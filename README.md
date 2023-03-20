@@ -22,19 +22,22 @@ Create new chat input cells by either:
 
 ## Features
 
-**Interact with ChatGPT conversationally:**
+#### Interact with ChatGPT:
 
-TODO
+![Example of text cell in chat output](./docs/images/example-of-text-output.png)
 
-**Use ChatGPT to generate immediately evaluatable Wolfram code:**
+#### Use ChatGPT to generate immediately evaluatable Wolfram code:
 
-TODO
+![Example of Input cell in chat output](./docs/images/example-of-wolfram-output.png)
 
-**Generate evaluatable code in any language supported by [ExternalEvaluate]:**
+Wolfram code in the chat output can be evaluated in place immediately:
 
-TODO
+![Example of evaluation of Input cell from chat output](./docs/images/example-of-wolfram-output-evaluated.png)
+
+#### Generate immediately evaluatable code in any language supported by [ExternalEvaluate]:
+
+![Example of ExternalEvaluate cell in chat output](./docs/images/example-of-external-evaluate.png)
 
 [ExternalEvaluate]: https://reference.wolfram.com/language/ref/ExternalEvaluate
 
-## Screenshots
 
