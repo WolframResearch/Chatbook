@@ -149,7 +149,7 @@ promptProcess[cell0_] := ConfirmReplace[cell0, {
 	(* FIXME: Inlude these *)
 	Cell[_, "Program" | "ExternalLanguage", ___] :> Nothing,
 
-	Cell[expr_, "Input" | "ChatGPTInput" | "Text", ___]
+	Cell[expr_, "Input" | "ChatGPTInput" | "ChatGPTUserInput" | "Text", ___]
 		:> <| "role" -> "user", "content" -> promptCellDataToString[expr] |>,
 
 	Cell[expr_, "Output", ___]
