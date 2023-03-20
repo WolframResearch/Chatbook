@@ -166,7 +166,7 @@ processResponse[response_?StringQ] := Module[{
 			s_?StringQ :> CellPrint @ Cell[StringTrim[s], "Text"],
 			Code[s_?StringQ] :> CellPrint @ Cell[s, "Program"],
 			Code[s_?StringQ, "Wolfram"] :> CellPrint @ Cell[s, "Input"],
-			Code[s_?StringQ, lang : ("Python" | "Shell" | "Bash")]
+			Code[s_?StringQ, lang_?StringQ]
 				:> CellPrint @ Cell[
 					s,
 					"ExternalLanguage",
