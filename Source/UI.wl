@@ -142,20 +142,14 @@ SetFallthroughError[promptProcess]
 promptProcess[cell0_] := ConfirmReplace[cell0, {
 	Cell[CellGroupData[___], ___] :> Nothing,
 
-	Cell[_, "Subsubsection", ___] :> Nothing,
-
-	Cell[_, "Print", ___] :> Nothing,
-
-	(* FIXME: Inlude these *)
-	Cell[_, "Program" | "ExternalLanguage", ___] :> Nothing,
-
-	Cell[expr_, "Input" | "ChatGPTInput" | "ChatGPTUserInput" | "Text", ___]
+	Cell[expr_, "ChatUserInput" |
+				(*Deprecated names*) "ChatGPTInput" | "ChatGPTUserInput", ___]
 		:> <| "role" -> "user", "content" -> promptCellDataToString[expr] |>,
 
-	Cell[expr_, "Output", ___]
+	Cell[expr_, "ChatAssistantOutput" | "ChatAssistantText" | "ChatAssistantProgram" | "ChatAssistantExternalLanguage", ___]
 		:> <| "role" -> "assistant", "content" -> promptCellDataToString[expr] |>,
 
-	Cell[expr_, "ChatGPTSystemInput", ___]
+	Cell[expr_, "ChatSystemInput" | (*Deprecated names*) "ChatGPTSystemInput", ___]
 		:> <| "role" -> "system", "content" -> promptCellDataToString[expr] |>,
 
 	(* Ignore unrecognized cell types. *)
@@ -208,13 +202,13 @@ processResponse[response_?StringQ] := Module[{
 },
 	Scan[
 		Replace[{
-			s_?StringQ :> CellPrint @ Cell[StringTrim[s], "Text"],
-			Code[s_?StringQ] :> CellPrint @ Cell[s, "Program"],
-			Code[s_?StringQ, "Wolfram"] :> CellPrint @ Cell[s, "Input"],
+			s_?StringQ :> CellPrint @ Cell[StringTrim[s], "ChatAssistantText"],
+			Code[s_?StringQ] :> CellPrint @ Cell[s, "ChatAssistantProgram"],
+			Code[s_?StringQ, "Wolfram"] :> CellPrint @ Cell[BoxData[s], "ChatAssistantOutput"],
 			Code[s_?StringQ, lang_?StringQ]
 				:> CellPrint @ Cell[
 					s,
-					"ExternalLanguage",
+					"ChatAssistantExternalLanguage",
 					CellEvaluationLanguage -> Replace[lang, {
 						"Bash" -> "Shell"
 					}]
