@@ -19,9 +19,21 @@ ChatInputCellEvaluationFunction[
 	input_,
 	form_
 ] := Module[{
+	chatGroupCells,
 	req, response, parsed, processed
 },
-	req = assembleChatGPTPrompt[getEnclosingChatGroup[]];
+	(*--------------------------------*)
+	(* Assemble the ChatGPT prompt    *)
+	(*--------------------------------*)
+
+	(*
+		Construct a chat prompt list from the current cell and all the cells
+		that come before the current cell inside the innermost cell group.
+	*)
+	chatGroupCells = Append[precedingCellsInGroup[], EvaluationCell[]];
+	chatGroupCells = NotebookRead[chatGroupCells];
+
+	req = Map[promptProcess, chatGroupCells];
 
 	RaiseAssert[
 		MatchQ[req, {___?AssociationQ}],
@@ -33,6 +45,10 @@ ChatInputCellEvaluationFunction[
 	];
 
 	ConnorGray`Chatbook`Debug`$LastRequestContent = req;
+
+	(*--------------------------------*)
+	(* Perform the API request        *)
+	(*--------------------------------*)
 
 	response = chatRequest[req];
 
@@ -54,28 +70,35 @@ ChatInputCellEvaluationFunction[
 (* Cell Processing                                        *)
 (*========================================================*)
 
-getEnclosingChatGroup[] := Module[{
-	return
+precedingCellsInGroup[] := Module[{
+	cell = EvaluationCell[],
+	nb = EvaluationNotebook[],
+	cells
 },
-	SelectionMove[EvaluationCell[], All, Cell, AutoScroll -> False];
-	NotebookFind[EvaluationNotebook[], "Subsubsection", Previous, CellStyle, AutoScroll -> False];
-	SelectionMove[EvaluationNotebook[], All, CellGroup, AutoScroll -> False];
-	return = NotebookRead[EvaluationNotebook[]];
+	(* Move the selection just before the current cell. *)
+	SelectionMove[cell, Before, Cell];
 
-	SelectionMove[EvaluationNotebook[], After, CellGroup, AutoScroll -> False];
+	(* Get all the cells in the cell group containing `cell`. *)
+	cells = ConfirmReplace[SelectionMove[nb, All, CellGroup, AutoScroll -> False], {
+		Null :> Cells[NotebookSelection[nb]],
+		(* Assume this failed because there was no enclosing cell group. This can
+			commonly happen when the current cell is at the top level in the
+			notebook, e.g. it's the first cell in a new notebook. *)
+		$Failed :> Cells[nb]
+	}];
 
-	return
+	(* Select the cell group we just selected. *)
+	SelectionMove[cell, After, Cell];
+
+	(* Take all the cells that come before `cell`, dropping the cells that
+	   come after `cell`. *)
+	cells = TakeWhile[cells, # =!= cell &];
+
+	(* This does not include `cell` itself. *)
+	cells
 ]
 
-(*------------------------------------*)
-
-assembleChatGPTPrompt[evalGroupData_] := Module[{},
-	Map[
-		promptProcess,
-		Cases[evalGroupData, Cell[Except[_CellGroupData], ___], Infinity]]
-	]
-
-(*------------------------------------*)
+(*====================================*)
 
 SetFallthroughError[promptProcess]
 
