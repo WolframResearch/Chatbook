@@ -35,13 +35,17 @@ ChatInputCellEvaluationFunction[
 
 	req = Map[promptProcess, chatGroupCells];
 
-	RaiseAssert[
-		MatchQ[req, {___?AssociationQ}],
-		"unexpected form for parsed chat input: ``", InputForm[req]
+	If[StringQ[$ChatSystemPre] && $ChatSystemPre =!= "",
+		PrependTo[req, <| "role" -> "system", "content" -> $ChatSystemPre |>];
 	];
 
-	If[StringQ[$ChatInputPost],
+	If[StringQ[$ChatInputPost] && $ChatInputPost =!= "",
 		AppendTo[req, <| "role" -> "user", "content" -> $ChatInputPost |>];
+	];
+
+	RaiseAssert[
+		MatchQ[req, {<| "role" -> _?StringQ, "content" -> _?StringQ |> ...}],
+		"unexpected form for parsed chat input: ``", InputForm[req]
 	];
 
 	ConnorGray`Chatbook`Debug`$LastRequestContent = req;
