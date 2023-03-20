@@ -15,7 +15,7 @@ Notebook[{
 		StyleData["ChatAssistantOutput", StyleDefinitions -> StyleData["Input"]],
 		CellGroupingRules -> "OutputGrouping",
 		CellFrame->{{2, False}, {False, False}},
-		CellFrameStyle -> Dashed,
+		CellFrameStyle -> Dashing[{Small, Small}],
 		CellFrameColor->RGBColor[1, 0.7, 0.1]
 	],
 
@@ -23,7 +23,7 @@ Notebook[{
 		StyleData["ChatAssistantText", StyleDefinitions -> StyleData["Text"]],
 		CellGroupingRules -> "OutputGrouping",
 		CellFrame->{{2, False}, {False, False}},
-		CellFrameStyle -> Dashed,
+		CellFrameStyle -> Dashing[{Small, Small}],
 		CellFrameColor->RGBColor[1, 0.7, 0.1]
 	],
 
@@ -31,7 +31,7 @@ Notebook[{
 		StyleData["ChatAssistantProgram", StyleDefinitions -> StyleData["Program"]],
 		CellGroupingRules -> "OutputGrouping",
 		CellFrame->{{2, False}, {False, False}},
-		CellFrameStyle -> Dashed,
+		CellFrameStyle -> Dashing[{Small, Small}],
 		CellFrameColor->RGBColor[1, 0.7, 0.1]
 	],
 
@@ -39,7 +39,7 @@ Notebook[{
 		StyleData["ChatAssistantExternalLanguage", StyleDefinitions -> StyleData["ExternalLanguage"]],
 		CellGroupingRules -> "OutputGrouping",
 		CellFrame->{{2, False}, {False, False}},
-		CellFrameStyle -> Dashed,
+		CellFrameStyle -> Dashing[{Small, Small}],
 		CellFrameColor->RGBColor[1, 0.7, 0.1]
 	],
 
