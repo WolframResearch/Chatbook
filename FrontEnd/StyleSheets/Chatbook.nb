@@ -4,25 +4,57 @@ Notebook[{
 	Cell[
 		StyleData["Input"],
 		StyleKeyMapping -> {
-			"/" -> "ChatGPTUserInput",
+			"/" -> "ChatUserInput",
 			"=" -> "WolframAlphaShort",
 			">" -> "ExternalLanguageDefault",
 			"*" -> "Item"
 		}
 	],
 
+	Cell[
+		StyleData["ChatAssistantOutput", StyleDefinitions -> StyleData["Output"]],
+		CellGroupingRules -> "OutputGrouping",
+		CellFrame->{{2, False}, {False, False}},
+		CellFrameStyle -> Dashed,
+		CellFrameColor->RGBColor[1, 0.7, 0.1]
+	],
+
+	Cell[
+		StyleData["ChatAssistantText", StyleDefinitions -> StyleData["Text"]],
+		CellGroupingRules -> "OutputGrouping",
+		CellFrame->{{2, False}, {False, False}},
+		CellFrameStyle -> Dashed,
+		CellFrameColor->RGBColor[1, 0.7, 0.1]
+	],
+
+	Cell[
+		StyleData["ChatAssistantProgram", StyleDefinitions -> StyleData["Program"]],
+		CellGroupingRules -> "OutputGrouping",
+		CellFrame->{{2, False}, {False, False}},
+		CellFrameStyle -> Dashed,
+		CellFrameColor->RGBColor[1, 0.7, 0.1]
+	],
+
+	Cell[
+		StyleData["ChatAssistantExternalLanguage", StyleDefinitions -> StyleData["ExternalLanguage"]],
+		CellGroupingRules -> "OutputGrouping",
+		CellFrame->{{2, False}, {False, False}},
+		CellFrameStyle -> Dashed,
+		CellFrameColor->RGBColor[1, 0.7, 0.1]
+	],
+
 	(*================================*)
-	(* ChatGPT Input Cell Styles      *)
+	(* Chat Input Cell Styles         *)
 	(*================================*)
 
 	Cell[
 		StyleData[
-			"ChatGPTUserInput",
-			StyleDefinitions -> StyleData["ChatGPTInputBase"]
+			"ChatUserInput",
+			StyleDefinitions -> StyleData["ChatInputBase"]
 		],
 		StyleKeyMapping -> {
 			"Backspace" -> "Input",
-			"/" -> "ChatGPTSystemInput",
+			"/" -> "ChatSystemInput",
 			" " -> "Text",
 			"*" -> "Item"
 		},
@@ -47,11 +79,11 @@ Notebook[{
 
 	Cell[
 		StyleData[
-			"ChatGPTSystemInput",
-			StyleDefinitions -> StyleData["ChatGPTInputBase"]
+			"ChatSystemInput",
+			StyleDefinitions -> StyleData["ChatInputBase"]
 		],
 		StyleKeyMapping -> {
-			"Backspace" -> "ChatGPTInput"
+			"Backspace" -> "ChatUserInput"
 		},
 		BackgroundAppearance -> FrontEnd`FileName[{"WolframAlphaClient"}, "NLInputQuery.9.png"],
 		CellDingbat -> PaneBox[
@@ -71,11 +103,23 @@ Notebook[{
 		]
 	],
 
-	(* Deprecated cell style. ChatGPTInput was replaced with ChatGPTUserInput. *)
+	(* Deprecated cell styles. ChatGPTInput was replaced with ChatGPTUserInput and then with ChatUserInput. *)
 	Cell[
 		StyleData[
 			"ChatGPTInput",
-			StyleDefinitions -> StyleData["ChatGPTUserInput"]
+			StyleDefinitions -> StyleData["ChatUserInput"]
+		]
+	],
+	Cell[
+		StyleData[
+			"ChatGPTUserInput",
+			StyleDefinitions -> StyleData["ChatUserInput"]
+		]
+	],
+	Cell[
+		StyleData[
+			"ChatGPTSystemInput",
+			StyleDefinitions -> StyleData["ChatSystemInput"]
 		]
 	],
 
@@ -84,7 +128,7 @@ Notebook[{
 	(*--------------------------------*)
 
 	Cell[
-		StyleData["ChatGPTInputBase", StyleDefinitions -> StyleData["Input"]],
+		StyleData["ChatInputBase", StyleDefinitions -> StyleData["Input"]],
 		CellMargins -> {{66, 21}, {5, 10}},
 		CellDingbatMargin -> -25,
 		CellEvaluationFunction :> (
