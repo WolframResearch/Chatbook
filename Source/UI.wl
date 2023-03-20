@@ -204,7 +204,7 @@ processResponse[response_?StringQ] := Module[{
 		Replace[{
 			s_?StringQ :> CellPrint @ Cell[StringTrim[s], "ChatAssistantText"],
 			Code[s_?StringQ] :> CellPrint @ Cell[s, "ChatAssistantProgram"],
-			Code[s_?StringQ, "Wolfram"] :> CellPrint @ Cell[BoxData[s], "ChatAssistantOutput"],
+			Code[s_?StringQ, "Wolfram" | "Mathematica"] :> CellPrint @ Cell[BoxData[s], "ChatAssistantOutput"],
 			Code[s_?StringQ, lang_?StringQ]
 				:> CellPrint @ Cell[
 					s,
