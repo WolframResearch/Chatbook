@@ -16,7 +16,7 @@ Notebook[{
 		BackgroundAppearance -> FrontEnd`FileName[{"WolframAlphaClient"}, "NLInputQuery.9.png"],
 		CellDingbat -> PaneBox[
 			(* "\[FreeformPrompt]", *)
-			StyleBox["\"\|01F916\"", FontSize -> 24],
+			StyleBox["\"\|01F916\"", FontSize -> 20],
 			BaselinePosition -> Dynamic[
 				FEPrivate`If[FEPrivate`Greater[FEPrivate`$VersionNumber, 12.],
 					Center -> Center,
@@ -30,7 +30,7 @@ Notebook[{
 			}
 		],
 		CellMargins -> {{66, 21}, {5, 10}},
-		CellDingbatMargin -> 8,
+		CellDingbatMargin -> -25,
 		StyleKeyMapping -> {" " -> "Text", "*" -> "Item"},
 		CellEvaluationFunction :> (
 			(*
@@ -42,7 +42,7 @@ Notebook[{
 			ConnorGray`Chatbook`UI`ChatInputCellEvaluationFunction
 		),
 		ShowCellLabel -> False,
-		CellFrameMargins -> {{5, 8}, {3, 4}},
+		CellFrameMargins -> {{27, 8}, {3, 6}},
 		CellFrameColor -> RGBColor[1, 0.5, 0],
 		CellFrameLabelMargins -> Dynamic[
 			FEPrivate`If[
