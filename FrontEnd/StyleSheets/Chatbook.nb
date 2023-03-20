@@ -12,7 +12,7 @@ Notebook[{
 	],
 
 	Cell[
-		StyleData["ChatAssistantOutput", StyleDefinitions -> StyleData["Output"]],
+		StyleData["ChatAssistantOutput", StyleDefinitions -> StyleData["Input"]],
 		CellGroupingRules -> "OutputGrouping",
 		CellFrame->{{2, False}, {False, False}},
 		CellFrameStyle -> Dashed,
