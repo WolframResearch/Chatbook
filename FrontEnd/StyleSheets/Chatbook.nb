@@ -13,6 +13,7 @@ Notebook[{
 
 	Cell[
 		StyleData["ChatAssistantOutput", StyleDefinitions -> StyleData["Input"]],
+		CellEditDuplicate -> True,
 		CellGroupingRules -> "OutputGrouping",
 		CellFrame->{{2, False}, {False, False}},
 		CellFrameStyle -> Dashing[{Small, Small}],

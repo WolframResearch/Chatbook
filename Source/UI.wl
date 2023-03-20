@@ -50,6 +50,12 @@ ChatInputCellEvaluationFunction[
 
 	ConnorGray`Chatbook`Debug`$LastRequestContent = req;
 
+	(*----------------------------------------------------------------------*)
+	(* Put the insertion point where it belongs after the old output        *)
+	(*----------------------------------------------------------------------*)
+
+	moveAfterPreviousOutputs[EvaluationCell[], EvaluationNotebook[]];
+	
 	(*--------------------------------*)
 	(* Perform the API request        *)
 	(*--------------------------------*)
@@ -102,6 +108,8 @@ ChatInputCellEvaluationFunction[
 	}];
 
 	processed = StringJoin[StringTrim[content]];
+
+	deletePreviousOutputs[EvaluationCell[], EvaluationNotebook[]];
 
 	processResponse[processed];
 ]
@@ -197,12 +205,63 @@ promptCellDataToString[cdata_] := ConfirmReplace[cdata, {
 }]
 
 (*========================================================*)
+(* Dealing with old output                                *)
+(*========================================================*)
+
+(* Copied from WANE *)
+
+(* The procedure for determining previously generated output cells is:
+
+	- If OutputAutoOverwrite is False for the notebook, stop.
+	- Otherwise, examine the cell immediately after the input cell.
+		- If it's not Deletable, stop.
+		- If it's not CellAutoOverwrite, stop.
+		- Otherwise, mark it for deletion, and examine the next cell.
+
+This is not quite the same as the Desktop front end's algorithm. The FE checks
+for Evaluatable -> False right after Deletable. But we can't do that, because we
+have to be able to delete "DeployedWLInput" cells, which can be evaluated.
+
+The FE also does something special if it encounters a cell group. But we're not
+going to bother with that for now.
+*)
+
+previousOutputs[cellobj_, nbobj_] := 
+	Module[{cells, objs = {}},
+		If[Not @ TrueQ @ AbsoluteCurrentValue[nbobj, OutputAutoOverwrite], Return[{}]];
+		cells = NextCell[cellobj, All];
+		If[!MatchQ[cells, {__CellObject}], Return[{}]];
+		Do[
+			If[
+				TrueQ @ AbsoluteCurrentValue[cell, Deletable] &&
+				TrueQ @ AbsoluteCurrentValue[cell, CellAutoOverwrite], AppendTo[objs, cell], Break[]],
+			{cell, cells}
+		];
+		objs
+	]
+
+
+deletePreviousOutputs[cellobj_, nbobj_] :=
+	Replace[previousOutputs[cellobj, nbobj], {
+		cells: {__CellObject} :> NotebookDelete[cells],
+		_ :> None
+	}]
+
+moveAfterPreviousOutputs[cellobj_, nbobj_] := 
+	Replace[previousOutputs[cellobj, nbobj], {
+		{___, lastcell_CellObject} :> SelectionMove[lastcell, After, Cell],
+		_ :> SelectionMove[cellobj, After, Cell]
+	}]
+
+
+
+(*========================================================*)
 (* ChatGPT Response Processing                            *)
 (*========================================================*)
 
 processResponse[response_?StringQ] := Module[{
 	parsed = parseResponse[response]
-},
+},	
 	Scan[
 		Replace[{
 			s_?StringQ :> CellPrint @ Cell[StringTrim[s], "ChatAssistantText"],
