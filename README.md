@@ -34,7 +34,7 @@ TODO
 
 TODO
 
-[ExternalEvaluate]: https://reference.wolfram.com/ref/ExternalEvaluate
+[ExternalEvaluate]: https://reference.wolfram.com/language/ref/ExternalEvaluate
 
 ## Screenshots
 
