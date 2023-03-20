@@ -20,7 +20,7 @@ ChatInputCellEvaluationFunction[
 	form_
 ] := Module[{
 	chatGroupCells,
-	req, response, parsed, processed
+	req, response, parsed, content, processed
 },
 	(*--------------------------------*)
 	(* Assemble the ChatGPT prompt    *)
@@ -71,9 +71,34 @@ ChatInputCellEvaluationFunction[
 		_?FailureQ :> Raise[ChatbookError, "Error performing chat API request: ``", response]
 	}];
 
-	processed = StringJoin[
-		StringTrim["content" /. ("message" /. ("choices" /. parsed))]
+	If[!MatchQ[parsed, {___Rule}],
+		Raise[
+			ChatbookError,
+			"Chat API response did not have the expected format: ``",
+			InputForm[parsed]
+		];
 	];
+
+	content = ConfirmReplace[parsed, {
+		KeyValuePattern[{
+			"choices" -> {
+				KeyValuePattern[{
+					"message" -> KeyValuePattern[{
+						"content" -> content0_
+					}]
+				}],
+				(* FIXME: What about other potential entries in this "choices" field? *)
+				___
+			}
+		}] :> content0,
+		other_ :> Raise[
+			ChatbookError,
+			"Chat API response did not contain \"content\" at the expected lookup path: ``",
+			InputForm[other]
+		]
+	}];
+
+	processed = StringJoin[StringTrim[content]];
 
 	processResponse[processed];
 ]
