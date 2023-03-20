@@ -59,7 +59,15 @@ ChatInputCellEvaluationFunction[
 	ConnorGray`Chatbook`Debug`$LastResponse = response;
 
 	parsed = ConfirmReplace[response, {
-		_HTTPResponse :> ImportString[response["Body"], "JSON"],
+		_HTTPResponse :> ConfirmReplace[ImportString[response["Body"], "JSON"], {
+			result_?ListQ :> result,
+			other_ :> Raise[
+				ChatbookError,
+				"error parsing response body: ``: body was: ",
+				InputForm[other],
+				InputForm[response["Body"]]
+			]
+		}],
 		_?FailureQ :> Raise[ChatbookError, "Error performing chat API request: ``", response]
 	}];
 
