@@ -1,0 +1,65 @@
+Notebook[{
+	Cell[StyleData[StyleDefinitions -> "Default.nb"]],
+
+	Cell[
+		StyleData["Input"],
+		StyleKeyMapping -> {
+			"&" -> "ChatGPTInput"
+		}
+	],
+
+	Cell[
+		StyleData["ChatGPTInput", StyleDefinitions -> StyleData["Input"]],
+		BackgroundAppearance -> FrontEnd`FileName[{"WolframAlphaClient"}, "NLInputQuery.9.png"],
+		CellDingbat -> PaneBox[
+			(* "\[FreeformPrompt]", *)
+			StyleBox["\"\|01F916\"", FontSize -> 24],
+			BaselinePosition -> Dynamic[
+				FEPrivate`If[FEPrivate`Greater[FEPrivate`$VersionNumber, 12.],
+					Center -> Center,
+					Center -> Baseline
+				]
+			],
+			BaseStyle -> {
+				FontSize -> 10,
+				FontColor -> RGBColor[0.949219, 0.4375, 0.128906],
+				FontFamily -> Dynamic[CurrentValue[{StyleHints, "CodeFont"}]]
+			}
+		],
+		CellMargins -> {{66, 21}, {5, 10}},
+		CellDingbatMargin -> 8,
+		StyleKeyMapping -> {" " -> "Text", "*" -> "Item"},
+		CellEvaluationFunction :> (
+			(*
+				Don't put this context on $ContextPath. Any symbols from Chatbook
+				used in UI functions should be refered to by absolute context.
+			*)
+			Needs["ConnorGray`Chatbook`UI`" -> None];
+
+			ConnorGray`Chatbook`UI`ChatInputCellEvaluationFunction
+		),
+		ShowCellLabel -> False,
+		CellFrameMargins -> {{5, 8}, {3, 4}},
+		CellFrameColor -> RGBColor[1, 0.5, 0],
+		CellFrameLabelMargins -> Dynamic[
+			FEPrivate`If[
+				FEPrivate`Greater[FEPrivate`$VersionNumber, 12.],
+				6, 1
+			]
+		],
+		DefaultFormatType -> TextForm,
+		ShowAutoStyles -> False,
+		ShowCodeAssist -> False,
+		ShowAutoSpellCheck -> False,
+		AllowInlineCells -> False,
+		FormatType -> TextForm,
+		ShowStringCharacters -> False,
+		MenuSortingValue -> 1520,
+		FontFamily -> "Helvetica",
+		FontSize -> 14,
+		FontWeight -> "Plain",
+		PrivateFontOptions -> {
+			"OperatorSubstitution" -> True
+		}
+	]
+}]
