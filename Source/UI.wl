@@ -57,12 +57,12 @@ ChatInputCellEvaluationFunction[
 getEnclosingChatGroup[] := Module[{
 	return
 },
-	SelectionMove[EvaluationCell[], All, Cell];
-	NotebookFind[EvaluationNotebook[], "Subsubsection", Previous, CellStyle];
-	SelectionMove[EvaluationNotebook[], All, CellGroup];
+	SelectionMove[EvaluationCell[], All, Cell, AutoScroll -> False];
+	NotebookFind[EvaluationNotebook[], "Subsubsection", Previous, CellStyle, AutoScroll -> False];
+	SelectionMove[EvaluationNotebook[], All, CellGroup, AutoScroll -> False];
 	return = NotebookRead[EvaluationNotebook[]];
 
-	SelectionMove[EvaluationNotebook[], After, CellGroup];
+	SelectionMove[EvaluationNotebook[], After, CellGroup, AutoScroll -> False];
 
 	return
 ]
