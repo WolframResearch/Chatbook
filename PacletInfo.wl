@@ -1,7 +1,7 @@
 PacletObject[<|
 	"Name" -> "ConnorGray/Chatbook",
 	"PublisherID" -> "ConnorGray",
-	"Version" -> "0.0.2",
+	"Version" -> "0.0.3",
 	"WolframVersion" -> "13.2+",
 	"Creator" -> {"Connor Gray", "Theodore Gray"},
 	"Description" -> "ChatGPT + Wolfram Notebooks",

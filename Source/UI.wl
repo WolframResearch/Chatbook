@@ -170,13 +170,16 @@ promptProcess[cell0_] := ConfirmReplace[cell0, {
 			]
 		|>,
 
+	(* Ignore unrecognized cell types. *)
+	(* TODO: Should try to treat every cell type as input to the chat?
+		It is currently unintuitive that there isn't any obvious way to know
+		whether a cell in a cell group will be sent to the AI or not.
 
-	(* TODO: Relax this hard error; ignore unrecognized cells. *)
-	other_ :> Raise[
-		ChatbookError,
-		"unexpected cell form in chat group: ``",
-		InputForm[other]
-	]
+		In addition to being unintuitive, this also makes it difficult for a
+		user to reason about what cells are "private" and not sent over the
+		internet to the AI.
+	*)
+	other_ :> Nothing
 }]
 
 (*========================================================*)
