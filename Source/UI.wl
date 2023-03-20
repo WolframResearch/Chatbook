@@ -149,26 +149,12 @@ promptProcess[cell0_] := ConfirmReplace[cell0, {
 	(* FIXME: Inlude these *)
 	Cell[_, "Program" | "ExternalLanguage", ___] :> Nothing,
 
-	Cell[expr_, "Text", ___]
-		:> 	<| "role" -> "user", "content" -> ToString[expr] |>,
-
-	Cell[BoxData[expr_, form_], "Input" | "ChatGPTInput", ___]
-		:> <| "role" -> "user", "content" -> ToString[ToExpression[expr, form]] |>,
-
-	Cell[expr_, "Input" | "ChatGPTInput", ___]
-		:> <| "role" -> "user", "content" -> ToString[expr]|>,
+	Cell[expr_, "Input" | "ChatGPTInput" | "Text", ___]
+		:> <| "role" -> "user", "content" -> promptCellDataToString[expr] |>,
 
 	Cell[expr_, "Output", ___]
-		:> <|
-			"role" -> "assistant",
-			(* FIXME: Process cell content less hackily *)
-			"content" -> ToString[
-				expr //. {
-					BoxData[e_, ___] :> e,
-					FormBox[e_, ___] :> e
-				}
-			]
-		|>,
+		:> <| "role" -> "assistant", "content" -> promptCellDataToString[expr] |>,
+
 
 	(* Ignore unrecognized cell types. *)
 	(* TODO: Should try to treat every cell type as input to the chat?
@@ -180,6 +166,35 @@ promptProcess[cell0_] := ConfirmReplace[cell0, {
 		internet to the AI.
 	*)
 	other_ :> Nothing
+}]
+
+(*------------------------------------*)
+
+SetFallthroughError[promptCellDataToString]
+
+promptCellDataToString[cdata_] := ConfirmReplace[cdata, {
+	s_?StringQ :> s,
+
+	(* TODO: Is this incorrect, or desirable? The string contains "TextData[..]",
+		but this makes the example of ChatGPT describing the visual appearance
+		of a styled text/box data cell work. *)
+
+	bd:BoxData[_] :> ToString[bd],
+	td:TextData[_] :> ToString[td],
+
+	(* "content" -> ToString[
+		expr //. {
+			BoxData[e_, ___] :> e,
+			FormBox[e_, ___] :> e
+		}
+	] *)
+
+	other_ :> (
+		Print["warning: unexpected prompt cell data: ", InputForm[other]];
+
+		(* Hope that ToString is better than nothing. *)
+		ToString[other]
+	)
 }]
 
 (*========================================================*)
