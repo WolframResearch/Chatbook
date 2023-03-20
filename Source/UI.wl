@@ -8,6 +8,7 @@ ChatInputCellEvaluationFunction[input$, form$] is the CellEvaluationFunction for
 
 Begin["`Private`"]
 
+Needs["ConnorGray`Chatbook`"]
 Needs["ConnorGray`Chatbook`ErrorUtils`"]
 Needs["ConnorGray`Chatbook`Errors`"]
 
@@ -22,7 +23,20 @@ ChatInputCellEvaluationFunction[
 },
 	req = assembleChatGPTPrompt[getEnclosingChatGroup[]];
 
+	RaiseAssert[
+		MatchQ[req, {___?AssociationQ}],
+		"unexpected form for parsed chat input: ``", InputForm[req]
+	];
+
+	If[StringQ[$ChatInputPost],
+		AppendTo[req, <| "role" -> "user", "content" -> $ChatInputPost |>];
+	];
+
+	ConnorGray`Chatbook`Debug`$LastRequestContent = req;
+
 	response = chatRequest[req];
+
+	ConnorGray`Chatbook`Debug`$LastResponse = response;
 
 	parsed = ConfirmReplace[response, {
 		_HTTPResponse :> ImportString[response["Body"], "JSON"],
@@ -144,12 +158,11 @@ parseResponse[response_?StringQ] := Module[{
 				"mathematica" :> Code[trimCodeBlock[code], "Wolfram"],
 				"" :> Code[trimCodeBlock[code]],
 				other_ :> (
-					(* FIXME: Handle this better. *)
-					Print[
+					(* Print[
 						Style["warning:", Orange],
-						" unrecognized language: ``",
+						" unrecognized language: ",
 						other
-					];
+					]; *)
 					Code[trimCodeBlock[code], Capitalize[lang]]
 				)
 			}]
