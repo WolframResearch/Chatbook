@@ -63,7 +63,7 @@ ChatInputCellEvaluationFunction[
 			result_?ListQ :> result,
 			other_ :> Raise[
 				ChatbookError,
-				"error parsing response body: ``: body was: ",
+				"Error parsing API response body: ``: body was: ``",
 				InputForm[other],
 				InputForm[response["Body"]]
 			]
