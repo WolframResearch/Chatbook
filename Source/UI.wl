@@ -59,10 +59,11 @@ ChatInputCellEvaluationFunction[
 	ConnorGray`Chatbook`Debug`$LastResponse = response;
 
 	parsed = ConfirmReplace[response, {
-		_HTTPResponse :> ConfirmReplace[ImportString[response["Body"], "JSON"], {
-			result_?ListQ :> result,
+		_HTTPResponse :> ConfirmReplace[ImportByteArray[response["BodyByteArray"], "RawJSON"], {
+			result : (_?ListQ | _?AssociationQ) :> result,
 			other_ :> Raise[
 				ChatbookError,
+				<| "ResponseResult" -> response |>,
 				"Error parsing API response body: ``: body was: ``",
 				InputForm[other],
 				InputForm[response["Body"]]
@@ -71,9 +72,10 @@ ChatInputCellEvaluationFunction[
 		_?FailureQ :> Raise[ChatbookError, "Error performing chat API request: ``", response]
 	}];
 
-	If[!MatchQ[parsed, {___Rule}],
+	If[!MatchQ[parsed, {___Rule} | _?AssociationQ],
 		Raise[
 			ChatbookError,
+			<| "ResponseResult" -> response |>,
 			"Chat API response did not have the expected format: ``",
 			InputForm[parsed]
 		];
@@ -93,6 +95,7 @@ ChatInputCellEvaluationFunction[
 		}] :> content0,
 		other_ :> Raise[
 			ChatbookError,
+			<| "ResponseResult" -> response |>,
 			"Chat API response did not contain \"content\" at the expected lookup path: ``",
 			InputForm[other]
 		]
@@ -124,7 +127,7 @@ precedingCellsInGroup[] := Module[{
 		$Failed :> Cells[nb]
 	}];
 
-	(* Select the cell group we just selected. *)
+	(* Deselect the cell group we just selected. *)
 	SelectionMove[cell, After, Cell];
 
 	(* Take all the cells that come before `cell`, dropping the cells that
