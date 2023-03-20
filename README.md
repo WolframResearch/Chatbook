@@ -5,9 +5,15 @@ notebooks to Wolfram.
 
 ## Getting Started
 
-To start using Chatbook, install this paclet by:
+To start using Chatbook, install this paclet by evaluating:
 
-**TODO**
+```
+PacletInstall[ResourceObject["https://wolfr.am/1c2WoIEpe"]]
+```
+
+which will install the
+[ConnorGray/Chatbook](https://www.wolframcloud.com/obj/connorg/DeployedResources/Paclet/ConnorGray/Chatbook/)
+paclet resource.
 
 Once installed, start using Chatbook by first creating an empty notebook,
 and then selecting the `Format > Stylesheet > Chatbook` menu item to change
@@ -26,7 +32,7 @@ Create new chat input cells by either:
 
 ![Example of text cell in chat output](./docs/images/example-of-text-output-2.png)
 
-### Use ChatGPT to generate immediately evaluatable Wolfram code:
+### Generate immediately evaluatable Wolfram code:
 
 ![Example of Input cell in chat output](./docs/images/example-of-wolfram-output-2.png)
 

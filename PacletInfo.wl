@@ -4,6 +4,7 @@ PacletObject[<|
 	"Version" -> "0.0.1",
 	"WolframVersion" -> "13.2+",
 	"Creator" -> {"Connor Gray", "Theodore Gray"},
+	"Description" -> "ChatGPT + Wolfram Notebooks",
 	"Extensions" -> {
 		{"Kernel", "Root" -> "Source", "Context" -> "ConnorGray`Chatbook`"},
 		{"FrontEnd"},
