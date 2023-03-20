@@ -31,7 +31,12 @@ Notebook[{
 		],
 		CellMargins -> {{66, 21}, {5, 10}},
 		CellDingbatMargin -> -25,
-		StyleKeyMapping -> {" " -> "Text", "*" -> "Item"},
+		StyleKeyMapping -> {
+			"Backspace" -> "Input",
+			"/" -> "ChatGPTSystemInput",
+			" " -> "Text",
+			"*" -> "Item"
+		},
 		CellEvaluationFunction :> (
 			(*
 				Don't put this context on $ContextPath. Any symbols from Chatbook
@@ -63,6 +68,28 @@ Notebook[{
 		FontWeight -> "Plain",
 		PrivateFontOptions -> {
 			"OperatorSubstitution" -> True
+		}
+	],
+
+	Cell[
+		StyleData["ChatGPTSystemInput", StyleDefinitions -> StyleData["ChatGPTInput"]],
+		CellDingbat -> PaneBox[
+			(* "\[FreeformPrompt]", *)
+			StyleBox["\"\|002699\|00fe0f\"", FontSize -> 20],
+			BaselinePosition -> Dynamic[
+				FEPrivate`If[FEPrivate`Greater[FEPrivate`$VersionNumber, 12.],
+					Center -> Center,
+					Center -> Baseline
+				]
+			],
+			BaseStyle -> {
+				FontSize -> 10,
+				FontColor -> RGBColor[0.949219, 0.4375, 0.128906],
+				FontFamily -> Dynamic[CurrentValue[{StyleHints, "CodeFont"}]]
+			}
+		],
+		StyleKeyMapping -> {
+			"Backspace" -> "ChatGPTInput"
 		}
 	]
 }]

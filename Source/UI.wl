@@ -155,6 +155,8 @@ promptProcess[cell0_] := ConfirmReplace[cell0, {
 	Cell[expr_, "Output", ___]
 		:> <| "role" -> "assistant", "content" -> promptCellDataToString[expr] |>,
 
+	Cell[expr_, "ChatGPTSystemInput", ___]
+		:> <| "role" -> "system", "content" -> promptCellDataToString[expr] |>,
 
 	(* Ignore unrecognized cell types. *)
 	(* TODO: Should try to treat every cell type as input to the chat?
