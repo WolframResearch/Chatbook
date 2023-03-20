@@ -17,7 +17,7 @@ Create new chat input cells by either:
 
 * Selecting the `Format > Style > ChatGPTInput` menu item.
 
-* Typing '&' when the cursor is in-between cells, or as the first character in
+* Typing '/' when the cursor is in-between cells, or as the first character in
   an Input cell.
 
 ## Features

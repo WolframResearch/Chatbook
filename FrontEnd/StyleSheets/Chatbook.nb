@@ -4,7 +4,10 @@ Notebook[{
 	Cell[
 		StyleData["Input"],
 		StyleKeyMapping -> {
-			"&" -> "ChatGPTInput"
+			"/" -> "ChatGPTInput",
+			"=" -> "WolframAlphaShort",
+			">" -> "ExternalLanguageDefault",
+			"*" -> "Item"
 		}
 	],
 
