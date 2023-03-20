@@ -26,6 +26,20 @@ Create new chat input cells by either:
 * Typing '/' when the cursor is in-between cells, or as the first character in
   an Input cell.
 
+### Configuration
+
+Before you can perform chat queries, you must specify your OpenAI API key by
+performing the following evaluation:
+
+```wolfram
+SystemCredential["OPENAI_API_KEY"] = "<YOUR KEY>"
+```
+
+where `<YOUR_KEY>` is a valid OpenAI API key.
+
+*Note: This credential is the same as that used by the
+[ChristopherWolfram/OpenAILink](https://paclets.com/ChristopherWolfram/OpenAILink) paclet*.
+
 ## Features
 
 ### Interact with ChatGPT:
