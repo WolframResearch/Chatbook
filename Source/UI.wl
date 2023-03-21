@@ -13,99 +13,6 @@ Needs["ConnorGray`Chatbook`ErrorUtils`"]
 Needs["ConnorGray`Chatbook`Errors`"]
 
 
-checkAPIKey[provenBad_] := Module[{},
-   If[(Head[SystemCredential["OPENAI_API_KEY"]] === String) && ! 
-      provenBad,
-    Return[True]];
-   
-   NotebookPut[Notebook[{
-      Cell["ChatGPT API Key Required", "Subsection", 
-       TextAlignment -> Center],
-      
-      Cell[TextData[Flatten[{
-          If[provenBad,
-           {"The ChatGPT API Key you have installed was not accepted \
-by OpenAI. You can install a different one by pasting it into the \
-field below and clicking ", 
-            StyleBox["Install API Key.", 
-             FontFamily -> CurrentValue["ControlsFontFamily"]]},
-           
-           "To use ChatGPT features you must have a valid ChatGPT API \
-key installed. "
-           ],
-          
-          "If you don't have one, you can get a free one by following \
-these instructions.\n\n",
-          "\t(1) Login or create a free account at ", 
-          ButtonBox["https://chat.openai.com/auth/login", 
-           BaseStyle -> "Hyperlink", 
-           ButtonData -> {URL["https://chat.openai.com/auth/login"], 
-             None}], "\n\t(2) View your API Key at ",
-          
-          ButtonBox["https://platform.openai.com/account/api-keys", 
-           BaseStyle -> "Hyperlink", 
-           ButtonData -> {URL[
-              "https://platform.openai.com/account/api-keys"], None}],
-           "\n\t(3) Copy/paste the key into the field below, then \
-click ", StyleBox["Install API Key.", 
-           FontFamily -> CurrentValue["ControlsFontFamily"]]}]], 
-       "Text",
-       FontFamily -> CurrentValue["PanelFontFamily"],
-       CellMargins -> {{20, 20}, {10, 10}}],
-      
-      Cell[BoxData[RowBox[{StyleBox[
-           InputFieldBox["", String,
-            FieldSize -> 45,
-            FieldHint -> "Paste ChaptGPT API Key Here"],
-           ShowSelection -> True]
-          }]],
-       "Text",
-       TextAlignment -> Center,
-       CellMargins -> {{20, 20}, {10, 10}},
-       FontFamily -> CurrentValue["ControlsFontFamily"]],
-      
-      Cell[
-       TextData[
-        "If you need to change your API key in the future, use the \
-non-existant Credentials tab in the Preferences dialog."], "Text",
-       FontFamily -> CurrentValue["PanelFontFamily"],
-       CellMargins -> {{20, 20}, {10, 10}}],
-      
-      Cell[BoxData[RowBox[{
-          
-          ButtonBox[
-           StyleBox["Install API Key", 
-            FontFamily -> CurrentValue["ControlsFontFamily"]], 
-           ButtonFunction :> (
-             
-             SystemCredential["OPENAI_API_KEY"] = 
-              Cases[NotebookGet[EvaluationNotebook[]], _InputFieldBox,
-                 Infinity][[1, 1]];
-             NotebookClose[EvaluationNotebook[]];
-             ), Evaluator -> Automatic, Method -> "Preemptive"],
-          "   ",
-          
-          ButtonBox[
-           StyleBox["Cancel", 
-            FontFamily -> CurrentValue["ControlsFontFamily"]], 
-           ButtonFunction :> NotebookClose[EvaluationNotebook[]]]
-          }]],
-       "Text",
-       TextAlignment -> Center,
-       CellMargins -> {{20, 20}, {10, 10}}]
-      }],
-    WindowFrame -> "ModelessDialog",
-    WindowSize -> {800, FitAll},
-    ShowCellBracket -> False,
-    ShowSelection -> False,
-    Selectable -> False,
-    Editable -> False,
-    WindowElements -> {},
-    WindowTitle -> "ChatGPT API Key"];
-   
-   False
-   ];
-
 SetFallthroughError[ChatInputCellEvaluationFunction]
 
 ChatInputCellEvaluationFunction[
@@ -148,10 +55,11 @@ ChatInputCellEvaluationFunction[
 	(*----------------------------------------------------------------------*)
 
 	moveAfterPreviousOutputs[EvaluationCell[], EvaluationNotebook[]];
-	
+
 	If[ !checkAPIKey[False],
-		Return[]];
-	
+		Return[]
+	];
+
 	(*--------------------------------*)
 	(* Perform the API request        *)
 	(*--------------------------------*)
@@ -159,13 +67,39 @@ ChatInputCellEvaluationFunction[
 	response = chatRequest[req];
 
 	ConnorGray`Chatbook`Debug`$LastResponse = response;
-	
-	If[("StatusCode" /.response[[2]]) === 401,
-		checkAPIKey[True];
-		Return[]];
 
-	parsed = ConfirmReplace[response, {
-		_HTTPResponse :> ConfirmReplace[ImportByteArray[response["BodyByteArray"], "RawJSON"], {
+	response = ConfirmReplace[response, {
+		_HTTPResponse :> response,
+		_?FailureQ :> Raise[
+			ChatbookError,
+			<| "ResponseResult" -> response |>,
+			"Error performing chat API request: ``",
+			response
+		],
+		other_ :> Raise[
+			ChatbookError,
+			<| "ResponseResult" -> response |>,
+			"Unexpected result expression from chatRequest: ``",
+			InputForm[other]
+		]
+	}];
+
+	RaiseAssert[
+		MatchQ[response, _HTTPResponse],
+		"Unexpected response form: ``", InputForm[response]
+	];
+
+	ConfirmReplace[response["StatusCode"], {
+		200 :> Null,
+		401 :> (
+			checkAPIKey[True];
+			Return[]
+		)
+	}];
+
+	parsed = ConfirmReplace[
+		ImportByteArray[response["BodyByteArray"], "RawJSON"],
+		{
 			result : (_?ListQ | _?AssociationQ) :> result,
 			other_ :> Raise[
 				ChatbookError,
@@ -174,9 +108,8 @@ ChatInputCellEvaluationFunction[
 				InputForm[other],
 				InputForm[response["Body"]]
 			]
-		}],
-		_?FailureQ :> Raise[ChatbookError, "Error performing chat API request: ``", response]
-	}];
+		}
+	];
 
 	If[!MatchQ[parsed, {___Rule} | _?AssociationQ],
 		Raise[
@@ -213,6 +146,117 @@ ChatInputCellEvaluationFunction[
 
 	processResponse[processed];
 ]
+
+(*====================================*)
+
+SetFallthroughError[checkAPIKey]
+
+checkAPIKey[provenBad_] := Module[{
+	nb
+},
+	If[StringQ[SystemCredential["OPENAI_API_KEY"]] && !provenBad,
+		Return[True]
+	];
+
+	nb = Notebook[{
+		Cell["ChatGPT API Key Required", "Subsection", TextAlignment -> Center],
+
+		Cell[
+			TextData[Flatten[{
+				If[provenBad,
+					{"The ChatGPT API Key you have installed was not accepted by OpenAI. You can install a different one by pasting it into the field below and clicking ",
+						StyleBox["Install API Key.",
+						FontFamily -> CurrentValue["ControlsFontFamily"]]},
+
+					"To use ChatGPT features you must have a valid ChatGPT API key installed. "
+				],
+				"If you don't have one, you can get a free one by following these instructions.\n\n",
+				"\t(1) Login or create a free account at ",
+				ButtonBox[
+					"https://chat.openai.com/auth/login",
+					BaseStyle -> "Hyperlink",
+					ButtonData -> {URL["https://chat.openai.com/auth/login"], None}
+				],
+				"\n\t(2) View your API Key at ",
+				ButtonBox[
+					"https://platform.openai.com/account/api-keys",
+					BaseStyle -> "Hyperlink",
+					ButtonData -> {URL["https://platform.openai.com/account/api-keys"], None}
+				],
+				"\n\t(3) Copy/paste the key into the field below, then click ",
+				StyleBox["Install API Key.", FontFamily -> CurrentValue["ControlsFontFamily"]]
+			}]],
+			"Text",
+			FontFamily -> CurrentValue["PanelFontFamily"],
+			CellMargins -> {{20, 20}, {10, 10}}
+		],
+
+		Cell[
+			BoxData @ RowBox[{
+				StyleBox[
+					InputFieldBox[
+						"",
+						String,
+						FieldSize -> 45,
+						FieldHint -> "Paste ChaptGPT API Key Here"
+					],
+					ShowSelection -> True
+				]
+			}],
+			"Text",
+			TextAlignment -> Center,
+			CellMargins -> {{20, 20}, {10, 10}},
+			FontFamily -> CurrentValue["ControlsFontFamily"]
+		],
+
+		Cell[
+			TextData["If you need to change your API key in the future, use the non-existant Credentials tab in the Preferences dialog."],
+			"Text",
+			FontFamily -> CurrentValue["PanelFontFamily"],
+			CellMargins -> {{20, 20}, {10, 10}}
+		],
+
+		Cell[
+			BoxData[RowBox[{
+
+			ButtonBox[
+			StyleBox["Install API Key",
+				FontFamily -> CurrentValue["ControlsFontFamily"]],
+			ButtonFunction :> (
+
+				SystemCredential["OPENAI_API_KEY"] =
+				Cases[NotebookGet[EvaluationNotebook[]], _InputFieldBox,
+					Infinity][[1, 1]];
+				NotebookClose[EvaluationNotebook[]];
+				), Evaluator -> Automatic, Method -> "Preemptive"],
+			"   ",
+
+			ButtonBox[
+			StyleBox["Cancel",
+				FontFamily -> CurrentValue["ControlsFontFamily"]],
+			ButtonFunction :> NotebookClose[EvaluationNotebook[]]]
+			}]],
+			"Text",
+			TextAlignment -> Center,
+			CellMargins -> {{20, 20}, {10, 10}}
+		]
+	}];
+
+	NotebookPut[
+		nb,
+		WindowFrame -> "ModelessDialog",
+		WindowSize -> {800, FitAll},
+		ShowCellBracket -> False,
+		ShowSelection -> False,
+		Selectable -> False,
+		Editable -> False,
+		WindowElements -> {},
+		WindowTitle -> "ChatGPT API Key"
+	];
+
+	False
+];
+
 
 (*========================================================*)
 (* Cell Processing                                        *)
@@ -326,7 +370,7 @@ The FE also does something special if it encounters a cell group. But we're not
 going to bother with that for now.
 *)
 
-previousOutputs[cellobj_, nbobj_] := 
+previousOutputs[cellobj_, nbobj_] :=
 	Module[{cells, objs = {}},
 		If[Not @ TrueQ @ AbsoluteCurrentValue[nbobj, OutputAutoOverwrite], Return[{}]];
 		cells = NextCell[cellobj, All];
@@ -347,7 +391,7 @@ deletePreviousOutputs[cellobj_, nbobj_] :=
 		_ :> None
 	}]
 
-moveAfterPreviousOutputs[cellobj_, nbobj_] := 
+moveAfterPreviousOutputs[cellobj_, nbobj_] :=
 	Replace[previousOutputs[cellobj, nbobj], {
 		{___, lastcell_CellObject} :> SelectionMove[lastcell, After, Cell],
 		_ :> SelectionMove[cellobj, After, Cell]
@@ -361,7 +405,7 @@ moveAfterPreviousOutputs[cellobj_, nbobj_] :=
 
 processResponse[response_?StringQ] := Module[{
 	parsed = parseResponse[response]
-},	
+},
 	Scan[
 		Replace[{
 			s_?StringQ :> CellPrint @ Cell[StringTrim[s], "ChatAssistantText"],
