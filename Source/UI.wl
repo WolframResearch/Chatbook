@@ -198,7 +198,10 @@ checkAPIKey[provenBad_] := Module[{
 						"",
 						String,
 						FieldSize -> 45,
-						FieldHint -> "Paste ChaptGPT API Key Here"
+						FieldHint -> "Paste ChaptGPT API Key Here",
+						(* Don't show the API key. Useful if the user is
+							e.g. screensharing when they paste it in. *)
+						FieldMasked -> True
 					],
 					ShowSelection -> True
 				]
