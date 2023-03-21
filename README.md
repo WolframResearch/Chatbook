@@ -3,7 +3,7 @@
 This repository contains *Chatbook*, a paclet adding support for ChatGPT-powered
 notebooks to Wolfram.
 
-**Latest Release:** v0.0.6, released 2023-03-20 2:34pm CT.
+**Latest Release:** v0.0.7, released 2023-03-21 1:34pm CT.
 
 ## Getting Started
 
