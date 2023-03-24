@@ -20,6 +20,7 @@ ChatInputCellEvaluationFunction[
 	form_
 ] := Module[{
 	chatGroupCells,
+	additionalContextStyles,
 	req, response, parsed, content, processed
 },
 	(*--------------------------------*)
@@ -33,7 +34,21 @@ ChatInputCellEvaluationFunction[
 	chatGroupCells = Append[precedingCellsInGroup[], EvaluationCell[]];
 	chatGroupCells = NotebookRead[chatGroupCells];
 
-	req = Map[promptProcess, chatGroupCells];
+	additionalContextStyles = ConfirmReplace[$ChatContextCellStyles, {
+		value_?AssociationQ :> value,
+		other_ :> (
+			ChatbookWarning[
+				"$ChatContextCellStyles must be an Association. Got: ``",
+				InputForm[other]
+			];
+			<||>
+		)
+	}];
+
+	req = Map[
+		cell |-> promptProcess[cell, additionalContextStyles],
+		chatGroupCells
+	];
 
 	If[StringQ[$ChatSystemPre] && $ChatSystemPre =!= "",
 		PrependTo[req, <| "role" -> "system", "content" -> $ChatSystemPre |>];
@@ -297,7 +312,10 @@ precedingCellsInGroup[] := Module[{
 
 SetFallthroughError[promptProcess]
 
-promptProcess[cell0_] := ConfirmReplace[cell0, {
+promptProcess[
+	cell0_,
+	additionalContextStyles_?AssociationQ
+] := ConfirmReplace[cell0, {
 	Cell[CellGroupData[___], ___] :> Nothing,
 
 	Cell[expr_, "ChatUserInput" |
@@ -309,6 +327,40 @@ promptProcess[cell0_] := ConfirmReplace[cell0, {
 
 	Cell[expr_, "ChatSystemInput" | (*Deprecated names*) "ChatGPTSystemInput", ___]
 		:> <| "role" -> "system", "content" -> promptCellDataToString[expr] |>,
+
+	(*
+		If a Cell isn't one of the built-in recognized styles, check to see if
+		there are any additional styles that have been specified to include.
+	*)
+	Cell[expr_, styles0___?StringQ, ___?OptionQ] :> Module[{
+		styles = {styles0},
+	},
+		(* Only consider styles that are in `includedStyles` *)
+		styles = Intersection[styles, Keys[additionalContextStyles]];
+
+		ConfirmReplace[styles, {
+			{} :> Nothing,
+			{first_, rest___} :> Module[{role},
+				(* FIXME: Issue a warning if rest contains cell styles that map
+				    to conflicting roles. *)
+				(* If[Length[{rest}] > 0,
+					ChatWarning
+				]; *)
+
+				(* FIXME: Better error if this confirm fails. *)
+				role = RaiseConfirmMatch[
+					Lookup[additionalContextStyles, first],
+					_?StringQ
+				];
+
+				<| "role" -> role, "content" -> promptCellDataToString[expr] |>
+			]
+		}]
+	],
+
+	(*-----------------------------------------------*)
+	(* Ignore cells of any other unrecognized style. *)
+	(*-----------------------------------------------*)
 
 	(* Ignore unrecognized cell types. *)
 	(* TODO: Should try to treat every cell type as input to the chat?

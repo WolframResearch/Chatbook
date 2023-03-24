@@ -15,6 +15,12 @@ GU`SetUsage[$ChatInputPost, "$ChatInputPost is a string that is appended to the 
 GU`SetUsage[$DefaultChatSystemPre, "$DefaultChatSystemPre is the default value of $ChatSystemPre"]
 GU`SetUsage[$DefaultChatInputPost, "$ChatInputPost is the default value of $ChatInputPost"]
 
+GU`SetUsage[$ChatContextCellStyles, "
+$ChatContextCellStyles specifies additional cell styles to include as context to a chat input.
+
+Cells with one of the built-in chat cell styles are always included as context.
+"]
+
 
 Begin["`Private`"]
 
@@ -43,6 +49,8 @@ Protect[{$DefaultChatSystemPre, $DefaultChatInputPost}]
 
 $ChatSystemPre = $DefaultChatSystemPre
 $ChatInputPost = $DefaultChatInputPost
+
+$ChatContextCellStyles = <||>
 
 
 End[] (* End `Private` *)
