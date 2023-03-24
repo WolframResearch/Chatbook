@@ -21,6 +21,7 @@ $ChatContextCellStyles specifies additional cell styles to include as context to
 Cells with one of the built-in chat cell styles are always included as context.
 "]
 
+GU`SetUsage[$ChatService, "$ChatService sets the default service to use in a chat notebook"]
 
 Begin["`Private`"]
 

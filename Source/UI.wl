@@ -11,6 +11,7 @@ Begin["`Private`"]
 Needs["ConnorGray`Chatbook`"]
 Needs["ConnorGray`Chatbook`ErrorUtils`"]
 Needs["ConnorGray`Chatbook`Errors`"]
+Needs["ConnorGray`Chatbook`ServiceUtils`"]
 
 
 
@@ -91,7 +92,7 @@ ChatInputCellEvaluationFunction[
 	(* Perform the API request        *)
 	(*--------------------------------*)
 
-	response = chatRequest[req, tokenLimit, temperature];
+	response = ChatServiceData[$ChatService,"ChatRequestFunction"][req, tokenLimit, temperature];
 
 	ConnorGray`Chatbook`Debug`$LastResponse = response;
 
@@ -345,7 +346,7 @@ promptProcess[
 		there are any additional styles that have been specified to include.
 	*)
 	Cell[expr_, styles0___?StringQ, ___?OptionQ] :> Module[{
-		styles = {styles0},
+		styles = {styles0}
 	},
 		(* Only consider styles that are in `includedStyles` *)
 		styles = Intersection[styles, Keys[additionalContextStyles]];
@@ -551,26 +552,8 @@ chatRequest[messages_, tokenLimit_, temperature_] := Module[{apiKey},
 			InputForm[apiKey]
 		];
 	];
+	ChatServiceData[service,messages,tokenLimit,temperature]
 
-	URLRead[<|
-		"Method" -> "POST",
-		"Scheme" -> "HTTPS",
-		"Domain" -> "api.openai.com",
-		"Path" -> {"v1", "chat", "completions"},
-		"Body" -> ExportByteArray[
-			<|
-				"model" -> "gpt-3.5-turbo",
-				"max_tokens" -> ToExpression[tokenLimit],
-				"temperature" -> ToExpression[temperature],
-				"messages" -> messages
-			|>,
-			"JSON"
-		],
-		"ContentType" -> "application/json",
-		"Headers" -> {
-			"Authorization" -> "Bearer " <> apiKey
-		}
-	|>]
 ]
 
 (*========================================================*)
