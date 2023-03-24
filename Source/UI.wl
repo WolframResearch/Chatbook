@@ -11,6 +11,7 @@ Begin["`Private`"]
 Needs["ConnorGray`Chatbook`"]
 Needs["ConnorGray`Chatbook`ErrorUtils`"]
 Needs["ConnorGray`Chatbook`Errors`"]
+Needs["ConnorGray`Chatbook`Debug`"]
 
 
 
@@ -24,6 +25,7 @@ ChatInputCellEvaluationFunction[
 	additionalContextStyles,
 	tokenLimit,
 	temperature,
+	params,
 	req, response, parsed, content, processed
 },
 	If[!checkAPIKey[False],
@@ -70,8 +72,6 @@ ChatInputCellEvaluationFunction[
 		"unexpected form for parsed chat input: ``", InputForm[req]
 	];
 
-	ConnorGray`Chatbook`Debug`$LastRequestContent = req;
-
 	(*----------------------------------------------------------------------*)
 	(* Put the insertion point where it belongs after the old output        *)
 	(*----------------------------------------------------------------------*)
@@ -87,13 +87,21 @@ ChatInputCellEvaluationFunction[
 			{Lookup[opts, "TokenLimit", "1000"], Lookup[opts, "Temperature", "0.7"]}
 		];
 
+	params = <|
+		"TokenLimit" -> ToExpression[tokenLimit],
+		"Temperature" -> ToExpression[temperature]
+	|>;
+
 	(*--------------------------------*)
 	(* Perform the API request        *)
 	(*--------------------------------*)
 
-	response = chatRequest[req, tokenLimit, temperature];
+	$LastRequestChatMessages = req;
+	$LastRequestParameters = params;
 
-	ConnorGray`Chatbook`Debug`$LastResponse = response;
+	response = chatRequest[req, params];
+
+	$LastResponse = response;
 
 	response = ConfirmReplace[response, {
 		_HTTPResponse :> response,
@@ -536,10 +544,64 @@ SetFallthroughError[chatRequest]
 
 (* TODO: Replace this with function from ChristopherWolfram/OpenAILink once
 	available. *)
-chatRequest[messages_, tokenLimit_, temperature_] := Module[{apiKey},
+chatRequest[
+	messages_,
+	params_?AssociationQ
+] := Module[{
+	apiKey,
+	request
+},
 	apiKey = SystemCredential[$openAICredentialKey];
 
+	request = chatHTTPRequest[
+		messages,
+		params,
+		apiKey
+	];
+
+	RaiseConfirmMatch[request, _HTTPRequest];
+
+	URLRead[request]
+]
+
+(*====================================*)
+
+(* TODO: Replace this boilerplate with ChristopherWolfram/OpenAILink API calls. *)
+
+SetFallthroughError[chatHTTPRequest]
+
+chatHTTPRequest[
+	messages_,
+	params_?AssociationQ,
+	apiKey_?StringQ
+] := Module[{
+	tokenLimit,
+	temperature,
+	request
+},
+	(* TODO: Better error. *)
 	RaiseConfirmMatch[messages, {___?AssociationQ}];
+
+	model = ConfirmReplace[Lookup[params, "Model", Automatic], {
+		Automatic -> "gpt-3.5-turbo",
+		m_?StringQ :> m,
+		other_ :> Raise[
+			ChatbookError,
+			"Invalid chat model specification: ``",
+			InputForm[other]
+		]
+	}];
+
+	(* TODO: Better error here. *)
+	tokenLimit = RaiseConfirmMatch[
+		Lookup[params, "TokenLimit", Infinity],
+		Infinity | _?IntegerQ
+	];
+	(* TODO: Better error here. *)
+	temperature = RaiseConfirmMatch[
+		Lookup[params, "Temperature", 0.70],
+		_?IntegerQ | _Real?NumberQ
+	];
 
 	(* FIXME: Produce a better error message if this credential key doesn't
 		exist; tell the user that they need to set SystemCredential. *)
@@ -552,17 +614,22 @@ chatRequest[messages_, tokenLimit_, temperature_] := Module[{apiKey},
 		];
 	];
 
-	URLRead[<|
+	request = HTTPRequest[<|
 		"Method" -> "POST",
 		"Scheme" -> "HTTPS",
 		"Domain" -> "api.openai.com",
 		"Path" -> {"v1", "chat", "completions"},
 		"Body" -> ExportByteArray[
 			<|
-				"model" -> "gpt-3.5-turbo",
-				"max_tokens" -> ToExpression[tokenLimit],
-				"temperature" -> ToExpression[temperature],
-				"messages" -> messages
+				"model" -> model,
+				"messages" -> messages,
+				ConfirmReplace[tokenLimit, {
+					Infinity -> Nothing,
+					maxTokens_?IntegerQ :> (
+						"max_tokens" -> maxTokens
+					)
+				}],
+				"temperature" -> temperature
 			|>,
 			"JSON"
 		],
@@ -570,7 +637,9 @@ chatRequest[messages_, tokenLimit_, temperature_] := Module[{apiKey},
 		"Headers" -> {
 			"Authorization" -> "Bearer " <> apiKey
 		}
-	|>]
+	|>];
+
+	request
 ]
 
 (*========================================================*)
