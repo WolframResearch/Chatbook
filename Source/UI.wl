@@ -13,17 +13,6 @@ Needs["ConnorGray`Chatbook`ErrorUtils`"]
 Needs["ConnorGray`Chatbook`Errors`"]
 
 
-setTaggingRulesValue[key_, value_] :=
-	SetOptions[
-		ParentCell[EvaluationCell[]],
-		TaggingRules -> Module[{
-			a = FullOptions[ParentCell[EvaluationCell[]], TaggingRules]
-		},
-			a[key] = value;
-			a
-		]
-	];
-
 
 SetFallthroughError[ChatInputCellEvaluationFunction]
 

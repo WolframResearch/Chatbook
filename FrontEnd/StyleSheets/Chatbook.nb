@@ -164,8 +164,10 @@ Notebook[{
 									{_Missing -> "1000"}
 								],
 								(
-									Needs["ConnorGray`Chatbook`UI`" -> None];
-									ConnorGray`Chatbook`UI`Private`setTaggingRulesValue["TokenLimit", #1]
+									CurrentValue[
+										ParentCell[EvaluationCell[]],
+										{TaggingRules, "TokenLimit"}
+									] = #1;
 								) &
 							],
 							{"100", "500", "1000", "2000", "4000"},
@@ -180,8 +182,10 @@ Notebook[{
 									{_Missing -> "0.7"}
 								],
 								(
-									Needs["ConnorGray`Chatbook`UI`" -> None];
-									ConnorGray`Chatbook`UI`Private`setTaggingRulesValue["Temperature", #1]
+									CurrentValue[
+										ParentCell[EvaluationCell[]],
+										{TaggingRules, "Temperature"}
+									] = #1;
 								) &
 							],
 							{"0", "0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "1.0"},
