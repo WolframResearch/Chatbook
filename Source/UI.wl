@@ -13,6 +13,7 @@ Needs["ConnorGray`Chatbook`ErrorUtils`"]
 Needs["ConnorGray`Chatbook`Errors`"]
 
 
+
 SetFallthroughError[ChatInputCellEvaluationFunction]
 
 ChatInputCellEvaluationFunction[
@@ -21,8 +22,13 @@ ChatInputCellEvaluationFunction[
 ] := Module[{
 	chatGroupCells,
 	additionalContextStyles,
+	tokenLimit,
+	temperature,
 	req, response, parsed, content, processed
 },
+	If[ !checkAPIKey[False],
+		Return[]];
+
 	(*--------------------------------*)
 	(* Assemble the ChatGPT prompt    *)
 	(*--------------------------------*)
@@ -75,11 +81,20 @@ ChatInputCellEvaluationFunction[
 		Return[]
 	];
 
+	(*----------------------------------------------------------------------*)
+	(* Extract the token limit and temperature from the evaluation cell     *)
+	(*----------------------------------------------------------------------*)
+
+	{tokenLimit, temperature} =
+		With[{opts = FullOptions[EvaluationCell[], TaggingRules]},
+			{Lookup[opts, "TokenLimit", "1000"], Lookup[opts, "Temperature", "0.7"]}
+		];
+
 	(*--------------------------------*)
 	(* Perform the API request        *)
 	(*--------------------------------*)
 
-	response = chatRequest[req];
+	response = chatRequest[req, tokenLimit, temperature];
 
 	ConnorGray`Chatbook`Debug`$LastResponse = response;
 
@@ -524,7 +539,7 @@ SetFallthroughError[chatRequest]
 
 (* TODO: Replace this with function from ChristopherWolfram/OpenAILink once
 	available. *)
-chatRequest[messages_] := Module[{apiKey},
+chatRequest[messages_, tokenLimit_, temperature_] := Module[{apiKey},
 	apiKey = SystemCredential[$openAICredentialKey];
 
 	RaiseConfirmMatch[messages, {___?AssociationQ}];
@@ -548,7 +563,8 @@ chatRequest[messages_] := Module[{apiKey},
 		"Body" -> ExportByteArray[
 			<|
 				"model" -> "gpt-3.5-turbo",
-				"temperature" -> 0.7,
+				"max_tokens" -> ToExpression[tokenLimit],
+				"temperature" -> ToExpression[temperature],
 				"messages" -> messages
 			|>,
 			"JSON"
