@@ -26,7 +26,7 @@ ChatInputCellEvaluationFunction[
 	tokenLimit,
 	temperature,
 	params,
-	req, response, parsed, content, processed
+	req
 },
 	If[!checkAPIKey[False],
 		Return[]
@@ -99,7 +99,23 @@ ChatInputCellEvaluationFunction[
 	$LastRequestChatMessages = req;
 	$LastRequestParameters = params;
 
-	response = chatRequest[req, params];
+	doSyncChatRequest[req, params]
+]
+
+(*====================================*)
+
+SetFallthroughError[doSyncChatRequest]
+
+doSyncChatRequest[
+	messages_?ListQ,
+	params_?AssociationQ
+] := Module[{
+	response,
+	parsed,
+	content,
+	processed
+},
+	response = chatRequest[messages, params];
 
 	$LastResponse = response;
 
