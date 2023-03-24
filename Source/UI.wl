@@ -26,8 +26,9 @@ ChatInputCellEvaluationFunction[
 	temperature,
 	req, response, parsed, content, processed
 },
-	If[ !checkAPIKey[False],
-		Return[]];
+	If[!checkAPIKey[False],
+		Return[]
+	];
 
 	(*--------------------------------*)
 	(* Assemble the ChatGPT prompt    *)
@@ -76,10 +77,6 @@ ChatInputCellEvaluationFunction[
 	(*----------------------------------------------------------------------*)
 
 	moveAfterPreviousOutputs[EvaluationCell[], EvaluationNotebook[]];
-
-	If[ !checkAPIKey[False],
-		Return[]
-	];
 
 	(*----------------------------------------------------------------------*)
 	(* Extract the token limit and temperature from the evaluation cell     *)
