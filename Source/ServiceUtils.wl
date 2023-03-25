@@ -46,7 +46,7 @@ defaultChatRequest[service_,messages_, tokenLimit_, temperature_] := Module[{api
 	]
 ]
 
-defaultChatServiceData[name_,"AuthorizationKey"]:=SystemCredential[defaultChatServiceData[name,"AuthKeyName"]]
+defaultChatServiceData[name_,"AuthorizationKey"]:=SystemCredential[ChatServiceData[name,"AuthKeyName"]]
 defaultChatServiceData[_,prop_]:=Missing["NotAvailable",prop]
 
 

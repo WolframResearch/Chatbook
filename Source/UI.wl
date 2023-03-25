@@ -27,7 +27,7 @@ ChatInputCellEvaluationFunction[
 	temperature,
 	req, response, parsed, content, processed
 },
-	If[!checkAPIKey[False],
+	If[!checkAPIKey[$ChatService,False],
 		Return[]
 	];
 
@@ -120,7 +120,7 @@ ChatInputCellEvaluationFunction[
 	ConfirmReplace[response["StatusCode"], {
 		200 :> Null,
 		401 :> (
-			checkAPIKey[True];
+			checkAPIKey[$ChatService,True];
 			Return[]
 		)
 	}];
@@ -179,10 +179,10 @@ ChatInputCellEvaluationFunction[
 
 SetFallthroughError[checkAPIKey]
 
-checkAPIKey[provenBad_] := Module[{
+checkAPIKey[service_,provenBad_] := Module[{
 	nb
 },
-	If[StringQ[SystemCredential["OPENAI_API_KEY"]] && !provenBad,
+	If[StringQ[ChatServiceData[service,"AuthorizationKey"]] && !provenBad,
 		Return[True]
 	];
 
@@ -246,7 +246,7 @@ checkAPIKey[provenBad_] := Module[{
 			FontFamily -> CurrentValue["PanelFontFamily"],
 			CellMargins -> {{20, 20}, {10, 10}}
 		],
-
+		With[{authkeyname=ChatServiceData[service,"AuthKeyName"]},
 		Cell[
 			BoxData[RowBox[{
 
@@ -255,7 +255,7 @@ checkAPIKey[provenBad_] := Module[{
 				FontFamily -> CurrentValue["ControlsFontFamily"]],
 			ButtonFunction :> (
 
-				SystemCredential["OPENAI_API_KEY"] =
+				SystemCredential[authkeyname] =
 				Cases[NotebookGet[EvaluationNotebook[]], _InputFieldBox,
 					Infinity][[1, 1]];
 				NotebookClose[EvaluationNotebook[]];
@@ -270,6 +270,7 @@ checkAPIKey[provenBad_] := Module[{
 			"Text",
 			TextAlignment -> Center,
 			CellMargins -> {{20, 20}, {10, 10}}
+		]
 		]
 	}];
 
@@ -537,8 +538,11 @@ SetFallthroughError[chatRequest]
 
 (* TODO: Replace this with function from ChristopherWolfram/OpenAILink once
 	available. *)
-chatRequest[messages_, tokenLimit_, temperature_] := Module[{apiKey},
-	apiKey = SystemCredential[$openAICredentialKey];
+chatRequest[messages_, tokenLimit_, temperature_]:=
+	chatRequest[$ChatService, messages, tokenLimit, temperature]
+
+chatRequest[service_,messages_, tokenLimit_, temperature_] := Module[{apiKey},
+	apiKey = ChatServiceData[service,"AuthorizationKey"];
 
 	RaiseConfirmMatch[messages, {___?AssociationQ}];
 
@@ -547,8 +551,9 @@ chatRequest[messages_, tokenLimit_, temperature_] := Module[{apiKey},
 	If[!StringQ[apiKey],
 		Raise[
 			ChatbookError,
-			<| "SystemCredentialKey" -> $openAICredentialKey |>,
-			"unexpected result getting OpenAI API Key from SystemCredential: ``",
+			<| "SystemCredentialKey" -> ChatServiceData[service,"AuthKeyName"],
+				"ServiceName" -> ChatServiceData[service,"ServiceName"] |>,
+			"unexpected result getting `ServiceName` API Key from SystemCredential: `SystemCredentialKey`",
 			InputForm[apiKey]
 		];
 	];

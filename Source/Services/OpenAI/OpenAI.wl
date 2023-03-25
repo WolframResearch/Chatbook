@@ -2,18 +2,20 @@ BeginPackage["ConnorGray`Chatbook`Services`OpenAI`"]
 
 Begin["`Private`"]
 
+Needs["ConnorGray`Chatbook`ServiceUtils`"->"cbs`"];
+
 $openaidata=<||>;
 
 $openaidata["Domain"]="api.openai.com";
 
 $openaidata["AuthKeyName"]="OPENAI_API_KEY"
 
-$openaidata["AuthorizationKey"]:=SystemCredential[$openaidata["AuthKeyName"]];
+$openaidata["ServiceName"]="OpenAI";
 
-$openaidata["HTTPRequestFunction"]=HTTPRequest[<|
+$openaidata["HTTPRequestFunction"]:=HTTPRequest[<|
 		"Method" -> "POST",
 		"Scheme" -> "HTTPS",
-		"Domain" -> "api.openai.com",
+		"Domain" -> $openaidata["Domain"],
 		"Path" -> {"v1", "chat", "completions"},
 		"Body" -> ExportByteArray[
 			<|
@@ -26,11 +28,12 @@ $openaidata["HTTPRequestFunction"]=HTTPRequest[<|
 		],
 		"ContentType" -> "application/json",
 		"Headers" -> {
-			"Authorization" -> "Bearer " <> $openaidata["AuthorizationKey"]
+			"Authorization" -> "Bearer " <> cbs`ChatServiceData["OpenAI","AuthorizationKey"]
 		}
 	|>]&
 
-EchoEvaluation@ConnorGray`Chatbook`ServiceUtils`RegisterChatService["OpenAI",
+ConnorGray`Chatbook`ServiceUtils`RegisterChatService[
+	"OpenAI",
 	$openaidata
 	]
 
