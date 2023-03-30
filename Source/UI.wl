@@ -369,7 +369,7 @@ promptProcess[
 		there are any additional styles that have been specified to include.
 	*)
 	Cell[expr_, styles0___?StringQ, ___?OptionQ] :> Module[{
-		styles = {styles0},
+		styles = {styles0}
 	},
 		(* Only consider styles that are in `includedStyles` *)
 		styles = Intersection[styles, Keys[additionalContextStyles]];
