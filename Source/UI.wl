@@ -290,42 +290,36 @@ handleStreamEvent[
 		InputForm[json]
 	];
 
+	data = ConfirmReplace[data, {
+		KeyValuePattern[{
+			(* TODO: What about other possible choices? *)
+			"choices" -> {firstChoice_, ___}
+		}] :> firstChoice,
+		other_ :> Raise[
+			ChatbookError,
+			"Unexpected chat streaming response object form: ``",
+			InputForm[other]
+		]
+	}];
+
 	ConfirmReplace[data, {
 		KeyValuePattern[{
-			"choices" -> {
-				KeyValuePattern[{
-					"delta" -> KeyValuePattern[{
-						"content" -> text_?StringQ
-					}]
-				}],
-				(* TODO: What about other possible choices? *)
-				___
-			}
+			"delta" -> KeyValuePattern[{
+				"content" -> text_?StringQ
+			}]
 		}] :> (
 			NotebookWrite[nbObj, text];
 		),
 		(* FIXME: Handle this change in role by changing cell type if necessary? *)
 		KeyValuePattern[{
-			"choices" -> {
-				KeyValuePattern[{
-					"delta" -> KeyValuePattern[{
-						"role" -> "assistant"
-					}]
-				}],
-				(* TODO: What about other possible choices? *)
-				___
-			}
+			"delta" -> KeyValuePattern[{
+				"role" -> "assistant"
+			}]
 		}] :> Null,
 		(* FIXME: Handle this streaming end better. *)
 		KeyValuePattern[{
-			"choices" -> {
-				KeyValuePattern[{
-					"delta" -> <||>,
-					"finish_reason" -> "stop"
-				}],
-				(* TODO: What about other possible choices? *)
-				___
-			}
+			"delta" -> <||>,
+			"finish_reason" -> "stop"
 		}] :> Null,
 		other_ :> Raise[
 			ChatbookError,
