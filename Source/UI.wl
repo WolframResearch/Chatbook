@@ -78,7 +78,7 @@ ChatInputCellEvaluationFunction[
 	(* Put the insertion point where it belongs after the old output        *)
 	(*----------------------------------------------------------------------*)
 
-	moveAfterPreviousOutputs[EvaluationCell[], EvaluationNotebook[]];
+	moveAfterPreviousOutputs[EvaluationCell[]];
 
 	(*----------------------------------------------------------------------*)
 	(* Extract the token limit and temperature from the evaluation cell     *)
@@ -105,7 +105,7 @@ ChatInputCellEvaluationFunction[
 	(* doSyncChatRequest[req, params] *)
 
 
-	deletePreviousOutputs[EvaluationCell[], EvaluationNotebook[]];
+	deletePreviousOutputs[EvaluationCell[]];
 
 	SelectionMove[cell, After, EvaluationCell[]];
 
@@ -207,7 +207,7 @@ doSyncChatRequest[
 
 	processed = StringJoin[StringTrim[content]];
 
-	deletePreviousOutputs[EvaluationCell[], EvaluationNotebook[]];
+	deletePreviousOutputs[EvaluationCell[]];
 
 	processResponse[processed];
 ]
@@ -598,8 +598,11 @@ The FE also does something special if it encounters a cell group. But we're not
 going to bother with that for now.
 *)
 
-previousOutputs[cellobj_, nbobj_] :=
-	Module[{cells, objs = {}},
+previousOutputs[cellobj_CellObject] :=
+	Module[{
+		nbobj = ParentNotebook[cellobj],
+		cells, objs = {}
+	},
 		If[Not @ TrueQ @ AbsoluteCurrentValue[nbobj, OutputAutoOverwrite], Return[{}]];
 		cells = NextCell[cellobj, All];
 		If[!MatchQ[cells, {__CellObject}], Return[{}]];
@@ -613,14 +616,14 @@ previousOutputs[cellobj_, nbobj_] :=
 	]
 
 
-deletePreviousOutputs[cellobj_, nbobj_] :=
-	Replace[previousOutputs[cellobj, nbobj], {
+deletePreviousOutputs[cellobj_CellObject] :=
+	Replace[previousOutputs[cellobj], {
 		cells: {__CellObject} :> NotebookDelete[cells],
 		_ :> None
 	}]
 
-moveAfterPreviousOutputs[cellobj_, nbobj_] :=
-	Replace[previousOutputs[cellobj, nbobj], {
+moveAfterPreviousOutputs[cellobj_CellObject] :=
+	Replace[previousOutputs[cellobj], {
 		{___, lastcell_CellObject} :> SelectionMove[lastcell, After, Cell],
 		_ :> SelectionMove[cellobj, After, Cell]
 	}]
