@@ -13,6 +13,8 @@ Needs["ConnorGray`Chatbook`ErrorUtils`"]
 Needs["ConnorGray`Chatbook`Errors`"]
 Needs["ConnorGray`Chatbook`Debug`"]
 
+Needs["ConnorGray`ServerSentEventUtils`" -> "SSEUtils`"]
+
 
 
 SetFallthroughError[ChatInputCellEvaluationFunction]
@@ -99,7 +101,19 @@ ChatInputCellEvaluationFunction[
 	$LastRequestChatMessages = req;
 	$LastRequestParameters = params;
 
-	doSyncChatRequest[req, params]
+
+	(* doSyncChatRequest[req, params] *)
+
+
+	deletePreviousOutputs[EvaluationCell[], EvaluationNotebook[]];
+
+	SelectionMove[cell, After, EvaluationCell[]];
+
+	(* Position the cursor to start streaming the output. *)
+	NotebookWrite[EvaluationNotebook[], Cell["", "Text"]];
+	SelectionMove[EvaluationNotebook[], Before, CellContents];
+
+	doAsyncChatRequest[EvaluationNotebook[], req, params]
 ]
 
 (*====================================*)
@@ -196,6 +210,129 @@ doSyncChatRequest[
 	deletePreviousOutputs[EvaluationCell[], EvaluationNotebook[]];
 
 	processResponse[processed];
+]
+
+(*====================================*)
+
+SetFallthroughError[doAsyncChatRequest]
+
+doAsyncChatRequest[
+	nbObj_NotebookObject,
+	messages_?ListQ,
+	params_?AssociationQ
+] := Module[{
+	apiKey,
+	request,
+	task
+},
+	(*-----------------------------*)
+	(* Make the API request object *)
+	(*-----------------------------*)
+
+	apiKey = SystemCredential[$openAICredentialKey];
+
+	request = chatHTTPRequest[
+		messages,
+		params,
+		apiKey,
+		"Stream" -> True
+	];
+
+	(*---------------------------------------------------------*)
+	(* Perform the web request and start streaming the results *)
+	(*---------------------------------------------------------*)
+
+	task = URLSubmit[
+		request,
+		HandlerFunctions -> <|
+			"BodyChunkReceived" -> SSEUtils`ServerSentEventBodyChunkTransformer[
+				event |-> handleStreamEvent[nbObj, event]
+			]
+			(* TODO: Do some cleanup with the current selection caret? *)
+			(* "TaskFinished" -> Function[
+				Print["Finished! ", #1]
+			] *)
+		|>,
+		HandlerFunctionsKeys -> {"BodyChunk"}
+	];
+
+	(* TODO: Better default time constraint value?
+		Also we should issue a message when this is hit.
+		What if the user wants to wait longer than this (i.e. ChatGPT is having
+		a slow day?)
+	*)
+	TaskWait[task, TimeConstraint -> 120];
+]
+
+(*------------------------------------*)
+
+SetFallthroughError[handleStreamEvent]
+
+handleStreamEvent[
+	nbObj_NotebookObject,
+	ssevent_?AssociationQ
+] := Module[{
+	data
+},
+	data = Replace[ssevent, {
+		<| "Data" -> "[DONE]" |> :> Return[Null, Module],
+		<| "Data" -> json_?StringQ |> :> Developer`ReadRawJSONString[json],
+		other_ :> Raise[
+			ChatbookError,
+			"Unexpected form for chat streaming server-sent event object: ``",
+			InputForm[other]
+		]
+	}];
+
+	RaiseAssert[
+		MatchQ[data, _?AssociationQ],
+		"Unexpected chat streaming response JSON parse result: ``",
+		InputForm[json]
+	];
+
+	ConfirmReplace[data, {
+		KeyValuePattern[{
+			"choices" -> {
+				KeyValuePattern[{
+					"delta" -> KeyValuePattern[{
+						"content" -> text_?StringQ
+					}]
+				}],
+				(* TODO: What about other possible choices? *)
+				___
+			}
+		}] :> (
+			NotebookWrite[nbObj, text];
+		),
+		(* FIXME: Handle this change in role by changing cell type if necessary? *)
+		KeyValuePattern[{
+			"choices" -> {
+				KeyValuePattern[{
+					"delta" -> KeyValuePattern[{
+						"role" -> "assistant"
+					}]
+				}],
+				(* TODO: What about other possible choices? *)
+				___
+			}
+		}] :> Null,
+		(* FIXME: Handle this streaming end better. *)
+		KeyValuePattern[{
+			"choices" -> {
+				KeyValuePattern[{
+					"delta" -> <||>,
+					"finish_reason" -> "stop"
+				}],
+				(* TODO: What about other possible choices? *)
+				___
+			}
+		}] :> Null,
+		other_ :> Raise[
+			ChatbookError,
+			"Unexpected chat streaming response object form: ``",
+			InputForm[other]
+		]
+	}];
 ]
 
 (*====================================*)
@@ -586,10 +723,15 @@ chatRequest[
 
 SetFallthroughError[chatHTTPRequest]
 
+Options[chatHTTPRequest] = {
+	"Stream" -> False
+}
+
 chatHTTPRequest[
 	messages_,
 	params_?AssociationQ,
-	apiKey_?StringQ
+	apiKey_?StringQ,
+	OptionsPattern[]
 ] := Module[{
 	tokenLimit,
 	temperature,
@@ -619,6 +761,9 @@ chatHTTPRequest[
 		_?IntegerQ | _Real?NumberQ
 	];
 
+	(* TODO: Better error here. *)
+	stream = RaiseConfirmMatch[OptionValue["Stream"], _?BooleanQ];
+
 	(* FIXME: Produce a better error message if this credential key doesn't
 		exist; tell the user that they need to set SystemCredential. *)
 	If[!StringQ[apiKey],
@@ -645,7 +790,8 @@ chatHTTPRequest[
 						"max_tokens" -> maxTokens
 					)
 				}],
-				"temperature" -> temperature
+				"temperature" -> temperature,
+				"stream" -> stream
 			|>,
 			"JSON"
 		],
