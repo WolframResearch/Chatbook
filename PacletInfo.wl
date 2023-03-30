@@ -7,6 +7,9 @@ PacletObject[<|
 	"Description" -> "ChatGPT + Wolfram Notebooks",
 	"Extensions" -> {
 		{"Kernel", "Root" -> "Source", "Context" -> "ConnorGray`Chatbook`"},
+		{"Kernel",
+			"Root" -> "SourceSSE",
+			"Context" -> "ConnorGray`ServerSentEventUtils`"},
 		{"FrontEnd"},
 		{"Documentation", "Language" -> "English"}
 	}
