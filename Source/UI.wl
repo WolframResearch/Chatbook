@@ -633,22 +633,34 @@ processResponse[response_?StringQ] := Module[{
 },
 	Scan[
 		Replace[{
-			s_?StringQ :> CellPrint @ Cell[StringTrim[s], "ChatAssistantText"],
-			Code[s_?StringQ] :> CellPrint @ Cell[s, "ChatAssistantProgram"],
-			Code[s_?StringQ, "Wolfram" | "Mathematica"] :> CellPrint @ Cell[BoxData[s], "ChatAssistantOutput"],
+			s_?StringQ
+				:> CellPrint @ Cell[StringTrim[s], "ChatAssistantText"],
+			Code[s_?StringQ]
+				:> CellPrint[makeCodeBlockCell[s, None]],
 			Code[s_?StringQ, lang_?StringQ]
-				:> CellPrint @ Cell[
-					s,
-					"ChatAssistantExternalLanguage",
-					CellEvaluationLanguage -> Replace[lang, {
-						"Bash" -> "Shell"
-					}]
-				],
+				:> CellPrint[makeCodeBlockCell[s, lang]],
 			other_ :> Throw[{"Unexpected parsed form: ", InputForm[other]}]
 		}],
 		parsed
 	]
 ]
+
+(*------------------------------------*)
+
+SetFallthroughError[makeCodeBlockCell]
+
+makeCodeBlockCell[content_?StringQ, codeBlockSpec : _?StringQ | None] :=
+	ConfirmReplace[Replace[codeBlockSpec, s_String :> Capitalize[s]], {
+		None -> Cell[BoxData[content], "ChatAssistantProgram"],
+		"Wolfram" | "Mathematica" -> Cell[BoxData[content], "ChatAssistantOutput"],
+		lang_?StringQ :> Cell[
+			content,
+			"ChatAssistantExternalLanguage",
+			CellEvaluationLanguage -> Replace[lang, {
+				"Bash" -> "Shell"
+			}]
+		]
+	}]
 
 (*------------------------------------*)
 
@@ -660,16 +672,8 @@ parseResponse[response_?StringQ] := Module[{
 			StartOfLine ~~ "```" ~~ (lang : LetterCharacter ...) ~~ Shortest[___]
 			~~ StartOfLine ~~ "```" ~~ EndOfLine
 		) :> Replace[lang, {
-				"mathematica" :> Code[trimCodeBlock[code], "Wolfram"],
 				"" :> Code[trimCodeBlock[code]],
-				other_ :> (
-					(* Print[
-						Style["warning:", Orange],
-						" unrecognized language: ",
-						other
-					]; *)
-					Code[trimCodeBlock[code], Capitalize[lang]]
-				)
+				other_ :> Code[trimCodeBlock[code], lang]
 			}]
 	}];
 
