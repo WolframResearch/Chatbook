@@ -58,7 +58,7 @@ ChatInputCellEvaluationFunction[
 		)
 	}];
 
-	req = Map[
+	req = Flatten @ Map[
 		cell |-> promptProcess[cell, additionalContextStyles],
 		chatGroupCells
 	];
@@ -91,6 +91,21 @@ ChatInputCellEvaluationFunction[
 			{Lookup[opts, "TokenLimit", "1000"], Lookup[opts, "Temperature", "0.7"]}
 		];
 
+	runAndDecodeAPIRequest[req, tokenLimit, temperature, True];
+]
+
+(*------------------------------------*)
+
+SetFallthroughError[runAndDecodeAPIRequest]
+
+runAndDecodeAPIRequest[
+	req_,
+	tokenLimit_,
+	temperature_,
+	isAsync_?BooleanQ
+] := Module[{
+	response, parsed, content, processed
+},
 	params = <|
 		"TokenLimit" -> ToExpression[tokenLimit],
 		"Temperature" -> ToExpression[temperature]
@@ -103,11 +118,11 @@ ChatInputCellEvaluationFunction[
 	$LastRequestChatMessages = req;
 	$LastRequestParameters = params;
 
-
-	(* doSyncChatRequest[req, params] *)
-
-
-	doAsyncChatRequest[EvaluationNotebook[], req, params]
+	If[isAsync,
+		doAsyncChatRequest[EvaluationNotebook[], req, params]
+		,
+		doSyncChatRequest[req, params]
+	]
 ]
 
 (*====================================*)
@@ -201,10 +216,44 @@ doSyncChatRequest[
 
 	processed = StringJoin[StringTrim[content]];
 
-	deletePreviousOutputs[EvaluationCell[]];
-
-	processResponse[processed];
+	processed
 ]
+
+(*====================================*)
+
+(* Called after normal Input cell evaluation to create an attached report of what it did*)
+
+ChatInputCellReportFunction[cellobj_] := Module[{},
+	NotebookDelete[Cells[cellobj, AttachedCell -> True]];
+	AttachCell[
+		cellobj,
+		Cell[BoxData[{
+			StyleBox[
+				FrameBox[PaneBox[
+					runAndDecodeAPIRequest[
+					{
+						<|"role"->"user", "content" ->
+"Explain what the following Mathematica language code does.
+If it contains a syntax error explain where the error is and how to fix it."|>,
+						<|
+							"role"->"user",
+							"content" -> StringJoin[
+								NotebookImport[Notebook[{NotebookRead[cellobj]}], _ -> "InputText"]
+							]
+						|>
+					}, 500, 0.7, False]
+				],
+				FrameStyle -> Darker[Green]],
+			Background -> Lighter[Green]]
+			}],
+			"Text",
+			FontWeight -> Plain, FontFamily -> "Ariel", TextAlignment -> Center
+		]
+		,
+		"Inline"
+	];
+]
+
 
 (*====================================*)
 
@@ -591,64 +640,85 @@ SetFallthroughError[promptProcess]
 promptProcess[
 	cell0_,
 	additionalContextStyles_?AssociationQ
-] := ConfirmReplace[cell0, {
-	Cell[CellGroupData[___], ___] :> Nothing,
+] := Module[{
+	result,
+	taggingRules,
+	promptTag
+},
+	result = ConfirmReplace[cell0, {
+		Cell[CellGroupData[___], ___] :> Nothing,
 
-	Cell[expr_, "ChatUserInput" |
-				(*Deprecated names*) "ChatGPTInput" | "ChatGPTUserInput", ___]
-		:> <| "role" -> "user", "content" -> promptCellDataToString[expr] |>,
+		Cell[expr_, "ChatUserInput" |
+					(*Deprecated names*) "ChatGPTInput" | "ChatGPTUserInput", ___]
+			:> <| "role" -> "user", "content" -> promptCellDataToString[expr] |>,
 
-	Cell[expr_, "ChatAssistantOutput" | "ChatAssistantText" | "ChatAssistantProgram" | "ChatAssistantExternalLanguage", ___]
-		:> <| "role" -> "assistant", "content" -> promptCellDataToString[expr] |>,
+		Cell[expr_, "ChatAssistantOutput" | "ChatAssistantText" | "ChatAssistantProgram" | "ChatAssistantExternalLanguage", ___]
+			:> <| "role" -> "assistant", "content" -> promptCellDataToString[expr] |>,
 
-	Cell[expr_, "ChatSystemInput" | (*Deprecated names*) "ChatGPTSystemInput", ___]
-		:> <| "role" -> "system", "content" -> promptCellDataToString[expr] |>,
+		Cell[expr_, "ChatSystemInput" | (*Deprecated names*) "ChatGPTSystemInput", ___]
+			:> <| "role" -> "system", "content" -> promptCellDataToString[expr] |>,
 
-	(*
-		If a Cell isn't one of the built-in recognized styles, check to see if
-		there are any additional styles that have been specified to include.
-	*)
-	Cell[expr_, styles0___?StringQ, ___?OptionQ] :> Module[{
-		styles = {styles0}
-	},
-		(* Only consider styles that are in `includedStyles` *)
-		styles = Intersection[styles, Keys[additionalContextStyles]];
+		(*
+			If a Cell isn't one of the built-in recognized styles, check to see if
+			there are any additional styles that have been specified to include.
+		*)
+		Cell[expr_, styles0___?StringQ, ___?OptionQ] :> Module[{
+			styles = {styles0}
+		},
+			(* Only consider styles that are in `includedStyles` *)
+			styles = Intersection[styles, Keys[additionalContextStyles]];
 
-		ConfirmReplace[styles, {
-			{} :> Nothing,
-			{first_, rest___} :> Module[{role},
-				(* FIXME: Issue a warning if rest contains cell styles that map
-				    to conflicting roles. *)
-				(* If[Length[{rest}] > 0,
-					ChatWarning
-				]; *)
+			ConfirmReplace[styles, {
+				{} :> Nothing,
+				{first_, rest___} :> Module[{role},
+					(* FIXME: Issue a warning if rest contains cell styles that map
+						to conflicting roles. *)
+					(* If[Length[{rest}] > 0,
+						ChatWarning
+					]; *)
 
-				(* FIXME: Better error if this confirm fails. *)
-				role = RaiseConfirmMatch[
-					Lookup[additionalContextStyles, first],
-					_?StringQ
-				];
+					(* FIXME: Better error if this confirm fails. *)
+					role = RaiseConfirmMatch[
+						Lookup[additionalContextStyles, first],
+						_?StringQ
+					];
 
-				<| "role" -> role, "content" -> promptCellDataToString[expr] |>
-			]
-		}]
-	],
+					<| "role" -> role, "content" -> promptCellDataToString[expr] |>
+				]
+			}]
+		],
 
-	(*-----------------------------------------------*)
-	(* Ignore cells of any other unrecognized style. *)
-	(*-----------------------------------------------*)
+		(*-----------------------------------------------*)
+		(* Ignore cells of any other unrecognized style. *)
+		(*-----------------------------------------------*)
 
-	(* Ignore unrecognized cell types. *)
-	(* TODO: Should try to treat every cell type as input to the chat?
-		It is currently unintuitive that there isn't any obvious way to know
-		whether a cell in a cell group will be sent to the AI or not.
+		(* Ignore unrecognized cell types. *)
+		(* TODO: Should try to treat every cell type as input to the chat?
+			It is currently unintuitive that there isn't any obvious way to know
+			whether a cell in a cell group will be sent to the AI or not.
 
-		In addition to being unintuitive, this also makes it difficult for a
-		user to reason about what cells are "private" and not sent over the
-		internet to the AI.
-	*)
-	other_ :> Nothing
-}]
+			In addition to being unintuitive, this also makes it difficult for a
+			user to reason about what cells are "private" and not sent over the
+			internet to the AI.
+		*)
+		other_ :> Nothing
+	}];
+
+	result = {result};
+
+	taggingRules = (TaggingRules /. Options[cell0]);
+
+	If[AssociationQ[taggingRules],
+		If[AssociationQ[taggingRules["Preprompt"]],
+			PrependTo[result, taggingRules["Preprompt"]]
+		];
+		If[AssociationQ[taggingRules["Postprompt"]],
+			AppendTo[result, taggingRules["Postprompt"]]
+		];
+	];
+
+	result
+]
 
 (*------------------------------------*)
 
@@ -736,6 +806,8 @@ moveAfterPreviousOutputs[cellobj_CellObject] :=
 (*========================================================*)
 (* ChatGPT Response Processing                            *)
 (*========================================================*)
+
+SetFallthroughError[processResponse];
 
 processResponse[response_?StringQ] := Module[{
 	parsed = parseResponse[response]

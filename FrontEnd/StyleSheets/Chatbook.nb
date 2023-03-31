@@ -8,6 +8,27 @@ Notebook[{
 			"=" -> "WolframAlphaShort",
 			">" -> "ExternalLanguageDefault",
 			"*" -> "Item"
+		},
+		CellFrameLabels -> {
+			{
+				None,
+				Cell[
+					BoxData[
+						ButtonBox[
+							StyleBox["Explain", FontSize -> 10],
+							ButtonFunction :> (
+								ConnorGray`Chatbook`UI`ChatInputCellReportFunction[ParentCell[EvaluationCell[]]]
+							),
+							Evaluator -> Automatic
+						]
+					],
+					Background -> GrayLevel[1],
+					FontSize -> 10,
+					FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
+					TextAlignment -> Left, CellMargins -> 0, CellSize -> {All, 20}
+				]
+			},
+			{None, None}
 		}
 	],
 
