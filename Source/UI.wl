@@ -18,6 +18,14 @@ Needs["ConnorGray`Chatbook`Streaming`"]
 Needs["ConnorGray`ServerSentEventUtils`" -> "SSEUtils`"]
 
 
+$ChatSystemOutputTypePrompts = <|
+	Automatic -> "",
+	"Verbose" -> "Make your response detailed and include all relevant information.",
+	"Terse" -> "Make your response tersely worded and compact.",
+	"Data" -> "Include in your response only data and plain facts without explanations or additional text.",
+	"Code" -> "Include in your response only computer code in the Mathematica language.",
+	"Analysis" -> "Analyze the correctness of the following statement or computer code and report any errors and how to fix them."
+|>;
 
 SetFallthroughError[ChatInputCellEvaluationFunction]
 
@@ -27,9 +35,9 @@ ChatInputCellEvaluationFunction[
 ] := Module[{
 	chatGroupCells,
 	additionalContextStyles,
+	outputType,
 	tokenLimit,
 	temperature,
-	params,
 	req
 },
 	If[!checkAPIKey[False],
@@ -42,10 +50,9 @@ ChatInputCellEvaluationFunction[
 
 	(*
 		Construct a chat prompt list from the current cell and all the cells
-		that come before the current cell inside the innermost cell group.
+		that come before it up to the first chat context delimiting cell.
 	*)
-	chatGroupCells = Append[precedingCellsInGroup[], EvaluationCell[]];
-	chatGroupCells = NotebookRead[chatGroupCells];
+	chatGroupCells = NotebookRead[precedingCellsInChatContext[]];
 
 	additionalContextStyles = ConfirmReplace[$ChatContextCellStyles, {
 		value_?AssociationQ :> value,
@@ -86,10 +93,22 @@ ChatInputCellEvaluationFunction[
 	(* Extract the token limit and temperature from the evaluation cell     *)
 	(*----------------------------------------------------------------------*)
 
-	{tokenLimit, temperature} =
+	{outputType, tokenLimit, temperature} =
 		With[{opts = FullOptions[EvaluationCell[], TaggingRules]},
-			{Lookup[opts, "TokenLimit", "1000"], Lookup[opts, "Temperature", "0.7"]}
+			{
+				Lookup[opts, "OutputType", Automatic],
+				Lookup[opts, "TokenLimit", "1000"],
+				Lookup[opts, "Temperature", "0.7"]
+			}
 		];
+
+	If[outputType =!= Automatic,
+		PrependTo[req, <|
+			"role" -> "system",
+			(* FIXME: Confirm this output type exists. *)
+			"content" -> $ChatSystemOutputTypePrompts[outputType]
+		|>]
+	];
 
 	runAndDecodeAPIRequest[req, tokenLimit, temperature, True];
 ]
@@ -168,6 +187,11 @@ doSyncChatRequest[
 		401 :> (
 			checkAPIKey[True];
 			Return[]
+		),
+		429 :> (
+			(* FIXME: Replace this with better error reporting. *)
+			Print["Too Many Requests"];
+			Return[];
 		)
 	}];
 
@@ -232,9 +256,10 @@ ChatInputCellReportFunction[cellobj_] := Module[{},
 				FrameBox[PaneBox[
 					runAndDecodeAPIRequest[
 					{
-						<|"role"->"user", "content" ->
+						<|"role" -> "system", "content" ->
 "Explain what the following Mathematica language code does.
-If it contains a syntax error explain where the error is and how to fix it."|>,
+If it contains a syntax error explain where the error is and how to fix it.
+If there are no syntax errors do not state that fact."|>,
 						<|
 							"role"->"user",
 							"content" -> StringJoin[
@@ -247,7 +272,7 @@ If it contains a syntax error explain where the error is and how to fix it."|>,
 			Background -> Lighter[Green]]
 			}],
 			"Text",
-			FontWeight -> Plain, FontFamily -> "Ariel", TextAlignment -> Center
+			FontWeight -> Plain, FontFamily -> "Ariel", TextAlignment -> Left
 		]
 		,
 		"Inline"
@@ -631,6 +656,41 @@ precedingCellsInGroup[] := Module[{
 
 	(* This does not include `cell` itself. *)
 	cells
+];
+
+(*====================================*)
+
+precedingCellsInChatContext[] := Module[{
+	evaluationCell = EvaluationCell[],
+	nb = EvaluationNotebook[],
+	allCells, currentCellPos, dividerCellPos
+},
+	allCells = Cells[nb];
+	currentCellPos = Flatten[Position[allCells, evaluationCell]];
+	dividerCellPos = Flatten[
+		Map[
+			Position[allCells, #] &,
+			Cells[nb, CellStyle -> "ChatContextDivider"]
+		]
+	];
+
+	If[Length[currentCellPos] === 0,
+		Return[{}]
+	];
+
+	currentCellPos = First[currentCellPos];
+
+	If[Length[dividerCellPos] === 0,
+		Return[Take[allCells, currentCellPos]]
+	];
+
+	Take[
+		allCells,
+		{
+			Max[Select[dividerCellPos, (# < currentCellPos) &]],
+			currentCellPos
+		}
+	]
 ]
 
 (*====================================*)
