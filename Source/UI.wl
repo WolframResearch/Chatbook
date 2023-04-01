@@ -52,7 +52,9 @@ ChatInputCellEvaluationFunction[
 		Construct a chat prompt list from the current cell and all the cells
 		that come before it up to the first chat context delimiting cell.
 	*)
-	chatGroupCells = NotebookRead[precedingCellsInChatContext[]];
+	chatGroupCells = NotebookRead[
+		precedingCellsInChatContext[EvaluationNotebook[], EvaluationCell[]]
+	];
 
 	additionalContextStyles = ConfirmReplace[$ChatContextCellStyles, {
 		value_?AssociationQ :> value,
@@ -660,10 +662,16 @@ precedingCellsInGroup[] := Module[{
 
 (*====================================*)
 
-precedingCellsInChatContext[] := Module[{
-	evaluationCell = EvaluationCell[],
-	nb = EvaluationNotebook[],
-	allCells, currentCellPos, dividerCellPos
+SetFallthroughError[precedingCellsInChatContext]
+
+precedingCellsInChatContext[
+	nb_NotebookObject,
+	evaluationCell_CellObject
+] := Module[{
+	allCells,
+	currentCellPos,
+	dividerCellPos,
+	cellsInContext
 },
 	allCells = Cells[nb];
 	currentCellPos = Flatten[Position[allCells, evaluationCell]];
@@ -680,18 +688,29 @@ precedingCellsInChatContext[] := Module[{
 
 	currentCellPos = First[currentCellPos];
 
-	If[Length[dividerCellPos] === 0,
-		Return[Take[allCells, currentCellPos]]
+	cellsInContext = If[Length[dividerCellPos] === 0,
+		Take[allCells, currentCellPos]
+		,
+		Take[
+			allCells,
+			{
+				Max[Select[dividerCellPos, (# < currentCellPos) &]],
+				currentCellPos
+			}
+		]
 	];
 
-	Take[
-		allCells,
-		{
-			Max[Select[dividerCellPos, (# < currentCellPos) &]],
-			currentCellPos
-		}
+	cellsInContext = Reverse[cellsInContext];
+	Reverse[
+		Take[
+			cellsInContext,
+			Min[
+				Length[cellsInContext],
+				1 + LengthWhile[cellsInContext, (! cellIsChatDelimiter[#]) &]
+			]
+		]
 	]
-]
+];
 
 (*====================================*)
 
