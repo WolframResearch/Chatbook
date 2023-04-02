@@ -6,6 +6,8 @@ GU`SetUsage[ChatInputCellEvaluationFunction, "
 ChatInputCellEvaluationFunction[input$, form$] is the CellEvaluationFunction for chat input cells.
 "]
 
+ChatExplainButtonFunction
+
 Begin["`Private`"]
 
 Needs["ConnorGray`Chatbook`"]
@@ -27,6 +29,8 @@ $ChatSystemOutputTypePrompts = <|
 	"Analysis" -> "Analyze the correctness of the following statement or computer code and report any errors and how to fix them."
 |>;
 
+(*====================================*)
+
 SetFallthroughError[ChatInputCellEvaluationFunction]
 
 ChatInputCellEvaluationFunction[
@@ -35,6 +39,7 @@ ChatInputCellEvaluationFunction[
 ] := Module[{
 	chatGroupCells,
 	additionalContextStyles,
+	taggingRules,
 	outputType,
 	tokenLimit,
 	temperature,
@@ -72,6 +77,20 @@ ChatInputCellEvaluationFunction[
 		chatGroupCells
 	];
 
+	taggingRules = (TaggingRules /. Options[First[chatGroupCells]]);
+
+	(* TODO(polish): Improve the error checking / reporting here to let
+		chat notebook authors know if they've entered an invalid prompt form. *)
+	If[AssociationQ[taggingRules],
+		If[MatchQ[taggingRules["ChatContextPreprompt"], _?ListQ | _?AssociationQ],
+			PrependTo[req, taggingRules["ChatContextPreprompt"]]
+		];
+
+		If[MatchQ[taggingRules["ChatContextPostprompt"], _?ListQ | _?AssociationQ],
+			AppendTo[req, taggingRules["ChatContextPostprompt"]]
+		];
+	];
+
 	If[StringQ[$ChatSystemPre] && $ChatSystemPre =!= "",
 		PrependTo[req, <| "role" -> "system", "content" -> $ChatSystemPre |>];
 	];
@@ -79,6 +98,8 @@ ChatInputCellEvaluationFunction[
 	If[StringQ[$ChatInputPost] && $ChatInputPost =!= "",
 		AppendTo[req, <| "role" -> "user", "content" -> $ChatInputPost |>];
 	];
+
+	req = Flatten[req];
 
 	RaiseAssert[
 		MatchQ[req, {<| "role" -> _?StringQ, "content" -> _?StringQ |> ...}],
@@ -249,37 +270,161 @@ doSyncChatRequest[
 
 (* Called after normal Input cell evaluation to create an attached report of what it did*)
 
-ChatInputCellReportFunction[cellobj_] := Module[{},
+SetFallthroughError[ChatExplainButtonFunction]
+
+ChatExplainButtonFunction[cellobj_] := Module[{},
 	NotebookDelete[Cells[cellobj, AttachedCell -> True]];
 	AttachCell[
 		cellobj,
-		Cell[BoxData[{
-			StyleBox[
-				FrameBox[PaneBox[
-					runAndDecodeAPIRequest[
-					{
-						<|"role" -> "system", "content" ->
+		Cell[
+			BoxData[{
+				GridBox[{{
+					StyleBox[
+						FrameBox[PaneBox[
+							runAndDecodeAPIRequest[
+							{
+								<|"role" -> "system", "content" ->
 "Explain what the following Mathematica language code does.
 If it contains a syntax error explain where the error is and how to fix it.
 If there are no syntax errors do not state that fact."|>,
-						<|
-							"role"->"user",
-							"content" -> StringJoin[
-								NotebookImport[Notebook[{NotebookRead[cellobj]}], _ -> "InputText"]
-							]
-						|>
-					}, 500, 0.7, False]
-				],
-				FrameStyle -> Darker[Green]],
-			Background -> Lighter[Green]]
+								<|
+									"role" -> "user",
+									"content" -> StringJoin[
+										NotebookImport[Notebook[{NotebookRead[cellobj]}], _ -> "InputText"]
+									]
+								|>
+							}, 500, 0.7, False]
+						],
+							FrameStyle -> Darker[Green]
+						],
+						Background -> Lighter[Green]
+					],
+					ButtonBox[
+						FrameBox["x"],
+						Evaluator -> Automatic,
+						ButtonFunction :> NotebookDelete[EvaluationCell[]]
+					]
+				}}]
 			}],
 			"Text",
 			FontWeight -> Plain, FontFamily -> "Ariel", TextAlignment -> Left
 		]
-		,
+  		,
 		"Inline"
 	];
 ]
+
+
+ConnorGray`Chatbook`UI`EditChatParametersFunction[cellobj_] := Module[{
+	cell
+},
+	NotebookDelete[Cells[cellobj, AttachedCell -> True]];
+
+	cell = Cell[
+			BoxData[{
+				DynamicModuleBox[{
+					$CellContext`editingTable$$ = If[
+						ListQ[CurrentValue[EvaluationCell[], {TaggingRules, "ChatContextPreprompt"}]]
+						,
+						Map[
+							{#["role"], #["content"]} &,
+							CurrentValue[EvaluationCell[], {TaggingRules, "ChatContextPreprompt"}]
+						]
+						,
+						{{"system", ""}}
+					]
+				},
+				StyleBox[
+					GridBox[{
+						{
+							DynamicBox[
+								GridBox[
+									Join[
+										{{"Role", "Content", ""}},
+										MapIndexed[
+											{
+												InputFieldBox[
+													Dynamic[
+														$CellContext`editingTable$$[[#2[[1]], 1]]
+													]
+												],
+												InputFieldBox[
+													Dynamic[
+														$CellContext`editingTable$$[[#2[[1]], 2]]
+													]
+												],
+												ButtonBox[
+													"x",
+													Evaluator -> Automatic,
+													ButtonFunction :> (
+														$CellContext`editingTable$$ = Delete[
+															$CellContext`editingTable$$,
+															{#2[[1]]}
+														]
+													)
+												]
+											} &,
+											$CellContext`editingTable$$
+										]
+									],
+
+									GridBoxFrame -> {
+										"Columns" -> {{True}},
+										"Rows" -> {{True}}
+									}
+								]
+							]
+						},
+						{
+							RowBox[{
+								ButtonBox[
+									FrameBox["Add Row"],
+									Evaluator -> Automatic,
+									Appearance -> None,
+									ButtonFunction :> (
+										AppendTo[$CellContext`editingTable$$, {"user", ""}]
+									)
+								],
+								ButtonBox[
+									FrameBox["Apply"],
+									Evaluator -> Automatic,
+									Appearance -> None,
+									ButtonFunction :> (
+										CurrentValue[
+											ParentCell[ParentCell[EvaluationCell[]]],
+											{"TaggingRules", "ChatContextPreprompt"}
+										] = Map[
+											<|
+												"role" -> #[[1]],
+												"content" -> #[[2]]
+											|> &,
+											$CellContext`editingTable$$
+										];
+
+										NotebookDelete[Cells[cellobj, AttachedCell -> True]]
+									)
+								],
+								ButtonBox[
+									FrameBox["Cancel"],
+									Evaluator -> Automatic,
+									Appearance -> None,
+									ButtonFunction :> NotebookDelete[Cells[cellobj, AttachedCell -> True]]
+								]
+							}]
+						}
+					}],
+					Background -> RGBColor[0.333, 1, 0.333]
+				]
+			]
+		}],
+		"Text",
+		FontWeight -> Plain,
+		FontFamily -> "Ariel",
+		TextAlignment -> Left
+	];
+
+	AttachCell[cellobj, cell, "Inline"];
+];
 
 
 (*====================================*)
@@ -632,6 +777,7 @@ checkAPIKey[provenBad_] := Module[{
 (* Cell Processing                                        *)
 (*========================================================*)
 
+(* TODO: This function is unused? *)
 precedingCellsInGroup[] := Module[{
 	cell = EvaluationCell[],
 	nb = EvaluationNotebook[],
@@ -662,6 +808,13 @@ precedingCellsInGroup[] := Module[{
 
 (*====================================*)
 
+SetFallthroughError[cellIsChatDelimiter]
+
+cellIsChatDelimiter[cellobj_CellObject] :=
+	TrueQ[FullOptions[cellobj, TaggingRules]["ChatDelimiter"]];
+
+(*------------------------------------*)
+
 SetFallthroughError[precedingCellsInChatContext]
 
 precedingCellsInChatContext[
@@ -675,6 +828,13 @@ precedingCellsInChatContext[
 },
 	allCells = Cells[nb];
 	currentCellPos = Flatten[Position[allCells, evaluationCell]];
+
+	If[Length[currentCellPos] === 0,
+		(* FIXME: Better error reporting. *)
+		Print["Evaluation cell not found in Notebook."];
+		Return[{}]
+	];
+
 	dividerCellPos = Flatten[
 		Map[
 			Position[allCells, #] &,
@@ -682,13 +842,8 @@ precedingCellsInChatContext[
 		]
 	];
 
-	If[Length[currentCellPos] === 0,
-		Return[{}]
-	];
-
 	currentCellPos = First[currentCellPos];
-
-	cellsInContext = If[Length[dividerCellPos] === 0,
+	cellsInContext = If[(Length[dividerCellPos] === 0) || (First[dividerCellPos] >= currentCellPos),
 		Take[allCells, currentCellPos]
 		,
 		Take[
@@ -701,7 +856,7 @@ precedingCellsInChatContext[
 	];
 
 	cellsInContext = Reverse[cellsInContext];
-	Reverse[
+	cellsInContext = Reverse[
 		Take[
 			cellsInContext,
 			Min[
@@ -709,7 +864,11 @@ precedingCellsInChatContext[
 				1 + LengthWhile[cellsInContext, (! cellIsChatDelimiter[#]) &]
 			]
 		]
-	]
+	];
+
+	ConnorGray`Chatbook`Debug`$LastContextGroupCells = cellsInContext;
+
+	cellsInContext
 ];
 
 (*====================================*)
@@ -788,11 +947,11 @@ promptProcess[
 	taggingRules = (TaggingRules /. Options[cell0]);
 
 	If[AssociationQ[taggingRules],
-		If[AssociationQ[taggingRules["Preprompt"]],
-			PrependTo[result, taggingRules["Preprompt"]]
+		If[AssociationQ[taggingRules["CellPreprompt"]] || ListQ[taggingRules["CellPreprompt"]],
+			PrependTo[result, taggingRules["CellPreprompt"]]
 		];
-		If[AssociationQ[taggingRules["Postprompt"]],
-			AppendTo[result, taggingRules["Postprompt"]]
+		If[AssociationQ[taggingRules["CellPostprompt"]] || ListQ[taggingRules["CellPostprompt"]],
+			AppendTo[result, taggingRules["CellPostprompt"]]
 		];
 	];
 
