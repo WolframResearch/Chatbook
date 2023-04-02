@@ -6,6 +6,7 @@ GU`SetUsage[ChatInputCellEvaluationFunction, "
 ChatInputCellEvaluationFunction[input$, form$] is the CellEvaluationFunction for chat input cells.
 "]
 
+EditChatParametersFunction
 ChatExplainButtonFunction
 
 Begin["`Private`"]
@@ -314,6 +315,53 @@ If there are no syntax errors do not state that fact."|>,
 	];
 ]
 
+(*====================================*)
+
+SetFallthroughError[OnePromptTableEditor]
+
+OnePromptTableEditor[
+	cellobj_,
+	tag_,
+   Dynamic[tableContents_]
+] :=
+	GridBox[{{
+		DynamicBox[GridBox[
+			Join[
+				{{
+					"Role",
+					"Content",
+					ButtonBox[
+						FrameBox["+"],
+						Evaluator -> Automatic,
+						Appearance -> None,
+						ButtonFunction :> (
+							AppendTo[tableContents, {"user", ""}]
+						)
+					]
+				}},
+				MapIndexed[
+					{
+						InputFieldBox[Dynamic[tableContents[[#2[[1]], 1]]]],
+						InputFieldBox[Dynamic[tableContents[[#2[[1]], 2]]]],
+						ButtonBox[
+							"x",
+							Evaluator -> Automatic,
+							ButtonFunction :> (
+								tableContents = Delete[tableContents, {#2[[1]]}]
+							)
+						]
+					} &,
+					tableContents
+				]
+			],
+			GridBoxFrame -> {
+				"Columns" -> {{True}},
+				"Rows" -> {{True}}
+			}
+		]]
+	}}];
+
+(*====================================*)
 
 ConnorGray`Chatbook`UI`EditChatParametersFunction[cellobj_] := Module[{
 	cell
@@ -321,109 +369,115 @@ ConnorGray`Chatbook`UI`EditChatParametersFunction[cellobj_] := Module[{
 	NotebookDelete[Cells[cellobj, AttachedCell -> True]];
 
 	cell = Cell[
-			BoxData[{
-				DynamicModuleBox[{
-					$CellContext`editingTable$$ = If[
-						ListQ[CurrentValue[EvaluationCell[], {TaggingRules, "ChatContextPreprompt"}]]
-						,
-						Map[
-							{#["role"], #["content"]} &,
-							CurrentValue[EvaluationCell[], {TaggingRules, "ChatContextPreprompt"}]
-						]
-						,
-						{{"system", ""}}
+		BoxData @ DynamicModuleBox[{
+			$CellContext`tableContentsPreprompt$$ =
+				If[ListQ[CurrentValue[cellobj, {TaggingRules, "ChatContextPreprompt"}]],
+					Map[
+						{#["role"], #["content"]} &,
+						CurrentValue[cellobj, {TaggingRules, "ChatContextPreprompt"}]
 					]
-				},
-				StyleBox[
-					GridBox[{
+					,
+					{{"system", ""}}
+				],
+			$CellContext`tableContentsPostprompt$$ =
+				If[ListQ[CurrentValue[cellobj, {TaggingRules, "ChatContextPostprompt"}]],
+					Map[
+						{#["role"], #["content"]} &,
+						CurrentValue[cellobj, {TaggingRules, "ChatContextPostprompt"}]
+					]
+					,
+					{{"system", ""}}
+				],
+			$CellContext`tableContentsActAsDelimiter$$ =
+				TrueQ[CurrentValue[cellobj, {TaggingRules, "ChatContextDelimiter"}]]
+		},
+			Evaluate @ StyleBox[
+				FrameBox @ GridBox[
+					{
+						{StyleBox["ChatContextPreprompt", Bold]},
 						{
-							DynamicBox[
-								GridBox[
-									Join[
-										{{"Role", "Content", ""}},
-										MapIndexed[
-											{
-												InputFieldBox[
-													Dynamic[
-														$CellContext`editingTable$$[[#2[[1]], 1]]
-													]
-												],
-												InputFieldBox[
-													Dynamic[
-														$CellContext`editingTable$$[[#2[[1]], 2]]
-													]
-												],
-												ButtonBox[
-													"x",
-													Evaluator -> Automatic,
-													ButtonFunction :> (
-														$CellContext`editingTable$$ = Delete[
-															$CellContext`editingTable$$,
-															{#2[[1]]}
-														]
-													)
-												]
-											} &,
-											$CellContext`editingTable$$
-										]
-									],
-
-									GridBoxFrame -> {
-										"Columns" -> {{True}},
-										"Rows" -> {{True}}
-									}
-								]
+							OnePromptTableEditor[
+								cellobj,
+								"ChatContextPreprompt",
+								Dynamic[$CellContext`tableContentsPreprompt$$]
 							]
 						},
+						{""},
+						{StyleBox["ChatContextPostprompt", Bold]},
+						{
+							OnePromptTableEditor[
+								cellobj,
+								"ChatContextPostprompt",
+								Dynamic[$CellContext`tableContentsPostprompt$$]
+							]
+						},
+						{""},
 						{
 							RowBox[{
-								ButtonBox[
-									FrameBox["Add Row"],
-									Evaluator -> Automatic,
-									Appearance -> None,
-									ButtonFunction :> (
-										AppendTo[$CellContext`editingTable$$, {"user", ""}]
-									)
-								],
-								ButtonBox[
-									FrameBox["Apply"],
-									Evaluator -> Automatic,
-									Appearance -> None,
-									ButtonFunction :> (
-										CurrentValue[
-											ParentCell[ParentCell[EvaluationCell[]]],
-											{"TaggingRules", "ChatContextPreprompt"}
-										] = Map[
-											<|
-												"role" -> #[[1]],
-												"content" -> #[[2]]
-											|> &,
-											$CellContext`editingTable$$
-										];
-
-										NotebookDelete[Cells[cellobj, AttachedCell -> True]]
-									)
-								],
-								ButtonBox[
-									FrameBox["Cancel"],
-									Evaluator -> Automatic,
-									Appearance -> None,
-									ButtonFunction :> NotebookDelete[Cells[cellobj, AttachedCell -> True]]
-								]
+								CheckboxBox[Dynamic[$CellContext`tableContentsActAsDelimiter$$]],
+								" Act as chat context delimiter"
 							}]
+						},
+						{""},
+						{
+							ItemBox[
+								RowBox[{
+									ButtonBox[
+										FrameBox["Apply"],
+										Evaluator -> Automatic,
+										Appearance -> None,
+										ButtonFunction :> (
+											CurrentValue[
+												cellobj,
+												{"TaggingRules", "ChatContextPreprompt"}
+											] = Map[
+												<|"role" -> #[[1]], "content" -> #[[2]]|> &,
+												$CellContext`tableContentsPreprompt$$
+											];
+
+											CurrentValue[
+												cellobj,
+												{"TaggingRules", "ChatContextPostprompt"}
+											] = Map[
+												<|"role" -> #[[1]], "content" -> #[[2]]|> &,
+												$CellContext`tableContentsPostprompt$$
+											];
+
+											CurrentValue[
+												cellobj,
+												{TaggingRules, "ChatContextDelimiter"}
+											] = $CellContext`tableContentsActAsDelimiter$$;
+
+											NotebookDelete[Cells[cellobj, AttachedCell -> True]];
+										)
+									],
+									ButtonBox[
+										FrameBox["Cancel"],
+										Evaluator -> Automatic,
+										Appearance -> None,
+										ButtonFunction :> (
+											NotebookDelete[Cells[cellobj, AttachedCell -> True]]
+										)
+									]
+								}],
+								Alignment -> Center
+							]
 						}
-					}],
-					Background -> RGBColor[0.333, 1, 0.333]
-				]
+					},
+					GridBoxAlignment -> {
+						"Columns" -> {{Left}}
+					}
+				],
+				Background -> RGBColor[0.333, 1, 0.333]
 			]
-		}],
+		],
 		"Text",
 		FontWeight -> Plain,
 		FontFamily -> "Ariel",
 		TextAlignment -> Left
 	];
 
-	AttachCell[cellobj, cell, "Inline"];
+	AttachCell[cellobj, cell];
 ];
 
 
@@ -659,6 +713,7 @@ writeContent[$state_Symbol, content_?StringQ] := Module[{},
 
 (*------------------------------------*)
 
+
 (*====================================*)
 
 SetFallthroughError[checkAPIKey]
@@ -811,7 +866,7 @@ precedingCellsInGroup[] := Module[{
 SetFallthroughError[cellIsChatDelimiter]
 
 cellIsChatDelimiter[cellobj_CellObject] :=
-	TrueQ[FullOptions[cellobj, TaggingRules]["ChatDelimiter"]];
+	TrueQ[FullOptions[cellobj, TaggingRules]["ChatContextDelimiter"]];
 
 (*------------------------------------*)
 
