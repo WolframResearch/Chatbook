@@ -363,7 +363,9 @@ OnePromptTableEditor[
 
 (*====================================*)
 
-ConnorGray`Chatbook`UI`EditChatParametersFunction[cellobj_] := Module[{
+SetFallthroughError[EditChatParametersFunction]
+
+EditChatParametersFunction[cellobj_] := Module[{
 	cell
 },
 	NotebookDelete[Cells[cellobj, AttachedCell -> True]];
@@ -477,7 +479,7 @@ ConnorGray`Chatbook`UI`EditChatParametersFunction[cellobj_] := Module[{
 		TextAlignment -> Left
 	];
 
-	AttachCell[cellobj, cell];
+	AttachCell[cellobj, cell, "Inline"];
 ];
 
 
