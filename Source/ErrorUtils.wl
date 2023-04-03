@@ -78,6 +78,16 @@ $RaiseThrowTag
 
 $RegisteredErrorTags = <||>
 
+(*------------------------------------------*)
+(* Experiment with Raise => Fail rebranding *)
+(*------------------------------------------*)
+
+Fail2 = Raise
+FailAssert = RaiseAssert
+WrapFailed = WrapRaised
+FailConfirm = RaiseConfirm
+FailConfirmMatch = RaiseConfirmMatch
+
 (*====================================*)
 (* Advice                             *)
 (*====================================*)
@@ -379,6 +389,8 @@ FailurePattern[tags0_?TagsQ] :=
 (* Convenience Functions                                  *)
 (*========================================================*)
 
+Attributes[RaiseConfirm] = {HoldFirst}
+
 RaiseConfirm[expr_] :=
 	Replace[expr, {
 		f_Failure :> Raise[f],
@@ -434,6 +446,7 @@ RaiseAssert::assertfail = "``"
 
 RaiseAssert[
 	cond_,
+	assoc : _?AssociationQ : <||>,
 	formatStr_?StringQ,
 	formatArgs___
 ] :=
@@ -444,11 +457,14 @@ RaiseAssert[
 			"RaiseAssert[..] failed: " <> ToString[StringForm @@ {formatStr, formatArgs}]
 		];
 
-		Raise @ Failure[AssertFailedError, <|
-			"MessageTemplate" -> "RaiseAssert[..] failed: " <> formatStr,
-			"MessageParameters" -> {formatArgs},
-			"AssertConditionExpression" -> HoldForm[cond]
-		|>]
+		Raise @ Failure[AssertFailedError, Join[
+			<|
+				"MessageTemplate" -> "RaiseAssert[..] failed: " <> formatStr,
+				"MessageParameters" -> {formatArgs},
+				"AssertConditionExpression" -> HoldForm[cond]
+			|>,
+			assoc
+		]]
 	]
 
 RaiseAssert[cond_] :=
