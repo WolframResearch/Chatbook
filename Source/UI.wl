@@ -12,6 +12,7 @@ Needs["ConnorGray`Chatbook`"]
 Needs["ConnorGray`Chatbook`ErrorUtils`"]
 Needs["ConnorGray`Chatbook`Errors`"]
 Needs["ConnorGray`Chatbook`Debug`"]
+Needs["ConnorGray`Chatbook`Utils`"]
 
 Needs["ConnorGray`ServerSentEventUtils`" -> "SSEUtils`"]
 
@@ -104,14 +105,6 @@ ChatInputCellEvaluationFunction[
 
 	(* doSyncChatRequest[req, params] *)
 
-
-	deletePreviousOutputs[EvaluationCell[]];
-
-	SelectionMove[cell, After, EvaluationCell[]];
-
-	(* Position the cursor to start streaming the output. *)
-	NotebookWrite[EvaluationNotebook[], Cell["", "Text"]];
-	SelectionMove[EvaluationNotebook[], Before, CellContents];
 
 	doAsyncChatRequest[EvaluationNotebook[], req, params]
 ]
@@ -223,8 +216,37 @@ doAsyncChatRequest[
 ] := Module[{
 	apiKey,
 	request,
+	$state,
+	events = {},
+	result = Null,
 	task
 },
+	deletePreviousOutputs[EvaluationCell[]];
+
+	(* NOTE:
+		This prints an empty mostly-invisible Cell, and immediately deletes
+		it. The purpose for doing this is to trigger the FE's automatic logic
+		for deleting previous output cells, which happens when a CellPrint
+		operation is done. The call to deletePreviousOutputs above has already
+		done this for us.
+
+		Additionally, if we don't do this now, it is done automatically after
+		the CellEvaluationFunction returns its result, which will delete any
+		cells that are written by the asynchronous URLSubmit streaming results
+		logic.
+	*)
+	NotebookDelete @ FrontEndExecute[
+		FrontEnd`CellPrintReturnObject[
+			Cell["", CellOpen -> False, ShowCellBracket -> False]
+		]
+	];
+
+	$state["EvaluationCell"] = EvaluationCell[];
+	$state["Buffer"] = "";
+	$state["CurrentCell"] = None;
+
+	SelectionMove[cell, After, EvaluationCell[]];
+
 	(*-----------------------------*)
 	(* Make the API request object *)
 	(*-----------------------------*)
@@ -246,14 +268,44 @@ doAsyncChatRequest[
 		request,
 		HandlerFunctions -> <|
 			"BodyChunkReceived" -> SSEUtils`ServerSentEventBodyChunkTransformer[
-				event |-> handleStreamEvent[nbObj, event]
+				event |-> (
+					AppendTo[events, event];
+					Handle[
+						WrapRaised[ChatbookError, "Error processing AI output."][
+							handleStreamEvent[$state, event]
+						],
+						failure_Failure :> (
+							(* If there was a failure processing the last event,
+								stop executing this task. Further events are
+								only likely to generate more failures. *)
+							TaskRemove[task];
+							result = failure;
+						)
+					]
+				)
+			],
+			"TaskFinished" -> Function[args,
+				(* FIXME: Store the response body in this error as well.
+					This is currently non-trivial due to a bug in URLSubmit:
+					if you use BodyChunkRecieved, you can't access the "Body"
+					field to get the entire response. *)
+				ConfirmReplace[args["StatusCode"], {
+					200 :> Null,
+					other_?IntegerQ :> (
+						result = CreateFailure[
+							ChatbookError,
+							(* <| "ResponseBody" -> args |>, *)
+							"Chat request failed."
+						];
+					)
+				}];
 			]
 			(* TODO: Do some cleanup with the current selection caret? *)
 			(* "TaskFinished" -> Function[
 				Print["Finished! ", #1]
 			] *)
 		|>,
-		HandlerFunctionsKeys -> {"BodyChunk"}
+		HandlerFunctionsKeys -> {"BodyChunk", "StatusCode"}
 	];
 
 	(* TODO: Better default time constraint value?
@@ -262,6 +314,10 @@ doAsyncChatRequest[
 		a slow day?)
 	*)
 	TaskWait[task, TimeConstraint -> 120];
+
+	$LastResponse = events;
+
+	result
 ]
 
 (*------------------------------------*)
@@ -269,7 +325,7 @@ doAsyncChatRequest[
 SetFallthroughError[handleStreamEvent]
 
 handleStreamEvent[
-	nbObj_NotebookObject,
+	$state_Symbol,
 	ssevent_?AssociationQ
 ] := Module[{
 	data
@@ -308,7 +364,8 @@ handleStreamEvent[
 				"content" -> text_?StringQ
 			}]
 		}] :> (
-			NotebookWrite[nbObj, text];
+			(* Print["Chunk: ", InputForm[text]]; *)
+			$state["Buffer"] = StringJoin[$state["Buffer"], text];
 		),
 		(* FIXME: Handle this change in role by changing cell type if necessary? *)
 		KeyValuePattern[{
@@ -320,14 +377,141 @@ handleStreamEvent[
 		KeyValuePattern[{
 			"delta" -> <||>,
 			"finish_reason" -> "stop"
-		}] :> Null,
+		}] :> (
+			(*
+				If there is any remaining data in the buffer that wasn't
+				written out, write it out now. This can happen if the last token
+				is a string that is ambiguous to parse (e.g. "`").
+			*)
+			If[$state["Buffer"] =!= "",
+				writeContent[$state, $state["Buffer"]]
+			];
+		),
 		other_ :> Raise[
 			ChatbookError,
 			"Unexpected chat streaming response object form: ``",
 			InputForm[other]
 		]
 	}];
+
+	(*--------------------------------*)
+	(* Process the buffer.            *)
+	(*--------------------------------*)
+
+	RaiseAssert[StringQ[$state["Buffer"]]];
+
+	While[$state["Buffer"] =!= "",
+		(* Print["Buffer => ", InputForm[$state["Buffer"]]]; *)
+
+		StringReplace[$state["Buffer"], {
+			StartOfString ~~ prefix:Repeated[Except["`" | "\n"]] ~~ rest___ ~~ EndOfString :> (
+				writeContent[$state, prefix];
+				$state["Buffer"] = rest;
+			),
+			(* Recognize incomplete input that might be a ``` code block start
+				or end marker. *)
+			StartOfString ~~ RepeatedNull["\n", 1] ~~ Repeated["`", {1, 2}] ~~ EndOfString :> (
+				(*
+					We don't have enough buffered data to know if we should
+					start or end a code block or not. Break out of the buffer
+					processing loop until we recieve more input.
+				*)
+				Break[];
+			),
+			(*--------------------------------------------------*)
+			(* Recognize a ``` that starts or ends a code block *)
+			(*--------------------------------------------------*)
+			StartOfString
+			~~ RepeatedNull["\n", 1] ~~ "```" ~~ spec:RepeatedNull[Except["`" | "\n"]]
+			~~ RepeatedNull["\n", 1] ~~ rest___ ~~ EndOfString :> (
+
+				ConfirmReplace[$state["CurrentCell"], {
+					(* If we haven't written any cell yet, then this ``` must
+						be the first thing sent from the LLM, so make the
+						initial cell a code output cell. *)
+					None :> startCurrentCell[$state, makeCodeBlockCell["", spec]],
+					KeyValuePattern[{ "Style" -> currentStyle_ }] :> Module[{newCell},
+						newCell = ConfirmReplace[currentStyle, {
+							(* If the current cell is a non-code cell, then this
+								"```" must be starting a code block. *)
+							"ChatAssistantText"
+								:> makeCodeBlockCell["", spec],
+							(* If the current cell is a code cell, then this
+								"```" must be ending a code block. *)
+							"ChatAssistantProgram"
+							| "ChatAssistantOutput"
+							| "ChatAssistantExternalLanguage"
+								:> Cell[TextData[""], "ChatAssistantText"]
+						}];
+
+						startCurrentCell[$state, newCell]
+					]
+				}];
+
+				$state["Buffer"] = rest;
+			),
+			(* Write any other input out directly. *)
+			_ :> (
+				writeContent[$state, $state["Buffer"]];
+				$state["Buffer"] = "";
+			)
+		}];
+	];
 ]
+
+(*------------------------------------*)
+
+SetFallthroughError[startCurrentCell]
+
+(* Start a new cell and update $state["CurrentCell"]. *)
+startCurrentCell[$state_Symbol, cell:Cell[_, style_?StringQ, ___]] := Module[{},
+	$state["CurrentCell"] = <|
+		"Style" -> style,
+		"Object" -> CellPrint2[$state["EvaluationCell"], cell]
+	|>;
+]
+
+(*------------------------------------*)
+
+SetFallthroughError[writeContent]
+
+writeContent[$state_Symbol, content_?StringQ] := Module[{},
+	ConfirmReplace[$state["CurrentCell"], {
+		(* If there is no current cell, default to creating a text cell. *)
+		None :> startCurrentCell[$state, Cell[TextData[""], "ChatAssistantText"]],
+		KeyValuePattern[{"Style" -> _}] :> Null
+	}];
+
+	With[{
+		currCellObj = $state["CurrentCell"]["Object"]
+	},
+		RaiseConfirmMatch[currCellObj, _CellObject];
+		RaiseAssert[Experimental`CellExistsQ[currCellObj]];
+
+		SelectionMove[currCellObj, After, CellContents];
+
+		WithCleanup[
+			(* NOTE:
+				Temporarily prevent the automatic cell edit duplicate FE
+				behavior from occurring during this write. This prevents our
+				programmatic edit to the cell from causing it to be
+				automatically transformed into an Input cell (which is the
+				desired behavior when a user manually edits a code cell
+				generated by the AI).
+			*)
+			SetOptions[currCellObj, CellEditDuplicate -> False]
+			,
+			NotebookWrite[
+				RaiseConfirm @ ParentNotebook[currCellObj],
+				content
+			];
+			,
+			SetOptions[currCellObj, CellEditDuplicate -> Inherited]
+		];
+	];
+]
+
+(*------------------------------------*)
 
 (*====================================*)
 
@@ -651,7 +835,7 @@ SetFallthroughError[makeCodeBlockCell]
 
 makeCodeBlockCell[content_?StringQ, codeBlockSpec : _?StringQ | None] :=
 	ConfirmReplace[Replace[codeBlockSpec, s_String :> Capitalize[s]], {
-		None -> Cell[BoxData[content], "ChatAssistantProgram"],
+		None | "" -> Cell[BoxData[content], "ChatAssistantProgram"],
 		"Wolfram" | "Mathematica" -> Cell[BoxData[content], "ChatAssistantOutput"],
 		lang_?StringQ :> Cell[
 			content,
