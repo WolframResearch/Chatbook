@@ -5,6 +5,10 @@ Notebook[{
 	(* Modifications to built-in styles *)
 	(*==================================*)
 
+	(*------------------------------------*)
+	(* Built-in cells with Explain button *)
+	(*------------------------------------*)
+
 	Cell[
 		StyleData["Input"],
 		StyleKeyMapping -> {
@@ -106,6 +110,91 @@ Notebook[{
 								ConnorGray`Chatbook`UI`ChatExplainButtonFunction[ParentCell[EvaluationCell[]]]
 							),
 							Evaluator -> Automatic
+						]
+					],
+					Background -> GrayLevel[1],
+					FontSize -> 10,
+					FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
+					TextAlignment -> Left,
+					CellMargins -> 0,
+					CellSize -> {All, 20}
+				]
+			},
+			{None, None}
+		}
+	],
+
+	(*----------------------------------------*)
+	(* Built-in cells with divider parameters *)
+	(*----------------------------------------*)
+
+	Cell[
+		StyleData["Section"],
+		CellFrameLabels -> {
+			{
+				None,
+				Cell[
+					BoxData[
+						ButtonBox[
+							StyleBox["Params", FontSize -> 10],
+							ButtonFunction :> (
+								ConnorGray`Chatbook`UI`EditChatParametersFunction[ParentCell[EvaluationCell[]]]
+							),
+							Evaluator -> Automatic
+						]
+					],
+					Background -> GrayLevel[1],
+					FontSize -> 10,
+					FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
+					TextAlignment -> Left,
+					CellMargins -> 0,
+					CellSize -> {All, 20}
+				]
+			},
+			{None, None}
+		}
+	],
+
+	Cell[
+		StyleData["Subsection"],
+		CellFrameLabels -> {
+			{
+				None,
+				Cell[
+					BoxData[
+						ButtonBox[
+							StyleBox["Params", FontSize -> 10],
+							Evaluator -> Automatic,
+							ButtonFunction :> (
+								ConnorGray`Chatbook`UI`EditChatParametersFunction[ParentCell[EvaluationCell[]]]
+							)
+						]
+					],
+					Background -> GrayLevel[1],
+					FontSize -> 10,
+					FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
+					TextAlignment -> Left,
+					CellMargins -> 0,
+					CellSize -> {All, 20}
+				]
+			},
+			{None, None}
+		}
+	],
+
+	Cell[
+		StyleData["Subsubsection"],
+		CellFrameLabels -> {
+			{
+				None,
+				Cell[
+					BoxData[
+						ButtonBox[
+							StyleBox["Params", FontSize -> 10],
+							Evaluator -> Automatic,
+							ButtonFunction :> (
+								ConnorGray`Chatbook`UI`EditChatParametersFunction[ParentCell[EvaluationCell[]]]
+							)
 						]
 					],
 					Background -> GrayLevel[1],
@@ -323,7 +412,7 @@ Notebook[{
 							Dynamic[
 								ReplaceAll[
 									FullOptions[ParentCell[EvaluationCell[]], TaggingRules]["OutputType"],
-									{_Missing -> "Automatic"}
+									{_Missing -> Automatic}
 								],
 								(
 									CurrentValue[
