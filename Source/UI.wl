@@ -13,6 +13,7 @@ Needs["ConnorGray`Chatbook`ErrorUtils`"]
 Needs["ConnorGray`Chatbook`Errors`"]
 Needs["ConnorGray`Chatbook`Debug`"]
 Needs["ConnorGray`Chatbook`Utils`"]
+Needs["ConnorGray`Chatbook`Streaming`"]
 
 Needs["ConnorGray`ServerSentEventUtils`" -> "SSEUtils`"]
 
@@ -241,11 +242,21 @@ doAsyncChatRequest[
 		]
 	];
 
-	$state["EvaluationCell"] = EvaluationCell[];
-	$state["Buffer"] = "";
-	$state["CurrentCell"] = None;
-
 	SelectionMove[cell, After, EvaluationCell[]];
+
+	(*-----------------------------------------------*)
+	(* Initialize the URLSubmit event handler state. *)
+	(*-----------------------------------------------*)
+
+	$state["EvaluationCell"] = EvaluationCell[];
+	$state["CurrentCell"] = None;
+	$state["OutputEventGenerator"] = CreateChatEventToOutputEventGenerator[];
+
+	$state[args___] := Raise[
+		ChatbookError,
+		"Invalid chat event to output event $state args: ``",
+		{args}
+	];
 
 	(*-----------------------------*)
 	(* Make the API request object *)
@@ -340,123 +351,37 @@ handleStreamEvent[
 		]
 	}];
 
-	RaiseAssert[
-		MatchQ[data, _?AssociationQ],
-		"Unexpected chat streaming response JSON parse result: ``",
-		InputForm[json]
-	];
-
-	data = ConfirmReplace[data, {
-		KeyValuePattern[{
-			(* TODO: What about other possible choices? *)
-			"choices" -> {firstChoice_, ___}
-		}] :> firstChoice,
-		other_ :> Raise[
-			ChatbookError,
-			"Unexpected chat streaming response object form: ``",
-			InputForm[other]
-		]
+	events = ConfirmReplace[$state["OutputEventGenerator"][data], {
+		(*
+			We don't have enough buffered data to know if we should
+			start or end a code block or not. Do nothing until we
+			recieve more input.
+		*)
+		Missing["IncompleteData"] :> Return[Null, Module],
+		e_?ListQ :> e
 	}];
 
-	ConfirmReplace[data, {
-		KeyValuePattern[{
-			"delta" -> KeyValuePattern[{
-				"content" -> text_?StringQ
-			}]
-		}] :> (
-			(* Print["Chunk: ", InputForm[text]]; *)
-			$state["Buffer"] = StringJoin[$state["Buffer"], text];
-		),
-		(* FIXME: Handle this change in role by changing cell type if necessary? *)
-		KeyValuePattern[{
-			"delta" -> KeyValuePattern[{
-				"role" -> "assistant"
-			}]
-		}] :> Null,
-		(* FIXME: Handle this streaming end better. *)
-		KeyValuePattern[{
-			"delta" -> <||>,
-			"finish_reason" -> "stop"
-		}] :> (
-			(*
-				If there is any remaining data in the buffer that wasn't
-				written out, write it out now. This can happen if the last token
-				is a string that is ambiguous to parse (e.g. "`").
-			*)
-			If[$state["Buffer"] =!= "",
-				writeContent[$state, $state["Buffer"]]
-			];
-		),
-		other_ :> Raise[
-			ChatbookError,
-			"Unexpected chat streaming response object form: ``",
-			InputForm[other]
-		]
-	}];
-
-	(*--------------------------------*)
-	(* Process the buffer.            *)
-	(*--------------------------------*)
-
-	RaiseAssert[StringQ[$state["Buffer"]]];
-
-	While[$state["Buffer"] =!= "",
-		(* Print["Buffer => ", InputForm[$state["Buffer"]]]; *)
-
-		StringReplace[$state["Buffer"], {
-			StartOfString ~~ prefix:Repeated[Except["`" | "\n"]] ~~ rest___ ~~ EndOfString :> (
-				writeContent[$state, prefix];
-				$state["Buffer"] = rest;
+	Scan[
+		event |-> ConfirmReplace[event, {
+			"Write"[content_?StringQ] :> (
+				writeContent[$state, content];
 			),
-			(* Recognize incomplete input that might be a ``` code block start
-				or end marker. *)
-			StartOfString ~~ RepeatedNull["\n", 1] ~~ Repeated["`", {1, 2}] ~~ EndOfString :> (
-				(*
-					We don't have enough buffered data to know if we should
-					start or end a code block or not. Break out of the buffer
-					processing loop until we recieve more input.
-				*)
-				Break[];
+			"BeginCodeBlock"[spec_?StringQ] :> (
+				startCurrentCell[$state, makeCodeBlockCell["", spec]];
 			),
-			(*--------------------------------------------------*)
-			(* Recognize a ``` that starts or ends a code block *)
-			(*--------------------------------------------------*)
-			StartOfString
-			~~ RepeatedNull["\n", 1] ~~ "```" ~~ spec:RepeatedNull[Except["`" | "\n"]]
-			~~ RepeatedNull["\n", 1] ~~ rest___ ~~ EndOfString :> (
-
-				ConfirmReplace[$state["CurrentCell"], {
-					(* If we haven't written any cell yet, then this ``` must
-						be the first thing sent from the LLM, so make the
-						initial cell a code output cell. *)
-					None :> startCurrentCell[$state, makeCodeBlockCell["", spec]],
-					KeyValuePattern[{ "Style" -> currentStyle_ }] :> Module[{newCell},
-						newCell = ConfirmReplace[currentStyle, {
-							(* If the current cell is a non-code cell, then this
-								"```" must be starting a code block. *)
-							"ChatAssistantText"
-								:> makeCodeBlockCell["", spec],
-							(* If the current cell is a code cell, then this
-								"```" must be ending a code block. *)
-							"ChatAssistantProgram"
-							| "ChatAssistantOutput"
-							| "ChatAssistantExternalLanguage"
-								:> Cell[TextData[""], "ChatAssistantText"]
-						}];
-
-						startCurrentCell[$state, newCell]
-					]
-				}];
-
-				$state["Buffer"] = rest;
+			"BeginText" :> (
+				startCurrentCell[$state, Cell[TextData[""], "ChatAssistantText"]];
 			),
-			(* Write any other input out directly. *)
-			_ :> (
-				writeContent[$state, $state["Buffer"]];
-				$state["Buffer"] = "";
-			)
-		}];
+			other_ :> Fail2[
+				ChatbookError,
+				"Unexpected form for chat streaming output event: ``",
+				InputForm[other]
+			]
+		}],
+		events
 	];
+
+	(* FIXME: Flush remaining buffered data in the output event generator. *)
 ]
 
 (*------------------------------------*)
