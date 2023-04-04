@@ -11,6 +11,11 @@ Begin["`Private`"]
 Needs["ConnorGray`Chatbook`"]
 Needs["ConnorGray`Chatbook`ErrorUtils`"]
 Needs["ConnorGray`Chatbook`Errors`"]
+Needs["ConnorGray`Chatbook`Debug`"]
+Needs["ConnorGray`Chatbook`Utils`"]
+Needs["ConnorGray`Chatbook`Streaming`"]
+
+Needs["ConnorGray`ServerSentEventUtils`" -> "SSEUtils`"]
 
 
 
@@ -24,7 +29,8 @@ ChatInputCellEvaluationFunction[
 	additionalContextStyles,
 	tokenLimit,
 	temperature,
-	req, response, parsed, content, processed
+	params,
+	req
 },
 	If[!checkAPIKey[False],
 		Return[]
@@ -70,13 +76,11 @@ ChatInputCellEvaluationFunction[
 		"unexpected form for parsed chat input: ``", InputForm[req]
 	];
 
-	ConnorGray`Chatbook`Debug`$LastRequestContent = req;
-
 	(*----------------------------------------------------------------------*)
 	(* Put the insertion point where it belongs after the old output        *)
 	(*----------------------------------------------------------------------*)
 
-	moveAfterPreviousOutputs[EvaluationCell[], EvaluationNotebook[]];
+	moveAfterPreviousOutputs[EvaluationCell[]];
 
 	(*----------------------------------------------------------------------*)
 	(* Extract the token limit and temperature from the evaluation cell     *)
@@ -87,13 +91,41 @@ ChatInputCellEvaluationFunction[
 			{Lookup[opts, "TokenLimit", "1000"], Lookup[opts, "Temperature", "0.7"]}
 		];
 
+	params = <|
+		"TokenLimit" -> ToExpression[tokenLimit],
+		"Temperature" -> ToExpression[temperature]
+	|>;
+
 	(*--------------------------------*)
 	(* Perform the API request        *)
 	(*--------------------------------*)
 
-	response = chatRequest[req, tokenLimit, temperature];
+	$LastRequestChatMessages = req;
+	$LastRequestParameters = params;
 
-	ConnorGray`Chatbook`Debug`$LastResponse = response;
+
+	(* doSyncChatRequest[req, params] *)
+
+
+	doAsyncChatRequest[EvaluationNotebook[], req, params]
+]
+
+(*====================================*)
+
+SetFallthroughError[doSyncChatRequest]
+
+doSyncChatRequest[
+	messages_?ListQ,
+	params_?AssociationQ
+] := Module[{
+	response,
+	parsed,
+	content,
+	processed
+},
+	response = chatRequest[messages, params];
+
+	$LastResponse = response;
 
 	response = ConfirmReplace[response, {
 		_HTTPResponse :> response,
@@ -169,10 +201,242 @@ ChatInputCellEvaluationFunction[
 
 	processed = StringJoin[StringTrim[content]];
 
-	deletePreviousOutputs[EvaluationCell[], EvaluationNotebook[]];
+	deletePreviousOutputs[EvaluationCell[]];
 
 	processResponse[processed];
 ]
+
+(*====================================*)
+
+SetFallthroughError[doAsyncChatRequest]
+
+doAsyncChatRequest[
+	nbObj_NotebookObject,
+	messages_?ListQ,
+	params_?AssociationQ
+] := Module[{
+	apiKey,
+	request,
+	$state,
+	events = {},
+	result = Null,
+	task
+},
+	deletePreviousOutputs[EvaluationCell[]];
+
+	(* NOTE:
+		This prints an empty mostly-invisible Cell, and immediately deletes
+		it. The purpose for doing this is to trigger the FE's automatic logic
+		for deleting previous output cells, which happens when a CellPrint
+		operation is done. The call to deletePreviousOutputs above has already
+		done this for us.
+
+		Additionally, if we don't do this now, it is done automatically after
+		the CellEvaluationFunction returns its result, which will delete any
+		cells that are written by the asynchronous URLSubmit streaming results
+		logic.
+	*)
+	NotebookDelete @ FrontEndExecute[
+		FrontEnd`CellPrintReturnObject[
+			Cell["", CellOpen -> False, ShowCellBracket -> False]
+		]
+	];
+
+	SelectionMove[cell, After, EvaluationCell[]];
+
+	(*-----------------------------------------------*)
+	(* Initialize the URLSubmit event handler state. *)
+	(*-----------------------------------------------*)
+
+	$state["EvaluationCell"] = EvaluationCell[];
+	$state["CurrentCell"] = None;
+	$state["OutputEventGenerator"] = CreateChatEventToOutputEventGenerator[];
+
+	$state[args___] := Raise[
+		ChatbookError,
+		"Invalid chat event to output event $state args: ``",
+		{args}
+	];
+
+	(*-----------------------------*)
+	(* Make the API request object *)
+	(*-----------------------------*)
+
+	apiKey = SystemCredential[$openAICredentialKey];
+
+	request = chatHTTPRequest[
+		messages,
+		params,
+		apiKey,
+		"Stream" -> True
+	];
+
+	(*---------------------------------------------------------*)
+	(* Perform the web request and start streaming the results *)
+	(*---------------------------------------------------------*)
+
+	task = URLSubmit[
+		request,
+		HandlerFunctions -> <|
+			"BodyChunkReceived" -> SSEUtils`ServerSentEventBodyChunkTransformer[
+				event |-> (
+					AppendTo[events, event];
+					Handle[
+						WrapRaised[ChatbookError, "Error processing AI output."][
+							handleStreamEvent[$state, event]
+						],
+						failure_Failure :> (
+							(* If there was a failure processing the last event,
+								stop executing this task. Further events are
+								only likely to generate more failures. *)
+							TaskRemove[task];
+							result = failure;
+						)
+					]
+				)
+			],
+			"TaskFinished" -> Function[args,
+				(* FIXME: Store the response body in this error as well.
+					This is currently non-trivial due to a bug in URLSubmit:
+					if you use BodyChunkRecieved, you can't access the "Body"
+					field to get the entire response. *)
+				ConfirmReplace[args["StatusCode"], {
+					200 :> Null,
+					other_?IntegerQ :> (
+						result = CreateFailure[
+							ChatbookError,
+							(* <| "ResponseBody" -> args |>, *)
+							"Chat request failed."
+						];
+					)
+				}];
+			]
+			(* TODO: Do some cleanup with the current selection caret? *)
+			(* "TaskFinished" -> Function[
+				Print["Finished! ", #1]
+			] *)
+		|>,
+		HandlerFunctionsKeys -> {"BodyChunk", "StatusCode"}
+	];
+
+	(* TODO: Better default time constraint value?
+		Also we should issue a message when this is hit.
+		What if the user wants to wait longer than this (i.e. ChatGPT is having
+		a slow day?)
+	*)
+	TaskWait[task, TimeConstraint -> 120];
+
+	$LastResponse = events;
+
+	result
+]
+
+(*------------------------------------*)
+
+SetFallthroughError[handleStreamEvent]
+
+handleStreamEvent[
+	$state_Symbol,
+	ssevent_?AssociationQ
+] := Module[{
+	data
+},
+	data = Replace[ssevent, {
+		<| "Data" -> "[DONE]" |> :> Return[Null, Module],
+		<| "Data" -> json_?StringQ |> :> Developer`ReadRawJSONString[json],
+		other_ :> Raise[
+			ChatbookError,
+			"Unexpected form for chat streaming server-sent event object: ``",
+			InputForm[other]
+		]
+	}];
+
+	events = ConfirmReplace[$state["OutputEventGenerator"][data], {
+		(*
+			We don't have enough buffered data to know if we should
+			start or end a code block or not. Do nothing until we
+			recieve more input.
+		*)
+		Missing["IncompleteData"] :> Return[Null, Module],
+		e_?ListQ :> e
+	}];
+
+	Scan[
+		event |-> ConfirmReplace[event, {
+			"Write"[content_?StringQ] :> (
+				writeContent[$state, content];
+			),
+			"BeginCodeBlock"[spec_?StringQ] :> (
+				startCurrentCell[$state, makeCodeBlockCell["", spec]];
+			),
+			"BeginText" :> (
+				startCurrentCell[$state, Cell[TextData[""], "ChatAssistantText"]];
+			),
+			other_ :> Fail2[
+				ChatbookError,
+				"Unexpected form for chat streaming output event: ``",
+				InputForm[other]
+			]
+		}],
+		events
+	];
+
+	(* FIXME: Flush remaining buffered data in the output event generator. *)
+]
+
+(*------------------------------------*)
+
+SetFallthroughError[startCurrentCell]
+
+(* Start a new cell and update $state["CurrentCell"]. *)
+startCurrentCell[$state_Symbol, cell:Cell[_, style_?StringQ, ___]] := Module[{},
+	$state["CurrentCell"] = <|
+		"Style" -> style,
+		"Object" -> CellPrint2[$state["EvaluationCell"], cell]
+	|>;
+]
+
+(*------------------------------------*)
+
+SetFallthroughError[writeContent]
+
+writeContent[$state_Symbol, content_?StringQ] := Module[{},
+	ConfirmReplace[$state["CurrentCell"], {
+		(* If there is no current cell, default to creating a text cell. *)
+		None :> startCurrentCell[$state, Cell[TextData[""], "ChatAssistantText"]],
+		KeyValuePattern[{"Style" -> _}] :> Null
+	}];
+
+	With[{
+		currCellObj = $state["CurrentCell"]["Object"]
+	},
+		RaiseConfirmMatch[currCellObj, _CellObject];
+		RaiseAssert[Experimental`CellExistsQ[currCellObj]];
+
+		SelectionMove[currCellObj, After, CellContents];
+
+		WithCleanup[
+			(* NOTE:
+				Temporarily prevent the automatic cell edit duplicate FE
+				behavior from occurring during this write. This prevents our
+				programmatic edit to the cell from causing it to be
+				automatically transformed into an Input cell (which is the
+				desired behavior when a user manually edits a code cell
+				generated by the AI).
+			*)
+			SetOptions[currCellObj, CellEditDuplicate -> False]
+			,
+			NotebookWrite[
+				RaiseConfirm @ ParentNotebook[currCellObj],
+				content
+			];
+			,
+			SetOptions[currCellObj, CellEditDuplicate -> Inherited]
+		];
+	];
+]
+
+(*------------------------------------*)
 
 (*====================================*)
 
@@ -345,7 +609,7 @@ promptProcess[
 		there are any additional styles that have been specified to include.
 	*)
 	Cell[expr_, styles0___?StringQ, ___?OptionQ] :> Module[{
-		styles = {styles0},
+		styles = {styles0}
 	},
 		(* Only consider styles that are in `includedStyles` *)
 		styles = Intersection[styles, Keys[additionalContextStyles]];
@@ -437,8 +701,11 @@ The FE also does something special if it encounters a cell group. But we're not
 going to bother with that for now.
 *)
 
-previousOutputs[cellobj_, nbobj_] :=
-	Module[{cells, objs = {}},
+previousOutputs[cellobj_CellObject] :=
+	Module[{
+		nbobj = ParentNotebook[cellobj],
+		cells, objs = {}
+	},
 		If[Not @ TrueQ @ AbsoluteCurrentValue[nbobj, OutputAutoOverwrite], Return[{}]];
 		cells = NextCell[cellobj, All];
 		If[!MatchQ[cells, {__CellObject}], Return[{}]];
@@ -452,14 +719,14 @@ previousOutputs[cellobj_, nbobj_] :=
 	]
 
 
-deletePreviousOutputs[cellobj_, nbobj_] :=
-	Replace[previousOutputs[cellobj, nbobj], {
+deletePreviousOutputs[cellobj_CellObject] :=
+	Replace[previousOutputs[cellobj], {
 		cells: {__CellObject} :> NotebookDelete[cells],
 		_ :> None
 	}]
 
-moveAfterPreviousOutputs[cellobj_, nbobj_] :=
-	Replace[previousOutputs[cellobj, nbobj], {
+moveAfterPreviousOutputs[cellobj_CellObject] :=
+	Replace[previousOutputs[cellobj], {
 		{___, lastcell_CellObject} :> SelectionMove[lastcell, After, Cell],
 		_ :> SelectionMove[cellobj, After, Cell]
 	}]
@@ -475,22 +742,34 @@ processResponse[response_?StringQ] := Module[{
 },
 	Scan[
 		Replace[{
-			s_?StringQ :> CellPrint @ Cell[StringTrim[s], "ChatAssistantText"],
-			Code[s_?StringQ] :> CellPrint @ Cell[s, "ChatAssistantProgram"],
-			Code[s_?StringQ, "Wolfram" | "Mathematica"] :> CellPrint @ Cell[BoxData[s], "ChatAssistantOutput"],
+			s_?StringQ
+				:> CellPrint @ Cell[StringTrim[s], "ChatAssistantText"],
+			Code[s_?StringQ]
+				:> CellPrint[makeCodeBlockCell[s, None]],
 			Code[s_?StringQ, lang_?StringQ]
-				:> CellPrint @ Cell[
-					s,
-					"ChatAssistantExternalLanguage",
-					CellEvaluationLanguage -> Replace[lang, {
-						"Bash" -> "Shell"
-					}]
-				],
+				:> CellPrint[makeCodeBlockCell[s, lang]],
 			other_ :> Throw[{"Unexpected parsed form: ", InputForm[other]}]
 		}],
 		parsed
 	]
 ]
+
+(*------------------------------------*)
+
+SetFallthroughError[makeCodeBlockCell]
+
+makeCodeBlockCell[content_?StringQ, codeBlockSpec : _?StringQ | None] :=
+	ConfirmReplace[Replace[codeBlockSpec, s_String :> Capitalize[s]], {
+		None | "" -> Cell[BoxData[content], "ChatAssistantProgram"],
+		"Wolfram" | "Mathematica" -> Cell[BoxData[content], "ChatAssistantOutput"],
+		lang_?StringQ :> Cell[
+			content,
+			"ChatAssistantExternalLanguage",
+			CellEvaluationLanguage -> Replace[lang, {
+				"Bash" -> "Shell"
+			}]
+		]
+	}]
 
 (*------------------------------------*)
 
@@ -502,16 +781,8 @@ parseResponse[response_?StringQ] := Module[{
 			StartOfLine ~~ "```" ~~ (lang : LetterCharacter ...) ~~ Shortest[___]
 			~~ StartOfLine ~~ "```" ~~ EndOfLine
 		) :> Replace[lang, {
-				"mathematica" :> Code[trimCodeBlock[code], "Wolfram"],
 				"" :> Code[trimCodeBlock[code]],
-				other_ :> (
-					(* Print[
-						Style["warning:", Orange],
-						" unrecognized language: ",
-						other
-					]; *)
-					Code[trimCodeBlock[code], Capitalize[lang]]
-				)
+				other_ :> Code[trimCodeBlock[code], lang]
 			}]
 	}];
 
@@ -536,10 +807,72 @@ SetFallthroughError[chatRequest]
 
 (* TODO: Replace this with function from ChristopherWolfram/OpenAILink once
 	available. *)
-chatRequest[messages_, tokenLimit_, temperature_] := Module[{apiKey},
+chatRequest[
+	messages_,
+	params_?AssociationQ
+] := Module[{
+	apiKey,
+	request
+},
 	apiKey = SystemCredential[$openAICredentialKey];
 
+	request = chatHTTPRequest[
+		messages,
+		params,
+		apiKey
+	];
+
+	RaiseConfirmMatch[request, _HTTPRequest];
+
+	URLRead[request]
+]
+
+(*====================================*)
+
+(* TODO: Replace this boilerplate with ChristopherWolfram/OpenAILink API calls. *)
+
+SetFallthroughError[chatHTTPRequest]
+
+Options[chatHTTPRequest] = {
+	"Stream" -> False
+}
+
+chatHTTPRequest[
+	messages_,
+	params_?AssociationQ,
+	apiKey_?StringQ,
+	OptionsPattern[]
+] := Module[{
+	tokenLimit,
+	temperature,
+	request
+},
+	(* TODO: Better error. *)
 	RaiseConfirmMatch[messages, {___?AssociationQ}];
+
+	model = ConfirmReplace[Lookup[params, "Model", Automatic], {
+		Automatic -> "gpt-3.5-turbo",
+		m_?StringQ :> m,
+		other_ :> Raise[
+			ChatbookError,
+			"Invalid chat model specification: ``",
+			InputForm[other]
+		]
+	}];
+
+	(* TODO: Better error here. *)
+	tokenLimit = RaiseConfirmMatch[
+		Lookup[params, "TokenLimit", Infinity],
+		Infinity | _?IntegerQ
+	];
+	(* TODO: Better error here. *)
+	temperature = RaiseConfirmMatch[
+		Lookup[params, "Temperature", 0.70],
+		_?IntegerQ | _Real?NumberQ
+	];
+
+	(* TODO: Better error here. *)
+	stream = RaiseConfirmMatch[OptionValue["Stream"], _?BooleanQ];
 
 	(* FIXME: Produce a better error message if this credential key doesn't
 		exist; tell the user that they need to set SystemCredential. *)
@@ -552,17 +885,23 @@ chatRequest[messages_, tokenLimit_, temperature_] := Module[{apiKey},
 		];
 	];
 
-	URLRead[<|
+	request = HTTPRequest[<|
 		"Method" -> "POST",
 		"Scheme" -> "HTTPS",
 		"Domain" -> "api.openai.com",
 		"Path" -> {"v1", "chat", "completions"},
 		"Body" -> ExportByteArray[
 			<|
-				"model" -> "gpt-3.5-turbo",
-				"max_tokens" -> ToExpression[tokenLimit],
-				"temperature" -> ToExpression[temperature],
-				"messages" -> messages
+				"model" -> model,
+				"messages" -> messages,
+				ConfirmReplace[tokenLimit, {
+					Infinity -> Nothing,
+					maxTokens_?IntegerQ :> (
+						"max_tokens" -> maxTokens
+					)
+				}],
+				"temperature" -> temperature,
+				"stream" -> stream
 			|>,
 			"JSON"
 		],
@@ -570,7 +909,9 @@ chatRequest[messages_, tokenLimit_, temperature_] := Module[{apiKey},
 		"Headers" -> {
 			"Authorization" -> "Bearer " <> apiKey
 		}
-	|>]
+	|>];
+
+	request
 ]
 
 (*========================================================*)

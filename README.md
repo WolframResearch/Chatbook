@@ -63,3 +63,7 @@ Wolfram code in the chat output can be evaluated in place immediately:
 [ExternalEvaluate]: https://reference.wolfram.com/language/ref/ExternalEvaluate
 
 
+### Contributing
+
+See [**Development.md**](./docs/Development.md) for instructions on how to
+perform common development tasks when contributing to this project.
