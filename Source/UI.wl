@@ -6,6 +6,9 @@ GU`SetUsage[ChatInputCellEvaluationFunction, "
 ChatInputCellEvaluationFunction[input$, form$] is the CellEvaluationFunction for chat input cells.
 "]
 
+EditChatParametersFunction
+ChatExplainButtonFunction
+
 Begin["`Private`"]
 
 Needs["ConnorGray`Chatbook`"]
@@ -18,6 +21,16 @@ Needs["ConnorGray`Chatbook`Streaming`"]
 Needs["ConnorGray`ServerSentEventUtils`" -> "SSEUtils`"]
 
 
+$ChatSystemOutputTypePrompts = <|
+	Automatic -> "",
+	"Verbose" -> "Make your response detailed and include all relevant information.",
+	"Terse" -> "Make your response tersely worded and compact.",
+	"Data" -> "Include in your response only data and plain facts without explanations or additional text.",
+	"Code" -> "Include in your response only computer code in the Mathematica language.",
+	"Analysis" -> "Analyze the correctness of the following statement or computer code and report any errors and how to fix them."
+|>;
+
+(*====================================*)
 
 SetFallthroughError[ChatInputCellEvaluationFunction]
 
@@ -27,9 +40,10 @@ ChatInputCellEvaluationFunction[
 ] := Module[{
 	chatGroupCells,
 	additionalContextStyles,
+	taggingRules,
+	outputType,
 	tokenLimit,
 	temperature,
-	params,
 	req
 },
 	If[!checkAPIKey[False],
@@ -42,10 +56,11 @@ ChatInputCellEvaluationFunction[
 
 	(*
 		Construct a chat prompt list from the current cell and all the cells
-		that come before the current cell inside the innermost cell group.
+		that come before it up to the first chat context delimiting cell.
 	*)
-	chatGroupCells = Append[precedingCellsInGroup[], EvaluationCell[]];
-	chatGroupCells = NotebookRead[chatGroupCells];
+	chatGroupCells = NotebookRead[
+		precedingCellsInChatContext[EvaluationNotebook[], EvaluationCell[]]
+	];
 
 	additionalContextStyles = ConfirmReplace[$ChatContextCellStyles, {
 		value_?AssociationQ :> value,
@@ -58,9 +73,23 @@ ChatInputCellEvaluationFunction[
 		)
 	}];
 
-	req = Map[
+	req = Flatten @ Map[
 		cell |-> promptProcess[cell, additionalContextStyles],
 		chatGroupCells
+	];
+
+	taggingRules = (TaggingRules /. Options[First[chatGroupCells]]);
+
+	(* TODO(polish): Improve the error checking / reporting here to let
+		chat notebook authors know if they've entered an invalid prompt form. *)
+	If[AssociationQ[taggingRules],
+		If[MatchQ[taggingRules["ChatContextPreprompt"], _?ListQ | _?AssociationQ],
+			PrependTo[req, taggingRules["ChatContextPreprompt"]]
+		];
+
+		If[MatchQ[taggingRules["ChatContextPostprompt"], _?ListQ | _?AssociationQ],
+			AppendTo[req, taggingRules["ChatContextPostprompt"]]
+		];
 	];
 
 	If[StringQ[$ChatSystemPre] && $ChatSystemPre =!= "",
@@ -70,6 +99,8 @@ ChatInputCellEvaluationFunction[
 	If[StringQ[$ChatInputPost] && $ChatInputPost =!= "",
 		AppendTo[req, <| "role" -> "user", "content" -> $ChatInputPost |>];
 	];
+
+	req = Flatten[req];
 
 	RaiseAssert[
 		MatchQ[req, {<| "role" -> _?StringQ, "content" -> _?StringQ |> ...}],
@@ -86,11 +117,38 @@ ChatInputCellEvaluationFunction[
 	(* Extract the token limit and temperature from the evaluation cell     *)
 	(*----------------------------------------------------------------------*)
 
-	{tokenLimit, temperature} =
+	{outputType, tokenLimit, temperature} =
 		With[{opts = FullOptions[EvaluationCell[], TaggingRules]},
-			{Lookup[opts, "TokenLimit", "1000"], Lookup[opts, "Temperature", "0.7"]}
+			{
+				Lookup[opts, "OutputType", Automatic],
+				Lookup[opts, "TokenLimit", "1000"],
+				Lookup[opts, "Temperature", "0.7"]
+			}
 		];
 
+	If[outputType =!= Automatic,
+		PrependTo[req, <|
+			"role" -> "system",
+			(* FIXME: Confirm this output type exists. *)
+			"content" -> $ChatSystemOutputTypePrompts[outputType]
+		|>]
+	];
+
+	runAndDecodeAPIRequest[req, tokenLimit, temperature, True];
+]
+
+(*------------------------------------*)
+
+SetFallthroughError[runAndDecodeAPIRequest]
+
+runAndDecodeAPIRequest[
+	req_,
+	tokenLimit_,
+	temperature_,
+	isAsync_?BooleanQ
+] := Module[{
+	response, parsed, content, processed
+},
 	params = <|
 		"TokenLimit" -> ToExpression[tokenLimit],
 		"Temperature" -> ToExpression[temperature]
@@ -103,11 +161,11 @@ ChatInputCellEvaluationFunction[
 	$LastRequestChatMessages = req;
 	$LastRequestParameters = params;
 
-
-	(* doSyncChatRequest[req, params] *)
-
-
-	doAsyncChatRequest[EvaluationNotebook[], req, params]
+	If[isAsync,
+		doAsyncChatRequest[EvaluationNotebook[], req, params]
+		,
+		doSyncChatRequest[req, params]
+	]
 ]
 
 (*====================================*)
@@ -153,6 +211,11 @@ doSyncChatRequest[
 		401 :> (
 			checkAPIKey[True];
 			Return[]
+		),
+		429 :> (
+			(* FIXME: Replace this with better error reporting. *)
+			Print["Too Many Requests"];
+			Return[];
 		)
 	}];
 
@@ -201,10 +264,224 @@ doSyncChatRequest[
 
 	processed = StringJoin[StringTrim[content]];
 
-	deletePreviousOutputs[EvaluationCell[]];
-
-	processResponse[processed];
+	processed
 ]
+
+(*====================================*)
+
+(* Called after normal Input cell evaluation to create an attached report of what it did*)
+
+SetFallthroughError[ChatExplainButtonFunction]
+
+ChatExplainButtonFunction[cellobj_] := Module[{},
+	NotebookDelete[Cells[cellobj, AttachedCell -> True]];
+	AttachCell[
+		cellobj,
+		Cell[
+			BoxData[{
+				GridBox[{{
+					StyleBox[
+						FrameBox[PaneBox[
+							runAndDecodeAPIRequest[
+							{
+								<|"role" -> "system", "content" ->
+"Explain what the following Mathematica language code does.
+If it contains a syntax error explain where the error is and how to fix it.
+If there are no syntax errors do not state that fact."|>,
+								<|
+									"role" -> "user",
+									"content" -> StringJoin[
+										NotebookImport[Notebook[{NotebookRead[cellobj]}], _ -> "InputText"]
+									]
+								|>
+							}, 500, 0.7, False]
+						],
+							FrameStyle -> Darker[Green]
+						],
+						Background -> Lighter[Green]
+					],
+					ButtonBox[
+						FrameBox["x"],
+						Evaluator -> Automatic,
+						ButtonFunction :> NotebookDelete[EvaluationCell[]]
+					]
+				}}]
+			}],
+			"Text",
+			FontWeight -> Plain, FontFamily -> "Ariel", TextAlignment -> Left
+		]
+  		,
+		"Inline"
+	];
+]
+
+(*====================================*)
+
+SetFallthroughError[OnePromptTableEditor]
+
+OnePromptTableEditor[
+	cellobj_,
+	tag_,
+   Dynamic[tableContents_]
+] :=
+	GridBox[{{
+		DynamicBox[GridBox[
+			Join[
+				{{
+					"Role",
+					"Content",
+					ButtonBox[
+						FrameBox["+"],
+						Evaluator -> Automatic,
+						Appearance -> None,
+						ButtonFunction :> (
+							AppendTo[tableContents, {"user", ""}]
+						)
+					]
+				}},
+				MapIndexed[
+					{
+						InputFieldBox[Dynamic[tableContents[[#2[[1]], 1]]]],
+						InputFieldBox[Dynamic[tableContents[[#2[[1]], 2]]]],
+						ButtonBox[
+							"x",
+							Evaluator -> Automatic,
+							ButtonFunction :> (
+								tableContents = Delete[tableContents, {#2[[1]]}]
+							)
+						]
+					} &,
+					tableContents
+				]
+			],
+			GridBoxFrame -> {
+				"Columns" -> {{True}},
+				"Rows" -> {{True}}
+			}
+		]]
+	}}];
+
+(*====================================*)
+
+SetFallthroughError[EditChatParametersFunction]
+
+EditChatParametersFunction[cellobj_] := Module[{
+	cell
+},
+	NotebookDelete[Cells[cellobj, AttachedCell -> True]];
+
+	cell = Cell[
+		BoxData @ DynamicModuleBox[{
+			$CellContext`tableContentsPreprompt$$ =
+				If[ListQ[CurrentValue[cellobj, {TaggingRules, "ChatContextPreprompt"}]],
+					Map[
+						{#["role"], #["content"]} &,
+						CurrentValue[cellobj, {TaggingRules, "ChatContextPreprompt"}]
+					]
+					,
+					{{"system", ""}}
+				],
+			$CellContext`tableContentsPostprompt$$ =
+				If[ListQ[CurrentValue[cellobj, {TaggingRules, "ChatContextPostprompt"}]],
+					Map[
+						{#["role"], #["content"]} &,
+						CurrentValue[cellobj, {TaggingRules, "ChatContextPostprompt"}]
+					]
+					,
+					{{"system", ""}}
+				],
+			$CellContext`tableContentsActAsDelimiter$$ =
+				TrueQ[CurrentValue[cellobj, {TaggingRules, "ChatContextDelimiter"}]]
+		},
+			Evaluate @ StyleBox[
+				FrameBox @ GridBox[
+					{
+						{StyleBox["ChatContextPreprompt", Bold]},
+						{
+							OnePromptTableEditor[
+								cellobj,
+								"ChatContextPreprompt",
+								Dynamic[$CellContext`tableContentsPreprompt$$]
+							]
+						},
+						{""},
+						{StyleBox["ChatContextPostprompt", Bold]},
+						{
+							OnePromptTableEditor[
+								cellobj,
+								"ChatContextPostprompt",
+								Dynamic[$CellContext`tableContentsPostprompt$$]
+							]
+						},
+						{""},
+						{
+							RowBox[{
+								CheckboxBox[Dynamic[$CellContext`tableContentsActAsDelimiter$$]],
+								" Act as chat context delimiter"
+							}]
+						},
+						{""},
+						{
+							ItemBox[
+								RowBox[{
+									ButtonBox[
+										FrameBox["Apply"],
+										Evaluator -> Automatic,
+										Appearance -> None,
+										ButtonFunction :> (
+											CurrentValue[
+												cellobj,
+												{"TaggingRules", "ChatContextPreprompt"}
+											] = Map[
+												<|"role" -> #[[1]], "content" -> #[[2]]|> &,
+												$CellContext`tableContentsPreprompt$$
+											];
+
+											CurrentValue[
+												cellobj,
+												{"TaggingRules", "ChatContextPostprompt"}
+											] = Map[
+												<|"role" -> #[[1]], "content" -> #[[2]]|> &,
+												$CellContext`tableContentsPostprompt$$
+											];
+
+											CurrentValue[
+												cellobj,
+												{TaggingRules, "ChatContextDelimiter"}
+											] = $CellContext`tableContentsActAsDelimiter$$;
+
+											NotebookDelete[Cells[cellobj, AttachedCell -> True]];
+										)
+									],
+									ButtonBox[
+										FrameBox["Cancel"],
+										Evaluator -> Automatic,
+										Appearance -> None,
+										ButtonFunction :> (
+											NotebookDelete[Cells[cellobj, AttachedCell -> True]]
+										)
+									]
+								}],
+								Alignment -> Center
+							]
+						}
+					},
+					GridBoxAlignment -> {
+						"Columns" -> {{Left}}
+					}
+				],
+				Background -> RGBColor[0.333, 1, 0.333]
+			]
+		],
+		"Text",
+		FontWeight -> Plain,
+		FontFamily -> "Ariel",
+		TextAlignment -> Left
+	];
+
+	AttachCell[cellobj, cell, "Inline"];
+];
+
 
 (*====================================*)
 
@@ -438,6 +715,7 @@ writeContent[$state_Symbol, content_?StringQ] := Module[{},
 
 (*------------------------------------*)
 
+
 (*====================================*)
 
 SetFallthroughError[checkAPIKey]
@@ -556,6 +834,7 @@ checkAPIKey[provenBad_] := Module[{
 (* Cell Processing                                        *)
 (*========================================================*)
 
+(* TODO: This function is unused? *)
 precedingCellsInGroup[] := Module[{
 	cell = EvaluationCell[],
 	nb = EvaluationNotebook[],
@@ -582,7 +861,72 @@ precedingCellsInGroup[] := Module[{
 
 	(* This does not include `cell` itself. *)
 	cells
-]
+];
+
+(*====================================*)
+
+SetFallthroughError[cellIsChatDelimiter]
+
+cellIsChatDelimiter[cellobj_CellObject] :=
+	TrueQ[FullOptions[cellobj, TaggingRules]["ChatContextDelimiter"]];
+
+(*------------------------------------*)
+
+SetFallthroughError[precedingCellsInChatContext]
+
+precedingCellsInChatContext[
+	nb_NotebookObject,
+	evaluationCell_CellObject
+] := Module[{
+	allCells,
+	currentCellPos,
+	dividerCellPos,
+	cellsInContext
+},
+	allCells = Cells[nb];
+	currentCellPos = Flatten[Position[allCells, evaluationCell]];
+
+	If[Length[currentCellPos] === 0,
+		(* FIXME: Better error reporting. *)
+		Print["Evaluation cell not found in Notebook."];
+		Return[{}]
+	];
+
+	dividerCellPos = Flatten[
+		Map[
+			Position[allCells, #] &,
+			Cells[nb, CellStyle -> "ChatContextDivider"]
+		]
+	];
+
+	currentCellPos = First[currentCellPos];
+	cellsInContext = If[(Length[dividerCellPos] === 0) || (First[dividerCellPos] >= currentCellPos),
+		Take[allCells, currentCellPos]
+		,
+		Take[
+			allCells,
+			{
+				Max[Select[dividerCellPos, (# < currentCellPos) &]],
+				currentCellPos
+			}
+		]
+	];
+
+	cellsInContext = Reverse[cellsInContext];
+	cellsInContext = Reverse[
+		Take[
+			cellsInContext,
+			Min[
+				Length[cellsInContext],
+				1 + LengthWhile[cellsInContext, (! cellIsChatDelimiter[#]) &]
+			]
+		]
+	];
+
+	ConnorGray`Chatbook`Debug`$LastContextGroupCells = cellsInContext;
+
+	cellsInContext
+];
 
 (*====================================*)
 
@@ -591,64 +935,85 @@ SetFallthroughError[promptProcess]
 promptProcess[
 	cell0_,
 	additionalContextStyles_?AssociationQ
-] := ConfirmReplace[cell0, {
-	Cell[CellGroupData[___], ___] :> Nothing,
+] := Module[{
+	result,
+	taggingRules,
+	promptTag
+},
+	result = ConfirmReplace[cell0, {
+		Cell[CellGroupData[___], ___] :> Nothing,
 
-	Cell[expr_, "ChatUserInput" |
-				(*Deprecated names*) "ChatGPTInput" | "ChatGPTUserInput", ___]
-		:> <| "role" -> "user", "content" -> promptCellDataToString[expr] |>,
+		Cell[expr_, "ChatUserInput" |
+					(*Deprecated names*) "ChatGPTInput" | "ChatGPTUserInput", ___]
+			:> <| "role" -> "user", "content" -> promptCellDataToString[expr] |>,
 
-	Cell[expr_, "ChatAssistantOutput" | "ChatAssistantText" | "ChatAssistantProgram" | "ChatAssistantExternalLanguage", ___]
-		:> <| "role" -> "assistant", "content" -> promptCellDataToString[expr] |>,
+		Cell[expr_, "ChatAssistantOutput" | "ChatAssistantText" | "ChatAssistantProgram" | "ChatAssistantExternalLanguage", ___]
+			:> <| "role" -> "assistant", "content" -> promptCellDataToString[expr] |>,
 
-	Cell[expr_, "ChatSystemInput" | (*Deprecated names*) "ChatGPTSystemInput", ___]
-		:> <| "role" -> "system", "content" -> promptCellDataToString[expr] |>,
+		Cell[expr_, "ChatSystemInput" | (*Deprecated names*) "ChatGPTSystemInput", ___]
+			:> <| "role" -> "system", "content" -> promptCellDataToString[expr] |>,
 
-	(*
-		If a Cell isn't one of the built-in recognized styles, check to see if
-		there are any additional styles that have been specified to include.
-	*)
-	Cell[expr_, styles0___?StringQ, ___?OptionQ] :> Module[{
-		styles = {styles0}
-	},
-		(* Only consider styles that are in `includedStyles` *)
-		styles = Intersection[styles, Keys[additionalContextStyles]];
+		(*
+			If a Cell isn't one of the built-in recognized styles, check to see if
+			there are any additional styles that have been specified to include.
+		*)
+		Cell[expr_, styles0___?StringQ, ___?OptionQ] :> Module[{
+			styles = {styles0}
+		},
+			(* Only consider styles that are in `includedStyles` *)
+			styles = Intersection[styles, Keys[additionalContextStyles]];
 
-		ConfirmReplace[styles, {
-			{} :> Nothing,
-			{first_, rest___} :> Module[{role},
-				(* FIXME: Issue a warning if rest contains cell styles that map
-				    to conflicting roles. *)
-				(* If[Length[{rest}] > 0,
-					ChatWarning
-				]; *)
+			ConfirmReplace[styles, {
+				{} :> Nothing,
+				{first_, rest___} :> Module[{role},
+					(* FIXME: Issue a warning if rest contains cell styles that map
+						to conflicting roles. *)
+					(* If[Length[{rest}] > 0,
+						ChatWarning
+					]; *)
 
-				(* FIXME: Better error if this confirm fails. *)
-				role = RaiseConfirmMatch[
-					Lookup[additionalContextStyles, first],
-					_?StringQ
-				];
+					(* FIXME: Better error if this confirm fails. *)
+					role = RaiseConfirmMatch[
+						Lookup[additionalContextStyles, first],
+						_?StringQ
+					];
 
-				<| "role" -> role, "content" -> promptCellDataToString[expr] |>
-			]
-		}]
-	],
+					<| "role" -> role, "content" -> promptCellDataToString[expr] |>
+				]
+			}]
+		],
 
-	(*-----------------------------------------------*)
-	(* Ignore cells of any other unrecognized style. *)
-	(*-----------------------------------------------*)
+		(*-----------------------------------------------*)
+		(* Ignore cells of any other unrecognized style. *)
+		(*-----------------------------------------------*)
 
-	(* Ignore unrecognized cell types. *)
-	(* TODO: Should try to treat every cell type as input to the chat?
-		It is currently unintuitive that there isn't any obvious way to know
-		whether a cell in a cell group will be sent to the AI or not.
+		(* Ignore unrecognized cell types. *)
+		(* TODO: Should try to treat every cell type as input to the chat?
+			It is currently unintuitive that there isn't any obvious way to know
+			whether a cell in a cell group will be sent to the AI or not.
 
-		In addition to being unintuitive, this also makes it difficult for a
-		user to reason about what cells are "private" and not sent over the
-		internet to the AI.
-	*)
-	other_ :> Nothing
-}]
+			In addition to being unintuitive, this also makes it difficult for a
+			user to reason about what cells are "private" and not sent over the
+			internet to the AI.
+		*)
+		other_ :> Nothing
+	}];
+
+	result = {result};
+
+	taggingRules = (TaggingRules /. Options[cell0]);
+
+	If[AssociationQ[taggingRules],
+		If[AssociationQ[taggingRules["CellPreprompt"]] || ListQ[taggingRules["CellPreprompt"]],
+			PrependTo[result, taggingRules["CellPreprompt"]]
+		];
+		If[AssociationQ[taggingRules["CellPostprompt"]] || ListQ[taggingRules["CellPostprompt"]],
+			AppendTo[result, taggingRules["CellPostprompt"]]
+		];
+	];
+
+	result
+]
 
 (*------------------------------------*)
 
@@ -736,6 +1101,8 @@ moveAfterPreviousOutputs[cellobj_CellObject] :=
 (*========================================================*)
 (* ChatGPT Response Processing                            *)
 (*========================================================*)
+
+SetFallthroughError[processResponse];
 
 processResponse[response_?StringQ] := Module[{
 	parsed = parseResponse[response]
