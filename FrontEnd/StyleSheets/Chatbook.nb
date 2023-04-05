@@ -1,6 +1,14 @@
 Notebook[{
 	Cell[StyleData[StyleDefinitions -> "Default.nb"]],
 
+	(*==================================*)
+	(* Modifications to built-in styles *)
+	(*==================================*)
+
+	(*------------------------------------*)
+	(* Built-in cells with Explain button *)
+	(*------------------------------------*)
+
 	Cell[
 		StyleData["Input"],
 		StyleKeyMapping -> {
@@ -8,8 +16,202 @@ Notebook[{
 			"=" -> "WolframAlphaShort",
 			">" -> "ExternalLanguageDefault",
 			"*" -> "Item"
+		},
+		CellFrameLabels -> {
+			{
+				None,
+				Cell[
+					BoxData[
+						ButtonBox[
+							StyleBox["Explain", FontSize -> 10],
+							ButtonFunction :> (
+								(* FIXME: Load package. *)
+								ConnorGray`Chatbook`UI`ChatExplainButtonFunction[ParentCell[EvaluationCell[]]]
+							),
+							Evaluator -> Automatic
+						]
+					],
+					Background -> GrayLevel[1],
+					FontSize -> 10,
+					FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
+					TextAlignment -> Left,
+					CellMargins -> 0,
+					CellSize -> {All, 20}
+				]
+			},
+			{None, None}
 		}
 	],
+
+	Cell[
+		StyleData["Output"],
+		CellFrameLabels -> {
+			{
+				None,
+				Cell[
+					BoxData[
+						ButtonBox[StyleBox["Explain", FontSize -> 10],
+							ButtonFunction :> (
+								(* FIXME: Load package. *)
+								ConnorGray`Chatbook`UI`ChatExplainButtonFunction[ParentCell[EvaluationCell[]]]
+							),
+							Evaluator -> Automatic
+						]
+					],
+					Background -> GrayLevel[1],
+					FontSize -> 10,
+					FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
+					TextAlignment -> Left, CellMargins -> 0, CellSize -> {All, 20}
+				]
+			},
+			{None, None}
+		}
+	],
+
+	Cell[
+		StyleData["Print"],
+		CellFrameLabels -> {
+			{
+				None,
+				Cell[
+					BoxData[
+						ButtonBox[
+							StyleBox["Explain", FontSize -> 10],
+							ButtonFunction :> (
+								(* FIXME: Load package. *)
+								ConnorGray`Chatbook`UI`ChatExplainButtonFunction[ParentCell[EvaluationCell[]]]
+							),
+							Evaluator -> Automatic
+						]
+					],
+					Background -> GrayLevel[1],
+					FontSize -> 10,
+					FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
+					TextAlignment -> Left,
+					CellMargins -> 0,
+					CellSize -> {All, 20}
+				]
+			},
+			{None, None}
+		}
+	],
+
+	Cell[
+		StyleData["Message"],
+		CellFrameLabels -> {
+			{
+				None,
+				Cell[
+					BoxData[
+						ButtonBox[
+							StyleBox["Explain", FontSize -> 10],
+							ButtonFunction :> (
+								(* FIXME: Load package. *)
+								ConnorGray`Chatbook`UI`ChatExplainButtonFunction[ParentCell[EvaluationCell[]]]
+							),
+							Evaluator -> Automatic
+						]
+					],
+					Background -> GrayLevel[1],
+					FontSize -> 10,
+					FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
+					TextAlignment -> Left,
+					CellMargins -> 0,
+					CellSize -> {All, 20}
+				]
+			},
+			{None, None}
+		}
+	],
+
+	(*----------------------------------------*)
+	(* Built-in cells with divider parameters *)
+	(*----------------------------------------*)
+
+	Cell[
+		StyleData["Section"],
+		CellFrameLabels -> {
+			{
+				None,
+				Cell[
+					BoxData[
+						ButtonBox[
+							StyleBox["Params", FontSize -> 10],
+							ButtonFunction :> (
+								ConnorGray`Chatbook`UI`EditChatParametersFunction[ParentCell[EvaluationCell[]]]
+							),
+							Evaluator -> Automatic
+						]
+					],
+					Background -> GrayLevel[1],
+					FontSize -> 10,
+					FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
+					TextAlignment -> Left,
+					CellMargins -> 0,
+					CellSize -> {All, 20}
+				]
+			},
+			{None, None}
+		}
+	],
+
+	Cell[
+		StyleData["Subsection"],
+		CellFrameLabels -> {
+			{
+				None,
+				Cell[
+					BoxData[
+						ButtonBox[
+							StyleBox["Params", FontSize -> 10],
+							Evaluator -> Automatic,
+							ButtonFunction :> (
+								ConnorGray`Chatbook`UI`EditChatParametersFunction[ParentCell[EvaluationCell[]]]
+							)
+						]
+					],
+					Background -> GrayLevel[1],
+					FontSize -> 10,
+					FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
+					TextAlignment -> Left,
+					CellMargins -> 0,
+					CellSize -> {All, 20}
+				]
+			},
+			{None, None}
+		}
+	],
+
+	Cell[
+		StyleData["Subsubsection"],
+		CellFrameLabels -> {
+			{
+				None,
+				Cell[
+					BoxData[
+						ButtonBox[
+							StyleBox["Params", FontSize -> 10],
+							Evaluator -> Automatic,
+							ButtonFunction :> (
+								ConnorGray`Chatbook`UI`EditChatParametersFunction[ParentCell[EvaluationCell[]]]
+							)
+						]
+					],
+					Background -> GrayLevel[1],
+					FontSize -> 10,
+					FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
+					TextAlignment -> Left,
+					CellMargins -> 0,
+					CellSize -> {All, 20}
+				]
+			},
+			{None, None}
+		}
+	],
+
+	(*================================*)
+	(* Chat Assistant Output Styles   *)
+	(*================================*)
 
 	Cell[
 		StyleData["ChatAssistantOutput", StyleDefinitions -> StyleData["Input"]],
@@ -84,7 +286,8 @@ Notebook[{
 			StyleDefinitions -> StyleData["ChatInputBase"]
 		],
 		StyleKeyMapping -> {
-			"Backspace" -> "ChatUserInput"
+			"Backspace" -> "ChatUserInput",
+			"/" -> "ChatContextDivider"
 		},
 		BackgroundAppearance -> FrontEnd`FileName[{"WolframAlphaClient"}, "NLInputQuery.9.png"],
 		CellDingbat -> PaneBox[
@@ -102,6 +305,54 @@ Notebook[{
 				FontFamily -> Dynamic[CurrentValue[{StyleHints, "CodeFont"}]]
 			}
 		]
+	],
+
+	Cell[
+		StyleData[
+			"ChatContextDivider",
+			StyleDefinitions -> StyleData["Text"]
+		],
+		StyleKeyMapping -> {
+			"Backspace" -> "ChatSystemInput"
+		},
+		CellFrameLabels -> {
+			{
+				None,
+				Cell[
+					BoxData[
+						ButtonBox[
+							StyleBox["Params", FontSize -> 10],
+							Evaluator -> Automatic
+							ButtonFunction :> (
+								(* FIXME: Load package. *)
+								ConnorGray`Chatbook`UI`EditChatParametersFunction[ParentCell[EvaluationCell[]]]
+							),
+						]
+					],
+					Background -> GrayLevel[1],
+					FontSize -> 10,
+					FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
+					TextAlignment -> Left,
+					CellMargins -> 0,
+					CellSize -> {All, 20}
+				]
+			},
+			{
+				None,
+				StyleBox[
+					"Restart Chat Context",
+					FontSize -> 20,
+					FontFamily -> "Ariel",
+					FontColor -> RGBColor[0.96669, 0.406104, 0.0365759]
+				]
+			}
+		},
+		Deployed -> True,
+		CellSize -> {Automatic,0},
+		Selectable -> False,
+		Editable -> False,
+		CellFrame -> {{0, 0}, {0, 6}},
+		CellFrameStyle -> RGBColor[0.96669, 0.406104, 0.0365759]
 	],
 
 	(* Deprecated cell styles. ChatGPTInput was replaced with ChatGPTUserInput and then with ChatUserInput. *)
@@ -156,7 +407,25 @@ Notebook[{
 				None,
 				Cell[
 					BoxData[RowBox[{
-						"Token Limit: ",
+						"Output Type: ",
+						PopupMenuBox[
+							Dynamic[
+								ReplaceAll[
+									FullOptions[ParentCell[EvaluationCell[]], TaggingRules]["OutputType"],
+									{_Missing -> Automatic}
+								],
+								(
+									CurrentValue[
+										ParentCell[EvaluationCell[]],
+										{TaggingRules, "OutputType"}
+									] = #1;
+								) &
+							],
+							{Automatic, "Verbose", "Terse", "Data", "Code", "Analysis"},
+							Appearance -> None,
+							BaseStyle -> {FontSize -> 10}
+						],
+						" Token Limit: ",
 						PopupMenuBox[
 							Dynamic[
 								ReplaceAll[
@@ -174,7 +443,7 @@ Notebook[{
 							Appearance -> None,
 							BaseStyle -> {FontSize -> 10}
 						],
-						"Temperature: ",
+						" Temperature: ",
 						PopupMenuBox[
 							Dynamic[
 								ReplaceAll[
