@@ -8,6 +8,9 @@ ChatInputCellEvaluationFunction[input$, form$] is the CellEvaluationFunction for
 
 EditChatParametersFunction
 ChatExplainButtonFunction
+GetChatEnvironmentValues
+GetAllCellsInChatContext
+ChatContextEpilogFunction
 
 Begin["`Private`"]
 
@@ -29,6 +32,22 @@ $ChatSystemOutputTypePrompts = <|
 	"Code" -> "Include in your response only computer code in the Mathematica language.",
 	"Analysis" -> "Analyze the correctness of the following statement or computer code and report any errors and how to fix them."
 |>;
+
+
+
+GetChatEnvironmentValues[evaluationCell_, chatContextCells_] := With[{
+			evCellTaggingRules = FullOptions[evaluationCell, TaggingRules], 
+			chatContextTaggingRules = FullOptions[First[chatContextCells], TaggingRules]},
+	<|
+		"Model" -> Lookup[evCellTaggingRules, "Model", Automatic], 
+		"OutputType" -> Lookup[evCellTaggingRules, "OutputType", Automatic],
+		"TokenLimit" -> Lookup[evCellTaggingRules, "TokenLimit", "1000"],
+		"Temperature" -> Lookup[evCellTaggingRules, "Temperature", "0.7"],
+		"ChatContextPreprompt" -> Lookup[chatContextTaggingRules, "ChatContextPreprompt", Null],
+		"ChatContextPostprompt" -> Lookup[chatContextTaggingRules, "ChatContextPostprompt", Null]
+	|>
+]
+
 
 (*====================================*)
 
@@ -59,7 +78,7 @@ ChatInputCellEvaluationFunction[
 		that come before it up to the first chat context delimiting cell.
 	*)
 	chatGroupCells = NotebookRead[
-		precedingCellsInChatContext[EvaluationNotebook[], EvaluationCell[]]
+		GetAllCellsInChatContext[EvaluationNotebook[], EvaluationCell[]]
 	];
 
 	additionalContextStyles = ConfirmReplace[$ChatContextCellStyles, {
@@ -135,6 +154,19 @@ ChatInputCellEvaluationFunction[
 	];
 
 	runAndDecodeAPIRequest[req, tokenLimit, temperature, True];
+]
+
+
+Attributes[ChatContextEpilogFunction] = {HoldFirst};
+ChatContextEpilogFunction[func_] := Module[{evaluationCell, params},
+	evaluationCell = EvaluationCell[];	
+	params = GetChatEnvironmentValues[evaluationCell, GetAllCellsInChatContext[EvaluationNotebook[], evaluationCell]];
+	
+	params["Contents"] = NotebookRead[evaluationCell = EvaluationCell[]];
+	params["ContentsString"] = First[NotebookImport[Notebook[{NotebookRead[evaluationCell = EvaluationCell[]]}], _ -> "InputText"]];
+	params["EvaluationCell"] = evaluationCell;
+	
+	func[params];
 ]
 
 (*------------------------------------*)
@@ -400,7 +432,7 @@ EditChatParametersFunction[cellobj_] := Module[{
 			
 			$CellContext`tableContentsChatContextCellProcessingFunctionKeys$$ =
 				(CurrentValue[cellobj, {TaggingRules, "ChatContextCellProcessingFunctionKeys"}] /. Inherited -> 
-				{"Contents", "ContentsString", "EvaluationCell", "Model", "TokenLimit", "Temperature", "ChatContextPreprompt", "ChatContextPostprompt"}),
+				{"Contents", "ContentsString", "EvaluationCell", "Model", "OutputType", "TokenLimit", "Temperature", "ChatContextPreprompt", "ChatContextPostprompt"}),
 			
 			$CellContext`tableContentsChatContextPostEvaluationFunction$$ =
 				(CurrentValue[cellobj, {TaggingRules, "ChatContextPostEvaluationFunction"}] /. Inherited -> Identity)
@@ -479,12 +511,12 @@ EditChatParametersFunction[cellobj_] := Module[{
 
 											CurrentValue[
 												cellobj,
-												{TaggingRules,"ChatContextCellProcessingFunction"}
+												{TaggingRules, "ChatContextCellProcessingFunction"}
 											] = $CellContext`tableContentsChatContextCellProcessingFunction$$;
 											
 											CurrentValue[
 												cellobj,
-												{TaggingRules,"ChatContextCellProcessingFunctionKeys"}
+												{TaggingRules, "ChatContextCellProcessingFunctionKeys"}
 											] = $CellContext`tableContentsChatContextCellProcessingFunctionKeys$$;
 											
 											(* ChatContextPostEvaluationFunction is set twice: once in tagging rules, and then in 
@@ -492,14 +524,17 @@ EditChatParametersFunction[cellobj_] := Module[{
 											this cell is the head of. *)
 											CurrentValue[
 												cellobj,
-												{TaggingRules,"ChatContextPostEvaluationFunction"}
+												{TaggingRules, "ChatContextPostEvaluationFunction"}
 											] = $CellContext`tableContentsChatContextPostEvaluationFunction$$;
+											
 											$CellContext`tableContentsChatContextPostEvaluationFunction$$ /. Hold[e_] :> 
-													SetOptions[
-														cellobj, 
-														PrivateCellOptions->{"CellGroupBaseStyle"->{CellEpilog:>e}}
-													];
-
+												SetOptions[
+													cellobj, 
+													PrivateCellOptions->{"CellGroupBaseStyle" -> {
+														CellEpilog :> ConnorGray`Chatbook`UI`ChatContextEpilogFunction[e]}
+													}
+												];
+											
 											NotebookDelete[Cells[cellobj, AttachedCell -> True]];
 										)
 									],
@@ -922,9 +957,9 @@ cellIsChatDelimiter[cellobj_CellObject] :=
 
 (*------------------------------------*)
 
-SetFallthroughError[precedingCellsInChatContext]
+SetFallthroughError[GetAllCellsInChatContext]
 
-precedingCellsInChatContext[
+GetAllCellsInChatContext[
 	nb_NotebookObject,
 	evaluationCell_CellObject
 ] := Module[{
