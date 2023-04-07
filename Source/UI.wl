@@ -20,6 +20,7 @@ Needs["ConnorGray`Chatbook`Errors`"]
 Needs["ConnorGray`Chatbook`Debug`"]
 Needs["ConnorGray`Chatbook`Utils`"]
 Needs["ConnorGray`Chatbook`Streaming`"]
+Needs["ConnorGray`Chatbook`Serialization`"]
 
 Needs["ConnorGray`ServerSentEventUtils`" -> "SSEUtils`"]
 
@@ -97,7 +98,7 @@ ChatInputCellEvaluationFunction[
 		chatGroupCells
 	];
 
-	taggingRules = (TaggingRules /. Options[First[chatGroupCells]]);
+	taggingRules = Association @ CurrentValue[First[chatGroupCells], TaggingRules];
 
 	(* TODO(polish): Improve the error checking / reporting here to let
 		chat notebook authors know if they've entered an invalid prompt form. *)
@@ -1028,21 +1029,21 @@ promptProcess[
 	result = ConfirmReplace[cell0, {
 		Cell[CellGroupData[___], ___] :> Nothing,
 
-		Cell[expr_, "ChatUserInput" |
+		cell: Cell[__, "ChatUserInput" |
 					(*Deprecated names*) "ChatGPTInput" | "ChatGPTUserInput", ___]
-			:> <| "role" -> "user", "content" -> promptCellDataToString[expr] |>,
+			:> <| "role" -> "user", "content" -> CellToString @ cell |>,
 
-		Cell[expr_, "ChatAssistantOutput" | "ChatAssistantText" | "ChatAssistantProgram" | "ChatAssistantExternalLanguage", ___]
-			:> <| "role" -> "assistant", "content" -> promptCellDataToString[expr] |>,
+		cell: Cell[__, "ChatAssistantOutput" | "ChatAssistantText" | "ChatAssistantProgram" | "ChatAssistantExternalLanguage", ___]
+			:> <| "role" -> "assistant", "content" -> CellToString @ cell |>,
 
-		Cell[expr_, "ChatSystemInput" | (*Deprecated names*) "ChatGPTSystemInput", ___]
-			:> <| "role" -> "system", "content" -> promptCellDataToString[expr] |>,
+		cell: Cell[__, "ChatSystemInput" | (*Deprecated names*) "ChatGPTSystemInput", ___]
+			:> <| "role" -> "system", "content" -> CellToString @ cell |>,
 
 		(*
 			If a Cell isn't one of the built-in recognized styles, check to see if
 			there are any additional styles that have been specified to include.
 		*)
-		Cell[expr_, styles0___?StringQ, ___?OptionQ] :> Module[{
+		cell: Cell[expr_, styles0___?StringQ, ___?OptionQ] :> Module[{
 			styles = {styles0}
 		},
 			(* Only consider styles that are in `includedStyles` *)
@@ -1063,7 +1064,7 @@ promptProcess[
 						_?StringQ
 					];
 
-					<| "role" -> role, "content" -> promptCellDataToString[expr] |>
+					<| "role" -> role, "content" -> CellToString @ cell |>
 				]
 			}]
 		],
