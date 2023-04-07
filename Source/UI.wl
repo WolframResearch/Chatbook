@@ -361,6 +361,7 @@ OnePromptTableEditor[
 		]]
 	}}];
 
+
 (*====================================*)
 
 SetFallthroughError[EditChatParametersFunction]
@@ -390,12 +391,30 @@ EditChatParametersFunction[cellobj_] := Module[{
 					,
 					{{"system", ""}}
 				],
+			
 			$CellContext`tableContentsActAsDelimiter$$ =
-				TrueQ[CurrentValue[cellobj, {TaggingRules, "ChatContextDelimiter"}]]
+				TrueQ[CurrentValue[cellobj, {TaggingRules, "ChatContextDelimiter"}]],
+				
+			$CellContext`tableContentsChatContextCellProcessingFunction$$ =
+				(CurrentValue[cellobj, {TaggingRules, "ChatContextCellProcessingFunction"}] /. Inherited -> Identity),
+			
+			$CellContext`tableContentsChatContextCellProcessingFunctionKeys$$ =
+				(CurrentValue[cellobj, {TaggingRules, "ChatContextCellProcessingFunctionKeys"}] /. Inherited -> 
+				{"Contents", "ContentsString", "EvaluationCell", "Model", "TokenLimit", "Temperature", "ChatContextPreprompt", "ChatContextPostprompt"}),
+			
+			$CellContext`tableContentsChatContextPostEvaluationFunction$$ =
+				(CurrentValue[cellobj, {TaggingRules, "ChatContextPostEvaluationFunction"}] /. Inherited -> Identity)
 		},
 			Evaluate @ StyleBox[
 				FrameBox @ GridBox[
 					{
+						{
+							RowBox[{
+								CheckboxBox[Dynamic[$CellContext`tableContentsActAsDelimiter$$]],
+								" Act as chat context delimiter"
+							}]
+						},
+						{""},
 						{StyleBox["ChatContextPreprompt", Bold]},
 						{
 							OnePromptTableEditor[
@@ -414,11 +433,19 @@ EditChatParametersFunction[cellobj_] := Module[{
 							]
 						},
 						{""},
+						{StyleBox["ChatContextCellProcessingFunction", Bold]},
 						{
-							RowBox[{
-								CheckboxBox[Dynamic[$CellContext`tableContentsActAsDelimiter$$]],
-								" Act as chat context delimiter"
-							}]
+							InputFieldBox[Dynamic[$CellContext`tableContentsChatContextCellProcessingFunction$$]]
+						},
+						{""},
+						{StyleBox["ChatContextCellProcessingFunctionKeys", Bold]},
+						{
+							InputFieldBox[Dynamic[$CellContext`tableContentsChatContextCellProcessingFunctionKeys$$]]
+						},
+						{""},
+						{StyleBox["ChatContextPostEvaluationFunction", Bold]},
+						{
+							InputFieldBox[Dynamic[$CellContext`tableContentsChatContextPostEvaluationFunction$$], Hold[Expression]]
 						},
 						{""},
 						{
@@ -429,6 +456,11 @@ EditChatParametersFunction[cellobj_] := Module[{
 										Evaluator -> Automatic,
 										Appearance -> None,
 										ButtonFunction :> (
+											CurrentValue[
+												cellobj,
+												{TaggingRules, "ChatContextDelimiter"}
+											] = $CellContext`tableContentsActAsDelimiter$$;
+											
 											CurrentValue[
 												cellobj,
 												{"TaggingRules", "ChatContextPreprompt"}
@@ -447,8 +479,26 @@ EditChatParametersFunction[cellobj_] := Module[{
 
 											CurrentValue[
 												cellobj,
-												{TaggingRules, "ChatContextDelimiter"}
-											] = $CellContext`tableContentsActAsDelimiter$$;
+												{TaggingRules,"ChatContextCellProcessingFunction"}
+											] = $CellContext`tableContentsChatContextCellProcessingFunction$$;
+											
+											CurrentValue[
+												cellobj,
+												{TaggingRules,"ChatContextCellProcessingFunctionKeys"}
+											] = $CellContext`tableContentsChatContextCellProcessingFunctionKeys$$;
+											
+											(* ChatContextPostEvaluationFunction is set twice: once in tagging rules, and then in 
+											the option that causes it to be used as the CellEpilog of all cells within the group
+											this cell is the head of. *)
+											CurrentValue[
+												cellobj,
+												{TaggingRules,"ChatContextPostEvaluationFunction"}
+											] = $CellContext`tableContentsChatContextPostEvaluationFunction$$;
+											$CellContext`tableContentsChatContextPostEvaluationFunction$$ /. Hold[e_] :> 
+													SetOptions[
+														cellobj, 
+														PrivateCellOptions->{"CellGroupBaseStyle"->{CellEpilog:>e}}
+													];
 
 											NotebookDelete[Cells[cellobj, AttachedCell -> True]];
 										)
