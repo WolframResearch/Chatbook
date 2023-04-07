@@ -164,7 +164,11 @@ CellToString[ cell_, opts: OptionsPattern[ ] ] :=
             $cellPageWidth         = OptionValue[ "PageWidth" ]
         },
         If[ ! StringQ @ $cellCharacterEncoding, $cellCharacterEncoding = "UTF-8" ];
-        cellToString @ cell
+        Replace[
+            cellToString @ cell,
+            (* TODO: give a failure here *)
+            Except[ _String? StringQ ] :> ""
+        ]
     ];
 
 (* ::**************************************************************************************************************:: *)
