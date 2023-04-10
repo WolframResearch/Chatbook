@@ -23,11 +23,12 @@ ClearAll[ "ConnorGray`Chatbook`Serialization`Private`*" ];
 (* ::Subsection::Closed:: *)
 (*Config*)
 $$delimiterStyle   = "PageBreak"|"ExampleDelimiter";
+$$itemStyle        = "Item"|"Notes";
 $$noCellLabelStyle = "ChatUserInput"|"ChatSystemInput"|"ChatContextDivider"|$$delimiterStyle;
 $$docSearchStyle   = "ChatQuery"; (* TODO: currently unused *)
 
 (* Default character encoding for strings created from cells *)
-$cellCharacterEncoding = "UTF-8";
+$cellCharacterEncoding = "Unicode";
 
 (* Set a max string length for output cells to avoid blowing up token counts *)
 $maxOutputCellStringLength = 500;
@@ -208,11 +209,17 @@ cellToString[ Cell[ a__, $$docSearchStyle, b___ ] ] :=
 cellToString[ Cell[ a___, CellLabel -> label_String, b___ ] ] :=
     With[ { str = cellToString @ Cell[ a, b ] }, label<>" "<>str /; StringQ @ str ];
 
+(* Item styles *)
+cellToString[ Cell[ a___, $$itemStyle, b___ ] ] :=
+    With[ { str = cellToString @ Cell[ a, "Text", b ] },
+        " * "<>str /; StringQ @ str
+    ];
+
 (* Cells showing raw data (ctrl-shift-e) *)
 cellToString[ Cell[ RawData[ str_String ], ___ ] ] := str;
 
 (* Include a stack trace for message cells when available *)
-cellToString[ Cell[ a_, "Message", "MSG", b___ ] ] :=
+cellToString[ Cell[ a__, "Message", "MSG", b___ ] ] :=
     Module[ { string, stacks, stack, stackString },
         { string, stacks } = Reap[ cellToString0 @ Cell[ a, b ], $messageStack ];
         stack = First[ First[ stacks, $Failed ], $Failed ];
@@ -221,7 +228,7 @@ cellToString[ Cell[ a_, "Message", "MSG", b___ ] ] :=
             stackString = StringRiffle[
                 Cases[
                     stack,
-                    HoldForm[ expr_ ] :> ToString[
+                    HoldForm[ expr_ ] :> truncateStackString @ ToString[
                         Unevaluated @ expr,
                         InputForm,
                         CharacterEncoding -> $cellCharacterEncoding
@@ -300,7 +307,7 @@ fasterCellToString0[ "," ] := ", ";
 fasterCellToString0[ FromCharacterCode[ 62371 ] ] := "\n\t";
 
 (* StandardForm strings *)
-fasterCellToString0[ a_String /; StringMatchQ[ a, "\""~~___~~"\!"~~___~~"\"" ] ] :=
+fasterCellToString0[ a_String /; StringMatchQ[ a, "\""~~___~~("\\!"|"\!")~~___~~"\"" ] ] :=
     With[ { res = ToString @ ToExpression[ a, InputForm ] },
         If[ TrueQ @ $showStringCharacters,
             res,
@@ -377,6 +384,10 @@ fasterCellToString0[
 
 (* Entity *)
 fasterCellToString0[ TemplateBox[ { _, box_, ___ }, "Entity" ] ] := fasterCellToString0 @ box;
+fasterCellToString0[ TemplateBox[ { _, box_, ___ }, "EntityProperty" ] ] := fasterCellToString0 @ box;
+
+(* Spacers *)
+fasterCellToString0[ TemplateBox[ _, "Spacer1" ] ] := " ";
 
 (* Other *)
 fasterCellToString0[ TemplateBox[ args_, name_String, ___ ] ] :=
@@ -411,13 +422,13 @@ fasterCellToString0[ (box: $boxOperators)[ a_, b_ ] ] :=
 (* ::Subsubsubsection::Closed:: *)
 (*Other*)
 
-fasterCellToString0[ BoxData[ string_String ] ] :=
-    fasterCellToString0 @ string;
-
 fasterCellToString0[ BoxData[ boxes_List ] ] :=
     With[ { strings = fasterCellToString0 /@ boxes },
         StringRiffle[ strings, "\n" ] /; AllTrue[ strings, StringQ ]
     ];
+
+fasterCellToString0[ BoxData[ boxes_ ] ] :=
+    fasterCellToString0 @ boxes;
 
 fasterCellToString0[ list_List ] :=
     With[ { strings = fasterCellToString0 /@ list },
@@ -452,6 +463,9 @@ fasterCellToString0[ GridBox[ grid_? MatrixQ, ___ ] ] :=
         ) /; AllTrue[ strings, StringQ, 2 ]
     ];
 
+fasterCellToString0[ Cell[ TextData @ { _, _, text_String, _, Cell[ _, "ExampleCount", ___ ] }, ___ ] ] :=
+    fasterCellToString0 @ text;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Missing Definition*)
@@ -467,12 +481,23 @@ $fasterCellToStringFailBag := $fasterCellToStringFailBag = Internal`Bag[ ];
 (*slowCellToString*)
 slowCellToString // SetFallthroughError;
 
-slowCellToString[ cell_ ] :=
-    Module[ { plain, string },
-        plain = Quiet @ UsingFrontEnd @ FrontEndExecute @ FrontEnd`ExportPacket[ cell, "PlainText" ];
+slowCellToString[ cell_Cell ] :=
+    Module[ { format, plain, string },
+
+        format = If[ TrueQ @ $showStringCharacters, "InputText", "PlainText" ];
+        plain  = Quiet @ UsingFrontEnd @ FrontEndExecute @ FrontEnd`ExportPacket[ cell, format ];
         string = Replace[ plain, { { s_String? StringQ, ___ } :> s, ___ :> $Failed } ];
-        StringTrim @ string /; StringQ @ string
+
+        If[ StringQ @ string,
+            Replace[ StringTrim[ string, WhitespaceCharacter ], "" -> Missing[ "NotFound" ] ],
+            $Failed
+        ]
     ];
+
+slowCellToString[ boxes_BoxData ] := slowCellToString @ Cell @ boxes;
+slowCellToString[ text_TextData ] := Block[ { $showStringCharacters = False }, slowCellToString @ Cell @ text ];
+slowCellToString[ text_String   ] := slowCellToString @ TextData @ text;
+slowCellToString[ boxes_        ] := slowCellToString @ BoxData @ boxes;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -481,6 +506,8 @@ slowCellToString[ cell_ ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*stringToBoxes*)
+stringToBoxes // SetFallthroughError;
+
 stringToBoxes[ s_String /; StringMatchQ[ s, "\"" ~~ __ ~~ "\"" ] ] :=
     With[ { str = stringToBoxes @ StringTrim[ s, "\"" ] }, "\""<>str<>"\"" /; StringQ @ str ];
 
@@ -503,7 +530,12 @@ makeGraphicsString[ gfx_ ] := makeGraphicsString[ gfx, makeGraphicsExpression @ 
 
 makeGraphicsString[ gfx_, HoldComplete[ expr: _Graphics|_Graphics3D|_Image|_Image3D|_Graph ] ] :=
     StringReplace[
-        ToString[ Unevaluated @ expr, InputForm, PageWidth -> 100, CharacterEncoding -> "UTF8" ],
+        ToString[
+            Unevaluated @ expr,
+            InputForm,
+            PageWidth         -> $cellPageWidth,
+            CharacterEncoding -> $cellCharacterEncoding
+        ],
         "\r\n" -> "\n"
     ];
 
@@ -530,6 +562,7 @@ makeGraphicsString[ Raster3DBox[ a___ ], _ ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*makeGraphicsExpression*)
+makeGraphicsExpression // SetFallthroughError;
 makeGraphicsExpression[ gfx_ ] := Quiet @ Check[ ToExpression[ gfx, StandardForm, HoldComplete ], $Failed ];
 
 (* ::**************************************************************************************************************:: *)
@@ -550,6 +583,13 @@ sowMessageData[ ___ ] := Null;
    and strings. However, there might be cases in the future where we want to change this behavior, so this is left in
    as a stub definition for now. *)
 showStringCharactersQ[ ___ ] := True;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*truncateStackString*)
+truncateStackString // SetFallthroughError;
+truncateStackString[ str_String ] /; StringLength @ str <= 80 := str;
+truncateStackString[ str_String ] := StringTake[ str, 80 ] <> "...";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
