@@ -349,7 +349,7 @@ OnePromptTableEditor[
 						Evaluator -> Automatic,
 						Appearance -> None,
 						ButtonFunction :> (
-							AppendTo[tableContents, {"user", ""}]
+							AppendTo[tableContents, {"system", ""}]
 						)
 					]
 				}},
@@ -394,7 +394,7 @@ EditChatParametersFunction[cellobj_] := Module[{
 						CurrentValue[cellobj, {TaggingRules, "ChatContextPreprompt"}]
 					]
 					,
-					{{"system", ""}}
+					{}
 				],
 			$CellContext`tableContentsPostprompt$$ =
 				If[ListQ[CurrentValue[cellobj, {TaggingRules, "ChatContextPostprompt"}]],
@@ -403,7 +403,7 @@ EditChatParametersFunction[cellobj_] := Module[{
 						CurrentValue[cellobj, {TaggingRules, "ChatContextPostprompt"}]
 					]
 					,
-					{{"system", ""}}
+					{}
 				],
 			
 			$CellContext`tableContentsActAsDelimiter$$ =
@@ -411,10 +411,6 @@ EditChatParametersFunction[cellobj_] := Module[{
 				
 			$CellContext`tableContentsChatContextCellProcessingFunction$$ =
 				(CurrentValue[cellobj, {TaggingRules, "ChatContextCellProcessingFunction"}] /. Inherited -> Automatic),
-			
-			$CellContext`tableContentsChatContextCellProcessingFunctionKeys$$ =
-				(CurrentValue[cellobj, {TaggingRules, "ChatContextCellProcessingFunctionKeys"}] /. Inherited -> 
-				{"Contents", "ContentsString", "EvaluationCell", "Model", "OutputType", "TokenLimit", "Temperature", "ChatContextPreprompt", "ChatContextPostprompt"}),
 			
 			$CellContext`tableContentsChatContextPostEvaluationFunction$$ =
 				(CurrentValue[cellobj, {TaggingRules, "ChatContextPostEvaluationFunction"}] /. Inherited -> Automatic)
@@ -450,11 +446,6 @@ EditChatParametersFunction[cellobj_] := Module[{
 						{StyleBox["ChatContextCellProcessingFunction", Bold]},
 						{
 							InputFieldBox[Dynamic[$CellContext`tableContentsChatContextCellProcessingFunction$$]]
-						},
-						{""},
-						{StyleBox["ChatContextCellProcessingFunctionKeys", Bold]},
-						{
-							InputFieldBox[Dynamic[$CellContext`tableContentsChatContextCellProcessingFunctionKeys$$]]
 						},
 						{""},
 						{StyleBox["ChatContextPostEvaluationFunction", Bold]},
@@ -495,11 +486,6 @@ EditChatParametersFunction[cellobj_] := Module[{
 												cellobj,
 												{TaggingRules, "ChatContextCellProcessingFunction"}
 											] = $CellContext`tableContentsChatContextCellProcessingFunction$$;
-											
-											CurrentValue[
-												cellobj,
-												{TaggingRules, "ChatContextCellProcessingFunctionKeys"}
-											] = $CellContext`tableContentsChatContextCellProcessingFunctionKeys$$;
 											
 											(* ChatContextPostEvaluationFunction is set twice: once in tagging rules, and then in 
 											the option that causes it to be used as the CellEpilog of all cells within the group
