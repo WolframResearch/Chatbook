@@ -25,7 +25,7 @@ Needs["ConnorGray`Chatbook`Serialization`"]
 Needs["ConnorGray`ServerSentEventUtils`" -> "SSEUtils`"]
 
 
-$ChatSystemOutputTypePrompts = <|
+$ChatOutputTypePrompts = <|
 	Automatic -> "",
 	"Verbose" -> "Make your response detailed and include all relevant information.",
 	"Terse" -> "Make your response tersely worded and compact.",
@@ -34,18 +34,34 @@ $ChatSystemOutputTypePrompts = <|
 	"Analysis" -> "Analyze the correctness of the following statement or computer code and report any errors and how to fix them."
 |>;
 
+$ChatContextCellStyles = <|
+	"ChatUserInput" -> "user",
+	"ChatSystemInput" -> "system",
+	"ChatAssistantOutput" -> "assistant",
+	"ChatAssistantText" -> "assistant",
+	"ChatAssistantProgram" -> "assistant",
+	"ChatAssistantExternalLanguage" -> "assistant"
+|>;
 
-
-GetChatEnvironmentValues[evaluationCell_, chatContextCells_] := With[{
-			evCellTaggingRules = FullOptions[evaluationCell, TaggingRules], 
+GetChatEnvironmentValues[promptCell_, evaluationCell_, chatContextCells_] := With[{
+			promptCellContents = NotebookRead[promptCell],
+			evaluationCellTaggingRules = FullOptions[evaluationCell, TaggingRules], 
 			chatContextTaggingRules = FullOptions[First[chatContextCells], TaggingRules]},
 	<|
-		"Model" -> Lookup[evCellTaggingRules, "Model", Automatic], 
-		"OutputType" -> Lookup[evCellTaggingRules, "OutputType", Automatic],
-		"TokenLimit" -> Lookup[evCellTaggingRules, "TokenLimit", "1000"],
-		"Temperature" -> Lookup[evCellTaggingRules, "Temperature", "0.7"],
+		"Contents" -> promptCellContents,
+		"ContentsString" -> CellToString[promptCellContents],
+		"PromptCell" -> promptCell,
+		"EvaluationCell" -> evaluationCell,
+		"ChatContextCells" -> chatContextCells,
+
+		"Model" -> Lookup[evaluationCellTaggingRules, "Model", Automatic], 
+		"OutputType" -> Lookup[evaluationCellTaggingRules, "OutputType", Automatic],
+		"TokenLimit" -> Lookup[evaluationCellTaggingRules, "TokenLimit", "1000"],
+		"Temperature" -> Lookup[evaluationCellTaggingRules, "Temperature", "0.7"],
 		"ChatContextPreprompt" -> Lookup[chatContextTaggingRules, "ChatContextPreprompt", Null],
-		"ChatContextPostprompt" -> Lookup[chatContextTaggingRules, "ChatContextPostprompt", Null]
+		"ChatContextPostprompt" -> Lookup[chatContextTaggingRules, "ChatContextPostprompt", Null],
+		"ChatContextCellProcessingFunction" -> Lookup[chatContextTaggingRules, "ChatContextCellProcessingFunction", Automatic],
+		"ChatContextPostEvaluationFunction" -> Lookup[chatContextTaggingRules, "ChatContextPostEvaluationFunction", Automatic]
 	|>
 ]
 
@@ -58,12 +74,9 @@ ChatInputCellEvaluationFunction[
 	input_,
 	form_
 ] := Module[{
-	chatGroupCells,
-	additionalContextStyles,
-	taggingRules,
-	outputType,
-	tokenLimit,
-	temperature,
+	evaluationCell,
+	chatContextCells,
+	params,
 	req
 },
 	If[!checkAPIKey[False],
@@ -78,40 +91,24 @@ ChatInputCellEvaluationFunction[
 		Construct a chat prompt list from the current cell and all the cells
 		that come before it up to the first chat context delimiting cell.
 	*)
-	chatGroupCells = NotebookRead[
-		GetAllCellsInChatContext[EvaluationNotebook[], EvaluationCell[]]
-	];
-
-	additionalContextStyles = ConfirmReplace[$ChatContextCellStyles, {
-		value_?AssociationQ :> value,
-		other_ :> (
-			ChatbookWarning[
-				"$ChatContextCellStyles must be an Association. Got: ``",
-				InputForm[other]
-			];
-			<||>
-		)
-	}];
-
+	evaluationCell = EvaluationCell[];
+	chatContextCells = GetAllCellsInChatContext[EvaluationNotebook[], evaluationCell];
+	params = GetChatEnvironmentValues[evaluationCell, evaluationCell, chatContextCells];
+	
 	req = Flatten @ Map[
-		cell |-> promptProcess[cell, additionalContextStyles],
-		chatGroupCells
+		promptCell |-> promptProcess[promptCell, evaluationCell, chatContextCells],
+		chatContextCells
 	];
-
-	taggingRules = Association @ CurrentValue[First[chatGroupCells], TaggingRules];
 
 	(* TODO(polish): Improve the error checking / reporting here to let
 		chat notebook authors know if they've entered an invalid prompt form. *)
-	If[AssociationQ[taggingRules],
-		If[MatchQ[taggingRules["ChatContextPreprompt"], _?ListQ | _?AssociationQ],
-			PrependTo[req, taggingRules["ChatContextPreprompt"]]
-		];
+	
+	If[MatchQ[params["ChatContextPreprompt"], _?ListQ | _?AssociationQ],
+		PrependTo[req, params["ChatContextPreprompt"]]];
 
-		If[MatchQ[taggingRules["ChatContextPostprompt"], _?ListQ | _?AssociationQ],
-			AppendTo[req, taggingRules["ChatContextPostprompt"]]
-		];
-	];
-
+	If[MatchQ[params["ChatContextPostprompt"], _?ListQ | _?AssociationQ],
+		AppendTo[req, params["ChatContextPostprompt"]]];
+	
 	If[StringQ[$ChatSystemPre] && $ChatSystemPre =!= "",
 		PrependTo[req, <| "role" -> "system", "content" -> $ChatSystemPre |>];
 	];
@@ -133,39 +130,23 @@ ChatInputCellEvaluationFunction[
 
 	moveAfterPreviousOutputs[EvaluationCell[]];
 
-	(*----------------------------------------------------------------------*)
-	(* Extract the token limit and temperature from the evaluation cell     *)
-	(*----------------------------------------------------------------------*)
-
-	{outputType, tokenLimit, temperature} =
-		With[{opts = FullOptions[EvaluationCell[], TaggingRules]},
-			{
-				Lookup[opts, "OutputType", Automatic],
-				Lookup[opts, "TokenLimit", "1000"],
-				Lookup[opts, "Temperature", "0.7"]
-			}
-		];
-
-	If[outputType =!= Automatic,
+	If[Lookup[params, "OutputType", Automatic] =!= Automatic,
 		PrependTo[req, <|
 			"role" -> "system",
 			(* FIXME: Confirm this output type exists. *)
-			"content" -> $ChatSystemOutputTypePrompts[outputType]
+			"content" -> $ChatOutputTypePrompts[Lookup[params, "OutputType", Automatic]]
 		|>]
 	];
 
-	runAndDecodeAPIRequest[req, tokenLimit, temperature, True];
+	runAndDecodeAPIRequest[req, Lookup[params, "TokenLimit", "1000"], Lookup[params, "Temperature", "0.7"], True];
 ]
 
 
 Attributes[ChatContextEpilogFunction] = {HoldFirst};
 ChatContextEpilogFunction[func_] := Module[{evaluationCell, params},
 	evaluationCell = EvaluationCell[];	
-	params = GetChatEnvironmentValues[evaluationCell, GetAllCellsInChatContext[EvaluationNotebook[], evaluationCell]];
-	
-	params["Contents"] = NotebookRead[evaluationCell = EvaluationCell[]];
-	params["ContentsString"] = First[NotebookImport[Notebook[{NotebookRead[evaluationCell = EvaluationCell[]]}], _ -> "InputText"]];
-	params["EvaluationCell"] = evaluationCell;
+	chatContextCells = GetAllCellsInChatContext[EvaluationNotebook[], evaluationCell];
+	params = GetChatEnvironmentValues[evaluationCell, evaluationCell, chatContextCells];
 	
 	func[params];
 ]
@@ -429,14 +410,14 @@ EditChatParametersFunction[cellobj_] := Module[{
 				TrueQ[CurrentValue[cellobj, {TaggingRules, "ChatContextDelimiter"}]],
 				
 			$CellContext`tableContentsChatContextCellProcessingFunction$$ =
-				(CurrentValue[cellobj, {TaggingRules, "ChatContextCellProcessingFunction"}] /. Inherited -> Identity),
+				(CurrentValue[cellobj, {TaggingRules, "ChatContextCellProcessingFunction"}] /. Inherited -> Automatic),
 			
 			$CellContext`tableContentsChatContextCellProcessingFunctionKeys$$ =
 				(CurrentValue[cellobj, {TaggingRules, "ChatContextCellProcessingFunctionKeys"}] /. Inherited -> 
 				{"Contents", "ContentsString", "EvaluationCell", "Model", "OutputType", "TokenLimit", "Temperature", "ChatContextPreprompt", "ChatContextPostprompt"}),
 			
 			$CellContext`tableContentsChatContextPostEvaluationFunction$$ =
-				(CurrentValue[cellobj, {TaggingRules, "ChatContextPostEvaluationFunction"}] /. Inherited -> Identity)
+				(CurrentValue[cellobj, {TaggingRules, "ChatContextPostEvaluationFunction"}] /. Inherited -> Automatic)
 		},
 			Evaluate @ StyleBox[
 				FrameBox @ GridBox[
@@ -1019,38 +1000,38 @@ GetAllCellsInChatContext[
 SetFallthroughError[promptProcess]
 
 promptProcess[
-	cell0_,
-	additionalContextStyles_?AssociationQ
+	promptCell_CellObject,
+	evaluationCell_CellObject,
+	chatContextCells_List
 ] := Module[{
-	result,
+	contextStyles,
 	taggingRules,
-	promptTag
+	defaultRole
 },
-	result = ConfirmReplace[cell0, {
-		Cell[CellGroupData[___], ___] :> Nothing,
+	contextStyles = ConfirmReplace[$ChatContextCellStyles, {
+		value_?AssociationQ :> value,
+		other_ :> (
+			ChatbookWarning[
+				"$ChatContextCellStyles must be an Association. Got: ``",
+				InputForm[other]
+			];
+			<||>
+		)
+	}];
 
-		cell: Cell[__, "ChatUserInput" |
-					(*Deprecated names*) "ChatGPTInput" | "ChatGPTUserInput", ___]
-			:> <| "role" -> "user", "content" -> CellToString @ cell |>,
+	params = GetChatEnvironmentValues[promptCell, evaluationCell, chatContextCells];
+	
+	defaultRole = ConfirmReplace[params["Contents"], {
+		Cell[CellGroupData[___], ___] :> None,
 
-		cell: Cell[__, "ChatAssistantOutput" | "ChatAssistantText" | "ChatAssistantProgram" | "ChatAssistantExternalLanguage", ___]
-			:> <| "role" -> "assistant", "content" -> CellToString @ cell |>,
-
-		cell: Cell[__, "ChatSystemInput" | (*Deprecated names*) "ChatGPTSystemInput", ___]
-			:> <| "role" -> "system", "content" -> CellToString @ cell |>,
-
-		(*
-			If a Cell isn't one of the built-in recognized styles, check to see if
-			there are any additional styles that have been specified to include.
-		*)
-		cell: Cell[expr_, styles0___?StringQ, ___?OptionQ] :> Module[{
-			styles = {styles0}
+		Cell[expr_, styles0___?StringQ, ___?OptionQ] :> Module[{
+			styles = {styles0}, role
 		},
 			(* Only consider styles that are in `includedStyles` *)
-			styles = Intersection[styles, Keys[additionalContextStyles]];
+			styles = Intersection[styles, Keys[contextStyles]];
 
 			ConfirmReplace[styles, {
-				{} :> Nothing,
+				{} :> "user",
 				{first_, rest___} :> Module[{role},
 					(* FIXME: Issue a warning if rest contains cell styles that map
 						to conflicting roles. *)
@@ -1060,75 +1041,28 @@ promptProcess[
 
 					(* FIXME: Better error if this confirm fails. *)
 					role = RaiseConfirmMatch[
-						Lookup[additionalContextStyles, first],
+						Lookup[contextStyles, first],
 						_?StringQ
 					];
 
-					<| "role" -> role, "content" -> CellToString @ cell |>
+					role
 				]
 			}]
 		],
-
-		(*-----------------------------------------------*)
-		(* Ignore cells of any other unrecognized style. *)
-		(*-----------------------------------------------*)
-
-		(* Ignore unrecognized cell types. *)
-		(* TODO: Should try to treat every cell type as input to the chat?
-			It is currently unintuitive that there isn't any obvious way to know
-			whether a cell in a cell group will be sent to the AI or not.
-
-			In addition to being unintuitive, this also makes it difficult for a
-			user to reason about what cells are "private" and not sent over the
-			internet to the AI.
-		*)
-		other_ :> Nothing
+		
+		other_ :> None
 	}];
-
-	result = {result};
-
-	taggingRules = (TaggingRules /. Options[cell0]);
-
-	If[AssociationQ[taggingRules],
-		If[AssociationQ[taggingRules["CellPreprompt"]] || ListQ[taggingRules["CellPreprompt"]],
-			PrependTo[result, taggingRules["CellPreprompt"]]
-		];
-		If[AssociationQ[taggingRules["CellPostprompt"]] || ListQ[taggingRules["CellPostprompt"]],
-			AppendTo[result, taggingRules["CellPostprompt"]]
-		];
-	];
-
-	result
+	
+	If[defaultRole === None,
+		Return[{}]];
+	
+	If[params["ChatContextCellProcessingFunction"] === Automatic,
+		<| "role" -> defaultRole, "content" -> params["ContentsString"] |>,
+		params["ChatContextCellProcessingFunction"][params]
+		(* TODO error checking to ensure function returned an association *)
+	]
 ]
 
-(*------------------------------------*)
-
-SetFallthroughError[promptCellDataToString]
-
-promptCellDataToString[cdata_] := ConfirmReplace[cdata, {
-	s_?StringQ :> s,
-
-	(* TODO: Is this incorrect, or desirable? The string contains "TextData[..]",
-		but this makes the example of ChatGPT describing the visual appearance
-		of a styled text/box data cell work. *)
-
-	bd:BoxData[_] :> ToString[bd],
-	td:TextData[_] :> ToString[td],
-
-	(* "content" -> ToString[
-		expr //. {
-			BoxData[e_, ___] :> e,
-			FormBox[e_, ___] :> e
-		}
-	] *)
-
-	other_ :> (
-		Print["warning: unexpected prompt cell data: ", InputForm[other]];
-
-		(* Hope that ToString is better than nothing. *)
-		ToString[other]
-	)
-}]
 
 (*========================================================*)
 (* Dealing with old output                                *)
