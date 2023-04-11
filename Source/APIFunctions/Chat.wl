@@ -34,7 +34,7 @@ DefineFunction[
 	"ExtraOptions" -> $createChatHiddenOptions
 ]
 
-createChatMethods = {"OpenAI"};
+$createChatMethods = {"OpenAI"};
 
 $DefaultChatPrompt = "You are a helpful assistant.";
 
@@ -70,8 +70,8 @@ iCreateChat[args_, opts_] := GU`Scope @ Enclose[
 			_ :> GU`ThrowFailure["bdmethod", GetOption[Method]]
 		}
 	];
-	If[Not@MemberQ[Append[createChatMethods, Automatic], method],
-		GU`ThrowFailure["bdopt", Method, method, createChatMethods]
+	If[Not@MemberQ[Append[$createChatMethods, Automatic], method],
+		GU`ThrowFailure["bdopt", Method, method, $createChatMethods]
 	];
 
 	(* cooked API params *)
