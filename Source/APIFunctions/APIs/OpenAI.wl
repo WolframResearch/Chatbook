@@ -14,6 +14,7 @@ $DefaultOpenAIModel
 $OpenAIMaxImageSize
 
 (* connexion handling interfaces ConformAuthentication, ... *)
+Needs["GeneralUtilities`" -> "GU`"]
 Needs["Wolfram`APIFunctions`Common`"]
 Needs["Wolfram`APIFunctions`APIs`Common`"]
 
