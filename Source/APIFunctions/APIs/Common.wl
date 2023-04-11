@@ -106,14 +106,16 @@ ConnectToService[name_, authentication_] :=
 					key = Confirm @ getAuthenticationHash[temp];
 				];
 				,
-			_Association, (* password / apikey ... *)
+			_Association | Environment | SystemCredential, (* password / apikey ... *)
 				(* check the connection cache for existing so *)
-				key = Hash[authentication, "SHA512", "Base64Encoding"];
+				authmod = ConformAuthentication[name, authentication];
+				If[FailureQ @ authmod, GU`ThrowFailure["bdauth", authentication]];
+				key = Hash[authmod, "SHA512", "Base64Encoding"];
 				temp = Query[Key@name, Key@key][$ConnectionCache];
 				(* validate connexion *)
 				If[MissingQ[temp] || FailureQ @ TestConnection[name, temp],
 					DBPrint["ConnectToService: ", StringForm["Creating new connexion with provided authentication ``", authentication]];
-					temp = Confirm @ makeConnection[name, authentication]
+					temp = Confirm @ makeConnection[name, authmod]
 				]
 				,
 			AuthenticationDialog,
@@ -154,14 +156,12 @@ saveConnection[name_, key_, so_ServiceObject] := GU`Scope[
 ]
 
 makeConnection[name_String, auth_] := GU`Scope[Enclose[
-	ServiceInstall[name];
 	so = ConfirmQuiet @ Confirm @ Switch[auth,
 		AuthenticationDialog,
 			ServiceConnect[name, "New"]
 			,
-		_Association,
-			authmod = Confirm @ ConformAuthentication[name, auth];
-			ServiceConnect[name, "New", Authentication -> authmod]
+		_Association | _List /; Not @ FailureQ @ ConformAuthentication[name, auth],
+			ServiceConnect[name, "New", Authentication -> ConformAuthentication[name, auth]]
 			,
 		_,
 			Return @ Failure["APIError", <|"Message" -> "Unkown authentication error"|>];
