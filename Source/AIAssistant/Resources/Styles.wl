@@ -3,17 +3,17 @@
 (*Notebook*)
 Cell[
     StyleData[ "Notebook" ],
-    TaggingRules   -> <| "BirdChatSettings" -> $defaultBirdChatSettings |>,
+    TaggingRules   -> <| "AIAssistantSettings" -> $defaultAIAssistantSettings |>,
     MessageOptions -> { "KernelMessageAction" -> "PrintToNotebook" },
     CellEpilog :> Module[ { cell, notebook, settings, id, birdChat },
 
         cell     = EvaluationCell[ ];
         notebook = Notebooks @ cell;
-        settings = CurrentValue[ notebook, { TaggingRules, "BirdChatSettings" }, <| |> ];
-        id       = Lookup[ settings, "ResourceID", "BirdChat" ];
+        settings = CurrentValue[ notebook, { TaggingRules, "AIAssistantSettings" }, <| |> ];
+        id       = Lookup[ settings, "ResourceID", "AIAssistant" ];
         birdChat = Function[ Once @ ResourceFunction[ #, "Function" ] ][ id ];
 
-        birdChat[ "RequestBirdChat", cell, notebook, settings ];
+        birdChat[ "RequestAIAssistant", cell, notebook, settings ];
 
         If[ ! TrueQ @ birdChat[ "Loaded" ],
             Function[ Quiet @ Unset @ Once @ ResourceFunction[ #, "Function" ] ][ id ];
@@ -33,10 +33,10 @@ Cell[
             Function[ Once @ ResourceFunction[ #1, "Function" ] ][
                 CurrentValue[
                     EvaluationNotebook[ ],
-                    { TaggingRules, "BirdChatSettings", "ResourceID" },
-                    "BirdChat"
+                    { TaggingRules, "AIAssistantSettings", "ResourceID" },
+                    "AIAssistant"
                 ]
-            ][ "RequestBirdChat" ],
+            ][ "RequestAIAssistant" ],
             Null
         ]
     ],
@@ -47,8 +47,8 @@ Cell[
                 Function[ Once @ ResourceFunction[ #1, "Function" ] ][
                     CurrentValue[
                         EvaluationNotebook[ ],
-                        { TaggingRules, "BirdChatSettings", "ResourceID" },
-                        "BirdChat"
+                        { TaggingRules, "AIAssistantSettings", "ResourceID" },
+                        "AIAssistant"
                     ]
                 ][ "Ask" ]
             ],
@@ -146,8 +146,8 @@ Cell[
                 Function[ Once @ ResourceFunction[ #1, "Function" ] ][
                     CurrentValue[
                         EvaluationNotebook[ ],
-                        { TaggingRules, "BirdChatSettings", "ResourceID" },
-                        "BirdChat"
+                        { TaggingRules, "AIAssistantSettings", "ResourceID" },
+                        "AIAssistant"
                     ]
                 ][ "Ask" ]
             ],
@@ -171,8 +171,8 @@ Cell[
                 Function[ Once @ ResourceFunction[ #1, "Function" ] ][
                     CurrentValue[
                         EvaluationNotebook[ ],
-                        { TaggingRules, "BirdChatSettings", "ResourceID" },
-                        "BirdChat"
+                        { TaggingRules, "AIAssistantSettings", "ResourceID" },
+                        "AIAssistant"
                     ]
                 ][ "Ask" ]
             ],

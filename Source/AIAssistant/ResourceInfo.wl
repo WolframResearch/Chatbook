@@ -1,5 +1,5 @@
 <|
-    "Name"        -> "BirdChat",
+    "Name"        -> "AIAssistant",
     "Description" -> "Open a notebook to chat with a cool bird",
     "Author"      -> "Richard Hennigan (Wolfram Research)"
     ,
@@ -65,8 +65,8 @@
             "https://openai.com/blog/chatgpt/"
         ],
         Hyperlink[
-            "BirdChat | rhennigan/ResourceFunctions | GitHub",
-            "https://github.com/rhennigan/ResourceFunctions/tree/main/Definitions/BirdChat"
+            "AIAssistant | rhennigan/ResourceFunctions | GitHub",
+            "https://github.com/rhennigan/ResourceFunctions/tree/main/Definitions/AIAssistant"
         ]
     }
 |>

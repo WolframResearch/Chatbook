@@ -20,9 +20,9 @@ PacletObject[<|
 		{"Kernel",
 			"Root" -> "Source/APIFunctions",
 			"Context" -> "Wolfram`APIFunctions`"},
-        {"Kernel",
-			"Root" -> "AIAssistant",
-			"Context" -> "ConnorGray`AIAssistant`"},
+		{"Kernel",
+			"Root" -> "Source/AIAssistant",
+			"Context" -> "Wolfram`AIAssistant`"},
 		{"Asset",
 			"Root" -> "Assets",
 			"Assets" -> {

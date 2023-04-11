@@ -5,7 +5,7 @@ VerificationTest[
     SetOptions[ ResourceFunction[ "MessageFailure" ], "TestMode" -> True ],
     KeyValuePattern[ "TestMode" -> True ],
     SameTest -> MatchQ,
-    TestID   -> "Initialization@@Definitions/BirdChat/Tests.wlt:4,1-9,2"
+    TestID   -> "Initialization@@Definitions/AIAssistant/Tests.wlt:4,1-9,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -59,5 +59,5 @@ VerificationTest[
     SetOptions[ ResourceFunction[ "MessageFailure" ], "TestMode" -> False ],
     KeyValuePattern[ "TestMode" -> False ],
     SameTest -> MatchQ,
-    TestID   -> "Cleanup@@Definitions/BirdChat/Tests.wlt:58,1-63,2"
+    TestID   -> "Cleanup@@Definitions/AIAssistant/Tests.wlt:58,1-63,2"
 ]

@@ -1,20 +1,20 @@
 <|
 "Usage" -> {
     {
-        "BirdChat[]",
+        "AIAssistant[]",
         "opens a notebook that can be used to chat with a cool bird."
     },
     {
-        "BirdChat[notebook]",
-        "converts the given <+NotebookObject+> into a BirdChat notebook."
+        "AIAssistant[notebook]",
+        "converts the given <+NotebookObject+> into a AIAssistant notebook."
     }
 },
 "Notes" -> {
-    "<+BirdChat+> requires an API key from [OpenAI](https://platform.openai.com/account/api-keys).",
-    "Storing the API key with <+SystemCredential[\"OPENAI_API_KEY\"]=\"key\"+> will make the key persistently available to <+BirdChat+>.",
-    "<+BirdChat+> is an interface to communicate with [Birdnardo](https://resources.wolframcloud.com/FunctionRepository/resources/BirdSay), a hyper-intelligent AI chat assistant from the future",
+    "<+AIAssistant+> requires an API key from [OpenAI](https://platform.openai.com/account/api-keys).",
+    "Storing the API key with <+SystemCredential[\"OPENAI_API_KEY\"]=\"key\"+> will make the key persistently available to <+AIAssistant+>.",
+    "<+AIAssistant+> is an interface to communicate with [Birdnardo](https://resources.wolframcloud.com/FunctionRepository/resources/BirdSay), a hyper-intelligent AI chat assistant from the future",
     "Birdnardo is pretty good at the Wolfram Language and can probably help you out (or at least entertain you).",
-    "<+BirdChat+> accepts the following options:",
+    "<+AIAssistant+> accepts the following options:",
     {
         { "AssistantIcon"    , "<+Automatic+>"    , "the image used to represent the chat assistant" },
         { "AssistantTheme"   , "\"Birdnardo\""    , "a named AI assistant" },
