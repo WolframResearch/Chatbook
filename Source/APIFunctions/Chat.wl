@@ -345,7 +345,7 @@ chatObjectPanelBoxes[object : ChatObject[data_Association, opts:OptionsPattern[]
 Module[
 	{messages},
 	messages = object["Messages"];
-	ToBoxes[Deploy@Pane[makeChatGrid[messages],
+	ToBoxes[Pane[makeChatGrid[messages],
 						FilterRules[Flatten[{opts}], Options[Pane]],
 						AppearanceElements -> None,
 						Scrollbars -> {False, Automatic},
