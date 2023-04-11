@@ -14,7 +14,7 @@ PacletInstall[ResourceObject["https://wolfr.am/1c2WoIEpe"]]
 ```
 
 which will install the
-[ConnorGray/Chatbook](https://www.wolframcloud.com/obj/connorg/DeployedResources/Paclet/ConnorGray/Chatbook/)
+[Wolfram/Chatbook](https://www.wolframcloud.com/obj/connorg/DeployedResources/Paclet/Wolfram/Chatbook/)
 paclet resource.
 
 Once installed, start using Chatbook by first creating an empty notebook,

@@ -1,4 +1,4 @@
-BeginPackage["ConnorGray`ServerSentEventUtils`"]
+BeginPackage["Wolfram`ServerSentEventUtils`"]
 
 Needs["GeneralUtilities`" -> "GU`"]
 
@@ -24,7 +24,7 @@ between calls.
 
 Begin["`Private`"]
 
-Needs["ConnorGray`Chatbook`ErrorUtils`"]
+Needs["Wolfram`Chatbook`ErrorUtils`"]
 
 CreateErrorType[ServerSentEventError, {}]
 

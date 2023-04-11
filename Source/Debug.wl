@@ -1,4 +1,4 @@
-BeginPackage["ConnorGray`Chatbook`Debug`"]
+BeginPackage["Wolfram`Chatbook`Debug`"]
 
 $LastRequest
 

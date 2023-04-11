@@ -1,4 +1,4 @@
-BeginPackage["ConnorGray`Chatbook`UI`"]
+BeginPackage["Wolfram`Chatbook`UI`"]
 
 Needs["GeneralUtilities`" -> "GU`"]
 
@@ -14,15 +14,15 @@ ChatContextEpilogFunction
 
 Begin["`Private`"]
 
-Needs["ConnorGray`Chatbook`"]
-Needs["ConnorGray`Chatbook`ErrorUtils`"]
-Needs["ConnorGray`Chatbook`Errors`"]
-Needs["ConnorGray`Chatbook`Debug`"]
-Needs["ConnorGray`Chatbook`Utils`"]
-Needs["ConnorGray`Chatbook`Streaming`"]
-Needs["ConnorGray`Chatbook`Serialization`"]
+Needs["Wolfram`Chatbook`"]
+Needs["Wolfram`Chatbook`ErrorUtils`"]
+Needs["Wolfram`Chatbook`Errors`"]
+Needs["Wolfram`Chatbook`Debug`"]
+Needs["Wolfram`Chatbook`Utils`"]
+Needs["Wolfram`Chatbook`Streaming`"]
+Needs["Wolfram`Chatbook`Serialization`"]
 
-Needs["ConnorGray`ServerSentEventUtils`" -> "SSEUtils`"]
+Needs["Wolfram`ServerSentEventUtils`" -> "SSEUtils`"]
 
 
 $ChatOutputTypePrompts = <|
@@ -499,7 +499,7 @@ EditChatParametersFunction[cellobj_] := Module[{
 												SetOptions[
 													cellobj, 
 													PrivateCellOptions->{"CellGroupBaseStyle" -> {
-														CellEpilog :> ConnorGray`Chatbook`UI`ChatContextEpilogFunction[e]}
+														CellEpilog :> Wolfram`Chatbook`UI`ChatContextEpilogFunction[e]}
 													}
 												];
 											
@@ -976,7 +976,7 @@ GetAllCellsInChatContext[
 		]
 	];
 
-	ConnorGray`Chatbook`Debug`$LastContextGroupCells = cellsInContext;
+	Wolfram`Chatbook`Debug`$LastContextGroupCells = cellsInContext;
 
 	cellsInContext
 ];

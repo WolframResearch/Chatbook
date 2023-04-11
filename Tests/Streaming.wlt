@@ -1,4 +1,4 @@
-Needs["ConnorGray`Chatbook`Streaming`"]
+Needs["Wolfram`Chatbook`Streaming`"]
 
 (*====================================*)
 

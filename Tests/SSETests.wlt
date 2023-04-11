@@ -1,4 +1,4 @@
-Needs["ConnorGray`ServerSentEventUtils`"]
+Needs["Wolfram`ServerSentEventUtils`"]
 
 
 (*=================================================*)

@@ -3,14 +3,14 @@
 	directly in any way.
 *)
 
-BeginPackage["ConnorGray`Chatbook`Utils`"]
+BeginPackage["Wolfram`Chatbook`Utils`"]
 
 CellPrint2
 
 Begin["`Private`"]
 
-Needs["ConnorGray`Chatbook`ErrorUtils`"]
-Needs["ConnorGray`Chatbook`UI`"]
+Needs["Wolfram`Chatbook`ErrorUtils`"]
+Needs["Wolfram`Chatbook`UI`"]
 
 (*====================================*)
 
@@ -43,7 +43,7 @@ CellPrint2[
 		"Unable to print cell: evaluation cell does not exist."
 	];
 
-	ConnorGray`Chatbook`UI`Private`moveAfterPreviousOutputs[evalCell];
+	Wolfram`Chatbook`UI`Private`moveAfterPreviousOutputs[evalCell];
 
 	RaiseConfirm @ NotebookWrite[ParentNotebook[evalCell], cell];
 

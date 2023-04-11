@@ -1,4 +1,4 @@
-BeginPackage["ConnorGray`Chatbook`"]
+BeginPackage["Wolfram`Chatbook`"]
 
 Needs["GeneralUtilities`" -> "GU`"]
 
