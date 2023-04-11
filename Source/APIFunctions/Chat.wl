@@ -235,15 +235,15 @@ ChatObject /: MakeBoxes[object : ChatObject[data_Association, opts:OptionsPatter
 $blue = RGBColor[{240, 255, 251}/255];
 
 $logoOpenAI := $logoOpenAI = Show[Import[FileNameJoin[
-	{PacletManager`PacletResource["Wolfram`Chatbook", "APIFunctions"], "OpenAILogo.svg"}
+	{PacletManager`PacletResource["Wolfram/Chatbook", "APIFunctions"], "OpenAILogo.svg"}
 ], "Graphics"], ImageSize -> 20];
 
 $logoSystem := $logoSystem = Import[FileNameJoin[
-	{PacletManager`PacletResource["Wolfram`Chatbook", "APIFunctions"], "chat-system.wl"}
+	{PacletManager`PacletResource["Wolfram/Chatbook", "APIFunctions"], "chat-system.wl"}
 ]];
 
 $logoUser := $logoUser = Import[FileNameJoin[
-	{PacletManager`PacletResource["Wolfram`Chatbook", "APIFunctions"], "chat-user.wl"}
+	{PacletManager`PacletResource["Wolfram/Chatbook", "APIFunctions"], "chat-user.wl"}
 ]];
 
 $logoWolfram = "\[WolframLanguageLogoCircle]";
