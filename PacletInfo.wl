@@ -6,11 +6,16 @@ PacletObject[<|
 	"Description" -> "Wolfram tools for interacting with LLMs",
 	"Creator" -> {"Connor Gray", "Theodore Gray", "Giulio Alessandrini", "Timothee Verdier"},
 	"Extensions" -> {
-		{"Kernel", "Root" -> "Source", "Context" -> "Wolfram`Chatbook`"},
 		{"Kernel",
-			"Root" -> "SourceSSE",
+			"Root" -> "Source/Chatbook",
+			"Context" -> "Wolfram`Chatbook`"
+		},
+		{"Kernel",
+			"Root" -> "Source/ServerSentEventUtils",
 			"Context" -> "Wolfram`ServerSentEventUtils`"},
-		{"Kernel", "Root" -> "Source/APIFunctions", "Context" -> "Wolfram`APIFunctions`"},
+		{"Kernel",
+			"Root" -> "Source/APIFunctions",
+			"Context" -> "Wolfram`APIFunctions`"},
 		{"Resource", "Root" -> "Resources", Resources -> {"APIFunctions"}},
 		{"FrontEnd"},
 		{"Documentation", "Language" -> "English"}
