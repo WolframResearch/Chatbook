@@ -90,13 +90,13 @@ iCreateChat[args_, opts_] := GU`Scope @ Enclose[
 	(* params["Seed"] = GetOption[RandomSeeding]; *)
 
 	authentication = GetOption[Authentication];
-	Switch[authentication,
-		Automatic,
-			params["Authentication"] = Automatic
+	params["Authentication"] = Switch[authentication,
+		"Available" | "Wolfram" | Automatic | Environment | SystemCredential
+		| AuthenticationDialog | ServiceObject[method, _],
+			authentication
 			,
-		a_?AssociationQ /; ContainsOnly[Keys[a], "APIKey"],
-			params["Authentication"] = authentication;
-			,
+		a_?AssociationQ,
+			ConformAuthentication[method, authentication],
 		_,
 			GU`ThrowFailure["bdauth", authentication]
 	];
