@@ -1,7 +1,12 @@
 BeginPackage["Wolfram`APIFunctions`APIs`Common`"]
 
+APIFailure
+ConnectToService
+$ConnectionCache
+ConformAuthentication
+TestConnection
+
 Needs["GeneralUtilities`" -> "GU`"]
-Needs["Wolfram`APIFunctions`Common`"]
 
 GU`SetUsage[$APIParameters, "$APIParameters is a variable that contains parameters for each API endpoint.
 The format should be:
@@ -13,11 +18,7 @@ $APIParameters['name$', 'endpoint$'] = {
 GU`SetUsage[ValidateAPIParams, "ValidateAPIParams[service$, endpoint$, params$]\
  validates the association params$ using the data in $APIParameters[service$, endpoint$]."]
 
-APIFailure
-ConnectToService
-$ConnectionCache
-ConformAuthentication
-TestConnection
+Needs["Wolfram`APIFunctions`Common`"]
 
 Begin["`Private`"]
 
@@ -153,6 +154,7 @@ saveConnection[name_, key_, so_ServiceObject] := GU`Scope[
 ]
 
 makeConnection[name_String, auth_] := GU`Scope[Enclose[
+	ServiceInstall[name];
 	so = ConfirmQuiet @ Confirm @ Switch[auth,
 		AuthenticationDialog,
 			ServiceConnect[name, "New"]

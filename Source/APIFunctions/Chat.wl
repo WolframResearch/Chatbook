@@ -1,16 +1,15 @@
 BeginPackage["Wolfram`APIFunctions`Chat`"]
-Needs["Wolfram`APIFunctions`"]
-
-Needs["GeneralUtilities`" -> "GU`"]
-
-(* general interfaces DefineFunction, ... *)
-Needs["Wolfram`APIFunctions`Common`"]
-Needs["Wolfram`APIFunctions`APIs`Common`"]
-Needs["Wolfram`APIFunctions`APIs`OpenAI`"]
 
 $DefaultChatPrompt
 $ChatConnexionCache
 CallChatAPI
+
+Needs["GeneralUtilities`" -> "GU`"]
+Needs["Wolfram`APIFunctions`"]
+(* general interfaces DefineFunction, ... *)
+Needs["Wolfram`APIFunctions`Common`"]
+Needs["Wolfram`APIFunctions`APIs`Common`"]
+Needs["Wolfram`APIFunctions`APIs`OpenAI`"]
 
 Begin["`Private`"]
 

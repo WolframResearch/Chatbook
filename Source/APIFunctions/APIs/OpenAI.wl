@@ -1,23 +1,21 @@
 BeginPackage["Wolfram`APIFunctions`APIs`OpenAI`"]
 
-PacletManager`PacletInstall[
+$OpenAIModels
+$DefaultOpenAIModel
+$OpenAIMaxImageSize
+
+(* no op in >13.2 - in layout *)
+Quiet @ PacletManager`PacletInstall[
 	FileNameJoin[{
 		PacletManager`PacletResource["Wolfram/Chatbook", "APIFunctions"],
 		"ServiceConnection_OpenAI-13.3.6.paclet"
 	}]
 ];
 
-(* no op in >13.2 - in layout *)
-
-$OpenAIModels
-$DefaultOpenAIModel
-$OpenAIMaxImageSize
-
 (* connexion handling interfaces ConformAuthentication, ... *)
 Needs["GeneralUtilities`" -> "GU`"]
 Needs["Wolfram`APIFunctions`Common`"]
 Needs["Wolfram`APIFunctions`APIs`Common`"]
-
 (* CallxxxAPI interfaces *)
 Needs["Wolfram`APIFunctions`ImageSynthesize`"]
 Needs["Wolfram`APIFunctions`TextSynthesize`"]
