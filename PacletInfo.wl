@@ -26,7 +26,8 @@ PacletObject[<|
 		{"Asset",
 			"Root" -> "Assets",
 			"Assets" -> {
-				{"APIFunctions", "APIFunctions"}
+				{"APIFunctions", "APIFunctions"},
+                {"AIAssistant", "AIAssistant"}
 			}
 		},
 		{"FrontEnd"},

@@ -1,5 +1,16 @@
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Package Header*)
+BeginPackage[ "Wolfram`AIAssistant`" ];
 
 AIAssistant // ClearAll;
+
+System`MenuAnchor;
+System`MenuItem;
+System`RawInputForm;
+
+Begin[ "`Private`" ];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Initialization*)
@@ -67,66 +78,6 @@ endDefinition // endDefinition;
 (* ::Section:: *)
 (*Resources*)
 
-If[ DownValues @ EvaluateInPlace === { }, EvaluateInPlace = # & ];
-If[ DownValues @ IconizeInPlace  === { }, IconizeInPlace  = # & ];
-
-$generatingNotebook = EvaluateInPlace @ TrueQ @ RH`ResourceFunctions`$GeneratingNotebook;
-
-$images = IconizeInPlace[
-    $images = Association @ Map[
-        FileBaseName @ # -> Import[ #, "WXF" ] &,
-        FileNames[
-            "*.wxf",
-            FileNameJoin @ Flatten @ { DirectoryName @ $InputFileName, "Resources", "Icons" }
-        ]
-    ],
-    "Images"
-];
-
-$curves = IconizeInPlace[
-    $curves = Association @ Map[
-        FileBaseName @ # -> Import[ #, "WXF" ] &,
-        FileNames[
-            "*.wxf",
-            FileNameJoin @ Flatten @ { DirectoryName @ $InputFileName, "Resources", "GraphicsComponents" }
-        ]
-    ],
-    "Curves"
-];
-
-$styleDataCells = IconizeInPlace[
-    $styleDataCells = Association @ Cases[
-        ReadList @ FileNameJoin @ Flatten @ { DirectoryName @ $InputFileName, "Resources", "Styles.wl" },
-        cell: Cell[ StyleData[ name_String, ___ ], ___ ] :> name -> cell
-    ],
-    "StyleDataCells"
-];
-
-$apiKeyDialogDescription = IconizeInPlace[
-    $apiKeyDialogDescription = Get @ FileNameJoin @ Flatten @ {
-        DirectoryName @ $InputFileName,
-        "Resources",
-        "APIKeyDialogDescription.wl"
-    },
-    "APIKeyDialogDescription"
-];
-
-$promptStrings = IconizeInPlace[
-    $promptStrings = Module[ { dir },
-        dir = FileNameJoin @ { DirectoryName @ $InputFileName, "Resources", "Prompts" };
-        Association @ Map[
-            Function[
-                StringDelete[
-                    StringReplace[ ResourceFunction[ "RelativePath" ][ dir, # ], "\\" -> "/" ],
-                    ".md"~~EndOfString
-                ] -> ByteArrayToString @ ReadByteArray @ #
-            ],
-            FileNames[ "*.md", dir, Infinity ]
-        ]
-    ],
-    "Prompts"
-];
-
 (* ::**************************************************************************************************************:: *)
 (* ::Section:: *)
 (*Messages*)
@@ -151,23 +102,7 @@ AIAssistant::BadResponseMessage =
 (* ::**************************************************************************************************************:: *)
 (* ::Section:: *)
 (*Options*)
-AIAssistant // Options = {
-    "AssistantIcon"     -> Automatic,
-    "AssistantTheme"    -> "Generic",
-    "AutoFormat"        -> True,
-    "ChatHistoryLength" -> 15,
-    "DynamicAutoFormat" -> Automatic,
-    "FrequencyPenalty"  -> 0.1,
-    "MaxTokens"         -> Automatic,
-    "MergeMessages"     -> True,
-    "Model"             -> "gpt-3.5-turbo",
-    "OpenAIKey"         -> Automatic,
-    "PresencePenalty"   -> 0.1,
-    "RolePrompt"        -> Automatic,
-    "ShowMinimized"     -> Automatic,
-    "Temperature"       -> 0.7,
-    "TopP"              -> 1
-};
+AIAssistant // Options = Normal[ $defaultAIAssistantSettings, Association ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section:: *)
@@ -202,53 +137,6 @@ AIAssistant[ nbo_NotebookObject, opts: OptionsPattern[ ] ] :=
 (* ::Subsection::Closed:: *)
 (*Commands*)
 AIAssistant[ command_String, args___ ] := catchTop @ executeAIAssistantCommand[ command, args ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*Config*)
-
-$defaultAIAssistantSettings := <|
-    "AssistantIcon"        -> Automatic,
-    "AssistantTheme"       -> "Birdnardo",
-    "AutoFormat"           -> True,
-    "AIAssistantNotebook"  -> True,
-    "ChatHistoryLength"    -> $maxChatCells,
-    "DynamicAutoFormat"    -> Automatic,
-    "FrequencyPenalty"     -> 0.1,
-    "MaxTokens"            -> Automatic,
-    "MergeMessages"        -> True,
-    "Model"                -> "gpt-3.5-turbo",
-    "PresencePenalty"      -> 0.1,
-    "ResourceID"           -> $resourceID,
-    "RolePrompt"           -> Automatic,
-    "ShowMinimized"        -> Automatic,
-    "Temperature"          -> 0.7,
-    "TopP"                 -> 1
-|>;
-
-(* $resourceID     = First @ CloudObject[ "DeployedResources/Function/AIAssistant" ]; *)
-$resourceID     = "AIAssistant";
-$birdChatLoaded = True;
-$maxChatCells   = OptionValue[ AIAssistant, "ChatHistoryLength" ];
-
-$$externalLanguage = "Java"|"Julia"|"Jupyter"|"NodeJS"|"Octave"|"Python"|"R"|"Ruby"|"Shell"|"SQL"|"SQL-JDBC";
-
-$externalLanguageRules = Flatten @ {
-    "JS"         -> "NodeJS",
-    "Javascript" -> "NodeJS",
-    "NPM"        -> "NodeJS",
-    "Node"       -> "NodeJS",
-    "Bash"       -> "Shell",
-    "SH"         -> "Shell",
-    Cases[ $$externalLanguage, lang_ :> (lang -> lang) ]
-};
-
-$closedBirdCellOptions = Sequence[
-    CellMargins     -> -2,
-    CellOpen        -> False,
-    CellFrame       -> 0,
-    ShowCellBracket -> False
-];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -505,14 +393,13 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
     TooltipStyle -> { Background -> None, CellFrame -> 0 }
 ];
 
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*getAssistantIcon*)
 getAssistantIcon // beginDefinition;
 getAssistantIcon[ as_Association ] := getAssistantIcon[ as, Lookup[ as, "AssistantIcon", Automatic ] ];
-getAssistantIcon[ KeyValuePattern[ "AssistantTheme" -> "Generic" ], Automatic ] := $images[ "Generic" ];
-getAssistantIcon[ KeyValuePattern[ "AssistantTheme" -> "Wolfie" ], Automatic ] := $images[ "Wolfie" ];
+getAssistantIcon[ KeyValuePattern[ "AssistantTheme" -> "Generic" ], Automatic ] := $icons[ "Generic" ];
+getAssistantIcon[ KeyValuePattern[ "AssistantTheme" -> "Wolfie" ], Automatic ] := $icons[ "Wolfie" ];
 getAssistantIcon[ as_, Automatic ] := $defaultAssistantIcon;
 getAssistantIcon[ as_, None ] := Graphics[ { }, ImageSize -> 1 ];
 getAssistantIcon[ as_, KeyValuePattern[ "Default" -> icon_ ] ] := icon;
@@ -525,8 +412,8 @@ getAssistantIcon // endDefinition;
 (*getAssistantIconActive*)
 getAssistantIconActive // beginDefinition;
 getAssistantIconActive[ as_Association ] := getAssistantIconActive[ as, Lookup[ as, "AssistantIcon", Automatic ] ];
-getAssistantIconActive[ KeyValuePattern[ "AssistantTheme" -> "Generic" ], Automatic ] := $images[ "GenericActive" ];
-getAssistantIconActive[ KeyValuePattern[ "AssistantTheme" -> "Wolfie" ], Automatic ] := $images[ "Wolfie" ];
+getAssistantIconActive[ KeyValuePattern[ "AssistantTheme" -> "Generic" ], Automatic ] := $icons[ "GenericActive" ];
+getAssistantIconActive[ KeyValuePattern[ "AssistantTheme" -> "Wolfie" ], Automatic ] := $icons[ "Wolfie" ];
 getAssistantIconActive[ as_, Automatic ] := $defaultAssistantIconActive;
 getAssistantIconActive[ as_, None ] := Graphics[ { }, ImageSize -> 1 ];
 getAssistantIconActive[ as_, KeyValuePattern[ "Active" -> icon_ ] ] := icon;
@@ -570,10 +457,10 @@ makeAIAssistantSettings // endDefinition;
 (*executeAIAssistantCommand*)
 executeAIAssistantCommand // beginDefinition;
 executeAIAssistantCommand[ "RequestAIAssistant", args___ ] := requestAIAssistant @ args;
-executeAIAssistantCommand[ "Loaded"         , args___ ] := $birdChatLoaded;
-executeAIAssistantCommand[ "SetRole"        , args___ ] := setAIAssistantRole @ args;
-executeAIAssistantCommand[ "Ask"            , args___ ] := askAIAssistant @ args;
-executeAIAssistantCommand[ "Models"         , args___ ] := getAIAssistantModels @ args;
+executeAIAssistantCommand[ "Loaded"            , args___ ] := $birdChatLoaded;
+executeAIAssistantCommand[ "SetRole"           , args___ ] := setAIAssistantRole @ args;
+executeAIAssistantCommand[ "Ask"               , args___ ] := askAIAssistant @ args;
+executeAIAssistantCommand[ "Models"            , args___ ] := getAIAssistantModels @ args;
 executeAIAssistantCommand // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1447,15 +1334,15 @@ attachMinimizedIcon // endDefinition;
 (*makeMinimizedIconCell*)
 makeMinimizedIconCell // beginDefinition;
 
-makeMinimizedIconCell[ label_, chatCell_CellObject ] :=
-    Cell[ BoxData @ MakeBoxes @ Button[
-              MouseAppearance[ label, "LinkHand" ],
-              With[ { attached = EvaluationCell[ ] }, NotebookDelete @ attached;
-              openBirdCell @ chatCell ],
-              Appearance -> None
-          ],
-          "MinimizedChatIcon"
-    ];
+makeMinimizedIconCell[ label_, chatCell_CellObject ] := Cell[
+    BoxData @ MakeBoxes @ Button[
+        MouseAppearance[ label, "LinkHand" ],
+        With[ { attached = EvaluationCell[ ] }, NotebookDelete @ attached;
+        openBirdCell @ chatCell ],
+        Appearance -> None
+    ],
+    "MinimizedChatIcon"
+];
 
 makeMinimizedIconCell // endDefinition;
 
@@ -1493,7 +1380,7 @@ writeReformattedCell[ settings_, other_, cell_CellObject ] :=
         cell,
         Cell[
             TextData @ {
-                "I can't believe you've done this! \n\n",
+                "An unexpected error occurred.\n\n",
                 Cell @ BoxData @ ToBoxes @ Catch[
                     throwInternalFailure @ writeReformattedCell[ settings, other, cell ],
                     $top
@@ -1501,7 +1388,7 @@ writeReformattedCell[ settings_, other_, cell_CellObject ] :=
             },
             "Text",
             "ChatOutput",
-            GeneratedCell -> True,
+            GeneratedCell     -> True,
             CellAutoOverwrite -> True
         ],
         None,
@@ -1509,7 +1396,6 @@ writeReformattedCell[ settings_, other_, cell_CellObject ] :=
     ];
 
 writeReformattedCell // endDefinition;
-
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1975,13 +1861,15 @@ showAPIKeyDialog // endDefinition;
 (* ::Subsection::Closed:: *)
 (*Cell to String Conversion*)
 
+(* TODO: use Wolfram`Chatbook`Serialization`CellToString *)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*Config*)
 $$delimiterStyle   = "PageBreak"|"ExampleDelimiter";
 $$itemStyle        = "Item"|"Notes";
 $$noCellLabelStyle = "ChatInput"|"ChatUserInput"|"ChatSystemInput"|"ChatContextDivider"|$$delimiterStyle;
-$$docSearchStyle   = "ChatQuery"; (* TODO: currently unused *)
+$$docSearchStyle   = "ChatQuery";
 
 (* Default character encoding for strings created from cells *)
 $cellCharacterEncoding = "Unicode";
@@ -3054,10 +2942,6 @@ staticChatIcon[ fg_, bg_, size_ ] :=
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Development Initialization*)
-If[ Context @ AIAssistant === "Global`",
-    Quiet @ Unset @ Once @ ResourceFunction[ "AIAssistant", "Function" ];
-    Quiet @ Unset @ Once @ ResourceFunction[ #, "Function" ] & [ $resourceID ];
-    DeleteObject @ ResourceFunction[ "AIAssistant" ];
-    DefineResourceFunction[ Symbol[ "Global`AIAssistant" ][ ## ] &, "AIAssistant" ]
-];
+(*Package Footer*)
+End[ ];
+EndPackage[ ];

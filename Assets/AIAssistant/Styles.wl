@@ -1,3 +1,5 @@
+Begin[ "Wolfram`AIAssistant`Private`" ];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Notebook*)
@@ -5,19 +7,19 @@ Cell[
     StyleData[ "Notebook" ],
     TaggingRules   -> <| "AIAssistantSettings" -> $defaultAIAssistantSettings |>,
     MessageOptions -> { "KernelMessageAction" -> "PrintToNotebook" },
-    CellEpilog :> Module[ { cell, notebook, settings, id, birdChat },
+    CellEpilog :> Module[ { $CellContext`cell, $CellContext`notebook, $CellContext`settings, $CellContext`aiAssistant },
 
-        cell     = EvaluationCell[ ];
-        notebook = Notebooks @ cell;
-        settings = CurrentValue[ notebook, { TaggingRules, "AIAssistantSettings" }, <| |> ];
-        id       = Lookup[ settings, "ResourceID", "AIAssistant" ];
-        birdChat = Function[ Once @ ResourceFunction[ #, "Function" ] ][ id ];
+        Needs[ "Wolfram`AIAssistant`" -> None ];
 
-        birdChat[ "RequestAIAssistant", cell, notebook, settings ];
+        $CellContext`cell        = EvaluationCell[ ];
+        $CellContext`notebook    = Notebooks @ $CellContext`cell;
+        $CellContext`settings    = CurrentValue[ $CellContext`notebook, { TaggingRules, "AIAssistantSettings" }, <| |> ];
+        $CellContext`aiAssistant = Symbol[ "Wolfram`AIAssistant`AIAssistant" ];
 
-        If[ ! TrueQ @ birdChat[ "Loaded" ],
-            Function[ Quiet @ Unset @ Once @ ResourceFunction[ #, "Function" ] ][ id ];
-            ResourceFunction[ "MessageFailure" ][ "Chat assistant is unavailable due to an unknown error." ]
+        $CellContext`aiAssistant[ "RequestAIAssistant", $CellContext`cell, $CellContext`notebook, $CellContext`settings ];
+
+        If[ ! TrueQ @ $CellContext`aiAssistant[ "Loaded" ],
+            ResourceFunction[ "MessageFailure" ][ "AI assistant is unavailable due to an unknown error." ]
         ]
     ]
 ]
@@ -30,13 +32,8 @@ Cell[
     Evaluatable            -> True,
     CellEvaluationFunction -> Function[
         If[ TrueQ @ CloudSystem`$CloudNotebooks,
-            Function[ Once @ ResourceFunction[ #1, "Function" ] ][
-                CurrentValue[
-                    EvaluationNotebook[ ],
-                    { TaggingRules, "AIAssistantSettings", "ResourceID" },
-                    "AIAssistant"
-                ]
-            ][ "RequestAIAssistant" ],
+            Needs[ "Wolfram`AIAssistant`" -> None ];
+            Symbol[ "Wolfram`AIAssistant`AIAssistant" ][ "RequestAIAssistant", EvaluationCell[ ] ],
             Null
         ]
     ],
@@ -44,13 +41,8 @@ Cell[
         MenuItem[
             "Ask AI Assistant",
             KernelExecute[
-                Function[ Once @ ResourceFunction[ #1, "Function" ] ][
-                    CurrentValue[
-                        EvaluationNotebook[ ],
-                        { TaggingRules, "AIAssistantSettings", "ResourceID" },
-                        "AIAssistant"
-                    ]
-                ][ "Ask" ]
+                Needs[ "Wolfram`AIAssistant`" -> None ];
+                Symbol[ "Wolfram`AIAssistant`AIAssistant" ][ "Ask" ]
             ],
             MenuEvaluator -> Automatic,
             Method        -> "Queued"
@@ -79,7 +71,7 @@ Cell[
     CellFrameLabels          -> {
         {
             Cell @ BoxData @ ToBoxes @ Graphics[
-                { RGBColor[ 0.62105, 0.70407, 0.82588 ], First @ $images[ "Comment" ] },
+                { RGBColor[ 0.62105, 0.70407, 0.82588 ], First @ $icons[ "Comment" ] },
                 ImageSize -> 24
             ],
             None
@@ -101,7 +93,7 @@ Cell[
     CellFrameLabels  -> {
         {
             Cell @ BoxData @ ToBoxes @ Graphics[
-                { RGBColor[ 0.60416, 0.72241, 0.2754 ], First @ $images[ "ChatQuestion" ] },
+                { RGBColor[ 0.60416, 0.72241, 0.2754 ], First @ $icons[ "ChatQuestion" ] },
                 ImageSize -> 24
             ],
             None
@@ -143,13 +135,8 @@ Cell[
         MenuItem[
             "Ask AI Assistant",
             KernelExecute[
-                Function[ Once @ ResourceFunction[ #1, "Function" ] ][
-                    CurrentValue[
-                        EvaluationNotebook[ ],
-                        { TaggingRules, "AIAssistantSettings", "ResourceID" },
-                        "AIAssistant"
-                    ]
-                ][ "Ask" ]
+                Needs[ "Wolfram`AIAssistant`" -> None ];
+                Symbol[ "Wolfram`AIAssistant`AIAssistant" ][ "Ask" ]
             ],
             MenuEvaluator -> Automatic,
             Method        -> "Queued"
@@ -168,13 +155,8 @@ Cell[
         MenuItem[
             "Ask AI Assistant",
             KernelExecute[
-                Function[ Once @ ResourceFunction[ #1, "Function" ] ][
-                    CurrentValue[
-                        EvaluationNotebook[ ],
-                        { TaggingRules, "AIAssistantSettings", "ResourceID" },
-                        "AIAssistant"
-                    ]
-                ][ "Ask" ]
+                Needs[ "Wolfram`AIAssistant`" -> None ];
+                Symbol[ "Wolfram`AIAssistant`AIAssistant" ][ "Ask" ]
             ],
             MenuEvaluator -> Automatic,
             Method        -> "Queued"
@@ -245,3 +227,5 @@ Cell[
     ShowCellLabel          -> False
 ]
 (* :!CodeAnalysis::EndBlock:: *)
+
+End[ ];
