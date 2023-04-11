@@ -26,7 +26,7 @@ Notebook[{
 							StyleBox["Explain", FontSize -> 10],
 							ButtonFunction :> (
 								(* FIXME: Load package. *)
-								ConnorGray`Chatbook`UI`ChatExplainButtonFunction[ParentCell[EvaluationCell[]]]
+								Wolfram`Chatbook`UI`ChatExplainButtonFunction[ParentCell[EvaluationCell[]]]
 							),
 							Evaluator -> Automatic
 						]
@@ -53,7 +53,7 @@ Notebook[{
 						ButtonBox[StyleBox["Explain", FontSize -> 10],
 							ButtonFunction :> (
 								(* FIXME: Load package. *)
-								ConnorGray`Chatbook`UI`ChatExplainButtonFunction[ParentCell[EvaluationCell[]]]
+								Wolfram`Chatbook`UI`ChatExplainButtonFunction[ParentCell[EvaluationCell[]]]
 							),
 							Evaluator -> Automatic
 						]
@@ -79,7 +79,7 @@ Notebook[{
 							StyleBox["Explain", FontSize -> 10],
 							ButtonFunction :> (
 								(* FIXME: Load package. *)
-								ConnorGray`Chatbook`UI`ChatExplainButtonFunction[ParentCell[EvaluationCell[]]]
+								Wolfram`Chatbook`UI`ChatExplainButtonFunction[ParentCell[EvaluationCell[]]]
 							),
 							Evaluator -> Automatic
 						]
@@ -107,7 +107,7 @@ Notebook[{
 							StyleBox["Explain", FontSize -> 10],
 							ButtonFunction :> (
 								(* FIXME: Load package. *)
-								ConnorGray`Chatbook`UI`ChatExplainButtonFunction[ParentCell[EvaluationCell[]]]
+								Wolfram`Chatbook`UI`ChatExplainButtonFunction[ParentCell[EvaluationCell[]]]
 							),
 							Evaluator -> Automatic
 						]
@@ -138,7 +138,7 @@ Notebook[{
 						ButtonBox[
 							StyleBox["Params", FontSize -> 10],
 							ButtonFunction :> (
-								ConnorGray`Chatbook`UI`EditChatParametersFunction[ParentCell[EvaluationCell[]]]
+								Wolfram`Chatbook`UI`EditChatParametersFunction[ParentCell[EvaluationCell[]]]
 							),
 							Evaluator -> Automatic
 						]
@@ -166,7 +166,7 @@ Notebook[{
 							StyleBox["Params", FontSize -> 10],
 							Evaluator -> Automatic,
 							ButtonFunction :> (
-								ConnorGray`Chatbook`UI`EditChatParametersFunction[ParentCell[EvaluationCell[]]]
+								Wolfram`Chatbook`UI`EditChatParametersFunction[ParentCell[EvaluationCell[]]]
 							)
 						]
 					],
@@ -193,7 +193,7 @@ Notebook[{
 							StyleBox["Params", FontSize -> 10],
 							Evaluator -> Automatic,
 							ButtonFunction :> (
-								ConnorGray`Chatbook`UI`EditChatParametersFunction[ParentCell[EvaluationCell[]]]
+								Wolfram`Chatbook`UI`EditChatParametersFunction[ParentCell[EvaluationCell[]]]
 							)
 						]
 					],
@@ -325,7 +325,7 @@ Notebook[{
 							Evaluator -> Automatic
 							ButtonFunction :> (
 								(* FIXME: Load package. *)
-								ConnorGray`Chatbook`UI`EditChatParametersFunction[ParentCell[EvaluationCell[]]]
+								Wolfram`Chatbook`UI`EditChatParametersFunction[ParentCell[EvaluationCell[]]]
 							),
 						]
 					],
@@ -388,9 +388,9 @@ Notebook[{
 				Don't put this context on $ContextPath. Any symbols from Chatbook
 				used in UI functions should be refered to by absolute context.
 			*)
-			Needs["ConnorGray`Chatbook`UI`" -> None];
+			Needs["Wolfram`Chatbook`UI`" -> None];
 
-			ConnorGray`Chatbook`UI`ChatInputCellEvaluationFunction
+			Wolfram`Chatbook`UI`ChatInputCellEvaluationFunction
 		),
 		ShowCellLabel -> False,
 		CellFrameMargins -> {{27, 8}, {3, 6}},

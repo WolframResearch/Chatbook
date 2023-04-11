@@ -14,7 +14,7 @@ PacletInstall[ResourceObject["https://wolfr.am/1c2WoIEpe"]]
 ```
 
 which will install the
-[ConnorGray/Chatbook](https://www.wolframcloud.com/obj/connorg/DeployedResources/Paclet/ConnorGray/Chatbook/)
+[Wolfram/Chatbook](https://www.wolframcloud.com/obj/connorg/DeployedResources/Paclet/Wolfram/Chatbook/)
 paclet resource.
 
 Once installed, start using Chatbook by first creating an empty notebook,
@@ -62,8 +62,11 @@ Wolfram code in the chat output can be evaluated in place immediately:
 
 [ExternalEvaluate]: https://reference.wolfram.com/language/ref/ExternalEvaluate
 
+## License
 
-### Contributing
+Licensed under the MIT license ([LICENSE-MIT](./LICENSE-MIT) or <https://opensource.org/license/MIT/>)
+
+## Contributing
 
 See [**Development.md**](./docs/Development.md) for instructions on how to
 perform common development tasks when contributing to this project.

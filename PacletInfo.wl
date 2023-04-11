@@ -1,16 +1,27 @@
 PacletObject[<|
-	"Name" -> "ConnorGray/Chatbook",
-	"PublisherID" -> "ConnorGray",
-	"Version" -> "0.0.7",
-	"WolframVersion" -> "13.2+",
-	"Creator" -> {"Connor Gray", "Theodore Gray"},
-	"Description" -> "ChatGPT + Wolfram Notebooks",
+	"Name" -> "Wolfram/Chatbook",
+	"PublisherID" -> "Wolfram",
+	"Version" -> "0.0.8",
+	"WolframVersion" -> "13.2",
+	"Description" -> "Wolfram tools for interacting with LLMs",
+	"Creator" -> {"Connor Gray", "Theodore Gray", "Giulio Alessandrini", "Timothee Verdier"},
 	"Extensions" -> {
-		{"Kernel", "Root" -> "Source", "Context" -> "ConnorGray`Chatbook`"},
 		{"Kernel",
-			"Root" -> "SourceSSE",
-			"Context" -> "ConnorGray`ServerSentEventUtils`"},
-        {"Kernel", "Root" -> "AIAssistant", "Context" -> "ConnorGray`AIAssistant`"},
+			"Root" -> "Source/Chatbook",
+			"Context" -> "Wolfram`Chatbook`"
+		},
+		{"Kernel",
+			"Root" -> "Source/ServerSentEventUtils",
+			"Context" -> "Wolfram`ServerSentEventUtils`"},
+		{"Kernel",
+			"Root" -> "Source/APIFunctions",
+			"Context" -> "Wolfram`APIFunctions`"},
+		{"Asset",
+			"Root" -> "Assets",
+			"Assets" -> {
+				{"APIFunctions", "APIFunctions"}
+			}
+		},
 		{"FrontEnd"},
 		{"Documentation", "Language" -> "English"}
 	}
