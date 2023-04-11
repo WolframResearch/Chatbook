@@ -16,7 +16,12 @@ PacletObject[<|
 		{"Kernel",
 			"Root" -> "Source/APIFunctions",
 			"Context" -> "Wolfram`APIFunctions`"},
-		{"Resource", "Root" -> "Resources", Resources -> {"APIFunctions"}},
+		{"Asset",
+			"Root" -> "Assets",
+			"Assets" -> {
+				{"APIFunctions", "APIFunctions"}
+			}
+		},
 		{"FrontEnd"},
 		{"Documentation", "Language" -> "English"}
 	}
