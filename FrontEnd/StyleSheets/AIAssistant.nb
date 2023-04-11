@@ -1,0 +1,1303 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* Created By: SaveReadableNotebook *)
+(* https://resources.wolframcloud.com/FunctionRepository/resources/SaveReadableNotebook *)
+
+Notebook[
+ {
+  Cell[StyleData[StyleDefinitions -> "Default.nb"]],
+  Cell[
+   StyleData["Notebook"],
+   MessageOptions -> {"KernelMessageAction" -> "PrintToNotebook"},
+   TaggingRules -> <|
+    "AIAssistantSettings" -> <|
+     "AssistantIcon" -> Automatic,
+     "AssistantTheme" -> "Generic",
+     "AutoFormat" -> True,
+     "AIAssistantNotebook" -> True,
+     "ChatHistoryLength" -> 25,
+     "DynamicAutoFormat" -> Automatic,
+     "FrequencyPenalty" -> 0.1,
+     "MaxTokens" -> Automatic,
+     "MergeMessages" -> True,
+     "Model" -> "gpt-3.5-turbo",
+     "PresencePenalty" -> 0.1,
+     "RolePrompt" -> Automatic,
+     "ShowMinimized" -> Automatic,
+     "Temperature" -> 0.7,
+     "TopP" -> 1
+    |>
+   |>,
+   CellEpilog :>
+    Module[ { cell, notebook, settings, aiAssistant },
+     Needs["Wolfram`AIAssistant`" -> None];
+     cell = EvaluationCell[];
+     notebook = Notebooks[cell];
+     
+     settings = 
+      CurrentValue[
+       notebook,
+       {TaggingRules, "AIAssistantSettings"},
+       <| |>
+      ];
+
+     aiAssistant = Symbol["Wolfram`AIAssistant`AIAssistant"];
+     aiAssistant["RequestAIAssistant", cell, notebook, settings];
+     If[ Not[TrueQ[aiAssistant["Loaded"]]],
+      ResourceFunction["MessageFailure"][
+       "AI assistant is unavailable due to an unknown error."
+      ]
+     ]
+    ]
+  ],
+  Cell[
+   StyleData["Text"],
+   Evaluatable -> True,
+   CellEvaluationFunction ->
+    (Function[
+     If[ TrueQ[CloudSystem`$CloudNotebooks],
+      Needs["Wolfram`AIAssistant`" -> None];
+      Symbol["Wolfram`AIAssistant`AIAssistant"][
+       "RequestAIAssistant",
+       EvaluationCell[]
+      ],
+      Null
+     ]
+    ]),
+   ContextMenu -> {
+    MenuItem[
+     "Ask AI Assistant",
+     KernelExecute[
+      Needs["Wolfram`AIAssistant`" -> None];
+      Symbol["Wolfram`AIAssistant`AIAssistant"]["Ask"]
+     ],
+     MenuEvaluator -> Automatic,
+     Method -> "Queued"
+    ],
+    Delimiter,
+    MenuItem["Cu&t", "Cut"],
+    MenuItem["&Copy", "Copy"],
+    MenuItem["&Paste", FrontEnd`Paste[After]],
+    Menu[
+     "Cop&y As",
+     {
+      MenuItem["Plain &Text", FrontEnd`CopySpecial["PlainText"]],
+      MenuItem["&Input Text", FrontEnd`CopySpecial["InputText"]],
+      MenuItem[
+       "&LaTeX",
+       KernelExecute[ToExpression["FrontEnd`CopyAsTeX[]"]],
+       MenuEvaluator -> "System"
+      ],
+      MenuItem[
+       "M&athML",
+       KernelExecute[ToExpression["FrontEnd`CopyAsMathML[]"]],
+       MenuEvaluator -> "System"
+      ],
+      Delimiter,
+      MenuItem[
+       "Cell &Object",
+       FrontEnd`CopySpecial["CellObject"]
+      ],
+      MenuItem[
+       "&Cell Expression",
+       FrontEnd`CopySpecial["CellExpression"]
+      ],
+      MenuItem[
+       "&Notebook Expression",
+       FrontEnd`CopySpecial["NotebookExpression"]
+      ]
+     }
+    ],
+    Delimiter,
+    MenuItem["Make &Hyperlink...", "CreateHyperlinkDialog"],
+    MenuItem[
+     "Insert Table/&Matrix...",
+     FrontEndExecute[
+      {
+       FrontEnd`NotebookOpen[
+        FrontEnd`FindFileOnPath[
+         "InsertGrid.nb",
+         "PrivatePathsSystemResources"
+        ]
+       ]
+      }
+     ]
+    ],
+    MenuItem["Chec&k Spelling...", "FindNextMisspelling"],
+    Menu[
+     "Citatio&n",
+     {
+      MenuItem[
+       "Insert Bibliographical &Reference...",
+       "InsertBibReference"
+      ],
+      MenuItem[
+       "Insert Bibliographical &Note...",
+       "InsertBibNote"
+      ],
+      Delimiter,
+      MenuItem[
+       "Set / Change Citation &Style...",
+       "SetCitationStyle"
+      ],
+      MenuItem[
+       "&Insert Bibliography and Notes",
+       "InsertBibAndNotes"
+      ],
+      MenuItem[
+       "&Delete Bibliography and Notes",
+       "DeleteBibAndNotes"
+      ],
+      MenuItem[
+       "Re&build Bibliography and Notes",
+       "RebuildBibAndNotes"
+      ]
+     }
+    ],
+    Delimiter,
+    Menu[
+     "Sty&le",
+     {
+      MenuItem[
+       "Start Cell Style Names",
+       "MenuListStyles",
+       MenuAnchor -> True
+      ],
+      Delimiter,
+      MenuItem["&Other...", "StyleOther"]
+     }
+    ],
+    Delimiter,
+    MenuItem["Create Inline Cell", "CreateInlineCell"],
+    MenuItem["Di&vide Cell", "CellSplit"],
+    MenuItem["Evaluate &in Place", All],
+    Delimiter,
+    MenuItem[
+     "Toggle &Full Screen",
+     FrontEndExecute[
+      FrontEnd`Value[FEPrivate`NotebookToggleFullScreen[]]
+     ]
+    ]
+   }
+  ],
+  Cell[
+   StyleData[
+    "ChatInput",
+    StyleDefinitions -> StyleData["Text"]
+   ],
+   CellFrame -> 2,
+   CellMargins -> {{36, 24}, {5, 12}},
+   StyleKeyMapping -> {"/" -> "ChatQuery", "?" -> "ChatQuery"},
+   CellGroupingRules -> "InputGrouping",
+   ShowCellLabel -> False,
+   CellFrameMargins -> {{8, 8}, {4, 4}},
+   CellFrameColor -> RGBColor[0.81053, 0.85203, 0.91294],
+   CellFrameLabels -> {
+    {
+     Cell[
+      BoxData[
+       GraphicsBox[
+        {
+         RGBColor[0.62105, 0.70407, 0.82588],
+         {
+          Thickness[0.0082061],
+          StyleBox[
+           {
+            FilledCurveBox[
+             {
+              {
+               {0, 2, 0},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {0, 1, 0}
+              },
+              {
+               {1, 4, 3},
+               {1, 3, 3},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {1, 3, 3},
+               {0, 1, 0}
+              },
+              {
+               {1, 4, 3},
+               {1, 3, 3},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {1, 3, 3},
+               {0, 1, 0}
+              },
+              {
+               {0, 2, 0},
+               {1, 3, 3},
+               {1, 3, 3},
+               {0, 1, 0},
+               {0, 1, 0},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {0, 1, 0}
+              }
+             },
+             {
+              CompressedData[
+               "\n1:eJxTTMoPSmViYGBQAGIQDWKuc7dzADFqpmiCaIWY9R5g/ixJexDdoM7lCeYv\nOQbmP5jaBOHfEXZwgBjhBaIdqkVg/BhkfsN2FTD/gDKEn/DTHcxv0DCE8D8k\nQtSLpkL4z6sh6hlngvkLMrsg/Pb7EHlbCJ/hm4YjMl/mujPE3L+dEDojA0I7\nQ8yzSe4G0wvcIfadkVsKphXyIO5Z83YfmE5og7iXacHZGGT/TBA5B1F/fbEy\nMp+Bw0MRRFccOQ3mP9A7IgeiBfz6IfbNnCmH7D4Yv8FWC+z+BXarwPwDryaC\n/feg2QlsXoOyuAOyfQcOiULC81CpFTLfwXmSDZjmg/APQOOzobsYTMPit4Er\n3AaZD45vAIdTc60=\n             "
+              ],
+              {
+               {28.45, 59.32},
+               {27.082, 59.32},
+               {25.817, 60.05},
+               {25.133, 61.235},
+               {24.449, 62.42},
+               {24.449, 63.88},
+               {25.133, 65.065},
+               {25.817, 66.25},
+               {27.082, 66.98},
+               {28.45, 66.98},
+               {81.45, 66.98},
+               {83.565, 66.98},
+               {85.28, 65.265},
+               {85.28, 63.15},
+               {85.28, 61.035},
+               {83.565, 59.32},
+               {81.45, 59.32},
+               {28.45, 59.32}
+              },
+              {
+               {28.45, 84.18},
+               {27.037, 84.108},
+               {25.699, 84.821},
+               {24.971, 86.034},
+               {24.242, 87.247},
+               {24.242, 88.763},
+               {24.971, 89.976},
+               {25.699, 91.189},
+               {27.037, 91.902},
+               {28.45, 91.83},
+               {93.45, 91.83},
+               {95.487, 91.726},
+               {97.084, 90.044},
+               {97.084, 88.005},
+               {97.084, 85.966},
+               {95.487, 84.284},
+               {93.45, 84.18},
+               {28.45, 84.18}
+              },
+              CompressedData[
+               "\n1:eJxTTMoPSmViYGCQAmIQDQQH5I56OYAY8q0WDmC+qy2YL3D9sz2QelBlYgPm\nNwhtBvEV4juswPwHplf2A6kFl/gtwfwFjRdA8g1u083B/IC5r8D6H843A/Mr\nmJjA5rsvhPBvLOZD4UPtV7i+WBmZ/2DDUkEwX6YHzF9gemYB2J6/ryHugoIG\nWy1HZL7MdecYsHnZbstA6g8dnxsLNm/xCpB5c4w6t8ah2Be0Iw6qPwaZ/yA+\nCqRP793EbWB+w+4iMF1kNg9iXlUJmA+zD8aHuSdBqBhi7tVXYPceyASbx8AQ\n0mmBYh88/JHiAwA6P1/Y\n             "
+              ]
+             }
+            ]
+           },
+           {Thickness[0.0082061]},
+           StripOnInput -> False
+          ]
+         }
+        },
+        ImageSize -> 24
+       ]
+      ]
+     ],
+     None
+    },
+    {None, None}
+   },
+   CellFrameLabelMargins -> 15,
+   AutoQuoteCharacters -> { },
+   PasteAutoQuoteCharacters -> { },
+   MenuSortingValue -> 1000
+  ],
+  Cell[
+   StyleData[
+    "ChatQuery",
+    StyleDefinitions -> StyleData["ChatInput"]
+   ],
+   StyleKeyMapping -> {"/" -> "ChatInput"},
+   CellFrameColor -> RGBColor[0.82407, 0.87663, 0.67795],
+   CellFrameLabels -> {
+    {
+     Cell[
+      BoxData[
+       GraphicsBox[
+        {
+         RGBColor[0.60416, 0.72241, 0.2754],
+         {
+          Thickness[0.008138],
+          StyleBox[
+           {
+            FilledCurveBox[
+             {
+              {
+               {1, 4, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {0, 1, 0},
+               {0, 1, 0},
+               {1, 3, 3},
+               {1, 3, 3},
+               {0, 1, 0},
+               {0, 1, 0},
+               {1, 3, 3},
+               {1, 3, 3},
+               {1, 3, 3}
+              },
+              {
+               {1, 4, 3},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {0, 1, 0},
+               {0, 1, 0},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {1, 3, 3},
+               {0, 1, 0}
+              },
+              {
+               {1, 4, 3},
+               {1, 3, 3},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {1, 3, 3},
+               {0, 1, 0}
+              },
+              {
+               {1, 4, 3},
+               {1, 3, 3},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {1, 3, 3},
+               {1, 3, 3},
+               {0, 1, 0}
+              },
+              {
+               {0, 2, 0},
+               {1, 3, 3},
+               {1, 3, 3},
+               {1, 3, 3},
+               {1, 3, 3},
+               {1, 3, 3},
+               {1, 3, 3},
+               {1, 3, 3},
+               {1, 3, 3},
+               {0, 1, 0},
+               {1, 3, 3},
+               {1, 3, 3},
+               {1, 3, 3},
+               {1, 3, 3},
+               {1, 3, 3},
+               {1, 3, 3},
+               {1, 3, 3},
+               {1, 3, 3},
+               {0, 1, 0}
+              },
+              {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}
+             },
+             {
+              CompressedData[
+               "\n1:eJxTTMoPSmViYGBQB2IQDQQPqlpiHIC0g/FnTxD94NP6aBDN4DbPG0QrXFod\nBebX3/MB0QsKeiPB9MyZvsj8A3KuEcj8EptmMJ3Q1x0BkW+Ngsj7hiPzgUAJ\nmX9ARU4ATR4MYObBAMw+ONCcYwdx/8QWexB/u5UN2D6NC+/AfLnPlmD/GBuz\ngugGOVcLsPrFBexgfj8TmJ9gFyoENres2gzsjs//pMB8zYWmyO5t2DEPxjfB\nxmcQWccLNu//f2Mwv2DxL5A7GlYuh6rrKAPxHYw3myP748G3QxbI8grlR8Hu\nZnDIugtW/7DKCqr+C5jPdd0d2X4HLvYAFD5PKoRvwGgI1sfLEQim0+Zogt3X\n/wjCL9wL8ZfRpRAwf8I/pgMg/TemRCLzYekFrl62JB5Mu8qaIvMZ3gq7ODCg\npS8AKlmHNA==\n             "
+              ],
+              CompressedData[
+               "\n1:eJxTTMoPSmViYGBQAWIQDQQOxpvDHcB0sB+ITvjTGwqiF/DMBvMPrCgOBosH\ncPqCaAWLN4Fgfg2zF4huOJ4SAFH31w3MD9H2B9EMB846gdWlpUH48qy2YHse\nSrkj8xssFkL0LWAH8xXOaIP5DI9X24D5xpddoerBfIcdcdZg/oRDGih8j0RL\nsHr/WDC/4WIOmFZo2AIWb6gWAZt/4OsKc7B6KB8IlJD5B2a5KoL570XB/ITK\niQpg/VFmMPVgPsOSAjB/wcyZ8mB52y6IetdMOTA/7CpEve0eWTDdYG0HpoN2\ngPkNactQ+AfkXCPA5iVdAvMvKNeA+Qe4PMD2cfStiEB2r9/DVREQ//uFI/MX\ntGaC+X2pED4DbzOYXxE9HyJ/aCqY/0ejB8xXWLUCzI+IqYSod4Gkhy/H4yHm\nQ9MHzH0o6QUAz2B80A==\n             "
+              ],
+              {
+               {25.43, 50.84},
+               {24.06, 50.769},
+               {22.763, 51.459},
+               {22.057, 52.635},
+               {21.351, 53.81},
+               {21.351, 55.28},
+               {22.057, 56.455},
+               {22.763, 57.631},
+               {24.06, 58.321},
+               {25.43, 58.25},
+               {59.82, 58.25},
+               {61.791, 58.148},
+               {63.337, 56.519},
+               {63.337, 54.545},
+               {63.337, 52.571},
+               {61.791, 50.942},
+               {59.82, 50.84},
+               {25.43, 50.84}
+              },
+              CompressedData[
+               "\n1:eJxTTMoPSmViYGAQBWIQDQQNInmWDkD6gLthEIhOKOO3ANENO3XAfIbUw2Yg\nesLTCDD/wBw+MH+G8hIwX+FqpClYPvE9Ct8j2zcYWb3DyhnByOZ5PH8cjGxf\nhrBAiAOSezRaucF8h36jYGQ+g3lXMLJ6B+u7wcjmOeRyhSDb5zDfPATZPTA+\nzL0w9TD/wMyD+RdmHyw8YO6BhRdK+AEAqTVLPg==\n             "
+              ],
+              CompressedData[
+               "\n1:eJxt000oBGEYB/BJUVaR2lJsu0s5bDhgfcQu72ItRSLfp83H5uBjL3ugaA4o\nF1Iit7HsxUEuLlKGcmFzIOQ2pHxtSlLaHJj/fxy2bG3v/N7nfZ+Z551ncgcm\nOoaTJEly/v718fcnv2b2Cv1irqBCcKr7P8umtcqE+NZuNebNVsbdJrc++tUS\nxtNjsHLazvj4QQ28PmnsD9ZinDmnLSMCcb+jB35J83D9AiyWwrBqvTKcV8f7\nxnv4HIsJFqUfsH//m/nqWuqRrzxG127CajRq5Ltn/CvCfGFbgz5qWSHGO92w\ndFMPq8dlsPKcQnurYPX0jPU8pnH/ptLN9XvIL3ZHeR5OJ2wPtTGevYLnVYKt\ntPkN9cqvxZ30OOJakQsW7zfYL0sLsH+syMvzSu3Cumhho3F+sJJv89HNyK89\nrP2Z9Zlo+f0T1i4isDavoD/sGy0+nmtpn7Ee+aXAJT19jfuLI2c/5p+mGoz1\n/XxvyazfQkvxQdSjxi2w/HHiMd4b8kkOF+sv2IbVplH0h/25DZajY+gfrf2J\n/bvjQ39p8TDtmUX/ieMAHV52YV+gHJbvptC/6mEO47cZVXAwgx5areT5G9+H\nw1KRYP37+AEIwMRN\n             "
+              ],
+              {
+               {96.58, 20.17},
+               {96.58, 14.08},
+               {87.73, 14.08},
+               {87.73, 20.18},
+               {96.58, 20.17}
+              }
+             }
+            ]
+           },
+           {Thickness[0.008138]},
+           StripOnInput -> False
+          ]
+         }
+        },
+        ImageSize -> 24
+       ]
+      ]
+     ],
+     None
+    },
+    {None, None}
+   },
+   MenuSortingValue -> 1000,
+   FontSlant -> Italic,
+   FontColor -> GrayLevel[0.25]
+  ],
+  Cell[
+   StyleData[
+    "ChatOutput",
+    StyleDefinitions -> StyleData["Text"]
+   ],
+   CellFrame -> 2,
+   CellMargins -> {{36, 24}, {12, 5}},
+   CellElementSpacings -> {"CellMinHeight" -> 0, "ClosedCellHeight" -> 0},
+   CellGroupingRules -> "OutputGrouping",
+   GeneratedCell -> True,
+   CellAutoOverwrite -> True,
+   CellFrameColor -> GrayLevel[0.85],
+   CellFrameLabels -> {
+    {Cell[BoxData[TemplateBox[{}, "AssistantIcon"]]], None},
+    {None, None}
+   },
+   ShowAutoSpellCheck -> False,
+   LineSpacing -> {1.1, 0, 2}
+  ],
+  Cell[
+   StyleData["Input"],
+   StyleKeyMapping -> {
+    "~" -> "ChatDelimiter",
+    "/" -> "ChatInput",
+    "=" -> "WolframAlphaShort",
+    "*" -> "Item",
+    ">" -> "ExternalLanguageDefault"
+   },
+   ContextMenu -> {
+    MenuItem[
+     "Ask AI Assistant",
+     KernelExecute[
+      Needs["Wolfram`AIAssistant`" -> None];
+      Symbol["Wolfram`AIAssistant`AIAssistant"]["Ask"]
+     ],
+     MenuEvaluator -> Automatic,
+     Method -> "Queued"
+    ],
+    Delimiter,
+    MenuItem["Cu&t", "Cut"],
+    MenuItem["&Copy", "Copy"],
+    MenuItem["&Paste", FrontEnd`Paste[After]],
+    Menu[
+     "Cop&y As",
+     {
+      MenuItem["Plain &Text", FrontEnd`CopySpecial["PlainText"]],
+      MenuItem["&Input Text", FrontEnd`CopySpecial["InputText"]],
+      MenuItem[
+       "&LaTeX",
+       KernelExecute[ToExpression["FrontEnd`CopyAsTeX[]"]],
+       MenuEvaluator -> "System"
+      ],
+      MenuItem[
+       "M&athML",
+       KernelExecute[ToExpression["FrontEnd`CopyAsMathML[]"]],
+       MenuEvaluator -> "System"
+      ],
+      Delimiter,
+      MenuItem[
+       "Cell &Object",
+       FrontEnd`CopySpecial["CellObject"]
+      ],
+      MenuItem[
+       "&Cell Expression",
+       FrontEnd`CopySpecial["CellExpression"]
+      ],
+      MenuItem[
+       "&Notebook Expression",
+       FrontEnd`CopySpecial["NotebookExpression"]
+      ]
+     }
+    ],
+    Delimiter,
+    MenuItem["&Evaluate Cell", "EvaluateCells"],
+    MenuItem["Evaluate &in Place", All],
+    MenuItem[
+     "Analyze Cell",
+     KernelExecute[
+      Needs["CodeInspector`"];
+      CodeInspector`AttachAnalysis[
+       SelectedCells[InputNotebook[]]
+      ]
+     ],
+     MenuEvaluator -> Automatic,
+     Method -> "Queued"
+    ],
+    Menu[
+     "C&onvert To",
+     {
+      MenuItem["&InputForm", "SelectionConvert" -> InputForm],
+      MenuItem[
+       "&Raw InputForm",
+       "SelectionConvert" -> RawInputForm
+      ],
+      MenuItem["&OutputForm", "SelectionConvert" -> OutputForm],
+      MenuItem[
+       "First Convert to BoxForm",
+       "MenuListConvertFormatTypes",
+       MenuAnchor -> True
+      ],
+      Delimiter,
+      MenuItem["&Bitmap", "SelectionConvert" -> "Bitmap"]
+     }
+    ],
+    Delimiter,
+    MenuItem["Make &Hyperlink...", "CreateHyperlinkDialog"],
+    MenuItem[
+     "Insert Table/&Matrix...",
+     FrontEndExecute[
+      {
+       FrontEnd`NotebookOpen[
+        FrontEnd`FindFileOnPath[
+         "InsertGrid.nb",
+         "PrivatePathsSystemResources"
+        ]
+       ]
+      }
+     ]
+    ],
+    MenuItem[
+     "Insert &Special Character...",
+     FrontEndExecute[
+      {FrontEnd`NotebookOpen["SpecialCharacters.nb"]}
+     ]
+    ],
+    Delimiter,
+    MenuItem["Check &Balance", "Balance"],
+    MenuItem["Di&vide Cell", "CellSplit"],
+    MenuItem[
+     "&Un/Comment Selection",
+     KernelExecute[ToExpression["FE`toggleComment[]"]],
+     MenuEvaluator -> "System"
+    ],
+    MenuItem[
+     "Un/Iconi&ze Selection",
+     KernelExecute[ToExpression["FE`iconizeSelectionToggle[]"]],
+     MenuEvaluator -> Automatic
+    ],
+    Delimiter,
+    MenuItem["&Get Help", FrontEnd`SelectionHelpDialog[True]],
+    MenuItem[
+     "Why the Coloring?...",
+     FrontEndExecute[
+      {
+       FrontEnd`NotebookOpen[
+        FrontEnd`FindFileOnPath[
+         "WhyTheColoring.nb",
+         "PrivatePathsSystemResources"
+        ]
+       ]
+      }
+     ]
+    ],
+    MenuItem["Spea&k Selection", "SelectionSpeak"],
+    Delimiter,
+    MenuItem[
+     "Toggle &Full Screen",
+     FrontEndExecute[
+      FrontEnd`Value[FEPrivate`NotebookToggleFullScreen[]]
+     ]
+    ]
+   }
+  ],
+  Cell[
+   StyleData["Output"],
+   ContextMenu -> {
+    MenuItem[
+     "Ask AI Assistant",
+     KernelExecute[
+      Needs["Wolfram`AIAssistant`" -> None];
+      Symbol["Wolfram`AIAssistant`AIAssistant"]["Ask"]
+     ],
+     MenuEvaluator -> Automatic,
+     Method -> "Queued"
+    ],
+    Delimiter,
+    MenuItem["Cu&t", "Cut"],
+    MenuItem["&Copy", "Copy"],
+    MenuItem["&Paste", FrontEnd`Paste[After]],
+    Menu[
+     "Cop&y As",
+     {
+      MenuItem["Plain &Text", FrontEnd`CopySpecial["PlainText"]],
+      MenuItem["&Input Text", FrontEnd`CopySpecial["InputText"]],
+      MenuItem[
+       "&LaTeX",
+       KernelExecute[ToExpression["FrontEnd`CopyAsTeX[]"]],
+       MenuEvaluator -> "System"
+      ],
+      MenuItem[
+       "M&athML",
+       KernelExecute[ToExpression["FrontEnd`CopyAsMathML[]"]],
+       MenuEvaluator -> "System"
+      ],
+      Delimiter,
+      MenuItem[
+       "Cell &Object",
+       FrontEnd`CopySpecial["CellObject"]
+      ],
+      MenuItem[
+       "&Cell Expression",
+       FrontEnd`CopySpecial["CellExpression"]
+      ],
+      MenuItem[
+       "&Notebook Expression",
+       FrontEnd`CopySpecial["NotebookExpression"]
+      ]
+     }
+    ],
+    Delimiter,
+    MenuItem["&Evaluate Cell", "EvaluateCells"],
+    MenuItem["Evaluate &in Place", All],
+    MenuItem[
+     "Analyze Cell",
+     KernelExecute[
+      Needs["CodeInspector`"];
+      CodeInspector`AttachAnalysis[
+       SelectedCells[InputNotebook[]]
+      ]
+     ],
+     MenuEvaluator -> Automatic,
+     Method -> "Queued"
+    ],
+    Menu[
+     "C&onvert To",
+     {
+      MenuItem["&InputForm", "SelectionConvert" -> InputForm],
+      MenuItem[
+       "&Raw InputForm",
+       "SelectionConvert" -> RawInputForm
+      ],
+      MenuItem["&OutputForm", "SelectionConvert" -> OutputForm],
+      MenuItem[
+       "First Convert to BoxForm",
+       "MenuListConvertFormatTypes",
+       MenuAnchor -> True
+      ],
+      Delimiter,
+      MenuItem["&Bitmap", "SelectionConvert" -> "Bitmap"]
+     }
+    ],
+    Delimiter,
+    MenuItem["Make &Hyperlink...", "CreateHyperlinkDialog"],
+    MenuItem[
+     "Insert Table/&Matrix...",
+     FrontEndExecute[
+      {
+       FrontEnd`NotebookOpen[
+        FrontEnd`FindFileOnPath[
+         "InsertGrid.nb",
+         "PrivatePathsSystemResources"
+        ]
+       ]
+      }
+     ]
+    ],
+    MenuItem[
+     "Insert &Special Character...",
+     FrontEndExecute[
+      {FrontEnd`NotebookOpen["SpecialCharacters.nb"]}
+     ]
+    ],
+    Delimiter,
+    MenuItem["Check &Balance", "Balance"],
+    MenuItem["Di&vide Cell", "CellSplit"],
+    MenuItem[
+     "&Un/Comment Selection",
+     KernelExecute[ToExpression["FE`toggleComment[]"]],
+     MenuEvaluator -> "System"
+    ],
+    MenuItem[
+     "Un/Iconi&ze Selection",
+     KernelExecute[ToExpression["FE`iconizeSelectionToggle[]"]],
+     MenuEvaluator -> Automatic
+    ],
+    Delimiter,
+    MenuItem["&Get Help", FrontEnd`SelectionHelpDialog[True]],
+    MenuItem[
+     "Why the Coloring?...",
+     FrontEndExecute[
+      {
+       FrontEnd`NotebookOpen[
+        FrontEnd`FindFileOnPath[
+         "WhyTheColoring.nb",
+         "PrivatePathsSystemResources"
+        ]
+       ]
+      }
+     ]
+    ],
+    MenuItem["Spea&k Selection", "SelectionSpeak"],
+    Delimiter,
+    MenuItem[
+     "Toggle &Full Screen",
+     FrontEndExecute[
+      FrontEnd`Value[FEPrivate`NotebookToggleFullScreen[]]
+     ]
+    ]
+   }
+  ],
+  Cell[
+   StyleData["Link"],
+   FontFamily -> "Source Sans Pro",
+   FontColor ->
+    Dynamic[
+     If[ CurrentValue["MouseOver"],
+      RGBColor[0.855, 0.396, 0.145],
+      RGBColor[0.02, 0.286, 0.651]
+     ]
+    ]
+  ],
+  Cell[
+   StyleData["InlineFormula"],
+   HyphenationOptions -> {"HyphenationCharacter" -> "\[Continuation]"},
+   LanguageCategory -> "Formula",
+   AutoSpacing -> True,
+   ScriptLevel -> 1,
+   SingleLetterItalics -> False,
+   SpanMaxSize -> 1,
+   StyleMenuListing -> None,
+   FontFamily -> "Source Sans Pro",
+   FontSize -> 1.0 * Inherited,
+   ButtonBoxOptions -> {Appearance -> {Automatic, None}},
+   FractionBoxOptions -> {BaseStyle -> {SpanMaxSize -> Automatic}},
+   GridBoxOptions -> {
+    GridBoxItemSize -> {
+     "Columns" -> {{Automatic}},
+     "ColumnsIndexed" -> { },
+     "Rows" -> {{1.0}},
+     "RowsIndexed" -> { }
+    }
+   }
+  ],
+  Cell[
+   StyleData["ChatDelimiter"],
+   Selectable -> False,
+   ShowCellBracket -> False,
+   CellMargins -> {{0, 0}, {10, 10}},
+   CellBracketOptions -> {"OverlapContent" -> True},
+   CellElementSpacings -> {"CellMinHeight" -> 6},
+   Evaluatable -> True,
+   CellGroupingRules -> {"SectionGrouping", 58},
+   CellEvaluationFunction -> (($Line = 0;) &),
+   ShowCellLabel -> False,
+   CellFrameMargins -> {{20, 20}, {2, 2}},
+   DefaultNewCellStyle -> "Input",
+   FontSize -> 6,
+   Background -> GrayLevel[0.95]
+  ],
+  Cell[
+   StyleData["AssistantIcon"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        RGBColor[0.86667, 0.066667, 0.0, 1.0],
+        Thickness[0.00125],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {
+            {
+             {0, 2, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0}
+            },
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}
+           },
+           {
+            CompressedData[
+             "\n1:eJxTTMoPSmViYGAQBWIQzRC0Qzz0Y4sDw+awleX/KxwYhG0YjJM7HBpYT8zq\niGlwYMi40XwmpNmhYd/8f+/KGh0Y1A0nnrkB5PtJx4TObXNgmLRs1TuzOocD\nL3IVBDuB5jAwHPgPMgcMOh0YNGNO/j9e7NAwPe/umQ6gPP+zmWfmpDg4/JWW\nFATpl1nYsHt1moND7oLdq0Dmn3rxVGCisQPD1/ztM2MbHBpeqnmXmyc4MNz3\nr1RiqkTIbyiyu+daCNfPUHD6U4dGHohvkDYtxYGhIUtlr3SwA8OdTUblQPsZ\nfsxyP3snEc19CvYMXb/ky83rEPLKt08L3GxG6N95/b5AKJBv0VkrqJgHcr9V\nOTB84PajhR8A1/uJ8A==\n        "
+            ],
+            {
+             {723.67, 306.9},
+             {628.3, 339.63},
+             {565.0, 422.0},
+             {649.2, 390.6},
+             {723.67, 306.9}
+            },
+            {
+             {738.97, 510.1},
+             {652.23, 412.83},
+             {550.03, 450.87},
+             {611.5, 537.93},
+             {738.97, 510.1}
+            },
+            {
+             {596.03, 554.23},
+             {544.93, 481.6},
+             {547.87, 587.0},
+             {607.47, 667.5},
+             {596.03, 554.23}
+            },
+            {
+             {485.9, 634.2},
+             {588.93, 679.33},
+             {530.0, 600.07},
+             {431.9, 565.1},
+             {485.9, 634.2}
+            },
+            {
+             {525.47, 575.13},
+             {522.27, 453.4},
+             {410.9, 416.07},
+             {410.9, 534.37},
+             {525.47, 575.13}
+            },
+            {
+             {400.0, 756.4},
+             {465.63, 644.03},
+             {400.0, 560.03},
+             {334.3, 644.07},
+             {400.0, 756.4}
+            },
+            {
+             {314.1, 634.2},
+             {368.07, 565.13},
+             {269.8, 600.07},
+             {211.07, 679.33},
+             {314.1, 634.2}
+            },
+            {
+             {388.93, 534.37},
+             {388.93, 416.07},
+             {277.77, 453.4},
+             {274.37, 575.13},
+             {388.93, 534.37}
+            },
+            {
+             {252.13, 587.0},
+             {255.0, 481.6},
+             {203.93, 554.23},
+             {192.57, 667.47},
+             {252.13, 587.0}
+            },
+            {
+             {61.0, 510.27},
+             {188.47, 537.93},
+             {249.77, 450.87},
+             {147.6, 413.0},
+             {61.0, 510.27}
+            },
+            {
+             {150.8, 390.77},
+             {235.0, 422.0},
+             {171.67, 339.63},
+             {76.3, 307.07},
+             {150.8, 390.77}
+            },
+            {
+             {81.033, 285.47},
+             {178.67, 318.8},
+             {280.17, 288.93},
+             {192.77, 261.03},
+             {81.033, 285.47}
+            },
+            {
+             {190.37, 111.73},
+             {203.43, 241.6},
+             {307.13, 274.33},
+             {309.87, 164.0},
+             {190.37, 111.73}
+            },
+            {
+             {313.4, 302.0},
+             {196.8, 336.33},
+             {271.0, 432.73},
+             {382.17, 395.2},
+             {313.4, 302.0}
+            },
+            {
+             {388.93, 62.3},
+             {331.9, 160.1},
+             {329.7, 252.47},
+             {388.93, 165.9},
+             {388.93, 62.3}
+            },
+            {
+             {331.27, 288.97},
+             {400.0, 382.27},
+             {468.77, 288.97},
+             {400.0, 188.8},
+             {331.27, 288.97}
+            },
+            {
+             {468.07, 160.1},
+             {410.9, 62.3},
+             {410.9, 165.87},
+             {470.3, 252.43},
+             {468.07, 160.1}
+            },
+            {
+             {417.6, 395.17},
+             {528.97, 432.7},
+             {603.0, 336.3},
+             {486.37, 301.97},
+             {417.6, 395.17}
+            },
+            {
+             {490.1, 164.0},
+             {492.67, 274.33},
+             {596.53, 241.6},
+             {609.4, 111.57},
+             {490.1, 164.0}
+            },
+            {
+             {607.23, 261.07},
+             {519.73, 288.97},
+             {621.37, 318.83},
+             {718.97, 285.4},
+             {607.23, 261.07}
+            }
+           }
+          ]
+         },
+         {Thickness[0.041667]},
+         StripOnInput -> False
+        ]
+       },
+       PlotRange -> {{0.0, 800.0}, {0.0, 800.0}},
+       ImageSize -> 30
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["AssistantIconActive"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      DynamicModuleBox[
+       {v$$ = 0},
+       OverlayBox[
+        {
+         AnimatorBox[
+          Dynamic[v$$],
+          {0, 2*Pi},
+          AppearanceElements -> { },
+          DefaultDuration -> 2,
+          ImageSize -> {1, 1}
+         ],
+         GraphicsBox[
+          GeometricTransformationBox[
+           {
+            RGBColor[0.86667, 0.066667, 0.0, 1.0],
+            Thickness[0.00125],
+            StyleBox[
+             {
+              FilledCurveBox[
+               {
+                {
+                 {0, 2, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0}
+                },
+                {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+                {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+                {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+                {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+                {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+                {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+                {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+                {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+                {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+                {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+                {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+                {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+                {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+                {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+                {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+                {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+                {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+                {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+                {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+                {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}
+               },
+               {
+                CompressedData[
+                 "\n1:eJxTTMoPSmViYGAQBWIQzRC0Qzz0Y4sDw+awleX/KxwYhG0YjJM7HBpYT8zq\niGlwYMi40XwmpNmhYd/8f+/KGh0Y1A0nnrkB5PtJx4TObXNgmLRs1TuzOocD\nL3IVBDuB5jAwHPgPMgcMOh0YNGNO/j9e7NAwPe/umQ6gPP+zmWfmpDg4/JWW\nFATpl1nYsHt1moND7oLdq0Dmn3rxVGCisQPD1/ztM2MbHBpeqnmXmyc4MNz3\nr1RiqkTIbyiyu+daCNfPUHD6U4dGHohvkDYtxYGhIUtlr3SwA8OdTUblQPsZ\nfsxyP3snEc19CvYMXb/ky83rEPLKt08L3GxG6N95/b5AKJBv0VkrqJgHcr9V\nOTB84PajhR8A1/uJ8A==\n            "
+                ],
+                {
+                 {723.67, 306.9},
+                 {628.3, 339.63},
+                 {565.0, 422.0},
+                 {649.2, 390.6},
+                 {723.67, 306.9}
+                },
+                {
+                 {738.97, 510.1},
+                 {652.23, 412.83},
+                 {550.03, 450.87},
+                 {611.5, 537.93},
+                 {738.97, 510.1}
+                },
+                {
+                 {596.03, 554.23},
+                 {544.93, 481.6},
+                 {547.87, 587.0},
+                 {607.47, 667.5},
+                 {596.03, 554.23}
+                },
+                {
+                 {485.9, 634.2},
+                 {588.93, 679.33},
+                 {530.0, 600.07},
+                 {431.9, 565.1},
+                 {485.9, 634.2}
+                },
+                {
+                 {525.47, 575.13},
+                 {522.27, 453.4},
+                 {410.9, 416.07},
+                 {410.9, 534.37},
+                 {525.47, 575.13}
+                },
+                {
+                 {400.0, 756.4},
+                 {465.63, 644.03},
+                 {400.0, 560.03},
+                 {334.3, 644.07},
+                 {400.0, 756.4}
+                },
+                {
+                 {314.1, 634.2},
+                 {368.07, 565.13},
+                 {269.8, 600.07},
+                 {211.07, 679.33},
+                 {314.1, 634.2}
+                },
+                {
+                 {388.93, 534.37},
+                 {388.93, 416.07},
+                 {277.77, 453.4},
+                 {274.37, 575.13},
+                 {388.93, 534.37}
+                },
+                {
+                 {252.13, 587.0},
+                 {255.0, 481.6},
+                 {203.93, 554.23},
+                 {192.57, 667.47},
+                 {252.13, 587.0}
+                },
+                {
+                 {61.0, 510.27},
+                 {188.47, 537.93},
+                 {249.77, 450.87},
+                 {147.6, 413.0},
+                 {61.0, 510.27}
+                },
+                {
+                 {150.8, 390.77},
+                 {235.0, 422.0},
+                 {171.67, 339.63},
+                 {76.3, 307.07},
+                 {150.8, 390.77}
+                },
+                {
+                 {81.033, 285.47},
+                 {178.67, 318.8},
+                 {280.17, 288.93},
+                 {192.77, 261.03},
+                 {81.033, 285.47}
+                },
+                {
+                 {190.37, 111.73},
+                 {203.43, 241.6},
+                 {307.13, 274.33},
+                 {309.87, 164.0},
+                 {190.37, 111.73}
+                },
+                {
+                 {313.4, 302.0},
+                 {196.8, 336.33},
+                 {271.0, 432.73},
+                 {382.17, 395.2},
+                 {313.4, 302.0}
+                },
+                {
+                 {388.93, 62.3},
+                 {331.9, 160.1},
+                 {329.7, 252.47},
+                 {388.93, 165.9},
+                 {388.93, 62.3}
+                },
+                {
+                 {331.27, 288.97},
+                 {400.0, 382.27},
+                 {468.77, 288.97},
+                 {400.0, 188.8},
+                 {331.27, 288.97}
+                },
+                {
+                 {468.07, 160.1},
+                 {410.9, 62.3},
+                 {410.9, 165.87},
+                 {470.3, 252.43},
+                 {468.07, 160.1}
+                },
+                {
+                 {417.6, 395.17},
+                 {528.97, 432.7},
+                 {603.0, 336.3},
+                 {486.37, 301.97},
+                 {417.6, 395.17}
+                },
+                {
+                 {490.1, 164.0},
+                 {492.67, 274.33},
+                 {596.53, 241.6},
+                 {609.4, 111.57},
+                 {490.1, 164.0}
+                },
+                {
+                 {607.23, 261.07},
+                 {519.73, 288.97},
+                 {621.37, 318.83},
+                 {718.97, 285.4},
+                 {607.23, 261.07}
+                }
+               }
+              ]
+             },
+             {Thickness[0.041667]},
+             StripOnInput -> False
+            ]
+           },
+           {
+            {
+             {1.0*Cos[Dynamic[-v$$]], -Sin[Dynamic[-v$$]]},
+             {1.0*Sin[Dynamic[-v$$]], 1.0*Cos[Dynamic[-v$$]]}
+            },
+            {
+             Times[
+              1.0,
+              400.0 + (-1) * 400.0 * Cos[Dynamic[-v$$]] + 400.0 * Sin[Dynamic[-v$$]]
+             ],
+             Times[
+              1.0,
+              400.0 + (-1) * 400.0 * Cos[Dynamic[-v$$]] + (-1) * 400.0 * Sin[Dynamic[-v$$]]
+             ]
+            }
+           }
+          ],
+          PlotRange -> {{0.0, 800.0}, {0.0, 800.0}},
+          ImageSize -> 30
+         ]
+        }
+       ],
+       DynamicModuleValues :> { },
+       BaseStyle -> {CacheGraphics -> False}
+      ]
+     ])
+   }
+  ]
+ },
+ FrontEndVersion -> "13.2 for Microsoft Windows (64-bit) (January 30, 2023)",
+ StyleDefinitions -> "PrivateStylesheetFormatting.nb"
+]
