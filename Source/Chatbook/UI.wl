@@ -6,7 +6,7 @@ GU`SetUsage[ChatInputCellEvaluationFunction, "
 ChatInputCellEvaluationFunction[input$, form$] is the CellEvaluationFunction for chat input cells.
 "]
 
-EditChatParametersFunction
+EditChatContextSettings
 ChatExplainButtonFunction
 GetChatEnvironmentValues
 GetAllCellsInChatContext
@@ -378,9 +378,9 @@ OnePromptTableEditor[
 
 (*====================================*)
 
-SetFallthroughError[EditChatParametersFunction]
+SetFallthroughError[EditChatContextSettings]
 
-EditChatParametersFunction[cellobj_] := Module[{
+EditChatContextSettings[cellobj_] := Module[{
 	cell
 },
 	NotebookDelete[Cells[cellobj, AttachedCell -> True]];
@@ -407,7 +407,7 @@ EditChatParametersFunction[cellobj_] := Module[{
 				],
 			
 			$CellContext`tableContentsActAsDelimiter$$ =
-				TrueQ[CurrentValue[cellobj, {TaggingRules, "ChatContextDelimiter"}]],
+				CurrentValue[cellobj, {TaggingRules, "ChatContextDelimiter"}] =!= False,
 				
 			$CellContext`tableContentsChatContextCellProcessingFunction$$ =
 				(CurrentValue[cellobj, {TaggingRules, "ChatContextCellProcessingFunction"}] /. Inherited -> Automatic),

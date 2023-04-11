@@ -138,7 +138,7 @@ Notebook[{
 						ButtonBox[
 							StyleBox["Params", FontSize -> 10],
 							ButtonFunction :> (
-								Wolfram`Chatbook`UI`EditChatParametersFunction[ParentCell[EvaluationCell[]]]
+								Wolfram`Chatbook`UI`EditChatContextSettings[ParentCell[EvaluationCell[]]]
 							),
 							Evaluator -> Automatic
 						]
@@ -166,7 +166,7 @@ Notebook[{
 							StyleBox["Params", FontSize -> 10],
 							Evaluator -> Automatic,
 							ButtonFunction :> (
-								Wolfram`Chatbook`UI`EditChatParametersFunction[ParentCell[EvaluationCell[]]]
+								Wolfram`Chatbook`UI`EditChatContextSettings[ParentCell[EvaluationCell[]]]
 							)
 						]
 					],
@@ -193,7 +193,7 @@ Notebook[{
 							StyleBox["Params", FontSize -> 10],
 							Evaluator -> Automatic,
 							ButtonFunction :> (
-								Wolfram`Chatbook`UI`EditChatParametersFunction[ParentCell[EvaluationCell[]]]
+								Wolfram`Chatbook`UI`EditChatContextSettings[ParentCell[EvaluationCell[]]]
 							)
 						]
 					],
@@ -325,7 +325,7 @@ Notebook[{
 							Evaluator -> Automatic
 							ButtonFunction :> (
 								(* FIXME: Load package. *)
-								Wolfram`Chatbook`UI`EditChatParametersFunction[ParentCell[EvaluationCell[]]]
+								Wolfram`Chatbook`UI`EditChatContextSettings[ParentCell[EvaluationCell[]]]
 							),
 						]
 					],
@@ -402,70 +402,34 @@ Notebook[{
 			]
 		],
 		CellFrameLabels -> {
-			{None, None},
 			{
 				None,
 				Cell[
-					BoxData[RowBox[{
-						"Output Type: ",
-						PopupMenuBox[
-							Dynamic[
-								ReplaceAll[
-									FullOptions[ParentCell[EvaluationCell[]], TaggingRules]["OutputType"],
-									{_Missing -> Automatic}
-								],
-								(
-									CurrentValue[
-										ParentCell[EvaluationCell[]],
-										{TaggingRules, "OutputType"}
-									] = #1;
-								) &
-							],
-							{Automatic, "Verbose", "Terse", "Data", "Code", "Analysis"},
-							Appearance -> None,
-							BaseStyle -> {FontSize -> 10}
-						],
-						" Token Limit: ",
-						PopupMenuBox[
-							Dynamic[
-								ReplaceAll[
-									FullOptions[ParentCell[EvaluationCell[]], TaggingRules]["TokenLimit"],
-									{_Missing -> "1000"}
-								],
-								(
-									CurrentValue[
-										ParentCell[EvaluationCell[]],
-										{TaggingRules, "TokenLimit"}
-									] = #1;
-								) &
-							],
-							{"100", "500", "1000", "2000", "4000"},
-							Appearance -> None,
-							BaseStyle -> {FontSize -> 10}
-						],
-						" Temperature: ",
-						PopupMenuBox[
-							Dynamic[
-								ReplaceAll[
-									FullOptions[ParentCell[EvaluationCell[]], TaggingRules]["Temperature"],
-									{_Missing -> "0.7"}
-								],
-								(
-									CurrentValue[
-										ParentCell[EvaluationCell[]],
-										{TaggingRules, "Temperature"}
-									] = #1;
-								) &
-							],
-							{"0", "0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "1.0"},
-							Appearance -> None,
-							BaseStyle -> {FontSize -> 10}
+					BoxData[
+						ButtonBox[
+							StyleBox["\[VerticalEllipsis]", FontSize -> 14, FontWeight->Bold],
+							Evaluator -> Automatic
+							ButtonFunction :> (
+								(* FIXME: Load package. *)
+								Wolfram`Chatbook`UI`EditChatSettingsForCell[ParentCell[EvaluationCell[]]]
+							),
 						]
-					}]],
+					],
 					Background -> GrayLevel[1],
 					FontSize -> 10,
 					FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
-					TextAlignment -> Left, CellMargins -> 0, CellSize -> {All, 20}
+					TextAlignment -> Left,
+					CellMargins -> 0,
+					CellSize -> {All, 20}
+				]
+			},
+			{
+				None,
+				StyleBox[
+					"Restart Chat Context",
+					FontSize -> 20,
+					FontFamily -> "Ariel",
+					FontColor -> RGBColor[0.96669, 0.406104, 0.0365759]
 				]
 			}
 		},
