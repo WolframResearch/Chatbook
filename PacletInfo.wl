@@ -10,6 +10,7 @@ PacletObject[<|
 		{"Kernel",
 			"Root" -> "SourceSSE",
 			"Context" -> "ConnorGray`ServerSentEventUtils`"},
+        {"Kernel", "Root" -> "AIAssistant", "Context" -> "ConnorGray`AIAssistant`"},
 		{"FrontEnd"},
 		{"Documentation", "Language" -> "English"}
 	}
