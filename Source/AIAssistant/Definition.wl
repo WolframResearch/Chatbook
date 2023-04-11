@@ -208,22 +208,22 @@ AIAssistant[ command_String, args___ ] := catchTop @ executeAIAssistantCommand[ 
 (*Config*)
 
 $defaultAIAssistantSettings := <|
-    "AssistantIcon"     -> Automatic,
-    "AssistantTheme"    -> "Birdnardo",
-    "AutoFormat"        -> True,
+    "AssistantIcon"        -> Automatic,
+    "AssistantTheme"       -> "Birdnardo",
+    "AutoFormat"           -> True,
     "AIAssistantNotebook"  -> True,
-    "ChatHistoryLength" -> $maxChatCells,
-    "DynamicAutoFormat" -> Automatic,
-    "FrequencyPenalty"  -> 0.1,
-    "MaxTokens"         -> Automatic,
-    "MergeMessages"     -> True,
-    "Model"             -> "gpt-3.5-turbo",
-    "PresencePenalty"   -> 0.1,
-    "ResourceID"        -> $resourceID,
-    "RolePrompt"        -> Automatic,
-    "ShowMinimized"     -> Automatic,
-    "Temperature"       -> 0.7,
-    "TopP"              -> 1
+    "ChatHistoryLength"    -> $maxChatCells,
+    "DynamicAutoFormat"    -> Automatic,
+    "FrequencyPenalty"     -> 0.1,
+    "MaxTokens"            -> Automatic,
+    "MergeMessages"        -> True,
+    "Model"                -> "gpt-3.5-turbo",
+    "PresencePenalty"      -> 0.1,
+    "ResourceID"           -> $resourceID,
+    "RolePrompt"           -> Automatic,
+    "ShowMinimized"        -> Automatic,
+    "Temperature"          -> 0.7,
+    "TopP"                 -> 1
 |>;
 
 (* $resourceID     = First @ CloudObject[ "DeployedResources/Function/AIAssistant" ]; *)
@@ -991,7 +991,7 @@ errorText // ClearAll;
 errorText[ KeyValuePattern[ "BodyJSON" -> KeyValuePattern[ "error" -> KeyValuePattern[ "message" -> s_String ] ] ] ] :=
     s;
 
-errorText[ ___ ] := "I can't believe you've done this!";
+errorText[ ___ ] := "An unexpected error occurred.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
