@@ -1,4 +1,4 @@
-BeginPackage["ConnorGray`Chatbook`Errors`"]
+BeginPackage["Wolfram`Chatbook`Errors`"]
 
 Needs["GeneralUtilities`" -> "GU`"]
 
@@ -8,7 +8,7 @@ ChatbookWarning
 
 Begin["`Private`"]
 
-Needs["ConnorGray`Chatbook`ErrorUtils`"]
+Needs["Wolfram`Chatbook`ErrorUtils`"]
 
 CreateErrorType[ChatbookError, {}]
 
