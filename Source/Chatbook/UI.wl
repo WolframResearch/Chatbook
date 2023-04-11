@@ -535,6 +535,76 @@ EditChatContextSettings[cellobj_] := Module[{
 	AttachCell[cellobj, cell, "Inline"];
 ];
 
+EditChatSettingsForCell[cellobj_] := Module[{
+		cell
+	},
+	NotebookDelete[Cells[cellobj, AttachedCell -> True]];
+
+	cell = Cell[
+		BoxData[RowBox[{
+			"Output Type: ",
+			PopupMenuBox[
+				Dynamic[
+					ReplaceAll[
+						FullOptions[ParentCell[EvaluationCell[]], TaggingRules]["OutputType"],
+						{_Missing -> Automatic}
+					],
+					(
+						CurrentValue[
+							ParentCell[EvaluationCell[]],
+							{TaggingRules, "OutputType"}
+						] = #1;
+					) &
+				],
+				{Automatic, "Verbose", "Terse", "Data", "Code", "Analysis"},
+				Appearance -> None,
+				BaseStyle -> {FontSize -> 10}
+			],
+			" Token Limit: ",
+			PopupMenuBox[
+				Dynamic[
+					ReplaceAll[
+						FullOptions[ParentCell[EvaluationCell[]], TaggingRules]["TokenLimit"],
+						{_Missing -> "1000"}
+					],
+					(
+						CurrentValue[
+							ParentCell[EvaluationCell[]],
+							{TaggingRules, "TokenLimit"}
+						] = #1;
+					) &
+				],
+				{"100", "500", "1000", "2000", "4000"},
+				Appearance -> None,
+				BaseStyle -> {FontSize -> 10}
+			],
+			" Temperature: ",
+			PopupMenuBox[
+				Dynamic[
+					ReplaceAll[
+						FullOptions[ParentCell[EvaluationCell[]], TaggingRules]["Temperature"],
+						{_Missing -> "0.7"}
+					],
+					(
+						CurrentValue[
+							ParentCell[EvaluationCell[]],
+							{TaggingRules, "Temperature"}
+						] = #1;
+					) &
+				],
+				{"0", "0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "1.0"},
+				Appearance -> None,
+				BaseStyle -> {FontSize -> 10}
+			]
+		}]],
+		Background -> GrayLevel[1],
+		FontSize -> 10,
+		FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
+		TextAlignment -> Center
+	];
+	
+	AttachCell[cellobj, cell, Top];
+];
 
 (*====================================*)
 

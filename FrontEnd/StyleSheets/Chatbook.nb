@@ -322,7 +322,7 @@ Notebook[{
 					BoxData[
 						ButtonBox[
 							StyleBox["Params", FontSize -> 10],
-							Evaluator -> Automatic
+							Evaluator -> Automatic,
 							ButtonFunction :> (
 								(* FIXME: Load package. *)
 								Wolfram`Chatbook`UI`EditChatContextSettings[ParentCell[EvaluationCell[]]]
@@ -408,7 +408,7 @@ Notebook[{
 					BoxData[
 						ButtonBox[
 							StyleBox["\[VerticalEllipsis]", FontSize -> 14, FontWeight->Bold],
-							Evaluator -> Automatic
+							Evaluator -> Automatic,
 							ButtonFunction :> (
 								(* FIXME: Load package. *)
 								Wolfram`Chatbook`UI`EditChatSettingsForCell[ParentCell[EvaluationCell[]]]
@@ -425,12 +425,7 @@ Notebook[{
 			},
 			{
 				None,
-				StyleBox[
-					"Restart Chat Context",
-					FontSize -> 20,
-					FontFamily -> "Ariel",
-					FontColor -> RGBColor[0.96669, 0.406104, 0.0365759]
-				]
+				None
 			}
 		},
 		DefaultFormatType -> TextForm,
