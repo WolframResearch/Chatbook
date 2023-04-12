@@ -1,3 +1,5 @@
+(* ::Package:: *)
+
 BeginPackage["Wolfram`Chatbook`UI`"]
 
 Needs["GeneralUtilities`" -> "GU`"]
@@ -6,7 +8,8 @@ GU`SetUsage[ChatInputCellEvaluationFunction, "
 ChatInputCellEvaluationFunction[input$, form$] is the CellEvaluationFunction for chat input cells.
 "]
 
-EditChatParametersFunction
+EditChatContextSettings
+EditChatSettingsForCell
 ChatExplainButtonFunction
 GetChatEnvironmentValues
 GetAllCellsInChatContext
@@ -21,6 +24,8 @@ Needs["Wolfram`Chatbook`Debug`"]
 Needs["Wolfram`Chatbook`Utils`"]
 Needs["Wolfram`Chatbook`Streaming`"]
 Needs["Wolfram`Chatbook`Serialization`"]
+
+Needs["OAuth`"];
 
 Needs["Wolfram`ServerSentEventUtils`" -> "SSEUtils`"]
 
@@ -342,49 +347,56 @@ OnePromptTableEditor[
 		DynamicBox[GridBox[
 			Join[
 				{{
-					"Role",
-					"Content",
-					ButtonBox[
-						FrameBox["+"],
-						Evaluator -> Automatic,
-						Appearance -> None,
-						ButtonFunction :> (
-							AppendTo[tableContents, {"system", ""}]
-						)
-					]
+					StyleBox["ROLE", FontSize->10],
+					StyleBox["CONTENT", FontSize->10],
+					""
 				}},
 				MapIndexed[
 					{
 						InputFieldBox[Dynamic[tableContents[[#2[[1]], 1]]]],
 						InputFieldBox[Dynamic[tableContents[[#2[[1]], 2]]]],
 						ButtonBox[
-							"x",
+							FrameBox["\[Times]", RoundingRadius->5, ImageSize->{20,20}, Alignment->{Center,Center}],
 							Evaluator -> Automatic,
+							Appearance -> None,
 							ButtonFunction :> (
 								tableContents = Delete[tableContents, {#2[[1]]}]
 							)
 						]
 					} &,
 					tableContents
-				]
+				],
+				{{
+					ButtonBox[
+						FrameBox["+", RoundingRadius->5, ImageSize->{20,20}, Alignment->{Center,Center}],
+						Evaluator -> Automatic,
+						Appearance -> None,
+						ButtonFunction :> (
+							AppendTo[tableContents, {"system", ""}]
+						)
+					],
+					"",
+					""
+				}}
 			],
-			GridBoxFrame -> {
-				"Columns" -> {{True}},
-				"Rows" -> {{True}}
-			}
+			GridBoxAlignment->{"Columns" -> {{Left}}}
 		]]
-	}}];
+	}}
+];
 
 
 (*====================================*)
 
-SetFallthroughError[EditChatParametersFunction]
+SetFallthroughError[EditChatContextSettings]
 
-EditChatParametersFunction[cellobj_] := Module[{
+EditChatContextSettings[cellobj_] := Module[{
 	cell
 },
-	NotebookDelete[Cells[cellobj, AttachedCell -> True]];
-
+	If[Cells[cellobj, AttachedCell -> True] =!= {},
+		NotebookDelete[Cells[cellobj, AttachedCell -> True]];
+		Return[]
+	];
+	
 	cell = Cell[
 		BoxData @ DynamicModuleBox[{
 			$CellContext`tableContentsPreprompt$$ =
@@ -407,7 +419,7 @@ EditChatParametersFunction[cellobj_] := Module[{
 				],
 			
 			$CellContext`tableContentsActAsDelimiter$$ =
-				TrueQ[CurrentValue[cellobj, {TaggingRules, "ChatContextDelimiter"}]],
+				CurrentValue[cellobj, {TaggingRules, "ChatContextDelimiter"}] =!= False,
 				
 			$CellContext`tableContentsChatContextCellProcessingFunction$$ =
 				(CurrentValue[cellobj, {TaggingRules, "ChatContextCellProcessingFunction"}] /. Inherited -> Automatic),
@@ -416,114 +428,119 @@ EditChatParametersFunction[cellobj_] := Module[{
 				(CurrentValue[cellobj, {TaggingRules, "ChatContextPostEvaluationFunction"}] /. Inherited -> Automatic)
 		},
 			Evaluate @ StyleBox[
-				FrameBox @ GridBox[
-					{
+				FrameBox[
+					GridBox[
 						{
-							RowBox[{
-								CheckboxBox[Dynamic[$CellContext`tableContentsActAsDelimiter$$]],
-								" Act as chat context delimiter"
-							}]
-						},
-						{""},
-						{StyleBox["ChatContextPreprompt", Bold]},
-						{
-							OnePromptTableEditor[
-								cellobj,
-								"ChatContextPreprompt",
-								Dynamic[$CellContext`tableContentsPreprompt$$]
-							]
-						},
-						{""},
-						{StyleBox["ChatContextPostprompt", Bold]},
-						{
-							OnePromptTableEditor[
-								cellobj,
-								"ChatContextPostprompt",
-								Dynamic[$CellContext`tableContentsPostprompt$$]
-							]
-						},
-						{""},
-						{StyleBox["ChatContextCellProcessingFunction", Bold]},
-						{
-							InputFieldBox[Dynamic[$CellContext`tableContentsChatContextCellProcessingFunction$$]]
-						},
-						{""},
-						{StyleBox["ChatContextPostEvaluationFunction", Bold]},
-						{
-							InputFieldBox[Dynamic[$CellContext`tableContentsChatContextPostEvaluationFunction$$], Hold[Expression]]
-						},
-						{""},
-						{
-							ItemBox[
+							{
 								RowBox[{
-									ButtonBox[
-										FrameBox["Apply"],
-										Evaluator -> Automatic,
-										Appearance -> None,
-										ButtonFunction :> (
-											CurrentValue[
-												cellobj,
-												{TaggingRules, "ChatContextDelimiter"}
-											] = $CellContext`tableContentsActAsDelimiter$$;
-											
-											CurrentValue[
-												cellobj,
-												{"TaggingRules", "ChatContextPreprompt"}
-											] = Map[
-												<|"role" -> #[[1]], "content" -> #[[2]]|> &,
-												$CellContext`tableContentsPreprompt$$
-											];
-
-											CurrentValue[
-												cellobj,
-												{"TaggingRules", "ChatContextPostprompt"}
-											] = Map[
-												<|"role" -> #[[1]], "content" -> #[[2]]|> &,
-												$CellContext`tableContentsPostprompt$$
-											];
-
-											CurrentValue[
-												cellobj,
-												{TaggingRules, "ChatContextCellProcessingFunction"}
-											] = $CellContext`tableContentsChatContextCellProcessingFunction$$;
-											
-											(* ChatContextPostEvaluationFunction is set twice: once in tagging rules, and then in 
-											the option that causes it to be used as the CellEpilog of all cells within the group
-											this cell is the head of. *)
-											CurrentValue[
-												cellobj,
-												{TaggingRules, "ChatContextPostEvaluationFunction"}
-											] = $CellContext`tableContentsChatContextPostEvaluationFunction$$;
-											
-											$CellContext`tableContentsChatContextPostEvaluationFunction$$ /. Hold[e_] :> 
-												SetOptions[
-													cellobj, 
-													PrivateCellOptions->{"CellGroupBaseStyle" -> {
-														CellEpilog :> Wolfram`Chatbook`UI`ChatContextEpilogFunction[e]}
-													}
+									CheckboxBox[Dynamic[$CellContext`tableContentsActAsDelimiter$$]],
+									" Act as chat context delimiter"
+								}]
+							},
+							{""},
+							{StyleBox["ChatContextPreprompt", FontSize->12]},
+							{
+								OnePromptTableEditor[
+									cellobj,
+									"ChatContextPreprompt",
+									Dynamic[$CellContext`tableContentsPreprompt$$]
+								]
+							},
+							{""},
+							{StyleBox["ChatContextPostprompt", FontSize->12]},
+							{
+								OnePromptTableEditor[
+									cellobj,
+									"ChatContextPostprompt",
+									Dynamic[$CellContext`tableContentsPostprompt$$]
+								]
+							},
+							{""},
+							{StyleBox["ChatContextCellProcessingFunction", FontSize->12]},
+							{
+								InputFieldBox[Dynamic[$CellContext`tableContentsChatContextCellProcessingFunction$$]]
+							},
+							{""},
+							{StyleBox["ChatContextPostEvaluationFunction", FontSize->12]},
+							{
+								InputFieldBox[Dynamic[$CellContext`tableContentsChatContextPostEvaluationFunction$$], Hold[Expression]]
+							},
+							{""},
+							{
+								ItemBox[
+									RowBox[{
+										ButtonBox[
+											FrameBox["Apply"],
+											Evaluator -> Automatic,
+											Appearance -> None,
+											ButtonFunction :> (
+												CurrentValue[
+													cellobj,
+													{TaggingRules, "ChatContextDelimiter"}
+												] = $CellContext`tableContentsActAsDelimiter$$;
+												
+												CurrentValue[
+													cellobj,
+													{"TaggingRules", "ChatContextPreprompt"}
+												] = Map[
+													<|"role" -> #[[1]], "content" -> #[[2]]|> &,
+													$CellContext`tableContentsPreprompt$$
 												];
-											
-											NotebookDelete[Cells[cellobj, AttachedCell -> True]];
-										)
-									],
-									ButtonBox[
-										FrameBox["Cancel"],
-										Evaluator -> Automatic,
-										Appearance -> None,
-										ButtonFunction :> (
-											NotebookDelete[Cells[cellobj, AttachedCell -> True]]
-										)
-									]
-								}],
-								Alignment -> Center
-							]
+	
+												CurrentValue[
+													cellobj,
+													{"TaggingRules", "ChatContextPostprompt"}
+												] = Map[
+													<|"role" -> #[[1]], "content" -> #[[2]]|> &,
+													$CellContext`tableContentsPostprompt$$
+												];
+	
+												CurrentValue[
+													cellobj,
+													{TaggingRules, "ChatContextCellProcessingFunction"}
+												] = $CellContext`tableContentsChatContextCellProcessingFunction$$;
+												
+												(* ChatContextPostEvaluationFunction is set twice: once in tagging rules, and then in 
+												the option that causes it to be used as the CellEpilog of all cells within the group
+												this cell is the head of. *)
+												CurrentValue[
+													cellobj,
+													{TaggingRules, "ChatContextPostEvaluationFunction"}
+												] = $CellContext`tableContentsChatContextPostEvaluationFunction$$;
+												
+												$CellContext`tableContentsChatContextPostEvaluationFunction$$ /. Hold[e_] :> 
+													SetOptions[
+														cellobj, 
+														PrivateCellOptions->{"CellGroupBaseStyle" -> {
+															CellEpilog :> Wolfram`Chatbook`UI`ChatContextEpilogFunction[e]}
+														}
+													];
+												
+												NotebookDelete[Cells[cellobj, AttachedCell -> True]];
+											)
+										],
+										ButtonBox[
+											FrameBox["Cancel"],
+											Evaluator -> Automatic,
+											Appearance -> None,
+											ButtonFunction :> (
+												NotebookDelete[Cells[cellobj, AttachedCell -> True]]
+											)
+										]
+									}],
+									Alignment -> Center
+								]
+							}
+						},
+						GridBoxAlignment -> {
+							"Columns" -> {{Left}}
 						}
-					},
-					GridBoxAlignment -> {
-						"Columns" -> {{Left}}
-					}
+					],
+					FrameStyle -> GrayLevel[0.774121],
+					RoundingRadius -> 5,
+					Background -> GrayLevel[0.96]
 				],
-				Background -> RGBColor[0.333, 1, 0.333]
+				FontColor->GrayLevel[0.422675]
 			]
 		],
 		"Text",
@@ -535,6 +552,79 @@ EditChatParametersFunction[cellobj_] := Module[{
 	AttachCell[cellobj, cell, "Inline"];
 ];
 
+EditChatSettingsForCell[cellobj_] := Module[{
+		cell
+	},
+	If[Cells[cellobj, AttachedCell -> True] =!= {},
+		NotebookDelete[Cells[cellobj, AttachedCell -> True]];
+		Return[]
+	];
+	
+	cell = Cell[
+		BoxData[RowBox[{
+			"Output Type: ",
+			PopupMenuBox[
+				Dynamic[
+					ReplaceAll[
+						FullOptions[ParentCell[EvaluationCell[]], TaggingRules]["OutputType"],
+						{_Missing -> Automatic}
+					],
+					(
+						CurrentValue[
+							ParentCell[EvaluationCell[]],
+							{TaggingRules, "OutputType"}
+						] = #1;
+					) &
+				],
+				{Automatic, "Verbose", "Terse", "Data", "Code", "Analysis"},
+				Appearance -> None,
+				BaseStyle -> {FontSize -> 10}
+			],
+			" Token Limit: ",
+			PopupMenuBox[
+				Dynamic[
+					ReplaceAll[
+						FullOptions[ParentCell[EvaluationCell[]], TaggingRules]["TokenLimit"],
+						{_Missing -> "1000"}
+					],
+					(
+						CurrentValue[
+							ParentCell[EvaluationCell[]],
+							{TaggingRules, "TokenLimit"}
+						] = #1;
+					) &
+				],
+				{"100", "500", "1000", "2000", "4000"},
+				Appearance -> None,
+				BaseStyle -> {FontSize -> 10}
+			],
+			" Temperature: ",
+			PopupMenuBox[
+				Dynamic[
+					ReplaceAll[
+						FullOptions[ParentCell[EvaluationCell[]], TaggingRules]["Temperature"],
+						{_Missing -> "0.7"}
+					],
+					(
+						CurrentValue[
+							ParentCell[EvaluationCell[]],
+							{TaggingRules, "Temperature"}
+						] = #1;
+					) &
+				],
+				{"0", "0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "1.0"},
+				Appearance -> None,
+				BaseStyle -> {FontSize -> 10}
+			]
+		}]],
+		Background -> GrayLevel[1],
+		FontSize -> 10,
+		FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
+		TextAlignment -> Center
+	];
+	
+	AttachCell[cellobj, cell, Top];
+];
 
 (*====================================*)
 
@@ -774,111 +864,21 @@ writeContent[$state_Symbol, content_?StringQ] := Module[{},
 SetFallthroughError[checkAPIKey]
 
 checkAPIKey[provenBad_] := Module[{
-	nb
+	value
 },
 	If[StringQ[SystemCredential["OPENAI_API_KEY"]] && !provenBad,
 		Return[True]
 	];
-
-	nb = Notebook[{
-		Cell["ChatGPT API Key Required", "Subsection", TextAlignment -> Center],
-
-		Cell[
-			TextData[Flatten[{
-				If[provenBad,
-					{"The ChatGPT API Key you have installed was not accepted by OpenAI. You can install a different one by pasting it into the field below and clicking ",
-						StyleBox["Install API Key.",
-						FontFamily -> CurrentValue["ControlsFontFamily"]]},
-
-					"To use ChatGPT features you must have a valid ChatGPT API key installed. "
-				],
-				"If you don't have one, you can get a free one by following these instructions.\n\n",
-				"\t(1) Login or create a free account at ",
-				ButtonBox[
-					"https://chat.openai.com/auth/login",
-					BaseStyle -> "Hyperlink",
-					ButtonData -> {URL["https://chat.openai.com/auth/login"], None}
-				],
-				"\n\t(2) View your API Key at ",
-				ButtonBox[
-					"https://platform.openai.com/account/api-keys",
-					BaseStyle -> "Hyperlink",
-					ButtonData -> {URL["https://platform.openai.com/account/api-keys"], None}
-				],
-				"\n\t(3) Copy/paste the key into the field below, then click ",
-				StyleBox["Install API Key.", FontFamily -> CurrentValue["ControlsFontFamily"]]
-			}]],
-			"Text",
-			FontFamily -> CurrentValue["PanelFontFamily"],
-			CellMargins -> {{20, 20}, {10, 10}}
-		],
-
-		Cell[
-			BoxData @ RowBox[{
-				StyleBox[
-					InputFieldBox[
-						"",
-						String,
-						FieldSize -> 45,
-						FieldHint -> "Paste ChaptGPT API Key Here",
-						(* Don't show the API key. Useful if the user is
-							e.g. screensharing when they paste it in. *)
-						FieldMasked -> True
-					],
-					ShowSelection -> True
-				]
-			}],
-			"Text",
-			TextAlignment -> Center,
-			CellMargins -> {{20, 20}, {10, 10}},
-			FontFamily -> CurrentValue["ControlsFontFamily"]
-		],
-
-		Cell[
-			TextData["If you need to change your API key in the future, use the non-existant Credentials tab in the Preferences dialog."],
-			"Text",
-			FontFamily -> CurrentValue["PanelFontFamily"],
-			CellMargins -> {{20, 20}, {10, 10}}
-		],
-
-		Cell[
-			BoxData[RowBox[{
-
-			ButtonBox[
-			StyleBox["Install API Key",
-				FontFamily -> CurrentValue["ControlsFontFamily"]],
-			ButtonFunction :> (
-
-				SystemCredential["OPENAI_API_KEY"] =
-				Cases[NotebookGet[EvaluationNotebook[]], _InputFieldBox,
-					Infinity][[1, 1]];
-				NotebookClose[EvaluationNotebook[]];
-				), Evaluator -> Automatic, Method -> "Preemptive"],
-			"   ",
-
-			ButtonBox[
-			StyleBox["Cancel",
-				FontFamily -> CurrentValue["ControlsFontFamily"]],
-			ButtonFunction :> NotebookClose[EvaluationNotebook[]]]
-			}]],
-			"Text",
-			TextAlignment -> Center,
-			CellMargins -> {{20, 20}, {10, 10}}
-		]
-	}];
-
-	NotebookPut[
-		nb,
-		WindowFrame -> "ModelessDialog",
-		WindowSize -> {800, FitAll},
-		ShowCellBracket -> False,
-		ShowSelection -> False,
-		Selectable -> False,
-		Editable -> False,
-		WindowElements -> {},
-		WindowTitle -> "ChatGPT API Key"
-	];
-
+	
+	value = OAuthDialogDump`Private`MultipleKeyDialog[
+		"OpenAILink", 
+		{"API Key" -> "APIKey"}, 
+		"https://platform.openai.com/account/api-keys", 
+		"https://openai.com/policies/terms-of-use"];
+	
+	If[value =!= $Canceled,
+		SystemCredential["OPENAI_API_KEY"] = ("APIKey" /. value)];
+	
 	False
 ];
 
