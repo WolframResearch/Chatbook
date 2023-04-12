@@ -3,7 +3,7 @@ BeginPackage["Wolfram`APIFunctions`APIs`Common`"]
 APIFailure
 ConnectToService
 $ConnectionCache
-$ValidAuthenticationPatt
+$ValidAuthenticationPattern
 ConformAuthentication
 TestConnection
 
@@ -83,36 +83,27 @@ SetAttributes[errorSymbol, HoldFirst]
 errorSymbol[s_Symbol] := StringForm["`1` (`2`)", SymbolName[Unevaluated[s]], s] /; ValueQ[s]
 errorSymbol[s_Symbol] := SymbolName[Unevaluated[s]]
 
-$ValidAuthenticationPatt = "Available" | Environment | SystemCredential |
+$ValidAuthenticationPattern = "Cached" | "Available" | Environment | SystemCredential |
 	"Dialog";
 
 ClearAll["ConnectToService"]
 ConnectToService[name_, authentication_] :=
 	GU`Scope[Enclose[
 		Switch[authentication,
-			"Available",
-				temp = SelectFirst[
+			"Cached",
+				so = Confirm @ SelectFirst[
 					Lookup[$ConnectionCache, Key@name, <||>],
 					(
 						DBPrint["ConnectToService: ", StringForm["Testing `` for availability...", Last@#]];
 						Not @ FailureQ @ TestConnection[name, #]
 					)&,
-					Missing["NotAvailable"]
+					$Failed
 				];
-				If[!MissingQ[temp],
-					DBPrint["ConnectToService: ", StringForm["Using first available cached connexion to ``: ``.", name, temp["ID"]]];
-					Return @ temp
-					,
-					DBPrint["ConnectToService: ", StringForm["Attempting to grab external connexion to ``.", name]];
-					temp = Confirm @ Quiet[ConfirmQuiet[ServiceConnect[name]]];
-					Confirm @ TestConnection[name, temp];
-					key = Confirm @ getAuthenticationHash[temp];
-				];
+				key = Confirm @ getAuthenticationHash[so]
 				,
 			_Association | Environment | SystemCredential, (* password / apikey ... *)
 				(* check the connection cache for existing so *)
-				authmod = ConformAuthentication[name, authentication];
-				If[FailureQ @ authmod, GU`ThrowFailure["bdauth", authentication]];
+				authmod = Confirm @ ConformAuthentication[name, authentication];
 				key = Hash[authmod, "SHA512", "Base64Encoding"];
 				temp = Query[Key@name, Key@key][$ConnectionCache];
 				(* validate connexion *)
@@ -120,6 +111,12 @@ ConnectToService[name_, authentication_] :=
 					DBPrint["ConnectToService: ", StringForm["Creating new connexion with provided authentication ``", authentication]];
 					temp = Confirm @ makeConnection[name, authmod]
 				]
+				,
+			"Available",
+				DBPrint["ConnectToService: ", StringForm["Attempting to grab external connexion to ``.", name]];
+				so = Confirm @ Quiet[ConfirmQuiet[ServiceConnect[name]]];
+				Confirm @ TestConnection[name, so];
+				key = Confirm @ getAuthenticationHash[so]
 				,
 			"Dialog",
 				(* prompt for key *)
@@ -146,15 +143,14 @@ ConnectToService[name_, authentication_] :=
 		APIFailure
 	]];
 
-ConnectToService[name_] := GU`Scope @ Enclose[
-	DBPrint["ConnectToService: ", StringForm["Looking for any available connexion to ``.", name]];
-	so = ConnectToService[name, "Available"];
-	(* TODO : enable "WolframCloud" method
-	If[FailureQ[so],
-		DBPrint["ConnectToService: ", StringForm["No available connexion to ``. Will use Wolfram.", name]];
-		so = Confirm @ ConnectToService[name, "WolframCloud"]
+ConnectToService[name_] := GU`Scope[
+	Do[
+		DBPrint["ConnectToService: ", StringForm["Looking for any `` connexion to ``.", auth, name]];
+		so = ConnectToService[name, auth];
+		If[!FailureQ[so], Break[]];
+		,
+		{auth, {"Cached", Environment, SystemCredential, "Available", "Dialog"}}
 	];
-	*)
 	so
 ];
 
@@ -206,6 +202,8 @@ getAuthenticationKey[so_ServiceObject] := GU`Scope @ Enclose[
 		key
 	]
 ];
+
+getAuthenticationHash[_] := Failure["APIError", <|"Message" -> "Missing Authentication informations."|>];
 
 TestConnection[name_String, so_ServiceObject] := GU`Scope[Enclose[
 	TestConnection[name, Confirm @ getAuthenticationKey[so]]

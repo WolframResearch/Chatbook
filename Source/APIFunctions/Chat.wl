@@ -90,7 +90,7 @@ iCreateChat[args_, opts_] := GU`Scope @ Enclose[
 	(* params["Seed"] = GetOption[RandomSeeding]; *)
 	authentication = GetOption[Authentication];
 	params["Authentication"] = Switch[authentication,
-		Automatic | (Alternatives @@ $ValidAuthenticationPatt) | ServiceObject[method, _],
+		Automatic | (Alternatives @@ $ValidAuthenticationPattern) | ServiceObject[method, _],
 			authentication
 			,
 		a_?AssociationQ,
