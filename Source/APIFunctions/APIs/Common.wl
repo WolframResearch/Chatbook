@@ -127,9 +127,9 @@ ConnectToService[name_, authentication_] :=
 				key = Confirm @ getAuthenticationHash[temp];
 				,
 			_ServiceObject,
+				(* test is wasting time - no early failure gain *)
 				temp = authentication;
-				DBPrint["ConnectToService: ", StringForm["Validating connexion ``.", Last @ authentication]];
-				Confirm @ TestConnection[name, temp];
+				DBPrint["ConnectToService: ", StringForm["Using provided connexion w/o validation ``.", Last @ authentication]];
 				key = Confirm @ getAuthenticationHash[temp];
 				,
 			_,
