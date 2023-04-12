@@ -99,7 +99,7 @@ ConnectToService[name_, authentication_] :=
 					)&,
 					$Failed
 				];
-				hash = Confirm @ authenticationHash[Confirm @ ConformAuthentication[so]]
+				hash = None (* already in cache *)
 				,
 			_Association | Environment | SystemCredential, (* password / apikey ... *)
 				(* check the connection cache for existing so *)
@@ -127,7 +127,10 @@ ConnectToService[name_, authentication_] :=
 				(* test is wasting time - no early failure gain *)
 				so = authentication;
 				DBPrint["ConnectToService: ", StringForm["Using provided connection w/o validation ``.", Last @ authentication]];
-				hash = Confirm @ authenticationHash[Confirm @ ConformAuthentication[so]];
+				hash = If[MemberQ[Values@$ConnectionCache[name], so],
+					None, (* likely - performances : no cloud lookup on existing object *)
+					Confirm @ authenticationHash[Confirm @ ConformAuthentication[so]]
+				];
 				,
 			_,
 				(* TODO : service credits via "WolframCloud" *)
