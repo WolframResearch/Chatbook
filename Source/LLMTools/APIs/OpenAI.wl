@@ -1,4 +1,4 @@
-BeginPackage["Wolfram`APIFunctions`APIs`OpenAI`"]
+BeginPackage["Wolfram`LLMTools`APIs`OpenAI`"]
 
 $OpenAIModels
 $DefaultOpenAIModel
@@ -7,19 +7,19 @@ $OpenAIMaxImageSize
 (* no op in >13.2 - in layout *)
 Quiet @ PacletManager`PacletInstall[
 	FileNameJoin[{
-		PacletManager`PacletResource["Wolfram/LLMTools", "APIFunctions"],
+		PacletManager`PacletResource["Wolfram/LLMTools", "LLMTools"],
 		"ServiceConnection_OpenAI-13.3.6.paclet"
 	}]
 ];
 
 (* connection handling interfaces ConformAuthentication, ... *)
 Needs["GeneralUtilities`" -> "GU`"]
-Needs["Wolfram`APIFunctions`Common`"]
-Needs["Wolfram`APIFunctions`APIs`Common`"]
+Needs["Wolfram`LLMTools`Common`"]
+Needs["Wolfram`LLMTools`APIs`Common`"]
 (* CallxxxAPI interfaces *)
-Needs["Wolfram`APIFunctions`ImageSynthesize`"]
-Needs["Wolfram`APIFunctions`TextSynthesize`"]
-Needs["Wolfram`APIFunctions`Chat`"]
+Needs["Wolfram`LLMTools`ImageSynthesize`"]
+Needs["Wolfram`LLMTools`TextSynthesize`"]
+Needs["Wolfram`LLMTools`Chat`"]
 
 Begin["`Private`"]
 (* API parameters *)

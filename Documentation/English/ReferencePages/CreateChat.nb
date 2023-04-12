@@ -564,7 +564,7 @@ Cell[BoxData[
        Dynamic[Typeset`open$$], ImageSize -> Automatic]},
      "SummaryPanel"],
     DynamicModuleValues:>{}], "]"}],
-  Wolfram`APIFunctions`ChatObject[<|
+  Wolfram`LLMTools`ChatObject[<|
    "Method" -> "OpenAI", "Messages" -> {}, "ChatID" -> 
     "e0a4edec-9328-41c5-86ff-86df75a50dae", "History" -> {}, "Usage" -> 
     0|>, {}],
@@ -607,8 +607,8 @@ Cell[BoxData[
                 PaneBox[
                  
                  DynamicModuleBox[{
-                  Wolfram`APIFunctions`Chat`Private`over$$ = 0, 
-                   Wolfram`APIFunctions`Chat`Private`overhandler$$}, 
+                  Wolfram`LLMTools`Chat`Private`over$$ = 0, 
+                   Wolfram`LLMTools`Chat`Private`overhandler$$}, 
                   TagBox[
                    TagBox[
                     GridBox[{{
@@ -681,7 +681,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -705,7 +705,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -714,8 +714,8 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     PaneSelectorBox[{1 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -800,20 +800,20 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> 
@@ -822,7 +822,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     "Default" -> FrontEnd`FileName[{"Misc"}, 
                     "TransparentBG.9.png"]}, Evaluator -> Automatic, Method -> 
                     "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -836,7 +836,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}, {
                     TagBox[
@@ -937,7 +937,7 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -963,7 +963,7 @@ Himalayas on the border between Nepal and Tibet. It stands at 8,848 meters \
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -972,8 +972,8 @@ Himalayas on the border between Nepal and Tibet. It stands at 8,848 meters \
                     PaneSelectorBox[{2 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -1058,20 +1058,20 @@ Himalayas on the border between Nepal and Tibet. It stands at 8,848 meters \
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> 
@@ -1082,7 +1082,7 @@ Himalayas on the border between Nepal and Tibet. It stands at 8,848 meters \
                     "Default" -> FrontEnd`FileName[{"Misc"}, 
                     "TransparentBG.9.png"]}, Evaluator -> Automatic, Method -> 
                     "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -1096,7 +1096,7 @@ Himalayas on the border between Nepal and Tibet. It stands at 8,848 meters \
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}}, 
                     GridBoxAlignment -> {
@@ -1121,27 +1121,27 @@ Himalayas on the border between Nepal and Tibet. It stands at 8,848 meters \
                    EventHandlerTag[{
                     "MouseExited" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 0], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 0], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                   DynamicModuleValues :> {{
                     DownValues[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$] = {
+                    Wolfram`LLMTools`Chat`Private`overhandler$$] = {
                     HoldPattern[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$[
-                    Pattern[Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`overhandler$$[
+                    Pattern[Wolfram`LLMTools`Chat`Private`expr$, 
                     Blank[]], 
-                    Pattern[Wolfram`APIFunctions`Chat`Private`i$, 
+                    Pattern[Wolfram`LLMTools`Chat`Private`i$, 
                     Blank[]]]] :> EventHandler[
                     Button[
-                    Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`expr$, 
                     FrameMargins -> {{10, 10}, {5, 5}}, Appearance -> 
                     "Suppressed", Active -> False, BaselinePosition -> 
                     Baseline, BaseStyle -> {}, DefaultBaseStyle -> {}, 
                     Alignment -> Left], "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 
-                    Wolfram`APIFunctions`Chat`Private`i$]]}}}], {}, 
+                    Wolfram`LLMTools`Chat`Private`over$$, 
+                    Wolfram`LLMTools`Chat`Private`i$]]}}}], {}, 
                  AppearanceElements -> None, Scrollbars -> {False, Automatic},
                   ImageSize -> {{180, 600}, {20, 400}}, ContentPadding -> 
                  False], "SummaryItem"]}}, 
@@ -1163,8 +1163,8 @@ Himalayas on the border between Nepal and Tibet. It stands at 8,848 meters \
                 PaneBox[
                  
                  DynamicModuleBox[{
-                  Wolfram`APIFunctions`Chat`Private`over$$ = 0, 
-                   Wolfram`APIFunctions`Chat`Private`overhandler$$}, 
+                  Wolfram`LLMTools`Chat`Private`over$$ = 0, 
+                   Wolfram`LLMTools`Chat`Private`overhandler$$}, 
                   TagBox[
                    TagBox[
                     GridBox[{{
@@ -1237,7 +1237,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -1261,7 +1261,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -1270,8 +1270,8 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     PaneSelectorBox[{1 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -1356,20 +1356,20 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> 
@@ -1378,7 +1378,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     "Default" -> FrontEnd`FileName[{"Misc"}, 
                     "TransparentBG.9.png"]}, Evaluator -> Automatic, Method -> 
                     "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -1392,7 +1392,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}, {
                     TagBox[
@@ -1493,7 +1493,7 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -1519,7 +1519,7 @@ Himalayas on the border between Nepal and Tibet. It stands at 8,848 meters \
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -1528,8 +1528,8 @@ Himalayas on the border between Nepal and Tibet. It stands at 8,848 meters \
                     PaneSelectorBox[{2 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -1614,20 +1614,20 @@ Himalayas on the border between Nepal and Tibet. It stands at 8,848 meters \
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> 
@@ -1638,7 +1638,7 @@ Himalayas on the border between Nepal and Tibet. It stands at 8,848 meters \
                     "Default" -> FrontEnd`FileName[{"Misc"}, 
                     "TransparentBG.9.png"]}, Evaluator -> Automatic, Method -> 
                     "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -1652,7 +1652,7 @@ Himalayas on the border between Nepal and Tibet. It stands at 8,848 meters \
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}}, 
                     GridBoxAlignment -> {
@@ -1677,27 +1677,27 @@ Himalayas on the border between Nepal and Tibet. It stands at 8,848 meters \
                    EventHandlerTag[{
                     "MouseExited" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 0], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 0], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                   DynamicModuleValues :> {{
                     DownValues[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$] = {
+                    Wolfram`LLMTools`Chat`Private`overhandler$$] = {
                     HoldPattern[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$[
-                    Pattern[Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`overhandler$$[
+                    Pattern[Wolfram`LLMTools`Chat`Private`expr$, 
                     Blank[]], 
-                    Pattern[Wolfram`APIFunctions`Chat`Private`i$, 
+                    Pattern[Wolfram`LLMTools`Chat`Private`i$, 
                     Blank[]]]] :> EventHandler[
                     Button[
-                    Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`expr$, 
                     FrameMargins -> {{10, 10}, {5, 5}}, Appearance -> 
                     "Suppressed", Active -> False, BaselinePosition -> 
                     Baseline, BaseStyle -> {}, DefaultBaseStyle -> {}, 
                     Alignment -> Left], "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 
-                    Wolfram`APIFunctions`Chat`Private`i$]]}}}], {}, 
+                    Wolfram`LLMTools`Chat`Private`over$$, 
+                    Wolfram`LLMTools`Chat`Private`i$]]}}}], {}, 
                  AppearanceElements -> None, Scrollbars -> {False, Automatic},
                   ImageSize -> {{180, 600}, {20, 400}}, ContentPadding -> 
                  False], "SummaryItem"]}}, 
@@ -1717,7 +1717,7 @@ Himalayas on the border between Nepal and Tibet. It stands at 8,848 meters \
        Dynamic[Typeset`open$$], ImageSize -> Automatic]},
      "SummaryPanel"],
     DynamicModuleValues:>{}], "]"}],
-  Wolfram`APIFunctions`ChatObject[<|
+  Wolfram`LLMTools`ChatObject[<|
    "Method" -> "OpenAI", 
     "Messages" -> {<|
       "Role" -> "User", "Content" -> "What's the tallest mountain?", 
@@ -1795,8 +1795,8 @@ Cell[BoxData[
                 PaneBox[
                  
                  DynamicModuleBox[{
-                  Wolfram`APIFunctions`Chat`Private`over$$ = 0, 
-                   Wolfram`APIFunctions`Chat`Private`overhandler$$}, 
+                  Wolfram`LLMTools`Chat`Private`over$$ = 0, 
+                   Wolfram`LLMTools`Chat`Private`overhandler$$}, 
                   TagBox[
                    TagBox[
                     GridBox[{{
@@ -1939,7 +1939,7 @@ v5VLBsyRPbUa1El5j8L6p/dK/0LuD3rPqH8i3sd/zBK2RA==
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -1963,7 +1963,7 @@ child\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -1972,8 +1972,8 @@ child\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     PaneSelectorBox[{1 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -2058,20 +2058,20 @@ child\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> 
@@ -2080,7 +2080,7 @@ child\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
 child"], Appearance -> {"Default" -> 
                     FrontEnd`FileName[{"Misc"}, "TransparentBG.9.png"]}, 
                     Evaluator -> Automatic, Method -> "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -2094,7 +2094,7 @@ child"], Appearance -> {"Default" ->
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}}, 
                     GridBoxAlignment -> {
@@ -2119,27 +2119,27 @@ child"], Appearance -> {"Default" ->
                    EventHandlerTag[{
                     "MouseExited" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 0], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 0], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                   DynamicModuleValues :> {{
                     DownValues[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$] = {
+                    Wolfram`LLMTools`Chat`Private`overhandler$$] = {
                     HoldPattern[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$[
-                    Pattern[Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`overhandler$$[
+                    Pattern[Wolfram`LLMTools`Chat`Private`expr$, 
                     Blank[]], 
-                    Pattern[Wolfram`APIFunctions`Chat`Private`i$, 
+                    Pattern[Wolfram`LLMTools`Chat`Private`i$, 
                     Blank[]]]] :> EventHandler[
                     Button[
-                    Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`expr$, 
                     FrameMargins -> {{10, 10}, {5, 5}}, Appearance -> 
                     "Suppressed", Active -> False, BaselinePosition -> 
                     Baseline, BaseStyle -> {}, DefaultBaseStyle -> {}, 
                     Alignment -> Left], "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 
-                    Wolfram`APIFunctions`Chat`Private`i$]]}}}], {}, 
+                    Wolfram`LLMTools`Chat`Private`over$$, 
+                    Wolfram`LLMTools`Chat`Private`i$]]}}}], {}, 
                  AppearanceElements -> None, Scrollbars -> {False, Automatic},
                   ImageSize -> {{180, 600}, {20, 400}}, ContentPadding -> 
                  False], "SummaryItem"]}}, 
@@ -2161,8 +2161,8 @@ child"], Appearance -> {"Default" ->
                 PaneBox[
                  
                  DynamicModuleBox[{
-                  Wolfram`APIFunctions`Chat`Private`over$$ = 0, 
-                   Wolfram`APIFunctions`Chat`Private`overhandler$$}, 
+                  Wolfram`LLMTools`Chat`Private`over$$ = 0, 
+                   Wolfram`LLMTools`Chat`Private`overhandler$$}, 
                   TagBox[
                    TagBox[
                     GridBox[{{
@@ -2305,7 +2305,7 @@ v5VLBsyRPbUa1El5j8L6p/dK/0LuD3rPqH8i3sd/zBK2RA==
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -2329,7 +2329,7 @@ child\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -2338,8 +2338,8 @@ child\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     PaneSelectorBox[{1 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -2424,20 +2424,20 @@ child\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> 
@@ -2446,7 +2446,7 @@ child\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
 child"], Appearance -> {"Default" -> 
                     FrontEnd`FileName[{"Misc"}, "TransparentBG.9.png"]}, 
                     Evaluator -> Automatic, Method -> "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -2460,7 +2460,7 @@ child"], Appearance -> {"Default" ->
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}}, 
                     GridBoxAlignment -> {
@@ -2485,27 +2485,27 @@ child"], Appearance -> {"Default" ->
                    EventHandlerTag[{
                     "MouseExited" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 0], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 0], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                   DynamicModuleValues :> {{
                     DownValues[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$] = {
+                    Wolfram`LLMTools`Chat`Private`overhandler$$] = {
                     HoldPattern[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$[
-                    Pattern[Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`overhandler$$[
+                    Pattern[Wolfram`LLMTools`Chat`Private`expr$, 
                     Blank[]], 
-                    Pattern[Wolfram`APIFunctions`Chat`Private`i$, 
+                    Pattern[Wolfram`LLMTools`Chat`Private`i$, 
                     Blank[]]]] :> EventHandler[
                     Button[
-                    Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`expr$, 
                     FrameMargins -> {{10, 10}, {5, 5}}, Appearance -> 
                     "Suppressed", Active -> False, BaselinePosition -> 
                     Baseline, BaseStyle -> {}, DefaultBaseStyle -> {}, 
                     Alignment -> Left], "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 
-                    Wolfram`APIFunctions`Chat`Private`i$]]}}}], {}, 
+                    Wolfram`LLMTools`Chat`Private`over$$, 
+                    Wolfram`LLMTools`Chat`Private`i$]]}}}], {}, 
                  AppearanceElements -> None, Scrollbars -> {False, Automatic},
                   ImageSize -> {{180, 600}, {20, 400}}, ContentPadding -> 
                  False], "SummaryItem"]}}, 
@@ -2525,7 +2525,7 @@ child"], Appearance -> {"Default" ->
        Dynamic[Typeset`open$$], ImageSize -> Automatic]},
      "SummaryPanel"],
     DynamicModuleValues:>{}], "]"}],
-  Wolfram`APIFunctions`ChatObject[<|
+  Wolfram`LLMTools`ChatObject[<|
    "Method" -> "OpenAI", 
     "Messages" -> {<|
       "Role" -> "System", "Content" -> 
@@ -2574,8 +2574,8 @@ Cell[BoxData[
                 PaneBox[
                  
                  DynamicModuleBox[{
-                  Wolfram`APIFunctions`Chat`Private`over$$ = 0, 
-                   Wolfram`APIFunctions`Chat`Private`overhandler$$}, 
+                  Wolfram`LLMTools`Chat`Private`over$$ = 0, 
+                   Wolfram`LLMTools`Chat`Private`overhandler$$}, 
                   TagBox[
                    TagBox[
                     GridBox[{{
@@ -2718,7 +2718,7 @@ v5VLBsyRPbUa1El5j8L6p/dK/0LuD3rPqH8i3sd/zBK2RA==
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -2742,7 +2742,7 @@ child\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -2751,8 +2751,8 @@ child\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     PaneSelectorBox[{1 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -2837,20 +2837,20 @@ child\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> 
@@ -2859,7 +2859,7 @@ child\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
 child"], Appearance -> {"Default" -> 
                     FrontEnd`FileName[{"Misc"}, "TransparentBG.9.png"]}, 
                     Evaluator -> Automatic, Method -> "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -2873,7 +2873,7 @@ child"], Appearance -> {"Default" ->
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}, {
                     TagBox[
@@ -2945,7 +2945,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -2969,7 +2969,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -2978,8 +2978,8 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     PaneSelectorBox[{2 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -3064,20 +3064,20 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> CopyToClipboard["What is electricity?"],
@@ -3085,7 +3085,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     "Default" -> FrontEnd`FileName[{"Misc"}, 
                     "TransparentBG.9.png"]}, Evaluator -> Automatic, Method -> 
                     "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -3099,7 +3099,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}, {
                     TagBox[
@@ -3200,7 +3200,7 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 3], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 3], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -3227,7 +3227,7 @@ your toys or a lightbulb - it's what makes them turn on and work!\"",
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 3], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 3], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -3236,8 +3236,8 @@ your toys or a lightbulb - it's what makes them turn on and work!\"",
                     PaneSelectorBox[{3 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -3322,20 +3322,20 @@ your toys or a lightbulb - it's what makes them turn on and work!\"",
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> 
@@ -3347,7 +3347,7 @@ your toys or a lightbulb - it's what makes them turn on and work!"],
                     "Default" -> FrontEnd`FileName[{"Misc"}, 
                     "TransparentBG.9.png"]}, Evaluator -> Automatic, Method -> 
                     "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -3361,7 +3361,7 @@ your toys or a lightbulb - it's what makes them turn on and work!"],
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 3], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 3], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}}, 
                     GridBoxAlignment -> {
@@ -3386,27 +3386,27 @@ your toys or a lightbulb - it's what makes them turn on and work!"],
                    EventHandlerTag[{
                     "MouseExited" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 0], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 0], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                   DynamicModuleValues :> {{
                     DownValues[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$] = {
+                    Wolfram`LLMTools`Chat`Private`overhandler$$] = {
                     HoldPattern[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$[
-                    Pattern[Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`overhandler$$[
+                    Pattern[Wolfram`LLMTools`Chat`Private`expr$, 
                     Blank[]], 
-                    Pattern[Wolfram`APIFunctions`Chat`Private`i$, 
+                    Pattern[Wolfram`LLMTools`Chat`Private`i$, 
                     Blank[]]]] :> EventHandler[
                     Button[
-                    Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`expr$, 
                     FrameMargins -> {{10, 10}, {5, 5}}, Appearance -> 
                     "Suppressed", Active -> False, BaselinePosition -> 
                     Baseline, BaseStyle -> {}, DefaultBaseStyle -> {}, 
                     Alignment -> Left], "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 
-                    Wolfram`APIFunctions`Chat`Private`i$]]}}}], {}, 
+                    Wolfram`LLMTools`Chat`Private`over$$, 
+                    Wolfram`LLMTools`Chat`Private`i$]]}}}], {}, 
                  AppearanceElements -> None, Scrollbars -> {False, Automatic},
                   ImageSize -> {{180, 600}, {20, 400}}, ContentPadding -> 
                  False], "SummaryItem"]}}, 
@@ -3428,8 +3428,8 @@ your toys or a lightbulb - it's what makes them turn on and work!"],
                 PaneBox[
                  
                  DynamicModuleBox[{
-                  Wolfram`APIFunctions`Chat`Private`over$$ = 0, 
-                   Wolfram`APIFunctions`Chat`Private`overhandler$$}, 
+                  Wolfram`LLMTools`Chat`Private`over$$ = 0, 
+                   Wolfram`LLMTools`Chat`Private`overhandler$$}, 
                   TagBox[
                    TagBox[
                     GridBox[{{
@@ -3572,7 +3572,7 @@ v5VLBsyRPbUa1El5j8L6p/dK/0LuD3rPqH8i3sd/zBK2RA==
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -3596,7 +3596,7 @@ child\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -3605,8 +3605,8 @@ child\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     PaneSelectorBox[{1 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -3691,20 +3691,20 @@ child\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> 
@@ -3713,7 +3713,7 @@ child\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
 child"], Appearance -> {"Default" -> 
                     FrontEnd`FileName[{"Misc"}, "TransparentBG.9.png"]}, 
                     Evaluator -> Automatic, Method -> "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -3727,7 +3727,7 @@ child"], Appearance -> {"Default" ->
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}, {
                     TagBox[
@@ -3799,7 +3799,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -3823,7 +3823,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -3832,8 +3832,8 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     PaneSelectorBox[{2 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -3918,20 +3918,20 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> CopyToClipboard["What is electricity?"],
@@ -3939,7 +3939,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     "Default" -> FrontEnd`FileName[{"Misc"}, 
                     "TransparentBG.9.png"]}, Evaluator -> Automatic, Method -> 
                     "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -3953,7 +3953,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}, {
                     TagBox[
@@ -4054,7 +4054,7 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 3], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 3], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -4081,7 +4081,7 @@ your toys or a lightbulb - it's what makes them turn on and work!\"",
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 3], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 3], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -4090,8 +4090,8 @@ your toys or a lightbulb - it's what makes them turn on and work!\"",
                     PaneSelectorBox[{3 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -4176,20 +4176,20 @@ your toys or a lightbulb - it's what makes them turn on and work!\"",
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> 
@@ -4201,7 +4201,7 @@ your toys or a lightbulb - it's what makes them turn on and work!"],
                     "Default" -> FrontEnd`FileName[{"Misc"}, 
                     "TransparentBG.9.png"]}, Evaluator -> Automatic, Method -> 
                     "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -4215,7 +4215,7 @@ your toys or a lightbulb - it's what makes them turn on and work!"],
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 3], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 3], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}}, 
                     GridBoxAlignment -> {
@@ -4240,27 +4240,27 @@ your toys or a lightbulb - it's what makes them turn on and work!"],
                    EventHandlerTag[{
                     "MouseExited" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 0], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 0], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                   DynamicModuleValues :> {{
                     DownValues[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$] = {
+                    Wolfram`LLMTools`Chat`Private`overhandler$$] = {
                     HoldPattern[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$[
-                    Pattern[Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`overhandler$$[
+                    Pattern[Wolfram`LLMTools`Chat`Private`expr$, 
                     Blank[]], 
-                    Pattern[Wolfram`APIFunctions`Chat`Private`i$, 
+                    Pattern[Wolfram`LLMTools`Chat`Private`i$, 
                     Blank[]]]] :> EventHandler[
                     Button[
-                    Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`expr$, 
                     FrameMargins -> {{10, 10}, {5, 5}}, Appearance -> 
                     "Suppressed", Active -> False, BaselinePosition -> 
                     Baseline, BaseStyle -> {}, DefaultBaseStyle -> {}, 
                     Alignment -> Left], "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 
-                    Wolfram`APIFunctions`Chat`Private`i$]]}}}], {}, 
+                    Wolfram`LLMTools`Chat`Private`over$$, 
+                    Wolfram`LLMTools`Chat`Private`i$]]}}}], {}, 
                  AppearanceElements -> None, Scrollbars -> {False, Automatic},
                   ImageSize -> {{180, 600}, {20, 400}}, ContentPadding -> 
                  False], "SummaryItem"]}}, 
@@ -4280,7 +4280,7 @@ your toys or a lightbulb - it's what makes them turn on and work!"],
        Dynamic[Typeset`open$$], ImageSize -> Automatic]},
      "SummaryPanel"],
     DynamicModuleValues:>{}], "]"}],
-  Wolfram`APIFunctions`ChatObject[<|
+  Wolfram`LLMTools`ChatObject[<|
    "Method" -> "OpenAI", 
     "Messages" -> {<|
       "Role" -> "System", "Content" -> 
@@ -4450,7 +4450,7 @@ Cell[BoxData[
        Dynamic[Typeset`open$$], ImageSize -> Automatic]},
      "SummaryPanel"],
     DynamicModuleValues:>{}], "]"}],
-  Wolfram`APIFunctions`ChatObject[<|
+  Wolfram`LLMTools`ChatObject[<|
    "Method" -> "OpenAI", "Messages" -> {}, "ChatID" -> 
     "4793a837-5ffa-45e7-8a78-5a4d502e81ba", "History" -> {}, "Usage" -> 
     0|>, {}],
@@ -4502,8 +4502,8 @@ Cell[BoxData[
                 PaneBox[
                  
                  DynamicModuleBox[{
-                  Wolfram`APIFunctions`Chat`Private`over$$ = 0, 
-                   Wolfram`APIFunctions`Chat`Private`overhandler$$}, 
+                  Wolfram`LLMTools`Chat`Private`over$$ = 0, 
+                   Wolfram`LLMTools`Chat`Private`overhandler$$}, 
                   TagBox[
                    TagBox[
                     GridBox[{{
@@ -4646,7 +4646,7 @@ v5VLBsyRPbUa1El5j8L6p/dK/0LuD3rPqH8i3sd/zBK2RA==
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -4670,7 +4670,7 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -4679,8 +4679,8 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     PaneSelectorBox[{1 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -4765,20 +4765,20 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> 
@@ -4788,7 +4788,7 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     "Default" -> FrontEnd`FileName[{"Misc"}, 
                     "TransparentBG.9.png"]}, Evaluator -> Automatic, Method -> 
                     "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -4802,7 +4802,7 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}}, 
                     GridBoxAlignment -> {
@@ -4827,27 +4827,27 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                    EventHandlerTag[{
                     "MouseExited" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 0], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 0], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                   DynamicModuleValues :> {{
                     DownValues[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$] = {
+                    Wolfram`LLMTools`Chat`Private`overhandler$$] = {
                     HoldPattern[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$[
-                    Pattern[Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`overhandler$$[
+                    Pattern[Wolfram`LLMTools`Chat`Private`expr$, 
                     Blank[]], 
-                    Pattern[Wolfram`APIFunctions`Chat`Private`i$, 
+                    Pattern[Wolfram`LLMTools`Chat`Private`i$, 
                     Blank[]]]] :> EventHandler[
                     Button[
-                    Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`expr$, 
                     FrameMargins -> {{10, 10}, {5, 5}}, Appearance -> 
                     "Suppressed", Active -> False, BaselinePosition -> 
                     Baseline, BaseStyle -> {}, DefaultBaseStyle -> {}, 
                     Alignment -> Left], "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 
-                    Wolfram`APIFunctions`Chat`Private`i$]]}}}], {}, 
+                    Wolfram`LLMTools`Chat`Private`over$$, 
+                    Wolfram`LLMTools`Chat`Private`i$]]}}}], {}, 
                  AppearanceElements -> None, Scrollbars -> {False, Automatic},
                   ImageSize -> {{180, 600}, {20, 400}}, ContentPadding -> 
                  False], "SummaryItem"]}}, 
@@ -4869,8 +4869,8 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                 PaneBox[
                  
                  DynamicModuleBox[{
-                  Wolfram`APIFunctions`Chat`Private`over$$ = 0, 
-                   Wolfram`APIFunctions`Chat`Private`overhandler$$}, 
+                  Wolfram`LLMTools`Chat`Private`over$$ = 0, 
+                   Wolfram`LLMTools`Chat`Private`overhandler$$}, 
                   TagBox[
                    TagBox[
                     GridBox[{{
@@ -5013,7 +5013,7 @@ v5VLBsyRPbUa1El5j8L6p/dK/0LuD3rPqH8i3sd/zBK2RA==
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -5037,7 +5037,7 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -5046,8 +5046,8 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     PaneSelectorBox[{1 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -5132,20 +5132,20 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> 
@@ -5155,7 +5155,7 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     "Default" -> FrontEnd`FileName[{"Misc"}, 
                     "TransparentBG.9.png"]}, Evaluator -> Automatic, Method -> 
                     "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -5169,7 +5169,7 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}}, 
                     GridBoxAlignment -> {
@@ -5194,27 +5194,27 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                    EventHandlerTag[{
                     "MouseExited" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 0], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 0], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                   DynamicModuleValues :> {{
                     DownValues[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$] = {
+                    Wolfram`LLMTools`Chat`Private`overhandler$$] = {
                     HoldPattern[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$[
-                    Pattern[Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`overhandler$$[
+                    Pattern[Wolfram`LLMTools`Chat`Private`expr$, 
                     Blank[]], 
-                    Pattern[Wolfram`APIFunctions`Chat`Private`i$, 
+                    Pattern[Wolfram`LLMTools`Chat`Private`i$, 
                     Blank[]]]] :> EventHandler[
                     Button[
-                    Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`expr$, 
                     FrameMargins -> {{10, 10}, {5, 5}}, Appearance -> 
                     "Suppressed", Active -> False, BaselinePosition -> 
                     Baseline, BaseStyle -> {}, DefaultBaseStyle -> {}, 
                     Alignment -> Left], "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 
-                    Wolfram`APIFunctions`Chat`Private`i$]]}}}], {}, 
+                    Wolfram`LLMTools`Chat`Private`over$$, 
+                    Wolfram`LLMTools`Chat`Private`i$]]}}}], {}, 
                  AppearanceElements -> None, Scrollbars -> {False, Automatic},
                   ImageSize -> {{180, 600}, {20, 400}}, ContentPadding -> 
                  False], "SummaryItem"]}}, 
@@ -5234,7 +5234,7 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
        Dynamic[Typeset`open$$], ImageSize -> Automatic]},
      "SummaryPanel"],
     DynamicModuleValues:>{}], "]"}],
-  Wolfram`APIFunctions`ChatObject[<|
+  Wolfram`LLMTools`ChatObject[<|
    "Method" -> "OpenAI", 
     "Messages" -> {<|
       "Role" -> "System", "Content" -> 
@@ -5275,8 +5275,8 @@ Cell[BoxData[
                 PaneBox[
                  
                  DynamicModuleBox[{
-                  Wolfram`APIFunctions`Chat`Private`over$$ = 0, 
-                   Wolfram`APIFunctions`Chat`Private`overhandler$$}, 
+                  Wolfram`LLMTools`Chat`Private`over$$ = 0, 
+                   Wolfram`LLMTools`Chat`Private`overhandler$$}, 
                   TagBox[
                    TagBox[
                     GridBox[{{
@@ -5419,7 +5419,7 @@ v5VLBsyRPbUa1El5j8L6p/dK/0LuD3rPqH8i3sd/zBK2RA==
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -5443,7 +5443,7 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -5452,8 +5452,8 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     PaneSelectorBox[{1 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -5538,20 +5538,20 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> 
@@ -5561,7 +5561,7 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     "Default" -> FrontEnd`FileName[{"Misc"}, 
                     "TransparentBG.9.png"]}, Evaluator -> Automatic, Method -> 
                     "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -5575,7 +5575,7 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}, {
                     TagBox[
@@ -5647,7 +5647,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -5671,7 +5671,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -5680,8 +5680,8 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     PaneSelectorBox[{2 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -5766,20 +5766,20 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> CopyToClipboard["who are you?"], 
@@ -5787,7 +5787,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     "Default" -> FrontEnd`FileName[{"Misc"}, 
                     "TransparentBG.9.png"]}, Evaluator -> Automatic, Method -> 
                     "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -5800,7 +5800,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}, {
                     TagBox[
@@ -5901,7 +5901,7 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 3], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 3], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -5926,7 +5926,7 @@ talk like a pirate. What brings ye here to me ship?\"", BoxForm`Undeploy,
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 3], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 3], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -5935,8 +5935,8 @@ talk like a pirate. What brings ye here to me ship?\"", BoxForm`Undeploy,
                     PaneSelectorBox[{3 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -6021,20 +6021,20 @@ talk like a pirate. What brings ye here to me ship?\"", BoxForm`Undeploy,
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> 
@@ -6045,7 +6045,7 @@ like a pirate. What brings ye here to me ship?"],
                     "Default" -> FrontEnd`FileName[{"Misc"}, 
                     "TransparentBG.9.png"]}, Evaluator -> Automatic, Method -> 
                     "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -6059,7 +6059,7 @@ like a pirate. What brings ye here to me ship?"],
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 3], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 3], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}}, 
                     GridBoxAlignment -> {
@@ -6084,27 +6084,27 @@ like a pirate. What brings ye here to me ship?"],
                    EventHandlerTag[{
                     "MouseExited" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 0], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 0], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                   DynamicModuleValues :> {{
                     DownValues[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$] = {
+                    Wolfram`LLMTools`Chat`Private`overhandler$$] = {
                     HoldPattern[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$[
-                    Pattern[Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`overhandler$$[
+                    Pattern[Wolfram`LLMTools`Chat`Private`expr$, 
                     Blank[]], 
-                    Pattern[Wolfram`APIFunctions`Chat`Private`i$, 
+                    Pattern[Wolfram`LLMTools`Chat`Private`i$, 
                     Blank[]]]] :> EventHandler[
                     Button[
-                    Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`expr$, 
                     FrameMargins -> {{10, 10}, {5, 5}}, Appearance -> 
                     "Suppressed", Active -> False, BaselinePosition -> 
                     Baseline, BaseStyle -> {}, DefaultBaseStyle -> {}, 
                     Alignment -> Left], "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 
-                    Wolfram`APIFunctions`Chat`Private`i$]]}}}], {}, 
+                    Wolfram`LLMTools`Chat`Private`over$$, 
+                    Wolfram`LLMTools`Chat`Private`i$]]}}}], {}, 
                  AppearanceElements -> None, Scrollbars -> {False, Automatic},
                   ImageSize -> {{180, 600}, {20, 400}}, ContentPadding -> 
                  False], "SummaryItem"]}}, 
@@ -6126,8 +6126,8 @@ like a pirate. What brings ye here to me ship?"],
                 PaneBox[
                  
                  DynamicModuleBox[{
-                  Wolfram`APIFunctions`Chat`Private`over$$ = 0, 
-                   Wolfram`APIFunctions`Chat`Private`overhandler$$}, 
+                  Wolfram`LLMTools`Chat`Private`over$$ = 0, 
+                   Wolfram`LLMTools`Chat`Private`overhandler$$}, 
                   TagBox[
                    TagBox[
                     GridBox[{{
@@ -6270,7 +6270,7 @@ v5VLBsyRPbUa1El5j8L6p/dK/0LuD3rPqH8i3sd/zBK2RA==
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -6294,7 +6294,7 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -6303,8 +6303,8 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     PaneSelectorBox[{1 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -6389,20 +6389,20 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> 
@@ -6412,7 +6412,7 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     "Default" -> FrontEnd`FileName[{"Misc"}, 
                     "TransparentBG.9.png"]}, Evaluator -> Automatic, Method -> 
                     "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -6426,7 +6426,7 @@ character.\"", BoxForm`Undeploy, DefaultBaseStyle -> {Deployed -> False}],
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}, {
                     TagBox[
@@ -6498,7 +6498,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -6522,7 +6522,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -6531,8 +6531,8 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     PaneSelectorBox[{2 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -6617,20 +6617,20 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> CopyToClipboard["who are you?"], 
@@ -6638,7 +6638,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     "Default" -> FrontEnd`FileName[{"Misc"}, 
                     "TransparentBG.9.png"]}, Evaluator -> Automatic, Method -> 
                     "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -6652,7 +6652,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}, {
                     TagBox[
@@ -6753,7 +6753,7 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 3], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 3], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -6778,7 +6778,7 @@ talk like a pirate. What brings ye here to me ship?\"", BoxForm`Undeploy,
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 3], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 3], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -6787,8 +6787,8 @@ talk like a pirate. What brings ye here to me ship?\"", BoxForm`Undeploy,
                     PaneSelectorBox[{3 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -6873,20 +6873,20 @@ talk like a pirate. What brings ye here to me ship?\"", BoxForm`Undeploy,
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> 
@@ -6897,7 +6897,7 @@ like a pirate. What brings ye here to me ship?"],
                     "Default" -> FrontEnd`FileName[{"Misc"}, 
                     "TransparentBG.9.png"]}, Evaluator -> Automatic, Method -> 
                     "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -6911,7 +6911,7 @@ like a pirate. What brings ye here to me ship?"],
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 3], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 3], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}}, 
                     GridBoxAlignment -> {
@@ -6936,27 +6936,27 @@ like a pirate. What brings ye here to me ship?"],
                    EventHandlerTag[{
                     "MouseExited" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 0], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 0], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                   DynamicModuleValues :> {{
                     DownValues[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$] = {
+                    Wolfram`LLMTools`Chat`Private`overhandler$$] = {
                     HoldPattern[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$[
-                    Pattern[Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`overhandler$$[
+                    Pattern[Wolfram`LLMTools`Chat`Private`expr$, 
                     Blank[]], 
-                    Pattern[Wolfram`APIFunctions`Chat`Private`i$, 
+                    Pattern[Wolfram`LLMTools`Chat`Private`i$, 
                     Blank[]]]] :> EventHandler[
                     Button[
-                    Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`expr$, 
                     FrameMargins -> {{10, 10}, {5, 5}}, Appearance -> 
                     "Suppressed", Active -> False, BaselinePosition -> 
                     Baseline, BaseStyle -> {}, DefaultBaseStyle -> {}, 
                     Alignment -> Left], "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 
-                    Wolfram`APIFunctions`Chat`Private`i$]]}}}], {}, 
+                    Wolfram`LLMTools`Chat`Private`over$$, 
+                    Wolfram`LLMTools`Chat`Private`i$]]}}}], {}, 
                  AppearanceElements -> None, Scrollbars -> {False, Automatic},
                   ImageSize -> {{180, 600}, {20, 400}}, ContentPadding -> 
                  False], "SummaryItem"]}}, 
@@ -6976,7 +6976,7 @@ like a pirate. What brings ye here to me ship?"],
        Dynamic[Typeset`open$$], ImageSize -> Automatic]},
      "SummaryPanel"],
     DynamicModuleValues:>{}], "]"}],
-  Wolfram`APIFunctions`ChatObject[<|
+  Wolfram`LLMTools`ChatObject[<|
    "Method" -> "OpenAI", 
     "Messages" -> {<|
       "Role" -> "System", "Content" -> 
@@ -7103,8 +7103,8 @@ Cell[BoxData[
                 PaneBox[
                  
                  DynamicModuleBox[{
-                  Wolfram`APIFunctions`Chat`Private`over$$ = 0, 
-                   Wolfram`APIFunctions`Chat`Private`overhandler$$}, 
+                  Wolfram`LLMTools`Chat`Private`over$$ = 0, 
+                   Wolfram`LLMTools`Chat`Private`overhandler$$}, 
                   TagBox[
                    TagBox[
                     GridBox[{{
@@ -7177,7 +7177,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -7201,7 +7201,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -7210,8 +7210,8 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     PaneSelectorBox[{1 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -7296,20 +7296,20 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> 
@@ -7318,7 +7318,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     "Default" -> FrontEnd`FileName[{"Misc"}, 
                     "TransparentBG.9.png"]}, Evaluator -> Automatic, Method -> 
                     "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -7332,7 +7332,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}, {
                     TagBox[
@@ -7433,7 +7433,7 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -7458,7 +7458,7 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -7467,8 +7467,8 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                     PaneSelectorBox[{2 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -7553,20 +7553,20 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> 
@@ -7577,7 +7577,7 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                     "Default" -> FrontEnd`FileName[{"Misc"}, 
                     "TransparentBG.9.png"]}, Evaluator -> Automatic, Method -> 
                     "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -7591,7 +7591,7 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}}, 
                     GridBoxAlignment -> {
@@ -7616,27 +7616,27 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                    EventHandlerTag[{
                     "MouseExited" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 0], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 0], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                   DynamicModuleValues :> {{
                     DownValues[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$] = {
+                    Wolfram`LLMTools`Chat`Private`overhandler$$] = {
                     HoldPattern[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$[
-                    Pattern[Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`overhandler$$[
+                    Pattern[Wolfram`LLMTools`Chat`Private`expr$, 
                     Blank[]], 
-                    Pattern[Wolfram`APIFunctions`Chat`Private`i$, 
+                    Pattern[Wolfram`LLMTools`Chat`Private`i$, 
                     Blank[]]]] :> EventHandler[
                     Button[
-                    Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`expr$, 
                     FrameMargins -> {{10, 10}, {5, 5}}, Appearance -> 
                     "Suppressed", Active -> False, BaselinePosition -> 
                     Baseline, BaseStyle -> {}, DefaultBaseStyle -> {}, 
                     Alignment -> Left], "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 
-                    Wolfram`APIFunctions`Chat`Private`i$]]}}}], {}, 
+                    Wolfram`LLMTools`Chat`Private`over$$, 
+                    Wolfram`LLMTools`Chat`Private`i$]]}}}], {}, 
                  AppearanceElements -> None, Scrollbars -> {False, Automatic},
                   ImageSize -> {{180, 600}, {20, 400}}, ContentPadding -> 
                  False], "SummaryItem"]}}, 
@@ -7658,8 +7658,8 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                 PaneBox[
                  
                  DynamicModuleBox[{
-                  Wolfram`APIFunctions`Chat`Private`over$$ = 0, 
-                   Wolfram`APIFunctions`Chat`Private`overhandler$$}, 
+                  Wolfram`LLMTools`Chat`Private`over$$ = 0, 
+                   Wolfram`LLMTools`Chat`Private`overhandler$$}, 
                   TagBox[
                    TagBox[
                     GridBox[{{
@@ -7732,7 +7732,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -7756,7 +7756,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -7765,8 +7765,8 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     PaneSelectorBox[{1 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -7851,20 +7851,20 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> 
@@ -7873,7 +7873,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     "Default" -> FrontEnd`FileName[{"Misc"}, 
                     "TransparentBG.9.png"]}, Evaluator -> Automatic, Method -> 
                     "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -7887,7 +7887,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}, {
                     TagBox[
@@ -7988,7 +7988,7 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -8013,7 +8013,7 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -8022,8 +8022,8 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                     PaneSelectorBox[{2 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -8108,20 +8108,20 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                     GrayLevel[0., 0.05], StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     ButtonFunction :> 
@@ -8132,7 +8132,7 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                     "Default" -> FrontEnd`FileName[{"Misc"}, 
                     "TransparentBG.9.png"]}, Evaluator -> Automatic, Method -> 
                     "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     ImageMargins -> {{0, 0}, {0, 0}}, FrameMargins -> None, 
                     FrameStyle -> None, Background -> None, StripOnInput -> 
                     False], ButtonFunction :> {}, Evaluator -> None, 
@@ -8146,7 +8146,7 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}}, 
                     GridBoxAlignment -> {
@@ -8171,27 +8171,27 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                    EventHandlerTag[{
                     "MouseExited" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 0], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 0], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                   DynamicModuleValues :> {{
                     DownValues[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$] = {
+                    Wolfram`LLMTools`Chat`Private`overhandler$$] = {
                     HoldPattern[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$[
-                    Pattern[Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`overhandler$$[
+                    Pattern[Wolfram`LLMTools`Chat`Private`expr$, 
                     Blank[]], 
-                    Pattern[Wolfram`APIFunctions`Chat`Private`i$, 
+                    Pattern[Wolfram`LLMTools`Chat`Private`i$, 
                     Blank[]]]] :> EventHandler[
                     Button[
-                    Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`expr$, 
                     FrameMargins -> {{10, 10}, {5, 5}}, Appearance -> 
                     "Suppressed", Active -> False, BaselinePosition -> 
                     Baseline, BaseStyle -> {}, DefaultBaseStyle -> {}, 
                     Alignment -> Left], "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 
-                    Wolfram`APIFunctions`Chat`Private`i$]]}}}], {}, 
+                    Wolfram`LLMTools`Chat`Private`over$$, 
+                    Wolfram`LLMTools`Chat`Private`i$]]}}}], {}, 
                  AppearanceElements -> None, Scrollbars -> {False, Automatic},
                   ImageSize -> {{180, 600}, {20, 400}}, ContentPadding -> 
                  False], "SummaryItem"]}}, 
@@ -8211,7 +8211,7 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
        Dynamic[Typeset`open$$], ImageSize -> Automatic]},
      "SummaryPanel"],
     DynamicModuleValues:>{}], "]"}],
-  Wolfram`APIFunctions`ChatObject[<|
+  Wolfram`LLMTools`ChatObject[<|
    "Method" -> "OpenAI", 
     "Messages" -> {<|
       "Role" -> "User", "Content" -> "What's the tallest mountain?", 

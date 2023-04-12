@@ -1,15 +1,15 @@
-BeginPackage["Wolfram`APIFunctions`Chat`"]
+BeginPackage["Wolfram`LLMTools`Chat`"]
 
 $DefaultChatPrompt
 $ChatConnectionCache
 CallChatAPI
 
 Needs["GeneralUtilities`" -> "GU`"]
-Needs["Wolfram`APIFunctions`"]
+Needs["Wolfram`LLMTools`"]
 (* general interfaces DefineFunction, ... *)
-Needs["Wolfram`APIFunctions`Common`"]
-Needs["Wolfram`APIFunctions`APIs`Common`"]
-Needs["Wolfram`APIFunctions`APIs`OpenAI`"]
+Needs["Wolfram`LLMTools`Common`"]
+Needs["Wolfram`LLMTools`APIs`Common`"]
+Needs["Wolfram`LLMTools`APIs`OpenAI`"]
 
 Begin["`Private`"]
 
@@ -228,18 +228,18 @@ $blue = RGBColor[{240, 255, 251}/255];
 
 $logoOpenAI := $logoOpenAI = Show[Import[FileNameJoin[
 	{
-		PacletManager`PacletResource["Wolfram/LLMTools", "APIFunctions"],
+		PacletManager`PacletResource["Wolfram/LLMTools", "LLMTools"],
 		"OpenAILogo.wl"
 	}]],
 	ImageSize -> 20
 ];
 
 $logoSystem := $logoSystem = Import[FileNameJoin[
-	{PacletManager`PacletResource["Wolfram/LLMTools", "APIFunctions"], "chat-system.wl"}
+	{PacletManager`PacletResource["Wolfram/LLMTools", "LLMTools"], "chat-system.wl"}
 ]];
 
 $logoUser := $logoUser = Import[FileNameJoin[
-	{PacletManager`PacletResource["Wolfram/LLMTools", "APIFunctions"], "chat-user.wl"}
+	{PacletManager`PacletResource["Wolfram/LLMTools", "LLMTools"], "chat-user.wl"}
 ]];
 
 $logoWolfram = "\[WolframLanguageLogoCircle]";

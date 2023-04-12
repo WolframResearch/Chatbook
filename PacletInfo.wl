@@ -12,7 +12,7 @@ PacletObject[<|
 	"Extensions" -> {
 		{
 			"Kernel",
-			"Root" -> "Source",
+			"Root" -> "Source/LLMTools",
 			"Context" -> "Wolfram`LLMTools`",
 			"Symbols" -> {
 				"Wolfram`LLMTools`ImageSynthesize",
@@ -32,11 +32,6 @@ PacletObject[<|
 			"Kernel",
 			"Root" -> "Source/ServerSentEventUtils",
 			"Context" -> "Wolfram`ServerSentEventUtils`"
-		},
-		{
-			"Kernel",
-			"Root" -> "Source/APIFunctions",
-			"Context" -> "Wolfram`APIFunctions`"
 		},
 		{
 			"Kernel",
@@ -61,7 +56,7 @@ PacletObject[<|
 			"Asset",
 			"Root" -> "Assets",
 			"Assets" -> {
-				{"APIFunctions", "APIFunctions"}
+				{"LLMTools", "LLMTools"}
 			}
 		},
 		{"FrontEnd"},

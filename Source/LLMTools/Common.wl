@@ -2,7 +2,7 @@
 	Initial content for this file is copied from the NeuralFunctions paclet
 *)
 
-BeginPackage["Wolfram`APIFunctions`Common`"]
+BeginPackage["Wolfram`LLMTools`Common`"]
 
 Needs["GeneralUtilities`" -> "GU`"]
 

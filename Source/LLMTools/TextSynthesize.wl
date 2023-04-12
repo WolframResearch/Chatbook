@@ -1,13 +1,13 @@
-BeginPackage["Wolfram`APIFunctions`TextSynthesize`"]
+BeginPackage["Wolfram`LLMTools`TextSynthesize`"]
 
 CallTextAPI
 
 Needs["GeneralUtilities`" -> "GU`"]
-Needs["Wolfram`APIFunctions`"]
+Needs["Wolfram`LLMTools`"]
 (* general interfaces DefineFunction, ... *)
-Needs["Wolfram`APIFunctions`Common`"]
-Needs["Wolfram`APIFunctions`APIs`Common`"]
-Needs["Wolfram`APIFunctions`APIs`OpenAI`"]
+Needs["Wolfram`LLMTools`Common`"]
+Needs["Wolfram`LLMTools`APIs`Common`"]
+Needs["Wolfram`LLMTools`APIs`OpenAI`"]
 
 Begin["`Private`"]
 

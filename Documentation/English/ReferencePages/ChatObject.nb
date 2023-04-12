@@ -798,7 +798,7 @@ Cell[BoxData[
        Dynamic[Typeset`open$$], ImageSize -> Automatic]},
      "SummaryPanel"],
     DynamicModuleValues:>{}], "]"}],
-  Wolfram`APIFunctions`ChatObject[<|
+  Wolfram`LLMTools`ChatObject[<|
    "Method" -> "OpenAI", "Messages" -> {}, "ChatID" -> 
     "d36fe6a7-5606-4700-954d-0bdfb1708979", "History" -> {}, "Usage" -> 
     0|>, {}],
@@ -843,8 +843,8 @@ Cell[BoxData[
                 PaneBox[
                  
                  DynamicModuleBox[{
-                  Wolfram`APIFunctions`Chat`Private`over$$ = 0, 
-                   Wolfram`APIFunctions`Chat`Private`overhandler$$}, 
+                  Wolfram`LLMTools`Chat`Private`over$$ = 0, 
+                   Wolfram`LLMTools`Chat`Private`overhandler$$}, 
                   TagBox[
                    TagBox[
                     GridBox[{{
@@ -917,7 +917,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -941,7 +941,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -950,8 +950,8 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     PaneSelectorBox[{1 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -1036,20 +1036,20 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     RoundingRadius -> 5, StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     Appearance -> {
@@ -1057,7 +1057,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     "TransparentBG.9.png"]}, ButtonFunction :> 
                     CopyToClipboard["What's the tallest mountain?"], 
                     Evaluator -> Automatic, Method -> "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     Background -> None, FrameMargins -> None, FrameStyle -> 
                     None, ImageMargins -> {{0, 0}, {0, 0}}, StripOnInput -> 
                     False], Active -> False, Alignment -> Left, Appearance -> 
@@ -1071,7 +1071,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}, {
                     TagBox[
@@ -1173,7 +1173,7 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -1198,7 +1198,7 @@ height of 29,029 feet (8,848 meters) above sea level.\"", BoxForm`Undeploy,
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -1207,8 +1207,8 @@ height of 29,029 feet (8,848 meters) above sea level.\"", BoxForm`Undeploy,
                     PaneSelectorBox[{2 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -1292,20 +1292,20 @@ height of 29,029 feet (8,848 meters) above sea level.\"", BoxForm`Undeploy,
                     RoundingRadius -> 5, StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     Appearance -> {
@@ -1315,7 +1315,7 @@ height of 29,029 feet (8,848 meters) above sea level.\"", BoxForm`Undeploy,
                     "Mount Everest is the tallest mountain on Earth, with a \
 height of 29,029 feet (8,848 meters) above sea level."], Evaluator -> 
                     Automatic, Method -> "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     Background -> None, FrameMargins -> None, FrameStyle -> 
                     None, ImageMargins -> {{0, 0}, {0, 0}}, StripOnInput -> 
                     False], Active -> False, Alignment -> Left, Appearance -> 
@@ -1329,7 +1329,7 @@ height of 29,029 feet (8,848 meters) above sea level."], Evaluator ->
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}}, AutoDelete -> False, BaseStyle -> "Text", 
                     GridBoxAlignment -> {
@@ -1353,27 +1353,27 @@ height of 29,029 feet (8,848 meters) above sea level."], Evaluator ->
                    EventHandlerTag[{
                     "MouseExited" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 0], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 0], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                   DynamicModuleValues :> {{
                     DownValues[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$] = {
+                    Wolfram`LLMTools`Chat`Private`overhandler$$] = {
                     HoldPattern[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$[
-                    Pattern[Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`overhandler$$[
+                    Pattern[Wolfram`LLMTools`Chat`Private`expr$, 
                     Blank[]], 
-                    Pattern[Wolfram`APIFunctions`Chat`Private`i$, 
+                    Pattern[Wolfram`LLMTools`Chat`Private`i$, 
                     Blank[]]]] :> EventHandler[
                     Button[
-                    Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`expr$, 
                     FrameMargins -> {{10, 10}, {5, 5}}, Appearance -> 
                     "Suppressed", Active -> False, BaselinePosition -> 
                     Baseline, BaseStyle -> {}, DefaultBaseStyle -> {}, 
                     Alignment -> Left], "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 
-                    Wolfram`APIFunctions`Chat`Private`i$]]}}}], 
+                    Wolfram`LLMTools`Chat`Private`over$$, 
+                    Wolfram`LLMTools`Chat`Private`i$]]}}}], 
                  AppearanceElements -> None, ContentPadding -> False, 
                  ImageSize -> {{180, 600}, {20, 400}}, 
                  Scrollbars -> {False, Automatic}], "SummaryItem"]}}, 
@@ -1397,8 +1397,8 @@ height of 29,029 feet (8,848 meters) above sea level."], Evaluator ->
                 PaneBox[
                  
                  DynamicModuleBox[{
-                  Wolfram`APIFunctions`Chat`Private`over$$ = 0, 
-                   Wolfram`APIFunctions`Chat`Private`overhandler$$}, 
+                  Wolfram`LLMTools`Chat`Private`over$$ = 0, 
+                   Wolfram`LLMTools`Chat`Private`overhandler$$}, 
                   TagBox[
                    TagBox[
                     GridBox[{{
@@ -1471,7 +1471,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -1495,7 +1495,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -1504,8 +1504,8 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     PaneSelectorBox[{1 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -1590,20 +1590,20 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     RoundingRadius -> 5, StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     Appearance -> {
@@ -1611,7 +1611,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     "TransparentBG.9.png"]}, ButtonFunction :> 
                     CopyToClipboard["What's the tallest mountain?"], 
                     Evaluator -> Automatic, Method -> "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     Background -> None, FrameMargins -> None, FrameStyle -> 
                     None, ImageMargins -> {{0, 0}, {0, 0}}, StripOnInput -> 
                     False], Active -> False, Alignment -> Left, Appearance -> 
@@ -1625,7 +1625,7 @@ IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 1], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}, {
                     TagBox[
@@ -1727,7 +1727,7 @@ E4Qh8rD4PI7GNxZxAAC/JFq/
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -1752,7 +1752,7 @@ height of 29,029 feet (8,848 meters) above sea level.\"", BoxForm`Undeploy,
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                     TagBox[
@@ -1761,8 +1761,8 @@ height of 29,029 feet (8,848 meters) above sea level.\"", BoxForm`Undeploy,
                     PaneSelectorBox[{2 -> ButtonBox[
                     
                     DynamicModuleBox[{
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$ = False}, 
                     TagBox[
                     PaneSelectorBox[{"Default" -> FrameBox[
                     GraphicsBox[
@@ -1847,20 +1847,20 @@ height of 29,029 feet (8,848 meters) above sea level.\"", BoxForm`Undeploy,
                     RoundingRadius -> 5, StripOnInput -> False]}, 
                     Dynamic[
                     FEPrivate`Which[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, "Hover", 
                     True, "Default"]]], 
                     
                     EventHandlerTag[{
                     "MouseDown" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, True], 
                     "MouseUp" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseDown$$, False], 
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, True], 
                     "MouseExited" :> FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    Wolfram`LLMTools`Chat`Private`mouseHover$$, False], 
                     PassEventsDown -> True, Method -> "Preemptive", 
                     PassEventsUp -> True}]], DynamicModuleValues :> {}], 
                     Appearance -> {
@@ -1870,7 +1870,7 @@ height of 29,029 feet (8,848 meters) above sea level.\"", BoxForm`Undeploy,
                     "Mount Everest is the tallest mountain on Earth, with a \
 height of 29,029 feet (8,848 meters) above sea level."], Evaluator -> 
                     Automatic, Method -> "Preemptive"]}, 
-                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Dynamic[Wolfram`LLMTools`Chat`Private`over$$]], 
                     Background -> None, FrameMargins -> None, FrameStyle -> 
                     None, ImageMargins -> {{0, 0}, {0, 0}}, StripOnInput -> 
                     False], Active -> False, Alignment -> Left, Appearance -> 
@@ -1884,7 +1884,7 @@ height of 29,029 feet (8,848 meters) above sea level."], Evaluator ->
                     EventHandlerTag[{
                     "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 2], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]]}}, AutoDelete -> False, BaseStyle -> "Text", 
                     GridBoxAlignment -> {
@@ -1908,27 +1908,27 @@ height of 29,029 feet (8,848 meters) above sea level."], Evaluator ->
                    EventHandlerTag[{
                     "MouseExited" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 0], Method -> 
+                    Wolfram`LLMTools`Chat`Private`over$$, 0], Method -> 
                     "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
                     True}]], 
                   DynamicModuleValues :> {{
                     DownValues[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$] = {
+                    Wolfram`LLMTools`Chat`Private`overhandler$$] = {
                     HoldPattern[
-                    Wolfram`APIFunctions`Chat`Private`overhandler$$[
-                    Pattern[Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`overhandler$$[
+                    Pattern[Wolfram`LLMTools`Chat`Private`expr$, 
                     Blank[]], 
-                    Pattern[Wolfram`APIFunctions`Chat`Private`i$, 
+                    Pattern[Wolfram`LLMTools`Chat`Private`i$, 
                     Blank[]]]] :> EventHandler[
                     Button[
-                    Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Wolfram`LLMTools`Chat`Private`expr$, 
                     FrameMargins -> {{10, 10}, {5, 5}}, Appearance -> 
                     "Suppressed", Active -> False, BaselinePosition -> 
                     Baseline, BaseStyle -> {}, DefaultBaseStyle -> {}, 
                     Alignment -> Left], "MouseEntered" :> 
                     FEPrivate`Set[
-                    Wolfram`APIFunctions`Chat`Private`over$$, 
-                    Wolfram`APIFunctions`Chat`Private`i$]]}}}], 
+                    Wolfram`LLMTools`Chat`Private`over$$, 
+                    Wolfram`LLMTools`Chat`Private`i$]]}}}], 
                  AppearanceElements -> None, ContentPadding -> False, 
                  ImageSize -> {{180, 600}, {20, 400}}, 
                  Scrollbars -> {False, Automatic}], "SummaryItem"]}}, 
@@ -1949,7 +1949,7 @@ height of 29,029 feet (8,848 meters) above sea level."], Evaluator ->
        Dynamic[Typeset`open$$], ImageSize -> Automatic]},
      "SummaryPanel"],
     DynamicModuleValues:>{}], "]"}],
-  Wolfram`APIFunctions`ChatObject[<|
+  Wolfram`LLMTools`ChatObject[<|
    "Method" -> "OpenAI", 
     "Messages" -> {<|
       "Role" -> "User", "Content" -> "What's the tallest mountain?", 
