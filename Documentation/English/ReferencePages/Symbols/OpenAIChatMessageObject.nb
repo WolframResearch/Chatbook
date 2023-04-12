@@ -1,0 +1,718 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.2' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     24950,        710]
+NotebookOptionsPosition[     17633,        554]
+NotebookOutlinePosition[     18737,        586]
+CellTagsIndexPosition[     18658,        581]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["OpenAIChatMessageObject", "ObjectName",
+ CellID->940460267],
+
+Cell[TextData[{
+ Cell["   ", "ModInfo"],
+ Cell[BoxData[
+  RowBox[{"OpenAIChatMessageObject", "[", 
+   StyleBox["\[Ellipsis]", "TR"], "]"}]], "InlineFormula"],
+ " \[LineSeparator]represents a message in a ChatGPT conversation.\n",
+ Cell["   ", "ModInfo"],
+ Cell[BoxData[
+  RowBox[{"OpenAIChatMessageObject", "[", 
+   RowBox[{
+    StyleBox["role", "TI"], ",", 
+    StyleBox["text", "TI"]}], "]"}]], "InlineFormula"],
+ "\[LineSeparator]creates a message with the specified role and text."
+}], "Usage",
+ CellChangeTimes->{{3.888270149250366*^9, 3.888270223457992*^9}},
+ CellID->1260536867],
+
+Cell[TextData[{
+ Cell[BoxData[
+  RowBox[{
+   RowBox[{
+    ButtonBox["OpenAIChatMessageObject",
+     BaseStyle->"Link",
+     ButtonData->
+      "paclet:ChristopherWolfram/OpenAILink/ref/OpenAIChatMessageObject"], 
+    "[", 
+    StyleBox["\[Ellipsis]", "TR"], "]"}], "[", 
+   StyleBox["prop", "TI"], "]"}]], "InlineFormula"],
+ " is used to access the property ",
+ Cell[BoxData[
+  StyleBox["prop", "TI"]], "InlineFormula"],
+ " from the chat message."
+}], "Notes",
+ CellChangeTimes->{{3.88827054514713*^9, 3.888270625024418*^9}, {
+  3.888270860764945*^9, 3.888270865111413*^9}},
+ CellID->1994250826],
+
+Cell["Supported properties include:", "Notes",
+ CellChangeTimes->{{3.88827062904205*^9, 3.88827063278503*^9}},
+ CellID->1887820947],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "ModInfo"], Cell["\"Role\"", "TableText"], Cell[
+    "role", "TableText"]},
+   {Cell["      ", "ModInfo"], Cell["\"Text\"", "TableText"], Cell[
+    "text", "TableText"]}
+  }]], "2ColumnTableMod",
+ CellChangeTimes->{{3.88827064317881*^9, 3.888270653378049*^9}},
+ CellID->2121267514],
+
+Cell["Valid roles include \"system\", \"assistant\", and \"user\".", "Notes",
+ CellChangeTimes->{{3.888270670580055*^9, 3.8882706874111347`*^9}},
+ CellID->1875168582]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Tech Notes",
+ Cell[BoxData[
+  TemplateBox[{"TechNotes", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell["Insert links to related tech notes.", "MoreInfoText"], BaseStyle -> 
+       "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "TechNotesSection",
+ CellID->577943248],
+
+Cell["XXXX", "Tutorials",
+ CellID->1811091662]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Related Links",
+ Cell[BoxData[
+  TemplateBox[{"RelatedLinks", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Insert links to any related page, including web pages.", 
+        "MoreInfoText"], BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "RelatedLinksSection",
+ CellID->1814710017],
+
+Cell["XXXX", "RelatedLinks",
+ CellID->462738387]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "See Also",
+ Cell[BoxData[
+  TemplateBox[{"SeeAlso", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Insert links to any related reference (function) pages.", 
+        "MoreInfoText"], BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "SeeAlsoSection",
+ CellID->2110607442],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["OpenAITextCompletionObject",
+   BaseStyle->"Link",
+   ButtonData->
+    "paclet:ChristopherWolfram/OpenAILink/ref/OpenAITextCompletionObject"]], 
+  "InlineSeeAlsoFunction",
+  TaggingRules->{"PageType" -> "Function"},ExpressionUUID->
+  "dd2dbe7a-9e2e-444c-a04a-1cf6a3e75ce8"],
+ Cell[BoxData[
+  RowBox[{
+  Cell[TextData[StyleBox[
+   " \[FilledVerySmallSquare] ", "InlineSeparator"]],ExpressionUUID->
+    "98ec2fe6-49c2-478a-9b84-1c55131ad580"], 
+   DynamicModuleBox[{$CellContext`nbobj$$ = NotebookObject[
+    "87a72adf-4019-4941-96fa-06c5d80b7cb0", 
+     "55ba5b6c-69a8-4289-8321-0c88d27ff9d0"], $CellContext`cellobj$$ = 
+    CellObject[
+    "7d5071e0-7bff-4ff5-b5c7-2245baac7e8e", 
+     "bacbe088-3884-4c68-b2d7-5612aa74a34e"]}, 
+    TemplateBox[{
+      GraphicsBox[{{
+         Thickness[0.06], 
+         StrokeForm[
+          Hue[0.4167, 0.406, 0.502]], 
+         CircleBox[{0, 0}]}, {
+         Thickness[0.06], 
+         StrokeForm[
+          Hue[0.4167, 0.406, 0.502]], 
+         LineBox[{{0, 0.62}, {0, -0.62}}]}, {
+         Thickness[0.06], 
+         StrokeForm[
+          Hue[0.4167, 0.406, 0.502]], 
+         LineBox[{{-0.62, 0}, {0.62, 0}}]}}, 
+       ImagePadding -> {{1., 1.}, {2.4, 1.}}, ImageSize -> 16, 
+       PlotRange -> {{-1.06, 1.06}, {-1.06, 1.06}}, 
+       BaselinePosition -> (Center -> 
+        Center)], $CellContext`nbobj$$, $CellContext`cellobj$$},
+     "InlineListingAddButton"],
+    Initialization:>($CellContext`nbobj$$ = 
+      EvaluationNotebook[]; $CellContext`cellobj$$ = EvaluationCell[])]}]], 
+  "InlineListingAddButton",ExpressionUUID->
+  "7d5071e0-7bff-4ff5-b5c7-2245baac7e8e"]
+}], "SeeAlso",
+ CellChangeTimes->{{3.888270765810018*^9, 3.888270767814732*^9}},
+ CellID->1964947085,ExpressionUUID->"f9c34e2f-6cc3-4674-b179-54273af13448"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Guides", "MoreAboutSection",
+ CellChangeTimes->{{3.843042374232973*^9, 3.843042375545676*^9}},
+ CellID->1282455708],
+
+Cell["XXXX", "MoreAbout",
+ CellID->235293098]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Examples Initialization",
+ Cell[BoxData[
+  TemplateBox[{"ExamplesInitialization", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Input that is to be evaluated before any examples are run, e.g. \
+Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]], 
+     "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "ExamplesInitializationSection",
+ CellID->711667161],
+
+Cell[BoxData[
+ RowBox[{"Needs", "[", "\"\<ChristopherWolfram`OpenAILink`\>\"", 
+  "]"}]], "ExampleInitialization",
+ CellChangeTimes->{{3.888270714756373*^9, 3.8882707154282417`*^9}},
+ CellID->2034037463]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[GridBox[{
+    {
+     StyleBox[
+      RowBox[{"Basic", " ", "Examples"}], "PrimaryExamplesSection"], 
+     ButtonBox[
+      RowBox[{
+       RowBox[{"More", " ", "Examples"}], " ", "\[RightTriangle]"}],
+      BaseStyle->"ExtendedExamplesLink",
+      ButtonData:>"ExtendedExamples"]}
+   }],
+  $Line = 0; Null]], "PrimaryExamplesSection",
+ CellID->411183582],
+
+Cell["Create a message:", "ExampleText",
+ CellChangeTimes->{{3.8882707026197157`*^9, 3.888270707307819*^9}},
+ CellID->6337920],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"OpenAIChatMessageObject", "[", 
+  RowBox[{"\"\<user\>\"", ",", "\"\<Hello! How are you?\>\""}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.888270708316169*^9, 3.888270727480904*^9}},
+ CellLabel->"In[2]:=",
+ CellID->406099638],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{
+   TagBox["OpenAIChatMessageObject",
+    "SummaryHead"], "[", 
+   DynamicModuleBox[{Typeset`open$$ = False, Typeset`embedState$$ = "Ready"}, 
+    
+    TemplateBox[{
+      PaneSelectorBox[{False -> GridBox[{{
+            GridBox[{{
+               RowBox[{
+                 TagBox["\"role: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["\"user\"", "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"text: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["\"Hello! How are you?\"", "SummaryItem"]}]}}, 
+             GridBoxAlignment -> {
+              "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+             False, GridBoxItemSize -> {
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+             GridBoxSpacings -> {"Columns" -> {{2}}, "Rows" -> {{Automatic}}},
+              BaseStyle -> {
+              ShowStringCharacters -> False, NumberMarks -> False, 
+               PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
+          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+          AutoDelete -> False, 
+          GridBoxItemSize -> {
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+          BaselinePosition -> {1, 1}], True -> GridBox[{{
+            GridBox[{{
+               RowBox[{
+                 TagBox["\"role: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["\"user\"", "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"text: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["\"Hello! How are you?\"", "SummaryItem"]}]}}, 
+             GridBoxAlignment -> {
+              "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+             False, GridBoxItemSize -> {
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+             GridBoxSpacings -> {"Columns" -> {{2}}, "Rows" -> {{Automatic}}},
+              BaseStyle -> {
+              ShowStringCharacters -> False, NumberMarks -> False, 
+               PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
+          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+          AutoDelete -> False, 
+          GridBoxItemSize -> {
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+          BaselinePosition -> {1, 1}]}, 
+       Dynamic[Typeset`open$$], ImageSize -> Automatic]},
+     "SummaryPanel"],
+    DynamicModuleValues:>{}], "]"}],
+  ChristopherWolfram`OpenAILink`OpenAIChatMessageObject[<|
+   "Role" -> "user", "Text" -> "Hello! How are you?"|>],
+  Editable->False,
+  SelectWithContents->True,
+  Selectable->False]], "Output",
+ CellChangeTimes->{3.888270727785288*^9},
+ CellLabel->"Out[2]=",
+ CellID->985648407]
+}, Open  ]],
+
+Cell["Use the message in a chat:", "ExampleText",
+ CellChangeTimes->{{3.8882707314570436`*^9, 3.888270734221002*^9}},
+ CellID->1511562041],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"OpenAITextCompletionObject", "[", "%", "]"}]], "Input",
+ CellChangeTimes->{{3.8882707350221233`*^9, 3.8882707381053543`*^9}},
+ CellLabel->"In[3]:=",
+ CellID->818635361],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{
+   TagBox["OpenAIChatMessageObject",
+    "SummaryHead"], "[", 
+   DynamicModuleBox[{Typeset`open$$ = False, Typeset`embedState$$ = "Ready"}, 
+    
+    TemplateBox[{
+      PaneSelectorBox[{False -> GridBox[{{
+            GridBox[{{
+               RowBox[{
+                 TagBox["\"role: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["\"assistant\"", "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"text: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox[
+                 "\"\\n\\nAs an AI language model, I don't have feelings, but \
+I'm always functioning optimally. Thank you for asking. How can I assist you \
+today?\"", "SummaryItem"]}]}}, 
+             GridBoxAlignment -> {
+              "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+             False, GridBoxItemSize -> {
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+             GridBoxSpacings -> {"Columns" -> {{2}}, "Rows" -> {{Automatic}}},
+              BaseStyle -> {
+              ShowStringCharacters -> False, NumberMarks -> False, 
+               PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
+          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+          AutoDelete -> False, 
+          GridBoxItemSize -> {
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+          BaselinePosition -> {1, 1}], True -> GridBox[{{
+            GridBox[{{
+               RowBox[{
+                 TagBox["\"role: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox["\"assistant\"", "SummaryItem"]}]}, {
+               RowBox[{
+                 TagBox["\"text: \"", "SummaryItemAnnotation"], 
+                 "\[InvisibleSpace]", 
+                 TagBox[
+                 "\"\\n\\nAs an AI language model, I don't have feelings, but \
+I'm always functioning optimally. Thank you for asking. How can I assist you \
+today?\"", "SummaryItem"]}]}}, 
+             GridBoxAlignment -> {
+              "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+             False, GridBoxItemSize -> {
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+             GridBoxSpacings -> {"Columns" -> {{2}}, "Rows" -> {{Automatic}}},
+              BaseStyle -> {
+              ShowStringCharacters -> False, NumberMarks -> False, 
+               PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
+          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+          AutoDelete -> False, 
+          GridBoxItemSize -> {
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+          BaselinePosition -> {1, 1}]}, 
+       Dynamic[Typeset`open$$], ImageSize -> Automatic]},
+     "SummaryPanel"],
+    DynamicModuleValues:>{}], "]"}],
+  ChristopherWolfram`OpenAILink`OpenAIChatMessageObject[<|
+   "Role" -> "assistant", "Text" -> 
+    "\n\nAs an AI language model, I don't have feelings, but I'm always \
+functioning optimally. Thank you for asking. How can I assist you today?"|>],
+  Editable->False,
+  SelectWithContents->True,
+  Selectable->False]], "Output",
+ CellChangeTimes->{3.8882707467259827`*^9},
+ CellLabel->"Out[3]=",
+ CellID->1133557612]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "More Examples",
+ Cell[BoxData[
+  TemplateBox[{"MoreExamples", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell["Extended examples in standardized sections.", "MoreInfoText"], 
+       BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "ExtendedExamplesSection",
+ CellTags->"ExtendedExamples",
+ CellID->1930534544],
+
+Cell[BoxData[
+ InterpretationBox[Cell["Scope", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->23474738],
+
+Cell[BoxData[
+ InterpretationBox[Cell["Generalizations & Extensions", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->1636699943],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[Cell["Options", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->920037416],
+
+Cell[BoxData[
+ InterpretationBox[Cell["XXXX", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection",
+ CellID->1498648447],
+
+Cell[BoxData[
+ InterpretationBox[Cell["XXXX", "ExampleSubsection"],
+  $Line = 0; Null]], "ExampleSubsection",
+ CellID->861982349]
+}, Open  ]],
+
+Cell[BoxData[
+ InterpretationBox[Cell["Applications", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->937366313],
+
+Cell[BoxData[
+ InterpretationBox[Cell["Properties & Relations", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->1243402398],
+
+Cell[BoxData[
+ InterpretationBox[Cell["Possible Issues", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->1577974326],
+
+Cell[BoxData[
+ InterpretationBox[Cell["Interactive Examples", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->480514458],
+
+Cell[BoxData[
+ InterpretationBox[Cell["Neat Examples", "ExampleSection"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->762588238]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Metadata", "MetadataSection",
+ CellID->668243728],
+
+Cell[TextData[{
+ "New in: ",
+ Cell["XX", "HistoryData",
+  CellTags->"New"],
+ " | Modified in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Modified"],
+ " | Obsolete in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Obsolete"]
+}], "History",
+ CellID->546920417],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Categorization",
+ Cell[BoxData[
+  TemplateBox[{"Metadata", 
+    Cell[
+     BoxData[
+      FrameBox[
+       Cell[
+       "Metadata such as page URI, context, and type of documentation page.", 
+        "MoreInfoText"], BaseStyle -> "IFrameBox"]], "MoreInfoTextOuter"]},
+   "MoreInfoOpenerButtonTemplate"]]]
+}], "CategorizationSection",
+ CellID->1537789795],
+
+Cell["Symbol", "Categorization",
+ CellLabel->"Entity Type",
+ CellID->997927363],
+
+Cell["Wolfram/LLMTools", "Categorization",
+ CellLabel->"Paclet Name",
+ CellID->944243929,ExpressionUUID->"3a610a08-b7c1-4043-a689-088714c48eda"],
+
+Cell["Wolfram`OpenAILink`", "Categorization",
+ CellChangeTimes->{{3.89030403613305*^9, 3.890304037483755*^9}},
+ CellLabel->"Context",
+ CellID->54366888,ExpressionUUID->"491a978e-edda-4a8c-a09a-ca6b82ab13a4"],
+
+Cell["Wolfram/LLMTools/ref/OpenAIChatMessageObject", "Categorization",
+ CellLabel->"URI",
+ CellID->1938387630,ExpressionUUID->"a94f5279-33ed-4f2e-a932-cae32f065606"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Keywords", "KeywordsSection",
+ CellID->57297148],
+
+Cell["XXXX", "Keywords",
+ CellID->2048617714]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Syntax Templates", "TemplatesSection",
+ CellID->368847230],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Additional Function Template",
+ CellID->1868388810],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Arguments Pattern",
+ CellID->1715844083],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Local Variables",
+ CellID->831585618],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Color Equal Signs",
+ CellID->1831512604]
+}, Closed]]
+}, Open  ]]
+},
+WindowSize->{700.125, 770.25},
+WindowMargins->{{322.125, Automatic}, {Automatic, 69}},
+TaggingRules-><|
+ "DocuToolsSettingsInternal" -> {
+   "$ApplicationName" -> "Mathematica", "$LinkBase" -> "Mathematica", 
+    "$ApplicationDirectory" -> "/home/christopher/cvs/Mathematica/", 
+    "$DocumentationDirectory" -> 
+    "/home/christopher/cvs/Mathematica/Documentation/English/", 
+    "$UseNewPageDialog" -> ""}, "Paclet" -> "Wolfram/LLMTools", "TryRealOnly" -> 
+  False|>,
+FrontEndVersion->"13.2 for Mac OS X x86 (64-bit) (November 18, 2022)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStylesExt.nb", 
+  CharacterEncoding -> "UTF-8"],
+ExpressionUUID->"87a72adf-4019-4941-96fa-06c5d80b7cb0"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{
+ "ExtendedExamples"->{
+  Cell[13887, 402, 375, 12, 58, "ExtendedExamplesSection",ExpressionUUID->"b503ecdb-e3a5-4279-ba3b-ad3f8ac565a4",
+   CellTags->"ExtendedExamples",
+   CellID->1930534544]}
+ }
+*)
+(*CellTagsIndex
+CellTagsIndex->{
+ {"ExtendedExamples", 18463, 574}
+ }
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 65, 1, 74, "ObjectName",ExpressionUUID->"f82903d5-7256-482d-b294-782452d09d94",
+ CellID->940460267],
+Cell[648, 25, 585, 15, 123, "Usage",ExpressionUUID->"f4615637-b77d-4cc0-9f6b-0538b62a5261",
+ CellID->1260536867],
+Cell[1236, 42, 595, 18, 28, "Notes",ExpressionUUID->"f866342a-105f-49d5-afc2-871d1f42dc8e",
+ CellID->1994250826],
+Cell[1834, 62, 131, 2, 27, "Notes",ExpressionUUID->"479235b9-35b6-4577-8840-fa574eb0b079",
+ CellID->1887820947],
+Cell[1968, 66, 323, 7, 43, "2ColumnTableMod",ExpressionUUID->"698330db-d9d5-4456-9123-4d7bd13a6b30",
+ CellID->2121267514],
+Cell[2294, 75, 166, 2, 27, "Notes",ExpressionUUID->"a5fd2795-21ac-4b33-9c2d-4b3c394ba29e",
+ CellID->1875168582]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2497, 82, 322, 11, 47, "TechNotesSection",ExpressionUUID->"0ae1bbf4-a931-485d-823a-cf9d41067892",
+ CellID->577943248],
+Cell[2822, 95, 46, 1, 19, "Tutorials",ExpressionUUID->"d90f5c8f-4edc-43fe-a1e5-9bf892df9e8c",
+ CellID->1811091662]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2905, 101, 360, 12, 34, "RelatedLinksSection",ExpressionUUID->"5c26e241-0b4f-461e-94ac-1a63f3867c11",
+ CellID->1814710017],
+Cell[3268, 115, 48, 1, 19, "RelatedLinks",ExpressionUUID->"93e32cd3-7ef2-4d01-b354-77706870ac5d",
+ CellID->462738387]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3353, 121, 346, 12, 34, "SeeAlsoSection",ExpressionUUID->"c4eed9c4-bf2a-4fdd-9de4-c33b9bf4c7f9",
+ CellID->2110607442],
+Cell[3702, 135, 1813, 45, 23, "SeeAlso",ExpressionUUID->"f9c34e2f-6cc3-4674-b179-54273af13448",
+ CellID->1964947085]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5552, 185, 129, 2, 34, "MoreAboutSection",ExpressionUUID->"299ef11b-5176-4076-967c-6b8fd3968e61",
+ CellID->1282455708],
+Cell[5684, 189, 45, 1, 19, "MoreAbout",ExpressionUUID->"31160d8c-9d0b-446d-a455-ceb147bfad07",
+ CellID->235293098]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5766, 195, 417, 13, 70, "ExamplesInitializationSection",ExpressionUUID->"46b01029-100d-48f1-95be-697c84386e6d",
+ CellID->711667161],
+Cell[6186, 210, 203, 4, 47, "ExampleInitialization",ExpressionUUID->"a96ee4a4-9da5-4bc2-93fa-a27246e6f63a",
+ CellID->2034037463]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[6426, 219, 387, 12, 73, "PrimaryExamplesSection",ExpressionUUID->"36eb5788-9b78-42a2-a3e9-743b82d39557",
+ CellID->411183582],
+Cell[6816, 233, 126, 2, 24, "ExampleText",ExpressionUUID->"dcb85b44-4f92-4ceb-8303-1bb18dc9685f",
+ CellID->6337920],
+Cell[CellGroupData[{
+Cell[6967, 239, 248, 6, 27, "Input",ExpressionUUID->"b782f4a9-64f3-4c71-b6d6-be6817052575",
+ CellID->406099638],
+Cell[7218, 247, 2907, 63, 52, "Output",ExpressionUUID->"1619a0f1-0f43-440d-8780-6aa461e66d81",
+ CellID->985648407]
+}, Open  ]],
+Cell[10140, 313, 138, 2, 24, "ExampleText",ExpressionUUID->"6ccc6d97-bdc3-4e6f-b46d-ace598e50460",
+ CellID->1511562041],
+Cell[CellGroupData[{
+Cell[10303, 319, 192, 4, 27, "Input",ExpressionUUID->"c1fec742-11f1-4a02-a1e5-e18ac40f6f9c",
+ CellID->818635361],
+Cell[10498, 325, 3340, 71, 101, "Output",ExpressionUUID->"92a86554-db8d-4b9f-ba29-7da60544021c",
+ CellID->1133557612]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[13887, 402, 375, 12, 58, "ExtendedExamplesSection",ExpressionUUID->"b503ecdb-e3a5-4279-ba3b-ad3f8ac565a4",
+ CellTags->"ExtendedExamples",
+ CellID->1930534544],
+Cell[14265, 416, 123, 3, 35, "ExampleSection",ExpressionUUID->"bbe896a0-b8b8-483c-9c3d-717392fd1b2f",
+ CellID->23474738],
+Cell[14391, 421, 148, 3, 23, "ExampleSection",ExpressionUUID->"a7e8a4ee-6e02-4fc2-991b-fcf366f9c0d8",
+ CellID->1636699943],
+Cell[CellGroupData[{
+Cell[14564, 428, 126, 3, 23, "ExampleSection",ExpressionUUID->"7ca180cb-a2cd-4d20-a088-73559071c189",
+ CellID->920037416],
+Cell[14693, 433, 130, 3, 26, "ExampleSubsection",ExpressionUUID->"f818cad8-196d-4147-a191-3c8a3ef35614",
+ CellID->1498648447],
+Cell[14826, 438, 129, 3, 22, "ExampleSubsection",ExpressionUUID->"c91a3bd7-4d98-4706-84a5-5ec555072a70",
+ CellID->861982349]
+}, Open  ]],
+Cell[14970, 444, 131, 3, 35, "ExampleSection",ExpressionUUID->"df89ef87-bf06-4072-af6f-7ea9f03514ae",
+ CellID->937366313],
+Cell[15104, 449, 142, 3, 23, "ExampleSection",ExpressionUUID->"cbd2cd51-c634-4d19-a7bd-ac82fef10f5f",
+ CellID->1243402398],
+Cell[15249, 454, 135, 3, 23, "ExampleSection",ExpressionUUID->"b4d945e8-182b-428c-af63-cec34fba28a9",
+ CellID->1577974326],
+Cell[15387, 459, 139, 3, 23, "ExampleSection",ExpressionUUID->"51e49e96-ac00-4df5-ba5b-af48f47e20b2",
+ CellID->480514458],
+Cell[15529, 464, 132, 3, 23, "ExampleSection",ExpressionUUID->"0ed69dfb-c7ca-4c87-a3ca-563a49da2b21",
+ CellID->762588238]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[15698, 472, 55, 1, 72, "MetadataSection",ExpressionUUID->"02eeeb36-3366-4e8c-931e-81e1384110a3",
+ CellID->668243728],
+Cell[15756, 475, 253, 11, 26, "History",ExpressionUUID->"d9f6a24c-2586-42b4-a9ef-4d3761a805d3",
+ CellID->546920417],
+Cell[CellGroupData[{
+Cell[16034, 490, 372, 12, 21, "CategorizationSection",ExpressionUUID->"a9492aa4-cb37-462c-b955-aaf1a477de7b",
+ CellID->1537789795],
+Cell[16409, 504, 79, 2, 35, "Categorization",ExpressionUUID->"dd3a4673-d22c-42f2-a3b9-3474de1f2318",
+ CellID->997927363],
+Cell[16491, 508, 144, 2, 35, "Categorization",ExpressionUUID->"3a610a08-b7c1-4043-a689-088714c48eda",
+ CellID->944243929],
+Cell[16638, 512, 207, 3, 35, "Categorization",ExpressionUUID->"491a978e-edda-4a8c-a09a-ca6b82ab13a4",
+ CellID->54366888],
+Cell[16848, 517, 165, 2, 35, "Categorization",ExpressionUUID->"a94f5279-33ed-4f2e-a932-cae32f065606",
+ CellID->1938387630]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[17050, 524, 54, 1, 31, "KeywordsSection",ExpressionUUID->"5d922c05-a820-4cf7-bced-1ae94830bae4",
+ CellID->57297148],
+Cell[17107, 527, 45, 1, 70, "Keywords",ExpressionUUID->"9845afe9-448e-4977-bebd-25b1aa7ae812",
+ CellID->2048617714]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[17189, 533, 64, 1, 21, "TemplatesSection",ExpressionUUID->"e90ff3c1-e744-4f55-a439-2004335418c2",
+ CellID->368847230],
+Cell[17256, 536, 94, 2, 70, "Template",ExpressionUUID->"23147b7b-1890-410d-a9e6-0e66b228621e",
+ CellID->1868388810],
+Cell[17353, 540, 83, 2, 70, "Template",ExpressionUUID->"af68d3ae-1275-4080-b033-bdd52281c91f",
+ CellID->1715844083],
+Cell[17439, 544, 80, 2, 70, "Template",ExpressionUUID->"8ad69684-4e09-4f2f-a952-bec17b81534f",
+ CellID->831585618],
+Cell[17522, 548, 83, 2, 70, "Template",ExpressionUUID->"bc2c9046-a8a6-4515-8986-89e8408f871a",
+ CellID->1831512604]
+}, Closed]]
+}, Open  ]]
+}
+]
+*)
+
