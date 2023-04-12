@@ -136,6 +136,14 @@ ConformAuthentication["OpenAI", auth_] /; MatchQ[auth, KeyValuePattern[{"APIKey"
 	{"apikey" -> auth["APIKey"]};
 ConformAuthentication["OpenAI", auth_] /; MatchQ[auth, {"apikey" -> _String}] := 
 	auth;
+ConformAuthentication[so:ServiceObject["OpenAI", _]] := GU`Scope @ Enclose[
+	token = Confirm @ ServiceConnections`Private`serviceAuthentication[so["ID"]];
+	key = Query[2, "apikey"] @ token;
+	If[!StringQ @ key,
+		Failure["APIError", <|"Message" -> "Missing Authentication informations."|>],
+		{"apikey" -> key}
+	]
+];
 ConformAuthentication["OpenAI", auth_] :=
 	Failure["APIError",
 		<|
@@ -144,7 +152,9 @@ ConformAuthentication["OpenAI", auth_] :=
 		|>
 	];
 
-TestConnection["OpenAI", key_String] := TestConnection[
+TestConnection["OpenAI", so:ServiceObject["OpenAI", _]] :=
+	TestConnection["OpenAI", ConformAuthentication[so]];
+TestConnection["OpenAI", {"apikey" -> key_String}] := TestConnection[
 	HTTPRequest[
 		"https://api.openai.com/v1/models", 
 		<|
