@@ -37,20 +37,20 @@ Cell[TextData[{
  Cell[BoxData[
   ButtonBox["OpenAIModels",
    BaseStyle->"Link",
-   ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAIModels"]], 
+   ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAIModels"]], 
   "InlineFormula"],
  " can be used in the ",
  Cell[BoxData[
   ButtonBox["OpenAIModel",
    BaseStyle->"Link",
-   ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAIModel"]], 
+   ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAIModel"]], 
   "InlineFormula"],
  " option for functions like ",
  Cell[BoxData[
   ButtonBox["OpenAITextCompletionObject",
    BaseStyle->"Link",
    ButtonData->
-    "paclet:ChristopherWolfram/OpenAILink/ref/OpenAITextCompletionObject"]], 
+    "paclet:Wolfram/LLMTools/ref/OpenAITextCompletionObject"]], 
   "InlineFormula"],
  "."
 }], "Notes",
@@ -117,7 +117,7 @@ Cell[TextData[{
  Cell[BoxData[
   ButtonBox["OpenAIModel",
    BaseStyle->"Link",
-   ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAIModel"]], 
+   ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAIModel"]], 
   "InlineSeeAlsoFunction",
   TaggingRules->{"PageType" -> "Function"},ExpressionUUID->
   "9eee50a9-50f2-4ab9-8e43-1d9028eded51"],
@@ -188,7 +188,7 @@ Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]],
  CellID->938810580],
 
 Cell[BoxData[
- RowBox[{"Needs", "[", "\"\<ChristopherWolfram`OpenAILink`\>\"", 
+ RowBox[{"Needs", "[", "\"\<Wolfram`OpenAILink`\>\"", 
   "]"}]], "ExampleInitialization",
  CellID->1027063551]
 }, Open  ]],

@@ -85,7 +85,7 @@ Cell[TextData[{
   ButtonBox["OpenAIChatCompletionObject",
    BaseStyle->"Link",
    ButtonData->
-    "paclet:ChristopherWolfram/OpenAILink/ref/OpenAIChatCompletionObject"]], 
+    "paclet:Wolfram/LLMTools/ref/OpenAIChatCompletionObject"]], 
   "InlineFormula",ExpressionUUID->"eb490dc2-ce29-4e1c-92fa-e19603bf592f"],
  " containing all properties of the results.\n",
  Cell["   ", "ModInfo",ExpressionUUID->"e6df0cce-a445-4bc0-9cd5-5cd7e0f22401"],
@@ -110,7 +110,7 @@ Cell[TextData[{
   ButtonBox["OpenAITextComplete",
    BaseStyle->"Link",
    ButtonData->
-    "paclet:ChristopherWolfram/OpenAILink/ref/OpenAITextComplete"]], 
+    "paclet:Wolfram/LLMTools/ref/OpenAITextComplete"]], 
   "InlineFormula",ExpressionUUID->"ea07e842-62a8-4d85-a19b-7d545c635888"],
  " uses ChatGPT from OpenAI to generate chat messages."
 }], "Notes",
@@ -125,7 +125,7 @@ Cell[TextData[{
   ButtonBox["OpenAITextComplete",
    BaseStyle->"Link",
    ButtonData->
-    "paclet:ChristopherWolfram/OpenAILink/ref/OpenAITextComplete"]], 
+    "paclet:Wolfram/LLMTools/ref/OpenAITextComplete"]], 
   "InlineFormula",ExpressionUUID->"1cf2cf88-0171-4eae-9464-efe0a370fba8"],
  " uses the ",
  ButtonBox["chat completion API",
@@ -176,7 +176,7 @@ Cell[TextData[{
   ButtonBox["OpenAIChatCompletionObject",
    BaseStyle->"Link",
    ButtonData->
-    "paclet:ChristopherWolfram/OpenAILink/ref/OpenAIChatCompletionObject"]], 
+    "paclet:Wolfram/LLMTools/ref/OpenAIChatCompletionObject"]], 
   "InlineFormula",ExpressionUUID->"09e507e8-19ab-4443-8003-958e58642eb8"],
  "."
 }], "Notes",
@@ -190,7 +190,7 @@ Cell[TextData[{
   ButtonBox["OpenAIChatComplete",
    BaseStyle->"Link",
    ButtonData->
-    "paclet:ChristopherWolfram/OpenAILink/ref/OpenAIChatComplete"]], 
+    "paclet:Wolfram/LLMTools/ref/OpenAIChatComplete"]], 
   "InlineFormula",ExpressionUUID->"6b8be01a-cbf5-484d-be83-052834429919"],
  " supports the following options:"
 }], "Notes",
@@ -204,27 +204,27 @@ Cell[BoxData[GridBox[{
      "11d87655-d226-4d30-b755-e445ca593f1d"], 
     ButtonBox["OpenAIKey",
      BaseStyle->"Link",
-     ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAIKey"], 
+     ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAIKey"], 
     ButtonBox["$OpenAIKey",
      BaseStyle->"Link",
-     ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/$OpenAIKey"], Cell[
+     ButtonData->"paclet:Wolfram/LLMTools/ref/$OpenAIKey"], Cell[
     "OpenAI API key", "TableText",ExpressionUUID->
      "6a09dc74-e8f1-4c18-abc8-7049e76296c7"]},
    {Cell["      ", "ModInfo",ExpressionUUID->
      "8f7d6124-cbec-4f8d-a46c-0f8cd6562388"], 
     ButtonBox["OpenAIUser",
      BaseStyle->"Link",
-     ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAIUser"], 
+     ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAIUser"], 
     ButtonBox["$OpenAIUser",
      BaseStyle->"Link",
-     ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/$OpenAIUser"], 
+     ButtonData->"paclet:Wolfram/LLMTools/ref/$OpenAIUser"], 
     Cell["OpenAI user ID", "TableText",ExpressionUUID->
      "a6d3a1e0-a5f8-48b9-9e74-fe4973ca3f2e"]},
    {Cell["      ", "ModInfo",ExpressionUUID->
      "9d808da8-f73c-4a8b-a0f2-962b4d75833a"], 
     ButtonBox["OpenAIModel",
      BaseStyle->"Link",
-     ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAIModel"], 
+     ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAIModel"], 
     ButtonBox["Automatic",
      BaseStyle->"Link"], Cell[
     "model", "TableText",ExpressionUUID->
@@ -234,7 +234,7 @@ Cell[BoxData[GridBox[{
     ButtonBox["OpenAITemperature",
      BaseStyle->"Link",
      ButtonData->
-      "paclet:ChristopherWolfram/OpenAILink/ref/OpenAITemperature"], 
+      "paclet:Wolfram/LLMTools/ref/OpenAITemperature"], 
     ButtonBox["Automatic",
      BaseStyle->"Link"], Cell[
     "temperature", "TableText",ExpressionUUID->
@@ -244,7 +244,7 @@ Cell[BoxData[GridBox[{
     ButtonBox["OpenAITopProbability",
      BaseStyle->"Link",
      ButtonData->
-      "paclet:ChristopherWolfram/OpenAILink/ref/OpenAITopProbability"], 
+      "paclet:Wolfram/LLMTools/ref/OpenAITopProbability"], 
     ButtonBox["Automatic",
      BaseStyle->"Link"], Cell[
     "top probability (top P)", "TableText",ExpressionUUID->
@@ -253,7 +253,7 @@ Cell[BoxData[GridBox[{
      "76f68f54-29e9-4f69-a135-6e0c3e076ecc"], 
     ButtonBox["OpenAITokenLimit",
      BaseStyle->"Link",
-     ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAITokenLimit"], 
+     ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAITokenLimit"], 
     ButtonBox["Automatic",
      BaseStyle->"Link"], Cell[
     "OpenAI token limit", "TableText",ExpressionUUID->
@@ -262,7 +262,7 @@ Cell[BoxData[GridBox[{
      "94f2731b-37a1-4de8-a1d2-4d3442636f7d"], 
     ButtonBox["OpenAIStopTokens",
      BaseStyle->"Link",
-     ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAIStopTokens"], 
+     ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAIStopTokens"], 
     ButtonBox["Automatic",
      BaseStyle->"Link"], Cell[
     "stop tokens", "TableText",ExpressionUUID->
@@ -343,7 +343,7 @@ Cell[TextData[{
   ButtonBox["OpenAITextComplete",
    BaseStyle->"Link",
    ButtonData->
-    "paclet:ChristopherWolfram/OpenAILink/ref/OpenAITextComplete"]], 
+    "paclet:Wolfram/LLMTools/ref/OpenAITextComplete"]], 
   "InlineSeeAlsoFunction",
   TaggingRules->{"PageType" -> "Function"},ExpressionUUID->
   "beab71ad-b482-4d6c-91c0-ba8010dbbfc9"],
@@ -352,7 +352,7 @@ Cell[TextData[{
   ButtonBox["OpenAIChatCompletionObject",
    BaseStyle->"Link",
    ButtonData->
-    "paclet:ChristopherWolfram/OpenAILink/ref/OpenAIChatCompletionObject"]], 
+    "paclet:Wolfram/LLMTools/ref/OpenAIChatCompletionObject"]], 
   "InlineSeeAlsoFunction",
   TaggingRules->{"PageType" -> "Function"},ExpressionUUID->
   "7e00ac7e-6fe9-4393-a3a3-2efabcfad55e"],
@@ -431,7 +431,7 @@ Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]],
  CellID->905932729,ExpressionUUID->"d9df65d0-4949-4dbe-8a6a-d05f00958aee"],
 
 Cell[BoxData[
- RowBox[{"Needs", "[", "\"\<ChristopherWolfram`OpenAILink`\>\"", 
+ RowBox[{"Needs", "[", "\"\<Wolfram`OpenAILink`\>\"", 
   "]"}]], "ExampleInitialization",
  CellID->922571669,ExpressionUUID->"4a3634f5-c68b-4161-bc52-7686ffb82d83"]
 }, Open  ]],
@@ -532,7 +532,7 @@ I assist you today?\"", "SummaryItem"]}]}},
        Dynamic[Typeset`open$$], ImageSize -> Automatic]},
      "SummaryPanel"],
     DynamicModuleValues:>{}], "]"}],
-  ChristopherWolfram`OpenAILink`OpenAIChatMessageObject[<|
+  Wolfram`OpenAILink`OpenAIChatMessageObject[<|
    "Role" -> "assistant", "Text" -> 
     "\n\nI'm an AI language model, so I don't have feelings. But I'm here to \
 assist you with any questions or tasks you may have. How can I assist you \

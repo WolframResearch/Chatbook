@@ -47,7 +47,7 @@ Cell[TextData[{
     ButtonBox["OpenAIChatMessageObject",
      BaseStyle->"Link",
      ButtonData->
-      "paclet:ChristopherWolfram/OpenAILink/ref/OpenAIChatMessageObject"], 
+      "paclet:Wolfram/LLMTools/ref/OpenAIChatMessageObject"], 
     "[", 
     StyleBox["\[Ellipsis]", "TR"], "]"}], "[", 
    StyleBox["prop", "TI"], "]"}]], "InlineFormula"],
@@ -138,7 +138,7 @@ Cell[TextData[{
   ButtonBox["OpenAITextCompletionObject",
    BaseStyle->"Link",
    ButtonData->
-    "paclet:ChristopherWolfram/OpenAILink/ref/OpenAITextCompletionObject"]], 
+    "paclet:Wolfram/LLMTools/ref/OpenAITextCompletionObject"]], 
   "InlineSeeAlsoFunction",
   TaggingRules->{"PageType" -> "Function"},ExpressionUUID->
   "dd2dbe7a-9e2e-444c-a04a-1cf6a3e75ce8"],
@@ -209,7 +209,7 @@ Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]],
  CellID->711667161],
 
 Cell[BoxData[
- RowBox[{"Needs", "[", "\"\<ChristopherWolfram`OpenAILink`\>\"", 
+ RowBox[{"Needs", "[", "\"\<Wolfram`OpenAILink`\>\"", 
   "]"}]], "ExampleInitialization",
  CellChangeTimes->{{3.888270714756373*^9, 3.8882707154282417`*^9}},
  CellID->2034037463]
@@ -301,7 +301,7 @@ Cell[BoxData[
        Dynamic[Typeset`open$$], ImageSize -> Automatic]},
      "SummaryPanel"],
     DynamicModuleValues:>{}], "]"}],
-  ChristopherWolfram`OpenAILink`OpenAIChatMessageObject[<|
+  Wolfram`OpenAILink`OpenAIChatMessageObject[<|
    "Role" -> "user", "Text" -> "Hello! How are you?"|>],
   Editable->False,
   SelectWithContents->True,
@@ -385,7 +385,7 @@ today?\"", "SummaryItem"]}]}},
        Dynamic[Typeset`open$$], ImageSize -> Automatic]},
      "SummaryPanel"],
     DynamicModuleValues:>{}], "]"}],
-  ChristopherWolfram`OpenAILink`OpenAIChatMessageObject[<|
+  Wolfram`OpenAILink`OpenAIChatMessageObject[<|
    "Role" -> "assistant", "Text" -> 
     "\n\nAs an AI language model, I don't have feelings, but I'm always \
 functioning optimally. Thank you for asking. How can I assist you today?"|>],

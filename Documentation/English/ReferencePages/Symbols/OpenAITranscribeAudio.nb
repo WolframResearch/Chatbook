@@ -57,7 +57,7 @@ Cell[TextData[{
   ButtonBox["OpenAITranscribeAudio",
    BaseStyle->"Link",
    ButtonData->
-    "paclet:ChristopherWolfram/OpenAILink/ref/OpenAITranscribeAudio"]], 
+    "paclet:Wolfram/LLMTools/ref/OpenAITranscribeAudio"]], 
   "InlineFormula",ExpressionUUID->"7e81d794-07cd-4d73-9d7e-4f7245161ec5"],
  " uses the ",
  ButtonBox["Whisper-1",
@@ -78,7 +78,7 @@ Cell[TextData[{
   ButtonBox["OpenAITranscribeAudio",
    BaseStyle->"Link",
    ButtonData->
-    "paclet:ChristopherWolfram/OpenAILink/ref/OpenAITranscribeAudio"]], 
+    "paclet:Wolfram/LLMTools/ref/OpenAITranscribeAudio"]], 
   "InlineFormula",ExpressionUUID->"4f3178ce-6d64-4c91-9685-9f83318a7b34"],
  " supports the following options:"
 }], "Notes",
@@ -91,20 +91,20 @@ Cell[BoxData[GridBox[{
      "d0eeac56-681f-460c-807f-f62951a1b02a"], 
     ButtonBox["OpenAIKey",
      BaseStyle->"Link",
-     ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAIKey"], 
+     ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAIKey"], 
     ButtonBox["$OpenAIKey",
      BaseStyle->"Link",
-     ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/$OpenAIKey"], Cell[
+     ButtonData->"paclet:Wolfram/LLMTools/ref/$OpenAIKey"], Cell[
     "OpenAI API key", "TableText",ExpressionUUID->
      "566bc228-753b-4dbb-93e3-885f111b0fba"]},
    {Cell["      ", "ModInfo",ExpressionUUID->
      "2133ccff-4bae-4361-a58d-1b8208297280"], 
     ButtonBox["OpenAIUser",
      BaseStyle->"Link",
-     ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAIUser"], 
+     ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAIUser"], 
     ButtonBox["$OpenAIUser",
      BaseStyle->"Link",
-     ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/$OpenAIUser"], 
+     ButtonData->"paclet:Wolfram/LLMTools/ref/$OpenAIUser"], 
     Cell["OpenAI user ID", "TableText",ExpressionUUID->
      "b8484616-11b7-4479-9ea6-1fa1e161259e"]},
    {Cell["      ", "ModInfo",ExpressionUUID->
@@ -248,7 +248,7 @@ Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]],
  CellID->1759005148,ExpressionUUID->"d1265044-4492-4d65-82ba-3b35bc0cf936"],
 
 Cell[BoxData[
- RowBox[{"Needs", "[", "\"\<ChristopherWolfram`OpenAILink`\>\"", 
+ RowBox[{"Needs", "[", "\"\<Wolfram`OpenAILink`\>\"", 
   "]"}]], "ExampleInitialization",
  CellID->1339637834,ExpressionUUID->"cee3e1f2-7704-4b29-ba15-f1d121ec59b3"]
 }, Open  ]],

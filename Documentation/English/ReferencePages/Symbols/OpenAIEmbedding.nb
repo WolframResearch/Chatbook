@@ -68,7 +68,7 @@ Cell[TextData[{
  Cell[BoxData[
   ButtonBox["OpenAIEmbedding",
    BaseStyle->"Link",
-   ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAIEmbedding"]], 
+   ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAIEmbedding"]], 
   "InlineFormula",ExpressionUUID->"1e03be85-15a4-4b30-ad19-55c4346c8262"],
  " uses language models to generate feature vectors representing the input \
 text."
@@ -81,7 +81,7 @@ Cell[TextData[{
  Cell[BoxData[
   ButtonBox["OpenAIEmbedding",
    BaseStyle->"Link",
-   ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAIEmbedding"]], 
+   ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAIEmbedding"]], 
   "InlineFormula",ExpressionUUID->"ef41bb8e-7051-4557-bf08-c48cd47d01ac"],
  " uses the ",
  ButtonBox["embedding API",
@@ -142,7 +142,7 @@ Cell[TextData[{
  Cell[BoxData[
   ButtonBox["OpenAIEmbedding",
    BaseStyle->"Link",
-   ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAIEmbedding"]], 
+   ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAIEmbedding"]], 
   "InlineFormula",ExpressionUUID->"4cd49e15-d5a4-43ca-9590-5a5ee89ad9b5"],
  " supports the following options:"
 }], "Notes",
@@ -155,17 +155,17 @@ Cell[BoxData[GridBox[{
      "6901dee3-8651-4586-bab5-1b08342fd5e6"], 
     ButtonBox["OpenAIKey",
      BaseStyle->"Link",
-     ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAIKey"], 
+     ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAIKey"], 
     ButtonBox["$OpenAIKey",
      BaseStyle->"Link",
-     ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/$OpenAIKey"], Cell[
+     ButtonData->"paclet:Wolfram/LLMTools/ref/$OpenAIKey"], Cell[
     "OpenAI API key", "TableText",ExpressionUUID->
      "18ebc966-61d5-4253-8657-f6587dcf9386"]},
    {Cell["      ", "ModInfo",ExpressionUUID->
      "66dacd5b-1268-4eb1-b5eb-b1fe8bab2ea1"], 
     ButtonBox["OpenAIUser",
      BaseStyle->"Link",
-     ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAIUser"], 
+     ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAIUser"], 
     ButtonBox["$OpenAIUser",
      BaseStyle->"Link"], Cell[
     "OpenAI user ID", "TableText",ExpressionUUID->
@@ -174,7 +174,7 @@ Cell[BoxData[GridBox[{
      "1daeeb60-e6f7-4f9b-8b31-f4ef0fb585bf"], 
     ButtonBox["OpenAIModel",
      BaseStyle->"Link",
-     ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAIModel"], 
+     ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAIModel"], 
     "\"\<text-embedding-ada-002\>\"", Cell[
     "model", "TableText",ExpressionUUID->
      "e4cb28e4-5cdb-4c5b-887b-4549799dbf6b"]}
@@ -259,7 +259,7 @@ Cell[TextData[{
  Cell[BoxData[
   ButtonBox["OpenAIModels",
    BaseStyle->"Link",
-   ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAIModels"]], 
+   ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAIModels"]], 
   "InlineSeeAlsoFunction",
   TaggingRules->{"PageType" -> "Function"},ExpressionUUID->
   "6c886c93-26a6-435f-9842-006d02a4f5f6"],
@@ -332,7 +332,7 @@ Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]],
  CellID->767174103,ExpressionUUID->"31abe5d2-5ae8-461b-97f3-b96e79532521"],
 
 Cell[BoxData[
- RowBox[{"Needs", "[", "\"\<ChristopherWolfram`OpenAILink`\>\"", 
+ RowBox[{"Needs", "[", "\"\<Wolfram`OpenAILink`\>\"", 
   "]"}]], "ExampleInitialization",
  CellID->403332533,ExpressionUUID->"9cb4b0a4-1491-4f67-b180-d2bc92f7a233"]
 }, Open  ]],

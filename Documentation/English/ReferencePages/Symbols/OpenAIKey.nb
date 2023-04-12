@@ -99,7 +99,7 @@ Cell[TextData[{
 Cell[TextData[ButtonBox["Configuring OpenAI Credentials",
  BaseStyle->"Link",
  ButtonData->
-  "paclet:ChristopherWolfram/OpenAILink/tutorial/\
+  "paclet:Wolfram/LLMTools/tutorial/\
 ConfiguringOpenAICredentials"]], "Tutorials",
  CellChangeTimes->{{3.8813436649290037`*^9, 3.88134369345437*^9}},
  CellID->1076553683,ExpressionUUID->"e0525d72-087b-4bb7-b1d5-5a75be3c8172"]
@@ -155,7 +155,7 @@ Cell[TextData[{
  Cell[BoxData[
   ButtonBox["OpenAIKey",
    BaseStyle->"Link",
-   ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAIKey"]], 
+   ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAIKey"]], 
   "InlineSeeAlsoFunction",
   TaggingRules->{"PageType" -> "Function"},ExpressionUUID->
   "29fa7c07-d247-4560-9f9c-6a39fa69a8e0"],
@@ -229,7 +229,7 @@ Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]],
  CellID->1827565614,ExpressionUUID->"8a71d7e0-03fe-4286-b4df-6faae41a2fd4"],
 
 Cell[BoxData[
- RowBox[{"Needs", "[", "\"\<ChristopherWolfram`OpenAILink`\>\"", 
+ RowBox[{"Needs", "[", "\"\<Wolfram`OpenAILink`\>\"", 
   "]"}]], "ExampleInitialization",
  CellID->436671457,ExpressionUUID->"e64027aa-f550-4aba-b3a9-ce39da1d7657"]
 }, Open  ]],
@@ -286,7 +286,7 @@ the ",
  Cell[BoxData[
   ButtonBox["OpenAIKey",
    BaseStyle->"Link",
-   ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAIKey"]], 
+   ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAIKey"]], 
   "InlineFormula",ExpressionUUID->"a53fefb4-4d38-40be-b3e5-fa482995e24c"],
  " option."
 }], "ExampleText",
