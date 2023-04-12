@@ -22,6 +22,7 @@ PacletObject[<|
 				{"APIFunctions", "APIFunctions"}
 			}
 		},
+		{"ElevenLabs"},
 		{"FrontEnd"},
 		{"Documentation", "Language" -> "English"}
 	}
