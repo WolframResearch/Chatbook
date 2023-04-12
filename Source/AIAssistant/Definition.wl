@@ -525,7 +525,7 @@ askAIAssistant[ nbo_NotebookObject, { selected_CellObject } ] :=
         selection = NotebookRead @ nbo;
         cell = chatQueryCell @ selection;
         SelectionMove[ selected, After, Cell ];
-        obj = $lastQueryCell = cellPrint @ cell;
+        obj = cellPrint @ cell;
         SelectionMove[ obj, All, Cell ];
         SelectionEvaluateCreateCell @ nbo
     ];
@@ -536,9 +536,15 @@ askAIAssistant // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*chatQueryCell*)
 chatQueryCell // beginDefinition;
-chatQueryCell[ s_String ] := Cell[ StringTrim @ s, "ChatQuery", GeneratedCell -> False, CellAutoOverwrite -> False ];
-chatQueryCell[ boxes_ ] := Cell[ BoxData @ boxes, "ChatQuery", GeneratedCell -> False, CellAutoOverwrite -> False ];
+chatQueryCell[ s_String      ] := chatQueryCell0 @ StringTrim @ s;
+chatQueryCell[ content_List  ] := chatQueryCell0 @ TextData @ content;
+chatQueryCell[ text_TextData ] := chatQueryCell0 @ text;
+chatQueryCell[ boxes_BoxData ] := chatQueryCell0 @ TextData @ Cell @ boxes;
+chatQueryCell[ cell_Cell     ] := chatQueryCell0 @ TextData @ cell;
+chatQueryCell[ boxes_        ] := chatQueryCell0 @ BoxData @ boxes;
 chatQueryCell // endDefinition;
+
+chatQueryCell0[ content_ ] := Cell[ content, "ChatQuery", GeneratedCell -> False, CellAutoOverwrite -> False ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section:: *)
@@ -2465,8 +2471,7 @@ slowCellToString // endDefinition;
 (*docSearchResultString*)
 docSearchResultString // ClearAll;
 
-docSearchResultString[ query_String ] /; $currentCell =!= True :=
-    "BEGIN_DOCUMENTATION_SEARCH_RESULTS\n(results omitted)\nEND_DOCUMENTATION_SEARCH_RESULTS";
+docSearchResultString[ query_String ] /; $currentCell =!= True := "";
 
 docSearchResultString[ query_String ] := Enclose[
     Module[ { search },
