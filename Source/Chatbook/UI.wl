@@ -25,6 +25,8 @@ Needs["Wolfram`Chatbook`Utils`"]
 Needs["Wolfram`Chatbook`Streaming`"]
 Needs["Wolfram`Chatbook`Serialization`"]
 
+Needs["OAuth`"];
+
 Needs["Wolfram`ServerSentEventUtils`" -> "SSEUtils`"]
 
 
@@ -862,111 +864,21 @@ writeContent[$state_Symbol, content_?StringQ] := Module[{},
 SetFallthroughError[checkAPIKey]
 
 checkAPIKey[provenBad_] := Module[{
-	nb
+	value
 },
 	If[StringQ[SystemCredential["OPENAI_API_KEY"]] && !provenBad,
 		Return[True]
 	];
-
-	nb = Notebook[{
-		Cell["ChatGPT API Key Required", "Subsection", TextAlignment -> Center],
-
-		Cell[
-			TextData[Flatten[{
-				If[provenBad,
-					{"The ChatGPT API Key you have installed was not accepted by OpenAI. You can install a different one by pasting it into the field below and clicking ",
-						StyleBox["Install API Key.",
-						FontFamily -> CurrentValue["ControlsFontFamily"]]},
-
-					"To use ChatGPT features you must have a valid ChatGPT API key installed. "
-				],
-				"If you don't have one, you can get a free one by following these instructions.\n\n",
-				"\t(1) Login or create a free account at ",
-				ButtonBox[
-					"https://chat.openai.com/auth/login",
-					BaseStyle -> "Hyperlink",
-					ButtonData -> {URL["https://chat.openai.com/auth/login"], None}
-				],
-				"\n\t(2) View your API Key at ",
-				ButtonBox[
-					"https://platform.openai.com/account/api-keys",
-					BaseStyle -> "Hyperlink",
-					ButtonData -> {URL["https://platform.openai.com/account/api-keys"], None}
-				],
-				"\n\t(3) Copy/paste the key into the field below, then click ",
-				StyleBox["Install API Key.", FontFamily -> CurrentValue["ControlsFontFamily"]]
-			}]],
-			"Text",
-			FontFamily -> CurrentValue["PanelFontFamily"],
-			CellMargins -> {{20, 20}, {10, 10}}
-		],
-
-		Cell[
-			BoxData @ RowBox[{
-				StyleBox[
-					InputFieldBox[
-						"",
-						String,
-						FieldSize -> 45,
-						FieldHint -> "Paste ChaptGPT API Key Here",
-						(* Don't show the API key. Useful if the user is
-							e.g. screensharing when they paste it in. *)
-						FieldMasked -> True
-					],
-					ShowSelection -> True
-				]
-			}],
-			"Text",
-			TextAlignment -> Center,
-			CellMargins -> {{20, 20}, {10, 10}},
-			FontFamily -> CurrentValue["ControlsFontFamily"]
-		],
-
-		Cell[
-			TextData["If you need to change your API key in the future, use the non-existant Credentials tab in the Preferences dialog."],
-			"Text",
-			FontFamily -> CurrentValue["PanelFontFamily"],
-			CellMargins -> {{20, 20}, {10, 10}}
-		],
-
-		Cell[
-			BoxData[RowBox[{
-
-			ButtonBox[
-			StyleBox["Install API Key",
-				FontFamily -> CurrentValue["ControlsFontFamily"]],
-			ButtonFunction :> (
-
-				SystemCredential["OPENAI_API_KEY"] =
-				Cases[NotebookGet[EvaluationNotebook[]], _InputFieldBox,
-					Infinity][[1, 1]];
-				NotebookClose[EvaluationNotebook[]];
-				), Evaluator -> Automatic, Method -> "Preemptive"],
-			"   ",
-
-			ButtonBox[
-			StyleBox["Cancel",
-				FontFamily -> CurrentValue["ControlsFontFamily"]],
-			ButtonFunction :> NotebookClose[EvaluationNotebook[]]]
-			}]],
-			"Text",
-			TextAlignment -> Center,
-			CellMargins -> {{20, 20}, {10, 10}}
-		]
-	}];
-
-	NotebookPut[
-		nb,
-		WindowFrame -> "ModelessDialog",
-		WindowSize -> {800, FitAll},
-		ShowCellBracket -> False,
-		ShowSelection -> False,
-		Selectable -> False,
-		Editable -> False,
-		WindowElements -> {},
-		WindowTitle -> "ChatGPT API Key"
-	];
-
+	
+	value = OAuthDialogDump`Private`MultipleKeyDialog[
+		"OpenAILink", 
+		{"API Key" -> "APIKey"}, 
+		"https://platform.openai.com/account/api-keys", 
+		"https://openai.com/policies/terms-of-use"];
+	
+	If[value =!= $Canceled,
+		SystemCredential["OPENAI_API_KEY"] = ("APIKey" /. value)];
+	
 	False
 ];
 
