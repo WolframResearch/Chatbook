@@ -99,13 +99,13 @@ ConnectToService[name_, authentication_] :=
 					)&,
 					$Failed
 				];
-				key = Confirm @ getAuthenticationHash[so]
+				hash = Confirm @ authenticationHash[Confirm @ ConformAuthentication[so]]
 				,
 			_Association | Environment | SystemCredential, (* password / apikey ... *)
 				(* check the connection cache for existing so *)
 				authmod = Confirm @ ConformAuthentication[name, authentication];
-				key = Hash[authmod, "SHA512", "Base64Encoding"];
-				so = Query[Key@name, Key@key][$ConnectionCache];
+				hash = authenticationHash[authmod];
+				so = Query[Key@name, Key@hash][$ConnectionCache];
 				(* validate connection *)
 				If[MissingQ[so] || FailureQ @ TestConnection[name, so],
 					DBPrint["ConnectToService: ", StringForm["Creating new connection with provided authentication ``", authentication]];
@@ -116,18 +116,18 @@ ConnectToService[name_, authentication_] :=
 				DBPrint["ConnectToService: ", StringForm["Attempting to grab external connection to ``.", name]];
 				so = Confirm @ Quiet[ConfirmQuiet[ServiceConnect[name]]];
 				Confirm @ TestConnection[name, so];
-				key = Confirm @ getAuthenticationHash[so]
+				hash = Confirm @ authenticationHash[Confirm @ ConformAuthentication[so]];
 				,
 			"Dialog",
-				(* prompt for key *)
+				(* prompt for hash *)
 				so = Confirm @ makeConnection[name, "Dialog"];
-				key = Confirm @ getAuthenticationHash[so];
+				hash = Confirm @ authenticationHash[Confirm @ ConformAuthentication[so]];
 				,
 			_ServiceObject,
 				(* test is wasting time - no early failure gain *)
 				so = authentication;
 				DBPrint["ConnectToService: ", StringForm["Using provided connection w/o validation ``.", Last @ authentication]];
-				key = Confirm @ getAuthenticationHash[so];
+				hash = Confirm @ authenticationHash[Confirm @ ConformAuthentication[so]];
 				,
 			_,
 				(* TODO : service credits via "WolframCloud" *)
@@ -136,7 +136,7 @@ ConnectToService[name_, authentication_] :=
 		];
 		
 		(* cache/overwrite the connection *)
-		If[StringQ@key, saveConnection[name, key, so]];
+		If[StringQ@hash, saveConnection[name, hash, so]];
 
 		so
 		,
@@ -154,16 +154,17 @@ ConnectToService[name_] := GU`Scope[
 	so
 ];
 
+authenticationHash = Hash[#, "SHA512", "Base64Encoding"]&;
 
 $ConnectionCache = <||>;
 
-saveConnection[name_, key_, so_ServiceObject] := GU`Scope[
+saveConnection[name_, hash_, so_ServiceObject] := GU`Scope[
 	If[
 		!KeyExistsQ[$ConnectionCache, name],
 		$ConnectionCache[name] = <||>;
 	];
-	DBPrint["saveConnection: ", StringForm["Connection `` to `` is now cached as ``.", temp["ID"], name, key]];
-	$ConnectionCache[name][key] = so
+	DBPrint["saveConnection: ", StringForm["Connection `` to `` is now cached as ``.", First @ so, name, hash]];
+	$ConnectionCache[name][hash] = so
 ]
 
 makeConnection[name_String, auth_] := GU`Scope[Enclose[
@@ -188,26 +189,6 @@ makeConnection[name_String] := GU`Scope[Enclose[
 ]];
 
 makeConnection[a__] := $Failed;
-
-
-getAuthenticationHash[so_ServiceObject] := GU`Scope[Enclose[
-	Hash[Confirm @ getAuthenticationKey[so], "SHA512", "Base64Encoding"]
-]];
-
-getAuthenticationKey[so_ServiceObject] := GU`Scope @ Enclose[
-	token = Confirm @ ServiceConnections`Private`serviceAuthentication[so["ID"]];
-	key = Query[2, "apikey"] @ token;
-	If[!StringQ @ key,
-		Failure["APIError", <|"Message" -> "Missing Authentication informations."|>],
-		key
-	]
-];
-
-getAuthenticationHash[_] := Failure["APIError", <|"Message" -> "Missing Authentication informations."|>];
-
-TestConnection[name_String, so_ServiceObject] := GU`Scope[Enclose[
-	TestConnection[name, Confirm @ getAuthenticationKey[so]]
-]]
 
 TestConnection[request_HTTPRequest] := GU`Scope[
 	{timing, response}= AbsoluteTiming @ URLRead[request, Interactive -> False];
