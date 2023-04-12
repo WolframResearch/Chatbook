@@ -1,3 +1,5 @@
+Get["ElevenLabsFunctions.m"]
+
 Begin["Wolfram`ElevenLabsAPI`"] (* Begin Private Context *)
 
 
@@ -10,19 +12,26 @@ Begin["`Private`"](* Begin Private Context *)
 ElevenLabsData[] = {
     "ServiceName" -> "ElevenLabs",
     "URLFetchFun" :> Function[
-        Enclose @ With[{params = Lookup[{##2}, "Parameters", {}]},
-            HTTPRequest[
-                #1,
-                Association @ FilterRules[{##2}, Except["Parameters" | "AudioStream"]] //
+        Enclose @ With[{url = #1, params = Lookup[{##2}, "Parameters", {}]},
+            Association @ FilterRules[{##2}, Except["Parameters" | "AudioStream"]] //
                     MapAt[Append["xi-api-key" -> Confirm @ Lookup[params, "key"]], "Headers"] //
                     KeyMap[Replace["BodyData" -> "Body"]] //
-                    MapAt[DeleteCases[None], "Body"]
-            ] // If[Lookup[params, "AudioStream", False],
-                (* bad attempt at supporting audio streaming *)
-                With[{file = CreateFile[]},
-                    URLDownloadSubmit[#, file]; While[FileByteCount[file] == 0]; Audio[file]
+                    MapAt[DeleteCases[None], "Body"] //
+            If[ Lookup[params, "AudioStream", False],
+                Block[{path, format, localObject},
+                    {path, format, localObject} = Video`Utilities`ValidateGeneratedAssetLocation[
+                        {AudioStream, Audio`AudioPlaybackDump`AudioStreamHiddenOptions},
+                        AudioStream,
+                        False,
+                        Audio`$ImportAudioFileFormats,
+                        "DefaultFormat" -> "Ogg",
+                        "AllowNone" -> True,
+                        "BaseDirectory" -> Audio`AudioPlaybackDump`$WolframAudioFolder
+                    ];
+                    URLDownloadSubmit[HTTPRequest[url, MapAt[Append["Accept" -> "audio/ogg"], #, "Headers"]], path];
+                    AudioPlay[AudioStreamFromFile[path]]
                 ] &,
-                URLExecute
+                URLExecute[HTTPRequest[url, #]] &
             ]
         ]
     ] ,
@@ -42,7 +51,7 @@ ElevenLabsData[] = {
     "Information" -> "ElevenLabs connection for WolframLanguage"
 }
 
-$ElevenLabslogo = ImageResize[RemoveBackground @ Import["https://pbs.twimg.com/profile_images/1590865996532912131/Tkgaw9L1_400x400.jpg"], 24]
+$ElevenLabslogo = ImageResize[RemoveBackground @ Import[PacletObject["ServiceConnection_ElevenLabs"]["AssetLocation", "logo"]], 24]
 ElevenLabsData["icon"] := $ElevenLabslogo
 
 

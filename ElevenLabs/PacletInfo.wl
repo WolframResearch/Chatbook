@@ -13,7 +13,8 @@ PacletObject[
         "Kernel",
         "Root" -> "Kernel",
         "Context" -> {"Wolfram`ElevenLabsLoad`"}
-      }
+      },
+      {"Asset", "Root" -> "Assets", "Assets" -> {{"logo", "ElevenLabsLogo.jpg"}}}
     }
   |>
 ]
