@@ -12,7 +12,7 @@ Quiet @ PacletManager`PacletInstall[
 	}]
 ];
 
-(* connexion handling interfaces ConformAuthentication, ... *)
+(* connection handling interfaces ConformAuthentication, ... *)
 Needs["GeneralUtilities`" -> "GU`"]
 Needs["Wolfram`APIFunctions`Common`"]
 Needs["Wolfram`APIFunctions`APIs`Common`"]
