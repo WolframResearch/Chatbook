@@ -36,6 +36,6 @@ TextSynthesize::bdauth =
 CreateChat::bdauth =
 ChatObject::bdauth = "Authentication method `1` is not available."
 CreateChat::bdmethod = "Method `1` is not available."
-ChatObject::deadcon = "The linked connexion is not available anymore."
+ChatObject::deadcon = "The linked connection is not available anymore."
 
 EndPackage[]
