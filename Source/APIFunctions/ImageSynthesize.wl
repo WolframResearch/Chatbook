@@ -120,7 +120,7 @@ iImageSynthesize[args_, opts_] := GU`Scope[
 				params["ID"] = authentication["ID"]
 			];
 		,
-		$ValidAuthenticationPattern | (so_ServiceObject /; so["Name"] === method),
+		$ValidAuthenticationPattern | ServiceObject[method, _],
 			params["Authentication"] = authentication;
 		,
 		_,
