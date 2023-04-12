@@ -93,6 +93,9 @@ AIAssistant::InvalidAPIKey =
 AIAssistant::UnknownResponse =
 "Unexpected response from OpenAI server";
 
+AIAssistant::RateLimitReached =
+"Rate limit reached for requests. Please try again later.";
+
 AIAssistant::UnknownStatusCode =
 "Unexpected response from OpenAI server with status code `StatusCode`";
 
@@ -884,6 +887,10 @@ errorText[ ___ ] := "An unexpected error occurred.";
 (* ::Subsubsection::Closed:: *)
 (*errorBoxes*)
 errorBoxes // ClearAll;
+
+(* TODO: define error messages for other documented responses *)
+errorBoxes[ as: KeyValuePattern[ "StatusCode" -> 429 ] ] :=
+    ToBoxes @ messageFailure[ AIAssistant::RateLimitReached, as ];
 
 errorBoxes[ as: KeyValuePattern[ "StatusCode" -> code: Except[ 200 ] ] ] :=
     ToBoxes @ messageFailure[ AIAssistant::UnknownStatusCode, as ];
