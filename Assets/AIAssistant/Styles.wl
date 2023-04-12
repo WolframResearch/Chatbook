@@ -60,22 +60,14 @@ Cell[
     MenuSortingValue         -> 1000,
     AutoQuoteCharacters      -> { },
     PasteAutoQuoteCharacters -> { },
-    CellFrame                -> 2,
-    CellFrameColor           -> RGBColor[ 0.81053, 0.85203, 0.91294 ],
     ShowCellLabel            -> False,
     CellGroupingRules        -> "InputGrouping",
-    CellMargins              -> { { 36, 24 }, { 5, 12 } },
-    CellFrameMargins         -> { { 8, 8 }, { 4, 4 } },
-    CellFrameLabelMargins    -> 15,
+    CellMargins              -> { { 40, 25 }, { 3, 10 } },
+    CellFrameMargins         -> { { 5 ,  5 }, { 3,  3 } },
     StyleKeyMapping          -> { "/" -> "ChatQuery", "?" -> "ChatQuery" },
+    BackgroundAppearance     -> $icons[ "ChatInput9Patch" ],
     CellFrameLabels          -> {
-        {
-            Cell @ BoxData @ ToBoxes @ Graphics[
-                { RGBColor[ 0.62105, 0.70407, 0.82588 ], First @ $icons[ "Comment" ] },
-                ImageSize -> 24
-            ],
-            None
-        },
+        { Cell @ BoxData @ ToBoxes @ $icons[ "ChatUserIcon" ], None },
         { None, None }
     }
 ]
@@ -85,21 +77,14 @@ Cell[
 (*ChatQuery*)
 Cell[
     StyleData[ "ChatQuery", StyleDefinitions -> StyleData[ "ChatInput" ] ],
-    MenuSortingValue -> 1000,
-    CellFrameColor   -> RGBColor[ 0.82407, 0.87663, 0.67795 ],
-    FontSlant        -> Italic,
-    FontColor        -> GrayLevel[ 0.25 ],
-    StyleKeyMapping  -> { "/" -> "ChatInput" },
-    CellFrameLabels  -> {
-        {
-            Cell @ BoxData @ ToBoxes @ Graphics[
-                { RGBColor[ 0.60416, 0.72241, 0.2754 ], First @ $icons[ "ChatQuestion" ] },
-                ImageSize -> 24
-            ],
-            None
-        },
-        { None, None }
-    }
+    MenuSortingValue     -> 1000,
+    FontSlant            -> Italic,
+    FontColor            -> GrayLevel[ 0.25 ],
+    StyleKeyMapping      -> { "/" -> "ChatInput" },
+    BackgroundAppearance -> $icons[ "ChatQuery9Patch" ],
+    CellFrameMargins     -> { { 5, 5 }, { 3, 3 } },
+    CellMargins          -> { { 40, 25 }, { 3, 10 } },
+    CellFrameLabels      -> { { Cell @ BoxData @ ToBoxes @ $icons[ "ChatQueryIcon" ], None }, { None, None } }
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -107,16 +92,16 @@ Cell[
 (*ChatOutput*)
 Cell[
     StyleData[ "ChatOutput", StyleDefinitions -> StyleData[ "Text" ] ],
-    GeneratedCell       -> True,
-    CellAutoOverwrite   -> True,
-    CellGroupingRules   -> "OutputGrouping",
-    CellMargins         -> { { 36, 24 }, { 12, 5 } },
-    CellFrame           -> 2,
-    CellFrameColor      -> GrayLevel[ 0.85 ],
-    LineSpacing         -> { 1.1, 0, 2 },
-    ShowAutoSpellCheck  -> False,
-    CellElementSpacings -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
-    CellFrameLabels     -> { { Cell @ BoxData @ TemplateBox[ { }, "AssistantIcon" ], None }, { None, None } }
+    GeneratedCell        -> True,
+    CellAutoOverwrite    -> True,
+    CellGroupingRules    -> "OutputGrouping",
+    CellFrameMargins     -> { { 10, 40 }, { 10, 10 } },
+    CellMargins          -> { { 40, 25 }, { 10, 3 } },
+    LineSpacing          -> { 1.1, 0, 2 },
+    ShowAutoSpellCheck   -> False,
+    CellElementSpacings  -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
+    BackgroundAppearance -> $icons[ "ChatOutput9Patch" ],
+    CellFrameLabels      -> { { Cell @ BoxData @ TemplateBox[ { }, "AssistantIcon" ], None }, { None, None } }
 ]
 
 (* ::**************************************************************************************************************:: *)
