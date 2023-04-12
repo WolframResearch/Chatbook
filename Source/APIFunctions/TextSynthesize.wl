@@ -116,14 +116,15 @@ iTextSynthesize[args_, opts_] := GU`Scope[
 	authentication = GetOption[Authentication];
 	Switch[authentication,
 		Automatic,
-			params["Authentication"] = "Available",
+			params["Authentication"] = ConnectToService[method]
+		,
 		a_?AssociationQ /; ContainsOnly[Keys[a], {"ID", "APIKey"}],
 			params["Authentication"] = authentication;
 			If[KeyExistsQ[authentication, "ID"],
 				params["ID"] = authentication["ID"]
 			];
 		,
-		so_ServiceObject /; so["Name"] === method,
+		$ValidAuthenticationPattern | (so_ServiceObject /; so["Name"] === method),
 			params["Authentication"] = authentication;
 		,
 		_,
