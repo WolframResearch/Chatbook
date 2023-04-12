@@ -2948,47 +2948,10 @@ $languageIcons := $languageIcons = Enclose[
 
 
 activeChatIcon // ClearAll;
-
-activeChatIcon[ ] := activeChatIcon[ GrayLevel[ 0.4 ] ];
-activeChatIcon[ fg_ ] := activeChatIcon[ fg, White ];
-activeChatIcon[ fg_, bg_ ] := activeChatIcon[ fg, bg, 16 ];
-
-activeChatIcon[ fg_, bg_, size_ ] :=
-    Graphics[
-        {
-            fg,
-            Thickness[ 0.0082061 ],
-            $curves[ "ChatIconBoundary" ],
-            bg,
-            $curves[ "ChatIconBackground" ],
-            Inset[
-                ProgressIndicator[ Appearance -> "Necklace", ImageSize -> size / 2 ],
-                Offset[ { 0, -6 }, ImageScaled @ { 0.5, 0.8 } ]
-            ]
-        },
-        ImageSize -> size
-    ];
-
+activeChatIcon[ ___ ] := $icons[ "MinimizedChatActive" ];
 
 staticChatIcon // ClearAll;
-
-staticChatIcon[ ] := staticChatIcon[ GrayLevel[ 0.4 ] ];
-staticChatIcon[ fg_ ] := staticChatIcon[ fg, White ];
-staticChatIcon[ fg_, bg_ ] := staticChatIcon[ fg, bg, 16 ];
-
-staticChatIcon[ fg_, bg_, size_ ] :=
-    Graphics[
-        {
-            fg,
-            Thickness[ 0.0082061 ],
-            $curves[ "ChatIconBoundary" ],
-            bg,
-            $curves[ "ChatIconBackground" ],
-            fg,
-            $curves[ "ChatIconLines" ]
-        },
-        ImageSize -> size
-    ];
+staticChatIcon[ ___ ] := $icons[ "MinimizedChat" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
