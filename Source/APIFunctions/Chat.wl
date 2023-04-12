@@ -145,44 +145,74 @@ ChatObjectQ[o : ChatObject[params_Association, opts:OptionsPattern[]]] :=
 		]
 	]
 
+Clear[ChatEvaluate, iChatEvaluate]
+Options[ChatEvaluate] = {
+	Authentication -> Inherited
+} // System`Private`SortOptions;
 
-ClearAll["ChatEvaluate"]
-Options[ChatEvaluate] = {Authentication -> Inherited};
-
-ChatEvaluate[s_String?StringQ][obj_ChatObject?ChatObjectQ] := 
-	ChatEvaluate[obj, s]
-
-ChatEvaluate[obj:ChatObject[params_, opts:OptionsPattern[]]?ChatObjectQ, OptionsPattern[]] := (* side effect ?? *)
-GU`Scope @ Enclose[
-	so = Confirm @ getServiceObject[params["ChatID"], params["Method"], OptionValue[Authentication]];
-	obj
+DefineOperator[
+	ChatEvaluate,
+	iChatEvaluate,
+	1,
+	"ArgumentsPattern" -> _String,
+	"SubArgumentsPattern" -> _
 ];
 
-ChatEvaluate[obj:ChatObject[params_, opts:OptionsPattern[]]?ChatObjectQ, s_String?StringQ, newopts:OptionsPattern[]] :=
-GU`Scope @ Enclose[
-	paramsmod = params;
-	so = Confirm @ getServiceObject[params["ChatID"], params["Method"], OptionValue[Authentication]];
+DefineFunction[
+	ChatEvaluate,
+	iChatEvaluate,
+	{1, 2},
+	"ArgumentsPattern" -> PatternSequence[_ChatObject?ChatObjectQ, __]
+];
 
-	paramsmod["Messages"] //= Append[
-		<|"Role" -> "User", "Content" -> s, "Timestamp" -> Now|>
+iChatEvaluate[args_, opts_] := GU`Scope @ Enclose[
+	
+	(* default values *)
+	$AllowFailure ^= True;
+	
+	(* arguments checks *)
+	Switch[args,
+		{_ChatObject?ChatObjectQ},
+			paramsmod = args[[1, 1]];
+			content = None;
+			,
+		{_ChatObject?ChatObjectQ, _String},
+			paramsmod = args[[1, 1]];
+			content = args[[2]];
+			,
+		{Except[_ChatObject?ChatObjectQ], _},
+			GU`ThrowFailure["badchat", args[[1]]],
+		_,
+			GU`ThrowFailure["bdspec", args[[2]]]
 	];
 
-	Progress`EvaluateWithProgress[
-		res = CallChatAPI[so, "Chat", paramsmod],
-		<|
-			"Text" -> StringForm["Waiting for `` answer\[Ellipsis]", so["Name"]],
-			"ElapsedTime" -> Automatic
-		|>
-		,
-		"Delay" -> 0
-	];
+	so = Confirm @ getServiceObject[paramsmod["ChatID"], paramsmod["Method"], GetOption[Authentication]];
 
-	paramsmod["Messages"] = res["Messages"];
-	paramsmod["History"] //= Append[res["RawResult"]];
-	paramsmod["Usage"] += res["Usage"];
+	If[content =!= None,
+		paramsmod["Messages"] //= Append[
+			<|"Role" -> "User", "Content" -> content, "Timestamp" -> Now|>
+		];
+
+		Progress`EvaluateWithProgress[
+			res = CallChatAPI[so, "Chat", paramsmod],
+			<|
+				"Text" -> StringForm["Waiting for `` answer\[Ellipsis]", so["Name"]],
+				"ElapsedTime" -> Automatic
+			|>
+			,
+			"Delay" -> 0
+		];
+
+		paramsmod["Messages"] = res["Messages"];
+		paramsmod["History"] //= Append[res["RawResult"]];
+		paramsmod["Usage"] += res["Usage"];
 
 	ChatObject[paramsmod, opts]
-]
+	,
+	args[[1]]
+	]
+
+];
 
 
 ClearAll[ChatObject]
