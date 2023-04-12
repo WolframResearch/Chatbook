@@ -1,4 +1,4 @@
-Needs["Wolfram`Chatbook`Streaming`"]
+Needs["Wolfram`LLMTools`Chatbook`Streaming`"]
 
 (*====================================*)
 

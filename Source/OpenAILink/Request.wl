@@ -1,4 +1,4 @@
-BeginPackage["Wolfram`OpenAILink`Request`"];
+BeginPackage["Wolfram`LLMTools`OpenAILink`Request`"];
 
 OpenAIRequest
 ConformUsage
@@ -6,8 +6,8 @@ ConformResponse
 
 Begin["`Private`"];
 
-Needs["Wolfram`OpenAILink`"]
-Needs["Wolfram`OpenAILink`Constants`"]
+Needs["Wolfram`LLMTools`OpenAILink`"]
+Needs["Wolfram`LLMTools`OpenAILink`Constants`"]
 
 
 

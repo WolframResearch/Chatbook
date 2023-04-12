@@ -432,7 +432,7 @@ Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]],
  CellID->2044866197,ExpressionUUID->"8e80a36d-a439-4f71-8e5c-bbd3a7112e60"],
 
 Cell[BoxData[
- RowBox[{"Needs", "[", "\"\<Wolfram`OpenAILink`\>\"", 
+ RowBox[{"Needs", "[", "\"\<Wolfram`LLMTools`OpenAILink`\>\"", 
   "]"}]], "ExampleInitialization",
  CellID->561794773,ExpressionUUID->"2b7efb38-a5da-4277-a639-5ca9970f02da"]
 }, Open  ]],
@@ -613,7 +613,7 @@ Cell["Wolfram/LLMTools", "Categorization",
  CellLabel->"Paclet Name",
  CellID->225661050,ExpressionUUID->"334fd983-aba0-42e9-a43b-e56b8b88b244"],
 
-Cell["Wolfram`OpenAILink`", "Categorization",
+Cell["Wolfram`LLMTools`OpenAILink`", "Categorization",
  CellChangeTimes->{{3.8903041007144833`*^9, 3.89030410328654*^9}},
  CellLabel->"Context",
  CellID->1612543956,ExpressionUUID->"0708b85a-0d62-4c17-bfaa-84ab62be708b"],

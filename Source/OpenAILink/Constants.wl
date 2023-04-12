@@ -1,8 +1,8 @@
-BeginPackage["Wolfram`OpenAILink`Constants`"];
+BeginPackage["Wolfram`LLMTools`OpenAILink`Constants`"];
 
 Begin["`Private`"];
 
-Needs["Wolfram`OpenAILink`"]
+Needs["Wolfram`LLMTools`OpenAILink`"]
 
 
 (*

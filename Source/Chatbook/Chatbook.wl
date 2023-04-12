@@ -1,4 +1,4 @@
-BeginPackage["Wolfram`Chatbook`"]
+BeginPackage["Wolfram`LLMTools`Chatbook`"]
 
 Needs["GeneralUtilities`" -> "GU`"]
 

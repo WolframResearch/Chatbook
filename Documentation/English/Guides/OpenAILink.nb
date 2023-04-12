@@ -341,7 +341,7 @@ Cell["Wolfram/LLMTools", "Categorization",
  CellLabel->"Paclet Name",
  CellID->612056792,ExpressionUUID->"7a00ef75-3552-4ffa-ad2f-28b13112bc42"],
 
-Cell["Wolfram`OpenAILink`", "Categorization",
+Cell["Wolfram`LLMTools`OpenAILink`", "Categorization",
  CellChangeTimes->{{3.890304648836646*^9, 3.8903046517276917`*^9}},
  CellLabel->"Context",
  CellID->391834014,ExpressionUUID->"e61a751f-3216-4d0c-a072-087741755e01"],

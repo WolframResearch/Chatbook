@@ -1,4 +1,4 @@
-BeginPackage["Wolfram`Chatbook`Debug`"]
+BeginPackage["Wolfram`LLMTools`Chatbook`Debug`"]
 
 $LastRequest
 

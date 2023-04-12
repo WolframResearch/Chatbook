@@ -8,7 +8,7 @@
 	another file.
 *)
 
-BeginPackage["Wolfram`Chatbook`ErrorUtils`"]
+BeginPackage["Wolfram`LLMTools`Chatbook`ErrorUtils`"]
 
 Needs["GeneralUtilities`" -> "GU`"]
 

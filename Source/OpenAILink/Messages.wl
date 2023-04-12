@@ -1,9 +1,9 @@
-BeginPackage["Wolfram`OpenAILink`Messages`"];
+BeginPackage["Wolfram`LLMTools`OpenAILink`Messages`"];
 
 Begin["`Private`"];
 
-Needs["Wolfram`OpenAILink`"]
-Needs["Wolfram`OpenAILink`Request`"]
+Needs["Wolfram`LLMTools`OpenAILink`"]
+Needs["Wolfram`LLMTools`OpenAILink`Request`"]
 
 
 OpenAIFileDelete::openAIResponseFailureCode =

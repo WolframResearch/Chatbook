@@ -1,4 +1,4 @@
-BeginPackage["Wolfram`ServerSentEventUtils`"]
+BeginPackage["Wolfram`LLMTools`ServerSentEventUtils`"]
 
 Needs["GeneralUtilities`" -> "GU`"]
 
@@ -24,7 +24,7 @@ between calls.
 
 Begin["`Private`"]
 
-Needs["Wolfram`Chatbook`ErrorUtils`"]
+Needs["Wolfram`LLMTools`Chatbook`ErrorUtils`"]
 
 CreateErrorType[ServerSentEventError, {}]
 

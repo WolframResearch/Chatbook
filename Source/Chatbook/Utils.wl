@@ -3,14 +3,14 @@
 	directly in any way.
 *)
 
-BeginPackage["Wolfram`Chatbook`Utils`"]
+BeginPackage["Wolfram`LLMTools`Chatbook`Utils`"]
 
 CellPrint2
 
 Begin["`Private`"]
 
-Needs["Wolfram`Chatbook`ErrorUtils`"]
-Needs["Wolfram`Chatbook`UI`"]
+Needs["Wolfram`LLMTools`Chatbook`ErrorUtils`"]
+Needs["Wolfram`LLMTools`Chatbook`UI`"]
 
 (*====================================*)
 
@@ -43,7 +43,7 @@ CellPrint2[
 		"Unable to print cell: evaluation cell does not exist."
 	];
 
-	Wolfram`Chatbook`UI`Private`moveAfterPreviousOutputs[evalCell];
+	Wolfram`LLMTools`Chatbook`UI`Private`moveAfterPreviousOutputs[evalCell];
 
 	RaiseConfirm @ NotebookWrite[ParentNotebook[evalCell], cell];
 

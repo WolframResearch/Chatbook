@@ -1,12 +1,12 @@
-BeginPackage["Wolfram`OpenAILink`Files`"];
+BeginPackage["Wolfram`LLMTools`OpenAILink`Files`"];
 
 CreateOpenAIFile
 
 Begin["`Private`"];
 
-Needs["Wolfram`OpenAILink`"]
-Needs["Wolfram`OpenAILink`Constants`"]
-Needs["Wolfram`OpenAILink`Request`"]
+Needs["Wolfram`LLMTools`OpenAILink`"]
+Needs["Wolfram`LLMTools`OpenAILink`Constants`"]
+Needs["Wolfram`LLMTools`OpenAILink`Request`"]
 
 
 

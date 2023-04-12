@@ -1,10 +1,10 @@
-BeginPackage["Wolfram`OpenAILink`Audio`"];
+BeginPackage["Wolfram`LLMTools`OpenAILink`Audio`"];
 
 Begin["`Private`"];
 
-Needs["Wolfram`OpenAILink`"]
-Needs["Wolfram`OpenAILink`Constants`"]
-Needs["Wolfram`OpenAILink`Request`"]
+Needs["Wolfram`LLMTools`OpenAILink`"]
+Needs["Wolfram`LLMTools`OpenAILink`Constants`"]
+Needs["Wolfram`LLMTools`OpenAILink`Request`"]
 
 
 

@@ -1,4 +1,4 @@
-BeginPackage["Wolfram`APIFunctions`"]
+BeginPackage["Wolfram`LLMTools`APIFunctions`"]
 
 ImageSynthesize
 TextSynthesize
@@ -7,9 +7,9 @@ ChatEvaluate
 ChatObject
 ChatObjectQ
 
-Needs["Wolfram`APIFunctions`Chat`"]
-Needs["Wolfram`APIFunctions`ImageSynthesize`"]
-Needs["Wolfram`APIFunctions`TextSynthesize`"]
+Needs["Wolfram`LLMTools`APIFunctions`Chat`"]
+Needs["Wolfram`LLMTools`APIFunctions`ImageSynthesize`"]
+Needs["Wolfram`LLMTools`APIFunctions`TextSynthesize`"]
 
 (* error message copied from NeuralFunctions *)
 

@@ -431,7 +431,7 @@ Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]],
  CellID->905932729,ExpressionUUID->"d9df65d0-4949-4dbe-8a6a-d05f00958aee"],
 
 Cell[BoxData[
- RowBox[{"Needs", "[", "\"\<Wolfram`OpenAILink`\>\"", 
+ RowBox[{"Needs", "[", "\"\<Wolfram`LLMTools`OpenAILink`\>\"", 
   "]"}]], "ExampleInitialization",
  CellID->922571669,ExpressionUUID->"4a3634f5-c68b-4161-bc52-7686ffb82d83"]
 }, Open  ]],
@@ -532,7 +532,7 @@ I assist you today?\"", "SummaryItem"]}]}},
        Dynamic[Typeset`open$$], ImageSize -> Automatic]},
      "SummaryPanel"],
     DynamicModuleValues:>{}], "]"}],
-  Wolfram`OpenAILink`OpenAIChatMessageObject[<|
+  Wolfram`LLMTools`OpenAILink`OpenAIChatMessageObject[<|
    "Role" -> "assistant", "Text" -> 
     "\n\nI'm an AI language model, so I don't have feelings. But I'm here to \
 assist you with any questions or tasks you may have. How can I assist you \
@@ -683,7 +683,7 @@ Cell["Wolfram/LLMTools", "Categorization",
  CellLabel->"Paclet Name",
  CellID->1478065876,ExpressionUUID->"940f006a-91f2-4945-b37d-e4401b0ba105"],
 
-Cell["Wolfram`OpenAILink`", "Categorization",
+Cell["Wolfram`LLMTools`OpenAILink`", "Categorization",
  CellChangeTimes->{{3.890303918416505*^9, 3.8903039215565968`*^9}},
  CellLabel->"Context",
  CellID->2019590157,ExpressionUUID->"8ee6a650-7bca-4b88-be1e-10119a434b17"],

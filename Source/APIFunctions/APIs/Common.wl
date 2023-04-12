@@ -1,4 +1,4 @@
-BeginPackage["Wolfram`APIFunctions`APIs`Common`"]
+BeginPackage["Wolfram`LLMTools`APIFunctions`APIs`Common`"]
 
 APIFailure
 ConnectToService
@@ -19,7 +19,7 @@ $APIParameters['name$', 'endpoint$'] = {
 GU`SetUsage[ValidateAPIParams, "ValidateAPIParams[service$, endpoint$, params$]\
  validates the association params$ using the data in $APIParameters[service$, endpoint$]."]
 
-Needs["Wolfram`APIFunctions`Common`"]
+Needs["Wolfram`LLMTools`APIFunctions`Common`"]
 
 Begin["`Private`"]
 

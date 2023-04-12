@@ -2,7 +2,7 @@
 	This file contains functions for working with streaming chat response
 *)
 
-BeginPackage["Wolfram`Chatbook`Streaming`"]
+BeginPackage["Wolfram`LLMTools`Chatbook`Streaming`"]
 
 Needs["GeneralUtilities`" -> "GU`"]
 
@@ -18,8 +18,8 @@ between calls.
 
 Begin["`Private`"]
 
-Needs["Wolfram`Chatbook`Errors`"]
-Needs["Wolfram`Chatbook`ErrorUtils`"]
+Needs["Wolfram`LLMTools`Chatbook`Errors`"]
+Needs["Wolfram`LLMTools`Chatbook`ErrorUtils`"]
 
 (*========================================================*)
 

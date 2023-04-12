@@ -1,4 +1,4 @@
-Needs["Wolfram`ServerSentEventUtils`"]
+Needs["Wolfram`LLMTools`ServerSentEventUtils`"]
 
 
 (*=================================================*)

@@ -1,4 +1,4 @@
-BeginPackage["Wolfram`Chatbook`Serialization`"]
+BeginPackage["Wolfram`LLMTools`Chatbook`Serialization`"]
 
 Needs["GeneralUtilities`" -> "GU`"]
 
@@ -8,16 +8,16 @@ CellToString[cell$] serializes a Cell expression as a string for use in chat.
 
 Begin["`Private`"]
 
-Needs["Wolfram`Chatbook`Errors`"]
-Needs["Wolfram`Chatbook`ErrorUtils`"]
+Needs["Wolfram`LLMTools`Chatbook`Errors`"]
+Needs["Wolfram`LLMTools`Chatbook`ErrorUtils`"]
 
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Initialization*)
 
-ClearAll[ "Wolfram`Chatbook`Serialization`*"         ];
-ClearAll[ "Wolfram`Chatbook`Serialization`Private`*" ];
+ClearAll[ "Wolfram`LLMTools`Chatbook`Serialization`*"         ];
+ClearAll[ "Wolfram`LLMTools`Chatbook`Serialization`Private`*" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

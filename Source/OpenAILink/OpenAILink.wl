@@ -1,4 +1,4 @@
-BeginPackage["Wolfram`OpenAILink`"];
+BeginPackage["Wolfram`LLMTools`OpenAILink`"];
 
 
 $OpenAIKey
@@ -37,16 +37,16 @@ OpenAIFileInformation
 Begin["`Private`"];
 
 
-Needs["Wolfram`OpenAILink`Constants`"]
-Needs["Wolfram`OpenAILink`Request`"]
-Needs["Wolfram`OpenAILink`Models`"]
-Needs["Wolfram`OpenAILink`TextCompletion`"]
-Needs["Wolfram`OpenAILink`ChatCompletion`"]
-Needs["Wolfram`OpenAILink`Audio`"]
-Needs["Wolfram`OpenAILink`Image`"]
-Needs["Wolfram`OpenAILink`Embedding`"]
-Needs["Wolfram`OpenAILink`Files`"]
-Needs["Wolfram`OpenAILink`Messages`"]
+Needs["Wolfram`LLMTools`OpenAILink`Constants`"]
+Needs["Wolfram`LLMTools`OpenAILink`Request`"]
+Needs["Wolfram`LLMTools`OpenAILink`Models`"]
+Needs["Wolfram`LLMTools`OpenAILink`TextCompletion`"]
+Needs["Wolfram`LLMTools`OpenAILink`ChatCompletion`"]
+Needs["Wolfram`LLMTools`OpenAILink`Audio`"]
+Needs["Wolfram`LLMTools`OpenAILink`Image`"]
+Needs["Wolfram`LLMTools`OpenAILink`Embedding`"]
+Needs["Wolfram`LLMTools`OpenAILink`Files`"]
+Needs["Wolfram`LLMTools`OpenAILink`Messages`"]
 
 
 End[];

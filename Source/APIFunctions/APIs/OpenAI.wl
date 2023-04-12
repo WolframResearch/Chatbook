@@ -1,4 +1,4 @@
-BeginPackage["Wolfram`APIFunctions`APIs`OpenAI`"]
+BeginPackage["Wolfram`LLMTools`APIFunctions`APIs`OpenAI`"]
 
 $OpenAIModels
 $DefaultOpenAIModel
@@ -14,12 +14,12 @@ Quiet @ PacletManager`PacletInstall[
 
 (* connection handling interfaces ConformAuthentication, ... *)
 Needs["GeneralUtilities`" -> "GU`"]
-Needs["Wolfram`APIFunctions`Common`"]
-Needs["Wolfram`APIFunctions`APIs`Common`"]
+Needs["Wolfram`LLMTools`APIFunctions`Common`"]
+Needs["Wolfram`LLMTools`APIFunctions`APIs`Common`"]
 (* CallxxxAPI interfaces *)
-Needs["Wolfram`APIFunctions`ImageSynthesize`"]
-Needs["Wolfram`APIFunctions`TextSynthesize`"]
-Needs["Wolfram`APIFunctions`Chat`"]
+Needs["Wolfram`LLMTools`APIFunctions`ImageSynthesize`"]
+Needs["Wolfram`LLMTools`APIFunctions`TextSynthesize`"]
+Needs["Wolfram`LLMTools`APIFunctions`Chat`"]
 
 Begin["`Private`"]
 (* API parameters *)

@@ -10,20 +10,55 @@ PacletObject[<|
 	},
 	"Icon" -> "Assets/Images/PacletIcon.png",
 	"Extensions" -> {
-		{"Kernel",
-			"Root" -> "Source/Chatbook",
-			"Context" -> "Wolfram`Chatbook`"
+		{
+			"Kernel",
+			"Root" -> "Source",
+			"Context" -> "Wolfram`LLMTools`"
 		},
-		{"Kernel",
+		{
+			"Kernel",
+			"Root" -> "Source/Chatbook",
+			"Context" -> "Wolfram`LLMTools`Chatbook`"
+		},
+		{
+			"Kernel",
 			"Root" -> "Source/ServerSentEventUtils",
-			"Context" -> "Wolfram`ServerSentEventUtils`"},
-		{"Kernel",
+			"Context" -> "Wolfram`LLMTools`ServerSentEventUtils`"
+		},
+		{
+			"Kernel",
 			"Root" -> "Source/APIFunctions",
-			"Context" -> "Wolfram`APIFunctions`"},
-		{"Kernel",
+			"Context" -> "Wolfram`LLMTools`APIFunctions`",
+			"Symbols" -> {
+				"Wolfram`LLMTools`APIFunctions`ImageSynthesize",
+				"Wolfram`LLMTools`APIFunctions`TextSynthesize",
+				"Wolfram`LLMTools`APIFunctions`CreateChat",
+				"Wolfram`LLMTools`APIFunctions`ChatEvaluate",
+				"Wolfram`LLMTools`APIFunctions`ChatObject",
+				"Wolfram`LLMTools`APIFunctions`ChatObjectQ"
+			}
+		},
+		{
+			"Kernel",
 			"Root" -> "Source/OpenAILink",
-			"Context" -> "Wolfram`OpenAILink`"},
-		{"Asset",
+			"Context" -> "Wolfram`LLMTools`OpenAILink`",
+			"Symbols" -> {
+				"Wolfram`LLMTools`OpenAILink`$OpenAIKey",
+				"Wolfram`LLMTools`OpenAILink`$OpenAIUser",
+				"Wolfram`LLMTools`OpenAILink`OpenAIChatMessageObject",
+				"Wolfram`LLMTools`OpenAILink`OpenAIChatCompletionObject",
+				"Wolfram`LLMTools`OpenAILink`OpenAITextCompletionObject",
+				"Wolfram`LLMTools`OpenAILink`OpenAIChatComplete",
+				"Wolfram`LLMTools`OpenAILink`OpenAITextComplete",
+				"Wolfram`LLMTools`OpenAILink`OpenAITranscribeAudio",
+				"Wolfram`LLMTools`OpenAILink`OpenAITranslateAudio",
+				"Wolfram`LLMTools`OpenAILink`OpenAIGenerateImage",
+				"Wolfram`LLMTools`OpenAILink`OpenAIEmbedding",
+				"Wolfram`LLMTools`OpenAILink`OpenAIModels"
+			}
+		},
+		{
+			"Asset",
 			"Root" -> "Assets",
 			"Assets" -> {
 				{"APIFunctions", "APIFunctions"}
