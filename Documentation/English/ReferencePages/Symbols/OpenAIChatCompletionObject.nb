@@ -40,7 +40,7 @@ Cell[TextData[{
     ButtonBox["OpenAIChatCompletionObject",
      BaseStyle->"Link",
      ButtonData->
-      "paclet:ChristopherWolfram/OpenAILink/ref/OpenAIChatCompletionObject"], 
+      "paclet:Wolfram/LLMTools/ref/OpenAIChatCompletionObject"], 
     "[", 
     StyleBox["\[Ellipsis]", "TR"], "]"}], "[", 
    StyleBox["prop", "TI"], "]"}]], "InlineFormula"],
@@ -158,7 +158,7 @@ Cell[TextData[{
   ButtonBox["OpenAIChatMessageObject",
    BaseStyle->"Link",
    ButtonData->
-    "paclet:ChristopherWolfram/OpenAILink/ref/OpenAIChatMessageObject"]], 
+    "paclet:Wolfram/LLMTools/ref/OpenAIChatMessageObject"]], 
   "InlineSeeAlsoFunction",
   TaggingRules->{"PageType" -> "Function"},ExpressionUUID->
   "4d0132db-ebf3-4ba2-83e9-4d9cf1be07a9"],
@@ -167,7 +167,7 @@ Cell[TextData[{
   ButtonBox["OpenAITextCompletionObject",
    BaseStyle->"Link",
    ButtonData->
-    "paclet:ChristopherWolfram/OpenAILink/ref/OpenAITextCompletionObject"]], 
+    "paclet:Wolfram/LLMTools/ref/OpenAITextCompletionObject"]], 
   "InlineSeeAlsoFunction",
   TaggingRules->{"PageType" -> "Function"},ExpressionUUID->
   "87f32aec-6201-4667-82b7-1da0738474da"],
@@ -238,7 +238,7 @@ Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]],
  CellID->1784966629],
 
 Cell[BoxData[
- RowBox[{"Needs", "[", "\"\<ChristopherWolfram`OpenAILink`\>\"", 
+ RowBox[{"Needs", "[", "\"\<Wolfram`OpenAILink`\>\"", 
   "]"}]], "ExampleInitialization",
  CellID->550554795]
 }, Open  ]],

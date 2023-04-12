@@ -48,7 +48,7 @@ Cell[TextData[{
   ButtonBox["OpenAIGenerateImage",
    BaseStyle->"Link",
    ButtonData->
-    "paclet:ChristopherWolfram/OpenAILink/ref/OpenAIGenerateImage"]], 
+    "paclet:Wolfram/LLMTools/ref/OpenAIGenerateImage"]], 
   "InlineFormula"],
  " uses DALL-E from OpenAI to generate images."
 }], "Notes",
@@ -60,7 +60,7 @@ Cell[TextData[{
   ButtonBox["OpenAIGenerateImage",
    BaseStyle->"Link",
    ButtonData->
-    "paclet:ChristopherWolfram/OpenAILink/ref/OpenAIGenerateImage"]], 
+    "paclet:Wolfram/LLMTools/ref/OpenAIGenerateImage"]], 
   "InlineFormula"],
  " uses the ",
  ButtonBox["image generation API",
@@ -103,7 +103,7 @@ Cell[TextData[{
   ButtonBox["OpenAIGenerateImage",
    BaseStyle->"Link",
    ButtonData->
-    "paclet:ChristopherWolfram/OpenAILink/ref/OpenAIGenerateImage"]], 
+    "paclet:Wolfram/LLMTools/ref/OpenAIGenerateImage"]], 
   "InlineFormula"],
  " supports the following options:"
 }], "Notes",
@@ -114,18 +114,18 @@ Cell[BoxData[GridBox[{
    {Cell["      ", "ModInfo"], 
     ButtonBox["OpenAIKey",
      BaseStyle->"Link",
-     ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAIKey"], 
+     ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAIKey"], 
     ButtonBox["$OpenAIKey",
      BaseStyle->"Link",
-     ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/$OpenAIKey"], Cell[
+     ButtonData->"paclet:Wolfram/LLMTools/ref/$OpenAIKey"], Cell[
     "OpenAI API key", "TableText"]},
    {Cell["      ", "ModInfo"], 
     ButtonBox["OpenAIUser",
      BaseStyle->"Link",
-     ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/OpenAIUser"], 
+     ButtonData->"paclet:Wolfram/LLMTools/ref/OpenAIUser"], 
     ButtonBox["$OpenAIUser",
      BaseStyle->"Link",
-     ButtonData->"paclet:ChristopherWolfram/OpenAILink/ref/$OpenAIUser"], 
+     ButtonData->"paclet:Wolfram/LLMTools/ref/$OpenAIUser"], 
     Cell["OpenAI user ID", "TableText"]},
    {Cell["      ", "ModInfo"], 
     ButtonBox["ImageSize",
@@ -320,7 +320,7 @@ Needs[\[Ellipsis]].", "MoreInfoText"], BaseStyle -> "IFrameBox"]],
  CellID->1199784305],
 
 Cell[BoxData[
- RowBox[{"Needs", "[", "\"\<ChristopherWolfram`OpenAILink`\>\"", 
+ RowBox[{"Needs", "[", "\"\<Wolfram`OpenAILink`\>\"", 
   "]"}]], "ExampleInitialization",
  CellID->2050852452,ExpressionUUID->"ef36c344-16b2-40c4-a2f8-81eb503255d8"]
 }, Open  ]],
