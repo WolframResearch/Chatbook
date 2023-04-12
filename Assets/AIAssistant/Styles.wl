@@ -54,16 +54,44 @@ Cell[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*DotDotDotMenuCell*)
+Cell[
+    StyleData[ "DotDotDotMenuCell", StyleDefinitions -> StyleData[ "Text" ] ],
+    With[
+        {
+            attach = Cell @ BoxData @ ToBoxes @ Button[
+                $icons[ "ChatMenuIcon" ],
+                MessageDialog[ "Not implemented" ],
+                Appearance -> Dynamic @ FEPrivate`FrontEndResource[
+                    "FEExpressions",
+                    "SuppressMouseDownNinePatchAppearance"
+                ]
+            ]
+        },
+        Initialization :>
+            AttachCell[
+                EvaluationCell[ ],
+                attach,
+                { Right, Top },
+                Offset[ { -10, -5 }, { Right, Top } ],
+                { Right, Top },
+                RemovalConditions -> { "EvaluatorQuit" }
+            ]
+    ]
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*ChatInput*)
 Cell[
-    StyleData[ "ChatInput", StyleDefinitions -> StyleData[ "Text" ] ],
+    StyleData[ "ChatInput", StyleDefinitions -> StyleData[ "DotDotDotMenuCell" ] ],
     MenuSortingValue         -> 1000,
     AutoQuoteCharacters      -> { },
     PasteAutoQuoteCharacters -> { },
     ShowCellLabel            -> False,
     CellGroupingRules        -> "InputGrouping",
     CellMargins              -> { { 40, 25 }, { 3, 10 } },
-    CellFrameMargins         -> { { 5 ,  5 }, { 3,  3 } },
+    CellFrameMargins         -> { { 5 , 25 }, { 3,  3 } },
     StyleKeyMapping          -> { "/" -> "ChatQuery", "?" -> "ChatQuery" },
     BackgroundAppearance     -> $icons[ "ChatInput9Patch" ],
     CellFrameLabels          -> {
@@ -91,7 +119,7 @@ Cell[
 (* ::Section::Closed:: *)
 (*ChatOutput*)
 Cell[
-    StyleData[ "ChatOutput", StyleDefinitions -> StyleData[ "Text" ] ],
+    StyleData[ "ChatOutput", StyleDefinitions -> StyleData[ "DotDotDotMenuCell" ] ],
     GeneratedCell        -> True,
     CellAutoOverwrite    -> True,
     CellGroupingRules    -> "OutputGrouping",
