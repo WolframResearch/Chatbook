@@ -1,11 +1,4 @@
-BeginPackage["Wolfram`APIFunctions`"]
-
-ImageSynthesize
-TextSynthesize
-CreateChat
-ChatEvaluate
-ChatObject
-ChatObjectQ
+BeginPackage["Wolfram`APIFunctions`", {"Wolfram`LLMTools`"}]
 
 Needs["Wolfram`APIFunctions`Chat`"]
 Needs["Wolfram`APIFunctions`ImageSynthesize`"]
