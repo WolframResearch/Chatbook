@@ -7,7 +7,7 @@ $OpenAIMaxImageSize
 (* no op in >13.2 - in layout *)
 Quiet @ PacletManager`PacletInstall[
 	FileNameJoin[{
-		PacletManager`PacletResource["Wolfram/Chatbook", "APIFunctions"],
+		PacletManager`PacletResource["Wolfram/LLMTools", "APIFunctions"],
 		"ServiceConnection_OpenAI-13.3.6.paclet"
 	}]
 ];
