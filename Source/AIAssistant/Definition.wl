@@ -1873,6 +1873,39 @@ showAPIKeyDialog[ ] := AuthenticationDialog[
 showAPIKeyDialog // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*tokenCount*)
+tokenCount // beginDefinition;
+
+tokenCount[ string_ ] :=
+    tokenCount[ string, "gpt-3.5-turbo" ];
+
+tokenCount[ KeyValuePattern[ "content" -> string_ ], model_ ] :=
+    tokenCount[ string, model ];
+
+tokenCount[ string_String, model_ ] :=
+    With[ { tokens = tokenizer[ model ][ string ] },
+        (tokenCount[ string, model ] = Length @ tokens) /; MatchQ[ tokens, { ___Integer } ]
+    ];
+
+tokenCount[ messages_List, model_ ] :=
+    With[ { counts = tokenCount[ #, model ] & /@ messages },
+        Total @ counts /; MatchQ[ counts, { ___Integer } ]
+    ];
+
+tokenCount // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*tokenizer*)
+tokenizer // beginDefinition;
+tokenizer[ name_String ] := gptTokenizer;
+tokenizer // endDefinition;
+
+(* TODO: this isn't the correct tokenizer for gpt-4 and gpt-3.5-turbo, but it's a reasonable approximation for now *)
+gptTokenizer := gptTokenizer = ResourceFunction[ "GPTTokenizer" ][ ];
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Cell to String Conversion*)
 
