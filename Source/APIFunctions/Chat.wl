@@ -228,18 +228,18 @@ $blue = RGBColor[{240, 255, 251}/255];
 
 $logoOpenAI := $logoOpenAI = Show[Import[FileNameJoin[
 	{
-		PacletManager`PacletResource["Wolfram/Chatbook", "APIFunctions"],
+		PacletManager`PacletResource["Wolfram/LLMTools", "APIFunctions"],
 		"OpenAILogo.wl"
 	}]],
 	ImageSize -> 20
 ];
 
 $logoSystem := $logoSystem = Import[FileNameJoin[
-	{PacletManager`PacletResource["Wolfram/Chatbook", "APIFunctions"], "chat-system.wl"}
+	{PacletManager`PacletResource["Wolfram/LLMTools", "APIFunctions"], "chat-system.wl"}
 ]];
 
 $logoUser := $logoUser = Import[FileNameJoin[
-	{PacletManager`PacletResource["Wolfram/Chatbook", "APIFunctions"], "chat-user.wl"}
+	{PacletManager`PacletResource["Wolfram/LLMTools", "APIFunctions"], "chat-user.wl"}
 ]];
 
 $logoWolfram = "\[WolframLanguageLogoCircle]";
