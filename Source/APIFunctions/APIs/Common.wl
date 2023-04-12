@@ -3,6 +3,7 @@ BeginPackage["Wolfram`APIFunctions`APIs`Common`"]
 APIFailure
 ConnectToService
 $ConnectionCache
+$ValidAuthenticationPatt
 ConformAuthentication
 TestConnection
 
@@ -82,6 +83,8 @@ SetAttributes[errorSymbol, HoldFirst]
 errorSymbol[s_Symbol] := StringForm["`1` (`2`)", SymbolName[Unevaluated[s]], s] /; ValueQ[s]
 errorSymbol[s_Symbol] := SymbolName[Unevaluated[s]]
 
+$ValidAuthenticationPatt = "Available" | Environment | SystemCredential |
+	AuthenticationDialog;
 
 ClearAll["ConnectToService"]
 ConnectToService[name_, authentication_] :=
@@ -129,8 +132,8 @@ ConnectToService[name_, authentication_] :=
 				Confirm @ TestConnection[name, temp];
 				key = Confirm @ getAuthenticationHash[temp];
 				,
-			"Wolfram" | _,
-				(**)
+			_,
+				(* TODO : "WolframCloud " *)
 				DBPrint["ConnectToService: ", StringForm["Unsupported authentication ``.", authentication]];
 				GU`ThrowFailure["bdauth", "Wolfram"]
 		];
@@ -142,6 +145,18 @@ ConnectToService[name_, authentication_] :=
 		,
 		APIFailure
 	]];
+
+ConnectToService[name_] := GU`Scope @ Enclose[
+	DBPrint["ConnectToService: ", StringForm["Looking for any available connexion to ``.", name]];
+	so = ConnectToService[name, "Available"];
+	(* TODO : enable "WolframCloud" method
+	If[FailureQ[so],
+		DBPrint["ConnectToService: ", StringForm["No available connexion to ``. Will use Wolfram.", name]];
+		so = Confirm @ ConnectToService[name, "WolframCloud"]
+	];
+	*)
+	so
+];
 
 
 $ConnectionCache = <||>;
@@ -183,13 +198,13 @@ getAuthenticationHash[so_ServiceObject] := GU`Scope[Enclose[
 	Hash[Confirm @ getAuthenticationKey[so], "SHA512", "Base64Encoding"]
 ]];
 
-getAuthenticationKey[so_ServiceObject] := GU`Scope[
-	token = ServiceConnections`Private`serviceAuthentication[so["ID"]];
+getAuthenticationKey[so_ServiceObject] := GU`Scope @ Enclose[
+	token = Confirm @ ServiceConnections`Private`serviceAuthentication[so["ID"]];
 	key = Query[2, "apikey"] @ token;
 	If[!StringQ @ key,
-		Return @ Failure["APIError", <|"Message" -> "Missing Authentication informations."|>]
-	];
-	key
+		Failure["APIError", <|"Message" -> "Missing Authentication informations."|>],
+		key
+	]
 ];
 
 TestConnection[name_String, so_ServiceObject] := GU`Scope[Enclose[
