@@ -84,7 +84,7 @@ errorSymbol[s_Symbol] := StringForm["`1` (`2`)", SymbolName[Unevaluated[s]], s] 
 errorSymbol[s_Symbol] := SymbolName[Unevaluated[s]]
 
 $ValidAuthenticationPatt = "Available" | Environment | SystemCredential |
-	AuthenticationDialog;
+	"Dialog";
 
 ClearAll["ConnectToService"]
 ConnectToService[name_, authentication_] :=
@@ -121,9 +121,9 @@ ConnectToService[name_, authentication_] :=
 					temp = Confirm @ makeConnection[name, authmod]
 				]
 				,
-			AuthenticationDialog,
+			"Dialog",
 				(* prompt for key *)
-				temp = Confirm @ makeConnection[name, AuthenticationDialog];
+				temp = Confirm @ makeConnection[name, "Dialog"];
 				key = Confirm @ getAuthenticationHash[temp];
 				,
 			_ServiceObject,
@@ -172,7 +172,7 @@ saveConnection[name_, key_, so_ServiceObject] := GU`Scope[
 
 makeConnection[name_String, auth_] := GU`Scope[Enclose[
 	so = ConfirmQuiet @ Confirm @ Switch[auth,
-		AuthenticationDialog,
+		"Dialog",
 			ServiceConnect[name, "New"]
 			,
 		_Association | _List /; Not @ FailureQ @ ConformAuthentication[name, auth],
