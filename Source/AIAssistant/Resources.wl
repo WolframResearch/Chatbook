@@ -7,7 +7,7 @@ Begin[ "`Private`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Paths*)
-$assetLocation = PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "AIAssistant" ];
+$assetLocation = PacletObject[ "Wolfram/LLMTools" ][ "AssetLocation", "AIAssistant" ];
 
 $iconDirectory         = FileNameJoin @ { $assetLocation, "Icons"                      };
 $curveDirectory        = FileNameJoin @ { $assetLocation, "GraphicsComponents"         };
