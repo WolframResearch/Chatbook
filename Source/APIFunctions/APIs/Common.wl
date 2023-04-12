@@ -130,7 +130,7 @@ ConnectToService[name_, authentication_] :=
 				key = Confirm @ getAuthenticationHash[temp];
 				,
 			_,
-				(* TODO : "WolframCloud " *)
+				(* TODO : service credits via "WolframCloud" *)
 				DBPrint["ConnectToService: ", StringForm["Unsupported authentication ``.", authentication]];
 				GU`ThrowFailure["bdauth", authentication]
 		];
