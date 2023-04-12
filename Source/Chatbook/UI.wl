@@ -1,3 +1,5 @@
+(* ::Package:: *)
+
 BeginPackage["Wolfram`Chatbook`UI`"]
 
 Needs["GeneralUtilities`" -> "GU`"]
@@ -7,6 +9,7 @@ ChatInputCellEvaluationFunction[input$, form$] is the CellEvaluationFunction for
 "]
 
 EditChatContextSettings
+EditChatSettingsForCell
 ChatExplainButtonFunction
 GetChatEnvironmentValues
 GetAllCellsInChatContext
@@ -342,38 +345,42 @@ OnePromptTableEditor[
 		DynamicBox[GridBox[
 			Join[
 				{{
-					"Role",
-					"Content",
-					ButtonBox[
-						FrameBox["+"],
-						Evaluator -> Automatic,
-						Appearance -> None,
-						ButtonFunction :> (
-							AppendTo[tableContents, {"system", ""}]
-						)
-					]
+					StyleBox["ROLE", FontSize->10],
+					StyleBox["CONTENT", FontSize->10],
+					""
 				}},
 				MapIndexed[
 					{
 						InputFieldBox[Dynamic[tableContents[[#2[[1]], 1]]]],
 						InputFieldBox[Dynamic[tableContents[[#2[[1]], 2]]]],
 						ButtonBox[
-							"x",
+							FrameBox["\[Times]", RoundingRadius->5, ImageSize->{20,20}, Alignment->{Center,Center}],
 							Evaluator -> Automatic,
+							Appearance -> None,
 							ButtonFunction :> (
 								tableContents = Delete[tableContents, {#2[[1]]}]
 							)
 						]
 					} &,
 					tableContents
-				]
+				],
+				{{
+					ButtonBox[
+						FrameBox["+", RoundingRadius->5, ImageSize->{20,20}, Alignment->{Center,Center}],
+						Evaluator -> Automatic,
+						Appearance -> None,
+						ButtonFunction :> (
+							AppendTo[tableContents, {"system", ""}]
+						)
+					],
+					"",
+					""
+				}}
 			],
-			GridBoxFrame -> {
-				"Columns" -> {{True}},
-				"Rows" -> {{True}}
-			}
+			GridBoxAlignment->{"Columns" -> {{Left}}}
 		]]
-	}}];
+	}}
+];
 
 
 (*====================================*)
@@ -383,8 +390,11 @@ SetFallthroughError[EditChatContextSettings]
 EditChatContextSettings[cellobj_] := Module[{
 	cell
 },
-	NotebookDelete[Cells[cellobj, AttachedCell -> True]];
-
+	If[Cells[cellobj, AttachedCell -> True] =!= {},
+		NotebookDelete[Cells[cellobj, AttachedCell -> True]];
+		Return[]
+	];
+	
 	cell = Cell[
 		BoxData @ DynamicModuleBox[{
 			$CellContext`tableContentsPreprompt$$ =
@@ -416,114 +426,119 @@ EditChatContextSettings[cellobj_] := Module[{
 				(CurrentValue[cellobj, {TaggingRules, "ChatContextPostEvaluationFunction"}] /. Inherited -> Automatic)
 		},
 			Evaluate @ StyleBox[
-				FrameBox @ GridBox[
-					{
+				FrameBox[
+					GridBox[
 						{
-							RowBox[{
-								CheckboxBox[Dynamic[$CellContext`tableContentsActAsDelimiter$$]],
-								" Act as chat context delimiter"
-							}]
-						},
-						{""},
-						{StyleBox["ChatContextPreprompt", Bold]},
-						{
-							OnePromptTableEditor[
-								cellobj,
-								"ChatContextPreprompt",
-								Dynamic[$CellContext`tableContentsPreprompt$$]
-							]
-						},
-						{""},
-						{StyleBox["ChatContextPostprompt", Bold]},
-						{
-							OnePromptTableEditor[
-								cellobj,
-								"ChatContextPostprompt",
-								Dynamic[$CellContext`tableContentsPostprompt$$]
-							]
-						},
-						{""},
-						{StyleBox["ChatContextCellProcessingFunction", Bold]},
-						{
-							InputFieldBox[Dynamic[$CellContext`tableContentsChatContextCellProcessingFunction$$]]
-						},
-						{""},
-						{StyleBox["ChatContextPostEvaluationFunction", Bold]},
-						{
-							InputFieldBox[Dynamic[$CellContext`tableContentsChatContextPostEvaluationFunction$$], Hold[Expression]]
-						},
-						{""},
-						{
-							ItemBox[
+							{
 								RowBox[{
-									ButtonBox[
-										FrameBox["Apply"],
-										Evaluator -> Automatic,
-										Appearance -> None,
-										ButtonFunction :> (
-											CurrentValue[
-												cellobj,
-												{TaggingRules, "ChatContextDelimiter"}
-											] = $CellContext`tableContentsActAsDelimiter$$;
-											
-											CurrentValue[
-												cellobj,
-												{"TaggingRules", "ChatContextPreprompt"}
-											] = Map[
-												<|"role" -> #[[1]], "content" -> #[[2]]|> &,
-												$CellContext`tableContentsPreprompt$$
-											];
-
-											CurrentValue[
-												cellobj,
-												{"TaggingRules", "ChatContextPostprompt"}
-											] = Map[
-												<|"role" -> #[[1]], "content" -> #[[2]]|> &,
-												$CellContext`tableContentsPostprompt$$
-											];
-
-											CurrentValue[
-												cellobj,
-												{TaggingRules, "ChatContextCellProcessingFunction"}
-											] = $CellContext`tableContentsChatContextCellProcessingFunction$$;
-											
-											(* ChatContextPostEvaluationFunction is set twice: once in tagging rules, and then in 
-											the option that causes it to be used as the CellEpilog of all cells within the group
-											this cell is the head of. *)
-											CurrentValue[
-												cellobj,
-												{TaggingRules, "ChatContextPostEvaluationFunction"}
-											] = $CellContext`tableContentsChatContextPostEvaluationFunction$$;
-											
-											$CellContext`tableContentsChatContextPostEvaluationFunction$$ /. Hold[e_] :> 
-												SetOptions[
-													cellobj, 
-													PrivateCellOptions->{"CellGroupBaseStyle" -> {
-														CellEpilog :> Wolfram`Chatbook`UI`ChatContextEpilogFunction[e]}
-													}
+									CheckboxBox[Dynamic[$CellContext`tableContentsActAsDelimiter$$]],
+									" Act as chat context delimiter"
+								}]
+							},
+							{""},
+							{StyleBox["ChatContextPreprompt", FontSize->12]},
+							{
+								OnePromptTableEditor[
+									cellobj,
+									"ChatContextPreprompt",
+									Dynamic[$CellContext`tableContentsPreprompt$$]
+								]
+							},
+							{""},
+							{StyleBox["ChatContextPostprompt", FontSize->12]},
+							{
+								OnePromptTableEditor[
+									cellobj,
+									"ChatContextPostprompt",
+									Dynamic[$CellContext`tableContentsPostprompt$$]
+								]
+							},
+							{""},
+							{StyleBox["ChatContextCellProcessingFunction", FontSize->12]},
+							{
+								InputFieldBox[Dynamic[$CellContext`tableContentsChatContextCellProcessingFunction$$]]
+							},
+							{""},
+							{StyleBox["ChatContextPostEvaluationFunction", FontSize->12]},
+							{
+								InputFieldBox[Dynamic[$CellContext`tableContentsChatContextPostEvaluationFunction$$], Hold[Expression]]
+							},
+							{""},
+							{
+								ItemBox[
+									RowBox[{
+										ButtonBox[
+											FrameBox["Apply"],
+											Evaluator -> Automatic,
+											Appearance -> None,
+											ButtonFunction :> (
+												CurrentValue[
+													cellobj,
+													{TaggingRules, "ChatContextDelimiter"}
+												] = $CellContext`tableContentsActAsDelimiter$$;
+												
+												CurrentValue[
+													cellobj,
+													{"TaggingRules", "ChatContextPreprompt"}
+												] = Map[
+													<|"role" -> #[[1]], "content" -> #[[2]]|> &,
+													$CellContext`tableContentsPreprompt$$
 												];
-											
-											NotebookDelete[Cells[cellobj, AttachedCell -> True]];
-										)
-									],
-									ButtonBox[
-										FrameBox["Cancel"],
-										Evaluator -> Automatic,
-										Appearance -> None,
-										ButtonFunction :> (
-											NotebookDelete[Cells[cellobj, AttachedCell -> True]]
-										)
-									]
-								}],
-								Alignment -> Center
-							]
+	
+												CurrentValue[
+													cellobj,
+													{"TaggingRules", "ChatContextPostprompt"}
+												] = Map[
+													<|"role" -> #[[1]], "content" -> #[[2]]|> &,
+													$CellContext`tableContentsPostprompt$$
+												];
+	
+												CurrentValue[
+													cellobj,
+													{TaggingRules, "ChatContextCellProcessingFunction"}
+												] = $CellContext`tableContentsChatContextCellProcessingFunction$$;
+												
+												(* ChatContextPostEvaluationFunction is set twice: once in tagging rules, and then in 
+												the option that causes it to be used as the CellEpilog of all cells within the group
+												this cell is the head of. *)
+												CurrentValue[
+													cellobj,
+													{TaggingRules, "ChatContextPostEvaluationFunction"}
+												] = $CellContext`tableContentsChatContextPostEvaluationFunction$$;
+												
+												$CellContext`tableContentsChatContextPostEvaluationFunction$$ /. Hold[e_] :> 
+													SetOptions[
+														cellobj, 
+														PrivateCellOptions->{"CellGroupBaseStyle" -> {
+															CellEpilog :> Wolfram`Chatbook`UI`ChatContextEpilogFunction[e]}
+														}
+													];
+												
+												NotebookDelete[Cells[cellobj, AttachedCell -> True]];
+											)
+										],
+										ButtonBox[
+											FrameBox["Cancel"],
+											Evaluator -> Automatic,
+											Appearance -> None,
+											ButtonFunction :> (
+												NotebookDelete[Cells[cellobj, AttachedCell -> True]]
+											)
+										]
+									}],
+									Alignment -> Center
+								]
+							}
+						},
+						GridBoxAlignment -> {
+							"Columns" -> {{Left}}
 						}
-					},
-					GridBoxAlignment -> {
-						"Columns" -> {{Left}}
-					}
+					],
+					FrameStyle -> GrayLevel[0.774121],
+					RoundingRadius -> 5,
+					Background -> GrayLevel[0.96]
 				],
-				Background -> RGBColor[0.333, 1, 0.333]
+				FontColor->GrayLevel[0.422675]
 			]
 		],
 		"Text",
@@ -538,8 +553,11 @@ EditChatContextSettings[cellobj_] := Module[{
 EditChatSettingsForCell[cellobj_] := Module[{
 		cell
 	},
-	NotebookDelete[Cells[cellobj, AttachedCell -> True]];
-
+	If[Cells[cellobj, AttachedCell -> True] =!= {},
+		NotebookDelete[Cells[cellobj, AttachedCell -> True]];
+		Return[]
+	];
+	
 	cell = Cell[
 		BoxData[RowBox[{
 			"Output Type: ",
