@@ -135,7 +135,7 @@ ConnectToService[name_, authentication_] :=
 			_,
 				(* TODO : "WolframCloud " *)
 				DBPrint["ConnectToService: ", StringForm["Unsupported authentication ``.", authentication]];
-				GU`ThrowFailure["bdauth", "Wolfram"]
+				GU`ThrowFailure["bdauth", authentication]
 		];
 		
 		(* cache/overwrite the connection *)
