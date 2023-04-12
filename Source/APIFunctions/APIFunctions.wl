@@ -31,6 +31,8 @@ TextSynthesize::invlim = "The value `1` of the option `2` is not a positive\
  integer or exceed the maximum allowed value `3`."
 ImageSynthesize::noimg = "Seeding with an image is not implemented yet."
 
+ImageSynthesize::bdauth =
+TextSynthesize::bdauth =
 CreateChat::bdauth =
 ChatObject::bdauth = "Authentication method `1` is not available."
 CreateChat::bdmethod = "Method `1` is not available."

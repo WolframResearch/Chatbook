@@ -88,11 +88,9 @@ iCreateChat[args_, opts_] := GU`Scope @ Enclose[
 
 	(* Not supported yet *)
 	(* params["Seed"] = GetOption[RandomSeeding]; *)
-
 	authentication = GetOption[Authentication];
 	params["Authentication"] = Switch[authentication,
-		"Available" | "Wolfram" | Automatic | Environment | SystemCredential
-		| AuthenticationDialog | ServiceObject[method, _],
+		Automatic | (Alternatives @@ $ValidAuthenticationPatt) | ServiceObject[method, _],
 			authentication
 			,
 		a_?AssociationQ,
@@ -126,12 +124,7 @@ getServiceObject[chatID_, name_, auth_] := GU`Scope[Enclose[
 			Confirm @ ConnectToService[name, so];
 			,
 		Automatic,
-			DBPrint["Chat/getServiceObject: ", StringForm["Looking for any available connexion to ``.", name]];
-			so = ConnectToService[name, "Available"];
-			If[FailureQ[so],
-				DBPrint["Chat/getServiceObject: ", StringForm["No available connexion to ``. Will use Wolfram.", name]];
-				so = Confirm @ ConnectToService[name, "Wolfram"]
-			];
+			so = Confirm @ ConnectToService[name]
 			,
 		_,
 			DBPrint["Chat/getServiceObject: ", StringForm["Custom authentication provided ``.", auth]];
