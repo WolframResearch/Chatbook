@@ -105,11 +105,11 @@ ConnectToService[name_, authentication_] :=
 				(* check the connection cache for existing so *)
 				authmod = Confirm @ ConformAuthentication[name, authentication];
 				key = Hash[authmod, "SHA512", "Base64Encoding"];
-				temp = Query[Key@name, Key@key][$ConnectionCache];
+				so = Query[Key@name, Key@key][$ConnectionCache];
 				(* validate connection *)
-				If[MissingQ[temp] || FailureQ @ TestConnection[name, temp],
+				If[MissingQ[so] || FailureQ @ TestConnection[name, so],
 					DBPrint["ConnectToService: ", StringForm["Creating new connection with provided authentication ``", authentication]];
-					temp = Confirm @ makeConnection[name, authmod]
+					so = Confirm @ makeConnection[name, authmod]
 				]
 				,
 			"Available",
@@ -120,14 +120,14 @@ ConnectToService[name_, authentication_] :=
 				,
 			"Dialog",
 				(* prompt for key *)
-				temp = Confirm @ makeConnection[name, "Dialog"];
-				key = Confirm @ getAuthenticationHash[temp];
+				so = Confirm @ makeConnection[name, "Dialog"];
+				key = Confirm @ getAuthenticationHash[so];
 				,
 			_ServiceObject,
 				(* test is wasting time - no early failure gain *)
-				temp = authentication;
+				so = authentication;
 				DBPrint["ConnectToService: ", StringForm["Using provided connection w/o validation ``.", Last @ authentication]];
-				key = Confirm @ getAuthenticationHash[temp];
+				key = Confirm @ getAuthenticationHash[so];
 				,
 			_,
 				(* TODO : service credits via "WolframCloud" *)
@@ -136,9 +136,9 @@ ConnectToService[name_, authentication_] :=
 		];
 		
 		(* cache/overwrite the connection *)
-		If[StringQ@key, saveConnection[name, key, temp]];
+		If[StringQ@key, saveConnection[name, key, so]];
 
-		temp
+		so
 		,
 		APIFailure
 	]];
