@@ -1,0 +1,2183 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[    105465,       2175]
+NotebookOptionsPosition[     94180,       1945]
+NotebookOutlinePosition[     95377,       1978]
+CellTagsIndexPosition[     95297,       1973]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[TextData[{
+ "New in: ",
+ Cell["13.3", "HistoryData",
+  CellTags->"New",ExpressionUUID->"1798712e-7db8-4705-950c-f9c651710e59"],
+ " | Modified in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Modified",ExpressionUUID->"7000b848-35c9-439f-90d3-f408641e3fee"],
+ " | Obsolete in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Obsolete",ExpressionUUID->"e951f0e6-b2f8-43c9-827c-b572dd58b6f0"],
+ " | Excised in: ",
+ Cell[" ", "HistoryData",
+  CellTags->"Excised",ExpressionUUID->"1ffb54cb-37c0-4122-8251-bab516d81c2c"]
+}], "History",
+ CellID->341476719,ExpressionUUID->"11ef8686-b3ed-40e4-9246-f3405967961e"],
+
+Cell["Created by: giulioa on 03-23-2023 12:31:29", "AuthorDate",
+ CellID->498460038,ExpressionUUID->"266a24ac-2156-49b4-b67a-9566c022f3e9"],
+
+Cell[CellGroupData[{
+
+Cell["Categorization", "CategorizationSection",
+ CellID->1122911449,ExpressionUUID->"aab346e5-c54e-4543-bfb6-055de9d33d30"],
+
+Cell["Symbol", "Categorization",
+ CellLabel->"Entity Type",
+ CellID->686433507,ExpressionUUID->"628529aa-75c0-47b0-aee1-60c78cad327e"],
+
+Cell["Mathematica", "Categorization",
+ CellLabel->"Paclet Name",
+ CellID->605800465,ExpressionUUID->"bef83001-b92a-4b47-91bf-718662946187"],
+
+Cell["System`", "Categorization",
+ CellLabel->"Context",
+ CellID->468444828,ExpressionUUID->"bea189f9-73e0-4baf-b29f-7184e0cf366c"],
+
+Cell["ref/ChatEvaluate", "Categorization",
+ CellLabel->"URI",ExpressionUUID->"e6d405af-40e0-4ab3-b0f9-eef9bc6a46a8"],
+
+Cell["XXXX", "Categorization",
+ CellLabel->"Title Modifier",
+ CellID->172747495,ExpressionUUID->"4a2472d2-19f5-4b9f-a0f2-c5a1708cd7bb"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Synonyms", "SynonymsSection",
+ CellID->1427418553,ExpressionUUID->"fb8acf4f-9285-4b8c-a747-4381fc0b9d41"],
+
+Cell["XXXX", "Synonyms",
+ CellID->1251652828,ExpressionUUID->"80d54c53-ee23-43f2-a45f-b1e852e781b1"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Keywords", "KeywordsSection",
+ CellID->477174294,ExpressionUUID->"e9878159-9f99-4959-9826-e5a3f952bf23"],
+
+Cell["XXXX", "Keywords",
+ CellID->1164421360,ExpressionUUID->"612ce670-b22f-493d-b218-797337b1a463"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Syntax Templates", "TemplatesSection",
+ CellID->1872225408,ExpressionUUID->"5cc15371-6f63-4f57-9207-32b25cb98ecc"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Additional Function Template",
+ CellID->1562036412,ExpressionUUID->"895d1c65-38f1-4125-baff-a225fcfc19c8"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Arguments Pattern",
+ CellID->158391909,ExpressionUUID->"170b786f-fb75-4556-a26a-6701da067cc2"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Local Variables",
+ CellID->1360575930,ExpressionUUID->"82a33b27-a8e0-4f8a-ba2a-5f2dee7b1bbf"],
+
+Cell[BoxData[""], "Template",
+ CellLabel->"Color Equal Signs",
+ CellID->793782254,ExpressionUUID->"a0124f6d-7659-412c-a856-eefb69ed49a8"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Details", "DetailsSection",
+ CellID->307771771,ExpressionUUID->"8f9f96de-cdd4-415b-98c3-6a4a1d7a219e"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Lead",
+ CellID->49458704,ExpressionUUID->"4b2f2a6b-f93c-4868-9e10-5b6968909260"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Developers",
+ CellID->350963985,ExpressionUUID->"6e4a3ae1-cdf6-47cc-ad1f-759e8fe45593"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Authors",
+ CellID->422270209,ExpressionUUID->"efc33df5-b775-495a-80e4-3521a78bc446"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Feature Name",
+ CellID->545239557,ExpressionUUID->"1a0db4eb-149a-46f3-b25b-b280d6264af5"],
+
+Cell["XXXX", "Details",
+ CellLabel->"QA",
+ CellID->121292707,ExpressionUUID->"1050f771-3937-45cd-bf2a-bca989fc6c2c"],
+
+Cell["XXXX", "Details",
+ CellLabel->"DA",
+ CellID->29314406,ExpressionUUID->"2d37259b-d19a-4265-94d9-1062a057d814"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Docs",
+ CellID->96001539,ExpressionUUID->"4e0c64af-4701-4221-b6a7-d115b2825a25"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Features Page Notes",
+ CellID->123278822,ExpressionUUID->"d0039a91-8ee2-4052-8ab0-325c85db884a"],
+
+Cell["XXXX", "Details",
+ CellLabel->"Comments",
+ CellID->240026365,ExpressionUUID->"02ff136a-5412-4c7d-9f54-fb44ec7c41f5"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["Security Details", "SecuritySection",
+ CellID->13551076,ExpressionUUID->"c4d92900-bc11-4614-8c83-407abdd45933"],
+
+Cell[BoxData[
+ TagBox[GridBox[{
+    {
+     TemplateBox[{
+       CheckboxBox[
+        Dynamic[
+         CurrentValue[
+          EvaluationNotebook[], {TaggingRules, "SecurityRisk"}, False]]], 
+       StyleBox[
+       "\"   Potential security risk\"", FontFamily -> "Arial", FontSize -> 
+        10, StripOnInput -> False]},
+      "RowDefault"]},
+    {
+     DynamicBox[ToBoxes[
+       If[
+        TrueQ[
+         CurrentValue[
+          EvaluationNotebook[], {TaggingRules, "SecurityRisk"}]], 
+        InputField[
+         Dynamic[
+          CurrentValue[
+           EvaluationNotebook[], {TaggingRules, "SecurityExplanation"}, ""]], 
+         String, FieldHint -> "How so? (optional)", FieldSize -> {40, 5}, 
+         BaseStyle -> {FontFamily -> "Arial", FontSize -> 12}], ""], 
+       StandardForm],
+      ImageSizeCache->{0., {0., 4.86}}]}
+   },
+   DefaultBaseStyle->"Column",
+   GridBoxAlignment->{"Columns" -> {{Left}}},
+   GridBoxItemSize->{"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+  "Column"]], "SecurityDetails",
+ CellID->2488900,ExpressionUUID->"89fc8445-1353-4fa3-97dd-1be0f00a5de5"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell["ChatEvaluate", "ObjectName",
+ CellID->1224892054,ExpressionUUID->"9e65fd4a-3b79-48c0-af70-75bef669e834"],
+
+Cell[TextData[{
+ Cell["   ", "ModInfo",ExpressionUUID->"2fdc3ed2-06fd-4227-b5c0-2a023c6c9737"],
+ Cell[BoxData[
+  RowBox[{"ChatEvaluate", "[", 
+   RowBox[{
+    StyleBox["chat", "TI"], ",", 
+    StyleBox["text", "TI"]}], "]"}]], "InlineFormula",ExpressionUUID->
+  "f8ea538b-9d46-4953-98dc-da0c15517a97"],
+ " \[LineSeparator]appends ",
+ Cell[BoxData[
+  StyleBox["text", "TI"]], "InlineFormula",ExpressionUUID->
+  "7b56a4f1-8afc-4f4d-8352-fedfc226e3a5"],
+ " and its follow-up to the ",
+ Cell[BoxData[
+  ButtonBox["ChatObject",
+   BaseStyle->"Link"]], "InlineFormula",ExpressionUUID->
+  "d2b37c2d-3de6-4445-a9a4-2dcb21e3e482"],
+ " ",
+ Cell[BoxData[
+  StyleBox["chat", "TI"]], "InlineFormula",ExpressionUUID->
+  "7d49b30d-9684-4de6-ba73-b87d0588f6a8"],
+ ".\n",
+ Cell["   ", "ModInfo",ExpressionUUID->"fe179e9f-6055-427a-aefe-62a0abe13e86"],
+ Cell[BoxData[
+  RowBox[{"ChatEvaluate", "[", 
+   StyleBox["text", "TI"], "]"}]], "InlineFormula",ExpressionUUID->
+  "62368d4c-f2cb-43f4-aa33-126707e083af"],
+ "\[LineSeparator]represents an operator form of ",
+ Cell[BoxData[
+ "ChatEvaluate"], "InlineFormula",ExpressionUUID->
+  "798e0dd5-73b5-417c-954d-cc3631630bac"],
+ " that can be applied to a ",
+ Cell[BoxData[
+  ButtonBox["ChatObject",
+   BaseStyle->"Link"]], "InlineFormula",ExpressionUUID->
+  "033ebd06-fda4-4883-9ae9-49c9a49dddac"],
+ "."
+}], "Usage",
+ CellChangeTimes->{{3.888652138558649*^9, 3.8886521874519176`*^9}, {
+  3.889526318677163*^9, 3.889526359347928*^9}},
+ CellID->982511436,ExpressionUUID->"2f7b7357-db0a-477c-a3fa-e2cca7faa2b5"],
+
+Cell["XXXX", "Notes",
+ CellID->1067943069,ExpressionUUID->"c396774d-bb61-4976-8af9-595edbd6f735"],
+
+Cell["The following options can be specified:", "Notes",
+ CellChangeTimes->{{3.886501726824514*^9, 3.8865017276432333`*^9}},
+ CellID->2060826575,ExpressionUUID->"929efb4a-79dc-4cbb-8667-5323443bf354"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "ModInfo",ExpressionUUID->
+     "380fc1c5-b3aa-4d1f-8bab-7d56f82a84e1"], 
+    ButtonBox["Authentication",
+     BaseStyle->"Link"], 
+    ButtonBox["Automatic",
+     BaseStyle->"Link"], Cell[
+    "explicit user ID and API key", "TableText",ExpressionUUID->
+     "1aad2a78-fd5a-4035-b401-4a1d007c414a"]},
+   {Cell["      ", "ModInfo",ExpressionUUID->
+     "1a17e547-4c1a-4cd3-a2e9-db1d4cdb460e"], 
+    ButtonBox["MaxItems",
+     BaseStyle->"Link"], "50", Cell[
+    "maximum number of tokens to generate", "TableText",ExpressionUUID->
+     "e68a7106-ccf4-4210-b868-020a7729486b"]},
+   {Cell["      ", "ModInfo",ExpressionUUID->
+     "fbdfa406-a844-4cd7-9e94-1e9710899e39"], 
+    ButtonBox["Method",
+     BaseStyle->"Link"], 
+    ButtonBox["Automatic",
+     BaseStyle->"Link"], Cell[
+    "method used to generate the text", "TableText",ExpressionUUID->
+     "18e34121-48dd-41f2-8ec1-b9a7d4312b3d"]},
+   {
+    TooltipBox[Cell["giulioa", "ModInfo", "FutureExample",
+      CellDingbat->Cell[
+        BoxData[
+         TooltipBox[
+          Cell["giulioa      ", "TentativeID"], "2023-02-15"]], 
+        "TentativeWrapper"],ExpressionUUID->
+      "23a88600-73cd-4764-98f9-ae6cf4317976"],
+     "Tentative"], 
+    ButtonBox["RandomSeeding",
+     BaseStyle->"Link"], 
+    ButtonBox["Automatic",
+     BaseStyle->"Link"], Cell[
+    "seeding of pseudorandom generators", "TableText",ExpressionUUID->
+     "ae1afd82-bf94-4ccf-9f72-89a170e2b967"]}
+  }]], "3ColumnTableMod",
+ TaggingRules->{"Alphabetized" -> True},
+ CellChangeTimes->{{3.885439632065222*^9, 3.885439690668057*^9}, {
+   3.8854445756200666`*^9, 3.885444596917966*^9}, 3.885444832208441*^9, {
+   3.886234933321583*^9, 3.886234948406764*^9}, 3.886488837546764*^9, {
+   3.8864971285224247`*^9, 3.886497151554191*^9}, {3.886497215108632*^9, 
+   3.8864972303719273`*^9}, {3.886498378001594*^9, 3.8864984006633873`*^9}, {
+   3.886679567049877*^9, 3.8866796221952057`*^9}, {3.8871760986678743`*^9, 
+   3.887176106949741*^9}, {3.88865375293407*^9, 3.888653760847519*^9}, {
+   3.8886539400453*^9, 3.888653940183185*^9}, {3.889063434561454*^9, 
+   3.889063434561462*^9}},
+ CellID->410087359,ExpressionUUID->"9df3ea5c-bfae-4685-837b-2010f9202322"],
+
+Cell[TextData[{
+ "The generated text is sampled from a distribution. Details of the sampling \
+can be specified using ",
+ Cell[BoxData[
+  RowBox[{
+   ButtonBox["Method",
+    BaseStyle->"Link"], " ", "\[Rule]", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{
+      SubscriptBox[
+       StyleBox["opt", "TI"], 
+       StyleBox["1", "TR"]], "\[Rule]", 
+      SubscriptBox[
+       StyleBox["val", "TI"], 
+       StyleBox["1", "TR"]]}], ",", 
+     StyleBox["\[Ellipsis]", "TR"]}], "}"}]}]], "InlineFormula",
+  ExpressionUUID->"bc31925f-7b92-458b-83f1-25595298e4dd"],
+ ", where the possible ",
+ Cell[BoxData[
+  SubscriptBox[
+   StyleBox["opt", "TI"], 
+   StyleBox["i", "TI"]]], "InlineFormula",ExpressionUUID->
+  "a9bc68a1-ac71-444b-83fe-1b320d112216"],
+ " are:"
+}], "Notes",
+ CellChangeTimes->{{3.887176315172724*^9, 3.887176367008003*^9}, {
+  3.8890634591185617`*^9, 3.889063482206943*^9}},
+ CellID->1031992097,ExpressionUUID->"dedac581-3278-44df-a076-9cb73133a1cf"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "ModInfo",ExpressionUUID->
+     "36824919-3116-4c9b-8921-b02faa89103b"], 
+    RowBox[{"\"\<Temperature\>\"", "\[Rule]", 
+     StyleBox["t", "TI"]}], "1", Cell[TextData[{
+     "sample using a positive temperature ",
+     Cell[BoxData[
+      StyleBox["t", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "ee0458cc-f6ee-48c4-ba95-9862f172ba74"]
+    }], "TableText",ExpressionUUID->"43cb5624-69c5-4914-86be-278a072a20a1"]},
+   {Cell["      ", "ModInfo",ExpressionUUID->
+     "496ce9a7-10d0-4f07-b7e6-4d51e81faf07"], 
+    RowBox[{"\"\<TopProbabilityCutoff\>\"", "\[Rule]", 
+     StyleBox["p", "TI"]}], "1", Cell[TextData[{
+     "sample among the most probable choices with an accumulated probability \
+of at least ",
+     Cell[BoxData[
+      StyleBox["p", "TI"]], "InlineFormula",
+      FontFamily->"Source Sans Pro",ExpressionUUID->
+      "70096526-3f08-4daa-8f56-b193350db329"],
+     " (nucleus sampling)"
+    }], "TableText",ExpressionUUID->"b6fdda23-535b-4fa9-bb1b-e9987508f58e"]}
+  }]], "3ColumnTableMod",
+ CellChangeTimes->{{3.887176135547015*^9, 3.8871762514174757`*^9}, 
+   3.887176301607314*^9, {3.889063450015738*^9, 3.889063450015745*^9}, {
+   3.889063492301322*^9, 3.889063493818378*^9}},
+ CellID->2074579731,ExpressionUUID->"44ba1b5e-5cbf-4c93-bbec-8bb5cb338df1"],
+
+Cell[TextData[{
+ "With ",
+ Cell[BoxData[
+  RowBox[{
+   ButtonBox["Authentication",
+    BaseStyle->"Link"], "\[Rule]", 
+   ButtonBox["Automatic",
+    BaseStyle->"Link"]}]], "InlineFormula",ExpressionUUID->
+  "68a657bf-b68a-450c-909c-f48e4ce0ab03"],
+ ", the function uses ",
+ Cell[BoxData[
+  RowBox[{
+   ButtonBox["ServiceConnect",
+    BaseStyle->"Link"], "[", "\"\<OpenAI\>\"", "]"}]], "InlineFormula",
+  ExpressionUUID->"7bd97c63-2e0b-4814-b7b2-4d1d5c0f2061"],
+ "."
+}], "Notes",
+ CellChangeTimes->{{3.8864972851416483`*^9, 3.886497364703752*^9}},
+ CellID->1890374997,ExpressionUUID->"ffa3c814-6f3f-41df-a049-ec9f0773152c"],
+
+Cell[TextData[{
+ "Credential can be also given using ",
+ Cell[BoxData[
+  RowBox[{"Authentication", "\[Rule]", 
+   StyleBox["assoc", "TI"]}]], "InlineFormula",ExpressionUUID->
+  "cd62f563-7353-41ce-8547-525ad621d121"],
+ ", where ",
+ Cell[BoxData[
+  StyleBox["assoc", "TI"]], "InlineFormula",ExpressionUUID->
+  "b2a3ac71-18ac-46cf-9f59-73712230ff03"],
+ " can contain the following keys:"
+}], "Notes",
+ TaggingRules->{"AnnotationsDeleted" -> True},
+ CellChangeTimes->{{3.673024252304309*^9, 3.6730242664734297`*^9}, 
+   3.673024383831319*^9, {3.749571607166835*^9, 3.749571638660835*^9}, {
+   3.7495727895870347`*^9, 3.7495727933310347`*^9}, {3.749573001839035*^9, 
+   3.749573002344035*^9}, {3.7500743000895967`*^9, 3.750074300809482*^9}, {
+   3.756048725514456*^9, 3.756048730461691*^9}, {3.756048773957713*^9, 
+   3.756048774205223*^9}, 3.75612348300342*^9, {3.823970833960923*^9, 
+   3.823970834850061*^9}, {3.828695490449212*^9, 3.828695508249237*^9}, {
+   3.886497263430833*^9, 3.8864972687959013`*^9}, {3.886497370578269*^9, 
+   3.886497461964859*^9}},
+ CellID->13965788,ExpressionUUID->"ab5ce21a-72d9-4ffe-a192-9b8dea5e0854"],
+
+Cell[BoxData[GridBox[{
+   {Cell["      ", "ModInfo",ExpressionUUID->
+     "a6e6a159-46ac-49e7-9da2-706946bb248b"], "\"\<ID\>\"", Cell[
+    "user identity", "TableText",ExpressionUUID->
+     "8b842ead-11e2-4be2-a218-1fd8e1c5a017"]},
+   {Cell["      ", "ModInfo",ExpressionUUID->
+     "6f6a2904-189f-4e58-8528-0fe467781a6d"], "\"\<APIKey\>\"", Cell[
+    "API key used to authenticate", "TableText",ExpressionUUID->
+     "d7e8b7af-5d39-4186-93cc-c6e22af8ee1a"]}
+  }]], "2ColumnTableMod",
+ CellChangeTimes->{{3.6730242727164297`*^9, 3.673024355792506*^9}, 
+   3.674392921281736*^9, {3.677517762772373*^9, 3.677517855473823*^9}, {
+   3.677867786018692*^9, 3.677867800072638*^9}, {3.6778679874102592`*^9, 
+   3.677867990446262*^9}, {3.677868021904542*^9, 3.6778680844560823`*^9}, 
+   3.7065469711922417`*^9, {3.706547143423123*^9, 3.70654727772571*^9}, 
+   3.708734401582951*^9, {3.7495716469088345`*^9, 3.749571811907835*^9}, {
+   3.749571854009035*^9, 3.7495719224770346`*^9}, {3.749572195861035*^9, 
+   3.749572273089035*^9}, {3.7495723214620347`*^9, 3.749572328974035*^9}, {
+   3.749572592839035*^9, 3.749572752582035*^9}, {3.7495728054750347`*^9, 
+   3.749572813987035*^9}, {3.749572845049035*^9, 3.7495729525620346`*^9}, {
+   3.750074375275066*^9, 3.750074381239275*^9}, {3.751712328968925*^9, 
+   3.751712330373021*^9}, {3.7561234944588013`*^9, 3.7561235349314632`*^9}, {
+   3.886497171819392*^9, 3.886497195181542*^9}, {3.8864972352548637`*^9, 
+   3.8864972438573103`*^9}},
+ CellID->359403746,ExpressionUUID->"13019fbf-4214-421c-9c0f-fe394295c8a4"],
+
+Cell[TextData[{
+ Cell[BoxData[
+ "ChatEvaluate"], "InlineFormula",ExpressionUUID->
+  "acad2200-467e-4ce4-8568-e6f8886c80e9"],
+ " uses machine learning. Its methods, training sets and biases included \
+therein may change and yield varied results in different versions of the \
+Wolfram Language."
+}], "Notes",
+ CellChangeTimes->{
+  3.709562435104498*^9, {3.709562942715005*^9, 3.709562944281691*^9}, 
+   3.710073356104604*^9, 3.787659073818141*^9, 3.787922688882407*^9, {
+   3.885447519895226*^9, 3.8854475198952427`*^9}, {3.889063306136598*^9, 
+   3.889063309237954*^9}, {3.889063411334806*^9, 3.889063411334818*^9}},
+ CellID->1225367472,ExpressionUUID->"058b422d-7cc4-45d2-a8e6-40448f9f8662"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Tutorials", "TutorialsSection",
+ CellID->250839057,ExpressionUUID->"b02d4013-fc03-46fd-91f5-418756d88d93"],
+
+Cell["XXXX", "Tutorials",
+ CellID->341631938,ExpressionUUID->"e5fbfac5-d780-4a61-9aa1-c2995b34e594"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Demonstrations", "RelatedDemonstrationsSection",
+ CellID->1268215905,ExpressionUUID->"2bafa20c-ad4d-4358-9b58-1c0fa094f645"],
+
+Cell["XXXX", "RelatedDemonstrations",
+ CellID->1129518860,ExpressionUUID->"ca787c01-e02b-4f0c-b52a-b5a25070bba2"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Links", "RelatedLinksSection",
+ CellID->1584193535,ExpressionUUID->"a98c198c-eaff-4f47-a52b-bde15cb67cfa"],
+
+Cell["XXXX", "RelatedLinks",
+ CellID->1038487239,ExpressionUUID->"ec84bd42-24ea-4c7d-a2df-bf8e73ab079b"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["See Also", "SeeAlsoSection",
+ CellID->1255426704,ExpressionUUID->"d9364631-c239-4d65-b012-ba498b2ced33"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  ButtonBox["ChatObject",
+   BaseStyle->"Link"]], "InlineFormula",ExpressionUUID->
+  "e6e8aee6-e709-4785-9a18-3c1e3b14b5bd"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["CreateChat",
+   BaseStyle->"Link"]], "InlineFormula",ExpressionUUID->
+  "c35b02b6-d9c6-41ae-a5db-bdad449707c6"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["TextSynthesize",
+   BaseStyle->"Link"]], "InlineFormula",ExpressionUUID->
+  "9e8a8383-7c49-49b7-8a75-6f19d24fdd5f"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["FindTextualAnswer",
+   BaseStyle->"Link"]], "InlineFormula",ExpressionUUID->
+  "706daa9b-6136-402c-ba4e-386ed3deda0f"],
+ " \[EmptyVerySmallSquare] ",
+ Cell[BoxData[
+  ButtonBox["TextContents",
+   BaseStyle->"Link"]], "InlineFormula",ExpressionUUID->
+  "c9356e32-e731-405f-aab3-1b7c4e5f058e"]
+}], "SeeAlso",
+ CellChangeTimes->{{3.888651765866096*^9, 3.888651768126163*^9}},
+ CellID->929782353,ExpressionUUID->"93ffba56-cd93-4908-bd9e-67eec8b2e5b1"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Related Workflows", "RelatedWorkflowsSection",
+ CellID->121236710,ExpressionUUID->"fc08db45-053b-4d9f-98c1-1ff4c0f2aaf6"],
+
+Cell["XXXX", "RelatedWorkflows",
+ CellID->294347949,ExpressionUUID->"0387d739-2698-4d59-91f8-023405a5f852"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["More About", "MoreAboutSection",
+ CellID->38303248,ExpressionUUID->"b2f57e8f-69ad-4769-b4dc-58a90c351f38"],
+
+Cell["Autogenerated", "MoreAbout",
+ CellID->1665078683,ExpressionUUID->"0862ec19-c5ba-4499-bc8f-b5b8b510794c"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[GridBox[{
+    {
+     StyleBox["Examples", "PrimaryExamplesSection"], 
+     ButtonBox[
+      RowBox[{
+       RowBox[{"More", " ", "Examples"}], " ", "\[RightTriangle]"}],
+      BaseStyle->"ExtendedExamplesLink",
+      ButtonData:>"ExtendedExamples"]}
+   }],
+  $Line = 0; Null]], "PrimaryExamplesSection",
+ CellID->880084151,ExpressionUUID->"ff765981-7828-4382-a532-4eb8c1f0790e"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "\t", "ExampleDelimiter",ExpressionUUID->
+   "fee9475a-cfa6-4e9d-ae78-317077be0aa2"],
+  $Line = 0; Null]], "ExampleDelimiter",
+ CellID->1379429588,ExpressionUUID->"7d9935ab-40b3-4b43-881a-8963b5bb57c2"],
+
+Cell["Create a new chat:", "ExampleText",
+ CellChangeTimes->{{3.888651978744624*^9, 3.8886519837496977`*^9}},
+ CellID->1987116151,ExpressionUUID->"0f98e524-b033-4801-aef3-38709abf05a6"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"chat", "=", 
+  RowBox[{"CreateChat", "[", "]"}]}]], "Input",
+ CellChangeTimes->{{3.888651984673601*^9, 3.888652012499041*^9}},
+ CellLabel->"In[2]:=",
+ CellID->1942955360,ExpressionUUID->"559b90c6-d4c0-49a7-9ece-73ca6cbe0b58"],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{
+   TagBox["ChatObject",
+    "SummaryHead"], "[", 
+   DynamicModuleBox[{Typeset`open$$ = False, Typeset`embedState$$ = "Ready"}, 
+    
+    TemplateBox[{
+      PaneSelectorBox[{False -> GridBox[{{
+            GridBox[{{
+               TagBox[
+                PaneBox[
+                 TagBox[
+                  GridBox[{{
+                    PaneBox["\"\"", ImageSize -> 180]}}, 
+                   GridBoxAlignment -> {
+                    "Columns" -> {Right, Left}, "Rows" -> {{Automatic}}}, 
+                   AutoDelete -> False, 
+                   GridBoxBackground -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{
+                    GrayLevel[1], 
+                    RGBColor[{
+                    Rational[16, 17], 1, 
+                    Rational[251, 255]}]}}}, GridBoxDividers -> {"Columns" -> {
+                    GrayLevel[0, 0], {None}, 
+                    GrayLevel[0, 0]}, "Rows" -> {
+                    GrayLevel[0, 0], {
+                    GrayLevel[0, 0.05]}, 
+                    GrayLevel[0, 0]}}, 
+                   GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+                   GridBoxSpacings -> {"Columns" -> {{1}}, "Rows" -> {{1}}}, 
+                   BaseStyle -> "Text"], "Grid"], {}, AppearanceElements -> 
+                 None, Scrollbars -> {False, Automatic}, 
+                 ImageSize -> {{180, 600}, {20, 400}}, ContentPadding -> 
+                 False], "SummaryItem"]}}, 
+             GridBoxAlignment -> {
+              "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+             False, GridBoxItemSize -> {
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+             GridBoxSpacings -> {"Columns" -> {{2}}, "Rows" -> {{Automatic}}},
+              BaseStyle -> {
+              ShowStringCharacters -> False, NumberMarks -> False, 
+               PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
+          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+          AutoDelete -> False, 
+          GridBoxItemSize -> {
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+          BaselinePosition -> {1, 1}], True -> GridBox[{{
+            GridBox[{{
+               TagBox[
+                PaneBox[
+                 TagBox[
+                  GridBox[{{
+                    PaneBox["\"\"", ImageSize -> 180]}}, 
+                   GridBoxAlignment -> {
+                    "Columns" -> {Right, Left}, "Rows" -> {{Automatic}}}, 
+                   AutoDelete -> False, 
+                   GridBoxBackground -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{
+                    GrayLevel[1], 
+                    RGBColor[{
+                    Rational[16, 17], 1, 
+                    Rational[251, 255]}]}}}, GridBoxDividers -> {"Columns" -> {
+                    GrayLevel[0, 0], {None}, 
+                    GrayLevel[0, 0]}, "Rows" -> {
+                    GrayLevel[0, 0], {
+                    GrayLevel[0, 0.05]}, 
+                    GrayLevel[0, 0]}}, 
+                   GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+                   GridBoxSpacings -> {"Columns" -> {{1}}, "Rows" -> {{1}}}, 
+                   BaseStyle -> "Text"], "Grid"], {}, AppearanceElements -> 
+                 None, Scrollbars -> {False, Automatic}, 
+                 ImageSize -> {{180, 600}, {20, 400}}, ContentPadding -> 
+                 False], "SummaryItem"]}}, 
+             GridBoxAlignment -> {
+              "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+             False, GridBoxItemSize -> {
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+             GridBoxSpacings -> {"Columns" -> {{2}}, "Rows" -> {{Automatic}}},
+              BaseStyle -> {
+              ShowStringCharacters -> False, NumberMarks -> False, 
+               PrintPrecision -> 3, ShowSyntaxStyles -> False}]}}, 
+          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+          AutoDelete -> False, 
+          GridBoxItemSize -> {
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+          BaselinePosition -> {1, 1}]}, 
+       Dynamic[Typeset`open$$], ImageSize -> Automatic]},
+     "SummaryPanel"],
+    DynamicModuleValues:>{}], "]"}],
+  Wolfram`APIFunctions`ChatObject[<|
+   "Method" -> "OpenAI", "Messages" -> {}, "ChatID" -> 
+    "866c6612-259e-419d-a534-e170b16e6cc8", "History" -> {}, "Usage" -> 
+    0|>, {}],
+  Editable->False,
+  SelectWithContents->True,
+  Selectable->False]], "Output",
+ CellChangeTimes->{{3.888651987098476*^9, 3.888652012746044*^9}, 
+   3.889161068293786*^9, 3.889161217380987*^9, 3.889526142375278*^9, 
+   3.8895263665512667`*^9, 3.889527781347981*^9, 3.8903016204683447`*^9},
+ CellLabel->"Out[2]=",
+ CellID->601938533,ExpressionUUID->"f4854179-0db1-4643-bfd1-74566a73e318"]
+}, Open  ]],
+
+Cell["Add a message and a response to the conversation:", "ExampleText",
+ CellChangeTimes->{{3.888651978744624*^9, 3.888652004771367*^9}},
+ CellID->102083979,ExpressionUUID->"2c105ac3-16ed-43ab-b8cd-ec7995d1ea74"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"ChatEvaluate", "[", 
+  RowBox[{"chat", ",", "\"\<What's the tallest mountain?\>\""}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.888652014604343*^9, 3.8886520372243547`*^9}, {
+  3.888652075402828*^9, 3.888652083916297*^9}},
+ CellLabel->"In[3]:=",
+ CellID->1503581402,ExpressionUUID->"a32c68e3-33ae-450f-b5ef-ce61348d8059"],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{
+   TagBox["ChatObject",
+    "SummaryHead"], "[", 
+   DynamicModuleBox[{Typeset`open$$ = False, Typeset`embedState$$ = "Ready"}, 
+    
+    TemplateBox[{
+      PaneSelectorBox[{False -> GridBox[{{
+            GridBox[{{
+               TagBox[
+                PaneBox[
+                 
+                 DynamicModuleBox[{
+                  Wolfram`APIFunctions`Chat`Private`over$$ = 0, 
+                   Wolfram`APIFunctions`Chat`Private`overhandler$$}, 
+                  TagBox[
+                   TagBox[
+                    GridBox[{{
+                    TagBox[
+                    ButtonBox[
+                    FrameBox[
+                    StyleBox[
+                    GraphicsBox[{
+                    Thickness[0.05], {
+                    FaceForm[{
+                    RGBColor[1., 1., 1.], 
+                    Opacity[1.]}], 
+                    
+                    FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+                    0}, {0, 1, 0}, {0, 1, 0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIRIGZiAIOEFl8lBwhTCERfiGYwQOYbvD2Lwv+QnGMI
+oh/484qC6AWh9WB+xK6T4iDaQarBEKreAJmf8JgVTM/4ywqVh4g7SMHsg+rL
+ZBBA4a8+z47Cv8TAgmwejA+zD4kvgczfUPRCGNU8iH8Q9kH4ApkMYtj4C+Ra
+GRzQwwsAPDUvmA==
+                    "]]}, {
+                    FaceForm[{
+                    RGBColor[0.2, 0.2, 0.2], 
+                    Opacity[1.]}], 
+                    
+                    FilledCurveBox[{{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+                    3}}, {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}, {{1, 4,
+                     3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}}, CompressedData["
+1:eJxtkEEKwjAQRYOu3cdQpEqMoWbr2iKewBMEwbVX6E1yk9q198g9TJXB308H
+wvAy/Pk/2d6ft8dSKTWeVTkLJWXbX/djv8S8Qy715VcyB+RSDvkasyW9net9
+Mnu6d6iHvZMu/qCXfJa4QW5j9jT39B65d8iSB/Ti0yAPyRxpHug9gfYH9Af9
+bP5SNelr3N+dTxvyr5C74b2muaZ8mvZrzAd6yVMhg/8kL/zvP/8Hou1EYQ==
+
+                    "]]}, {
+                    FaceForm[{
+                    RGBColor[
+                    0.5372549019607843, 0.5372549019607843, 
+                    0.5372549019607843], 
+                    Opacity[1.]}], 
+                    
+                    FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+                    0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+                    0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{0, 2, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+                    0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+                    0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+                    3}}}, {CompressedData["
+1:eJxTTMoPSmViYGAQB2IQDQEcDhDawAGJ72C6D8zf48nDBRU3hNICaHwDZH7A
+jn0GaPKGyObh0gcEEiD6QdUXsPgBmSgxMD23H8L/+U8YRCsYcqDwAxJYUfgf
+LjDBzBVBswfGV0LjSyD7G4kPkxdA5iOFhwiKPm12URzmIMIXALO+KbM=
+                    "], CompressedData["
+1:eJxTTMoPSmViYGCQAmIQDQUOEMrAAZUvgcx34LouBKJrRNaxQsUFcNAiOPgc
+KPzJEp/sgdSHQAspEL9BIIIRRF9Qmq2ErP/A1xf6YPvZGMH8hH4msDsbPv/l
+B9EKhhwo/AZ7UUNk/gG5p2D+gYqXwmC67B9EPm+SONQeI7D5W06g8JH8D+Mb
+IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
+                    "]}]}}, AspectRatio -> Automatic, 
+                    ImageSize -> {{21., 21.}, {21., 21.}}, 
+                    PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}], 
+                    "InformationTitleText", StripOnInput -> False], 
+                    Background -> None, FrameMargins -> None, FrameStyle -> 
+                    None, ImageMargins -> {{0, 0}, {0, 0}}, StripOnInput -> 
+                    False], Active -> False, Alignment -> Left, Appearance -> 
+                    FEPrivate`FrontEndResource[
+                    "FEExpressions", "SuppressMouseDownNinePatchAppearance"], 
+                    BaseStyle -> {}, BaselinePosition -> Baseline, 
+                    ButtonFunction :> {}, DefaultBaseStyle -> {}, Evaluator -> 
+                    None, FrameMargins -> {{10, 10}, {5, 5}}, Method -> 
+                    "Preemptive"], 
+                    
+                    EventHandlerTag[{
+                    "MouseEntered" :> 
+                    FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
+                    True}]], 
+                    TagBox[
+                    ButtonBox[
+                    FrameBox[
+                    StyleBox[
+                    TagBox[
+                    "\"What's the tallest mountain?\"", BoxForm`Undeploy, 
+                    DefaultBaseStyle -> {Deployed -> False}], Editable -> 
+                    False, StripOnInput -> False], Background -> None, 
+                    FrameMargins -> None, FrameStyle -> None, 
+                    ImageMargins -> {{0, 0}, {0, 0}}, StripOnInput -> False], 
+                    Active -> False, Alignment -> Left, Appearance -> 
+                    FEPrivate`FrontEndResource[
+                    "FEExpressions", "SuppressMouseDownNinePatchAppearance"], 
+                    BaseStyle -> {}, BaselinePosition -> Baseline, 
+                    ButtonFunction :> {}, DefaultBaseStyle -> {}, Evaluator -> 
+                    None, FrameMargins -> {{10, 10}, {5, 5}}, Method -> 
+                    "Preemptive"], 
+                    
+                    EventHandlerTag[{
+                    "MouseEntered" :> 
+                    FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
+                    True}]], 
+                    TagBox[
+                    ButtonBox[
+                    FrameBox[
+                    PaneSelectorBox[{1 -> ButtonBox[
+                    
+                    DynamicModuleBox[{
+                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    TagBox[
+                    PaneSelectorBox[{"Default" -> FrameBox[
+                    GraphicsBox[
+                    GeometricTransformationBox[{
+                    GrayLevel[0.65], 
+                    Thickness[0.05], 
+                    CapForm["Butt"], 
+                    JoinForm["Bevel"], 
+                    
+                    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{0, 2, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+                    0}, {1, 3, 3}}}, {{{9., 15.}, {5., 15.}, {
+                    3.895430088043213, 15.}, {3., 14.104599952697754`}, {3., 
+                    13.}, {3., 5.}, {3., 3.895430088043213}, {
+                    3.895430088043213, 3.}, {5., 3.}, {13., 3.}, {
+                    14.104599952697754`, 3.}, {15., 3.895430088043213}, {15., 
+                    5.}, {15., 9.}}, {{11., 21.}, {19., 21.}, {
+                    20.10460090637207, 21.}, {21., 20.10460090637207}, {21., 
+                    19.}, {21., 11.}, {21., 9.895429611206055}, {
+                    20.10460090637207, 9.}, {19., 9.}, {11., 9.}, {
+                    9.895429611206055, 9.}, {9., 9.895429611206055}, {9., 
+                    11.}, {9., 19.}, {9., 20.10460090637207}, {
+                    9.895429611206055, 21.}, {11., 21.}}}, 
+                    CurveClosed -> {0, 1}]}, {{{1, 0}, {0, -1}}, {0, 0}}], 
+                    ImageSize -> 20], Background -> GrayLevel[0, 0], 
+                    FrameMargins -> 5, FrameStyle -> GrayLevel[0, 0], 
+                    RoundingRadius -> 5, StripOnInput -> False], "Hover" -> 
+                    FrameBox[
+                    GraphicsBox[
+                    GeometricTransformationBox[{
+                    GrayLevel[0.286], 
+                    Thickness[0.05], 
+                    CapForm["Butt"], 
+                    JoinForm["Bevel"], 
+                    
+                    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{0, 2, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+                    0}, {1, 3, 3}}}, {{{9., 15.}, {5., 15.}, {
+                    3.895430088043213, 15.}, {3., 14.104599952697754`}, {3., 
+                    13.}, {3., 5.}, {3., 3.895430088043213}, {
+                    3.895430088043213, 3.}, {5., 3.}, {13., 3.}, {
+                    14.104599952697754`, 3.}, {15., 3.895430088043213}, {15., 
+                    5.}, {15., 9.}}, {{11., 21.}, {19., 21.}, {
+                    20.10460090637207, 21.}, {21., 20.10460090637207}, {21., 
+                    19.}, {21., 11.}, {21., 9.895429611206055}, {
+                    20.10460090637207, 9.}, {19., 9.}, {11., 9.}, {
+                    9.895429611206055, 9.}, {9., 9.895429611206055}, {9., 
+                    11.}, {9., 19.}, {9., 20.10460090637207}, {
+                    9.895429611206055, 21.}, {11., 21.}}}, 
+                    CurveClosed -> {0, 1}]}, {{{1, 0}, {0, -1}}, {0, 0}}], 
+                    ImageSize -> 20], Background -> GrayLevel[0, 0], 
+                    FrameMargins -> 5, FrameStyle -> GrayLevel[0, 0], 
+                    RoundingRadius -> 5, StripOnInput -> False], "Pressed" -> 
+                    FrameBox[
+                    GraphicsBox[
+                    GeometricTransformationBox[{
+                    GrayLevel[0.286], 
+                    Thickness[0.05], 
+                    CapForm["Butt"], 
+                    JoinForm["Bevel"], 
+                    
+                    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{0, 2, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+                    0}, {1, 3, 3}}}, {{{9., 15.}, {5., 15.}, {
+                    3.895430088043213, 15.}, {3., 14.104599952697754`}, {3., 
+                    13.}, {3., 5.}, {3., 3.895430088043213}, {
+                    3.895430088043213, 3.}, {5., 3.}, {13., 3.}, {
+                    14.104599952697754`, 3.}, {15., 3.895430088043213}, {15., 
+                    5.}, {15., 9.}}, {{11., 21.}, {19., 21.}, {
+                    20.10460090637207, 21.}, {21., 20.10460090637207}, {21., 
+                    19.}, {21., 11.}, {21., 9.895429611206055}, {
+                    20.10460090637207, 9.}, {19., 9.}, {11., 9.}, {
+                    9.895429611206055, 9.}, {9., 9.895429611206055}, {9., 
+                    11.}, {9., 19.}, {9., 20.10460090637207}, {
+                    9.895429611206055, 21.}, {11., 21.}}}, 
+                    CurveClosed -> {0, 1}]}, {{{1, 0}, {0, -1}}, {0, 0}}], 
+                    ImageSize -> 20], Background -> GrayLevel[0., 0.05], 
+                    FrameMargins -> 5, FrameStyle -> GrayLevel[0, 0], 
+                    RoundingRadius -> 5, StripOnInput -> False]}, 
+                    Dynamic[
+                    FEPrivate`Which[
+                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    True, "Default"]]], 
+                    
+                    EventHandlerTag[{
+                    "MouseDown" :> FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    "MouseUp" :> FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    "MouseEntered" :> 
+                    FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    "MouseExited" :> FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    PassEventsDown -> True, Method -> "Preemptive", 
+                    PassEventsUp -> True}]], DynamicModuleValues :> {}], 
+                    Appearance -> {
+                    "Default" -> FrontEnd`FileName[{"Misc"}, 
+                    "TransparentBG.9.png"]}, ButtonFunction :> 
+                    CopyToClipboard["What's the tallest mountain?"], 
+                    Evaluator -> Automatic, Method -> "Preemptive"]}, 
+                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Background -> None, FrameMargins -> None, FrameStyle -> 
+                    None, ImageMargins -> {{0, 0}, {0, 0}}, StripOnInput -> 
+                    False], Active -> False, Alignment -> Left, Appearance -> 
+                    FEPrivate`FrontEndResource[
+                    "FEExpressions", "SuppressMouseDownNinePatchAppearance"], 
+                    BaseStyle -> {}, BaselinePosition -> Baseline, 
+                    ButtonFunction :> {}, DefaultBaseStyle -> {}, Evaluator -> 
+                    None, FrameMargins -> {{10, 10}, {5, 5}}, Method -> 
+                    "Preemptive"], 
+                    
+                    EventHandlerTag[{
+                    "MouseEntered" :> 
+                    FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
+                    True}]]}, {
+                    TagBox[
+                    ButtonBox[
+                    FrameBox[
+                    StyleBox[
+                    GraphicsBox[
+                    GeometricTransformationBox[{
+                    Thickness[0.], 
+                    
+                    FilledCurveBox[{{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+                    3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+                    3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+                    3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+                    3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+                    3}}, {{1, 4, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
+                    3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 
+                    0}, {1, 3, 3}, {1, 3, 3}}, {{1, 4, 3}, {1, 3, 3}, {0, 1, 
+                    0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 
+                    3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}}, {{1, 4, 
+                    3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 
+                    0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+                    3}, {1, 3, 3}}, {{0, 2, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+                    3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}}, {{1, 4, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 
+                    0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
+                    3}, {1, 3, 3}, {1, 3, 3}}, {{0, 2, 0}, {1, 3, 3}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+                    3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}}, {{0, 2, 
+                    0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+                    0}}}, {CompressedData["
+1:eJxVlE0ow2Ecxx9/bzVkmKx53aaN2Wx2kCT7FxcXiosctEjigLhQ0kq4EScu
+3g4OkoSDg4MT5cSJg/Rv5SUp8768jT3fr2K1ffv8f8/ze37f3/P7z9zW29ih
+CCHqfr5RlZ+WMvXnt0AM56uSJyVrkdhc8BK50wSeKoMeZUFHuL8iE1xH3kkH
+P3uYXw8e8iCfXQcdcEMP4hBfdWH9bAxYK4lqQGgfPsnB4iirwvMODtuxLvAF
+NtkR33jxyTzJNnBfCHxWyPXX4DUrWGjY32aRHPGd+GRdGWZZjxI4QVzN+899
+si+ByMIF1tewL+IJ+Y0G1vsJ3k2DP2M8fE/oqcl4Hk6K6l5kKoV9SqSfVGhI
+QX5/Gn194tyrdDJ9nxmQp+EedRZksY9BrB810ecpfUhfImbvHOwwk4PIl2Ml
+3yH+UIh8/jfka7ehD/mviC/yHkLP4FAR6kllvNLB9WHwOO/Zz3vdd6IfzQJ+
+LzkXFZyTWTf7qgMPcs7WOGfnHqhqgNZyLquM4FbOsT4H6uCcH3DuV8hXfC90
+XrAVfRH15CYLeNoLnec8bXtx3i3nbYtxzfY3LsRhEbSD3OqAHvP8xxJwNeu1
+uKA99LtLFm6o4ubzUnA2+1BOXib3c18x8647oXPkTZ57S55hXV2/Plj3AvmG
+vsbIYfruJiewLwrZyz7++f/5Bk7hy/k=
+                    "], CompressedData["
+1:eJxTTMoPSmViYGCQBWIQDQQKDG9UHMCsBkMIHaCMyj+kCKEtoPw2BQi91QBE
+P/g/GcrfaACh10H5q6D8fVD+UiifSwNCC+lCaCso/4cOhE6A8i+B+QoMNVD+
+Iqj8NA2IvcU6EHoxVN4Ojc+Bxt8H9ccubag/oP7cB+V3QPmHtCH29ihD9B+G
+yk+Ayh+D8idB+Seg/BlQ/imo/jkofAYGJR1k9Q/+f4b6XwAqv0kfar4mhK4z
+QPW/MjT896lBaEj8oMQfAPGTSL0=
+                    "], CompressedData["
+1:eJxTTMoPSmViYGCQBWIQDQQP/i/ncACzNumAaAeGAlYI308bQjuwQOh1mhA6
+ASovoQGiFRhmQPkKUP4PKF8Pyrdgg/AtoPwdkhB+Adi+B/+FpSDiPToQ8QYp
+CD1LByL+Bo0fIY3MZ2A4II2sX4FBRgbZfAaGH2oQcR91VP4dLWQ+0CUo/Af/
+H0P536DyL7Qg4p+h+t9A5T9A5T9oQcWh+j9D+RLyEHkzfag6qPv5DSC0gQSE
+1jeAqF8jAuE/04eYoy4IEc+B8t15IPJuehA+UvwBABKLSf8=
+                    "], CompressedData["
+1:eJxTTMoPSmViYGCQBWIQDQQKDD8YHID0g//NkhBancUBLL5HDEJbcELoOSIQ
+eXd+B7DOBmFU/gJhCO3AD1F/A4UPBCKo/DwlZP6D/4uVIPoqoPK3oPIPoHwO
+Zaj7BCB8Cyi/GMqPg/IvQ/kVUH6wIoQ/TwNifo0MhJ+mBdUP5WdA+elQfpYW
+hE5A4SswRKDxfVD4D/47o5nHzg2hldUg6ndAw9dGFaJOgQHC36MM4Tf8sQfT
+P8DudmDY8APCN1OA8n/Zg9WvkYHoQ4o/ANTRUP0=
+                    "], CompressedData["
+1:eJxTTMoPSmViYGBQAGIQDQbTdB3A9ColCL1OBUQ/+M8uDaEPqzuAtVSIQ+RP
+qEPEi8Uh4mfUIeIFUPkLaPxrUP05UP4tNPl7KOYxMDjoQ9T/kIfwDQwg8osV
+IPxlBhB6liKE/gLlH4K639EQQr9ShtBJUL6FKoQOgfLb1CC0G5R/CeouDihf
+QBNCL4aaL6UFoe2g7lHWhvCz9CH0OyjfQA9qrw4qPwiNb4bGV0Ljb1JG5isw
+1ED5SlB5DyifA8qXUoaoewONz1dKEPqYLsS9h6F8pPgGAMl6SBI=
+                    "], CompressedData["
+1:eJxTTMoPSmViYGBQAGIQDQahBg5A8sF/YRkHMN8PymeG8h2h/MfSEL6lAYS+
+IA0RV9aE0MnCEPFvGg5gK3Sg/EMaEFpAGCLeg8JnYAhD4yug6f+kjmq+gBxE
+fo0sKr9HDJn/4H+zGNRfUPkaMQgtAZUvhvJloPx0qH4FKD8Zql8dqj8Gyi9W
+A9EODBu4IeqnqUPN5YTwH4Hdf+D/eXYIX08LwufngLpDG2KOOwdE/oAORPwH
+VP8lXSifB6LusR7Evg/8EPld+hB5HiEIXxYaP8UiEH6cAUT+DtQ/hdD4apCE
+0EjxDQA/Mlk+
+                    "], CompressedData["
+1:eJxTTMoPSmViYGCQB2IQDQQKDDukHID0g//JKg5gfo8IhJ6j5ABW0SACoWcp
+QcRroPxpShB9xVD+JKj6Aii/D6o+B8rvQuO3ofEZRJD5QPcIQvg6ohD+cl6I
+ugliENqBEyL/QxzCf8AC5UtC6AhGiL5gGaj6f/Zg/mY5EP/A//M/7cHiqxRA
+fAcGgx8Q/jdFqL+h8g7KIH4Dw4NfEH4VOJwa/sv/h/JVIfY8Z4K6H8pnZ4ba
+rwq1nxlCO0Hl05kh6t9IQ8QVhKD+k4a6H8p3kIaoXywEEeeBqmcQhohfloLw
+E4Qh8rD4PI7GNxZxAAC/JFq/
+                    "], {{7.515625, 8.38671875}, {9.5, 7.242187976837158}, {
+                    11.484375, 8.38671875}, {11.484375, 
+                    10.679688453674316`}, {9.5, 11.82421875}, {7.515625, 
+                    10.679688453674316`}}}]}, {{{1, 0}, {0, -1}}, {0, 0}}], 
+                    ImageSize -> 20], "InformationTitleText", StripOnInput -> 
+                    False], Background -> None, FrameMargins -> None, 
+                    FrameStyle -> None, ImageMargins -> {{0, 0}, {0, 0}}, 
+                    StripOnInput -> False], Active -> False, Alignment -> 
+                    Left, Appearance -> 
+                    FEPrivate`FrontEndResource[
+                    "FEExpressions", "SuppressMouseDownNinePatchAppearance"], 
+                    BaseStyle -> {}, BaselinePosition -> Baseline, 
+                    ButtonFunction :> {}, DefaultBaseStyle -> {}, Evaluator -> 
+                    None, FrameMargins -> {{10, 10}, {5, 5}}, Method -> 
+                    "Preemptive"], 
+                    
+                    EventHandlerTag[{
+                    "MouseEntered" :> 
+                    FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
+                    True}]], 
+                    TagBox[
+                    ButtonBox[
+                    FrameBox[
+                    StyleBox[
+                    TagBox[
+                    "\"The tallest mountain is Mount Everest, located in the \
+Himalayas on the border of Nepal and Tibet. It stands at a height of 29,029 \
+feet (8,848 meters) above sea level.\"", BoxForm`Undeploy, 
+                    DefaultBaseStyle -> {Deployed -> False}], Editable -> 
+                    False, StripOnInput -> False], Background -> None, 
+                    FrameMargins -> None, FrameStyle -> None, 
+                    ImageMargins -> {{0, 0}, {0, 0}}, StripOnInput -> False], 
+                    Active -> False, Alignment -> Left, Appearance -> 
+                    FEPrivate`FrontEndResource[
+                    "FEExpressions", "SuppressMouseDownNinePatchAppearance"], 
+                    BaseStyle -> {}, BaselinePosition -> Baseline, 
+                    ButtonFunction :> {}, DefaultBaseStyle -> {}, Evaluator -> 
+                    None, FrameMargins -> {{10, 10}, {5, 5}}, Method -> 
+                    "Preemptive"], 
+                    
+                    EventHandlerTag[{
+                    "MouseEntered" :> 
+                    FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
+                    True}]], 
+                    TagBox[
+                    ButtonBox[
+                    FrameBox[
+                    PaneSelectorBox[{2 -> ButtonBox[
+                    
+                    DynamicModuleBox[{
+                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    TagBox[
+                    PaneSelectorBox[{"Default" -> FrameBox[
+                    GraphicsBox[
+                    GeometricTransformationBox[{
+                    GrayLevel[0.65], 
+                    Thickness[0.05], 
+                    CapForm["Butt"], 
+                    JoinForm["Bevel"], 
+                    
+                    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{0, 2, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+                    0}, {1, 3, 3}}}, {{{9., 15.}, {5., 15.}, {
+                    3.895430088043213, 15.}, {3., 14.104599952697754`}, {3., 
+                    13.}, {3., 5.}, {3., 3.895430088043213}, {
+                    3.895430088043213, 3.}, {5., 3.}, {13., 3.}, {
+                    14.104599952697754`, 3.}, {15., 3.895430088043213}, {15., 
+                    5.}, {15., 9.}}, {{11., 21.}, {19., 21.}, {
+                    20.10460090637207, 21.}, {21., 20.10460090637207}, {21., 
+                    19.}, {21., 11.}, {21., 9.895429611206055}, {
+                    20.10460090637207, 9.}, {19., 9.}, {11., 9.}, {
+                    9.895429611206055, 9.}, {9., 9.895429611206055}, {9., 
+                    11.}, {9., 19.}, {9., 20.10460090637207}, {
+                    9.895429611206055, 21.}, {11., 21.}}}, 
+                    CurveClosed -> {0, 1}]}, {{{1, 0}, {0, -1}}, {0, 0}}], 
+                    ImageSize -> 20], Background -> GrayLevel[0, 0], 
+                    FrameMargins -> 5, FrameStyle -> GrayLevel[0, 0], 
+                    RoundingRadius -> 5, StripOnInput -> False], "Hover" -> 
+                    FrameBox[
+                    GraphicsBox[
+                    GeometricTransformationBox[{
+                    GrayLevel[0.286], 
+                    Thickness[0.05], 
+                    CapForm["Butt"], 
+                    JoinForm["Bevel"], 
+                    
+                    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{0, 2, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+                    0}, {1, 3, 3}}}, {{{9., 15.}, {5., 15.}, {
+                    3.895430088043213, 15.}, {3., 14.104599952697754`}, {3., 
+                    13.}, {3., 5.}, {3., 3.895430088043213}, {
+                    3.895430088043213, 3.}, {5., 3.}, {13., 3.}, {
+                    14.104599952697754`, 3.}, {15., 3.895430088043213}, {15., 
+                    5.}, {15., 9.}}, {{11., 21.}, {19., 21.}, {
+                    20.10460090637207, 21.}, {21., 20.10460090637207}, {21., 
+                    19.}, {21., 11.}, {21., 9.895429611206055}, {
+                    20.10460090637207, 9.}, {19., 9.}, {11., 9.}, {
+                    9.895429611206055, 9.}, {9., 9.895429611206055}, {9., 
+                    11.}, {9., 19.}, {9., 20.10460090637207}, {
+                    9.895429611206055, 21.}, {11., 21.}}}, 
+                    CurveClosed -> {0, 1}]}, {{{1, 0}, {0, -1}}, {0, 0}}], 
+                    ImageSize -> 20], Background -> GrayLevel[0, 0], 
+                    FrameMargins -> 5, FrameStyle -> GrayLevel[0, 0], 
+                    RoundingRadius -> 5, StripOnInput -> False], "Pressed" -> 
+                    FrameBox[
+                    GraphicsBox[
+                    GeometricTransformationBox[{
+                    GrayLevel[0.286], 
+                    Thickness[0.05], 
+                    CapForm["Butt"], 
+                    JoinForm["Bevel"], 
+                    
+                    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{0, 2, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+                    0}, {1, 3, 3}}}, {{{9., 15.}, {5., 15.}, {
+                    3.895430088043213, 15.}, {3., 14.104599952697754`}, {3., 
+                    13.}, {3., 5.}, {3., 3.895430088043213}, {
+                    3.895430088043213, 3.}, {5., 3.}, {13., 3.}, {
+                    14.104599952697754`, 3.}, {15., 3.895430088043213}, {15., 
+                    5.}, {15., 9.}}, {{11., 21.}, {19., 21.}, {
+                    20.10460090637207, 21.}, {21., 20.10460090637207}, {21., 
+                    19.}, {21., 11.}, {21., 9.895429611206055}, {
+                    20.10460090637207, 9.}, {19., 9.}, {11., 9.}, {
+                    9.895429611206055, 9.}, {9., 9.895429611206055}, {9., 
+                    11.}, {9., 19.}, {9., 20.10460090637207}, {
+                    9.895429611206055, 21.}, {11., 21.}}}, 
+                    CurveClosed -> {0, 1}]}, {{{1, 0}, {0, -1}}, {0, 0}}], 
+                    ImageSize -> 20], Background -> GrayLevel[0., 0.05], 
+                    FrameMargins -> 5, FrameStyle -> GrayLevel[0, 0], 
+                    RoundingRadius -> 5, StripOnInput -> False]}, 
+                    Dynamic[
+                    FEPrivate`Which[
+                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    True, "Default"]]], 
+                    
+                    EventHandlerTag[{
+                    "MouseDown" :> FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    "MouseUp" :> FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    "MouseEntered" :> 
+                    FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    "MouseExited" :> FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    PassEventsDown -> True, Method -> "Preemptive", 
+                    PassEventsUp -> True}]], DynamicModuleValues :> {}], 
+                    Appearance -> {
+                    "Default" -> FrontEnd`FileName[{"Misc"}, 
+                    "TransparentBG.9.png"]}, ButtonFunction :> 
+                    CopyToClipboard[
+                    "The tallest mountain is Mount Everest, located in the \
+Himalayas on the border of Nepal and Tibet. It stands at a height of 29,029 \
+feet (8,848 meters) above sea level."], Evaluator -> Automatic, Method -> 
+                    "Preemptive"]}, 
+                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Background -> None, FrameMargins -> None, FrameStyle -> 
+                    None, ImageMargins -> {{0, 0}, {0, 0}}, StripOnInput -> 
+                    False], Active -> False, Alignment -> Left, Appearance -> 
+                    FEPrivate`FrontEndResource[
+                    "FEExpressions", "SuppressMouseDownNinePatchAppearance"], 
+                    BaseStyle -> {}, BaselinePosition -> Baseline, 
+                    ButtonFunction :> {}, DefaultBaseStyle -> {}, Evaluator -> 
+                    None, FrameMargins -> {{10, 10}, {5, 5}}, Method -> 
+                    "Preemptive"], 
+                    
+                    EventHandlerTag[{
+                    "MouseEntered" :> 
+                    FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
+                    True}]]}}, AutoDelete -> False, BaseStyle -> "Text", 
+                    GridBoxAlignment -> {
+                    "Columns" -> {Right, Left}, "Rows" -> {{Automatic}}}, 
+                    GridBoxBackground -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{
+                    GrayLevel[1], 
+                    RGBColor[{
+                    Rational[16, 17], 1, 
+                    Rational[251, 255]}]}}}, GridBoxDividers -> {"Columns" -> {
+                    GrayLevel[0, 0], {None}, 
+                    GrayLevel[0, 0]}, "Rows" -> {
+                    GrayLevel[0, 0], {
+                    GrayLevel[0, 0.05]}, 
+                    GrayLevel[0, 0]}}, 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+                    GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}}],
+                     "Grid"], 
+                   
+                   EventHandlerTag[{
+                    "MouseExited" :> 
+                    FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`over$$, 0], Method -> 
+                    "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
+                    True}]], 
+                  DynamicModuleValues :> {{
+                    DownValues[
+                    Wolfram`APIFunctions`Chat`Private`overhandler$$] = {
+                    HoldPattern[
+                    Wolfram`APIFunctions`Chat`Private`overhandler$$[
+                    Pattern[Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Blank[]], 
+                    Pattern[Wolfram`APIFunctions`Chat`Private`i$, 
+                    Blank[]]]] :> EventHandler[
+                    Button[
+                    Wolfram`APIFunctions`Chat`Private`expr$, 
+                    FrameMargins -> {{10, 10}, {5, 5}}, Appearance -> 
+                    "Suppressed", Active -> False, BaselinePosition -> 
+                    Baseline, BaseStyle -> {}, DefaultBaseStyle -> {}, 
+                    Alignment -> Left], "MouseEntered" :> 
+                    FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`over$$, 
+                    Wolfram`APIFunctions`Chat`Private`i$]]}}}], 
+                 AppearanceElements -> None, ContentPadding -> False, 
+                 ImageSize -> {{180, 600}, {20, 400}}, 
+                 Scrollbars -> {False, Automatic}], "SummaryItem"]}}, 
+             AutoDelete -> False, 
+             BaseStyle -> {
+              ShowStringCharacters -> False, NumberMarks -> False, 
+               PrintPrecision -> 3, ShowSyntaxStyles -> False}, 
+             GridBoxAlignment -> {
+              "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, 
+             GridBoxItemSize -> {
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+             GridBoxSpacings -> {
+              "Columns" -> {{2}}, "Rows" -> {{Automatic}}}]}}, AutoDelete -> 
+          False, BaselinePosition -> {1, 1}, 
+          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+          GridBoxItemSize -> {
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], True -> 
+        GridBox[{{
+            GridBox[{{
+               TagBox[
+                PaneBox[
+                 
+                 DynamicModuleBox[{
+                  Wolfram`APIFunctions`Chat`Private`over$$ = 0, 
+                   Wolfram`APIFunctions`Chat`Private`overhandler$$}, 
+                  TagBox[
+                   TagBox[
+                    GridBox[{{
+                    TagBox[
+                    ButtonBox[
+                    FrameBox[
+                    StyleBox[
+                    GraphicsBox[{
+                    Thickness[0.05], {
+                    FaceForm[{
+                    RGBColor[1., 1., 1.], 
+                    Opacity[1.]}], 
+                    
+                    FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+                    0}, {0, 1, 0}, {0, 1, 0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIRIGZiAIOEFl8lBwhTCERfiGYwQOYbvD2Lwv+QnGMI
+oh/484qC6AWh9WB+xK6T4iDaQarBEKreAJmf8JgVTM/4ywqVh4g7SMHsg+rL
+ZBBA4a8+z47Cv8TAgmwejA+zD4kvgczfUPRCGNU8iH8Q9kH4ApkMYtj4C+Ra
+GRzQwwsAPDUvmA==
+                    "]]}, {
+                    FaceForm[{
+                    RGBColor[0.2, 0.2, 0.2], 
+                    Opacity[1.]}], 
+                    
+                    FilledCurveBox[{{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+                    3}}, {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}, {{1, 4,
+                     3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}}, CompressedData["
+1:eJxtkEEKwjAQRYOu3cdQpEqMoWbr2iKewBMEwbVX6E1yk9q198g9TJXB308H
+wvAy/Pk/2d6ft8dSKTWeVTkLJWXbX/djv8S8Qy715VcyB+RSDvkasyW9net9
+Mnu6d6iHvZMu/qCXfJa4QW5j9jT39B65d8iSB/Ti0yAPyRxpHug9gfYH9Af9
+bP5SNelr3N+dTxvyr5C74b2muaZ8mvZrzAd6yVMhg/8kL/zvP/8Hou1EYQ==
+
+                    "]]}, {
+                    FaceForm[{
+                    RGBColor[
+                    0.5372549019607843, 0.5372549019607843, 
+                    0.5372549019607843], 
+                    Opacity[1.]}], 
+                    
+                    FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+                    0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+                    0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{0, 2, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+                    0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+                    0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+                    3}}}, {CompressedData["
+1:eJxTTMoPSmViYGAQB2IQDQEcDhDawAGJ72C6D8zf48nDBRU3hNICaHwDZH7A
+jn0GaPKGyObh0gcEEiD6QdUXsPgBmSgxMD23H8L/+U8YRCsYcqDwAxJYUfgf
+LjDBzBVBswfGV0LjSyD7G4kPkxdA5iOFhwiKPm12URzmIMIXALO+KbM=
+                    "], CompressedData["
+1:eJxTTMoPSmViYGCQAmIQDQUOEMrAAZUvgcx34LouBKJrRNaxQsUFcNAiOPgc
+KPzJEp/sgdSHQAspEL9BIIIRRF9Qmq2ErP/A1xf6YPvZGMH8hH4msDsbPv/l
+B9EKhhwo/AZ7UUNk/gG5p2D+gYqXwmC67B9EPm+SONQeI7D5W06g8JH8D+Mb
+IPOLbL3A5hRAaVzqkMIBzEcKP5g8A7J5MD7YHACcHjYu
+                    "]}]}}, AspectRatio -> Automatic, 
+                    ImageSize -> {{21., 21.}, {21., 21.}}, 
+                    PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}], 
+                    "InformationTitleText", StripOnInput -> False], 
+                    Background -> None, FrameMargins -> None, FrameStyle -> 
+                    None, ImageMargins -> {{0, 0}, {0, 0}}, StripOnInput -> 
+                    False], Active -> False, Alignment -> Left, Appearance -> 
+                    FEPrivate`FrontEndResource[
+                    "FEExpressions", "SuppressMouseDownNinePatchAppearance"], 
+                    BaseStyle -> {}, BaselinePosition -> Baseline, 
+                    ButtonFunction :> {}, DefaultBaseStyle -> {}, Evaluator -> 
+                    None, FrameMargins -> {{10, 10}, {5, 5}}, Method -> 
+                    "Preemptive"], 
+                    
+                    EventHandlerTag[{
+                    "MouseEntered" :> 
+                    FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
+                    True}]], 
+                    TagBox[
+                    ButtonBox[
+                    FrameBox[
+                    StyleBox[
+                    TagBox[
+                    "\"What's the tallest mountain?\"", BoxForm`Undeploy, 
+                    DefaultBaseStyle -> {Deployed -> False}], Editable -> 
+                    False, StripOnInput -> False], Background -> None, 
+                    FrameMargins -> None, FrameStyle -> None, 
+                    ImageMargins -> {{0, 0}, {0, 0}}, StripOnInput -> False], 
+                    Active -> False, Alignment -> Left, Appearance -> 
+                    FEPrivate`FrontEndResource[
+                    "FEExpressions", "SuppressMouseDownNinePatchAppearance"], 
+                    BaseStyle -> {}, BaselinePosition -> Baseline, 
+                    ButtonFunction :> {}, DefaultBaseStyle -> {}, Evaluator -> 
+                    None, FrameMargins -> {{10, 10}, {5, 5}}, Method -> 
+                    "Preemptive"], 
+                    
+                    EventHandlerTag[{
+                    "MouseEntered" :> 
+                    FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
+                    True}]], 
+                    TagBox[
+                    ButtonBox[
+                    FrameBox[
+                    PaneSelectorBox[{1 -> ButtonBox[
+                    
+                    DynamicModuleBox[{
+                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    TagBox[
+                    PaneSelectorBox[{"Default" -> FrameBox[
+                    GraphicsBox[
+                    GeometricTransformationBox[{
+                    GrayLevel[0.65], 
+                    Thickness[0.05], 
+                    CapForm["Butt"], 
+                    JoinForm["Bevel"], 
+                    
+                    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{0, 2, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+                    0}, {1, 3, 3}}}, {{{9., 15.}, {5., 15.}, {
+                    3.895430088043213, 15.}, {3., 14.104599952697754`}, {3., 
+                    13.}, {3., 5.}, {3., 3.895430088043213}, {
+                    3.895430088043213, 3.}, {5., 3.}, {13., 3.}, {
+                    14.104599952697754`, 3.}, {15., 3.895430088043213}, {15., 
+                    5.}, {15., 9.}}, {{11., 21.}, {19., 21.}, {
+                    20.10460090637207, 21.}, {21., 20.10460090637207}, {21., 
+                    19.}, {21., 11.}, {21., 9.895429611206055}, {
+                    20.10460090637207, 9.}, {19., 9.}, {11., 9.}, {
+                    9.895429611206055, 9.}, {9., 9.895429611206055}, {9., 
+                    11.}, {9., 19.}, {9., 20.10460090637207}, {
+                    9.895429611206055, 21.}, {11., 21.}}}, 
+                    CurveClosed -> {0, 1}]}, {{{1, 0}, {0, -1}}, {0, 0}}], 
+                    ImageSize -> 20], Background -> GrayLevel[0, 0], 
+                    FrameMargins -> 5, FrameStyle -> GrayLevel[0, 0], 
+                    RoundingRadius -> 5, StripOnInput -> False], "Hover" -> 
+                    FrameBox[
+                    GraphicsBox[
+                    GeometricTransformationBox[{
+                    GrayLevel[0.286], 
+                    Thickness[0.05], 
+                    CapForm["Butt"], 
+                    JoinForm["Bevel"], 
+                    
+                    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{0, 2, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+                    0}, {1, 3, 3}}}, {{{9., 15.}, {5., 15.}, {
+                    3.895430088043213, 15.}, {3., 14.104599952697754`}, {3., 
+                    13.}, {3., 5.}, {3., 3.895430088043213}, {
+                    3.895430088043213, 3.}, {5., 3.}, {13., 3.}, {
+                    14.104599952697754`, 3.}, {15., 3.895430088043213}, {15., 
+                    5.}, {15., 9.}}, {{11., 21.}, {19., 21.}, {
+                    20.10460090637207, 21.}, {21., 20.10460090637207}, {21., 
+                    19.}, {21., 11.}, {21., 9.895429611206055}, {
+                    20.10460090637207, 9.}, {19., 9.}, {11., 9.}, {
+                    9.895429611206055, 9.}, {9., 9.895429611206055}, {9., 
+                    11.}, {9., 19.}, {9., 20.10460090637207}, {
+                    9.895429611206055, 21.}, {11., 21.}}}, 
+                    CurveClosed -> {0, 1}]}, {{{1, 0}, {0, -1}}, {0, 0}}], 
+                    ImageSize -> 20], Background -> GrayLevel[0, 0], 
+                    FrameMargins -> 5, FrameStyle -> GrayLevel[0, 0], 
+                    RoundingRadius -> 5, StripOnInput -> False], "Pressed" -> 
+                    FrameBox[
+                    GraphicsBox[
+                    GeometricTransformationBox[{
+                    GrayLevel[0.286], 
+                    Thickness[0.05], 
+                    CapForm["Butt"], 
+                    JoinForm["Bevel"], 
+                    
+                    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{0, 2, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+                    0}, {1, 3, 3}}}, {{{9., 15.}, {5., 15.}, {
+                    3.895430088043213, 15.}, {3., 14.104599952697754`}, {3., 
+                    13.}, {3., 5.}, {3., 3.895430088043213}, {
+                    3.895430088043213, 3.}, {5., 3.}, {13., 3.}, {
+                    14.104599952697754`, 3.}, {15., 3.895430088043213}, {15., 
+                    5.}, {15., 9.}}, {{11., 21.}, {19., 21.}, {
+                    20.10460090637207, 21.}, {21., 20.10460090637207}, {21., 
+                    19.}, {21., 11.}, {21., 9.895429611206055}, {
+                    20.10460090637207, 9.}, {19., 9.}, {11., 9.}, {
+                    9.895429611206055, 9.}, {9., 9.895429611206055}, {9., 
+                    11.}, {9., 19.}, {9., 20.10460090637207}, {
+                    9.895429611206055, 21.}, {11., 21.}}}, 
+                    CurveClosed -> {0, 1}]}, {{{1, 0}, {0, -1}}, {0, 0}}], 
+                    ImageSize -> 20], Background -> GrayLevel[0., 0.05], 
+                    FrameMargins -> 5, FrameStyle -> GrayLevel[0, 0], 
+                    RoundingRadius -> 5, StripOnInput -> False]}, 
+                    Dynamic[
+                    FEPrivate`Which[
+                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    True, "Default"]]], 
+                    
+                    EventHandlerTag[{
+                    "MouseDown" :> FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    "MouseUp" :> FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    "MouseEntered" :> 
+                    FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    "MouseExited" :> FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    PassEventsDown -> True, Method -> "Preemptive", 
+                    PassEventsUp -> True}]], DynamicModuleValues :> {}], 
+                    Appearance -> {
+                    "Default" -> FrontEnd`FileName[{"Misc"}, 
+                    "TransparentBG.9.png"]}, ButtonFunction :> 
+                    CopyToClipboard["What's the tallest mountain?"], 
+                    Evaluator -> Automatic, Method -> "Preemptive"]}, 
+                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Background -> None, FrameMargins -> None, FrameStyle -> 
+                    None, ImageMargins -> {{0, 0}, {0, 0}}, StripOnInput -> 
+                    False], Active -> False, Alignment -> Left, Appearance -> 
+                    FEPrivate`FrontEndResource[
+                    "FEExpressions", "SuppressMouseDownNinePatchAppearance"], 
+                    BaseStyle -> {}, BaselinePosition -> Baseline, 
+                    ButtonFunction :> {}, DefaultBaseStyle -> {}, Evaluator -> 
+                    None, FrameMargins -> {{10, 10}, {5, 5}}, Method -> 
+                    "Preemptive"], 
+                    
+                    EventHandlerTag[{
+                    "MouseEntered" :> 
+                    FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`over$$, 1], Method -> 
+                    "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
+                    True}]]}, {
+                    TagBox[
+                    ButtonBox[
+                    FrameBox[
+                    StyleBox[
+                    GraphicsBox[
+                    GeometricTransformationBox[{
+                    Thickness[0.], 
+                    
+                    FilledCurveBox[{{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+                    3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+                    3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+                    3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+                    3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+                    3}}, {{1, 4, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
+                    3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 
+                    0}, {1, 3, 3}, {1, 3, 3}}, {{1, 4, 3}, {1, 3, 3}, {0, 1, 
+                    0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 
+                    3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}}, {{1, 4, 
+                    3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 
+                    0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+                    3}, {1, 3, 3}}, {{0, 2, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+                    3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}}, {{1, 4, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {0, 1, 
+                    0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
+                    3}, {1, 3, 3}, {1, 3, 3}}, {{0, 2, 0}, {1, 3, 3}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+                    3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}}, {{0, 2, 
+                    0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+                    0}}}, {CompressedData["
+1:eJxVlE0ow2Ecxx9/bzVkmKx53aaN2Wx2kCT7FxcXiosctEjigLhQ0kq4EScu
+3g4OkoSDg4MT5cSJg/Rv5SUp8768jT3fr2K1ffv8f8/ze37f3/P7z9zW29ih
+CCHqfr5RlZ+WMvXnt0AM56uSJyVrkdhc8BK50wSeKoMeZUFHuL8iE1xH3kkH
+P3uYXw8e8iCfXQcdcEMP4hBfdWH9bAxYK4lqQGgfPsnB4iirwvMODtuxLvAF
+NtkR33jxyTzJNnBfCHxWyPXX4DUrWGjY32aRHPGd+GRdGWZZjxI4QVzN+899
+si+ByMIF1tewL+IJ+Y0G1vsJ3k2DP2M8fE/oqcl4Hk6K6l5kKoV9SqSfVGhI
+QX5/Gn194tyrdDJ9nxmQp+EedRZksY9BrB810ecpfUhfImbvHOwwk4PIl2Ml
+3yH+UIh8/jfka7ehD/mviC/yHkLP4FAR6kllvNLB9WHwOO/Zz3vdd6IfzQJ+
+LzkXFZyTWTf7qgMPcs7WOGfnHqhqgNZyLquM4FbOsT4H6uCcH3DuV8hXfC90
+XrAVfRH15CYLeNoLnec8bXtx3i3nbYtxzfY3LsRhEbSD3OqAHvP8xxJwNeu1
+uKA99LtLFm6o4ubzUnA2+1BOXib3c18x8647oXPkTZ57S55hXV2/Plj3AvmG
+vsbIYfruJiewLwrZyz7++f/5Bk7hy/k=
+                    "], CompressedData["
+1:eJxTTMoPSmViYGCQBWIQDQQKDG9UHMCsBkMIHaCMyj+kCKEtoPw2BQi91QBE
+P/g/GcrfaACh10H5q6D8fVD+UiifSwNCC+lCaCso/4cOhE6A8i+B+QoMNVD+
+Iqj8NA2IvcU6EHoxVN4Ojc+Bxt8H9ccubag/oP7cB+V3QPmHtCH29ihD9B+G
+yk+Ayh+D8idB+Seg/BlQ/imo/jkofAYGJR1k9Q/+f4b6XwAqv0kfar4mhK4z
+QPW/MjT896lBaEj8oMQfAPGTSL0=
+                    "], CompressedData["
+1:eJxTTMoPSmViYGCQBWIQDQQP/i/ncACzNumAaAeGAlYI308bQjuwQOh1mhA6
+ASovoQGiFRhmQPkKUP4PKF8Pyrdgg/AtoPwdkhB+Adi+B/+FpSDiPToQ8QYp
+CD1LByL+Bo0fIY3MZ2A4II2sX4FBRgbZfAaGH2oQcR91VP4dLWQ+0CUo/Af/
+H0P536DyL7Qg4p+h+t9A5T9A5T9oQcWh+j9D+RLyEHkzfag6qPv5DSC0gQSE
+1jeAqF8jAuE/04eYoy4IEc+B8t15IPJuehA+UvwBABKLSf8=
+                    "], CompressedData["
+1:eJxTTMoPSmViYGCQBWIQDQQKDD8YHID0g//NkhBancUBLL5HDEJbcELoOSIQ
+eXd+B7DOBmFU/gJhCO3AD1F/A4UPBCKo/DwlZP6D/4uVIPoqoPK3oPIPoHwO
+Zaj7BCB8Cyi/GMqPg/IvQ/kVUH6wIoQ/TwNifo0MhJ+mBdUP5WdA+elQfpYW
+hE5A4SswRKDxfVD4D/47o5nHzg2hldUg6ndAw9dGFaJOgQHC36MM4Tf8sQfT
+P8DudmDY8APCN1OA8n/Zg9WvkYHoQ4o/ANTRUP0=
+                    "], CompressedData["
+1:eJxTTMoPSmViYGBQAGIQDQbTdB3A9ColCL1OBUQ/+M8uDaEPqzuAtVSIQ+RP
+qEPEi8Uh4mfUIeIFUPkLaPxrUP05UP4tNPl7KOYxMDjoQ9T/kIfwDQwg8osV
+IPxlBhB6liKE/gLlH4K639EQQr9ShtBJUL6FKoQOgfLb1CC0G5R/CeouDihf
+QBNCL4aaL6UFoe2g7lHWhvCz9CH0OyjfQA9qrw4qPwiNb4bGV0Ljb1JG5isw
+1ED5SlB5DyifA8qXUoaoewONz1dKEPqYLsS9h6F8pPgGAMl6SBI=
+                    "], CompressedData["
+1:eJxTTMoPSmViYGBQAGIQDQahBg5A8sF/YRkHMN8PymeG8h2h/MfSEL6lAYS+
+IA0RV9aE0MnCEPFvGg5gK3Sg/EMaEFpAGCLeg8JnYAhD4yug6f+kjmq+gBxE
+fo0sKr9HDJn/4H+zGNRfUPkaMQgtAZUvhvJloPx0qH4FKD8Zql8dqj8Gyi9W
+A9EODBu4IeqnqUPN5YTwH4Hdf+D/eXYIX08LwufngLpDG2KOOwdE/oAORPwH
+VP8lXSifB6LusR7Evg/8EPld+hB5HiEIXxYaP8UiEH6cAUT+DtQ/hdD4apCE
+0EjxDQA/Mlk+
+                    "], CompressedData["
+1:eJxTTMoPSmViYGCQB2IQDQQKDDukHID0g//JKg5gfo8IhJ6j5ABW0SACoWcp
+QcRroPxpShB9xVD+JKj6Aii/D6o+B8rvQuO3ofEZRJD5QPcIQvg6ohD+cl6I
+ugliENqBEyL/QxzCf8AC5UtC6AhGiL5gGaj6f/Zg/mY5EP/A//M/7cHiqxRA
+fAcGgx8Q/jdFqL+h8g7KIH4Dw4NfEH4VOJwa/sv/h/JVIfY8Z4K6H8pnZ4ba
+rwq1nxlCO0Hl05kh6t9IQ8QVhKD+k4a6H8p3kIaoXywEEeeBqmcQhohfloLw
+E4Qh8rD4PI7GNxZxAAC/JFq/
+                    "], {{7.515625, 8.38671875}, {9.5, 7.242187976837158}, {
+                    11.484375, 8.38671875}, {11.484375, 
+                    10.679688453674316`}, {9.5, 11.82421875}, {7.515625, 
+                    10.679688453674316`}}}]}, {{{1, 0}, {0, -1}}, {0, 0}}], 
+                    ImageSize -> 20], "InformationTitleText", StripOnInput -> 
+                    False], Background -> None, FrameMargins -> None, 
+                    FrameStyle -> None, ImageMargins -> {{0, 0}, {0, 0}}, 
+                    StripOnInput -> False], Active -> False, Alignment -> 
+                    Left, Appearance -> 
+                    FEPrivate`FrontEndResource[
+                    "FEExpressions", "SuppressMouseDownNinePatchAppearance"], 
+                    BaseStyle -> {}, BaselinePosition -> Baseline, 
+                    ButtonFunction :> {}, DefaultBaseStyle -> {}, Evaluator -> 
+                    None, FrameMargins -> {{10, 10}, {5, 5}}, Method -> 
+                    "Preemptive"], 
+                    
+                    EventHandlerTag[{
+                    "MouseEntered" :> 
+                    FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
+                    True}]], 
+                    TagBox[
+                    ButtonBox[
+                    FrameBox[
+                    StyleBox[
+                    TagBox[
+                    "\"The tallest mountain is Mount Everest, located in the \
+Himalayas on the border of Nepal and Tibet. It stands at a height of 29,029 \
+feet (8,848 meters) above sea level.\"", BoxForm`Undeploy, 
+                    DefaultBaseStyle -> {Deployed -> False}], Editable -> 
+                    False, StripOnInput -> False], Background -> None, 
+                    FrameMargins -> None, FrameStyle -> None, 
+                    ImageMargins -> {{0, 0}, {0, 0}}, StripOnInput -> False], 
+                    Active -> False, Alignment -> Left, Appearance -> 
+                    FEPrivate`FrontEndResource[
+                    "FEExpressions", "SuppressMouseDownNinePatchAppearance"], 
+                    BaseStyle -> {}, BaselinePosition -> Baseline, 
+                    ButtonFunction :> {}, DefaultBaseStyle -> {}, Evaluator -> 
+                    None, FrameMargins -> {{10, 10}, {5, 5}}, Method -> 
+                    "Preemptive"], 
+                    
+                    EventHandlerTag[{
+                    "MouseEntered" :> 
+                    FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
+                    True}]], 
+                    TagBox[
+                    ButtonBox[
+                    FrameBox[
+                    PaneSelectorBox[{2 -> ButtonBox[
+                    
+                    DynamicModuleBox[{
+                    Wolfram`APIFunctions`Chat`Private`mouseDown$$ = False, 
+                    Wolfram`APIFunctions`Chat`Private`mouseHover$$ = False}, 
+                    TagBox[
+                    PaneSelectorBox[{"Default" -> FrameBox[
+                    GraphicsBox[
+                    GeometricTransformationBox[{
+                    GrayLevel[0.65], 
+                    Thickness[0.05], 
+                    CapForm["Butt"], 
+                    JoinForm["Bevel"], 
+                    
+                    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{0, 2, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+                    0}, {1, 3, 3}}}, {{{9., 15.}, {5., 15.}, {
+                    3.895430088043213, 15.}, {3., 14.104599952697754`}, {3., 
+                    13.}, {3., 5.}, {3., 3.895430088043213}, {
+                    3.895430088043213, 3.}, {5., 3.}, {13., 3.}, {
+                    14.104599952697754`, 3.}, {15., 3.895430088043213}, {15., 
+                    5.}, {15., 9.}}, {{11., 21.}, {19., 21.}, {
+                    20.10460090637207, 21.}, {21., 20.10460090637207}, {21., 
+                    19.}, {21., 11.}, {21., 9.895429611206055}, {
+                    20.10460090637207, 9.}, {19., 9.}, {11., 9.}, {
+                    9.895429611206055, 9.}, {9., 9.895429611206055}, {9., 
+                    11.}, {9., 19.}, {9., 20.10460090637207}, {
+                    9.895429611206055, 21.}, {11., 21.}}}, 
+                    CurveClosed -> {0, 1}]}, {{{1, 0}, {0, -1}}, {0, 0}}], 
+                    ImageSize -> 20], Background -> GrayLevel[0, 0], 
+                    FrameMargins -> 5, FrameStyle -> GrayLevel[0, 0], 
+                    RoundingRadius -> 5, StripOnInput -> False], "Hover" -> 
+                    FrameBox[
+                    GraphicsBox[
+                    GeometricTransformationBox[{
+                    GrayLevel[0.286], 
+                    Thickness[0.05], 
+                    CapForm["Butt"], 
+                    JoinForm["Bevel"], 
+                    
+                    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{0, 2, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+                    0}, {1, 3, 3}}}, {{{9., 15.}, {5., 15.}, {
+                    3.895430088043213, 15.}, {3., 14.104599952697754`}, {3., 
+                    13.}, {3., 5.}, {3., 3.895430088043213}, {
+                    3.895430088043213, 3.}, {5., 3.}, {13., 3.}, {
+                    14.104599952697754`, 3.}, {15., 3.895430088043213}, {15., 
+                    5.}, {15., 9.}}, {{11., 21.}, {19., 21.}, {
+                    20.10460090637207, 21.}, {21., 20.10460090637207}, {21., 
+                    19.}, {21., 11.}, {21., 9.895429611206055}, {
+                    20.10460090637207, 9.}, {19., 9.}, {11., 9.}, {
+                    9.895429611206055, 9.}, {9., 9.895429611206055}, {9., 
+                    11.}, {9., 19.}, {9., 20.10460090637207}, {
+                    9.895429611206055, 21.}, {11., 21.}}}, 
+                    CurveClosed -> {0, 1}]}, {{{1, 0}, {0, -1}}, {0, 0}}], 
+                    ImageSize -> 20], Background -> GrayLevel[0, 0], 
+                    FrameMargins -> 5, FrameStyle -> GrayLevel[0, 0], 
+                    RoundingRadius -> 5, StripOnInput -> False], "Pressed" -> 
+                    FrameBox[
+                    GraphicsBox[
+                    GeometricTransformationBox[{
+                    GrayLevel[0.286], 
+                    Thickness[0.05], 
+                    CapForm["Butt"], 
+                    JoinForm["Bevel"], 
+                    
+                    JoinedCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{0, 2, 0}, {1, 3, 
+                    3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+                    0}, {1, 3, 3}}}, {{{9., 15.}, {5., 15.}, {
+                    3.895430088043213, 15.}, {3., 14.104599952697754`}, {3., 
+                    13.}, {3., 5.}, {3., 3.895430088043213}, {
+                    3.895430088043213, 3.}, {5., 3.}, {13., 3.}, {
+                    14.104599952697754`, 3.}, {15., 3.895430088043213}, {15., 
+                    5.}, {15., 9.}}, {{11., 21.}, {19., 21.}, {
+                    20.10460090637207, 21.}, {21., 20.10460090637207}, {21., 
+                    19.}, {21., 11.}, {21., 9.895429611206055}, {
+                    20.10460090637207, 9.}, {19., 9.}, {11., 9.}, {
+                    9.895429611206055, 9.}, {9., 9.895429611206055}, {9., 
+                    11.}, {9., 19.}, {9., 20.10460090637207}, {
+                    9.895429611206055, 21.}, {11., 21.}}}, 
+                    CurveClosed -> {0, 1}]}, {{{1, 0}, {0, -1}}, {0, 0}}], 
+                    ImageSize -> 20], Background -> GrayLevel[0., 0.05], 
+                    FrameMargins -> 5, FrameStyle -> GrayLevel[0, 0], 
+                    RoundingRadius -> 5, StripOnInput -> False]}, 
+                    Dynamic[
+                    FEPrivate`Which[
+                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, "Pressed", 
+                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, "Hover", 
+                    True, "Default"]]], 
+                    
+                    EventHandlerTag[{
+                    "MouseDown" :> FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, True], 
+                    "MouseUp" :> FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`mouseDown$$, False], 
+                    "MouseEntered" :> 
+                    FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, True], 
+                    "MouseExited" :> FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`mouseHover$$, False], 
+                    PassEventsDown -> True, Method -> "Preemptive", 
+                    PassEventsUp -> True}]], DynamicModuleValues :> {}], 
+                    Appearance -> {
+                    "Default" -> FrontEnd`FileName[{"Misc"}, 
+                    "TransparentBG.9.png"]}, ButtonFunction :> 
+                    CopyToClipboard[
+                    "The tallest mountain is Mount Everest, located in the \
+Himalayas on the border of Nepal and Tibet. It stands at a height of 29,029 \
+feet (8,848 meters) above sea level."], Evaluator -> Automatic, Method -> 
+                    "Preemptive"]}, 
+                    Dynamic[Wolfram`APIFunctions`Chat`Private`over$$]], 
+                    Background -> None, FrameMargins -> None, FrameStyle -> 
+                    None, ImageMargins -> {{0, 0}, {0, 0}}, StripOnInput -> 
+                    False], Active -> False, Alignment -> Left, Appearance -> 
+                    FEPrivate`FrontEndResource[
+                    "FEExpressions", "SuppressMouseDownNinePatchAppearance"], 
+                    BaseStyle -> {}, BaselinePosition -> Baseline, 
+                    ButtonFunction :> {}, DefaultBaseStyle -> {}, Evaluator -> 
+                    None, FrameMargins -> {{10, 10}, {5, 5}}, Method -> 
+                    "Preemptive"], 
+                    
+                    EventHandlerTag[{
+                    "MouseEntered" :> 
+                    FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`over$$, 2], Method -> 
+                    "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
+                    True}]]}}, AutoDelete -> False, BaseStyle -> "Text", 
+                    GridBoxAlignment -> {
+                    "Columns" -> {Right, Left}, "Rows" -> {{Automatic}}}, 
+                    GridBoxBackground -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{
+                    GrayLevel[1], 
+                    RGBColor[{
+                    Rational[16, 17], 1, 
+                    Rational[251, 255]}]}}}, GridBoxDividers -> {"Columns" -> {
+                    GrayLevel[0, 0], {None}, 
+                    GrayLevel[0, 0]}, "Rows" -> {
+                    GrayLevel[0, 0], {
+                    GrayLevel[0, 0.05]}, 
+                    GrayLevel[0, 0]}}, 
+                    GridBoxItemSize -> {
+                    "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+                    GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}}],
+                     "Grid"], 
+                   
+                   EventHandlerTag[{
+                    "MouseExited" :> 
+                    FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`over$$, 0], Method -> 
+                    "Preemptive", PassEventsDown -> Automatic, PassEventsUp -> 
+                    True}]], 
+                  DynamicModuleValues :> {{
+                    DownValues[
+                    Wolfram`APIFunctions`Chat`Private`overhandler$$] = {
+                    HoldPattern[
+                    Wolfram`APIFunctions`Chat`Private`overhandler$$[
+                    Pattern[Wolfram`APIFunctions`Chat`Private`expr$, 
+                    Blank[]], 
+                    Pattern[Wolfram`APIFunctions`Chat`Private`i$, 
+                    Blank[]]]] :> EventHandler[
+                    Button[
+                    Wolfram`APIFunctions`Chat`Private`expr$, 
+                    FrameMargins -> {{10, 10}, {5, 5}}, Appearance -> 
+                    "Suppressed", Active -> False, BaselinePosition -> 
+                    Baseline, BaseStyle -> {}, DefaultBaseStyle -> {}, 
+                    Alignment -> Left], "MouseEntered" :> 
+                    FEPrivate`Set[
+                    Wolfram`APIFunctions`Chat`Private`over$$, 
+                    Wolfram`APIFunctions`Chat`Private`i$]]}}}], 
+                 AppearanceElements -> None, ContentPadding -> False, 
+                 ImageSize -> {{180, 600}, {20, 400}}, 
+                 Scrollbars -> {False, Automatic}], "SummaryItem"]}}, 
+             AutoDelete -> False, 
+             BaseStyle -> {
+              ShowStringCharacters -> False, NumberMarks -> False, 
+               PrintPrecision -> 3, ShowSyntaxStyles -> False}, 
+             GridBoxAlignment -> {
+              "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, 
+             GridBoxItemSize -> {
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+             GridBoxSpacings -> {
+              "Columns" -> {{2}}, "Rows" -> {{Automatic}}}]}}, AutoDelete -> 
+          False, BaselinePosition -> {1, 1}, 
+          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}}, 
+          GridBoxItemSize -> {
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}]}, 
+       Dynamic[Typeset`open$$], ImageSize -> Automatic]},
+     "SummaryPanel"],
+    DynamicModuleValues:>{}], "]"}],
+  Wolfram`APIFunctions`ChatObject[<|
+   "Method" -> "OpenAI", 
+    "Messages" -> {<|
+      "Role" -> "User", "Content" -> "What's the tallest mountain?", 
+       "Timestamp" -> 
+       DateObject[{2023, 4, 12, 17, 20, 25.217743`8.154281196754695}, 
+         "Instant", "Gregorian", 2.]|>, <|
+      "Role" -> "Assistant", "Content" -> 
+       "The tallest mountain is Mount Everest, located in the Himalayas on \
+the border of Nepal and Tibet. It stands at a height of 29,029 feet (8,848 \
+meters) above sea level.", "Timestamp" -> 
+       DateObject[{2023, 4, 12, 17, 20, 25.}, "Instant", "Gregorian", 2.]|>}, 
+    "ChatID" -> "866c6612-259e-419d-a534-e170b16e6cc8", 
+    "History" -> {<|
+      "id" -> "chatcmpl-74WYjhYfBUKsLLzlrhYTwOmYy5zx6", "object" -> 
+       "chat.completion", "created" -> 1681312825, "model" -> 
+       "gpt-3.5-turbo-0301", 
+       "usage" -> <|
+        "prompt_tokens" -> 14, "completion_tokens" -> 41, "total_tokens" -> 
+         55|>, "choices" -> {<|
+         "message" -> <|
+           "role" -> "assistant", "content" -> 
+            "The tallest mountain is Mount Everest, located in the Himalayas \
+on the border of Nepal and Tibet. It stands at a height of 29,029 feet (8,848 \
+meters) above sea level."|>, "finish_reason" -> "stop", "index" -> 0|>}|>}, 
+    "Usage" -> 55|>, {}],
+  Editable->False,
+  SelectWithContents->True,
+  Selectable->False]], "Output",
+ CellChangeTimes->{3.889161191950862*^9, 3.88952614503655*^9, 
+  3.889526373684925*^9, 3.889527784540876*^9, 3.890301627848502*^9},
+ CellLabel->"Out[3]=",
+ CellID->1224618725,ExpressionUUID->"8a34fe39-ac7a-4cee-8ac7-36a7a79b86f3"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["More Examples", "ExtendedExamplesSection",
+ CellTags->"ExtendedExamples",
+ CellID->1854448968,ExpressionUUID->"456fe121-758f-4ad6-9d96-2e57a0bcf8b5"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Scope", "ExampleSection",ExpressionUUID->
+   "0fbd8662-e240-41ca-bcd9-7ca71f46b749"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->1293636265,ExpressionUUID->"3d9280dd-6661-4a8d-bbde-1d8e7123b08d"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Generalizations & Extensions", "ExampleSection",ExpressionUUID->
+   "9ea84794-8b60-479b-be45-8e0f5d33bd38"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->1020263627,ExpressionUUID->"1c6d89dc-e871-4fe5-a81e-b2c660875ccb"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Options", "ExampleSection",ExpressionUUID->
+   "4b2873af-4134-4d2b-8f7f-431a8606315f"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->2061341341,ExpressionUUID->"04ca60dd-a4a6-49b7-9f2b-b9fa2adf971b"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "XXXX", "ExampleSubsection",ExpressionUUID->
+   "fb822cb5-ebb0-4a37-a294-dd80ea66e928"],
+  $Line = 0; Null]], "ExampleSubsection",
+ CellID->1757724783,ExpressionUUID->"f91cb45f-63bb-4f64-86a3-b4bba17fec52"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "XXXX", "ExampleSubsection",ExpressionUUID->
+   "6c8839f6-b7d7-43e8-87cf-f5ef5eb18a58"],
+  $Line = 0; Null]], "ExampleSubsection",
+ CellID->1295379749,ExpressionUUID->"24525614-b8ce-4134-becc-672f4a53b772"]
+}, Closed]],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Applications", "ExampleSection",ExpressionUUID->
+   "1f73b08b-4b74-4417-a449-babb541d2fc9"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->258228157,ExpressionUUID->"8008c9d4-0511-49ea-9b70-6e997048933c"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Properties & Relations", "ExampleSection",ExpressionUUID->
+   "c1901e4c-e3d6-4047-a765-21cc4751e6fa"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->2123667759,ExpressionUUID->"168b6ea6-0048-4952-a928-8589747d3f82"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Possible Issues", "ExampleSection",ExpressionUUID->
+   "39788d3e-4b45-4f5e-bcb5-6a4faa8b0106"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->1305812373,ExpressionUUID->"a34bdd3c-150d-4dff-bab1-1495c611ad50"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Interactive Examples", "ExampleSection",ExpressionUUID->
+   "7aab9189-8700-4946-b0b1-b34d44ab3559"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->1653164318,ExpressionUUID->"3cb57427-e229-4946-a7f6-52d8568e9329"],
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "Neat Examples", "ExampleSection",ExpressionUUID->
+   "99e7c285-de10-4553-b4ba-551b440d0f77"],
+  $Line = 0; Null]], "ExampleSection",
+ CellID->589267740,ExpressionUUID->"beada140-18bc-41a2-9272-843f037106ea"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Design Discussion", "DesignDiscussionSection",
+ CellID->1775809863,ExpressionUUID->"b6da41e9-8313-437d-80d4-645f5ac55afd"],
+
+Cell["XXXX", "ApplicationNotes",
+ CellID->1601812448,ExpressionUUID->"d5570548-97ce-4493-adc1-3034bfcd1656"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Application Notes", "ApplicationNotesSection",
+ CellID->1163590540,ExpressionUUID->"1d63aa1c-c7e7-4d4a-ad87-c70abe264c40"],
+
+Cell["XXXX", "ApplicationNotes",
+ CellID->1480116198,ExpressionUUID->"63187b85-4f87-4a3e-bd26-2bbd7fd363a6"]
+}, Open  ]],
+
+Cell["Test Cases", "TestCasesSection",
+ CellID->725748110,ExpressionUUID->"864855e0-b22b-4280-bbbf-40c5e86c317d"],
+
+Cell[CellGroupData[{
+
+Cell["Function Essay", "FunctionEssaySection",
+ CellID->37427227,ExpressionUUID->"36a784ce-ae99-4eb9-b37b-89fbe71c4eb2"],
+
+Cell["XXXX", "FunctionEssay",
+ CellID->356990964,ExpressionUUID->"a08c1f65-c8d3-4041-b769-0fb7c3b60c2a"]
+}, Open  ]]
+},
+WindowSize->{711, 977},
+WindowMargins->{{418, Automatic}, {Automatic, 1}},
+TaggingRules->{
+ "DocuToolsSettingsInternal" -> {
+   "$PacletVersion" -> "0.9.1871", "$MVersion" -> "11", "$FlaggedVersion" -> 
+    10.4, "$ApplicationName" -> "Pubs", "$LinkBase" -> "Pubs", 
+    "$ApplicationDirectory" -> "C:\\Workspace\\Pubs\\", 
+    "$DocumentationDirectory" -> 
+    "C:\\Workspace\\Pubs\\Documentation\\English\\", "$UseNewPageDialog" -> 
+    ""}, "SecurityRisk" -> False, "SecurityExplanation" -> "", "Author" -> 
+  "giulioa", "CreationDate" -> "03-23-2023 12:31:29"},
+FrontEndVersion->"13.2 for Mac OS X ARM (64-bit) (November 18, 2022)",
+StyleDefinitions->FrontEnd`FileName[{"Wolfram"}, "FunctionPageStyles.nb", 
+  CharacterEncoding -> "UTF-8"],
+ExpressionUUID->"9bee6fdd-cc26-4ebb-838d-e1a8ff051dd5"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{
+ "ExtendedExamples"->{
+  Cell[90503, 1837, 155, 2, 56, "ExtendedExamplesSection",ExpressionUUID->"456fe121-758f-4ad6-9d96-2e57a0bcf8b5",
+   CellTags->"ExtendedExamples",
+   CellID->1854448968]}
+ }
+*)
+(*CellTagsIndex
+CellTagsIndex->{
+ {"ExtendedExamples", 95102, 1966}
+ }
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 600, 14, 24, "History",ExpressionUUID->"11ef8686-b3ed-40e4-9246-f3405967961e",
+ CellID->341476719],
+Cell[1161, 36, 139, 1, 20, "AuthorDate",ExpressionUUID->"266a24ac-2156-49b4-b67a-9566c022f3e9",
+ CellID->498460038],
+Cell[CellGroupData[{
+Cell[1325, 41, 123, 1, 29, "CategorizationSection",ExpressionUUID->"aab346e5-c54e-4543-bfb6-055de9d33d30",
+ CellID->1122911449],
+Cell[1451, 44, 134, 2, 70, "Categorization",ExpressionUUID->"628529aa-75c0-47b0-aee1-60c78cad327e",
+ CellID->686433507],
+Cell[1588, 48, 139, 2, 70, "Categorization",ExpressionUUID->"bef83001-b92a-4b47-91bf-718662946187",
+ CellID->605800465],
+Cell[1730, 52, 131, 2, 70, "Categorization",ExpressionUUID->"bea189f9-73e0-4baf-b29f-7184e0cf366c",
+ CellID->468444828],
+Cell[1864, 56, 116, 1, 70, "Categorization",ExpressionUUID->"e6d405af-40e0-4ab3-b0f9-eef9bc6a46a8"],
+Cell[1983, 59, 135, 2, 70, "Categorization",ExpressionUUID->"4a2472d2-19f5-4b9f-a0f2-c5a1708cd7bb",
+ CellID->172747495]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[2155, 66, 111, 1, 19, "SynonymsSection",ExpressionUUID->"fb8acf4f-9285-4b8c-a747-4381fc0b9d41",
+ CellID->1427418553],
+Cell[2269, 69, 100, 1, 70, "Synonyms",ExpressionUUID->"80d54c53-ee23-43f2-a45f-b1e852e781b1",
+ CellID->1251652828]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[2406, 75, 110, 1, 19, "KeywordsSection",ExpressionUUID->"e9878159-9f99-4959-9826-e5a3f952bf23",
+ CellID->477174294],
+Cell[2519, 78, 100, 1, 70, "Keywords",ExpressionUUID->"612ce670-b22f-493d-b218-797337b1a463",
+ CellID->1164421360]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[2656, 84, 120, 1, 19, "TemplatesSection",ExpressionUUID->"5cc15371-6f63-4f57-9207-32b25cb98ecc",
+ CellID->1872225408],
+Cell[2779, 87, 149, 2, 70, "Template",ExpressionUUID->"895d1c65-38f1-4125-baff-a225fcfc19c8",
+ CellID->1562036412],
+Cell[2931, 91, 137, 2, 70, "Template",ExpressionUUID->"170b786f-fb75-4556-a26a-6701da067cc2",
+ CellID->158391909],
+Cell[3071, 95, 136, 2, 70, "Template",ExpressionUUID->"82a33b27-a8e0-4f8a-ba2a-5f2dee7b1bbf",
+ CellID->1360575930],
+Cell[3210, 99, 137, 2, 70, "Template",ExpressionUUID->"a0124f6d-7659-412c-a856-eefb69ed49a8",
+ CellID->793782254]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[3384, 106, 108, 1, 19, "DetailsSection",ExpressionUUID->"8f9f96de-cdd4-415b-98c3-6a4a1d7a219e",
+ CellID->307771771],
+Cell[3495, 109, 117, 2, 70, "Details",ExpressionUUID->"4b2f2a6b-f93c-4868-9e10-5b6968909260",
+ CellID->49458704],
+Cell[3615, 113, 124, 2, 70, "Details",ExpressionUUID->"6e4a3ae1-cdf6-47cc-ad1f-759e8fe45593",
+ CellID->350963985],
+Cell[3742, 117, 121, 2, 70, "Details",ExpressionUUID->"efc33df5-b775-495a-80e4-3521a78bc446",
+ CellID->422270209],
+Cell[3866, 121, 126, 2, 70, "Details",ExpressionUUID->"1a0db4eb-149a-46f3-b25b-b280d6264af5",
+ CellID->545239557],
+Cell[3995, 125, 116, 2, 70, "Details",ExpressionUUID->"1050f771-3937-45cd-bf2a-bca989fc6c2c",
+ CellID->121292707],
+Cell[4114, 129, 115, 2, 70, "Details",ExpressionUUID->"2d37259b-d19a-4265-94d9-1062a057d814",
+ CellID->29314406],
+Cell[4232, 133, 117, 2, 70, "Details",ExpressionUUID->"4e0c64af-4701-4221-b6a7-d115b2825a25",
+ CellID->96001539],
+Cell[4352, 137, 133, 2, 70, "Details",ExpressionUUID->"d0039a91-8ee2-4052-8ab0-325c85db884a",
+ CellID->123278822],
+Cell[4488, 141, 122, 2, 70, "Details",ExpressionUUID->"02ff136a-5412-4c7d-9f54-fb44ec7c41f5",
+ CellID->240026365]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[4647, 148, 117, 1, 19, "SecuritySection",ExpressionUUID->"c4d92900-bc11-4614-8c83-407abdd45933",
+ CellID->13551076],
+Cell[4767, 151, 1105, 31, 70, "SecurityDetails",ExpressionUUID->"89fc8445-1353-4fa3-97dd-1be0f00a5de5",
+ CellID->2488900]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[5909, 187, 110, 1, 63, "ObjectName",ExpressionUUID->"9e65fd4a-3b79-48c0-af70-75bef669e834",
+ CellID->1224892054],
+Cell[6022, 190, 1535, 40, 119, "Usage",ExpressionUUID->"2f7b7357-db0a-477c-a3fa-e2cca7faa2b5",
+ CellID->982511436],
+Cell[7560, 232, 97, 1, 25, "Notes",ExpressionUUID->"c396774d-bb61-4976-8af9-595edbd6f735",
+ CellID->1067943069],
+Cell[7660, 235, 200, 2, 25, "Notes",ExpressionUUID->"929efb4a-79dc-4cbb-8667-5323443bf354",
+ CellID->2060826575],
+Cell[7863, 239, 2225, 49, 99, "3ColumnTableMod",ExpressionUUID->"9df3ea5c-bfae-4685-837b-2010f9202322",
+ CellID->410087359],
+Cell[10091, 290, 959, 28, 45, "Notes",ExpressionUUID->"dedac581-3278-44df-a076-9cb73133a1cf",
+ CellID->1031992097],
+Cell[11053, 320, 1349, 27, 75, "3ColumnTableMod",ExpressionUUID->"44ba1b5e-5cbf-4c93-bbec-8bb5cb338df1",
+ CellID->2074579731],
+Cell[12405, 349, 622, 18, 28, "Notes",ExpressionUUID->"ffa3c814-6f3f-41df-a049-ec9f0773152c",
+ CellID->1890374997],
+Cell[13030, 369, 1130, 22, 26, "Notes",ExpressionUUID->"ab5ce21a-72d9-4ffe-a192-9b8dea5e0854",
+ CellID->13965788],
+Cell[14163, 393, 1550, 24, 41, "2ColumnTableMod",ExpressionUUID->"13019fbf-4214-421c-9c0f-fe394295c8a4",
+ CellID->359403746],
+Cell[15716, 419, 691, 13, 42, "Notes",ExpressionUUID->"058b422d-7cc4-45d2-a8e6-40448f9f8662",
+ CellID->1225367472]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[16444, 437, 112, 1, 44, "TutorialsSection",ExpressionUUID->"b02d4013-fc03-46fd-91f5-418756d88d93",
+ CellID->250839057],
+Cell[16559, 440, 100, 1, 16, "Tutorials",ExpressionUUID->"e5fbfac5-d780-4a61-9aa1-c2995b34e594",
+ CellID->341631938]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[16696, 446, 138, 1, 31, "RelatedDemonstrationsSection",ExpressionUUID->"2bafa20c-ad4d-4358-9b58-1c0fa094f645",
+ CellID->1268215905],
+Cell[16837, 449, 113, 1, 16, "RelatedDemonstrations",ExpressionUUID->"ca787c01-e02b-4f0c-b52a-b5a25070bba2",
+ CellID->1129518860]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[16987, 455, 120, 1, 31, "RelatedLinksSection",ExpressionUUID->"a98c198c-eaff-4f47-a52b-bde15cb67cfa",
+ CellID->1584193535],
+Cell[17110, 458, 104, 1, 16, "RelatedLinks",ExpressionUUID->"ec84bd42-24ea-4c7d-a2df-bf8e73ab079b",
+ CellID->1038487239]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[17251, 464, 110, 1, 31, "SeeAlsoSection",ExpressionUUID->"d9364631-c239-4d65-b012-ba498b2ced33",
+ CellID->1255426704],
+Cell[17364, 467, 1008, 27, 22, "SeeAlso",ExpressionUUID->"93ffba56-cd93-4908-bd9e-67eec8b2e5b1",
+ CellID->929782353]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[18409, 499, 127, 1, 31, "RelatedWorkflowsSection",ExpressionUUID->"fc08db45-053b-4d9f-98c1-1ff4c0f2aaf6",
+ CellID->121236710],
+Cell[18539, 502, 107, 1, 16, "RelatedWorkflows",ExpressionUUID->"0387d739-2698-4d59-91f8-023405a5f852",
+ CellID->294347949]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[18683, 508, 112, 1, 31, "MoreAboutSection",ExpressionUUID->"b2f57e8f-69ad-4769-b4dc-58a90c351f38",
+ CellID->38303248],
+Cell[18798, 511, 110, 1, 16, "MoreAbout",ExpressionUUID->"0862ec19-c5ba-4499-bc8f-b5b8b510794c",
+ CellID->1665078683]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[18945, 517, 411, 11, 70, "PrimaryExamplesSection",ExpressionUUID->"ff765981-7828-4382-a532-4eb8c1f0790e",
+ CellID->880084151],
+Cell[CellGroupData[{
+Cell[19381, 532, 243, 5, 17, "ExampleDelimiter",ExpressionUUID->"7d9935ab-40b3-4b43-881a-8963b5bb57c2",
+ CellID->1379429588],
+Cell[19627, 539, 185, 2, 22, "ExampleText",ExpressionUUID->"0f98e524-b033-4801-aef3-38709abf05a6",
+ CellID->1987116151],
+Cell[CellGroupData[{
+Cell[19837, 545, 249, 5, 27, "Input",ExpressionUUID->"559b90c6-d4c0-49a7-9ece-73ca6cbe0b58",
+ CellID->1942955360],
+Cell[20089, 552, 4953, 103, 55, "Output",ExpressionUUID->"f4854179-0db1-4643-bfd1-74566a73e318",
+ CellID->601938533]
+}, Open  ]],
+Cell[25057, 658, 213, 2, 22, "ExampleText",ExpressionUUID->"2c105ac3-16ed-43ab-b8cd-ec7995d1ea74",
+ CellID->102083979],
+Cell[CellGroupData[{
+Cell[25295, 664, 345, 7, 27, "Input",ExpressionUUID->"a32c68e3-33ae-450f-b5ef-ce61348d8059",
+ CellID->1503581402],
+Cell[25643, 673, 64799, 1157, 120, "Output",ExpressionUUID->"8a34fe39-ac7a-4cee-8ac7-36a7a79b86f3",
+ CellID->1224618725]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[90503, 1837, 155, 2, 56, "ExtendedExamplesSection",ExpressionUUID->"456fe121-758f-4ad6-9d96-2e57a0bcf8b5",
+ CellTags->"ExtendedExamples",
+ CellID->1854448968],
+Cell[90661, 1841, 242, 5, 33, "ExampleSection",ExpressionUUID->"3d9280dd-6661-4a8d-bbde-1d8e7123b08d",
+ CellID->1293636265],
+Cell[90906, 1848, 265, 5, 21, "ExampleSection",ExpressionUUID->"1c6d89dc-e871-4fe5-a81e-b2c660875ccb",
+ CellID->1020263627],
+Cell[CellGroupData[{
+Cell[91196, 1857, 244, 5, 21, "ExampleSection",ExpressionUUID->"04ca60dd-a4a6-49b7-9f2b-b9fa2adf971b",
+ CellID->2061341341],
+Cell[91443, 1864, 247, 5, 70, "ExampleSubsection",ExpressionUUID->"f91cb45f-63bb-4f64-86a3-b4bba17fec52",
+ CellID->1757724783],
+Cell[91693, 1871, 247, 5, 70, "ExampleSubsection",ExpressionUUID->"24525614-b8ce-4134-becc-672f4a53b772",
+ CellID->1295379749]
+}, Closed]],
+Cell[91955, 1879, 248, 5, 21, "ExampleSection",ExpressionUUID->"8008c9d4-0511-49ea-9b70-6e997048933c",
+ CellID->258228157],
+Cell[92206, 1886, 259, 5, 21, "ExampleSection",ExpressionUUID->"168b6ea6-0048-4952-a928-8589747d3f82",
+ CellID->2123667759],
+Cell[92468, 1893, 252, 5, 21, "ExampleSection",ExpressionUUID->"a34bdd3c-150d-4dff-bab1-1495c611ad50",
+ CellID->1305812373],
+Cell[92723, 1900, 257, 5, 21, "ExampleSection",ExpressionUUID->"3cb57427-e229-4946-a7f6-52d8568e9329",
+ CellID->1653164318],
+Cell[92983, 1907, 249, 5, 21, "ExampleSection",ExpressionUUID->"beada140-18bc-41a2-9272-843f037106ea",
+ CellID->589267740]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[93269, 1917, 128, 1, 79, "DesignDiscussionSection",ExpressionUUID->"b6da41e9-8313-437d-80d4-645f5ac55afd",
+ CellID->1775809863],
+Cell[93400, 1920, 108, 1, 16, "ApplicationNotes",ExpressionUUID->"d5570548-97ce-4493-adc1-3034bfcd1656",
+ CellID->1601812448]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[93545, 1926, 128, 1, 31, "ApplicationNotesSection",ExpressionUUID->"1d63aa1c-c7e7-4d4a-ad87-c70abe264c40",
+ CellID->1163590540],
+Cell[93676, 1929, 108, 1, 16, "ApplicationNotes",ExpressionUUID->"63187b85-4f87-4a3e-bd26-2bbd7fd363a6",
+ CellID->1480116198]
+}, Open  ]],
+Cell[93799, 1933, 113, 1, 31, "TestCasesSection",ExpressionUUID->"864855e0-b22b-4280-bbbf-40c5e86c317d",
+ CellID->725748110],
+Cell[CellGroupData[{
+Cell[93937, 1938, 120, 1, 33, "FunctionEssaySection",ExpressionUUID->"36a784ce-ae99-4eb9-b37b-89fbe71c4eb2",
+ CellID->37427227],
+Cell[94060, 1941, 104, 1, 19, "FunctionEssay",ExpressionUUID->"a08c1f65-c8d3-4041-b769-0fb7c3b60c2a",
+ CellID->356990964]
+}, Open  ]]
+}
+]
+*)
+
