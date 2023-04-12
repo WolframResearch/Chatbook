@@ -7,12 +7,12 @@ $OpenAIMaxImageSize
 (* no op in >13.2 - in layout *)
 Quiet @ PacletManager`PacletInstall[
 	FileNameJoin[{
-		PacletManager`PacletResource["Wolfram/Chatbook", "APIFunctions"],
+		PacletManager`PacletResource["Wolfram/LLMTools", "APIFunctions"],
 		"ServiceConnection_OpenAI-13.3.6.paclet"
 	}]
 ];
 
-(* connexion handling interfaces ConformAuthentication, ... *)
+(* connection handling interfaces ConformAuthentication, ... *)
 Needs["GeneralUtilities`" -> "GU`"]
 Needs["Wolfram`APIFunctions`Common`"]
 Needs["Wolfram`APIFunctions`APIs`Common`"]
@@ -130,8 +130,20 @@ openAIcompletionmodel = With[{models = Alternatives @@ $OpenAIModels["Completion
 
 
 (* API calls *)
+ConformAuthentication["OpenAI", sym:(Environment | SystemCredential)] :=
+	Enclose[{"apikey" -> Confirm @ sym["OPENAI_API_KEY"]}];
 ConformAuthentication["OpenAI", auth_] /; MatchQ[auth, KeyValuePattern[{"APIKey" -> _String}]] := 
 	{"apikey" -> auth["APIKey"]};
+ConformAuthentication["OpenAI", auth_] /; MatchQ[auth, {"apikey" -> _String}] := 
+	auth;
+ConformAuthentication[so:ServiceObject["OpenAI", _]] := GU`Scope @ Enclose[
+	token = Confirm @ ServiceConnections`Private`serviceAuthentication[so["ID"]];
+	key = Query[2, "apikey"] @ token;
+	If[!StringQ @ key,
+		Failure["APIError", <|"Message" -> "Missing Authentication informations."|>],
+		{"apikey" -> key}
+	]
+];
 ConformAuthentication["OpenAI", auth_] :=
 	Failure["APIError",
 		<|
@@ -140,7 +152,9 @@ ConformAuthentication["OpenAI", auth_] :=
 		|>
 	];
 
-TestConnection["OpenAI", key_String] := TestConnection[
+TestConnection["OpenAI", so:ServiceObject["OpenAI", _]] :=
+	TestConnection["OpenAI", ConformAuthentication[so]];
+TestConnection["OpenAI", {"apikey" -> key_String}] := TestConnection[
 	HTTPRequest[
 		"https://api.openai.com/v1/models", 
 		<|

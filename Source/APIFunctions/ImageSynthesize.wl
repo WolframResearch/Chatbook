@@ -112,14 +112,15 @@ iImageSynthesize[args_, opts_] := GU`Scope[
 	authentication = GetOption[Authentication];
 	Switch[authentication,
 		Automatic,
-			params["Authentication"] = "Available",
+			params["Authentication"] = ConnectToService[method]
+		,
 		a_?AssociationQ /; ContainsOnly[Keys[a], {"ID", "APIKey"}],
 			params["Authentication"] = authentication;
 			If[KeyExistsQ[authentication, "ID"],
 				params["ID"] = authentication["ID"]
 			];
 		,
-		so_ServiceObject /; so["Name"] === method,
+		$ValidAuthenticationPattern | ServiceObject[method, _],
 			params["Authentication"] = authentication;
 		,
 		_,
