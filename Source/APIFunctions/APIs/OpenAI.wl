@@ -12,7 +12,7 @@ Quiet @ PacletManager`PacletInstall[
 	}]
 ];
 
-(* connexion handling interfaces ConformAuthentication, ... *)
+(* connection handling interfaces ConformAuthentication, ... *)
 Needs["GeneralUtilities`" -> "GU`"]
 Needs["Wolfram`APIFunctions`Common`"]
 Needs["Wolfram`APIFunctions`APIs`Common`"]
@@ -130,8 +130,12 @@ openAIcompletionmodel = With[{models = Alternatives @@ $OpenAIModels["Completion
 
 
 (* API calls *)
+ConformAuthentication["OpenAI", sym:(Environment | SystemCredential)] :=
+	Enclose[{"apikey" -> Confirm @ sym["OPENAI_API_KEY"]}];
 ConformAuthentication["OpenAI", auth_] /; MatchQ[auth, KeyValuePattern[{"APIKey" -> _String}]] := 
 	{"apikey" -> auth["APIKey"]};
+ConformAuthentication["OpenAI", auth_] /; MatchQ[auth, {"apikey" -> _String}] := 
+	auth;
 ConformAuthentication["OpenAI", auth_] :=
 	Failure["APIError",
 		<|
