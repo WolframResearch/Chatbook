@@ -910,9 +910,11 @@ makeHTTPRequest[ settings_Association? AssociationQ, cells: { __CellObject } ] :
     makeHTTPRequest[ settings, notebookRead @ cells ];
 
 makeHTTPRequest[ settings_Association? AssociationQ, cells: { __Cell } ] :=
-    Module[ { role, messages, merged },
+    Module[ { role, message, history, messages, merged },
         role     = makeCurrentRole @ settings;
-        messages = DeleteMissing @ Prepend[ makeCellMessage /@ cells, role ];
+        message  = Block[ { $currentCell = True }, makeCellMessage @ Last @ cells ];
+        history  = Reverse[ makeCellMessage /@ Reverse @ Most @ cells ];
+        messages = DeleteMissing @ Flatten @ { role, history, message };
         merged   = If[ TrueQ @ Lookup[ settings, "MergeMessages" ], mergeMessageData @ messages, messages ];
         makeHTTPRequest[ settings, merged ]
     ];
@@ -2462,6 +2464,9 @@ slowCellToString // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*docSearchResultString*)
 docSearchResultString // ClearAll;
+
+docSearchResultString[ query_String ] /; $currentCell =!= True :=
+    "BEGIN_DOCUMENTATION_SEARCH_RESULTS\n(results omitted)\nEND_DOCUMENTATION_SEARCH_RESULTS";
 
 docSearchResultString[ query_String ] := Enclose[
     Module[ { search },
