@@ -401,7 +401,7 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 (*getAssistantIcon*)
 getAssistantIcon // beginDefinition;
 getAssistantIcon[ as_Association ] := getAssistantIcon[ as, Lookup[ as, "AssistantIcon", Automatic ] ];
-getAssistantIcon[ KeyValuePattern[ "AssistantTheme" -> "Generic" ], Automatic ] := $icons[ "Generic" ];
+getAssistantIcon[ KeyValuePattern[ "AssistantTheme" -> "Generic" ], Automatic ] := $icons[ "ChatResponseIcon" ];
 getAssistantIcon[ KeyValuePattern[ "AssistantTheme" -> "Wolfie" ], Automatic ] := $icons[ "Wolfie" ];
 getAssistantIcon[ as_, Automatic ] := $defaultAssistantIcon;
 getAssistantIcon[ as_, None ] := Graphics[ { }, ImageSize -> 1 ];
@@ -415,7 +415,7 @@ getAssistantIcon // endDefinition;
 (*getAssistantIconActive*)
 getAssistantIconActive // beginDefinition;
 getAssistantIconActive[ as_Association ] := getAssistantIconActive[ as, Lookup[ as, "AssistantIcon", Automatic ] ];
-getAssistantIconActive[ KeyValuePattern[ "AssistantTheme" -> "Generic" ], Automatic ] := $icons[ "GenericActive" ];
+getAssistantIconActive[ KeyValuePattern[ "AssistantTheme" -> "Generic" ], Automatic ] := $icons[ "ChatResponseIcon" ];
 getAssistantIconActive[ KeyValuePattern[ "AssistantTheme" -> "Wolfie" ], Automatic ] := $icons[ "Wolfie" ];
 getAssistantIconActive[ as_, Automatic ] := $defaultAssistantIconActive;
 getAssistantIconActive[ as_, None ] := Graphics[ { }, ImageSize -> 1 ];
