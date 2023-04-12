@@ -106,14 +106,14 @@ ConnectToService[name_, authentication_] :=
 				authmod = Confirm @ ConformAuthentication[name, authentication];
 				key = Hash[authmod, "SHA512", "Base64Encoding"];
 				temp = Query[Key@name, Key@key][$ConnectionCache];
-				(* validate connexion *)
+				(* validate connection *)
 				If[MissingQ[temp] || FailureQ @ TestConnection[name, temp],
-					DBPrint["ConnectToService: ", StringForm["Creating new connexion with provided authentication ``", authentication]];
+					DBPrint["ConnectToService: ", StringForm["Creating new connection with provided authentication ``", authentication]];
 					temp = Confirm @ makeConnection[name, authmod]
 				]
 				,
 			"Available",
-				DBPrint["ConnectToService: ", StringForm["Attempting to grab external connexion to ``.", name]];
+				DBPrint["ConnectToService: ", StringForm["Attempting to grab external connection to ``.", name]];
 				so = Confirm @ Quiet[ConfirmQuiet[ServiceConnect[name]]];
 				Confirm @ TestConnection[name, so];
 				key = Confirm @ getAuthenticationHash[so]
@@ -126,7 +126,7 @@ ConnectToService[name_, authentication_] :=
 			_ServiceObject,
 				(* test is wasting time - no early failure gain *)
 				temp = authentication;
-				DBPrint["ConnectToService: ", StringForm["Using provided connexion w/o validation ``.", Last @ authentication]];
+				DBPrint["ConnectToService: ", StringForm["Using provided connection w/o validation ``.", Last @ authentication]];
 				key = Confirm @ getAuthenticationHash[temp];
 				,
 			_,
@@ -145,7 +145,7 @@ ConnectToService[name_, authentication_] :=
 
 ConnectToService[name_] := GU`Scope[
 	Do[
-		DBPrint["ConnectToService: ", StringForm["Looking for any `` connexion to ``.", auth, name]];
+		DBPrint["ConnectToService: ", StringForm["Looking for any `` connection to ``.", auth, name]];
 		so = ConnectToService[name, auth];
 		If[!FailureQ[so], Break[]];
 		,
@@ -162,7 +162,7 @@ saveConnection[name_, key_, so_ServiceObject] := GU`Scope[
 		!KeyExistsQ[$ConnectionCache, name],
 		$ConnectionCache[name] = <||>;
 	];
-	DBPrint["saveConnection: ", StringForm["Connexion `` to `` is now cached as ``.", temp["ID"], name, key]];
+	DBPrint["saveConnection: ", StringForm["Connection `` to `` is now cached as ``.", temp["ID"], name, key]];
 	$ConnectionCache[name][key] = so
 ]
 

@@ -1,7 +1,7 @@
 BeginPackage["Wolfram`APIFunctions`Chat`"]
 
 $DefaultChatPrompt
-$ChatConnexionCache
+$ChatConnectionCache
 CallChatAPI
 
 Needs["GeneralUtilities`" -> "GU`"]
@@ -103,7 +103,7 @@ iCreateChat[args_, opts_] := GU`Scope @ Enclose[
 	params["History"] = {};
 	params["Usage"] = 0;
 
-	(* set $ChatConnexionCache entry *)
+	(* set $ChatConnectionCache entry *)
 	Confirm @ getServiceObject[params["ChatID"], params["Method"], params["Authentication"]];
 	params = KeyDrop[params, "Authentication"];
 
@@ -113,14 +113,14 @@ iCreateChat[args_, opts_] := GU`Scope @ Enclose[
 
 
 (* session pairing between chatobject <-> service object *)
-$ChatConnexionCache = <||>;
+$ChatConnectionCache = <||>;
 
 getServiceObject[chatID_, name_, auth_] := GU`Scope[Enclose[
 	Switch[auth,
 		Inherited,
-			so = Lookup[$ChatConnexionCache, chatID, Missing["NoCachedServiceObject"]];
+			so = Lookup[$ChatConnectionCache, chatID, Missing["NoCachedServiceObject"]];
 			If[MissingQ[so], GU`ThrowFailure["deadcon"]];
-			DBPrint["Chat/getServiceObject: ", StringForm["Using known inherited connexion ``.", Last @ so]];
+			DBPrint["Chat/getServiceObject: ", StringForm["Using known inherited connection ``.", Last @ so]];
 			Confirm @ ConnectToService[name, so];
 			,
 		Automatic,
@@ -131,7 +131,7 @@ getServiceObject[chatID_, name_, auth_] := GU`Scope[Enclose[
 			so = Confirm @ ConnectToService[name, auth]
 	];
 	DBPrint["Service object will be saved:", so];
-	$ChatConnexionCache[chatID] = so;
+	$ChatConnectionCache[chatID] = so;
 	so
 ]];
 
