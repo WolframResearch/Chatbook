@@ -6,7 +6,7 @@ PacletObject[<|
 	"Description" -> "Wolfram tools for interacting with LLMs",
 	"Creator" -> {
 		"Connor Gray", "Theodore Gray", "Giulio Alessandrini",
-		"Timothee Verdier"
+		"Timothee Verdier", "Christopher Wolfram"
 	},
 	"Icon" -> "Assets/Images/PacletIcon.png",
 	"Extensions" -> {
@@ -20,6 +20,9 @@ PacletObject[<|
 		{"Kernel",
 			"Root" -> "Source/APIFunctions",
 			"Context" -> "Wolfram`APIFunctions`"},
+		{"Kernel",
+			"Root" -> "Source/OpenAILink",
+			"Context" -> "Wolfram`OpenAILink`"},
 		{"Asset",
 			"Root" -> "Assets",
 			"Assets" -> {
