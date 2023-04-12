@@ -1,10 +1,14 @@
 PacletObject[<|
-	"Name" -> "Wolfram/Chatbook",
+	"Name" -> "Wolfram/LLMTools",
 	"PublisherID" -> "Wolfram",
 	"Version" -> "0.0.8",
 	"WolframVersion" -> "13.2",
 	"Description" -> "Wolfram tools for interacting with LLMs",
-	"Creator" -> {"Connor Gray", "Theodore Gray", "Giulio Alessandrini", "Timothee Verdier"},
+	"Creator" -> {
+		"Connor Gray", "Theodore Gray", "Giulio Alessandrini",
+		"Timothee Verdier"
+	},
+	"Icon" -> "Assets/Images/PacletIcon.png",
 	"Extensions" -> {
 		{"Kernel",
 			"Root" -> "Source/Chatbook",
