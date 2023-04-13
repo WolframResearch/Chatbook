@@ -1447,10 +1447,12 @@ reformatTextData[ string_String ] := Flatten @ Map[
         {
             StringExpression[
                     Longest[ "```" ~~ lang: Except[ WhitespaceCharacter ].. /; externalLanguageQ @ lang ],
-                    Shortest[ code__ ] ~~ "```"
-                ] :> externalCodeCell[ lang, code ],
-            Longest[ "```" ~~ ($wlCodeString|"") ] ~~ Shortest[ code__ ] ~~ "```" :>
-                If[ NameQ[ "System`"<>code ], inlineCodeCell @ code, codeCell @ code ],
+                    Shortest[ code__ ] ~~ ("```"|EndOfString)
+                ] :> externalCodeCell[ lang, code ]
+            ,
+            Longest[ "```" ~~ ($wlCodeString|"") ] ~~ Shortest[ code__ ] ~~ ("```"|EndOfString) :>
+                If[ NameQ[ "System`"<>code ], inlineCodeCell @ code, codeCell @ code ]
+            ,
             "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :> hyperlinkCell[ label, url ],
             "``" ~~ code: Except[ "`" ].. ~~ "``" :> inlineCodeCell @ code,
             "`" ~~ code: Except[ "`" ].. ~~ "`" :> inlineCodeCell @ code,
