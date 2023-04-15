@@ -26,8 +26,8 @@ $defaultAIAssistantSettings := <|
     "TopP"                -> 1
 |>;
 
-$birdChatLoaded = True;
-$maxChatCells   = $defaultAIAssistantSettings[ "ChatHistoryLength" ];
+$aiChatLoaded = True;
+$maxChatCells = $defaultAIAssistantSettings[ "ChatHistoryLength" ];
 
 $$externalLanguage = "Java"|"Julia"|"Jupyter"|"NodeJS"|"Octave"|"Python"|"R"|"Ruby"|"Shell"|"SQL"|"SQL-JDBC";
 

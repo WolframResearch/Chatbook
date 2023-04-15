@@ -1,14 +1,14 @@
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Header*)
-BeginPackage[ "Wolfram`Chatbook`CreateChatbook`" ];
+BeginPackage[ "Wolfram`Chatbook`CreateChatNotebook`" ];
 
 ClearAll[ "`*"         ];
 ClearAll[ "`Private`*" ];
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`Errors`"     ];
+Needs[ "Wolfram`Chatbook`"            ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
 
 (* ::**************************************************************************************************************:: *)
