@@ -1,8 +1,9 @@
 BeginPackage["Wolfram`ServerSentEventUtils`"]
 
-Needs["GeneralUtilities`" -> "GU`"]
+(* Avoiding context aliasing due to bug 434990: *)
+Needs[ "GeneralUtilities`" -> None ];
 
-GU`SetUsage[ServerSentEventBodyChunkTransformer, "
+GeneralUtilities`SetUsage[ServerSentEventBodyChunkTransformer, "
 ServerSentEventBodyChunkTransformer[func$] transforms a sequence of raw recieved \
 data chunks into a sequence of server-sent events.
 
@@ -13,7 +14,7 @@ The inner func$ will be called once for each complete server-sent event that is 
 recieved.
 "]
 
-GU`SetUsage[CreateChunkToServerSentEventGenerator, "
+GeneralUtilities`SetUsage[CreateChunkToServerSentEventGenerator, "
 CreateChunkToServerSentEventGenerator[] returns a generator function, which
 should be called with chunks of recieved string data, and will return either
 Missing['IncompleteData'], or a list of parsed server-sent event structures.

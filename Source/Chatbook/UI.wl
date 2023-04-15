@@ -2,9 +2,10 @@
 
 BeginPackage["Wolfram`Chatbook`UI`"]
 
-Needs["GeneralUtilities`" -> "GU`"]
+(* Avoiding context aliasing due to bug 434990: *)
+Needs[ "GeneralUtilities`" -> None ];
 
-GU`SetUsage[ChatInputCellEvaluationFunction, "
+GeneralUtilities`SetUsage[ChatInputCellEvaluationFunction, "
 ChatInputCellEvaluationFunction[input$, form$] is the CellEvaluationFunction for chat input cells.
 "]
 
@@ -25,9 +26,8 @@ Needs["Wolfram`Chatbook`Utils`"]
 Needs["Wolfram`Chatbook`Streaming`"]
 Needs["Wolfram`Chatbook`Serialization`"]
 
-Needs["OAuth`"];
 
-Needs["Wolfram`ServerSentEventUtils`" -> "SSEUtils`"]
+Needs["Wolfram`ServerSentEventUtils`" -> None]
 
 
 $ChatOutputTypePrompts = <|
@@ -50,7 +50,7 @@ $ChatContextCellStyles = <|
 
 GetChatEnvironmentValues[promptCell_, evaluationCell_, chatContextCells_] := With[{
 			promptCellContents = NotebookRead[promptCell],
-			evaluationCellTaggingRules = FullOptions[evaluationCell, TaggingRules], 
+			evaluationCellTaggingRules = FullOptions[evaluationCell, TaggingRules],
 			chatContextTaggingRules = FullOptions[First[chatContextCells], TaggingRules]},
 	<|
 		"Contents" -> promptCellContents,
@@ -59,7 +59,7 @@ GetChatEnvironmentValues[promptCell_, evaluationCell_, chatContextCells_] := Wit
 		"EvaluationCell" -> evaluationCell,
 		"ChatContextCells" -> chatContextCells,
 
-		"Model" -> Lookup[evaluationCellTaggingRules, "Model", Automatic], 
+		"Model" -> Lookup[evaluationCellTaggingRules, "Model", Automatic],
 		"OutputType" -> Lookup[evaluationCellTaggingRules, "OutputType", Automatic],
 		"TokenLimit" -> Lookup[evaluationCellTaggingRules, "TokenLimit", "1000"],
 		"Temperature" -> Lookup[evaluationCellTaggingRules, "Temperature", "0.7"],
@@ -99,7 +99,7 @@ ChatInputCellEvaluationFunction[
 	evaluationCell = EvaluationCell[];
 	chatContextCells = GetAllCellsInChatContext[EvaluationNotebook[], evaluationCell];
 	params = GetChatEnvironmentValues[evaluationCell, evaluationCell, chatContextCells];
-	
+
 	req = Flatten @ Map[
 		promptCell |-> promptProcess[promptCell, evaluationCell, chatContextCells],
 		chatContextCells
@@ -107,13 +107,13 @@ ChatInputCellEvaluationFunction[
 
 	(* TODO(polish): Improve the error checking / reporting here to let
 		chat notebook authors know if they've entered an invalid prompt form. *)
-	
+
 	If[MatchQ[params["ChatContextPreprompt"], _?ListQ | _?AssociationQ],
 		PrependTo[req, params["ChatContextPreprompt"]]];
 
 	If[MatchQ[params["ChatContextPostprompt"], _?ListQ | _?AssociationQ],
 		AppendTo[req, params["ChatContextPostprompt"]]];
-	
+
 	If[StringQ[$ChatSystemPre] && $ChatSystemPre =!= "",
 		PrependTo[req, <| "role" -> "system", "content" -> $ChatSystemPre |>];
 	];
@@ -125,7 +125,7 @@ ChatInputCellEvaluationFunction[
 	req = Flatten[req];
 
 	RaiseAssert[
-		MatchQ[req, {<| "role" -> _?StringQ, "content" -> _?StringQ |> ...}],
+		MatchQ[ req, { KeyValuePattern @ { "role" -> _? StringQ, "content" -> _? StringQ }... } ],
 		"unexpected form for parsed chat input: ``", InputForm[req]
 	];
 
@@ -149,10 +149,10 @@ ChatInputCellEvaluationFunction[
 
 Attributes[ChatContextEpilogFunction] = {HoldFirst};
 ChatContextEpilogFunction[func_] := Module[{evaluationCell, params},
-	evaluationCell = EvaluationCell[];	
+	evaluationCell = EvaluationCell[];
 	chatContextCells = GetAllCellsInChatContext[EvaluationNotebook[], evaluationCell];
 	params = GetChatEnvironmentValues[evaluationCell, evaluationCell, chatContextCells];
-	
+
 	func[params];
 ]
 
@@ -396,7 +396,7 @@ EditChatContextSettings[cellobj_] := Module[{
 		NotebookDelete[Cells[cellobj, AttachedCell -> True]];
 		Return[]
 	];
-	
+
 	cell = Cell[
 		BoxData @ DynamicModuleBox[{
 			$CellContext`tableContentsPreprompt$$ =
@@ -417,13 +417,13 @@ EditChatContextSettings[cellobj_] := Module[{
 					,
 					{}
 				],
-			
+
 			$CellContext`tableContentsActAsDelimiter$$ =
 				CurrentValue[cellobj, {TaggingRules, "ChatContextDelimiter"}] =!= False,
-				
+
 			$CellContext`tableContentsChatContextCellProcessingFunction$$ =
 				(CurrentValue[cellobj, {TaggingRules, "ChatContextCellProcessingFunction"}] /. Inherited -> Automatic),
-			
+
 			$CellContext`tableContentsChatContextPostEvaluationFunction$$ =
 				(CurrentValue[cellobj, {TaggingRules, "ChatContextPostEvaluationFunction"}] /. Inherited -> Automatic)
 		},
@@ -478,7 +478,7 @@ EditChatContextSettings[cellobj_] := Module[{
 													cellobj,
 													{TaggingRules, "ChatContextDelimiter"}
 												] = $CellContext`tableContentsActAsDelimiter$$;
-												
+
 												CurrentValue[
 													cellobj,
 													{"TaggingRules", "ChatContextPreprompt"}
@@ -486,7 +486,7 @@ EditChatContextSettings[cellobj_] := Module[{
 													<|"role" -> #[[1]], "content" -> #[[2]]|> &,
 													$CellContext`tableContentsPreprompt$$
 												];
-	
+
 												CurrentValue[
 													cellobj,
 													{"TaggingRules", "ChatContextPostprompt"}
@@ -494,28 +494,28 @@ EditChatContextSettings[cellobj_] := Module[{
 													<|"role" -> #[[1]], "content" -> #[[2]]|> &,
 													$CellContext`tableContentsPostprompt$$
 												];
-	
+
 												CurrentValue[
 													cellobj,
 													{TaggingRules, "ChatContextCellProcessingFunction"}
 												] = $CellContext`tableContentsChatContextCellProcessingFunction$$;
-												
-												(* ChatContextPostEvaluationFunction is set twice: once in tagging rules, and then in 
+
+												(* ChatContextPostEvaluationFunction is set twice: once in tagging rules, and then in
 												the option that causes it to be used as the CellEpilog of all cells within the group
 												this cell is the head of. *)
 												CurrentValue[
 													cellobj,
 													{TaggingRules, "ChatContextPostEvaluationFunction"}
 												] = $CellContext`tableContentsChatContextPostEvaluationFunction$$;
-												
-												$CellContext`tableContentsChatContextPostEvaluationFunction$$ /. Hold[e_] :> 
+
+												$CellContext`tableContentsChatContextPostEvaluationFunction$$ /. Hold[e_] :>
 													SetOptions[
-														cellobj, 
+														cellobj,
 														PrivateCellOptions->{"CellGroupBaseStyle" -> {
 															CellEpilog :> Wolfram`Chatbook`UI`ChatContextEpilogFunction[e]}
 														}
 													];
-												
+
 												NotebookDelete[Cells[cellobj, AttachedCell -> True]];
 											)
 										],
@@ -559,7 +559,7 @@ EditChatSettingsForCell[cellobj_] := Module[{
 		NotebookDelete[Cells[cellobj, AttachedCell -> True]];
 		Return[]
 	];
-	
+
 	cell = Cell[
 		BoxData[RowBox[{
 			"Output Type: ",
@@ -622,7 +622,7 @@ EditChatSettingsForCell[cellobj_] := Module[{
 		FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
 		TextAlignment -> Center
 	];
-	
+
 	AttachCell[cellobj, cell, Top];
 ];
 
@@ -698,7 +698,7 @@ doAsyncChatRequest[
 	task = URLSubmit[
 		request,
 		HandlerFunctions -> <|
-			"BodyChunkReceived" -> SSEUtils`ServerSentEventBodyChunkTransformer[
+			"BodyChunkReceived" -> Wolfram`ServerSentEventUtils`ServerSentEventBodyChunkTransformer[
 				event |-> (
 					AppendTo[events, event];
 					Handle[
@@ -869,16 +869,16 @@ checkAPIKey[provenBad_] := Module[{
 	If[StringQ[SystemCredential["OPENAI_API_KEY"]] && !provenBad,
 		Return[True]
 	];
-	
+    Needs[ "OAuth`" -> None ];
 	value = OAuthDialogDump`Private`MultipleKeyDialog[
-		"OpenAILink", 
-		{"API Key" -> "APIKey"}, 
-		"https://platform.openai.com/account/api-keys", 
+		"OpenAILink",
+		{"API Key" -> "APIKey"},
+		"https://platform.openai.com/account/api-keys",
 		"https://openai.com/policies/terms-of-use"];
-	
+
 	If[value =!= $Canceled,
 		SystemCredential["OPENAI_API_KEY"] = ("APIKey" /. value)];
-	
+
 	False
 ];
 
@@ -1006,7 +1006,7 @@ promptProcess[
 	}];
 
 	params = GetChatEnvironmentValues[promptCell, evaluationCell, chatContextCells];
-	
+
 	defaultRole = ConfirmReplace[params["Contents"], {
 		Cell[CellGroupData[___], ___] :> None,
 
@@ -1035,13 +1035,13 @@ promptProcess[
 				]
 			}]
 		],
-		
+
 		other_ :> None
 	}];
-	
+
 	If[defaultRole === None,
 		Return[{}]];
-	
+
 	If[params["ChatContextCellProcessingFunction"] === Automatic,
 		<| "role" -> defaultRole, "content" -> params["ContentsString"] |>,
 		params["ChatContextCellProcessingFunction"][params]
