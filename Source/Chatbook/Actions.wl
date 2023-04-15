@@ -440,7 +440,7 @@ makeHTTPRequest[ settings_Association? AssociationQ, cells: { __CellObject } ] :
 makeHTTPRequest[ settings_Association? AssociationQ, cells: { __Cell } ] :=
     Module[ { role, message, history, messages, merged },
         role     = makeCurrentRole @ settings;
-        message  = Block[ { $currentCell = True }, makeCellMessage @ Last @ cells ];
+        message  = Block[ { $CurrentCell = True }, makeCellMessage @ Last @ cells ];
         history  = Reverse[ makeCellMessage /@ Reverse @ Most @ cells ];
         messages = DeleteMissing @ Flatten @ { role, history, message };
         merged   = If[ TrueQ @ Lookup[ settings, "MergeMessages" ], mergeMessageData @ messages, messages ];
