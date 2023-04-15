@@ -214,7 +214,12 @@ Notebook[
      Background -> None
     ],
    CellMargins -> {{56, 25}, {5, 8}},
-   StyleKeyMapping -> {"/" -> "ChatQuery", "?" -> "ChatQuery"},
+   StyleKeyMapping -> {
+    " " -> "Text",
+    "*" -> "Item",
+    "/" -> "ChatQuery",
+    "Backspace" -> "Input"
+   },
    CellGroupingRules -> "InputGrouping",
    CellFrameColor -> RGBColor[0.81053, 0.85203, 0.91294],
    MenuSortingValue -> 1000
@@ -229,9 +234,56 @@ Notebook[
      BoxData[TemplateBox[{}, "ChatQueryIcon"]],
      Background -> None
     ],
-   StyleKeyMapping -> {"/" -> "ChatInput"},
+   StyleKeyMapping -> {
+    " " -> "Text",
+    "*" -> "Item",
+    "/" -> "ChatSystemInput",
+    "Backspace" -> "ChatInput"
+   },
    CellFrameColor -> RGBColor[0.82745, 0.87059, 0.68235],
    MenuSortingValue -> 1000
+  ],
+  Cell[
+   StyleData[
+    "ChatSystemInput",
+    StyleDefinitions -> StyleData["ChatInput"]
+   ],
+   CellFrame -> 1,
+   CellDingbat ->
+    Cell[
+     BoxData[TemplateBox[{}, "ChatSystemIcon"]],
+     Background -> None
+    ],
+   StyleKeyMapping -> {
+    " " -> "Text",
+    "*" -> "Item",
+    "/" -> "ChatContextDivider",
+    "Backspace" -> "ChatQuery"
+   },
+   CellFrameColor -> RGBColor[0.70196, 0.52941, 0.58039],
+   CellFrameStyle -> Dashing[{Small, Small}],
+   MenuSortingValue -> 1000
+  ],
+  Cell[
+   StyleData["ChatContextDivider"],
+   Selectable -> False,
+   ShowCellBracket -> False,
+   CellMargins -> {{0, 0}, {10, 10}},
+   CellBracketOptions -> {"OverlapContent" -> True},
+   CellElementSpacings -> {"CellMinHeight" -> 6},
+   StyleKeyMapping -> {
+    " " -> "Text",
+    "*" -> "Item",
+    "/" -> "Input",
+    "Backspace" -> "ChatSystemInput"
+   },
+   Evaluatable -> True,
+   CellGroupingRules -> {"SectionGrouping", 58},
+   ShowCellLabel -> False,
+   CellFrameMargins -> {{20, 20}, {2, 2}},
+   DefaultNewCellStyle -> "Input",
+   FontSize -> 6,
+   Background -> GrayLevel[0.95]
   ],
   Cell[
    StyleData[
@@ -1424,6 +1476,244 @@ Notebook[
        AspectRatio -> Automatic,
        ImageSize -> {{25.0, 25.0}, {25.0, 25.0}},
        PlotRange -> {{-0.5, 24.5}, {-0.5, 24.5}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ChatSystemIcon"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.05],
+        {
+         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgBGIRIGYC4slWjL4tvkoODGAg5HDc27zTkcEAzn/+e+XH\nS2cRfHvTuF2eOYYOUSnW9/15RR3WyABZ9YYOtSCJk+IQdQ2GUPUGcP7Nc9+D\nH7MiaFzqCtd0385gEIDznzTPO7vqPDuc/yhCfPtFBha4OTA+zBxUvgScP+eI\nwoaiF8Ko5gH9g2IfnC+GwW99HbhDrpXBAT28AKb/WbY=\n      "
+          ]
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.0]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {1, 4, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0}
+           },
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           }
+          },
+          {
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGAQB2IQDQEcDhDawAHGn/i2xt50n4GDvWncLk8eLqi4IZQW\nQOMbwPnyra8Dd+wzQJM3hJuHSx+ElnAQWef+sOqLgYO6IccamSgxhzA+3U1z\n+w0cnl5Quv3zn7DD1YqXaoYcCL6PeadjAiuCD+Q9vcAEM1cEzR4YXwmNLwH3\nNyofJi8A56OGhwhcH1CQSZtdFIc5iPAFAFbNPe0=\n       "
+           ],
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGCQAmIQDQUOEMrAAZUvAedfX1xgy3VdyGGd+8MqkXWsUHEB\nHLQIDj4HnF+ftadkssQn+x1yra8DLaQcPl3yTRKIYHRwSnh6QWm2Ely/Zkz/\noa8v9B2k9e+qsDEKOBz+qhHTz2TgcHqh67bPf/kdrla8VDPkQPAzJr6tsRc1\nhPOBpu+Qe2roAORcqXgp7BBhueVE2T9Dh/v+vdPzJolD7TFyAFoOlEHwUf0P\n4xvA+VygAPEyhNO41KGGgxFa+MHkGdDMQcQHACdvXVM=\n       "
+           ]
+          }
+         ]
+        },
+        {
+         FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.0]}],
+         FilledCurveBox[
+          {
+           {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}},
+           {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}},
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3}
+           },
+           {
+            {0, 2, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3}
+           }
+          },
+          {
+           {
+            {10.059, 9.5668},
+            {9.3003, 9.5668},
+            {8.6853, 10.182},
+            {8.6853, 10.941},
+            {8.6853, 11.7},
+            {9.3003, 12.315},
+            {10.059, 12.315},
+            {10.818, 12.315},
+            {11.433, 11.7},
+            {11.433, 10.941},
+            {11.433, 10.182},
+            {10.818, 9.5668},
+            {10.059, 9.5668}
+           },
+           {
+            {10.059, 13.002},
+            {8.9233, 13.002},
+            {7.9983, 12.078},
+            {7.9983, 10.941},
+            {7.9983, 9.8048},
+            {8.9233, 8.8798},
+            {10.059, 8.8798},
+            {11.196, 8.8798},
+            {12.12, 9.8048},
+            {12.12, 10.941},
+            {12.12, 12.078},
+            {11.196, 13.002},
+            {10.059, 13.002}
+           },
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGCwBGIQ7dKd8/x3prbDnQyG/MYWRYcU6/v+vdM1HT45nk+7\n+lzRASS98qOGwzIuN9VSJ0UHW67riwv2ajhErDA9a82n6PDpkm+SgISGQ/1N\n28qIDAWHac5AHdUaDtFOdi9u6sg6PF46+4iCgbpDzacNAdlSMlB5dYcr2qmS\njyJkHApBBhqoOXy9fb2x2E3aQXFDUcZEXVUHvQkLfhimyTlYKXtVN/Mrw/mx\n/5x/veVWgqu3+HEoZdUBBbh5r6Zu4inkUYTb1yWf/C6qSR7uHrA/VRTg7lUA\nSjv9k4P7p2Xe2VXnp8rB/XuJ4R4Tp5csPDzA7lgmCQ8vfwfhxMOTJRyAPJaj\n55Ucllce17S6JOHgd3FizL9mJQcgb9Lp/eIOxdeFgEYoO0jzPtCd8EDKIRcU\nrJdU4HxwOHxQg6v3SxKIsPyiDjevOGPi2xp7Tbh9B08tdN32WQPunqcXlG7/\ntNOCu/f89+DHS29rwv0jrX9Xha1RC+5fsHFbteDhseVE2b75Udrw8JoswRLG\np6sLD8/mAyALdeHhDUwFtlzTdeHxcdzbvNNRQQ8eX6s+AhPGBB14fML4sPiG\nqYelB5h5sPQCsw+WnmDugaU3mHth6RHmH1h6hfkXlp5h4QFL77DwWga0bsMn\nbXh4/qrL2lNyWRse3i/VDDnWxOjA4+PsGRDQgscXjA+LT5h6WHzDzIOlB5h9\nsPSCnv8Ao++OJg==\n       "
+           ],
+           CompressedData[
+            "\n1:eJxdVQtQVFUY3kGHVDK1eOxT7r73evfuioovNH60NpklG1ZjzEQIQ600UwYF\nzfAxiEhRUCpDZGqA5jCMkUqpVGpEiC/UZBhHMIlS0zRCSEvGc+7y/zvjndnZ\n+e6ce87//9/jGNOW+dKDVCpVBvvx/3kfHr/n0MswfM6kAz/3WCB4/dbpBU4n\n+L4ZmftnkZVwwZI//vsyyga4/vQp/tig2XT5/nv7ZDj0z8OLWaId8uNSO89d\nk2Fg0lNyzRU7LHt64w8nd8mwJrT6hV9XO8C4f8XiIlmGpWy7v4tFiGl/6YPt\n1U5QltWPgh139vzkXeUEKz/YK0GPg58oQZV+7usxn0vwHC/kjQCuF9iGiQHs\n4YVMlPx1lknQ4J2QHydI0PLFO1OHbJcgjTc6aBSc7Z3VUfGqBF3nX0wbXiJC\nbPT8w/GnJMgLbz3Te0GEcra8pcPpr6dXhLV8Qb7cf44IfRezbtiiXHDiHisw\nSAQNb3iFy9/nYTuwKbDJuPzf19oggZWRmu6Gms/YiwJbf59u/5ySbaDizzp3\n/74BbGbjffOolbBSZ4IVdmrdVywet7+uwVZg7K38rt0FfMqhb1ugo+LTH4W7\nMkR2L0lae8ZMuO3jvNy5Y820Xrdjvth010T77Uud7bOvM9F5yX3TH9wOCeDG\nztjy9jYj4b3Rp2NmfmWkfkYnVA7x5Bqp399CDY2dKQLcSuSCcsHoI/ZhIZkj\naV7JS+v7amIMNM/VDeLk4gI9zXtPNntxXk981Dar2oLiDcQX/3zNGAPoWPnB\nxyS4lHTLfWSRnvh1DAs5WDlJS/xzmP2ElvQxYvyUOt8lDennmddOXJAqAvjk\n7GN7ywvVhFNKEsLe3xJB+rR8+39ety6C9Ms/T38lHKYpAhChzrfNWBgdRvrf\n3H25Zf3XoVB0+93Y6DY73I/6vdpqCSP/XJsTUdsM4eSvwszluqGCmvyHGP2J\n69G/uJ89alCVvtRC5ym8dJqpHo81M6h0hhleZu3NVIX7dTHLRP1UH0rLaX0o\nUL9lY3cfmJAl0DwY+ve4RaB5IcZ5IsZ5pyvCEmDoVfmjnRO1cHNrzZPLnQLx\n1RV3duEviwTid8DgLZEL/ook/icXN+XM+N5A+lD6ytCTfjY1ssIsOtJX4lul\nq8p2a8HIDZAsAJdJ134N6fPmwHEjxh9Vk349n/QEp5SoSd8bMtibTWrSP2L0\nB2L0z7Rnr7dWPVCTv5S+GzTkP17WwUod+RMx+hfXK/ngtdJ+6H88D/MBMeYH\nYswX7AfzB/tVzou3g1d5oQElpvocoFOIQV+IwGncZtRR/uG8MR+RD8xP5Ktp\n1/NMyiKwqTYXzRMob5FfzGPkH/Ma9YF5jvrBvEeM9wFivC9Qn3ifoH6V3DDL\nsCCndWq22kT3Eeof76u6Dh5UZrrP0D+P34+PAJsHBOE=\n       "
+           ]
+          }
+         ]
+        }
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
+       PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
       ]
      ])
    }
