@@ -5,8 +5,8 @@ Begin[ "Wolfram`ChatbookStylesheetBuilder`Private`" ];
 (*Notebook*)
 Cell[
     StyleData[ "Notebook" ],
-    TaggingRules -> <| "ChatbookSettings" -> $defaultChatbookSettings |>,
-    CellEpilog   :> $sendChatFunction[ EvaluationCell[ ] ]
+    TaggingRules -> <| "ChatNotebookSettings" -> $defaultChatbookSettings |>,
+    CellEpilog   :> { $sendChatFunction[ EvaluationCell[ ] ] }
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -15,8 +15,13 @@ Cell[
 Cell[
     StyleData[ "Text" ],
     Evaluatable -> True,
-    CellEvaluationFunction -> Function[ If[ CloudSystem`$CloudNotebooks, $sendChatFunction[ EvaluationCell[ ] ] ] ],
-    ContextMenu            -> contextMenu[ $askMenuItem, Delimiter, "Text" ]
+    CellEvaluationFunction -> Function[
+        If[ TrueQ @ CloudSystem`$CloudNotebooks,
+            $sendChatFunction[ EvaluationCell[ ] ],
+            Null
+        ]
+    ],
+    ContextMenu -> contextMenu[ $askMenuItem, Delimiter, "Text" ]
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -33,7 +38,7 @@ Cell[
     With[
         {
             attach = Cell @ BoxData @ ToBoxes @ Button[
-                $icons[ "ChatMenuIcon" ],
+                RawBoxes @ TemplateBox[ { }, "ChatMenuIcon" ],
                 MessageDialog[ "Not implemented" ],
                 Appearance -> Dynamic @ FEPrivate`FrontEndResource[
                     "FEExpressions",
@@ -62,7 +67,7 @@ Cell[
     CellGroupingRules        -> "InputGrouping",
     CellFrameColor           -> RGBColor[ 0.81053, 0.85203, 0.91294 ],
     CellMargins              -> { { 56, 25 }, { 3, 10 } },
-    CellDingbat              -> Cell[ BoxData @ ToBoxes @ $icons[ "ChatUserIcon" ], Background -> None ],
+    CellDingbat              -> Cell[ BoxData @ TemplateBox[ { }, "ChatUserIcon" ], Background -> None ],
     StyleKeyMapping          -> { "/" -> "ChatQuery", "?" -> "ChatQuery" }
 ]
 
@@ -74,7 +79,7 @@ Cell[
     MenuSortingValue     -> 1000,
     StyleKeyMapping      -> { "/" -> "ChatInput" },
     CellFrameColor       -> RGBColor[ 0.82745, 0.87059, 0.68235 ],
-    CellDingbat          -> Cell[ BoxData @ ToBoxes @ $icons[ "ChatQueryIcon" ], Background -> None ]
+    CellDingbat          -> Cell[ BoxData @ TemplateBox[ { }, "ChatQueryIcon" ], Background -> None ]
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -84,7 +89,7 @@ Cell[
     StyleData[ "ChatOutput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
     Background          -> GrayLevel[ 0.97647 ],
     CellAutoOverwrite   -> True,
-    CellDingbat         -> Cell[ BoxData @ ToBoxes @ $icons[ "AssistantIcon" ], Background -> None ],
+    CellDingbat         -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIcon" ], Background -> None ],
     CellElementSpacings -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
     CellGroupingRules   -> "OutputGrouping",
     CellMargins         -> { { 56, 25 }, { 10,  3 } },
@@ -102,7 +107,7 @@ Cell[
         Background   -> GrayLevel[ 1 ],
         FrameMargins -> { { 10, 10 }, { 6, 6 } },
         FrameStyle   -> Directive[ AbsoluteThickness[ 1 ], GrayLevel[ 0.92941 ] ],
-        ImageMargins -> { { 0, 0 }, { 20, 20 } },
+        ImageMargins -> 0,
         ImageSize    -> { Full, Automatic }
     }
 ]
@@ -211,5 +216,79 @@ Cell[
     ShowCellLabel          -> False
 ]
 (* :!CodeAnalysis::EndBlock:: *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Icons*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*AssistantIcon*)
+Cell[
+    StyleData[ "AssistantIcon" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "AssistantIcon" ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*AssistantIconActive*)
+Cell[
+    StyleData[ "AssistantIconActive" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "AssistantIcon" ] (* TODO: get active icon *)
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatUserIcon*)
+Cell[
+    StyleData[ "ChatUserIcon" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "ChatUserIcon" ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatMenuIcon*)
+Cell[
+    StyleData[ "ChatMenuIcon" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "ChatMenuIcon" ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatQueryIcon*)
+Cell[
+    StyleData[ "ChatQueryIcon" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "ChatQueryIcon" ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*MinimizedChat*)
+Cell[
+    StyleData[ "MinimizedChat" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "MinimizedChat" ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*MinimizedChatActive*)
+Cell[
+    StyleData[ "MinimizedChatActive" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "MinimizedChatActive" ]
+    }
+]
 
 End[ ];
