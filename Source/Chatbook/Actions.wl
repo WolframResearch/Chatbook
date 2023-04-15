@@ -27,7 +27,7 @@ $externalLanguageRules = Flatten @ {
     Cases[ $$externalLanguage, lang_ :> (lang -> lang) ]
 };
 
-$closedBirdCellOptions = Sequence[
+$closedChatCellOptions = Sequence[
     CellMargins     -> -2,
     CellOpen        -> False,
     CellFrame       -> 0,
@@ -151,7 +151,10 @@ SendChat[ evalCell_, nbo_, settings_, Automatic ] /; CloudSystem`$CloudNotebooks
 
 SendChat[ evalCell_, nbo_, settings_, Automatic ] :=
     Block[ { $autoOpen, $alwaysOpen },
-        $autoOpen = $alwaysOpen = MemberQ[ CurrentValue[ evalCell, CellStyle ], "Text"|"ChatInput"|"ChatQuery" ];
+        $autoOpen = $alwaysOpen = MemberQ[
+            CurrentValue[ evalCell, CellStyle ],
+            "Text"|"ChatInput"|"ChatQuery"|"ChatSystemInput"
+        ];
         sendChat[ evalCell, nbo, settings ]
     ];
 
@@ -306,7 +309,7 @@ activeAIAssistantCell[ container_, settings_, minimized_ ] :=
             "ChatOutput",
             If[ MatchQ[ minimized, True|Automatic ],
                 Sequence @@ Flatten[ {
-                    $closedBirdCellOptions,
+                    $closedChatCellOptions,
                     Initialization :> attachMinimizedIcon[ EvaluationCell[ ], label ]
                 } ],
                 Sequence @@ { }
@@ -438,9 +441,10 @@ makeHTTPRequest[ settings_Association? AssociationQ, cells: { __Cell } ] :=
     Module[ { role, message, history, messages, merged },
         role     = makeCurrentRole @ settings;
         message  = Block[ { $CurrentCell = True }, makeCellMessage @ Last @ cells ];
-        history  = Reverse[ makeCellMessage /@ Reverse @ Most @ cells ];
+        history  = Global`$history = Reverse[ makeCellMessage /@ Reverse @ Most @ cells ];
         messages = DeleteMissing @ Flatten @ { role, history, message };
         merged   = If[ TrueQ @ Lookup[ settings, "MergeMessages" ], mergeMessageData @ messages, messages ];
+        Global`$merged = merged;
         makeHTTPRequest[ settings, merged ]
     ];
 
@@ -658,9 +662,31 @@ cloudCellStyles // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeCellMessage*)
 makeCellMessage // beginDefinition;
-makeCellMessage[ cell: Cell[ __, "ChatOutput", ___ ] ] := <| "role" -> "assistant", "content" -> CellToString @ cell |>;
-makeCellMessage[ cell_Cell ] := <| "role" -> "user", "content" -> CellToString @ cell |>;
+makeCellMessage[ cell_Cell ] := <| "role" -> cellRole @ cell, "content" -> CellToString @ cell |>;
 makeCellMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cellRole*)
+cellRole // beginDefinition;
+
+cellRole[ Cell[
+    __,
+    TaggingRules -> KeyValuePattern[ "ChatNotebookSettings" -> KeyValuePattern[ "Role" -> role_String ] ],
+    ___
+] ] := role;
+
+cellRole[ Cell[ _, styles__String, OptionsPattern[ ] ] ] :=
+    FirstCase[ { styles }, style_ :> With[ { role = $styleRoles @ style }, role /; StringQ @ role ], "user" ];
+
+cellRole // endDefinition;
+
+
+$styleRoles = <|
+    "ChatInput"       -> "user",
+    "ChatOutput"      -> "assistant",
+    "ChatSystemInput" -> "system"
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1162,7 +1188,7 @@ reformatCell[ settings_, string_, tag_, open_, label_ ] := Cell[
     If[ TrueQ @ open,
         Sequence @@ { },
         Sequence @@ Flatten @ {
-            $closedBirdCellOptions,
+            $closedChatCellOptions,
             Initialization :> attachMinimizedIcon[ EvaluationCell[ ], label ]
         }
     ]
