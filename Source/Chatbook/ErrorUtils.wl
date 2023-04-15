@@ -10,13 +10,14 @@
 
 BeginPackage["Wolfram`Chatbook`ErrorUtils`"]
 
-Needs["GeneralUtilities`" -> "GU`"]
+(* Avoiding context aliasing due to bug 434990: *)
+Needs[ "GeneralUtilities`" -> None ];
 
-GU`SetUsage[CreateErrorType, "
+GeneralUtilities`SetUsage[CreateErrorType, "
 CreateErrorType[symbol$, expansions$] registers an error tag that can be used with CreateFailure and Raise.
 "]
 
-GU`SetUsage[CreateFailure, "
+GeneralUtilities`SetUsage[CreateFailure, "
 CreateFailure[tag$] expands tag$ and returns a Failure.
 CreateFailure[tag$, assoc$] expands tag$ and returns a Failure.
 CreateFailure[tag$, assoc$, {formatString$, args$}] expands tag$ and returns a Failure with the specified formatted message.
@@ -25,7 +26,7 @@ Experimental: CreateFailure[tag$, formatString$, formatArgs$\[Ellipsis]]
 Experimental: CreateFailure[tag$, assoc$, formatString$, formatArgs$\[Ellipsis]]
 "]
 
-GU`SetUsage[Raise, "
+GeneralUtilities`SetUsage[Raise, "
 Raise[tag$, assoc$] expands tag$ and raises a Failure exception.
 Raise[tag$, assoc$, {formatString$, args$}] expands tag$ and raises a Failure exception with the specified formatted message.
 Raise[tag$, {formatString$, args$}] expands tag$ and raises a Failure exception with the specified formatted message.
@@ -33,44 +34,44 @@ Experimental: Raise[tag$, formatString$, formatArgs$\[Ellipsis]]
 Experimental: Raise[tag$, assoc$, formatString$, formatArgs$\[Ellipsis]]
 "]
 
-GU`SetUsage[Handle, "
+GeneralUtilities`SetUsage[Handle, "
 Handle[expr$, pattern$] catches any raised failure that matches pattern$.
 Handle[expr$, rules$] catches any raised failure that matches one of the specified handler rules$.
 Handle[spec$] represents an operator form of Handle that can be applied to an expression.
 "]
 
-GU`SetUsage[FailurePattern, "FailurePattern[tags$] is a pattern that matches any Failure with one or more of the specified tags$."]
+GeneralUtilities`SetUsage[FailurePattern, "FailurePattern[tags$] is a pattern that matches any Failure with one or more of the specified tags$."]
 
 (* TODO: This should be the same as ConfirmAssert? *)
-GU`SetUsage[RaiseAssert, "
+GeneralUtilities`SetUsage[RaiseAssert, "
 RaiseAssert[cond$] raises a Failure if cond$ is not True.
 RaiseAssert[cond$, formatStr$, formatArgs$\[Ellipsis]] raises a Failure with the specified formatted string message if cond$ is not True.
 "]
 
-GU`SetUsage[WrapFailure, "
+GeneralUtilities`SetUsage[WrapFailure, "
 WrapFailure[failure$, tags$] constructs a new Failure from tags$ with a \"CausedBy\ -> failure$ field.
 WrapFailure[failure$, tags$, formatString$, formatArgs$\[Ellipsis]] constructs a new Failure  from tags$ and the format string message with a \"CausedBy\" -> failure$ field.
 "]
 
-GU`SetUsage[WrapRaised, "
+GeneralUtilities`SetUsage[WrapRaised, "
 WrapRaised[tag$, formatString$, formatArgs$\[Ellipsis]][expr$] wraps any Failure's raised by the evaluation of expr$ in an outer Failure where the original error is the \"CausedBy\" field of the new error.
 "]
 
-GU`SetUsage[SetFallthroughError, "
+GeneralUtilities`SetUsage[SetFallthroughError, "
 SetFallthroughError[symbol] sets a \"fallthrough\" down value on symbol$ that raises an error if no other down values match.
 "]
 
 (* TODO: This should be the same as Confirm[_]? *)
-GU`SetUsage[RaiseConfirm, "
+GeneralUtilities`SetUsage[RaiseConfirm, "
 RaiseConfirm[expr$] confirms that expr$ is not considered a failure, otherwise raising an error.
 "]
 
 (* TODO: This should be the same as ConfirmMatch[_]? *)
-GU`SetUsage[RaiseConfirmMatch, "
+GeneralUtilities`SetUsage[RaiseConfirmMatch, "
 RaiseConfirmMatch[expr$, form$] confirms that expr$ matches the pattern form$, otherwise raising a Failure.
 "]
 
-GU`SetUsage[ConfirmReplace, "
+GeneralUtilities`SetUsage[ConfirmReplace, "
 ConfirmReplace[expr$, rules$] applies a rule or list of rules in an attempt to transform the entire expression expr$, and raises an error if no rule matches.
 "]
 
@@ -103,23 +104,23 @@ Apprise
 (* Standard Error Tags                *)
 (*====================================*)
 
-GU`SetUsage[AssertFailedError, "
+GeneralUtilities`SetUsage[AssertFailedError, "
 AssertFailedError is an error tag indicating a failed RaiseAssert[..]
 "]
 
-GU`SetUsage[DownValueFallthroughError, "
+GeneralUtilities`SetUsage[DownValueFallthroughError, "
 DownValueFallthroughError is an error tag indicating that a function was called with arguments that fell through to the catch-all definition set by SetFallthroughError.
 "]
 
-GU`SetUsage[ConfirmError, "
+GeneralUtilities`SetUsage[ConfirmError, "
 ConfirmError is an error tag indicating that a *Confirm* function was called with an argument that is considered a failure.
 "]
 
-GU`SetUsage[ConfirmReplaceError, "
+GeneralUtilities`SetUsage[ConfirmReplaceError, "
 ConfirmReplaceError is an error tag indicating that ConfirmReplace was unable to transform an expression.
 "]
 
-GU`SetUsage[ConfirmMatchError, "
+GeneralUtilities`SetUsage[ConfirmMatchError, "
 ConfirmMatchError is an error tag indicating that RaiseConfirmMatch was called with an expression and pattern that did not match.
 "]
 
