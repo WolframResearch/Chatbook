@@ -265,25 +265,24 @@ Notebook[
    MenuSortingValue -> 1000
   ],
   Cell[
-   StyleData["ChatContextDivider"],
-   Selectable -> False,
-   ShowCellBracket -> False,
-   CellMargins -> {{0, 0}, {10, 10}},
-   CellBracketOptions -> {"OverlapContent" -> True},
-   CellElementSpacings -> {"CellMinHeight" -> 6},
+   StyleData[
+    "ChatContextDivider",
+    StyleDefinitions -> StyleData["Section"]
+   ],
+   CellFrame -> {{0, 0}, {0, 8}},
+   CellMargins -> {{56, 25}, {Inherited, Inherited}},
    StyleKeyMapping -> {
     " " -> "Text",
     "*" -> "Item",
     "/" -> "Input",
     "Backspace" -> "ChatSystemInput"
    },
-   Evaluatable -> True,
    CellGroupingRules -> {"SectionGrouping", 58},
    ShowCellLabel -> False,
-   CellFrameMargins -> {{20, 20}, {2, 2}},
+   CellFrameColor -> RGBColor[0.74902, 0.74902, 0.74902],
    DefaultNewCellStyle -> "Input",
-   FontSize -> 6,
-   Background -> GrayLevel[0.95]
+   FontWeight -> "DemiBold",
+   FontColor -> GrayLevel[0.2]
   ],
   Cell[
    StyleData[

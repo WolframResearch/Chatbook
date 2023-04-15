@@ -99,20 +99,16 @@ Cell[
 (* ::Section::Closed:: *)
 (*ChatContextDivider*)
 Cell[
-    StyleData[ "ChatContextDivider" ],
+    StyleData[ "ChatContextDivider", StyleDefinitions -> StyleData[ "Section" ] ],
     StyleKeyMapping     -> { " " -> "Text", "*" -> "Item", "/" -> "Input", "Backspace" -> "ChatSystemInput" },
-    Background          -> GrayLevel[ 0.95 ],
-    CellBracketOptions  -> { "OverlapContent" -> True },
-    CellElementSpacings -> { "CellMinHeight" -> 6 },
-    CellFrameMargins    -> { { 20, 20 }, { 2, 2 } },
     CellGroupingRules   -> { "SectionGrouping", 58 },
-    CellMargins         -> { { 0, 0 }, { 10, 10 } },
+    ShowCellLabel       -> False,
+    CellMargins         -> { { 56, 25 }, { Inherited, Inherited } },
+    CellFrame           -> { { 0, 0 }, { 0, 8 } },
+    CellFrameColor      -> RGBColor[ 0.74902, 0.74902, 0.74902 ],
     DefaultNewCellStyle -> "Input",
-    Evaluatable         -> True,
-    FontSize            -> 6,
-    Selectable          -> False,
-    ShowCellBracket     -> False,
-    ShowCellLabel       -> False
+    FontColor           -> GrayLevel[ 0.2 ],
+    FontWeight          -> "DemiBold"
 ]
 
 (* ::**************************************************************************************************************:: *)
