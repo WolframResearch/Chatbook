@@ -213,7 +213,7 @@ Notebook[
      BoxData[TemplateBox[{}, "ChatUserIcon"]],
      Background -> None
     ],
-   CellMargins -> {{56, 25}, {3, 10}},
+   CellMargins -> {{56, 25}, {5, 8}},
    StyleKeyMapping -> {"/" -> "ChatQuery", "?" -> "ChatQuery"},
    CellGroupingRules -> "InputGrouping",
    CellFrameColor -> RGBColor[0.81053, 0.85203, 0.91294],
@@ -243,7 +243,7 @@ Notebook[
      BoxData[TemplateBox[{}, "AssistantIcon"]],
      Background -> None
     ],
-   CellMargins -> {{56, 25}, {10, 3}},
+   CellMargins -> {{56, 25}, {12, 5}},
    CellElementSpacings -> {"CellMinHeight" -> 0, "ClosedCellHeight" -> 0},
    CellGroupingRules -> "OutputGrouping",
    GeneratedCell -> True,
@@ -252,17 +252,7 @@ Notebook[
    LineSpacing -> {1.1, 0, 2},
    Background -> GrayLevel[0.97647]
   ],
-  Cell[
-   StyleData["ChatCodeBlock"],
-   FrameBoxOptions -> {
-    Background -> GrayLevel[1],
-    FrameMargins -> {{10, 10}, {6, 6}},
-    FrameStyle ->
-     Directive[AbsoluteThickness[1], GrayLevel[0.92941]],
-    ImageMargins -> {{0, 0}, {8, 8}},
-    ImageSize -> {Full, Automatic}
-   }
-  ],
+  Cell[StyleData["ChatCodeBlock"]],
   Cell[
    StyleData["Input"],
    StyleKeyMapping -> {

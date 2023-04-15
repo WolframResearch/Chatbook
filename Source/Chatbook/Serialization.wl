@@ -301,6 +301,7 @@ fasterCellToString0[ $stringStripHeads[ a_, ___ ] ] := fasterCellToString0 @ a;
 
 (* Add spacing between RowBox elements that are comma separated *)
 fasterCellToString0[ "," ] := ", ";
+fasterCellToString0[ RowBox[ row: { ___, ",", " ", ___ } ] ] := fasterCellToString0 @ RowBox @ DeleteCases[ row, " " ];
 
 (* IndentingNewline *)
 fasterCellToString0[ FromCharacterCode[ 62371 ] ] := "\n\t";
@@ -479,8 +480,16 @@ fasterCellToString0[ GridBox[ grid_? MatrixQ, ___ ] ] :=
 fasterCellToString0[ Cell[ TextData @ { _, _, text_String, _, Cell[ _, "ExampleCount", ___ ] }, ___ ] ] :=
     fasterCellToString0 @ text;
 
-fasterCellToString0[ DynamicModuleBox[ _, TagBox[ Cell[ box_, "ChatCodeBlock", ___ ], _EventHandlerTag ], ___ ] ] :=
-    fasterCellToString0 @ box;
+fasterCellToString0[
+    Cell[
+        BoxData @ FrameBox[ Cell[ BoxData @ DynamicModuleBox[ _, box_, ___ ], ___ ], ___ ],
+        "ChatCodeBlock",
+        ___,
+        TaggingRules -> KeyValuePattern[ "CodeLanguage" -> lang_String ],
+        ___
+    ]
+] := "```" <> lang <> "\n" <> fasterCellToString0 @ box <> "\n```";
+
 
 fasterCellToString0[ _[
     __,
