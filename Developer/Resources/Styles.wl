@@ -107,7 +107,7 @@ Cell[
         Background   -> GrayLevel[ 1 ],
         FrameMargins -> { { 10, 10 }, { 6, 6 } },
         FrameStyle   -> Directive[ AbsoluteThickness[ 1 ], GrayLevel[ 0.92941 ] ],
-        ImageMargins -> 0,
+        ImageMargins -> { { 0, 0 }, { 8, 8 } },
         ImageSize    -> { Full, Automatic }
     }
 ]
