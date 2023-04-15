@@ -6,12 +6,13 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Declare Symbols*)
-`CreateChatNotebook;
-`$ChatSystemPre;
-`$ChatInputPost;
-`$DefaultChatSystemPre;
-`$DefaultChatInputPost;
 `$ChatContextCellStyles;
+`$ChatInputPost;
+`$ChatSystemPre;
+`$DefaultChatInputPost;
+`$DefaultChatSystemPre;
+`ChatbookAction;
+`CreateChatNotebook;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -58,14 +59,15 @@ Cells with one of the built-in chat cell styles are always included as context.\
 (* ::Section::Closed:: *)
 (*Load Files*)
 Block[ { $ContextPath },
-    Get[ "Wolfram`Chatbook`Debug`"          ];
-    Get[ "Wolfram`Chatbook`ErrorUtils`"     ];
-    Get[ "Wolfram`Chatbook`Errors`"         ];
-    Get[ "Wolfram`Chatbook`CreateChatbook`" ];
-    Get[ "Wolfram`Chatbook`Serialization`"  ];
-    Get[ "Wolfram`Chatbook`Streaming`"      ];
-    Get[ "Wolfram`Chatbook`Utils`"          ];
-    Get[ "Wolfram`Chatbook`UI`"             ];
+    Get[ "Wolfram`Chatbook`Debug`"              ];
+    Get[ "Wolfram`Chatbook`ErrorUtils`"         ];
+    Get[ "Wolfram`Chatbook`Errors`"             ];
+    Get[ "Wolfram`Chatbook`CreateChatNotebook`" ];
+    Get[ "Wolfram`Chatbook`Serialization`"      ];
+    Get[ "Wolfram`Chatbook`Streaming`"          ];
+    Get[ "Wolfram`Chatbook`Utils`"              ];
+    Get[ "Wolfram`Chatbook`UI`"                 ];
+    Get[ "Wolfram`Chatbook`Actions`"            ];
 ];
 
 (* ::**************************************************************************************************************:: *)

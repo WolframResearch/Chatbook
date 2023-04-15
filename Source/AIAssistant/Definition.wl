@@ -113,10 +113,11 @@ AIAssistant // Options = Normal[ $defaultAIAssistantSettings, Association ];
 AIAssistant[ opts: OptionsPattern[ ] ] :=
     Module[ { nbo, result },
         WithCleanup[
-            nbo = CreateWindow[ WindowTitle -> "Untitled Chat Notebook", Visible -> False ],
+            nbo = NotebookPut[ Notebook @ { Cell[ "", "ChatInput" ] }, Visible -> False ],
             result = catchTop @ AIAssistant[ nbo, opts ],
             If[ FailureQ @ result,
                 NotebookClose @ nbo,
+                SelectionMove[ First @ Cells @ nbo, Before, CellContents ];
                 SetOptions[ nbo, Visible -> True ];
                 SetSelectedNotebook @ nbo
             ]
@@ -125,7 +126,7 @@ AIAssistant[ opts: OptionsPattern[ ] ] :=
 
 AIAssistant[ nbo_NotebookObject, opts: OptionsPattern[ ] ] :=
     catchTop @ Enclose @ Module[ { key, id, settings, options },
-        $birdChatLoaded = True;
+        $aiChatLoaded = True;
         key = ConfirmBy[ toAPIKey @ OptionValue[ "OpenAIKey" ], StringQ ];
         id = CreateUUID[ ];
         $apiKeys[ id ] = key;
@@ -460,7 +461,7 @@ makeAIAssistantSettings // endDefinition;
 (*executeAIAssistantCommand*)
 executeAIAssistantCommand // beginDefinition;
 executeAIAssistantCommand[ "RequestAIAssistant", args___ ] := requestAIAssistant @ args;
-executeAIAssistantCommand[ "Loaded"            , args___ ] := $birdChatLoaded;
+executeAIAssistantCommand[ "Loaded"            , args___ ] := $aiChatLoaded;
 executeAIAssistantCommand[ "SetRole"           , args___ ] := setAIAssistantRole @ args;
 executeAIAssistantCommand[ "Ask"               , args___ ] := askAIAssistant @ args;
 executeAIAssistantCommand[ "Models"            , args___ ] := getAIAssistantModels @ args;
@@ -1683,7 +1684,7 @@ inlineInteractiveCodeCell[ display_, string_, lang_ ] :=
             display,
             {
                 "MouseEntered" :>
-                    If[ TrueQ @ $birdChatLoaded,
+                    If[ TrueQ @ $aiChatLoaded,
                         attached =
                             AttachCell[
                                 EvaluationCell[ ],
@@ -2284,11 +2285,18 @@ fasterCellToString0[ TemplateBox[ { _, box_, ___ }, "EntityProperty" ] ] := fast
 (* Spacers *)
 fasterCellToString0[ TemplateBox[ _, "Spacer1" ] ] := " ";
 
+(* TeXAssistantTemplate *)
+fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> string_ ], "TeXAssistantTemplate" ] ] :=
+    "ToExpression[\"" <> string <> "\", TeXForm]";
+
 (* Other *)
 fasterCellToString0[ TemplateBox[ args_, name_String, ___ ] ] :=
-    With[ { s = fasterCellToString0 @ $templateBoxRules[ name ][ args ] },
-        s /; StringQ @ s
+    With[ { f = $templateBoxRules @ name },
+        fasterCellToString0 @ f @ args /; ! MissingQ @ f
     ];
+
+fasterCellToString0[ TemplateBox[ args_, ___, InterpretationFunction -> f_, ___ ] ] :=
+    fasterCellToString0 @ f @ args;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -2366,6 +2374,8 @@ fasterCellToString0[ _[
     TaggingRules -> Association @ OrderlessPatternSequence[ "CellToStringData" -> data_, ___ ],
     ___
 ] ] := fasterCellToString0 @ data;
+
+fasterCellToString0[ DynamicModuleBox[ a___ ] ] := "DynamicModule[<<" <> ToString @ Length @ HoldComplete @ a <> ">>]";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)

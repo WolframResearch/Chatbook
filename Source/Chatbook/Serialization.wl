@@ -21,8 +21,8 @@ Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
 (*Config*)
 $$delimiterStyle   = "PageBreak"|"ExampleDelimiter";
 $$itemStyle        = "Item"|"Notes";
-$$noCellLabelStyle = "ChatUserInput"|"ChatSystemInput"|"ChatContextDivider"|$$delimiterStyle;
-$$docSearchStyle   = "ChatQuery"; (* TODO: currently unused *)
+$$noCellLabelStyle = "ChatInput"|"ChatUserInput"|"ChatSystemInput"|"ChatContextDivider"|$$delimiterStyle;
+$$docSearchStyle   = "ChatQuery";
 
 (* Default character encoding for strings created from cells *)
 $cellCharacterEncoding = "Unicode";
@@ -309,11 +309,11 @@ fasterCellToString0[ a_String /; StringMatchQ[ a, "\""~~___~~("\\!"|"\!")~~___~~
         If[ TrueQ @ $showStringCharacters,
             res,
             StringTrim[ res, "\"" ]
-        ] /; FreeQ[ res, s_String /; StringContainsQ[ s, "\!" ] ]
+        ] /; FreeQ[ res, s_String /; StringContainsQ[ s, ("\\!"|"\!") ] ]
     ];
 
-fasterCellToString0[ a_String /; StringContainsQ[ a, "\!" ] ] :=
-    With[ { res = stringToBoxes @ a }, res /; FreeQ[ res, s_String /; StringContainsQ[ s, "\!" ] ] ];
+fasterCellToString0[ a_String /; StringContainsQ[ a, ("\\!"|"\!") ] ] :=
+    With[ { res = stringToBoxes @ a }, res /; FreeQ[ res, s_String /; StringContainsQ[ s, ("\\!"|"\!") ] ] ];
 
 (* Other strings *)
 fasterCellToString0[ a_String ] :=
@@ -386,11 +386,18 @@ fasterCellToString0[ TemplateBox[ { _, box_, ___ }, "EntityProperty" ] ] := fast
 (* Spacers *)
 fasterCellToString0[ TemplateBox[ _, "Spacer1" ] ] := " ";
 
+(* TeXAssistantTemplate *)
+fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> string_ ], "TeXAssistantTemplate" ] ] :=
+    "ToExpression[\"" <> string <> "\", TeXForm]";
+
 (* Other *)
 fasterCellToString0[ TemplateBox[ args_, name_String, ___ ] ] :=
-    With[ { s = fasterCellToString0 @ $templateBoxRules[ name ][ args ] },
-        s /; StringQ @ s
+    With[ { f = $templateBoxRules @ name },
+        fasterCellToString0 @ f @ args /; ! MissingQ @ f
     ];
+
+fasterCellToString0[ TemplateBox[ args_, ___, InterpretationFunction -> f_, ___ ] ] :=
+    fasterCellToString0 @ f @ args;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -462,6 +469,14 @@ fasterCellToString0[ GridBox[ grid_? MatrixQ, ___ ] ] :=
 
 fasterCellToString0[ Cell[ TextData @ { _, _, text_String, _, Cell[ _, "ExampleCount", ___ ] }, ___ ] ] :=
     fasterCellToString0 @ text;
+
+fasterCellToString0[ _[
+    __,
+    TaggingRules -> Association @ OrderlessPatternSequence[ "CellToStringData" -> data_, ___ ],
+    ___
+] ] := fasterCellToString0 @ data;
+
+fasterCellToString0[ DynamicModuleBox[ a___ ] ] := "DynamicModule[<<" <> ToString @ Length @ HoldComplete @ a <> ">>]";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -591,7 +606,248 @@ truncateStackString[ str_String ] := StringTake[ str, 80 ] <> "...";
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*docSearchResultString*)
-docSearchResultString // SetFallthroughError; (* FIXME: define this *)
+docSearchResultString // ClearAll;
+
+docSearchResultString[ query_String ] /; $currentCell =!= True := "";
+
+docSearchResultString[ query_String ] := Enclose[
+    Module[ { search },
+        search = ConfirmMatch[ documentationSearch @ query, { __String } ];
+        StringJoin[
+            "BEGIN_SEARCH_RESULTS\n",
+            StringRiffle[ search, "\n" ],
+            "\nEND_SEARCH_RESULTS"
+        ]
+    ],
+    $noDocSearchResultsString &
+];
+
+
+docSearchResultString[ other_ ] :=
+    With[ { str = cellToString @ other }, documentationSearch @ str /; StringQ @ str ];
+
+docSearchResultString[ ___ ] := $noDocSearchResultsString;
+
+
+documentationSearch[ query_String ] /; $localDocSearch := documentationSearch[ query ] =
+    Module[ { result },
+        Needs[ "DocumentationSearch`" -> None ];
+        result = Association @ DocumentationSearch`SearchDocumentation[
+            query,
+            "MetaData" -> { "Title", "URI", "ShortenedSummary", "Score" },
+            "Limit"    -> 5
+        ];
+        makeSearchResultString /@ Cases[
+            result[ "Matches" ],
+            { title_, uri_String, summary_, score_ } :>
+                { title, "paclet:"<>StringTrim[ uri, "paclet:" ], summary, score }
+        ]
+    ];
+
+documentationSearch[ query_String ] := documentationSearch[ query ] =
+    Module[ { resp, flat, items },
+
+        resp = URLExecute[
+            "https://search.wolfram.com/search-api/search.json",
+            {
+                "query"           -> query,
+                "limit"           -> "5",
+                "disableSpelling" -> "true",
+                "fields"          -> "title,summary,url,label",
+                "collection"      -> "blogs,demonstrations,documentation10,mathworld,resources,wa_products"
+            },
+            "RawJSON"
+        ];
+
+        flat = Take[
+            ReverseSortBy[ Flatten @ Values @ KeyTake[ resp[ "results" ], resp[ "sortOrder" ] ], #score & ],
+            UpTo[ 5 ]
+        ];
+
+        items = Select[ flat, #score > 1 & ];
+
+        makeSearchResultString /@ items
+    ];
+
+
+makeSearchResultString // ClearAll;
+
+makeSearchResultString[ { title_, uri_String, summary_, score_ } ] :=
+    TemplateApply[
+        "* [`1`](`2`) - (score: `4`) `3`",
+        { title, uri, summary, score }
+    ];
+
+
+makeSearchResultString[ KeyValuePattern[ "ad" -> True ] ] := Nothing;
+
+makeSearchResultString[ KeyValuePattern @ { "fields" -> fields_Association, "score" -> score_ } ] :=
+    makeSearchResultString @ Replace[
+        Append[ fields, "score" -> score ],
+        { s_String, ___ } :> s,
+        { 1 }
+    ];
+
+
+makeSearchResultString[ KeyValuePattern @ {
+    "summary" -> summary_String,
+    "title"   -> name_String,
+    "label"   -> "Built-in Symbol"|"Entity Type"|"Featured Example"|"Guide"|"Import/Export Format"|"Tech Note",
+    "uri"     -> uri_String,
+    "score"   -> score_
+} ] := TemplateApply[
+    "* [`1`](`2`) - (score: `4`) `3`",
+    { name, "paclet:"<>StringTrim[ uri, "paclet:" ], summary, score }
+];
+
+makeSearchResultString[ KeyValuePattern @ {
+    "summary" -> summary_String,
+    "title"   -> name_String,
+    "url"     -> url_String,
+    "score"   -> score_
+} ] := TemplateApply[ "* [`1`](`2`) - (score: `4`) `3`", { name, url, summary, score } ];
+
+
+$noDocSearchResultsString = "BEGIN_DOCUMENTATION_SEARCH_RESULTS\n(no results found)\nEND_DOCUMENTATION_SEARCH_RESULTS";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getUsageString*)
+getUsageString // SetFallthroughError;
+
+getUsageString[ nb_Notebook ] := makeUsageString @ cellCases[
+    firstMatchingCellGroup[ nb, Cell[ __, "ObjectNameGrid", ___ ], All ],
+    Cell[ __, "ObjectNameGrid"|"Usage", ___ ]
+];
+
+
+makeUsageString // SetFallthroughError;
+
+makeUsageString[ usage_List ] := StringRiffle[ Flatten[ makeUsageString /@ usage ], "\n" ];
+
+makeUsageString[ Cell[ BoxData @ GridBox[ grid_List, ___ ], "Usage", ___ ] ] := makeUsageString0 /@ grid;
+
+makeUsageString[ Cell[ BoxData @ GridBox @ { { cell_, _ } }, "ObjectNameGrid", ___ ] ] :=
+    "# " <> cellToString @ cell <> "\n";
+
+makeUsageString0 // SetFallthroughError;
+makeUsageString0[ list_List ] := StringTrim @ StringReplace[ StringRiffle[ cellToString /@ list ], Whitespace :> " " ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getDetailsString*)
+getDetailsString // SetFallthroughError;
+
+getDetailsString[ nb_Notebook ] :=
+    Module[ { notes },
+        notes = cellToString /@ cellFlatten @ firstMatchingCellGroup[ nb, Cell[ __, "NotesSection", ___ ] ];
+        If[ MatchQ[ notes, { __String } ],
+            "## Notes\n\n" <> StringRiffle[ notes, "\n" ],
+            ""
+        ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getExamplesString*)
+getExamplesString // SetFallthroughError;
+
+getExamplesString[ nb_Notebook ] :=
+    Module[ { examples },
+        examples = cellToString /@ cellFlatten @ firstMatchingCellGroup[
+            nb,
+            Cell[ __, "PrimaryExamplesSection", ___ ]
+        ];
+        If[ MatchQ[ examples, { __String } ],
+            "## Examples\n\n" <> StringRiffle[ examples, "\n" ],
+            ""
+        ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Cell Utilities*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cellMap*)
+cellMap // SetFallthroughError;
+cellMap[ f_, cells_List ] := (cellMap[ f, #1 ] &) /@ cells;
+cellMap[ f_, Cell[ CellGroupData[ cells_, a___ ], b___ ] ] := Cell[ CellGroupData[ cellMap[ f, cells ], a ], b ];
+cellMap[ f_, cell_Cell ] := f @ cell;
+cellMap[ f_, Notebook[ cells_, opts___ ] ] := Notebook[ cellMap[ f, cells ], opts ];
+cellMap[ f_, other_ ] := other;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cellGroupMap*)
+cellGroupMap // SetFallthroughError;
+cellGroupMap[ f_, Notebook[ cells_, opts___ ] ] := Notebook[ cellGroupMap[ f, cells ], opts ];
+cellGroupMap[ f_, cells_List ] := Map[ cellGroupMap[ f, # ] &, cells ];
+cellGroupMap[ f_, Cell[ group_CellGroupData, a___ ] ] := Cell[ cellGroupMap[ f, f @ group ], a ];
+cellGroupMap[ f_, other_ ] := other;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cellScan*)
+cellScan // SetFallthroughError;
+cellScan[ f_, Notebook[ cells_, opts___ ] ] := cellScan[ f, cells ];
+cellScan[ f_, cells_List ] := Scan[ cellScan[ f, # ] &, cells ];
+cellScan[ f_, Cell[ CellGroupData[ cells_, _ ], ___ ] ] := cellScan[ f, cells ];
+cellScan[ f_, cell_Cell ] := (f @ cell; Null);
+cellScan[ ___ ] := Null;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cellGroupScan*)
+cellGroupScan // SetFallthroughError;
+cellGroupScan[ f_, Notebook[ cells_, opts___ ] ] := cellGroupScan[ f, cells ];
+cellGroupScan[ f_, cells_List ] := Scan[ cellGroupScan[ f, # ] &, cells ];
+cellGroupScan[ f_, Cell[ group_CellGroupData, ___ ] ] := (f @ group; cellGroupScan[ f, group ]);
+cellGroupScan[ ___ ] := Null;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cellCases*)
+cellCases // SetFallthroughError;
+cellCases[ cells_, patt_ ] := Cases[ cellFlatten @ cells, patt ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cellFlatten*)
+cellFlatten // SetFallthroughError;
+
+cellFlatten[ cells_ ] :=
+    Module[ { bag },
+        bag = Internal`Bag[ ];
+        cellScan[ Internal`StuffBag[ bag, # ] &, cells ];
+        Internal`BagPart[ bag, All ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*firstMatchingCellGroup*)
+firstMatchingCellGroup // SetFallthroughError;
+
+firstMatchingCellGroup[ nb_, patt_ ] := firstMatchingCellGroup[ nb, patt, "Content" ];
+
+firstMatchingCellGroup[ nb_, patt_, All ] := Catch[
+    cellGroupScan[
+        Replace[ CellGroupData[ { header: patt, content___ }, _ ] :> Throw[ { header, content }, $cellGroupTag ] ],
+        nb
+    ];
+    Missing[ "NotFound" ],
+    $cellGroupTag
+];
+
+firstMatchingCellGroup[ nb_, patt_, "Content" ] := Catch[
+    cellGroupScan[
+        Replace[ CellGroupData[ { patt, content___ }, _ ] :> Throw[ { content }, $cellGroupTag ] ],
+        nb
+    ];
+    Missing[ "NotFound" ],
+    $cellGroupTag
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

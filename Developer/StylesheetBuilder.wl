@@ -44,7 +44,7 @@ $icons := $icons = Association @ Map[
 (*$sendChatFunction*)
 $sendChatFunction = Function[
     Needs[ "Wolfram`Chatbook`" -> None ];
-    Symbol[ "Wolfram`Chatbook`SendChat" ][ Notebooks @ #, # ]
+    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "Send", # ]
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -55,8 +55,8 @@ $askMenuItem = MenuItem[
     KernelExecute[
         Function[
             Needs[ "Wolfram`Chatbook`" -> None ];
-            Symbol[ "Wolfram`Chatbook`AskChat" ][ Notebooks @ #, # ]
-        ][ EvaluationCell[ ] ]
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "Ask", ## ]
+        ][ InputNotebook[ ], SelectedCells @ InputNotebook[ ] ]
     ],
     MenuEvaluator -> Automatic,
     Method        -> "Queued"
