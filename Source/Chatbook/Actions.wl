@@ -272,10 +272,7 @@ activeAIAssistantCell[ container_, settings_ ] /; CloudSystem`$CloudNotebooks :=
         BoxData @ ToBoxes @ ProgressIndicator[ Appearance -> "Percolate" ],
         "Output",
         "ChatOutput",
-        CellFrameLabels -> {
-            { Cell @ BoxData @ TemplateBox[ { }, "AssistantIconActive" ], None },
-            { None, None }
-        }
+        CellDingbat -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIconActive" ], Background -> None ]
     ]
 );
 
@@ -316,7 +313,7 @@ activeAIAssistantCell[ container_, settings_, minimized_ ] :=
             ],
             Selectable  -> False,
             Editable    -> False,
-            CellDingbat -> Cell @ BoxData @ TemplateBox[ { }, "AssistantIconActive" ]
+            CellDingbat -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIconActive" ], Background -> None ]
         ]
     ];
 
@@ -1290,7 +1287,13 @@ makeResultCell0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*formatTextString*)
 formatTextString // beginDefinition;
-formatTextString[ str_String ] := StringSplit[ str, $stringFormatRules, IgnoreCase -> True ];
+
+formatTextString[ str_String ] := StringSplit[
+    StringReplace[ str, { StartOfString~~"\n\n" -> "\n", "\n\n"~~EndOfString -> "\n" } ],
+    $stringFormatRules,
+    IgnoreCase -> True
+];
+
 formatTextString // endDefinition;
 
 $stringFormatRules = {
@@ -1578,6 +1581,9 @@ button[ label_, code_ ] :=
 (* TODO: use something simpler/faster *)
 
 stringTemplateInput // ClearAll;
+
+stringTemplateInput[ s_String? NameQ ] /; Context @ s === "System`" :=
+    hyperlink[ s, "paclet:ref/" <> Last @ StringSplit[ s, "`" ] ];
 
 stringTemplateInput[ s_String? StringQ ] :=
     UsingFrontEnd @ Enclose @ Confirm[ stringTemplateInput0 ][ s ];

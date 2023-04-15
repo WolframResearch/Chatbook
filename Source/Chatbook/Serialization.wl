@@ -388,6 +388,13 @@ fasterCellToString0[ TemplateBox[ { _, box_, ___ }, "EntityProperty" ] ] := fast
 (* Spacers *)
 fasterCellToString0[ TemplateBox[ _, "Spacer1" ] ] := " ";
 
+(* Links *)
+fasterCellToString0[ TemplateBox[ { label_, uri_String }, "TextRefLink" ] ] :=
+    "[" <> fasterCellToString0 @ label <> "](" <> uri <> ")";
+
+fasterCellToString0[ ButtonBox[ StyleBox[ label_, "SymbolsRefLink", ___ ], ___, ButtonData -> uri_String, ___ ] ] :=
+    "[" <> fasterCellToString0 @ label <> "](" <> uri <> ")";
+
 (* TeXAssistantTemplate *)
 fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> string_ ], "TeXAssistantTemplate" ] ] :=
     "$" <> string <> "$";
