@@ -63,12 +63,12 @@ Cell[
 (*ChatInput*)
 Cell[
     StyleData[ "ChatInput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
-    MenuSortingValue         -> 1000,
-    CellGroupingRules        -> "InputGrouping",
-    CellFrameColor           -> RGBColor[ 0.81053, 0.85203, 0.91294 ],
-    CellMargins              -> { { 56, 25 }, { 5, 8 } },
-    CellDingbat              -> Cell[ BoxData @ TemplateBox[ { }, "ChatUserIcon" ], Background -> None ],
-    StyleKeyMapping          -> { "/" -> "ChatQuery", "?" -> "ChatQuery" }
+    MenuSortingValue  -> 1000,
+    CellGroupingRules -> "InputGrouping",
+    CellFrameColor    -> RGBColor[ 0.81053, 0.85203, 0.91294 ],
+    CellMargins       -> { { 56, 25 }, { 5, 8 } },
+    CellDingbat       -> Cell[ BoxData @ TemplateBox[ { }, "ChatUserIcon" ], Background -> None ],
+    StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "/" -> "ChatQuery", "Backspace" -> "Input" }
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -76,10 +76,43 @@ Cell[
 (*ChatQuery*)
 Cell[
     StyleData[ "ChatQuery", StyleDefinitions -> StyleData[ "ChatInput" ] ],
-    MenuSortingValue     -> 1000,
-    StyleKeyMapping      -> { "/" -> "ChatInput" },
-    CellFrameColor       -> RGBColor[ 0.82745, 0.87059, 0.68235 ],
-    CellDingbat          -> Cell[ BoxData @ TemplateBox[ { }, "ChatQueryIcon" ], Background -> None ]
+    MenuSortingValue -> 1000,
+    StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "/" -> "ChatSystemInput", "Backspace" -> "ChatInput" },
+    CellFrameColor   -> RGBColor[ 0.82745, 0.87059, 0.68235 ],
+    CellDingbat      -> Cell[ BoxData @ TemplateBox[ { }, "ChatQueryIcon" ], Background -> None ]
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ChatSystemInput*)
+Cell[
+    StyleData[ "ChatSystemInput", StyleDefinitions -> StyleData[ "ChatInput" ] ],
+    MenuSortingValue -> 1000,
+    CellFrame        -> 1,
+    StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "/" -> "ChatContextDivider", "Backspace" -> "ChatQuery" },
+    CellFrameColor   -> RGBColor[ 0.70196, 0.52941, 0.58039 ],
+    CellFrameStyle   -> Dashing @ { Small, Small },
+    CellDingbat      -> Cell[ BoxData @ TemplateBox[ { }, "ChatSystemIcon" ], Background -> None ]
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ChatContextDivider*)
+Cell[
+    StyleData[ "ChatContextDivider" ],
+    StyleKeyMapping     -> { " " -> "Text", "*" -> "Item", "/" -> "Input", "Backspace" -> "ChatSystemInput" },
+    Background          -> GrayLevel[ 0.95 ],
+    CellBracketOptions  -> { "OverlapContent" -> True },
+    CellElementSpacings -> { "CellMinHeight" -> 6 },
+    CellFrameMargins    -> { { 20, 20 }, { 2, 2 } },
+    CellGroupingRules   -> { "SectionGrouping", 58 },
+    CellMargins         -> { { 0, 0 }, { 10, 10 } },
+    DefaultNewCellStyle -> "Input",
+    Evaluatable         -> True,
+    FontSize            -> 6,
+    Selectable          -> False,
+    ShowCellBracket     -> False,
+    ShowCellLabel       -> False
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -193,6 +226,7 @@ Cell[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*ChatDelimiter*)
+
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 Cell[
@@ -264,6 +298,16 @@ Cell[
     StyleData[ "ChatQueryIcon" ],
     TemplateBoxOptions -> {
         DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "ChatQueryIcon" ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatSystemIcon*)
+Cell[
+    StyleData[ "ChatSystemIcon" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "ChatSystemIcon" ]
     }
 ]
 
