@@ -87,23 +87,10 @@ $styleDataCells := $styleDataCells = inlineResources @ Cases[ ReadList @ $styleD
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Default Settings*)
-$defaultChatbookSettings := <|
-    "AutoFormat"                        -> True,
-    "ChatContextCellProcessingFunction" -> Automatic,
-    "ChatContextPostEvaluationFunction" -> Automatic,
-    "ChatContextPreprompt"              -> Automatic,
-    "ChatHistoryLength"                 -> 25,
-    "DynamicAutoFormat"                 -> Automatic,
-    "FrequencyPenalty"                  -> 0.1,
-    "MaxTokens"                         -> Automatic,
-    "MergeMessages"                     -> True,
-    "Model"                             -> "gpt-3.5-turbo",
-    "OpenAIKey"                         -> Automatic,
-    "PresencePenalty"                   -> 0.1,
-    "ShowMinimized"                     -> Automatic,
-    "Temperature"                       -> 0.7,
-    "TopP"                              -> 1
-|>;
+$defaultChatbookSettings := (
+    Needs[ "Wolfram`Chatbook`" -> None ];
+    KeyMap[ ToString, Association @ Options @ Wolfram`Chatbook`CreateChatNotebook ]
+);
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
