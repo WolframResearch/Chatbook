@@ -66,7 +66,7 @@ Cell[
     MenuSortingValue         -> 1000,
     CellGroupingRules        -> "InputGrouping",
     CellFrameColor           -> RGBColor[ 0.81053, 0.85203, 0.91294 ],
-    CellMargins              -> { { 56, 25 }, { 3, 10 } },
+    CellMargins              -> { { 56, 25 }, { 5, 8 } },
     CellDingbat              -> Cell[ BoxData @ TemplateBox[ { }, "ChatUserIcon" ], Background -> None ],
     StyleKeyMapping          -> { "/" -> "ChatQuery", "?" -> "ChatQuery" }
 ]
@@ -92,7 +92,7 @@ Cell[
     CellDingbat         -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIcon" ], Background -> None ],
     CellElementSpacings -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
     CellGroupingRules   -> "OutputGrouping",
-    CellMargins         -> { { 56, 25 }, { 10,  3 } },
+    CellMargins         -> { { 56, 25 }, { 12, 5 } },
     GeneratedCell       -> True,
     LineSpacing         -> { 1.1, 0, 2 },
     ShowAutoSpellCheck  -> False
@@ -104,11 +104,7 @@ Cell[
 Cell[
     StyleData[ "ChatCodeBlock" ],
     FrameBoxOptions -> {
-        Background   -> GrayLevel[ 1 ],
-        FrameMargins -> { { 10, 10 }, { 6, 6 } },
-        FrameStyle   -> Directive[ AbsoluteThickness[ 1 ], GrayLevel[ 0.92941 ] ],
-        ImageMargins -> { { 0, 0 }, { 8, 8 } },
-        ImageSize    -> { Full, Automatic }
+
     }
 ]
 

@@ -1359,36 +1359,52 @@ makeInteractiveCodeCell[ string_String ] /; $dynamicText :=
 makeInteractiveCodeCell[ string_String ] :=
     Module[ { display, handler },
 
-        display = RawBoxes @ codeBlockFrame[
-            Cell[
-                BoxData @ string,
-                "Input",
-                FontSize             -> 14,
-                ShowAutoStyles       -> True,
-                ShowStringCharacters -> True,
-                ShowSyntaxStyles     -> True,
-                LanguageCategory     -> "Input"
-            ],
-            string
+        display = RawBoxes @ Cell[
+            BoxData @ string,
+            "Input",
+            FontSize             -> 14,
+            ShowAutoStyles       -> True,
+            ShowStringCharacters -> True,
+            ShowSyntaxStyles     -> True,
+            LanguageCategory     -> "Input"
         ];
 
         handler = inlineInteractiveCodeCell[ display, string ];
-        Cell @ BoxData @ ToBoxes @ handler
+        codeBlockFrame[ Cell @ BoxData @ ToBoxes @ handler, string ]
     ];
 
 makeInteractiveCodeCell[ lang_String, code_String ] :=
     Module[ { cell, display, handler },
         cell = Cell[ code, "ExternalLanguage", FontSize -> 14, System`CellEvaluationLanguage -> lang ];
-        display = RawBoxes @ cell;
+        display = RawBoxes @ Cell[
+            code,
+            "ExternalLanguage",
+            System`CellEvaluationLanguage -> lang,
+            FontSize   -> 14,
+            Background -> None,
+            CellFrame  -> None
+        ];
         handler = inlineInteractiveCodeCell[ display, cell ];
-        Cell @ BoxData @ ToBoxes @ handler
+        codeBlockFrame[ Cell @ BoxData @ ToBoxes @ handler, code, lang ]
     ];
 
 makeInteractiveCodeCell // endDefinition;
 
 
-codeBlockFrame[ cell_, string_ ] :=
-    Cell[ BoxData @ FrameBox @ cell, "ChatCodeBlock", TaggingRules -> <| "CellToStringData" -> string |> ];
+codeBlockFrame[ cell_, string_ ] := codeBlockFrame[ cell, string, "Wolfram" ];
+codeBlockFrame[ cell_, string_, lang_ ] :=
+    Cell[
+        BoxData @ FrameBox[
+            cell,
+            Background   -> GrayLevel[ 1 ],
+            FrameMargins -> { { 10, 10 }, { 6, 6 } },
+            FrameStyle   -> Directive[ AbsoluteThickness[ 1 ], GrayLevel[ 0.92941 ] ],
+            ImageMargins -> { { 0, 0 }, { 8, 8 } },
+            ImageSize    -> { Full, Automatic }
+        ],
+        "ChatCodeBlock",
+        TaggingRules -> <| "CodeLanguage" -> lang |>
+    ];
 
 
 inlineInteractiveCodeCell // beginDefinition;
@@ -1416,7 +1432,7 @@ inlineInteractiveCodeCell[ display_, string_, lang_ ] :=
                         floatingButtonGrid[ attached, string, lang ],
                         { Left, Bottom },
                         0,
-                        { Left, Top },
+                        { Left, Center },
                         RemovalConditions -> { "MouseClickOutside", "MouseExit" }
                     ]
                 )
@@ -1442,9 +1458,10 @@ floatingButtonGrid[ attached_, string_, lang_ ] := Framed[
         Spacings  -> 0
     ],
     Background     -> GrayLevel[ 0.9764705882352941 ],
-    RoundingRadius -> 2,
     FrameMargins   -> 3,
-    FrameStyle     -> GrayLevel[ 0.82 ]
+    FrameStyle     -> GrayLevel[ 0.82 ],
+    ImageMargins   -> 0,
+    RoundingRadius -> 2
 ];
 
 insertCodeBelow[ cell_Cell, evaluate_: False ] :=
