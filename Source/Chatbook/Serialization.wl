@@ -7,6 +7,8 @@ GeneralUtilities`SetUsage[ CellToString, "\
 CellToString[cell$] serializes a Cell expression as a string for use in chat.\
 " ];
 
+$CurrentCell;
+
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`Errors`"     ];
@@ -388,7 +390,7 @@ fasterCellToString0[ TemplateBox[ _, "Spacer1" ] ] := " ";
 
 (* TeXAssistantTemplate *)
 fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> string_ ], "TeXAssistantTemplate" ] ] :=
-    "ToExpression[\"" <> string <> "\", TeXForm]";
+    "$" <> string <> "$";
 
 (* Other *)
 fasterCellToString0[ TemplateBox[ args_, name_String, ___ ] ] :=
@@ -469,6 +471,9 @@ fasterCellToString0[ GridBox[ grid_? MatrixQ, ___ ] ] :=
 
 fasterCellToString0[ Cell[ TextData @ { _, _, text_String, _, Cell[ _, "ExampleCount", ___ ] }, ___ ] ] :=
     fasterCellToString0 @ text;
+
+fasterCellToString0[ DynamicModuleBox[ _, TagBox[ Cell[ box_, "ChatCodeBlock", ___ ], _EventHandlerTag ], ___ ] ] :=
+    fasterCellToString0 @ box;
 
 fasterCellToString0[ _[
     __,
@@ -608,7 +613,7 @@ truncateStackString[ str_String ] := StringTake[ str, 80 ] <> "...";
 (*docSearchResultString*)
 docSearchResultString // ClearAll;
 
-docSearchResultString[ query_String ] /; $currentCell =!= True := "";
+docSearchResultString[ query_String ] /; $CurrentCell =!= True := "";
 
 docSearchResultString[ query_String ] := Enclose[
     Module[ { search },
