@@ -1,500 +1,1201 @@
-Notebook[{
-	Cell[StyleData[StyleDefinitions -> "Default.nb"]],
+(* Content-type: application/vnd.wolfram.mathematica *)
 
-	(*==================================*)
-	(* Modifications to built-in styles *)
-	(*==================================*)
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
 
-	(*------------------------------------*)
-	(* Built-in cells with Explain button *)
-	(*------------------------------------*)
+(* Created By: SaveReadableNotebook *)
+(* https://resources.wolframcloud.com/FunctionRepository/resources/SaveReadableNotebook *)
 
-	Cell[
-		StyleData["Input"],
-		StyleKeyMapping -> {
-			"/" -> "ChatUserInput",
-			"=" -> "WolframAlphaShort",
-			">" -> "ExternalLanguageDefault",
-			"*" -> "Item"
-		},
-		CellFrameLabels -> {
-			{
-				None,
-				Cell[
-					BoxData[
-						ButtonBox[
-							FrameBox[
-								StyleBox["?", FontSize -> 14, FontColor -> RGBColor[1, 0.2, 0]],
-								Background -> RGBColor[1, 0.7, 0],
-								RoundingRadius -> 5,
-								FrameMargins -> 2,
-								FrameStyle -> RGBColor[1, 0.5, 0]
-							],
-							Evaluator -> Automatic,
-							Appearance -> None,
-							ButtonFunction :> (
-								Needs["Wolfram`Chatbook`UI`" -> None];
-								Wolfram`Chatbook`UI`ChatExplainButtonFunction[ParentCell[EvaluationCell[]]]
-							)
-						]
-					],
-					Background -> GrayLevel[1],
-					TextAlignment -> Left,
-					CellMargins -> 0,
-					CellSize -> {All, 20}
-				]
-			},
-			{None, None}
-		}
-	],
-
-	Cell[
-		StyleData["Output"],
-		CellFrameLabels -> {
-			{
-				None,
-				Cell[
-					BoxData[
-						ButtonBox[
-							FrameBox[
-								StyleBox["?", FontSize -> 14, FontColor -> RGBColor[1, 0.2, 0]],
-								Background -> RGBColor[1, 0.7, 0],
-								RoundingRadius -> 5,
-								FrameMargins -> 2,
-								FrameStyle -> RGBColor[1, 0.5, 0]
-							],
-							Evaluator -> Automatic,
-							Appearance -> None,
-							ButtonFunction :> (
-								Needs["Wolfram`Chatbook`UI`" -> None];
-								Wolfram`Chatbook`UI`ChatExplainButtonFunction[ParentCell[EvaluationCell[]]]
-							)
-						]
-					],
-					Background -> GrayLevel[1],
-					TextAlignment -> Left,
-					CellMargins -> 0,
-					CellSize -> {All, 20}
-				]
-			},
-			{None, None}
-		}
-	],
-
-	Cell[
-		StyleData["Print"],
-		CellFrameLabels -> {
-			{
-				None,
-				Cell[
-					BoxData[
-						ButtonBox[
-							FrameBox[
-								StyleBox["?", FontSize -> 14, FontColor -> RGBColor[1, 0.2, 0]],
-								Background -> RGBColor[1, 0.7, 0],
-								RoundingRadius -> 5,
-								FrameMargins -> 2,
-								FrameStyle -> RGBColor[1, 0.5, 0]
-							],
-							Evaluator -> Automatic,
-							Appearance -> None,
-							ButtonFunction :> (
-								Needs["Wolfram`Chatbook`UI`" -> None];
-								Wolfram`Chatbook`UI`ChatExplainButtonFunction[ParentCell[EvaluationCell[]]]
-							)
-						]
-					],
-					Background -> GrayLevel[1],
-					TextAlignment -> Left,
-					CellMargins -> 0,
-					CellSize -> {All, 20}
-				]
-			},
-			{None, None}
-		}
-	],
-
-	Cell[
-		StyleData["Message"],
-		CellFrameLabels -> {
-			{
-				None,
-				Cell[
-					BoxData[
-						ButtonBox[
-							FrameBox[
-								StyleBox["?", FontSize -> 14, FontColor -> RGBColor[1, 0.2, 0]],
-								Background -> RGBColor[1, 0.7, 0],
-								RoundingRadius -> 5,
-								FrameMargins -> 2,
-								FrameStyle -> RGBColor[1, 0.5, 0]
-							],
-							Evaluator -> Automatic,
-							Appearance -> None,
-							ButtonFunction :> (
-								Needs["Wolfram`Chatbook`UI`" -> None];
-								Wolfram`Chatbook`UI`ChatExplainButtonFunction[ParentCell[EvaluationCell[]]]
-							)
-						]
-					],
-					Background -> GrayLevel[1],
-					TextAlignment -> Left,
-					CellMargins -> 0,
-					CellSize -> {All, 20}
-				]
-			},
-			{None, None}
-		}
-	],
-
-	(*----------------------------------------*)
-	(* Built-in cells with divider parameters *)
-	(*----------------------------------------*)
-
-	Cell[
-		StyleData["Section"],
-		CellFrameLabels -> {
-			{
-				None,
-				Cell[
-					BoxData[
-						ButtonBox[
-							FrameBox[
-								StyleBox["\[VerticalEllipsis]", FontSize -> 14, FontWeight->Bold],
-								Background -> RGBColor[1, 0.7, 0],
-								RoundingRadius -> 5,
-								FrameMargins -> 2,
-								FrameStyle -> RGBColor[1, 0.5, 0]
-							],
-							Evaluator -> Automatic,
-							Appearance -> None,
-							ButtonFunction :> (
-								Needs["Wolfram`Chatbook`UI`" -> None];
-								Wolfram`Chatbook`UI`EditChatContextSettings[ParentCell[EvaluationCell[]]]
-							)
-						]
-					],
-					Background -> GrayLevel[1],
-					FontSize -> 10,
-					FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
-					TextAlignment -> Left,
-					CellMargins -> 0,
-					CellSize -> {All, 20}
-				]
-			},
-			{None, None}
-		}
-	],
-
-	Cell[
-		StyleData["Subsection"],
-		CellFrameLabels -> {
-			{
-				None,
-				Cell[
-					BoxData[
-						ButtonBox[
-							FrameBox[
-								StyleBox["\[VerticalEllipsis]", FontSize -> 14, FontWeight->Bold],
-								Background -> RGBColor[1, 0.7, 0],
-								RoundingRadius -> 5,
-								FrameMargins -> 2,
-								FrameStyle -> RGBColor[1, 0.5, 0]
-							],
-							Evaluator -> Automatic,
-							Appearance -> None,
-							ButtonFunction :> (
-								Needs["Wolfram`Chatbook`UI`" -> None];
-								Wolfram`Chatbook`UI`EditChatContextSettings[ParentCell[EvaluationCell[]]]
-							)
-						]
-					],
-					Background -> GrayLevel[1],
-					FontSize -> 10,
-					FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
-					TextAlignment -> Left,
-					CellMargins -> 0,
-					CellSize -> {All, 20}
-				]
-			},
-			{None, None}
-		}
-
-	],
-
-	Cell[
-		StyleData["Subsubsection"],
-		CellFrameLabels -> {
-			{
-				None,
-				Cell[
-					BoxData[
-						ButtonBox[
-							FrameBox[
-								StyleBox["\[VerticalEllipsis]", FontSize -> 14, FontWeight->Bold],
-								Background -> RGBColor[1, 0.7, 0],
-								RoundingRadius -> 5,
-								FrameMargins -> 2,
-								FrameStyle -> RGBColor[1, 0.5, 0]
-							],
-							Evaluator -> Automatic,
-							Appearance -> None,
-							ButtonFunction :> (
-								Needs["Wolfram`Chatbook`UI`" -> None];
-								Wolfram`Chatbook`UI`EditChatContextSettings[ParentCell[EvaluationCell[]]]
-							)
-						]
-					],
-					Background -> GrayLevel[1],
-					FontSize -> 10,
-					FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
-					TextAlignment -> Left,
-					CellMargins -> 0,
-					CellSize -> {All, 20}
-				]
-			},
-			{None, None}
-		}
-	],
-
-	(*================================*)
-	(* Chat Assistant Output Styles   *)
-	(*================================*)
-
-	Cell[
-		StyleData["ChatAssistantOutput", StyleDefinitions -> StyleData["Input"]],
-		CellEditDuplicate -> True,
-		CellGroupingRules -> "OutputGrouping",
-		CellFrame->{{2, False}, {False, False}},
-		CellFrameStyle -> Dashing[{Small, Small}],
-		CellFrameColor->RGBColor[1, 0.7, 0.1]
-	],
-
-	Cell[
-		StyleData["ChatAssistantText", StyleDefinitions -> StyleData["Text"]],
-		CellGroupingRules -> "OutputGrouping",
-		CellFrame->{{2, False}, {False, False}},
-		CellFrameStyle -> Dashing[{Small, Small}],
-		CellFrameColor->RGBColor[1, 0.7, 0.1]
-	],
-
-	Cell[
-		StyleData["ChatAssistantProgram", StyleDefinitions -> StyleData["Program"]],
-		CellGroupingRules -> "OutputGrouping",
-		CellFrame->{{2, False}, {False, False}},
-		CellFrameStyle -> Dashing[{Small, Small}],
-		CellFrameColor->RGBColor[1, 0.7, 0.1]
-	],
-
-	Cell[
-		StyleData["ChatAssistantExternalLanguage", StyleDefinitions -> StyleData["ExternalLanguage"]],
-		CellGroupingRules -> "OutputGrouping",
-		CellFrame->{{2, False}, {False, False}},
-		CellFrameStyle -> Dashing[{Small, Small}],
-		CellFrameColor->RGBColor[1, 0.7, 0.1]
-	],
-
-	(*================================*)
-	(* Chat Input Cell Styles         *)
-	(*================================*)
-
-	Cell[
-		StyleData[
-			"ChatUserInput",
-			StyleDefinitions -> StyleData["ChatInputBase"]
-		],
-		StyleKeyMapping -> {
-			"Backspace" -> "Input",
-			"/" -> "ChatSystemInput",
-			" " -> "Text",
-			"*" -> "Item"
-		},
-		BackgroundAppearance -> FrontEnd`FileName[{"WolframAlphaClient"}, "NLInputQuery.9.png"],
-		CellDingbat -> PaneBox[
-			(* "\[FreeformPrompt]", *)
-			(* Robot emoji *)
-			StyleBox["\"\|01F916\"", FontSize -> 20],
-			BaselinePosition -> Dynamic[
-				FEPrivate`If[FEPrivate`Greater[FEPrivate`$VersionNumber, 12.],
-					Center -> Center,
-					Center -> Baseline
-				]
-			],
-			BaseStyle -> {
-				FontSize -> 10,
-				FontColor -> RGBColor[0.949219, 0.4375, 0.128906],
-				FontFamily -> Dynamic[CurrentValue[{StyleHints, "CodeFont"}]]
-			}
-		]
-	],
-
-	Cell[
-		StyleData[
-			"ChatSystemInput",
-			StyleDefinitions -> StyleData["ChatInputBase"]
-		],
-		StyleKeyMapping -> {
-			"Backspace" -> "ChatUserInput",
-			"/" -> "ChatContextDivider"
-		},
-		BackgroundAppearance -> FrontEnd`FileName[{"WolframAlphaClient"}, "NLInputQuery.9.png"],
-		CellDingbat -> PaneBox[
-			(* Gear emoji *)
-			StyleBox["\"\|002699\|00fe0f\"", FontSize -> 20],
-			BaselinePosition -> Dynamic[
-				FEPrivate`If[FEPrivate`Greater[FEPrivate`$VersionNumber, 12.],
-					Center -> Center,
-					Center -> Baseline
-				]
-			],
-			BaseStyle -> {
-				FontSize -> 10,
-				FontColor -> RGBColor[0.949219, 0.4375, 0.128906],
-				FontFamily -> Dynamic[CurrentValue[{StyleHints, "CodeFont"}]]
-			}
-		]
-	],
-
-	Cell[
-		StyleData[
-			"ChatContextDivider",
-			StyleDefinitions -> StyleData["Text"]
-		],
-		StyleKeyMapping -> {
-			"Backspace" -> "ChatSystemInput"
-		},
-		CellFrameLabels -> {
-			{
-				None,
-				Cell[
-					BoxData[
-						ButtonBox[
-							FrameBox[
-								StyleBox["\[VerticalEllipsis]", FontSize -> 14, FontWeight->Bold],
-								Background -> RGBColor[1, 0.7, 0],
-								RoundingRadius -> 5,
-								FrameMargins -> 2,
-								FrameStyle -> RGBColor[1, 0.5, 0]
-							],
-							Evaluator -> Automatic,
-							Appearance -> None,
-							ButtonFunction :> (
-								Needs["Wolfram`Chatbook`UI`" -> None];
-								Wolfram`Chatbook`UI`EditChatContextSettings[ParentCell[EvaluationCell[]]]
-							)
-						]
-					],
-					Background -> GrayLevel[1],
-					FontSize -> 10,
-					FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
-					TextAlignment -> Left,
-					CellMargins -> 0,
-					CellSize -> {All, 20}
-				]
-			},
-			{None, None}
-		},
-		Deployed -> True,
-		CellSize -> {Automatic,0},
-		Selectable -> False,
-		Editable -> False,
-		CellFrame -> {{0, 0}, {0, 5}},
-		CellFrameStyle -> RGBColor[1, 0.9, 0.9]
-	],
-
-	(* Deprecated cell styles. ChatGPTInput was replaced with ChatGPTUserInput and then with ChatUserInput. *)
-	Cell[
-		StyleData[
-			"ChatGPTInput",
-			StyleDefinitions -> StyleData["ChatUserInput"]
-		]
-	],
-	Cell[
-		StyleData[
-			"ChatGPTUserInput",
-			StyleDefinitions -> StyleData["ChatUserInput"]
-		]
-	],
-	Cell[
-		StyleData[
-			"ChatGPTSystemInput",
-			StyleDefinitions -> StyleData["ChatSystemInput"]
-		]
-	],
-
-	(*--------------------------------*)
-	(* Input base style               *)
-	(*--------------------------------*)
-
-	Cell[
-		StyleData["ChatInputBase", StyleDefinitions -> StyleData["Input"]],
-		CellMargins -> {{66, 21}, {5, 10}},
-		CellDingbatMargin -> -25,
-		CellEvaluationFunction :> (
-			(*
-				Don't put this context on $ContextPath. Any symbols from Chatbook
-				used in UI functions should be refered to by absolute context.
-			*)
-			Needs["Wolfram`Chatbook`UI`" -> None];
-
-			Wolfram`Chatbook`UI`ChatInputCellEvaluationFunction
-		),
-		ShowCellLabel -> False,
- 		CellFrameMargins->{{27, 18}, {3, 6}},
- 		CellFrameLabelMargins->{{6, -15}, {6, 6}},
-		CellFrameColor -> RGBColor[1, 0.5, 0],
-		CellFrameLabelMargins -> Dynamic[
-			FEPrivate`If[
-				FEPrivate`Greater[FEPrivate`$VersionNumber, 12.],
-				6, 1
-			]
-		],
-		CellFrameLabels -> {
-			{
-				None,
-				Cell[
-					BoxData[
-						ButtonBox[
-							FrameBox[
-								StyleBox["\[VerticalEllipsis]", FontSize -> 14, FontWeight->Bold],
-								Background -> RGBColor[1, 0.7, 0],
-								RoundingRadius -> 5,
-								FrameMargins -> 2,
-								FrameStyle -> RGBColor[1, 0.5, 0]
-							],
-							Evaluator -> Automatic,
-							Appearance -> None,
-							ButtonFunction :> (
-								Needs["Wolfram`Chatbook`UI`" -> None];
-								Wolfram`Chatbook`UI`EditChatSettingsForCell[ParentCell[EvaluationCell[]]]
-							)
-						]
-					],
-					Background -> GrayLevel[1],
-					FontSize -> 10,
-					FontFamily -> FrontEnd`CurrentValue["ControlsFontFamily"],
-					TextAlignment -> Left,
-					CellMargins -> 0,
-					CellSize -> {All, 20}
-				]
-			},
-			{
-				None,
-				None
-			}
-		},
-		DefaultFormatType -> TextForm,
-		ShowAutoStyles -> False,
-		ShowCodeAssist -> False,
-		ShowAutoSpellCheck -> False,
-		AllowInlineCells -> False,
-		FormatType -> TextForm,
-		ShowStringCharacters -> False,
-		FontFamily -> "Helvetica",
-		FontSize -> 14,
-		FontWeight -> "Plain",
-		PrivateFontOptions -> {
-			"OperatorSubstitution" -> True
-		}
-	]
-}]
+Notebook[
+ {
+  Cell[StyleData[StyleDefinitions -> "Default.nb"]],
+  Cell[
+   StyleData["Notebook"],
+   TaggingRules -> <|
+    "ChatbookSettings" -> <|
+     "AutoFormat" -> True,
+     "ChatContextCellProcessingFunction" -> Automatic,
+     "ChatContextPostEvaluationFunction" -> Automatic,
+     "ChatContextPreprompt" -> Automatic,
+     "ChatHistoryLength" -> 25,
+     "DynamicAutoFormat" -> Automatic,
+     "FrequencyPenalty" -> 0.1,
+     "MaxTokens" -> Automatic,
+     "MergeMessages" -> True,
+     "Model" -> "gpt-3.5-turbo",
+     "OpenAIKey" -> Automatic,
+     "PresencePenalty" -> 0.1,
+     "ShowMinimized" -> Automatic,
+     "Temperature" -> 0.7,
+     "TopP" -> 1
+    |>
+   |>,
+   CellEpilog :>
+    (Needs["Wolfram`Chatbook`" -> None]; Symbol["Wolfram`Chatbook`SendChat"][Notebooks[#1], #1]) &[
+     EvaluationCell[]
+    ]
+  ],
+  Cell[
+   StyleData["Text"],
+   Evaluatable -> True,
+   CellEvaluationFunction ->
+    (Function[
+     If[ CloudSystem`$CloudNotebooks,
+      (Needs["Wolfram`Chatbook`" -> None]; Symbol["Wolfram`Chatbook`SendChat"][Notebooks[#1], #1]) &[
+       EvaluationCell[]
+      ]
+     ]
+    ]),
+   ContextMenu -> {
+    MenuItem[
+     "Ask AI Assistant",
+     KernelExecute[
+      (Needs["Wolfram`Chatbook`" -> None]; Symbol["Wolfram`Chatbook`AskChat"][Notebooks[#1], #1]) &[
+       EvaluationCell[]
+      ]
+     ],
+     MenuEvaluator -> Automatic,
+     Method -> "Queued"
+    ],
+    Delimiter,
+    MenuItem["Cu&t", "Cut"],
+    MenuItem["&Copy", "Copy"],
+    MenuItem["&Paste", FrontEnd`Paste[After]],
+    Menu[
+     "Cop&y As",
+     {
+      MenuItem["Plain &Text", FrontEnd`CopySpecial["PlainText"]],
+      MenuItem["&Input Text", FrontEnd`CopySpecial["InputText"]],
+      MenuItem[
+       "&LaTeX",
+       KernelExecute[ToExpression["FrontEnd`CopyAsTeX[]"]],
+       MenuEvaluator -> "System"
+      ],
+      MenuItem[
+       "M&athML",
+       KernelExecute[ToExpression["FrontEnd`CopyAsMathML[]"]],
+       MenuEvaluator -> "System"
+      ],
+      Delimiter,
+      MenuItem[
+       "Cell &Object",
+       FrontEnd`CopySpecial["CellObject"]
+      ],
+      MenuItem[
+       "&Cell Expression",
+       FrontEnd`CopySpecial["CellExpression"]
+      ],
+      MenuItem[
+       "&Notebook Expression",
+       FrontEnd`CopySpecial["NotebookExpression"]
+      ]
+     }
+    ],
+    Delimiter,
+    MenuItem["Make &Hyperlink...", "CreateHyperlinkDialog"],
+    MenuItem[
+     "Insert Table/&Matrix...",
+     FrontEndExecute[
+      {
+       FrontEnd`NotebookOpen[
+        FrontEnd`FindFileOnPath[
+         "InsertGrid.nb",
+         "PrivatePathsSystemResources"
+        ]
+       ]
+      }
+     ]
+    ],
+    MenuItem["Chec&k Spelling...", "FindNextMisspelling"],
+    Menu[
+     "Citatio&n",
+     {
+      MenuItem[
+       "Insert Bibliographical &Reference...",
+       "InsertBibReference"
+      ],
+      MenuItem[
+       "Insert Bibliographical &Note...",
+       "InsertBibNote"
+      ],
+      Delimiter,
+      MenuItem[
+       "Set / Change Citation &Style...",
+       "SetCitationStyle"
+      ],
+      MenuItem[
+       "&Insert Bibliography and Notes",
+       "InsertBibAndNotes"
+      ],
+      MenuItem[
+       "&Delete Bibliography and Notes",
+       "DeleteBibAndNotes"
+      ],
+      MenuItem[
+       "Re&build Bibliography and Notes",
+       "RebuildBibAndNotes"
+      ]
+     }
+    ],
+    Delimiter,
+    Menu[
+     "Sty&le",
+     {
+      MenuItem[
+       "Start Cell Style Names",
+       "MenuListStyles",
+       MenuAnchor -> True
+      ],
+      Delimiter,
+      MenuItem["&Other...", "StyleOther"]
+     }
+    ],
+    Delimiter,
+    MenuItem["Create Inline Cell", "CreateInlineCell"],
+    MenuItem["Di&vide Cell", "CellSplit"],
+    MenuItem["Evaluate &in Place", All],
+    Delimiter,
+    MenuItem[
+     "Toggle &Full Screen",
+     FrontEndExecute[
+      FrontEnd`Value[FEPrivate`NotebookToggleFullScreen[]]
+     ]
+    ]
+   }
+  ],
+  Cell[
+   StyleData[
+    "FramedChatCell",
+    StyleDefinitions -> StyleData["Text"]
+   ],
+   CellFrame -> 2,
+   Initialization :>
+    AttachCell[
+     EvaluationCell[],
+     Cell[
+      BoxData[
+       ButtonBox[
+        GraphicsBox[
+         {
+          Thickness[0.071429],
+          FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.0]}],
+          FilledCurveBox[
+           {
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}
+           },
+           {
+            {
+             {6.0, 5.0},
+             {8.0, 5.0},
+             {8.0, 7.0},
+             {6.0, 7.0},
+             {6.0, 5.0}
+            },
+            {
+             {6.0, 9.0},
+             {8.0, 9.0},
+             {8.0, 11.0},
+             {6.0, 11.0},
+             {6.0, 9.0}
+            },
+            {
+             {8.0, 13.0},
+             {6.0, 13.0},
+             {6.0, 15.0},
+             {8.0, 15.0},
+             {8.0, 13.0}
+            }
+           }
+          ]
+         },
+         AspectRatio -> Automatic,
+         ImageSize -> {{15.0, 21.0}, {15.0, 21.0}},
+         PlotRange -> {{-0.5, 14.5}, {-0.5, 20.5}}
+        ],
+        ButtonFunction :> MessageDialog["Not implemented"],
+        Appearance ->
+         Dynamic[
+          FEPrivate`FrontEndResource[
+           "FEExpressions",
+           "SuppressMouseDownNinePatchAppearance"
+          ]
+         ],
+        Evaluator -> Automatic,
+        Method -> "Preemptive"
+       ]
+      ]
+     ],
+     {Right, Top},
+     Offset[{-10, -5}, {Right, Top}],
+     {Right, Top},
+     RemovalConditions -> {"EvaluatorQuit"}
+    ],
+   ShowCellLabel -> False,
+   CellFrameMargins -> {{12, 25}, {8, 8}},
+   CellFrameColor -> GrayLevel[0.92941],
+   AutoQuoteCharacters -> { },
+   PasteAutoQuoteCharacters -> { }
+  ],
+  Cell[
+   StyleData[
+    "ChatInput",
+    StyleDefinitions -> StyleData["FramedChatCell"]
+   ],
+   CellDingbat ->
+    Cell[
+     BoxData[
+      GraphicsBox[
+       {
+        Thickness[0.05],
+        {
+         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgBGIRIGYC4slWjL4tvkoODGAg5HDc27zTkcEAzn/+e+XH\nS2cRfHvTuF2eOYYOUSnW9/15RR3WyABZ9YYOtSCJk+IQdQ2GUPUGcP7Nc9+D\nH7MiaFzqCtd0385gEIDznzTPO7vqPDuc/yhCfPtFBha4OTA+zBxUvgScP+eI\nwoaiF8Ko5gH9g2IfnC+GwW99HbhDrpXBAT28AKb/WbY=\n        "
+          ]
+         ]
+        },
+        {
+         FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.0]}],
+         FilledCurveBox[
+          {
+           {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}},
+           {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}},
+           {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGAAYV4gZmKAARUHCK3h4GPe6ZjwVAnOh9BKDltOlO2bL6UO\n50NoNTgfok8FTb8KBg0xRxVNXA2uH9VcBA2zH1W/Bpo5ML4Wmn800OQ10PwD\nE1dD06eCph9mjxacDzFHG01eB80/Omjm66D5B6Yf0/0QWgFNvwLc/IyJb2vs\nTeXQ7JeB82fkCTUfOCWJJi+B5j4JNPMl4O5D1Q9zjwycj2o/wr2o4YtwPwCs\n0Ggr\n        "
+          ]
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.0]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {1, 4, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0}
+           },
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           }
+          },
+          {
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGAQB2IQDQEcDhDawAHGn/i2xt50n4GDvWncLk8eLqi4IZQW\nQOMbwPnyra8Dd+wzQJM3hJuHSx+ElnAQWef+sOqLgYO6IccamSgxhzA+3U1z\n+w0cnl5Quv3zn7DD1YqXaoYcCL6PeadjAiuCD+Q9vcAEM1cEzR4YXwmNLwH3\nNyofJi8A56OGhwhcH1CQSZtdFIc5iPAFAFbNPe0=\n         "
+           ],
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGCQAmIQDQUOEMrAAZUvAedfX1xgy3VdyGGd+8MqkXWsUHEB\nHLQIDj4HnF+ftadkssQn+x1yra8DLaQcPl3yTRKIYHRwSnh6QWm2Ely/Zkz/\noa8v9B2k9e+qsDEKOBz+qhHTz2TgcHqh67bPf/kdrla8VDPkQPAzJr6tsRc1\nhPOBpu+Qe2roAORcqXgp7BBhueVE2T9Dh/v+vdPzJolD7TFyAFoOlEHwUf0P\n4xvA+VygAPEyhNO41KGGgxFa+MHkGdDMQcQHACdvXVM=\n         "
+           ]
+          }
+         ]
+        }
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
+       PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
+      ]
+     ],
+     Background -> None
+    ],
+   CellMargins -> {{56, 25}, {3, 10}},
+   StyleKeyMapping -> {"/" -> "ChatQuery", "?" -> "ChatQuery"},
+   CellGroupingRules -> "InputGrouping",
+   CellFrameColor -> RGBColor[0.81053, 0.85203, 0.91294],
+   MenuSortingValue -> 1000
+  ],
+  Cell[
+   StyleData[
+    "ChatQuery",
+    StyleDefinitions -> StyleData["ChatInput"]
+   ],
+   CellDingbat ->
+    Cell[
+     BoxData[
+      GraphicsBox[
+       {
+        Thickness[0.041667],
+        {
+         FaceForm[
+          {RGBColor[0.39216, 0.39216, 0.39216], Opacity[1.0]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {1, 4, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0}
+           }
+          },
+          CompressedData[
+           "\n1:eJxVlH8sVWEYx2+ynHvfcy+ZylJRiQzrx+1NRvPEqBaVHzNTCbFEC6WmImtN\nJUkmtUW3i/zIzCQzMzWTqG5U0qoZZWYYN6kpsdR73nvOe+ds54/vOed93+f5\nfL/PWR2dGBS7UCaTLSB3ALlNZNK1FSwvtbwq9lWDpMcDG1dlJqihZufAOatv\nGEJVrnX3ctWQ2zq1/uAbDNEWYe71lWoo8W34+bdeDeetyJfhGOKbU/Kt21zh\nuV3tybhkLO7nBF44omn3uBpu+2QfH/awh7me1FEH8v7sqMMmzmUJW585Jhws\nZ/vT83I5dr5hP47VJ+n59XMQ5KjNqo0yZ7oSd3rsDTQHxcfSpO0KDraU1LtN\nexv1tdqB0YLN5nA639o0VMWBMrk6u3dEBU/vL9/QZ8/BRv9yhV+ZCjQTFe17\n3DhY+XLI68FhFaTTxjioigwJcrRTgdC+aSgHJnc5G02/EsoL2wgJDmb0Yy3u\npUoDlzwOhPIGjilhbe+fC/HNHNy6khn+3lMJ/m5ZOyKHOIgi22nlSviyL+fO\nCUs5hAkNdPHAVa8Ij/GQg40mwkl3kwe6PEUu1sNDIgUhByedRUfTNh68I4fe\nrumVi/XxUDXZHRBtoYDQ9JqG6H8IfggyTAHTrTFVkT0ITCloBcQKCyqQgfuE\nAh4RPHXXkcgTweKOpsacy0jkh8Ds+9Jd+9MQZNAAIDj6YTje+QwSeSC4Stpr\nPoLE/hEcmvOZ0Scg6HwtXMb3WgH3Ih4e88SAA0jslxf9QuBH4taTatQhg2WF\nbV/XMU0WXyx45iD2Z2bg6+nMNN3O1oV9T3EnYaZPxeXp0zKMmubhBob+fGJQ\nMAKhen0RZv3ZCoHVYNY/xaPFjI+QDr4EM340LtWY8TXMD2b8dcXkwRPM/JkO\nFhrEzD9iRkW7DjN/Kc93mPlP+X/CLB/Uzz7M8rPsc9fv4EHM8lUkxHMEs/wN\nzz6c7NZjlk8yreQJZvkV8HhNYZZvYUxf/MIs/9Sfaczmg/o3i9n8CMvxHGbz\nRfkRLc2fpKX5lP5H0vxKev58G/9f/wFcU+hw\n        "
+          ]
+         ]
+        },
+        {
+         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgBGIJIGYC4qucGUo5FQIOZQ/mCC61FXGA8XU3zX2/nM3Y\nwfjIRr08ZQkHLx4m7fYwE4ckgQjLLSdUHC4q3f5Z52XiENA7PU/IWcPh8FeN\nmP5HRg5hfECd6zUcri8usOXabuRg3umY8DRAE87fUJQx8e0eTbj6HXKtrwMt\ndOHmgdV9N4LbZxq3y5PnkQncPTA+zL0sIAv/GjvMfia7/MUJUYeb574HPz5q\n5KBwKT+e3U8M4p73hg4psXfcmCvEHGSjUqzv5xs4GGitFL5wRMxhy4myffOj\ntB2uHc01aTAXc2AAA02Ht/NsdK7MEoKYt1TNYWH65lfFpmIOdi9urvklo+jQ\nsN2h6dFxMYfrJu8tXN1l4OZPvQIMwDcSDtaMvi28/kDzI7/uvMUl4rBV9Pfp\ndydFHdDDGwDQMp3X\n        "
+          ]
+         ]
+        },
+        {
+         FaceForm[{RGBColor[0.86667, 0.066667, 0.0], Opacity[1.0]}],
+         FilledCurveBox[
+          {
+           {
+            {1, 4, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3}
+           },
+           {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}},
+           {
+            {1, 4, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3}
+           },
+           {
+            {1, 4, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3}
+           }
+          },
+          {
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGAwAGIQnQYGqg6zZoKAloN5p2PCUwFVh6w9JZMlXLQcJFnC\n+HQ3qThc9k0SiPip6RCVYn3f31fF4V2NvWncLk2HreY/DqVoKTn8Wfnxkm+S\njsOa7tsZDO+VHQptua4vNsDkA02x3HJCBWKfpA7EnF8qcPnGqc7dOeqqDoe/\nasT0O+k4nP8e/HiptJrDlhNl++bP0iXIL2WaxSEdp+wAcj5LmL6D/JecsNo8\nJYfW14E75FQNHBJDgtQXdCo55D7/vfLjJwOHZ/ZL7u/zU3LYN19K/y6LEZwP\ntp/JCGLePEUHoOsKbFcZOmh/m353cruiw0s1Q441cwwdPAL+SBRfV3BQZQO6\n3NvQ4d3rA5bKXQoOHg+rRNYdN3Twqm7W90lTcFg2+4jChk+GDh/EQDoUHE4C\nnSuVb+QgnHj4snaqnMPjpUAFAkYORs/WqT5hlnXoPwR0QL6hQ7pLZv4HVhmH\ng6cWum7bbOCQ/6H1ZMhBSYh5QgYONZ82BGRLSTgwabeL3eTTc1iv+qR53lkx\nhw/Lj3mbe+o4TDpd77H/r6iDJSiA5HUdbPYGTVPsE3U4ewYIePTgfAYw0Ifz\njUEg2MAhUnz7RYZ7Yg7gZCBr6PA7JvfoPyNJiPxmQweQLFOntMMcoHOKPIwg\n8pvkHJRv/6zLmmPk8ERE9uTT/wpwPjg8linB+dOA0f3cWgWuH5YeYeaD0+ME\nNbj9bts+/71ioQ53H4wPcz+MD05fkbpw/eD0fETbAT29AwAFlz4o\n         "
+           ],
+           {
+            {8.4998, 17.029},
+            {8.7388, 17.259},
+            {8.7738, 17.294},
+            {9.0038, 17.515},
+            {9.0218, 17.073},
+            {9.0128, 16.843},
+            {8.9858, 16.304},
+            {8.8538, 16.437},
+            {8.5888, 16.605},
+            {8.5888, 16.605},
+            {8.5888, 16.605},
+            {8.5348, 16.914},
+            {8.4998, 17.029}
+           },
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGCwAGIQ/Tsm9+g/I0mHWTNBQMvhSfO8s6vOSzhsmvt++bHT\nWg4dX25fbyyWcOidnifUzKDt8Gyd6pNmOQmHHXKtrwMttB2inexe3NSRdMiY\n+LbGvlTXIRZo3KZqKYejChuKMgQNHHRSJR9FTJdx8OJh0m4vM3BYff5q2Jv1\nsg7mnY4JTz8YODyKEN9+kUHO4ea578GPlxpC9P+Wd9g3X0r/LouRg6L8l5ww\nWwW4/NF+w3LdhQoO0vp3VdgeGjgs2mL+49ATBYd8oeYDpxoNHIqvC31y5Fdy\nAFkndlPfIVv72/S7l5Uh+lP1HAJAHmFWdbA3jdvleUbXAeSMC0qqDu9qQCK6\nEH97qzpwrJGJSrHG5IP9dVEFYt9CHYfFyjv/tJdA3aui67C88rim1SQ5h3Xu\nD6tE9HQdZpXPWaS8UxYuz711WeXxlTIOpZMlWML4dB2uhb3R360u68DWONW5\ne42uAyi4xM3lHICuA3pBjyAfZJymlSwkPir0oOEv4wB2XquewwPdCQt+bJRx\nAMrukDuq57DUz0E40VkWEh9i+g4e+2tlLdJlHSDO0YfGr6yD5ZYTZfvk9SH+\nEZJ2cOnOef57pZ6DCtC7X25LOeiCAsZNz+GKNtBFN6Qdvvy9UvFSTc/BZm/Q\nNMU+GYfTC123ff6rS5AP5pZKO4CNL9R1sJp0ut7DXtrBluv64oJaHQw+KHRP\n18s5AGNh4ts9Og5zjIEpoELBARjZ575P1nHouZ3BkN+o4NB/6KtGTL+OAzD2\nJ7e3IvjvXh+wVO5C8FnBCUrRYQYweR/o0nHo2vDw5VQjZWj8aToUrum+ndGg\nBAnv1xoOkqAEdlDRARz8xzUcnojInnz6XwHOB+enTXJwPjBx32PqlHY4WQZM\nAfmaDuj5DQBU44C4\n         "
+           ],
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGCQBGIQbQwCn1UdZs0Egp+GDuI3z30PXqzisOKYt3nnQiMH\n1VKmWRy3lRwYwMDY4YmI7Mmn/xXgfJfM/A+tnnJw/tZllcc1d0nB9Scevqyd\nKikBN1+DnxuoRNThqMKGooxAQ4fjmlaTTv8XdlAEcifmGsD5EPP04fx986X0\n76rowvW/VDPkWBOjDTf/7Bkg4NGC2w8y7u0eDTT3aaC5XwPNfxpw/8P0w8IH\nZn5A7/Q8IWd1uP0wfTD3wfgw98P4MP/B9MP8jx7+AJXiijg=\n         "
+           ]
+          }
+         ]
+        },
+        {
+         FaceForm[{RGBColor[0.86667, 0.066667, 0.0], Opacity[1.0]}],
+         FilledCurveBox[
+          {{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}},
+          {
+           {
+            {8.8358, 15.279},
+            {8.9948, 15.323},
+            {9.0128, 15.332},
+            {9.1718, 15.376},
+            {8.9688, 15.526},
+            {8.7478, 15.686},
+            {8.4468, 15.641},
+            {8.4208, 15.562},
+            {8.3938, 15.5},
+            {8.3758, 15.412},
+            {8.5178, 15.429},
+            {8.6678, 15.376},
+            {8.8358, 15.279}
+           }
+          }
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.65098, 0.65098, 0.65098], Opacity[1.0]}
+         ],
+         FilledCurveBox[
+          {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}},
+          {
+           {
+            {20.0, 16.0},
+            {13.0, 16.0},
+            {13.0, 17.0},
+            {20.0, 17.0},
+            {20.0, 16.0}
+           }
+          }
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.65098, 0.65098, 0.65098], Opacity[1.0]}
+         ],
+         FilledCurveBox[
+          {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}},
+          {
+           {
+            {20.0, 14.0},
+            {13.0, 14.0},
+            {13.0, 15.0},
+            {20.0, 15.0},
+            {20.0, 14.0}
+           }
+          }
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.65098, 0.65098, 0.65098], Opacity[1.0]}
+         ],
+         FilledCurveBox[
+          {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}},
+          {
+           {
+            {12.0, 7.0},
+            {5.0, 7.0},
+            {5.0, 8.0},
+            {12.0, 8.0},
+            {12.0, 7.0}
+           }
+          }
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.65098, 0.65098, 0.65098], Opacity[1.0]}
+         ],
+         FilledCurveBox[
+          {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}},
+          {
+           {
+            {12.0, 9.0},
+            {5.0, 9.0},
+            {5.0, 10.0},
+            {12.0, 10.0},
+            {12.0, 9.0}
+           }
+          }
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.65098, 0.65098, 0.65098], Opacity[1.0]}
+         ],
+         FilledCurveBox[
+          {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}},
+          {
+           {
+            {16.0, 7.0},
+            {16.0, 12.0},
+            {17.0, 12.0},
+            {17.0, 7.0},
+            {16.0, 7.0}
+           }
+          }
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.65098, 0.65098, 0.65098], Opacity[1.0]}
+         ],
+         FilledCurveBox[
+          {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}},
+          {
+           {
+            {18.0, 7.0},
+            {18.0, 11.0},
+            {19.0, 11.0},
+            {19.0, 7.0},
+            {18.0, 7.0}
+           }
+          }
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.65098, 0.65098, 0.65098], Opacity[1.0]}
+         ],
+         FilledCurveBox[
+          {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}},
+          {
+           {
+            {14.0, 7.0},
+            {14.0, 10.0},
+            {15.0, 10.0},
+            {15.0, 7.0},
+            {14.0, 7.0}
+           }
+          }
+         ]
+        }
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {{25.0, 25.0}, {25.0, 25.0}},
+       PlotRange -> {{-0.5, 24.5}, {-0.5, 24.5}}
+      ]
+     ],
+     Background -> None
+    ],
+   StyleKeyMapping -> {"/" -> "ChatInput"},
+   CellFrameColor -> RGBColor[0.82745, 0.87059, 0.68235],
+   MenuSortingValue -> 1000
+  ],
+  Cell[
+   StyleData[
+    "ChatOutput",
+    StyleDefinitions -> StyleData["FramedChatCell"]
+   ],
+   CellDingbat ->
+    Cell[
+     BoxData[
+      GraphicsBox[
+       {
+        Thickness[0.05],
+        FaceForm[{RGBColor[0.86667, 0.066667, 0.0], Opacity[1.0]}],
+        FilledCurveBox[
+         {
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {
+           {0, 2, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0}
+          }
+         },
+         {
+          {
+           {12.177, 5.1718},
+           {12.221, 6.9798},
+           {13.918, 6.4428},
+           {14.131, 4.3138},
+           {12.177, 5.1718}
+          },
+          {
+           {6.0821, 6.4438},
+           {7.7791, 6.9808},
+           {7.8221, 5.1728},
+           {5.8691, 4.3148},
+           {6.0821, 6.4438}
+          },
+          {
+           {4.2261, 7.6308},
+           {5.3161, 8.0028},
+           {6.5591, 7.6368},
+           {5.5961, 7.3318},
+           {4.2261, 7.6308}
+          },
+          {
+           {3.3161, 12.173},
+           {5.4041, 12.627},
+           {6.4061, 11.205},
+           {4.7321, 10.584},
+           {3.3161, 12.173}
+          },
+          {
+           {11.075, 15.19},
+           {10.0, 13.816},
+           {8.9261, 15.19},
+           {10.0, 17.029},
+           {11.075, 15.19}
+          },
+          {
+           {16.685, 12.171},
+           {15.269, 10.583},
+           {13.594, 11.205},
+           {14.596, 12.626},
+           {16.685, 12.171}
+          },
+          {
+           {8.7951, 5.9928},
+           {9.5041, 4.9588},
+           {9.5041, 3.8208},
+           {8.8191, 4.9918},
+           {8.7951, 5.9928}
+          },
+          {
+           {7.3611, 10.381},
+           {9.1971, 9.7618},
+           {8.0661, 8.2278},
+           {6.1411, 8.7948},
+           {7.3611, 10.381}
+          },
+          {
+           {6.1011, 13.363},
+           {5.9641, 14.741},
+           {6.6061, 13.873},
+           {6.6421, 12.596},
+           {6.1011, 13.363}
+          },
+          {
+           {10.803, 9.7618},
+           {12.639, 10.381},
+           {13.859, 8.7948},
+           {11.934, 8.2278},
+           {10.803, 9.7618}
+          },
+          {
+           {12.33, 11.325},
+           {10.496, 10.707},
+           {10.496, 12.661},
+           {12.385, 13.332},
+           {12.33, 11.325}
+          },
+          {
+           {7.6701, 11.325},
+           {7.6151, 13.332},
+           {9.5041, 12.661},
+           {9.5041, 10.707},
+           {7.6701, 11.325}
+          },
+          {
+           {10.0, 5.9908},
+           {8.8681, 7.6428},
+           {10.0, 9.1788},
+           {11.132, 7.6428},
+           {10.0, 5.9908}
+          },
+          {
+           {15.126, 9.5758},
+           {15.992, 8.6048},
+           {14.996, 8.9448},
+           {14.264, 9.8968},
+           {15.126, 9.5758}
+          },
+          {
+           {13.899, 13.362},
+           {13.358, 12.595},
+           {13.393, 13.873},
+           {14.036, 14.74},
+           {13.899, 13.362}
+          },
+          {
+           {11.987, 14.745},
+           {13.198, 15.276},
+           {12.593, 14.46},
+           {11.445, 14.052},
+           {11.987, 14.745}
+          },
+          {
+           {8.5561, 14.051},
+           {7.4081, 14.459},
+           {6.8031, 15.276},
+           {8.0141, 14.744},
+           {8.5561, 14.051}
+          },
+          {
+           {5.0031, 8.9448},
+           {4.0071, 8.6048},
+           {4.8751, 9.5778},
+           {5.7371, 9.8978},
+           {5.0031, 8.9448}
+          },
+          {
+           {11.18, 4.9908},
+           {10.496, 3.8208},
+           {10.496, 4.9588},
+           {11.204, 5.9918},
+           {11.18, 4.9908}
+          },
+          {
+           {13.44, 7.6358},
+           {14.684, 8.0028},
+           {15.774, 7.6298},
+           {14.405, 7.3308},
+           {13.44, 7.6358}
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmViYGAQBWIQbX3fv3d6n5FDX2mhNO8DGQe/JIEISxEDh7DadduS\n/is7lE6WYAkDyjNpt4vd7NN02FMCFLim6+Bj3umYoKrtABQ9932ynkPjVOfu\nHHdDB9O4XZ48h9QdZKNSrO/36zswgIGKwxoZoMB/I4dn61SfNNspOKz6eMk3\naYK+g+Zb3n0GN4Xg+hcz7mEVChFxAJoa/Bhovmop0ywO6e/2EPM0HU4ddlqb\nGcfv0Ds9T6gZaO7uHb1sH8S+269c4ucg/FAGrt/7FYuJ4DZJB759BjO1bgg5\nfEw+E+t9gtUhUnz7RQag/RD/CsDdF3vHjbmC+4P9imPe5p0H1R1K3KZ8Y7sv\n4JD7/PfKj5P0HII85zaoHWKF+99gtzo/91ZJB/TwAwDKeX+2\n        "
+          ]
+         }
+        ]
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
+       PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
+      ]
+     ],
+     Background -> None
+    ],
+   CellMargins -> {{56, 25}, {10, 3}},
+   CellElementSpacings -> {"CellMinHeight" -> 0, "ClosedCellHeight" -> 0},
+   CellGroupingRules -> "OutputGrouping",
+   GeneratedCell -> True,
+   CellAutoOverwrite -> True,
+   ShowAutoSpellCheck -> False,
+   LineSpacing -> {1.1, 0, 2},
+   Background -> GrayLevel[0.97647]
+  ],
+  Cell[
+   StyleData["ChatCodeBlock"],
+   FrameBoxOptions -> {
+    Background -> GrayLevel[1],
+    FrameMargins -> {{10, 10}, {6, 6}},
+    FrameStyle ->
+     Directive[AbsoluteThickness[1], GrayLevel[0.92941]],
+    ImageMargins -> {{0, 0}, {20, 20}},
+    ImageSize -> {Full, Automatic}
+   }
+  ],
+  Cell[
+   StyleData["Input"],
+   StyleKeyMapping -> {
+    "~" -> "ChatDelimiter",
+    "/" -> "ChatInput",
+    "=" -> "WolframAlphaShort",
+    "*" -> "Item",
+    ">" -> "ExternalLanguageDefault"
+   },
+   ContextMenu -> {
+    MenuItem[
+     "Ask AI Assistant",
+     KernelExecute[
+      (Needs["Wolfram`Chatbook`" -> None]; Symbol["Wolfram`Chatbook`AskChat"][Notebooks[#1], #1]) &[
+       EvaluationCell[]
+      ]
+     ],
+     MenuEvaluator -> Automatic,
+     Method -> "Queued"
+    ],
+    Delimiter,
+    MenuItem["Cu&t", "Cut"],
+    MenuItem["&Copy", "Copy"],
+    MenuItem["&Paste", FrontEnd`Paste[After]],
+    Menu[
+     "Cop&y As",
+     {
+      MenuItem["Plain &Text", FrontEnd`CopySpecial["PlainText"]],
+      MenuItem["&Input Text", FrontEnd`CopySpecial["InputText"]],
+      MenuItem[
+       "&LaTeX",
+       KernelExecute[ToExpression["FrontEnd`CopyAsTeX[]"]],
+       MenuEvaluator -> "System"
+      ],
+      MenuItem[
+       "M&athML",
+       KernelExecute[ToExpression["FrontEnd`CopyAsMathML[]"]],
+       MenuEvaluator -> "System"
+      ],
+      Delimiter,
+      MenuItem[
+       "Cell &Object",
+       FrontEnd`CopySpecial["CellObject"]
+      ],
+      MenuItem[
+       "&Cell Expression",
+       FrontEnd`CopySpecial["CellExpression"]
+      ],
+      MenuItem[
+       "&Notebook Expression",
+       FrontEnd`CopySpecial["NotebookExpression"]
+      ]
+     }
+    ],
+    Delimiter,
+    MenuItem["&Evaluate Cell", "EvaluateCells"],
+    MenuItem["Evaluate &in Place", All],
+    MenuItem[
+     "Analyze Cell",
+     KernelExecute[
+      Needs["CodeInspector`"];
+      CodeInspector`AttachAnalysis[
+       SelectedCells[InputNotebook[]]
+      ]
+     ],
+     MenuEvaluator -> Automatic,
+     Method -> "Queued"
+    ],
+    Menu[
+     "C&onvert To",
+     {
+      MenuItem["&InputForm", "SelectionConvert" -> InputForm],
+      MenuItem[
+       "&Raw InputForm",
+       "SelectionConvert" -> RawInputForm
+      ],
+      MenuItem["&OutputForm", "SelectionConvert" -> OutputForm],
+      MenuItem[
+       "First Convert to BoxForm",
+       "MenuListConvertFormatTypes",
+       MenuAnchor -> True
+      ],
+      Delimiter,
+      MenuItem["&Bitmap", "SelectionConvert" -> "Bitmap"]
+     }
+    ],
+    Delimiter,
+    MenuItem["Make &Hyperlink...", "CreateHyperlinkDialog"],
+    MenuItem[
+     "Insert Table/&Matrix...",
+     FrontEndExecute[
+      {
+       FrontEnd`NotebookOpen[
+        FrontEnd`FindFileOnPath[
+         "InsertGrid.nb",
+         "PrivatePathsSystemResources"
+        ]
+       ]
+      }
+     ]
+    ],
+    MenuItem[
+     "Insert &Special Character...",
+     FrontEndExecute[
+      {FrontEnd`NotebookOpen["SpecialCharacters.nb"]}
+     ]
+    ],
+    Delimiter,
+    MenuItem["Check &Balance", "Balance"],
+    MenuItem["Di&vide Cell", "CellSplit"],
+    MenuItem[
+     "&Un/Comment Selection",
+     KernelExecute[ToExpression["FE`toggleComment[]"]],
+     MenuEvaluator -> "System"
+    ],
+    MenuItem[
+     "Un/Iconi&ze Selection",
+     KernelExecute[ToExpression["FE`iconizeSelectionToggle[]"]],
+     MenuEvaluator -> Automatic
+    ],
+    Delimiter,
+    MenuItem["&Get Help", FrontEnd`SelectionHelpDialog[True]],
+    MenuItem[
+     "Why the Coloring?...",
+     FrontEndExecute[
+      {
+       FrontEnd`NotebookOpen[
+        FrontEnd`FindFileOnPath[
+         "WhyTheColoring.nb",
+         "PrivatePathsSystemResources"
+        ]
+       ]
+      }
+     ]
+    ],
+    MenuItem["Spea&k Selection", "SelectionSpeak"],
+    Delimiter,
+    MenuItem[
+     "Toggle &Full Screen",
+     FrontEndExecute[
+      FrontEnd`Value[FEPrivate`NotebookToggleFullScreen[]]
+     ]
+    ]
+   }
+  ],
+  Cell[
+   StyleData["Output"],
+   ContextMenu -> {
+    MenuItem[
+     "Ask AI Assistant",
+     KernelExecute[
+      (Needs["Wolfram`Chatbook`" -> None]; Symbol["Wolfram`Chatbook`AskChat"][Notebooks[#1], #1]) &[
+       EvaluationCell[]
+      ]
+     ],
+     MenuEvaluator -> Automatic,
+     Method -> "Queued"
+    ],
+    Delimiter,
+    MenuItem["Cu&t", "Cut"],
+    MenuItem["&Copy", "Copy"],
+    MenuItem["&Paste", FrontEnd`Paste[After]],
+    Menu[
+     "Cop&y As",
+     {
+      MenuItem["Plain &Text", FrontEnd`CopySpecial["PlainText"]],
+      MenuItem["&Input Text", FrontEnd`CopySpecial["InputText"]],
+      MenuItem[
+       "&LaTeX",
+       KernelExecute[ToExpression["FrontEnd`CopyAsTeX[]"]],
+       MenuEvaluator -> "System"
+      ],
+      MenuItem[
+       "M&athML",
+       KernelExecute[ToExpression["FrontEnd`CopyAsMathML[]"]],
+       MenuEvaluator -> "System"
+      ],
+      Delimiter,
+      MenuItem[
+       "Cell &Object",
+       FrontEnd`CopySpecial["CellObject"]
+      ],
+      MenuItem[
+       "&Cell Expression",
+       FrontEnd`CopySpecial["CellExpression"]
+      ],
+      MenuItem[
+       "&Notebook Expression",
+       FrontEnd`CopySpecial["NotebookExpression"]
+      ]
+     }
+    ],
+    Delimiter,
+    Menu[
+     "Con&vert To",
+     {
+      MenuItem["&InputForm", "SelectionConvert" -> InputForm],
+      MenuItem[
+       "&Raw InputForm",
+       "SelectionConvert" -> RawInputForm
+      ],
+      MenuItem["&OutputForm", "SelectionConvert" -> OutputForm],
+      MenuItem[
+       "First Convert to BoxForm",
+       "MenuListConvertFormatTypes",
+       MenuAnchor -> True
+      ],
+      Delimiter,
+      MenuItem["&Bitmap", "SelectionConvert" -> "Bitmap"]
+     }
+    ],
+    Delimiter,
+    MenuItem[
+     "Un/Iconi&ze Selection",
+     KernelExecute[ToExpression["FE`iconizeSelectionToggle[]"]],
+     MenuEvaluator -> Automatic
+    ],
+    Delimiter,
+    MenuItem["&Get Help", FrontEnd`SelectionHelpDialog[True]],
+    MenuItem["Spea&k Selection", "SelectionSpeak"],
+    Delimiter,
+    MenuItem[
+     "Toggle &Full Screen",
+     FrontEndExecute[
+      FrontEnd`Value[FEPrivate`NotebookToggleFullScreen[]]
+     ]
+    ]
+   }
+  ],
+  Cell[
+   StyleData["Link"],
+   FontFamily -> "Source Sans Pro",
+   FontColor ->
+    Dynamic[
+     If[ CurrentValue["MouseOver"],
+      RGBColor[0.855, 0.396, 0.145],
+      RGBColor[0.02, 0.286, 0.651]
+     ]
+    ]
+  ],
+  Cell[
+   StyleData["TextRefLink"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      TagBox[
+       ButtonBox[
+        StyleBox[
+         #1,
+         ShowStringCharacters -> True,
+         FontFamily -> "Source Sans Pro"
+        ],
+        BaseStyle -> "Link",
+        ButtonData -> #2,
+        ContentPadding -> False
+       ],
+       MouseAppearanceTag["LinkHand"]
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["InlineFormula"],
+   HyphenationOptions -> {"HyphenationCharacter" -> "\[Continuation]"},
+   LanguageCategory -> "Formula",
+   AutoSpacing -> True,
+   ScriptLevel -> 1,
+   SingleLetterItalics -> False,
+   SpanMaxSize -> 1,
+   StyleMenuListing -> None,
+   FontFamily -> "Source Sans Pro",
+   FontSize -> 1.0 * Inherited,
+   ButtonBoxOptions -> {Appearance -> {Automatic, None}},
+   FractionBoxOptions -> {BaseStyle -> {SpanMaxSize -> Automatic}},
+   GridBoxOptions -> {
+    GridBoxItemSize -> {
+     "Columns" -> {{Automatic}},
+     "ColumnsIndexed" -> { },
+     "Rows" -> {{1.0}},
+     "RowsIndexed" -> { }
+    }
+   }
+  ],
+  Cell[
+   StyleData["ChatDelimiter"],
+   Selectable -> False,
+   ShowCellBracket -> False,
+   CellMargins -> {{0, 0}, {10, 10}},
+   CellBracketOptions -> {"OverlapContent" -> True},
+   CellElementSpacings -> {"CellMinHeight" -> 6},
+   Evaluatable -> True,
+   CellGroupingRules -> {"SectionGrouping", 58},
+   CellEvaluationFunction -> (($Line = 0;) &),
+   ShowCellLabel -> False,
+   CellFrameMargins -> {{20, 20}, {2, 2}},
+   DefaultNewCellStyle -> "Input",
+   FontSize -> 6,
+   Background -> GrayLevel[0.95]
+  ]
+ },
+ FrontEndVersion -> "13.2 for Microsoft Windows (64-bit) (January 30, 2023)",
+ StyleDefinitions -> "PrivateStylesheetFormatting.nb"
+]
