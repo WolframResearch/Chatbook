@@ -1,8 +1,8 @@
 BeginPackage["Wolfram`Chatbook`Errors`"]
 
-Needs["GeneralUtilities`" -> "GU`"]
+Needs["GeneralUtilities`" -> None]
 
-GU`SetUsage[ChatbookError, "ChatbookError represents an error in a Chatbook operation"]
+GeneralUtilities`SetUsage[ChatbookError, "ChatbookError represents an error in a Chatbook operation"]
 
 ChatbookWarning
 

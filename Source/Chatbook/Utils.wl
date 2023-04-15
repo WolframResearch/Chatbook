@@ -10,7 +10,6 @@ CellPrint2
 Begin["`Private`"]
 
 Needs["Wolfram`Chatbook`ErrorUtils`"]
-Needs["Wolfram`Chatbook`UI`"]
 
 (*====================================*)
 

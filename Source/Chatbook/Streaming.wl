@@ -4,9 +4,10 @@
 
 BeginPackage["Wolfram`Chatbook`Streaming`"]
 
-Needs["GeneralUtilities`" -> "GU`"]
+(* Avoiding context aliasing due to bug 434990: *)
+Needs[ "GeneralUtilities`" -> None ];
 
-GU`SetUsage[CreateChatEventToOutputEventGenerator, "
+GeneralUtilities`SetUsage[CreateChatEventToOutputEventGenerator, "
 CreateChatEventToOutputEventGenerator[] returns a generator function, which
 should be called with parsed chat server sent events, and will return either
 Missing['IncompleteData'], or a list of parsed chat output event structures.

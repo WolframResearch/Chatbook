@@ -1,23 +1,20 @@
-BeginPackage["Wolfram`Chatbook`Serialization`"]
+BeginPackage[ "Wolfram`Chatbook`Serialization`" ];
 
-Needs["GeneralUtilities`" -> "GU`"]
+(* Avoiding context aliasing due to bug 434990: *)
+Needs[ "GeneralUtilities`" -> None ];
 
-GU`SetUsage[CellToString, "
-CellToString[cell$] serializes a Cell expression as a string for use in chat.
-"]
+GeneralUtilities`SetUsage[ CellToString, "\
+CellToString[cell$] serializes a Cell expression as a string for use in chat.\
+" ];
 
-Begin["`Private`"]
+Begin[ "`Private`" ];
 
-Needs["Wolfram`Chatbook`Errors`"]
-Needs["Wolfram`Chatbook`ErrorUtils`"]
-
+Needs[ "Wolfram`Chatbook`Errors`"     ];
+Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Initialization*)
-
-ClearAll[ "Wolfram`Chatbook`Serialization`*"         ];
-ClearAll[ "Wolfram`Chatbook`Serialization`Private`*" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
