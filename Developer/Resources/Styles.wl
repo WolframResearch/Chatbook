@@ -5,9 +5,16 @@ Begin[ "Wolfram`ChatbookStylesheetBuilder`Private`" ];
 (*Notebook*)
 Cell[
     StyleData[ "Notebook" ],
-    TaggingRules    -> <| "ChatNotebookSettings" -> $defaultChatbookSettings |>,
-    CellTrayWidgets -> <| "ChatWidget" -> <| "Type" -> "Focus", "Content" -> $sendChatWidget |> |>,
-    CellEpilog      :> { $sendChatFunction[ EvaluationCell[ ] ] },
+    TaggingRules -> <| "ChatNotebookSettings" -> $defaultChatbookSettings |>,
+
+    CellTrayWidgets -> <|
+        "ChatWidget" -> <|
+            "Type"    -> "Focus",
+            "Content" -> Cell[ BoxData @ TemplateBox[ { }, "ChatWidgetButton" ], "ChatWidget" ]
+        |>
+    |>,
+
+    CellEpilog :> { $sendChatFunction[ EvaluationCell[ ] ] },
 
     ComponentwiseContextMenu -> <|
         "CellBracket" -> contextMenu[ $askMenuItem, $excludeMenuItem, Delimiter, "CellBracket" ],
@@ -91,7 +98,7 @@ Cell[
     MenuSortingValue  -> 1000,
     CellGroupingRules -> "InputGrouping",
     CellFrameColor    -> RGBColor[ 0.81053, 0.85203, 0.91294 ],
-    CellMargins       -> { { 56, 25 }, { 5, 8 } },
+    CellMargins       -> { { 66, 25 }, { 5, 8 } },
     CellDingbat       -> Cell[ BoxData @ TemplateBox[ { }, "ChatUserIcon" ], Background -> None ],
     StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "/" -> "ChatQuery", "Backspace" -> "Input" }
 ]
@@ -131,7 +138,7 @@ Cell[
     StyleKeyMapping     -> { " " -> "Text", "*" -> "Item", "/" -> "Input", "Backspace" -> "ChatSystemInput" },
     CellGroupingRules   -> { "SectionGrouping", 58 },
     ShowCellLabel       -> False,
-    CellMargins         -> { { 56, 25 }, { Inherited, Inherited } },
+    CellMargins         -> { { 66, 25 }, { Inherited, Inherited } },
     CellFrame           -> { { 0, 0 }, { 0, 8 } },
     CellFrameColor      -> RGBColor[ 0.74902, 0.74902, 0.74902 ],
     DefaultNewCellStyle -> "Input",
@@ -150,7 +157,7 @@ Cell[
     CellDingbat         -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIcon" ], Background -> None ],
     CellElementSpacings -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
     CellGroupingRules   -> "OutputGrouping",
-    CellMargins         -> { { 56, 25 }, { 12, 5 } },
+    CellMargins         -> { { 66, 25 }, { 12, 5 } },
     GeneratedCell       -> True,
     LineSpacing         -> { 1.1, 0, 2 },
     ShowAutoSpellCheck  -> False
@@ -272,6 +279,26 @@ Cell[
     ShowCellLabel          -> False
 ]
 (* :!CodeAnalysis::EndBlock:: *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ChatWidgetButton*)
+Cell[
+    StyleData[ "ChatWidgetButton" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function[
+            Evaluate @ ToBoxes @ Button[
+                MouseAppearance[
+                    Tooltip[ RawBoxes @ TemplateBox[ { }, "ChatWidgetIcon" ], "Send to AI Assistant" ],
+                    "LinkHand"
+                ],
+                Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "WidgetSend", ParentCell @ EvaluationCell[ ] ],
+                Appearance -> $suppressButtonAppearance
+            ]
+        ]
+    }
+]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
