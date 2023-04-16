@@ -9,9 +9,11 @@ ClearAll[ "`Private`*" ];
 $ChatbookStylesheet;
 BuildChatbookStylesheet;
 
+System`LinkedItems;
 System`MenuAnchor;
 System`MenuItem;
 System`RawInputForm;
+System`ToggleMenuItem;
 
 Begin[ "`Private`" ];
 
@@ -43,7 +45,7 @@ $icons := $icons = Association @ Map[
 (* ::Subsubsection::Closed:: *)
 (*$sendChatFunction*)
 $sendChatFunction = Function[
-    Needs[ "Wolfram`Chatbook`" -> None ];
+    Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
     Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "Send", # ]
 ];
 
@@ -54,8 +56,23 @@ $askMenuItem = MenuItem[
     "Ask AI Assistant",
     KernelExecute[
         Function[
-            Needs[ "Wolfram`Chatbook`" -> None ];
+            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
             Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "Ask", ## ]
+        ][ InputNotebook[ ], SelectedCells @ InputNotebook[ ] ]
+    ],
+    MenuEvaluator -> Automatic,
+    Method        -> "Queued"
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$excludeMenuItem*)
+$excludeMenuItem = MenuItem[
+    "Include/Exclude From AI Chat",
+    KernelExecute[
+        Function[
+            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "ExclusionToggle", ## ]
         ][ InputNotebook[ ], SelectedCells @ InputNotebook[ ] ]
     ],
     MenuEvaluator -> Automatic,

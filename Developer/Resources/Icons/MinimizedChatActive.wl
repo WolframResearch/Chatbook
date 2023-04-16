@@ -141,11 +141,11 @@ Graphics[
             ]
         },
         Inset[
-            ProgressIndicator[ Appearance -> "Necklace", ImageSize -> 8 ],
-            ImageScaled @ { 0.525, 0.45 }
+            ProgressIndicator[ Appearance -> "Necklace", ImageSize -> 6 ],
+            ImageScaled @ { 0.525, 0.35 }
         ]
     },
     AspectRatio -> Automatic,
-    ImageSize -> { { 22.0, 22.0 }, { 22.0, 22.0 } },
+    ImageSize -> { { 16.5, 16.5 }, { 16.5, 16.5 } },
     PlotRange -> { { -0.5, 21.5 }, { -0.5, 21.5 } }
 ]
