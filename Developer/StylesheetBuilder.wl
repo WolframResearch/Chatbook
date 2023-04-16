@@ -35,26 +35,18 @@ $styleSheetTarget = FileNameJoin @ { DirectoryName[ $InputFileName, 2 ], "FrontE
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*$icons*)
-$icons := $icons = Association @ Map[
-    FileBaseName @ # -> Import @ # &,
-    FileNames[ All, $iconDirectory ]
+(*$suppressButtonAppearance*)
+$suppressButtonAppearance = Dynamic @ FEPrivate`FrontEndResource[
+    "FEExpressions",
+    "SuppressMouseDownNinePatchAppearance"
 ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*$sendChatWidget*)
-$sendChatWidget = Cell[
-    BoxData @ ToBoxes @ Button[
-        MouseAppearance[
-            Tooltip[ RawBoxes @ TemplateBox[ { }, "ChatWidgetIcon" ], "Send to AI Assistant" ],
-            "LinkHand"
-        ],
-        Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "WidgetSend", ParentCell @ EvaluationCell[ ] ],
-        Appearance -> Dynamic @ FEPrivate`FrontEndResource[ "FEExpressions", "SuppressMouseDownNinePatchAppearance" ]
-    ],
-    "ChatWidget"
+(*$icons*)
+$icons := $icons = Association @ Map[
+    FileBaseName @ # -> Import @ # &,
+    FileNames[ All, $iconDirectory ]
 ];
 
 (* ::**************************************************************************************************************:: *)
