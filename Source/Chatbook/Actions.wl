@@ -3,6 +3,12 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 
+`AskChat;
+`AttachWidget;
+`ExclusionToggle;
+`SendChat;
+`WidgetSend;
+
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"               ];
@@ -126,10 +132,189 @@ ChatbookAction::UnknownStatusCode =
 ChatbookAction::BadResponseMessage =
 "`1`";
 
-ChatbookAction[ "Ask" , args___ ] := catchTop @ AskChat @ args;
-ChatbookAction[ "Send", args___ ] := catchTop @ SendChat @ args;
+ChatbookAction[ "Ask"            , args___ ] := catchTop @ AskChat @ args;
+ChatbookAction[ "AttachWidget"   , args___ ] := catchTop @ AttachWidget @ args;
+ChatbookAction[ "Send"           , args___ ] := catchTop @ SendChat @ args;
+ChatbookAction[ "WidgetSend"     , args___ ] := catchTop @ WidgetSend @ args;
+ChatbookAction[ "ExclusionToggle", args___ ] := catchTop @ ExclusionToggle @ args;
 
 ChatbookAction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ExclusionToggle*)
+ExclusionToggle // beginDefinition;
+
+ExclusionToggle[ _, { } ] := Null;
+
+ExclusionToggle[ nbo_NotebookObject, cellObjects: { __CellObject } ] :=
+    Enclose @ Module[ { cells, excluded, toggled },
+        SelectionMove[ Confirm @ First[ cellObjects, $Failed ], Before, Cell, AutoScroll -> False ];
+        cells    = ConfirmMatch[ NotebookRead @ cellObjects, { __Cell } ];
+        excluded = MatchQ[ cells, { Cell[ __, "ChatExcluded", ___ ], ___ } ];
+        toggled  = ConfirmMatch[ If[ excluded, includeChatCells @ cells, excludeChatCells @ cells ], { __Cell } ];
+        CurrentValue[ cellObjects, Deletable ] = True;
+        NotebookDelete @ cellObjects;
+        NotebookWrite[ nbo, toggled, All ]
+    ];
+
+ExclusionToggle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*includeChatCells*)
+includeChatCells // beginDefinition;
+includeChatCells[ cells_List ] := includeChatCells /@ cells;
+includeChatCells[ cell_Cell ] := DeleteCases[ cell, "ChatExcluded" ];
+includeChatCells // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*excludeChatCells*)
+excludeChatCells // beginDefinition;
+excludeChatCells[ cells_List ] := excludeChatCells /@ cells;
+excludeChatCells[ cell: Cell[ __, "ChatExcluded", ___ ] ] := cell;
+excludeChatCells[ Cell[ a_, b___String, c: OptionsPattern[ ] ] ] := Cell[ a, b, "ChatExcluded", c ];
+excludeChatCells // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*WidgetSend*)
+WidgetSend // beginDefinition;
+
+WidgetSend[ cell_CellObject ] :=
+    Block[ { $alwaysOpen = True, cellPrint = cellPrintAfter @ cell },
+        SendChat @ cell
+    ];
+
+WidgetSend // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*AskChat*)
+AskChat // beginDefinition;
+
+AskChat[ ] := AskChat[ InputNotebook[ ] ];
+
+AskChat[ nbo_NotebookObject ] := AskChat[ nbo, SelectedCells @ nbo ];
+
+AskChat[ nbo_NotebookObject, { selected_CellObject } ] :=
+    Module[ { selection, cell, obj },
+        selection = NotebookRead @ nbo;
+        cell = chatQueryCell @ selection;
+        SelectionMove[ selected, After, Cell ];
+        obj = cellPrint @ cell;
+        SelectionMove[ obj, All, Cell ];
+        SelectionEvaluateCreateCell @ nbo
+    ];
+
+AskChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatQueryCell*)
+chatQueryCell // beginDefinition;
+chatQueryCell[ s_String      ] := chatQueryCell0 @ StringTrim @ s;
+chatQueryCell[ content_List  ] := chatQueryCell0 @ TextData @ content;
+chatQueryCell[ text_TextData ] := chatQueryCell0 @ text;
+chatQueryCell[ boxes_BoxData ] := chatQueryCell0 @ TextData @ Cell @ boxes;
+chatQueryCell[ cell_Cell     ] := chatQueryCell0 @ TextData @ cell;
+chatQueryCell[ boxes_        ] := chatQueryCell0 @ BoxData @ boxes;
+chatQueryCell // endDefinition;
+
+chatQueryCell0[ content_ ] := Cell[ content, "ChatQuery", GeneratedCell -> False, CellAutoOverwrite -> False ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*AttachWidget*)
+AttachWidget // beginDefinition;
+
+AttachWidget[ ] := AttachWidget @ EvaluationNotebook[ ];
+
+AttachWidget[ nbo_NotebookObject ] :=
+    With[ { selected = getSelectedCell @ nbo },
+        clearExistingWidgets @ nbo;
+        AttachWidget @ selected
+    ];
+
+AttachWidget[ cell_CellObject ] :=
+    With[ { widget = $chatWidgetCell },
+        FE`Evaluate @ FEPrivate`AddCellTrayWidget[ cell, "ChatWidget" -> <| "Content" -> widget |> ]
+    ];
+
+AttachWidget[ _Missing ] := Null;
+
+AttachWidget // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$chatWidgetCell*)
+$chatWidgetCell = Cell[
+    BoxData @ MakeBoxes @ Button[
+        MouseAppearance[ RawBoxes @ TemplateBox[ { }, "ChatWidgetIcon" ], "LinkHand" ],
+        Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "WidgetSend", $lastSentCell = ParentCell[ $lastWidgetCell = EvaluationCell[ ] ] ],
+        Appearance -> None
+    ],
+    "ChatWidget"
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*disableWidgets*)
+disableWidgets // beginDefinition;
+
+disableWidgets[ nbo_NotebookObject ] := (
+    clearExistingWidgets @ nbo;
+    SetOptions[ nbo, NotebookDynamicExpression :> Null ];
+);
+
+disableWidgets // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*enableWidgets*)
+enableWidgets // beginDefinition;
+enableWidgets[ nbo_NotebookObject ] := SetOptions[ nbo, NotebookDynamicExpression :> Inherited ];
+enableWidgets // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*clearExistingWidgets*)
+clearExistingWidgets // beginDefinition;
+
+clearExistingWidgets[ nbo_NotebookObject ] :=
+    NotebookDelete @ Cells[ nbo, CellStyle -> "ChatWidget", AttachedCell -> True ];
+
+clearExistingWidgets // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getSelectedCell*)
+getSelectedCell // beginDefinition;
+
+getSelectedCell[ nbo_NotebookObject ] :=
+    Module[ { cells, info, filtered, selected, uuid, cell },
+
+        cells    = Cells @ nbo;
+        info     = Reverse[ Association /@ Developer`CellInformation @ cells ];
+        filtered = DeleteCases[ info, KeyValuePattern[ "Style" -> $$noWidgetStyle ] ];
+        selected = FirstCase[ filtered, KeyValuePattern[ "CursorPosition" -> $$selectedCursorPosition ], <| |> ];
+        uuid     = Lookup[ selected, "ExpressionUUID" ];
+        cell     = If[ StringQ @ uuid, CellObject @ uuid, Throw[ Missing[ "NotFound" ], $tag ] ];
+
+        If[ MatchQ[ Cells[ cell, AttachedCell -> True, CellStyle -> "MinimizedChatIcon" ], { } ],
+            cell,
+            Missing[ "NotFound" ]
+        ]
+
+    ] ~Catch~ $tag;
+
+getSelectedCell // endDefinition;
+
+$$noWidgetStyleName      = "ChatInput"|"ChatOutput"|"ChatQuery"|"ChatSystemInput"|"ChatContextDivider"|"ChatExcluded";
+$$noWidgetStyle          = $$noWidgetStyleName | { ___, $$noWidgetStyleName, ___ };
+$$selectedCursorPosition = "BelowCell"|"CellBracket"|"CellLabel"|_List;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -137,6 +322,8 @@ ChatbookAction // endDefinition;
 SendChat // beginDefinition;
 
 SendChat[ ] := SendChat @ EvaluationCell[ ];
+
+SendChat[ evalCell_CellObject, ___ ] /; MemberQ[ CurrentValue[ evalCell, CellStyle ], "ChatExcluded" ] := Null;
 
 SendChat[ evalCell_CellObject ] := SendChat[ evalCell, parentNotebook @ evalCell ];
 
@@ -150,11 +337,12 @@ SendChat[ evalCell_, nbo_, settings_, Automatic ] /; CloudSystem`$CloudNotebooks
     SendChat[ evalCell, nbo, settings, False ];
 
 SendChat[ evalCell_, nbo_, settings_, Automatic ] :=
-    Block[ { $autoOpen, $alwaysOpen },
-        $autoOpen = $alwaysOpen = MemberQ[
+    Block[ { $autoOpen, $alwaysOpen = $alwaysOpen },
+        $autoOpen = MemberQ[
             CurrentValue[ evalCell, CellStyle ],
             "Text"|"ChatInput"|"ChatQuery"|"ChatSystemInput"
         ];
+        $alwaysOpen = TrueQ @ $alwaysOpen || $autoOpen;
         sendChat[ evalCell, nbo, settings ]
     ];
 
@@ -202,6 +390,7 @@ sendChat // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*alwaysOpenQ*)
 alwaysOpenQ // beginDefinition;
+alwaysOpenQ[ _, _ ] /; $alwaysOpen := True;
 alwaysOpenQ[ as_, True  ] := False;
 alwaysOpenQ[ as_, False ] := True;
 alwaysOpenQ[ as_, _     ] := StringQ @ as[ "RolePrompt" ] && StringFreeQ[ as[ "RolePrompt" ], $$severityTag ];
@@ -226,7 +415,8 @@ submitAIAssistant[ container_, req_, cellObject_, settings_ ] /; CloudSystem`$Cl
 ];
 
 submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
-    With[ { autoOpen = TrueQ @ $autoOpen, alwaysOpen = TrueQ @ $alwaysOpen },
+    With[ { autoOpen = TrueQ @ $autoOpen, alwaysOpen = TrueQ @ $alwaysOpen, nbo = Notebooks @ cellObject },
+        disableWidgets @ nbo;
         URLSubmit[
             req,
             HandlerFunctions -> <|
@@ -238,6 +428,7 @@ submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
                 ],
                 "TaskFinished" -> Function[
                     catchTop @ Block[ { $autoOpen = autoOpen, $alwaysOpen = alwaysOpen },
+                        enableWidgets @ nbo;
                         Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                         checkResponse[ settings, container, cellObject, #1 ]
                     ]
@@ -441,10 +632,9 @@ makeHTTPRequest[ settings_Association? AssociationQ, cells: { __Cell } ] :=
     Module[ { role, message, history, messages, merged },
         role     = makeCurrentRole @ settings;
         message  = Block[ { $CurrentCell = True }, makeCellMessage @ Last @ cells ];
-        history  = Global`$history = Reverse[ makeCellMessage /@ Reverse @ Most @ cells ];
+        history  = Reverse[ makeCellMessage /@ Reverse @ Most @ cells ];
         messages = DeleteMissing @ Flatten @ { role, history, message };
         merged   = If[ TrueQ @ Lookup[ settings, "MergeMessages" ], mergeMessageData @ messages, messages ];
-        Global`$merged = merged;
         makeHTTPRequest[ settings, merged ]
     ];
 
@@ -591,11 +781,24 @@ selectChatCells0[ cell_, { cells___, cell_, trailing0___ } ] :=
         NotebookDelete @ delete;
         included = DeleteCases[ include, Alternatives @@ delete ];
         flat = dropDelimitedCells @ Flatten @ { cells, cell, included };
-        filtered = clearMinimizedChats[ parentNotebook @ cell, flat ];
+        filtered = dropExcludedCells @ clearMinimizedChats[ parentNotebook @ cell, flat ];
         Reverse @ Take[ Reverse @ filtered, UpTo @ $maxChatCells ]
     ];
 
 selectChatCells0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*dropExcludedCells*)
+dropExcludedCells // beginDefinition;
+
+dropExcludedCells[ cells_List ] :=
+    Module[ { styles },
+        styles = cellStyles @ cells;
+        Keys @ Select[ AssociationThread[ cells -> MemberQ[ "ChatExcluded" ] /@ styles ], Not@*TrueQ ]
+    ];
+
+dropExcludedCells // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -826,41 +1029,6 @@ $apiKeyDialogDescription := $apiKeyDialogDescription = Get @ FileNameJoin @ {
     PacletObject[ "Wolfram/LLMTools" ][ "AssetLocation", "AIAssistant" ],
     "APIKeyDialogDescription.wl"
 };
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*AskChat*)
-AskChat // beginDefinition;
-
-AskChat[ ] := AskChat[ InputNotebook[ ] ];
-
-AskChat[ nbo_NotebookObject ] := AskChat[ nbo, SelectedCells @ nbo ];
-
-AskChat[ nbo_NotebookObject, { selected_CellObject } ] :=
-    Module[ { selection, cell, obj },
-        selection = NotebookRead @ nbo;
-        cell = chatQueryCell @ selection;
-        SelectionMove[ selected, After, Cell ];
-        obj = cellPrint @ cell;
-        SelectionMove[ obj, All, Cell ];
-        SelectionEvaluateCreateCell @ nbo
-    ];
-
-AskChat // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*chatQueryCell*)
-chatQueryCell // beginDefinition;
-chatQueryCell[ s_String      ] := chatQueryCell0 @ StringTrim @ s;
-chatQueryCell[ content_List  ] := chatQueryCell0 @ TextData @ content;
-chatQueryCell[ text_TextData ] := chatQueryCell0 @ text;
-chatQueryCell[ boxes_BoxData ] := chatQueryCell0 @ TextData @ Cell @ boxes;
-chatQueryCell[ cell_Cell     ] := chatQueryCell0 @ TextData @ cell;
-chatQueryCell[ boxes_        ] := chatQueryCell0 @ BoxData @ boxes;
-chatQueryCell // endDefinition;
-
-chatQueryCell0[ content_ ] := Cell[ content, "ChatQuery", GeneratedCell -> False, CellAutoOverwrite -> False ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1291,8 +1459,11 @@ makeResultCell0[ externalCodeCell[ lang_String, code_String ] ] :=
         StringTrim @ code
     ];
 
-makeResultCell0[ inlineCodeCell[ code_String ] ] :=
-    stringTemplateInput @ code;
+makeResultCell0[ inlineCodeCell[ code_String ] ] := Cell[
+    BoxData @ stringTemplateInput @ code,
+    "InlineFormula",
+    FontFamily -> "Source Sans Pro"
+];
 
 makeResultCell0[ mathCell[ math_String ] ] :=
     With[ { boxes = Quiet @ InputAssistant`TeXAssistant @ StringTrim @ math },
@@ -1449,7 +1620,8 @@ inlineInteractiveCodeCell[ display_, string_, lang_ ] :=
             display,
             {
                 "MouseEntered" :> (
-                    Needs[ "Wolfram`Chatbook`" -> None ];
+                    Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+                    (* TODO: create a ChatbookAction for this *)
                     attached = AttachCell[
                         EvaluationCell[ ],
                         floatingButtonGrid[ attached, string, lang ],
@@ -1671,6 +1843,22 @@ parentNotebook // beginDefinition;
 parentNotebook[ cell_CellObject ] /; CloudSystem`$CloudNotebooks := Notebooks @ cell;
 parentNotebook[ cell_CellObject ] := ParentNotebook @ cell;
 parentNotebook // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*cellPrintAfter*)
+cellPrintAfter // ClearAll;
+
+cellPrintAfter[ target_ ][ cell_ ] := cellPrintAfter[ target, cell ];
+
+cellPrintAfter[ target_CellObject, cell: Cell[ __, ExpressionUUID -> uuid_, ___ ] ] := (
+    SelectionMove[ target, After, Cell, AutoScroll -> False ];
+    NotebookWrite[ parentNotebook @ target, cell ];
+    CellObject @ uuid
+);
+
+cellPrintAfter[ target_CellObject, cell_Cell ] :=
+    cellPrintAfter[ target, Append[ cell, ExpressionUUID -> CreateUUID[ ] ] ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

@@ -6,7 +6,35 @@ Begin[ "Wolfram`ChatbookStylesheetBuilder`Private`" ];
 Cell[
     StyleData[ "Notebook" ],
     TaggingRules -> <| "ChatNotebookSettings" -> $defaultChatbookSettings |>,
-    CellEpilog   :> { $sendChatFunction[ EvaluationCell[ ] ] }
+    CellEpilog   :> { $sendChatFunction[ EvaluationCell[ ] ] },
+
+    NotebookDynamicExpression :> Refresh[
+        Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachWidget", EvaluationNotebook[ ] ]
+        ,
+        UpdateInterval -> 1
+    ],
+
+    ComponentwiseContextMenu -> <|
+        "CellBracket" -> contextMenu[ $askMenuItem, $excludeMenuItem, Delimiter, "CellBracket" ],
+        "CellGroup"   -> contextMenu[ $excludeMenuItem, Delimiter, "CellGroup" ],
+        "CellRange"   -> contextMenu[ $excludeMenuItem, Delimiter, "CellRange" ]
+    |>
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ChatExcluded*)
+Cell[
+    StyleData[ "ChatExcluded" ],
+    CellBracketOptions -> { "Color" -> Pink },
+    GeneratedCellStyles -> {
+        "Message"        -> { "Message" , "MSG", "ChatExcluded" },
+        "Graphics"       -> { "Graphics"       , "ChatExcluded" },
+        "Output"         -> { "Output"         , "ChatExcluded" },
+        "Print"          -> { "Print"          , "ChatExcluded" },
+        "PrintTemporary" -> { "PrintTemporary" , "ChatExcluded" }
+    }
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -327,4 +355,17 @@ Cell[
     }
 ]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatWidgetIcon*)
+Cell[
+    StyleData[ "ChatWidgetIcon" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "ChatWidgetIcon" ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Package Footer*)
 End[ ];
