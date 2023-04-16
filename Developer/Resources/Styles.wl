@@ -5,15 +5,9 @@ Begin[ "Wolfram`ChatbookStylesheetBuilder`Private`" ];
 (*Notebook*)
 Cell[
     StyleData[ "Notebook" ],
-    TaggingRules -> <| "ChatNotebookSettings" -> $defaultChatbookSettings |>,
-    CellEpilog   :> { $sendChatFunction[ EvaluationCell[ ] ] },
-
-    NotebookDynamicExpression :> Refresh[
-        Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachWidget", EvaluationNotebook[ ] ]
-        ,
-        UpdateInterval -> 1
-    ],
+    TaggingRules    -> <| "ChatNotebookSettings" -> $defaultChatbookSettings |>,
+    CellTrayWidgets -> <| "ChatWidget" -> <| "Type" -> "Focus", "Content" -> $sendChatWidget |> |>,
+    CellEpilog      :> { $sendChatFunction[ EvaluationCell[ ] ] },
 
     ComponentwiseContextMenu -> <|
         "CellBracket" -> contextMenu[ $askMenuItem, $excludeMenuItem, Delimiter, "CellBracket" ],
@@ -27,7 +21,8 @@ Cell[
 (*ChatExcluded*)
 Cell[
     StyleData[ "ChatExcluded" ],
-    CellBracketOptions -> { "Color" -> Pink },
+    CellTrayWidgets     -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    CellBracketOptions  -> { "Color" -> Pink },
     GeneratedCellStyles -> {
         "Message"        -> { "Message" , "MSG", "ChatExcluded" },
         "Graphics"       -> { "Graphics"       , "ChatExcluded" },
@@ -57,6 +52,7 @@ Cell[
 (*FramedChatCell*)
 Cell[
     StyleData[ "FramedChatCell", StyleDefinitions -> StyleData[ "Text" ] ],
+    CellTrayWidgets          -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     AutoQuoteCharacters      -> { },
     CellFrame                -> 2,
     CellFrameColor           -> GrayLevel[ 0.92941 ],
@@ -91,6 +87,7 @@ Cell[
 (*ChatInput*)
 Cell[
     StyleData[ "ChatInput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
+    CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     MenuSortingValue  -> 1000,
     CellGroupingRules -> "InputGrouping",
     CellFrameColor    -> RGBColor[ 0.81053, 0.85203, 0.91294 ],
@@ -104,6 +101,7 @@ Cell[
 (*ChatQuery*)
 Cell[
     StyleData[ "ChatQuery", StyleDefinitions -> StyleData[ "ChatInput" ] ],
+    CellTrayWidgets  -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     MenuSortingValue -> 1000,
     StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "/" -> "ChatSystemInput", "Backspace" -> "ChatInput" },
     CellFrameColor   -> RGBColor[ 0.82745, 0.87059, 0.68235 ],
@@ -115,6 +113,7 @@ Cell[
 (*ChatSystemInput*)
 Cell[
     StyleData[ "ChatSystemInput", StyleDefinitions -> StyleData[ "ChatInput" ] ],
+    CellTrayWidgets  -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     MenuSortingValue -> 1000,
     CellFrame        -> 1,
     StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "/" -> "ChatContextDivider", "Backspace" -> "ChatQuery" },
@@ -128,6 +127,7 @@ Cell[
 (*ChatContextDivider*)
 Cell[
     StyleData[ "ChatContextDivider", StyleDefinitions -> StyleData[ "Section" ] ],
+    CellTrayWidgets     -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     StyleKeyMapping     -> { " " -> "Text", "*" -> "Item", "/" -> "Input", "Backspace" -> "ChatSystemInput" },
     CellGroupingRules   -> { "SectionGrouping", 58 },
     ShowCellLabel       -> False,
@@ -144,6 +144,7 @@ Cell[
 (*ChatOutput*)
 Cell[
     StyleData[ "ChatOutput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
+    CellTrayWidgets     -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     Background          -> GrayLevel[ 0.97647 ],
     CellAutoOverwrite   -> True,
     CellDingbat         -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIcon" ], Background -> None ],
@@ -255,6 +256,7 @@ Cell[
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 Cell[
     StyleData[ "ChatDelimiter" ],
+    CellTrayWidgets        -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     Background             -> GrayLevel[ 0.95 ],
     CellBracketOptions     -> { "OverlapContent" -> True },
     CellElementSpacings    -> { "CellMinHeight" -> 6 },
