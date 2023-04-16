@@ -253,6 +253,8 @@ SendChat[ evalCell_CellObject, ___ ] /; MemberQ[ CurrentValue[ evalCell, CellSty
 
 SendChat[ evalCell_CellObject ] := SendChat[ evalCell, parentNotebook @ evalCell ];
 
+SendChat[ evalCell_CellObject, nbo_NotebookObject? queuedEvaluationsQ ] := Null;
+
 SendChat[ evalCell_CellObject, nbo_NotebookObject ] :=
     SendChat[ evalCell, nbo, Association @ CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings" } ] ];
 
@@ -278,6 +280,14 @@ SendChat[ evalCell_, nbo_, settings_, minimized_ ] :=
     ];
 
 SendChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*queuedEvaluationsQ*)
+queuedEvaluationsQ[ nbo_NotebookObject ] :=
+    TrueQ[ Count[ Lookup[ Developer`CellInformation @ Cells @ nbo, "Evaluating" ], True ] > 1 ];
+
+queuedEvaluationsQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
