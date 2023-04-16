@@ -43,6 +43,22 @@ $icons := $icons = Association @ Map[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*$sendChatWidget*)
+$sendChatWidget = Cell[
+    BoxData @ ToBoxes @ Button[
+        MouseAppearance[
+            Tooltip[ RawBoxes @ TemplateBox[ { }, "ChatWidgetIcon" ], "Send to AI Assistant" ],
+            "LinkHand"
+        ],
+        Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "WidgetSend", ParentCell @ EvaluationCell[ ] ],
+        Appearance -> Dynamic @ FEPrivate`FrontEndResource[ "FEExpressions", "SuppressMouseDownNinePatchAppearance" ]
+    ],
+    "ChatWidget"
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*$sendChatFunction*)
 $sendChatFunction = Function[
     Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];

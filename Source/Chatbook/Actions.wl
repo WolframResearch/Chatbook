@@ -4,7 +4,6 @@
 BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 
 `AskChat;
-`AttachWidget;
 `ExclusionToggle;
 `SendChat;
 `WidgetSend;
@@ -133,7 +132,6 @@ ChatbookAction::BadResponseMessage =
 "`1`";
 
 ChatbookAction[ "Ask"            , args___ ] := catchTop @ AskChat @ args;
-ChatbookAction[ "AttachWidget"   , args___ ] := catchTop @ AttachWidget @ args;
 ChatbookAction[ "Send"           , args___ ] := catchTop @ SendChat @ args;
 ChatbookAction[ "WidgetSend"     , args___ ] := catchTop @ WidgetSend @ args;
 ChatbookAction[ "ExclusionToggle", args___ ] := catchTop @ ExclusionToggle @ args;
@@ -223,98 +221,6 @@ chatQueryCell[ boxes_        ] := chatQueryCell0 @ BoxData @ boxes;
 chatQueryCell // endDefinition;
 
 chatQueryCell0[ content_ ] := Cell[ content, "ChatQuery", GeneratedCell -> False, CellAutoOverwrite -> False ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*AttachWidget*)
-AttachWidget // beginDefinition;
-
-AttachWidget[ ] := AttachWidget @ EvaluationNotebook[ ];
-
-AttachWidget[ nbo_NotebookObject ] :=
-    With[ { selected = getSelectedCell @ nbo },
-        clearExistingWidgets @ nbo;
-        AttachWidget @ selected
-    ];
-
-AttachWidget[ cell_CellObject ] :=
-    With[ { widget = $chatWidgetCell },
-        FE`Evaluate @ FEPrivate`AddCellTrayWidget[ cell, "ChatWidget" -> <| "Content" -> widget |> ]
-    ];
-
-AttachWidget[ _Missing ] := Null;
-
-AttachWidget // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*$chatWidgetCell*)
-$chatWidgetCell = Cell[
-    BoxData @ MakeBoxes @ Button[
-        MouseAppearance[ RawBoxes @ TemplateBox[ { }, "ChatWidgetIcon" ], "LinkHand" ],
-        Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "WidgetSend", $lastSentCell = ParentCell[ $lastWidgetCell = EvaluationCell[ ] ] ],
-        Appearance -> None
-    ],
-    "ChatWidget"
-];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*disableWidgets*)
-disableWidgets // beginDefinition;
-
-disableWidgets[ nbo_NotebookObject ] := (
-    clearExistingWidgets @ nbo;
-    SetOptions[ nbo, NotebookDynamicExpression :> Null ];
-);
-
-disableWidgets // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*enableWidgets*)
-enableWidgets // beginDefinition;
-enableWidgets[ nbo_NotebookObject ] := SetOptions[ nbo, NotebookDynamicExpression :> Inherited ];
-enableWidgets // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*clearExistingWidgets*)
-clearExistingWidgets // beginDefinition;
-
-clearExistingWidgets[ nbo_NotebookObject ] :=
-    NotebookDelete @ Cells[ nbo, CellStyle -> "ChatWidget", AttachedCell -> True ];
-
-clearExistingWidgets // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*getSelectedCell*)
-getSelectedCell // beginDefinition;
-
-getSelectedCell[ nbo_NotebookObject ] :=
-    Module[ { cells, info, filtered, selected, uuid, cell },
-
-        cells    = Cells @ nbo;
-        info     = Reverse[ Association /@ Developer`CellInformation @ cells ];
-        filtered = DeleteCases[ info, KeyValuePattern[ "Style" -> $$noWidgetStyle ] ];
-        selected = FirstCase[ filtered, KeyValuePattern[ "CursorPosition" -> $$selectedCursorPosition ], <| |> ];
-        uuid     = Lookup[ selected, "ExpressionUUID" ];
-        cell     = If[ StringQ @ uuid, CellObject @ uuid, Throw[ Missing[ "NotFound" ], $tag ] ];
-
-        If[ MatchQ[ Cells[ cell, AttachedCell -> True, CellStyle -> "MinimizedChatIcon" ], { } ],
-            cell,
-            Missing[ "NotFound" ]
-        ]
-
-    ] ~Catch~ $tag;
-
-getSelectedCell // endDefinition;
-
-$$noWidgetStyleName      = "ChatInput"|"ChatOutput"|"ChatQuery"|"ChatSystemInput"|"ChatContextDivider"|"ChatExcluded";
-$$noWidgetStyle          = $$noWidgetStyleName | { ___, $$noWidgetStyleName, ___ };
-$$selectedCursorPosition = "BelowCell"|"CellBracket"|"CellLabel"|_List;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -415,8 +321,7 @@ submitAIAssistant[ container_, req_, cellObject_, settings_ ] /; CloudSystem`$Cl
 ];
 
 submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
-    With[ { autoOpen = TrueQ @ $autoOpen, alwaysOpen = TrueQ @ $alwaysOpen, nbo = Notebooks @ cellObject },
-        disableWidgets @ nbo;
+    With[ { autoOpen = TrueQ @ $autoOpen, alwaysOpen = TrueQ @ $alwaysOpen },
         URLSubmit[
             req,
             HandlerFunctions -> <|
@@ -428,7 +333,6 @@ submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
                 ],
                 "TaskFinished" -> Function[
                     catchTop @ Block[ { $autoOpen = autoOpen, $alwaysOpen = alwaysOpen },
-                        enableWidgets @ nbo;
                         Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                         checkResponse[ settings, container, cellObject, #1 ]
                     ]
@@ -464,7 +368,6 @@ activeAIAssistantCell // Attributes = { HoldFirst };
 activeAIAssistantCell[ container_, settings_ ] /; CloudSystem`$CloudNotebooks := (
     Cell[
         BoxData @ ToBoxes @ ProgressIndicator[ Appearance -> "Percolate" ],
-        "Output",
         "ChatOutput",
         CellDingbat -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIconActive" ], Background -> None ]
     ]
@@ -1327,7 +1230,6 @@ writeReformattedCell[ settings_, other_, cell_CellObject ] :=
                     $top
                 ]
             },
-            "Text",
             "ChatOutput",
             GeneratedCell     -> True,
             CellAutoOverwrite -> True
@@ -1348,7 +1250,6 @@ reformatCell[ settings_, string_, tag_, open_, label_ ] := Cell[
         TextData @ reformatTextData @ string,
         TextData @ string
     ],
-    "Text",
     "ChatOutput",
     GeneratedCell     -> True,
     CellAutoOverwrite -> True,
