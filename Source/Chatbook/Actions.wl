@@ -1291,11 +1291,8 @@ makeResultCell0[ externalCodeCell[ lang_String, code_String ] ] :=
         StringTrim @ code
     ];
 
-makeResultCell0[ inlineCodeCell[ code_String ] ] := Cell[
-    BoxData @ stringTemplateInput @ code,
-    "InlineFormula",
-    FontFamily -> "Source Sans Pro"
-];
+makeResultCell0[ inlineCodeCell[ code_String ] ] :=
+    stringTemplateInput @ code;
 
 makeResultCell0[ mathCell[ math_String ] ] :=
     With[ { boxes = Quiet @ InputAssistant`TeXAssistant @ StringTrim @ math },
