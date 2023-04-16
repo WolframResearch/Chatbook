@@ -2,7 +2,7 @@ Graphics[
     {
         Thickness[ 0.047619 ],
         {
-            FaceForm @ { RGBColor[ 1.0, 1.0, 1.0 ], Opacity[ 1.0 ] },
+            FaceForm @ { GrayLevel[ 1.0 ], Opacity[ 1.0 ] },
             FilledCurve[
                 {
                     {
@@ -46,7 +46,7 @@ Graphics[
             ]
         },
         {
-            FaceForm @ { RGBColor[ 0.53725, 0.53725, 0.53725 ], Opacity[ 1.0 ] },
+            FaceForm @ { GrayLevel[ 0.53725 ], Opacity[ 1.0 ] },
             FilledCurve[
                 {
                     {
@@ -141,7 +141,7 @@ Graphics[
             ]
         },
         {
-            FaceForm @ { RGBColor[ 0.86667, 0.066667, 0.0 ], Opacity[ 1.0 ] },
+            FaceForm @ { GrayLevel[ 0.53725 ], Opacity[ 1.0 ] },
             FilledCurve[
                 {
                     { { 0, 2, 0 }, { 0, 1, 0 }, { 0, 1, 0 }, { 0, 1, 0 } },
