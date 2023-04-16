@@ -11,15 +11,6 @@ Notebook[
   Cell[StyleData[StyleDefinitions -> "Default.nb"]],
   Cell[
    StyleData["Notebook"],
-   NotebookDynamicExpression :>
-    Refresh[
-     Quiet[Needs["Wolfram`Chatbook`" -> None]];
-     Symbol["Wolfram`Chatbook`ChatbookAction"][
-      "AttachWidget",
-      EvaluationNotebook[]
-     ],
-     UpdateInterval -> 1
-    ],
    TaggingRules -> <|
     "ChatNotebookSettings" -> <|
      "AutoFormat" -> True,
@@ -37,6 +28,45 @@ Notebook[
      "ShowMinimized" -> Automatic,
      "Temperature" -> 0.7,
      "TopP" -> 1
+    |>
+   |>,
+   CellTrayWidgets -> <|
+    "ChatWidget" -> <|
+     "Type" -> "Focus",
+     "Content" ->
+      Cell[
+       BoxData[
+        ButtonBox[
+         TagBox[
+          TagBox[
+           TooltipBox[
+            TemplateBox[{}, "ChatWidgetIcon"],
+            "\"Send to AI Assistant\"",
+            TooltipStyle -> "TextStyling"
+           ],
+           Annotation[#1, "Send to AI Assistant", "Tooltip"] &
+          ],
+          MouseAppearanceTag["LinkHand"]
+         ],
+         ButtonFunction :>
+          (Quiet[Needs["Wolfram`Chatbook`" -> None]];
+          Symbol["Wolfram`Chatbook`ChatbookAction"][
+           "WidgetSend",
+           ParentCell[EvaluationCell[]]
+          ]),
+         Appearance ->
+          Dynamic[
+           FEPrivate`FrontEndResource[
+            "FEExpressions",
+            "SuppressMouseDownNinePatchAppearance"
+           ]
+          ],
+         Evaluator -> Automatic,
+         Method -> "Preemptive"
+        ]
+       ],
+       "ChatWidget"
+      ]
     |>
    |>,
    CellEpilog :> {
@@ -410,6 +440,7 @@ Notebook[
   Cell[
    StyleData["ChatExcluded"],
    CellBracketOptions -> {"Color" -> RGBColor[1, 0.5, 0.5]},
+   CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    GeneratedCellStyles -> {
     "Graphics" -> {"Graphics", "ChatExcluded"},
     "Message" -> {"Message", "MSG", "ChatExcluded"},
@@ -554,6 +585,7 @@ Notebook[
     StyleDefinitions -> StyleData["Text"]
    ],
    CellFrame -> 2,
+   CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    Initialization :>
     AttachCell[
      EvaluationCell[],
@@ -603,6 +635,7 @@ Notebook[
     "Backspace" -> "Input"
    },
    CellGroupingRules -> "InputGrouping",
+   CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellFrameColor -> RGBColor[0.81053, 0.85203, 0.91294],
    MenuSortingValue -> 1000
   ],
@@ -622,6 +655,7 @@ Notebook[
     "/" -> "ChatSystemInput",
     "Backspace" -> "ChatInput"
    },
+   CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellFrameColor -> RGBColor[0.82745, 0.87059, 0.68235],
    MenuSortingValue -> 1000
   ],
@@ -642,6 +676,7 @@ Notebook[
     "/" -> "ChatContextDivider",
     "Backspace" -> "ChatQuery"
    },
+   CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellFrameColor -> RGBColor[0.70196, 0.52941, 0.58039],
    CellFrameStyle -> Dashing[{Small, Small}],
    MenuSortingValue -> 1000
@@ -660,6 +695,7 @@ Notebook[
     "Backspace" -> "ChatSystemInput"
    },
    CellGroupingRules -> {"SectionGrouping", 58},
+   CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    ShowCellLabel -> False,
    CellFrameColor -> RGBColor[0.74902, 0.74902, 0.74902],
    DefaultNewCellStyle -> "Input",
@@ -679,6 +715,7 @@ Notebook[
    CellMargins -> {{56, 25}, {12, 5}},
    CellElementSpacings -> {"CellMinHeight" -> 0, "ClosedCellHeight" -> 0},
    CellGroupingRules -> "OutputGrouping",
+   CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    GeneratedCell -> True,
    CellAutoOverwrite -> True,
    ShowAutoSpellCheck -> False,
@@ -980,6 +1017,7 @@ Notebook[
    CellElementSpacings -> {"CellMinHeight" -> 6},
    Evaluatable -> True,
    CellGroupingRules -> {"SectionGrouping", 58},
+   CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellEvaluationFunction -> (($Line = 0;) &),
    ShowCellLabel -> False,
    CellFrameMargins -> {{20, 20}, {2, 2}},
