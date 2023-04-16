@@ -35,36 +35,7 @@ Notebook[
      "Type" -> "Focus",
      "Content" ->
       Cell[
-       BoxData[
-        ButtonBox[
-         TagBox[
-          TagBox[
-           TooltipBox[
-            TemplateBox[{}, "ChatWidgetIcon"],
-            "\"Send to AI Assistant\"",
-            TooltipStyle -> "TextStyling"
-           ],
-           Annotation[#1, "Send to AI Assistant", "Tooltip"] &
-          ],
-          MouseAppearanceTag["LinkHand"]
-         ],
-         ButtonFunction :>
-          (Quiet[Needs["Wolfram`Chatbook`" -> None]];
-          Symbol["Wolfram`Chatbook`ChatbookAction"][
-           "WidgetSend",
-           ParentCell[EvaluationCell[]]
-          ]),
-         Appearance ->
-          Dynamic[
-           FEPrivate`FrontEndResource[
-            "FEExpressions",
-            "SuppressMouseDownNinePatchAppearance"
-           ]
-          ],
-         Evaluator -> Automatic,
-         Method -> "Preemptive"
-        ]
-       ],
+       BoxData[TemplateBox[{}, "ChatWidgetButton"]],
        "ChatWidget"
       ]
     |>
@@ -627,7 +598,7 @@ Notebook[
      BoxData[TemplateBox[{}, "ChatUserIcon"]],
      Background -> None
     ],
-   CellMargins -> {{56, 25}, {5, 8}},
+   CellMargins -> {{66, 25}, {5, 8}},
    StyleKeyMapping -> {
     " " -> "Text",
     "*" -> "Item",
@@ -687,7 +658,7 @@ Notebook[
     StyleDefinitions -> StyleData["Section"]
    ],
    CellFrame -> {{0, 0}, {0, 8}},
-   CellMargins -> {{56, 25}, {Inherited, Inherited}},
+   CellMargins -> {{66, 25}, {Inherited, Inherited}},
    StyleKeyMapping -> {
     " " -> "Text",
     "*" -> "Item",
@@ -712,7 +683,7 @@ Notebook[
      BoxData[TemplateBox[{}, "AssistantIcon"]],
      Background -> None
     ],
-   CellMargins -> {{56, 25}, {12, 5}},
+   CellMargins -> {{66, 25}, {12, 5}},
    CellElementSpacings -> {"CellMinHeight" -> 0, "ClosedCellHeight" -> 0},
    CellGroupingRules -> "OutputGrouping",
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
@@ -1024,6 +995,42 @@ Notebook[
    DefaultNewCellStyle -> "Input",
    FontSize -> 6,
    Background -> GrayLevel[0.95]
+  ],
+  Cell[
+   StyleData["ChatWidgetButton"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      ButtonBox[
+       TagBox[
+        TagBox[
+         TooltipBox[
+          TemplateBox[{}, "ChatWidgetIcon"],
+          "\"Send to AI Assistant\"",
+          TooltipStyle -> "TextStyling"
+         ],
+         Annotation[#1, "Send to AI Assistant", "Tooltip"] &
+        ],
+        MouseAppearanceTag["LinkHand"]
+       ],
+       ButtonFunction :>
+        (Quiet[Needs["Wolfram`Chatbook`" -> None]];
+        Symbol["Wolfram`Chatbook`ChatbookAction"][
+         "WidgetSend",
+         ParentCell[EvaluationCell[]]
+        ]),
+       Appearance ->
+        Dynamic[
+         FEPrivate`FrontEndResource[
+          "FEExpressions",
+          "SuppressMouseDownNinePatchAppearance"
+         ]
+        ],
+       Evaluator -> Automatic,
+       Method -> "Preemptive"
+      ]
+     ])
+   }
   ],
   Cell[
    StyleData["AssistantIcon"],

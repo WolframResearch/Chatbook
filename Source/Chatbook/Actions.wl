@@ -7,6 +7,7 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 `ExclusionToggle;
 `SendChat;
 `WidgetSend;
+`AttachCodeButtons;
 
 Begin[ "`Private`" ];
 
@@ -131,12 +132,31 @@ ChatbookAction::UnknownStatusCode =
 ChatbookAction::BadResponseMessage =
 "`1`";
 
-ChatbookAction[ "Ask"            , args___ ] := catchTop @ AskChat @ args;
-ChatbookAction[ "Send"           , args___ ] := catchTop @ SendChat @ args;
-ChatbookAction[ "WidgetSend"     , args___ ] := catchTop @ WidgetSend @ args;
-ChatbookAction[ "ExclusionToggle", args___ ] := catchTop @ ExclusionToggle @ args;
+ChatbookAction[ "Ask"              , args___ ] := catchTop @ AskChat @ args;
+ChatbookAction[ "Send"             , args___ ] := catchTop @ SendChat @ args;
+ChatbookAction[ "WidgetSend"       , args___ ] := catchTop @ WidgetSend @ args;
+ChatbookAction[ "ExclusionToggle"  , args___ ] := catchTop @ ExclusionToggle @ args;
+ChatbookAction[ "AttachCodeButtons", args___ ] := catchTop @ AttachCodeButtons @ args;
 
 ChatbookAction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*AttachCodeButtons*)
+AttachCodeButtons // beginDefinition;
+
+AttachCodeButtons[ Dynamic[ attached_ ], cell_CellObject, string_, lang_ ] := (
+    attached = AttachCell[
+        EvaluationCell[ ],
+        floatingButtonGrid[ attached, string, lang ],
+        { Left, Bottom },
+        Offset[ { 0, 12 }, { 0, 0 } ],
+        { Left, Top },
+        RemovalConditions -> { "MouseClickOutside", "MouseExit" }
+    ]
+);
+
+AttachCodeButtons // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -181,7 +201,7 @@ excludeChatCells // endDefinition;
 WidgetSend // beginDefinition;
 
 WidgetSend[ cell_CellObject ] :=
-    Block[ { $alwaysOpen = True, cellPrint = cellPrintAfter @ cell },
+    Block[ { $alwaysOpen = True, cellPrint = cellPrintAfter @ cell, $finalCell = cell },
         SendChat @ cell
     ];
 
@@ -673,9 +693,12 @@ selectChatCells // endDefinition;
 selectChatCells0 // beginDefinition;
 
 selectChatCells0[ cell_, nbo_NotebookObject ] :=
-    selectChatCells0[ cell, Cells @ nbo ];
+    selectChatCells0[ cell, Cells @ nbo, $finalCell ];
 
-selectChatCells0[ cell_, { cells___, cell_, trailing0___ } ] :=
+selectChatCells0[ cell_, { before___, final_, ___ }, final_ ] :=
+    selectChatCells0[ cell, { before, final }, None ];
+
+selectChatCells0[ cell_, { cells___, cell_, trailing0___ }, _ ] :=
     Module[ { trailing, include, styles, delete, included, flat, filtered },
         trailing = { trailing0 };
         include = Keys @ TakeWhile[ AssociationThread[ trailing -> CurrentValue[ trailing, GeneratedCell ] ], TrueQ ];
@@ -1437,6 +1460,7 @@ hyperlink[ a_, ___ ] := a;
 (*makeInteractiveCodeCell*)
 makeInteractiveCodeCell // beginDefinition;
 
+(* TODO: define template boxes for these *)
 makeInteractiveCodeCell[ string_String ] /; $dynamicText :=
     codeBlockFrame[
         Cell[
@@ -1516,25 +1540,24 @@ inlineInteractiveCodeCell[ display_, string_ ] :=
     inlineInteractiveCodeCell[ display, string, contentLanguage @ string ];
 
 inlineInteractiveCodeCell[ display_, string_, lang_ ] :=
-    DynamicModule[ { attached },
+    DynamicModule[ { $CellContext`attached },
         EventHandler[
             display,
             {
                 "MouseEntered" :> (
                     Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-                    (* TODO: create a ChatbookAction for this *)
-                    attached = AttachCell[
+                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
+                        "AttachCodeButtons",
+                        Dynamic[ $CellContext`attached ],
                         EvaluationCell[ ],
-                        floatingButtonGrid[ attached, string, lang ],
-                        { Left, Bottom },
-                        0,
-                        { Left, Center },
-                        RemovalConditions -> { "MouseClickOutside", "MouseExit" }
+                        string,
+                        lang
                     ]
                 )
             }
         ],
-        TaggingRules -> <| "CellToStringData" -> string |>
+        TaggingRules -> <| "CellToStringData" -> string |>,
+        UnsavedVariables :> { $CellContext`attached }
     ];
 
 inlineInteractiveCodeCell // endDefinition;
@@ -1545,13 +1568,16 @@ floatingButtonGrid[ attached_, string_, lang_ ] := Framed[
     Grid[
         {
             {
-                button[ $copyToClipboardButtonLabel, NotebookDelete @ attached; CopyToClipboard @ string ],
+                button[ evaluateLanguageLabel @ lang, insertCodeBelow[ string, True ]; NotebookDelete @ attached ],
                 button[ $insertInputButtonLabel, insertCodeBelow[ string, False ]; NotebookDelete @ attached ],
-                button[ evaluateLanguageLabel @ lang, insertCodeBelow[ string, True ]; NotebookDelete @ attached ]
+                button[ $copyToClipboardButtonLabel, NotebookDelete @ attached; CopyToClipboard @ string ]
+
             }
         },
-        Alignment -> Top,
-        Spacings  -> 0
+        Alignment  -> Top,
+        Spacings   -> 0.5,
+        Dividers   -> Center,
+        FrameStyle -> GrayLevel[ 0.85 ]
     ],
     Background     -> GrayLevel[ 0.9764705882352941 ],
     FrameMargins   -> 3,
