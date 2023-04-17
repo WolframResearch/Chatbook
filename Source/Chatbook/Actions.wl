@@ -147,10 +147,294 @@ ChatbookAction // endDefinition;
 OpenChatMenu // beginDefinition;
 OpenChatMenu[ "ChatInput"  , cell_CellObject ] := openChatInputMenu @ cell;
 OpenChatMenu[ "ChatOutput" , cell_CellObject ] := openChatOutputMenu @ cell;
-OpenChatMenu[ "ChatSection", cell_CellObject ] := openChatSectionMenu @ cell;
+OpenChatMenu[ "ChatSection", cell_CellObject ] := openChatSectionDialog @ cell;
 OpenChatMenu // endDefinition;
 
-(* FIXME: define the above menu functions *)
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*openChatInputMenu*)
+openChatInputMenu // beginDefinition;
+
+openChatInputMenu[ cell0_CellObject ] :=
+    With[ { cell = ParentCell @ cell0 },
+        AttachCell[
+            cell,
+            chatInputMenu @ cell,
+            { Right, Top },
+            Offset[ { -7, -7 }, { 0, 0 } ],
+            { Right, Top },
+            RemovalConditions -> { "EvaluatorQuit", "MouseClickOutside" }
+        ]
+    ];
+
+openChatInputMenu // endDefinition;
+
+
+chatInputMenu[ cell_CellObject ] :=
+    Pane[
+        RawBoxes @ TemplateBox[
+            {
+                ToBoxes @ Grid[
+                    {
+                        {
+                            inputMenuLabel[ "Temperature" ],
+                            Slider[
+                                Dynamic @ AbsoluteCurrentValue[
+                                    cell,
+                                    { TaggingRules, "ChatNotebookSettings", "Temperature" }
+                                ],
+                                { 0, 1, 0.01 },
+                                ImageSize -> { 100, Automatic }
+                            ],
+                            InputField[
+                                Dynamic @ AbsoluteCurrentValue[
+                                    cell,
+                                    { TaggingRules, "ChatNotebookSettings", "Temperature" }
+                                ],
+                                Number,
+                                ImageSize -> { 35, Automatic },
+                                BaseStyle -> {
+                                    FontColor       -> GrayLevel[ 0.2 ],
+                                    FontFamily      -> "Source Sans Pro",
+                                    FontWeight      -> Plain,
+                                    FontSize        -> 13,
+                                    LineIndent      -> 0,
+                                    LineBreakWithin -> False
+                                }
+                            ]
+                        },
+                        {
+                            inputMenuLabel[ "Model" ],
+                            PopupMenu[
+                                Dynamic @ AbsoluteCurrentValue[
+                                    cell,
+                                    { TaggingRules, "ChatNotebookSettings", "Model" }
+                                ],
+                                {
+                                    "gpt-3.5-turbo" -> inputMenuLabel @ Row[{ RawBoxes @ TemplateBox[ {}, "OpenAILogo" ], " ", "GPT-3.5"}],
+                                    "gpt-4" -> inputMenuLabel @ Row[{ RawBoxes @ TemplateBox[ {}, "OpenAILogo" ], " ", "GPT-4"}]
+                                }
+                            ],
+                            SpanFromLeft
+                        }
+                    },
+                    Alignment -> { Left, Baseline },
+                    Spacings  -> { 1, 1 }
+                ],
+                FrameMargins -> 7,
+                Background -> GrayLevel[ 1 ],
+                RoundingRadius -> 3,
+                FrameStyle -> Directive[ AbsoluteThickness[ 1 ], GrayLevel[ 0.85 ] ],
+                ImageMargins -> 0,
+                ImageSize -> { Full, Automatic }
+            },
+            "Highlighted"
+        ],
+        ImageSize -> { 300, Automatic }
+    ];
+
+
+inputMenuLabel[ text_ ] :=
+    Style[
+        text,
+        FontColor  -> GrayLevel[ 0.2 ],
+        FontFamily -> "Source Sans Pro",
+        FontWeight -> Plain,
+        FontSize   -> 13,
+        LineIndent -> 0
+    ];
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*openChatOutputMenu*)
+openChatOutputMenu // beginDefinition;
+
+openChatOutputMenu[ cell_CellObject ] := AttachCell[
+    ParentCell @ cell,
+    $chatOutputMenu,
+    { Right, Top },
+    Offset[ { -7, -7 }, { 0, 0 } ],
+    { Right, Top },
+    RemovalConditions -> { "EvaluatorQuit", "MouseClickOutside" }
+];
+
+openChatOutputMenu // endDefinition;
+
+
+$chatOutputMenu := $chatOutputMenu = makeMenu[
+    {
+        {
+            RawBoxes @ PaneBox[
+                DynamicBox @ FEPrivate`FrontEndResource[ "NotebookToolbarExpressions", "InsertInputIcon" ],
+                ImageSize -> { 16, 16 },
+                ImageSizeAction -> "ShrinkToFit"
+            ],
+            "Regenerate",
+            Hold @ MessageDialog[ "Not Implemented" ]
+        },
+        {
+            RawBoxes @ PaneBox[
+                DynamicBox @ FEPrivate`FrontEndResource[ "NotebookToolbarExpressions", "DrawIcon" ],
+                ImageSize -> { 16, 16 },
+                ImageSizeAction -> "ShrinkToFit"
+            ],
+            "Edit",
+            Hold @ MessageDialog[ "Not Implemented" ]
+        },
+        { Delimiter },
+        {
+            RawBoxes @ PaneBox[
+                DynamicBox @ FEPrivate`FrontEndResource[ "NotebookToolbarExpressions", "InPlaceIcon" ],
+                ImageSize -> { 16, 16 },
+                ImageSizeAction -> "ShrinkToFit"
+            ],
+            "View Raw Messages",
+            Hold @ MessageDialog[ "Not Implemented" ]
+        },
+        {
+            RawBoxes @ PaneBox[
+                DynamicBox @ FEPrivate`FrontEndResource[ "NotebookToolbarExpressions", "GroupCellsIcon" ],
+                ImageSize -> { 16, 16 },
+                ImageSizeAction -> "ShrinkToFit"
+            ],
+            "Lock Response",
+            Hold @ MessageDialog[ "Not Implemented" ]
+        },
+        {
+            RawBoxes @ PaneBox[
+                DynamicBox @ FEPrivate`FrontEndResource[ "NotebookToolbarExpressions", "AbortAllIcon" ],
+                ImageSize -> { 16, 16 },
+                ImageSizeAction -> "ShrinkToFit"
+            ],
+            "Disable AI Assistant",
+            Hold @ MessageDialog[ "Not Implemented" ]
+        }
+    },
+    (* GrayLevel[ 0.92941 ], *)
+    GrayLevel[ 0.85 ],
+    250
+];
+
+
+makeMenu[ items_, frameColor_, width_ ] :=
+    Pane[
+        RawBoxes @ TemplateBox[
+            {
+                ToBoxes @ Column[ menuItem @@@ items, ItemSize -> { Full, 0 }, Spacings -> 0, Alignment -> Left ],
+                FrameMargins -> 3,
+                Background -> GrayLevel[ 1 ],
+                RoundingRadius -> 3,
+                FrameStyle -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
+                ImageMargins -> 0
+            },
+            "Highlighted"
+        ],
+        ImageSize -> { width, Automatic }
+    ];
+
+
+menuItem[ Delimiter ] :=
+    RawBoxes @ PaneBox[
+        StyleBox[
+            GraphicsBox[
+                { CapForm[ "Round" ], GrayLevel[ 0.9 ], AbsoluteThickness[ 1 ], LineBox @ { { -1, 0 }, { 1, 0 } } },
+                AspectRatio -> Full,
+                PlotRange -> { { -1, 1 }, { -1, 1 } },
+                ImageMargins -> { { 0, 0 }, { 2, 2 } },
+                ImagePadding -> { { 5, 5 }, { 0, 0 } },
+                ImageSize -> { Full, 2 }
+            ],
+            LineIndent -> 0
+        ],
+        FrameMargins -> 0,
+        ImageMargins -> 0,
+        BaselinePosition -> Baseline,
+        ImageSize -> Full
+    ];
+
+
+menuItem[ icon_, label_, Hold[ code_ ] ] :=
+    RawBoxes @ ButtonBox[
+        TemplateBox[
+            {
+                TagBox[
+                    GridBox[
+                        {
+                            {
+                                ToBoxes @ icon,
+                                TemplateBox[ { 7 }, "Spacer1" ],
+                                PaneBox[
+                                    StyleBox[
+                                        ToBoxes @ label,
+                                        FontColor -> GrayLevel[ 0.2 ],
+                                        FontFamily -> "Source Sans Pro",
+                                        FontWeight -> Plain,
+                                        FontSize -> 13,
+                                        LineIndent -> 0,
+                                        StripOnInput -> False
+                                    ],
+                                    FrameMargins -> 0,
+                                    ImageMargins -> 0,
+                                    BaselinePosition -> Baseline,
+                                    ImageSize -> Full
+                                ]
+                            }
+                        },
+                        GridBoxAlignment -> { "Columns" -> { { Left } }, "Rows" -> { { Top } } },
+                        AutoDelete -> False,
+                        GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+                        GridBoxSpacings -> { "Columns" -> { { 0 } } }
+                    ],
+                    "Grid"
+                ],
+                FrameStyle -> None,
+                RoundingRadius -> 0,
+                FrameMargins -> { { 5, 2 }, { 2, 2 } },
+                ImageSize -> Full,
+                ImageMargins -> { { 0, 0 }, { 0, 0 } },
+                Background -> Dynamic @ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.96 ], GrayLevel[ 1. ] ]
+            },
+            "Highlighted"
+        ],
+        ButtonFunction :> ( code; NotebookDelete @ EvaluationCell[ ] ),
+        Appearance -> Dynamic @ FEPrivate`FrontEndResource[ "FEExpressions", "SuppressMouseDownNinePatchAppearance" ],
+        Method -> "Queued",
+        Evaluator -> Automatic
+    ];
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*openChatSectionDialog*)
+openChatSectionDialog // beginDefinition;
+openChatSectionDialog[ cell0_CellObject ] := createChatContextDialog @ ParentCell @ cell0;
+openChatSectionDialog // endDefinition;
+
+
+createChatContextDialog[ cell_CellObject ] :=
+    Module[ { cells, nbo },
+        cells = Append[ $chatContextDialogCells, Cell[ BoxData @ ToBoxes @ ChoiceButtons[ ], "DialogButtons" ] ];
+        nbo = NotebookPut @ Notebook[
+            cells,
+            StyleDefinitions -> $chatContextDialogStyles,
+            CreateCellID -> True,
+            Saveable -> False
+        ];
+        SelectionMove[ nbo, After, Notebook, AutoScroll -> False ]
+    ];
+
+
+$chatContextDialogCells := $chatContextDialogCells = Get @ FileNameJoin @ {
+    PacletObject[ "Wolfram/LLMTools" ][ "AssetLocation", "AIAssistant" ],
+    "ChatContextDialogCells.wl"
+};
+
+
+$chatContextDialogStyles := $chatContextDialogStyles = Get @ FileNameJoin @ {
+    PacletObject[ "Wolfram/LLMTools" ][ "AssetLocation", "AIAssistant" ],
+    "ChatContextDialogStyles.wl"
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

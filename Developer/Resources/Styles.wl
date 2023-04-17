@@ -440,6 +440,16 @@ Cell[
 ]
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*OpenAILogo*)
+Cell[
+    StyleData[ "OpenAILogo" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "OpenAILogo" ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
 End[ ];
