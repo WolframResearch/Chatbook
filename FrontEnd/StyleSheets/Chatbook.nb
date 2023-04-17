@@ -3023,6 +3023,173 @@ Notebook[
       ]
      ])
    }
+  ],
+  Cell[
+   StyleData["OpenAILogo"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       GeometricTransformationBox[
+        {
+         RGBColor[0.4549, 0.66667, 0.61176],
+         Thickness[0.0],
+         Opacity[1.0],
+         FilledCurveBox[
+          {
+           {
+            {1, 4, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3}
+           },
+           {
+            {1, 4, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3}
+           },
+           {
+            {1, 4, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3}
+           },
+           {
+            {1, 4, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3}
+           },
+           {
+            {0, 2, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3}
+           },
+           {
+            {1, 4, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3}
+           },
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3}
+           },
+           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}
+          },
+          {
+           CompressedData[
+            "\n1:eJxdlHlIVHEQxzddrVZLk9W1zaN1lz3c9ngPxLay30RZWWR0ICVqZgoVlWYH\nHUaB2GGpWXRRamoSsV3Y5UVYiGsGpZJsdx6JmoareZWu9fbNr/5oYXnMb35v\n5jszn3myhOS1SU4CgSCC+zueKmbKbb9oBkr1u4onpQXC3WWth8TZDEQ25sZM\nOPvDLMMnhWshA1rfC2+mbpXCi/1PC6Q5DJjCl6X+fC2Bl4Xhj38cYSAx9uNS\n57neoInJeT60nNplXlDEue2DRhrfE9ydtCd8Dhphuq40r08lgsgEzw2mvQYo\nz3K1+dQJYcnpHZ1jt3TQ3LldO3xpElhWhp5a1KKF7H27Z01rGSfJXunV9a0a\nML9ujuo1jBEu2rtXIyqwaOade3l0gvD1SFXQXnK1Zvb9YcJluVnrpoScrwOB\nTck24pCn/qiA7Pkl6UNHu0jPnkfeY2Y5CPhfC7nZtVz/e3MQWPKanv0iVuJ9\nZsU3oVgGqTXRaaJjVsJfg4B/tqWiLMs1RQpfI7vj7QUdhO/bYgmNN0j4OiRi\nqtdO+D5UzcD6JC5wrUhePn7Ckz7dsW+jbtjfnGm0T5Px/XsewOezOWE/4mfQ\nuuyEn0+XF7WHiYKLNvhBDP7RifO/rO4nqZnZnEcC5t7KoNEvbagzXQpm5ckK\nD3hL6wgAU4JuoUv1Z8LPQSOjdhvq9pNTu4/MFEZN1w0oIKrAfOftpl/kRkqY\nyLpFCZhnhJge1nGkqKjeIcLPw6bGujxGSHxHQ9AHUzC9P0quSznQjmtpvDG0\na+fAQNMqjhABcENe196hA8fb3aFCPL9soH0VoX3ACAe7lRwBnsjlJyPOAcSw\nvWrved8llPMFvuiPpRx7+CF3GgbnYPHHfCWU+65A9E9lcS/kMtyTSBZ4PtYH\nAUdpfMdZFjZKnjQK8uXAY/mART29CtjJUd1fylKelf/8ImtxSli9GjJ61pQF\nJLGQ+z2NhMQFY7wGBvdjUIt6wxjg+ZfpMP8uI1xczAmr1FHeDBASVxHh7mSg\n53o4LOZuSo0wrObID9Gjv8gI/PxSdbivagbj3Z2D+3mFQX+plupnYG1ZQEZP\nbjDe3/q3DjU4xvgzn8X+dCuxjgwWcC8VeL6NhaHy95l2FznVx4JjC1xYGfz/\n/fkDr4X4dA==\n       "
+           ],
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGCQBWIQXflSzZDjjYoDAwg0GDpYuroX/fRXhvOXv/DQ+39Q\n0eHTJd8kAQtDh687b3X9bVVwWOS67fPfLQYOoj1er1imKDiYdzomPN1g4DAp\n5p/zr7UKDi7dOc9/rzRwiBTffpFhn4JD6+vAHXJLDRy4ri8usOXScAjaIdf6\nWlDXIeHpBaXblhoO2u1iN89913E47g0yCSp/UcdhmjPQoGoNh3yh5gOnFuo4\n7CmZLMEyTcPBL0kgwrJEx2EJ0LTrizUcTi8EOsgWwb9aAfIYgg9xhyLEvp3a\nUH8oQ/Tt1XaYs0h55592ZQfTuF2ePIe0HV4XbxX93a3skAWy8Ig2JFz6lR0W\nSOnfVTmm7ZC3mHEP6yRliD0ntB1SYu+4Mc9QhvjvlLbDJj2gijkIPtj9ijpw\n9WD3f9F1kI1Ksb7Pr+0gyRLGp7tJH2q+JsRdtQZw/wf0Ts8TUjaEulcNHj/o\n8QcARYq+Hg==\n       "
+           ],
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGCQBWIQzae7ae775RwOkixhQKaOw/FdO3rZClgdnv9e+fGS\nr7bDExHZk0/tWRzWuT+sElmn6dBXWijNm8Dq8OmSb5KAhIbD1edZ2t+mszpY\nbjlRtk9ewyEl9o4b8w9WiHo9DQf3op/8L83ZHLTbxW6eM4fK75B0eLx09hGF\nAh0HkPB3YSkHkCuOdes4MIBAg5SDuiHHGplZOg6VL9UMOd4g+GD7wqXhfLD6\nA9Jw/So7/7R/kZaBmw+297saRN5bHc6P6T/0VeOOFpx/3Nu80/EBgr+kwJbr\n+mMth28aIJVqDuBweq7l4JckEGH5RQ3qLi2IPR/UoLQWVFwNqk4L4l5xeYg5\npvqQ8P0g7XCybN98KX4DCN9AAsLXN4DoXyPiAHRE8OOn+g7aElOvcGoIQsRz\n9B12AnWLefA4LJDSv6vipueAHn8AzsbBmg==\n       "
+           ],
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGCQBWIQnRJ7x435B4OD38WJMf+aJR34dDfNfa/O4rBJL28x\n4x4xB/ein/wvzTkdVHb+af8yW8RhZy/bBzEPfgcGEGgQhvOLuvqefJov7PBE\nRPbkU3t+h6vPs7S/XUfwweoZROD8STH/nH/lKsH5YPsXKzmA3VPB78DtplrK\ndEvJoa+0UJr3Ab/DnEXKO/+wKztoS0y9wqkhAFFnoewg2uP1iqVEwCFSfPtF\nhjhlh3axm+e+X4bKV0DlQxQdJr6tsTedpwHxV42MA1BV8ONULah+GYi/07Ug\n5mfIOLh05zz/nakFsT8BwQf7KxzBf128VfS3N4IP9oczwjyIu7kdlhTYcl1X\nVoOE53YWh2nOQA3WqpBwk2eAhreyw3FNq0mn6//YQ+JF0eHx0tlHFDb8sN9T\nMlmCxUwByv9lX/lSzZBjjYwDevwBADr2v6g=\n       "
+           ],
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGBQAGIQvadksgTLNF0Hl+6c579XKjmsc39YJbJOxWHOIuWd\nf9ilHbJACo6oO6TE3nFjrhB3uFrxUs3whLqDaI/XK5YScYdNc98vP3Za3eH4\nrh29bAXiDrJRKdb3zyP4YPOvqTtUArVx5Ig7qBtyrJG5hZCf+LbG3vQewjwG\nEHDQh9j3Q97h8dLZRxQMDBz8Lk6M+bdYweHmue/Bj5caOHC7qZYyzVJ0aBcD\ninw2cFj+wkPv/0ElB2n9uypsjoYQ/7xUdjCN2+XJk2TooA1SaK4KUR9s6LBA\nCqiwTQ1inquhQ9AOudbXF9Ud+HSBPmI3hPiDX9MhoHd6ntBiA4i7pbQcTi90\n3fbZ1sBhSYEt13VlbYg9mfqQcHunDXWvnkO+UPOBU4k6cD7Y/EAE/5tGTP8h\nUx1U9YoIft5ixj2sm5Th/E16QJEaZag6PUj8uCtD4oNDDxIeUsqQcH4Djc+X\nShB/HtOFhN9hJQf0+AYAlq/WNw==\n       "
+           ],
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGBQAGIQvch12+e/IQYO7WI3z30XlnFY5/6wSsTPwMHv4sSY\nf8wyDtL6d1XYHA0c7rgxV3A/kXbgYdJuF7M0cLB0dS/6eV7aYUmBLdd1ZU2I\nfIqwwzeNmP5DXzUcKl+qGXLoCDuYxu3y5DmkAVHPL+ywae775ce6Efw9JZMl\nWMIQfMstJ8r2ySP0S7KE8el+UoebD1EnB5FfIwvnvy7eKvq7WwzOB7u/WQzq\nLzmHTXp5ixlrxByuPs/S/iYu5yDa4/WKpUTMQWXnn/Yv0nIO2hJTr3BmiDkU\ndfU9+SQvB7VPDCKuIQdRFy3m4JckEGFZouaw+vzVsDfruSHun6YONZfTIV+o\n+cCphxoOoQZaK4UvsEPCU08L6i4Oh2nO3TnPq7UddvayfRDz4HBgAIEDOg4p\nsUAbf3A6BO2Qa319URfK54GE72M9h+O7dgB18DskPL2gdHunPsS/3EIOG4oy\nJr6VMYD6R8Th9EJghMYaQNx7W8zBvNMx4WmBAcSeBkkH9PgGANrqyI4=\n       "
+           ],
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGCQB2IQnRJ7x415h5TDkgJbruvJKg6vi7eK/u4Wcdikl7eY\ncY6SAwMINIg4cLupljLNUoKI14g47CmZLMEyTclBtMfrFUuJiANQdA/rJCWH\n47t29LIViDhMivnn/KtXyaHypZohR46Ig0t3zvPfnQj+1523uv62IvhgexhE\n4Hygqyq4UwQhfB1RBz7dTXPfL+d1sHR1L/rZL+bwRET25FN7Tgew+3+IO/SV\nFkrzPmCB8iUdPl3yTRKIYHRoF7t57nuwDFT9P3uwe7fIOYQaaK0UvvDTHuyu\nlQoOq89fDXuj/8Me7K9vig6W147mmjT8tAc7y0EZav4v+4SnF5RuV6o4FHX1\nPfkk/x/KV3XQlph6hfMFE9T9qg5zFinv/MPODLVfFWo/s4Np3C5PHieo+gxm\niPo30lDzhKD+k3a4+jxL+1u4ECRcHKQh4bFECBI/3NLQ8BKGmH9ZCuK+BGEH\nWHyC7T+O4IP9bSLiAADmBL79\n       "
+           ],
+           {
+            {7.5156, 8.3867},
+            {9.5, 7.2422},
+            {11.484, 8.3867},
+            {11.484, 10.68},
+            {9.5, 11.824},
+            {7.5156, 10.68}
+           }
+          }
+         ]
+        },
+        {{{1, 0}, {0, -1}}, {0, 0}}
+       ],
+       ImageSize -> 16
+      ]
+     ])
+   }
   ]
  },
  FrontEndVersion -> "13.2 for Microsoft Windows (64-bit) (January 30, 2023)",
