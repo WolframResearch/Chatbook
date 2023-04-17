@@ -137,8 +137,20 @@ ChatbookAction[ "Send"             , args___ ] := catchTop @ SendChat @ args;
 ChatbookAction[ "WidgetSend"       , args___ ] := catchTop @ WidgetSend @ args;
 ChatbookAction[ "ExclusionToggle"  , args___ ] := catchTop @ ExclusionToggle @ args;
 ChatbookAction[ "AttachCodeButtons", args___ ] := catchTop @ AttachCodeButtons @ args;
+ChatbookAction[ "OpenChatMenu"     , args___ ] := catchTop @ OpenChatMenu @ args;
 
 ChatbookAction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*OpenChatMenu*)
+OpenChatMenu // beginDefinition;
+OpenChatMenu[ "ChatInput"  , cell_CellObject ] := openChatInputMenu @ cell;
+OpenChatMenu[ "ChatOutput" , cell_CellObject ] := openChatOutputMenu @ cell;
+OpenChatMenu[ "ChatSection", cell_CellObject ] := openChatSectionMenu @ cell;
+OpenChatMenu // endDefinition;
+
+(* FIXME: define the above menu functions *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -294,6 +306,7 @@ queuedEvaluationsQ[ ___ ] := False;
 (*sendChat*)
 sendChat // beginDefinition;
 
+(* FIXME: Select cells here instead of in makeHTTPRequest and include chat context header for options *)
 sendChat[ evalCell_, nbo_, settings_ ] := catchTop @ Enclose[
     Module[ { id, key, cell, cellObject, container, req, task },
         id   = Lookup[ settings, "ID" ];

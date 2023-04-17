@@ -59,24 +59,27 @@ Cell[
 (*FramedChatCell*)
 Cell[
     StyleData[ "FramedChatCell", StyleDefinitions -> StyleData[ "Text" ] ],
-    CellTrayWidgets          -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     AutoQuoteCharacters      -> { },
     CellFrame                -> 2,
     CellFrameColor           -> GrayLevel[ 0.92941 ],
-    CellFrameMargins         -> { { 12, 25 }, { 8, 8 } },
+    CellFrameMargins         -> { { 12, 20 }, { 8, 8 } },
     PasteAutoQuoteCharacters -> { },
-    ShowCellLabel            -> False,
-    With[
-        {
-            attach = Cell @ BoxData @ ToBoxes @ Button[
-                RawBoxes @ TemplateBox[ { }, "ChatMenuIcon" ],
-                MessageDialog[ "Not implemented" ],
-                Appearance -> Dynamic @ FEPrivate`FrontEndResource[
-                    "FEExpressions",
-                    "SuppressMouseDownNinePatchAppearance"
-                ]
-            ]
-        },
+    ShowCellLabel            -> False
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ChatInput*)
+Cell[
+    StyleData[ "ChatInput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
+    MenuSortingValue  -> 1000,
+    CellGroupingRules -> "InputGrouping",
+    CellFrameColor    -> RGBColor[ 0.81053, 0.85203, 0.91294 ],
+    CellMargins       -> { { 66, 20 }, { 5, 8 } },
+    CellDingbat       -> Cell[ BoxData @ TemplateBox[ { }, "ChatUserIcon" ], Background -> None ],
+    StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "/" -> "ChatQuery", "Backspace" -> "Input" },
+    CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    With[ { attach = Cell[ BoxData @ TemplateBox[ { }, "ChatInputMenuButton" ], "ChatMenu" ] },
         Initialization :>
             AttachCell[
                 EvaluationCell[ ],
@@ -91,28 +94,25 @@ Cell[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*ChatInput*)
-Cell[
-    StyleData[ "ChatInput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
-    CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
-    MenuSortingValue  -> 1000,
-    CellGroupingRules -> "InputGrouping",
-    CellFrameColor    -> RGBColor[ 0.81053, 0.85203, 0.91294 ],
-    CellMargins       -> { { 66, 25 }, { 5, 8 } },
-    CellDingbat       -> Cell[ BoxData @ TemplateBox[ { }, "ChatUserIcon" ], Background -> None ],
-    StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "/" -> "ChatQuery", "Backspace" -> "Input" }
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
 (*ChatQuery*)
 Cell[
     StyleData[ "ChatQuery", StyleDefinitions -> StyleData[ "ChatInput" ] ],
-    CellTrayWidgets  -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     MenuSortingValue -> 1000,
     StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "/" -> "ChatSystemInput", "Backspace" -> "ChatInput" },
     CellFrameColor   -> RGBColor[ 0.82745, 0.87059, 0.68235 ],
-    CellDingbat      -> Cell[ BoxData @ TemplateBox[ { }, "ChatQueryIcon" ], Background -> None ]
+    CellDingbat      -> Cell[ BoxData @ TemplateBox[ { }, "ChatQueryIcon" ], Background -> None ],
+    CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    With[ { attach = Cell[ BoxData @ TemplateBox[ { }, "ChatInputMenuButton" ], "ChatMenu" ] },
+        Initialization :>
+            AttachCell[
+                EvaluationCell[ ],
+                attach,
+                { Right, Top },
+                Offset[ { -10, -5 }, { Right, Top } ],
+                { Right, Top },
+                RemovalConditions -> { "EvaluatorQuit" }
+            ]
+    ]
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -120,30 +120,24 @@ Cell[
 (*ChatSystemInput*)
 Cell[
     StyleData[ "ChatSystemInput", StyleDefinitions -> StyleData[ "ChatInput" ] ],
-    CellTrayWidgets  -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     MenuSortingValue -> 1000,
     CellFrame        -> 1,
     StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "/" -> "ChatContextDivider", "Backspace" -> "ChatQuery" },
     CellFrameColor   -> RGBColor[ 0.70196, 0.52941, 0.58039 ],
     CellFrameStyle   -> Dashing @ { Small, Small },
-    CellDingbat      -> Cell[ BoxData @ TemplateBox[ { }, "ChatSystemIcon" ], Background -> None ]
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*ChatContextDivider*)
-Cell[
-    StyleData[ "ChatContextDivider", StyleDefinitions -> StyleData[ "Section" ] ],
-    CellTrayWidgets     -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
-    StyleKeyMapping     -> { " " -> "Text", "*" -> "Item", "/" -> "Input", "Backspace" -> "ChatSystemInput" },
-    CellGroupingRules   -> { "SectionGrouping", 58 },
-    ShowCellLabel       -> False,
-    CellMargins         -> { { 66, 25 }, { Inherited, Inherited } },
-    CellFrame           -> { { 0, 0 }, { 0, 8 } },
-    CellFrameColor      -> RGBColor[ 0.74902, 0.74902, 0.74902 ],
-    DefaultNewCellStyle -> "Input",
-    FontColor           -> GrayLevel[ 0.2 ],
-    FontWeight          -> "DemiBold"
+    CellDingbat      -> Cell[ BoxData @ TemplateBox[ { }, "ChatSystemIcon" ], Background -> None ],
+    CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    With[ { attach = Cell[ BoxData @ TemplateBox[ { }, "ChatInputMenuButton" ], "ChatMenu" ] },
+        Initialization :>
+            AttachCell[
+                EvaluationCell[ ],
+                attach,
+                { Right, Top },
+                Offset[ { -10, -5 }, { Right, Top } ],
+                { Right, Top },
+                RemovalConditions -> { "EvaluatorQuit" }
+            ]
+    ]
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -151,16 +145,55 @@ Cell[
 (*ChatOutput*)
 Cell[
     StyleData[ "ChatOutput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
-    CellTrayWidgets     -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     Background          -> GrayLevel[ 0.97647 ],
     CellAutoOverwrite   -> True,
     CellDingbat         -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIcon" ], Background -> None ],
     CellElementSpacings -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
     CellGroupingRules   -> "OutputGrouping",
-    CellMargins         -> { { 66, 25 }, { 12, 5 } },
+    CellMargins         -> { { 66, 20 }, { 12, 5 } },
     GeneratedCell       -> True,
     LineSpacing         -> { 1.1, 0, 2 },
-    ShowAutoSpellCheck  -> False
+    ShowAutoSpellCheck  -> False,
+    CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    With[ { attach = Cell[ BoxData @ TemplateBox[ { }, "ChatOutputMenuButton" ], "ChatMenu" ] },
+        Initialization :>
+            AttachCell[
+                EvaluationCell[ ],
+                attach,
+                { Right, Top },
+                Offset[ { -10, -5 }, { Right, Top } ],
+                { Right, Top },
+                RemovalConditions -> { "EvaluatorQuit" }
+            ]
+    ]
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ChatContextDivider*)
+Cell[
+    StyleData[ "ChatContextDivider", StyleDefinitions -> StyleData[ "Section" ] ],
+    StyleKeyMapping     -> { " " -> "Text", "*" -> "Item", "/" -> "Input", "Backspace" -> "ChatSystemInput" },
+    CellGroupingRules   -> { "SectionGrouping", 58 },
+    ShowCellLabel       -> False,
+    CellMargins         -> { { 66, 20 }, { Inherited, Inherited } },
+    CellFrame           -> { { 0, 0 }, { 0, 8 } },
+    CellFrameColor      -> RGBColor[ 0.74902, 0.74902, 0.74902 ],
+    DefaultNewCellStyle -> "Input",
+    FontColor           -> GrayLevel[ 0.2 ],
+    FontWeight          -> "DemiBold",
+    CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    With[ { attach = Cell[ BoxData @ TemplateBox[ { }, "ChatSectionMenuButton" ], "ChatMenu" ] },
+        Initialization :>
+            AttachCell[
+                EvaluationCell[ ],
+                attach,
+                { Right, Top },
+                Offset[ { -10, -5 }, { Right, Top } ],
+                { Right, Top },
+                RemovalConditions -> { "EvaluatorQuit" }
+            ]
+    ]
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -292,9 +325,84 @@ Cell[
                     Tooltip[ RawBoxes @ TemplateBox[ { }, "ChatWidgetIcon" ], "Send to AI Assistant" ],
                     "LinkHand"
                 ],
-                Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "WidgetSend", ParentCell @ EvaluationCell[ ] ],
+                Function[
+                    Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "WidgetSend", # ]
+                ][ ParentCell @ EvaluationCell[ ] ],
                 Appearance -> $suppressButtonAppearance
+            ]
+        ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Chat Menus*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatInputMenuButton*)
+Cell[
+    StyleData[ "ChatInputMenuButton" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function[
+            Evaluate @ ButtonBox[
+                TemplateBox[ { }, "ChatMenuIcon" ],
+                ButtonFunction :> (
+                    Function[
+                        Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+                        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "OpenChatMenu", "ChatInput", # ]
+                    ][ EvaluationCell[ ] ]
+                ),
+                Appearance -> $suppressButtonAppearance,
+                Evaluator  -> Automatic,
+                Method     -> "Preemptive"
+            ]
+        ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatOutputMenuButton*)
+Cell[
+    StyleData[ "ChatOutputMenuButton" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function[
+            Evaluate @ ButtonBox[
+                TemplateBox[ { }, "ChatMenuIcon" ],
+                ButtonFunction :> (
+                    Function[
+                        Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+                        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "OpenChatMenu", "ChatOutput", # ]
+                    ][ EvaluationCell[ ] ]
+                ),
+                Appearance -> $suppressButtonAppearance,
+                Evaluator  -> Automatic,
+                Method     -> "Preemptive"
+            ]
+        ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatSectionMenuButton*)
+Cell[
+    StyleData[ "ChatSectionMenuButton" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function[
+            Evaluate @ ButtonBox[
+                TemplateBox[ { }, "ChatMenuIcon" ],
+                ButtonFunction :> (
+                    Function[
+                        Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+                        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "OpenChatMenu", "ChatSection", # ]
+                    ][ EvaluationCell[ ] ]
+                ),
+                Appearance -> $suppressButtonAppearance,
+                Evaluator  -> Automatic,
+                Method     -> "Preemptive"
             ]
         ]
     }
