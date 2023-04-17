@@ -41,19 +41,24 @@ Notebook[
       ]
     |>
    |>,
-   CellEpilog :> {
-    (Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["Send", #1]) &[
-     EvaluationCell[]
-    ]
-   },
+   CellEpilog :>
+    With[ { cell = EvaluationCell[] },
+     Quiet[Needs["Wolfram`Chatbook`" -> None]];
+     Symbol["Wolfram`Chatbook`ChatbookAction"]["Send", cell]
+    ],
    ComponentwiseContextMenu -> <|
     "CellBracket" -> {
      MenuItem[
       "Ask AI Assistant",
       KernelExecute[
-       (Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["Ask", ##1]) &[
-        InputNotebook[],
-        SelectedCells[InputNotebook[]]
+       With[ { nbo = InputNotebook[] },
+        {cells = SelectedCells[nbo]},
+        Quiet[Needs["Wolfram`Chatbook`" -> None]];
+        Symbol["Wolfram`Chatbook`ChatbookAction"][
+         "Ask",
+         nbo,
+         cells
+        ]
        ]
       ],
       MenuEvaluator -> Automatic,
@@ -62,9 +67,14 @@ Notebook[
      MenuItem[
       "Include/Exclude From AI Chat",
       KernelExecute[
-       (Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["ExclusionToggle", ##1]) &[
-        InputNotebook[],
-        SelectedCells[InputNotebook[]]
+       With[ { nbo = InputNotebook[] },
+        {cells = SelectedCells[nbo]},
+        Quiet[Needs["Wolfram`Chatbook`" -> None]];
+        Symbol["Wolfram`Chatbook`ChatbookAction"][
+         "ExclusionToggle",
+         nbo,
+         cells
+        ]
        ]
       ],
       MenuEvaluator -> Automatic,
@@ -251,16 +261,21 @@ Notebook[
      MenuItem[
       "Properties...",
       "OptionsDialog",
-      Wolfram`ChatbookStylesheetBuilder`Private`Scope -> Selection
+      Scope -> Selection
      ]
     },
     "CellGroup" -> {
      MenuItem[
       "Include/Exclude From AI Chat",
       KernelExecute[
-       (Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["ExclusionToggle", ##1]) &[
-        InputNotebook[],
-        SelectedCells[InputNotebook[]]
+       With[ { nbo = InputNotebook[] },
+        {cells = SelectedCells[nbo]},
+        Quiet[Needs["Wolfram`Chatbook`" -> None]];
+        Symbol["Wolfram`Chatbook`ChatbookAction"][
+         "ExclusionToggle",
+         nbo,
+         cells
+        ]
        ]
       ],
       MenuEvaluator -> Automatic,
@@ -335,9 +350,14 @@ Notebook[
      MenuItem[
       "Include/Exclude From AI Chat",
       KernelExecute[
-       (Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["ExclusionToggle", ##1]) &[
-        InputNotebook[],
-        SelectedCells[InputNotebook[]]
+       With[ { nbo = InputNotebook[] },
+        {cells = SelectedCells[nbo]},
+        Quiet[Needs["Wolfram`Chatbook`" -> None]];
+        Symbol["Wolfram`Chatbook`ChatbookAction"][
+         "ExclusionToggle",
+         nbo,
+         cells
+        ]
        ]
       ],
       MenuEvaluator -> Automatic,
@@ -427,8 +447,9 @@ Notebook[
    CellEvaluationFunction ->
     (Function[
      If[ TrueQ[CloudSystem`$CloudNotebooks],
-      (Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["Send", #1]) &[
-       EvaluationCell[]
+      With[ { cell = EvaluationCell[] },
+       Quiet[Needs["Wolfram`Chatbook`" -> None]];
+       Symbol["Wolfram`Chatbook`ChatbookAction"]["Send", cell]
       ],
       Null
      ]
@@ -437,9 +458,14 @@ Notebook[
     MenuItem[
      "Ask AI Assistant",
      KernelExecute[
-      (Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["Ask", ##1]) &[
-       InputNotebook[],
-       SelectedCells[InputNotebook[]]
+      With[ { nbo = InputNotebook[] },
+       {cells = SelectedCells[nbo]},
+       Quiet[Needs["Wolfram`Chatbook`" -> None]];
+       Symbol["Wolfram`Chatbook`ChatbookAction"][
+        "Ask",
+        nbo,
+        cells
+       ]
       ]
      ],
      MenuEvaluator -> Automatic,
@@ -558,7 +584,7 @@ Notebook[
    ],
    CellFrame -> 2,
    ShowCellLabel -> False,
-   CellFrameMargins -> {{12, 20}, {8, 8}},
+   CellFrameMargins -> {{12, 25}, {8, 8}},
    CellFrameColor -> GrayLevel[0.92941],
    AutoQuoteCharacters -> { },
    PasteAutoQuoteCharacters -> { }
@@ -573,7 +599,7 @@ Notebook[
      BoxData[TemplateBox[{}, "ChatUserIcon"]],
      Background -> None
     ],
-   CellMargins -> {{66, 20}, {5, 8}},
+   CellMargins -> {{66, 25}, {5, 8}},
    StyleKeyMapping -> {
     " " -> "Text",
     "*" -> "Item",
@@ -583,18 +609,30 @@ Notebook[
    CellGroupingRules -> "InputGrouping",
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    Initialization :>
-    AttachCell[
-     EvaluationCell[],
-     Cell[
-      BoxData[TemplateBox[{}, "ChatInputMenuButton"]],
-      "ChatMenu"
-     ],
-     {Right, Top},
-     Offset[{-10, -5}, {Right, Top}],
-     {Right, Top},
-     RemovalConditions -> {"EvaluatorQuit"}
+    With[ { cell$ = EvaluationCell[] },
+     
+     NotebookDelete[
+      Cells[cell$, AttachedCell -> True, CellStyle -> "ChatMenu"]
+     ];
+
+     AttachCell[
+      cell$,
+      Cell[
+       BoxData[
+        TemplateBox[
+         {"ChatInput", RGBColor[0.81176, 0.85098, 0.91373]},
+         "ChatMenuButton"
+        ]
+       ],
+       "ChatMenu"
+      ],
+      {Right, Top},
+      Offset[{-7, -7}, {Right, Top}],
+      {Right, Top},
+      RemovalConditions -> {"EvaluatorQuit"}
+     ]
     ],
-   CellFrameColor -> RGBColor[0.81053, 0.85203, 0.91294],
+   CellFrameColor -> RGBColor[0.81176, 0.85098, 0.91373],
    MenuSortingValue -> 1000
   ],
   Cell[
@@ -615,16 +653,28 @@ Notebook[
    },
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    Initialization :>
-    AttachCell[
-     EvaluationCell[],
-     Cell[
-      BoxData[TemplateBox[{}, "ChatInputMenuButton"]],
-      "ChatMenu"
-     ],
-     {Right, Top},
-     Offset[{-10, -5}, {Right, Top}],
-     {Right, Top},
-     RemovalConditions -> {"EvaluatorQuit"}
+    With[ { cell$ = EvaluationCell[] },
+     
+     NotebookDelete[
+      Cells[cell$, AttachedCell -> True, CellStyle -> "ChatMenu"]
+     ];
+
+     AttachCell[
+      cell$,
+      Cell[
+       BoxData[
+        TemplateBox[
+         {"ChatInput", RGBColor[0.82745, 0.87059, 0.68235]},
+         "ChatMenuButton"
+        ]
+       ],
+       "ChatMenu"
+      ],
+      {Right, Top},
+      Offset[{-7, -7}, {Right, Top}],
+      {Right, Top},
+      RemovalConditions -> {"EvaluatorQuit"}
+     ]
     ],
    CellFrameColor -> RGBColor[0.82745, 0.87059, 0.68235],
    MenuSortingValue -> 1000
@@ -648,16 +698,28 @@ Notebook[
    },
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    Initialization :>
-    AttachCell[
-     EvaluationCell[],
-     Cell[
-      BoxData[TemplateBox[{}, "ChatInputMenuButton"]],
-      "ChatMenu"
-     ],
-     {Right, Top},
-     Offset[{-10, -5}, {Right, Top}],
-     {Right, Top},
-     RemovalConditions -> {"EvaluatorQuit"}
+    With[ { cell$ = EvaluationCell[] },
+     
+     NotebookDelete[
+      Cells[cell$, AttachedCell -> True, CellStyle -> "ChatMenu"]
+     ];
+
+     AttachCell[
+      cell$,
+      Cell[
+       BoxData[
+        TemplateBox[
+         {"ChatInput", RGBColor[0.70196, 0.52941, 0.58039]},
+         "ChatMenuButton"
+        ]
+       ],
+       "ChatMenu"
+      ],
+      {Right, Top},
+      Offset[{-7, -7}, {Right, Top}],
+      {Right, Top},
+      RemovalConditions -> {"EvaluatorQuit"}
+     ]
     ],
    CellFrameColor -> RGBColor[0.70196, 0.52941, 0.58039],
    CellFrameStyle -> Dashing[{Small, Small}],
@@ -673,21 +735,33 @@ Notebook[
      BoxData[TemplateBox[{}, "AssistantIcon"]],
      Background -> None
     ],
-   CellMargins -> {{66, 20}, {12, 5}},
+   CellMargins -> {{66, 25}, {12, 5}},
    CellElementSpacings -> {"CellMinHeight" -> 0, "ClosedCellHeight" -> 0},
    CellGroupingRules -> "OutputGrouping",
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    Initialization :>
-    AttachCell[
-     EvaluationCell[],
-     Cell[
-      BoxData[TemplateBox[{}, "ChatOutputMenuButton"]],
-      "ChatMenu"
-     ],
-     {Right, Top},
-     Offset[{-10, -5}, {Right, Top}],
-     {Right, Top},
-     RemovalConditions -> {"EvaluatorQuit"}
+    With[ { cell$ = EvaluationCell[] },
+     
+     NotebookDelete[
+      Cells[cell$, AttachedCell -> True, CellStyle -> "ChatMenu"]
+     ];
+
+     AttachCell[
+      cell$,
+      Cell[
+       BoxData[
+        TemplateBox[
+         {"ChatOutput", GrayLevel[0.89804]},
+         "ChatMenuButton"
+        ]
+       ],
+       "ChatMenu"
+      ],
+      {Right, Top},
+      Offset[{-7, -7}, {Right, Top}],
+      {Right, Top},
+      RemovalConditions -> {"EvaluatorQuit"}
+     ]
     ],
    GeneratedCell -> True,
    CellAutoOverwrite -> True,
@@ -701,7 +775,7 @@ Notebook[
     StyleDefinitions -> StyleData["Section"]
    ],
    CellFrame -> {{0, 0}, {0, 8}},
-   CellMargins -> {{66, 20}, {Inherited, Inherited}},
+   CellMargins -> {{66, 25}, {Inherited, Inherited}},
    StyleKeyMapping -> {
     " " -> "Text",
     "*" -> "Item",
@@ -711,19 +785,31 @@ Notebook[
    CellGroupingRules -> {"SectionGrouping", 58},
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    Initialization :>
-    AttachCell[
-     EvaluationCell[],
-     Cell[
-      BoxData[TemplateBox[{}, "ChatSectionMenuButton"]],
-      "ChatMenu"
-     ],
-     {Right, Top},
-     Offset[{-10, -5}, {Right, Top}],
-     {Right, Top},
-     RemovalConditions -> {"EvaluatorQuit"}
+    With[ { cell$ = EvaluationCell[] },
+     
+     NotebookDelete[
+      Cells[cell$, AttachedCell -> True, CellStyle -> "ChatMenu"]
+     ];
+
+     AttachCell[
+      cell$,
+      Cell[
+       BoxData[
+        TemplateBox[
+         {"ChatSection", GrayLevel[0.925]},
+         "ChatMenuButton"
+        ]
+       ],
+       "ChatMenu"
+      ],
+      {Right, Top},
+      Offset[{-7, -7}, {Right, Top}],
+      {Right, Top},
+      RemovalConditions -> {"EvaluatorQuit"}
+     ]
     ],
    ShowCellLabel -> False,
-   CellFrameColor -> RGBColor[0.74902, 0.74902, 0.74902],
+   CellFrameColor -> GrayLevel[0.74902],
    DefaultNewCellStyle -> "Input",
    FontWeight -> "DemiBold",
    FontColor -> GrayLevel[0.2]
@@ -742,9 +828,14 @@ Notebook[
     MenuItem[
      "Ask AI Assistant",
      KernelExecute[
-      (Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["Ask", ##1]) &[
-       InputNotebook[],
-       SelectedCells[InputNotebook[]]
+      With[ { nbo = InputNotebook[] },
+       {cells = SelectedCells[nbo]},
+       Quiet[Needs["Wolfram`Chatbook`" -> None]];
+       Symbol["Wolfram`Chatbook`ChatbookAction"][
+        "Ask",
+        nbo,
+        cells
+       ]
       ]
      ],
      MenuEvaluator -> Automatic,
@@ -881,9 +972,14 @@ Notebook[
     MenuItem[
      "Ask AI Assistant",
      KernelExecute[
-      (Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["Ask", ##1]) &[
-       InputNotebook[],
-       SelectedCells[InputNotebook[]]
+      With[ { nbo = InputNotebook[] },
+       {cells = SelectedCells[nbo]},
+       Quiet[Needs["Wolfram`Chatbook`" -> None]];
+       Symbol["Wolfram`Chatbook`ChatbookAction"][
+        "Ask",
+        nbo,
+        cells
+       ]
       ]
      ],
      MenuEvaluator -> Automatic,
@@ -1024,7 +1120,6 @@ Notebook[
    Evaluatable -> True,
    CellGroupingRules -> {"SectionGrouping", 58},
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
-   CellEvaluationFunction -> (($Line = 0;) &),
    ShowCellLabel -> False,
    CellFrameMargins -> {{20, 20}, {2, 2}},
    DefaultNewCellStyle -> "Input",
@@ -1049,8 +1144,12 @@ Notebook[
         MouseAppearanceTag["LinkHand"]
        ],
        ButtonFunction :>
-        (Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["WidgetSend", #1]) &[
-         ParentCell[EvaluationCell[]]
+        With[ { cell = ParentCell[EvaluationCell[]] },
+         Quiet[Needs["Wolfram`Chatbook`" -> None]];
+         Symbol["Wolfram`Chatbook`ChatbookAction"][
+          "WidgetSend",
+          cell
+         ]
         ],
        Appearance ->
         Dynamic[
@@ -1066,73 +1165,79 @@ Notebook[
    }
   ],
   Cell[
-   StyleData["ChatInputMenuButton"],
+   StyleData["ChatMenuButton"],
    TemplateBoxOptions -> {
     DisplayFunction ->
      (Function[
-      ButtonBox[
-       TemplateBox[{}, "ChatMenuIcon"],
-       ButtonFunction :>
-        (Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["OpenChatMenu", "ChatInput", #1]) &[
-         EvaluationCell[]
-        ],
-       Appearance ->
-        Dynamic[
-         FEPrivate`FrontEndResource[
-          "FEExpressions",
-          "SuppressMouseDownNinePatchAppearance"
-         ]
-        ],
-       Evaluator -> Automatic,
-       Method -> "Preemptive"
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["ChatOutputMenuButton"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      ButtonBox[
-       TemplateBox[{}, "ChatMenuIcon"],
-       ButtonFunction :>
-        (Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["OpenChatMenu", "ChatOutput", #1]) &[
-         EvaluationCell[]
-        ],
-       Appearance ->
-        Dynamic[
-         FEPrivate`FrontEndResource[
-          "FEExpressions",
-          "SuppressMouseDownNinePatchAppearance"
-         ]
-        ],
-       Evaluator -> Automatic,
-       Method -> "Preemptive"
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["ChatSectionMenuButton"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      ButtonBox[
-       TemplateBox[{}, "ChatMenuIcon"],
-       ButtonFunction :>
-        (Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["OpenChatMenu", "ChatSection", #1]) &[
-         EvaluationCell[]
-        ],
-       Appearance ->
-        Dynamic[
-         FEPrivate`FrontEndResource[
-          "FEExpressions",
-          "SuppressMouseDownNinePatchAppearance"
-         ]
-        ],
-       Evaluator -> Automatic,
-       Method -> "Preemptive"
+      TagBox[
+       PaneSelectorBox[
+        {
+         False ->
+          FrameBox[
+           ButtonBox[
+            TemplateBox[{}, "ChatMenuIcon"],
+            ButtonFunction :>
+             With[ { cell = EvaluationCell[] },
+              Quiet[Needs["Wolfram`Chatbook`" -> None]];
+              Symbol["Wolfram`Chatbook`ChatbookAction"][
+               "OpenChatMenu",
+               #1,
+               cell
+              ]
+             ],
+            Appearance ->
+             Dynamic[
+              FEPrivate`FrontEndResource[
+               "FEExpressions",
+               "SuppressMouseDownNinePatchAppearance"
+              ]
+             ],
+            Evaluator -> Automatic,
+            Method -> "Preemptive"
+           ],
+           RoundingRadius -> 3,
+           FrameStyle -> GrayLevel[1, 0],
+           Background -> None,
+           FrameMargins -> 0,
+           ContentPadding -> False,
+           StripOnInput -> False
+          ],
+         True ->
+          FrameBox[
+           ButtonBox[
+            TemplateBox[{}, "ChatMenuIcon"],
+            ButtonFunction :>
+             With[ { cell = EvaluationCell[] },
+              Quiet[Needs["Wolfram`Chatbook`" -> None]];
+              Symbol["Wolfram`Chatbook`ChatbookAction"][
+               "OpenChatMenu",
+               #1,
+               cell
+              ]
+             ],
+            Appearance ->
+             Dynamic[
+              FEPrivate`FrontEndResource[
+               "FEExpressions",
+               "SuppressMouseDownNinePatchAppearance"
+              ]
+             ],
+            Evaluator -> Automatic,
+            Method -> "Preemptive"
+           ],
+           RoundingRadius -> 3,
+           FrameStyle -> GrayLevel[1, 0],
+           Background -> #2,
+           FrameMargins -> 0,
+           ContentPadding -> False,
+           StripOnInput -> False
+          ]
+        },
+        Dynamic[CurrentValue["MouseOver"]],
+        ImageSize -> Automatic,
+        FrameMargins -> 0
+       ],
+       MouseAppearanceTag["LinkHand"]
       ]
      ])
    }
