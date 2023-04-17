@@ -14,6 +14,7 @@ System`MenuAnchor;
 System`MenuItem;
 System`RawInputForm;
 System`ToggleMenuItem;
+System`Scope;
 
 Begin[ "`Private`" ];
 
@@ -51,22 +52,16 @@ $icons := $icons = Association @ Map[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*$sendChatFunction*)
-$sendChatFunction = Function[
-    Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "Send", # ]
-];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*$askMenuItem*)
 $askMenuItem = MenuItem[
     "Ask AI Assistant",
     KernelExecute[
-        Function[
+        With[
+            { $CellContext`nbo = InputNotebook[ ] },
+            { $CellContext`cells = SelectedCells @ $CellContext`nbo },
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "Ask", ## ]
-        ][ InputNotebook[ ], SelectedCells @ InputNotebook[ ] ]
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "Ask", $CellContext`nbo, $CellContext`cells ]
+        ]
     ],
     MenuEvaluator -> Automatic,
     Method        -> "Queued"
@@ -78,10 +73,12 @@ $askMenuItem = MenuItem[
 $excludeMenuItem = MenuItem[
     "Include/Exclude From AI Chat",
     KernelExecute[
-        Function[
+        With[
+            { $CellContext`nbo = InputNotebook[ ] },
+            { $CellContext`cells = SelectedCells @ $CellContext`nbo },
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "ExclusionToggle", ## ]
-        ][ InputNotebook[ ], SelectedCells @ InputNotebook[ ] ]
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "ExclusionToggle", $CellContext`nbo, $CellContext`cells ]
+        ]
     ],
     MenuEvaluator -> Automatic,
     Method        -> "Queued"
@@ -96,12 +93,30 @@ contextMenu[ a___ ] := Flatten @ { a };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*menuInitializer*)
+menuInitializer[ name_String, color_ ] :=
+    With[ { attach = Cell[ BoxData @ TemplateBox[ { name, color }, "ChatMenuButton" ], "ChatMenu" ] },
+        Initialization :> With[ { $CellContext`cell = EvaluationCell[ ] },
+            NotebookDelete @ Cells[ $CellContext`cell, AttachedCell -> True, CellStyle -> "ChatMenu" ];
+            AttachCell[
+                $CellContext`cell,
+                attach,
+                { Right, Top },
+                Offset[ { -7, -7 }, { Right, Top } ],
+                { Right, Top },
+                RemovalConditions -> { "EvaluatorQuit" }
+            ]
+        ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*inlineResources*)
 inlineResources[ expr_ ] := expr /. {
-    HoldPattern[ $icons[ name_String ] ]   :> RuleCondition @ $icons @ name,
-    HoldPattern @ $askMenuItem             :> RuleCondition @ $askMenuItem,
-    HoldPattern @ $defaultChatbookSettings :> RuleCondition @ $defaultChatbookSettings,
-    HoldPattern @ $sendChatFunction        :> RuleCondition @ $sendChatFunction
+    HoldPattern[ $icons[ name_String ] ]    :> RuleCondition @ $icons @ name,
+    HoldPattern @ $askMenuItem              :> RuleCondition @ $askMenuItem,
+    HoldPattern @ $defaultChatbookSettings  :> RuleCondition @ $defaultChatbookSettings,
+    HoldPattern @ $suppressButtonAppearance :> RuleCondition @ $suppressButtonAppearance
 };
 
 (* ::**************************************************************************************************************:: *)
