@@ -1,12 +1,12 @@
 PacletObject[<|
 	"Name" -> "Wolfram/LLMTools",
 	"PublisherID" -> "Wolfram",
-	"Version" -> "0.0.8",
+	"Version" -> "0.0.9",
 	"WolframVersion" -> "13.2",
 	"Description" -> "Wolfram tools for interacting with LLMs",
 	"Creator" -> {
 		"Connor Gray", "Theodore Gray", "Giulio Alessandrini",
-		"Timothee Verdier"
+		"Timothee Verdier", "Richard Hennigan"
 	},
 	"Icon" -> "Assets/Images/PacletIcon.png",
 	"Extensions" -> {
@@ -27,7 +27,7 @@ PacletObject[<|
 			"Root" -> "Assets",
 			"Assets" -> {
 				{"APIFunctions", "APIFunctions"},
-                {"AIAssistant", "AIAssistant"}
+				{"AIAssistant", "AIAssistant"}
 			}
 		},
 		{"FrontEnd"},
