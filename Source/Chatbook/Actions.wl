@@ -301,18 +301,31 @@ chatContextDialogButtons // beginDefinition;
 
 chatContextDialogButtons[ cell_CellObject ] := Cell[
     BoxData @ ToBoxes @ ChoiceButtons @ {
-
-        DialogReturn @ KeyValueMap[
-            Function[ { k, v }, CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", k } ] = v ],
-            scrapeChatContextDialog @ EvaluationNotebook[ ]
-        ]
-        ,
+        DialogReturn @ setChatSectionSettings[ cell, scrapeChatContextDialog @ EvaluationNotebook[ ] ],
         DialogReturn @ $Canceled
     },
     "DialogButtons"
 ];
 
 chatContextDialogButtons // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*setChatSectionSettings*)
+setChatSectionSettings // beginDefinition;
+
+setChatSectionSettings[ cell_CellObject, settings_Association ] :=
+    Module[ { cellSettings, nbSettings, newSettings },
+        KeyValueMap[ Function[ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", #1 } ] = #2 ], settings ];
+
+        (* The rest of this is a workaround for bug 435058 *)
+        cellSettings = CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ];
+        nbSettings   = CurrentValue[ parentNotebook @ cell, { TaggingRules, "ChatNotebookSettings" } ];
+        newSettings  = Complement[ cellSettings, nbSettings ];
+        CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ] = newSettings;
+    ];
+
+setChatSectionSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
