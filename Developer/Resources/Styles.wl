@@ -395,6 +395,54 @@ Cell[
 ]
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatMenuItem*)
+Cell[
+    StyleData[ "ChatMenuItem" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ ButtonBox[
+            TemplateBox[
+                {
+                    TagBox[
+                        GridBox[
+                            {
+                                {
+                                    #1,
+                                    TemplateBox[ { 7 }, "Spacer1" ],
+                                    PaneBox[
+                                        StyleBox[ #2, "ChatMenuLabel" ],
+                                        FrameMargins     -> 0,
+                                        ImageMargins     -> 0,
+                                        BaselinePosition -> Baseline,
+                                        ImageSize        -> Full
+                                    ]
+                                }
+                            },
+                            GridBoxAlignment -> { "Columns" -> { { Left } }, "Rows" -> { { Top } } },
+                            AutoDelete       -> False,
+                            GridBoxItemSize  -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+                            GridBoxSpacings  -> { "Columns" -> { { 0 } } }
+                        ],
+                        "Grid"
+                    ],
+                    FrameStyle     -> None,
+                    RoundingRadius -> 0,
+                    FrameMargins   -> { { 5, 2 }, { 2, 2 } },
+                    ImageSize      -> Full,
+                    ImageMargins   -> { { 0, 0 }, { 0, 0 } },
+                    Background     -> Dynamic @ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.96 ], GrayLevel[ 1. ] ]
+                },
+                "Highlighted"
+            ],
+            ButtonFunction :> (ReleaseHold @ #3; NotebookDelete @ EvaluationCell[ ]),
+            Appearance     -> $suppressButtonAppearance,
+            Method         -> "Queued",
+            Evaluator      -> Automatic
+        ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Icons*)
 

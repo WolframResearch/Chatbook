@@ -323,48 +323,7 @@ makeMenu[ items_, frameColor_, width_ ] :=
 
 
 menuItem[ Delimiter ] := RawBoxes @ TemplateBox[ { }, "ChatMenuItemDelimiter" ];
-
-
-menuItem[ icon_, label_, Hold[ code_ ] ] :=
-    RawBoxes @ ButtonBox[
-        TemplateBox[
-            {
-                TagBox[
-                    GridBox[
-                        {
-                            {
-                                ToBoxes @ icon,
-                                TemplateBox[ { 7 }, "Spacer1" ],
-                                PaneBox[
-                                    StyleBox[ ToBoxes @ label, "ChatMenuLabel" ],
-                                    FrameMargins -> 0,
-                                    ImageMargins -> 0,
-                                    BaselinePosition -> Baseline,
-                                    ImageSize -> Full
-                                ]
-                            }
-                        },
-                        GridBoxAlignment -> { "Columns" -> { { Left } }, "Rows" -> { { Top } } },
-                        AutoDelete       -> False,
-                        GridBoxItemSize  -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
-                        GridBoxSpacings  -> { "Columns" -> { { 0 } } }
-                    ],
-                    "Grid"
-                ],
-                FrameStyle -> None,
-                RoundingRadius -> 0,
-                FrameMargins -> { { 5, 2 }, { 2, 2 } },
-                ImageSize -> Full,
-                ImageMargins -> { { 0, 0 }, { 0, 0 } },
-                Background -> Dynamic @ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.96 ], GrayLevel[ 1. ] ]
-            },
-            "Highlighted"
-        ],
-        ButtonFunction :> ( code; NotebookDelete @ EvaluationCell[ ] ),
-        Appearance -> Dynamic @ FEPrivate`FrontEndResource[ "FEExpressions", "SuppressMouseDownNinePatchAppearance" ],
-        Method -> "Queued",
-        Evaluator -> Automatic
-    ];
+menuItem[ icon_, label_, code_ ] := RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label, code }, "ChatMenuItem" ];
 
 
 (* ::**************************************************************************************************************:: *)
