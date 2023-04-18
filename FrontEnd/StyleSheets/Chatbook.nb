@@ -777,12 +777,13 @@ Notebook[
    CellFrame -> {{0, 0}, {0, 8}},
    CellMargins -> {{66, 25}, {Inherited, Inherited}},
    StyleKeyMapping -> {
-    " " -> "Text",
+    "~" -> "ChatDelimiter",
+    "/" -> "ChatInput",
+    "=" -> "WolframAlphaShort",
     "*" -> "Item",
-    "/" -> "Input",
-    "Backspace" -> "ChatSystemInput"
+    ">" -> "ExternalLanguageDefault"
    },
-   CellGroupingRules -> {"SectionGrouping", 58},
+   CellGroupingRules -> {"SectionGrouping", 30},
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    Initialization :>
     With[ { cell$ = EvaluationCell[] },
@@ -813,6 +814,62 @@ Notebook[
    DefaultNewCellStyle -> "Input",
    FontWeight -> "DemiBold",
    FontColor -> GrayLevel[0.2]
+  ],
+  Cell[
+   StyleData["ChatDelimiter"],
+   ShowCellBracket -> False,
+   CellMargins -> {{0, 0}, {10, 10}},
+   CellElementSpacings -> {"CellMinHeight" -> 6},
+   CellGroupingRules -> {"SectionGrouping", 62},
+   CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
+   Initialization :>
+    NotebookDelete[
+     Cells[
+      EvaluationCell[],
+      AttachedCell -> True,
+      CellStyle -> "ChatMenu"
+     ]
+    ],
+   CellEventActions -> {
+    "KeyDown" :>
+     Switch[
+      CurrentValue["EventKey"],
+      Alternatives["UpArrow", "LeftArrow"],
+      SelectionMove[EvaluationCell[], Before, Cell],
+      "~",
+      
+      NotebookWrite[
+       EvaluationCell[],
+       Cell["", "ChatContextDivider"],
+       All
+      ];
+
+      SelectionMove[EvaluationNotebook[], Before, CellContents];,
+      Blank[],
+      SelectionMove[EvaluationCell[], After, Cell]
+     ]
+   },
+   ShowCellLabel -> False,
+   CellFrameMargins -> {{20, 20}, {2, 2}},
+   CellFrameLabels -> {
+    {
+     None,
+     Cell[
+      BoxData[
+       TemplateBox[
+        {"ChatSection", GrayLevel[0.925]},
+        "ChatMenuButton"
+       ]
+      ],
+      "ChatMenu",
+      Background -> None
+     ]
+    },
+    {None, None}
+   },
+   DefaultNewCellStyle -> "Input",
+   FontSize -> 6,
+   Background -> GrayLevel[0.95]
   ],
   Cell[StyleData["ChatCodeBlock"]],
   Cell[
@@ -1111,22 +1168,6 @@ Notebook[
    }
   ],
   Cell[
-   StyleData["ChatDelimiter"],
-   Selectable -> False,
-   ShowCellBracket -> False,
-   CellMargins -> {{0, 0}, {10, 10}},
-   CellBracketOptions -> {"OverlapContent" -> True},
-   CellElementSpacings -> {"CellMinHeight" -> 6},
-   Evaluatable -> True,
-   CellGroupingRules -> {"SectionGrouping", 58},
-   CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
-   ShowCellLabel -> False,
-   CellFrameMargins -> {{20, 20}, {2, 2}},
-   DefaultNewCellStyle -> "Input",
-   FontSize -> 6,
-   Background -> GrayLevel[0.95]
-  ],
-  Cell[
    StyleData["ChatWidgetButton"],
    TemplateBoxOptions -> {
     DisplayFunction ->
@@ -1347,6 +1388,134 @@ Notebook[
         ],
        Method -> "Queued",
        Evaluator -> Automatic
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ChatOutputMenu"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      PaneBox[
+       TemplateBox[
+        {
+         TagBox[
+          GridBox[
+           {
+            {
+             TemplateBox[
+              {
+               TemplateBox[{"IconizeIcon"}, "ChatMenuItemToolbarIcon"],
+               "\"Regenerate\"",
+               Hold[MessageDialog["Not Implemented"]]
+              },
+              "ChatMenuItem"
+             ]
+            },
+            {
+             TemplateBox[
+              {
+               TemplateBox[{"DrawIcon"}, "ChatMenuItemToolbarIcon"],
+               "\"Edit\"",
+               Hold[MessageDialog["Not Implemented"]]
+              },
+              "ChatMenuItem"
+             ]
+            },
+            {TemplateBox[{}, "ChatMenuItemDelimiter"]},
+            {
+             TemplateBox[
+              {
+               TemplateBox[{"DivideCellsIcon"}, "ChatMenuItemToolbarIcon"],
+               "\"Explode Cells (In Place)\"",
+               Hold[MessageDialog["Not Implemented"]]
+              },
+              "ChatMenuItem"
+             ]
+            },
+            {
+             TemplateBox[
+              {
+               TemplateBox[{"OverflowIcon"}, "ChatMenuItemToolbarIcon"],
+               "\"Explode Cells (Duplicate)\"",
+               Hold[MessageDialog["Not Implemented"]]
+              },
+              "ChatMenuItem"
+             ]
+            },
+            {
+             TemplateBox[
+              {
+               TemplateBox[
+                {"HyperlinkCopyIcon"},
+                "ChatMenuItemToolbarIcon"
+               ],
+               "\"Copy Exploded Cells\"",
+               Hold[MessageDialog["Not Implemented"]]
+              },
+              "ChatMenuItem"
+             ]
+            },
+            {TemplateBox[{}, "ChatMenuItemDelimiter"]},
+            {
+             TemplateBox[
+              {
+               TemplateBox[{"TypesettingIcon"}, "ChatMenuItemToolbarIcon"],
+               "\"Toggle Formatting\"",
+               Hold[MessageDialog["Not Implemented"]]
+              },
+              "ChatMenuItem"
+             ]
+            },
+            {
+             TemplateBox[
+              {
+               TemplateBox[{"InPlaceIcon"}, "ChatMenuItemToolbarIcon"],
+               "\"View Raw Messages\"",
+               Hold[MessageDialog["Not Implemented"]]
+              },
+              "ChatMenuItem"
+             ]
+            },
+            {
+             TemplateBox[
+              {
+               TemplateBox[{"GroupCellsIcon"}, "ChatMenuItemToolbarIcon"],
+               "\"Lock Response\"",
+               Hold[MessageDialog["Not Implemented"]]
+              },
+              "ChatMenuItem"
+             ]
+            },
+            {
+             TemplateBox[
+              {
+               TemplateBox[{"AbortAllIcon"}, "ChatMenuItemToolbarIcon"],
+               "\"Disable AI Assistant\"",
+               Hold[MessageDialog["Not Implemented"]]
+              },
+              "ChatMenuItem"
+             ]
+            }
+           },
+           GridBoxAlignment -> {"Columns" -> {{Left}}},
+           DefaultBaseStyle -> "Column",
+           GridBoxItemSize -> {"Columns" -> {{All}}, "Rows" -> {{0}}},
+           GridBoxSpacings -> {"Columns" -> {{Automatic}}, "Rows" -> {{0}}}
+          ],
+          "Column"
+         ],
+         FrameMargins -> 3,
+         Background -> GrayLevel[1],
+         RoundingRadius -> 3,
+         FrameStyle ->
+          Directive[AbsoluteThickness[1], GrayLevel[0.85]],
+         ImageMargins -> 0
+        },
+        "Highlighted"
+       ],
+       ImageSize -> {250, Automatic}
       ]
      ])
    }
