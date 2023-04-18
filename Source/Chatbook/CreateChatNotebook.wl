@@ -51,7 +51,7 @@ CreateChatNotebook[ opts: OptionsPattern[ ] ] :=
 
 CreateChatNotebook[ nbo_NotebookObject, opts: OptionsPattern[ ] ] :=
     Enclose @ Module[ { settings, options },
-        settings = makeChatNotebookSettings @ opts;
+        settings = makeChatNotebookSettings @ Association @ opts;
         options  = makeChatNotebookOptions @ settings;
         SetOptions[ nbo, options ];
         nbo
