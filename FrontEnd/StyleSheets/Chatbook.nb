@@ -1243,6 +1243,115 @@ Notebook[
    }
   ],
   Cell[
+   StyleData["ChatMenuItemToolbarIcon"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      PaneBox[
+       DynamicBox[
+        FEPrivate`FrontEndResource[
+         "NotebookToolbarExpressions",
+         #1
+        ]
+       ],
+       ImageSize -> {16, 16},
+       ImageSizeAction -> "ShrinkToFit"
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ChatMenuItemDelimiter"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      PaneBox[
+       StyleBox[
+        GraphicsBox[
+         {
+          CapForm["Round"],
+          GrayLevel[0.9],
+          AbsoluteThickness[1],
+          LineBox[{{-1, 0}, {1, 0}}]
+         },
+         AspectRatio -> Full,
+         ImageMargins -> {{0, 0}, {2, 2}},
+         ImagePadding -> {{5, 5}, {0, 0}},
+         ImageSize -> {Full, 2},
+         PlotRange -> {{-1, 1}, {-1, 1}}
+        ],
+        LineIndent -> 0
+       ],
+       BaselinePosition -> Baseline,
+       FrameMargins -> 0,
+       ImageMargins -> 0,
+       ImageSize -> Full
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ChatMenuItem"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      ButtonBox[
+       TemplateBox[
+        {
+         TagBox[
+          GridBox[
+           {
+            {
+             #1,
+             TemplateBox[{7}, "Spacer1"],
+             PaneBox[
+              StyleBox[#2, "ChatMenuLabel"],
+              FrameMargins -> 0,
+              ImageMargins -> 0,
+              BaselinePosition -> Baseline,
+              ImageSize -> Full
+             ]
+            }
+           },
+           GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}},
+           AutoDelete -> False,
+           GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+           GridBoxSpacings -> {"Columns" -> {{0}}}
+          ],
+          "Grid"
+         ],
+         FrameStyle -> None,
+         RoundingRadius -> 0,
+         FrameMargins -> {{5, 2}, {2, 2}},
+         ImageSize -> Full,
+         ImageMargins -> {{0, 0}, {0, 0}},
+         Background ->
+          Dynamic[
+           If[ CurrentValue["MouseOver"],
+            GrayLevel[0.96],
+            GrayLevel[1.0]
+           ]
+          ]
+        },
+        "Highlighted"
+       ],
+       ButtonFunction :>
+        (ReleaseHold[#3];
+        NotebookDelete[EvaluationCell[]]),
+       Appearance ->
+        Dynamic[
+         FEPrivate`FrontEndResource[
+          "FEExpressions",
+          "SuppressMouseDownNinePatchAppearance"
+         ]
+        ],
+       Method -> "Queued",
+       Evaluator -> Automatic
+      ]
+     ])
+   }
+  ],
+  Cell[
    StyleData["AssistantIcon"],
    TemplateBoxOptions -> {
     DisplayFunction ->
@@ -3190,6 +3299,15 @@ Notebook[
       ]
      ])
    }
+  ],
+  Cell[
+   StyleData["ChatMenuLabel"],
+   LineBreakWithin -> False,
+   LineIndent -> 0,
+   FontFamily -> "Source Sans Pro",
+   FontSize -> 13,
+   FontWeight -> Plain,
+   FontColor -> GrayLevel[0.2]
   ]
  },
  FrontEndVersion -> "13.2 for Microsoft Windows (64-bit) (January 30, 2023)",
