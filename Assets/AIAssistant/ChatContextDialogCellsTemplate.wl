@@ -10,7 +10,7 @@
                             True ->
                                 TemplateBox[
                                     {
-                                        "SystemPrompt",
+                                        "ChatContextPreprompt",
                                         Cell[
                                             BoxData @ FrameBox[
                                                 Cell[
@@ -25,7 +25,9 @@
                                             ],
                                             "MoreInfoText",
                                             Deletable -> True,
-                                            CellTags -> { "SectionMoreInfoSystemPrompt" },
+                                            CellTags -> {
+                                                "SectionMoreInfoChatContextPreprompt"
+                                            },
                                             CellMargins -> { { 66, 66 }, { 15, 15 } }
                                         ]
                                     },
@@ -41,21 +43,27 @@
                 },
                 "Section",
                 CellTags -> {
+                    "ChatContextPreprompt",
                     "NonDefault",
-                    "SystemPrompt",
                     "System Prompt Text",
                     "TemplateCellGroup"
                 },
                 DefaultNewCellStyle -> "Text",
                 Deletable -> False,
                 Editable -> False,
-                TaggingRules -> { "TemplateGroupName" -> "SystemPrompt" }
+                TaggingRules -> { "TemplateGroupName" -> "ChatContextPreprompt" }
             ],
-            Cell[
-                "You are a helpful Wolfram Language programming assistant. Your job is to offer Wolfram Language code suggestions based on previous inputs and offer code suggestions to fix errors.",
-                "Text",
-                CellID -> 1,
-                CellTags -> { "NonDefault" }
+            TemplateSlot[
+                "ChatContextPreprompt",
+                InsertionFunction -> Composition[ Apply @ Sequence, Flatten, List ],
+                DefaultValue -> {
+                    Cell[
+                        "You are a helpful Wolfram Language programming assistant. Your job is to offer Wolfram Language code suggestions based on previous inputs and offer code suggestions to fix errors.",
+                        "Text",
+                        CellID -> 1,
+                        CellTags -> { "NonDefault" }
+                    ]
+                }
             ]
         },
         Open
@@ -112,11 +120,17 @@
                 Editable -> False,
                 TaggingRules -> { "TemplateGroupName" -> "ChatContextCellProcessingFunction" }
             ],
-            Cell[
-                BoxData[ "Automatic" ],
-                "Input",
-                CellID -> 2,
-                CellTags -> { "NonDefault" }
+            TemplateSlot[
+                "ChatContextCellProcessingFunction",
+                InsertionFunction -> Composition[ Apply @ Sequence, Flatten, List ],
+                DefaultValue -> {
+                    Cell[
+                        BoxData[ "Automatic" ],
+                        "Input",
+                        CellID -> 2,
+                        CellTags -> { "NonDefault" }
+                    ]
+                }
             ]
         },
         Open
@@ -173,11 +187,17 @@
                 Editable -> False,
                 TaggingRules -> { "TemplateGroupName" -> "ChatContextPostEvaluationFunction" }
             ],
-            Cell[
-                BoxData[ "Automatic" ],
-                "Input",
-                CellID -> 3,
-                CellTags -> { "NonDefault" }
+            TemplateSlot[
+                "ChatContextPostEvaluationFunction",
+                InsertionFunction -> Composition[ Apply @ Sequence, Flatten, List ],
+                DefaultValue -> {
+                    Cell[
+                        BoxData[ "Automatic" ],
+                        "Input",
+                        CellID -> 3,
+                        CellTags -> { "NonDefault" }
+                    ]
+                }
             ]
         },
         Open
