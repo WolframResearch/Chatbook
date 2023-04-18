@@ -346,6 +346,55 @@ Cell[
 ]
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatMenuItemToolbarIcon*)
+Cell[
+    StyleData[ "ChatMenuItemToolbarIcon" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function[
+            PaneBox[
+                DynamicBox @ FEPrivate`FrontEndResource[ "NotebookToolbarExpressions", # ],
+                ImageSize       -> { 16, 16 },
+                ImageSizeAction -> "ShrinkToFit"
+            ]
+        ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatMenuItemDelimiter*)
+Cell[
+    StyleData[ "ChatMenuItemDelimiter" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function[
+            PaneBox[
+                StyleBox[
+                    GraphicsBox[
+                        {
+                            CapForm[ "Round" ],
+                            GrayLevel[ 0.9 ],
+                            AbsoluteThickness[ 1 ],
+                            LineBox @ { { -1, 0 }, { 1, 0 } }
+                        },
+                        AspectRatio  -> Full,
+                        ImageMargins -> { { 0, 0 }, { 2, 2 } },
+                        ImagePadding -> { { 5, 5 }, { 0, 0 } },
+                        ImageSize    -> { Full, 2 },
+                        PlotRange    -> { { -1, 1 }, { -1, 1 } }
+                    ],
+                    LineIndent -> 0
+                ],
+                BaselinePosition -> Baseline,
+                FrameMargins     -> 0,
+                ImageMargins     -> 0,
+                ImageSize        -> Full
+            ]
+        ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Icons*)
 
@@ -447,6 +496,23 @@ Cell[
     TemplateBoxOptions -> {
         DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "OpenAILogo" ]
     }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Misc Styles*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatMenuLabel*)
+Cell[
+    StyleData[ "ChatMenuLabel" ],
+    FontColor       -> GrayLevel[ 0.2 ],
+    FontFamily      -> "Source Sans Pro",
+    FontSize        -> 13,
+    FontWeight      -> Plain,
+    LineBreakWithin -> False,
+    LineIndent      -> 0
 ]
 
 (* ::**************************************************************************************************************:: *)
