@@ -443,6 +443,16 @@ Cell[
 ]
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatOutputMenu*)
+Cell[
+    StyleData[ "ChatOutputMenu" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ $chatOutputMenu
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Icons*)
 
