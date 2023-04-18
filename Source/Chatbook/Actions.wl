@@ -177,22 +177,14 @@ chatInputMenu[ cell_CellObject ] := Global`$chatInputMenu = Pane[
                 {
                     {
                         inputMenuLabel[ "Temperature" ],
-                        Slider[
+                        inputMenuLabel @ Slider[
                             Dynamic @ AbsoluteCurrentValue[
                                 cell,
                                 { TaggingRules, "ChatNotebookSettings", "Temperature" }
                             ],
-                            { 0, 1, 0.01 },
-                            ImageSize -> { 100, Automatic }
-                        ],
-                        InputField[
-                            Dynamic @ AbsoluteCurrentValue[
-                                cell,
-                                { TaggingRules, "ChatNotebookSettings", "Temperature" }
-                            ],
-                            Number,
-                            ImageSize -> { 35, Automatic },
-                            BaseStyle -> "ChatMenuLabel"
+                            { 0, 1 },
+                            ImageSize  -> { 100, Automatic },
+                            Appearance -> "Labeled"
                         ]
                     },
                     {
@@ -210,8 +202,7 @@ chatInputMenu[ cell_CellObject ] := Global`$chatInputMenu = Pane[
                                     RawBoxes @ TemplateBox[ { }, "OpenAILogo" ], " ", "GPT-4"
                                 }
                             }
-                        ],
-                        SpanFromLeft
+                        ]
                     }
                 },
                 Alignment -> { Left, Baseline },
@@ -226,7 +217,7 @@ chatInputMenu[ cell_CellObject ] := Global`$chatInputMenu = Pane[
         },
         "Highlighted"
     ],
-    ImageSize -> { 300, Automatic }
+    ImageSize -> { 250, Automatic }
 ];
 
 
@@ -1876,7 +1867,7 @@ codeBlockFrame[ cell_, string_, lang_ ] :=
             ImageSize    -> { Full, Automatic }
         ],
         "ChatCodeBlock",
-        TaggingRules -> <| "CodeLanguage" -> lang |>
+        TaggingRules -> <| "CodeLanguage" -> lang, "CellToStringData" -> string |>
     ];
 
 
