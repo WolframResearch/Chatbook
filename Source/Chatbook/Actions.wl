@@ -982,7 +982,7 @@ selectChatCells0[ cell_, { before___, final_, ___ }, final_ ] :=
 selectChatCells0[ cell_, { cells___, cell_, trailing0___ }, _ ] :=
     Module[ { trailing, include, styles, delete, included, flat, filtered },
         trailing = { trailing0 };
-        include = Keys @ TakeWhile[ AssociationThread[ trailing -> CurrentValue[ trailing, GeneratedCell ] ], TrueQ ];
+        include = Keys @ TakeWhile[ AssociationThread[ trailing -> CurrentValue[ trailing, CellAutoOverwrite ] ], TrueQ ];
         styles = cellStyles @ include;
         delete = Keys @ Select[ AssociationThread[ include -> MemberQ[ "ChatOutput" ] /@ styles ], TrueQ ];
         NotebookDelete @ delete;
@@ -1587,6 +1587,8 @@ reformatTextData[ string_String ] := Flatten @ Map[
             Longest[ "```" ~~ ($wlCodeString|"") ] ~~ Shortest[ code__ ] ~~ ("```"|EndOfString) :>
                 If[ NameQ[ "System`"<>code ], inlineCodeCell @ code, codeCell @ code ]
             ,
+            "\n" ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
+            "\n" ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ],
             "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :> hyperlinkCell[ label, url ],
             "``" ~~ code: Except[ "`" ].. ~~ "``" :> inlineCodeCell @ code,
             "`" ~~ code: Except[ "`" ].. ~~ "`" :> inlineCodeCell @ code,
@@ -1680,7 +1682,31 @@ makeResultCell0[ mathCell[ math_String ] ] :=
 
 makeResultCell0[ hyperlinkCell[ label_String, url_String ] ] := hyperlink[ label, url ];
 
+makeResultCell0[ bulletCell[ whitespace_String, item_String ] ] := Flatten @ {
+    $tinyLineBreak,
+    whitespace,
+    StyleBox[ "\[Bullet]", FontColor -> GrayLevel[ 0.5 ] ],
+    " ",
+    reformatTextData @ item,
+    $tinyLineBreak
+};
+
+makeResultCell0[ sectionCell[ n_, section_String ] ] := Flatten @ {
+    "\n",
+    StyleBox[ formatTextString @ section, sectionStyle @ n, "InlineSection", FontSize -> .8*Inherited ],
+    $tinyLineBreak
+};
+
 makeResultCell0 // endDefinition;
+
+
+sectionStyle[ 1 ] := "Section";
+sectionStyle[ 2 ] := "Subsection";
+sectionStyle[ 3 ] := "Subsubsection";
+sectionStyle[ 4 ] := "Subsubsubsection";
+sectionStyle[ _ ] := "Subsubsubsubsection";
+
+$tinyLineBreak = StyleBox[ "\n", "TinyLineBreak", FontSize -> 3 ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
