@@ -170,7 +170,7 @@ openChatInputMenu[ cell0_CellObject ] :=
 openChatInputMenu // endDefinition;
 
 
-chatInputMenu[ cell_CellObject ] := Global`$chatInputMenu = Pane[
+chatInputMenu[ cell_CellObject ] := Pane[
     RawBoxes @ TemplateBox[
         {
             ToBoxes @ Grid[
