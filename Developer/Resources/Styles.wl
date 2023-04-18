@@ -139,8 +139,7 @@ Cell[
 (*ChatContextDivider*)
 Cell[
     StyleData[ "ChatContextDivider", StyleDefinitions -> StyleData[ "Section" ] ],
-    StyleKeyMapping     -> { " " -> "Text", "*" -> "Item", "/" -> "Input", "Backspace" -> "ChatSystemInput" },
-    CellGroupingRules   -> { "SectionGrouping", 58 },
+    CellGroupingRules   -> { "SectionGrouping", 30 },
     ShowCellLabel       -> False,
     CellMargins         -> { { 66, 25 }, { Inherited, Inherited } },
     CellFrame           -> { { 0, 0 }, { 0, 8 } },
@@ -149,7 +148,59 @@ Cell[
     FontColor           -> GrayLevel[ 0.2 ],
     FontWeight          -> "DemiBold",
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+
+    StyleKeyMapping -> {
+        "~" -> "ChatDelimiter",
+        "/" -> "ChatInput",
+        "=" -> "WolframAlphaShort",
+        "*" -> "Item",
+        ">" -> "ExternalLanguageDefault"
+    },
+
     menuInitializer[ "ChatSection", GrayLevel[ 0.925 ] ]
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ChatDelimiter*)
+Cell[
+    StyleData[ "ChatDelimiter" ],
+    CellTrayWidgets        -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    Background             -> GrayLevel[ 0.95 ],
+    CellElementSpacings    -> { "CellMinHeight" -> 6 },
+    CellFrameMargins       -> { { 20, 20 }, { 2, 2 } },
+    CellGroupingRules      -> { "SectionGrouping", 62 },
+    CellMargins            -> { { 0, 0 }, { 10, 10 } },
+    DefaultNewCellStyle    -> "Input",
+    FontSize               -> 6,
+    ShowCellBracket        -> False,
+    ShowCellLabel          -> False,
+
+    CellEventActions -> {
+        "KeyDown" :> Switch[
+            CurrentValue[ "EventKey" ],
+            "UpArrow"|"LeftArrow", SelectionMove[ EvaluationCell[ ], Before, Cell ],
+            "~", (
+                NotebookWrite[ EvaluationCell[ ], Cell[ "", "ChatContextDivider" ], All ];
+                SelectionMove[ EvaluationNotebook[ ], Before, CellContents ];
+            ),
+            _, SelectionMove[ EvaluationCell[ ], After, Cell ]
+        ]
+    },
+
+    CellFrameLabels -> {
+        {
+            None,
+            Cell[
+                BoxData @ TemplateBox[ { "ChatSection", GrayLevel[ 0.925 ] }, "ChatMenuButton" ],
+                "ChatMenu",
+                Background -> None
+            ]
+        },
+        { None, None }
+    },
+
+    Initialization :> NotebookDelete @ Cells[ EvaluationCell[ ], AttachedCell -> True, CellStyle -> "ChatMenu" ]
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -242,26 +293,6 @@ Cell[
             "RowsIndexed"    -> { }
         }
     }
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*ChatDelimiter*)
-Cell[
-    StyleData[ "ChatDelimiter" ],
-    CellTrayWidgets        -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
-    Background             -> GrayLevel[ 0.95 ],
-    CellBracketOptions     -> { "OverlapContent" -> True },
-    CellElementSpacings    -> { "CellMinHeight" -> 6 },
-    CellFrameMargins       -> { { 20, 20 }, { 2, 2 } },
-    CellGroupingRules      -> { "SectionGrouping", 58 },
-    CellMargins            -> { { 0, 0 }, { 10, 10 } },
-    DefaultNewCellStyle    -> "Input",
-    Evaluatable            -> True,
-    FontSize               -> 6,
-    Selectable             -> False,
-    ShowCellBracket        -> False,
-    ShowCellLabel          -> False
 ]
 
 (* ::**************************************************************************************************************:: *)
