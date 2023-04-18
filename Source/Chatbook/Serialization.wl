@@ -297,6 +297,15 @@ fasterCellToString0[ $stringStripHeads[ a_, ___ ] ] := fasterCellToString0 @ a;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
+(*Headings*)
+fasterCellToString0[ StyleBox[ a_, "Section", ___ ] ] := "# "<>fasterCellToString0 @ a;
+fasterCellToString0[ StyleBox[ a_, "Subsection", ___ ] ] := "## "<>fasterCellToString0 @ a;
+fasterCellToString0[ StyleBox[ a_, "Subsubsection", ___ ] ] := "### "<>fasterCellToString0 @ a;
+fasterCellToString0[ StyleBox[ a_, "Subsubsubsection", ___ ] ] := "#### "<>fasterCellToString0 @ a;
+fasterCellToString0[ StyleBox[ a_, "Subsubsubsubsection", ___ ] ] := "##### "<>fasterCellToString0 @ a;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
 (*String Normalization*)
 
 (* Add spacing between RowBox elements that are comma separated *)
@@ -305,6 +314,8 @@ fasterCellToString0[ RowBox[ row: { ___, ",", " ", ___ } ] ] := fasterCellToStri
 
 (* IndentingNewline *)
 fasterCellToString0[ FromCharacterCode[ 62371 ] ] := "\n\t";
+
+fasterCellToString0[ "\[Bullet]" ] := "*";
 
 (* StandardForm strings *)
 fasterCellToString0[ a_String /; StringMatchQ[ a, "\""~~___~~("\\!"|"\!")~~___~~"\"" ] ] :=
@@ -431,6 +442,12 @@ fasterCellToString0[ (box: $boxOperators)[ a_, b_ ] ] :=
             { a$, b$ }
         ]
     ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Definitions*)
+fasterCellToString0[ InterpretationBox[ boxes_, (Definition|FullDefinition)[ _Symbol ], ___ ] ] :=
+    fasterCellToString0 @ boxes;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
