@@ -111,6 +111,84 @@ menuInitializer[ name_String, color_ ] :=
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*$chatOutputMenu*)
+$chatOutputMenu := $chatOutputMenu = ToBoxes @ makeMenu[
+    {
+        {
+            RawBoxes @ TemplateBox[ { "IconizeIcon" }, "ChatMenuItemToolbarIcon" ],
+            "Regenerate",
+            Hold @ MessageDialog[ "Not Implemented" ]
+        },
+        {
+            RawBoxes @ TemplateBox[ { "DrawIcon" }, "ChatMenuItemToolbarIcon" ],
+            "Edit",
+            Hold @ MessageDialog[ "Not Implemented" ]
+        },
+        { Delimiter },
+        {
+            RawBoxes @ TemplateBox[ { "DivideCellsIcon" }, "ChatMenuItemToolbarIcon" ],
+            "Explode Cells (In Place)",
+            Hold @ MessageDialog[ "Not Implemented" ]
+        },
+        {
+            RawBoxes @ TemplateBox[ { "OverflowIcon" }, "ChatMenuItemToolbarIcon" ],
+            "Explode Cells (Duplicate)",
+            Hold @ MessageDialog[ "Not Implemented" ]
+        },
+        {
+            RawBoxes @ TemplateBox[ { "HyperlinkCopyIcon" }, "ChatMenuItemToolbarIcon" ],
+            "Copy Exploded Cells",
+            Hold @ MessageDialog[ "Not Implemented" ]
+        },
+        { Delimiter },
+        {
+            RawBoxes @ TemplateBox[ { "TypesettingIcon" }, "ChatMenuItemToolbarIcon" ],
+            "Toggle Formatting",
+            Hold @ MessageDialog[ "Not Implemented" ]
+        },
+        {
+            RawBoxes @ TemplateBox[ { "InPlaceIcon" }, "ChatMenuItemToolbarIcon" ],
+            "View Raw Messages",
+            Hold @ MessageDialog[ "Not Implemented" ]
+        },
+        {
+            RawBoxes @ TemplateBox[ { "GroupCellsIcon" }, "ChatMenuItemToolbarIcon" ],
+            "Lock Response",
+            Hold @ MessageDialog[ "Not Implemented" ]
+        },
+        {
+            RawBoxes @ TemplateBox[ { "AbortAllIcon" }, "ChatMenuItemToolbarIcon" ],
+            "Disable AI Assistant",
+            Hold @ MessageDialog[ "Not Implemented" ]
+        }
+    },
+    GrayLevel[ 0.85 ],
+    250
+];
+
+
+makeMenu[ items_, frameColor_, width_ ] :=
+    Pane[
+        RawBoxes @ TemplateBox[
+            {
+                ToBoxes @ Column[ menuItem @@@ items, ItemSize -> { Full, 0 }, Spacings -> 0, Alignment -> Left ],
+                FrameMargins   -> 3,
+                Background     -> GrayLevel[ 1 ],
+                RoundingRadius -> 3,
+                FrameStyle     -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
+                ImageMargins   -> 0
+            },
+            "Highlighted"
+        ],
+        ImageSize -> { width, Automatic }
+    ];
+
+
+menuItem[ Delimiter ] := RawBoxes @ TemplateBox[ { }, "ChatMenuItemDelimiter" ];
+menuItem[ icon_, label_, code_ ] := RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label, code }, "ChatMenuItem" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*inlineResources*)
 inlineResources[ expr_ ] := expr /. {
     HoldPattern[ $icons[ name_String ] ]    :> RuleCondition @ $icons @ name,

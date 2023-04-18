@@ -231,7 +231,7 @@ openChatOutputMenu // beginDefinition;
 
 openChatOutputMenu[ cell_CellObject ] := AttachCell[
     ParentCell @ cell,
-    $chatOutputMenu,
+    RawBoxes @ TemplateBox[ { }, "ChatOutputMenu" ],
     { Right, Top },
     Offset[ { -7, -7 }, { 0, 0 } ],
     { Right, Top },
@@ -239,83 +239,6 @@ openChatOutputMenu[ cell_CellObject ] := AttachCell[
 ];
 
 openChatOutputMenu // endDefinition;
-
-
-$chatOutputMenu := $chatOutputMenu = makeMenu[
-    {
-        {
-            RawBoxes @ TemplateBox[ { "IconizeIcon" }, "ChatMenuItemToolbarIcon" ],
-            "Regenerate",
-            Hold @ MessageDialog[ "Not Implemented" ]
-        },
-        {
-            RawBoxes @ TemplateBox[ { "DrawIcon" }, "ChatMenuItemToolbarIcon" ],
-            "Edit",
-            Hold @ MessageDialog[ "Not Implemented" ]
-        },
-        { Delimiter },
-        {
-            RawBoxes @ TemplateBox[ { "DivideCellsIcon" }, "ChatMenuItemToolbarIcon" ],
-            "Explode Cells (In Place)",
-            Hold @ MessageDialog[ "Not Implemented" ]
-        },
-        {
-            RawBoxes @ TemplateBox[ { "OverflowIcon" }, "ChatMenuItemToolbarIcon" ],
-            "Explode Cells (Duplicate)",
-            Hold @ MessageDialog[ "Not Implemented" ]
-        },
-        {
-            RawBoxes @ TemplateBox[ { "HyperlinkCopyIcon" }, "ChatMenuItemToolbarIcon" ],
-            "Copy Exploded Cells",
-            Hold @ MessageDialog[ "Not Implemented" ]
-        },
-        { Delimiter },
-        {
-            RawBoxes @ TemplateBox[ { "TypesettingIcon" }, "ChatMenuItemToolbarIcon" ],
-            "Toggle Formatting",
-            Hold @ MessageDialog[ "Not Implemented" ]
-        },
-        {
-            RawBoxes @ TemplateBox[ { "InPlaceIcon" }, "ChatMenuItemToolbarIcon" ],
-            "View Raw Messages",
-            Hold @ MessageDialog[ "Not Implemented" ]
-        },
-        {
-            RawBoxes @ TemplateBox[ { "GroupCellsIcon" }, "ChatMenuItemToolbarIcon" ],
-            "Lock Response",
-            Hold @ MessageDialog[ "Not Implemented" ]
-        },
-        {
-            RawBoxes @ TemplateBox[ { "AbortAllIcon" }, "ChatMenuItemToolbarIcon" ],
-            "Disable AI Assistant",
-            Hold @ MessageDialog[ "Not Implemented" ]
-        }
-    },
-    GrayLevel[ 0.85 ],
-    250
-];
-
-
-makeMenu[ items_, frameColor_, width_ ] :=
-    Pane[
-        RawBoxes @ TemplateBox[
-            {
-                ToBoxes @ Column[ menuItem @@@ items, ItemSize -> { Full, 0 }, Spacings -> 0, Alignment -> Left ],
-                FrameMargins -> 3,
-                Background -> GrayLevel[ 1 ],
-                RoundingRadius -> 3,
-                FrameStyle -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
-                ImageMargins -> 0
-            },
-            "Highlighted"
-        ],
-        ImageSize -> { width, Automatic }
-    ];
-
-
-menuItem[ Delimiter ] := RawBoxes @ TemplateBox[ { }, "ChatMenuItemDelimiter" ];
-menuItem[ icon_, label_, code_ ] := RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label, code }, "ChatMenuItem" ];
-
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -333,7 +256,7 @@ createChatContextDialog[ cell_CellObject ] :=
     Module[ { text, textCell, cellFunc, cellFuncCell, postFunc, postFuncCell, cells, nbo },
 
         text = AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "ChatContextPreprompt" } ];
-        textCell = If[ StringQ @ text, Cell[ text, "Text", CellTags -> "NonDefault", CellID -> 1 ], Missing[ ] ];
+        textCell = If[ StringQ @ text, Cell[ text, "Text", CellID -> 1, CellTags -> { "NonDefault" } ], Missing[ ] ];
 
         cellFunc = AbsoluteCurrentValue[
             cell,
@@ -378,11 +301,11 @@ chatContextDialogButtons // beginDefinition;
 
 chatContextDialogButtons[ cell_CellObject ] := Cell[
     BoxData @ ToBoxes @ ChoiceButtons @ {
-        CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ] = Association[
-            CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ],
+
+        DialogReturn @ KeyValueMap[
+            Function[ { k, v }, CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", k } ] = v ],
             scrapeChatContextDialog @ EvaluationNotebook[ ]
-        ];
-        DialogReturn[ ]
+        ]
         ,
         DialogReturn @ $Canceled
     },
