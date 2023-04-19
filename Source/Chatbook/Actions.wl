@@ -574,7 +574,6 @@ queuedEvaluationsQ[ ___ ] := False;
 (*sendChat*)
 sendChat // beginDefinition;
 
-(* FIXME: Select cells here instead of in makeHTTPRequest and include chat context header for options *)
 sendChat[ evalCell_, nbo_, settings0_ ] := catchTop @ Enclose[
     Module[ { cells, settings, id, key, req, cell, cellObject, container, task },
 
