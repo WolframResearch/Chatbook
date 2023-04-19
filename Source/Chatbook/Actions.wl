@@ -988,10 +988,13 @@ buildSystemPrompt // beginDefinition;
 
 buildSystemPrompt[ as_Association ] := TemplateApply[
     $promptTemplate,
-    DeleteMissing @ <|
-        "Pre"  -> Lookup[ as, "ChatContextPreprompt"  ],
-        "Post" -> Lookup[ as, "ChatContextPostPrompt" ]
-    |>
+    Select[
+        <|
+            "Pre"  -> Lookup[ as, "ChatContextPreprompt"  ],
+            "Post" -> Lookup[ as, "ChatContextPostPrompt" ]
+        |>,
+        StringQ
+    ]
 ];
 
 buildSystemPrompt // endDefinition;
