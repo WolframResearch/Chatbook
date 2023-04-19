@@ -18,6 +18,9 @@ Needs[ "Wolfram`Chatbook`Serialization`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
+$chatDelimiterStyles = { "ChatContextDivider", "ChatDelimiter" };
+$chatIgnoredStyles   = { "ChatExcluded" };
+$chatOutputStyles    = { "ChatOutput" };
 
 $maxChatCells = OptionValue[ CreateChatNotebook, "ChatHistoryLength" ];
 
@@ -39,6 +42,13 @@ $closedChatCellOptions = Sequence[
     CellFrame       -> 0,
     ShowCellBracket -> False
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Style Patterns*)
+$$chatDelimiterStyle = Alternatives @@ $chatDelimiterStyles | { ___, Alternatives @@ $chatDelimiterStyles, ___ };
+$$chatIgnoredStyle   = Alternatives @@ $chatIgnoredStyles   | { ___, Alternatives @@ $chatIgnoredStyles  , ___ };
+$$chatOutputStyle    = Alternatives @@ $chatOutputStyles    | { ___, Alternatives @@ $chatOutputStyles   , ___ };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -565,14 +575,21 @@ queuedEvaluationsQ[ ___ ] := False;
 sendChat // beginDefinition;
 
 (* FIXME: Select cells here instead of in makeHTTPRequest and include chat context header for options *)
-sendChat[ evalCell_, nbo_, settings_ ] := catchTop @ Enclose[
-    Module[ { id, key, cell, cellObject, container, req, task },
-        id   = Lookup[ settings, "ID" ];
-        key  = toAPIKey[ Automatic, id ];
+sendChat[ evalCell_, nbo_, settings0_ ] := catchTop @ Enclose[
+    Module[ { cells, settings, id, key, req, cell, cellObject, container, task },
+
+        cells    = ConfirmMatch[ selectChatCells[ settings0, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
+        settings = ConfirmBy[ inheritSettings[ settings0, cells, evalCell ], AssociationQ, "InheritSettings" ];
+        id       = Lookup[ settings, "ID" ];
+        key      = toAPIKey[ Automatic, id ];
 
         If[ ! StringQ @ key, throwFailure[ "NoAPIKey" ] ];
 
-        req = ConfirmMatch[ makeHTTPRequest[ Append[ settings, "OpenAIKey" -> key ], nbo, evalCell ], _HTTPRequest ];
+        req = ConfirmMatch[
+            makeHTTPRequest[ Append[ settings, "OpenAIKey" -> key ], cells ],
+            _HTTPRequest,
+            "MakeHTTPRequest"
+        ];
 
         container = ProgressIndicator[ Appearance -> "Percolate" ];
         cell = activeAIAssistantCell[ container, settings ];
@@ -588,10 +605,48 @@ sendChat[ evalCell_, nbo_, settings_ ] := catchTop @ Enclose[
 
         task = Confirm[ $lastTask = submitAIAssistant[ container, req, cellObject, settings ] ]
     ],
-    throwInternalFailure[ sendChat[ evalCell, nbo, settings ], ## ] &
+    throwInternalFailure[ sendChat[ evalCell, nbo, settings0 ], ## ] &
 ];
 
 sendChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inheritSettings*)
+inheritSettings // beginDefinition;
+
+inheritSettings[ settings_, { first_CellObject, ___ }, evalCell_CellObject ] :=
+    inheritSettings[ settings, cellInformation @ first, evalCell ];
+
+inheritSettings[
+    settings_Association,
+    KeyValuePattern @ { "Style" -> $$chatDelimiterStyle, "CellObject" -> delimiter_CellObject },
+    evalCell_CellObject
+] :=
+    mergeSettings[
+        settings,
+        Association @ CurrentValue[ delimiter, { TaggingRules, "ChatNotebookSettings" } ],
+        Association @ CurrentValue[ evalCell, { TaggingRules, "ChatNotebookSettings" } ]
+    ];
+
+inheritSettings[ settings_Association, _, evalCell_CellObject ] :=
+    mergeSettings[
+        settings,
+        <| |>,
+        Association @ CurrentValue[ evalCell, { TaggingRules, "ChatNotebookSettings" } ]
+    ];
+
+inheritSettings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*mergeSettings*)
+mergeSettings // beginDefinition;
+
+mergeSettings[ settings_? AssociationQ, group_? AssociationQ, cell_? AssociationQ ] :=
+    Association[ settings, Complement[ group, settings ], Complement[ cell, settings ] ];\
+
+mergeSettings // endDefinition;\
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -923,8 +978,23 @@ makeCurrentRole[ as_Association? AssociationQ ] := makeCurrentRole[ as, as[ "Rol
 makeCurrentRole[ as_, None, _ ] := Missing[ ];
 makeCurrentRole[ as_, role_String, _ ] := <| "role" -> "system", "content" -> role |>;
 makeCurrentRole[ as_, Automatic, name_String ] := <| "role" -> "system", "content" -> namedRolePrompt @ name |>;
-makeCurrentRole[ as_, _, _ ] := $defaultRole;
+makeCurrentRole[ as_, _, _ ] := <| "role" -> "system", "content" -> buildSystemPrompt @ as |>;
 makeCurrentRole // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*buildSystemPrompt*)
+buildSystemPrompt // beginDefinition;
+
+buildSystemPrompt[ as_Association ] := TemplateApply[
+    $promptTemplate,
+    DeleteMissing @ <|
+        "Pre"  -> Lookup[ as, "ChatContextPreprompt"  ],
+        "Post" -> Lookup[ as, "ChatContextPostPrompt" ]
+    |>
+];
+
+buildSystemPrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -965,7 +1035,7 @@ selectChatCells[ as_Association? AssociationQ, cell_CellObject, nbo_NotebookObje
                 Except[ _Integer? Positive ] :> $maxChatCells
             ]
         },
-        $selectedChatCells = selectChatCells0[ cell, nbo ]
+        $selectedChatCells = selectChatCells0[ cell, clearMinimizedChats @ nbo ]
     ];
 
 selectChatCells // endDefinition;
@@ -973,44 +1043,100 @@ selectChatCells // endDefinition;
 
 selectChatCells0 // beginDefinition;
 
-selectChatCells0[ cell_, nbo_NotebookObject ] :=
-    selectChatCells0[ cell, Cells @ nbo, $finalCell ];
+(* If `$finalCell` is defined, it means we are evaluating through the cell tray widget button. This can be invoked from
+   a cell that is in the middle of other generated outputs, e.g. a message cell that lies between an input and output.
+   In these cases, we want to make sure we don't delete chat output cells that come after the generated cells,
+   since the user is just looking for chat feedback for the selected cell. *)
+selectChatCells0[ cell_, cells: { __CellObject } ] := selectChatCells0[ cell, cells, $finalCell ];
 
-selectChatCells0[ cell_, { before___, final_, ___ }, final_ ] :=
-    selectChatCells0[ cell, { before, final }, None ];
+(* If `$finalCell` is defined, we can use it to filter out any cells that follow it via this pattern: *)
+selectChatCells0[ cell_, { before___, final_, ___ }, final_ ] := selectChatCells0[ cell, { before, final }, None ];
 
-selectChatCells0[ cell_, { cells___, cell_, trailing0___ }, _ ] :=
-    Module[ { trailing, include, styles, delete, included, flat, filtered },
-        trailing = { trailing0 };
-        include = Keys @ TakeWhile[ AssociationThread[ trailing -> CurrentValue[ trailing, CellAutoOverwrite ] ], TrueQ ];
-        styles = cellStyles @ include;
-        delete = Keys @ Select[ AssociationThread[ include -> MemberQ[ "ChatOutput" ] /@ styles ], TrueQ ];
-        NotebookDelete @ delete;
-        included = DeleteCases[ include, Alternatives @@ delete ];
-        flat = dropDelimitedCells @ Flatten @ { cells, cell, included };
-        filtered = dropExcludedCells @ clearMinimizedChats[ parentNotebook @ cell, flat ];
-        Reverse @ Take[ Reverse @ filtered, UpTo @ $maxChatCells ]
-    ];
+(* Otherwise, proceed with cell selection: *)
+selectChatCells0[ cell_, cells: { __CellObject }, final_ ] := Enclose[
+    Module[ { cellData, cellPosition, before, groupPos, selectedRange, filtered, selectedCells },
+
+        cellData = ConfirmMatch[
+            cellInformation @ cells,
+            { KeyValuePattern[ "CellObject" -> _CellObject ].. },
+            "CellInformation"
+        ];
+
+        (* Position of the current evaluation cell *)
+        cellPosition = ConfirmBy[
+            First @ FirstPosition[ cellData, KeyValuePattern[ "CellObject" -> cell ] ],
+            IntegerQ,
+            "EvaluationCellPosition"
+        ];
+
+        (* Select all cells up to and including the evaluation cell *)
+        before = Reverse @ Take[ cellData, cellPosition ];
+        groupPos = ConfirmBy[
+            First @ FirstPosition[ before, KeyValuePattern[ "Style" -> $$chatDelimiterStyle ], { Length @ before } ],
+            IntegerQ,
+            "ChatDelimiterPosition"
+        ];
+        selectedRange = Reverse @ Take[ before, groupPos ];
+
+        (* Filter out ignored cells *)
+        filtered = DeleteCases[ selectedRange, KeyValuePattern[ "Style" -> $$chatIgnoredStyle ] ];
+
+        (* Delete output cells that come after the evaluation cell *)
+        deleteExistingChatOutputs @ Drop[ cellData, cellPosition ];
+
+        (* Get the selected cell objects from the filtered cell info *)
+        selectedCells = ConfirmMatch[
+            Lookup[ filtered, "CellObject" ],
+            { __CellObject },
+            "FilteredCellObjects"
+        ];
+
+        (* Limit the number of cells specified by ChatHistoryLength, starting from current cell and looking backwards *)
+        ConfirmMatch[
+            Reverse @ Take[ Reverse @ selectedCells, UpTo @ $maxChatCells ],
+            { __CellObject },
+            "ChatHistoryLengthCellObjects"
+        ]
+    ],
+    throwInternalFailure[ selectChatCells0[ cell, cells, final ], ## ] &
+];
 
 selectChatCells0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*dropExcludedCells*)
-dropExcludedCells // beginDefinition;
+(*deleteExistingChatOutputs*)
+deleteExistingChatOutputs // beginDefinition;
 
-dropExcludedCells[ cells_List ] :=
-    Module[ { styles },
-        styles = cellStyles @ cells;
-        Keys @ Select[ AssociationThread[ cells -> MemberQ[ "ChatExcluded" ] /@ styles ], Not@*TrueQ ]
+(* When chat is triggered by an evaluation instead of a chat input, there can be generated cells between the
+   evaluation cell and the previous chat output. For example:
+
+       CellObject[ <Current evaluation cell> ]
+       CellObject[ <Message/Print/Echo cells, etc.> ]
+       CellObject[ <Output from the current evaluation cell> ]
+       CellObject[ <Previous chat output> ] <--- We want to delete this cell, since it's from a previous evaluation
+
+   At this point, the front end has already cleared previous output cells (messages, output, etc.), but the previous
+   chat output cell is still there. We need to delete it so that the new chat output cell can be inserted in its place.
+   `deleteExistingChatOutputs` gathers up all the generated cells that come after the evaluation cell and if it finds
+   a chat output cell, it deletes it.
+*)
+deleteExistingChatOutputs[ cellData: { KeyValuePattern[ "CellObject" -> _CellObject ] ... } ] :=
+    Module[ { delete, chatOutputs, cells },
+        delete      = TakeWhile[ cellData, MatchQ @ KeyValuePattern[ "CellAutoOverwrite" -> True ] ];
+        chatOutputs = Cases[ delete, KeyValuePattern[ "Style" -> $$chatOutputStyle ] ];
+        cells       = Cases[ chatOutputs, KeyValuePattern[ "CellObject" -> cell_ ] :> cell ];
+        NotebookDelete @ cells
     ];
 
-dropExcludedCells // endDefinition;
+deleteExistingChatOutputs // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*clearMinimizedChats*)
 clearMinimizedChats // beginDefinition;
+
+clearMinimizedChats[ nbo_NotebookObject ] := clearMinimizedChats[ nbo, Cells @ nbo ];
 
 clearMinimizedChats[ nbo_, cells_ ] /; CloudSystem`$CloudNotebooks := cells;
 
@@ -2009,6 +2135,30 @@ contentLanguage[ ___ ] := "Wolfram";
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*FrontEnd Utilities*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*cellInformation*)
+cellInformation // beginDefinition;
+
+cellInformation[ nbo_NotebookObject ] := cellInformation @ Cells @ nbo;
+
+cellInformation[ cells: { ___CellObject } ] := Map[
+    Association,
+    Transpose @ {
+        Thread[ "CellObject" -> cells ],
+        Developer`CellInformation @ cells,
+        Thread[ "CellAutoOverwrite" -> CurrentValue[ cells, CellAutoOverwrite ] ]
+    }
+];
+
+cellInformation[ cell_CellObject ] := Association[
+    "CellObject" -> cell,
+    Developer`CellInformation @ cell,
+    "CellAutoOverwrite" -> CurrentValue[ cell, CellAutoOverwrite ]
+];
+
+cellInformation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

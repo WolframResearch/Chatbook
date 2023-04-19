@@ -21,7 +21,7 @@ Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Config*)
-$$delimiterStyle   = "PageBreak"|"ExampleDelimiter";
+$$delimiterStyle   = "PageBreak"|"ExampleDelimiter"|"ChatDelimiter";
 $$itemStyle        = "Item"|"Notes";
 $$noCellLabelStyle = "Text"|"ChatInput"|"ChatUserInput"|"ChatSystemInput"|"ChatContextDivider"|$$delimiterStyle;
 $$docSearchStyle   = "ChatQuery";
@@ -298,11 +298,12 @@ fasterCellToString0[ $stringStripHeads[ a_, ___ ] ] := fasterCellToString0 @ a;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Headings*)
-fasterCellToString0[ StyleBox[ a_, "Section", ___ ] ] := "# "<>fasterCellToString0 @ a;
-fasterCellToString0[ StyleBox[ a_, "Subsection", ___ ] ] := "## "<>fasterCellToString0 @ a;
-fasterCellToString0[ StyleBox[ a_, "Subsubsection", ___ ] ] := "### "<>fasterCellToString0 @ a;
-fasterCellToString0[ StyleBox[ a_, "Subsubsubsection", ___ ] ] := "#### "<>fasterCellToString0 @ a;
-fasterCellToString0[ StyleBox[ a_, "Subsubsubsubsection", ___ ] ] := "##### "<>fasterCellToString0 @ a;
+fasterCellToString0[ (Cell|StyleBox)[ a_, "Section", ___ ] ] := "# "<>fasterCellToString0 @ a;
+fasterCellToString0[ (Cell|StyleBox)[ a_, "Subsection", ___ ] ] := "## "<>fasterCellToString0 @ a;
+fasterCellToString0[ (Cell|StyleBox)[ a_, "Subsubsection", ___ ] ] := "### "<>fasterCellToString0 @ a;
+fasterCellToString0[ (Cell|StyleBox)[ a_, "Subsubsubsection", ___ ] ] := "#### "<>fasterCellToString0 @ a;
+fasterCellToString0[ (Cell|StyleBox)[ a_, "Subsubsubsubsection", ___ ] ] := "##### "<>fasterCellToString0 @ a;
+fasterCellToString0[ (Cell|StyleBox)[ a_, "ChatContextDivider", ___ ] ] := "# "<>fasterCellToString0 @ a;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
