@@ -1382,7 +1382,7 @@ $promptStrings := $promptStrings = Association @ Map[
         StringDelete[
             StringReplace[ ResourceFunction[ "RelativePath" ][ $promptDirectory, # ], "\\" -> "/" ],
             ".md"~~EndOfString
-        ] -> ByteArrayToString @ ReadByteArray @ #
+        ] -> StringReplace[ ByteArrayToString @ ReadByteArray @ #, "\r\n" -> "\n" ]
     ],
     FileNames[ "*.md", $promptDirectory, Infinity ]
 ];
