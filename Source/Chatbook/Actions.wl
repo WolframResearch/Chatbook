@@ -3,11 +3,14 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 
+(* TODO: these probably aren't needed as exported symbols since all hooks are going through ChatbookAction *)
 `AskChat;
+`AttachCodeButtons;
+`CopyChatObject;
 `ExclusionToggle;
+`OpenChatMenu;
 `SendChat;
 `WidgetSend;
-`AttachCodeButtons;
 
 Begin[ "`Private`" ];
 
@@ -116,7 +119,6 @@ endDefinition // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*ChatbookAction*)
-ChatbookAction // beginDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -142,14 +144,51 @@ ChatbookAction::UnknownStatusCode =
 ChatbookAction::BadResponseMessage =
 "`1`";
 
+ChatbookAction::NotImplemented =
+"Action \"`1`\" is not implemented.";
+
 ChatbookAction[ "Ask"              , args___ ] := catchTop @ AskChat @ args;
+ChatbookAction[ "AttachCodeButtons", args___ ] := catchTop @ AttachCodeButtons @ args;
+ChatbookAction[ "CopyChatObject"   , args___ ] := catchTop @ CopyChatObject @ args;
+ChatbookAction[ "ExclusionToggle"  , args___ ] := catchTop @ ExclusionToggle @ args;
+ChatbookAction[ "OpenChatMenu"     , args___ ] := catchTop @ OpenChatMenu @ args;
 ChatbookAction[ "Send"             , args___ ] := catchTop @ SendChat @ args;
 ChatbookAction[ "WidgetSend"       , args___ ] := catchTop @ WidgetSend @ args;
-ChatbookAction[ "ExclusionToggle"  , args___ ] := catchTop @ ExclusionToggle @ args;
-ChatbookAction[ "AttachCodeButtons", args___ ] := catchTop @ AttachCodeButtons @ args;
-ChatbookAction[ "OpenChatMenu"     , args___ ] := catchTop @ OpenChatMenu @ args;
+ChatbookAction[ name_String        , args___ ] := catchTop @ throwFailure[ ChatbookAction::NotImplemented, name, args ];
+ChatbookAction[ args___                      ] := catchTop @ throwInternalFailure @ HoldForm @ ChatbookAction @ args;
 
-ChatbookAction // endDefinition;
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*CopyChatObject*)
+CopyChatObject // beginDefinition;
+
+CopyChatObject[ cell_CellObject ] := Enclose[
+    Module[ { encodedString, chatData, messages, chatObject },
+        encodedString = ConfirmBy[ CurrentValue[ cell, { TaggingRules, "ChatData" } ], StringQ ];
+        chatData      = ConfirmBy[ BinaryDeserialize @ BaseDecode @ encodedString, AssociationQ ];
+        messages      = ConfirmMatch[ chatData[ "Data", "Messages" ], { __Association? AssociationQ } ];
+        chatObject    = Confirm @ constructChatObject @ messages;
+        CopyToClipboard @ chatObject
+    ],
+    throwInternalFailure[ HoldForm @ CopyChatObject @ cell, ## ] &
+];
+
+CopyChatObject // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*constructChatObject*)
+constructChatObject // beginDefinition;
+
+constructChatObject[ messages_List ] :=
+    With[ { chat = System`CreateChat[ Append[ KeyMap[ Capitalize, #1 ], "Timestamp" -> Now ] & /@ messages ] },
+        chat /; MatchQ[ chat, _System`ChatObject ]
+    ];
+
+constructChatObject[ messages_List ] :=
+    Dataset[ KeyMap[ Capitalize ] /@ messages ];
+
+constructChatObject // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -575,7 +614,7 @@ queuedEvaluationsQ[ ___ ] := False;
 sendChat // beginDefinition;
 
 sendChat[ evalCell_, nbo_, settings0_ ] := catchTop @ Enclose[
-    Module[ { cells, settings, id, key, req, cell, cellObject, container, task },
+    Module[ { cells, settings, id, key, req, data, cell, cellObject, container, task },
 
         cells    = ConfirmMatch[ selectChatCells[ settings0, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
         settings = ConfirmBy[ inheritSettings[ settings0, cells, evalCell ], AssociationQ, "InheritSettings" ];
@@ -584,11 +623,18 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTop @ Enclose[
 
         If[ ! StringQ @ key, throwFailure[ "NoAPIKey" ] ];
 
-        req = ConfirmMatch[
-            makeHTTPRequest[ Append[ settings, "OpenAIKey" -> key ], cells ],
-            _HTTPRequest,
-            "MakeHTTPRequest"
+        { req, data } = Reap[
+            ConfirmMatch[
+                makeHTTPRequest[ Append[ settings, "OpenAIKey" -> key ], cells ],
+                _HTTPRequest,
+                "MakeHTTPRequest"
+            ],
+            $chatDataTag
         ];
+
+        data = ConfirmBy[ Association @ Flatten @ data, AssociationQ, "Data" ];
+
+        AppendTo[ settings, "Data" -> data ];
 
         container = ProgressIndicator[ Appearance -> "Percolate" ];
         cell = activeAIAssistantCell[ container, settings ];
@@ -927,6 +973,8 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association }
             |>,
             Automatic|_Missing
         ];
+
+        Sow[ <| "Messages" -> messages |>, $chatDataTag ];
 
         body = ConfirmBy[ Developer`WriteRawJSONString[ data, "Compact" -> True ], StringQ ];
 
@@ -1688,7 +1736,11 @@ reformatCell[ settings_, string_, tag_, open_, label_ ] := Cell[
     "ChatOutput",
     GeneratedCell     -> True,
     CellAutoOverwrite -> True,
-    TaggingRules      -> <| "CellToStringData" -> string, "MessageTag" -> tag |>,
+    TaggingRules      -> <|
+        "CellToStringData" -> string,
+        "MessageTag"       -> tag,
+        "ChatData"         -> makeCompactChatData[ string, tag, settings ]
+    |>,
     If[ TrueQ @ open,
         Sequence @@ { },
         Sequence @@ Flatten @ {
@@ -1699,6 +1751,30 @@ reformatCell[ settings_, string_, tag_, open_, label_ ] := Cell[
 ];
 
 reformatCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeCompactChatData*)
+makeCompactChatData // beginDefinition;
+
+makeCompactChatData[
+    message_,
+    tag_,
+    as: KeyValuePattern[ "Data" -> data: KeyValuePattern[ "Messages" -> messages_List ] ]
+] :=
+    BaseEncode @ BinarySerialize[
+        Association[
+            as,
+            "MessageTag" -> tag,
+            "Data" -> Association[
+                data,
+                "Messages" -> Append[ messages, <| "role" -> "assistant", "content" -> message |> ]
+            ]
+        ],
+        PerformanceGoal -> "Size"
+    ];
+
+makeCompactChatData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
