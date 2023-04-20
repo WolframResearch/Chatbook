@@ -987,12 +987,15 @@ buildSystemPrompt // beginDefinition;
 
 buildSystemPrompt[ as_Association ] := TemplateApply[
     $promptTemplate,
+    Association[
+        $promptComponents[ "Generic" ],
     Select[
         <|
             "Pre"  -> Lookup[ as, "ChatContextPreprompt"  ],
             "Post" -> Lookup[ as, "ChatContextPostPrompt" ]
         |>,
         StringQ
+    ]
     ]
 ];
 
@@ -1379,7 +1382,7 @@ $promptStrings := $promptStrings = Association @ Map[
         StringDelete[
             StringReplace[ ResourceFunction[ "RelativePath" ][ $promptDirectory, # ], "\\" -> "/" ],
             ".md"~~EndOfString
-        ] -> ByteArrayToString @ ReadByteArray @ #
+        ] -> StringReplace[ ByteArrayToString @ ReadByteArray @ #, "\r\n" -> "\n" ]
     ],
     FileNames[ "*.md", $promptDirectory, Infinity ]
 ];
