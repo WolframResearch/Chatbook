@@ -3285,7 +3285,6 @@ Notebook[
    FontColor -> GrayLevel[0.2]
   ]
  },
- FrontEndVersion -> "13.3 for Microsoft Windows (64-bit) (April 19, 2023)",
- StyleDefinitions -> "PrivateStylesheetFormatting.nb",
- ExpressionUUID -> "10a4cf04-5db8-4990-997a-08f1e8e09c38"
+ FrontEndVersion -> "13.2 for Microsoft Windows (64-bit) (January 30, 2023)",
+ StyleDefinitions -> "PrivateStylesheetFormatting.nb"
 ]
