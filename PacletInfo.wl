@@ -16,9 +16,6 @@ PacletObject[<|
 		{"Kernel",
 			"Root" -> "Source/ServerSentEventUtils",
 			"Context" -> "Wolfram`ServerSentEventUtils`"},
-		{"Kernel",
-			"Root" -> "Source/AIAssistant",
-			"Context" -> "Wolfram`AIAssistant`"},
 		{"Asset",
 			"Root" -> "Assets",
 			"Assets" -> {
