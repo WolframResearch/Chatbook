@@ -603,7 +603,7 @@ Notebook[
    StyleKeyMapping -> {
     " " -> "Text",
     "*" -> "Item",
-    "/" -> "ChatQuery",
+    "'" -> "ChatQuery",
     "Backspace" -> "Input"
    },
    CellGroupingRules -> "InputGrouping",
@@ -648,7 +648,7 @@ Notebook[
    StyleKeyMapping -> {
     " " -> "Text",
     "*" -> "Item",
-    "/" -> "ChatSystemInput",
+    "'" -> "ChatSystemInput",
     "Backspace" -> "ChatInput"
    },
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
@@ -693,7 +693,7 @@ Notebook[
    StyleKeyMapping -> {
     " " -> "Text",
     "*" -> "Item",
-    "/" -> "ChatContextDivider",
+    "'" -> "ChatContextDivider",
     "Backspace" -> "ChatQuery"
    },
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
@@ -778,7 +778,7 @@ Notebook[
    CellMargins -> {{66, 25}, {Inherited, Inherited}},
    StyleKeyMapping -> {
     "~" -> "ChatDelimiter",
-    "/" -> "ChatInput",
+    "'" -> "ChatInput",
     "=" -> "WolframAlphaShort",
     "*" -> "Item",
     ">" -> "ExternalLanguageDefault"
@@ -876,7 +876,7 @@ Notebook[
    StyleData["Input"],
    StyleKeyMapping -> {
     "~" -> "ChatDelimiter",
-    "/" -> "ChatInput",
+    "'" -> "ChatInput",
     "=" -> "WolframAlphaShort",
     "*" -> "Item",
     ">" -> "ExternalLanguageDefault"
