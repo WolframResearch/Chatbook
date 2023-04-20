@@ -67,7 +67,7 @@ Cell[
     StyleData[ "FramedChatCell", StyleDefinitions -> StyleData[ "Text" ] ],
     AutoQuoteCharacters      -> { },
     CellFrame                -> 2,
-    CellFrameColor           -> GrayLevel[ 0.92941 ],
+    CellFrameColor           -> RGBColor[ "#ecf0f5" ],
     CellFrameMargins         -> { { 12, 25 }, { 8, 8 } },
     PasteAutoQuoteCharacters -> { },
     ShowCellLabel            -> False
@@ -80,12 +80,12 @@ Cell[
     StyleData[ "ChatInput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
     MenuSortingValue  -> 1000,
     CellGroupingRules -> "InputGrouping",
-    CellFrameColor    -> RGBColor[ "#cfd9e9" ],
+    CellFrameColor    -> RGBColor[ "#a3c9f2" ],
     CellMargins       -> { { 66, 25 }, { 5, 8 } },
     CellDingbat       -> Cell[ BoxData @ TemplateBox[ { }, "ChatUserIcon" ], Background -> None ],
     StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "ChatQuery", "Backspace" -> "Input" },
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
-    menuInitializer[ "ChatInput", RGBColor[ "#cfd9e9" ] ]
+    menuInitializer[ "ChatInput", RGBColor[ "#d1d9ea" ] ]
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -95,10 +95,10 @@ Cell[
     StyleData[ "ChatQuery", StyleDefinitions -> StyleData[ "ChatInput" ] ],
     MenuSortingValue -> 1000,
     StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "'" -> "ChatSystemInput", "Backspace" -> "ChatInput" },
-    CellFrameColor   -> RGBColor[ "#d3deae" ],
+    CellFrameColor   -> RGBColor[ "#a3c9f2" ],
     CellDingbat      -> Cell[ BoxData @ TemplateBox[ { }, "ChatQueryIcon" ], Background -> None ],
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
-    menuInitializer[ "ChatInput", RGBColor[ "#d3deae" ] ]
+    menuInitializer[ "ChatInput", RGBColor[ "#d1d9ea" ] ]
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -109,11 +109,11 @@ Cell[
     MenuSortingValue -> 1000,
     CellFrame        -> 1,
     StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "'" -> "ChatContextDivider", "Backspace" -> "ChatQuery" },
-    CellFrameColor   -> RGBColor[ "#b38794" ],
+    CellFrameColor   -> RGBColor[ "#a3c9f2" ],
     CellFrameStyle   -> Dashing @ { Small, Small },
     CellDingbat      -> Cell[ BoxData @ TemplateBox[ { }, "ChatSystemIcon" ], Background -> None ],
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
-    menuInitializer[ "ChatInput", RGBColor[ "#b38794" ] ]
+    menuInitializer[ "ChatInput", RGBColor[ "#d1d9ea" ] ]
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -121,7 +121,7 @@ Cell[
 (*ChatOutput*)
 Cell[
     StyleData[ "ChatOutput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
-    Background          -> GrayLevel[ 0.97647 ],
+    Background          -> RGBColor[ "#fcfdff" ],
     CellAutoOverwrite   -> True,
     CellDingbat         -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIcon" ], Background -> None ],
     CellElementSpacings -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
@@ -131,7 +131,7 @@ Cell[
     LineSpacing         -> { 1.1, 0, 2 },
     ShowAutoSpellCheck  -> False,
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
-    menuInitializer[ "ChatOutput", GrayLevel[ 0.898039 ] ]
+    menuInitializer[ "ChatOutput", RGBColor[ "#ecf0f5" ] ]
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -503,7 +503,7 @@ Cell[
 Cell[
     StyleData[ "AssistantIconActive" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "AssistantIcon" ] (* TODO: get active icon *)
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "AssistantIconActive" ]
     }
 ]
 
