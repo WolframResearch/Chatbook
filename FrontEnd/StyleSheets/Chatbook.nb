@@ -1376,9 +1376,7 @@ Notebook[
         },
         "Highlighted"
        ],
-       ButtonFunction :>
-        (ReleaseHold[#3];
-        NotebookDelete[EvaluationCell[]]),
+       ButtonFunction :> ReleaseHold[#3],
        Appearance ->
         Dynamic[
          FEPrivate`FrontEndResource[
@@ -1408,17 +1406,17 @@ Notebook[
               {
                TemplateBox[{"IconizeIcon"}, "ChatMenuItemToolbarIcon"],
                "\"Regenerate\"",
-               Hold[MessageDialog["Not Implemented"]]
-              },
-              "ChatMenuItem"
-             ]
-            },
-            {
-             TemplateBox[
-              {
-               TemplateBox[{"DrawIcon"}, "ChatMenuItemToolbarIcon"],
-               "\"Edit\"",
-               Hold[MessageDialog["Not Implemented"]]
+               Hold[
+                With[ { cell$ = EvaluationCell[] },
+                 {root$ = ParentCell[cell$]},
+                 NotebookDelete[cell$];
+                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                 Symbol["Wolfram`Chatbook`ChatbookAction"][
+                  "Regenerate",
+                  root$
+                 ]
+                ]
+               ]
               },
               "ChatMenuItem"
              ]
@@ -1429,7 +1427,17 @@ Notebook[
               {
                TemplateBox[{"DivideCellsIcon"}, "ChatMenuItemToolbarIcon"],
                "\"Explode Cells (In Place)\"",
-               Hold[MessageDialog["Not Implemented"]]
+               Hold[
+                With[ { cell$ = EvaluationCell[] },
+                 {root$ = ParentCell[cell$]},
+                 NotebookDelete[cell$];
+                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                 Symbol["Wolfram`Chatbook`ChatbookAction"][
+                  "ExplodeInPlace",
+                  root$
+                 ]
+                ]
+               ]
               },
               "ChatMenuItem"
              ]
@@ -1439,7 +1447,17 @@ Notebook[
               {
                TemplateBox[{"OverflowIcon"}, "ChatMenuItemToolbarIcon"],
                "\"Explode Cells (Duplicate)\"",
-               Hold[MessageDialog["Not Implemented"]]
+               Hold[
+                With[ { cell$ = EvaluationCell[] },
+                 {root$ = ParentCell[cell$]},
+                 NotebookDelete[cell$];
+                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                 Symbol["Wolfram`Chatbook`ChatbookAction"][
+                  "ExplodeDuplicate",
+                  root$
+                 ]
+                ]
+               ]
               },
               "ChatMenuItem"
              ]
@@ -1452,7 +1470,17 @@ Notebook[
                 "ChatMenuItemToolbarIcon"
                ],
                "\"Copy Exploded Cells\"",
-               Hold[MessageDialog["Not Implemented"]]
+               Hold[
+                With[ { cell$ = EvaluationCell[] },
+                 {root$ = ParentCell[cell$]},
+                 NotebookDelete[cell$];
+                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                 Symbol["Wolfram`Chatbook`ChatbookAction"][
+                  "CopyExplodedCells",
+                  root$
+                 ]
+                ]
+               ]
               },
               "ChatMenuItem"
              ]
@@ -1463,7 +1491,17 @@ Notebook[
               {
                TemplateBox[{"TypesettingIcon"}, "ChatMenuItemToolbarIcon"],
                "\"Toggle Formatting\"",
-               Hold[MessageDialog["Not Implemented"]]
+               Hold[
+                With[ { cell$ = EvaluationCell[] },
+                 {root$ = ParentCell[cell$]},
+                 NotebookDelete[cell$];
+                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                 Symbol["Wolfram`Chatbook`ChatbookAction"][
+                  "ToggleFormatting",
+                  root$
+                 ]
+                ]
+               ]
               },
               "ChatMenuItem"
              ]
@@ -1472,8 +1510,18 @@ Notebook[
              TemplateBox[
               {
                TemplateBox[{"InPlaceIcon"}, "ChatMenuItemToolbarIcon"],
-               "\"View Raw Messages\"",
-               Hold[MessageDialog["Not Implemented"]]
+               "\"Copy ChatObject\"",
+               Hold[
+                With[ { cell$ = EvaluationCell[] },
+                 {root$ = ParentCell[cell$]},
+                 NotebookDelete[cell$];
+                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                 Symbol["Wolfram`Chatbook`ChatbookAction"][
+                  "CopyChatObject",
+                  root$
+                 ]
+                ]
+               ]
               },
               "ChatMenuItem"
              ]
@@ -1483,7 +1531,17 @@ Notebook[
               {
                TemplateBox[{"GroupCellsIcon"}, "ChatMenuItemToolbarIcon"],
                "\"Lock Response\"",
-               Hold[MessageDialog["Not Implemented"]]
+               Hold[
+                With[ { cell$ = EvaluationCell[] },
+                 {root$ = ParentCell[cell$]},
+                 NotebookDelete[cell$];
+                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                 Symbol["Wolfram`Chatbook`ChatbookAction"][
+                  "LockResponse",
+                  root$
+                 ]
+                ]
+               ]
               },
               "ChatMenuItem"
              ]
@@ -1493,7 +1551,17 @@ Notebook[
               {
                TemplateBox[{"AbortAllIcon"}, "ChatMenuItemToolbarIcon"],
                "\"Disable AI Assistant\"",
-               Hold[MessageDialog["Not Implemented"]]
+               Hold[
+                With[ { cell$ = EvaluationCell[] },
+                 {root$ = ParentCell[cell$]},
+                 NotebookDelete[cell$];
+                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                 Symbol["Wolfram`Chatbook`ChatbookAction"][
+                  "DisableAIAssistant",
+                  root$
+                 ]
+                ]
+               ]
               },
               "ChatMenuItem"
              ]
