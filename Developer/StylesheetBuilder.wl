@@ -114,53 +114,17 @@ menuInitializer[ name_String, color_ ] :=
 (*$chatOutputMenu*)
 $chatOutputMenu := $chatOutputMenu = ToBoxes @ makeMenu[
     {
-        {
-            RawBoxes @ TemplateBox[ { "IconizeIcon" }, "ChatMenuItemToolbarIcon" ],
-            "Regenerate",
-            Hold @ MessageDialog[ "Not Implemented" ]
-        },
-        {
-            RawBoxes @ TemplateBox[ { "DrawIcon" }, "ChatMenuItemToolbarIcon" ],
-            "Edit",
-            Hold @ MessageDialog[ "Not Implemented" ]
-        },
-        { Delimiter },
-        {
-            RawBoxes @ TemplateBox[ { "DivideCellsIcon" }, "ChatMenuItemToolbarIcon" ],
-            "Explode Cells (In Place)",
-            Hold @ MessageDialog[ "Not Implemented" ]
-        },
-        {
-            RawBoxes @ TemplateBox[ { "OverflowIcon" }, "ChatMenuItemToolbarIcon" ],
-            "Explode Cells (Duplicate)",
-            Hold @ MessageDialog[ "Not Implemented" ]
-        },
-        {
-            RawBoxes @ TemplateBox[ { "HyperlinkCopyIcon" }, "ChatMenuItemToolbarIcon" ],
-            "Copy Exploded Cells",
-            Hold @ MessageDialog[ "Not Implemented" ]
-        },
-        { Delimiter },
-        {
-            RawBoxes @ TemplateBox[ { "TypesettingIcon" }, "ChatMenuItemToolbarIcon" ],
-            "Toggle Formatting",
-            Hold @ MessageDialog[ "Not Implemented" ]
-        },
-        {
-            RawBoxes @ TemplateBox[ { "InPlaceIcon" }, "ChatMenuItemToolbarIcon" ],
-            "View Raw Messages",
-            Hold @ MessageDialog[ "Not Implemented" ]
-        },
-        {
-            RawBoxes @ TemplateBox[ { "GroupCellsIcon" }, "ChatMenuItemToolbarIcon" ],
-            "Lock Response",
-            Hold @ MessageDialog[ "Not Implemented" ]
-        },
-        {
-            RawBoxes @ TemplateBox[ { "AbortAllIcon" }, "ChatMenuItemToolbarIcon" ],
-            "Disable AI Assistant",
-            Hold @ MessageDialog[ "Not Implemented" ]
-        }
+        (* Icon              , Label                      , ActionName          *)
+        { "IconizeIcon"      , "Regenerate"               , "Regenerate"         },
+        Delimiter,
+        { "DivideCellsIcon"  , "Explode Cells (In Place)" , "ExplodeInPlace"     },
+        { "OverflowIcon"     , "Explode Cells (Duplicate)", "ExplodeDuplicate"   },
+        { "HyperlinkCopyIcon", "Copy Exploded Cells"      , "CopyExplodedCells"  },
+        Delimiter,
+        { "TypesettingIcon"  , "Toggle Formatting"        , "ToggleFormatting"   },
+        { "InPlaceIcon"      , "Copy ChatObject"          , "CopyChatObject"     },
+        { "GroupCellsIcon"   , "Lock Response"            , "LockResponse"       },
+        { "AbortAllIcon"     , "Disable AI Assistant"     , "DisableAIAssistant" }
     },
     GrayLevel[ 0.85 ],
     250
@@ -171,7 +135,7 @@ makeMenu[ items_, frameColor_, width_ ] :=
     Pane[
         RawBoxes @ TemplateBox[
             {
-                ToBoxes @ Column[ menuItem @@@ items, ItemSize -> { Full, 0 }, Spacings -> 0, Alignment -> Left ],
+                ToBoxes @ Column[ menuItem /@ items, ItemSize -> { Full, 0 }, Spacings -> 0, Alignment -> Left ],
                 FrameMargins   -> 3,
                 Background     -> GrayLevel[ 1 ],
                 RoundingRadius -> 3,
@@ -184,8 +148,36 @@ makeMenu[ items_, frameColor_, width_ ] :=
     ];
 
 
+menuItem[ { args__ } ] := menuItem @ args;
+
 menuItem[ Delimiter ] := RawBoxes @ TemplateBox[ { }, "ChatMenuItemDelimiter" ];
-menuItem[ icon_, label_, code_ ] := RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label, code }, "ChatMenuItem" ];
+
+menuItem[ name_String, label_, code_ ] :=
+    With[ { icon = $icons[ name ] },
+        If[ MissingQ @ icon,
+            menuItem[ RawBoxes @ TemplateBox[ { name }, "ChatMenuItemToolbarIcon" ], label, code ],
+            menuItem[ icon, label, code ]
+        ]
+    ];
+
+menuItem[ icon_, label_, action_String ] :=
+    menuItem[
+        icon,
+        label,
+        Hold @ With[
+            { $CellContext`cell = EvaluationCell[ ] },
+            { $CellContext`root = ParentCell @ $CellContext`cell },
+            NotebookDelete @ $CellContext`cell;
+            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ action, $CellContext`root ]
+        ]
+    ];
+
+menuItem[ icon_, label_, None ] :=
+    menuItem[ icon, label, Hold[ NotebookDelete @ EvaluationCell[ ]; MessageDialog[ "Not Implemented" ] ] ];
+
+menuItem[ icon_, label_, code_ ] :=
+    RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label, code }, "ChatMenuItem" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

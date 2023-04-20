@@ -465,7 +465,7 @@ Cell[
                 },
                 "Highlighted"
             ],
-            ButtonFunction :> (ReleaseHold @ #3; NotebookDelete @ EvaluationCell[ ]),
+            ButtonFunction :> ReleaseHold @ #3,
             Appearance     -> $suppressButtonAppearance,
             Method         -> "Queued",
             Evaluator      -> Automatic
