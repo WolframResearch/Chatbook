@@ -22,7 +22,6 @@ PacletObject[<|
 				{"AIAssistant", "AIAssistant"}
 			}
 		},
-		{"FrontEnd"},
-		{"Documentation", "Language" -> "English"}
+		{"FrontEnd"}
 	}
 |>]

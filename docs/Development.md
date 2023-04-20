@@ -20,7 +20,7 @@ To quickly prototype changes to the stylesheet, the symbol `$ChatbookStylesheet`
 is defined as a convenience, and can be used as in:
 
 ```
-Get["LLMTools/Developer/StylesheetBuilder.wl"];
+Get["Chatbook/Developer/StylesheetBuilder.wl"];
 
 NotebookPut[
     Notebook[{Cell["", "ChatInput"]}, StyleDefinitions -> $ChatbookStylesheet]

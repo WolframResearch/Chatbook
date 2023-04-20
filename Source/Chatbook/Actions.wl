@@ -380,7 +380,7 @@ setChatSectionSettings // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*$chatContextDialogCells*)
 $chatContextDialogCells := $chatContextDialogCells = Get @ FileNameJoin @ {
-    PacletObject[ "Wolfram/LLMTools" ][ "AssetLocation", "AIAssistant" ],
+    PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "AIAssistant" ],
     "ChatContextDialogCells.wl"
 };
 
@@ -388,7 +388,7 @@ $chatContextDialogCells := $chatContextDialogCells = Get @ FileNameJoin @ {
 (* ::Subsubsection::Closed:: *)
 (*$chatContextDialogTemplateCells*)
 $chatContextDialogTemplateCells := $chatContextDialogTemplateCells = Get @ FileNameJoin @ {
-    PacletObject[ "Wolfram/LLMTools" ][ "AssetLocation", "AIAssistant" ],
+    PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "AIAssistant" ],
     "ChatContextDialogCellsTemplate.wl"
 };
 
@@ -396,7 +396,7 @@ $chatContextDialogTemplateCells := $chatContextDialogTemplateCells = Get @ FileN
 (* ::Subsubsection::Closed:: *)
 (*$chatContextDialogStyles*)
 $chatContextDialogStyles := $chatContextDialogStyles = Get @ FileNameJoin @ {
-    PacletObject[ "Wolfram/LLMTools" ][ "AssetLocation", "AIAssistant" ],
+    PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "AIAssistant" ],
     "ChatContextDialogStyles.wl"
 };
 
@@ -1412,7 +1412,7 @@ showAPIKeyDialog // endDefinition;
 
 
 $apiKeyDialogDescription := $apiKeyDialogDescription = Get @ FileNameJoin @ {
-    PacletObject[ "Wolfram/LLMTools" ][ "AssetLocation", "AIAssistant" ],
+    PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "AIAssistant" ],
     "APIKeyDialogDescription.wl"
 };
 
@@ -1421,7 +1421,7 @@ $apiKeyDialogDescription := $apiKeyDialogDescription = Get @ FileNameJoin @ {
 (*Prompts*)
 
 $promptDirectory := $promptDirectory = FileNameJoin @ {
-    PacletObject[ "Wolfram/LLMTools" ][ "AssetLocation", "AIAssistant" ],
+    PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "AIAssistant" ],
     "Prompts"
 };
 
@@ -2464,7 +2464,7 @@ $bugReportLink := Hyperlink[
     URLBuild @ <|
         "Scheme"   -> "https",
         "Domain"   -> "github.com",
-        "Path"     -> { "ConnorGray", "LLMTools", "issues", "new" },
+        "Path"     -> { "ConnorGray", "Chatbook", "issues", "new" },
         "Query"    -> {
             "title"  -> "[Chatbook] Insert Title Here",
             "body"   -> bugReportBody[ ],
@@ -2473,7 +2473,7 @@ $bugReportLink := Hyperlink[
     |>
 ];
 
-bugReportBody[ ] := bugReportBody @ PacletObject[ "Wolfram/LLMTools" ][ "PacletInfo" ];
+bugReportBody[ ] := bugReportBody @ PacletObject[ "Wolfram/Chatbook" ][ "PacletInfo" ];
 
 bugReportBody[ as_Association? AssociationQ ] := TemplateApply[
     $bugReportBodyTemplate,
