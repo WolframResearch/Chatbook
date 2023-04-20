@@ -83,7 +83,7 @@ Cell[
     CellFrameColor    -> RGBColor[ "#cfd9e9" ],
     CellMargins       -> { { 66, 25 }, { 5, 8 } },
     CellDingbat       -> Cell[ BoxData @ TemplateBox[ { }, "ChatUserIcon" ], Background -> None ],
-    StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "/" -> "ChatQuery", "Backspace" -> "Input" },
+    StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "ChatQuery", "Backspace" -> "Input" },
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     menuInitializer[ "ChatInput", RGBColor[ "#cfd9e9" ] ]
 ]
@@ -94,7 +94,7 @@ Cell[
 Cell[
     StyleData[ "ChatQuery", StyleDefinitions -> StyleData[ "ChatInput" ] ],
     MenuSortingValue -> 1000,
-    StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "/" -> "ChatSystemInput", "Backspace" -> "ChatInput" },
+    StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "'" -> "ChatSystemInput", "Backspace" -> "ChatInput" },
     CellFrameColor   -> RGBColor[ "#d3deae" ],
     CellDingbat      -> Cell[ BoxData @ TemplateBox[ { }, "ChatQueryIcon" ], Background -> None ],
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
@@ -108,7 +108,7 @@ Cell[
     StyleData[ "ChatSystemInput", StyleDefinitions -> StyleData[ "ChatInput" ] ],
     MenuSortingValue -> 1000,
     CellFrame        -> 1,
-    StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "/" -> "ChatContextDivider", "Backspace" -> "ChatQuery" },
+    StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "'" -> "ChatContextDivider", "Backspace" -> "ChatQuery" },
     CellFrameColor   -> RGBColor[ "#b38794" ],
     CellFrameStyle   -> Dashing @ { Small, Small },
     CellDingbat      -> Cell[ BoxData @ TemplateBox[ { }, "ChatSystemIcon" ], Background -> None ],
@@ -151,7 +151,7 @@ Cell[
 
     StyleKeyMapping -> {
         "~" -> "ChatDelimiter",
-        "/" -> "ChatInput",
+        "'" -> "ChatInput",
         "=" -> "WolframAlphaShort",
         "*" -> "Item",
         ">" -> "ExternalLanguageDefault"
@@ -220,7 +220,7 @@ Cell[
     StyleData[ "Input" ],
     StyleKeyMapping -> {
         "~" -> "ChatDelimiter",
-        "/" -> "ChatInput",
+        "'" -> "ChatInput",
         "=" -> "WolframAlphaShort",
         "*" -> "Item",
         ">" -> "ExternalLanguageDefault"
