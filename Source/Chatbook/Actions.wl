@@ -319,16 +319,14 @@ createChatContextDialog[ cell_CellObject ] :=
         ];
         postFuncCell = Cell[ BoxData @ ToBoxes @ postFunc, "Input", CellID -> 3, CellTags -> { "NonDefault" } ];
 
-        cells = Append[
-            TemplateApply[
-                $chatContextDialogTemplateCells,
-                DeleteMissing @ <|
-                    "ChatContextPreprompt"              -> textCell,
-                    "ChatContextCellProcessingFunction" -> cellFuncCell,
-                    "ChatContextPostEvaluationFunction" -> postFuncCell
-                |>
-            ],
-            chatContextDialogButtons @ cell
+        cells = TemplateApply[
+            $chatContextDialogTemplateCells,
+            DeleteMissing @ <|
+                "ChatContextPreprompt"              -> textCell,
+                "ChatContextCellProcessingFunction" -> cellFuncCell,
+                "ChatContextPostEvaluationFunction" -> postFuncCell,
+                "DialogButtons"                     -> chatContextDialogButtons @ cell
+            |>
         ];
 
         nbo = NotebookPut @ Notebook[
@@ -349,10 +347,10 @@ createChatContextDialog // endDefinition;
 chatContextDialogButtons // beginDefinition;
 
 chatContextDialogButtons[ cell_CellObject ] := Cell[
-    BoxData @ ToBoxes @ ChoiceButtons @ {
+    BoxData @ $chatContextDialogButtons[
         DialogReturn @ setChatSectionSettings[ cell, scrapeChatContextDialog @ EvaluationNotebook[ ] ],
         DialogReturn @ $Canceled
-    },
+    ],
     "DialogButtons"
 ];
 
@@ -378,10 +376,10 @@ setChatSectionSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*$chatContextDialogCells*)
-$chatContextDialogCells := $chatContextDialogCells = Get @ FileNameJoin @ {
+(*$chatContextDialogButtons*)
+$chatContextDialogButtons := $chatContextDialogButtons = Get @ FileNameJoin @ {
     PacletObject[ "Wolfram/LLMTools" ][ "AssetLocation", "AIAssistant" ],
-    "ChatContextDialogCells.wl"
+    "ChatContextDialogButtons.wl"
 };
 
 (* ::**************************************************************************************************************:: *)
