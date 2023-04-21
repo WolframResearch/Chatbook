@@ -3,18 +3,18 @@
 This repository contains *Chatbook*, a paclet adding support for ChatGPT-powered
 notebooks to Wolfram.
 
-**Latest Release:** v0.0.7, released 2023-03-21 1:34pm CT.
+**Latest Release:** v0.0.9, released 2023-04-20.
 
 ## Getting Started
 
 To start using Chatbook, install this paclet by evaluating:
 
 ```
-PacletInstall[ResourceObject["https://wolfr.am/1c2WoIEpe"]]
+PacletInstall[ResourceObject["Wolfram/Chatbook"]]
 ```
 
 which will install the
-[Wolfram/Chatbook](https://www.wolframcloud.com/obj/connorg/DeployedResources/Paclet/Wolfram/Chatbook/)
+[Wolfram/Chatbook](https://paclets.com/Wolfram/Chatbook/)
 paclet resource.
 
 Once installed, start using Chatbook by first creating an empty notebook,
@@ -25,7 +25,7 @@ Create new chat input cells by either:
 
 * Selecting the `Format > Style > ChatUserInput` menu item.
 
-* Typing '/' when the cursor is in-between cells, or as the first character in
+* Typing `'` when the cursor is in-between cells, or as the first character in
   an Input cell.
 
 ### Configuration
