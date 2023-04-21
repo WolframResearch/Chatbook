@@ -10,6 +10,7 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 `ExclusionToggle;
 `OpenChatMenu;
 `SendChat;
+`StopChat;
 `WidgetSend;
 
 Begin[ "`Private`" ];
@@ -153,9 +154,45 @@ ChatbookAction[ "CopyChatObject"   , args___ ] := catchTop @ CopyChatObject @ ar
 ChatbookAction[ "ExclusionToggle"  , args___ ] := catchTop @ ExclusionToggle @ args;
 ChatbookAction[ "OpenChatMenu"     , args___ ] := catchTop @ OpenChatMenu @ args;
 ChatbookAction[ "Send"             , args___ ] := catchTop @ SendChat @ args;
+ChatbookAction[ "StopChat"         , args___ ] := catchTop @ StopChat @ args;
 ChatbookAction[ "WidgetSend"       , args___ ] := catchTop @ WidgetSend @ args;
 ChatbookAction[ name_String        , args___ ] := catchTop @ throwFailure[ ChatbookAction::NotImplemented, name, args ];
 ChatbookAction[ args___                      ] := catchTop @ throwInternalFailure @ HoldForm @ ChatbookAction @ args;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*StopChat*)
+StopChat // beginDefinition;
+
+StopChat[ cell_CellObject ] := Enclose[
+    Module[ { settings, container },
+
+        settings = ConfirmBy[
+            Association @ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ],
+            AssociationQ,
+            "ChatNotebookSettings"
+        ];
+
+        removeTask @ Lookup[ settings, "Task" ];
+
+        container = ConfirmBy[ Lookup[ settings, "Container" ], StringQ, "Container" ];
+
+        writeReformattedCell[ settings, container, cell ];
+
+        Quiet @ NotebookDelete @ cell;
+    ],
+    throwInternalFailure[ StopChat @ cell, ## ] &
+];
+
+StopChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*removeTask*)
+removeTask // beginDefinition;
+removeTask[ task_TaskObject ] := Quiet[ TaskRemove @ task, TaskRemove::timnf ];
+removeTask[ _Symbol ] := Null; (* undefined Module symbol -- task hasn't been created yet *)
+removeTask // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -635,7 +672,11 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTop @ Enclose[
         AppendTo[ settings, "Data" -> data ];
 
         container = ProgressIndicator[ Appearance -> "Percolate" ];
-        cell = activeAIAssistantCell[ container, settings ];
+
+        cell = activeAIAssistantCell[
+            container,
+            Association[ settings, "Task" :> task, "Container" :> container ]
+        ];
 
         Quiet[
             TaskRemove @ $lastTask;
@@ -768,7 +809,8 @@ activeAIAssistantCell[ container_, settings_ ] /; CloudSystem`$CloudNotebooks :=
     Cell[
         BoxData @ ToBoxes @ ProgressIndicator[ Appearance -> "Percolate" ],
         "ChatOutput",
-        CellDingbat -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIconActive" ], Background -> None ]
+        CellDingbat  -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIconActive" ], Background -> None ],
+        TaggingRules -> <| "ChatNotebookSettings" -> settings |>
     ]
 );
 
@@ -807,9 +849,10 @@ activeAIAssistantCell[ container_, settings_, minimized_ ] :=
                 } ],
                 Sequence @@ { }
             ],
-            Selectable  -> False,
-            Editable    -> False,
-            CellDingbat -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIconActive" ], Background -> None ]
+            Selectable   -> False,
+            Editable     -> False,
+            CellDingbat  -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIconActive" ], Background -> None ],
+            TaggingRules -> <| "ChatNotebookSettings" -> settings |>
         ]
     ];
 
