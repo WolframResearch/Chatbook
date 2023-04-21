@@ -1637,8 +1637,18 @@ getModelList[ hash_, KeyValuePattern[ "data" -> data_ ] ] :=
 getModelList[ hash_, models: { KeyValuePattern[ "id" -> _String ].. } ] :=
     getModelList[ _String, hash ] = Cases[ models, KeyValuePattern[ "id" -> id_String ] :> id ];
 
-getModelList[ hash_, KeyValuePattern[ "error" -> as: KeyValuePattern[ "message" -> message_ ] ] ] :=
-    throwFailure[ ChatbookAction::BadResponseMessage, message, as ];
+getModelList[ hash_, KeyValuePattern[ "error" -> as: KeyValuePattern[ "message" -> message_String ] ] ] :=
+    Module[ { newKey, newHash },
+        If[ StringStartsQ[ message, "Incorrect API key" ] && Hash @ systemCredential[ "OPENAI_API_KEY" ] === hash,
+            newKey = apiKeyDialog[ ];
+            newHash = Hash @ newKey;
+            If[ StringQ @ newKey && newHash =!= hash,
+                getModelList[ newKey, newHash ],
+                throwFailure[ ChatbookAction::BadResponseMessage, message, as ]
+            ],
+            throwFailure[ ChatbookAction::BadResponseMessage, message, as ]
+        ]
+    ];
 
 getModelList // endDefinition;
 
@@ -2558,7 +2568,9 @@ throwInternalFailure // beginDefinition;
 throwInternalFailure // Attributes = { HoldFirst };
 
 throwInternalFailure[ eval_, a___ ] :=
-    throwFailure[ ChatbookAction::Internal, $bugReportLink, HoldForm @ eval, a ];
+    Block[ { $internalFailure = HoldForm @ eval },
+        throwFailure[ ChatbookAction::Internal, $bugReportLink, $internalFailure, a ]
+    ];
 
 throwInternalFailure // endDefinition;
 
@@ -2591,9 +2603,13 @@ bugReportBody[ as_Association? AssociationQ ] := TemplateApply[
         "Notebooks"             -> $Notebooks,
         "EvaluationEnvironment" -> $EvaluationEnvironment,
         "Stack"                 -> $bugReportStack,
-        "Settings"              -> $settings
+        "Settings"              -> $settings,
+        "InternalFailure"       -> internalFailureString @ $internalFailure
     ]
 ];
+
+internalFailureString[ HoldForm[ fail_ ] ] := internalFailureString @ Unevaluated @ fail;
+internalFailureString[ fail_ ] := StringTake[ ToString[ Unevaluated @ fail, InputForm ], UpTo[ 200 ] ];
 
 
 $frontEndVersion :=
@@ -2637,7 +2653,13 @@ Describe the issue in detail here.
 ## Stack Data
 ```
 %%Stack%%
-```",
+```
+
+## Failure Expression
+```
+%%InternalFailure%%
+```
+",
 Delimiters -> "%%"
 ];
 
@@ -2646,9 +2668,8 @@ $bugReportStack := StringRiffle[
     Replace[
         DeleteAdjacentDuplicates @ Cases[
             Stack[ _ ],
-            HoldForm[ (s_Symbol) | (s_Symbol)[ ___ ] | (s_Symbol)[ ___ ][ ___ ] ] /;
-                AtomQ @ Unevaluated @ s && StringStartsQ[ Context @ s, "Wolfram`Chatbook`" ] :>
-                    SymbolName @ Unevaluated @ s
+            HoldForm[ (s_Symbol) | (s_Symbol)[ ___ ] | (s_Symbol)[ ___ ][ ___ ] ] /; AtomQ @ Unevaluated @ s :>
+                SymbolName @ Unevaluated @ s
         ],
         { a___, "throwInternalFailure", ___ } :> { a, "throwInternalFailure" }
     ],
