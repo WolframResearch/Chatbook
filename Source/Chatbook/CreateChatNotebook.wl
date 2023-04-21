@@ -97,5 +97,9 @@ $inlinedStylesheet := $inlinedStylesheet = Import[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
+If[ Wolfram`Chatbook`Internal`$BuildingMX,
+    $inlinedStylesheet;
+];
+
 End[ ];
 EndPackage[ ];
