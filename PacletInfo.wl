@@ -4,6 +4,7 @@ PacletObject[<|
 	"Version" -> "0.0.9",
 	"WolframVersion" -> "13.2",
 	"Description" -> "Wolfram tools for interacting with LLMs",
+	"License" -> "MIT",
 	"Creator" -> {
 		"Connor Gray", "Theodore Gray", "Richard Hennigan"
 	},
