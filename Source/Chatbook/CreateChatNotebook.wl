@@ -75,8 +75,23 @@ makeChatNotebookSettings[ as_Association? AssociationQ, opts: OptionsPattern[ Cr
 makeChatNotebookOptions // SetFallthroughError;
 
 makeChatNotebookOptions[ settings_Association ] := Sequence[
-    StyleDefinitions -> "Chatbook.nb",
+    StyleDefinitions -> $chatbookStylesheet,
     TaggingRules     -> <| "ChatNotebookSettings" -> settings |>
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$chatbookStylesheet*)
+$chatbookStylesheet := If[ TrueQ @ CloudSystem`$CloudNotebooks, $inlinedStylesheet, "Chatbook.nb" ];
+
+$inlinedStylesheet := $inlinedStylesheet = Import[
+    FileNameJoin @ {
+        PacletObject[ "Wolfram/Chatbook" ][ "Location" ],
+        "FrontEnd",
+        "StyleSheets",
+        "Chatbook.nb"
+    },
+    "NB"
 ];
 
 (* ::**************************************************************************************************************:: *)
