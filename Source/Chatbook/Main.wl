@@ -13,6 +13,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$DefaultChatSystemPre;
 `ChatbookAction;
 `CreateChatNotebook;
+`Internal`$BuildingMX;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
