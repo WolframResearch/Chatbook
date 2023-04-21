@@ -1380,7 +1380,7 @@ toAPIKey[ Automatic ] := toAPIKey[ Automatic, None ];
 
 toAPIKey[ Automatic, id_ ] := checkAPIKey @ FirstCase[
     Unevaluated @ {
-        SystemCredential[ "OPENAI_API_KEY" ],
+        systemCredential[ "OPENAI_API_KEY" ],
         Environment[ "OPENAI_API_KEY" ],
         apiKeyDialog[ ]
     },
@@ -1391,6 +1391,71 @@ toAPIKey[ Automatic, id_ ] := checkAPIKey @ FirstCase[
 toAPIKey[ other___ ] := throwFailure[ "InvalidAPIKey", other ];
 
 toAPIKey // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*systemCredential*)
+systemCredential // beginDefinition;
+systemCredential[ name_String ] /; $CloudEvaluation := cloudSystemCredential @ name;
+systemCredential[ name_String ] := SystemCredential @ name;
+systemCredential // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*cloudSystemCredential*)
+
+cloudSystemCredential // beginDefinition;
+
+cloudSystemCredential[ name_ ] :=
+    With[ { credential = SystemCredential @ name },
+        credential /; StringQ @ credential
+    ];
+
+(* Workaround for CLOUD-22865 *)
+cloudSystemCredential[ name_ ] :=
+    Block[ { $SystemCredentialStore = $cloudCredentialStore },
+        SystemCredential @ name
+    ];
+
+cloudSystemCredential // endDefinition;
+
+$cloudCredentialStore := SystemCredentialStoreObject @ <|
+    "Backend" -> "EncryptedFile",
+    "Keyring" -> "Chatbook-"<>$MachineName
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*setSystemCredential*)
+setSystemCredential // beginDefinition;
+setSystemCredential[ name_, value_ ] /; $CloudEvaluation := setCloudSystemCredential[ name, value ];
+setSystemCredential[ name_, value_ ] := (SystemCredential[ name ] = value);
+setSystemCredential // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*setCloudSystemCredential*)
+setCloudSystemCredential // beginDefinition;
+
+setCloudSystemCredential[ name_, value_ ] := Quiet[
+    Check[ SystemCredential[ name ] = value,
+           setCloudSystemCredential0[ name, value ],
+           SystemCredential::nset
+    ],
+    SystemCredential::nset
+];
+
+setCloudSystemCredential // endDefinition;
+
+
+setCloudSystemCredential0 // beginDefinition;
+
+setCloudSystemCredential0[ name_, value_ ] :=
+    Block[ { $SystemCredentialStore = $cloudCredentialStore },
+        SystemCredential[ name ] = value
+    ];
+
+setCloudSystemCredential0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1409,7 +1474,7 @@ apiKeyDialog[ ] :=
         result = ConfirmBy[ showAPIKeyDialog[ ], AssociationQ ];
         key    = ConfirmBy[ result[ "APIKey" ], StringQ ];
 
-        If[ result[ "Save" ], SystemCredential[ "OPENAI_API_KEY" ] = key ];
+        If[ result[ "Save" ], setSystemCredential[ "OPENAI_API_KEY", key ] ];
 
         key
     ];
