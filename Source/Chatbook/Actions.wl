@@ -268,7 +268,7 @@ chatInputMenu[ cell_CellObject ] := Pane[
                                 cell,
                                 { TaggingRules, "ChatNotebookSettings", "Temperature" }
                             ],
-                            { 0, 1 },
+                            { 0, 2 },
                             ImageSize  -> { 100, Automatic },
                             Appearance -> "Labeled"
                         ]
@@ -1461,7 +1461,7 @@ $apiKeyDialogDescription := $apiKeyDialogDescription = Get @ FileNameJoin @ {
 (* ::Section::Closed:: *)
 (*Prompts*)
 
-$promptDirectory := $promptDirectory = FileNameJoin @ {
+$promptDirectory := FileNameJoin @ {
     PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "AIAssistant" ],
     "Prompts"
 };
@@ -2593,5 +2593,17 @@ $bugReportStack := StringRiffle[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
+If[ Wolfram`Chatbook`Internal`$BuildingMX,
+    $chatContextDialogButtons;
+    $chatContextDialogTemplateCells;
+    $chatContextDialogStyles;
+    $apiKeyDialogDescription;
+    $promptStrings;
+    $copyToClipboardButtonLabel;
+    $insertInputButtonLabel;
+    $insertEvaluateButtonLabel;
+    $languageIcons;
+];
+
 End[ ];
 EndPackage[ ];
