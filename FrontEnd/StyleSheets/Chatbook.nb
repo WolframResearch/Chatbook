@@ -871,7 +871,6 @@ Notebook[
    FontSize -> 6,
    Background -> GrayLevel[0.95]
   ],
-  Cell[StyleData["ChatCodeBlock"]],
   Cell[
    StyleData["Input"],
    StyleKeyMapping -> {
@@ -1201,6 +1200,64 @@ Notebook[
         ],
        Evaluator -> Automatic,
        Method -> "Preemptive"
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ChatCodeBlock"],
+   Background -> GrayLevel[1]
+  ],
+  Cell[
+   StyleData[
+    "ChatCode",
+    StyleDefinitions -> StyleData["Input"]
+   ],
+   ShowAutoStyles -> True,
+   ShowSyntaxStyles -> True,
+   LanguageCategory -> "Input",
+   ShowStringCharacters -> True,
+   FontSize -> 14,
+   FontWeight -> "Plain",
+   Background -> GrayLevel[1]
+  ],
+  Cell[
+   StyleData[
+    "ChatCodeActive",
+    StyleDefinitions -> StyleData["ChatCode"]
+   ],
+   ShowAutoStyles -> False
+  ],
+  Cell[
+   StyleData["ChatCodeBlockTemplate"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      FrameBox[
+       #1,
+       Background -> GrayLevel[1],
+       FrameMargins -> {{10, 10}, {6, 6}},
+       FrameStyle ->
+        Directive[AbsoluteThickness[1], GrayLevel[0.92941]],
+       ImageMargins -> {{0, 0}, {8, 8}},
+       ImageSize -> {Full, Automatic}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ChatCodeInlineTemplate"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      FrameBox[
+       #1,
+       Background -> GrayLevel[1],
+       BaselinePosition -> Scaled[0.275],
+       FrameMargins -> {{3, 3}, {2, 2}},
+       FrameStyle ->
+        Directive[AbsoluteThickness[1], GrayLevel[0.92941]],
+       ImageMargins -> {{0, 0}, {0, 0}}
       ]
      ])
    }
