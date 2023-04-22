@@ -1380,7 +1380,7 @@ toAPIKey[ Automatic ] := toAPIKey[ Automatic, None ];
 
 toAPIKey[ Automatic, id_ ] := checkAPIKey @ FirstCase[
     Unevaluated @ {
-        SystemCredential[ "OPENAI_API_KEY" ],
+        systemCredential[ "OPENAI_API_KEY" ],
         Environment[ "OPENAI_API_KEY" ],
         apiKeyDialog[ ]
     },
@@ -1391,6 +1391,71 @@ toAPIKey[ Automatic, id_ ] := checkAPIKey @ FirstCase[
 toAPIKey[ other___ ] := throwFailure[ "InvalidAPIKey", other ];
 
 toAPIKey // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*systemCredential*)
+systemCredential // beginDefinition;
+systemCredential[ name_String ] /; $CloudEvaluation := cloudSystemCredential @ name;
+systemCredential[ name_String ] := SystemCredential @ name;
+systemCredential // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*cloudSystemCredential*)
+
+cloudSystemCredential // beginDefinition;
+
+cloudSystemCredential[ name_ ] :=
+    With[ { credential = SystemCredential @ name },
+        credential /; StringQ @ credential
+    ];
+
+(* Workaround for CLOUD-22865 *)
+cloudSystemCredential[ name_ ] :=
+    Block[ { $SystemCredentialStore = $cloudCredentialStore },
+        SystemCredential @ name
+    ];
+
+cloudSystemCredential // endDefinition;
+
+$cloudCredentialStore := SystemCredentialStoreObject @ <|
+    "Backend" -> "EncryptedFile",
+    "Keyring" -> "Chatbook-"<>$MachineName
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*setSystemCredential*)
+setSystemCredential // beginDefinition;
+setSystemCredential[ name_, value_ ] /; $CloudEvaluation := setCloudSystemCredential[ name, value ];
+setSystemCredential[ name_, value_ ] := (SystemCredential[ name ] = value);
+setSystemCredential // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*setCloudSystemCredential*)
+setCloudSystemCredential // beginDefinition;
+
+setCloudSystemCredential[ name_, value_ ] := Quiet[
+    Check[ SystemCredential[ name ] = value,
+           setCloudSystemCredential0[ name, value ],
+           SystemCredential::nset
+    ],
+    SystemCredential::nset
+];
+
+setCloudSystemCredential // endDefinition;
+
+
+setCloudSystemCredential0 // beginDefinition;
+
+setCloudSystemCredential0[ name_, value_ ] :=
+    Block[ { $SystemCredentialStore = $cloudCredentialStore },
+        SystemCredential[ name ] = value
+    ];
+
+setCloudSystemCredential0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1409,7 +1474,7 @@ apiKeyDialog[ ] :=
         result = ConfirmBy[ showAPIKeyDialog[ ], AssociationQ ];
         key    = ConfirmBy[ result[ "APIKey" ], StringQ ];
 
-        If[ result[ "Save" ], SystemCredential[ "OPENAI_API_KEY" ] = key ];
+        If[ result[ "Save" ], setSystemCredential[ "OPENAI_API_KEY", key ] ];
 
         key
     ];
@@ -1572,8 +1637,18 @@ getModelList[ hash_, KeyValuePattern[ "data" -> data_ ] ] :=
 getModelList[ hash_, models: { KeyValuePattern[ "id" -> _String ].. } ] :=
     getModelList[ _String, hash ] = Cases[ models, KeyValuePattern[ "id" -> id_String ] :> id ];
 
-getModelList[ hash_, KeyValuePattern[ "error" -> as: KeyValuePattern[ "message" -> message_ ] ] ] :=
-    throwFailure[ ChatbookAction::BadResponseMessage, message, as ];
+getModelList[ hash_, KeyValuePattern[ "error" -> as: KeyValuePattern[ "message" -> message_String ] ] ] :=
+    Module[ { newKey, newHash },
+        If[ StringStartsQ[ message, "Incorrect API key" ] && Hash @ systemCredential[ "OPENAI_API_KEY" ] === hash,
+            newKey = apiKeyDialog[ ];
+            newHash = Hash @ newKey;
+            If[ StringQ @ newKey && newHash =!= hash,
+                getModelList[ newKey, newHash ],
+                throwFailure[ ChatbookAction::BadResponseMessage, message, as ]
+            ],
+            throwFailure[ ChatbookAction::BadResponseMessage, message, as ]
+        ]
+    ];
 
 getModelList // endDefinition;
 
@@ -2493,7 +2568,9 @@ throwInternalFailure // beginDefinition;
 throwInternalFailure // Attributes = { HoldFirst };
 
 throwInternalFailure[ eval_, a___ ] :=
-    throwFailure[ ChatbookAction::Internal, $bugReportLink, HoldForm @ eval, a ];
+    Block[ { $internalFailure = HoldForm @ eval },
+        throwFailure[ ChatbookAction::Internal, $bugReportLink, $internalFailure, a ]
+    ];
 
 throwInternalFailure // endDefinition;
 
@@ -2526,9 +2603,13 @@ bugReportBody[ as_Association? AssociationQ ] := TemplateApply[
         "Notebooks"             -> $Notebooks,
         "EvaluationEnvironment" -> $EvaluationEnvironment,
         "Stack"                 -> $bugReportStack,
-        "Settings"              -> $settings
+        "Settings"              -> $settings,
+        "InternalFailure"       -> internalFailureString @ $internalFailure
     ]
 ];
+
+internalFailureString[ HoldForm[ fail_ ] ] := internalFailureString @ Unevaluated @ fail;
+internalFailureString[ fail_ ] := StringTake[ ToString[ Unevaluated @ fail, InputForm ], UpTo[ 200 ] ];
 
 
 $frontEndVersion :=
@@ -2572,7 +2653,13 @@ Describe the issue in detail here.
 ## Stack Data
 ```
 %%Stack%%
-```",
+```
+
+## Failure Expression
+```
+%%InternalFailure%%
+```
+",
 Delimiters -> "%%"
 ];
 
@@ -2581,9 +2668,8 @@ $bugReportStack := StringRiffle[
     Replace[
         DeleteAdjacentDuplicates @ Cases[
             Stack[ _ ],
-            HoldForm[ (s_Symbol) | (s_Symbol)[ ___ ] | (s_Symbol)[ ___ ][ ___ ] ] /;
-                AtomQ @ Unevaluated @ s && StringStartsQ[ Context @ s, "Wolfram`Chatbook`" ] :>
-                    SymbolName @ Unevaluated @ s
+            HoldForm[ (s_Symbol) | (s_Symbol)[ ___ ] | (s_Symbol)[ ___ ][ ___ ] ] /; AtomQ @ Unevaluated @ s :>
+                SymbolName @ Unevaluated @ s
         ],
         { a___, "throwInternalFailure", ___ } :> { a, "throwInternalFailure" }
     ],
