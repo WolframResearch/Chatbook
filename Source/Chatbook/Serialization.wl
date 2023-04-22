@@ -3,11 +3,12 @@ BeginPackage[ "Wolfram`Chatbook`Serialization`" ];
 (* Avoiding context aliasing due to bug 434990: *)
 Needs[ "GeneralUtilities`" -> None ];
 
-GeneralUtilities`SetUsage[ CellToString, "\
+GeneralUtilities`SetUsage[ `CellToString, "\
 CellToString[cell$] serializes a Cell expression as a string for use in chat.\
 " ];
 
-$CurrentCell;
+`$CellToStringDebug;
+`$CurrentCell;
 
 Begin[ "`Private`" ];
 
@@ -36,7 +37,7 @@ $maxOutputCellStringLength = 500;
 $cellPageWidth = 100;
 
 (* Whether to collect data that can help discover missing definitions *)
-$cellToStringDebug = False;
+$CellToStringDebug = False;
 
 (* Can be redefined locally depending on cell style *)
 $showStringCharacters = True;
@@ -50,10 +51,11 @@ $boxOp = <| SuperscriptBox -> "^", SubscriptBox -> "_" |>;
 
 (* How to choose TemplateBox arguments for serialization *)
 $templateBoxRules = <|
-    "DateObject"       -> First,
-    "HyperlinkDefault" -> First,
-    "RefLink"          -> First,
-    "RowDefault"       -> Identity
+    "ChatCodeBlockTemplate"  -> First,
+    "DateObject"             -> First,
+    "HyperlinkDefault"       -> First,
+    "RefLink"                -> First,
+    "RowDefault"             -> Identity
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -152,24 +154,34 @@ CellToString // SetFallthroughError;
 
 CellToString // Options = {
     CharacterEncoding -> $cellCharacterEncoding,
-    "Debug"           -> $cellToStringDebug,
+    "Debug"           :> $CellToStringDebug,
     PageWidth         -> $cellPageWidth
 };
 
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 CellToString[ cell_, opts: OptionsPattern[ ] ] :=
     Block[
         {
             $cellCharacterEncoding = OptionValue[ "CharacterEncoding" ],
-            $cellToStringDebug     = TrueQ @ OptionValue[ "Debug" ],
+            $CellToStringDebug     = TrueQ @ OptionValue[ "Debug" ],
             $cellPageWidth         = OptionValue[ "PageWidth" ]
         },
+        $fasterCellToStringFailBag = Internal`Bag[ ];
         If[ ! StringQ @ $cellCharacterEncoding, $cellCharacterEncoding = "UTF-8" ];
-        Replace[
-            cellToString @ cell,
-            (* TODO: give a failure here *)
-            Except[ _String? StringQ ] :> ""
+        WithCleanup[
+            Replace[
+                cellToString @ cell,
+                (* TODO: give a failure here *)
+                Except[ _String? StringQ ] :> ""
+            ],
+            If[ TrueQ @ $CellToStringDebug && Internal`BagLength @ $fasterCellToStringFailBag > 0,
+                Print[ "Unhandled boxes for CellToString: " ];
+                Print[ Internal`BagPart[ $fasterCellToStringFailBag, All ] ];
+            ]
         ]
     ];
+(* :!CodeAnalysis::EndBlock:: *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -373,6 +385,10 @@ fasterCellToString0[ box: $graphicsHeads[ ___ ] ] :=
 (* ::Subsubsubsection::Closed:: *)
 (*Template Boxes*)
 
+(* Inline Code *)
+fasterCellToString0[ TemplateBox[ { code_ }, "ChatCodeInlineTemplate" ] ] := "`" <> fasterCellToString0 @ code <> "`";
+fasterCellToString0[ StyleBox[ code_, "TI", ___ ] ] := "`" <> fasterCellToString0 @ code <> "`";
+
 (* Messages *)
 fasterCellToString0[ TemplateBox[ args: { _, _, str_String, ___ }, "MessageTemplate" ] ] := (
     sowMessageData @ args; (* Look for stack trace data *)
@@ -498,16 +514,17 @@ fasterCellToString0[ GridBox[ grid_? MatrixQ, ___ ] ] :=
 fasterCellToString0[ Cell[ TextData @ { _, _, text_String, _, Cell[ _, "ExampleCount", ___ ] }, ___ ] ] :=
     fasterCellToString0 @ text;
 
-fasterCellToString0[
-    Cell[
-        BoxData @ FrameBox[ Cell[ BoxData @ DynamicModuleBox[ _, box_, ___ ], ___ ], ___ ],
-        "ChatCodeBlock",
-        ___,
-        TaggingRules -> KeyValuePattern[ "CodeLanguage" -> lang_String ],
+fasterCellToString0[ DynamicModuleBox[
+    _,
+    box_,
+    ___,
+    TaggingRules -> Association @ OrderlessPatternSequence[
+        "CellToStringType" -> "InlineInteractiveCodeCell",
+        "CodeLanguage"     -> lang_String,
         ___
-    ]
-] := "```" <> lang <> "\n" <> fasterCellToString0 @ box <> "\n```";
-
+    ],
+    ___
+] ] := "```" <> lang <> "\n" <> fasterCellToString0 @ box <> "\n```";
 
 fasterCellToString0[ _[
     __,
@@ -515,13 +532,19 @@ fasterCellToString0[ _[
     ___
 ] ] := fasterCellToString0 @ data;
 
-fasterCellToString0[ DynamicModuleBox[ a___ ] ] := "DynamicModule[<<" <> ToString @ Length @ HoldComplete @ a <> ">>]";
+fasterCellToString0[ DynamicModuleBox[
+    { ___, TypeSystem`NestedGrid`PackagePrivate`$state$$ = Association[ ___, "InitialData" -> data_, ___ ], ___ },
+    ___
+] ] := ToString[ Unevaluated @ Dataset @ data, InputForm ];
+
+fasterCellToString0[ DynamicModuleBox[ a___ ] ] /; ! TrueQ @ $CellToStringDebug :=
+    "DynamicModule[<<" <> ToString @ Length @ HoldComplete @ a <> ">>]";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Missing Definition*)
 fasterCellToString0[ a___ ] := (
-    If[ TrueQ @ $cellToStringDebug, Internal`StuffBag[ $fasterCellToStringFailBag, HoldComplete @ a ] ];
+    If[ TrueQ @ $CellToStringDebug, Internal`StuffBag[ $fasterCellToStringFailBag, HoldComplete @ a ] ];
     If[ TrueQ @ $catchingStringFail, Throw[ $Failed, $stringFail ], "" ]
 );
 
