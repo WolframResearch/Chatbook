@@ -1908,7 +1908,7 @@ reformatTextData[ string_String ] := Flatten @ Map[
                 ] :> externalCodeCell[ lang, code ]
             ,
             Longest[ "```" ~~ ($wlCodeString|"") ] ~~ Shortest[ code__ ] ~~ ("```"|EndOfString) :>
-                If[ NameQ[ "System`"<>code ], inlineCodeCell @ code, codeCell @ code ]
+                If[ nameQ[ "System`"<>code ], inlineCodeCell @ code, codeCell @ code ]
             ,
             "\n" ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
             "\n" ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ],
@@ -1933,6 +1933,13 @@ $wlCodeString = Longest @ Alternatives[
     "Wolfram",
     "Mathematica"
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*nameQ*)
+nameQ[ "*"|"**" ] := False;
+nameQ[ s_String? StringQ ] := StringFreeQ[ s, Verbatim[ "*" ] | Verbatim[ "@" ] ] && NameQ @ s;
+nameQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1989,11 +1996,7 @@ makeResultCell0[ externalCodeCell[ lang_String, code_String ] ] :=
         StringTrim @ code
     ];
 
-makeResultCell0[ inlineCodeCell[ code_String ] ] := Cell[
-    BoxData @ stringTemplateInput @ code,
-    "InlineFormula",
-    FontFamily -> "Source Sans Pro"
-];
+makeResultCell0[ inlineCodeCell[ code_String ] ] := makeInlineCodeCell @ code;
 
 makeResultCell0[ mathCell[ math_String ] ] :=
     With[ { boxes = Quiet @ InputAssistant`TeXAssistant @ StringTrim @ math },
@@ -2068,11 +2071,8 @@ styleBox[ a_, ___ ] := a;
 
 hyperlink // ClearAll;
 
-hyperlink[ label_String, uri_String ] /; StringStartsQ[ uri, "paclet:" ] := Cell[
-    BoxData @ TemplateBox[ { StringTrim[ label, (Whitespace|"`").. ], uri }, "TextRefLink" ],
-    "InlineFormula",
-    FontFamily -> "Source Sans Pro"
-];
+hyperlink[ label_String, uri_String ] /; StringStartsQ[ uri, "paclet:" ] :=
+    Cell @ BoxData @ TemplateBox[ { StringTrim[ label, (Whitespace|"`").. ], uri }, "TextRefLink" ];
 
 hyperlink[ label_String, url_String ] := hyperlink[ formatTextString @ label, url ];
 
@@ -2087,37 +2087,52 @@ hyperlink[ a_, ___ ] := a;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*makeInlineCodeCell*)
+makeInlineCodeCell // beginDefinition;
+
+makeInlineCodeCell[ s_String? nameQ ] /; Context @ s === "System`" :=
+    hyperlink[ s, "paclet:ref/" <> Last @ StringSplit[ s, "`" ] ];
+
+makeInlineCodeCell[ s_String? LowerCaseQ ] := StyleBox[ s, "TI" ];
+
+makeInlineCodeCell[ code_String ] /; $dynamicText := Cell[
+    BoxData @ TemplateBox[ { stringToBoxes @ code }, "ChatCodeInlineTemplate" ],
+    "ChatCodeActive"
+];
+
+makeInlineCodeCell[ code_String ] :=
+    If[ SyntaxQ @ code,
+        Cell[
+            BoxData @ TemplateBox[ { stringToBoxes @ code }, "ChatCodeInlineTemplate" ],
+            "ChatCode",
+            Background -> GrayLevel[ 1 ]
+        ],
+        Cell[
+            BoxData @ TemplateBox[ { Cell[ code, Background -> GrayLevel[ 1 ] ] }, "ChatCodeInlineTemplate" ],
+            "ChatCodeActive",
+            Background -> GrayLevel[ 1 ]
+        ]
+    ];
+
+makeInlineCodeCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*makeInteractiveCodeCell*)
 makeInteractiveCodeCell // beginDefinition;
 
 (* TODO: define template boxes for these *)
 makeInteractiveCodeCell[ string_String ] /; $dynamicText :=
-    codeBlockFrame[
-        Cell[
-            BoxData @ string,
-            "Input",
-            FontSize             -> 14,
-            ShowAutoStyles       -> False,
-            ShowStringCharacters -> True,
-            ShowSyntaxStyles     -> True,
-            LanguageCategory     -> "Input"
-        ],
-        string
-    ];
+    codeBlockFrame[ Cell[ BoxData @ string, "ChatCodeActive" ], string ];
 
 makeInteractiveCodeCell[ string_String ] :=
     Module[ { display, handler },
-
         display = RawBoxes @ Cell[
-            BoxData @ string,
+            BoxData @ stringToBoxes @ string,
+            "ChatCode",
             "Input",
-            FontSize             -> 14,
-            ShowAutoStyles       -> True,
-            ShowStringCharacters -> True,
-            ShowSyntaxStyles     -> True,
-            LanguageCategory     -> "Input"
+            Background -> GrayLevel[ 1 ]
         ];
-
         handler = inlineInteractiveCodeCell[ display, string ];
         codeBlockFrame[ Cell @ BoxData @ ToBoxes @ handler, string ]
     ];
@@ -2141,18 +2156,12 @@ makeInteractiveCodeCell // endDefinition;
 
 
 codeBlockFrame[ cell_, string_ ] := codeBlockFrame[ cell, string, "Wolfram" ];
+
 codeBlockFrame[ cell_, string_, lang_ ] :=
     Cell[
-        BoxData @ FrameBox[
-            cell,
-            Background   -> GrayLevel[ 1 ],
-            FrameMargins -> { { 10, 10 }, { 6, 6 } },
-            FrameStyle   -> Directive[ AbsoluteThickness[ 1 ], GrayLevel[ 0.92941 ] ],
-            ImageMargins -> { { 0, 0 }, { 8, 8 } },
-            ImageSize    -> { Full, Automatic }
-        ],
+        BoxData @ TemplateBox[ { cell }, "ChatCodeBlockTemplate" ],
         "ChatCodeBlock",
-        TaggingRules -> <| "CodeLanguage" -> lang, "CellToStringData" -> string |>
+        Background -> GrayLevel[ 1 ]
     ];
 
 
@@ -2186,7 +2195,7 @@ inlineInteractiveCodeCell[ display_, string_, lang_ ] :=
                 )
             }
         ],
-        TaggingRules -> <| "CellToStringData" -> string |>,
+        TaggingRules -> <| "CellToStringType" -> "InlineInteractiveCodeCell", "CodeLanguage" -> lang |>,
         UnsavedVariables :> { $CellContext`attached }
     ];
 
@@ -2375,23 +2384,26 @@ button[ label_, code_ ] :=
 
 stringTemplateInput // ClearAll;
 
-stringTemplateInput[ s_String? NameQ ] /; Context @ s === "System`" :=
-    hyperlink[ s, "paclet:ref/" <> Last @ StringSplit[ s, "`" ] ];
-
-stringTemplateInput[ s_String? StringQ ] :=
-    UsingFrontEnd @ Enclose @ Confirm[ stringTemplateInput0 ][ s ];
+stringTemplateInput[ s_String? StringQ ] := stringToBoxes @ s;
 
 stringTemplateInput[ ___ ] := $Failed;
 
-stringTemplateInput0 // ClearAll;
-stringTemplateInput0 := Enclose[
-    Needs[ "DefinitionNotebookClient`" -> None ];
-    ConfirmMatch[
-        DefinitionNotebookClient`StringTemplateInput[ "x" ],
-        Except[ _DefinitionNotebookClient`StringTemplateInput ]
-    ];
-    stringTemplateInput0 = DefinitionNotebookClient`StringTemplateInput
-];
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*stringToBoxes*)
+stringToBoxes // beginDefinition;
+stringToBoxes[ s_String ] /; $dynamicText := s;
+stringToBoxes[ s_String ] := removeExtraBoxSpaces @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ s;
+stringToBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*removeExtraBoxSpaces*)
+removeExtraBoxSpaces // beginDefinition;
+removeExtraBoxSpaces[ row: RowBox @ { "(*", ___, "*)" } ] := row;
+removeExtraBoxSpaces[ RowBox[ items_List ] ] := RowBox[ removeExtraBoxSpaces /@ DeleteCases[ items, " " ] ];
+removeExtraBoxSpaces[ other_ ] := other;
+removeExtraBoxSpaces // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
