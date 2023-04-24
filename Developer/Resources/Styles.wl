@@ -205,16 +205,6 @@ Cell[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*ChatCodeBlock*)
-Cell[
-    StyleData[ "ChatCodeBlock" ],
-    FrameBoxOptions -> {
-
-    }
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
 (*Input*)
 Cell[
     StyleData[ "Input" ],
@@ -313,6 +303,74 @@ Cell[
                 ],
                 Appearance -> $suppressButtonAppearance
             ]
+        ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Chat Output Formatting*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatCodeBlock*)
+Cell[
+    StyleData[ "ChatCodeBlock" ],
+    Background -> GrayLevel[ 1 ]
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatCode*)
+Cell[
+    StyleData[ "ChatCode", StyleDefinitions -> StyleData[ "Input" ] ],
+    Background           -> GrayLevel[ 1 ],
+    FontSize             -> 14,
+    FontWeight           -> "Plain",
+    LanguageCategory     -> "Input",
+    ShowAutoStyles       -> True,
+    ShowStringCharacters -> True,
+    ShowSyntaxStyles     -> True
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatCodeActive*)
+Cell[
+    StyleData[ "ChatCodeActive", StyleDefinitions -> StyleData[ "ChatCode" ] ],
+    ShowAutoStyles -> False
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatCodeBlockTemplate*)
+Cell[
+    StyleData[ "ChatCodeBlockTemplate" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ FrameBox[
+            #,
+            Background   -> GrayLevel[ 1 ],
+            FrameMargins -> { { 10, 10 }, { 6, 6 } },
+            FrameStyle   -> Directive[ AbsoluteThickness[ 1 ], GrayLevel[ 0.92941 ] ],
+            ImageMargins -> { { 0, 0 }, { 8, 8 } },
+            ImageSize    -> { Full, Automatic }
+        ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatCodeInlineTemplate*)
+Cell[
+    StyleData[ "ChatCodeInlineTemplate" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ FrameBox[
+            #1,
+            Background       -> GrayLevel[ 1 ],
+            BaselinePosition -> Scaled[ 0.275 ],
+            FrameMargins     -> { { 3, 3 }, { 2, 2 } },
+            FrameStyle       -> Directive[ AbsoluteThickness[ 1 ], GrayLevel[ 0.92941 ] ],
+            ImageMargins     -> { { 0, 0 }, { 0, 0 } }
         ]
     }
 ]
