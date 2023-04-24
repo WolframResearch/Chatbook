@@ -1110,7 +1110,7 @@ mergeMessages[ messages: { first_Association, __Association } ] :=
         strings = Lookup[ messages, "content" ];
         <|
             "role"    -> role,
-            "content" -> StringRiffle[ strings, "\n\n" ]
+            "content" -> StringDelete[ StringRiffle[ strings, "\n\n" ], "```\n\n```" ]
         |>
     ];
 
@@ -1898,7 +1898,7 @@ makeCompactChatData // endDefinition;
 (*reformatTextData*)
 reformatTextData // beginDefinition;
 
-reformatTextData[ string_String ] := Flatten @ Map[
+reformatTextData[ string_String ] := joinAdjacentStrings @ Flatten @ Map[
     makeResultCell,
     StringSplit[
         $reformattedString = string,
@@ -1914,7 +1914,10 @@ reformatTextData[ string_String ] := Flatten @ Map[
             "\n" ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
             "\n" ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ],
             "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :> hyperlinkCell[ label, url ],
-            "``" ~~ code: Except[ "`" ].. ~~ "``" :> inlineCodeCell @ code,
+            "\\`" :> "`",
+            "\\$" :> "$",
+            "``" ~~ code__ ~~ "``" /; StringFreeQ[ code, "``" ] :> inlineCodeCell @ code,
+            "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`" /; inlineSyntaxQ @ code :> inlineCodeCell @ code,
             "`" ~~ code: Except[ "`" ].. ~~ "`" :> inlineCodeCell @ code,
             "$$" ~~ math: Except[ "$" ].. ~~ "$$" :> mathCell @ math,
             "$" ~~ math: Except[ "$" ].. ~~ "$" :> mathCell @ math
@@ -1934,6 +1937,24 @@ $wlCodeString = Longest @ Alternatives[
     "Wolfram",
     "Mathematica"
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inlineSyntaxQ*)
+inlineSyntaxQ[ str_String ] := ! StringStartsQ[ str, "`" ] && Internal`SymbolNameQ[ str<>"x", True ];
+inlineSyntaxQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*joinAdjacentStrings*)
+joinAdjacentStrings // beginDefinition;
+joinAdjacentStrings[ content_List ] := joinAdjacentStrings0 /@ SplitBy[ content, StringQ ];
+joinAdjacentStrings // endDefinition;
+
+joinAdjacentStrings0 // beginDefinition;
+joinAdjacentStrings0[ { strings__String } ] := StringJoin @ strings;
+joinAdjacentStrings0[ { other___ } ] := other;
+joinAdjacentStrings0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
