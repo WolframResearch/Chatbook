@@ -2232,7 +2232,7 @@ codeBlockFrame[ cell_, string_, lang_ ] :=
     Cell[
         BoxData @ TemplateBox[ { cell }, "ChatCodeBlockTemplate" ],
         "ChatCodeBlock",
-        Background -> GrayLevel[ 1 ]
+        Background -> None
     ];
 
 
