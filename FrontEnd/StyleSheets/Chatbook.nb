@@ -596,7 +596,14 @@ Notebook[
    ],
    CellDingbat ->
     Cell[
-     BoxData[TemplateBox[{}, "ChatUserIcon"]],
+     BoxData[
+      RowBox[
+       {
+        TemplateBox[{}, "ChatCounterLabel"],
+        TemplateBox[{}, "ChatUserIcon"]
+       }
+      ]
+     ],
      Background -> None
     ],
    CellMargins -> {{66, 25}, {5, 8}},
@@ -633,6 +640,7 @@ Notebook[
      ]
     ],
    CellFrameColor -> RGBColor[0.63922, 0.78824, 0.94902],
+   CounterIncrements -> {"ChatInputCount"},
    MenuSortingValue -> 1000
   ],
   Cell[
@@ -812,6 +820,7 @@ Notebook[
    ShowCellLabel -> False,
    CellFrameColor -> GrayLevel[0.74902],
    DefaultNewCellStyle -> "Input",
+   CounterAssignments -> {{"ChatInputCount", 0}},
    FontWeight -> "DemiBold",
    FontColor -> GrayLevel[0.2]
   ],
@@ -867,6 +876,7 @@ Notebook[
     {None, None}
    },
    DefaultNewCellStyle -> "Input",
+   CounterAssignments -> {{"ChatInputCount", 0}},
    FontSize -> 6,
    Background -> GrayLevel[0.95]
   ],
@@ -3339,8 +3349,23 @@ Notebook[
    FontSize -> 13,
    FontWeight -> Plain,
    FontColor -> GrayLevel[0.2]
+  ],
+  Cell[
+   StyleData["ChatCounterLabel"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      StyleBox[
+       CounterBox["ChatInputCount"],
+       FontFamily -> "Source Sans Pro",
+       FontSize -> 10,
+       FontColor -> GrayLevel[0.2],
+       FontWeight -> Plain
+      ]
+     ])
+   }
   ]
  },
- FrontEndVersion -> "13.2 for Microsoft Windows (64-bit) (January 30, 2023)",
+ FrontEndVersion -> "13.2 for Mac OS X ARM (64-bit) (November 18, 2022)",
  StyleDefinitions -> "PrivateStylesheetFormatting.nb"
 ]
