@@ -1221,7 +1221,7 @@ deleteExistingChatOutputs[ cellData: { KeyValuePattern[ "CellObject" -> _CellObj
         chatOutputs = Cases[ delete, KeyValuePattern[ "Style" -> $$chatOutputStyle ] ];
         cells       = Cases[ chatOutputs, KeyValuePattern[ "CellObject" -> cell_ ] :> cell ];
         NotebookDelete @ cells;
-        DeleteCases[ cellData, KeyValuePattern[ "CellObject" -> Alternatives @@ cells ] ]
+        DeleteCases[ delete, KeyValuePattern[ "CellObject" -> Alternatives @@ cells ] ]
     ];
 
 deleteExistingChatOutputs // endDefinition;
