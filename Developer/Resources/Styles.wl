@@ -173,7 +173,6 @@ Cell[
     CellMargins            -> { { 0, 0 }, { 10, 10 } },
     DefaultNewCellStyle    -> "Input",
     FontSize               -> 6,
-    ShowCellBracket        -> False,
     ShowCellLabel          -> False,
 
     CellEventActions -> {

@@ -1996,8 +1996,12 @@ joinAdjacentStrings[ content_List ] := joinAdjacentStrings0 /@ SplitBy[ content,
 joinAdjacentStrings // endDefinition;
 
 joinAdjacentStrings0 // beginDefinition;
-joinAdjacentStrings0[ { strings__String } ] := StringJoin @ strings;
+
+joinAdjacentStrings0[ { strings__String } ] :=
+    StringReplace[ StringJoin @ strings, c: Except[ "\n" ]~~"\n"~~EndOfString :> c<>" \n" ];
+
 joinAdjacentStrings0[ { other___ } ] := other;
+
 joinAdjacentStrings0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
