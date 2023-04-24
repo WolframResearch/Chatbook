@@ -8,6 +8,12 @@
 $ wolfram-cli paclet test . ./Tests
 ```
 
+**Build optimized MX for package code:**
+
+```shell
+$ ./Scripts/BuildMX.wls
+```
+
 ## Changing the Chatbook stylesheet
 
 To make changes to the `Chatbook.nb` stylesheet, do the following:
