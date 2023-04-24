@@ -1110,7 +1110,7 @@ mergeMessages[ messages: { first_Association, __Association } ] :=
         strings = Lookup[ messages, "content" ];
         <|
             "role"    -> role,
-            "content" -> StringRiffle[ strings, "\n\n" ]
+            "content" -> StringDelete[ StringRiffle[ strings, "\n\n" ], "```\n\n```" ]
         |>
     ];
 
@@ -1898,7 +1898,7 @@ makeCompactChatData // endDefinition;
 (*reformatTextData*)
 reformatTextData // beginDefinition;
 
-reformatTextData[ string_String ] := Flatten @ Map[
+reformatTextData[ string_String ] := joinAdjacentStrings @ Flatten @ Map[
     makeResultCell,
     StringSplit[
         $reformattedString = string,
@@ -1914,7 +1914,10 @@ reformatTextData[ string_String ] := Flatten @ Map[
             "\n" ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
             "\n" ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ],
             "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :> hyperlinkCell[ label, url ],
-            "``" ~~ code: Except[ "`" ].. ~~ "``" :> inlineCodeCell @ code,
+            "\\`" :> "`",
+            "\\$" :> "$",
+            "``" ~~ code__ ~~ "``" /; StringFreeQ[ code, "``" ] :> inlineCodeCell @ code,
+            "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`" /; inlineSyntaxQ @ code :> inlineCodeCell @ code,
             "`" ~~ code: Except[ "`" ].. ~~ "`" :> inlineCodeCell @ code,
             "$$" ~~ math: Except[ "$" ].. ~~ "$$" :> mathCell @ math,
             "$" ~~ math: Except[ "$" ].. ~~ "$" :> mathCell @ math
@@ -1934,6 +1937,28 @@ $wlCodeString = Longest @ Alternatives[
     "Wolfram",
     "Mathematica"
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inlineSyntaxQ*)
+inlineSyntaxQ[ s_String ] := ! StringStartsQ[ s, "`" ] && Internal`SymbolNameQ[ unescapeInlineMarkdown @ s<>"x", True ];
+inlineSyntaxQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*joinAdjacentStrings*)
+joinAdjacentStrings // beginDefinition;
+joinAdjacentStrings[ content_List ] := joinAdjacentStrings0 /@ SplitBy[ content, StringQ ];
+joinAdjacentStrings // endDefinition;
+
+joinAdjacentStrings0 // beginDefinition;
+
+joinAdjacentStrings0[ { strings__String } ] :=
+    StringReplace[ StringJoin @ strings, c: Except[ "\n" ]~~"\n"~~EndOfString :> c<>" \n" ];
+
+joinAdjacentStrings0[ { other___ } ] := other;
+
+joinAdjacentStrings0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2094,14 +2119,15 @@ makeInlineCodeCell // beginDefinition;
 makeInlineCodeCell[ s_String? nameQ ] /; Context @ s === "System`" :=
     hyperlink[ s, "paclet:ref/" <> Last @ StringSplit[ s, "`" ] ];
 
-makeInlineCodeCell[ s_String? LowerCaseQ ] := StyleBox[ s, "TI" ];
+makeInlineCodeCell[ s_String? LowerCaseQ ] := StyleBox[ unescapeInlineMarkdown @ s, "TI" ];
 
 makeInlineCodeCell[ code_String ] /; $dynamicText := Cell[
-    BoxData @ TemplateBox[ { stringToBoxes @ code }, "ChatCodeInlineTemplate" ],
+    BoxData @ TemplateBox[ { stringToBoxes @ unescapeInlineMarkdown @ code }, "ChatCodeInlineTemplate" ],
     "ChatCodeActive"
 ];
 
-makeInlineCodeCell[ code_String ] :=
+makeInlineCodeCell[ code0_String ] :=
+    With[ { code = unescapeInlineMarkdown @ code0 },
     If[ SyntaxQ @ code,
         Cell[
             BoxData @ TemplateBox[ { stringToBoxes @ code }, "ChatCodeInlineTemplate" ],
@@ -2113,9 +2139,17 @@ makeInlineCodeCell[ code_String ] :=
             "ChatCodeActive",
             Background -> GrayLevel[ 1 ]
         ]
+        ]
     ];
 
 makeInlineCodeCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*unescapeInlineMarkdown*)
+unescapeInlineMarkdown // beginDefinition;
+unescapeInlineMarkdown[ str_String ] := StringReplace[ str, { "\\`" -> "`", "\\$" -> "$" } ];
+unescapeInlineMarkdown // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

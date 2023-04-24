@@ -216,6 +216,10 @@ cellToString[ Cell[ a__, $$docSearchStyle, b___ ] ] :=
         |>
     ];
 
+(* Delimit code blocks with triple backticks *)
+cellToString[ cell: Cell[ _BoxData, ___ ] ] /; ! TrueQ @ $delimitedCodeBlock :=
+    Block[ { $delimitedCodeBlock = True }, "```\n" <> cellToString @ cell <> "\n```" ];
+
 (* Prepend cell label to the cell string *)
 cellToString[ Cell[ a___, CellLabel -> label_String, b___ ] ] :=
     With[ { str = cellToString @ Cell[ a, b ] }, label<>" "<>str /; StringQ @ str ];
@@ -345,7 +349,7 @@ fasterCellToString0[ a_String /; StringContainsQ[ a, ("\\!"|"\!") ] ] :=
 (* Other strings *)
 fasterCellToString0[ a_String ] :=
     ToString[
-        If[ TrueQ @ $showStringCharacters, a, StringTrim[ a, "\"" ] ],
+        escapeMarkdownCharacters @ If[ TrueQ @ $showStringCharacters, a, StringTrim[ a, "\"" ] ],
         CharacterEncoding -> $cellCharacterEncoding
     ];
 
@@ -386,8 +390,11 @@ fasterCellToString0[ box: $graphicsHeads[ ___ ] ] :=
 (*Template Boxes*)
 
 (* Inline Code *)
-fasterCellToString0[ TemplateBox[ { code_ }, "ChatCodeInlineTemplate" ] ] := "`" <> fasterCellToString0 @ code <> "`";
-fasterCellToString0[ StyleBox[ code_, "TI", ___ ] ] := "`" <> fasterCellToString0 @ code <> "`";
+fasterCellToString0[ TemplateBox[ { code_ }, "ChatCodeInlineTemplate" ] ] :=
+    Block[ { $escapeMarkdown = False }, "``" <> fasterCellToString0 @ code <> "``" ];
+
+fasterCellToString0[ StyleBox[ code_, "TI", ___ ] ] :=
+    Block[ { $escapeMarkdown = False }, "``" <> fasterCellToString0 @ code <> "``" ];
 
 (* Messages *)
 fasterCellToString0[ TemplateBox[ args: { _, _, str_String, ___ }, "MessageTemplate" ] ] := (
@@ -524,7 +531,7 @@ fasterCellToString0[ DynamicModuleBox[
         ___
     ],
     ___
-] ] := "```" <> lang <> "\n" <> fasterCellToString0 @ box <> "\n```";
+] ] := Block[ { $escapeMarkdown = False }, "```" <> lang <> "\n" <> fasterCellToString0 @ box <> "\n```" ];
 
 fasterCellToString0[ _[
     __,
@@ -664,6 +671,20 @@ showStringCharactersQ[ ___ ] := True;
 truncateStackString // SetFallthroughError;
 truncateStackString[ str_String ] /; StringLength @ str <= 80 := str;
 truncateStackString[ str_String ] := StringTake[ str, 80 ] <> "...";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*escapeMarkdownCharacters*)
+escapeMarkdownCharacters // SetFallthroughError;
+escapeMarkdownCharacters[ text_ ] /; ! TrueQ @ $escapeMarkdown := text;
+escapeMarkdownCharacters[ text_String ] := StringReplace[ text, $markdownReplacements ];
+escapeMarkdownCharacters[ TextData[ text_ ] ] := escapeMarkdownCharacters @ text;
+escapeMarkdownCharacters[ text_List ] := escapeMarkdownCharacters /@ text;
+escapeMarkdownCharacters[ text_ ] := text;
+
+$escapeMarkdown = True;
+
+$markdownReplacements = { "\\`" -> "\\`", "\\$" -> "\\$", "`" -> "\\`", "$" -> "\\$" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
