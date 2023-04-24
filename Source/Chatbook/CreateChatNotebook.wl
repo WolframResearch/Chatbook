@@ -33,7 +33,48 @@ CreateChatNotebook // Options = {
     "TopP"                              -> 1
 };
 
-CreateChatNotebook[ opts: OptionsPattern[ ] ] :=
+CreateChatNotebook[ opts: OptionsPattern[ ] ] := createChatNotebook @ opts;
+
+CreateChatNotebook[ nbo_NotebookObject, opts: OptionsPattern[ ] ] :=
+    Enclose @ Module[ { settings, options },
+        settings = makeChatNotebookSettings @ Association @ opts;
+        options  = makeChatNotebookOptions @ settings;
+        SetOptions[ nbo, options ];
+        nbo
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*createChatNotebook*)
+createChatNotebook // SetFallthroughError;
+createChatNotebook[ opts___ ] /; CloudSystem`$CloudNotebooks := createCloudChatNotebook @ opts;
+createChatNotebook[ opts___ ] := createLocalChatNotebook @ opts;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createCloudChatNotebook*)
+createCloudChatNotebook // SetFallthroughError;
+createCloudChatNotebook[ opts: OptionsPattern[ CreateChatNotebook ] ] :=
+    Module[ { settings, options, notebook, deployed },
+        settings = makeChatNotebookSettings @ Association @ opts;
+        options  = makeChatNotebookOptions @ settings;
+        notebook = Notebook[ { Cell[ "", "ChatInput" ], $cloudSelectionMover }, options ];
+        deployed = CloudDeploy[ notebook, CloudObjectURLType -> "Environment" ];
+        SystemOpen @ deployed;
+        deployed
+    ];
+
+$cloudSelectionMover = Cell @ BoxData @ ToBoxes @ Dynamic[
+    SelectionMove[ First @ Cells @ EvaluationNotebook[ ], Before, CellContents ];
+    NotebookDelete @ EvaluationCell[ ];
+    ""
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createLocalChatNotebook*)
+createLocalChatNotebook // SetFallthroughError;
+createLocalChatNotebook[ opts: OptionsPattern[ CreateChatNotebook ] ] :=
     Module[ { nbo, result },
         WithCleanup[
             nbo = NotebookPut[ Notebook @ { Cell[ "", "ChatInput" ] }, Visible -> False ],
@@ -49,13 +90,6 @@ CreateChatNotebook[ opts: OptionsPattern[ ] ] :=
         ]
     ];
 
-CreateChatNotebook[ nbo_NotebookObject, opts: OptionsPattern[ ] ] :=
-    Enclose @ Module[ { settings, options },
-        settings = makeChatNotebookSettings @ Association @ opts;
-        options  = makeChatNotebookOptions @ settings;
-        SetOptions[ nbo, options ];
-        nbo
-    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
