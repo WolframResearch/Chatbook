@@ -1,5 +1,8 @@
 # Chatbook
 
+#### [Changelog](./docs/CHANGELOG.md)
+
+
 This repository contains *Chatbook*, a paclet adding support for ChatGPT-powered
 notebooks to Wolfram.
 
