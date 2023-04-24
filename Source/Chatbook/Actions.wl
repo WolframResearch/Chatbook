@@ -40,12 +40,11 @@ $externalLanguageRules = Flatten @ {
     Cases[ $$externalLanguage, lang_ :> (lang -> lang) ]
 };
 
-$closedChatCellOptions = Sequence[
-    CellMargins     -> -2,
-    CellOpen        -> False,
-    CellFrame       -> 0,
-    ShowCellBracket -> False
-];
+$closedChatCellOptions :=
+    If[ TrueQ @ CloudSystem`$CloudNotebooks,
+        Sequence @@ { },
+        Sequence @@ { CellMargins -> -2, CellOpen -> False, CellFrame -> 0, ShowCellBracket -> False }
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -687,7 +686,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTop @ Enclose[
         $debugLog = Internal`Bag[ ];
         cellObject = $lastCellObject = cellPrint @ cell;
 
-        task = Confirm[ $lastTask = submitAIAssistant[ container, req, cellObject, settings ] ]
+        task = Confirm[ $lastTask = submitAIAssistant[ container, req, cellObject, settings ] ];
     ],
     throwInternalFailure[ sendChat[ evalCell, nbo, settings0 ], ## ] &
 ];
@@ -748,7 +747,7 @@ alwaysOpenQ // endDefinition;
 submitAIAssistant // beginDefinition;
 submitAIAssistant // Attributes = { HoldFirst };
 
-submitAIAssistant[ container_, req_, cellObject_, settings_ ] /; CloudSystem`$CloudNotebooks := Enclose[
+(* submitAIAssistant[ container_, req_, cellObject_, settings_ ] /; CloudSystem`$CloudNotebooks := Enclose[
     Module[ { resp, code, json, text },
         resp = ConfirmMatch[ URLRead @ req, _HTTPResponse ];
         code = ConfirmBy[ resp[ "StatusCode" ], IntegerQ ];
@@ -758,7 +757,7 @@ submitAIAssistant[ container_, req_, cellObject_, settings_ ] /; CloudSystem`$Cl
         checkResponse[ settings, text, cellObject, json ]
     ],
     # & (* TODO: cloud error cell *)
-];
+]; *)
 
 submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
     With[ { autoOpen = TrueQ @ $autoOpen, alwaysOpen = TrueQ @ $alwaysOpen },
@@ -805,17 +804,59 @@ extractMessageText // endDefinition;
 activeAIAssistantCell // beginDefinition;
 activeAIAssistantCell // Attributes = { HoldFirst };
 
-activeAIAssistantCell[ container_, settings_ ] /; CloudSystem`$CloudNotebooks := (
+(* activeAIAssistantCell[ container_, settings_ ] /; CloudSystem`$CloudNotebooks := (
     Cell[
         BoxData @ ToBoxes @ ProgressIndicator[ Appearance -> "Percolate" ],
         "ChatOutput",
         CellDingbat  -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIconActive" ], Background -> None ],
         TaggingRules -> <| "ChatNotebookSettings" -> settings |>
     ]
-);
+); *)
 
 activeAIAssistantCell[ container_, settings_Association? AssociationQ ] :=
     activeAIAssistantCell[ container, settings, Lookup[ settings, "ShowMinimized", Automatic ] ];
+
+activeAIAssistantCell[ container_, settings_, minimized_ ] /; CloudSystem`$CloudNotebooks :=
+    With[
+        {
+            label    = RawBoxes @ TemplateBox[ { }, "MinimizedChatActive" ],
+            id       = $SessionID,
+            reformat = dynamicAutoFormatQ @ settings
+        },
+        x = 0;
+        Cell[
+            BoxData @ ToBoxes @
+                If[ TrueQ @ reformat,
+                    Dynamic[
+                        Refresh[
+                            x++;
+                            dynamicTextDisplay[ container, reformat ],
+                            TrackedSymbols :> { x },
+                            UpdateInterval -> 0.2
+                        ],
+                        Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
+                    ],
+                    Dynamic[
+                        x++;
+                        dynamicTextDisplay[ container, reformat ],
+                        Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
+                    ]
+                ],
+            "Output",
+            "ChatOutput",
+            If[ MatchQ[ minimized, True|Automatic ],
+                Sequence @@ Flatten[ {
+                    $closedChatCellOptions,
+                    Initialization :> attachMinimizedIcon[ EvaluationCell[ ], label ]
+                } ],
+                Sequence @@ { }
+            ],
+            Selectable   -> False,
+            Editable     -> False,
+            CellDingbat  -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIconActive" ], Background -> None ],
+            TaggingRules -> <| "ChatNotebookSettings" -> settings |>
+        ]
+    ];
 
 activeAIAssistantCell[ container_, settings_, minimized_ ] :=
     With[
@@ -991,7 +1032,8 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association }
         $lastMessages = messages;
 
         key         = ConfirmBy[ Lookup[ settings, "OpenAIKey" ], StringQ ];
-        stream      = ! TrueQ @ CloudSystem`$CloudNotebooks;
+        (* stream      = ! TrueQ @ CloudSystem`$CloudNotebooks; *)
+        stream      = True;
 
         (* model parameters *)
         model       = Lookup[ settings, "Model"           , "gpt-3.5-turbo" ];
@@ -1845,7 +1887,7 @@ writeReformattedCell // endDefinition;
 (*reformatCell*)
 reformatCell // beginDefinition;
 
-reformatCell[ settings_, string_, tag_, open_, label_ ] := Cell[
+reformatCell[ settings_, string_, tag_, open_, label_ ] := UsingFrontEnd @ Cell[
     If[ TrueQ @ settings[ "AutoFormat" ],
         TextData @ reformatTextData @ string,
         TextData @ string
@@ -1874,6 +1916,8 @@ reformatCell // endDefinition;
 (*makeCompactChatData*)
 makeCompactChatData // beginDefinition;
 
+makeCompactChatData[ message_, tag_, as_ ] /; CloudSystem`$CloudNotebooks := Inherited;
+
 makeCompactChatData[
     message_,
     tag_,
@@ -1881,7 +1925,7 @@ makeCompactChatData[
 ] :=
     BaseEncode @ BinarySerialize[
         Association[
-            as,
+            KeyDrop[ as, "OpenAIKey" ],
             "MessageTag" -> tag,
             "Data" -> Association[
                 data,
@@ -2124,17 +2168,17 @@ makeInlineCodeCell[ code_String ] /; $dynamicText := Cell[
 
 makeInlineCodeCell[ code0_String ] :=
     With[ { code = unescapeInlineMarkdown @ code0 },
-    If[ SyntaxQ @ code,
-        Cell[
-            BoxData @ TemplateBox[ { stringToBoxes @ code }, "ChatCodeInlineTemplate" ],
-            "ChatCode",
-            Background -> GrayLevel[ 1 ]
-        ],
-        Cell[
-            BoxData @ TemplateBox[ { Cell[ code, Background -> GrayLevel[ 1 ] ] }, "ChatCodeInlineTemplate" ],
-            "ChatCodeActive",
-            Background -> GrayLevel[ 1 ]
-        ]
+        If[ SyntaxQ @ code,
+            Cell[
+                BoxData @ TemplateBox[ { stringToBoxes @ code }, "ChatCodeInlineTemplate" ],
+                "ChatCode",
+                Background -> GrayLevel[ 1 ]
+            ],
+            Cell[
+                BoxData @ TemplateBox[ { Cell[ code, Background -> GrayLevel[ 1 ] ] }, "ChatCodeInlineTemplate" ],
+                "ChatCodeActive",
+                Background -> GrayLevel[ 1 ]
+            ]
         ]
     ];
 
