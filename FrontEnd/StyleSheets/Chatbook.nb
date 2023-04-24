@@ -817,7 +817,6 @@ Notebook[
   ],
   Cell[
    StyleData["ChatDelimiter"],
-   ShowCellBracket -> False,
    CellMargins -> {{0, 0}, {10, 10}},
    CellElementSpacings -> {"CellMinHeight" -> 6},
    CellGroupingRules -> {"SectionGrouping", 62},
