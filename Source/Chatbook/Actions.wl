@@ -1148,7 +1148,7 @@ selectChatCells0[ cell_, { before___, final_, ___ }, final_ ] := selectChatCells
 
 (* Otherwise, proceed with cell selection: *)
 selectChatCells0[ cell_, cells: { __CellObject }, final_ ] := Enclose[
-    Module[ { cellData, cellPosition, before, groupPos, selectedRange, filtered, selectedCells },
+    Module[ { cellData, cellPosition, before, groupPos, selectedRange, filtered, rest, selectedCells },
 
         cellData = ConfirmMatch[
             cellInformation @ cells,
@@ -1176,11 +1176,11 @@ selectChatCells0[ cell_, cells: { __CellObject }, final_ ] := Enclose[
         filtered = DeleteCases[ selectedRange, KeyValuePattern[ "Style" -> $$chatIgnoredStyle ] ];
 
         (* Delete output cells that come after the evaluation cell *)
-        deleteExistingChatOutputs @ Drop[ cellData, cellPosition ];
+        rest = deleteExistingChatOutputs @ Drop[ cellData, cellPosition ];
 
         (* Get the selected cell objects from the filtered cell info *)
         selectedCells = ConfirmMatch[
-            Lookup[ filtered, "CellObject" ],
+            Lookup[ Flatten @ { filtered, rest }, "CellObject" ],
             { __CellObject },
             "FilteredCellObjects"
         ];
@@ -1220,7 +1220,8 @@ deleteExistingChatOutputs[ cellData: { KeyValuePattern[ "CellObject" -> _CellObj
         delete      = TakeWhile[ cellData, MatchQ @ KeyValuePattern[ "CellAutoOverwrite" -> True ] ];
         chatOutputs = Cases[ delete, KeyValuePattern[ "Style" -> $$chatOutputStyle ] ];
         cells       = Cases[ chatOutputs, KeyValuePattern[ "CellObject" -> cell_ ] :> cell ];
-        NotebookDelete @ cells
+        NotebookDelete @ cells;
+        DeleteCases[ delete, KeyValuePattern[ "CellObject" -> Alternatives @@ cells ] ]
     ];
 
 deleteExistingChatOutputs // endDefinition;
