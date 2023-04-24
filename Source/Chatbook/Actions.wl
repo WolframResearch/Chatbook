@@ -672,9 +672,10 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTop @ Enclose[
 
         container = ProgressIndicator[ Appearance -> "Percolate" ];
 
+        $reformattedCell = None;
         cell = activeAIAssistantCell[
             container,
-            Association[ settings, "Task" :> task, "Container" :> container ]
+            Association[ settings, "Task" :> task, "Container" :> container, "CellObject" :> cellObject ]
         ];
 
         Quiet[
@@ -747,18 +748,6 @@ alwaysOpenQ // endDefinition;
 submitAIAssistant // beginDefinition;
 submitAIAssistant // Attributes = { HoldFirst };
 
-(* submitAIAssistant[ container_, req_, cellObject_, settings_ ] /; CloudSystem`$CloudNotebooks := Enclose[
-    Module[ { resp, code, json, text },
-        resp = ConfirmMatch[ URLRead @ req, _HTTPResponse ];
-        code = ConfirmBy[ resp[ "StatusCode" ], IntegerQ ];
-        ConfirmAssert[ resp[ "ContentType" ] === "application/json" ];
-        json = Developer`ReadRawJSONString @ resp[ "Body" ];
-        text = $lastMessageText = extractMessageText @ json;
-        checkResponse[ settings, text, cellObject, json ]
-    ],
-    # & (* TODO: cloud error cell *)
-]; *)
-
 submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
     With[ { autoOpen = TrueQ @ $autoOpen, alwaysOpen = TrueQ @ $alwaysOpen },
         URLSubmit[
@@ -804,57 +793,60 @@ extractMessageText // endDefinition;
 activeAIAssistantCell // beginDefinition;
 activeAIAssistantCell // Attributes = { HoldFirst };
 
-(* activeAIAssistantCell[ container_, settings_ ] /; CloudSystem`$CloudNotebooks := (
-    Cell[
-        BoxData @ ToBoxes @ ProgressIndicator[ Appearance -> "Percolate" ],
-        "ChatOutput",
-        CellDingbat  -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIconActive" ], Background -> None ],
-        TaggingRules -> <| "ChatNotebookSettings" -> settings |>
-    ]
-); *)
-
 activeAIAssistantCell[ container_, settings_Association? AssociationQ ] :=
     activeAIAssistantCell[ container, settings, Lookup[ settings, "ShowMinimized", Automatic ] ];
 
-activeAIAssistantCell[ container_, settings_, minimized_ ] /; CloudSystem`$CloudNotebooks :=
+activeAIAssistantCell[
+    container_,
+    settings: KeyValuePattern[ "CellObject" :> cellObject_ ],
+    minimized_
+] /; CloudSystem`$CloudNotebooks :=
     With[
         {
             label    = RawBoxes @ TemplateBox[ { }, "MinimizedChatActive" ],
             id       = $SessionID,
             reformat = dynamicAutoFormatQ @ settings
         },
-        x = 0;
-        Cell[
-            BoxData @ ToBoxes @
-                If[ TrueQ @ reformat,
-                    Dynamic[
-                        Refresh[
-                            x++;
-                            dynamicTextDisplay[ container, reformat ],
-                            TrackedSymbols :> { x },
-                            UpdateInterval -> 0.2
+        Module[ { x = 0 },
+            ClearAttributes[ { x, cellObject }, Temporary ];
+            Cell[
+                BoxData @ ToBoxes @
+                    If[ TrueQ @ reformat,
+                        Dynamic[
+                            Refresh[
+                                x++;
+                                If[ MatchQ[ $reformattedCell, _Cell ],
+                                    Pause[ 1 ];
+                                    NotebookWrite[ cellObject, $reformattedCell ];
+                                    Remove[ x, cellObject ];
+                                    ,
+                                    dynamicTextDisplay[ container, reformat ]
+                                ],
+                                TrackedSymbols :> { x },
+                                UpdateInterval -> 0.2
+                            ],
+                            Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
                         ],
-                        Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
+                        Dynamic[
+                            x++;
+                            If[ MatchQ[ $reformattedCell, _Cell ],
+                                Pause[ 1 ];
+                                NotebookWrite[ cellObject, $reformattedCell ];
+                                Remove[ x, cellObject ];
+                                ,
+                                dynamicTextDisplay[ container, reformat ]
+                            ],
+                            Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
+                        ]
                     ],
-                    Dynamic[
-                        x++;
-                        dynamicTextDisplay[ container, reformat ],
-                        Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
-                    ]
-                ],
-            "Output",
-            "ChatOutput",
-            If[ MatchQ[ minimized, True|Automatic ],
-                Sequence @@ Flatten[ {
-                    $closedChatCellOptions,
-                    Initialization :> attachMinimizedIcon[ EvaluationCell[ ], label ]
-                } ],
-                Sequence @@ { }
-            ],
-            Selectable   -> False,
-            Editable     -> False,
-            CellDingbat  -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIconActive" ], Background -> None ],
-            TaggingRules -> <| "ChatNotebookSettings" -> settings |>
+                "Output",
+                "ChatOutput",
+                Sequence @@ Flatten[ { $closedChatCellOptions } ],
+                Selectable   -> False,
+                Editable     -> False,
+                CellDingbat  -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIconActive" ], Background -> None ],
+                TaggingRules -> <| "ChatNotebookSettings" -> settings |>
+            ]
         ]
     ];
 
