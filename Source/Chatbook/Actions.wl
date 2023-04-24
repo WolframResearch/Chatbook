@@ -1941,7 +1941,7 @@ $wlCodeString = Longest @ Alternatives[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*inlineSyntaxQ*)
-inlineSyntaxQ[ str_String ] := ! StringStartsQ[ str, "`" ] && Internal`SymbolNameQ[ str<>"x", True ];
+inlineSyntaxQ[ s_String ] := ! StringStartsQ[ s, "`" ] && Internal`SymbolNameQ[ unescapeInlineMarkdown @ s<>"x", True ];
 inlineSyntaxQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
@@ -2115,14 +2115,15 @@ makeInlineCodeCell // beginDefinition;
 makeInlineCodeCell[ s_String? nameQ ] /; Context @ s === "System`" :=
     hyperlink[ s, "paclet:ref/" <> Last @ StringSplit[ s, "`" ] ];
 
-makeInlineCodeCell[ s_String? LowerCaseQ ] := StyleBox[ s, "TI" ];
+makeInlineCodeCell[ s_String? LowerCaseQ ] := StyleBox[ unescapeInlineMarkdown @ s, "TI" ];
 
 makeInlineCodeCell[ code_String ] /; $dynamicText := Cell[
-    BoxData @ TemplateBox[ { stringToBoxes @ code }, "ChatCodeInlineTemplate" ],
+    BoxData @ TemplateBox[ { stringToBoxes @ unescapeInlineMarkdown @ code }, "ChatCodeInlineTemplate" ],
     "ChatCodeActive"
 ];
 
-makeInlineCodeCell[ code_String ] :=
+makeInlineCodeCell[ code0_String ] :=
+    With[ { code = unescapeInlineMarkdown @ code0 },
     If[ SyntaxQ @ code,
         Cell[
             BoxData @ TemplateBox[ { stringToBoxes @ code }, "ChatCodeInlineTemplate" ],
@@ -2134,9 +2135,17 @@ makeInlineCodeCell[ code_String ] :=
             "ChatCodeActive",
             Background -> GrayLevel[ 1 ]
         ]
+        ]
     ];
 
 makeInlineCodeCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*unescapeInlineMarkdown*)
+unescapeInlineMarkdown // beginDefinition;
+unescapeInlineMarkdown[ str_String ] := StringReplace[ str, { "\\`" -> "`", "\\$" -> "$" } ];
+unescapeInlineMarkdown // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
