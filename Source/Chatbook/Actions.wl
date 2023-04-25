@@ -503,7 +503,7 @@ AttachCodeButtons[ Dynamic[ attached_ ], cell_CellObject, string_, lang_ ] := (
         EvaluationCell[ ],
         floatingButtonGrid[ attached, string, lang ],
         { Left, Bottom },
-        Offset[ { 0, 12 }, { 0, 0 } ],
+        Offset[ { 0, 13 }, { 0, 0 } ],
         { Left, Top },
         RemovalConditions -> { "MouseClickOutside", "MouseExit" }
     ]
@@ -2274,26 +2274,22 @@ inlineInteractiveCodeCell // endDefinition;
 
 
 floatingButtonGrid // Attributes = { HoldFirst };
-floatingButtonGrid[ attached_, string_, lang_ ] := Framed[
-    Grid[
-        {
+floatingButtonGrid[ attached_, string_, lang_ ] := RawBoxes @ TemplateBox[
+    {
+        ToBoxes @ Grid[
             {
-                button[ evaluateLanguageLabel @ lang, insertCodeBelow[ string, True ]; NotebookDelete @ attached ],
-                button[ $insertInputButtonLabel, insertCodeBelow[ string, False ]; NotebookDelete @ attached ],
-                button[ $copyToClipboardButtonLabel, NotebookDelete @ attached; CopyToClipboard @ string ]
-
-            }
-        },
-        Alignment  -> Top,
-        Spacings   -> 0.5,
-        Dividers   -> Center,
-        FrameStyle -> GrayLevel[ 0.85 ]
-    ],
-    Background     -> GrayLevel[ 0.9764705882352941 ],
-    FrameMargins   -> 3,
-    FrameStyle     -> GrayLevel[ 0.82 ],
-    ImageMargins   -> 0,
-    RoundingRadius -> 2
+                {
+                    button[ evaluateLanguageLabel @ lang, insertCodeBelow[ string, True ]; NotebookDelete @ attached ],
+                    button[ $insertInputButtonLabel, insertCodeBelow[ string, False ]; NotebookDelete @ attached ],
+                    button[ $copyToClipboardButtonLabel, NotebookDelete @ attached; CopyToClipboard @ string ]
+                }
+            },
+            Alignment -> Top,
+            Spacings -> 0.2,
+            FrameStyle -> GrayLevel[ 0.85 ]
+        ]
+    },
+    "ChatCodeBlockButtonPanel"
 ];
 
 insertCodeBelow[ cell_Cell, evaluate_: False ] :=
@@ -2316,11 +2312,8 @@ insertCodeBelow[ string_String, evaluate_: False ] := insertCodeBelow[ Cell[ Box
 $copyToClipboardButtonLabel := $copyToClipboardButtonLabel = fancyTooltip[
     MouseAppearance[
         buttonMouseover[
-            buttonFrameDefault @ RawBoxes @ FrontEndResource[ "NotebookToolbarExpressions", "HyperlinkCopyIcon" ],
-            buttonFrameActive @ RawBoxes @ ReplaceAll[
-                FrontEndResource[ "NotebookToolbarExpressions", "HyperlinkCopyIcon" ],
-                RGBColor[ 0.2, 0.2, 0.2 ] -> RGBColor[ 0.2902, 0.58431, 0.8 ]
-            ]
+            buttonFrameDefault @ RawBoxes @ TemplateBox[ { }, "AssistantCopyClipboard" ],
+            buttonFrameActive @ RawBoxes @ TemplateBox[ { }, "AssistantCopyClipboard" ]
         ],
         "LinkHand"
     ],
@@ -2330,8 +2323,8 @@ $copyToClipboardButtonLabel := $copyToClipboardButtonLabel = fancyTooltip[
 $insertInputButtonLabel := $insertInputButtonLabel = fancyTooltip[
     MouseAppearance[
         buttonMouseover[
-            buttonFrameDefault @ RawBoxes @ FrontEndResource[ "NotebookToolbarExpressions", "InsertInputIcon" ],
-            buttonFrameActive @ RawBoxes @ FrontEndResource[ "NotebookToolbarExpressions", "InsertInputIconHover" ]
+            buttonFrameDefault @ RawBoxes @ TemplateBox[ { }, "AssistantCopyBelow" ],
+            buttonFrameActive @ RawBoxes @ TemplateBox[ { }, "AssistantCopyBelow" ]
         ],
         "LinkHand"
     ],
@@ -2341,8 +2334,8 @@ $insertInputButtonLabel := $insertInputButtonLabel = fancyTooltip[
 $insertEvaluateButtonLabel := $insertEvaluateButtonLabel = fancyTooltip[
     MouseAppearance[
         buttonMouseover[
-            buttonFrameDefault @ RawBoxes @ FrontEndResource[ "NotebookToolbarExpressions", "EvaluateIcon" ],
-            buttonFrameActive @ RawBoxes @ FrontEndResource[ "NotebookToolbarExpressions", "EvaluateIconHover" ]
+            buttonFrameDefault @ RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
+            buttonFrameActive @ RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ]
         ],
         "LinkHand"
     ],
@@ -2378,9 +2371,27 @@ $languageIcons := $languageIcons = Enclose[
 
 
 buttonMouseover[ a_, b_ ] := Mouseover[ a, b ];
-buttonFrameDefault[ expr_ ] := Framed[ buttonPane @ expr, FrameStyle -> None, Background -> None, FrameMargins -> 1 ];
-buttonFrameActive[ expr_ ] := Framed[ buttonPane @ expr, FrameStyle -> GrayLevel[ 0.82 ], Background -> GrayLevel[ 1 ], FrameMargins -> 1 ];
-buttonPane[ expr_ ] := Pane[ expr, ImageSize -> { 24, 24 }, ImageSizeAction -> "ShrinkToFit", Alignment -> { Center, Center } ];
+
+buttonFrameDefault[ expr_ ] :=
+    Framed[
+        buttonPane @ expr,
+        FrameStyle     -> GrayLevel[ 0.95 ],
+        Background     -> GrayLevel[ 1 ],
+        FrameMargins   -> 0,
+        RoundingRadius -> 2
+    ];
+
+buttonFrameActive[ expr_ ] :=
+    Framed[
+        buttonPane @ expr,
+        FrameStyle     -> GrayLevel[ 0.82 ],
+        Background     -> GrayLevel[ 1 ],
+        FrameMargins   -> 0,
+        RoundingRadius -> 2
+    ];
+
+buttonPane[ expr_ ] :=
+    Pane[ expr, ImageSize -> { 24, 24 }, ImageSizeAction -> "ShrinkToFit", Alignment -> { Center, Center } ];
 
 fancyTooltip[ expr_, tooltip_ ] := Tooltip[
     expr,
