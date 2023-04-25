@@ -264,6 +264,7 @@ CopyChatObject // beginDefinition;
 
 CopyChatObject[ cell_CellObject ] := Enclose[
     Module[ { encodedString, chatData, messages, chatObject },
+        Quiet[ PacletInstall[ "Wolfram/LLMFunctions" ]; Needs[ "Wolfram`LLMFunctions`" -> None ] ];
         encodedString = ConfirmBy[ CurrentValue[ cell, { TaggingRules, "ChatData" } ], StringQ ];
         chatData      = ConfirmBy[ BinaryDeserialize @ BaseDecode @ encodedString, AssociationQ ];
         messages      = ConfirmMatch[ chatData[ "Data", "Messages" ], { __Association? AssociationQ } ];
