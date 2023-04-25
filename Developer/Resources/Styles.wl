@@ -329,6 +329,20 @@ Cell[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*ChatCodeBlockButtonPanel*)
+Cell[
+    StyleData[ "ChatCodeBlockButtonPanel" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ PanelBox[
+            #,
+            Appearance   -> $floatingButtonNinePatch,
+            ImageMargins -> 0
+        ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*ChatCode*)
 Cell[
     StyleData[ "ChatCode", StyleDefinitions -> StyleData[ "Input" ] ],
@@ -552,6 +566,36 @@ Cell[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Icons*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*AssistantCopyBelow*)
+Cell[
+    StyleData[ "AssistantCopyBelow" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "AssistantCopyBelow" ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*AssistantCopyClipboard*)
+Cell[
+    StyleData[ "AssistantCopyClipboard" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "AssistantCopyClipboard" ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*AssistantEvaluate*)
+Cell[
+    StyleData[ "AssistantEvaluate" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "AssistantEvaluate" ]
+    }
+]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

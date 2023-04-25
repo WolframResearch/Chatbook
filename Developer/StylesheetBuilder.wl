@@ -25,14 +25,20 @@ Begin[ "`Private`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Paths*)
-$assetLocation    = FileNameJoin @ { DirectoryName @ $InputFileName, "Resources" };
-$iconDirectory    = FileNameJoin @ { $assetLocation, "Icons" };
-$styleDataFile    = FileNameJoin @ { $assetLocation, "Styles.wl" };
-$styleSheetTarget = FileNameJoin @ { DirectoryName[ $InputFileName, 2 ], "FrontEnd", "StyleSheets", "Chatbook.nb" };
+$assetLocation      = FileNameJoin @ { DirectoryName @ $InputFileName, "Resources" };
+$iconDirectory      = FileNameJoin @ { $assetLocation, "Icons" };
+$ninePatchDirectory = FileNameJoin @ { $assetLocation, "NinePatchImages" };
+$styleDataFile      = FileNameJoin @ { $assetLocation, "Styles.wl" };
+$styleSheetTarget   = FileNameJoin @ { DirectoryName[ $InputFileName, 2 ], "FrontEnd", "StyleSheets", "Chatbook.nb" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Resources*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$floatingButtonNinePatch*)
+$floatingButtonNinePatch = Import @ FileNameJoin @ { $ninePatchDirectory, "FloatingButtonGrid.wxf" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
