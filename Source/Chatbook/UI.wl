@@ -16,6 +16,9 @@ GetChatEnvironmentValues
 GetAllCellsInChatContext
 ChatContextEpilogFunction
 
+MakeChatInputCellDingbat
+GetChatInputLLMConfigurationSelectorMenuData
+
 Begin["`Private`"]
 
 Needs["Wolfram`Chatbook`"]
@@ -1288,6 +1291,114 @@ chatHTTPRequest[
 ]
 
 (*========================================================*)
+
+MakeChatInputCellDingbat[] := With[{
+	default = "Assistant",
+	menuData = GetChatInputLLMConfigurationSelectorMenuData[],
+	valueKeyPath = {TaggingRules, "LLMConfiguration"}
+}, {
+	menu = Tooltip[
+		PopupMenu[
+			Dynamic[
+				CurrentValue[
+					ParentCell[EvaluationCell[]],
+					valueKeyPath
+				]
+			],
+			Map[
+				entry |-> Replace[entry, {
+					{id_?StringQ, label_, suffix_} :> (
+						id -> Row[{
+							Dynamic[RawBoxes[label]],
+							Dynamic[RawBoxes[suffix]]
+						}]
+					),
+					Delimiter -> Delimiter,
+					other_ :> (
+						ChatbookWarning[
+							"Unexpected persona menu entry form: ``",
+							InputForm[other]
+						];
+						other
+					)
+				}],
+				menuData
+			],
+			default,
+			Framed[
+				Style[
+					Row[{
+						PaneSelector[
+							Map[
+								entry |-> Replace[entry, {
+									{id_?StringQ, label_, _} :> (
+										id -> Dynamic[RawBoxes[label]]
+									),
+									Delimiter -> Nothing,
+									other_ :> (
+										ChatbookWarning[
+											"Unexpected persona menu entry form: ``",
+											InputForm[other]
+										];
+										other
+									)
+								}],
+								menuData
+							],
+							Dynamic[
+								CurrentValue[
+									ParentCell[EvaluationCell[]],
+									valueKeyPath
+								]
+							],
+							CurrentValue[
+								ParentCell[EvaluationCell[]],
+								valueKeyPath
+							],
+							ImageSize -> Automatic
+						],
+						"\[VeryThinSpace]\[RightAngleBracket]"
+					}],
+					FontColor -> GrayLevel[0.5],
+					FontWeight -> "Bold",
+					FontSize -> 11
+				],
+				RoundingRadius -> 3,
+				FrameMargins -> 2,
+				ImageMargins -> {{0, 3}, {0, 0}},
+				FrameStyle -> Directive[
+					RGBColor[0.8549, 0.83137, 0.72549],
+					AbsoluteThickness[1]
+				],
+				FrameMargins -> 0
+			]
+		],
+		CurrentValue[
+			ParentCell[EvaluationCell[]],
+			valueKeyPath
+		]
+	]
+},
+	Row[{
+		RawBoxes @ TemplateBox[{}, "ChatCounterLabel"],
+		menu
+	}]
+]
+
+(*====================================*)
+
+GetChatInputLLMConfigurationSelectorMenuData[] := Module[{},
+	{
+		{"Assistant", TemplateBox[{}, "ChatUserIcon"], " Assistant"},
+		{"Query", TemplateBox[{}, "ChatQueryIcon"], " Query"},
+		{"Wolfie", TemplateBox[{}, "WolfieIcon"], " Wolfie"},
+		Delimiter,
+		{"ChatGPT", TemplateBox[{}, "OpenAILogo"], " ChatGPT"},
+		{"ChatGPT-system", TemplateBox[{}, "OpenAILogo"], " ChatGPT (system)"},
+		Delimiter,
+		{"Birdnardo", TemplateBox[{}, "PRECOMMIT"], " Birdnardo"}
+	}
+]
 
 
 End[]

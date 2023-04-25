@@ -589,14 +589,17 @@ Notebook[
    CellDingbat ->
     Cell[
      BoxData[
-      RowBox[
-       {
-        TemplateBox[{}, "ChatCounterLabel"],
-        TemplateBox[{}, "ChatUserIcon"]
-       }
+      DynamicBox[
+       ToBoxes[
+        Wolfram`Chatbook`UI`$ChatInputMenuDataChanged;
+        Symbol["Wolfram`Chatbook`UI`MakeChatInputCellDingbat"][],
+        StandardForm
+       ],
+       TrackedSymbols :> {Wolfram`Chatbook`UI`$ChatInputMenuDataChanged}
       ]
      ],
-     Background -> None
+     Background -> None,
+     CellFrame -> 0
     ],
    CellMargins -> {{66, 25}, {5, 8}},
    StyleKeyMapping -> {
@@ -1462,7 +1465,13 @@ Notebook[
           ],
           "Grid"
          ],
-         FrameStyle -> None,
+         FrameStyle ->
+          Dynamic[
+           If[ CurrentValue["MouseOver"],
+            GrayLevel[0.8],
+            GrayLevel[0.98]
+           ]
+          ],
          RoundingRadius -> 0,
          FrameMargins -> {{5, 2}, {2, 2}},
          ImageSize -> Full,
@@ -1470,8 +1479,8 @@ Notebook[
          Background ->
           Dynamic[
            If[ CurrentValue["MouseOver"],
-            GrayLevel[0.96],
-            GrayLevel[1.0]
+            GrayLevel[1],
+            GrayLevel[0.98]
            ]
           ]
         },
@@ -1487,6 +1496,45 @@ Notebook[
         ],
        Method -> "Queued",
        Evaluator -> Automatic
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ChatMenuSection"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      TemplateBox[
+       {
+        TagBox[
+         GridBox[
+          {
+           {
+            PaneBox[
+             StyleBox[#1, "ChatMenuSectionLabel"],
+             FrameMargins -> 0,
+             ImageMargins -> 0,
+             BaselinePosition -> Baseline,
+             ImageSize -> Full
+            ]
+           }
+          },
+          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}},
+          AutoDelete -> False,
+          GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+          GridBoxSpacings -> {"Columns" -> {{0}}}
+         ],
+         "Grid"
+        ],
+        Background -> GrayLevel[0.937],
+        FrameMargins -> {{5, 2}, {2, 2}},
+        FrameStyle -> None,
+        ImageMargins -> {{0, 0}, {0, 0}},
+        ImageSize -> Full,
+        RoundingRadius -> 0
+       },
+       "Highlighted"
       ]
      ])
    }
@@ -1676,7 +1724,7 @@ Notebook[
           "Column"
          ],
          FrameMargins -> 3,
-         Background -> GrayLevel[1],
+         Background -> GrayLevel[0.98],
          RoundingRadius -> 3,
          FrameStyle ->
           Directive[AbsoluteThickness[1], GrayLevel[0.85]],
@@ -3893,6 +3941,15 @@ Notebook[
    FontColor -> GrayLevel[0.2]
   ],
   Cell[
+   StyleData[
+    "ChatMenuSectionLabel",
+    StyleDefinitions -> StyleData["ChatMenuLabel"]
+   ],
+   FontSize -> 11,
+   FontVariations -> {"CapsType" -> "AllCaps"},
+   FontColor -> GrayLevel[0.35]
+  ],
+  Cell[
    StyleData["ChatCounterLabel"],
    TemplateBoxOptions -> {
     DisplayFunction ->
@@ -3908,6 +3965,6 @@ Notebook[
    }
   ]
  },
- FrontEndVersion -> "13.2 for Microsoft Windows (64-bit) (January 30, 2023)",
+ FrontEndVersion -> "13.2 for Mac OS X ARM (64-bit) (November 18, 2022)",
  StyleDefinitions -> "PrivateStylesheetFormatting.nb"
 ]
