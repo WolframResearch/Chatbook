@@ -76,12 +76,22 @@ Cell[
     Evaluatable       -> True,
     MenuSortingValue  -> 1000,
     StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "ChatQuery", "Backspace" -> "Input" },
+	CellDingbat -> Cell[
+		BoxData @ DynamicBox[
+			ToBoxes[
+				(
+					(* FIXME: Is this actually used? *)
+					Wolfram`Chatbook`UI`$ChatInputMenuDataChanged;
 
-    CellDingbat -> Cell[
-        BoxData @ RowBox @ { TemplateBox[ { }, "ChatCounterLabel" ], TemplateBox[ { }, "ChatUserIcon" ] },
-        Background -> None
-    ],
-
+					Symbol["Wolfram`Chatbook`UI`MakeChatInputCellDingbat"][]
+				),
+				StandardForm
+			],
+			TrackedSymbols :> {Wolfram`Chatbook`UI`$ChatInputMenuDataChanged}
+		],
+		Background -> None,
+		CellFrame -> 0
+	],
     CellEvaluationFunction -> Function @ With[ { $CellContext`cell = EvaluationCell[ ] },
         Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
         Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "EvaluateChatInput", $CellContext`cell ]
