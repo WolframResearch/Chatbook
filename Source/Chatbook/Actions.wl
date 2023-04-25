@@ -6,7 +6,9 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 (* TODO: these probably aren't needed as exported symbols since all hooks are going through ChatbookAction *)
 `AskChat;
 `AttachCodeButtons;
+`AIAutoAssist;
 `CopyChatObject;
+`EvaluateChatInput;
 `ExclusionToggle;
 `OpenChatMenu;
 `SendChat;
@@ -24,6 +26,7 @@ Needs[ "Wolfram`Chatbook`Serialization`" ];
 (*Config*)
 $chatDelimiterStyles = { "ChatContextDivider", "ChatDelimiter" };
 $chatIgnoredStyles   = { "ChatExcluded" };
+$chatInputStyles     = { "ChatInput", "ChatQuery", "ChatSystemInput" };
 $chatOutputStyles    = { "ChatOutput" };
 
 $maxChatCells = OptionValue[ CreateChatNotebook, "ChatHistoryLength" ];
@@ -51,6 +54,7 @@ $closedChatCellOptions :=
 (*Style Patterns*)
 $$chatDelimiterStyle = Alternatives @@ $chatDelimiterStyles | { ___, Alternatives @@ $chatDelimiterStyles, ___ };
 $$chatIgnoredStyle   = Alternatives @@ $chatIgnoredStyles   | { ___, Alternatives @@ $chatIgnoredStyles  , ___ };
+$$chatInputStyle     = Alternatives @@ $chatInputStyles     | { ___, Alternatives @@ $chatInputStyles    , ___ };
 $$chatOutputStyle    = Alternatives @@ $chatOutputStyles    | { ___, Alternatives @@ $chatOutputStyles   , ___ };
 
 (* ::**************************************************************************************************************:: *)
@@ -147,16 +151,76 @@ ChatbookAction::BadResponseMessage =
 ChatbookAction::NotImplemented =
 "Action \"`1`\" is not implemented.";
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Dispatcher Definitions*)
 ChatbookAction[ "Ask"              , args___ ] := catchTop @ AskChat @ args;
 ChatbookAction[ "AttachCodeButtons", args___ ] := catchTop @ AttachCodeButtons @ args;
+ChatbookAction[ "AIAutoAssist"     , args___ ] := catchTop @ AIAutoAssist @ args;
 ChatbookAction[ "CopyChatObject"   , args___ ] := catchTop @ CopyChatObject @ args;
 ChatbookAction[ "ExclusionToggle"  , args___ ] := catchTop @ ExclusionToggle @ args;
+ChatbookAction[ "EvaluateChatInput", args___ ] := catchTop @ EvaluateChatInput @ args;
 ChatbookAction[ "OpenChatMenu"     , args___ ] := catchTop @ OpenChatMenu @ args;
 ChatbookAction[ "Send"             , args___ ] := catchTop @ SendChat @ args;
 ChatbookAction[ "StopChat"         , args___ ] := catchTop @ StopChat @ args;
 ChatbookAction[ "WidgetSend"       , args___ ] := catchTop @ WidgetSend @ args;
 ChatbookAction[ name_String        , args___ ] := catchTop @ throwFailure[ ChatbookAction::NotImplemented, name, args ];
 ChatbookAction[ args___                      ] := catchTop @ throwInternalFailure @ HoldForm @ ChatbookAction @ args;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*EvaluateChatInput*)
+EvaluateChatInput // beginDefinition;
+
+EvaluateChatInput[ ] := EvaluateChatInput @ EvaluationCell[ ];
+
+EvaluateChatInput[ evalCell_CellObject ] := EvaluateChatInput[ evalCell, parentNotebook @ evalCell ];
+
+EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
+    EvaluateChatInput[ evalCell, nbo, Association @ CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings" } ] ];
+
+EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
+    Block[ { $autoAssistMode = False }, sendChat[ evalCell, nbo, settings ] ];
+
+EvaluateChatInput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*AIAutoAssist*)
+AIAutoAssist // beginDefinition;
+
+AIAutoAssist[ cell_ ] /; CloudSystem`$CloudNotebooks := Null;
+
+AIAutoAssist[ cell_CellObject ] := AIAutoAssist[ cell, parentNotebook @ cell ];
+
+AIAutoAssist[ cell_CellObject, nbo_NotebookObject ] :=
+    If[ autoAssistQ[ cell, nbo ],
+        Block[ { $autoAssistMode = True }, SendChat @ cell ],
+        Null
+    ];
+
+AIAutoAssist // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*autoAssistQ*)
+autoAssistQ // beginDefinition;
+
+autoAssistQ[ cell_CellObject, nbo_NotebookObject ] := autoAssistQ[ cellInformation @ cell, cell, nbo ];
+
+autoAssistQ[ KeyValuePattern[ "Style" -> $$chatInputStyle ], _, _ ] := False;
+
+autoAssistQ[ info_, cell_CellObject, nbo_NotebookObject ] :=
+    autoAssistQ[
+        CurrentValue[ nbo,  { TaggingRules, "ChatNotebookSettings", "Assistance" } ],
+        CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "Assistance" } ]
+    ];
+
+autoAssistQ[ True|Automatic|Inherited, True|Automatic|Inherited ] := True;
+autoAssistQ[ _, True|Automatic ] := True;
+autoAssistQ[ _, _ ] := False;
+
+autoAssistQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -619,10 +683,7 @@ SendChat[ evalCell_, nbo_, settings_, Automatic ] /; CloudSystem`$CloudNotebooks
 
 SendChat[ evalCell_, nbo_, settings_, Automatic ] :=
     Block[ { $autoOpen, $alwaysOpen = $alwaysOpen },
-        $autoOpen = MemberQ[
-            CurrentValue[ evalCell, CellStyle ],
-            "Text"|"ChatInput"|"ChatQuery"|"ChatSystemInput"
-        ];
+        $autoOpen = MemberQ[ CurrentValue[ evalCell, CellStyle ], $$chatInputStyle ];
         $alwaysOpen = TrueQ @ $alwaysOpen || $autoOpen;
         sendChat[ evalCell, nbo, settings ]
     ];
@@ -686,7 +747,6 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTop @ Enclose[
         $resultCellCache = <| |>;
         $debugLog = Internal`Bag[ ];
         cellObject = $lastCellObject = cellPrint @ cell;
-
         task = Confirm[ $lastTask = submitAIAssistant[ container, req, cellObject, settings ] ];
     ],
     throwInternalFailure[ sendChat[ evalCell, nbo, settings0 ], ## ] &
@@ -875,7 +935,7 @@ activeAIAssistantCell[ container_, settings_, minimized_ ] :=
                 ],
             "Output",
             "ChatOutput",
-            If[ MatchQ[ minimized, True|Automatic ],
+            If[ TrueQ @ $autoAssistMode && MatchQ[ minimized, True|Automatic ],
                 Sequence @@ Flatten[ {
                     $closedChatCellOptions,
                     Initialization :> attachMinimizedIcon[ EvaluationCell[ ], label ]
@@ -936,10 +996,17 @@ dynamicTextDisplay // endDefinition;
 checkResponse // beginDefinition;
 
 checkResponse[ settings_, container_, cell_, as: KeyValuePattern[ "StatusCode" -> Except[ 200, _Integer ] ] ] :=
-    Module[ { log, body, data },
-        log  = Internal`BagPart[ $debugLog, All ];
-        body = StringJoin @ Cases[ log, KeyValuePattern[ "BodyChunk" -> s_String ] :> s ];
-        data = Replace[ Quiet @ Developer`ReadRawJSONString @ body, $Failed -> Missing[ "NotAvailable" ] ];
+    Module[ { log, chunks, folded, body, data },
+        log    = Internal`BagPart[ $debugLog, All ];
+        chunks = Cases[ log, KeyValuePattern[ "BodyChunk" -> s_String ] :> s ];
+        folded = FoldList[ StringJoin, chunks ];
+        { body, data } = FirstCase[
+            folded,
+            s_String :> With[ { json = Quiet @ Developer`ReadRawJSONString @ s },
+                            { s, json } /; MatchQ[ json, KeyValuePattern[ "error" -> _ ] ]
+                        ],
+            { Last[ folded, Missing[ "NotAvailable" ] ], Missing[ "NotAvailable" ] }
+        ];
         writeErrorCell[ cell, $badResponse = Association[ as, "Body" -> body, "BodyJSON" -> data ] ]
     ];
 
@@ -962,11 +1029,15 @@ writeErrorCell[ cell_, as_ ] := NotebookWrite[ cell, errorCell @ as ];
 errorCell // ClearAll;
 errorCell[ as_ ] :=
     Cell[
-        TextData @ { errorText @ as, "\n\n", Cell @ BoxData @ errorBoxes @ as },
+        TextData @ {
+            StyleBox[ "\[WarningSign] ", FontColor -> Darker @ Red, FontSize -> 1.5 Inherited ],
+            errorText @ as,
+            "\n\n",
+            Cell @ BoxData @ errorBoxes @ as
+        },
         "Text",
-        "Message",
         "ChatOutput",
-        GeneratedCell -> True,
+        GeneratedCell     -> True,
         CellAutoOverwrite -> True
     ];
 
@@ -1249,7 +1320,7 @@ deleteExistingChatOutputs // beginDefinition;
    `deleteExistingChatOutputs` gathers up all the generated cells that come after the evaluation cell and if it finds
    a chat output cell, it deletes it.
 *)
-deleteExistingChatOutputs[ cellData: { KeyValuePattern[ "CellObject" -> _CellObject ] ... } ] :=
+deleteExistingChatOutputs[ cellData: { KeyValuePattern[ "CellObject" -> _CellObject ] ... } ] /; $autoAssistMode :=
     Module[ { delete, chatOutputs, cells },
         delete      = TakeWhile[ cellData, MatchQ @ KeyValuePattern[ "CellAutoOverwrite" -> True ] ];
         chatOutputs = Cases[ delete, KeyValuePattern[ "Style" -> $$chatOutputStyle ] ];
@@ -1257,6 +1328,9 @@ deleteExistingChatOutputs[ cellData: { KeyValuePattern[ "CellObject" -> _CellObj
         NotebookDelete @ cells;
         DeleteCases[ delete, KeyValuePattern[ "CellObject" -> Alternatives @@ cells ] ]
     ];
+
+deleteExistingChatOutputs[ cellData_ ] :=
+    TakeWhile[ cellData, MatchQ @ KeyValuePattern[ "CellAutoOverwrite" -> True ] ];
 
 deleteExistingChatOutputs // endDefinition;
 
