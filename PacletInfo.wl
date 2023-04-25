@@ -14,6 +14,7 @@ PacletObject[<|
 		this paclet. This is a workaround used to prevent the contexts from this
 		paclet from being present in $ContextPath post Kernel-startup. *)
 	"Loading" -> "Startup",
+    "PrimaryContext" -> "Wolfram`Chatbook`",
 	"Extensions" -> {
 		{"Kernel", "Root" -> "Source/Startup/Begin", "Context" -> "Wolfram`Chatbook`BeginStartup`"},
 		{"Kernel",
