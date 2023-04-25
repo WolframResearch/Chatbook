@@ -16,7 +16,7 @@ Cell[
 
     CellEpilog :> With[ { $CellContext`cell = EvaluationCell[ ] },
         Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "Send", $CellContext`cell ]
+        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AIAutoAssist", $CellContext`cell ]
     ],
 
     ComponentwiseContextMenu -> <|
@@ -47,16 +47,6 @@ Cell[
 (*Text*)
 Cell[
     StyleData[ "Text" ],
-    Evaluatable -> True,
-    CellEvaluationFunction -> Function[
-        If[ TrueQ @ CloudSystem`$CloudNotebooks,
-            With[ { $CellContext`cell = EvaluationCell[ ] },
-                Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "Send", $CellContext`cell ]
-            ],
-            Null
-        ]
-    ],
     ContextMenu -> contextMenu[ $askMenuItem, Delimiter, "Text" ]
 ]
 
@@ -78,20 +68,25 @@ Cell[
 (*ChatInput*)
 Cell[
     StyleData[ "ChatInput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
-    MenuSortingValue  -> 1000,
-    CellGroupingRules -> "InputGrouping",
     CellFrameColor    -> RGBColor[ "#a3c9f2" ],
+    CellGroupingRules -> "InputGrouping",
     CellMargins       -> { { 66, 25 }, { 5, 8 } },
-    CellDingbat       -> Cell[
-        BoxData @ RowBox[{
-            TemplateBox[{}, "ChatCounterLabel"],
-            TemplateBox[{}, "ChatUserIcon"]
-        }],
+    CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    CounterIncrements -> { "ChatInputCount" },
+    Evaluatable       -> True,
+    MenuSortingValue  -> 1000,
+    StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "ChatQuery", "Backspace" -> "Input" },
+
+    CellDingbat -> Cell[
+        BoxData @ RowBox @ { TemplateBox[ { }, "ChatCounterLabel" ], TemplateBox[ { }, "ChatUserIcon" ] },
         Background -> None
     ],
-    CounterIncrements -> {"ChatInputCount"},
-    StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "ChatQuery", "Backspace" -> "Input" },
-    CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+
+    CellEvaluationFunction -> Function @ With[ { $CellContext`cell = EvaluationCell[ ] },
+        Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "EvaluateChatInput", $CellContext`cell ]
+    ],
+
     menuInitializer[ "ChatInput", RGBColor[ "#d1d9ea" ] ]
 ]
 
@@ -100,11 +95,11 @@ Cell[
 (*ChatQuery*)
 Cell[
     StyleData[ "ChatQuery", StyleDefinitions -> StyleData[ "ChatInput" ] ],
+    CellDingbat      -> Cell[ BoxData @ TemplateBox[ { }, "ChatQueryIcon" ], Background -> None ],
+    CellFrameColor   -> RGBColor[ "#a3c9f2" ],
+    CellTrayWidgets  -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     MenuSortingValue -> 1000,
     StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "'" -> "ChatSystemInput", "Backspace" -> "ChatInput" },
-    CellFrameColor   -> RGBColor[ "#a3c9f2" ],
-    CellDingbat      -> Cell[ BoxData @ TemplateBox[ { }, "ChatQueryIcon" ], Background -> None ],
-    CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     menuInitializer[ "ChatInput", RGBColor[ "#d1d9ea" ] ]
 ]
 
@@ -113,13 +108,13 @@ Cell[
 (*ChatSystemInput*)
 Cell[
     StyleData[ "ChatSystemInput", StyleDefinitions -> StyleData[ "ChatInput" ] ],
-    MenuSortingValue -> 1000,
+    CellDingbat      -> Cell[ BoxData @ TemplateBox[ { }, "ChatSystemIcon" ], Background -> None ],
     CellFrame        -> 1,
-    StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "'" -> "ChatContextDivider", "Backspace" -> "ChatQuery" },
     CellFrameColor   -> RGBColor[ "#a3c9f2" ],
     CellFrameStyle   -> Dashing @ { Small, Small },
-    CellDingbat      -> Cell[ BoxData @ TemplateBox[ { }, "ChatSystemIcon" ], Background -> None ],
-    CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    CellTrayWidgets  -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    MenuSortingValue -> 1000,
+    StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "'" -> "ChatContextDivider", "Backspace" -> "ChatQuery" },
     menuInitializer[ "ChatInput", RGBColor[ "#d1d9ea" ] ]
 ]
 
@@ -134,10 +129,10 @@ Cell[
     CellElementSpacings -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
     CellGroupingRules   -> "OutputGrouping",
     CellMargins         -> { { 66, 25 }, { 12, 5 } },
+    CellTrayWidgets     -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     GeneratedCell       -> True,
     LineSpacing         -> { 1.1, 0, 2 },
     ShowAutoSpellCheck  -> False,
-    CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     menuInitializer[ "ChatOutput", RGBColor[ "#ecf0f5" ] ]
 ]
 
@@ -146,16 +141,16 @@ Cell[
 (*ChatContextDivider*)
 Cell[
     StyleData[ "ChatContextDivider", StyleDefinitions -> StyleData[ "Section" ] ],
-    CellGroupingRules   -> { "SectionGrouping", 30 },
-    ShowCellLabel       -> False,
-    CellMargins         -> { { 66, 25 }, { Inherited, Inherited } },
     CellFrame           -> { { 0, 0 }, { 0, 8 } },
     CellFrameColor      -> GrayLevel[ 0.74902 ],
+    CellGroupingRules   -> { "SectionGrouping", 30 },
+    CellMargins         -> { { 66, 25 }, { Inherited, Inherited } },
+    CellTrayWidgets     -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    CounterAssignments  -> { { "ChatInputCount", 0 } },
     DefaultNewCellStyle -> "Input",
     FontColor           -> GrayLevel[ 0.2 ],
     FontWeight          -> "DemiBold",
-    CounterAssignments  -> {{"ChatInputCount", 0}},
-    CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    ShowCellLabel       -> False,
 
     StyleKeyMapping -> {
         "~" -> "ChatDelimiter",
@@ -173,16 +168,16 @@ Cell[
 (*ChatDelimiter*)
 Cell[
     StyleData[ "ChatDelimiter" ],
-    CellTrayWidgets        -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     Background             -> GrayLevel[ 0.95 ],
     CellElementSpacings    -> { "CellMinHeight" -> 6 },
     CellFrameMargins       -> { { 20, 20 }, { 2, 2 } },
     CellGroupingRules      -> { "SectionGrouping", 62 },
     CellMargins            -> { { 0, 0 }, { 10, 10 } },
+    CellTrayWidgets        -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    CounterAssignments     -> { { "ChatInputCount", 0 } },
     DefaultNewCellStyle    -> "Input",
     FontSize               -> 6,
     ShowCellLabel          -> False,
-    CounterAssignments     -> {{"ChatInputCount", 0}},
 
     CellEventActions -> {
         "KeyDown" :> Switch[
