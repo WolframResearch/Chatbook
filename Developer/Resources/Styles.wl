@@ -82,7 +82,14 @@ Cell[
     CellGroupingRules -> "InputGrouping",
     CellFrameColor    -> RGBColor[ "#a3c9f2" ],
     CellMargins       -> { { 66, 25 }, { 5, 8 } },
-    CellDingbat       -> Cell[ BoxData @ TemplateBox[ { }, "ChatUserIcon" ], Background -> None ],
+    CellDingbat       -> Cell[
+        BoxData @ RowBox[{
+            TemplateBox[{}, "ChatCounterLabel"],
+            TemplateBox[{}, "ChatUserIcon"]
+        }],
+        Background -> None
+    ],
+    CounterIncrements -> {"ChatInputCount"},
     StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "ChatQuery", "Backspace" -> "Input" },
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     menuInitializer[ "ChatInput", RGBColor[ "#d1d9ea" ] ]
@@ -147,6 +154,7 @@ Cell[
     DefaultNewCellStyle -> "Input",
     FontColor           -> GrayLevel[ 0.2 ],
     FontWeight          -> "DemiBold",
+    CounterAssignments  -> {{"ChatInputCount", 0}},
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
 
     StyleKeyMapping -> {
@@ -174,6 +182,7 @@ Cell[
     DefaultNewCellStyle    -> "Input",
     FontSize               -> 6,
     ShowCellLabel          -> False,
+    CounterAssignments     -> {{"ChatInputCount", 0}},
 
     CellEventActions -> {
         "KeyDown" :> Switch[
@@ -703,6 +712,22 @@ Cell[
     FontWeight      -> Plain,
     LineBreakWithin -> False,
     LineIndent      -> 0
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatCounterLabel*)
+Cell[
+    StyleData["ChatCounterLabel"],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ StyleBox[
+            CounterBox["ChatInputCount"],
+            FontFamily -> "Source Sans Pro",
+            FontSize -> 10,
+            FontColor -> GrayLevel[ 0.2 ],
+            FontWeight -> Plain
+        ]
+    }
 ]
 
 (* ::**************************************************************************************************************:: *)
