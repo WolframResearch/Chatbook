@@ -18,6 +18,8 @@ System`Scope;
 
 Begin[ "`Private`" ];
 
+Get[ "Wolfram`Chatbook`" ];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
@@ -188,6 +190,101 @@ menuItem[ icon_, label_, None ] :=
 
 menuItem[ icon_, label_, code_ ] :=
     RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label, code }, "ChatMenuItem" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Tabbed Output CellDingbat*)
+
+tabArrowFrame[ gfx_, opts___ ] := Framed[
+    Graphics[ { GrayLevel[ 0.4 ], gfx }, ImageSize -> 5 ],
+    FrameMargins   -> 3,
+    FrameStyle     -> None,
+    ImageMargins   -> 0,
+    RoundingRadius -> 2,
+    opts
+];
+
+
+tabArrowButtonLabel[ gfx_ ] := MouseAppearance[
+    Mouseover[
+        tabArrowFrame[ gfx, Background -> None ],
+        tabArrowFrame[ gfx, Background -> GrayLevel[ 0.9 ] ]
+    ],
+    "LinkHand"
+];
+
+
+$tabButtonLabels = <|
+    "TabLeft" -> tabArrowButtonLabel[ Polygon @ { { 0, 0 }, { 0, 1 }, { -0.5, 0.5 } } ],
+    "TabRight" -> tabArrowButtonLabel[ Polygon @ { { 0, 0 }, { 0, 1 }, { 0.5, 0.5 } } ]
+|>;
+
+
+tabScrollButton[ direction_ ] := Button[
+    $tabButtonLabels[ direction ],
+    With[ { $CellContext`cell = EvaluationCell[ ] },
+        Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ direction, $CellContext`cell ]
+    ],
+    Appearance -> $suppressButtonAppearance
+];
+
+
+$tabbedOutputControls = Column[
+    {
+        Row @ { tabScrollButton[ "TabLeft" ], tabScrollButton[ "TabRight" ] },
+        RawBoxes @ StyleBox[
+            RowBox @ {
+                DynamicBox @ ToBoxes[
+                    If[ TrueQ @ CloudSystem`$CloudNotebooks,
+                        CurrentValue[
+                            EvaluationCell[ ],
+                            { TaggingRules, "PageData", "CurrentPage" },
+                            1
+                        ],
+                        CurrentValue[
+                            ParentCell @ EvaluationCell[ ],
+                            { TaggingRules, "PageData", "CurrentPage" },
+                            1
+                        ]
+                    ],
+                    StandardForm
+                ],
+                "/",
+                DynamicBox @ ToBoxes[
+                    If[ TrueQ @ CloudSystem`$CloudNotebooks,
+                        CurrentValue[
+                            EvaluationCell[ ],
+                            { TaggingRules, "PageData", "PageCount" },
+                            1
+                        ],
+                        CurrentValue[
+                            ParentCell @ EvaluationCell[ ],
+                            { TaggingRules, "PageData", "PageCount" },
+                            1
+                        ]
+                    ],
+                    StandardForm
+                ]
+            },
+            FontFamily -> "Source Sans Pro",
+            FontSize   -> 12
+        ]
+    },
+    Alignment -> Center,
+    Spacings  -> 0.1
+];
+
+
+$tabbedChatOutputCellDingbat = Column[
+    {
+        Style[ "", ShowStringCharacters -> False ],
+        RawBoxes @ TemplateBox[ { }, "AssistantIcon" ],
+        $tabbedOutputControls
+    },
+    Alignment -> Center,
+    Spacings  -> 0.1
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
