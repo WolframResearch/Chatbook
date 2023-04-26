@@ -18,8 +18,6 @@ System`Scope;
 
 Begin[ "`Private`" ];
 
-Get[ "Wolfram`Chatbook`" ];
-
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
@@ -31,7 +29,14 @@ $assetLocation      = FileNameJoin @ { DirectoryName @ $InputFileName, "Resource
 $iconDirectory      = FileNameJoin @ { $assetLocation, "Icons" };
 $ninePatchDirectory = FileNameJoin @ { $assetLocation, "NinePatchImages" };
 $styleDataFile      = FileNameJoin @ { $assetLocation, "Styles.wl" };
-$styleSheetTarget   = FileNameJoin @ { DirectoryName[ $InputFileName, 2 ], "FrontEnd", "StyleSheets", "Chatbook.nb" };
+$pacletDirectory    = DirectoryName[ $InputFileName, 2 ];
+$styleSheetTarget   = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Load Paclet*)
+PacletDirectoryLoad @ $pacletDirectory;
+Get[ "Wolfram`Chatbook`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -196,7 +201,7 @@ menuItem[ icon_, label_, code_ ] :=
 (*Tabbed Output CellDingbat*)
 
 tabArrowFrame[ gfx_, opts___ ] := Framed[
-    Graphics[ { GrayLevel[ 0.4 ], gfx }, ImageSize -> 5 ],
+    Graphics[ { GrayLevel[ 0.4 ], gfx }, ImageSize -> 4 ],
     FrameMargins   -> 3,
     FrameStyle     -> None,
     ImageMargins   -> 0,
@@ -267,8 +272,8 @@ $tabbedOutputControls = Column[
                     StandardForm
                 ]
             },
-            FontFamily -> "Source Sans Pro",
-            FontSize   -> 12
+            FontFamily -> "Roboto",
+            FontSize   -> 10
         ]
     },
     Alignment -> Center,
