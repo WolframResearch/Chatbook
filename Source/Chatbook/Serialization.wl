@@ -895,7 +895,7 @@ cellScan[ ___ ] := Null;
 (* ::Subsubsection::Closed:: *)
 (*cellGroupScan*)
 cellGroupScan // SetFallthroughError;
-cellGroupScan[ f_, Notebook[ cells_, opts___ ] ] := cellGroupScan[ f, cells ];
+cellGroupScan[ f_, (Notebook|CellGroupData)[ cells_, ___ ] ] := cellGroupScan[ f, cells ];
 cellGroupScan[ f_, cells_List ] := Scan[ cellGroupScan[ f, # ] &, cells ];
 cellGroupScan[ f_, Cell[ group_CellGroupData, ___ ] ] := (f @ group; cellGroupScan[ f, group ]);
 cellGroupScan[ ___ ] := Null;
