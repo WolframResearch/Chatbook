@@ -604,6 +604,16 @@ Cell[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*AssistantIconTabbed*)
+Cell[
+    StyleData[ "AssistantIconTabbed" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $tabbedChatOutputCellDingbat
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*AssistantIconActive*)
 Cell[
     StyleData[ "AssistantIconActive" ],

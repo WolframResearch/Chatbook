@@ -154,18 +154,66 @@ ChatbookAction::NotImplemented =
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Dispatcher Definitions*)
+ChatbookAction[ "AIAutoAssist"     , args___ ] := catchTop @ AIAutoAssist @ args;
 ChatbookAction[ "Ask"              , args___ ] := catchTop @ AskChat @ args;
 ChatbookAction[ "AttachCodeButtons", args___ ] := catchTop @ AttachCodeButtons @ args;
-ChatbookAction[ "AIAutoAssist"     , args___ ] := catchTop @ AIAutoAssist @ args;
 ChatbookAction[ "CopyChatObject"   , args___ ] := catchTop @ CopyChatObject @ args;
-ChatbookAction[ "ExclusionToggle"  , args___ ] := catchTop @ ExclusionToggle @ args;
 ChatbookAction[ "EvaluateChatInput", args___ ] := catchTop @ EvaluateChatInput @ args;
+ChatbookAction[ "ExclusionToggle"  , args___ ] := catchTop @ ExclusionToggle @ args;
 ChatbookAction[ "OpenChatMenu"     , args___ ] := catchTop @ OpenChatMenu @ args;
 ChatbookAction[ "Send"             , args___ ] := catchTop @ SendChat @ args;
 ChatbookAction[ "StopChat"         , args___ ] := catchTop @ StopChat @ args;
+ChatbookAction[ "TabLeft"          , args___ ] := catchTop @ TabLeft @ args;
+ChatbookAction[ "TabRight"         , args___ ] := catchTop @ TabRight @ args;
 ChatbookAction[ "WidgetSend"       , args___ ] := catchTop @ WidgetSend @ args;
 ChatbookAction[ name_String        , args___ ] := catchTop @ throwFailure[ ChatbookAction::NotImplemented, name, args ];
 ChatbookAction[ args___                      ] := catchTop @ throwInternalFailure @ HoldForm @ ChatbookAction @ args;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*TabLeft*)
+TabLeft // beginDefinition;
+TabLeft[ cell_CellObject ] := rotateTabPage[ cell, -1 ];
+TabLeft // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*TabRight*)
+TabRight // beginDefinition;
+TabRight[ cell_CellObject ] := rotateTabPage[ cell, 1 ];
+TabRight // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*rotateTabPage*)
+rotateTabPage // beginDefinition;
+rotateTabPage[ cell_CellObject, n_Integer ] /; CloudSystem`$CloudNotebooks := rotateTabPage0[ cell, n ];
+rotateTabPage[ cell_CellObject, n_Integer ] := rotateTabPage0[ ParentCell @ cell, n ];
+rotateTabPage // endDefinition;
+
+
+rotateTabPage0 // beginDefinition;
+
+rotateTabPage0[ cell_CellObject, n_Integer ] := Enclose[
+    Module[ { pageData, pageCount, currentPage, newPage, encoded, content },
+
+        pageData    = ConfirmBy[ <| CurrentValue[ cell, { TaggingRules, "PageData" } ] |>, AssociationQ, "PageData" ];
+        pageCount   = ConfirmBy[ pageData[ "PageCount"   ], IntegerQ, "PageCount"   ];
+        currentPage = ConfirmBy[ pageData[ "CurrentPage" ], IntegerQ, "CurrentPage" ];
+        newPage     = Mod[ currentPage + n, pageCount, 1 ];
+        encoded     = ConfirmMatch[ pageData[ "Pages", newPage ], _String, "EncodedContent" ];
+        content     = ConfirmMatch[ BinaryDeserialize @ BaseDecode @ encoded, TextData[ _String|_List ], "Content" ];
+
+        SelectionMove[ cell, All, CellContents, AutoScroll -> False ];
+        NotebookWrite[ ParentNotebook @ cell, content, None, AutoScroll -> False ];
+        SelectionMove[ cell, After, Cell, AutoScroll -> False ];
+        CurrentValue[ cell, { TaggingRules, "PageData", "CurrentPage" } ] = newPage;
+        SetOptions[ cell, CellAutoOverwrite -> True, GeneratedCell -> True ]
+    ],
+    throwInternalFailure[ rotateTabPage0[ cell, n ], ## ] &
+];
+
+rotateTabPage0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -710,9 +758,16 @@ queuedEvaluationsQ[ ___ ] := False;
 sendChat // beginDefinition;
 
 sendChat[ evalCell_, nbo_, settings0_ ] := catchTop @ Enclose[
-    Module[ { cells, settings, id, key, req, data, cell, cellObject, container, task },
+    Module[ { cells0, cells, target, settings, id, key, req, data, cell, cellObject, container, task },
 
-        cells    = ConfirmMatch[ selectChatCells[ settings0, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
+        cells0 = ConfirmMatch[ selectChatCells[ settings0, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
+
+        { cells, target } = ConfirmMatch[
+            chatHistoryCellsAndTarget @ cells0,
+            { { __CellObject }, _CellObject | None },
+            "HistoryAndTarget"
+        ];
+
         settings = ConfirmBy[ inheritSettings[ settings0, cells, evalCell ], AssociationQ, "InheritSettings" ];
         id       = Lookup[ settings, "ID" ];
         key      = toAPIKey[ Automatic, id ];
@@ -747,13 +802,89 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTop @ Enclose[
 
         $resultCellCache = <| |>;
         $debugLog = Internal`Bag[ ];
-        cellObject = $lastCellObject = cellPrint @ cell;
+
+        cellObject = $lastCellObject = ConfirmMatch[
+            createNewChatOutput[ settings, target, cell ],
+            _CellObject,
+            "CreateOutput"
+        ];
+
         task = Confirm[ $lastTask = submitAIAssistant[ container, req, cellObject, settings ] ];
     ],
     throwInternalFailure[ sendChat[ evalCell, nbo, settings0 ], ## ] &
 ];
 
 sendChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createNewChatOutput*)
+createNewChatOutput // beginDefinition;
+createNewChatOutput[ settings_, None, cell_Cell ] := cellPrint @ cell;
+createNewChatOutput[ settings_, target_, cell_Cell ] /; settings[ "TabbedOutput" ] === False := cellPrint @ cell;
+createNewChatOutput[ settings_, target_CellObject, cell_Cell ] := prepareChatOutputPage[ target, cell ];
+createNewChatOutput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*prepareChatOutputPage*)
+prepareChatOutputPage // beginDefinition;
+
+prepareChatOutputPage[ target_CellObject, cell_Cell ] := Enclose[
+    Module[ { prevCellExpr, prevPage, encoded, pageData, newCellObject },
+
+        prevCellExpr = ConfirmMatch[ NotebookRead @ target, _Cell, "NotebookRead" ];
+
+        prevPage = ConfirmMatch[
+            Replace[ First @ prevCellExpr, text_String :> TextData @ { text } ],
+            _TextData,
+            "PageContent"
+        ];
+
+        encoded = ConfirmBy[
+            BaseEncode @ BinarySerialize[ prevPage, PerformanceGoal -> "Size" ],
+            StringQ,
+            "BaseEncode"
+        ];
+
+        pageData = ConfirmBy[
+            Replace[
+                prevCellExpr,
+                {
+                    Cell[ __, TaggingRules -> KeyValuePattern[ "PageData" -> data_ ], ___ ] :> Association @ data,
+                    _ :> <| |>
+                }
+            ],
+            AssociationQ,
+            "PageData"
+        ];
+
+        If[ ! AssociationQ @ pageData[ "Pages" ], pageData[ "Pages" ] = <| 1 -> encoded |> ];
+        If[ ! IntegerQ @ pageData[ "PageCount" ], pageData[ "PageCount" ] = 1 ];
+        If[ ! IntegerQ @ pageData[ "CurrentPage" ], pageData[ "CurrentPage" ] = 1 ];
+        pageData[ "PagedOutput" ] = True;
+
+        newCellObject = cellPrint @ cell;
+        CurrentValue[ newCellObject, { TaggingRules, "PageData" } ] = pageData;
+        newCellObject
+    ],
+    throwInternalFailure[ prepareChatOutputPage[ target, cell ], ## ] &
+];
+
+prepareChatOutputPage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatHistoryCellsAndTarget*)
+chatHistoryCellsAndTarget // beginDefinition;
+
+chatHistoryCellsAndTarget[ { before___CellObject, after_CellObject } ] :=
+    If[ MatchQ[ cellInformation @ after, KeyValuePattern[ "Style" -> $$chatOutputStyle ] ],
+        { { before }, after },
+        { { before, after }, None }\
+    ];
+
+chatHistoryCellsAndTarget // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1013,7 +1144,7 @@ checkResponse[ settings_, container_, cell_, as: KeyValuePattern[ "StatusCode" -
 
 checkResponse[ settings_, container_, cell_, as_Association ] := (
     writeReformattedCell[ settings, container, cell ];
-    Quiet @ NotebookDelete @ cell;
+    (* Quiet @ NotebookDelete @ cell; *)
 );
 
 checkResponse // endDefinition;
@@ -1470,7 +1601,7 @@ writeChunk[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
         errorTaggedQ @ container, processErrorCell[ container, cell ],
         warningTaggedQ @ container, processWarningCell[ container, cell ],
         infoTaggedQ @ container, processInfoCell[ container, cell ],
-        untaggedQ @ container, openBirdCell @ cell,
+        untaggedQ @ container, openChatCell @ cell,
         True, Null
     ]
 );
@@ -1839,7 +1970,7 @@ processErrorCell[ container_, cell_CellObject ] := (
     $$errorString = container;
     removeSeverityTag[ container, cell ];
     (* TODO: Add an error icon? *)
-    openBirdCell @ cell
+    openChatCell @ cell
 );
 
 processErrorCell // endDefinition;
@@ -1853,7 +1984,7 @@ processWarningCell // Attributes = { HoldFirst };
 processWarningCell[ container_, cell_CellObject ] := (
     $$warningString = container;
     removeSeverityTag[ container, cell ];
-    openBirdCell @ cell
+    openChatCell @ cell
 );
 
 processWarningCell // endDefinition;
@@ -1868,17 +1999,17 @@ processInfoCell[ container_, cell_CellObject ] := (
     $$infoString = container;
     removeSeverityTag[ container, cell ];
     $lastAutoOpen = $autoOpen;
-    If[ TrueQ @ $autoOpen, openBirdCell @ cell ]
+    If[ TrueQ @ $autoOpen, openChatCell @ cell ]
 );
 
 processInfoCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*openBirdCell*)
-openBirdCell // beginDefinition;
+(*openChatCell*)
+openChatCell // beginDefinition;
 
-openBirdCell[ cell_CellObject ] :=
+openChatCell[ cell_CellObject ] :=
     Module[ { prev, attached },
         prev = PreviousCell @ cell;
         attached = Cells[ prev, AttachedCell -> True, CellStyle -> "MinimizedChatIcon" ];
@@ -1893,7 +2024,7 @@ openBirdCell[ cell_CellObject ] :=
         ]
     ];
 
-openBirdCell // endDefinition;
+openChatCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1914,14 +2045,15 @@ writeReformattedCell // beginDefinition;
 writeReformattedCell[ settings_, string_String, cell_CellObject ] :=
     With[
         {
-            tag   = CurrentValue[ cell, { TaggingRules, "MessageTag" } ],
-            open  = $lastOpen = cellOpenQ @ cell,
-            label = RawBoxes @ TemplateBox[ { }, "MinimizedChat" ]
+            tag      = CurrentValue[ cell, { TaggingRules, "MessageTag" } ],
+            open     = $lastOpen = cellOpenQ @ cell,
+            label    = RawBoxes @ TemplateBox[ { }, "MinimizedChat" ],
+            pageData = CurrentValue[ cell, { TaggingRules, "PageData" } ]
         },
         Block[ { $dynamicText = False },
             NotebookWrite[
                 cell,
-                $reformattedCell = reformatCell[ settings, string, tag, open, label ],
+                $reformattedCell = reformatCell[ settings, string, tag, open, label, pageData ],
                 None,
                 AutoScroll -> False
             ]
@@ -1954,29 +2086,77 @@ writeReformattedCell // endDefinition;
 (*reformatCell*)
 reformatCell // beginDefinition;
 
-reformatCell[ settings_, string_, tag_, open_, label_ ] := UsingFrontEnd @ Cell[
-    If[ TrueQ @ settings[ "AutoFormat" ],
-        TextData @ reformatTextData @ string,
-        TextData @ string
+reformatCell[ settings_, string_, tag_, open_, label_, pageData_ ] := UsingFrontEnd @ Enclose[
+    Module[ { content, rules },
+
+        content = ConfirmMatch[
+            If[ TrueQ @ settings[ "AutoFormat" ], TextData @ reformatTextData @ string, TextData @ string ],
+            TextData[ _String | _List ],
+            "Content"
+        ];
+
+        rules = ConfirmBy[
+            makeReformattedCellTaggingRules[ settings, string, tag, content, pageData ],
+            AssociationQ,
+            "TaggingRules"
+        ];
+
+        Cell[
+            content,
+            "ChatOutput",
+            GeneratedCell     -> True,
+            CellAutoOverwrite -> True,
+            TaggingRules      -> rules,
+            If[ TrueQ[ rules[ "PageData", "PageCount" ] > 1 ],
+                CellDingbat -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIconTabbed" ], Background -> None ],
+                Sequence @@ { }
+            ],
+            If[ TrueQ @ open,
+                Sequence @@ { },
+                Sequence @@ Flatten @ {
+                    $closedChatCellOptions,
+                    Initialization :> attachMinimizedIcon[ EvaluationCell[ ], label ]
+                }
+            ]
+        ]
     ],
-    "ChatOutput",
-    GeneratedCell     -> True,
-    CellAutoOverwrite -> True,
-    TaggingRules      -> <|
-        "CellToStringData" -> string,
-        "MessageTag"       -> tag,
-        "ChatData"         -> makeCompactChatData[ string, tag, settings ]
-    |>,
-    If[ TrueQ @ open,
-        Sequence @@ { },
-        Sequence @@ Flatten @ {
-            $closedChatCellOptions,
-            Initialization :> attachMinimizedIcon[ EvaluationCell[ ], label ]
-        }
-    ]
+    throwInternalFailure[ reformatCell[ settings, string, tag, open, label, pageData ], ## ] &
 ];
 
 reformatCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeReformattedCellTaggingRules*)
+makeReformattedCellTaggingRules // beginDefinition;
+
+makeReformattedCellTaggingRules[
+    settings_,
+    string_,
+    tag_,
+    content_,
+    KeyValuePattern @ { "Pages" -> pages_Association, "PageCount" -> count_Integer, "CurrentPage" -> page_Integer }
+] :=
+    With[ { p = count + 1 },
+    <|
+        "CellToStringData" -> string,
+        "MessageTag"       -> tag,
+        "ChatData"         -> makeCompactChatData[ string, tag, settings ],
+        "PageData"         -> <|
+            "Pages"      -> Append[ pages, p -> BaseEncode @ BinarySerialize[ content, PerformanceGoal -> "Size" ] ],
+            "PageCount"  -> p,
+            "CurrentPage"-> p
+        |>
+    |>
+];
+
+makeReformattedCellTaggingRules[ settings_, string_, tag_, content_, pageData_ ] := <|
+    "CellToStringData" -> string,
+    "MessageTag"       -> tag,
+    "ChatData"         -> makeCompactChatData[ string, tag, settings ]
+|>;
+
+makeReformattedCellTaggingRules // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2671,7 +2851,7 @@ makeMinimizedIconCell // beginDefinition;
 makeMinimizedIconCell[ label_, chatCell_CellObject ] := Cell[
     BoxData @ MakeBoxes @ Button[
         MouseAppearance[ label, "LinkHand" ],
-        With[ { attached = EvaluationCell[ ] }, NotebookDelete @ attached; openBirdCell @ chatCell ],
+        With[ { attached = EvaluationCell[ ] }, NotebookDelete @ attached; openChatCell @ chatCell ],
         Appearance -> None
     ],
     "MinimizedChatIcon"
