@@ -154,18 +154,60 @@ ChatbookAction::NotImplemented =
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Dispatcher Definitions*)
+ChatbookAction[ "AIAutoAssist"     , args___ ] := catchTop @ AIAutoAssist @ args;
 ChatbookAction[ "Ask"              , args___ ] := catchTop @ AskChat @ args;
 ChatbookAction[ "AttachCodeButtons", args___ ] := catchTop @ AttachCodeButtons @ args;
-ChatbookAction[ "AIAutoAssist"     , args___ ] := catchTop @ AIAutoAssist @ args;
 ChatbookAction[ "CopyChatObject"   , args___ ] := catchTop @ CopyChatObject @ args;
-ChatbookAction[ "ExclusionToggle"  , args___ ] := catchTop @ ExclusionToggle @ args;
 ChatbookAction[ "EvaluateChatInput", args___ ] := catchTop @ EvaluateChatInput @ args;
+ChatbookAction[ "ExclusionToggle"  , args___ ] := catchTop @ ExclusionToggle @ args;
 ChatbookAction[ "OpenChatMenu"     , args___ ] := catchTop @ OpenChatMenu @ args;
 ChatbookAction[ "Send"             , args___ ] := catchTop @ SendChat @ args;
 ChatbookAction[ "StopChat"         , args___ ] := catchTop @ StopChat @ args;
+ChatbookAction[ "TabLeft"          , args___ ] := catchTop @ TabLeft @ args;
+ChatbookAction[ "TabRight"         , args___ ] := catchTop @ TabRight @ args;
 ChatbookAction[ "WidgetSend"       , args___ ] := catchTop @ WidgetSend @ args;
 ChatbookAction[ name_String        , args___ ] := catchTop @ throwFailure[ ChatbookAction::NotImplemented, name, args ];
 ChatbookAction[ args___                      ] := catchTop @ throwInternalFailure @ HoldForm @ ChatbookAction @ args;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*TabLeft*)
+TabLeft // beginDefinition;
+TabLeft[ cell_CellObject ] := rotateTabPage[ cell, -1 ];
+TabLeft // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*TabRight*)
+TabRight // beginDefinition;
+TabRight[ cell_CellObject ] := rotateTabPage[ cell, 1 ];
+TabRight // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*rotateTabPage*)
+rotateTabPage // beginDefinition;
+rotateTabPage[ cell_CellObject, n_Integer ] /; CloudSystem`$CloudNotebooks := rotateTabPage0[ cell, n ];
+rotateTabPage[ cell_CellObject, n_Integer ] := rotateTabPage0[ ParentCell @ cell, n ];
+rotateTabPage // endDefinition;
+
+
+rotateTabPage0 // beginDefinition;
+
+rotateTabPage0[ cell_CellObject, n_Integer ] := Enclose[
+    Module[ { pageData, pageCount, currentPage, newPage },
+        pageData    = ConfirmBy[ <| CurrentValue[ cell, { TaggingRules, "PageData" } ] |>, AssociationQ, "PageData" ];
+        pageCount   = ConfirmBy[ pageData[ "PageCount"   ], IntegerQ, "PageCount"   ];
+        currentPage = ConfirmBy[ pageData[ "CurrentPage" ], IntegerQ, "CurrentPage" ];
+        newPage     = Mod[ currentPage + n, pageCount, 1 ];
+
+        (* TODO: rewrite page content *)
+        CurrentValue[ cell, { TaggingRules, "PageData", "CurrentPage" } ] = newPage
+    ],
+    throwInternalFailure[ rotateTabPage0[ cell, n ], ## ] &
+];
+
+rotateTabPage0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
