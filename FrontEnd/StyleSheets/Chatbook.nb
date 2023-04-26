@@ -2081,6 +2081,205 @@ Notebook[
    }
   ],
   Cell[
+   StyleData["AssistantIconTabbed"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      TagBox[
+       GridBox[
+        {
+         {
+          StyleBox[
+           "\"\"",
+           ShowStringCharacters -> False,
+           StripOnInput -> False
+          ]
+         },
+         {TemplateBox[{}, "AssistantIcon"]},
+         {
+          TagBox[
+           GridBox[
+            {
+             {
+              TemplateBox[
+               {
+                ButtonBox[
+                 TagBox[
+                  PaneSelectorBox[
+                   {
+                    False ->
+                     FrameBox[
+                      GraphicsBox[
+                       {GrayLevel[0.4], PolygonBox[{{0, 0}, {0, 1}, {-0.5, 0.5}}]},
+                       ImageSize -> 4
+                      ],
+                      FrameMargins -> 3,
+                      FrameStyle -> None,
+                      ImageMargins -> 0,
+                      RoundingRadius -> 2,
+                      Background -> None,
+                      StripOnInput -> False
+                     ],
+                    True ->
+                     FrameBox[
+                      GraphicsBox[
+                       {GrayLevel[0.4], PolygonBox[{{0, 0}, {0, 1}, {-0.5, 0.5}}]},
+                       ImageSize -> 4
+                      ],
+                      FrameMargins -> 3,
+                      FrameStyle -> None,
+                      ImageMargins -> 0,
+                      RoundingRadius -> 2,
+                      Background -> GrayLevel[0.9],
+                      StripOnInput -> False
+                     ]
+                   },
+                   Dynamic[CurrentValue["MouseOver"]],
+                   ImageSize -> Automatic,
+                   FrameMargins -> 0
+                  ],
+                  MouseAppearanceTag["LinkHand"]
+                 ],
+                 ButtonFunction :>
+                  With[ { cell$ = EvaluationCell[] },
+                   Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                   Symbol["Wolfram`Chatbook`ChatbookAction"]["TabLeft", cell$]
+                  ],
+                 Appearance ->
+                  Dynamic[
+                   FEPrivate`FrontEndResource[
+                    "FEExpressions",
+                    "SuppressMouseDownNinePatchAppearance"
+                   ]
+                  ],
+                 Evaluator -> Automatic,
+                 Method -> "Preemptive"
+                ],
+                ButtonBox[
+                 TagBox[
+                  PaneSelectorBox[
+                   {
+                    False ->
+                     FrameBox[
+                      GraphicsBox[
+                       {GrayLevel[0.4], PolygonBox[{{0, 0}, {0, 1}, {0.5, 0.5}}]},
+                       ImageSize -> 4
+                      ],
+                      FrameMargins -> 3,
+                      FrameStyle -> None,
+                      ImageMargins -> 0,
+                      RoundingRadius -> 2,
+                      Background -> None,
+                      StripOnInput -> False
+                     ],
+                    True ->
+                     FrameBox[
+                      GraphicsBox[
+                       {GrayLevel[0.4], PolygonBox[{{0, 0}, {0, 1}, {0.5, 0.5}}]},
+                       ImageSize -> 4
+                      ],
+                      FrameMargins -> 3,
+                      FrameStyle -> None,
+                      ImageMargins -> 0,
+                      RoundingRadius -> 2,
+                      Background -> GrayLevel[0.9],
+                      StripOnInput -> False
+                     ]
+                   },
+                   Dynamic[CurrentValue["MouseOver"]],
+                   ImageSize -> Automatic,
+                   FrameMargins -> 0
+                  ],
+                  MouseAppearanceTag["LinkHand"]
+                 ],
+                 ButtonFunction :>
+                  With[ { cell$ = EvaluationCell[] },
+                   Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                   Symbol["Wolfram`Chatbook`ChatbookAction"][
+                    "TabRight",
+                    cell$
+                   ]
+                  ],
+                 Appearance ->
+                  Dynamic[
+                   FEPrivate`FrontEndResource[
+                    "FEExpressions",
+                    "SuppressMouseDownNinePatchAppearance"
+                   ]
+                  ],
+                 Evaluator -> Automatic,
+                 Method -> "Preemptive"
+                ]
+               },
+               "RowDefault"
+              ]
+             },
+             {
+              StyleBox[
+               RowBox[
+                {
+                 DynamicBox[
+                  ToBoxes[
+                   If[ TrueQ[CloudSystem`$CloudNotebooks],
+                    CurrentValue[
+                     EvaluationCell[],
+                     {TaggingRules, "PageData", "CurrentPage"},
+                     1
+                    ],
+                    CurrentValue[
+                     ParentCell[EvaluationCell[]],
+                     {TaggingRules, "PageData", "CurrentPage"},
+                     1
+                    ]
+                   ],
+                   StandardForm
+                  ]
+                 ],
+                 "/",
+                 DynamicBox[
+                  ToBoxes[
+                   If[ TrueQ[CloudSystem`$CloudNotebooks],
+                    CurrentValue[
+                     EvaluationCell[],
+                     {TaggingRules, "PageData", "PageCount"},
+                     1
+                    ],
+                    CurrentValue[
+                     ParentCell[EvaluationCell[]],
+                     {TaggingRules, "PageData", "PageCount"},
+                     1
+                    ]
+                   ],
+                   StandardForm
+                  ]
+                 ]
+                }
+               ],
+               FontFamily -> "Roboto",
+               FontSize -> 10
+              ]
+             }
+            },
+            GridBoxAlignment -> {"Columns" -> {{Center}}},
+            DefaultBaseStyle -> "Column",
+            GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+            GridBoxSpacings -> {"Columns" -> {{Automatic}}, "Rows" -> {{0.1}}}
+           ],
+           "Column"
+          ]
+         }
+        },
+        GridBoxAlignment -> {"Columns" -> {{Center}}},
+        DefaultBaseStyle -> "Column",
+        GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+        GridBoxSpacings -> {"Columns" -> {{Automatic}}, "Rows" -> {{0.1}}}
+       ],
+       "Column"
+      ]
+     ])
+   }
+  ],
+  Cell[
    StyleData["AssistantIconActive"],
    TemplateBoxOptions -> {
     DisplayFunction ->
