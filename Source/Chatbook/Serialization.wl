@@ -42,6 +42,14 @@ $CellToStringDebug = False;
 (* Can be redefined locally depending on cell style *)
 $showStringCharacters = True;
 
+(* Add spacing around these operators *)
+$$spacedInfixOperator = Alternatives[
+    "^", "*", "+", "=", "|", "<", ">", ";", "?", "/", ":", "!=", "@*", "^=", "&&", "*=", "-=", "->", "+=", "==", "~~",
+    "||", "<=", "<>", ">=", ";;", "/@", "/*", "/=", "/.", "/;", ":=", ":>", "::", "^:=", "=!=", "===", "|->", "<->",
+    "//@", "//.", "\[Equal]", "\[GreaterEqual]", "\[LessEqual]", "\[NotEqual]", "\[Function]", "\[Rule]",
+    "\[RuleDelayed]", "\[TwoWayRule]"
+];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*Conversion Rules*)
@@ -268,7 +276,8 @@ cellToString[ Cell[ code_, "ExternalLanguage", ___, $$cellEvaluationLanguage -> 
     ];
 
 (* Begin recursive serialization of the cell content *)
-cellToString[ cell_ ] := cellToString0 @ cell;
+cellToString[ cell: Cell[ _TextData|_String, ___ ] ] := Block[ { $escapeMarkdown = True }, cellToString0 @ cell ];
+cellToString[ cell_ ] := Block[ { $escapeMarkdown = False }, cellToString0 @ cell ];
 
 cellToString0[ cell_ ] :=
     With[ { string = fasterCellToString @ cell },
@@ -327,7 +336,9 @@ fasterCellToString0[ (Cell|StyleBox)[ a_, "ChatContextDivider", ___ ] ] := "# "<
 
 (* Add spacing between RowBox elements that are comma separated *)
 fasterCellToString0[ "," ] := ", ";
-fasterCellToString0[ RowBox[ row: { ___, ",", " ", ___ } ] ] := fasterCellToString0 @ RowBox @ DeleteCases[ row, " " ];
+fasterCellToString0[ c: $$spacedInfixOperator ] := " "<>c<>" ";
+fasterCellToString0[ RowBox[ row: { ___, ","|$$spacedInfixOperator, " ", ___ } ] ] :=
+    fasterCellToString0 @ RowBox @ DeleteCases[ row, " " ];
 
 (* IndentingNewline *)
 fasterCellToString0[ FromCharacterCode[ 62371 ] ] := "\n\t";
@@ -682,7 +693,7 @@ escapeMarkdownCharacters[ TextData[ text_ ] ] := escapeMarkdownCharacters @ text
 escapeMarkdownCharacters[ text_List ] := escapeMarkdownCharacters /@ text;
 escapeMarkdownCharacters[ text_ ] := text;
 
-$escapeMarkdown = True;
+$escapeMarkdown = False;
 
 $markdownReplacements = { "\\`" -> "\\`", "\\$" -> "\\$", "`" -> "\\`", "$" -> "\\$" };
 

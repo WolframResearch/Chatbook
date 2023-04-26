@@ -102,17 +102,21 @@ contextMenu[ a___ ] := Flatten @ { a };
 (*menuInitializer*)
 menuInitializer[ name_String, color_ ] :=
     With[ { attach = Cell[ BoxData @ TemplateBox[ { name, color }, "ChatMenuButton" ], "ChatMenu" ] },
-        Initialization :> With[ { $CellContext`cell = EvaluationCell[ ] },
-            NotebookDelete @ Cells[ $CellContext`cell, AttachedCell -> True, CellStyle -> "ChatMenu" ];
-            AttachCell[
-                $CellContext`cell,
-                attach,
-                { Right, Top },
-                Offset[ { -7, -7 }, { Right, Top } ],
-                { Right, Top },
-                RemovalConditions -> { "EvaluatorQuit" }
+        Initialization :>
+            If[ ! TrueQ @ CloudSystem`$CloudNotebooks,
+                (* TODO: we need another method for menus in the cloud *)
+                With[ { $CellContext`cell = EvaluationCell[ ] },
+                    NotebookDelete @ Cells[ $CellContext`cell, AttachedCell -> True, CellStyle -> "ChatMenu" ];
+                    AttachCell[
+                        $CellContext`cell,
+                        attach,
+                        { Right, Top },
+                        Offset[ { -7, -7 }, { Right, Top } ],
+                        { Right, Top },
+                        RemovalConditions -> { "EvaluatorQuit" }
+                    ]
+                ]
             ]
-        ]
     ];
 
 (* ::**************************************************************************************************************:: *)
