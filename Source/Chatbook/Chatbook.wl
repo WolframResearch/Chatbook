@@ -1,6 +1,5 @@
 PreemptProtect[ BeginPackage[ "Wolfram`Chatbook`" ]; EndPackage[ ] ];
 
-(* TODO: create an MX build script *)
 Wolfram`ChatbookLoader`$MXFile = FileNameJoin @ {
     DirectoryName @ $InputFileName,
     ToString @ $SystemWordLength <> "Bit",

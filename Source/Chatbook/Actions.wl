@@ -881,7 +881,7 @@ chatHistoryCellsAndTarget // beginDefinition;
 chatHistoryCellsAndTarget[ { before___CellObject, after_CellObject } ] :=
     If[ MatchQ[ cellInformation @ after, KeyValuePattern[ "Style" -> $$chatOutputStyle ] ],
         { { before }, after },
-        { { before, after }, None }\
+        { { before, after }, None }
     ];
 
 chatHistoryCellsAndTarget // endDefinition;
