@@ -1310,19 +1310,19 @@ MakeChatInputCellDingbat[] := Module[{
 		"Persona" :> (
 			CurrentValue[
 				ParentCell[EvaluationCell[]],
-				{TaggingRules, "LLMSettings", "LLMEvaluator"}
+				{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
 			] = value;
 		),
 		"Model" :> (
 			CurrentValue[
 				ParentCell[EvaluationCell[]],
-				{TaggingRules, "LLMSettings", "Model"}
+				{TaggingRules, "ChatNotebookSettings", "Model"}
 			] = value;
 		),
 		"Role" :> (
 			CurrentValue[
 				ParentCell[EvaluationCell[]],
-				{TaggingRules, "LLMSettings", "Role"}
+				{TaggingRules, "ChatNotebookSettings", "Role"}
 			] = value;
 		),
 		other_ :> (
@@ -1340,15 +1340,15 @@ MakeChatInputCellDingbat[] := Module[{
 		"ActionCallback" -> actionCallback,
 		"PersonaValue" -> currentValueOrigin[
 			ParentCell[EvaluationCell[]],
-			{TaggingRules, "LLMSettings", "LLMEvaluator"}
+			{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
 		],
 		"ModelValue" -> currentValueOrigin[
 			ParentCell[EvaluationCell[]],
-			{TaggingRules, "LLMSettings", "Model"}
+			{TaggingRules, "ChatNotebookSettings", "Model"}
 		],
 		"RoleValue" -> currentValueOrigin[
 			ParentCell[EvaluationCell[]],
-			{TaggingRules, "LLMSettings", "Role"}
+			{TaggingRules, "ChatNotebookSettings", "Role"}
 		]
 	];
 
@@ -1602,8 +1602,8 @@ GetChatInputLLMConfigurationSelectorMenuData[] := Module[{
 
 	models = {
 		(* FIXME: Replace with OpenAI logo *)
-		{"GPT-3.5", getIcon["Chatbot.wxf"], "GPT-3.5"},
-		{"GPT-4", getIcon["Chatbot.wxf"], "GPT-4"}
+		{"gpt-3.5-turbo", getIcon["Chatbot.wxf"], "GPT-3.5"},
+		{"gpt-4", getIcon["Chatbot.wxf"], "GPT-4"}
 	};
 
 	<|
