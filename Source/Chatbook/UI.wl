@@ -29,6 +29,7 @@ Needs["Wolfram`Chatbook`Debug`"]
 Needs["Wolfram`Chatbook`Utils`"]
 Needs["Wolfram`Chatbook`Streaming`"]
 Needs["Wolfram`Chatbook`Serialization`"]
+Needs["Wolfram`Chatbook`Menus`"]
 
 
 Needs["Wolfram`ServerSentEventUtils`" -> None]
@@ -1293,7 +1294,9 @@ chatHTTPRequest[
 
 (*========================================================*)
 
-MakeChatInputCellDingbat[] := Module[{
+MakeChatInputCellDingbat[] := With[{
+	chatInputCellObj = ParentCell[EvaluationCell[]]
+}, Module[{
 	menuData = GetChatInputLLMConfigurationSelectorMenuData[],
 	actionCallback,
 	actionMenu,
@@ -1309,21 +1312,24 @@ MakeChatInputCellDingbat[] := Module[{
 	actionCallback = Function[{field, value}, Replace[field, {
 		"Persona" :> (
 			CurrentValue[
-				ParentCell[EvaluationCell[]],
+				chatInputCellObj,
 				{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
 			] = value;
+			NotebookDelete[EvaluationCell[]];
 		),
 		"Model" :> (
 			CurrentValue[
-				ParentCell[EvaluationCell[]],
+				chatInputCellObj,
 				{TaggingRules, "ChatNotebookSettings", "Model"}
 			] = value;
+			NotebookDelete[EvaluationCell[]];
 		),
 		"Role" :> (
 			CurrentValue[
-				ParentCell[EvaluationCell[]],
+				chatInputCellObj,
 				{TaggingRules, "ChatNotebookSettings", "Role"}
 			] = value;
+			NotebookDelete[EvaluationCell[]];
 		),
 		other_ :> (
 			ChatbookWarning[
@@ -1339,15 +1345,15 @@ MakeChatInputCellDingbat[] := Module[{
 		menuData["Models"],
 		"ActionCallback" -> actionCallback,
 		"PersonaValue" -> currentValueOrigin[
-			ParentCell[EvaluationCell[]],
+			chatInputCellObj,
 			{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
 		],
 		"ModelValue" -> currentValueOrigin[
-			ParentCell[EvaluationCell[]],
+			chatInputCellObj,
 			{TaggingRules, "ChatNotebookSettings", "Model"}
 		],
 		"RoleValue" -> currentValueOrigin[
-			ParentCell[EvaluationCell[]],
+			chatInputCellObj,
 			{TaggingRules, "ChatNotebookSettings", "Role"}
 		]
 	];
@@ -1366,7 +1372,7 @@ MakeChatInputCellDingbat[] := Module[{
 		RawBoxes @ TemplateBox[{}, "ChatCounterLabel"],
 		menu
 	}]
-]
+]]
 
 (*====================================*)
 
@@ -1516,7 +1522,13 @@ MakeChatInputLLMConfigurationActionMenu[
 		]
 	];
 
-	ActionMenu[
+	menu = MakeMenu[
+		menuItems,
+		GrayLevel[0.85],
+		250
+	];
+
+	Button[
 		Framed[
 			Row[{menuLabel, "\[RightAngleBracket]"}],
 			RoundingRadius -> 3,
@@ -1528,7 +1540,16 @@ MakeChatInputLLMConfigurationActionMenu[
 			],
 			FrameMargins -> 0
 		],
-		menuItems,
+		(
+			AttachCell[
+				EvaluationCell[],
+				menu,
+				{Left, Bottom},
+				Offset[],
+				{Left, Top},
+				RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
+			];
+		),
 		Appearance -> None
 	]
 ]]
@@ -1572,8 +1593,16 @@ getIcon[filename_?StringQ] := Module[{
 		filename
 	};
 
-	(* TODO: Better error handling. *)
-	RaiseConfirmMatch[icon, _Graphics]
+	If[!MatchQ[icon, _Graphics],
+		Raise[
+			ChatbookError,
+			"Unexpected result loading icon from from file ``: ``",
+			filename,
+			InputForm[icon]
+		];
+	];
+
+	icon
 ]
 
 (*------------------------------------*)
