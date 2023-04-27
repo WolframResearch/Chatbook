@@ -1299,6 +1299,13 @@ MakeChatInputCellDingbat[] := Module[{
 	actionMenu,
 	menu
 },
+	(* NOTE:
+		This is needed here due to its use in TrackedSymbols in the stylesheet.
+		Without this, the CellDingbat dynamic will not refresh when changes are
+		made to the inherited TaggingRules.
+	*)
+	Wolfram`Chatbook`UI`$ChatInputMenuDataChanged;
+
 	actionCallback = Function[{field, value}, Replace[field, {
 		"Persona" :> (
 			CurrentValue[
@@ -1330,7 +1337,19 @@ MakeChatInputCellDingbat[] := Module[{
 	actionMenu = MakeChatInputLLMConfigurationActionMenu[
 		menuData["Personas"],
 		menuData["Models"],
-		"ActionCallback" -> actionCallback
+		"ActionCallback" -> actionCallback,
+		"SelectedPersona" -> CurrentValue[
+			ParentCell[EvaluationCell[]],
+			{TaggingRules, "LLMSettings", "LLMEvaluator"}
+		],
+		"SelectedModel" -> CurrentValue[
+			ParentCell[EvaluationCell[]],
+			{TaggingRules, "LLMSettings", "Model"}
+		],
+		"SelectedRole" -> CurrentValue[
+			ParentCell[EvaluationCell[]],
+			{TaggingRules, "LLMSettings", "Role"}
+		]
 	];
 
 	(* menu = Tooltip[
