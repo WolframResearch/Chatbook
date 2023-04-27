@@ -531,12 +531,12 @@ Cell[
                         ],
                         "Grid"
                     ],
-                    FrameStyle     -> None,
+                    FrameStyle     -> Dynamic @ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.8 ], GrayLevel[ 0.98 ] ],
                     RoundingRadius -> 0,
                     FrameMargins   -> { { 5, 2 }, { 2, 2 } },
                     ImageSize      -> Full,
                     ImageMargins   -> { { 0, 0 }, { 0, 0 } },
-                    Background     -> Dynamic @ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.96 ], GrayLevel[ 1. ] ]
+                    Background     -> Dynamic @ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 1 ], GrayLevel[ 0.98 ] ]
                 },
                 "Highlighted"
             ],
@@ -544,6 +544,46 @@ Cell[
             Appearance     -> $suppressButtonAppearance,
             Method         -> "Queued",
             Evaluator      -> Automatic
+        ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatMenuSection*)
+Cell[
+    StyleData[ "ChatMenuSection" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ TemplateBox[
+            {
+                TagBox[
+                    GridBox[
+                        {
+                            {
+                                PaneBox[
+                                    StyleBox[ #1, "ChatMenuSectionLabel" ],
+                                    FrameMargins     -> 0,
+                                    ImageMargins     -> 0,
+                                    BaselinePosition -> Baseline,
+                                    ImageSize        -> Full
+                                ]
+                            }
+                        },
+                        GridBoxAlignment -> { "Columns" -> { { Left } }, "Rows" -> { { Top } } },
+                        AutoDelete       -> False,
+                        GridBoxItemSize  -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+                        GridBoxSpacings  -> { "Columns" -> { { 0 } } }
+                    ],
+                    "Grid"
+                ],
+                Background     -> GrayLevel[ 0.937 ],
+                FrameMargins   -> { { 5, 2 }, { 2, 2 } },
+                FrameStyle     -> None,
+                ImageMargins   -> { { 0, 0 }, { 0, 0 } },
+                ImageSize      -> Full,
+                RoundingRadius -> 0
+            },
+            "Highlighted"
         ]
     }
 ]
@@ -717,6 +757,16 @@ Cell[
     FontWeight      -> Plain,
     LineBreakWithin -> False,
     LineIndent      -> 0
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatMenuSectionLabel*)
+Cell[
+    StyleData[ "ChatMenuSectionLabel", StyleDefinitions -> StyleData[ "ChatMenuLabel" ] ],
+    FontVariations -> { "CapsType" -> "AllCaps" },
+    FontSize -> 11,
+    FontColor -> GrayLevel[ 0.35 ]
 ]
 
 (* ::**************************************************************************************************************:: *)
