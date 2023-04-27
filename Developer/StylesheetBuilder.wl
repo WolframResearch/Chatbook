@@ -37,6 +37,7 @@ $styleSheetTarget   = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheet
 (*Load Paclet*)
 PacletDirectoryLoad @ $pacletDirectory;
 Get[ "Wolfram`Chatbook`" ];
+Get[ "Wolfram`Chatbook`Menus`"];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -129,7 +130,7 @@ menuInitializer[ name_String, color_ ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$chatOutputMenu*)
-$chatOutputMenu := $chatOutputMenu = ToBoxes @ makeMenu[
+$chatOutputMenu := $chatOutputMenu = ToBoxes @ MakeMenu[
     {
         (* Icon              , Label                      , ActionName          *)
         { "IconizeIcon"      , "Regenerate"               , "Regenerate"         },
@@ -148,55 +149,6 @@ $chatOutputMenu := $chatOutputMenu = ToBoxes @ makeMenu[
 ];
 
 
-makeMenu[ items_, frameColor_, width_ ] :=
-    Pane[
-        RawBoxes @ TemplateBox[
-            {
-                ToBoxes @ Column[ menuItem /@ items, ItemSize -> { Full, 0 }, Spacings -> 0, Alignment -> Left ],
-                FrameMargins   -> 3,
-                Background     -> GrayLevel[ 0.98 ],
-                RoundingRadius -> 3,
-                FrameStyle     -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
-                ImageMargins   -> 0
-            },
-            "Highlighted"
-        ],
-        ImageSize -> { width, Automatic }
-    ];
-
-
-menuItem[ { args__ } ] := menuItem @ args;
-
-menuItem[ Delimiter ] := RawBoxes @ TemplateBox[ { }, "ChatMenuItemDelimiter" ];
-
-menuItem[ section_ ] := RawBoxes @ TemplateBox[ { ToBoxes @ section }, "ChatMenuSection" ];
-
-menuItem[ name_String, label_, code_ ] :=
-    With[ { icon = $icons[ name ] },
-        If[ MissingQ @ icon,
-            menuItem[ RawBoxes @ TemplateBox[ { name }, "ChatMenuItemToolbarIcon" ], label, code ],
-            menuItem[ icon, label, code ]
-        ]
-    ];
-
-menuItem[ icon_, label_, action_String ] :=
-    menuItem[
-        icon,
-        label,
-        Hold @ With[
-            { $CellContext`cell = EvaluationCell[ ] },
-            { $CellContext`root = ParentCell @ $CellContext`cell },
-            NotebookDelete @ $CellContext`cell;
-            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ action, $CellContext`root ]
-        ]
-    ];
-
-menuItem[ icon_, label_, None ] :=
-    menuItem[ icon, label, Hold[ NotebookDelete @ EvaluationCell[ ]; MessageDialog[ "Not Implemented" ] ] ];
-
-menuItem[ icon_, label_, code_ ] :=
-    RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label, code }, "ChatMenuItem" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
