@@ -1338,15 +1338,15 @@ MakeChatInputCellDingbat[] := Module[{
 		menuData["Personas"],
 		menuData["Models"],
 		"ActionCallback" -> actionCallback,
-		"SelectedPersona" -> CurrentValue[
+		"PersonaValue" -> currentValueOrigin[
 			ParentCell[EvaluationCell[]],
 			{TaggingRules, "LLMSettings", "LLMEvaluator"}
 		],
-		"SelectedModel" -> CurrentValue[
+		"ModelValue" -> currentValueOrigin[
 			ParentCell[EvaluationCell[]],
 			{TaggingRules, "LLMSettings", "Model"}
 		],
-		"SelectedRole" -> CurrentValue[
+		"RoleValue" -> currentValueOrigin[
 			ParentCell[EvaluationCell[]],
 			{TaggingRules, "LLMSettings", "Role"}
 		]
@@ -1370,12 +1370,47 @@ MakeChatInputCellDingbat[] := Module[{
 
 (*====================================*)
 
+(*
+	Get the current value and origin of a cell option value.
+
+	This function will return {origin, value}, where `origin` will be one of:
+
+	* "Inline"    -- this value is set inline in the specified CellObject
+	* "Inherited" -- this value is inherited from a style setting outside of the
+		specified CellObject.
+*)
+currentValueOrigin[
+	cell_CellObject,
+	keyPath_List
+] := Module[{
+	value,
+	inlineValue
+},
+	value = CurrentValue[cell, keyPath];
+
+	(* FIXME: Don't use a ResourceFunction in this code. *)
+	inlineValue = Quiet @ ResourceFunction["NestedLookup"][
+		Options[cell],
+		keyPath,
+		None
+	];
+
+	Which[
+		inlineValue === None,
+			{"Inherited", value},
+		True,
+			{"Inline", inlineValue}
+	]
+]
+
+(*====================================*)
+
 SetFallthroughError[MakeChatInputLLMConfigurationActionMenu]
 
 Options[MakeChatInputLLMConfigurationActionMenu] = {
-	"SelectedPersona" -> Automatic,
-	"SelectedModel" -> Automatic,
-	"SelectedRole" -> Automatic,
+	"PersonaValue" -> Automatic,
+	"ModelValue" -> Automatic,
+	"RoleValue" -> Automatic,
 	"ActionCallback" -> (Null &)
 }
 
@@ -1388,9 +1423,9 @@ MakeChatInputLLMConfigurationActionMenu[
 ] := With[{
 	callback = OptionValue["ActionCallback"]
 }, Module[{
-	selectedPersona = OptionValue["SelectedPersona"],
-	selectedModel = OptionValue["SelectedModel"],
-	selectedRole = OptionValue["SelectedRole"],
+	personaValue = OptionValue["PersonaValue"],
+	modelValue = OptionValue["ModelValue"],
+	roleValue = OptionValue["RoleValue"],
 	menuLabel,
 	menuItems
 },
@@ -1400,7 +1435,7 @@ MakeChatInputLLMConfigurationActionMenu[
 
 	menuLabel = FirstCase[
 		personas,
-		{selectedPersona, icon_, _} :> icon,
+		{personaValue[[2]], icon_, _} :> icon,
 		Style["\[LongDash]", GrayLevel[0.5]]
 	];
 
@@ -1420,10 +1455,7 @@ MakeChatInputLLMConfigurationActionMenu[
 			entry |-> ConfirmReplace[entry, {
 				{persona_?StringQ, icon_, listItemLabel_} :> (
 					Row[{
-						Style[
-							"\[Checkmark]",
-							If[persona =!= selectedPersona, Transparent, {}]
-						],
+						styleListItem[persona, personaValue],
 						" ",
 						icon,
 						listItemLabel
@@ -1446,10 +1478,7 @@ MakeChatInputLLMConfigurationActionMenu[
 			entry |-> ConfirmReplace[entry, {
 				{model_?StringQ, icon_, listItemLabel_} :> (
 					Row[{
-						Style[
-							"\[Checkmark]",
-							If[model =!= selectedModel, Transparent, {}]
-						],
+						styleListItem[model, modelValue],
 						" ",
 						icon,
 						listItemLabel
@@ -1472,10 +1501,7 @@ MakeChatInputLLMConfigurationActionMenu[
 			entry |-> ConfirmReplace[entry, {
 				role_?StringQ :> (
 					Row[{
-						Style[
-							"\[Checkmark]",
-							If[role =!= selectedRole, Transparent, {}]
-						],
+						styleListItem[role, roleValue],
 						" ",
 						role
 					}] :> (
@@ -1506,6 +1532,35 @@ MakeChatInputLLMConfigurationActionMenu[
 		Appearance -> None
 	]
 ]]
+
+(*------------------------------------*)
+
+SetFallthroughError[styleListItem]
+
+(*
+	Style a list item in the ChatInput option value dropdown based on whether
+	its value is set inline in the current cell, inherited from some enclosing
+	setting, or not the current value.
+*)
+styleListItem[
+	possibleValue_?StringQ,
+	currentValue : {"Inline" | "Inherited", _}
+] := (
+	Replace[currentValue, {
+		(* This possible value is the currently selected value. *)
+		{"Inline", possibleValue} :>
+			"\[Checkmark]",
+		(* This possible value is the inherited selected value. *)
+		{"Inherited", possibleValue} :>
+			Style["\[Checkmark]", GrayLevel[0.75]],
+		(* This possible value is not whatever the currently selected value is. *)
+		(* Display a hidden checkmark purely so that this
+			is offset by the same amount as list items that
+			display a visible checkmark. *)
+		_ ->
+			Style["\[Checkmark]", Transparent]
+	}]
+)
 
 (*====================================*)
 
