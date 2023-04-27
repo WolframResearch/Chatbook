@@ -1295,12 +1295,42 @@ chatHTTPRequest[
 
 MakeChatInputCellDingbat[] := Module[{
 	menuData = GetChatInputLLMConfigurationSelectorMenuData[],
+	actionCallback,
 	actionMenu,
 	menu
 },
+	actionCallback = Function[{field, value}, Replace[field, {
+		"Persona" :> (
+			CurrentValue[
+				ParentCell[EvaluationCell[]],
+				{TaggingRules, "LLMSettings", "LLMEvaluator"}
+			] = value;
+		),
+		"Model" :> (
+			CurrentValue[
+				ParentCell[EvaluationCell[]],
+				{TaggingRules, "LLMSettings", "Model"}
+			] = value;
+		),
+		"Role" :> (
+			CurrentValue[
+				ParentCell[EvaluationCell[]],
+				{TaggingRules, "LLMSettings", "Role"}
+			] = value;
+		),
+		other_ :> (
+			ChatbookWarning[
+				"Unexpected field set from LLM configuration action menu: `` => ``",
+				InputForm[other],
+				InputForm[value]
+			];
+		)
+	}]];
+
 	actionMenu = MakeChatInputLLMConfigurationActionMenu[
 		menuData["Personas"],
-		menuData["Models"]
+		menuData["Models"],
+		"ActionCallback" -> actionCallback
 	];
 
 	(* menu = Tooltip[
@@ -1326,7 +1356,8 @@ SetFallthroughError[MakeChatInputLLMConfigurationActionMenu]
 Options[MakeChatInputLLMConfigurationActionMenu] = {
 	"SelectedPersona" -> Automatic,
 	"SelectedModel" -> Automatic,
-	"SelectedRole" -> Automatic
+	"SelectedRole" -> Automatic,
+	"ActionCallback" -> (Null &)
 }
 
 MakeChatInputLLMConfigurationActionMenu[
@@ -1335,7 +1366,9 @@ MakeChatInputLLMConfigurationActionMenu[
 	(* List of {tagging rule value, icon, list item label} *)
 	models:{___List},
 	OptionsPattern[]
-] := Module[{
+] := With[{
+	callback = OptionValue["ActionCallback"]
+}, Module[{
 	selectedPersona = OptionValue["SelectedPersona"],
 	selectedModel = OptionValue["SelectedModel"],
 	selectedRole = OptionValue["SelectedRole"],
@@ -1376,10 +1409,7 @@ MakeChatInputLLMConfigurationActionMenu[
 						icon,
 						listItemLabel
 					}] :> (
-						CurrentValue[
-							ParentCell[EvaluationCell[]],
-							{TaggingRules, "LLMSettings", "LLMEvaluator"}
-						] = persona;
+						callback["Persona", persona];
 					)
 				)
 			}],
@@ -1405,10 +1435,7 @@ MakeChatInputLLMConfigurationActionMenu[
 						icon,
 						listItemLabel
 					}] :> (
-						CurrentValue[
-							ParentCell[EvaluationCell[]],
-							{TaggingRules, "LLMSettings", "Model"}
-						] = model;
+						callback["Model", model];
 					)
 				)
 			}],
@@ -1433,10 +1460,7 @@ MakeChatInputLLMConfigurationActionMenu[
 						" ",
 						role
 					}] :> (
-						CurrentValue[
-							ParentCell[EvaluationCell[]],
-							{TaggingRules, "LLMSettings", "Role"}
-						] = role;
+						callback["Role", role];
 					)
 				)
 			}],
@@ -1462,7 +1486,7 @@ MakeChatInputLLMConfigurationActionMenu[
 		menuItems,
 		Appearance -> None
 	]
-]
+]]
 
 (*====================================*)
 
