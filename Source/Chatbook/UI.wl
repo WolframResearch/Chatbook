@@ -1568,8 +1568,7 @@ getIcon[filename_?StringQ] := Module[{
 	icon
 },
 	icon = Import @ FileNameJoin @ {
-		PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "AIAssistant" ],
-		"Icons",
+		PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "Icons" ],
 		filename
 	};
 
