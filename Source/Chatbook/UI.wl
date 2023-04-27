@@ -17,6 +17,7 @@ GetAllCellsInChatContext
 ChatContextEpilogFunction
 
 MakeChatInputCellDingbat
+MakeChatInputLLMConfigurationActionMenu
 GetChatInputLLMConfigurationSelectorMenuData
 
 Begin["`Private`"]
@@ -1292,93 +1293,26 @@ chatHTTPRequest[
 
 (*========================================================*)
 
-MakeChatInputCellDingbat[] := With[{
-	default = "Assistant",
+MakeChatInputCellDingbat[] := Module[{
 	menuData = GetChatInputLLMConfigurationSelectorMenuData[],
-	valueKeyPath = {TaggingRules, "LLMConfiguration"}
-}, {
-	menu = Tooltip[
-		PopupMenu[
-			Dynamic[
-				CurrentValue[
-					ParentCell[EvaluationCell[]],
-					valueKeyPath
-				]
-			],
-			Map[
-				entry |-> Replace[entry, {
-					{id_?StringQ, label_, suffix_} :> (
-						id -> Row[{
-							Dynamic[RawBoxes[label]],
-							Dynamic[RawBoxes[suffix]]
-						}]
-					),
-					Delimiter -> Delimiter,
-					other_ :> (
-						ChatbookWarning[
-							"Unexpected persona menu entry form: ``",
-							InputForm[other]
-						];
-						other
-					)
-				}],
-				menuData
-			],
-			default,
-			Framed[
-				Style[
-					Row[{
-						PaneSelector[
-							Map[
-								entry |-> Replace[entry, {
-									{id_?StringQ, label_, _} :> (
-										id -> Dynamic[RawBoxes[label]]
-									),
-									Delimiter -> Nothing,
-									other_ :> (
-										ChatbookWarning[
-											"Unexpected persona menu entry form: ``",
-											InputForm[other]
-										];
-										other
-									)
-								}],
-								menuData
-							],
-							Dynamic[
-								CurrentValue[
-									ParentCell[EvaluationCell[]],
-									valueKeyPath
-								]
-							],
-							CurrentValue[
-								ParentCell[EvaluationCell[]],
-								valueKeyPath
-							],
-							ImageSize -> Automatic
-						],
-						"\[VeryThinSpace]\[RightAngleBracket]"
-					}],
-					FontColor -> GrayLevel[0.5],
-					FontWeight -> "Bold",
-					FontSize -> 11
-				],
-				RoundingRadius -> 3,
-				FrameMargins -> 2,
-				ImageMargins -> {{0, 3}, {0, 0}},
-				FrameStyle -> Directive[
-					RGBColor[0.8549, 0.83137, 0.72549],
-					AbsoluteThickness[1]
-				],
-				FrameMargins -> 0
-			]
-		],
+	actionMenu,
+	menu
+},
+	actionMenu = MakeChatInputLLMConfigurationActionMenu[
+		menuData["Personas"],
+		menuData["Models"]
+	];
+
+	(* menu = Tooltip[
+		actionMenu,
 		CurrentValue[
 			ParentCell[EvaluationCell[]],
 			valueKeyPath
 		]
-	]
-},
+	]; *)
+
+	menu = actionMenu;
+
 	Row[{
 		RawBoxes @ TemplateBox[{}, "ChatCounterLabel"],
 		menu
@@ -1387,19 +1321,198 @@ MakeChatInputCellDingbat[] := With[{
 
 (*====================================*)
 
-GetChatInputLLMConfigurationSelectorMenuData[] := Module[{},
-	{
-		{"Assistant", TemplateBox[{}, "ChatUserIcon"], " Assistant"},
-		{"Query", TemplateBox[{}, "ChatQueryIcon"], " Query"},
-		{"Wolfie", TemplateBox[{}, "WolfieIcon"], " Wolfie"},
-		Delimiter,
-		{"ChatGPT", TemplateBox[{}, "OpenAILogo"], " ChatGPT"},
-		{"ChatGPT-system", TemplateBox[{}, "OpenAILogo"], " ChatGPT (system)"},
-		Delimiter,
-		{"Birdnardo", TemplateBox[{}, "PRECOMMIT"], " Birdnardo"}
-	}
+SetFallthroughError[MakeChatInputLLMConfigurationActionMenu]
+
+Options[MakeChatInputLLMConfigurationActionMenu] = {
+	"SelectedPersona" -> Automatic,
+	"SelectedModel" -> Automatic,
+	"SelectedRole" -> Automatic
+}
+
+MakeChatInputLLMConfigurationActionMenu[
+	(* List of {tagging rule value, icon, list item label} *)
+	personas:{___List},
+	(* List of {tagging rule value, icon, list item label} *)
+	models:{___List},
+	OptionsPattern[]
+] := Module[{
+	selectedPersona = OptionValue["SelectedPersona"],
+	selectedModel = OptionValue["SelectedModel"],
+	selectedRole = OptionValue["SelectedRole"],
+	menuLabel,
+	menuItems
+},
+	(*-----------------------------------------*)
+	(* Construct the action menu display label *)
+	(*-----------------------------------------*)
+
+	menuLabel = FirstCase[
+		personas,
+		{selectedPersona, icon_, _} :> icon,
+		Style["\[LongDash]", GrayLevel[0.5]]
+	];
+
+	(*------------------------------------*)
+	(* Construct the popup menu item list *)
+	(*------------------------------------*)
+
+	menuItems = Join[
+		{
+			Style["Personas",
+				FontSize -> 16,
+				FontVariations -> {"CapsType" -> "SmallCaps"},
+				GrayLevel[0.5]
+			]
+		},
+		Map[
+			entry |-> ConfirmReplace[entry, {
+				{persona_?StringQ, icon_, listItemLabel_} :> (
+					Row[{
+						Style[
+							"\[Checkmark]",
+							If[persona =!= selectedPersona, Transparent, {}]
+						],
+						" ",
+						icon,
+						listItemLabel
+					}] :> (
+						CurrentValue[
+							ParentCell[EvaluationCell[]],
+							{TaggingRules, "LLMSettings", "LLMEvaluator"}
+						] = persona;
+					)
+				)
+			}],
+			personas
+		],
+		{Delimiter},
+		{
+			Style["Models",
+				FontSize -> 16,
+				FontVariations -> {"CapsType" -> "SmallCaps"},
+				GrayLevel[0.5]
+			]
+		},
+		Map[
+			entry |-> ConfirmReplace[entry, {
+				{model_?StringQ, icon_, listItemLabel_} :> (
+					Row[{
+						Style[
+							"\[Checkmark]",
+							If[model =!= selectedModel, Transparent, {}]
+						],
+						" ",
+						icon,
+						listItemLabel
+					}] :> (
+						CurrentValue[
+							ParentCell[EvaluationCell[]],
+							{TaggingRules, "LLMSettings", "Model"}
+						] = model;
+					)
+				)
+			}],
+			models
+		],
+		{Delimiter},
+		{
+			Style["Roles",
+				FontSize -> 16,
+				FontVariations -> {"CapsType" -> "SmallCaps"},
+				GrayLevel[0.5]
+			]
+		},
+		Map[
+			entry |-> ConfirmReplace[entry, {
+				role_?StringQ :> (
+					Row[{
+						Style[
+							"\[Checkmark]",
+							If[role =!= selectedRole, Transparent, {}]
+						],
+						" ",
+						role
+					}] :> (
+						CurrentValue[
+							ParentCell[EvaluationCell[]],
+							{TaggingRules, "LLMSettings", "Role"}
+						] = role;
+					)
+				)
+			}],
+			{
+				"User",
+				"System"
+			}
+		]
+	];
+
+	ActionMenu[
+		Framed[
+			Row[{menuLabel, "\[RightAngleBracket]"}],
+			RoundingRadius -> 3,
+			FrameMargins -> 2,
+			ImageMargins -> {{0, 3}, {0, 0}},
+			FrameStyle -> Directive[
+				RGBColor[0.8549, 0.83137, 0.72549],
+				AbsoluteThickness[1]
+			],
+			FrameMargins -> 0
+		],
+		menuItems,
+		Appearance -> None
+	]
 ]
 
+(*====================================*)
+
+getIcon[filename_?StringQ] := Module[{
+	icon
+},
+	icon = Import @ FileNameJoin @ {
+		PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "AIAssistant" ],
+		"Icons",
+		filename
+	};
+
+	(* TODO: Better error handling. *)
+	RaiseConfirmMatch[icon, _Graphics]
+]
+
+(*------------------------------------*)
+
+GetChatInputLLMConfigurationSelectorMenuData[] := Module[{
+	personas,
+	models
+},
+	personas = {
+		{"Assistant", getIcon["ChatUserIcon.wxf"], "Assistant"},
+		{"Query", getIcon["ChatQueryIcon.wxf"], "Query"},
+		{"Wolfie", getIcon["Wolfie.wxf"], "Wolfie"},
+		{
+			"ConnorGray/OrganizerAssistant",
+			RawBoxes @ TemplateBox[{
+				StyleBox["\"ConnorGray:\"", FontSize -> 10, GrayLevel[
+				0.5], StripOnInput -> False
+				],
+				"\" \"",
+				"\"Organizer Assistant\""
+			}, "RowDefault"],
+			""
+		}
+	};
+
+	models = {
+		(* FIXME: Replace with OpenAI logo *)
+		{"GPT-3.5", getIcon["Chatbot.wxf"], "GPT-3.5"},
+		{"GPT-4", getIcon["Chatbot.wxf"], "GPT-4"}
+	};
+
+	<|
+		"Personas" -> personas,
+		"Models" -> models
+	|>
+]
 
 End[]
 
