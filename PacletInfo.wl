@@ -27,6 +27,7 @@ PacletObject[<|
 		{"Asset",
 			"Root" -> "Assets",
 			"Assets" -> {
+				{"Icons", "Icons"},
 				{"AIAssistant", "AIAssistant"}
 			}
 		},

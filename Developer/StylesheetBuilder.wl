@@ -26,7 +26,7 @@ Begin[ "`Private`" ];
 (* ::Subsection::Closed:: *)
 (*Paths*)
 $assetLocation      = FileNameJoin @ { DirectoryName @ $InputFileName, "Resources" };
-$iconDirectory      = FileNameJoin @ { $assetLocation, "Icons" };
+$iconDirectory      = PacletObject["Wolfram/Chatbook"]["AssetLocation", "Icons"];
 $ninePatchDirectory = FileNameJoin @ { $assetLocation, "NinePatchImages" };
 $styleDataFile      = FileNameJoin @ { $assetLocation, "Styles.wl" };
 $pacletDirectory    = DirectoryName[ $InputFileName, 2 ];
@@ -60,7 +60,7 @@ $suppressButtonAppearance = Dynamic @ FEPrivate`FrontEndResource[
 (*$icons*)
 $icons := $icons = Association @ Map[
     FileBaseName @ # -> Import @ # &,
-    FileNames[ All, $iconDirectory ]
+    FileNames[ "*.wl", $iconDirectory ]
 ];
 
 (* ::**************************************************************************************************************:: *)
