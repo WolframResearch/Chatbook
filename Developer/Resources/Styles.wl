@@ -80,7 +80,6 @@ Cell[
 		BoxData @ DynamicBox[
 			ToBoxes[
 				(
-					(* FIXME: Is this actually used? *)
 					Wolfram`Chatbook`UI`$ChatInputMenuDataChanged;
 
 					Symbol["Wolfram`Chatbook`UI`MakeChatInputCellDingbat"][]
