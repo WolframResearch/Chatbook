@@ -1505,10 +1505,11 @@ MakeChatInputLLMConfigurationActionMenu[
 		},
 		Map[
 			entry |-> ConfirmReplace[entry, {
-				role_?StringQ :> (
+				{role_?StringQ, icon_} :> (
 					Row[{
 						styleListItem[role, roleValue],
 						" ",
+						icon,
 						role
 					}] :> (
 						callback["Role", role];
@@ -1516,8 +1517,8 @@ MakeChatInputLLMConfigurationActionMenu[
 				)
 			}],
 			{
-				"User",
-				"System"
+				{"User", getIcon["role-user.wl"]},
+				{"System", getIcon["role-system.wl"]}
 			}
 		]
 	];
@@ -1602,6 +1603,9 @@ getIcon[filename_?StringQ] := Module[{
 		];
 	];
 
+	(* Cache the icon so we don't have to load it from disk again. *)
+	getIcon[filename] = icon;
+
 	icon
 ]
 
@@ -1612,9 +1616,11 @@ GetChatInputLLMConfigurationSelectorMenuData[] := Module[{
 	models
 },
 	personas = {
-		{"Assistant", getIcon["ChatUserIcon.wxf"], "Assistant"},
-		{"Query", getIcon["ChatQueryIcon.wxf"], "Query"},
-		{"Wolfie", getIcon["Wolfie.wxf"], "Wolfie"},
+		{"Helper", getIcon["persona-helper.wl"], "Helper"},
+		{"Code", getIcon["persona-code.wl"], "Code"},
+		{"Documentation", getIcon["persona-documentation.wl"], "Documentation"},
+		{"Wolfie", getIcon["persona-wolfie.wl"], "Wolfie"},
+		{"Birdnardo", getIcon["persona-birdnardo.wl"], "Birdnardo"},
 		{
 			"ConnorGray/OrganizerAssistant",
 			RawBoxes @ TemplateBox[{
@@ -1630,8 +1636,8 @@ GetChatInputLLMConfigurationSelectorMenuData[] := Module[{
 
 	models = {
 		(* FIXME: Replace with OpenAI logo *)
-		{"gpt-3.5-turbo", getIcon["Chatbot.wxf"], "GPT-3.5"},
-		{"gpt-4", getIcon["Chatbot.wxf"], "GPT-4"}
+		{"gpt-3.5-turbo", getIcon["model-gpt3.5.wl"], "GPT-3.5"},
+		{"gpt-4", getIcon["model-gpt4.wl"], "GPT-4"}
 	};
 
 	<|
