@@ -154,7 +154,7 @@ makeMenu[ items_, frameColor_, width_ ] :=
             {
                 ToBoxes @ Column[ menuItem /@ items, ItemSize -> { Full, 0 }, Spacings -> 0, Alignment -> Left ],
                 FrameMargins   -> 3,
-                Background     -> GrayLevel[ 1 ],
+                Background     -> GrayLevel[ 0.98 ],
                 RoundingRadius -> 3,
                 FrameStyle     -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
                 ImageMargins   -> 0
@@ -168,6 +168,8 @@ makeMenu[ items_, frameColor_, width_ ] :=
 menuItem[ { args__ } ] := menuItem @ args;
 
 menuItem[ Delimiter ] := RawBoxes @ TemplateBox[ { }, "ChatMenuItemDelimiter" ];
+
+menuItem[ section_ ] := RawBoxes @ TemplateBox[ { ToBoxes @ section }, "ChatMenuSection" ];
 
 menuItem[ name_String, label_, code_ ] :=
     With[ { icon = $icons[ name ] },
