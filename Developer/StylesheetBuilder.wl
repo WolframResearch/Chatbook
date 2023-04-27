@@ -133,14 +133,13 @@ $chatOutputMenu := $chatOutputMenu = ToBoxes @ makeMenu[
     {
         (* Icon              , Label                      , ActionName          *)
         { "IconizeIcon"      , "Regenerate"               , "Regenerate"         },
-        "Explosions",
+        Delimiter,
         { "DivideCellsIcon"  , "Explode Cells (In Place)" , "ExplodeInPlace"     },
         { "OverflowIcon"     , "Explode Cells (Duplicate)", "ExplodeDuplicate"   },
         { "HyperlinkCopyIcon", "Copy Exploded Cells"      , "CopyExplodedCells"  },
-        "Neat Stuff",
+        Delimiter,
         { "TypesettingIcon"  , "Toggle Formatting"        , "ToggleFormatting"   },
         { "InPlaceIcon"      , "Copy ChatObject"          , "CopyChatObject"     },
-        Delimiter,
         { "GroupCellsIcon"   , "Lock Response"            , "LockResponse"       },
         { "AbortAllIcon"     , "Disable AI Assistant"     , "DisableAIAssistant" }
     },
