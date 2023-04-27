@@ -61,6 +61,8 @@ menuItem[ { args__ } ] := menuItem @ args;
 
 menuItem[ Delimiter ] := RawBoxes @ TemplateBox[ { }, "ChatMenuItemDelimiter" ];
 
+menuItem[ label_ :> action_ ] := menuItem[Graphics[{}, ImageSize -> 0], label, Hold[action]]
+
 menuItem[ section_ ] := RawBoxes @ TemplateBox[ { ToBoxes @ section }, "ChatMenuSection" ];
 
 menuItem[ name_String, label_, code_ ] :=
