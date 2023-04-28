@@ -25,6 +25,7 @@ CreateChatNotebook // Options = {
     "FrequencyPenalty"                  -> 0.1,
     "MaxTokens"                         -> Automatic,
     "MergeMessages"                     -> True,
+    "LLMEvaluator"                      -> "Helper",
     "Model"                             -> "gpt-3.5-turbo",
     "OpenAIKey"                         -> Automatic,
     "PresencePenalty"                   -> 0.1,
