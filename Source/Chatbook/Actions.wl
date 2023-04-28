@@ -18,8 +18,10 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"               ];
+Needs[ "Wolfram`Chatbook`Errors`"        ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`"    ];
 Needs[ "Wolfram`Chatbook`Serialization`" ];
+Needs[ "Wolfram`Chatbook`Personas`"      ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1302,10 +1304,10 @@ toModelName0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeCurrentRole*)
 makeCurrentRole // beginDefinition;
-makeCurrentRole[ as_Association? AssociationQ ] := makeCurrentRole[ as, as[ "RolePrompt" ], as[ "AssistantTheme" ] ];
+makeCurrentRole[ as_Association? AssociationQ ] := makeCurrentRole[ as, as[ "RolePrompt" ], as[ "LLMEvaluator" ] ];
 makeCurrentRole[ as_, None, _ ] := Missing[ ];
 makeCurrentRole[ as_, role_String, _ ] := <| "role" -> "system", "content" -> role |>;
-makeCurrentRole[ as_, Automatic, name_String ] := <| "role" -> "system", "content" -> namedRolePrompt @ name |>;
+makeCurrentRole[ as_, Automatic | _Missing, name_String ] := <| "role" -> "system", "content" -> namedRolePrompt @ name |>;
 makeCurrentRole[ as_, _, _ ] := <| "role" -> "system", "content" -> buildSystemPrompt @ as |>;
 makeCurrentRole // endDefinition;
 
@@ -1318,13 +1320,13 @@ buildSystemPrompt[ as_Association ] := TemplateApply[
     $promptTemplate,
     Association[
         $promptComponents[ "Generic" ],
-    Select[
-        <|
-            "Pre"  -> Lookup[ as, "ChatContextPreprompt"  ],
-            "Post" -> Lookup[ as, "ChatContextPostPrompt" ]
-        |>,
-        StringQ
-    ]
+		Select[
+			<|
+				"Pre"  -> Lookup[ as, "ChatContextPreprompt"  ],
+				"Post" -> Lookup[ as, "ChatContextPostPrompt" ]
+			|>,
+			StringQ
+		]
     ]
 ];
 
@@ -1798,14 +1800,8 @@ $promptTemplate = StringTemplate[ $promptStrings[ "Default" ], Delimiters -> "%%
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$promptComponents*)
+(* TODO(cleanup): This is now only used for the "Generic" persona. *)
 $promptComponents = <| |>;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*Birdnardo*)
-$promptComponents[ "Birdnardo" ] = <| |>;
-$promptComponents[ "Birdnardo", "Pre"  ] = $promptStrings[ "Birdnardo/Pre"  ];
-$promptComponents[ "Birdnardo", "Post" ] = $promptStrings[ "Birdnardo/Post" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1813,13 +1809,6 @@ $promptComponents[ "Birdnardo", "Post" ] = $promptStrings[ "Birdnardo/Post" ];
 $promptComponents[ "Generic" ] = <| |>;
 $promptComponents[ "Generic", "Pre"  ] = $promptStrings[ "Generic/Pre" ];
 $promptComponents[ "Generic", "Post" ] = "";
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*Wolfie*)
-$promptComponents[ "Wolfie" ] = <| |>;
-$promptComponents[ "Wolfie", "Pre"  ] = $promptStrings[ "Wolfie/Pre"  ];
-$promptComponents[ "Wolfie", "Post" ] = $promptStrings[ "Wolfie/Post" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1833,9 +1822,11 @@ $defaultRole = <| "role" -> "system", "content" -> $defaultRolePrompt |>;
 namedRolePrompt // ClearAll;
 
 namedRolePrompt[ name_String ] := Enclose[
-    Module[ { pre, post },
-        pre  = $promptComponents[ name, "Pre"  ];
-        post = $promptComponents[ name, "Post" ];
+    Module[ { data, pre, post },
+		data = ConfirmBy[GetPersonaData[name], AssociationQ];
+
+        pre  = Lookup[ data, "Pre"  ];
+        post = Lookup[ data, "Post" ];
         ConfirmBy[
             TemplateApply[
                 $promptTemplate,
@@ -1844,7 +1835,13 @@ namedRolePrompt[ name_String ] := Enclose[
             StringQ
         ]
     ],
-    $defaultRolePrompt &
+	(
+		ChatbookWarning[
+			"Error using named role prompt ``; falling back to default prompt.",
+			InputForm[name]
+		];
+		$defaultRolePrompt
+	) &
 ];
 
 namedRolePrompt[ ___ ] := $defaultRolePrompt;

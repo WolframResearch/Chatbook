@@ -30,6 +30,7 @@ Needs["Wolfram`Chatbook`Utils`"]
 Needs["Wolfram`Chatbook`Streaming`"]
 Needs["Wolfram`Chatbook`Serialization`"]
 Needs["Wolfram`Chatbook`Menus`"]
+Needs["Wolfram`Chatbook`Personas`"]
 
 
 Needs["Wolfram`ServerSentEventUtils`" -> None]
@@ -1638,7 +1639,7 @@ GetChatInputLLMConfigurationSelectorMenuData[] := Module[{
 	personas,
 	models
 },
-	personas = {
+	(* personas = {
 		{"Helper", getIcon["persona-helper.wl"], "Helper"},
 		{"Code", getIcon["persona-code.wl"], "Code"},
 		{"Documentation", getIcon["persona-documentation.wl"], "Documentation"},
@@ -1655,7 +1656,20 @@ GetChatInputLLMConfigurationSelectorMenuData[] := Module[{
 			}, "RowDefault"],
 			""
 		}
-	};
+	}; *)
+
+	personas = KeyValueMap[
+		{key, value} |-> {
+			key,
+			(* FIXME: Better generic fallback icon? *)
+			Replace[
+				Lookup[First[value], "Icon"],
+				_Missing -> ""
+			],
+			key
+		},
+		GetPersonasAssociation[]
+	];
 
 	models = {
 		(* FIXME: Replace with OpenAI logo *)
