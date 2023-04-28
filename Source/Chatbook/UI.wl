@@ -1464,6 +1464,7 @@ MakeChatInputLLMConfigurationActionMenu[
 						styleListItem[persona, personaValue],
 						" ",
 						icon,
+						Spacer[7],
 						listItemLabel
 					}] :> (
 						callback["Persona", persona];
@@ -1472,6 +1473,17 @@ MakeChatInputLLMConfigurationActionMenu[
 			}],
 			personas
 		],
+		{
+			Delimiter,
+			Row[{getIcon["persona-other.wl"], Spacer[7], "More Personas\[Ellipsis]"}] :> (
+				(* FIXME: Implement this. *)
+				MessageDialog["Not Implemented: Get More Personas"];
+			),
+			Row[{getIcon["persona-from-url.wl"], Spacer[7], "Install From URL\[Ellipsis]"}] :> (
+				(* FIXME: Implement this. *)
+				MessageDialog["Not Implemented: Install From URL"]
+			)
+		},
 		{Delimiter},
 		{
 			Style["Models",
@@ -1487,6 +1499,7 @@ MakeChatInputLLMConfigurationActionMenu[
 						styleListItem[model, modelValue],
 						" ",
 						icon,
+						Spacer[7],
 						listItemLabel
 					}] :> (
 						callback["Model", model];
@@ -1510,6 +1523,7 @@ MakeChatInputLLMConfigurationActionMenu[
 						styleListItem[role, roleValue],
 						" ",
 						icon,
+						Spacer[7],
 						role
 					}] :> (
 						callback["Role", role];
@@ -1601,6 +1615,14 @@ getIcon[filename_?StringQ] := Module[{
 			filename,
 			InputForm[icon]
 		];
+	];
+
+	(* NOTE: If the graphic doesn't have an existing BaselinePosition set,
+		use a default baseline that looks vertically centered for most visually
+		balanced icons. *)
+	If[BaselinePosition /. Options[icon, BaselinePosition] === Automatic,
+		(* TODO: Force the image size too. *)
+		icon = Show[icon, BaselinePosition -> Scaled[0.24]];
 	];
 
 	(* Cache the icon so we don't have to load it from disk again. *)
