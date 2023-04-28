@@ -31,6 +31,13 @@ PacletObject[<|
 				{"AIAssistant", "AIAssistant"}
 			}
 		},
+		{"LLMConfiguration",
+			"Personas" -> {
+				"Helper",
+				"Wolfie",
+				"Birdnardo"
+			}
+		},
 		{"FrontEnd"}
 	}
 |>]
