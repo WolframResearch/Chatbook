@@ -313,10 +313,10 @@ CopyChatObject // beginDefinition;
 CopyChatObject[ cell_CellObject ] := Enclose[
     Module[ { encodedString, chatData, messages, chatObject },
         Quiet[ PacletInstall[ "Wolfram/LLMFunctions" ]; Needs[ "Wolfram`LLMFunctions`" -> None ] ];
-        encodedString = ConfirmBy[ CurrentValue[ cell, { TaggingRules, "ChatData" } ], StringQ ];
-        chatData      = ConfirmBy[ BinaryDeserialize @ BaseDecode @ encodedString, AssociationQ ];
-        messages      = ConfirmMatch[ chatData[ "Data", "Messages" ], { __Association? AssociationQ } ];
-        chatObject    = Confirm @ constructChatObject @ messages;
+        encodedString = ConfirmBy[ CurrentValue[ cell, { TaggingRules, "ChatData" } ], StringQ, "EncodedString" ];
+        chatData      = ConfirmBy[ BinaryDeserialize @ BaseDecode @ encodedString, AssociationQ, "ChatData" ];
+        messages      = ConfirmMatch[ chatData[ "Data", "Messages" ], { __Association? AssociationQ }, "Messages" ];
+        chatObject    = Confirm[ constructChatObject @ messages, "ChatObject" ];
         CopyToClipboard @ chatObject
     ],
     throwInternalFailure[ HoldForm @ CopyChatObject @ cell, ## ] &
@@ -949,13 +949,13 @@ submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
             req,
             HandlerFunctions -> <|
                 "BodyChunkReceived" -> Function[
-                    catchTop @ Block[ { $autoOpen = autoOpen, $alwaysOpen = alwaysOpen },
+                    catchTop @ Block[ { $autoOpen = autoOpen, $alwaysOpen = alwaysOpen, $settings = settings },
                         Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                         writeChunk[ Dynamic @ container, cellObject, #1 ]
                     ]
                 ],
                 "TaskFinished" -> Function[
-                    catchTop @ Block[ { $autoOpen = autoOpen, $alwaysOpen = alwaysOpen },
+                    catchTop @ Block[ { $autoOpen = autoOpen, $alwaysOpen = alwaysOpen, $settings = settings },
                         Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                         checkResponse[ settings, container, cellObject, #1 ]
                     ]
@@ -1580,6 +1580,11 @@ writeChunk[ container_, cell_, chunk_String ] /; StringMatchQ[ chunk, "data: " ~
     ];
 
 writeChunk[ container_, cell_, "" | "data: [DONE]" | "data: [DONE]\n\n" ] := Null;
+
+writeChunk[ container_, cell_, chunk_String ] :=
+    With[ { json = Quiet @ Developer`ReadRawJSONString @ chunk },
+        writeChunk[ container, cell, chunk, json ] /; AssociationQ @ json
+    ];
 
 writeChunk[
     container_,
@@ -2920,54 +2925,136 @@ throwInternalFailure // beginDefinition;
 throwInternalFailure // Attributes = { HoldFirst };
 
 throwInternalFailure[ eval_, a___ ] :=
-    Block[ { $internalFailure = HoldForm @ eval },
-        throwFailure[ ChatbookAction::Internal, $bugReportLink, $internalFailure, a ]
+    Block[ { $internalFailure = makeInternalFailureData[ eval, a ] },
+        throwFailure[ ChatbookAction::Internal, $bugReportLink, $internalFailure ]
     ];
 
 throwInternalFailure // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*makeInternalFailureData*)
+makeInternalFailureData // Attributes = { HoldFirst };
+
+makeInternalFailureData[ eval_, Failure[ tag_, as_Association ], args___ ] := maskOpenAIKey @ <|
+    "Evaluation" :> eval,
+    "Failure"    -> Failure[ tag, Association[ KeyTake[ as, "Information" ], as ] ],
+    "Arguments"  -> { args }
+|>;
+
+makeInternalFailureData[ eval_, args___ ] := maskOpenAIKey @ <| "Evaluation" :> eval, "Arguments" -> { args } |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*$bugReportLink*)
 $bugReportLink := Hyperlink[
     "Report this issue \[RightGuillemet]",
-    URLBuild @ <|
+    trimURL @ URLBuild @ <|
         "Scheme"   -> "https",
         "Domain"   -> "github.com",
-        "Path"     -> { "ConnorGray", "Chatbook", "issues", "new" },
+        "Path"     -> { "WolframResearch", "Chatbook", "issues", "new" },
         "Query"    -> {
-            "title"  -> "[Chatbook] Insert Title Here",
-            "body"   -> bugReportBody[ ],
-            "labels" -> "bug"
+            "title"  -> "Insert Title Here",
+            "labels" -> "bug",
+            "body"   -> bugReportBody[ ]
         }
     |>
 ];
 
+$maxBugReportURLSize = 4000;
+(*
+    RFC 7230 recommends clients support 8000: https://www.rfc-editor.org/rfc/rfc7230#section-3.1.1
+    Long bug report links might not work in old versions of IE,
+    but using IE these days should probably be considered user error.
+*)
+
 bugReportBody[ ] := bugReportBody @ PacletObject[ "Wolfram/Chatbook" ][ "PacletInfo" ];
 
-bugReportBody[ as_Association? AssociationQ ] := TemplateApply[
-    $bugReportBodyTemplate,
-    Association[
-        as,
-        "SystemID"              -> $SystemID,
-        "KernelVersion"         -> SystemInformation[ "Kernel"  , "Version" ],
-        "FrontEndVersion"       -> $frontEndVersion,
-        "Notebooks"             -> $Notebooks,
-        "EvaluationEnvironment" -> $EvaluationEnvironment,
-        "Stack"                 -> $bugReportStack,
-        "Settings"              -> $settings,
-        "InternalFailure"       -> internalFailureString @ $internalFailure
+bugReportBody[ as_Association? AssociationQ ] :=
+    TemplateApply[
+        $bugReportBodyTemplate,
+        <|
+            "DebugData" -> associationMarkdown[
+                KeyTake[ as, { "Name", "Version" } ],
+                "EvaluationEnvironment" -> $EvaluationEnvironment,
+                "FrontEndVersion"       -> $frontEndVersion,
+                "KernelVersion"         -> SystemInformation[ "Kernel", "Version" ],
+                "SystemID"              -> $SystemID,
+                "Notebooks"             -> $Notebooks,
+                "DynamicEvaluation"     -> $DynamicEvaluation,
+                "SynchronousEvaluation" -> $SynchronousEvaluation,
+                "TaskEvaluation"        -> MatchQ[ $CurrentTask, _TaskObject ]
+            ],
+            "Stack"           -> $bugReportStack,
+            "Settings"        -> associationMarkdown @ maskOpenAIKey @ $settings,
+            "InternalFailure" -> markdownCodeBlock @ $internalFailure
+        |>
+    ];
+
+(* cSpell: ignore Fdetails *)
+trimURL[ url_String ] := trimURL[ url, $maxBugReportURLSize ];
+
+trimURL[ url_String, limit_Integer ] /; StringLength @ url <= limit := url;
+
+trimURL[ url_String, limit_Integer ] :=
+    Module[ { sp, bt, nl, before, after, base, take },
+        sp     = ("+"|"%20")...;
+        bt     = URLEncode[ "```" ];
+        nl     = (URLEncode[ "\r\n" ] | URLEncode[ "\n" ])...;
+        before = Longest[ "%23%23"~~sp~~"Failure"~~sp~~"Data"~~nl~~bt~~nl ];
+        after  = Longest[ nl~~bt~~nl~~"%3C%2Fdetails%3E" ];
+        base   = StringLength @ StringReplace[ url, a: before ~~ ___ ~~ b: after :> a <> "\n" <> b ];
+        take   = UpTo @ Max[ limit - base, 80 ];
+        With[ { t = take }, StringReplace[ url, a: before ~~ b__ ~~ c: after :> a <> StringTake[ b, t ] <> "\n" <> c ] ]
+    ];
+
+
+associationMarkdown[ data_Association? AssociationQ ] := StringJoin[
+    "| Property | Value |\n| --- | --- |\n",
+    StringRiffle[
+        KeyValueMap[
+            Function[
+                { k, v },
+                StringJoin @ StringJoin[
+                    "| ",
+                    ToString @ ToString[ Unevaluated @ k, CharacterEncoding -> "UTF-8" ],
+                    " | ``",
+                    StringTake[ ToString[ Unevaluated @ v, InputForm, CharacterEncoding -> "UTF-8" ], UpTo[ 80 ] ],
+                    "`` |"
+                ],
+                HoldAllComplete
+            ],
+            data
+        ],
+        "\n"
     ]
 ];
 
-internalFailureString[ HoldForm[ fail_ ] ] := internalFailureString @ Unevaluated @ fail;
-internalFailureString[ fail_ ] := StringTake[ ToString[ Unevaluated @ fail, InputForm ], UpTo[ 200 ] ];
+
+maskOpenAIKey[ expr_ ] :=
+    With[ { mask = "**********" },
+        ReplaceAll[
+            expr /. HoldPattern[ "OpenAIKey" -> Except[ mask, _String ] ] :> ("OpenAIKey" -> mask),
+            a: (KeyValuePattern[ "OpenAIKey" -> Except[ mask, _String ] ])? AssociationQ :>
+                RuleCondition @ Insert[ a, "OpenAIKey" -> mask, Key[ "OpenAIKey" ] ]
+        ]
+    ];
+
+
+associationMarkdown[ rules___ ] := With[ { as = Association @ rules }, associationMarkdown @ as /; AssociationQ @ as ];
+associationMarkdown[ expr_ ] := markdownCodeBlock @ expr;
+
+markdownCodeBlock[ expr_ ] := StringJoin[
+    "```\n",
+    StringTake[ ToString[ expr, InputForm, PageWidth -> 120 ], UpTo @ $maxBugReportURLSize ],
+    "\n```\n"
+];
 
 
 $frontEndVersion :=
     If[ TrueQ @ CloudSystem`$CloudNotebooks,
-        Row @ { "Cloud: ", $CloudVersion },
-        Row @ { "Desktop: ", UsingFrontEnd @ SystemInformation[ "FrontEnd", "Version" ] }
+        StringJoin[ "Cloud: ", ToString @ $CloudVersion ],
+        StringJoin[ "Desktop: ", ToString @ UsingFrontEnd @ SystemInformation[ "FrontEnd", "Version" ] ]
     ];
 
 
@@ -2976,42 +3063,36 @@ $settings :=
         settings = CurrentValue @ { TaggingRules, "ChatNotebookSettings" };
         assoc = Association @ settings;
         If[ AssociationQ @ assoc,
-            ToString @ ResourceFunction[ "ReadableForm" ][ KeyDrop[ assoc, "OpenAIKey" ], "DynamicAlignment" -> True ],
+            KeyDrop[ assoc, "OpenAIKey" ],
             settings
         ]
     ];
 
 
 $bugReportBodyTemplate = StringTemplate[ "\
-# Description
-Describe the issue in detail here.
+Describe the issue in detail here. Attach any relevant screenshots or files. \
+The section below was automatically generated. \
+Remove any information that you do not wish to include in the report.
 
-# Debug Data
-| Property | Value |
-| --- | --- |
-| Name | `%%Name%%` |
-| Version | `%%Version%%` |
-| KernelVersion | `%%KernelVersion%%` |
-| FrontEndVersion | `%%FrontEndVersion%%` |
-| Notebooks | `%%Notebooks%%` |
-| EvaluationEnvironment | `%%EvaluationEnvironment%%` |
-| SystemID | `%%SystemID%%` |
+<details>
+<summary>Debug Data</summary>
+
+%%DebugData%%
 
 ## Settings
-```
+
 %%Settings%%
-```
 
 ## Stack Data
 ```
 %%Stack%%
 ```
 
-## Failure Expression
-```
+## Failure Data
+
 %%InternalFailure%%
-```
-",
+
+</details>",
 Delimiters -> "%%"
 ];
 
@@ -3020,8 +3101,9 @@ $bugReportStack := StringRiffle[
     Replace[
         DeleteAdjacentDuplicates @ Cases[
             Stack[ _ ],
-            HoldForm[ (s_Symbol) | (s_Symbol)[ ___ ] | (s_Symbol)[ ___ ][ ___ ] ] /; AtomQ @ Unevaluated @ s :>
-                SymbolName @ Unevaluated @ s
+            HoldForm[ (s_Symbol) | (s_Symbol)[ ___ ] | (s_Symbol)[ ___ ][ ___ ] ] /;
+                AtomQ @ Unevaluated @ s && StringStartsQ[ Context @ s, "Wolfram`Chatbook`" ] :>
+                    SymbolName @ Unevaluated @ s
         ],
         { a___, "throwInternalFailure", ___ } :> { a, "throwInternalFailure" }
     ],
