@@ -1295,6 +1295,7 @@ chatHTTPRequest[
 (*========================================================*)
 
 MakeChatInputCellDingbat[] := With[{
+	dingbatCellObj = EvaluationCell[],
 	chatInputCellObj = ParentCell[EvaluationCell[]]
 }, Module[{
 	menuData = GetChatInputLLMConfigurationSelectorMenuData[],
@@ -1315,21 +1316,21 @@ MakeChatInputCellDingbat[] := With[{
 				chatInputCellObj,
 				{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
 			] = value;
-			NotebookDelete[EvaluationCell[]];
+			NotebookDelete[Cells[dingbatCellObj, AttachedCell->True]];
 		),
 		"Model" :> (
 			CurrentValue[
 				chatInputCellObj,
 				{TaggingRules, "ChatNotebookSettings", "Model"}
 			] = value;
-			NotebookDelete[EvaluationCell[]];
+			NotebookDelete[Cells[dingbatCellObj, AttachedCell->True]];
 		),
 		"Role" :> (
 			CurrentValue[
 				chatInputCellObj,
 				{TaggingRules, "ChatNotebookSettings", "Role"}
 			] = value;
-			NotebookDelete[EvaluationCell[]];
+			NotebookDelete[Cells[dingbatCellObj, AttachedCell->True]];
 		),
 		other_ :> (
 			ChatbookWarning[
