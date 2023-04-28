@@ -330,14 +330,17 @@ CopyChatObject // endDefinition;
 constructChatObject // beginDefinition;
 
 constructChatObject[ messages_List ] :=
-    With[ { chat = System`CreateChat[ Append[ KeyMap[ Capitalize, #1 ], "Timestamp" -> Now ] & /@ messages ] },
-        chat /; MatchQ[ chat, _System`ChatObject ]
+    With[ { chat = createChat[ Append[ KeyMap[ Capitalize, #1 ], "Timestamp" -> Now ] & /@ messages ] },
+        chat /; MatchQ[ chat, _chatObject ]
     ];
 
 constructChatObject[ messages_List ] :=
     Dataset[ KeyMap[ Capitalize ] /@ messages ];
 
 constructChatObject // endDefinition;
+
+createChat := createChat = Symbol[ "System`CreateChat" ];
+chatObject := chatObject = Symbol[ "System`ChatObject" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -881,7 +884,7 @@ chatHistoryCellsAndTarget // beginDefinition;
 chatHistoryCellsAndTarget[ { before___CellObject, after_CellObject } ] :=
     If[ MatchQ[ cellInformation @ after, KeyValuePattern[ "Style" -> $$chatOutputStyle ] ],
         { { before }, after },
-        { { before, after }, None }\
+        { { before, after }, None }
     ];
 
 chatHistoryCellsAndTarget // endDefinition;
