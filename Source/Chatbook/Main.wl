@@ -11,6 +11,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$ChatSystemPre;
 `$DefaultChatInputPost;
 `$DefaultChatSystemPre;
+`Chatbook;
 `ChatbookAction;
 `CreateChatNotebook;
 `Internal`$BuildingMX;
@@ -56,10 +57,15 @@ $ChatContextCellStyles specifies additional cell styles to include as context to
 Cells with one of the built-in chat cell styles are always included as context.\
 " ];
 
+GeneralUtilities`SetUsage[ Chatbook, "\
+Chatbook is a symbol for miscellaneous chat notebook messages.\
+" ];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Load Files*)
 Block[ { $ContextPath },
+    Get[ "Wolfram`Chatbook`Common`"             ];
     Get[ "Wolfram`Chatbook`Debug`"              ];
     Get[ "Wolfram`Chatbook`ErrorUtils`"         ];
     Get[ "Wolfram`Chatbook`Errors`"             ];
@@ -71,6 +77,7 @@ Block[ { $ContextPath },
     Get[ "Wolfram`Chatbook`Actions`"            ];
     Get[ "Wolfram`Chatbook`Menus`"              ];
     Get[ "Wolfram`Chatbook`Personas`"           ];
+    Get[ "Wolfram`Chatbook`PersonaInstaller`"   ];
 ];
 
 (* ::**************************************************************************************************************:: *)
