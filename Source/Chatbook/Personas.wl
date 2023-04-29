@@ -162,12 +162,12 @@ loadPersonaFromDirectory[dir_?StringQ] := Module[{
 	icon = FileNameJoin[{dir, "Icon.wl"}];
 
 	pre = If[FileType[pre] === File,
-		ReadString[pre],
+		readPromptString[pre],
 		Missing["NotAvailable", pre]
 	];
 
 	post = If[FileType[post] === File,
-		ReadString[post],
+		readPromptString[post],
 		Missing["NotAvailable", post]
 	];
 
@@ -178,6 +178,8 @@ loadPersonaFromDirectory[dir_?StringQ] := Module[{
 
 	<| "Pre" -> pre, "Post" -> post, "Icon" -> icon |>
 ]
+
+readPromptString[ file_ ] := StringReplace[ ReadString @ file, "\r\n" -> "\n" ];
 
 End[]
 EndPackage[]
