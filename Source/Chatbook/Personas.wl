@@ -16,8 +16,6 @@ GetPersonasData[] returns information about all locally installed personas, incl
 
 Begin["`Private`"]
 
-Needs["PacletTools`" -> None]
-
 Needs["Wolfram`Chatbook`Errors`"]
 Needs["Wolfram`Chatbook`ErrorUtils`"]
 
@@ -26,6 +24,7 @@ Needs["Wolfram`Chatbook`ErrorUtils`"]
 GetPersonas[] := Module[{
 	paclets
 },
+	Needs["PacletTools`" -> None];
 	paclets = PacletFind[All, <| "Extension" -> "LLMConfiguration" |>];
 
 	Flatten @ Map[
@@ -77,6 +76,7 @@ SetFallthroughError[GetPersonaData]
 GetPersonaData[] := Module[{
 	paclets
 },
+	Needs["PacletTools`" -> None];
 	paclets = PacletFind[All, <| "Extension" -> "LLMConfiguration" |>];
 
 	Flatten @ Map[

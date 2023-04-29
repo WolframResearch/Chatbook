@@ -19,15 +19,8 @@ Needs["Wolfram`Chatbook`ErrorUtils`"]
 
 (*========================================================*)
 
-$iconDirectory = RaiseConfirmMatch[
-	PacletObject["Wolfram/Chatbook"]["AssetLocation", "Icons"],
-	_?DirectoryQ
-];
-
-$chatbookIcons := $chatbookIcons = Association @ Map[
-    FileBaseName @ # -> Import @ # &,
-    FileNames[ "*.wl", $iconDirectory ]
-];
+$chatbookIcons := $chatbookIcons =
+    Developer`ReadWXFFile @ PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "Icons" ];
 
 (*========================================================*)
 
@@ -100,6 +93,10 @@ menuItem[ icon_, label_, code_ ] :=
 	RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label, code }, "ChatMenuItem" ];
 
 (*========================================================*)
+
+If[ Wolfram`Chatbook`Internal`$BuildingMX,
+    $chatbookIcons;
+];
 
 End[]
 
