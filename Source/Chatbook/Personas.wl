@@ -179,7 +179,7 @@ loadPersonaFromDirectory[dir_?StringQ] := Module[{
 	<| "Pre" -> pre, "Post" -> post, "Icon" -> icon |>
 ]
 
-readPromptString[ file_ ] := StringReplace[ ReadString @ file, "\r\n" -> "\n" ];
+readPromptString[ file_ ] := StringReplace[ ByteArrayToString @ ReadByteArray @ file, "\r\n" -> "\n" ];
 
 End[]
 EndPackage[]
