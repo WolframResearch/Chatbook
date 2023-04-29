@@ -1477,11 +1477,11 @@ MakeChatInputLLMConfigurationActionMenu[
 		],
 		{
 			Delimiter,
-			Row[{getIcon["persona-other.wl"], Spacer[7], "More Personas\[Ellipsis]"}] :> (
+			Row[{getIcon["PersonaOther"], Spacer[7], "More Personas\[Ellipsis]"}] :> (
 				(* FIXME: Implement this. *)
 				MessageDialog["Not Implemented: Get More Personas"];
 			),
-			Row[{getIcon["persona-from-url.wl"], Spacer[7], "Install From URL\[Ellipsis]"}] :> (
+			Row[{getIcon["PersonaFromURL"], Spacer[7], "Install From URL\[Ellipsis]"}] :> (
 				(* FIXME: Implement this. *)
 				MessageDialog["Not Implemented: Install From URL"]
 			)
@@ -1533,8 +1533,8 @@ MakeChatInputLLMConfigurationActionMenu[
 				)
 			}],
 			{
-				{"User", getIcon["role-user.wl"]},
-				{"System", getIcon["role-system.wl"]}
+				{"User", getIcon["RoleUser"]},
+				{"System", getIcon["RoleSystem"]}
 			}
 		]
 	];
@@ -1602,7 +1602,7 @@ styleListItem[
 
 (*====================================*)
 
-getIcon[filename_?StringQ] := Module[{
+(* getIcon[filename_?StringQ] := Module[{
 	icon
 },
 	icon = Import @ FileNameJoin @ {
@@ -1631,7 +1631,9 @@ getIcon[filename_?StringQ] := Module[{
 	getIcon[filename] = icon;
 
 	icon
-]
+] *)
+
+getIcon[ name_ ] := RawBoxes @ TemplateBox[ { }, name ];
 
 (*------------------------------------*)
 
@@ -1673,8 +1675,8 @@ GetChatInputLLMConfigurationSelectorMenuData[] := Module[{
 
 	models = {
 		(* FIXME: Replace with OpenAI logo *)
-		{"gpt-3.5-turbo", getIcon["model-gpt3.5.wl"], "GPT-3.5"},
-		{"gpt-4", getIcon["model-gpt4.wl"], "GPT-4"}
+		{"gpt-3.5-turbo", getIcon["ModelGPT35"], "GPT-3.5"},
+		{"gpt-4", getIcon["ModelGPT4"], "GPT-4"}
 	};
 
 	<|
