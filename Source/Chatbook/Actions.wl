@@ -18,6 +18,7 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"               ];
+Needs[ "Wolfram`Chatbook`Common`"        ];
 Needs[ "Wolfram`Chatbook`Errors`"        ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`"    ];
 Needs[ "Wolfram`Chatbook`Serialization`" ];
@@ -61,115 +62,21 @@ $$chatOutputStyle    = Alternatives @@ $chatOutputStyles    | { ___, Alternative
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Initialization*)
-$inDef = False;
-$debug = True;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*beginDefinition*)
-beginDefinition // ClearAll;
-beginDefinition // Attributes = { HoldFirst };
-beginDefinition::Unfinished =
-"Starting definition for `1` without ending the current one.";
-
-(* :!CodeAnalysis::BeginBlock:: *)
-(* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
-beginDefinition[ s_Symbol ] /; $debug && $inDef :=
-    WithCleanup[
-        $inDef = False
-        ,
-        Print @ TemplateApply[ beginDefinition::Unfinished, HoldForm @ s ];
-        beginDefinition @ s
-        ,
-        $inDef = True
-    ];
-(* :!CodeAnalysis::EndBlock:: *)
-
-beginDefinition[ s_Symbol ] :=
-    WithCleanup[ Unprotect @ s; ClearAll @ s, $inDef = True ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*endDefinition*)
-endDefinition // beginDefinition;
-endDefinition // Attributes = { HoldFirst };
-
-endDefinition[ s_Symbol ] := endDefinition[ s, DownValues ];
-
-endDefinition[ s_Symbol, None ] := $inDef = False;
-
-endDefinition[ s_Symbol, DownValues ] :=
-    WithCleanup[
-        AppendTo[ DownValues @ s,
-                  e: HoldPattern @ s[ ___ ] :>
-                      throwInternalFailure @ HoldForm @ e
-        ],
-        $inDef = False
-    ];
-
-endDefinition[ s_Symbol, SubValues  ] :=
-    WithCleanup[
-        AppendTo[ SubValues @ s,
-                  e: HoldPattern @ s[ ___ ][ ___ ] :>
-                      throwInternalFailure @ HoldForm @ e
-        ],
-        $inDef = False
-    ];
-
-endDefinition[ s_Symbol, list_List ] :=
-    endDefinition[ s, # ] & /@ list;
-
-endDefinition // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
 (*ChatbookAction*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*Messages*)
-ChatbookAction::Internal =
-"An unexpected error occurred. `1`";
-
-ChatbookAction::NoAPIKey =
-"No API key defined.";
-
-ChatbookAction::InvalidAPIKey =
-"Invalid value for API key: `1`";
-
-ChatbookAction::UnknownResponse =
-"Unexpected response from OpenAI server";
-
-ChatbookAction::RateLimitReached =
-"Rate limit reached for requests. Please try again later.";
-
-ChatbookAction::UnknownStatusCode =
-"Unexpected response from OpenAI server with status code `StatusCode`";
-
-ChatbookAction::BadResponseMessage =
-"`1`";
-
-ChatbookAction::NotImplemented =
-"Action \"`1`\" is not implemented.";
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*Dispatcher Definitions*)
-ChatbookAction[ "AIAutoAssist"     , args___ ] := catchTop @ AIAutoAssist @ args;
-ChatbookAction[ "Ask"              , args___ ] := catchTop @ AskChat @ args;
-ChatbookAction[ "AttachCodeButtons", args___ ] := catchTop @ AttachCodeButtons @ args;
-ChatbookAction[ "CopyChatObject"   , args___ ] := catchTop @ CopyChatObject @ args;
-ChatbookAction[ "EvaluateChatInput", args___ ] := catchTop @ EvaluateChatInput @ args;
-ChatbookAction[ "ExclusionToggle"  , args___ ] := catchTop @ ExclusionToggle @ args;
-ChatbookAction[ "OpenChatMenu"     , args___ ] := catchTop @ OpenChatMenu @ args;
-ChatbookAction[ "Send"             , args___ ] := catchTop @ SendChat @ args;
-ChatbookAction[ "StopChat"         , args___ ] := catchTop @ StopChat @ args;
-ChatbookAction[ "TabLeft"          , args___ ] := catchTop @ TabLeft @ args;
-ChatbookAction[ "TabRight"         , args___ ] := catchTop @ TabRight @ args;
-ChatbookAction[ "WidgetSend"       , args___ ] := catchTop @ WidgetSend @ args;
-ChatbookAction[ name_String        , args___ ] := catchTop @ throwFailure[ ChatbookAction::NotImplemented, name, args ];
-ChatbookAction[ args___                      ] := catchTop @ throwInternalFailure @ HoldForm @ ChatbookAction @ args;
+ChatbookAction[ "AIAutoAssist"     , args___ ] := catchMine @ AIAutoAssist @ args;
+ChatbookAction[ "Ask"              , args___ ] := catchMine @ AskChat @ args;
+ChatbookAction[ "AttachCodeButtons", args___ ] := catchMine @ AttachCodeButtons @ args;
+ChatbookAction[ "CopyChatObject"   , args___ ] := catchMine @ CopyChatObject @ args;
+ChatbookAction[ "EvaluateChatInput", args___ ] := catchMine @ EvaluateChatInput @ args;
+ChatbookAction[ "ExclusionToggle"  , args___ ] := catchMine @ ExclusionToggle @ args;
+ChatbookAction[ "OpenChatMenu"     , args___ ] := catchMine @ OpenChatMenu @ args;
+ChatbookAction[ "Send"             , args___ ] := catchMine @ SendChat @ args;
+ChatbookAction[ "StopChat"         , args___ ] := catchMine @ StopChat @ args;
+ChatbookAction[ "TabLeft"          , args___ ] := catchMine @ TabLeft @ args;
+ChatbookAction[ "TabRight"         , args___ ] := catchMine @ TabRight @ args;
+ChatbookAction[ "WidgetSend"       , args___ ] := catchMine @ WidgetSend @ args;
+ChatbookAction[ name_String        , args___ ] := catchMine @ throwFailure[ "NotImplemented", name, args ];
+ChatbookAction[ args___                      ] := catchMine @ throwInternalFailure @ HoldForm @ ChatbookAction @ args;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -762,7 +669,7 @@ queuedEvaluationsQ[ ___ ] := False;
 (*sendChat*)
 sendChat // beginDefinition;
 
-sendChat[ evalCell_, nbo_, settings0_ ] := catchTop @ Enclose[
+sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclose[
     Module[ { cells0, cells, target, settings, id, key, req, data, cell, cellObject, container, task },
 
         cells0 = ConfirmMatch[ selectChatCells[ settings0, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
@@ -950,14 +857,14 @@ submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
         URLSubmit[
             req,
             HandlerFunctions -> <|
-                "BodyChunkReceived" -> Function[
-                    catchTop @ Block[ { $autoOpen = autoOpen, $alwaysOpen = alwaysOpen, $settings = settings },
+                "BodyChunkReceived" -> Function @ catchTopAs[ ChatbookAction ][
+                    Block[ { $autoOpen = autoOpen, $alwaysOpen = alwaysOpen, $settings = settings },
                         Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                         writeChunk[ Dynamic @ container, cellObject, #1 ]
                     ]
                 ],
-                "TaskFinished" -> Function[
-                    catchTop @ Block[ { $autoOpen = autoOpen, $alwaysOpen = alwaysOpen, $settings = settings },
+                "TaskFinished" -> Function @ catchTopAs[ ChatbookAction ][
+                    Block[ { $autoOpen = autoOpen, $alwaysOpen = alwaysOpen, $settings = settings },
                         Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                         checkResponse[ settings, container, cellObject, #1 ]
                     ]
@@ -2073,7 +1980,7 @@ writeReformattedCell[ settings_, other_, cell_CellObject ] :=
                 "An unexpected error occurred.\n\n",
                 Cell @ BoxData @ ToBoxes @ Catch[
                     throwInternalFailure @ writeReformattedCell[ settings, other, cell ],
-                    $top
+                    $catchTopTag
                 ]
             },
             "ChatOutput",
@@ -2863,249 +2770,6 @@ makeMinimizedIconCell[ label_, chatCell_CellObject ] := Cell[
 ];
 
 makeMinimizedIconCell // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*Error Handling*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*catchTop*)
-catchTop // beginDefinition;
-catchTop // Attributes = { HoldFirst };
-catchTop[ eval_ ] := Block[ { $catching = True, $failed = False, catchTop = #1 & }, Catch[ eval, $top ] ];
-catchTop // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*throwFailure*)
-throwFailure // beginDefinition;
-throwFailure // Attributes = { HoldFirst };
-
-throwFailure[ tag_String, params___ ] :=
-    throwFailure[ MessageName[ ChatbookAction, tag ], params ];
-
-throwFailure[ msg_, args___ ] :=
-    Module[ { failure },
-        failure = messageFailure[ msg, Sequence @@ HoldForm /@ { args } ];
-        If[ TrueQ @ $catching,
-            Throw[ failure, $top ],
-            failure
-        ]
-    ];
-
-throwFailure // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*messageFailure*)
-messageFailure // beginDefinition;
-messageFailure // Attributes = { HoldFirst };
-
-messageFailure[ args___ ] :=
-    Module[ { quiet },
-        quiet = If[ TrueQ @ $failed, Quiet, Identity ];
-        WithCleanup[
-            StackInhibit @ quiet @ messageFailure0[ args ],
-            $failed = True
-        ]
-    ];
-
-messageFailure // endDefinition;
-
-messageFailure0 := messageFailure0 = ResourceFunction[ "MessageFailure", "Function" ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*throwInternalFailure*)
-throwInternalFailure // beginDefinition;
-throwInternalFailure // Attributes = { HoldFirst };
-
-throwInternalFailure[ eval_, a___ ] :=
-    Block[ { $internalFailure = makeInternalFailureData[ eval, a ] },
-        throwFailure[ ChatbookAction::Internal, $bugReportLink, $internalFailure ]
-    ];
-
-throwInternalFailure // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*makeInternalFailureData*)
-makeInternalFailureData // Attributes = { HoldFirst };
-
-makeInternalFailureData[ eval_, Failure[ tag_, as_Association ], args___ ] := maskOpenAIKey @ <|
-    "Evaluation" :> eval,
-    "Failure"    -> Failure[ tag, Association[ KeyTake[ as, "Information" ], as ] ],
-    "Arguments"  -> { args }
-|>;
-
-makeInternalFailureData[ eval_, args___ ] := maskOpenAIKey @ <| "Evaluation" :> eval, "Arguments" -> { args } |>;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*$bugReportLink*)
-$bugReportLink := Hyperlink[
-    "Report this issue \[RightGuillemet]",
-    trimURL @ URLBuild @ <|
-        "Scheme"   -> "https",
-        "Domain"   -> "github.com",
-        "Path"     -> { "WolframResearch", "Chatbook", "issues", "new" },
-        "Query"    -> {
-            "title"  -> "Insert Title Here",
-            "labels" -> "bug",
-            "body"   -> bugReportBody[ ]
-        }
-    |>
-];
-
-$maxBugReportURLSize = 4000;
-(*
-    RFC 7230 recommends clients support 8000: https://www.rfc-editor.org/rfc/rfc7230#section-3.1.1
-    Long bug report links might not work in old versions of IE,
-    but using IE these days should probably be considered user error.
-*)
-
-bugReportBody[ ] := bugReportBody @ PacletObject[ "Wolfram/Chatbook" ][ "PacletInfo" ];
-
-bugReportBody[ as_Association? AssociationQ ] :=
-    TemplateApply[
-        $bugReportBodyTemplate,
-        <|
-            "DebugData" -> associationMarkdown[
-                KeyTake[ as, { "Name", "Version" } ],
-                "EvaluationEnvironment" -> $EvaluationEnvironment,
-                "FrontEndVersion"       -> $frontEndVersion,
-                "KernelVersion"         -> SystemInformation[ "Kernel", "Version" ],
-                "SystemID"              -> $SystemID,
-                "Notebooks"             -> $Notebooks,
-                "DynamicEvaluation"     -> $DynamicEvaluation,
-                "SynchronousEvaluation" -> $SynchronousEvaluation,
-                "TaskEvaluation"        -> MatchQ[ $CurrentTask, _TaskObject ]
-            ],
-            "Stack"           -> $bugReportStack,
-            "Settings"        -> associationMarkdown @ maskOpenAIKey @ $settings,
-            "InternalFailure" -> markdownCodeBlock @ $internalFailure
-        |>
-    ];
-
-(* cSpell: ignore Fdetails *)
-trimURL[ url_String ] := trimURL[ url, $maxBugReportURLSize ];
-
-trimURL[ url_String, limit_Integer ] /; StringLength @ url <= limit := url;
-
-trimURL[ url_String, limit_Integer ] :=
-    Module[ { sp, bt, nl, before, after, base, take },
-        sp     = ("+"|"%20")...;
-        bt     = URLEncode[ "```" ];
-        nl     = (URLEncode[ "\r\n" ] | URLEncode[ "\n" ])...;
-        before = Longest[ "%23%23"~~sp~~"Failure"~~sp~~"Data"~~nl~~bt~~nl ];
-        after  = Longest[ nl~~bt~~nl~~"%3C%2Fdetails%3E" ];
-        base   = StringLength @ StringReplace[ url, a: before ~~ ___ ~~ b: after :> a <> "\n" <> b ];
-        take   = UpTo @ Max[ limit - base, 80 ];
-        With[ { t = take }, StringReplace[ url, a: before ~~ b__ ~~ c: after :> a <> StringTake[ b, t ] <> "\n" <> c ] ]
-    ];
-
-
-associationMarkdown[ data_Association? AssociationQ ] := StringJoin[
-    "| Property | Value |\n| --- | --- |\n",
-    StringRiffle[
-        KeyValueMap[
-            Function[
-                { k, v },
-                StringJoin @ StringJoin[
-                    "| ",
-                    ToString @ ToString[ Unevaluated @ k, CharacterEncoding -> "UTF-8" ],
-                    " | ``",
-                    StringTake[ ToString[ Unevaluated @ v, InputForm, CharacterEncoding -> "UTF-8" ], UpTo[ 80 ] ],
-                    "`` |"
-                ],
-                HoldAllComplete
-            ],
-            data
-        ],
-        "\n"
-    ]
-];
-
-
-maskOpenAIKey[ expr_ ] :=
-    With[ { mask = "**********" },
-        ReplaceAll[
-            expr /. HoldPattern[ "OpenAIKey" -> Except[ mask, _String ] ] :> ("OpenAIKey" -> mask),
-            a: (KeyValuePattern[ "OpenAIKey" -> Except[ mask, _String ] ])? AssociationQ :>
-                RuleCondition @ Insert[ a, "OpenAIKey" -> mask, Key[ "OpenAIKey" ] ]
-        ]
-    ];
-
-
-associationMarkdown[ rules___ ] := With[ { as = Association @ rules }, associationMarkdown @ as /; AssociationQ @ as ];
-associationMarkdown[ expr_ ] := markdownCodeBlock @ expr;
-
-markdownCodeBlock[ expr_ ] := StringJoin[
-    "```\n",
-    StringTake[ ToString[ expr, InputForm, PageWidth -> 120 ], UpTo @ $maxBugReportURLSize ],
-    "\n```\n"
-];
-
-
-$frontEndVersion :=
-    If[ TrueQ @ CloudSystem`$CloudNotebooks,
-        StringJoin[ "Cloud: ", ToString @ $CloudVersion ],
-        StringJoin[ "Desktop: ", ToString @ UsingFrontEnd @ SystemInformation[ "FrontEnd", "Version" ] ]
-    ];
-
-
-$settings :=
-    Module[ { settings, assoc },
-        settings = CurrentValue @ { TaggingRules, "ChatNotebookSettings" };
-        assoc = Association @ settings;
-        If[ AssociationQ @ assoc,
-            KeyDrop[ assoc, "OpenAIKey" ],
-            settings
-        ]
-    ];
-
-
-$bugReportBodyTemplate = StringTemplate[ "\
-Describe the issue in detail here. Attach any relevant screenshots or files. \
-The section below was automatically generated. \
-Remove any information that you do not wish to include in the report.
-
-<details>
-<summary>Debug Data</summary>
-
-%%DebugData%%
-
-## Settings
-
-%%Settings%%
-
-## Stack Data
-```
-%%Stack%%
-```
-
-## Failure Data
-
-%%InternalFailure%%
-
-</details>",
-Delimiters -> "%%"
-];
-
-
-$bugReportStack := StringRiffle[
-    Replace[
-        DeleteAdjacentDuplicates @ Cases[
-            Stack[ _ ],
-            HoldForm[ (s_Symbol) | (s_Symbol)[ ___ ] | (s_Symbol)[ ___ ][ ___ ] ] /;
-                AtomQ @ Unevaluated @ s && StringStartsQ[ Context @ s, "Wolfram`Chatbook`" ] :>
-                    SymbolName @ Unevaluated @ s
-        ],
-        { a___, "throwInternalFailure", ___ } :> { a, "throwInternalFailure" }
-    ],
-    "\n"
-];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
