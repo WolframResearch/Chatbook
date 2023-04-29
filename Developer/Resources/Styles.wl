@@ -611,45 +611,7 @@ Cell[
 (* ::Section::Closed:: *)
 (*Icons*)
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*AssistantCopyBelow*)
-Cell[
-    StyleData[ "AssistantCopyBelow" ],
-    TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "AssistantCopyBelow" ]
-    }
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*AssistantCopyClipboard*)
-Cell[
-    StyleData[ "AssistantCopyClipboard" ],
-    TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "AssistantCopyClipboard" ]
-    }
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*AssistantEvaluate*)
-Cell[
-    StyleData[ "AssistantEvaluate" ],
-    TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "AssistantEvaluate" ]
-    }
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*AssistantIcon*)
-Cell[
-    StyleData[ "AssistantIcon" ],
-    TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "AssistantIcon" ]
-    }
-]
+makeIconTemplateBoxStyle /@ FileNames[ "*.wl", $iconDirectory ]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -658,96 +620,6 @@ Cell[
     StyleData[ "AssistantIconTabbed" ],
     TemplateBoxOptions -> {
         DisplayFunction -> Function @ Evaluate @ ToBoxes @ $tabbedChatOutputCellDingbat
-    }
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*AssistantIconActive*)
-Cell[
-    StyleData[ "AssistantIconActive" ],
-    TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "AssistantIconActive" ]
-    }
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*ChatUserIcon*)
-Cell[
-    StyleData[ "ChatUserIcon" ],
-    TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "ChatUserIcon" ]
-    }
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*ChatMenuIcon*)
-Cell[
-    StyleData[ "ChatMenuIcon" ],
-    TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "ChatMenuIcon" ]
-    }
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*ChatQueryIcon*)
-Cell[
-    StyleData[ "ChatQueryIcon" ],
-    TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "ChatQueryIcon" ]
-    }
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*ChatSystemIcon*)
-Cell[
-    StyleData[ "ChatSystemIcon" ],
-    TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "ChatSystemIcon" ]
-    }
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*MinimizedChat*)
-Cell[
-    StyleData[ "MinimizedChat" ],
-    TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "MinimizedChat" ]
-    }
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*MinimizedChatActive*)
-Cell[
-    StyleData[ "MinimizedChatActive" ],
-    TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "MinimizedChatActive" ]
-    }
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*ChatWidgetIcon*)
-Cell[
-    StyleData[ "ChatWidgetIcon" ],
-    TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "ChatWidgetIcon" ]
-    }
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*OpenAILogo*)
-Cell[
-    StyleData[ "OpenAILogo" ],
-    TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $icons[ "OpenAILogo" ]
     }
 ]
 

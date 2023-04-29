@@ -3116,6 +3116,7 @@ If[ Wolfram`Chatbook`Internal`$BuildingMX,
     $chatContextDialogStyles;
     $apiKeyDialogDescription;
     $promptStrings;
+    $promptTemplate;
     $copyToClipboardButtonLabel;
     $insertInputButtonLabel;
     $insertEvaluateButtonLabel;

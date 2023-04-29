@@ -26,10 +26,11 @@ Begin[ "`Private`" ];
 (* ::Subsection::Closed:: *)
 (*Paths*)
 $assetLocation      = FileNameJoin @ { DirectoryName @ $InputFileName, "Resources" };
-$iconDirectory      = PacletObject["Wolfram/Chatbook"]["AssetLocation", "Icons"];
+$iconDirectory      = FileNameJoin @ { $assetLocation, "Icons" };
 $ninePatchDirectory = FileNameJoin @ { $assetLocation, "NinePatchImages" };
 $styleDataFile      = FileNameJoin @ { $assetLocation, "Styles.wl" };
 $pacletDirectory    = DirectoryName[ $InputFileName, 2 ];
+$iconManifestFile   = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
 $styleSheetTarget   = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
 
 (* ::**************************************************************************************************************:: *)
@@ -37,7 +38,6 @@ $styleSheetTarget   = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheet
 (*Load Paclet*)
 PacletDirectoryLoad @ $pacletDirectory;
 Get[ "Wolfram`Chatbook`" ];
-Get[ "Wolfram`Chatbook`Menus`"];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -58,11 +58,19 @@ $suppressButtonAppearance = Dynamic @ FEPrivate`FrontEndResource[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*$icons*)
-$icons := $icons = Association @ Map[
-    FileBaseName @ # -> Import @ # &,
-    FileNames[ "*.wl", $iconDirectory ]
-];
+(*Icons*)
+$iconFiles = FileNames[ "*.wl", $iconDirectory ];
+$iconNames = FileBaseName /@ $iconFiles;
+
+Developer`WriteWXFFile[ $iconManifestFile, AssociationMap[ RawBoxes @ TemplateBox[ { }, #1 ] &, $iconNames ] ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeIconTemplateBoxStyle*)
+makeIconTemplateBoxStyle[ file_ ] :=
+    With[ { icon = ToBoxes @ Import @ file },
+        Cell[ StyleData @ FileBaseName @ file, TemplateBoxOptions -> { DisplayFunction -> (icon &) } ]
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -130,7 +138,63 @@ menuInitializer[ name_String, color_ ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$chatOutputMenu*)
-$chatOutputMenu := $chatOutputMenu = ToBoxes @ MakeMenu[
+
+makeMenu[ items_List, frameColor_, width_ ] := Pane[
+    RawBoxes @ TemplateBox[
+        {
+            ToBoxes @ Column[ menuItem /@ items, ItemSize -> { Full, 0 }, Spacings -> 0, Alignment -> Left ],
+            FrameMargins   -> 3,
+            Background     -> GrayLevel[ 0.98 ],
+            RoundingRadius -> 3,
+            FrameStyle     -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
+            ImageMargins   -> 0
+        },
+        "Highlighted"
+    ],
+    ImageSize -> { width, Automatic }
+];
+
+menuItem[ { args__ } ] := menuItem @ args;
+
+menuItem[ Delimiter ] := RawBoxes @ TemplateBox[ { }, "ChatMenuItemDelimiter" ];
+
+menuItem[ label_ :> action_ ] := menuItem[ Graphics[ { }, ImageSize -> 0 ], label, Hold @ action ];
+
+menuItem[ section_ ] := RawBoxes @ TemplateBox[ { ToBoxes @ section }, "ChatMenuSection" ];
+
+menuItem[ name_String, label_, code_ ] :=
+    If[ MemberQ[ $iconNames, name ],
+        menuItem[ RawBoxes @ TemplateBox[ { }, name ], label, code ],
+        menuItem[ RawBoxes @ TemplateBox[ { name }, "ChatMenuItemToolbarIcon" ], label, code ]
+    ];
+
+menuItem[ icon_, label_, action_String ] :=
+    menuItem[
+        icon,
+        label,
+        Hold @ With[
+            { $CellContext`cell = EvaluationCell[ ] },
+            { $CellContext`root = ParentCell @ $CellContext`cell },
+            NotebookDelete @ $CellContext`cell;
+            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ action, $CellContext`root ]
+        ]
+    ];
+
+menuItem[ icon_, label_, None ] :=
+    menuItem[
+        icon,
+        label,
+        Hold[
+            NotebookDelete @ EvaluationCell[ ];
+            MessageDialog[ "Not Implemented" ]
+        ]
+    ];
+
+menuItem[ icon_, label_, code_ ] :=
+    RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label, code }, "ChatMenuItem" ];
+
+$chatOutputMenu := $chatOutputMenu = ToBoxes @ makeMenu[
     {
         (* Icon              , Label                      , ActionName          *)
         { "IconizeIcon"      , "Regenerate"               , "Regenerate"         },
@@ -147,8 +211,6 @@ $chatOutputMenu := $chatOutputMenu = ToBoxes @ MakeMenu[
     GrayLevel[ 0.85 ],
     250
 ];
-
-
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -174,7 +236,7 @@ tabArrowButtonLabel[ gfx_ ] := MouseAppearance[
 
 
 $tabButtonLabels = <|
-    "TabLeft" -> tabArrowButtonLabel[ Polygon @ { { 0, 0 }, { 0, 1 }, { -0.5, 0.5 } } ],
+    "TabLeft"  -> tabArrowButtonLabel[ Polygon @ { { 0, 0 }, { 0, 1 }, { -0.5, 0.5 } } ],
     "TabRight" -> tabArrowButtonLabel[ Polygon @ { { 0, 0 }, { 0, 1 }, { 0.5, 0.5 } } ]
 |>;
 
@@ -249,7 +311,6 @@ $tabbedChatOutputCellDingbat = Column[
 (* ::Subsubsection::Closed:: *)
 (*inlineResources*)
 inlineResources[ expr_ ] := expr /. {
-    HoldPattern[ $icons[ name_String ] ]    :> RuleCondition @ $icons @ name,
     HoldPattern @ $askMenuItem              :> RuleCondition @ $askMenuItem,
     HoldPattern @ $defaultChatbookSettings  :> RuleCondition @ $defaultChatbookSettings,
     HoldPattern @ $suppressButtonAppearance :> RuleCondition @ $suppressButtonAppearance
@@ -258,7 +319,7 @@ inlineResources[ expr_ ] := expr /. {
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$styleDataCells*)
-$styleDataCells := $styleDataCells = inlineResources @ Cases[ ReadList @ $styleDataFile, _Cell ];
+$styleDataCells := $styleDataCells = inlineResources @ Cases[ Flatten @ ReadList @ $styleDataFile, _Cell ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

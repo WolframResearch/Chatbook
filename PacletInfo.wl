@@ -27,7 +27,7 @@ PacletObject[<|
 		{"Asset",
 			"Root" -> "Assets",
 			"Assets" -> {
-				{"Icons", "Icons"},
+				{"Icons", "Icons.wxf"},
 				{"AIAssistant", "AIAssistant"}
 			}
 		},
