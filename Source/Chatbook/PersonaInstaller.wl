@@ -20,7 +20,10 @@ Needs[ "Wolfram`Chatbook`Common`"  ];
 
 $personaBrowseURL    = "https://www.wolframcloud.com/obj/rhennigan/published/PromptRepository/category/persona";
 $resourceSystemAdmin = "richardh@wolfram.com";
-$channelPermissions  = { $resourceSystemAdmin -> All, "Owner" -> All };
+(* $channelPermissions  = { $resourceSystemAdmin -> All, "Owner" -> All }; *)
+$channelPermissions  = "Public";
+$keepChannelOpen     = True;
+$debug               = True;
 
 (* TODO: need to add a DeleteResource hook for PromptResources that removes corresponding items here *)
 $PersonaInstallationDirectory := GeneralUtilities`EnsureDirectory @ {
@@ -44,7 +47,7 @@ browseWithChannelCallback // beginDefinition;
 
 browseWithChannelCallback[ ] := Enclose[
     Module[ { perms, channel, data, handler, listener, url, shortURL, parsed, id, browseURL },
-        perms     = { ConfirmBy[ $resourceSystemAdmin, StringQ, "ResourceSystemAdmin" ] -> All, "Owner" -> All };
+        perms     = $channelPermissions;
         channel   = ConfirmMatch[ CreateChannel[ Permissions -> perms ], _ChannelObject, "CreateChannel" ];
         data      = <| "Listener" :> listener, "Channel" -> channel |>;
         handler   = ConfirmMatch[ promptResourceInstallHandler @ data, _Function, "Handler" ];
@@ -52,7 +55,7 @@ browseWithChannelCallback[ ] := Enclose[
         url       = ConfirmMatch[ listener[ "URL" ], _String | _URL, "ChannelListenerURL" ];
         shortURL  = ConfirmBy[ makeShortListenerURL[ channel, url ], StringQ, "URLShorten" ];
         parsed    = ConfirmMatch[ DeleteCases[ URLParse[ shortURL, "Path" ], "" ], { __String? StringQ }, "URLParse" ];
-        id        = ConfirmBy[ Last @ URLParse[ shortURL, "Path" ], StringQ, "InstallerID" ];
+        id        = ConfirmBy[ Last @ URLParse[ shortURL, "Path" ], StringQ, "ChannelID" ];
         browseURL = ConfirmBy[ createBrowseURL @ id, StringQ, "BrowseURL" ];
         ConfirmMatch[ SystemOpen @ browseURL, Null, "SystemOpen" ];
         AssociationMap[ Apply @ Rule, Append[ data, "BrowseURL" -> browseURL ] ]
@@ -88,14 +91,14 @@ makeShortListenerURL // beginDefinition;
     throwInternalFailure[ makeShortListenerURL @ url, ## ] &
 ]; *)
 
-makeShortListenerURL[ channel_, url_ ] := URLShorten @ channel;
+makeShortListenerURL[ channel_, url_ ] := url;
 makeShortListenerURL // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*createBrowseURL*)
 createBrowseURL // beginDefinition;
-createBrowseURL[ id_String ] := URLBuild[ $personaBrowseURL, { "ChatbookInstallerID" -> id } ];
+createBrowseURL[ id_String ] := URLBuild[ $personaBrowseURL, { "ChannelID" -> id } ];
 createBrowseURL // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -126,11 +129,13 @@ promptResourceInstall // beginDefinition;
 promptResourceInstall[ channelData: KeyValuePattern[ "Listener" :> listener0_Symbol ], messageData_ ] := Enclose[
     Module[ { data, listener, channel },
         data = AssociationMap[ Apply @ Rule, channelData ];
-        listener = ConfirmMatch[ listener0, _ChannelListener, "ChannelListener" ];
-        Confirm[ RemoveChannelListener @ listener, "RemoveChannelListener" ];
-        channel = ConfirmMatch[ data[ "Channel" ], _ChannelObject, "ChannelObject" ];
-        Confirm[ DeleteChannel @ channel, "DeleteChannel" ];
-        Remove @ listener0;
+        If[ ! TrueQ @ $keepChannelOpen,
+            listener = ConfirmMatch[ listener0, _ChannelListener, "ChannelListener" ];
+            Confirm[ RemoveChannelListener @ listener, "RemoveChannelListener" ];
+            channel = ConfirmMatch[ data[ "Channel" ], _ChannelObject, "ChannelObject" ];
+            Confirm[ DeleteChannel @ channel, "DeleteChannel" ];
+            Remove @ listener0;
+        ];
         promptResourceInstall0[ data, messageData ]
     ],
     throwInternalFailure[ promptResourceInstall[ channelData, messageData ], ## ] &
@@ -143,27 +148,37 @@ promptResourceInstall0 // beginDefinition;
 
 promptResourceInstall0[ channelData_, messageData_ ] := Enclose[
     Module[ { message, info, resource, target, config, installed },
-        message   = ConfirmBy[ messageData[ "Message" ], ByteArrayQ, "Message" ];
+        message   = ConfirmBy[ messageWXF @ messageData[ "Message" ], ByteArrayQ, "Message" ];
         info      = ConfirmBy[ BinaryDeserialize @ message, AssociationQ, "BinaryDeserialize" ];
         resource  = ConfirmMatch[ ResourceObject @ info, _ResourceObject, "ResourceObject" ];
         target    = ConfirmBy[ personaInstallLocation @ info, StringQ, "InstallLocation" ];
         config    = ConfirmBy[ resource[ "LLMConfiguration" ], AssociationQ, "LLMConfiguration" ];
         installed = ConfirmBy[ installPersonaConfiguration[ info, config, target ], FileExistsQ, "Install" ];
-        Print[ Global`$args = <|
-            "channelData" -> channelData,
-            "messageData" -> messageData,
-            "message"     -> message,
-            "info"        -> info,
-            "resource"    -> resource,
-            "target"      -> target,
-            "config"      -> config,
-            "installed"   -> installed
-         |> ] (* TODO: do the thing *)
+        If[ TrueQ @ $debug,
+            MessageDialog @ Grid[
+                {
+                    { Style[ "Persona Install Debug Info", "Section" ], SpanFromLeft },
+                    { "ResourceObject:", resource },
+                    { "Installed:"     , installed }
+                },
+                Alignment -> Left,
+                Dividers  -> Center
+            ]
+        ];
+        installed
     ],
     throwInternalFailure[ promptResourceInstall0[ channelData, messageData ], ## ] &
 ];
 
 promptResourceInstall0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*messageWXF*)
+messageWXF // beginDefinition;
+messageWXF[ bytes_ByteArray ] := bytes;
+messageWXF[ KeyValuePattern @ { "Data" -> data_String, "Format" -> "Base64WXF" } ] := BaseDecode @ data;
+messageWXF // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -245,9 +260,30 @@ dependentPersonaSymbolQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*GetInstalledPersonas*)
+GetInstalledPersonas // beginDefinition;
+GetInstalledPersonas[ ] := catchMine @ getInstalledPersonas[ ];
+GetInstalledPersonas // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getInstalledPersonas*)
+getInstalledPersonas // beginDefinition;
+getInstalledPersonas[ ] := getPersonaFile /@ FileNames[ "*.mx", $PersonaInstallationDirectory ];
+getInstalledPersonas // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getPersonaFile*)
+getPersonaFile // beginDefinition;
+getPersonaFile[ file_ ] := Block[ { $PersonaConfig = $Failed }, Get @ file; $PersonaConfig ];
+getPersonaFile // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Package Footer*)
 If[ Wolfram`Chatbook`Internal`$BuildingMX,
-    Null
+    $debug = False;
 ];
 
 End[ ];
