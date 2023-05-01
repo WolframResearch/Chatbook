@@ -590,13 +590,18 @@ Notebook[
    CellDingbat ->
     Cell[
      BoxData[
-      DynamicBox[
-       ToBoxes[
-        Wolfram`Chatbook`UI`$ChatInputMenuDataChanged;
-        Symbol["Wolfram`Chatbook`UI`MakeChatInputCellDingbat"][],
-        StandardForm
-       ],
-       TrackedSymbols :> {Wolfram`Chatbook`UI`$ChatInputMenuDataChanged}
+      RowBox[
+       {
+        TemplateBox[{}, "ChatCounterLabel"],
+        DynamicBox[
+         ToBoxes[
+          Wolfram`Chatbook`UI`$ChatInputMenuDataChanged;
+          Symbol["Wolfram`Chatbook`UI`MakeChatInputCellDingbat"][],
+          StandardForm
+         ],
+         TrackedSymbols :> {Wolfram`Chatbook`UI`$ChatInputMenuDataChanged}
+        ]
+       }
       ]
      ],
      Background -> None,

@@ -1370,10 +1370,7 @@ MakeChatInputCellDingbat[] := With[{
 
 	menu = actionMenu;
 
-	Row[{
-		RawBoxes @ TemplateBox[{}, "ChatCounterLabel"],
-		menu
-	}]
+	menu
 ]]
 
 (*====================================*)

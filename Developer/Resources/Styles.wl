@@ -77,17 +77,20 @@ Cell[
     MenuSortingValue  -> 1000,
     StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "ChatQuery", "Backspace" -> "Input" },
 	CellDingbat -> Cell[
-		BoxData @ DynamicBox[
-			ToBoxes[
-				(
-					Wolfram`Chatbook`UI`$ChatInputMenuDataChanged;
+		BoxData @ RowBox[{
+			TemplateBox[{}, "ChatCounterLabel"],
+			DynamicBox[
+				ToBoxes[
+					(
+						Wolfram`Chatbook`UI`$ChatInputMenuDataChanged;
 
-					Symbol["Wolfram`Chatbook`UI`MakeChatInputCellDingbat"][]
-				),
-				StandardForm
-			],
-			TrackedSymbols :> {Wolfram`Chatbook`UI`$ChatInputMenuDataChanged}
-		],
+						Symbol["Wolfram`Chatbook`UI`MakeChatInputCellDingbat"][]
+					),
+					StandardForm
+				],
+				TrackedSymbols :> {Wolfram`Chatbook`UI`$ChatInputMenuDataChanged}
+			]
+		}],
 		Background -> None,
 		CellFrame -> 0
 	],
