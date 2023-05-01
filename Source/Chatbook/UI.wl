@@ -17,7 +17,6 @@ GetAllCellsInChatContext
 ChatContextEpilogFunction
 
 MakeChatInputCellDingbat
-MakeChatInputLLMConfigurationActionMenu
 GetChatInputLLMConfigurationSelectorMenuData
 
 Begin["`Private`"]
@@ -1295,14 +1294,10 @@ chatHTTPRequest[
 
 (*========================================================*)
 
-MakeChatInputCellDingbat[] := With[{
-	dingbatCellObj = EvaluationCell[],
-	chatInputCellObj = ParentCell[EvaluationCell[]]
-}, Module[{
+MakeChatInputCellDingbat[] := With[{}, Module[{
 	menuData = GetChatInputLLMConfigurationSelectorMenuData[],
-	actionCallback,
-	actionMenu,
-	menu
+	personaValue,
+	menuLabel
 },
 	(* NOTE:
 		This is needed here due to its use in TrackedSymbols in the stylesheet.
@@ -1311,6 +1306,72 @@ MakeChatInputCellDingbat[] := With[{
 	*)
 	Wolfram`Chatbook`UI`$ChatInputMenuDataChanged;
 
+	(* menu = Tooltip[
+		actionMenu,
+		CurrentValue[
+			ParentCell[EvaluationCell[]],
+			valueKeyPath
+		]
+	]; *)
+
+	(*-----------------------------------------*)
+	(* Construct the action menu display label *)
+	(*-----------------------------------------*)
+
+	personaValue = currentValueOrigin[
+		ParentCell[EvaluationCell[]],
+		{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+	];
+
+	menuLabel = FirstCase[
+		menuData["Personas"],
+		{personaValue[[2]], icon_, _} :> icon,
+		Style["\[LongDash]", GrayLevel[0.5]]
+	];
+
+	Row[{
+		RawBoxes @ TemplateBox[{}, "RoleUser"],
+		Button[
+			Framed[
+				menuLabel,
+				RoundingRadius -> 3,
+				FrameMargins -> 2,
+				ImageMargins -> {{0, 3}, {0, 0}},
+				FrameStyle -> Directive[
+					RGBColor[0.8549, 0.83137, 0.72549],
+					AbsoluteThickness[1]
+				],
+				Background -> Dynamic[
+					If[CurrentValue["MouseOver"], GrayLevel[0.8], GrayLevel[1]]
+				],
+				FrameMargins -> 0
+			],
+			(
+				AttachCell[
+					EvaluationCell[],
+					openChatInputActionMenu[EvaluationCell[]],
+					{Left, Bottom},
+					Offset[],
+					{Left, Top},
+					RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
+				];
+			),
+			Appearance -> None
+		]
+	}]
+]]
+
+(*====================================*)
+
+SetFallthroughError[openChatInputActionMenu]
+
+openChatInputActionMenu[dingbatCellObj_CellObject] := With[{
+	chatInputCellObj = ParentCell[dingbatCellObj]
+}, Module[{
+	menuData = GetChatInputLLMConfigurationSelectorMenuData[],
+	actionCallback,
+	actionMenu
+},
 	actionCallback = Function[{field, value}, Replace[field, {
 		"Persona" :> (
 			CurrentValue[
@@ -1342,7 +1403,7 @@ MakeChatInputCellDingbat[] := With[{
 		)
 	}]];
 
-	actionMenu = MakeChatInputLLMConfigurationActionMenu[
+	makeChatInputActionMenuContent[
 		menuData["Personas"],
 		menuData["Models"],
 		"ActionCallback" -> actionCallback,
@@ -1358,22 +1419,12 @@ MakeChatInputCellDingbat[] := With[{
 			chatInputCellObj,
 			{TaggingRules, "ChatNotebookSettings", "Role"}
 		]
-	];
-
-	(* menu = Tooltip[
-		actionMenu,
-		CurrentValue[
-			ParentCell[EvaluationCell[]],
-			valueKeyPath
-		]
-	]; *)
-
-	menu = actionMenu;
-
-	menu
+	]
 ]]
 
 (*====================================*)
+
+SetFallthroughError[currentValueOrigin]
 
 (*
 	Get the current value and origin of a cell option value.
@@ -1410,16 +1461,18 @@ currentValueOrigin[
 
 (*====================================*)
 
-SetFallthroughError[MakeChatInputLLMConfigurationActionMenu]
+(*====================================*)
 
-Options[MakeChatInputLLMConfigurationActionMenu] = {
+SetFallthroughError[makeChatInputActionMenuContent]
+
+Options[makeChatInputActionMenuContent] = {
 	"PersonaValue" -> Automatic,
 	"ModelValue" -> Automatic,
 	"RoleValue" -> Automatic,
 	"ActionCallback" -> (Null &)
 }
 
-MakeChatInputLLMConfigurationActionMenu[
+makeChatInputActionMenuContent[
 	(* List of {tagging rule value, icon, list item label} *)
 	personas:{___List},
 	(* List of {tagging rule value, icon, list item label} *)
@@ -1434,15 +1487,6 @@ MakeChatInputLLMConfigurationActionMenu[
 	menuLabel,
 	menuItems
 },
-	(*-----------------------------------------*)
-	(* Construct the action menu display label *)
-	(*-----------------------------------------*)
-
-	menuLabel = FirstCase[
-		personas,
-		{personaValue[[2]], icon_, _} :> icon,
-		Style["\[LongDash]", GrayLevel[0.5]]
-	];
 
 	(*------------------------------------*)
 	(* Construct the popup menu item list *)
@@ -1542,33 +1586,7 @@ MakeChatInputLLMConfigurationActionMenu[
 		250
 	];
 
-	Button[
-		Framed[
-			menuLabel,
-			RoundingRadius -> 3,
-			FrameMargins -> 2,
-			ImageMargins -> {{0, 3}, {0, 0}},
-			FrameStyle -> Directive[
-				RGBColor[0.8549, 0.83137, 0.72549],
-				AbsoluteThickness[1]
-			],
-			Background -> Dynamic[
-				If[CurrentValue["MouseOver"], GrayLevel[0.8], GrayLevel[1]]
-			],
-			FrameMargins -> 0
-		],
-		(
-			AttachCell[
-				EvaluationCell[],
-				menu,
-				{Left, Bottom},
-				Offset[],
-				{Left, Top},
-				RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
-			];
-		),
-		Appearance -> None
-	]
+	menu
 ]]
 
 (*------------------------------------*)
