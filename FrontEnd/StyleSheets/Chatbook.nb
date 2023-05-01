@@ -7462,7 +7462,7 @@ Notebook[
        CounterBox["ChatInputCount"],
        FontFamily -> "Source Sans Pro",
        FontSize -> 10,
-       FontColor -> GrayLevel[0.2],
+       FontColor -> RGBColor[0.55433, 0.70794, 0.9258],
        FontWeight -> Plain
       ]
      ])

@@ -663,7 +663,7 @@ Cell[
             CounterBox["ChatInputCount"],
             FontFamily -> "Source Sans Pro",
             FontSize -> 10,
-            FontColor -> GrayLevel[ 0.2 ],
+            FontColor -> RGBColor[0.55433, 0.707942, 0.925795],
             FontWeight -> Plain
         ]
     }
