@@ -1544,13 +1544,16 @@ MakeChatInputLLMConfigurationActionMenu[
 
 	Button[
 		Framed[
-			Row[{menuLabel, "\[RightAngleBracket]"}],
+			menuLabel,
 			RoundingRadius -> 3,
 			FrameMargins -> 2,
 			ImageMargins -> {{0, 3}, {0, 0}},
 			FrameStyle -> Directive[
 				RGBColor[0.8549, 0.83137, 0.72549],
 				AbsoluteThickness[1]
+			],
+			Background -> Dynamic[
+				If[CurrentValue["MouseOver"], GrayLevel[0.8], GrayLevel[1]]
 			],
 			FrameMargins -> 0
 		],
