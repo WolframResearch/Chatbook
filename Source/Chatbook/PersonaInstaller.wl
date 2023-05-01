@@ -4,7 +4,7 @@
 BeginPackage[ "Wolfram`Chatbook`PersonaInstaller`" ];
 
 `$PersonaInstallationDirectory;
-`GetInstalledPersonas;
+`GetInstalledResourcePersonas;
 `PersonaInstallFromResourceSystem;
 
 Begin[ "`Private`" ];
@@ -260,10 +260,10 @@ dependentPersonaSymbolQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*GetInstalledPersonas*)
-GetInstalledPersonas // beginDefinition;
-GetInstalledPersonas[ ] := catchMine @ getInstalledPersonas[ ];
-GetInstalledPersonas // endDefinition;
+(*GetInstalledResourcePersonas*)
+GetInstalledResourcePersonas // beginDefinition;
+GetInstalledResourcePersonas[ ] := catchMine @ getInstalledPersonas[ ];
+GetInstalledResourcePersonas // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
