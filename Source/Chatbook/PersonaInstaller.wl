@@ -23,7 +23,7 @@ $resourceSystemAdmin = "richardh@wolfram.com";
 (* $channelPermissions  = { $resourceSystemAdmin -> All, "Owner" -> All }; *)
 $channelPermissions  = "Public";
 $keepChannelOpen     = True;
-$debug               = True;
+$debug               = False;
 
 (* TODO: need to add a DeleteResource hook for PromptResources that removes corresponding items here *)
 $PersonaInstallationDirectory := GeneralUtilities`EnsureDirectory @ {
@@ -37,8 +37,151 @@ $PersonaInstallationDirectory := GeneralUtilities`EnsureDirectory @ {
 (* ::Section::Closed:: *)
 (*PersonaInstallFromResourceSystem*)
 PersonaInstallFromResourceSystem // beginDefinition;
-PersonaInstallFromResourceSystem[ ] := catchMine @ withExternalChannelFunctions @ browseWithChannelCallback[ ];
+
+PersonaInstallFromResourceSystem[ ] := catchMine @ Enclose[
+    Module[ { data, dialog },
+        data = ConfirmMatch[
+            withExternalChannelFunctions @ browseWithChannelCallback[ ],
+            KeyValuePattern @ { "Listener" -> _ChannelListener, "Channel" -> _ChannelObject },
+            "BrowseWithCallback"
+        ];
+        $installed = ConfirmMatch[
+            GetInstalledResourcePersonas[ ],
+            { ___Association },
+            "GetInstalledResourcePersonas"
+        ];
+
+        dialog = createPersonaInstallWaitingDialog @ data;
+    ],
+    (
+        $installed = { };
+        throwInternalFailure[ PersonaInstallFromResourceSystem[ ], ## ]
+    ) &
+];
+
 PersonaInstallFromResourceSystem // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*createPersonaInstallWaitingDialog*)
+createPersonaInstallWaitingDialog // beginDefinition;
+
+createPersonaInstallWaitingDialog[ data_ ] := CreateDialog[
+    {
+        TextCell[ "If your browser does not open automatically, click here", "Text" ],
+        ExpressionCell @ Dynamic[
+            If[ $installed === { },
+                ProgressIndicator[ Appearance -> "Necklace" ],
+                Grid[
+                    Prepend[
+                        formatInstalledResource /@ $installed,
+                        {
+                            "",
+                            Style[ "Name", FontWeight -> "DemiBold" ],
+                            Style[ "Description", FontWeight -> "DemiBold" ],
+                            Style[ "Version", FontWeight -> "DemiBold" ],
+                            ""
+                        }
+                    ],
+                    Alignment -> Left,
+                    BaseStyle -> "Text",
+                    Dividers -> { False, Center },
+                    FrameStyle -> GrayLevel[ 0.6 ]
+                ]
+            ],
+            TrackedSymbols :> { $installed }
+        ],
+        DefaultButton[ DialogReturn @ channelCleanup @ data ]
+    },
+    NotebookEventActions -> {
+        "ReturnKeyDown" :> FE`Evaluate @ FEPrivate`FindAndClickDefaultButton[ ],
+        { "MenuCommand", "EvaluateCells" } :> FE`Evaluate @ FEPrivate`FindAndClickDefaultButton[ ],
+        { "MenuCommand", "HandleShiftReturn" } :> FE`Evaluate @ FEPrivate`FindAndClickDefaultButton[ ],
+        { "MenuCommand", "EvaluateNextCell" } :> FE`Evaluate @ FEPrivate`FindAndClickDefaultButton[ ],
+        "EscapeKeyDown" :> (
+            FE`Evaluate @ FEPrivate`FindAndClickCancelButton[ ];
+            channelCleanup @ data;
+            DialogReturn @ $Canceled
+        ),
+        "WindowClose" :> (
+            FE`Evaluate @ FEPrivate`FindAndClickCancelButton[ ];
+            channelCleanup @ data;
+            DialogReturn @ $Canceled
+        )
+    }
+];
+
+createPersonaInstallWaitingDialog // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*channelCleanup*)
+channelCleanup // beginDefinition;
+
+channelCleanup[ KeyValuePattern @ { "Listener" -> listener_ChannelListener, "Channel" -> channel_ChannelObject } ] := (
+    RemoveChannelListener @ listener;
+    DeleteChannel @ channel;
+);
+
+channelCleanup // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatInstalledResource*)
+formatInstalledResource // beginDefinition;
+
+formatInstalledResource[ as_ ] :=
+    formatInstalledResource[ as[ "ResourceInformation" ], as[ "Configuration" ] ];
+
+formatInstalledResource[ as_, config_ ] :=
+    formatInstalledResource[ as[ "Name" ], as[ "Description" ], as[ "Version" ], config[ "PersonaIcon" ] ];
+
+formatInstalledResource[ name_, desc_, version_, KeyValuePattern[ "Default" -> icon_ ] ] :=
+    formatInstalledResource[ name, desc, version, icon ];
+
+formatInstalledResource[ name_, desc_, version_, icon_ ] := {
+    formatIcon @ icon,
+    formatName @ name,
+    formatDescription @ desc,
+    formatVersion @ version,
+    uninstallButton @ name
+};
+
+formatInstalledResource // endDefinition;
+
+
+formatName[ name_String ] := (
+    needsPromptResource[ ];
+    StringDelete[ name, StartOfString ~~ ResourceSystemClient`ResourceType`NamePrefix[ "Prompt" ] ]
+);
+
+formatDescription[ _Missing ] := "";
+formatDescription[ desc_String ] := desc;
+
+formatVersion[ _Missing ] := "";
+formatVersion[ version_String ] := version;
+
+formatIcon[ _Missing ] := "";
+formatIcon[ KeyValuePattern[ "Default" -> icon_ ] ] := formatIcon @ icon;
+formatIcon[ icon_ ] := Pane[ icon, ImageSize -> { 30, 30 }, ImageSizeAction -> "ShrinkToFit" ];
+
+uninstallButton[ name_String ] := Button[ "Uninstall", uninstallPersona @ name ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*uninstallPersona*)
+uninstallPersona // beginDefinition;
+
+uninstallPersona[ name_String ] := Enclose[
+    Module[ { file },
+        file = ConfirmBy[ personaInstallLocation @ name, FileExistsQ, "PersonaInstallLocation" ];
+        Confirm[ DeleteFile @ file, "DeleteFile" ];
+        $installed = ConfirmMatch[ GetInstalledResourcePersonas[ ], { ___Association }, "GetInstalledResourcePersonas" ]
+    ],
+    throwInternalFailure[ uninstallPersona @ name, ## ] &
+];
+
+uninstallPersona // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -147,12 +290,12 @@ promptResourceInstall // endDefinition;
 promptResourceInstall0 // beginDefinition;
 
 promptResourceInstall0[ channelData_, messageData_ ] := Enclose[
-    Module[ { message, info, resource, target, config, installed },
-        message   = ConfirmBy[ messageWXF @ messageData[ "Message" ], ByteArrayQ, "Message" ];
-        info      = ConfirmBy[ BinaryDeserialize @ message, AssociationQ, "BinaryDeserialize" ];
-        resource  = ConfirmMatch[ ResourceObject @ info, _ResourceObject, "ResourceObject" ];
+    Module[ { message, resource, info, target, config, installed },
+        message   = ConfirmBy[ messageData[ "Message" ], AssociationQ, "Message" ];
+        resource  = ConfirmMatch[ acquireResource @ message, _ResourceObject, "ResourceObject" ];
+        info      = ConfirmBy[ resource[ All ], AssociationQ, "Information" ];
         target    = ConfirmBy[ personaInstallLocation @ info, StringQ, "InstallLocation" ];
-        config    = ConfirmBy[ resource[ "LLMConfiguration" ], AssociationQ, "LLMConfiguration" ];
+        config    = ConfirmBy[ resource[ "PromptConfiguration" ], AssociationQ, "PromptConfiguration" ];
         installed = ConfirmBy[ installPersonaConfiguration[ info, config, target ], FileExistsQ, "Install" ];
         If[ TrueQ @ $debug,
             MessageDialog @ Grid[
@@ -165,6 +308,8 @@ promptResourceInstall0[ channelData_, messageData_ ] := Enclose[
                 Dividers  -> Center
             ]
         ];
+        $installed = GetInstalledResourcePersonas[ ];
+
         installed
     ],
     throwInternalFailure[ promptResourceInstall0[ channelData, messageData ], ## ] &
@@ -174,11 +319,10 @@ promptResourceInstall0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*messageWXF*)
-messageWXF // beginDefinition;
-messageWXF[ bytes_ByteArray ] := bytes;
-messageWXF[ KeyValuePattern @ { "Data" -> data_String, "Format" -> "Base64WXF" } ] := BaseDecode @ data;
-messageWXF // endDefinition;
+(*acquireResource*)
+acquireResource // beginDefinition;
+acquireResource[ KeyValuePattern[ "UUID" -> uuid_ ] ] := ResourceObject[ uuid, ResourceVersion -> "Latest" ];
+acquireResource // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -211,20 +355,19 @@ installPersonaConfiguration // endDefinition;
 (*personaInstallLocation*)
 personaInstallLocation // beginDefinition;
 
-personaInstallLocation[ info_Association ] := Enclose[
+personaInstallLocation[ KeyValuePattern[ "Name" -> name_ ] ] := personaInstallLocation @ name;
+
+personaInstallLocation[ name0_String ] := Enclose[
     Module[ { prefix, name, fileName, directory },
-
-        ConfirmBy[ PacletInstall[ "PromptResource" ], PacletObjectQ, "PacletInstall" ];
-        ConfirmMatch[ Needs[ "PromptResource`" -> None ], Null, "PromptResource" ];
-
+        needsPromptResource[ ];
         prefix    = ConfirmBy[ ResourceSystemClient`ResourceType`NamePrefix[ "Prompt" ], StringQ ];
-        name      = StringDelete[ ConfirmBy[ info[ "Name" ], StringQ, "Name" ], StartOfString~~prefix ];
+        name      = StringDelete[ ConfirmBy[ name0, StringQ, "Name" ], StartOfString~~prefix ];
         fileName  = URLEncode @ name <> ".mx";
         directory = ConfirmBy[ $PersonaInstallationDirectory, DirectoryQ, "Directory" ];
 
         FileNameJoin @ { directory, fileName }
     ],
-    throwInternalFailure[ personaInstallLocation @ info, ## ] &
+    throwInternalFailure[ personaInstallLocation @ name0, ## ] &
 ];
 
 personaInstallLocation // endDefinition;
@@ -278,6 +421,21 @@ getInstalledPersonas // endDefinition;
 getPersonaFile // beginDefinition;
 getPersonaFile[ file_ ] := Block[ { $PersonaConfig = $Failed }, Get @ file; $PersonaConfig ];
 getPersonaFile // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Utilities*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*needsPromptResource*)
+needsPromptResource[ ] := Enclose[
+    ConfirmBy[ PacletInstall[ "PromptResource" ], PacletObjectQ, "PacletInstall" ];
+    ConfirmMatch[ Needs[ "PromptResource`" -> None ], Null, "PromptResource" ];
+    needsPromptResource[ ] = Null
+    ,
+    throwInternalFailure[ needsPromptResource[ ], ## ] &
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
