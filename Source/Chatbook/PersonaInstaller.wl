@@ -16,14 +16,10 @@ Needs[ "Wolfram`Chatbook`Common`"  ];
 (* ::Section::Closed:: *)
 (*Config*)
 
-(* FIXME: set values to corresponding PRD resource system *)
-
-$personaBrowseURL    = "https://www.wolframcloud.com/obj/rhennigan/published/PromptRepository/category/persona";
-$resourceSystemAdmin = "richardh@wolfram.com";
-(* $channelPermissions  = { $resourceSystemAdmin -> All, "Owner" -> All }; *)
-$channelPermissions  = "Public";
-$keepChannelOpen     = True;
-$debug               = False;
+$personaBrowseURL  := URLBuild @ { rsRoot[ ], "published/PromptRepository/category/persona" };
+$channelPermissions = "Public";
+$keepChannelOpen    = True;
+$debug              = False;
 
 (* TODO: need to add a DeleteResource hook for PromptResources that removes corresponding items here *)
 $PersonaInstallationDirectory := GeneralUtilities`EnsureDirectory @ {
@@ -436,6 +432,28 @@ needsPromptResource[ ] := Enclose[
     ,
     throwInternalFailure[ needsPromptResource[ ], ## ] &
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*rsRoot*)
+rsRoot[ ] := (ResourceObject; rsRoot @ $ResourceSystemBase);
+
+rsRoot[ HoldPattern[ $ResourceSystemBase ] ] :=
+    With[ { rsb = (ResourceObject; $ResourceSystemBase) }, rsRoot @ rsb /; StringQ @ rsb ];
+
+rsRoot[ rsBase_String ] :=
+    Replace[
+        URLParse @ rsBase,
+        {
+            p: KeyValuePattern @ { "Domain" -> "www.wolframcloud.com", "Path" -> { "", _, "resourcesystem", ___ } } :>
+                (rsRoot[ rsBase ] = "https://resources.wolframcloud.com"),
+            p: KeyValuePattern[ "Path" -> { base___, "api", _ } ] :>
+                (rsRoot[ rsBase ] = URLBuild @ Append[ p, "Path" -> { base } ]),
+            ___ :> Missing[ "Unknown" ]
+        }
+    ];
+
+rsRoot[ _ ] := "https://resources.wolframcloud.com";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
