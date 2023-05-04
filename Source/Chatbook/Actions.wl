@@ -17,12 +17,13 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"               ];
-Needs[ "Wolfram`Chatbook`Common`"        ];
-Needs[ "Wolfram`Chatbook`Errors`"        ];
-Needs[ "Wolfram`Chatbook`ErrorUtils`"    ];
-Needs[ "Wolfram`Chatbook`Serialization`" ];
-Needs[ "Wolfram`Chatbook`Personas`"      ];
+Needs[ "Wolfram`Chatbook`"                  ];
+Needs[ "Wolfram`Chatbook`Common`"           ];
+Needs[ "Wolfram`Chatbook`Errors`"           ];
+Needs[ "Wolfram`Chatbook`ErrorUtils`"       ];
+Needs[ "Wolfram`Chatbook`PersonaInstaller`" ];
+Needs[ "Wolfram`Chatbook`Personas`"         ];
+Needs[ "Wolfram`Chatbook`Serialization`"    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -70,13 +71,32 @@ ChatbookAction[ "CopyChatObject"   , args___ ] := catchMine @ CopyChatObject @ a
 ChatbookAction[ "EvaluateChatInput", args___ ] := catchMine @ EvaluateChatInput @ args;
 ChatbookAction[ "ExclusionToggle"  , args___ ] := catchMine @ ExclusionToggle @ args;
 ChatbookAction[ "OpenChatMenu"     , args___ ] := catchMine @ OpenChatMenu @ args;
+ChatbookAction[ "PersonaInstall"   , args___ ] := catchMine @ PersonaInstall @ args;
+ChatbookAction[ "PersonaURLInstall", args___ ] := catchMine @ PersonaURLInstall @ args;
 ChatbookAction[ "Send"             , args___ ] := catchMine @ SendChat @ args;
 ChatbookAction[ "StopChat"         , args___ ] := catchMine @ StopChat @ args;
 ChatbookAction[ "TabLeft"          , args___ ] := catchMine @ TabLeft @ args;
 ChatbookAction[ "TabRight"         , args___ ] := catchMine @ TabRight @ args;
 ChatbookAction[ "WidgetSend"       , args___ ] := catchMine @ WidgetSend @ args;
 ChatbookAction[ name_String        , args___ ] := catchMine @ throwFailure[ "NotImplemented", name, args ];
-ChatbookAction[ args___                      ] := catchMine @ throwInternalFailure @ HoldForm @ ChatbookAction @ args;
+ChatbookAction[ args___                      ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*PersonaInstall*)
+PersonaInstall // beginDefinition;
+
+PersonaInstall[ a___ ] := Enclose[
+    ConfirmBy[ PersonaInstallFromResourceSystem[ ], AssociationQ, "PersonaInstallFromResourceSystem" ],
+    throwInternalFailure[ PersonaInstall @ a, ## ] &
+];
+
+PersonaInstall // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*PersonaURLInstall*)
+(* FIXME: do the thing *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1732,7 +1752,7 @@ namedRolePrompt[ name_String ] := Enclose[
     Module[ { data, pre, post },
 		data = ConfirmBy[GetPersonaData[name], AssociationQ];
 
-        pre  = Lookup[ data, "Pre"  ];
+        pre  = Lookup[ data, "Pre", TemplateApply @ Lookup[ data, "PromptTemplate" ] ];
         post = Lookup[ data, "Post" ];
         ConfirmBy[
             TemplateApply[
