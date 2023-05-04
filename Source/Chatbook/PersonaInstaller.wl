@@ -4,6 +4,7 @@
 BeginPackage[ "Wolfram`Chatbook`PersonaInstaller`" ];
 
 `$PersonaInstallationDirectory;
+`GetInstalledResourcePersonaData;
 `GetInstalledResourcePersonas;
 `PersonaInstallFromResourceSystem;
 
@@ -23,11 +24,28 @@ $debug              = False;
 
 (* TODO: need to add a DeleteResource hook for PromptResources that removes corresponding items here *)
 $PersonaInstallationDirectory := GeneralUtilities`EnsureDirectory @ {
-    $UserBaseDirectory,
-    "ApplicationData",
+    ExpandFileName @ LocalObject @ $LocalBase,
     "Chatbook",
     "Personas"
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*GetInstalledResourcePersonaData*)
+GetInstalledResourcePersonaData // beginDefinition;
+
+GetInstalledResourcePersonaData[ ] := catchMine @ Enclose[
+    Module[ { data },
+        data = ConfirmMatch[ GetInstalledResourcePersonas[ ], { ___Association }, "GetInstalledResourcePersonas" ];
+        KeySort @ Association @ Cases[
+            data,
+            KeyValuePattern @ { "Name" -> name_String, "Configuration" -> config_Association } :> name -> config
+        ]
+    ],
+    throwInternalFailure[ GetInstalledResourcePersonaData[ ], ## ] &
+];
+
+GetInstalledResourcePersonaData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -41,13 +59,15 @@ PersonaInstallFromResourceSystem[ ] := catchMine @ Enclose[
             KeyValuePattern @ { "Listener" -> _ChannelListener, "Channel" -> _ChannelObject },
             "BrowseWithCallback"
         ];
-        $installed = ConfirmMatch[
+        ConfirmMatch[
             GetInstalledResourcePersonas[ ],
             { ___Association },
             "GetInstalledResourcePersonas"
         ];
 
         dialog = createPersonaInstallWaitingDialog @ data;
+
+        Append[ data, "Dialog" -> dialog ]
     ],
     (
         $installed = { };
@@ -62,30 +82,46 @@ PersonaInstallFromResourceSystem // endDefinition;
 (*createPersonaInstallWaitingDialog*)
 createPersonaInstallWaitingDialog // beginDefinition;
 
-createPersonaInstallWaitingDialog[ data_ ] := CreateDialog[
+createPersonaInstallWaitingDialog[ data: KeyValuePattern[ "BrowseURL" -> url_ ] ] := CreateDialog[
     {
-        TextCell[ "If your browser does not open automatically, click here", "Text" ],
-        ExpressionCell @ Dynamic[
-            If[ $installed === { },
-                ProgressIndicator[ Appearance -> "Necklace" ],
-                Grid[
-                    Prepend[
-                        formatInstalledResource /@ $installed,
-                        {
-                            "",
-                            Style[ "Name", FontWeight -> "DemiBold" ],
-                            Style[ "Description", FontWeight -> "DemiBold" ],
-                            Style[ "Version", FontWeight -> "DemiBold" ],
-                            ""
-                        }
-                    ],
-                    Alignment -> Left,
-                    BaseStyle -> "Text",
-                    Dividers -> { False, Center },
-                    FrameStyle -> GrayLevel[ 0.6 ]
-                ]
+        RawBoxes @ Cell[
+            TextData @ {
+                "If your browser does not open automatically, click ",
+                ButtonBox[
+                    "here",
+                    BaseStyle -> "Hyperlink",
+                    ButtonData -> { URL @ url, None },
+                    ButtonNote -> url
+                ],
+                "."
+            },
+            "Text",
+            Background -> None
+        ],
+        RawBoxes @ Cell[
+            BoxData @ ToBoxes @ Dynamic[
+                If[ $installed === { },
+                    ProgressIndicator[ Appearance -> "Necklace" ],
+                    Grid[
+                        Prepend[
+                            formatInstalledResource /@ $installed,
+                            {
+                                "",
+                                Style[ "Name", FontWeight -> "DemiBold" ],
+                                Style[ "Description", FontWeight -> "DemiBold" ],
+                                Style[ "Version", FontWeight -> "DemiBold" ],
+                                ""
+                            }
+                        ],
+                        Alignment -> Left,
+                        BaseStyle -> "Text",
+                        Dividers -> { False, Center },
+                        FrameStyle -> GrayLevel[ 0.6 ]
+                    ]
+                ],
+                TrackedSymbols :> { $installed }
             ],
-            TrackedSymbols :> { $installed }
+            "Output"
         ],
         DefaultButton[ DialogReturn @ channelCleanup @ data ]
     },
@@ -146,22 +182,29 @@ formatInstalledResource[ name_, desc_, version_, icon_ ] := {
 formatInstalledResource // endDefinition;
 
 
-formatName[ name_String ] := (
-    needsPromptResource[ ];
-    StringDelete[ name, StartOfString ~~ ResourceSystemClient`ResourceType`NamePrefix[ "Prompt" ] ]
-);
+formatName // beginDefinition;
+formatName[ name_String ] := personaName @ name;
+formatName // endDefinition;
 
+formatDescription // beginDefinition;
 formatDescription[ _Missing ] := "";
 formatDescription[ desc_String ] := desc;
+formatDescription // endDefinition;
 
+formatVersion // beginDefinition;
 formatVersion[ _Missing ] := "";
 formatVersion[ version_String ] := version;
+formatVersion // endDefinition;
 
+formatIcon // beginDefinition;
 formatIcon[ _Missing ] := "";
 formatIcon[ KeyValuePattern[ "Default" -> icon_ ] ] := formatIcon @ icon;
 formatIcon[ icon_ ] := Pane[ icon, ImageSize -> { 30, 30 }, ImageSizeAction -> "ShrinkToFit" ];
+formatIcon // endDefinition;
 
+uninstallButton // beginDefinition;
 uninstallButton[ name_String ] := Button[ "Uninstall", uninstallPersona @ name ];
+uninstallButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -172,7 +215,7 @@ uninstallPersona[ name_String ] := Enclose[
     Module[ { file },
         file = ConfirmBy[ personaInstallLocation @ name, FileExistsQ, "PersonaInstallLocation" ];
         Confirm[ DeleteFile @ file, "DeleteFile" ];
-        $installed = ConfirmMatch[ GetInstalledResourcePersonas[ ], { ___Association }, "GetInstalledResourcePersonas" ]
+        ConfirmMatch[ GetInstalledResourcePersonas[ ], { ___Association }, "GetInstalledResourcePersonas" ]
     ],
     throwInternalFailure[ uninstallPersona @ name, ## ] &
 ];
@@ -304,7 +347,7 @@ promptResourceInstall0[ channelData_, messageData_ ] := Enclose[
                 Dividers  -> Center
             ]
         ];
-        $installed = GetInstalledResourcePersonas[ ];
+        GetInstalledResourcePersonas[ ];
 
         installed
     ],
@@ -326,25 +369,38 @@ acquireResource // endDefinition;
 installPersonaConfiguration // beginDefinition;
 
 installPersonaConfiguration[ info_, config_, target_ ] :=
-    installPersonaConfiguration[ info, config, target, personaContext @ config ];
+    installPersonaConfiguration[ info, config, target, personaName @ info, personaContext @ config ];
 
-installPersonaConfiguration[ info_, config_, target_, None ] :=
-    Block[ { $PersonaConfig = <| "ResourceInformation" -> info, "Configuration" -> config |> },
-        With[ { name = ToString @ Unevaluated @ $PersonaConfig },
-            DumpSave[ target, name, "SymbolAttributes" -> False ];
+installPersonaConfiguration[ info_, config_, target_, name_String, None ] :=
+    Block[ { $PersonaConfig = <| "Name" -> name, "ResourceInformation" -> info, "Configuration" -> config |> },
+        With[ { symbol = ToString @ Unevaluated @ $PersonaConfig },
+            DumpSave[ target, symbol, "SymbolAttributes" -> False ];
             target
         ]
     ];
 
-installPersonaConfiguration[ info_, config_, target_, context_String ] :=
-    Block[ { $PersonaConfig = <| "ResourceInformation" -> info, "Configuration" -> config |> },
-        With[ { name = ToString @ Unevaluated @ $PersonaConfig },
-            DumpSave[ target, { name, context }, "SymbolAttributes" -> False ];
+installPersonaConfiguration[ info_, config_, target_, name_String, context_String ] :=
+    Block[ { $PersonaConfig = <| "Name" -> name, "ResourceInformation" -> info, "Configuration" -> config |> },
+        With[ { symbol = ToString @ Unevaluated @ $PersonaConfig },
+            DumpSave[ target, { symbol, context }, "SymbolAttributes" -> False ];
             target
         ]
     ];
 
 installPersonaConfiguration // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*personaName*)
+personaName // beginDefinition;
+personaName[ KeyValuePattern[ "Name" -> name_ ] ] := personaName @ name;
+
+personaName[ name_String ] := (
+    needsPromptResource[ ];
+    StringDelete[ name, StartOfString ~~ ResourceSystemClient`ResourceType`NamePrefix[ "Prompt" ] ]
+);
+
+personaName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -354,10 +410,8 @@ personaInstallLocation // beginDefinition;
 personaInstallLocation[ KeyValuePattern[ "Name" -> name_ ] ] := personaInstallLocation @ name;
 
 personaInstallLocation[ name0_String ] := Enclose[
-    Module[ { prefix, name, fileName, directory },
-        needsPromptResource[ ];
-        prefix    = ConfirmBy[ ResourceSystemClient`ResourceType`NamePrefix[ "Prompt" ], StringQ ];
-        name      = StringDelete[ ConfirmBy[ name0, StringQ, "Name" ], StartOfString~~prefix ];
+    Module[ { name, fileName, directory },
+        name      = ConfirmBy[ personaName @ name0, StringQ, "Name" ];
         fileName  = URLEncode @ name <> ".mx";
         directory = ConfirmBy[ $PersonaInstallationDirectory, DirectoryQ, "Directory" ];
 
@@ -408,7 +462,7 @@ GetInstalledResourcePersonas // endDefinition;
 (* ::Subsection::Closed:: *)
 (*getInstalledPersonas*)
 getInstalledPersonas // beginDefinition;
-getInstalledPersonas[ ] := getPersonaFile /@ FileNames[ "*.mx", $PersonaInstallationDirectory ];
+getInstalledPersonas[ ] := $installed = getPersonaFile /@ FileNames[ "*.mx", $PersonaInstallationDirectory ];
 getInstalledPersonas // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
