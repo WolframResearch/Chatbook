@@ -79,17 +79,7 @@ Cell[
 	CellDingbat -> Cell[
 		BoxData @ RowBox[{
 			TemplateBox[{}, "ChatCounterLabel"],
-			DynamicBox[
-				ToBoxes[
-					(
-						Wolfram`Chatbook`UI`$ChatInputMenuDataChanged;
-
-						Symbol["Wolfram`Chatbook`UI`MakeChatInputCellDingbat"][]
-					),
-					StandardForm
-				],
-				TrackedSymbols :> {Wolfram`Chatbook`UI`$ChatInputMenuDataChanged}
-			]
+			ToBoxes @ $chatInputCellDingbat
 		}],
 		Background -> None,
 		CellFrame -> 0

@@ -593,13 +593,84 @@ Notebook[
       RowBox[
        {
         TemplateBox[{}, "ChatCounterLabel"],
-        DynamicBox[
-         ToBoxes[
-          Wolfram`Chatbook`UI`$ChatInputMenuDataChanged;
-          Symbol["Wolfram`Chatbook`UI`MakeChatInputCellDingbat"][],
-          StandardForm
-         ],
-         TrackedSymbols :> {Wolfram`Chatbook`UI`$ChatInputMenuDataChanged}
+        PaneSelectorBox[
+         {
+          True ->
+           ButtonBox[
+            FrameBox[
+             DynamicBox[
+              ToBoxes[
+               With[
+                {
+                 Wolfram`Chatbook`UI`Private`menuData = 
+                  Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
+
+                  ],
+                 Wolfram`Chatbook`UI`Private`personaValue = 
+                  Wolfram`Chatbook`UI`Private`currentValueOrigin[
+                   ParentCell[EvaluationCell[]],
+                   {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+                  ]
+                },
+                FirstCase[
+                 Wolfram`Chatbook`UI`Private`menuData["Personas"],
+                 {
+                  Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
+                  Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]],
+                  Blank[]
+                 } :> Wolfram`Chatbook`UI`Private`icon,
+                 Style[
+                  Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
+                  GrayLevel[0.5]
+                 ]
+                ]
+               ],
+               StandardForm
+              ]
+             ],
+             RoundingRadius -> 3,
+             FrameMargins -> 2,
+             ImageMargins -> {{0, 3}, {0, 0}},
+             FrameStyle ->
+              Directive[
+               RGBColor[0.8549, 0.83137, 0.72549],
+               AbsoluteThickness[1]
+              ],
+             Background ->
+              Dynamic[
+               If[ CurrentValue["MouseOver"], GrayLevel[0.8], GrayLevel[1] ]
+              ],
+             FrameMargins -> 0,
+             StripOnInput -> False
+            ],
+            ButtonFunction :>
+             (AttachCell[
+              EvaluationCell[],
+              Wolfram`Chatbook`UI`Private`openChatInputActionMenu[
+               EvaluationCell[]
+              ],
+              {Left, Bottom},
+              Offset[{0, 0}, {Left, Top}],
+              {Left, Top},
+              RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
+             ];),
+            Appearance -> None,
+            Evaluator -> Automatic,
+            Method -> "Preemptive"
+           ],
+          False ->
+           FrameBox[
+            TemplateBox[{}, "RoleUser"],
+            RoundingRadius -> 3,
+            FrameMargins -> 2,
+            ImageMargins -> {{0, 3}, {0, 0}},
+            FrameStyle -> GrayLevel[0, 0],
+            FrameMargins -> 0,
+            StripOnInput -> False
+           ]
+         },
+         Dynamic[CurrentValue["MouseOver"]],
+         ImageSize -> Automatic
         ]
        }
       ]
@@ -6256,6 +6327,123 @@ Notebook[
        AspectRatio -> Automatic,
        ImageSize -> {20.0, 20.0},
        PlotRange -> {{0.0, 20.0}, {0.0, 20.0}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["PersonaUnknown"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.038462],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {
+            {
+             {1, 4, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3}
+            }
+           },
+           CompressedData[
+            "\n1:eJxTTMoPSmVmYGBgBGJ5IGZiAAOF9C8GDkC64bWgOoheYLREF0QzNIZqgOiE\nOmkdEF0weYYmMj9mF6c2Mj8hbRlYn8O5FXpgc2SidJD5DgmpRsh8gevJJiBa\nY/5pLRCtELXEFERv4P6sjsx3qJBSReYreNoqIuuH8WHmw/gw+xlmnlJGdh+M\nD3M/jA/z34EnjkrI/neY9EsaOXwahAVEQHTA46dgdzXITxIC688QhLhDMBXM\nbzhUKgOmv22VBNu/pwSsT+GrJMT8m+f4kP0L41sondFF5nP1tRoi67/RGmmM\nbL6Dk58xsv0P2N4bIbsPJX4BxWdtNA==\n       "
+           ]
+          ]
+         },
+         {FaceForm[RGBColor[0.7451, 0.82353, 1.0, 1.0]]},
+         StripOnInput -> False
+        ],
+        StyleBox[
+         {
+          JoinedCurveBox[
+           {
+            {
+             {1, 4, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3}
+            }
+           },
+           CompressedData[
+            "\n1:eJxTTMoPSmVmYGBgBGJ5IGZiAAOF9C8GDkC64bWgOoheYLREF0QzNIZqgOiE\nOmkdEF0weYYmMj9mF6c2Mj8hbRlYn8O5FXpgc2SidJD5DgmpRsh8gevJJiBa\nY/5pLRCtELXEFERv4P6sjsx3qJBSReYreNoqIuuH8WHmw/gw+xlmnlJGdh+M\nD3M/jA/z34EnjkrI/neY9EsaOXwahAVEQHTA46dgdzXITxIC688QhLhDMBXM\nbzhUKgOmv22VBNu/pwSsT+GrJMT8m+f4kP0L41sondFF5nP1tRoi67/RGmmM\nbL6Dk58xsv0P2N4bIbsPJX4BxWdtNA==\n       "
+           ],
+           CurveClosed -> {1}
+          ]
+         },
+         {CapForm["Round"], JoinForm["Round"], Thickness[0.019231]},
+         StripOnInput -> False
+        ],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {
+             {1, 4, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0}
+            }
+           },
+           {
+            {
+             {18.227, 15.047},
+             {19.532, 15.047},
+             {19.532, 13.939},
+             {18.227, 13.939},
+             {18.227, 15.047}
+            },
+            CompressedData[
+             "\n1:eJxdlF1IFFEUxy8ViyyGLxGyRM2+SBBku+4GfVijMYmVmT4sFEHDZiZS+WZW\nVBskYSkmscZCi1MQbiHbB1EkEgMRSQS6gRVIpEEUWOzDYvVgH+v5zcJsA8Ph\nxzn3f+75z73jj3Y0H1milNqZfxdj/jFnNwf1fIzZuyp1F89UPIDD28jHl25Y\njPZqg/xwhbDWvVvYHK0nPx4RtufbhM3WVmGr/KKwZXQKq7ND1Nf3ojc0Kqw/\nStFv+5TT7wV6ySw8/5X6xuUBiadXVIleZL3DIWEtXSdsa/uEZyajwrFjR4Vj\nNTHyneeE9YdJp/4q60fGhK3vN9Cv/IB+1x1hO/dbWP94D71na4JuNvtri7nl\nDD7UWOilh4U1zwVhK/uS+tIo/QPMaRsb2X/TL/LhP0E3W8mJIlbr0LV2zFFv\ndvN9Pk/ia3kLuuOP6X+/mXpfP/m5JnSm98PV3oCb9UAJPvw9RF3Kg08rn5Kf\n9QlrB5bhq2lQ31DLXAc7Ao7/+FJ9F9+T+GQZPxxfJ1hfWvAxSz6RoK9SIdFd\nu1DEdi5Z5eZY+yqJauo9en0n4fOX0TvxhrovWwrrwviQCbpZL9lTxJavDB9/\n5kLs+y1z3J5mX69uMmf8Odx4HB8zt6hv30o+cSqEL2WF88ocDZ8473V+Yd37\nBH79Dd8G+rhfbRn4Whf3cWSM8xg/LKwiafj6XlhZjo+bnPs4iC89fkdvAB9S\nHvhKL3nvO/kfqIUevuOlwSL+//8h/A+9LAYt\n        "
+            ]
+           }
+          ]
+         },
+         {FaceForm[RGBColor[0.42353, 0.48627, 0.68627, 1.0]]},
+         StripOnInput -> False
+        ]
+       },
+       ImageSize -> {{27.0, 27.0}, {27.0, 27.0}},
+       PlotRange -> {{-0.5, 26.5}, {-0.5, 26.5}},
+       AspectRatio -> Automatic
       ]
      ])
    }
