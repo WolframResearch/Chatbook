@@ -1295,70 +1295,70 @@ chatHTTPRequest[
 (*========================================================*)
 
 MakeChatInputCellDingbat[] := With[{}, Module[{
-	menuData = GetChatInputLLMConfigurationSelectorMenuData[],
-	personaValue,
-	menuLabel
+	menuLabel,
+	button
 },
-	(* NOTE:
-		This is needed here due to its use in TrackedSymbols in the stylesheet.
-		Without this, the CellDingbat dynamic will not refresh when changes are
-		made to the inherited TaggingRules.
-	*)
-	Wolfram`Chatbook`UI`$ChatInputMenuDataChanged;
-
-	(* menu = Tooltip[
-		actionMenu,
-		CurrentValue[
-			ParentCell[EvaluationCell[]],
-			valueKeyPath
-		]
-	]; *)
-
 	(*-----------------------------------------*)
 	(* Construct the action menu display label *)
 	(*-----------------------------------------*)
 
-	personaValue = currentValueOrigin[
-		ParentCell[EvaluationCell[]],
-		{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+	menuLabel = Dynamic @ With[{
+		menuData = GetChatInputLLMConfigurationSelectorMenuData[],
+		personaValue = currentValueOrigin[
+			ParentCell[EvaluationCell[]],
+			{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+		]
+	},
+		FirstCase[
+			menuData["Personas"],
+			{personaValue[[2]], icon_, _} :> icon,
+			Style[getIcon["PersonaUnknown"], GrayLevel[0.5]]
+		]
 	];
 
-	menuLabel = FirstCase[
-		menuData["Personas"],
-		{personaValue[[2]], icon_, _} :> icon,
-		Style["\[LongDash]", GrayLevel[0.5]]
+	button = Button[
+		Framed[
+			menuLabel,
+			RoundingRadius -> 3,
+			FrameMargins -> 2,
+			ImageMargins -> {{0, 3}, {0, 0}},
+			FrameStyle -> Directive[
+				RGBColor[0.8549, 0.83137, 0.72549],
+				AbsoluteThickness[1]
+			],
+			Background -> Dynamic[
+				If[CurrentValue["MouseOver"], GrayLevel[0.8], GrayLevel[1]]
+			],
+			FrameMargins -> 0
+		],
+		(
+			AttachCell[
+				EvaluationCell[],
+				openChatInputActionMenu[EvaluationCell[]],
+				{Left, Bottom},
+				Offset[{0, 0}, {Left, Top}],
+				{Left, Top},
+				RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
+			];
+		),
+		Appearance -> None
 	];
 
-	Row[{
-		RawBoxes @ TemplateBox[{}, "RoleUser"],
-		Button[
-			Framed[
-				menuLabel,
+	PaneSelector[
+		{
+			True -> button,
+			False -> Framed[
+				RawBoxes @ TemplateBox[{}, "RoleUser"],
 				RoundingRadius -> 3,
 				FrameMargins -> 2,
 				ImageMargins -> {{0, 3}, {0, 0}},
-				FrameStyle -> Directive[
-					RGBColor[0.8549, 0.83137, 0.72549],
-					AbsoluteThickness[1]
-				],
-				Background -> Dynamic[
-					If[CurrentValue["MouseOver"], GrayLevel[0.8], GrayLevel[1]]
-				],
+				FrameStyle -> Transparent,
 				FrameMargins -> 0
-			],
-			(
-				AttachCell[
-					EvaluationCell[],
-					openChatInputActionMenu[EvaluationCell[]],
-					{Left, Bottom},
-					Offset[],
-					{Left, Top},
-					RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
-				];
-			),
-			Appearance -> None
-		]
-	}]
+			]
+		},
+		Dynamic[CurrentValue["MouseOver"]],
+		ImageSize -> Automatic
+	]
 ]]
 
 (*====================================*)

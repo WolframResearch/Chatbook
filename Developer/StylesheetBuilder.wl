@@ -307,6 +307,8 @@ $tabbedChatOutputCellDingbat = Column[
     Spacings  -> 0.1
 ];
 
+$chatInputCellDingbat = Wolfram`Chatbook`UI`MakeChatInputCellDingbat[]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*inlineResources*)
