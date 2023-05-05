@@ -612,7 +612,7 @@ makeIconTemplateBoxStyle /@ FileNames[ "*.wl", $iconDirectory ]
 Cell[
     StyleData[ "AssistantIconTabbed" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $tabbedChatOutputCellDingbat
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ tabbedChatOutputCellDingbat @ #
     }
 ]
 
