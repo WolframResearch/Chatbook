@@ -762,7 +762,16 @@ queuedEvaluationsQ[ ___ ] := False;
 (*sendChat*)
 sendChat // beginDefinition;
 
-sendChat[ evalCell_, nbo_, settings0_ ] := catchTop @ Enclose[
+sendChat[ evalCell_, nbo_, settings_ ] :=
+    Block[ { $llmEvaluator = getLLMEvaluator @ settings },
+        sendChat0[ evalCell, nbo, settings ]
+    ];
+
+sendChat // endDefinition;
+
+sendChat0 // beginDefinition;
+
+sendChat0[ evalCell_, nbo_, settings0_ ] := catchTop @ Enclose[
     Module[ { cells0, cells, target, settings, id, key, req, data, cell, cellObject, container, task },
 
         cells0 = ConfirmMatch[ selectChatCells[ settings0, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
@@ -816,10 +825,20 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTop @ Enclose[
 
         task = Confirm[ $lastTask = submitAIAssistant[ container, req, cellObject, settings ] ];
     ],
-    throwInternalFailure[ sendChat[ evalCell, nbo, settings0 ], ## ] &
+    throwInternalFailure[ sendChat0[ evalCell, nbo, settings0 ], ## ] &
 ];
 
-sendChat // endDefinition;
+sendChat0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getLLMEvaluator*)
+getLLMEvaluator // beginDefinition;
+getLLMEvaluator[ as_Association ] := getLLMEvaluator[ as, Lookup[ as, "LLMEvaluator" ] ];
+getLLMEvaluator[ as_, name_String ] := getLLMEvaluator[ as, GetPersonaData @ name ];
+getLLMEvaluator[ as_, evaluator_Association ] := evaluator;
+getLLMEvaluator[ _, _ ] := None;
+getLLMEvaluator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1307,7 +1326,13 @@ makeCurrentRole // beginDefinition;
 makeCurrentRole[ as_Association? AssociationQ ] := makeCurrentRole[ as, as[ "RolePrompt" ], as[ "LLMEvaluator" ] ];
 makeCurrentRole[ as_, None, _ ] := Missing[ ];
 makeCurrentRole[ as_, role_String, _ ] := <| "role" -> "system", "content" -> role |>;
-makeCurrentRole[ as_, Automatic | _Missing, name_String ] := <| "role" -> "system", "content" -> namedRolePrompt @ name |>;
+
+makeCurrentRole[ as_, Automatic|_Missing, name_String ] :=
+    <| "role" -> "system", "content" -> namedRolePrompt @ name |>;
+
+makeCurrentRole[ as_, Automatic|_Missing, evaluator_Association ] :=
+    <| "role" -> "system", "content" -> buildSystemPrompt @ Association[ as, evaluator ] |>;
+
 makeCurrentRole[ as_, _, _ ] := <| "role" -> "system", "content" -> buildSystemPrompt @ as |>;
 makeCurrentRole // endDefinition;
 
@@ -2092,7 +2117,7 @@ writeReformattedCell // endDefinition;
 reformatCell // beginDefinition;
 
 reformatCell[ settings_, string_, tag_, open_, label_, pageData_ ] := UsingFrontEnd @ Enclose[
-    Module[ { content, rules },
+    Module[ { content, rules, dingbat },
 
         content = ConfirmMatch[
             If[ TrueQ @ settings[ "AutoFormat" ], TextData @ reformatTextData @ string, TextData @ string ],
@@ -2106,6 +2131,8 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_ ] := UsingFront
             "TaggingRules"
         ];
 
+        dingbat = makeOutputCellDingbat @ settings;
+
         Cell[
             content,
             "ChatOutput",
@@ -2113,8 +2140,8 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_ ] := UsingFront
             CellAutoOverwrite -> True,
             TaggingRules      -> rules,
             If[ TrueQ[ rules[ "PageData", "PageCount" ] > 1 ],
-                CellDingbat -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIconTabbed" ], Background -> None ],
-                Sequence @@ { }
+                CellDingbat -> Cell[ BoxData @ TemplateBox[ { dingbat }, "AssistantIconTabbed" ], Background -> None ],
+                CellDingbat -> Cell[ BoxData @ dingbat, Background -> None ]
             ],
             If[ TrueQ @ open,
                 Sequence @@ { },
@@ -2129,6 +2156,11 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_ ] := UsingFront
 ];
 
 reformatCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeOutputCellDingbat*)
+makeOutputCellDingbat[ settings_ ] :=  TemplateBox[ { }, "AssistantIcon" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
