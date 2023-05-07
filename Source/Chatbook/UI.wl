@@ -1671,7 +1671,7 @@ SetFallthroughError[getPersonaMenuIcon];
 
 getPersonaMenuIcon[ KeyValuePattern[ "Icon"|"PersonaIcon" -> icon_ ] ] := getPersonaMenuIcon @ icon;
 getPersonaMenuIcon[ KeyValuePattern[ "Default" -> icon_ ] ] := getPersonaMenuIcon @ icon;
-getPersonaMenuIcon[ _Missing | _Association | None ] := "";
+getPersonaMenuIcon[ _Missing | _Association | None ] := RawBoxes @ TemplateBox[ { }, "PersonaUnknown" ];
 getPersonaMenuIcon[ boxes: RawBoxes[ _TemplateBox ] ] := boxes;
 
 getPersonaMenuIcon[ icon_ ] := Pane[
