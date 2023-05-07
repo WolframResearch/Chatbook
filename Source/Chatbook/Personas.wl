@@ -18,6 +18,7 @@ Begin["`Private`"]
 
 Needs["Wolfram`Chatbook`Errors`"]
 Needs["Wolfram`Chatbook`ErrorUtils`"]
+Needs["Wolfram`Chatbook`PersonaInstaller`"]
 
 (*========================================================*)
 
@@ -61,12 +62,10 @@ GetPersonasAssociation[] := Module[{
 },
 	personas = RaiseConfirmMatch[
 		GetPersonaData[],
-		_?ListQ
+		_?AssociationQ
 	];
 
-	personas = Cases[personas, HoldPattern[_?StringQ -> _?AssociationQ]];
-
-	Merge[personas, Join]
+	personas
 ]
 
 (*========================================================*)
@@ -74,12 +73,17 @@ GetPersonasAssociation[] := Module[{
 SetFallthroughError[GetPersonaData]
 
 GetPersonaData[] := Module[{
-	paclets
+	resourcePersonas,
+	paclets,
+	pacletPersonas,
+	personas
 },
+	resourcePersonas = RaiseConfirmMatch[GetInstalledResourcePersonaData[], _Association? AssociationQ];
+
 	Needs["PacletTools`" -> None];
 	paclets = PacletFind[All, <| "Extension" -> "LLMConfiguration" |>];
 
-	Flatten @ Map[
+	pacletPersonas = KeySort @ Flatten @ Map[
 		paclet |-> Handle[_Failure] @ Module[{
 			extensions
 		},
@@ -97,17 +101,24 @@ GetPersonaData[] := Module[{
 			]
 		],
 		paclets
-	]
+	];
+
+	personas = Merge[{resourcePersonas, pacletPersonas}, First];
+
+	(* Show core personas first *)
+	Join[KeyTake[personas, $corePersonaNames], personas]
 ]
+
+$corePersonaNames = {"Helper", "Wolfie"};
 
 (*------------------------------------*)
 
 GetPersonaData[persona_?StringQ] := Module[{
 	data = GetPersonaData[]
 },
-	FirstCase[
+	Lookup[
 		data,
-		HoldPattern[persona -> pData_?AssociationQ] :> pData,
+		persona,
 		Missing["NotAvailable", <| "Persona" -> persona |>]
 	]
 ]
@@ -179,7 +190,7 @@ loadPersonaFromDirectory[dir_?StringQ] := Module[{
 	<| "Pre" -> pre, "Post" -> post, "Icon" -> icon |>
 ]
 
-readPromptString[ file_ ] := StringReplace[ ReadString @ file, "\r\n" -> "\n" ];
+readPromptString[ file_ ] := StringReplace[ ByteArrayToString @ ReadByteArray @ file, "\r\n" -> "\n" ];
 
 End[]
 EndPackage[]

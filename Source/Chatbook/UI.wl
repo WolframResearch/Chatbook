@@ -30,6 +30,7 @@ Needs["Wolfram`Chatbook`Streaming`"]
 Needs["Wolfram`Chatbook`Serialization`"]
 Needs["Wolfram`Chatbook`Menus`"]
 Needs["Wolfram`Chatbook`Personas`"]
+Needs["Wolfram`Chatbook`PersonaInstaller`"]
 
 
 Needs["Wolfram`ServerSentEventUtils`" -> None]
@@ -1493,85 +1494,41 @@ makeChatInputActionMenuContent[
 	(*------------------------------------*)
 
 	menuItems = Join[
-		{
-			Style["Personas",
-				FontSize -> 16,
-				FontVariations -> {"CapsType" -> "SmallCaps"},
-				GrayLevel[0.5]
-			]
-		},
+		{"Personas"},
 		Map[
 			entry |-> ConfirmReplace[entry, {
-				{persona_?StringQ, icon_, listItemLabel_} :> (
-					Row[{
-						styleListItem[persona, personaValue],
-						" ",
-						icon,
-						Spacer[7],
-						listItemLabel
-					}] :> (
-						callback["Persona", persona];
-					)
-				)
+				{persona_?StringQ, icon_, listItemLabel_} :> {
+					alignedMenuIcon[persona, personaValue, icon],
+					listItemLabel,
+					Hold[callback["Persona", persona]]
+				}
 			}],
 			personas
 		],
 		{
 			Delimiter,
-			Row[{getIcon["PersonaOther"], Spacer[7], "More Personas\[Ellipsis]"}] :> (
-				(* FIXME: Implement this. *)
-				MessageDialog["Not Implemented: Get More Personas"];
-			),
-			Row[{getIcon["PersonaFromURL"], Spacer[7], "Install From URL\[Ellipsis]"}] :> (
-				(* FIXME: Implement this. *)
-				MessageDialog["Not Implemented: Install From URL"]
-			)
+			{alignedMenuIcon[getIcon["PersonaOther"]], "More Personas\[Ellipsis]", "PersonaInstall"},
+			{alignedMenuIcon[getIcon["PersonaFromURL"]], "Install From URL\[Ellipsis]", "PersonaURLInstall"}
 		},
-		{Delimiter},
-		{
-			Style["Models",
-				FontSize -> 16,
-				FontVariations -> {"CapsType" -> "SmallCaps"},
-				GrayLevel[0.5]
-			]
-		},
+		{"Models"},
 		Map[
 			entry |-> ConfirmReplace[entry, {
-				{model_?StringQ, icon_, listItemLabel_} :> (
-					Row[{
-						styleListItem[model, modelValue],
-						" ",
-						icon,
-						Spacer[7],
-						listItemLabel
-					}] :> (
-						callback["Model", model];
-					)
-				)
+				{model_?StringQ, icon_, listItemLabel_} :> {
+					alignedMenuIcon[model, modelValue, icon],
+					listItemLabel,
+					Hold[callback["Model", model]]
+				}
 			}],
 			models
 		],
-		{Delimiter},
-		{
-			Style["Roles",
-				FontSize -> 16,
-				FontVariations -> {"CapsType" -> "SmallCaps"},
-				GrayLevel[0.5]
-			]
-		},
+		{"Roles"},
 		Map[
 			entry |-> ConfirmReplace[entry, {
-				{role_?StringQ, icon_} :> (
-					Row[{
-						styleListItem[role, roleValue],
-						" ",
-						icon,
-						Spacer[7],
-						role
-					}] :> (
-						callback["Role", role];
-					)
-				)
+				{role_?StringQ, icon_} :> {
+					alignedMenuIcon[role, roleValue, icon],
+					role,
+					Hold[callback["Role", role]]
+				}
 			}],
 			{
 				{"User", getIcon["RoleUser"]},
@@ -1588,6 +1545,15 @@ makeChatInputActionMenuContent[
 
 	menu
 ]]
+
+(*------------------------------------*)
+
+SetFallthroughError[alignedMenuIcon]
+
+alignedMenuIcon[possible_, current_, icon_] :=alignedMenuIcon[styleListItem[possible, current], icon]
+alignedMenuIcon[check_, icon_] := Row[{check, " ", icon}]
+(* If menu item does not utilize a checkmark, use an invisible one to ensure it is left-aligned with others *)
+alignedMenuIcon[icon_] := alignedMenuIcon[Style["\[Checkmark]", ShowContents -> False], icon]
 
 (*------------------------------------*)
 
@@ -1608,13 +1574,13 @@ styleListItem[
 			"\[Checkmark]",
 		(* This possible value is the inherited selected value. *)
 		{"Inherited", possibleValue} :>
-			Style["\[Checkmark]", GrayLevel[0.75]],
+			Style["\[Checkmark]", FontColor -> GrayLevel[0.75]],
 		(* This possible value is not whatever the currently selected value is. *)
 		(* Display a hidden checkmark purely so that this
 			is offset by the same amount as list items that
 			display a visible checkmark. *)
 		_ ->
-			Style["\[Checkmark]", Transparent]
+			Style["\[Checkmark]", ShowContents -> False]
 	}]
 )
 
@@ -1682,10 +1648,7 @@ GetChatInputLLMConfigurationSelectorMenuData[] := Module[{
 		{key, value} |-> {
 			key,
 			(* FIXME: Better generic fallback icon? *)
-			Replace[
-				Lookup[First[value], "Icon"],
-				_Missing -> ""
-			],
+			getPersonaMenuIcon @ value,
 			key
 		},
 		GetPersonasAssociation[]
@@ -1702,6 +1665,22 @@ GetChatInputLLMConfigurationSelectorMenuData[] := Module[{
 		"Models" -> models
 	|>
 ]
+
+
+SetFallthroughError[getPersonaMenuIcon];
+
+getPersonaMenuIcon[ KeyValuePattern[ "Icon"|"PersonaIcon" -> icon_ ] ] := getPersonaMenuIcon @ icon;
+getPersonaMenuIcon[ KeyValuePattern[ "Default" -> icon_ ] ] := getPersonaMenuIcon @ icon;
+getPersonaMenuIcon[ _Missing | _Association | None ] := "";
+getPersonaMenuIcon[ boxes: RawBoxes[ _TemplateBox ] ] := boxes;
+
+getPersonaMenuIcon[ icon_ ] := Pane[
+	icon,
+	ImageSize       -> { 20, 20 },
+	ImageSizeAction -> "ShrinkToFit",
+	ContentPadding  -> False
+];
+
 
 End[]
 
