@@ -10,6 +10,7 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `cellStyles;
 `notebookRead;
 `parentNotebook;
+`toCompressedBoxes;
 `topParentCell;
 
 Begin[ "`Private`" ];
@@ -152,6 +153,39 @@ cloudNotebookRead // beginDefinition;
 cloudNotebookRead[ cells: { ___CellObject } ] := NotebookRead /@ cells;
 cloudNotebookRead[ cell_ ] := NotebookRead @ cell;
 cloudNotebookRead // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Boxes*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toCompressedBoxes*)
+toCompressedBoxes // beginDefinition;
+toCompressedBoxes[ expr_ ] := compressRasterBoxes @ MakeBoxes @ expr;
+toCompressedBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*compressRasterBoxes*)
+compressRasterBoxes // beginDefinition;
+
+compressRasterBoxes[ boxes_ ] :=
+    ReplaceAll[
+        boxes,
+        {
+            GraphicsBox[ TagBox[ RasterBox[ a: Except[ _String ], b___ ], c___ ], d___ ] :>
+                With[ { compressed = Compress @ Unevaluated @ a },
+                    GraphicsBox[ TagBox[ RasterBox[ CompressedData @ compressed, b ], c ], d ] /; True
+                ],
+            GraphicsBox[ RasterBox[ a: Except[ _String ], b___ ], c___ ] :>
+                With[ { compressed = Compress @ Unevaluated @ a },
+                    GraphicsBox[ RasterBox[ CompressedData @ compressed, b ], c ] /; True
+                ]
+        }
+    ];
+
+compressRasterBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

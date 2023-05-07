@@ -743,10 +743,19 @@ sendChat // endDefinition;
 (*getLLMEvaluator*)
 getLLMEvaluator // beginDefinition;
 getLLMEvaluator[ as_Association ] := getLLMEvaluator[ as, Lookup[ as, "LLMEvaluator" ] ];
-getLLMEvaluator[ as_, name_String ] := getLLMEvaluator[ as, GetPersonaData @ name ];
+getLLMEvaluator[ as_, name_String ] := getLLMEvaluator[ as, getNamedLLMEvaluator @ name ];
 getLLMEvaluator[ as_, evaluator_Association ] := evaluator;
 getLLMEvaluator[ _, _ ] := None;
 getLLMEvaluator // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getNamedLLMEvaluator*)
+getNamedLLMEvaluator // beginDefinition;
+getNamedLLMEvaluator[ name_String ] := getNamedLLMEvaluator[ name, GetPersonaData @ name ];
+getNamedLLMEvaluator[ name_String, evaluator_Association ] := Append[ evaluator, "LLMEvaluatorName" -> name ];
+getNamedLLMEvaluator[ name_String, _ ] := name;
+getNamedLLMEvaluator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1017,6 +1026,15 @@ activeAIAssistantCell[ container_, settings_, minimized_ ] :=
     ];
 
 activeAIAssistantCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*smallSettings*)
+smallSettings // beginDefinition;
+smallSettings[ as_Association ] := smallSettings[ as, as[ "LLMEvaluator" ] ];
+smallSettings[ as_, KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] := Append[ as, "LLMEvaluator" -> name ];
+smallSettings[ as_, _ ] := as;
+smallSettings // endDefinition
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2121,7 +2139,7 @@ makeOutputDingbat[ as_, KeyValuePattern[ "PersonaIcon" -> icon_ ] ] := makeOutpu
 makeOutputDingbat[ as_, KeyValuePattern[ "Icon" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
 makeOutputDingbat[ as_, KeyValuePattern[ "Default" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
 makeOutputDingbat[ as_, _Association|_Missing|_Failure|None ] := TemplateBox[ { }, "AssistantIcon" ];
-makeOutputDingbat[ as_, icon_ ] := ToBoxes @ resizeDingbat @ icon;
+makeOutputDingbat[ as_, icon_ ] := toDingbatBoxes @ resizeDingbat @ icon;
 makeOutputDingbat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -2144,11 +2162,20 @@ makeActiveOutputDingbat[ as_, _Association|_Missing|_Failure|None ] :=
 
 makeActiveOutputDingbat[ as_, icon_ ] :=
     If[ TrueQ @ $noActiveProgress,
-        TemplateBox[ { ToBoxes @ icon }, "ChatOutputStopButtonWrapper" ],
-        TemplateBox[ { ToBoxes @ icon }, "ChatOutputStopButtonProgressWrapper" ]
+        TemplateBox[ { toDingbatBoxes @ icon }, "ChatOutputStopButtonWrapper" ],
+        TemplateBox[ { toDingbatBoxes @ icon }, "ChatOutputStopButtonProgressWrapper" ]
     ];
 
 makeActiveOutputDingbat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toDingbatBoxes*)
+(* TODO: this could create a Dynamic with a unique trigger symbol that's only updated once per session *)
+
+toDingbatBoxes // beginDefinition;
+toDingbatBoxes[ icon_ ] := toDingbatBoxes[ icon ] = toCompressedBoxes @ icon;
+toDingbatBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2214,7 +2241,7 @@ makeCompactChatData[
 ] :=
     BaseEncode @ BinarySerialize[
         Association[
-            KeyDrop[ as, "OpenAIKey" ],
+            smallSettings @ KeyDrop[ as, "OpenAIKey" ],
             "MessageTag" -> tag,
             "Data" -> Association[
                 data,
