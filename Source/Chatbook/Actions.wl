@@ -689,16 +689,7 @@ queuedEvaluationsQ[ ___ ] := False;
 (*sendChat*)
 sendChat // beginDefinition;
 
-sendChat[ evalCell_, nbo_, settings_ ] :=
-    Block[ { $llmEvaluator = getLLMEvaluator @ settings },
-        sendChat0[ evalCell, nbo, settings ]
-    ];
-
-sendChat // endDefinition;
-
-sendChat0 // beginDefinition;
-
-sendChat0[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclose[
+sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclose[
     Module[ { cells0, cells, target, settings, id, key, req, data, cell, cellObject, container, task },
 
         cells0 = ConfirmMatch[ selectChatCells[ settings0, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
@@ -752,10 +743,10 @@ sendChat0[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclo
 
         task = Confirm[ $lastTask = submitAIAssistant[ container, req, cellObject, settings ] ];
     ],
-    throwInternalFailure[ sendChat0[ evalCell, nbo, settings0 ], ## ] &
+    throwInternalFailure[ sendChat[ evalCell, nbo, settings0 ], ## ] &
 ];
 
-sendChat0 // endDefinition;
+sendChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -871,7 +862,10 @@ inheritSettings // endDefinition;
 mergeSettings // beginDefinition;
 
 mergeSettings[ settings_? AssociationQ, group_? AssociationQ, cell_? AssociationQ ] :=
-    Association[ settings, Complement[ group, settings ], Complement[ cell, settings ] ];\
+    Module[ { as },
+        as = Association[ settings, Complement[ group, settings ], Complement[ cell, settings ] ];
+        Association[ as, "LLMEvaluator" -> getLLMEvaluator @ as ]
+    ];\
 
 mergeSettings // endDefinition;\
 
@@ -987,7 +981,7 @@ activeAIAssistantCell[
                 Sequence @@ Flatten[ { $closedChatCellOptions } ],
                 Selectable   -> False,
                 Editable     -> False,
-                CellDingbat  -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIconActive" ], Background -> None ],
+                CellDingbat  -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
                 TaggingRules -> <| "ChatNotebookSettings" -> settings |>
             ]
         ]
@@ -1027,7 +1021,7 @@ activeAIAssistantCell[ container_, settings_, minimized_ ] :=
             ],
             Selectable   -> False,
             Editable     -> False,
-            CellDingbat  -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIconActive" ], Background -> None ],
+            CellDingbat  -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
             TaggingRules -> <| "ChatNotebookSettings" -> settings |>
         ]
     ];
@@ -1250,17 +1244,25 @@ toModelName0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeCurrentRole*)
 makeCurrentRole // beginDefinition;
-makeCurrentRole[ as_Association? AssociationQ ] := makeCurrentRole[ as, as[ "RolePrompt" ], as[ "LLMEvaluator" ] ];
-makeCurrentRole[ as_, None, _ ] := Missing[ ];
-makeCurrentRole[ as_, role_String, _ ] := <| "role" -> "system", "content" -> role |>;
 
-makeCurrentRole[ as_, Automatic|_Missing, name_String ] :=
+makeCurrentRole[ as_Association? AssociationQ ] :=
+    makeCurrentRole[ as, as[ "RolePrompt" ], as[ "LLMEvaluator" ] ];
+
+makeCurrentRole[ as_, None, _ ] :=
+    Missing[ ];
+
+makeCurrentRole[ as_, role_String, _ ] :=
+    <| "role" -> "system", "content" -> role |>;
+
+makeCurrentRole[ as_, Automatic|Inherited|_Missing, name_String ] :=
     <| "role" -> "system", "content" -> namedRolePrompt @ name |>;
 
-makeCurrentRole[ as_, Automatic|_Missing, evaluator_Association ] :=
-    <| "role" -> "system", "content" -> buildSystemPrompt @ Association[ as, evaluator ] |>;
+makeCurrentRole[ as_, _, eval_Association ] :=
+    <| "role" -> "system", "content" -> buildSystemPrompt @ Association[ as, eval ] |>;
 
-makeCurrentRole[ as_, _, _ ] := <| "role" -> "system", "content" -> buildSystemPrompt @ as |>;
+makeCurrentRole[ as_, _, _ ] :=
+    <| "role" -> "system", "content" -> buildSystemPrompt @ as |>;
+
 makeCurrentRole // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1274,8 +1276,8 @@ buildSystemPrompt[ as_Association ] := TemplateApply[
         $promptComponents[ "Generic" ],
 		Select[
 			<|
-				"Pre"  -> Lookup[ as, "ChatContextPreprompt"  ],
-				"Post" -> Lookup[ as, "ChatContextPostPrompt" ]
+				"Pre"  -> getPrePrompt @ as,
+				"Post" -> getPostPrompt @ as
 			|>,
 			StringQ
 		]
@@ -1283,6 +1285,51 @@ buildSystemPrompt[ as_Association ] := TemplateApply[
 ];
 
 buildSystemPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getPrePrompt*)
+getPrePrompt // beginDefinition;
+
+getPrePrompt[ as_Association ] := toPromptString @ FirstCase[
+    Unevaluated @ {
+        as[ "LLMEvaluator", "ChatContextPreprompt" ],
+        as[ "LLMEvaluator", "Pre" ],
+        as[ "LLMEvaluator", "PromptTemplate" ],
+        as[ "ChatContextPreprompt" ],
+        as[ "Pre" ],
+        as[ "PromptTemplate" ]
+    },
+    expr_ :> With[ { e = expr }, e /; ! MissingQ @ e ]
+];
+
+getPrePrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getPostPrompt*)
+getPostPrompt // beginDefinition;
+
+getPostPrompt[ as_Association ] := toPromptString @ FirstCase[
+    Unevaluated @ {
+        as[ "LLMEvaluator", "ChatContextPostPrompt" ],
+        as[ "LLMEvaluator", "Post" ],
+        as[ "ChatContextPostPrompt" ],
+        as[ "Post" ]
+    },
+    expr_ :> With[ { e = expr }, e /; ! MissingQ @ e ]
+];
+
+getPostPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toPromptString*)
+toPromptString // beginDefinition;
+toPromptString[ string_String ] := string;
+toPromptString[ template_TemplateObject ] := With[ { string = TemplateApply @ template }, string /; StringQ @ string ];
+toPromptString[ _Missing | Automatic | Inherited | None ] := Missing[ ];
+toPromptString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2058,7 +2105,7 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_ ] := UsingFront
             "TaggingRules"
         ];
 
-        dingbat = makeOutputCellDingbat @ settings;
+        dingbat = makeOutputDingbat @ settings;
 
         Cell[
             content,
@@ -2086,8 +2133,58 @@ reformatCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*makeOutputCellDingbat*)
-makeOutputCellDingbat[ settings_ ] :=  TemplateBox[ { }, "AssistantIcon" ];
+(*makeOutputDingbat*)
+makeOutputDingbat // beginDefinition;
+makeOutputDingbat[ as: KeyValuePattern[ "LLMEvaluator" -> config_ ] ] := makeOutputDingbat[ as, config ];
+makeOutputDingbat[ as_, KeyValuePattern[ "PersonaIcon" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
+makeOutputDingbat[ as_, KeyValuePattern[ "Icon" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
+makeOutputDingbat[ as_, KeyValuePattern[ "Default" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
+makeOutputDingbat[ as_, _Association|_Missing|_Failure|None ] := TemplateBox[ { }, "AssistantIcon" ];
+makeOutputDingbat[ as_, icon_ ] := ToBoxes @ resizeDingbat @ icon;
+makeOutputDingbat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeActiveOutputDingbat*)
+makeActiveOutputDingbat // beginDefinition;
+
+makeActiveOutputDingbat[ as: KeyValuePattern[ "LLMEvaluator" -> config_ ] ] := makeActiveOutputDingbat[ as, config ];
+makeActiveOutputDingbat[ as_, KeyValuePattern[ "PersonaIcon" -> icon_ ] ] := makeActiveOutputDingbat[ as, icon ];
+makeActiveOutputDingbat[ as_, KeyValuePattern[ "Icon" -> icon_ ] ] := makeActiveOutputDingbat[ as, icon ];
+
+makeActiveOutputDingbat[ as_, KeyValuePattern[ "Active" -> icon_ ] ] :=
+    Block[ { $noActiveProgress = True }, makeActiveOutputDingbat[ as, icon ] ];
+
+makeActiveOutputDingbat[ as_, KeyValuePattern[ "Default" -> icon_ ] ] :=
+    makeActiveOutputDingbat[ as, icon ];
+
+makeActiveOutputDingbat[ as_, _Association|_Missing|_Failure|None ] :=
+    makeActiveOutputDingbat[ as, RawBoxes @ TemplateBox[ { }, "AssistantIconActive" ] ];
+
+makeActiveOutputDingbat[ as_, icon_ ] :=
+    If[ TrueQ @ $noActiveProgress,
+        TemplateBox[ { ToBoxes @ icon }, "ChatOutputStopButtonWrapper" ],
+        TemplateBox[ { ToBoxes @ icon }, "ChatOutputStopButtonProgressWrapper" ]
+    ];
+
+makeActiveOutputDingbat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*resizeDingbat*)
+resizeDingbat // beginDefinition;
+
+resizeDingbat[ icon_ ] /; $resizeDingbats := Pane[
+    icon,
+    ContentPadding  -> False,
+    FrameMargins    -> 0,
+    ImageSize       -> { 20, 20 },
+    ImageSizeAction -> "ShrinkToFit"
+];
+
+resizeDingbat[ icon_ ] := icon;
+
+resizeDingbat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

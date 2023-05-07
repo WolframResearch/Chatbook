@@ -608,6 +608,66 @@ makeIconTemplateBoxStyle /@ FileNames[ "*.wl", $iconDirectory ]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*ChatOutputStopButtonWrapper*)
+Cell[
+    StyleData[ "ChatOutputStopButtonWrapper" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ OverlayBox[
+            {
+                #1,
+                PaneSelectorBox[
+                    {
+                        False -> " ",
+                        True  -> TemplateBox[ { }, "ChatOutputStopButton" ]
+                    },
+                    Dynamic @ CurrentValue[ "MouseOver" ],
+                    ImageSize    -> All,
+                    FrameMargins -> 0
+                ]
+            },
+            { 1, 2 },
+            2,
+            Alignment -> { Right, Top }
+        ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatOutputStopButtonProgressWrapper*)
+Cell[
+    StyleData[ "ChatOutputStopButtonProgressWrapper" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ OverlayBox[
+            {
+                #1,
+                PaneSelectorBox[
+                    {
+                        False -> PaneBox[
+                            InterpretationBox[
+                                DynamicBox @ FEPrivate`FrontEndResource[ "FEExpressions", "NecklaceAnimator" ][ Tiny ],
+                                ProgressIndicator[ Appearance -> "Necklace", ImageSize -> Tiny ],
+                                BaseStyle -> { "Deploy" }
+                            ],
+                            ImageSize -> { 33, Automatic },
+                            Alignment -> Left
+                        ],
+                        True -> TemplateBox[ { }, "ChatOutputStopButton" ]
+                    },
+                    Dynamic @ CurrentValue[ "MouseOver" ],
+                    ImageSize    -> All,
+                    FrameMargins -> 0
+                ]
+            },
+            { 1, 2 },
+            2,
+            Alignment -> { Right, Top }
+        ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*AssistantIconTabbed*)
 Cell[
     StyleData[ "AssistantIconTabbed" ],
