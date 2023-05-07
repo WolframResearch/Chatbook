@@ -24,6 +24,8 @@ Needs[ "Wolfram`Chatbook`ErrorUtils`"       ];
 Needs[ "Wolfram`Chatbook`PersonaInstaller`" ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`Serialization`"    ];
+Needs[ "Wolfram`Chatbook`Formatting`"       ];
+Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -34,18 +36,6 @@ $chatInputStyles     = { "ChatInput", "ChatQuery", "ChatSystemInput" };
 $chatOutputStyles    = { "ChatOutput" };
 
 $maxChatCells = OptionValue[ CreateChatNotebook, "ChatHistoryLength" ];
-
-$$externalLanguage = "Java"|"Julia"|"Jupyter"|"NodeJS"|"Octave"|"Python"|"R"|"Ruby"|"Shell"|"SQL"|"SQL-JDBC";
-
-$externalLanguageRules = Flatten @ {
-    "JS"         -> "NodeJS",
-    "Javascript" -> "NodeJS",
-    "NPM"        -> "NodeJS",
-    "Node"       -> "NodeJS",
-    "Bash"       -> "Shell",
-    "SH"         -> "Shell",
-    Cases[ $$externalLanguage, lang_ :> (lang -> lang) ]
-};
 
 $closedChatCellOptions :=
     If[ TrueQ @ CloudSystem`$CloudNotebooks,
@@ -753,10 +743,19 @@ sendChat // endDefinition;
 (*getLLMEvaluator*)
 getLLMEvaluator // beginDefinition;
 getLLMEvaluator[ as_Association ] := getLLMEvaluator[ as, Lookup[ as, "LLMEvaluator" ] ];
-getLLMEvaluator[ as_, name_String ] := getLLMEvaluator[ as, GetPersonaData @ name ];
+getLLMEvaluator[ as_, name_String ] := getLLMEvaluator[ as, getNamedLLMEvaluator @ name ];
 getLLMEvaluator[ as_, evaluator_Association ] := evaluator;
 getLLMEvaluator[ _, _ ] := None;
 getLLMEvaluator // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getNamedLLMEvaluator*)
+getNamedLLMEvaluator // beginDefinition;
+getNamedLLMEvaluator[ name_String ] := getNamedLLMEvaluator[ name, GetPersonaData @ name ];
+getNamedLLMEvaluator[ name_String, evaluator_Association ] := Append[ evaluator, "LLMEvaluatorName" -> name ];
+getNamedLLMEvaluator[ name_String, _ ] := name;
+getNamedLLMEvaluator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1027,6 +1026,15 @@ activeAIAssistantCell[ container_, settings_, minimized_ ] :=
     ];
 
 activeAIAssistantCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*smallSettings*)
+smallSettings // beginDefinition;
+smallSettings[ as_Association ] := smallSettings[ as, as[ "LLMEvaluator" ] ];
+smallSettings[ as_, KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] := Append[ as, "LLMEvaluator" -> name ];
+smallSettings[ as_, _ ] := as;
+smallSettings // endDefinition
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1521,17 +1529,7 @@ dropDelimitedCells // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*cellStyles*)
-cellStyles // beginDefinition;
-cellStyles[ cells_ ] /; CloudSystem`$CloudNotebooks := cloudCellStyles @ cells;
-cellStyles[ cells_ ] := CurrentValue[ cells, CellStyle ];
-cellStyles // endDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*cloudCellStyles*)
-cloudCellStyles // beginDefinition;
-cloudCellStyles[ cells_ ] := Cases[ notebookRead @ cells, Cell[ _, style___String, OptionsPattern[ ] ] :> { style } ];
-cloudCellStyles // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1654,6 +1652,7 @@ systemCredential // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*cloudSystemCredential*)
 
+(* FIXME: move all cloud workarounds to separate file and define global flag to turn off workarounds *)
 cloudSystemCredential // beginDefinition;
 
 cloudSystemCredential[ name_ ] :=
@@ -2140,7 +2139,7 @@ makeOutputDingbat[ as_, KeyValuePattern[ "PersonaIcon" -> icon_ ] ] := makeOutpu
 makeOutputDingbat[ as_, KeyValuePattern[ "Icon" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
 makeOutputDingbat[ as_, KeyValuePattern[ "Default" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
 makeOutputDingbat[ as_, _Association|_Missing|_Failure|None ] := TemplateBox[ { }, "AssistantIcon" ];
-makeOutputDingbat[ as_, icon_ ] := ToBoxes @ resizeDingbat @ icon;
+makeOutputDingbat[ as_, icon_ ] := toDingbatBoxes @ resizeDingbat @ icon;
 makeOutputDingbat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -2163,11 +2162,20 @@ makeActiveOutputDingbat[ as_, _Association|_Missing|_Failure|None ] :=
 
 makeActiveOutputDingbat[ as_, icon_ ] :=
     If[ TrueQ @ $noActiveProgress,
-        TemplateBox[ { ToBoxes @ icon }, "ChatOutputStopButtonWrapper" ],
-        TemplateBox[ { ToBoxes @ icon }, "ChatOutputStopButtonProgressWrapper" ]
+        TemplateBox[ { toDingbatBoxes @ icon }, "ChatOutputStopButtonWrapper" ],
+        TemplateBox[ { toDingbatBoxes @ icon }, "ChatOutputStopButtonProgressWrapper" ]
     ];
 
 makeActiveOutputDingbat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toDingbatBoxes*)
+(* TODO: this could create a Dynamic with a unique trigger symbol that's only updated once per session *)
+
+toDingbatBoxes // beginDefinition;
+toDingbatBoxes[ icon_ ] := toDingbatBoxes[ icon ] = toCompressedBoxes @ icon;
+toDingbatBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2233,7 +2241,7 @@ makeCompactChatData[
 ] :=
     BaseEncode @ BinarySerialize[
         Association[
-            KeyDrop[ as, "OpenAIKey" ],
+            smallSettings @ KeyDrop[ as, "OpenAIKey" ],
             "MessageTag" -> tag,
             "Data" -> Association[
                 data,
@@ -2246,642 +2254,8 @@ makeCompactChatData[
 makeCompactChatData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*reformatTextData*)
-reformatTextData // beginDefinition;
-
-reformatTextData[ string_String ] := joinAdjacentStrings @ Flatten @ Map[
-    makeResultCell,
-    StringSplit[
-        $reformattedString = string,
-        {
-            StringExpression[
-                    Longest[ "```" ~~ lang: Except[ WhitespaceCharacter ].. /; externalLanguageQ @ lang ],
-                    Shortest[ code__ ] ~~ ("```"|EndOfString)
-                ] :> externalCodeCell[ lang, code ]
-            ,
-            Longest[ "```" ~~ ($wlCodeString|"") ] ~~ Shortest[ code__ ] ~~ ("```"|EndOfString) :>
-                If[ nameQ[ "System`"<>code ], inlineCodeCell @ code, codeCell @ code ]
-            ,
-            "\n" ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
-            "\n" ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ],
-            "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :> hyperlinkCell[ label, url ],
-            "\\`" :> "`",
-            "\\$" :> "$",
-            "``" ~~ code__ ~~ "``" /; StringFreeQ[ code, "``" ] :> inlineCodeCell @ code,
-            "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`" /; inlineSyntaxQ @ code :> inlineCodeCell @ code,
-            "`" ~~ code: Except[ "`" ].. ~~ "`" :> inlineCodeCell @ code,
-            "$$" ~~ math: Except[ "$" ].. ~~ "$$" :> mathCell @ math,
-            "$" ~~ math: Except[ "$" ].. ~~ "$" :> mathCell @ math
-        },
-        IgnoreCase -> True
-    ]
-];
-
-reformatTextData[ other_ ] := other;
-
-reformatTextData // endDefinition;
-
-
-$wlCodeString = Longest @ Alternatives[
-    "Wolfram Language",
-    "WolframLanguage",
-    "Wolfram",
-    "Mathematica"
-];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*inlineSyntaxQ*)
-inlineSyntaxQ[ s_String ] := ! StringStartsQ[ s, "`" ] && Internal`SymbolNameQ[ unescapeInlineMarkdown @ s<>"x", True ];
-inlineSyntaxQ[ ___ ] := False;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*joinAdjacentStrings*)
-joinAdjacentStrings // beginDefinition;
-joinAdjacentStrings[ content_List ] := joinAdjacentStrings0 /@ SplitBy[ content, StringQ ];
-joinAdjacentStrings // endDefinition;
-
-joinAdjacentStrings0 // beginDefinition;
-
-joinAdjacentStrings0[ { strings__String } ] :=
-    StringReplace[ StringJoin @ strings, c: Except[ "\n" ]~~"\n"~~EndOfString :> c<>" \n" ];
-
-joinAdjacentStrings0[ { other___ } ] := other;
-
-joinAdjacentStrings0 // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*nameQ*)
-nameQ[ "*"|"**" ] := False;
-nameQ[ s_String? StringQ ] := StringFreeQ[ s, Verbatim[ "*" ] | Verbatim[ "@" ] ] && NameQ @ s;
-nameQ[ ___ ] := False;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*externalLanguageQ*)
-externalLanguageQ // ClearAll;
-
-externalLanguageQ[ $$externalLanguage ] := True;
-
-externalLanguageQ[ str_String? StringQ ] := externalLanguageQ[ str ] =
-    StringMatchQ[
-        StringReplace[ StringTrim @ str, $externalLanguageRules, IgnoreCase -> True ],
-        $$externalLanguage,
-        IgnoreCase -> True
-    ];
-
-externalLanguageQ[ ___ ] := False;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*cellOpenQ*)
-cellOpenQ // beginDefinition;
-cellOpenQ[ cell_CellObject ] /; CloudSystem`$CloudNotebooks := Lookup[ Options[ cell, CellOpen ], CellOpen, True ];
-cellOpenQ[ cell_CellObject ] := CurrentValue[ cell, CellOpen ];
-cellOpenQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*makeResultCell*)
-makeResultCell // beginDefinition;
-
-makeResultCell[ expr_ ] /; $dynamicText :=
-    Lookup[ $resultCellCache,
-            HoldComplete @ expr,
-            $resultCellCache[ HoldComplete @ expr ] = makeResultCell0 @ expr
-    ];
-
-makeResultCell[ expr_ ] := makeResultCell0 @ expr;
-
-makeResultCell // endDefinition;
-
-
-$resultCellCache = <| |>;
-
-
-makeResultCell0 // beginDefinition;
-
-makeResultCell0[ str_String ] := formatTextString @ str;
-
-makeResultCell0[ codeCell[ code_String ] ] := makeInteractiveCodeCell @ StringTrim @ code;
-
-makeResultCell0[ externalCodeCell[ lang_String, code_String ] ] :=
-    makeInteractiveCodeCell[
-        StringReplace[ StringTrim @ lang, $externalLanguageRules, IgnoreCase -> True ],
-        StringTrim @ code
-    ];
-
-makeResultCell0[ inlineCodeCell[ code_String ] ] := makeInlineCodeCell @ code;
-
-makeResultCell0[ mathCell[ math_String ] ] :=
-    With[ { boxes = Quiet @ InputAssistant`TeXAssistant @ StringTrim @ math },
-        If[ MatchQ[ boxes, _RawBoxes ],
-            Cell @ BoxData @ FormBox[ ToBoxes @ boxes, TraditionalForm ],
-            makeResultCell0 @ inlineCodeCell @ math
-        ]
-    ];
-
-makeResultCell0[ hyperlinkCell[ label_String, url_String ] ] := hyperlink[ label, url ];
-
-makeResultCell0[ bulletCell[ whitespace_String, item_String ] ] := Flatten @ {
-    $tinyLineBreak,
-    whitespace,
-    StyleBox[ "\[Bullet]", FontColor -> GrayLevel[ 0.5 ] ],
-    " ",
-    reformatTextData @ item,
-    $tinyLineBreak
-};
-
-makeResultCell0[ sectionCell[ n_, section_String ] ] := Flatten @ {
-    "\n",
-    StyleBox[ formatTextString @ section, sectionStyle @ n, "InlineSection", FontSize -> .8*Inherited ],
-    $tinyLineBreak
-};
-
-makeResultCell0 // endDefinition;
-
-
-sectionStyle[ 1 ] := "Section";
-sectionStyle[ 2 ] := "Subsection";
-sectionStyle[ 3 ] := "Subsubsection";
-sectionStyle[ 4 ] := "Subsubsubsection";
-sectionStyle[ _ ] := "Subsubsubsubsection";
-
-$tinyLineBreak = StyleBox[ "\n", "TinyLineBreak", FontSize -> 3 ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*formatTextString*)
-formatTextString // beginDefinition;
-
-formatTextString[ str_String ] := StringSplit[
-    StringReplace[ str, { StartOfString~~"\n\n" -> "\n", "\n\n"~~EndOfString -> "\n" } ],
-    $stringFormatRules,
-    IgnoreCase -> True
-];
-
-formatTextString // endDefinition;
-
-$stringFormatRules = {
-    "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :> hyperlink[ label, url ],
-    "***" ~~ text: Except[ "*" ].. ~~ "***" :> styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
-    "___" ~~ text: Except[ "_" ].. ~~ "___" :> styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
-    "**" ~~ text: Except[ "*" ].. ~~ "**" :> styleBox[ text, FontWeight -> Bold ],
-    "__" ~~ text: Except[ "_" ].. ~~ "__" :> styleBox[ text, FontWeight -> Bold ],
-    "*" ~~ text: Except[ "*" ].. ~~ "*" :> styleBox[ text, FontSlant -> Italic ],
-    "_" ~~ text: Except[ "_" ].. ~~ "_" :> styleBox[ text, FontSlant -> Italic ]
-};
-
-styleBox // ClearAll;
-
-styleBox[ text_String, a___ ] := styleBox[ formatTextString @ text, a ];
-styleBox[ { text: _ButtonBox|_String }, a___ ] := StyleBox[ text, a ];
-styleBox[ { (h: Cell|StyleBox)[ text_, a___ ] }, b___ ] := DeleteDuplicates @ StyleBox[ text, a, b ];
-
-styleBox[ { a___, b: Except[ _ButtonBox|_Cell|_String|_StyleBox ], c___ }, d___ ] :=
-    styleBox[ { a, Cell @ BoxData @ b, c }, d ];
-
-styleBox[ a_, ___ ] := a;
-
-
-hyperlink // ClearAll;
-
-hyperlink[ label_String, uri_String ] /; StringStartsQ[ uri, "paclet:" ] :=
-    Cell @ BoxData @ TemplateBox[ { StringTrim[ label, (Whitespace|"`").. ], uri }, "TextRefLink" ];
-
-hyperlink[ label_String, url_String ] := hyperlink[ formatTextString @ label, url ];
-
-hyperlink[ { label: _String|_StyleBox }, url_ ] := ButtonBox[
-    label,
-    BaseStyle  -> "Hyperlink",
-    ButtonData -> { URL @ url, None },
-    ButtonNote -> url
-];
-
-hyperlink[ a_, ___ ] := a;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*makeInlineCodeCell*)
-makeInlineCodeCell // beginDefinition;
-
-makeInlineCodeCell[ s_String? nameQ ] /; Context @ s === "System`" :=
-    hyperlink[ s, "paclet:ref/" <> Last @ StringSplit[ s, "`" ] ];
-
-makeInlineCodeCell[ s_String? LowerCaseQ ] := StyleBox[ unescapeInlineMarkdown @ s, "TI" ];
-
-makeInlineCodeCell[ code_String ] /; $dynamicText := Cell[
-    BoxData @ TemplateBox[ { stringToBoxes @ unescapeInlineMarkdown @ code }, "ChatCodeInlineTemplate" ],
-    "ChatCodeActive"
-];
-
-makeInlineCodeCell[ code0_String ] :=
-    With[ { code = unescapeInlineMarkdown @ code0 },
-        If[ SyntaxQ @ code,
-            Cell[
-                BoxData @ TemplateBox[ { stringToBoxes @ code }, "ChatCodeInlineTemplate" ],
-                "ChatCode",
-                Background -> GrayLevel[ 1 ]
-            ],
-            Cell[
-                BoxData @ TemplateBox[ { Cell[ code, Background -> GrayLevel[ 1 ] ] }, "ChatCodeInlineTemplate" ],
-                "ChatCodeActive",
-                Background -> GrayLevel[ 1 ]
-            ]
-        ]
-    ];
-
-makeInlineCodeCell // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*unescapeInlineMarkdown*)
-unescapeInlineMarkdown // beginDefinition;
-unescapeInlineMarkdown[ str_String ] := StringReplace[ str, { "\\`" -> "`", "\\$" -> "$" } ];
-unescapeInlineMarkdown // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*makeInteractiveCodeCell*)
-makeInteractiveCodeCell // beginDefinition;
-
-(* TODO: define template boxes for these *)
-makeInteractiveCodeCell[ string_String ] /; $dynamicText :=
-    codeBlockFrame[ Cell[ BoxData @ string, "ChatCodeActive" ], string ];
-
-makeInteractiveCodeCell[ string_String ] :=
-    Module[ { display, handler },
-        display = RawBoxes @ Cell[
-            BoxData @ stringToBoxes @ string,
-            "ChatCode",
-            "Input",
-            Background -> GrayLevel[ 1 ]
-        ];
-        handler = inlineInteractiveCodeCell[ display, string ];
-        codeBlockFrame[ Cell @ BoxData @ ToBoxes @ handler, string ]
-    ];
-
-makeInteractiveCodeCell[ lang_String, code_String ] :=
-    Module[ { cell, display, handler },
-        cell = Cell[ code, "ExternalLanguage", FontSize -> 14, System`CellEvaluationLanguage -> lang ];
-        display = RawBoxes @ Cell[
-            code,
-            "ExternalLanguage",
-            System`CellEvaluationLanguage -> lang,
-            FontSize   -> 14,
-            Background -> None,
-            CellFrame  -> None
-        ];
-        handler = inlineInteractiveCodeCell[ display, cell ];
-        codeBlockFrame[ Cell @ BoxData @ ToBoxes @ handler, code, lang ]
-    ];
-
-makeInteractiveCodeCell // endDefinition;
-
-
-codeBlockFrame[ cell_, string_ ] := codeBlockFrame[ cell, string, "Wolfram" ];
-
-codeBlockFrame[ cell_, string_, lang_ ] :=
-    Cell[
-        BoxData @ TemplateBox[ { cell }, "ChatCodeBlockTemplate" ],
-        "ChatCodeBlock",
-        Background -> None
-    ];
-
-
-inlineInteractiveCodeCell // beginDefinition;
-
-inlineInteractiveCodeCell[ display_, string_ ] /; $dynamicText := display;
-
-inlineInteractiveCodeCell[ display_, string_String ] /; CloudSystem`$CloudNotebooks :=
-    Button[ display, CellPrint @ Cell[ BoxData @ string, "Input" ], Appearance -> None ];
-
-inlineInteractiveCodeCell[ display_, cell_Cell ] /; CloudSystem`$CloudNotebooks :=
-    Button[ display, CellPrint @ cell, Appearance -> None ];
-
-inlineInteractiveCodeCell[ display_, string_ ] :=
-    inlineInteractiveCodeCell[ display, string, contentLanguage @ string ];
-
-inlineInteractiveCodeCell[ display_, string_, lang_ ] :=
-    DynamicModule[ { $CellContext`attached },
-        EventHandler[
-            display,
-            {
-                "MouseEntered" :> (
-                    Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
-                        "AttachCodeButtons",
-                        Dynamic[ $CellContext`attached ],
-                        EvaluationCell[ ],
-                        string,
-                        lang
-                    ]
-                )
-            }
-        ],
-        TaggingRules -> <| "CellToStringType" -> "InlineInteractiveCodeCell", "CodeLanguage" -> lang |>,
-        UnsavedVariables :> { $CellContext`attached }
-    ];
-
-inlineInteractiveCodeCell // endDefinition;
-
-
-floatingButtonGrid // Attributes = { HoldFirst };
-floatingButtonGrid[ attached_, string_, lang_ ] := RawBoxes @ TemplateBox[
-    {
-        ToBoxes @ Grid[
-            {
-                {
-                    button[ evaluateLanguageLabel @ lang, insertCodeBelow[ string, True ]; NotebookDelete @ attached ],
-                    button[ $insertInputButtonLabel, insertCodeBelow[ string, False ]; NotebookDelete @ attached ],
-                    button[ $copyToClipboardButtonLabel, NotebookDelete @ attached; CopyToClipboard @ string ]
-                }
-            },
-            Alignment -> Top,
-            Spacings -> 0.2,
-            FrameStyle -> GrayLevel[ 0.85 ]
-        ]
-    },
-    "ChatCodeBlockButtonPanel"
-];
-
-insertCodeBelow[ cell_Cell, evaluate_: False ] :=
-    Module[ { cellObj, nbo },
-        cellObj = topParentCell @ EvaluationCell[ ];
-        nbo  = parentNotebook @ cellObj;
-        SelectionMove[ cellObj, After, Cell ];
-        NotebookWrite[ nbo, cell, All ];
-        If[ TrueQ @ evaluate,
-            SelectionEvaluateCreateCell @ nbo,
-            SelectionMove[ nbo, After, CellContents ]
-        ]
-    ];
-
-insertCodeBelow[ string_String, evaluate_: False ] := insertCodeBelow[ Cell[ BoxData @ string, "Input" ], evaluate ];
-
-
-(* FIXME: move this stuff to the stylesheet *)
-
-$copyToClipboardButtonLabel := $copyToClipboardButtonLabel = fancyTooltip[
-    MouseAppearance[
-        buttonMouseover[
-            buttonFrameDefault @ RawBoxes @ TemplateBox[ { }, "AssistantCopyClipboard" ],
-            buttonFrameActive @ RawBoxes @ TemplateBox[ { }, "AssistantCopyClipboard" ]
-        ],
-        "LinkHand"
-    ],
-    "Copy to clipboard"
-];
-
-$insertInputButtonLabel := $insertInputButtonLabel = fancyTooltip[
-    MouseAppearance[
-        buttonMouseover[
-            buttonFrameDefault @ RawBoxes @ TemplateBox[ { }, "AssistantCopyBelow" ],
-            buttonFrameActive @ RawBoxes @ TemplateBox[ { }, "AssistantCopyBelow" ]
-        ],
-        "LinkHand"
-    ],
-    "Insert content as new input cell below"
-];
-
-$insertEvaluateButtonLabel := $insertEvaluateButtonLabel = fancyTooltip[
-    MouseAppearance[
-        buttonMouseover[
-            buttonFrameDefault @ RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
-            buttonFrameActive @ RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ]
-        ],
-        "LinkHand"
-    ],
-    "Insert content as new input cell below and evaluate"
-];
-
-
-evaluateLanguageLabel // ClearAll;
-
-evaluateLanguageLabel[ name_String ] :=
-    With[ { icon = $languageIcons @ name },
-        fancyTooltip[
-            MouseAppearance[ buttonMouseover[ buttonFrameDefault @ icon, buttonFrameActive @ icon ], "LinkHand" ],
-            "Insert content as new input cell below and evaluate"
-        ] /; MatchQ[ icon, _Graphics | _Image ]
-    ];
-
-evaluateLanguageLabel[ ___ ] := $insertEvaluateButtonLabel;
-
-
-
-$languageIcons := $languageIcons = Enclose[
-    ExternalEvaluate;
-    Select[
-        AssociationMap[
-            ReleaseHold @ ExternalEvaluate`Private`GetLanguageRules[ #1, "Icon" ] &,
-            ConfirmMatch[ ExternalEvaluate`Private`GetLanguageRules[ ], _List ]
-        ],
-        MatchQ[ _Graphics|_Image ]
-    ],
-    <| |> &
-];
-
-
-buttonMouseover[ a_, b_ ] := Mouseover[ a, b ];
-
-buttonFrameDefault[ expr_ ] :=
-    Framed[
-        buttonPane @ expr,
-        FrameStyle     -> GrayLevel[ 0.95 ],
-        Background     -> GrayLevel[ 1 ],
-        FrameMargins   -> 0,
-        RoundingRadius -> 2
-    ];
-
-buttonFrameActive[ expr_ ] :=
-    Framed[
-        buttonPane @ expr,
-        FrameStyle     -> GrayLevel[ 0.82 ],
-        Background     -> GrayLevel[ 1 ],
-        FrameMargins   -> 0,
-        RoundingRadius -> 2
-    ];
-
-buttonPane[ expr_ ] :=
-    Pane[ expr, ImageSize -> { 24, 24 }, ImageSizeAction -> "ShrinkToFit", Alignment -> { Center, Center } ];
-
-fancyTooltip[ expr_, tooltip_ ] := Tooltip[
-    expr,
-    Framed[
-        Style[
-            tooltip,
-            "Text",
-            FontColor    -> RGBColor[ 0.53725, 0.53725, 0.53725 ],
-            FontSize     -> 12,
-            FontWeight   -> "Plain",
-            FontTracking -> "Plain"
-        ],
-        Background   -> RGBColor[ 0.96078, 0.96078, 0.96078 ],
-        FrameStyle   -> RGBColor[ 0.89804, 0.89804, 0.89804 ],
-        FrameMargins -> 8
-    ],
-    TooltipDelay -> 0.15,
-    TooltipStyle -> { Background -> None, CellFrame -> 0 }
-];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*contentLanguage*)
-contentLanguage // ClearAll;
-contentLanguage[ Cell[ __, "CellEvaluationLanguage" -> lang_String, ___ ] ] := lang;
-contentLanguage[ Cell[ __, System`CellEvaluationLanguage -> lang_String, ___ ] ] := lang;
-contentLanguage[ ___ ] := "Wolfram";
-
-(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*FrontEnd Utilities*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*cellInformation*)
-cellInformation // beginDefinition;
-
-cellInformation[ nbo_NotebookObject ] := cellInformation @ Cells @ nbo;
-
-cellInformation[ cells: { ___CellObject } ] := Map[
-    Association,
-    Transpose @ {
-        Thread[ "CellObject" -> cells ],
-        Developer`CellInformation @ cells,
-        Thread[ "CellAutoOverwrite" -> CurrentValue[ cells, CellAutoOverwrite ] ]
-    }
-];
-
-cellInformation[ cell_CellObject ] := Association[
-    "CellObject" -> cell,
-    Developer`CellInformation @ cell,
-    "CellAutoOverwrite" -> CurrentValue[ cell, CellAutoOverwrite ]
-];
-
-cellInformation // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*button*)
-button // Attributes = { HoldRest };
-button[ label_, code_ ] :=
-    Button[
-        label,
-        code,
-        Appearance -> Dynamic @ FEPrivate`FrontEndResource[ "FEExpressions", "SuppressMouseDownNinePatchAppearance" ]
-    ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*stringTemplateInput*)
-(* TODO: use something simpler/faster *)
-
-stringTemplateInput // ClearAll;
-
-stringTemplateInput[ s_String? StringQ ] := stringToBoxes @ s;
-
-stringTemplateInput[ ___ ] := $Failed;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*stringToBoxes*)
-stringToBoxes // beginDefinition;
-stringToBoxes[ s_String ] /; $dynamicText := s;
-stringToBoxes[ s_String ] := removeExtraBoxSpaces @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ s;
-stringToBoxes // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*removeExtraBoxSpaces*)
-removeExtraBoxSpaces // beginDefinition;
-removeExtraBoxSpaces[ row: RowBox @ { "(*", ___, "*)" } ] := row;
-removeExtraBoxSpaces[ RowBox[ items_List ] ] := RowBox[ removeExtraBoxSpaces /@ DeleteCases[ items, " " ] ];
-removeExtraBoxSpaces[ other_ ] := other;
-removeExtraBoxSpaces // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*topParentCell*)
-topParentCell // beginDefinition;
-topParentCell[ cell_CellObject ] := With[ { p = ParentCell @ cell }, topParentCell @ p /; MatchQ[ p, _CellObject ] ];
-topParentCell[ cell_CellObject ] := cell;
-topParentCell // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*notebookRead*)
-notebookRead // beginDefinition;
-notebookRead[ cells_ ] /; CloudSystem`$CloudNotebooks := cloudNotebookRead @ cells;
-notebookRead[ cells_ ] := NotebookRead @ cells;
-notebookRead // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*cloudNotebookRead*)
-cloudNotebookRead // beginDefinition;
-cloudNotebookRead[ cells: { ___CellObject } ] := NotebookRead /@ cells;
-cloudNotebookRead[ cell_ ] := NotebookRead @ cell;
-cloudNotebookRead // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*parentNotebook*)
-parentNotebook // beginDefinition;
-parentNotebook[ cell_CellObject ] /; CloudSystem`$CloudNotebooks := Notebooks @ cell;
-parentNotebook[ cell_CellObject ] := ParentNotebook @ cell;
-parentNotebook // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*cellPrintAfter*)
-cellPrintAfter // ClearAll;
-
-cellPrintAfter[ target_ ][ cell_ ] := cellPrintAfter[ target, cell ];
-
-cellPrintAfter[ target_CellObject, cell: Cell[ __, ExpressionUUID -> uuid_, ___ ] ] := (
-    SelectionMove[ target, After, Cell, AutoScroll -> False ];
-    NotebookWrite[ parentNotebook @ target, cell ];
-    CellObject @ uuid
-);
-
-cellPrintAfter[ target_CellObject, cell_Cell ] :=
-    cellPrintAfter[ target, Append[ cell, ExpressionUUID -> CreateUUID[ ] ] ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*cellPrint*)
-cellPrint // beginDefinition;
-cellPrint[ cell_Cell ] /; CloudSystem`$CloudNotebooks := cloudCellPrint @ cell;
-cellPrint[ cell_Cell ] := MathLink`CallFrontEnd @ FrontEnd`CellPrintReturnObject @ cell;
-cellPrint // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*cloudCellPrint*)
-cloudCellPrint // beginDefinition;
-
-cloudCellPrint[ cell0_Cell ] :=
-    Enclose @ Module[ { cellUUID, nbUUID, cell },
-        cellUUID = CreateUUID[ ];
-        nbUUID   = ConfirmBy[ cloudNotebookUUID[ ], StringQ ];
-        cell     = Append[ DeleteCases[ cell0, ExpressionUUID -> _ ], ExpressionUUID -> cellUUID ];
-        CellPrint @ cell;
-        CellObject[ cellUUID, nbUUID ]
-    ];
-
-cloudCellPrint // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*cloudNotebookUUID*)
-cloudNotebookUUID // beginDefinition;
-cloudNotebookUUID[ ] := cloudNotebookUUID[ EvaluationNotebook[ ] ];
-cloudNotebookUUID[ NotebookObject[ _, uuid_String ] ] := uuid;
-cloudNotebookUUID // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -2930,10 +2304,6 @@ If[ Wolfram`Chatbook`Internal`$BuildingMX,
     $apiKeyDialogDescription;
     $promptStrings;
     $promptTemplate;
-    $copyToClipboardButtonLabel;
-    $insertInputButtonLabel;
-    $insertEvaluateButtonLabel;
-    $languageIcons;
 ];
 
 End[ ];
