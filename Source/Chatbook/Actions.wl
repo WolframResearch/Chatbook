@@ -147,9 +147,18 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
     EvaluateChatInput[ evalCell, nbo, Association @ CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings" } ] ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
-    Block[ { $autoAssistMode = False }, sendChat[ evalCell, nbo, settings ] ];
+    Block[ { $autoAssistMode = False }, waitForLastTask[ ]; sendChat[ evalCell, nbo, settings ] ];
 
 EvaluateChatInput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*waitForLastTask*)
+waitForLastTask // beginDefinition;
+waitForLastTask[ ] := waitForLastTask @ $lastTask;
+waitForLastTask[ task_TaskObject ] := TaskWait @ task;
+waitForLastTask[ HoldPattern[ $lastTask ] ] := Null;
+waitForLastTask // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
