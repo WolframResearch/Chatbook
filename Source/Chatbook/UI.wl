@@ -1358,7 +1358,7 @@ MakeChatInputCellDingbat[] := With[{}, Module[{
 			]
 		},
 		Dynamic[CurrentValue["MouseOver"]],
-		ImageSize -> Automatic
+		ImageSize -> All
 	]
 ]]
 
