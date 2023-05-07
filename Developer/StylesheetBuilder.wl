@@ -297,15 +297,17 @@ $tabbedOutputControls = Column[
 ];
 
 
-$tabbedChatOutputCellDingbat = Column[
+tabbedChatOutputCellDingbat[ arg_ ] := Column[
     {
         Style[ "", ShowStringCharacters -> False ],
-        RawBoxes @ TemplateBox[ { }, "AssistantIcon" ],
+        RawBoxes @ arg,
         $tabbedOutputControls
     },
     Alignment -> Center,
     Spacings  -> 0.1
 ];
+
+$chatInputCellDingbat = Wolfram`Chatbook`UI`MakeChatInputCellDingbat[]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
