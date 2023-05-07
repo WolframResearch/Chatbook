@@ -77,17 +77,10 @@ Cell[
     MenuSortingValue  -> 1000,
     StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "ChatQuery", "Backspace" -> "Input" },
 	CellDingbat -> Cell[
-		BoxData @ DynamicBox[
-			ToBoxes[
-				(
-					Wolfram`Chatbook`UI`$ChatInputMenuDataChanged;
-
-					Symbol["Wolfram`Chatbook`UI`MakeChatInputCellDingbat"][]
-				),
-				StandardForm
-			],
-			TrackedSymbols :> {Wolfram`Chatbook`UI`$ChatInputMenuDataChanged}
-		],
+		BoxData @ RowBox[{
+			TemplateBox[{}, "ChatCounterLabel"],
+			ToBoxes @ $chatInputCellDingbat
+		}],
 		Background -> None,
 		CellFrame -> 0
 	],
@@ -615,11 +608,71 @@ makeIconTemplateBoxStyle /@ FileNames[ "*.wl", $iconDirectory ]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*ChatOutputStopButtonWrapper*)
+Cell[
+    StyleData[ "ChatOutputStopButtonWrapper" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ OverlayBox[
+            {
+                #1,
+                PaneSelectorBox[
+                    {
+                        False -> " ",
+                        True  -> TemplateBox[ { }, "ChatOutputStopButton" ]
+                    },
+                    Dynamic @ CurrentValue[ "MouseOver" ],
+                    ImageSize    -> All,
+                    FrameMargins -> 0
+                ]
+            },
+            { 1, 2 },
+            2,
+            Alignment -> { Right, Top }
+        ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatOutputStopButtonProgressWrapper*)
+Cell[
+    StyleData[ "ChatOutputStopButtonProgressWrapper" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ OverlayBox[
+            {
+                #1,
+                PaneSelectorBox[
+                    {
+                        False -> PaneBox[
+                            InterpretationBox[
+                                DynamicBox @ FEPrivate`FrontEndResource[ "FEExpressions", "NecklaceAnimator" ][ Tiny ],
+                                ProgressIndicator[ Appearance -> "Necklace", ImageSize -> Tiny ],
+                                BaseStyle -> { "Deploy" }
+                            ],
+                            ImageSize -> { 33, Automatic },
+                            Alignment -> Left
+                        ],
+                        True -> TemplateBox[ { }, "ChatOutputStopButton" ]
+                    },
+                    Dynamic @ CurrentValue[ "MouseOver" ],
+                    ImageSize    -> All,
+                    FrameMargins -> 0
+                ]
+            },
+            { 1, 2 },
+            2,
+            Alignment -> { Right, Top }
+        ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*AssistantIconTabbed*)
 Cell[
     StyleData[ "AssistantIconTabbed" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $tabbedChatOutputCellDingbat
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ tabbedChatOutputCellDingbat @ #
     }
 ]
 
@@ -660,7 +713,7 @@ Cell[
             CounterBox["ChatInputCount"],
             FontFamily -> "Source Sans Pro",
             FontSize -> 10,
-            FontColor -> GrayLevel[ 0.2 ],
+            FontColor -> RGBColor[0.55433, 0.707942, 0.925795],
             FontWeight -> Plain
         ]
     }
