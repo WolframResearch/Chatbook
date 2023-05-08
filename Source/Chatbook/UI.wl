@@ -25,6 +25,11 @@ MakeChatInputCellDingbat
 MakeChatDelimiterCellDingbat
 GetChatInputLLMConfigurationSelectorMenuData
 
+GeneralUtilities`SetUsage[CreatePreferencesContent, "
+CreatePreferencesContent[] returns an expression containing the UI shown in the Preferences > AI Settings window.
+"]
+
+
 Begin["`Private`"]
 
 Needs["Wolfram`Chatbook`"]
@@ -39,6 +44,8 @@ Needs["Wolfram`Chatbook`Menus`"]
 Needs["Wolfram`Chatbook`Personas`"]
 Needs["Wolfram`Chatbook`PersonaInstaller`"]
 Needs["Wolfram`Chatbook`FrontEnd`"]
+
+Needs["Wolfram`PreferencesUtils`" -> "PrefUtils`"]
 
 
 Needs["Wolfram`Chatbook`ServerSentEventUtils`" -> None]
@@ -83,6 +90,150 @@ GetChatEnvironmentValues[promptCell_, evaluationCell_, chatContextCells_] := Wit
 		"ChatContextPostEvaluationFunction" -> Lookup[chatContextTaggingRules, "ChatContextPostEvaluationFunction", Automatic]
 	|>
 ]
+
+(*====================================*)
+
+CreatePreferencesContent[] := Module[{
+	(* Make a hidden notebook using the Chatbook stylesheet, so that we can
+		look up TemplateBox[..] persona icon data in it. *)
+	fakeChatNB = NotebookPut[Notebook[
+		{},
+		StyleDefinitions -> "Chatbook.nb",
+		WindowTitle -> "Fake Chatbook for icon lookup",
+		Visible -> False
+	]],
+	getTemplateIcon,
+	personas = GetPersonasAssociation[],
+	chatbookSettings,
+	llmEvaluatorNamesSettings,
+	services,
+	grid
+},
+	getTemplateIcon = Function[iconStyle,
+		RawBoxes @ CurrentValue[fakeChatNB, {
+			StyleDefinitions,
+			iconStyle,
+			TemplateBoxOptions,
+			DisplayFunction
+		}][]
+	];
+
+	(*================================*)
+
+	llmEvaluatorNamesSettings = Grid[
+		Prepend[
+			KeyValueMap[
+				{name, fields} |-> {
+					Replace[Lookup[fields, "Icon", None], {
+						None -> "",
+						RawBoxes[TemplateBox[{}, iconStyle_?StringQ]] :> (
+							getTemplateIcon[iconStyle]
+						),
+						icon_ :> icon
+					}],
+					name,
+					""
+				},
+				personas
+			],
+			{"", "Name", "Description"}
+		],
+		Background -> {None, {1 -> GrayLevel[0.95]}},
+		Dividers -> {False, {False, {1 -> True, 2 -> True}}},
+		Alignment -> {Left, Center}
+	];
+
+	chatbookSettings = Grid[{
+		{Row[{
+			tr["Default LLM Evaluator:"],
+			PopupMenu[
+				Dynamic[CurrentValue[$FrontEnd, {System`LLMEvaluator}]],
+				Keys @ personas
+			]
+		}, Spacer[3]]},
+		{Row[{
+			Checkbox[Dynamic[
+				CurrentValue[
+					$FrontEnd,
+					{
+						PrivateFrontEndOptions,
+						"InterfaceSettings",
+						"ChatNotebooks",
+						"Assistance"
+					}
+				]
+			]],
+			"Provide automatic assistance"
+		}]}
+	},
+		Alignment -> {Left, Baseline},
+		Spacings -> {0, 0.7}
+	];
+
+	services = Grid[{
+		{"",                            "Name", "State"},
+		{getTemplateIcon["OpenAILogo"], "OpenAI", "<Connected>"},
+		{"",                            "Bard", Style["Coming soon", Italic]},
+		{"",                            "Claude", Style["Coming soon", Italic]}
+	},
+		Background -> {None, {1 -> GrayLevel[0.95]}},
+		Dividers -> {False, {False, {1 -> True, 2 -> True}}},
+		Alignment -> {Left, Center}
+	];
+
+	(*-----------------------------------------*)
+	(* Return the complete settings expression *)
+	(*-----------------------------------------*)
+
+	PrefUtils`PreferencesPane[
+		{
+			PrefUtils`PreferencesSection[
+				Style[tr["Chat Notebook Interface"], "subsectionText"],
+				chatbookSettings
+			],
+			PrefUtils`PreferencesSection[
+				Style[tr["Installed LLM Evaluators"], "subsectionText"],
+				llmEvaluatorNamesSettings
+			],
+			PrefUtils`PreferencesSection[
+				Style[tr["LLM Service Providers"], "subsectionText"],
+				services
+			]
+		},
+		PrefUtils`PreferencesResetButton[
+			FrontEndExecute @ FrontEnd`RemoveOptions[$FrontEnd, {
+				System`LLMEvaluator,
+			}];
+
+			CurrentValue[
+				$FrontEnd,
+				{
+					PrivateFrontEndOptions,
+					"InterfaceSettings",
+					"ChatNotebooks"
+				}
+			] = Inherited;
+		]
+	]
+]
+
+(*====================================*)
+
+(* TODO: Make this look up translations for `name` in text resources data files. *)
+tr[name_?StringQ] := name
+
+(*
+
+
+	Checkbox @ Dynamic[
+		CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "ChatNotebooks", "IncludeHistory"}]
+	]
+
+		- True -- include any history cells that the persona wants
+		- False -- never include any history
+		- {"Style1", "Style2", ...}
+*)
+
 
 
 (*====================================*)
