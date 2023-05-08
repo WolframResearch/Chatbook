@@ -16,6 +16,7 @@ PacletObject[<|
 	"Extensions" -> {
 		{"Kernel", "Root" -> "Source/Startup/Begin", "Context" -> "Wolfram`Chatbook`BeginStartup`"},
 		{"Kernel", "Root" -> "Source/Chatbook", "Context" -> "Wolfram`Chatbook`"},
+		{"Kernel", "Root" -> "Source/PreferencesUtils", "Context" -> "Wolfram`PreferencesUtils`"},
 		{"Kernel", "Root" -> "Source/Startup/End", "Context" -> "Wolfram`Chatbook`EndStartup`"},
 		{"Asset",
 			"Root" -> "Assets",
