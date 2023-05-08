@@ -258,7 +258,7 @@ CopyChatObject // endDefinition;
 constructChatObject // beginDefinition;
 
 constructChatObject[ messages_List ] :=
-    With[ { chat = createChat[ Append[ KeyMap[ Capitalize, #1 ], "Timestamp" -> Now ] & /@ messages ] },
+    With[ { chat = chatObject[ Append[ KeyMap[ Capitalize, #1 ], "Timestamp" -> Now ] & /@ messages ] },
         chat /; MatchQ[ chat, _chatObject ]
     ];
 
@@ -267,7 +267,6 @@ constructChatObject[ messages_List ] :=
 
 constructChatObject // endDefinition;
 
-createChat := createChat = Symbol[ "System`CreateChat" ];
 chatObject := chatObject = Symbol[ "System`ChatObject" ];
 
 (* ::**************************************************************************************************************:: *)
