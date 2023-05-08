@@ -34,7 +34,7 @@ MakeMenu[
 	Pane[
 		RawBoxes @ TemplateBox[
 			{
-				ToBoxes @ Column[ menuItem /@ items, ItemSize -> { Full, 0 }, Spacings -> 0, Alignment -> Left ],
+				ToBoxes @ Column[ menuItem /@ items, ItemSize -> Automatic, Spacings -> 0, Alignment -> Left ],
 				FrameMargins   -> 3,
 				Background     -> GrayLevel[ 0.98 ],
 				RoundingRadius -> 3,
@@ -78,6 +78,9 @@ menuItem[ icon_, label_, action_String ] :=
 			Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ action, $CellContext`root ]
 		]
 	];
+
+menuItem[ None, content_, None ] :=
+	content;
 
 menuItem[ icon_, label_, None ] :=
 	menuItem[

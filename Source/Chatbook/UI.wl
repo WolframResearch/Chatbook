@@ -1419,6 +1419,11 @@ openChatInputActionMenu[dingbatCellObj_CellObject] := With[{
 		"RoleValue" -> currentValueOrigin[
 			chatInputCellObj,
 			{TaggingRules, "ChatNotebookSettings", "Role"}
+		],
+		"TemperatureValue" -> Dynamic @ AbsoluteCurrentValue[
+			(* "ChatInput" > CellDingbat > Persona Menu > Advanced Menu *)
+			chatInputCellObj,
+			{ TaggingRules, "ChatNotebookSettings", "Temperature" }
 		]
 	]
 ]]
@@ -1462,14 +1467,13 @@ currentValueOrigin[
 
 (*====================================*)
 
-(*====================================*)
-
 SetFallthroughError[makeChatInputActionMenuContent]
 
 Options[makeChatInputActionMenuContent] = {
 	"PersonaValue" -> Automatic,
 	"ModelValue" -> Automatic,
 	"RoleValue" -> Automatic,
+	"TemperatureValue" -> Automatic,
 	"ActionCallback" -> (Null &)
 }
 
@@ -1485,30 +1489,26 @@ makeChatInputActionMenuContent[
 	personaValue = OptionValue["PersonaValue"],
 	modelValue = OptionValue["ModelValue"],
 	roleValue = OptionValue["RoleValue"],
+	tempValue = OptionValue["TemperatureValue"],
+	advancedSettingsMenu,
 	menuLabel,
 	menuItems
 },
 
-	(*------------------------------------*)
-	(* Construct the popup menu item list *)
-	(*------------------------------------*)
+	(*-------------------------------------------------*)
+	(* Construct the Advanced Settings submenu content *)
+	(*-------------------------------------------------*)
 
-	menuItems = Join[
-		{"Personas"},
-		Map[
-			entry |-> ConfirmReplace[entry, {
-				{persona_?StringQ, icon_, listItemLabel_} :> {
-					alignedMenuIcon[persona, personaValue, icon],
-					listItemLabel,
-					Hold[callback["Persona", persona]]
-				}
-			}],
-			personas
-		],
+	advancedSettingsMenu = Join[
 		{
-			Delimiter,
-			{alignedMenuIcon[getIcon["PersonaOther"]], "Add & Manage Personas\[Ellipsis]", "PersonaInstall"},
-			{alignedMenuIcon[getIcon["PersonaFromURL"]], "Install From URL\[Ellipsis]", "PersonaURLInstall"}
+			"Temperature",
+			{None, Slider[
+				tempValue,
+				{ 0, 2, 0.01 },
+				ImageSize  -> { 175, Automatic },
+				ImageMargins -> {{5, Automatic}, {5, 5}},
+				Appearance -> "Labeled"
+			], None}
 		},
 		{"Models"},
 		Map[
@@ -1535,6 +1535,62 @@ makeChatInputActionMenuContent[
 				{"System", getIcon["RoleSystem"]}
 			}
 		]
+	];
+
+	advancedSettingsMenu = MakeMenu[
+		advancedSettingsMenu,
+		GrayLevel[0.85],
+		250
+	];
+
+	(*------------------------------------*)
+	(* Construct the popup menu item list *)
+	(*------------------------------------*)
+
+	menuItems = Join[
+		{"Personas"},
+		Map[
+			entry |-> ConfirmReplace[entry, {
+				{persona_?StringQ, icon_, listItemLabel_} :> {
+					alignedMenuIcon[persona, personaValue, icon],
+					listItemLabel,
+					Hold[callback["Persona", persona]]
+				}
+			}],
+			personas
+		],
+		{
+			Delimiter,
+			{alignedMenuIcon[getIcon["PersonaOther"]], "Add & Manage Personas\[Ellipsis]", "PersonaInstall"},
+			{alignedMenuIcon[getIcon["PersonaFromURL"]], "Install From URL\[Ellipsis]", "PersonaURLInstall"}
+		},
+		{
+			Button[
+				Style[
+					Grid[{{
+						Item[
+							Style["Advanced Settings"],
+							ItemSize -> Fit,
+							Alignment -> Left
+						],
+						Magnify["\[RightPointer]", 1.5]
+					}}],
+					FontColor -> GrayLevel[0.35]
+				],
+				(
+					AttachCell[
+						EvaluationCell[],
+						advancedSettingsMenu,
+						{Right, Bottom},
+						{50, 50},
+						{Left, Bottom},
+						RemovalConditions -> "MouseExit"
+					];
+				),
+				AutoAction -> True,
+				Appearance -> None
+			]
+		}
 	];
 
 	menu = MakeMenu[
