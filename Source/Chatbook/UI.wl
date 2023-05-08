@@ -1507,7 +1507,7 @@ makeChatInputActionMenuContent[
 		],
 		{
 			Delimiter,
-			{alignedMenuIcon[getIcon["PersonaOther"]], "More Personas\[Ellipsis]", "PersonaInstall"},
+			{alignedMenuIcon[getIcon["PersonaOther"]], "Add & Manage Personas\[Ellipsis]", "PersonaInstall"},
 			{alignedMenuIcon[getIcon["PersonaFromURL"]], "Install From URL\[Ellipsis]", "PersonaURLInstall"}
 		},
 		{"Models"},
