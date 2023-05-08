@@ -273,83 +273,13 @@ chatObject := chatObject = Symbol[ "System`ChatObject" ];
 (* ::Section::Closed:: *)
 (*OpenChatMenu*)
 OpenChatMenu // beginDefinition;
-OpenChatMenu[ "ChatInput"  , cell_CellObject ] := openChatInputMenu @ cell;
 OpenChatMenu[ "ChatOutput" , cell_CellObject ] := openChatOutputMenu @ cell;
 OpenChatMenu[ "ChatSection", cell_CellObject ] := openChatSectionDialog @ cell;
 OpenChatMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*openChatInputMenu*)
-openChatInputMenu // beginDefinition;
 
-openChatInputMenu[ cell0_CellObject ] :=
-    With[ { cell = ParentCell @ cell0 },
-        AttachCell[
-            cell,
-            chatInputMenu @ cell,
-            { Right, Top },
-            Offset[ { -7, -7 }, { 0, 0 } ],
-            { Right, Top },
-            RemovalConditions -> { "EvaluatorQuit", "MouseClickOutside" }
-        ]
-    ];
-
-openChatInputMenu // endDefinition;
-
-
-chatInputMenu[ cell_CellObject ] := Pane[
-    RawBoxes @ TemplateBox[
-        {
-            ToBoxes @ Grid[
-                {
-                    {
-                        inputMenuLabel[ "Temperature" ],
-                        inputMenuLabel @ Slider[
-                            Dynamic @ AbsoluteCurrentValue[
-                                cell,
-                                { TaggingRules, "ChatNotebookSettings", "Temperature" }
-                            ],
-                            { 0, 2 },
-                            ImageSize  -> { 100, Automatic },
-                            Appearance -> "Labeled"
-                        ]
-                    },
-                    {
-                        inputMenuLabel[ "Model" ],
-                        PopupMenu[
-                            Dynamic @ AbsoluteCurrentValue[
-                                cell,
-                                { TaggingRules, "ChatNotebookSettings", "Model" }
-                            ],
-                            {
-                                "gpt-3.5-turbo" -> inputMenuLabel @ Row @ {
-                                    RawBoxes @ TemplateBox[ { }, "OpenAILogo" ], " ", "GPT-3.5"
-                                },
-                                "gpt-4" -> inputMenuLabel @ Row @ {
-                                    RawBoxes @ TemplateBox[ { }, "OpenAILogo" ], " ", "GPT-4"
-                                }
-                            }
-                        ]
-                    }
-                },
-                Alignment -> { Left, Baseline },
-                Spacings  -> { 1, 1 }
-            ],
-            FrameMargins   -> 7,
-            Background     -> GrayLevel[ 1 ],
-            RoundingRadius -> 3,
-            FrameStyle     -> Directive[ AbsoluteThickness[ 1 ], GrayLevel[ 0.85 ] ],
-            ImageMargins   -> 0,
-            ImageSize      -> { Full, Automatic }
-        },
-        "Highlighted"
-    ],
-    ImageSize -> { 250, Automatic }
-];
-
-
-inputMenuLabel[ text_ ] := Style[ text, "ChatMenuLabel" ];
 
 
 (* ::**************************************************************************************************************:: *)

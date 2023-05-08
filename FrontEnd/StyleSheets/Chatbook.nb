@@ -670,7 +670,7 @@ Notebook[
            ]
          },
          Dynamic[CurrentValue["MouseOver"]],
-         ImageSize -> Automatic
+         ImageSize -> All
         ]
        }
       ]
@@ -688,32 +688,6 @@ Notebook[
    Evaluatable -> True,
    CellGroupingRules -> "InputGrouping",
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
-   Initialization :>
-    If[ Not[TrueQ[CloudSystem`$CloudNotebooks]],
-     With[ { cell$ = EvaluationCell[] },
-      
-      NotebookDelete[
-       Cells[cell$, AttachedCell -> True, CellStyle -> "ChatMenu"]
-      ];
-
-      AttachCell[
-       cell$,
-       Cell[
-        BoxData[
-         TemplateBox[
-          {"ChatInput", RGBColor[0.81961, 0.85098, 0.91765]},
-          "ChatMenuButton"
-         ]
-        ],
-        "ChatMenu"
-       ],
-       {Right, Top},
-       Offset[{-7, -7}, {Right, Top}],
-       {Right, Top},
-       RemovalConditions -> {"EvaluatorQuit"}
-      ]
-     ]
-    ],
    CellEvaluationFunction ->
     (Function[
      With[ { cell = EvaluationCell[] },
@@ -745,32 +719,6 @@ Notebook[
     "Backspace" -> "ChatInput"
    },
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
-   Initialization :>
-    If[ Not[TrueQ[CloudSystem`$CloudNotebooks]],
-     With[ { cell$ = EvaluationCell[] },
-      
-      NotebookDelete[
-       Cells[cell$, AttachedCell -> True, CellStyle -> "ChatMenu"]
-      ];
-
-      AttachCell[
-       cell$,
-       Cell[
-        BoxData[
-         TemplateBox[
-          {"ChatInput", RGBColor[0.81961, 0.85098, 0.91765]},
-          "ChatMenuButton"
-         ]
-        ],
-        "ChatMenu"
-       ],
-       {Right, Top},
-       Offset[{-7, -7}, {Right, Top}],
-       {Right, Top},
-       RemovalConditions -> {"EvaluatorQuit"}
-      ]
-     ]
-    ],
    CellFrameColor -> RGBColor[0.63922, 0.78824, 0.94902],
    MenuSortingValue -> 1000
   ],
@@ -792,32 +740,6 @@ Notebook[
     "Backspace" -> "ChatQuery"
    },
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
-   Initialization :>
-    If[ Not[TrueQ[CloudSystem`$CloudNotebooks]],
-     With[ { cell$ = EvaluationCell[] },
-      
-      NotebookDelete[
-       Cells[cell$, AttachedCell -> True, CellStyle -> "ChatMenu"]
-      ];
-
-      AttachCell[
-       cell$,
-       Cell[
-        BoxData[
-         TemplateBox[
-          {"ChatInput", RGBColor[0.81961, 0.85098, 0.91765]},
-          "ChatMenuButton"
-         ]
-        ],
-        "ChatMenu"
-       ],
-       {Right, Top},
-       Offset[{-7, -7}, {Right, Top}],
-       {Right, Top},
-       RemovalConditions -> {"EvaluatorQuit"}
-      ]
-     ]
-    ],
    CellFrameColor -> RGBColor[0.63922, 0.78824, 0.94902],
    CellFrameStyle -> Dashing[{Small, Small}],
    MenuSortingValue -> 1000
@@ -6416,7 +6338,7 @@ Notebook[
          StripOnInput -> False
         ]
        },
-       ImageSize -> {{27.0, 27.0}, {27.0, 27.0}},
+       ImageSize -> {{20.0, 20.0}, {20.0, 20.0}},
        PlotRange -> {{-0.5, 26.5}, {-0.5, 26.5}},
        AspectRatio -> Automatic
       ]

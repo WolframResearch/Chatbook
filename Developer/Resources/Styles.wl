@@ -87,9 +87,7 @@ Cell[
     CellEvaluationFunction -> Function @ With[ { $CellContext`cell = EvaluationCell[ ] },
         Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
         Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "EvaluateChatInput", $CellContext`cell ]
-    ],
-
-    menuInitializer[ "ChatInput", RGBColor[ "#d1d9ea" ] ]
+    ]
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -101,8 +99,7 @@ Cell[
     CellFrameColor   -> RGBColor[ "#a3c9f2" ],
     CellTrayWidgets  -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     MenuSortingValue -> 1000,
-    StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "'" -> "ChatSystemInput", "Backspace" -> "ChatInput" },
-    menuInitializer[ "ChatInput", RGBColor[ "#d1d9ea" ] ]
+    StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "'" -> "ChatSystemInput", "Backspace" -> "ChatInput" }
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -116,8 +113,7 @@ Cell[
     CellFrameStyle   -> Dashing @ { Small, Small },
     CellTrayWidgets  -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     MenuSortingValue -> 1000,
-    StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "'" -> "ChatContextDivider", "Backspace" -> "ChatQuery" },
-    menuInitializer[ "ChatInput", RGBColor[ "#d1d9ea" ] ]
+    StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "'" -> "ChatContextDivider", "Backspace" -> "ChatQuery" }
 ]
 
 (* ::**************************************************************************************************************:: *)
