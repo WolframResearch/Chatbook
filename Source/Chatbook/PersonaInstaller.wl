@@ -17,7 +17,7 @@ Needs[ "Wolfram`Chatbook`Common`"  ];
 (* ::Section::Closed:: *)
 (*Config*)
 
-$personaBrowseURL  := URLBuild @ { rsRoot[ ], "published/PromptRepository/category/persona" };
+$personaBrowseURL  := "https://resources.wolframcloud.com/PromptRepository/prompttype/personas";
 $channelPermissions = "Public";
 $keepChannelOpen    = True;
 $debug              = False;
@@ -486,28 +486,6 @@ needsPromptResource[ ] := Enclose[
     ,
     throwInternalFailure[ needsPromptResource[ ], ## ] &
 ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*rsRoot*)
-rsRoot[ ] := (ResourceObject; rsRoot @ $ResourceSystemBase);
-
-rsRoot[ HoldPattern[ $ResourceSystemBase ] ] :=
-    With[ { rsb = (ResourceObject; $ResourceSystemBase) }, rsRoot @ rsb /; StringQ @ rsb ];
-
-rsRoot[ rsBase_String ] :=
-    Replace[
-        URLParse @ rsBase,
-        {
-            p: KeyValuePattern @ { "Domain" -> "www.wolframcloud.com", "Path" -> { "", _, "resourcesystem", ___ } } :>
-                (rsRoot[ rsBase ] = "https://resources.wolframcloud.com"),
-            p: KeyValuePattern[ "Path" -> { base___, "api", _ } ] :>
-                (rsRoot[ rsBase ] = URLBuild @ Append[ p, "Path" -> { base } ]),
-            ___ :> Missing[ "Unknown" ]
-        }
-    ];
-
-rsRoot[ _ ] := "https://resources.wolframcloud.com";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
