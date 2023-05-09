@@ -87,7 +87,14 @@ Cell[
     CellEvaluationFunction -> Function @ With[ { $CellContext`cell = EvaluationCell[ ] },
         Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
         Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "EvaluateChatInput", $CellContext`cell ]
-    ]
+    ],
+    CellEventActions -> {
+        { "KeyDown", "@" } :>
+            With[ { $CellContext`cell = EvaluationCell[ ] },
+                Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "Persona", $CellContext`cell ]
+            ]
+    }
 ]
 
 (* ::**************************************************************************************************************:: *)

@@ -26,6 +26,7 @@ Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`Serialization`"    ];
 Needs[ "Wolfram`Chatbook`Formatting`"       ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
+Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -54,22 +55,30 @@ $$chatOutputStyle    = Alternatives @@ $chatOutputStyles    | { ___, Alternative
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*ChatbookAction*)
-ChatbookAction[ "AIAutoAssist"     , args___ ] := catchMine @ AIAutoAssist @ args;
-ChatbookAction[ "Ask"              , args___ ] := catchMine @ AskChat @ args;
-ChatbookAction[ "AttachCodeButtons", args___ ] := catchMine @ AttachCodeButtons @ args;
-ChatbookAction[ "CopyChatObject"   , args___ ] := catchMine @ CopyChatObject @ args;
-ChatbookAction[ "EvaluateChatInput", args___ ] := catchMine @ EvaluateChatInput @ args;
-ChatbookAction[ "ExclusionToggle"  , args___ ] := catchMine @ ExclusionToggle @ args;
-ChatbookAction[ "OpenChatMenu"     , args___ ] := catchMine @ OpenChatMenu @ args;
-ChatbookAction[ "PersonaInstall"   , args___ ] := catchMine @ PersonaInstall @ args;
-ChatbookAction[ "PersonaURLInstall", args___ ] := catchMine @ PersonaURLInstall @ args;
-ChatbookAction[ "Send"             , args___ ] := catchMine @ SendChat @ args;
-ChatbookAction[ "StopChat"         , args___ ] := catchMine @ StopChat @ args;
-ChatbookAction[ "TabLeft"          , args___ ] := catchMine @ TabLeft @ args;
-ChatbookAction[ "TabRight"         , args___ ] := catchMine @ TabRight @ args;
-ChatbookAction[ "WidgetSend"       , args___ ] := catchMine @ WidgetSend @ args;
-ChatbookAction[ name_String        , args___ ] := catchMine @ throwFailure[ "NotImplemented", name, args ];
-ChatbookAction[ args___                      ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
+ChatbookAction[ "AIAutoAssist"         , args___ ] := catchMine @ AIAutoAssist @ args;
+ChatbookAction[ "Ask"                  , args___ ] := catchMine @ AskChat @ args;
+ChatbookAction[ "AttachCodeButtons"    , args___ ] := catchMine @ AttachCodeButtons @ args;
+ChatbookAction[ "CopyChatObject"       , args___ ] := catchMine @ CopyChatObject @ args;
+ChatbookAction[ "EvaluateChatInput"    , args___ ] := catchMine @ EvaluateChatInput @ args;
+ChatbookAction[ "ExclusionToggle"      , args___ ] := catchMine @ ExclusionToggle @ args;
+ChatbookAction[ "OpenChatMenu"         , args___ ] := catchMine @ OpenChatMenu @ args;
+ChatbookAction[ "PersonaInstall"       , args___ ] := catchMine @ PersonaInstall @ args;
+ChatbookAction[ "PersonaURLInstall"    , args___ ] := catchMine @ PersonaURLInstall @ args;
+ChatbookAction[ "Send"                 , args___ ] := catchMine @ SendChat @ args;
+ChatbookAction[ "StopChat"             , args___ ] := catchMine @ StopChat @ args;
+ChatbookAction[ "TabLeft"              , args___ ] := catchMine @ TabLeft @ args;
+ChatbookAction[ "TabRight"             , args___ ] := catchMine @ TabRight @ args;
+ChatbookAction[ "WidgetSend"           , args___ ] := catchMine @ WidgetSend @ args;
+ChatbookAction[ "InsertInlineReference", args___ ] := catchMine @ InsertInlineReference @ args;
+ChatbookAction[ name_String            , args___ ] := catchMine @ throwFailure[ "NotImplemented", name, args ];
+ChatbookAction[ args___                          ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*InsertInlineReference*)
+InsertInlineReference // beginDefinition;
+InsertInlineReference[ "Persona", args___ ] := insertPersonaInputBox @ args;
+InsertInlineReference // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
