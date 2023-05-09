@@ -1485,7 +1485,7 @@ cellRole[ Cell[
     __,
     TaggingRules -> KeyValuePattern[ "ChatNotebookSettings" -> KeyValuePattern[ "Role" -> role_String ] ],
     ___
-] ] := role;
+] ] := ToLowerCase @ role;
 
 cellRole[ Cell[ _, styles__String, OptionsPattern[ ] ] ] :=
     FirstCase[ { styles }, style_ :> With[ { role = $styleRoles @ style }, role /; StringQ @ role ], "user" ];
@@ -1721,7 +1721,7 @@ $promptDirectory := FileNameJoin @ {
 $promptStrings := $promptStrings = Association @ Map[
     Function[
         StringDelete[
-            StringReplace[ ResourceFunction[ "RelativePath" ][ $promptDirectory, # ], "\\" -> "/" ],
+            StringTrim[ StringReplace[ StringDelete[ #, StartOfString~~$promptDirectory ], "\\" -> "/" ], "/" ],
             ".md"~~EndOfString
         ] -> StringReplace[ ByteArrayToString @ ReadByteArray @ #, "\r\n" -> "\n" ]
     ],
