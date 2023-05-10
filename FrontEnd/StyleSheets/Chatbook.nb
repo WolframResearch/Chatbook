@@ -21,6 +21,7 @@ Notebook[
      "ChatHistoryLength" -> 25,
      "DynamicAutoFormat" -> Automatic,
      "FrequencyPenalty" -> 0.1,
+     "IncludeHistory" -> Automatic,
      "MaxTokens" -> Automatic,
      "MergeMessages" -> True,
      "LLMEvaluator" -> "Helper",
@@ -654,7 +655,13 @@ Notebook[
               {Left, Top},
               RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
              ];),
-            Appearance -> None,
+            Appearance ->
+             Dynamic[
+              FEPrivate`FrontEndResource[
+               "FEExpressions",
+               "SuppressMouseDownNinePatchAppearance"
+              ]
+             ],
             Evaluator -> Automatic,
             Method -> "Preemptive"
            ],
@@ -682,7 +689,7 @@ Notebook[
    StyleKeyMapping -> {
     " " -> "Text",
     "*" -> "Item",
-    "'" -> "ChatQuery",
+    "'" -> "ChatInputSingle",
     "Backspace" -> "Input"
    },
    Evaluatable -> True,
@@ -698,9 +705,144 @@ Notebook[
       ]
      ]
     ]),
+   CellEventActions -> {
+    {"KeyDown", "@"} :>
+     With[ { cell = EvaluationCell[] },
+      Quiet[Needs["Wolfram`Chatbook`" -> None]];
+      Symbol["Wolfram`Chatbook`ChatbookAction"][
+       "InsertInlineReference",
+       "Persona",
+       cell
+      ]
+     ]
+   },
    CellFrameColor -> RGBColor[0.63922, 0.78824, 0.94902],
    CounterIncrements -> {"ChatInputCount"},
    MenuSortingValue -> 1000
+  ],
+  Cell[
+   StyleData[
+    "ChatInputSingle",
+    StyleDefinitions -> StyleData["ChatInput"]
+   ],
+   CellDingbat ->
+    Cell[
+     BoxData[
+      TagBox[
+       GridBox[
+        {
+         {
+          ItemBox[
+           PaneSelectorBox[
+            {
+             True ->
+              ButtonBox[
+               FrameBox[
+                DynamicBox[
+                 ToBoxes[
+                  With[
+                   {
+                    Wolfram`Chatbook`UI`Private`menuData = 
+                     Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
+
+                     ],
+                    Wolfram`Chatbook`UI`Private`personaValue = 
+                     Wolfram`Chatbook`UI`Private`currentValueOrigin[
+                      ParentCell[EvaluationCell[]],
+                      {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+                     ]
+                   },
+                   FirstCase[
+                    Wolfram`Chatbook`UI`Private`menuData["Personas"],
+                    {
+                     Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
+                     Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]],
+                     Blank[]
+                    } :> Wolfram`Chatbook`UI`Private`icon,
+                    Style[
+                     Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
+                     GrayLevel[0.5]
+                    ]
+                   ]
+                  ],
+                  StandardForm
+                 ]
+                ],
+                RoundingRadius -> 3,
+                FrameMargins -> 2,
+                ImageMargins -> {{0, 3}, {0, 0}},
+                FrameStyle ->
+                 Directive[
+                  RGBColor[0.8549, 0.83137, 0.72549],
+                  AbsoluteThickness[1]
+                 ],
+                Background ->
+                 Dynamic[
+                  If[ CurrentValue["MouseOver"], GrayLevel[0.8], GrayLevel[1] ]
+                 ],
+                FrameMargins -> 0,
+                StripOnInput -> False
+               ],
+               ButtonFunction :>
+                (AttachCell[
+                 EvaluationCell[],
+                 Wolfram`Chatbook`UI`Private`openChatInputActionMenu[
+                  EvaluationCell[]
+                 ],
+                 {Left, Bottom},
+                 Offset[{0, 0}, {Left, Top}],
+                 {Left, Top},
+                 RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
+                ];),
+               Appearance ->
+                Dynamic[
+                 FEPrivate`FrontEndResource[
+                  "FEExpressions",
+                  "SuppressMouseDownNinePatchAppearance"
+                 ]
+                ],
+               Evaluator -> Automatic,
+               Method -> "Preemptive"
+              ],
+             False ->
+              FrameBox[
+               TemplateBox[{}, "RoleUser"],
+               RoundingRadius -> 3,
+               FrameMargins -> 2,
+               ImageMargins -> {{0, 3}, {0, 0}},
+               FrameStyle -> GrayLevel[0, 0],
+               FrameMargins -> 0,
+               StripOnInput -> False
+              ]
+            },
+            Dynamic[CurrentValue["MouseOver"]],
+            ImageSize -> All
+           ],
+           Frame -> {False, False, True, False},
+           FrameStyle ->
+            Directive[GrayLevel[0.925], AbsoluteThickness[4]],
+           StripOnInput -> False
+          ]
+         }
+        },
+        AutoDelete -> False,
+        GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+        GridBoxSpacings -> {"Columns" -> {{0}}}
+       ],
+       "Grid"
+      ]
+     ],
+     Background -> None
+    ],
+   StyleKeyMapping -> {
+    " " -> "Text",
+    "*" -> "Item",
+    "'" -> "ChatSystemInput",
+    "Backspace" -> "ChatInput"
+   },
+   TaggingRules -> <|"ChatNotebookSettings" -> <|"IncludeHistory" -> False|>|>,
+   CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
+   CounterIncrements -> { }
   ],
   Cell[
    StyleData[
@@ -737,7 +879,7 @@ Notebook[
     " " -> "Text",
     "*" -> "Item",
     "'" -> "ChatContextDivider",
-    "Backspace" -> "ChatQuery"
+    "Backspace" -> "ChatInputSingle"
    },
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellFrameColor -> RGBColor[0.63922, 0.78824, 0.94902],
