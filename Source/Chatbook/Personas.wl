@@ -10,8 +10,18 @@ GeneralUtilities`SetUsage[GetPersonasAssociation, "
 GetPersonasAssociation[] returns an association describing all locally installed personas.
 "];
 
+GeneralUtilities`SetUsage[GetCachedPersonaData, "
+GetCachedPersonaData[] gives the same information as GetPersonaData[], but caches the result.
+"];
+
+GeneralUtilities`SetUsage[$CachedPersonaData, "
+$CachedPersonaData represents the cache used by GetCachedPersonaData. \
+Setting $CachedPersonaData to None will force GetCachedPersonaData to regenerate the cache.
+"];
+
 GeneralUtilities`SetUsage[GetPersonaData, "
-GetPersonasData[] returns information about all locally installed personas, including invalid personas.
+GetPersonaData[] returns information about all locally installed personas, including invalid personas. \
+Calling GetPersonaData[] will additionally regenerate the cache used by GetCachedPersonaData.
 "];
 
 Begin["`Private`"]
@@ -61,12 +71,21 @@ GetPersonasAssociation[] := Module[{
 	personas
 },
 	personas = RaiseConfirmMatch[
-		GetPersonaData[],
+		GetCachedPersonaData[],
 		_?AssociationQ
 	];
 
 	personas
 ]
+
+(*========================================================*)
+
+SetFallthroughError[GetCachedPersonaData]
+
+GetCachedPersonaData[] := If[AssociationQ[$CachedPersonaData], $CachedPersonaData, GetPersonaData[]]
+GetCachedPersonaData[persona_] := Lookup[GetCachedPersonaData[], persona, GetPersonaData[persona]]
+
+$CachedPersonaData = None
 
 (*========================================================*)
 
@@ -105,8 +124,11 @@ GetPersonaData[] := Module[{
 
 	personas = Merge[{resourcePersonas, pacletPersonas}, First];
 
-	(* Show core personas first *)
-	Join[KeyTake[personas, $corePersonaNames], personas]
+	$CachedPersonaData = RaiseConfirmMatch[
+		(* Show core personas first *)
+		Join[KeyTake[personas, $corePersonaNames], personas],
+		_Association? AssociationQ
+	]
 ]
 
 $corePersonaNames = {"Helper", "Wolfie"};

@@ -7,11 +7,12 @@ BeginPackage[ "Wolfram`Chatbook`PersonaInstaller`" ];
 `GetInstalledResourcePersonaData;
 `GetInstalledResourcePersonas;
 `PersonaInstallFromResourceSystem;
+`PersonaInstall;
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"         ];
-Needs[ "Wolfram`Chatbook`Common`"  ];
+Needs[ "Wolfram`Chatbook`"        ];
+Needs[ "Wolfram`Chatbook`Common`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -28,6 +29,52 @@ $PersonaInstallationDirectory := GeneralUtilities`EnsureDirectory @ {
     "Chatbook",
     "Personas"
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*PersonaInstall*)
+PersonaInstall // beginDefinition;
+
+PersonaInstall[ ro_ResourceObject ] := catchMine @ personaInstall @ ro;
+
+PersonaInstall[ id_ ] :=
+    catchMine @ With[ { ro = ResourceObject @ id },
+        personaInstall @ ro /; MatchQ[ ro, _ResourceObject ]
+    ];
+
+PersonaInstall // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*personaInstall*)
+personaInstall // beginDefinition;
+
+personaInstall[ resource_ResourceObject ] := Enclose[
+    Module[ { info, target, config, installed },
+        ConfirmAssert[ resource[ "ResourceType" ] === "Prompt", "ResourceType" ];
+        info      = ConfirmBy[ resource[ All ], AssociationQ, "ResourceInformation" ];
+        target    = ConfirmBy[ personaInstallLocation @ info, StringQ, "InstallLocation" ];
+        config    = ConfirmBy[ resource[ "PromptConfiguration" ], AssociationQ, "PromptConfiguration" ];
+        installed = ConfirmBy[ installPersonaConfiguration[ info, config, target ], FileExistsQ, "Install" ];
+        If[ TrueQ @ $debug,
+            MessageDialog @ Grid[
+                {
+                    { Style[ "Persona Install Debug Info", "Section" ], SpanFromLeft },
+                    { "ResourceObject:", resource },
+                    { "Installed:"     , installed }
+                },
+                Alignment -> Left,
+                Dividers  -> Center
+            ]
+        ];
+        GetInstalledResourcePersonas[ ];
+
+        installed
+    ],
+    throwInternalFailure[ personaInstall @ resource, ##1 ] &
+];
+
+personaInstall // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -70,12 +117,20 @@ PersonaInstallFromResourceSystem[ ] := catchMine @ Enclose[
         Append[ data, "Dialog" -> dialog ]
     ],
     (
-        $installed = { };
+        setInstalledPersonas @ { };
         throwInternalFailure[ PersonaInstallFromResourceSystem[ ], ## ]
     ) &
 ];
 
 PersonaInstallFromResourceSystem // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*setInstalledPersonas*)
+setInstalledPersonas[ data_ ] := (
+    Wolfram`Chatbook`Personas`$CachedPersonaData = None; (* Invalidate persona data cache *)
+    $installed = data
+);
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -251,28 +306,6 @@ browseWithChannelCallback // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeShortListenerURL*)
 makeShortListenerURL // beginDefinition;
-
-(* makeShortListenerURL[ url_String ] := Enclose[
-    Module[ { domain, parse1, parse2 },
-        (* cSpell: ignore channelbroker,mqtt *)
-        domain = ConfirmBy[
-            StringReplace[ URLParse[ url, "Domain" ], "channelbroker-mqtt" -> "channelbroker" ],
-            StringQ,
-            "Domain"
-        ];
-
-        parse1 = ConfirmBy[ URLParse @ url, AssociationQ, "Parse1" ];
-        parse2 = ConfirmBy[ Association[ parse1, "Scheme" -> "https", "Domain" -> domain ], AssociationQ, "Parse2" ];
-
-        ConfirmBy[
-            ConfirmBy[ URLBuild @ parse2, StringQ, "URLBuild" ],
-            StringQ,
-            "URLShorten"
-        ]
-    ],
-    throwInternalFailure[ makeShortListenerURL @ url, ## ] &
-]; *)
-
 makeShortListenerURL[ channel_, url_ ] := url;
 makeShortListenerURL // endDefinition;
 
@@ -329,27 +362,10 @@ promptResourceInstall // endDefinition;
 promptResourceInstall0 // beginDefinition;
 
 promptResourceInstall0[ channelData_, messageData_ ] := Enclose[
-    Module[ { message, resource, info, target, config, installed },
+    Module[ { message, resource },
         message   = ConfirmBy[ messageData[ "Message" ], AssociationQ, "Message" ];
         resource  = ConfirmMatch[ acquireResource @ message, _ResourceObject, "ResourceObject" ];
-        info      = ConfirmBy[ resource[ All ], AssociationQ, "Information" ];
-        target    = ConfirmBy[ personaInstallLocation @ info, StringQ, "InstallLocation" ];
-        config    = ConfirmBy[ resource[ "PromptConfiguration" ], AssociationQ, "PromptConfiguration" ];
-        installed = ConfirmBy[ installPersonaConfiguration[ info, config, target ], FileExistsQ, "Install" ];
-        If[ TrueQ @ $debug,
-            MessageDialog @ Grid[
-                {
-                    { Style[ "Persona Install Debug Info", "Section" ], SpanFromLeft },
-                    { "ResourceObject:", resource },
-                    { "Installed:"     , installed }
-                },
-                Alignment -> Left,
-                Dividers  -> Center
-            ]
-        ];
-        GetInstalledResourcePersonas[ ];
-
-        installed
+        personaInstall @ resource
     ],
     throwInternalFailure[ promptResourceInstall0[ channelData, messageData ], ## ] &
 ];
@@ -462,7 +478,7 @@ GetInstalledResourcePersonas // endDefinition;
 (* ::Subsection::Closed:: *)
 (*getInstalledPersonas*)
 getInstalledPersonas // beginDefinition;
-getInstalledPersonas[ ] := $installed = getPersonaFile /@ FileNames[ "*.mx", $PersonaInstallationDirectory ];
+getInstalledPersonas[ ] := setInstalledPersonas[ getPersonaFile /@ FileNames[ "*.mx", $PersonaInstallationDirectory ] ];
 getInstalledPersonas // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
