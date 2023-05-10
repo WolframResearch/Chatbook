@@ -24,7 +24,7 @@ Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
 (*Config*)
 $$delimiterStyle   = "PageBreak"|"ExampleDelimiter"|"ChatDelimiter";
 $$itemStyle        = "Item"|"Notes";
-$$noCellLabelStyle = "Text"|"ChatInput"|"ChatUserInput"|"ChatSystemInput"|"ChatContextDivider"|$$delimiterStyle;
+$$noCellLabelStyle = "Text"|"ChatInput"|"ChatInputSingle"|"ChatSystemInput"|"ChatContextDivider"|$$delimiterStyle;
 $$docSearchStyle   = "ChatQuery";
 
 (* Default character encoding for strings created from cells *)
@@ -365,6 +365,13 @@ fasterCellToString0[ a_String ] :=
     ];
 
 fasterCellToString0[ a: { ___String } ] := StringJoin[ fasterCellToString0 /@ a ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Inline References*)
+fasterCellToString0[
+    Cell[ _, "InlinePersonaReference", ___, TaggingRules -> KeyValuePattern[ "PersonaName" -> name_String ], ___ ]
+] := "@"<>name;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)

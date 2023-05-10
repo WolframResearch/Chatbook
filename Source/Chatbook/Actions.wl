@@ -31,10 +31,11 @@ Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
-$chatDelimiterStyles = { "ChatContextDivider", "ChatDelimiter" };
-$chatIgnoredStyles   = { "ChatExcluded" };
-$chatInputStyles     = { "ChatInput", "ChatQuery", "ChatSystemInput" };
-$chatOutputStyles    = { "ChatOutput" };
+$chatDelimiterStyles  = { "ChatContextDivider", "ChatDelimiter" };
+$chatIgnoredStyles    = { "ChatExcluded" };
+$chatInputStyles      = { "ChatInput", "ChatInputSingle", "ChatQuery", "ChatSystemInput" };
+$chatOutputStyles     = { "ChatOutput" };
+$excludeHistoryStyles = { "ChatInputSingle" };
 
 $maxChatCells = OptionValue[ CreateChatNotebook, "ChatHistoryLength" ];
 
@@ -47,10 +48,11 @@ $closedChatCellOptions :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Style Patterns*)
-$$chatDelimiterStyle = Alternatives @@ $chatDelimiterStyles | { ___, Alternatives @@ $chatDelimiterStyles, ___ };
-$$chatIgnoredStyle   = Alternatives @@ $chatIgnoredStyles   | { ___, Alternatives @@ $chatIgnoredStyles  , ___ };
-$$chatInputStyle     = Alternatives @@ $chatInputStyles     | { ___, Alternatives @@ $chatInputStyles    , ___ };
-$$chatOutputStyle    = Alternatives @@ $chatOutputStyles    | { ___, Alternatives @@ $chatOutputStyles   , ___ };
+$$chatDelimiterStyle  = Alternatives @@ $chatDelimiterStyles  | { ___, Alternatives @@ $chatDelimiterStyles , ___ };
+$$chatIgnoredStyle    = Alternatives @@ $chatIgnoredStyles    | { ___, Alternatives @@ $chatIgnoredStyles   , ___ };
+$$chatInputStyle      = Alternatives @@ $chatInputStyles      | { ___, Alternatives @@ $chatInputStyles     , ___ };
+$$chatOutputStyle     = Alternatives @@ $chatOutputStyles     | { ___, Alternatives @@ $chatOutputStyles    , ___ };
+$$excludeHistoryStyle = Alternatives @@ $excludeHistoryStyles | { ___, Alternatives @@ $excludeHistoryStyles, ___ };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -285,11 +287,6 @@ OpenChatMenu // beginDefinition;
 OpenChatMenu[ "ChatOutput" , cell_CellObject ] := openChatOutputMenu @ cell;
 OpenChatMenu[ "ChatSection", cell_CellObject ] := openChatSectionDialog @ cell;
 OpenChatMenu // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-
-
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -600,18 +597,29 @@ SendChat[ evalCell_, nbo_, settings_, Automatic ] /; CloudSystem`$CloudNotebooks
     SendChat[ evalCell, nbo, settings, False ];
 
 SendChat[ evalCell_, nbo_, settings_, Automatic ] :=
-    Block[ { $autoOpen, $alwaysOpen = $alwaysOpen },
-        $autoOpen = MemberQ[ CurrentValue[ evalCell, CellStyle ], $$chatInputStyle ];
-        $alwaysOpen = TrueQ @ $alwaysOpen || $autoOpen;
-        sendChat[ evalCell, nbo, settings ]
+    With[ { styles = cellStyles @ evalCell },
+        Block[ { $autoOpen, $alwaysOpen = $alwaysOpen },
+            $autoOpen = MemberQ[ styles, $$chatInputStyle ];
+            $alwaysOpen = TrueQ[ $alwaysOpen || $autoOpen ];
+            sendChat[ evalCell, nbo, addCellStyleSettings[ settings, styles ] ]
+        ]
     ];
 
 SendChat[ evalCell_, nbo_, settings_, minimized_ ] :=
     Block[ { $alwaysOpen = alwaysOpenQ[ settings, minimized ] },
-        sendChat[ evalCell, nbo, settings ]
+        sendChat[ evalCell, nbo, addCellStyleSettings[ settings, evalCell ] ]
     ];
 
 SendChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*addCellStyleSettings*)
+addCellStyleSettings // beginDefinition;
+addCellStyleSettings[ settings_, cell_CellObject ] := addCellStyleSettings[ settings, cellStyles @ cell ];
+addCellStyleSettings[ settings_, $$excludeHistoryStyle ] := Association[ settings, "IncludeHistory" -> False ];
+addCellStyleSettings[ settings_, _ ] := settings;
+addCellStyleSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -640,6 +648,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         settings = ConfirmBy[ inheritSettings[ settings0, cells, evalCell ], AssociationQ, "InheritSettings" ];
         id       = Lookup[ settings, "ID" ];
         key      = toAPIKey[ Automatic, id ];
+
+        If[ ! settings[ "IncludeHistory" ], cells = { evalCell } ];
 
         If[ ! StringQ @ key, throwFailure[ "NoAPIKey" ] ];
 
