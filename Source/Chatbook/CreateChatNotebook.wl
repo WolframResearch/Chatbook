@@ -15,7 +15,7 @@ Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
 (* ::Section::Closed:: *)
 (*CreateChatNotebook*)
 CreateChatNotebook // Options = {
-    "Assistance"                        -> Automatic, (* TODO: use this to determine if assistance should run as epilog *)
+    "Assistance"                        -> Automatic,
     "AutoFormat"                        -> True,
     "ChatContextCellProcessingFunction" -> Automatic,
     "ChatContextPostEvaluationFunction" -> Automatic,
@@ -23,6 +23,7 @@ CreateChatNotebook // Options = {
     "ChatHistoryLength"                 -> 25,
     "DynamicAutoFormat"                 -> Automatic,
     "FrequencyPenalty"                  -> 0.1,
+    "IncludeHistory"                    -> Automatic,
     "MaxTokens"                         -> Automatic,
     "MergeMessages"                     -> True,
     "LLMEvaluator"                      -> "Helper",

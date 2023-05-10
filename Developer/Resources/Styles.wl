@@ -75,7 +75,7 @@ Cell[
     CounterIncrements -> { "ChatInputCount" },
     Evaluatable       -> True,
     MenuSortingValue  -> 1000,
-    StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "ChatQuery", "Backspace" -> "Input" },
+    StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "ChatInputSingle", "Backspace" -> "Input" },
 	CellDingbat -> Cell[
 		BoxData @ RowBox[{
 			TemplateBox[{}, "ChatCounterLabel"],
@@ -95,6 +95,20 @@ Cell[
                 Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "Persona", $CellContext`cell ]
             ]
     }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ChatInputSingle*)
+Cell[
+    StyleData[ "ChatInputSingle", StyleDefinitions -> StyleData[ "ChatInput" ] ],
+    CellDingbat       -> Cell[ BoxData @ ToBoxes @ Grid[{{Item[$chatInputCellDingbat,
+    Frame -> {False, False, True, False},
+    FrameStyle -> Directive[GrayLevel[0.925], AbsoluteThickness[4]]]}}, Spacings -> 0], Background -> None ],
+    CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    CounterIncrements -> { },
+    StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "ChatSystemInput", "Backspace" -> "ChatInput" },
+    TaggingRules      -> <| "ChatNotebookSettings" -> <| "IncludeHistory" -> False |> |>
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -120,7 +134,7 @@ Cell[
     CellFrameStyle   -> Dashing @ { Small, Small },
     CellTrayWidgets  -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     MenuSortingValue -> 1000,
-    StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "'" -> "ChatContextDivider", "Backspace" -> "ChatQuery" }
+    StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "'" -> "ChatContextDivider", "Backspace" -> "ChatInputSingle" }
 ]
 
 (* ::**************************************************************************************************************:: *)
