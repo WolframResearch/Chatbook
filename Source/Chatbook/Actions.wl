@@ -45,6 +45,8 @@ $closedChatCellOptions :=
         Sequence @@ { CellMargins -> -2, CellOpen -> False, CellFrame -> 0, ShowCellBracket -> False }
     ];
 
+$defaultChatSettings := Association @ Options @ CreateChatNotebook;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Style Patterns*)
@@ -155,12 +157,33 @@ EvaluateChatInput[ ] := EvaluateChatInput @ EvaluationCell[ ];
 EvaluateChatInput[ evalCell_CellObject ] := EvaluateChatInput[ evalCell, parentNotebook @ evalCell ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
-    EvaluateChatInput[ evalCell, nbo, Association @ CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings" } ] ];
+    EvaluateChatInput[ evalCell, nbo, currentChatSettings @ nbo ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
     Block[ { $autoAssistMode = False }, waitForLastTask[ ]; sendChat[ evalCell, nbo, settings ] ];
 
 EvaluateChatInput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*currentChatSettings*)
+currentChatSettings // beginDefinition;
+
+currentChatSettings[ obj: _NotebookObject|_CellObject ] :=
+    Association[
+        $defaultChatSettings,
+        Replace[
+            CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ],
+            Except[ _? AssociationQ ] :> <| |>
+        ]
+    ];
+
+currentChatSettings[ obj: _NotebookObject|_CellObject, key_String ] := Replace[
+    CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", key } ],
+    Inherited :> Lookup[ $defaultChatSettings, key, Inherited ]
+];
+
+currentChatSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -199,8 +222,8 @@ autoAssistQ[ KeyValuePattern[ "Style" -> $$chatInputStyle ], _, _ ] := False;
 
 autoAssistQ[ info_, cell_CellObject, nbo_NotebookObject ] :=
     autoAssistQ[
-        CurrentValue[ nbo,  { TaggingRules, "ChatNotebookSettings", "Assistance" } ],
-        CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "Assistance" } ]
+        currentChatSettings[ nbo, "Assistance" ],
+        currentChatSettings[ cell, "Assistance" ]
     ];
 
 autoAssistQ[ True|Automatic|Inherited, True|Automatic|Inherited ] := True;
@@ -216,19 +239,10 @@ StopChat // beginDefinition;
 
 StopChat[ cell_CellObject ] := Enclose[
     Module[ { settings, container },
-
-        settings = ConfirmBy[
-            Association @ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ],
-            AssociationQ,
-            "ChatNotebookSettings"
-        ];
-
+        settings = ConfirmBy[ currentChatSettings @ cell, AssociationQ, "ChatNotebookSettings" ];
         removeTask @ Lookup[ settings, "Task" ];
-
         container = ConfirmBy[ Lookup[ settings, "Container" ], StringQ, "Container" ];
-
         writeReformattedCell[ settings, container, cell ];
-
         Quiet @ NotebookDelete @ cell;
     ],
     throwInternalFailure[ StopChat @ cell, ## ] &
@@ -588,7 +602,7 @@ SendChat[ evalCell_CellObject ] := SendChat[ evalCell, parentNotebook @ evalCell
 SendChat[ evalCell_CellObject, nbo_NotebookObject? queuedEvaluationsQ ] := Null;
 
 SendChat[ evalCell_CellObject, nbo_NotebookObject ] :=
-    SendChat[ evalCell, nbo, Association @ CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings" } ] ];
+    SendChat[ evalCell, nbo, currentChatSettings @ nbo ];
 
 SendChat[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
     SendChat[ evalCell, nbo, settings, Lookup[ settings, "ShowMinimized", Automatic ] ];
@@ -796,19 +810,10 @@ inheritSettings[
     settings_Association,
     KeyValuePattern @ { "Style" -> $$chatDelimiterStyle, "CellObject" -> delimiter_CellObject },
     evalCell_CellObject
-] :=
-    mergeSettings[
-        settings,
-        Association @ CurrentValue[ delimiter, { TaggingRules, "ChatNotebookSettings" } ],
-        Association @ CurrentValue[ evalCell, { TaggingRules, "ChatNotebookSettings" } ]
-    ];
+] := mergeSettings[ settings, currentChatSettings @ delimiter, currentChatSettings @ evalCell ];
 
 inheritSettings[ settings_Association, _, evalCell_CellObject ] :=
-    mergeSettings[
-        settings,
-        <| |>,
-        Association @ CurrentValue[ evalCell, { TaggingRules, "ChatNotebookSettings" } ]
-    ];
+    mergeSettings[ settings, <| |>, currentChatSettings @ evalCell ];
 
 inheritSettings // endDefinition;
 
