@@ -6,9 +6,44 @@ BeginPackage[ "Wolfram`Chatbook`InlineReferences`" ];
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"          ];
-Needs[ "Wolfram`Chatbook`Common`"   ];
-Needs[ "Wolfram`Chatbook`FrontEnd`" ];
+Needs[ "Wolfram`Chatbook`"                  ];
+Needs[ "Wolfram`Chatbook`Common`"           ];
+Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
+Needs[ "Wolfram`Chatbook`Personas`"         ];
+Needs[ "Wolfram`Chatbook`PersonaInstaller`" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Config*)
+$personaDataURL = "https://resources.wolframcloud.com/PromptRepository/prompttype/personas-data.json";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*personaCompletion*)
+personaCompletion // beginDefinition;
+personaCompletion[ "" ] := $personaNames;
+personaCompletion[ string_String ] := Select[ $personaNames, StringStartsQ[ string, IgnoreCase -> True ] ];
+personaCompletion // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$personaNames*)
+$personaNames := DeleteDuplicates @ Join[ Keys @ GetCachedPersonaData[ ], $availablePersonaNames ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$availablePersonaNames*)
+$availablePersonaNames := Enclose[
+    Module[ { personaData, names },
+        personaData = ConfirmBy[ URLExecute[ $personaDataURL, "RawJSON" ], AssociationQ, "PersonaData" ];
+        names = Cases[
+            personaData[ "Resources" ],
+            KeyValuePattern[ "Name" -> KeyValuePattern[ "Label" -> name_String ] ] :> name
+        ];
+        $availablePersonaNames = ConfirmMatch[ names, { __? StringQ }, "Names" ]
+    ],
+    throwInternalFailure[ $availablePersonaNames, ##1 ] &
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -20,8 +55,18 @@ insertPersonaInputBox[ cell_CellObject ] := insertPersonaInputBox[ cell, parentN
 insertPersonaInputBox[ parent_CellObject, nbo_NotebookObject ] :=
     Module[ { uuid, cell },
         uuid = CreateUUID[ ];
-        cell = Cell[ BoxData @ ToBoxes @ personaInputBox @ uuid, "InlinePersonaChooser", Background -> None ];
+        cell = Cell[ BoxData @ ToBoxes @ personaInputBox[ "", uuid ], "InlinePersonaChooser", Background -> None ];
         NotebookWrite[ nbo, cell ];
+        FrontEnd`MoveCursorToInputField[ nbo, uuid ]
+    ];
+
+insertPersonaInputBox[ name_String, cell_CellObject ] := insertPersonaInputBox[ name, cell, parentNotebook @ cell ];
+
+insertPersonaInputBox[ name_String, parent_CellObject, nbo_NotebookObject ] :=
+    Module[ { uuid, cell },
+        uuid = CreateUUID[ ];
+        cell = Cell[ BoxData @ ToBoxes @ personaInputBox[ name, uuid ], "InlinePersonaChooser", Background -> None ];
+        NotebookWrite[ parent, cell ];
         FrontEnd`MoveCursorToInputField[ nbo, uuid ]
     ];
 
@@ -30,11 +75,10 @@ insertPersonaInputBox // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*personaInputBox*)
-(* FIXME: create TemplateBox and hook up an action name *)
 personaInputBox // beginDefinition;
 
-personaInputBox[ uuid_ ] := EventHandler[
-    DynamicModule[ { string },
+personaInputBox[ name_String, uuid_ ] := DynamicModule[ { string = name, cell },
+    EventHandler[
         Style[
             Framed[
                 Grid[
@@ -42,12 +86,12 @@ personaInputBox[ uuid_ ] := EventHandler[
                         {
                             "@",
                             InputField[
-                                Dynamic[ string ],
+                                Dynamic[ string, writeStaticPersonaBox[ cell, string = # ] & ],
                                 String,
                                 ContinuousAction        -> False,
                                 FieldCompletionFunction -> personaCompletion,
-                                FieldSize               -> { { 6, Infinity }, { 0, Infinity } },
-                                BaseStyle               -> { "Text", FontColor -> Darker @ Blue },
+                                FieldSize               -> { { 15, Infinity }, { 0, Infinity } },
+                                BaseStyle               -> { "Text" },
                                 Appearance              -> "Frameless",
                                 ContentPadding          -> False,
                                 FrameMargins            -> 0,
@@ -56,36 +100,34 @@ personaInputBox[ uuid_ ] := EventHandler[
                         }
                     },
                     Spacings  -> 0,
-                    Alignment -> { Automatic, Center }
+                    Alignment -> { Automatic, Baseline }
                 ],
                 RoundingRadius -> 4,
-                FrameStyle     -> LightBlue,
+                FrameStyle     -> RGBColor[ "#a3c9f2" ],
                 FrameMargins   -> { { 4, 3 }, { 3, 3 } },
                 ContentPadding -> False
             ],
             "Text",
-            FontColor            -> Darker @ Blue,
             ShowStringCharacters -> False
-        ]
+        ],
+        {
+            "ReturnKeyDown" :> moveAndWriteStaticPersonaBox @ cell,
+            "TabKeyDown"    :> moveAndWriteStaticPersonaBox @ cell(*,
+            "EscapeKeyDown" :> Block[ { $personaNames = { } }, moveAndWriteStaticPersonaBox @ cell ]*)
+        }
     ],
-    {
-        "ReturnKeyDown" :> writeStaticPersonaBox[ EvaluationCell[ ] ],
-        "EscapeKeyDown" :> removePersonaBox @ EvaluationCell[ ]
-    }
+    Initialization   :> { cell = EvaluationCell[ ], Quiet @ Needs[ "Wolfram`Chatbook`" -> None ] },
+    UnsavedVariables :> { cell }
 ];
 
 personaInputBox // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*personaCompletion*)
-personaCompletion // beginDefinition;
-personaCompletion[ "" ] := $personaNames;
-personaCompletion[ string_String ] := Select[ $personaNames, StringStartsQ @ string ];
-personaCompletion // endDefinition;
-
-(* TODO: placeholder definition *)
-$personaNames := { "Birdnardo", "Helper", "Wolfie", "ELI5", "Talk Like a Pirate", "Opposite Day" };
+(* ::Subsection::Closed:: *)
+(*moveAndWriteStaticPersonaBox*)
+moveAndWriteStaticPersonaBox // beginDefinition;
+moveAndWriteStaticPersonaBox[ cell_CellObject ] := (SelectionMove[ cell, All, Cell ]; writeStaticPersonaBox @ cell);
+moveAndWriteStaticPersonaBox // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -95,7 +137,13 @@ writeStaticPersonaBox // beginDefinition;
 writeStaticPersonaBox[ cell_CellObject ] :=
     writeStaticPersonaBox[ cell, personaInputSetting @ NotebookRead @ cell ];
 
-writeStaticPersonaBox[ cell_CellObject, name_String ] /; MemberQ[ $personaNames, name ] := (
+writeStaticPersonaBox[ cell_, $Failed ] := Null; (* box was already overwritten *)
+
+writeStaticPersonaBox[ cell_CellObject, name_String ] /; MemberQ[ $personaNames, name ] := Enclose[
+    If[ ! MemberQ[ Keys @ GetCachedPersonaData[ ], name ],
+        ConfirmBy[ PersonaInstall @ name, FileExistsQ, "PersonaInstall" ];
+        ConfirmAssert[ MemberQ[ Keys @ GetCachedPersonaData[ ], name ], "GetCachedPersonaData" ]
+    ];
     CurrentValue[ ParentCell @ cell, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = name;
     NotebookWrite[
         cell,
@@ -103,12 +151,12 @@ writeStaticPersonaBox[ cell_CellObject, name_String ] /; MemberQ[ $personaNames,
             BoxData @ ToBoxes @ staticPersonaBox @ name,
             "InlinePersonaReference",
             TaggingRules -> <| "PersonaName" -> name |>,
-            Background   -> None,
-            Editable     -> False,
-            Selectable   -> False
+            Background -> None,
+            Selectable -> False
         ]
-    ];
-);
+    ],
+    throwInternalFailure[ writeStaticPersonaBox[ cell, name ], ## ] &
+];
 
 writeStaticPersonaBox[ cell_CellObject, name_String ] :=
     NotebookWrite[ cell, TextData[ "@"<>name ], After ];
@@ -117,26 +165,51 @@ writeStaticPersonaBox // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*removePersonaBox*)
+removePersonaBox // beginDefinition;
+removePersonaBox[ cell_CellObject ] := removePersonaBox[ cell, personaInputSetting @ NotebookRead @ cell ];
+removePersonaBox[ cell_CellObject, text_String ] := NotebookWrite[ cell, TextData[ "@"<>text ], After ];
+removePersonaBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*staticPersonaBox*)
 (* FIXME: this can be a template box *)
 staticPersonaBox // beginDefinition;
+staticPersonaBox[ name_String ] := Button[
+    MouseAppearance[
+        Mouseover[
+            staticPersonaBoxLabel[ name, RGBColor[ "#f1f8ff" ] ],
+            staticPersonaBoxLabel[ name, RGBColor[ "#ffffff" ] ]
+        ],
+        "LinkHand"
+    ],
+    insertPersonaInputBox[ name, EvaluationCell[ ] ],
+    ContentPadding -> False,
+    FrameMargins   -> 0,
+    Appearance     -> $suppressButtonAppearance
+];
 
-staticPersonaBox[ name_String ] := Style[
+staticPersonaBox // endDefinition;
+
+
+staticPersonaBoxLabel // beginDefinition;
+
+staticPersonaBoxLabel[ name_String, background_ ] := Style[
     Framed[
-        Grid[ { { "@", name } }, Spacings -> 0, Alignment -> { Automatic, Baseline } ],
-        Background     -> GrayLevel[ 0.95 ],
+        "@" <> name,
+        Background     -> background,
         RoundingRadius -> 4,
-        FrameStyle     -> GrayLevel[ 0.85 ],
+        FrameStyle     -> RGBColor[ "#a3c9f2" ],
         FrameMargins   -> { { 4, 3 }, { 3, 3 } },
         ContentPadding -> False,
         BaseStyle      -> "Text"
     ],
-    FontColor            -> GrayLevel[ 0.4 ],
     ShowStringCharacters -> False,
     Selectable           -> False
 ];
 
-staticPersonaBox // endDefinition;
+staticPersonaBoxLabel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

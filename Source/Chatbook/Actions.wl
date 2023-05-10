@@ -64,7 +64,7 @@ ChatbookAction[ "CopyChatObject"       , args___ ] := catchMine @ CopyChatObject
 ChatbookAction[ "EvaluateChatInput"    , args___ ] := catchMine @ EvaluateChatInput @ args;
 ChatbookAction[ "ExclusionToggle"      , args___ ] := catchMine @ ExclusionToggle @ args;
 ChatbookAction[ "OpenChatMenu"         , args___ ] := catchMine @ OpenChatMenu @ args;
-ChatbookAction[ "PersonaInstall"       , args___ ] := catchMine @ PersonaInstall @ args;
+ChatbookAction[ "PersonaManage"        , args___ ] := catchMine @ PersonaManage @ args;
 ChatbookAction[ "PersonaURLInstall"    , args___ ] := catchMine @ PersonaURLInstall @ args;
 ChatbookAction[ "Send"                 , args___ ] := catchMine @ SendChat @ args;
 ChatbookAction[ "StopChat"             , args___ ] := catchMine @ StopChat @ args;
@@ -84,15 +84,15 @@ InsertInlineReference // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*PersonaInstall*)
-PersonaInstall // beginDefinition;
+(*PersonaManage*)
+PersonaManage // beginDefinition;
 
-PersonaInstall[ a___ ] := Enclose[
+PersonaManage[ a___ ] := Enclose[
     ConfirmBy[ PersonaInstallFromResourceSystem[ ], AssociationQ, "PersonaInstallFromResourceSystem" ],
-    throwInternalFailure[ PersonaInstall @ a, ## ] &
+    throwInternalFailure[ PersonaManage @ a, ## ] &
 ];
 
-PersonaInstall // endDefinition;
+PersonaManage // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -709,7 +709,7 @@ getLLMEvaluator // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getNamedLLMEvaluator*)
 getNamedLLMEvaluator // beginDefinition;
-getNamedLLMEvaluator[ name_String ] := getNamedLLMEvaluator[ name, GetPersonaData @ name ];
+getNamedLLMEvaluator[ name_String ] := getNamedLLMEvaluator[ name, GetCachedPersonaData @ name ];
 getNamedLLMEvaluator[ name_String, evaluator_Association ] := Append[ evaluator, "LLMEvaluatorName" -> name ];
 getNamedLLMEvaluator[ name_String, _ ] := name;
 getNamedLLMEvaluator // endDefinition;
@@ -1778,7 +1778,7 @@ namedRolePrompt // ClearAll;
 
 namedRolePrompt[ name_String ] := Enclose[
     Module[ { data, pre, post },
-		data = ConfirmBy[GetPersonaData[name], AssociationQ];
+		data = ConfirmBy[GetCachedPersonaData[name], AssociationQ];
 
         pre  = Lookup[ data, "Pre", TemplateApply @ Lookup[ data, "PromptTemplate" ] ];
         post = Lookup[ data, "Post" ];

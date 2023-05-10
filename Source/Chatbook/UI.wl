@@ -31,6 +31,7 @@ Needs["Wolfram`Chatbook`Serialization`"]
 Needs["Wolfram`Chatbook`Menus`"]
 Needs["Wolfram`Chatbook`Personas`"]
 Needs["Wolfram`Chatbook`PersonaInstaller`"]
+Needs["Wolfram`Chatbook`FrontEnd`"]
 
 
 Needs["Wolfram`ServerSentEventUtils`" -> None]
@@ -1342,7 +1343,7 @@ MakeChatInputCellDingbat[] := With[{}, Module[{
 				RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
 			];
 		),
-		Appearance -> None
+		Appearance -> $suppressButtonAppearance
 	];
 
 	PaneSelector[
@@ -1561,7 +1562,7 @@ makeChatInputActionMenuContent[
 		],
 		{
 			Delimiter,
-			{alignedMenuIcon[getIcon["PersonaOther"]], "Add & Manage Personas\[Ellipsis]", "PersonaInstall"},
+			{alignedMenuIcon[getIcon["PersonaOther"]], "Add & Manage Personas\[Ellipsis]", "PersonaManage"},
 			{alignedMenuIcon[getIcon["PersonaFromURL"]], "Install From URL\[Ellipsis]", "PersonaURLInstall"}
 		},
 		{
@@ -1588,7 +1589,7 @@ makeChatInputActionMenuContent[
 					];
 				),
 				AutoAction -> True,
-				Appearance -> None
+				Appearance -> $suppressButtonAppearance
 			]
 		}
 	];
