@@ -213,6 +213,7 @@ cellToString[ Cell[ a__, $$noCellLabelStyle, b___, CellLabel -> _, c___ ] ] :=
 
 (* Convert delimiters to equivalent markdown *)
 cellToString[ Cell[ __, $$delimiterStyle, ___ ] ] := "\n---\n";
+cellToString[ Cell[ __, "ExcludedChatDelimiter", ___ ] ] := "";
 
 (* Styles that should include documentation search *)
 cellToString[ Cell[ a__, $$docSearchStyle, b___ ] ] :=

@@ -34,7 +34,7 @@ currentChatSettings[ obj: _NotebookObject|_CellObject ] :=
     Association[
         $defaultChatSettings,
         Replace[
-            CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ],
+            Association @ CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ],
             Except[ _? AssociationQ ] :> <| |>
         ]
     ];
