@@ -45,8 +45,6 @@ $closedChatCellOptions :=
         Sequence @@ { CellMargins -> -2, CellOpen -> False, CellFrame -> 0, ShowCellBracket -> False }
     ];
 
-$defaultChatSettings := Association @ Options @ CreateChatNotebook;
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Style Patterns*)
@@ -163,27 +161,6 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
     Block[ { $autoAssistMode = False }, waitForLastTask[ ]; sendChat[ evalCell, nbo, settings ] ];
 
 EvaluateChatInput // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*currentChatSettings*)
-currentChatSettings // beginDefinition;
-
-currentChatSettings[ obj: _NotebookObject|_CellObject ] :=
-    Association[
-        $defaultChatSettings,
-        Replace[
-            CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ],
-            Except[ _? AssociationQ ] :> <| |>
-        ]
-    ];
-
-currentChatSettings[ obj: _NotebookObject|_CellObject, key_String ] := Replace[
-    CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", key } ],
-    Inherited :> Lookup[ $defaultChatSettings, key, Inherited ]
-];
-
-currentChatSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -903,7 +880,8 @@ activeAIAssistantCell[
         {
             label    = RawBoxes @ TemplateBox[ { }, "MinimizedChatActive" ],
             id       = $SessionID,
-            reformat = dynamicAutoFormatQ @ settings
+            reformat = dynamicAutoFormatQ @ settings,
+            task     = Lookup[ settings, "Task" ]
         },
         Module[ { x = 0 },
             ClearAttributes[ { x, cellObject }, Temporary ];
@@ -923,7 +901,8 @@ activeAIAssistantCell[
                                 TrackedSymbols :> { x },
                                 UpdateInterval -> 0.2
                             ],
-                            Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
+                            Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
+                            Deinitialization :> Quiet @ TaskRemove @ task
                         ],
                         Dynamic[
                             x++;
@@ -934,7 +913,8 @@ activeAIAssistantCell[
                                 ,
                                 dynamicTextDisplay[ container, reformat ]
                             ],
-                            Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
+                            Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
+                            Deinitialization :> Quiet @ TaskRemove @ task
                         ]
                     ],
                 "Output",
@@ -953,7 +933,8 @@ activeAIAssistantCell[ container_, settings_, minimized_ ] :=
         {
             label    = RawBoxes @ TemplateBox[ { }, "MinimizedChatActive" ],
             id       = $SessionID,
-            reformat = dynamicAutoFormatQ @ settings
+            reformat = dynamicAutoFormatQ @ settings,
+            task     = Lookup[ settings, "Task" ]
         },
         Cell[
             BoxData @ ToBoxes @
@@ -964,11 +945,13 @@ activeAIAssistantCell[ container_, settings_, minimized_ ] :=
                             TrackedSymbols :> { },
                             UpdateInterval -> 0.2
                         ],
-                        Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
+                        Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
+                        Deinitialization :> Quiet @ TaskRemove @ task
                     ],
                     Dynamic[
                         dynamicTextDisplay[ container, reformat ],
-                        Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
+                        Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
+                        Deinitialization :> Quiet @ TaskRemove @ task
                     ]
                 ],
             "Output",

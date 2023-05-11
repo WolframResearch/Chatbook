@@ -11,28 +11,7 @@ Notebook[
   Cell[StyleData[StyleDefinitions -> "Default.nb"]],
   Cell[
    StyleData["Notebook"],
-   TaggingRules -> <|
-    "ChatNotebookSettings" -> <|
-     "Assistance" -> Automatic,
-     "AutoFormat" -> True,
-     "ChatContextCellProcessingFunction" -> Automatic,
-     "ChatContextPostEvaluationFunction" -> Automatic,
-     "ChatContextPreprompt" -> Automatic,
-     "ChatHistoryLength" -> 25,
-     "DynamicAutoFormat" -> Automatic,
-     "FrequencyPenalty" -> 0.1,
-     "IncludeHistory" -> Automatic,
-     "MaxTokens" -> Automatic,
-     "MergeMessages" -> True,
-     "LLMEvaluator" -> "Helper",
-     "Model" -> "gpt-3.5-turbo",
-     "OpenAIKey" -> Automatic,
-     "PresencePenalty" -> 0.1,
-     "ShowMinimized" -> Automatic,
-     "Temperature" -> 0.7,
-     "TopP" -> 1
-    |>
-   |>,
+   TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    CellTrayWidgets -> <|
     "ChatWidget" -> <|
      "Type" -> "Focus",
@@ -633,10 +612,7 @@ Notebook[
              FrameMargins -> 2,
              ImageMargins -> {{0, 3}, {0, 0}},
              FrameStyle ->
-              Directive[
-               RGBColor[0.8549, 0.83137, 0.72549],
-               AbsoluteThickness[1]
-              ],
+              Directive[GrayLevel[0.85686], AbsoluteThickness[1]],
              Background ->
               Dynamic[
                If[ CurrentValue["MouseOver"], GrayLevel[0.8], GrayLevel[1] ]
@@ -772,10 +748,7 @@ Notebook[
                 FrameMargins -> 2,
                 ImageMargins -> {{0, 3}, {0, 0}},
                 FrameStyle ->
-                 Directive[
-                  RGBColor[0.8549, 0.83137, 0.72549],
-                  AbsoluteThickness[1]
-                 ],
+                 Directive[GrayLevel[0.85686], AbsoluteThickness[1]],
                 Background ->
                  Dynamic[
                   If[ CurrentValue["MouseOver"], GrayLevel[0.8], GrayLevel[1] ]
@@ -884,6 +857,7 @@ Notebook[
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellFrameColor -> RGBColor[0.63922, 0.78824, 0.94902],
    CellFrameStyle -> Dashing[{Small, Small}],
+   CounterIncrements -> { },
    MenuSortingValue -> 1000
   ],
   Cell[
