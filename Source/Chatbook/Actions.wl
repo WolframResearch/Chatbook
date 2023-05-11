@@ -1253,7 +1253,7 @@ getPrePrompt[ as_Association ] := toPromptString @ FirstCase[
         as[ "Pre" ],
         as[ "PromptTemplate" ]
     },
-    expr_ :> With[ { e = expr }, e /; ! MissingQ @ e ]
+    expr_ :> With[ { e = expr }, e /; MatchQ[ e, _String | _TemplateObject ] ]
 ];
 
 getPrePrompt // endDefinition;
@@ -1270,7 +1270,7 @@ getPostPrompt[ as_Association ] := toPromptString @ FirstCase[
         as[ "ChatContextPostPrompt" ],
         as[ "Post" ]
     },
-    expr_ :> With[ { e = expr }, e /; ! MissingQ @ e ]
+    expr_ :> With[ { e = expr }, e /; MatchQ[ e, _String | _TemplateObject ] ]
 ];
 
 getPostPrompt // endDefinition;
