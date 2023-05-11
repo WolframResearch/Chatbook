@@ -3,12 +3,14 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 
+`$defaultChatSettings;
 `$suppressButtonAppearance;
 `cellInformation;
 `cellOpenQ;
 `cellPrint;
 `cellPrintAfter;
 `cellStyles;
+`currentChatSettings;
 `notebookRead;
 `parentNotebook;
 `toCompressedBoxes;
@@ -18,6 +20,36 @@ Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"        ];
 Needs[ "Wolfram`Chatbook`Common`" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*CurrentValue Utilities*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*currentChatSettings*)
+currentChatSettings // beginDefinition;
+
+currentChatSettings[ obj: _NotebookObject|_CellObject ] :=
+    Association[
+        $defaultChatSettings,
+        Replace[
+            CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ],
+            Except[ _? AssociationQ ] :> <| |>
+        ]
+    ];
+
+currentChatSettings[ obj: _NotebookObject|_CellObject, key_String ] := Replace[
+    AbsoluteCurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", key } ],
+    Inherited :> Lookup[ $defaultChatSettings, key, Inherited ]
+];
+
+currentChatSettings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$defaultChatSettings*)
+$defaultChatSettings := Association @ Options @ CreateChatNotebook;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

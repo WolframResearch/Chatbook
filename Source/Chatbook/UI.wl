@@ -1325,7 +1325,7 @@ MakeChatInputCellDingbat[] := With[{}, Module[{
 			FrameMargins -> 2,
 			ImageMargins -> {{0, 3}, {0, 0}},
 			FrameStyle -> Directive[
-				RGBColor[0.8549, 0.83137, 0.72549],
+				GrayLevel[0.856863],
 				AbsoluteThickness[1]
 			],
 			Background -> Dynamic[
@@ -1449,10 +1449,9 @@ currentValueOrigin[
 	value,
 	inlineValue
 },
-	value = CurrentValue[cell, keyPath];
+	value = absoluteCurrentValue[cell, keyPath];
 
-	(* FIXME: Don't use a ResourceFunction in this code. *)
-	inlineValue = Quiet @ ResourceFunction["NestedLookup"][
+	inlineValue = nestedLookup[
 		Options[cell],
 		keyPath,
 		None
@@ -1465,6 +1464,37 @@ currentValueOrigin[
 			{"Inline", inlineValue}
 	]
 ]
+
+(*====================================*)
+
+SetFallthroughError[absoluteCurrentValue]
+
+absoluteCurrentValue[cell_, {TaggingRules, "ChatNotebookSettings", key_}] := currentChatSettings[cell, key]
+absoluteCurrentValue[cell_, keyPath_] := AbsoluteCurrentValue[cell, keyPath]
+
+(*====================================*)
+
+SetFallthroughError[nestedLookup]
+Attributes[nestedLookup] = {HoldRest}
+
+nestedLookup[as:KeyValuePattern[{}], {keys___}, default_] :=
+	Replace[
+		GeneralUtilities`ToAssociations[as][keys],
+		{
+			Missing["KeyAbsent", ___] :> default,
+			_[keys] :> default
+		}
+	]
+
+nestedLookup[as_, key:Except[_List], default_] :=
+	With[{keys = key},
+		If[ ListQ[keys],
+			nestedLookup[as, keys, default],
+			nestedLookup[as, {keys}, default]
+		]
+	]
+
+nestedLookup[as_, keys_] := nestedLookup[as, keys, Missing["KeySequenceAbsent", keys]]
 
 (*====================================*)
 
