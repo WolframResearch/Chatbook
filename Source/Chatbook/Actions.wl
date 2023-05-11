@@ -26,14 +26,16 @@ Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`Serialization`"    ];
 Needs[ "Wolfram`Chatbook`Formatting`"       ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
+Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
-$chatDelimiterStyles = { "ChatContextDivider", "ChatDelimiter" };
-$chatIgnoredStyles   = { "ChatExcluded" };
-$chatInputStyles     = { "ChatInput", "ChatQuery", "ChatSystemInput" };
-$chatOutputStyles    = { "ChatOutput" };
+$chatDelimiterStyles  = { "ChatContextDivider", "ChatDelimiter" };
+$chatIgnoredStyles    = { "ChatExcluded" };
+$chatInputStyles      = { "ChatInput", "ChatInputSingle", "ChatQuery", "ChatSystemInput" };
+$chatOutputStyles     = { "ChatOutput" };
+$excludeHistoryStyles = { "ChatInputSingle" };
 
 $maxChatCells = OptionValue[ CreateChatNotebook, "ChatHistoryLength" ];
 
@@ -46,42 +48,51 @@ $closedChatCellOptions :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Style Patterns*)
-$$chatDelimiterStyle = Alternatives @@ $chatDelimiterStyles | { ___, Alternatives @@ $chatDelimiterStyles, ___ };
-$$chatIgnoredStyle   = Alternatives @@ $chatIgnoredStyles   | { ___, Alternatives @@ $chatIgnoredStyles  , ___ };
-$$chatInputStyle     = Alternatives @@ $chatInputStyles     | { ___, Alternatives @@ $chatInputStyles    , ___ };
-$$chatOutputStyle    = Alternatives @@ $chatOutputStyles    | { ___, Alternatives @@ $chatOutputStyles   , ___ };
+$$chatDelimiterStyle  = Alternatives @@ $chatDelimiterStyles  | { ___, Alternatives @@ $chatDelimiterStyles , ___ };
+$$chatIgnoredStyle    = Alternatives @@ $chatIgnoredStyles    | { ___, Alternatives @@ $chatIgnoredStyles   , ___ };
+$$chatInputStyle      = Alternatives @@ $chatInputStyles      | { ___, Alternatives @@ $chatInputStyles     , ___ };
+$$chatOutputStyle     = Alternatives @@ $chatOutputStyles     | { ___, Alternatives @@ $chatOutputStyles    , ___ };
+$$excludeHistoryStyle = Alternatives @@ $excludeHistoryStyles | { ___, Alternatives @@ $excludeHistoryStyles, ___ };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*ChatbookAction*)
-ChatbookAction[ "AIAutoAssist"     , args___ ] := catchMine @ AIAutoAssist @ args;
-ChatbookAction[ "Ask"              , args___ ] := catchMine @ AskChat @ args;
-ChatbookAction[ "AttachCodeButtons", args___ ] := catchMine @ AttachCodeButtons @ args;
-ChatbookAction[ "CopyChatObject"   , args___ ] := catchMine @ CopyChatObject @ args;
-ChatbookAction[ "EvaluateChatInput", args___ ] := catchMine @ EvaluateChatInput @ args;
-ChatbookAction[ "ExclusionToggle"  , args___ ] := catchMine @ ExclusionToggle @ args;
-ChatbookAction[ "OpenChatMenu"     , args___ ] := catchMine @ OpenChatMenu @ args;
-ChatbookAction[ "PersonaInstall"   , args___ ] := catchMine @ PersonaInstall @ args;
-ChatbookAction[ "PersonaURLInstall", args___ ] := catchMine @ PersonaURLInstall @ args;
-ChatbookAction[ "Send"             , args___ ] := catchMine @ SendChat @ args;
-ChatbookAction[ "StopChat"         , args___ ] := catchMine @ StopChat @ args;
-ChatbookAction[ "TabLeft"          , args___ ] := catchMine @ TabLeft @ args;
-ChatbookAction[ "TabRight"         , args___ ] := catchMine @ TabRight @ args;
-ChatbookAction[ "WidgetSend"       , args___ ] := catchMine @ WidgetSend @ args;
-ChatbookAction[ name_String        , args___ ] := catchMine @ throwFailure[ "NotImplemented", name, args ];
-ChatbookAction[ args___                      ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
+ChatbookAction[ "AIAutoAssist"         , args___ ] := catchMine @ AIAutoAssist @ args;
+ChatbookAction[ "Ask"                  , args___ ] := catchMine @ AskChat @ args;
+ChatbookAction[ "AttachCodeButtons"    , args___ ] := catchMine @ AttachCodeButtons @ args;
+ChatbookAction[ "CopyChatObject"       , args___ ] := catchMine @ CopyChatObject @ args;
+ChatbookAction[ "EvaluateChatInput"    , args___ ] := catchMine @ EvaluateChatInput @ args;
+ChatbookAction[ "ExclusionToggle"      , args___ ] := catchMine @ ExclusionToggle @ args;
+ChatbookAction[ "OpenChatMenu"         , args___ ] := catchMine @ OpenChatMenu @ args;
+ChatbookAction[ "PersonaManage"        , args___ ] := catchMine @ PersonaManage @ args;
+ChatbookAction[ "PersonaURLInstall"    , args___ ] := catchMine @ PersonaURLInstall @ args;
+ChatbookAction[ "Send"                 , args___ ] := catchMine @ SendChat @ args;
+ChatbookAction[ "StopChat"             , args___ ] := catchMine @ StopChat @ args;
+ChatbookAction[ "TabLeft"              , args___ ] := catchMine @ TabLeft @ args;
+ChatbookAction[ "TabRight"             , args___ ] := catchMine @ TabRight @ args;
+ChatbookAction[ "WidgetSend"           , args___ ] := catchMine @ WidgetSend @ args;
+ChatbookAction[ "InsertInlineReference", args___ ] := catchMine @ InsertInlineReference @ args;
+ChatbookAction[ name_String            , args___ ] := catchMine @ throwFailure[ "NotImplemented", name, args ];
+ChatbookAction[ args___                          ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*PersonaInstall*)
-PersonaInstall // beginDefinition;
+(*InsertInlineReference*)
+InsertInlineReference // beginDefinition;
+InsertInlineReference[ "Persona", args___ ] := insertPersonaInputBox @ args;
+InsertInlineReference // endDefinition;
 
-PersonaInstall[ a___ ] := Enclose[
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*PersonaManage*)
+PersonaManage // beginDefinition;
+
+PersonaManage[ a___ ] := Enclose[
     ConfirmBy[ PersonaInstallFromResourceSystem[ ], AssociationQ, "PersonaInstallFromResourceSystem" ],
-    throwInternalFailure[ PersonaInstall @ a, ## ] &
+    throwInternalFailure[ PersonaManage @ a, ## ] &
 ];
 
-PersonaInstall // endDefinition;
+PersonaManage // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -276,11 +287,6 @@ OpenChatMenu // beginDefinition;
 OpenChatMenu[ "ChatOutput" , cell_CellObject ] := openChatOutputMenu @ cell;
 OpenChatMenu[ "ChatSection", cell_CellObject ] := openChatSectionDialog @ cell;
 OpenChatMenu // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-
-
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -591,18 +597,29 @@ SendChat[ evalCell_, nbo_, settings_, Automatic ] /; CloudSystem`$CloudNotebooks
     SendChat[ evalCell, nbo, settings, False ];
 
 SendChat[ evalCell_, nbo_, settings_, Automatic ] :=
-    Block[ { $autoOpen, $alwaysOpen = $alwaysOpen },
-        $autoOpen = MemberQ[ CurrentValue[ evalCell, CellStyle ], $$chatInputStyle ];
-        $alwaysOpen = TrueQ @ $alwaysOpen || $autoOpen;
-        sendChat[ evalCell, nbo, settings ]
+    With[ { styles = cellStyles @ evalCell },
+        Block[ { $autoOpen, $alwaysOpen = $alwaysOpen },
+            $autoOpen = MemberQ[ styles, $$chatInputStyle ];
+            $alwaysOpen = TrueQ[ $alwaysOpen || $autoOpen ];
+            sendChat[ evalCell, nbo, addCellStyleSettings[ settings, styles ] ]
+        ]
     ];
 
 SendChat[ evalCell_, nbo_, settings_, minimized_ ] :=
     Block[ { $alwaysOpen = alwaysOpenQ[ settings, minimized ] },
-        sendChat[ evalCell, nbo, settings ]
+        sendChat[ evalCell, nbo, addCellStyleSettings[ settings, evalCell ] ]
     ];
 
 SendChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*addCellStyleSettings*)
+addCellStyleSettings // beginDefinition;
+addCellStyleSettings[ settings_, cell_CellObject ] := addCellStyleSettings[ settings, cellStyles @ cell ];
+addCellStyleSettings[ settings_, $$excludeHistoryStyle ] := Association[ settings, "IncludeHistory" -> False ];
+addCellStyleSettings[ settings_, _ ] := settings;
+addCellStyleSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -631,6 +648,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         settings = ConfirmBy[ inheritSettings[ settings0, cells, evalCell ], AssociationQ, "InheritSettings" ];
         id       = Lookup[ settings, "ID" ];
         key      = toAPIKey[ Automatic, id ];
+
+        If[ ! settings[ "IncludeHistory" ], cells = { evalCell } ];
 
         If[ ! StringQ @ key, throwFailure[ "NoAPIKey" ] ];
 
@@ -690,7 +709,7 @@ getLLMEvaluator // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getNamedLLMEvaluator*)
 getNamedLLMEvaluator // beginDefinition;
-getNamedLLMEvaluator[ name_String ] := getNamedLLMEvaluator[ name, GetPersonaData @ name ];
+getNamedLLMEvaluator[ name_String ] := getNamedLLMEvaluator[ name, GetCachedPersonaData @ name ];
 getNamedLLMEvaluator[ name_String, evaluator_Association ] := Append[ evaluator, "LLMEvaluatorName" -> name ];
 getNamedLLMEvaluator[ name_String, _ ] := name;
 getNamedLLMEvaluator // endDefinition;
@@ -1759,7 +1778,7 @@ namedRolePrompt // ClearAll;
 
 namedRolePrompt[ name_String ] := Enclose[
     Module[ { data, pre, post },
-		data = ConfirmBy[GetPersonaData[name], AssociationQ];
+		data = ConfirmBy[GetCachedPersonaData[name], AssociationQ];
 
         pre  = Lookup[ data, "Pre", TemplateApply @ Lookup[ data, "PromptTemplate" ] ];
         post = Lookup[ data, "Post" ];

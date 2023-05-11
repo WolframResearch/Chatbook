@@ -3,6 +3,7 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 
+`$suppressButtonAppearance;
 `cellInformation;
 `cellOpenQ;
 `cellPrint;
@@ -157,6 +158,14 @@ cloudNotebookRead // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Boxes*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$suppressButtonAppearance*)
+$suppressButtonAppearance = Dynamic @ FEPrivate`FrontEndResource[
+    "FEExpressions",
+    "SuppressMouseDownNinePatchAppearance"
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
