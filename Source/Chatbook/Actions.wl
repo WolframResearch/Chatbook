@@ -31,7 +31,7 @@ Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
-$chatDelimiterStyles  = { "ChatContextDivider", "ChatDelimiter" };
+$chatDelimiterStyles  = { "ChatContextDivider", "ChatDelimiter", "ExcludedChatDelimiter" };
 $chatIgnoredStyles    = { "ChatExcluded" };
 $chatInputStyles      = { "ChatInput", "ChatInputSingle", "ChatQuery", "ChatSystemInput" };
 $chatOutputStyles     = { "ChatOutput" };
