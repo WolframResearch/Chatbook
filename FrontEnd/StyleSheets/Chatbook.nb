@@ -1668,27 +1668,6 @@ Notebook[
             {
              TemplateBox[
               {
-               TemplateBox[{"IconizeIcon"}, "ChatMenuItemToolbarIcon"],
-               "\"Regenerate\"",
-               Hold[
-                With[ { cell$ = EvaluationCell[] },
-                 {root$ = ParentCell[cell$]},
-                 NotebookDelete[cell$];
-                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                 Symbol["Wolfram`Chatbook`ChatbookAction"][
-                  "Regenerate",
-                  root$
-                 ]
-                ]
-               ]
-              },
-              "ChatMenuItem"
-             ]
-            },
-            {TemplateBox[{}, "ChatMenuItemDelimiter"]},
-            {
-             TemplateBox[
-              {
                TemplateBox[{"DivideCellsIcon"}, "ChatMenuItemToolbarIcon"],
                "\"Explode Cells (In Place)\"",
                Hold[
@@ -1782,46 +1761,6 @@ Notebook[
                  Quiet[Needs["Wolfram`Chatbook`" -> None]];
                  Symbol["Wolfram`Chatbook`ChatbookAction"][
                   "CopyChatObject",
-                  root$
-                 ]
-                ]
-               ]
-              },
-              "ChatMenuItem"
-             ]
-            },
-            {
-             TemplateBox[
-              {
-               TemplateBox[{"GroupCellsIcon"}, "ChatMenuItemToolbarIcon"],
-               "\"Lock Response\"",
-               Hold[
-                With[ { cell$ = EvaluationCell[] },
-                 {root$ = ParentCell[cell$]},
-                 NotebookDelete[cell$];
-                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                 Symbol["Wolfram`Chatbook`ChatbookAction"][
-                  "LockResponse",
-                  root$
-                 ]
-                ]
-               ]
-              },
-              "ChatMenuItem"
-             ]
-            },
-            {
-             TemplateBox[
-              {
-               TemplateBox[{"AbortAllIcon"}, "ChatMenuItemToolbarIcon"],
-               "\"Disable AI Assistant\"",
-               Hold[
-                With[ { cell$ = EvaluationCell[] },
-                 {root$ = ParentCell[cell$]},
-                 NotebookDelete[cell$];
-                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                 Symbol["Wolfram`Chatbook`ChatbookAction"][
-                  "DisableAIAssistant",
                   root$
                  ]
                 ]
