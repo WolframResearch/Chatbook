@@ -79,7 +79,9 @@ ChatbookAction[ args___                          ] := catchMine @ throwInternalF
 (* ::Section::Closed:: *)
 (*InsertInlineReference*)
 InsertInlineReference // beginDefinition;
-InsertInlineReference[ "Persona", args___ ] := insertPersonaInputBox @ args;
+InsertInlineReference[ "Persona"         , args___ ] := insertPersonaInputBox @ args;
+InsertInlineReference[ "TrailingFunction", args___ ] := insertTrailingFunctionInputBox @ args;
+InsertInlineReference[ "Function"        , args___ ] := insertFunctionInputBox @ args;
 InsertInlineReference // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -655,6 +657,13 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
 
         data = ConfirmBy[ Association @ Flatten @ data, AssociationQ, "Data" ];
 
+        If[ data[ "RawOutput" ],
+            If[ AssociationQ @ settings[ "LLMEvaluator" ],
+                settings[ "LLMEvaluator", "PersonaIcon" ] = RawBoxes @ TemplateBox[ { }, "PersonaCode" ],
+                settings[ "PersonaIcon" ] = RawBoxes @ TemplateBox[ { }, "PersonaCode" ]
+            ]
+        ];
+
         AppendTo[ settings, "Data" -> data ];
 
         container = ProgressIndicator[ Appearance -> "Percolate" ];
@@ -1108,14 +1117,7 @@ makeHTTPRequest[ settings_Association? AssociationQ, cells: { __CellObject } ] :
     makeHTTPRequest[ settings, notebookRead @ cells ];
 
 makeHTTPRequest[ settings_Association? AssociationQ, cells: { __Cell } ] :=
-    Module[ { role, message, history, messages, merged },
-        role     = makeCurrentRole @ settings;
-        message  = Block[ { $CurrentCell = True }, makeCellMessage @ Last @ cells ];
-        history  = Reverse[ makeCellMessage /@ Reverse @ Most @ cells ];
-        messages = DeleteMissing @ Flatten @ { role, history, message };
-        merged   = If[ TrueQ @ Lookup[ settings, "MergeMessages" ], mergeMessageData @ messages, messages ];
-        makeHTTPRequest[ settings, merged ]
-    ];
+    makeHTTPRequest[ settings, makeChatMessages[ settings, cells ] ];
 
 makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association } ] :=
     Enclose @ Module[
@@ -1168,6 +1170,131 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association }
     ];
 
 makeHTTPRequest // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeChatMessages*)
+makeChatMessages // beginDefinition;
+
+makeChatMessages[ settings_, { cells___, cell_ ? promptFunctionCellQ } ] := (
+    Sow[ <| "RawOutput" -> True |>, $chatDataTag ];
+    makePromptFunctionMessages[ settings, { cells, cell } ]
+);
+
+makeChatMessages[ settings_, cells_List ] :=
+    Module[ { role, message, history, messages, merged },
+        role     = makeCurrentRole @ settings;
+        message  = Block[ { $CurrentCell = True }, makeCellMessage @ Last @ cells ];
+        history  = Reverse[ makeCellMessage /@ Reverse @ Most @ cells ];
+        messages = DeleteMissing @ Flatten @ { role, history, message };
+        merged   = If[ TrueQ @ Lookup[ settings, "MergeMessages" ], mergeMessageData @ messages, messages ];
+        merged
+    ];
+
+makeChatMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*promptFunctionCellQ*)
+promptFunctionCellQ[ Cell[ boxes_, ___, "ChatInput", ___ ] ] := inlineFunctionReferenceBoxesQ @ boxes;
+promptFunctionCellQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*inlineFunctionReferenceBoxesQ*)
+inlineFunctionReferenceBoxesQ[ (BoxData|TextData)[ boxes_ ] ] := inlineFunctionReferenceBoxesQ @ boxes;
+inlineFunctionReferenceBoxesQ[ { box_, ___ } ] := inlineFunctionReferenceBoxesQ @ box;
+
+inlineFunctionReferenceBoxesQ[
+    Cell[ _, "InlineFunctionReference", ___, TaggingRules -> KeyValuePattern[ "PromptFunctionName" -> _String ], ___ ]
+] := True;
+
+inlineFunctionReferenceBoxesQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makePromptFunctionMessages*)
+makePromptFunctionMessages // beginDefinition;
+
+makePromptFunctionMessages[ settings_, { cells___, cell_ } ] := Enclose[
+    Module[ { name, arguments, filled, string },
+        name      = ConfirmBy[ extractPromptFunctionName @ cell, StringQ, "PromptFunctionName" ];
+        arguments = ConfirmMatch[ extractPromptArguments @ cell, { ___String }, "PromptArguments" ];
+        filled    = ConfirmMatch[ replaceArgumentTokens[ name, arguments, { cells, cell } ], { ___String }, "Tokens" ];
+        string    = ConfirmBy[ getLLMPrompt[ name ] @@ filled, StringQ, "LLMPrompt" ];
+        (* FIXME: handle named slots *)
+        { <| "role" -> "user", "content" -> string |> }
+    ],
+    throwInternalFailure[ makePromptFunctionMessages[ settings, { cells, cell } ], ## ] &
+];
+
+makePromptFunctionMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*getLLMPrompt*)
+getLLMPrompt // beginDefinition;
+getLLMPrompt[ name_String ] := Block[ { PrintTemporary }, Quiet @ getLLMPrompt0 @ name ];
+getLLMPrompt // endDefinition;
+
+getLLMPrompt0 // beginDefinition;
+getLLMPrompt0[ name_ ] := With[ { t = System`LLMPrompt[ "Prompt: "<>name ] }, t /; MatchQ[ t, _TemplateObject ] ];
+getLLMPrompt0[ name_ ] := System`LLMPrompt @ name;
+getLLMPrompt0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*extractPromptFunctionName*)
+extractPromptFunctionName // beginDefinition;
+extractPromptFunctionName[ Cell[ boxes_, ___, "ChatInput", ___ ] ] := extractPromptFunctionName @ boxes;
+extractPromptFunctionName[ (BoxData|TextData)[ boxes_ ] ] := extractPromptFunctionName @ boxes;
+extractPromptFunctionName[ { box_, ___ } ] := extractPromptFunctionName @ box;
+extractPromptFunctionName[ Cell[ __, TaggingRules -> KeyValuePattern[ "PromptFunctionName" -> name_ ], ___ ] ] := name;
+extractPromptFunctionName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*extractPromptArguments*)
+extractPromptArguments // beginDefinition;
+extractPromptArguments[ Cell[ boxes_, ___, "ChatInput", ___ ] ] := extractPromptArguments @ boxes;
+extractPromptArguments[ (BoxData|TextData)[ boxes_ ] ] := extractPromptArguments @ boxes;
+extractPromptArguments[ { box_, ___ } ] := extractPromptArguments @ box;
+extractPromptArguments[ Cell[ __, TaggingRules -> KeyValuePattern[ "PromptArguments" -> args_ ], ___ ] ] := args;
+extractPromptArguments // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*replaceArgumentTokens*)
+$$promptArgumentToken = Alternatives[ ">", "^", "^^" ];
+
+replaceArgumentTokens // beginDefinition;
+
+replaceArgumentTokens[ name_String, args_List, { cells___, cell_ } ] :=
+    Module[ { tokens, rules, arguments },
+        tokens = Cases[ Union @ args, $$promptArgumentToken ];
+        rules = AssociationMap[ argumentTokenToString[ #, name, { cells, cell } ] &, tokens ];
+        arguments = Replace[ args, rules, { 1 } ];
+        arguments
+    ];
+
+replaceArgumentTokens // endDefinition;
+
+argumentTokenToString[
+    ">",
+    name_,
+    {
+        ___,
+        Cell[
+            TextData @ { ___, Cell[ __, TaggingRules -> KeyValuePattern[ "PromptFunctionName" -> name_ ], ___ ], a___ },
+            "ChatInput",
+            b___
+        ]
+    }
+] := CellToString @ Cell[ TextData @ { a }, "ChatInput", b ];
+
+argumentTokenToString[ "^", name_, { ___, cell_, _ } ] := CellToString @ cell;
+
+argumentTokenToString[ "^^", name_, { history___, _ } ] := StringRiffle[ CellToString /@ { history }, "\n\n" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1470,11 +1597,6 @@ dropDelimitedCells[ cells_List ] :=
     Drop[ cells, Max[ Position[ cellStyles @ cells, { ___, "ChatDelimiter"|"PageBreak", ___ }, { 1 } ], 0 ] ];
 
 dropDelimitedCells // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*cellStyles*)
-
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
