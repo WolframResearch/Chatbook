@@ -89,11 +89,20 @@ Cell[
         Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "EvaluateChatInput", $CellContext`cell ]
     ],
     CellEventActions -> {
-        { "KeyDown", "@" } :>
-            With[ { $CellContext`cell = EvaluationCell[ ] },
-                Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "Persona", $CellContext`cell ]
-            ]
+        { "KeyDown", "@" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
+            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "Persona", $CellContext`cell ]
+        ]
+        ,
+        { "KeyDown", "!" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
+            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "Function", $CellContext`cell ]
+        ]
+        (* ,
+        { "KeyDown", ">" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
+            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "TrailingFunction", $CellContext`cell ]
+        ] *)
     }
 ]
 

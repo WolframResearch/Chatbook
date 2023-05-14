@@ -227,7 +227,9 @@ cellToString[ Cell[ a__, $$docSearchStyle, b___ ] ] :=
 
 (* Delimit code blocks with triple backticks *)
 cellToString[ cell: Cell[ _BoxData, ___ ] ] /; ! TrueQ @ $delimitedCodeBlock :=
-    Block[ { $delimitedCodeBlock = True }, "```\n" <> cellToString @ cell <> "\n```" ];
+    Block[ { $delimitedCodeBlock = True },
+        With[ { s = cellToString @ cell }, If[ StringQ @ s, "```\n"<>s<>"\n```", "" ] ]
+    ];
 
 (* Prepend cell label to the cell string *)
 cellToString[ Cell[ a___, CellLabel -> label_String, b___ ] ] :=
@@ -373,6 +375,20 @@ fasterCellToString0[ a: { ___String } ] := StringJoin[ fasterCellToString0 /@ a 
 fasterCellToString0[
     Cell[ _, "InlinePersonaReference", ___, TaggingRules -> KeyValuePattern[ "PersonaName" -> name_String ], ___ ]
 ] := "@"<>name;
+
+fasterCellToString0[ Cell[
+    _,
+    "InlineFunctionReference",
+    ___,
+    TaggingRules -> KeyValuePattern @ { "PromptFunctionName" -> name_String, "PromptArguments" -> args_List },
+    ___
+] ] := "LLMResourceFunction[" <> StringRiffle[ toLLMArg /@ Flatten @ { name, args }, ", " ] <> "]";
+
+
+toLLMArg[ ">" ] := "$RestOfCellContents";
+toLLMArg[ "^" ] := "$PreviousCellContents";
+toLLMArg[ "^^" ] := "$ChatHistory";
+toLLMArg[ arg_ ] := ToString[ arg, InputForm ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)

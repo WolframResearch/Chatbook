@@ -3,6 +3,8 @@
 BeginPackage[ "Wolfram`Chatbook`InlineReferences`" ];
 
 `insertPersonaInputBox;
+`insertFunctionInputBox;
+`insertTrailingFunctionInputBox;
 
 Begin[ "`Private`" ];
 
@@ -12,13 +14,525 @@ Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`PersonaInstaller`" ];
 
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*Config*)
-$personaDataURL = "https://resources.wolframcloud.com/PromptRepository/prompttype/personas-data.json";
+(* TODO syntax
+    * #Translated:French: - Modifier prompt
+*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Config*)
+$argumentDivider = "|";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Function Input*)
+$functionDataURL = "https://resources.wolframcloud.com/PromptRepository/category/function-prompts-data.json";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*functionCompletion*)
+functionCompletion // beginDefinition;
+functionCompletion[ "" ] := $functionNames;
+functionCompletion[ string_String ] := Select[ $functionNames, StringStartsQ[ string, IgnoreCase -> True ] ];
+functionCompletion // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$functionNames*)
+$functionNames := $availableFunctionNames;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$availableFunctionNames*)
+$availableFunctionNames := Enclose[
+    Module[ { functionData, names },
+        functionData = ConfirmBy[ URLExecute[ $functionDataURL, "RawJSON" ], AssociationQ, "FunctionData" ];
+        names = Cases[
+            functionData[ "Resources" ],
+            KeyValuePattern[ "Name" -> KeyValuePattern[ "Label" -> name_String ] ] :> name
+        ];
+        $availableFunctionNames = ConfirmMatch[ names, { __? StringQ }, "Names" ]
+    ],
+    throwInternalFailure[ $availableFunctionNames, ##1 ] &
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*insertFunctionInputBox*)
+insertFunctionInputBox // beginDefinition;
+
+insertFunctionInputBox[ cell_CellObject ] :=
+    If[ MatchQ[
+            Developer`CellInformation @ SelectedCells[ ],
+            { KeyValuePattern @ { "Style" -> "ChatInput", "CursorPosition" -> { 0, 0 } } }
+        ],
+        insertFunctionInputBox[ cell, parentNotebook @ cell ],
+        NotebookWrite[ parentNotebook @ cell, "!" ]
+    ];
+
+insertFunctionInputBox[ parent_CellObject, nbo_NotebookObject ] :=
+    Module[ { uuid, cell },
+        uuid = CreateUUID[ ];
+        cell = Cell[ BoxData @ ToBoxes @ functionInputBox[ "", uuid ], "InlineFunctionChooser", Background -> None ];
+        NotebookWrite[ nbo, cell ];
+        FrontEnd`MoveCursorToInputField[ nbo, uuid ]
+    ];
+
+insertFunctionInputBox[ args_List, cell_CellObject ] :=
+    insertFunctionInputBox[ args, cell, parentNotebook @ cell ];
+
+insertFunctionInputBox[ args_List, parent_CellObject, nbo_NotebookObject ] :=
+    Module[ { uuid, cell },
+        uuid = CreateUUID[ ];
+        cell = Cell[ BoxData @ ToBoxes @ functionInputBox[ args, uuid ], "InlineFunctionChooser", Background -> None ];
+        NotebookWrite[ parent, cell ];
+        FrontEnd`MoveCursorToInputField[ nbo, uuid ]
+    ];
+
+insertFunctionInputBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*functionInputBox*)
+functionInputBox // beginDefinition;
+
+functionInputBox[ name_String, uuid_ ] := functionInputBox[ { name }, uuid ];
+
+(* TODO:
+    * separate input boxes for arguments?
+    * prefill argument hints based on resource metadata
+*)
+functionInputBox[ args_List, uuid_ ] :=
+    DynamicModule[ { string = StringRiffle[ args, " "<>$argumentDivider<>" " ], cell },
+        EventHandler[
+            Style[
+                Framed[
+                    Grid[
+                        {
+                            {
+                                "!",
+                                InputField[
+                                    Dynamic[
+                                        string,
+                                        Function[
+                                            string = #;
+                                            processFunctionInput[ #, SelectedCells[ ], cell ]
+                                        ]
+                                    ],
+                                    String,
+                                    Alignment               -> { Left, Baseline },
+                                    ContinuousAction        -> False,
+                                    FieldCompletionFunction -> functionCompletion,
+                                    FieldSize               -> { { 15, Infinity }, Automatic },
+                                    FieldHint               -> "PromptName",
+                                    BaseStyle               -> $inputFieldStyle,
+                                    Appearance              -> "Frameless",
+                                    ContentPadding          -> False,
+                                    FrameMargins            -> 0,
+                                    BoxID                   -> uuid
+                                ]
+                            }
+                        },
+                        Spacings  -> 0,
+                        Alignment -> { Automatic, Baseline }
+                    ],
+                    RoundingRadius -> 4,
+                    FrameStyle     -> RGBColor[ "#ff6a00" ],
+                    FrameMargins   -> { { 4, 3 }, { 3, 3 } },
+                    ContentPadding -> False
+                ],
+                "Text",
+                ShowStringCharacters -> False
+            ],
+            {
+                { "KeyDown", "!" } :> NotebookWrite[ EvaluationNotebook[ ], "!" ],
+                "EscapeKeyDown"    :> removeFunctionInputBox @ cell,
+                "ReturnKeyDown"    :> writeStaticFunctionBox @ cell
+            },
+            PassEventsUp   -> False,
+            PassEventsDown -> True
+        ],
+        Initialization   :> { cell = EvaluationCell[ ], Quiet @ Needs[ "Wolfram`Chatbook`" -> None ] },
+        UnsavedVariables :> { cell }
+    ];
+
+functionInputBox // endDefinition;
+
+$inputFieldStyle = {
+    "Text",
+    AutoOperatorRenderings -> { },
+    PrivateFontOptions -> { "OperatorSubstitution" -> False }
+};
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*processFunctionInput*)
+processFunctionInput // beginDefinition;
+
+processFunctionInput[ string_String, { cell_CellObject }, cell_CellObject ] :=
+    Null;
+
+processFunctionInput[ string_String, _List, cell_CellObject ] :=
+    writeStaticFunctionBox[ cell, functionInputSetting @ string ];
+
+processFunctionInput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*writeStaticFunctionBox*)
+writeStaticFunctionBox // beginDefinition;
+
+writeStaticFunctionBox[ cell_CellObject ] :=
+    writeStaticFunctionBox[ cell, functionInputSetting @ NotebookRead @ cell ];
+
+writeStaticFunctionBox[ cell_, $Failed ] := Null; (* box was already overwritten *)
+
+writeStaticFunctionBox[ cell_CellObject, { name_String? promptNameQ, args___ } ] /; ! TrueQ @ $removingBox :=
+    Enclose[
+        NotebookWrite[
+            cell,
+            Cell[
+                BoxData @ ToBoxes @ staticFunctionBox @ { name, args },
+                "InlineFunctionReference",
+                TaggingRules -> <| "PromptFunctionName" -> name, "PromptArguments" -> promptArguments @ args |>,
+                Background   -> None,
+                Selectable   -> False
+            ]
+        ],
+        throwInternalFailure[ writeStaticFunctionBox[ cell, { name, args } ], ## ] &
+    ];
+
+writeStaticFunctionBox[ cell_CellObject, args_List ] :=
+    NotebookWrite[ cell, TextData[ "!" <> StringRiffle[ args, $argumentDivider ] ], After ];
+
+writeStaticFunctionBox // endDefinition;
+
+
+promptArguments[ ] := { ">" };
+promptArguments[ args___ ] := Flatten @ { args };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*removeFunctionInputBox*)
+removeFunctionInputBox // beginDefinition;
+removeFunctionInputBox[ cell_CellObject ] := Block[ { $removingBox = True }, writeStaticFunctionBox @ cell ];
+removeFunctionInputBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*promptNameQ*)
+promptNameQ[ name_String ] /; MemberQ[ $functionNames, name ] := True;
+
+promptNameQ[ name_String? Internal`SymbolNameQ ] := promptNameQ[ name ] = Quiet @ Block[ { PrintTemporary },
+    TrueQ @ Or[
+        ResourceObject[ name ][ "ResourceType" ] === "Prompt",
+        ResourceObject[ "Prompt: " <> name ][ "ResourceType" ] === "Prompt"
+    ]
+];
+
+promptNameQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*staticFunctionBox*)
+(* FIXME: this should _definitely_ be a template box *)
+staticFunctionBox // beginDefinition;
+
+staticFunctionBox[ { name_String } ] := staticFunctionBox[ { name, ">" } ];
+
+staticFunctionBox[ args_List ] := Button[
+    MouseAppearance[
+        Mouseover[
+            staticFunctionBoxLabel[ args, RGBColor[ "#fffbf0" ] ],
+            staticFunctionBoxLabel[ args, RGBColor[ "#ffffff" ] ]
+        ],
+        "LinkHand"
+    ],
+    insertFunctionInputBox[ args, EvaluationCell[ ] ],
+    ContentPadding -> False,
+    FrameMargins   -> 0,
+    Appearance     -> $suppressButtonAppearance
+];
+
+staticFunctionBox // endDefinition;
+
+staticFunctionBoxLabel // beginDefinition;
+
+(* staticFunctionBoxLabel[ { name_, args___ }, background_ ] := Style[
+    Framed[
+        Row @ Flatten @ {
+            Riffle[
+                Flatten @ {
+                    Style[ name, "StandardForm", "Input" ],
+                    styleFunctionArgument /@ { args }
+                },
+                Style[ "\[ThinSpace]:\[ThinSpace]", FontColor -> GrayLevel[ 0.6 ], FontWeight -> "DemiBold" ]
+            ]
+        },
+        Background     -> background,
+        RoundingRadius -> 4,
+        FrameStyle     -> RGBColor[ "#a3c9f2" ],
+        FrameMargins   -> { { 4, 3 }, { 3, 3 } },
+        ContentPadding -> False,
+        BaseStyle      -> "Text"
+    ],
+    ShowStringCharacters -> False,
+    Selectable           -> False
+]; *)
+
+staticFunctionBoxLabel[ { name_, args___ }, background_ ] :=
+    Style[
+        Framed[
+            Grid[
+                {
+                    Flatten @ {
+                        Style[ name, "StandardForm", "Input" ],
+                        styleFunctionArgument /@ { args }
+                    }
+                },
+                Dividers   -> { { False, { True }, False }, False },
+                FrameStyle -> RGBColor[ "#ff6a00" ],
+                Spacings   -> 0.65,
+                Alignment  -> { Automatic, Baseline }
+            ],
+            Background     -> background,
+            RoundingRadius -> 4,
+            FrameStyle     -> RGBColor[ "#ff6a00" ],
+            FrameMargins   -> { { 4, 3 }, { 3, 3 } },
+            ContentPadding -> False,
+            BaseStyle      -> "Text"
+        ],
+        ShowStringCharacters -> False,
+        Selectable           -> False
+    ];
+
+staticFunctionBoxLabel // endDefinition;
+
+
+styleFunctionArgument // beginDefinition;
+
+styleFunctionArgument[ ">" ] := specArg[ "\[ThinSpace]>\[ThinSpace]" ];
+styleFunctionArgument[ "^" ] := specArg[ Rotate[ "\[ThinSpace]>", Pi/2 ] ];
+styleFunctionArgument[ "^^" ] := specArg[ Rotate[ "\[ThinSpace]\[GreaterGreater]", Pi/2 ], FontSize -> 0.85*Inherited ];
+
+styleFunctionArgument[ $argumentDivider ] :=
+    Style[ " " <> $argumentDivider <> " ", FontColor -> GrayLevel[ 0.6 ], FontWeight -> "DemiBold" ];
+
+styleFunctionArgument[ argument_ ] := Style[ argument, FontSize -> 0.9*Inherited ];
+
+styleFunctionArgument // endDefinition;
+
+specArg[ expr_, opts___ ] := Style[ expr, opts, FontWeight -> Bold, FontColor -> Gray ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*insertTrailingFunctionInputBox*)
+insertTrailingFunctionInputBox // beginDefinition;
+
+insertTrailingFunctionInputBox[ cell_CellObject ] :=
+    If[ MatchQ[ Developer`CellInformation @ SelectedCells[ ], { KeyValuePattern[ "Style" -> "ChatInput" ] } ],
+        insertTrailingFunctionInputBox[ cell, parentNotebook @ cell ]
+    ];
+
+insertTrailingFunctionInputBox[ parent_CellObject, nbo_NotebookObject ] :=
+    Module[ { uuid, cell },
+        uuid = CreateUUID[ ];
+        cell = Cell[
+            BoxData @ ToBoxes @ trailingFunctionInputBox[ "", uuid ],
+            "InlineTrailingFunctionChooser",
+            Background -> None
+        ];
+        NotebookWrite[ nbo, cell ];
+        FrontEnd`MoveCursorToInputField[ nbo, uuid ]
+    ];
+
+insertTrailingFunctionInputBox[ args_List, cell_CellObject ] :=
+    insertTrailingFunctionInputBox[ args, cell, parentNotebook @ cell ];
+
+insertTrailingFunctionInputBox[ args_List, parent_CellObject, nbo_NotebookObject ] :=
+    Module[ { uuid, cell },
+        uuid = CreateUUID[ ];
+        cell = Cell[
+            BoxData @ ToBoxes @ trailingFunctionInputBox[ args, uuid ],
+            "InlineTrailingFunctionChooser",
+            Background -> None
+        ];
+        NotebookWrite[ parent, cell ];
+        FrontEnd`MoveCursorToInputField[ nbo, uuid ]
+    ];
+
+insertTrailingFunctionInputBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*trailingFunctionInputBox*)
+trailingFunctionInputBox // beginDefinition;
+
+trailingFunctionInputBox[ name_String, uuid_ ] := trailingFunctionInputBox[ { name }, uuid ];
+
+(* TODO:
+    * separate input boxes for arguments?
+    * prefill argument hints based on resource metadata
+*)
+trailingFunctionInputBox[ args_List, uuid_ ] := DynamicModule[ { string = StringRiffle[ args, $argumentDivider ], cell },
+    EventHandler[
+        Style[
+            Framed[
+                Grid[
+                    {
+                        {
+                            InputField[
+                                Dynamic[
+                                    string,
+                                    Function[
+                                        string = StringDelete[ #, StartOfString~~">" ]
+                                    ]
+                                ],
+                                String,
+                                ContinuousAction        -> False,
+                                FieldCompletionFunction -> functionCompletion,
+                                FieldSize               -> { { 15, Infinity }, { 0, Infinity } },
+                                BaseStyle               -> { "Text" },
+                                Appearance              -> "Frameless",
+                                ContentPadding          -> False,
+                                FrameMargins            -> 0,
+                                BoxID                   -> uuid
+                            ]
+                        }
+                    },
+                    Spacings  -> 0,
+                    Alignment -> { Automatic, Baseline }
+                ],
+                RoundingRadius -> 4,
+                FrameStyle     -> RGBColor[ "#a3c9f2" ],
+                FrameMargins   -> { { 4, 3 }, { 3, 3 } },
+                ContentPadding -> False
+            ],
+            "Text",
+            ShowStringCharacters -> False
+        ],
+        {
+            { "KeyDown", ">" } :> NotebookWrite[ EvaluationNotebook[ ], ">" ],
+            "ReturnKeyDown"    :> If[ string =!= "", writeStaticTrailingFunctionBox @ cell ],
+            "TabKeyDown"       :> writeStaticTrailingFunctionBox @ cell(*,
+            "EscapeKeyDown" :> Block[ { $personaNames = { } }, moveAndWriteStaticPersonaBox @ cell ]*)
+        },
+        PassEventsUp -> False
+    ],
+    Initialization   :> { cell = EvaluationCell[ ], Quiet @ Needs[ "Wolfram`Chatbook`" -> None ] },
+    UnsavedVariables :> { cell }
+];
+
+trailingFunctionInputBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*writeStaticTrailingFunctionBox*)
+writeStaticTrailingFunctionBox // beginDefinition;
+
+writeStaticTrailingFunctionBox[ cell_CellObject ] :=
+    writeStaticTrailingFunctionBox[ cell, functionInputSetting @ NotebookRead @ cell ];
+
+writeStaticTrailingFunctionBox[ cell_, $Failed ] := Null; (* box was already overwritten *)
+
+writeStaticTrailingFunctionBox[ cell_CellObject, { name_String, args___ } ] /; MemberQ[ $functionNames, name ] :=
+    Enclose[
+        NotebookWrite[
+            cell,
+            Cell[
+                BoxData @ ToBoxes @ staticTrailingFunctionBox @ { name, args },
+                "InlinePersonaReference",
+                TaggingRules -> <| "PromptFunctionName" -> name, "PromptArguments" -> promptArguments @ args |>,
+                Background   -> None,
+                Selectable   -> False
+            ]
+        ],
+        throwInternalFailure[ writeStaticTrailingFunctionBox[ cell, { name, args } ], ## ] &
+    ];
+
+writeStaticTrailingFunctionBox[ cell_CellObject, args_List ] :=
+    NotebookWrite[ cell, TextData[ ">" <> StringRiffle[ args, $argumentDivider ] ], After ];
+
+writeStaticTrailingFunctionBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*staticTrailingFunctionBox*)
+
+(* FIXME: this should _definitely_ be a template box *)
+staticTrailingFunctionBox // beginDefinition;
+
+staticTrailingFunctionBox[ args_List ] := Button[
+    MouseAppearance[
+        Mouseover[
+            staticTrailingFunctionBoxLabel[ args, RGBColor[ "#f1f8ff" ] ],
+            staticTrailingFunctionBoxLabel[ args, RGBColor[ "#ffffff" ] ]
+        ],
+        "LinkHand"
+    ],
+    insertTrailingFunctionInputBox[ args, EvaluationCell[ ] ],
+    ContentPadding -> False,
+    FrameMargins   -> 0,
+    Appearance     -> $suppressButtonAppearance
+];
+
+staticTrailingFunctionBox // endDefinition;
+
+staticTrailingFunctionBoxLabel // beginDefinition;
+
+staticTrailingFunctionBoxLabel[ { name_, args___ }, background_ ] := Style[
+    Framed[
+        Row @ Flatten @ {
+            Style[ "> ", FontColor -> GrayLevel[ 0.6 ], FontWeight -> Bold ],
+            Riffle[
+                Flatten @ {
+                    Style[ name, "StandardForm", "Input" ],
+                    Style[ #, FontSize -> 0.9 * Inherited ] & /@ { args }
+                },
+                Style[ "\[ThinSpace]:\[ThinSpace]", FontColor -> GrayLevel[ 0.6 ], FontWeight -> "DemiBold" ]
+            ]
+        },
+        Background     -> background,
+        RoundingRadius -> 4,
+        FrameStyle     -> RGBColor[ "#a3c9f2" ],
+        FrameMargins   -> { { 4, 3 }, { 3, 3 } },
+        ContentPadding -> False,
+        BaseStyle      -> "Text"
+    ],
+    ShowStringCharacters -> False,
+    Selectable           -> False
+];
+
+staticTrailingFunctionBoxLabel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*functionInputSetting*)
+functionInputSetting // beginDefinition;
+functionInputSetting[ cell_CellObject ] := functionInputSetting @ NotebookRead @ cell;
+functionInputSetting[ (Cell|BoxData|TagBox)[ boxes_, ___ ] ] := functionInputSetting @ boxes;
+functionInputSetting[ DynamicModuleBox[ { ___, _ = string_String, ___ }, ___ ] ] := functionInputSetting @ string;
+
+functionInputSetting[ string_String ] :=
+    DeleteCases[ StringTrim @ StringSplit[ StringTrim @ string, $functionArgSplitRules ], "" ];
+
+functionInputSetting[ ___ ] := $Failed;
+functionInputSetting // endDefinition;
+
+$functionArgSplitRules = {
+    $argumentDivider,
+    "^^" :> "^^",
+    "^"  :> "^",
+    ">"  :> ">"
+};
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Persona Input*)
+$personaDataURL = "https://resources.wolframcloud.com/PromptRepository/category/personas-data.json";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*personaCompletion*)
 personaCompletion // beginDefinition;
 personaCompletion[ "" ] := $personaNames;
@@ -26,12 +540,12 @@ personaCompletion[ string_String ] := Select[ $personaNames, StringStartsQ[ stri
 personaCompletion // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*$personaNames*)
 $personaNames := DeleteDuplicates @ Join[ Keys @ GetCachedPersonaData[ ], $availablePersonaNames ];
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*$availablePersonaNames*)
 $availablePersonaNames := Enclose[
     Module[ { personaData, names },
@@ -46,7 +560,7 @@ $availablePersonaNames := Enclose[
 ];
 
 (* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*insertPersonaInputBox*)
 insertPersonaInputBox // beginDefinition;
 
@@ -73,7 +587,7 @@ insertPersonaInputBox[ name_String, parent_CellObject, nbo_NotebookObject ] :=
 insertPersonaInputBox // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*personaInputBox*)
 personaInputBox // beginDefinition;
 
@@ -123,14 +637,14 @@ personaInputBox[ name_String, uuid_ ] := DynamicModule[ { string = name, cell },
 personaInputBox // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*moveAndWriteStaticPersonaBox*)
 moveAndWriteStaticPersonaBox // beginDefinition;
 moveAndWriteStaticPersonaBox[ cell_CellObject ] := (SelectionMove[ cell, All, Cell ]; writeStaticPersonaBox @ cell);
 moveAndWriteStaticPersonaBox // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*writeStaticPersonaBox*)
 writeStaticPersonaBox // beginDefinition;
 
@@ -144,10 +658,10 @@ writeStaticPersonaBox[ cell_, $Failed ] := Null; (* box was already overwritten 
 *)
 writeStaticPersonaBox[ cell_CellObject, name_String ] /; MemberQ[ $personaNames, name ] := Enclose[
     If[ ! MemberQ[ Keys @ GetCachedPersonaData[ ], name ],
-        ConfirmBy[ PersonaInstall @ name, FileExistsQ, "PersonaInstall" ];
+        ConfirmBy[ PersonaInstall[ "Prompt: " <> name ], FileExistsQ, "PersonaInstall" ];
         ConfirmAssert[ MemberQ[ Keys @ GetCachedPersonaData[ ], name ], "GetCachedPersonaData" ]
     ];
-    CurrentValue[ ParentCell @ cell, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = name;
+
     NotebookWrite[
         cell,
         Cell[
@@ -155,7 +669,11 @@ writeStaticPersonaBox[ cell_CellObject, name_String ] /; MemberQ[ $personaNames,
             "InlinePersonaReference",
             TaggingRules -> <| "PersonaName" -> name |>,
             Background -> None,
-            Selectable -> False
+            Selectable -> False,
+            Initialization :> (CurrentValue[
+                ParentCell @ EvaluationCell[ ],
+                { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }
+            ] = name)
         ]
     ],
     throwInternalFailure[ writeStaticPersonaBox[ cell, name ], ## ] &
@@ -167,15 +685,16 @@ writeStaticPersonaBox[ cell_CellObject, name_String ] :=
 writeStaticPersonaBox // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*removePersonaBox*)
+(* FIXME: hook this up *)
 removePersonaBox // beginDefinition;
 removePersonaBox[ cell_CellObject ] := removePersonaBox[ cell, personaInputSetting @ NotebookRead @ cell ];
 removePersonaBox[ cell_CellObject, text_String ] := NotebookWrite[ cell, TextData[ "@"<>text ], After ];
 removePersonaBox // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*staticPersonaBox*)
 (* FIXME: this can be a template box *)
 staticPersonaBox // beginDefinition;
@@ -215,12 +734,12 @@ staticPersonaBoxLabel[ name_String, background_ ] := Style[
 staticPersonaBoxLabel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*personaInputSetting*)
 personaInputSetting // beginDefinition;
 personaInputSetting[ cell_CellObject ] := personaInputSetting @ NotebookRead @ cell;
 personaInputSetting[ (Cell|BoxData|TagBox)[ boxes_, ___ ] ] := personaInputSetting @ boxes;
-personaInputSetting[ DynamicModuleBox[ { _ = string_String }, ___ ] ] := string;
+personaInputSetting[ DynamicModuleBox[ { ___, _ = string_String, ___ }, ___ ] ] := string;
 personaInputSetting[ ___ ] := $Failed;
 personaInputSetting // endDefinition;
 
