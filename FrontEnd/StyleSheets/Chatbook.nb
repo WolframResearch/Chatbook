@@ -1810,6 +1810,124 @@ Notebook[
    }
   ],
   Cell[
+   StyleData["AdvancedSettings"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.05],
+        {
+         FaceForm[
+          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.0]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {1, 4, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0}
+           },
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgAmJBKC3z+pGZFIOQAwMYGDhkKOVUVD0VgPMh8gIOUSnW\n9/179eF8iDw6XwjO9zHvdEwAmoNqnoADqn1Q8QYDOF9309z3y48ZoMozGMLN\ng/Fh9qHy9eF8mHtRzTNAs8/AAd3/qPIcaPIcDiYN2x2aknjhfMtrR3NNgPSf\nlR8v+QLFYXyY+1D5+nD+wVMLXbcFG6CZZ4hmnyGaewyh+gxR5RmM4ObB+Kjh\nAeMLwfkw96Kax4HhfwDHCW5r\n      "
+          ]
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.0]}
+         ],
+         FilledCurveBox[
+          {
+           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}
+          },
+          {
+           {
+            {15.0, 14.0},
+            {14.0, 14.0},
+            {14.0, 6.0},
+            {15.0, 6.0},
+            {15.0, 14.0}
+           },
+           {
+            {11.0, 14.0},
+            {10.0, 14.0},
+            {10.0, 6.0},
+            {11.0, 6.0},
+            {11.0, 14.0}
+           },
+           {
+            {7.0, 6.0},
+            {6.0, 6.0},
+            {6.0, 14.0},
+            {7.0, 14.0},
+            {7.0, 6.0}
+           }
+          }
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.0]}
+         ],
+         FilledCurveBox[
+          {
+           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}
+          },
+          {
+           {
+            {8.0, 13.0},
+            {5.0, 13.0},
+            {5.0, 12.0},
+            {8.0, 12.0},
+            {8.0, 13.0}
+           },
+           {
+            {12.0, 8.0},
+            {9.0, 8.0},
+            {9.0, 7.0},
+            {12.0, 7.0},
+            {12.0, 8.0}
+           },
+           {
+            {16.0, 10.0},
+            {13.0, 10.0},
+            {13.0, 11.0},
+            {16.0, 11.0},
+            {16.0, 10.0}
+           }
+          }
+         ]
+        }
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
+       PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
+      ]
+     ])
+   }
+  ],
+  Cell[
    StyleData["AssistantCopyBelow"],
    TemplateBoxOptions -> {
     DisplayFunction ->
@@ -2568,6 +2686,95 @@ Notebook[
        AspectRatio -> Automatic,
        ImageSize -> {20.0, 20.0},
        PlotRange -> {{0.0, 20.0}, {0.0, 20.0}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ChatIconNoPersona"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.038462],
+        {
+         FaceForm[
+          {RGBColor[0.8549, 0.88235, 0.87843], Opacity[1.0]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgBGIRIGZigIIGBQcUmkEEzv90yTdJIEIITV7Qga1xqnO3\njiKcD6GV0PimcL5Ld87z35mmqOYdgMmLoPFN4XyYPhR5XOJI+oozJr6t+a8I\n51e+VDPkALoXRR/cPwh+7vPfKz9e0kSVB9L6d1XYGkWFMMQBtjo+0A==\n      "
+          ]
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.67451, 0.71765, 0.73725], Opacity[1.0]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           },
+           {
+            {1, 4, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0}
+           }
+          },
+          {
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGAQAWIQDQGmDhDaDEqLwPkz8oSaD5wSRJMXcIhKsb7v32sK\n56OaA+Mrwfk+5p2OCU8V0MxTQLNPgQANM1cLTdwUzkd1F0zezGHffCn9u08Q\n/OKMiW9r/iui+QsRDjBzUM3DVAcAxvcssw==\n       "
+           ],
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGCQBmIQDQGmDmCqwdRBd9Pc98vdEHy84kj6ijMmvq35rwjn\nc6yRiUrZreiwbPYRhQ1Fpg7VIuvcH1YpOmw5UbZvfpSpw4w8oeYDXooOf1Z+\nvOTrZAoRl4LylWDmK6LaA+drwflpILBME84/7m3e6Zig6eDxsEpk3XEFuLhm\nTP+hrxoiaOYooPFxiSP0+YCMfyqEJi8E9SeCD6GV0PimcD4sPFHMg4erCBof\nEc4A/3BXag==\n       "
+           ]
+          }
+         ]
+        }
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
+       PlotRange -> {{-0.5, 26.5}, {-0.5, 26.5}}
       ]
      ])
    }
@@ -3506,6 +3713,48 @@ Notebook[
        AspectRatio -> Automatic,
        ImageSize -> {{16.5, 16.5}, {16.5, 16.5}},
        PlotRange -> {{-0.5, 21.5}, {-0.5, 21.5}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["Checkmark"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.05],
+        FaceForm[
+         {RGBColor[0.39216, 0.39216, 0.39216], Opacity[1.0]}
+        ],
+        FilledCurveBox[
+         {
+          {
+           {0, 2, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0}
+          }
+         },
+         {
+          {
+           {15.646, 14.53},
+           {8.0005, 6.884},
+           {4.3545, 10.53},
+           {3.6465, 9.823},
+           {8.0005, 5.47},
+           {16.353, 13.824},
+           {15.646, 14.53}
+          }
+         }
+        ]
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
+       PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
       ]
      ])
    }
@@ -6693,6 +6942,164 @@ Notebook[
        AspectRatio -> Automatic,
        ImageSize -> {20.0, 20.0},
        PlotRange -> {{0.0, 20.0}, {0.0, 20.0}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["SideChat"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.05],
+        {
+         FaceForm[{RGBColor[0.4902, 0.82353, 1.0], Opacity[1.0]}],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgBGIRIGZigAFZBwgt6qC7ae775cdE4XweJu12sUgEH5c4\nur6XaoYca2Q04fxfdVl7SoI1UfU1aKLqA/Ih+nThfIg+BB9C68LNg/FR7APy\nUc3VhduLYh7cnQg+WN1NZTT/yjoo3/4J1MkN58PkAf0dQ8I=\n      "
+          ]
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.18824, 0.49412, 0.6549], Opacity[1.0]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           },
+           {
+            {0, 2, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0}
+           }
+          },
+          {
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGAQAWIQ/VLNkGONjK4DAxhoOVw3eW/helwUzo9RcPyYfEYE\nzu8PLlGZ/l/YQR2kbZYmnA8xB8HX3TT3/fJjonA+mHtaBM08ETT7RKDqpXHw\nORyOa1pNOv1fGS6P6n4RqLsQfAitB7cfxoe5D8aHuR/Gh/kP1TwtB/TwAgBR\nb1Sq\n       "
+           ],
+           {
+            {14.5, 12.5},
+            {14.5, 5.5},
+            {9.9996, 5.5},
+            {9.8486, 5.5},
+            {9.7226, 5.416},
+            {7.4996, 3.934},
+            {7.4996, 5.0},
+            {7.4996, 5.5},
+            {6.9996, 5.5},
+            {5.4996, 5.5},
+            {5.4996, 12.5},
+            {14.5, 12.5}
+           }
+          }
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.33725, 0.65882, 0.82745], Opacity[1.0]}
+         ],
+         FilledCurveBox[
+          {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}},
+          {
+           {
+            {3.0, 15.0},
+            {17.0, 15.0},
+            {17.0, 17.0},
+            {3.0, 17.0},
+            {3.0, 15.0}
+           }
+          }
+         ]
+        }
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
+       PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["Triangle"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.11111],
+        FaceForm[
+         {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.0]}
+        ],
+        FilledCurveBox[
+         {
+          {
+           {0, 2, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {1, 3, 3}
+          }
+         },
+         {
+          {
+           {1.9986, 9.8977},
+           {7.7166, 6.0297},
+           {8.0916, 5.7767},
+           {8.0916, 5.2237},
+           {7.7166, 4.9697},
+           {1.9986, 1.1027},
+           {1.5736, 0.8147},
+           {0.9996, 1.1197},
+           {0.9996, 1.6327},
+           {0.9996, 9.3677},
+           {0.9996, 9.8807},
+           {1.5736, 10.185},
+           {1.9986, 9.8977}
+          }
+         }
+        ]
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {{10.0, 12.0}, {10.0, 12.0}},
+       PlotRange -> {{-0.5, 9.5}, {-0.5, 11.5}}
       ]
      ])
    }
