@@ -1421,10 +1421,17 @@ openChatInputActionMenu[dingbatCellObj_CellObject] := With[{
 			chatInputCellObj,
 			{TaggingRules, "ChatNotebookSettings", "Role"}
 		],
-		"TemperatureValue" -> Dynamic @ AbsoluteCurrentValue[
-			(* "ChatInput" > CellDingbat > Persona Menu > Advanced Menu *)
-			chatInputCellObj,
-			{ TaggingRules, "ChatNotebookSettings", "Temperature" }
+		"TemperatureValue" -> Dynamic[
+			CurrentValue[
+				(* "ChatInput" > CellDingbat > Persona Menu > Advanced Menu *)
+				chatInputCellObj,
+				{ TaggingRules, "ChatNotebookSettings", "TemperatureSetting" },
+				0.7
+			],
+			Function[
+				CurrentValue[ chatInputCellObj, { TaggingRules, "ChatNotebookSettings", "TemperatureSetting" } ] =
+					CurrentValue[ chatInputCellObj, { TaggingRules, "ChatNotebookSettings", "Temperature" } ] = #1;
+			]
 		]
 	]
 ]]
@@ -1533,13 +1540,21 @@ makeChatInputActionMenuContent[
 	advancedSettingsMenu = Join[
 		{
 			"Temperature",
-			{None, Slider[
-				tempValue,
-				{ 0, 2, 0.01 },
-				ImageSize  -> { 175, Automatic },
-				ImageMargins -> {{5, Automatic}, {5, 5}},
-				Appearance -> "Labeled"
-			], None}
+			{
+				None,
+				Pane[
+					Slider[
+						tempValue,
+						{ 0, 2, 0.01 },
+						ImageSize  -> { 140, Automatic },
+						ImageMargins -> {{5, 0}, {5, 5}},
+						Appearance -> "Labeled"
+					],
+					ImageSize -> { 180, Automatic },
+					BaseStyle -> { FontSize -> 12 }
+				],
+				None
+			}
 		},
 		{"Models"},
 		Map[
@@ -1571,7 +1586,7 @@ makeChatInputActionMenuContent[
 	advancedSettingsMenu = MakeMenu[
 		advancedSettingsMenu,
 		GrayLevel[0.85],
-		250
+		200
 	];
 
 	(*------------------------------------*)
@@ -1593,41 +1608,33 @@ makeChatInputActionMenuContent[
 		{
 			Delimiter,
 			{alignedMenuIcon[getIcon["PersonaOther"]], "Add & Manage Personas\[Ellipsis]", "PersonaManage"},
-			{alignedMenuIcon[getIcon["PersonaFromURL"]], "Install From URL\[Ellipsis]", "PersonaURLInstall"}
-		},
-		{
-			Button[
-				Style[
-					Grid[{{
-						Item[
-							Style["Advanced Settings"],
-							ItemSize -> Fit,
-							Alignment -> Left
-						],
-						Magnify["\[RightPointer]", 1.5]
-					}}],
-					FontColor -> GrayLevel[0.35]
+			{alignedMenuIcon[getIcon["PersonaFromURL"]], "Install From URL\[Ellipsis]", "PersonaURLInstall"},
+			Delimiter,
+			{
+				alignedMenuIcon[getIcon["AdvancedSettings"]],
+				Grid[
+					{{
+						Item["Advanced Settings", ItemSize -> Fit, Alignment -> Left],
+						RawBoxes[TemplateBox[{}, "Triangle"]]
+					}},
+					Spacings -> 0
 				],
-				(
-					AttachCell[
-						EvaluationCell[],
-						advancedSettingsMenu,
-						{Right, Bottom},
-						{50, 50},
-						{Left, Bottom},
-						RemovalConditions -> "MouseExit"
-					];
-				),
-				AutoAction -> True,
-				Appearance -> $suppressButtonAppearance
-			]
+				Hold[AttachCell[
+					EvaluationCell[],
+					advancedSettingsMenu,
+					{Right, Bottom},
+					{50, 50},
+					{Left, Bottom},
+					RemovalConditions -> "MouseExit"
+				]]
+			}
 		}
 	];
 
 	menu = MakeMenu[
 		menuItems,
 		GrayLevel[0.85],
-		250
+		225
 	];
 
 	menu
