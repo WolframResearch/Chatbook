@@ -3,6 +3,20 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Common`" ];
 
+`$maxChatCells;
+`$closedChatCellOptions;
+
+`$chatDelimiterStyles;
+`$chatIgnoredStyles;
+`$chatInputStyles;
+`$chatOutputStyles;
+`$excludeHistoryStyles;
+`$$chatDelimiterStyle;
+`$$chatIgnoredStyle;
+`$$chatInputStyle;
+`$$chatOutputStyle;
+`$$excludeHistoryStyle;
+
 `$catchTopTag;
 `beginDefinition;
 `catchTop;
@@ -16,6 +30,32 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Config*)
+$chatDelimiterStyles  = { "ChatContextDivider", "ChatDelimiter", "ExcludedChatDelimiter" };
+$chatIgnoredStyles    = { "ChatExcluded" };
+$chatInputStyles      = { "ChatInput", "ChatInputSingle", "ChatQuery", "ChatSystemInput" };
+$chatOutputStyles     = { "ChatOutput" };
+$excludeHistoryStyles = { "ChatInputSingle" };
+
+$maxChatCells := OptionValue[ CreateChatNotebook, "ChatHistoryLength" ];
+
+$closedChatCellOptions :=
+    If[ TrueQ @ CloudSystem`$CloudNotebooks,
+        Sequence @@ { },
+        Sequence @@ { CellMargins -> -2, CellOpen -> False, CellFrame -> 0, ShowCellBracket -> False }
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Style Patterns*)
+$$chatDelimiterStyle  = Alternatives @@ $chatDelimiterStyles  | { ___, Alternatives @@ $chatDelimiterStyles , ___ };
+$$chatIgnoredStyle    = Alternatives @@ $chatIgnoredStyles    | { ___, Alternatives @@ $chatIgnoredStyles   , ___ };
+$$chatInputStyle      = Alternatives @@ $chatInputStyles      | { ___, Alternatives @@ $chatInputStyles     , ___ };
+$$chatOutputStyle     = Alternatives @@ $chatOutputStyles     | { ___, Alternatives @@ $chatOutputStyles    , ___ };
+$$excludeHistoryStyle = Alternatives @@ $excludeHistoryStyles | { ___, Alternatives @@ $excludeHistoryStyles, ___ };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -54,7 +94,7 @@ $internalFailure = None;
 $messageSymbol   = Chatbook;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*beginDefinition*)
 beginDefinition // ClearAll;
 beginDefinition // Attributes = { HoldFirst };
@@ -77,7 +117,7 @@ beginDefinition[ s_Symbol ] /; $debug && $inDef :=
 beginDefinition[ s_Symbol ] := WithCleanup[ Unprotect @ s; ClearAll @ s, $inDef = True ];
 
 (* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*endDefinition*)
 endDefinition // beginDefinition;
 endDefinition // Attributes = { HoldFirst };
