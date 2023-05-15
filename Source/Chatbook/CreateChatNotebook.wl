@@ -17,6 +17,7 @@ Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
 CreateChatNotebook // Options = {
     "Assistance"                        -> Automatic,
     "AutoFormat"                        -> True,
+    "BasePrompt"                        -> Automatic,
     "ChatContextCellProcessingFunction" -> Automatic,
     "ChatContextPostEvaluationFunction" -> Automatic,
     "ChatContextPreprompt"              -> Automatic,

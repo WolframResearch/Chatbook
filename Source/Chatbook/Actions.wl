@@ -636,7 +636,7 @@ queuedEvaluationsQ[ ___ ] := False;
 sendChat // beginDefinition;
 
 sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclose[
-    Module[ { cells0, cells, target, settings, id, key, req, data, cell, cellObject, container, task },
+    Module[ { cells0, cells, target, settings, id, key, req, data, persona, cell, cellObject, container, task },
 
         cells0 = ConfirmMatch[ selectChatCells[ settings0, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
 
@@ -666,9 +666,10 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         data = ConfirmBy[ Association @ Flatten @ data, AssociationQ, "Data" ];
 
         If[ data[ "RawOutput" ],
+            persona = ConfirmBy[ GetCachedPersonaData[ "None" ], AssociationQ, "NonePersona" ];
             If[ AssociationQ @ settings[ "LLMEvaluator" ],
-                settings[ "LLMEvaluator", "PersonaIcon" ] = RawBoxes @ TemplateBox[ { }, "PersonaCode" ],
-                settings[ "PersonaIcon" ] = RawBoxes @ TemplateBox[ { }, "PersonaCode" ]
+                settings[ "LLMEvaluator" ] = Association[ settings[ "LLMEvaluator" ], persona ],
+                settings = Association[ settings, persona ]
             ]
         ];
 
@@ -831,7 +832,7 @@ alwaysOpenQ // beginDefinition;
 alwaysOpenQ[ _, _ ] /; $alwaysOpen := True;
 alwaysOpenQ[ as_, True  ] := False;
 alwaysOpenQ[ as_, False ] := True;
-alwaysOpenQ[ as_, _     ] := StringQ @ as[ "RolePrompt" ] && StringFreeQ[ as[ "RolePrompt" ], $$severityTag ];
+alwaysOpenQ[ as_, _     ] := StringQ @ as[ "BasePrompt" ] && StringFreeQ[ as[ "BasePrompt" ], $$severityTag ];
 alwaysOpenQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1344,7 +1345,7 @@ toModelName0 // endDefinition;
 makeCurrentRole // beginDefinition;
 
 makeCurrentRole[ as_Association? AssociationQ ] :=
-    makeCurrentRole[ as, as[ "RolePrompt" ], as[ "LLMEvaluator" ] ];
+    makeCurrentRole[ as, as[ "BasePrompt" ], as[ "LLMEvaluator" ] ];
 
 makeCurrentRole[ as_, None, _ ] :=
     Missing[ ];
@@ -1354,6 +1355,9 @@ makeCurrentRole[ as_, role_String, _ ] :=
 
 makeCurrentRole[ as_, Automatic|Inherited|_Missing, name_String ] :=
     <| "role" -> "system", "content" -> namedRolePrompt @ name |>;
+
+makeCurrentRole[ as_, _, KeyValuePattern[ "BasePrompt" -> None ] ] :=
+    Missing[ ];
 
 makeCurrentRole[ as_, _, eval_Association ] :=
     <| "role" -> "system", "content" -> buildSystemPrompt @ Association[ as, eval ] |>;
