@@ -82,6 +82,7 @@ InsertInlineReference // beginDefinition;
 InsertInlineReference[ "Persona"         , args___ ] := insertPersonaInputBox @ args;
 InsertInlineReference[ "TrailingFunction", args___ ] := insertTrailingFunctionInputBox @ args;
 InsertInlineReference[ "Function"        , args___ ] := insertFunctionInputBox @ args;
+InsertInlineReference[ "Modifier"        , args___ ] := insertModifierInputBox @ args;
 InsertInlineReference // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1184,7 +1185,7 @@ makeChatMessages[ settings_, { cells___, cell_ ? promptFunctionCellQ } ] := (
 makeChatMessages[ settings_, cells_List ] :=
     Module[ { role, message, history, messages, merged },
         role     = makeCurrentRole @ settings;
-        message  = Block[ { $CurrentCell = True }, makeCellMessage @ Last @ cells ];
+        message  = makeCurrentCellMessage[ settings, cells ];
         history  = Reverse[ makeCellMessage /@ Reverse @ Most @ cells ];
         messages = DeleteMissing @ Flatten @ { role, history, message };
         merged   = If[ TrueQ @ Lookup[ settings, "MergeMessages" ], mergeMessageData @ messages, messages ];
@@ -1204,11 +1205,8 @@ promptFunctionCellQ[ ___ ] := False;
 (*inlineFunctionReferenceBoxesQ*)
 inlineFunctionReferenceBoxesQ[ (BoxData|TextData)[ boxes_ ] ] := inlineFunctionReferenceBoxesQ @ boxes;
 inlineFunctionReferenceBoxesQ[ { box_, ___ } ] := inlineFunctionReferenceBoxesQ @ box;
-
-inlineFunctionReferenceBoxesQ[
-    Cell[ _, "InlineFunctionReference", ___, TaggingRules -> KeyValuePattern[ "PromptFunctionName" -> _String ], ___ ]
-] := True;
-
+inlineFunctionReferenceBoxesQ[ Cell[ __, TaggingRules -> tags_, ___ ] ] := inlineFunctionReferenceBoxesQ @ tags;
+inlineFunctionReferenceBoxesQ[ KeyValuePattern[ "PromptFunctionName" -> _String ] ] := True;
 inlineFunctionReferenceBoxesQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
@@ -1216,16 +1214,20 @@ inlineFunctionReferenceBoxesQ[ ___ ] := False;
 (*makePromptFunctionMessages*)
 makePromptFunctionMessages // beginDefinition;
 
-makePromptFunctionMessages[ settings_, { cells___, cell_ } ] := Enclose[
-    Module[ { name, arguments, filled, string },
+makePromptFunctionMessages[ settings_, { cells___, cell0_ } ] := Enclose[
+    Module[ { modifiers, cell, name, arguments, filled, string },
+        { modifiers, cell } = ConfirmMatch[ extractModifiers @ cell0, { _, _ }, "Modifiers" ];
         name      = ConfirmBy[ extractPromptFunctionName @ cell, StringQ, "PromptFunctionName" ];
         arguments = ConfirmMatch[ extractPromptArguments @ cell, { ___String }, "PromptArguments" ];
         filled    = ConfirmMatch[ replaceArgumentTokens[ name, arguments, { cells, cell } ], { ___String }, "Tokens" ];
         string    = ConfirmBy[ getLLMPrompt[ name ] @@ filled, StringQ, "LLMPrompt" ];
         (* FIXME: handle named slots *)
-        { <| "role" -> "user", "content" -> string |> }
+        Flatten @ {
+            expandModifierMessages[ modifiers, { cells }, cell ],
+            <| "role" -> "user", "content" -> string |>
+        }
     ],
-    throwInternalFailure[ makePromptFunctionMessages[ settings, { cells, cell } ], ## ] &
+    throwInternalFailure[ makePromptFunctionMessages[ settings, { cells, cell0 } ], ## ] &
 ];
 
 makePromptFunctionMessages // endDefinition;
@@ -1597,6 +1599,76 @@ dropDelimitedCells[ cells_List ] :=
     Drop[ cells, Max[ Position[ cellStyles @ cells, { ___, "ChatDelimiter"|"PageBreak", ___ }, { 1 } ], 0 ] ];
 
 dropDelimitedCells // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeCurrentCellMessage*)
+makeCurrentCellMessage // beginDefinition;
+
+makeCurrentCellMessage[ settings_, { cells___, cell0_ } ] := Enclose[
+    Module[ { modifiers, cell, role, content },
+        { modifiers, cell } = ConfirmMatch[ extractModifiers @ cell0, { _, _ }, "Modifiers" ];
+        role = ConfirmBy[ cellRole @ cell, StringQ, "CellRole" ];
+        content = ConfirmBy[ Block[ { $CurrentCell = True }, CellToString @ cell ], StringQ, "Content" ];
+        Flatten @ {
+            expandModifierMessages[ modifiers, { cells }, cell ],
+            <| "role" -> role, "content" -> content |>
+        }
+    ],
+    throwInternalFailure[ makeCurrentCellMessage[ settings, { cells, cell0 } ], ## ] &
+];
+
+makeCurrentCellMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*expandModifierMessages*)
+expandModifierMessages // beginDefinition;
+expandModifierMessages[ modifiers_List, history_, cell_ ] := expandModifierMessage[ #, history, cell ] & /@ modifiers;
+expandModifierMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*expandModifierMessage*)
+expandModifierMessage // beginDefinition;
+
+expandModifierMessage[ modifier_, { cells___ }, cell_ ] := Enclose[
+    Module[ { name, arguments, filled, string },
+        name      = ConfirmBy[ modifier[ "PromptModifierName" ], StringQ, "ModifierName" ];
+        arguments = ConfirmMatch[ modifier[ "PromptArguments" ], { ___String }, "Arguments" ];
+        filled    = ConfirmMatch[ replaceArgumentTokens[ name, arguments, { cells, cell } ], { ___String }, "Tokens" ];
+        string    = ConfirmBy[ getLLMPrompt[ name ] @@ filled, StringQ, "LLMPrompt" ];
+        <| "role" -> "system", "content" -> string |>
+    ],
+    throwInternalFailure[ expandModifierMessage[ modifier, { cells }, cell ], ## ] &
+];
+
+expandModifierMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*extractModifiers*)
+extractModifiers // beginDefinition;
+
+extractModifiers[ cell: Cell[ _String, ___ ] ] := { { }, cell };
+extractModifiers[ cell: Cell[ TextData[ _String ], ___ ] ] := { { }, cell };
+
+extractModifiers[ Cell[ TextData[ text: { ___, Cell[ _, "InlineModifierReference", ___ ], ___ } ], a___ ] ] := {
+    Cases[ text, cell: Cell[ _, "InlineModifierReference", ___ ] :> extractModifier @ cell ],
+    Cell[ TextData @ DeleteCases[ text, Cell[ _, "InlineModifierReference", ___ ] ], a ]
+};
+
+extractModifiers[ cell_Cell ] := { { }, cell };
+
+extractModifiers // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*extractModifier*)
+extractModifier // beginDefinition;
+extractModifier[ Cell[ __, TaggingRules -> tags_, ___ ] ] := extractModifier @ tags;
+extractModifier[ as: KeyValuePattern @ { "PromptModifierName" -> _String, "PromptArguments" -> _List } ] := as;
+extractModifier // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
