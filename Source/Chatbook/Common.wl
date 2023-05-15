@@ -40,7 +40,7 @@ $chatInputStyles      = { "ChatInput", "ChatInputSingle", "ChatQuery", "ChatSyst
 $chatOutputStyles     = { "ChatOutput" };
 $excludeHistoryStyles = { "ChatInputSingle" };
 
-$maxChatCells = OptionValue[ CreateChatNotebook, "ChatHistoryLength" ];
+$maxChatCells := OptionValue[ CreateChatNotebook, "ChatHistoryLength" ];
 
 $closedChatCellOptions :=
     If[ TrueQ @ CloudSystem`$CloudNotebooks,
