@@ -35,7 +35,8 @@ PacletObject[<|
 			"Personas" -> {
 				"Helper",
 				"Wolfie",
-				"Birdnardo"
+				"Birdnardo",
+                "None"
 			}
 		},
 		{"FrontEnd"}
