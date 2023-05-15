@@ -1689,6 +1689,11 @@ extractModifiers[ Cell[ TextData[ text: { ___, Cell[ _, "InlineModifierReference
     Cell[ TextData @ DeleteCases[ text, Cell[ _, "InlineModifierReference", ___ ] ], a ]
 };
 
+extractModifiers[ Cell[ TextData[ modifier: Cell[ _, "InlineModifierReference", ___ ] ], a___ ] ] := {
+    { extractModifier @ modifier },
+    Cell[ "", a ]
+};
+
 extractModifiers[ cell_Cell ] := { { }, cell };
 
 extractModifiers // endDefinition;
