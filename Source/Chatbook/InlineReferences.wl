@@ -4,6 +4,7 @@ BeginPackage[ "Wolfram`Chatbook`InlineReferences`" ];
 
 `insertPersonaInputBox;
 `insertFunctionInputBox;
+`insertModifierInputBox;
 `insertTrailingFunctionInputBox;
 
 Begin[ "`Private`" ];
@@ -22,6 +23,245 @@ Needs[ "Wolfram`Chatbook`PersonaInstaller`" ];
 (* ::Section::Closed:: *)
 (*Config*)
 $argumentDivider = "|";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Modifier Input*)
+$modifierDataURL = "https://resources.wolframcloud.com/PromptRepository/category/modifier-prompts-data.json";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*modifierCompletion*)
+modifierCompletion // beginDefinition;
+modifierCompletion[ "" ] := $modifierNames;
+modifierCompletion[ string_String ] := Select[ $modifierNames, StringStartsQ[ string, IgnoreCase -> True ] ];
+modifierCompletion // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$modifierNames*)
+$modifierNames := $availableModifierNames;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$availableModifierNames*)
+$availableModifierNames := Enclose[
+    Module[ { modifierData, names },
+        modifierData = ConfirmBy[ URLExecute[ $modifierDataURL, "RawJSON" ], AssociationQ, "ModifierData" ];
+        names = Cases[
+            modifierData[ "Resources" ],
+            KeyValuePattern[ "Name" -> KeyValuePattern[ "Label" -> name_String ] ] :> name
+        ];
+        $availableModifierNames = ConfirmMatch[ names, { __? StringQ }, "Names" ]
+    ],
+    throwInternalFailure[ $availableModifierNames, ##1 ] &
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*insertModifierInputBox*)
+insertModifierInputBox // beginDefinition;
+
+insertModifierInputBox[ cell_CellObject ] :=
+    If[ MatchQ[
+            Developer`CellInformation @ SelectedCells[ ],
+            { KeyValuePattern @ { "Style" -> "ChatInput" } }
+        ],
+        insertModifierInputBox[ cell, parentNotebook @ cell ],
+        NotebookWrite[ parentNotebook @ cell, "#" ]
+    ];
+
+insertModifierInputBox[ parent_CellObject, nbo_NotebookObject ] :=
+    Module[ { uuid, cell },
+        uuid = CreateUUID[ ];
+        cell = Cell[ BoxData @ ToBoxes @ modifierInputBox[ "", uuid ], "InlineModifierChooser", Background -> None ];
+        NotebookWrite[ nbo, cell ];
+        FrontEnd`MoveCursorToInputField[ nbo, uuid ]
+    ];
+
+insertModifierInputBox[ args_List, cell_CellObject ] :=
+    insertModifierInputBox[ args, cell, parentNotebook @ cell ];
+
+insertModifierInputBox[ args_List, parent_CellObject, nbo_NotebookObject ] :=
+    Module[ { uuid, cell },
+        uuid = CreateUUID[ ];
+        cell = Cell[ BoxData @ ToBoxes @ modifierInputBox[ args, uuid ], "InlineModifierChooser", Background -> None ];
+        NotebookWrite[ parent, cell ];
+        FrontEnd`MoveCursorToInputField[ nbo, uuid ]
+    ];
+
+insertModifierInputBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*modifierInputBox*)
+modifierInputBox // beginDefinition;
+
+modifierInputBox[ name_String, uuid_ ] := modifierInputBox[ { name }, uuid ];
+
+modifierInputBox[ args_List, uuid_ ] :=
+    DynamicModule[ { string = StringRiffle[ args, " "<>$argumentDivider<>" " ], cell },
+        EventHandler[
+            Style[
+                Framed[
+                    Grid[
+                        {
+                            {
+                                "#",
+                                InputField[
+                                    Dynamic[
+                                        string,
+                                        Function[
+                                            string = #;
+                                            processModifierInput[ #, SelectedCells[ ], cell ]
+                                        ]
+                                    ],
+                                    String,
+                                    Alignment               -> { Left, Baseline },
+                                    ContinuousAction        -> False,
+                                    FieldCompletionFunction -> modifierCompletion,
+                                    FieldSize               -> { { 15, Infinity }, Automatic },
+                                    FieldHint               -> "PromptName",
+                                    BaseStyle               -> $inputFieldStyle,
+                                    Appearance              -> "Frameless",
+                                    ContentPadding          -> False,
+                                    FrameMargins            -> 0,
+                                    BoxID                   -> uuid
+                                ]
+                            }
+                        },
+                        Spacings  -> 0,
+                        Alignment -> { Automatic, Baseline }
+                    ],
+                    RoundingRadius -> 4,
+                    FrameStyle     -> RGBColor[ "#ff6a00" ],
+                    FrameMargins   -> { { 4, 3 }, { 3, 3 } },
+                    ContentPadding -> False
+                ],
+                "Text",
+                ShowStringCharacters -> False
+            ],
+            {
+                { "KeyDown", "#" } :> NotebookWrite[ EvaluationNotebook[ ], "#" ],
+                "EscapeKeyDown"    :> removeModifierInputBox @ cell,
+                "ReturnKeyDown"    :> writeStaticModifierBox @ cell
+            },
+            PassEventsUp   -> False,
+            PassEventsDown -> True
+        ],
+        Initialization   :> { cell = EvaluationCell[ ], Quiet @ Needs[ "Wolfram`Chatbook`" -> None ] },
+        UnsavedVariables :> { cell }
+    ];
+
+modifierInputBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*processModifierInput*)
+processModifierInput // beginDefinition;
+
+processModifierInput[ string_String, { cell_CellObject }, cell_CellObject ] := Null;
+
+processModifierInput[ string_String, _List, cell_CellObject ] :=
+    writeStaticModifierBox[ cell, functionInputSetting @ string ];
+
+processModifierInput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*writeStaticModifierBox*)
+writeStaticModifierBox // beginDefinition;
+
+writeStaticModifierBox[ cell_CellObject ] :=
+    writeStaticModifierBox[ cell, functionInputSetting @ NotebookRead @ cell ];
+
+writeStaticModifierBox[ cell_, $Failed ] := Null; (* box was already overwritten *)
+
+writeStaticModifierBox[ cell_CellObject, { name_String? promptNameQ, args___ } ] /; ! TrueQ @ $removingBox :=
+    Enclose[
+        NotebookWrite[
+            cell,
+            Cell[
+                BoxData @ ToBoxes @ staticModifierBox @ { name, args },
+                "InlineModifierReference",
+                TaggingRules -> <| "PromptModifierName" -> name, "PromptArguments" -> promptModifierArguments @ args |>,
+                Background   -> None,
+                Selectable   -> False
+            ]
+        ],
+        throwInternalFailure[ writeStaticModifierBox[ cell, { name, args } ], ## ] &
+    ];
+
+writeStaticModifierBox[ cell_CellObject, args_List ] :=
+    NotebookWrite[ cell, TextData[ "#" <> StringRiffle[ args, $argumentDivider ] ], After ];
+
+writeStaticModifierBox // endDefinition;
+
+promptModifierArguments[ args___ ] := Flatten @ { args };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*removeModifierInputBox*)
+removeModifierInputBox // beginDefinition;
+removeModifierInputBox[ cell_CellObject ] := Block[ { $removingBox = True }, writeStaticModifierBox @ cell ];
+removeModifierInputBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*staticModifierBox*)
+(* FIXME: this should _definitely_ be a template box *)
+staticModifierBox // beginDefinition;
+
+staticModifierBox[ args_List ] := Button[
+    MouseAppearance[
+        Mouseover[
+            staticModifierBoxLabel[ args, RGBColor[ "#fffbf0" ] ],
+            staticModifierBoxLabel[ args, RGBColor[ "#ffffff" ] ]
+        ],
+        "LinkHand"
+    ],
+    insertModifierInputBox[ args, EvaluationCell[ ] ],
+    ContentPadding -> False,
+    FrameMargins   -> 0,
+    Appearance     -> $suppressButtonAppearance
+];
+
+staticModifierBox // endDefinition;
+
+
+staticModifierBoxLabel // beginDefinition;
+
+staticModifierBoxLabel[ { name_, args___ }, background_ ] :=
+    Style[
+        Framed[
+            Grid[
+                {
+                    Flatten @ {
+                        Row @ {
+                            Style[ "#", FontColor -> RGBColor[ "#ff6a00" ], FontSize -> 0.9*Inherited ],
+                            Spacer[ 2 ],
+                            Style[ name, FontColor -> GrayLevel[ 0.25 ], FontSize -> 0.9*Inherited ]
+                        },
+                        styleFunctionArgument /@ { args }
+                    }
+                },
+                Dividers   -> { { False, { True }, False }, False },
+                FrameStyle -> RGBColor[ "#ff6a00" ],
+                Spacings   -> 0.65,
+                Alignment  -> { Automatic, Baseline }
+            ],
+            Background     -> background,
+            RoundingRadius -> 4,
+            FrameStyle     -> RGBColor[ "#ff6a00" ],
+            FrameMargins   -> { { 4, 3 }, { 3, 3 } },
+            ContentPadding -> False,
+            BaseStyle      -> "Text"
+        ],
+        ShowStringCharacters -> False,
+        Selectable           -> False
+    ];
+
+staticModifierBoxLabel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -194,7 +434,7 @@ writeStaticFunctionBox[ cell_CellObject, { name_String? promptNameQ, args___ } ]
             Cell[
                 BoxData @ ToBoxes @ staticFunctionBox @ { name, args },
                 "InlineFunctionReference",
-                TaggingRules -> <| "PromptFunctionName" -> name, "PromptArguments" -> promptArguments @ args |>,
+                TaggingRules -> <| "PromptFunctionName" -> name, "PromptArguments" -> promptFunctionArguments @ args |>,
                 Background   -> None,
                 Selectable   -> False
             ]
@@ -208,8 +448,8 @@ writeStaticFunctionBox[ cell_CellObject, args_List ] :=
 writeStaticFunctionBox // endDefinition;
 
 
-promptArguments[ ] := { ">" };
-promptArguments[ args___ ] := Flatten @ { args };
+promptFunctionArguments[ ] := { ">" };
+promptFunctionArguments[ args___ ] := Flatten @ { args };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -221,7 +461,7 @@ removeFunctionInputBox // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*promptNameQ*)
-promptNameQ[ name_String ] /; MemberQ[ $functionNames, name ] := True;
+promptNameQ[ name_String ] /; MemberQ[ $functionNames, name ] || MemberQ[ $modifierNames, name ] := True;
 
 promptNameQ[ name_String? Internal`SymbolNameQ ] := promptNameQ[ name ] = Quiet @ Block[ { PrintTemporary },
     TrueQ @ Or[
@@ -442,7 +682,7 @@ writeStaticTrailingFunctionBox[ cell_CellObject, { name_String, args___ } ] /; M
             Cell[
                 BoxData @ ToBoxes @ staticTrailingFunctionBox @ { name, args },
                 "InlinePersonaReference",
-                TaggingRules -> <| "PromptFunctionName" -> name, "PromptArguments" -> promptArguments @ args |>,
+                TaggingRules -> <| "PromptFunctionName" -> name, "PromptArguments" -> promptFunctionArguments @ args |>,
                 Background   -> None,
                 Selectable   -> False
             ]

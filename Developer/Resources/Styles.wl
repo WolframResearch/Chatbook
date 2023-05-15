@@ -98,6 +98,11 @@ Cell[
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
             Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "Function", $CellContext`cell ]
         ]
+        ,
+        { "KeyDown", "#" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
+            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "Modifier", $CellContext`cell ]
+        ]
         (* ,
         { "KeyDown", ">" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];

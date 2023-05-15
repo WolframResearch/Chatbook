@@ -384,6 +384,30 @@ fasterCellToString0[ Cell[
     ___
 ] ] := "LLMResourceFunction[" <> StringRiffle[ toLLMArg /@ Flatten @ { name, args }, ", " ] <> "]";
 
+fasterCellToString0[
+    Cell[
+        _,
+        "InlineModifierReference",
+        ___,
+        TaggingRules -> KeyValuePattern @ { "PromptModifierName" -> name_String, "PromptArguments" -> { } },
+        ___
+    ]
+] := "#" <> name;
+
+fasterCellToString0[
+    Cell[
+        _,
+        "InlineModifierReference",
+        ___,
+        TaggingRules -> KeyValuePattern @ { "PromptModifierName" -> name_String, "PromptArguments" -> args_List },
+        ___
+    ]
+] := StringJoin[
+    "LLMSynthesize[{",
+    StringRiffle[ Flatten @ { "LLMPrompt[\""<>name<>"\"]", toLLMArg /@ Flatten @ { args } }, ", " ],
+    "}]"
+];
+
 
 toLLMArg[ ">" ] := "$RestOfCellContents";
 toLLMArg[ "^" ] := "$PreviousCellContents";
