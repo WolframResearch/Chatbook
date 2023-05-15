@@ -53,11 +53,44 @@ ChatbookAction[ args___                          ] := catchMine @ throwInternalF
 (* ::Section::Closed:: *)
 (*InsertInlineReference*)
 InsertInlineReference // beginDefinition;
-InsertInlineReference[ "Persona"         , args___ ] := insertPersonaInputBox @ args;
-InsertInlineReference[ "TrailingFunction", args___ ] := insertTrailingFunctionInputBox @ args;
-InsertInlineReference[ "Function"        , args___ ] := insertFunctionInputBox @ args;
-InsertInlineReference[ "Modifier"        , args___ ] := insertModifierInputBox @ args;
+InsertInlineReference[ type_, cell_CellObject ] := insertInlineReference[ type, loadDefinitionNotebook @ cell ];
 InsertInlineReference // endDefinition;
+
+insertInlineReference // beginDefinition;
+insertInlineReference[ "Persona"         , args___ ] := insertPersonaInputBox @ args;
+insertInlineReference[ "TrailingFunction", args___ ] := insertTrailingFunctionInputBox @ args;
+insertInlineReference[ "Function"        , args___ ] := insertFunctionInputBox @ args;
+insertInlineReference[ "Modifier"        , args___ ] := insertModifierInputBox @ args;
+insertInlineReference // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*loadDefinitionNotebook*)
+
+(* TODO: hook up to other actions that might need this *)
+loadDefinitionNotebook // beginDefinition;
+
+loadDefinitionNotebook[ cell_ ] /; $definitionNotebookLoaded := cell;
+
+loadDefinitionNotebook[ cell_CellObject? definitionNotebookCellQ ] :=
+    With[ { nbo = parentNotebook @ cell },
+        DefinitionNotebookClient`LoadDefinitionNotebook @ nbo;
+        PromptResource`DefinitionNotebook`RescrapeLLMEvaluator @ nbo;
+        $definitionNotebookLoaded = True;
+        cell
+    ];
+
+loadDefinitionNotebook[ cell_ ] := cell;
+
+loadDefinitionNotebook // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*definitionNotebookCellQ*)
+definitionNotebookCellQ[ cell_CellObject ] := definitionNotebookCellQ[ cell ] =
+    CurrentValue[ cell, { TaggingRules, "ResourceType" } ] === "Prompt";
+
+definitionNotebookCellQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1197,7 +1230,7 @@ makePromptFunctionMessages[ settings_, { cells___, cell0_ } ] := Enclose[
         string    = ConfirmBy[ getLLMPrompt[ name ] @@ filled, StringQ, "LLMPrompt" ];
         (* FIXME: handle named slots *)
         Flatten @ {
-            expandModifierMessages[ modifiers, { cells }, cell ],
+            expandModifierMessages[ settings, modifiers, { cells }, cell ],
             <| "role" -> "user", "content" -> string |>
         }
     ],
@@ -1267,6 +1300,15 @@ argumentTokenToString[
         ]
     }
 ] := CellToString @ Cell[ TextData @ { a }, "ChatInput", b ];
+
+argumentTokenToString[
+    ">",
+    name_,
+    {
+        ___,
+        Cell[ TextData @ Cell[ __, TaggingRules -> KeyValuePattern[ "PromptFunctionName" -> name_ ], ___ ], "ChatInput", ___ ]
+    }
+] := "";
 
 argumentTokenToString[ "^", name_, { ___, cell_, _ } ] := CellToString @ cell;
 
@@ -1585,7 +1627,7 @@ makeCurrentCellMessage[ settings_, { cells___, cell0_ } ] := Enclose[
         role = ConfirmBy[ cellRole @ cell, StringQ, "CellRole" ];
         content = ConfirmBy[ Block[ { $CurrentCell = True }, CellToString @ cell ], StringQ, "Content" ];
         Flatten @ {
-            expandModifierMessages[ modifiers, { cells }, cell ],
+            expandModifierMessages[ settings, modifiers, { cells }, cell ],
             <| "role" -> role, "content" -> content |>
         }
     ],
@@ -1598,7 +1640,10 @@ makeCurrentCellMessage // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*expandModifierMessages*)
 expandModifierMessages // beginDefinition;
-expandModifierMessages[ modifiers_List, history_, cell_ ] := expandModifierMessage[ #, history, cell ] & /@ modifiers;
+
+expandModifierMessages[ settings_, modifiers_List, history_, cell_ ] :=
+    expandModifierMessage[ settings, #, history, cell ] & /@ modifiers;
+
 expandModifierMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1606,18 +1651,30 @@ expandModifierMessages // endDefinition;
 (*expandModifierMessage*)
 expandModifierMessage // beginDefinition;
 
-expandModifierMessage[ modifier_, { cells___ }, cell_ ] := Enclose[
-    Module[ { name, arguments, filled, string },
+expandModifierMessage[ settings_, modifier_, { cells___ }, cell_ ] := Enclose[
+    Module[ { name, arguments, filled, string, role },
         name      = ConfirmBy[ modifier[ "PromptModifierName" ], StringQ, "ModifierName" ];
         arguments = ConfirmMatch[ modifier[ "PromptArguments" ], { ___String }, "Arguments" ];
         filled    = ConfirmMatch[ replaceArgumentTokens[ name, arguments, { cells, cell } ], { ___String }, "Tokens" ];
         string    = ConfirmBy[ getLLMPrompt[ name ] @@ filled, StringQ, "LLMPrompt" ];
-        <| "role" -> "system", "content" -> string |>
+        role      = ConfirmBy[ modifierMessageRole @ settings, StringQ, "Role" ];
+        <| "role" -> role, "content" -> string |>
     ],
     throwInternalFailure[ expandModifierMessage[ modifier, { cells }, cell ], ## ] &
 ];
 
 expandModifierMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*modifierMessageRole*)
+modifierMessageRole[ KeyValuePattern[ "Model" -> model_String ] ] :=
+    If[ TrueQ @ StringStartsQ[ toModelName @ model, "gpt-3.5", IgnoreCase -> True ],
+        "user",
+        "system"
+    ];
+
+modifierMessageRole[ ___ ] := "system";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
