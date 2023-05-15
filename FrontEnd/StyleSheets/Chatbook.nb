@@ -1591,10 +1591,10 @@ Notebook[
              ]
             }
            },
-           GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}},
+           GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
            AutoDelete -> False,
            GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-           GridBoxSpacings -> {"Columns" -> {{0}}}
+           GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}}
           ],
           "Grid"
          ],
@@ -1653,10 +1653,10 @@ Notebook[
             ]
            }
           },
-          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Top}}},
+          GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
           AutoDelete -> False,
           GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-          GridBoxSpacings -> {"Columns" -> {{0}}}
+          GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {{0}}}
          ],
          "Grid"
         ],
@@ -1922,7 +1922,8 @@ Notebook[
        },
        AspectRatio -> Automatic,
        ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
-       PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
+       PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}},
+       BaselinePosition -> Scaled[0.324]
       ]
      ])
    }
@@ -6351,7 +6352,8 @@ Notebook[
        },
        AspectRatio -> Automatic,
        ImageSize -> {20.0, 20.0},
-       PlotRange -> {{0.0, 20.0}, {0.0, 20.0}}
+       PlotRange -> {{0.0, 20.0}, {0.0, 20.0}},
+       BaselinePosition -> Scaled[0.282]
       ]
      ])
    }
@@ -6545,7 +6547,8 @@ Notebook[
        },
        AspectRatio -> Automatic,
        ImageSize -> {20.0, 20.0},
-       PlotRange -> {{0.0, 20.0}, {0.0, 20.0}}
+       PlotRange -> {{0.0, 20.0}, {0.0, 20.0}},
+       BaselinePosition -> Scaled[0.262]
       ]
      ])
    }
@@ -8167,8 +8170,7 @@ Notebook[
     "ChatMenuSectionLabel",
     StyleDefinitions -> StyleData["ChatMenuLabel"]
    ],
-   FontSize -> 11,
-   FontVariations -> {"CapsType" -> "AllCaps"},
+   FontSize -> 13,
    FontColor -> GrayLevel[0.35]
   ],
   Cell[
