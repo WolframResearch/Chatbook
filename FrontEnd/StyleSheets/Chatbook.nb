@@ -690,6 +690,24 @@ Notebook[
        "Persona",
        cell
       ]
+     ],
+    {"KeyDown", "!"} :>
+     With[ { cell = EvaluationCell[] },
+      Quiet[Needs["Wolfram`Chatbook`" -> None]];
+      Symbol["Wolfram`Chatbook`ChatbookAction"][
+       "InsertInlineReference",
+       "Function",
+       cell
+      ]
+     ],
+    {"KeyDown", "#"} :>
+     With[ { cell = EvaluationCell[] },
+      Quiet[Needs["Wolfram`Chatbook`" -> None]];
+      Symbol["Wolfram`Chatbook`ChatbookAction"][
+       "InsertInlineReference",
+       "Modifier",
+       cell
+      ]
      ]
    },
    CellFrameColor -> RGBColor[0.63922, 0.78824, 0.94902],
