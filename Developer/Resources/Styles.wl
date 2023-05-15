@@ -75,7 +75,7 @@ Cell[
     CounterIncrements -> { "ChatInputCount" },
     Evaluatable       -> True,
     MenuSortingValue  -> 1000,
-    StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "ChatInputSingle", "Backspace" -> "Input" },
+    StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "SideChat", "Backspace" -> "Input" },
 	CellDingbat -> Cell[
 		BoxData @ RowBox[{
 			TemplateBox[{}, "ChatCounterLabel"],
@@ -115,7 +115,7 @@ Cell[
 (* ::Section::Closed:: *)
 (*ChatInputSingle*)
 Cell[
-    StyleData[ "ChatInputSingle", StyleDefinitions -> StyleData[ "ChatInput" ] ],
+    StyleData[ "SideChat", StyleDefinitions -> StyleData[ "ChatInput" ] ],
     CellDingbat -> Cell[
         BoxData @ ToBoxes @ Grid[
             { {
@@ -159,7 +159,7 @@ Cell[
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterIncrements -> { },
     MenuSortingValue  -> 1000,
-    StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "ChatContextDivider", "Backspace" -> "ChatInputSingle" }
+    StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "ChatContextDivider", "Backspace" -> "SideChat" }
 ]
 
 (* ::**************************************************************************************************************:: *)

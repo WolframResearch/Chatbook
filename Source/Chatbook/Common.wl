@@ -36,9 +36,9 @@ Needs[ "Wolfram`Chatbook`" ];
 (*Config*)
 $chatDelimiterStyles  = { "ChatContextDivider", "ChatDelimiter", "ExcludedChatDelimiter" };
 $chatIgnoredStyles    = { "ChatExcluded" };
-$chatInputStyles      = { "ChatInput", "ChatInputSingle", "ChatQuery", "ChatSystemInput" };
+$chatInputStyles      = { "ChatInput", "SideChat", "ChatQuery", "ChatSystemInput" };
 $chatOutputStyles     = { "ChatOutput" };
-$excludeHistoryStyles = { "ChatInputSingle" };
+$excludeHistoryStyles = { "SideChat" };
 
 $maxChatCells := OptionValue[ CreateChatNotebook, "ChatHistoryLength" ];
 
