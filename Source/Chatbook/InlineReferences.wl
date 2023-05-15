@@ -40,7 +40,13 @@ modifierCompletion // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$modifierNames*)
-$modifierNames := $availableModifierNames;
+$modifierNames := Select[
+    DeleteDuplicates @ Flatten @ {
+        CurrentValue @ { TaggingRules, "ChatNotebookSettings", "LLMEvaluator", "LLMEvaluatorName" },
+        $availableModifierNames
+    },
+    StringQ
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -52,7 +58,7 @@ $availableModifierNames := Enclose[
             modifierData[ "Resources" ],
             KeyValuePattern[ "Name" -> KeyValuePattern[ "Label" -> name_String ] ] :> name
         ];
-        $availableModifierNames = ConfirmMatch[ names, { __? StringQ }, "Names" ]
+        $availableModifierNames = ConfirmMatch[ Union @ names, { __? StringQ }, "Names" ]
     ],
     throwInternalFailure[ $availableModifierNames, ##1 ] &
 ];
@@ -279,7 +285,13 @@ functionCompletion // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$functionNames*)
-$functionNames := $availableFunctionNames;
+$functionNames := Select[
+    DeleteDuplicates @ Flatten @ {
+        CurrentValue @ { TaggingRules, "ChatNotebookSettings", "LLMEvaluator", "LLMEvaluatorName" },
+        $availableFunctionNames
+    },
+    StringQ
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -291,7 +303,7 @@ $availableFunctionNames := Enclose[
             functionData[ "Resources" ],
             KeyValuePattern[ "Name" -> KeyValuePattern[ "Label" -> name_String ] ] :> name
         ];
-        $availableFunctionNames = ConfirmMatch[ names, { __? StringQ }, "Names" ]
+        $availableFunctionNames = ConfirmMatch[ Union @ names, { __? StringQ }, "Names" ]
     ],
     throwInternalFailure[ $availableFunctionNames, ##1 ] &
 ];
@@ -461,16 +473,16 @@ removeFunctionInputBox // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*promptNameQ*)
-promptNameQ[ name_String ] /; MemberQ[ $functionNames, name ] || MemberQ[ $modifierNames, name ] := True;
+promptNameQ[ id_String ] /; MemberQ[ $functionNames, id ] || MemberQ[ $modifierNames, id ] := True;
+promptNameQ[ id_String? Internal`SymbolNameQ ] := If[ TrueQ @ promptNameQ0 @ id, promptNameQ[ id ] = True, False ];
+promptNameQ[ ___ ] := False;
 
-promptNameQ[ name_String? Internal`SymbolNameQ ] := promptNameQ[ name ] = Quiet @ Block[ { PrintTemporary },
+promptNameQ0[ name_String ] := Quiet @ Block[ { PrintTemporary },
     TrueQ @ Or[
         ResourceObject[ name ][ "ResourceType" ] === "Prompt",
         ResourceObject[ "Prompt: " <> name ][ "ResourceType" ] === "Prompt"
     ]
 ];
-
-promptNameQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -782,7 +794,14 @@ personaCompletion // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$personaNames*)
-$personaNames := DeleteDuplicates @ Join[ Keys @ GetCachedPersonaData[ ], $availablePersonaNames ];
+$personaNames := Select[
+    DeleteDuplicates @ Flatten @ {
+        CurrentValue @ { TaggingRules, "ChatNotebookSettings", "LLMEvaluator", "LLMEvaluatorName" },
+        Keys @ GetCachedPersonaData[ ],
+        $availablePersonaNames
+    },
+    StringQ
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -794,7 +813,7 @@ $availablePersonaNames := Enclose[
             personaData[ "Resources" ],
             KeyValuePattern[ "Name" -> KeyValuePattern[ "Label" -> name_String ] ] :> name
         ];
-        $availablePersonaNames = ConfirmMatch[ names, { __? StringQ }, "Names" ]
+        $availablePersonaNames = ConfirmMatch[ Union @ names, { __? StringQ }, "Names" ]
     ],
     throwInternalFailure[ $availablePersonaNames, ##1 ] &
 ];
