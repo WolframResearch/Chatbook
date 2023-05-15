@@ -178,7 +178,9 @@ SetFallthroughError[loadPersonaFromDirectory]
 loadPersonaFromDirectory[dir_?StringQ] := Module[{
 	pre,
 	post,
-	icon
+	icon,
+	config,
+	extra
 },
 	If[!DirectoryQ[dir],
 		Raise[
@@ -193,6 +195,7 @@ loadPersonaFromDirectory[dir_?StringQ] := Module[{
 	post = FileNameJoin[{dir, "Post.md"}];
 	(* TODO: Support .png, .jpg, etc. icons. *)
 	icon = FileNameJoin[{dir, "Icon.wl"}];
+	config = FileNameJoin[{dir, "LLMConfiguration.wl"}];
 
 	pre = If[FileType[pre] === File,
 		readPromptString[pre],
@@ -209,7 +212,17 @@ loadPersonaFromDirectory[dir_?StringQ] := Module[{
 		Missing["NotAvailable", icon]
 	];
 
-	<| "Pre" -> pre, "Post" -> post, "Icon" -> icon |>
+	config = If[FileType[config] === File,
+		Get[config],
+		Missing["NotAvailable", config]
+	];
+
+	extra = <| "Pre" -> pre, "Post" -> post, "Icon" -> icon |>;
+
+	If[ AssociationQ[config],
+		Association[extra, config],
+		extra
+	]
 ]
 
 readPromptString[ file_ ] := StringReplace[ ByteArrayToString @ ReadByteArray @ file, "\r\n" -> "\n" ];
