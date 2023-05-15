@@ -15,6 +15,8 @@ Needs[ "Wolfram`Chatbook`"          ];
 Needs[ "Wolfram`Chatbook`Common`"   ];
 Needs[ "Wolfram`Chatbook`FrontEnd`" ];
 
+(* FIXME: Use ParagraphSpacing to squeeze text closer together *)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)

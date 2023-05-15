@@ -5,7 +5,7 @@ Begin[ "Wolfram`ChatbookStylesheetBuilder`Private`" ];
 (*Notebook*)
 Cell[
     StyleData[ "Notebook" ],
-    TaggingRules -> <| "ChatNotebookSettings" -> $defaultChatbookSettings |>,
+    TaggingRules -> <| "ChatNotebookSettings" -> <| |> |>,
 
     CellTrayWidgets -> <|
         "ChatWidget" -> <|
@@ -102,9 +102,19 @@ Cell[
 (*ChatInputSingle*)
 Cell[
     StyleData[ "ChatInputSingle", StyleDefinitions -> StyleData[ "ChatInput" ] ],
-    CellDingbat       -> Cell[ BoxData @ ToBoxes @ Grid[{{Item[$chatInputCellDingbat,
-    Frame -> {False, False, True, False},
-    FrameStyle -> Directive[GrayLevel[0.925], AbsoluteThickness[4]]]}}, Spacings -> 0], Background -> None ],
+    CellDingbat -> Cell[
+        BoxData @ ToBoxes @ Grid[
+            { {
+                Item[
+                    $chatInputCellDingbat,
+                    Frame      -> { False, False, True, False },
+                    FrameStyle -> Directive[ GrayLevel[ 0.925 ], AbsoluteThickness[ 4 ] ]
+                ]
+            } },
+            Spacings -> 0
+        ],
+        Background -> None
+    ],
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterIncrements -> { },
     StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "ChatSystemInput", "Backspace" -> "ChatInput" },
@@ -128,13 +138,14 @@ Cell[
 (*ChatSystemInput*)
 Cell[
     StyleData[ "ChatSystemInput", StyleDefinitions -> StyleData[ "ChatInput" ] ],
-    CellDingbat      -> Cell[ BoxData @ TemplateBox[ { }, "ChatSystemIcon" ], Background -> None ],
-    CellFrame        -> 1,
-    CellFrameColor   -> RGBColor[ "#a3c9f2" ],
-    CellFrameStyle   -> Dashing @ { Small, Small },
-    CellTrayWidgets  -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
-    MenuSortingValue -> 1000,
-    StyleKeyMapping  -> { " " -> "Text", "*" -> "Item", "'" -> "ChatContextDivider", "Backspace" -> "ChatInputSingle" }
+    CellDingbat       -> Cell[ BoxData @ TemplateBox[ { }, "ChatSystemIcon" ], Background -> None ],
+    CellFrame         -> 1,
+    CellFrameColor    -> RGBColor[ "#a3c9f2" ],
+    CellFrameStyle    -> Dashing @ { Small, Small },
+    CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    CounterIncrements -> { },
+    MenuSortingValue  -> 1000,
+    StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "ChatContextDivider", "Backspace" -> "ChatInputSingle" }
 ]
 
 (* ::**************************************************************************************************************:: *)

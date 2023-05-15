@@ -11,28 +11,7 @@ Notebook[
   Cell[StyleData[StyleDefinitions -> "Default.nb"]],
   Cell[
    StyleData["Notebook"],
-   TaggingRules -> <|
-    "ChatNotebookSettings" -> <|
-     "Assistance" -> Automatic,
-     "AutoFormat" -> True,
-     "ChatContextCellProcessingFunction" -> Automatic,
-     "ChatContextPostEvaluationFunction" -> Automatic,
-     "ChatContextPreprompt" -> Automatic,
-     "ChatHistoryLength" -> 25,
-     "DynamicAutoFormat" -> Automatic,
-     "FrequencyPenalty" -> 0.1,
-     "IncludeHistory" -> Automatic,
-     "MaxTokens" -> Automatic,
-     "MergeMessages" -> True,
-     "LLMEvaluator" -> "Helper",
-     "Model" -> "gpt-3.5-turbo",
-     "OpenAIKey" -> Automatic,
-     "PresencePenalty" -> 0.1,
-     "ShowMinimized" -> Automatic,
-     "Temperature" -> 0.7,
-     "TopP" -> 1
-    |>
-   |>,
+   TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    CellTrayWidgets -> <|
     "ChatWidget" -> <|
      "Type" -> "Focus",
@@ -633,10 +612,7 @@ Notebook[
              FrameMargins -> 2,
              ImageMargins -> {{0, 3}, {0, 0}},
              FrameStyle ->
-              Directive[
-               RGBColor[0.8549, 0.83137, 0.72549],
-               AbsoluteThickness[1]
-              ],
+              Directive[GrayLevel[0.85686], AbsoluteThickness[1]],
              Background ->
               Dynamic[
                If[ CurrentValue["MouseOver"], GrayLevel[0.8], GrayLevel[1] ]
@@ -772,10 +748,7 @@ Notebook[
                 FrameMargins -> 2,
                 ImageMargins -> {{0, 3}, {0, 0}},
                 FrameStyle ->
-                 Directive[
-                  RGBColor[0.8549, 0.83137, 0.72549],
-                  AbsoluteThickness[1]
-                 ],
+                 Directive[GrayLevel[0.85686], AbsoluteThickness[1]],
                 Background ->
                  Dynamic[
                   If[ CurrentValue["MouseOver"], GrayLevel[0.8], GrayLevel[1] ]
@@ -884,6 +857,7 @@ Notebook[
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellFrameColor -> RGBColor[0.63922, 0.78824, 0.94902],
    CellFrameStyle -> Dashing[{Small, Small}],
+   CounterIncrements -> { },
    MenuSortingValue -> 1000
   ],
   Cell[
@@ -1694,27 +1668,6 @@ Notebook[
             {
              TemplateBox[
               {
-               TemplateBox[{"IconizeIcon"}, "ChatMenuItemToolbarIcon"],
-               "\"Regenerate\"",
-               Hold[
-                With[ { cell$ = EvaluationCell[] },
-                 {root$ = ParentCell[cell$]},
-                 NotebookDelete[cell$];
-                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                 Symbol["Wolfram`Chatbook`ChatbookAction"][
-                  "Regenerate",
-                  root$
-                 ]
-                ]
-               ]
-              },
-              "ChatMenuItem"
-             ]
-            },
-            {TemplateBox[{}, "ChatMenuItemDelimiter"]},
-            {
-             TemplateBox[
-              {
                TemplateBox[{"DivideCellsIcon"}, "ChatMenuItemToolbarIcon"],
                "\"Explode Cells (In Place)\"",
                Hold[
@@ -1808,46 +1761,6 @@ Notebook[
                  Quiet[Needs["Wolfram`Chatbook`" -> None]];
                  Symbol["Wolfram`Chatbook`ChatbookAction"][
                   "CopyChatObject",
-                  root$
-                 ]
-                ]
-               ]
-              },
-              "ChatMenuItem"
-             ]
-            },
-            {
-             TemplateBox[
-              {
-               TemplateBox[{"GroupCellsIcon"}, "ChatMenuItemToolbarIcon"],
-               "\"Lock Response\"",
-               Hold[
-                With[ { cell$ = EvaluationCell[] },
-                 {root$ = ParentCell[cell$]},
-                 NotebookDelete[cell$];
-                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                 Symbol["Wolfram`Chatbook`ChatbookAction"][
-                  "LockResponse",
-                  root$
-                 ]
-                ]
-               ]
-              },
-              "ChatMenuItem"
-             ]
-            },
-            {
-             TemplateBox[
-              {
-               TemplateBox[{"AbortAllIcon"}, "ChatMenuItemToolbarIcon"],
-               "\"Disable AI Assistant\"",
-               Hold[
-                With[ { cell$ = EvaluationCell[] },
-                 {root$ = ParentCell[cell$]},
-                 NotebookDelete[cell$];
-                 Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                 Symbol["Wolfram`Chatbook`ChatbookAction"][
-                  "DisableAIAssistant",
                   root$
                  ]
                 ]
@@ -6638,6 +6551,93 @@ Notebook[
        AspectRatio -> Automatic,
        ImageSize -> {20.0, 20.0},
        PlotRange -> {{0.0, 20.0}, {0.0, 20.0}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["RoleUserSingle"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.038462],
+        {
+         FaceForm[{RGBColor[0.4902, 0.82353, 1.0], Opacity[1.0]}],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgBGIRIGZigIIGBQcUmkEEzv90yTdJIEIITV7Qga1xqnO3\njiKcD6GV0PimcL5Ld87z35mmqOYdgMmLoPFN4XyYPhR5XOJI+oozJr6t+a8I\n51e+VDPkALoXRR/cPwh+7vPfKz9e0kSVB9L6d1XYGkWFMMQBtjo+0A==\n      "
+          ]
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.18824, 0.49412, 0.6549], Opacity[1.0]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           },
+           {
+            {1, 4, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0}
+           }
+          },
+          {
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGAQAWIQDQGmDhDaDEqLwPkz8oSaD5wSRJMXcIhKsb7v32sK\n56OaA+Mrwfk+5p2OCU8V0MxTQLNPgQANM1cLTdwUzkd1F0zezGHffCn9u08Q\n/OKMiW9r/iui+QsRDjBzUM3DVAcAxvcssw==\n       "
+           ],
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGCQBmIQDQGmDmCqwdRBd9Pc98vdEHy84kj6ijMmvq35rwjn\nc6yRiUrZreiwbPYRhQ1Fpg7VIuvcH1YpOmw5UbZvfpSpw4w8oeYDXooOf1Z+\nvOTrZAoRl4LylWDmK6LaA+drwflpILBME84/7m3e6Zig6eDxsEpk3XEFuLhm\nTP+hrxoiaOYooPFxiSP0+YCMfyqEJi8E9SeCD6GV0PimcD4sPFHMg4erCBof\nEc4A/3BXag==\n       "
+           ]
+          }
+         ]
+        }
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {{20.0, 20.0}, {20.0, 20.0}},
+       PlotRange -> {{-0.5, 26.5}, {-0.5, 26.5}}
       ]
      ])
    }

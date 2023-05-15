@@ -139,6 +139,9 @@ writeStaticPersonaBox[ cell_CellObject ] :=
 
 writeStaticPersonaBox[ cell_, $Failed ] := Null; (* box was already overwritten *)
 
+(* TODO: Should this also insert a space after? It might not be desirable if you wanted to follow with punctuation, e.g.
+    "Hey [@Birdnardo], do something cool!"
+*)
 writeStaticPersonaBox[ cell_CellObject, name_String ] /; MemberQ[ $personaNames, name ] := Enclose[
     If[ ! MemberQ[ Keys @ GetCachedPersonaData[ ], name ],
         ConfirmBy[ PersonaInstall @ name, FileExistsQ, "PersonaInstall" ];
