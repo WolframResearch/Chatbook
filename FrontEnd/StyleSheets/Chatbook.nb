@@ -582,11 +582,11 @@ Notebook[
               ToBoxes[
                With[
                 {
-                 Wolfram`Chatbook`UI`Private`menuData = 
+                 Wolfram`Chatbook`UI`Private`menuData =
                   Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
 
                   ],
-                 Wolfram`Chatbook`UI`Private`personaValue = 
+                 Wolfram`Chatbook`UI`Private`personaValue =
                   Wolfram`Chatbook`UI`Private`currentValueOrigin[
                    ParentCell[EvaluationCell[]],
                    {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
@@ -665,7 +665,7 @@ Notebook[
    StyleKeyMapping -> {
     " " -> "Text",
     "*" -> "Item",
-    "'" -> "ChatInputSingle",
+    "'" -> "SideChat",
     "Backspace" -> "Input"
    },
    Evaluatable -> True,
@@ -716,7 +716,7 @@ Notebook[
   ],
   Cell[
    StyleData[
-    "ChatInputSingle",
+    "SideChat",
     StyleDefinitions -> StyleData["ChatInput"]
    ],
    CellDingbat ->
@@ -736,11 +736,11 @@ Notebook[
                  ToBoxes[
                   With[
                    {
-                    Wolfram`Chatbook`UI`Private`menuData = 
+                    Wolfram`Chatbook`UI`Private`menuData =
                      Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
 
                      ],
-                    Wolfram`Chatbook`UI`Private`personaValue = 
+                    Wolfram`Chatbook`UI`Private`personaValue =
                      Wolfram`Chatbook`UI`Private`currentValueOrigin[
                       ParentCell[EvaluationCell[]],
                       {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
@@ -870,7 +870,7 @@ Notebook[
     " " -> "Text",
     "*" -> "Item",
     "'" -> "ChatContextDivider",
-    "Backspace" -> "ChatInputSingle"
+    "Backspace" -> "SideChat"
    },
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellFrameColor -> RGBColor[0.63922, 0.78824, 0.94902],
@@ -895,7 +895,7 @@ Notebook[
    Initialization :>
     If[ Not[TrueQ[CloudSystem`$CloudNotebooks]],
      With[ { cell$ = EvaluationCell[] },
-      
+
       NotebookDelete[
        Cells[cell$, AttachedCell -> True, CellStyle -> "ChatMenu"]
       ];
@@ -943,7 +943,7 @@ Notebook[
    Initialization :>
     If[ Not[TrueQ[CloudSystem`$CloudNotebooks]],
      With[ { cell$ = EvaluationCell[] },
-      
+
       NotebookDelete[
        Cells[cell$, AttachedCell -> True, CellStyle -> "ChatMenu"]
       ];
@@ -994,7 +994,7 @@ Notebook[
       Alternatives["UpArrow", "LeftArrow"],
       SelectionMove[EvaluationCell[], Before, Cell],
       "~",
-      
+
       NotebookWrite[
        EvaluationCell[],
        Cell["", "ChatContextDivider"],
