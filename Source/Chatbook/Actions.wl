@@ -31,7 +31,7 @@ Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
-$chatDelimiterStyles  = { "ChatContextDivider", "ChatDelimiter" };
+$chatDelimiterStyles  = { "ChatContextDivider", "ChatDelimiter", "ExcludedChatDelimiter" };
 $chatIgnoredStyles    = { "ChatExcluded" };
 $chatInputStyles      = { "ChatInput", "ChatInputSingle", "ChatQuery", "ChatSystemInput" };
 $chatOutputStyles     = { "ChatOutput" };
@@ -155,7 +155,7 @@ EvaluateChatInput[ ] := EvaluateChatInput @ EvaluationCell[ ];
 EvaluateChatInput[ evalCell_CellObject ] := EvaluateChatInput[ evalCell, parentNotebook @ evalCell ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
-    EvaluateChatInput[ evalCell, nbo, Association @ CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings" } ] ];
+    EvaluateChatInput[ evalCell, nbo, currentChatSettings @ nbo ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
     Block[ { $autoAssistMode = False }, waitForLastTask[ ]; sendChat[ evalCell, nbo, settings ] ];
@@ -199,8 +199,8 @@ autoAssistQ[ KeyValuePattern[ "Style" -> $$chatInputStyle ], _, _ ] := False;
 
 autoAssistQ[ info_, cell_CellObject, nbo_NotebookObject ] :=
     autoAssistQ[
-        CurrentValue[ nbo,  { TaggingRules, "ChatNotebookSettings", "Assistance" } ],
-        CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "Assistance" } ]
+        currentChatSettings[ nbo, "Assistance" ],
+        currentChatSettings[ cell, "Assistance" ]
     ];
 
 autoAssistQ[ True|Automatic|Inherited, True|Automatic|Inherited ] := True;
@@ -216,19 +216,10 @@ StopChat // beginDefinition;
 
 StopChat[ cell_CellObject ] := Enclose[
     Module[ { settings, container },
-
-        settings = ConfirmBy[
-            Association @ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ],
-            AssociationQ,
-            "ChatNotebookSettings"
-        ];
-
+        settings = ConfirmBy[ currentChatSettings @ cell, AssociationQ, "ChatNotebookSettings" ];
         removeTask @ Lookup[ settings, "Task" ];
-
         container = ConfirmBy[ Lookup[ settings, "Container" ], StringQ, "Container" ];
-
         writeReformattedCell[ settings, container, cell ];
-
         Quiet @ NotebookDelete @ cell;
     ],
     throwInternalFailure[ StopChat @ cell, ## ] &
@@ -588,7 +579,7 @@ SendChat[ evalCell_CellObject ] := SendChat[ evalCell, parentNotebook @ evalCell
 SendChat[ evalCell_CellObject, nbo_NotebookObject? queuedEvaluationsQ ] := Null;
 
 SendChat[ evalCell_CellObject, nbo_NotebookObject ] :=
-    SendChat[ evalCell, nbo, Association @ CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings" } ] ];
+    SendChat[ evalCell, nbo, currentChatSettings @ nbo ];
 
 SendChat[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
     SendChat[ evalCell, nbo, settings, Lookup[ settings, "ShowMinimized", Automatic ] ];
@@ -796,19 +787,10 @@ inheritSettings[
     settings_Association,
     KeyValuePattern @ { "Style" -> $$chatDelimiterStyle, "CellObject" -> delimiter_CellObject },
     evalCell_CellObject
-] :=
-    mergeSettings[
-        settings,
-        Association @ CurrentValue[ delimiter, { TaggingRules, "ChatNotebookSettings" } ],
-        Association @ CurrentValue[ evalCell, { TaggingRules, "ChatNotebookSettings" } ]
-    ];
+] := mergeSettings[ settings, currentChatSettings @ delimiter, currentChatSettings @ evalCell ];
 
 inheritSettings[ settings_Association, _, evalCell_CellObject ] :=
-    mergeSettings[
-        settings,
-        <| |>,
-        Association @ CurrentValue[ evalCell, { TaggingRules, "ChatNotebookSettings" } ]
-    ];
+    mergeSettings[ settings, <| |>, currentChatSettings @ evalCell ];
 
 inheritSettings // endDefinition;
 
@@ -898,7 +880,8 @@ activeAIAssistantCell[
         {
             label    = RawBoxes @ TemplateBox[ { }, "MinimizedChatActive" ],
             id       = $SessionID,
-            reformat = dynamicAutoFormatQ @ settings
+            reformat = dynamicAutoFormatQ @ settings,
+            task     = Lookup[ settings, "Task" ]
         },
         Module[ { x = 0 },
             ClearAttributes[ { x, cellObject }, Temporary ];
@@ -918,7 +901,8 @@ activeAIAssistantCell[
                                 TrackedSymbols :> { x },
                                 UpdateInterval -> 0.2
                             ],
-                            Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
+                            Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
+                            Deinitialization :> Quiet @ TaskRemove @ task
                         ],
                         Dynamic[
                             x++;
@@ -929,7 +913,8 @@ activeAIAssistantCell[
                                 ,
                                 dynamicTextDisplay[ container, reformat ]
                             ],
-                            Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
+                            Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
+                            Deinitialization :> Quiet @ TaskRemove @ task
                         ]
                     ],
                 "Output",
@@ -948,7 +933,8 @@ activeAIAssistantCell[ container_, settings_, minimized_ ] :=
         {
             label    = RawBoxes @ TemplateBox[ { }, "MinimizedChatActive" ],
             id       = $SessionID,
-            reformat = dynamicAutoFormatQ @ settings
+            reformat = dynamicAutoFormatQ @ settings,
+            task     = Lookup[ settings, "Task" ]
         },
         Cell[
             BoxData @ ToBoxes @
@@ -959,11 +945,13 @@ activeAIAssistantCell[ container_, settings_, minimized_ ] :=
                             TrackedSymbols :> { },
                             UpdateInterval -> 0.2
                         ],
-                        Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
+                        Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
+                        Deinitialization :> Quiet @ TaskRemove @ task
                     ],
                     Dynamic[
                         dynamicTextDisplay[ container, reformat ],
-                        Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
+                        Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
+                        Deinitialization :> Quiet @ TaskRemove @ task
                     ]
                 ],
             "Output",
@@ -1265,7 +1253,7 @@ getPrePrompt[ as_Association ] := toPromptString @ FirstCase[
         as[ "Pre" ],
         as[ "PromptTemplate" ]
     },
-    expr_ :> With[ { e = expr }, e /; ! MissingQ @ e ]
+    expr_ :> With[ { e = expr }, e /; MatchQ[ e, _String | _TemplateObject ] ]
 ];
 
 getPrePrompt // endDefinition;
@@ -1282,7 +1270,7 @@ getPostPrompt[ as_Association ] := toPromptString @ FirstCase[
         as[ "ChatContextPostPrompt" ],
         as[ "Post" ]
     },
-    expr_ :> With[ { e = expr }, e /; ! MissingQ @ e ]
+    expr_ :> With[ { e = expr }, e /; MatchQ[ e, _String | _TemplateObject ] ]
 ];
 
 getPostPrompt // endDefinition;

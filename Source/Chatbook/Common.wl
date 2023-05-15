@@ -268,7 +268,7 @@ bugReportBody[ ] := bugReportBody @ PacletObject[ "Wolfram/Chatbook" ][ "PacletI
 bugReportBody[ as_Association? AssociationQ ] :=
     TemplateApply[
         $bugReportBodyTemplate,
-        <|
+        TemplateVerbatim /@ <|
             "DebugData" -> associationMarkdown[
                 KeyTake[ as, { "Name", "Version" } ],
                 "EvaluationEnvironment" -> $EvaluationEnvironment,

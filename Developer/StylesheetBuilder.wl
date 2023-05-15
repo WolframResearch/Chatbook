@@ -197,16 +197,12 @@ menuItem[ icon_, label_, code_ ] :=
 $chatOutputMenu := $chatOutputMenu = ToBoxes @ makeMenu[
     {
         (* Icon              , Label                      , ActionName          *)
-        { "IconizeIcon"      , "Regenerate"               , "Regenerate"         },
-        Delimiter,
         { "DivideCellsIcon"  , "Explode Cells (In Place)" , "ExplodeInPlace"     },
         { "OverflowIcon"     , "Explode Cells (Duplicate)", "ExplodeDuplicate"   },
         { "HyperlinkCopyIcon", "Copy Exploded Cells"      , "CopyExplodedCells"  },
         Delimiter,
         { "TypesettingIcon"  , "Toggle Formatting"        , "ToggleFormatting"   },
-        { "InPlaceIcon"      , "Copy ChatObject"          , "CopyChatObject"     },
-        { "GroupCellsIcon"   , "Lock Response"            , "LockResponse"       },
-        { "AbortAllIcon"     , "Disable AI Assistant"     , "DisableAIAssistant" }
+        { "InPlaceIcon"      , "Copy ChatObject"          , "CopyChatObject"     }
     },
     GrayLevel[ 0.85 ],
     250
