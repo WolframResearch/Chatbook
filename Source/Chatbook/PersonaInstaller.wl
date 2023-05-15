@@ -18,7 +18,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::Section::Closed:: *)
 (*Config*)
 
-$personaBrowseURL   = "https://resources.wolframcloud.com/PromptRepository/prompttype/personas";
+$personaBrowseURL   = "https://resources.wolframcloud.com/PromptRepository/category/personas";
 $channelPermissions = "Public";
 $keepChannelOpen    = True;
 $debug              = False;
