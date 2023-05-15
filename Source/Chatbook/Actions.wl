@@ -30,32 +30,6 @@ Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Config*)
-$chatDelimiterStyles  = { "ChatContextDivider", "ChatDelimiter", "ExcludedChatDelimiter" };
-$chatIgnoredStyles    = { "ChatExcluded" };
-$chatInputStyles      = { "ChatInput", "ChatInputSingle", "ChatQuery", "ChatSystemInput" };
-$chatOutputStyles     = { "ChatOutput" };
-$excludeHistoryStyles = { "ChatInputSingle" };
-
-$maxChatCells = OptionValue[ CreateChatNotebook, "ChatHistoryLength" ];
-
-$closedChatCellOptions :=
-    If[ TrueQ @ CloudSystem`$CloudNotebooks,
-        Sequence @@ { },
-        Sequence @@ { CellMargins -> -2, CellOpen -> False, CellFrame -> 0, ShowCellBracket -> False }
-    ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*Style Patterns*)
-$$chatDelimiterStyle  = Alternatives @@ $chatDelimiterStyles  | { ___, Alternatives @@ $chatDelimiterStyles , ___ };
-$$chatIgnoredStyle    = Alternatives @@ $chatIgnoredStyles    | { ___, Alternatives @@ $chatIgnoredStyles   , ___ };
-$$chatInputStyle      = Alternatives @@ $chatInputStyles      | { ___, Alternatives @@ $chatInputStyles     , ___ };
-$$chatOutputStyle     = Alternatives @@ $chatOutputStyles     | { ___, Alternatives @@ $chatOutputStyles    , ___ };
-$$excludeHistoryStyle = Alternatives @@ $excludeHistoryStyles | { ___, Alternatives @@ $excludeHistoryStyles, ___ };
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
 (*ChatbookAction*)
 ChatbookAction[ "AIAutoAssist"         , args___ ] := catchMine @ AIAutoAssist @ args;
 ChatbookAction[ "Ask"                  , args___ ] := catchMine @ AskChat @ args;
