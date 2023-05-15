@@ -916,8 +916,10 @@ writeStaticPersonaBox[ cell_, $Failed ] := Null; (* box was already overwritten 
     "Hey [@Birdnardo], do something cool!"
 *)
 writeStaticPersonaBox[ cell_CellObject, name_String ] /; MemberQ[ $personaNames, name ] := Enclose[
-    If[ ! MemberQ[ Keys @ GetCachedPersonaData[ ], name ],
-        ConfirmBy[ PersonaInstall[ "Prompt: " <> name ], FileExistsQ, "PersonaInstall" ];
+    If[ And[ ! MemberQ[ Keys @ GetCachedPersonaData[ ], name ],
+             CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= name
+        ],
+        ConfirmBy[ PersonaInstall[ "Prompt: "<>name ], FileExistsQ, "PersonaInstall" ];
         ConfirmAssert[ MemberQ[ Keys @ GetCachedPersonaData[ ], name ], "GetCachedPersonaData" ]
     ];
 
