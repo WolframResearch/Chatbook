@@ -65,7 +65,7 @@ insertModifierInputBox // beginDefinition;
 insertModifierInputBox[ cell_CellObject ] :=
     If[ MatchQ[
             Developer`CellInformation @ SelectedCells[ ],
-            { KeyValuePattern @ { "Style" -> "ChatInput" } }
+            { KeyValuePattern @ { "Style" -> $$chatInputStyle } }
         ],
         insertModifierInputBox[ cell, parentNotebook @ cell ],
         NotebookWrite[ parentNotebook @ cell, "#" ]
@@ -304,7 +304,7 @@ insertFunctionInputBox // beginDefinition;
 insertFunctionInputBox[ cell_CellObject ] :=
     If[ MatchQ[
             Developer`CellInformation @ SelectedCells[ ],
-            { KeyValuePattern @ { "Style" -> "ChatInput", "CursorPosition" -> { 0, 0 } } }
+            { KeyValuePattern @ { "Style" -> $$chatInputStyle, "CursorPosition" -> { 0, _ } } }
         ],
         insertFunctionInputBox[ cell, parentNotebook @ cell ],
         NotebookWrite[ parentNotebook @ cell, "!" ]
@@ -570,7 +570,7 @@ specArg[ expr_, opts___ ] := Style[ expr, opts, FontWeight -> Bold, FontColor ->
 insertTrailingFunctionInputBox // beginDefinition;
 
 insertTrailingFunctionInputBox[ cell_CellObject ] :=
-    If[ MatchQ[ Developer`CellInformation @ SelectedCells[ ], { KeyValuePattern[ "Style" -> "ChatInput" ] } ],
+    If[ MatchQ[ Developer`CellInformation @ SelectedCells[ ], { KeyValuePattern[ "Style" -> $$chatInputStyle ] } ],
         insertTrailingFunctionInputBox[ cell, parentNotebook @ cell ]
     ];
 
