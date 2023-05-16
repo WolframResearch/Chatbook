@@ -24,6 +24,17 @@ Needs[ "Wolfram`Chatbook`PersonaInstaller`" ];
 (*Config*)
 $argumentDivider = "|";
 
+$frameStyle     = Directive[ AbsoluteThickness[ 1 ], RGBColor[ "#a3c9f2" ] ];
+$frameBaseStyle = { "InlineReferenceText", FontSize -> 0.95*Inherited };
+
+$frameOptions = Sequence[
+    RoundingRadius -> 2,
+    FrameStyle     -> $frameStyle,
+    FrameMargins   -> 2,
+    ContentPadding -> False,
+    BaseStyle      -> $frameBaseStyle
+];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Modifier Input*)
@@ -139,10 +150,7 @@ modifierInputBox[ args_List, uuid_ ] :=
                         Spacings  -> 0,
                         Alignment -> { Automatic, Baseline }
                     ],
-                    RoundingRadius -> 4,
-                    FrameStyle     -> RGBColor[ "#ff6a00" ],
-                    FrameMargins   -> { { 4, 3 }, { 3, 3 } },
-                    ContentPadding -> False
+                    $frameOptions
                 ],
                 "Text",
                 ShowStringCharacters -> False
@@ -221,7 +229,7 @@ staticModifierBox // beginDefinition;
 staticModifierBox[ args_List ] := Button[
     MouseAppearance[
         Mouseover[
-            staticModifierBoxLabel[ args, RGBColor[ "#fffbf0" ] ],
+            staticModifierBoxLabel[ args, RGBColor[ "#f1f8ff" ] ],
             staticModifierBoxLabel[ args, RGBColor[ "#ffffff" ] ]
         ],
         "LinkHand"
@@ -252,16 +260,12 @@ staticModifierBoxLabel[ { name_, args___ }, background_ ] :=
                     }
                 },
                 Dividers   -> { { False, { True }, False }, False },
-                FrameStyle -> RGBColor[ "#ff6a00" ],
-                Spacings   -> 0.65,
+                FrameStyle -> RGBColor[ "#a3c9f2" ],
+                Spacings   -> 0.5,
                 Alignment  -> { Automatic, Baseline }
             ],
             Background     -> background,
-            RoundingRadius -> 4,
-            FrameStyle     -> RGBColor[ "#ff6a00" ],
-            FrameMargins   -> { { 4, 3 }, { 3, 3 } },
-            ContentPadding -> False,
-            BaseStyle      -> "Text"
+            $frameOptions
         ],
         ShowStringCharacters -> False,
         Selectable           -> False
@@ -388,10 +392,7 @@ functionInputBox[ args_List, uuid_ ] :=
                         Spacings  -> 0,
                         Alignment -> { Automatic, Baseline }
                     ],
-                    RoundingRadius -> 4,
-                    FrameStyle     -> RGBColor[ "#ff6a00" ],
-                    FrameMargins   -> { { 4, 3 }, { 3, 3 } },
-                    ContentPadding -> False
+                    $frameOptions
                 ],
                 "Text",
                 ShowStringCharacters -> False
@@ -495,7 +496,7 @@ staticFunctionBox[ { name_String } ] := staticFunctionBox[ { name, ">" } ];
 staticFunctionBox[ args_List ] := Button[
     MouseAppearance[
         Mouseover[
-            staticFunctionBoxLabel[ args, RGBColor[ "#fffbf0" ] ],
+            staticFunctionBoxLabel[ args, RGBColor[ "#f1f8ff" ] ],
             staticFunctionBoxLabel[ args, RGBColor[ "#ffffff" ] ]
         ],
         "LinkHand"
@@ -522,11 +523,7 @@ staticFunctionBoxLabel // beginDefinition;
             ]
         },
         Background     -> background,
-        RoundingRadius -> 4,
-        FrameStyle     -> RGBColor[ "#a3c9f2" ],
-        FrameMargins   -> { { 4, 3 }, { 3, 3 } },
-        ContentPadding -> False,
-        BaseStyle      -> "Text"
+        $frameOptions
     ],
     ShowStringCharacters -> False,
     Selectable           -> False
@@ -543,16 +540,12 @@ staticFunctionBoxLabel[ { name_, args___ }, background_ ] :=
                     }
                 },
                 Dividers   -> { { False, { True }, False }, False },
-                FrameStyle -> RGBColor[ "#ff6a00" ],
-                Spacings   -> 0.65,
+                FrameStyle -> RGBColor[ "#a3c9f2" ],
+                Spacings   -> 0.5,
                 Alignment  -> { Automatic, Baseline }
             ],
             Background     -> background,
-            RoundingRadius -> 4,
-            FrameStyle     -> RGBColor[ "#ff6a00" ],
-            FrameMargins   -> { { 4, 3 }, { 3, 3 } },
-            ContentPadding -> False,
-            BaseStyle      -> "Text"
+            $frameOptions
         ],
         ShowStringCharacters -> False,
         Selectable           -> False
@@ -655,10 +648,7 @@ trailingFunctionInputBox[ args_List, uuid_ ] := DynamicModule[ { string = String
                     Spacings  -> 0,
                     Alignment -> { Automatic, Baseline }
                 ],
-                RoundingRadius -> 4,
-                FrameStyle     -> RGBColor[ "#a3c9f2" ],
-                FrameMargins   -> { { 4, 3 }, { 3, 3 } },
-                ContentPadding -> False
+                $frameOptions
             ],
             "Text",
             ShowStringCharacters -> False
@@ -745,11 +735,7 @@ staticTrailingFunctionBoxLabel[ { name_, args___ }, background_ ] := Style[
             ]
         },
         Background     -> background,
-        RoundingRadius -> 4,
-        FrameStyle     -> RGBColor[ "#a3c9f2" ],
-        FrameMargins   -> { { 4, 3 }, { 3, 3 } },
-        ContentPadding -> False,
-        BaseStyle      -> "Text"
+        $frameOptions
     ],
     ShowStringCharacters -> False,
     Selectable           -> False
@@ -875,10 +861,7 @@ personaInputBox[ name_String, uuid_ ] := DynamicModule[ { string = name, cell },
                     Spacings  -> 0,
                     Alignment -> { Automatic, Baseline }
                 ],
-                RoundingRadius -> 4,
-                FrameStyle     -> RGBColor[ "#a3c9f2" ],
-                FrameMargins   -> { { 4, 3 }, { 3, 3 } },
-                ContentPadding -> False
+                $frameOptions
             ],
             "Text",
             ShowStringCharacters -> False

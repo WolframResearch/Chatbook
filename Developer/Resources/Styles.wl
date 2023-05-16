@@ -746,6 +746,14 @@ Cell[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*InlineReferenceText*)
+Cell[
+    StyleData[ "InlineReferenceText", StyleDefinitions -> StyleData[ "Text" ] ],
+    FontColor -> GrayLevel[ 0.2 ]
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*ChatExcluded*)
 Cell[
     StyleData[ "ChatExcluded" ],
