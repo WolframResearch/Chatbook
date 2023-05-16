@@ -757,7 +757,13 @@ Cell[
 (*ChatExcluded*)
 Cell[
     StyleData[ "ChatExcluded" ],
-    CellTrayWidgets     -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    CellTrayWidgets -> <|
+        "ChatWidget"         -> <| "Visible" -> False |>,
+        "ChatExcludedWidget" -> <|
+            "Type"    -> "Focus",
+            "Content" -> Cell[ BoxData @ TemplateBox[ { }, "ChatExcludedWidget" ], "ChatExcludedWidget" ]
+        |>
+    |>,
     CellBracketOptions  -> { "Color" -> Pink },
     GeneratedCellStyles -> {
         "Message"        -> { "Message" , "MSG", "ChatExcluded" },
