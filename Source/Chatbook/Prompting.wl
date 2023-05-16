@@ -39,7 +39,6 @@ $basePromptOrder = {
 };
 
 $basePromptClasses = <|
-    "General"           -> { "GeneralInstructionsHeader", "CodeBlocks", "MathExpressions" },
     "Notebooks"         -> { "NotebooksPreamble", "MessageConversion" },
     "WolframLanguage"   -> { "CodeBlocks", "DoubleBackticks", "DocumentationLinkSyntax", "InlineSymbolLinks" },
     "Math"              -> { "MathExpressions" },
@@ -48,7 +47,7 @@ $basePromptClasses = <|
     "All"               -> $basePromptOrder
 |>;
 
-$basePromptDependencies = <|
+$basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "GeneralInstructionsHeader"   -> { },
     "NotebooksPreamble"           -> { },
     "AutoAssistant"               -> { "CodeBlocks", "DoubleBackticks" },
