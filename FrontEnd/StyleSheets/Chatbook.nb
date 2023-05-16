@@ -665,7 +665,7 @@ Notebook[
    StyleKeyMapping -> {
     " " -> "Text",
     "*" -> "Item",
-    "'" -> "ChatInputSingle",
+    "'" -> "SideChat",
     "Backspace" -> "Input"
    },
    Evaluatable -> True,
@@ -716,7 +716,7 @@ Notebook[
   ],
   Cell[
    StyleData[
-    "ChatInputSingle",
+    "SideChat",
     StyleDefinitions -> StyleData["ChatInput"]
    ],
    CellDingbat ->
@@ -870,7 +870,7 @@ Notebook[
     " " -> "Text",
     "*" -> "Item",
     "'" -> "ChatContextDivider",
-    "Backspace" -> "ChatInputSingle"
+    "Backspace" -> "SideChat"
    },
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellFrameColor -> RGBColor[0.63922, 0.78824, 0.94902],
@@ -923,6 +923,234 @@ Notebook[
    ShowAutoSpellCheck -> False,
    LineSpacing -> {1.1, 0, 2},
    Background -> RGBColor[0.98824, 0.99216, 1.0]
+  ],
+  Cell[
+   StyleData[
+    "AssistantOutput",
+    StyleDefinitions -> StyleData["ChatOutput"]
+   ],
+   Initialization :>
+    If[ Not[TrueQ[CloudSystem`$CloudNotebooks]],
+     With[ { cell$ = EvaluationCell[] },
+      
+      NotebookDelete[
+       Cells[cell$, AttachedCell -> True, CellStyle -> "ChatMenu"]
+      ];
+
+      AttachCell[
+       cell$,
+       Cell[
+        BoxData[
+         TagBox[
+          GridBox[
+           {
+            {
+             TagBox[
+              TooltipBox[
+               ButtonBox[
+                TemplateBox[{}, "CloseAssistant"],
+                ButtonFunction :>
+                 With[ { cell = EvaluationCell[] },
+                  Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                  Symbol["Wolfram`Chatbook`ChatbookAction"][
+                   "DisableAssistance",
+                   cell
+                  ]
+                 ],
+                Appearance ->
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                   "FEExpressions",
+                   "SuppressMouseDownNinePatchAppearance"
+                  ]
+                 ],
+                Evaluator -> Automatic,
+                Method -> "Preemptive"
+               ],
+               "\"Disable automatic assistance\"",
+               TooltipStyle -> "TextStyling"
+              ],
+              Annotation[#1, "Disable automatic assistance", "Tooltip"] &
+             ]
+            },
+            {
+             TemplateBox[
+              {"AssistantOutput", RGBColor[0.81569, 0.87059, 0.92549]},
+              "ChatMenuButton"
+             ]
+            }
+           },
+           GridBoxAlignment -> {"Columns" -> {{Left}}},
+           DefaultBaseStyle -> "Column",
+           GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+           GridBoxSpacings -> {"Columns" -> {{Automatic}}, "Rows" -> {{0}}}
+          ],
+          "Column"
+         ]
+        ],
+        "ChatMenu"
+       ],
+       {Right, Top},
+       Offset[{-7, -7}, {Right, Top}],
+       {Right, Top},
+       RemovalConditions -> {"EvaluatorQuit"}
+      ]
+     ]
+    ],
+   CellFrameColor -> RGBColor[0.81569, 0.87059, 0.92549],
+   Background -> RGBColor[0.92941, 0.94902, 0.96863]
+  ],
+  Cell[
+   StyleData[
+    "AssistantOutputWarning",
+    StyleDefinitions -> StyleData["AssistantOutput"]
+   ],
+   Initialization :>
+    If[ Not[TrueQ[CloudSystem`$CloudNotebooks]],
+     With[ { cell$ = EvaluationCell[] },
+      
+      NotebookDelete[
+       Cells[cell$, AttachedCell -> True, CellStyle -> "ChatMenu"]
+      ];
+
+      AttachCell[
+       cell$,
+       Cell[
+        BoxData[
+         TagBox[
+          GridBox[
+           {
+            {
+             TagBox[
+              TooltipBox[
+               ButtonBox[
+                TemplateBox[{}, "CloseAssistant"],
+                ButtonFunction :>
+                 With[ { cell = EvaluationCell[] },
+                  Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                  Symbol["Wolfram`Chatbook`ChatbookAction"][
+                   "DisableAssistance",
+                   cell
+                  ]
+                 ],
+                Appearance ->
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                   "FEExpressions",
+                   "SuppressMouseDownNinePatchAppearance"
+                  ]
+                 ],
+                Evaluator -> Automatic,
+                Method -> "Preemptive"
+               ],
+               "\"Disable automatic assistance\"",
+               TooltipStyle -> "TextStyling"
+              ],
+              Annotation[#1, "Disable automatic assistance", "Tooltip"] &
+             ]
+            },
+            {
+             TemplateBox[
+              {"AssistantOutput", RGBColor[0.9451, 0.90588, 0.87059]},
+              "ChatMenuButton"
+             ]
+            }
+           },
+           GridBoxAlignment -> {"Columns" -> {{Left}}},
+           DefaultBaseStyle -> "Column",
+           GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+           GridBoxSpacings -> {"Columns" -> {{Automatic}}, "Rows" -> {{0}}}
+          ],
+          "Column"
+         ]
+        ],
+        "ChatMenu"
+       ],
+       {Right, Top},
+       Offset[{-7, -7}, {Right, Top}],
+       {Right, Top},
+       RemovalConditions -> {"EvaluatorQuit"}
+      ]
+     ]
+    ],
+   CellFrameColor -> RGBColor[0.9451, 0.90588, 0.87059],
+   Background -> RGBColor[0.99216, 0.98039, 0.95686]
+  ],
+  Cell[
+   StyleData[
+    "AssistantOutputError",
+    StyleDefinitions -> StyleData["AssistantOutput"]
+   ],
+   Initialization :>
+    If[ Not[TrueQ[CloudSystem`$CloudNotebooks]],
+     With[ { cell$ = EvaluationCell[] },
+      
+      NotebookDelete[
+       Cells[cell$, AttachedCell -> True, CellStyle -> "ChatMenu"]
+      ];
+
+      AttachCell[
+       cell$,
+       Cell[
+        BoxData[
+         TagBox[
+          GridBox[
+           {
+            {
+             TagBox[
+              TooltipBox[
+               ButtonBox[
+                TemplateBox[{}, "CloseAssistant"],
+                ButtonFunction :>
+                 With[ { cell = EvaluationCell[] },
+                  Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                  Symbol["Wolfram`Chatbook`ChatbookAction"][
+                   "DisableAssistance",
+                   cell
+                  ]
+                 ],
+                Appearance ->
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                   "FEExpressions",
+                   "SuppressMouseDownNinePatchAppearance"
+                  ]
+                 ],
+                Evaluator -> Automatic,
+                Method -> "Preemptive"
+               ],
+               "\"Disable automatic assistance\"",
+               TooltipStyle -> "TextStyling"
+              ],
+              Annotation[#1, "Disable automatic assistance", "Tooltip"] &
+             ]
+            },
+            {
+             TemplateBox[
+              {"AssistantOutput", RGBColor[0.9451, 0.87059, 0.87059]},
+              "ChatMenuButton"
+             ]
+            }
+           },
+           GridBoxAlignment -> {"Columns" -> {{Left}}},
+           DefaultBaseStyle -> "Column",
+           GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+           GridBoxSpacings -> {"Columns" -> {{Automatic}}, "Rows" -> {{0}}}
+          ],
+          "Column"
+         ]
+        ],
+        "ChatMenu"
+       ],
+       {Right, Top},
+       Offset[{-7, -7}, {Right, Top}],
+       {Right, Top},
+       RemovalConditions -> {"EvaluatorQuit"}
+      ]
+     ]
+    ],
+   CellFrameColor -> RGBColor[0.9451, 0.87059, 0.87059],
+   Background -> RGBColor[0.99216, 0.95686, 0.95686]
   ],
   Cell[
    StyleData[
@@ -3756,6 +3984,124 @@ Notebook[
        AspectRatio -> Automatic,
        ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
        PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["CloseAssistant"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      TagBox[
+       PaneSelectorBox[
+        {
+         False ->
+          GraphicsBox[
+           {
+            Thickness[0.083333],
+            {
+             FaceForm[{GrayLevel[0.65098], Opacity[1.0]}],
+             DiskBox[{4.7, 7.15}, 5]
+            },
+            {
+             FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+             FilledCurveBox[
+              {
+               {
+                {0, 2, 0},
+                {0, 1, 0},
+                {0, 1, 0},
+                {0, 1, 0},
+                {0, 1, 0},
+                {0, 1, 0},
+                {0, 1, 0},
+                {0, 1, 0},
+                {0, 1, 0},
+                {0, 1, 0},
+                {0, 1, 0},
+                {0, 1, 0}
+               }
+              },
+              {
+               {
+                {5.9141, 7.5},
+                {7.6671, 5.747},
+                {6.2531, 4.333},
+                {4.5001, 6.086},
+                {2.7471, 4.333},
+                {1.3331, 5.747},
+                {3.0861, 7.5},
+                {1.3331, 9.253},
+                {2.7471, 10.667},
+                {4.5001, 8.914},
+                {6.2531, 10.667},
+                {7.6671, 9.253},
+                {5.9141, 7.5}
+               }
+              }
+             ]
+            }
+           },
+           PlotRangePadding -> 0,
+           ImageSize -> 12
+          ],
+         True ->
+          GraphicsBox[
+           {
+            Thickness[0.083333],
+            {
+             FaceForm[{GrayLevel[0.34902], Opacity[1.0]}],
+             DiskBox[{4.7, 7.15}, 5]
+            },
+            {
+             FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+             FilledCurveBox[
+              {
+               {
+                {0, 2, 0},
+                {0, 1, 0},
+                {0, 1, 0},
+                {0, 1, 0},
+                {0, 1, 0},
+                {0, 1, 0},
+                {0, 1, 0},
+                {0, 1, 0},
+                {0, 1, 0},
+                {0, 1, 0},
+                {0, 1, 0},
+                {0, 1, 0}
+               }
+              },
+              {
+               {
+                {5.9141, 7.5},
+                {7.6671, 5.747},
+                {6.2531, 4.333},
+                {4.5001, 6.086},
+                {2.7471, 4.333},
+                {1.3331, 5.747},
+                {3.0861, 7.5},
+                {1.3331, 9.253},
+                {2.7471, 10.667},
+                {4.5001, 8.914},
+                {6.2531, 10.667},
+                {7.6671, 9.253},
+                {5.9141, 7.5}
+               }
+              }
+             ]
+            }
+           },
+           PlotRangePadding -> 0,
+           ImageSize -> 12
+          ]
+        },
+        Dynamic[CurrentValue["MouseOver"]],
+        ImageSize -> Automatic,
+        FrameMargins -> 0
+       ],
+       MouseAppearanceTag["LinkHand"]
       ]
      ])
    }

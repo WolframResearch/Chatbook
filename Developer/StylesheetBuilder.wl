@@ -137,6 +137,52 @@ menuInitializer[ name_String, color_ ] :=
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*assistantMenuInitializer*)
+assistantMenuInitializer[ name_String, color_ ] :=
+    With[
+        {
+            attach = Cell[
+                BoxData @ ToBoxes @ Column[
+                    {
+                        Tooltip[
+                            Button[
+                                RawBoxes @ TemplateBox[ { }, "CloseAssistant" ],
+                                With[ { $CellContext`cell = EvaluationCell[ ] },
+                                    Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+                                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
+                                        "DisableAssistance",
+                                        $CellContext`cell
+                                    ]
+                                ],
+                                Appearance -> $suppressButtonAppearance
+                            ],
+                            "Disable automatic assistance"
+                        ],
+                        RawBoxes @ TemplateBox[ { name, color }, "ChatMenuButton" ]
+                    },
+                    Spacings -> 0
+                ],
+                "ChatMenu"
+            ]
+        },
+        Initialization :>
+            If[ ! TrueQ @ CloudSystem`$CloudNotebooks,
+                With[ { $CellContext`cell = EvaluationCell[ ] },
+                    NotebookDelete @ Cells[ $CellContext`cell, AttachedCell -> True, CellStyle -> "ChatMenu" ];
+                    AttachCell[
+                        $CellContext`cell,
+                        attach,
+                        { Right, Top },
+                        Offset[ { -7, -7 }, { Right, Top } ],
+                        { Right, Top },
+                        RemovalConditions -> { "EvaluatorQuit" }
+                    ]
+                ]
+            ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*$chatOutputMenu*)
 
 makeMenu[ items_List, frameColor_, width_ ] := Pane[

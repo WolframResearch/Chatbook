@@ -24,7 +24,7 @@ Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
 (*Config*)
 $$delimiterStyle   = "PageBreak"|"ExampleDelimiter"|"ChatDelimiter";
 $$itemStyle        = "Item"|"Notes";
-$$noCellLabelStyle = "Text"|"ChatInput"|"ChatInputSingle"|"ChatSystemInput"|"ChatContextDivider"|$$delimiterStyle;
+$$noCellLabelStyle = "Text"|"ChatInput"|"SideChat"|"ChatSystemInput"|"ChatContextDivider"|$$delimiterStyle;
 $$docSearchStyle   = "ChatQuery";
 
 (* Default character encoding for strings created from cells *)

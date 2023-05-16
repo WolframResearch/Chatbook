@@ -75,7 +75,7 @@ Cell[
     CounterIncrements -> { "ChatInputCount" },
     Evaluatable       -> True,
     MenuSortingValue  -> 1000,
-    StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "ChatInputSingle", "Backspace" -> "Input" },
+    StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "SideChat", "Backspace" -> "Input" },
 	CellDingbat -> Cell[
 		BoxData @ RowBox[{
 			TemplateBox[{}, "ChatCounterLabel"],
@@ -115,7 +115,7 @@ Cell[
 (* ::Section::Closed:: *)
 (*ChatInputSingle*)
 Cell[
-    StyleData[ "ChatInputSingle", StyleDefinitions -> StyleData[ "ChatInput" ] ],
+    StyleData[ "SideChat", StyleDefinitions -> StyleData[ "ChatInput" ] ],
     CellDingbat -> Cell[
         BoxData @ ToBoxes @ Grid[
             { {
@@ -159,7 +159,7 @@ Cell[
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterIncrements -> { },
     MenuSortingValue  -> 1000,
-    StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "ChatContextDivider", "Backspace" -> "ChatInputSingle" }
+    StyleKeyMapping   -> { " " -> "Text", "*" -> "Item", "'" -> "ChatContextDivider", "Backspace" -> "SideChat" }
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -178,6 +178,36 @@ Cell[
     LineSpacing         -> { 1.1, 0, 2 },
     ShowAutoSpellCheck  -> False,
     menuInitializer[ "ChatOutput", RGBColor[ "#ecf0f5" ] ]
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*AssistantOutput*)
+Cell[
+    StyleData[ "AssistantOutput", StyleDefinitions -> StyleData[ "ChatOutput" ] ],
+    Background     -> RGBColor[ "#edf2f7" ],
+    CellFrameColor -> RGBColor[ "#d0deec" ],
+    assistantMenuInitializer[ "AssistantOutput", RGBColor[ "#d0deec" ] ]
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*AssistantOutputWarning*)
+Cell[
+    StyleData[ "AssistantOutputWarning", StyleDefinitions -> StyleData[ "AssistantOutput" ] ],
+    Background     -> RGBColor[ "#fdfaf4" ],
+    CellFrameColor -> RGBColor[ "#f1e7de" ],
+    assistantMenuInitializer[ "AssistantOutput", RGBColor[ "#f1e7de" ] ]
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*AssistantOutputError*)
+Cell[
+    StyleData[ "AssistantOutputError", StyleDefinitions -> StyleData[ "AssistantOutput" ] ],
+    Background     -> RGBColor[ "#fdf4f4" ],
+    CellFrameColor -> RGBColor[ "#f1dede" ],
+    assistantMenuInitializer[ "AssistantOutput", RGBColor[ "#f1dede" ] ]
 ]
 
 (* ::**************************************************************************************************************:: *)
