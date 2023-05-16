@@ -468,12 +468,12 @@ makeInlineCodeCell[ code0_String ] :=
             Cell[
                 BoxData @ TemplateBox[ { stringToBoxes @ code }, "ChatCodeInlineTemplate" ],
                 "ChatCode",
-                Background -> GrayLevel[ 1 ]
+                Background -> None
             ],
             Cell[
-                BoxData @ TemplateBox[ { Cell[ code, Background -> GrayLevel[ 1 ] ] }, "ChatCodeInlineTemplate" ],
+                BoxData @ TemplateBox[ { Cell[ code, Background -> None ] }, "ChatCodeInlineTemplate" ],
                 "ChatCodeActive",
-                Background -> GrayLevel[ 1 ]
+                Background -> None
             ]
         ]
     ];
