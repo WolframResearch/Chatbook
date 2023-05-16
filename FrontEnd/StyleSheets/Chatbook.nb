@@ -1562,10 +1562,10 @@ Notebook[
         TagBox[
          TooltipBox[
           TemplateBox[{}, "ChatWidgetIcon"],
-          "\"Send to AI Assistant\"",
+          "\"Send to LLM\"",
           TooltipStyle -> "TextStyling"
          ],
-         Annotation[#1, "Send to AI Assistant", "Tooltip"] &
+         Annotation[#1, "Send to LLM", "Tooltip"] &
         ],
         MouseAppearanceTag["LinkHand"]
        ],
