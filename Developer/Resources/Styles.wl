@@ -371,7 +371,7 @@ Cell[
         DisplayFunction -> Function[
             Evaluate @ ToBoxes @ Button[
                 MouseAppearance[
-                    Tooltip[ RawBoxes @ TemplateBox[ { }, "ChatWidgetIcon" ], "Send to AI Assistant" ],
+                    Tooltip[ RawBoxes @ TemplateBox[ { }, "ChatWidgetIcon" ], "Send to LLM" ],
                     "LinkHand"
                 ],
                 With[ { $CellContext`cell = ParentCell @ EvaluationCell[ ] },
