@@ -251,11 +251,7 @@ staticModifierBoxLabel[ { name_, args___ }, background_ ] :=
             Grid[
                 {
                     Flatten @ {
-                        Row @ {
-                            Style[ "#", FontColor -> RGBColor[ "#ff6a00" ], FontSize -> 0.9*Inherited ],
-                            Spacer[ 2 ],
-                            Style[ name, FontColor -> GrayLevel[ 0.25 ], FontSize -> 0.9*Inherited ]
-                        },
+                        Row @ { RawBoxes @ TemplateBox[ { }, "InlineReferenceIconHash" ], name },
                         styleFunctionArgument /@ { args }
                     }
                 },
@@ -264,7 +260,7 @@ staticModifierBoxLabel[ { name_, args___ }, background_ ] :=
                 Spacings   -> 0.5,
                 Alignment  -> { Automatic, Baseline }
             ],
-            Background     -> background,
+            Background -> background,
             $frameOptions
         ],
         ShowStringCharacters -> False,
@@ -522,7 +518,7 @@ staticFunctionBoxLabel // beginDefinition;
                 Style[ "\[ThinSpace]:\[ThinSpace]", FontColor -> GrayLevel[ 0.6 ], FontWeight -> "DemiBold" ]
             ]
         },
-        Background     -> background,
+        Background -> background,
         $frameOptions
     ],
     ShowStringCharacters -> False,
@@ -544,7 +540,7 @@ staticFunctionBoxLabel[ { name_, args___ }, background_ ] :=
                 Spacings   -> 0.5,
                 Alignment  -> { Automatic, Baseline }
             ],
-            Background     -> background,
+            Background -> background,
             $frameOptions
         ],
         ShowStringCharacters -> False,
@@ -556,9 +552,9 @@ staticFunctionBoxLabel // endDefinition;
 
 styleFunctionArgument // beginDefinition;
 
-styleFunctionArgument[ ">" ] := specArg[ "\[ThinSpace]>\[ThinSpace]" ];
-styleFunctionArgument[ "^" ] := specArg[ Rotate[ "\[ThinSpace]>", Pi/2 ] ];
-styleFunctionArgument[ "^^" ] := specArg[ Rotate[ "\[ThinSpace]\[GreaterGreater]", Pi/2 ], FontSize -> 0.85*Inherited ];
+styleFunctionArgument[ ">" ] := RawBoxes @ TemplateBox[ { }, "InlineReferenceIconRight" ];
+styleFunctionArgument[ "^" ] := RawBoxes @ TemplateBox[ { }, "InlineReferenceIconPrevious" ];
+styleFunctionArgument[ "^^" ] := RawBoxes @ TemplateBox[ { }, "InlineReferenceIconHistory" ];
 
 styleFunctionArgument[ $argumentDivider ] :=
     Style[ " " <> $argumentDivider <> " ", FontColor -> GrayLevel[ 0.6 ], FontWeight -> "DemiBold" ];
@@ -734,7 +730,7 @@ staticTrailingFunctionBoxLabel[ { name_, args___ }, background_ ] := Style[
                 Style[ "\[ThinSpace]:\[ThinSpace]", FontColor -> GrayLevel[ 0.6 ], FontWeight -> "DemiBold" ]
             ]
         },
-        Background     -> background,
+        Background -> background,
         $frameOptions
     ],
     ShowStringCharacters -> False,
@@ -963,13 +959,9 @@ staticPersonaBoxLabel // beginDefinition;
 
 staticPersonaBoxLabel[ name_String, background_ ] := Style[
     Framed[
-        "@" <> name,
-        Background     -> background,
-        RoundingRadius -> 4,
-        FrameStyle     -> RGBColor[ "#a3c9f2" ],
-        FrameMargins   -> { { 4, 3 }, { 3, 3 } },
-        ContentPadding -> False,
-        BaseStyle      -> "Text"
+        Row @ { RawBoxes @ TemplateBox[ { }, "InlineReferenceIconAt" ], name },
+        Background -> background,
+        $frameOptions
     ],
     ShowStringCharacters -> False,
     Selectable           -> False
