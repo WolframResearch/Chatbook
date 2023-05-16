@@ -14,6 +14,7 @@ Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`Errors`"     ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
+Needs[ "Wolfram`Chatbook`Prompting`"  ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -228,12 +229,18 @@ cellToString[ Cell[ a__, $$docSearchStyle, b___ ] ] :=
 (* Delimit code blocks with triple backticks *)
 cellToString[ cell: Cell[ _BoxData, ___ ] ] /; ! TrueQ @ $delimitedCodeBlock :=
     Block[ { $delimitedCodeBlock = True },
-        With[ { s = cellToString @ cell }, If[ StringQ @ s, "```\n"<>s<>"\n```", "" ] ]
+        With[ { s = cellToString @ cell },
+            If[ StringQ @ s,
+                needsBasePrompt[ "WolframLanguage" ];
+                "```\n"<>s<>"\n```",
+                ""
+            ]
+        ]
     ];
 
 (* Prepend cell label to the cell string *)
 cellToString[ Cell[ a___, CellLabel -> label_String, b___ ] ] :=
-    With[ { str = cellToString @ Cell[ a, b ] }, label<>" "<>str /; StringQ @ str ];
+    With[ { str = cellToString @ Cell[ a, b ] }, (needsBasePrompt[ "Notebooks" ]; label<>" "<>str) /; StringQ @ str ];
 
 (* Item styles *)
 cellToString[ Cell[ a___, $$itemStyle, b___ ] ] :=
@@ -242,7 +249,7 @@ cellToString[ Cell[ a___, $$itemStyle, b___ ] ] :=
     ];
 
 (* Cells showing raw data (ctrl-shift-e) *)
-cellToString[ Cell[ RawData[ str_String ], ___ ] ] := str;
+cellToString[ Cell[ RawData[ str_String ], ___ ] ] := (needsBasePrompt[ "Notebooks" ]; str);
 
 (* Include a stack trace for message cells when available *)
 cellToString[ Cell[ a__, "Message", "MSG", b___ ] ] :=
@@ -262,6 +269,7 @@ cellToString[ Cell[ a__, "Message", "MSG", b___ ] ] :=
                 ],
                 "\n"
             ];
+            needsBasePrompt[ "WolframLanguage" ];
             TemplateApply[
                 $stackTraceTemplate,
                 <| "String" -> string, "StackTrace" -> stackString |>
@@ -275,7 +283,10 @@ cellToString[ Cell[ a__, "Message", "MSG", b___ ] ] :=
 cellToString[ Cell[ code_, "ExternalLanguage", ___, $$cellEvaluationLanguage -> lang_String, ___ ] ] :=
     Module[ { string },
         string = cellToString0 @ code;
-        "ExternalEvaluate[\""<>lang<>"\", \""<>string<>"\"]" /; StringQ @ string
+        (
+            needsBasePrompt[ "WolframLanguage" ];
+            "ExternalEvaluate[\""<>lang<>"\", \""<>string<>"\"]"
+        ) /; StringQ @ string
     ];
 
 (* Begin recursive serialization of the cell content *)
@@ -382,7 +393,10 @@ fasterCellToString0[ Cell[
     ___,
     TaggingRules -> KeyValuePattern @ { "PromptFunctionName" -> name_String, "PromptArguments" -> args_List },
     ___
-] ] := "LLMResourceFunction[" <> StringRiffle[ toLLMArg /@ Flatten @ { name, args }, ", " ] <> "]";
+] ] := (
+    needsBasePrompt[ "WolframLanguage" ];
+    "LLMResourceFunction[" <> StringRiffle[ toLLMArg /@ Flatten @ { name, args }, ", " ] <> "]"
+);
 
 fasterCellToString0[
     Cell[
@@ -402,11 +416,14 @@ fasterCellToString0[
         TaggingRules -> KeyValuePattern @ { "PromptModifierName" -> name_String, "PromptArguments" -> args_List },
         ___
     ]
-] := StringJoin[
-    "LLMSynthesize[{",
-    StringRiffle[ Flatten @ { "LLMPrompt[\""<>name<>"\"]", toLLMArg /@ Flatten @ { args } }, ", " ],
-    "}]"
-];
+] := (
+    needsBasePrompt[ "WolframLanguage" ];
+    StringJoin[
+        "LLMSynthesize[{",
+        StringRiffle[ Flatten @ { "LLMPrompt[\""<>name<>"\"]", toLLMArg /@ Flatten @ { args } }, ", " ],
+        "}]"
+    ]
+);
 
 
 toLLMArg[ ">" ] := "$RestOfCellContents";
@@ -439,8 +456,10 @@ fasterCellToString0[ NamespaceBox[
 fasterCellToString0[ box: $graphicsHeads[ ___ ] ] :=
     If[ TrueQ[ ByteCount @ box < $maxOutputCellStringLength ],
         (* For relatively small graphics expressions, we'll give an InputForm string *)
+        needsBasePrompt[ "Notebooks" ];
         makeGraphicsString @ box,
         (* Otherwise, give the same thing you'd get in a standalone kernel*)
+        needsBasePrompt[ "ConversionGraphics" ];
         "-Graphics-"
     ];
 
@@ -450,13 +469,20 @@ fasterCellToString0[ box: $graphicsHeads[ ___ ] ] :=
 
 (* Inline Code *)
 fasterCellToString0[ TemplateBox[ { code_ }, "ChatCodeInlineTemplate" ] ] :=
-    Block[ { $escapeMarkdown = False }, "``" <> fasterCellToString0 @ code <> "``" ];
+    Block[ { $escapeMarkdown = False },
+        needsBasePrompt[ "DoubleBackticks" ];
+        "``" <> fasterCellToString0 @ code <> "``"
+    ];
 
 fasterCellToString0[ StyleBox[ code_, "TI", ___ ] ] :=
-    Block[ { $escapeMarkdown = False }, "``" <> fasterCellToString0 @ code <> "``" ];
+    Block[ { $escapeMarkdown = False },
+        needsBasePrompt[ "DoubleBackticks" ];
+        "``" <> fasterCellToString0 @ code <> "``"
+    ];
 
 (* Messages *)
 fasterCellToString0[ TemplateBox[ args: { _, _, str_String, ___ }, "MessageTemplate" ] ] := (
+    needsBasePrompt[ "WolframLanguage" ];
     sowMessageData @ args; (* Look for stack trace data *)
     fasterCellToString0 @ str
 );
@@ -474,7 +500,10 @@ fasterCellToString0[ TemplateBox[ KeyValuePattern[ "boxes" -> box_ ], "Linguisti
 (* NotebookObject *)
 fasterCellToString0[
     TemplateBox[ KeyValuePattern[ "label" -> label_String ], "NotebookObjectUUIDsUnsaved"|"NotebookObjectUUIDs" ]
-] := "NotebookObject["<>label<>"]";
+] := (
+    needsBasePrompt[ "Notebooks" ];
+    "NotebookObject["<>label<>"]"
+);
 
 (* Entity *)
 fasterCellToString0[ TemplateBox[ { _, box_, ___ }, "Entity" ] ] := fasterCellToString0 @ box;
@@ -484,15 +513,21 @@ fasterCellToString0[ TemplateBox[ { _, box_, ___ }, "EntityProperty" ] ] := fast
 fasterCellToString0[ TemplateBox[ _, "Spacer1" ] ] := " ";
 
 (* Links *)
-fasterCellToString0[ TemplateBox[ { label_, uri_String }, "TextRefLink" ] ] :=
-    "[" <> fasterCellToString0 @ label <> "](" <> uri <> ")";
+fasterCellToString0[ TemplateBox[ { label_, uri_String }, "TextRefLink" ] ] := (
+    needsBasePrompt[ "WolframLanguage" ];
+    "[" <> fasterCellToString0 @ label <> "](" <> uri <> ")"
+);
 
-fasterCellToString0[ ButtonBox[ StyleBox[ label_, "SymbolsRefLink", ___ ], ___, ButtonData -> uri_String, ___ ] ] :=
-    "[" <> fasterCellToString0 @ label <> "](" <> uri <> ")";
+fasterCellToString0[ ButtonBox[ StyleBox[ label_, "SymbolsRefLink", ___ ], ___, ButtonData -> uri_String, ___ ] ] := (
+    needsBasePrompt[ "WolframLanguage" ];
+    "[" <> fasterCellToString0 @ label <> "](" <> uri <> ")"
+);
 
 (* TeXAssistantTemplate *)
-fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> string_ ], "TeXAssistantTemplate" ] ] :=
-    "$" <> string <> "$";
+fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> string_ ], "TeXAssistantTemplate" ] ] := (
+    needsBasePrompt[ "Math" ];
+    "$" <> string <> "$"
+);
 
 (* Other *)
 fasterCellToString0[ TemplateBox[ args_, name_String, ___ ] ] :=
@@ -509,11 +544,11 @@ fasterCellToString0[ TemplateBox[ args_, ___, InterpretationFunction -> f_, ___ 
 
 (* Sqrt *)
 fasterCellToString0[ SqrtBox[ a_ ] ] :=
-    "Sqrt["<>fasterCellToString0 @ a<>"]";
+    (needsBasePrompt[ "WolframLanguage" ]; "Sqrt["<>fasterCellToString0 @ a<>"]");
 
 (* Fraction *)
 fasterCellToString0[ FractionBox[ a_, b_ ] ] :=
-    "(" <> fasterCellToString0 @ a <> "/" <> fasterCellToString0 @ b <> ")";
+    (needsBasePrompt[ "Math" ]; "(" <> fasterCellToString0 @ a <> "/" <> fasterCellToString0 @ b <> ")");
 
 (* Other *)
 fasterCellToString0[ (box: $boxOperators)[ a_, b_ ] ] :=
@@ -529,8 +564,10 @@ fasterCellToString0[ (box: $boxOperators)[ a_, b_ ] ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Definitions*)
-fasterCellToString0[ InterpretationBox[ boxes_, (Definition|FullDefinition)[ _Symbol ], ___ ] ] :=
-    fasterCellToString0 @ boxes;
+fasterCellToString0[ InterpretationBox[ boxes_, (Definition|FullDefinition)[ _Symbol ], ___ ] ] := (
+    needsBasePrompt[ "WolframLanguage" ];
+    fasterCellToString0 @ boxes
+);
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -552,13 +589,15 @@ fasterCellToString0[ list_List ] :=
 fasterCellToString0[ cell: Cell[ a_, ___ ] ] :=
     Block[ { $showStringCharacters = showStringCharactersQ @ cell }, fasterCellToString0 @ a ];
 
-fasterCellToString0[ InterpretationBox[ _, expr_, ___ ] ] :=
+fasterCellToString0[ InterpretationBox[ _, expr_, ___ ] ] := (
+    needsBasePrompt[ "WolframLanguage" ];
     ToString[
         Unevaluated @ expr,
         InputForm,
         PageWidth         -> $cellPageWidth,
         CharacterEncoding -> $cellCharacterEncoding
-    ];
+    ]
+);
 
 fasterCellToString0[ GridBox[ grid_? MatrixQ, ___ ] ] :=
     Module[ { strings, tr, colSizes },
@@ -601,10 +640,15 @@ fasterCellToString0[ _[
 fasterCellToString0[ DynamicModuleBox[
     { ___, TypeSystem`NestedGrid`PackagePrivate`$state$$ = Association[ ___, "InitialData" -> data_, ___ ], ___ },
     ___
-] ] := ToString[ Unevaluated @ Dataset @ data, InputForm ];
+] ] := (
+    needsBasePrompt[ "WolframLanguage" ];
+    ToString[ Unevaluated @ Dataset @ data, InputForm ]
+);
 
-fasterCellToString0[ DynamicModuleBox[ a___ ] ] /; ! TrueQ @ $CellToStringDebug :=
-    "DynamicModule[<<" <> ToString @ Length @ HoldComplete @ a <> ">>]";
+fasterCellToString0[ DynamicModuleBox[ a___ ] ] /; ! TrueQ @ $CellToStringDebug := (
+    needsBasePrompt[ "ConversionLargeOutputs" ];
+    "DynamicModule[<<" <> ToString @ Length @ HoldComplete @ a <> ">>]"
+);
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
