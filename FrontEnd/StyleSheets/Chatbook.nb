@@ -414,18 +414,6 @@ Notebook[
    |>
   ],
   Cell[
-   StyleData["ChatExcluded"],
-   CellBracketOptions -> {"Color" -> RGBColor[1, 0.5, 0.5]},
-   CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
-   GeneratedCellStyles -> {
-    "Graphics" -> {"Graphics", "ChatExcluded"},
-    "Message" -> {"Message", "MSG", "ChatExcluded"},
-    "Output" -> {"Output", "ChatExcluded"},
-    "Print" -> {"Print", "ChatExcluded"},
-    "PrintTemporary" -> {"PrintTemporary", "ChatExcluded"}
-   }
-  ],
-  Cell[
    StyleData["Text"],
    ContextMenu -> {
     MenuItem[
@@ -551,6 +539,247 @@ Notebook[
    }
   ],
   Cell[
+   StyleData["Input"],
+   StyleKeyMapping -> {
+    "~" -> "ChatDelimiter",
+    "'" -> "ChatInput",
+    "=" -> "WolframAlphaShort",
+    "*" -> "Item",
+    ">" -> "ExternalLanguageDefault"
+   },
+   ContextMenu -> {
+    MenuItem[
+     "Ask AI Assistant",
+     KernelExecute[
+      With[ { nbo = InputNotebook[] },
+       {cells = SelectedCells[nbo]},
+       Quiet[Needs["Wolfram`Chatbook`" -> None]];
+       Symbol["Wolfram`Chatbook`ChatbookAction"][
+        "Ask",
+        nbo,
+        cells
+       ]
+      ]
+     ],
+     MenuEvaluator -> Automatic,
+     Method -> "Queued"
+    ],
+    Delimiter,
+    MenuItem["Cu&t", "Cut"],
+    MenuItem["&Copy", "Copy"],
+    MenuItem["&Paste", FrontEnd`Paste[After]],
+    Menu[
+     "Cop&y As",
+     {
+      MenuItem["Plain &Text", FrontEnd`CopySpecial["PlainText"]],
+      MenuItem["&Input Text", FrontEnd`CopySpecial["InputText"]],
+      MenuItem[
+       "&LaTeX",
+       KernelExecute[ToExpression["FrontEnd`CopyAsTeX[]"]],
+       MenuEvaluator -> "System"
+      ],
+      MenuItem[
+       "M&athML",
+       KernelExecute[ToExpression["FrontEnd`CopyAsMathML[]"]],
+       MenuEvaluator -> "System"
+      ],
+      Delimiter,
+      MenuItem[
+       "Cell &Object",
+       FrontEnd`CopySpecial["CellObject"]
+      ],
+      MenuItem[
+       "&Cell Expression",
+       FrontEnd`CopySpecial["CellExpression"]
+      ],
+      MenuItem[
+       "&Notebook Expression",
+       FrontEnd`CopySpecial["NotebookExpression"]
+      ]
+     }
+    ],
+    Delimiter,
+    MenuItem["&Evaluate Cell", "EvaluateCells"],
+    MenuItem["Evaluate &in Place", All],
+    MenuItem[
+     "Analyze Cell",
+     KernelExecute[
+      Needs["CodeInspector`"];
+      CodeInspector`AttachAnalysis[
+       SelectedCells[InputNotebook[]]
+      ]
+     ],
+     MenuEvaluator -> Automatic,
+     Method -> "Queued"
+    ],
+    Menu[
+     "C&onvert To",
+     {
+      MenuItem["&InputForm", "SelectionConvert" -> InputForm],
+      MenuItem[
+       "&Raw InputForm",
+       "SelectionConvert" -> RawInputForm
+      ],
+      MenuItem["&OutputForm", "SelectionConvert" -> OutputForm],
+      MenuItem[
+       "First Convert to BoxForm",
+       "MenuListConvertFormatTypes",
+       MenuAnchor -> True
+      ],
+      Delimiter,
+      MenuItem["&Bitmap", "SelectionConvert" -> "Bitmap"]
+     }
+    ],
+    Delimiter,
+    MenuItem["Make &Hyperlink...", "CreateHyperlinkDialog"],
+    MenuItem[
+     "Insert Table/&Matrix...",
+     FrontEndExecute[
+      {
+       FrontEnd`NotebookOpen[
+        FrontEnd`FindFileOnPath[
+         "InsertGrid.nb",
+         "PrivatePathsSystemResources"
+        ]
+       ]
+      }
+     ]
+    ],
+    MenuItem[
+     "Insert &Special Character...",
+     FrontEndExecute[
+      {FrontEnd`NotebookOpen["SpecialCharacters.nb"]}
+     ]
+    ],
+    Delimiter,
+    MenuItem["Check &Balance", "Balance"],
+    MenuItem["Di&vide Cell", "CellSplit"],
+    MenuItem[
+     "&Un/Comment Selection",
+     KernelExecute[ToExpression["FE`toggleComment[]"]],
+     MenuEvaluator -> "System"
+    ],
+    MenuItem[
+     "Un/Iconi&ze Selection",
+     KernelExecute[ToExpression["FE`iconizeSelectionToggle[]"]],
+     MenuEvaluator -> Automatic
+    ],
+    Delimiter,
+    MenuItem["&Get Help", FrontEnd`SelectionHelpDialog[True]],
+    MenuItem[
+     "Why the Coloring?...",
+     FrontEndExecute[
+      {
+       FrontEnd`NotebookOpen[
+        FrontEnd`FindFileOnPath[
+         "WhyTheColoring.nb",
+         "PrivatePathsSystemResources"
+        ]
+       ]
+      }
+     ]
+    ],
+    MenuItem["Spea&k Selection", "SelectionSpeak"],
+    Delimiter,
+    MenuItem[
+     "Toggle &Full Screen",
+     FrontEndExecute[
+      FrontEnd`Value[FEPrivate`NotebookToggleFullScreen[]]
+     ]
+    ]
+   }
+  ],
+  Cell[
+   StyleData["Output"],
+   ContextMenu -> {
+    MenuItem[
+     "Ask AI Assistant",
+     KernelExecute[
+      With[ { nbo = InputNotebook[] },
+       {cells = SelectedCells[nbo]},
+       Quiet[Needs["Wolfram`Chatbook`" -> None]];
+       Symbol["Wolfram`Chatbook`ChatbookAction"][
+        "Ask",
+        nbo,
+        cells
+       ]
+      ]
+     ],
+     MenuEvaluator -> Automatic,
+     Method -> "Queued"
+    ],
+    Delimiter,
+    MenuItem["Cu&t", "Cut"],
+    MenuItem["&Copy", "Copy"],
+    MenuItem["&Paste", FrontEnd`Paste[After]],
+    Menu[
+     "Cop&y As",
+     {
+      MenuItem["Plain &Text", FrontEnd`CopySpecial["PlainText"]],
+      MenuItem["&Input Text", FrontEnd`CopySpecial["InputText"]],
+      MenuItem[
+       "&LaTeX",
+       KernelExecute[ToExpression["FrontEnd`CopyAsTeX[]"]],
+       MenuEvaluator -> "System"
+      ],
+      MenuItem[
+       "M&athML",
+       KernelExecute[ToExpression["FrontEnd`CopyAsMathML[]"]],
+       MenuEvaluator -> "System"
+      ],
+      Delimiter,
+      MenuItem[
+       "Cell &Object",
+       FrontEnd`CopySpecial["CellObject"]
+      ],
+      MenuItem[
+       "&Cell Expression",
+       FrontEnd`CopySpecial["CellExpression"]
+      ],
+      MenuItem[
+       "&Notebook Expression",
+       FrontEnd`CopySpecial["NotebookExpression"]
+      ]
+     }
+    ],
+    Delimiter,
+    Menu[
+     "Con&vert To",
+     {
+      MenuItem["&InputForm", "SelectionConvert" -> InputForm],
+      MenuItem[
+       "&Raw InputForm",
+       "SelectionConvert" -> RawInputForm
+      ],
+      MenuItem["&OutputForm", "SelectionConvert" -> OutputForm],
+      MenuItem[
+       "First Convert to BoxForm",
+       "MenuListConvertFormatTypes",
+       MenuAnchor -> True
+      ],
+      Delimiter,
+      MenuItem["&Bitmap", "SelectionConvert" -> "Bitmap"]
+     }
+    ],
+    Delimiter,
+    MenuItem[
+     "Un/Iconi&ze Selection",
+     KernelExecute[ToExpression["FE`iconizeSelectionToggle[]"]],
+     MenuEvaluator -> Automatic
+    ],
+    Delimiter,
+    MenuItem["&Get Help", FrontEnd`SelectionHelpDialog[True]],
+    MenuItem["Spea&k Selection", "SelectionSpeak"],
+    Delimiter,
+    MenuItem[
+     "Toggle &Full Screen",
+     FrontEndExecute[
+      FrontEnd`Value[FEPrivate`NotebookToggleFullScreen[]]
+     ]
+    ]
+   }
+  ],
+  Cell[
    StyleData[
     "FramedChatCell",
     StyleDefinitions -> StyleData["Text"]
@@ -663,8 +892,7 @@ Notebook[
     ],
    CellMargins -> {{66, 25}, {5, 8}},
    StyleKeyMapping -> {
-    " " -> "Text",
-    "*" -> "Item",
+    "~" -> "ChatDelimiter",
     "'" -> "SideChat",
     "Backspace" -> "Input"
    },
@@ -719,121 +947,113 @@ Notebook[
     "SideChat",
     StyleDefinitions -> StyleData["ChatInput"]
    ],
+   CellFrame -> {{0, 0}, {0, 2}},
    CellDingbat ->
     Cell[
      BoxData[
-      TagBox[
-       GridBox[
-        {
+      RowBox[
+       {
+        PaneSelectorBox[
          {
-          ItemBox[
-           PaneSelectorBox[
-            {
-             True ->
-              ButtonBox[
-               FrameBox[
-                DynamicBox[
-                 ToBoxes[
-                  With[
-                   {
-                    Wolfram`Chatbook`UI`Private`menuData = 
-                     Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
+          True ->
+           ButtonBox[
+            FrameBox[
+             DynamicBox[
+              ToBoxes[
+               With[
+                {
+                 Wolfram`Chatbook`UI`Private`menuData = 
+                  Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
 
-                     ],
-                    Wolfram`Chatbook`UI`Private`personaValue = 
-                     Wolfram`Chatbook`UI`Private`currentValueOrigin[
-                      ParentCell[EvaluationCell[]],
-                      {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
-                     ]
-                   },
-                   FirstCase[
-                    Wolfram`Chatbook`UI`Private`menuData["Personas"],
-                    {
-                     Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
-                     Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]],
-                     Blank[]
-                    } :> Wolfram`Chatbook`UI`Private`icon,
-                    Style[
-                     Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
-                     GrayLevel[0.5]
-                    ]
-                   ]
                   ],
-                  StandardForm
+                 Wolfram`Chatbook`UI`Private`personaValue = 
+                  Wolfram`Chatbook`UI`Private`currentValueOrigin[
+                   ParentCell[EvaluationCell[]],
+                   {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+                  ]
+                },
+                FirstCase[
+                 Wolfram`Chatbook`UI`Private`menuData["Personas"],
+                 {
+                  Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
+                  Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]],
+                  Blank[]
+                 } :> Wolfram`Chatbook`UI`Private`icon,
+                 Style[
+                  Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
+                  GrayLevel[0.5]
                  ]
-                ],
-                RoundingRadius -> 3,
-                FrameMargins -> 2,
-                ImageMargins -> {{0, 3}, {0, 0}},
-                FrameStyle ->
-                 Directive[GrayLevel[0.85686], AbsoluteThickness[1]],
-                Background ->
-                 Dynamic[
-                  If[ CurrentValue["MouseOver"], GrayLevel[0.8], GrayLevel[1] ]
-                 ],
-                FrameMargins -> 0,
-                StripOnInput -> False
+                ]
                ],
-               ButtonFunction :>
-                (AttachCell[
-                 EvaluationCell[],
-                 Wolfram`Chatbook`UI`Private`openChatInputActionMenu[
-                  EvaluationCell[]
-                 ],
-                 {Left, Bottom},
-                 Offset[{0, 0}, {Left, Top}],
-                 {Left, Top},
-                 RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
-                ];),
-               Appearance ->
-                Dynamic[
-                 FEPrivate`FrontEndResource[
-                  "FEExpressions",
-                  "SuppressMouseDownNinePatchAppearance"
-                 ]
-                ],
-               Evaluator -> Automatic,
-               Method -> "Preemptive"
-              ],
-             False ->
-              FrameBox[
-               TemplateBox[{}, "RoleUser"],
-               RoundingRadius -> 3,
-               FrameMargins -> 2,
-               ImageMargins -> {{0, 3}, {0, 0}},
-               FrameStyle -> GrayLevel[0, 0],
-               FrameMargins -> 0,
-               StripOnInput -> False
+               StandardForm
               ]
-            },
-            Dynamic[CurrentValue["MouseOver"]],
-            ImageSize -> All
+             ],
+             RoundingRadius -> 3,
+             FrameMargins -> 2,
+             ImageMargins -> {{0, 3}, {0, 0}},
+             FrameStyle ->
+              Directive[GrayLevel[0.85686], AbsoluteThickness[1]],
+             Background ->
+              Dynamic[
+               If[ CurrentValue["MouseOver"], GrayLevel[0.8], GrayLevel[1] ]
+              ],
+             FrameMargins -> 0,
+             StripOnInput -> False
+            ],
+            ButtonFunction :>
+             (AttachCell[
+              EvaluationCell[],
+              Wolfram`Chatbook`UI`Private`openChatInputActionMenu[
+               EvaluationCell[]
+              ],
+              {Left, Bottom},
+              Offset[{0, 0}, {Left, Top}],
+              {Left, Top},
+              RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
+             ];),
+            Appearance ->
+             Dynamic[
+              FEPrivate`FrontEndResource[
+               "FEExpressions",
+               "SuppressMouseDownNinePatchAppearance"
+              ]
+             ],
+            Evaluator -> Automatic,
+            Method -> "Preemptive"
            ],
-           Frame -> {False, False, True, False},
-           FrameStyle ->
-            Directive[GrayLevel[0.925], AbsoluteThickness[4]],
-           StripOnInput -> False
-          ]
-         }
-        },
-        AutoDelete -> False,
-        GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-        GridBoxSpacings -> {"Columns" -> {{0}}}
-       ],
-       "Grid"
+          False ->
+           FrameBox[
+            TemplateBox[{}, "RoleUser"],
+            RoundingRadius -> 3,
+            FrameMargins -> 2,
+            ImageMargins -> {{0, 3}, {0, 0}},
+            FrameStyle -> GrayLevel[0, 0],
+            FrameMargins -> 0,
+            StripOnInput -> False
+           ]
+         },
+         Dynamic[CurrentValue["MouseOver"]],
+         ImageSize -> All
+        ],
+        TemplateBox[{12}, "Spacer1"]
+       }
       ]
      ],
-     Background -> None
+     CellFrame -> {{0, 0}, {0, 2}},
+     CellFrameMargins -> 5
     ],
+   CellMargins -> {{79, 26}, {Inherited, Inherited}},
+   CellDingbatMargin -> 0,
    StyleKeyMapping -> {
-    " " -> "Text",
-    "*" -> "Item",
+    "~" -> "ChatDelimiter",
     "'" -> "ChatSystemInput",
     "Backspace" -> "ChatInput"
    },
    TaggingRules -> <|"ChatNotebookSettings" -> <|"IncludeHistory" -> False|>|>,
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
-   CounterIncrements -> { }
+   CellFrameMargins -> {{0, Inherited}, {Inherited, Inherited}},
+   CounterIncrements -> { },
+   Background -> RGBColor[0.98039, 0.98824, 1.0]
   ],
   Cell[
    StyleData[
@@ -845,12 +1065,7 @@ Notebook[
      BoxData[TemplateBox[{}, "ChatQueryIcon"]],
      Background -> None
     ],
-   StyleKeyMapping -> {
-    " " -> "Text",
-    "*" -> "Item",
-    "'" -> "ChatSystemInput",
-    "Backspace" -> "ChatInput"
-   },
+   StyleKeyMapping -> {"~" -> "ChatDelimiter", "'" -> "ChatInput"},
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellFrameColor -> RGBColor[0.63922, 0.78824, 0.94902],
    MenuSortingValue -> 1000
@@ -867,9 +1082,8 @@ Notebook[
      Background -> None
     ],
    StyleKeyMapping -> {
-    " " -> "Text",
-    "*" -> "Item",
-    "'" -> "ChatContextDivider",
+    "~" -> "ChatDelimiter",
+    "'" -> "ChatInput",
     "Backspace" -> "SideChat"
    },
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
@@ -1159,13 +1373,7 @@ Notebook[
    ],
    CellFrame -> {{0, 0}, {0, 8}},
    CellMargins -> {{66, 25}, {Inherited, Inherited}},
-   StyleKeyMapping -> {
-    "~" -> "ChatDelimiter",
-    "'" -> "ChatInput",
-    "=" -> "WolframAlphaShort",
-    "*" -> "Item",
-    ">" -> "ExternalLanguageDefault"
-   },
+   StyleKeyMapping -> {"~" -> "ChatDelimiter", "'" -> "ChatInput"},
    CellGroupingRules -> {"SectionGrouping", 30},
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    Initialization :>
@@ -1230,6 +1438,18 @@ Notebook[
       ];
 
       SelectionMove[EvaluationNotebook[], Before, CellContents];,
+      "'",
+      
+      NotebookDelete[
+       Cells[
+        EvaluationCell[],
+        AttachedCell -> True,
+        CellStyle -> "ChatMenu"
+       ]
+      ];
+
+      NotebookWrite[EvaluationCell[], Cell["", "ChatInput"], All];
+      SelectionMove[EvaluationNotebook[], Before, CellContents];,
       Blank[],
       SelectionMove[EvaluationCell[], After, Cell]
      ]
@@ -1256,339 +1476,6 @@ Notebook[
    CounterAssignments -> {{"ChatInputCount", 0}},
    FontSize -> 6,
    Background -> GrayLevel[0.95]
-  ],
-  Cell[
-   StyleData["Input"],
-   StyleKeyMapping -> {
-    "~" -> "ChatDelimiter",
-    "'" -> "ChatInput",
-    "=" -> "WolframAlphaShort",
-    "*" -> "Item",
-    ">" -> "ExternalLanguageDefault"
-   },
-   ContextMenu -> {
-    MenuItem[
-     "Ask AI Assistant",
-     KernelExecute[
-      With[ { nbo = InputNotebook[] },
-       {cells = SelectedCells[nbo]},
-       Quiet[Needs["Wolfram`Chatbook`" -> None]];
-       Symbol["Wolfram`Chatbook`ChatbookAction"][
-        "Ask",
-        nbo,
-        cells
-       ]
-      ]
-     ],
-     MenuEvaluator -> Automatic,
-     Method -> "Queued"
-    ],
-    Delimiter,
-    MenuItem["Cu&t", "Cut"],
-    MenuItem["&Copy", "Copy"],
-    MenuItem["&Paste", FrontEnd`Paste[After]],
-    Menu[
-     "Cop&y As",
-     {
-      MenuItem["Plain &Text", FrontEnd`CopySpecial["PlainText"]],
-      MenuItem["&Input Text", FrontEnd`CopySpecial["InputText"]],
-      MenuItem[
-       "&LaTeX",
-       KernelExecute[ToExpression["FrontEnd`CopyAsTeX[]"]],
-       MenuEvaluator -> "System"
-      ],
-      MenuItem[
-       "M&athML",
-       KernelExecute[ToExpression["FrontEnd`CopyAsMathML[]"]],
-       MenuEvaluator -> "System"
-      ],
-      Delimiter,
-      MenuItem[
-       "Cell &Object",
-       FrontEnd`CopySpecial["CellObject"]
-      ],
-      MenuItem[
-       "&Cell Expression",
-       FrontEnd`CopySpecial["CellExpression"]
-      ],
-      MenuItem[
-       "&Notebook Expression",
-       FrontEnd`CopySpecial["NotebookExpression"]
-      ]
-     }
-    ],
-    Delimiter,
-    MenuItem["&Evaluate Cell", "EvaluateCells"],
-    MenuItem["Evaluate &in Place", All],
-    MenuItem[
-     "Analyze Cell",
-     KernelExecute[
-      Needs["CodeInspector`"];
-      CodeInspector`AttachAnalysis[
-       SelectedCells[InputNotebook[]]
-      ]
-     ],
-     MenuEvaluator -> Automatic,
-     Method -> "Queued"
-    ],
-    Menu[
-     "C&onvert To",
-     {
-      MenuItem["&InputForm", "SelectionConvert" -> InputForm],
-      MenuItem[
-       "&Raw InputForm",
-       "SelectionConvert" -> RawInputForm
-      ],
-      MenuItem["&OutputForm", "SelectionConvert" -> OutputForm],
-      MenuItem[
-       "First Convert to BoxForm",
-       "MenuListConvertFormatTypes",
-       MenuAnchor -> True
-      ],
-      Delimiter,
-      MenuItem["&Bitmap", "SelectionConvert" -> "Bitmap"]
-     }
-    ],
-    Delimiter,
-    MenuItem["Make &Hyperlink...", "CreateHyperlinkDialog"],
-    MenuItem[
-     "Insert Table/&Matrix...",
-     FrontEndExecute[
-      {
-       FrontEnd`NotebookOpen[
-        FrontEnd`FindFileOnPath[
-         "InsertGrid.nb",
-         "PrivatePathsSystemResources"
-        ]
-       ]
-      }
-     ]
-    ],
-    MenuItem[
-     "Insert &Special Character...",
-     FrontEndExecute[
-      {FrontEnd`NotebookOpen["SpecialCharacters.nb"]}
-     ]
-    ],
-    Delimiter,
-    MenuItem["Check &Balance", "Balance"],
-    MenuItem["Di&vide Cell", "CellSplit"],
-    MenuItem[
-     "&Un/Comment Selection",
-     KernelExecute[ToExpression["FE`toggleComment[]"]],
-     MenuEvaluator -> "System"
-    ],
-    MenuItem[
-     "Un/Iconi&ze Selection",
-     KernelExecute[ToExpression["FE`iconizeSelectionToggle[]"]],
-     MenuEvaluator -> Automatic
-    ],
-    Delimiter,
-    MenuItem["&Get Help", FrontEnd`SelectionHelpDialog[True]],
-    MenuItem[
-     "Why the Coloring?...",
-     FrontEndExecute[
-      {
-       FrontEnd`NotebookOpen[
-        FrontEnd`FindFileOnPath[
-         "WhyTheColoring.nb",
-         "PrivatePathsSystemResources"
-        ]
-       ]
-      }
-     ]
-    ],
-    MenuItem["Spea&k Selection", "SelectionSpeak"],
-    Delimiter,
-    MenuItem[
-     "Toggle &Full Screen",
-     FrontEndExecute[
-      FrontEnd`Value[FEPrivate`NotebookToggleFullScreen[]]
-     ]
-    ]
-   }
-  ],
-  Cell[
-   StyleData["Output"],
-   ContextMenu -> {
-    MenuItem[
-     "Ask AI Assistant",
-     KernelExecute[
-      With[ { nbo = InputNotebook[] },
-       {cells = SelectedCells[nbo]},
-       Quiet[Needs["Wolfram`Chatbook`" -> None]];
-       Symbol["Wolfram`Chatbook`ChatbookAction"][
-        "Ask",
-        nbo,
-        cells
-       ]
-      ]
-     ],
-     MenuEvaluator -> Automatic,
-     Method -> "Queued"
-    ],
-    Delimiter,
-    MenuItem["Cu&t", "Cut"],
-    MenuItem["&Copy", "Copy"],
-    MenuItem["&Paste", FrontEnd`Paste[After]],
-    Menu[
-     "Cop&y As",
-     {
-      MenuItem["Plain &Text", FrontEnd`CopySpecial["PlainText"]],
-      MenuItem["&Input Text", FrontEnd`CopySpecial["InputText"]],
-      MenuItem[
-       "&LaTeX",
-       KernelExecute[ToExpression["FrontEnd`CopyAsTeX[]"]],
-       MenuEvaluator -> "System"
-      ],
-      MenuItem[
-       "M&athML",
-       KernelExecute[ToExpression["FrontEnd`CopyAsMathML[]"]],
-       MenuEvaluator -> "System"
-      ],
-      Delimiter,
-      MenuItem[
-       "Cell &Object",
-       FrontEnd`CopySpecial["CellObject"]
-      ],
-      MenuItem[
-       "&Cell Expression",
-       FrontEnd`CopySpecial["CellExpression"]
-      ],
-      MenuItem[
-       "&Notebook Expression",
-       FrontEnd`CopySpecial["NotebookExpression"]
-      ]
-     }
-    ],
-    Delimiter,
-    Menu[
-     "Con&vert To",
-     {
-      MenuItem["&InputForm", "SelectionConvert" -> InputForm],
-      MenuItem[
-       "&Raw InputForm",
-       "SelectionConvert" -> RawInputForm
-      ],
-      MenuItem["&OutputForm", "SelectionConvert" -> OutputForm],
-      MenuItem[
-       "First Convert to BoxForm",
-       "MenuListConvertFormatTypes",
-       MenuAnchor -> True
-      ],
-      Delimiter,
-      MenuItem["&Bitmap", "SelectionConvert" -> "Bitmap"]
-     }
-    ],
-    Delimiter,
-    MenuItem[
-     "Un/Iconi&ze Selection",
-     KernelExecute[ToExpression["FE`iconizeSelectionToggle[]"]],
-     MenuEvaluator -> Automatic
-    ],
-    Delimiter,
-    MenuItem["&Get Help", FrontEnd`SelectionHelpDialog[True]],
-    MenuItem["Spea&k Selection", "SelectionSpeak"],
-    Delimiter,
-    MenuItem[
-     "Toggle &Full Screen",
-     FrontEndExecute[
-      FrontEnd`Value[FEPrivate`NotebookToggleFullScreen[]]
-     ]
-    ]
-   }
-  ],
-  Cell[
-   StyleData["Link"],
-   FontFamily -> "Source Sans Pro",
-   FontColor ->
-    Dynamic[
-     If[ CurrentValue["MouseOver"],
-      RGBColor[0.855, 0.396, 0.145],
-      RGBColor[0.02, 0.286, 0.651]
-     ]
-    ]
-  ],
-  Cell[
-   StyleData["TextRefLink"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      TagBox[
-       ButtonBox[
-        StyleBox[
-         #1,
-         ShowStringCharacters -> True,
-         FontFamily -> "Source Sans Pro"
-        ],
-        BaseStyle -> "Link",
-        ButtonData -> #2,
-        ContentPadding -> False
-       ],
-       MouseAppearanceTag["LinkHand"]
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["InlineFormula"],
-   HyphenationOptions -> {"HyphenationCharacter" -> "\[Continuation]"},
-   LanguageCategory -> "Formula",
-   AutoSpacing -> True,
-   ScriptLevel -> 1,
-   SingleLetterItalics -> False,
-   SpanMaxSize -> 1,
-   StyleMenuListing -> None,
-   FontFamily -> "Source Sans Pro",
-   FontSize -> 1.0 * Inherited,
-   ButtonBoxOptions -> {Appearance -> {Automatic, None}},
-   FractionBoxOptions -> {BaseStyle -> {SpanMaxSize -> Automatic}},
-   GridBoxOptions -> {
-    GridBoxItemSize -> {
-     "Columns" -> {{Automatic}},
-     "ColumnsIndexed" -> { },
-     "Rows" -> {{1.0}},
-     "RowsIndexed" -> { }
-    }
-   }
-  ],
-  Cell[
-   StyleData["ChatWidgetButton"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      ButtonBox[
-       TagBox[
-        TagBox[
-         TooltipBox[
-          TemplateBox[{}, "ChatWidgetIcon"],
-          "\"Send to LLM\"",
-          TooltipStyle -> "TextStyling"
-         ],
-         Annotation[#1, "Send to LLM", "Tooltip"] &
-        ],
-        MouseAppearanceTag["LinkHand"]
-       ],
-       ButtonFunction :>
-        With[ { cell = ParentCell[EvaluationCell[]] },
-         Quiet[Needs["Wolfram`Chatbook`" -> None]];
-         Symbol["Wolfram`Chatbook`ChatbookAction"][
-          "WidgetSend",
-          cell
-         ]
-        ],
-       Appearance ->
-        Dynamic[
-         FEPrivate`FrontEndResource[
-          "FEExpressions",
-          "SuppressMouseDownNinePatchAppearance"
-         ]
-        ],
-       Evaluator -> Automatic,
-       Method -> "Preemptive"
-      ]
-     ])
-   }
   ],
   Cell[
    StyleData["ChatCodeBlock"],
@@ -1668,6 +1555,60 @@ Notebook[
        ImageMargins -> {{0, 0}, {0, 0}}
       ]
      ])
+   }
+  ],
+  Cell[
+   StyleData["Link"],
+   FontFamily -> "Source Sans Pro",
+   FontColor ->
+    Dynamic[
+     If[ CurrentValue["MouseOver"],
+      RGBColor[0.855, 0.396, 0.145],
+      RGBColor[0.02, 0.286, 0.651]
+     ]
+    ]
+  ],
+  Cell[
+   StyleData["TextRefLink"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      TagBox[
+       ButtonBox[
+        StyleBox[
+         #1,
+         ShowStringCharacters -> True,
+         FontFamily -> "Source Sans Pro"
+        ],
+        BaseStyle -> "Link",
+        ButtonData -> #2,
+        ContentPadding -> False
+       ],
+       MouseAppearanceTag["LinkHand"]
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["InlineFormula"],
+   HyphenationOptions -> {"HyphenationCharacter" -> "\[Continuation]"},
+   LanguageCategory -> "Formula",
+   AutoSpacing -> True,
+   ScriptLevel -> 1,
+   SingleLetterItalics -> False,
+   SpanMaxSize -> 1,
+   StyleMenuListing -> None,
+   FontFamily -> "Source Sans Pro",
+   FontSize -> 1.0 * Inherited,
+   ButtonBoxOptions -> {Appearance -> {Automatic, None}},
+   FractionBoxOptions -> {BaseStyle -> {SpanMaxSize -> Automatic}},
+   GridBoxOptions -> {
+    GridBoxItemSize -> {
+     "Columns" -> {{Automatic}},
+     "ColumnsIndexed" -> { },
+     "Rows" -> {{1.0}},
+     "RowsIndexed" -> { }
+    }
    }
   ],
   Cell[
@@ -2036,6 +1977,23 @@ Notebook[
       ]
      ])
    }
+  ],
+  Cell[
+   StyleData["ChatMenuLabel"],
+   LineBreakWithin -> False,
+   LineIndent -> 0,
+   FontFamily -> "Source Sans Pro",
+   FontSize -> 13,
+   FontWeight -> Plain,
+   FontColor -> GrayLevel[0.2]
+  ],
+  Cell[
+   StyleData[
+    "ChatMenuSectionLabel",
+    StyleDefinitions -> StyleData["ChatMenuLabel"]
+   ],
+   FontSize -> 13,
+   FontColor -> GrayLevel[0.35]
   ],
   Cell[
    StyleData["AdvancedSettings"],
@@ -8503,21 +8461,54 @@ Notebook[
    }
   ],
   Cell[
-   StyleData["ChatMenuLabel"],
-   LineBreakWithin -> False,
-   LineIndent -> 0,
-   FontFamily -> "Source Sans Pro",
-   FontSize -> 13,
-   FontWeight -> Plain,
-   FontColor -> GrayLevel[0.2]
+   StyleData["ChatExcluded"],
+   CellBracketOptions -> {"Color" -> RGBColor[1, 0.5, 0.5]},
+   CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
+   GeneratedCellStyles -> {
+    "Graphics" -> {"Graphics", "ChatExcluded"},
+    "Message" -> {"Message", "MSG", "ChatExcluded"},
+    "Output" -> {"Output", "ChatExcluded"},
+    "Print" -> {"Print", "ChatExcluded"},
+    "PrintTemporary" -> {"PrintTemporary", "ChatExcluded"}
+   }
   ],
   Cell[
-   StyleData[
-    "ChatMenuSectionLabel",
-    StyleDefinitions -> StyleData["ChatMenuLabel"]
-   ],
-   FontSize -> 13,
-   FontColor -> GrayLevel[0.35]
+   StyleData["ChatWidgetButton"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      ButtonBox[
+       TagBox[
+        TagBox[
+         TooltipBox[
+          TemplateBox[{}, "ChatWidgetIcon"],
+          "\"Send to LLM\"",
+          TooltipStyle -> "TextStyling"
+         ],
+         Annotation[#1, "Send to LLM", "Tooltip"] &
+        ],
+        MouseAppearanceTag["LinkHand"]
+       ],
+       ButtonFunction :>
+        With[ { cell = ParentCell[EvaluationCell[]] },
+         Quiet[Needs["Wolfram`Chatbook`" -> None]];
+         Symbol["Wolfram`Chatbook`ChatbookAction"][
+          "WidgetSend",
+          cell
+         ]
+        ],
+       Appearance ->
+        Dynamic[
+         FEPrivate`FrontEndResource[
+          "FEExpressions",
+          "SuppressMouseDownNinePatchAppearance"
+         ]
+        ],
+       Evaluator -> Automatic,
+       Method -> "Preemptive"
+      ]
+     ])
+   }
   ],
   Cell[
    StyleData["ChatCounterLabel"],
