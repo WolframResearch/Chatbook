@@ -27,6 +27,7 @@ Needs[ "Wolfram`Chatbook`Serialization`"    ];
 Needs[ "Wolfram`Chatbook`Formatting`"       ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
 Needs[ "Wolfram`Chatbook`InlineReferences`" ];
+Needs[ "Wolfram`Chatbook`Prompting`"        ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -210,7 +211,7 @@ AIAutoAssist[ cell_CellObject ] := AIAutoAssist[ cell, parentNotebook @ cell ];
 
 AIAutoAssist[ cell_CellObject, nbo_NotebookObject ] :=
     If[ autoAssistQ[ cell, nbo ],
-        Block[ { $autoAssistMode = True }, SendChat @ cell ],
+        Block[ { $autoAssistMode = True }, needsBasePrompt[ "AutoAssistant" ]; SendChat @ cell ],
         Null
     ];
 
