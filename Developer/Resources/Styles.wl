@@ -568,10 +568,10 @@ Cell[
                                     ]
                                 }
                             },
-                            GridBoxAlignment -> { "Columns" -> { { Left } }, "Rows" -> { { Top } } },
+                            GridBoxAlignment -> { "Columns" -> { { Left } }, "Rows" -> { { Baseline } } },
                             AutoDelete       -> False,
                             GridBoxItemSize  -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
-                            GridBoxSpacings  -> { "Columns" -> { { 0 } } }
+                            GridBoxSpacings  -> { "Columns" -> { { 0 } }, "Rows" -> { { 0 } } }
                         ],
                         "Grid"
                     ],
@@ -613,10 +613,10 @@ Cell[
                                 ]
                             }
                         },
-                        GridBoxAlignment -> { "Columns" -> { { Left } }, "Rows" -> { { Top } } },
+                        GridBoxAlignment -> { "Columns" -> { { Left } }, "Rows" -> { { Baseline } } },
                         AutoDelete       -> False,
                         GridBoxItemSize  -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
-                        GridBoxSpacings  -> { "Columns" -> { { 0 } } }
+                        GridBoxSpacings  -> { "Columns" -> { { 0 } }, "Rows" -> { { 0 } } }
                     ],
                     "Grid"
                 ],
@@ -740,8 +740,7 @@ Cell[
 (*ChatMenuSectionLabel*)
 Cell[
     StyleData[ "ChatMenuSectionLabel", StyleDefinitions -> StyleData[ "ChatMenuLabel" ] ],
-    FontVariations -> { "CapsType" -> "AllCaps" },
-    FontSize -> 11,
+    FontSize  -> 13,
     FontColor -> GrayLevel[ 0.35 ]
 ]
 
