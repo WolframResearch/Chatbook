@@ -35,11 +35,12 @@ ChatbookAction[ "AIAutoAssist"         , args___ ] := catchMine @ AIAutoAssist @
 ChatbookAction[ "Ask"                  , args___ ] := catchMine @ AskChat @ args;
 ChatbookAction[ "AttachCodeButtons"    , args___ ] := catchMine @ AttachCodeButtons @ args;
 ChatbookAction[ "CopyChatObject"       , args___ ] := catchMine @ CopyChatObject @ args;
+ChatbookAction[ "DisableAssistance"    , args___ ] := catchMine @ DisableAssistance @ args;
 ChatbookAction[ "EvaluateChatInput"    , args___ ] := catchMine @ EvaluateChatInput @ args;
 ChatbookAction[ "ExclusionToggle"      , args___ ] := catchMine @ ExclusionToggle @ args;
 ChatbookAction[ "OpenChatMenu"         , args___ ] := catchMine @ OpenChatMenu @ args;
 ChatbookAction[ "PersonaManage"        , args___ ] := catchMine @ PersonaManage @ args;
-ChatbookAction[ "PersonaURLInstall"    , args___ ] := catchMine @ PersonaURLInstall @ args;
+(* ChatbookAction[ "PersonaURLInstall"    , args___ ] := catchMine @ PersonaURLInstall @ args; *) (* TODO *)
 ChatbookAction[ "Send"                 , args___ ] := catchMine @ SendChat @ args;
 ChatbookAction[ "StopChat"             , args___ ] := catchMine @ StopChat @ args;
 ChatbookAction[ "TabLeft"              , args___ ] := catchMine @ TabLeft @ args;
@@ -48,6 +49,23 @@ ChatbookAction[ "WidgetSend"           , args___ ] := catchMine @ WidgetSend @ a
 ChatbookAction[ "InsertInlineReference", args___ ] := catchMine @ InsertInlineReference @ args;
 ChatbookAction[ name_String            , args___ ] := catchMine @ throwFailure[ "NotImplemented", name, args ];
 ChatbookAction[ args___                          ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*DisableAssistance*)
+DisableAssistance // beginDefinition;
+
+DisableAssistance[ cell_CellObject ] := (
+    DisableAssistance @ parentNotebook @ cell;
+    NotebookDelete @ ParentCell @ cell;
+    NotebookDelete @ cell;
+);
+
+DisableAssistance[ nbo_NotebookObject ] := (
+    CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = False
+);
+
+DisableAssistance // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -285,8 +303,9 @@ chatObject := chatObject = Symbol[ "System`ChatObject" ];
 (* ::Section::Closed:: *)
 (*OpenChatMenu*)
 OpenChatMenu // beginDefinition;
-OpenChatMenu[ "ChatOutput" , cell_CellObject ] := openChatOutputMenu @ cell;
-OpenChatMenu[ "ChatSection", cell_CellObject ] := openChatSectionDialog @ cell;
+OpenChatMenu[ "AssistantOutput", cell_CellObject ] := openChatOutputMenu @ cell;
+OpenChatMenu[ "ChatOutput"     , cell_CellObject ] := openChatOutputMenu @ cell;
+OpenChatMenu[ "ChatSection"    , cell_CellObject ] := openChatSectionDialog @ cell;
 OpenChatMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -534,7 +553,9 @@ excludeChatCells // endDefinition;
 WidgetSend // beginDefinition;
 
 WidgetSend[ cell_CellObject ] :=
-    Block[ { $alwaysOpen = True, cellPrint = cellPrintAfter @ cell, $finalCell = cell },
+    Block[ { $alwaysOpen = True, cellPrint = cellPrintAfter @ cell, $finalCell = cell, $autoAssistMode = True },
+        (* TODO: this is currently the only UI method to turn this back on *)
+        CurrentValue[ parentNotebook @ cell, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = True;
         SendChat @ cell
     ];
 
@@ -842,18 +863,30 @@ submitAIAssistant // beginDefinition;
 submitAIAssistant // Attributes = { HoldFirst };
 
 submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
-    With[ { autoOpen = TrueQ @ $autoOpen, alwaysOpen = TrueQ @ $alwaysOpen },
+    With[ { autoOpen = TrueQ @ $autoOpen, alwaysOpen = TrueQ @ $alwaysOpen, autoAssist = $autoAssistMode },
         URLSubmit[
             req,
             HandlerFunctions -> <|
                 "BodyChunkReceived" -> Function @ catchTopAs[ ChatbookAction ][
-                    Block[ { $autoOpen = autoOpen, $alwaysOpen = alwaysOpen, $settings = settings },
+                    Block[
+                        {
+                            $autoOpen       = autoOpen,
+                            $alwaysOpen     = alwaysOpen,
+                            $settings       = settings,
+                            $autoAssistMode = autoAssist
+                        },
                         Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                         writeChunk[ Dynamic @ container, cellObject, #1 ]
                     ]
                 ],
                 "TaskFinished" -> Function @ catchTopAs[ ChatbookAction ][
-                    Block[ { $autoOpen = autoOpen, $alwaysOpen = alwaysOpen, $settings = settings },
+                    Block[
+                        {
+                            $autoOpen       = autoOpen,
+                            $alwaysOpen     = alwaysOpen,
+                            $settings       = settings,
+                            $autoAssistMode = autoAssist
+                        },
                         Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                         checkResponse[ settings, container, cellObject, #1 ]
                     ]
@@ -2151,7 +2184,7 @@ processErrorCell // Attributes = { HoldFirst };
 processErrorCell[ container_, cell_CellObject ] := (
     $$errorString = container;
     removeSeverityTag[ container, cell ];
-    (* TODO: Add an error icon? *)
+    SetOptions[ cell, "AssistantOutputError" ];
     openChatCell @ cell
 );
 
@@ -2166,6 +2199,7 @@ processWarningCell // Attributes = { HoldFirst };
 processWarningCell[ container_, cell_CellObject ] := (
     $$warningString = container;
     removeSeverityTag[ container, cell ];
+    SetOptions[ cell, "AssistantOutputWarning" ];
     openChatCell @ cell
 );
 
@@ -2180,6 +2214,7 @@ processInfoCell // Attributes = { HoldFirst };
 processInfoCell[ container_, cell_CellObject ] := (
     $$infoString = container;
     removeSeverityTag[ container, cell ];
+    SetOptions[ cell, "AssistantOutput" ];
     $lastAutoOpen = $autoOpen;
     If[ TrueQ @ $autoOpen, openChatCell @ cell ]
 );
@@ -2288,6 +2323,14 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_ ] := UsingFront
         Cell[
             content,
             "ChatOutput",
+            If[ TrueQ @ $autoAssistMode,
+                Switch[ tag,
+                        "[ERROR]"  , "AssistantOutputError",
+                        "[WARNING]", "AssistantOutputWarning",
+                        _          , "AssistantOutput"
+                ],
+                Sequence @@ { }
+            ],
             GeneratedCell     -> True,
             CellAutoOverwrite -> True,
             TaggingRules      -> rules,
