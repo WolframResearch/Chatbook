@@ -93,7 +93,6 @@ createLocalChatNotebook[ opts: OptionsPattern[ CreateChatNotebook ] ] :=
         ]
     ];
 
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*makeChatNotebookSettings*)
