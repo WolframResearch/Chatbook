@@ -27,6 +27,7 @@ Needs[ "Wolfram`Chatbook`Serialization`"    ];
 Needs[ "Wolfram`Chatbook`Formatting`"       ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
 Needs[ "Wolfram`Chatbook`InlineReferences`" ];
+Needs[ "Wolfram`Chatbook`Prompting`"        ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -186,7 +187,10 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
     EvaluateChatInput[ evalCell, nbo, currentChatSettings @ nbo ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
-    Block[ { $autoAssistMode = False }, waitForLastTask[ ]; sendChat[ evalCell, nbo, settings ] ];
+    withBasePromptBuilder @ Block[ { $autoAssistMode = False },
+        waitForLastTask[ ];
+        sendChat[ evalCell, nbo, settings ]
+    ];
 
 EvaluateChatInput // endDefinition;
 
@@ -208,9 +212,9 @@ AIAutoAssist[ cell_ ] /; CloudSystem`$CloudNotebooks := Null;
 
 AIAutoAssist[ cell_CellObject ] := AIAutoAssist[ cell, parentNotebook @ cell ];
 
-AIAutoAssist[ cell_CellObject, nbo_NotebookObject ] :=
+AIAutoAssist[ cell_CellObject, nbo_NotebookObject ] := withBasePromptBuilder @
     If[ autoAssistQ[ cell, nbo ],
-        Block[ { $autoAssistMode = True }, SendChat @ cell ],
+        Block[ { $autoAssistMode = True }, needsBasePrompt[ "AutoAssistant" ]; SendChat @ cell ],
         Null
     ];
 
@@ -552,7 +556,7 @@ excludeChatCells // endDefinition;
 (*WidgetSend*)
 WidgetSend // beginDefinition;
 
-WidgetSend[ cell_CellObject ] :=
+WidgetSend[ cell_CellObject ] := withBasePromptBuilder @
     Block[ { $alwaysOpen = True, cellPrint = cellPrintAfter @ cell, $finalCell = cell, $autoAssistMode = True },
         (* TODO: this is currently the only UI method to turn this back on *)
         CurrentValue[ parentNotebook @ cell, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = True;
@@ -570,7 +574,7 @@ AskChat[ ] := AskChat[ InputNotebook[ ] ];
 
 AskChat[ nbo_NotebookObject ] := AskChat[ nbo, SelectedCells @ nbo ];
 
-AskChat[ nbo_NotebookObject, { selected_CellObject } ] :=
+AskChat[ nbo_NotebookObject, { selected_CellObject } ] := withBasePromptBuilder @
     Module[ { selection, cell, obj },
         selection = NotebookRead @ nbo;
         cell = chatQueryCell @ selection;
@@ -618,7 +622,7 @@ SendChat[ evalCell_CellObject, nbo_NotebookObject, settings_Association? Associa
 SendChat[ evalCell_, nbo_, settings_, Automatic ] /; CloudSystem`$CloudNotebooks :=
     SendChat[ evalCell, nbo, settings, False ];
 
-SendChat[ evalCell_, nbo_, settings_, Automatic ] :=
+SendChat[ evalCell_, nbo_, settings_, Automatic ] := withBasePromptBuilder @
     With[ { styles = cellStyles @ evalCell },
         Block[ { $autoOpen, $alwaysOpen = $alwaysOpen },
             $autoOpen = MemberQ[ styles, $$chatInputStyle ];
@@ -627,7 +631,7 @@ SendChat[ evalCell_, nbo_, settings_, Automatic ] :=
         ]
     ];
 
-SendChat[ evalCell_, nbo_, settings_, minimized_ ] :=
+SendChat[ evalCell_, nbo_, settings_, minimized_ ] := withBasePromptBuilder @
     Block[ { $alwaysOpen = alwaysOpenQ[ settings, minimized ] },
         sendChat[ evalCell, nbo, addCellStyleSettings[ settings, evalCell ] ]
     ];
@@ -1161,10 +1165,12 @@ makeHTTPRequest[ settings_Association? AssociationQ, cells: { __CellObject } ] :
 makeHTTPRequest[ settings_Association? AssociationQ, cells: { __Cell } ] :=
     makeHTTPRequest[ settings, makeChatMessages[ settings, cells ] ];
 
-makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association } ] :=
+makeHTTPRequest[ settings_Association? AssociationQ, messages0: { __Association } ] :=
     Enclose @ Module[
-        { key, stream, model, tokens, temperature, topP, freqPenalty, presPenalty, data, body },
+        { messages, key, stream, model, tokens, temperature, topP, freqPenalty, presPenalty, data, body },
 
+        If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
+        messages = messages0 /. s_String :> RuleCondition @ StringReplace[ s, "%%BASE_PROMPT%%" -> $basePrompt ];
         $lastSettings = settings;
         $lastMessages = messages;
 
@@ -1412,7 +1418,8 @@ buildSystemPrompt[ as_Association ] := TemplateApply[
 		Select[
 			<|
 				"Pre"  -> getPrePrompt @ as,
-				"Post" -> getPostPrompt @ as
+				"Post" -> getPostPrompt @ as,
+                "Base" -> "%%BASE_PROMPT%%"
 			|>,
 			StringQ
 		]
