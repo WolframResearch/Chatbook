@@ -3,6 +3,7 @@
 BeginPackage[ "Wolfram`Chatbook`Prompting`" ];
 
 (* TODO: select portions of base prompt during serialization as needed *)
+`$basePrompt;
 `$basePromptComponents;
 `needsBasePrompt;
 `withBasePromptBuilder;
@@ -43,7 +44,8 @@ $basePromptClasses = <|
     "WolframLanguage"   -> { "CodeBlocks", "DoubleBackticks", "DocumentationLinkSyntax", "InlineSymbolLinks" },
     "Math"              -> { "MathExpressions" },
     "Formatting"        -> { "CodeBlocks", "DoubleBackticks", "MathExpressions", "EscapedCharacters" },
-    "MessageConversion" -> { "ConversionLargeOutputs", "ConversionGraphics", "ConversionFormatting" }
+    "MessageConversion" -> { "ConversionLargeOutputs", "ConversionGraphics", "ConversionFormatting" },
+    "All"               -> $basePromptOrder
 |>;
 
 $basePromptDependencies = <|
@@ -67,7 +69,7 @@ $basePromptDependencies = <|
     "FunctionalStyle"             -> { }
 |>;
 
-$collectedPromptComponents = <| |>;
+$collectedPromptComponents = AssociationMap[ Identity, $basePromptOrder ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -153,15 +155,63 @@ $basePromptComponents[ "FunctionalStyle" ] = "\
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*buildBasePrompt*)
-buildBasePrompt (* TODO *)
+(*$basePrompt*)
+$basePrompt := buildPrompt[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*buildPrompt*)
+buildPrompt // beginDefinition;
+
+buildPrompt[ ] := (
+    expandPromptComponents[ ];
+    StringRiffle[
+        Values @ KeyTake[ $basePromptComponents, Values @ KeyTake[ $collectedPromptComponents, $basePromptOrder ] ],
+        "\n"
+    ]
+);
+
+buildPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*expandPromptComponents*)
+expandPromptComponents // beginDefinition;
+
+expandPromptComponents[ ] := (
+    FixedPoint[ expandPromptComponent /@ $collectedPromptComponents &, { }, 100 ];
+    $collectedPromptComponents
+);
+
+expandPromptComponents // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*expandPromptComponent*)
+expandPromptComponent // beginDefinition;
+
+expandPromptComponent[ name_String ] :=
+    Module[ { class, dependencies, needs },
+        class = Lookup[ $basePromptClasses, name, { } ];
+        dependencies = Lookup[ $basePromptDependencies, name, { } ];
+        needs = Select[ Union[ class, dependencies ], ! KeyExistsQ[ $collectedPromptComponents, #1 ] & ];
+        needsBasePrompt /@ needs
+    ];
+
+expandPromptComponent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*withBasePromptBuilder*)
 withBasePromptBuilder // beginDefinition;
 withBasePromptBuilder // Attributes = { HoldFirst };
-withBasePromptBuilder[ eval_ ] := Block[ { $collectedPromptComponents = <| |> }, needsBasePrompt[ "General" ]; eval ];
+
+withBasePromptBuilder[ eval_ ] :=
+    Block[ { $collectedPromptComponents = <| |>, withBasePromptBuilder = # & },
+        needsBasePrompt[ "General" ];
+        eval
+    ];
+
 withBasePromptBuilder // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
