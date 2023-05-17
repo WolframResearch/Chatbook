@@ -181,7 +181,13 @@ EvaluateChatInput // beginDefinition;
 
 EvaluateChatInput[ ] := EvaluateChatInput @ EvaluationCell[ ];
 
-EvaluateChatInput[ evalCell_CellObject ] := EvaluateChatInput[ evalCell, parentNotebook @ evalCell ];
+EvaluateChatInput[ evalCell_CellObject? chatInputCellQ ] :=
+    EvaluateChatInput[ evalCell, parentNotebook @ evalCell ];
+
+EvaluateChatInput[ _CellObject | $Failed ] :=
+    With[ { evalCell = EvaluationCell[ ] },
+        EvaluateChatInput @ evalCell /; chatInputCellQ @ evalCell
+    ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
     EvaluateChatInput[ evalCell, nbo, currentChatSettings @ nbo ];
@@ -193,6 +199,14 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
     ];
 
 EvaluateChatInput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatInputCellQ*)
+chatInputCellQ[ cell_CellObject ] := chatInputCellQ[ cell, Developer`CellInformation @ cell ];
+chatInputCellQ[ cell_, KeyValuePattern[ "Style" -> $$chatInputStyle ] ] := True;
+chatInputCellQ[ cell_CellObject, ___ ] := ($badCellObject = cell; $badCell = NotebookRead @ cell; False);
+chatInputCellQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1411,7 +1425,7 @@ makeCurrentRole // endDefinition;
 (*buildSystemPrompt*)
 buildSystemPrompt // beginDefinition;
 
-buildSystemPrompt[ as_Association ] := TemplateApply[
+buildSystemPrompt[ as_Association ] := StringTrim @ TemplateApply[
     $promptTemplate,
     Association[
         $promptComponents[ "Generic" ],

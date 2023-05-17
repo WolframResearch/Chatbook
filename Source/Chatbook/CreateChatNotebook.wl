@@ -21,6 +21,7 @@ CreateChatNotebook // Options = {
     "ChatContextCellProcessingFunction" -> Automatic,
     "ChatContextPostEvaluationFunction" -> Automatic,
     "ChatContextPreprompt"              -> Automatic,
+    "ChatDrivenNotebook"                -> False,
     "ChatHistoryLength"                 -> 25,
     "DynamicAutoFormat"                 -> Automatic,
     "FrequencyPenalty"                  -> 0.1,
@@ -36,12 +37,12 @@ CreateChatNotebook // Options = {
     "TopP"                              -> 1
 };
 
-CreateChatNotebook[ opts: OptionsPattern[ ] ] := createChatNotebook @ opts;
+CreateChatNotebook[ opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] := createChatNotebook @ opts;
 
-CreateChatNotebook[ nbo_NotebookObject, opts: OptionsPattern[ ] ] :=
+CreateChatNotebook[ nbo_NotebookObject, opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] :=
     Enclose @ Module[ { settings, options },
-        settings = makeChatNotebookSettings @ Association @ opts;
-        options  = makeChatNotebookOptions @ settings;
+        settings = makeChatNotebookSettings @ Association @ FilterRules[ { opts }, Options @ CreateChatNotebook ];
+        options  = makeChatNotebookOptions[ settings, opts ];
         SetOptions[ nbo, options ];
         nbo
     ];
@@ -110,9 +111,13 @@ makeChatNotebookSettings[ as_Association? AssociationQ, opts: OptionsPattern[ Cr
 (*makeChatNotebookOptions*)
 makeChatNotebookOptions // SetFallthroughError;
 
-makeChatNotebookOptions[ settings_Association ] := Sequence[
-    StyleDefinitions -> $chatbookStylesheet,
-    TaggingRules     -> <| "ChatNotebookSettings" -> settings |>
+makeChatNotebookOptions[ settings_Association, opts: OptionsPattern[ ] ] := Sequence @@ DeleteDuplicatesBy[
+    Flatten @ {
+        FilterRules[ { opts }, Options @ Notebook ],
+        StyleDefinitions -> $chatbookStylesheet,
+        TaggingRules     -> <| "ChatNotebookSettings" -> settings |>
+    },
+    ToString @* First
 ];
 
 (* ::**************************************************************************************************************:: *)
