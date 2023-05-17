@@ -33,6 +33,7 @@ PacletObject[<|
 		},
 		{"LLMConfiguration",
 			"Personas" -> {
+				"Default",
 				"Helper",
 				"Wolfie",
 				"Birdnardo",
