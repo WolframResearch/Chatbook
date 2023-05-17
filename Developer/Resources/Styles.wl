@@ -87,10 +87,11 @@ Cell[
     MenuSortingValue  -> 1000,
     StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "SideChat", "Backspace" -> "Input" },
 	CellDingbat -> Cell[
-		BoxData @ RowBox[{
+		(* BoxData @ RowBox[{
 			TemplateBox[{}, "ChatCounterLabel"],
 			ToBoxes @ $chatInputCellDingbat
-		}],
+		}], *)
+        BoxData @ ToBoxes @ $chatInputCellDingbat,
 		Background -> None,
 		CellFrame -> 0
 	],
