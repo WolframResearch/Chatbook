@@ -6,6 +6,8 @@ BeginPackage[ "Wolfram`Chatbook`InlineReferences`" ];
 `insertFunctionInputBox;
 `insertModifierInputBox;
 `insertTrailingFunctionInputBox;
+`resolveLastInlineReference;
+`resolveInlineReferences;
 
 Begin[ "`Private`" ];
 
@@ -14,10 +16,6 @@ Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`PersonaInstaller`" ];
-
-(* TODO syntax
-    * #Translated:French: - Modifier prompt
-*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -34,6 +32,48 @@ $frameOptions = Sequence[
     ContentPadding -> False,
     BaseStyle      -> $frameBaseStyle
 ];
+
+$lastInlineReferenceCell = None;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Resolve Inline References*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*resolveInlineReferences*)
+resolveInlineReferences // beginDefinition;
+
+resolveInlineReferences[ cell_CellObject ] := (
+    resolveLastInlineReference[ ];
+    resolveInlineReferences[
+        cell,
+        Cells[ cell, CellStyle -> { "InlineModifierChooser", "InlineFunctionChooser", "InlinePersonaChooser" } ]
+    ]
+);
+
+resolveInlineReferences[ _, { } ] := Null;
+
+resolveInlineReferences[ cell_, cells: { ___CellObject } ] := resolveLastInlineReference /@ cells;
+
+resolveInlineReferences // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*resolveLastInlineReference*)
+resolveLastInlineReference[ ] :=
+    resolveLastInlineReference @ $lastInlineReferenceCell;
+
+resolveLastInlineReference[ cell_CellObject ] :=
+    resolveLastInlineReference[ cell, Developer`CellInformation @ cell ];
+
+resolveLastInlineReference[ cell_CellObject, KeyValuePattern[ "Style" -> style_ ] ] :=
+    resolveLastInlineReference[ cell, style ];
+
+resolveLastInlineReference[ cell_CellObject, "InlineModifierChooser" ] := writeStaticModifierBox @ cell;
+resolveLastInlineReference[ cell_CellObject, "InlineFunctionChooser" ] := writeStaticFunctionBox @ cell;
+resolveLastInlineReference[ cell_CellObject, "InlinePersonaChooser"  ] := writeStaticPersonaBox @ cell;
+resolveLastInlineReference[ ___ ] := Null;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -90,6 +130,7 @@ insertModifierInputBox[ cell_CellObject ] :=
 
 insertModifierInputBox[ parent_CellObject, nbo_NotebookObject ] :=
     Module[ { uuid, cell },
+        resolveInlineReferences @ parent;
         uuid = CreateUUID[ ];
         cell = Cell[ BoxData @ ToBoxes @ modifierInputBox[ "", uuid ], "InlineModifierChooser", Background -> None ];
         NotebookWrite[ nbo, cell ];
@@ -101,6 +142,7 @@ insertModifierInputBox[ args_List, cell_CellObject ] :=
 
 insertModifierInputBox[ args_List, parent_CellObject, nbo_NotebookObject ] :=
     Module[ { uuid, cell },
+        resolveInlineReferences @ ParentCell @ parent;
         uuid = CreateUUID[ ];
         cell = Cell[ BoxData @ ToBoxes @ modifierInputBox[ args, uuid ], "InlineModifierChooser", Background -> None ];
         NotebookWrite[ parent, cell ];
@@ -163,7 +205,10 @@ modifierInputBox[ args_List, uuid_ ] :=
             PassEventsUp   -> False,
             PassEventsDown -> True
         ],
-        Initialization   :> { cell = EvaluationCell[ ], Quiet @ Needs[ "Wolfram`Chatbook`" -> None ] },
+        Initialization :> (
+            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+            $lastInlineReferenceCell = cell = EvaluationCell[ ];
+        ),
         UnsavedVariables :> { cell }
     ];
 
@@ -324,6 +369,7 @@ insertFunctionInputBox[ cell_CellObject ] :=
 
 insertFunctionInputBox[ parent_CellObject, nbo_NotebookObject ] :=
     Module[ { uuid, cell },
+        resolveInlineReferences @ parent;
         uuid = CreateUUID[ ];
         cell = Cell[ BoxData @ ToBoxes @ functionInputBox[ "", uuid ], "InlineFunctionChooser", Background -> None ];
         NotebookWrite[ nbo, cell ];
@@ -335,6 +381,7 @@ insertFunctionInputBox[ args_List, cell_CellObject ] :=
 
 insertFunctionInputBox[ args_List, parent_CellObject, nbo_NotebookObject ] :=
     Module[ { uuid, cell },
+        resolveInlineReferences @ ParentCell @ parent;
         uuid = CreateUUID[ ];
         cell = Cell[ BoxData @ ToBoxes @ functionInputBox[ args, uuid ], "InlineFunctionChooser", Background -> None ];
         NotebookWrite[ parent, cell ];
@@ -401,7 +448,10 @@ functionInputBox[ args_List, uuid_ ] :=
             PassEventsUp   -> False,
             PassEventsDown -> True
         ],
-        Initialization   :> { cell = EvaluationCell[ ], Quiet @ Needs[ "Wolfram`Chatbook`" -> None ] },
+        Initialization :> (
+            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+            $lastInlineReferenceCell = cell = EvaluationCell[ ];
+        ),
         UnsavedVariables :> { cell }
     ];
 
@@ -577,6 +627,7 @@ insertTrailingFunctionInputBox[ cell_CellObject ] :=
 
 insertTrailingFunctionInputBox[ parent_CellObject, nbo_NotebookObject ] :=
     Module[ { uuid, cell },
+        resolveInlineReferences @ parent;
         uuid = CreateUUID[ ];
         cell = Cell[
             BoxData @ ToBoxes @ trailingFunctionInputBox[ "", uuid ],
@@ -592,6 +643,7 @@ insertTrailingFunctionInputBox[ args_List, cell_CellObject ] :=
 
 insertTrailingFunctionInputBox[ args_List, parent_CellObject, nbo_NotebookObject ] :=
     Module[ { uuid, cell },
+        resolveInlineReferences @ ParentCell @ parent;
         uuid = CreateUUID[ ];
         cell = Cell[
             BoxData @ ToBoxes @ trailingFunctionInputBox[ args, uuid ],
@@ -652,8 +704,7 @@ trailingFunctionInputBox[ args_List, uuid_ ] := DynamicModule[ { string = String
         {
             { "KeyDown", ">" } :> NotebookWrite[ EvaluationNotebook[ ], ">" ],
             "ReturnKeyDown"    :> If[ string =!= "", writeStaticTrailingFunctionBox @ cell ],
-            "TabKeyDown"       :> writeStaticTrailingFunctionBox @ cell(*,
-            "EscapeKeyDown" :> Block[ { $personaNames = { } }, moveAndWriteStaticPersonaBox @ cell ]*)
+            "TabKeyDown"       :> writeStaticTrailingFunctionBox @ cell
         },
         PassEventsUp -> False
     ],
@@ -777,11 +828,7 @@ personaCompletion // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*$personaNames*)
 $personaNames := Select[
-    DeleteDuplicates @ Flatten @ {
-        CurrentValue @ { TaggingRules, "ChatNotebookSettings", "LLMEvaluator", "LLMEvaluatorName" },
-        Keys @ GetCachedPersonaData[ ],
-        $availablePersonaNames
-    },
+    DeleteDuplicates @ Flatten @ { Keys @ GetCachedPersonaData[ ], $availablePersonaNames },
     StringQ
 ];
 
@@ -809,6 +856,7 @@ insertPersonaInputBox[ cell_CellObject ] := insertPersonaInputBox[ cell, parentN
 
 insertPersonaInputBox[ parent_CellObject, nbo_NotebookObject ] :=
     Module[ { uuid, cell },
+        resolveInlineReferences @ parent;
         uuid = CreateUUID[ ];
         cell = Cell[ BoxData @ ToBoxes @ personaInputBox[ "", uuid ], "InlinePersonaChooser", Background -> None ];
         NotebookWrite[ nbo, cell ];
@@ -819,6 +867,7 @@ insertPersonaInputBox[ name_String, cell_CellObject ] := insertPersonaInputBox[ 
 
 insertPersonaInputBox[ name_String, parent_CellObject, nbo_NotebookObject ] :=
     Module[ { uuid, cell },
+        resolveInlineReferences @ ParentCell @ parent;
         uuid = CreateUUID[ ];
         cell = Cell[ BoxData @ ToBoxes @ personaInputBox[ name, uuid ], "InlinePersonaChooser", Background -> None ];
         NotebookWrite[ parent, cell ];
@@ -841,12 +890,13 @@ personaInputBox[ name_String, uuid_ ] := DynamicModule[ { string = name, cell },
                         {
                             "@",
                             InputField[
-                                Dynamic[ string, writeStaticPersonaBox[ cell, string = # ] & ],
+                                Dynamic @ string,
                                 String,
-                                ContinuousAction        -> False,
+                                Alignment               -> { Left, Baseline },
+                                ContinuousAction        -> True,
                                 FieldCompletionFunction -> personaCompletion,
-                                FieldSize               -> { { 15, Infinity }, { 0, Infinity } },
-                                BaseStyle               -> { "Text" },
+                                FieldSize               -> { { 15, Infinity }, Automatic },
+                                BaseStyle               -> $inputFieldStyle,
                                 Appearance              -> "Frameless",
                                 ContentPadding          -> False,
                                 FrameMargins            -> 0,
@@ -863,12 +913,14 @@ personaInputBox[ name_String, uuid_ ] := DynamicModule[ { string = name, cell },
             ShowStringCharacters -> False
         ],
         {
-            "ReturnKeyDown" :> moveAndWriteStaticPersonaBox @ cell,
-            "TabKeyDown"    :> moveAndWriteStaticPersonaBox @ cell(*,
-            "EscapeKeyDown" :> Block[ { $personaNames = { } }, moveAndWriteStaticPersonaBox @ cell ]*)
+            "EscapeKeyDown" :> removePersonaInputBox @ cell,
+            "ReturnKeyDown" :> writeStaticPersonaBox @ cell
         }
     ],
-    Initialization   :> { cell = EvaluationCell[ ], Quiet @ Needs[ "Wolfram`Chatbook`" -> None ] },
+    Initialization :> (
+        Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+        $lastInlineReferenceCell = cell = EvaluationCell[ ];
+    ),
     UnsavedVariables :> { cell }
 ];
 
@@ -876,10 +928,15 @@ personaInputBox // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*moveAndWriteStaticPersonaBox*)
-moveAndWriteStaticPersonaBox // beginDefinition;
-moveAndWriteStaticPersonaBox[ cell_CellObject ] := (SelectionMove[ cell, All, Cell ]; writeStaticPersonaBox @ cell);
-moveAndWriteStaticPersonaBox // endDefinition;
+(*processPersonaInput*)
+processPersonaInput // beginDefinition;
+
+processPersonaInput[ string_String, { cell_CellObject }, cell_CellObject ] := Null;
+
+processPersonaInput[ string_String, _List, cell_CellObject ] :=
+    writeStaticPersonaBox[ cell, personaInputSetting @ string ];
+
+processPersonaInput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -891,13 +948,14 @@ writeStaticPersonaBox[ cell_CellObject ] :=
 
 writeStaticPersonaBox[ cell_, $Failed ] := Null; (* box was already overwritten *)
 
+writeStaticPersonaBox[ cell_CellObject, name_String ] /; $removingBox :=
+    NotebookWrite[ cell, TextData[ "@" <> name ], After ];
+
 (* TODO: Should this also insert a space after? It might not be desirable if you wanted to follow with punctuation, e.g.
     "Hey [@Birdnardo], do something cool!"
 *)
 writeStaticPersonaBox[ cell_CellObject, name_String ] /; MemberQ[ $personaNames, name ] := Enclose[
-    If[ And[ ! MemberQ[ Keys @ GetCachedPersonaData[ ], name ],
-             CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= name
-        ],
+    If[ ! MemberQ[ Keys @ GetCachedPersonaData[ ], name ],
         ConfirmBy[ PersonaInstall[ "Prompt: "<>name ], FileExistsQ, "PersonaInstall" ];
         ConfirmAssert[ MemberQ[ Keys @ GetCachedPersonaData[ ], name ], "GetCachedPersonaData" ]
     ];
@@ -926,12 +984,10 @@ writeStaticPersonaBox // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*removePersonaBox*)
-(* FIXME: hook this up *)
-removePersonaBox // beginDefinition;
-removePersonaBox[ cell_CellObject ] := removePersonaBox[ cell, personaInputSetting @ NotebookRead @ cell ];
-removePersonaBox[ cell_CellObject, text_String ] := NotebookWrite[ cell, TextData[ "@"<>text ], After ];
-removePersonaBox // endDefinition;
+(*removePersonaInputBox*)
+removePersonaInputBox // beginDefinition;
+removePersonaInputBox[ cell_CellObject ] := Block[ { $removingBox = True }, writeStaticPersonaBox @ cell ];
+removePersonaInputBox // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -973,6 +1029,7 @@ staticPersonaBoxLabel // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*personaInputSetting*)
 personaInputSetting // beginDefinition;
+personaInputSetting[ string_String ] := string;
 personaInputSetting[ cell_CellObject ] := personaInputSetting @ NotebookRead @ cell;
 personaInputSetting[ (Cell|BoxData|TagBox)[ boxes_, ___ ] ] := personaInputSetting @ boxes;
 personaInputSetting[ DynamicModuleBox[ { ___, _ = string_String, ___ }, ___ ] ] := string;
