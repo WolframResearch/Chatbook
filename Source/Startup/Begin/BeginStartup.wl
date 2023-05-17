@@ -19,6 +19,14 @@ Once[
 				)],
 				FrontEnd`MenuEvaluator -> Automatic,
 				FrontEnd`MenuKey["n", FrontEnd`Modifiers -> {FrontEnd`Command, FrontEnd`Option}]
+			],
+			MenuItem[
+				"Chat-Driven Notebook",
+				FrontEnd`KernelExecute[(
+					Needs["Wolfram`Chatbook`" -> None];
+					Wolfram`Chatbook`CreateChatDrivenNotebook[]
+				)],
+				FrontEnd`MenuEvaluator -> Automatic
 			]
 		}]
 	}],
@@ -31,9 +39,17 @@ Once[
 
 PrependTo[
     DownValues @ System`FEDump`createNotebook,
-    HoldPattern[ System`FEDump`createNotebook[ "Chat", { System`FEDump`opts___ } ] ] :> (
+    HoldPattern[ System`FEDump`createNotebook[ "ChatEnabled", { System`FEDump`opts___ } ] ] :> (
         Needs[ "Wolfram`Chatbook`" -> None ];
         Wolfram`Chatbook`CreateChatNotebook[ System`FEDump`opts ]
+    )
+]
+
+PrependTo[
+    DownValues @ System`FEDump`createNotebook,
+    HoldPattern[ System`FEDump`createNotebook[ "ChatDriven", { System`FEDump`opts___ } ] ] :> (
+        Needs[ "Wolfram`Chatbook`" -> None ];
+        Wolfram`Chatbook`CreateChatDrivenNotebook[ System`FEDump`opts ]
     )
 ]
 

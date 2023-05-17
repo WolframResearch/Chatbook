@@ -137,6 +137,17 @@ $inlinedStylesheet := $inlinedStylesheet = Import[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*CreateChatDrivenNotebook*)
+CreateChatDrivenNotebook[ opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] :=
+    CreateChatNotebook[
+        "ChatDrivenNotebook" -> True,
+        "LLMEvaluator"       -> "Default",
+        DefaultNewCellStyle  -> "ChatInput",
+        opts
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Package Footer*)
 If[ Wolfram`Chatbook`Internal`$BuildingMX,
     $inlinedStylesheet;
