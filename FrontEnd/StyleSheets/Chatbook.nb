@@ -22,14 +22,6 @@ Notebook[
       ]
     |>
    |>,
-   CellEpilog :>
-    With[ { cell = EvaluationCell[] },
-     Quiet[Needs["Wolfram`Chatbook`" -> None]];
-     Symbol["Wolfram`Chatbook`ChatbookAction"][
-      "AIAutoAssist",
-      cell
-     ]
-    ],
    ComponentwiseContextMenu -> <|
     "CellBracket" -> {
      MenuItem[
@@ -547,6 +539,14 @@ Notebook[
     "*" -> "Item",
     ">" -> "ExternalLanguageDefault"
    },
+   CellEpilog :>
+    With[ { cell = EvaluationCell[] },
+     Quiet[Needs["Wolfram`Chatbook`" -> None]];
+     Symbol["Wolfram`Chatbook`ChatbookAction"][
+      "AIAutoAssist",
+      cell
+     ]
+    ],
    ContextMenu -> {
     MenuItem[
      "Ask AI Assistant",
@@ -799,92 +799,87 @@ Notebook[
    CellDingbat ->
     Cell[
      BoxData[
-      RowBox[
+      PaneSelectorBox[
        {
-        TemplateBox[{}, "ChatCounterLabel"],
-        PaneSelectorBox[
-         {
-          True ->
-           ButtonBox[
-            FrameBox[
-             DynamicBox[
-              ToBoxes[
-               With[
-                {
-                 Wolfram`Chatbook`UI`Private`menuData = 
-                  Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
+        True ->
+         ButtonBox[
+          FrameBox[
+           DynamicBox[
+            ToBoxes[
+             With[
+              {
+               Wolfram`Chatbook`UI`Private`menuData = 
+                Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
 
-                  ],
-                 Wolfram`Chatbook`UI`Private`personaValue = 
-                  Wolfram`Chatbook`UI`Private`currentValueOrigin[
-                   ParentCell[EvaluationCell[]],
-                   {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
-                  ]
-                },
-                FirstCase[
-                 Wolfram`Chatbook`UI`Private`menuData["Personas"],
-                 {
-                  Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
-                  Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]],
-                  Blank[]
-                 } :> Wolfram`Chatbook`UI`Private`icon,
-                 Style[
-                  Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
-                  GrayLevel[0.5]
-                 ]
+                ],
+               Wolfram`Chatbook`UI`Private`personaValue = 
+                Wolfram`Chatbook`UI`Private`currentValueOrigin[
+                 ParentCell[EvaluationCell[]],
+                 {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
                 ]
-               ],
-               StandardForm
+              },
+              FirstCase[
+               Wolfram`Chatbook`UI`Private`menuData["Personas"],
+               {
+                Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
+                Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]],
+                Blank[]
+               } :> Wolfram`Chatbook`UI`Private`icon,
+               Style[
+                Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
+                GrayLevel[0.5]
+               ]
               ]
              ],
-             RoundingRadius -> 3,
-             FrameMargins -> 2,
-             ImageMargins -> {{0, 3}, {0, 0}},
-             FrameStyle ->
-              Directive[GrayLevel[0.85686], AbsoluteThickness[1]],
-             Background ->
-              Dynamic[
-               If[ CurrentValue["MouseOver"], GrayLevel[0.8], GrayLevel[1] ]
-              ],
-             FrameMargins -> 0,
-             StripOnInput -> False
-            ],
-            ButtonFunction :>
-             (AttachCell[
-              EvaluationCell[],
-              Wolfram`Chatbook`UI`Private`openChatInputActionMenu[
-               EvaluationCell[]
-              ],
-              {Left, Bottom},
-              Offset[{0, 0}, {Left, Top}],
-              {Left, Top},
-              RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
-             ];),
-            Appearance ->
-             Dynamic[
-              FEPrivate`FrontEndResource[
-               "FEExpressions",
-               "SuppressMouseDownNinePatchAppearance"
-              ]
-             ],
-            Evaluator -> Automatic,
-            Method -> "Preemptive"
+             StandardForm
+            ]
            ],
-          False ->
-           FrameBox[
-            TemplateBox[{}, "RoleUser"],
-            RoundingRadius -> 3,
-            FrameMargins -> 2,
-            ImageMargins -> {{0, 3}, {0, 0}},
-            FrameStyle -> GrayLevel[0, 0],
-            FrameMargins -> 0,
-            StripOnInput -> False
-           ]
-         },
-         Dynamic[CurrentValue["MouseOver"]],
-         ImageSize -> All
-        ]
-       }
+           RoundingRadius -> 3,
+           FrameMargins -> 2,
+           ImageMargins -> {{0, 3}, {0, 0}},
+           FrameStyle ->
+            Directive[GrayLevel[0.85686], AbsoluteThickness[1]],
+           Background ->
+            Dynamic[
+             If[ CurrentValue["MouseOver"], GrayLevel[0.8], GrayLevel[1] ]
+            ],
+           FrameMargins -> 0,
+           StripOnInput -> False
+          ],
+          ButtonFunction :>
+           (AttachCell[
+            EvaluationCell[],
+            Wolfram`Chatbook`UI`Private`openChatInputActionMenu[
+             EvaluationCell[]
+            ],
+            {Left, Bottom},
+            Offset[{0, 0}, {Left, Top}],
+            {Left, Top},
+            RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
+           ];),
+          Appearance ->
+           Dynamic[
+            FEPrivate`FrontEndResource[
+             "FEExpressions",
+             "SuppressMouseDownNinePatchAppearance"
+            ]
+           ],
+          Evaluator -> Automatic,
+          Method -> "Preemptive"
+         ],
+        False ->
+         FrameBox[
+          TemplateBox[{}, "RoleUser"],
+          RoundingRadius -> 3,
+          FrameMargins -> 2,
+          ImageMargins -> {{0, 3}, {0, 0}},
+          FrameStyle -> GrayLevel[0, 0],
+          FrameMargins -> 0,
+          StripOnInput -> False
+         ]
+       },
+       Dynamic[CurrentValue["MouseOver"]],
+       ImageSize -> All
       ]
      ],
      Background -> None,
