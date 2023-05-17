@@ -34,14 +34,8 @@ $PersonaInstallationDirectory := GeneralUtilities`EnsureDirectory @ {
 (* ::Section::Closed:: *)
 (*PersonaInstall*)
 PersonaInstall // beginDefinition;
-
 PersonaInstall[ ro_ResourceObject ] := catchMine @ personaInstall @ ro;
-
-PersonaInstall[ id_ ] :=
-    catchMine @ With[ { ro = ResourceObject @ id },
-        personaInstall @ ro /; MatchQ[ ro, _ResourceObject ]
-    ];
-
+PersonaInstall[ id_ ] := With[ { ro = ResourceObject @ id }, PersonaInstall @ ro /; MatchQ[ ro, _ResourceObject ] ];
 PersonaInstall // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

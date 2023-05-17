@@ -39,10 +39,10 @@ $basePromptOrder = {
 };
 
 $basePromptClasses = <|
-    "Notebooks"         -> { "NotebooksPreamble", "MessageConversion" },
+    "Notebooks"         -> { "NotebooksPreamble" },
     "WolframLanguage"   -> { "CodeBlocks", "DoubleBackticks", "DocumentationLinkSyntax", "InlineSymbolLinks" },
     "Math"              -> { "MathExpressions" },
-    "Formatting"        -> { "CodeBlocks", "DoubleBackticks", "MathExpressions", "EscapedCharacters" },
+    "Formatting"        -> { "CodeBlocks", "MathExpressions", "EscapedCharacters" },
     "MessageConversion" -> { "ConversionLargeOutputs", "ConversionGraphics", "ConversionFormatting" },
     "All"               -> $basePromptOrder
 |>;
@@ -94,7 +94,7 @@ $basePromptComponents[ "AutoAssistant" ] = "\
 
 $basePromptComponents[ "CodeBlocks" ] = "\
 * Whenever your response contains a block of code, surround it with three backticks and include the language when applicable:
-```wolfram
+```language
 code
 ```";
 
