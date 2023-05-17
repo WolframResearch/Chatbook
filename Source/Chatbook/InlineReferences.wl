@@ -828,11 +828,7 @@ personaCompletion // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*$personaNames*)
 $personaNames := Select[
-    DeleteDuplicates @ Flatten @ {
-        CurrentValue @ { TaggingRules, "ChatNotebookSettings", "LLMEvaluator", "LLMEvaluatorName" },
-        Keys @ GetCachedPersonaData[ ],
-        $availablePersonaNames
-    },
+    DeleteDuplicates @ Flatten @ { Keys @ GetCachedPersonaData[ ], $availablePersonaNames },
     StringQ
 ];
 
@@ -959,9 +955,7 @@ writeStaticPersonaBox[ cell_CellObject, name_String ] /; $removingBox :=
     "Hey [@Birdnardo], do something cool!"
 *)
 writeStaticPersonaBox[ cell_CellObject, name_String ] /; MemberQ[ $personaNames, name ] := Enclose[
-    If[ And[ ! MemberQ[ Keys @ GetCachedPersonaData[ ], name ],
-             CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] =!= name
-        ],
+    If[ ! MemberQ[ Keys @ GetCachedPersonaData[ ], name ],
         ConfirmBy[ PersonaInstall[ "Prompt: "<>name ], FileExistsQ, "PersonaInstall" ];
         ConfirmAssert[ MemberQ[ Keys @ GetCachedPersonaData[ ], name ], "GetCachedPersonaData" ]
     ];
