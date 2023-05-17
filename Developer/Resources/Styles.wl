@@ -14,11 +14,6 @@ Cell[
         |>
     |>,
 
-    CellEpilog :> With[ { $CellContext`cell = EvaluationCell[ ] },
-        Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AIAutoAssist", $CellContext`cell ]
-    ],
-
     ComponentwiseContextMenu -> <|
         "CellBracket" -> contextMenu[ $askMenuItem, $excludeMenuItem, Delimiter, "CellBracket" ],
         "CellGroup"   -> contextMenu[ $excludeMenuItem, Delimiter, "CellGroup" ],
@@ -46,7 +41,11 @@ Cell[
         "*" -> "Item",
         ">" -> "ExternalLanguageDefault"
     },
-    ContextMenu -> contextMenu[ $askMenuItem, Delimiter, "Input" ]
+    ContextMenu -> contextMenu[ $askMenuItem, Delimiter, "Input" ],
+    CellEpilog :> With[ { $CellContext`cell = EvaluationCell[ ] },
+        Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AIAutoAssist", $CellContext`cell ]
+    ]
 ]
 
 (* ::**************************************************************************************************************:: *)
