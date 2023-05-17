@@ -746,10 +746,24 @@ Cell[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*InlineReferenceText*)
+Cell[
+    StyleData[ "InlineReferenceText", StyleDefinitions -> StyleData[ "Text" ] ],
+    FontColor -> GrayLevel[ 0.2 ]
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*ChatExcluded*)
 Cell[
     StyleData[ "ChatExcluded" ],
-    CellTrayWidgets     -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    CellTrayWidgets -> <|
+        "ChatWidget"         -> <| "Visible" -> False |>,
+        "ChatExcludedWidget" -> <|
+            "Type"    -> "Focus",
+            "Content" -> Cell[ BoxData @ TemplateBox[ { }, "ChatExcludedWidget" ], "ChatExcludedWidget" ]
+        |>
+    |>,
     CellBracketOptions  -> { "Color" -> Pink },
     GeneratedCellStyles -> {
         "Message"        -> { "Message" , "MSG", "ChatExcluded" },

@@ -24,6 +24,17 @@ Needs[ "Wolfram`Chatbook`PersonaInstaller`" ];
 (*Config*)
 $argumentDivider = "|";
 
+$frameStyle     = Directive[ AbsoluteThickness[ 1 ], RGBColor[ "#a3c9f2" ] ];
+$frameBaseStyle = { "InlineReferenceText", FontSize -> 0.95*Inherited };
+
+$frameOptions = Sequence[
+    RoundingRadius -> 2,
+    FrameStyle     -> $frameStyle,
+    FrameMargins   -> 2,
+    ContentPadding -> False,
+    BaseStyle      -> $frameBaseStyle
+];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Modifier Input*)
@@ -139,10 +150,7 @@ modifierInputBox[ args_List, uuid_ ] :=
                         Spacings  -> 0,
                         Alignment -> { Automatic, Baseline }
                     ],
-                    RoundingRadius -> 4,
-                    FrameStyle     -> RGBColor[ "#ff6a00" ],
-                    FrameMargins   -> { { 4, 3 }, { 3, 3 } },
-                    ContentPadding -> False
+                    $frameOptions
                 ],
                 "Text",
                 ShowStringCharacters -> False
@@ -221,7 +229,7 @@ staticModifierBox // beginDefinition;
 staticModifierBox[ args_List ] := Button[
     MouseAppearance[
         Mouseover[
-            staticModifierBoxLabel[ args, RGBColor[ "#fffbf0" ] ],
+            staticModifierBoxLabel[ args, RGBColor[ "#f1f8ff" ] ],
             staticModifierBoxLabel[ args, RGBColor[ "#ffffff" ] ]
         ],
         "LinkHand"
@@ -243,25 +251,17 @@ staticModifierBoxLabel[ { name_, args___ }, background_ ] :=
             Grid[
                 {
                     Flatten @ {
-                        Row @ {
-                            Style[ "#", FontColor -> RGBColor[ "#ff6a00" ], FontSize -> 0.9*Inherited ],
-                            Spacer[ 2 ],
-                            Style[ name, FontColor -> GrayLevel[ 0.25 ], FontSize -> 0.9*Inherited ]
-                        },
+                        Row @ { RawBoxes @ TemplateBox[ { }, "InlineReferenceIconHash" ], name },
                         styleFunctionArgument /@ { args }
                     }
                 },
                 Dividers   -> { { False, { True }, False }, False },
-                FrameStyle -> RGBColor[ "#ff6a00" ],
-                Spacings   -> 0.65,
+                FrameStyle -> RGBColor[ "#a3c9f2" ],
+                Spacings   -> 0.5,
                 Alignment  -> { Automatic, Baseline }
             ],
-            Background     -> background,
-            RoundingRadius -> 4,
-            FrameStyle     -> RGBColor[ "#ff6a00" ],
-            FrameMargins   -> { { 4, 3 }, { 3, 3 } },
-            ContentPadding -> False,
-            BaseStyle      -> "Text"
+            Background -> background,
+            $frameOptions
         ],
         ShowStringCharacters -> False,
         Selectable           -> False
@@ -388,10 +388,7 @@ functionInputBox[ args_List, uuid_ ] :=
                         Spacings  -> 0,
                         Alignment -> { Automatic, Baseline }
                     ],
-                    RoundingRadius -> 4,
-                    FrameStyle     -> RGBColor[ "#ff6a00" ],
-                    FrameMargins   -> { { 4, 3 }, { 3, 3 } },
-                    ContentPadding -> False
+                    $frameOptions
                 ],
                 "Text",
                 ShowStringCharacters -> False
@@ -495,7 +492,7 @@ staticFunctionBox[ { name_String } ] := staticFunctionBox[ { name, ">" } ];
 staticFunctionBox[ args_List ] := Button[
     MouseAppearance[
         Mouseover[
-            staticFunctionBoxLabel[ args, RGBColor[ "#fffbf0" ] ],
+            staticFunctionBoxLabel[ args, RGBColor[ "#f1f8ff" ] ],
             staticFunctionBoxLabel[ args, RGBColor[ "#ffffff" ] ]
         ],
         "LinkHand"
@@ -521,12 +518,8 @@ staticFunctionBoxLabel // beginDefinition;
                 Style[ "\[ThinSpace]:\[ThinSpace]", FontColor -> GrayLevel[ 0.6 ], FontWeight -> "DemiBold" ]
             ]
         },
-        Background     -> background,
-        RoundingRadius -> 4,
-        FrameStyle     -> RGBColor[ "#a3c9f2" ],
-        FrameMargins   -> { { 4, 3 }, { 3, 3 } },
-        ContentPadding -> False,
-        BaseStyle      -> "Text"
+        Background -> background,
+        $frameOptions
     ],
     ShowStringCharacters -> False,
     Selectable           -> False
@@ -543,16 +536,12 @@ staticFunctionBoxLabel[ { name_, args___ }, background_ ] :=
                     }
                 },
                 Dividers   -> { { False, { True }, False }, False },
-                FrameStyle -> RGBColor[ "#ff6a00" ],
-                Spacings   -> 0.65,
+                FrameStyle -> RGBColor[ "#a3c9f2" ],
+                Spacings   -> 0.5,
                 Alignment  -> { Automatic, Baseline }
             ],
-            Background     -> background,
-            RoundingRadius -> 4,
-            FrameStyle     -> RGBColor[ "#ff6a00" ],
-            FrameMargins   -> { { 4, 3 }, { 3, 3 } },
-            ContentPadding -> False,
-            BaseStyle      -> "Text"
+            Background -> background,
+            $frameOptions
         ],
         ShowStringCharacters -> False,
         Selectable           -> False
@@ -563,9 +552,9 @@ staticFunctionBoxLabel // endDefinition;
 
 styleFunctionArgument // beginDefinition;
 
-styleFunctionArgument[ ">" ] := specArg[ "\[ThinSpace]>\[ThinSpace]" ];
-styleFunctionArgument[ "^" ] := specArg[ Rotate[ "\[ThinSpace]>", Pi/2 ] ];
-styleFunctionArgument[ "^^" ] := specArg[ Rotate[ "\[ThinSpace]\[GreaterGreater]", Pi/2 ], FontSize -> 0.85*Inherited ];
+styleFunctionArgument[ ">" ] := RawBoxes @ TemplateBox[ { }, "InlineReferenceIconRight" ];
+styleFunctionArgument[ "^" ] := RawBoxes @ TemplateBox[ { }, "InlineReferenceIconPrevious" ];
+styleFunctionArgument[ "^^" ] := RawBoxes @ TemplateBox[ { }, "InlineReferenceIconHistory" ];
 
 styleFunctionArgument[ $argumentDivider ] :=
     Style[ " " <> $argumentDivider <> " ", FontColor -> GrayLevel[ 0.6 ], FontWeight -> "DemiBold" ];
@@ -655,10 +644,7 @@ trailingFunctionInputBox[ args_List, uuid_ ] := DynamicModule[ { string = String
                     Spacings  -> 0,
                     Alignment -> { Automatic, Baseline }
                 ],
-                RoundingRadius -> 4,
-                FrameStyle     -> RGBColor[ "#a3c9f2" ],
-                FrameMargins   -> { { 4, 3 }, { 3, 3 } },
-                ContentPadding -> False
+                $frameOptions
             ],
             "Text",
             ShowStringCharacters -> False
@@ -744,12 +730,8 @@ staticTrailingFunctionBoxLabel[ { name_, args___ }, background_ ] := Style[
                 Style[ "\[ThinSpace]:\[ThinSpace]", FontColor -> GrayLevel[ 0.6 ], FontWeight -> "DemiBold" ]
             ]
         },
-        Background     -> background,
-        RoundingRadius -> 4,
-        FrameStyle     -> RGBColor[ "#a3c9f2" ],
-        FrameMargins   -> { { 4, 3 }, { 3, 3 } },
-        ContentPadding -> False,
-        BaseStyle      -> "Text"
+        Background -> background,
+        $frameOptions
     ],
     ShowStringCharacters -> False,
     Selectable           -> False
@@ -875,10 +857,7 @@ personaInputBox[ name_String, uuid_ ] := DynamicModule[ { string = name, cell },
                     Spacings  -> 0,
                     Alignment -> { Automatic, Baseline }
                 ],
-                RoundingRadius -> 4,
-                FrameStyle     -> RGBColor[ "#a3c9f2" ],
-                FrameMargins   -> { { 4, 3 }, { 3, 3 } },
-                ContentPadding -> False
+                $frameOptions
             ],
             "Text",
             ShowStringCharacters -> False
@@ -980,13 +959,9 @@ staticPersonaBoxLabel // beginDefinition;
 
 staticPersonaBoxLabel[ name_String, background_ ] := Style[
     Framed[
-        "@" <> name,
-        Background     -> background,
-        RoundingRadius -> 4,
-        FrameStyle     -> RGBColor[ "#a3c9f2" ],
-        FrameMargins   -> { { 4, 3 }, { 3, 3 } },
-        ContentPadding -> False,
-        BaseStyle      -> "Text"
+        Row @ { RawBoxes @ TemplateBox[ { }, "InlineReferenceIconAt" ], name },
+        Background -> background,
+        $frameOptions
     ],
     ShowStringCharacters -> False,
     Selectable           -> False
