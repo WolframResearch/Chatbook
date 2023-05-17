@@ -663,6 +663,7 @@ sendChat // beginDefinition;
 sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclose[
     Module[ { cells0, cells, target, settings, id, key, req, data, persona, cell, cellObject, container, task },
 
+        resolveInlineReferences @ evalCell;
         cells0 = ConfirmMatch[ selectChatCells[ settings0, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
 
         { cells, target } = ConfirmMatch[
@@ -1143,13 +1144,13 @@ errorBoxes // ClearAll;
 
 (* TODO: define error messages for other documented responses *)
 errorBoxes[ as: KeyValuePattern[ "StatusCode" -> 429 ] ] :=
-    ToBoxes @ messageFailure[ ChatbookAction::RateLimitReached, as ];
+    ToBoxes @ messageFailure[ "RateLimitReached", as ];
 
 errorBoxes[ as: KeyValuePattern[ "StatusCode" -> code: Except[ 200 ] ] ] :=
-    ToBoxes @ messageFailure[ ChatbookAction::UnknownStatusCode, as ];
+    ToBoxes @ messageFailure[ "UnknownStatusCode", as ];
 
 errorBoxes[ as_ ] :=
-    ToBoxes @ messageFailure[ ChatbookAction::UnknownResponse, as ];
+    ToBoxes @ messageFailure[ "UnknownResponse", as ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1175,7 +1176,6 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages0: { __Association 
         $lastMessages = messages;
 
         key         = ConfirmBy[ Lookup[ settings, "OpenAIKey" ], StringQ ];
-        (* stream      = ! TrueQ @ CloudSystem`$CloudNotebooks; *)
         stream      = True;
 
         (* model parameters *)
