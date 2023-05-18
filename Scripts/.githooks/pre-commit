@@ -1,0 +1,17 @@
+#!/bin/bash
+set -e
+
+changed="$(git --no-pager diff --name-status --no-color --cached | awk '$1 != "D" && $2 ~ /\.(nb|wlt)/ { print $2}')"
+
+echo "Changed files:"
+echo "$changed"
+
+if [ "$changed" != "" ]; then
+    wolframscript -f Scripts/FormatFiles.wls --files="$changed"
+
+    for sourceFilePath in $changed
+    do
+    git add $sourceFilePath
+    done;
+
+fi

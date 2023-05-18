@@ -28,7 +28,18 @@ Once[
 				)],
 				FrontEnd`MenuEvaluator -> Automatic
 			]
-		}]
+		}](* FIXME: figure out how to make this work:
+		FrontEnd`AddMenuCommands["Paclet Repository Item", {
+			MenuItem[
+				"Prompt Repository Item",
+				FrontEnd`KernelExecute[{
+					Needs["ResourceSystemClient`" -> None];
+					ResourceSystemClient`CreateResourceNotebook["Prompt", "SuppressProgressBar" -> True]
+				}],
+				MenuEvaluator -> Automatic,
+				Method -> "Queued"
+			]
+		}]*)
 	}],
     "FrontEndSession"
 ]
@@ -37,20 +48,22 @@ Once[
 (* Add CreateNotebook["Chat"] *)
 (*----------------------------*)
 
-PrependTo[
-    DownValues @ System`FEDump`createNotebook,
-    HoldPattern[ System`FEDump`createNotebook[ "ChatEnabled", { System`FEDump`opts___ } ] ] :> (
-        Needs[ "Wolfram`Chatbook`" -> None ];
-        Wolfram`Chatbook`CreateChatNotebook[ System`FEDump`opts ]
-    )
-]
-
-PrependTo[
-    DownValues @ System`FEDump`createNotebook,
-    HoldPattern[ System`FEDump`createNotebook[ "ChatDriven", { System`FEDump`opts___ } ] ] :> (
-        Needs[ "Wolfram`Chatbook`" -> None ];
-        Wolfram`Chatbook`CreateChatDrivenNotebook[ System`FEDump`opts ]
-    )
+Scan[
+	PrependTo[ DownValues @ System`FEDump`createNotebook, # ] &,
+	{
+		HoldPattern[ System`FEDump`createNotebook[ "ChatEnabled", { System`FEDump`opts___ } ] ] :> (
+			Needs[ "Wolfram`Chatbook`" -> None ];
+			Wolfram`Chatbook`CreateChatNotebook[ System`FEDump`opts ]
+		),
+		HoldPattern[ System`FEDump`createNotebook[ "ChatDriven", { System`FEDump`opts___ } ] ] :> (
+			Needs[ "Wolfram`Chatbook`" -> None ];
+			Wolfram`Chatbook`CreateChatDrivenNotebook[ System`FEDump`opts ]
+		),
+		HoldPattern[ System`FEDump`createNotebook[ "PromptResource", { System`FEDump`opts___ } ] ] :> (
+			Needs[ "ResourceSystemClient`" -> None ];
+			ResourceSystemClient`CreateResourceNotebook[ "Prompt", "SuppressProgressBar" -> True ]
+		)
+	}
 ]
 
 (*--------------------------------------------*)
