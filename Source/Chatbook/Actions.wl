@@ -2412,8 +2412,8 @@ makeActiveOutputDingbat[ as_, _Association|_Missing|_Failure|None ] :=
 
 makeActiveOutputDingbat[ as_, icon_ ] :=
     If[ TrueQ @ $noActiveProgress,
-        TemplateBox[ { toDingbatBoxes @ icon }, "ChatOutputStopButtonWrapper" ],
-        TemplateBox[ { toDingbatBoxes @ icon }, "ChatOutputStopButtonProgressWrapper" ]
+        TemplateBox[ { toDingbatBoxes @ resizeDingbat @ icon }, "ChatOutputStopButtonWrapper" ],
+        TemplateBox[ { toDingbatBoxes @ resizeDingbat @ icon }, "ChatOutputStopButtonProgressWrapper" ]
     ];
 
 makeActiveOutputDingbat // endDefinition;
@@ -2443,6 +2443,8 @@ resizeDingbat[ icon_ ] /; $resizeDingbats := Pane[
 resizeDingbat[ icon_ ] := icon;
 
 resizeDingbat // endDefinition;
+
+$resizeDingbats = True;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
