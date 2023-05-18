@@ -12,6 +12,7 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `cellStyles;
 `currentChatSettings;
 `notebookRead;
+`parentCell;
 `parentNotebook;
 `toCompressedBoxes;
 `topParentCell;
@@ -78,6 +79,14 @@ cellInformation[ cell_CellObject ] := Association[
 ];
 
 cellInformation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*parentCell*)
+parentCell // beginDefinition;
+parentCell[ cell_CellObject ] /; CloudSystem`$CloudNotebooks := cell;
+parentCell[ cell_CellObject ] := cell;
+parentCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
