@@ -44,6 +44,8 @@ $lastInlineReferenceCell = None;
 (*resolveInlineReferences*)
 resolveInlineReferences // beginDefinition;
 
+resolveInlineReferences[ _ ] /; CloudSystem`$CloudNotebooks := Null;
+
 resolveInlineReferences[ cell_CellObject ] := (
     resolveLastInlineReference[ ];
     resolveInlineReferences[
