@@ -16,11 +16,14 @@ CreateErrorType[ChatbookError, {}]
 
 SetFallthroughError[ChatbookWarning]
 
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 ChatbookWarning[formatStr_?StringQ, args___] :=
 	Print[
 		Style["warning: ", Darker[Yellow]],
 		ToString @ StringForm[formatStr, args]
 	]
+(* :!CodeAnalysis::EndBlock:: *)
 
 End[]
 
