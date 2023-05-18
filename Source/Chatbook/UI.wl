@@ -16,6 +16,7 @@ GetChatEnvironmentValues
 GetAllCellsInChatContext
 ChatContextEpilogFunction
 
+MakeChatInputActiveCellDingbat
 MakeChatInputCellDingbat
 GetChatInputLLMConfigurationSelectorMenuData
 
@@ -1296,7 +1297,25 @@ chatHTTPRequest[
 
 (*========================================================*)
 
-MakeChatInputCellDingbat[] := With[{}, Module[{
+$dynamicMenuLabel := DynamicModule[ { cell },
+	Dynamic @ With[{
+		menuData = GetChatInputLLMConfigurationSelectorMenuData[],
+		personaValue = currentValueOrigin[cell, {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}]
+	},
+		FirstCase[
+			menuData["Personas"],
+			{personaValue[[2]], icon_, _} :> icon,
+			Style[getIcon["PersonaUnknown"], GrayLevel[0.5]]
+		]
+	],
+	Initialization :> (
+		Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+		cell = ParentCell @ EvaluationCell[ ]
+	),
+	UnsavedVariables :> {cell}
+]
+
+MakeChatInputActiveCellDingbat[] := Module[{
 	menuLabel,
 	button
 },
@@ -1304,34 +1323,21 @@ MakeChatInputCellDingbat[] := With[{}, Module[{
 	(* Construct the action menu display label *)
 	(*-----------------------------------------*)
 
-	menuLabel = Dynamic @ With[{
-		menuData = GetChatInputLLMConfigurationSelectorMenuData[],
-		personaValue = currentValueOrigin[
-			ParentCell[EvaluationCell[]],
-			{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
-		]
-	},
-		FirstCase[
-			menuData["Personas"],
-			{personaValue[[2]], icon_, _} :> icon,
-			Style[getIcon["PersonaUnknown"], GrayLevel[0.5]]
-		]
-	];
+	menuLabel = $dynamicMenuLabel;
 
 	button = Button[
 		Framed[
-			menuLabel,
-			RoundingRadius -> 3,
-			FrameMargins -> 2,
-			ImageMargins -> {{0, 3}, {0, 0}},
-			FrameStyle -> Directive[
-				GrayLevel[0.856863],
-				AbsoluteThickness[1]
+			Pane[menuLabel, Alignment -> {Center, Center}, ImageSize -> {25, 25}, ImageSizeAction -> "ShrinkToFit"],
+			RoundingRadius -> 2,
+			FrameStyle -> Dynamic[
+				If[CurrentValue["MouseOver"], GrayLevel[0.74902], GrayLevel[0.819608]]
 			],
 			Background -> Dynamic[
-				If[CurrentValue["MouseOver"], GrayLevel[0.8], GrayLevel[1]]
+				If[CurrentValue["MouseOver"], GrayLevel[0.960784], GrayLevel[1]]
 			],
-			FrameMargins -> 0
+			FrameMargins -> 0,
+			ImageMargins -> 0,
+			ContentPadding -> False
 		],
 		(
 			AttachCell[
@@ -1343,12 +1349,19 @@ MakeChatInputCellDingbat[] := With[{}, Module[{
 				RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
 			];
 		),
-		Appearance -> $suppressButtonAppearance
+		Appearance -> $suppressButtonAppearance,
+		ImageMargins -> 0,
+		FrameMargins -> 0,
+		ContentPadding -> False
 	];
 
+	button
+];
+
+MakeChatInputCellDingbat[] :=
 	PaneSelector[
 		{
-			True -> button,
+			True -> MakeChatInputActiveCellDingbat[],
 			False -> Framed[
 				RawBoxes @ TemplateBox[{}, "RoleUser"],
 				RoundingRadius -> 3,
@@ -1361,7 +1374,6 @@ MakeChatInputCellDingbat[] := With[{}, Module[{
 		Dynamic[CurrentValue["MouseOver"]],
 		ImageSize -> All
 	]
-]]
 
 (*====================================*)
 
@@ -1381,6 +1393,7 @@ openChatInputActionMenu[dingbatCellObj_CellObject] := With[{
 				{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
 			] = value;
 			NotebookDelete[Cells[dingbatCellObj, AttachedCell->True]];
+			SetOptions[chatInputCellObj, CellDingbat -> Inherited];
 		),
 		"Model" :> (
 			CurrentValue[

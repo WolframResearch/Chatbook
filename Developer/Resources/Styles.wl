@@ -80,7 +80,7 @@ Cell[
     StyleData[ "ChatInput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
     CellFrameColor    -> RGBColor[ "#a3c9f2" ],
     CellGroupingRules -> "InputGrouping",
-    CellMargins       -> { { 66, 25 }, { 5, 8 } },
+    CellMargins       -> { { 66, 25 }, { 1, 8 } },
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterIncrements -> { "ChatInputCount" },
     Evaluatable       -> True,
@@ -91,9 +91,10 @@ Cell[
 			TemplateBox[{}, "ChatCounterLabel"],
 			ToBoxes @ $chatInputCellDingbat
 		}], *)
-        BoxData @ ToBoxes @ $chatInputCellDingbat,
+        BoxData @ TemplateBox[ { }, "ChatInputActiveCellDingbat" ],
 		Background -> None,
-		CellFrame -> 0
+		CellFrame -> 0,
+        CellMargins -> 0
 	],
     CellEvaluationFunction -> Function @ With[ { $CellContext`cell = EvaluationCell[ ] },
         Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
@@ -119,6 +120,26 @@ Cell[
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
             Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "TrailingFunction", $CellContext`cell ]
         ] *)
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*ChatInputActiveCellDingbat*)
+Cell[
+    StyleData[ "ChatInputActiveCellDingbat" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $chatInputActiveCellDingbat
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*ChatInputCellDingbat*)
+Cell[
+    StyleData[ "ChatInputCellDingbat" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $chatInputCellDingbat
     }
 ]
 

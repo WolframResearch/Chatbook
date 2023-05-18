@@ -203,7 +203,7 @@ EvaluateChatInput // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*chatInputCellQ*)
-chatInputCellQ[ cell_CellObject ] := chatInputCellQ[ cell, Developer`CellInformation @ cell ];
+chatInputCellQ[ cell_CellObject ] := chatInputCellQ[ cell ] = chatInputCellQ[ cell, Developer`CellInformation @ cell ];
 chatInputCellQ[ cell_, KeyValuePattern[ "Style" -> $$chatInputStyle ] ] := True;
 chatInputCellQ[ cell_CellObject, ___ ] := ($badCellObject = cell; $badCell = NotebookRead @ cell; False);
 chatInputCellQ[ ___ ] := False;
@@ -730,6 +730,13 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
 
         $resultCellCache = <| |>;
         $debugLog = Internal`Bag[ ];
+
+        If[ chatInputCellQ @ evalCell,
+            SetOptions[
+                evalCell,
+                CellDingbat -> Cell[ BoxData @ TemplateBox[ { }, "ChatInputCellDingbat" ], Background -> None ]
+            ]
+        ];
 
         cellObject = $lastCellObject = ConfirmMatch[
             createNewChatOutput[ settings, target, cell ],
