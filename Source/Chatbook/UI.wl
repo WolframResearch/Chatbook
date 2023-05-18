@@ -1,5 +1,9 @@
 (* ::Package:: *)
 
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::NoVariables::Module:: *)
+(* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
+
 BeginPackage["Wolfram`Chatbook`UI`"]
 
 (* Avoiding context aliasing due to bug 434990: *)
@@ -300,10 +304,10 @@ doSyncChatRequest[
 
 SetFallthroughError[ChatExplainButtonFunction]
 
-ChatExplainButtonFunction[cellobj_] := Module[{},
-	NotebookDelete[Cells[cellobj, AttachedCell -> True]];
+ChatExplainButtonFunction[cellObj_] := Module[{},
+	NotebookDelete[Cells[cellObj, AttachedCell -> True]];
 	AttachCell[
-		cellobj,
+		cellObj,
 		Cell[
 			BoxData[{
 				GridBox[{{
@@ -318,7 +322,7 @@ If there are no syntax errors do not state that fact."|>,
 								<|
 									"role" -> "user",
 									"content" -> StringJoin[
-										NotebookImport[Notebook[{NotebookRead[cellobj]}], _ -> "InputText"]
+										NotebookImport[Notebook[{NotebookRead[cellObj]}], _ -> "InputText"]
 									]
 								|>
 							}, 500, 0.7, False]
@@ -347,7 +351,7 @@ If there are no syntax errors do not state that fact."|>,
 SetFallthroughError[OnePromptTableEditor]
 
 OnePromptTableEditor[
-	cellobj_,
+	cellObj_,
 	tag_,
    Dynamic[tableContents_]
 ] :=
@@ -397,43 +401,43 @@ OnePromptTableEditor[
 
 SetFallthroughError[EditChatContextSettings]
 
-EditChatContextSettings[cellobj_] := Module[{
+EditChatContextSettings[cellObj_] := Module[{
 	cell
 },
-	If[Cells[cellobj, AttachedCell -> True] =!= {},
-		NotebookDelete[Cells[cellobj, AttachedCell -> True]];
+	If[Cells[cellObj, AttachedCell -> True] =!= {},
+		NotebookDelete[Cells[cellObj, AttachedCell -> True]];
 		Return[]
 	];
 
 	cell = Cell[
 		BoxData @ DynamicModuleBox[{
 			$CellContext`tableContentsPreprompt$$ =
-				If[ListQ[CurrentValue[cellobj, {TaggingRules, "ChatContextPreprompt"}]],
+				If[ListQ[CurrentValue[cellObj, {TaggingRules, "ChatContextPreprompt"}]],
 					Map[
 						{#["role"], #["content"]} &,
-						CurrentValue[cellobj, {TaggingRules, "ChatContextPreprompt"}]
+						CurrentValue[cellObj, {TaggingRules, "ChatContextPreprompt"}]
 					]
 					,
 					{}
 				],
 			$CellContext`tableContentsPostprompt$$ =
-				If[ListQ[CurrentValue[cellobj, {TaggingRules, "ChatContextPostprompt"}]],
+				If[ListQ[CurrentValue[cellObj, {TaggingRules, "ChatContextPostprompt"}]],
 					Map[
 						{#["role"], #["content"]} &,
-						CurrentValue[cellobj, {TaggingRules, "ChatContextPostprompt"}]
+						CurrentValue[cellObj, {TaggingRules, "ChatContextPostprompt"}]
 					]
 					,
 					{}
 				],
 
 			$CellContext`tableContentsActAsDelimiter$$ =
-				CurrentValue[cellobj, {TaggingRules, "ChatContextDelimiter"}] =!= False,
+				CurrentValue[cellObj, {TaggingRules, "ChatContextDelimiter"}] =!= False,
 
 			$CellContext`tableContentsChatContextCellProcessingFunction$$ =
-				(CurrentValue[cellobj, {TaggingRules, "ChatContextCellProcessingFunction"}] /. Inherited -> Automatic),
+				(CurrentValue[cellObj, {TaggingRules, "ChatContextCellProcessingFunction"}] /. Inherited -> Automatic),
 
 			$CellContext`tableContentsChatContextPostEvaluationFunction$$ =
-				(CurrentValue[cellobj, {TaggingRules, "ChatContextPostEvaluationFunction"}] /. Inherited -> Automatic)
+				(CurrentValue[cellObj, {TaggingRules, "ChatContextPostEvaluationFunction"}] /. Inherited -> Automatic)
 		},
 			Evaluate @ StyleBox[
 				FrameBox[
@@ -449,7 +453,7 @@ EditChatContextSettings[cellobj_] := Module[{
 							{StyleBox["ChatContextPreprompt", FontSize->12]},
 							{
 								OnePromptTableEditor[
-									cellobj,
+									cellObj,
 									"ChatContextPreprompt",
 									Dynamic[$CellContext`tableContentsPreprompt$$]
 								]
@@ -458,7 +462,7 @@ EditChatContextSettings[cellobj_] := Module[{
 							{StyleBox["ChatContextPostprompt", FontSize->12]},
 							{
 								OnePromptTableEditor[
-									cellobj,
+									cellObj,
 									"ChatContextPostprompt",
 									Dynamic[$CellContext`tableContentsPostprompt$$]
 								]
@@ -483,12 +487,12 @@ EditChatContextSettings[cellobj_] := Module[{
 											Appearance -> None,
 											ButtonFunction :> (
 												CurrentValue[
-													cellobj,
+													cellObj,
 													{TaggingRules, "ChatContextDelimiter"}
 												] = $CellContext`tableContentsActAsDelimiter$$;
 
 												CurrentValue[
-													cellobj,
+													cellObj,
 													{"TaggingRules", "ChatContextPreprompt"}
 												] = Map[
 													<|"role" -> #[[1]], "content" -> #[[2]]|> &,
@@ -496,7 +500,7 @@ EditChatContextSettings[cellobj_] := Module[{
 												];
 
 												CurrentValue[
-													cellobj,
+													cellObj,
 													{"TaggingRules", "ChatContextPostprompt"}
 												] = Map[
 													<|"role" -> #[[1]], "content" -> #[[2]]|> &,
@@ -504,7 +508,7 @@ EditChatContextSettings[cellobj_] := Module[{
 												];
 
 												CurrentValue[
-													cellobj,
+													cellObj,
 													{TaggingRules, "ChatContextCellProcessingFunction"}
 												] = $CellContext`tableContentsChatContextCellProcessingFunction$$;
 
@@ -512,19 +516,19 @@ EditChatContextSettings[cellobj_] := Module[{
 												the option that causes it to be used as the CellEpilog of all cells within the group
 												this cell is the head of. *)
 												CurrentValue[
-													cellobj,
+													cellObj,
 													{TaggingRules, "ChatContextPostEvaluationFunction"}
 												] = $CellContext`tableContentsChatContextPostEvaluationFunction$$;
 
 												$CellContext`tableContentsChatContextPostEvaluationFunction$$ /. Hold[e_] :>
 													SetOptions[
-														cellobj,
+														cellObj,
 														PrivateCellOptions->{"CellGroupBaseStyle" -> {
 															CellEpilog :> Wolfram`Chatbook`UI`ChatContextEpilogFunction[e]}
 														}
 													];
 
-												NotebookDelete[Cells[cellobj, AttachedCell -> True]];
+												NotebookDelete[Cells[cellObj, AttachedCell -> True]];
 											)
 										],
 										ButtonBox[
@@ -532,7 +536,7 @@ EditChatContextSettings[cellobj_] := Module[{
 											Evaluator -> Automatic,
 											Appearance -> None,
 											ButtonFunction :> (
-												NotebookDelete[Cells[cellobj, AttachedCell -> True]]
+												NotebookDelete[Cells[cellObj, AttachedCell -> True]]
 											)
 										]
 									}],
@@ -557,14 +561,14 @@ EditChatContextSettings[cellobj_] := Module[{
 		TextAlignment -> Left
 	];
 
-	AttachCell[cellobj, cell, "Inline"];
+	AttachCell[cellObj, cell, "Inline"];
 ];
 
-EditChatSettingsForCell[cellobj_] := Module[{
+EditChatSettingsForCell[cellObj_] := Module[{
 		cell
 	},
-	If[Cells[cellobj, AttachedCell -> True] =!= {},
-		NotebookDelete[Cells[cellobj, AttachedCell -> True]];
+	If[Cells[cellObj, AttachedCell -> True] =!= {},
+		NotebookDelete[Cells[cellObj, AttachedCell -> True]];
 		Return[]
 	];
 
@@ -631,7 +635,7 @@ EditChatSettingsForCell[cellobj_] := Module[{
 		TextAlignment -> Center
 	];
 
-	AttachCell[cellobj, cell, Top];
+	AttachCell[cellObj, cell, Top];
 ];
 
 (*====================================*)
@@ -726,7 +730,7 @@ doAsyncChatRequest[
 			"TaskFinished" -> Function[args,
 				(* FIXME: Store the response body in this error as well.
 					This is currently non-trivial due to a bug in URLSubmit:
-					if you use BodyChunkRecieved, you can't access the "Body"
+					if you use BodyChunkReceived, you can't access the "Body"
 					field to get the entire response. *)
 				ConfirmReplace[args["StatusCode"], {
 					200 :> Null,
@@ -765,11 +769,11 @@ SetFallthroughError[handleStreamEvent]
 
 handleStreamEvent[
 	$state_Symbol,
-	ssevent_?AssociationQ
+	ssEvent_?AssociationQ
 ] := Module[{
 	data
 },
-	data = Replace[ssevent, {
+	data = Replace[ssEvent, {
 		<| "Data" -> "[DONE]" |> :> Return[Null, Module],
 		<| "Data" -> json_?StringQ |> :> Developer`ReadRawJSONString[json],
 		other_ :> Raise[
@@ -783,7 +787,7 @@ handleStreamEvent[
 		(*
 			We don't have enough buffered data to know if we should
 			start or end a code block or not. Do nothing until we
-			recieve more input.
+			receive more input.
 		*)
 		Missing["IncompleteData"] :> Return[Null, Module],
 		e_?ListQ :> e
@@ -836,12 +840,12 @@ writeContent[$state_Symbol, content_?StringQ] := Module[{},
 	}];
 
 	With[{
-		currCellObj = $state["CurrentCell"]["Object"]
+		currentCellObj = $state["CurrentCell"]["Object"]
 	},
-		RaiseConfirmMatch[currCellObj, _CellObject];
-		RaiseAssert[Experimental`CellExistsQ[currCellObj]];
+		RaiseConfirmMatch[currentCellObj, _CellObject];
+		RaiseAssert[Experimental`CellExistsQ[currentCellObj]];
 
-		SelectionMove[currCellObj, After, CellContents];
+		SelectionMove[currentCellObj, After, CellContents];
 
 		WithCleanup[
 			(* NOTE:
@@ -852,14 +856,14 @@ writeContent[$state_Symbol, content_?StringQ] := Module[{},
 				desired behavior when a user manually edits a code cell
 				generated by the AI).
 			*)
-			SetOptions[currCellObj, CellEditDuplicate -> False]
+			SetOptions[currentCellObj, CellEditDuplicate -> False]
 			,
 			NotebookWrite[
-				RaiseConfirm @ ParentNotebook[currCellObj],
+				RaiseConfirm @ ParentNotebook[currentCellObj],
 				content
 			];
 			,
-			SetOptions[currCellObj, CellEditDuplicate -> Inherited]
+			SetOptions[currentCellObj, CellEditDuplicate -> Inherited]
 		];
 	];
 ]
@@ -928,8 +932,8 @@ precedingCellsInGroup[] := Module[{
 
 SetFallthroughError[cellIsChatDelimiter]
 
-cellIsChatDelimiter[cellobj_CellObject] :=
-	TrueQ[FullOptions[cellobj, TaggingRules]["ChatContextDelimiter"]];
+cellIsChatDelimiter[cellObj_CellObject] :=
+	TrueQ[FullOptions[cellObj, TaggingRules]["ChatContextDelimiter"]];
 
 (*------------------------------------*)
 
@@ -1080,13 +1084,13 @@ The FE also does something special if it encounters a cell group. But we're not
 going to bother with that for now.
 *)
 
-previousOutputs[cellobj_CellObject] :=
+previousOutputs[cellObj_CellObject] :=
 	Module[{
-		nbobj = ParentNotebook[cellobj],
+		nbObj = ParentNotebook[cellObj],
 		cells, objs = {}
 	},
-		If[Not @ TrueQ @ AbsoluteCurrentValue[nbobj, OutputAutoOverwrite], Return[{}]];
-		cells = NextCell[cellobj, All];
+		If[Not @ TrueQ @ AbsoluteCurrentValue[nbObj, OutputAutoOverwrite], Return[{}]];
+		cells = NextCell[cellObj, All];
 		If[!MatchQ[cells, {__CellObject}], Return[{}]];
 		Do[
 			If[
@@ -1098,16 +1102,16 @@ previousOutputs[cellobj_CellObject] :=
 	]
 
 
-deletePreviousOutputs[cellobj_CellObject] :=
-	Replace[previousOutputs[cellobj], {
+deletePreviousOutputs[cellObj_CellObject] :=
+	Replace[previousOutputs[cellObj], {
 		cells: {__CellObject} :> NotebookDelete[cells],
 		_ :> None
 	}]
 
-moveAfterPreviousOutputs[cellobj_CellObject] :=
-	Replace[previousOutputs[cellobj], {
-		{___, lastcell_CellObject} :> SelectionMove[lastcell, After, Cell],
-		_ :> SelectionMove[cellobj, After, Cell]
+moveAfterPreviousOutputs[cellObj_CellObject] :=
+	Replace[previousOutputs[cellObj], {
+		{___, lastCell_CellObject} :> SelectionMove[lastCell, After, Cell],
+		_ :> SelectionMove[cellObj, After, Cell]
 	}]
 
 
@@ -1123,12 +1127,9 @@ processResponse[response_?StringQ] := Module[{
 },
 	Scan[
 		Replace[{
-			s_?StringQ
-				:> CellPrint @ Cell[StringTrim[s], "ChatAssistantText"],
-			Code[s_?StringQ]
-				:> CellPrint[makeCodeBlockCell[s, None]],
-			Code[s_?StringQ, lang_?StringQ]
-				:> CellPrint[makeCodeBlockCell[s, lang]],
+			s_?StringQ :> CellPrint @ Cell[StringTrim[s], "ChatAssistantText"],
+			Code[s_?StringQ] :> CellPrint[makeCodeBlockCell[s, None]],
+			Code[s_?StringQ, lang_?StringQ] :> CellPrint[makeCodeBlockCell[s, lang]],
 			other_ :> Throw[{"Unexpected parsed form: ", InputForm[other]}]
 		}],
 		parsed
@@ -1159,8 +1160,7 @@ parseResponse[response_?StringQ] := Module[{
 },
 	parsed = StringSplit[response, {
 		code : (
-			StartOfLine ~~ "```" ~~ (lang : LetterCharacter ...) ~~ Shortest[___]
-			~~ StartOfLine ~~ "```" ~~ EndOfLine
+			StartOfLine ~~ "```" ~~ (lang : LetterCharacter ...) ~~ Shortest[___] ~~ StartOfLine ~~ "```" ~~ EndOfLine
 		) :> Replace[lang, {
 				"" :> Code[trimCodeBlock[code]],
 				other_ :> Code[trimCodeBlock[code], lang]
@@ -1792,3 +1792,5 @@ getPersonaMenuIcon[ icon_ ] := Pane[
 End[]
 
 EndPackage[]
+
+(* :!CodeAnalysis::EndBlock:: *)

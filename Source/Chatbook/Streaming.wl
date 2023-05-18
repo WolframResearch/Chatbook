@@ -45,18 +45,20 @@ CreateChatEventToOutputEventGenerator[] := Module[{
 		{args}
 	];
 
-	Function[ssevent, handleChatEvent[$state, ssevent]]
+	Function[ssEvent, handleChatEvent[$state, ssEvent]]
 ]
 
 (*------------------------------------*)
 
 SetFallthroughError[handleChatEvent]
 
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::LeakedVariable:: *)
 handleChatEvent[
 	$state_Symbol,
-	ssevent_?AssociationQ
+	ssEvent_?AssociationQ
 ] := Module[{
-	data = ssevent,
+	data = ssEvent,
 	outputEvents = {}
 },
 	RaiseAssert[
@@ -137,16 +139,22 @@ handleChatEvent[
 				(*
 					We don't have enough buffered data to know if we should
 					start or end a code block or not. Break out of the buffer
-					processing loop until we recieve more input.
+					processing loop until we receive more input.
 				*)
 				Break[];
 			),
 			(*--------------------------------------------------*)
 			(* Recognize a ``` that starts or ends a code block *)
 			(*--------------------------------------------------*)
-			StartOfString
-			~~ RepeatedNull["\n", 1] ~~ "```" ~~ spec:RepeatedNull[Except["`" | "\n"]]
-			~~ RepeatedNull["\n", 1] ~~ rest___ ~~ EndOfString :> (
+			StringExpression[
+				StartOfString,
+				RepeatedNull["\n", 1],
+				"```",
+				spec:RepeatedNull[Except["`" | "\n"]],
+				RepeatedNull["\n", 1],
+				rest___,
+				EndOfString
+			] :> (
 				ConfirmReplace[$state["CurrentOutputType"], {
 					(* If we haven't written any cell yet, then this ``` must
 						be the first thing sent from the LLM, so make the
@@ -166,7 +174,7 @@ handleChatEvent[
 					"Code" :> (
 						(* FIXME: This can fail if ChatGPT generates
 							syntactically invalid Markdown output, which doesn't
-							seem inconveivable. Maybe fail more gracefully if
+							seem inconceivable. Maybe fail more gracefully if
 							that happens? *)
 						RaiseAssert[spec === ""];
 
@@ -192,6 +200,7 @@ handleChatEvent[
 		outputEvents
 	]
 ]
+(* :!CodeAnalysis::EndBlock:: *)
 
 (*========================================================*)
 

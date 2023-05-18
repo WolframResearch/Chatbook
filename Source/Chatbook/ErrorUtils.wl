@@ -8,6 +8,11 @@
 	another file.
 *)
 
+(* cSpell: ignore rebranding, downvalue, assertfail, applyable *)
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::NoVariables::Module:: *)
+
 BeginPackage["Wolfram`Chatbook`ErrorUtils`"]
 
 (* Avoiding context aliasing due to bug 434990: *)
@@ -568,7 +573,7 @@ SetFallthroughError[WrapRaised]
 $AdviceListeners = <||>
 
 Apprise[advice: Advice[adviceTags0: _?TagsQ, meta: _?AssociationQ]] := Module[{
-	adviceTags = Replace[adviceTags0, tag_?TagQ -> {tag}]
+	adviceTags = Replace[adviceTags0, tag_?TagQ :> {tag}]
 },
 	Scan[
 		{rule} |-> Module[{
@@ -586,7 +591,7 @@ Apprise[advice: Advice[adviceTags0: _?TagsQ, meta: _?AssociationQ]] := Module[{
 ]
 
 RegisterAdviceListener[tags0: _?TagsQ, listenerFunction: _] := Module[{
-	tags = Replace[tags0, tag_?TagQ -> {tag}]
+	tags = Replace[tags0, tag_?TagQ :> {tag}]
 },
 	$AdviceListeners[tags] = Append[
 		Lookup[$AdviceListeners, Key[tags], {}],
@@ -614,7 +619,7 @@ ExpandTag[tag0_?TagQ] := Module[{
 		),
 		(* Start with tag0 *)
 		{tag0},
-		(* FIXME: Better limitting behavior. *)
+		(* FIXME: Better limiting behavior. *)
 		5
 	];
 
@@ -663,3 +668,5 @@ CreateErrorType[ConfirmMatchError, {}]
 End[]
 
 EndPackage[]
+
+(* :!CodeAnalysis::EndBlock:: *)
