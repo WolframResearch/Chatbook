@@ -969,14 +969,12 @@ writeStaticPersonaBox[ cell_CellObject, name_String ] /; MemberQ[ $personaNames,
             Background -> None,
             Selectable -> False,
             Initialization :> With[ { parent = ParentCell @ EvaluationCell[ ] },
-                CurrentValue[
-                    parent,
-                    { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }
-                ] = name;
-                SetOptions[ parent, CellDingbat -> Inherited ]
+                CurrentValue[ parent, CellDingbat ] = Inherited;
+                CurrentValue[ parent, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = name;
             ]
         ]
-    ],
+    ]
+    ,
     throwInternalFailure[ writeStaticPersonaBox[ cell, name ], ## ] &
 ];
 

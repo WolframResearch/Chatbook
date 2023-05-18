@@ -798,94 +798,12 @@ Notebook[
    ],
    CellDingbat ->
     Cell[
-     BoxData[
-      PaneSelectorBox[
-       {
-        True ->
-         ButtonBox[
-          FrameBox[
-           DynamicBox[
-            ToBoxes[
-             With[
-              {
-               Wolfram`Chatbook`UI`Private`menuData = 
-                Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
-
-                ],
-               Wolfram`Chatbook`UI`Private`personaValue = 
-                Wolfram`Chatbook`UI`Private`currentValueOrigin[
-                 ParentCell[EvaluationCell[]],
-                 {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
-                ]
-              },
-              FirstCase[
-               Wolfram`Chatbook`UI`Private`menuData["Personas"],
-               {
-                Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
-                Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]],
-                Blank[]
-               } :> Wolfram`Chatbook`UI`Private`icon,
-               Style[
-                Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
-                GrayLevel[0.5]
-               ]
-              ]
-             ],
-             StandardForm
-            ]
-           ],
-           RoundingRadius -> 3,
-           FrameMargins -> 2,
-           ImageMargins -> {{0, 3}, {0, 0}},
-           FrameStyle ->
-            Directive[GrayLevel[0.85686], AbsoluteThickness[1]],
-           Background ->
-            Dynamic[
-             If[ CurrentValue["MouseOver"], GrayLevel[0.8], GrayLevel[1] ]
-            ],
-           FrameMargins -> 0,
-           StripOnInput -> False
-          ],
-          ButtonFunction :>
-           (AttachCell[
-            EvaluationCell[],
-            Wolfram`Chatbook`UI`Private`openChatInputActionMenu[
-             EvaluationCell[]
-            ],
-            {Left, Bottom},
-            Offset[{0, 0}, {Left, Top}],
-            {Left, Top},
-            RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
-           ];),
-          Appearance ->
-           Dynamic[
-            FEPrivate`FrontEndResource[
-             "FEExpressions",
-             "SuppressMouseDownNinePatchAppearance"
-            ]
-           ],
-          Evaluator -> Automatic,
-          Method -> "Preemptive"
-         ],
-        False ->
-         FrameBox[
-          TemplateBox[{}, "RoleUser"],
-          RoundingRadius -> 3,
-          FrameMargins -> 2,
-          ImageMargins -> {{0, 3}, {0, 0}},
-          FrameStyle -> GrayLevel[0, 0],
-          FrameMargins -> 0,
-          StripOnInput -> False
-         ]
-       },
-       Dynamic[CurrentValue["MouseOver"]],
-       ImageSize -> All
-      ]
-     ],
+     BoxData[TemplateBox[{}, "ChatInputActiveCellDingbat"]],
      Background -> None,
-     CellFrame -> 0
+     CellFrame -> 0,
+     CellMargins -> 0
     ],
-   CellMargins -> {{66, 25}, {5, 8}},
+   CellMargins -> {{66, 25}, {1, 8}},
    StyleKeyMapping -> {
     "~" -> "ChatDelimiter",
     "'" -> "SideChat",
@@ -938,21 +856,116 @@ Notebook[
    MenuSortingValue -> 1000
   ],
   Cell[
-   StyleData[
-    "SideChat",
-    StyleDefinitions -> StyleData["ChatInput"]
-   ],
-   CellFrame -> {{0, 0}, {0, 2}},
-   CellDingbat ->
-    Cell[
-     BoxData[
-      RowBox[
+   StyleData["ChatInputActiveCellDingbat"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      ButtonBox[
+       FrameBox[
+        PaneBox[
+         DynamicModuleBox[
+          {Wolfram`Chatbook`UI`Private`cell$$},
+          DynamicBox[
+           ToBoxes[
+            With[
+             {
+              Wolfram`Chatbook`UI`Private`menuData = 
+               Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
+
+               ],
+              Wolfram`Chatbook`UI`Private`personaValue = 
+               Wolfram`Chatbook`UI`Private`currentValueOrigin[
+                Wolfram`Chatbook`UI`Private`cell$$,
+                {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+               ]
+             },
+             FirstCase[
+              Wolfram`Chatbook`UI`Private`menuData["Personas"],
+              {
+               Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
+               Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]],
+               Blank[]
+              } :> Wolfram`Chatbook`UI`Private`icon,
+              Style[
+               Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
+               GrayLevel[0.5]
+              ]
+             ]
+            ],
+            StandardForm
+           ]
+          ],
+          Initialization :>
+           (Quiet[Needs["Wolfram`Chatbook`" -> None]];
+           Wolfram`Chatbook`UI`Private`cell$$ = 
+            ParentCell[EvaluationCell[]]),
+          DynamicModuleValues :> { },
+          UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
+         ],
+         Alignment -> {Center, Center},
+         ImageSize -> {25, 25},
+         ImageSizeAction -> "ShrinkToFit"
+        ],
+        RoundingRadius -> 2,
+        FrameStyle ->
+         Dynamic[
+          If[ CurrentValue["MouseOver"],
+           GrayLevel[0.74902],
+           GrayLevel[0.81961]
+          ]
+         ],
+        Background ->
+         Dynamic[
+          If[ CurrentValue["MouseOver"],
+           GrayLevel[0.96078],
+           GrayLevel[1]
+          ]
+         ],
+        FrameMargins -> 0,
+        ImageMargins -> 0,
+        ContentPadding -> False,
+        StripOnInput -> False
+       ],
+       ButtonFunction :>
+        (AttachCell[
+         EvaluationCell[],
+         Wolfram`Chatbook`UI`Private`openChatInputActionMenu[
+          EvaluationCell[]
+         ],
+         {Left, Bottom},
+         Offset[{0, 0}, {Left, Top}],
+         {Left, Top},
+         RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
+        ];),
+       Appearance ->
+        Dynamic[
+         FEPrivate`FrontEndResource[
+          "FEExpressions",
+          "SuppressMouseDownNinePatchAppearance"
+         ]
+        ],
+       ImageMargins -> 0,
+       FrameMargins -> 0,
+       ContentPadding -> False,
+       Evaluator -> Automatic,
+       Method -> "Preemptive"
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ChatInputCellDingbat"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      PaneSelectorBox[
        {
-        PaneSelectorBox[
-         {
-          True ->
-           ButtonBox[
-            FrameBox[
+        True ->
+         ButtonBox[
+          FrameBox[
+           PaneBox[
+            DynamicModuleBox[
+             {Wolfram`Chatbook`UI`Private`cell$$},
              DynamicBox[
               ToBoxes[
                With[
@@ -963,7 +976,7 @@ Notebook[
                   ],
                  Wolfram`Chatbook`UI`Private`personaValue = 
                   Wolfram`Chatbook`UI`Private`currentValueOrigin[
-                   ParentCell[EvaluationCell[]],
+                   Wolfram`Chatbook`UI`Private`cell$$,
                    {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
                   ]
                 },
@@ -983,16 +996,156 @@ Notebook[
                StandardForm
               ]
              ],
-             RoundingRadius -> 3,
-             FrameMargins -> 2,
-             ImageMargins -> {{0, 3}, {0, 0}},
+             Initialization :>
+              (Quiet[Needs["Wolfram`Chatbook`" -> None]];
+              Wolfram`Chatbook`UI`Private`cell$$ = 
+               ParentCell[EvaluationCell[]]),
+             DynamicModuleValues :> { },
+             UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
+            ],
+            Alignment -> {Center, Center},
+            ImageSize -> {25, 25},
+            ImageSizeAction -> "ShrinkToFit"
+           ],
+           RoundingRadius -> 2,
+           FrameStyle ->
+            Dynamic[
+             If[ CurrentValue["MouseOver"],
+              GrayLevel[0.74902],
+              GrayLevel[0.81961]
+             ]
+            ],
+           Background ->
+            Dynamic[
+             If[ CurrentValue["MouseOver"],
+              GrayLevel[0.96078],
+              GrayLevel[1]
+             ]
+            ],
+           FrameMargins -> 0,
+           ImageMargins -> 0,
+           ContentPadding -> False,
+           StripOnInput -> False
+          ],
+          ButtonFunction :>
+           (AttachCell[
+            EvaluationCell[],
+            Wolfram`Chatbook`UI`Private`openChatInputActionMenu[
+             EvaluationCell[]
+            ],
+            {Left, Bottom},
+            Offset[{0, 0}, {Left, Top}],
+            {Left, Top},
+            RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
+           ];),
+          Appearance ->
+           Dynamic[
+            FEPrivate`FrontEndResource[
+             "FEExpressions",
+             "SuppressMouseDownNinePatchAppearance"
+            ]
+           ],
+          ImageMargins -> 0,
+          FrameMargins -> 0,
+          ContentPadding -> False,
+          Evaluator -> Automatic,
+          Method -> "Preemptive"
+         ],
+        False ->
+         FrameBox[
+          TemplateBox[{}, "RoleUser"],
+          RoundingRadius -> 3,
+          FrameMargins -> 2,
+          ImageMargins -> {{0, 3}, {0, 0}},
+          FrameStyle -> GrayLevel[0, 0],
+          FrameMargins -> 0,
+          StripOnInput -> False
+         ]
+       },
+       Dynamic[CurrentValue["MouseOver"]],
+       ImageSize -> All
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData[
+    "SideChat",
+    StyleDefinitions -> StyleData["ChatInput"]
+   ],
+   CellFrame -> {{0, 0}, {0, 2}},
+   CellDingbat ->
+    Cell[
+     BoxData[
+      RowBox[
+       {
+        PaneSelectorBox[
+         {
+          True ->
+           ButtonBox[
+            FrameBox[
+             PaneBox[
+              DynamicModuleBox[
+               {Wolfram`Chatbook`UI`Private`cell$$},
+               DynamicBox[
+                ToBoxes[
+                 With[
+                  {
+                   Wolfram`Chatbook`UI`Private`menuData = 
+                    Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
+
+                    ],
+                   Wolfram`Chatbook`UI`Private`personaValue = 
+                    Wolfram`Chatbook`UI`Private`currentValueOrigin[
+                     Wolfram`Chatbook`UI`Private`cell$$,
+                     {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+                    ]
+                  },
+                  FirstCase[
+                   Wolfram`Chatbook`UI`Private`menuData["Personas"],
+                   {
+                    Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
+                    Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]],
+                    Blank[]
+                   } :> Wolfram`Chatbook`UI`Private`icon,
+                   Style[
+                    Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
+                    GrayLevel[0.5]
+                   ]
+                  ]
+                 ],
+                 StandardForm
+                ]
+               ],
+               Initialization :>
+                (Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                Wolfram`Chatbook`UI`Private`cell$$ = 
+                 ParentCell[EvaluationCell[]]),
+               DynamicModuleValues :> { },
+               UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
+              ],
+              Alignment -> {Center, Center},
+              ImageSize -> {25, 25},
+              ImageSizeAction -> "ShrinkToFit"
+             ],
+             RoundingRadius -> 2,
              FrameStyle ->
-              Directive[GrayLevel[0.85686], AbsoluteThickness[1]],
+              Dynamic[
+               If[ CurrentValue["MouseOver"],
+                GrayLevel[0.74902],
+                GrayLevel[0.81961]
+               ]
+              ],
              Background ->
               Dynamic[
-               If[ CurrentValue["MouseOver"], GrayLevel[0.8], GrayLevel[1] ]
+               If[ CurrentValue["MouseOver"],
+                GrayLevel[0.96078],
+                GrayLevel[1]
+               ]
               ],
              FrameMargins -> 0,
+             ImageMargins -> 0,
+             ContentPadding -> False,
              StripOnInput -> False
             ],
             ButtonFunction :>
@@ -1013,6 +1166,9 @@ Notebook[
                "SuppressMouseDownNinePatchAppearance"
               ]
              ],
+            ImageMargins -> 0,
+            FrameMargins -> 0,
+            ContentPadding -> False,
             Evaluator -> Automatic,
             Method -> "Preemptive"
            ],
