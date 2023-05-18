@@ -91,7 +91,13 @@ Cell[
 			TemplateBox[{}, "ChatCounterLabel"],
 			ToBoxes @ $chatInputCellDingbat
 		}], *)
-        BoxData @ TemplateBox[ { }, "ChatInputActiveCellDingbat" ],
+        BoxData @ DynamicBox @ ToBoxes[
+            If[ TrueQ @ CloudSystem`$CloudNotebooks,
+                RawBoxes @ TemplateBox[ { }, "RoleUser" ],
+                RawBoxes @ TemplateBox[ { }, "ChatInputActiveCellDingbat" ]
+            ],
+            StandardForm
+        ],
 		Background -> None,
 		CellFrame -> 0,
         CellMargins -> 0

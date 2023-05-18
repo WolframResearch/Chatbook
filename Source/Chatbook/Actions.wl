@@ -58,7 +58,7 @@ DisableAssistance // beginDefinition;
 
 DisableAssistance[ cell_CellObject ] := (
     DisableAssistance @ parentNotebook @ cell;
-    NotebookDelete @ ParentCell @ cell;
+    NotebookDelete @ parentCell @ cell;
     NotebookDelete @ cell;
 );
 
@@ -147,7 +147,7 @@ TabRight // endDefinition;
 (*rotateTabPage*)
 rotateTabPage // beginDefinition;
 rotateTabPage[ cell_CellObject, n_Integer ] /; CloudSystem`$CloudNotebooks := rotateTabPage0[ cell, n ];
-rotateTabPage[ cell_CellObject, n_Integer ] := rotateTabPage0[ ParentCell @ cell, n ];
+rotateTabPage[ cell_CellObject, n_Integer ] := rotateTabPage0[ parentCell @ cell, n ];
 rotateTabPage // endDefinition;
 
 
@@ -332,7 +332,7 @@ OpenChatMenu // endDefinition;
 openChatOutputMenu // beginDefinition;
 
 openChatOutputMenu[ cell_CellObject ] := AttachCell[
-    ParentCell @ cell,
+    parentCell @ cell,
     RawBoxes @ TemplateBox[ { }, "ChatOutputMenu" ],
     { Right, Top },
     Offset[ { -7, -7 }, { 0, 0 } ],
@@ -346,7 +346,7 @@ openChatOutputMenu // endDefinition;
 (* ::Subsection::Closed:: *)
 (*openChatSectionDialog*)
 openChatSectionDialog // beginDefinition;
-openChatSectionDialog[ cell0_CellObject ] := createChatContextDialog @ ParentCell @ cell0;
+openChatSectionDialog[ cell0_CellObject ] := createChatContextDialog @ parentCell @ cell0;
 openChatSectionDialog // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -731,7 +731,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         $resultCellCache = <| |>;
         $debugLog = Internal`Bag[ ];
 
-        If[ chatInputCellQ @ evalCell,
+        If[ ! TrueQ @ CloudSystem`$CloudNotebooks && chatInputCellQ @ evalCell,
             SetOptions[
                 evalCell,
                 CellDingbat -> Cell[ BoxData @ TemplateBox[ { }, "ChatInputCellDingbat" ], Background -> None ]
