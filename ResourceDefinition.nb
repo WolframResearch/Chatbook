@@ -6274,6 +6274,137 @@ Notebook[
                   CellID -> 805150974
                  ],
                  Cell[
+                  CellGroupData[
+                   {
+                    Cell[
+                     TextData[
+                      Cell[
+                       BoxData[
+                        InterpretationBox[
+                         TagBox[
+                          ActionMenuBox[
+                           "\"64Bit\"",
+                           {
+                            "\"Open/Close Group\"" :>
+                             (SelectionMove[ParentCell[EvaluationCell[]], All, Cell];
+                             FrontEndTokenExecute[
+                              EvaluationNotebook[],
+                              "OpenCloseGroup"
+                             ]),
+                            "\"Open Directory\"" :>
+                             DefinitionNotebookClient`FileTreeOpen[
+                              ParentCell[EvaluationCell[]]
+                             ],
+                            "\"Un/Mark as Excluded\"" :>
+                             DefinitionNotebookClient`FileTreeExclusionToggle[
+                              ParentCell[EvaluationCell[]]
+                             ],
+                            "\"Copy Path to Clipboard\"" :>
+                             DefinitionNotebookClient`FileTreeCopy[
+                              ParentCell[EvaluationCell[]]
+                             ]
+                           },
+                           Appearance -> None,
+                           BaseStyle -> {"Text"}
+                          ],
+                          Function[
+                           Annotation[
+                            #1,
+                            DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                             2
+                            ]
+                           ]
+                          ]
+                         ],
+                         FileNameJoin[
+                          {NotebookDirectory[], "Source", "Chatbook", "64Bit"}
+                         ],
+                         BoxID -> "FileTreePath",
+                         BaseStyle -> {"Text"}
+                        ]
+                       ]
+                      ]
+                     ],
+                     "FileManagerDirectory",
+                     CellMargins -> {{46 + Inherited, Inherited}, {Inherited, Inherited}},
+                     CellGroupingRules -> {"SectionGrouping", 120},
+                     CellFrameLabels -> {
+                      {
+                       Cell[
+                        BoxData[
+                         TemplateBox[{}, "FileManagerDirectoryIconTemplate"]
+                        ],
+                        Background -> None
+                       ],
+                       Inherited
+                      },
+                      {Inherited, Inherited}
+                     },
+                     CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                     CellID -> 471175377
+                    ],
+                    Cell[
+                     BoxData[
+                      InterpretationBox[
+                       TagBox[
+                        TemplateBox[
+                         {
+                          "\"Chatbook.mx\"",
+                          FileNameJoin[
+                           {
+                            NotebookDirectory[],
+                            "Source",
+                            "Chatbook",
+                            "64Bit",
+                            "Chatbook.mx"
+                           }
+                          ]
+                         },
+                         "FileManagerFileOpenerTemplate"
+                        ],
+                        Function[
+                         Annotation[
+                          #1,
+                          DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                           3
+                          ]
+                         ]
+                        ]
+                       ],
+                       FileNameJoin[
+                        {
+                         NotebookDirectory[],
+                         "Source",
+                         "Chatbook",
+                         "64Bit",
+                         "Chatbook.mx"
+                        }
+                       ],
+                       BoxID -> "FileTreePath",
+                       BaseStyle -> {"Text"}
+                      ]
+                     ],
+                     "FileManagerFile",
+                     CellMargins -> {{69 + Inherited, Inherited}, {Inherited, Inherited}},
+                     CellGroupingRules -> {"SectionGrouping", 130},
+                     CellFrameLabels -> {
+                      {
+                       Cell[
+                        BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                        Background -> None
+                       ],
+                       Inherited
+                      },
+                      {Inherited, Inherited}
+                     },
+                     CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                     CellID -> 222793628
+                    ]
+                   },
+                   Closed
+                  ]
+                 ],
+                 Cell[
                   BoxData[
                    InterpretationBox[
                     TagBox[
@@ -8622,13 +8753,88 @@ Notebook[
            ],
            Cell[
             BoxData[
+             {
+              RowBox[
+               {
+                RowBox[
+                 {
+                  "PacletDirectoryLoad",
+                  " ",
+                  "@",
+                  " ",
+                  RowBox[{"NotebookDirectory", "[", " ", "]"}]
+                 }
+                ],
+                ";"
+               }
+              ],
+              "\n",
+              RowBox[
+               {
+                RowBox[
+                 {"Needs", "[", " ", "\"Wolfram`Chatbook`\"", " ", "]"}
+                ],
+                ";"
+               }
+              ]
+             }
+            ],
+            "Code",
+            "Excluded",
+            InitializationCell -> True,
+            CellLabel -> "In[2]:=",
+            CellID -> 996717066
+           ],
+           Cell[
+            "Build MX file:",
+            "CodeText",
+            "Excluded",
+            CellID -> 329075969
+           ],
+           Cell[
+            BoxData[
              RowBox[
               {
                RowBox[
                 {
-                 "PacletDirectoryLoad",
+                 "RunProcess",
                  "[",
-                 RowBox[{"NotebookDirectory", "[", "]"}],
+                 " ",
+                 RowBox[
+                  {
+                   RowBox[
+                    {
+                     "{",
+                     " ",
+                     RowBox[
+                      {
+                       "\"wolframscript\"",
+                       ",",
+                       " ",
+                       "\"-f\"",
+                       ",",
+                       " ",
+                       "\"./Scripts/BuildMX.wls\""
+                      }
+                     ],
+                     " ",
+                     "}"
+                    }
+                   ],
+                   ",",
+                   " ",
+                   RowBox[
+                    {
+                     "ProcessDirectory",
+                     " ",
+                     "->",
+                     " ",
+                     RowBox[{"NotebookDirectory", "[", " ", "]"}]
+                    }
+                   ]
+                  }
+                 ],
+                 " ",
                  "]"
                 }
                ],
@@ -8636,109 +8842,65 @@ Notebook[
               }
              ]
             ],
-            "Input",
+            "Code",
             "Excluded",
-            InitializationCell -> True,
-            CellLabel -> "In[3]:=",
-            CellID -> 996717066
-           ],
-           Cell[
-            BoxData[
-             RowBox[
-              {RowBox[{"Needs", "[", "\"Wolfram`Chatbook`\"", "]"}], ";"}
-             ]
-            ],
-            "Input",
-            "Excluded",
-            InitializationCell -> True,
             CellLabel -> "In[4]:=",
-            CellID -> 172764492
+            CellID -> 23056019
+           ],
+           Cell[
+            "Increase resolution of screenshots by evaluating this before submitting:",
+            "CodeText",
+            "Excluded",
+            CellID -> 75543984
            ],
            Cell[
             BoxData[
-             RowBox[
-              {
-               RowBox[
-                {
-                 "(*",
-                 " ",
-                 RowBox[
-                  {
-                   RowBox[{"Avoid", " ", "lower"}],
-                   "-",
-                   RowBox[
-                    {
-                     "resolution",
-                     " ",
-                     "screenshots",
-                     " ",
-                     "by",
-                     " ",
-                     "evaluating",
-                     " ",
-                     "this",
-                     " ",
-                     "before",
-                     " ",
-                     RowBox[{"submitting", "."}]
-                    }
-                   ]
-                  }
-                 ],
-                 " ",
-                 "*)"
-                }
-               ],
-               "\n",
-               RowBox[
-                {
-                 RowBox[
-                  {
-                   RowBox[
-                    {
-                     "Needs",
-                     "[",
-                     RowBox[{"\"PacletResource`\"", "->", "None"}],
-                     "]"
-                    }
-                   ],
-                   ";"
-                  }
-                 ],
-                 "\n",
-                 RowBox[
-                  {
-                   RowBox[
-                    {
-                     "SetOptions",
-                     "[",
-                     "\n",
-                     "\t",
-                     RowBox[
-                      {
-                       "PacletResource`Notebooks`ProcessNotebookForEmbedding",
-                       ",",
-                       "\n",
-                       "\t",
-                       RowBox[{"\"EmbeddedHTMLImages\"", "->", "True"}]
-                      }
-                     ],
-                     "\n",
-                     "]"
-                    }
-                   ],
-                   ";"
-                  }
-                 ]
-                }
-               ]
-              }
-             ]
+             {
+              RowBox[
+               {
+                RowBox[
+                 {
+                  "Needs",
+                  "[",
+                  " ",
+                  RowBox[{"\"PacletResource`\"", " ", "->", " ", "None"}],
+                  " ",
+                  "]"
+                 }
+                ],
+                ";"
+               }
+              ],
+              "\n",
+              RowBox[
+               {
+                RowBox[
+                 {
+                  "SetOptions",
+                  "[",
+                  " ",
+                  RowBox[
+                   {
+                    "PacletResource`Notebooks`ProcessNotebookForEmbedding",
+                    ",",
+                    " ",
+                    RowBox[{"\"EmbeddedHTMLImages\"", " ", "->", " ", "True"}]
+                   }
+                  ],
+                  " ",
+                  "]"
+                 }
+                ],
+                ";"
+               }
+              ]
+             }
             ],
-            "Input",
+            "Code",
             "Excluded",
-            CellLabel -> "In[1]:=",
-            CellID -> 423629247
+            InitializationCell -> True,
+            CellLabel -> "In[5]:=",
+            CellID -> 29801418
            ]
           },
           Open
@@ -13146,10 +13308,14 @@ Notebook[
   },
   "SubmissionReviewData" -> {"Review" -> False},
   "ToolsOpen" -> True,
-  "UpdatedTimestamp" -> 3.8934056288754917*^9,
+  "UpdatedTimestamp" -> 3.8934056288754916*^9,
   "TemplateVersion" -> "2023.03.03",
   "StatusMessage" -> "",
-  "AutoUpdate" -> True
+  "AutoUpdate" -> True,
+  "PacletBuildData" -> {
+   "LastBuiltArchive" -> "H:\\Documents\\Chatbook\\build\\Wolfram__Chatbook-0.0.12.paclet",
+   "FileHashes" -> ByteArray["OEM6eJyNlmtsFFUUgH1UtDTE4qu0xbICtUXcXSsF02gJ+6IubmHbKa0GqZmdvbu9MHtnvXO3dLvUFMGIpVhDGjWQSH/4Q+kPqiloiE1NtGp8BAxgYqxGVESNUYNGI5ji7Ha3Z7h3+vixk50vc76cc+7TtdIu2V26jpjudPmNP1hnMmFOV9D/CEp6saxqUS/SFYrjDGvEsUN1XWeX5klagiooMHzigc6qu5vuM0iTTKOImYjDwuppk5lHIwx1sEm1O8GYRnROO3TltbzxZxx20AKpnovWg1RVb0KxuCozxMnrtsfn72hO1oEciFUnBLnEkiriU/6n/3H178sPzQMrkHILa5BqsbjBvCgiJ1TmiIXNtuiy8rf2P9vfBTYgK2aw1SGCKFaMd8QZ3bf8mJ9Sy6JgBFKYNfqVzFB0RMyBPvu+sZqCDW0QCMS2nhqN8ZGwM9MTqQ2lNemGhTRtu4OEzKI3k290TiyUykAEZGUgUG/0OIKjCSqn55kziKiuEVl3ujENE5mGtUx6XNf3DX3/0q7UV1vBCWROzqCm873vU4sLfE3jNeAEcs+cnELz3317yaEG38eNoASyenpldm44+S+4Jny95Y4FVwp328AOpHJ6+8NIjSNq1dW8wRsa1nxwNgRCIBWzCsXyb/xz/+CLNT0p8AG5f3rfRo2g2Wo/+d/8osKjXT5QA5mh9hZNjWBkVfuX+XnFx55bGgAhkNmFFtNp9NFa96Uz6zpBCGSGZuaEQjPbx17YcuGk7gEfkAVBWVER85OIxpXV3TtY0/ovjkMUkIWTUfUywRFk5H9VpJ6XHgYIO9jQfPzIZ+5Ku3TX5AdTy925ptqNGaz+WIc5gXdeUUeXlgwUgAlICW9yKelm8FvscJ+36qlh+oTpsJkipbxiKo2rHafv/bwsf+/p1eAAUiw4tFhMXG2+672lR2+62bTapki5YKDIOIDSrxs1hizyGew5oRd8c7gSbEAW8TYvCiWinODi+8eHmnd9VAQCIEJBPko1yrdVue1i8aXfozvBAOROS8NmhlXe8mDvqXXKtvOmaQ5EsKzXaExmDBO+mm8rej988po9LrAAEYY4d/hwDk/jpyOHN/xlqgfIMt7hJyomqBFFEEVEEU712p8u7B54rygCLiBFvKtexvxkObUifGD0/NOmeoAIw1uPSIJPIIWPjCweqzDNeSBCMdnNw0+MS4GqIsq5Js4VtvR5N5WAC4jQ3NxGxDn2bPqtXUkmNXAAWSw4MrcScZQnAr/+0d213HS9A2LjJZJxoZFV3Gm1+9+69tDa/lVfmCoCImQjMWMxxsRszkV/eXlJT3UFSIDczks2+7no0HevXlv++tlWiAYijLDVwvkkNb715x8OloIAyKqswOhBO6ISMqZ7u/HIaCwh5z4zcGzkwOXWbeAGsjznZjJlibjTjaKYTD6ziJMtqmoZ6fN2Y5ABsXGy9JXQ+FmLdj72fEetrVYCUY78D7gEpXE="]
+  }
  },
  CreateCellID -> True,
  DynamicEvaluationTimeout -> 60,
