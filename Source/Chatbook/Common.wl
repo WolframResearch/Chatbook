@@ -232,10 +232,8 @@ messageFailure0 := messageFailure0 = Block[ { PrintTemporary }, ResourceFunction
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*messagePrint*)
-messagePrint // beginDefinition;
 messagePrint // Attributes = { HoldFirst };
 messagePrint[ args___ ] := WithCleanup[ $failed = False, messageFailure @ args, $failed = False ];
-messagePrint // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

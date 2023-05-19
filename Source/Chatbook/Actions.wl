@@ -114,14 +114,10 @@ definitionNotebookCellQ[ ___ ] := False;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*PersonaManage*)
-PersonaManage // beginDefinition;
-
 PersonaManage[ a___ ] := Enclose[
     ConfirmBy[ PersonaInstallFromResourceSystem[ ], AssociationQ, "PersonaInstallFromResourceSystem" ],
     throwInternalFailure[ PersonaManage @ a, ## ] &
 ];
-
-PersonaManage // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1860,8 +1856,6 @@ writeChunk // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*toAPIKey*)
-toAPIKey // beginDefinition;
-
 toAPIKey[ key_String ] := key;
 
 toAPIKey[ Automatic ] := toAPIKey[ Automatic, None ];
@@ -1877,8 +1871,6 @@ toAPIKey[ Automatic, id_ ] := checkAPIKey @ FirstCase[
 ];
 
 toAPIKey[ other___ ] := throwFailure[ "InvalidAPIKey", other ];
-
-toAPIKey // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
