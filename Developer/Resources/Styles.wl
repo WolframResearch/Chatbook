@@ -87,10 +87,6 @@ Cell[
     MenuSortingValue  -> 1000,
     StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "SideChat", "Backspace" -> "Input" },
 	CellDingbat -> Cell[
-		(* BoxData @ RowBox[{
-			TemplateBox[{}, "ChatCounterLabel"],
-			ToBoxes @ $chatInputCellDingbat
-		}], *)
         BoxData @ DynamicBox @ ToBoxes[
             If[ TrueQ @ CloudSystem`$CloudNotebooks,
                 RawBoxes @ TemplateBox[ { }, "RoleUser" ],
@@ -271,7 +267,20 @@ Cell[
 
     StyleKeyMapping -> { "~" -> "ChatDelimiter", "'" -> "ChatInput" },
 
-    menuInitializer[ "ChatSection", GrayLevel[ 0.925 ] ]
+    menuInitializer[ "ChatSection", GrayLevel[ 0.925 ] ],
+
+    CellDingbat -> Cell[
+        BoxData @ DynamicBox @ ToBoxes[
+            If[ TrueQ @ CloudSystem`$CloudNotebooks,
+                RawBoxes @ TemplateBox[ { }, "RoleUser" ],
+                RawBoxes @ TemplateBox[ { }, "ChatInputActiveCellDingbat" ]
+            ],
+            StandardForm
+        ],
+		Background -> None,
+		CellFrame -> 0,
+        CellMargins -> 0
+	]
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -283,7 +292,7 @@ Cell[
     CellElementSpacings    -> { "CellMinHeight" -> 6 },
     CellFrameMargins       -> { { 20, 20 }, { 2, 2 } },
     CellGroupingRules      -> { "SectionGrouping", 62 },
-    CellMargins            -> { { 0, 0 }, { 10, 10 } },
+    CellMargins            -> { { 5, 0 }, { 10, 10 } },
     CellTrayWidgets        -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterAssignments     -> { { "ChatInputCount", 0 } },
     DefaultNewCellStyle    -> "Input",
@@ -309,7 +318,18 @@ Cell[
 
     CellFrameLabels -> {
         {
-            None,
+            Cell[
+                BoxData @ DynamicBox @ ToBoxes[
+                    If[ TrueQ @ CloudSystem`$CloudNotebooks,
+                        RawBoxes @ TemplateBox[ { }, "RoleUser" ],
+                        RawBoxes @ TemplateBox[ { }, "ChatInputActiveCellDingbat" ]
+                    ],
+                    StandardForm
+                ],
+                Background  -> None,
+                CellFrame   -> 0,
+                CellMargins -> 0
+            ],
             Cell[
                 BoxData @ TemplateBox[ { "ChatSection", GrayLevel[ 0.925 ] }, "ChatMenuButton" ],
                 "ChatMenu",
