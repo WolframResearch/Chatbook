@@ -803,7 +803,6 @@ functionInputSetting[ DynamicModuleBox[ { ___, _ = string_String, ___ }, ___ ] ]
 functionInputSetting[ string_String ] :=
     DeleteCases[ StringTrim @ StringSplit[ StringTrim @ string, $functionArgSplitRules ], "" ];
 
-functionInputSetting[ ___ ] := $Failed;
 functionInputSetting // endDefinition;
 
 $functionArgSplitRules = {
@@ -1036,7 +1035,6 @@ personaInputSetting[ string_String ] := string;
 personaInputSetting[ cell_CellObject ] := personaInputSetting @ NotebookRead @ cell;
 personaInputSetting[ (Cell|BoxData|TagBox)[ boxes_, ___ ] ] := personaInputSetting @ boxes;
 personaInputSetting[ DynamicModuleBox[ { ___, _ = string_String, ___ }, ___ ] ] := string;
-personaInputSetting[ ___ ] := $Failed;
 personaInputSetting // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
