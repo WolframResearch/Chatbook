@@ -1298,19 +1298,22 @@ chatHTTPRequest[
 (*========================================================*)
 
 $dynamicMenuLabel := DynamicModule[ { cell },
-	Dynamic @ With[{
-		menuData = GetChatInputLLMConfigurationSelectorMenuData[],
-		personaValue = currentValueOrigin[cell, {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}]
-	},
-		FirstCase[
-			menuData["Personas"],
-			{personaValue[[2]], icon_, _} :> icon,
-			Style[getIcon["PersonaUnknown"], GrayLevel[0.5]]
+	Dynamic @ If[ TrueQ @ CloudSystem`$CloudNotebooks,
+		RawBoxes @ TemplateBox[{},"ChatInputCellDingbat"],
+		With[{
+			menuData = GetChatInputLLMConfigurationSelectorMenuData[],
+			personaValue = currentValueOrigin[cell, {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}]
+		},
+			FirstCase[
+				menuData["Personas"],
+				{personaValue[[2]], icon_, _} :> icon,
+				Style[getIcon["PersonaUnknown"], GrayLevel[0.5]]
+			]
 		]
 	],
 	Initialization :> (
 		Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-		cell = ParentCell @ EvaluationCell[ ]
+		cell = parentCell @ EvaluationCell[ ]
 	),
 	UnsavedVariables :> {cell}
 ]
@@ -1380,7 +1383,7 @@ MakeChatInputCellDingbat[] :=
 SetFallthroughError[openChatInputActionMenu]
 
 openChatInputActionMenu[dingbatCellObj_CellObject] := With[{
-	chatInputCellObj = ParentCell[dingbatCellObj]
+	chatInputCellObj = parentCell[dingbatCellObj]
 }, Module[{
 	menuData = GetChatInputLLMConfigurationSelectorMenuData[],
 	actionCallback,
