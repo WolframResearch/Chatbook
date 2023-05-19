@@ -2430,8 +2430,9 @@ resizeDingbat[ icon_ ] /; $resizeDingbats := Pane[
     icon,
     ContentPadding  -> False,
     FrameMargins    -> 0,
-    ImageSize       -> { 20, 20 },
-    ImageSizeAction -> "ShrinkToFit"
+    ImageSize       -> { 35, 35 },
+    ImageSizeAction -> "ShrinkToFit",
+    Alignment       -> { Center, Center }
 ];
 
 resizeDingbat[ icon_ ] := icon;
