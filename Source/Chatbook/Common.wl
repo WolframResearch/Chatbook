@@ -203,7 +203,6 @@ throwFailure // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*messageFailure*)
-messageFailure // beginDefinition;
 messageFailure // Attributes = { HoldFirst };
 
 messageFailure[ t_String, args___ ] :=
@@ -227,8 +226,6 @@ messageFailure[ args___ ] :=
             $failed = True
         ]
     ];
-
-messageFailure // endDefinition;
 
 messageFailure0 := messageFailure0 = Block[ { PrintTemporary }, ResourceFunction[ "MessageFailure", "Function" ] ];
 
