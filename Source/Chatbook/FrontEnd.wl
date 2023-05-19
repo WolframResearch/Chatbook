@@ -85,7 +85,7 @@ cellInformation // endDefinition;
 (*parentCell*)
 parentCell // beginDefinition;
 parentCell[ cell_CellObject ] /; CloudSystem`$CloudNotebooks := cell;
-parentCell[ cell_CellObject ] := cell;
+parentCell[ cell_CellObject ] := ParentCell @ cell;
 parentCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

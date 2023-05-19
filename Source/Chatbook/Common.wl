@@ -203,7 +203,6 @@ throwFailure // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*messageFailure*)
-messageFailure // beginDefinition;
 messageFailure // Attributes = { HoldFirst };
 
 messageFailure[ t_String, args___ ] :=
@@ -228,17 +227,13 @@ messageFailure[ args___ ] :=
         ]
     ];
 
-messageFailure // endDefinition;
-
 messageFailure0 := messageFailure0 = Block[ { PrintTemporary }, ResourceFunction[ "MessageFailure", "Function" ] ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*messagePrint*)
-messagePrint // beginDefinition;
 messagePrint // Attributes = { HoldFirst };
 messagePrint[ args___ ] := WithCleanup[ $failed = False, messageFailure @ args, $failed = False ];
-messagePrint // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
