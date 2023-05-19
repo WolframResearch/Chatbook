@@ -37,6 +37,7 @@ CreateChatNotebook // Options = {
     "TopP"                              -> 1
 };
 
+(* FIXME: don't bake in settings so FE inheritance works *)
 CreateChatNotebook[ opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] := createChatNotebook @ opts;
 
 CreateChatNotebook[ nbo_NotebookObject, opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] :=
