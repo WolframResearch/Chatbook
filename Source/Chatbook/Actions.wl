@@ -190,6 +190,7 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
     withBasePromptBuilder @ Block[ { $autoAssistMode = False },
+        clearMinimizedChats @ nbo;
         waitForLastTask[ ];
         sendChat[ evalCell, nbo, settings ]
     ];
@@ -714,10 +715,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         container = ProgressIndicator[ Appearance -> "Percolate" ];
 
         $reformattedCell = None;
-        cell = activeAIAssistantCell[
-            container,
-            Association[ settings, "Task" :> task, "Container" :> container, "CellObject" :> cellObject ]
-        ];
+        cell = activeAIAssistantCell[ container, Association[ settings, "Container" :> container ] ];
 
         Quiet[
             TaskRemove @ $lastTask;
@@ -741,6 +739,9 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         ];
 
         task = Confirm[ $lastTask = submitAIAssistant[ container, req, cellObject, settings ] ];
+
+        CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "CellObject" } ] = cellObject;
+        CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "Task"       } ] = task;
     ],
     throwInternalFailure[ sendChat[ evalCell, nbo, settings0 ], ## ] &
 ];
@@ -1643,6 +1644,7 @@ clearMinimizedChats[ nbo_NotebookObject, cells_List ] :=
         outCells = Cells[ nbo, CellStyle -> "ChatOutput" ];
         closed = Keys @ Select[ AssociationThread[ outCells -> CurrentValue[ outCells, CellOpen ] ], Not ];
         attached = Cells[ nbo, AttachedCell -> True, CellStyle -> "MinimizedChatIcon" ];
+        removeTask /@ CurrentValue[ closed, { TaggingRules, "ChatNotebookSettings", "Task" } ];
         NotebookDelete @ Flatten @ { closed, attached };
         DeleteCases[ cells, Alternatives @@ closed ]
     ];
