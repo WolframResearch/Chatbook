@@ -39,7 +39,7 @@ Needs["Wolfram`Chatbook`PersonaInstaller`"]
 Needs["Wolfram`Chatbook`FrontEnd`"]
 
 
-Needs["Wolfram`ServerSentEventUtils`" -> None]
+Needs["Wolfram`Chatbook`ServerSentEventUtils`" -> None]
 
 
 $ChatOutputTypePrompts = <|
@@ -710,7 +710,7 @@ doAsyncChatRequest[
 	task = URLSubmit[
 		request,
 		HandlerFunctions -> <|
-			"BodyChunkReceived" -> Wolfram`ServerSentEventUtils`ServerSentEventBodyChunkTransformer[
+			"BodyChunkReceived" -> Wolfram`Chatbook`ServerSentEventUtils`ServerSentEventBodyChunkTransformer[
 				event |-> (
 					AppendTo[events, event];
 					Handle[
