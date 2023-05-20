@@ -65,23 +65,24 @@ Chatbook is a symbol for miscellaneous chat notebook messages.\
 (* ::Section::Closed:: *)
 (*Load Files*)
 Block[ { $ContextPath },
-    Get[ "Wolfram`Chatbook`Common`"             ];
-    Get[ "Wolfram`Chatbook`Debug`"              ];
-    Get[ "Wolfram`Chatbook`ErrorUtils`"         ];
-    Get[ "Wolfram`Chatbook`Errors`"             ];
-    Get[ "Wolfram`Chatbook`CreateChatNotebook`" ];
-    Get[ "Wolfram`Chatbook`Serialization`"      ];
-    Get[ "Wolfram`Chatbook`Streaming`"          ];
-    Get[ "Wolfram`Chatbook`Utils`"              ];
-    Get[ "Wolfram`Chatbook`FrontEnd`"           ];
-    Get[ "Wolfram`Chatbook`UI`"                 ];
-    Get[ "Wolfram`Chatbook`Formatting`"         ];
-    Get[ "Wolfram`Chatbook`Prompting`"          ];
-    Get[ "Wolfram`Chatbook`Actions`"            ];
-    Get[ "Wolfram`Chatbook`Menus`"              ];
-    Get[ "Wolfram`Chatbook`Personas`"           ];
-    Get[ "Wolfram`Chatbook`PersonaInstaller`"   ];
-    Get[ "Wolfram`Chatbook`InlineReferences`"   ];
+    Get[ "Wolfram`Chatbook`Common`"               ];
+    Get[ "Wolfram`Chatbook`Debug`"                ];
+    Get[ "Wolfram`Chatbook`ErrorUtils`"           ];
+    Get[ "Wolfram`Chatbook`Errors`"               ];
+    Get[ "Wolfram`Chatbook`CreateChatNotebook`"   ];
+    Get[ "Wolfram`Chatbook`Serialization`"        ];
+    Get[ "Wolfram`Chatbook`Streaming`"            ];
+    Get[ "Wolfram`Chatbook`Utils`"                ];
+    Get[ "Wolfram`Chatbook`FrontEnd`"             ];
+    Get[ "Wolfram`Chatbook`UI`"                   ];
+    Get[ "Wolfram`Chatbook`Formatting`"           ];
+    Get[ "Wolfram`Chatbook`Prompting`"            ];
+    Get[ "Wolfram`Chatbook`Actions`"              ];
+    Get[ "Wolfram`Chatbook`Menus`"                ];
+    Get[ "Wolfram`Chatbook`Personas`"             ];
+    Get[ "Wolfram`Chatbook`PersonaInstaller`"     ];
+    Get[ "Wolfram`Chatbook`InlineReferences`"     ];
+    Get[ "Wolfram`Chatbook`ServerSentEventUtils`" ];
 ];
 
 (* ::**************************************************************************************************************:: *)
