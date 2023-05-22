@@ -1,4 +1,4 @@
-BeginPackage["Wolfram`ServerSentEventUtils`"]
+BeginPackage["Wolfram`Chatbook`ServerSentEventUtils`"]
 
 (* Avoiding context aliasing due to bug 434990: *)
 Needs[ "GeneralUtilities`" -> None ];
