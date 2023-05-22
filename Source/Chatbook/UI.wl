@@ -1298,7 +1298,7 @@ chatHTTPRequest[
 (*========================================================*)
 
 $dynamicMenuLabel := DynamicModule[ { cell },
-	Dynamic @ If[ TrueQ @ CloudSystem`$CloudNotebooks,
+	Dynamic @ If[ TrueQ @ $cloudNotebooks,
 		RawBoxes @ TemplateBox[{},"ChatInputCellDingbat"],
 		With[{
 			menuData = GetChatInputLLMConfigurationSelectorMenuData[],

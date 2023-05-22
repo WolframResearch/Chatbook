@@ -142,7 +142,7 @@ TabRight // endDefinition;
 (* ::Subsection::Closed:: *)
 (*rotateTabPage*)
 rotateTabPage // beginDefinition;
-rotateTabPage[ cell_CellObject, n_Integer ] /; CloudSystem`$CloudNotebooks := rotateTabPage0[ cell, n ];
+rotateTabPage[ cell_CellObject, n_Integer ] /; $cloudNotebooks := rotateTabPage0[ cell, n ];
 rotateTabPage[ cell_CellObject, n_Integer ] := rotateTabPage0[ parentCell @ cell, n ];
 rotateTabPage // endDefinition;
 
@@ -219,7 +219,7 @@ waitForLastTask // endDefinition;
 (*AIAutoAssist*)
 AIAutoAssist // beginDefinition;
 
-AIAutoAssist[ cell_ ] /; CloudSystem`$CloudNotebooks := Null;
+AIAutoAssist[ cell_ ] /; $cloudNotebooks := Null;
 
 AIAutoAssist[ cell_CellObject ] := AIAutoAssist[ cell, parentNotebook @ cell ];
 
@@ -630,7 +630,7 @@ SendChat[ evalCell_CellObject, nbo_NotebookObject ] :=
 SendChat[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
     SendChat[ evalCell, nbo, settings, Lookup[ settings, "ShowMinimized", Automatic ] ];
 
-SendChat[ evalCell_, nbo_, settings_, Automatic ] /; CloudSystem`$CloudNotebooks :=
+SendChat[ evalCell_, nbo_, settings_, Automatic ] /; $cloudNotebooks :=
     SendChat[ evalCell, nbo, settings, False ];
 
 SendChat[ evalCell_, nbo_, settings_, Automatic ] := withBasePromptBuilder @
@@ -725,7 +725,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         $resultCellCache = <| |>;
         $debugLog = Internal`Bag[ ];
 
-        If[ ! TrueQ @ CloudSystem`$CloudNotebooks && chatInputCellQ @ evalCell,
+        If[ ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
             SetOptions[
                 evalCell,
                 CellDingbat -> Cell[ BoxData @ TemplateBox[ { }, "ChatInputCellDingbat" ], Background -> None ]
@@ -949,7 +949,7 @@ activeAIAssistantCell[
     container_,
     settings: KeyValuePattern[ "CellObject" :> cellObject_ ],
     minimized_
-] /; CloudSystem`$CloudNotebooks :=
+] /; $cloudNotebooks :=
     With[
         {
             label    = RawBoxes @ TemplateBox[ { }, "MinimizedChatActive" ],
@@ -1637,7 +1637,7 @@ clearMinimizedChats // beginDefinition;
 
 clearMinimizedChats[ nbo_NotebookObject ] := clearMinimizedChats[ nbo, Cells @ nbo ];
 
-clearMinimizedChats[ nbo_, cells_ ] /; CloudSystem`$CloudNotebooks := cells;
+clearMinimizedChats[ nbo_, cells_ ] /; $cloudNotebooks := cells;
 
 clearMinimizedChats[ nbo_NotebookObject, cells_List ] :=
     Module[ { outCells, closed, attached },
@@ -2479,7 +2479,7 @@ makeReformattedCellTaggingRules // endDefinition;
 (*makeCompactChatData*)
 makeCompactChatData // beginDefinition;
 
-makeCompactChatData[ message_, tag_, as_ ] /; CloudSystem`$CloudNotebooks := Inherited;
+makeCompactChatData[ message_, tag_, as_ ] /; $cloudNotebooks := Inherited;
 
 makeCompactChatData[
     message_,

@@ -84,7 +84,7 @@ cellInformation // endDefinition;
 (* ::Subsection::Closed:: *)
 (*parentCell*)
 parentCell // beginDefinition;
-parentCell[ cell_CellObject ] /; CloudSystem`$CloudNotebooks := cell;
+parentCell[ cell_CellObject ] /; $cloudNotebooks := cell;
 parentCell[ cell_CellObject ] := ParentCell @ cell;
 parentCell // endDefinition;
 
@@ -100,7 +100,7 @@ topParentCell // endDefinition;
 (* ::Subsection::Closed:: *)
 (*cellPrint*)
 cellPrint // beginDefinition;
-cellPrint[ cell_Cell ] /; CloudSystem`$CloudNotebooks := cloudCellPrint @ cell;
+cellPrint[ cell_Cell ] /; $cloudNotebooks := cloudCellPrint @ cell;
 cellPrint[ cell_Cell ] := MathLink`CallFrontEnd @ FrontEnd`CellPrintReturnObject @ cell;
 cellPrint // endDefinition;
 
@@ -149,7 +149,7 @@ cellPrintAfter[ a_ ][ b___ ] := throwInternalFailure @ cellPrintAfter[ a ][ b ];
 (* ::Subsection::Closed:: *)
 (*cellOpenQ*)
 cellOpenQ // beginDefinition;
-cellOpenQ[ cell_CellObject ] /; CloudSystem`$CloudNotebooks := Lookup[ Options[ cell, CellOpen ], CellOpen, True ];
+cellOpenQ[ cell_CellObject ] /; $cloudNotebooks := Lookup[ Options[ cell, CellOpen ], CellOpen, True ];
 cellOpenQ[ cell_CellObject ] := CurrentValue[ cell, CellOpen ];
 cellOpenQ // endDefinition;
 
@@ -157,7 +157,7 @@ cellOpenQ // endDefinition;
 (* ::Subsection::Closed:: *)
 (*cellStyles*)
 cellStyles // beginDefinition;
-cellStyles[ cells_ ] /; CloudSystem`$CloudNotebooks := cloudCellStyles @ cells;
+cellStyles[ cells_ ] /; $cloudNotebooks := cloudCellStyles @ cells;
 cellStyles[ cells_ ] := CurrentValue[ cells, CellStyle ];
 cellStyles // endDefinition;
 
@@ -176,7 +176,7 @@ cloudCellStyles // endDefinition;
 (* ::Subsection::Closed:: *)
 (*parentNotebook*)
 parentNotebook // beginDefinition;
-parentNotebook[ cell_CellObject ] /; CloudSystem`$CloudNotebooks := Notebooks @ cell;
+parentNotebook[ cell_CellObject ] /; $cloudNotebooks := Notebooks @ cell;
 parentNotebook[ cell_CellObject ] := ParentNotebook @ cell;
 parentNotebook // endDefinition;
 
@@ -184,7 +184,7 @@ parentNotebook // endDefinition;
 (* ::Subsection::Closed:: *)
 (*notebookRead*)
 notebookRead // beginDefinition;
-notebookRead[ cells_ ] /; CloudSystem`$CloudNotebooks := cloudNotebookRead @ cells;
+notebookRead[ cells_ ] /; $cloudNotebooks := cloudNotebookRead @ cells;
 notebookRead[ cells_ ] := NotebookRead @ cells;
 notebookRead // endDefinition;
 
