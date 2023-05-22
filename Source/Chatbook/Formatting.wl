@@ -415,10 +415,10 @@ inlineInteractiveCodeCell // beginDefinition;
 
 inlineInteractiveCodeCell[ display_, string_ ] /; $dynamicText := display;
 
-inlineInteractiveCodeCell[ display_, string_String ] /; CloudSystem`$CloudNotebooks :=
+inlineInteractiveCodeCell[ display_, string_String ] /; $cloudNotebooks :=
     Button[ display, CellPrint @ Cell[ BoxData @ string, "Input" ], Appearance -> None ];
 
-inlineInteractiveCodeCell[ display_, cell_Cell ] /; CloudSystem`$CloudNotebooks :=
+inlineInteractiveCodeCell[ display_, cell_Cell ] /; $cloudNotebooks :=
     Button[ display, CellPrint @ cell, Appearance -> None ];
 
 inlineInteractiveCodeCell[ display_, string_ ] :=

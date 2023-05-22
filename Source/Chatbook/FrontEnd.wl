@@ -31,7 +31,101 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (*currentChatSettings*)
 currentChatSettings // beginDefinition;
 
-currentChatSettings[ obj: _NotebookObject|_CellObject ] :=
+currentChatSettings[ nbo_NotebookObject ] := currentChatSettings0 @ nbo;
+currentChatSettings[ nbo_NotebookObject, key_String ] := currentChatSettings0[ nbo, key ];
+
+
+currentChatSettings[ cell_CellObject ] := Catch @ Enclose[
+    Module[ { styles, nbo, cells, before, info, delimiter, settings },
+
+        styles = cellStyles @ cell;
+
+        If[ MemberQ[ styles, $$chatDelimiterStyle ], Throw @ currentChatSettings0 @ cell ];
+
+        nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
+
+        cells = ConfirmMatch[
+            Cells[ nbo, CellStyle -> Union[ $chatDelimiterStyles, styles ] ],
+            { __CellObject },
+            "ChatCells"
+        ];
+
+        before = ConfirmMatch[
+            Replace[ cells, { { a___, cell, ___ } :> { a }, ___ :> $Failed } ],
+            { ___CellObject },
+            "BeforeCells"
+        ];
+
+        info = ConfirmMatch[
+            cellInformation @ before,
+            { KeyValuePattern[ "CellObject" -> _CellObject ]... },
+            "CellInformation"
+        ];
+
+        delimiter = FirstCase[
+            Reverse @ info,
+            KeyValuePattern @ { "Style" -> $$chatDelimiterStyle, "CellObject" -> c_ } :> c,
+            Nothing
+        ];
+
+        settings = Select[
+            Map[ Association,
+                 CurrentValue[ DeleteMissing @ { delimiter, cell }, { TaggingRules, "ChatNotebookSettings" } ]
+            ],
+            AssociationQ
+        ];
+
+        ConfirmBy[ Association[ $defaultChatSettings, settings ], AssociationQ, "CombinedSettings" ]
+    ],
+    throwInternalFailure[ currentChatSettings @ cell, ## ] &
+];
+
+currentChatSettings[ cell_CellObject, key_String ] := Catch @ Enclose[
+    Module[ { styles, nbo, cells, before, info, delimiter, values },
+
+        styles = cellStyles @ cell;
+
+        If[ MemberQ[ styles, $$chatDelimiterStyle ], Throw @ currentChatSettings0[ cell, key ] ];
+
+        nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
+
+        cells = ConfirmMatch[
+            Cells[ nbo, CellStyle -> Union[ $chatDelimiterStyles, styles ] ],
+            { __CellObject },
+            "ChatCells"
+        ];
+
+        before = ConfirmMatch[
+            Replace[ cells, { { a___, cell, ___ } :> { a }, ___ :> $Failed } ],
+            { ___CellObject },
+            "BeforeCells"
+        ];
+
+        info = ConfirmMatch[
+            cellInformation @ before,
+            { KeyValuePattern[ "CellObject" -> _CellObject ]... },
+            "CellInformation"
+        ];
+
+        delimiter = FirstCase[
+            Reverse @ info,
+            KeyValuePattern @ { "Style" -> $$chatDelimiterStyle, "CellObject" -> c_ } :> c,
+            Nothing
+        ];
+
+        values = CurrentValue[ DeleteMissing @ { delimiter, cell }, { TaggingRules, "ChatNotebookSettings", key } ];
+
+        FirstCase[ values, Except[ Inherited ], Lookup[ $defaultChatSettings, key, Inherited ] ]
+    ],
+    throwInternalFailure[ currentChatSettings[ cell, key ], ## ] &
+];
+
+currentChatSettings // endDefinition;
+
+
+currentChatSettings0 // beginDefinition;
+
+currentChatSettings0[ obj: _CellObject|_NotebookObject ] :=
     Association[
         $defaultChatSettings,
         Replace[
@@ -40,12 +134,12 @@ currentChatSettings[ obj: _NotebookObject|_CellObject ] :=
         ]
     ];
 
-currentChatSettings[ obj: _NotebookObject|_CellObject, key_String ] := Replace[
+currentChatSettings0[ obj: _CellObject|_NotebookObject, key_String ] := Replace[
     AbsoluteCurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", key } ],
     Inherited :> Lookup[ $defaultChatSettings, key, Inherited ]
 ];
 
-currentChatSettings // endDefinition;
+currentChatSettings0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -84,7 +178,7 @@ cellInformation // endDefinition;
 (* ::Subsection::Closed:: *)
 (*parentCell*)
 parentCell // beginDefinition;
-parentCell[ cell_CellObject ] /; CloudSystem`$CloudNotebooks := cell;
+parentCell[ cell_CellObject ] /; $cloudNotebooks := cell;
 parentCell[ cell_CellObject ] := ParentCell @ cell;
 parentCell // endDefinition;
 
@@ -100,7 +194,7 @@ topParentCell // endDefinition;
 (* ::Subsection::Closed:: *)
 (*cellPrint*)
 cellPrint // beginDefinition;
-cellPrint[ cell_Cell ] /; CloudSystem`$CloudNotebooks := cloudCellPrint @ cell;
+cellPrint[ cell_Cell ] /; $cloudNotebooks := cloudCellPrint @ cell;
 cellPrint[ cell_Cell ] := MathLink`CallFrontEnd @ FrontEnd`CellPrintReturnObject @ cell;
 cellPrint // endDefinition;
 
@@ -149,7 +243,7 @@ cellPrintAfter[ a_ ][ b___ ] := throwInternalFailure @ cellPrintAfter[ a ][ b ];
 (* ::Subsection::Closed:: *)
 (*cellOpenQ*)
 cellOpenQ // beginDefinition;
-cellOpenQ[ cell_CellObject ] /; CloudSystem`$CloudNotebooks := Lookup[ Options[ cell, CellOpen ], CellOpen, True ];
+cellOpenQ[ cell_CellObject ] /; $cloudNotebooks := Lookup[ Options[ cell, CellOpen ], CellOpen, True ];
 cellOpenQ[ cell_CellObject ] := CurrentValue[ cell, CellOpen ];
 cellOpenQ // endDefinition;
 
@@ -157,7 +251,7 @@ cellOpenQ // endDefinition;
 (* ::Subsection::Closed:: *)
 (*cellStyles*)
 cellStyles // beginDefinition;
-cellStyles[ cells_ ] /; CloudSystem`$CloudNotebooks := cloudCellStyles @ cells;
+cellStyles[ cells_ ] /; $cloudNotebooks := cloudCellStyles @ cells;
 cellStyles[ cells_ ] := CurrentValue[ cells, CellStyle ];
 cellStyles // endDefinition;
 
@@ -176,7 +270,7 @@ cloudCellStyles // endDefinition;
 (* ::Subsection::Closed:: *)
 (*parentNotebook*)
 parentNotebook // beginDefinition;
-parentNotebook[ cell_CellObject ] /; CloudSystem`$CloudNotebooks := Notebooks @ cell;
+parentNotebook[ cell_CellObject ] /; $cloudNotebooks := Notebooks @ cell;
 parentNotebook[ cell_CellObject ] := ParentNotebook @ cell;
 parentNotebook // endDefinition;
 
@@ -184,7 +278,7 @@ parentNotebook // endDefinition;
 (* ::Subsection::Closed:: *)
 (*notebookRead*)
 notebookRead // beginDefinition;
-notebookRead[ cells_ ] /; CloudSystem`$CloudNotebooks := cloudNotebookRead @ cells;
+notebookRead[ cells_ ] /; $cloudNotebooks := cloudNotebookRead @ cells;
 notebookRead[ cells_ ] := NotebookRead @ cells;
 notebookRead // endDefinition;
 

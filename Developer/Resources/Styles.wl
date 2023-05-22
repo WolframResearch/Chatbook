@@ -87,10 +87,6 @@ Cell[
     MenuSortingValue  -> 1000,
     StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "SideChat", "Backspace" -> "Input" },
 	CellDingbat -> Cell[
-		(* BoxData @ RowBox[{
-			TemplateBox[{}, "ChatCounterLabel"],
-			ToBoxes @ $chatInputCellDingbat
-		}], *)
         BoxData @ DynamicBox @ ToBoxes[
             If[ TrueQ @ CloudSystem`$CloudNotebooks,
                 RawBoxes @ TemplateBox[ { }, "RoleUser" ],
@@ -255,23 +251,40 @@ Cell[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*ChatContextDivider*)
+(*ChatBlockDivider*)
 Cell[
-    StyleData[ "ChatContextDivider", StyleDefinitions -> StyleData[ "Section" ] ],
+    StyleData[ "ChatBlockDivider", StyleDefinitions -> StyleData[ "Section" ] ],
     CellFrame           -> { { 0, 0 }, { 0, 8 } },
     CellFrameColor      -> GrayLevel[ 0.74902 ],
     CellGroupingRules   -> { "SectionGrouping", 30 },
-    CellMargins         -> { { 66, 25 }, { Inherited, Inherited } },
+    CellMargins         -> { { 5, 25 }, { Inherited, Inherited } },
     CellTrayWidgets     -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterAssignments  -> { { "ChatInputCount", 0 } },
     DefaultNewCellStyle -> "Input",
     FontColor           -> GrayLevel[ 0.2 ],
     FontWeight          -> "DemiBold",
     ShowCellLabel       -> False,
+    StyleKeyMapping     -> { "~" -> "ChatDelimiter", "'" -> "ChatInput" },
 
-    StyleKeyMapping -> { "~" -> "ChatDelimiter", "'" -> "ChatInput" },
-
-    menuInitializer[ "ChatSection", GrayLevel[ 0.925 ] ]
+    CellFrameLabels -> {
+        {
+            Cell[
+                BoxData @ DynamicBox @ ToBoxes[
+                    If[ TrueQ @ CloudSystem`$CloudNotebooks,
+                        "",
+                        RawBoxes @ TemplateBox[ { }, "ChatDelimiterCellDingbat" ]
+                    ],
+                    StandardForm
+                ],
+                "Text",
+                Background  -> None,
+                CellFrame   -> 0,
+                CellMargins -> 0
+            ],
+            None
+        },
+        { None, None }
+    }
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -283,7 +296,7 @@ Cell[
     CellElementSpacings    -> { "CellMinHeight" -> 6 },
     CellFrameMargins       -> { { 20, 20 }, { 2, 2 } },
     CellGroupingRules      -> { "SectionGrouping", 62 },
-    CellMargins            -> { { 0, 0 }, { 10, 10 } },
+    CellMargins            -> { { 5, 0 }, { 10, 10 } },
     CellTrayWidgets        -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterAssignments     -> { { "ChatInputCount", 0 } },
     DefaultNewCellStyle    -> "Input",
@@ -295,7 +308,7 @@ Cell[
             CurrentValue[ "EventKey" ],
             "UpArrow"|"LeftArrow", SelectionMove[ EvaluationCell[ ], Before, Cell ],
             "~", (
-                NotebookWrite[ EvaluationCell[ ], Cell[ "", "ChatContextDivider" ], All ];
+                NotebookWrite[ EvaluationCell[ ], Cell[ "", "ChatBlockDivider" ], All ];
                 SelectionMove[ EvaluationNotebook[ ], Before, CellContents ];
             ),
             "'", (
@@ -309,17 +322,35 @@ Cell[
 
     CellFrameLabels -> {
         {
-            None,
             Cell[
-                BoxData @ TemplateBox[ { "ChatSection", GrayLevel[ 0.925 ] }, "ChatMenuButton" ],
-                "ChatMenu",
-                Background -> None
-            ]
+                BoxData @ DynamicBox @ ToBoxes[
+                    If[ TrueQ @ CloudSystem`$CloudNotebooks,
+                        "",
+                        RawBoxes @ TemplateBox[ { }, "ChatDelimiterCellDingbat" ]
+                    ],
+                    StandardForm
+                ],
+                Background    -> None,
+                CellFrame     -> 0,
+                CellMargins   -> 0,
+                Magnification -> 0.75 Inherited
+            ],
+            None
         },
         { None, None }
     },
 
     Initialization :> NotebookDelete @ Cells[ EvaluationCell[ ], AttachedCell -> True, CellStyle -> "ChatMenu" ]
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*ChatDelimiterCellDingbat*)
+Cell[
+    StyleData[ "ChatDelimiterCellDingbat" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $chatDelimiterCellDingbat
+    }
 ]
 
 (* ::**************************************************************************************************************:: *)

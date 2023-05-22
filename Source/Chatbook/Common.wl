@@ -3,6 +3,7 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Common`" ];
 
+`$cloudNotebooks;
 `$maxChatCells;
 `$closedChatCellOptions;
 
@@ -31,10 +32,12 @@ Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`" ];
 
+$cloudNotebooks := TrueQ @ CloudSystem`$CloudNotebooks;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
-$chatDelimiterStyles  = { "ChatContextDivider", "ChatDelimiter", "ExcludedChatDelimiter" };
+$chatDelimiterStyles  = { "ChatBlockDivider", "ChatDelimiter", "ExcludedChatDelimiter" };
 $chatIgnoredStyles    = { "ChatExcluded" };
 $chatInputStyles      = { "ChatInput", "SideChat", "ChatQuery", "ChatSystemInput" };
 $chatOutputStyles     = { "ChatOutput" };
@@ -43,7 +46,7 @@ $excludeHistoryStyles = { "SideChat" };
 $maxChatCells := OptionValue[ CreateChatNotebook, "ChatHistoryLength" ];
 
 $closedChatCellOptions :=
-    If[ TrueQ @ CloudSystem`$CloudNotebooks,
+    If[ TrueQ @ $cloudNotebooks,
         Sequence @@ { },
         Sequence @@ { CellMargins -> -2, CellOpen -> False, CellFrame -> 0, ShowCellBracket -> False }
     ];
@@ -355,7 +358,7 @@ Delimiters -> "%%"
 (* ::Subsubsection::Closed:: *)
 (*$frontEndVersion*)
 $frontEndVersion :=
-    If[ TrueQ @ CloudSystem`$CloudNotebooks,
+    If[ TrueQ @ $cloudNotebooks,
         StringJoin[ "Cloud: ", ToString @ $CloudVersion ],
         StringJoin[ "Desktop: ", ToString @ UsingFrontEnd @ SystemInformation[ "FrontEnd", "Version" ] ]
     ];

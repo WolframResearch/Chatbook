@@ -25,7 +25,7 @@ Needs[ "Wolfram`Chatbook`Prompting`"  ];
 (*Config*)
 $$delimiterStyle   = "PageBreak"|"ExampleDelimiter"|"ChatDelimiter";
 $$itemStyle        = "Item"|"Notes";
-$$noCellLabelStyle = "Text"|"ChatInput"|"SideChat"|"ChatSystemInput"|"ChatContextDivider"|$$delimiterStyle;
+$$noCellLabelStyle = "Text"|"ChatInput"|"SideChat"|"ChatSystemInput"|"ChatBlockDivider"|$$delimiterStyle;
 $$docSearchStyle   = "ChatQuery";
 
 (* Default character encoding for strings created from cells *)
@@ -342,7 +342,7 @@ fasterCellToString0[ (Cell|StyleBox)[ a_, "Subsection", ___ ] ] := "## "<>faster
 fasterCellToString0[ (Cell|StyleBox)[ a_, "Subsubsection", ___ ] ] := "### "<>fasterCellToString0 @ a;
 fasterCellToString0[ (Cell|StyleBox)[ a_, "Subsubsubsection", ___ ] ] := "#### "<>fasterCellToString0 @ a;
 fasterCellToString0[ (Cell|StyleBox)[ a_, "Subsubsubsubsection", ___ ] ] := "##### "<>fasterCellToString0 @ a;
-fasterCellToString0[ (Cell|StyleBox)[ a_, "ChatContextDivider", ___ ] ] := "# "<>fasterCellToString0 @ a;
+fasterCellToString0[ (Cell|StyleBox)[ a_, "ChatBlockDivider", ___ ] ] := "# "<>fasterCellToString0 @ a;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
