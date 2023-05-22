@@ -1,4 +1,4 @@
-Needs["Wolfram`ServerSentEventUtils`"]
+Needs["Wolfram`Chatbook`ServerSentEventUtils`"]
 
 
 (*=================================================*)
@@ -9,22 +9,22 @@ Module[{
 	generator = CreateChunkToServerSentEventGenerator[]
 },
 	VerificationTest[
-		generator["data:"]
-		,
-		Missing["IncompleteData"]
-	];
+  generator["data:"],
+  Missing["IncompleteData"],
+  TestID -> "Untitled-7@@Tests/SSETests.wlt:11,2-15,2"
+];
 
 	VerificationTest[
-		generator[" foo\n"]
-		,
-		Missing["IncompleteData"]
-	];
+  generator[" foo\n"],
+  Missing["IncompleteData"],
+  TestID -> "Untitled-8@@Tests/SSETests.wlt:17,2-21,2"
+];
 
 	VerificationTest[
-		generator["\n"]
-		,
-		{<|"Data" -> "foo"|>}
-	];
+  generator["\n"],
+  {Association["Data" -> "foo"]},
+  TestID -> "Untitled-9@@Tests/SSETests.wlt:23,2-27,2"
+];
 ]
 
 (*===========================================*)
@@ -35,28 +35,19 @@ $events = {}
 $func = ServerSentEventBodyChunkTransformer[event |-> AppendTo[$events, event]]
 
 VerificationTest[
-	{
-		$func[<| "BodyChunk" -> "data: " |>],
-		$events
-	}
-	,
-	{Null, {}}
+  {$func[Association["BodyChunk" -> "data: "]], $events},
+  {Null, {}},
+  TestID -> "Untitled-10@@Tests/SSETests.wlt:37,1-41,2"
 ]
 
 VerificationTest[
-	{
-		$func[<| "BodyChunk" -> "foo\n" |>],
-		$events
-	}
-	,
-	{Null, {}}
+  {$func[Association["BodyChunk" -> "foo\n"]], $events},
+  {Null, {}},
+  TestID -> "Untitled-11@@Tests/SSETests.wlt:43,1-47,2"
 ]
 
 VerificationTest[
-	{
-		$func[<| "BodyChunk" -> "\n\n" |>],
-		$events
-	}
-	,
-	{Null, {<| "Data" -> "foo" |>}}
+  {$func[Association["BodyChunk" -> "\n\n"]], $events},
+  {Null, {Association["Data" -> "foo"]}},
+  TestID -> "Untitled-12@@Tests/SSETests.wlt:49,1-53,2"
 ]
