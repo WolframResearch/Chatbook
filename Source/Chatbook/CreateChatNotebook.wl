@@ -52,7 +52,7 @@ CreateChatNotebook[ nbo_NotebookObject, opts: OptionsPattern[ { CreateChatNotebo
 (* ::Subsection::Closed:: *)
 (*createChatNotebook*)
 createChatNotebook // SetFallthroughError;
-createChatNotebook[ opts___ ] /; CloudSystem`$CloudNotebooks := createCloudChatNotebook @ opts;
+createChatNotebook[ opts___ ] /; $cloudNotebooks := createCloudChatNotebook @ opts;
 createChatNotebook[ opts___ ] := createLocalChatNotebook @ opts;
 
 (* ::**************************************************************************************************************:: *)
@@ -124,7 +124,7 @@ makeChatNotebookOptions[ settings_Association, opts: OptionsPattern[ ] ] := Sequ
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$chatbookStylesheet*)
-$chatbookStylesheet := If[ TrueQ @ CloudSystem`$CloudNotebooks, $inlinedStylesheet, "Chatbook.nb" ];
+$chatbookStylesheet := If[ TrueQ @ $cloudNotebooks, $inlinedStylesheet, "Chatbook.nb" ];
 
 $inlinedStylesheet := $inlinedStylesheet = Import[
     FileNameJoin @ {
