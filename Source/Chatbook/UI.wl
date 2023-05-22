@@ -28,6 +28,7 @@ GetChatInputLLMConfigurationSelectorMenuData
 Begin["`Private`"]
 
 Needs["Wolfram`Chatbook`"]
+Needs["Wolfram`Chatbook`Common`"]
 Needs["Wolfram`Chatbook`ErrorUtils`"]
 Needs["Wolfram`Chatbook`Errors`"]
 Needs["Wolfram`Chatbook`Debug`"]

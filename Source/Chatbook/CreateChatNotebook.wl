@@ -9,6 +9,7 @@ ClearAll[ "`Private`*" ];
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"            ];
+Needs[ "Wolfram`Chatbook`Common`"     ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
 
 (* ::**************************************************************************************************************:: *)
