@@ -31,18 +31,96 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (*currentChatSettings*)
 currentChatSettings // beginDefinition;
 
-currentChatSettings[ obj: _NotebookObject|_CellObject ] :=
+currentChatSettings[ nbo_NotebookObject ] :=
     Association[
         $defaultChatSettings,
         Replace[
-            Association @ CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ],
+            Association @ CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings" } ],
             Except[ _? AssociationQ ] :> <| |>
         ]
     ];
 
-currentChatSettings[ obj: _NotebookObject|_CellObject, key_String ] := Replace[
-    AbsoluteCurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", key } ],
+currentChatSettings[ nbo_NotebookObject, key_String ] := Replace[
+    AbsoluteCurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", key } ],
     Inherited :> Lookup[ $defaultChatSettings, key, Inherited ]
+];
+
+
+currentChatSettings[ cell_CellObject ] := Enclose[
+    Module[ { nbo, cells, before, info, delimiter, settings },
+
+        nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
+
+        cells = ConfirmMatch[
+            Cells[ nbo, CellStyle -> Union[ $chatDelimiterStyles, $chatInputStyles ] ],
+            { __CellObject },
+            "ChatCells"
+        ];
+
+        before = ConfirmMatch[
+            Replace[ cells, { { a___, cell, ___ } :> { a }, ___ :> $Failed } ],
+            { ___CellObject },
+            "BeforeCells"
+        ];
+
+        info = ConfirmMatch[
+            cellInformation @ before,
+            { KeyValuePattern[ "CellObject" -> _CellObject ]... },
+            "CellInformation"
+        ];
+
+        delimiter = FirstCase[
+            Reverse @ info,
+            KeyValuePattern @ { "Style" -> $$chatDelimiterStyle, "CellObject" -> c_ } :> c,
+            Nothing
+        ];
+
+        settings = Select[
+            Map[ Association,
+                 CurrentValue[ DeleteMissing @ { delimiter, cell }, { TaggingRules, "ChatNotebookSettings" } ]
+            ],
+            AssociationQ
+        ];
+
+        ConfirmBy[ Association[ $defaultChatSettings, settings ], AssociationQ, "CombinedSettings" ]
+    ],
+    throwInternalFailure[ currentChatSettings @ cell, ## ] &
+];
+
+currentChatSettings[ cell_CellObject, key_String ] := Enclose[
+    Module[ { nbo, cells, before, info, delimiter, values },
+
+        nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
+
+        cells = ConfirmMatch[
+            Cells[ nbo, CellStyle -> Union[ $chatDelimiterStyles, $chatInputStyles ] ],
+            { __CellObject },
+            "ChatCells"
+        ];
+
+        before = ConfirmMatch[
+            Replace[ cells, { { a___, cell, ___ } :> { a }, ___ :> $Failed } ],
+            { ___CellObject },
+            "BeforeCells"
+        ];
+
+        info = ConfirmMatch[
+            cellInformation @ before,
+            { KeyValuePattern[ "CellObject" -> _CellObject ]... },
+            "CellInformation"
+        ];
+
+        delimiter = FirstCase[
+            Reverse @ info,
+            KeyValuePattern @ { "Style" -> $$chatDelimiterStyle, "CellObject" -> c_ } :> c,
+            Nothing
+        ];
+
+        values = CurrentValue[ DeleteMissing @ { delimiter, cell }, { TaggingRules, "ChatNotebookSettings", key } ];
+
+        FirstCase[ values, Except[ Inherited ], Lookup[ $defaultChatSettings, key, Inherited ] ]
+    ],
+    throwInternalFailure[ currentChatSettings[ cell, key ], ## ] &
 ];
 
 currentChatSettings // endDefinition;
