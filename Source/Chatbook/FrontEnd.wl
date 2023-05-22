@@ -52,7 +52,7 @@ currentChatSettings[ cell_CellObject ] := Enclose[
         nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
 
         cells = ConfirmMatch[
-            Cells[ nbo, CellStyle -> Union[ $chatDelimiterStyles, $chatInputStyles ] ],
+            Cells[ nbo, CellStyle -> Union[ $chatDelimiterStyles, cellStyles @ cell ] ],
             { __CellObject },
             "ChatCells"
         ];
@@ -93,7 +93,7 @@ currentChatSettings[ cell_CellObject, key_String ] := Enclose[
         nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
 
         cells = ConfirmMatch[
-            Cells[ nbo, CellStyle -> Union[ $chatDelimiterStyles, $chatInputStyles ] ],
+            Cells[ nbo, CellStyle -> Union[ $chatDelimiterStyles, cellStyles @ cell ] ],
             { __CellObject },
             "ChatCells"
         ];
