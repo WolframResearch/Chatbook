@@ -1879,6 +1879,12 @@ makeChatDelimiterActionMenuContent[
 		],
 		{
 			Delimiter,
+			{
+				alignedMenuIcon[getIcon["ChatBlockSettingsMenuIcon"]],
+				"Chat Block Settings\[Ellipsis]",
+				"OpenChatBlockSettings"
+			},
+			Delimiter,
 			{alignedMenuIcon[getIcon["PersonaOther"]], "Add & Manage Personas\[Ellipsis]", "PersonaManage"},
 			{alignedMenuIcon[getIcon["PersonaFromURL"]], "Install From URL\[Ellipsis]", "PersonaURLInstall"},
 			Delimiter,

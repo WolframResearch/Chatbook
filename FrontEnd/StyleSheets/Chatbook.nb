@@ -1542,55 +1542,35 @@ Notebook[
     StyleDefinitions -> StyleData["Section"]
    ],
    CellFrame -> {{0, 0}, {0, 8}},
-   CellDingbat ->
-    Cell[
-     BoxData[
-      DynamicBox[
-       ToBoxes[
-        If[ TrueQ[CloudSystem`$CloudNotebooks],
-         RawBoxes[TemplateBox[{}, "RoleUser"]],
-         RawBoxes[TemplateBox[{}, "ChatInputActiveCellDingbat"]]
-        ],
-        StandardForm
-       ]
-      ]
-     ],
-     Background -> None,
-     CellFrame -> 0,
-     CellMargins -> 0
-    ],
-   CellMargins -> {{66, 25}, {Inherited, Inherited}},
+   CellMargins -> {{5, 25}, {Inherited, Inherited}},
    StyleKeyMapping -> {"~" -> "ChatDelimiter", "'" -> "ChatInput"},
    CellGroupingRules -> {"SectionGrouping", 30},
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
-   Initialization :>
-    If[ Not[TrueQ[CloudSystem`$CloudNotebooks]],
-     With[ { cell$ = EvaluationCell[] },
-      
-      NotebookDelete[
-       Cells[cell$, AttachedCell -> True, CellStyle -> "ChatMenu"]
-      ];
-
-      AttachCell[
-       cell$,
-       Cell[
-        BoxData[
-         TemplateBox[
-          {"ChatSection", GrayLevel[0.925]},
-          "ChatMenuButton"
-         ]
-        ],
-        "ChatMenu"
-       ],
-       {Right, Top},
-       Offset[{-7, -7}, {Right, Top}],
-       {Right, Top},
-       RemovalConditions -> {"EvaluatorQuit"}
-      ]
-     ]
-    ],
    ShowCellLabel -> False,
    CellFrameColor -> GrayLevel[0.74902],
+   CellFrameLabels -> {
+    {
+     Cell[
+      BoxData[
+       DynamicBox[
+        ToBoxes[
+         If[ TrueQ[CloudSystem`$CloudNotebooks],
+          "",
+          RawBoxes[TemplateBox[{}, "ChatDelimiterCellDingbat"]]
+         ],
+         StandardForm
+        ]
+       ]
+      ],
+      "Text",
+      Background -> None,
+      CellFrame -> 0,
+      CellMargins -> 0
+     ],
+     None
+    },
+    {None, None}
+   },
    DefaultNewCellStyle -> "Input",
    CounterAssignments -> {{"ChatInputCount", 0}},
    FontWeight -> "DemiBold",
@@ -1650,8 +1630,8 @@ Notebook[
        DynamicBox[
         ToBoxes[
          If[ TrueQ[CloudSystem`$CloudNotebooks],
-          RawBoxes[TemplateBox[{}, "RoleUser"]],
-          RawBoxes[TemplateBox[{}, "ChatInputActiveCellDingbat"]]
+          "",
+          RawBoxes[TemplateBox[{}, "ChatDelimiterCellDingbat"]]
          ],
          StandardForm
         ]
@@ -1659,18 +1639,10 @@ Notebook[
       ],
       Background -> None,
       CellFrame -> 0,
-      CellMargins -> 0
+      CellMargins -> 0,
+      Magnification -> 0.75 * Inherited
      ],
-     Cell[
-      BoxData[
-       TemplateBox[
-        {"ChatSection", GrayLevel[0.925]},
-        "ChatMenuButton"
-       ]
-      ],
-      "ChatMenu",
-      Background -> None
-     ]
+     None
     },
     {None, None}
    },
@@ -1678,6 +1650,66 @@ Notebook[
    CounterAssignments -> {{"ChatInputCount", 0}},
    FontSize -> 6,
    Background -> GrayLevel[0.95]
+  ],
+  Cell[
+   StyleData["ChatDelimiterCellDingbat"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      ButtonBox[
+       FrameBox[
+        PaneBox[
+         TemplateBox[{}, "ChatSystemMenu"],
+         Alignment -> {Center, Center},
+         ImageSize -> {25, 25},
+         ImageSizeAction -> "ShrinkToFit"
+        ],
+        RoundingRadius -> 2,
+        FrameStyle ->
+         Dynamic[
+          If[ CurrentValue["MouseOver"],
+           GrayLevel[0.74902],
+           GrayLevel[0, 0]
+          ]
+         ],
+        Background ->
+         Dynamic[
+          If[ CurrentValue["MouseOver"],
+           GrayLevel[0.96078],
+           GrayLevel[1]
+          ]
+         ],
+        FrameMargins -> 0,
+        ImageMargins -> 0,
+        ContentPadding -> False,
+        StripOnInput -> False
+       ],
+       ButtonFunction :>
+        (AttachCell[
+         EvaluationCell[],
+         Wolfram`Chatbook`UI`Private`openChatDelimiterActionMenu[
+          EvaluationCell[]
+         ],
+         {Left, Bottom},
+         Offset[{0, 0}, {Left, Top}],
+         {Left, Top},
+         RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
+        ];),
+       Appearance ->
+        Dynamic[
+         FEPrivate`FrontEndResource[
+          "FEExpressions",
+          "SuppressMouseDownNinePatchAppearance"
+         ]
+        ],
+       ImageMargins -> 0,
+       FrameMargins -> 0,
+       ContentPadding -> False,
+       Evaluator -> Automatic,
+       Method -> "Preemptive"
+      ]
+     ])
+   }
   ],
   Cell[
    StyleData["ChatCodeBlock"],
@@ -3037,6 +3069,171 @@ Notebook[
    }
   ],
   Cell[
+   StyleData["ChatBlockSettingsMenuIcon"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.05],
+        {
+         EdgeForm[
+          {
+           RGBColor[0.50196, 0.56078, 0.59216],
+           Opacity[1.],
+           Thickness[0.04]
+          }
+         ],
+         FaceForm[GrayLevel[1]],
+         FilledCurveBox[
+          {
+           {
+            {1, 4, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgBGIRIGZigAFDBwht4ADjR6VY3/fvNYDTuNTJvH5kJsUg\nAOdnbH5VvHUqN5xvee1orgkDB9wcGB9mDipfBs6fkSfUfOCUJJp5Emj2wfgS\nOPgwc1Xg8qjul0DzH0ze0KHW3jRu10lJOP/pBaXbP/9JY4QDAHoEQIQ=\n      "
+          ]
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.50196, 0.56078, 0.59216], Opacity[1.]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0}
+           },
+           {
+            {0, 2, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           }
+          },
+          {
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGBQBGIQfftnXdYeE22H1teBO+RYVR2eXlACCmk5RJwyOrLR\nT9mBT3fT3PfPNRz08xYz7lmq7OCUAFQRre5wlTNDKUdCyaE75/nvlRvVHf6l\nfn+S2KjgwLFGJirlt6qD1krhCy4z5B14mLTbxSRVHXgmr2wK1FR0uBb2Rn/3\ncyU431e0x+sVixJcvc3eoGmKfgpw84QTD1/WXqoAt6/oJ//L7fpycPfcf8A9\neSWTNNy9n/uCS1SmS8L985AbZJGMQ+NUZ6BTEXyIuzTg6iHu1oCbJ8kSBvS6\nFty+89+DHy+N1oK7Z84RhQ1FL7Th7oWEmy7cPxkT39bYm+rB/Ztifd+/97oO\nPDxgfFh4wdTDwhNmHiy8IfGgDbVXA+4eWHzB3AuLT5h/IPZowv0L48PCAz3+\nAcYL3Ok=\n       "
+           ],
+           CompressedData[
+            "\n1:eJxdVAlME1EQrQh4REUJtIUesqUt3e62lQQQT4aggifhEMUDFTUhBsQgRELU\ncEQBCwoRBbwFCTF4n3hEiSIeGKIGATVeoAFFQBRRg0T/dneHxE22m/c7/8/M\ne28+FZsYvt5OIpEsIy/3Da9W7+gMY2Ei+a2O0YPLmeD3aUUMHCglz4shnLEv\nyBrv5QVvQ/OLN4azkOicVfPouBfsldtHjetiwXThcE+lowFmWePbB2gT6BzJ\njnoDnNg0Y3RzGwv9hhV77qTQcMzd8lrryEKAb8z1uXkMkNPISQwsih2/dIoP\nCyHv01zOjGCguZxsLGb5/JFGiBpHMiSycKSnsm7+FprfB6zwpYV1FtoqDtZ6\nbKKFfSaYN8aOyd5Pw1fy9+RRZiBZLj3wo0HCPTVm4MqusxqEuiwQV9i1NSBF\nD94jTymXfbBACtdgg44/z2US/IogGex1cOX7YGPqJwv8Odn7bGGZFngeLdDH\nLeu1Am9maGTWu7W2eCKOll19KonxxPjUQ2We1/5ogCb0/OiwQEvG5jlFfhoo\nm00ykHyrSha45u2iBB4twMj3NY7qUGO95cNuOjgXqbAf71IjiVDCNo5g0m+b\nn3vNcg8Vfx7hI1lb/Ldguwr5iuQWxquQz4OLj1adXqpAvjcs/L47os8N1k3j\nlGeh9rx5Y3mGnNfTl4VQtZSEyFDPbU8uRv+YIkW9NfGpaRWnXHmeiR+ywuYe\nTtdL0S+drVyBMvRThv7OzspmOfpNxKIfxXjRr3FcAp0UVn98onn1W4f5bDr6\n6rCeEs5mu7RCPzKet2QNEDbJEXI43uTT4/+REvpzg+qzw9vzcigwBSk7W6+4\nI+bYDOwdwnw/CkirYIOUVoqvd4kC8g1dY28VUMhvFKG15TaF/M8OTvrtlEuh\nPoG9ax+vrPJA/dpVlR0h3RNR34H67od3M9Wo/07/pnsJfSr4Yrnh5UTylt7Y\nX+A0VQnzP9v7TCD+ieYCTivAgaDpgxpIvuw6UG9Wov80g/0p71ao0J/VkNl6\nv0WN/hWx6G8x/lCtx7mkDq1QjxIiuYFbrYOqmUuWn/+rANmLhp8RbUOY97Ee\nsW2+g/VQ8+XIdNZFifMm1m/zba4Bwl4qtq75phJ8RkNdgk/61XQ1zrPIjzjv\nDTnP3rwj/In3gciveF+I/GdLuQKNqA91LimuMMGI+j0n3XvnGFHfW0fJoJ0Y\nwrY5AwaxzVePGPQP72uW15H4i+eD5e9DqxaeEpduN5rQn7b85P4U/fv/ffwP\nllVkVA==\n       "
+           ]
+          }
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.50196, 0.56078, 0.59216], Opacity[1.]}
+         ],
+         FilledCurveBox[
+          {
+           {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}},
+           {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgAmJeKP1ERPbk0//KDqcXum77vFfF4Z/zr7evDyjB+eu2\nJdXf3KvosOKYt3nnQVU4v3d6nlAzgzqc//SC0u2fdhpw/Ye/asT0O2k6wMyH\n8SHqVOF8CK0G1w/jw8yH8WH2w/TD3Ifufhi/OGPi25r/Wg7TNvEUrjmtCOcX\nrum+ncGg4OCXJBBhaaIJ58Psg/HtTeN2eZ5Rgevv2ZnN+ZNBGW4+jA8xRw3O\nh9ijDtcP48PMh/Fh9sP0w9yH7n4AybfA1A==\n      "
+          ]
+         ]
+        }
+       },
+       AspectRatio -> Automatic,
+       BaselinePosition -> Scaled[0.288],
+       ImageSize -> {{21., 21.}, {21., 21.}},
+       PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
+      ]
+     ])
+   }
+  ],
+  Cell[
    StyleData["ChatExcludedWidget"],
    TemplateBoxOptions -> {
     DisplayFunction ->
@@ -3865,6 +4062,161 @@ Notebook[
        AspectRatio -> Automatic,
        ImageSize -> {{26., 21.}, {26., 21.}},
        PlotRange -> {{-0.5, 25.5}, {0.5, 20.5}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ChatSystemMenu"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.05],
+        {
+         FaceForm[
+          {RGBColor[0.50196, 0.56078, 0.59216], Opacity[1.]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {1, 4, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgBGIRIGZigAFDBwht4ADjR6VY3/fvNYDTuNTJvH5kJsUg\nAOdnbH5VvHUqN5xvee1orgkDB9wcGB9mDipfBs6fkSfUfOCUJJp5Emj2wfgS\nOPgwc1Xg8qjul0DzH0ze0KHW3jRu10lJOP/pBaXbP/9JY4QDAHoEQIQ=\n      "
+          ]
+         ]
+        },
+        {
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0}
+           },
+           {
+            {0, 2, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           }
+          },
+          {
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGBQBGIQfftnXdYeE22H1teBO+RYVR2eXlACCmk5RJwyOrLR\nT9mBT3fT3PfPNRz08xYz7lmq7OCUAFQRre5wlTNDKUdCyaE75/nvlRvVHf6l\nfn+S2KjgwLFGJirlt6qD1krhCy4z5B14mLTbxSRVHXgmr2wK1FR0uBb2Rn/3\ncyU431e0x+sVixJcvc3eoGmKfgpw84QTD1/WXqoAt6/oJ//L7fpycPfcf8A9\neSWTNNy9n/uCS1SmS8L985AbZJGMQ+NUZ6BTEXyIuzTg6iHu1oCbJ8kSBvS6\nFty+89+DHy+N1oK7Z84RhQ1FL7Th7oWEmy7cPxkT39bYm+rB/Ztifd+/97oO\nPDxgfFh4wdTDwhNmHiy8IfGgDbVXA+4eWHzB3AuLT5h/IPZowv0L48PCAz3+\nAcYL3Ok=\n       "
+           ],
+           CompressedData[
+            "\n1:eJxdVAlME1EQrQh4REUJtIUesqUt3e62lQQQT4aggifhEMUDFTUhBsQgRELU\ncEQBCwoRBbwFCTF4n3hEiSIeGKIGATVeoAFFQBRRg0T/dneHxE22m/c7/8/M\ne28+FZsYvt5OIpEsIy/3Da9W7+gMY2Ei+a2O0YPLmeD3aUUMHCglz4shnLEv\nyBrv5QVvQ/OLN4azkOicVfPouBfsldtHjetiwXThcE+lowFmWePbB2gT6BzJ\njnoDnNg0Y3RzGwv9hhV77qTQcMzd8lrryEKAb8z1uXkMkNPISQwsih2/dIoP\nCyHv01zOjGCguZxsLGb5/JFGiBpHMiSycKSnsm7+FprfB6zwpYV1FtoqDtZ6\nbKKFfSaYN8aOyd5Pw1fy9+RRZiBZLj3wo0HCPTVm4MqusxqEuiwQV9i1NSBF\nD94jTymXfbBACtdgg44/z2US/IogGex1cOX7YGPqJwv8Odn7bGGZFngeLdDH\nLeu1Am9maGTWu7W2eCKOll19KonxxPjUQ2We1/5ogCb0/OiwQEvG5jlFfhoo\nm00ykHyrSha45u2iBB4twMj3NY7qUGO95cNuOjgXqbAf71IjiVDCNo5g0m+b\nn3vNcg8Vfx7hI1lb/Ldguwr5iuQWxquQz4OLj1adXqpAvjcs/L47os8N1k3j\nlGeh9rx5Y3mGnNfTl4VQtZSEyFDPbU8uRv+YIkW9NfGpaRWnXHmeiR+ywuYe\nTtdL0S+drVyBMvRThv7OzspmOfpNxKIfxXjRr3FcAp0UVn98onn1W4f5bDr6\n6rCeEs5mu7RCPzKet2QNEDbJEXI43uTT4/+REvpzg+qzw9vzcigwBSk7W6+4\nI+bYDOwdwnw/CkirYIOUVoqvd4kC8g1dY28VUMhvFKG15TaF/M8OTvrtlEuh\nPoG9ax+vrPJA/dpVlR0h3RNR34H67od3M9Wo/07/pnsJfSr4Yrnh5UTylt7Y\nX+A0VQnzP9v7TCD+ieYCTivAgaDpgxpIvuw6UG9Wov80g/0p71ao0J/VkNl6\nv0WN/hWx6G8x/lCtx7mkDq1QjxIiuYFbrYOqmUuWn/+rANmLhp8RbUOY97Ee\nsW2+g/VQ8+XIdNZFifMm1m/zba4Bwl4qtq75phJ8RkNdgk/61XQ1zrPIjzjv\nDTnP3rwj/In3gciveF+I/GdLuQKNqA91LimuMMGI+j0n3XvnGFHfW0fJoJ0Y\nwrY5AwaxzVePGPQP72uW15H4i+eD5e9DqxaeEpduN5rQn7b85P4U/fv/ffwP\nllVkVA==\n       "
+           ]
+          }
+         ]
+        },
+        {
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
+         FilledCurveBox[
+          {
+           {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}},
+           {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgAmJeKP1ERPbk0//KDqcXum77vFfF4Z/zr7evDyjB+eu2\nJdXf3KvosOKYt3nnQVU4v3d6nlAzgzqc//SC0u2fdhpw/Ye/asT0O2k6wMyH\n8SHqVOF8CK0G1w/jw8yH8WH2w/TD3Ifufhi/OGPi25r/Wg7TNvEUrjmtCOcX\nrum+ncGg4OCXJBBhaaIJ58Psg/HtTeN2eZ5Rgevv2ZnN+ZNBGW4+jA8xRw3O\nh9ijDtcP48PMh/Fh9sP0w9yH7n4AybfA1A==\n      "
+          ]
+         ]
+        }
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {{21., 21.}, {21., 21.}},
+       PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
       ]
      ])
    }
