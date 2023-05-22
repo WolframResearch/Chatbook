@@ -39,6 +39,7 @@ ChatbookAction[ "CopyChatObject"       , args___ ] := catchMine @ CopyChatObject
 ChatbookAction[ "DisableAssistance"    , args___ ] := catchMine @ DisableAssistance @ args;
 ChatbookAction[ "EvaluateChatInput"    , args___ ] := catchMine @ EvaluateChatInput @ args;
 ChatbookAction[ "ExclusionToggle"      , args___ ] := catchMine @ ExclusionToggle @ args;
+ChatbookAction[ "OpenChatBlockSettings", args___ ] := catchMine @ OpenChatBlockSettings @ args;
 ChatbookAction[ "OpenChatMenu"         , args___ ] := catchMine @ OpenChatMenu @ args;
 ChatbookAction[ "PersonaManage"        , args___ ] := catchMine @ PersonaManage @ args;
 (* ChatbookAction[ "PersonaURLInstall"    , args___ ] := catchMine @ PersonaURLInstall @ args; *) (* TODO *)
@@ -313,6 +314,13 @@ constructChatObject[ messages_List ] :=
 constructChatObject // endDefinition;
 
 chatObject := chatObject = Symbol[ "System`ChatObject" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*OpenChatBlockSettings*)
+OpenChatBlockSettings // beginDefinition;
+OpenChatBlockSettings[ cell_CellObject ] := OpenChatMenu[ "ChatSection", cell ];
+OpenChatBlockSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
