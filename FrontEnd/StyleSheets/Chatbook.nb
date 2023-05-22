@@ -877,7 +877,7 @@ Notebook[
           {Wolfram`Chatbook`UI`Private`cell$$},
           DynamicBox[
            ToBoxes[
-            If[ TrueQ[CloudSystem`$CloudNotebooks],
+            If[ TrueQ[Wolfram`Chatbook`UI`Private`$cloudNotebooks],
              RawBoxes[TemplateBox[{}, "ChatInputCellDingbat"]],
              With[
               {
@@ -981,7 +981,7 @@ Notebook[
              {Wolfram`Chatbook`UI`Private`cell$$},
              DynamicBox[
               ToBoxes[
-               If[ TrueQ[CloudSystem`$CloudNotebooks],
+               If[ TrueQ[Wolfram`Chatbook`UI`Private`$cloudNotebooks],
                 RawBoxes[TemplateBox[{}, "ChatInputCellDingbat"]],
                 With[
                  {
@@ -1105,7 +1105,7 @@ Notebook[
                {Wolfram`Chatbook`UI`Private`cell$$},
                DynamicBox[
                 ToBoxes[
-                 If[ TrueQ[CloudSystem`$CloudNotebooks],
+                 If[ TrueQ[Wolfram`Chatbook`UI`Private`$cloudNotebooks],
                   RawBoxes[TemplateBox[{}, "ChatInputCellDingbat"]],
                   With[
                    {
@@ -1223,7 +1223,7 @@ Notebook[
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellFrameMargins -> {{0, Inherited}, {Inherited, Inherited}},
    CounterIncrements -> { },
-   Background -> RGBColor[0.98039, 0.98824, 1.0]
+   Background -> RGBColor[0.98039, 0.98824, 1.]
   ],
   Cell[
    StyleData[
@@ -1306,7 +1306,7 @@ Notebook[
    CellAutoOverwrite -> True,
    ShowAutoSpellCheck -> False,
    LineSpacing -> {1.1, 0, 2},
-   Background -> RGBColor[0.98824, 0.99216, 1.0]
+   Background -> RGBColor[0.98824, 0.99216, 1.]
   ],
   Cell[
    StyleData[
@@ -1538,42 +1538,39 @@ Notebook[
   ],
   Cell[
    StyleData[
-    "ChatContextDivider",
+    "ChatBlockDivider",
     StyleDefinitions -> StyleData["Section"]
    ],
    CellFrame -> {{0, 0}, {0, 8}},
-   CellMargins -> {{66, 25}, {Inherited, Inherited}},
+   CellMargins -> {{5, 25}, {Inherited, Inherited}},
    StyleKeyMapping -> {"~" -> "ChatDelimiter", "'" -> "ChatInput"},
    CellGroupingRules -> {"SectionGrouping", 30},
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
-   Initialization :>
-    If[ Not[TrueQ[CloudSystem`$CloudNotebooks]],
-     With[ { cell$ = EvaluationCell[] },
-      
-      NotebookDelete[
-       Cells[cell$, AttachedCell -> True, CellStyle -> "ChatMenu"]
-      ];
-
-      AttachCell[
-       cell$,
-       Cell[
-        BoxData[
-         TemplateBox[
-          {"ChatSection", GrayLevel[0.925]},
-          "ChatMenuButton"
-         ]
-        ],
-        "ChatMenu"
-       ],
-       {Right, Top},
-       Offset[{-7, -7}, {Right, Top}],
-       {Right, Top},
-       RemovalConditions -> {"EvaluatorQuit"}
-      ]
-     ]
-    ],
    ShowCellLabel -> False,
    CellFrameColor -> GrayLevel[0.74902],
+   CellFrameLabels -> {
+    {
+     Cell[
+      BoxData[
+       DynamicBox[
+        ToBoxes[
+         If[ TrueQ[CloudSystem`$CloudNotebooks],
+          "",
+          RawBoxes[TemplateBox[{}, "ChatDelimiterCellDingbat"]]
+         ],
+         StandardForm
+        ]
+       ]
+      ],
+      "Text",
+      Background -> None,
+      CellFrame -> 0,
+      CellMargins -> 0
+     ],
+     None
+    },
+    {None, None}
+   },
    DefaultNewCellStyle -> "Input",
    CounterAssignments -> {{"ChatInputCount", 0}},
    FontWeight -> "DemiBold",
@@ -1581,7 +1578,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatDelimiter"],
-   CellMargins -> {{0, 0}, {10, 10}},
+   CellMargins -> {{5, 0}, {10, 10}},
    CellElementSpacings -> {"CellMinHeight" -> 6},
    CellGroupingRules -> {"SectionGrouping", 62},
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
@@ -1603,7 +1600,7 @@ Notebook[
       
       NotebookWrite[
        EvaluationCell[],
-       Cell["", "ChatContextDivider"],
+       Cell["", "ChatBlockDivider"],
        All
       ];
 
@@ -1628,17 +1625,24 @@ Notebook[
    CellFrameMargins -> {{20, 20}, {2, 2}},
    CellFrameLabels -> {
     {
-     None,
      Cell[
       BoxData[
-       TemplateBox[
-        {"ChatSection", GrayLevel[0.925]},
-        "ChatMenuButton"
+       DynamicBox[
+        ToBoxes[
+         If[ TrueQ[CloudSystem`$CloudNotebooks],
+          "",
+          RawBoxes[TemplateBox[{}, "ChatDelimiterCellDingbat"]]
+         ],
+         StandardForm
+        ]
        ]
       ],
-      "ChatMenu",
-      Background -> None
-     ]
+      Background -> None,
+      CellFrame -> 0,
+      CellMargins -> 0,
+      Magnification -> 0.75 * Inherited
+     ],
+     None
     },
     {None, None}
    },
@@ -1646,6 +1650,66 @@ Notebook[
    CounterAssignments -> {{"ChatInputCount", 0}},
    FontSize -> 6,
    Background -> GrayLevel[0.95]
+  ],
+  Cell[
+   StyleData["ChatDelimiterCellDingbat"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      ButtonBox[
+       FrameBox[
+        PaneBox[
+         TemplateBox[{}, "ChatSystemMenu"],
+         Alignment -> {Center, Center},
+         ImageSize -> {25, 25},
+         ImageSizeAction -> "ShrinkToFit"
+        ],
+        RoundingRadius -> 2,
+        FrameStyle ->
+         Dynamic[
+          If[ CurrentValue["MouseOver"],
+           GrayLevel[0.74902],
+           GrayLevel[0, 0]
+          ]
+         ],
+        Background ->
+         Dynamic[
+          If[ CurrentValue["MouseOver"],
+           GrayLevel[0.96078],
+           GrayLevel[1]
+          ]
+         ],
+        FrameMargins -> 0,
+        ImageMargins -> 0,
+        ContentPadding -> False,
+        StripOnInput -> False
+       ],
+       ButtonFunction :>
+        (AttachCell[
+         EvaluationCell[],
+         Wolfram`Chatbook`UI`Private`openChatDelimiterActionMenu[
+          EvaluationCell[]
+         ],
+         {Left, Bottom},
+         Offset[{0, 0}, {Left, Top}],
+         {Left, Top},
+         RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
+        ];),
+       Appearance ->
+        Dynamic[
+         FEPrivate`FrontEndResource[
+          "FEExpressions",
+          "SuppressMouseDownNinePatchAppearance"
+         ]
+        ],
+       ImageMargins -> 0,
+       FrameMargins -> 0,
+       ContentPadding -> False,
+       Evaluator -> Automatic,
+       Method -> "Preemptive"
+      ]
+     ])
+   }
   ],
   Cell[
    StyleData["ChatCodeBlock"],
@@ -1769,14 +1833,14 @@ Notebook[
    SpanMaxSize -> 1,
    StyleMenuListing -> None,
    FontFamily -> "Source Sans Pro",
-   FontSize -> 1.0 * Inherited,
+   FontSize -> 1. * Inherited,
    ButtonBoxOptions -> {Appearance -> {Automatic, None}},
    FractionBoxOptions -> {BaseStyle -> {SpanMaxSize -> Automatic}},
    GridBoxOptions -> {
     GridBoxItemSize -> {
      "Columns" -> {{Automatic}},
      "ColumnsIndexed" -> { },
-     "Rows" -> {{1.0}},
+     "Rows" -> {{1.}},
      "RowsIndexed" -> { }
     }
    }
@@ -2175,7 +2239,7 @@ Notebook[
         Thickness[0.05],
         {
          FaceForm[
-          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.0]}
+          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}
          ],
          FilledCurveBox[
           {
@@ -2207,7 +2271,7 @@ Notebook[
         },
         {
          FaceForm[
-          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.0]}
+          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}
          ],
          FilledCurveBox[
           {
@@ -2216,33 +2280,15 @@ Notebook[
            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}
           },
           {
-           {
-            {15.0, 14.0},
-            {14.0, 14.0},
-            {14.0, 6.0},
-            {15.0, 6.0},
-            {15.0, 14.0}
-           },
-           {
-            {11.0, 14.0},
-            {10.0, 14.0},
-            {10.0, 6.0},
-            {11.0, 6.0},
-            {11.0, 14.0}
-           },
-           {
-            {7.0, 6.0},
-            {6.0, 6.0},
-            {6.0, 14.0},
-            {7.0, 14.0},
-            {7.0, 6.0}
-           }
+           {{15., 14.}, {14., 14.}, {14., 6.}, {15., 6.}, {15., 14.}},
+           {{11., 14.}, {10., 14.}, {10., 6.}, {11., 6.}, {11., 14.}},
+           {{7., 6.}, {6., 6.}, {6., 14.}, {7., 14.}, {7., 6.}}
           }
          ]
         },
         {
          FaceForm[
-          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.0]}
+          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}
          ],
          FilledCurveBox[
           {
@@ -2251,33 +2297,21 @@ Notebook[
            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}
           },
           {
+           {{8., 13.}, {5., 13.}, {5., 12.}, {8., 12.}, {8., 13.}},
+           {{12., 8.}, {9., 8.}, {9., 7.}, {12., 7.}, {12., 8.}},
            {
-            {8.0, 13.0},
-            {5.0, 13.0},
-            {5.0, 12.0},
-            {8.0, 12.0},
-            {8.0, 13.0}
-           },
-           {
-            {12.0, 8.0},
-            {9.0, 8.0},
-            {9.0, 7.0},
-            {12.0, 7.0},
-            {12.0, 8.0}
-           },
-           {
-            {16.0, 10.0},
-            {13.0, 10.0},
-            {13.0, 11.0},
-            {16.0, 11.0},
-            {16.0, 10.0}
+            {16., 10.},
+            {13., 10.},
+            {13., 11.},
+            {16., 11.},
+            {16., 10.}
            }
           }
          ]
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
+       ImageSize -> {{21., 21.}, {21., 21.}},
        PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}},
        BaselinePosition -> Scaled[0.324]
       ]
@@ -2294,7 +2328,7 @@ Notebook[
         Thickness[0.05],
         {
          FaceForm[
-          {RGBColor[0.69804, 0.69804, 0.69804], Opacity[1.0]}
+          {RGBColor[0.69804, 0.69804, 0.69804], Opacity[1.]}
          ],
          FilledCurveBox[
           {
@@ -2309,7 +2343,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[0.2902, 0.58431, 0.8], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.2902, 0.58431, 0.8], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -2325,28 +2359,22 @@ Notebook[
           },
           {
            {
-            {7.0, 11.0},
-            {6.0, 11.0},
-            {6.0, 7.0},
-            {3.187, 7.0},
-            {6.616, 2.0},
-            {10.0, 7.0},
-            {7.0, 7.0},
-            {7.0, 11.0}
+            {7., 11.},
+            {6., 11.},
+            {6., 7.},
+            {3.187, 7.},
+            {6.616, 2.},
+            {10., 7.},
+            {7., 7.},
+            {7., 11.}
            },
-           {
-            {11.0, 12.0},
-            {4.0, 12.0},
-            {4.0, 14.0},
-            {11.0, 14.0},
-            {11.0, 12.0}
-           }
+           {{11., 12.}, {4., 12.}, {4., 14.}, {11., 14.}, {11., 12.}}
           }
          ]
         },
         {
          FaceForm[
-          {RGBColor[0.63922, 0.78824, 0.94902], Opacity[1.0]}
+          {RGBColor[0.63922, 0.78824, 0.94902], Opacity[1.]}
          ],
          FilledCurveBox[
           {
@@ -2367,26 +2395,26 @@ Notebook[
           },
           {
            {
-            {2.0, 8.0},
-            {5.0, 8.0},
-            {5.0, 9.0},
-            {3.0, 9.0},
-            {3.0, 17.0},
-            {14.0, 17.0},
-            {14.0, 9.0},
-            {8.0, 9.0},
-            {8.0, 8.0},
-            {15.0, 8.0},
-            {15.0, 18.0},
-            {2.0, 18.0},
-            {2.0, 8.0}
+            {2., 8.},
+            {5., 8.},
+            {5., 9.},
+            {3., 9.},
+            {3., 17.},
+            {14., 17.},
+            {14., 9.},
+            {8., 9.},
+            {8., 8.},
+            {15., 8.},
+            {15., 18.},
+            {2., 18.},
+            {2., 8.}
            }
           }
          ]
         },
         {
          FaceForm[
-          {RGBColor[0.63137, 0.63137, 0.63137], Opacity[1.0]}
+          {RGBColor[0.63137, 0.63137, 0.63137], Opacity[1.]}
          ],
          FilledCurveBox[
           {
@@ -2403,22 +2431,22 @@ Notebook[
           },
           {
            {
-            {16.0, 19.0},
-            {16.0, 18.0},
-            {17.0, 18.0},
-            {17.0, 7.9999},
-            {16.0, 7.9999},
-            {16.0, 6.9999},
-            {18.0, 6.9999},
-            {18.0, 19.0},
-            {16.0, 19.0}
+            {16., 19.},
+            {16., 18.},
+            {17., 18.},
+            {17., 7.9999},
+            {16., 7.9999},
+            {16., 6.9999},
+            {18., 6.9999},
+            {18., 19.},
+            {16., 19.}
            }
           }
          ]
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
+       ImageSize -> {{21., 21.}, {21., 21.}},
        PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
       ]
      ])
@@ -2434,7 +2462,7 @@ Notebook[
         Thickness[0.05],
         {
          FaceForm[
-          {RGBColor[0.76863, 0.76863, 0.76863], Opacity[1.0]}
+          {RGBColor[0.76863, 0.76863, 0.76863], Opacity[1.]}
          ],
          FilledCurveBox[
           {
@@ -2449,7 +2477,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[0.2902, 0.58431, 0.8], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.2902, 0.58431, 0.8], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -2469,25 +2497,25 @@ Notebook[
           },
           {
            {
-            {16.0, 16.0},
-            {16.0, 2.0},
-            {4.0, 2.0},
-            {4.0, 16.0},
-            {6.0, 16.0},
-            {6.0, 15.0},
-            {5.0, 15.0},
-            {5.0, 3.0},
-            {15.0, 3.0},
-            {15.0, 15.0},
-            {14.0, 15.0},
-            {14.0, 16.0},
-            {16.0, 16.0}
+            {16., 16.},
+            {16., 2.},
+            {4., 2.},
+            {4., 16.},
+            {6., 16.},
+            {6., 15.},
+            {5., 15.},
+            {5., 3.},
+            {15., 3.},
+            {15., 15.},
+            {14., 15.},
+            {14., 16.},
+            {16., 16.}
            }
           }
          ]
         },
         {
-         FaceForm[{RGBColor[0.2902, 0.58431, 0.8], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.2902, 0.58431, 0.8], Opacity[1.]}],
          FilledCurveBox[
           {
            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
@@ -2510,11 +2538,11 @@ Notebook[
           },
           {
            {
-            {8.001, 15.0},
-            {11.999, 15.0},
-            {11.499, 16.0},
-            {8.501, 16.0},
-            {8.001, 15.0}
+            {8.001, 15.},
+            {11.999, 15.},
+            {11.499, 16.},
+            {8.501, 16.},
+            {8.001, 15.}
            },
            CompressedData[
             "\n1:eJxTTMoPSmViYGCQBmIQPWsmCMg4GIPAZx2HiW9r7E3vSTvU2pvG7erUdTh7\nBgSkHXQ3zX2/3E3Pga1xqnN3jozDvvlS+nefwPhyDvf9e6fnFRk4gM2TlHfY\n9vnvlYqTBg4RlltOlNkpOBz3Nu90ZDB0AKoSamZQdGAAA0MorYSDbwSl1XDw\nDR2eXlC6/fMfgi+tf1eF7aA63L5ls48obCjSgLvnw/Jj3uYnNaDiBhB/ntSE\n+8fjYZXIOnctBz6Qh5/rOoC5DzUd/JIEgF7RcVhSYMt1/bGGwzeNmP5DpjoO\n5SCNczUg/hfScWDSbhe76acBdY+OQ3EGMET/q8P5EP8rwPksYSCb5KDqtB2A\nus99D5Z1OP89+PHSaB0H9PgBAGwLlRk=\n       "
@@ -2524,7 +2552,7 @@ Notebook[
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
+       ImageSize -> {{21., 21.}, {21., 21.}},
        PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
       ]
      ])
@@ -2539,7 +2567,7 @@ Notebook[
        {
         Thickness[0.05],
         {
-         FaceForm[{RGBColor[0.86667, 0.066667, 0.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.86667, 0.066667, 0.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -2571,22 +2599,15 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
          FilledCurveBox[
           {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}}},
-          {
-           {
-            {8.0, 14.502},
-            {8.0, 6.5018},
-            {14.0, 10.522},
-            {8.0, 14.502}
-           }
-          }
+          {{{8., 14.502}, {8., 6.5018}, {14., 10.522}, {8., 14.502}}}
          ]
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
+       ImageSize -> {{21., 21.}, {21., 21.}},
        PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
       ]
      ])
@@ -2602,7 +2623,7 @@ Notebook[
         Thickness[0.04],
         {
          FaceForm[
-          {RGBColor[0.65098, 0.65098, 0.65098], Opacity[1.0]}
+          {RGBColor[0.65098, 0.65098, 0.65098], Opacity[1.]}
          ],
          FilledCurveBox[
           {
@@ -2627,7 +2648,7 @@ Notebook[
         },
         {
          FaceForm[
-          {RGBColor[0.57255, 0.57255, 0.57255], Opacity[1.0]}
+          {RGBColor[0.57255, 0.57255, 0.57255], Opacity[1.]}
          ],
          FilledCurveBox[
           {
@@ -2642,19 +2663,19 @@ Notebook[
           },
           {
            {
-            {21.121, 15.0},
-            {22.0, 15.0},
+            {21.121, 15.},
+            {22., 15.},
             {19.779, 10.003},
-            {22.0, 5.0},
-            {21.121, 5.0},
+            {22., 5.},
+            {21.121, 5.},
             {18.42, 9.991},
-            {21.121, 15.0}
+            {21.121, 15.}
            }
           }
          ]
         },
         {
-         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
          FilledCurveBox[
           {
            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
@@ -2671,7 +2692,7 @@ Notebook[
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {{26.0, 21.0}, {26.0, 21.0}},
+       ImageSize -> {{26., 21.}, {26., 21.}},
        PlotRange -> {{-0.5, 25.5}, {0.5, 20.5}}
       ]
      ])
@@ -2686,7 +2707,7 @@ Notebook[
        {
         Thickness[0.04],
         {
-         FaceForm[{RGBColor[0.0, 0.69804, 1.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[0., 0.69804, 1.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -2710,7 +2731,7 @@ Notebook[
         },
         {
          FaceForm[
-          {RGBColor[0.57255, 0.57255, 0.57255], Opacity[1.0]}
+          {RGBColor[0.57255, 0.57255, 0.57255], Opacity[1.]}
          ],
          FilledCurveBox[
           {
@@ -2725,19 +2746,19 @@ Notebook[
           },
           {
            {
-            {21.121, 15.0},
-            {22.0, 15.0},
+            {21.121, 15.},
+            {22., 15.},
             {19.779, 10.003},
-            {22.0, 5.0},
-            {21.121, 5.0},
+            {22., 5.},
+            {21.121, 5.},
             {18.42, 9.991},
-            {21.121, 15.0}
+            {21.121, 15.}
            }
           }
          ]
         },
         {
-         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
          FilledCurveBox[
           {
            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
@@ -2754,7 +2775,7 @@ Notebook[
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {{26.0, 21.0}, {26.0, 21.0}},
+       ImageSize -> {{26., 21.}, {26., 21.}},
        PlotRange -> {{-0.5, 25.5}, {0.5, 20.5}}
       ]
      ])
@@ -2769,7 +2790,7 @@ Notebook[
        {
         Thickness[0.05],
         {
-         FaceForm[{RGBColor[1.0, 0.75686, 0.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 0.75686, 0.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -2839,7 +2860,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[0.0, 0.0039216, 0.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[0., 0.0039216, 0.], Opacity[1.]}],
          FilledCurveBox[
           {{{0, 2, 0}, {1, 3, 3}, {1, 3, 3}}},
           {
@@ -2878,7 +2899,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[0.0, 0.0039216, 0.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[0., 0.0039216, 0.], Opacity[1.]}],
          FilledCurveBox[
           {{{0, 2, 0}, {1, 3, 3}, {1, 3, 3}}},
           {
@@ -2917,7 +2938,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[1.0, 0.26667, 0.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 0.26667, 0.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -2992,11 +3013,11 @@ Notebook[
          ]
         },
         {
-         RGBColor[1.0, 1.0, 1.0],
+         RGBColor[1., 1., 1.],
          Thickness[0.0075],
-         Opacity[1.0],
+         Opacity[1.],
          CapForm["Round"],
-         JoinForm[{"Miter", 10.0}],
+         JoinForm[{"Miter", 10.}],
          JoinedCurveBox[
           {{{0, 2, 0}}},
           {{{6.7195, 13.996}, {7.7205, 12.243}}},
@@ -3004,11 +3025,11 @@ Notebook[
          ]
         },
         {
-         RGBColor[1.0, 1.0, 1.0],
+         RGBColor[1., 1., 1.],
          Thickness[0.0075],
-         Opacity[1.0],
+         Opacity[1.],
          CapForm["Round"],
-         JoinForm[{"Miter", 10.0}],
+         JoinForm[{"Miter", 10.}],
          JoinedCurveBox[
           {{{0, 2, 0}}},
           {{{6.0894, 13.996}, {7.0904, 12.243}}},
@@ -3016,11 +3037,11 @@ Notebook[
          ]
         },
         {
-         RGBColor[1.0, 1.0, 1.0],
+         RGBColor[1., 1., 1.],
          Thickness[0.0075],
-         Opacity[1.0],
+         Opacity[1.],
          CapForm["Round"],
-         JoinForm[{"Miter", 10.0}],
+         JoinForm[{"Miter", 10.}],
          JoinedCurveBox[
           {{{0, 2, 0}}},
           {{{11.243, 13.996}, {12.244, 12.243}}},
@@ -3028,11 +3049,11 @@ Notebook[
          ]
         },
         {
-         RGBColor[1.0, 1.0, 1.0],
+         RGBColor[1., 1., 1.],
          Thickness[0.0075],
-         Opacity[1.0],
+         Opacity[1.],
          CapForm["Round"],
-         JoinForm[{"Miter", 10.0}],
+         JoinForm[{"Miter", 10.}],
          JoinedCurveBox[
           {{{0, 2, 0}}},
           {{{10.613, 13.996}, {11.614, 12.243}}},
@@ -3041,14 +3062,14 @@ Notebook[
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {20.0, 20.0},
-       PlotRange -> {{0.0, 20.0}, {0.0, 20.0}}
+       ImageSize -> {20., 20.},
+       PlotRange -> {{0., 20.}, {0., 20.}}
       ]
      ])
    }
   ],
   Cell[
-   StyleData["ChatExcludedWidget"],
+   StyleData["ChatBlockSettingsMenuIcon"],
    TemplateBoxOptions -> {
     DisplayFunction ->
      (Function[
@@ -3056,737 +3077,14 @@ Notebook[
        {
         Thickness[0.05],
         {
-         FaceForm[
-          {RGBColor[0.65098, 0.65098, 0.65098], Opacity[1.0]}
-         ],
-         FilledCurveBox[
+         EdgeForm[
           {
-           {
-            {0, 2, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {1, 3, 3},
-            {0, 1, 0},
-            {1, 3, 3},
-            {0, 1, 0},
-            {1, 3, 3}
-           }
-          },
-          {
-           {
-            {3.6555, 6.0},
-            {3.0005, 6.0},
-            {3.0005, 17.0},
-            {14.585, 17.0},
-            {15.585, 18.0},
-            {3.0005, 18.0},
-            {2.4475, 18.0},
-            {2.0005, 17.552},
-            {2.0005, 17.0},
-            {2.0005, 6.0},
-            {2.0005, 5.448},
-            {2.4475, 5.0},
-            {3.0005, 5.0},
-            {3.6555, 5.0},
-            {3.4715, 5.312},
-            {3.4715, 5.688},
-            {3.6555, 6.0}
-           }
+           RGBColor[0.50196, 0.56078, 0.59216],
+           Opacity[1.],
+           Thickness[0.04]
           }
-         ]
-        },
-        {
-         FaceForm[
-          {RGBColor[0.65098, 0.65098, 0.65098], Opacity[1.0]}
          ],
-         FilledCurveBox[
-          {
-           {
-            {1, 4, 3},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {1, 3, 3},
-            {0, 1, 0},
-            {1, 3, 3}
-           }
-          },
-          CompressedData[
-           "\n1:eJxTTMoPSmVmYGBgBGIpIGYC4l2ePEza6YYO2z7/vVLx0tBBkiWMT3eSoUMc\nSKLb0KHTMeHphSZDh/qsPSWTJQwdFrkCVZpA5U8bODCAgaEDSJZlGoJfuKb7\ndgaDBJSvh8bXwcEXQeMLOBiDgbrDkvv7+OYYi0PsXa2Gph/Bvxb2Rn/3ckk0\nviia+WpofD2HRxHi2y8yMKC5FyZvCOcrbijKmNhriCZv5PDu9QFL5VOicD6q\n+4zg5sD4c44oAE0ydJDWv6vCdtDQIV+o+cApII0eHwCwln2R\n      "
-          ]
-         ]
-        },
-        {
-         FaceForm[{RGBColor[1.0, 0.40784, 0.40784], Opacity[1.0]}],
-         FilledCurveBox[
-          {
-           {
-            {1, 4, 3},
-            {1, 3, 3},
-            {0, 1, 0},
-            {1, 3, 3},
-            {1, 3, 3},
-            {0, 1, 0},
-            {1, 3, 3}
-           }
-          },
-          {
-           {
-            {4.5, 5.0},
-            {4.372, 5.0},
-            {4.244, 5.049},
-            {4.146, 5.146},
-            {3.951, 5.342},
-            {3.951, 5.658},
-            {4.146, 5.854},
-            {16.146, 17.854},
-            {16.342, 18.049},
-            {16.658, 18.049},
-            {16.854, 17.854},
-            {17.049, 17.658},
-            {17.049, 17.342},
-            {16.854, 17.146},
-            {4.854, 5.146},
-            {4.756, 5.049},
-            {4.628, 5.0},
-            {4.5, 5.0}
-           }
-          }
-         ]
-        },
-        {
-         FaceForm[
-          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.0]}
-         ],
-         FilledCurveBox[
-          {
-           {
-            {0, 2, 0},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {0, 1, 0},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3}
-           }
-          },
-          CompressedData[
-           "\n1:eJxTTMoPSmVmYGBgBGJRIGYC4l91WXtKhCUdWML4dDfFKjoUZ0x8W2Mv43Dw\n1ELXbZ+VHMw7HROeXhB1WHHM27yzUcVh2+e/VypeCjswgIE6Qb7ihiKgieIO\nd1XYGqc660DFVeD8N4E75Fq1VeH8ZbOPKGwwUnMw5FgjE6Wi42C55UTZPnl1\nqHu0HT5d8k0SkNB0qHypZsjxRtfBpTvn+e+V6g6mcbs8eZr0HMDW/VF18AE7\nXA9uH4yvfPsn0MeiaPICcPcS4lvf9++dnifkYAwCm5Ud0MMPAKWmbxw=\n      "
-          ]
-         ]
-        },
-        {
-         FaceForm[
-          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.0]}
-         ],
-         FilledCurveBox[
-          {
-           {
-            {0, 2, 0},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {0, 1, 0},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3}
-           }
-          },
-          CompressedData[
-           "\n1:eJxTTMoPSmVmYGBgBGJRIGYCYv27KmyNU3UcVhzzNu88qO0gfvPc92BlbYf+\nQ181Yvy1HLx4mLTbw3QdZKNSrO+f13BQBap25tZzYAADdYL8JIEIyy0cOg7R\nG/e/mbdHESquAufvmy+lf7dFGc4P49PdNJdf2eHBHMGlew8qOjy9oHT75zwl\nhwsuNz58OaXosMsT6KB0BQev6mZ9HzV5B6cEoIpqRYeAPxLF1yfJOXBdX1xg\nu0rJ4aZtZcQKUzm4fTD+wyqRde6KumjyBnD3EuKbdzomPBXQdwAFh3+vpgN6\n+AEAvs9osw==\n      "
-          ]
-         ]
-        },
-        {
-         FaceForm[
-          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.0]}
-         ],
-         FilledCurveBox[
-          {{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}}},
-          {
-           {
-            {10.857, 13.271},
-            {10.597, 13.397},
-            {10.309, 13.474},
-            {9.9998, 13.474},
-            {8.9098, 13.474},
-            {8.0258, 12.59},
-            {8.0258, 11.5},
-            {8.0258, 11.192},
-            {8.1028, 10.904},
-            {8.2288, 10.643},
-            {10.857, 13.271}
-           }
-          }
-         ]
-        },
-        {
-         FaceForm[
-          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.0]}
-         ],
-         FilledCurveBox[
-          {{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}}},
-          {
-           {
-            {9.9456, 9.5316},
-            {9.9636, 9.5316},
-            {9.9816, 9.5266},
-            {9.9996, 9.5266},
-            {11.091, 9.5266},
-            {11.974, 10.41},
-            {11.974, 11.5},
-            {11.974, 11.519},
-            {11.969, 11.536},
-            {11.969, 11.555},
-            {9.9456, 9.5316}
-           }
-          }
-         ]
-        }
-       },
-       AspectRatio -> Automatic,
-       ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
-       PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["ChatIconNoPersona"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      GraphicsBox[
-       {
-        Thickness[0.038462],
-        {
-         FaceForm[
-          {RGBColor[0.8549, 0.88235, 0.87843], Opacity[1.0]}
-         ],
-         FilledCurveBox[
-          {
-           {
-            {0, 2, 0},
-            {1, 3, 3},
-            {0, 1, 0},
-            {1, 3, 3},
-            {0, 1, 0},
-            {1, 3, 3},
-            {0, 1, 0},
-            {1, 3, 3},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0}
-           }
-          },
-          CompressedData[
-           "\n1:eJxTTMoPSmVmYGBgBGIRIGZigIIGBQcUmkEEzv90yTdJIEIITV7Qga1xqnO3\njiKcD6GV0PimcL5Ld87z35mmqOYdgMmLoPFN4XyYPhR5XOJI+oozJr6t+a8I\n51e+VDPkALoXRR/cPwh+7vPfKz9e0kSVB9L6d1XYGkWFMMQBtjo+0A==\n      "
-          ]
-         ]
-        },
-        {
-         FaceForm[
-          {RGBColor[0.67451, 0.71765, 0.73725], Opacity[1.0]}
-         ],
-         FilledCurveBox[
-          {
-           {
-            {0, 2, 0},
-            {1, 3, 3},
-            {0, 1, 0},
-            {1, 3, 3},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {1, 3, 3},
-            {0, 1, 0},
-            {1, 3, 3}
-           },
-           {
-            {1, 4, 3},
-            {0, 1, 0},
-            {1, 3, 3},
-            {1, 3, 3},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {1, 3, 3},
-            {0, 1, 0},
-            {1, 3, 3},
-            {0, 1, 0}
-           }
-          },
-          {
-           CompressedData[
-            "\n1:eJxTTMoPSmViYGAQAWIQDQGmDhDaDEqLwPkz8oSaD5wSRJMXcIhKsb7v32sK\n56OaA+Mrwfk+5p2OCU8V0MxTQLNPgQANM1cLTdwUzkd1F0zezGHffCn9u08Q\n/OKMiW9r/iui+QsRDjBzUM3DVAcAxvcssw==\n       "
-           ],
-           CompressedData[
-            "\n1:eJxTTMoPSmViYGCQBmIQDQGmDmCqwdRBd9Pc98vdEHy84kj6ijMmvq35rwjn\nc6yRiUrZreiwbPYRhQ1Fpg7VIuvcH1YpOmw5UbZvfpSpw4w8oeYDXooOf1Z+\nvOTrZAoRl4LylWDmK6LaA+drwflpILBME84/7m3e6Zig6eDxsEpk3XEFuLhm\nTP+hrxoiaOYooPFxiSP0+YCMfyqEJi8E9SeCD6GV0PimcD4sPFHMg4erCBof\nEc4A/3BXag==\n       "
-           ]
-          }
-         ]
-        }
-       },
-       AspectRatio -> Automatic,
-       ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
-       PlotRange -> {{-0.5, 26.5}, {-0.5, 26.5}}
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["ChatMenuIcon"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      GraphicsBox[
-       {
-        Thickness[0.071429],
-        FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.0]}],
-        FilledCurveBox[
-         {
-          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
-          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
-          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}
-         },
-         {
-          {
-           {6.0, 5.0},
-           {8.0, 5.0},
-           {8.0, 7.0},
-           {6.0, 7.0},
-           {6.0, 5.0}
-          },
-          {
-           {6.0, 9.0},
-           {8.0, 9.0},
-           {8.0, 11.0},
-           {6.0, 11.0},
-           {6.0, 9.0}
-          },
-          {
-           {8.0, 13.0},
-           {6.0, 13.0},
-           {6.0, 15.0},
-           {8.0, 15.0},
-           {8.0, 13.0}
-          }
-         }
-        ]
-       },
-       AspectRatio -> Automatic,
-       ImageSize -> {{15.0, 21.0}, {15.0, 21.0}},
-       PlotRange -> {{-0.5, 14.5}, {-0.5, 20.5}}
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["ChatOutputStopButton"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      PaneBox[
-       ButtonBox[
-        TagBox[
-         TooltipBox[
-          TagBox[
-           GraphicsBox[
-            {
-             Thickness[0.083333],
-             {
-              FaceForm[{RGBColor[0.86667, 0.066667, 0.0], Opacity[1.0]}],
-              FilledCurveBox[
-               {{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}},
-               {
-                {
-                 {4.5, 3.0},
-                 {6.985, 3.0},
-                 {9.0, 5.015},
-                 {9.0, 7.5},
-                 {9.0, 9.985},
-                 {6.985, 12.0},
-                 {4.5, 12.0},
-                 {2.015, 12.0},
-                 {0.0, 9.985},
-                 {0.0, 7.5},
-                 {0.0, 5.015},
-                 {2.015, 3.0},
-                 {4.5, 3.0}
-                }
-               }
-              ]
-             },
-             {
-              FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
-              FilledCurveBox[
-               {
-                {
-                 {0, 2, 0},
-                 {0, 1, 0},
-                 {0, 1, 0},
-                 {0, 1, 0},
-                 {0, 1, 0},
-                 {0, 1, 0},
-                 {0, 1, 0},
-                 {0, 1, 0},
-                 {0, 1, 0},
-                 {0, 1, 0},
-                 {0, 1, 0},
-                 {0, 1, 0}
-                }
-               },
-               {
-                {
-                 {5.9141, 7.5},
-                 {7.6671, 5.747},
-                 {6.2531, 4.333},
-                 {4.5001, 6.086},
-                 {2.7471, 4.333},
-                 {1.3331, 5.747},
-                 {3.0861, 7.5},
-                 {1.3331, 9.253},
-                 {2.7471, 10.667},
-                 {4.5001, 8.914},
-                 {6.2531, 10.667},
-                 {7.6671, 9.253},
-                 {5.9141, 7.5}
-                }
-               }
-              ]
-             }
-            },
-            AspectRatio -> Automatic,
-            ImageSize -> {{13.0, 13.0}, {13.0, 13.0}},
-            PlotRange -> {{-0.5, 12.5}, {0.5, 12.5}}
-           ],
-           MouseAppearanceTag["LinkHand"]
-          ],
-          "\"Stop\"",
-          TooltipStyle -> "TextStyling"
-         ],
-         Annotation[#1, "Stop", "Tooltip"] &
-        ],
-        ButtonFunction :>
-         With[ { cell = ParentCell[EvaluationCell[]] },
-          Quiet[Needs["Wolfram`Chatbook`" -> None]];
-          Symbol["Wolfram`Chatbook`ChatbookAction"]["StopChat", cell]
-         ],
-        Appearance -> None,
-        Evaluator -> Automatic,
-        Method -> "Preemptive"
-       ],
-       ImageSize -> {33, Automatic},
-       Alignment -> Left
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["ChatQueryIcon"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      GraphicsBox[
-       {
-        Thickness[0.04],
-        {
-         FaceForm[
-          {RGBColor[0.57255, 0.57255, 0.57255], Opacity[1.0]}
-         ],
-         FilledCurveBox[
-          {
-           {
-            {0, 2, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0}
-           }
-          },
-          {
-           {
-            {22.58, 9.9913},
-            {19.879, 5.0003},
-            {19.0, 5.0003},
-            {21.221, 10.003},
-            {19.0, 15.0},
-            {19.879, 15.0},
-            {22.58, 9.9913}
-           }
-          }
-         ]
-        },
-        {
-         FaceForm[{RGBColor[0.86667, 0.066667, 0.0], Opacity[1.0]}],
-         FilledCurveBox[
-          {
-           {
-            {1, 4, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {0, 1, 0},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {0, 1, 0}
-           }
-          },
-          CompressedData[
-           "\n1:eJxdVH0slVEcvsl4771mkvnIiFDZHfdYs6Wm85M+JC2pZPmokTKzTIrKJDNd\nzcwfJlsh0dfM7kwyjEtMqKVamkySTFYq773Xvaqpdd733e/autvZ7nPe8/H8\nnt/zHO/kzJjU1TKZbBUbB9iwYkOlcR4fWSLQPePkMTyrBMRrDWEvT79VgkNc\nSOuQmUBtkv9zh0ElRNpZqTQM99hXb6lvVULX+QpXa4Z3stVz6Up48uzO7jYj\ngdTGk0diNilhwKv5XJqeQEnx8TddMwoo7zNtTlgg8LWyxS6rSQHavdOXnX4Q\ncImIXnbNVkBS5z47q3kC2rbkgvFQBRRWhpdmzBF4nybLLLRWQD/bXv6JwIcK\nDTtRDtax9gEtkwQ+6gRCchDoOY8TaCqdYDvkMPHrSnrXKIFdv7/P94bIQfw8\nQuAzvTuls5dDm/HP6MVhrJ+D6LKqs479BOTuQsUc5Opur1N3I18O1JO+NoWP\nCZirJhkDTuKvJWB1k2M7OCieP9TueY9AkTrqvmIPBy5MzcMNBNyyxxwNYRwE\nCwXWExgPvRT3MJgDmfCrI7DNJzKvSM2BKH8FAUGNMUcOWHU1Cxqsn4Mbghx5\nK1isv8bXgq9G9OR7vPOBLFEAawm7ellwb7xXmL7B07J+eFYQYoki/tl3inVu\nBZ9hXVWZzdTvglAh48tmB8rNVJTThwMRBpmpWL4/B4/shJtMlE3mBnhz4L1+\nMSM230Sxvq3iBSaK9XeU2fDOESaK+og2Upko6ifaqG6Ror5EmPZbpKi/eLzW\nSLE/4jVRRor9k/pqoNhfib+BYv8l/gaK/kj8G87+6Sn6R/KVnqK/UgoE5nqK\n/lsz2NleZqOn6M8dQlkveIr+BeGaap6iv1UicZ6i/6Xc8BTzIenAU8xPPJt1\n8uAp5uuasMyJp5g/xJhPqc88xfwixnwjfr2BJaMx0IKHc5jRFwKBiX29eZqn\nWaGKsQaiBlGeXANlr0CO7oQaKlNLUhITbKF24cHT/ceCYMg29NbRKXfYPnWQ\nJScIOpY1ixNL3vCNxaB4Xg1CnIpkG6Xcse9iPt0CLfvFe14RwPPzKUvIFwJ4\nP75HyA8x8v///foHfk0cwA==\n      "
-          ]
-         ]
-        },
-        {
-         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
-         FilledCurveBox[
-          {
-           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
-           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
-           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
-           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
-           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
-           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
-           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
-           {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}},
-           {
-            {1, 4, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {0, 1, 0},
-            {0, 1, 0},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3}
-           },
-           {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}},
-           {
-            {1, 4, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {0, 1, 0},
-            {0, 1, 0},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {0, 1, 0},
-            {0, 1, 0},
-            {1, 3, 3}
-           },
-           {
-            {1, 4, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3}
-           }
-          },
-          {
-           {
-            {14.0, 9.0},
-            {15.0, 9.0},
-            {15.0, 5.0},
-            {14.0, 5.0},
-            {14.0, 9.0}
-           },
-           {
-            {12.0, 8.0},
-            {13.0, 8.0},
-            {13.0, 5.0},
-            {12.0, 5.0},
-            {12.0, 8.0}
-           },
-           {
-            {10.0, 12.0},
-            {15.0, 12.0},
-            {15.0, 11.0},
-            {10.0, 11.0},
-            {10.0, 12.0}
-           },
-           {
-            {15.0, 13.0},
-            {10.0, 13.0},
-            {10.0, 14.0},
-            {15.0, 14.0},
-            {15.0, 13.0}
-           },
-           {
-            {3.0, 8.0},
-            {9.0, 8.0},
-            {9.0, 7.0},
-            {3.0, 7.0},
-            {3.0, 8.0}
-           },
-           {
-            {10.0, 7.0},
-            {11.0, 7.0},
-            {11.0, 5.0},
-            {10.0, 5.0},
-            {10.0, 7.0}
-           },
-           {
-            {3.0, 6.0},
-            {9.0, 6.0},
-            {9.0, 5.0},
-            {3.0, 5.0},
-            {3.0, 6.0}
-           },
-           {
-            {6.272, 11.831},
-            {6.128, 11.914},
-            {5.999, 11.959},
-            {5.878, 11.944},
-            {5.893, 12.019},
-            {5.916, 12.073},
-            {5.939, 12.141},
-            {6.196, 12.18},
-            {6.386, 12.042},
-            {6.56, 11.914},
-            {6.424, 11.875},
-            {6.408, 11.868},
-            {6.272, 11.831}
-           },
-           CompressedData[
-            "\n1:eJxTTMoPSmViYGAwAGIQ/WH5MW/zTi6HWnvTuF2cGg4wvl+SQIRliaYDiNpy\ngseh/9BXjZjzWg4+5p2OCakCUL42lC8E5es4nP8e/HiptKjDGpmoFOt4XYcw\nPt1Nc9+Lw/l3Vdgapx6WgvOrRda5P6ySheuH8OXh5ttyXV9csFcBbj9Q131/\nX0W4+2B8mPth/ONAXzguUIPr/wF01mwXVbj5EL6KQ+NU5+6c53IO00DUb2UH\noeYDpxa6Qvm7lR3qs/aUTJ4h69D6OnCHXKsy1D+SDkBi+bHTqg7a7WI3z32X\ncXhYBTR4ISb/DUhbtpzD898rP17qVXVYAQreg3Jw+dLJEixhfPIOhSCHblCF\n2Beh4PDpkm+SwA01gvynF5Ru//wn7QC2NljDwZADFLJSkHhR1XS47987PW+S\nlAPI1cvbtBxAvhfRk3KIAQeoDpwPNi9CB2qehAMDCBzQhtoj4bDt898rFSu1\nHVxAwbRS3KF833wpfVltB5Ctj1XFHZbNPqKw4ZO2wxwgVfRCzEH59s+6LBsd\nqHvEHIKAwfBaUBdqnoiDNdhhOlDzhKHu0XYAOfvpBSGHWTOBQFLLYeLbGnvT\newKQeGHVhLjjJR8kfqzVIe5fx+MATqbbVCHpwJMbar4aPD0ngDxmqe6Ant4B\nz4tKmQ==\n       "
-           ],
-           {
-            {5.984, 13.331},
-            {6.189, 13.527},
-            {6.219, 13.557},
-            {6.416, 13.747},
-            {6.431, 13.368},
-            {6.424, 13.172},
-            {6.401, 12.709},
-            {6.287, 12.823},
-            {6.06, 12.966},
-            {6.06, 12.966},
-            {6.06, 12.966},
-            {6.014, 13.232},
-            {5.984, 13.331}
-           },
-           CompressedData[
-            "\n1:eJxTTMoPSmViYGCwAGIQHcanu2nue3GHjIlva+y3Kjmc/x78eKm0KJzvY97p\nmJAq5PADKDzbRRnKF4DyVRz6D33ViOEXcDhZtm++VL6Kg7T+XRW2Rn6HciBX\nf66KA8R8Pgd707hdnmdUHNbIRKVYxws4zHu//Jj3djWH0wtdt32uFXQI6J2e\nJ8Ss6XD2DBD4CDsU2nJdX7xB0wFEFdiKOBwGWtPfpAVR1yzisEOu9XXgDm2I\nO03FHGLADtFxyBdqPnBqoRhcHmKeuMOXv1cqXqZpOaw45m3eeVDcIWtPyWSJ\nI5pQviSUr+GQJBBhueWEjAPI1cvb1B1A3n16QQ5iP5O6wy5PHiZtdnmHZbOP\nKGz4pAY1Xx6qHpM/zbk753k1TL8a1D5RiP4iNYenF5Ru//wn4lAtss79YZUa\nNFxF4PIQfwlDw00N6j5hiH+eqTn8A1JqG0Uc2sVunvserE6Q/+mSb5LADWEH\ncDRNVYeGn7DDwyqgAxaqOxhygGwShqpTdzgOdK7jA2FIfMpqQN0LjR8DDah/\nhCHpQhUmL+jAAAIHYOEn6BAHCrhsdQcXYHD8XinkIAv0zn1/dah/hR0UNxRl\nTNQlzF8ETC5/Q4Sg6VPNAeSrx6pCDuIQBgYfkv5EHGbNBAJJNWj8iTuAg/Gb\nqoMXkNsuJg6NT1UHeVCykUPwIcYg+JD0KOEAdHzv9HeqDn7gCJF2AHuHVxma\nPqUg4X1ZyUH59s+6LBtJeH5Cz28Af2eJpw==\n       "
-           ],
-           CompressedData[
-            "\n1:eJxTTMoPSmViYGCQBGIQHcanu2nue3GHWnvTuF2cSg7yra8Dd8hJw/mVL9UM\nOXTkIPQaJYdvGjH9h0wVHICalh87reywp2SyBEuYIkT+jYqDdrvYzXPfFR2W\nzT6isKFIDc6HmKcB5z+sElnnvlATrh/sDHVtuPlXK4AGeujA7QfLp+uiuU/P\nAdX9eg4rjnmbdx4UgfONQWCzIFx/41Tn7pznfHDz08CAC27/GpmoFOv77HD3\nwfgw98P4MP/B9MP8DzMfFj4w+2Hhh+o+JQf08AcActKajQ==\n       "
-           ]
-          }
-         ]
-        }
-       },
-       AspectRatio -> Automatic,
-       ImageSize -> {{26.0, 21.0}, {26.0, 21.0}},
-       PlotRange -> {{-0.5, 25.5}, {0.5, 20.5}}
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["ChatSystemIcon"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      GraphicsBox[
-       {
-        Thickness[0.04],
-        {
-         FaceForm[
-          {RGBColor[0.57255, 0.57255, 0.57255], Opacity[1.0]}
-         ],
-         FilledCurveBox[
-          {
-           {
-            {0, 2, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0}
-           }
-          },
-          {
-           {
-            {22.58, 9.9913},
-            {19.879, 5.0003},
-            {19.0, 5.0003},
-            {21.221, 10.003},
-            {19.0, 15.0},
-            {19.879, 15.0},
-            {22.58, 9.9913}
-           }
-          }
-         ]
-        },
-        {
-         FaceForm[
-          {RGBColor[0.50196, 0.56078, 0.59216], Opacity[1.0]}
-         ],
+         FaceForm[GrayLevel[1]],
          FilledCurveBox[
           {
            {
@@ -3809,7 +3107,9 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FaceForm[
+          {RGBColor[0.50196, 0.56078, 0.59216], Opacity[1.]}
+         ],
          FilledCurveBox[
           {
            {
@@ -3911,7 +3211,9 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FaceForm[
+          {RGBColor[0.50196, 0.56078, 0.59216], Opacity[1.]}
+         ],
          FilledCurveBox[
           {
            {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}},
@@ -3924,14 +3226,451 @@ Notebook[
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {{26.0, 21.0}, {26.0, 21.0}},
-       PlotRange -> {{-0.5, 25.5}, {0.5, 20.5}}
+       BaselinePosition -> Scaled[0.288],
+       ImageSize -> {{21., 21.}, {21., 21.}},
+       PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
       ]
      ])
    }
   ],
   Cell[
-   StyleData["ChatUserIcon"],
+   StyleData["ChatExcludedWidget"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.05],
+        {
+         FaceForm[
+          {RGBColor[0.65098, 0.65098, 0.65098], Opacity[1.]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           }
+          },
+          {
+           {
+            {3.6555, 6.},
+            {3.0005, 6.},
+            {3.0005, 17.},
+            {14.585, 17.},
+            {15.585, 18.},
+            {3.0005, 18.},
+            {2.4475, 18.},
+            {2.0005, 17.552},
+            {2.0005, 17.},
+            {2.0005, 6.},
+            {2.0005, 5.448},
+            {2.4475, 5.},
+            {3.0005, 5.},
+            {3.6555, 5.},
+            {3.4715, 5.312},
+            {3.4715, 5.688},
+            {3.6555, 6.}
+           }
+          }
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.65098, 0.65098, 0.65098], Opacity[1.]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {1, 4, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgBGIpIGYC4l2ePEza6YYO2z7/vVLx0tBBkiWMT3eSoUMc\nSKLb0KHTMeHphSZDh/qsPSWTJQwdFrkCVZpA5U8bODCAgaEDSJZlGoJfuKb7\ndgaDBJSvh8bXwcEXQeMLOBiDgbrDkvv7+OYYi0PsXa2Gph/Bvxb2Rn/3ckk0\nviia+WpofD2HRxHi2y8yMKC5FyZvCOcrbijKmNhriCZv5PDu9QFL5VOicD6q\n+4zg5sD4c44oAE0ydJDWv6vCdtDQIV+o+cApII0eHwCwln2R\n      "
+          ]
+         ]
+        },
+        {
+         FaceForm[{RGBColor[1., 0.40784, 0.40784], Opacity[1.]}],
+         FilledCurveBox[
+          {
+           {
+            {1, 4, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           }
+          },
+          {
+           {
+            {4.5, 5.},
+            {4.372, 5.},
+            {4.244, 5.049},
+            {4.146, 5.146},
+            {3.951, 5.342},
+            {3.951, 5.658},
+            {4.146, 5.854},
+            {16.146, 17.854},
+            {16.342, 18.049},
+            {16.658, 18.049},
+            {16.854, 17.854},
+            {17.049, 17.658},
+            {17.049, 17.342},
+            {16.854, 17.146},
+            {4.854, 5.146},
+            {4.756, 5.049},
+            {4.628, 5.},
+            {4.5, 5.}
+           }
+          }
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgBGJRIGYC4l91WXtKhCUdWML4dDfFKjoUZ0x8W2Mv43Dw\n1ELXbZ+VHMw7HROeXhB1WHHM27yzUcVh2+e/VypeCjswgIE6Qb7ihiKgieIO\nd1XYGqc660DFVeD8N4E75Fq1VeH8ZbOPKGwwUnMw5FgjE6Wi42C55UTZPnl1\nqHu0HT5d8k0SkNB0qHypZsjxRtfBpTvn+e+V6g6mcbs8eZr0HMDW/VF18AE7\nXA9uH4yvfPsn0MeiaPICcPcS4lvf9++dnifkYAwCm5Ud0MMPAKWmbxw=\n      "
+          ]
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgBGJRIGYCYv27KmyNU3UcVhzzNu88qO0gfvPc92BlbYf+\nQ181Yvy1HLx4mLTbw3QdZKNSrO+f13BQBap25tZzYAADdYL8JIEIyy0cOg7R\nG/e/mbdHESquAufvmy+lf7dFGc4P49PdNJdf2eHBHMGlew8qOjy9oHT75zwl\nhwsuNz58OaXosMsT6KB0BQev6mZ9HzV5B6cEoIpqRYeAPxLF1yfJOXBdX1xg\nu0rJ4aZtZcQKUzm4fTD+wyqRde6KumjyBnD3EuKbdzomPBXQdwAFh3+vpgN6\n+AEAvs9osw==\n      "
+          ]
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}
+         ],
+         FilledCurveBox[
+          {{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}}},
+          {
+           {
+            {10.857, 13.271},
+            {10.597, 13.397},
+            {10.309, 13.474},
+            {9.9998, 13.474},
+            {8.9098, 13.474},
+            {8.0258, 12.59},
+            {8.0258, 11.5},
+            {8.0258, 11.192},
+            {8.1028, 10.904},
+            {8.2288, 10.643},
+            {10.857, 13.271}
+           }
+          }
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}
+         ],
+         FilledCurveBox[
+          {{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}}},
+          {
+           {
+            {9.9456, 9.5316},
+            {9.9636, 9.5316},
+            {9.9816, 9.5266},
+            {9.9996, 9.5266},
+            {11.091, 9.5266},
+            {11.974, 10.41},
+            {11.974, 11.5},
+            {11.974, 11.519},
+            {11.969, 11.536},
+            {11.969, 11.555},
+            {9.9456, 9.5316}
+           }
+          }
+         ]
+        }
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {{21., 21.}, {21., 21.}},
+       PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ChatIconNoPersona"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.038462],
+        {
+         FaceForm[{RGBColor[0.8549, 0.88235, 0.87843], Opacity[1.]}],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgBGIRIGZigIIGBQcUmkEEzv90yTdJIEIITV7Qga1xqnO3\njiKcD6GV0PimcL5Ld87z35mmqOYdgMmLoPFN4XyYPhR5XOJI+oozJr6t+a8I\n51e+VDPkALoXRR/cPwh+7vPfKz9e0kSVB9L6d1XYGkWFMMQBtjo+0A==\n      "
+          ]
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.67451, 0.71765, 0.73725], Opacity[1.]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           },
+           {
+            {1, 4, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0}
+           }
+          },
+          {
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGAQAWIQDQGmDhDaDEqLwPkz8oSaD5wSRJMXcIhKsb7v32sK\n56OaA+Mrwfk+5p2OCU8V0MxTQLNPgQANM1cLTdwUzkd1F0zezGHffCn9u08Q\n/OKMiW9r/iui+QsRDjBzUM3DVAcAxvcssw==\n       "
+           ],
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGCQBmIQDQGmDmCqwdRBd9Pc98vdEHy84kj6ijMmvq35rwjn\nc6yRiUrZreiwbPYRhQ1Fpg7VIuvcH1YpOmw5UbZvfpSpw4w8oeYDXooOf1Z+\nvOTrZAoRl4LylWDmK6LaA+drwflpILBME84/7m3e6Zig6eDxsEpk3XEFuLhm\nTP+hrxoiaOYooPFxiSP0+YCMfyqEJi8E9SeCD6GV0PimcD4sPFHMg4erCBof\nEc4A/3BXag==\n       "
+           ]
+          }
+         ]
+        }
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {{21., 21.}, {21., 21.}},
+       PlotRange -> {{-0.5, 26.5}, {-0.5, 26.5}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ChatMenuIcon"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.071429],
+        FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.]}],
+        FilledCurveBox[
+         {
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+          {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}
+         },
+         {
+          {{6., 5.}, {8., 5.}, {8., 7.}, {6., 7.}, {6., 5.}},
+          {{6., 9.}, {8., 9.}, {8., 11.}, {6., 11.}, {6., 9.}},
+          {{8., 13.}, {6., 13.}, {6., 15.}, {8., 15.}, {8., 13.}}
+         }
+        ]
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {{15., 21.}, {15., 21.}},
+       PlotRange -> {{-0.5, 14.5}, {-0.5, 20.5}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ChatOutputStopButton"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      PaneBox[
+       ButtonBox[
+        TagBox[
+         TooltipBox[
+          TagBox[
+           GraphicsBox[
+            {
+             Thickness[0.083333],
+             {
+              FaceForm[{RGBColor[0.86667, 0.066667, 0.], Opacity[1.]}],
+              FilledCurveBox[
+               {{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}},
+               {
+                {
+                 {4.5, 3.},
+                 {6.985, 3.},
+                 {9., 5.015},
+                 {9., 7.5},
+                 {9., 9.985},
+                 {6.985, 12.},
+                 {4.5, 12.},
+                 {2.015, 12.},
+                 {0., 9.985},
+                 {0., 7.5},
+                 {0., 5.015},
+                 {2.015, 3.},
+                 {4.5, 3.}
+                }
+               }
+              ]
+             },
+             {
+              FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
+              FilledCurveBox[
+               {
+                {
+                 {0, 2, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0},
+                 {0, 1, 0}
+                }
+               },
+               {
+                {
+                 {5.9141, 7.5},
+                 {7.6671, 5.747},
+                 {6.2531, 4.333},
+                 {4.5001, 6.086},
+                 {2.7471, 4.333},
+                 {1.3331, 5.747},
+                 {3.0861, 7.5},
+                 {1.3331, 9.253},
+                 {2.7471, 10.667},
+                 {4.5001, 8.914},
+                 {6.2531, 10.667},
+                 {7.6671, 9.253},
+                 {5.9141, 7.5}
+                }
+               }
+              ]
+             }
+            },
+            AspectRatio -> Automatic,
+            ImageSize -> {{13., 13.}, {13., 13.}},
+            PlotRange -> {{-0.5, 12.5}, {0.5, 12.5}}
+           ],
+           MouseAppearanceTag["LinkHand"]
+          ],
+          "\"Stop\"",
+          TooltipStyle -> "TextStyling"
+         ],
+         Annotation[#1, "Stop", "Tooltip"] &
+        ],
+        ButtonFunction :>
+         With[ { cell = ParentCell[EvaluationCell[]] },
+          Quiet[Needs["Wolfram`Chatbook`" -> None]];
+          Symbol["Wolfram`Chatbook`ChatbookAction"]["StopChat", cell]
+         ],
+        Appearance -> None,
+        Evaluator -> Automatic,
+        Method -> "Preemptive"
+       ],
+       ImageSize -> {33, Automatic},
+       Alignment -> Left
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ChatQueryIcon"],
    TemplateBoxOptions -> {
     DisplayFunction ->
      (Function[
@@ -3940,7 +3679,7 @@ Notebook[
         Thickness[0.04],
         {
          FaceForm[
-          {RGBColor[0.57255, 0.57255, 0.57255], Opacity[1.0]}
+          {RGBColor[0.57255, 0.57255, 0.57255], Opacity[1.]}
          ],
          FilledCurveBox[
           {
@@ -3957,17 +3696,569 @@ Notebook[
            {
             {22.58, 9.9913},
             {19.879, 5.0003},
-            {19.0, 5.0003},
+            {19., 5.0003},
             {21.221, 10.003},
-            {19.0, 15.0},
-            {19.879, 15.0},
+            {19., 15.},
+            {19.879, 15.},
             {22.58, 9.9913}
            }
           }
          ]
         },
         {
-         FaceForm[{RGBColor[0.0, 0.51373, 0.83137], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.86667, 0.066667, 0.], Opacity[1.]}],
+         FilledCurveBox[
+          {
+           {
+            {1, 4, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0}
+           }
+          },
+          CompressedData[
+           "\n1:eJxdVH0slVEcvsl4771mkvnIiFDZHfdYs6Wm85M+JC2pZPmokTKzTIrKJDNd\nzcwfJlsh0dfM7kwyjEtMqKVamkySTFYq773Xvaqpdd733e/autvZ7nPe8/H8\nnt/zHO/kzJjU1TKZbBUbB9iwYkOlcR4fWSLQPePkMTyrBMRrDWEvT79VgkNc\nSOuQmUBtkv9zh0ElRNpZqTQM99hXb6lvVULX+QpXa4Z3stVz6Up48uzO7jYj\ngdTGk0diNilhwKv5XJqeQEnx8TddMwoo7zNtTlgg8LWyxS6rSQHavdOXnX4Q\ncImIXnbNVkBS5z47q3kC2rbkgvFQBRRWhpdmzBF4nybLLLRWQD/bXv6JwIcK\nDTtRDtax9gEtkwQ+6gRCchDoOY8TaCqdYDvkMPHrSnrXKIFdv7/P94bIQfw8\nQuAzvTuls5dDm/HP6MVhrJ+D6LKqs479BOTuQsUc5Opur1N3I18O1JO+NoWP\nCZirJhkDTuKvJWB1k2M7OCieP9TueY9AkTrqvmIPBy5MzcMNBNyyxxwNYRwE\nCwXWExgPvRT3MJgDmfCrI7DNJzKvSM2BKH8FAUGNMUcOWHU1Cxqsn4Mbghx5\nK1isv8bXgq9G9OR7vPOBLFEAawm7ellwb7xXmL7B07J+eFYQYoki/tl3inVu\nBZ9hXVWZzdTvglAh48tmB8rNVJTThwMRBpmpWL4/B4/shJtMlE3mBnhz4L1+\nMSM230Sxvq3iBSaK9XeU2fDOESaK+og2Upko6ifaqG6Ror5EmPZbpKi/eLzW\nSLE/4jVRRor9k/pqoNhfib+BYv8l/gaK/kj8G87+6Sn6R/KVnqK/UgoE5nqK\n/lsz2NleZqOn6M8dQlkveIr+BeGaap6iv1UicZ6i/6Xc8BTzIenAU8xPPJt1\n8uAp5uuasMyJp5g/xJhPqc88xfwixnwjfr2BJaMx0IKHc5jRFwKBiX29eZqn\nWaGKsQaiBlGeXANlr0CO7oQaKlNLUhITbKF24cHT/ceCYMg29NbRKXfYPnWQ\nJScIOpY1ixNL3vCNxaB4Xg1CnIpkG6Xcse9iPt0CLfvFe14RwPPzKUvIFwJ4\nP75HyA8x8v///foHfk0cwA==\n      "
+          ]
+         ]
+        },
+        {
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
+         FilledCurveBox[
+          {
+           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+           {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}},
+           {
+            {1, 4, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3}
+           },
+           {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}},
+           {
+            {1, 4, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3}
+           },
+           {
+            {1, 4, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3}
+           }
+          },
+          {
+           {{14., 9.}, {15., 9.}, {15., 5.}, {14., 5.}, {14., 9.}},
+           {{12., 8.}, {13., 8.}, {13., 5.}, {12., 5.}, {12., 8.}},
+           {
+            {10., 12.},
+            {15., 12.},
+            {15., 11.},
+            {10., 11.},
+            {10., 12.}
+           },
+           {
+            {15., 13.},
+            {10., 13.},
+            {10., 14.},
+            {15., 14.},
+            {15., 13.}
+           },
+           {{3., 8.}, {9., 8.}, {9., 7.}, {3., 7.}, {3., 8.}},
+           {{10., 7.}, {11., 7.}, {11., 5.}, {10., 5.}, {10., 7.}},
+           {{3., 6.}, {9., 6.}, {9., 5.}, {3., 5.}, {3., 6.}},
+           {
+            {6.272, 11.831},
+            {6.128, 11.914},
+            {5.999, 11.959},
+            {5.878, 11.944},
+            {5.893, 12.019},
+            {5.916, 12.073},
+            {5.939, 12.141},
+            {6.196, 12.18},
+            {6.386, 12.042},
+            {6.56, 11.914},
+            {6.424, 11.875},
+            {6.408, 11.868},
+            {6.272, 11.831}
+           },
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGAwAGIQ/WH5MW/zTi6HWnvTuF2cGg4wvl+SQIRliaYDiNpy\ngseh/9BXjZjzWg4+5p2OCakCUL42lC8E5es4nP8e/HiptKjDGpmoFOt4XYcw\nPt1Nc9+Lw/l3Vdgapx6WgvOrRda5P6ySheuH8OXh5ttyXV9csFcBbj9Q131/\nX0W4+2B8mPth/ONAXzguUIPr/wF01mwXVbj5EL6KQ+NU5+6c53IO00DUb2UH\noeYDpxa6Qvm7lR3qs/aUTJ4h69D6OnCHXKsy1D+SDkBi+bHTqg7a7WI3z32X\ncXhYBTR4ISb/DUhbtpzD898rP17qVXVYAQreg3Jw+dLJEixhfPIOhSCHblCF\n2Beh4PDpkm+SwA01gvynF5Ru//wn7QC2NljDwZADFLJSkHhR1XS47987PW+S\nlAPI1cvbtBxAvhfRk3KIAQeoDpwPNi9CB2qehAMDCBzQhtoj4bDt898rFSu1\nHVxAwbRS3KF833wpfVltB5Ctj1XFHZbNPqKw4ZO2wxwgVfRCzEH59s+6LBsd\nqHvEHIKAwfBaUBdqnoiDNdhhOlDzhKHu0XYAOfvpBSGHWTOBQFLLYeLbGnvT\newKQeGHVhLjjJR8kfqzVIe5fx+MATqbbVCHpwJMbar4aPD0ngDxmqe6Ant4B\nz4tKmQ==\n       "
+           ],
+           {
+            {5.984, 13.331},
+            {6.189, 13.527},
+            {6.219, 13.557},
+            {6.416, 13.747},
+            {6.431, 13.368},
+            {6.424, 13.172},
+            {6.401, 12.709},
+            {6.287, 12.823},
+            {6.06, 12.966},
+            {6.06, 12.966},
+            {6.06, 12.966},
+            {6.014, 13.232},
+            {5.984, 13.331}
+           },
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGCwAGIQHcanu2nue3GHjIlva+y3Kjmc/x78eKm0KJzvY97p\nmJAq5PADKDzbRRnKF4DyVRz6D33ViOEXcDhZtm++VL6Kg7T+XRW2Rn6HciBX\nf66KA8R8Pgd707hdnmdUHNbIRKVYxws4zHu//Jj3djWH0wtdt32uFXQI6J2e\nJ8Ss6XD2DBD4CDsU2nJdX7xB0wFEFdiKOBwGWtPfpAVR1yzisEOu9XXgDm2I\nO03FHGLADtFxyBdqPnBqoRhcHmKeuMOXv1cqXqZpOaw45m3eeVDcIWtPyWSJ\nI5pQviSUr+GQJBBhueWEjAPI1cvb1B1A3n16QQ5iP5O6wy5PHiZtdnmHZbOP\nKGz4pAY1Xx6qHpM/zbk753k1TL8a1D5RiP4iNYenF5Ru//wn4lAtss79YZUa\nNFxF4PIQfwlDw00N6j5hiH+eqTn8A1JqG0Uc2sVunvserE6Q/+mSb5LADWEH\ncDRNVYeGn7DDwyqgAxaqOxhygGwShqpTdzgOdK7jA2FIfMpqQN0LjR8DDah/\nhCHpQhUmL+jAAAIHYOEn6BAHCrhsdQcXYHD8XinkIAv0zn1/dah/hR0UNxRl\nTNQlzF8ETC5/Q4Sg6VPNAeSrx6pCDuIQBgYfkv5EHGbNBAJJNWj8iTuAg/Gb\nqoMXkNsuJg6NT1UHeVCykUPwIcYg+JD0KOEAdHzv9HeqDn7gCJF2AHuHVxma\nPqUg4X1ZyUH59s+6LBtJeH5Cz28Af2eJpw==\n       "
+           ],
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGCQBGIQHcanu2nue3GHWnvTuF2cSg7yra8Dd8hJw/mVL9UM\nOXTkIPQaJYdvGjH9h0wVHICalh87reywp2SyBEuYIkT+jYqDdrvYzXPfFR2W\nzT6isKFIDc6HmKcB5z+sElnnvlATrh/sDHVtuPlXK4AGeujA7QfLp+uiuU/P\nAdX9eg4rjnmbdx4UgfONQWCzIFx/41Tn7pznfHDz08CAC27/GpmoFOv77HD3\nwfgw98P4MP/B9MP8DzMfFj4w+2Hhh+o+JQf08AcActKajQ==\n       "
+           ]
+          }
+         ]
+        }
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {{26., 21.}, {26., 21.}},
+       PlotRange -> {{-0.5, 25.5}, {0.5, 20.5}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ChatSystemIcon"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.04],
+        {
+         FaceForm[
+          {RGBColor[0.57255, 0.57255, 0.57255], Opacity[1.]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0}
+           }
+          },
+          {
+           {
+            {22.58, 9.9913},
+            {19.879, 5.0003},
+            {19., 5.0003},
+            {21.221, 10.003},
+            {19., 15.},
+            {19.879, 15.},
+            {22.58, 9.9913}
+           }
+          }
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.50196, 0.56078, 0.59216], Opacity[1.]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {1, 4, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgBGIRIGZigAFDBwht4ADjR6VY3/fvNYDTuNTJvH5kJsUg\nAOdnbH5VvHUqN5xvee1orgkDB9wcGB9mDipfBs6fkSfUfOCUJJp5Emj2wfgS\nOPgwc1Xg8qjul0DzH0ze0KHW3jRu10lJOP/pBaXbP/9JY4QDAHoEQIQ=\n      "
+          ]
+         ]
+        },
+        {
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0}
+           },
+           {
+            {0, 2, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           }
+          },
+          {
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGBQBGIQfftnXdYeE22H1teBO+RYVR2eXlACCmk5RJwyOrLR\nT9mBT3fT3PfPNRz08xYz7lmq7OCUAFQRre5wlTNDKUdCyaE75/nvlRvVHf6l\nfn+S2KjgwLFGJirlt6qD1krhCy4z5B14mLTbxSRVHXgmr2wK1FR0uBb2Rn/3\ncyU431e0x+sVixJcvc3eoGmKfgpw84QTD1/WXqoAt6/oJ//L7fpycPfcf8A9\neSWTNNy9n/uCS1SmS8L985AbZJGMQ+NUZ6BTEXyIuzTg6iHu1oCbJ8kSBvS6\nFty+89+DHy+N1oK7Z84RhQ1FL7Th7oWEmy7cPxkT39bYm+rB/Ztifd+/97oO\nPDxgfFh4wdTDwhNmHiy8IfGgDbVXA+4eWHzB3AuLT5h/IPZowv0L48PCAz3+\nAcYL3Ok=\n       "
+           ],
+           CompressedData[
+            "\n1:eJxdVAlME1EQrQh4REUJtIUesqUt3e62lQQQT4aggifhEMUDFTUhBsQgRELU\ncEQBCwoRBbwFCTF4n3hEiSIeGKIGATVeoAFFQBRRg0T/dneHxE22m/c7/8/M\ne28+FZsYvt5OIpEsIy/3Da9W7+gMY2Ei+a2O0YPLmeD3aUUMHCglz4shnLEv\nyBrv5QVvQ/OLN4azkOicVfPouBfsldtHjetiwXThcE+lowFmWePbB2gT6BzJ\njnoDnNg0Y3RzGwv9hhV77qTQcMzd8lrryEKAb8z1uXkMkNPISQwsih2/dIoP\nCyHv01zOjGCguZxsLGb5/JFGiBpHMiSycKSnsm7+FprfB6zwpYV1FtoqDtZ6\nbKKFfSaYN8aOyd5Pw1fy9+RRZiBZLj3wo0HCPTVm4MqusxqEuiwQV9i1NSBF\nD94jTymXfbBACtdgg44/z2US/IogGex1cOX7YGPqJwv8Odn7bGGZFngeLdDH\nLeu1Am9maGTWu7W2eCKOll19KonxxPjUQ2We1/5ogCb0/OiwQEvG5jlFfhoo\nm00ykHyrSha45u2iBB4twMj3NY7qUGO95cNuOjgXqbAf71IjiVDCNo5g0m+b\nn3vNcg8Vfx7hI1lb/Ldguwr5iuQWxquQz4OLj1adXqpAvjcs/L47os8N1k3j\nlGeh9rx5Y3mGnNfTl4VQtZSEyFDPbU8uRv+YIkW9NfGpaRWnXHmeiR+ywuYe\nTtdL0S+drVyBMvRThv7OzspmOfpNxKIfxXjRr3FcAp0UVn98onn1W4f5bDr6\n6rCeEs5mu7RCPzKet2QNEDbJEXI43uTT4/+REvpzg+qzw9vzcigwBSk7W6+4\nI+bYDOwdwnw/CkirYIOUVoqvd4kC8g1dY28VUMhvFKG15TaF/M8OTvrtlEuh\nPoG9ax+vrPJA/dpVlR0h3RNR34H67od3M9Wo/07/pnsJfSr4Yrnh5UTylt7Y\nX+A0VQnzP9v7TCD+ieYCTivAgaDpgxpIvuw6UG9Wov80g/0p71ao0J/VkNl6\nv0WN/hWx6G8x/lCtx7mkDq1QjxIiuYFbrYOqmUuWn/+rANmLhp8RbUOY97Ee\nsW2+g/VQ8+XIdNZFifMm1m/zba4Bwl4qtq75phJ8RkNdgk/61XQ1zrPIjzjv\nDTnP3rwj/In3gciveF+I/GdLuQKNqA91LimuMMGI+j0n3XvnGFHfW0fJoJ0Y\nwrY5AwaxzVePGPQP72uW15H4i+eD5e9DqxaeEpduN5rQn7b85P4U/fv/ffwP\nllVkVA==\n       "
+           ]
+          }
+         ]
+        },
+        {
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
+         FilledCurveBox[
+          {
+           {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}},
+           {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgAmJeKP1ERPbk0//KDqcXum77vFfF4Z/zr7evDyjB+eu2\nJdXf3KvosOKYt3nnQVU4v3d6nlAzgzqc//SC0u2fdhpw/Ye/asT0O2k6wMyH\n8SHqVOF8CK0G1w/jw8yH8WH2w/TD3Ifufhi/OGPi25r/Wg7TNvEUrjmtCOcX\nrum+ncGg4OCXJBBhaaIJ58Psg/HtTeN2eZ5Rgevv2ZnN+ZNBGW4+jA8xRw3O\nh9ijDtcP48PMh/Fh9sP0w9yH7n4AybfA1A==\n      "
+          ]
+         ]
+        }
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {{26., 21.}, {26., 21.}},
+       PlotRange -> {{-0.5, 25.5}, {0.5, 20.5}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ChatSystemMenu"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.05],
+        {
+         FaceForm[
+          {RGBColor[0.50196, 0.56078, 0.59216], Opacity[1.]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {1, 4, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgBGIRIGZigAFDBwht4ADjR6VY3/fvNYDTuNTJvH5kJsUg\nAOdnbH5VvHUqN5xvee1orgkDB9wcGB9mDipfBs6fkSfUfOCUJJp5Emj2wfgS\nOPgwc1Xg8qjul0DzH0ze0KHW3jRu10lJOP/pBaXbP/9JY4QDAHoEQIQ=\n      "
+          ]
+         ]
+        },
+        {
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0}
+           },
+           {
+            {0, 2, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           }
+          },
+          {
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGBQBGIQfftnXdYeE22H1teBO+RYVR2eXlACCmk5RJwyOrLR\nT9mBT3fT3PfPNRz08xYz7lmq7OCUAFQRre5wlTNDKUdCyaE75/nvlRvVHf6l\nfn+S2KjgwLFGJirlt6qD1krhCy4z5B14mLTbxSRVHXgmr2wK1FR0uBb2Rn/3\ncyU431e0x+sVixJcvc3eoGmKfgpw84QTD1/WXqoAt6/oJ//L7fpycPfcf8A9\neSWTNNy9n/uCS1SmS8L985AbZJGMQ+NUZ6BTEXyIuzTg6iHu1oCbJ8kSBvS6\nFty+89+DHy+N1oK7Z84RhQ1FL7Th7oWEmy7cPxkT39bYm+rB/Ztifd+/97oO\nPDxgfFh4wdTDwhNmHiy8IfGgDbVXA+4eWHzB3AuLT5h/IPZowv0L48PCAz3+\nAcYL3Ok=\n       "
+           ],
+           CompressedData[
+            "\n1:eJxdVAlME1EQrQh4REUJtIUesqUt3e62lQQQT4aggifhEMUDFTUhBsQgRELU\ncEQBCwoRBbwFCTF4n3hEiSIeGKIGATVeoAFFQBRRg0T/dneHxE22m/c7/8/M\ne28+FZsYvt5OIpEsIy/3Da9W7+gMY2Ei+a2O0YPLmeD3aUUMHCglz4shnLEv\nyBrv5QVvQ/OLN4azkOicVfPouBfsldtHjetiwXThcE+lowFmWePbB2gT6BzJ\njnoDnNg0Y3RzGwv9hhV77qTQcMzd8lrryEKAb8z1uXkMkNPISQwsih2/dIoP\nCyHv01zOjGCguZxsLGb5/JFGiBpHMiSycKSnsm7+FprfB6zwpYV1FtoqDtZ6\nbKKFfSaYN8aOyd5Pw1fy9+RRZiBZLj3wo0HCPTVm4MqusxqEuiwQV9i1NSBF\nD94jTymXfbBACtdgg44/z2US/IogGex1cOX7YGPqJwv8Odn7bGGZFngeLdDH\nLeu1Am9maGTWu7W2eCKOll19KonxxPjUQ2We1/5ogCb0/OiwQEvG5jlFfhoo\nm00ykHyrSha45u2iBB4twMj3NY7qUGO95cNuOjgXqbAf71IjiVDCNo5g0m+b\nn3vNcg8Vfx7hI1lb/Ldguwr5iuQWxquQz4OLj1adXqpAvjcs/L47os8N1k3j\nlGeh9rx5Y3mGnNfTl4VQtZSEyFDPbU8uRv+YIkW9NfGpaRWnXHmeiR+ywuYe\nTtdL0S+drVyBMvRThv7OzspmOfpNxKIfxXjRr3FcAp0UVn98onn1W4f5bDr6\n6rCeEs5mu7RCPzKet2QNEDbJEXI43uTT4/+REvpzg+qzw9vzcigwBSk7W6+4\nI+bYDOwdwnw/CkirYIOUVoqvd4kC8g1dY28VUMhvFKG15TaF/M8OTvrtlEuh\nPoG9ax+vrPJA/dpVlR0h3RNR34H67od3M9Wo/07/pnsJfSr4Yrnh5UTylt7Y\nX+A0VQnzP9v7TCD+ieYCTivAgaDpgxpIvuw6UG9Wov80g/0p71ao0J/VkNl6\nv0WN/hWx6G8x/lCtx7mkDq1QjxIiuYFbrYOqmUuWn/+rANmLhp8RbUOY97Ee\nsW2+g/VQ8+XIdNZFifMm1m/zba4Bwl4qtq75phJ8RkNdgk/61XQ1zrPIjzjv\nDTnP3rwj/In3gciveF+I/GdLuQKNqA91LimuMMGI+j0n3XvnGFHfW0fJoJ0Y\nwrY5AwaxzVePGPQP72uW15H4i+eD5e9DqxaeEpduN5rQn7b85P4U/fv/ffwP\nllVkVA==\n       "
+           ]
+          }
+         ]
+        },
+        {
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
+         FilledCurveBox[
+          {
+           {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}},
+           {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgAmJeKP1ERPbk0//KDqcXum77vFfF4Z/zr7evDyjB+eu2\nJdXf3KvosOKYt3nnQVU4v3d6nlAzgzqc//SC0u2fdhpw/Ye/asT0O2k6wMyH\n8SHqVOF8CK0G1w/jw8yH8WH2w/TD3Ifufhi/OGPi25r/Wg7TNvEUrjmtCOcX\nrum+ncGg4OCXJBBhaaIJ58Psg/HtTeN2eZ5Rgevv2ZnN+ZNBGW4+jA8xRw3O\nh9ijDtcP48PMh/Fh9sP0w9yH7n4AybfA1A==\n      "
+          ]
+         ]
+        }
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {{21., 21.}, {21., 21.}},
+       PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ChatUserIcon"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.04],
+        {
+         FaceForm[
+          {RGBColor[0.57255, 0.57255, 0.57255], Opacity[1.]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0}
+           }
+          },
+          {
+           {
+            {22.58, 9.9913},
+            {19.879, 5.0003},
+            {19., 5.0003},
+            {21.221, 10.003},
+            {19., 15.},
+            {19.879, 15.},
+            {22.58, 9.9913}
+           }
+          }
+         ]
+        },
+        {
+         FaceForm[{RGBColor[0., 0.51373, 0.83137], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -3990,7 +4281,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
          FilledCurveBox[
           {
            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
@@ -4006,7 +4297,7 @@ Notebook[
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {{26.0, 21.0}, {26.0, 21.0}},
+       ImageSize -> {{26., 21.}, {26., 21.}},
        PlotRange -> {{-0.5, 25.5}, {0.5, 20.5}}
       ]
      ])
@@ -4021,7 +4312,7 @@ Notebook[
        {
         Thickness[0.047619],
         {
-         FaceForm[{GrayLevel[1.0], Opacity[1.0]}],
+         FaceForm[{GrayLevel[1.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -4044,7 +4335,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{GrayLevel[0.53725], Opacity[1.0]}],
+         FaceForm[{GrayLevel[0.53725], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -4092,7 +4383,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{GrayLevel[0.53725], Opacity[1.0]}],
+         FaceForm[{GrayLevel[0.53725], Opacity[1.]}],
          FilledCurveBox[
           {
            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
@@ -4168,11 +4459,11 @@ Notebook[
             {13.92, 12.324}
            },
            {
-            {11.0, 15.895},
+            {11., 15.895},
             {11.595, 14.876},
-            {11.0, 14.115},
+            {11., 14.115},
             {10.404, 14.876},
-            {11.0, 15.895}
+            {11., 15.895}
            },
            {
             {8.4523, 13.455},
@@ -4225,9 +4516,9 @@ Notebook[
            },
            {
             {10.372, 10.693},
-            {11.0, 11.545},
+            {11., 11.545},
             {11.627, 10.693},
-            {11.0, 9.7781},
+            {11., 9.7781},
             {10.372, 10.693}
            },
            {
@@ -4302,7 +4593,7 @@ Notebook[
        {
         Thickness[0.05],
         FaceForm[
-         {RGBColor[0.39216, 0.39216, 0.39216], Opacity[1.0]}
+         {RGBColor[0.39216, 0.39216, 0.39216], Opacity[1.]}
         ],
         FilledCurveBox[
          {
@@ -4329,7 +4620,7 @@ Notebook[
         ]
        },
        AspectRatio -> Automatic,
-       ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
+       ImageSize -> {{21., 21.}, {21., 21.}},
        PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
       ]
      ])
@@ -4349,7 +4640,7 @@ Notebook[
             Thickness[0.071429],
             {
              FaceForm[
-              {RGBColor[0.65098, 0.65098, 0.65098], Opacity[1.0]}
+              {RGBColor[0.65098, 0.65098, 0.65098], Opacity[1.]}
              ],
              FilledCurveBox[
               {{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}},
@@ -4360,12 +4651,12 @@ Notebook[
                 {9.275, 2.05},
                 {5.975, 2.05},
                 {2.675, 2.05},
-                {0.0, 4.725},
-                {0.0, 8.025},
-                {0.0, 11.325},
-                {2.675, 14.0},
-                {5.975, 14.0},
-                {9.275, 14.0},
+                {0., 4.725},
+                {0., 8.025},
+                {0., 11.325},
+                {2.675, 14.},
+                {5.975, 14.},
+                {9.275, 14.},
                 {11.95, 11.325},
                 {11.95, 8.025}
                }
@@ -4373,7 +4664,7 @@ Notebook[
              ]
             },
             {
-             FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+             FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
              FilledCurveBox[
               {
                {
@@ -4404,7 +4695,7 @@ Notebook[
             }
            },
            AspectRatio -> Automatic,
-           ImageSize -> {{15.0, 15.0}, {15.0, 15.0}},
+           ImageSize -> {{15., 15.}, {15., 15.}},
            PlotRange -> {{-0.5, 14.5}, {0.5, 14.5}}
           ],
          True ->
@@ -4412,7 +4703,7 @@ Notebook[
            {
             Thickness[0.071429],
             {
-             FaceForm[{RGBColor[0.94118, 0.44314, 0.0], Opacity[1.0]}],
+             FaceForm[{RGBColor[0.94118, 0.44314, 0.], Opacity[1.]}],
              FilledCurveBox[
               {{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}},
               {
@@ -4422,12 +4713,12 @@ Notebook[
                 {9.275, 2.05},
                 {5.975, 2.05},
                 {2.675, 2.05},
-                {0.0, 4.725},
-                {0.0, 8.025},
-                {0.0, 11.325},
-                {2.675, 14.0},
-                {5.975, 14.0},
-                {9.275, 14.0},
+                {0., 4.725},
+                {0., 8.025},
+                {0., 11.325},
+                {2.675, 14.},
+                {5.975, 14.},
+                {9.275, 14.},
                 {11.95, 11.325},
                 {11.95, 8.025}
                }
@@ -4435,7 +4726,7 @@ Notebook[
              ]
             },
             {
-             FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+             FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
              FilledCurveBox[
               {
                {
@@ -4466,7 +4757,7 @@ Notebook[
             }
            },
            AspectRatio -> Automatic,
-           ImageSize -> {{15.0, 15.0}, {15.0, 15.0}},
+           ImageSize -> {{15., 15.}, {15., 15.}},
            PlotRange -> {{-0.5, 14.5}, {0.5, 14.5}}
           ]
         },
@@ -4488,7 +4779,7 @@ Notebook[
        {
         Thickness[0.05],
         {
-         FaceForm[{RGBColor[0.0, 0.52157, 0.8549], Opacity[1.0]}],
+         FaceForm[{RGBColor[0., 0.52157, 0.8549], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -4555,7 +4846,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
          FilledCurveBox[
           {
            {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}},
@@ -4654,8 +4945,8 @@ Notebook[
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {20.0, 20.0},
-       PlotRange -> {{0.0, 20.0}, {0.0, 20.0}}
+       ImageSize -> {20., 20.},
+       PlotRange -> {{0., 20.}, {0., 20.}}
       ]
      ])
    }
@@ -4668,7 +4959,7 @@ Notebook[
       GraphicsBox[
        {
         Thickness[0.071429],
-        FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.0]}],
+        FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.]}],
         FilledCurveBox[
          {
           {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}},
@@ -4722,7 +5013,7 @@ Notebook[
        },
        AspectRatio -> Automatic,
        BaselinePosition -> Scaled[0.2],
-       ImageSize -> {{15.0, 16.0}, {15.0, 16.0}},
+       ImageSize -> {{15., 16.}, {15., 16.}},
        PlotRange -> {{-0.5, 14.5}, {-0.5, 15.5}}
       ]
      ])
@@ -4736,7 +5027,7 @@ Notebook[
       GraphicsBox[
        {
         Thickness[0.11111],
-        FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.0]}],
+        FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.]}],
         FilledCurveBox[
          {
           {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
@@ -4787,7 +5078,7 @@ Notebook[
        },
        AspectRatio -> Automatic,
        BaselinePosition -> Scaled[0.18],
-       ImageSize -> {{10.0, 16.0}, {10.0, 16.0}},
+       ImageSize -> {{10., 16.}, {10., 16.}},
        PlotRange -> {{-0.5, 9.5}, {-0.5, 15.5}}
       ]
      ])
@@ -4801,7 +5092,7 @@ Notebook[
       GraphicsBox[
        {
         Thickness[0.1],
-        FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.0]}],
+        FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.]}],
         FilledCurveBox[
          {
           {
@@ -4825,30 +5116,30 @@ Notebook[
          },
          {
           {
-           {9.0, 8.6022},
+           {9., 8.6022},
            {8.398, 7.8492},
-           {5.0, 10.387},
+           {5., 10.387},
            {1.645, 7.8492},
-           {1.0, 8.6022},
+           {1., 8.6022},
            {4.333, 11.548},
            {5.667, 11.548},
-           {9.0, 8.6022}
+           {9., 8.6022}
           },
           {
-           {9.0, 5.2042},
+           {9., 5.2042},
            {8.398, 4.4512},
-           {5.0, 6.9892},
+           {5., 6.9892},
            {1.645, 4.4512},
-           {1.0, 5.2042},
+           {1., 5.2042},
            {4.333, 8.1502},
            {5.667, 8.1502},
-           {9.0, 5.2042}
+           {9., 5.2042}
           }
          }
         ]
        },
        AspectRatio -> Automatic,
-       ImageSize -> {{11.0, 16.0}, {11.0, 16.0}},
+       ImageSize -> {{11., 16.}, {11., 16.}},
        PlotRange -> {{-0.5, 10.5}, {-0.5, 15.5}}
       ]
      ])
@@ -4862,7 +5153,7 @@ Notebook[
       GraphicsBox[
        {
         Thickness[0.1],
-        FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.0]}],
+        FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.]}],
         FilledCurveBox[
          {
           {
@@ -4877,20 +5168,20 @@ Notebook[
          },
          {
           {
-           {9.0, 6.4578},
+           {9., 6.4578},
            {8.398, 5.7048},
-           {5.0, 8.2428},
+           {5., 8.2428},
            {1.645, 5.7048},
-           {1.0, 6.4578},
+           {1., 6.4578},
            {4.333, 9.4038},
            {5.667, 9.4038},
-           {9.0, 6.4578}
+           {9., 6.4578}
           }
          }
         ]
        },
        AspectRatio -> Automatic,
-       ImageSize -> {{11.0, 16.0}, {11.0, 16.0}},
+       ImageSize -> {{11., 16.}, {11., 16.}},
        PlotRange -> {{-0.5, 10.5}, {-0.5, 15.5}}
       ]
      ])
@@ -4904,7 +5195,7 @@ Notebook[
       GraphicsBox[
        {
         Thickness[0.1],
-        FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.0]}],
+        FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.]}],
         FilledCurveBox[
          {
           {
@@ -4932,7 +5223,7 @@ Notebook[
         ]
        },
        AspectRatio -> Automatic,
-       ImageSize -> {{11.0, 16.0}, {11.0, 16.0}},
+       ImageSize -> {{11., 16.}, {11., 16.}},
        PlotRange -> {{-0.5, 10.5}, {-0.5, 15.5}}
       ]
      ])
@@ -4947,7 +5238,7 @@ Notebook[
        {
         Thickness[0.047619],
         {
-         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -4971,7 +5262,7 @@ Notebook[
         },
         {
          FaceForm[
-          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.0]}
+          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}
          ],
          FilledCurveBox[
           {
@@ -5053,7 +5344,7 @@ Notebook[
        {
         Thickness[0.047619],
         {
-         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -5077,7 +5368,7 @@ Notebook[
         },
         {
          FaceForm[
-          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.0]}
+          {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}
          ],
          FilledCurveBox[
           {
@@ -5126,7 +5417,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[0.86667, 0.066667, 0.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.86667, 0.066667, 0.], Opacity[1.]}],
          FilledCurveBox[
           {
            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
@@ -5202,11 +5493,11 @@ Notebook[
             {13.92, 12.324}
            },
            {
-            {11.0, 15.895},
+            {11., 15.895},
             {11.595, 14.876},
-            {11.0, 14.115},
+            {11., 14.115},
             {10.404, 14.876},
-            {11.0, 15.895}
+            {11., 15.895}
            },
            {
             {8.4523, 13.455},
@@ -5259,9 +5550,9 @@ Notebook[
            },
            {
             {10.372, 10.693},
-            {11.0, 11.545},
+            {11., 11.545},
             {11.627, 10.693},
-            {11.0, 9.7781},
+            {11., 9.7781},
             {10.372, 10.693}
            },
            {
@@ -5337,7 +5628,7 @@ Notebook[
         Thickness[0.05],
         {
          FaceForm[
-          {RGBColor[0.37255, 0.65098, 0.58431], Opacity[1.0]}
+          {RGBColor[0.37255, 0.65098, 0.58431], Opacity[1.]}
          ],
          FilledCurveBox[
           {
@@ -5484,7 +5775,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -5498,27 +5789,27 @@ Notebook[
           },
           {
            {
-            {15.5, 1.0},
-            {9.4999, 1.0},
-            {7.5669, 1.0},
+            {15.5, 1.},
+            {9.4999, 1.},
+            {7.5669, 1.},
             {5.9999, 2.567},
             {5.9999, 4.5},
             {5.9999, 6.433},
-            {7.5669, 8.0},
-            {9.4999, 8.0},
-            {15.5, 8.0},
-            {17.433, 8.0},
-            {19.0, 6.433},
-            {19.0, 4.5},
-            {19.0, 2.567},
-            {17.433, 1.0},
-            {15.5, 1.0}
+            {7.5669, 8.},
+            {9.4999, 8.},
+            {15.5, 8.},
+            {17.433, 8.},
+            {19., 6.433},
+            {19., 4.5},
+            {19., 2.567},
+            {17.433, 1.},
+            {15.5, 1.}
            }
           }
          ]
         },
         {
-         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -5616,8 +5907,8 @@ Notebook[
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {20.0, 20.0},
-       PlotRange -> {{0.0, 20.0}, {0.0, 20.0}}
+       ImageSize -> {20., 20.},
+       PlotRange -> {{0., 20.}, {0., 20.}}
       ]
      ])
    }
@@ -5632,7 +5923,7 @@ Notebook[
         Thickness[0.05],
         {
          FaceForm[
-          {RGBColor[0.37255, 0.65098, 0.58431], Opacity[1.0]}
+          {RGBColor[0.37255, 0.65098, 0.58431], Opacity[1.]}
          ],
          FilledCurveBox[
           {
@@ -5779,31 +6070,31 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.]}],
          FilledCurveBox[
           {{{0, 2, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}},
           {
            {
-            {15.5, 1.0},
-            {15.5, 1.0},
-            {13.567, 1.0},
-            {12.0, 2.567},
-            {12.0, 4.5},
-            {12.0, 6.433},
-            {13.567, 8.0},
-            {15.5, 8.0},
-            {17.433, 8.0},
-            {19.0, 6.433},
-            {19.0, 4.5},
-            {19.0, 2.567},
-            {17.433, 1.0},
-            {15.5, 1.0}
+            {15.5, 1.},
+            {15.5, 1.},
+            {13.567, 1.},
+            {12., 2.567},
+            {12., 4.5},
+            {12., 6.433},
+            {13.567, 8.},
+            {15.5, 8.},
+            {17.433, 8.},
+            {19., 6.433},
+            {19., 4.5},
+            {19., 2.567},
+            {17.433, 1.},
+            {15.5, 1.}
            }
           }
          ]
         },
         {
-         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -5848,8 +6139,8 @@ Notebook[
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {20.0, 20.0},
-       PlotRange -> {{0.0, 20.0}, {0.0, 20.0}}
+       ImageSize -> {20., 20.},
+       PlotRange -> {{0., 20.}, {0., 20.}}
       ]
      ])
    }
@@ -5863,8 +6154,8 @@ Notebook[
        GeometricTransformationBox[
         {
          RGBColor[0.4549, 0.66667, 0.61176],
-         Thickness[0.0],
-         Opacity[1.0],
+         Thickness[0.],
+         Opacity[1.],
          FilledCurveBox[
           {
            {
@@ -6030,7 +6321,7 @@ Notebook[
        {
         Thickness[0.05],
         {
-         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
          FilledCurveBox[
           {{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}},
           {
@@ -6038,13 +6329,13 @@ Notebook[
             {9.9999, 1.75},
             {5.4509, 1.75},
             {1.7499, 5.451},
-            {1.7499, 10.0},
+            {1.7499, 10.},
             {1.7499, 14.549},
             {5.4509, 18.25},
             {9.9999, 18.25},
             {14.549, 18.25},
             {18.25, 14.549},
-            {18.25, 10.0},
+            {18.25, 10.},
             {18.25, 5.451},
             {14.549, 1.75},
             {9.9999, 1.75}
@@ -6065,7 +6356,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[0.96863, 0.0, 0.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.96863, 0., 0.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -6098,7 +6389,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[0.96863, 0.0, 0.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.96863, 0., 0.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -6163,7 +6454,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[0.96863, 0.0, 0.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.96863, 0., 0.], Opacity[1.]}],
          FilledCurveBox[
           {{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}},
           {
@@ -6188,8 +6479,8 @@ Notebook[
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {20.0, 20.0},
-       PlotRange -> {{0.0, 20.0}, {0.0, 20.0}}
+       ImageSize -> {20., 20.},
+       PlotRange -> {{0., 20.}, {0., 20.}}
       ]
      ])
    }
@@ -6203,7 +6494,7 @@ Notebook[
        {
         Thickness[0.05],
         {
-         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -6219,14 +6510,14 @@ Notebook[
            {
             {3.7499, 1.75},
             {3.7499, 18.25},
-            {15.0, 18.25},
+            {15., 18.25},
             {15.689, 18.25},
             {16.25, 17.689},
-            {16.25, 17.0},
-            {16.25, 3.0},
+            {16.25, 17.},
+            {16.25, 3.},
             {16.25, 2.311},
             {15.689, 1.75},
-            {15.0, 1.75},
+            {15., 1.75},
             {3.7499, 1.75}
            }
           }
@@ -6259,40 +6550,40 @@ Notebook[
           },
           {
            {
-            {15.0, 18.5},
+            {15., 18.5},
             {3.9999, 18.5},
             {3.4999, 18.5},
-            {3.4999, 18.0},
-            {3.4999, 2.0},
+            {3.4999, 18.},
+            {3.4999, 2.},
             {3.4999, 1.5},
             {3.9999, 1.5},
-            {15.0, 1.5},
+            {15., 1.5},
             {15.827, 1.5},
             {16.5, 2.173},
-            {16.5, 3.0},
-            {16.5, 17.0},
+            {16.5, 3.},
+            {16.5, 17.},
             {16.5, 17.827},
             {15.827, 18.5},
-            {15.0, 18.5}
+            {15., 18.5}
            },
            {
-            {15.0, 18.0},
-            {15.552, 18.0},
-            {16.0, 17.552},
-            {16.0, 17.0},
-            {16.0, 3.0},
-            {16.0, 2.448},
-            {15.552, 2.0},
-            {15.0, 2.0},
-            {3.9999, 2.0},
-            {3.9999, 18.0},
-            {15.0, 18.0}
+            {15., 18.},
+            {15.552, 18.},
+            {16., 17.552},
+            {16., 17.},
+            {16., 3.},
+            {16., 2.448},
+            {15.552, 2.},
+            {15., 2.},
+            {3.9999, 2.},
+            {3.9999, 18.},
+            {15., 18.}
            }
           }
          ]
         },
         {
-         FaceForm[{RGBColor[1.0, 0.4549, 0.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 0.4549, 0.], Opacity[1.]}],
          FilledCurveBox[
           {{{0, 2, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}},
           {
@@ -6313,7 +6604,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[1.0, 0.4549, 0.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 0.4549, 0.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -6379,7 +6670,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[1.0, 0.4549, 0.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 0.4549, 0.], Opacity[1.]}],
          FilledCurveBox[
           {
            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
@@ -6412,20 +6703,8 @@ Notebook[
            }
           },
           {
-           {
-            {14.0, 15.0},
-            {6.0, 15.0},
-            {6.0, 16.0},
-            {14.0, 16.0},
-            {14.0, 15.0}
-           },
-           {
-            {14.0, 13.0},
-            {6.0, 13.0},
-            {6.0, 14.0},
-            {14.0, 14.0},
-            {14.0, 13.0}
-           },
+           {{14., 15.}, {6., 15.}, {6., 16.}, {14., 16.}, {14., 15.}},
+           {{14., 13.}, {6., 13.}, {6., 14.}, {14., 14.}, {14., 13.}},
            CompressedData[
             "\n1:eJxTTMoPSmViYGDQB2IQDQF6DhDaCEoLYPDPfw9+vHQ2vwOTdrvYTT9Bhy0n\nyvbNlxJ2AAoeUdgg7ODFA5SZJumQBgZiDvp3VdgaRRUcSidLsITxSTncPAc0\nQFXJYQ5QddELaYeXaoYca+6oOATtkGt9HSjn8OmSb5LADTWHcqCp+nMVHLiu\nLy6w5dJwAFPiig7r3B9WieRpOPwAOcNF0SHF+r5/73V1B6BmoAmKDh+WH/M2\n51R3OHhqoeu2zYoOp4HU51o1hz8rP17yfaToYAwCn1Uh6lmVHKLABqg6fPl7\npeKlmpIDn+6mue/VVR1kwRJKDpox/Ye+rlBxEAFZfEXJwce80zFBVRXibhll\nB8UNRRkTc1UdjiqAGMoOQNmnFx6pOqwAOqOzEaZPzSFJIMJyywkViD3L1Bwy\nJr6tsTdVhbgrSc0BJFtmpwpxd7GiQ3fO898rDVUdbMEBoOBgDjZYzQEUvGKR\nsg57SoABKqbtAHL99HfiDiHgCNB2AIYO0EZxh97peULNDdoO2z4DLcwUh5qv\n7SAJjAXdTWIQ/dM0oeEg5ADy9nI3TQeh5gOnFh4VdKgEeVBH0+EfKFg2Cjqo\ng7x7S8MBREWlCELc91Hd4ekFpds/6wQdQL5/a6MO8f8iQah5qg4g5+UJCUHC\nk18Tmo4YHFDTGwM0HemjyRtA0s9UZjgfQnOg8Q3hfEh8GqKZB0u/iPQNAHoY\nB8o=\n       "
            ]
@@ -6434,8 +6713,8 @@ Notebook[
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {20.0, 20.0},
-       PlotRange -> {{0.0, 20.0}, {0.0, 20.0}}
+       ImageSize -> {20., 20.},
+       PlotRange -> {{0., 20.}, {0., 20.}}
       ]
      ])
    }
@@ -6449,30 +6728,30 @@ Notebook[
        {
         Thickness[0.05],
         {
-         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
          FilledCurveBox[
           {{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}},
           {
            {
-            {16.749, 10.0},
+            {16.749, 10.},
             {16.749, 6.272},
             {13.716, 3.25},
             {9.975, 3.25},
             {6.234, 3.25},
             {3.201, 6.272},
-            {3.201, 10.0},
+            {3.201, 10.},
             {3.201, 13.728},
             {6.234, 16.75},
             {9.975, 16.75},
             {13.716, 16.75},
             {16.749, 13.728},
-            {16.749, 10.0}
+            {16.749, 10.}
            }
           }
          ]
         },
         {
-         FaceForm[{RGBColor[0.8, 0.8, 0.8], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.8, 0.8, 0.8], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -7021,7 +7300,7 @@ Notebook[
         },
         {
          FaceForm[
-          {RGBColor[0.43137, 0.43137, 0.43137], Opacity[1.0]}
+          {RGBColor[0.43137, 0.43137, 0.43137], Opacity[1.]}
          ],
          FilledCurveBox[
           {
@@ -7348,8 +7627,8 @@ Notebook[
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {20.0, 20.0},
-       PlotRange -> {{0.0, 20.0}, {0.0, 20.0}},
+       ImageSize -> {20., 20.},
+       PlotRange -> {{0., 20.}, {0., 20.}},
        BaselinePosition -> Scaled[0.282]
       ]
      ])
@@ -7384,7 +7663,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -7491,7 +7770,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
          FilledCurveBox[
           {
            {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}},
@@ -7543,8 +7822,8 @@ Notebook[
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {20.0, 20.0},
-       PlotRange -> {{0.0, 20.0}, {0.0, 20.0}},
+       ImageSize -> {20., 20.},
+       PlotRange -> {{0., 20.}, {0., 20.}},
        BaselinePosition -> Scaled[0.262]
       ]
      ])
@@ -7580,7 +7859,7 @@ Notebook[
            ]
           ]
          },
-         {FaceForm[RGBColor[0.7451, 0.82353, 1.0, 1.0]]},
+         {FaceForm[RGBColor[0.7451, 0.82353, 1., 1.]]},
          StripOnInput -> False
         ],
         StyleBox[
@@ -7656,11 +7935,11 @@ Notebook[
            }
           ]
          },
-         {FaceForm[RGBColor[0.42353, 0.48627, 0.68627, 1.0]]},
+         {FaceForm[RGBColor[0.42353, 0.48627, 0.68627, 1.]]},
          StripOnInput -> False
         ]
        },
-       ImageSize -> {{20.0, 20.0}, {20.0, 20.0}},
+       ImageSize -> {{20., 20.}, {20., 20.}},
        PlotRange -> {{-0.5, 26.5}, {-0.5, 26.5}},
        AspectRatio -> Automatic
       ]
@@ -7677,7 +7956,7 @@ Notebook[
         Thickness[0.05],
         {
          FaceForm[
-          {RGBColor[0.48627, 0.56078, 0.59216], Opacity[1.0]}
+          {RGBColor[0.48627, 0.56078, 0.59216], Opacity[1.]}
          ],
          FilledCurveBox[
           {
@@ -7701,7 +7980,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -7803,7 +8082,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
          FilledCurveBox[
           {
            {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}},
@@ -7816,8 +8095,8 @@ Notebook[
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {20.0, 20.0},
-       PlotRange -> {{0.0, 20.0}, {0.0, 20.0}}
+       ImageSize -> {20., 20.},
+       PlotRange -> {{0., 20.}, {0., 20.}}
       ]
      ])
    }
@@ -7831,7 +8110,7 @@ Notebook[
        {
         Thickness[0.038462],
         {
-         FaceForm[{RGBColor[0.4902, 0.82353, 1.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.4902, 0.82353, 1.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -7854,9 +8133,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[
-          {RGBColor[0.18824, 0.49412, 0.6549], Opacity[1.0]}
-         ],
+         FaceForm[{RGBColor[0.18824, 0.49412, 0.6549], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -7903,7 +8180,7 @@ Notebook[
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {{20.0, 20.0}, {20.0, 20.0}},
+       ImageSize -> {{20., 20.}, {20., 20.}},
        PlotRange -> {{-0.5, 26.5}, {-0.5, 26.5}}
       ]
      ])
@@ -7917,7 +8194,7 @@ Notebook[
       GraphicsBox[
        {
         Thickness[0.05],
-        FaceForm[{RGBColor[0.0, 0.52157, 0.8549], Opacity[1.0]}],
+        FaceForm[{RGBColor[0., 0.52157, 0.8549], Opacity[1.]}],
         FilledCurveBox[
          {
           {
@@ -7940,8 +8217,8 @@ Notebook[
         ]
        },
        AspectRatio -> Automatic,
-       ImageSize -> {20.0, 20.0},
-       PlotRange -> {{0.0, 20.0}, {0.0, 20.0}}
+       ImageSize -> {20., 20.},
+       PlotRange -> {{0., 20.}, {0., 20.}}
       ]
      ])
    }
@@ -7955,7 +8232,7 @@ Notebook[
        {
         Thickness[0.05],
         {
-         FaceForm[{RGBColor[0.4902, 0.82353, 1.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.4902, 0.82353, 1.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -7978,9 +8255,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[
-          {RGBColor[0.18824, 0.49412, 0.6549], Opacity[1.0]}
-         ],
+         FaceForm[{RGBColor[0.18824, 0.49412, 0.6549], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -8021,7 +8296,7 @@ Notebook[
             {9.8486, 5.5},
             {9.7226, 5.416},
             {7.4996, 3.934},
-            {7.4996, 5.0},
+            {7.4996, 5.},
             {7.4996, 5.5},
             {6.9996, 5.5},
             {5.4996, 5.5},
@@ -8033,24 +8308,16 @@ Notebook[
         },
         {
          FaceForm[
-          {RGBColor[0.33725, 0.65882, 0.82745], Opacity[1.0]}
+          {RGBColor[0.33725, 0.65882, 0.82745], Opacity[1.]}
          ],
          FilledCurveBox[
           {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}},
-          {
-           {
-            {3.0, 15.0},
-            {17.0, 15.0},
-            {17.0, 17.0},
-            {3.0, 17.0},
-            {3.0, 15.0}
-           }
-          }
+          {{{3., 15.}, {17., 15.}, {17., 17.}, {3., 17.}, {3., 15.}}}
          ]
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
+       ImageSize -> {{21., 21.}, {21., 21.}},
        PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
       ]
      ])
@@ -8065,7 +8332,7 @@ Notebook[
        {
         Thickness[0.11111],
         FaceForm[
-         {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.0]}
+         {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.]}
         ],
         FilledCurveBox[
          {
@@ -8098,7 +8365,7 @@ Notebook[
         ]
        },
        AspectRatio -> Automatic,
-       ImageSize -> {{10.0, 12.0}, {10.0, 12.0}},
+       ImageSize -> {{10., 12.}, {10., 12.}},
        PlotRange -> {{-0.5, 9.5}, {-0.5, 11.5}}
       ]
      ])
@@ -8295,7 +8562,7 @@ Notebook[
         },
         {
          FaceForm[
-          {RGBColor[0.62745, 0.58039, 0.58039], Opacity[1.0]}
+          {RGBColor[0.62745, 0.58039, 0.58039], Opacity[1.]}
          ],
          FilledCurveBox[
           {
@@ -8314,9 +8581,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[
-          {RGBColor[0.7451, 0.69804, 0.69804], Opacity[1.0]}
-         ],
+         FaceForm[{RGBColor[0.7451, 0.69804, 0.69804], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -8339,7 +8604,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[0.95686, 0.0, 0.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.95686, 0., 0.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -8359,7 +8624,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[0.76078, 0.0, 0.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.76078, 0., 0.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -8394,7 +8659,7 @@ Notebook[
         },
         {
          FaceForm[
-          {RGBColor[0.97647, 0.16078, 0.13725], Opacity[1.0]}
+          {RGBColor[0.97647, 0.16078, 0.13725], Opacity[1.]}
          ],
          FilledCurveBox[
           {{{0, 2, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}},
@@ -8419,7 +8684,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[0.96863, 0.0, 0.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.96863, 0., 0.], Opacity[1.]}],
          FilledCurveBox[
           {{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}}},
           {
@@ -8438,7 +8703,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[0.79216, 0.019608, 0.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.79216, 0.019608, 0.], Opacity[1.]}],
          FilledCurveBox[
           {{{1, 4, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}},
           {
@@ -8456,7 +8721,7 @@ Notebook[
         },
         {
          FaceForm[
-          {RGBColor[0.81961, 0.19216, 0.16078], Opacity[1.0]}
+          {RGBColor[0.81961, 0.19216, 0.16078], Opacity[1.]}
          ],
          FilledCurveBox[
           {
@@ -8499,7 +8764,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[0.95686, 0.0, 0.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.95686, 0., 0.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -8519,7 +8784,7 @@ Notebook[
         },
         {
          FaceForm[
-          {RGBColor[0.62745, 0.58039, 0.58039], Opacity[1.0]}
+          {RGBColor[0.62745, 0.58039, 0.58039], Opacity[1.]}
          ],
          FilledCurveBox[
           {
@@ -8642,7 +8907,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[0.95686, 0.0, 0.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.95686, 0., 0.], Opacity[1.]}],
          FilledCurveBox[
           {
            {
@@ -8664,7 +8929,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
          FilledCurveBox[
           {{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}},
           {
@@ -8687,7 +8952,7 @@ Notebook[
          ]
         },
         {
-         FaceForm[{RGBColor[0.95686, 0.0, 0.0], Opacity[1.0]}],
+         FaceForm[{RGBColor[0.95686, 0., 0.], Opacity[1.]}],
          FilledCurveBox[
           {
            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
@@ -8882,8 +9147,8 @@ Notebook[
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {20.0, 20.0},
-       PlotRange -> {{0.0, 20.0}, {0.0, 20.0}}
+       ImageSize -> {20., 20.},
+       PlotRange -> {{0., 20.}, {0., 20.}}
       ]
      ])
    }

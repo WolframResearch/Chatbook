@@ -1559,6 +1559,63 @@ Notebook[
                        TagBox[
                         TemplateBox[
                          {
+                          "\"ChatBlockSettingsMenuIcon.wl\"",
+                          FileNameJoin[
+                           {
+                            NotebookDirectory[],
+                            "Developer",
+                            "Resources",
+                            "Icons",
+                            "ChatBlockSettingsMenuIcon.wl"
+                           }
+                          ]
+                         },
+                         "FileManagerFileOpenerTemplate"
+                        ],
+                        Function[
+                         Annotation[
+                          #1,
+                          DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                           3
+                          ]
+                         ]
+                        ]
+                       ],
+                       FileNameJoin[
+                        {
+                         NotebookDirectory[],
+                         "Developer",
+                         "Resources",
+                         "Icons",
+                         "ChatBlockSettingsMenuIcon.wl"
+                        }
+                       ],
+                       BoxID -> "FileTreePath",
+                       BaseStyle -> {"Text"}
+                      ]
+                     ],
+                     "FileManagerFile",
+                     CellMargins -> {{69 + Inherited, Inherited}, {Inherited, Inherited}},
+                     CellGroupingRules -> {"SectionGrouping", 130},
+                     CellFrameLabels -> {
+                      {
+                       Cell[
+                        BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                        Background -> None
+                       ],
+                       Inherited
+                      },
+                      {Inherited, Inherited}
+                     },
+                     CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                     CellID -> 840082979
+                    ],
+                    Cell[
+                     BoxData[
+                      InterpretationBox[
+                       TagBox[
+                        TemplateBox[
+                         {
                           "\"ChatExcludedWidget.wl\"",
                           FileNameJoin[
                            {
@@ -1894,6 +1951,63 @@ Notebook[
                      },
                      CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
                      CellID -> 1306351818
+                    ],
+                    Cell[
+                     BoxData[
+                      InterpretationBox[
+                       TagBox[
+                        TemplateBox[
+                         {
+                          "\"ChatSystemMenu.wl\"",
+                          FileNameJoin[
+                           {
+                            NotebookDirectory[],
+                            "Developer",
+                            "Resources",
+                            "Icons",
+                            "ChatSystemMenu.wl"
+                           }
+                          ]
+                         },
+                         "FileManagerFileOpenerTemplate"
+                        ],
+                        Function[
+                         Annotation[
+                          #1,
+                          DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                           3
+                          ]
+                         ]
+                        ]
+                       ],
+                       FileNameJoin[
+                        {
+                         NotebookDirectory[],
+                         "Developer",
+                         "Resources",
+                         "Icons",
+                         "ChatSystemMenu.wl"
+                        }
+                       ],
+                       BoxID -> "FileTreePath",
+                       BaseStyle -> {"Text"}
+                      ]
+                     ],
+                     "FileManagerFile",
+                     CellMargins -> {{69 + Inherited, Inherited}, {Inherited, Inherited}},
+                     CellGroupingRules -> {"SectionGrouping", 130},
+                     CellFrameLabels -> {
+                      {
+                       Cell[
+                        BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                        Background -> None
+                       ],
+                       Inherited
+                      },
+                      {Inherited, Inherited}
+                     },
+                     CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                     CellID -> 770999598
                     ],
                     Cell[
                      BoxData[
@@ -6398,7 +6512,7 @@ Notebook[
                       {Inherited, Inherited}
                      },
                      CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
-                     CellID -> 222793628
+                     CellID -> 429889803
                     ]
                    },
                    Closed
@@ -7190,6 +7304,61 @@ Notebook[
                     TagBox[
                      TemplateBox[
                       {
+                       "\"ServerSentEventUtils.wl\"",
+                       FileNameJoin[
+                        {
+                         NotebookDirectory[],
+                         "Source",
+                         "Chatbook",
+                         "ServerSentEventUtils.wl"
+                        }
+                       ]
+                      },
+                      "FileManagerFileOpenerTemplate"
+                     ],
+                     Function[
+                      Annotation[
+                       #1,
+                       DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                        2
+                       ]
+                      ]
+                     ]
+                    ],
+                    FileNameJoin[
+                     {
+                      NotebookDirectory[],
+                      "Source",
+                      "Chatbook",
+                      "ServerSentEventUtils.wl"
+                     }
+                    ],
+                    BoxID -> "FileTreePath",
+                    BaseStyle -> {"Text"}
+                   ]
+                  ],
+                  "FileManagerFile",
+                  CellMargins -> {{46 + Inherited, Inherited}, {Inherited, Inherited}},
+                  CellGroupingRules -> {"SectionGrouping", 120},
+                  CellFrameLabels -> {
+                   {
+                    Cell[
+                     BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                     Background -> None
+                    ],
+                    Inherited
+                   },
+                   {Inherited, Inherited}
+                  },
+                  CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                  CellID -> 712963170
+                 ],
+                 Cell[
+                  BoxData[
+                   InterpretationBox[
+                    TagBox[
+                     TemplateBox[
+                      {
                        "\"Streaming.wl\"",
                        FileNameJoin[
                         {NotebookDirectory[], "Source", "Chatbook", "Streaming.wl"}
@@ -7318,135 +7487,6 @@ Notebook[
                   },
                   CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
                   CellID -> 1634736
-                 ]
-                },
-                Closed
-               ]
-              ],
-              Cell[
-               CellGroupData[
-                {
-                 Cell[
-                  TextData[
-                   Cell[
-                    BoxData[
-                     InterpretationBox[
-                      TagBox[
-                       ActionMenuBox[
-                        "\"ServerSentEventUtils\"",
-                        {
-                         "\"Open/Close Group\"" :>
-                          (SelectionMove[ParentCell[EvaluationCell[]], All, Cell];
-                          FrontEndTokenExecute[
-                           EvaluationNotebook[],
-                           "OpenCloseGroup"
-                          ]),
-                         "\"Open Directory\"" :>
-                          DefinitionNotebookClient`FileTreeOpen[
-                           ParentCell[EvaluationCell[]]
-                          ],
-                         "\"Un/Mark as Excluded\"" :>
-                          DefinitionNotebookClient`FileTreeExclusionToggle[
-                           ParentCell[EvaluationCell[]]
-                          ],
-                         "\"Copy Path to Clipboard\"" :>
-                          DefinitionNotebookClient`FileTreeCopy[
-                           ParentCell[EvaluationCell[]]
-                          ]
-                        },
-                        Appearance -> None,
-                        BaseStyle -> {"Text"}
-                       ],
-                       Function[
-                        Annotation[
-                         #1,
-                         DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
-                          1
-                         ]
-                        ]
-                       ]
-                      ],
-                      FileNameJoin[
-                       {NotebookDirectory[], "Source", "ServerSentEventUtils"}
-                      ],
-                      BoxID -> "FileTreePath",
-                      BaseStyle -> {"Text"}
-                     ]
-                    ]
-                   ]
-                  ],
-                  "FileManagerDirectory",
-                  CellMargins -> {{23 + Inherited, Inherited}, {Inherited, Inherited}},
-                  CellGroupingRules -> {"SectionGrouping", 110},
-                  CellFrameLabels -> {
-                   {
-                    Cell[
-                     BoxData[
-                      TemplateBox[{}, "FileManagerDirectoryIconTemplate"]
-                     ],
-                     Background -> None
-                    ],
-                    Inherited
-                   },
-                   {Inherited, Inherited}
-                  },
-                  CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
-                  CellID -> 1705204188
-                 ],
-                 Cell[
-                  BoxData[
-                   InterpretationBox[
-                    TagBox[
-                     TemplateBox[
-                      {
-                       "\"ServerSentEventUtils.wl\"",
-                       FileNameJoin[
-                        {
-                         NotebookDirectory[],
-                         "Source",
-                         "ServerSentEventUtils",
-                         "ServerSentEventUtils.wl"
-                        }
-                       ]
-                      },
-                      "FileManagerFileOpenerTemplate"
-                     ],
-                     Function[
-                      Annotation[
-                       #1,
-                       DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
-                        2
-                       ]
-                      ]
-                     ]
-                    ],
-                    FileNameJoin[
-                     {
-                      NotebookDirectory[],
-                      "Source",
-                      "ServerSentEventUtils",
-                      "ServerSentEventUtils.wl"
-                     }
-                    ],
-                    BoxID -> "FileTreePath",
-                    BaseStyle -> {"Text"}
-                   ]
-                  ],
-                  "FileManagerFile",
-                  CellMargins -> {{46 + Inherited, Inherited}, {Inherited, Inherited}},
-                  CellGroupingRules -> {"SectionGrouping", 120},
-                  CellFrameLabels -> {
-                   {
-                    Cell[
-                     BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
-                     Background -> None
-                    ],
-                    Inherited
-                   },
-                   {Inherited, Inherited}
-                  },
-                  CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
-                  CellID -> 1197518501
                  ]
                 },
                 Closed
@@ -8782,7 +8822,7 @@ Notebook[
             "Code",
             "Excluded",
             InitializationCell -> True,
-            CellLabel -> "In[2]:=",
+            CellLabel -> "In[7]:=",
             CellID -> 996717066
            ],
            Cell[
@@ -8844,7 +8884,7 @@ Notebook[
             ],
             "Code",
             "Excluded",
-            CellLabel -> "In[4]:=",
+            CellLabel -> "In[9]:=",
             CellID -> 23056019
            ],
            Cell[
@@ -8899,7 +8939,7 @@ Notebook[
             "Code",
             "Excluded",
             InitializationCell -> True,
-            CellLabel -> "In[5]:=",
+            CellLabel -> "In[10]:=",
             CellID -> 29801418
            ]
           },
@@ -13313,8 +13353,8 @@ Notebook[
   "StatusMessage" -> "",
   "AutoUpdate" -> True,
   "PacletBuildData" -> {
-   "LastBuiltArchive" -> "H:\\Documents\\Chatbook\\build\\Wolfram__Chatbook-0.0.12.paclet",
-   "FileHashes" -> ByteArray["OEM6eJyNlmtsFFUUgH1UtDTE4qu0xbICtUXcXSsF02gJ+6IubmHbKa0GqZmdvbu9MHtnvXO3dLvUFMGIpVhDGjWQSH/4Q+kPqiloiE1NtGp8BAxgYqxGVESNUYNGI5ji7Ha3Z7h3+vixk50vc76cc+7TtdIu2V26jpjudPmNP1hnMmFOV9D/CEp6saxqUS/SFYrjDGvEsUN1XWeX5klagiooMHzigc6qu5vuM0iTTKOImYjDwuppk5lHIwx1sEm1O8GYRnROO3TltbzxZxx20AKpnovWg1RVb0KxuCozxMnrtsfn72hO1oEciFUnBLnEkiriU/6n/3H178sPzQMrkHILa5BqsbjBvCgiJ1TmiIXNtuiy8rf2P9vfBTYgK2aw1SGCKFaMd8QZ3bf8mJ9Sy6JgBFKYNfqVzFB0RMyBPvu+sZqCDW0QCMS2nhqN8ZGwM9MTqQ2lNemGhTRtu4OEzKI3k290TiyUykAEZGUgUG/0OIKjCSqn55kziKiuEVl3ujENE5mGtUx6XNf3DX3/0q7UV1vBCWROzqCm873vU4sLfE3jNeAEcs+cnELz3317yaEG38eNoASyenpldm44+S+4Jny95Y4FVwp328AOpHJ6+8NIjSNq1dW8wRsa1nxwNgRCIBWzCsXyb/xz/+CLNT0p8AG5f3rfRo2g2Wo/+d/8osKjXT5QA5mh9hZNjWBkVfuX+XnFx55bGgAhkNmFFtNp9NFa96Uz6zpBCGSGZuaEQjPbx17YcuGk7gEfkAVBWVER85OIxpXV3TtY0/ovjkMUkIWTUfUywRFk5H9VpJ6XHgYIO9jQfPzIZ+5Ku3TX5AdTy925ptqNGaz+WIc5gXdeUUeXlgwUgAlICW9yKelm8FvscJ+36qlh+oTpsJkipbxiKo2rHafv/bwsf+/p1eAAUiw4tFhMXG2+672lR2+62bTapki5YKDIOIDSrxs1hizyGew5oRd8c7gSbEAW8TYvCiWinODi+8eHmnd9VAQCIEJBPko1yrdVue1i8aXfozvBAOROS8NmhlXe8mDvqXXKtvOmaQ5EsKzXaExmDBO+mm8rej988po9LrAAEYY4d/hwDk/jpyOHN/xlqgfIMt7hJyomqBFFEEVEEU712p8u7B54rygCLiBFvKtexvxkObUifGD0/NOmeoAIw1uPSIJPIIWPjCweqzDNeSBCMdnNw0+MS4GqIsq5Js4VtvR5N5WAC4jQ3NxGxDn2bPqtXUkmNXAAWSw4MrcScZQnAr/+0d213HS9A2LjJZJxoZFV3Gm1+9+69tDa/lVfmCoCImQjMWMxxsRszkV/eXlJT3UFSIDczks2+7no0HevXlv++tlWiAYijLDVwvkkNb715x8OloIAyKqswOhBO6ISMqZ7u/HIaCwh5z4zcGzkwOXWbeAGsjznZjJlibjTjaKYTD6ziJMtqmoZ6fN2Y5ABsXGy9JXQ+FmLdj72fEetrVYCUY78D7gEpXE="]
+   "LastBuiltArchive" -> "H:\\Documents\\Chatbook\\build\\Wolfram__Chatbook-0.0.15.paclet",
+   "FileHashes" -> ByteArray["OEM6eJyNlm9sE2Ucx41WZJiFQoAxyqDIxmDS1smYLLq4di1bYwdlNxgEkdxuT4+D+1Oee7q1a5cwxqKiOKOgRt+Q+EadCTMBFcMiLwYSjcFlqAgjBv9GNM5Mo2YY8Lq1+x3Pc/vzopfeJ/d88vy+z++ee7xrXZzLq+uI6B5v0Pgj6YRXiccbDj6BEn6JlzXRj3QBS1Eiaaq7Vfbe7eJmcVoMCyh08qNH2kpXNTxkkAYei4iYiNvCWr2HJ9WaSlCcjKt9MUI0Vae0vbffsg11uV2gBVI2E201kmW9ASlRmSeIktfsi85p3ZaoATkQqyQYOUcSMqKn/M/RJ+W/bz42C6xAiiysYawpUYP5UYSPycStNJtt4sqiD448fbQdbEDWTGGrQSrCkmDcI8rom/9TTlJeJoIRiD1jDApjSxGPmAcWnp7Xn6pakwsDgTg3YiOYgNrsGcuE24PSmnRgTZq2z602mUXC3K9afz1z9XEQAXkwFKozMo5IYgzz6T7zhBHWNZXXPT4JN6s8btbGpkel/lzv9692JK/uAieQGTnDmk5n3y3n3x9oGKoAJ5CSGTmZ8M9+uPyNLYFP60EJZP3kykxveOgnqBCu7VyUe9ve6QQ7kNWT22uRHEXYKlVbz71bys9/2QRCIMXTCtny7/vzSM8rFYeT4APy8OS+TZqKpqv94n9z8uwn2gOgBjJF7Y2aHJGQVe3f5NjyTz37QAiEQKYXWrTTx9srfaOXqtpACGSKMLNCJsyWcy/u/PmiXg0+ILlhXpARCaoRjSrriuI4aZs7aNpRgcwbH1XHq1IEGfO/Y6RuSy8DDDsxVHCs8+17sItbMf7AxOvuKS/zSQTefiVunkBwYODgBaVnA5iALKFNXiEdBr3FOnK++6R2dMN+UABx0IqJadzpGFw7sCznmcH14ACSzzg0RWEaZP+3q/tTtpECMAApYgwYGR+g9O0mjSCL+Vw+5O6/cW13LdiALKZtftQUEynBSP/7vds6LuSBAAhTUABjDdOxCgtG8keHxZRpX54gBZaGrUSSacujz39RJez90dTmQBjLRg0rPCGSSlfDv/xe1/C6y+VgAcIscfbjQzm6En8dX8ENmDZbICtpR1CVJRXVowjCSBWYr3pN6RXvwuG7tpvOChMkj3bV8RLdLAcdqdmf29+cDeOBMMtbh9QYPYGk9E7f0nPFu0EAhCkms3kEVeNQIMsIU65b1+2N3f7NS8AFhAk3uxFRjkObf28REgkNHECWMo6xUwm7yrdCv/1xoL3QtBkBcdISzjjQ8LLUZrX7n343flb3+1aBCEixhagFYQ4ZPdNiXKyaeMeCzq87/GcWgQ8IUx1HjJdbYau7Lt54bfnhsmKQAFlIS7YGqdHnR6T6in9LSmA0EKZjrGr4LDm065cfXneAAMi6jMAqipnkc+n4qb6Xbj61F9xACrNuwmMSi3p8SJTU8WsGUbLFpY193f4DEsiAOClZ+ohp/KxFqR0vxCudlRyIsuR/uu3E+Q=="]
   }
  },
  CreateCellID -> True,

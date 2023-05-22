@@ -9,6 +9,7 @@ ClearAll[ "`Private`*" ];
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"            ];
+Needs[ "Wolfram`Chatbook`Common`"     ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
 
 (* ::**************************************************************************************************************:: *)
@@ -37,7 +38,7 @@ CreateChatNotebook // Options = {
     "TopP"                              -> 1
 };
 
-(* FIXME: don't bake in settings so FE inheritance works *)
+
 CreateChatNotebook[ opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] := createChatNotebook @ opts;
 
 CreateChatNotebook[ nbo_NotebookObject, opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] :=
@@ -52,7 +53,7 @@ CreateChatNotebook[ nbo_NotebookObject, opts: OptionsPattern[ { CreateChatNotebo
 (* ::Subsection::Closed:: *)
 (*createChatNotebook*)
 createChatNotebook // SetFallthroughError;
-createChatNotebook[ opts___ ] /; CloudSystem`$CloudNotebooks := createCloudChatNotebook @ opts;
+createChatNotebook[ opts___ ] /; $cloudNotebooks := createCloudChatNotebook @ opts;
 createChatNotebook[ opts___ ] := createLocalChatNotebook @ opts;
 
 (* ::**************************************************************************************************************:: *)
@@ -89,7 +90,7 @@ createLocalChatNotebook[ opts: OptionsPattern[ CreateChatNotebook ] ] :=
                 NotebookClose @ nbo
                 ,
                 SelectionMove[ First @ Cells @ nbo, Before, CellContents ];
-                SetOptions[ nbo, Visible -> True ];
+                CurrentValue[ nbo, Visible ] = Inherited;
                 SetSelectedNotebook @ nbo
             ]
         ]
@@ -99,13 +100,7 @@ createLocalChatNotebook[ opts: OptionsPattern[ CreateChatNotebook ] ] :=
 (* ::Subsection::Closed:: *)
 (*makeChatNotebookSettings*)
 makeChatNotebookSettings // SetFallthroughError;
-
-makeChatNotebookSettings[ ] := makeChatNotebookSettings @ <| |>;
-
-makeChatNotebookSettings[ as_Association? AssociationQ, opts: OptionsPattern[ CreateChatNotebook ] ] :=
-    With[ { bcOpts = Options @ CreateChatNotebook },
-        KeyMap[ ToString, Association[ bcOpts, FilterRules[ { opts }, bcOpts ], as ] ]
-    ];
+makeChatNotebookSettings[ as_Association? AssociationQ ] := KeySort @ KeyMap[ ToString, as ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -116,7 +111,10 @@ makeChatNotebookOptions[ settings_Association, opts: OptionsPattern[ ] ] := Sequ
     Flatten @ {
         FilterRules[ { opts }, Options @ Notebook ],
         StyleDefinitions -> $chatbookStylesheet,
-        TaggingRules     -> <| "ChatNotebookSettings" -> settings |>
+        If[ settings === <| |>,
+            Nothing,
+            TaggingRules -> <| "ChatNotebookSettings" -> settings |>
+        ]
     },
     ToString @* First
 ];
@@ -124,7 +122,7 @@ makeChatNotebookOptions[ settings_Association, opts: OptionsPattern[ ] ] := Sequ
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$chatbookStylesheet*)
-$chatbookStylesheet := If[ TrueQ @ CloudSystem`$CloudNotebooks, $inlinedStylesheet, "Chatbook.nb" ];
+$chatbookStylesheet := If[ TrueQ @ $cloudNotebooks, $inlinedStylesheet, "Chatbook.nb" ];
 
 $inlinedStylesheet := $inlinedStylesheet = Import[
     FileNameJoin @ {
