@@ -1442,7 +1442,7 @@ openChatInputActionMenu[dingbatCellObj_CellObject] := With[{
 				(* "ChatInput" > CellDingbat > Persona Menu > Advanced Menu *)
 				chatInputCellObj,
 				{ TaggingRules, "ChatNotebookSettings", "TemperatureSetting" },
-				0.7
+				currentChatSettings[ chatInputCellObj, "Temperature" ]
 			],
 			Function[
 				CurrentValue[ chatInputCellObj, { TaggingRules, "ChatNotebookSettings", "TemperatureSetting" } ] =
