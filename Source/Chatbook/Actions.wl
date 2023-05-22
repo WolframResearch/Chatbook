@@ -723,7 +723,10 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         container = ProgressIndicator[ Appearance -> "Percolate" ];
 
         $reformattedCell = None;
-        cell = activeAIAssistantCell[ container, Association[ settings, "Container" :> container ] ];
+        cell = activeAIAssistantCell[
+            container,
+            Association[ settings, "Container" :> container, "CellObject" :> cellObject, "Task" :> task ]
+        ];
 
         Quiet[
             TaskRemove @ $lastTask;
