@@ -1538,7 +1538,7 @@ Notebook[
   ],
   Cell[
    StyleData[
-    "ChatContextDivider",
+    "ChatBlockDivider",
     StyleDefinitions -> StyleData["Section"]
    ],
    CellFrame -> {{0, 0}, {0, 8}},
@@ -1620,7 +1620,7 @@ Notebook[
       
       NotebookWrite[
        EvaluationCell[],
-       Cell["", "ChatContextDivider"],
+       Cell["", "ChatBlockDivider"],
        All
       ];
 

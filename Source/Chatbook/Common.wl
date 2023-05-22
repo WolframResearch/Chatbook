@@ -37,7 +37,7 @@ $cloudNotebooks := TrueQ @ CloudSystem`$CloudNotebooks;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
-$chatDelimiterStyles  = { "ChatContextDivider", "ChatDelimiter", "ExcludedChatDelimiter" };
+$chatDelimiterStyles  = { "ChatBlockDivider", "ChatDelimiter", "ExcludedChatDelimiter" };
 $chatIgnoredStyles    = { "ChatExcluded" };
 $chatInputStyles      = { "ChatInput", "SideChat", "ChatQuery", "ChatSystemInput" };
 $chatOutputStyles     = { "ChatOutput" };
