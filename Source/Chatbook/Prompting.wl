@@ -35,7 +35,8 @@ $basePromptOrder = {
     "TrivialCode",
     "WolframSymbolCapitalization",
     "ModernMethods",
-    "FunctionalStyle"
+    "FunctionalStyle",
+    "WolframLanguageStyle"
 };
 
 $basePromptClasses = <|
@@ -149,8 +150,8 @@ $basePromptComponents[ "ModernMethods" ] = "\
 $basePromptComponents[ "FunctionalStyle" ] = "\
 * Prefer functional programming style instead of procedural";
 
-$basePromptComponents[ "WolframLanguageStyle" ] = "\
-# Wolfram Language Guidelines
+$basePromptComponents[ "WolframLanguageStyle" ] = "
+# Wolfram Language Style Guidelines
 
 * Keep code simple when possible
 * Use functional programming instead of procedural
@@ -227,9 +228,13 @@ withBasePromptBuilder // endDefinition;
 (* ::Subsection::Closed:: *)
 (*needsBasePrompt*)
 needsBasePrompt // beginDefinition;
-needsBasePrompt // Attributes = { Listable };
 needsBasePrompt[ name_String ] /; KeyExistsQ[ $collectedPromptComponents, name ] := Null;
 needsBasePrompt[ name_String ] := $collectedPromptComponents[ name ] = name;
+needsBasePrompt[ Automatic|Inherited|_Missing ] := Null;
+needsBasePrompt[ None ] := $collectedPromptComponents = <| |>;
+needsBasePrompt[ KeyValuePattern[ "BasePrompt" -> base_ ] ] := needsBasePrompt @ base;
+needsBasePrompt[ KeyValuePattern[ "LLMEvaluator" -> as_Association ] ] := needsBasePrompt @ as;
+needsBasePrompt[ list_List ] := needsBasePrompt /@ list;
 needsBasePrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
