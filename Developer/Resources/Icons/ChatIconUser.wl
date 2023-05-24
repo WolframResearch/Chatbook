@@ -137,7 +137,6 @@ Graphics[
    ]
   }
  },
- AspectRatio -> Automatic,
- ImageSize -> { { 20.0, 20.0 }, { 20.0, 20.0 } },
- PlotRange -> { { -0.5, 26.5 }, { -0.5, 26.5 } }
+ ImageSize -> { 21, 21 },
+ ImagePadding -> 1
 ]
