@@ -3,6 +3,8 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 
+(* cSpell: ignore ENDTOOLCALL *)
+
 (* TODO: these probably aren't needed as exported symbols since all hooks are going through ChatbookAction *)
 `AskChat;
 `AttachCodeButtons;
@@ -28,6 +30,7 @@ Needs[ "Wolfram`Chatbook`Formatting`"       ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
 Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 Needs[ "Wolfram`Chatbook`Prompting`"        ];
+Needs[ "Wolfram`Chatbook`Tools`"            ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1224,7 +1227,8 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages0: { __Association 
                 "frequency_penalty" -> freqPenalty,
                 "presence_penalty"  -> presPenalty,
                 "model"             -> toModelName @ model,
-                "stream"            -> stream
+                "stream"            -> stream,
+                "stop"              -> "ENDTOOLCALL"
             |>,
             Automatic|_Missing
         ];
@@ -1440,22 +1444,44 @@ makeCurrentRole // endDefinition;
 (*buildSystemPrompt*)
 buildSystemPrompt // beginDefinition;
 
-buildSystemPrompt[ as_Association ] := StringTrim @ TemplateApply[
-    $promptTemplate,
-    Association[
-        $promptComponents[ "Generic" ],
-		Select[
-			<|
-				"Pre"  -> getPrePrompt @ as,
-				"Post" -> getPostPrompt @ as,
-                "Base" -> "%%BASE_PROMPT%%"
-			|>,
-			StringQ
-		]
-    ]
+buildSystemPrompt[ as_Association ] := StringReplace[
+    StringTrim @ TemplateApply[
+        $promptTemplate,
+        Association[
+            $promptComponents[ "Generic" ],
+            Select[
+                <|
+                    "Pre"   -> getPrePrompt @ as,
+                    "Post"  -> getPostPrompt @ as,
+                    "Tools" -> getToolPrompt @ as,
+                    "Base"  -> "%%BASE_PROMPT%%"
+                |>,
+                StringQ
+            ]
+        ]
+    ],
+    "\n\n\n\n" -> "\n\n"
 ];
 
 buildSystemPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getToolPrompt*)
+getToolPrompt // beginDefinition;
+
+(* TODO: include tools defined by the persona! *)
+getToolPrompt[ settings_ ] := Enclose[
+    Module[ { config, string },
+        config = ConfirmMatch[ makeToolConfiguration[ ], _System`LLMConfiguration ];
+        ConfirmBy[ TemplateApply[ config[ "ToolPrompt" ], config[ "Data" ] ], StringQ ]
+    ],
+    throwInternalFailure[ getToolPrompt @ settings, ## ] &
+];
+
+(* getToolPrompt[ _ ] := Missing[ ]; *)
+
+getToolPrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
