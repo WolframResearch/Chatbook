@@ -1449,14 +1449,21 @@ makeCurrentRole[ as_, role_String, _ ] :=
 makeCurrentRole[ as_, Automatic|Inherited|_Missing, name_String ] :=
     <| "role" -> "system", "content" -> namedRolePrompt @ name |>;
 
-makeCurrentRole[ as_, _, KeyValuePattern[ "BasePrompt" -> None ] ] :=
-    Missing[ ];
+makeCurrentRole[ as_, _, KeyValuePattern[ "BasePrompt" -> None ] ] := (
+    needsBasePrompt @ None;
+    Missing[ ]
+);
 
-makeCurrentRole[ as_, _, eval_Association ] :=
-    <| "role" -> "system", "content" -> buildSystemPrompt @ Association[ as, eval ] |>;
+makeCurrentRole[ as_, base_, eval_Association ] := (
+    needsBasePrompt @ base;
+    needsBasePrompt @ eval;
+    <| "role" -> "system", "content" -> buildSystemPrompt @ Association[ as, eval ] |>
+);
 
-makeCurrentRole[ as_, _, _ ] :=
-    <| "role" -> "system", "content" -> buildSystemPrompt @ as |>;
+makeCurrentRole[ as_, base_, _ ] := (
+    needsBasePrompt @ base;
+    <| "role" -> "system", "content" -> buildSystemPrompt @ as |>
+);
 
 makeCurrentRole // endDefinition;
 
