@@ -42,7 +42,7 @@ ChatbookAction[ "ExclusionToggle"      , args___ ] := catchMine @ ExclusionToggl
 ChatbookAction[ "OpenChatBlockSettings", args___ ] := catchMine @ OpenChatBlockSettings @ args;
 ChatbookAction[ "OpenChatMenu"         , args___ ] := catchMine @ OpenChatMenu @ args;
 ChatbookAction[ "PersonaManage"        , args___ ] := catchMine @ PersonaManage @ args;
-(* ChatbookAction[ "PersonaURLInstall"    , args___ ] := catchMine @ PersonaURLInstall @ args; *) (* TODO *)
+ChatbookAction[ "PersonaURLInstall"    , args___ ] := catchMine @ PersonaURLInstall @ args;
 ChatbookAction[ "Send"                 , args___ ] := catchMine @ SendChat @ args;
 ChatbookAction[ "StopChat"             , args___ ] := catchMine @ StopChat @ args;
 ChatbookAction[ "TabLeft"              , args___ ] := catchMine @ TabLeft @ args;
@@ -111,6 +111,31 @@ definitionNotebookCellQ[ cell_CellObject ] := definitionNotebookCellQ[ cell ] =
     CurrentValue[ cell, { TaggingRules, "ResourceType" } ] === "Prompt";
 
 definitionNotebookCellQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*PersonaURLInstall*)
+(* TODO: this will eventually get merged into the manage personas dialog instead of being a separate menu item *)
+
+PersonaURLInstall // beginDefinition;
+
+PersonaURLInstall[ dingbatCell_CellObject ] := Enclose[
+    Catch @ Module[ { cellObject, installed, name },
+        cellObject = ConfirmMatch[ topParentCell @ dingbatCell, _CellObject, "ParentCell" ];
+        installed = PersonaInstallFromURL[ ];
+        If[ installed === $Canceled, Throw @ $Canceled ];
+        ConfirmAssert[ AssociationQ @ installed, "AssociationQ" ];
+        name = ConfirmBy[ installed[ "Name" ], StringQ, "Name" ];
+        ConfirmMatch[
+            CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = name,
+            name,
+            "SetLLMEvaluator"
+        ]
+    ],
+    throwInternalFailure[ PersonaURLInstall @ dingbatCell, ## ] &
+];
+
+PersonaURLInstall // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
