@@ -1933,7 +1933,7 @@ personaDisplayName[name_String, _] := name
 SetFallthroughError[alignedMenuIcon]
 
 alignedMenuIcon[possible_, current_, icon_] :=alignedMenuIcon[styleListItem[possible, current], icon]
-alignedMenuIcon[check_, icon_] := Row[{check, " ", icon}]
+alignedMenuIcon[check_, icon_] := Row[{check, " ", resizeMenuIcon[icon]}]
 (* If menu item does not utilize a checkmark, use an invisible one to ensure it is left-aligned with others *)
 alignedMenuIcon[icon_] := alignedMenuIcon[Style["\[Checkmark]", ShowContents -> False], icon]
 
@@ -2054,11 +2054,15 @@ SetFallthroughError[getPersonaMenuIcon];
 getPersonaMenuIcon[ KeyValuePattern[ "Icon"|"PersonaIcon" -> icon_ ] ] := getPersonaMenuIcon @ icon;
 getPersonaMenuIcon[ KeyValuePattern[ "Default" -> icon_ ] ] := getPersonaMenuIcon @ icon;
 getPersonaMenuIcon[ _Missing | _Association | None ] := RawBoxes @ TemplateBox[ { }, "PersonaUnknown" ];
-getPersonaMenuIcon[ boxes: RawBoxes[ _TemplateBox ] ] := boxes;
+getPersonaMenuIcon[ icon_ ] := icon;
 
-getPersonaMenuIcon[ icon_ ] := Pane[
+
+resizeMenuIcon[ icon: _Graphics|_Graphics3D ] :=
+	Show[ icon, ImageSize -> { 21, 21 } ];
+
+resizeMenuIcon[ icon_ ] := Pane[
 	icon,
-	ImageSize       -> { 20, 20 },
+	ImageSize       -> { 21, 21 },
 	ImageSizeAction -> "ShrinkToFit",
 	ContentPadding  -> False
 ];
