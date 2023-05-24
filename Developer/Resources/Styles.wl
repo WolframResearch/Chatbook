@@ -766,6 +766,7 @@ Cell[
                 PaneSelectorBox[
                     {
                         False -> PaneBox[
+                            (* FIXME: add a white background to progress indicator *)
                             InterpretationBox[
                                 DynamicBox @ FEPrivate`FrontEndResource[ "FEExpressions", "NecklaceAnimator" ][ Tiny ],
                                 ProgressIndicator[ Appearance -> "Necklace", ImageSize -> Tiny ],
