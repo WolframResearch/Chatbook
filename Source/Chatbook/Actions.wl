@@ -1225,6 +1225,7 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages0: { __Association 
         { messages, key, stream, model, tokens, temperature, topP, freqPenalty, presPenalty, data, body },
 
         If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
+        needsBasePrompt @ settings;
         messages = messages0 /. s_String :> RuleCondition @ StringReplace[ s, "%%BASE_PROMPT%%" -> $basePrompt ];
         $lastSettings = settings;
         $lastMessages = messages;
