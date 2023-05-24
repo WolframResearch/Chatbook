@@ -1735,7 +1735,7 @@ makeChatInputActionMenuContent[
 			entry |-> ConfirmReplace[entry, {
 				{persona_?StringQ, icon_, listItemLabel_} :> {
 					alignedMenuIcon[persona, personaValue, icon],
-					listItemLabel,
+					personaDisplayName[listItemLabel],
 					Hold[callback["Persona", persona]]
 				}
 			}],
@@ -1918,6 +1918,15 @@ makeChatDelimiterActionMenuContent[
 
 	menu
 ]]
+
+(*------------------------------------*)
+
+SetFallthroughError[personaDisplayName]
+
+personaDisplayName[name_String] := personaDisplayName[name, GetCachedPersonaData[name]]
+personaDisplayName[name_String, data_Association] := personaDisplayName[name, data["DisplayName"]]
+personaDisplayName[name_String, displayName_String] := displayName
+personaDisplayName[name_String, _] := name
 
 (*------------------------------------*)
 
