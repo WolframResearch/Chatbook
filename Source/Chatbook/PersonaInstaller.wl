@@ -7,6 +7,7 @@ BeginPackage[ "Wolfram`Chatbook`PersonaInstaller`" ];
 `GetInstalledResourcePersonaData;
 `GetInstalledResourcePersonas;
 `PersonaInstallFromResourceSystem;
+`PersonaInstallFromURL;
 `PersonaInstall;
 
 Begin[ "`Private`" ];
@@ -87,6 +88,110 @@ GetInstalledResourcePersonaData[ ] := catchMine @ Enclose[
 ];
 
 GetInstalledResourcePersonaData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*PersonaInstallFromURL*)
+PersonaInstallFromURL // beginDefinition;
+
+PersonaInstallFromURL[ ] := catchMine @ Enclose[
+    Module[ { url },
+
+        url = ConfirmMatch[
+            DefinitionNotebookClient`FancyInputString[ "Prompt", "Enter a URL" ], (* FIXME: needs custom dialog *)
+            _String|$Canceled,
+            "InputString"
+        ];
+
+        If[ url === $Canceled,
+            $Canceled,
+            ConfirmBy[ PersonaInstallFromURL @ url, AssociationQ, "Install" ]
+        ]
+    ],
+    throwInternalFailure[ PersonaInstallFromURL[ ], ## ] &
+];
+
+PersonaInstallFromURL[ url_String ] := Enclose[
+    Module[ { ro, file, data },
+        ro = ConfirmMatch[ resourceFromURL @ url, _ResourceObject, "ResourceObject" ];
+        ConfirmAssert[ ro[ "ResourceType" ] === "Prompt", "ResourceType" ];
+        file = ConfirmBy[ PersonaInstall @ ro, FileExistsQ, "PersonaInstall" ];
+        data = ConfirmBy[ getPersonaFile @ file, AssociationQ, "GetPersonaFile" ];
+        Block[ { SystemOpen = Null & }, PersonaInstallFromResourceSystem[ ] ];
+        data
+    ],
+    throwInternalFailure[ PersonaInstallFromURL @ url, ## ] &
+];
+
+PersonaInstallFromURL // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*resourceFromURL*)
+resourceFromURL // beginDefinition;
+
+resourceFromURL[ url_String ] := Block[ { PrintTemporary },
+    Quiet[ resourceFromURL0 @ url, { CloudObject::cloudnf, Lookup::invrl, ResourceObject::notfname } ]
+];
+
+resourceFromURL // endDefinition;
+
+resourceFromURL0 // beginDefinition;
+resourceFromURL0[ url_String ] := With[ { ro = ResourceObject @ url }, ro /; promptResourceQ ];
+resourceFromURL0[ url_String ] := scrapeResourceFromShingle @ url;
+resourceFromURL0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*scrapeResourceFromShingle*)
+scrapeResourceFromShingle // beginDefinition;
+(* TODO: we should have something in RSC to do this cleaner/better *)
+scrapeResourceFromShingle[ url_String ] := Enclose[
+    Module[ { resp, bytes, xml },
+
+        resp = ConfirmMatch[ URLRead @ url, _HTTPResponse, "URLRead" ];
+        ConfirmAssert[ resp[ "StatusCode" ] === 200, "StatusCode" ];
+        bytes = ConfirmBy[ resp[ "BodyByteArray" ], ByteArrayQ, "BodyByteArray" ];
+
+        xml = ConfirmMatch[
+            Quiet @ ImportByteArray[ bytes, { "HTML", "XMLObject" } ],
+            XMLObject[ ___ ][ ___ ],
+            "XML"
+        ];
+
+        ConfirmBy[
+            FirstCase[
+                xml
+                ,
+                XMLElement[ "div", { ___, "data-resource-uuid" -> uuid_String, ___ }, _ ] :>
+                    With[ { ro = Quiet @ ResourceObject @ uuid }, ro /; promptResourceQ @ ro ]
+                ,
+                FirstCase[
+                    xml
+                    ,
+                    XMLElement[ "div", { ___, "data-clipboard-text" -> c2c_String, ___ }, _ ] :>
+                        With[ { ro = Quiet @ ToExpression[ c2c, InputForm ] }, ro /; promptResourceQ @ ro ]
+                    ,
+                    Missing[ ]
+                    ,
+                    Infinity
+                ],
+                Infinity
+            ],
+            promptResourceQ,
+            "ResourceObject"
+        ]
+    ],
+    throwInternalFailure[ scrapeResourceFromShingle @ url, ## ] &
+];
+
+scrapeResourceFromShingle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*promptResourceQ*)
+promptResourceQ[ ro_ResourceObject ] := ro[ "ResourceType" ] === "Prompt";
+promptResourceQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -242,7 +347,7 @@ formatDescription // endDefinition;
 
 formatVersion // beginDefinition;
 formatVersion[ _Missing ] := "";
-formatVersion[ version_String ] := version;
+formatVersion[ version: _String|None ] := version;
 formatVersion // endDefinition;
 
 formatIcon // beginDefinition;
