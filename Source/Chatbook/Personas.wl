@@ -131,7 +131,7 @@ GetPersonaData[] := Module[{
 	]
 ]
 
-$corePersonaNames = {"Helper", "Wolfie"};
+$corePersonaNames = {"CodeAssistant", "CodeWriter", "NoPersona", "Wolfie"};
 
 (*------------------------------------*)
 
