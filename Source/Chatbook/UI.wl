@@ -1368,7 +1368,7 @@ MakeChatInputCellDingbat[] :=
 		{
 			True -> MakeChatInputActiveCellDingbat[],
 			False -> Framed[
-				RawBoxes @ TemplateBox[{}, "RoleUser"],
+				RawBoxes @ TemplateBox[{}, "ChatIconUser"],
 				RoundingRadius -> 3,
 				FrameMargins -> 2,
 				ImageMargins -> {{0, 3}, {0, 0}},
