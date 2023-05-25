@@ -149,7 +149,7 @@ Cell[
     CellEventActions -> {
         { "KeyDown", "@" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "Persona", $CellContext`cell ]
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "PersonaTemplate", $CellContext`cell ]
         ]
         ,
         { "KeyDown", "!" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
@@ -159,7 +159,7 @@ Cell[
         ,
         { "KeyDown", "#" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "Modifier", $CellContext`cell ]
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "ModifierTemplate", $CellContext`cell ]
         ]
         (* ,
         { "KeyDown", ">" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
@@ -1108,7 +1108,7 @@ Cell[
 		DisplayFunction -> (
 			NamespaceBox["ChatbookPersonaID",
 				DynamicModuleBox[{},
-					DynamicBox[ToBoxes @ Wolfram`Chatbook`InlineReferences`personaAssistantBoxes[1, #input, #state, #uuid]],
+					DynamicBox[ToBoxes @ Wolfram`Chatbook`InlineReferences`personaTemplateBoxes[1, #input, #state, #uuid]],
 					Initialization :> (
 						Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
 						Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = EvaluationCell[ ]
@@ -1130,7 +1130,7 @@ Cell[
 		DisplayFunction -> (
 			NamespaceBox["ChatbookModifierID",
 				DynamicModuleBox[{},
-					DynamicBox[ToBoxes @ Wolfram`Chatbook`InlineReferences`modifierAssistantBoxes[1, #input, #state, #uuid]],
+					DynamicBox[ToBoxes @ Wolfram`Chatbook`InlineReferences`modifierTemplateBoxes[1, #input, #state, #uuid]],
 					Initialization :> (
 						Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
 						Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = EvaluationCell[ ]
