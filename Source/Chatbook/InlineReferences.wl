@@ -1353,6 +1353,10 @@ toPipedString[input_String, {params___String}] := StringRiffle[{input, params}, 
 (*Persona Template*)
 
 
+(* ::Subsection::Closed:: *)
+(*personaCommitAction*)
+
+
 SetAttributes[personaCommitAction, HoldRest]
 
 personaCommitAction[action: "Enter", var_, state_] := (
@@ -1366,6 +1370,10 @@ personaCommitAction[action_, var_, state_] := (
 	(* If the "ReturnKeyDown" trap was avoided, do the state change here *)
 	setPersonaState[state, "Chosen"]
 )
+
+
+(* ::Subsection::Closed:: *)
+(*setPersonaState*)
 
 
 SetAttributes[setPersonaState, HoldFirst]
@@ -1390,6 +1398,10 @@ setPersonaState[state_, "Replace" -> input_String] := (
 	SelectionMove[EvaluationCell[], All, Cell];
 	NotebookWrite[InputNotebook[], "@" <> input]
 )
+
+
+(* ::Subsection::Closed:: *)
+(*personaTemplateBoxes*)
 
 
 SetAttributes[personaTemplateBoxes, HoldRest];
@@ -1465,6 +1477,10 @@ personaTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] 
 (* FIXME: Add a personaTemplateBoxes rule for unknown version number *)
 
 
+(* ::Subsection::Closed:: *)
+(*personaTemplateCell*)
+
+
 personaTemplateCell[input_String, state: ("Input" | "Chosen"), uuid_String] := 
 Cell[BoxData[FormBox[
 	TemplateBox[<|"input" -> input, "state" -> state, "uuid" -> uuid|>,
@@ -1474,6 +1490,10 @@ Cell[BoxData[FormBox[
 	Background -> None,
 	Deployed -> True
 ]
+
+
+(* ::Subsection::Closed:: *)
+(*insertPersonaTemplate*)
 
 
 insertPersonaTemplate[ cell_CellObject ] := insertPersonaTemplate[ cell, parentNotebook @ cell ];
@@ -1504,6 +1524,10 @@ insertPersonaTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
 (*Modifier Template*)
 
 
+(* ::Subsection::Closed:: *)
+(*modifierCommitAction*)
+
+
 SetAttributes[modifierCommitAction, HoldRest]
 
 modifierCommitAction[action: "Enter", var_, state_] := (
@@ -1517,6 +1541,10 @@ modifierCommitAction[action_, var_, state_] := (
 	(* If the "ReturnKeyDown" trap was avoided, do the state change here *)
 	setModifierState[state, "Chosen"]
 )
+
+
+(* ::Subsection::Closed:: *)
+(*setModifierState*)
 
 
 SetAttributes[setModifierState, HoldFirst]
@@ -1541,6 +1569,10 @@ setModifierState[state_, "Replace" -> input_String] := (
 	SelectionMove[EvaluationCell[], All, Cell];
 	NotebookWrite[InputNotebook[], "#" <> input]
 )
+
+
+(* ::Subsection::Closed:: *)
+(*modifierTemplateBoxes*)
 
 
 SetAttributes[modifierTemplateBoxes, HoldRest];
@@ -1625,6 +1657,10 @@ modifierTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 (* FIXME: Add a modifierTemplateBoxes rule for unknown version number *)
 
 
+(* ::Subsection::Closed:: *)
+(*modifierTemplateCell*)
+
+
 modifierTemplateCell[input_String, params_List, state: ("Input" | "Chosen"), uuid_String] := 
 Cell[BoxData[FormBox[
 	TemplateBox[<|"input" -> input, "params" -> params, "state" -> state, "uuid" -> uuid|>,
@@ -1634,6 +1670,10 @@ Cell[BoxData[FormBox[
 	Background -> None,
 	Deployed -> True
 ]
+
+
+(* ::Subsection::Closed:: *)
+(*insertModifierTemplate*)
 
 
 insertModifierTemplate[ cell_CellObject ] := insertModifierTemplate[ cell, parentNotebook @ cell ];
