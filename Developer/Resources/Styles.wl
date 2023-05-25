@@ -1095,6 +1095,54 @@ Cell[
 
 
 (* ::Section::Closed:: *)
+(*Templates*)
+
+
+(* ::Subsection::Closed:: *)
+(*ChatbookPersona*)
+
+
+Cell[
+	StyleData["ChatbookPersona"],
+	TemplateBoxOptions -> {
+		DisplayFunction -> (
+			NamespaceBox["ChatbookPersonaID",
+				DynamicModuleBox[{},
+					DynamicBox[ToBoxes @ Wolfram`Chatbook`InlineReferences`personaAssistantBoxes[1, #input, #state, #uuid]],
+					Initialization :> (
+						Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+						Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = EvaluationCell[ ]
+					)
+				]
+			]&),
+		InterpretationFunction -> (InterpretationBox["", "@"<>#input]&)
+	}
+]
+
+
+(* ::Subsection::Closed:: *)
+(*ChatbookModifier*)
+
+
+Cell[
+	StyleData["ChatbookModifier"],
+	TemplateBoxOptions -> {
+		DisplayFunction -> (
+			NamespaceBox["ChatbookModifierID",
+				DynamicModuleBox[{},
+					DynamicBox[ToBoxes @ Wolfram`Chatbook`InlineReferences`modifierAssistantBoxes[1, #input, #state, #uuid]],
+					Initialization :> (
+						Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+						Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = EvaluationCell[ ]
+					)
+				]
+			]&),
+		InterpretationFunction -> (InterpretationBox["", "#"<>#input]&)
+	}
+]
+
+
+(* ::Section::Closed:: *)
 (*Misc Styles*)
 
 
