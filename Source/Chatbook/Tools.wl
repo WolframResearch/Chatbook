@@ -3,6 +3,7 @@
 BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 
 `$defaultChatTools;
+`$toolConfiguration;
 `makeToolConfiguration;
 
 Begin[ "`Private`" ];
@@ -75,23 +76,28 @@ $toolPost = "
 
 To call a tool, write the following at any time during your response:
 
+```
 TOOLCALL: <tool name>
 {
-\t\"<parameter name 1>\": <value 1>
-\t\"<parameter name 2>\": <value 2>
+	\"<parameter name 1>\": <value 1>
+	\"<parameter name 2>\": <value 2>
 }
 ENDARGUMENTS
 ENDTOOLCALL
+```
 
 The system will execute the requested tool call and you will receive a system message containing the result.
 
-You can then use this result to finish writing your response for the user. Here is a full example:
+You can then use this result to finish writing your response for the user.
+
+Here is a full example:
 
 ---
-USER:
+
+user:
 How do I use AstroGraphics?
 
-ASSISTANT:
+assistant:
 Let me check the documentation for you. One moment...
 TOOLCALL: documentation_lookup
 {
@@ -100,29 +106,17 @@ TOOLCALL: documentation_lookup
 ENDARGUMENTS
 ENDTOOLCALL
 
-SYSTEM:
+system:
 # Usage
 AstroGraphics[primitives, options] represents a two-dimensional view of space and the celestial sphere.
 
 # Basic Examples
 <example text>
 
-ASSISTANT:
+assistant:
 To use [AstroGraphics](paclet:ref/AstroGraphics), you need to provide a list of graphics primitives and options. \
 For example, <remainder of response>
----
 
-The user will see the response combined into a single assistant message:
----
-USER:
-How do I use AstroGraphics?
-
-ASSISTANT:
-Let me check the documentation for you. One moment...
-
-<formatted icon indicating that a tool was used>
-
-To use [AstroGraphics](paclet:ref/AstroGraphics), you need to...
 ---
 ";
 
@@ -286,13 +280,31 @@ $line = 0;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Evaluate*)
+
+$sandboxEvaluateDescription = "\
+Evaluate Wolfram Language code for the user in a sandboxed environment. \
+The result will be displayed in the chat for the user to see.
+
+Example
+---
+user: What's the 1337th prime number?
+
+assistant: Let me calculate that for you. Just a moment...
+TOOLCALL: sandbox_evaluate
+{
+	\"code\": \"Prime[1337]\"
+}
+ENDARGUMENTS
+ENDTOOLCALL
+"
+
 $defaultChatTools[ "sandbox_evaluate" ] = LLMTool[
     <|
         "Name"        -> "sandbox_evaluate",
         "DisplayName" -> "Sandbox Evaluate",
         "Icon"        -> RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
         "ShowResult"  -> True, (* TODO: make this work *)
-        "Description" -> "Evaluate Wolfram Language code for the user in a sandboxed environment. The result will be displayed in the chat for the user to see.",
+        "Description" -> $sandboxEvaluateDescription,
         "Parameters"  -> {
             "code" -> <|
                 "Interpreter" -> Restricted[ "HeldExpression", All ],
@@ -308,9 +320,16 @@ $defaultChatTools[ "sandbox_evaluate" ] = LLMTool[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$sandBoxKernel*)
+
+(* Close previous $sandboxKernel links in case package was reloaded *)
+Scan[ LinkClose, Cases[ Links[ ], LinkObject[ _String? (StringContainsQ[ "SandboxEvaluateTag" ]), ___ ] ] ];
+
 $sandBoxKernel := $sandBoxKernel =
     Module[ { kernel },
-        kernel = LinkLaunch[ First @ $CommandLine <> " -wstp -pacletreadonly -sandbox -noinit -noicon" ];
+        kernel = LinkLaunch @ StringJoin[
+            First @ $CommandLine,
+            " -wstp -pacletreadonly -sandbox -noinit -noicon -run SandboxEvaluateTag"
+        ];
         While[ LinkReadyQ @ kernel, LinkRead @ kernel ];
         kernel
     ];
@@ -324,14 +343,32 @@ sandboxEvaluate[ KeyValuePattern[ "code" -> code_ ] ] := sandboxEvaluate @ code;
 
 sandboxEvaluate[ HoldComplete[ evaluation_ ] ] :=
     Module[ { null, packets, results, flat },
-        LinkWrite[ $sandBoxKernel, Unevaluated[ HoldComplete @@ { evaluation } ] ];
-        { null, { packets } } = Reap @ While[ LinkReadyQ @ $sandBoxKernel, Sow @ LinkRead @ $sandBoxKernel ];
-        (* TODO: handle MessagePacket and TextPacket etc. *)
-        results = Cases[ packets, ReturnPacket[ expr_ ] :> expr ];
+
+        $lastSandboxEvaluation = HoldComplete @ evaluation;
+
+        LinkWrite[
+            $sandBoxKernel,
+            Unevaluated @ EnterExpressionPacket @ BinarySerialize @ evaluation
+        ];
+
+        { null, { packets } } = Reap[
+            TimeConstrained[
+                While[ ! MatchQ[ Sow @ LinkRead @ $sandBoxKernel, _ReturnExpressionPacket ] ],
+                10
+            ]
+        ];
+
+        results = Cases[
+            packets,
+            ReturnExpressionPacket[ bytes_ByteArray ] :> BinaryDeserialize[ bytes, HoldComplete ]
+        ];
+
         flat = Flatten[ HoldComplete @@ results, 1 ];
+
         <|
             "String"  -> sandboxResultString @ flat,
-            "Display" -> flat
+            "Result"  -> flat,
+            "Packets" -> packets
         |>
     ];
 
@@ -342,9 +379,10 @@ sandboxEvaluate // endDefinition;
 (*sandboxResultString*)
 sandboxResultString // beginDefinition;
 
+(* TODO: show messages etc. *)
 sandboxResultString[ HoldComplete[ expr_ ] ] := StringJoin[
-    CellToString @ Cell[ BoxData @ MakeBoxes @ expr, "Output" ],
-    "[[Output displayed for user]]"
+    "[[DISPLAY]]\n",
+    CellToString @ Cell[ BoxData @ MakeBoxes @ expr, "Output" ]
 ];
 
 sandboxResultString // endDefinition;

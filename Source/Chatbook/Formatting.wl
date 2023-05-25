@@ -416,40 +416,9 @@ inlineToolCall // endDefinition;
 (*parseToolCallString*)
 parseToolCallString // beginDefinition;
 
-parseToolCallString[ string_String ] /; StringMatchQ[ string, "TOOLCALL:"~~__~~"ENDARGUMENTS"~~___ ] :=
-    Module[ { noPrefix, noSuffix, name, tool, toolData, displayName, icon, parameters },
-        noPrefix    = StringDelete[ string, StartOfString~~"TOOLCALL:" ];
-        noSuffix    = StringTrim @ StringDelete[ noPrefix, "ENDARGUMENTS"~~___~~EndOfString ];
-        name        = StringTrim @ StringDelete[ noSuffix, ("\n"|"{")~~___~~EndOfString ];
-        tool        = $defaultChatTools[ name ];
-        toolData    = Replace[ tool, { HoldPattern @ LLMTool[ as_Association, ___ ] :> as, _ :> <| |> } ];
-        displayName = Lookup[ toolData, "DisplayName", name ];
-        icon        = Lookup[ toolData, "Icon" ];
-
-        parameters = Quiet @ Developer`ReadRawJSONString @ StringJoin[
-            "{",
-            StringDelete[
-                noSuffix,
-                {
-                    StartOfString~~Shortest[___]~~"{",
-                    "}"~~Shortest[___]~~EndOfString
-                }
-            ],
-            "}"
-        ];
-
-        Global`$parsedToolCall = <|
-            "Name"            -> name,
-            "DisplayName"     -> displayName,
-            "ParameterValues" -> parameters,
-            "Icon"            -> icon,
-            "ToolCall"        -> StringTrim @ string,
-            "Tool"            -> tool
-        |>
-    ];
-
 parseToolCallString[ string_String ] /; StringMatchQ[ string, "TOOLCALL:"~~__~~"{"~~___ ] :=
-    Module[ { noPrefix, noSuffix, name, tool, toolData, displayName, icon },
+    Module[ { noPrefix, noSuffix, name, tool, toolData, displayName, icon, query, result },
+
         noPrefix    = StringDelete[ string, StartOfString~~"TOOLCALL:" ];
         noSuffix    = StringTrim @ StringDelete[ noPrefix, "ENDTOOLCALL"~~___~~EndOfString ];
         name        = StringTrim @ StringDelete[ noSuffix, ("\n"|"{")~~___~~EndOfString ];
@@ -457,13 +426,16 @@ parseToolCallString[ string_String ] /; StringMatchQ[ string, "TOOLCALL:"~~__~~"
         toolData    = Replace[ tool, { HoldPattern @ LLMTool[ as_Association, ___ ] :> as, _ :> <| |> } ];
         displayName = Lookup[ toolData, "DisplayName", name ];
         icon        = Lookup[ toolData, "Icon" ];
+        query       = First[ StringCases[ string, "TOOLCALL:" ~~ q___ ~~ "\nRESULT" :> q ], "" ];
+        result      = First[ StringCases[ string, "RESULT\n" ~~ r___ ~~ "\nENDTOOLCALL" :> r ], "" ];
 
-        Global`$parsedToolCall = <|
+        <|
             "Name"            -> name,
             "DisplayName"     -> displayName,
             "Icon"            -> icon,
             "ToolCall"        -> StringTrim @ string,
-            "Tool"            -> tool
+            "Query"           -> StringTrim @ query,
+            "Result"          -> StringTrim @ result
         |>
     ];
 
@@ -493,23 +465,23 @@ makeToolCallBoxLabel[ as_Association ] := "Using tool\[Ellipsis]";
 makeToolCallBoxLabel[ as_Association, name_String ] :=
     makeToolCallBoxLabel[ as, name, Lookup[ as, "Icon" ] ];
 
-makeToolCallBoxLabel[ as_, name_String, icon_ ] /; $dynamicText := makeToolCallBoxLabel0[ name, icon ];
+makeToolCallBoxLabel[ as_, name_String, icon_ ] /; $dynamicText := makeToolCallBoxLabel0[ as, name, icon ];
 
 makeToolCallBoxLabel[ as_, name_String, icon_ ] :=
     OpenerView @ {
-        makeToolCallBoxLabel0[ name, icon ],
+        makeToolCallBoxLabel0[ as, name, icon ],
         Column[
             {
                 Framed[
-                    TextCell[ as[ "ToolCall" ], "Program", FontSize -> 0.75 * Inherited, Background -> None ],
+                    TextCell[ as[ "Query" ], "Program", FontSize -> 0.75 * Inherited, Background -> None ],
                     Background   -> White,
                     FrameMargins -> 10,
                     FrameStyle   -> None,
                     ImageSize    -> { Scaled[ 1 ], Automatic }
                 ],
                 Framed[
-                    Dynamic @ TextCell[
-                        Global`$resultString,
+                    TextCell[
+                        as[ "Result" ],
                         "Program",
                         FontSize -> 0.75 * Inherited,
                         Background -> None
@@ -529,7 +501,7 @@ makeToolCallBoxLabel // endDefinition;
 
 makeToolCallBoxLabel0 // beginDefinition;
 
-makeToolCallBoxLabel0[ string_String, icon_ ] /; $dynamicText := Row @ Flatten @ {
+makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] := Row @ Flatten @ {
     "Using ",
     string,
     "\[Ellipsis]",
@@ -542,7 +514,7 @@ makeToolCallBoxLabel0[ string_String, icon_ ] /; $dynamicText := Row @ Flatten @
     ]
 };
 
-makeToolCallBoxLabel0[ string_String, icon_ ] := Row @ Flatten @ {
+makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Row @ Flatten @ {
     "Used ",
     string,
     If[ MissingQ @ icon,
