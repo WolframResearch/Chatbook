@@ -1130,7 +1130,7 @@ Cell[
 		DisplayFunction -> (
 			NamespaceBox["ChatbookModifierID",
 				DynamicModuleBox[{},
-					DynamicBox[ToBoxes @ Wolfram`Chatbook`InlineReferences`modifierTemplateBoxes[1, #input, #state, #uuid]],
+					DynamicBox[ToBoxes @ Wolfram`Chatbook`InlineReferences`modifierTemplateBoxes[1, #input, #params, #state, #uuid]],
 					Initialization :> (
 						Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
 						Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = EvaluationCell[ ]

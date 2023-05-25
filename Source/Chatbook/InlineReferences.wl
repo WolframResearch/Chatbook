@@ -1339,6 +1339,17 @@ personaInputSetting // endDefinition;
 
 
 (* ::Section::Closed:: *)
+(*Template Utilities*)
+
+
+fromPipedString[str_String] := Replace[ StringTrim /@ StringSplit[str, "|"],
+	{ {first_, rest___} :> {first, {rest}}, _ :> {"", {}} }]
+
+
+toPipedString[input_String, {params___String}] := StringRiffle[{input, params}, " | "]
+
+
+(* ::Section::Closed:: *)
 (*Persona Template*)
 
 
@@ -1415,6 +1426,7 @@ personaTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] 
 				],
 				BaselinePosition -> Baseline,
 				FrameStyle -> RGBColor[0.227, 0.553, 0.694],
+				ImageMargins -> {{1,1},{0,0}},
 				$frameOptions
 			],
 			"Text",
@@ -1533,7 +1545,7 @@ setModifierState[state_, "Replace" -> input_String] := (
 
 SetAttributes[modifierTemplateBoxes, HoldRest];
 
-modifierTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] /; state === "Input" := 
+modifierTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsPattern[]] /; state === "Input" := 
 	EventHandler[
 		Style[
 			Framed[
@@ -1542,16 +1554,10 @@ modifierTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]]
 						{
 							RawBoxes[TemplateBox[{}, "InlineReferenceIconHash"]],
 							InputField[
-								Dynamic[
-									input(*,
-									Function[
-										string = #;
-										processModifierInput[ #, SelectedCells[ ], cell ]
-									]*)
-								],
+								Dynamic[toPipedString[input, params], ({input, params} = fromPipedString[#])&],
 								String,
 								Alignment               -> { Left, Baseline },
-								ContinuousAction        -> True,
+								ContinuousAction        -> False,
 								FieldCompletionFunction -> modifierCompletion,
 								System`CommitAction -> (modifierCommitAction[#, input, state]&),
 								BaselinePosition -> Baseline,
@@ -1571,6 +1577,7 @@ modifierTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]]
 				],
 				BaselinePosition -> Baseline,
 				FrameStyle -> RGBColor[0.529, 0.776, 0.424],
+				ImageMargins -> {{1,1},{0,0}},
 				$frameOptions
 			],
 			"Text",
@@ -1578,16 +1585,24 @@ modifierTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]]
 		],
 		{
 			(*{ "KeyDown", "#" } :> NotebookWrite[ EvaluationNotebook[ ], "#" ],*)
-			"EscapeKeyDown" :> setModifierState[state, "Replace" -> input],
-			"ReturnKeyDown" :> setModifierState[state, If[Length[modifierCompletion[input]] > 0 && input =!= "", "Chosen", "Replace" -> input]]
+			"EscapeKeyDown" :> setModifierState[state, "Replace" -> toPipedString[input, params]],
+			"ReturnKeyDown" :> setModifierState[state,
+				If[Length[modifierCompletion[input]] > 0 && input =!= "", "Chosen", "Replace" -> toPipedString[input, params]]]
 		}
 	]
 
-modifierTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] /; state === "Chosen" :=
+modifierTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsPattern[]] /; state === "Chosen" :=
 	Button[
 		NotebookTools`Mousedown @@ MapThread[
 			Framed[
-				Row[{RawBoxes[TemplateBox[{}, "InlineReferenceIconHash"]], input}],
+				Grid[{{
+					Row[{RawBoxes[TemplateBox[{}, "InlineReferenceIconHash"]], input}],
+					Splice @ Replace[params, Except[_List] :> {}]
+					}},
+					BaselinePosition -> {1,1},
+					Dividers -> {Center, None},
+					FrameStyle -> #2
+				],
 				BaselinePosition -> Baseline,
 				RoundingRadius -> 2,
 				Background -> #1,
@@ -1610,9 +1625,9 @@ modifierTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]]
 (* FIXME: Add a modifierTemplateBoxes rule for unknown version number *)
 
 
-modifierTemplateCell[input_String, state: ("Input" | "Chosen"), uuid_String] := 
+modifierTemplateCell[input_String, params_List, state: ("Input" | "Chosen"), uuid_String] := 
 Cell[BoxData[FormBox[
-	TemplateBox[<|"input" -> input, "state" -> state, "uuid" -> uuid|>,
+	TemplateBox[<|"input" -> input, "params" -> params, "state" -> state, "uuid" -> uuid|>,
 		"ChatbookModifier"
 	], TextForm]],
 	"InlineModifierReference",
@@ -1627,7 +1642,7 @@ insertModifierTemplate[ parent_CellObject, nbo_NotebookObject ] :=
 	Module[ { uuid, cellexpr },
 		resolveInlineReferences @ parent;
 		uuid = CreateUUID[ ];
-		cellexpr = modifierTemplateCell[ "", "Input", uuid ];
+		cellexpr = modifierTemplateCell[ "", {}, "Input", uuid ];
 		NotebookWrite[ nbo, cellexpr ];
 		(* FIXME: Can we get rid of the need for this UUID, and use BoxReference-something? *)
 		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
@@ -1639,7 +1654,7 @@ insertModifierTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
 	Module[ { uuid, cellexpr },
 		resolveInlineReferences @ ParentCell @ parent;
 		uuid = CreateUUID[ ];
-		cellexpr = modifierTemplateCell[ name, "Input", uuid ];
+		cellexpr = modifierTemplateCell[ name, {}, "Input", uuid ];
 		NotebookWrite[ parent, cellexpr ];
 		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
 	];
