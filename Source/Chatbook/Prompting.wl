@@ -158,7 +158,8 @@ $basePromptComponents[ "WolframLanguageStyle" ] = "
 * Do not assign global variables when it's not necessary
 * Prefer modern Wolfram Language symbols and methods
 * Many new symbols have been added to WL since your knowledge cutoff date, so check documentation as needed
-* When creating plots, add options such as labels and legends to make them easier to understand";
+* When creating plots, add options such as labels and legends to make them easier to understand
+* If the user is asking for a result instead of code to produce that result, use the sandbox_evaluate tool";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

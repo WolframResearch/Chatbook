@@ -284,6 +284,72 @@ renumberCell // endDefinition;
 $line = 0;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Evaluate*)
+$defaultChatTools[ "sandbox_evaluate" ] = LLMTool[
+    <|
+        "Name"        -> "sandbox_evaluate",
+        "DisplayName" -> "Sandbox Evaluate",
+        "Icon"        -> RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
+        "ShowResult"  -> True, (* TODO: make this work *)
+        "Description" -> "Evaluate Wolfram Language code for the user in a sandboxed environment. The result will be displayed in the chat for the user to see.",
+        "Parameters"  -> {
+            "code" -> <|
+                "Interpreter" -> Restricted[ "HeldExpression", All ],
+                "Help"        -> "Wolfram Language code to evaluate",
+                "Required"    -> True
+            |>
+        },
+        "Function" -> sandboxEvaluate
+    |>,
+    { }
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$sandBoxKernel*)
+$sandBoxKernel := $sandBoxKernel =
+    Module[ { kernel },
+        kernel = LinkLaunch[ First @ $CommandLine <> " -wstp -pacletreadonly -sandbox -noinit -noicon" ];
+        While[ LinkReadyQ @ kernel, LinkRead @ kernel ];
+        kernel
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sandboxEvaluate*)
+sandboxEvaluate // beginDefinition;
+
+sandboxEvaluate[ KeyValuePattern[ "code" -> code_ ] ] := sandboxEvaluate @ code;
+
+sandboxEvaluate[ HoldComplete[ evaluation_ ] ] :=
+    Module[ { null, packets, results, flat },
+        LinkWrite[ $sandBoxKernel, Unevaluated[ HoldComplete @@ { evaluation } ] ];
+        { null, { packets } } = Reap @ While[ LinkReadyQ @ $sandBoxKernel, Sow @ LinkRead @ $sandBoxKernel ];
+        (* TODO: handle MessagePacket and TextPacket etc. *)
+        results = Cases[ packets, ReturnPacket[ expr_ ] :> expr ];
+        flat = Flatten[ HoldComplete @@ results, 1 ];
+        <|
+            "String"  -> sandboxResultString @ flat,
+            "Display" -> flat
+        |>
+    ];
+
+sandboxEvaluate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sandboxResultString*)
+sandboxResultString // beginDefinition;
+
+sandboxResultString[ HoldComplete[ expr_ ] ] := StringJoin[
+    CellToString @ Cell[ BoxData @ MakeBoxes @ expr, "Output" ],
+    "[[Output displayed for user]]"
+];
+
+sandboxResultString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Utilities*)
 
