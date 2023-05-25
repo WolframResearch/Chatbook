@@ -235,6 +235,7 @@ needsBasePrompt[ Automatic|Inherited|_Missing ] := Null;
 needsBasePrompt[ None ] := $collectedPromptComponents = <| |>;
 needsBasePrompt[ KeyValuePattern[ "BasePrompt" -> base_ ] ] := needsBasePrompt @ base;
 needsBasePrompt[ KeyValuePattern[ "LLMEvaluator" -> as_Association ] ] := needsBasePrompt @ as;
+needsBasePrompt[ _Association ] := Null;
 needsBasePrompt[ list_List ] := needsBasePrompt /@ list;
 needsBasePrompt // endDefinition;
 
