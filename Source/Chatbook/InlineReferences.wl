@@ -1375,12 +1375,10 @@ setPersonaState[state_, "Chosen"] := (
 	FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]]
 )
 
-setPersonaState[state_, "Replace" -> input_String] := 
-	If[input === "",
-		NotebookDelete[EvaluationCell[]],
-		SelectionMove[EvaluationCell[], All, Cell];
-		NotebookWrite[InputNotebook[], "@" <> input]
-	]
+setPersonaState[state_, "Replace" -> input_String] := (
+	SelectionMove[EvaluationCell[], All, Cell];
+	NotebookWrite[InputNotebook[], "@" <> input]
+)
 
 
 SetAttributes[personaTemplateBoxes, HoldRest];
@@ -1527,12 +1525,10 @@ setModifierState[state_, "Chosen"] := (
 	FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]]
 )
 
-setModifierState[state_, "Replace" -> input_String] := 
-	If[input === "",
-		NotebookDelete[EvaluationCell[]],
-		SelectionMove[EvaluationCell[], All, Cell];
-		NotebookWrite[InputNotebook[], "#" <> input]
-	]
+setModifierState[state_, "Replace" -> input_String] := (
+	SelectionMove[EvaluationCell[], All, Cell];
+	NotebookWrite[InputNotebook[], "#" <> input]
+)
 
 
 SetAttributes[modifierTemplateBoxes, HoldRest];
