@@ -126,12 +126,12 @@ GetPersonaData[] := Module[{
 
 	$CachedPersonaData = RaiseConfirmMatch[
 		(* Show core personas first *)
-		Join[KeyTake[personas, $corePersonaNames], personas],
+		Join[KeyTake[personas, $corePersonaNames], KeySort[personas]],
 		_Association? AssociationQ
 	]
 ]
 
-$corePersonaNames = {"Helper", "Wolfie"};
+$corePersonaNames = {"CodeAssistant", "CodeWriter", "NoPersona", "Wolfie"};
 
 (*------------------------------------*)
 

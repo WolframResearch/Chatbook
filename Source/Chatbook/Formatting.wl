@@ -368,7 +368,7 @@ $textDataFormatRules = {
     "\\$" :> "$",
     "``" ~~ code__ ~~ "``" /; StringFreeQ[ code, "``" ] :> inlineCodeCell @ code,
     "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`" /; inlineSyntaxQ @ code :> inlineCodeCell @ code,
-    "`" ~~ code: Except[ "`" ].. ~~ "`" :> inlineCodeCell @ code,
+    "`" ~~ code: Except[ "`"|"\n" ].. ~~ "`" :> inlineCodeCell @ code,
     "$$" ~~ math: Except[ "$" ].. ~~ "$$" :> mathCell @ math,
     "$" ~~ math: Except[ "$" ].. ~~ "$" :> mathCell @ math
 };

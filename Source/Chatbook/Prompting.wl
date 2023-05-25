@@ -35,12 +35,13 @@ $basePromptOrder = {
     "TrivialCode",
     "WolframSymbolCapitalization",
     "ModernMethods",
-    "FunctionalStyle"
+    "FunctionalStyle",
+    "WolframLanguageStyle"
 };
 
 $basePromptClasses = <|
     "Notebooks"         -> { "NotebooksPreamble" },
-    "WolframLanguage"   -> { "CodeBlocks", "DoubleBackticks", "DocumentationLinkSyntax", "InlineSymbolLinks" },
+    "WolframLanguage"   -> { "CodeBlocks", "DoubleBackticks", "WolframLanguageStyle" },
     "Math"              -> { "MathExpressions" },
     "Formatting"        -> { "CodeBlocks", "MathExpressions", "EscapedCharacters" },
     "MessageConversion" -> { "ConversionLargeOutputs", "ConversionGraphics", "ConversionFormatting" },
@@ -65,7 +66,8 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "TrivialCode"                 -> { },
     "WolframSymbolCapitalization" -> { },
     "ModernMethods"               -> { },
-    "FunctionalStyle"             -> { }
+    "FunctionalStyle"             -> { },
+    "WolframLanguageStyle"        -> { "DocumentationLinkSyntax", "InlineSymbolLinks" }
 |>;
 
 $collectedPromptComponents = AssociationMap[ Identity, $basePromptOrder ];
@@ -148,6 +150,16 @@ $basePromptComponents[ "ModernMethods" ] = "\
 $basePromptComponents[ "FunctionalStyle" ] = "\
 * Prefer functional programming style instead of procedural";
 
+$basePromptComponents[ "WolframLanguageStyle" ] = "
+# Wolfram Language Style Guidelines
+
+* Keep code simple when possible
+* Use functional programming instead of procedural
+* Do not assign global variables when it's not necessary
+* Prefer modern Wolfram Language symbols and methods
+* Many new symbols have been added to WL since your knowledge cutoff date, so check documentation as needed
+* When creating plots, add options such as labels and legends to make them easier to understand";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Prompt Builder*)
@@ -217,9 +229,14 @@ withBasePromptBuilder // endDefinition;
 (* ::Subsection::Closed:: *)
 (*needsBasePrompt*)
 needsBasePrompt // beginDefinition;
-needsBasePrompt // Attributes = { Listable };
 needsBasePrompt[ name_String ] /; KeyExistsQ[ $collectedPromptComponents, name ] := Null;
 needsBasePrompt[ name_String ] := $collectedPromptComponents[ name ] = name;
+needsBasePrompt[ Automatic|Inherited|_Missing ] := Null;
+needsBasePrompt[ None ] := $collectedPromptComponents = <| |>;
+needsBasePrompt[ KeyValuePattern[ "BasePrompt" -> base_ ] ] := needsBasePrompt @ base;
+needsBasePrompt[ KeyValuePattern[ "LLMEvaluator" -> as_Association ] ] := needsBasePrompt @ as;
+needsBasePrompt[ _Association ] := Null;
+needsBasePrompt[ list_List ] := needsBasePrompt /@ list;
 needsBasePrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

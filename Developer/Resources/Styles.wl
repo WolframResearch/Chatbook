@@ -89,7 +89,7 @@ Cell[
 	CellDingbat -> Cell[
         BoxData @ DynamicBox @ ToBoxes[
             If[ TrueQ @ CloudSystem`$CloudNotebooks,
-                RawBoxes @ TemplateBox[ { }, "RoleUser" ],
+                RawBoxes @ TemplateBox[ { }, "ChatIconUser" ],
                 RawBoxes @ TemplateBox[ { }, "ChatInputActiveCellDingbat" ]
             ],
             StandardForm

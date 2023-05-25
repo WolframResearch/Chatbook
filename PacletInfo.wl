@@ -1,7 +1,7 @@
 PacletObject[<|
 	"Name" -> "Wolfram/Chatbook",
 	"PublisherID" -> "Wolfram",
-	"Version" -> "0.0.15",
+	"Version" -> "0.0.16",
 	"WolframVersion" -> "13.2+",
 	"Description" -> "Wolfram Notebooks + LLMs",
 	"License" -> "MIT",
@@ -26,8 +26,9 @@ PacletObject[<|
 		},
 		{"LLMConfiguration",
 			"Personas" -> {
-				"Default",
-				"Helper",
+				"NoPersona",
+				"CodeAssistant",
+				"CodeWriter",
 				"Wolfie",
 				"Birdnardo",
 				"None"
