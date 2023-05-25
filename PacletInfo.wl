@@ -26,8 +26,9 @@ PacletObject[<|
 		},
 		{"LLMConfiguration",
 			"Personas" -> {
-				"Default",
-				"Helper",
+				"NoPersona",
+				"CodeAssistant",
+				"CodeWriter",
 				"Wolfie",
 				"Birdnardo",
 				"None"
