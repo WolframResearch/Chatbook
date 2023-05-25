@@ -1,1 +1,0 @@
-RawBoxes @ TemplateBox[ { }, "HelperIcon" ]
