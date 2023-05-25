@@ -10,6 +10,14 @@ BeginPackage[ "Wolfram`Chatbook`InlineReferences`" ];
 `insertFunctionInputBox;
 `insertModifierInputBox;
 `insertTrailingFunctionInputBox;
+
+`insertPersonaTemplate;
+`insertFunctionTemplate;
+`insertModifierTemplate;
+
+`personaTemplateBoxes;
+`modifierTemplateBoxes;
+
 `resolveLastInlineReference;
 `resolveInlineReferences;
 
@@ -1328,6 +1336,317 @@ personaInputSetting // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (**)
+
+
+(* ::Section::Closed:: *)
+(*Persona Template*)
+
+
+SetAttributes[personaCommitAction, HoldRest]
+
+personaCommitAction[action: "Enter", var_, state_] := (
+	(*Print[{Hold[var], var, action}];*)
+	(* Pressing enter should effectively accept the first match, if there is one *)
+	Replace[personaCompletion[var], {match_, ___} :> (var = match)]
+)
+
+personaCommitAction[action_, var_, state_] := (
+	(*Print[{Hold[var], var, action}];*)
+	(* If the "ReturnKeyDown" trap was avoided, do the state change here *)
+	setPersonaState[state, "Chosen"]
+)
+
+
+SetAttributes[setPersonaState, HoldFirst]
+
+setPersonaState[state_, "Input"] := (
+	state = "Input";
+	MathLink`CallFrontEnd[FrontEnd`BoxReferenceFind[
+			FE`BoxReference[MathLink`CallFrontEnd[FrontEnd`Value[FEPrivate`Self[]]],
+			{FE`Parent["ChatbookPersonaID"]}],
+			AutoScroll -> True
+		]];
+	FrontEndExecute[FrontEnd`FrontEndToken["MoveNextPlaceHolder"]];
+)
+
+setPersonaState[state_, "Chosen"] := (
+	state = "Chosen";
+	SelectionMove[EvaluationCell[], All, Cell];
+	FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]]
+)
+
+setPersonaState[state_, "Replace" -> input_String] := 
+	If[input === "",
+		NotebookDelete[EvaluationCell[]],
+		SelectionMove[EvaluationCell[], All, Cell];
+		NotebookWrite[InputNotebook[], "@" <> input]
+	]
+
+
+SetAttributes[personaTemplateBoxes, HoldRest];
+
+personaTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] /; state === "Input" := 
+	EventHandler[
+		Style[
+			Framed[
+				Grid[
+					{
+						{
+							RawBoxes[TemplateBox[{}, "InlineReferenceIconAt"]],
+							InputField[
+								Dynamic @ input,
+								String,
+								Alignment			   -> { Left, Baseline },
+								ContinuousAction		-> True,
+								FieldCompletionFunction -> personaCompletion,
+								System`CommitAction	 -> (personaCommitAction[#, input, state]&),
+								TrapSelection -> False,
+								BaselinePosition -> Baseline,
+								FieldSize			   -> { { 15, Infinity }, Automatic },
+								BaseStyle			   -> $inputFieldStyle,
+								Appearance			  -> "Frameless",
+								(*ContentPadding		  -> False,*)
+								FrameMargins			-> 0,
+								BoxID				   -> uuid
+							]
+						}
+					},
+					Spacings  -> 0,
+					Alignment -> { Automatic, Baseline },
+					BaselinePosition -> {1,2}
+				],
+				BaselinePosition -> Baseline,
+				FrameStyle -> RGBColor[0.227, 0.553, 0.694],
+				$frameOptions
+			],
+			"Text",
+			ShowStringCharacters -> False
+		],
+		{
+			"EscapeKeyDown" :> setPersonaState[state, "Replace" -> input],
+			"ReturnKeyDown" :> setPersonaState[state, If[Length[personaCompletion[input]] > 0 && input =!= "", "Chosen", "Replace" -> input]]
+		}
+	]
+
+personaTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] /; state === "Chosen" :=
+	Button[
+		NotebookTools`Mousedown @@ MapThread[
+			Framed[
+				Row[{RawBoxes[TemplateBox[{}, "InlineReferenceIconAt"]], input}],
+				BaselinePosition -> Baseline,
+				RoundingRadius -> 2,
+				Background -> #1,
+				FrameStyle -> #2,
+				FrameMargins -> 2,
+				ImageMargins -> {{1,1},{0,0}}]&,
+			{
+				{RGBColor[0.824, 0.918, 0.961], RGBColor[0.925, 0.976, 1.000], RGBColor[0.765, 0.878, 0.925]},
+				{RGBColor[0.227, 0.553, 0.694], RGBColor[0.455, 0.737, 0.863], RGBColor[0.196, 0.510, 0.647]}
+			}
+		],
+		setPersonaState[state, "Input"]
+		,
+		Appearance -> "Suppressed",
+		BaseStyle -> {},
+		DefaultBaseStyle -> {},
+		BaselinePosition -> Baseline
+	]
+
+(* FIXME: Add a personaTemplateBoxes rule for unknown version number *)
+
+
+personaTemplateCell[input_String, state: ("Input" | "Chosen"), uuid_String] := 
+Cell[BoxData[FormBox[
+	TemplateBox[<|"input" -> input, "state" -> state, "uuid" -> uuid|>,
+		"ChatbookPersona"
+	], TextForm]],
+	"InlinePersonaChooser",
+	Background -> None,
+	Deployed -> True
+]
+
+
+insertPersonaTemplate[ cell_CellObject ] := insertPersonaTemplate[ cell, parentNotebook @ cell ];
+
+insertPersonaTemplate[ parent_CellObject, nbo_NotebookObject ] :=
+	Module[ { uuid, cellexpr },
+		resolveInlineReferences @ parent;
+		uuid = CreateUUID[ ];
+		cellexpr = personaTemplateCell[ "", "Input", uuid ];
+		NotebookWrite[ nbo, cellexpr ];
+		(* FIXME: Can we get rid of the need for this UUID, and use BoxReference-something? *)
+		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
+	];
+
+insertPersonaTemplate[ name_String, cell_CellObject ] := insertPersonaTemplate[ name, cell, parentNotebook @ cell ];
+
+insertPersonaTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
+	Module[ { uuid, cellexpr },
+		resolveInlineReferences @ ParentCell @ parent;
+		uuid = CreateUUID[ ];
+		cellexpr = personaTemplateCell[ name, "Input", uuid ];
+		NotebookWrite[ parent, cellexpr ];
+		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
+	];
+
+
+(* ::Section::Closed:: *)
+(*Modifier Template*)
+
+
+SetAttributes[modifierCommitAction, HoldRest]
+
+modifierCommitAction[action: "Enter", var_, state_] := (
+	(*Print[{Hold[var], var, action}];*)
+	(* Pressing enter should effectively accept the first match, if there is one *)
+	Replace[modifierCompletion[var], {match_, ___} :> (var = match)]
+)
+
+modifierCommitAction[action_, var_, state_] := (
+	(*Print[{Hold[var], var, action}];*)
+	(* If the "ReturnKeyDown" trap was avoided, do the state change here *)
+	setModifierState[state, "Chosen"]
+)
+
+
+SetAttributes[setModifierState, HoldFirst]
+
+setModifierState[state_, "Input"] := (
+	state = "Input";
+	MathLink`CallFrontEnd[FrontEnd`BoxReferenceFind[
+			FE`BoxReference[MathLink`CallFrontEnd[FrontEnd`Value[FEPrivate`Self[]]],
+			{FE`Parent["ChatbookModifierID"]}],
+			AutoScroll -> True
+		]];
+	FrontEndExecute[FrontEnd`FrontEndToken["MoveNextPlaceHolder"]];
+)
+
+setModifierState[state_, "Chosen"] := (
+	state = "Chosen";
+	SelectionMove[EvaluationCell[], All, Cell];
+	FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]]
+)
+
+setModifierState[state_, "Replace" -> input_String] := 
+	If[input === "",
+		NotebookDelete[EvaluationCell[]],
+		SelectionMove[EvaluationCell[], All, Cell];
+		NotebookWrite[InputNotebook[], "#" <> input]
+	]
+
+
+SetAttributes[modifierTemplateBoxes, HoldRest];
+
+modifierTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] /; state === "Input" := 
+	EventHandler[
+		Style[
+			Framed[
+				Grid[
+					{
+						{
+							RawBoxes[TemplateBox[{}, "InlineReferenceIconHash"]],
+							InputField[
+								Dynamic[
+									input(*,
+									Function[
+										string = #;
+										processModifierInput[ #, SelectedCells[ ], cell ]
+									]*)
+								],
+								String,
+								Alignment               -> { Left, Baseline },
+								ContinuousAction        -> True,
+								FieldCompletionFunction -> modifierCompletion,
+								System`CommitAction -> (modifierCommitAction[#, input, state]&),
+								BaselinePosition -> Baseline,
+								FieldSize               -> { { 15, Infinity }, Automatic },
+								FieldHint               -> "PromptName", (* FIXME: Is this right? *)
+								BaseStyle               -> $inputFieldStyle,
+								Appearance              -> "Frameless",
+								(*ContentPadding          -> False,*)
+								FrameMargins            -> 0,
+								BoxID                   -> uuid
+							]
+						}
+					},
+					Spacings  -> 0,
+					Alignment -> { Automatic, Baseline },
+					BaselinePosition -> {1,2}
+				],
+				BaselinePosition -> Baseline,
+				FrameStyle -> RGBColor[0.529, 0.776, 0.424],
+				$frameOptions
+			],
+			"Text",
+			ShowStringCharacters -> False
+		],
+		{
+			(*{ "KeyDown", "#" } :> NotebookWrite[ EvaluationNotebook[ ], "#" ],*)
+			"EscapeKeyDown" :> setModifierState[state, "Replace" -> input],
+			"ReturnKeyDown" :> setModifierState[state, If[Length[modifierCompletion[input]] > 0 && input =!= "", "Chosen", "Replace" -> input]]
+		}
+	]
+
+modifierTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] /; state === "Chosen" :=
+	Button[
+		NotebookTools`Mousedown @@ MapThread[
+			Framed[
+				Row[{RawBoxes[TemplateBox[{}, "InlineReferenceIconHash"]], input}],
+				BaselinePosition -> Baseline,
+				RoundingRadius -> 2,
+				Background -> #1,
+				FrameStyle -> #2,
+				FrameMargins -> 2,
+				ImageMargins -> {{1,1},{0,0}}]&,
+			{
+				{RGBColor[0.894, 0.965, 0.847], RGBColor[0.961, 1.000, 0.937], RGBColor[0.796, 0.925, 0.733]},
+				{RGBColor[0.529, 0.776, 0.424], RGBColor[0.647, 0.886, 0.545], RGBColor[0.408, 0.671, 0.294]}
+			}
+		],
+		setModifierState[state, "Input"]
+		,
+		Appearance -> "Suppressed",
+		BaseStyle -> {},
+		DefaultBaseStyle -> {},
+		BaselinePosition -> Baseline
+	]
+
+(* FIXME: Add a modifierTemplateBoxes rule for unknown version number *)
+
+
+modifierTemplateCell[input_String, state: ("Input" | "Chosen"), uuid_String] := 
+Cell[BoxData[FormBox[
+	TemplateBox[<|"input" -> input, "state" -> state, "uuid" -> uuid|>,
+		"ChatbookModifier"
+	], TextForm]],
+	"InlineModifierReference",
+	Background -> None,
+	Deployed -> True
+]
+
+
+insertModifierTemplate[ cell_CellObject ] := insertModifierTemplate[ cell, parentNotebook @ cell ];
+
+insertModifierTemplate[ parent_CellObject, nbo_NotebookObject ] :=
+	Module[ { uuid, cellexpr },
+		resolveInlineReferences @ parent;
+		uuid = CreateUUID[ ];
+		cellexpr = modifierTemplateCell[ "", "Input", uuid ];
+		NotebookWrite[ nbo, cellexpr ];
+		(* FIXME: Can we get rid of the need for this UUID, and use BoxReference-something? *)
+		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
+	];
+
+insertModifierTemplate[ name_String, cell_CellObject ] := insertModifierTemplate[ name, cell, parentNotebook @ cell ];
+
+insertModifierTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
+	Module[ { uuid, cellexpr },
+		resolveInlineReferences @ ParentCell @ parent;
+		uuid = CreateUUID[ ];
+		cellexpr = modifierTemplateCell[ name, "Input", uuid ];
+		NotebookWrite[ parent, cellexpr ];
+		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
+	];
 
 
 (* ::Section::Closed:: *)
