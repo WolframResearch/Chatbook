@@ -1,6 +1,13 @@
+(* ::Package:: *)
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Section::Closed:: *)
 (*Package Header*)
+
+
 BeginPackage[ "Wolfram`ChatbookStylesheetBuilder`" ];
 
 ClearAll[ "`*" ];
@@ -18,13 +25,24 @@ System`Scope;
 
 Begin[ "`Private`" ];
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Section::Closed:: *)
 (*Config*)
 
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*Paths*)
+
+
 $assetLocation      = FileNameJoin @ { DirectoryName @ $InputFileName, "Resources" };
 $iconDirectory      = FileNameJoin @ { $assetLocation, "Icons" };
 $ninePatchDirectory = FileNameJoin @ { $assetLocation, "NinePatchImages" };
@@ -33,48 +51,94 @@ $pacletDirectory    = DirectoryName[ $InputFileName, 2 ];
 $iconManifestFile   = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
 $styleSheetTarget   = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*Load Paclet*)
+
+
 PacletDirectoryLoad @ $pacletDirectory;
 Get[ "Wolfram`Chatbook`" ];
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*Resources*)
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*$floatingButtonNinePatch*)
-$floatingButtonNinePatch = Import @ FileNameJoin @ { $ninePatchDirectory, "FloatingButtonGrid.wxf" };
 
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
+(* ::Subsubsection::Closed:: *)
+(*$floatingButtonNinePatch*)
+
+
+$floatingButtonNinePatch = Import @ FileNameJoin @ { $ninePatchDirectory, "FloatingButtonGrid.wxf" };
+
+
+
+(* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsubsection::Closed:: *)
 (*$suppressButtonAppearance*)
+
+
 $suppressButtonAppearance = Dynamic @ FEPrivate`FrontEndResource[
     "FEExpressions",
     "SuppressMouseDownNinePatchAppearance"
 ];
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsubsection::Closed:: *)
 (*Icons*)
+
+
 $iconFiles = FileNames[ "*.wl", $iconDirectory ];
 $iconNames = FileBaseName /@ $iconFiles;
 
 Developer`WriteWXFFile[ $iconManifestFile, AssociationMap[ RawBoxes @ TemplateBox[ { }, #1 ] &, $iconNames ] ];
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsubsection::Closed:: *)
 (*makeIconTemplateBoxStyle*)
+
+
 makeIconTemplateBoxStyle[ file_ ] :=
     With[ { icon = ToBoxes @ Import @ file },
         Cell[ StyleData @ FileBaseName @ file, TemplateBoxOptions -> { DisplayFunction -> (icon &) } ]
     ];
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsubsection::Closed:: *)
 (*$askMenuItem*)
+
+
 $askMenuItem = MenuItem[
     "Ask AI Assistant",
     KernelExecute[
@@ -89,9 +153,16 @@ $askMenuItem = MenuItem[
     Method        -> "Queued"
 ];
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsubsection::Closed:: *)
 (*$excludeMenuItem*)
+
+
 $excludeMenuItem = MenuItem[
     "Include/Exclude From AI Chat",
     KernelExecute[
@@ -106,16 +177,30 @@ $excludeMenuItem = MenuItem[
     Method        -> "Queued"
 ];
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsubsection::Closed:: *)
 (*contextMenu*)
+
+
 contextMenu[ a___, name_String, b___ ] := contextMenu[ a, FrontEndResource[ "ContextMenus", name ], b ];
 contextMenu[ a___, list_List, b___ ] := contextMenu @@ Flatten @ { a, list, b };
 contextMenu[ a___ ] := Flatten @ { a };
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsubsection::Closed:: *)
 (*menuInitializer*)
+
+
 menuInitializer[ name_String, color_ ] :=
     With[ { attach = Cell[ BoxData @ TemplateBox[ { name, color }, "ChatMenuButton" ], "ChatMenu" ] },
         Initialization :>
@@ -135,9 +220,16 @@ menuInitializer[ name_String, color_ ] :=
             ]
     ];
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsubsection::Closed:: *)
 (*assistantMenuInitializer*)
+
+
 assistantMenuInitializer[ name_String, color_ ] :=
     With[
         {
@@ -181,9 +273,15 @@ assistantMenuInitializer[ name_String, color_ ] :=
             ]
     ];
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsubsection::Closed:: *)
 (*$chatOutputMenu*)
+
 
 makeMenu[ items_List, frameColor_, width_ ] := Pane[
     RawBoxes @ TemplateBox[
@@ -254,9 +352,15 @@ $chatOutputMenu := $chatOutputMenu = ToBoxes @ makeMenu[
     250
 ];
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsubsection::Closed:: *)
 (*Tabbed Output CellDingbat*)
+
 
 tabArrowFrame[ gfx_, opts___ ] := Framed[
     Graphics[ { GrayLevel[ 0.4 ], gfx }, ImageSize -> 4 ],
@@ -353,31 +457,59 @@ $chatInputActiveCellDingbat = Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat
 $chatInputCellDingbat       = Wolfram`Chatbook`UI`MakeChatInputCellDingbat[ ];
 $chatDelimiterCellDingbat   = Wolfram`Chatbook`UI`MakeChatDelimiterCellDingbat[ ];
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsubsection::Closed:: *)
 (*inlineResources*)
+
+
 inlineResources[ expr_ ] := expr /. {
     HoldPattern @ $askMenuItem              :> RuleCondition @ $askMenuItem,
     HoldPattern @ $defaultChatbookSettings  :> RuleCondition @ $defaultChatbookSettings,
     HoldPattern @ $suppressButtonAppearance :> RuleCondition @ $suppressButtonAppearance
 };
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*$styleDataCells*)
-$styleDataCells := $styleDataCells = inlineResources @ Cases[ Flatten @ ReadList @ $styleDataFile, _Cell ];
+
 
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
+(* ::Subsubsection::Closed:: *)
+(*$styleDataCells*)
+
+
+$styleDataCells := $styleDataCells = inlineResources @ Cases[ Flatten @ ReadList @ $styleDataFile, _Cell ];
+
+
+
+(* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*Default Settings*)
+
+
 $defaultChatbookSettings := (
     Needs[ "Wolfram`Chatbook`" -> None ];
     KeyMap[ ToString, Association @ Options @ Wolfram`Chatbook`CreateChatNotebook ]
 );
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Section::Closed:: *)
 (*$ChatbookStylesheet*)
+
+
 $ChatbookStylesheet = Notebook[
     Flatten @ {
         Cell @ StyleData[ StyleDefinitions -> "Default.nb" ],
@@ -386,9 +518,16 @@ $ChatbookStylesheet = Notebook[
     StyleDefinitions -> "PrivateStylesheetFormatting.nb"
 ];
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Section::Closed:: *)
 (*BuildChatbookStylesheet*)
+
+
 BuildChatbookStylesheet[ ] := BuildChatbookStylesheet @ $styleSheetTarget;
 
 BuildChatbookStylesheet[ target_ ] :=
@@ -400,8 +539,15 @@ BuildChatbookStylesheet[ target_ ] :=
         exported
     ];
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Section::Closed:: *)
 (*Package Footer*)
+
+
 End[ ];
 EndPackage[ ];
