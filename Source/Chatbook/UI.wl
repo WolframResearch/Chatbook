@@ -1368,7 +1368,7 @@ MakeChatInputCellDingbat[] :=
 		{
 			True -> MakeChatInputActiveCellDingbat[],
 			False -> Framed[
-				RawBoxes @ TemplateBox[{}, "RoleUser"],
+				RawBoxes @ TemplateBox[{}, "ChatIconUser"],
 				RoundingRadius -> 3,
 				FrameMargins -> 2,
 				ImageMargins -> {{0, 3}, {0, 0}},
@@ -1735,7 +1735,7 @@ makeChatInputActionMenuContent[
 			entry |-> ConfirmReplace[entry, {
 				{persona_?StringQ, icon_, listItemLabel_} :> {
 					alignedMenuIcon[persona, personaValue, icon],
-					listItemLabel,
+					personaDisplayName[listItemLabel],
 					Hold[callback["Persona", persona]]
 				}
 			}],
@@ -1921,10 +1921,19 @@ makeChatDelimiterActionMenuContent[
 
 (*------------------------------------*)
 
+SetFallthroughError[personaDisplayName]
+
+personaDisplayName[name_String] := personaDisplayName[name, GetCachedPersonaData[name]]
+personaDisplayName[name_String, data_Association] := personaDisplayName[name, data["DisplayName"]]
+personaDisplayName[name_String, displayName_String] := displayName
+personaDisplayName[name_String, _] := name
+
+(*------------------------------------*)
+
 SetFallthroughError[alignedMenuIcon]
 
 alignedMenuIcon[possible_, current_, icon_] :=alignedMenuIcon[styleListItem[possible, current], icon]
-alignedMenuIcon[check_, icon_] := Row[{check, " ", icon}]
+alignedMenuIcon[check_, icon_] := Row[{check, " ", resizeMenuIcon[icon]}]
 (* If menu item does not utilize a checkmark, use an invisible one to ensure it is left-aligned with others *)
 alignedMenuIcon[icon_] := alignedMenuIcon[Style["\[Checkmark]", ShowContents -> False], icon]
 
@@ -2045,11 +2054,15 @@ SetFallthroughError[getPersonaMenuIcon];
 getPersonaMenuIcon[ KeyValuePattern[ "Icon"|"PersonaIcon" -> icon_ ] ] := getPersonaMenuIcon @ icon;
 getPersonaMenuIcon[ KeyValuePattern[ "Default" -> icon_ ] ] := getPersonaMenuIcon @ icon;
 getPersonaMenuIcon[ _Missing | _Association | None ] := RawBoxes @ TemplateBox[ { }, "PersonaUnknown" ];
-getPersonaMenuIcon[ boxes: RawBoxes[ _TemplateBox ] ] := boxes;
+getPersonaMenuIcon[ icon_ ] := icon;
 
-getPersonaMenuIcon[ icon_ ] := Pane[
+
+resizeMenuIcon[ icon: _Graphics|_Graphics3D ] :=
+	Show[ icon, ImageSize -> { 21, 21 } ];
+
+resizeMenuIcon[ icon_ ] := Pane[
 	icon,
-	ImageSize       -> { 20, 20 },
+	ImageSize       -> { 21, 21 },
 	ImageSizeAction -> "ShrinkToFit",
 	ContentPadding  -> False
 ];

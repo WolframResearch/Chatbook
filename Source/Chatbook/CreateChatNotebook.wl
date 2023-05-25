@@ -29,7 +29,7 @@ CreateChatNotebook // Options = {
     "IncludeHistory"                    -> Automatic,
     "MaxTokens"                         -> Automatic,
     "MergeMessages"                     -> True,
-    "LLMEvaluator"                      -> "Helper",
+    "LLMEvaluator"                      -> "CodeAssistant",
     "Model"                             -> "gpt-3.5-turbo",
     "OpenAIKey"                         -> Automatic,
     "PresencePenalty"                   -> 0.1,
