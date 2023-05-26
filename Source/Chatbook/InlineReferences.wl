@@ -1738,13 +1738,19 @@ insertModifierTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
 SetAttributes[functionCommitAction, HoldRest]
 
 functionCommitAction[action: "Enter", input_, params_, state_] := (
-	(*Print[{Hold[var], var, action}];*)
+	(*Print[{action, input, params, state}];*)
 	(* Pressing enter should effectively accept the first match, if there is one *)
 	Replace[functionCompletion[input], {match_, ___} :> (input = match)]
 )
 
+functionCommitAction[action: "FieldCompletion", input_, params_, state_] := (
+	(*Print[{action, input, params, state}];*)
+	(* do nothing -- leave the interface in the "Input" state *)
+	Null
+)
+
 functionCommitAction[action_, input_, params_, state_] := (
-	(*Print[{Hold[var], var, action}];*)
+	(*Print[{action, input, params, state}];*)
 	(* If the "ReturnKeyDown" trap was avoided, do the state change here *)
 	setFunctionState[state, "Chosen", input, params]
 )
