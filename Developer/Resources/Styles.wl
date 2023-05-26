@@ -154,7 +154,7 @@ Cell[
         ,
         { "KeyDown", "!" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "Function", $CellContext`cell ]
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "FunctionTemplate", $CellContext`cell ]
         ]
         ,
         { "KeyDown", "#" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
@@ -1138,6 +1138,28 @@ Cell[
 				]
 			]&),
 		InterpretationFunction -> (InterpretationBox["", "#"<>#input]&)
+	}
+]
+
+
+(* ::Subsection::Closed:: *)
+(*ChatbookFunction*)
+
+
+Cell[
+	StyleData["ChatbookFunction"],
+	TemplateBoxOptions -> {
+		DisplayFunction -> (
+			NamespaceBox["ChatbookFunctionID",
+				DynamicModuleBox[{},
+					DynamicBox[ToBoxes @ Wolfram`Chatbook`InlineReferences`functionTemplateBoxes[1, #input, #params, #state, #uuid]],
+					Initialization :> (
+						Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+						Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = EvaluationCell[ ]
+					)
+				]
+			]&),
+		InterpretationFunction -> (InterpretationBox["", "!"<>#input]&)
 	}
 ]
 
