@@ -1195,7 +1195,7 @@ personaInputBox // endDefinition;
 
 
 (* ::Subsubsection::Closed:: *)
-(*processPersonaInput*)
+(*processPersonaInput (unused?)*)
 
 
 processPersonaInput // beginDefinition;
@@ -1331,6 +1331,7 @@ personaInputSetting[ string_String ] := string;
 personaInputSetting[ cell_CellObject ] := personaInputSetting @ NotebookRead @ cell;
 personaInputSetting[ (Cell|BoxData|TagBox)[ boxes_, ___ ] ] := personaInputSetting @ boxes;
 personaInputSetting[ DynamicModuleBox[ { ___, _ = string_String, ___ }, ___ ] ] := string;
+(*personaInputSetting[ TemplateBox[assoc_?AssociationQ, "ChatbookPersona", ___]] := assoc["name"];*)
 personaInputSetting // endDefinition;
 
 
@@ -1358,7 +1359,7 @@ personaCommitAction[action: "Enter", var_, state_] := (
 personaCommitAction[action_, var_, state_] := (
 	(*Print[{Hold[var], var, action}];*)
 	(* If the "ReturnKeyDown" trap was avoided, do the state change here *)
-	setPersonaState[state, "Chosen"]
+	setPersonaState[state, "Chosen", var]
 )
 
 
@@ -1368,7 +1369,7 @@ personaCommitAction[action_, var_, state_] := (
 
 SetAttributes[setPersonaState, HoldFirst]
 
-setPersonaState[state_, "Input"] := (
+setPersonaState[state_, "Input", input_] := (
 	state = "Input";
 	MathLink`CallFrontEnd[FrontEnd`BoxReferenceFind[
 			FE`BoxReference[MathLink`CallFrontEnd[FrontEnd`Value[FEPrivate`Self[]]],
@@ -1378,13 +1379,29 @@ setPersonaState[state_, "Input"] := (
 	FrontEndExecute[FrontEnd`FrontEndToken["MoveNextPlaceHolder"]];
 )
 
-setPersonaState[state_, "Chosen"] := (
-	state = "Chosen";
-	SelectionMove[EvaluationCell[], All, Cell];
-	FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]]
-)
-
-setPersonaState[state_, "Replace" -> input_String] := (
+setPersonaState[state_, "Chosen", input_] := 
+Enclose[
+	With[{cellobj = EvaluationCell[]},
+		state = "Chosen";
+		SelectionMove[cellobj, All, Cell];
+		FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]];
+		CurrentValue[cellobj, {TaggingRules, "PersonaName"}] = input;
+		
+		If[ ! MemberQ[ Keys @ GetCachedPersonaData[ ], input ],
+	        ConfirmBy[ PersonaInstall[ "Prompt: "<>input ], FileExistsQ, "PersonaInstall" ];
+	        ConfirmAssert[ MemberQ[ Keys @ GetCachedPersonaData[ ], input ], "GetCachedPersonaData" ]
+	    ];
+		
+		With[ { parent = ParentCell @ cellobj },
+			CurrentValue[ parent, CellDingbat ] = Inherited;
+			CurrentValue[ parent, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = input;
+		]
+	]
+	,
+	throwInternalFailure[ setPersonaState[state, "Chosen", input], ## ] &
+]
+	
+setPersonaState[state_, "Replace", input_String] := (
 	SelectionMove[EvaluationCell[], All, Cell];
 	NotebookWrite[InputNotebook[], "@" <> input]
 )
@@ -1435,8 +1452,8 @@ personaTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] 
 			ShowStringCharacters -> False
 		],
 		{
-			"EscapeKeyDown" :> setPersonaState[state, "Replace" -> input],
-			"ReturnKeyDown" :> setPersonaState[state, If[Length[personaCompletion[input]] > 0 && input =!= "", "Chosen", "Replace" -> input]]
+			"EscapeKeyDown" :> setPersonaState[state, "Replace", input],
+			"ReturnKeyDown" :> setPersonaState[state, If[Length[personaCompletion[input]] > 0 && input =!= "", "Chosen", "Replace"], input]
 		}
 	]
 
@@ -1456,7 +1473,7 @@ personaTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] 
 				{RGBColor[0.227, 0.553, 0.694], RGBColor[0.455, 0.737, 0.863], RGBColor[0.196, 0.510, 0.647]}
 			}
 		],
-		setPersonaState[state, "Input"]
+		setPersonaState[state, "Input", input]
 		,
 		Appearance -> "Suppressed",
 		BaseStyle -> {},
@@ -1476,7 +1493,7 @@ Cell[BoxData[FormBox[
 	TemplateBox[<|"input" -> input, "state" -> state, "uuid" -> uuid|>,
 		"ChatbookPersona"
 	], TextForm]],
-	"InlinePersonaChooser",
+	"InlinePersonaReference",
 	Background -> None,
 	Deployed -> True
 ]
