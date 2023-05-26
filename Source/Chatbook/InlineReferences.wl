@@ -16,6 +16,7 @@ BeginPackage[ "Wolfram`Chatbook`InlineReferences`" ];
 `insertModifierTemplate;
 
 `personaTemplateBoxes;
+`functionTemplateBoxes;
 `modifierTemplateBoxes;
 
 `resolveLastInlineReference;
@@ -1339,17 +1340,6 @@ personaInputSetting // endDefinition;
 
 
 (* ::Section::Closed:: *)
-(*Template Utilities*)
-
-
-fromPipedString[str_String] := Replace[ StringTrim /@ StringSplit[str, "|"],
-	{ {first_, rest___} :> {first, {rest}}, _ :> {"", {}} }]
-
-
-toPipedString[input_String, {params___String}] := StringRiffle[{input, params}, " | "]
-
-
-(* ::Section::Closed:: *)
 (*Persona Template*)
 
 
@@ -1575,6 +1565,13 @@ setModifierState[state_, "Replace" -> input_String] := (
 (*modifierTemplateBoxes*)
 
 
+toModifierString[input_String, {params___String}] := StringRiffle[{input, params}, " | "]
+
+
+fromModifierString[str_String] := Replace[ StringTrim /@ StringSplit[str, "|"],
+	{ {first_, rest___} :> {first, {rest}}, _ :> {"", {}} }]
+
+
 SetAttributes[modifierTemplateBoxes, HoldRest];
 
 modifierTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsPattern[]] /; state === "Input" := 
@@ -1586,7 +1583,10 @@ modifierTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 						{
 							RawBoxes[TemplateBox[{}, "InlineReferenceIconHash"]],
 							InputField[
-								Dynamic[toPipedString[input, params], ({input, params} = fromPipedString[#])&],
+								Dynamic[
+									toModifierString[input, params],
+									({input, params} = fromModifierString[#])&
+								],
 								String,
 								Alignment               -> { Left, Baseline },
 								ContinuousAction        -> False,
@@ -1617,9 +1617,9 @@ modifierTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 		],
 		{
 			(*{ "KeyDown", "#" } :> NotebookWrite[ EvaluationNotebook[ ], "#" ],*)
-			"EscapeKeyDown" :> setModifierState[state, "Replace" -> toPipedString[input, params]],
+			"EscapeKeyDown" :> setModifierState[state, "Replace" -> toModifierString[input, params]],
 			"ReturnKeyDown" :> setModifierState[state,
-				If[Length[modifierCompletion[input]] > 0 && input =!= "", "Chosen", "Replace" -> toPipedString[input, params]]]
+				If[Length[modifierCompletion[input]] > 0 && input =!= "", "Chosen", "Replace" -> toModifierString[input, params]]]
 		}
 	]
 
@@ -1629,7 +1629,10 @@ modifierTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 			Framed[
 				Grid[{{
 					Row[{RawBoxes[TemplateBox[{}, "InlineReferenceIconHash"]], input}],
-					Splice @ Replace[params, Except[_List] :> {}]
+					Map[
+						Style[#, FontSize -> Inherited * 0.9]&,
+						Replace[params, Except[_List] :> {}]
+					] // Splice
 					}},
 					BaselinePosition -> {1,1},
 					Dividers -> {Center, None},
@@ -1695,6 +1698,208 @@ insertModifierTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
 		resolveInlineReferences @ ParentCell @ parent;
 		uuid = CreateUUID[ ];
 		cellexpr = modifierTemplateCell[ name, {}, "Input", uuid ];
+		NotebookWrite[ parent, cellexpr ];
+		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
+	];
+
+
+(* ::Section::Closed:: *)
+(*Function Template*)
+
+
+(* ::Subsection::Closed:: *)
+(*functionCommitAction*)
+
+
+SetAttributes[functionCommitAction, HoldRest]
+
+functionCommitAction[action: "Enter", var_, state_] := (
+	(*Print[{Hold[var], var, action}];*)
+	(* Pressing enter should effectively accept the first match, if there is one *)
+	Replace[functionCompletion[var], {match_, ___} :> (var = match)]
+)
+
+functionCommitAction[action_, var_, state_] := (
+	(*Print[{Hold[var], var, action}];*)
+	(* If the "ReturnKeyDown" trap was avoided, do the state change here *)
+	setFunctionState[state, "Chosen"]
+)
+
+
+(* ::Subsection::Closed:: *)
+(*setFunctionState*)
+
+
+SetAttributes[setFunctionState, HoldFirst]
+
+setFunctionState[state_, "Input"] := (
+	state = "Input";
+	MathLink`CallFrontEnd[FrontEnd`BoxReferenceFind[
+			FE`BoxReference[MathLink`CallFrontEnd[FrontEnd`Value[FEPrivate`Self[]]],
+			{FE`Parent["ChatbookFunctionID"]}],
+			AutoScroll -> True
+		]];
+	FrontEndExecute[FrontEnd`FrontEndToken["MoveNextPlaceHolder"]];
+)
+
+setFunctionState[state_, "Chosen"] := (
+	state = "Chosen";
+	SelectionMove[EvaluationCell[], All, Cell];
+	FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]]
+)
+
+setFunctionState[state_, "Replace" -> input_String] := (
+	SelectionMove[EvaluationCell[], All, Cell];
+	NotebookWrite[InputNotebook[], "!" <> input]
+)
+
+
+(* ::Subsection::Closed:: *)
+(*functionTemplateBoxes*)
+
+
+toFunctionString[input_String, {params___String}] := StringRiffle[{input, params}, " | "]
+
+
+fromFunctionString[str_String] := Replace[ functionInputSetting[str], {
+	{} | {""} :> {"", {}},
+	{first_} :> {first, {">"}},
+	{first_, rest__} :> {first, {rest}}
+}]
+
+
+SetAttributes[functionTemplateBoxes, HoldRest];
+
+functionTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsPattern[]] /; state === "Input" := 
+	EventHandler[
+		Style[
+			Framed[
+				Grid[
+					{
+						{
+							RawBoxes[TemplateBox[{}, "InlineReferenceIconBang"]],
+							InputField[
+								Dynamic[
+									toFunctionString[input, params],
+									({input, params} = fromFunctionString[#])&
+								],
+								String,
+								Alignment               -> { Left, Baseline },
+								ContinuousAction        -> False,
+								FieldCompletionFunction -> functionCompletion,
+								System`CommitAction -> (functionCommitAction[#, input, state]&),
+								BaselinePosition -> Baseline,
+								FieldSize               -> { { 15, Infinity }, Automatic },
+								FieldHint               -> "PromptName", (* FIXME: Is this right? *)
+								BaseStyle               -> $inputFieldStyle,
+								Appearance              -> "Frameless",
+								(*ContentPadding          -> False,*)
+								FrameMargins            -> 0,
+								BoxID                   -> uuid
+							]
+						}
+					},
+					Spacings  -> 0,
+					Alignment -> { Automatic, Baseline },
+					BaselinePosition -> {1,2}
+				],
+				BaselinePosition -> Baseline,
+				FrameStyle -> RGBColor[1.000, 0.608, 0.255],
+				ImageMargins -> {{1,1},{0,0}},
+				$frameOptions
+			],
+			"Text",
+			ShowStringCharacters -> False
+		],
+		{
+			(*{ "KeyDown", "!" } :> NotebookWrite[ EvaluationNotebook[ ], "!" ],*)
+			"EscapeKeyDown" :> setFunctionState[state, "Replace" -> toFunctionString[input, params]],
+			"ReturnKeyDown" :> setFunctionState[state,
+				If[Length[functionCompletion[input]] > 0 && input =!= "", "Chosen", "Replace" -> toFunctionString[input, params]]]
+		}
+	]
+
+functionTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsPattern[]] /; state === "Chosen" :=
+	Button[
+		NotebookTools`Mousedown @@ MapThread[
+			Framed[
+				Grid[{{
+					Row[{RawBoxes[TemplateBox[{}, "InlineReferenceIconBang"]], input}],
+					Replace[
+						Replace[params, Except[_List] :> {}],
+						{
+							">" :> RawBoxes @ TemplateBox[{}, "InlineReferenceIconRight"],
+							"^" :> RawBoxes @ TemplateBox[{}, "InlineReferenceIconPrevious"],
+							"^^" :> RawBoxes @ TemplateBox[{}, "InlineReferenceIconHistory"],
+							else_ :> Style[else, FontSize -> Inherited * 0.9]
+						},
+						{1}
+					] // Splice		
+					}},
+					BaselinePosition -> {1,1},
+					Dividers -> {Center, None},
+					FrameStyle -> #2
+				],
+				BaselinePosition -> Baseline,
+				RoundingRadius -> 2,
+				Background -> #1,
+				FrameStyle -> #2,
+				FrameMargins -> 2,
+				ImageMargins -> {{1,1},{0,0}}]&,
+			{
+				{RGBColor[0.988, 0.910, 0.839], RGBColor[1., 0.957, 0.914], RGBColor[0.969, 0.831, 0.718]},
+				{RGBColor[1.000, 0.608, 0.255], RGBColor[1., 0.765, 0.553], RGBColor[0.914, 0.522, 0.169]}
+			}
+		],
+		setFunctionState[state, "Input"]
+		,
+		Appearance -> "Suppressed",
+		BaseStyle -> {},
+		DefaultBaseStyle -> {},
+		BaselinePosition -> Baseline
+	]
+
+(* FIXME: Add a functionTemplateBoxes rule for unknown version number *)
+
+
+(* ::Subsection::Closed:: *)
+(*functionTemplateCell*)
+
+
+functionTemplateCell[input_String, params_List, state: ("Input" | "Chosen"), uuid_String] := 
+Cell[BoxData[FormBox[
+	TemplateBox[<|"input" -> input, "params" -> params, "state" -> state, "uuid" -> uuid|>,
+		"ChatbookFunction"
+	], TextForm]],
+	"InlineModifierReference",
+	Background -> None,
+	Deployed -> True
+]
+
+
+(* ::Subsection::Closed:: *)
+(*insertFunctionTemplate*)
+
+
+insertFunctionTemplate[ cell_CellObject ] := insertFunctionTemplate[ cell, parentNotebook @ cell ];
+
+insertFunctionTemplate[ parent_CellObject, nbo_NotebookObject ] :=
+	Module[ { uuid, cellexpr },
+		resolveInlineReferences @ parent;
+		uuid = CreateUUID[ ];
+		cellexpr = functionTemplateCell[ "", {}, "Input", uuid ];
+		NotebookWrite[ nbo, cellexpr ];
+		(* FIXME: Can we get rid of the need for this UUID, and use BoxReference-something? *)
+		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
+	];
+
+insertFunctionTemplate[ name_String, cell_CellObject ] := insertFunctionTemplate[ name, cell, parentNotebook @ cell ];
+
+insertFunctionTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
+	Module[ { uuid, cellexpr },
+		resolveInlineReferences @ ParentCell @ parent;
+		uuid = CreateUUID[ ];
+		cellexpr = functionTemplateCell[ name, {}, "Input", uuid ];
 		NotebookWrite[ parent, cellexpr ];
 		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
 	];
