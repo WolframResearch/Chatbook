@@ -81,7 +81,8 @@ resolveInlineReferences[ cell_CellObject ] := (
     resolveLastInlineReference[ ];
     resolveInlineReferences[
         cell,
-        Cells[ cell, CellStyle -> { "InlineModifierChooser", "InlineFunctionChooser", "InlinePersonaChooser" } ]
+        Cells[ cell, CellStyle -> { "InlineModifierChooser", "InlineFunctionChooser", "InlinePersonaChooser",
+                                    "InlineModifierReference", "InlineFunctionReference", "InlinePersonaReference"} ]
     ]
 );
 
@@ -1537,16 +1538,16 @@ insertPersonaTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
 
 SetAttributes[modifierCommitAction, HoldRest]
 
-modifierCommitAction[action: "Enter", var_, state_] := (
+modifierCommitAction[action: "Enter", input_, params_, state_] := (
 	(*Print[{Hold[var], var, action}];*)
 	(* Pressing enter should effectively accept the first match, if there is one *)
-	Replace[modifierCompletion[var], {match_, ___} :> (var = match)]
+	Replace[modifierCompletion[input], {match_, ___} :> (input = match)]
 )
 
-modifierCommitAction[action_, var_, state_] := (
+modifierCommitAction[action_, input_, params_, state_] := (
 	(*Print[{Hold[var], var, action}];*)
 	(* If the "ReturnKeyDown" trap was avoided, do the state change here *)
-	setModifierState[state, "Chosen"]
+	setModifierState[state, "Chosen", input, params]
 )
 
 
@@ -1556,7 +1557,7 @@ modifierCommitAction[action_, var_, state_] := (
 
 SetAttributes[setModifierState, HoldFirst]
 
-setModifierState[state_, "Input"] := (
+setModifierState[state_, "Input", input_, params_] := (
 	state = "Input";
 	MathLink`CallFrontEnd[FrontEnd`BoxReferenceFind[
 			FE`BoxReference[MathLink`CallFrontEnd[FrontEnd`Value[FEPrivate`Self[]]],
@@ -1566,15 +1567,21 @@ setModifierState[state_, "Input"] := (
 	FrontEndExecute[FrontEnd`FrontEndToken["MoveNextPlaceHolder"]];
 )
 
-setModifierState[state_, "Chosen"] := (
-	state = "Chosen";
-	SelectionMove[EvaluationCell[], All, Cell];
-	FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]]
-)
+setModifierState[state_, "Chosen", input_, params_] := 
+Enclose[
+	With[{cellobj = EvaluationCell[]},
+		state = "Chosen";
+		SelectionMove[cellobj, All, Cell];
+		FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]];
+		CurrentValue[cellobj, TaggingRules] = <| "PromptModifierName" -> input, "PromptArguments" -> params |>;
+	]
+	,
+	throwInternalFailure[ setModifierState[state, "Chosen", input, params], ## ] &
+]
 
-setModifierState[state_, "Replace" -> input_String] := (
+setModifierState[state_, "Replace", input_, params_] := (
 	SelectionMove[EvaluationCell[], All, Cell];
-	NotebookWrite[InputNotebook[], "#" <> input]
+	NotebookWrite[InputNotebook[], "#" <> toModifierString[input, params]]
 )
 
 
@@ -1608,7 +1615,7 @@ modifierTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 								Alignment               -> { Left, Baseline },
 								ContinuousAction        -> False,
 								FieldCompletionFunction -> modifierCompletion,
-								System`CommitAction -> (modifierCommitAction[#, input, state]&),
+								System`CommitAction -> (modifierCommitAction[#, input, params, state]&),
 								BaselinePosition -> Baseline,
 								FieldSize               -> { { 15, Infinity }, Automatic },
 								FieldHint               -> "PromptName", (* FIXME: Is this right? *)
@@ -1634,9 +1641,9 @@ modifierTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 		],
 		{
 			(*{ "KeyDown", "#" } :> NotebookWrite[ EvaluationNotebook[ ], "#" ],*)
-			"EscapeKeyDown" :> setModifierState[state, "Replace" -> toModifierString[input, params]],
+			"EscapeKeyDown" :> setModifierState[state, "Replace", input, params],
 			"ReturnKeyDown" :> setModifierState[state,
-				If[Length[modifierCompletion[input]] > 0 && input =!= "", "Chosen", "Replace" -> toModifierString[input, params]]]
+				If[Length[modifierCompletion[input]] > 0 && input =!= "", "Chosen", "Replace"], input, params]
 		}
 	]
 
@@ -1666,7 +1673,7 @@ modifierTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 				{RGBColor[0.529, 0.776, 0.424], RGBColor[0.647, 0.886, 0.545], RGBColor[0.408, 0.671, 0.294]}
 			}
 		],
-		setModifierState[state, "Input"]
+		setModifierState[state, "Input", input, params]
 		,
 		Appearance -> "Suppressed",
 		BaseStyle -> {},
