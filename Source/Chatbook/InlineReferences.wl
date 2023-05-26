@@ -1356,6 +1356,13 @@ overrideKeyEvents[expr_] :=
 	]
 
 
+backspaceWhenEmpty[expr_, Hold[input_]] :=
+	EventHandler[expr,
+		{"KeyDown", "Backspace"} :> If[input === "", NotebookDelete[EvaluationCell[]]],
+		PassEventsDown -> True
+	]
+
+
 (* ::Section::Closed:: *)
 (*Persona Template*)
 
@@ -1452,7 +1459,7 @@ personaTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] 
 								(*ContentPadding		  -> False,*)
 								FrameMargins			-> 0,
 								BoxID				   -> uuid
-							] // overrideKeyEvents
+							] // overrideKeyEvents // backspaceWhenEmpty[#, Hold[input]]&
 						}
 					},
 					Spacings  -> 0,
