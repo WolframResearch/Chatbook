@@ -1342,6 +1342,21 @@ personaInputSetting // endDefinition;
 
 
 (* ::Section::Closed:: *)
+(*Template Utilities*)
+
+
+overrideKeyEvents[expr_] :=
+	EventHandler[expr, {
+			{"KeyDown", "@"} :> NotebookWrite[EvaluationNotebook[], "@"],
+			{"KeyDown", "#"} :> NotebookWrite[EvaluationNotebook[], "#"],
+			{"KeyDown", "!"} :> NotebookWrite[EvaluationNotebook[], "!"]
+		},
+		PassEventsDown -> False,
+		PassEventsUp -> False
+	]
+
+
+(* ::Section::Closed:: *)
 (*Persona Template*)
 
 
@@ -1437,7 +1452,7 @@ personaTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] 
 								(*ContentPadding		  -> False,*)
 								FrameMargins			-> 0,
 								BoxID				   -> uuid
-							]
+							] // overrideKeyEvents
 						}
 					},
 					Spacings  -> 0,
@@ -1624,7 +1639,7 @@ modifierTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 								(*ContentPadding          -> False,*)
 								FrameMargins            -> 0,
 								BoxID                   -> uuid
-							]
+							] // overrideKeyEvents
 						}
 					},
 					Spacings  -> 0,
@@ -1832,7 +1847,7 @@ functionTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 								(*ContentPadding          -> False,*)
 								FrameMargins            -> 0,
 								BoxID                   -> uuid
-							]
+							] // overrideKeyEvents
 						}
 					},
 					Spacings  -> 0,
