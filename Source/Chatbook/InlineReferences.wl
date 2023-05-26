@@ -1737,16 +1737,16 @@ insertModifierTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
 
 SetAttributes[functionCommitAction, HoldRest]
 
-functionCommitAction[action: "Enter", var_, state_] := (
+functionCommitAction[action: "Enter", input_, params_, state_] := (
 	(*Print[{Hold[var], var, action}];*)
 	(* Pressing enter should effectively accept the first match, if there is one *)
-	Replace[functionCompletion[var], {match_, ___} :> (var = match)]
+	Replace[functionCompletion[input], {match_, ___} :> (input = match)]
 )
 
-functionCommitAction[action_, var_, state_] := (
+functionCommitAction[action_, input_, params_, state_] := (
 	(*Print[{Hold[var], var, action}];*)
 	(* If the "ReturnKeyDown" trap was avoided, do the state change here *)
-	setFunctionState[state, "Chosen"]
+	setFunctionState[state, "Chosen", input, params]
 )
 
 
@@ -1756,7 +1756,7 @@ functionCommitAction[action_, var_, state_] := (
 
 SetAttributes[setFunctionState, HoldFirst]
 
-setFunctionState[state_, "Input"] := (
+setFunctionState[state_, "Input", input_, params_] := (
 	state = "Input";
 	MathLink`CallFrontEnd[FrontEnd`BoxReferenceFind[
 			FE`BoxReference[MathLink`CallFrontEnd[FrontEnd`Value[FEPrivate`Self[]]],
@@ -1766,13 +1766,19 @@ setFunctionState[state_, "Input"] := (
 	FrontEndExecute[FrontEnd`FrontEndToken["MoveNextPlaceHolder"]];
 )
 
-setFunctionState[state_, "Chosen"] := (
-	state = "Chosen";
-	SelectionMove[EvaluationCell[], All, Cell];
-	FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]]
-)
+setFunctionState[state_, "Chosen", input_, params_] := 
+Enclose[
+	With[{cellobj = EvaluationCell[]},
+		state = "Chosen";
+		SelectionMove[cellobj, All, Cell];
+		FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]];
+		CurrentValue[cellobj, TaggingRules] = <| "PromptFunctionName" -> input, "PromptArguments" -> params |>;
+	]
+	,
+	throwInternalFailure[ setFunctionState[state, "Chosen", input, params], ## ]&
+]
 
-setFunctionState[state_, "Replace" -> input_String] := (
+setFunctionState[state_, "Replace", input_, params_] := (
 	SelectionMove[EvaluationCell[], All, Cell];
 	NotebookWrite[InputNotebook[], "!" <> input]
 )
@@ -1811,7 +1817,7 @@ functionTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 								Alignment               -> { Left, Baseline },
 								ContinuousAction        -> False,
 								FieldCompletionFunction -> functionCompletion,
-								System`CommitAction -> (functionCommitAction[#, input, state]&),
+								System`CommitAction -> (functionCommitAction[#, input, params, state]&),
 								BaselinePosition -> Baseline,
 								FieldSize               -> { { 15, Infinity }, Automatic },
 								FieldHint               -> "PromptName", (* FIXME: Is this right? *)
@@ -1837,9 +1843,9 @@ functionTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 		],
 		{
 			(*{ "KeyDown", "!" } :> NotebookWrite[ EvaluationNotebook[ ], "!" ],*)
-			"EscapeKeyDown" :> setFunctionState[state, "Replace" -> toFunctionString[input, params]],
+			"EscapeKeyDown" :> setFunctionState[state, "Replace", input, params],
 			"ReturnKeyDown" :> setFunctionState[state,
-				If[Length[functionCompletion[input]] > 0 && input =!= "", "Chosen", "Replace" -> toFunctionString[input, params]]]
+				If[Length[functionCompletion[input]] > 0 && input =!= "", "Chosen", "Replace"], input, params]
 		}
 	]
 
@@ -1875,7 +1881,7 @@ functionTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 				{RGBColor[1.000, 0.608, 0.255], RGBColor[1., 0.765, 0.553], RGBColor[0.914, 0.522, 0.169]}
 			}
 		],
-		setFunctionState[state, "Input"]
+		setFunctionState[state, "Input", input, params]
 		,
 		Appearance -> "Suppressed",
 		BaseStyle -> {},
@@ -1895,7 +1901,7 @@ Cell[BoxData[FormBox[
 	TemplateBox[<|"input" -> input, "params" -> params, "state" -> state, "uuid" -> uuid|>,
 		"ChatbookFunction"
 	], TextForm]],
-	"InlineModifierReference",
+	"InlineFunctionReference",
 	Background -> None,
 	Deployed -> True
 ]
