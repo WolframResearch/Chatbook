@@ -84,10 +84,16 @@ InsertInlineReference[ type_, cell_CellObject ] := insertInlineReference[ type, 
 InsertInlineReference // endDefinition;
 
 insertInlineReference // beginDefinition;
+
 insertInlineReference[ "Persona"         , args___ ] := insertPersonaInputBox @ args;
 insertInlineReference[ "TrailingFunction", args___ ] := insertTrailingFunctionInputBox @ args;
 insertInlineReference[ "Function"        , args___ ] := insertFunctionInputBox @ args;
 insertInlineReference[ "Modifier"        , args___ ] := insertModifierInputBox @ args;
+
+insertInlineReference[ "PersonaTemplate" , args___ ] := insertPersonaTemplate @ args;
+insertInlineReference[ "FunctionTemplate", args___ ] := insertFunctionTemplate @ args;
+insertInlineReference[ "ModifierTemplate", args___ ] := insertModifierTemplate @ args;
+
 insertInlineReference // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

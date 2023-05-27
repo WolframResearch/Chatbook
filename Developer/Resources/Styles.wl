@@ -1,8 +1,13 @@
+(* ::Package:: *)
+
 Begin[ "Wolfram`ChatbookStylesheetBuilder`Private`" ];
 
-(* ::**************************************************************************************************************:: *)
+
+
 (* ::Section::Closed:: *)
 (*Notebook*)
+
+
 Cell[
     StyleData[ "Notebook" ],
     TaggingRules -> <| "ChatNotebookSettings" -> <| |> |>,
@@ -21,17 +26,31 @@ Cell[
     |>
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Section::Closed:: *)
 (*Text*)
+
+
 Cell[
     StyleData[ "Text" ],
     ContextMenu -> contextMenu[ $askMenuItem, Delimiter, "Text" ]
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Section::Closed:: *)
 (*Input*)
+
+
 Cell[
     StyleData[ "Input" ],
     StyleKeyMapping -> {
@@ -48,21 +67,39 @@ Cell[
     ]
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Section::Closed:: *)
 (*Output*)
+
+
 Cell[
     StyleData[ "Output" ],
     ContextMenu -> contextMenu[ $askMenuItem, Delimiter, "Output" ]
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Section::Closed:: *)
 (*Chat Input Styles*)
 
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*FramedChatCell*)
+
+
 Cell[
     StyleData[ "FramedChatCell", StyleDefinitions -> StyleData[ "Text" ] ],
     AutoQuoteCharacters      -> { },
@@ -73,9 +110,16 @@ Cell[
     ShowCellLabel            -> False
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatInput*)
+
+
 Cell[
     StyleData[ "ChatInput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
     CellFrameColor    -> RGBColor[ "#a3c9f2" ],
@@ -105,17 +149,17 @@ Cell[
     CellEventActions -> {
         { "KeyDown", "@" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "Persona", $CellContext`cell ]
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "PersonaTemplate", $CellContext`cell ]
         ]
         ,
         { "KeyDown", "!" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "Function", $CellContext`cell ]
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "FunctionTemplate", $CellContext`cell ]
         ]
         ,
         { "KeyDown", "#" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "Modifier", $CellContext`cell ]
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "ModifierTemplate", $CellContext`cell ]
         ]
         (* ,
         { "KeyDown", ">" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
@@ -125,9 +169,16 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsubsection::Closed:: *)
 (*ChatInputActiveCellDingbat*)
+
+
 Cell[
     StyleData[ "ChatInputActiveCellDingbat" ],
     TemplateBoxOptions -> {
@@ -135,9 +186,16 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsubsection::Closed:: *)
 (*ChatInputCellDingbat*)
+
+
 Cell[
     StyleData[ "ChatInputCellDingbat" ],
     TemplateBoxOptions -> {
@@ -145,9 +203,16 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*SideChat*)
+
+
 Cell[
     StyleData[ "SideChat", StyleDefinitions -> StyleData[ "ChatInput" ] ],
     Background        -> RGBColor[ "#fafcff" ],
@@ -166,9 +231,16 @@ Cell[
     ]
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatQuery*)
+
+
 Cell[
     StyleData[ "ChatQuery", StyleDefinitions -> StyleData[ "ChatInput" ] ],
     CellDingbat      -> Cell[ BoxData @ TemplateBox[ { }, "ChatQueryIcon" ], Background -> None ],
@@ -178,9 +250,16 @@ Cell[
     StyleKeyMapping  -> { "~" -> "ChatDelimiter", "'" -> "ChatInput" }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatSystemInput*)
+
+
 Cell[
     StyleData[ "ChatSystemInput", StyleDefinitions -> StyleData[ "ChatInput" ] ],
     CellDingbat       -> Cell[ BoxData @ TemplateBox[ { }, "ChatSystemIcon" ], Background -> None ],
@@ -193,13 +272,24 @@ Cell[
     StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "ChatInput", "Backspace" -> "SideChat" }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Section::Closed:: *)
 (*Chat Output Styles*)
 
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatOutput*)
+
+
 Cell[
     StyleData[ "ChatOutput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
     Background          -> RGBColor[ "#fcfdff" ],
@@ -215,9 +305,16 @@ Cell[
     menuInitializer[ "ChatOutput", RGBColor[ "#ecf0f5" ] ]
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*AssistantOutput*)
+
+
 Cell[
     StyleData[ "AssistantOutput", StyleDefinitions -> StyleData[ "ChatOutput" ] ],
     Background     -> RGBColor[ "#edf2f7" ],
@@ -225,9 +322,16 @@ Cell[
     assistantMenuInitializer[ "AssistantOutput", RGBColor[ "#d0deec" ] ]
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*AssistantOutputWarning*)
+
+
 Cell[
     StyleData[ "AssistantOutputWarning", StyleDefinitions -> StyleData[ "AssistantOutput" ] ],
     Background     -> RGBColor[ "#fdfaf4" ],
@@ -235,9 +339,16 @@ Cell[
     assistantMenuInitializer[ "AssistantOutput", RGBColor[ "#f1e7de" ] ]
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*AssistantOutputError*)
+
+
 Cell[
     StyleData[ "AssistantOutputError", StyleDefinitions -> StyleData[ "AssistantOutput" ] ],
     Background     -> RGBColor[ "#fdf4f4" ],
@@ -245,13 +356,24 @@ Cell[
     assistantMenuInitializer[ "AssistantOutput", RGBColor[ "#f1dede" ] ]
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Section::Closed:: *)
 (*Chat Block Delimiters*)
 
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatBlockDivider*)
+
+
 Cell[
     StyleData[ "ChatBlockDivider", StyleDefinitions -> StyleData[ "Section" ] ],
     CellFrame           -> { { 0, 0 }, { 0, 8 } },
@@ -287,9 +409,16 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatDelimiter*)
+
+
 Cell[
     StyleData[ "ChatDelimiter" ],
     Background             -> GrayLevel[ 0.95 ],
@@ -343,9 +472,16 @@ Cell[
     Initialization :> NotebookDelete @ Cells[ EvaluationCell[ ], AttachedCell -> True, CellStyle -> "ChatMenu" ]
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsubsection::Closed:: *)
 (*ChatDelimiterCellDingbat*)
+
+
 Cell[
     StyleData[ "ChatDelimiterCellDingbat" ],
     TemplateBoxOptions -> {
@@ -353,21 +489,39 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Section::Closed:: *)
 (*Chat Output Formatting*)
 
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatCodeBlock*)
+
+
 Cell[
     StyleData[ "ChatCodeBlock" ],
     Background -> GrayLevel[ 1 ]
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatCodeBlockButtonPanel*)
+
+
 Cell[
     StyleData[ "ChatCodeBlockButtonPanel" ],
     TemplateBoxOptions -> {
@@ -379,9 +533,16 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatCode*)
+
+
 Cell[
     StyleData[ "ChatCode", StyleDefinitions -> StyleData[ "Input" ] ],
     Background           -> GrayLevel[ 1 ],
@@ -393,17 +554,31 @@ Cell[
     ShowSyntaxStyles     -> True
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatCodeActive*)
+
+
 Cell[
     StyleData[ "ChatCodeActive", StyleDefinitions -> StyleData[ "ChatCode" ] ],
     ShowAutoStyles -> False
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatCodeBlockTemplate*)
+
+
 Cell[
     StyleData[ "ChatCodeBlockTemplate" ],
     TemplateBoxOptions -> {
@@ -418,9 +593,16 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatCodeInlineTemplate*)
+
+
 Cell[
     StyleData[ "ChatCodeInlineTemplate" ],
     TemplateBoxOptions -> {
@@ -435,9 +617,16 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*Link*)
+
+
 Cell[
     StyleData[ "Link" ],
     FontFamily -> "Source Sans Pro",
@@ -448,9 +637,16 @@ Cell[
         ]
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*TextRefLink*)
+
+
 Cell[
     StyleData[ "TextRefLink" ],
     TemplateBoxOptions -> {
@@ -468,9 +664,16 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*InlineFormula*)
+
+
 Cell[
     StyleData[ "InlineFormula" ],
     AutoSpacing         -> True,
@@ -494,13 +697,24 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Section::Closed:: *)
 (*Chat Menus*)
 
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatMenuButton*)
+
+
 Cell[
     StyleData[ "ChatMenuButton" ],
     TemplateBoxOptions -> {
@@ -553,9 +767,16 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatMenuItemToolbarIcon*)
+
+
 Cell[
     StyleData[ "ChatMenuItemToolbarIcon" ],
     TemplateBoxOptions -> {
@@ -569,9 +790,16 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatMenuItemDelimiter*)
+
+
 Cell[
     StyleData[ "ChatMenuItemDelimiter" ],
     TemplateBoxOptions -> {
@@ -602,9 +830,16 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatMenuItem*)
+
+
 Cell[
     StyleData[ "ChatMenuItem" ],
     TemplateBoxOptions -> {
@@ -650,9 +885,16 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatMenuSection*)
+
+
 Cell[
     StyleData[ "ChatMenuSection" ],
     TemplateBoxOptions -> {
@@ -690,9 +932,16 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatOutputMenu*)
+
+
 Cell[
     StyleData[ "ChatOutputMenu" ],
     TemplateBoxOptions -> {
@@ -700,9 +949,16 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatMenuLabel*)
+
+
 Cell[
     StyleData[ "ChatMenuLabel" ],
     FontColor       -> GrayLevel[ 0.2 ],
@@ -713,24 +969,44 @@ Cell[
     LineIndent      -> 0
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatMenuSectionLabel*)
+
+
 Cell[
     StyleData[ "ChatMenuSectionLabel", StyleDefinitions -> StyleData[ "ChatMenuLabel" ] ],
     FontSize  -> 13,
     FontColor -> GrayLevel[ 0.35 ]
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Section::Closed:: *)
 (*Icons*)
 
+
 makeIconTemplateBoxStyle /@ FileNames[ "*.wl", $iconDirectory ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatOutputStopButtonWrapper*)
+
+
 Cell[
     StyleData[ "ChatOutputStopButtonWrapper" ],
     TemplateBoxOptions -> {
@@ -754,9 +1030,16 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatOutputStopButtonProgressWrapper*)
+
+
 Cell[
     StyleData[ "ChatOutputStopButtonProgressWrapper" ],
     TemplateBoxOptions -> {
@@ -789,9 +1072,16 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*AssistantIconTabbed*)
+
+
 Cell[
     StyleData[ "AssistantIconTabbed" ],
     TemplateBoxOptions -> {
@@ -799,21 +1089,109 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
+(* ::Section::Closed:: *)
+(*Templates*)
+
+
+(* ::Subsection::Closed:: *)
+(*ChatbookPersona*)
+
+
+Cell[
+	StyleData["ChatbookPersona"],
+	TemplateBoxOptions -> {
+		DisplayFunction -> (
+			NamespaceBox["ChatbookPersonaID",
+				DynamicModuleBox[{},
+					DynamicBox[ToBoxes @ Wolfram`Chatbook`InlineReferences`personaTemplateBoxes[1, #input, #state, #uuid]],
+					Initialization :> (
+						Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+						Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = EvaluationCell[ ]
+					)
+				]
+			]&),
+		InterpretationFunction -> (InterpretationBox["", "@"<>#input]&)
+	}
+]
+
+
+(* ::Subsection::Closed:: *)
+(*ChatbookModifier*)
+
+
+Cell[
+	StyleData["ChatbookModifier"],
+	TemplateBoxOptions -> {
+		DisplayFunction -> (
+			NamespaceBox["ChatbookModifierID",
+				DynamicModuleBox[{},
+					DynamicBox[ToBoxes @ Wolfram`Chatbook`InlineReferences`modifierTemplateBoxes[1, #input, #params, #state, #uuid]],
+					Initialization :> (
+						Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+						Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = EvaluationCell[ ]
+					)
+				]
+			]&),
+		InterpretationFunction -> (InterpretationBox["", "#"<>#input]&)
+	}
+]
+
+
+(* ::Subsection::Closed:: *)
+(*ChatbookFunction*)
+
+
+Cell[
+	StyleData["ChatbookFunction"],
+	TemplateBoxOptions -> {
+		DisplayFunction -> (
+			NamespaceBox["ChatbookFunctionID",
+				DynamicModuleBox[{},
+					DynamicBox[ToBoxes @ Wolfram`Chatbook`InlineReferences`functionTemplateBoxes[1, #input, #params, #state, #uuid]],
+					Initialization :> (
+						Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+						Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = EvaluationCell[ ]
+					)
+				]
+			]&),
+		InterpretationFunction -> (InterpretationBox["", "!"<>#input]&)
+	}
+]
+
+
 (* ::Section::Closed:: *)
 (*Misc Styles*)
 
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*InlineReferenceText*)
+
+
 Cell[
     StyleData[ "InlineReferenceText", StyleDefinitions -> StyleData[ "Text" ] ],
     FontColor -> GrayLevel[ 0.2 ]
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatExcluded*)
+
+
 Cell[
     StyleData[ "ChatExcluded" ],
     CellTrayWidgets -> <|
@@ -833,9 +1211,16 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatWidgetButton*)
+
+
 Cell[
     StyleData[ "ChatWidgetButton" ],
     TemplateBoxOptions -> {
@@ -855,9 +1240,16 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Subsection::Closed:: *)
 (*ChatCounterLabel*)
+
+
 Cell[
     StyleData["ChatCounterLabel"],
     TemplateBoxOptions -> {
@@ -871,7 +1263,14 @@ Cell[
     }
 ]
 
+
+
 (* ::**************************************************************************************************************:: *)
+(**)
+
+
 (* ::Section::Closed:: *)
 (*Package Footer*)
+
+
 End[ ];
