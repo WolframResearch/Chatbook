@@ -795,7 +795,14 @@ sendChat // endDefinition;
 (*getLLMEvaluator*)
 getLLMEvaluator // beginDefinition;
 getLLMEvaluator[ as_Association ] := getLLMEvaluator[ as, Lookup[ as, "LLMEvaluator" ] ];
-getLLMEvaluator[ as_, name_String ] := getLLMEvaluator[ as, getNamedLLMEvaluator @ name ];
+getLLMEvaluator[ as_, name_String ] :=
+	(* If there isn't any information on `name`, getNamedLLMEvaluator just
+		returns `name`; if that happens, avoid infinite recursion by just
+		returning *)
+	Replace[getNamedLLMEvaluator[name], {
+		name -> name,
+		other_ :> getLLMEvaluator[as, other]
+	}]
 getLLMEvaluator[ as_, evaluator_Association ] := evaluator;
 getLLMEvaluator[ _, _ ] := None;
 getLLMEvaluator // endDefinition;
