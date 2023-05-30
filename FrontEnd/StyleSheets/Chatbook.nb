@@ -1571,7 +1571,6 @@ Notebook[
     },
     {None, None}
    },
-   DefaultNewCellStyle -> "Input",
    CounterAssignments -> {{"ChatInputCount", 0}},
    FontWeight -> "DemiBold",
    FontColor -> GrayLevel[0.2]
@@ -1645,7 +1644,6 @@ Notebook[
     },
     {None, None}
    },
-   DefaultNewCellStyle -> "Input",
    CounterAssignments -> {{"ChatInputCount", 0}},
    FontSize -> 6,
    Background -> GrayLevel[0.95]
