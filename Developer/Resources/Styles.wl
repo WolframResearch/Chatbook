@@ -461,8 +461,7 @@ Cell[
                 ],
                 Background    -> None,
                 CellFrame     -> 0,
-                CellMargins   -> 0,
-                Magnification -> 0.75 Inherited
+                CellMargins   -> 0
             ],
             None
         },
