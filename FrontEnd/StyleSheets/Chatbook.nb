@@ -1665,7 +1665,9 @@ Notebook[
              With[
               {
                Wolfram`Chatbook`UI`Private`menuData = 
-                GetChatInputLLMConfigurationSelectorMenuData[],
+                Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
+
+                ],
                Wolfram`Chatbook`UI`Private`personaValue = 
                 Wolfram`Chatbook`UI`Private`currentValueOrigin[
                  Wolfram`Chatbook`UI`Private`cell$$,
@@ -3866,7 +3868,7 @@ Notebook[
    }
   ],
   Cell[
-   StyleData["ChatIconNoPersona"],
+   StyleData["ChatIconPlainChat"],
    TemplateBoxOptions -> {
     DisplayFunction ->
      (Function[
@@ -10047,6 +10049,6 @@ Notebook[
    }
   ]
  },
- FrontEndVersion -> "13.2 for Mac OS X ARM (64-bit) (January 30, 2023)",
+ FrontEndVersion -> "13.2 for Mac OS X ARM (64-bit) (November 18, 2022)",
  StyleDefinitions -> "PrivateStylesheetFormatting.nb"
 ]
