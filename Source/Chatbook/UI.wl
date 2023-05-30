@@ -1540,7 +1540,7 @@ MakeChatDelimiterCellDingbat[] := Module[{
 	(* Construct the action menu display label *)
 	(*-----------------------------------------*)
 
-	menuLabel = RawBoxes @ TemplateBox[ { }, "ChatSystemMenu" ];
+	menuLabel = $dynamicMenuLabel;
 
 	button = Button[
 		Framed[

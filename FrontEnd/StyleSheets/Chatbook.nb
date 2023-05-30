@@ -1659,7 +1659,46 @@ Notebook[
       ButtonBox[
        FrameBox[
         PaneBox[
-         TemplateBox[{}, "ChatSystemMenu"],
+         DynamicModuleBox[
+          {Wolfram`Chatbook`UI`Private`cell$$},
+          DynamicBox[
+           ToBoxes[
+            If[ TrueQ[Wolfram`Chatbook`Common`$cloudNotebooks],
+             RawBoxes[TemplateBox[{}, "ChatInputCellDingbat"]],
+             With[
+              {
+               Wolfram`Chatbook`UI`Private`menuData = 
+                GetChatInputLLMConfigurationSelectorMenuData[],
+               Wolfram`Chatbook`UI`Private`personaValue = 
+                Wolfram`Chatbook`UI`Private`currentValueOrigin[
+                 Wolfram`Chatbook`UI`Private`cell$$,
+                 {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+                ]
+              },
+              FirstCase[
+               Wolfram`Chatbook`UI`Private`menuData["Personas"],
+               {
+                Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
+                Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]],
+                Blank[]
+               } :> Wolfram`Chatbook`UI`Private`icon,
+               Style[
+                Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
+                GrayLevel[0.5]
+               ]
+              ]
+             ]
+            ],
+            StandardForm
+           ]
+          ],
+          Initialization :>
+           (Quiet[Needs["Wolfram`Chatbook`" -> None]];
+           Wolfram`Chatbook`UI`Private`cell$$ = 
+            Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]]),
+          DynamicModuleValues :> { },
+          UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
+         ],
          Alignment -> {Center, Center},
          ImageSize -> {25, 25},
          ImageSizeAction -> "ShrinkToFit"
