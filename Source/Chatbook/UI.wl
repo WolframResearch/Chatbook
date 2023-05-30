@@ -1618,7 +1618,8 @@ openChatInputActionMenu[dingbatCellObj_CellObject] := With[{
 		)
 	}]];
 
-	makeChatInputActionMenuContent[
+	makeChatActionMenuContent[
+		"Input",
 		menuData["Personas"],
 		menuData["Models"],
 		"ActionCallback" -> actionCallback,
@@ -1692,7 +1693,8 @@ openChatDelimiterActionMenu[dingbatCellObj_CellObject] := With[{
 		)
 	}]];
 
-	makeChatDelimiterActionMenuContent[
+	makeChatActionMenuContent[
+		"Delimiter",
 		menuData["Personas"],
 		menuData["Models"],
 		"ActionCallback" -> actionCallback,
@@ -1792,9 +1794,9 @@ nestedLookup[as_, keys_] := nestedLookup[as, keys, Missing["KeySequenceAbsent", 
 
 (*====================================*)
 
-SetFallthroughError[makeChatInputActionMenuContent]
+SetFallthroughError[makeChatActionMenuContent]
 
-Options[makeChatInputActionMenuContent] = {
+Options[makeChatActionMenuContent] = {
 	"PersonaValue" -> Automatic,
 	"ModelValue" -> Automatic,
 	"RoleValue" -> Automatic,
@@ -1802,7 +1804,8 @@ Options[makeChatInputActionMenuContent] = {
 	"ActionCallback" -> (Null &)
 }
 
-makeChatInputActionMenuContent[
+makeChatActionMenuContent[
+	containerType : "Input" | "Delimiter",
 	(* List of {tagging rule value, icon, list item label} *)
 	personas:{___List},
 	(* List of {tagging rule value, icon, list item label} *)
@@ -1893,6 +1896,17 @@ makeChatInputActionMenuContent[
 			personas
 		],
 		{
+			ConfirmReplace[containerType, {
+				"Input" -> Nothing,
+				"Delimiter" :> Splice[{
+					Delimiter,
+					{
+						alignedMenuIcon[getIcon["ChatBlockSettingsMenuIcon"]],
+						"Chat Block Settings\[Ellipsis]",
+						"OpenChatBlockSettings"
+					}
+				}]
+			}],
 			Delimiter,
 			{alignedMenuIcon[getIcon["PersonaOther"]], "Add & Manage Personas\[Ellipsis]", "PersonaManage"},
 			{alignedMenuIcon[getIcon["PersonaFromURL"]], "Install From URL\[Ellipsis]", "PersonaURLInstall"},
@@ -1928,149 +1942,6 @@ makeChatInputActionMenuContent[
 ]]
 
 (*====================================*)
-
-SetFallthroughError[makeChatDelimiterActionMenuContent]
-
-Options[makeChatDelimiterActionMenuContent] = {
-	"PersonaValue" -> Automatic,
-	"ModelValue" -> Automatic,
-	"RoleValue" -> Automatic,
-	"TemperatureValue" -> Automatic,
-	"ActionCallback" -> (Null &)
-}
-
-makeChatDelimiterActionMenuContent[
-	(* List of {tagging rule value, icon, list item label} *)
-	personas:{___List},
-	(* List of {tagging rule value, icon, list item label} *)
-	models:{___List},
-	OptionsPattern[]
-] := With[{
-	callback = OptionValue["ActionCallback"]
-}, Module[{
-	personaValue = OptionValue["PersonaValue"],
-	modelValue = OptionValue["ModelValue"],
-	roleValue = OptionValue["RoleValue"],
-	tempValue = OptionValue["TemperatureValue"],
-	advancedSettingsMenu,
-	menuLabel,
-	menuItems
-},
-
-	(*-------------------------------------------------*)
-	(* Construct the Advanced Settings submenu content *)
-	(*-------------------------------------------------*)
-
-	advancedSettingsMenu = Join[
-		{
-			"Temperature",
-			{
-				None,
-				Pane[
-					Slider[
-						tempValue,
-						{ 0, 2, 0.01 },
-						ImageSize  -> { 140, Automatic },
-						ImageMargins -> {{5, 0}, {5, 5}},
-						Appearance -> "Labeled"
-					],
-					ImageSize -> { 180, Automatic },
-					BaseStyle -> { FontSize -> 12 }
-				],
-				None
-			}
-		},
-		{"Models"},
-		Map[
-			entry |-> ConfirmReplace[entry, {
-				{model_?StringQ, icon_, listItemLabel_} :> {
-					alignedMenuIcon[model, modelValue, icon],
-					listItemLabel,
-					Hold[callback["Model", model]]
-				}
-			}],
-			models
-		],
-		{"Roles"},
-		Map[
-			entry |-> ConfirmReplace[entry, {
-				{role_?StringQ, icon_} :> {
-					alignedMenuIcon[role, roleValue, icon],
-					role,
-					Hold[callback["Role", role]]
-				}
-			}],
-			{
-				{"User", getIcon["RoleUser"]},
-				{"System", getIcon["RoleSystem"]}
-			}
-		]
-	];
-
-	advancedSettingsMenu = MakeMenu[
-		advancedSettingsMenu,
-		GrayLevel[0.85],
-		200
-	];
-
-	(*------------------------------------*)
-	(* Construct the popup menu item list *)
-	(*------------------------------------*)
-
-	menuItems = Join[
-		{"Personas"},
-		Map[
-			entry |-> ConfirmReplace[entry, {
-				{persona_?StringQ, icon_, listItemLabel_} :> {
-					alignedMenuIcon[persona, personaValue, icon],
-					listItemLabel,
-					Hold[callback["Persona", persona]]
-				}
-			}],
-			personas
-		],
-		{
-			Delimiter,
-			{
-				alignedMenuIcon[getIcon["ChatBlockSettingsMenuIcon"]],
-				"Chat Block Settings\[Ellipsis]",
-				"OpenChatBlockSettings"
-			},
-			Delimiter,
-			{alignedMenuIcon[getIcon["PersonaOther"]], "Add & Manage Personas\[Ellipsis]", "PersonaManage"},
-			{alignedMenuIcon[getIcon["PersonaFromURL"]], "Install From URL\[Ellipsis]", "PersonaURLInstall"},
-			Delimiter,
-			{
-				alignedMenuIcon[getIcon["AdvancedSettings"]],
-				Grid[
-					{{
-						Item["Advanced Settings", ItemSize -> Fit, Alignment -> Left],
-						RawBoxes[TemplateBox[{}, "Triangle"]]
-					}},
-					Spacings -> 0
-				],
-				Hold[AttachCell[
-					EvaluationCell[],
-					advancedSettingsMenu,
-					{Right, Bottom},
-					{50, 50},
-					{Left, Bottom},
-					RemovalConditions -> "MouseExit"
-				]]
-			}
-		}
-	];
-
-	menu = MakeMenu[
-		menuItems,
-		GrayLevel[0.85],
-		225
-	];
-
-	menu
-]]
-
-(*------------------------------------*)
 
 SetFallthroughError[personaDisplayName]
 
