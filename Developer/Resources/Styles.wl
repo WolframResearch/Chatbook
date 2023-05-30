@@ -382,7 +382,6 @@ Cell[
     CellMargins         -> { { 5, 25 }, { Inherited, Inherited } },
     CellTrayWidgets     -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterAssignments  -> { { "ChatInputCount", 0 } },
-    DefaultNewCellStyle -> "Input",
     FontColor           -> GrayLevel[ 0.2 ],
     FontWeight          -> "DemiBold",
     ShowCellLabel       -> False,
@@ -428,7 +427,6 @@ Cell[
     CellMargins            -> { { 5, 0 }, { 10, 10 } },
     CellTrayWidgets        -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterAssignments     -> { { "ChatInputCount", 0 } },
-    DefaultNewCellStyle    -> "Input",
     FontSize               -> 6,
     ShowCellLabel          -> False,
 
