@@ -29,7 +29,7 @@ PacletObject[<|
 		},
 		{"LLMConfiguration",
 			"Personas" -> {
-				"NoPersona",
+				"PlainChat",
 				"CodeAssistant",
 				"CodeWriter",
 				"Wolfie",

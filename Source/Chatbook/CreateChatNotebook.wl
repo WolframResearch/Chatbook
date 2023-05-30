@@ -140,7 +140,7 @@ $inlinedStylesheet := $inlinedStylesheet = Import[
 CreateChatDrivenNotebook[ opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] :=
     CreateChatNotebook[
         "ChatDrivenNotebook" -> True,
-        "LLMEvaluator"       -> "NoPersona",
+        "LLMEvaluator"       -> "PlainChat",
         DefaultNewCellStyle  -> "ChatInput",
         opts
     ];

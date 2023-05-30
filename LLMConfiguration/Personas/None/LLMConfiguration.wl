@@ -1,4 +1,4 @@
 <|
     "BasePrompt" -> None,
-    "Icon"       -> RawBoxes @ TemplateBox[ { }, "ChatIconNoPersona" ]
+    "Icon"       -> RawBoxes @ TemplateBox[ { }, "ChatIconPlainChat" ]
 |>
