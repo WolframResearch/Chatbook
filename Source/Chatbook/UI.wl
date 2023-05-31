@@ -1867,7 +1867,7 @@ makeChatActionMenuContent[
 				}
 			}],
 			{
-				{"User", getIcon["RoleUser"]},
+				{"User", getIcon["ChatIconUser"]},
 				{"System", getIcon["RoleSystem"]}
 			}
 		]
