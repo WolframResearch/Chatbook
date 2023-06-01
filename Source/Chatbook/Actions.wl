@@ -1165,6 +1165,13 @@ checkResponse[ settings_, container_, cell_, as: KeyValuePattern[ "StatusCode" -
         writeErrorCell[ cell, $badResponse = Association[ as, "Body" -> body, "BodyJSON" -> data ] ]
     ];
 
+checkResponse[
+    settings: KeyValuePattern[ "ToolsEnabled" -> False ],
+    container_,
+    cell_,
+    as_Association
+] := writeReformattedCell[ settings, container, cell ];
+
 checkResponse[ settings_, container_? toolFreeQ, cell_, as_Association ] :=
     writeReformattedCell[ settings, container, cell ];
 
@@ -1585,6 +1592,8 @@ buildSystemPrompt // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getToolPrompt*)
 getToolPrompt // beginDefinition;
+
+getToolPrompt[ KeyValuePattern[ "ToolsEnabled" -> False ] ] := "";
 
 (* TODO: include tools defined by the persona! *)
 getToolPrompt[ settings_ ] := Enclose[
