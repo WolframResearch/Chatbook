@@ -27,14 +27,15 @@ CreateChatNotebook // Options = {
     "DynamicAutoFormat"                 -> Automatic,
     "FrequencyPenalty"                  -> 0.1,
     "IncludeHistory"                    -> Automatic,
+    "LLMEvaluator"                      -> "CodeAssistant",
     "MaxTokens"                         -> Automatic,
     "MergeMessages"                     -> True,
-    "LLMEvaluator"                      -> "CodeAssistant",
     "Model"                             -> "gpt-3.5-turbo",
     "OpenAIKey"                         -> Automatic,
     "PresencePenalty"                   -> 0.1,
     "ShowMinimized"                     -> Automatic,
     "Temperature"                       -> 0.7,
+    "ToolsEnabled"                      -> False,
     "TopP"                              -> 1
 };
 
