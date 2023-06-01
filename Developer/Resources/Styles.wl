@@ -807,7 +807,7 @@ Cell[
                         {
                             CapForm[ "Round" ],
                             GrayLevel[ 0.9 ],
-                            AbsoluteThickness[ 1 ],
+                            AbsoluteThickness[ 2 ],
                             LineBox @ { { -1, 0 }, { 1, 0 } }
                         },
                         AspectRatio  -> Full,
