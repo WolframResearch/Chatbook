@@ -32,9 +32,9 @@ PacletObject[<|
 				"PlainChat",
 				"CodeAssistant",
 				"CodeWriter",
+				"RawModel",
 				"Wolfie",
-				"Birdnardo",
-				"None"
+				"Birdnardo"
 			}
 		},
 		{"FrontEnd"}

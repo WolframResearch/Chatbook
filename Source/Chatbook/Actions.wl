@@ -742,7 +742,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         data = ConfirmBy[ Association @ Flatten @ data, AssociationQ, "Data" ];
 
         If[ data[ "RawOutput" ],
-            persona = ConfirmBy[ GetCachedPersonaData[ "None" ], AssociationQ, "NonePersona" ];
+            persona = ConfirmBy[ GetCachedPersonaData[ "RawModel" ], AssociationQ, "NonePersona" ];
             If[ AssociationQ @ settings[ "LLMEvaluator" ],
                 settings[ "LLMEvaluator" ] = Association[ settings[ "LLMEvaluator" ], persona ],
                 settings = Association[ settings, persona ]

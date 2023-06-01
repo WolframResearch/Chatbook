@@ -1610,7 +1610,7 @@ openChatInputActionMenu[dingbatCellObj_CellObject] := With[{
 			First,
 			FirstMatchingPositionOrder[{
 				"PlainChat",
-				"None",
+				"RawModel",
 				"CodeWriter",
 				"CodeAssistant"
 			}]
