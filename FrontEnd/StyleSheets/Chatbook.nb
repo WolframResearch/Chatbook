@@ -9815,7 +9815,7 @@ Notebook[
                 {
                  DynamicBox[
                   ToBoxes[
-                   If[ TrueQ[CloudSystem`$CloudNotebooks],
+                   If[ FEPrivate`$ProductIDName === "WolframCloud",
                     CurrentValue[
                      EvaluationCell[],
                      {TaggingRules, "PageData", "CurrentPage"},
@@ -9833,7 +9833,7 @@ Notebook[
                  "/",
                  DynamicBox[
                   ToBoxes[
-                   If[ TrueQ[CloudSystem`$CloudNotebooks],
+                   If[ FEPrivate`$ProductIDName === "WolframCloud",
                     CurrentValue[
                      EvaluationCell[],
                      {TaggingRules, "PageData", "PageCount"},
