@@ -29,6 +29,10 @@ GeneralUtilities`SetUsage[CreatePreferencesContent, "
 CreatePreferencesContent[] returns an expression containing the UI shown in the Preferences > AI Settings window.
 "]
 
+GeneralUtilities`SetUsage[CreateToolbarContent, "
+CreateToolbarContent[] is called by the NotebookToolbar to generate the content of the 'Notebook AI Settings' attached menu.
+"]
+
 
 Begin["`Private`"]
 
@@ -143,32 +147,7 @@ CreatePreferencesContent[] := Module[{
 		Alignment -> {Left, Center}
 	];
 
-	chatbookSettings = Grid[{
-		{Row[{
-			tr["Default LLM Evaluator:"],
-			PopupMenu[
-				Dynamic[CurrentValue[$FrontEnd, {System`LLMEvaluator}]],
-				Keys @ personas
-			]
-		}, Spacer[3]]},
-		{Row[{
-			Checkbox[Dynamic[
-				CurrentValue[
-					$FrontEnd,
-					{
-						PrivateFrontEndOptions,
-						"InterfaceSettings",
-						"ChatNotebooks",
-						"Assistance"
-					}
-				]
-			]],
-			"Provide automatic assistance"
-		}]}
-	},
-		Alignment -> {Left, Baseline},
-		Spacings -> {0, 0.7}
-	];
+	chatbookSettings = makeFrontEndAndNotebookSettingsContent[$FrontEnd];
 
 	services = Grid[{
 		{"",                            "Name", "State"},
@@ -218,6 +197,49 @@ CreatePreferencesContent[] := Module[{
 ]
 
 (*====================================*)
+
+CreateToolbarContent[] :=
+	makeFrontEndAndNotebookSettingsContent[EvaluationNotebook[]]
+
+(*=========================================*)
+(* Common preferences content construction *)
+(*=========================================*)
+
+SetFallthroughError[makeFrontEndAndNotebookSettingsContent]
+
+makeFrontEndAndNotebookSettingsContent[
+	targetObj : _FrontEndObject | $FrontEndSession | _NotebookObject
+] := Module[{
+	personas = GetPersonasAssociation[]
+},
+	Grid[
+		{
+			{Row[{
+				tr["Default LLM Evaluator:"],
+				PopupMenu[
+					Dynamic @ CurrentValue[
+						targetObj,
+						{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+					],
+					Keys @ personas
+				]
+			}, Spacer[3]]},
+			{Row[{
+				Checkbox[
+					Dynamic @ CurrentValue[
+						targetObj,
+						{TaggingRules, "ChatNotebookSettings", "Assistance"}
+					]
+				],
+				"Provide automatic assistance"
+			}]}
+		},
+		Alignment -> {Left, Baseline},
+		Spacings -> {0, 0.7}
+	]
+]
+
+(*========================================================*)
 
 (* TODO: Make this look up translations for `name` in text resources data files. *)
 tr[name_?StringQ] := name
