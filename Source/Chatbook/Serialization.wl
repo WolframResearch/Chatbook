@@ -442,8 +442,8 @@ toLLMArg[ arg_ ] := ToString[ arg, InputForm ];
 (* ::Subsubsubsection::Closed:: *)
 (*Tools*)
 fasterCellToString0[
-    Cell[ _, "InlineToolCall", ___, TaggingRules -> KeyValuePattern[ "ToolCall" -> s_String ], ___ ]
-] := s;
+    Cell[ _, "InlineToolCall", ___, TaggingRules -> KeyValuePattern[ "Query" -> s_String ], ___ ]
+] := "TOOLCALL: " <> s <> "\nRESULT\n<<Removed after last message to save space>>\nENDTOOLCALL\n";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
