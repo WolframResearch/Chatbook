@@ -2029,25 +2029,6 @@ GetChatInputLLMConfigurationSelectorMenuData[] := Module[{
 	personas,
 	models
 },
-	(* personas = {
-		{"Helper", getIcon["persona-helper.wl"], "Helper"},
-		{"Code", getIcon["persona-code.wl"], "Code"},
-		{"Documentation", getIcon["persona-documentation.wl"], "Documentation"},
-		{"Wolfie", getIcon["persona-wolfie.wl"], "Wolfie"},
-		{"Birdnardo", getIcon["persona-birdnardo.wl"], "Birdnardo"},
-		{
-			"ConnorGray/OrganizerAssistant",
-			RawBoxes @ TemplateBox[{
-				StyleBox["\"ConnorGray:\"", FontSize -> 10, GrayLevel[
-				0.5], StripOnInput -> False
-				],
-				"\" \"",
-				"\"Organizer Assistant\""
-			}, "RowDefault"],
-			""
-		}
-	}; *)
-
 	personas = KeyValueMap[
 		{key, value} |-> {
 			key,
