@@ -1583,9 +1583,42 @@ openChatInputActionMenu[dingbatCellObj_CellObject] := With[{
 	chatInputCellObj = parentCell[dingbatCellObj]
 }, Module[{
 	menuData = GetChatInputLLMConfigurationSelectorMenuData[],
+	personas,
 	actionCallback,
 	actionMenu
 },
+	(*--------------------------------*)
+	(* Get and sort personas.         *)
+	(*--------------------------------*)
+
+	personas = RaiseConfirmMatch[
+		menuData["Personas"],
+		{{_String, _, _}...}
+	];
+
+	(*
+		If this menu is being rendered into a Chat-Driven notebook, make the
+		'Plain Chat' persona come first.
+	*)
+	If[
+		TrueQ @ CurrentValue[
+			ParentNotebook[dingbatCellObj],
+			{TaggingRules, "ChatNotebookSettings", "ChatDrivenNotebook"}
+		],
+		personas = SortBy[
+			personas,
+			First,
+			FirstMatchingPositionOrder[{
+				"PlainChat",
+				"None",
+				"CodeWriter",
+				"CodeAssistant"
+			}]
+		];
+	];
+
+	(*--------------------------------*)
+
 	actionCallback = Function[{field, value}, Replace[field, {
 		"Persona" :> (
 			CurrentValue[
@@ -1620,7 +1653,7 @@ openChatInputActionMenu[dingbatCellObj_CellObject] := With[{
 
 	makeChatActionMenuContent[
 		"Input",
-		menuData["Personas"],
+		personas,
 		menuData["Models"],
 		"ActionCallback" -> actionCallback,
 		"PersonaValue" -> currentValueOrigin[
