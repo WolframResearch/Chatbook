@@ -211,8 +211,63 @@ SetFallthroughError[makeFrontEndAndNotebookSettingsContent]
 makeFrontEndAndNotebookSettingsContent[
 	targetObj : _FrontEndObject | $FrontEndSession | _NotebookObject
 ] := Module[{
-	personas = GetPersonasAssociation[]
+	personas = GetPersonasAssociation[],
+	defaultPersonaPopupItems
 },
+	defaultPersonaPopupItems = KeyValueMap[
+		{persona, personaSettings} |-> (
+			persona -> Row[{
+				resizeMenuIcon[
+					getPersonaMenuIcon[personaSettings]
+				],
+				personaDisplayName[persona, personaSettings]
+			}, Spacer[1]]
+		),
+		personas
+	];
+
+	defaultPersonaPopupItems = Append[
+		defaultPersonaPopupItems,
+		Inherited -> Row[{
+			"Inherited",
+			Spacer[3],
+			Dynamic @ With[{
+				currentValue = CurrentValue[
+					targetObj,
+					{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+				],
+				absoluteCurrentValue = AbsoluteCurrentValue[
+					targetObj,
+					{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+				]
+			},
+				(* NOTE:
+					If `targetObj` is a NotebookObject and the local value of
+					LLMEvaluator is not set (i.e. currentValue === Inherited),
+					then display the inherited persona in italics.
+				*)
+				If[currentValue === Inherited && absoluteCurrentValue =!= Inherited,
+					Style[
+						Row[{
+							"(",
+							If[StringQ[absoluteCurrentValue],
+								personaDisplayName[absoluteCurrentValue],
+								personaDisplayName
+							],
+							")"
+						}],
+						Italic
+					],
+					Row[{}]
+				]
+			]
+		}]
+	];
+
+	(*---------------------------------*)
+	(* Return the toolbar menu content *)
+	(*---------------------------------*)
+
 	Grid[
 		{
 			{Row[{
@@ -222,7 +277,7 @@ makeFrontEndAndNotebookSettingsContent[
 						targetObj,
 						{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
 					],
-					Keys @ personas
+					defaultPersonaPopupItems
 				]
 			}, Spacer[3]]},
 			{Row[{
