@@ -1351,7 +1351,17 @@ makePromptFunctionMessages // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*getLLMPrompt*)
 getLLMPrompt // beginDefinition;
-getLLMPrompt[ name_String ] := Block[ { PrintTemporary }, Quiet @ getLLMPrompt0 @ name ];
+getLLMPrompt[ name_String ] :=
+	Block[ { PrintTemporary },
+		(* Ensure Wolfram/LLMFunctions is installed and loaded before calling System`LLMPrompt[..] *)
+		If[$VersionNumber < 13.3,
+			Quiet[
+				PacletInstall[ "Wolfram/LLMFunctions" ];
+				Needs[ "Wolfram`LLMFunctions`" -> None ]
+			];
+		];
+		Quiet @ getLLMPrompt0 @ name
+	];
 getLLMPrompt // endDefinition;
 
 getLLMPrompt0 // beginDefinition;
