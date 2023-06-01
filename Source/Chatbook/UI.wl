@@ -182,6 +182,7 @@ CreatePreferencesContent[] := Module[{
 		PrefUtils`PreferencesResetButton[
 			FrontEndExecute @ FrontEnd`RemoveOptions[$FrontEnd, {
 				System`LLMEvaluator,
+				{TaggingRules, "ChatNotebookSettings"}
 			}];
 
 			CurrentValue[
