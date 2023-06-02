@@ -33,6 +33,8 @@ GeneralUtilities`SetUsage[CreateToolbarContent, "
 CreateToolbarContent[] is called by the NotebookToolbar to generate the content of the 'Notebook AI Settings' attached menu.
 "]
 
+$SupportedModels
+
 
 Begin["`Private`"]
 
@@ -54,6 +56,15 @@ Needs["Wolfram`PreferencesUtils`" -> "PrefUtils`"]
 
 Needs["Wolfram`Chatbook`ServerSentEventUtils`" -> None]
 
+(*========================================================*)
+
+$SupportedModels = {
+	(* FIXME: Replace with OpenAI logo *)
+	{"gpt-3.5-turbo", getIcon["ModelGPT35"], "GPT-3.5"},
+	{"gpt-4", getIcon["ModelGPT4"], "GPT-4"}
+};
+
+(*========================================================*)
 
 $ChatOutputTypePrompts = <|
 	Automatic -> "",
@@ -1543,12 +1554,12 @@ $dynamicMenuLabel := DynamicModule[ { cell },
 	Dynamic @ If[ TrueQ @ $cloudNotebooks,
 		RawBoxes @ TemplateBox[{},"ChatInputCellDingbat"],
 		With[{
-			menuData = GetChatInputLLMConfigurationSelectorMenuData[],
+			personas = GetChatInputLLMConfigurationSelectorMenuData[],
 			personaValue = currentValueOrigin[cell, {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}]
 		},
 			FirstCase[
-				menuData["Personas"],
-				{personaValue[[2]], icon_, _} :> icon,
+				personas,
+				{personaValue[[2]], icon_} :> icon,
 				Style[getIcon["PersonaUnknown"], GrayLevel[0.5]]
 			]
 		]
@@ -1671,8 +1682,7 @@ SetFallthroughError[openChatInputActionMenu]
 openChatInputActionMenu[dingbatCellObj_CellObject] := With[{
 	chatInputCellObj = parentCell[dingbatCellObj]
 }, Module[{
-	menuData = GetChatInputLLMConfigurationSelectorMenuData[],
-	personas,
+	personas = GetChatInputLLMConfigurationSelectorMenuData[],
 	actionCallback,
 	actionMenu
 },
@@ -1680,10 +1690,7 @@ openChatInputActionMenu[dingbatCellObj_CellObject] := With[{
 	(* Get and sort personas.         *)
 	(*--------------------------------*)
 
-	personas = RaiseConfirmMatch[
-		menuData["Personas"],
-		{{_String, _, _}...}
-	];
+	RaiseConfirmMatch[personas, {{_String, _}...}];
 
 	(*
 		If this menu is being rendered into a Chat-Driven notebook, make the
@@ -1743,7 +1750,7 @@ openChatInputActionMenu[dingbatCellObj_CellObject] := With[{
 	makeChatActionMenuContent[
 		"Input",
 		personas,
-		menuData["Models"],
+		$SupportedModels,
 		"ActionCallback" -> actionCallback,
 		"PersonaValue" -> currentValueOrigin[
 			chatInputCellObj,
@@ -1779,7 +1786,7 @@ SetFallthroughError[openChatDelimiterActionMenu]
 openChatDelimiterActionMenu[dingbatCellObj_CellObject] := With[{
 	chatInputCellObj = parentCell[dingbatCellObj]
 }, Module[{
-	menuData = GetChatInputLLMConfigurationSelectorMenuData[],
+	personas = GetChatInputLLMConfigurationSelectorMenuData[],
 	actionCallback,
 	actionMenu
 },
@@ -1817,8 +1824,8 @@ openChatDelimiterActionMenu[dingbatCellObj_CellObject] := With[{
 
 	makeChatActionMenuContent[
 		"Delimiter",
-		menuData["Personas"],
-		menuData["Models"],
+		personas,
+		$SupportedModels,
 		"ActionCallback" -> actionCallback,
 		"PersonaValue" -> currentValueOrigin[
 			chatInputCellObj,
@@ -2009,9 +2016,9 @@ makeChatActionMenuContent[
 		{"Personas"},
 		Map[
 			entry |-> ConfirmReplace[entry, {
-				{persona_?StringQ, icon_, listItemLabel_} :> {
+				{persona_?StringQ, icon_} :> {
 					alignedMenuIcon[persona, personaValue, icon],
-					personaDisplayName[listItemLabel],
+					personaDisplayName[persona],
 					Hold[callback["Persona", persona]]
 				}
 			}],
@@ -2147,31 +2154,15 @@ getIcon[ name_ ] := RawBoxes @ TemplateBox[ { }, name ];
 
 (*------------------------------------*)
 
-GetChatInputLLMConfigurationSelectorMenuData[] := Module[{
-	personas,
-	models
-},
-	personas = KeyValueMap[
+GetChatInputLLMConfigurationSelectorMenuData[] :=
+	KeyValueMap[
 		{key, value} |-> {
 			key,
 			(* FIXME: Better generic fallback icon? *)
-			getPersonaMenuIcon @ value,
-			key
+			getPersonaMenuIcon @ value
 		},
 		GetPersonasAssociation[]
-	];
-
-	models = {
-		(* FIXME: Replace with OpenAI logo *)
-		{"gpt-3.5-turbo", getIcon["ModelGPT35"], "GPT-3.5"},
-		{"gpt-4", getIcon["ModelGPT4"], "GPT-4"}
-	};
-
-	<|
-		"Personas" -> personas,
-		"Models" -> models
-	|>
-]
+	]
 
 
 SetFallthroughError[getPersonaMenuIcon];

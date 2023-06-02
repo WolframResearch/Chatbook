@@ -881,7 +881,7 @@ Notebook[
              RawBoxes[TemplateBox[{}, "ChatInputCellDingbat"]],
              With[
               {
-               Wolfram`Chatbook`UI`Private`menuData = 
+               Wolfram`Chatbook`UI`Private`personas = 
                 Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
 
                 ],
@@ -892,11 +892,10 @@ Notebook[
                 ]
               },
               FirstCase[
-               Wolfram`Chatbook`UI`Private`menuData["Personas"],
+               Wolfram`Chatbook`UI`Private`personas,
                {
                 Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
-                Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]],
-                Blank[]
+                Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]]
                } :> Wolfram`Chatbook`UI`Private`icon,
                Style[
                 Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
@@ -985,7 +984,7 @@ Notebook[
                 RawBoxes[TemplateBox[{}, "ChatInputCellDingbat"]],
                 With[
                  {
-                  Wolfram`Chatbook`UI`Private`menuData = 
+                  Wolfram`Chatbook`UI`Private`personas = 
                    Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
 
                    ],
@@ -996,11 +995,10 @@ Notebook[
                    ]
                  },
                  FirstCase[
-                  Wolfram`Chatbook`UI`Private`menuData["Personas"],
+                  Wolfram`Chatbook`UI`Private`personas,
                   {
                    Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
-                   Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]],
-                   Blank[]
+                   Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]]
                   } :> Wolfram`Chatbook`UI`Private`icon,
                   Style[
                    Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
@@ -1109,7 +1107,7 @@ Notebook[
                   RawBoxes[TemplateBox[{}, "ChatInputCellDingbat"]],
                   With[
                    {
-                    Wolfram`Chatbook`UI`Private`menuData = 
+                    Wolfram`Chatbook`UI`Private`personas = 
                      Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
 
                      ],
@@ -1120,11 +1118,10 @@ Notebook[
                      ]
                    },
                    FirstCase[
-                    Wolfram`Chatbook`UI`Private`menuData["Personas"],
+                    Wolfram`Chatbook`UI`Private`personas,
                     {
                      Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
-                     Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]],
-                     Blank[]
+                     Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]]
                     } :> Wolfram`Chatbook`UI`Private`icon,
                     Style[
                      Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
@@ -1664,7 +1661,7 @@ Notebook[
              RawBoxes[TemplateBox[{}, "ChatInputCellDingbat"]],
              With[
               {
-               Wolfram`Chatbook`UI`Private`menuData = 
+               Wolfram`Chatbook`UI`Private`personas = 
                 Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
 
                 ],
@@ -1675,11 +1672,10 @@ Notebook[
                 ]
               },
               FirstCase[
-               Wolfram`Chatbook`UI`Private`menuData["Personas"],
+               Wolfram`Chatbook`UI`Private`personas,
                {
                 Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
-                Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]],
-                Blank[]
+                Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]]
                } :> Wolfram`Chatbook`UI`Private`icon,
                Style[
                 Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
