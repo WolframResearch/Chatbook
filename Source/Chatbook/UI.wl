@@ -221,8 +221,13 @@ CreatePreferencesContent[] := Module[{
 
 (*====================================*)
 
-CreateToolbarContent[] :=
-	makeFrontEndAndNotebookSettingsContent[EvaluationNotebook[]]
+CreateToolbarContent[] := With[{},
+	openChatActionMenu[
+		"Toolbar",
+		EvaluationNotebook[],
+		Automatic
+	]
+]
 
 (*=========================================*)
 (* Common preferences content construction *)
@@ -1688,10 +1693,28 @@ MakeChatDelimiterCellDingbat[] := Module[{
 SetFallthroughError[openChatActionMenu]
 
 openChatActionMenu[
-	containerType: "Input" | "Delimiter",
-	targetObj_CellObject,
-	dingbatCellObj_CellObject
-] := Module[{
+	containerType: "Input" | "Delimiter" | "Toolbar",
+	targetObj : _CellObject | _NotebookObject,
+	(* The cell that will be the parent of the attached cell that contains this
+		chat action menu content. *)
+	attachedCellParent : _CellObject | Automatic
+] := With[{
+	closeMenu = ConfirmReplace[attachedCellParent, {
+		parent_CellObject -> Function[
+			NotebookDelete[Cells[attachedCellParent, AttachedCell -> True]]
+		],
+		(* NOTE: Capture the parent EvaluationCell[] immediately instead of
+			delaying to do it inside closeMenu because closeMenu may be called
+			from an attached sub-menu cell (like Advanced Settings), in which
+			case EvaluationCell[] is no longer the top-level attached cell menu.
+			We want closeMenu to always close the outermost menu. *)
+		Automatic -> With[{parent = EvaluationCell[]},
+			Function[
+				NotebookDelete @ parent
+			]
+		]
+	}]
+}, Module[{
 	personas = GetChatInputLLMConfigurationSelectorMenuData[],
 	actionCallback
 },
@@ -1703,7 +1726,10 @@ openChatActionMenu[
 	*)
 	If[
 		TrueQ @ CurrentValue[
-			ParentNotebook[dingbatCellObj],
+			ConfirmReplace[targetObj, {
+				cell_CellObject :> ParentNotebook[cell],
+				nb_NotebookObject :> nb
+			}],
 			{TaggingRules, "ChatNotebookSettings", "ChatDrivenNotebook"}
 		],
 		personas = SortBy[
@@ -1726,22 +1752,29 @@ openChatActionMenu[
 				targetObj,
 				{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
 			] = value;
-			NotebookDelete[Cells[dingbatCellObj, AttachedCell->True]];
-			SetOptions[targetObj, CellDingbat -> Inherited];
+
+			closeMenu[];
+
+			(* If we're changing the persona set on a cell, ensure that we are
+				not showing the static "ChatInputCellDingbat" that is set
+				when a ChatInput is evaluated. *)
+			If[Head[targetObj] === CellObject,
+				SetOptions[targetObj, CellDingbat -> Inherited];
+			];
 		),
 		"Model" :> (
 			CurrentValue[
 				targetObj,
 				{TaggingRules, "ChatNotebookSettings", "Model"}
 			] = value;
-			NotebookDelete[Cells[dingbatCellObj, AttachedCell->True]];
+			closeMenu[];
 		),
 		"Role" :> (
 			CurrentValue[
 				targetObj,
 				{TaggingRules, "ChatNotebookSettings", "Role"}
 			] = value;
-			NotebookDelete[Cells[dingbatCellObj, AttachedCell->True]];
+			closeMenu[];
 		),
 		other_ :> (
 			ChatbookWarning[
@@ -1782,7 +1815,7 @@ openChatActionMenu[
 			]
 		]
 	]
-]
+]]
 
 (*====================================*)
 
@@ -1798,16 +1831,16 @@ SetFallthroughError[currentValueOrigin]
 		specified CellObject.
 *)
 currentValueOrigin[
-	cell_CellObject,
+	targetObj : _CellObject | _NotebookObject,
 	keyPath_List
 ] := Module[{
 	value,
 	inlineValue
 },
-	value = absoluteCurrentValue[cell, keyPath];
+	value = absoluteCurrentValue[targetObj, keyPath];
 
 	inlineValue = nestedLookup[
-		Options[cell],
+		Options[targetObj],
 		keyPath,
 		None
 	];
@@ -1864,7 +1897,7 @@ Options[makeChatActionMenuContent] = {
 }
 
 makeChatActionMenuContent[
-	containerType : "Input" | "Delimiter",
+	containerType : "Input" | "Delimiter" | "Toolbar",
 	(* List of {tagging rule value, icon, list item label} *)
 	personas:{___List},
 	(* List of {tagging rule value, icon, list item label} *)
@@ -1956,7 +1989,7 @@ makeChatActionMenuContent[
 		],
 		{
 			ConfirmReplace[containerType, {
-				"Input" -> Nothing,
+				"Input" | "Toolbar" -> Nothing,
 				"Delimiter" :> Splice[{
 					Delimiter,
 					{
