@@ -1683,7 +1683,6 @@ openChatInputActionMenu[dingbatCellObj_CellObject] := With[{
 	chatInputCellObj = parentCell[dingbatCellObj]
 }, Module[{
 	personas = GetChatInputLLMConfigurationSelectorMenuData[],
-	actionCallback,
 	actionMenu
 },
 	(*--------------------------------*)
@@ -1715,67 +1714,11 @@ openChatInputActionMenu[dingbatCellObj_CellObject] := With[{
 
 	(*--------------------------------*)
 
-	actionCallback = Function[{field, value}, Replace[field, {
-		"Persona" :> (
-			CurrentValue[
-				chatInputCellObj,
-				{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
-			] = value;
-			NotebookDelete[Cells[dingbatCellObj, AttachedCell->True]];
-			SetOptions[chatInputCellObj, CellDingbat -> Inherited];
-		),
-		"Model" :> (
-			CurrentValue[
-				chatInputCellObj,
-				{TaggingRules, "ChatNotebookSettings", "Model"}
-			] = value;
-			NotebookDelete[Cells[dingbatCellObj, AttachedCell->True]];
-		),
-		"Role" :> (
-			CurrentValue[
-				chatInputCellObj,
-				{TaggingRules, "ChatNotebookSettings", "Role"}
-			] = value;
-			NotebookDelete[Cells[dingbatCellObj, AttachedCell->True]];
-		),
-		other_ :> (
-			ChatbookWarning[
-				"Unexpected field set from LLM configuration action menu: `` => ``",
-				InputForm[other],
-				InputForm[value]
-			];
-		)
-	}]];
-
-	makeChatActionMenuContent[
+	openChatActionMenu[
 		"Input",
-		personas,
-		$SupportedModels,
-		"ActionCallback" -> actionCallback,
-		"PersonaValue" -> currentValueOrigin[
-			chatInputCellObj,
-			{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
-		],
-		"ModelValue" -> currentValueOrigin[
-			chatInputCellObj,
-			{TaggingRules, "ChatNotebookSettings", "Model"}
-		],
-		"RoleValue" -> currentValueOrigin[
-			chatInputCellObj,
-			{TaggingRules, "ChatNotebookSettings", "Role"}
-		],
-		"TemperatureValue" -> Dynamic[
-			CurrentValue[
-				(* "ChatInput" > CellDingbat > Persona Menu > Advanced Menu *)
-				chatInputCellObj,
-				{ TaggingRules, "ChatNotebookSettings", "TemperatureSetting" },
-				currentChatSettings[ chatInputCellObj, "Temperature" ]
-			],
-			Function[
-				CurrentValue[ chatInputCellObj, { TaggingRules, "ChatNotebookSettings", "TemperatureSetting" } ] =
-					CurrentValue[ chatInputCellObj, { TaggingRules, "ChatNotebookSettings", "Temperature" } ] = #1;
-			]
-		]
+		chatInputCellObj,
+		dingbatCellObj,
+		personas
 	]
 ]]
 
@@ -1787,28 +1730,45 @@ openChatDelimiterActionMenu[dingbatCellObj_CellObject] := With[{
 	chatInputCellObj = parentCell[dingbatCellObj]
 }, Module[{
 	personas = GetChatInputLLMConfigurationSelectorMenuData[],
-	actionCallback,
 	actionMenu
 },
+	openChatActionMenu[
+		"Delimiter",
+		chatInputCellObj,
+		dingbatCellObj,
+		personas
+	]
+]]
+
+(*====================================*)
+
+SetFallthroughError[openChatActionMenu]
+
+openChatActionMenu[
+	containerType: "Input" | "Delimiter",
+	targetObj_CellObject,
+	dingbatCellObj_CellObject,
+	personas_
+] := Module[{},
 	actionCallback = Function[{field, value}, Replace[field, {
 		"Persona" :> (
 			CurrentValue[
-				chatInputCellObj,
+				targetObj,
 				{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
 			] = value;
 			NotebookDelete[Cells[dingbatCellObj, AttachedCell->True]];
-			SetOptions[chatInputCellObj, CellDingbat -> Inherited];
+			SetOptions[targetObj, CellDingbat -> Inherited];
 		),
 		"Model" :> (
 			CurrentValue[
-				chatInputCellObj,
+				targetObj,
 				{TaggingRules, "ChatNotebookSettings", "Model"}
 			] = value;
 			NotebookDelete[Cells[dingbatCellObj, AttachedCell->True]];
 		),
 		"Role" :> (
 			CurrentValue[
-				chatInputCellObj,
+				targetObj,
 				{TaggingRules, "ChatNotebookSettings", "Role"}
 			] = value;
 			NotebookDelete[Cells[dingbatCellObj, AttachedCell->True]];
@@ -1823,36 +1783,36 @@ openChatDelimiterActionMenu[dingbatCellObj_CellObject] := With[{
 	}]];
 
 	makeChatActionMenuContent[
-		"Delimiter",
+		containerType,
 		personas,
 		$SupportedModels,
 		"ActionCallback" -> actionCallback,
 		"PersonaValue" -> currentValueOrigin[
-			chatInputCellObj,
+			targetObj,
 			{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
 		],
 		"ModelValue" -> currentValueOrigin[
-			chatInputCellObj,
+			targetObj,
 			{TaggingRules, "ChatNotebookSettings", "Model"}
 		],
 		"RoleValue" -> currentValueOrigin[
-			chatInputCellObj,
+			targetObj,
 			{TaggingRules, "ChatNotebookSettings", "Role"}
 		],
 		"TemperatureValue" -> Dynamic[
 			CurrentValue[
 				(* "ChatInput" > CellDingbat > Persona Menu > Advanced Menu *)
-				chatInputCellObj,
+				targetObj,
 				{ TaggingRules, "ChatNotebookSettings", "TemperatureSetting" },
-				currentChatSettings[ chatInputCellObj, "Temperature" ]
+				currentChatSettings[ targetObj, "Temperature" ]
 			],
 			Function[
-				CurrentValue[ chatInputCellObj, { TaggingRules, "ChatNotebookSettings", "TemperatureSetting" } ] =
-					CurrentValue[ chatInputCellObj, { TaggingRules, "ChatNotebookSettings", "Temperature" } ] = #1;
+				CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "TemperatureSetting" } ] =
+					CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Temperature" } ] = #1;
 			]
 		]
 	]
-]]
+]
 
 (*====================================*)
 
