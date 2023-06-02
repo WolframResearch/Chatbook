@@ -81,7 +81,20 @@ GetInstalledResourcePersonaData[ ] := catchMine @ Enclose[
         data = ConfirmMatch[ GetInstalledResourcePersonas[ ], { ___Association }, "GetInstalledResourcePersonas" ];
         KeySort @ Association @ Cases[
             data,
-            KeyValuePattern @ { "Name" -> name_String, "Configuration" -> config_Association } :> name -> config
+            KeyValuePattern @ {
+				"Name" -> name_String,
+				"Configuration" -> config_Association,
+				"ResourceInformation" -> resourceAssoc_Association
+			} :> (
+				(* Include the resource description in the returned persona data. *)
+				name -> Merge[
+					{
+						config,
+						KeyTake[resourceAssoc, "Description"]
+					},
+					First
+				]
+			)
         ]
     ],
     throwInternalFailure[ GetInstalledResourcePersonaData[ ], ## ] &

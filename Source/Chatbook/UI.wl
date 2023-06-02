@@ -127,16 +127,27 @@ CreatePreferencesContent[] := Module[{
 	llmEvaluatorNamesSettings = Grid[
 		Prepend[
 			KeyValueMap[
-				{name, fields} |-> {
-					Replace[Lookup[fields, "Icon", None], {
+				{persona, personaSettings} |-> {
+					Replace[Lookup[personaSettings, "Icon", None], {
 						None -> "",
 						RawBoxes[TemplateBox[{}, iconStyle_?StringQ]] :> (
 							getTemplateIcon[iconStyle]
 						),
 						icon_ :> icon
 					}],
-					name,
-					""
+					personaDisplayName[persona, personaSettings],
+					Replace[Lookup[personaSettings, "Description", None], {
+						None | _?MissingQ -> "",
+						desc_?StringQ :> desc,
+						other_ :> (
+							ChatbookWarning[
+								"Unexpected non-String persona `` description: ``",
+								InputForm[persona],
+								InputForm[other]
+							];
+							other
+						)
+					}]
 				},
 				personas
 			],
