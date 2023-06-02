@@ -1598,7 +1598,11 @@ MakeChatInputActiveCellDingbat[] := Module[{
 		(
 			AttachCell[
 				EvaluationCell[],
-				openChatInputActionMenu[EvaluationCell[]],
+				openChatActionMenu[
+					"Input",
+					parentCell[EvaluationCell[]],
+					EvaluationCell[]
+				],
 				{Left, Bottom},
 				Offset[{0, 0}, {Left, Top}],
 				{Left, Top},
@@ -1659,7 +1663,11 @@ MakeChatDelimiterCellDingbat[] := Module[{
 		(
 			AttachCell[
 				EvaluationCell[],
-				openChatDelimiterActionMenu[EvaluationCell[]],
+				openChatActionMenu[
+					"Delimiter",
+					parentCell[EvaluationCell[]],
+					EvaluationCell[]
+				],
 				{Left, Bottom},
 				Offset[{0, 0}, {Left, Top}],
 				{Left, Top},
@@ -1677,61 +1685,18 @@ MakeChatDelimiterCellDingbat[] := Module[{
 
 (*====================================*)
 
-SetFallthroughError[openChatInputActionMenu]
-
-openChatInputActionMenu[dingbatCellObj_CellObject] := With[{
-	chatInputCellObj = parentCell[dingbatCellObj]
-}, Module[{
-	personas = GetChatInputLLMConfigurationSelectorMenuData[],
-	actionMenu
-},
-	(*--------------------------------*)
-	(* Get and sort personas.         *)
-	(*--------------------------------*)
-
-	RaiseConfirmMatch[personas, {{_String, _}...}];
-
-	(*--------------------------------*)
-
-	openChatActionMenu[
-		"Input",
-		chatInputCellObj,
-		dingbatCellObj,
-		personas
-	]
-]]
-
-(*====================================*)
-
-SetFallthroughError[openChatDelimiterActionMenu]
-
-openChatDelimiterActionMenu[dingbatCellObj_CellObject] := With[{
-	chatInputCellObj = parentCell[dingbatCellObj]
-}, Module[{
-	personas = GetChatInputLLMConfigurationSelectorMenuData[],
-	actionMenu
-},
-	openChatActionMenu[
-		"Delimiter",
-		chatInputCellObj,
-		dingbatCellObj,
-		personas
-	]
-]]
-
-(*====================================*)
-
 SetFallthroughError[openChatActionMenu]
 
 openChatActionMenu[
 	containerType: "Input" | "Delimiter",
 	targetObj_CellObject,
-	dingbatCellObj_CellObject,
-	personas0_
+	dingbatCellObj_CellObject
 ] := Module[{
-	personas = personas0,
+	personas = GetChatInputLLMConfigurationSelectorMenuData[],
 	actionCallback
 },
+	RaiseConfirmMatch[personas, {{_String, _}...}];
+
 	(*
 		If this menu is being rendered into a Chat-Driven notebook, make the
 		'Plain Chat' persona come first.

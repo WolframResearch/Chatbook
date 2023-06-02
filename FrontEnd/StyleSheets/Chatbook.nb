@@ -941,7 +941,9 @@ Notebook[
        ButtonFunction :>
         (AttachCell[
          EvaluationCell[],
-         Wolfram`Chatbook`UI`Private`openChatInputActionMenu[
+         Wolfram`Chatbook`UI`Private`openChatActionMenu[
+          "Input",
+          Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]],
           EvaluationCell[]
          ],
          {Left, Bottom},
@@ -1044,7 +1046,9 @@ Notebook[
           ButtonFunction :>
            (AttachCell[
             EvaluationCell[],
-            Wolfram`Chatbook`UI`Private`openChatInputActionMenu[
+            Wolfram`Chatbook`UI`Private`openChatActionMenu[
+             "Input",
+             Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]],
              EvaluationCell[]
             ],
             {Left, Bottom},
@@ -1167,7 +1171,9 @@ Notebook[
             ButtonFunction :>
              (AttachCell[
               EvaluationCell[],
-              Wolfram`Chatbook`UI`Private`openChatInputActionMenu[
+              Wolfram`Chatbook`UI`Private`openChatActionMenu[
+               "Input",
+               Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]],
                EvaluationCell[]
               ],
               {Left, Bottom},
@@ -1721,7 +1727,9 @@ Notebook[
        ButtonFunction :>
         (AttachCell[
          EvaluationCell[],
-         Wolfram`Chatbook`UI`Private`openChatDelimiterActionMenu[
+         Wolfram`Chatbook`UI`Private`openChatActionMenu[
+          "Delimiter",
+          Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]],
           EvaluationCell[]
          ],
          {Left, Bottom},
