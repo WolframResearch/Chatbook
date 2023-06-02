@@ -1691,27 +1691,6 @@ openChatInputActionMenu[dingbatCellObj_CellObject] := With[{
 
 	RaiseConfirmMatch[personas, {{_String, _}...}];
 
-	(*
-		If this menu is being rendered into a Chat-Driven notebook, make the
-		'Plain Chat' persona come first.
-	*)
-	If[
-		TrueQ @ CurrentValue[
-			ParentNotebook[dingbatCellObj],
-			{TaggingRules, "ChatNotebookSettings", "ChatDrivenNotebook"}
-		],
-		personas = SortBy[
-			personas,
-			First,
-			FirstMatchingPositionOrder[{
-				"PlainChat",
-				"RawModel",
-				"CodeWriter",
-				"CodeAssistant"
-			}]
-		];
-	];
-
 	(*--------------------------------*)
 
 	openChatActionMenu[
@@ -1748,8 +1727,34 @@ openChatActionMenu[
 	containerType: "Input" | "Delimiter",
 	targetObj_CellObject,
 	dingbatCellObj_CellObject,
-	personas_
-] := Module[{},
+	personas0_
+] := Module[{
+	personas = personas0,
+	actionCallback
+},
+	(*
+		If this menu is being rendered into a Chat-Driven notebook, make the
+		'Plain Chat' persona come first.
+	*)
+	If[
+		TrueQ @ CurrentValue[
+			ParentNotebook[dingbatCellObj],
+			{TaggingRules, "ChatNotebookSettings", "ChatDrivenNotebook"}
+		],
+		personas = SortBy[
+			personas,
+			First,
+			FirstMatchingPositionOrder[{
+				"PlainChat",
+				"RawModel",
+				"CodeWriter",
+				"CodeAssistant"
+			}]
+		];
+	];
+
+	(*--------------------------------*)
+
 	actionCallback = Function[{field, value}, Replace[field, {
 		"Persona" :> (
 			CurrentValue[
