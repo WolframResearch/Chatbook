@@ -1591,10 +1591,10 @@ MakeChatInputActiveCellDingbat[] := Module[{
 			Pane[menuLabel, Alignment -> {Center, Center}, ImageSize -> {25, 25}, ImageSizeAction -> "ShrinkToFit"],
 			RoundingRadius -> 2,
 			FrameStyle -> Dynamic[
-				If[CurrentValue["MouseOver"], GrayLevel[0.74902], GrayLevel[0.819608]]
+				If[CurrentValue["MouseOver"], GrayLevel[0.74902], None]
 			],
 			Background -> Dynamic[
-				If[CurrentValue["MouseOver"], GrayLevel[0.960784], GrayLevel[1]]
+				If[CurrentValue["MouseOver"], GrayLevel[0.960784], None]
 			],
 			FrameMargins -> 0,
 			ImageMargins -> 0,

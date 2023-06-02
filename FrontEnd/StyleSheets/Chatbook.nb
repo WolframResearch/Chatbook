@@ -921,17 +921,11 @@ Notebook[
         RoundingRadius -> 2,
         FrameStyle ->
          Dynamic[
-          If[ CurrentValue["MouseOver"],
-           GrayLevel[0.74902],
-           GrayLevel[0.81961]
-          ]
+          If[ CurrentValue["MouseOver"], GrayLevel[0.74902], None ]
          ],
         Background ->
          Dynamic[
-          If[ CurrentValue["MouseOver"],
-           GrayLevel[0.96078],
-           GrayLevel[1]
-          ]
+          If[ CurrentValue["MouseOver"], GrayLevel[0.96078], None ]
          ],
         FrameMargins -> 0,
         ImageMargins -> 0,
@@ -1026,17 +1020,11 @@ Notebook[
            RoundingRadius -> 2,
            FrameStyle ->
             Dynamic[
-             If[ CurrentValue["MouseOver"],
-              GrayLevel[0.74902],
-              GrayLevel[0.81961]
-             ]
+             If[ CurrentValue["MouseOver"], GrayLevel[0.74902], None ]
             ],
            Background ->
             Dynamic[
-             If[ CurrentValue["MouseOver"],
-              GrayLevel[0.96078],
-              GrayLevel[1]
-             ]
+             If[ CurrentValue["MouseOver"], GrayLevel[0.96078], None ]
             ],
            FrameMargins -> 0,
            ImageMargins -> 0,
@@ -1151,17 +1139,11 @@ Notebook[
              RoundingRadius -> 2,
              FrameStyle ->
               Dynamic[
-               If[ CurrentValue["MouseOver"],
-                GrayLevel[0.74902],
-                GrayLevel[0.81961]
-               ]
+               If[ CurrentValue["MouseOver"], GrayLevel[0.74902], None ]
               ],
              Background ->
               Dynamic[
-               If[ CurrentValue["MouseOver"],
-                GrayLevel[0.96078],
-                GrayLevel[1]
-               ]
+               If[ CurrentValue["MouseOver"], GrayLevel[0.96078], None ]
               ],
              FrameMargins -> 0,
              ImageMargins -> 0,
