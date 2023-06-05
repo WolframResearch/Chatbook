@@ -1,5 +1,7 @@
 BeginPackage[ "Wolfram`Chatbook`Serialization`" ];
 
+(* cSpell: ignore TOOLCALL, ENDTOOLCALL *)
+
 (* Avoiding context aliasing due to bug 434990: *)
 Needs[ "GeneralUtilities`" -> None ];
 
@@ -443,7 +445,7 @@ toLLMArg[ arg_ ] := ToString[ arg, InputForm ];
 (*Tools*)
 fasterCellToString0[
     Cell[ _, "InlineToolCall", ___, TaggingRules -> KeyValuePattern[ "Query" -> s_String ], ___ ]
-] := "TOOLCALL: " <> s <> "\nRESULT\n<<Removed after last message to save space>>\nENDTOOLCALL\n";
+] := "TOOLCALL: " <> s <> "\nENDTOOLCALL\n";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -586,6 +588,10 @@ fasterCellToString0[ InterpretationBox[ boxes_, (Definition|FullDefinition)[ _Sy
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Other*)
+
+fasterCellToString0[
+    TagBox[ _, "MarkdownImage", ___, TaggingRules -> KeyValuePattern[ "CellToStringData" -> string_String ], ___ ]
+] := string;
 
 fasterCellToString0[ BoxData[ boxes_List ] ] :=
     With[ { strings = fasterCellToString0 /@ boxes },
