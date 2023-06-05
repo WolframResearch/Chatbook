@@ -90,7 +90,13 @@ makeResultCell0 // beginDefinition;
 
 makeResultCell0[ str_String ] := formatTextString @ str;
 
-makeResultCell0[ codeCell[ code_String ] ] := makeInteractiveCodeCell @ StringTrim @ code;
+makeResultCell0[ codeCell[ code0_String ] ] :=
+    With[ { code = StringTrim @ code0 },
+        If[ StringMatchQ[ code, "!["~~__~~"]("~~__~~")" ],
+            image @ code,
+            makeInteractiveCodeCell @ StringTrim @ code
+        ]
+    ];
 
 makeResultCell0[ externalCodeCell[ lang_String, code_String ] ] :=
     makeInteractiveCodeCell[
@@ -679,6 +685,8 @@ styleBox // endDefinition;
 (* ::Subsection::Closed:: *)
 (*image*)
 image // beginDefinition;
+
+image[ str_String ] := StringReplace[ str, "![" ~~ alt__ ~~ "](" ~~ url__ ~~ ")" :> image[ alt, url ] ];
 
 image[ alt_String, url_String ] := image[ alt, url, URLParse @ url ];
 
