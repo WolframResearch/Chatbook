@@ -51,7 +51,7 @@ Needs["Wolfram`Chatbook`Personas`"]
 Needs["Wolfram`Chatbook`PersonaInstaller`"]
 Needs["Wolfram`Chatbook`FrontEnd`"]
 
-Needs["Wolfram`PreferencesUtils`" -> "PrefUtils`"]
+Needs["Wolfram`Chatbook`PreferencesUtils`" -> "PrefUtils`"]
 
 
 Needs["Wolfram`Chatbook`ServerSentEventUtils`" -> None]
