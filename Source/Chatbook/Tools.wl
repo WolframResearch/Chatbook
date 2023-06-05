@@ -480,15 +480,15 @@ sandboxEvaluate // endDefinition;
 sandboxResultString // beginDefinition;
 
 (* TODO: show messages etc. *)
-sandboxResultString[ HoldComplete[ Null..., expr_ ] ] :=
+sandboxResultString[ HoldComplete[ Null..., expr: Except[ _Graphics|_Graphics3D ] ] ] :=
     With[ { string = ToString[ Unevaluated @ expr, InputForm, PageWidth -> 80 ] },
         "```\n"<>string<>"\n```" /; StringLength @ string < 240
     ];
 
 sandboxResultString[ HoldComplete[ Null..., expr_ ] ] :=
-    With[ { uuid = CreateUUID[ "result-" ] },
-        $attachments[ uuid ] = HoldComplete @ expr;
-        "![result](expression://" <> uuid <> ")"
+    With[ { id = "result-"<>Hash[ Unevaluated @ expr, Automatic, "HexString" ] },
+        $attachments[ id ] = HoldComplete @ expr;
+        "![result](expression://" <> id <> ")"
     ];
 
 sandboxResultString // endDefinition;
