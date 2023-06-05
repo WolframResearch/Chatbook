@@ -729,9 +729,14 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
             "HistoryAndTarget"
         ];
 
-        settings = ConfirmBy[ inheritSettings[ settings0, cells, evalCell ], AssociationQ, "InheritSettings" ];
-        id       = Lookup[ settings, "ID" ];
-        key      = toAPIKey[ Automatic, id ];
+        settings = ConfirmBy[
+            resolveAutoSettings @ inheritSettings[ settings0, cells, evalCell ],
+            AssociationQ,
+            "InheritSettings"
+        ];
+
+        id  = Lookup[ settings, "ID" ];
+        key = toAPIKey[ Automatic, id ];
 
         If[ ! settings[ "IncludeHistory" ], cells = { evalCell } ];
 
@@ -798,6 +803,26 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
 ];
 
 sendChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*resolveAutoSettings*)
+resolveAutoSettings // beginDefinition;
+
+resolveAutoSettings[ settings: KeyValuePattern[ "ToolsEnabled" -> Automatic ] ] :=
+    resolveAutoSettings @ Association[ settings, "ToolsEnabled" -> toolsEnabledQ @ settings ];
+
+resolveAutoSettings[ settings_Association ] := settings;
+
+resolveAutoSettings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*toolsEnabledQ*)
+toolsEnabledQ[ KeyValuePattern[ "ToolsEnabled" -> enabled: True|False ] ] := enabled;
+toolsEnabledQ[ KeyValuePattern[ "Model" -> model_String ] ] := toolsEnabledQ @ toModelName @ model;
+toolsEnabledQ[ model_String ] := ! TrueQ @ StringStartsQ[ model, "gpt-3", IgnoreCase -> True ];
+toolsEnabledQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1193,7 +1218,7 @@ checkResponse[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         toolResponse = ConfirmMatch[
             GenerateLLMToolResponse[ $toolConfiguration, toolCall ],
-            _LLMToolResponse,
+            _LLMToolResponse | _Failure, (* TODO: handle the Failure[...] case *)
             "GenerateLLMToolResponse"
         ];
 
@@ -1226,18 +1251,7 @@ checkResponse // endDefinition;
 (*appendToolResult*)
 appendToolResult // beginDefinition;
 appendToolResult // Attributes = { HoldFirst };
-
-appendToolResult[ container_Symbol, output_String ] := container =
-    If[ StringStartsQ[ output, "[[DISPLAY]]" ],
-        StringJoin[
-            container,
-            "RESULT\n[[Output displayed for user]]\nENDTOOLCALL\n\n",
-            StringTrim @ StringDelete[ output, "[[DISPLAY]]" ],
-            "\n"
-        ],
-        container<>"RESULT\n"<>output<>"\nENDTOOLCALL\n"
-    ];
-
+appendToolResult[ container_Symbol, output_String ] := container = container<>"RESULT\n"<>output<>"\nENDTOOLCALL\n";
 appendToolResult // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1525,7 +1539,7 @@ argumentTokenToString[ "^^", name_, { history___, _ } ] := StringRiffle[ CellToS
 (*toModelName*)
 toModelName // beginDefinition;
 
-toModelName[ name_String? StringQ ] :=
+toModelName[ name_String? StringQ ] := toModelName[ name ] =
     toModelName0 @ StringReplace[
         ToLowerCase @ StringReplace[
             name,
