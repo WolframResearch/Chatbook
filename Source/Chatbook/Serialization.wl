@@ -9,6 +9,8 @@ CellToString[cell$] serializes a Cell expression as a string for use in chat.\
 
 `$CellToStringDebug;
 `$CurrentCell;
+`documentationSearchAPI;
+`$maxOutputCellStringLength;
 
 Begin[ "`Private`" ];
 
@@ -27,6 +29,7 @@ $$delimiterStyle   = "PageBreak"|"ExampleDelimiter"|"ChatDelimiter";
 $$itemStyle        = "Item"|"Notes";
 $$noCellLabelStyle = "Text"|"ChatInput"|"SideChat"|"ChatSystemInput"|"ChatBlockDivider"|$$delimiterStyle;
 $$docSearchStyle   = "ChatQuery";
+$$outputStyle      = "Output"|"Print"|"Echo";
 
 (* Default character encoding for strings created from cells *)
 $cellCharacterEncoding = "Unicode";
@@ -289,6 +292,10 @@ cellToString[ Cell[ code_, "ExternalLanguage", ___, $$cellEvaluationLanguage -> 
         ) /; StringQ @ string
     ];
 
+(* Output styles that should be truncated *)
+cellToString[ cell: Cell[ __, $$outputStyle, ___ ] ] /; ! TrueQ @ $truncatingOutput :=
+    Block[ { $truncatingOutput = True }, truncateOutputString @ cellToString @ cell ];
+
 (* Begin recursive serialization of the cell content *)
 cellToString[ cell: Cell[ _TextData|_String, ___ ] ] := Block[ { $escapeMarkdown = True }, cellToString0 @ cell ];
 cellToString[ cell_ ] := Block[ { $escapeMarkdown = False }, cellToString0 @ cell ];
@@ -430,6 +437,13 @@ toLLMArg[ ">" ] := "$RestOfCellContents";
 toLLMArg[ "^" ] := "$PreviousCellContents";
 toLLMArg[ "^^" ] := "$ChatHistory";
 toLLMArg[ arg_ ] := ToString[ arg, InputForm ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Tools*)
+fasterCellToString0[
+    Cell[ _, "InlineToolCall", ___, TaggingRules -> KeyValuePattern[ "Query" -> s_String ], ___ ]
+] := "TOOLCALL: " <> s <> "\nRESULT\n<<Removed after last message to save space>>\nENDTOOLCALL\n";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -770,6 +784,13 @@ showStringCharactersQ[ ___ ] := True;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*truncateOutputString*)
+truncateOutputString // SetFallthroughError;
+truncateOutputString[ str_String ] /; StringLength @ str <= $maxOutputCellStringLength := str;
+truncateOutputString[ str_String ] := StringTake[ str, $maxOutputCellStringLength ] <> "...";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*truncateStackString*)
 truncateStackString // SetFallthroughError;
 truncateStackString[ str_String ] /; StringLength @ str <= 80 := str;
@@ -798,7 +819,7 @@ docSearchResultString[ query_String ] /; $CurrentCell =!= True := "";
 
 docSearchResultString[ query_String ] := Enclose[
     Module[ { search },
-        search = ConfirmMatch[ documentationSearch @ query, { __String } ];
+        search = ConfirmMatch[ documentationSearchAPI @ query, { __String } ];
         StringJoin[
             "BEGIN_SEARCH_RESULTS\n",
             StringRiffle[ search, "\n" ],
@@ -810,12 +831,12 @@ docSearchResultString[ query_String ] := Enclose[
 
 
 docSearchResultString[ other_ ] :=
-    With[ { str = cellToString @ other }, documentationSearch @ str /; StringQ @ str ];
+    With[ { str = cellToString @ other }, documentationSearchAPI @ str /; StringQ @ str ];
 
 docSearchResultString[ ___ ] := $noDocSearchResultsString;
 
 
-documentationSearch[ query_String ] /; $localDocSearch := documentationSearch[ query ] =
+documentationSearchAPI[ query_String ] /; $localDocSearch := documentationSearchAPI[ query ] =
     Module[ { result },
         Needs[ "DocumentationSearch`" -> None ];
         result = Association @ DocumentationSearch`SearchDocumentation[
@@ -830,8 +851,8 @@ documentationSearch[ query_String ] /; $localDocSearch := documentationSearch[ q
         ]
     ];
 
-documentationSearch[ query_String ] := documentationSearch[ query ] =
-    Module[ { resp, flat, items },
+documentationSearchAPI[ query_String ] := documentationSearchAPI[ query ] =
+    Module[ { resp, flat, items, main },
 
         resp = URLExecute[
             "https://search.wolfram.com/search-api/search.json",
@@ -852,7 +873,9 @@ documentationSearch[ query_String ] := documentationSearch[ query ] =
 
         items = Select[ flat, #score > 1 & ];
 
-        makeSearchResultString /@ items
+        main = Replace[ resp[ "adResult" ], { as_Association :> makeSearchResultString @ as, _ :> Nothing } ];
+
+        makeSearchResultString /@ Prepend[ items, main ]
     ];
 
 
@@ -893,6 +916,8 @@ makeSearchResultString[ KeyValuePattern @ {
     "score"   -> score_
 } ] := TemplateApply[ "* [`1`](`2`) - (score: `4`) `3`", { name, url, summary, score } ];
 
+
+makeSearchResultString[ as_ ] := ToString[ as, InputForm ];
 
 $noDocSearchResultsString = "BEGIN_DOCUMENTATION_SEARCH_RESULTS\n(no results found)\nEND_DOCUMENTATION_SEARCH_RESULTS";
 
