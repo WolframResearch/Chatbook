@@ -3,6 +3,8 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Formatting`" ];
 
+(* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDTOOLCALL *)
+
 `$dynamicText;
 `$reformattedCell;
 `$resultCellCache;
@@ -14,6 +16,7 @@ Begin[ "`Private`" ];
 Needs[ "Wolfram`Chatbook`"          ];
 Needs[ "Wolfram`Chatbook`Common`"   ];
 Needs[ "Wolfram`Chatbook`FrontEnd`" ];
+Needs[ "Wolfram`Chatbook`Tools`"    ];
 
 (* FIXME: Use ParagraphSpacing to squeeze text closer together *)
 
@@ -100,7 +103,7 @@ makeResultCell0[ inlineCodeCell[ code_String ] ] := makeInlineCodeCell @ code;
 makeResultCell0[ mathCell[ math_String ] ] :=
     With[ { boxes = Quiet @ InputAssistant`TeXAssistant @ StringTrim @ math },
         If[ MatchQ[ boxes, _RawBoxes ],
-            Cell @ BoxData @ FormBox[ ToBoxes @ boxes, TraditionalForm ],
+            Cell @ BoxData @ toTeXBoxes @ boxes,
             makeResultCell0 @ inlineCodeCell @ math
         ]
     ];
@@ -122,7 +125,23 @@ makeResultCell0[ sectionCell[ n_, section_String ] ] := Flatten @ {
     $tinyLineBreak
 };
 
+makeResultCell0[ inlineToolCallCell[ string_String ] ] := inlineToolCall @ string;
+
 makeResultCell0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toTeXBoxes*)
+toTeXBoxes // beginDefinition;
+
+toTeXBoxes[ RawBoxes[ boxes_ ] ] := toTeXBoxes @ boxes;
+
+toTeXBoxes[ a: TemplateBox[ KeyValuePattern[ "boxes" -> b_ ], "TeXAssistantTemplate" ] ] :=
+    FormBox[ If[ TrueQ @ $dynamicText, StyleBox[ b, "TeXAssistantBoxes" ], a ], TraditionalForm ];
+
+toTeXBoxes[ boxes_TemplateBox ] := FormBox[ boxes, TraditionalForm ];
+
+toTeXBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -334,13 +353,14 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 (*$textDataFormatRules*)
 $textDataFormatRules = {
     StringExpression[
-            Longest[ "```" ~~ lang: Except[ WhitespaceCharacter ].. /; externalLanguageQ @ lang ],
-            Shortest[ code__ ] ~~ ("```"|EndOfString)
-        ] :> externalCodeCell[ lang, code ]
+        Longest[ "```" ~~ lang: Except[ WhitespaceCharacter ].. /; externalLanguageQ @ lang ],
+        Shortest[ code__ ] ~~ ("```"|EndOfString)
+    ] :> externalCodeCell[ lang, code ]
     ,
     Longest[ "```" ~~ ($wlCodeString|"") ] ~~ Shortest[ code__ ] ~~ ("```"|EndOfString) :>
         If[ nameQ[ "System`"<>code ], inlineCodeCell @ code, codeCell @ code ]
     ,
+    tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ("ENDTOOLCALL"|EndOfString)) :> inlineToolCallCell @ tool,
     "\n" ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
     "\n" ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ],
     "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :> hyperlinkCell[ label, url ],
@@ -369,6 +389,144 @@ $stringFormatRules = {
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Formatted Boxes*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*inlineToolCall*)
+inlineToolCall // beginDefinition;
+
+inlineToolCall[ string_String ] := inlineToolCall[ string, parseToolCallString @ string ];
+
+inlineToolCall[ string_String, as_Association ] := Cell[
+    BoxData @ ToBoxes @ Panel[
+        makeToolCallBoxLabel @ as,
+        BaseStyle    -> "Text",
+        Background   -> GrayLevel[ 0.95 ],
+        ImageMargins -> 10
+    ],
+    "InlineToolCall",
+    Background   -> None,
+    TaggingRules -> as
+];
+
+inlineToolCall // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*parseToolCallString*)
+parseToolCallString // beginDefinition;
+
+parseToolCallString[ string_String ] /; StringMatchQ[ string, "TOOLCALL:"~~__~~"{"~~___ ] :=
+    Module[ { noPrefix, noSuffix, name, tool, toolData, displayName, icon, query, result },
+
+        noPrefix    = StringDelete[ string, StartOfString~~"TOOLCALL:" ];
+        noSuffix    = StringTrim @ StringDelete[ noPrefix, "ENDTOOLCALL"~~___~~EndOfString ];
+        name        = StringTrim @ StringDelete[ noSuffix, ("\n"|"{")~~___~~EndOfString ];
+        tool        = $defaultChatTools[ name ];
+        toolData    = Replace[ tool, { HoldPattern @ LLMTool[ as_Association, ___ ] :> as, _ :> <| |> } ];
+        displayName = Lookup[ toolData, "DisplayName", name ];
+        icon        = Lookup[ toolData, "Icon" ];
+        query       = First[ StringCases[ string, "TOOLCALL:" ~~ q___ ~~ "\nRESULT" :> q ], "" ];
+        result      = First[ StringCases[ string, "RESULT\n" ~~ r___ ~~ "\nENDTOOLCALL" :> r ], "" ];
+
+        <|
+            "Name"            -> name,
+            "DisplayName"     -> displayName,
+            "Icon"            -> icon,
+            "ToolCall"        -> StringTrim @ string,
+            "Query"           -> StringTrim @ query,
+            "Result"          -> StringTrim @ result
+        |>
+    ];
+
+parseToolCallString[ string_String ] := <| "ToolCall" -> StringTrim @ string |>;
+
+parseToolCallString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeToolCallBoxLabel*)
+makeToolCallBoxLabel // beginDefinition;
+
+makeToolCallBoxLabel[ as: KeyValuePattern[ "DisplayName" -> name_String ] ] :=
+    makeToolCallBoxLabel[ as, name ];
+
+makeToolCallBoxLabel[ as: KeyValuePattern[ "Name" -> name_String ] ] :=
+    makeToolCallBoxLabel[
+        as,
+        StringRiffle @ Capitalize @ StringSplit[
+            StringDelete[ StringTrim @ name, (Whitespace|"{") ~~ ___ ~~ EndOfString ],
+            "_"
+        ]
+    ];
+
+makeToolCallBoxLabel[ as_Association ] := "Using tool\[Ellipsis]";
+
+makeToolCallBoxLabel[ as_Association, name_String ] :=
+    makeToolCallBoxLabel[ as, name, Lookup[ as, "Icon" ] ];
+
+makeToolCallBoxLabel[ as_, name_String, icon_ ] /; $dynamicText := makeToolCallBoxLabel0[ as, name, icon ];
+
+makeToolCallBoxLabel[ as_, name_String, icon_ ] :=
+    OpenerView @ {
+        makeToolCallBoxLabel0[ as, name, icon ],
+        Column[
+            {
+                Framed[
+                    TextCell[ as[ "Query" ], "Program", FontSize -> 0.75 * Inherited, Background -> None ],
+                    Background   -> White,
+                    FrameMargins -> 10,
+                    FrameStyle   -> None,
+                    ImageSize    -> { Scaled[ 1 ], Automatic }
+                ],
+                Framed[
+                    TextCell[
+                        as[ "Result" ],
+                        "Program",
+                        FontSize -> 0.75 * Inherited,
+                        Background -> None
+                    ],
+                    Background   -> White,
+                    FrameMargins -> 10,
+                    FrameStyle   -> None,
+                    ImageSize    -> { Scaled[ 1 ], Automatic }
+                ]
+            },
+            Alignment -> Left
+        ]
+    };
+
+makeToolCallBoxLabel // endDefinition;
+
+
+makeToolCallBoxLabel0 // beginDefinition;
+
+makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] := Row @ Flatten @ {
+    "Using ",
+    string,
+    "\[Ellipsis]",
+    If[ MissingQ @ icon,
+        Nothing,
+        {
+            Spacer[ 5 ],
+            Pane[ icon, ImageSize -> { 20, 20 }, ImageSizeAction -> "ShrinkToFit" ]
+        }
+    ]
+};
+
+makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Row @ Flatten @ {
+    "Used ",
+    string,
+    If[ MissingQ @ icon,
+        Nothing,
+        {
+            Spacer[ 5 ],
+            Pane[ icon, ImageSize -> { 20, 20 }, ImageSizeAction -> "ShrinkToFit" ]
+        }
+    ]
+};
+
+makeToolCallBoxLabel0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

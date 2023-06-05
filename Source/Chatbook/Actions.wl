@@ -3,6 +3,8 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 
+(* cSpell: ignore ENDTOOLCALL *)
+
 (* TODO: these probably aren't needed as exported symbols since all hooks are going through ChatbookAction *)
 `AskChat;
 `AttachCodeButtons;
@@ -28,6 +30,11 @@ Needs[ "Wolfram`Chatbook`Formatting`"       ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
 Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 Needs[ "Wolfram`Chatbook`Prompting`"        ];
+Needs[ "Wolfram`Chatbook`Tools`"            ];
+
+System`GenerateLLMToolResponse;
+System`LLMToolRequest;
+System`LLMToolResponse;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -242,7 +249,7 @@ chatInputCellQ[ ___ ] := False;
 (*waitForLastTask*)
 waitForLastTask // beginDefinition;
 waitForLastTask[ ] := waitForLastTask @ $lastTask;
-waitForLastTask[ task_TaskObject ] := TaskWait @ task;
+waitForLastTask[ task_TaskObject ] := (TaskWait @ task; If[ $lastTask =!= task, waitForLastTask @ $lastTask ]);
 waitForLastTask[ HoldPattern[ $lastTask ] ] := Null;
 waitForLastTask // endDefinition;
 
@@ -730,9 +737,11 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
 
         If[ ! StringQ @ key, throwFailure[ "NoAPIKey" ] ];
 
+        settings[ "OpenAIKey" ] = key;
+
         { req, data } = Reap[
             ConfirmMatch[
-                makeHTTPRequest[ Append[ settings, "OpenAIKey" -> key ], cells ],
+                makeHTTPRequest[ settings, cells ],
                 _HTTPRequest,
                 "MakeHTTPRequest"
             ],
@@ -960,7 +969,7 @@ submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
                             $autoAssistMode = autoAssist
                         },
                         Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
-                        checkResponse[ settings, container, cellObject, #1 ]
+                        checkResponse[ settings, Unevaluated @ container, cellObject, #1 ]
                     ]
                 ]
             |>,
@@ -1022,7 +1031,7 @@ activeAIAssistantCell[
                                     dynamicTextDisplay[ container, reformat ]
                                 ],
                                 TrackedSymbols :> { x },
-                                UpdateInterval -> 0.2
+                                UpdateInterval -> 0.4
                             ],
                             Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
                             Deinitialization :> Quiet @ TaskRemove @ task
@@ -1066,7 +1075,7 @@ activeAIAssistantCell[ container_, settings_, minimized_ ] :=
                         Refresh[
                             dynamicTextDisplay[ container, reformat ],
                             TrackedSymbols :> { },
-                            UpdateInterval -> 0.2
+                            UpdateInterval -> 0.4
                         ],
                         Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
                         Deinitialization :> Quiet @ TaskRemove @ task
@@ -1123,7 +1132,7 @@ dynamicTextDisplay[ text_String, True ] :=
             Refresh[
                 Block[ { $dynamicText = True }, RawBoxes @ Cell @ TextData @ reformatTextData @ text ],
                 TrackedSymbols :> { },
-                UpdateInterval -> 0.2
+                UpdateInterval -> 0.4
             ],
             Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
         ]
@@ -1163,12 +1172,90 @@ checkResponse[ settings_, container_, cell_, as: KeyValuePattern[ "StatusCode" -
         writeErrorCell[ cell, $badResponse = Association[ as, "Body" -> body, "BodyJSON" -> data ] ]
     ];
 
-checkResponse[ settings_, container_, cell_, as_Association ] := (
+checkResponse[
+    settings: KeyValuePattern[ "ToolsEnabled" -> False ],
+    container_,
+    cell_,
+    as_Association
+] := writeReformattedCell[ settings, container, cell ];
+
+checkResponse[ settings_, container_? toolFreeQ, cell_, as_Association ] :=
     writeReformattedCell[ settings, container, cell ];
-    (* Quiet @ NotebookDelete @ cell; *)
-);
+
+checkResponse[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
+    Module[ { callPos, toolCall, toolResponse, output, messages, newMessages, req },
+
+        { callPos, toolCall } = ConfirmMatch[
+            $toolConfiguration[ "ToolRequestParser" ][ container ],
+            { _, _LLMToolRequest },
+            "ToolRequestParser"
+        ];
+
+        toolResponse = ConfirmMatch[
+            GenerateLLMToolResponse[ $toolConfiguration, toolCall ],
+            _LLMToolResponse,
+            "GenerateLLMToolResponse"
+        ];
+
+        output = toolResponseString @ toolResponse;
+
+        messages = ConfirmMatch[ settings[ "Data", "Messages" ], { __Association }, "Messages" ];
+
+        newMessages = Join[
+            messages,
+            {
+                <| "role" -> "assistant", "content" -> StringTrim @ container <> "\nENDTOOLCALL" |>,
+                <| "role" -> "system"   , "content" -> output |>
+            }
+        ];
+
+        req = ConfirmMatch[ makeHTTPRequest[ settings, newMessages ], _HTTPRequest, "HTTPRequest" ];
+
+        (* container = container <> "RESULT\n" <> output <> "\nENDTOOLCALL\n"; *)
+        appendToolResult[ container, output ];
+
+        $lastTask = submitAIAssistant[ container, req, cell, settings ]
+    ],
+    throwInternalFailure[ checkResponse[ settings, container, cell, as ], ## ] &
+];
 
 checkResponse // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*appendToolResult*)
+appendToolResult // beginDefinition;
+appendToolResult // Attributes = { HoldFirst };
+
+appendToolResult[ container_Symbol, output_String ] := container =
+    If[ StringStartsQ[ output, "[[DISPLAY]]" ],
+        StringJoin[
+            container,
+            "RESULT\n[[Output displayed for user]]\nENDTOOLCALL\n\n",
+            StringTrim @ StringDelete[ output, "[[DISPLAY]]" ],
+            "\n"
+        ],
+        container<>"RESULT\n"<>output<>"\nENDTOOLCALL\n"
+    ];
+
+appendToolResult // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolResponseString*)
+toolResponseString // beginDefinition;
+toolResponseString[ HoldPattern @ LLMToolResponse[ as_, ___ ] ] := toolResponseString @ as;
+toolResponseString[ as: KeyValuePattern[ "Output" -> output_ ] ] := toolResponseString[ as, output ];
+toolResponseString[ as_, KeyValuePattern[ "String" -> output_ ] ] := toolResponseString[ as, output ];
+toolResponseString[ as_, output_String ] := output;
+toolResponseString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolFreeQ*)
+toolFreeQ // beginDefinition;
+toolFreeQ[ s_String ] := ! MatchQ[ $toolConfiguration[ "ToolRequestParser" ][ s ], { _, _LLMToolRequest } ];
+toolFreeQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1263,7 +1350,8 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages0: { __Association 
                 "frequency_penalty" -> freqPenalty,
                 "presence_penalty"  -> presPenalty,
                 "model"             -> toModelName @ model,
-                "stream"            -> stream
+                "stream"            -> stream,
+                "stop"              -> "ENDTOOLCALL"
             |>,
             Automatic|_Missing
         ];
@@ -1496,22 +1584,46 @@ makeCurrentRole // endDefinition;
 (*buildSystemPrompt*)
 buildSystemPrompt // beginDefinition;
 
-buildSystemPrompt[ as_Association ] := StringTrim @ TemplateApply[
-    $promptTemplate,
-    Association[
-        $promptComponents[ "Generic" ],
-		Select[
-			<|
-				"Pre"  -> getPrePrompt @ as,
-				"Post" -> getPostPrompt @ as,
-                "Base" -> "%%BASE_PROMPT%%"
-			|>,
-			StringQ
-		]
-    ]
+buildSystemPrompt[ as_Association ] := StringReplace[
+    StringTrim @ TemplateApply[
+        $promptTemplate,
+        Association[
+            $promptComponents[ "Generic" ],
+            Select[
+                <|
+                    "Pre"   -> getPrePrompt @ as,
+                    "Post"  -> getPostPrompt @ as,
+                    "Tools" -> getToolPrompt @ as,
+                    "Base"  -> "%%BASE_PROMPT%%"
+                |>,
+                StringQ
+            ]
+        ]
+    ],
+    "\n\n\n\n" -> "\n\n"
 ];
 
 buildSystemPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getToolPrompt*)
+getToolPrompt // beginDefinition;
+
+getToolPrompt[ KeyValuePattern[ "ToolsEnabled" -> False ] ] := "";
+
+(* TODO: include tools defined by the persona! *)
+getToolPrompt[ settings_ ] := Enclose[
+    Module[ { config, string },
+        config = ConfirmMatch[ makeToolConfiguration[ ], _System`LLMConfiguration ];
+        ConfirmBy[ TemplateApply[ config[ "ToolPrompt" ], config[ "Data" ] ], StringQ ]
+    ],
+    throwInternalFailure[ getToolPrompt @ settings, ## ] &
+];
+
+(* getToolPrompt[ _ ] := Missing[ ]; *)
+
+getToolPrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
