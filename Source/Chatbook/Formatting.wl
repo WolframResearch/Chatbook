@@ -686,7 +686,7 @@ styleBox // endDefinition;
 (*image*)
 image // beginDefinition;
 
-image[ str_String ] := StringReplace[ str, "![" ~~ alt__ ~~ "](" ~~ url__ ~~ ")" :> image[ alt, url ] ];
+image[ str_String ] := First @ StringSplit[ str, "![" ~~ alt__ ~~ "](" ~~ url__ ~~ ")" :> image[ alt, url ] ];
 
 image[ alt_String, url_String ] := image[ alt, url, URLParse @ url ];
 
