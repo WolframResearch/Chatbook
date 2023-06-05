@@ -2,6 +2,9 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 
+(* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDTOOLCALL, pacletreadonly, noinit, playerpass *)
+
+`$attachments;
 `$defaultChatTools;
 `$toolConfiguration;
 `makeToolConfiguration;
@@ -21,6 +24,8 @@ System`LLMConfiguration;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Tool Configuration*)
+
+$sandboxEvaluationTimeout = 30;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -283,27 +288,34 @@ $line = 0;
 
 $sandboxEvaluateDescription = "\
 Evaluate Wolfram Language code for the user in a sandboxed environment. \
-The result will be displayed in the chat for the user to see.
+You do not need to tell the user the input code that you are evaluating. \
+They will be able to inspect it if they want to. \
+The user does not automatically see the result. \
+You must include the result in your response in order for them to see it.
 
 Example
 ---
-user: What's the 1337th prime number?
+user: Plot sin(x) from -5 to 5
 
-assistant: Let me calculate that for you. Just a moment...
+assistant: Let me plot that for you. Just a moment...
 TOOLCALL: sandbox_evaluate
 {
-	\"code\": \"Prime[1337]\"
+	\"code\": \"Plot[Sin[x], {x, -10, 10}, AxesLabel -> {\\\"x\\\", \\\"sin(x)\\\"}]\"
 }
 ENDARGUMENTS
 ENDTOOLCALL
-"
+
+system: ![result](expression://result-xxxx)
+
+assistant: Here's the plot of $sin(x)$ from $-5$ to $5$:
+![Plot](expression://result-xxxx)
+";
 
 $defaultChatTools[ "sandbox_evaluate" ] = LLMTool[
     <|
         "Name"        -> "sandbox_evaluate",
         "DisplayName" -> "Sandbox Evaluate",
         "Icon"        -> RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
-        "ShowResult"  -> True, (* TODO: make this work *)
         "Description" -> $sandboxEvaluateDescription,
         "Parameters"  -> {
             "code" -> <|
@@ -319,20 +331,101 @@ $defaultChatTools[ "sandbox_evaluate" ] = LLMTool[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*$sandBoxKernel*)
+(*startSandboxKernel*)
+startSandboxKernel // beginDefinition;
 
-(* Close previous $sandboxKernel links in case package was reloaded *)
-Scan[ LinkClose, Cases[ Links[ ], LinkObject[ _String? (StringContainsQ[ "SandboxEvaluateTag" ]), ___ ] ] ];
+startSandboxKernel[ ] := Enclose[
+    Module[ { pwFile, kernel, pid },
 
-$sandBoxKernel := $sandBoxKernel =
-    Module[ { kernel },
-        kernel = LinkLaunch @ StringJoin[
-            First @ $CommandLine,
-            " -wstp -pacletreadonly -sandbox -noinit -noicon -run SandboxEvaluateTag"
+        Scan[ LinkClose, Select[ Links[ ], sandboxKernelQ ] ];
+
+        (* pwFile = FileNameJoin @ { $InstallationDirectory, "Configuration", "Licensing", "playerpass" }; *)
+
+        kernel = ConfirmMatch[
+            LinkLaunch @ StringJoin[
+                First @ $CommandLine,
+                " -wstp -pacletreadonly -noinit -noicon",
+                If[ FileExistsQ @ pwFile, " -pwfile \""<>pwFile<>"\"", "" ],
+                " -run ChatbookSandbox" <> ToString @ $ProcessID
+            ],
+            _LinkObject,
+            "LinkLaunch"
         ];
-        While[ LinkReadyQ @ kernel, LinkRead @ kernel ];
-        kernel
-    ];
+
+        (* Use StartProtectedMode instead of passing the -sandbox argument, since we need to initialize the FE first *)
+        LinkWrite[ kernel, Unevaluated @ EvaluatePacket[ UsingFrontEnd @ Null; Developer`StartProtectedMode[ ] ] ];
+
+        pid = pingSandboxKernel @ kernel;
+
+        If[ IntegerQ @ pid,
+            kernel,
+            Quiet @ LinkClose @ kernel;
+            throwFailure[ "NoSandboxKernel" ]
+        ]
+    ],
+    throwInternalFailure[ startSandboxKernel[ ], ## ] &
+];
+
+startSandboxKernel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getSandboxKernel*)
+getSandboxKernel // beginDefinition;
+getSandboxKernel[ ] := getSandboxKernel @ Select[ Links[ ], sandboxKernelQ ];
+getSandboxKernel[ { other__LinkObject, kernel_ } ] := (Scan[ LinkClose, { other } ]; getSandboxKernel @ { kernel });
+getSandboxKernel[ { kernel_LinkObject } ] := checkSandboxKernel @ kernel;
+getSandboxKernel[ { } ] := startSandboxKernel[ ];
+getSandboxKernel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkSandboxKernel*)
+checkSandboxKernel // beginDefinition;
+checkSandboxKernel[ kernel_LinkObject ] /; IntegerQ @ pingSandboxKernel @ kernel := kernel;
+checkSandboxKernel[ kernel_LinkObject ] := startSandboxKernel[ ];
+checkSandboxKernel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*pingSandboxKernel*)
+pingSandboxKernel // beginDefinition;
+
+pingSandboxKernel[ kernel_LinkObject ] := Enclose[
+    Module[ { uuid, return },
+
+        uuid   = CreateUUID[ ];
+        return = $Failed;
+
+        ConfirmMatch[
+            TimeConstrained[ While[ LinkReadyQ @ kernel, LinkRead @ kernel ], 10, $TimedOut ],
+            Except[ $TimedOut ],
+            "InitialLinkRead"
+        ];
+
+        With[ { id = uuid }, LinkWrite[ kernel, Unevaluated @ EvaluatePacket @ { id, $ProcessID } ] ];
+
+        ConfirmMatch[
+            TimeConstrained[ While[ ! MatchQ[ return = LinkRead @ kernel, ReturnPacket @ { uuid, _ } ] ], 10 ],
+            Except[ $TimedOut ],
+            "LinkReadReturn"
+        ];
+
+        ConfirmBy[
+            Replace[ return, ReturnPacket @ { _, pid_ } :> pid ],
+            IntegerQ,
+            "ProcessID"
+        ]
+    ]
+];
+
+pingSandboxKernel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sandboxKernelQ*)
+sandboxKernelQ[ LinkObject[ cmd_String, ___ ] ] := StringContainsQ[ cmd, "ChatbookSandbox" <> ToString @ $ProcessID ];
+sandboxKernelQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -341,36 +434,43 @@ sandboxEvaluate // beginDefinition;
 
 sandboxEvaluate[ KeyValuePattern[ "code" -> code_ ] ] := sandboxEvaluate @ code;
 
-sandboxEvaluate[ HoldComplete[ evaluation_ ] ] :=
-    Module[ { null, packets, results, flat },
+sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
+    Module[ { kernel, null, packets, results, flat },
 
         $lastSandboxEvaluation = HoldComplete @ evaluation;
 
+        kernel = ConfirmMatch[ getSandboxKernel[ ], _LinkObject, "GetKernel" ];
+        While[ LinkReadyQ @ kernel, LinkRead @ kernel ];
+
         LinkWrite[
-            $sandBoxKernel,
-            Unevaluated @ EnterExpressionPacket @ BinarySerialize @ evaluation
+            kernel,
+            Unevaluated @ EnterExpressionPacket @ UsingFrontEnd @ BinarySerialize[ HoldComplete @@ { evaluation } ]
         ];
 
         { null, { packets } } = Reap[
             TimeConstrained[
-                While[ ! MatchQ[ Sow @ LinkRead @ $sandBoxKernel, _ReturnExpressionPacket ] ],
-                10
+                While[ ! MatchQ[ Sow @ LinkRead @ kernel, _ReturnExpressionPacket ] ],
+                $sandboxEvaluationTimeout
             ]
         ];
 
         results = Cases[
             packets,
-            ReturnExpressionPacket[ bytes_ByteArray ] :> BinaryDeserialize[ bytes, HoldComplete ]
+            ReturnExpressionPacket[ bytes_ByteArray ] :> BinaryDeserialize @ bytes
         ];
 
         flat = Flatten[ HoldComplete @@ results, 1 ];
 
-        <|
+        (* TODO: include prompting that explains how to use Out[n] to get previous results *)
+
+        $lastSandboxResult = <|
             "String"  -> sandboxResultString @ flat,
             "Result"  -> flat,
             "Packets" -> packets
         |>
-    ];
+    ],
+    throwInternalFailure[ sandboxEvaluate @ HoldComplete @ evaluation, ## ] &
+];
 
 sandboxEvaluate // endDefinition;
 
@@ -380,12 +480,20 @@ sandboxEvaluate // endDefinition;
 sandboxResultString // beginDefinition;
 
 (* TODO: show messages etc. *)
-sandboxResultString[ HoldComplete[ expr_ ] ] := StringJoin[
-    "[[DISPLAY]]\n",
-    CellToString @ Cell[ BoxData @ MakeBoxes @ expr, "Output" ]
-];
+sandboxResultString[ HoldComplete[ Null..., expr_ ] ] :=
+    With[ { string = ToString[ Unevaluated @ expr, InputForm, PageWidth -> 80 ] },
+        "```\n"<>string<>"\n```" /; StringLength @ string < 240
+    ];
+
+sandboxResultString[ HoldComplete[ Null..., expr_ ] ] :=
+    With[ { uuid = CreateUUID[ "result-" ] },
+        $attachments[ uuid ] = HoldComplete @ expr;
+        "![result](expression://" <> uuid <> ")"
+    ];
 
 sandboxResultString // endDefinition;
+
+$attachments = <| |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
