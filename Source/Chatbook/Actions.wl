@@ -1219,18 +1219,7 @@ checkResponse // endDefinition;
 (*appendToolResult*)
 appendToolResult // beginDefinition;
 appendToolResult // Attributes = { HoldFirst };
-
-appendToolResult[ container_Symbol, output_String ] := container =
-    If[ StringStartsQ[ output, "[[DISPLAY]]" ],
-        StringJoin[
-            container,
-            "RESULT\n[[Output displayed for user]]\nENDTOOLCALL\n\n",
-            StringTrim @ StringDelete[ output, "[[DISPLAY]]" ],
-            "\n"
-        ],
-        container<>"RESULT\n"<>output<>"\nENDTOOLCALL\n"
-    ];
-
+appendToolResult[ container_Symbol, output_String ] := container = container<>"RESULT\n"<>output<>"\nENDTOOLCALL\n";
 appendToolResult // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
