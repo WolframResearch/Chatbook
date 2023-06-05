@@ -1725,7 +1725,14 @@ Cell[BoxData[FormBox[
 (*insertModifierTemplate*)
 
 
-insertModifierTemplate[ cell_CellObject ] := insertModifierTemplate[ cell, parentNotebook @ cell ];
+insertModifierTemplate[ cell_CellObject ] :=
+    If[ MatchQ[
+            Developer`CellInformation @ SelectedCells[ ],
+            { KeyValuePattern @ { "Style" -> $$chatInputStyle } }
+        ],
+        insertModifierTemplate[ cell, parentNotebook @ cell ],
+        NotebookWrite[ parentNotebook @ cell, "#" ]
+    ];
 
 insertModifierTemplate[ parent_CellObject, nbo_NotebookObject ] :=
 	Module[ { uuid, cellexpr },
@@ -1939,7 +1946,14 @@ Cell[BoxData[FormBox[
 (*insertFunctionTemplate*)
 
 
-insertFunctionTemplate[ cell_CellObject ] := insertFunctionTemplate[ cell, parentNotebook @ cell ];
+insertFunctionTemplate[ cell_CellObject ] := 
+    If[ MatchQ[
+            Developer`CellInformation @ SelectedCells[ ],
+            { KeyValuePattern @ { "Style" -> $$chatInputStyle, "CursorPosition" -> { 0, _ } } }
+        ],
+        insertFunctionTemplate[ cell, parentNotebook @ cell ],
+        NotebookWrite[ parentNotebook @ cell, "!" ]
+    ];
 
 insertFunctionTemplate[ parent_CellObject, nbo_NotebookObject ] :=
 	Module[ { uuid, cellexpr },

@@ -7,6 +7,8 @@ BeginPackage["Wolfram`Chatbook`Utils`"]
 
 CellPrint2
 
+FirstMatchingPositionOrder::usage = "FirstMatchingPositionOrder[patterns][a, b] returns an ordering value based on the positions of the first pattern in patterns to match a and b."
+
 Begin["`Private`"]
 
 Needs["Wolfram`Chatbook`ErrorUtils`"]
@@ -58,6 +60,30 @@ CellPrint2[
 ]]
 
 (*====================================*)
+
+FirstMatchingPositionOrder[patterns_?ListQ][a_, b_] := Module[{
+	aPos,
+	bPos
+},
+	aPos = FirstPosition[patterns, _?(patt |-> MatchQ[a, patt]), None, {1}];
+	bPos = FirstPosition[patterns, _?(patt |-> MatchQ[b, patt]), None, {1}];
+
+	Replace[{aPos, bPos}, {
+		(* If neither `a` nor `b` match, then they are already in order. *)
+		{None, None} -> True,
+		(* If only `a` matches, it's already in order. *)
+		{Except[None], None} -> True,
+		(* If only `b` matches, it should come earlier. *)
+		{None, Except[None]} -> -1,
+		(* If both `a` and `b` match, sort based on the position of the matched pattern. *)
+		{{aIdx_?IntegerQ}, {bIdx_?IntegerQ}} :> Order[aIdx, bIdx],
+		other_ :> FailureMessage[
+			FirstMatchingPositionOrder::unexpected,
+			"Unexpected position values: ``",
+			{other}
+		]
+	}]
+]
 
 End[]
 
