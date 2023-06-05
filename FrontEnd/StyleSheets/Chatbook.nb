@@ -5388,6 +5388,98 @@ Notebook[
    }
   ],
   Cell[
+   StyleData["ImageNotFound"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.034483],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {
+            {
+             {1, 4, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0}
+            },
+            {
+             {1, 4, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3}
+            }
+           },
+           {
+            CompressedData[
+             "\n1:eJxdUwlIVFEUHawsJCsizHZHzZk/f3dmlArzZESriRYSJaGiYlFqlmVmgkSZ\nhoVZ2ALZZmVISJlIiGTYJmlmioSZWZlEREkbtr839zdSDz6P+9999557znnm\nxPSYZA+TyRTOPr6nlrzLDb8uYJraE+jZaIFX17mMsCIBVdPXJs3rtaI3qrgs\n7bCAhvKpas8rAZcH2yMT2wTw06gWG7JKfUfGjrOB6oiUl2TDsbSJe24WSfiW\nt7F+22Mb5UfKcK6/sXRshIhDtz5b48YrRl8R7K+HeFfB5oHvlYMxEn51ZL8J\n2qIinZVp7pMQ7rqoQYhjN1NlmPiK17AitHBBfL+MxuYzi2qvaejLmXRlcYKC\n/KMLD2warROOZgUR8f1t/ut0OjereFlxssmvWsep9xfvLN+h4nxGmFfXiGDw\nam1nVcKVMBy75moajiesmVNzL9aO3S5gKnh6fqcdMXUz974tUcC6dQ/Nd4Bl\nbW/oldHJxtEvOcC69+V0SKjOZIw9dRCODNEdu/ZcmzvmtBWXCWAqsEGM83or\nUvja5zB0sYDT1h7pwA+++VuwlZf5bQeHE50dhIdfV7FWdkxhasmZgfjAxg4t\ndIChGlMVNxtmXtjbaeAJAqfZmutE7cefHdmVFvJBu5Pmf2ElHawhxvw2rExk\njKwOwSzWru6Z6I5duLyVf+MWFU9aGaBRIeSfgxrh2eDEFysr7NThyQV84DB8\npKN7iBnpk90du/R/HuyOXXykBJMPs3SIBT6shQ7etmaJTv4o1RHGDT5DJ3/p\nOk4z+gJfa7jA7dBu+KlCw4njbO3UCGeyRj40awa/Gul4RKV7V1Xy24BCPgpQ\nsYsnzFVI/3KFcOyXMZkXDFBo7laJ5qySsYzZv8BHMnSUcduPCRIt0nxeMvkp\nz0Z83/97TyBeaySwV1bq22Ql/z2S3O/5//f9B5U2suw=\n        "
+            ],
+            CompressedData[
+             "\n1:eJxTTMoPSmViYGCQBGIQveVE2b75UdoOCo4fk8/Eyjp0OiY8vbBIC87/sPyY\ntzmnlgO3m2op0y1ZB67riwtsuzQdyvfNl9K/K+fw/PfKj5d4NR0em0kdiH4g\n7xCVYn3f/6yGQ1vU5T2PpyjA+RVzFinvjFGE8/MWM+5hNVJyUGVrnOrMrelw\nTjLwlvQdJbj5LGF8uptilR0WAG1RYdNysJp0ut7jvjLcfce9zTsdFVQcYO6H\n8YN2yLW+FtSB84G29U5fpwPX/3jp7CMKBrpw87tzgD7YqOtgXXCu49I9JYdl\nQOkNn3QdfFt4/debIPgw98P4MP/B9MP8DzMfFj4w+59+kr+Uf18W7j5Y+KKH\nPwBPJ60a\n        "
+            ]
+           }
+          ]
+         },
+         {FaceForm[RGBColor[0.74902, 0.74902, 0.74902, 1.]]},
+         StripOnInput -> False
+        ],
+        StyleBox[
+         {
+          JoinedCurveBox[
+           {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}},
+           {
+            {
+             {0.5, 29.5},
+             {28.301, 29.5},
+             {28.301, 1.699},
+             {0.5, 1.699},
+             {0.5, 29.5}
+            }
+           },
+           CurveClosed -> {1}
+          ]
+         },
+         {
+          CapForm["Butt"],
+          JoinForm[{"Miter", 10.}],
+          Dashing[{0.13793, 0.13793}],
+          RGBColor[0.74902, 0.74902, 0.74902, 1.]
+         },
+         StripOnInput -> False
+        ]
+       },
+       ImageSize -> {29., 31.},
+       PlotRange -> {{0., 29.}, {0., 31.}},
+       AspectRatio -> Automatic
+      ]
+     ])
+   }
+  ],
+  Cell[
    StyleData["InlineReferenceIconAt"],
    TemplateBoxOptions -> {
     DisplayFunction ->
@@ -10014,6 +10106,6 @@ Notebook[
    }
   ]
  },
- FrontEndVersion -> "13.2 for Mac OS X ARM (64-bit) (November 18, 2022)",
+ FrontEndVersion -> "13.2 for Microsoft Windows (64-bit) (January 30, 2023)",
  StyleDefinitions -> "PrivateStylesheetFormatting.nb"
 ]
