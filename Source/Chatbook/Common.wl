@@ -84,6 +84,10 @@ Chatbook::UnknownStatusCode =
 Chatbook::BadResponseMessage =
 "`1`";
 
+Chatbook::NoSandboxKernel = "\
+Unable to start a sandbox kernel.\
+This may mean that the number of currently running kernels exceeds the limit defined by $LicenseProcesses.";
+
 Chatbook::NotImplemented =
 "Action \"`1`\" is not implemented.";
 
