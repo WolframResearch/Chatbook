@@ -756,7 +756,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         data = ConfirmBy[ Association @ Flatten @ data, AssociationQ, "Data" ];
 
         If[ data[ "RawOutput" ],
-            persona = ConfirmBy[ GetCachedPersonaData[ "None" ], AssociationQ, "NonePersona" ];
+            persona = ConfirmBy[ GetCachedPersonaData[ "RawModel" ], AssociationQ, "NonePersona" ];
             If[ AssociationQ @ settings[ "LLMEvaluator" ],
                 settings[ "LLMEvaluator" ] = Association[ settings[ "LLMEvaluator" ], persona ],
                 settings = Association[ settings, persona ]
@@ -829,7 +829,14 @@ toolsEnabledQ[ ___ ] := False;
 (*getLLMEvaluator*)
 getLLMEvaluator // beginDefinition;
 getLLMEvaluator[ as_Association ] := getLLMEvaluator[ as, Lookup[ as, "LLMEvaluator" ] ];
-getLLMEvaluator[ as_, name_String ] := getLLMEvaluator[ as, getNamedLLMEvaluator @ name ];
+getLLMEvaluator[ as_, name_String ] :=
+	(* If there isn't any information on `name`, getNamedLLMEvaluator just
+		returns `name`; if that happens, avoid infinite recursion by just
+		returning *)
+	Replace[getNamedLLMEvaluator[name], {
+		name -> name,
+		other_ :> getLLMEvaluator[as, other]
+	}]
 getLLMEvaluator[ as_, evaluator_Association ] := evaluator;
 getLLMEvaluator[ _, _ ] := None;
 getLLMEvaluator // endDefinition;
@@ -1446,7 +1453,17 @@ makePromptFunctionMessages // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*getLLMPrompt*)
 getLLMPrompt // beginDefinition;
-getLLMPrompt[ name_String ] := Block[ { PrintTemporary }, Quiet @ getLLMPrompt0 @ name ];
+getLLMPrompt[ name_String ] :=
+	Block[ { PrintTemporary },
+		(* Ensure Wolfram/LLMFunctions is installed and loaded before calling System`LLMPrompt[..] *)
+		If[$VersionNumber < 13.3,
+			Quiet[
+				PacletInstall[ "Wolfram/LLMFunctions" ];
+				Needs[ "Wolfram`LLMFunctions`" -> None ]
+			];
+		];
+		Quiet @ getLLMPrompt0 @ name
+	];
 getLLMPrompt // endDefinition;
 
 getLLMPrompt0 // beginDefinition;

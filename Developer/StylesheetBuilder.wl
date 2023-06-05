@@ -403,7 +403,7 @@ $tabbedOutputControls = Column[
         RawBoxes @ StyleBox[
             RowBox @ {
                 DynamicBox @ ToBoxes[
-                    If[ TrueQ @ CloudSystem`$CloudNotebooks,
+                    If[ FEPrivate`$ProductIDName === "WolframCloud",
                         CurrentValue[
                             EvaluationCell[ ],
                             { TaggingRules, "PageData", "CurrentPage" },
@@ -419,7 +419,7 @@ $tabbedOutputControls = Column[
                 ],
                 "/",
                 DynamicBox @ ToBoxes[
-                    If[ TrueQ @ CloudSystem`$CloudNotebooks,
+                    If[ FEPrivate`$ProductIDName === "WolframCloud",
                         CurrentValue[
                             EvaluationCell[ ],
                             { TaggingRules, "PageData", "PageCount" },

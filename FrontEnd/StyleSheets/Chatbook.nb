@@ -881,7 +881,7 @@ Notebook[
              RawBoxes[TemplateBox[{}, "ChatInputCellDingbat"]],
              With[
               {
-               Wolfram`Chatbook`UI`Private`menuData = 
+               Wolfram`Chatbook`UI`Private`personas = 
                 Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
 
                 ],
@@ -892,11 +892,10 @@ Notebook[
                 ]
               },
               FirstCase[
-               Wolfram`Chatbook`UI`Private`menuData["Personas"],
+               Wolfram`Chatbook`UI`Private`personas,
                {
                 Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
-                Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]],
-                Blank[]
+                Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]]
                } :> Wolfram`Chatbook`UI`Private`icon,
                Style[
                 Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
@@ -922,17 +921,11 @@ Notebook[
         RoundingRadius -> 2,
         FrameStyle ->
          Dynamic[
-          If[ CurrentValue["MouseOver"],
-           GrayLevel[0.74902],
-           GrayLevel[0.81961]
-          ]
+          If[ CurrentValue["MouseOver"], GrayLevel[0.74902], None ]
          ],
         Background ->
          Dynamic[
-          If[ CurrentValue["MouseOver"],
-           GrayLevel[0.96078],
-           GrayLevel[1]
-          ]
+          If[ CurrentValue["MouseOver"], GrayLevel[0.96078], None ]
          ],
         FrameMargins -> 0,
         ImageMargins -> 0,
@@ -942,7 +935,9 @@ Notebook[
        ButtonFunction :>
         (AttachCell[
          EvaluationCell[],
-         Wolfram`Chatbook`UI`Private`openChatInputActionMenu[
+         Wolfram`Chatbook`UI`Private`openChatActionMenu[
+          "Input",
+          Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]],
           EvaluationCell[]
          ],
          {Left, Bottom},
@@ -985,7 +980,7 @@ Notebook[
                 RawBoxes[TemplateBox[{}, "ChatInputCellDingbat"]],
                 With[
                  {
-                  Wolfram`Chatbook`UI`Private`menuData = 
+                  Wolfram`Chatbook`UI`Private`personas = 
                    Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
 
                    ],
@@ -996,11 +991,10 @@ Notebook[
                    ]
                  },
                  FirstCase[
-                  Wolfram`Chatbook`UI`Private`menuData["Personas"],
+                  Wolfram`Chatbook`UI`Private`personas,
                   {
                    Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
-                   Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]],
-                   Blank[]
+                   Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]]
                   } :> Wolfram`Chatbook`UI`Private`icon,
                   Style[
                    Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
@@ -1026,17 +1020,11 @@ Notebook[
            RoundingRadius -> 2,
            FrameStyle ->
             Dynamic[
-             If[ CurrentValue["MouseOver"],
-              GrayLevel[0.74902],
-              GrayLevel[0.81961]
-             ]
+             If[ CurrentValue["MouseOver"], GrayLevel[0.74902], None ]
             ],
            Background ->
             Dynamic[
-             If[ CurrentValue["MouseOver"],
-              GrayLevel[0.96078],
-              GrayLevel[1]
-             ]
+             If[ CurrentValue["MouseOver"], GrayLevel[0.96078], None ]
             ],
            FrameMargins -> 0,
            ImageMargins -> 0,
@@ -1046,7 +1034,9 @@ Notebook[
           ButtonFunction :>
            (AttachCell[
             EvaluationCell[],
-            Wolfram`Chatbook`UI`Private`openChatInputActionMenu[
+            Wolfram`Chatbook`UI`Private`openChatActionMenu[
+             "Input",
+             Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]],
              EvaluationCell[]
             ],
             {Left, Bottom},
@@ -1109,7 +1099,7 @@ Notebook[
                   RawBoxes[TemplateBox[{}, "ChatInputCellDingbat"]],
                   With[
                    {
-                    Wolfram`Chatbook`UI`Private`menuData = 
+                    Wolfram`Chatbook`UI`Private`personas = 
                      Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
 
                      ],
@@ -1120,11 +1110,10 @@ Notebook[
                      ]
                    },
                    FirstCase[
-                    Wolfram`Chatbook`UI`Private`menuData["Personas"],
+                    Wolfram`Chatbook`UI`Private`personas,
                     {
                      Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
-                     Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]],
-                     Blank[]
+                     Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]]
                     } :> Wolfram`Chatbook`UI`Private`icon,
                     Style[
                      Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
@@ -1150,17 +1139,11 @@ Notebook[
              RoundingRadius -> 2,
              FrameStyle ->
               Dynamic[
-               If[ CurrentValue["MouseOver"],
-                GrayLevel[0.74902],
-                GrayLevel[0.81961]
-               ]
+               If[ CurrentValue["MouseOver"], GrayLevel[0.74902], None ]
               ],
              Background ->
               Dynamic[
-               If[ CurrentValue["MouseOver"],
-                GrayLevel[0.96078],
-                GrayLevel[1]
-               ]
+               If[ CurrentValue["MouseOver"], GrayLevel[0.96078], None ]
               ],
              FrameMargins -> 0,
              ImageMargins -> 0,
@@ -1170,7 +1153,9 @@ Notebook[
             ButtonFunction :>
              (AttachCell[
               EvaluationCell[],
-              Wolfram`Chatbook`UI`Private`openChatInputActionMenu[
+              Wolfram`Chatbook`UI`Private`openChatActionMenu[
+               "Input",
+               Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]],
                EvaluationCell[]
               ],
               {Left, Bottom},
@@ -1571,7 +1556,6 @@ Notebook[
     },
     {None, None}
    },
-   DefaultNewCellStyle -> "Input",
    CounterAssignments -> {{"ChatInputCount", 0}},
    FontWeight -> "DemiBold",
    FontColor -> GrayLevel[0.2]
@@ -1639,14 +1623,12 @@ Notebook[
       ],
       Background -> None,
       CellFrame -> 0,
-      CellMargins -> 0,
-      Magnification -> 0.75 * Inherited
+      CellMargins -> 0
      ],
      None
     },
     {None, None}
    },
-   DefaultNewCellStyle -> "Input",
    CounterAssignments -> {{"ChatInputCount", 0}},
    FontSize -> 6,
    Background -> GrayLevel[0.95]
@@ -1659,7 +1641,47 @@ Notebook[
       ButtonBox[
        FrameBox[
         PaneBox[
-         TemplateBox[{}, "ChatSystemMenu"],
+         DynamicModuleBox[
+          {Wolfram`Chatbook`UI`Private`cell$$},
+          DynamicBox[
+           ToBoxes[
+            If[ TrueQ[Wolfram`Chatbook`Common`$cloudNotebooks],
+             RawBoxes[TemplateBox[{}, "ChatInputCellDingbat"]],
+             With[
+              {
+               Wolfram`Chatbook`UI`Private`personas = 
+                Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
+
+                ],
+               Wolfram`Chatbook`UI`Private`personaValue = 
+                Wolfram`Chatbook`UI`Private`currentValueOrigin[
+                 Wolfram`Chatbook`UI`Private`cell$$,
+                 {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+                ]
+              },
+              FirstCase[
+               Wolfram`Chatbook`UI`Private`personas,
+               {
+                Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
+                Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]]
+               } :> Wolfram`Chatbook`UI`Private`icon,
+               Style[
+                Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
+                GrayLevel[0.5]
+               ]
+              ]
+             ]
+            ],
+            StandardForm
+           ]
+          ],
+          Initialization :>
+           (Quiet[Needs["Wolfram`Chatbook`" -> None]];
+           Wolfram`Chatbook`UI`Private`cell$$ = 
+            Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]]),
+          DynamicModuleValues :> { },
+          UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
+         ],
          Alignment -> {Center, Center},
          ImageSize -> {25, 25},
          ImageSizeAction -> "ShrinkToFit"
@@ -1687,7 +1709,9 @@ Notebook[
        ButtonFunction :>
         (AttachCell[
          EvaluationCell[],
-         Wolfram`Chatbook`UI`Private`openChatDelimiterActionMenu[
+         Wolfram`Chatbook`UI`Private`openChatActionMenu[
+          "Delimiter",
+          Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]],
           EvaluationCell[]
          ],
          {Left, Bottom},
@@ -1952,7 +1976,7 @@ Notebook[
          {
           CapForm["Round"],
           GrayLevel[0.9],
-          AbsoluteThickness[1],
+          AbsoluteThickness[2],
           LineBox[{{-1, 0}, {1, 0}}]
          },
          AspectRatio -> Full,
@@ -3781,7 +3805,7 @@ Notebook[
    }
   ],
   Cell[
-   StyleData["ChatIconNoPersona"],
+   StyleData["ChatIconPlainChat"],
    TemplateBoxOptions -> {
     DisplayFunction ->
      (Function[
@@ -5364,98 +5388,6 @@ Notebook[
    }
   ],
   Cell[
-   StyleData["ImageNotFound"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      GraphicsBox[
-       {
-        Thickness[0.034483],
-        StyleBox[
-         {
-          FilledCurveBox[
-           {
-            {
-             {1, 4, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {0, 1, 0},
-             {1, 3, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {0, 1, 0}
-            },
-            {
-             {1, 4, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {1, 3, 3},
-             {1, 3, 3}
-            }
-           },
-           {
-            CompressedData[
-             "\n1:eJxdUwlIVFEUHawsJCsizHZHzZk/f3dmlArzZESriRYSJaGiYlFqlmVmgkSZ\nhoVZ2ALZZmVISJlIiGTYJmlmioSZWZlEREkbtr839zdSDz6P+9999557znnm\nxPSYZA+TyRTOPr6nlrzLDb8uYJraE+jZaIFX17mMsCIBVdPXJs3rtaI3qrgs\n7bCAhvKpas8rAZcH2yMT2wTw06gWG7JKfUfGjrOB6oiUl2TDsbSJe24WSfiW\nt7F+22Mb5UfKcK6/sXRshIhDtz5b48YrRl8R7K+HeFfB5oHvlYMxEn51ZL8J\n2qIinZVp7pMQ7rqoQYhjN1NlmPiK17AitHBBfL+MxuYzi2qvaejLmXRlcYKC\n/KMLD2warROOZgUR8f1t/ut0OjereFlxssmvWsep9xfvLN+h4nxGmFfXiGDw\nam1nVcKVMBy75moajiesmVNzL9aO3S5gKnh6fqcdMXUz974tUcC6dQ/Nd4Bl\nbW/oldHJxtEvOcC69+V0SKjOZIw9dRCODNEdu/ZcmzvmtBWXCWAqsEGM83or\nUvja5zB0sYDT1h7pwA+++VuwlZf5bQeHE50dhIdfV7FWdkxhasmZgfjAxg4t\ndIChGlMVNxtmXtjbaeAJAqfZmutE7cefHdmVFvJBu5Pmf2ElHawhxvw2rExk\njKwOwSzWru6Z6I5duLyVf+MWFU9aGaBRIeSfgxrh2eDEFysr7NThyQV84DB8\npKN7iBnpk90du/R/HuyOXXykBJMPs3SIBT6shQ7etmaJTv4o1RHGDT5DJ3/p\nOk4z+gJfa7jA7dBu+KlCw4njbO3UCGeyRj40awa/Gul4RKV7V1Xy24BCPgpQ\nsYsnzFVI/3KFcOyXMZkXDFBo7laJ5qySsYzZv8BHMnSUcduPCRIt0nxeMvkp\nz0Z83/97TyBeaySwV1bq22Ql/z2S3O/5//f9B5U2suw=\n        "
-            ],
-            CompressedData[
-             "\n1:eJxTTMoPSmViYGCQBGIQveVE2b75UdoOCo4fk8/Eyjp0OiY8vbBIC87/sPyY\ntzmnlgO3m2op0y1ZB67riwtsuzQdyvfNl9K/K+fw/PfKj5d4NR0em0kdiH4g\n7xCVYn3f/6yGQ1vU5T2PpyjA+RVzFinvjFGE8/MWM+5hNVJyUGVrnOrMrelw\nTjLwlvQdJbj5LGF8uptilR0WAG1RYdNysJp0ut7jvjLcfce9zTsdFVQcYO6H\n8YN2yLW+FtSB84G29U5fpwPX/3jp7CMKBrpw87tzgD7YqOtgXXCu49I9JYdl\nQOkNn3QdfFt4/debIPgw98P4MP/B9MP8DzMfFj4w+59+kr+Uf18W7j5Y+KKH\nPwBPJ60a\n        "
-            ]
-           }
-          ]
-         },
-         {FaceForm[RGBColor[0.74902, 0.74902, 0.74902, 1.]]},
-         StripOnInput -> False
-        ],
-        StyleBox[
-         {
-          JoinedCurveBox[
-           {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}},
-           {
-            {
-             {0.5, 29.5},
-             {28.301, 29.5},
-             {28.301, 1.699},
-             {0.5, 1.699},
-             {0.5, 29.5}
-            }
-           },
-           CurveClosed -> {1}
-          ]
-         },
-         {
-          CapForm["Butt"],
-          JoinForm[{"Miter", 10.}],
-          Dashing[{0.13793, 0.13793}],
-          RGBColor[0.74902, 0.74902, 0.74902, 1.]
-         },
-         StripOnInput -> False
-        ]
-       },
-       ImageSize -> {29., 31.},
-       PlotRange -> {{0., 29.}, {0., 31.}},
-       AspectRatio -> Automatic
-      ]
-     ])
-   }
-  ],
-  Cell[
    StyleData["InlineReferenceIconAt"],
    TemplateBoxOptions -> {
     DisplayFunction ->
@@ -6391,226 +6323,233 @@ Notebook[
       GraphicsBox[
        {
         Thickness[0.05],
-        {
-         FaceForm[
-          {RGBColor[0.37255, 0.65098, 0.58431], Opacity[1.]}
-         ],
-         FilledCurveBox[
-          {
+        StyleBox[
+         {
+          FilledCurveBox[
            {
-            {0, 2, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0}
+            {
+             {0, 2, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0}
+            },
+            {
+             {0, 2, 0},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0}
+            },
+            {
+             {1, 4, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3}
+            },
+            {
+             {0, 2, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3}
+            },
+            {
+             {1, 4, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3}
+            },
+            {
+             {1, 4, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3}
+            },
+            {
+             {1, 4, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3}
+            },
+            {
+             {1, 4, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3}
+            }
            },
            {
-            {0, 2, 0},
-            {0, 1, 0},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {0, 1, 0},
-            {1, 3, 3},
-            {1, 3, 3},
-            {0, 1, 0}
-           },
-           {
-            {1, 4, 3},
-            {0, 1, 0},
-            {1, 3, 3},
-            {1, 3, 3},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3}
-           },
-           {
-            {0, 2, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {0, 1, 0},
-            {1, 3, 3},
-            {1, 3, 3}
-           },
-           {
-            {1, 4, 3},
-            {0, 1, 0},
-            {0, 1, 0},
-            {1, 3, 3},
-            {1, 3, 3},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {1, 3, 3},
-            {1, 3, 3}
-           },
-           {
-            {1, 4, 3},
-            {1, 3, 3},
-            {0, 1, 0},
-            {1, 3, 3},
-            {1, 3, 3},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {1, 3, 3},
-            {1, 3, 3}
-           },
-           {
-            {1, 4, 3},
-            {1, 3, 3},
-            {0, 1, 0},
-            {1, 3, 3},
-            {1, 3, 3},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {1, 3, 3}
-           },
-           {
-            {1, 4, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3},
-            {1, 3, 3}
+            {
+             {8.3529, 10.955},
+             {10.024, 11.91},
+             {11.695, 10.955},
+             {11.695, 9.0448},
+             {10.024, 8.0898},
+             {8.3529, 9.0448},
+             {8.3529, 10.955}
+            },
+            CompressedData[
+             "\n1:eJxTTMoPSmViYGCQAmIQDQQ9YXvlHIB0TestJRD9IW2qJIiu25CogswP0OzW\nRuYrfJuuA6InXFWXAtEZYXt1QfSOTT7SIDqhfqYeiOaYViQDojfs6NUH0Vce\naoLtS4iVMQDRwWs5FUB0Q08kmL/m2V8wf8buaWD+GzdlsLsqeNeD+XuEDZSR\n5Tse2IDdeaOwC8zPMPBSBdEHnHzBfI9rqmoguqD5vT42/oOjvGA+w4drYH6B\n0VdVZP4Vno3yIPrCPj+wfzWO+oP5EdpmYL7NPDkw/8V0WTA/pPwt2H8CX96A\nwwsWvgZnd6PwT+xZjMJ/MLUIhQ+ODwDqZmjC\n        "
+            ],
+            CompressedData[
+             "\n1:eJxTTMoPSmViYGCQAmIQDQQHXmToOwBpljnGGg5Y+Ak3AsD8Cn0fMP+BiwUK\n/8IMaU0QvSDhijaIZvj6Ciwu8OUNmD8h8RIKf8fehSj8E9MKUPg/Ptmj8Bvi\n1TWQzU9Yv0UBRH+b2aGOzO+IqdMCm5f9Ug1EKyjK64FoA417YHUH+jfqIbtv\nwbZHYL5DqIAWMl9ASVYbmX/hnaYO2N+vGyDqV8vpgugbL6+CaYPAX2B6Q4oW\nhH62F6Jvnx9YX8JGeXB4ZTBFgc01qGkE8wVOpkLs5Z8F5l/JcNDECH8Apvdq\ngQ==\n        "
+            ],
+            CompressedData[
+             "\n1:eJxTTMoPSmViYGAQB2IQDQQPPlzRcQDSdRsSVUD0CYckVRBt8WutBoieYPFN\nHUQrLDLRAtELngjpgWjGwjVqIPqDLLs+iA6vlwTzCzafAvNf5ISBzbnQoWSA\nbD7DjngwX6U8VxlsXnALmB+xKkEJRD/grADzJbysFUG0wYFsA4h7dBVAdICM\nNZj/IMpJDtk+Af5uGRCdsFEezHfYe0kKLN/hDHavws4aSRC9YbeZLohuUN4p\ngcz/IzVPGZn/wvE8Cn/P0/9gvsNqOTDfoFJCBRv/gjgbmM8l6wnmo4QvAGas\nVTs=\n        "
+            ],
+            CompressedData[
+             "\n1:eJxTTMoPSmViYGAQBWIQDQKBr/kcgNSVDAdNEN2w5rQAiBY4maoFohN8ngmB\naIZPjtogeoFuoiiINji7G4UfoNmNwv/iXKWCzOeS9UThG1RKgPkNIZPA/D1P\n/yuD7as+DOa/cDwP5hvM+QzmF6zbBuYzvAoVA9F/pOaB+SpL5yqB6A0rlsiB\n6OC1nApge4KmSYNpplvCILoiKlgRbP4vXUEQ/eO9GFgfA3Mn2P8bHoeAzXO4\nwcgLou2qD4Pd57CzhhtEnxEyUgPRB37dAfN3pLxSd0APPwBY0U4s\n        "
+            ],
+            CompressedData[
+             "\n1:eJxTTMoPSmViYGAQB2IQDQQFqluFHECMvq/iINpBMV4QRDf4OUiB6TWnBUD0\ngbA3MsjyH+JmyGPjCzj1g/kGdhlg/oeMAyh8noM/ZUH0gqthEiB6D0e0HIh+\nsEUNzF+h34PCDyl/i8LXOOovj8y/wrMRhb/P+JE8svkMp5LVQfSMLeUKyHyF\nJ8zSQLphKq++Ilh9yEFhZPMWaFqBw+XCtkVgfzM8ugH2x4b2o5LgcCmfA5Y/\nYLhdDCzPmwDWXxBgIwLWX+8h6oAevgCXV1ST\n        "
+            ],
+            CompressedData[
+             "\n1:eJxTTMoPSmViYGAQAWIQDQQav1erOgDpA/wvuUC0ygUVFWT+k/z/SiC6oeMS\nD4gWW/xJEUQrTFAQwMav2swFVv9gWyCY/8ZNGYX/45O9Btg8+WRxEH1iWgGY\n7+AwGcz30OoE8xXSj4D5O/YuBPMfbFGTAIuf2wnmL/jTjsJvUN6JwnfIlpJE\n5v93VQX788FRX20Q/UdqnjIyH6Y+ITINzG8IyBZC1g8LD5TwAgD8fk4n\n        "
+            ],
+            CompressedData[
+             "\n1:eJxVlH1IU2EUxm9+lyvXh6k57U6n23LqMkOdMYdJTqFYmaWBNQtLSmiWyCCx\nS5jaUJkkIZZtsCjLoBVU6wvviIg+mdEf/hGbfRijGYQkLKNs73MZvA3Gw++e\n995zznPOvdKDx3c1RTAMUxX6Ew39DKNWtS6k7VHPsok6z7jBFZOTcqLTljdg\n8WWvgo5PHw0oiTIld8FjRcENRO01XeDenmgVUU5WKZznf4FZx518osa65jyi\nplttUKerH9c9STG5iDdIhPtmO3OINntbwYY8H/JOtVrAwbky1MX11YNNDR2o\nu3jvIzBXaEdfuinxRqKK3+NZeH7sDjCvvS8j6v9pAZu9g5mI9zrAzpVnM2gu\nqplhaR7L70snqq8/DDZIfalEh7fMIj+bsimFrt90tTqJ7pf5VrsW3B8DHzhl\n/Bqc3/MEPnjuZaxC3cFyMKMtERO1nnOqhL6WLKf9Zjy1yxDfr4RvXKIoDvVs\n3o758K0Xo+h5ckPtkURHfFr4xmeWIF54xQaf+Ik/4Mczi/CFe349FvzQDF/4\nhQ/xRJOrS6V0/uKFXPjEDcwvxRz3lafTcbVbIcH9aS6wXZ6wDqwvE+HcwDx8\n4t2KFegzUQSfuJuv0D/7NW81zg1VQu1ZX4TrT2U4x2yVJND+8xoTnht34QTy\nMrZx1P1edHs9+GUB8VEXSL2EunVtMtT1scKMvrhjZvSt6WxB39yiNRp5NY2C\nL93X4KN/pBv7xAQ+RRB1HTmfRXOyo0BOs7XxnTCHQ6/hs9OvwJyYqlHMLbz/\n4frV2SdVdL/Gru8Cn5qDD+qdC8L782I39uhHWiz2zH5anwje9lnYO4tN8Ml1\nQE37HX6/2Qcd8M1g+gvmc5qw13xXC/Y8PE8jOwj2B3hh3m/N4LobRvgkLjWC\nw/vjjEwizE2Ie+DLf9+ff0XdD48=\n        "
+            ]
            }
-          },
-          {
+          ]
+         },
+         {FaceForm[RGBColor[0.67059, 0.41176, 1., 1.]]},
+         StripOnInput -> False
+        ],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {{{0, 2, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}},
            {
-            {8.3528, 10.955},
-            {10.024, 11.91},
-            {11.695, 10.955},
-            {11.695, 9.0448},
-            {10.024, 8.0898},
-            {8.3528, 9.0448},
-            {8.3528, 10.955}
+            {
+             {15.5, 1.},
+             {15.5, 1.},
+             {13.567, 1.},
+             {12., 2.567},
+             {12., 4.5},
+             {12., 6.433},
+             {13.567, 8.},
+             {15.5, 8.},
+             {17.433, 8.},
+             {19., 6.433},
+             {19., 4.5},
+             {19., 2.567},
+             {17.433, 1.},
+             {15.5, 1.}
+            }
+           }
+          ]
+         },
+         {FaceForm[RGBColor[0.2, 0.2, 0.2, 1.]]},
+         StripOnInput -> False
+        ],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {
+            {
+             {0, 2, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0}
+            }
            },
-           CompressedData[
-            "\n1:eJxTTMoPSmViYGCQAmIQzWoiaGazV85hxt3J7a23lBy+s8XP8Jkq6ZAv1Hzg\nVKIKnK/K1jjVuVsbzv90yTdJYIaOw7WwN/q71aUcbLmuLy7Yq+sw5RtIgbTD\nrJkgoOeQe/TfpuoiGYfnv1d+vNSr78C9dVnlcU05B+XbP+uyZAwcEkOC1Bdw\nKkDURxo4rNuWVH/zr4KDQITllhPTDBx+vX19wFJZyeFk2b75UusNHI7v2tHL\nZqAMl99QlDHxrY2Kw0UloIFdBg4gZ9h6qTpEpVjf9/c1cLh57nvwY1U1hzA+\n3U1z3+tj8MHu4lVzAGnjuq7vADStxv6rKpwPcv6nDfIOTNrtYjf9dByeNM87\nu8pf3gEYOgtdzXQcnq1TfdIsJ+/AAjJQVsfhxc01v2LeyjlMlgCKvNV2gIXv\nNOfunOe7EfwlIOMXI/jLZh9R2FCE4MPiAwDNfrQr\n       "
-           ],
-           CompressedData[
-            "\n1:eJxTTMoPSmViYGCQAmIQrRnTf+hrhr7DwVMLXbcZazig8807HROeBug72JvG\n7fL00XDYIdf6OtACwT//PfjxUmlNB5F17g+rrmg7AEV5mF5rOEyWYAnje6vt\ncN+/d3reJQQ/X6j5wKmFCH6hLdf1xQUIPgMIOCD4jVOdu3PUNeDm7+ebY7xo\ni4JDkkCE5ZYOdTgfyDtRVqflsO3z3ysVL9Uc1shEpVjL6zlMfFtjb3pP3aE7\n5/nvlRv14O4DeevCIz2HVR8v+SYJaMH55fvmS+nLasP5LiCNmjoO0vp3Vdga\n9Rzkgd7fIafrsKcE6MJrug7vgMbH/dJ1uKh0+2edlq7DaWCwfd6r58Ck3S52\n00/HAeSsffL6DuqGHEAnaTusOOZt3tmo73DzHDDgUrUg4rP0HYChJNTsoIkR\n/gAaSara\n       "
-           ],
-           CompressedData[
-            "\n1:eJxTTMoPSmViYGAQB2IQvch12+e/V3Qc8oWaD5xKVHH4s/LjJd8kVYd17g+r\nRNZpOABFF7p+U3e4/bMua4+JlkPu898rPwrpObA1TnXuXqPmsMuTh0mbXd9h\n1kwgkFRzmJEHMkjfwQso3B6m6nD4q0ZMv5IB3HzLLSfK9sUbOLAe7Tcsz1V2\nMORYIxPVYuBg8eNQyqoEJYdPQNsFKgwc3hywVPayVnSofKlmyJFj4DAp5p/z\nL10FB6eEpxeUrA0cuuST30U5ycHte6O/W52/WwZivry+g4mgmc3eS1IOd1VA\nLtVzqJizSHlnjaSDQARQhZmuw6xykIAEnF/KNItDep4ynF98XeiT43kE/4mI\n7Mmn/5Ud5FtfB+6Q03Woz9pTMllCBYO/QEofaKWuw4flx7zNPVUc0MMXAOrZ\nmEw=\n       "
-           ],
-           CompressedData[
-            "\n1:eJxTTMoPSmViYGAQBWIQXbVUx1nmNZ9D7/Q8oWYHTYeq45pWk04LONw89z34\ncaqWg96EBT8Mnwk5mMbt8uRx0nZYucTPQThR1GGac3fO890Ivipb41TnbgT/\nXY29aVyVCpz/Yfkxb3NPBL8+a0/JZAkVh+WVIAtFHZ6IyJ58+l/ZYSlI+rCo\nQ/F1oU+O55UdOr7cvt74WdThS05Y7bptyg4t886uOh8q5lDKNItDep6yw4ss\n7W/T5yo5tJ0MObhiiZxDYkiQ+gJOBQdBM5u9QdOkHd5FOdm9uCnscG9ye2tU\nsKJDWaE07wNdQYfdO3rZPogpOdT/tio418Hn0BZ1ec/jEGWHIxv18hYz8jrc\nVQF66LCKg/2xO1tbargdJFnC+HSN1BzYhESAQtwOF5Vu/6x7pe6AHn4AJiOJ\n0g==\n       "
-           ],
-           CompressedData[
-            "\n1:eJxTTMoPSmViYGAQB2IQbbBbnZ97q5DD3qBpin1fxR1K3KZ8Y4sXdAg9uGKJ\nn4OUQ9VxTatJpwUczq06fzXsjQxcHkzNkMfgh7/R363eL+iQ/C7KyS5DHmLO\nAQRfA2jbsp+yDvPPggyUcODskgdKyTmAnaEm4cAeP8NHtAfBf3Fzza+Ytwj+\nk+Z5Z1f5y8P5R/9tqv60AcE/fFk7VfKRPNz8JQW2XNeT1R345xgv2lKuAOcb\nPVun+oRZ2mFN9+0MBn1Fh/wPrSdDDgrDzdu6rBLocyGHwOxZ5XMWyThcARl7\nQ9DhFtA5uUclHTYGgCSEHICiEeLbxRz6SguleROEHV6xmAia2Yg4aAFDrd5D\n1AE9fAFcoZaM\n       "
-           ],
-           CompressedData[
-            "\n1:eJxTTMoPSmViYGAQAWIQXflSzZBjjaqDq3vRT/6XXA775kvp31VRgfPDatdt\nS/qv5PDbquBcxyUeh64ND19O/aToIM37QHeCggAGv7pZ32cZl5KD5KMI8e2B\nAg6/3r4+YKmM4DOAgIOGwz0mzi75ZHGHQluu64sLNBwOrlji5zBZ3OHD8mPe\n5p0aDvtrZS3Sj4g75As1Hzi1UMNhtzo/91Y1CYeEpxeUbu/UcJizSHnnn3YE\nf1Y5SATBr/m0ISBbShLO9zHvdExQVXV4/nvlx0u+2g6lTLM4pOcpw/kw9Wlg\noO2wuRokIATXDwsP9PACAIJgiGg=\n       "
-           ],
-           CompressedData[
-            "\n1:eJxdVHtQVGUUX5dlF3ZX2YEVRt1g3w/Yx71qKTLEz5iBEB8t6pgMI6jYYJEI\nMbrSDkq5VOSDlVBTEJQC0TIiTcTHIAn4CBO0h49AS3QIkNSheIzYd+8d7x+d\nmXu/+d3vfOf7nfM752pWZSWtEQoEggTyMGt2tPTXqmIKnj5nQ2iLEYdbE2d9\ncp5CUkOop6/DBE1dToa3nUIY49Bl5vf7nYyDBRneAXfMCQoMcg6Hg/b7SpW8\nlULgh02XD/pa0ZggF0bEU0jruaa9PWJF9f4L6rp6B8rIkpNhx+2R/LfP5Nrx\ncKz2ced2ByqnOn7Xi23QMRsqCuyx/AiOTzYFEj09qtuCDuZzEQUBYzBj3+fE\nllPcObcJDI300xTaCN25lUaQd1qPgsamXiOhaMCx+Ht5yoU0DgzWtCae1MMg\nLiiN/ZTGK+1RCzu8OhASBaVVNNYKsgpEHi2PqfnV0rgeNY8lqXvnT94WirdY\no5Eb99k/4u5piHl5RWNCP4WxlHdbxqdP4fmz7vNC+Hy3Hmg/8tPSYNjqywdr\nxHb0O06bAmRKMLKsP2uD8519G8u0gXhj+551gbE2EHRIF6kAq1udFRe+ta+r\nmjCRr3fiRUn0/qVSfP/02Q2XJQJXP+7suivzA1O1RQvCsYJ1EPF6Vhz9+rfU\nDT5cnV81YdXBX2YOzhYh8vjFDecqDEgeOnWr6JkI95UvXep5rsN1Eq2kVgLL\nFUVbo0sLcaAypvWODP1Nkbp5URr+/l0p47GjNjU87mvfLR/yR1HY6kfJr4Xy\n+397Li05b1YhPmckoPekFMvYxKdCeMaXRJTjbNJuzY6hEDR84/Nwm3kSV2d5\nMPLaLHN2XVGguHKYfmAPQoDsRPWm+CCM0A+OGe4rUEjCHtYHw5X3pTVWFcDX\nX+DNH5uzXg6C6t/PUcGPsKg4KgMDn9SFobmwZtnl6ROBL7rPTSpTY8HTHYtz\n9VKUzTh0fJZLg5/9M7SZLgn+Kq2XZ2dqsSRXv+d5sS9adtIbbSt1KN9iJCF8\nOB0L9WBu7/tDiFGmvUsMPJ7BmonH3YuIsJ1mpKjnPl79owiWlJ3NQ+ZwlNR+\n4Ewo9+P7/wV/9vh7Vj5fdj4HrFxeT4LwyE06b9SGtVlMhZXc/EkcCCdV2/z6\nZITcvPrv4j8dmNAl9C+qCOZ0TqX4er+Ybxdps1PuKXiTcRinELTyh+sRa6aB\nHZNMmtdz/Iar1+ilQdQe6GtSI45tPBqzh5vTj6RpuflLo/n+IV0dLQ2hOV4f\nGfD//89/raLufg==\n       "
-           ]
-          }
-         ]
-        },
-        {
-         FaceForm[{RGBColor[0.2, 0.2, 0.2], Opacity[1.]}],
-         FilledCurveBox[
-          {{{0, 2, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}},
-          {
            {
-            {15.5, 1.},
-            {15.5, 1.},
-            {13.567, 1.},
-            {12., 2.567},
-            {12., 4.5},
-            {12., 6.433},
-            {13.567, 8.},
-            {15.5, 8.},
-            {17.433, 8.},
-            {19., 6.433},
-            {19., 4.5},
-            {19., 2.567},
-            {17.433, 1.},
-            {15.5, 1.}
+            {
+             {16.009, 3.4458},
+             {16.009, 3.6258},
+             {16.009, 6.0388},
+             {15.967, 6.0388},
+             {14.438, 3.7988},
+             {16.185, 3.7988},
+             {16.45, 3.7988},
+             {17.335, 3.7988},
+             {17.335, 3.2528},
+             {13.682, 3.2528},
+             {13.682, 3.6878},
+             {16.036, 7.0988},
+             {16.63, 7.0988},
+             {16.63, 2.0718},
+             {16.009, 2.0718},
+             {16.009, 3.4458}
+            }
            }
-          }
-         ]
-        },
-        {
-         FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}],
-         FilledCurveBox[
-          {
-           {
-            {0, 2, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0},
-            {0, 1, 0}
-           }
-          },
-          {
-           {
-            {16.009, 2.0718},
-            {16.63, 2.0718},
-            {16.63, 7.0991},
-            {16.036, 7.0991},
-            {13.681, 3.6877},
-            {13.681, 3.2527},
-            {17.334, 3.2527},
-            {17.334, 3.7982},
-            {16.451, 3.7982},
-            {16.185, 3.7982},
-            {14.438, 3.7982},
-            {15.967, 6.039},
-            {16.009, 6.039},
-            {16.009, 3.6256},
-            {16.009, 3.446},
-            {16.009, 2.0718}
-           }
-          }
-         ]
-        }
+          ]
+         },
+         {FaceForm[RGBColor[1., 1., 1., 1.]]},
+         StripOnInput -> False
+        ]
        },
-       AspectRatio -> Automatic,
-       ImageSize -> {20., 20.},
-       PlotRange -> {{0., 20.}, {0., 20.}}
+       ImageSize -> {{21., 21.}, {21., 21.}},
+       PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}},
+       AspectRatio -> Automatic
       ]
      ])
    }
@@ -8300,6 +8239,103 @@ Notebook[
    }
   ],
   Cell[
+   StyleData["PersonaRawModel"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.038462],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {
+            {
+             {0, 2, 0},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0}
+            }
+           },
+           CompressedData[
+            "\n1:eJxTTMoPSmVmYGBgBGIRIGZigAFFB1RaBJmfkPZMCE0ezDc2LkbhA4ESGt8U\nmf9guZspqnkNMHkRNL4pMj8hzc0UVR5Cw8zDpe9dzX9FJH6DwoYiRVTz4P5B\n4Sc8XqqJJg+mD3zVEMEQBwCRvSeH\n       "
+           ]
+          ]
+         },
+         {FaceForm[RGBColor[1., 1., 1., 1.]]},
+         StripOnInput -> False
+        ],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {
+            {
+             {0, 2, 0},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3}
+            },
+            {
+             {0, 2, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0}
+            }
+           },
+           {
+            CompressedData[
+             "\n1:eJxTTMoPSmViYGAQAWIQDQQOUgymDhCmGZjOZBBB5jdonhZEkxcA0g33/XtN\nkfgggM5XQuY7JDxVQDNPAc0+iLwJVByTLwDlayHLI7kfzJfP6jVFkwe7W+Hu\nExT+g5r/ish8mPuhfLj/kMwzQ7PPzAEA5oooHw==\n        "
+            ],
+            {
+             {21., 21.},
+             {21., 9.},
+             {13., 9.},
+             {12.649, 9.},
+             {12.375, 8.781},
+             {9.0004, 6.081},
+             {9.0004, 8.},
+             {9.0004, 9.},
+             {8.0004, 9.},
+             {5.0004, 9.},
+             {5.0004, 21.},
+             {21., 21.}
+            }
+           }
+          ]
+         },
+         {FaceForm[RGBColor[0.53725, 0.53725, 0.53725, 1.]]},
+         StripOnInput -> False
+        ]
+       },
+       ImageSize -> {{27., 27.}, {27., 27.}},
+       PlotRange -> {{-0.5, 26.5}, {-0.5, 26.5}},
+       AspectRatio -> Automatic
+      ]
+     ])
+   }
+  ],
+  Cell[
    StyleData["PersonaUnknown"],
    TemplateBoxOptions -> {
     DisplayFunction ->
@@ -9744,7 +9780,7 @@ Notebook[
                 {
                  DynamicBox[
                   ToBoxes[
-                   If[ TrueQ[CloudSystem`$CloudNotebooks],
+                   If[ FEPrivate`$ProductIDName === "WolframCloud",
                     CurrentValue[
                      EvaluationCell[],
                      {TaggingRules, "PageData", "CurrentPage"},
@@ -9762,7 +9798,7 @@ Notebook[
                  "/",
                  DynamicBox[
                   ToBoxes[
-                   If[ TrueQ[CloudSystem`$CloudNotebooks],
+                   If[ FEPrivate`$ProductIDName === "WolframCloud",
                     CurrentValue[
                      EvaluationCell[],
                      {TaggingRules, "PageData", "PageCount"},
@@ -9978,6 +10014,6 @@ Notebook[
    }
   ]
  },
- FrontEndVersion -> "13.2 for Microsoft Windows (64-bit) (January 30, 2023)",
+ FrontEndVersion -> "13.2 for Mac OS X ARM (64-bit) (November 18, 2022)",
  StyleDefinitions -> "PrivateStylesheetFormatting.nb"
 ]

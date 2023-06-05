@@ -25,6 +25,17 @@ MakeChatInputCellDingbat
 MakeChatDelimiterCellDingbat
 GetChatInputLLMConfigurationSelectorMenuData
 
+GeneralUtilities`SetUsage[CreatePreferencesContent, "
+CreatePreferencesContent[] returns an expression containing the UI shown in the Preferences > AI Settings window.
+"]
+
+GeneralUtilities`SetUsage[CreateToolbarContent, "
+CreateToolbarContent[] is called by the NotebookToolbar to generate the content of the 'Notebook AI Settings' attached menu.
+"]
+
+$SupportedModels
+
+
 Begin["`Private`"]
 
 Needs["Wolfram`Chatbook`"]
@@ -40,9 +51,20 @@ Needs["Wolfram`Chatbook`Personas`"]
 Needs["Wolfram`Chatbook`PersonaInstaller`"]
 Needs["Wolfram`Chatbook`FrontEnd`"]
 
+Needs["Wolfram`PreferencesUtils`" -> "PrefUtils`"]
+
 
 Needs["Wolfram`Chatbook`ServerSentEventUtils`" -> None]
 
+(*========================================================*)
+
+$SupportedModels = {
+	(* FIXME: Replace with OpenAI logo *)
+	{"gpt-3.5-turbo", getIcon["ModelGPT35"], "GPT-3.5"},
+	{"gpt-4", getIcon["ModelGPT4"], "GPT-4"}
+};
+
+(*========================================================*)
 
 $ChatOutputTypePrompts = <|
 	Automatic -> "",
@@ -83,6 +105,240 @@ GetChatEnvironmentValues[promptCell_, evaluationCell_, chatContextCells_] := Wit
 		"ChatContextPostEvaluationFunction" -> Lookup[chatContextTaggingRules, "ChatContextPostEvaluationFunction", Automatic]
 	|>
 ]
+
+(*====================================*)
+
+CreatePreferencesContent[] := Module[{
+	(* Make a hidden notebook using the Chatbook stylesheet, so that we can
+		look up TemplateBox[..] persona icon data in it. *)
+	fakeChatNB = NotebookPut[Notebook[
+		{},
+		StyleDefinitions -> "Chatbook.nb",
+		WindowTitle -> "Fake Chatbook for icon lookup",
+		Visible -> False
+	]],
+	getTemplateIcon,
+	personas = GetPersonasAssociation[],
+	chatbookSettings,
+	llmEvaluatorNamesSettings,
+	services,
+	grid
+},
+	getTemplateIcon = Function[iconStyle,
+		RawBoxes @ CurrentValue[fakeChatNB, {
+			StyleDefinitions,
+			iconStyle,
+			TemplateBoxOptions,
+			DisplayFunction
+		}][]
+	];
+
+	(*================================*)
+
+	llmEvaluatorNamesSettings = Grid[
+		Prepend[
+			KeyValueMap[
+				{persona, personaSettings} |-> {
+					Replace[Lookup[personaSettings, "Icon", None], {
+						None -> "",
+						RawBoxes[TemplateBox[{}, iconStyle_?StringQ]] :> (
+							getTemplateIcon[iconStyle]
+						),
+						icon_ :> icon
+					}],
+					personaDisplayName[persona, personaSettings],
+					Replace[Lookup[personaSettings, "Description", None], {
+						None | _?MissingQ -> "",
+						desc_?StringQ :> desc,
+						other_ :> (
+							ChatbookWarning[
+								"Unexpected non-String persona `` description: ``",
+								InputForm[persona],
+								InputForm[other]
+							];
+							other
+						)
+					}]
+				},
+				personas
+			],
+			{"", "Name", "Description"}
+		],
+		Background -> {None, {1 -> GrayLevel[0.95]}},
+		Dividers -> {False, {False, {1 -> True, 2 -> True}}},
+		Alignment -> {Left, Center}
+	];
+
+	chatbookSettings = makeFrontEndAndNotebookSettingsContent[$FrontEnd];
+
+	services = Grid[{
+		{"",                            "Name", "State"},
+		{getTemplateIcon["OpenAILogo"], "OpenAI", "<Connected>"},
+		{"",                            "Bard", Style["Coming soon", Italic]},
+		{"",                            "Claude", Style["Coming soon", Italic]}
+	},
+		Background -> {None, {1 -> GrayLevel[0.95]}},
+		Dividers -> {False, {False, {1 -> True, 2 -> True}}},
+		Alignment -> {Left, Center}
+	];
+
+	(*-----------------------------------------*)
+	(* Return the complete settings expression *)
+	(*-----------------------------------------*)
+
+	PrefUtils`PreferencesPane[
+		{
+			PrefUtils`PreferencesSection[
+				Style[tr["Chat Notebook Interface"], "subsectionText"],
+				chatbookSettings
+			],
+			PrefUtils`PreferencesSection[
+				Style[tr["Installed LLM Evaluators"], "subsectionText"],
+				llmEvaluatorNamesSettings
+			],
+			PrefUtils`PreferencesSection[
+				Style[tr["LLM Service Providers"], "subsectionText"],
+				services
+			]
+		},
+		PrefUtils`PreferencesResetButton[
+			FrontEndExecute @ FrontEnd`RemoveOptions[$FrontEnd, {
+				System`LLMEvaluator,
+				{TaggingRules, "ChatNotebookSettings"}
+			}];
+
+			CurrentValue[
+				$FrontEnd,
+				{
+					PrivateFrontEndOptions,
+					"InterfaceSettings",
+					"ChatNotebooks"
+				}
+			] = Inherited;
+		]
+	]
+]
+
+(*====================================*)
+
+CreateToolbarContent[] := With[{},
+	openChatActionMenu[
+		"Toolbar",
+		EvaluationNotebook[],
+		Automatic
+	]
+]
+
+(*=========================================*)
+(* Common preferences content construction *)
+(*=========================================*)
+
+SetFallthroughError[makeFrontEndAndNotebookSettingsContent]
+
+makeFrontEndAndNotebookSettingsContent[
+	targetObj : _FrontEndObject | $FrontEndSession | _NotebookObject
+] := Module[{
+	personas = GetPersonasAssociation[],
+	defaultPersonaPopupItems
+},
+	defaultPersonaPopupItems = KeyValueMap[
+		{persona, personaSettings} |-> (
+			persona -> Row[{
+				resizeMenuIcon[
+					getPersonaMenuIcon[personaSettings]
+				],
+				personaDisplayName[persona, personaSettings]
+			}, Spacer[1]]
+		),
+		personas
+	];
+
+	defaultPersonaPopupItems = Append[
+		defaultPersonaPopupItems,
+		Inherited -> Row[{
+			"Inherited",
+			Spacer[3],
+			Dynamic @ With[{
+				currentValue = CurrentValue[
+					targetObj,
+					{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+				],
+				absoluteCurrentValue = AbsoluteCurrentValue[
+					targetObj,
+					{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+				]
+			},
+				(* NOTE:
+					If `targetObj` is a NotebookObject and the local value of
+					LLMEvaluator is not set (i.e. currentValue === Inherited),
+					then display the inherited persona in italics.
+				*)
+				If[currentValue === Inherited && absoluteCurrentValue =!= Inherited,
+					Style[
+						Row[{
+							"(",
+							If[StringQ[absoluteCurrentValue],
+								personaDisplayName[absoluteCurrentValue],
+								personaDisplayName
+							],
+							")"
+						}],
+						Italic
+					],
+					Row[{}]
+				]
+			]
+		}]
+	];
+
+	(*---------------------------------*)
+	(* Return the toolbar menu content *)
+	(*---------------------------------*)
+
+	Grid[
+		{
+			{Row[{
+				tr["Default LLM Evaluator:"],
+				PopupMenu[
+					Dynamic @ CurrentValue[
+						targetObj,
+						{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+					],
+					defaultPersonaPopupItems
+				]
+			}, Spacer[3]]},
+			{Row[{
+				Checkbox[
+					Dynamic @ CurrentValue[
+						targetObj,
+						{TaggingRules, "ChatNotebookSettings", "Assistance"}
+					]
+				],
+				"Provide automatic assistance"
+			}]}
+		},
+		Alignment -> {Left, Baseline},
+		Spacings -> {0, 0.7}
+	]
+]
+
+(*========================================================*)
+
+(* TODO: Make this look up translations for `name` in text resources data files. *)
+tr[name_?StringQ] := name
+
+(*
+
+
+	Checkbox @ Dynamic[
+		CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "ChatNotebooks", "IncludeHistory"}]
+	]
+
+		- True -- include any history cells that the persona wants
+		- False -- never include any history
+		- {"Style1", "Style2", ...}
+*)
+
 
 
 (*====================================*)
@@ -1303,12 +1559,12 @@ $dynamicMenuLabel := DynamicModule[ { cell },
 	Dynamic @ If[ TrueQ @ $cloudNotebooks,
 		RawBoxes @ TemplateBox[{},"ChatInputCellDingbat"],
 		With[{
-			menuData = GetChatInputLLMConfigurationSelectorMenuData[],
+			personas = GetChatInputLLMConfigurationSelectorMenuData[],
 			personaValue = currentValueOrigin[cell, {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}]
 		},
 			FirstCase[
-				menuData["Personas"],
-				{personaValue[[2]], icon_, _} :> icon,
+				personas,
+				{personaValue[[2]], icon_} :> icon,
 				Style[getIcon["PersonaUnknown"], GrayLevel[0.5]]
 			]
 		]
@@ -1335,10 +1591,10 @@ MakeChatInputActiveCellDingbat[] := Module[{
 			Pane[menuLabel, Alignment -> {Center, Center}, ImageSize -> {25, 25}, ImageSizeAction -> "ShrinkToFit"],
 			RoundingRadius -> 2,
 			FrameStyle -> Dynamic[
-				If[CurrentValue["MouseOver"], GrayLevel[0.74902], GrayLevel[0.819608]]
+				If[CurrentValue["MouseOver"], GrayLevel[0.74902], None]
 			],
 			Background -> Dynamic[
-				If[CurrentValue["MouseOver"], GrayLevel[0.960784], GrayLevel[1]]
+				If[CurrentValue["MouseOver"], GrayLevel[0.960784], None]
 			],
 			FrameMargins -> 0,
 			ImageMargins -> 0,
@@ -1347,7 +1603,11 @@ MakeChatInputActiveCellDingbat[] := Module[{
 		(
 			AttachCell[
 				EvaluationCell[],
-				openChatInputActionMenu[EvaluationCell[]],
+				openChatActionMenu[
+					"Input",
+					parentCell[EvaluationCell[]],
+					EvaluationCell[]
+				],
 				{Left, Bottom},
 				Offset[{0, 0}, {Left, Top}],
 				{Left, Top},
@@ -1389,7 +1649,7 @@ MakeChatDelimiterCellDingbat[] := Module[{
 	(* Construct the action menu display label *)
 	(*-----------------------------------------*)
 
-	menuLabel = RawBoxes @ TemplateBox[ { }, "ChatSystemMenu" ];
+	menuLabel = $dynamicMenuLabel;
 
 	button = Button[
 		Framed[
@@ -1408,7 +1668,11 @@ MakeChatDelimiterCellDingbat[] := Module[{
 		(
 			AttachCell[
 				EvaluationCell[],
-				openChatDelimiterActionMenu[EvaluationCell[]],
+				openChatActionMenu[
+					"Delimiter",
+					parentCell[EvaluationCell[]],
+					EvaluationCell[]
+				],
 				{Left, Bottom},
 				Offset[{0, 0}, {Left, Top}],
 				{Left, Top},
@@ -1426,111 +1690,91 @@ MakeChatDelimiterCellDingbat[] := Module[{
 
 (*====================================*)
 
-SetFallthroughError[openChatInputActionMenu]
+SetFallthroughError[openChatActionMenu]
 
-openChatInputActionMenu[dingbatCellObj_CellObject] := With[{
-	chatInputCellObj = parentCell[dingbatCellObj]
-}, Module[{
-	menuData = GetChatInputLLMConfigurationSelectorMenuData[],
-	actionCallback,
-	actionMenu
-},
-	actionCallback = Function[{field, value}, Replace[field, {
-		"Persona" :> (
-			CurrentValue[
-				chatInputCellObj,
-				{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
-			] = value;
-			NotebookDelete[Cells[dingbatCellObj, AttachedCell->True]];
-			SetOptions[chatInputCellObj, CellDingbat -> Inherited];
-		),
-		"Model" :> (
-			CurrentValue[
-				chatInputCellObj,
-				{TaggingRules, "ChatNotebookSettings", "Model"}
-			] = value;
-			NotebookDelete[Cells[dingbatCellObj, AttachedCell->True]];
-		),
-		"Role" :> (
-			CurrentValue[
-				chatInputCellObj,
-				{TaggingRules, "ChatNotebookSettings", "Role"}
-			] = value;
-			NotebookDelete[Cells[dingbatCellObj, AttachedCell->True]];
-		),
-		other_ :> (
-			ChatbookWarning[
-				"Unexpected field set from LLM configuration action menu: `` => ``",
-				InputForm[other],
-				InputForm[value]
-			];
-		)
-	}]];
-
-	makeChatInputActionMenuContent[
-		menuData["Personas"],
-		menuData["Models"],
-		"ActionCallback" -> actionCallback,
-		"PersonaValue" -> currentValueOrigin[
-			chatInputCellObj,
-			{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+openChatActionMenu[
+	containerType: "Input" | "Delimiter" | "Toolbar",
+	targetObj : _CellObject | _NotebookObject,
+	(* The cell that will be the parent of the attached cell that contains this
+		chat action menu content. *)
+	attachedCellParent : _CellObject | Automatic
+] := With[{
+	closeMenu = ConfirmReplace[attachedCellParent, {
+		parent_CellObject -> Function[
+			NotebookDelete[Cells[attachedCellParent, AttachedCell -> True]]
 		],
-		"ModelValue" -> currentValueOrigin[
-			chatInputCellObj,
-			{TaggingRules, "ChatNotebookSettings", "Model"}
-		],
-		"RoleValue" -> currentValueOrigin[
-			chatInputCellObj,
-			{TaggingRules, "ChatNotebookSettings", "Role"}
-		],
-		"TemperatureValue" -> Dynamic[
-			CurrentValue[
-				(* "ChatInput" > CellDingbat > Persona Menu > Advanced Menu *)
-				chatInputCellObj,
-				{ TaggingRules, "ChatNotebookSettings", "TemperatureSetting" },
-				currentChatSettings[ chatInputCellObj, "Temperature" ]
-			],
+		(* NOTE: Capture the parent EvaluationCell[] immediately instead of
+			delaying to do it inside closeMenu because closeMenu may be called
+			from an attached sub-menu cell (like Advanced Settings), in which
+			case EvaluationCell[] is no longer the top-level attached cell menu.
+			We want closeMenu to always close the outermost menu. *)
+		Automatic -> With[{parent = EvaluationCell[]},
 			Function[
-				CurrentValue[ chatInputCellObj, { TaggingRules, "ChatNotebookSettings", "TemperatureSetting" } ] =
-					CurrentValue[ chatInputCellObj, { TaggingRules, "ChatNotebookSettings", "Temperature" } ] = #1;
+				NotebookDelete @ parent
 			]
 		]
-	]
-]]
-
-(*====================================*)
-
-SetFallthroughError[openChatDelimiterActionMenu]
-
-openChatDelimiterActionMenu[dingbatCellObj_CellObject] := With[{
-	chatInputCellObj = parentCell[dingbatCellObj]
+	}]
 }, Module[{
-	menuData = GetChatInputLLMConfigurationSelectorMenuData[],
-	actionCallback,
-	actionMenu
+	personas = GetChatInputLLMConfigurationSelectorMenuData[],
+	actionCallback
 },
+	RaiseConfirmMatch[personas, {{_String, _}...}];
+
+	(*
+		If this menu is being rendered into a Chat-Driven notebook, make the
+		'Plain Chat' persona come first.
+	*)
+	If[
+		TrueQ @ CurrentValue[
+			ConfirmReplace[targetObj, {
+				cell_CellObject :> ParentNotebook[cell],
+				nb_NotebookObject :> nb
+			}],
+			{TaggingRules, "ChatNotebookSettings", "ChatDrivenNotebook"}
+		],
+		personas = SortBy[
+			personas,
+			First,
+			FirstMatchingPositionOrder[{
+				"PlainChat",
+				"RawModel",
+				"CodeWriter",
+				"CodeAssistant"
+			}]
+		];
+	];
+
+	(*--------------------------------*)
+
 	actionCallback = Function[{field, value}, Replace[field, {
 		"Persona" :> (
 			CurrentValue[
-				chatInputCellObj,
+				targetObj,
 				{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
 			] = value;
-			NotebookDelete[Cells[dingbatCellObj, AttachedCell->True]];
-			SetOptions[chatInputCellObj, CellDingbat -> Inherited];
+
+			closeMenu[];
+
+			(* If we're changing the persona set on a cell, ensure that we are
+				not showing the static "ChatInputCellDingbat" that is set
+				when a ChatInput is evaluated. *)
+			If[Head[targetObj] === CellObject,
+				SetOptions[targetObj, CellDingbat -> Inherited];
+			];
 		),
 		"Model" :> (
 			CurrentValue[
-				chatInputCellObj,
+				targetObj,
 				{TaggingRules, "ChatNotebookSettings", "Model"}
 			] = value;
-			NotebookDelete[Cells[dingbatCellObj, AttachedCell->True]];
+			closeMenu[];
 		),
 		"Role" :> (
 			CurrentValue[
-				chatInputCellObj,
+				targetObj,
 				{TaggingRules, "ChatNotebookSettings", "Role"}
 			] = value;
-			NotebookDelete[Cells[dingbatCellObj, AttachedCell->True]];
+			closeMenu[];
 		),
 		other_ :> (
 			ChatbookWarning[
@@ -1541,32 +1785,33 @@ openChatDelimiterActionMenu[dingbatCellObj_CellObject] := With[{
 		)
 	}]];
 
-	makeChatDelimiterActionMenuContent[
-		menuData["Personas"],
-		menuData["Models"],
+	makeChatActionMenuContent[
+		containerType,
+		personas,
+		$SupportedModels,
 		"ActionCallback" -> actionCallback,
 		"PersonaValue" -> currentValueOrigin[
-			chatInputCellObj,
+			targetObj,
 			{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
 		],
 		"ModelValue" -> currentValueOrigin[
-			chatInputCellObj,
+			targetObj,
 			{TaggingRules, "ChatNotebookSettings", "Model"}
 		],
 		"RoleValue" -> currentValueOrigin[
-			chatInputCellObj,
+			targetObj,
 			{TaggingRules, "ChatNotebookSettings", "Role"}
 		],
 		"TemperatureValue" -> Dynamic[
 			CurrentValue[
 				(* "ChatInput" > CellDingbat > Persona Menu > Advanced Menu *)
-				chatInputCellObj,
+				targetObj,
 				{ TaggingRules, "ChatNotebookSettings", "TemperatureSetting" },
-				currentChatSettings[ chatInputCellObj, "Temperature" ]
+				currentChatSettings[ targetObj, "Temperature" ]
 			],
 			Function[
-				CurrentValue[ chatInputCellObj, { TaggingRules, "ChatNotebookSettings", "TemperatureSetting" } ] =
-					CurrentValue[ chatInputCellObj, { TaggingRules, "ChatNotebookSettings", "Temperature" } ] = #1;
+				CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "TemperatureSetting" } ] =
+					CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Temperature" } ] = #1;
 			]
 		]
 	]
@@ -1586,16 +1831,16 @@ SetFallthroughError[currentValueOrigin]
 		specified CellObject.
 *)
 currentValueOrigin[
-	cell_CellObject,
+	targetObj : _CellObject | _NotebookObject,
 	keyPath_List
 ] := Module[{
 	value,
 	inlineValue
 },
-	value = absoluteCurrentValue[cell, keyPath];
+	value = absoluteCurrentValue[targetObj, keyPath];
 
 	inlineValue = nestedLookup[
-		Options[cell],
+		Options[targetObj],
 		keyPath,
 		None
 	];
@@ -1641,9 +1886,9 @@ nestedLookup[as_, keys_] := nestedLookup[as, keys, Missing["KeySequenceAbsent", 
 
 (*====================================*)
 
-SetFallthroughError[makeChatInputActionMenuContent]
+SetFallthroughError[makeChatActionMenuContent]
 
-Options[makeChatInputActionMenuContent] = {
+Options[makeChatActionMenuContent] = {
 	"PersonaValue" -> Automatic,
 	"ModelValue" -> Automatic,
 	"RoleValue" -> Automatic,
@@ -1651,7 +1896,8 @@ Options[makeChatInputActionMenuContent] = {
 	"ActionCallback" -> (Null &)
 }
 
-makeChatInputActionMenuContent[
+makeChatActionMenuContent[
+	containerType : "Input" | "Delimiter" | "Toolbar",
 	(* List of {tagging rule value, icon, list item label} *)
 	personas:{___List},
 	(* List of {tagging rule value, icon, list item label} *)
@@ -1713,7 +1959,7 @@ makeChatInputActionMenuContent[
 				}
 			}],
 			{
-				{"User", getIcon["RoleUser"]},
+				{"User", getIcon["ChatIconUser"]},
 				{"System", getIcon["RoleSystem"]}
 			}
 		]
@@ -1733,15 +1979,26 @@ makeChatInputActionMenuContent[
 		{"Personas"},
 		Map[
 			entry |-> ConfirmReplace[entry, {
-				{persona_?StringQ, icon_, listItemLabel_} :> {
+				{persona_?StringQ, icon_} :> {
 					alignedMenuIcon[persona, personaValue, icon],
-					personaDisplayName[listItemLabel],
+					personaDisplayName[persona],
 					Hold[callback["Persona", persona]]
 				}
 			}],
 			personas
 		],
 		{
+			ConfirmReplace[containerType, {
+				"Input" | "Toolbar" -> Nothing,
+				"Delimiter" :> Splice[{
+					Delimiter,
+					{
+						alignedMenuIcon[getIcon["ChatBlockSettingsMenuIcon"]],
+						"Chat Block Settings\[Ellipsis]",
+						"OpenChatBlockSettings"
+					}
+				}]
+			}],
 			Delimiter,
 			{alignedMenuIcon[getIcon["PersonaOther"]], "Add & Manage Personas\[Ellipsis]", "PersonaManage"},
 			{alignedMenuIcon[getIcon["PersonaFromURL"]], "Install From URL\[Ellipsis]", "PersonaURLInstall"},
@@ -1777,149 +2034,6 @@ makeChatInputActionMenuContent[
 ]]
 
 (*====================================*)
-
-SetFallthroughError[makeChatDelimiterActionMenuContent]
-
-Options[makeChatDelimiterActionMenuContent] = {
-	"PersonaValue" -> Automatic,
-	"ModelValue" -> Automatic,
-	"RoleValue" -> Automatic,
-	"TemperatureValue" -> Automatic,
-	"ActionCallback" -> (Null &)
-}
-
-makeChatDelimiterActionMenuContent[
-	(* List of {tagging rule value, icon, list item label} *)
-	personas:{___List},
-	(* List of {tagging rule value, icon, list item label} *)
-	models:{___List},
-	OptionsPattern[]
-] := With[{
-	callback = OptionValue["ActionCallback"]
-}, Module[{
-	personaValue = OptionValue["PersonaValue"],
-	modelValue = OptionValue["ModelValue"],
-	roleValue = OptionValue["RoleValue"],
-	tempValue = OptionValue["TemperatureValue"],
-	advancedSettingsMenu,
-	menuLabel,
-	menuItems
-},
-
-	(*-------------------------------------------------*)
-	(* Construct the Advanced Settings submenu content *)
-	(*-------------------------------------------------*)
-
-	advancedSettingsMenu = Join[
-		{
-			"Temperature",
-			{
-				None,
-				Pane[
-					Slider[
-						tempValue,
-						{ 0, 2, 0.01 },
-						ImageSize  -> { 140, Automatic },
-						ImageMargins -> {{5, 0}, {5, 5}},
-						Appearance -> "Labeled"
-					],
-					ImageSize -> { 180, Automatic },
-					BaseStyle -> { FontSize -> 12 }
-				],
-				None
-			}
-		},
-		{"Models"},
-		Map[
-			entry |-> ConfirmReplace[entry, {
-				{model_?StringQ, icon_, listItemLabel_} :> {
-					alignedMenuIcon[model, modelValue, icon],
-					listItemLabel,
-					Hold[callback["Model", model]]
-				}
-			}],
-			models
-		],
-		{"Roles"},
-		Map[
-			entry |-> ConfirmReplace[entry, {
-				{role_?StringQ, icon_} :> {
-					alignedMenuIcon[role, roleValue, icon],
-					role,
-					Hold[callback["Role", role]]
-				}
-			}],
-			{
-				{"User", getIcon["RoleUser"]},
-				{"System", getIcon["RoleSystem"]}
-			}
-		]
-	];
-
-	advancedSettingsMenu = MakeMenu[
-		advancedSettingsMenu,
-		GrayLevel[0.85],
-		200
-	];
-
-	(*------------------------------------*)
-	(* Construct the popup menu item list *)
-	(*------------------------------------*)
-
-	menuItems = Join[
-		{"Personas"},
-		Map[
-			entry |-> ConfirmReplace[entry, {
-				{persona_?StringQ, icon_, listItemLabel_} :> {
-					alignedMenuIcon[persona, personaValue, icon],
-					listItemLabel,
-					Hold[callback["Persona", persona]]
-				}
-			}],
-			personas
-		],
-		{
-			Delimiter,
-			{
-				alignedMenuIcon[getIcon["ChatBlockSettingsMenuIcon"]],
-				"Chat Block Settings\[Ellipsis]",
-				"OpenChatBlockSettings"
-			},
-			Delimiter,
-			{alignedMenuIcon[getIcon["PersonaOther"]], "Add & Manage Personas\[Ellipsis]", "PersonaManage"},
-			{alignedMenuIcon[getIcon["PersonaFromURL"]], "Install From URL\[Ellipsis]", "PersonaURLInstall"},
-			Delimiter,
-			{
-				alignedMenuIcon[getIcon["AdvancedSettings"]],
-				Grid[
-					{{
-						Item["Advanced Settings", ItemSize -> Fit, Alignment -> Left],
-						RawBoxes[TemplateBox[{}, "Triangle"]]
-					}},
-					Spacings -> 0
-				],
-				Hold[AttachCell[
-					EvaluationCell[],
-					advancedSettingsMenu,
-					{Right, Bottom},
-					{50, 50},
-					{Left, Bottom},
-					RemovalConditions -> "MouseExit"
-				]]
-			}
-		}
-	];
-
-	menu = MakeMenu[
-		menuItems,
-		GrayLevel[0.85],
-		225
-	];
-
-	menu
-]]
-
-(*------------------------------------*)
 
 SetFallthroughError[personaDisplayName]
 
@@ -2003,50 +2117,15 @@ getIcon[ name_ ] := RawBoxes @ TemplateBox[ { }, name ];
 
 (*------------------------------------*)
 
-GetChatInputLLMConfigurationSelectorMenuData[] := Module[{
-	personas,
-	models
-},
-	(* personas = {
-		{"Helper", getIcon["persona-helper.wl"], "Helper"},
-		{"Code", getIcon["persona-code.wl"], "Code"},
-		{"Documentation", getIcon["persona-documentation.wl"], "Documentation"},
-		{"Wolfie", getIcon["persona-wolfie.wl"], "Wolfie"},
-		{"Birdnardo", getIcon["persona-birdnardo.wl"], "Birdnardo"},
-		{
-			"ConnorGray/OrganizerAssistant",
-			RawBoxes @ TemplateBox[{
-				StyleBox["\"ConnorGray:\"", FontSize -> 10, GrayLevel[
-				0.5], StripOnInput -> False
-				],
-				"\" \"",
-				"\"Organizer Assistant\""
-			}, "RowDefault"],
-			""
-		}
-	}; *)
-
-	personas = KeyValueMap[
+GetChatInputLLMConfigurationSelectorMenuData[] :=
+	KeyValueMap[
 		{key, value} |-> {
 			key,
 			(* FIXME: Better generic fallback icon? *)
-			getPersonaMenuIcon @ value,
-			key
+			getPersonaMenuIcon @ value
 		},
 		GetPersonasAssociation[]
-	];
-
-	models = {
-		(* FIXME: Replace with OpenAI logo *)
-		{"gpt-3.5-turbo", getIcon["ModelGPT35"], "GPT-3.5"},
-		{"gpt-4", getIcon["ModelGPT4"], "GPT-4"}
-	};
-
-	<|
-		"Personas" -> personas,
-		"Models" -> models
-	|>
-]
+	]
 
 
 SetFallthroughError[getPersonaMenuIcon];

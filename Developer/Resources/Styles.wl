@@ -382,7 +382,6 @@ Cell[
     CellMargins         -> { { 5, 25 }, { Inherited, Inherited } },
     CellTrayWidgets     -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterAssignments  -> { { "ChatInputCount", 0 } },
-    DefaultNewCellStyle -> "Input",
     FontColor           -> GrayLevel[ 0.2 ],
     FontWeight          -> "DemiBold",
     ShowCellLabel       -> False,
@@ -428,7 +427,6 @@ Cell[
     CellMargins            -> { { 5, 0 }, { 10, 10 } },
     CellTrayWidgets        -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterAssignments     -> { { "ChatInputCount", 0 } },
-    DefaultNewCellStyle    -> "Input",
     FontSize               -> 6,
     ShowCellLabel          -> False,
 
@@ -461,8 +459,7 @@ Cell[
                 ],
                 Background    -> None,
                 CellFrame     -> 0,
-                CellMargins   -> 0,
-                Magnification -> 0.75 Inherited
+                CellMargins   -> 0
             ],
             None
         },
@@ -810,7 +807,7 @@ Cell[
                         {
                             CapForm[ "Round" ],
                             GrayLevel[ 0.9 ],
-                            AbsoluteThickness[ 1 ],
+                            AbsoluteThickness[ 2 ],
                             LineBox @ { { -1, 0 }, { 1, 0 } }
                         },
                         AspectRatio  -> Full,
