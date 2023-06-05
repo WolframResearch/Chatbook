@@ -108,6 +108,8 @@ makeResultCell0[ mathCell[ math_String ] ] :=
         ]
     ];
 
+makeResultCell0[ imageCell[ alt_String, url_String ] ] := image[ alt, url ];
+
 makeResultCell0[ hyperlinkCell[ label_String, url_String ] ] := hyperlink[ label, url ];
 
 makeResultCell0[ bulletCell[ whitespace_String, item_String ] ] := Flatten @ {
@@ -125,7 +127,10 @@ makeResultCell0[ sectionCell[ n_, section_String ] ] := Flatten @ {
     $tinyLineBreak
 };
 
-makeResultCell0[ inlineToolCallCell[ string_String ] ] := inlineToolCall @ string;
+makeResultCell0[ inlineToolCallCell[ string_String ] ] := (
+    $lastToolCallString = string;
+    $lastFormattedToolCall = inlineToolCall @ string
+);
 
 makeResultCell0 // endDefinition;
 
@@ -363,6 +368,7 @@ $textDataFormatRules = {
     tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ("ENDTOOLCALL"|EndOfString)) :> inlineToolCallCell @ tool,
     "\n" ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
     "\n" ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ],
+    "![" ~~ alt__ ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" /; StringFreeQ[ alt, "![" ] :> imageCell[ alt, url ],
     "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :> hyperlinkCell[ label, url ],
     "\\`" :> "`",
     "\\$" :> "$",
@@ -656,6 +662,8 @@ codeBlockFrame // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*styleBox*)
+styleBox // beginDefinition;
+
 styleBox[ text_String, a___ ] := styleBox[ formatTextString @ text, a ];
 styleBox[ { text: _ButtonBox|_String }, a___ ] := StyleBox[ text, a ];
 styleBox[ { (h: Cell|StyleBox)[ text_, a___ ] }, b___ ] := DeleteDuplicates @ StyleBox[ text, a, b ];
@@ -665,9 +673,120 @@ styleBox[ { a___, b: Except[ _ButtonBox|_Cell|_String|_StyleBox ], c___ }, d___ 
 
 styleBox[ a_, ___ ] := a;
 
+styleBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*image*)
+image // beginDefinition;
+image[ alt_String, url_String ] := image[ alt, url, URLParse @ url ];
+image[ alt_, url_, KeyValuePattern @ { "Scheme" -> "attachment", "Domain" -> key_String } ] := attachment[ alt, key ];
+image[ alt_, url_, _ ] := importedImage[ alt, url ];
+image // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*attachment*)
+attachment // beginDefinition;
+attachment[ alt_String, key_String ] := attachment[ alt, key, $attachments[ key ] ];
+attachment[ alt_String, key_String, HoldComplete[ expr_ ] ] := attachment[ alt, key, tooltip[ Defer @ expr, alt ] ];
+attachment[ alt_String, key_String, _Missing ] := attachment[ alt, key, tooltip[ $missingImage, alt ] ];
+
+attachment[ alt_String, key_String, expr_ ] /; $dynamicText :=
+    codeBlockFrame[ Cell[ BoxData @ attachmentBoxes[ alt, key, expr ], "ChatCodeActive" ], expr ];
+
+attachment[ alt_String, key_String, expr_ ] :=
+    Module[ { boxes, display, handler },
+        boxes = attachmentBoxes[ alt, key, expr ];
+        display = RawBoxes @ Cell[
+            BoxData @ boxes,
+            "ChatCode",
+            "Input",
+            Background -> GrayLevel[ 1 ]
+        ];
+        handler = inlineInteractiveCodeCell[ display, Cell[ BoxData @ boxes, "Input" ] ];
+        codeBlockFrame[ Cell @ BoxData @ ToBoxes @ handler, expr ]
+    ];
+
+attachment // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*attachmentBoxes*)
+attachmentBoxes // beginDefinition;
+attachmentBoxes[ alt_, key_String, expr_ ] := markdownImageBoxes[ alt, "attachment://" <> key, expr ];
+attachmentBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*markdownImageBoxes*)
+markdownImageBoxes // beginDefinition;
+
+markdownImageBoxes[ alt_String, url_String, expr_ ] := TagBox[
+    cachedBoxes @ expr,
+    "MarkdownImage",
+    AutoDelete   -> True,
+    TaggingRules -> <| "CellToStringData" -> "!["<>alt<>"]("<>url<>")" |>
+];
+
+markdownImageBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*importedImage*)
+importedImage // beginDefinition;
+importedImage[ alt_String, url_String ] := importedImage[ alt, url ] = importedImage[ alt, url, Quiet @ Import @ url ];
+importedImage[ alt_String, url_String, _? FailureQ | _String ] := importedImage[ alt, url, $missingImage ];
+importedImage[ alt_String, url_String, i_ ] := Cell @ BoxData @ markdownImageBoxes[ alt, url, tooltip[ i, alt ] ];
+importedImage // endDefinition;
+
+$missingImage = RawBoxes @ TemplateBox[ { }, "ImageNotFound" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*tooltip*)
+tooltip // beginDefinition;
+tooltip[ expr_, ""|"result" ] := expr;
+tooltip[ expr_, text_ ] := Tooltip[ expr, text ];
+tooltip // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*displayExpression*)
+(* displayExpression // beginDefinition;
+
+displayExpression[ expr_ ] := displayExpression[ expr, cachedBoxes @ expr ];
+
+displayExpression[ expr_, copy_ ] /; $dynamicText := codeBlockFrame[ Cell[ BoxData @ copy, "ChatCodeActive" ], expr ];
+
+displayExpression[ expr_, copy_ ] :=
+    Module[ { display, handler },
+        display = RawBoxes @ Cell[
+            BoxData @ copy,
+            "ChatCode",
+            "Input",
+            Background -> GrayLevel[ 1 ]
+        ];
+        handler = inlineInteractiveCodeCell[ display, Cell[ BoxData @ copy, "Input" ] ];
+        codeBlockFrame[ Cell @ BoxData @ ToBoxes @ handler, expr ]
+    ];
+
+displayExpression // endDefinition; *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cachedBoxes*)
+cachedBoxes // beginDefinition;
+cachedBoxes[ e_ ] := With[ { h = Hash @ Unevaluated @ e }, Lookup[ $boxCache, h, $boxCache[ h ] = MakeBoxes @ e ] ];
+cachedBoxes // endDefinition;
+
+$boxCache = <| |>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*hyperlink*)
+hyperlink // beginDefinition;
+
 hyperlink[ label_String, uri_String ] /; StringStartsQ[ uri, "paclet:" ] :=
     Cell @ BoxData @ TemplateBox[ { StringTrim[ label, (Whitespace|"`").. ], uri }, "TextRefLink" ];
 
@@ -681,6 +800,8 @@ hyperlink[ { label: _String|_StyleBox }, url_ ] := ButtonBox[
 ];
 
 hyperlink[ a_, ___ ] := a;
+
+hyperlink // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
