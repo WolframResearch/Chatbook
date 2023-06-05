@@ -371,10 +371,14 @@ $textDataFormatRules = {
     Longest[ "```" ~~ ($wlCodeString|"") ] ~~ Shortest[ code__ ] ~~ ("```"|EndOfString) :>
         If[ nameQ[ "System`"<>code ], inlineCodeCell @ code, codeCell @ code ]
     ,
+    "![" ~~ alt: Shortest[ __ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
+        StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
+            imageCell[ alt, url ]
+    ,
     tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ("ENDTOOLCALL"|EndOfString)) :> inlineToolCallCell @ tool,
     "\n" ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
-    "\n" ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ],
-    "![" ~~ alt__ ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" /; StringFreeQ[ alt, "![" ] :> imageCell[ alt, url ],
+    "\n" ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ]
+    ,
     "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :> hyperlinkCell[ label, url ],
     "\\`" :> "`",
     "\\$" :> "$",
