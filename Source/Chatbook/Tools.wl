@@ -287,21 +287,28 @@ $line = 0;
 (*Evaluate*)
 
 $sandboxEvaluateDescription = "\
-Evaluate Wolfram Language code for the user in a sandboxed environment.\
-You do not need to tell the user the input code that you are evaluating.\
-They will be able to inspect it if they want to.
+Evaluate Wolfram Language code for the user in a sandboxed environment. \
+You do not need to tell the user the input code that you are evaluating. \
+They will be able to inspect it if they want to. \
+The user does not automatically see the result. \
+You must include the result in your response in order for them to see it.
 
 Example
 ---
-user: What's the 1337th prime number?
+user: Plot sin(x) from -5 to 5
 
-assistant: Let me calculate that for you. Just a moment...
+assistant: Let me plot that for you. Just a moment...
 TOOLCALL: sandbox_evaluate
 {
-	\"code\": \"Prime[1337]\"
+	\"code\": \"Plot[Sin[x], {x, -10, 10}, AxesLabel -> {\\\"x\\\", \\\"sin(x)\\\"}]\"
 }
 ENDARGUMENTS
 ENDTOOLCALL
+
+system: ![result](expression://result-xxxx)
+
+assistant: Here's the plot of $sin(x)$ from $-5$ to $5$:
+![Plot](expression://result-xxxx)
 ";
 
 $defaultChatTools[ "sandbox_evaluate" ] = LLMTool[
@@ -332,18 +339,21 @@ startSandboxKernel[ ] := Enclose[
 
         Scan[ LinkClose, Select[ Links[ ], sandboxKernelQ ] ];
 
-        pwFile = FileNameJoin @ { $InstallationDirectory, "Configuration", "Licensing", "playerpass" };
+        (* pwFile = FileNameJoin @ { $InstallationDirectory, "Configuration", "Licensing", "playerpass" }; *)
 
         kernel = ConfirmMatch[
             LinkLaunch @ StringJoin[
                 First @ $CommandLine,
-                " -wstp -pacletreadonly -sandbox -noinit -noicon",
+                " -wstp -pacletreadonly -noinit -noicon",
                 If[ FileExistsQ @ pwFile, " -pwfile \""<>pwFile<>"\"", "" ],
-                " -run ChatbookSandbox-" <> ToString @ $ProcessID
+                " -run ChatbookSandbox" <> ToString @ $ProcessID
             ],
             _LinkObject,
             "LinkLaunch"
         ];
+
+        (* Use StartProtectedMode instead of passing the -sandbox argument, since we need to initialize the FE first *)
+        LinkWrite[ kernel, Unevaluated @ EvaluatePacket[ UsingFrontEnd @ Null; Developer`StartProtectedMode[ ] ] ];
 
         pid = pingSandboxKernel @ kernel;
 
@@ -414,7 +424,7 @@ pingSandboxKernel // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*sandboxKernelQ*)
-sandboxKernelQ[ LinkObject[ cmd_String, ___ ] ] := StringContainsQ[ cmd, "ChatbookSandbox-" <> ToString @ $ProcessID ];
+sandboxKernelQ[ LinkObject[ cmd_String, ___ ] ] := StringContainsQ[ cmd, "ChatbookSandbox" <> ToString @ $ProcessID ];
 sandboxKernelQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
@@ -434,7 +444,7 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
 
         LinkWrite[
             kernel,
-            Unevaluated @ EnterExpressionPacket @ BinarySerialize[ HoldComplete @@ { evaluation } ]
+            Unevaluated @ EnterExpressionPacket @ UsingFrontEnd @ BinarySerialize[ HoldComplete @@ { evaluation } ]
         ];
 
         { null, { packets } } = Reap[
@@ -450,6 +460,8 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
         ];
 
         flat = Flatten[ HoldComplete @@ results, 1 ];
+
+        (* TODO: include prompting that explains how to use Out[n] to get previous results *)
 
         $lastSandboxResult = <|
             "String"  -> sandboxResultString @ flat,
@@ -476,7 +488,7 @@ sandboxResultString[ HoldComplete[ Null..., expr_ ] ] :=
 sandboxResultString[ HoldComplete[ Null..., expr_ ] ] :=
     With[ { uuid = CreateUUID[ "result-" ] },
         $attachments[ uuid ] = HoldComplete @ expr;
-        "![result](attachment://" <> uuid <> ")"
+        "![result](expression://" <> uuid <> ")"
     ];
 
 sandboxResultString // endDefinition;

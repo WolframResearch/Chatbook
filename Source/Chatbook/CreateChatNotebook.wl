@@ -35,7 +35,7 @@ CreateChatNotebook // Options = {
     "PresencePenalty"                   -> 0.1,
     "ShowMinimized"                     -> Automatic,
     "Temperature"                       -> 0.7,
-    "ToolsEnabled"                      -> False,
+    "ToolsEnabled"                      -> Automatic,
     "TopP"                              -> 1
 };
 
