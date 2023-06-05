@@ -288,7 +288,8 @@ $line = 0;
 
 $sandboxEvaluateDescription = "\
 Evaluate Wolfram Language code for the user in a sandboxed environment.\
-The result will be displayed in the chat for the user to see.
+You do not need to tell the user the input code that you are evaluating.\
+They will be able to inspect it if they want to.
 
 Example
 ---
@@ -301,14 +302,13 @@ TOOLCALL: sandbox_evaluate
 }
 ENDARGUMENTS
 ENDTOOLCALL
-"
+";
 
 $defaultChatTools[ "sandbox_evaluate" ] = LLMTool[
     <|
         "Name"        -> "sandbox_evaluate",
         "DisplayName" -> "Sandbox Evaluate",
         "Icon"        -> RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
-        "ShowResult"  -> True, (* TODO: make this work *)
         "Description" -> $sandboxEvaluateDescription,
         "Parameters"  -> {
             "code" -> <|
@@ -468,12 +468,20 @@ sandboxEvaluate // endDefinition;
 sandboxResultString // beginDefinition;
 
 (* TODO: show messages etc. *)
-sandboxResultString[ HoldComplete[ expr_ ] ] := StringJoin[
-    "[[DISPLAY]]\n",
-    CellToString @ Cell[ BoxData @ MakeBoxes @ expr, "Output" ]
+sandboxResultString[ HoldComplete[ Null..., expr_ ] ] :=
+    With[ { string = ToString[ Unevaluated @ expr, InputForm, PageWidth -> 80 ] },
+        "```\n"<>string<>"\n```" /; StringLength @ string < 240
+    ];
+
+sandboxResultString[ HoldComplete[ Null..., expr_ ] ] :=
+    With[ { uuid = CreateUUID[ "result-" ] },
+        $attachments[ uuid ] = HoldComplete @ expr;
+        "![result](attachment://" <> uuid <> ")"
     ];
 
 sandboxResultString // endDefinition;
+
+$attachments = <| |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
