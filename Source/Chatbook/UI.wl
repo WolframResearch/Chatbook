@@ -23,7 +23,6 @@ ChatContextEpilogFunction
 MakeChatInputActiveCellDingbat
 MakeChatInputCellDingbat
 MakeChatDelimiterCellDingbat
-GetChatInputLLMConfigurationSelectorMenuData
 
 GeneralUtilities`SetUsage[CreatePreferencesContent, "
 CreatePreferencesContent[] returns an expression containing the UI shown in the Preferences > AI Settings window.
@@ -1559,13 +1558,11 @@ $dynamicMenuLabel := DynamicModule[ { cell },
 	Dynamic @ If[ TrueQ @ $cloudNotebooks,
 		RawBoxes @ TemplateBox[{},"ChatInputCellDingbat"],
 		With[{
-			personas = GetChatInputLLMConfigurationSelectorMenuData[],
 			personaValue = currentValueOrigin[cell, {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}]
 		},
-			FirstCase[
-				personas,
-				{personaValue[[2]], icon_} :> icon,
-				Style[getIcon["PersonaUnknown"], GrayLevel[0.5]]
+			getPersonaMenuIcon @ Lookup[
+				GetPersonasAssociation[],
+				personaValue[[2]]
 			]
 		]
 	],
@@ -1715,10 +1712,10 @@ makeChatActionMenu[
 		]
 	}]
 }, Module[{
-	personas = GetChatInputLLMConfigurationSelectorMenuData[],
+	personas = GetPersonasAssociation[],
 	actionCallback
 },
-	RaiseConfirmMatch[personas, {{_String, _}...}];
+	RaiseConfirmMatch[personas, <| (_String -> _Association)... |>];
 
 	(*
 		If this menu is being rendered into a Chat-Driven notebook, make the
@@ -1732,9 +1729,8 @@ makeChatActionMenu[
 			}],
 			{TaggingRules, "ChatNotebookSettings", "ChatDrivenNotebook"}
 		],
-		personas = SortBy[
+		personas = KeySort[
 			personas,
-			First,
 			FirstMatchingPositionOrder[{
 				"PlainChat",
 				"RawModel",
@@ -1831,8 +1827,7 @@ Options[makeChatActionMenuContent] = {
 
 makeChatActionMenuContent[
 	containerType : "Input" | "Delimiter" | "Toolbar",
-	(* List of {tagging rule value, icon, list item label} *)
-	personas:{___List},
+	personas_?AssociationQ,
 	(* List of {tagging rule value, icon, list item label} *)
 	models:{___List},
 	OptionsPattern[]
@@ -1910,14 +1905,16 @@ makeChatActionMenuContent[
 
 	menuItems = Join[
 		{"Personas"},
-		Map[
-			entry |-> ConfirmReplace[entry, {
-				{persona_?StringQ, icon_} :> {
+		KeyValueMap[
+			{persona, personaSettings} |-> With[{
+				icon = getPersonaMenuIcon[personaSettings]
+			},
+				{
 					alignedMenuIcon[persona, personaValue, icon],
-					personaDisplayName[persona],
+					personaDisplayName[persona, personaSettings],
 					Hold[callback["Persona", persona]]
 				}
-			}],
+			],
 			personas
 		],
 		{
@@ -2000,18 +1997,6 @@ makeChatActionMenuContent[
 ] *)
 
 getIcon[ name_ ] := RawBoxes @ TemplateBox[ { }, name ];
-
-(*------------------------------------*)
-
-GetChatInputLLMConfigurationSelectorMenuData[] :=
-	KeyValueMap[
-		{key, value} |-> {
-			key,
-			(* FIXME: Better generic fallback icon? *)
-			getPersonaMenuIcon @ value
-		},
-		GetPersonasAssociation[]
-	]
 
 
 

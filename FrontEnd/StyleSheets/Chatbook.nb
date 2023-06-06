@@ -1616,25 +1616,16 @@ Notebook[
              RawBoxes[TemplateBox[{}, "ChatInputCellDingbat"]],
              With[
               {
-               Wolfram`Chatbook`UI`Private`personas = 
-                Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
-
-                ],
                Wolfram`Chatbook`UI`Private`personaValue = 
                 Wolfram`Chatbook`UI`Private`currentValueOrigin[
                  Wolfram`Chatbook`UI`Private`cell$$,
                  {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
                 ]
               },
-              FirstCase[
-               Wolfram`Chatbook`UI`Private`personas,
-               {
-                Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
-                Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]]
-               } :> Wolfram`Chatbook`UI`Private`icon,
-               Style[
-                Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
-                GrayLevel[0.5]
+              Wolfram`Chatbook`UI`Private`getPersonaMenuIcon[
+               Lookup[
+                Wolfram`Chatbook`Personas`GetPersonasAssociation[],
+                Part[Wolfram`Chatbook`UI`Private`personaValue, 2]
                ]
               ]
              ]
@@ -1670,7 +1661,7 @@ Notebook[
        ButtonFunction :>
         (AttachCell[
          EvaluationCell[],
-         Wolfram`Chatbook`UI`Private`openChatActionMenu[
+         Wolfram`Chatbook`UI`Private`makeChatActionMenu[
           "Input",
           Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]],
           EvaluationCell[]
@@ -1715,25 +1706,16 @@ Notebook[
                 RawBoxes[TemplateBox[{}, "ChatInputCellDingbat"]],
                 With[
                  {
-                  Wolfram`Chatbook`UI`Private`personas = 
-                   Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
-
-                   ],
                   Wolfram`Chatbook`UI`Private`personaValue = 
                    Wolfram`Chatbook`UI`Private`currentValueOrigin[
                     Wolfram`Chatbook`UI`Private`cell$$,
                     {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
                    ]
                  },
-                 FirstCase[
-                  Wolfram`Chatbook`UI`Private`personas,
-                  {
-                   Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
-                   Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]]
-                  } :> Wolfram`Chatbook`UI`Private`icon,
-                  Style[
-                   Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
-                   GrayLevel[0.5]
+                 Wolfram`Chatbook`UI`Private`getPersonaMenuIcon[
+                  Lookup[
+                   Wolfram`Chatbook`Personas`GetPersonasAssociation[],
+                   Part[Wolfram`Chatbook`UI`Private`personaValue, 2]
                   ]
                  ]
                 ]
@@ -1769,7 +1751,7 @@ Notebook[
           ButtonFunction :>
            (AttachCell[
             EvaluationCell[],
-            Wolfram`Chatbook`UI`Private`openChatActionMenu[
+            Wolfram`Chatbook`UI`Private`makeChatActionMenu[
              "Input",
              Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]],
              EvaluationCell[]
@@ -1834,25 +1816,16 @@ Notebook[
                   RawBoxes[TemplateBox[{}, "ChatInputCellDingbat"]],
                   With[
                    {
-                    Wolfram`Chatbook`UI`Private`personas = 
-                     Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
-
-                     ],
                     Wolfram`Chatbook`UI`Private`personaValue = 
                      Wolfram`Chatbook`UI`Private`currentValueOrigin[
                       Wolfram`Chatbook`UI`Private`cell$$,
                       {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
                      ]
                    },
-                   FirstCase[
-                    Wolfram`Chatbook`UI`Private`personas,
-                    {
-                     Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
-                     Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]]
-                    } :> Wolfram`Chatbook`UI`Private`icon,
-                    Style[
-                     Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
-                     GrayLevel[0.5]
+                   Wolfram`Chatbook`UI`Private`getPersonaMenuIcon[
+                    Lookup[
+                     Wolfram`Chatbook`Personas`GetPersonasAssociation[],
+                     Part[Wolfram`Chatbook`UI`Private`personaValue, 2]
                     ]
                    ]
                   ]
@@ -1888,7 +1861,7 @@ Notebook[
             ButtonFunction :>
              (AttachCell[
               EvaluationCell[],
-              Wolfram`Chatbook`UI`Private`openChatActionMenu[
+              Wolfram`Chatbook`UI`Private`makeChatActionMenu[
                "Input",
                Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]],
                EvaluationCell[]
@@ -2384,25 +2357,16 @@ Notebook[
              RawBoxes[TemplateBox[{}, "ChatInputCellDingbat"]],
              With[
               {
-               Wolfram`Chatbook`UI`Private`personas = 
-                Wolfram`Chatbook`UI`GetChatInputLLMConfigurationSelectorMenuData[
-
-                ],
                Wolfram`Chatbook`UI`Private`personaValue = 
                 Wolfram`Chatbook`UI`Private`currentValueOrigin[
                  Wolfram`Chatbook`UI`Private`cell$$,
                  {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
                 ]
               },
-              FirstCase[
-               Wolfram`Chatbook`UI`Private`personas,
-               {
-                Part[Wolfram`Chatbook`UI`Private`personaValue, 2],
-                Pattern[Wolfram`Chatbook`UI`Private`icon, Blank[]]
-               } :> Wolfram`Chatbook`UI`Private`icon,
-               Style[
-                Wolfram`Chatbook`UI`Private`getIcon["PersonaUnknown"],
-                GrayLevel[0.5]
+              Wolfram`Chatbook`UI`Private`getPersonaMenuIcon[
+               Lookup[
+                Wolfram`Chatbook`Personas`GetPersonasAssociation[],
+                Part[Wolfram`Chatbook`UI`Private`personaValue, 2]
                ]
               ]
              ]
@@ -2444,7 +2408,7 @@ Notebook[
        ButtonFunction :>
         (AttachCell[
          EvaluationCell[],
-         Wolfram`Chatbook`UI`Private`openChatActionMenu[
+         Wolfram`Chatbook`UI`Private`makeChatActionMenu[
           "Delimiter",
           Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]],
           EvaluationCell[]
