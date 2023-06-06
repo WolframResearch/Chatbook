@@ -1819,73 +1819,6 @@ openChatActionMenu[
 
 (*====================================*)
 
-SetFallthroughError[currentValueOrigin]
-
-(*
-	Get the current value and origin of a cell option value.
-
-	This function will return {origin, value}, where `origin` will be one of:
-
-	* "Inline"    -- this value is set inline in the specified CellObject
-	* "Inherited" -- this value is inherited from a style setting outside of the
-		specified CellObject.
-*)
-currentValueOrigin[
-	targetObj : _CellObject | _NotebookObject,
-	keyPath_List
-] := Module[{
-	value,
-	inlineValue
-},
-	value = absoluteCurrentValue[targetObj, keyPath];
-
-	inlineValue = nestedLookup[
-		Options[targetObj],
-		keyPath,
-		None
-	];
-
-	Which[
-		inlineValue === None,
-			{"Inherited", value},
-		True,
-			{"Inline", inlineValue}
-	]
-]
-
-(*====================================*)
-
-SetFallthroughError[absoluteCurrentValue]
-
-absoluteCurrentValue[cell_, {TaggingRules, "ChatNotebookSettings", key_}] := currentChatSettings[cell, key]
-absoluteCurrentValue[cell_, keyPath_] := AbsoluteCurrentValue[cell, keyPath]
-
-(*====================================*)
-
-SetFallthroughError[nestedLookup]
-Attributes[nestedLookup] = {HoldRest}
-
-nestedLookup[as:KeyValuePattern[{}], {keys___}, default_] :=
-	Replace[
-		GeneralUtilities`ToAssociations[as][keys],
-		{
-			Missing["KeyAbsent", ___] :> default,
-			_[keys] :> default
-		}
-	]
-
-nestedLookup[as_, key:Except[_List], default_] :=
-	With[{keys = key},
-		If[ ListQ[keys],
-			nestedLookup[as, keys, default],
-			nestedLookup[as, {keys}, default]
-		]
-	]
-
-nestedLookup[as_, keys_] := nestedLookup[as, keys, Missing["KeySequenceAbsent", keys]]
-
-(*====================================*)
-
 SetFallthroughError[makeChatActionMenuContent]
 
 Options[makeChatActionMenuContent] = {
@@ -2035,53 +1968,6 @@ makeChatActionMenuContent[
 
 (*====================================*)
 
-SetFallthroughError[personaDisplayName]
-
-personaDisplayName[name_String] := personaDisplayName[name, GetCachedPersonaData[name]]
-personaDisplayName[name_String, data_Association] := personaDisplayName[name, data["DisplayName"]]
-personaDisplayName[name_String, displayName_String] := displayName
-personaDisplayName[name_String, _] := name
-
-(*------------------------------------*)
-
-SetFallthroughError[alignedMenuIcon]
-
-alignedMenuIcon[possible_, current_, icon_] :=alignedMenuIcon[styleListItem[possible, current], icon]
-alignedMenuIcon[check_, icon_] := Row[{check, " ", resizeMenuIcon[icon]}]
-(* If menu item does not utilize a checkmark, use an invisible one to ensure it is left-aligned with others *)
-alignedMenuIcon[icon_] := alignedMenuIcon[Style["\[Checkmark]", ShowContents -> False], icon]
-
-(*------------------------------------*)
-
-SetFallthroughError[styleListItem]
-
-(*
-	Style a list item in the ChatInput option value dropdown based on whether
-	its value is set inline in the current cell, inherited from some enclosing
-	setting, or not the current value.
-*)
-styleListItem[
-	possibleValue_?StringQ,
-	currentValue : {"Inline" | "Inherited", _}
-] := (
-	Replace[currentValue, {
-		(* This possible value is the currently selected value. *)
-		{"Inline", possibleValue} :>
-			"\[Checkmark]",
-		(* This possible value is the inherited selected value. *)
-		{"Inherited", possibleValue} :>
-			Style["\[Checkmark]", FontColor -> GrayLevel[0.75]],
-		(* This possible value is not whatever the currently selected value is. *)
-		(* Display a hidden checkmark purely so that this
-			is offset by the same amount as list items that
-			display a visible checkmark. *)
-		_ ->
-			Style["\[Checkmark]", ShowContents -> False]
-	}]
-)
-
-(*====================================*)
-
 (* getIcon[filename_?StringQ] := Module[{
 	icon
 },
@@ -2128,13 +2014,66 @@ GetChatInputLLMConfigurationSelectorMenuData[] :=
 	]
 
 
-SetFallthroughError[getPersonaMenuIcon];
 
-getPersonaMenuIcon[ KeyValuePattern[ "Icon"|"PersonaIcon" -> icon_ ] ] := getPersonaMenuIcon @ icon;
-getPersonaMenuIcon[ KeyValuePattern[ "Default" -> icon_ ] ] := getPersonaMenuIcon @ icon;
-getPersonaMenuIcon[ _Missing | _Association | None ] := RawBoxes @ TemplateBox[ { }, "PersonaUnknown" ];
-getPersonaMenuIcon[ icon_ ] := icon;
+(*========================================================*)
+(* Chat settings lookup helpers                           *)
+(*========================================================*)
 
+SetFallthroughError[absoluteCurrentValue]
+
+absoluteCurrentValue[cell_, {TaggingRules, "ChatNotebookSettings", key_}] := currentChatSettings[cell, key]
+absoluteCurrentValue[cell_, keyPath_] := AbsoluteCurrentValue[cell, keyPath]
+
+(*====================================*)
+
+SetFallthroughError[currentValueOrigin]
+
+(*
+	Get the current value and origin of a cell option value.
+
+	This function will return {origin, value}, where `origin` will be one of:
+
+	* "Inline"    -- this value is set inline in the specified CellObject
+	* "Inherited" -- this value is inherited from a style setting outside of the
+		specified CellObject.
+*)
+currentValueOrigin[
+	targetObj : _CellObject | _NotebookObject,
+	keyPath_List
+] := Module[{
+	value,
+	inlineValue
+},
+	value = absoluteCurrentValue[targetObj, keyPath];
+
+	inlineValue = nestedLookup[
+		Options[targetObj],
+		keyPath,
+		None
+	];
+
+	Which[
+		inlineValue === None,
+			{"Inherited", value},
+		True,
+			{"Inline", inlineValue}
+	]
+]
+
+
+
+(*========================================================*)
+(* Menu construction helpers                              *)
+(*========================================================*)
+
+SetFallthroughError[alignedMenuIcon]
+
+alignedMenuIcon[possible_, current_, icon_] :=alignedMenuIcon[styleListItem[possible, current], icon]
+alignedMenuIcon[check_, icon_] := Row[{check, " ", resizeMenuIcon[icon]}]
+(* If menu item does not utilize a checkmark, use an invisible one to ensure it is left-aligned with others *)
+alignedMenuIcon[icon_] := alignedMenuIcon[Style["\[Checkmark]", ShowContents -> False], icon]
+
+(*====================================*)
 
 resizeMenuIcon[ icon: _Graphics|_Graphics3D ] :=
 	Show[ icon, ImageSize -> { 21, 21 } ];
@@ -2145,6 +2084,88 @@ resizeMenuIcon[ icon_ ] := Pane[
 	ImageSizeAction -> "ShrinkToFit",
 	ContentPadding  -> False
 ];
+
+(*====================================*)
+
+SetFallthroughError[styleListItem]
+
+(*
+	Style a list item in the ChatInput option value dropdown based on whether
+	its value is set inline in the current cell, inherited from some enclosing
+	setting, or not the current value.
+*)
+styleListItem[
+	possibleValue_?StringQ,
+	currentValue : {"Inline" | "Inherited", _}
+] := (
+	Replace[currentValue, {
+		(* This possible value is the currently selected value. *)
+		{"Inline", possibleValue} :>
+			"\[Checkmark]",
+		(* This possible value is the inherited selected value. *)
+		{"Inherited", possibleValue} :>
+			Style["\[Checkmark]", FontColor -> GrayLevel[0.75]],
+		(* This possible value is not whatever the currently selected value is. *)
+		(* Display a hidden checkmark purely so that this
+			is offset by the same amount as list items that
+			display a visible checkmark. *)
+		_ ->
+			Style["\[Checkmark]", ShowContents -> False]
+	}]
+)
+
+
+
+(*========================================================*)
+(* Persona property lookup helpers                        *)
+(*========================================================*)
+
+SetFallthroughError[personaDisplayName]
+
+personaDisplayName[name_String] := personaDisplayName[name, GetCachedPersonaData[name]]
+personaDisplayName[name_String, data_Association] := personaDisplayName[name, data["DisplayName"]]
+personaDisplayName[name_String, displayName_String] := displayName
+personaDisplayName[name_String, _] := name
+
+(*====================================*)
+
+SetFallthroughError[getPersonaMenuIcon];
+
+getPersonaMenuIcon[ KeyValuePattern[ "Icon"|"PersonaIcon" -> icon_ ] ] := getPersonaMenuIcon @ icon;
+getPersonaMenuIcon[ KeyValuePattern[ "Default" -> icon_ ] ] := getPersonaMenuIcon @ icon;
+getPersonaMenuIcon[ _Missing | _Association | None ] := RawBoxes @ TemplateBox[ { }, "PersonaUnknown" ];
+getPersonaMenuIcon[ icon_ ] := icon;
+
+
+
+(*========================================================*)
+(* Generic Utilities                                      *)
+(*========================================================*)
+
+SetFallthroughError[nestedLookup]
+Attributes[nestedLookup] = {HoldRest}
+
+nestedLookup[as:KeyValuePattern[{}], {keys___}, default_] :=
+	Replace[
+		GeneralUtilities`ToAssociations[as][keys],
+		{
+			Missing["KeyAbsent", ___] :> default,
+			_[keys] :> default
+		}
+	]
+
+nestedLookup[as_, key:Except[_List], default_] :=
+	With[{keys = key},
+		If[ ListQ[keys],
+			nestedLookup[as, keys, default],
+			nestedLookup[as, {keys}, default]
+		]
+	]
+
+nestedLookup[as_, keys_] := nestedLookup[as, keys, Missing["KeySequenceAbsent", keys]]
+
+
+(*========================================================*)
 
 
 End[]
