@@ -222,7 +222,7 @@ CreatePreferencesContent[] := Module[{
 (*====================================*)
 
 CreateToolbarContent[] := With[{},
-	openChatActionMenu[
+	makeChatActionMenu[
 		"Toolbar",
 		EvaluationNotebook[],
 		Automatic
@@ -1603,7 +1603,7 @@ MakeChatInputActiveCellDingbat[] := Module[{
 		(
 			AttachCell[
 				EvaluationCell[],
-				openChatActionMenu[
+				makeChatActionMenu[
 					"Input",
 					parentCell[EvaluationCell[]],
 					EvaluationCell[]
@@ -1668,7 +1668,7 @@ MakeChatDelimiterCellDingbat[] := Module[{
 		(
 			AttachCell[
 				EvaluationCell[],
-				openChatActionMenu[
+				makeChatActionMenu[
 					"Delimiter",
 					parentCell[EvaluationCell[]],
 					EvaluationCell[]
@@ -1690,9 +1690,9 @@ MakeChatDelimiterCellDingbat[] := Module[{
 
 (*====================================*)
 
-SetFallthroughError[openChatActionMenu]
+SetFallthroughError[makeChatActionMenu]
 
-openChatActionMenu[
+makeChatActionMenu[
 	containerType: "Input" | "Delimiter" | "Toolbar",
 	targetObj : _CellObject | _NotebookObject,
 	(* The cell that will be the parent of the attached cell that contains this
