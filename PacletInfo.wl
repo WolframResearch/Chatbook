@@ -3,7 +3,7 @@
 PacletObject[<|
 	"Name" -> "Wolfram/Chatbook",
 	"PublisherID" -> "Wolfram",
-	"Version" -> "0.0.20",
+	"Version" -> "0.0.21",
 	"WolframVersion" -> "13.2+",
 	"Description" -> "Wolfram Notebooks + LLMs",
 	"License" -> "MIT",
@@ -18,7 +18,6 @@ PacletObject[<|
 	"Extensions" -> {
 		{"Kernel", "Root" -> "Source/Startup/Begin", "Context" -> "Wolfram`Chatbook`BeginStartup`"},
 		{"Kernel", "Root" -> "Source/Chatbook", "Context" -> "Wolfram`Chatbook`"},
-		{"Kernel", "Root" -> "Source/PreferencesUtils", "Context" -> "Wolfram`PreferencesUtils`"},
 		{"Kernel", "Root" -> "Source/Startup/End", "Context" -> "Wolfram`Chatbook`EndStartup`"},
 		{"Asset",
 			"Root" -> "Assets",

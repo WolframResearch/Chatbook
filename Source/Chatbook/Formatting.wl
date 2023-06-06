@@ -90,7 +90,13 @@ makeResultCell0 // beginDefinition;
 
 makeResultCell0[ str_String ] := formatTextString @ str;
 
-makeResultCell0[ codeCell[ code_String ] ] := makeInteractiveCodeCell @ StringTrim @ code;
+makeResultCell0[ codeCell[ code0_String ] ] :=
+    With[ { code = StringTrim @ code0 },
+        If[ StringMatchQ[ code, "!["~~__~~"]("~~__~~")" ],
+            image @ code,
+            makeInteractiveCodeCell @ StringTrim @ code
+        ]
+    ];
 
 makeResultCell0[ externalCodeCell[ lang_String, code_String ] ] :=
     makeInteractiveCodeCell[
@@ -365,10 +371,14 @@ $textDataFormatRules = {
     Longest[ "```" ~~ ($wlCodeString|"") ] ~~ Shortest[ code__ ] ~~ ("```"|EndOfString) :>
         If[ nameQ[ "System`"<>code ], inlineCodeCell @ code, codeCell @ code ]
     ,
+    "![" ~~ alt: Shortest[ __ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
+        StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
+            imageCell[ alt, url ]
+    ,
     tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ("ENDTOOLCALL"|EndOfString)) :> inlineToolCallCell @ tool,
     "\n" ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
-    "\n" ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ],
-    "![" ~~ alt__ ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" /; StringFreeQ[ alt, "![" ] :> imageCell[ alt, url ],
+    "\n" ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ]
+    ,
     "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :> hyperlinkCell[ label, url ],
     "\\`" :> "`",
     "\\$" :> "$",
@@ -679,6 +689,8 @@ styleBox // endDefinition;
 (* ::Subsection::Closed:: *)
 (*image*)
 image // beginDefinition;
+
+image[ str_String ] := First @ StringSplit[ str, "![" ~~ alt__ ~~ "](" ~~ url__ ~~ ")" :> image[ alt, url ] ];
 
 image[ alt_String, url_String ] := image[ alt, url, URLParse @ url ];
 

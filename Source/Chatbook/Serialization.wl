@@ -641,6 +641,23 @@ fasterCellToString0[ Cell[ TextData @ { _, _, text_String, _, Cell[ _, "ExampleC
 
 fasterCellToString0[ DynamicModuleBox[
     _,
+    TagBox[
+        Cell[
+            BoxData @ TagBox[
+                _,
+                "MarkdownImage",
+                ___,
+                TaggingRules -> Association @ OrderlessPatternSequence[ "CellToStringData" -> str_String, ___ ]
+            ],
+            __
+        ],
+        ___
+    ],
+    ___
+] ] := str;
+
+fasterCellToString0[ DynamicModuleBox[
+    _,
     box_,
     ___,
     TaggingRules -> Association @ OrderlessPatternSequence[
