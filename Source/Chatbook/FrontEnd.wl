@@ -14,6 +14,7 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `notebookRead;
 `parentCell;
 `parentNotebook;
+`selectionEvaluateCreateCell;
 `toCompressedBoxes;
 `topParentCell;
 
@@ -264,6 +265,14 @@ cellStyles // endDefinition;
 cloudCellStyles // beginDefinition;
 cloudCellStyles[ cells_ ] := Cases[ notebookRead @ cells, Cell[ _, style___String, OptionsPattern[ ] ] :> { style } ];
 cloudCellStyles // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*selectionEvaluateCreateCell*)
+selectionEvaluateCreateCell // beginDefinition;
+selectionEvaluateCreateCell[ nbo_NotebookObject ] /; $cloudNotebooks := FrontEndTokenExecute[ nbo, "EvaluateCells" ];
+selectionEvaluateCreateCell[ nbo_NotebookObject ] := SelectionEvaluateCreateCell @ nbo;
+selectionEvaluateCreateCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

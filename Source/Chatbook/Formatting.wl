@@ -173,6 +173,7 @@ formatTextString // endDefinition;
 floatingButtonGrid // beginDefinition;
 
 floatingButtonGrid // Attributes = { HoldFirst };
+
 floatingButtonGrid[ attached_, string_, lang_ ] := RawBoxes @ TemplateBox[
     {
         ToBoxes @ Grid[
@@ -183,8 +184,27 @@ floatingButtonGrid[ attached_, string_, lang_ ] := RawBoxes @ TemplateBox[
                     button[ $copyToClipboardButtonLabel, NotebookDelete @ attached; CopyToClipboard @ string ]
                 }
             },
-            Alignment -> Top,
-            Spacings -> 0.2,
+            Alignment  -> Top,
+            Spacings   -> 0.2,
+            FrameStyle -> GrayLevel[ 0.85 ]
+        ]
+    },
+    "ChatCodeBlockButtonPanel"
+];
+
+(* For cloud notebooks (no attached cell) *)
+floatingButtonGrid[ string_, lang_ ] := RawBoxes @ TemplateBox[
+    {
+        ToBoxes @ Grid[
+            {
+                {
+                    button[ evaluateLanguageLabel @ lang, insertCodeBelow[ string, True ] ],
+                    button[ $insertInputButtonLabel, insertCodeBelow[ string, False ] ],
+                    button[ $copyToClipboardButtonLabel, CopyToClipboard @ string ]
+                }
+            },
+            Alignment  -> Top,
+            Spacings   -> 0.2,
             FrameStyle -> GrayLevel[ 0.85 ]
         ]
     },
@@ -272,7 +292,7 @@ insertCodeBelow[ cell_Cell, evaluate_: False ] :=
         SelectionMove[ cellObj, After, Cell ];
         NotebookWrite[ nbo, cell, All ];
         If[ TrueQ @ evaluate,
-            SelectionEvaluateCreateCell @ nbo,
+            selectionEvaluateCreateCell @ nbo,
             SelectionMove[ nbo, After, CellContents ]
         ]
     ];
@@ -589,14 +609,11 @@ inlineInteractiveCodeCell // beginDefinition;
 
 inlineInteractiveCodeCell[ display_, string_ ] /; $dynamicText := display;
 
-inlineInteractiveCodeCell[ display_, string_String ] /; $cloudNotebooks :=
-    Button[ display, CellPrint @ Cell[ BoxData @ string, "Input" ], Appearance -> None ];
-
-inlineInteractiveCodeCell[ display_, cell_Cell ] /; $cloudNotebooks :=
-    Button[ display, CellPrint @ cell, Appearance -> None ];
-
 inlineInteractiveCodeCell[ display_, string_ ] :=
     inlineInteractiveCodeCell[ display, string, contentLanguage @ string ];
+
+inlineInteractiveCodeCell[ display_, string_, lang_ ] /; $cloudNotebooks :=
+    Mouseover[ display, Column @ { display, floatingButtonGrid[ string, lang ] } ];
 
 inlineInteractiveCodeCell[ display_, string_, lang_ ] :=
     DynamicModule[ { $CellContext`attached },

@@ -3,7 +3,7 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 
-(* cSpell: ignore ENDTOOLCALL *)
+(* cSpell: ignore TOOLCALL, ENDTOOLCALL, nodef *)
 
 (* TODO: these probably aren't needed as exported symbols since all hooks are going through ChatbookAction *)
 `AskChat;
@@ -296,8 +296,9 @@ autoAssistQ // endDefinition;
 (*StopChat*)
 StopChat // beginDefinition;
 
-StopChat[ cell_CellObject ] := Enclose[
-    Module[ { settings, container },
+StopChat[ cell0_CellObject ] := Enclose[
+    Module[ { cell, settings, container },
+        cell = ConfirmMatch[ parentCell @ cell0, _CellObject, "ParentCell" ];
         settings = ConfirmBy[ currentChatSettings @ cell, AssociationQ, "ChatNotebookSettings" ];
         removeTask @ Lookup[ settings, "Task" ];
         container = ConfirmBy[ Lookup[ settings, "Container" ], StringQ, "Container" ];
@@ -638,7 +639,7 @@ AskChat[ nbo_NotebookObject, { selected_CellObject } ] := withBasePromptBuilder 
         SelectionMove[ selected, After, Cell ];
         obj = cellPrint @ cell;
         SelectionMove[ obj, All, Cell ];
-        SelectionEvaluateCreateCell @ nbo
+        selectionEvaluateCreateCell @ nbo
     ];
 
 AskChat // endDefinition;
@@ -1437,7 +1438,7 @@ makePromptFunctionMessages[ settings_, { cells___, cell0_ } ] := Enclose[
         name      = ConfirmBy[ extractPromptFunctionName @ cell, StringQ, "PromptFunctionName" ];
         arguments = ConfirmMatch[ extractPromptArguments @ cell, { ___String }, "PromptArguments" ];
         filled    = ConfirmMatch[ replaceArgumentTokens[ name, arguments, { cells, cell } ], { ___String }, "Tokens" ];
-        string    = ConfirmBy[ getLLMPrompt[ name ] @@ filled, StringQ, "LLMPrompt" ];
+        string    = ConfirmBy[ Quiet[ getLLMPrompt[ name ] @@ filled, OptionValue::nodef ], StringQ, "LLMPrompt" ];
         (* FIXME: handle named slots *)
         Flatten @ {
             expandModifierMessages[ settings, modifiers, { cells }, cell ],
@@ -1456,12 +1457,7 @@ getLLMPrompt // beginDefinition;
 getLLMPrompt[ name_String ] :=
 	Block[ { PrintTemporary },
 		(* Ensure Wolfram/LLMFunctions is installed and loaded before calling System`LLMPrompt[..] *)
-		If[$VersionNumber < 13.3,
-			Quiet[
-				PacletInstall[ "Wolfram/LLMFunctions" ];
-				Needs[ "Wolfram`LLMFunctions`" -> None ]
-			];
-		];
+		initTools[ ];
 		Quiet @ getLLMPrompt0 @ name
 	];
 getLLMPrompt // endDefinition;

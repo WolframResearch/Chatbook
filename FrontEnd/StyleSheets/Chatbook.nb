@@ -4984,7 +4984,7 @@ Notebook[
          Annotation[#1, "Stop", "Tooltip"] &
         ],
         ButtonFunction :>
-         With[ { cell = ParentCell[EvaluationCell[]] },
+         With[ { cell = EvaluationCell[] },
           Quiet[Needs["Wolfram`Chatbook`" -> None]];
           Symbol["Wolfram`Chatbook`ChatbookAction"]["StopChat", cell]
          ],
