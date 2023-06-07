@@ -639,7 +639,7 @@ AskChat[ nbo_NotebookObject, { selected_CellObject } ] := withBasePromptBuilder 
         SelectionMove[ selected, After, Cell ];
         obj = cellPrint @ cell;
         SelectionMove[ obj, All, Cell ];
-        SelectionEvaluateCreateCell @ nbo
+        selectionEvaluateCreateCell @ nbo
     ];
 
 AskChat // endDefinition;
