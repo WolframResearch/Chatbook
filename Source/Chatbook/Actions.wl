@@ -3,7 +3,7 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 
-(* cSpell: ignore ENDTOOLCALL *)
+(* cSpell: ignore TOOLCALL, ENDTOOLCALL, nodef *)
 
 (* TODO: these probably aren't needed as exported symbols since all hooks are going through ChatbookAction *)
 `AskChat;
@@ -1438,7 +1438,7 @@ makePromptFunctionMessages[ settings_, { cells___, cell0_ } ] := Enclose[
         name      = ConfirmBy[ extractPromptFunctionName @ cell, StringQ, "PromptFunctionName" ];
         arguments = ConfirmMatch[ extractPromptArguments @ cell, { ___String }, "PromptArguments" ];
         filled    = ConfirmMatch[ replaceArgumentTokens[ name, arguments, { cells, cell } ], { ___String }, "Tokens" ];
-        string    = ConfirmBy[ getLLMPrompt[ name ] @@ filled, StringQ, "LLMPrompt" ];
+        string    = ConfirmBy[ Quiet[ getLLMPrompt[ name ] @@ filled, OptionValue::nodef ], StringQ, "LLMPrompt" ];
         (* FIXME: handle named slots *)
         Flatten @ {
             expandModifierMessages[ settings, modifiers, { cells }, cell ],
@@ -1457,12 +1457,7 @@ getLLMPrompt // beginDefinition;
 getLLMPrompt[ name_String ] :=
 	Block[ { PrintTemporary },
 		(* Ensure Wolfram/LLMFunctions is installed and loaded before calling System`LLMPrompt[..] *)
-		If[$VersionNumber < 13.3,
-			Quiet[
-				PacletInstall[ "Wolfram/LLMFunctions" ];
-				Needs[ "Wolfram`LLMFunctions`" -> None ]
-			];
-		];
+		initTools[ ];
 		Quiet @ getLLMPrompt0 @ name
 	];
 getLLMPrompt // endDefinition;
