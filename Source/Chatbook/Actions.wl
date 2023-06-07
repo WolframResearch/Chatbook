@@ -1834,7 +1834,7 @@ clearMinimizedChats[ nbo_, cells_ ] /; $cloudNotebooks := cells;
 
 clearMinimizedChats[ nbo_NotebookObject, cells_List ] :=
     Module[ { outCells, closed, attached },
-        outCells = Cells[ nbo, CellStyle -> "ChatOutput" ];
+        outCells = Cells[ nbo, CellStyle -> $chatOutputStyles ];
         closed = Keys @ Select[ AssociationThread[ outCells -> CurrentValue[ outCells, CellOpen ] ], Not ];
         attached = Cells[ nbo, AttachedCell -> True, CellStyle -> "MinimizedChatIcon" ];
         removeTask /@ CurrentValue[ closed, { TaggingRules, "ChatNotebookSettings", "Task" } ];
@@ -1853,7 +1853,7 @@ clearMinimizedChat[ attached_CellObject, parentCell_CellObject ] :=
     Module[ { next },
         NotebookDelete @ attached;
         next = NextCell @ parentCell;
-        If[ MemberQ[ cellStyles @ next, "ChatOutput" ] && TrueQ[ ! CurrentValue[ next, CellOpen ] ],
+        If[ MemberQ[ cellStyles @ next, $$chatOutputStyle ] && TrueQ[ ! CurrentValue[ next, CellOpen ] ],
             NotebookDelete @ next;
             next,
             Nothing
@@ -1987,9 +1987,12 @@ cellRole // endDefinition;
 
 
 $styleRoles = <|
-    "ChatInput"       -> "user",
-    "ChatOutput"      -> "assistant",
-    "ChatSystemInput" -> "system"
+    "ChatInput"              -> "user",
+    "ChatOutput"             -> "assistant",
+    "AssistantOutput"        -> "assistant",
+    "AssistantOutputWarning" -> "assistant",
+    "AssistantOutputError"   -> "assistant",
+    "ChatSystemInput"        -> "system"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -2537,14 +2540,13 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_ ] := UsingFront
 
         Cell[
             content,
-            "ChatOutput",
             If[ TrueQ @ $autoAssistMode,
                 Switch[ tag,
                         "[ERROR]"  , "AssistantOutputError",
                         "[WARNING]", "AssistantOutputWarning",
                         _          , "AssistantOutput"
                 ],
-                Sequence @@ { }
+                "ChatOutput"
             ],
             GeneratedCell     -> True,
             CellAutoOverwrite -> True,
