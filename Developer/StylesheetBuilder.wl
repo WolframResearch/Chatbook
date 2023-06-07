@@ -458,6 +458,61 @@ $chatInputCellDingbat       = Wolfram`Chatbook`UI`MakeChatInputCellDingbat[ ];
 $chatDelimiterCellDingbat   = Wolfram`Chatbook`UI`MakeChatDelimiterCellDingbat[ ];
 
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Cell Insertion Point Cell*)
+
+$cellInsertionPointCell := $cellInsertionPointCell = ReplaceAll[
+    FrontEndResource[ "FEExpressions", "CellInsertionMenu" ],
+    item: HoldPattern[ _ :> FrontEndTokenExecute[ EvaluationNotebook[ ], "Style", "ExternalLanguage" ] ] :> Sequence[
+        item,
+        insertionPointMenuItem[ TemplateBox[ { }, "ChatInputIcon" ], "Chat Input", "'", "ChatInput" ],
+        insertionPointMenuItem[ TemplateBox[ { }, "SideChatIcon" ], "Side Chat", "''", "SideChat" ]
+    ]
+];
+
+
+insertionPointMenuItem // Attributes = { HoldRest };
+insertionPointMenuItem[ icon_, label_, shortcut_, style_ ] :=
+    GridBox[
+        {
+            {
+                PaneBox[ icon, BaselinePosition -> Center -> Scaled[ 0.55 ] ],
+                StyleBox[ label, "CellInsertionMenu" ],
+                StyleBox[ StyleBox[ shortcut, "CellInsertionMenuShortcut" ], "CellInsertionMenuShortcut" ]
+            }
+        },
+        GridBoxAlignment -> { "Columns" -> { Center, Left, Right }, "Rows" -> { { Automatic } } },
+        AutoDelete -> False,
+        GridBoxItemSize -> {
+            "Columns" -> {
+                2,
+                FEPrivate`First @ FEPrivate`StringWidth[
+                    {
+                        FEPrivate`FrontEndResource[ "CellInsertionMenu", "MathematicaInput"      ],
+                        FEPrivate`FrontEndResource[ "CellInsertionMenu", "FreeformInput"         ],
+                        FEPrivate`FrontEndResource[ "CellInsertionMenu", "WAQuery"               ],
+                        FEPrivate`FrontEndResource[ "CellInsertionMenu", "ExternalLanguageInput" ],
+                        FEPrivate`FrontEndResource[ "CellInsertionMenu", "TextStyle"             ],
+                        FEPrivate`FrontEndResource[ "CellInsertionMenu", "OtherStyle"            ]
+                    },
+                    "CellInsertionMenu"
+                ],
+                FEPrivate`First @ FEPrivate`StringWidth[
+                    FEPrivate`FrontEndResource[ "CellInsertionMenu", "ShortcutColumnMaxStringLen" ],
+                    "CellInsertionMenuDefaultLabel"
+                ]
+            },
+            "Rows" -> { { Automatic } }
+        },
+        GridBoxSpacings -> {
+            "Columns"        -> { { 0 } },
+            "ColumnsIndexed" -> { 2 -> 0.3, 3 -> 0.5 },
+            "Rows"           -> { { 0 } }
+        }
+    ] :> FrontEndTokenExecute[ EvaluationNotebook[ ], "Style", style ];
+
+
 
 (* ::**************************************************************************************************************:: *)
 (**)
