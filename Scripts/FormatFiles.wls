@@ -23,7 +23,7 @@ Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 
 SetOptions[
     ResourceFunction[ "SaveReadableNotebook" ],
-    "RealAccuracy" -> Infinity
+    "RealAccuracy" -> 10
 ];
 
 (* ::**************************************************************************************************************:: *)
