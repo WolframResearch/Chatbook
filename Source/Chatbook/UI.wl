@@ -63,6 +63,8 @@ $SupportedModels = {
 	{"gpt-4", getIcon["ModelGPT4"], "GPT-4"}
 };
 
+$chatMenuWidth = 225
+
 (*========================================================*)
 
 $ChatOutputTypePrompts = <|
@@ -220,13 +222,191 @@ CreatePreferencesContent[] := Module[{
 
 (*====================================*)
 
-CreateToolbarContent[] := With[{},
-	makeChatActionMenu[
-		"Toolbar",
-		EvaluationNotebook[],
-		Automatic
+CreateToolbarContent[] := With[{
+	nbObj = EvaluationNotebook[],
+	menuCell = EvaluationCell[]
+},
+	(* FIXME:
+		If the user has custom styles defined in their current chat-enabled
+		notebook, this isn't sufficient. Check for whether
+		CurrentValue[ParentNotebook, {StyleDefinitions, "ChatInput"}] has any
+		definitions? (Though that might not work in 13.3 because Core.nb has
+		basic placeholder definitions for "ChatInput".) *)
+	(* FIXME: Handle the case that this is a Chatbook with inlined styles,
+		e.g. $ChatbookStylesheet. *)
+	CurrentValue[menuCell, {TaggingRules, "IsChatEnabled"}] =
+		ConfirmReplace[CurrentValue[nbObj, StyleDefinitions], {
+			"Chatbook.nb" -> True,
+			_ -> False
+		}];
+
+	(* Set a notebook-level value for the "Assistance" setting, so
+		that the Checkbox button for setting this value never displays
+		as its neither-True-nor-False state if the value is `Inherited`. *)
+	CurrentValue[
+		nbObj,
+		{TaggingRules, "ChatNotebookSettings", "Assistance"}
+	] = TrueQ @ AbsoluteCurrentValue[
+		nbObj,
+		{TaggingRules, "ChatNotebookSettings", "Assistance"}
+	];
+
+	PaneSelector[
+		{
+			True :> (
+				Dynamic @ Refresh[
+					Column[{
+						makeEnableAIChatFeaturesLabel[True],
+						(* Note: Use EventHandler instead of Button to avoid
+							blue background shown when an Appearance -> None
+							Button is clicked. *)
+						EventHandler[
+							labeledCheckbox[
+								Dynamic @ CurrentValue[
+									EvaluationNotebook[],
+									{TaggingRules, "ChatNotebookSettings", "Assistance"}
+								],
+								Row[{
+									"Automatic Result Analyis",
+									Spacer[3],
+									Tooltip[
+										getIcon["InformationTooltip"],
+										"If enabled, automatic AI provided suggestions will be added following evaluation results."
+									]
+								}]
+							],
+							"MouseClicked" :> (
+								CurrentValue[
+									EvaluationNotebook[],
+									{TaggingRules, "ChatNotebookSettings", "Assistance"}
+								] = Not @ TrueQ @ CurrentValue[
+									EvaluationNotebook[],
+									{TaggingRules, "ChatNotebookSettings", "Assistance"}
+								]
+							),
+							(* Needed so that we can open a ChoiceDialog if required. *)
+							Method -> "Queued"
+						],
+						makeChatActionMenu[
+							"Toolbar",
+							EvaluationNotebook[],
+							Automatic
+						]
+					}],
+					None
+				]
+			),
+			False :> (
+				Dynamic @ Refresh[
+					createChatNotEnabledToolbar[nbObj, menuCell],
+					None
+				]
+			)
+		},
+		Dynamic @ CurrentValue[menuCell, {TaggingRules, "IsChatEnabled"}],
+		ImageSize -> Automatic
 	]
 ]
+
+(*====================================*)
+
+SetFallthroughError[createChatNotEnabledToolbar]
+
+createChatNotEnabledToolbar[
+	nbObj_NotebookObject,
+	menuCell_CellObject
+] := Module[{
+	button
+},
+	button = EventHandler[
+		makeEnableAIChatFeaturesLabel[False],
+		"MouseClicked" :> (
+			tryMakeChatEnabledNotebook[nbObj, menuCell]
+		),
+		(* Needed so that we can open a ChoiceDialog if required. *)
+		Method -> "Queued"
+	];
+
+	Pane[button, {$chatMenuWidth, Automatic}]
+]
+
+(*====================================*)
+
+SetFallthroughError[tryMakeChatEnabledNotebook]
+
+tryMakeChatEnabledNotebook[
+	nbObj_NotebookObject,
+	menuCell_CellObject
+] := Module[{
+	useChatbookStylesheet
+},
+	useChatbookStylesheet = ConfirmReplace[CurrentValue[nbObj, StyleDefinitions], {
+		"Default.nb" -> True,
+		(* TODO: Generate a warning dialog in this case, because Chatbook.nb
+			inherits from Default.nb? *)
+		_?StringQ | _FrontEnd`FileName -> True,
+		_Notebook | _ :> RaiseConfirmMatch[
+			ChoiceDialog[
+				Column[{
+					Item[Magnify["⚠", 5], Alignment -> Center],
+					"",
+					RawBoxes @ Cell[
+						"Enabling Chat Notebook functionality will destroy the"
+						<> " private styles defined in this notebook, and replace"
+						<> " them with the shared Chatbook stylesheet.",
+						"Text"
+					],
+					"",
+					RawBoxes @ Cell["Are you sure you wish to continue?", "Text"]
+				}],
+				Background -> White,
+				WindowMargins -> ConfirmReplace[
+					MousePosition["ScreenAbsolute"],
+					{x_, y_} :> {{x, Automatic}, {Automatic, y}}
+				]
+			],
+			_?BooleanQ
+		]
+	}];
+
+	RaiseAssert[BooleanQ[useChatbookStylesheet]];
+
+	If[!useChatbookStylesheet,
+		Return[Null, Module];
+	];
+
+	SetOptions[nbObj, StyleDefinitions -> "Chatbook.nb"];
+
+	(* Cause the PaneSelector to switch to showing all the options allowed
+		for Chat-Enabled notebooks. *)
+	CurrentValue[menuCell, {TaggingRules, "IsChatEnabled"}] = True;
+]
+
+(*====================================*)
+
+SetFallthroughError[makeEnableAIChatFeaturesLabel]
+
+makeEnableAIChatFeaturesLabel[enabled_?BooleanQ] :=
+	labeledCheckbox[enabled, "Enable AI Chat Features", !enabled]
+
+(*====================================*)
+
+SetFallthroughError[labeledCheckbox]
+
+labeledCheckbox[value_, label_, enabled_ : Automatic] :=
+	Row[
+		{
+			Checkbox[
+				value,
+				{False, True, Inherited},
+				Enabled -> enabled
+			],
+			Spacer[3],
+			label
+		},
+		ImageMargins -> {{5, 20}, {2.5, 2.5}},
+		BaseStyle -> {"Text", FontSize -> 14}
+	]
 
 (*=========================================*)
 (* Common preferences content construction *)
@@ -1957,7 +2137,7 @@ makeChatActionMenuContent[
 	menu = MakeMenu[
 		menuItems,
 		GrayLevel[0.85],
-		225
+		$chatMenuWidth
 	];
 
 	menu
