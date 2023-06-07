@@ -296,8 +296,9 @@ autoAssistQ // endDefinition;
 (*StopChat*)
 StopChat // beginDefinition;
 
-StopChat[ cell_CellObject ] := Enclose[
-    Module[ { settings, container },
+StopChat[ cell0_CellObject ] := Enclose[
+    Module[ { cell, settings, container },
+        cell = ConfirmMatch[ parentCell @ cell0, _CellObject, "ParentCell" ];
         settings = ConfirmBy[ currentChatSettings @ cell, AssociationQ, "ChatNotebookSettings" ];
         removeTask @ Lookup[ settings, "Task" ];
         container = ConfirmBy[ Lookup[ settings, "Container" ], StringQ, "Container" ];
