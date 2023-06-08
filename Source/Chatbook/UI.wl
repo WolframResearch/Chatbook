@@ -2122,14 +2122,36 @@ makeChatActionMenuContent[
 					}},
 					Spacings -> 0
 				],
-				Hold[AttachCell[
-					EvaluationCell[],
-					advancedSettingsMenu,
-					{Right, Bottom},
-					{50, 50},
-					{Left, Bottom},
-					RemovalConditions -> "MouseExit"
-				]]
+				Hold @ With[{
+					mouseX = MousePosition["WindowScaled"][[1]]
+				}, {
+					(* Note: Depending on the X coordinate of the users mouse
+						when they click the 'Advanced Settings' button, either
+						show the attached submenu to the left or right of the
+						outer menu. This ensures that this submenu doesn't touch
+						the right edge of the notebook window when it is opened
+						from the 'Chat Settings' notebook toolbar. *)
+					positions = If[
+						TrueQ[mouseX < 0.5],
+						{
+							{Right, Bottom},
+							{Left, Bottom}
+						},
+						{
+							{Left, Bottom},
+							{Right, Bottom}
+						}
+					]
+				},
+					AttachCell[
+						EvaluationCell[],
+						advancedSettingsMenu,
+						positions[[1]],
+						{50, 50},
+						positions[[2]],
+						RemovalConditions -> "MouseExit"
+					]
+				]
 			}
 		}
 	];
