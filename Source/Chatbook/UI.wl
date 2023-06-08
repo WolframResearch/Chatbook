@@ -267,7 +267,7 @@ CreateToolbarContent[] := With[{
 									{TaggingRules, "ChatNotebookSettings", "Assistance"}
 								],
 								Row[{
-									"Automatic Result Analyis",
+									"Automatic Result Analysis",
 									Spacer[3],
 									Tooltip[
 										getIcon["InformationTooltip"],
