@@ -4,6 +4,9 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 
 (* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDTOOLCALL, pacletreadonly, noinit, playerpass *)
 
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
+
 `$attachments;
 `$defaultChatTools;
 `$toolConfiguration;
@@ -165,7 +168,7 @@ toolTemplateDataString[ expr_ ] := ToString[ expr, InputForm ];
 (* ::Section::Closed:: *)
 (*Default Tools*)
 $defaultChatTools := If[ TrueQ @ $CloudEvaluation,
-                         KeyDrop[ $defaultChatTools0, { "sandbox_evaluate", "documentation_search" } ],
+                         KeyDrop[ $defaultChatTools0, { "wolfram_language_evaluator", "documentation_search" } ],
                          $defaultChatTools0
                      ];
 
@@ -325,7 +328,7 @@ $line = 0;
 (*Evaluate*)
 
 $sandboxEvaluateDescription = "\
-Evaluate Wolfram Language code for the user in a sandboxed environment. \
+Evaluate Wolfram Language code for the user in a separate sandboxed kernel. \
 You do not need to tell the user the input code that you are evaluating. \
 They will be able to inspect it if they want to. \
 The user does not automatically see the result. \
@@ -349,10 +352,10 @@ assistant: Here's the plot of $sin(x)$ from $-5$ to $5$:
 ![Plot](expression://result-xxxx)
 ";
 
-$defaultChatTools0[ "sandbox_evaluate" ] = LLMTool[
+$defaultChatTools0[ "wolfram_language_evaluator" ] = LLMTool[
     <|
-        "Name"        -> "sandbox_evaluate",
-        "DisplayName" -> "Sandbox Evaluate",
+        "Name"        -> "wolfram_language_evaluator",
+        "DisplayName" -> "Wolfram Language Evaluator",
         "Icon"        -> RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
         "Description" -> $sandboxEvaluateDescription,
         "Parameters"  -> {
@@ -394,6 +397,14 @@ startSandboxKernel[ ] := Enclose[
         LinkWrite[ kernel, Unevaluated @ EvaluatePacket[ UsingFrontEnd @ Null; Developer`StartProtectedMode[ ] ] ];
 
         pid = pingSandboxKernel @ kernel;
+
+        (* Reset line number and leave `In[1]:=` in the buffer *)
+        LinkWrite[ kernel, Unevaluated @ EnterExpressionPacket[ $Line = 0 ] ];
+        TimeConstrained[
+            While[ ! MatchQ[ LinkRead @ kernel, _ReturnExpressionPacket ] ],
+            10,
+            Confirm[ $Failed, "LineReset" ]
+        ];
 
         If[ IntegerQ @ pid,
             kernel,
@@ -473,23 +484,27 @@ sandboxEvaluate // beginDefinition;
 sandboxEvaluate[ KeyValuePattern[ "code" -> code_ ] ] := sandboxEvaluate @ code;
 
 sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
-    Module[ { kernel, null, packets, results, flat },
+    Module[ { kernel, null, packets, $timedOut, results, flat },
 
         $lastSandboxEvaluation = HoldComplete @ evaluation;
 
         kernel = ConfirmMatch[ getSandboxKernel[ ], _LinkObject, "GetKernel" ];
-        While[ LinkReadyQ @ kernel, LinkRead @ kernel ];
 
         LinkWrite[
             kernel,
-            Unevaluated @ EnterExpressionPacket @ UsingFrontEnd @ BinarySerialize[ HoldComplete @@ { evaluation } ]
+            Unevaluated @ EnterExpressionPacket @ BinarySerialize[ HoldComplete @@ { evaluation } ]
         ];
 
         { null, { packets } } = Reap[
             TimeConstrained[
                 While[ ! MatchQ[ Sow @ LinkRead @ kernel, _ReturnExpressionPacket ] ],
-                $sandboxEvaluationTimeout
+                $sandboxEvaluationTimeout,
+                $timedOut
             ]
+        ];
+
+        If[ null === $timedOut,
+            AppendTo[ packets, ReturnExpressionPacket @ BinarySerialize @ HoldComplete @ $TimedOut ]
         ];
 
         results = Cases[
@@ -511,6 +526,20 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
 ];
 
 sandboxEvaluate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*linkWriteEvaluation*)
+linkWriteEvaluation // beginDefinition;
+linkWriteEvaluation // Attributes = { HoldAllComplete };
+
+linkWriteEvaluation[ kernel_, evaluation_ ] :=
+    LinkWrite[
+        kernel,
+        Unevaluated @ EnterExpressionPacket @ BinarySerialize[ <| "Line" -> $Line, "Result" -> HoldComplete @@ { evaluation } |> ]
+    ];
+
+linkWriteEvaluation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -559,6 +588,8 @@ wolframLanguageData // endDefinition;
 If[ Wolfram`Chatbook`Internal`$BuildingMX,
     $toolConfiguration;
 ];
+
+(* :!CodeAnalysis::EndBlock:: *)
 
 End[ ];
 EndPackage[ ];

@@ -24,6 +24,16 @@ $channelPermissions = "Public";
 $keepChannelOpen    = True;
 $debug              = False;
 
+$unsavedResourceProperties = {
+    "AuthorNotes",
+    "DefinitionNotebook",
+    "Documentation",
+    "ExampleNotebook",
+    "Notes",
+    "SampleChat",
+    "Usage"
+};
+
 (* TODO: need to add a DeleteResource hook for PromptResources that removes corresponding items here *)
 $PersonaInstallationDirectory := GeneralUtilities`EnsureDirectory @ {
     ExpandFileName @ LocalObject @ $LocalBase,
@@ -497,9 +507,20 @@ acquireResource // endDefinition;
 installPersonaConfiguration // beginDefinition;
 
 installPersonaConfiguration[ info_, config_, target_ ] :=
-    installPersonaConfiguration[ info, config, target, personaName @ info, personaContext @ config ];
+    installPersonaConfiguration0[
+        installedResourceInfo @ info,
+        config,
+        target,
+        personaName @ info,
+        personaContext @ config
+    ];
 
-installPersonaConfiguration[ info_, config_, target_, name_String, None ] :=
+installPersonaConfiguration // endDefinition;
+
+
+installPersonaConfiguration0 // beginDefinition;
+
+installPersonaConfiguration0[ info_, config_, target_, name_String, None ] :=
     Block[ { $PersonaConfig = <| "Name" -> name, "ResourceInformation" -> info, "Configuration" -> config |> },
         With[ { symbol = ToString @ Unevaluated @ $PersonaConfig },
             DumpSave[ target, symbol, "SymbolAttributes" -> False ];
@@ -507,7 +528,7 @@ installPersonaConfiguration[ info_, config_, target_, name_String, None ] :=
         ]
     ];
 
-installPersonaConfiguration[ info_, config_, target_, name_String, context_String ] :=
+installPersonaConfiguration0[ info_, config_, target_, name_String, context_String ] :=
     Block[ { $PersonaConfig = <| "Name" -> name, "ResourceInformation" -> info, "Configuration" -> config |> },
         With[ { symbol = ToString @ Unevaluated @ $PersonaConfig },
             DumpSave[ target, { symbol, context }, "SymbolAttributes" -> False ];
@@ -515,7 +536,14 @@ installPersonaConfiguration[ info_, config_, target_, name_String, context_Strin
         ]
     ];
 
-installPersonaConfiguration // endDefinition;
+installPersonaConfiguration0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*installedResourceInfo*)
+installedResourceInfo // beginDefinition;
+installedResourceInfo[ info_Association? AssociationQ ] := KeyDrop[ info, $unsavedResourceProperties ];
+installedResourceInfo // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
