@@ -90,7 +90,13 @@ makeResultCell0 // beginDefinition;
 
 makeResultCell0[ str_String ] := formatTextString @ str;
 
-makeResultCell0[ codeCell[ code_String ] ] := makeInteractiveCodeCell @ StringTrim @ code;
+makeResultCell0[ codeCell[ code0_String ] ] :=
+    With[ { code = StringTrim @ code0 },
+        If[ StringMatchQ[ code, "!["~~__~~"]("~~__~~")" ],
+            image @ code,
+            makeInteractiveCodeCell @ StringTrim @ code
+        ]
+    ];
 
 makeResultCell0[ externalCodeCell[ lang_String, code_String ] ] :=
     makeInteractiveCodeCell[
@@ -167,6 +173,7 @@ formatTextString // endDefinition;
 floatingButtonGrid // beginDefinition;
 
 floatingButtonGrid // Attributes = { HoldFirst };
+
 floatingButtonGrid[ attached_, string_, lang_ ] := RawBoxes @ TemplateBox[
     {
         ToBoxes @ Grid[
@@ -177,8 +184,27 @@ floatingButtonGrid[ attached_, string_, lang_ ] := RawBoxes @ TemplateBox[
                     button[ $copyToClipboardButtonLabel, NotebookDelete @ attached; CopyToClipboard @ string ]
                 }
             },
-            Alignment -> Top,
-            Spacings -> 0.2,
+            Alignment  -> Top,
+            Spacings   -> 0.2,
+            FrameStyle -> GrayLevel[ 0.85 ]
+        ]
+    },
+    "ChatCodeBlockButtonPanel"
+];
+
+(* For cloud notebooks (no attached cell) *)
+floatingButtonGrid[ string_, lang_ ] := RawBoxes @ TemplateBox[
+    {
+        ToBoxes @ Grid[
+            {
+                {
+                    button[ evaluateLanguageLabel @ lang, insertCodeBelow[ string, True ] ],
+                    button[ $insertInputButtonLabel, insertCodeBelow[ string, False ] ],
+                    button[ $copyToClipboardButtonLabel, CopyToClipboard @ string ]
+                }
+            },
+            Alignment  -> Top,
+            Spacings   -> 0.2,
             FrameStyle -> GrayLevel[ 0.85 ]
         ]
     },
@@ -266,7 +292,7 @@ insertCodeBelow[ cell_Cell, evaluate_: False ] :=
         SelectionMove[ cellObj, After, Cell ];
         NotebookWrite[ nbo, cell, All ];
         If[ TrueQ @ evaluate,
-            SelectionEvaluateCreateCell @ nbo,
+            selectionEvaluateCreateCell @ nbo,
             SelectionMove[ nbo, After, CellContents ]
         ]
     ];
@@ -365,10 +391,14 @@ $textDataFormatRules = {
     Longest[ "```" ~~ ($wlCodeString|"") ] ~~ Shortest[ code__ ] ~~ ("```"|EndOfString) :>
         If[ nameQ[ "System`"<>code ], inlineCodeCell @ code, codeCell @ code ]
     ,
+    "![" ~~ alt: Shortest[ __ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
+        StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
+            imageCell[ alt, url ]
+    ,
     tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ("ENDTOOLCALL"|EndOfString)) :> inlineToolCallCell @ tool,
     "\n" ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
-    "\n" ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ],
-    "![" ~~ alt__ ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" /; StringFreeQ[ alt, "![" ] :> imageCell[ alt, url ],
+    "\n" ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ]
+    ,
     "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :> hyperlinkCell[ label, url ],
     "\\`" :> "`",
     "\\$" :> "$",
@@ -579,14 +609,11 @@ inlineInteractiveCodeCell // beginDefinition;
 
 inlineInteractiveCodeCell[ display_, string_ ] /; $dynamicText := display;
 
-inlineInteractiveCodeCell[ display_, string_String ] /; $cloudNotebooks :=
-    Button[ display, CellPrint @ Cell[ BoxData @ string, "Input" ], Appearance -> None ];
-
-inlineInteractiveCodeCell[ display_, cell_Cell ] /; $cloudNotebooks :=
-    Button[ display, CellPrint @ cell, Appearance -> None ];
-
 inlineInteractiveCodeCell[ display_, string_ ] :=
     inlineInteractiveCodeCell[ display, string, contentLanguage @ string ];
+
+inlineInteractiveCodeCell[ display_, string_, lang_ ] /; $cloudNotebooks :=
+    Mouseover[ display, Column @ { display, floatingButtonGrid[ string, lang ] } ];
 
 inlineInteractiveCodeCell[ display_, string_, lang_ ] :=
     DynamicModule[ { $CellContext`attached },
@@ -679,6 +706,8 @@ styleBox // endDefinition;
 (* ::Subsection::Closed:: *)
 (*image*)
 image // beginDefinition;
+
+image[ str_String ] := First @ StringSplit[ str, "![" ~~ alt__ ~~ "](" ~~ url__ ~~ ")" :> image[ alt, url ] ];
 
 image[ alt_String, url_String ] := image[ alt, url, URLParse @ url ];
 

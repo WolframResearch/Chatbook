@@ -3,7 +3,7 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 
-(* cSpell: ignore ENDTOOLCALL *)
+(* cSpell: ignore TOOLCALL, ENDTOOLCALL, nodef *)
 
 (* TODO: these probably aren't needed as exported symbols since all hooks are going through ChatbookAction *)
 `AskChat;
@@ -296,8 +296,9 @@ autoAssistQ // endDefinition;
 (*StopChat*)
 StopChat // beginDefinition;
 
-StopChat[ cell_CellObject ] := Enclose[
-    Module[ { settings, container },
+StopChat[ cell0_CellObject ] := Enclose[
+    Module[ { cell, settings, container },
+        cell = ConfirmMatch[ parentCell @ cell0, _CellObject, "ParentCell" ];
         settings = ConfirmBy[ currentChatSettings @ cell, AssociationQ, "ChatNotebookSettings" ];
         removeTask @ Lookup[ settings, "Task" ];
         container = ConfirmBy[ Lookup[ settings, "Container" ], StringQ, "Container" ];
@@ -638,7 +639,7 @@ AskChat[ nbo_NotebookObject, { selected_CellObject } ] := withBasePromptBuilder 
         SelectionMove[ selected, After, Cell ];
         obj = cellPrint @ cell;
         SelectionMove[ obj, All, Cell ];
-        SelectionEvaluateCreateCell @ nbo
+        selectionEvaluateCreateCell @ nbo
     ];
 
 AskChat // endDefinition;
@@ -1437,7 +1438,7 @@ makePromptFunctionMessages[ settings_, { cells___, cell0_ } ] := Enclose[
         name      = ConfirmBy[ extractPromptFunctionName @ cell, StringQ, "PromptFunctionName" ];
         arguments = ConfirmMatch[ extractPromptArguments @ cell, { ___String }, "PromptArguments" ];
         filled    = ConfirmMatch[ replaceArgumentTokens[ name, arguments, { cells, cell } ], { ___String }, "Tokens" ];
-        string    = ConfirmBy[ getLLMPrompt[ name ] @@ filled, StringQ, "LLMPrompt" ];
+        string    = ConfirmBy[ Quiet[ getLLMPrompt[ name ] @@ filled, OptionValue::nodef ], StringQ, "LLMPrompt" ];
         (* FIXME: handle named slots *)
         Flatten @ {
             expandModifierMessages[ settings, modifiers, { cells }, cell ],
@@ -1456,12 +1457,7 @@ getLLMPrompt // beginDefinition;
 getLLMPrompt[ name_String ] :=
 	Block[ { PrintTemporary },
 		(* Ensure Wolfram/LLMFunctions is installed and loaded before calling System`LLMPrompt[..] *)
-		If[$VersionNumber < 13.3,
-			Quiet[
-				PacletInstall[ "Wolfram/LLMFunctions" ];
-				Needs[ "Wolfram`LLMFunctions`" -> None ]
-			];
-		];
+		initTools[ ];
 		Quiet @ getLLMPrompt0 @ name
 	];
 getLLMPrompt // endDefinition;
@@ -1834,7 +1830,7 @@ clearMinimizedChats[ nbo_, cells_ ] /; $cloudNotebooks := cells;
 
 clearMinimizedChats[ nbo_NotebookObject, cells_List ] :=
     Module[ { outCells, closed, attached },
-        outCells = Cells[ nbo, CellStyle -> "ChatOutput" ];
+        outCells = Cells[ nbo, CellStyle -> $chatOutputStyles ];
         closed = Keys @ Select[ AssociationThread[ outCells -> CurrentValue[ outCells, CellOpen ] ], Not ];
         attached = Cells[ nbo, AttachedCell -> True, CellStyle -> "MinimizedChatIcon" ];
         removeTask /@ CurrentValue[ closed, { TaggingRules, "ChatNotebookSettings", "Task" } ];
@@ -1853,7 +1849,7 @@ clearMinimizedChat[ attached_CellObject, parentCell_CellObject ] :=
     Module[ { next },
         NotebookDelete @ attached;
         next = NextCell @ parentCell;
-        If[ MemberQ[ cellStyles @ next, "ChatOutput" ] && TrueQ[ ! CurrentValue[ next, CellOpen ] ],
+        If[ MemberQ[ cellStyles @ next, $$chatOutputStyle ] && TrueQ[ ! CurrentValue[ next, CellOpen ] ],
             NotebookDelete @ next;
             next,
             Nothing
@@ -1987,9 +1983,12 @@ cellRole // endDefinition;
 
 
 $styleRoles = <|
-    "ChatInput"       -> "user",
-    "ChatOutput"      -> "assistant",
-    "ChatSystemInput" -> "system"
+    "ChatInput"              -> "user",
+    "ChatOutput"             -> "assistant",
+    "AssistantOutput"        -> "assistant",
+    "AssistantOutputWarning" -> "assistant",
+    "AssistantOutputError"   -> "assistant",
+    "ChatSystemInput"        -> "system"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -2537,14 +2536,13 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_ ] := UsingFront
 
         Cell[
             content,
-            "ChatOutput",
             If[ TrueQ @ $autoAssistMode,
                 Switch[ tag,
                         "[ERROR]"  , "AssistantOutputError",
                         "[WARNING]", "AssistantOutputWarning",
                         _          , "AssistantOutput"
                 ],
-                Sequence @@ { }
+                "ChatOutput"
             ],
             GeneratedCell     -> True,
             CellAutoOverwrite -> True,

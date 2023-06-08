@@ -10,7 +10,8 @@ Begin[ "Wolfram`ChatbookStylesheetBuilder`Private`" ];
 
 Cell[
     StyleData[ "Notebook" ],
-    TaggingRules -> <| "ChatNotebookSettings" -> <| |> |>,
+    TaggingRules           -> <| "ChatNotebookSettings" -> <| |> |>,
+    CellInsertionPointCell -> $cellInsertionPointCell,
 
     CellTrayWidgets -> <|
         "GearMenu" -> {},

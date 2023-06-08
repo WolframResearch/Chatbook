@@ -7,6 +7,7 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 `$attachments;
 `$defaultChatTools;
 `$toolConfiguration;
+`initTools;
 `makeToolConfiguration;
 
 Begin[ "`Private`" ];
@@ -29,6 +30,35 @@ $sandboxEvaluationTimeout = 30;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*initTools*)
+initTools // beginDefinition;
+
+initTools[ ] := initTools[ ] = (
+
+    If[ $CloudEvaluation && $VersionNumber <= 13.2,
+
+        If[ PacletFind[ "ServiceConnection_OpenAI" ] === { },
+            PacletInstall[ "ServiceConnection_OpenAI", PacletSite -> "https://pacletserver.wolfram.com" ]
+        ];
+
+        WithCleanup[
+            Unprotect @ TemplateObject,
+            TemplateObject // Options = DeleteDuplicatesBy[
+                Append[ Options @ TemplateObject, MetaInformation -> <| |> ],
+                ToString @* First
+            ],
+            Protect @ TemplateObject
+        ]
+    ];
+
+    PacletInstall[ "Wolfram/LLMFunctions" ];
+    Needs[ "Wolfram`LLMFunctions`" -> None ];
+);
+
+initTools // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*makeToolConfiguration*)
 makeToolConfiguration // beginDefinition;
 
@@ -37,10 +67,13 @@ makeToolConfiguration[ Inherited|Automatic ] := makeToolConfiguration @ Values @
 
 makeToolConfiguration[ tool_LLMTool ] := makeToolConfiguration @ { tool };
 
-makeToolConfiguration[ tools: { (Inherited|_LLMTool)... } ] := LLMConfiguration @ <|
-    "Tools"      -> DeleteDuplicates @ Flatten @ Replace[ tools, Inherited :> Values @ $defaultChatTools, { 1 } ],
-    "ToolPrompt" -> $toolPrompt
-|>;
+makeToolConfiguration[ tools: { (Inherited|_LLMTool)... } ] := (
+    initTools[ ];
+    LLMConfiguration @ <|
+        "Tools"      -> DeleteDuplicates @ Flatten @ Replace[ tools, Inherited :> Values @ $defaultChatTools, { 1 } ],
+        "ToolPrompt" -> $toolPrompt
+    |>
+);
 
 makeToolConfiguration // endDefinition;
 
@@ -131,12 +164,17 @@ toolTemplateDataString[ expr_ ] := ToString[ expr, InputForm ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Default Tools*)
-$defaultChatTools = <| |>;
+$defaultChatTools := If[ TrueQ @ $CloudEvaluation,
+                         KeyDrop[ $defaultChatTools0, { "sandbox_evaluate", "documentation_search" } ],
+                         $defaultChatTools0
+                     ];
+
+$defaultChatTools0 = <| |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*DocumentationSearch*)
-$defaultChatTools[ "documentation_search" ] = LLMTool[
+$defaultChatTools0[ "documentation_search" ] = LLMTool[
     <|
         "Name"        -> "documentation_search",
         "DisplayName" -> "Documentation Search",
@@ -169,7 +207,7 @@ documentationSearch // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*DocumentationLookup*)
-$defaultChatTools[ "documentation_lookup" ] = LLMTool[
+$defaultChatTools0[ "documentation_lookup" ] = LLMTool[
     <|
         "Name"        -> "documentation_lookup",
         "DisplayName" -> "Documentation Lookup",
@@ -311,7 +349,7 @@ assistant: Here's the plot of $sin(x)$ from $-5$ to $5$:
 ![Plot](expression://result-xxxx)
 ";
 
-$defaultChatTools[ "sandbox_evaluate" ] = LLMTool[
+$defaultChatTools0[ "sandbox_evaluate" ] = LLMTool[
     <|
         "Name"        -> "sandbox_evaluate",
         "DisplayName" -> "Sandbox Evaluate",
@@ -480,15 +518,15 @@ sandboxEvaluate // endDefinition;
 sandboxResultString // beginDefinition;
 
 (* TODO: show messages etc. *)
-sandboxResultString[ HoldComplete[ Null..., expr_ ] ] :=
+sandboxResultString[ HoldComplete[ Null..., expr: Except[ _Graphics|_Graphics3D ] ] ] :=
     With[ { string = ToString[ Unevaluated @ expr, InputForm, PageWidth -> 80 ] },
         "```\n"<>string<>"\n```" /; StringLength @ string < 240
     ];
 
 sandboxResultString[ HoldComplete[ Null..., expr_ ] ] :=
-    With[ { uuid = CreateUUID[ "result-" ] },
-        $attachments[ uuid ] = HoldComplete @ expr;
-        "![result](expression://" <> uuid <> ")"
+    With[ { id = "result-"<>Hash[ Unevaluated @ expr, Automatic, "HexString" ] },
+        $attachments[ id ] = HoldComplete @ expr;
+        "![result](expression://" <> id <> ")"
     ];
 
 sandboxResultString // endDefinition;

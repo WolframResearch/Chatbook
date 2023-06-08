@@ -14,6 +14,7 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `notebookRead;
 `parentCell;
 `parentNotebook;
+`selectionEvaluateCreateCell;
 `toCompressedBoxes;
 `topParentCell;
 
@@ -70,7 +71,7 @@ currentChatSettings[ cell_CellObject ] := Catch @ Enclose[
 
         settings = Select[
             Map[ Association,
-                 CurrentValue[ DeleteMissing @ { delimiter, cell }, { TaggingRules, "ChatNotebookSettings" } ]
+                 AbsoluteCurrentValue[ DeleteMissing @ { delimiter, cell }, { TaggingRules, "ChatNotebookSettings" } ]
             ],
             AssociationQ
         ];
@@ -113,7 +114,10 @@ currentChatSettings[ cell_CellObject, key_String ] := Catch @ Enclose[
             Nothing
         ];
 
-        values = CurrentValue[ DeleteMissing @ { delimiter, cell }, { TaggingRules, "ChatNotebookSettings", key } ];
+        values = AbsoluteCurrentValue[
+            DeleteMissing @ { delimiter, cell },
+            { TaggingRules, "ChatNotebookSettings", key }
+        ];
 
         FirstCase[ values, Except[ Inherited ], Lookup[ $defaultChatSettings, key, Inherited ] ]
     ],
@@ -129,7 +133,7 @@ currentChatSettings0[ obj: _CellObject|_NotebookObject ] :=
     Association[
         $defaultChatSettings,
         Replace[
-            Association @ CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ],
+            Association @ AbsoluteCurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ],
             Except[ _? AssociationQ ] :> <| |>
         ]
     ];
@@ -261,6 +265,14 @@ cellStyles // endDefinition;
 cloudCellStyles // beginDefinition;
 cloudCellStyles[ cells_ ] := Cases[ notebookRead @ cells, Cell[ _, style___String, OptionsPattern[ ] ] :> { style } ];
 cloudCellStyles // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*selectionEvaluateCreateCell*)
+selectionEvaluateCreateCell // beginDefinition;
+selectionEvaluateCreateCell[ nbo_NotebookObject ] /; $cloudNotebooks := FrontEndTokenExecute[ nbo, "EvaluateCells" ];
+selectionEvaluateCreateCell[ nbo_NotebookObject ] := SelectionEvaluateCreateCell @ nbo;
+selectionEvaluateCreateCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
