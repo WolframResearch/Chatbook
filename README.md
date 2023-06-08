@@ -3,10 +3,9 @@
 #### [Changelog](./docs/CHANGELOG.md)
 
 
-This repository contains *Chatbook*, a paclet adding support for ChatGPT-powered
+This repository contains *Chatbook*, a paclet adding support for LLM-powered
 notebooks to Wolfram.
 
-**Latest Release:** v0.0.9, released 2023-04-20.
 
 ## Getting Started
 
