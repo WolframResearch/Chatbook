@@ -339,7 +339,7 @@ Example
 user: Plot sin(x) from -5 to 5
 
 assistant: Let me plot that for you. Just a moment...
-TOOLCALL: sandbox_evaluate
+TOOLCALL: wolfram_language_evaluator
 {
 	\"code\": \"Plot[Sin[x], {x, -10, 10}, AxesLabel -> {\\\"x\\\", \\\"sin(x)\\\"}]\"
 }
@@ -490,10 +490,7 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
 
         kernel = ConfirmMatch[ getSandboxKernel[ ], _LinkObject, "GetKernel" ];
 
-        LinkWrite[
-            kernel,
-            Unevaluated @ EnterExpressionPacket @ BinarySerialize[ HoldComplete @@ { evaluation } ]
-        ];
+        ConfirmMatch[ linkWriteEvaluation[ kernel, evaluation ], Null, "LinkWriteEvaluation" ];
 
         { null, { packets } } = Reap[
             TimeConstrained[
@@ -517,7 +514,7 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
         (* TODO: include prompting that explains how to use Out[n] to get previous results *)
 
         $lastSandboxResult = <|
-            "String"  -> sandboxResultString @ flat,
+            "String"  -> sandboxResultString[ flat, packets ],
             "Result"  -> flat,
             "Packets" -> packets
         |>
@@ -536,7 +533,9 @@ linkWriteEvaluation // Attributes = { HoldAllComplete };
 linkWriteEvaluation[ kernel_, evaluation_ ] :=
     LinkWrite[
         kernel,
-        Unevaluated @ EnterExpressionPacket @ BinarySerialize[ <| "Line" -> $Line, "Result" -> HoldComplete @@ { evaluation } |> ]
+        Unevaluated @ EnterExpressionPacket @ BinarySerialize[
+            <| "Line" -> $Line, "Result" -> HoldComplete @@ { evaluation } |>
+        ]
     ];
 
 linkWriteEvaluation // endDefinition;
@@ -546,13 +545,25 @@ linkWriteEvaluation // endDefinition;
 (*sandboxResultString*)
 sandboxResultString // beginDefinition;
 
-(* TODO: show messages etc. *)
-sandboxResultString[ HoldComplete[ Null..., expr: Except[ _Graphics|_Graphics3D ] ] ] :=
-    With[ { string = ToString[ Unevaluated @ expr, InputForm, PageWidth -> 80 ] },
-        "```\n"<>string<>"\n```" /; StringLength @ string < 240
+sandboxResultString[ result_, packets_ ] := sandboxResultString @ result;
+
+sandboxResultString[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result" -> result_ } ], packets_ ] :=
+    StringRiffle[
+        Flatten @ {
+            makePacketMessages[ ToString @ line, packets ],
+            "Out[" <> ToString @ line <> "]= " <> sandboxResultString @ Flatten @ HoldComplete @ result
+        },
+        "\n"
     ];
 
-sandboxResultString[ HoldComplete[ Null..., expr_ ] ] :=
+sandboxResultString[ HoldComplete[ Null..., expr_ ] ] := sandboxResultString @ HoldComplete @ expr;
+
+sandboxResultString[ HoldComplete[ expr: Except[ _Graphics|_Graphics3D ] ] ] :=
+    With[ { string = ToString[ Unevaluated @ expr, InputForm, PageWidth -> 80 ] },
+        string /; StringLength @ string < 240
+    ];
+
+sandboxResultString[ HoldComplete[ expr_ ] ] :=
     With[ { id = "result-"<>Hash[ Unevaluated @ expr, Automatic, "HexString" ] },
         $attachments[ id ] = HoldComplete @ expr;
         "![result](expression://" <> id <> ")"
@@ -561,6 +572,17 @@ sandboxResultString[ HoldComplete[ Null..., expr_ ] ] :=
 sandboxResultString // endDefinition;
 
 $attachments = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makePacketMessages*)
+makePacketMessages // beginDefinition;
+makePacketMessages[ line_, packets_List ] := makePacketMessages[ line, # ] & /@ packets;
+(* makePacketMessages[ line_String, TextPacket[ text_String ] ] /; StringStartsQ[ text, ">> " ] := text;
+makePacketMessages[ line_String, TextPacket[ text_String ] ] := "During evaluation of In[" <> line <> "]:= " <> text; *)
+makePacketMessages[ line_String, TextPacket[ text_String ] ] := text;
+makePacketMessages[ line_, _InputNamePacket|_MessagePacket|_OutputNamePacket|_ReturnExpressionPacket ] := Nothing;
+makePacketMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
