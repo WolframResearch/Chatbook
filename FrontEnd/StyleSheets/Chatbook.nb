@@ -748,6 +748,7 @@ Notebook[
     ],
    TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    CellTrayWidgets -> <|
+    "GearMenu" -> { },
     "ChatWidget" -> <|
      "Type" -> "Focus",
      "Content" ->
@@ -1426,6 +1427,7 @@ Notebook[
   ],
   Cell[
    StyleData["Output"],
+   CellTrayWidgets -> <|"GearMenu" -> {}|>,
    ContextMenu -> {
     MenuItem[
      "Ask AI Assistant",
@@ -1513,6 +1515,10 @@ Notebook[
      ]
     ]
    }
+  ],
+  Cell[
+   StyleData["Message"],
+   CellTrayWidgets -> <|"GearMenu" -> {}|>
   ],
   Cell[
    StyleData[
@@ -11131,6 +11137,6 @@ Notebook[
    }
   ]
  },
- FrontEndVersion -> "13.2 for Mac OS X ARM (64-bit) (November 18, 2022)",
+ FrontEndVersion -> "13.2 for Microsoft Windows (64-bit) (January 30, 2023)",
  StyleDefinitions -> "PrivateStylesheetFormatting.nb"
 ]
