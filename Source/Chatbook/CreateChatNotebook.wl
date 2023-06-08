@@ -63,8 +63,8 @@ createChatNotebook[ opts___ ] := createLocalChatNotebook @ opts;
 createCloudChatNotebook // SetFallthroughError;
 createCloudChatNotebook[ opts: OptionsPattern[ CreateChatNotebook ] ] :=
     Module[ { settings, options, notebook, deployed },
-        settings = makeChatNotebookSettings @ Association @ opts;
-        options  = makeChatNotebookOptions @ settings;
+        settings = makeChatNotebookSettings @ Association @ FilterRules[ { opts }, Options @ CreateChatNotebook ];
+        options  = makeChatNotebookOptions[ settings, opts ];
         notebook = Notebook[ { Cell[ "", "ChatInput" ], $cloudSelectionMover }, options ];
         deployed = CloudDeploy[ notebook, CloudObjectURLType -> "Environment" ];
         SystemOpen @ deployed;
