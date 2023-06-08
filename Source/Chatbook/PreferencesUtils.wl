@@ -1,4 +1,4 @@
-BeginPackage["Wolfram`PreferencesUtils`"]
+BeginPackage["Wolfram`Chatbook`PreferencesUtils`"]
 
 GeneralUtilities`SetUsage[PreferencesPane, "
 PreferencesPane[items$, resetButton$] returns a pane suitable for presentation

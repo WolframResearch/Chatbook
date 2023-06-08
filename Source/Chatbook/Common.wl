@@ -40,7 +40,7 @@ $cloudNotebooks := TrueQ @ CloudSystem`$CloudNotebooks;
 $chatDelimiterStyles  = { "ChatBlockDivider", "ChatDelimiter", "ExcludedChatDelimiter" };
 $chatIgnoredStyles    = { "ChatExcluded" };
 $chatInputStyles      = { "ChatInput", "SideChat", "ChatQuery", "ChatSystemInput" };
-$chatOutputStyles     = { "ChatOutput" };
+$chatOutputStyles     = { "ChatOutput", "AssistantOutput", "AssistantOutputWarning", "AssistantOutputError" };
 $excludeHistoryStyles = { "SideChat" };
 
 $maxChatCells := OptionValue[ CreateChatNotebook, "ChatHistoryLength" ];

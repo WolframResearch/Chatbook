@@ -75,7 +75,7 @@ Pane[
    ],
    "Stop"
   ],
-  With[ { $CellContext`cell = ParentCell @ EvaluationCell[ ] },
+  With[ { $CellContext`cell = EvaluationCell[ ] },
    Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat", $CellContext`cell ]
   ],

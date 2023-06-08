@@ -3,10 +3,9 @@
 #### [Changelog](./docs/CHANGELOG.md)
 
 
-This repository contains *Chatbook*, a paclet adding support for ChatGPT-powered
+This repository contains *Chatbook*, a paclet adding support for LLM-powered
 notebooks to Wolfram.
 
-**Latest Release:** v0.0.9, released 2023-04-20.
 
 ## Getting Started
 
@@ -49,21 +48,21 @@ where `<YOUR_KEY>` is a valid OpenAI API key.
 
 ### Interact with ChatGPT:
 
-![Example of text cell in chat output](./docs/images/example-of-text-output-2.png)
+![Example of text cell in chat output](./docs/images/example-of-text-output.png)
 
 ### Generate immediately evaluatable Wolfram code:
 
-![Example of Input cell in chat output](./docs/images/example-of-wolfram-output-2.png)
+![Example of Input cell in chat output](./docs/images/example-of-wolfram-output.png)
 
 Wolfram code in the chat output can be evaluated in place immediately:
 
-![Example of evaluation of Input cell from chat output](./docs/images/example-of-wolfram-output-evaluated-2.png)
+![Example of evaluation of Input cell from chat output](./docs/images/example-of-evaluating-generated-wolfram.gif)
 
-### Generate immediately evaluatable code in any language supported by [ExternalEvaluate]:
+<!-- ### Generate immediately evaluatable code in any language supported by [ExternalEvaluate]:
 
-![Example of ExternalEvaluate cell in chat output](./docs/images/example-of-external-evaluate-output-2.png)
+![Example of ExternalEvaluate cell in chat output](./docs/images/example-of-external-evaluate-output.png)
 
-[ExternalEvaluate]: https://reference.wolfram.com/language/ref/ExternalEvaluate
+[ExternalEvaluate]: https://reference.wolfram.com/language/ref/ExternalEvaluate -->
 
 ## License
 

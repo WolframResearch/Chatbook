@@ -23,7 +23,6 @@ ChatContextEpilogFunction
 MakeChatInputActiveCellDingbat
 MakeChatInputCellDingbat
 MakeChatDelimiterCellDingbat
-GetChatInputLLMConfigurationSelectorMenuData
 
 GeneralUtilities`SetUsage[CreatePreferencesContent, "
 CreatePreferencesContent[] returns an expression containing the UI shown in the Preferences > AI Settings window.
@@ -51,7 +50,7 @@ Needs["Wolfram`Chatbook`Personas`"]
 Needs["Wolfram`Chatbook`PersonaInstaller`"]
 Needs["Wolfram`Chatbook`FrontEnd`"]
 
-Needs["Wolfram`PreferencesUtils`" -> "PrefUtils`"]
+Needs["Wolfram`Chatbook`PreferencesUtils`" -> "PrefUtils`"]
 
 
 Needs["Wolfram`Chatbook`ServerSentEventUtils`" -> None]
@@ -63,6 +62,8 @@ $SupportedModels = {
 	{"gpt-3.5-turbo", getIcon["ModelGPT35"], "GPT-3.5"},
 	{"gpt-4", getIcon["ModelGPT4"], "GPT-4"}
 };
+
+$chatMenuWidth = 225
 
 (*========================================================*)
 
@@ -221,13 +222,191 @@ CreatePreferencesContent[] := Module[{
 
 (*====================================*)
 
-CreateToolbarContent[] := With[{},
-	openChatActionMenu[
-		"Toolbar",
-		EvaluationNotebook[],
-		Automatic
+CreateToolbarContent[] := With[{
+	nbObj = EvaluationNotebook[],
+	menuCell = EvaluationCell[]
+},
+	(* FIXME:
+		If the user has custom styles defined in their current chat-enabled
+		notebook, this isn't sufficient. Check for whether
+		CurrentValue[ParentNotebook, {StyleDefinitions, "ChatInput"}] has any
+		definitions? (Though that might not work in 13.3 because Core.nb has
+		basic placeholder definitions for "ChatInput".) *)
+	(* FIXME: Handle the case that this is a Chatbook with inlined styles,
+		e.g. $ChatbookStylesheet. *)
+	CurrentValue[menuCell, {TaggingRules, "IsChatEnabled"}] =
+		ConfirmReplace[CurrentValue[nbObj, StyleDefinitions], {
+			"Chatbook.nb" -> True,
+			_ -> False
+		}];
+
+	(* Set a notebook-level value for the "Assistance" setting, so
+		that the Checkbox button for setting this value never displays
+		as its neither-True-nor-False state if the value is `Inherited`. *)
+	CurrentValue[
+		nbObj,
+		{TaggingRules, "ChatNotebookSettings", "Assistance"}
+	] = TrueQ @ AbsoluteCurrentValue[
+		nbObj,
+		{TaggingRules, "ChatNotebookSettings", "Assistance"}
+	];
+
+	PaneSelector[
+		{
+			True :> (
+				Dynamic @ Refresh[
+					Column[{
+						makeEnableAIChatFeaturesLabel[True],
+						(* Note: Use EventHandler instead of Button to avoid
+							blue background shown when an Appearance -> None
+							Button is clicked. *)
+						EventHandler[
+							labeledCheckbox[
+								Dynamic @ CurrentValue[
+									EvaluationNotebook[],
+									{TaggingRules, "ChatNotebookSettings", "Assistance"}
+								],
+								Row[{
+									"Automatic Result Analysis",
+									Spacer[3],
+									Tooltip[
+										getIcon["InformationTooltip"],
+										"If enabled, automatic AI provided suggestions will be added following evaluation results."
+									]
+								}]
+							],
+							"MouseClicked" :> (
+								CurrentValue[
+									EvaluationNotebook[],
+									{TaggingRules, "ChatNotebookSettings", "Assistance"}
+								] = Not @ TrueQ @ CurrentValue[
+									EvaluationNotebook[],
+									{TaggingRules, "ChatNotebookSettings", "Assistance"}
+								]
+							),
+							(* Needed so that we can open a ChoiceDialog if required. *)
+							Method -> "Queued"
+						],
+						makeChatActionMenu[
+							"Toolbar",
+							EvaluationNotebook[],
+							Automatic
+						]
+					}],
+					None
+				]
+			),
+			False :> (
+				Dynamic @ Refresh[
+					createChatNotEnabledToolbar[nbObj, menuCell],
+					None
+				]
+			)
+		},
+		Dynamic @ CurrentValue[menuCell, {TaggingRules, "IsChatEnabled"}],
+		ImageSize -> Automatic
 	]
 ]
+
+(*====================================*)
+
+SetFallthroughError[createChatNotEnabledToolbar]
+
+createChatNotEnabledToolbar[
+	nbObj_NotebookObject,
+	menuCell_CellObject
+] := Module[{
+	button
+},
+	button = EventHandler[
+		makeEnableAIChatFeaturesLabel[False],
+		"MouseClicked" :> (
+			tryMakeChatEnabledNotebook[nbObj, menuCell]
+		),
+		(* Needed so that we can open a ChoiceDialog if required. *)
+		Method -> "Queued"
+	];
+
+	Pane[button, {$chatMenuWidth, Automatic}]
+]
+
+(*====================================*)
+
+SetFallthroughError[tryMakeChatEnabledNotebook]
+
+tryMakeChatEnabledNotebook[
+	nbObj_NotebookObject,
+	menuCell_CellObject
+] := Module[{
+	useChatbookStylesheet
+},
+	useChatbookStylesheet = ConfirmReplace[CurrentValue[nbObj, StyleDefinitions], {
+		"Default.nb" -> True,
+		(* TODO: Generate a warning dialog in this case, because Chatbook.nb
+			inherits from Default.nb? *)
+		_?StringQ | _FrontEnd`FileName -> True,
+		_Notebook | _ :> RaiseConfirmMatch[
+			ChoiceDialog[
+				Column[{
+					Item[Magnify["⚠", 5], Alignment -> Center],
+					"",
+					RawBoxes @ Cell[
+						"Enabling Chat Notebook functionality will destroy the"
+						<> " private styles defined in this notebook, and replace"
+						<> " them with the shared Chatbook stylesheet.",
+						"Text"
+					],
+					"",
+					RawBoxes @ Cell["Are you sure you wish to continue?", "Text"]
+				}],
+				Background -> White,
+				WindowMargins -> ConfirmReplace[
+					MousePosition["ScreenAbsolute"],
+					{x_, y_} :> {{x, Automatic}, {Automatic, y}}
+				]
+			],
+			_?BooleanQ
+		]
+	}];
+
+	RaiseAssert[BooleanQ[useChatbookStylesheet]];
+
+	If[!useChatbookStylesheet,
+		Return[Null, Module];
+	];
+
+	SetOptions[nbObj, StyleDefinitions -> "Chatbook.nb"];
+
+	(* Cause the PaneSelector to switch to showing all the options allowed
+		for Chat-Enabled notebooks. *)
+	CurrentValue[menuCell, {TaggingRules, "IsChatEnabled"}] = True;
+]
+
+(*====================================*)
+
+SetFallthroughError[makeEnableAIChatFeaturesLabel]
+
+makeEnableAIChatFeaturesLabel[enabled_?BooleanQ] :=
+	labeledCheckbox[enabled, "Enable AI Chat Features", !enabled]
+
+(*====================================*)
+
+SetFallthroughError[labeledCheckbox]
+
+labeledCheckbox[value_, label_, enabled_ : Automatic] :=
+	Row[
+		{
+			Checkbox[
+				value,
+				{False, True, Inherited},
+				Enabled -> enabled
+			],
+			Spacer[3],
+			label
+		},
+		ImageMargins -> {{5, 20}, {2.5, 2.5}},
+		BaseStyle -> {"Text", FontSize -> 14}
+	]
 
 (*=========================================*)
 (* Common preferences content construction *)
@@ -1559,13 +1738,11 @@ $dynamicMenuLabel := DynamicModule[ { cell },
 	Dynamic @ If[ TrueQ @ $cloudNotebooks,
 		RawBoxes @ TemplateBox[{},"ChatInputCellDingbat"],
 		With[{
-			personas = GetChatInputLLMConfigurationSelectorMenuData[],
 			personaValue = currentValueOrigin[cell, {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}]
 		},
-			FirstCase[
-				personas,
-				{personaValue[[2]], icon_} :> icon,
-				Style[getIcon["PersonaUnknown"], GrayLevel[0.5]]
+			getPersonaMenuIcon @ Lookup[
+				GetPersonasAssociation[],
+				personaValue[[2]]
 			]
 		]
 	],
@@ -1603,7 +1780,7 @@ MakeChatInputActiveCellDingbat[] := Module[{
 		(
 			AttachCell[
 				EvaluationCell[],
-				openChatActionMenu[
+				makeChatActionMenu[
 					"Input",
 					parentCell[EvaluationCell[]],
 					EvaluationCell[]
@@ -1668,7 +1845,7 @@ MakeChatDelimiterCellDingbat[] := Module[{
 		(
 			AttachCell[
 				EvaluationCell[],
-				openChatActionMenu[
+				makeChatActionMenu[
 					"Delimiter",
 					parentCell[EvaluationCell[]],
 					EvaluationCell[]
@@ -1690,9 +1867,9 @@ MakeChatDelimiterCellDingbat[] := Module[{
 
 (*====================================*)
 
-SetFallthroughError[openChatActionMenu]
+SetFallthroughError[makeChatActionMenu]
 
-openChatActionMenu[
+makeChatActionMenu[
 	containerType: "Input" | "Delimiter" | "Toolbar",
 	targetObj : _CellObject | _NotebookObject,
 	(* The cell that will be the parent of the attached cell that contains this
@@ -1715,10 +1892,10 @@ openChatActionMenu[
 		]
 	}]
 }, Module[{
-	personas = GetChatInputLLMConfigurationSelectorMenuData[],
+	personas = GetPersonasAssociation[],
 	actionCallback
 },
-	RaiseConfirmMatch[personas, {{_String, _}...}];
+	RaiseConfirmMatch[personas, <| (_String -> _Association)... |>];
 
 	(*
 		If this menu is being rendered into a Chat-Driven notebook, make the
@@ -1732,9 +1909,8 @@ openChatActionMenu[
 			}],
 			{TaggingRules, "ChatNotebookSettings", "ChatDrivenNotebook"}
 		],
-		personas = SortBy[
+		personas = KeySort[
 			personas,
-			First,
 			FirstMatchingPositionOrder[{
 				"PlainChat",
 				"RawModel",
@@ -1819,73 +1995,6 @@ openChatActionMenu[
 
 (*====================================*)
 
-SetFallthroughError[currentValueOrigin]
-
-(*
-	Get the current value and origin of a cell option value.
-
-	This function will return {origin, value}, where `origin` will be one of:
-
-	* "Inline"    -- this value is set inline in the specified CellObject
-	* "Inherited" -- this value is inherited from a style setting outside of the
-		specified CellObject.
-*)
-currentValueOrigin[
-	targetObj : _CellObject | _NotebookObject,
-	keyPath_List
-] := Module[{
-	value,
-	inlineValue
-},
-	value = absoluteCurrentValue[targetObj, keyPath];
-
-	inlineValue = nestedLookup[
-		Options[targetObj],
-		keyPath,
-		None
-	];
-
-	Which[
-		inlineValue === None,
-			{"Inherited", value},
-		True,
-			{"Inline", inlineValue}
-	]
-]
-
-(*====================================*)
-
-SetFallthroughError[absoluteCurrentValue]
-
-absoluteCurrentValue[cell_, {TaggingRules, "ChatNotebookSettings", key_}] := currentChatSettings[cell, key]
-absoluteCurrentValue[cell_, keyPath_] := AbsoluteCurrentValue[cell, keyPath]
-
-(*====================================*)
-
-SetFallthroughError[nestedLookup]
-Attributes[nestedLookup] = {HoldRest}
-
-nestedLookup[as:KeyValuePattern[{}], {keys___}, default_] :=
-	Replace[
-		GeneralUtilities`ToAssociations[as][keys],
-		{
-			Missing["KeyAbsent", ___] :> default,
-			_[keys] :> default
-		}
-	]
-
-nestedLookup[as_, key:Except[_List], default_] :=
-	With[{keys = key},
-		If[ ListQ[keys],
-			nestedLookup[as, keys, default],
-			nestedLookup[as, {keys}, default]
-		]
-	]
-
-nestedLookup[as_, keys_] := nestedLookup[as, keys, Missing["KeySequenceAbsent", keys]]
-
-(*====================================*)
-
 SetFallthroughError[makeChatActionMenuContent]
 
 Options[makeChatActionMenuContent] = {
@@ -1898,8 +2007,7 @@ Options[makeChatActionMenuContent] = {
 
 makeChatActionMenuContent[
 	containerType : "Input" | "Delimiter" | "Toolbar",
-	(* List of {tagging rule value, icon, list item label} *)
-	personas:{___List},
+	personas_?AssociationQ,
 	(* List of {tagging rule value, icon, list item label} *)
 	models:{___List},
 	OptionsPattern[]
@@ -1977,14 +2085,16 @@ makeChatActionMenuContent[
 
 	menuItems = Join[
 		{"Personas"},
-		Map[
-			entry |-> ConfirmReplace[entry, {
-				{persona_?StringQ, icon_} :> {
+		KeyValueMap[
+			{persona, personaSettings} |-> With[{
+				icon = getPersonaMenuIcon[personaSettings]
+			},
+				{
 					alignedMenuIcon[persona, personaValue, icon],
-					personaDisplayName[persona],
+					personaDisplayName[persona, personaSettings],
 					Hold[callback["Persona", persona]]
 				}
-			}],
+			],
 			personas
 		],
 		{
@@ -2012,14 +2122,36 @@ makeChatActionMenuContent[
 					}},
 					Spacings -> 0
 				],
-				Hold[AttachCell[
-					EvaluationCell[],
-					advancedSettingsMenu,
-					{Right, Bottom},
-					{50, 50},
-					{Left, Bottom},
-					RemovalConditions -> "MouseExit"
-				]]
+				Hold @ With[{
+					mouseX = MousePosition["WindowScaled"][[1]]
+				}, {
+					(* Note: Depending on the X coordinate of the users mouse
+						when they click the 'Advanced Settings' button, either
+						show the attached submenu to the left or right of the
+						outer menu. This ensures that this submenu doesn't touch
+						the right edge of the notebook window when it is opened
+						from the 'Chat Settings' notebook toolbar. *)
+					positions = If[
+						TrueQ[mouseX < 0.5],
+						{
+							{Right, Bottom},
+							{Left, Bottom}
+						},
+						{
+							{Left, Bottom},
+							{Right, Bottom}
+						}
+					]
+				},
+					AttachCell[
+						EvaluationCell[],
+						advancedSettingsMenu,
+						positions[[1]],
+						{50, 50},
+						positions[[2]],
+						RemovalConditions -> "MouseExit"
+					]
+				]
 			}
 		}
 	];
@@ -2027,58 +2159,11 @@ makeChatActionMenuContent[
 	menu = MakeMenu[
 		menuItems,
 		GrayLevel[0.85],
-		225
+		$chatMenuWidth
 	];
 
 	menu
 ]]
-
-(*====================================*)
-
-SetFallthroughError[personaDisplayName]
-
-personaDisplayName[name_String] := personaDisplayName[name, GetCachedPersonaData[name]]
-personaDisplayName[name_String, data_Association] := personaDisplayName[name, data["DisplayName"]]
-personaDisplayName[name_String, displayName_String] := displayName
-personaDisplayName[name_String, _] := name
-
-(*------------------------------------*)
-
-SetFallthroughError[alignedMenuIcon]
-
-alignedMenuIcon[possible_, current_, icon_] :=alignedMenuIcon[styleListItem[possible, current], icon]
-alignedMenuIcon[check_, icon_] := Row[{check, " ", resizeMenuIcon[icon]}]
-(* If menu item does not utilize a checkmark, use an invisible one to ensure it is left-aligned with others *)
-alignedMenuIcon[icon_] := alignedMenuIcon[Style["\[Checkmark]", ShowContents -> False], icon]
-
-(*------------------------------------*)
-
-SetFallthroughError[styleListItem]
-
-(*
-	Style a list item in the ChatInput option value dropdown based on whether
-	its value is set inline in the current cell, inherited from some enclosing
-	setting, or not the current value.
-*)
-styleListItem[
-	possibleValue_?StringQ,
-	currentValue : {"Inline" | "Inherited", _}
-] := (
-	Replace[currentValue, {
-		(* This possible value is the currently selected value. *)
-		{"Inline", possibleValue} :>
-			"\[Checkmark]",
-		(* This possible value is the inherited selected value. *)
-		{"Inherited", possibleValue} :>
-			Style["\[Checkmark]", FontColor -> GrayLevel[0.75]],
-		(* This possible value is not whatever the currently selected value is. *)
-		(* Display a hidden checkmark purely so that this
-			is offset by the same amount as list items that
-			display a visible checkmark. *)
-		_ ->
-			Style["\[Checkmark]", ShowContents -> False]
-	}]
-)
 
 (*====================================*)
 
@@ -2115,26 +2200,67 @@ styleListItem[
 
 getIcon[ name_ ] := RawBoxes @ TemplateBox[ { }, name ];
 
-(*------------------------------------*)
 
-GetChatInputLLMConfigurationSelectorMenuData[] :=
-	KeyValueMap[
-		{key, value} |-> {
-			key,
-			(* FIXME: Better generic fallback icon? *)
-			getPersonaMenuIcon @ value
-		},
-		GetPersonasAssociation[]
+
+(*========================================================*)
+(* Chat settings lookup helpers                           *)
+(*========================================================*)
+
+SetFallthroughError[absoluteCurrentValue]
+
+absoluteCurrentValue[cell_, {TaggingRules, "ChatNotebookSettings", key_}] := currentChatSettings[cell, key]
+absoluteCurrentValue[cell_, keyPath_] := AbsoluteCurrentValue[cell, keyPath]
+
+(*====================================*)
+
+SetFallthroughError[currentValueOrigin]
+
+(*
+	Get the current value and origin of a cell option value.
+
+	This function will return {origin, value}, where `origin` will be one of:
+
+	* "Inline"    -- this value is set inline in the specified CellObject
+	* "Inherited" -- this value is inherited from a style setting outside of the
+		specified CellObject.
+*)
+currentValueOrigin[
+	targetObj : _CellObject | _NotebookObject,
+	keyPath_List
+] := Module[{
+	value,
+	inlineValue
+},
+	value = absoluteCurrentValue[targetObj, keyPath];
+
+	inlineValue = nestedLookup[
+		Options[targetObj],
+		keyPath,
+		None
+	];
+
+	Which[
+		inlineValue === None,
+			{"Inherited", value},
+		True,
+			{"Inline", inlineValue}
 	]
+]
 
 
-SetFallthroughError[getPersonaMenuIcon];
 
-getPersonaMenuIcon[ KeyValuePattern[ "Icon"|"PersonaIcon" -> icon_ ] ] := getPersonaMenuIcon @ icon;
-getPersonaMenuIcon[ KeyValuePattern[ "Default" -> icon_ ] ] := getPersonaMenuIcon @ icon;
-getPersonaMenuIcon[ _Missing | _Association | None ] := RawBoxes @ TemplateBox[ { }, "PersonaUnknown" ];
-getPersonaMenuIcon[ icon_ ] := icon;
+(*========================================================*)
+(* Menu construction helpers                              *)
+(*========================================================*)
 
+SetFallthroughError[alignedMenuIcon]
+
+alignedMenuIcon[possible_, current_, icon_] :=alignedMenuIcon[styleListItem[possible, current], icon]
+alignedMenuIcon[check_, icon_] := Row[{check, " ", resizeMenuIcon[icon]}]
+(* If menu item does not utilize a checkmark, use an invisible one to ensure it is left-aligned with others *)
+alignedMenuIcon[icon_] := alignedMenuIcon[Style["\[Checkmark]", ShowContents -> False], icon]
+
+(*====================================*)
 
 resizeMenuIcon[ icon: _Graphics|_Graphics3D ] :=
 	Show[ icon, ImageSize -> { 21, 21 } ];
@@ -2145,6 +2271,88 @@ resizeMenuIcon[ icon_ ] := Pane[
 	ImageSizeAction -> "ShrinkToFit",
 	ContentPadding  -> False
 ];
+
+(*====================================*)
+
+SetFallthroughError[styleListItem]
+
+(*
+	Style a list item in the ChatInput option value dropdown based on whether
+	its value is set inline in the current cell, inherited from some enclosing
+	setting, or not the current value.
+*)
+styleListItem[
+	possibleValue_?StringQ,
+	currentValue : {"Inline" | "Inherited", _}
+] := (
+	Replace[currentValue, {
+		(* This possible value is the currently selected value. *)
+		{"Inline", possibleValue} :>
+			"\[Checkmark]",
+		(* This possible value is the inherited selected value. *)
+		{"Inherited", possibleValue} :>
+			Style["\[Checkmark]", FontColor -> GrayLevel[0.75]],
+		(* This possible value is not whatever the currently selected value is. *)
+		(* Display a hidden checkmark purely so that this
+			is offset by the same amount as list items that
+			display a visible checkmark. *)
+		_ ->
+			Style["\[Checkmark]", ShowContents -> False]
+	}]
+)
+
+
+
+(*========================================================*)
+(* Persona property lookup helpers                        *)
+(*========================================================*)
+
+SetFallthroughError[personaDisplayName]
+
+personaDisplayName[name_String] := personaDisplayName[name, GetCachedPersonaData[name]]
+personaDisplayName[name_String, data_Association] := personaDisplayName[name, data["DisplayName"]]
+personaDisplayName[name_String, displayName_String] := displayName
+personaDisplayName[name_String, _] := name
+
+(*====================================*)
+
+SetFallthroughError[getPersonaMenuIcon];
+
+getPersonaMenuIcon[ KeyValuePattern[ "Icon"|"PersonaIcon" -> icon_ ] ] := getPersonaMenuIcon @ icon;
+getPersonaMenuIcon[ KeyValuePattern[ "Default" -> icon_ ] ] := getPersonaMenuIcon @ icon;
+getPersonaMenuIcon[ _Missing | _Association | None ] := RawBoxes @ TemplateBox[ { }, "PersonaUnknown" ];
+getPersonaMenuIcon[ icon_ ] := icon;
+
+
+
+(*========================================================*)
+(* Generic Utilities                                      *)
+(*========================================================*)
+
+SetFallthroughError[nestedLookup]
+Attributes[nestedLookup] = {HoldRest}
+
+nestedLookup[as:KeyValuePattern[{}], {keys___}, default_] :=
+	Replace[
+		GeneralUtilities`ToAssociations[as][keys],
+		{
+			Missing["KeyAbsent", ___] :> default,
+			_[keys] :> default
+		}
+	]
+
+nestedLookup[as_, key:Except[_List], default_] :=
+	With[{keys = key},
+		If[ ListQ[keys],
+			nestedLookup[as, keys, default],
+			nestedLookup[as, {keys}, default]
+		]
+	]
+
+nestedLookup[as_, keys_] := nestedLookup[as, keys, Missing["KeySequenceAbsent", keys]]
+
+
+(*========================================================*)
 
 
 End[]
