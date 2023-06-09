@@ -1931,17 +1931,23 @@ modifierMessageRole[ ___ ] := "system";
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*extractModifiers*)
+
+$$inlineModifierCell = Alternatives[
+    Cell[ _, "InlineModifierReference", ___ ],
+    Cell[ BoxData @ Cell[ _, "InlineModifierReference", ___ ], ___ ]
+];
+
 extractModifiers // beginDefinition;
 
 extractModifiers[ cell: Cell[ _String, ___ ] ] := { { }, cell };
 extractModifiers[ cell: Cell[ TextData[ _String ], ___ ] ] := { { }, cell };
 
-extractModifiers[ Cell[ TextData[ text: { ___, Cell[ _, "InlineModifierReference", ___ ], ___ } ], a___ ] ] := {
-    Cases[ text, cell: Cell[ _, "InlineModifierReference", ___ ] :> extractModifier @ cell ],
-    Cell[ TextData @ DeleteCases[ text, Cell[ _, "InlineModifierReference", ___ ] ], a ]
+extractModifiers[ Cell[ TextData[ text: { ___, $$inlineModifierCell, ___ } ], a___ ] ] := {
+    Cases[ text, cell: $$inlineModifierCell :> extractModifier @ cell ],
+    Cell[ TextData @ DeleteCases[ text, $$inlineModifierCell ], a ]
 };
 
-extractModifiers[ Cell[ TextData[ modifier: Cell[ _, "InlineModifierReference", ___ ] ], a___ ] ] := {
+extractModifiers[ Cell[ TextData[ modifier: $$inlineModifierCell ], a___ ] ] := {
     { extractModifier @ modifier },
     Cell[ "", a ]
 };
@@ -1954,6 +1960,7 @@ extractModifiers // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*extractModifier*)
 extractModifier // beginDefinition;
+extractModifier[ Cell[ BoxData[ cell: Cell[ _, "InlineModifierReference", ___ ] ], ___ ] ] := extractModifier @ cell;
 extractModifier[ Cell[ __, TaggingRules -> tags_, ___ ] ] := extractModifier @ tags;
 extractModifier[ as: KeyValuePattern @ { "PromptModifierName" -> _String, "PromptArguments" -> _List } ] := as;
 extractModifier // endDefinition;
