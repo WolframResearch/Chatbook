@@ -22,6 +22,8 @@ BeginPackage[ "Wolfram`Chatbook`InlineReferences`" ];
 `resolveLastInlineReference;
 `resolveInlineReferences;
 
+`$cloudInlineReferenceButtons;
+
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                  ];
@@ -1402,19 +1404,19 @@ setPersonaState[state_, "Input", input_] := (
 	FrontEndExecute[FrontEnd`FrontEndToken["MoveNextPlaceHolder"]];
 )
 
-setPersonaState[state_, "Chosen", input_] := 
+setPersonaState[state_, "Chosen", input_] :=
 Enclose[
 	With[{cellobj = EvaluationCell[]},
 		state = "Chosen";
 		SelectionMove[cellobj, All, Cell];
 		FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]];
 		CurrentValue[cellobj, {TaggingRules, "PersonaName"}] = input;
-		
+
 		If[ ! MemberQ[ Keys @ GetCachedPersonaData[ ], input ],
 	        ConfirmBy[ PersonaInstall[ "Prompt: "<>input ], FileExistsQ, "PersonaInstall" ];
 	        ConfirmAssert[ MemberQ[ Keys @ GetCachedPersonaData[ ], input ], "GetCachedPersonaData" ]
 	    ];
-		
+
 		With[ { parent = ParentCell @ cellobj },
 			CurrentValue[ parent, CellDingbat ] = Inherited;
 			CurrentValue[ parent, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = input;
@@ -1423,7 +1425,7 @@ Enclose[
 	,
 	throwInternalFailure[ setPersonaState[state, "Chosen", input], ## ] &
 ]
-	
+
 setPersonaState[state_, "Replace", input_String] := (
 	SelectionMove[EvaluationCell[], All, Cell];
 	NotebookWrite[InputNotebook[], "@" <> input]
@@ -1436,7 +1438,7 @@ setPersonaState[state_, "Replace", input_String] := (
 
 SetAttributes[personaTemplateBoxes, HoldRest];
 
-personaTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] /; state === "Input" := 
+personaTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] /; state === "Input" :=
 	EventHandler[
 		Style[
 			Framed[
@@ -1511,7 +1513,7 @@ personaTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] 
 (*personaTemplateCell*)
 
 
-personaTemplateCell[input_String, state: ("Input" | "Chosen"), uuid_String] := 
+personaTemplateCell[input_String, state: ("Input" | "Chosen"), uuid_String] :=
 Cell[BoxData[FormBox[
 	TemplateBox[<|"input" -> input, "state" -> state, "uuid" -> uuid|>,
 		"ChatbookPersona"
@@ -1589,7 +1591,7 @@ setModifierState[state_, "Input", input_, params_] := (
 	FrontEndExecute[FrontEnd`FrontEndToken["MoveNextPlaceHolder"]];
 )
 
-setModifierState[state_, "Chosen", input_, params_] := 
+setModifierState[state_, "Chosen", input_, params_] :=
 Enclose[
 	With[{cellobj = EvaluationCell[]},
 		state = "Chosen";
@@ -1620,7 +1622,7 @@ fromModifierString[str_String] := Replace[ StringTrim /@ StringSplit[str, "|"],
 
 SetAttributes[modifierTemplateBoxes, HoldRest];
 
-modifierTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsPattern[]] /; state === "Input" := 
+modifierTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsPattern[]] /; state === "Input" :=
 	EventHandler[
 		Style[
 			Framed[
@@ -1710,7 +1712,7 @@ modifierTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 (*modifierTemplateCell*)
 
 
-modifierTemplateCell[input_String, params_List, state: ("Input" | "Chosen"), uuid_String] := 
+modifierTemplateCell[input_String, params_List, state: ("Input" | "Chosen"), uuid_String] :=
 Cell[BoxData[FormBox[
 	TemplateBox[<|"input" -> input, "params" -> params, "state" -> state, "uuid" -> uuid|>,
 		"ChatbookModifier"
@@ -1801,7 +1803,7 @@ setFunctionState[state_, "Input", input_, params_] := (
 	FrontEndExecute[FrontEnd`FrontEndToken["MoveNextPlaceHolder"]];
 )
 
-setFunctionState[state_, "Chosen", input_, params_] := 
+setFunctionState[state_, "Chosen", input_, params_] :=
 Enclose[
 	With[{cellobj = EvaluationCell[]},
 		state = "Chosen";
@@ -1835,7 +1837,7 @@ fromFunctionString[str_String] := Replace[ functionInputSetting[str], {
 
 SetAttributes[functionTemplateBoxes, HoldRest];
 
-functionTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsPattern[]] /; state === "Input" := 
+functionTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsPattern[]] /; state === "Input" :=
 	EventHandler[
 		Style[
 			Framed[
@@ -1899,7 +1901,7 @@ functionTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 							else_ :> Style[else, FontSize -> Inherited * 0.9]
 						},
 						{1}
-					] // Splice		
+					] // Splice
 					}},
 					BaselinePosition -> {1,1},
 					Dividers -> {Center, None},
@@ -1931,7 +1933,7 @@ functionTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 (*functionTemplateCell*)
 
 
-functionTemplateCell[input_String, params_List, state: ("Input" | "Chosen"), uuid_String] := 
+functionTemplateCell[input_String, params_List, state: ("Input" | "Chosen"), uuid_String] :=
 Cell[BoxData[FormBox[
 	TemplateBox[<|"input" -> input, "params" -> params, "state" -> state, "uuid" -> uuid|>,
 		"ChatbookFunction"
@@ -1946,7 +1948,7 @@ Cell[BoxData[FormBox[
 (*insertFunctionTemplate*)
 
 
-insertFunctionTemplate[ cell_CellObject ] := 
+insertFunctionTemplate[ cell_CellObject ] :=
     If[ MatchQ[
             Developer`CellInformation @ SelectedCells[ ],
             { KeyValuePattern @ { "Style" -> $$chatInputStyle, "CursorPosition" -> { 0, _ } } }
@@ -1975,6 +1977,100 @@ insertFunctionTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
 		NotebookWrite[ parent, cellexpr ];
 		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
 	];
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Cloud Docked Cell*)
+
+$cloudInlineReferenceButtons = Block[ { NotebookTools`Mousedown = Mouseover[ #1, #2 ] & },
+    Grid[
+        {
+            {
+                Style[ "Insert:", "Text" ],
+                Button[
+                    First @ personaTemplateBoxes[ 1, "Persona", "Chosen", "PersonaInsertButton" ],
+                    With[ { name = InputString[ "Enter a persona name" ], uuid = CreateUUID[ ] },
+                        If[ MemberQ[ $personaNames, name ],
+                            NotebookWrite[
+                                EvaluationNotebook[ ],
+                                Append[
+                                    personaTemplateCell[ name, "Chosen", uuid ],
+                                    TaggingRules -> <| "PersonaName" -> name |>
+                                ]
+                            ];
+                            CurrentValue[
+                                EvaluationNotebook[ ], (* FIXME: figure out how to get selected cell in cloud *)
+                                { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }
+                            ] = name;
+                            ,
+                            If[ StringQ @ name,
+                                MessageDialog[ "No persona with name \""<>name<>"\" found.\"" ]
+                            ]
+                        ]
+                    ],
+                    Appearance -> $suppressButtonAppearance,
+                    Method     -> "Queued"
+                ],
+                Button[
+                    First @ modifierTemplateBoxes[ 1, "Modifier", { }, "Chosen", "ModifierInsertButton" ],
+                    With[ { s = InputString[ "Enter a modifier prompt" ], uuid = CreateUUID[ ] },
+                        Replace[
+                            functionInputSetting @ s,
+                            { name_String, args___String } :>
+                                If[ MemberQ[ $modifierNames, name ],
+                                    NotebookWrite[
+                                        EvaluationNotebook[ ],
+                                        Append[
+                                            modifierTemplateCell[ name, { args }, "Chosen", uuid ],
+                                            TaggingRules -> <|
+                                                "PromptModifierName" -> name,
+                                                "PromptArguments"    -> { args }
+                                            |>
+                                        ]
+                                    ]
+                                    ,
+                                    If[ StringQ @ name,
+                                        MessageDialog[ "No modifier with name \""<>name<>"\" found.\"" ]
+                                    ]
+                                ]
+                        ]
+                    ],
+                    Appearance -> $suppressButtonAppearance,
+                    Method     -> "Queued"
+                ],
+                Button[
+                    First @ functionTemplateBoxes[ 1, "Function", { }, "Chosen", "FunctionInsertButton" ],
+                    With[ { s = InputString[ "Enter a function prompt" ], uuid = CreateUUID[ ] },
+                        Replace[
+                            functionInputSetting @ s,
+                            { name_String, args___String } :>
+                                If[ MemberQ[ $functionNames, name ],
+                                    NotebookWrite[
+                                        EvaluationNotebook[ ],
+                                        Append[
+                                            functionTemplateCell[ name, { args }, "Chosen", uuid ],
+                                            TaggingRules -> <|
+                                                "PromptFunctionName" -> name,
+                                                "PromptArguments"    -> { args }
+                                            |>
+                                        ]
+                                    ]
+                                    ,
+                                    If[ StringQ @ name,
+                                        MessageDialog[ "No function with name \""<>name<>"\" found.\"" ]
+                                    ]
+                                ]
+                        ]
+                    ],
+                    Appearance -> $suppressButtonAppearance,
+                    Method     -> "Queued"
+                ]
+            }
+        },
+        Spacings -> 0.5
+    ]
+];
 
 
 (* ::Section::Closed:: *)

@@ -1005,18 +1005,6 @@ Cell[
 
 
 (* ::Subsection::Closed:: *)
-(*ChatCloudDockedCellBoxes*)
-
-
-Cell[
-    StyleData[ "ChatCloudDockedCellBoxes" ],
-    TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $chatCloudDockedCellContent
-    }
-]
-
-
-(* ::Subsection::Closed:: *)
 (*InlineReferenceText*)
 
 

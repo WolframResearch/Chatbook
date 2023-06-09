@@ -50,6 +50,7 @@ Needs["Wolfram`Chatbook`Menus`"]
 Needs["Wolfram`Chatbook`Personas`"]
 Needs["Wolfram`Chatbook`PersonaInstaller`"]
 Needs["Wolfram`Chatbook`FrontEnd`"]
+Needs["Wolfram`Chatbook`InlineReferences`"]
 
 Needs["Wolfram`Chatbook`PreferencesUtils`" -> "PrefUtils`"]
 
@@ -110,7 +111,7 @@ GetChatEnvironmentValues[promptCell_, evaluationCell_, chatContextCells_] := Wit
 
 (*====================================*)
 
-MakeChatCloudDockedCellContents[] := TemplateBox[{}, "ChatCloudDockedCellBoxes"]
+MakeChatCloudDockedCellContents[] := Grid[{{Item["", ItemSize -> Fit ], $cloudInlineReferenceButtons}}]
 
 (*====================================*)
 
