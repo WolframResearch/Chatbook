@@ -23,6 +23,7 @@ ChatContextEpilogFunction
 MakeChatInputActiveCellDingbat
 MakeChatInputCellDingbat
 MakeChatDelimiterCellDingbat
+MakeChatCloudDockedCellContents
 
 GeneralUtilities`SetUsage[CreatePreferencesContent, "
 CreatePreferencesContent[] returns an expression containing the UI shown in the Preferences > AI Settings window.
@@ -106,6 +107,10 @@ GetChatEnvironmentValues[promptCell_, evaluationCell_, chatContextCells_] := Wit
 		"ChatContextPostEvaluationFunction" -> Lookup[chatContextTaggingRules, "ChatContextPostEvaluationFunction", Automatic]
 	|>
 ]
+
+(*====================================*)
+
+MakeChatCloudDockedCellContents[] := TemplateBox[{}, "ChatCloudDockedCellBoxes"]
 
 (*====================================*)
 
