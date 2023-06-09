@@ -353,7 +353,7 @@ tryMakeChatEnabledNotebook[
 		_ :> RaiseConfirmMatch[
 			ChoiceDialog[
 				Column[{
-					Item[Magnify["\:26a0", 5], Alignment -> Center],
+					Item[Magnify["\[WarningSign]", 5], Alignment -> Center],
 					"",
 					RawBoxes @ Cell[
 						"Enabling Chat Notebook functionality will destroy the" <>
