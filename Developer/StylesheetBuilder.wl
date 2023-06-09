@@ -48,13 +48,14 @@ $styleSheetTarget   = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheet
 PacletDirectoryLoad @ $pacletDirectory;
 Get[ "Wolfram`Chatbook`" ];
 
+$ContextAliases[ "ir`"  ] = "Wolfram`Chatbook`InlineReferences`";
+$ContextAliases[ "irp`" ] = "Wolfram`Chatbook`InlineReferences`Private`";
 
-
-(* ::Subsection::Closed:: *)
+(* ::Section::Closed:: *)
 (*Resources*)
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*$floatingButtonNinePatch*)
 
 
@@ -62,7 +63,7 @@ $floatingButtonNinePatch = Import @ FileNameJoin @ { $ninePatchDirectory, "Float
 
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*$suppressButtonAppearance*)
 
 
@@ -73,7 +74,7 @@ $suppressButtonAppearance = Dynamic @ FEPrivate`FrontEndResource[
 
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*Icons*)
 
 
@@ -84,7 +85,7 @@ Developer`WriteWXFFile[ $iconManifestFile, AssociationMap[ RawBoxes @ TemplateBo
 
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*makeIconTemplateBoxStyle*)
 
 
@@ -95,7 +96,7 @@ makeIconTemplateBoxStyle[ file_ ] :=
 
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*$askMenuItem*)
 
 
@@ -115,7 +116,7 @@ $askMenuItem = MenuItem[
 
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*$excludeMenuItem*)
 
 
@@ -135,7 +136,7 @@ $excludeMenuItem = MenuItem[
 
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*contextMenu*)
 
 
@@ -145,7 +146,7 @@ contextMenu[ a___ ] := Flatten @ { a };
 
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*menuInitializer*)
 
 
@@ -170,7 +171,7 @@ menuInitializer[ name_String, color_ ] :=
 
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*assistantMenuInitializer*)
 
 
@@ -219,7 +220,7 @@ assistantMenuInitializer[ name_String, color_ ] :=
 
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*$chatOutputMenu*)
 
 
@@ -294,7 +295,7 @@ $chatOutputMenu := $chatOutputMenu = ToBoxes @ makeMenu[
 
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*Tabbed Output CellDingbat*)
 
 
@@ -395,7 +396,7 @@ $chatDelimiterCellDingbat   = Wolfram`Chatbook`UI`MakeChatDelimiterCellDingbat[ 
 
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*Cell Insertion Point Cell*)
 
 $cellInsertionPointCell := $cellInsertionPointCell = ReplaceAll[
@@ -449,8 +450,81 @@ insertionPointMenuItem[ icon_, label_, shortcut_, style_ ] :=
     ] :> FrontEndTokenExecute[ EvaluationNotebook[ ], "Style", style ];
 
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Cloud Docked Cell*)
 
-(* ::Subsubsection::Closed:: *)
+
+$chatCloudDockedCellContent := $chatCloudDockedCellContent =
+    Block[ { NotebookTools`Mousedown = Mouseover[ #1, #2 ] & },
+        Grid[
+            {
+                {
+                    Item[ "", ItemSize -> Fit ],
+                    Button[
+                        First @ ir`personaTemplateBoxes[ 1, "Persona", "Chosen", "PersonaInsertButton" ],
+                        With[ { name = InputString[ "Enter a persona name" ], uuid = CreateUUID[ ] },
+                            NotebookWrite[
+                                EvaluationNotebook[ ],
+                                Append[
+                                    irp`personaTemplateCell[ name, "Chosen", uuid ],
+                                    TaggingRules -> <| "PersonaName" -> name |>
+                                ]
+                            ]
+                        ],
+                        Appearance -> $suppressButtonAppearance,
+                        Method -> "Queued"
+                    ],
+                    Button[
+                        First @ ir`modifierTemplateBoxes[ 1, "Modifier", { }, "Chosen", "ModifierInsertButton" ],
+                        With[ { s = InputString[ "Enter a modifier prompt", "name | arg" ], uuid = CreateUUID[ ] },
+                            Replace[
+                                irp`functionInputSetting @ s,
+                                { name_String, args___String } :>
+                                    NotebookWrite[
+                                        EvaluationNotebook[ ],
+                                        Append[
+                                            irp`modifierTemplateCell[ name, { args }, "Chosen", uuid ],
+                                            TaggingRules -> <|
+                                                "PromptModifierName" -> name,
+                                                "PromptArguments"    -> { args }
+                                            |>
+                                        ]
+                                    ]
+                            ]
+                        ],
+                        Appearance -> $suppressButtonAppearance,
+                        Method -> "Queued"
+                    ],
+                    Button[
+                        First @ ir`functionTemplateBoxes[ 1, "Function", { }, "Chosen", "FunctionInsertButton" ],
+                        With[ { s = InputString[ "Enter a function prompt", "name | arg" ], uuid = CreateUUID[ ] },
+                            Replace[
+                                irp`functionInputSetting @ s,
+                                { name_String, args___String } :>
+                                    NotebookWrite[
+                                        EvaluationNotebook[ ],
+                                        Append[
+                                            irp`functionTemplateCell[ name, { args }, "Chosen", uuid ],
+                                            TaggingRules -> <|
+                                                "PromptFunctionName" -> name,
+                                                "PromptArguments"    -> { args }
+                                            |>
+                                        ]
+                                    ]
+                            ]
+                        ],
+                        Appearance -> $suppressButtonAppearance,
+                        Method -> "Queued"
+                    ]
+                }
+            },
+            Spacings -> 0.5
+        ]
+    ];
+
+
+(* ::Subsection::Closed:: *)
 (*inlineResources*)
 
 
@@ -462,7 +536,7 @@ inlineResources[ expr_ ] := expr /. {
 
 
 
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*$styleDataCells*)
 
 
