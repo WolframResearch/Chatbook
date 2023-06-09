@@ -1011,7 +1011,7 @@ Cell[
 Cell[
     StyleData[ "ChatCloudDockedCellBoxes" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ ToBoxes @ $chatCloudDockedCellContent
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ $chatCloudDockedCellContent
     }
 ]
 
