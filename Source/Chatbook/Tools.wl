@@ -4,6 +4,9 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 
 (* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDTOOLCALL, pacletreadonly, noinit, playerpass *)
 
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
+
 `$attachments;
 `$defaultChatTools;
 `$toolConfiguration;
@@ -165,7 +168,7 @@ toolTemplateDataString[ expr_ ] := ToString[ expr, InputForm ];
 (* ::Section::Closed:: *)
 (*Default Tools*)
 $defaultChatTools := If[ TrueQ @ $CloudEvaluation,
-                         KeyDrop[ $defaultChatTools0, { "sandbox_evaluate", "documentation_search" } ],
+                         KeyDrop[ $defaultChatTools0, { "wolfram_language_evaluator", "documentation_search" } ],
                          $defaultChatTools0
                      ];
 
@@ -325,7 +328,7 @@ $line = 0;
 (*Evaluate*)
 
 $sandboxEvaluateDescription = "\
-Evaluate Wolfram Language code for the user in a sandboxed environment. \
+Evaluate Wolfram Language code for the user in a separate sandboxed kernel. \
 You do not need to tell the user the input code that you are evaluating. \
 They will be able to inspect it if they want to. \
 The user does not automatically see the result. \
@@ -336,7 +339,7 @@ Example
 user: Plot sin(x) from -5 to 5
 
 assistant: Let me plot that for you. Just a moment...
-TOOLCALL: sandbox_evaluate
+TOOLCALL: wolfram_language_evaluator
 {
 	\"code\": \"Plot[Sin[x], {x, -10, 10}, AxesLabel -> {\\\"x\\\", \\\"sin(x)\\\"}]\"
 }
@@ -349,10 +352,10 @@ assistant: Here's the plot of $sin(x)$ from $-5$ to $5$:
 ![Plot](expression://result-xxxx)
 ";
 
-$defaultChatTools0[ "sandbox_evaluate" ] = LLMTool[
+$defaultChatTools0[ "wolfram_language_evaluator" ] = LLMTool[
     <|
-        "Name"        -> "sandbox_evaluate",
-        "DisplayName" -> "Sandbox Evaluate",
+        "Name"        -> "wolfram_language_evaluator",
+        "DisplayName" -> "Wolfram Language Evaluator",
         "Icon"        -> RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
         "Description" -> $sandboxEvaluateDescription,
         "Parameters"  -> {
@@ -394,6 +397,14 @@ startSandboxKernel[ ] := Enclose[
         LinkWrite[ kernel, Unevaluated @ EvaluatePacket[ UsingFrontEnd @ Null; Developer`StartProtectedMode[ ] ] ];
 
         pid = pingSandboxKernel @ kernel;
+
+        (* Reset line number and leave `In[1]:=` in the buffer *)
+        LinkWrite[ kernel, Unevaluated @ EnterExpressionPacket[ $Line = 0 ] ];
+        TimeConstrained[
+            While[ ! MatchQ[ LinkRead @ kernel, _ReturnExpressionPacket ] ],
+            10,
+            Confirm[ $Failed, "LineReset" ]
+        ];
 
         If[ IntegerQ @ pid,
             kernel,
@@ -473,23 +484,24 @@ sandboxEvaluate // beginDefinition;
 sandboxEvaluate[ KeyValuePattern[ "code" -> code_ ] ] := sandboxEvaluate @ code;
 
 sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
-    Module[ { kernel, null, packets, results, flat },
+    Module[ { kernel, null, packets, $timedOut, results, flat },
 
         $lastSandboxEvaluation = HoldComplete @ evaluation;
 
         kernel = ConfirmMatch[ getSandboxKernel[ ], _LinkObject, "GetKernel" ];
-        While[ LinkReadyQ @ kernel, LinkRead @ kernel ];
 
-        LinkWrite[
-            kernel,
-            Unevaluated @ EnterExpressionPacket @ UsingFrontEnd @ BinarySerialize[ HoldComplete @@ { evaluation } ]
-        ];
+        ConfirmMatch[ linkWriteEvaluation[ kernel, evaluation ], Null, "LinkWriteEvaluation" ];
 
         { null, { packets } } = Reap[
             TimeConstrained[
                 While[ ! MatchQ[ Sow @ LinkRead @ kernel, _ReturnExpressionPacket ] ],
-                $sandboxEvaluationTimeout
+                $sandboxEvaluationTimeout,
+                $timedOut
             ]
+        ];
+
+        If[ null === $timedOut,
+            AppendTo[ packets, ReturnExpressionPacket @ BinarySerialize @ HoldComplete @ $TimedOut ]
         ];
 
         results = Cases[
@@ -502,7 +514,7 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
         (* TODO: include prompting that explains how to use Out[n] to get previous results *)
 
         $lastSandboxResult = <|
-            "String"  -> sandboxResultString @ flat,
+            "String"  -> sandboxResultString[ flat, packets ],
             "Result"  -> flat,
             "Packets" -> packets
         |>
@@ -513,17 +525,45 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
 sandboxEvaluate // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*linkWriteEvaluation*)
+linkWriteEvaluation // beginDefinition;
+linkWriteEvaluation // Attributes = { HoldAllComplete };
+
+linkWriteEvaluation[ kernel_, evaluation_ ] :=
+    LinkWrite[
+        kernel,
+        Unevaluated @ EnterExpressionPacket @ BinarySerialize[
+            <| "Line" -> $Line, "Result" -> HoldComplete @@ { evaluation } |>
+        ]
+    ];
+
+linkWriteEvaluation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*sandboxResultString*)
 sandboxResultString // beginDefinition;
 
-(* TODO: show messages etc. *)
-sandboxResultString[ HoldComplete[ Null..., expr: Except[ _Graphics|_Graphics3D ] ] ] :=
-    With[ { string = ToString[ Unevaluated @ expr, InputForm, PageWidth -> 80 ] },
-        "```\n"<>string<>"\n```" /; StringLength @ string < 240
+sandboxResultString[ result_, packets_ ] := sandboxResultString @ result;
+
+sandboxResultString[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result" -> result_ } ], packets_ ] :=
+    StringRiffle[
+        Flatten @ {
+            makePacketMessages[ ToString @ line, packets ],
+            "Out[" <> ToString @ line <> "]= " <> sandboxResultString @ Flatten @ HoldComplete @ result
+        },
+        "\n"
     ];
 
-sandboxResultString[ HoldComplete[ Null..., expr_ ] ] :=
+sandboxResultString[ HoldComplete[ Null..., expr_ ] ] := sandboxResultString @ HoldComplete @ expr;
+
+sandboxResultString[ HoldComplete[ expr: Except[ _Graphics|_Graphics3D ] ] ] :=
+    With[ { string = ToString[ Unevaluated @ expr, InputForm, PageWidth -> 80 ] },
+        string /; StringLength @ string < 240
+    ];
+
+sandboxResultString[ HoldComplete[ expr_ ] ] :=
     With[ { id = "result-"<>Hash[ Unevaluated @ expr, Automatic, "HexString" ] },
         $attachments[ id ] = HoldComplete @ expr;
         "![result](expression://" <> id <> ")"
@@ -532,6 +572,17 @@ sandboxResultString[ HoldComplete[ Null..., expr_ ] ] :=
 sandboxResultString // endDefinition;
 
 $attachments = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makePacketMessages*)
+makePacketMessages // beginDefinition;
+makePacketMessages[ line_, packets_List ] := makePacketMessages[ line, # ] & /@ packets;
+(* makePacketMessages[ line_String, TextPacket[ text_String ] ] /; StringStartsQ[ text, ">> " ] := text;
+makePacketMessages[ line_String, TextPacket[ text_String ] ] := "During evaluation of In[" <> line <> "]:= " <> text; *)
+makePacketMessages[ line_String, TextPacket[ text_String ] ] := text;
+makePacketMessages[ line_, _InputNamePacket|_MessagePacket|_OutputNamePacket|_ReturnExpressionPacket ] := Nothing;
+makePacketMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -559,6 +610,8 @@ wolframLanguageData // endDefinition;
 If[ Wolfram`Chatbook`Internal`$BuildingMX,
     $toolConfiguration;
 ];
+
+(* :!CodeAnalysis::EndBlock:: *)
 
 End[ ];
 EndPackage[ ];

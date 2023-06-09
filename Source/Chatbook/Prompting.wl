@@ -159,7 +159,7 @@ $basePromptComponents[ "WolframLanguageStyle" ] = "
 * Prefer modern Wolfram Language symbols and methods
 * Many new symbols have been added to WL since your knowledge cutoff date, so check documentation as needed
 * When creating plots, add options such as labels and legends to make them easier to understand
-* If the user is asking for a result instead of code to produce that result, use the sandbox_evaluate tool";
+* If the user is asking for a result instead of code to produce that result, use the wolfram_language_evaluator tool";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
