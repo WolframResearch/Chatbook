@@ -345,15 +345,15 @@ tryMakeChatEnabledNotebook[
 		(* TODO: Generate a warning dialog in this case, because Chatbook.nb
 			inherits from Default.nb? *)
 		_?StringQ | _FrontEnd`FileName -> True,
-		_Notebook | _ :> RaiseConfirmMatch[
+		_ :> RaiseConfirmMatch[
 			ChoiceDialog[
 				Column[{
-					Item[Magnify["⚠", 5], Alignment -> Center],
+					Item[Magnify["\:26a0", 5], Alignment -> Center],
 					"",
 					RawBoxes @ Cell[
-						"Enabling Chat Notebook functionality will destroy the"
-						<> " private styles defined in this notebook, and replace"
-						<> " them with the shared Chatbook stylesheet.",
+						"Enabling Chat Notebook functionality will destroy the" <>
+						" private styles defined in this notebook, and replace" <>
+						" them with the shared Chatbook stylesheet.",
 						"Text"
 					],
 					"",
