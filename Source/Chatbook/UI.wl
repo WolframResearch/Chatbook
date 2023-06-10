@@ -232,19 +232,8 @@ CreateToolbarContent[] := With[{
 	nbObj = EvaluationNotebook[],
 	menuCell = EvaluationCell[]
 },
-	(* FIXME:
-		If the user has custom styles defined in their current chat-enabled
-		notebook, this isn't sufficient. Check for whether
-		CurrentValue[ParentNotebook, {StyleDefinitions, "ChatInput"}] has any
-		definitions? (Though that might not work in 13.3 because Core.nb has
-		basic placeholder definitions for "ChatInput".) *)
-	(* FIXME: Handle the case that this is a Chatbook with inlined styles,
-		e.g. $ChatbookStylesheet. *)
 	CurrentValue[menuCell, {TaggingRules, "IsChatEnabled"}] =
-		ConfirmReplace[CurrentValue[nbObj, StyleDefinitions], {
-			"Chatbook.nb" -> True,
-			_ -> False
-		}];
+		TrueQ[CurrentValue[nbObj, {StyleDefinitions, "ChatInput", Evaluatable}]];
 
 	(* Set a notebook-level value for the "Assistance" setting, so
 		that the Checkbox button for setting this value never displays
