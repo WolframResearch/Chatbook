@@ -235,53 +235,51 @@ CreateToolbarContent[] := With[{
 	CurrentValue[menuCell, {TaggingRules, "IsChatEnabled"}] =
 		TrueQ[CurrentValue[nbObj, {StyleDefinitions, "ChatInput", Evaluatable}]];
 
-	(* Set a notebook-level value for the "Assistance" setting, so
-		that the Checkbox button for setting this value never displays
-		as its neither-True-nor-False state if the value is `Inherited`. *)
-	CurrentValue[
-		nbObj,
-		{TaggingRules, "ChatNotebookSettings", "Assistance"}
-	] = TrueQ @ AbsoluteCurrentValue[
-		nbObj,
-		{TaggingRules, "ChatNotebookSettings", "Assistance"}
-	];
-
 	PaneSelector[
 		{
 			True :> (
 				Dynamic @ Refresh[
 					Column[{
 						makeEnableAIChatFeaturesLabel[True],
-						(* Note: Use EventHandler instead of Button to avoid
-							blue background shown when an Appearance -> None
-							Button is clicked. *)
-						EventHandler[
-							labeledCheckbox[
-								Dynamic @ CurrentValue[
-									EvaluationNotebook[],
-									{TaggingRules, "ChatNotebookSettings", "Assistance"}
-								],
-								Row[{
-									"Automatic Result Analysis",
-									Spacer[3],
-									Tooltip[
-										getIcon["InformationTooltip"],
-										"If enabled, automatic AI provided suggestions will be added following evaluation results."
+
+						labeledCheckbox[
+							Dynamic[
+								TrueQ[
+									CurrentValue[
+										EvaluationNotebook[],
+										{TaggingRules, "ChatNotebookSettings", "Assistance"}
 									]
-								}]
-							],
-							"MouseClicked" :> (
-								CurrentValue[
-									EvaluationNotebook[],
-									{TaggingRules, "ChatNotebookSettings", "Assistance"}
-								] = Not @ TrueQ @ CurrentValue[
-									EvaluationNotebook[],
-									{TaggingRules, "ChatNotebookSettings", "Assistance"}
+								],
+								Function[
+									If[
+										SameQ[
+											#,
+											AbsoluteCurrentValue[
+												$FrontEndSession,
+												{TaggingRules, "ChatNotebookSettings", "Assistance"}
+											]
+										],
+										CurrentValue[
+											EvaluationNotebook[],
+											{TaggingRules, "ChatNotebookSettings", "Assistance"}
+										] = Inherited,
+										CurrentValue[
+											EvaluationNotebook[],
+											{TaggingRules, "ChatNotebookSettings", "Assistance"}
+										] = #
+									]
 								]
-							),
-							(* Needed so that we can open a ChoiceDialog if required. *)
-							Method -> "Queued"
+							],
+							Row[{
+								"Automatic Result Analysis",
+								Spacer[3],
+								Tooltip[
+									getIcon["InformationTooltip"],
+									"If enabled, automatic AI provided suggestions will be added following evaluation results."
+								]
+							}]
 						],
+
 						makeChatActionMenu[
 							"Toolbar",
 							EvaluationNotebook[],
@@ -393,7 +391,7 @@ labeledCheckbox[value_, label_, enabled_ : Automatic] :=
 		{
 			Checkbox[
 				value,
-				{False, True, Inherited},
+				{False, True},
 				Enabled -> enabled
 			],
 			Spacer[3],
