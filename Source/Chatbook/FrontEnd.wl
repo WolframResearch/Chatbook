@@ -32,9 +32,11 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (*currentChatSettings*)
 currentChatSettings // beginDefinition;
 
-currentChatSettings[ nbo_NotebookObject ] := currentChatSettings0 @ nbo;
-currentChatSettings[ nbo_NotebookObject, key_String ] := currentChatSettings0[ nbo, key ];
+currentChatSettings[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession ] :=
+    currentChatSettings0 @ obj;
 
+currentChatSettings[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] :=
+    currentChatSettings0[ obj, key ];
 
 currentChatSettings[ cell_CellObject ] := Catch @ Enclose[
     Module[ { styles, nbo, cells, before, info, delimiter, settings },
@@ -129,7 +131,7 @@ currentChatSettings // endDefinition;
 
 currentChatSettings0 // beginDefinition;
 
-currentChatSettings0[ obj: _CellObject|_NotebookObject ] :=
+currentChatSettings0[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession ] :=
     Association[
         $defaultChatSettings,
         Replace[
@@ -138,7 +140,7 @@ currentChatSettings0[ obj: _CellObject|_NotebookObject ] :=
         ]
     ];
 
-currentChatSettings0[ obj: _CellObject|_NotebookObject, key_String ] := Replace[
+currentChatSettings0[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := Replace[
     AbsoluteCurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", key } ],
     Inherited :> Lookup[ $defaultChatSettings, key, Inherited ]
 ];

@@ -23,6 +23,7 @@ ChatContextEpilogFunction
 MakeChatInputActiveCellDingbat
 MakeChatInputCellDingbat
 MakeChatDelimiterCellDingbat
+MakeChatCloudDockedCellContents
 
 GeneralUtilities`SetUsage[CreatePreferencesContent, "
 CreatePreferencesContent[] returns an expression containing the UI shown in the Preferences > AI Settings window.
@@ -49,6 +50,7 @@ Needs["Wolfram`Chatbook`Menus`"]
 Needs["Wolfram`Chatbook`Personas`"]
 Needs["Wolfram`Chatbook`PersonaInstaller`"]
 Needs["Wolfram`Chatbook`FrontEnd`"]
+Needs["Wolfram`Chatbook`InlineReferences`"]
 
 Needs["Wolfram`Chatbook`PreferencesUtils`" -> "PrefUtils`"]
 
@@ -106,6 +108,45 @@ GetChatEnvironmentValues[promptCell_, evaluationCell_, chatContextCells_] := Wit
 		"ChatContextPostEvaluationFunction" -> Lookup[chatContextTaggingRules, "ChatContextPostEvaluationFunction", Automatic]
 	|>
 ]
+
+(*====================================*)
+
+MakeChatCloudDockedCellContents[] := Grid[
+	{{
+		$cloudPersonaChooser,
+		$cloudModelChooser,
+		Item["", ItemSize -> Fit ],
+		$cloudInlineReferenceButtons
+	}}
+]
+
+
+$cloudPersonaChooser := PopupMenu[
+	Dynamic[
+		Replace[
+			CurrentValue[EvaluationNotebook[], {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}],
+			Inherited :> Lookup[$defaultChatSettings, "LLMEvaluator", "CodeAssistant"]
+		],
+		Function[CurrentValue[EvaluationNotebook[], {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}] = #]
+	],
+	KeyValueMap[
+		Function[{key, as}, key -> Grid[{{resizeMenuIcon[getPersonaMenuIcon[as]], personaDisplayName[key, as]}}]],
+		GetCachedPersonaData[]
+	]
+]
+
+
+$cloudModelChooser := PopupMenu[
+	Dynamic[
+		Replace[
+			CurrentValue[EvaluationNotebook[], {TaggingRules, "ChatNotebookSettings", "Model"}],
+			Inherited :> Lookup[$defaultChatSettings, "Model", "gpt-3.5-turbo"]
+		],
+		Function[CurrentValue[EvaluationNotebook[], {TaggingRules, "ChatNotebookSettings", "Model"}] = #]
+	],
+	Cases[$SupportedModels, {model_, icon_, label_} :> model -> Grid[{{resizeMenuIcon[icon], label}}]]
+]
+
 
 (*====================================*)
 
@@ -226,30 +267,8 @@ CreateToolbarContent[] := With[{
 	nbObj = EvaluationNotebook[],
 	menuCell = EvaluationCell[]
 },
-	(* FIXME:
-		If the user has custom styles defined in their current chat-enabled
-		notebook, this isn't sufficient. Check for whether
-		CurrentValue[ParentNotebook, {StyleDefinitions, "ChatInput"}] has any
-		definitions? (Though that might not work in 13.3 because Core.nb has
-		basic placeholder definitions for "ChatInput".) *)
-	(* FIXME: Handle the case that this is a Chatbook with inlined styles,
-		e.g. $ChatbookStylesheet. *)
 	CurrentValue[menuCell, {TaggingRules, "IsChatEnabled"}] =
-		ConfirmReplace[CurrentValue[nbObj, StyleDefinitions], {
-			"Chatbook.nb" -> True,
-			_ -> False
-		}];
-
-	(* Set a notebook-level value for the "Assistance" setting, so
-		that the Checkbox button for setting this value never displays
-		as its neither-True-nor-False state if the value is `Inherited`. *)
-	CurrentValue[
-		nbObj,
-		{TaggingRules, "ChatNotebookSettings", "Assistance"}
-	] = TrueQ @ AbsoluteCurrentValue[
-		nbObj,
-		{TaggingRules, "ChatNotebookSettings", "Assistance"}
-	];
+		TrueQ[CurrentValue[nbObj, {StyleDefinitions, "ChatInput", Evaluatable}]];
 
 	PaneSelector[
 		{
@@ -257,36 +276,45 @@ CreateToolbarContent[] := With[{
 				Dynamic @ Refresh[
 					Column[{
 						makeEnableAIChatFeaturesLabel[True],
-						(* Note: Use EventHandler instead of Button to avoid
-							blue background shown when an Appearance -> None
-							Button is clicked. *)
-						EventHandler[
-							labeledCheckbox[
-								Dynamic @ CurrentValue[
-									EvaluationNotebook[],
-									{TaggingRules, "ChatNotebookSettings", "Assistance"}
-								],
-								Row[{
-									"Automatic Result Analysis",
-									Spacer[3],
-									Tooltip[
-										getIcon["InformationTooltip"],
-										"If enabled, automatic AI provided suggestions will be added following evaluation results."
+
+						labeledCheckbox[
+							Dynamic[
+								TrueQ[
+									CurrentValue[
+										EvaluationNotebook[],
+										{TaggingRules, "ChatNotebookSettings", "Assistance"}
 									]
-								}]
-							],
-							"MouseClicked" :> (
-								CurrentValue[
-									EvaluationNotebook[],
-									{TaggingRules, "ChatNotebookSettings", "Assistance"}
-								] = Not @ TrueQ @ CurrentValue[
-									EvaluationNotebook[],
-									{TaggingRules, "ChatNotebookSettings", "Assistance"}
+								],
+								Function[
+									If[
+										SameQ[
+											#,
+											AbsoluteCurrentValue[
+												$FrontEndSession,
+												{TaggingRules, "ChatNotebookSettings", "Assistance"}
+											]
+										],
+										CurrentValue[
+											EvaluationNotebook[],
+											{TaggingRules, "ChatNotebookSettings", "Assistance"}
+										] = Inherited,
+										CurrentValue[
+											EvaluationNotebook[],
+											{TaggingRules, "ChatNotebookSettings", "Assistance"}
+										] = #
+									]
 								]
-							),
-							(* Needed so that we can open a ChoiceDialog if required. *)
-							Method -> "Queued"
+							],
+							Row[{
+								"Automatic Result Analysis",
+								Spacer[3],
+								Tooltip[
+									getIcon["InformationTooltip"],
+									"If enabled, automatic AI provided suggestions will be added following evaluation results."
+								]
+							}]
 						],
+
 						makeChatActionMenu[
 							"Toolbar",
 							EvaluationNotebook[],
@@ -345,15 +373,15 @@ tryMakeChatEnabledNotebook[
 		(* TODO: Generate a warning dialog in this case, because Chatbook.nb
 			inherits from Default.nb? *)
 		_?StringQ | _FrontEnd`FileName -> True,
-		_Notebook | _ :> RaiseConfirmMatch[
+		_ :> RaiseConfirmMatch[
 			ChoiceDialog[
 				Column[{
-					Item[Magnify["⚠", 5], Alignment -> Center],
+					Item[Magnify["\[WarningSign]", 5], Alignment -> Center],
 					"",
 					RawBoxes @ Cell[
-						"Enabling Chat Notebook functionality will destroy the"
-						<> " private styles defined in this notebook, and replace"
-						<> " them with the shared Chatbook stylesheet.",
+						"Enabling Chat Notebook functionality will destroy the" <>
+						" private styles defined in this notebook, and replace" <>
+						" them with the shared Chatbook stylesheet.",
 						"Text"
 					],
 					"",
@@ -398,7 +426,7 @@ labeledCheckbox[value_, label_, enabled_ : Automatic] :=
 		{
 			Checkbox[
 				value,
-				{False, True, Inherited},
+				{False, True},
 				Enabled -> enabled
 			],
 			Spacer[3],

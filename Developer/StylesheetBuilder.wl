@@ -1,9 +1,5 @@
 (* ::Package:: *)
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
 (* ::Section::Closed:: *)
 (*Package Header*)
 
@@ -27,16 +23,8 @@ Begin[ "`Private`" ];
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
 (* ::Section::Closed:: *)
 (*Config*)
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsection::Closed:: *)
@@ -53,10 +41,6 @@ $styleSheetTarget   = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheet
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
 (* ::Subsection::Closed:: *)
 (*Load Paclet*)
 
@@ -65,20 +49,11 @@ PacletDirectoryLoad @ $pacletDirectory;
 Get[ "Wolfram`Chatbook`" ];
 
 
-
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
-(* ::Subsection::Closed:: *)
+(* ::Section::Closed:: *)
 (*Resources*)
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*$floatingButtonNinePatch*)
 
 
@@ -86,11 +61,7 @@ $floatingButtonNinePatch = Import @ FileNameJoin @ { $ninePatchDirectory, "Float
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*$suppressButtonAppearance*)
 
 
@@ -101,11 +72,7 @@ $suppressButtonAppearance = Dynamic @ FEPrivate`FrontEndResource[
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*Icons*)
 
 
@@ -116,11 +83,7 @@ Developer`WriteWXFFile[ $iconManifestFile, AssociationMap[ RawBoxes @ TemplateBo
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*makeIconTemplateBoxStyle*)
 
 
@@ -131,11 +94,7 @@ makeIconTemplateBoxStyle[ file_ ] :=
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*$askMenuItem*)
 
 
@@ -155,11 +114,7 @@ $askMenuItem = MenuItem[
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*$excludeMenuItem*)
 
 
@@ -179,11 +134,7 @@ $excludeMenuItem = MenuItem[
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*contextMenu*)
 
 
@@ -193,11 +144,7 @@ contextMenu[ a___ ] := Flatten @ { a };
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*menuInitializer*)
 
 
@@ -222,11 +169,7 @@ menuInitializer[ name_String, color_ ] :=
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*assistantMenuInitializer*)
 
 
@@ -275,11 +218,7 @@ assistantMenuInitializer[ name_String, color_ ] :=
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*$chatOutputMenu*)
 
 
@@ -354,11 +293,7 @@ $chatOutputMenu := $chatOutputMenu = ToBoxes @ makeMenu[
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*Tabbed Output CellDingbat*)
 
 
@@ -459,7 +394,7 @@ $chatDelimiterCellDingbat   = Wolfram`Chatbook`UI`MakeChatDelimiterCellDingbat[ 
 
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*Cell Insertion Point Cell*)
 
 $cellInsertionPointCell := $cellInsertionPointCell = ReplaceAll[
@@ -513,12 +448,7 @@ insertionPointMenuItem[ icon_, label_, shortcut_, style_ ] :=
     ] :> FrontEndTokenExecute[ EvaluationNotebook[ ], "Style", style ];
 
 
-
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*inlineResources*)
 
 
@@ -530,20 +460,12 @@ inlineResources[ expr_ ] := expr /. {
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*$styleDataCells*)
 
 
 $styleDataCells := $styleDataCells = inlineResources @ Cases[ Flatten @ ReadList @ $styleDataFile, _Cell ];
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsection::Closed:: *)
@@ -555,10 +477,6 @@ $defaultChatbookSettings := (
     KeyMap[ ToString, Association @ Options @ Wolfram`Chatbook`CreateChatNotebook ]
 );
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Section::Closed:: *)
@@ -573,10 +491,6 @@ $ChatbookStylesheet = Notebook[
     StyleDefinitions -> "PrivateStylesheetFormatting.nb"
 ];
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Section::Closed:: *)
@@ -595,10 +509,6 @@ BuildChatbookStylesheet[ target_ ] :=
         exported
     ];
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Section::Closed:: *)
