@@ -111,7 +111,42 @@ GetChatEnvironmentValues[promptCell_, evaluationCell_, chatContextCells_] := Wit
 
 (*====================================*)
 
-MakeChatCloudDockedCellContents[] := Grid[{{Item["", ItemSize -> Fit ], $cloudInlineReferenceButtons}}]
+MakeChatCloudDockedCellContents[] := Grid[
+	{{
+		$cloudPersonaChooser,
+		$cloudModelChooser,
+		Item["", ItemSize -> Fit ],
+		$cloudInlineReferenceButtons
+	}}
+]
+
+
+$cloudPersonaChooser := PopupMenu[
+	Dynamic[
+		Replace[
+			CurrentValue[EvaluationNotebook[], {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}],
+			Inherited :> Lookup[$defaultChatSettings, "LLMEvaluator", "CodeAssistant"]
+		],
+		Function[CurrentValue[EvaluationNotebook[], {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}] = #]
+	],
+	KeyValueMap[
+		Function[{key, as}, key -> Grid[{{resizeMenuIcon[getPersonaMenuIcon[as]], personaDisplayName[key, as]}}]],
+		GetCachedPersonaData[]
+	]
+]
+
+
+$cloudModelChooser := PopupMenu[
+	Dynamic[
+		Replace[
+			CurrentValue[EvaluationNotebook[], {TaggingRules, "ChatNotebookSettings", "Model"}],
+			Inherited :> Lookup[$defaultChatSettings, "Model", "gpt-3.5-turbo"]
+		],
+		Function[CurrentValue[EvaluationNotebook[], {TaggingRules, "ChatNotebookSettings", "Model"}] = #]
+	],
+	Cases[$SupportedModels, {model_, icon_, label_} :> model -> Grid[{{resizeMenuIcon[icon], label}}]]
+]
+
 
 (*====================================*)
 
