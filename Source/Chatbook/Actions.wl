@@ -633,14 +633,26 @@ AskChat[ ] := AskChat[ InputNotebook[ ] ];
 AskChat[ nbo_NotebookObject ] := AskChat[ nbo, SelectedCells @ nbo ];
 
 AskChat[ nbo_NotebookObject, { selected_CellObject } ] := withBasePromptBuilder @
-    Module[ { selection, cell, obj },
-        selection = NotebookRead @ nbo;
+    Catch @ Module[ { selection, cell, obj },
+
+        selection = Replace[
+            NotebookRead @ nbo,
+            "" | { } :> (
+                SelectionMove[ selected, All, CellContents ];
+                NotebookRead @ nbo
+            )
+        ];
+
+        If[ MatchQ[ selection, "" | { } ], Throw @ Null ];
+
         cell = chatQueryCell @ selection;
         SelectionMove[ selected, After, Cell ];
         obj = cellPrint @ cell;
         SelectionMove[ obj, All, Cell ];
         selectionEvaluateCreateCell @ nbo
     ];
+
+AskChat[ nbo_NotebookObject, { } ] := Null; (* No cells selected *)
 
 AskChat // endDefinition;
 
