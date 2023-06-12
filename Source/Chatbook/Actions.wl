@@ -27,6 +27,7 @@ Needs[ "Wolfram`Chatbook`PersonaInstaller`" ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`Serialization`"    ];
 Needs[ "Wolfram`Chatbook`Formatting`"       ];
+Needs[ "Wolfram`Chatbook`Explode`"          ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
 Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 Needs[ "Wolfram`Chatbook`Prompting`"        ];
@@ -45,9 +46,12 @@ ChatbookAction[ "AIAutoAssist"         , args___ ] := catchMine @ AIAutoAssist @
 ChatbookAction[ "Ask"                  , args___ ] := catchMine @ AskChat @ args;
 ChatbookAction[ "AttachCodeButtons"    , args___ ] := catchMine @ AttachCodeButtons @ args;
 ChatbookAction[ "CopyChatObject"       , args___ ] := catchMine @ CopyChatObject @ args;
+ChatbookAction[ "CopyExplodedCells"    , args___ ] := catchMine @ CopyExplodedCells @ args;
 ChatbookAction[ "DisableAssistance"    , args___ ] := catchMine @ DisableAssistance @ args;
 ChatbookAction[ "EvaluateChatInput"    , args___ ] := catchMine @ EvaluateChatInput @ args;
 ChatbookAction[ "ExclusionToggle"      , args___ ] := catchMine @ ExclusionToggle @ args;
+ChatbookAction[ "ExplodeDuplicate"     , args___ ] := catchMine @ ExplodeDuplicate @ args;
+ChatbookAction[ "ExplodeInPlace"       , args___ ] := catchMine @ ExplodeInPlace @ args;
 ChatbookAction[ "InsertInlineReference", args___ ] := catchMine @ InsertInlineReference @ args;
 ChatbookAction[ "OpenChatBlockSettings", args___ ] := catchMine @ OpenChatBlockSettings @ args;
 ChatbookAction[ "OpenChatMenu"         , args___ ] := catchMine @ OpenChatMenu @ args;
@@ -61,6 +65,53 @@ ChatbookAction[ "ToggleFormatting"     , args___ ] := catchMine @ ToggleFormatti
 ChatbookAction[ "WidgetSend"           , args___ ] := catchMine @ WidgetSend @ args;
 ChatbookAction[ name_String            , args___ ] := catchMine @ throwFailure[ "NotImplemented", name, args ];
 ChatbookAction[ args___                          ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*CopyExplodedCells*)
+CopyExplodedCells // beginDefinition;
+
+CopyExplodedCells[ cellObject_CellObject ] := Enclose[
+    Module[ { exploded },
+        exploded = ConfirmMatch[ explodeCell @ cellObject, { ___Cell }, "ExplodeCell" ];
+        CopyToClipboard @ exploded
+    ],
+    throwInternalFailure[ CopyExplodedCells @ cellObject, ## ] &
+];
+
+CopyExplodedCells // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ExplodeDuplicate*)
+ExplodeDuplicate // beginDefinition;
+
+ExplodeDuplicate[ cellObject_CellObject ] := Enclose[
+    Module[ { exploded, nbo },
+        exploded = ConfirmMatch[ explodeCell @ cellObject, { __Cell }, "ExplodeCell" ];
+        SelectionMove[ cellObject, After, Cell, AutoScroll -> False ];
+        nbo = ConfirmMatch[ parentNotebook @ cellObject, _NotebookObject, "ParentNotebook" ];
+        ConfirmMatch[ NotebookWrite[ nbo, exploded ], Null, "NotebookWrite" ]
+    ],
+    throwInternalFailure[ ExplodeDuplicate @ cellObject, ## ] &
+];
+
+ExplodeDuplicate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ExplodeInPlace*)
+ExplodeInPlace // beginDefinition;
+
+ExplodeInPlace[ cellObject_CellObject ] := Enclose[
+    Module[ { exploded },
+        exploded = ConfirmMatch[ explodeCell @ cellObject, { __Cell }, "ExplodeCell" ];
+        ConfirmMatch[ NotebookWrite[ cellObject, exploded ], Null, "NotebookWrite" ]
+    ],
+    throwInternalFailure[ ExplodeInPlace @ cellObject, ## ] &
+];
+
+ExplodeInPlace // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -90,7 +141,7 @@ toggleFormatting // beginDefinition;
 (* Convert a plain string to formatted TextData: *)
 toggleFormatting[ cellObject_CellObject, nbo_NotebookObject, string_String ] := Enclose[
     Module[ { textDataList },
-        textDataList = ConfirmMatch[ reformatTextData @ string, { (_String|_Cell|_StyleBox)... }, "ReformatTextData" ];
+        textDataList = ConfirmMatch[ reformatTextData @ string, $$textDataList, "ReformatTextData" ];
         Confirm[ SelectionMove[ cellObject, All, CellContents, AutoScroll -> False ], "SelectionMove" ];
         Confirm[ NotebookWrite[ nbo, TextData @ textDataList, None ], "NotebookWrite" ]
     ],
