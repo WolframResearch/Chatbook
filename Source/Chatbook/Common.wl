@@ -18,6 +18,8 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$chatOutputStyle;
 `$$excludeHistoryStyle;
 
+`$$textDataList;
+
 `$catchTopTag;
 `beginDefinition;
 `catchTop;
@@ -59,6 +61,8 @@ $$chatIgnoredStyle    = Alternatives @@ $chatIgnoredStyles    | { ___, Alternati
 $$chatInputStyle      = Alternatives @@ $chatInputStyles      | { ___, Alternatives @@ $chatInputStyles     , ___ };
 $$chatOutputStyle     = Alternatives @@ $chatOutputStyles     | { ___, Alternatives @@ $chatOutputStyles    , ___ };
 $$excludeHistoryStyle = Alternatives @@ $excludeHistoryStyles | { ___, Alternatives @@ $excludeHistoryStyles, ___ };
+
+$$textDataList        = { (_String|_Cell|_StyleBox|_ButtonBox)... };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

@@ -78,6 +78,7 @@ Block[ { $ContextPath },
     Get[ "Wolfram`Chatbook`Tools`"                ];
     Get[ "Wolfram`Chatbook`Formatting`"           ];
     Get[ "Wolfram`Chatbook`Prompting`"            ];
+    Get[ "Wolfram`Chatbook`Explode`"              ];
     Get[ "Wolfram`Chatbook`Actions`"              ];
     Get[ "Wolfram`Chatbook`Menus`"                ];
     Get[ "Wolfram`Chatbook`Personas`"             ];
