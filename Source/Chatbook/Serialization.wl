@@ -298,10 +298,14 @@ cellToString[ Cell[ code_, "ExternalLanguage", ___, $$cellEvaluationLanguage -> 
 cellToString[ cell: Cell[ __, $$outputStyle, ___ ] ] /; ! TrueQ @ $truncatingOutput :=
     Block[ { $truncatingOutput = True }, truncateOutputString @ cellToString @ cell ];
 
-(* Begin recursive serialization of the cell content *)
+(* Don't escape markdown characters for ChatOutput cells, since a plain string means formatting was toggled off *)
+cellToString[ cell: Cell[ _String, "ChatOutput", ___ ] ] := Block[ { $escapeMarkdown = False }, cellToString0 @ cell ];
+
+(* Otherwise escape markdown characters normally as needed *)
 cellToString[ cell: Cell[ _TextData|_String, ___ ] ] := Block[ { $escapeMarkdown = True }, cellToString0 @ cell ];
 cellToString[ cell_ ] := Block[ { $escapeMarkdown = False }, cellToString0 @ cell ];
 
+(* Recursive serialization of the cell content *)
 cellToString0[ cell_ ] :=
     With[ { string = fasterCellToString @ cell },
         If[ StringQ @ string,
