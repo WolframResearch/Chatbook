@@ -32,9 +32,11 @@ Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 Needs[ "Wolfram`Chatbook`Prompting`"        ];
 Needs[ "Wolfram`Chatbook`Tools`"            ];
 
-System`GenerateLLMToolResponse;
-System`LLMToolRequest;
-System`LLMToolResponse;
+HoldComplete[
+    System`GenerateLLMToolResponse,
+    System`LLMToolRequest,
+    System`LLMToolResponse
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -46,6 +48,7 @@ ChatbookAction[ "CopyChatObject"       , args___ ] := catchMine @ CopyChatObject
 ChatbookAction[ "DisableAssistance"    , args___ ] := catchMine @ DisableAssistance @ args;
 ChatbookAction[ "EvaluateChatInput"    , args___ ] := catchMine @ EvaluateChatInput @ args;
 ChatbookAction[ "ExclusionToggle"      , args___ ] := catchMine @ ExclusionToggle @ args;
+ChatbookAction[ "InsertInlineReference", args___ ] := catchMine @ InsertInlineReference @ args;
 ChatbookAction[ "OpenChatBlockSettings", args___ ] := catchMine @ OpenChatBlockSettings @ args;
 ChatbookAction[ "OpenChatMenu"         , args___ ] := catchMine @ OpenChatMenu @ args;
 ChatbookAction[ "PersonaManage"        , args___ ] := catchMine @ PersonaManage @ args;
@@ -54,10 +57,57 @@ ChatbookAction[ "Send"                 , args___ ] := catchMine @ SendChat @ arg
 ChatbookAction[ "StopChat"             , args___ ] := catchMine @ StopChat @ args;
 ChatbookAction[ "TabLeft"              , args___ ] := catchMine @ TabLeft @ args;
 ChatbookAction[ "TabRight"             , args___ ] := catchMine @ TabRight @ args;
+ChatbookAction[ "ToggleFormatting"     , args___ ] := catchMine @ ToggleFormatting @ args;
 ChatbookAction[ "WidgetSend"           , args___ ] := catchMine @ WidgetSend @ args;
-ChatbookAction[ "InsertInlineReference", args___ ] := catchMine @ InsertInlineReference @ args;
 ChatbookAction[ name_String            , args___ ] := catchMine @ throwFailure[ "NotImplemented", name, args ];
 ChatbookAction[ args___                          ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ToggleFormatting*)
+ToggleFormatting // beginDefinition;
+
+ToggleFormatting[ cellObject_CellObject ] := Enclose[
+    Module[ { nbo, content },
+        nbo = ConfirmMatch[ parentNotebook @ cellObject, _NotebookObject, "ParentNotebook" ];
+        SelectionMove[ cellObject, All, CellContents, AutoScroll -> False ];
+        content = ConfirmMatch[ NotebookRead @ nbo, _String | _List, "NotebookRead" ];
+        Confirm[ toggleFormatting[ cellObject, nbo, content ], "Toggle" ]
+    ],
+    throwInternalFailure[ ToggleFormatting @ cellObject, ## ] &
+];
+
+ToggleFormatting // endDefinition;
+
+(* TODO: If the chat output is just a plain string with no markdown, toggling formatting is a no-op.
+         Should this display a message dialog in this case explaining that there's nothing to toggle? *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toggleFormatting*)
+toggleFormatting // beginDefinition;
+
+(* Convert a plain string to formatted TextData: *)
+toggleFormatting[ cellObject_CellObject, nbo_NotebookObject, string_String ] := Enclose[
+    Module[ { textDataList },
+        textDataList = ConfirmMatch[ reformatTextData @ string, { (_String|_Cell|_StyleBox)... }, "ReformatTextData" ];
+        Confirm[ SelectionMove[ cellObject, All, CellContents, AutoScroll -> False ], "SelectionMove" ];
+        Confirm[ NotebookWrite[ nbo, TextData @ textDataList, None ], "NotebookWrite" ]
+    ],
+    throwInternalFailure[ toggleFormatting[ cellObject, nbo, string ], ## ] &
+];
+
+(* Convert formatted TextData to a plain string: *)
+toggleFormatting[ cellObject_CellObject, nbo_NotebookObject, textDataList_List ] := Enclose[
+    Module[ { string },
+        string = ConfirmMatch[ CellToString @ Cell[ TextData @ textDataList, "ChatOutput" ], _String, "CellToString" ];
+        Confirm[ SelectionMove[ cellObject, All, CellContents, AutoScroll -> False ], "SelectionMove" ];
+        Confirm[ NotebookWrite[ nbo, TextData @ string, None ], "NotebookWrite" ]
+    ],
+    throwInternalFailure[ toggleFormatting[ cellObject, nbo, textDataList ], ## ] &
+];
+
+toggleFormatting // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
