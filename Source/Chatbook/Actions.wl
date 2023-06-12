@@ -32,9 +32,11 @@ Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 Needs[ "Wolfram`Chatbook`Prompting`"        ];
 Needs[ "Wolfram`Chatbook`Tools`"            ];
 
-System`GenerateLLMToolResponse;
-System`LLMToolRequest;
-System`LLMToolResponse;
+HoldComplete[
+    System`GenerateLLMToolResponse,
+    System`LLMToolRequest,
+    System`LLMToolResponse
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
