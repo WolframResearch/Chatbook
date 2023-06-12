@@ -28,6 +28,7 @@ System`LLMConfiguration;
 (* TODO:
     WolframAlpha
     ImageSynthesize
+    LongTermMemory
 *)
 
 (* ::**************************************************************************************************************:: *)
