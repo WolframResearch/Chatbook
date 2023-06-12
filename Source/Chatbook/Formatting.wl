@@ -503,8 +503,8 @@ makeToolCallBoxLabel[ as_Association, name_String ] :=
 
 makeToolCallBoxLabel[ as_, name_String, icon_ ] /; $dynamicText := makeToolCallBoxLabel0[ as, name, icon ];
 
-makeToolCallBoxLabel[ as_, name_String, icon_ ] :=
-    OpenerView @ {
+makeToolCallBoxLabel[ as_, name_String, icon_ ] := OpenerView[
+    {
         makeToolCallBoxLabel0[ as, name, icon ],
         Column[
             {
@@ -530,7 +530,9 @@ makeToolCallBoxLabel[ as_, name_String, icon_ ] :=
             },
             Alignment -> Left
         ]
-    };
+    },
+    Method -> "Active"
+];
 
 makeToolCallBoxLabel // endDefinition;
 
