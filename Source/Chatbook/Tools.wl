@@ -25,11 +25,32 @@ Needs[ "Wolfram`LLMFunctions`" ];
 System`LLMTool;
 System`LLMConfiguration;
 
+(* TODO:
+    WolframAlpha
+    ImageSynthesize
+    LongTermMemory
+*)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Tool Configuration*)
 
 $sandboxEvaluationTimeout = 30;
+
+$sandboxKernelCommandLine := StringRiffle @ {
+    ToString[
+        If[ $OperatingSystem === "Windows",
+            FileNameJoin @ { $InstallationDirectory, "WolframKernel" },
+            First @ $CommandLine
+        ],
+        InputForm
+    ],
+    "-wstp",
+    "-noicon",
+    "-pacletreadonly",
+    "-run",
+    "ChatbookSandbox" <> ToString @ $ProcessID
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -346,7 +367,7 @@ TOOLCALL: wolfram_language_evaluator
 ENDARGUMENTS
 ENDTOOLCALL
 
-system: ![result](expression://result-xxxx)
+system: Out[1]= ![result](expression://result-xxxx)
 
 assistant: Here's the plot of $sin(x)$ from $-5$ to $5$:
 ![Plot](expression://result-xxxx)
@@ -382,16 +403,7 @@ startSandboxKernel[ ] := Enclose[
 
         (* pwFile = FileNameJoin @ { $InstallationDirectory, "Configuration", "Licensing", "playerpass" }; *)
 
-        kernel = ConfirmMatch[
-            LinkLaunch @ StringJoin[
-                First @ $CommandLine,
-                " -wstp -pacletreadonly -noinit -noicon",
-                If[ FileExistsQ @ pwFile, " -pwfile \""<>pwFile<>"\"", "" ],
-                " -run ChatbookSandbox" <> ToString @ $ProcessID
-            ],
-            _LinkObject,
-            "LinkLaunch"
-        ];
+        kernel = ConfirmMatch[ LinkLaunch @ $sandboxKernelCommandLine, _LinkObject, "LinkLaunch" ];
 
         (* Use StartProtectedMode instead of passing the -sandbox argument, since we need to initialize the FE first *)
         LinkWrite[ kernel, Unevaluated @ EvaluatePacket[ UsingFrontEnd @ Null; Developer`StartProtectedMode[ ] ] ];
