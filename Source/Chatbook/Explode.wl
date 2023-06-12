@@ -20,7 +20,7 @@ explodeCell // beginDefinition;
 
 explodeCell[ cellObject_CellObject ] := explodeCell @ NotebookRead @ cellObject;
 explodeCell[ Cell[ content_, ___ ] ] := explodeCell @ content;
-explodeCell[ string_String ] := { Cell[ string, "Text" ] };
+explodeCell[ string_String ] := Cell[ #, "Text" ] & /@ StringSplit[ string, Longest[ "\n".. ] ];
 explodeCell[ (BoxData|TextData)[ textData_ ] ] := explodeCell @ textData;
 
 explodeCell[ textData_List ] := Enclose[
