@@ -1336,7 +1336,7 @@ checkResponse[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             "GenerateLLMToolResponse"
         ];
 
-        output = toolResponseString @ toolResponse;
+        output = ConfirmBy[ toolResponseString @ toolResponse, StringQ, "ToolResponseString" ];
 
         messages = ConfirmMatch[ settings[ "Data", "Messages" ], { __Association }, "Messages" ];
 
@@ -1344,7 +1344,7 @@ checkResponse[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             messages,
             {
                 <| "role" -> "assistant", "content" -> StringTrim @ container <> "\nENDTOOLCALL" |>,
-                <| "role" -> "system"   , "content" -> output |>
+                <| "role" -> "system"   , "content" -> ToString @ output |>
             }
         ];
 
@@ -1373,6 +1373,7 @@ appendToolResult // endDefinition;
 (*toolResponseString*)
 toolResponseString // beginDefinition;
 toolResponseString[ HoldPattern @ LLMToolResponse[ as_, ___ ] ] := toolResponseString @ as;
+toolResponseString[ failed_Failure ] := ToString @ failed[ "Message" ];
 toolResponseString[ as: KeyValuePattern[ "Output" -> output_ ] ] := toolResponseString[ as, output ];
 toolResponseString[ as_, KeyValuePattern[ "String" -> output_ ] ] := toolResponseString[ as, output ];
 toolResponseString[ as_, output_String ] := output;
