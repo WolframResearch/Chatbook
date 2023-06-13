@@ -1,6 +1,6 @@
 BeginPackage[ "Wolfram`Chatbook`Serialization`" ];
 
-(* cSpell: ignore TOOLCALL, ENDTOOLCALL *)
+(* cSpell: ignore TOOLCALL, ENDTOOLCALL, specialkeywords, tabletags *)
 
 (* Avoiding context aliasing due to bug 434990: *)
 Needs[ "GeneralUtilities`" -> None ];
@@ -12,6 +12,7 @@ CellToString[cell$] serializes a Cell expression as a string for use in chat.\
 `$CellToStringDebug;
 `$CurrentCell;
 `documentationSearchAPI;
+`escapeMarkdownString;
 `$maxOutputCellStringLength;
 
 Begin[ "`Private`" ];
@@ -266,10 +267,9 @@ cellToString[ Cell[ a__, "Message", "MSG", b___ ] ] :=
             stackString = StringRiffle[
                 Cases[
                     stack,
-                    HoldForm[ expr_ ] :> truncateStackString @ ToString[
+                    HoldForm[ expr_ ] :> truncateStackString @ inputFormString[
                         Unevaluated @ expr,
-                        InputForm,
-                        CharacterEncoding -> $cellCharacterEncoding
+                        PageWidth -> Infinity
                     ]
                 ],
                 "\n"
@@ -296,7 +296,7 @@ cellToString[ Cell[ code_, "ExternalLanguage", ___, $$cellEvaluationLanguage -> 
 
 (* Output styles that should be truncated *)
 cellToString[ cell: Cell[ __, $$outputStyle, ___ ] ] /; ! TrueQ @ $truncatingOutput :=
-    Block[ { $truncatingOutput = True }, truncateOutputString @ cellToString @ cell ];
+    Block[ { $truncatingOutput = True }, truncateString @ cellToString @ cell ];
 
 (* Don't escape markdown characters for ChatOutput cells, since a plain string means formatting was toggled off *)
 cellToString[ cell: Cell[ _String, "ChatOutput", ___ ] ] := Block[ { $escapeMarkdown = False }, cellToString0 @ cell ];
@@ -329,12 +329,8 @@ cellsToString[ cells_List ] :=
 fasterCellToString[ arg_ ] :=
     Block[ { $catchingStringFail = True },
         Catch[
-            Module[ { string },
-                string = fasterCellToString0 @ arg;
-                If[ StringQ @ string,
-                    Replace[ StringTrim @ string, "" -> Missing[ "NotFound" ] ],
-                    $Failed
-                ]
+            With[ { string = fasterCellToString0 @ arg },
+                If[ StringQ @ string, StringTrim @ string, $Failed ]
             ],
             $stringFail
         ]
@@ -480,8 +476,13 @@ fasterCellToString0[ box: $graphicsHeads[ ___ ] ] :=
         makeGraphicsString @ box,
         (* Otherwise, give the same thing you'd get in a standalone kernel*)
         needsBasePrompt[ "ConversionGraphics" ];
-        "-Graphics-"
+        "\\!\\(\\*" <> StringReplace[ inputFormString @ box, $graphicsBoxStringReplacements ] <> "\\)"
     ];
+
+
+$graphicsBoxStringReplacements = {
+    a: DigitCharacter ~~ "." ~~ b: Repeated[ DigitCharacter, { 4, Infinity } ] :> a <> "." <> StringTake[ b, 3 ]
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -595,6 +596,7 @@ fasterCellToString0[ InterpretationBox[ boxes_, (Definition|FullDefinition)[ _Sy
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Other*)
+fasterCellToString0[ Cell[ _, "ObjectNameTranslation", ___ ] ] := "";
 
 fasterCellToString0[
     TagBox[ _, "MarkdownImage", ___, TaggingRules -> KeyValuePattern[ "CellToStringData" -> string_String ], ___ ]
@@ -618,12 +620,7 @@ fasterCellToString0[ cell: Cell[ a_, ___ ] ] :=
 
 fasterCellToString0[ InterpretationBox[ _, expr_, ___ ] ] := (
     needsBasePrompt[ "WolframLanguage" ];
-    ToString[
-        Unevaluated @ expr,
-        InputForm,
-        PageWidth         -> $cellPageWidth,
-        CharacterEncoding -> $cellCharacterEncoding
-    ]
+    inputFormString @ Unevaluated @ expr
 );
 
 fasterCellToString0[ GridBox[ grid_? MatrixQ, ___ ] ] :=
@@ -686,7 +683,7 @@ fasterCellToString0[ DynamicModuleBox[
     ___
 ] ] := (
     needsBasePrompt[ "WolframLanguage" ];
-    ToString[ Unevaluated @ Dataset @ data, InputForm ]
+    inputFormString @ Unevaluated @ Dataset @ data
 );
 
 fasterCellToString0[ DynamicModuleBox[ a___ ] ] /; ! TrueQ @ $CellToStringDebug := (
@@ -717,7 +714,7 @@ slowCellToString[ cell_Cell ] :=
         string = Replace[ plain, { { s_String? StringQ, ___ } :> s, ___ :> $Failed } ];
 
         If[ StringQ @ string,
-            Replace[ StringTrim[ string, WhitespaceCharacter ], "" -> Missing[ "NotFound" ] ],
+            truncateString @ StringReplace[ StringTrim @ string, $exportPacketStringReplacements ],
             $Failed
         ]
     ];
@@ -727,9 +724,28 @@ slowCellToString[ text_TextData ] := Block[ { $showStringCharacters = False }, s
 slowCellToString[ text_String   ] := slowCellToString @ TextData @ text;
 slowCellToString[ boxes_        ] := slowCellToString @ BoxData @ boxes;
 
+
+$exportPacketStringReplacements = {
+    "\r\n" -> "\n",
+    "CompressedData[\"" ~~ s: Except[ "\"" ].. ~~ "\"]" :>
+        "CompressedData[\"" <> truncateString[ StringDelete[ s, Whitespace ], 8 ] <> "\"]"
+};
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Additional Utilities*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inputFormString*)
+inputFormString // SetFallthroughError;
+inputFormString[ expr_, opts: OptionsPattern[ ] ] :=
+    ToString[ Unevaluated @ expr,
+              InputForm,
+              opts,
+              PageWidth         -> $cellPageWidth,
+              CharacterEncoding -> $cellCharacterEncoding
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -757,15 +773,7 @@ makeGraphicsString // SetFallthroughError;
 makeGraphicsString[ gfx_ ] := makeGraphicsString[ gfx, makeGraphicsExpression @ gfx ];
 
 makeGraphicsString[ gfx_, HoldComplete[ expr: _Graphics|_Graphics3D|_Image|_Image3D|_Graph ] ] :=
-    StringReplace[
-        ToString[
-            Unevaluated @ expr,
-            InputForm,
-            PageWidth         -> $cellPageWidth,
-            CharacterEncoding -> $cellCharacterEncoding
-        ],
-        "\r\n" -> "\n"
-    ];
+    StringReplace[ inputFormString @ Unevaluated @ expr, "\r\n" -> "\n" ];
 
 makeGraphicsString[
     GraphicsBox[
@@ -814,10 +822,12 @@ showStringCharactersQ[ ___ ] := True;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*truncateOutputString*)
-truncateOutputString // SetFallthroughError;
-truncateOutputString[ str_String ] /; StringLength @ str <= $maxOutputCellStringLength := str;
-truncateOutputString[ str_String ] := StringTake[ str, $maxOutputCellStringLength ] <> "...";
+(*truncateString*)
+truncateString // SetFallthroughError;
+truncateString[ str_String ] := truncateString[ str, $maxOutputCellStringLength ];
+truncateString[ str_String, max_Integer ] := truncateString[ str, Ceiling[ max / 2 ], Floor[ max / 2 ] ];
+truncateString[ str_String, l_Integer, r_Integer ] /; StringLength @ str <= l + r + 5 := str;
+truncateString[ str_String, l_Integer, r_Integer ] := StringTake[ str, l ] <> " ... " <> StringTake[ str, -r ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -825,6 +835,12 @@ truncateOutputString[ str_String ] := StringTake[ str, $maxOutputCellStringLengt
 truncateStackString // SetFallthroughError;
 truncateStackString[ str_String ] /; StringLength @ str <= 80 := str;
 truncateStackString[ str_String ] := StringTake[ str, 80 ] <> "...";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*escapeMarkdownString*)
+escapeMarkdownString // SetFallthroughError;
+escapeMarkdownString[ text_String ] := Block[ { $escapeMarkdown = True }, escapeMarkdownCharacters @ text ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -953,6 +969,28 @@ $noDocSearchResultsString = "BEGIN_DOCUMENTATION_SEARCH_RESULTS\n(no results fou
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*makeDocumentationString*)
+makeDocumentationString // SetFallthroughError;
+
+makeDocumentationString[ file_? FileExistsQ ] := makeDocumentationString[ file ] =
+    Module[ { nb, string },
+        nb = Import[ file, "NB" ];
+
+        string = TemplateApply[
+            "`Usage`\n\n`Details`\n\n`Examples`\n\n`Metadata`",
+            <|
+                "Usage"    -> getUsageString @ nb,
+                "Details"  -> getDetailsString @ nb,
+                "Examples" -> getExamplesString @ nb,
+                "Metadata" -> getMetadataString @ nb
+            |>
+        ];
+
+        StringDelete[ StringReplace[ StringTrim @ string, "\n\n\n\n" -> "\n\n" ], "```"~~"\n"..~~"```" ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*getUsageString*)
 getUsageString // SetFallthroughError;
 
@@ -994,16 +1032,47 @@ getDetailsString[ nb_Notebook ] :=
 getExamplesString // SetFallthroughError;
 
 getExamplesString[ nb_Notebook ] :=
-    Module[ { examples },
-        examples = cellToString /@ cellFlatten @ firstMatchingCellGroup[
-            nb,
-            Cell[ __, "PrimaryExamplesSection", ___ ]
-        ];
+    Module[ { cells, examples },
+        cells    = cellFlatten @ firstMatchingCellGroup[ nb, Cell[ __, "PrimaryExamplesSection", ___ ] ];
+        examples = Block[ { $maxOutputCellStringLength = 100 }, cellToString /@ cells ];
         If[ MatchQ[ examples, { __String } ],
             "## Examples\n\n" <> StringRiffle[ examples, "\n" ],
             ""
         ]
     ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getMetadataString*)
+getMetadataString // SetFallthroughError;
+
+getMetadataString[ Notebook[ ___, TaggingRules -> tags_, ___ ] ] :=
+    getMetadataString @ tags;
+
+getMetadataString[ KeyValuePattern[ "Metadata" -> md: KeyValuePattern @ { } ] ] :=
+    formatMetadata @ KeyTake[ md, { "keywords", "specialkeywords", "summary", "synonyms", "tabletags", "title" } ];
+
+getMetadataString[ ___ ] := "";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*formatMetadata*)
+formatMetadata // SetFallthroughError;
+
+formatMetadata[ as_Association ] :=
+    "## Metadata\n\n" <> StringRiffle[ KeyValueMap[ formatMetadata, as ], "\n\n" ];
+
+formatMetadata[ key_String, values: { __String } ] :=
+    "### " <> key <> "\n\n" <> StringRiffle[ ("* " <> #1 &) /@ values, "\n" ];
+
+formatMetadata[ _, { } ] :=
+    Nothing;
+
+formatMetadata[ key_String, value_String ] :=
+    "### "<>key<>"\n\n"<>value;
+
+formatMetadata[ ___ ] :=
+    Nothing;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
