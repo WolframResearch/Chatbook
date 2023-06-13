@@ -1764,7 +1764,7 @@ chatHTTPRequest[
 
 $dynamicMenuLabel := DynamicModule[ { cell },
 	Dynamic @ If[ TrueQ @ $cloudNotebooks,
-		RawBoxes @ TemplateBox[{},"ChatInputCellDingbat"],
+		RawBoxes @ TemplateBox[{}, "ChatIconUser"],
 		With[{
 			personaValue = currentValueOrigin[cell, {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}]
 		},
