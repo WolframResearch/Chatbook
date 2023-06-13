@@ -1619,7 +1619,7 @@ Notebook[
           DynamicBox[
            ToBoxes[
             If[ TrueQ[Wolfram`Chatbook`Common`$cloudNotebooks],
-             RawBoxes[TemplateBox[{}, "ChatInputCellDingbat"]],
+             RawBoxes[TemplateBox[{}, "ChatIconUser"]],
              With[
               {
                Wolfram`Chatbook`UI`Private`personaValue = 
@@ -1709,7 +1709,7 @@ Notebook[
              DynamicBox[
               ToBoxes[
                If[ TrueQ[Wolfram`Chatbook`Common`$cloudNotebooks],
-                RawBoxes[TemplateBox[{}, "ChatInputCellDingbat"]],
+                RawBoxes[TemplateBox[{}, "ChatIconUser"]],
                 With[
                  {
                   Wolfram`Chatbook`UI`Private`personaValue = 
@@ -1819,7 +1819,7 @@ Notebook[
                DynamicBox[
                 ToBoxes[
                  If[ TrueQ[Wolfram`Chatbook`Common`$cloudNotebooks],
-                  RawBoxes[TemplateBox[{}, "ChatInputCellDingbat"]],
+                  RawBoxes[TemplateBox[{}, "ChatIconUser"]],
                   With[
                    {
                     Wolfram`Chatbook`UI`Private`personaValue = 
@@ -2360,7 +2360,7 @@ Notebook[
           DynamicBox[
            ToBoxes[
             If[ TrueQ[Wolfram`Chatbook`Common`$cloudNotebooks],
-             RawBoxes[TemplateBox[{}, "ChatInputCellDingbat"]],
+             RawBoxes[TemplateBox[{}, "ChatIconUser"]],
              With[
               {
                Wolfram`Chatbook`UI`Private`personaValue = 
