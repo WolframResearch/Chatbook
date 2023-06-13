@@ -127,7 +127,7 @@ $basePromptComponents[ "ConversionLargeOutputs" ] = "\
 	* Large outputs may be shortened: ``DynamicModule[<<4>>]``";
 
 $basePromptComponents[ "ConversionGraphics" ] = "\
-	* Rendered graphics will typically be replaced with the placeholder ``-Graphics-``";
+	* Rendered graphics will typically be replaced with a shortened box representation: \\!\\(\\*GraphicsBox[<<>>]\\)";
 
 $basePromptComponents[ "ConversionFormatting" ] = "\
 	* Cell formatting is removed when converting to text, so \
