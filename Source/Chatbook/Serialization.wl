@@ -555,6 +555,9 @@ fasterCellToString0[ TemplateBox[ args_, name_String, ___ ] ] :=
         fasterCellToString0 @ f @ args /; ! MissingQ @ f
     ];
 
+fasterCellToString0[ TemplateBox[ { args___ }, ___, InterpretationFunction -> f_, ___ ] ] :=
+    fasterCellToString0 @ f @ args;
+
 fasterCellToString0[ TemplateBox[ args_, ___, InterpretationFunction -> f_, ___ ] ] :=
     fasterCellToString0 @ f @ args;
 
