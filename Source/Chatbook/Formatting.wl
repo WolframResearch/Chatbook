@@ -386,10 +386,11 @@ $textDataFormatRules = {
     StringExpression[
         Longest[ "```" ~~ lang: Except[ WhitespaceCharacter ].. /; externalLanguageQ @ lang ],
         Shortest[ code__ ] ~~ ("```"|EndOfString)
-    ] :> externalCodeCell[ lang, code ]
+    ] /; ! StringStartsQ[ code, Whitespace~~"TOOLCALL" ] :> externalCodeCell[ lang, code ]
     ,
-    Longest[ "```" ~~ ($wlCodeString|"") ] ~~ Shortest[ code__ ] ~~ ("```"|EndOfString) :>
-        If[ nameQ[ "System`"<>code ], inlineCodeCell @ code, codeCell @ code ]
+    Longest[ "```" ~~ ($wlCodeString|"") ] ~~ Shortest[ code__ ] ~~ ("```"|EndOfString) /;
+        ! StringStartsQ[ code, Whitespace~~"TOOLCALL" ] :>
+            If[ nameQ[ "System`"<>code ], inlineCodeCell @ code, codeCell @ code ]
     ,
     "![" ~~ alt: Shortest[ __ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
         StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
