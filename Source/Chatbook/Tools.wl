@@ -924,7 +924,7 @@ wolframLanguageData // endDefinition;
 $defaultChatTools0 = Association[ KeyTake[ $defaultChatTools0, $defaultToolOrder ], $defaultChatTools0 ];
 
 
-If[ Wolfram`Chatbook`Internal`$BuildingMX,
+If[ Wolfram`ChatbookInternal`$BuildingMX,
     $toolConfiguration;
 ];
 
