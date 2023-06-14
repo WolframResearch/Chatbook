@@ -113,11 +113,15 @@ GetChatEnvironmentValues[promptCell_, evaluationCell_, chatContextCells_] := Wit
 
 MakeChatCloudDockedCellContents[] := Grid[
 	{{
-		$cloudPersonaChooser,
-		$cloudModelChooser,
-		Item["", ItemSize -> Fit ],
-		$cloudInlineReferenceButtons
-	}}
+		Item[$cloudChatBanner, Alignment -> Left],
+		Item["", ItemSize -> Fit],
+		Row[{"Persona", Spacer[5], $cloudPersonaChooser}],
+		Row[{"Model", Spacer[5], $cloudModelChooser}]
+	}},
+	Dividers -> {{False, False, False, True}, False},
+	Spacings -> {2, 0},
+	BaseStyle -> {"Text", FontSize -> 14, FontColor -> GrayLevel[0.4]},
+	FrameStyle -> Directive[Thickness[2], GrayLevel[0.9]]
 ]
 
 
@@ -132,7 +136,10 @@ $cloudPersonaChooser := PopupMenu[
 	KeyValueMap[
 		Function[{key, as}, key -> Grid[{{resizeMenuIcon[getPersonaMenuIcon[as]], personaDisplayName[key, as]}}]],
 		GetCachedPersonaData[]
-	]
+	],
+	ImageSize -> {Automatic, 30},
+	Alignment -> {Left, Baseline},
+	BaseStyle -> {FontSize -> 12}
 ]
 
 
@@ -144,8 +151,57 @@ $cloudModelChooser := PopupMenu[
 		],
 		Function[CurrentValue[EvaluationNotebook[], {TaggingRules, "ChatNotebookSettings", "Model"}] = #]
 	],
-	Cases[$SupportedModels, {model_, icon_, label_} :> model -> Grid[{{resizeMenuIcon[icon], label}}]]
+	Cases[$SupportedModels, {model_, icon_, label_} :> model -> Grid[{{resizeMenuIcon[icon], label}}]],
+	ImageSize -> {Automatic, 30},
+	Alignment -> {Left, Baseline},
+	BaseStyle -> {FontSize -> 12}
 ]
+
+
+$cloudChatBanner := PaneSelector[
+    {
+        True -> Grid[
+			{
+				{
+					"",
+					RawBoxes @ TemplateBox[ { }, "ChatDrivenNotebookIcon" ],
+					Style[
+						"Chat-Driven Notebook",
+						FontColor  -> RGBColor[ "#333333" ],
+						FontFamily -> "Source Sans Pro",
+						FontSize   -> 16,
+						FontWeight -> "DemiBold"
+					]
+				}
+			},
+			Alignment -> { Automatic, Center },
+			Spacings  -> 0.5
+		],
+        False -> Grid[
+			{
+				{
+					"",
+					RawBoxes @ TemplateBox[ { }, "ChatEnabledNotebookIcon" ],
+					Style[
+						"Chat-Enabled Notebook",
+						FontColor  -> RGBColor[ "#333333" ],
+						FontFamily -> "Source Sans Pro",
+						FontSize   -> 16,
+						FontWeight -> "DemiBold"
+					]
+				}
+			},
+			Alignment -> { Automatic, Center },
+			Spacings  -> 0.5
+		]
+    },
+    Dynamic @ TrueQ @ CurrentValue[
+		EvaluationNotebook[ ],
+		{ TaggingRules, "ChatNotebookSettings", "ChatDrivenNotebook" }
+	],
+    ImageSize -> Automatic
+]
+
 
 
 (*====================================*)
