@@ -2,7 +2,7 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 
-(* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDTOOLCALL, pacletreadonly, noinit, playerpass *)
+(* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDTOOLCALL, pacletreadonly, noinit, playerpass, Deflatten *)
 
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
@@ -134,9 +134,9 @@ You have access to system tools which can be used to do things, fetch data, comp
 ";
 
 
-$toolPost = "
+$toolPost := "
 
-To call a tool, write the following at any time during your response:
+To call a tool, write the following on a new line at any time during your response:
 
 ```
 TOOLCALL: <tool name>
@@ -152,14 +152,47 @@ The system will execute the requested tool call and you will receive a system me
 
 You can then use this result to finish writing your response for the user.
 
-Here is a full example:
+You must write the TOOLCALL in your CURRENT response. \
+Do not state that you will use a tool and end your message before making the tool call.
 
----
+If a user asks you to use a specific tool, you MUST attempt to use that tool as requested, \
+even if you think it will not work. \
+If the tool fails, use any error message to explain why it failed. \
+NEVER state that a tool cannot be used for a particular task without trying it first. \
+You did not create these tools, so you do not know what they can and cannot do.
 
-user:
+## Full examples
+" <> $fullExamples;
+
+
+toolTemplateDataString[ str_String ] := str;
+toolTemplateDataString[ expr_ ] := ToString[ expr, InputForm ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Full Examples*)
+
+$fullExamples := StringJoin[
+    "\n---\n\n",
+    StringRiffle[ Values @ KeyTake[ $fullExamples0, $fullExamplesKeys ], "\n\n---\n\n" ],
+    "\n\n---\n"
+];
+
+$fullExamplesKeys :=
+    If[ TrueQ @ $CloudEvaluation,
+        { "AstroGraphicsDocumentation" },
+        { "AstroGraphicsDocumentation", "PlotEvaluate", "TemporaryDirectory" }
+    ];
+
+
+$fullExamples0 = <| |>;
+
+
+$fullExamples0[ "AstroGraphicsDocumentation" ] = "\
+[user]
 How do I use AstroGraphics?
 
-assistant:
+[assistant]
 Let me check the documentation for you. One moment...
 TOOLCALL: documentation_lookup
 {
@@ -168,32 +201,81 @@ TOOLCALL: documentation_lookup
 ENDARGUMENTS
 ENDTOOLCALL
 
-system:
-# Usage
+[system]
+Usage
 AstroGraphics[primitives, options] represents a two-dimensional view of space and the celestial sphere.
 
-# Basic Examples
+Basic Examples
 <example text>
 
-assistant:
+[assistant]
 To use [AstroGraphics](paclet:ref/AstroGraphics), you need to provide a list of graphics primitives and options. \
-For example, <remainder of response>
+For example, <remainder of response>";
 
----
-";
 
-toolTemplateDataString[ str_String ] := str;
-toolTemplateDataString[ expr_ ] := ToString[ expr, InputForm ];
+$fullExamples0[ "PlotEvaluate" ] = "\
+[user]
+Plot sin(x) from -5 to 5
+
+[assistant]
+TOOLCALL: wolfram_language_evaluator
+{
+	\"code\": \"Plot[Sin[x], {x, -10, 10}, AxesLabel -> {\\\"x\\\", \\\"sin(x)\\\"}]\"
+}
+ENDARGUMENTS
+ENDTOOLCALL
+
+[system]
+Out[1]= ![result](expression://result-xxxx)
+
+[assistant]
+Here's the plot of $\\sin{x}$ from -5 to 5:
+![Plot](expression://result-xxxx)";
+
+
+$fullExamples0[ "TemporaryDirectory" ] = "\
+[user]
+Where is the temporary directory located?
+
+[assistant]
+TOOLCALL: documentation_search
+{
+	\"query\": \"location of temporary directory\"
+}
+ENDARGUMENTS
+ENDTOOLCALL
+
+[system]
+* $TemporaryDirectory - (score: 9.6) $TemporaryDirectory gives the main system directory for temporary files.
+* CreateDirectory - (score: 8.5) CreateDirectory[\"dir\"] creates ...
+
+[assistant]
+TOOLCALL: wolfram_language_evaluator
+{
+	\"code\": \"$TemporaryDirectory\"
+}
+ENDARGUMENTS
+ENDTOOLCALL
+
+[system]
+Out[2]= \"C:\\Users\\UserName\\AppData\\Local\\Temp\"
+
+[assistant]
+The temporary directory is located at C:\\Users\\UserName\\AppData\\Local\\Temp.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Default Tools*)
 $defaultChatTools := If[ TrueQ @ $CloudEvaluation,
-                         KeyDrop[ $defaultChatTools0, { "wolfram_language_evaluator", "documentation_search" } ],
+                         KeyDrop[ $defaultChatTools0, $cloudUnsupportedTools ],
                          $defaultChatTools0
                      ];
 
 $defaultChatTools0 = <| |>;
+
+$cloudUnsupportedTools = { "wolfram_language_evaluator", "documentation_search" };
+
+$defaultToolOrder = { "documentation_lookup", "documentation_search", "wolfram_alpha", "wolfram_language_evaluator" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -348,7 +430,7 @@ $line = 0;
 (* ::Subsection::Closed:: *)
 (*Evaluate*)
 
-$sandboxEvaluateDescription = "\
+(* $sandboxEvaluateDescription = "\
 Evaluate Wolfram Language code for the user in a separate sandboxed kernel. \
 You do not need to tell the user the input code that you are evaluating. \
 They will be able to inspect it if they want to. \
@@ -371,6 +453,14 @@ system: Out[1]= ![result](expression://result-xxxx)
 
 assistant: Here's the plot of $sin(x)$ from $-5$ to $5$:
 ![Plot](expression://result-xxxx)
+"; *)
+
+$sandboxEvaluateDescription = "\
+Evaluate Wolfram Language code for the user in a separate sandboxed kernel. \
+You do not need to tell the user the input code that you are evaluating. \
+They will be able to inspect it if they want to. \
+The user does not automatically see the result. \
+You must include the result in your response in order for them to see it.
 ";
 
 $defaultChatTools0[ "wolfram_language_evaluator" ] = LLMTool[
@@ -575,11 +665,7 @@ sandboxResultString[ HoldComplete[ expr: Except[ _Graphics|_Graphics3D ] ] ] :=
         string /; StringLength @ string < 240
     ];
 
-sandboxResultString[ HoldComplete[ expr_ ] ] :=
-    With[ { id = "result-"<>Hash[ Unevaluated @ expr, Automatic, "HexString" ] },
-        $attachments[ id ] = HoldComplete @ expr;
-        "![result](expression://" <> id <> ")"
-    ];
+sandboxResultString[ HoldComplete[ expr_ ] ] := makeExpressionURI @ Unevaluated @ expr;
 
 sandboxResultString // endDefinition;
 
@@ -597,8 +683,221 @@ makePacketMessages[ line_, _InputNamePacket|_MessagePacket|_OutputNamePacket|_Re
 makePacketMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Wolfram Alpha*)
+
+(* $wolframAlphaDescription = "Get Wolfram|Alpha results
+
+## Wolfram Alpha Tool Guidelines
+- Understands natural language queries about entities in chemistry, physics, geography, history, art, astronomy, and more.
+- Performs mathematical calculations, date and unit conversions, formula solving, etc.
+- Convert inputs to simplified keyword queries whenever possible (e.g. convert \"how many people live in France\" to \"France population\").
+- Use ONLY single-letter variable names, with or without integer subscript (e.g., n, n1, n_1).
+- Use named physical constants (e.g., 'speed of light') without numerical substitution.
+- Include a space between compound units (e.g., \"\[CapitalOmega] m\" for \"ohm*meter\").
+- To solve for a variable in an equation with units, consider solving a corresponding equation without units; exclude counting units (e.g., books), include genuine units (e.g., kg).
+- If data for multiple properties is needed, make separate calls for each property.
+- If a Wolfram Alpha result is not relevant to the query:
+ -- If Wolfram provides multiple 'Assumptions' for a query, choose the more relevant one(s) without explaining the initial result. If you are unsure, ask the user to choose.
+ -- Re-send the exact same 'input' with NO modifications, and add the 'assumption' parameter, formatted as a list, with the relevant values.
+ -- ONLY simplify or rephrase the initial query if a more relevant 'Assumption' or other input suggestions are not provided.
+ -- Do not explain each step unless user input is needed. Proceed directly to making a better API call based on the available assumptions.
+ "; *)
+
+$wolframAlphaDescription = "\
+Use natural language queries with Wolfram|Alpha to get up-to-date computational results about entities in chemistry, \
+physics, geography, history, art, astronomy, and more.";
+
+$wolframAlphaIcon = RawBoxes @ PaneBox[
+    DynamicBox @ FEPrivate`FrontEndResource[ "FEBitmaps", "InsertionAlpha" ],
+    BaselinePosition -> Center -> Scaled[ 0.55 ]
+];
+
+$defaultChatTools0[ "wolfram_alpha" ] = LLMTool[
+    <|
+        "Name"        -> "wolfram_alpha",
+        "DisplayName" -> "Wolfram Alpha",
+        "Icon"        -> $wolframAlphaIcon,
+        "Description" -> $wolframAlphaDescription,
+        "Parameters"  -> {
+            "input" -> <|
+                "Interpreter" -> "String",
+                "Help"        -> "the input",
+                "Required"    -> True
+            |>(*,
+            "assumption" -> <|
+                "Interpreter" -> "String",
+                "Help"        -> "the assumption to use, passed back from a previous query with the same input.",
+                "Required"    -> False
+            |>*)
+        },
+        "Function" -> getWolframAlphaText
+    |>,
+    { }
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getWolframAlphaText*)
+getWolframAlphaText // beginDefinition;
+
+getWolframAlphaText[ KeyValuePattern[ "input" -> query_String ] ] :=
+    getWolframAlphaText @ query;
+
+getWolframAlphaText[ query_String ] :=
+    getWolframAlphaText[ query, WolframAlpha[ query, { All, { "Title", "Plaintext", "ComputableData", "Content" } } ] ];
+
+getWolframAlphaText[ query_String, { } ] :=
+    "No results returned";
+
+getWolframAlphaText[ query_String, info_List ] :=
+    getWolframAlphaText[ query, associationKeyDeflatten[ makeKeySequenceRule /@ info ] ];
+
+getWolframAlphaText[ query_String, as_Association? AssociationQ ] :=
+    getWolframAlphaText[ query, waResultText @ as ];
+
+getWolframAlphaText[ query_String, result_String ] :=
+    escapeMarkdownString @ result;
+
+getWolframAlphaText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*makeKeySequenceRule*)
+makeKeySequenceRule // beginDefinition;
+makeKeySequenceRule[ { _, "Cell"|"Position"|"Scanner" } -> _ ] := Nothing;
+makeKeySequenceRule[ key_ -> value_ ] := makeKeySequence @ key -> value;
+makeKeySequenceRule // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*makeKeySequence*)
+makeKeySequence // beginDefinition;
+
+makeKeySequence[ { { path_String, n_Integer }, key_String } ] :=
+    makeKeySequence @ Flatten @ { Reverse @ StringSplit[ path, ":" ], n, key };
+
+makeKeySequence[ { path__String, 0, key_String } ] :=
+    { path, key };
+
+makeKeySequence[ { path__String, n_Integer, key_String } ] :=
+    { path, "Data", n, key };
+
+makeKeySequence // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*waResultText*)
+waResultText // beginDefinition;
+waResultText[ as_ ] := Block[ { $level = 1 }, StringRiffle[ Flatten @ Values[ waResultText0 /@ as ], "\n" ] ];
+waResultText // endDefinition;
+
+
+waResultText0 // beginDefinition;
+
+waResultText0[ as: KeyValuePattern @ { "Title" -> title_String, "Data" -> data_ } ] :=
+    StringRepeat[ "#", $level ] <> " " <> title <> "\n" <> waResultText0 @ data;
+
+waResultText0[ as: KeyValuePattern[ _Integer -> _ ] ] :=
+    waResultText0 /@ Values @ KeySort @ KeySelect[ as, IntegerQ ];
+
+waResultText0[ KeyValuePattern @ { "Plaintext" -> text_String, "ComputableData" -> Hold[ expr_ ] } ] :=
+    If[ ByteCount @ Unevaluated @ expr >= 500,
+        If[ StringFreeQ[ text, "["|"]"|"\n" ],
+            makeExpressionURI[ text, Unevaluated @ expr ] <> "\n",
+            text <> "\n" <> makeExpressionURI[ Unevaluated @ expr ] <> "\n"
+        ],
+        text <> "\n"
+    ];
+
+waResultText0[ as: KeyValuePattern @ { "Plaintext" -> text_String, "ComputableData" -> expr: Except[ _Hold ] } ] :=
+    waResultText0 @ Append[ as, "ComputableData" -> Hold @ expr ];
+
+waResultText0[ KeyValuePattern @ { "Plaintext" -> text_String, "Content" -> content_ } ] :=
+    If[ ByteCount @ content >= 500,
+        If[ StringFreeQ[ text, "["|"]"|"\n" ],
+            makeExpressionURI[ text, Unevaluated @ content ] <> "\n",
+            text <> "\n" <> makeExpressionURI[ Unevaluated @ content ] <> "\n"
+        ],
+        text <> "\n"
+    ];
+
+waResultText0[ as_Association ] /; Length @ as === 1 :=
+    waResultText0 @ First @ as;
+
+waResultText0[ as_Association ] :=
+    KeyValueMap[
+        Function[
+            StringJoin[
+                StringRepeat[ "#", $level ],
+                " ",
+                ToString[ #1 ],
+                "\n",
+                Block[ { $level = $level + 1 }, waResultText0[ #2 ] ]
+            ]
+        ],
+        as
+    ];
+
+waResultText0[ expr_ ] :=
+    With[ { s = ToString[ Unevaluated @ expr, InputForm ] }, s <> "\n" /; StringLength @ s <= 100 ];
+
+waResultText0[ expr_ ] :=
+    makeExpressionURI @ Unevaluated @ expr <> "\n";
+
+waResultText0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Utilities*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Expression URIs*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeExpressionURI*)
+makeExpressionURI // beginDefinition;
+
+makeExpressionURI[ expr_ ] :=
+    makeExpressionURI[ Automatic, Unevaluated @ expr ];
+
+makeExpressionURI[ label_, expr_ ] :=
+    makeExpressionURI[ Automatic, label, Unevaluated @ expr ];
+
+makeExpressionURI[ Automatic, label_, expr_ ] :=
+    makeExpressionURI[ expressionURIScheme @ expr, label, Unevaluated @ expr ];
+
+makeExpressionURI[ scheme_, Automatic, expr_ ] :=
+    makeExpressionURI[ scheme, expressionURILabel @ expr, Unevaluated @ expr ];
+
+makeExpressionURI[ scheme_, label_, expr_ ] :=
+    With[ { id = "result-" <> Hash[ Unevaluated @ expr, Automatic, "HexString" ] },
+        $attachments[ id ] = HoldComplete @ expr;
+        "![" <> TextString @ label <> "](" <> TextString @ scheme <> "://" <> id <> ")"
+    ];
+
+makeExpressionURI // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*expressionURILabel*)
+expressionURILabel // beginDefinition;
+expressionURILabel // Attributes = { HoldAllComplete };
+expressionURILabel[ _Graphics|_Graphics3D|_Image|_Image3D|_Legended|_RawBoxes ] := "image";
+expressionURILabel[ _List|_Association ] := "data";
+expressionURILabel[ _ ] := "result";
+expressionURILabel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*expressionURIScheme*)
+expressionURIScheme // beginDefinition;
+expressionURIScheme // Attributes = { HoldAllComplete };
+expressionURIScheme[ _Graphics|_Graphics3D|_Image|_Image3D|_Legended|_RawBoxes ] := "attachment";
+expressionURIScheme[ _ ] := "expression";
+expressionURIScheme // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -617,8 +916,24 @@ wolframLanguageData[ name_, property_ ] := Enclose[
 wolframLanguageData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Misc*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*associationKeyDeflatten*)
+(* TODO: copy definition from resource function *)
+associationKeyDeflatten := associationKeyDeflatten =
+    Block[ { PrintTemporary }, ResourceFunction[ "AssociationKeyDeflatten", "Function" ] ];
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
+
+(* Sort tools to their default ordering: *)
+$defaultChatTools0 = Association[ KeyTake[ $defaultChatTools0, $defaultToolOrder ], $defaultChatTools0 ];
+
+
 If[ Wolfram`Chatbook`Internal`$BuildingMX,
     $toolConfiguration;
 ];
