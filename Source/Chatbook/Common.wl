@@ -82,6 +82,10 @@ Chatbook::UnknownResponse =
 Chatbook::RateLimitReached =
 "Rate limit reached for requests. Please try again later.";
 
+(* TODO: use this message instead of RateLimitReached when sensible *)
+Chatbook::ServerOverloaded =
+"The server is currently overloaded with other requests. Please try again later.";
+
 Chatbook::UnknownStatusCode =
 "Unexpected response from OpenAI server with status code `StatusCode`";
 
