@@ -543,7 +543,7 @@ truncatePartString[ other_, max_Integer ] := truncatePartString[ ToString[ Uneva
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`Chatbook`Internal`$BuildingMX,
+If[ Wolfram`ChatbookInternal`$BuildingMX,
     $debug = False;
 ];
 
