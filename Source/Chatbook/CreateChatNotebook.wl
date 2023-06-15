@@ -110,7 +110,7 @@ makeChatNotebookOptions // SetFallthroughError;
 
 makeChatNotebookOptions[ settings_Association, opts: OptionsPattern[ ] ] := Sequence @@ DeleteDuplicatesBy[
     Flatten @ {
-        FilterRules[ { opts }, Options @ Notebook ],
+        FilterRules[ { opts }, UsingFrontEnd @ Options @ Notebook ],
         StyleDefinitions -> $chatbookStylesheet,
         If[ settings === <| |>,
             Nothing,
