@@ -70,10 +70,10 @@ Block[ { $ContextPath },
     Get[ "Wolfram`Chatbook`ErrorUtils`"           ];
     Get[ "Wolfram`Chatbook`Errors`"               ];
     Get[ "Wolfram`Chatbook`CreateChatNotebook`"   ];
-    Get[ "Wolfram`Chatbook`Serialization`"        ];
     Get[ "Wolfram`Chatbook`Streaming`"            ];
     Get[ "Wolfram`Chatbook`Utils`"                ];
     Get[ "Wolfram`Chatbook`FrontEnd`"             ];
+    Get[ "Wolfram`Chatbook`Serialization`"        ];
     Get[ "Wolfram`Chatbook`UI`"                   ];
     Get[ "Wolfram`Chatbook`Tools`"                ];
     Get[ "Wolfram`Chatbook`Formatting`"           ];

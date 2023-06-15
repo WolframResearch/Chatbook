@@ -20,6 +20,7 @@ Begin[ "`Private`" ];
 Needs[ "Wolfram`Chatbook`Errors`"     ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
 Needs[ "Wolfram`Chatbook`Prompting`"  ];
+Needs[ "Wolfram`Chatbook`FrontEnd`"   ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -306,8 +307,10 @@ cellToString[ cell: Cell[ _TextData|_String, ___ ] ] := Block[ { $escapeMarkdown
 cellToString[ cell_ ] := Block[ { $escapeMarkdown = False }, cellToString0 @ cell ];
 
 (* Recursive serialization of the cell content *)
-cellToString0[ cell_ ] :=
-    With[ { string = fasterCellToString @ cell },
+cellToString0[ cell0_ ] :=
+    With[
+        { cell = fixCloudCell @ cell0 },
+        { string = fasterCellToString @ cell },
         If[ StringQ @ string,
             string,
             slowCellToString @ cell

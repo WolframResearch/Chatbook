@@ -19,6 +19,7 @@ BeginPackage[ "Wolfram`Chatbook`InlineReferences`" ];
 `functionTemplateBoxes;
 `modifierTemplateBoxes;
 
+`parseInlineReferences;
 `resolveLastInlineReference;
 `resolveInlineReferences;
 
@@ -31,11 +32,8 @@ Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`PersonaInstaller`" ];
+Needs[ "Wolfram`Chatbook`Serialization`"    ];
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Section::Closed:: *)
@@ -58,17 +56,12 @@ $frameOptions = Sequence[
 $lastInlineReferenceCell = None;
 
 
-
-(* ::**************************************************************************************************************:: *)
-(**)
+$$inlineReferenceStyle = "InlinePersonaReference"|"InlineModifierReference"|"InlineFunctionReference";
+$$inlineReferenceCell  = Cell[ __, $$inlineReferenceStyle, ___ ];
 
 
 (* ::Section::Closed:: *)
 (*Resolve Inline References*)
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsection::Closed:: *)
@@ -77,7 +70,7 @@ $lastInlineReferenceCell = None;
 
 resolveInlineReferences // beginDefinition;
 
-resolveInlineReferences[ _ ] /; $cloudNotebooks := Null;
+resolveInlineReferences[ cell_CellObject ] /; $cloudNotebooks := parseInlineReferences @ cell;
 
 resolveInlineReferences[ cell_CellObject ] := (
     resolveLastInlineReference[ ];
@@ -96,8 +89,118 @@ resolveInlineReferences // endDefinition;
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
+(* ::Subsubsection::Closed:: *)
+(*parseInlineReferences*)
+
+
+parseInlineReferences // beginDefinition;
+
+parseInlineReferences[ cellObject_CellObject ] :=
+    parseInlineReferences[ cellObject, NotebookRead @ cellObject ];
+
+parseInlineReferences[ cellObject_CellObject, cell_Cell ] :=
+    parseInlineReferences[ cellObject, cell, CellToString @ cell ];
+
+parseInlineReferences[ cellObject_CellObject, _Cell, text_String ] := Enclose[
+    Module[ { parsed, nbo },
+        parsed = ConfirmMatch[ StringSplit[ text, $parsingRules ], { (_String|_Cell)... }, "Parse" ];
+        If[ MatchQ[ parsed, { ___, _Cell, ___ } ],
+            SelectionMove[ cellObject, All, CellContents ];
+            nbo = parentNotebook @ cellObject;
+            NotebookWrite[ nbo, # ] & /@ parsed;
+            FirstCase[
+                parsed,
+                Cell[ __, TaggingRules -> KeyValuePattern[ "PersonaName" -> name_String ], ___ ] :> (
+                    If[ ! MemberQ[ Keys @ GetCachedPersonaData[ ], name ],
+                        ConfirmBy[ PersonaInstall[ "Prompt: "<>name ], FileExistsQ, "PersonaInstall" ];
+                        ConfirmAssert[ MemberQ[ Keys @ GetCachedPersonaData[ ], name ], "GetCachedPersonaData" ]
+                    ];
+                    CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = name;
+                    CurrentValue[ cellObject, TaggingRules ] =
+                        GeneralUtilities`ToAssociations @ CurrentValue[ cellObject, TaggingRules ]
+                )
+            ]
+        ]
+    ],
+    throwInternalFailure[ parseInlineReferences[ cellObject, text ], ##1 ] &
+];
+
+parseInlineReferences[ cell_Cell ] /; ! TrueQ @ $cloudNotebooks || FreeQ[ cell, $$inlineReferenceCell ] := cell;
+
+parseInlineReferences[ cell: Cell[ _, args___ ] ] := Enclose[
+    Module[ { text, parsed },
+        text   = ConfirmBy[ CellToString @ cell, StringQ, "CellToString" ];
+        parsed = ConfirmMatch[ StringSplit[ text, $parsingRules ], { (_String|_Cell)... }, "Parse" ];
+        If[ MatchQ[ parsed, { ___, _Cell, ___ } ],
+            Cell[ TextData @ parsed, args ],
+            cell
+        ]
+    ],
+    throwInternalFailure[ parseInlineReferences @ cell, ##1 ] &
+];
+
+parseInlineReferences // endDefinition;
+
+
+
+$$refArgs = Longest[ "|" ~~ Except[ WhitespaceCharacter ].. ~~ ("|"|"") ] | "";
+
+
+$parsingRules := {
+    "@" ~~ p: $personaNames                                :> parsePersona @ p,
+    "#" ~~ m: ($modifierNames~~$$refArgs)                  :> parseModifier @ m,
+    StartOfString ~~ "!" ~~ f: ($functionNames~~$$refArgs) :> parseFunction @ f
+};
+
+
+(* ::Subsubsubsection::Closed:: *)
+(*parsePersona*)
+
+
+parsePersona // beginDefinition;
+
+parsePersona[ name_String ] /; MemberQ[ $personaNames, name ] :=
+    Append[
+        personaTemplateCell[ name, "Chosen", CreateUUID[ ] ],
+        TaggingRules -> <| "PersonaName" -> name, "PromptArguments" -> { } |>
+    ];
+
+parsePersona // endDefinition;
+
+
+(* ::Subsubsubsection::Closed:: *)
+(*parseModifier*)
+
+
+parseModifier // beginDefinition;
+
+parseModifier[ text_String ] := parseModifier @ functionInputSetting @ text;
+
+parseModifier[ { name_String, params___String } ] /; MemberQ[ $modifierNames, name ] :=
+    Append[
+        modifierTemplateCell[ name, { params }, "Chosen", CreateUUID[ ] ],
+        TaggingRules -> <| "PromptModifierName" -> name, "PromptArguments" -> { params } |>
+    ];
+
+parseModifier // endDefinition;
+
+
+(* ::Subsubsubsection::Closed:: *)
+(*parseFunction*)
+
+
+parseFunction // beginDefinition;
+
+parseFunction[ text_String ] := parseFunction @ functionInputSetting @ text;
+
+parseFunction[ { name_String, params___String } ] /; MemberQ[ $functionNames, name ] :=
+    Append[
+        functionTemplateCell[ name, { params }, "Chosen", CreateUUID[ ] ],
+        TaggingRules -> <| "PromptFunctionName" -> name, "PromptArguments" -> { params } |>
+    ];
+
+parseFunction // endDefinition;
+
 
 
 (* ::Subsection::Closed:: *)
@@ -120,20 +223,12 @@ resolveLastInlineReference[ ___ ] := Null;
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
 (* ::Section::Closed:: *)
 (*Modifier Input*)
 
 
 $modifierDataURL = "https://resources.wolframcloud.com/PromptRepository/category/modifier-prompts-data.json";
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsection::Closed:: *)
@@ -145,10 +240,6 @@ modifierCompletion[ "" ] := $modifierNames;
 modifierCompletion[ string_String ] := Select[ $modifierNames, StringStartsQ[ string, IgnoreCase -> True ] ];
 modifierCompletion // endDefinition;
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -163,10 +254,6 @@ $modifierNames := Select[
     StringQ
 ];
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -185,10 +272,6 @@ $availableModifierNames := Enclose[
     throwInternalFailure[ $availableModifierNames, ##1 ] &
 ];
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsection::Closed:: *)
@@ -229,10 +312,6 @@ insertModifierInputBox[ args_List, parent_CellObject, nbo_NotebookObject ] :=
 
 insertModifierInputBox // endDefinition;
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -301,10 +380,6 @@ modifierInputBox // endDefinition;
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
 (* ::Subsubsection::Closed:: *)
 (*processModifierInput*)
 
@@ -318,10 +393,6 @@ processModifierInput[ string_String, _List, cell_CellObject ] :=
 
 processModifierInput // endDefinition;
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -359,10 +430,6 @@ promptModifierArguments[ args___ ] := Flatten @ { args };
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
 (* ::Subsubsection::Closed:: *)
 (*removeModifierInputBox*)
 
@@ -371,10 +438,6 @@ removeModifierInputBox // beginDefinition;
 removeModifierInputBox[ cell_CellObject ] := Block[ { $removingBox = True }, writeStaticModifierBox @ cell ];
 removeModifierInputBox // endDefinition;
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -429,20 +492,12 @@ staticModifierBoxLabel // endDefinition;
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
 (* ::Section::Closed:: *)
 (*Function Input*)
 
 
 $functionDataURL = "https://resources.wolframcloud.com/PromptRepository/category/function-prompts-data.json";
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsection::Closed:: *)
@@ -454,10 +509,6 @@ functionCompletion[ "" ] := $functionNames;
 functionCompletion[ string_String ] := Select[ $functionNames, StringStartsQ[ string, IgnoreCase -> True ] ];
 functionCompletion // endDefinition;
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -472,10 +523,6 @@ $functionNames := Select[
     StringQ
 ];
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -494,10 +541,6 @@ $availableFunctionNames := Enclose[
     throwInternalFailure[ $availableFunctionNames, ##1 ] &
 ];
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsection::Closed:: *)
@@ -538,10 +581,6 @@ insertFunctionInputBox[ args_List, parent_CellObject, nbo_NotebookObject ] :=
 
 insertFunctionInputBox // endDefinition;
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -620,10 +659,6 @@ $inputFieldStyle = {
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
 (* ::Subsubsection::Closed:: *)
 (*processFunctionInput*)
 
@@ -638,10 +673,6 @@ processFunctionInput[ string_String, _List, cell_CellObject ] :=
 
 processFunctionInput // endDefinition;
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -681,10 +712,6 @@ promptFunctionArguments[ args___ ] := Flatten @ { args };
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
 (* ::Subsubsection::Closed:: *)
 (*removeFunctionInputBox*)
 
@@ -693,10 +720,6 @@ removeFunctionInputBox // beginDefinition;
 removeFunctionInputBox[ cell_CellObject ] := Block[ { $removingBox = True }, writeStaticFunctionBox @ cell ];
 removeFunctionInputBox // endDefinition;
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -714,10 +737,6 @@ promptNameQ0[ name_String ] := Quiet @ Block[ { PrintTemporary },
     ]
 ];
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -807,10 +826,6 @@ specArg[ expr_, opts___ ] := Style[ expr, opts, FontWeight -> Bold, FontColor ->
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
 (* ::Subsection::Closed:: *)
 (*insertTrailingFunctionInputBox*)
 
@@ -853,10 +868,6 @@ insertTrailingFunctionInputBox[ args_List, parent_CellObject, nbo_NotebookObject
 
 insertTrailingFunctionInputBox // endDefinition;
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -920,10 +931,6 @@ trailingFunctionInputBox // endDefinition;
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
 (* ::Subsubsection::Closed:: *)
 (*writeStaticTrailingFunctionBox*)
 
@@ -955,10 +962,6 @@ writeStaticTrailingFunctionBox[ cell_CellObject, args_List ] :=
 
 writeStaticTrailingFunctionBox // endDefinition;
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1009,10 +1012,6 @@ staticTrailingFunctionBoxLabel // endDefinition;
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
 (* ::Subsubsection::Closed:: *)
 (*functionInputSetting*)
 
@@ -1036,20 +1035,12 @@ $functionArgSplitRules = {
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
 (* ::Section::Closed:: *)
 (*Persona Input*)
 
 
 $personaDataURL = "https://resources.wolframcloud.com/PromptRepository/category/personas-data.json";
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsection::Closed:: *)
@@ -1063,10 +1054,6 @@ personaCompletion // endDefinition;
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
 (* ::Subsubsection::Closed:: *)
 (*$personaNames*)
 
@@ -1076,10 +1063,6 @@ $personaNames := Select[
     StringQ
 ];
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1098,10 +1081,6 @@ $availablePersonaNames := Enclose[
     throwInternalFailure[ $availablePersonaNames, ##1 ] &
 ];
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsection::Closed:: *)
@@ -1134,10 +1113,6 @@ insertPersonaInputBox[ name_String, parent_CellObject, nbo_NotebookObject ] :=
 
 insertPersonaInputBox // endDefinition;
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1193,10 +1168,6 @@ personaInputBox // endDefinition;
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
 (* ::Subsubsection::Closed:: *)
 (*processPersonaInput (unused?)*)
 
@@ -1210,10 +1181,6 @@ processPersonaInput[ string_String, _List, cell_CellObject ] :=
 
 processPersonaInput // endDefinition;
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1264,10 +1231,6 @@ writeStaticPersonaBox // endDefinition;
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
 (* ::Subsubsection::Closed:: *)
 (*removePersonaInputBox*)
 
@@ -1276,10 +1239,6 @@ removePersonaInputBox // beginDefinition;
 removePersonaInputBox[ cell_CellObject ] := Block[ { $removingBox = True }, writeStaticPersonaBox @ cell ];
 removePersonaInputBox // endDefinition;
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Subsubsection::Closed:: *)
@@ -1321,10 +1280,6 @@ staticPersonaBoxLabel // endDefinition;
 
 
 
-(* ::**************************************************************************************************************:: *)
-(**)
-
-
 (* ::Subsubsection::Closed:: *)
 (*personaInputSetting*)
 
@@ -1337,10 +1292,6 @@ personaInputSetting[ DynamicModuleBox[ { ___, _ = string_String, ___ }, ___ ] ] 
 (*personaInputSetting[ TemplateBox[assoc_?AssociationQ, "ChatbookPersona", ___]] := assoc["name"];*)
 personaInputSetting // endDefinition;
 
-
-
-(* ::**************************************************************************************************************:: *)
-(**)
 
 
 (* ::Section::Closed:: *)

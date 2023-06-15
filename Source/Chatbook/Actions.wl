@@ -1446,6 +1446,9 @@ makeHTTPRequest[ settings_Association? AssociationQ, nbo_NotebookObject, cell_Ce
 makeHTTPRequest[ settings_Association? AssociationQ, cells: { __CellObject } ] :=
     makeHTTPRequest[ settings, notebookRead @ cells ];
 
+makeHTTPRequest[ settings_Association? AssociationQ, { cells___Cell, cell_Cell } ] /; $cloudNotebooks :=
+    makeHTTPRequest[ settings, makeChatMessages[ settings, { cells, parseInlineReferences @ cell } ] ];
+
 makeHTTPRequest[ settings_Association? AssociationQ, cells: { __Cell } ] :=
     makeHTTPRequest[ settings, makeChatMessages[ settings, cells ] ];
 
