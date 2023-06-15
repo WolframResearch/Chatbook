@@ -2205,23 +2205,23 @@ systemCredential // endDefinition;
 (* FIXME: move all cloud workarounds to separate file and define global flag to turn off workarounds *)
 cloudSystemCredential // beginDefinition;
 
-cloudSystemCredential[ name_ ] :=
-    With[ { credential = SystemCredential @ name },
-        credential /; StringQ @ credential
-    ];
-
 (* Workaround for CLOUD-22865 *)
-cloudSystemCredential[ name_ ] :=
-    Block[ { $SystemCredentialStore = $cloudCredentialStore },
-        SystemCredential @ name
-    ];
+cloudSystemCredential[ name_String ] :=
+    cloudSystemCredential[ name, PersistentSymbol[ "Chatbook/SystemCredential/" <> name ] ];
+
+cloudSystemCredential[ name_, _Missing ] :=
+    Missing[ "NotAvailable" ];
+
+cloudSystemCredential[ name_, credential_EncryptedObject ] :=
+    cloudSystemCredential[ name, Decrypt[ $cloudEncryptHash, credential ] ];
+
+cloudSystemCredential[ name_, credential_String ] :=
+    credential;
 
 cloudSystemCredential // endDefinition;
 
-$cloudCredentialStore := SystemCredentialStoreObject @ <|
-    "Backend" -> "EncryptedFile",
-    "Keyring" -> "Chatbook-"<>$MachineName
-|>;
+
+$cloudEncryptHash := Hash[ $CloudUserUUID, "SHA256", "HexString" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2236,25 +2236,16 @@ setSystemCredential // endDefinition;
 (*setCloudSystemCredential*)
 setCloudSystemCredential // beginDefinition;
 
-setCloudSystemCredential[ name_, value_ ] := Quiet[
-    Check[ SystemCredential[ name ] = value,
-           setCloudSystemCredential0[ name, value ],
-           SystemCredential::nset
+setCloudSystemCredential[ name_, value_ ] := Enclose[
+    Module[ { encrypted },
+        encrypted = ConfirmMatch[ Encrypt[ $cloudEncryptHash, value ], _EncryptedObject, "Encrypt" ];
+        PersistentSymbol[ "Chatbook/SystemCredential/" <> name ] = encrypted;
+        ConfirmAssert[ cloudSystemCredential[ name ] === value, "CheckStoredCredential" ];
     ],
-    SystemCredential::nset
+    throwInternalFailure[ setCloudSystemCredential[ name, value ], ## ] &
 ];
 
 setCloudSystemCredential // endDefinition;
-
-
-setCloudSystemCredential0 // beginDefinition;
-
-setCloudSystemCredential0[ name_, value_ ] :=
-    Block[ { $SystemCredentialStore = $cloudCredentialStore },
-        SystemCredential[ name ] = value
-    ];
-
-setCloudSystemCredential0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
