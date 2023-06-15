@@ -37,6 +37,7 @@ $ninePatchDirectory = FileNameJoin @ { $assetLocation, "NinePatchImages" };
 $styleDataFile      = FileNameJoin @ { $assetLocation, "Styles.wl" };
 $pacletDirectory    = DirectoryName[ $InputFileName, 2 ];
 $iconManifestFile   = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
+$fullIconsFile      = FileNameJoin @ { $pacletDirectory, "Assets", "FullIcons.wxf" };
 $styleSheetTarget   = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
 
 
@@ -80,6 +81,7 @@ $iconFiles = FileNames[ "*.wl", $iconDirectory ];
 $iconNames = FileBaseName /@ $iconFiles;
 
 Developer`WriteWXFFile[ $iconManifestFile, AssociationMap[ RawBoxes @ TemplateBox[ { }, #1 ] &, $iconNames ] ];
+Developer`WriteWXFFile[ $fullIconsFile   , Association @ Map[ FileBaseName @ # -> Import @ # &, $iconFiles ] ];
 
 
 

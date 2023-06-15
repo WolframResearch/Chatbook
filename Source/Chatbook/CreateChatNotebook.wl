@@ -123,7 +123,10 @@ makeChatNotebookOptions[ settings_Association, opts: OptionsPattern[ ] ] := Sequ
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$chatbookStylesheet*)
-$chatbookStylesheet := If[ TrueQ @ $cloudNotebooks, $inlinedStylesheet, "Chatbook.nb" ];
+$chatbookStylesheet := If[ TrueQ[ $cloudNotebooks && $cloudVersionNumber < 1.66 ],
+                           $inlinedStylesheet,
+                           "Chatbook.nb"
+                       ];
 
 $inlinedStylesheet := $inlinedStylesheet = Import[
     FileNameJoin @ {
@@ -150,7 +153,7 @@ CreateChatDrivenNotebook[ opts: OptionsPattern[ { CreateChatNotebook, Notebook }
 (* ::Section::Closed:: *)
 (*Package Footer*)
 If[ Wolfram`ChatbookInternal`$BuildingMX,
-    $inlinedStylesheet;
+    Null;
 ];
 
 End[ ];
