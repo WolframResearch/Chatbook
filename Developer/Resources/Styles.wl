@@ -340,9 +340,10 @@ Cell[
                     StandardForm
                 ],
                 "Text",
-                Background  -> None,
-                CellFrame   -> 0,
-                CellMargins -> 0
+                Background           -> None,
+                CellFrame            -> 0,
+                CellMargins          -> 0,
+                ShowStringCharacters -> False
             ],
             None
         },
@@ -367,6 +368,7 @@ Cell[
     CounterAssignments     -> { { "ChatInputCount", 0 } },
     FontSize               -> 6,
     ShowCellLabel          -> False,
+    StyleKeyMapping        -> { "~" -> "ChatBlockDivider", "'" -> "ChatInput" },
 
     CellEventActions -> {
         "KeyDown" :> Switch[
@@ -395,9 +397,10 @@ Cell[
                     ],
                     StandardForm
                 ],
-                Background    -> None,
-                CellFrame     -> 0,
-                CellMargins   -> 0
+                Background           -> None,
+                CellFrame            -> 0,
+                CellMargins          -> 0,
+                ShowStringCharacters -> False
             ],
             None
         },
