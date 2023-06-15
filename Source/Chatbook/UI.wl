@@ -207,31 +207,12 @@ $cloudChatBanner := PaneSelector[
 (*====================================*)
 
 CreatePreferencesContent[] := Module[{
-	(* Make a hidden notebook using the Chatbook stylesheet, so that we can
-		look up TemplateBox[..] persona icon data in it. *)
-	fakeChatNB = NotebookPut[Notebook[
-		{},
-		StyleDefinitions -> "Chatbook.nb",
-		WindowTitle -> "Fake Chatbook for icon lookup",
-		Visible -> False
-	]],
-	getTemplateIcon,
 	personas = GetPersonasAssociation[],
 	chatbookSettings,
 	llmEvaluatorNamesSettings,
 	services,
 	grid
 },
-	getTemplateIcon = Function[iconStyle,
-		RawBoxes @ CurrentValue[fakeChatNB, {
-			StyleDefinitions,
-			iconStyle,
-			TemplateBoxOptions,
-			DisplayFunction
-		}][]
-	];
-
-	(*================================*)
 
 	llmEvaluatorNamesSettings = Grid[
 		Prepend[
@@ -240,7 +221,7 @@ CreatePreferencesContent[] := Module[{
 					Replace[Lookup[personaSettings, "Icon", None], {
 						None -> "",
 						RawBoxes[TemplateBox[{}, iconStyle_?StringQ]] :> (
-							getTemplateIcon[iconStyle]
+							chatbookIcon[iconStyle, False]
 						),
 						icon_ :> icon
 					}],
@@ -270,11 +251,11 @@ CreatePreferencesContent[] := Module[{
 	chatbookSettings = makeFrontEndAndNotebookSettingsContent[$FrontEnd];
 
 	services = Grid[{
-		{"",                            "Name", "State"},
-		{getTemplateIcon["OpenAILogo"], "OpenAI", "<Connected>"},
-		{"",                            "Bard", Style["Coming soon", Italic]},
-		{"",                            "Claude", Style["Coming soon", Italic]}
-	},
+			{""									, "Name"	, "State" 						},
+			{chatbookIcon["OpenAILogo", False]	, "OpenAI"	, "<Connected>" 				},
+			{""									, "Bard"	, Style["Coming soon", Italic]	},
+			{""									, "Claude"	, Style["Coming soon", Italic]	}
+		},
 		Background -> {None, {1 -> GrayLevel[0.95]}},
 		Dividers -> {False, {False, {1 -> True, 2 -> True}}},
 		Alignment -> {Left, Center}
