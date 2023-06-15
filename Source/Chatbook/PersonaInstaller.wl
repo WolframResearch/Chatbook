@@ -646,7 +646,7 @@ needsPromptResource[ ] := Enclose[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`Chatbook`Internal`$BuildingMX,
+If[ Wolfram`ChatbookInternal`$BuildingMX,
     $debug = False;
 ];
 

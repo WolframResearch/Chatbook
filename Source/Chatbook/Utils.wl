@@ -3,7 +3,11 @@
 	directly in any way.
 *)
 
+(* cSpell: ignore deflatten *)
+
 BeginPackage["Wolfram`Chatbook`Utils`"]
+
+`associationKeyDeflatten;
 
 CellPrint2
 
@@ -12,6 +16,7 @@ FirstMatchingPositionOrder::usage = "FirstMatchingPositionOrder[patterns][a, b] 
 Begin["`Private`"]
 
 Needs["Wolfram`Chatbook`ErrorUtils`"]
+Needs["Wolfram`Chatbook`Common`"]
 
 (*====================================*)
 
@@ -85,6 +90,18 @@ FirstMatchingPositionOrder[patterns_?ListQ][a_, b_] := Module[{
 	}]
 ]
 
-End[]
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*AssociationKeyDeflatten*)
+(* https://resources.wolframcloud.com/FunctionRepository/resources/AssociationKeyDeflatten *)
+importResourceFunction[ associationKeyDeflatten, "AssociationKeyDeflatten" ];
 
-EndPackage[]
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Package Footer*)
+If[ Wolfram`ChatbookInternal`$BuildingMX,
+    Null;
+];
+
+End[ ];
+EndPackage[ ];

@@ -17,7 +17,7 @@ cFile = cicd`ScriptConfirmBy[ #, FileExistsQ ] &;
 cDir  = cicd`ScriptConfirmBy[ #, DirectoryQ  ] &;
 cStr  = cicd`ScriptConfirmBy[ #, StringQ     ] &;
 
-Wolfram`Chatbook`Internal`$BuildingMX = True;
+Wolfram`ChatbookInternal`$BuildingMX = True;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -42,7 +42,7 @@ If[ FileExistsQ @ $mxFile,
 
 cicd`ConsoleLog[ "Loading paclet..." ];
 cicd`ScriptConfirmBy[ PacletDirectoryLoad @ $pacletDir, MemberQ @ $pacletDir ];
-cicd`ScriptConfirm @ Get[ "Wolfram`Chatbook`" ];
+cicd`ScriptConfirm @ CheckAbort[ Get[ "Wolfram`Chatbook`" ], $Failed ];
 
 $mxDir = cDir @ gu`EnsureDirectory @ DirectoryName @ $mxFile;
 cicd`ConsoleLog @ SequenceForm[ "MX target directory: ", $mxDir  ];

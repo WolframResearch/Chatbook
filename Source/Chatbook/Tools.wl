@@ -18,6 +18,7 @@ Begin[ "`Private`" ];
 Needs[ "Wolfram`Chatbook`"               ];
 Needs[ "Wolfram`Chatbook`Common`"        ];
 Needs[ "Wolfram`Chatbook`Serialization`" ];
+Needs[ "Wolfram`Chatbook`Utils`"         ];
 
 PacletInstall[ "Wolfram/LLMFunctions" ];
 Needs[ "Wolfram`LLMFunctions`" ];
@@ -916,17 +917,6 @@ wolframLanguageData[ name_, property_ ] := Enclose[
 wolframLanguageData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*Misc*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*associationKeyDeflatten*)
-(* TODO: copy definition from resource function *)
-associationKeyDeflatten := associationKeyDeflatten =
-    Block[ { PrintTemporary }, ResourceFunction[ "AssociationKeyDeflatten", "Function" ] ];
-
-(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
 
@@ -934,7 +924,7 @@ associationKeyDeflatten := associationKeyDeflatten =
 $defaultChatTools0 = Association[ KeyTake[ $defaultChatTools0, $defaultToolOrder ], $defaultChatTools0 ];
 
 
-If[ Wolfram`Chatbook`Internal`$BuildingMX,
+If[ Wolfram`ChatbookInternal`$BuildingMX,
     $toolConfiguration;
 ];
 
