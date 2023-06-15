@@ -11,6 +11,7 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `cellPrintAfter;
 `cellStyles;
 `currentChatSettings;
+`fixCloudCell;
 `notebookRead;
 `parentCell;
 `parentNotebook;
@@ -277,6 +278,42 @@ selectionEvaluateCreateCell[ nbo_NotebookObject ] := SelectionEvaluateCreateCell
 selectionEvaluateCreateCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*fixCloudCell*)
+
+(*
+    Repairs text cells created in cloud notebooks.
+    In the cloud, typing plain text like "Hello #Translated|French" into ChatInput cells can result in boxes like:
+    ```
+    Cell[TextData[{"Hello", StyleBox[RowBox[{" ", "#"}]], "Translated", "|", "French"}], "ChatInput"]
+    ```
+    This function repairs this kind mess so we can make sense of the cell contents.
+*)
+
+fixCloudCell // beginDefinition;
+fixCloudCell[ cell_ ] /; ! TrueQ @ $cloudNotebooks := cell;
+fixCloudCell[ Cell[ CellGroupData[ cells_, a___ ] ] ] := Cell[ CellGroupData[ fixCloudCell @ cells, a ] ];
+fixCloudCell[ Cell[ text_, args___ ] ] := Cell[ applyCloudCellFixes @ text, args ];
+fixCloudCell[ cells_List ] := fixCloudCell /@ cells;
+fixCloudCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*applyCloudCellFixes*)
+applyCloudCellFixes // beginDefinition;
+applyCloudCellFixes[ text_String ] := text;
+applyCloudCellFixes[ boxes_BoxData ] := boxes;
+applyCloudCellFixes[ text_TextData ] := ReplaceRepeated[ text, $cloudCellFixes ];
+applyCloudCellFixes // endDefinition;
+
+$cloudCellFixes := $cloudCellFixes = Dispatch @ {
+    TextData[ { a___, b_String, "|", c_String, d___ } ]  :> TextData @ { a, b<>"|"<>c, d },
+    TextData[ { a___String } ]                           :> StringJoin @ a,
+    TextData[ { a___, RowBox[ { b___String } ], c___ } ] :> TextData @ { a, StringJoin @ b, c },
+    StyleBox[ a_ ]                                       :> a
+};
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Notebooks*)
 
@@ -349,7 +386,7 @@ compressRasterBoxes // endDefinition;
 (* ::Section::Closed:: *)
 (*Package Footer*)
 If[ Wolfram`ChatbookInternal`$BuildingMX,
-    Null
+    $cloudCellFixes;
 ];
 
 End[ ];
