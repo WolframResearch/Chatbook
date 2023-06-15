@@ -85,6 +85,7 @@ Block[ { $ContextPath },
     Get[ "Wolfram`Chatbook`PersonaInstaller`"     ];
     Get[ "Wolfram`Chatbook`InlineReferences`"     ];
     Get[ "Wolfram`Chatbook`ServerSentEventUtils`" ];
+    Get[ "Wolfram`Chatbook`PreferencesUtils`"     ];
 ];
 
 (* ::**************************************************************************************************************:: *)
