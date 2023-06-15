@@ -2205,11 +2205,6 @@ systemCredential // endDefinition;
 (* FIXME: move all cloud workarounds to separate file and define global flag to turn off workarounds *)
 cloudSystemCredential // beginDefinition;
 
-cloudSystemCredential[ name_ ] :=
-    With[ { credential = SystemCredential @ name },
-        credential /; StringQ @ credential
-    ];
-
 (* Workaround for CLOUD-22865 *)
 cloudSystemCredential[ name_String ] :=
     cloudSystemCredential[ name, PersistentSymbol[ "Chatbook/SystemCredential/" <> name ] ];
@@ -2243,7 +2238,6 @@ setCloudSystemCredential // beginDefinition;
 
 setCloudSystemCredential[ name_, value_ ] := Enclose[
     Module[ { encrypted },
-        Quiet[ SystemCredential[ name ] = value ];
         encrypted = ConfirmMatch[ Encrypt[ $cloudEncryptHash, value ], _EncryptedObject, "Encrypt" ];
         PersistentSymbol[ "Chatbook/SystemCredential/" <> name ] = encrypted;
         ConfirmAssert[ cloudSystemCredential[ name ] === value, "CheckStoredCredential" ];
