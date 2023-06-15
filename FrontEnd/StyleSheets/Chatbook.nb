@@ -2264,7 +2264,8 @@ Notebook[
       "Text",
       Background -> None,
       CellFrame -> 0,
-      CellMargins -> 0
+      CellMargins -> 0,
+      ShowStringCharacters -> False
      ],
      None
     },
@@ -2278,6 +2279,7 @@ Notebook[
    StyleData["ChatDelimiter"],
    CellMargins -> {{5, 0}, {10, 10}},
    CellElementSpacings -> {"CellMinHeight" -> 6},
+   StyleKeyMapping -> {"~" -> "ChatBlockDivider", "'" -> "ChatInput"},
    CellGroupingRules -> {"SectionGrouping", 62},
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    Initialization :>
@@ -2337,7 +2339,8 @@ Notebook[
       ],
       Background -> None,
       CellFrame -> 0,
-      CellMargins -> 0
+      CellMargins -> 0,
+      ShowStringCharacters -> False
      ],
      None
     },
