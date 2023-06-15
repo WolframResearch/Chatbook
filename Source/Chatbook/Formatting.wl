@@ -397,10 +397,9 @@ $textDataFormatRules = {
             imageCell[ alt, url ]
     ,
     tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ("ENDTOOLCALL"|EndOfString)) :> inlineToolCallCell @ tool,
-    "\n" ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
-    "\n" ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ]
+    ("\n"|StartOfString) ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
+    ("\n"|StartOfString) ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ]
     ,
-    "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :> hyperlinkCell[ label, url ],
     "\\`" :> "`",
     "\\$" :> "$",
     "``" ~~ code__ ~~ "``" /; StringFreeQ[ code, "``" ] :> inlineCodeCell @ code,
@@ -414,13 +413,13 @@ $textDataFormatRules = {
 (* ::Subsection::Closed:: *)
 (*$stringFormatRules*)
 $stringFormatRules = {
-    "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :> hyperlink[ label, url ],
     "***" ~~ text: Except[ "*" ].. ~~ "***" :> styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
     "___" ~~ text: Except[ "_" ].. ~~ "___" :> styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
     "**" ~~ text: Except[ "*" ].. ~~ "**" :> styleBox[ text, FontWeight -> Bold ],
     "__" ~~ text: Except[ "_" ].. ~~ "__" :> styleBox[ text, FontWeight -> Bold ],
     "*" ~~ text: Except[ "*" ].. ~~ "*" :> styleBox[ text, FontSlant -> Italic ],
-    "_" ~~ text: Except[ "_" ].. ~~ "_" :> styleBox[ text, FontSlant -> Italic ]
+    "_" ~~ text: Except[ "_" ].. ~~ "_" :> styleBox[ text, FontSlant -> Italic ],
+    "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :> hyperlink[ label, url ]
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -696,7 +695,8 @@ styleBox // beginDefinition;
 
 styleBox[ text_String, a___ ] := styleBox[ formatTextString @ text, a ];
 styleBox[ { text: _ButtonBox|_String }, a___ ] := StyleBox[ text, a ];
-styleBox[ { (h: Cell|StyleBox)[ text_, a___ ] }, b___ ] := DeleteDuplicates @ StyleBox[ text, a, b ];
+styleBox[ { StyleBox[ text_, a___ ] }, b___ ] := DeleteDuplicates @ StyleBox[ text, a, b ];
+styleBox[ { Cell[ text_, a___ ] }, b___ ] := DeleteDuplicates @ Cell[ text, a, b ];
 
 styleBox[ { a___, b: Except[ _ButtonBox|_Cell|_String|_StyleBox ], c___ }, d___ ] :=
     styleBox[ { a, Cell @ BoxData @ b, c }, d ];
@@ -801,7 +801,7 @@ $boxCache = <| |>;
 (*hyperlink*)
 hyperlink // beginDefinition;
 
-hyperlink[ label_String, uri_String ] /; StringStartsQ[ uri, "paclet:" ] :=
+hyperlink[ label_String | { label_String }, uri_String ] /; StringStartsQ[ uri, "paclet:" ] :=
     Cell @ BoxData @ TemplateBox[ { StringTrim[ label, (Whitespace|"`"|"\\").. ], uri }, "TextRefLink" ];
 
 hyperlink[ label_String, url_String ] := hyperlink[ formatTextString @ label, url ];
