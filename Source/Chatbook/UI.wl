@@ -164,7 +164,7 @@ $cloudChatBanner := PaneSelector[
 			{
 				{
 					"",
-					$chatbookIcons[ "ChatDrivenNotebookIcon" ],
+					chatbookIcon[ "ChatDrivenNotebookIcon", False ],
 					Style[
 						"Chat-Driven Notebook",
 						FontColor  -> RGBColor[ "#333333" ],
@@ -181,7 +181,7 @@ $cloudChatBanner := PaneSelector[
 			{
 				{
 					"",
-					$chatbookIcons[ "ChatEnabledNotebookIcon" ],
+					chatbookIcon[ "ChatEnabledNotebookIcon", False ],
 					Style[
 						"Chat-Enabled Notebook",
 						FontColor  -> RGBColor[ "#333333" ],
