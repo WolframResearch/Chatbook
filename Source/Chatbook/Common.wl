@@ -31,6 +31,9 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `throwFailure;
 `throwInternalFailure;
 
+`chatbookIcon;
+`$cloudVersionNumber;
+
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`" ];
@@ -542,9 +545,59 @@ truncatePartString[ other_, max_Integer ] := truncatePartString[ ToString[ Uneva
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Assets*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatbookIcon*)
+(*
+    Gets an icon by name.
+    The second argument specifies whether it is returned as a `TemplateBox` or the full expression.
+    For efficiency, only use `False` when a template box cannot be used, i.e. when the stylesheet is not accessible.
+*)
+chatbookIcon // beginDefinition;
+chatbookIcon[ name_String ] := chatbookIcon[ name, True ];
+chatbookIcon[ name_String, True  ] := chatbookIcon[ name, Lookup[ $chatbookIcons    , name ] ];
+chatbookIcon[ name_String, False ] := chatbookIcon[ name, Lookup[ $chatbookIconsFull, name ] ];
+chatbookIcon[ name_String, icon: Except[ _Missing ] ] := icon;
+chatbookIcon // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$chatbookIcons*)
+$chatbookIcons := $chatbookIcons =
+    Developer`ReadWXFFile @ PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "Icons" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$chatbookIconsFull*)
+$chatbookIconsFull := $chatbookIconsFull =
+    Developer`ReadWXFFile @ PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "FullIcons" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Misc*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$cloudVersionNumber*)
+$cloudVersionNumber := cloudVersionNumber @ $CloudVersionNumber;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudVersionNumber*)
+cloudVersionNumber // beginDefinition;
+cloudVersionNumber[ version_? NumberQ ] := version;
+cloudVersionNumber[ version_String ] := cloudVersionNumber @ Interpreter[ "Number" ][ version ];
+cloudVersionNumber // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Package Footer*)
 If[ Wolfram`ChatbookInternal`$BuildingMX,
     $debug = False;
+    $chatbookIcons;
+    $chatbookIconsFull;
 ];
 
 End[ ];

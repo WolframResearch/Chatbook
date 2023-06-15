@@ -3,7 +3,7 @@
 PacletObject[<|
 	"Name" -> "Wolfram/Chatbook",
 	"PublisherID" -> "Wolfram",
-	"Version" -> "0.0.28",
+	"Version" -> "0.0.29",
 	"WolframVersion" -> "13.2+",
 	"Description" -> "Wolfram Notebooks + LLMs",
 	"License" -> "MIT",
@@ -23,6 +23,7 @@ PacletObject[<|
 			"Root" -> "Assets",
 			"Assets" -> {
 				{"Icons", "Icons.wxf"},
+				{"FullIcons", "FullIcons.wxf"},
 				{"AIAssistant", "AIAssistant"}
 			}
 		},
