@@ -97,7 +97,7 @@ menuItem[ icon_, label_, code_ ] :=
 
 (*========================================================*)
 
-If[ Wolfram`Chatbook`Internal`$BuildingMX,
+If[ Wolfram`ChatbookInternal`$BuildingMX,
     $chatbookIcons;
 ];
 

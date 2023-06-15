@@ -22,10 +22,11 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 
 `$catchTopTag;
 `beginDefinition;
-`catchTop;
 `catchMine;
+`catchTop;
 `catchTopAs;
 `endDefinition;
+`importResourceFunction;
 `messageFailure;
 `throwFailure;
 `throwInternalFailure;
@@ -159,6 +160,41 @@ endDefinition // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Resource Functions*)
+importResourceFunction // beginDefinition;
+importResourceFunction::failure = "[ERROR] Failed to import resource function `1`. Aborting MX build.";
+importResourceFunction // Attributes = { HoldFirst };
+
+importResourceFunction[ symbol_Symbol, name_String ] /; Wolfram`ChatbookInternal`$BuildingMX := Enclose[
+    Block[ { PrintTemporary },
+        Module[ { sourceContext, targetContext, definition, replaced, newSymbol },
+
+            sourceContext = ConfirmBy[ ResourceFunction[ name, "Context" ], StringQ ];
+            targetContext = "Wolfram`Chatbook`ResourceFunctions`"<>name<>"`";
+            definition    = ConfirmMatch[ ResourceFunction[ name, "DefinitionList" ], _Language`DefinitionList ];
+
+            replaced = ConfirmMatch[
+                ResourceFunction[ "ReplaceContext" ][ definition, sourceContext -> targetContext ],
+                _Language`DefinitionList
+            ];
+
+            ConfirmMatch[ Language`ExtendedFullDefinition[ ] = replaced, _Language`DefinitionList ];
+
+            newSymbol = ConfirmMatch[ Symbol[ targetContext<>name ], _Symbol? AtomQ ];
+
+            ConfirmMatch[ symbol = newSymbol, newSymbol ]
+        ]
+    ],
+    (Message[ importResourceFunction::failure, name ]; Abort[ ]) &
+];
+
+importResourceFunction[ symbol_Symbol, name_String ] :=
+    symbol := symbol = Block[ { PrintTemporary }, ResourceFunction[ name, "Function" ] ];
+
+importResourceFunction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Error Handling*)
 
 (* ::**************************************************************************************************************:: *)
@@ -242,7 +278,8 @@ messageFailure[ args___ ] :=
         ]
     ];
 
-messageFailure0 := messageFailure0 = Block[ { PrintTemporary }, ResourceFunction[ "MessageFailure", "Function" ] ];
+(* https://resources.wolframcloud.com/FunctionRepository/resources/MessageFailure *)
+importResourceFunction[ messageFailure0, "MessageFailure" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -506,7 +543,7 @@ truncatePartString[ other_, max_Integer ] := truncatePartString[ ToString[ Uneva
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`Chatbook`Internal`$BuildingMX,
+If[ Wolfram`ChatbookInternal`$BuildingMX,
     $debug = False;
 ];
 
