@@ -342,7 +342,8 @@ Cell[
                 "Text",
                 Background  -> None,
                 CellFrame   -> 0,
-                CellMargins -> 0
+                CellMargins          -> 0,
+                ShowStringCharacters -> False
             ],
             None
         },
@@ -397,7 +398,8 @@ Cell[
                 ],
                 Background    -> None,
                 CellFrame     -> 0,
-                CellMargins   -> 0
+                CellMargins          -> 0,
+                ShowStringCharacters -> False
             ],
             None
         },
