@@ -2401,6 +2401,8 @@ getAIAssistantModels // endDefinition;
 (*getModelList*)
 getModelList // beginDefinition;
 
+getModelList[ ] := getModelList @ toAPIKey @ Automatic;
+
 getModelList[ key_String ] := getModelList[ key, Hash @ key ];
 
 getModelList[ key_String, hash_Integer ] :=
