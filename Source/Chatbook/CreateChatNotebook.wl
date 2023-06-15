@@ -50,6 +50,9 @@ CreateChatNotebook[ nbo_NotebookObject, opts: OptionsPattern[ { CreateChatNotebo
         nbo
     ];
 
+CreateChatNotebook[ chat_ChatObject, opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] :=
+    createNotebookFromChatObject[ chat, opts ];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*createChatNotebook*)
