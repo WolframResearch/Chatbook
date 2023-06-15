@@ -31,7 +31,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `throwFailure;
 `throwInternalFailure;
 
-`$chatbookIcons;
+`chatbookIcon;
 
 Begin[ "`Private`" ];
 
@@ -548,9 +548,30 @@ truncatePartString[ other_, max_Integer ] := truncatePartString[ ToString[ Uneva
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*chatbookIcon*)
+(*
+    Gets an icon by name.
+    The second argument specifies whether it is returned as a `TemplateBox` or the full expression.
+    For efficiency, only use `False` when a template box cannot be used, i.e. when the stylesheet is not accessible.
+*)
+chatbookIcon // beginDefinition;
+chatbookIcon[ name_String ] := chatbookIcon[ name, True ];
+chatbookIcon[ name_String, True  ] := chatbookIcon[ name, Lookup[ $chatbookIcons    , name ] ];
+chatbookIcon[ name_String, False ] := chatbookIcon[ name, Lookup[ $chatbookIconsFull, name ] ];
+chatbookIcon[ name_String, icon: Except[ _Missing ] ] := icon;
+chatbookIcon // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*$chatbookIcons*)
 $chatbookIcons := $chatbookIcons =
     Developer`ReadWXFFile @ PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "Icons" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$chatbookIconsFull*)
+$chatbookIconsFull := $chatbookIconsFull =
+    Developer`ReadWXFFile @ PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "FullIcons" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -558,6 +579,7 @@ $chatbookIcons := $chatbookIcons =
 If[ Wolfram`ChatbookInternal`$BuildingMX,
     $debug = False;
     $chatbookIcons;
+    $chatbookIconsFull;
 ];
 
 End[ ];
