@@ -32,6 +32,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `throwInternalFailure;
 
 `chatbookIcon;
+`$cloudVersionNumber;
 
 Begin[ "`Private`" ];
 
@@ -572,6 +573,23 @@ $chatbookIcons := $chatbookIcons =
 (*$chatbookIconsFull*)
 $chatbookIconsFull := $chatbookIconsFull =
     Developer`ReadWXFFile @ PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "FullIcons" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Misc*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$cloudVersionNumber*)
+$cloudVersionNumber := cloudVersionNumber @ $CloudVersionNumber;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudVersionNumber*)
+cloudVersionNumber // beginDefinition;
+cloudVersionNumber[ version_? NumberQ ] := version;
+cloudVersionNumber[ version_String ] := cloudVersionNumber @ Interpreter[ "Number" ][ version ];
+cloudVersionNumber // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
