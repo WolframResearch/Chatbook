@@ -668,6 +668,8 @@ sandboxResultString[ HoldComplete[ expr: Except[ _Graphics|_Graphics3D ] ] ] :=
 
 sandboxResultString[ HoldComplete[ expr_ ] ] := makeExpressionURI @ Unevaluated @ expr;
 
+sandboxResultString[ HoldComplete[ ] ] := "Null";
+
 sandboxResultString // endDefinition;
 
 $attachments = <| |>;
