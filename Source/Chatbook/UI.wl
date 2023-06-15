@@ -164,7 +164,7 @@ $cloudChatBanner := PaneSelector[
 			{
 				{
 					"",
-					RawBoxes @ TemplateBox[ { }, "ChatDrivenNotebookIcon" ],
+					$chatbookIcons[ "ChatDrivenNotebookIcon" ],
 					Style[
 						"Chat-Driven Notebook",
 						FontColor  -> RGBColor[ "#333333" ],
@@ -181,7 +181,7 @@ $cloudChatBanner := PaneSelector[
 			{
 				{
 					"",
-					RawBoxes @ TemplateBox[ { }, "ChatEnabledNotebookIcon" ],
+					$chatbookIcons[ "ChatEnabledNotebookIcon" ],
 					Style[
 						"Chat-Enabled Notebook",
 						FontColor  -> RGBColor[ "#333333" ],

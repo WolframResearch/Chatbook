@@ -31,6 +31,8 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `throwFailure;
 `throwInternalFailure;
 
+`$chatbookIcons;
+
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`" ];
@@ -542,9 +544,20 @@ truncatePartString[ other_, max_Integer ] := truncatePartString[ ToString[ Uneva
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Assets*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$chatbookIcons*)
+$chatbookIcons := $chatbookIcons =
+    Developer`ReadWXFFile @ PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "Icons" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Package Footer*)
 If[ Wolfram`ChatbookInternal`$BuildingMX,
     $debug = False;
+    $chatbookIcons;
 ];
 
 End[ ];
