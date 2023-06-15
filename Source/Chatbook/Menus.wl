@@ -15,12 +15,8 @@ The generated menu expression may depend on styles from the Chatbook stylesheet.
 
 Begin["`Private`"]
 
+Needs["Wolfram`Chatbook`Common`"]
 Needs["Wolfram`Chatbook`ErrorUtils`"]
-
-(*========================================================*)
-
-$chatbookIcons := $chatbookIcons =
-    Developer`ReadWXFFile @ PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "Icons" ];
 
 (*========================================================*)
 
@@ -98,7 +94,7 @@ menuItem[ icon_, label_, code_ ] :=
 (*========================================================*)
 
 If[ Wolfram`ChatbookInternal`$BuildingMX,
-    $chatbookIcons;
+    Null;
 ];
 
 End[]
