@@ -55,7 +55,7 @@ menuItem[ label_ :> action_ ] := menuItem[Graphics[{}, ImageSize -> 0], label, H
 menuItem[ section_ ] := RawBoxes @ TemplateBox[ { ToBoxes @ section }, "ChatMenuSection" ];
 
 menuItem[ name_String, label_, code_ ] :=
-	With[ { icon = $chatbookIcons[ name ] },
+	With[ { icon = chatbookIcon @ name },
 		If[ MissingQ @ icon,
 			menuItem[ RawBoxes @ TemplateBox[ { name }, "ChatMenuItemToolbarIcon" ], label, code ],
 			menuItem[ icon, label, code ]
