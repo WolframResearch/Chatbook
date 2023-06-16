@@ -2,7 +2,7 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 
-(* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDTOOLCALL, pacletreadonly, noinit, playerpass, Deflatten *)
+(* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDTOOLCALL, pacletreadonly, noinit, playerpass, Deflatten, Liouville, nocont *)
 
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
@@ -182,7 +182,13 @@ $fullExamples := StringJoin[
 $fullExamplesKeys :=
     If[ TrueQ @ $CloudEvaluation,
         { "AstroGraphicsDocumentation" },
-        { "AstroGraphicsDocumentation", "PlotEvaluate", "TemporaryDirectory" }
+        {
+            "AstroGraphicsDocumentation",
+            "FileSystemTree",
+            "FractionalDerivatives",
+            "PlotEvaluate",
+            "TemporaryDirectory"
+        }
     ];
 
 
@@ -214,6 +220,83 @@ To use [AstroGraphics](paclet:ref/AstroGraphics), you need to provide a list of 
 For example, <remainder of response>";
 
 
+$fullExamples0[ "FileSystemTree" ] = "\
+[user]
+What's the best way to generate a tree of files in a given directory?
+
+[assistant]
+TOOLCALL: documentation_search
+{
+	\"query\": \"tree of files\"
+}
+ENDARGUMENTS
+ENDTOOLCALL
+
+[system]
+* FileSystemTree - (score: 9.9) FileSystemTree[root] gives a tree whose keys are ...
+* Tree Drawing - (score: 3.0) ...
+
+[assistant]
+TOOLCALL: documentation_lookup
+{
+	\"names\": \"FileSystemTree\"
+}
+ENDARGUMENTS
+ENDTOOLCALL
+
+...";
+
+
+$fullExamples0[ "FractionalDerivatives" ] = "\
+[user]
+Calculate the half-order fractional derivative of x^n with respect to x.
+
+[assistant]
+TOOLCALL: documentation_search
+{
+	\"query\": \"fractional derivatives\"
+}
+ENDARGUMENTS
+ENDTOOLCALL
+
+[system]
+* FractionalD - (score: 9.5) FractionalD[f, {x, a}] gives ...
+* NFractionalD - (score: 9.2) ...
+
+[assistant]
+TOOLCALL: documentation_lookup
+{
+	\"names\": \"FractionalD\"
+}
+ENDARGUMENTS
+ENDTOOLCALL
+
+[system]
+Usage
+FractionalD[f, {x, a}] gives the Riemann-Liouville fractional derivative D_x^a f(x) of order a of the function f.
+
+Basic Examples
+<example text>
+
+[assistant]
+TOOLCALL: wolfram_language_evaluator
+{
+	\"code\": \"FractionalD[x^n, {x, 1/2}]\"
+}
+ENDARGUMENTS
+ENDTOOLCALL
+
+[system]
+Out[1]= Piecewise[...]
+
+![Formatted Result](expression://result-1234)
+
+[assistant]
+The half-order fractional derivative of $x^n$ with respect to $x$ is given by:
+![Fractional Derivative](expression://result-1234)
+";
+
+
 $fullExamples0[ "PlotEvaluate" ] = "\
 [user]
 Plot sin(x) from -5 to 5
@@ -227,11 +310,11 @@ ENDARGUMENTS
 ENDTOOLCALL
 
 [system]
-Out[1]= ![result](expression://result-xxxx)
+Out[2]= ![result](expression://result-5678)
 
 [assistant]
 Here's the plot of $\\sin{x}$ from -5 to 5:
-![Plot](expression://result-xxxx)";
+![Plot](expression://result-5678)";
 
 
 $fullExamples0[ "TemporaryDirectory" ] = "\
@@ -259,7 +342,7 @@ ENDARGUMENTS
 ENDTOOLCALL
 
 [system]
-Out[2]= \"C:\\Users\\UserName\\AppData\\Local\\Temp\"
+Out[3]= \"C:\\Users\\UserName\\AppData\\Local\\Temp\"
 
 [assistant]
 The temporary directory is located at C:\\Users\\UserName\\AppData\\Local\\Temp.";
@@ -286,7 +369,7 @@ $defaultChatTools0[ "documentation_search" ] = LLMTool[
         "Name"        -> "documentation_search",
         "DisplayName" -> "Documentation Search",
         "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaDocumentation" ],
-        "Description" -> "Search Wolfram Language documentation for symbols and more.",
+        "Description" -> "Search Wolfram Language documentation for symbols and more. Follow up search results with the documentation lookup tool to get the full information.",
         "Parameters"  -> {
             "query" -> <|
                 "Interpreter" -> "String",
@@ -461,7 +544,8 @@ Evaluate Wolfram Language code for the user in a separate sandboxed kernel. \
 You do not need to tell the user the input code that you are evaluating. \
 They will be able to inspect it if they want to. \
 The user does not automatically see the result. \
-You must include the result in your response in order for them to see it.
+You must include the result in your response in order for them to see it. \
+If a formatted result is provided as a markdown link, use that in your response instead of typing out the output.
 ";
 
 $defaultChatTools0[ "wolfram_language_evaluator" ] = LLMTool[
@@ -501,8 +585,22 @@ startSandboxKernel[ ] := Enclose[
 
         pid = pingSandboxKernel @ kernel;
 
-        (* Reset line number and leave `In[1]:=` in the buffer *)
-        LinkWrite[ kernel, Unevaluated @ EnterExpressionPacket[ $Line = 0 ] ];
+
+        LinkWrite[
+            kernel,
+            Unevaluated @ EnterExpressionPacket[
+                (* Redefine some messages to provide hints to the LLM: *)
+                Needs::nocont = "Context `1` was not created when Needs was evaluated. Use the documentation_search tool to find alternatives.";
+
+                General::undefined = "Warning: Global symbol `1` is undefined. Use the documentation_search tool to find alternatives.";
+
+                General::undefined2 = "Warning: Global symbols `1` are undefined. Use the documentation_search tool to find alternatives.";
+
+                (* Reset line number and leave `In[1]:=` in the buffer *)
+                $Line = 0
+            ]
+        ];
+
         TimeConstrained[
             While[ ! MatchQ[ LinkRead @ kernel, _ReturnExpressionPacket ] ],
             10,
@@ -604,13 +702,10 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
         ];
 
         If[ null === $timedOut,
-            AppendTo[ packets, ReturnExpressionPacket @ BinarySerialize @ HoldComplete @ $TimedOut ]
+            AppendTo[ packets, ReturnExpressionPacket @ HoldComplete @ $TimedOut ]
         ];
 
-        results = Cases[
-            packets,
-            ReturnExpressionPacket[ bytes_ByteArray ] :> BinaryDeserialize @ bytes
-        ];
+        results = Cases[ packets, ReturnExpressionPacket[ expr_ ] :> expr ];
 
         flat = Flatten[ HoldComplete @@ results, 1 ];
 
@@ -634,14 +729,78 @@ linkWriteEvaluation // beginDefinition;
 linkWriteEvaluation // Attributes = { HoldAllComplete };
 
 linkWriteEvaluation[ kernel_, evaluation_ ] :=
-    LinkWrite[
-        kernel,
-        Unevaluated @ EnterExpressionPacket @ BinarySerialize[
-            <| "Line" -> $Line, "Result" -> HoldComplete @@ { evaluation } |>
+    With[ { eval = createEvaluationWithWarnings @ evaluation },
+        LinkWrite[
+            kernel,
+            Unevaluated @ EnterExpressionPacket @ <|
+                "Line"   -> $Line,
+                "Result" -> HoldComplete @@ { ReleaseHold @ eval }
+            |>
         ]
     ];
 
 linkWriteEvaluation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createEvaluationWithWarnings*)
+createEvaluationWithWarnings // beginDefinition;
+createEvaluationWithWarnings // Attributes = { HoldAllComplete };
+
+createEvaluationWithWarnings[ evaluation_ ] :=
+    Module[ { held, undefined },
+        held = HoldComplete @ evaluation;
+
+        undefined = Flatten[ HoldComplete @@ Cases[
+            Unevaluated @ evaluation,
+            s_Symbol? undefinedSymbolQ :> HoldComplete @ s,
+            Infinity,
+            Heads -> True
+        ] ];
+
+        (* TODO: add other warnings *)
+        addWarnings[ held, <| "UndefinedSymbols" -> undefined |> ]
+    ];
+
+createEvaluationWithWarnings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addWarnings*)
+addWarnings // beginDefinition;
+
+addWarnings[ HoldComplete[ eval__ ], as: KeyValuePattern[ "UndefinedSymbols" -> HoldComplete[ ] ] ] :=
+    addWarnings[ HoldComplete[ eval ], KeyDrop[ as, "UndefinedSymbols" ] ];
+
+addWarnings[ HoldComplete[ eval__ ], as: KeyValuePattern[ "UndefinedSymbols" -> HoldComplete[ s_Symbol ] ] ] :=
+    addWarnings[ HoldComplete[ Message[ General::undefined, s ]; eval ], KeyDrop[ as, "UndefinedSymbols" ] ];
+
+addWarnings[ HoldComplete[ eval__ ], as: KeyValuePattern[ "UndefinedSymbols" -> HoldComplete[ s__Symbol ] ] ] :=
+    addWarnings[
+        HoldComplete[ Message[ General::undefined2, StringRiffle[ { s }, ", " ] ]; eval ],
+        KeyDrop[ as, "UndefinedSymbols" ]
+    ];
+
+addWarnings[ HoldComplete[ eval_  ], _ ] := HoldComplete @ eval;
+addWarnings[ HoldComplete[ eval__ ], _ ] := HoldComplete @ CompoundExpression @ eval;
+
+addWarnings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*undefinedSymbolQ*)
+undefinedSymbolQ // ClearAll;
+undefinedSymbolQ // Attributes = { HoldAllComplete };
+
+undefinedSymbolQ[ symbol_Symbol ] := TrueQ @ And[
+    AtomQ @ Unevaluated @ symbol,
+    Unevaluated @ symbol =!= Internal`$EFAIL,
+    Context @ Unevaluated @ symbol === "Global`",
+    StringStartsQ[ SymbolName @ Unevaluated @ symbol, _? UpperCaseQ ],
+    ! System`Private`HasAnyEvaluationsQ @ symbol
+];
+
+undefinedSymbolQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -661,9 +820,16 @@ sandboxResultString[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result"
 
 sandboxResultString[ HoldComplete[ Null..., expr_ ] ] := sandboxResultString @ HoldComplete @ expr;
 
-sandboxResultString[ HoldComplete[ expr: Except[ _Graphics|_Graphics3D ] ] ] :=
+sandboxResultString[ HoldComplete[ expr_? simpleResultQ ] ] :=
     With[ { string = ToString[ Unevaluated @ expr, InputForm, PageWidth -> 80 ] },
-        string /; StringLength @ string < 240
+        If[ StringLength @ string < 150,
+            If[ StringContainsQ[ string, "\n" ], "\n" <> string, string ],
+            StringJoin[
+                "\n",
+                ToString[ Unevaluated @ Short[ expr, 1 ], OutputForm, PageWidth -> 80 ], "\n\n\n",
+                makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ]
+            ]
+        ]
     ];
 
 sandboxResultString[ HoldComplete[ expr_ ] ] := makeExpressionURI @ Unevaluated @ expr;
@@ -673,6 +839,23 @@ sandboxResultString[ HoldComplete[ ] ] := "Null";
 sandboxResultString // endDefinition;
 
 $attachments = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*simpleResultQ*)
+simpleResultQ // beginDefinition;
+simpleResultQ // Attributes = { HoldAllComplete };
+simpleResultQ[ expr_ ] := FreeQ[ Unevaluated @ expr, _? fancyResultQ ];
+simpleResultQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*fancyResultQ*)
+fancyResultQ // beginDefinition;
+fancyResultQ // Attributes = { HoldAllComplete };
+fancyResultQ[ _Graphics|_Graphics3D|_Manipulate|_DynamicModule|_Legended ] := True;
+fancyResultQ[ _ ] := False;
+fancyResultQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
