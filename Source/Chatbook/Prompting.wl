@@ -33,6 +33,7 @@ $basePromptOrder = {
     "ConversionFormatting",
     "VisibleUserInput",
     "TrivialCode",
+    "Packages",
     "WolframSymbolCapitalization",
     "ModernMethods",
     "FunctionalStyle",
@@ -41,7 +42,7 @@ $basePromptOrder = {
 
 $basePromptClasses = <|
     "Notebooks"         -> { "NotebooksPreamble" },
-    "WolframLanguage"   -> { "CodeBlocks", "DoubleBackticks", "WolframLanguageStyle" },
+    "WolframLanguage"   -> { "CodeBlocks", "DoubleBackticks", "WolframLanguageStyle", "Packages" },
     "Math"              -> { "MathExpressions" },
     "Formatting"        -> { "CodeBlocks", "MathExpressions", "EscapedCharacters" },
     "MessageConversion" -> { "ConversionLargeOutputs", "ConversionGraphics", "ConversionFormatting" },
@@ -140,6 +141,9 @@ $basePromptComponents[ "VisibleUserInput" ] = "\
 
 $basePromptComponents[ "TrivialCode" ] = "\
 * Avoid suggesting trivial code that does not evaluate to anything";
+
+$basePromptComponents[ "Packages" ] = "\
+* Stick to built-in system functionality. Avoid packages unless specifically requested.";
 
 $basePromptComponents[ "WolframSymbolCapitalization" ] = "\
 * ALWAYS capitalize Wolfram Language symbols correctly, ESPECIALLY in code";
