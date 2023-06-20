@@ -8,11 +8,11 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
 `$attachments;
-`$defaultChatTools;
 `$toolConfiguration;
 `getToolByName;
 `initTools;
 `makeToolConfiguration;
+`makeExpressionURI;
 
 Begin[ "`Private`" ];
 
