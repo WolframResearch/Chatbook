@@ -586,19 +586,19 @@ startSandboxKernel[ ] := Enclose[
 
         pid = pingSandboxKernel @ kernel;
 
-
+        With[ { messages = $messageOverrides },
         LinkWrite[
             kernel,
             Unevaluated @ EnterExpressionPacket[
-                (* Redefine some messages to provide hints to the LLM: *)
-                Needs::nocont = "Context `1` was not created when Needs was evaluated. Use the documentation_search tool to find alternatives.";
+                    (* Preload some paclets: *)
+                    Needs[ "FunctionResource`" -> None ];
 
-                General::undefined = "Warning: Global symbol `1` is undefined. Use the documentation_search tool to find alternatives.";
-
-                General::undefined2 = "Warning: Global symbols `1` are undefined. Use the documentation_search tool to find alternatives.";
+                    (* Redefine some messages to provide hints to the LLM: *)
+                    ReleaseHold @ messages;
 
                 (* Reset line number and leave `In[1]:=` in the buffer *)
                 $Line = 0
+            ]
             ]
         ];
 
@@ -618,6 +618,17 @@ startSandboxKernel[ ] := Enclose[
 ];
 
 startSandboxKernel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$messageOverrides*)
+$messageOverrides := $messageOverrides = Flatten @ Apply[
+    HoldComplete,
+    ReadList[
+        PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "SandboxMessages" ],
+        HoldComplete @ Expression
+    ]
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -750,7 +761,7 @@ createEvaluationWithWarnings // Attributes = { HoldAllComplete };
 
 createEvaluationWithWarnings[ evaluation_ ] :=
     Module[ { held, undefined },
-        held = HoldComplete @ evaluation;
+        held = Flatten @ HoldComplete @ evaluation;
 
         undefined = Flatten[ HoldComplete @@ Cases[
             Unevaluated @ evaluation,
@@ -774,18 +785,31 @@ addWarnings[ HoldComplete[ eval__ ], as: KeyValuePattern[ "UndefinedSymbols" -> 
     addWarnings[ HoldComplete[ eval ], KeyDrop[ as, "UndefinedSymbols" ] ];
 
 addWarnings[ HoldComplete[ eval__ ], as: KeyValuePattern[ "UndefinedSymbols" -> HoldComplete[ s_Symbol ] ] ] :=
-    addWarnings[ HoldComplete[ Message[ General::undefined, s ]; eval ], KeyDrop[ as, "UndefinedSymbols" ] ];
+    addWarnings[ HoldComplete[ Message[ Symbol::undefined, s ]; eval ], KeyDrop[ as, "UndefinedSymbols" ] ];
 
 addWarnings[ HoldComplete[ eval__ ], as: KeyValuePattern[ "UndefinedSymbols" -> HoldComplete[ s__Symbol ] ] ] :=
     addWarnings[
-        HoldComplete[ Message[ General::undefined2, StringRiffle[ { s }, ", " ] ]; eval ],
+        HoldComplete[ Message[ Symbol::undefined2, StringRiffle[ { s }, ", " ] ]; eval ],
         KeyDrop[ as, "UndefinedSymbols" ]
     ];
 
-addWarnings[ HoldComplete[ eval_  ], _ ] := HoldComplete @ eval;
-addWarnings[ HoldComplete[ eval__ ], _ ] := HoldComplete @ CompoundExpression @ eval;
+addWarnings[ HoldComplete[ eval_  ], _ ] := addMessageHandler @ HoldComplete @ eval;
+addWarnings[ HoldComplete[ eval__ ], _ ] := addMessageHandler @ HoldComplete @ CompoundExpression @ eval;
 
 addWarnings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addMessageHandler*)
+addMessageHandler // beginDefinition;
+
+addMessageHandler[ HoldComplete[ eval_ ] ] :=
+    HoldComplete @ WithCleanup[
+        eval,
+        If[ MatchQ[ $MessageList, { __ } ], Message[ General::messages ] ]
+    ];
+
+addMessageHandler // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1106,12 +1130,16 @@ wolframLanguageData // endDefinition;
 (* ::Section::Closed:: *)
 (*Package Footer*)
 
+(* Close previous sandbox kernel if package is being reloaded: *)
+Scan[ LinkClose, Select[ Links[ ], sandboxKernelQ ] ];
+
 (* Sort tools to their default ordering: *)
 $defaultChatTools0 = Association[ KeyTake[ $defaultChatTools0, $defaultToolOrder ], $defaultChatTools0 ];
 
 
 If[ Wolfram`ChatbookInternal`$BuildingMX,
     $toolConfiguration;
+    $messageOverrides;
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)

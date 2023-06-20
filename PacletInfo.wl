@@ -24,7 +24,8 @@ PacletObject[<|
 			"Assets" -> {
 				{"Icons", "Icons.wxf"},
 				{"FullIcons", "FullIcons.wxf"},
-				{"AIAssistant", "AIAssistant"}
+				{"AIAssistant", "AIAssistant"},
+				{"SandboxMessages", "SandboxMessages.wl"}
 			}
 		},
 		{"LLMConfiguration",
