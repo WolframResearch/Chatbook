@@ -48,6 +48,7 @@ $sandboxKernelCommandLine := StringRiffle @ {
     ],
     "-wstp",
     "-noicon",
+    "-noinit",
     "-pacletreadonly",
     "-run",
     "ChatbookSandbox" <> ToString @ $ProcessID
