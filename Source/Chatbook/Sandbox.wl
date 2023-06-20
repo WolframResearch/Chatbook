@@ -1,6 +1,6 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
-BeginPackage[ "Wolfram`Chatbook`Tools`" ];
+BeginPackage[ "Wolfram`Chatbook`Sandbox`" ];
 
 (* cSpell: ignore noinit pacletreadonly playerpass *)
 
