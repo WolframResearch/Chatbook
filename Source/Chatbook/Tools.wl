@@ -10,6 +10,7 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 `$attachments;
 `$defaultChatTools;
 `$toolConfiguration;
+`getToolByName;
 `initTools;
 `makeToolConfiguration;
 
@@ -27,10 +28,15 @@ System`LLMTool;
 System`LLMConfiguration;
 
 (* TODO:
-    WolframAlpha
     ImageSynthesize
     LongTermMemory
+    Definitions
+    TestWriter
 *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Toolbox*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -171,206 +177,108 @@ toolTemplateDataString[ str_String ] := str;
 toolTemplateDataString[ expr_ ] := ToString[ expr, InputForm ];
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*Full Examples*)
-
-$fullExamples := StringJoin[
-    "\n---\n\n",
-    StringRiffle[ Values @ KeyTake[ $fullExamples0, $fullExamplesKeys ], "\n\n---\n\n" ],
-    "\n\n---\n"
-];
-
-$fullExamplesKeys :=
-    If[ TrueQ @ $CloudEvaluation,
-        { "AstroGraphicsDocumentation" },
-        {
-            "AstroGraphicsDocumentation",
-            "FileSystemTree",
-            "FractionalDerivatives",
-            "PlotEvaluate",
-            "TemporaryDirectory"
-        }
-    ];
-
-
-$fullExamples0 = <| |>;
-
-
-$fullExamples0[ "AstroGraphicsDocumentation" ] = "\
-[user]
-How do I use AstroGraphics?
-
-[assistant]
-Let me check the documentation for you. One moment...
-TOOLCALL: documentation_lookup
-{
-	\"names\": \"AstroGraphics\"
-}
-ENDARGUMENTS
-ENDTOOLCALL
-
-[system]
-Usage
-AstroGraphics[primitives, options] represents a two-dimensional view of space and the celestial sphere.
-
-Basic Examples
-<example text>
-
-[assistant]
-To use [AstroGraphics](paclet:ref/AstroGraphics), you need to provide a list of graphics primitives and options. \
-For example, <remainder of response>";
-
-
-$fullExamples0[ "FileSystemTree" ] = "\
-[user]
-What's the best way to generate a tree of files in a given directory?
-
-[assistant]
-TOOLCALL: documentation_search
-{
-	\"query\": \"tree of files\"
-}
-ENDARGUMENTS
-ENDTOOLCALL
-
-[system]
-* FileSystemTree - (score: 9.9) FileSystemTree[root] gives a tree whose keys are ...
-* Tree Drawing - (score: 3.0) ...
-
-[assistant]
-TOOLCALL: documentation_lookup
-{
-	\"names\": \"FileSystemTree\"
-}
-ENDARGUMENTS
-ENDTOOLCALL
-
-...";
-
-
-$fullExamples0[ "FractionalDerivatives" ] = "\
-[user]
-Calculate the half-order fractional derivative of x^n with respect to x.
-
-[assistant]
-TOOLCALL: documentation_search
-{
-	\"query\": \"fractional derivatives\"
-}
-ENDARGUMENTS
-ENDTOOLCALL
-
-[system]
-* FractionalD - (score: 9.5) FractionalD[f, {x, a}] gives ...
-* NFractionalD - (score: 9.2) ...
-
-[assistant]
-TOOLCALL: documentation_lookup
-{
-	\"names\": \"FractionalD\"
-}
-ENDARGUMENTS
-ENDTOOLCALL
-
-[system]
-Usage
-FractionalD[f, {x, a}] gives the Riemann-Liouville fractional derivative D_x^a f(x) of order a of the function f.
-
-Basic Examples
-<example text>
-
-[assistant]
-TOOLCALL: wolfram_language_evaluator
-{
-	\"code\": \"FractionalD[x^n, {x, 1/2}]\"
-}
-ENDARGUMENTS
-ENDTOOLCALL
-
-[system]
-Out[1]= Piecewise[...]
-
-![Formatted Result](expression://result-1234)
-
-[assistant]
-The half-order fractional derivative of $x^n$ with respect to $x$ is given by:
-![Fractional Derivative](expression://result-1234)
-";
-
-
-$fullExamples0[ "PlotEvaluate" ] = "\
-[user]
-Plot sin(x) from -5 to 5
-
-[assistant]
-TOOLCALL: wolfram_language_evaluator
-{
-	\"code\": \"Plot[Sin[x], {x, -10, 10}, AxesLabel -> {\\\"x\\\", \\\"sin(x)\\\"}]\"
-}
-ENDARGUMENTS
-ENDTOOLCALL
-
-[system]
-Out[2]= ![result](expression://result-5678)
-
-[assistant]
-Here's the plot of $\\sin{x}$ from -5 to 5:
-![Plot](expression://result-5678)";
-
-
-$fullExamples0[ "TemporaryDirectory" ] = "\
-[user]
-Where is the temporary directory located?
-
-[assistant]
-TOOLCALL: documentation_search
-{
-	\"query\": \"location of temporary directory\"
-}
-ENDARGUMENTS
-ENDTOOLCALL
-
-[system]
-* $TemporaryDirectory - (score: 9.6) $TemporaryDirectory gives the main system directory for temporary files.
-* CreateDirectory - (score: 8.5) CreateDirectory[\"dir\"] creates ...
-
-[assistant]
-TOOLCALL: wolfram_language_evaluator
-{
-	\"code\": \"$TemporaryDirectory\"
-}
-ENDARGUMENTS
-ENDTOOLCALL
-
-[system]
-Out[3]= \"C:\\Users\\UserName\\AppData\\Local\\Temp\"
-
-[assistant]
-The temporary directory is located at C:\\Users\\UserName\\AppData\\Local\\Temp.";
-
-(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Default Tools*)
 $defaultChatTools := If[ TrueQ @ $CloudEvaluation,
                          KeyDrop[ $defaultChatTools0, $cloudUnsupportedTools ],
                          $defaultChatTools0
-                     ];
+    ];
 
 $defaultChatTools0 = <| |>;
 
-$cloudUnsupportedTools = { "wolfram_language_evaluator", "documentation_search" };
+$cloudUnsupportedTools = { "WolframLanguageEvaluator", "DocumentationSearch" };
 
-$defaultToolOrder = { "documentation_lookup", "documentation_search", "wolfram_alpha", "wolfram_language_evaluator" };
+$defaultToolOrder = {
+    "DocumentationLookup",
+    "DocumentationSearch",
+    "WolframAlpha",
+    "WolframLanguageEvaluator"
+};
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getToolByName*)
+getToolByName // beginDefinition;
+getToolByName[ name_String ] := Lookup[ $defaultChatTools, toCanonicalToolName @ name ];
+getToolByName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toolName*)
+toolName // beginDefinition;
+toolName[ tool_ ] := toolName[ tool, Automatic ];
+toolName[ HoldPattern @ LLMTool[ KeyValuePattern[ "Name" -> name_String ], ___ ], type_ ] := toolName[ name, type ];
+toolName[ name_, Automatic ] := toolName[ name, "Canonical" ];
+toolName[ name_String, "Machine" ] := toMachineToolName @ name;
+toolName[ name_String, "Canonical" ] := toCanonicalToolName @ name;
+toolName[ name_String, "Display" ] := toDisplayToolName @ name;
+toolName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toMachineToolName*)
+toMachineToolName // beginDefinition;
+
+toMachineToolName[ s_String ] :=
+    ToLowerCase @ StringReplace[
+        StringTrim @ s,
+        { " " -> "_", a_?LowerCaseQ ~~ b_?UpperCaseQ ~~ c_?LowerCaseQ :> a<>"_"<>b<>c }
+    ];
+
+toMachineToolName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toCanonicalToolName*)
+toCanonicalToolName // beginDefinition;
+
+toCanonicalToolName[ s_String ] :=
+    Capitalize @ StringReplace[ StringTrim @ s, a_~~("_"|" ")~~b_ :> a <> ToUpperCase @ b ];
+
+toCanonicalToolName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toDisplayToolName*)
+toDisplayToolName // beginDefinition;
+
+toDisplayToolName[ s_String ] :=
+    Capitalize[
+        StringReplace[
+            StringTrim @ s,
+            { "_" :> " ", a_?LowerCaseQ ~~ b_?UpperCaseQ ~~ c_?LowerCaseQ :> a<>" "<>b<>c }
+        ],
+        "TitleCase"
+                     ];
+
+toDisplayToolName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*formatToolCallExample*)
+formatToolCallExample // beginDefinition;
+
+formatToolCallExample[ name_String, params_Association ] :=
+    TemplateApply[
+        "TOOLCALL: `1`\n`2`\nENDARGUMENTS\nENDTOOLCALL",
+        { toMachineToolName @ name, Developer`WriteRawJSONString @ params }
+    ];
+
+formatToolCallExample // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*DocumentationSearch*)
-$defaultChatTools0[ "documentation_search" ] = LLMTool[
+$documentationSearchDescription = "\
+Search Wolfram Language documentation for symbols and more. \
+Follow up search results with the documentation lookup tool to get the full information.";
+
+$defaultChatTools0[ "DocumentationSearch" ] = LLMTool[
     <|
-        "Name"        -> "documentation_search",
-        "DisplayName" -> "Documentation Search",
+        "Name"        -> toMachineToolName[ "DocumentationSearch" ],
+        "DisplayName" -> toDisplayToolName[ "DocumentationSearch" ],
         "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaDocumentation" ],
-        "Description" -> "Search Wolfram Language documentation for symbols and more. Follow up search results with the documentation lookup tool to get the full information.",
+        "Description" -> $documentationSearchDescription,
         "Parameters"  -> {
             "query" -> <|
                 "Interpreter" -> "String",
@@ -398,10 +306,10 @@ documentationSearch // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*DocumentationLookup*)
-$defaultChatTools0[ "documentation_lookup" ] = LLMTool[
+$defaultChatTools0[ "DocumentationLookup" ] = LLMTool[
     <|
-        "Name"        -> "documentation_lookup",
-        "DisplayName" -> "Documentation Lookup",
+        "Name"        -> toMachineToolName[ "DocumentationLookup" ],
+        "DisplayName" -> toDisplayToolName[ "DocumentationLookup" ],
         "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaDocumentation" ],
         "Description" -> "Get documentation pages for Wolfram Language symbols.",
         "Parameters"  -> {
@@ -514,32 +422,6 @@ $line = 0;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Evaluate*)
-
-(* $sandboxEvaluateDescription = "\
-Evaluate Wolfram Language code for the user in a separate sandboxed kernel. \
-You do not need to tell the user the input code that you are evaluating. \
-They will be able to inspect it if they want to. \
-The user does not automatically see the result. \
-You must include the result in your response in order for them to see it.
-
-Example
----
-user: Plot sin(x) from -5 to 5
-
-assistant: Let me plot that for you. Just a moment...
-TOOLCALL: wolfram_language_evaluator
-{
-	\"code\": \"Plot[Sin[x], {x, -10, 10}, AxesLabel -> {\\\"x\\\", \\\"sin(x)\\\"}]\"
-}
-ENDARGUMENTS
-ENDTOOLCALL
-
-system: Out[1]= ![result](expression://result-xxxx)
-
-assistant: Here's the plot of $sin(x)$ from $-5$ to $5$:
-![Plot](expression://result-xxxx)
-"; *)
-
 $sandboxEvaluateDescription = "\
 Evaluate Wolfram Language code for the user in a separate sandboxed kernel. \
 You do not need to tell the user the input code that you are evaluating. \
@@ -549,10 +431,10 @@ You must include the result in your response in order for them to see it. \
 If a formatted result is provided as a markdown link, use that in your response instead of typing out the output.
 ";
 
-$defaultChatTools0[ "wolfram_language_evaluator" ] = LLMTool[
+$defaultChatTools0[ "WolframLanguageEvaluator" ] = LLMTool[
     <|
-        "Name"        -> "wolfram_language_evaluator",
-        "DisplayName" -> "Wolfram Language Evaluator",
+        "Name"        -> toMachineToolName[ "WolframLanguageEvaluator" ],
+        "DisplayName" -> toDisplayToolName[ "WolframLanguageEvaluator" ],
         "Icon"        -> RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
         "Description" -> $sandboxEvaluateDescription,
         "Parameters"  -> {
@@ -924,10 +806,10 @@ $wolframAlphaIcon = RawBoxes @ PaneBox[
     BaselinePosition -> Center -> Scaled[ 0.55 ]
 ];
 
-$defaultChatTools0[ "wolfram_alpha" ] = LLMTool[
+$defaultChatTools0[ "WolframAlpha" ] = LLMTool[
     <|
-        "Name"        -> "wolfram_alpha",
-        "DisplayName" -> "Wolfram Alpha",
+        "Name"        -> toMachineToolName[ "WolframAlpha" ],
+        "DisplayName" -> toDisplayToolName[ "WolframAlpha" ],
         "Icon"        -> $wolframAlphaIcon,
         "Description" -> $wolframAlphaDescription,
         "Parameters"  -> {
@@ -1057,6 +939,164 @@ waResultText0[ expr_ ] :=
     makeExpressionURI @ Unevaluated @ expr <> "\n";
 
 waResultText0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Full Examples*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$fullExamples*)
+$fullExamples := StringJoin[
+    "\n---\n\n",
+    StringRiffle[ Values @ KeyTake[ $fullExamples0, $fullExamplesKeys ], "\n\n---\n\n" ],
+    "\n\n---\n"
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$fullExamplesKeys*)
+$fullExamplesKeys :=
+    If[ TrueQ @ $CloudEvaluation,
+        { "AstroGraphicsDocumentation" },
+        {
+            "AstroGraphicsDocumentation",
+            "FileSystemTree",
+            "FractionalDerivatives",
+            "PlotEvaluate",
+            "TemporaryDirectory"
+        }
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$fullExamples0*)
+$fullExamples0 = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*AstroGraphicsDocumentation*)
+$fullExamples0[ "AstroGraphicsDocumentation" ] = TemplateApply[ "\
+[user]
+How do I use AstroGraphics?
+
+[assistant]
+Let me check the documentation for you. One moment...
+`1`
+
+[system]
+Usage
+AstroGraphics[primitives, options] represents a two-dimensional view of space and the celestial sphere.
+
+Basic Examples
+...
+
+[assistant]
+To use [AstroGraphics](paclet:ref/AstroGraphics), you need to provide a list of graphics primitives and options. \
+For example, ...",
+{
+    formatToolCallExample[ "DocumentationLookup", <| "names" -> "AstroGraphics" |> ]
+} ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*FileSystemTree*)
+$fullExamples0[ "FileSystemTree" ] = "\
+[user]
+What's the best way to generate a tree of files in a given directory?
+
+[assistant]
+"<>formatToolCallExample[ "DocumentationSearch", <| "query" -> "tree of files" |> ]<>"
+
+[system]
+* FileSystemTree - (score: 9.9) FileSystemTree[root] gives a tree whose keys are ...
+* Tree Drawing - (score: 3.0) ...
+
+[assistant]
+"<>formatToolCallExample[ "DocumentationLookup", <| "names" -> "FileSystemTree" |> ]<>"
+
+...";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*FractionalDerivatives*)
+$fullExamples0[ "FractionalDerivatives" ] = "\
+[user]
+Calculate the half-order fractional derivative of x^n with respect to x.
+
+[assistant]
+"<>formatToolCallExample[ "DocumentationSearch", <| "query" -> "fractional derivatives" |> ]<>"
+
+[system]
+* FractionalD - (score: 9.5) FractionalD[f, {x, a}] gives ...
+* NFractionalD - (score: 9.2) ...
+
+[assistant]
+"<>formatToolCallExample[ "DocumentationLookup", <| "names" -> "FractionalD" |> ]<>"
+
+[system]
+Usage
+FractionalD[f, {x, a}] gives the Riemann-Liouville fractional derivative D_x^a f(x) of order a of the function f.
+
+Basic Examples
+<example text>
+
+[assistant]
+"<>formatToolCallExample[ "WolframLanguageEvaluator", <| "code" -> "FractionalD[x^n, {x, 1/2}]" |> ]<>"
+
+[system]
+Out[n]= Piecewise[...]
+
+![Formatted Result](expression://result-{id})
+
+[assistant]
+The half-order fractional derivative of $x^n$ with respect to $x$ is given by:
+![Fractional Derivative](expression://result-{id})
+";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*PlotEvaluate*)
+$fullExamples0[ "PlotEvaluate" ] = StringJoin[ "\
+[user]
+Plot sin(x) from -5 to 5
+
+[assistant]
+", formatToolCallExample[
+    "WolframLanguageEvaluator",
+    <| "code" -> "Plot[Sin[x], {x, -10, 10}, AxesLabel -> {\"x\", \"sin(x)\"}]" |>
+], "
+
+[system]
+Out[n]= ![image](attachment://result-{id})
+
+[assistant]
+Here's the plot of $\\sin{x}$ from -5 to 5:
+![Plot](attachment://result-{id})"
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*TemporaryDirectory*)
+$fullExamples0[ "TemporaryDirectory" ] = "\
+[user]
+Where is the temporary directory located?
+
+[assistant]
+"<>formatToolCallExample[ "DocumentationSearch", <| "query" -> "location of temporary directory" |> ]<>"
+
+[system]
+* $TemporaryDirectory - (score: 9.6) $TemporaryDirectory gives the main system directory for temporary files.
+* CreateDirectory - (score: 8.5) CreateDirectory[\"dir\"] creates ...
+
+[assistant]
+"<>formatToolCallExample[ "WolframLanguageEvaluator", <| "code" -> "$TemporaryDirectory" |> ]<>"
+
+[system]
+Out[n]= \"C:\\Users\\UserName\\AppData\\Local\\Temp\"
+
+[assistant]
+The temporary directory is located at C:\\Users\\UserName\\AppData\\Local\\Temp.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

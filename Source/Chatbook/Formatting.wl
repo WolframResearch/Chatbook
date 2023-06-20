@@ -459,7 +459,7 @@ parseToolCallString[ string_String ] /; StringMatchQ[ string, "TOOLCALL:"~~__~~"
         noPrefix    = StringDelete[ string, StartOfString~~"TOOLCALL:" ];
         noSuffix    = StringTrim @ StringDelete[ noPrefix, "ENDTOOLCALL"~~___~~EndOfString ];
         name        = StringTrim @ StringDelete[ noSuffix, ("\n"|"{")~~___~~EndOfString ];
-        tool        = $defaultChatTools[ name ];
+        tool        = getToolByName @ name;
         toolData    = Replace[ tool, { HoldPattern @ LLMTool[ as_Association, ___ ] :> as, _ :> <| |> } ];
         displayName = Lookup[ toolData, "DisplayName", name ];
         icon        = Lookup[ toolData, "Icon" ];

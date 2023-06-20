@@ -17,6 +17,8 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 `StopChat;
 `WidgetSend;
 
+`$settings;
+
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                  ];
