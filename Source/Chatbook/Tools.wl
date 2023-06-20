@@ -20,6 +20,7 @@ Needs[ "Wolfram`Chatbook`"               ];
 Needs[ "Wolfram`Chatbook`Common`"        ];
 Needs[ "Wolfram`Chatbook`Serialization`" ];
 Needs[ "Wolfram`Chatbook`Utils`"         ];
+Needs[ "Wolfram`Chatbook`Sandbox`"       ];
 
 PacletInstall[ "Wolfram/LLMFunctions" ];
 Needs[ "Wolfram`LLMFunctions`" ];
@@ -36,28 +37,17 @@ System`LLMConfiguration;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Toolbox*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
 (*Tool Configuration*)
 
-$sandboxEvaluationTimeout = 30;
+$attachments = <| |>;
 
-$sandboxKernelCommandLine := StringRiffle @ {
-    ToString[
-        If[ $OperatingSystem === "Windows",
-            FileNameJoin @ { $InstallationDirectory, "WolframKernel" },
-            First @ $CommandLine
-        ],
-        InputForm
-    ],
-    "-wstp",
-    "-noicon",
-    "-noinit",
-    "-pacletreadonly",
-    "-run",
-    "ChatbookSandbox" <> ToString @ $ProcessID
+$cloudUnsupportedTools = { "WolframLanguageEvaluator", "DocumentationSearch" };
+
+$defaultToolOrder = {
+    "DocumentationLookup",
+    "DocumentationSearch",
+    "WolframAlpha",
+    "WolframLanguageEvaluator"
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -185,15 +175,6 @@ $defaultChatTools := If[ TrueQ @ $CloudEvaluation,
     ];
 
 $defaultChatTools0 = <| |>;
-
-$cloudUnsupportedTools = { "WolframLanguageEvaluator", "DocumentationSearch" };
-
-$defaultToolOrder = {
-    "DocumentationLookup",
-    "DocumentationSearch",
-    "WolframAlpha",
-    "WolframLanguageEvaluator"
-};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -448,332 +429,6 @@ $defaultChatTools0[ "WolframLanguageEvaluator" ] = LLMTool[
     |>,
     { }
 ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*startSandboxKernel*)
-startSandboxKernel // beginDefinition;
-
-startSandboxKernel[ ] := Enclose[
-    Module[ { pwFile, kernel, pid },
-
-        Scan[ LinkClose, Select[ Links[ ], sandboxKernelQ ] ];
-
-        (* pwFile = FileNameJoin @ { $InstallationDirectory, "Configuration", "Licensing", "playerpass" }; *)
-
-        kernel = ConfirmMatch[ LinkLaunch @ $sandboxKernelCommandLine, _LinkObject, "LinkLaunch" ];
-
-        (* Use StartProtectedMode instead of passing the -sandbox argument, since we need to initialize the FE first *)
-        LinkWrite[ kernel, Unevaluated @ EvaluatePacket[ UsingFrontEnd @ Null; Developer`StartProtectedMode[ ] ] ];
-
-        pid = pingSandboxKernel @ kernel;
-
-        With[ { messages = $messageOverrides },
-        LinkWrite[
-            kernel,
-            Unevaluated @ EnterExpressionPacket[
-                    (* Preload some paclets: *)
-                    Needs[ "FunctionResource`" -> None ];
-
-                    (* Redefine some messages to provide hints to the LLM: *)
-                    ReleaseHold @ messages;
-
-                (* Reset line number and leave `In[1]:=` in the buffer *)
-                $Line = 0
-            ]
-            ]
-        ];
-
-        TimeConstrained[
-            While[ ! MatchQ[ LinkRead @ kernel, _ReturnExpressionPacket ] ],
-            10,
-            Confirm[ $Failed, "LineReset" ]
-        ];
-
-        If[ IntegerQ @ pid,
-            kernel,
-            Quiet @ LinkClose @ kernel;
-            throwFailure[ "NoSandboxKernel" ]
-        ]
-    ],
-    throwInternalFailure[ startSandboxKernel[ ], ## ] &
-];
-
-startSandboxKernel // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*$messageOverrides*)
-$messageOverrides := $messageOverrides = Flatten @ Apply[
-    HoldComplete,
-    ReadList[
-        PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "SandboxMessages" ],
-        HoldComplete @ Expression
-    ]
-];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getSandboxKernel*)
-getSandboxKernel // beginDefinition;
-getSandboxKernel[ ] := getSandboxKernel @ Select[ Links[ ], sandboxKernelQ ];
-getSandboxKernel[ { other__LinkObject, kernel_ } ] := (Scan[ LinkClose, { other } ]; getSandboxKernel @ { kernel });
-getSandboxKernel[ { kernel_LinkObject } ] := checkSandboxKernel @ kernel;
-getSandboxKernel[ { } ] := startSandboxKernel[ ];
-getSandboxKernel // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*checkSandboxKernel*)
-checkSandboxKernel // beginDefinition;
-checkSandboxKernel[ kernel_LinkObject ] /; IntegerQ @ pingSandboxKernel @ kernel := kernel;
-checkSandboxKernel[ kernel_LinkObject ] := startSandboxKernel[ ];
-checkSandboxKernel // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*pingSandboxKernel*)
-pingSandboxKernel // beginDefinition;
-
-pingSandboxKernel[ kernel_LinkObject ] := Enclose[
-    Module[ { uuid, return },
-
-        uuid   = CreateUUID[ ];
-        return = $Failed;
-
-        ConfirmMatch[
-            TimeConstrained[ While[ LinkReadyQ @ kernel, LinkRead @ kernel ], 10, $TimedOut ],
-            Except[ $TimedOut ],
-            "InitialLinkRead"
-        ];
-
-        With[ { id = uuid }, LinkWrite[ kernel, Unevaluated @ EvaluatePacket @ { id, $ProcessID } ] ];
-
-        ConfirmMatch[
-            TimeConstrained[ While[ ! MatchQ[ return = LinkRead @ kernel, ReturnPacket @ { uuid, _ } ] ], 10 ],
-            Except[ $TimedOut ],
-            "LinkReadReturn"
-        ];
-
-        ConfirmBy[
-            Replace[ return, ReturnPacket @ { _, pid_ } :> pid ],
-            IntegerQ,
-            "ProcessID"
-        ]
-    ]
-];
-
-pingSandboxKernel // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*sandboxKernelQ*)
-sandboxKernelQ[ LinkObject[ cmd_String, ___ ] ] := StringContainsQ[ cmd, "ChatbookSandbox" <> ToString @ $ProcessID ];
-sandboxKernelQ[ ___ ] := False;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*sandboxEvaluate*)
-sandboxEvaluate // beginDefinition;
-
-sandboxEvaluate[ KeyValuePattern[ "code" -> code_ ] ] := sandboxEvaluate @ code;
-
-sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
-    Module[ { kernel, null, packets, $timedOut, results, flat },
-
-        $lastSandboxEvaluation = HoldComplete @ evaluation;
-
-        kernel = ConfirmMatch[ getSandboxKernel[ ], _LinkObject, "GetKernel" ];
-
-        ConfirmMatch[ linkWriteEvaluation[ kernel, evaluation ], Null, "LinkWriteEvaluation" ];
-
-        { null, { packets } } = Reap[
-            TimeConstrained[
-                While[ ! MatchQ[ Sow @ LinkRead @ kernel, _ReturnExpressionPacket ] ],
-                $sandboxEvaluationTimeout,
-                $timedOut
-            ]
-        ];
-
-        If[ null === $timedOut,
-            AppendTo[ packets, ReturnExpressionPacket @ HoldComplete @ $TimedOut ]
-        ];
-
-        results = Cases[ packets, ReturnExpressionPacket[ expr_ ] :> expr ];
-
-        flat = Flatten[ HoldComplete @@ results, 1 ];
-
-        (* TODO: include prompting that explains how to use Out[n] to get previous results *)
-
-        $lastSandboxResult = <|
-            "String"  -> sandboxResultString[ flat, packets ],
-            "Result"  -> flat,
-            "Packets" -> packets
-        |>
-    ],
-    throwInternalFailure[ sandboxEvaluate @ HoldComplete @ evaluation, ## ] &
-];
-
-sandboxEvaluate // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*linkWriteEvaluation*)
-linkWriteEvaluation // beginDefinition;
-linkWriteEvaluation // Attributes = { HoldAllComplete };
-
-linkWriteEvaluation[ kernel_, evaluation_ ] :=
-    With[ { eval = createEvaluationWithWarnings @ evaluation },
-        LinkWrite[
-            kernel,
-            Unevaluated @ EnterExpressionPacket @ <|
-                "Line"   -> $Line,
-                "Result" -> HoldComplete @@ { ReleaseHold @ eval }
-            |>
-        ]
-    ];
-
-linkWriteEvaluation // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*createEvaluationWithWarnings*)
-createEvaluationWithWarnings // beginDefinition;
-createEvaluationWithWarnings // Attributes = { HoldAllComplete };
-
-createEvaluationWithWarnings[ evaluation_ ] :=
-    Module[ { held, undefined },
-        held = Flatten @ HoldComplete @ evaluation;
-
-        undefined = Flatten[ HoldComplete @@ Cases[
-            Unevaluated @ evaluation,
-            s_Symbol? undefinedSymbolQ :> HoldComplete @ s,
-            Infinity,
-            Heads -> True
-        ] ];
-
-        (* TODO: add other warnings *)
-        addWarnings[ held, <| "UndefinedSymbols" -> undefined |> ]
-    ];
-
-createEvaluationWithWarnings // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*addWarnings*)
-addWarnings // beginDefinition;
-
-addWarnings[ HoldComplete[ eval__ ], as: KeyValuePattern[ "UndefinedSymbols" -> HoldComplete[ ] ] ] :=
-    addWarnings[ HoldComplete[ eval ], KeyDrop[ as, "UndefinedSymbols" ] ];
-
-addWarnings[ HoldComplete[ eval__ ], as: KeyValuePattern[ "UndefinedSymbols" -> HoldComplete[ s_Symbol ] ] ] :=
-    addWarnings[ HoldComplete[ Message[ Symbol::undefined, s ]; eval ], KeyDrop[ as, "UndefinedSymbols" ] ];
-
-addWarnings[ HoldComplete[ eval__ ], as: KeyValuePattern[ "UndefinedSymbols" -> HoldComplete[ s__Symbol ] ] ] :=
-    addWarnings[
-        HoldComplete[ Message[ Symbol::undefined2, StringRiffle[ { s }, ", " ] ]; eval ],
-        KeyDrop[ as, "UndefinedSymbols" ]
-    ];
-
-addWarnings[ HoldComplete[ eval_  ], _ ] := addMessageHandler @ HoldComplete @ eval;
-addWarnings[ HoldComplete[ eval__ ], _ ] := addMessageHandler @ HoldComplete @ CompoundExpression @ eval;
-
-addWarnings // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*addMessageHandler*)
-addMessageHandler // beginDefinition;
-
-addMessageHandler[ HoldComplete[ eval_ ] ] :=
-    HoldComplete @ WithCleanup[
-        eval,
-        If[ MatchQ[ $MessageList, { __ } ], Message[ General::messages ] ]
-    ];
-
-addMessageHandler // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*undefinedSymbolQ*)
-undefinedSymbolQ // ClearAll;
-undefinedSymbolQ // Attributes = { HoldAllComplete };
-
-undefinedSymbolQ[ symbol_Symbol ] := TrueQ @ And[
-    AtomQ @ Unevaluated @ symbol,
-    Unevaluated @ symbol =!= Internal`$EFAIL,
-    Context @ Unevaluated @ symbol === "Global`",
-    StringStartsQ[ SymbolName @ Unevaluated @ symbol, _? UpperCaseQ ],
-    ! System`Private`HasAnyEvaluationsQ @ symbol
-];
-
-undefinedSymbolQ[ ___ ] := False;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*sandboxResultString*)
-sandboxResultString // beginDefinition;
-
-sandboxResultString[ result_, packets_ ] := sandboxResultString @ result;
-
-sandboxResultString[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result" -> result_ } ], packets_ ] :=
-    StringRiffle[
-        Flatten @ {
-            makePacketMessages[ ToString @ line, packets ],
-            "Out[" <> ToString @ line <> "]= " <> sandboxResultString @ Flatten @ HoldComplete @ result
-        },
-        "\n"
-    ];
-
-sandboxResultString[ HoldComplete[ Null..., expr_ ] ] := sandboxResultString @ HoldComplete @ expr;
-
-sandboxResultString[ HoldComplete[ expr_? simpleResultQ ] ] :=
-    With[ { string = ToString[ Unevaluated @ expr, InputForm, PageWidth -> 80 ] },
-        If[ StringLength @ string < 150,
-            If[ StringContainsQ[ string, "\n" ], "\n" <> string, string ],
-            StringJoin[
-                "\n",
-                ToString[ Unevaluated @ Short[ expr, 1 ], OutputForm, PageWidth -> 80 ], "\n\n\n",
-                makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ]
-            ]
-        ]
-    ];
-
-sandboxResultString[ HoldComplete[ expr_ ] ] := makeExpressionURI @ Unevaluated @ expr;
-
-sandboxResultString[ HoldComplete[ ] ] := "Null";
-
-sandboxResultString // endDefinition;
-
-$attachments = <| |>;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*simpleResultQ*)
-simpleResultQ // beginDefinition;
-simpleResultQ // Attributes = { HoldAllComplete };
-simpleResultQ[ expr_ ] := FreeQ[ Unevaluated @ expr, _? fancyResultQ ];
-simpleResultQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*fancyResultQ*)
-fancyResultQ // beginDefinition;
-fancyResultQ // Attributes = { HoldAllComplete };
-fancyResultQ[ _Graphics|_Graphics3D|_Manipulate|_DynamicModule|_Legended ] := True;
-fancyResultQ[ _ ] := False;
-fancyResultQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*makePacketMessages*)
-makePacketMessages // beginDefinition;
-makePacketMessages[ line_, packets_List ] := makePacketMessages[ line, # ] & /@ packets;
-(* makePacketMessages[ line_String, TextPacket[ text_String ] ] /; StringStartsQ[ text, ">> " ] := text;
-makePacketMessages[ line_String, TextPacket[ text_String ] ] := "During evaluation of In[" <> line <> "]:= " <> text; *)
-makePacketMessages[ line_String, TextPacket[ text_String ] ] := text;
-makePacketMessages[ line_, _InputNamePacket|_MessagePacket|_OutputNamePacket|_ReturnExpressionPacket ] := Nothing;
-makePacketMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1170,16 +825,11 @@ wolframLanguageData // endDefinition;
 (* ::Section::Closed:: *)
 (*Package Footer*)
 
-(* Close previous sandbox kernel if package is being reloaded: *)
-Scan[ LinkClose, Select[ Links[ ], sandboxKernelQ ] ];
-
 (* Sort tools to their default ordering: *)
 $defaultChatTools0 = Association[ KeyTake[ $defaultChatTools0, $defaultToolOrder ], $defaultChatTools0 ];
 
-
 If[ Wolfram`ChatbookInternal`$BuildingMX,
     $toolConfiguration;
-    $messageOverrides;
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)
