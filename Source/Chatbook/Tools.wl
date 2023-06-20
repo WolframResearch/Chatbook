@@ -172,7 +172,7 @@ toolTemplateDataString[ expr_ ] := ToString[ expr, InputForm ];
 $defaultChatTools := If[ TrueQ @ $CloudEvaluation,
                          KeyDrop[ $defaultChatTools0, $cloudUnsupportedTools ],
                          $defaultChatTools0
-    ];
+                     ];
 
 $defaultChatTools0 = <| |>;
 
@@ -230,7 +230,7 @@ toDisplayToolName[ s_String ] :=
             { "_" :> " ", a_?LowerCaseQ ~~ b_?UpperCaseQ ~~ c_?LowerCaseQ :> a<>" "<>b<>c }
         ],
         "TitleCase"
-                     ];
+    ];
 
 toDisplayToolName // endDefinition;
 
@@ -594,6 +594,120 @@ waResultText0[ expr_ ] :=
     makeExpressionURI @ Unevaluated @ expr <> "\n";
 
 waResultText0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*WebSearch*)
+$defaultChatTools0[ "WebSearch" ] = LLMTool[
+    <|
+        "Name"        -> toMachineToolName[ "WebSearch" ],
+        "DisplayName" -> toDisplayToolName[ "WebSearch" ],
+        "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
+        "Description" -> "Search the web.",
+        "Parameters"  -> {
+            "query" -> <|
+                "Interpreter" -> "String",
+                "Help"        -> "Search query text",
+                "Required"    -> True
+            |>
+        },
+        "Function" -> webSearch
+    |>,
+    { }
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*webSearch*)
+webSearch // beginDefinition;
+
+webSearch[ KeyValuePattern[ "query" -> query_ ] ] := webSearch @ query;
+webSearch[ query_String ] := webSearch @ SearchQueryString @ query;
+
+webSearch[ query_SearchQueryString ] := StringJoin[
+    "Results", "\n",
+    "-------", "\n\n",
+    StringReplace[
+        Developer`WriteRawJSONString[
+            Normal @ WebSearch[ query, MaxItems -> 5 ] /. URL[ url_ ] :> url
+        ],
+        "\\/" -> "/"
+    ],
+    "\n\n",
+    "-------", "\n\n",
+    "Use the web_fetch tool to get the content of a URL."
+];
+
+webSearch // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*WebFetch*)
+$defaultChatTools0[ "WebFetch" ] = LLMTool[
+    <|
+        "Name"        -> toMachineToolName[ "WebFetch" ],
+        "DisplayName" -> toDisplayToolName[ "WebFetch" ],
+        "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
+        "Description" -> "Fetch plain text or image links from a URL.",
+        "Parameters"  -> {
+            "url" -> <|
+                "Interpreter" -> "URL",
+                "Help"        -> "The URL",
+                "Required"    -> True
+            |>,
+            "format" -> <|
+                "Interpreter" -> { "Plaintext", "ImageLinks" },
+                "Help"        -> "The type of content to retrieve (\"Plaintext\" or \"ImageLinks\")",
+                "Required"    -> True
+            |>
+        },
+        "Function" -> webFetch
+    |>,
+    { }
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*webFetch*)
+webFetch // beginDefinition;
+webFetch[ KeyValuePattern @ { "url" -> url_, "format" -> fmt_ } ] := webFetch[ url, fmt ];
+webFetch[ url: _URL|_String, fmt_String ] := webFetch[ url, fmt, Import[ url, { "HTML", fmt } ] ];
+webFetch[ url_, "ImageLinks", { } ] := "No links found at " <> TextString @ url;
+webFetch[ url_, "ImageLinks", links: { __String } ] := StringRiffle[ links, "\n" ];
+webFetch[ url_, fmt_, result_String ] := result;
+webFetch // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*WebImageSearch*)
+$defaultChatTools0[ "WebImageSearch" ] = LLMTool[
+    <|
+        "Name"        -> toMachineToolName[ "WebImageSearch" ],
+        "DisplayName" -> toDisplayToolName[ "WebImageSearch" ],
+        "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
+        "Description" -> "Search the web for images.",
+        "Parameters"  -> {
+            "query" -> <|
+                "Interpreter" -> "String",
+                "Help"        -> "Search query text",
+                "Required"    -> True
+            |>
+        },
+        "Function" -> webImageSearch
+    |>,
+    { }
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*webImageSearch*)
+webImageSearch // beginDefinition;
+webImageSearch[ KeyValuePattern[ "query" -> query_ ] ] := webImageSearch @ query;
+webImageSearch[ query_String ] := webImageSearch @ SearchQueryString @ query;
+webImageSearch[ query_SearchQueryString ] := webImageSearch[ query, WebImageSearch[ query, "ImageHyperlinks" ] ];
+webImageSearch[ query_, { } ] := "No results found";
+webImageSearch[ query_, urls: { __ } ] := StringRiffle[ TextString /@ urls, "\n" ];
+webImageSearch // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
