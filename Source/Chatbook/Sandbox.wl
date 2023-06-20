@@ -12,6 +12,7 @@ BeginPackage[ "Wolfram`Chatbook`Sandbox`" ];
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`Tools`"  ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
