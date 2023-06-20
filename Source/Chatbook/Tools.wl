@@ -159,7 +159,7 @@ Do not state that you will use a tool and end your message before making the too
 
 If a user asks you to use a specific tool, you MUST attempt to use that tool as requested, \
 even if you think it will not work. \
-If the tool fails, use any error message to explain why it failed. \
+If the tool fails, use any error message to correct the issue or explain why it failed. \
 NEVER state that a tool cannot be used for a particular task without trying it first. \
 You did not create these tools, so you do not know what they can and cannot do.
 
