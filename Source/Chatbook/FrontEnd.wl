@@ -49,10 +49,16 @@ currentChatSettings[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession ] :=
 currentChatSettings[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] :=
     currentChatSettings0[ obj, key ];
 
-currentChatSettings[ cell_CellObject ] := Catch @ Enclose[
-    Module[ { styles, nbo, cells, before, info, delimiter, settings },
+currentChatSettings[ cell0_CellObject ] := Catch @ Enclose[
+    Module[ { cell, styles, nbo, cells, before, info, delimiter, settings },
 
+        cell   = cell0;
         styles = cellStyles @ cell;
+
+        If[ MemberQ[ styles, $$nestedCellStyle ],
+            cell   = ConfirmMatch[ topParentCell @ cell, _CellObject, "ParentCell" ];
+            styles = cellStyles @ cell;
+        ];
 
         If[ MemberQ[ styles, $$chatDelimiterStyle ], Throw @ currentChatSettings0 @ cell ];
 
@@ -91,13 +97,19 @@ currentChatSettings[ cell_CellObject ] := Catch @ Enclose[
 
         ConfirmBy[ Association[ $defaultChatSettings, settings ], AssociationQ, "CombinedSettings" ]
     ],
-    throwInternalFailure[ currentChatSettings @ cell, ## ] &
+    throwInternalFailure[ currentChatSettings @ cell0, ## ] &
 ];
 
-currentChatSettings[ cell_CellObject, key_String ] := Catch @ Enclose[
-    Module[ { styles, nbo, cells, before, info, delimiter, values },
+currentChatSettings[ cell0_CellObject, key_String ] := Catch @ Enclose[
+    Module[ { cell, styles, nbo, cells, before, info, delimiter, values },
 
+        cell   = cell0;
         styles = cellStyles @ cell;
+
+        If[ MemberQ[ styles, $$nestedCellStyle ],
+            cell   = ConfirmMatch[ topParentCell @ cell, _CellObject, "ParentCell" ];
+            styles = cellStyles @ cell;
+        ];
 
         If[ MemberQ[ styles, $$chatDelimiterStyle ], Throw @ currentChatSettings0[ cell, key ] ];
 
@@ -134,7 +146,7 @@ currentChatSettings[ cell_CellObject, key_String ] := Catch @ Enclose[
 
         FirstCase[ values, Except[ Inherited ], Lookup[ $defaultChatSettings, key, Inherited ] ]
     ],
-    throwInternalFailure[ currentChatSettings[ cell, key ], ## ] &
+    throwInternalFailure[ currentChatSettings[ cell0, key ], ## ] &
 ];
 
 currentChatSettings // endDefinition;
