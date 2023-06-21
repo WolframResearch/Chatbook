@@ -315,13 +315,13 @@ rotateTabPage0 // endDefinition;
 (*EvaluateChatInput*)
 EvaluateChatInput // beginDefinition;
 
-EvaluateChatInput[ ] := EvaluateChatInput @ EvaluationCell[ ];
+EvaluateChatInput[ ] := EvaluateChatInput @ rootEvaluationCell[ ];
 
 EvaluateChatInput[ evalCell_CellObject? chatInputCellQ ] :=
     EvaluateChatInput[ evalCell, parentNotebook @ evalCell ];
 
-EvaluateChatInput[ _CellObject | $Failed ] :=
-    With[ { evalCell = EvaluationCell[ ] },
+EvaluateChatInput[ source: _CellObject | $Failed ] :=
+    With[ { evalCell = rootEvaluationCell @ source },
         EvaluateChatInput @ evalCell /; chatInputCellQ @ evalCell
     ];
 
@@ -361,7 +361,12 @@ AIAutoAssist // beginDefinition;
 
 AIAutoAssist[ cell_ ] /; $cloudNotebooks := Null;
 
-AIAutoAssist[ cell_CellObject ] := AIAutoAssist[ cell, parentNotebook @ cell ];
+AIAutoAssist[ cell_CellObject ] :=
+    Block[ { $inEpilog = True },
+        With[ { root = checkEvaluationCell @ cell },
+            AIAutoAssist[ root, parentNotebook @ root ]
+        ]
+    ];
 
 AIAutoAssist[ cell_CellObject, nbo_NotebookObject ] := withBasePromptBuilder @
     If[ autoAssistQ[ cell, nbo ],
@@ -776,7 +781,7 @@ chatQueryCell0[ content_ ] := Cell[ content, "ChatQuery", GeneratedCell -> False
 (*SendChat*)
 SendChat // beginDefinition;
 
-SendChat[ ] := SendChat @ EvaluationCell[ ];
+SendChat[ ] := SendChat @ rootEvaluationCell[ ];
 
 SendChat[ evalCell_CellObject, ___ ] /; MemberQ[ CurrentValue[ evalCell, CellStyle ], "ChatExcluded" ] := Null;
 
@@ -1266,24 +1271,10 @@ dynamicAutoFormatQ // endDefinition;
 dynamicTextDisplay // beginDefinition;
 
 dynamicTextDisplay[ text_String, True ] :=
-    With[ { id = $SessionID },
-        Dynamic[
-            Refresh[
-                Block[ { $dynamicText = True }, RawBoxes @ Cell @ TextData @ reformatTextData @ text ],
-                TrackedSymbols :> { },
-                UpdateInterval -> 0.4
-            ],
-            Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
-        ]
-    ];
+    Block[ { $dynamicText = True }, RawBoxes @ Cell @ TextData @ reformatTextData @ text ];
 
 dynamicTextDisplay[ text_String, False ] :=
-    With[ { id = $SessionID },
-        Dynamic[
-            RawBoxes @ Cell @ TextData @ text,
-            Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
-        ]
-    ];
+    RawBoxes @ Cell @ TextData @ text;
 
 dynamicTextDisplay[ _Symbol, _ ] := ProgressIndicator[ Appearance -> "Percolate" ];
 
@@ -1582,10 +1573,10 @@ getLLMPrompt[ name_String ] :=
         name,
         Quiet[
             Check[
-            Block[ { PrintTemporary }, getLLMPrompt0 @ name ],
+                Block[ { PrintTemporary }, getLLMPrompt0 @ name ],
                 (* TODO: a dialog might be better since a message could be missed in the messages window *)
-            throwFailure[ "ResourceNotFound", name ],
-            ResourceObject::notfname
+                throwFailure[ "ResourceNotFound", name ],
+                ResourceObject::notfname
             ],
             { ResourceObject::notfname, OptionValue::nodef }
         ]
