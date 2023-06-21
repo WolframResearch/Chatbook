@@ -315,13 +315,13 @@ rotateTabPage0 // endDefinition;
 (*EvaluateChatInput*)
 EvaluateChatInput // beginDefinition;
 
-EvaluateChatInput[ ] := EvaluateChatInput @ EvaluationCell[ ];
+EvaluateChatInput[ ] := EvaluateChatInput @ rootEvaluationCell[ ];
 
 EvaluateChatInput[ evalCell_CellObject? chatInputCellQ ] :=
     EvaluateChatInput[ evalCell, parentNotebook @ evalCell ];
 
-EvaluateChatInput[ _CellObject | $Failed ] :=
-    With[ { evalCell = EvaluationCell[ ] },
+EvaluateChatInput[ source: _CellObject | $Failed ] :=
+    With[ { evalCell = rootEvaluationCell @ source },
         EvaluateChatInput @ evalCell /; chatInputCellQ @ evalCell
     ];
 
