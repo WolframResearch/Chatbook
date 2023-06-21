@@ -1266,24 +1266,10 @@ dynamicAutoFormatQ // endDefinition;
 dynamicTextDisplay // beginDefinition;
 
 dynamicTextDisplay[ text_String, True ] :=
-    With[ { id = $SessionID },
-        Dynamic[
-            Refresh[
-                Block[ { $dynamicText = True }, RawBoxes @ Cell @ TextData @ reformatTextData @ text ],
-                TrackedSymbols :> { },
-                UpdateInterval -> 0.4
-            ],
-            Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
-        ]
-    ];
+    Block[ { $dynamicText = True }, RawBoxes @ Cell @ TextData @ reformatTextData @ text ];
 
 dynamicTextDisplay[ text_String, False ] :=
-    With[ { id = $SessionID },
-        Dynamic[
-            RawBoxes @ Cell @ TextData @ text,
-            Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
-        ]
-    ];
+    RawBoxes @ Cell @ TextData @ text;
 
 dynamicTextDisplay[ _Symbol, _ ] := ProgressIndicator[ Appearance -> "Percolate" ];
 
