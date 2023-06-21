@@ -1550,12 +1550,17 @@ inlineFunctionReferenceBoxesQ[ ___ ] := False;
 makePromptFunctionMessages // beginDefinition;
 
 makePromptFunctionMessages[ settings_, { cells___, cell0_ } ] := Enclose[
-    Module[ { modifiers, cell, name, arguments, filled, string },
+    Module[ { modifiers, cell, name, arguments, filled, prompt, string },
+        (* Ensure Wolfram/LLMFunctions is installed and loaded before calling System`LLMPrompt[..] *)
+		initTools[ ];
+
         { modifiers, cell } = ConfirmMatch[ extractModifiers @ cell0, { _, _ }, "Modifiers" ];
         name      = ConfirmBy[ extractPromptFunctionName @ cell, StringQ, "PromptFunctionName" ];
         arguments = ConfirmMatch[ extractPromptArguments @ cell, { ___String }, "PromptArguments" ];
         filled    = ConfirmMatch[ replaceArgumentTokens[ name, arguments, { cells, cell } ], { ___String }, "Tokens" ];
-        string    = ConfirmBy[ Quiet[ getLLMPrompt[ name ] @@ filled, OptionValue::nodef ], StringQ, "LLMPrompt" ];
+        prompt    = ConfirmMatch[ Quiet[ getLLMPrompt @ name, OptionValue::nodef ], _TemplateObject, "LLMPrompt" ];
+        string    = ConfirmBy[ Quiet[ TemplateApply[ prompt, filled ], OptionValue::nodef ], StringQ, "TemplateApply" ];
+
         (* FIXME: handle named slots *)
         Flatten @ {
             expandModifierMessages[ settings, modifiers, { cells }, cell ],
@@ -1571,13 +1576,25 @@ makePromptFunctionMessages // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*getLLMPrompt*)
 getLLMPrompt // beginDefinition;
+
 getLLMPrompt[ name_String ] :=
-	Block[ { PrintTemporary },
-		(* Ensure Wolfram/LLMFunctions is installed and loaded before calling System`LLMPrompt[..] *)
-		initTools[ ];
-		Quiet @ getLLMPrompt0 @ name
-	];
+    getLLMPrompt[
+        name,
+        Quiet[
+            Check[
+            Block[ { PrintTemporary }, getLLMPrompt0 @ name ],
+                (* TODO: a dialog might be better since a message could be missed in the messages window *)
+            throwFailure[ "ResourceNotFound", name ],
+            ResourceObject::notfname
+            ],
+            { ResourceObject::notfname, OptionValue::nodef }
+        ]
+    ];
+
+getLLMPrompt[ name_String, prompt: _TemplateObject|_String ] := prompt;
+
 getLLMPrompt // endDefinition;
+
 
 getLLMPrompt0 // beginDefinition;
 getLLMPrompt0[ name_ ] := With[ { t = System`LLMPrompt[ "Prompt: "<>name ] }, t /; MatchQ[ t, _TemplateObject ] ];
@@ -2021,11 +2038,12 @@ expandModifierMessages // endDefinition;
 expandModifierMessage // beginDefinition;
 
 expandModifierMessage[ settings_, modifier_, { cells___ }, cell_ ] := Enclose[
-    Module[ { name, arguments, filled, string, role },
+    Module[ { name, arguments, filled, prompt, string, role },
         name      = ConfirmBy[ modifier[ "PromptModifierName" ], StringQ, "ModifierName" ];
         arguments = ConfirmMatch[ modifier[ "PromptArguments" ], { ___String }, "Arguments" ];
         filled    = ConfirmMatch[ replaceArgumentTokens[ name, arguments, { cells, cell } ], { ___String }, "Tokens" ];
-        string    = ConfirmBy[ getLLMPrompt[ name ] @@ filled, StringQ, "LLMPrompt" ];
+        prompt    = ConfirmMatch[ Quiet[ getLLMPrompt @ name, OptionValue::nodef ], _TemplateObject, "LLMPrompt" ];
+        string    = ConfirmBy[ Quiet[ TemplateApply[ prompt, filled ], OptionValue::nodef ], StringQ, "TemplateApply" ];
         role      = ConfirmBy[ modifierMessageRole @ settings, StringQ, "Role" ];
         <| "role" -> role, "content" -> string |>
     ],
