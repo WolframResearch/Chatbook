@@ -781,7 +781,7 @@ chatQueryCell0[ content_ ] := Cell[ content, "ChatQuery", GeneratedCell -> False
 (*SendChat*)
 SendChat // beginDefinition;
 
-SendChat[ ] := SendChat @ EvaluationCell[ ];
+SendChat[ ] := SendChat @ rootEvaluationCell[ ];
 
 SendChat[ evalCell_CellObject, ___ ] /; MemberQ[ CurrentValue[ evalCell, CellStyle ], "ChatExcluded" ] := Null;
 
@@ -1573,10 +1573,10 @@ getLLMPrompt[ name_String ] :=
         name,
         Quiet[
             Check[
-            Block[ { PrintTemporary }, getLLMPrompt0 @ name ],
+                Block[ { PrintTemporary }, getLLMPrompt0 @ name ],
                 (* TODO: a dialog might be better since a message could be missed in the messages window *)
-            throwFailure[ "ResourceNotFound", name ],
-            ResourceObject::notfname
+                throwFailure[ "ResourceNotFound", name ],
+                ResourceObject::notfname
             ],
             { ResourceObject::notfname, OptionValue::nodef }
         ]
