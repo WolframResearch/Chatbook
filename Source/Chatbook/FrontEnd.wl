@@ -169,13 +169,6 @@ $defaultChatSettings := Association @ Options @ CreateChatNotebook;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*rootEvaluationCell*)
-rootEvaluationCell // beginDefinition;
-rootEvaluationCell[ ] := checkEvaluationCell @ EvaluationCell[ ];
-rootEvaluationCell // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
 (*checkEvaluationCell*)
 checkEvaluationCell // beginDefinition;
 checkEvaluationCell[ cell_ ] /; $checkEvaluationCell := rootEvaluationCell @ cell;
