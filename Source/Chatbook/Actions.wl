@@ -361,7 +361,12 @@ AIAutoAssist // beginDefinition;
 
 AIAutoAssist[ cell_ ] /; $cloudNotebooks := Null;
 
-AIAutoAssist[ cell_CellObject ] := AIAutoAssist[ cell, parentNotebook @ cell ];
+AIAutoAssist[ cell_CellObject ] :=
+    Block[ { $inEpilog = True },
+        With[ { root = checkEvaluationCell @ cell },
+            AIAutoAssist[ root, parentNotebook @ root ]
+        ]
+    ];
 
 AIAutoAssist[ cell_CellObject, nbo_NotebookObject ] := withBasePromptBuilder @
     If[ autoAssistQ[ cell, nbo ],
