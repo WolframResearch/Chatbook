@@ -1325,7 +1325,7 @@ checkResponse[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         toolResponse = ConfirmMatch[
             GenerateLLMToolResponse[ $toolConfiguration, toolCall ],
-            _LLMToolResponse | _Failure, (* TODO: handle the Failure[...] case *)
+            _LLMToolResponse | _Failure,
             "GenerateLLMToolResponse"
         ];
 
