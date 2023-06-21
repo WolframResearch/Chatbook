@@ -4,25 +4,35 @@
 BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 
 `$defaultChatSettings;
+`$inEpilog;
 `$suppressButtonAppearance;
 `cellInformation;
 `cellOpenQ;
 `cellPrint;
 `cellPrintAfter;
 `cellStyles;
+`checkEvaluationCell;
 `currentChatSettings;
 `fixCloudCell;
 `notebookRead;
 `parentCell;
 `parentNotebook;
+`rootEvaluationCell;
+`rootEvaluationCell;
 `selectionEvaluateCreateCell;
 `toCompressedBoxes;
+`topLevelCellQ;
 `topParentCell;
 
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"        ];
 Needs[ "Wolfram`Chatbook`Common`" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Config*)
+$checkEvaluationCell := $VersionNumber <= 13.2; (* Flag that determines whether to use workarounds for #187 *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -39,10 +49,16 @@ currentChatSettings[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession ] :=
 currentChatSettings[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] :=
     currentChatSettings0[ obj, key ];
 
-currentChatSettings[ cell_CellObject ] := Catch @ Enclose[
-    Module[ { styles, nbo, cells, before, info, delimiter, settings },
+currentChatSettings[ cell0_CellObject ] := Catch @ Enclose[
+    Module[ { cell, styles, nbo, cells, before, info, delimiter, settings },
 
+        cell   = cell0;
         styles = cellStyles @ cell;
+
+        If[ MemberQ[ styles, $$nestedCellStyle ],
+            cell   = ConfirmMatch[ topParentCell @ cell, _CellObject, "ParentCell" ];
+            styles = cellStyles @ cell;
+        ];
 
         If[ MemberQ[ styles, $$chatDelimiterStyle ], Throw @ currentChatSettings0 @ cell ];
 
@@ -81,13 +97,19 @@ currentChatSettings[ cell_CellObject ] := Catch @ Enclose[
 
         ConfirmBy[ Association[ $defaultChatSettings, settings ], AssociationQ, "CombinedSettings" ]
     ],
-    throwInternalFailure[ currentChatSettings @ cell, ## ] &
+    throwInternalFailure[ currentChatSettings @ cell0, ## ] &
 ];
 
-currentChatSettings[ cell_CellObject, key_String ] := Catch @ Enclose[
-    Module[ { styles, nbo, cells, before, info, delimiter, values },
+currentChatSettings[ cell0_CellObject, key_String ] := Catch @ Enclose[
+    Module[ { cell, styles, nbo, cells, before, info, delimiter, values },
 
+        cell   = cell0;
         styles = cellStyles @ cell;
+
+        If[ MemberQ[ styles, $$nestedCellStyle ],
+            cell   = ConfirmMatch[ topParentCell @ cell, _CellObject, "ParentCell" ];
+            styles = cellStyles @ cell;
+        ];
 
         If[ MemberQ[ styles, $$chatDelimiterStyle ], Throw @ currentChatSettings0[ cell, key ] ];
 
@@ -124,7 +146,7 @@ currentChatSettings[ cell_CellObject, key_String ] := Catch @ Enclose[
 
         FirstCase[ values, Except[ Inherited ], Lookup[ $defaultChatSettings, key, Inherited ] ]
     ],
-    throwInternalFailure[ currentChatSettings[ cell, key ], ## ] &
+    throwInternalFailure[ currentChatSettings[ cell0, key ], ## ] &
 ];
 
 currentChatSettings // endDefinition;
@@ -156,6 +178,71 @@ $defaultChatSettings := Association @ Options @ CreateChatNotebook;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Cells*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*checkEvaluationCell*)
+checkEvaluationCell // beginDefinition;
+checkEvaluationCell[ cell_ ] /; $checkEvaluationCell := rootEvaluationCell @ cell;
+checkEvaluationCell[ $Failed ] := rootEvaluationCell @ $Failed;
+checkEvaluationCell[ cell_CellObject ] := cell;
+checkEvaluationCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*rootEvaluationCell*)
+(*
+    A utility function that can be used in some places to help mitigate issue #187.
+    This isn't bullet-proof and relies on heuristics, so it should only be used as a fallback when
+    `EvaluationCell[]` has given something unexpected.
+*)
+rootEvaluationCell // beginDefinition;
+
+(* Try `EvaluationCell[]` first by default: *)
+rootEvaluationCell[ ] := rootEvaluationCell @ EvaluationCell[ ];
+
+(* If `EvaluationCell[ ]` returned `$Failed` try one more time: *)
+rootEvaluationCell[ $Failed ] :=
+    With[ { cell = EvaluationCell[ ] },
+        If[ MatchQ[ cell, _CellObject ],
+            (* Success, proceed normally: *)
+            rootEvaluationCell @ cell,
+            (* Failure, jump to heuristic method: *)
+            rootEvaluationCell[ cell, Cells[ ] ]
+        ]
+    ];
+
+(* Get the list of top-level cells from the current notebook: *)
+rootEvaluationCell[ cell_CellObject ] := rootEvaluationCell[ cell, parentNotebook @ cell ];
+rootEvaluationCell[ cell_CellObject, nbo_NotebookObject ] := rootEvaluationCell[ cell, Cells @ nbo ];
+
+(* The cell given by `EvaluationCell[]` is a top-level cell that's currently evaluating: *)
+rootEvaluationCell[ cell_CellObject, cells: { __CellObject } ] /;
+    TrueQ @ And[ MemberQ[ cells, cell ], cellEvaluatingQ @ cell ] :=
+        cell;
+
+(*
+    This looks for the first cell that's currently evaluating according to `cellInformation`.
+    This is a simple heuristic for guessing the current evaluation cell when other methods have failed.
+    If there are multiple cells queued for evaluation, this can return the wrong cell if the evaluations were
+    queued out of order, so this is only meant to be used as a last resort.
+*)
+rootEvaluationCell[ source_, cells: { __CellObject } ] :=
+    FirstCase[
+        cellInformation @ cells,
+        KeyValuePattern @ { "Evaluating" -> True, "CellObject" -> cell_CellObject } :> cell,
+        throwInternalFailure[ rootEvaluationCell[ source, cells ], ## ] &
+    ];
+
+rootEvaluationCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cellEvaluatingQ*)
+cellEvaluatingQ // beginDefinition;
+cellEvaluatingQ[ cell_CellObject ] /; $inEpilog := TrueQ @ CurrentValue[ cell, Evaluatable ];
+cellEvaluatingQ[ cell_CellObject ] := MatchQ[ cellInformation @ cell, KeyValuePattern[ "Evaluating" -> True ] ];
+cellEvaluatingQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -191,9 +278,19 @@ parentCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*topLevelCellQ*)
+topLevelCellQ // beginDefinition;
+topLevelCellQ[ cell_CellObject ] := topLevelCellQ[ cell, parentNotebook @ cell ];
+topLevelCellQ[ cell_CellObject, nbo_NotebookObject ] := topLevelCellQ[ cell, Cells @ nbo ];
+topLevelCellQ[ cell_CellObject, cells: { ___CellObject } ] := MemberQ[ cells, cell ];
+topLevelCellQ[ _ ] := False;
+topLevelCellQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*topParentCell*)
 topParentCell // beginDefinition;
-topParentCell[ cell_CellObject ] := With[ { p = ParentCell @ cell }, topParentCell @ p /; MatchQ[ p, _CellObject ] ];
+topParentCell[ cell_CellObject ] := With[ { p = parentCell @ cell }, topParentCell @ p /; MatchQ[ p, _CellObject ] ];
 topParentCell[ cell_CellObject ] := cell;
 topParentCell // endDefinition;
 
