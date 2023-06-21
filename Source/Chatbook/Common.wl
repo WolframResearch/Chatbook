@@ -100,6 +100,9 @@ Chatbook::NoSandboxKernel = "\
 Unable to start a sandbox kernel.\
 This may mean that the number of currently running kernels exceeds the limit defined by $LicenseProcesses.";
 
+Chatbook::ResourceNotFound = "\
+Resource `1` not found.";
+
 Chatbook::NotImplemented =
 "Action \"`1`\" is not implemented.";
 
