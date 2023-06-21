@@ -12,11 +12,13 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$chatInputStyles;
 `$chatOutputStyles;
 `$excludeHistoryStyles;
+`$nestedCellStyles;
 `$$chatDelimiterStyle;
 `$$chatIgnoredStyle;
 `$$chatInputStyle;
 `$$chatOutputStyle;
 `$$excludeHistoryStyle;
+`$$nestedCellStyle;
 
 `$$textDataList;
 
@@ -48,6 +50,9 @@ $chatIgnoredStyles    = { "ChatExcluded" };
 $chatInputStyles      = { "ChatInput", "SideChat", "ChatQuery", "ChatSystemInput" };
 $chatOutputStyles     = { "ChatOutput", "AssistantOutput", "AssistantOutputWarning", "AssistantOutputError" };
 $excludeHistoryStyles = { "SideChat" };
+$nestedCellStyles     = { "InlineFunctionReference", "InlineModifierReference", "InlinePersonaReference",
+                          "ChatMenu", "ChatWidget" (* TODO: add a style name to cell dingbat cells and add it here *)
+                        };
 
 $maxChatCells := OptionValue[ CreateChatNotebook, "ChatHistoryLength" ];
 
@@ -60,11 +65,16 @@ $closedChatCellOptions :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Style Patterns*)
-$$chatDelimiterStyle  = Alternatives @@ $chatDelimiterStyles  | { ___, Alternatives @@ $chatDelimiterStyles , ___ };
-$$chatIgnoredStyle    = Alternatives @@ $chatIgnoredStyles    | { ___, Alternatives @@ $chatIgnoredStyles   , ___ };
-$$chatInputStyle      = Alternatives @@ $chatInputStyles      | { ___, Alternatives @@ $chatInputStyles     , ___ };
-$$chatOutputStyle     = Alternatives @@ $chatOutputStyles     | { ___, Alternatives @@ $chatOutputStyles    , ___ };
-$$excludeHistoryStyle = Alternatives @@ $excludeHistoryStyles | { ___, Alternatives @@ $excludeHistoryStyles, ___ };
+cellStylePattern // beginDefinition;
+cellStylePattern[ { styles__String } ] := styles | { ___, Alternatives @ styles , ___ };
+cellStylePattern // endDefinition;
+
+$$chatDelimiterStyle  = cellStylePattern @ $chatDelimiterStyles ;
+$$chatIgnoredStyle    = cellStylePattern @ $chatIgnoredStyles;
+$$chatInputStyle      = cellStylePattern @ $chatInputStyles;
+$$chatOutputStyle     = cellStylePattern @ $chatOutputStyles;
+$$excludeHistoryStyle = cellStylePattern @ $excludeHistoryStyles;
+$$nestedCellStyle     = cellStylePattern @ $nestedCellStyles;
 
 $$textDataList        = { (_String|_Cell|_StyleBox|_ButtonBox)... };
 
@@ -99,6 +109,9 @@ Chatbook::BadResponseMessage =
 Chatbook::NoSandboxKernel = "\
 Unable to start a sandbox kernel.\
 This may mean that the number of currently running kernels exceeds the limit defined by $LicenseProcesses.";
+
+Chatbook::ResourceNotFound = "\
+Resource `1` not found.";
 
 Chatbook::NotImplemented =
 "Action \"`1`\" is not implemented.";
