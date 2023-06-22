@@ -7,6 +7,8 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
+`$ToolFunctions;
+
 `$attachments;
 `$defaultChatTools;
 `$toolConfiguration;
@@ -37,6 +39,19 @@ System`LLMConfiguration;
     Definitions
     TestWriter
 *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Exported Functions for Tool Repository*)
+$ToolFunctions = <|
+    "DocumentationLookup"      -> documentationLookup,
+    "DocumentationSearch"      -> documentationSearch,
+    "WebFetch"                 -> webFetch,
+    "WebImageSearch"           -> webImageSearch,
+    "WebSearch"                -> webSearch,
+    "WolframAlpha"             -> getWolframAlphaText,
+    "WolframLanguageEvaluator" -> sandboxEvaluate
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
