@@ -8,11 +8,14 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
 `$attachments;
+`$defaultChatTools;
 `$toolConfiguration;
 `getToolByName;
 `initTools;
-`makeToolConfiguration;
 `makeExpressionURI;
+`makeToolConfiguration;
+`resolveTools;
+`withToolBox;
 
 Begin[ "`Private`" ];
 
@@ -39,7 +42,9 @@ System`LLMConfiguration;
 (* ::Section::Closed:: *)
 (*Tool Configuration*)
 
-$attachments = <| |>;
+$toolBox       = <| |>;
+$selectedTools = <| |>;
+$attachments   = <| |>;
 
 $cloudUnsupportedTools = { "WolframLanguageEvaluator", "DocumentationSearch" };
 
@@ -49,6 +54,35 @@ $defaultToolOrder = {
     "WolframAlpha",
     "WolframLanguageEvaluator"
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Toolbox*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*withToolBox*)
+withToolBox // beginDefinition;
+withToolBox // Attributes = { HoldFirst };
+withToolBox[ eval_ ] := Block[ { $selectedTools = <| |> }, eval ];
+withToolBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*selectTools*)
+selectTools // beginDefinition;
+selectTools[ KeyValuePattern[ "LLMEvaluator" -> KeyValuePattern[ "Tools" -> tools_ ] ] ] := selectTools @ tools;
+selectTools[ KeyValuePattern[ "Tools" -> tools_ ] ] := selectTools @ tools;
+selectTools[ Automatic|Inherited ] := selectTools @ $defaultChatTools;
+selectTools[ tools_Association ] := KeyValueMap[ selectTools, tools ];
+selectTools[ tools_List ] := selectTools /@ tools;
+selectTools[ name_String ] /; KeyExistsQ[ $toolBox, name ] := $selectedTools[ name ] = $toolBox[ name ];
+selectTools[ name_String ] := selectTools[ name, Lookup[ $defaultChatTools, name ] ]; (* TODO: fetch from repository *)
+selectTools[ tool: HoldPattern @ LLMTool[ KeyValuePattern[ "Name" -> name_ ], ___ ] ] := selectTools[ name, tool ];
+selectTools[ name_String, Automatic|Inherited ] := selectTools[ name, Lookup[ $defaultChatTools, name ] ];
+selectTools[ name_String, None ] := KeyDropFrom[ $selectedTools, name ];
+selectTools[ name_String, tool_LLMTool ] := $selectedTools[ name ] = $toolBox[ name ] = tool;
+selectTools // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -81,21 +115,30 @@ initTools // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*resolveTools*)
+resolveTools // beginDefinition;
+
+resolveTools[ settings_Association ] := (
+    initTools[ ];
+    selectTools @ settings;
+    $lastSelectedTools = $selectedTools;
+    Append[ settings, "Tools" -> Values @ $selectedTools ]
+);
+
+resolveTools // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*makeToolConfiguration*)
 makeToolConfiguration // beginDefinition;
 
-makeToolConfiguration[ ] := makeToolConfiguration @ Automatic;
-makeToolConfiguration[ Inherited|Automatic ] := makeToolConfiguration @ Values @ $defaultChatTools;
-
-makeToolConfiguration[ tool_LLMTool ] := makeToolConfiguration @ { tool };
-
-makeToolConfiguration[ tools: { (Inherited|_LLMTool)... } ] := (
-    initTools[ ];
-    LLMConfiguration @ <|
-        "Tools"      -> DeleteDuplicates @ Flatten @ Replace[ tools, Inherited :> Values @ $defaultChatTools, { 1 } ],
-        "ToolPrompt" -> $toolPrompt
-    |>
-);
+makeToolConfiguration[ settings_Association ] := Enclose[
+    Module[ { tools },
+        tools = ConfirmMatch[ DeleteDuplicates @ Flatten @ Values @ $selectedTools, { ___LLMTool }, "SelectedTools" ];
+        $toolConfiguration = LLMConfiguration @ <| "Tools" -> tools, "ToolPrompt" -> $toolPrompt |>
+    ],
+    throwInternalFailure[ makeToolConfiguration @ settings, ## ] &
+];
 
 makeToolConfiguration // endDefinition;
 
@@ -107,7 +150,7 @@ $toolConfiguration := $toolConfiguration = LLMConfiguration @ <| "Tools" -> Valu
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$toolPrompt*)
-$toolPrompt := $toolPrompt = TemplateObject[
+$toolPrompt := TemplateObject[
     {
         $toolPre,
         TemplateSequence[
@@ -159,7 +202,6 @@ If the tool fails, use any error message to correct the issue or explain why it 
 NEVER state that a tool cannot be used for a particular task without trying it first. \
 You did not create these tools, so you do not know what they can and cannot do.
 
-## Full examples
 " <> $fullExamples;
 
 
@@ -180,7 +222,7 @@ $defaultChatTools0 = <| |>;
 (* ::Subsection::Closed:: *)
 (*getToolByName*)
 getToolByName // beginDefinition;
-getToolByName[ name_String ] := Lookup[ $defaultChatTools, toCanonicalToolName @ name ];
+getToolByName[ name_String ] := Lookup[ $toolBox, toCanonicalToolName @ name ];
 getToolByName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -716,26 +758,45 @@ webImageSearch // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$fullExamples*)
-$fullExamples := StringJoin[
-    "\n---\n\n",
-    StringRiffle[ Values @ KeyTake[ $fullExamples0, $fullExamplesKeys ], "\n\n---\n\n" ],
-    "\n\n---\n"
-];
+$fullExamples :=
+    With[ { keys = $fullExamplesKeys },
+        If[ keys === { },
+            "",
+            StringJoin[
+                "## Full examples\n\n---\n\n",
+                StringRiffle[ Values @ KeyTake[ $fullExamples0, $fullExamplesKeys ], "\n\n---\n\n" ],
+                "\n\n---\n"
+            ]
+        ]
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$fullExamplesKeys*)
 $fullExamplesKeys :=
-    If[ TrueQ @ $CloudEvaluation,
-        { "AstroGraphicsDocumentation" },
-        {
-            "AstroGraphicsDocumentation",
-            "FileSystemTree",
-            "FractionalDerivatives",
-            "PlotEvaluate",
-            "TemporaryDirectory"
-        }
+    With[ { selected = Keys @ $selectedTools },
+        Select[
+            If[ TrueQ @ $CloudEvaluation,
+                { "AstroGraphicsDocumentation" },
+                {
+                    "AstroGraphicsDocumentation",
+                    "FileSystemTree",
+                    "FractionalDerivatives",
+                    "PlotEvaluate",
+                    "TemporaryDirectory"
+                }
+            ],
+            ContainsAll[ selected, $exampleDependencies[ #1 ] ] &
+        ]
     ];
+
+$exampleDependencies = <|
+    "AstroGraphicsDocumentation" -> { "DocumentationLookup" },
+    "FileSystemTree"             -> { "DocumentationSearch", "DocumentationLookup" },
+    "FractionalDerivatives"      -> { "DocumentationSearch", "DocumentationLookup", "WolframLanguageEvaluator" },
+    "PlotEvaluate"               -> { "WolframLanguageEvaluator" },
+    "TemporaryDirectory"         -> { "DocumentationSearch", "WolframLanguageEvaluator" }
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
