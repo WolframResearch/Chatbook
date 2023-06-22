@@ -7,7 +7,9 @@ BeginPackage[ "Wolfram`Chatbook`Sandbox`" ];
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
+`fancyResultQ;
 `sandboxEvaluate;
+`simpleResultQ;
 
 Begin[ "`Private`" ];
 

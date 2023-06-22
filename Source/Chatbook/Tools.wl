@@ -7,7 +7,9 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
-`$ToolFunctions;
+Wolfram`Chatbook`$ToolFunctions;
+Wolfram`Chatbook`GetExpressionURI;
+Wolfram`Chatbook`GetExpressionURIs;
 
 `$attachments;
 `$defaultChatTools;
@@ -16,6 +18,7 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 `initTools;
 `makeExpressionURI;
 `makeToolConfiguration;
+`makeToolResponseString;
 `resolveTools;
 `withToolBox;
 
@@ -50,7 +53,7 @@ $ToolFunctions = <|
     "WebImageSearch"           -> webImageSearch,
     "WebSearch"                -> webSearch,
     "WolframAlpha"             -> getWolframAlphaText,
-    "WolframLanguageEvaluator" -> sandboxEvaluate
+    "WolframLanguageEvaluator" -> wolframLanguageEvaluator
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -519,6 +522,14 @@ $defaultChatTools0[ "WolframLanguageEvaluator" ] = LLMTool[
 ];
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*wolframLanguageEvaluator*)
+wolframLanguageEvaluator // beginDefinition;
+wolframLanguageEvaluator[ code_String ] := wolframLanguageEvaluator[ code, sandboxEvaluate @ code ];
+wolframLanguageEvaluator[ code_, KeyValuePattern[ "String" -> result_String ] ] := result;
+wolframLanguageEvaluator // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Wolfram Alpha*)
 
@@ -976,11 +987,119 @@ The temporary directory is located at C:\\Users\\UserName\\AppData\\Local\\Temp.
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Utilities*)
+(*Expression URIs*)
+$$expressionScheme = "attachment"|"expression";
+
+Chatbook::URIUnavailable = "The expression URI `1` is no longer available.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*Expression URIs*)
+(*GetExpressionURIs*)
+GetExpressionURIs // ClearAll;
+
+GetExpressionURIs[ str_ ] := GetExpressionURIs[ str, ## & ];
+
+GetExpressionURIs[ str_String, wrapper_ ] := catchMine @ StringSplit[
+    str,
+    link: Shortest[ "![" ~~ __ ~~ "](" ~~ __ ~~ ")" ] :> Catch[ GetExpressionURI[ link, wrapper ], $catchTopTag ]
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*GetExpressionURI*)
+GetExpressionURI // ClearAll;
+
+GetExpressionURI[ uri_ ] := catchMine @ GetExpressionURI[ uri, ## & ];
+GetExpressionURI[ URL[ uri_ ], wrapper_ ] := catchMine @ GetExpressionURI[ uri, wrapper ];
+
+GetExpressionURI[ uri_String, wrapper_ ] := catchMine @ Enclose[
+    Module[ { held },
+        held = ConfirmMatch[ getExpressionURI @ uri, _HoldComplete, "GetExpressionURI" ];
+        wrapper @@ held
+    ],
+    throwInternalFailure[ GetExpressionURI[ uri, wrapper ], ## ] &
+];
+
+GetExpressionURI[ All, wrapper_ ] := catchMine @ Enclose[
+    Module[ { attachments },
+        attachments = ConfirmBy[ $attachments, AssociationQ, "Attachments" ];
+        ConfirmAssert[ AllTrue[ attachments, MatchQ[ _HoldComplete ] ], "HeldAttachments" ];
+        Replace[ attachments, HoldComplete[ a___ ] :> RuleCondition @ wrapper @ a, { 1 } ]
+    ],
+    throwInternalFailure[ GetExpressionURI[ All, wrapper ], ## ] &
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getExpressionURI*)
+getExpressionURI // beginDefinition;
+
+getExpressionURI[ str_String ] :=
+    Module[ { split },
+        split = First[ StringSplit[ str, "![" ~~ alt__ ~~ "](" ~~ url__ ~~ ")" :> { alt, url } ], $Failed ];
+        getExpressionURI @@ split /; MatchQ[ split, { _String, _String } ]
+    ];
+
+getExpressionURI[ uri_String ] := getExpressionURI[ None, uri ];
+
+getExpressionURI[ tooltip_, uri_String ] := getExpressionURI[ tooltip, uri, URLParse @ uri ];
+
+getExpressionURI[ tooltip_, uri_, as: KeyValuePattern @ { "Scheme" -> $$expressionScheme, "Domain" -> key_ } ] :=
+    Enclose[
+        ConfirmMatch[ displayAttachment[ uri, tooltip, key ], _HoldComplete, "DisplayAttachment" ],
+        throwInternalFailure[ getExpressionURI[ tooltip, uri, as ], ## ] &
+    ];
+
+getExpressionURI // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*displayAttachment*)
+displayAttachment // beginDefinition;
+
+displayAttachment[ uri_, None, key_ ] :=
+    getAttachment[ uri, key ];
+
+displayAttachment[ uri_, tooltip_String, key_ ] := Enclose[
+    Replace[
+        ConfirmMatch[ getAttachment[ uri, key ], _HoldComplete, "GetAttachment" ],
+        HoldComplete[ expr_ ] :> HoldComplete @ Tooltip[ expr, tooltip ]
+    ],
+    throwInternalFailure[ displayAttachment[ uri, tooltip, key ], ## ] &
+];
+
+displayAttachment // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getAttachment*)
+getAttachment // beginDefinition;
+
+getAttachment[ uri_String, key_String ] :=
+    Lookup[ $attachments, key, throwFailure[ "URIUnavailable", uri ] ];
+
+getAttachment // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeToolResponseString*)
+makeToolResponseString // beginDefinition;
+
+makeToolResponseString[ expr_? simpleResultQ ] :=
+    With[ { string = TextString @ expr },
+        If[ StringLength @ string < 150,
+            If[ StringContainsQ[ string, "\n" ], "\n" <> string, string ],
+            StringJoin[
+                "\n",
+                ToString[ Unevaluated @ Short[ expr, 1 ], OutputForm, PageWidth -> 80 ], "\n\n\n",
+                makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ]
+            ]
+        ]
+    ];
+
+makeToolResponseString[ expr_ ] := makeExpressionURI @ expr;
+
+makeToolResponseString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1025,6 +1144,10 @@ expressionURIScheme // Attributes = { HoldAllComplete };
 expressionURIScheme[ _Graphics|_Graphics3D|_Image|_Image3D|_Legended|_RawBoxes ] := "attachment";
 expressionURIScheme[ _ ] := "expression";
 expressionURIScheme // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Utilities*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

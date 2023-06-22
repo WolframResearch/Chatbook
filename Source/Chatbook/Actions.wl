@@ -1370,6 +1370,7 @@ toolResponseString[ failed_Failure ] := ToString @ failed[ "Message" ];
 toolResponseString[ as: KeyValuePattern[ "Output" -> output_ ] ] := toolResponseString[ as, output ];
 toolResponseString[ as_, KeyValuePattern[ "String" -> output_ ] ] := toolResponseString[ as, output ];
 toolResponseString[ as_, output_String ] := output;
+toolResponseString[ as_, output_ ] := makeToolResponseString @ output;
 toolResponseString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
