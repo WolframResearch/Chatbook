@@ -26,7 +26,6 @@ explodeCell[ (BoxData|TextData)[ textData_ ] ] := explodeCell @ textData;
 explodeCell[ textData_List ] := Enclose[
     Module[ { processed },
         processed = ConfirmMatch[ ReplaceRepeated[ textData, $preprocessingRules ], $$textDataList, "Preprocessing" ];
-        Global`processed = processed;
         ConfirmMatch[ regroupCells @ processed, $$textDataList, "RegroupCells" ]
     ],
     throwInternalFailure[ explodeCell @ textData, ## ] &

@@ -17,6 +17,8 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 `StopChat;
 `WidgetSend;
 
+`$settings;
+
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                  ];
@@ -329,7 +331,7 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
     EvaluateChatInput[ evalCell, nbo, currentChatSettings @ nbo ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
-    withBasePromptBuilder @ Block[ { $autoAssistMode = False },
+    withChatState @ Block[ { $autoAssistMode = False },
         clearMinimizedChats @ nbo;
         waitForLastTask[ ];
         sendChat[ evalCell, nbo, settings ]
@@ -368,7 +370,7 @@ AIAutoAssist[ cell_CellObject ] :=
         ]
     ];
 
-AIAutoAssist[ cell_CellObject, nbo_NotebookObject ] := withBasePromptBuilder @
+AIAutoAssist[ cell_CellObject, nbo_NotebookObject ] := withChatState @
     If[ autoAssistQ[ cell, nbo ],
         Block[ { $autoAssistMode = True }, needsBasePrompt[ "AutoAssistant" ]; SendChat @ cell ],
         Null
@@ -720,7 +722,7 @@ excludeChatCells // endDefinition;
 (*WidgetSend*)
 WidgetSend // beginDefinition;
 
-WidgetSend[ cell_CellObject ] := withBasePromptBuilder @
+WidgetSend[ cell_CellObject ] := withChatState @
     Block[ { $alwaysOpen = True, cellPrint = cellPrintAfter @ cell, $finalCell = cell, $autoAssistMode = True },
         (* TODO: this is currently the only UI method to turn this back on *)
         CurrentValue[ parentNotebook @ cell, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = True;
@@ -738,7 +740,7 @@ AskChat[ ] := AskChat[ InputNotebook[ ] ];
 
 AskChat[ nbo_NotebookObject ] := AskChat[ nbo, SelectedCells @ nbo ];
 
-AskChat[ nbo_NotebookObject, { selected_CellObject } ] := withBasePromptBuilder @
+AskChat[ nbo_NotebookObject, { selected_CellObject } ] := withChatState @
     Catch @ Module[ { selection, cell, obj },
 
         selection = Replace[
@@ -798,7 +800,7 @@ SendChat[ evalCell_CellObject, nbo_NotebookObject, settings_Association? Associa
 SendChat[ evalCell_, nbo_, settings_, Automatic ] /; $cloudNotebooks :=
     SendChat[ evalCell, nbo, settings, False ];
 
-SendChat[ evalCell_, nbo_, settings_, Automatic ] := withBasePromptBuilder @
+SendChat[ evalCell_, nbo_, settings_, Automatic ] := withChatState @
     With[ { styles = cellStyles @ evalCell },
         Block[ { $autoOpen, $alwaysOpen = $alwaysOpen },
             $autoOpen = MemberQ[ styles, $$chatInputStyle ];
@@ -807,7 +809,7 @@ SendChat[ evalCell_, nbo_, settings_, Automatic ] := withBasePromptBuilder @
         ]
     ];
 
-SendChat[ evalCell_, nbo_, settings_, minimized_ ] := withBasePromptBuilder @
+SendChat[ evalCell_, nbo_, settings_, minimized_ ] := withChatState @
     Block[ { $alwaysOpen = alwaysOpenQ[ settings, minimized ] },
         sendChat[ evalCell, nbo, addCellStyleSettings[ settings, evalCell ] ]
     ];
@@ -849,7 +851,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         ];
 
         settings = ConfirmBy[
-            resolveAutoSettings @ inheritSettings[ settings0, cells, evalCell ],
+            resolveTools @ resolveAutoSettings @ inheritSettings[ settings0, cells, evalCell ],
             AssociationQ,
             "InheritSettings"
         ];
@@ -1323,7 +1325,7 @@ checkResponse[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         toolResponse = ConfirmMatch[
             GenerateLLMToolResponse[ $toolConfiguration, toolCall ],
-            _LLMToolResponse | _Failure, (* TODO: handle the Failure[...] case *)
+            _LLMToolResponse | _Failure,
             "GenerateLLMToolResponse"
         ];
 
@@ -1368,6 +1370,7 @@ toolResponseString[ failed_Failure ] := ToString @ failed[ "Message" ];
 toolResponseString[ as: KeyValuePattern[ "Output" -> output_ ] ] := toolResponseString[ as, output ];
 toolResponseString[ as_, KeyValuePattern[ "String" -> output_ ] ] := toolResponseString[ as, output ];
 toolResponseString[ as_, output_String ] := output;
+toolResponseString[ as_, output_ ] := makeToolResponseString @ output;
 toolResponseString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1750,7 +1753,7 @@ getToolPrompt[ KeyValuePattern[ "ToolsEnabled" -> False ] ] := "";
 (* TODO: include tools defined by the persona! *)
 getToolPrompt[ settings_ ] := Enclose[
     Module[ { config, string },
-        config = ConfirmMatch[ makeToolConfiguration[ ], _System`LLMConfiguration ];
+        config = ConfirmMatch[ makeToolConfiguration @ settings, _System`LLMConfiguration ];
         ConfirmBy[ TemplateApply[ config[ "ToolPrompt" ], config[ "Data" ] ], StringQ ]
     ],
     throwInternalFailure[ getToolPrompt @ settings, ## ] &
@@ -2857,6 +2860,18 @@ makeMinimizedIconCell[ label_, chatCell_CellObject ] := Cell[
 ];
 
 makeMinimizedIconCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Settings*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*withChatState*)
+withChatState // beginDefinition;
+withChatState // Attributes = { HoldFirst };
+withChatState[ eval_ ] := withToolBox @ withBasePromptBuilder @ eval;
+withChatState // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
