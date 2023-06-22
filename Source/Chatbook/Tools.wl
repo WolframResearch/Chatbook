@@ -462,7 +462,7 @@ $defaultChatTools0[ "WolframLanguageEvaluator" ] = LLMTool[
         "Description" -> $sandboxEvaluateDescription,
         "Parameters"  -> {
             "code" -> <|
-                "Interpreter" -> Restricted[ "HeldExpression", All ],
+                "Interpreter" -> "String",
                 "Help"        -> "Wolfram Language code to evaluate",
                 "Required"    -> True
             |>

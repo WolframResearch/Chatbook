@@ -183,7 +183,14 @@ $messageOverrides := $messageOverrides = Flatten @ Apply[
 (*sandboxEvaluate*)
 sandboxEvaluate // beginDefinition;
 
-sandboxEvaluate[ KeyValuePattern[ "code" -> code_ ] ] := sandboxEvaluate @ code;
+sandboxEvaluate[ KeyValuePattern[ "code" -> code_ ] ] :=
+    sandboxEvaluate @ code;
+
+sandboxEvaluate[ code_String ] :=
+    sandboxEvaluate @ ToExpression[ code, InputForm, HoldComplete ];
+
+sandboxEvaluate[ HoldComplete[ xs__, x_ ] ] :=
+    sandboxEvaluate @ HoldComplete @ CompoundExpression[ xs, x ];
 
 sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
     Module[ { kernel, null, packets, $timedOut, results, flat },
