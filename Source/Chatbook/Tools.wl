@@ -71,17 +71,48 @@ withToolBox // endDefinition;
 (* ::Subsection::Closed:: *)
 (*selectTools*)
 selectTools // beginDefinition;
-selectTools[ KeyValuePattern[ "LLMEvaluator" -> KeyValuePattern[ "Tools" -> tools_ ] ] ] := selectTools @ tools;
-selectTools[ KeyValuePattern[ "Tools" -> tools_ ] ] := selectTools @ tools;
-selectTools[ Automatic|Inherited ] := selectTools @ $defaultChatTools;
-selectTools[ tools_Association ] := KeyValueMap[ selectTools, tools ];
-selectTools[ tools_List ] := selectTools /@ tools;
-selectTools[ name_String ] /; KeyExistsQ[ $toolBox, name ] := $selectedTools[ name ] = $toolBox[ name ];
-selectTools[ name_String ] := selectTools[ name, Lookup[ $defaultChatTools, name ] ]; (* TODO: fetch from repository *)
-selectTools[ tool: HoldPattern @ LLMTool[ KeyValuePattern[ "Name" -> name_ ], ___ ] ] := selectTools[ name, tool ];
-selectTools[ name_String, Automatic|Inherited ] := selectTools[ name, Lookup[ $defaultChatTools, name ] ];
-selectTools[ name_String, None ] := KeyDropFrom[ $selectedTools, name ];
-selectTools[ name_String, tool_LLMTool ] := $selectedTools[ name ] = $toolBox[ name ] = tool;
+
+selectTools[ as: KeyValuePattern[ "LLMEvaluator" -> KeyValuePattern[ "Tools" -> tools_ ] ] ] := (
+    selectTools @ KeyDrop[ as, "LLMEvaluator" ];
+    selectTools @ tools;
+);
+
+selectTools[ KeyValuePattern[ "Tools" -> tools_ ] ] :=
+    selectTools @ tools;
+
+selectTools[ Automatic|Inherited ] :=
+    selectTools @ $defaultChatTools;
+
+selectTools[ None ] :=
+    $selectedTools = <| |>;
+
+selectTools[ tools_Association ] :=
+    KeyValueMap[ selectTools, tools ];
+
+selectTools[ tools_List ] :=
+    selectTools /@ tools;
+
+selectTools[ name_String ] /; KeyExistsQ[ $toolBox, name ] :=
+    $selectedTools[ name ] = $toolBox[ name ];
+
+selectTools[ name_String ] :=
+    selectTools[ name, Lookup[ $defaultChatTools, name ] ]; (* TODO: fetch from repository *)
+
+selectTools[ tool: HoldPattern @ LLMTool[ KeyValuePattern[ "Name" -> name_ ], ___ ] ] :=
+    selectTools[ name, tool ];
+
+selectTools[ (Rule|RuleDelayed)[ name_String, tool_ ] ] :=
+    selectTools[ name, tool ];
+
+selectTools[ name_String, Automatic|Inherited ] :=
+    selectTools[ name, Lookup[ $defaultChatTools, name ] ];
+
+selectTools[ name_String, None ] :=
+    KeyDropFrom[ $selectedTools, name ];
+
+selectTools[ name_String, tool_LLMTool ] :=
+    $selectedTools[ name ] = $toolBox[ name ] = tool;
+
 selectTools // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
