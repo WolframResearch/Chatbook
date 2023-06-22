@@ -27,6 +27,13 @@ Needs[ "GeneralUtilities`" -> None ];
 (* Clear existing definitions *)
 GeneralUtilities`UnprotectAndClearAll @ Evaluate[ # <> "*" & /@ Contexts[ "Wolfram`Chatbook`*" ] ];
 
+(* Clear subcontexts from `$Packages` to force `Needs` to run again: *)
+WithCleanup[
+    Unprotect @ $Packages,
+    $Packages = Select[ $Packages, Not @* StringStartsQ[ "Wolfram`Chatbook`"~~__~~"`" ] ],
+    Protect @ $Packages
+];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Usage Messages*)
