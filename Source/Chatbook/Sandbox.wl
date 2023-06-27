@@ -150,7 +150,7 @@ startSandboxKernel[ ] := Enclose[
 
         TimeConstrained[
             While[ ! MatchQ[ LinkRead @ kernel, _ReturnExpressionPacket ] ],
-            10,
+            30,
             Confirm[ $Failed, "LineReset" ]
         ];
 
