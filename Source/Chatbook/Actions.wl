@@ -2428,17 +2428,40 @@ getModelList[ ] := getModelList @ toAPIKey @ Automatic;
 getModelList[ key_String ] := getModelList[ key, Hash @ key ];
 
 getModelList[ key_String, hash_Integer ] :=
-    getModelList[
-        hash,
-        URLExecute[
+    Module[ { resp },
+        resp = URLExecute[
             HTTPRequest[
                 "https://api.openai.com/v1/models",
                 <| "Headers" -> <| "Content-Type" -> "application/json", "Authorization" -> "Bearer "<>key |> |>
             ],
             "RawJSON",
             Interactive -> False
+        ];
+        If[ FailureQ @ resp && StringStartsQ[ key, "org-", IgnoreCase -> True ],
+            (*
+                When viewing the account settings page on OpenAI's site, it describes the organization ID as something
+                that's used in API requests, which may be confusing to someone who is looking for their API key and
+                they come across this page first. This message is meant to catch these cases and steer the user in the
+                right direction.
+
+                TODO: When more services are supported, this should only apply when using an OpenAI endpoint.
+            *)
+            throwFailure[
+                ChatbookAction::APIKeyOrganizationID,
+                Hyperlink[ "https://platform.openai.com/account/api-keys" ],
+                key
+            ],
+            getModelList[ hash, resp ]
         ]
     ];
+
+(* Could not connect to the server (maybe server is down or no internet connection available) *)
+getModelList[ hash_Integer, failure: Failure[ "ConnectionFailure", _ ] ] :=
+    throwFailure[ ChatbookAction::ConnectionFailure, failure ];
+
+(* Some other failure: *)
+getModelList[ hash_Integer, failure_? FailureQ ] :=
+    throwFailure[ ChatbookAction::ConnectionFailure2, failure ];
 
 getModelList[ hash_, KeyValuePattern[ "data" -> data_ ] ] :=
     getModelList[ hash, data ];
