@@ -308,43 +308,7 @@ CreateToolbarContent[] := With[{
 					Column[{
 						makeEnableAIChatFeaturesLabel[True],
 
-						labeledCheckbox[
-							Dynamic[
-								TrueQ[
-									CurrentValue[
-										EvaluationNotebook[],
-										{TaggingRules, "ChatNotebookSettings", "Assistance"}
-									]
-								],
-								Function[
-									If[
-										SameQ[
-											#,
-											AbsoluteCurrentValue[
-												$FrontEndSession,
-												{TaggingRules, "ChatNotebookSettings", "Assistance"}
-											]
-										],
-										CurrentValue[
-											EvaluationNotebook[],
-											{TaggingRules, "ChatNotebookSettings", "Assistance"}
-										] = Inherited,
-										CurrentValue[
-											EvaluationNotebook[],
-											{TaggingRules, "ChatNotebookSettings", "Assistance"}
-										] = #
-									]
-								]
-							],
-							Row[{
-								"Automatic Result Analysis",
-								Spacer[3],
-								Tooltip[
-									getIcon["InformationTooltip"],
-									"If enabled, automatic AI provided suggestions will be added following evaluation results."
-								]
-							}]
-						],
+						makeAutomaticResultAnalysisCheckbox[],
 
 						makeChatActionMenu[
 							"Toolbar",
@@ -447,6 +411,49 @@ SetFallthroughError[makeEnableAIChatFeaturesLabel]
 
 makeEnableAIChatFeaturesLabel[enabled_?BooleanQ] :=
 	labeledCheckbox[enabled, "Enable AI Chat Features", !enabled]
+
+(*====================================*)
+
+SetFallthroughError[makeAutomaticResultAnalysisCheckbox]
+
+makeAutomaticResultAnalysisCheckbox[] :=
+	labeledCheckbox[
+		Dynamic[
+			TrueQ[
+				CurrentValue[
+					EvaluationNotebook[],
+					{TaggingRules, "ChatNotebookSettings", "Assistance"}
+				]
+			],
+			Function[
+				If[
+					SameQ[
+						#,
+						AbsoluteCurrentValue[
+							$FrontEndSession,
+							{TaggingRules, "ChatNotebookSettings", "Assistance"}
+						]
+					],
+					CurrentValue[
+						EvaluationNotebook[],
+						{TaggingRules, "ChatNotebookSettings", "Assistance"}
+					] = Inherited,
+					CurrentValue[
+						EvaluationNotebook[],
+						{TaggingRules, "ChatNotebookSettings", "Assistance"}
+					] = #
+				]
+			]
+		],
+		Row[{
+			"Automatic Result Analysis",
+			Spacer[3],
+			Tooltip[
+				getIcon["InformationTooltip"],
+				"If enabled, automatic AI provided suggestions will be added following evaluation results."
+			]
+		}]
+	]
 
 (*====================================*)
 
