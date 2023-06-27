@@ -537,44 +537,6 @@ makeFrontEndAndNotebookSettingsContent[
 		personas
 	];
 
-	defaultPersonaPopupItems = Append[
-		defaultPersonaPopupItems,
-		Inherited -> Row[{
-			"Inherited",
-			Spacer[3],
-			Dynamic @ With[{
-				currentValue = CurrentValue[
-					targetObj,
-					{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
-				],
-				absoluteCurrentValue = AbsoluteCurrentValue[
-					targetObj,
-					{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
-				]
-			},
-				(* NOTE:
-					If `targetObj` is a NotebookObject and the local value of
-					LLMEvaluator is not set (i.e. currentValue === Inherited),
-					then display the inherited persona in italics.
-				*)
-				If[currentValue === Inherited && absoluteCurrentValue =!= Inherited,
-					Style[
-						Row[{
-							"(",
-							If[StringQ[absoluteCurrentValue],
-								personaDisplayName[absoluteCurrentValue],
-								personaDisplayName
-							],
-							")"
-						}],
-						Italic
-					],
-					Row[{}]
-				]
-			]
-		}]
-	];
-
 	(*---------------------------------*)
 	(* Return the toolbar menu content *)
 	(*---------------------------------*)
@@ -584,9 +546,17 @@ makeFrontEndAndNotebookSettingsContent[
 			{Row[{
 				tr["Default LLM Evaluator:"],
 				PopupMenu[
-					Dynamic @ CurrentValue[
-						targetObj,
-						{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+					Dynamic[
+						currentChatSettings[
+							targetObj,
+							"LLMEvaluator"
+						],
+						Function[{newValue},
+							CurrentValue[
+								targetObj,
+								{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+							] = newValue
+						]
 					],
 					defaultPersonaPopupItems
 				]
