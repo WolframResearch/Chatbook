@@ -51,6 +51,7 @@ Needs["Wolfram`Chatbook`Personas`"]
 Needs["Wolfram`Chatbook`PersonaInstaller`"]
 Needs["Wolfram`Chatbook`FrontEnd`"]
 Needs["Wolfram`Chatbook`InlineReferences`"]
+Needs["Wolfram`Chatbook`Actions`"]
 
 Needs["Wolfram`Chatbook`PreferencesUtils`" -> "PrefUtils`"]
 
@@ -306,9 +307,15 @@ CreateToolbarContent[] := With[{
 			True :> (
 				Dynamic @ Refresh[
 					Column[{
-						makeEnableAIChatFeaturesLabel[True],
+						Pane[
+							makeEnableAIChatFeaturesLabel[True],
+							ImageMargins -> {{5, 20}, {2.5, 2.5}}
+						],
 
-						makeAutomaticResultAnalysisCheckbox[],
+						Pane[
+							makeAutomaticResultAnalysisCheckbox[EvaluationNotebook[]],
+							ImageMargins -> {{5, 20}, {2.5, 2.5}}
+						],
 
 						makeChatActionMenu[
 							"Toolbar",
@@ -416,44 +423,71 @@ makeEnableAIChatFeaturesLabel[enabled_?BooleanQ] :=
 
 SetFallthroughError[makeAutomaticResultAnalysisCheckbox]
 
-makeAutomaticResultAnalysisCheckbox[] :=
-	labeledCheckbox[
-		Dynamic[
-			TrueQ[
+makeAutomaticResultAnalysisCheckbox[
+	target : $FrontEnd | $FrontEndSession | _NotebookObject
+] := With[{
+	setterFunction = ConfirmReplace[target, {
+		$FrontEnd | $FrontEndSession :> (
+			Function[{newValue},
 				CurrentValue[
-					EvaluationNotebook[],
+					target,
 					{TaggingRules, "ChatNotebookSettings", "Assistance"}
-				]
-			],
-			Function[
+				] = newValue;
+			]
+		),
+		nbObj_NotebookObject :> (
+			Function[{newValue},
+				(* If the new value is the same as the value inherited from the
+				   parent scope, then set the value at the current level to
+				   inherit from the parent.
+
+				   Otherwise, if the new value differs from what would be
+				   inherited from the parent, then override it at the current
+				   level.
+
+				   The consequence of this behavior is that the notebook-level
+				   setting for Result Analysis will follow the global setting
+				   _if_ the local value is clicked to set it equal to the global
+				   setting.
+				 *)
 				If[
 					SameQ[
-						#,
+						newValue,
 						AbsoluteCurrentValue[
 							$FrontEndSession,
 							{TaggingRules, "ChatNotebookSettings", "Assistance"}
 						]
-					],
+					]
+					,
 					CurrentValue[
-						EvaluationNotebook[],
+						nbObj,
 						{TaggingRules, "ChatNotebookSettings", "Assistance"}
-					] = Inherited,
+					] = Inherited
+					,
 					CurrentValue[
-						EvaluationNotebook[],
+						nbObj,
 						{TaggingRules, "ChatNotebookSettings", "Assistance"}
-					] = #
+					] = newValue
 				]
 			]
+		)
+	}]
+},
+	labeledCheckbox[
+		Dynamic[
+			autoAssistQ[target],
+			setterFunction
 		],
 		Row[{
 			"Automatic Result Analysis",
 			Spacer[3],
 			Tooltip[
-				getIcon["InformationTooltip"],
+				chatbookIcon["InformationTooltip", False],
 				"If enabled, automatic AI provided suggestions will be added following evaluation results."
 			]
 		}]
 	]
+]
 
 (*====================================*)
 
@@ -470,8 +504,13 @@ labeledCheckbox[value_, label_, enabled_ : Automatic] :=
 			Spacer[3],
 			label
 		},
-		ImageMargins -> {{5, 20}, {2.5, 2.5}},
-		BaseStyle -> {"Text", FontSize -> 14}
+		BaseStyle -> {
+			"Text",
+			FontSize -> 14,
+			(* Note: Workaround increased ImageMargins of Checkbox's in
+			         Preferences.nb *)
+			CheckboxBoxOptions -> { ImageMargins -> 0 }
+		}
 	]
 
 (*=========================================*)
@@ -552,15 +591,9 @@ makeFrontEndAndNotebookSettingsContent[
 					defaultPersonaPopupItems
 				]
 			}, Spacer[3]]},
-			{Row[{
-				Checkbox[
-					Dynamic @ CurrentValue[
-						targetObj,
-						{TaggingRules, "ChatNotebookSettings", "Assistance"}
-					]
-				],
-				"Provide automatic assistance"
-			}]}
+			{
+				makeAutomaticResultAnalysisCheckbox[targetObj]
+			}
 		},
 		Alignment -> {Left, Baseline},
 		Spacings -> {0, 0.7}

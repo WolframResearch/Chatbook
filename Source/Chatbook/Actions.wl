@@ -18,6 +18,7 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 `WidgetSend;
 
 `$settings;
+`autoAssistQ;
 
 Begin[ "`Private`" ];
 
@@ -396,6 +397,15 @@ autoAssistQ[ info_, cell_CellObject, nbo_NotebookObject ] :=
 autoAssistQ[ True|Automatic|Inherited, True|Automatic|Inherited ] := True;
 autoAssistQ[ _, True|Automatic ] := True;
 autoAssistQ[ _, _ ] := False;
+
+(* Determine if auto assistance is enabled generally within a FE or Notebook. *)
+autoAssistQ[
+	target: _FrontEndObject | $FrontEndSession | _NotebookObject
+] :=
+	autoAssistQ[
+		Inherited,
+		currentChatSettings[ target, "Assistance" ]
+	]
 
 autoAssistQ // endDefinition;
 
