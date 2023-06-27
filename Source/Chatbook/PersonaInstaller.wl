@@ -173,7 +173,10 @@ scrapeResourceFromShingle[ url_String ] := Enclose[
     Module[ { returnInvalid, resp, bytes, xml },
 
         returnInvalid = Throw[
-            MessageDialog[ "The specified URL does not represent a valid prompt resource." ],
+            DefinitionNotebookClient`FancyMessageDialog[ (* FIXME: needs custom dialog *)
+                "Prompt",
+                "The specified URL does not represent a valid prompt resource."
+            ],
             $catchTopTag
         ] &;
 
