@@ -218,13 +218,7 @@ CreatePreferencesContent[] := Module[{
 		Prepend[
 			KeyValueMap[
 				{persona, personaSettings} |-> {
-					Replace[Lookup[personaSettings, "Icon", None], {
-						None -> "",
-						RawBoxes[TemplateBox[{}, iconStyle_?StringQ]] :> (
-							chatbookIcon[iconStyle, False]
-						),
-						icon_ :> icon
-					}],
+					getPersonaMenuIcon[personaSettings, "Full"],
 					personaDisplayName[persona, personaSettings],
 					Replace[Lookup[personaSettings, "Description", None], {
 						None | _?MissingQ -> "",
@@ -250,7 +244,7 @@ CreatePreferencesContent[] := Module[{
 
 	chatbookSettings = makeFrontEndAndNotebookSettingsContent[$FrontEnd];
 
-	services = Grid[{
+	(* services = Grid[{
 			{""									, "Name"	, "State" 						},
 			{chatbookIcon["OpenAILogo", False]	, "OpenAI"	, "<Connected>" 				},
 			{""									, "Bard"	, Style["Coming soon", Italic]	},
@@ -259,7 +253,7 @@ CreatePreferencesContent[] := Module[{
 		Background -> {None, {1 -> GrayLevel[0.95]}},
 		Dividers -> {False, {False, {1 -> True, 2 -> True}}},
 		Alignment -> {Left, Center}
-	];
+	]; *)
 
 	(*-----------------------------------------*)
 	(* Return the complete settings expression *)
@@ -274,11 +268,11 @@ CreatePreferencesContent[] := Module[{
 			PrefUtils`PreferencesSection[
 				Style[tr["Installed LLM Evaluators"], "subsectionText"],
 				llmEvaluatorNamesSettings
-			],
-			PrefUtils`PreferencesSection[
+			]
+			(* PrefUtils`PreferencesSection[
 				Style[tr["LLM Service Providers"], "subsectionText"],
 				services
-			]
+			] *)
 		},
 		PrefUtils`PreferencesResetButton[
 			FrontEndExecute @ FrontEnd`RemoveOptions[$FrontEnd, {
@@ -489,7 +483,7 @@ makeFrontEndAndNotebookSettingsContent[
 		{persona, personaSettings} |-> (
 			persona -> Row[{
 				resizeMenuIcon[
-					getPersonaMenuIcon[personaSettings]
+					getPersonaMenuIcon[personaSettings, "Full"]
 				],
 				personaDisplayName[persona, personaSettings]
 			}, Spacer[1]]
@@ -2387,6 +2381,17 @@ getPersonaMenuIcon[ KeyValuePattern[ "Icon"|"PersonaIcon" -> icon_ ] ] := getPer
 getPersonaMenuIcon[ KeyValuePattern[ "Default" -> icon_ ] ] := getPersonaMenuIcon @ icon;
 getPersonaMenuIcon[ _Missing | _Association | None ] := RawBoxes @ TemplateBox[ { }, "PersonaUnknown" ];
 getPersonaMenuIcon[ icon_ ] := icon;
+
+(* If "Full" is specified, resolve TemplateBox icons into their literal
+   icon data, so that they will render correctly in places where the Chatbook.nb
+   stylesheet is not available. *)
+getPersonaMenuIcon[ expr_, "Full" ] :=
+	Replace[getPersonaMenuIcon[expr], {
+		RawBoxes[TemplateBox[{}, iconStyle_?StringQ]] :> (
+			chatbookIcon[iconStyle, False]
+		),
+		icon_ :> icon
+	}]
 
 
 
