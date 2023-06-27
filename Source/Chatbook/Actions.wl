@@ -1393,16 +1393,18 @@ toolFreeQ // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*writeErrorCell*)
-writeErrorCell // ClearAll;
+writeErrorCell // beginDefinition;
 writeErrorCell[ cell_, as_ ] := NotebookWrite[ cell, errorCell @ as ];
+writeErrorCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*errorCell*)
-errorCell // ClearAll;
+errorCell // beginDefinition;
+
 errorCell[ as_ ] :=
     Cell[
-        TextData @ {
+        TextData @ Flatten @ {
             StyleBox[ "\[WarningSign] ", FontColor -> Darker @ Red, FontSize -> 1.5 Inherited ],
             errorText @ as,
             "\n\n",
@@ -1414,15 +1416,70 @@ errorCell[ as_ ] :=
         CellAutoOverwrite -> True
     ];
 
+errorCell // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*errorText*)
 errorText // ClearAll;
 
 errorText[ KeyValuePattern[ "BodyJSON" -> KeyValuePattern[ "error" -> KeyValuePattern[ "message" -> s_String ] ] ] ] :=
-    s;
+    errorText @ s;
+
+errorText[ str_String ] /; StringMatchQ[ str, "The model: `" ~~ __ ~~ "` does not exist" ] :=
+    Module[ { model, link, help, message },
+
+        model = StringReplace[ str, "The model: `" ~~ m__ ~~ "` does not exist" :> m ];
+        link  = textLink[ "here", "https://platform.openai.com/docs/models/overview" ];
+        help  = { " Click ", link, " for information about available models." };
+
+        message = If[ MemberQ[ getModelList[ ], model ],
+                      "The specified API key does not have access to the model \"" <> model <> "\".",
+                      "The model \"" <> model <> "\" does not exist or the specified API key does not have access to it."
+                  ];
+
+        Flatten @ { message, help }
+    ];
+
+(*
+    Note the subtle difference here where `model` is not followed by a colon.
+    This is apparently the best way we can determine the difference between a model that exists but isn't revealed
+    to the user and one that actually does not exist. Yes, this is ugly and will eventually be wrong.
+*)
+errorText[ str_String ] /; StringMatchQ[ str, "The model `" ~~ __ ~~ "` does not exist" ] :=
+    Module[ { model, link, help, message },
+
+        model = StringReplace[ str, "The model `" ~~ m__ ~~ "` does not exist" :> m ];
+        link  = textLink[ "here", "https://platform.openai.com/docs/models/overview" ];
+        help  = { " Click ", link, " for information about available models." };
+
+        message = If[ MemberQ[ getModelList[ ], model ],
+                      "The specified API key does not have access to the model \"" <> model <> "\".",
+                      "The model \"" <> model <> "\" does not exist."
+                  ];
+
+        Flatten @ { message, help }
+    ];
+
+errorText[ str_String ] := str;
 
 errorText[ ___ ] := "An unexpected error occurred.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*textLink*)
+textLink // beginDefinition;
+
+textLink[ url_String ] := textLink[ url, url ];
+
+textLink[ label_, url_String ] := ButtonBox[
+    label,
+    BaseStyle  -> "Hyperlink",
+    ButtonData -> { URL @ url, None },
+    ButtonNote -> url
+];
+
+textLink // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
