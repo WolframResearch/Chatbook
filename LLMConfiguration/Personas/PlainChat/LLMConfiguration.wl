@@ -4,5 +4,5 @@
     "Icon"        -> RawBoxes @ TemplateBox[ { }, "ChatIconPlainChat" ],
     "Pre"         -> "",
     "Tools"       -> { "WebSearch", "WebImageSearch", "WebFetch" },
-    "Description" -> "Chat about anything"
+    "Description" -> "Chat without a focus on code"
 |>
