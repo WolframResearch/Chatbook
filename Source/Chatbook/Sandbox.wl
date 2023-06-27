@@ -150,7 +150,7 @@ startSandboxKernel[ ] := Enclose[
 
         TimeConstrained[
             While[ ! MatchQ[ LinkRead @ kernel, _ReturnExpressionPacket ] ],
-            10,
+            30,
             Confirm[ $Failed, "LineReset" ]
         ];
 
@@ -341,9 +341,7 @@ sandboxResultString[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result"
         "\n"
     ];
 
-sandboxResultString[ HoldComplete[ Null..., expr_ ] ] := sandboxResultString @ HoldComplete @ expr;
-
-sandboxResultString[ HoldComplete[ expr_? simpleResultQ ] ] :=
+sandboxResultString[ HoldComplete[ ___, expr_? simpleResultQ ] ] :=
     With[ { string = ToString[ Unevaluated @ expr, InputForm, PageWidth -> 80 ] },
         If[ StringLength @ string < 150,
             If[ StringContainsQ[ string, "\n" ], "\n" <> string, string ],
@@ -355,7 +353,7 @@ sandboxResultString[ HoldComplete[ expr_? simpleResultQ ] ] :=
         ]
     ];
 
-sandboxResultString[ HoldComplete[ expr_ ] ] := makeExpressionURI @ Unevaluated @ expr;
+sandboxResultString[ HoldComplete[ ___, expr_ ] ] := makeExpressionURI @ Unevaluated @ expr;
 
 sandboxResultString[ HoldComplete[ ] ] := "Null";
 
