@@ -160,7 +160,7 @@ resourceFromURL[ url_String ] := Block[ { PrintTemporary },
 resourceFromURL // endDefinition;
 
 resourceFromURL0 // beginDefinition;
-resourceFromURL0[ url_String ] := With[ { ro = ResourceObject @ url }, ro /; promptResourceQ ];
+resourceFromURL0[ url_String ] := With[ { ro = ResourceObject @ url }, ro /; promptResourceQ @ ro ];
 resourceFromURL0[ url_String ] := scrapeResourceFromShingle @ url;
 resourceFromURL0 // endDefinition;
 
