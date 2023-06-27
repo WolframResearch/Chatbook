@@ -341,8 +341,6 @@ sandboxResultString[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result"
         "\n"
     ];
 
-sandboxResultString[ HoldComplete[ Null..., expr_ ] ] := sandboxResultString @ HoldComplete @ expr;
-
 sandboxResultString[ HoldComplete[ ___, expr_? simpleResultQ ] ] :=
     With[ { string = ToString[ Unevaluated @ expr, InputForm, PageWidth -> 80 ] },
         If[ StringLength @ string < 150,
