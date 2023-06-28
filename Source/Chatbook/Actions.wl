@@ -1249,7 +1249,7 @@ activeAIAssistantCell[ container_, settings_, minimized_ ] :=
                     $closedChatCellOptions,
                     Initialization :> attachMinimizedIcon[ EvaluationCell[ ], label ]
                 } ],
-                Sequence @@ { }
+                Initialization -> None
             ],
             Selectable   -> False,
             Editable     -> False,
@@ -2698,14 +2698,18 @@ writeReformattedCell[ settings_, string_String, cell_CellObject ] :=
             tag      = CurrentValue[ cell, { TaggingRules, "MessageTag" } ],
             open     = $lastOpen = cellOpenQ @ cell,
             label    = RawBoxes @ TemplateBox[ { }, "MinimizedChat" ],
-            pageData = CurrentValue[ cell, { TaggingRules, "PageData" } ]
+            pageData = CurrentValue[ cell, { TaggingRules, "PageData" } ],
+            uuid     = CreateUUID[ ]
         },
         Block[ { $dynamicText = False },
-            NotebookWrite[
-                cell,
-                $reformattedCell = reformatCell[ settings, string, tag, open, label, pageData ],
-                None,
-                AutoScroll -> False
+            WithCleanup[
+                NotebookWrite[
+                    cell,
+                    $reformattedCell = reformatCell[ settings, string, tag, open, label, pageData, uuid ],
+                    None,
+                    AutoScroll -> False
+                ],
+                attachChatOutputMenu[ $lastChatOutput = CellObject @ uuid ]
             ]
         ]
     ];
@@ -2733,10 +2737,31 @@ writeReformattedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*attachChatOutputMenu*)
+attachChatOutputMenu // beginDefinition;
+
+attachChatOutputMenu[ cell_CellObject ] /; $cloudNotebooks := Null;
+
+attachChatOutputMenu[ cell_CellObject ] := (
+    $lastChatOutput = cell;
+    NotebookDelete @ Cells[ cell, AttachedCell -> True, CellStyle -> "ChatMenu" ];
+    AttachCell[
+        cell,
+        Cell[ BoxData @ TemplateBox[ { "ChatOutput", RGBColor[ "#ecf0f5" ] }, "ChatMenuButton" ], "ChatMenu" ],
+        { Right, Top },
+        Offset[ { -7, -7 }, { Right, Top } ],
+        { Right, Top }
+    ]
+);
+
+attachChatOutputMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*reformatCell*)
 reformatCell // beginDefinition;
 
-reformatCell[ settings_, string_, tag_, open_, label_, pageData_ ] := UsingFrontEnd @ Enclose[
+reformatCell[ settings_, string_, tag_, open_, label_, pageData_, uuid_ ] := UsingFrontEnd @ Enclose[
     Module[ { content, rules, dingbat },
 
         content = ConfirmMatch[
@@ -2776,10 +2801,11 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_ ] := UsingFront
                     $closedChatCellOptions,
                     Initialization :> attachMinimizedIcon[ EvaluationCell[ ], label ]
                 }
-            ]
+            ],
+            ExpressionUUID -> uuid
         ]
     ],
-    throwInternalFailure[ reformatCell[ settings, string, tag, open, label, pageData ], ## ] &
+    throwInternalFailure[ reformatCell[ settings, string, tag, open, label, pageData, uuid ], ## ] &
 ];
 
 reformatCell // endDefinition;
