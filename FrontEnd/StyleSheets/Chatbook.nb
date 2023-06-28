@@ -1996,8 +1996,7 @@ Notebook[
        ],
        {Right, Top},
        Offset[{-7, -7}, {Right, Top}],
-       {Right, Top},
-       RemovalConditions -> {"EvaluatorQuit"}
+       {Right, Top}
       ]
      ]
     ],
@@ -2075,8 +2074,7 @@ Notebook[
        ],
        {Right, Top},
        Offset[{-7, -7}, {Right, Top}],
-       {Right, Top},
-       RemovalConditions -> {"EvaluatorQuit"}
+       {Right, Top}
       ]
      ]
     ],
@@ -2151,8 +2149,7 @@ Notebook[
        ],
        {Right, Top},
        Offset[{-7, -7}, {Right, Top}],
-       {Right, Top},
-       RemovalConditions -> {"EvaluatorQuit"}
+       {Right, Top}
       ]
      ]
     ],
@@ -2227,8 +2224,7 @@ Notebook[
        ],
        {Right, Top},
        Offset[{-7, -7}, {Right, Top}],
-       {Right, Top},
-       RemovalConditions -> {"EvaluatorQuit"}
+       {Right, Top}
       ]
      ]
     ],
