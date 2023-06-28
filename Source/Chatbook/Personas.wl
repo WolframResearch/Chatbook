@@ -36,7 +36,8 @@ GetPersonas[] := Module[{
 	paclets
 },
 	Needs["PacletTools`" -> None];
-	paclets = PacletFind[All, <| "Extension" -> "LLMConfiguration" |>];
+	(* Only look at most recent version of compatible paclets *)
+	paclets = First /@ SplitBy[PacletFind[All, <| "Extension" -> "LLMConfiguration" |>], #["Name"]&];
 
 	Flatten @ Map[
 		paclet |-> Module[{
@@ -100,7 +101,8 @@ GetPersonaData[] := Module[{
 	resourcePersonas = RaiseConfirmMatch[GetInstalledResourcePersonaData[], _Association? AssociationQ];
 
 	Needs["PacletTools`" -> None];
-	paclets = PacletFind[All, <| "Extension" -> "LLMConfiguration" |>];
+	(* Only look at most recent version of compatible paclets *)
+	paclets = First /@ SplitBy[PacletFind[All, <| "Extension" -> "LLMConfiguration" |>], #["Name"]&];
 
 	pacletPersonas = KeySort @ Flatten @ Map[
 		paclet |-> Handle[_Failure] @ Module[{
@@ -113,6 +115,7 @@ GetPersonaData[] := Module[{
 
 			Map[
 				extension |-> loadPersonaFromPacletExtension[
+					paclet,
 					PacletTools`PacletExtensionDirectory[paclet, extension],
 					extension
 				],
@@ -131,7 +134,9 @@ GetPersonaData[] := Module[{
 	]
 ]
 
-$corePersonaNames = {"CodeAssistant", "CodeWriter", "PlainChat", "Wolfie"};
+$corePersonaNames = {"CodeAssistant", "CodeWriter", "PlainChat", "RawModel"};
+$requiredKeys = {"Description", "UUID", "Version", "LatestUpdate", "ReleaseDate", "DocumentationLink"};
+$personaBaseURL = "https://resources.wolframcloud.com/PromptRepository/resources";
 
 (*------------------------------------*)
 
@@ -150,14 +155,15 @@ GetPersonaData[persona_?StringQ] := Module[{
 SetFallthroughError[loadPersonasFromPacletExtension]
 
 loadPersonaFromPacletExtension[
+	paclet_?PacletObjectQ,
 	extensionDirectory_?StringQ,
 	{"LLMConfiguration", options_?AssociationQ}
 ] := Handle[_Failure] @ Module[{
-	personas = Lookup[options, "Personas"]
+	personas = Lookup[options, "Personas"], slimData, ro = Quiet[ResourceObject[paclet["Name"]], ResourceObject::notfname]
 },
 	RaiseConfirmMatch[personas, {___?StringQ}];
 
-	Map[
+	slimData = Map[
 		personaName |-> (
 			(* Note:
 				Stop errors from propagating upwards so that a failure to load
@@ -168,7 +174,70 @@ loadPersonaFromPacletExtension[
 			]
 		),
 		personas
-	]
+	];
+
+	Which[
+		(* this is the Wolfram/Chatbook paclet *)
+		(* FIXME: can we assume parity with the paclet repository version? *)
+		(* FIXME: can we assume parity with the individual personas that appear on the persona repository? *)
+		paclet["Name"] === "Wolfram/Chatbook",
+			Map[
+				Function[
+					#[[1]] ->
+						Merge[
+							{
+								#[[2]],
+								<|
+									"PersonaIcon" ->
+										Switch[#[[1]],
+											"CodeAssistant", Wolfram`Chatbook`Common`chatbookIcon["ChatIconCodeAssistant", False],
+											"CodeWriter", Wolfram`Chatbook`Common`chatbookIcon["ChatIconCodeWriter", False],
+											"Birdnardo", Wolfram`Chatbook`Common`chatbookIcon["BirdnardoIcon", False],
+											"PlainChat", Wolfram`Chatbook`Common`chatbookIcon["ChatIconPlainChat", False],
+											"RawModel", Wolfram`Chatbook`Common`chatbookIcon["PersonaRawModel", False],
+											"Wolfie", Wolfram`Chatbook`Common`chatbookIcon["WolfieIcon", False]],
+									"Description" ->
+										Switch[#[[1]],
+											"CodeAssistant" | "PlainChat" | "RawModel", Missing["NotAvailable"],
+											"Birdnardo", "The one and only Birdnardo",
+											"CodeWriter", "AI code generation without the chatter",
+											"Wolfie", "Wolfram's friendliest AI guide"],
+									"UUID" -> ro["UUID"],
+									"Version" -> paclet["Version"],
+									"LatestUpdate" -> ro["LatestUpdate"],
+									"ReleaseDate" -> ro["ReleaseDate"],
+									"DocumentationLink" ->
+										Switch[#[[1]],
+											"CodeAssistant" | "PlainChat" | "RawModel", Missing["NotAvailable"],
+											"Birdnardo" | "CodeWriter" | "Wolfie", URLBuild[{$personaBaseURL, #[[1]]}]],
+									"PacletLink" -> ro["DocumentationLink"],
+									"InstallationDate" -> FileDate[paclet["Location"], "Creation"],
+									"Origin" -> "Wolfram/Chatbook",
+									"PacletName" -> paclet["Name"]|>},
+							First]],
+				slimData],
+		(* paclet originates from the paclet repository *)
+		!FailureQ[ro] && ro["ResourceType"] === "Paclet",
+			Map[
+				#[[1]] ->
+					Merge[
+						{
+							#[[2]],
+							AssociationMap[ro, $requiredKeys],
+							<|"Origin" -> "PacletRepository", "PacletName" -> paclet["Name"], "InstallationDate" -> FileDate[paclet["Location"], "Creation"]|>},
+						First]&,
+				slimData],
+		(* paclet is locally installed *)
+		True,
+			Map[
+				#[[1]] ->
+					Merge[
+						{
+							#[[2]],
+							AssociationMap[paclet, $requiredKeys],
+							<|"Origin" -> "LocalPaclet", "PacletName" -> paclet["Name"], "InstallationDate" -> FileDate[paclet["Location"], "Creation"]|>},
+						First]&,
+				slimData]]
 ]
 
 (*====================================*)
