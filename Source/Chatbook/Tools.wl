@@ -29,6 +29,7 @@ Needs[ "Wolfram`Chatbook`Common`"        ];
 Needs[ "Wolfram`Chatbook`Serialization`" ];
 Needs[ "Wolfram`Chatbook`Utils`"         ];
 Needs[ "Wolfram`Chatbook`Sandbox`"       ];
+Needs[ "Wolfram`Chatbook`Prompting`"     ];
 
 PacletInstall[ "Wolfram/LLMFunctions" ];
 Needs[ "Wolfram`LLMFunctions`" ];
@@ -167,12 +168,15 @@ initTools // endDefinition;
 (*resolveTools*)
 resolveTools // beginDefinition;
 
-resolveTools[ settings_Association ] := (
+resolveTools[ settings: KeyValuePattern[ "ToolsEnabled" -> True ] ] := (
     initTools[ ];
     selectTools @ settings;
     $lastSelectedTools = $selectedTools;
+    If[ KeyExistsQ[ $selectedTools, "WolframLanguageEvaluator" ], needsBasePrompt[ "WolframLanguageEvaluatorTool" ] ];
     Append[ settings, "Tools" -> Values @ $selectedTools ]
 );
+
+resolveTools[ settings_Association ] := settings;
 
 resolveTools // endDefinition;
 
