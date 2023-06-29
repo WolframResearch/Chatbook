@@ -12809,7 +12809,6 @@ Notebook[
    }
   ]
  },
- FrontEndVersion -> "13.3 for Microsoft Windows (64-bit) (June 3, 2023)",
- StyleDefinitions -> "PrivateStylesheetFormatting.nb",
- ExpressionUUID -> "1838ccbf-0799-447b-b51d-60cb15aa12f6"
+ FrontEndVersion -> "13.2 for Microsoft Windows (64-bit) (January 30, 2023)",
+ StyleDefinitions -> "PrivateStylesheetFormatting.nb"
 ]
