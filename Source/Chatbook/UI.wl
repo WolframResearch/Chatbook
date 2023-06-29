@@ -1966,6 +1966,21 @@ makeChatActionMenu[
 },
 	RaiseConfirmMatch[personas, <| (_String -> _Association)... |>];
 
+	(* initialize PrivateFrontEndOptions if they aren't already present or somehow broke *)
+	If[!MatchQ[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}], {___String}],
+        CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}] =
+            DeleteCases[Keys[personas], Alternatives["Birdnardo", "RawModel", "Wolfie"]]];
+	If[!MatchQ[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}], {___String}],
+        CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}] = {"CodeAssistant", "CodeWriter", "PlainChat"}];
+	
+	(* only show visible personas and sort visible personas based on favorites setting *)
+	personas = KeyTake[personas, CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}]];
+	personas =
+		Association[
+			KeyTake[personas, #], (* favorites appear in the exact order provided in the CurrentValue *)
+			KeySort @ KeyTake[personas, Complement[Keys[personas], #]]
+		]&[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}]];
+	
 	(*
 		If this menu is being rendered into a Chat-Driven notebook, make the
 		'Plain Chat' persona come first.
