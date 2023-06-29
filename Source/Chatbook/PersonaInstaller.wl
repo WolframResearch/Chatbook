@@ -202,7 +202,7 @@ resourceFromURL[ url_String ] := Block[ { PrintTemporary },
 resourceFromURL // endDefinition;
 
 resourceFromURL0 // beginDefinition;
-resourceFromURL0[ url_String ] := With[ { ro = ResourceObject @ url }, ro /; promptResourceQ ];
+resourceFromURL0[ url_String ] := With[ { ro = ResourceObject @ url }, ro /; promptResourceQ @ ro ];
 resourceFromURL0[ url_String ] := scrapeResourceFromShingle @ url;
 resourceFromURL0 // endDefinition;
 
@@ -212,10 +212,20 @@ resourceFromURL0 // endDefinition;
 scrapeResourceFromShingle // beginDefinition;
 (* TODO: we should have something in RSC to do this cleaner/better *)
 scrapeResourceFromShingle[ url_String ] := Enclose[
-    Module[ { resp, bytes, xml },
+    Module[ { returnInvalid, resp, bytes, xml },
+
+        returnInvalid = Throw[
+            DefinitionNotebookClient`FancyMessageDialog[ (* FIXME: needs custom dialog *)
+                "Prompt",
+                "The specified URL does not represent a valid prompt resource."
+            ],
+            $catchTopTag
+        ] &;
 
         resp = ConfirmMatch[ URLRead @ url, _HTTPResponse, "URLRead" ];
-        ConfirmAssert[ resp[ "StatusCode" ] === 200, "StatusCode" ];
+
+        If[ resp[ "StatusCode" ] =!= 200, returnInvalid[ ] ];
+
         bytes = ConfirmBy[ resp[ "BodyByteArray" ], ByteArrayQ, "BodyByteArray" ];
 
         xml = ConfirmMatch[
@@ -237,7 +247,7 @@ scrapeResourceFromShingle[ url_String ] := Enclose[
                     XMLElement[ "div", { ___, "data-clipboard-text" -> c2c_String, ___ }, _ ] :>
                         With[ { ro = Quiet @ ToExpression[ c2c, InputForm ] }, ro /; promptResourceQ @ ro ]
                     ,
-                    Missing[ ]
+                    returnInvalid[ ]
                     ,
                     Infinity
                 ],
