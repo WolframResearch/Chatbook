@@ -36,6 +36,9 @@ CreateToolbarContent[] is called by the NotebookToolbar to generate the content 
 $SupportedModels
 
 
+`personaDisplayName;
+
+
 Begin["`Private`"]
 
 Needs["Wolfram`Chatbook`"]
@@ -1972,7 +1975,7 @@ makeChatActionMenu[
             DeleteCases[Keys[personas], Alternatives["Birdnardo", "RawModel", "Wolfie"]]];
 	If[!MatchQ[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}], {___String}],
         CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}] = {"CodeAssistant", "CodeWriter", "PlainChat"}];
-	
+
 	(* only show visible personas and sort visible personas based on favorites setting *)
 	personas = KeyTake[personas, CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}]];
 	personas =
@@ -1980,7 +1983,7 @@ makeChatActionMenu[
 			KeyTake[personas, #], (* favorites appear in the exact order provided in the CurrentValue *)
 			KeySort @ KeyTake[personas, Complement[Keys[personas], #]]
 		]&[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}]];
-	
+
 	(*
 		If this menu is being rendered into a Chat-Driven notebook, make the
 		'Plain Chat' persona come first.
@@ -2195,7 +2198,6 @@ makeChatActionMenuContent[
 			}],
 			Delimiter,
 			{alignedMenuIcon[getIcon["PersonaOther"]], "Add & Manage Personas\[Ellipsis]", "PersonaManage"},
-			{alignedMenuIcon[getIcon["PersonaFromURL"]], "Install From URL\[Ellipsis]", "PersonaURLInstall"},
 			Delimiter,
 			{
 				alignedMenuIcon[getIcon["AdvancedSettings"]],
