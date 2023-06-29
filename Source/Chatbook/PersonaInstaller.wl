@@ -278,13 +278,15 @@ PersonaInstallFromResourceSystem // beginDefinition;
 
 PersonaInstallFromResourceSystem[ ] := catchMine @ Enclose[
     Module[ { data },
+        $channelData = None;
+
         data = ConfirmMatch[
             withExternalChannelFunctions @ browseWithChannelCallback[ ],
             KeyValuePattern @ { "Listener" -> _ChannelListener, "Channel" -> _ChannelObject },
             "BrowseWithCallback"
         ];
 
-        Append[ data, "Dialog" -> EvaluationNotebook[ ] ]
+        $channelData = Append[ data, "Dialog" -> EvaluationNotebook[ ] ]
     ],
     (
         throwInternalFailure[ PersonaInstallFromResourceSystem[ ], ## ]
@@ -301,7 +303,7 @@ createPersonaManagerDialog // beginDefinition;
 createPersonaManagerDialog[ ] :=
     CreateDialog[
         ExpressionCell[
-            DynamicModule[{favorites, data = None, delimColor},
+            DynamicModule[{favorites, delimColor},
                 favorites =
                     Replace[
                         CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}],
@@ -335,7 +337,7 @@ createPersonaManagerDialog[ ] :=
                                                 Framed["Prompt Repository", BaseStyle -> "ButtonGray1Hover", BaselinePosition -> Baseline],
                                                 Framed["Prompt Repository", BaseStyle -> "ButtonGray1Pressed", BaselinePosition -> Baseline],
                                                 BaseStyle -> "DialogTextBasic"],
-                                            data = PersonaInstallFromResourceSystem[],
+                                            PersonaInstallFromResourceSystem[],
                                             Appearance -> "Suppressed", BaselinePosition -> Baseline, Method -> "Queued"],
                                         Button[
                                             NotebookTools`Mousedown[
@@ -391,7 +393,7 @@ createPersonaManagerDialog[ ] :=
                                             Framed["OK", BaseStyle -> "ButtonRed1Hover", BaselinePosition -> Baseline],
                                             Framed["OK", BaseStyle -> "ButtonRed1Pressed", BaselinePosition -> Baseline],
                                             BaseStyle -> "DialogTextBasic"],
-                                        DialogReturn @ If[AssociationQ[data], channelCleanup],
+                                        DialogReturn @ channelCleanup[ ],
                                         Appearance -> FEPrivate`FrontEndResource["FEExpressions", "DefaultSuppressMouseDownNinePatchAppearance"],
                                         ImageMargins -> {{0, 31}, {14, 14}},
                                         ImageSize -> Automatic ],
@@ -425,12 +427,12 @@ createPersonaManagerDialog[ ] :=
             { "MenuCommand", "EvaluateNextCell" } :> FE`Evaluate @ FEPrivate`FindAndClickDefaultButton[ ],
             "EscapeKeyDown" :> (
                 FE`Evaluate @ FEPrivate`FindAndClickCancelButton[ ];
-                If[AssociationQ[data], channelCleanup];
+                channelCleanup[ ];
                 DialogReturn @ $Canceled
             ),
             "WindowClose" :> (
                 FE`Evaluate @ FEPrivate`FindAndClickCancelButton[ ];
-                If[AssociationQ[data], channelCleanup];
+                channelCleanup[ ];
                 DialogReturn @ $Canceled
             )
         },
@@ -448,12 +450,18 @@ createPersonaManagerDialog // endDefinition;
 (*channelCleanup*)
 channelCleanup // beginDefinition;
 
+channelCleanup[ ] := channelCleanup @ $channelData;
+channelCleanup[ None ] := Null;
+
 channelCleanup[ KeyValuePattern @ { "Listener" -> listener_ChannelListener, "Channel" -> channel_ChannelObject } ] := (
     RemoveChannelListener @ listener;
     DeleteChannel @ channel;
 );
 
 channelCleanup // endDefinition;
+
+
+$channelData = None;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
