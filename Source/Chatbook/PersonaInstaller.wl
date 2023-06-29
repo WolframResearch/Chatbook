@@ -102,20 +102,21 @@ GetInstalledResourcePersonaData[ ] := catchMine @ Enclose[
         KeySort @ Association @ Cases[
             data,
             KeyValuePattern @ {
-				"Name" -> name_String,
-				"Configuration" -> config_Association,
-				"ResourceInformation" -> resourceAssoc_Association
-			} :> (
-				(* Include the resource description in the returned persona data. *)
-				name -> Merge[
-					{
-						config,
-						KeyTake[resourceAssoc, {"Description", "UUID", "Version", "LatestUpdate", "ReleaseDate", "DocumentationLink"}],
-                        <|"Origin" -> "PromptRepository", "InstallationDate" -> FileDate[FileNameJoin[{$PersonaInstallationDirectory, name <> ".mx"}], "Creation"]|>
-					},
-					First
-				]
-			)
+                "Name"                -> name_String,
+                "Configuration"       -> config_Association,
+                "ResourceInformation" -> resourceAssoc_Association
+            } :>
+                name -> Merge[
+                    {
+                        config,
+                        KeyTake[
+                            resourceAssoc,
+                            { "Description", "UUID", "Version", "LatestUpdate", "ReleaseDate", "DocumentationLink" }
+                        ],
+                        <| "Origin" -> "PromptRepository" |>
+                    },
+                    First
+                ]
         ]
     ],
     throwInternalFailure[ GetInstalledResourcePersonaData[ ], ## ] &
@@ -469,9 +470,27 @@ $channelData = None;
 formatPersonaData // beginDefinition;
 
 formatPersonaData[ name_String, as_Association ] :=
-    formatPersonaData[ name, as, as[ "DocumentationLink" ], as[ "Description" ], as[ "Version" ], as[ "PersonaIcon" ], as[ "Origin" ], as[ "PacletName" ] ];
+    formatPersonaData[
+        name,
+        as,
+        as[ "DocumentationLink" ],
+        as[ "Description" ],
+        as[ "Version" ],
+        getPersonaIcon @ as,
+        as[ "Origin" ],
+        as[ "PacletName" ]
+    ];
 
-formatPersonaData[ name_String, as_Association, link_, desc_, version_, KeyValuePattern[ "Default" -> icon_ ], origin_, pacletName_ ] :=
+formatPersonaData[
+    name_String,
+    as_Association,
+    link_,
+    desc_,
+    version_,
+    KeyValuePattern[ "Default" -> icon_ ],
+    origin_,
+    pacletName_
+] :=
     formatPersonaData[ name, as, link, desc, version, icon, origin, pacletName ];
 
 formatPersonaData[ name_String, as_Association, link_, desc_, version_, icon_, origin_, pacletName_ ] := {
