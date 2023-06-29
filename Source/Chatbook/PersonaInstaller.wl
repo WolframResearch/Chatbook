@@ -696,7 +696,12 @@ promptResourceInstall0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*acquireResource*)
 acquireResource // beginDefinition;
-acquireResource[ KeyValuePattern[ "UUID" -> uuid_ ] ] := ResourceObject[ uuid, ResourceVersion -> "Latest" ];
+
+acquireResource[ KeyValuePattern[ "UUID" -> uuid_ ] ] := Quiet[
+    ResourceObject[ uuid, ResourceVersion -> "Latest" ],
+    ResourceObject::updav
+];
+
 acquireResource // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
