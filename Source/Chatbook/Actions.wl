@@ -1628,7 +1628,7 @@ getLLMPrompt // endDefinition;
 
 
 getLLMPrompt0 // beginDefinition;
-getLLMPrompt0[ name_ ] := With[ { t = System`LLMPrompt[ "Prompt: "<>name ] }, t /; MatchQ[ t, _TemplateObject ] ];
+getLLMPrompt0[ name_ ] := With[ { t = Quiet @ System`LLMPrompt[ "Prompt: "<>name ] }, t /; MatchQ[ t, _TemplateObject ] ];
 getLLMPrompt0[ name_ ] := System`LLMPrompt @ name;
 getLLMPrompt0 // endDefinition;
 
