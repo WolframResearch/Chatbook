@@ -2,7 +2,7 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Sandbox`" ];
 
-(* cSpell: ignore noinit pacletreadonly playerpass *)
+(* cSpell: ignore noinit pacletreadonly playerpass sntx *)
 
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
@@ -185,14 +185,9 @@ $messageOverrides := $messageOverrides = Flatten @ Apply[
 (*sandboxEvaluate*)
 sandboxEvaluate // beginDefinition;
 
-sandboxEvaluate[ KeyValuePattern[ "code" -> code_ ] ] :=
-    sandboxEvaluate @ code;
-
-sandboxEvaluate[ code_String ] :=
-    sandboxEvaluate @ ToExpression[ code, InputForm, HoldComplete ];
-
-sandboxEvaluate[ HoldComplete[ xs__, x_ ] ] :=
-    sandboxEvaluate @ HoldComplete @ CompoundExpression[ xs, x ];
+sandboxEvaluate[ KeyValuePattern[ "code" -> code_ ] ] := sandboxEvaluate @ code;
+sandboxEvaluate[ code_String ] := sandboxEvaluate @ toSandboxExpression @ code;
+sandboxEvaluate[ HoldComplete[ xs__, x_ ] ] := sandboxEvaluate @ HoldComplete @ CompoundExpression[ xs, x ];
 
 sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
     Module[ { kernel, null, packets, $timedOut, results, flat },
@@ -231,6 +226,29 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
 ];
 
 sandboxEvaluate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toSandboxExpression*)
+toSandboxExpression // beginDefinition;
+
+toSandboxExpression[ s_String ] := toSandboxExpression[ s, Quiet @ ToExpression[ s, InputForm, HoldComplete ] ];
+
+toSandboxExpression[ s_, expr_HoldComplete ] := expr;
+
+toSandboxExpression[ s_String, $Failed ] /; StringContainsQ[ s, "'" ] :=
+    Module[ { new, held },
+        new = StringReplace[ s, "'" -> "\"" ];
+        held = Quiet @ ToExpression[ new, InputForm, HoldComplete ];
+        If[ MatchQ[ held, _HoldComplete ],
+            held,
+            HoldComplete[ ToExpression[ s, InputForm ] ]
+        ]
+    ];
+
+toSandboxExpression[ s_String, $Failed ] := HoldComplete @ ToExpression[ s, InputForm ];
+
+toSandboxExpression // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
