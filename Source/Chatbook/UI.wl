@@ -35,7 +35,7 @@ CreateToolbarContent[] is called by the NotebookToolbar to generate the content 
 
 $SupportedModels
 
-
+`getPersonaIcon;
 `personaDisplayName;
 
 
@@ -2420,6 +2420,8 @@ getPersonaMenuIcon[ expr_, "Full" ] :=
 		icon_ :> icon
 	}]
 
+
+getPersonaIcon[ expr_ ] := getPersonaMenuIcon[ expr, "Full" ];
 
 
 (*========================================================*)
