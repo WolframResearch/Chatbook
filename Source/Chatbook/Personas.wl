@@ -137,8 +137,6 @@ GetPersonaData[] := Module[{
 ]
 
 $corePersonaNames = {"CodeAssistant", "CodeWriter", "PlainChat", "RawModel"};
-$requiredKeys = {"Description", "UUID", "Version", "LatestUpdate", "ReleaseDate", "DocumentationLink"};
-$personaBaseURL = "https://resources.wolframcloud.com/PromptRepository/resources";
 
 (*------------------------------------*)
 
@@ -161,96 +159,35 @@ loadPersonaFromPacletExtension[
 	extensionDirectory_?StringQ,
 	{"LLMConfiguration", options_?AssociationQ}
 ] := Handle[_Failure] @ Module[{
-	personas = Lookup[options, "Personas"], slimData, ro = Quiet[ResourceObject[paclet["Name"]], ResourceObject::notfname]
+	personas = Lookup[options, "Personas"]
 },
 	RaiseConfirmMatch[personas, {___?StringQ}];
 
-	slimData = Map[
+	Map[
 		personaName |-> (
 			(* Note:
 				Stop errors from propagating upwards so that a failure to load
 				any one persona doesn't prevent other, valid, personas from
 				being loaded and returned. *)
 			personaName -> Handle[_Failure] @ loadPersonaFromDirectory[
+				paclet,
 				FileNameJoin[{extensionDirectory, "Personas", personaName}]
 			]
 		),
 		personas
-	];
-
-	Which[
-		(* this is the Wolfram/Chatbook paclet *)
-		(* FIXME: can we assume parity with the paclet repository version? *)
-		(* FIXME: can we assume parity with the individual personas that appear on the persona repository? *)
-		paclet["Name"] === "Wolfram/Chatbook",
-			Map[
-				Function[
-					#[[1]] ->
-						Merge[
-							{
-								#[[2]],
-								<|
-									"PersonaIcon" ->
-										Switch[#[[1]],
-											"CodeAssistant", Wolfram`Chatbook`Common`chatbookIcon["ChatIconCodeAssistant", False],
-											"CodeWriter", Wolfram`Chatbook`Common`chatbookIcon["ChatIconCodeWriter", False],
-											"Birdnardo", Wolfram`Chatbook`Common`chatbookIcon["BirdnardoIcon", False],
-											"PlainChat", Wolfram`Chatbook`Common`chatbookIcon["ChatIconPlainChat", False],
-											"RawModel", Wolfram`Chatbook`Common`chatbookIcon["PersonaRawModel", False],
-											"Wolfie", Wolfram`Chatbook`Common`chatbookIcon["WolfieIcon", False]],
-									"Description" ->
-										Switch[#[[1]],
-											"CodeAssistant" | "PlainChat" | "RawModel", Missing["NotAvailable"],
-											"Birdnardo", "The one and only Birdnardo",
-											"CodeWriter", "AI code generation without the chatter",
-											"Wolfie", "Wolfram's friendliest AI guide"],
-									"UUID" -> ro["UUID"],
-									"Version" -> paclet["Version"],
-									"LatestUpdate" -> ro["LatestUpdate"],
-									"ReleaseDate" -> ro["ReleaseDate"],
-									"DocumentationLink" ->
-										Switch[#[[1]],
-											"CodeAssistant" | "PlainChat" | "RawModel", Missing["NotAvailable"],
-											"Birdnardo" | "CodeWriter" | "Wolfie", URLBuild[{$personaBaseURL, #[[1]]}]],
-									"PacletLink" -> ro["DocumentationLink"],
-									"InstallationDate" -> FileDate[paclet["Location"], "Creation"],
-									"Origin" -> "Wolfram/Chatbook",
-									"PacletName" -> paclet["Name"]|>},
-							First]],
-				slimData],
-		(* paclet originates from the paclet repository *)
-		!FailureQ[ro] && ro["ResourceType"] === "Paclet",
-			Map[
-				#[[1]] ->
-					Merge[
-						{
-							#[[2]],
-							AssociationMap[ro, $requiredKeys],
-							<|"Origin" -> "PacletRepository", "PacletName" -> paclet["Name"], "InstallationDate" -> FileDate[paclet["Location"], "Creation"]|>},
-						First]&,
-				slimData],
-		(* paclet is locally installed *)
-		True,
-			Map[
-				#[[1]] ->
-					Merge[
-						{
-							#[[2]],
-							AssociationMap[paclet, $requiredKeys],
-							<|"Origin" -> "LocalPaclet", "PacletName" -> paclet["Name"], "InstallationDate" -> FileDate[paclet["Location"], "Creation"]|>},
-						First]&,
-				slimData]]
+	]
 ]
 
 (*====================================*)
 
 SetFallthroughError[loadPersonaFromDirectory]
 
-loadPersonaFromDirectory[dir_?StringQ] := Module[{
+loadPersonaFromDirectory[paclet_PacletObject, dir_?StringQ] := Module[{
 	pre,
 	post,
 	icon,
 	config,
+	origin,
 	extra
 },
 	If[!DirectoryQ[dir],
@@ -288,7 +225,16 @@ loadPersonaFromDirectory[dir_?StringQ] := Module[{
 		Missing["NotAvailable", config]
 	];
 
-	extra = <| "Pre" -> pre, "Post" -> post, "Icon" -> icon |>;
+	origin = Replace[ paclet[ "Name" ], Except[ "Wolfram/Chatbook" ] -> "LocalPaclet" ];
+
+	extra = <|
+		"Icon"       -> icon,
+		"Origin"     -> origin,
+		"PacletName" -> paclet[ "Name" ],
+		"Post"       -> post,
+		"Pre"        -> pre,
+		"Version"    -> paclet[ "Version" ]
+	|>;
 
 	If[ AssociationQ[config],
 		Association[extra, config],
