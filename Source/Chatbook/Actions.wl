@@ -231,41 +231,11 @@ definitionNotebookCellQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*PersonaURLInstall*)
-(* TODO: this will eventually get merged into the manage personas dialog instead of being a separate menu item *)
-
-PersonaURLInstall // beginDefinition;
-
-PersonaURLInstall[ dingbatCell_CellObject ] := Enclose[
-    Catch @ Module[ { cellObject, installed, name },
-        cellObject = ConfirmMatch[ topParentCell @ dingbatCell, _CellObject, "ParentCell" ];
-        installed = PersonaInstallFromURL[ ];
-        If[ installed === $Canceled, Throw @ $Canceled ];
-        ConfirmAssert[ AssociationQ @ installed, "AssociationQ" ];
-        name = ConfirmBy[ installed[ "Name" ], StringQ, "Name" ];
-        ConfirmMatch[
-            CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = name,
-            name,
-            "SetLLMEvaluator"
-        ]
-    ],
-    throwInternalFailure[ PersonaURLInstall @ dingbatCell, ## ] &
-];
-
-PersonaURLInstall // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
 (*PersonaManage*)
 PersonaManage[ a___ ] := Enclose[
-    ConfirmBy[ Wolfram`Chatbook`PersonaInstaller`Private`createPersonaManagerDialog[ ], MatchQ[#, _Notebook]&, "createPersonaManagerDialog" ],
+    ConfirmMatch[ createPersonaManagerDialog[ ], _NotebookObject, "createPersonaManagerDialog" ],
     throwInternalFailure[ PersonaManage @ a, ## ] &
 ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*PersonaURLInstall*)
-(* FIXME: do the thing *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
