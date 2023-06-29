@@ -106,8 +106,18 @@ Chatbook::UnknownStatusCode =
 Chatbook::BadResponseMessage =
 "`1`";
 
+Chatbook::APIKeyOrganizationID = "\
+The value specified for the API key appears to be an organization ID instead of an API key. \
+Visit `1` to manage your API keys.";
+
+Chatbook::ConnectionFailure = "\
+Server connection failure: `1`. Please try again later.";
+
+Chatbook::ConnectionFailure2 = "\
+Could not get a valid response from the server: `1`. Please try again later.";
+
 Chatbook::NoSandboxKernel = "\
-Unable to start a sandbox kernel.\
+Unable to start a sandbox kernel. \
 This may mean that the number of currently running kernels exceeds the limit defined by $LicenseProcesses.";
 
 Chatbook::ResourceNotFound = "\

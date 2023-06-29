@@ -17,6 +17,9 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 `StopChat;
 `WidgetSend;
 
+`$settings;
+`autoAssistQ;
+
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                  ];
@@ -329,7 +332,7 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
     EvaluateChatInput[ evalCell, nbo, currentChatSettings @ nbo ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
-    withBasePromptBuilder @ Block[ { $autoAssistMode = False },
+    withChatState @ Block[ { $autoAssistMode = False },
         clearMinimizedChats @ nbo;
         waitForLastTask[ ];
         sendChat[ evalCell, nbo, settings ]
@@ -368,7 +371,7 @@ AIAutoAssist[ cell_CellObject ] :=
         ]
     ];
 
-AIAutoAssist[ cell_CellObject, nbo_NotebookObject ] := withBasePromptBuilder @
+AIAutoAssist[ cell_CellObject, nbo_NotebookObject ] := withChatState @
     If[ autoAssistQ[ cell, nbo ],
         Block[ { $autoAssistMode = True }, needsBasePrompt[ "AutoAssistant" ]; SendChat @ cell ],
         Null
@@ -394,6 +397,15 @@ autoAssistQ[ info_, cell_CellObject, nbo_NotebookObject ] :=
 autoAssistQ[ True|Automatic|Inherited, True|Automatic|Inherited ] := True;
 autoAssistQ[ _, True|Automatic ] := True;
 autoAssistQ[ _, _ ] := False;
+
+(* Determine if auto assistance is enabled generally within a FE or Notebook. *)
+autoAssistQ[
+	target: _FrontEndObject | $FrontEndSession | _NotebookObject
+] :=
+	autoAssistQ[
+		Inherited,
+		currentChatSettings[ target, "Assistance" ]
+	]
 
 autoAssistQ // endDefinition;
 
@@ -720,7 +732,7 @@ excludeChatCells // endDefinition;
 (*WidgetSend*)
 WidgetSend // beginDefinition;
 
-WidgetSend[ cell_CellObject ] := withBasePromptBuilder @
+WidgetSend[ cell_CellObject ] := withChatState @
     Block[ { $alwaysOpen = True, cellPrint = cellPrintAfter @ cell, $finalCell = cell, $autoAssistMode = True },
         (* TODO: this is currently the only UI method to turn this back on *)
         CurrentValue[ parentNotebook @ cell, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = True;
@@ -738,7 +750,7 @@ AskChat[ ] := AskChat[ InputNotebook[ ] ];
 
 AskChat[ nbo_NotebookObject ] := AskChat[ nbo, SelectedCells @ nbo ];
 
-AskChat[ nbo_NotebookObject, { selected_CellObject } ] := withBasePromptBuilder @
+AskChat[ nbo_NotebookObject, { selected_CellObject } ] := withChatState @
     Catch @ Module[ { selection, cell, obj },
 
         selection = Replace[
@@ -798,7 +810,7 @@ SendChat[ evalCell_CellObject, nbo_NotebookObject, settings_Association? Associa
 SendChat[ evalCell_, nbo_, settings_, Automatic ] /; $cloudNotebooks :=
     SendChat[ evalCell, nbo, settings, False ];
 
-SendChat[ evalCell_, nbo_, settings_, Automatic ] := withBasePromptBuilder @
+SendChat[ evalCell_, nbo_, settings_, Automatic ] := withChatState @
     With[ { styles = cellStyles @ evalCell },
         Block[ { $autoOpen, $alwaysOpen = $alwaysOpen },
             $autoOpen = MemberQ[ styles, $$chatInputStyle ];
@@ -807,7 +819,7 @@ SendChat[ evalCell_, nbo_, settings_, Automatic ] := withBasePromptBuilder @
         ]
     ];
 
-SendChat[ evalCell_, nbo_, settings_, minimized_ ] := withBasePromptBuilder @
+SendChat[ evalCell_, nbo_, settings_, minimized_ ] := withChatState @
     Block[ { $alwaysOpen = alwaysOpenQ[ settings, minimized ] },
         sendChat[ evalCell, nbo, addCellStyleSettings[ settings, evalCell ] ]
     ];
@@ -849,7 +861,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         ];
 
         settings = ConfirmBy[
-            resolveAutoSettings @ inheritSettings[ settings0, cells, evalCell ],
+            resolveTools @ resolveAutoSettings @ inheritSettings[ settings0, cells, evalCell ],
             AssociationQ,
             "InheritSettings"
         ];
@@ -1237,7 +1249,7 @@ activeAIAssistantCell[ container_, settings_, minimized_ ] :=
                     $closedChatCellOptions,
                     Initialization :> attachMinimizedIcon[ EvaluationCell[ ], label ]
                 } ],
-                Sequence @@ { }
+                Initialization -> None
             ],
             Selectable   -> False,
             Editable     -> False,
@@ -1323,7 +1335,7 @@ checkResponse[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         toolResponse = ConfirmMatch[
             GenerateLLMToolResponse[ $toolConfiguration, toolCall ],
-            _LLMToolResponse | _Failure, (* TODO: handle the Failure[...] case *)
+            _LLMToolResponse | _Failure,
             "GenerateLLMToolResponse"
         ];
 
@@ -1368,6 +1380,7 @@ toolResponseString[ failed_Failure ] := ToString @ failed[ "Message" ];
 toolResponseString[ as: KeyValuePattern[ "Output" -> output_ ] ] := toolResponseString[ as, output ];
 toolResponseString[ as_, KeyValuePattern[ "String" -> output_ ] ] := toolResponseString[ as, output ];
 toolResponseString[ as_, output_String ] := output;
+toolResponseString[ as_, output_ ] := makeToolResponseString @ output;
 toolResponseString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1380,16 +1393,18 @@ toolFreeQ // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*writeErrorCell*)
-writeErrorCell // ClearAll;
+writeErrorCell // beginDefinition;
 writeErrorCell[ cell_, as_ ] := NotebookWrite[ cell, errorCell @ as ];
+writeErrorCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*errorCell*)
-errorCell // ClearAll;
+errorCell // beginDefinition;
+
 errorCell[ as_ ] :=
     Cell[
-        TextData @ {
+        TextData @ Flatten @ {
             StyleBox[ "\[WarningSign] ", FontColor -> Darker @ Red, FontSize -> 1.5 Inherited ],
             errorText @ as,
             "\n\n",
@@ -1401,15 +1416,70 @@ errorCell[ as_ ] :=
         CellAutoOverwrite -> True
     ];
 
+errorCell // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*errorText*)
 errorText // ClearAll;
 
 errorText[ KeyValuePattern[ "BodyJSON" -> KeyValuePattern[ "error" -> KeyValuePattern[ "message" -> s_String ] ] ] ] :=
-    s;
+    errorText @ s;
+
+errorText[ str_String ] /; StringMatchQ[ str, "The model: `" ~~ __ ~~ "` does not exist" ] :=
+    Module[ { model, link, help, message },
+
+        model = StringReplace[ str, "The model: `" ~~ m__ ~~ "` does not exist" :> m ];
+        link  = textLink[ "here", "https://platform.openai.com/docs/models/overview" ];
+        help  = { " Click ", link, " for information about available models." };
+
+        message = If[ MemberQ[ getModelList[ ], model ],
+                      "The specified API key does not have access to the model \"" <> model <> "\".",
+                      "The model \"" <> model <> "\" does not exist or the specified API key does not have access to it."
+                  ];
+
+        Flatten @ { message, help }
+    ];
+
+(*
+    Note the subtle difference here where `model` is not followed by a colon.
+    This is apparently the best way we can determine the difference between a model that exists but isn't revealed
+    to the user and one that actually does not exist. Yes, this is ugly and will eventually be wrong.
+*)
+errorText[ str_String ] /; StringMatchQ[ str, "The model `" ~~ __ ~~ "` does not exist" ] :=
+    Module[ { model, link, help, message },
+
+        model = StringReplace[ str, "The model `" ~~ m__ ~~ "` does not exist" :> m ];
+        link  = textLink[ "here", "https://platform.openai.com/docs/models/overview" ];
+        help  = { " Click ", link, " for information about available models." };
+
+        message = If[ MemberQ[ getModelList[ ], model ],
+                      "The specified API key does not have access to the model \"" <> model <> "\".",
+                      "The model \"" <> model <> "\" does not exist."
+                  ];
+
+        Flatten @ { message, help }
+    ];
+
+errorText[ str_String ] := str;
 
 errorText[ ___ ] := "An unexpected error occurred.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*textLink*)
+textLink // beginDefinition;
+
+textLink[ url_String ] := textLink[ url, url ];
+
+textLink[ label_, url_String ] := ButtonBox[
+    label,
+    BaseStyle  -> "Hyperlink",
+    ButtonData -> { URL @ url, None },
+    ButtonNote -> url
+];
+
+textLink // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1750,7 +1820,7 @@ getToolPrompt[ KeyValuePattern[ "ToolsEnabled" -> False ] ] := "";
 (* TODO: include tools defined by the persona! *)
 getToolPrompt[ settings_ ] := Enclose[
     Module[ { config, string },
-        config = ConfirmMatch[ makeToolConfiguration[ ], _System`LLMConfiguration ];
+        config = ConfirmMatch[ makeToolConfiguration @ settings, _System`LLMConfiguration ];
         ConfirmBy[ TemplateApply[ config[ "ToolPrompt" ], config[ "Data" ] ], StringQ ]
     ],
     throwInternalFailure[ getToolPrompt @ settings, ## ] &
@@ -2415,17 +2485,40 @@ getModelList[ ] := getModelList @ toAPIKey @ Automatic;
 getModelList[ key_String ] := getModelList[ key, Hash @ key ];
 
 getModelList[ key_String, hash_Integer ] :=
-    getModelList[
-        hash,
-        URLExecute[
+    Module[ { resp },
+        resp = URLExecute[
             HTTPRequest[
                 "https://api.openai.com/v1/models",
                 <| "Headers" -> <| "Content-Type" -> "application/json", "Authorization" -> "Bearer "<>key |> |>
             ],
             "RawJSON",
             Interactive -> False
+        ];
+        If[ FailureQ @ resp && StringStartsQ[ key, "org-", IgnoreCase -> True ],
+            (*
+                When viewing the account settings page on OpenAI's site, it describes the organization ID as something
+                that's used in API requests, which may be confusing to someone who is looking for their API key and
+                they come across this page first. This message is meant to catch these cases and steer the user in the
+                right direction.
+
+                TODO: When more services are supported, this should only apply when using an OpenAI endpoint.
+            *)
+            throwFailure[
+                ChatbookAction::APIKeyOrganizationID,
+                Hyperlink[ "https://platform.openai.com/account/api-keys" ],
+                key
+            ],
+            getModelList[ hash, resp ]
         ]
     ];
+
+(* Could not connect to the server (maybe server is down or no internet connection available) *)
+getModelList[ hash_Integer, failure: Failure[ "ConnectionFailure", _ ] ] :=
+    throwFailure[ ChatbookAction::ConnectionFailure, failure ];
+
+(* Some other failure: *)
+getModelList[ hash_Integer, failure_? FailureQ ] :=
+    throwFailure[ ChatbookAction::ConnectionFailure2, failure ];
 
 getModelList[ hash_, KeyValuePattern[ "data" -> data_ ] ] :=
     getModelList[ hash, data ];
@@ -2605,14 +2698,18 @@ writeReformattedCell[ settings_, string_String, cell_CellObject ] :=
             tag      = CurrentValue[ cell, { TaggingRules, "MessageTag" } ],
             open     = $lastOpen = cellOpenQ @ cell,
             label    = RawBoxes @ TemplateBox[ { }, "MinimizedChat" ],
-            pageData = CurrentValue[ cell, { TaggingRules, "PageData" } ]
+            pageData = CurrentValue[ cell, { TaggingRules, "PageData" } ],
+            uuid     = CreateUUID[ ]
         },
         Block[ { $dynamicText = False },
-            NotebookWrite[
-                cell,
-                $reformattedCell = reformatCell[ settings, string, tag, open, label, pageData ],
-                None,
-                AutoScroll -> False
+            WithCleanup[
+                NotebookWrite[
+                    cell,
+                    $reformattedCell = reformatCell[ settings, string, tag, open, label, pageData, uuid ],
+                    None,
+                    AutoScroll -> False
+                ],
+                attachChatOutputMenu[ $lastChatOutput = CellObject @ uuid ]
             ]
         ]
     ];
@@ -2640,10 +2737,31 @@ writeReformattedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*attachChatOutputMenu*)
+attachChatOutputMenu // beginDefinition;
+
+attachChatOutputMenu[ cell_CellObject ] /; $cloudNotebooks := Null;
+
+attachChatOutputMenu[ cell_CellObject ] := (
+    $lastChatOutput = cell;
+    NotebookDelete @ Cells[ cell, AttachedCell -> True, CellStyle -> "ChatMenu" ];
+    AttachCell[
+        cell,
+        Cell[ BoxData @ TemplateBox[ { "ChatOutput", RGBColor[ "#ecf0f5" ] }, "ChatMenuButton" ], "ChatMenu" ],
+        { Right, Top },
+        Offset[ { -7, -7 }, { Right, Top } ],
+        { Right, Top }
+    ]
+);
+
+attachChatOutputMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*reformatCell*)
 reformatCell // beginDefinition;
 
-reformatCell[ settings_, string_, tag_, open_, label_, pageData_ ] := UsingFrontEnd @ Enclose[
+reformatCell[ settings_, string_, tag_, open_, label_, pageData_, uuid_ ] := UsingFrontEnd @ Enclose[
     Module[ { content, rules, dingbat },
 
         content = ConfirmMatch[
@@ -2683,10 +2801,11 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_ ] := UsingFront
                     $closedChatCellOptions,
                     Initialization :> attachMinimizedIcon[ EvaluationCell[ ], label ]
                 }
-            ]
+            ],
+            ExpressionUUID -> uuid
         ]
     ],
-    throwInternalFailure[ reformatCell[ settings, string, tag, open, label, pageData ], ## ] &
+    throwInternalFailure[ reformatCell[ settings, string, tag, open, label, pageData, uuid ], ## ] &
 ];
 
 reformatCell // endDefinition;
@@ -2857,6 +2976,18 @@ makeMinimizedIconCell[ label_, chatCell_CellObject ] := Cell[
 ];
 
 makeMinimizedIconCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Settings*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*withChatState*)
+withChatState // beginDefinition;
+withChatState // Attributes = { HoldFirst };
+withChatState[ eval_ ] := withToolBox @ withBasePromptBuilder @ eval;
+withChatState // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

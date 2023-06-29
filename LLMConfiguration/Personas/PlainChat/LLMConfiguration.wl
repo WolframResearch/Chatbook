@@ -2,5 +2,7 @@
     "BasePrompt"  -> Automatic,
     "DisplayName" -> "Plain Chat",
     "Icon"        -> RawBoxes @ TemplateBox[ { }, "ChatIconPlainChat" ],
-    "Pre"         -> ""
+    "Pre"         -> "",
+    "Tools"       -> { "WebSearch", "WebImageSearch", "WebFetch" },
+    "Description" -> "Chat without a focus on code"
 |>
