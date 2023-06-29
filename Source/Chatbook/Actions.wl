@@ -258,7 +258,7 @@ PersonaURLInstall // endDefinition;
 (* ::Section::Closed:: *)
 (*PersonaManage*)
 PersonaManage[ a___ ] := Enclose[
-    ConfirmBy[ PersonaInstallFromResourceSystem[ ], AssociationQ, "PersonaInstallFromResourceSystem" ],
+    ConfirmBy[ Wolfram`Chatbook`PersonaInstaller`Private`createPersonaManagerDialog[ ], MatchQ[#, _Notebook]&, "createPersonaManagerDialog" ],
     throwInternalFailure[ PersonaManage @ a, ## ] &
 ];
 
