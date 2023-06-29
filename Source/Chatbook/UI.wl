@@ -2198,7 +2198,6 @@ makeChatActionMenuContent[
 			}],
 			Delimiter,
 			{alignedMenuIcon[getIcon["PersonaOther"]], "Add & Manage Personas\[Ellipsis]", "PersonaManage"},
-			{alignedMenuIcon[getIcon["PersonaFromURL"]], "Install From URL\[Ellipsis]", "PersonaURLInstall"},
 			Delimiter,
 			{
 				alignedMenuIcon[getIcon["AdvancedSettings"]],
