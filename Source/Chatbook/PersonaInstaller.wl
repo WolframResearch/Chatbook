@@ -9,11 +9,14 @@ BeginPackage[ "Wolfram`Chatbook`PersonaInstaller`" ];
 `PersonaInstallFromResourceSystem;
 `PersonaInstallFromURL;
 `PersonaInstall;
+`createPersonaManagerDialog;
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"        ];
-Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`"          ];
+Needs[ "Wolfram`Chatbook`Common`"   ];
+Needs[ "Wolfram`Chatbook`Personas`" ];
+Needs[ "Wolfram`Chatbook`UI`"       ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -72,11 +75,11 @@ personaInstall[ resource_ResourceObject ] := Enclose[
                 Dividers  -> Center
             ]
         ];
-        
-        Wolfram`Chatbook`Personas`GetPersonaData[]; (* refresh cache since dialog depends on that value *)
+
+        GetPersonaData[]; (* refresh cache since dialog depends on that value *)
         If[!MatchQ[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}], {___String}],
             CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}] =
-                DeleteCases[Keys[Wolfram`Chatbook`Personas`$CachedPersonaData], Alternatives["Birdnardo", "RawModel", "Wolfie"]]];
+                DeleteCases[Keys[$CachedPersonaData], Alternatives["Birdnardo", "RawModel", "Wolfie"]]];
         AppendTo[
             CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}],
             StringReplace[resource["Name"], StartOfString ~~ "Prompt: " -> ""]];
@@ -302,8 +305,8 @@ createPersonaManagerDialog[ ] :=
                 favorites =
                     Replace[
                         CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}],
-                        Except[{___String}] :> Wolfram`Chatbook`Personas`Private`$corePersonaNames];
-                
+                        Except[{___String}] :> $corePersonaNames];
+
                 Framed[
                     Grid[
                         {
@@ -318,8 +321,8 @@ createPersonaManagerDialog[ ] :=
                                         StringTemplate["`n1` personas being shown in the prompt menu. `n2` total personas available."][
                                             <|
                                                 "n1" -> If[ListQ[#], Length[#], "\[LongDash]"]&[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}]],
-                                                "n2" -> If[Length[#] > 0, Length[#], "\[LongDash]"]&[Wolfram`Chatbook`Personas`$CachedPersonaData]|>],
-                                        TrackedSymbols :> {Wolfram`Chatbook`Personas`$CachedPersonaData}],
+                                                "n2" -> If[Length[#] > 0, Length[#], "\[LongDash]"]&[$CachedPersonaData]|>],
+                                        TrackedSymbols :> {$CachedPersonaData}],
                                     BaseStyle -> "DialogBody",
                                     FrameMargins -> Dynamic[Replace[CurrentValue[{StyleDefinitions, "DialogBody", CellMargins}], {{l_, r_}, {b_, t_}} :> {{l, r}, {0, t}}]]]},
                             {
@@ -349,7 +352,7 @@ createPersonaManagerDialog[ ] :=
                                                 Framed["File", BaseStyle -> "ButtonGray1Hover", BaselinePosition -> Baseline],
                                                 Framed["File", BaseStyle -> "ButtonGray1Pressed", BaselinePosition -> Baseline],
                                                 BaseStyle -> "DialogTextBasic"],
-                                            If[AssociationQ[PersonaInstallFromFile[]], Wolfram`Chatbook`Personas`GetPersonaData[]],
+                                            If[AssociationQ[PersonaInstallFromFile[]], GetPersonaData[]],
                                             Appearance -> "Suppressed", BaselinePosition -> Baseline, Method -> "Queued"] *)}}],
                                     BaseStyle -> "DialogBody",
                                     FrameMargins -> Dynamic[Replace[CurrentValue[{StyleDefinitions, "DialogBody", CellMargins}], {{l_, r_}, {b_, t_}} :> {{l, r}, {15, 5}}]]]},
@@ -361,8 +364,8 @@ createPersonaManagerDialog[ ] :=
                                             KeyValueMap[
                                                 formatPersonaData[#1, #2]&,
                                                 Join[
-                                                    KeyTake[Wolfram`Chatbook`Personas`$CachedPersonaData, favorites],
-                                                    KeySort[Wolfram`Chatbook`Personas`$CachedPersonaData]]],
+                                                    KeyTake[$CachedPersonaData, favorites],
+                                                    KeySort[$CachedPersonaData]]],
                                             {"", "In Menu", "", "Name", ""(*FITME*), (*"Description",*) "Version", ""}],
                                         Alignment -> {{Center, Center, {Left}}, Center},
                                         Background -> {{}, {RGBColor["#e5e5e5"]}},
@@ -379,7 +382,7 @@ createPersonaManagerDialog[ ] :=
                                         Spacings -> {
                                             {{{1}}, {2 -> 1, 4 -> 0.5}},
                                             0.5}],
-                                    TrackedSymbols :> {Wolfram`Chatbook`Personas`$CachedPersonaData}]},
+                                    TrackedSymbols :> {$CachedPersonaData}]},
                             {
                                 Item[
                                     Button[(* give Default properties using specific FEExpression *)
@@ -404,12 +407,12 @@ createPersonaManagerDialog[ ] :=
                     ImageSize -> {501, All}],
                 Initialization :> (
                     delimColor = CurrentValue[{StyleDefinitions, "DialogDelimiter", CellFrameColor}];
-                    Wolfram`Chatbook`Personas`GetPersonaData[]; (* sets $CachedPersonaData *)
+                    GetPersonaData[]; (* sets $CachedPersonaData *)
                     (* make sure there are no unexpected extra personas *)
                     CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}] =
                         Intersection[
                             CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}],
-                            Keys[Wolfram`Chatbook`Personas`$CachedPersonaData]]),
+                            Keys[$CachedPersonaData]]),
                 Deinitialization :> (CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}] = favorites)
             ],
             CellMargins -> 0],
@@ -434,7 +437,7 @@ createPersonaManagerDialog[ ] :=
         StyleDefinitions ->
             Notebook[{(* private stylesheet must inherit from Dialog.nb; only used to modify url link colors to match PeelOff.wl graphics *)
                 Cell[StyleData[StyleDefinitions -> "Dialog.nb"]],
-                Cell[StyleData["HyperlinkActive"], FontColor -> RGBColor[0.2392, 0.7960, 1.]], 
+                Cell[StyleData["HyperlinkActive"], FontColor -> RGBColor[0.2392, 0.7960, 1.]],
                 Cell[StyleData["Hyperlink"], FontColor ->  RGBColor[0.0862, 0.6196, 0.8156]]}],
         WindowTitle -> "Add & Manage Personas"];
 
@@ -467,7 +470,7 @@ formatPersonaData[ name_String, as_Association, link_, desc_, version_, icon_, o
     formatPacletLink[ origin, link, pacletName ],
     addRemovePersonaListingCheckbox[ name ],
     formatIcon @ icon,
-    formatName[ origin, Wolfram`Chatbook`UI`Private`personaDisplayName @ name, link ],
+    formatName[ origin, personaDisplayName @ name, link ],
     "", (* used for Grid's ItemSize -> Fit *)
     (* formatDescription @ desc, *) (* not enough room for a fixed-width dialog where the "Name" column can be quite large *)
     formatVersion @ version,
@@ -563,7 +566,7 @@ uninstallButton[ name_String, installedQ_, pacletName_String ] :=
                         StringTemplate["This persona cannot be uninstalled because it is provided by the `1` paclet."][pacletName]]},
             Dynamic[Which[!installedQ, "Disabled", CurrentValue["MouseOver"], "Hover", True, "Default"]],
             ImageSize -> Automatic],
-        Block[ { PrintTemporary }, uninstallPersona @ name; Wolfram`Chatbook`Personas`GetPersonaData[] ],
+        Block[ { PrintTemporary }, uninstallPersona @ name; GetPersonaData[] ],
         Appearance -> "Suppressed",
         Enabled -> installedQ,
         ImageMargins -> {{0, 13}, {0, 0}},
