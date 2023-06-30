@@ -304,8 +304,10 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
     withChatState @ Block[ { $autoAssistMode = False },
         clearMinimizedChats @ nbo;
-        waitForLastTask[ ];
-        sendChat[ evalCell, nbo, settings ]
+        WithCleanup[
+            sendChat[ evalCell, nbo, settings ],
+            waitForLastTask[ ]
+        ]
     ];
 
 EvaluateChatInput // endDefinition;
