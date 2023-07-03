@@ -59,7 +59,6 @@ ChatbookAction[ "InsertInlineReference", args___ ] := catchMine @ InsertInlineRe
 ChatbookAction[ "OpenChatBlockSettings", args___ ] := catchMine @ OpenChatBlockSettings @ args;
 ChatbookAction[ "OpenChatMenu"         , args___ ] := catchMine @ OpenChatMenu @ args;
 ChatbookAction[ "PersonaManage"        , args___ ] := catchMine @ PersonaManage @ args;
-ChatbookAction[ "PersonaURLInstall"    , args___ ] := catchMine @ PersonaURLInstall @ args;
 ChatbookAction[ "Send"                 , args___ ] := catchMine @ SendChat @ args;
 ChatbookAction[ "StopChat"             , args___ ] := catchMine @ StopChat @ args;
 ChatbookAction[ "TabLeft"              , args___ ] := catchMine @ TabLeft @ args;
@@ -304,8 +303,10 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
     withChatState @ Block[ { $autoAssistMode = False },
         clearMinimizedChats @ nbo;
-        waitForLastTask[ ];
-        sendChat[ evalCell, nbo, settings ]
+        WithCleanup[
+            sendChat[ evalCell, nbo, settings ],
+            waitForLastTask[ ]
+        ]
     ];
 
 EvaluateChatInput // endDefinition;
