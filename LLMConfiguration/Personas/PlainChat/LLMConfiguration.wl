@@ -3,6 +3,6 @@
     "DisplayName" -> "Plain Chat",
     "Icon"        -> RawBoxes @ TemplateBox[ { }, "ChatIconPlainChat" ],
     "Pre"         -> "",
-    "Tools"       -> { "WebSearch", "WebImageSearch", "WebFetch" },
+    "Tools"       -> { "WebSearcher", "WebImageSearcher", "WebFetcher" },
     "Description" -> "Chat without a focus on code"
 |>
