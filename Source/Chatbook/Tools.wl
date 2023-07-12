@@ -77,6 +77,8 @@ $defaultToolOrder = {
     "WolframLanguageEvaluator"
 };
 
+$webSessionVisible = False;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Toolbox*)
@@ -777,11 +779,69 @@ $defaultChatTools0[ "WebFetch" ] = LLMTool[
 (*webFetch*)
 webFetch // beginDefinition;
 webFetch[ KeyValuePattern @ { "url" -> url_, "format" -> fmt_ } ] := webFetch[ url, fmt ];
+webFetch[ url_, "Plaintext" ] := fetchWebText @ url;
 webFetch[ url: _URL|_String, fmt_String ] := webFetch[ url, fmt, Import[ url, { "HTML", fmt } ] ];
 webFetch[ url_, "ImageLinks", { } ] := "No links found at " <> TextString @ url;
 webFetch[ url_, "ImageLinks", links: { __String } ] := StringRiffle[ links, "\n" ];
 webFetch[ url_, fmt_, result_String ] := result;
 webFetch // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*fetchWebText*)
+fetchWebText // beginDefinition;
+
+fetchWebText[ URL[ url_ ] ] :=
+    fetchWebText @ url;
+
+fetchWebText[ url_String ] :=
+    fetchWebText[ url, $webSession ];
+
+fetchWebText[ url_String, session_WebSessionObject ] := Enclose[
+    Module[ { body, strings },
+        ConfirmMatch[ WebExecute[ session, { "OpenPage" -> url } ], _Success | { __Success } ];
+        body = ConfirmMatch[ WebExecute[ session, "LocateElements" -> "Tag" -> "body" ], { __WebElementObject } ];
+        strings = ConfirmMatch[ WebExecute[ "ElementText" -> body ], { __String } ];
+        StringRiffle[ strings, "\n\n" ]
+    ],
+    Import[ url, { "HTML", "Plaintext" } ] &
+];
+
+fetchWebText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$webSession*)
+$webSession := getWebSession[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getWebSession*)
+getWebSession // beginDefinition;
+getWebSession[ ] := getWebSession @ $currentWebSession;
+getWebSession[ session_WebSessionObject? validWebSessionQ ] := session;
+getWebSession[ session_WebSessionObject ] := (Quiet @ DeleteObject @ session; startWebSession[ ]);
+getWebSession[ _ ] := startWebSession[ ];
+getWebSession // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*validWebSessionQ*)
+validWebSessionQ // ClearAll;
+
+validWebSessionQ[ session_WebSessionObject ] :=
+    With[ { valid = Quiet @ StringQ @ WebExecute[ session, "PageURL" ] },
+        If[ valid, True, Quiet @ DeleteObject @ session; False ]
+    ];
+
+validWebSessionQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*startWebSession*)
+startWebSession // beginDefinition;
+startWebSession[ ] := $currentWebSession = StartWebSession[ Visible -> $webSessionVisible ];
+startWebSession // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
