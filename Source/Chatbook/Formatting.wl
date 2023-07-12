@@ -28,7 +28,8 @@ $wlCodeString = Longest @ Alternatives[
     "Wolfram Language",
     "WolframLanguage",
     "Wolfram",
-    "Mathematica"
+    "Mathematica",
+    "Wolfram_Language"
 ];
 
 $resultCellCache = <| |>;
