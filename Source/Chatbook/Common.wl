@@ -123,6 +123,9 @@ This may mean that the number of currently running kernels exceeds the limit def
 Chatbook::ResourceNotFound = "\
 Resource `1` not found.";
 
+Chatbook::ToolNotFound = "\
+Tool `1` not found.";
+
 Chatbook::NotImplemented =
 "Action \"`1`\" is not implemented.";
 
