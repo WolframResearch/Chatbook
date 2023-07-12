@@ -9,8 +9,10 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 
 Wolfram`Chatbook`$DefaultTools;
 Wolfram`Chatbook`$ToolFunctions;
+Wolfram`Chatbook`FormatToolResponse;
 Wolfram`Chatbook`GetExpressionURI;
 Wolfram`Chatbook`GetExpressionURIs;
+Wolfram`Chatbook`MakeExpressionURI;
 
 `$attachments;
 `$defaultChatTools;
@@ -1058,6 +1060,18 @@ The temporary directory is located at C:\\Users\\UserName\\AppData\\Local\\Temp.
 $$expressionScheme = "attachment"|"expression";
 
 Chatbook::URIUnavailable = "The expression URI `1` is no longer available.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*FormatToolResponse*)
+FormatToolResponse // ClearAll;
+FormatToolResponse[ response_ ] := makeToolResponseString @ response;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*MakeExpressionURI*)
+MakeExpressionURI // ClearAll;
+MakeExpressionURI[ args: Repeated[ _, { 1, 3 } ] ] := makeExpressionURI @ args;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
