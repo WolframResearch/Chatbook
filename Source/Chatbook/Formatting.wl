@@ -404,12 +404,11 @@ $textDataFormatRules = {
     "[`" ~~ label: Except[ "[" ].. ~~ "`](" ~~ url: Except[ ")" ].. ~~ ")" :> "[" <> label <> "]("<>url<>")",
     "\\`" :> "`",
     "\\$" :> "$",
-    money: ("$" ~~ (DigitCharacter.. ~~ ("," ~~ DigitCharacter..)...) ~~ (" "|PunctuationCharacter)) :> money,
     "``" ~~ code__ ~~ "``" /; StringFreeQ[ code, "``" ] :> inlineCodeCell @ code,
     "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`" /; inlineSyntaxQ @ code :> inlineCodeCell @ code,
     "`" ~~ code: Except[ "`"|"\n" ].. ~~ "`" :> inlineCodeCell @ code,
     "$$" ~~ math: Except[ "$" ].. ~~ "$$" :> mathCell @ math,
-    "$" ~~ math: Except[ "$" ].. ~~ "$" :> mathCell @ math
+    "$" ~~ math: Except[ "$" ].. ~~ "$" /; StringFreeQ[ math, "\n" ] :> mathCell @ math
 };
 
 (* ::**************************************************************************************************************:: *)
