@@ -54,10 +54,10 @@ $DefaultTools := $defaultChatTools;
 
 $ToolFunctions = <|
     "DocumentationLookup"      -> documentationLookup,
-    "DocumentationSearch"      -> documentationSearch,
-    "WebFetch"                 -> webFetch,
-    "WebImageSearch"           -> webImageSearch,
-    "WebSearch"                -> webSearch,
+    "DocumentationSearcher"    -> documentationSearch,
+    "WebFetcher"               -> webFetch,
+    "WebImageSearcher"         -> webImageSearch,
+    "WebSearcher"              -> webSearch,
     "WolframAlpha"             -> getWolframAlphaText,
     "WolframLanguageEvaluator" -> wolframLanguageEvaluator
 |>;
@@ -70,11 +70,11 @@ $toolBox       = <| |>;
 $selectedTools = <| |>;
 $attachments   = <| |>;
 
-$cloudUnsupportedTools = { "WolframLanguageEvaluator", "DocumentationSearch" };
+$cloudUnsupportedTools = { "WolframLanguageEvaluator", "DocumentationSearcher" };
 
 $defaultToolOrder = {
     "DocumentationLookup",
-    "DocumentationSearch",
+    "DocumentationSearcher",
     "WolframAlpha",
     "WolframLanguageEvaluator"
 };
@@ -356,10 +356,10 @@ $documentationSearchDescription = "\
 Search Wolfram Language documentation for symbols and more. \
 Follow up search results with the documentation lookup tool to get the full information.";
 
-$defaultChatTools0[ "DocumentationSearch" ] = LLMTool[
+$defaultChatTools0[ "DocumentationSearcher" ] = LLMTool[
     <|
-        "Name"        -> toMachineToolName[ "DocumentationSearch" ],
-        "DisplayName" -> toDisplayToolName[ "DocumentationSearch" ],
+        "Name"        -> toMachineToolName[ "DocumentationSearcher" ],
+        "DisplayName" -> toDisplayToolName[ "DocumentationSearcher" ],
         "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaDocumentation" ],
         "Description" -> $documentationSearchDescription,
         "Parameters"  -> {
@@ -708,10 +708,10 @@ waResultText0 // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*WebSearch*)
-$defaultChatTools0[ "WebSearch" ] = LLMTool[
+$defaultChatTools0[ "WebSearcher" ] = LLMTool[
     <|
-        "Name"        -> toMachineToolName[ "WebSearch" ],
-        "DisplayName" -> toDisplayToolName[ "WebSearch" ],
+        "Name"        -> toMachineToolName[ "WebSearcher" ],
+        "DisplayName" -> toDisplayToolName[ "WebSearcher" ],
         "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
         "Description" -> "Search the web.",
         "Parameters"  -> {
@@ -745,7 +745,7 @@ webSearch[ query_SearchQueryString ] := StringJoin[
     ],
     "\n\n",
     "-------", "\n\n",
-    "Use the web_fetch tool to get the content of a URL."
+    "Use the web_fetcher tool to get the content of a URL."
 ];
 
 webSearch // endDefinition;
@@ -753,10 +753,10 @@ webSearch // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*WebFetch*)
-$defaultChatTools0[ "WebFetch" ] = LLMTool[
+$defaultChatTools0[ "WebFetcher" ] = LLMTool[
     <|
-        "Name"        -> toMachineToolName[ "WebFetch" ],
-        "DisplayName" -> toDisplayToolName[ "WebFetch" ],
+        "Name"        -> toMachineToolName[ "WebFetcher" ],
+        "DisplayName" -> toDisplayToolName[ "WebFetcher" ],
         "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
         "Description" -> "Fetch plain text or image links from a URL.",
         "Parameters"  -> {
@@ -849,10 +849,10 @@ startWebSession // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*WebImageSearch*)
-$defaultChatTools0[ "WebImageSearch" ] = LLMTool[
+$defaultChatTools0[ "WebImageSearcher" ] = LLMTool[
     <|
-        "Name"        -> toMachineToolName[ "WebImageSearch" ],
-        "DisplayName" -> toDisplayToolName[ "WebImageSearch" ],
+        "Name"        -> toMachineToolName[ "WebImageSearcher" ],
+        "DisplayName" -> toDisplayToolName[ "WebImageSearcher" ],
         "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
         "Description" -> "Search the web for images.",
         "Parameters"  -> {
@@ -919,10 +919,10 @@ $fullExamplesKeys :=
 
 $exampleDependencies = <|
     "AstroGraphicsDocumentation" -> { "DocumentationLookup" },
-    "FileSystemTree"             -> { "DocumentationSearch", "DocumentationLookup" },
-    "FractionalDerivatives"      -> { "DocumentationSearch", "DocumentationLookup", "WolframLanguageEvaluator" },
+    "FileSystemTree"             -> { "DocumentationSearcher", "DocumentationLookup" },
+    "FractionalDerivatives"      -> { "DocumentationSearcher", "DocumentationLookup", "WolframLanguageEvaluator" },
     "PlotEvaluate"               -> { "WolframLanguageEvaluator" },
-    "TemporaryDirectory"         -> { "DocumentationSearch", "WolframLanguageEvaluator" }
+    "TemporaryDirectory"         -> { "DocumentationSearcher", "WolframLanguageEvaluator" }
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -963,7 +963,7 @@ $fullExamples0[ "FileSystemTree" ] = "\
 What's the best way to generate a tree of files in a given directory?
 
 [assistant]
-"<>formatToolCallExample[ "DocumentationSearch", <| "query" -> "tree of files" |> ]<>"
+"<>formatToolCallExample[ "DocumentationSearcher", <| "query" -> "tree of files" |> ]<>"
 
 [system]
 * FileSystemTree - (score: 9.9) FileSystemTree[root] gives a tree whose keys are ...
@@ -982,7 +982,7 @@ $fullExamples0[ "FractionalDerivatives" ] = "\
 Calculate the half-order fractional derivative of x^n with respect to x.
 
 [assistant]
-"<>formatToolCallExample[ "DocumentationSearch", <| "query" -> "fractional derivatives" |> ]<>"
+"<>formatToolCallExample[ "DocumentationSearcher", <| "query" -> "fractional derivatives" |> ]<>"
 
 [system]
 * FractionalD - (score: 9.5) FractionalD[f, {x, a}] gives ...
@@ -1040,7 +1040,7 @@ $fullExamples0[ "TemporaryDirectory" ] = "\
 Where is the temporary directory located?
 
 [assistant]
-"<>formatToolCallExample[ "DocumentationSearch", <| "query" -> "location of temporary directory" |> ]<>"
+"<>formatToolCallExample[ "DocumentationSearcher", <| "query" -> "location of temporary directory" |> ]<>"
 
 [system]
 * $TemporaryDirectory - (score: 9.6) $TemporaryDirectory gives the main system directory for temporary files.
