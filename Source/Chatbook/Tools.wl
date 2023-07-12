@@ -802,6 +802,7 @@ fetchWebText[ url_String ] :=
 fetchWebText[ url_String, session_WebSessionObject ] := Enclose[
     Module[ { body, strings },
         ConfirmMatch[ WebExecute[ session, { "OpenPage" -> url } ], _Success | { __Success } ];
+        Pause[ 3 ]; (* Allow time for the page to load *)
         body = ConfirmMatch[ WebExecute[ session, "LocateElements" -> "Tag" -> "body" ], { __WebElementObject } ];
         strings = ConfirmMatch[ WebExecute[ "ElementText" -> body ], { __String } ];
         StringRiffle[ strings, "\n\n" ]
