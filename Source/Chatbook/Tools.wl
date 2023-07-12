@@ -7,6 +7,7 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
+Wolfram`Chatbook`$DefaultTools;
 Wolfram`Chatbook`$ToolFunctions;
 Wolfram`Chatbook`GetExpressionURI;
 Wolfram`Chatbook`GetExpressionURIs;
@@ -47,6 +48,8 @@ System`LLMConfiguration;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Exported Functions for Tool Repository*)
+$DefaultTools := $defaultChatTools;
+
 $ToolFunctions = <|
     "DocumentationLookup"      -> documentationLookup,
     "DocumentationSearch"      -> documentationSearch,
