@@ -81,6 +81,13 @@ $defaultToolOrder = {
 
 $webSessionVisible = False;
 
+$toolNameAliases = <|
+    "DocumentationSearch" -> "DocumentationSearcher",
+    "WebFetch"            -> "WebFetcher",
+    "WebImageSearch"      -> "WebImageSearcher",
+    "WebSearch"           -> "WebSearcher"
+|>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Toolbox*)
@@ -121,6 +128,9 @@ selectTools[ tools_List ] :=
 selectTools[ name_String ] /; KeyExistsQ[ $toolBox, name ] :=
     $selectedTools[ name ] = $toolBox[ name ];
 
+selectTools[ name_String ] /; KeyExistsQ[ $toolNameAliases, name ] :=
+    selectTools @ $toolNameAliases @ name;
+
 selectTools[ name_String ] :=
     selectTools[ name, Lookup[ $defaultChatTools, name ] ]; (* TODO: fetch from repository *)
 
@@ -138,6 +148,9 @@ selectTools[ name_String, None ] :=
 
 selectTools[ name_String, tool_LLMTool ] :=
     $selectedTools[ name ] = $toolBox[ name ] = tool;
+
+selectTools[ name_String, Missing[ "KeyAbsent", name_ ] ] :=
+    messageFailure[ "ToolNotFound", name ];
 
 selectTools // endDefinition;
 
