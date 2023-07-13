@@ -7,9 +7,12 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
+Wolfram`Chatbook`$DefaultTools;
 Wolfram`Chatbook`$ToolFunctions;
+Wolfram`Chatbook`FormatToolResponse;
 Wolfram`Chatbook`GetExpressionURI;
 Wolfram`Chatbook`GetExpressionURIs;
+Wolfram`Chatbook`MakeExpressionURI;
 
 `$attachments;
 `$defaultChatTools;
@@ -47,12 +50,14 @@ System`LLMConfiguration;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Exported Functions for Tool Repository*)
+$DefaultTools := $defaultChatTools;
+
 $ToolFunctions = <|
     "DocumentationLookup"      -> documentationLookup,
-    "DocumentationSearch"      -> documentationSearch,
-    "WebFetch"                 -> webFetch,
-    "WebImageSearch"           -> webImageSearch,
-    "WebSearch"                -> webSearch,
+    "DocumentationSearcher"    -> documentationSearch,
+    "WebFetcher"               -> webFetch,
+    "WebImageSearcher"         -> webImageSearch,
+    "WebSearcher"              -> webSearch,
     "WolframAlpha"             -> getWolframAlphaText,
     "WolframLanguageEvaluator" -> wolframLanguageEvaluator
 |>;
@@ -65,14 +70,23 @@ $toolBox       = <| |>;
 $selectedTools = <| |>;
 $attachments   = <| |>;
 
-$cloudUnsupportedTools = { "WolframLanguageEvaluator", "DocumentationSearch" };
+$cloudUnsupportedTools = { "WolframLanguageEvaluator", "DocumentationSearcher" };
 
 $defaultToolOrder = {
     "DocumentationLookup",
-    "DocumentationSearch",
+    "DocumentationSearcher",
     "WolframAlpha",
     "WolframLanguageEvaluator"
 };
+
+$webSessionVisible = False;
+
+$toolNameAliases = <|
+    "DocumentationSearch" -> "DocumentationSearcher",
+    "WebFetch"            -> "WebFetcher",
+    "WebImageSearch"      -> "WebImageSearcher",
+    "WebSearch"           -> "WebSearcher"
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -114,6 +128,9 @@ selectTools[ tools_List ] :=
 selectTools[ name_String ] /; KeyExistsQ[ $toolBox, name ] :=
     $selectedTools[ name ] = $toolBox[ name ];
 
+selectTools[ name_String ] /; KeyExistsQ[ $toolNameAliases, name ] :=
+    selectTools @ $toolNameAliases @ name;
+
 selectTools[ name_String ] :=
     selectTools[ name, Lookup[ $defaultChatTools, name ] ]; (* TODO: fetch from repository *)
 
@@ -131,6 +148,9 @@ selectTools[ name_String, None ] :=
 
 selectTools[ name_String, tool_LLMTool ] :=
     $selectedTools[ name ] = $toolBox[ name ] = tool;
+
+selectTools[ name_String, Missing[ "KeyAbsent", name_ ] ] :=
+    messageFailure[ "ToolNotFound", name ];
 
 selectTools // endDefinition;
 
@@ -349,10 +369,10 @@ $documentationSearchDescription = "\
 Search Wolfram Language documentation for symbols and more. \
 Follow up search results with the documentation lookup tool to get the full information.";
 
-$defaultChatTools0[ "DocumentationSearch" ] = LLMTool[
+$defaultChatTools0[ "DocumentationSearcher" ] = LLMTool[
     <|
-        "Name"        -> toMachineToolName[ "DocumentationSearch" ],
-        "DisplayName" -> toDisplayToolName[ "DocumentationSearch" ],
+        "Name"        -> toMachineToolName[ "DocumentationSearcher" ],
+        "DisplayName" -> toDisplayToolName[ "DocumentationSearcher" ],
         "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaDocumentation" ],
         "Description" -> $documentationSearchDescription,
         "Parameters"  -> {
@@ -701,10 +721,10 @@ waResultText0 // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*WebSearch*)
-$defaultChatTools0[ "WebSearch" ] = LLMTool[
+$defaultChatTools0[ "WebSearcher" ] = LLMTool[
     <|
-        "Name"        -> toMachineToolName[ "WebSearch" ],
-        "DisplayName" -> toDisplayToolName[ "WebSearch" ],
+        "Name"        -> toMachineToolName[ "WebSearcher" ],
+        "DisplayName" -> toDisplayToolName[ "WebSearcher" ],
         "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
         "Description" -> "Search the web.",
         "Parameters"  -> {
@@ -738,7 +758,7 @@ webSearch[ query_SearchQueryString ] := StringJoin[
     ],
     "\n\n",
     "-------", "\n\n",
-    "Use the web_fetch tool to get the content of a URL."
+    "Use the web_fetcher tool to get the content of a URL."
 ];
 
 webSearch // endDefinition;
@@ -746,10 +766,10 @@ webSearch // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*WebFetch*)
-$defaultChatTools0[ "WebFetch" ] = LLMTool[
+$defaultChatTools0[ "WebFetcher" ] = LLMTool[
     <|
-        "Name"        -> toMachineToolName[ "WebFetch" ],
-        "DisplayName" -> toDisplayToolName[ "WebFetch" ],
+        "Name"        -> toMachineToolName[ "WebFetcher" ],
+        "DisplayName" -> toDisplayToolName[ "WebFetcher" ],
         "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
         "Description" -> "Fetch plain text or image links from a URL.",
         "Parameters"  -> {
@@ -774,6 +794,7 @@ $defaultChatTools0[ "WebFetch" ] = LLMTool[
 (*webFetch*)
 webFetch // beginDefinition;
 webFetch[ KeyValuePattern @ { "url" -> url_, "format" -> fmt_ } ] := webFetch[ url, fmt ];
+webFetch[ url_, "Plaintext" ] := fetchWebText @ url;
 webFetch[ url: _URL|_String, fmt_String ] := webFetch[ url, fmt, Import[ url, { "HTML", fmt } ] ];
 webFetch[ url_, "ImageLinks", { } ] := "No links found at " <> TextString @ url;
 webFetch[ url_, "ImageLinks", links: { __String } ] := StringRiffle[ links, "\n" ];
@@ -781,12 +802,70 @@ webFetch[ url_, fmt_, result_String ] := result;
 webFetch // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*fetchWebText*)
+fetchWebText // beginDefinition;
+
+fetchWebText[ URL[ url_ ] ] :=
+    fetchWebText @ url;
+
+fetchWebText[ url_String ] :=
+    fetchWebText[ url, $webSession ];
+
+fetchWebText[ url_String, session_WebSessionObject ] := Enclose[
+    Module[ { body, strings },
+        ConfirmMatch[ WebExecute[ session, { "OpenPage" -> url } ], _Success | { __Success } ];
+        Pause[ 3 ]; (* Allow time for the page to load *)
+        body = ConfirmMatch[ WebExecute[ session, "LocateElements" -> "Tag" -> "body" ], { __WebElementObject } ];
+        strings = ConfirmMatch[ WebExecute[ "ElementText" -> body ], { __String } ];
+        StringRiffle[ strings, "\n\n" ]
+    ],
+    Import[ url, { "HTML", "Plaintext" } ] &
+];
+
+fetchWebText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$webSession*)
+$webSession := getWebSession[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getWebSession*)
+getWebSession // beginDefinition;
+getWebSession[ ] := getWebSession @ $currentWebSession;
+getWebSession[ session_WebSessionObject? validWebSessionQ ] := session;
+getWebSession[ session_WebSessionObject ] := (Quiet @ DeleteObject @ session; startWebSession[ ]);
+getWebSession[ _ ] := startWebSession[ ];
+getWebSession // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*validWebSessionQ*)
+validWebSessionQ // ClearAll;
+
+validWebSessionQ[ session_WebSessionObject ] :=
+    With[ { valid = Quiet @ StringQ @ WebExecute[ session, "PageURL" ] },
+        If[ valid, True, Quiet @ DeleteObject @ session; False ]
+    ];
+
+validWebSessionQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*startWebSession*)
+startWebSession // beginDefinition;
+startWebSession[ ] := $currentWebSession = StartWebSession[ Visible -> $webSessionVisible ];
+startWebSession // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*WebImageSearch*)
-$defaultChatTools0[ "WebImageSearch" ] = LLMTool[
+$defaultChatTools0[ "WebImageSearcher" ] = LLMTool[
     <|
-        "Name"        -> toMachineToolName[ "WebImageSearch" ],
-        "DisplayName" -> toDisplayToolName[ "WebImageSearch" ],
+        "Name"        -> toMachineToolName[ "WebImageSearcher" ],
+        "DisplayName" -> toDisplayToolName[ "WebImageSearcher" ],
         "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
         "Description" -> "Search the web for images.",
         "Parameters"  -> {
@@ -853,10 +932,10 @@ $fullExamplesKeys :=
 
 $exampleDependencies = <|
     "AstroGraphicsDocumentation" -> { "DocumentationLookup" },
-    "FileSystemTree"             -> { "DocumentationSearch", "DocumentationLookup" },
-    "FractionalDerivatives"      -> { "DocumentationSearch", "DocumentationLookup", "WolframLanguageEvaluator" },
+    "FileSystemTree"             -> { "DocumentationSearcher", "DocumentationLookup" },
+    "FractionalDerivatives"      -> { "DocumentationSearcher", "DocumentationLookup", "WolframLanguageEvaluator" },
     "PlotEvaluate"               -> { "WolframLanguageEvaluator" },
-    "TemporaryDirectory"         -> { "DocumentationSearch", "WolframLanguageEvaluator" }
+    "TemporaryDirectory"         -> { "DocumentationSearcher", "WolframLanguageEvaluator" }
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -897,7 +976,7 @@ $fullExamples0[ "FileSystemTree" ] = "\
 What's the best way to generate a tree of files in a given directory?
 
 [assistant]
-"<>formatToolCallExample[ "DocumentationSearch", <| "query" -> "tree of files" |> ]<>"
+"<>formatToolCallExample[ "DocumentationSearcher", <| "query" -> "tree of files" |> ]<>"
 
 [system]
 * FileSystemTree - (score: 9.9) FileSystemTree[root] gives a tree whose keys are ...
@@ -916,7 +995,7 @@ $fullExamples0[ "FractionalDerivatives" ] = "\
 Calculate the half-order fractional derivative of x^n with respect to x.
 
 [assistant]
-"<>formatToolCallExample[ "DocumentationSearch", <| "query" -> "fractional derivatives" |> ]<>"
+"<>formatToolCallExample[ "DocumentationSearcher", <| "query" -> "fractional derivatives" |> ]<>"
 
 [system]
 * FractionalD - (score: 9.5) FractionalD[f, {x, a}] gives ...
@@ -974,7 +1053,7 @@ $fullExamples0[ "TemporaryDirectory" ] = "\
 Where is the temporary directory located?
 
 [assistant]
-"<>formatToolCallExample[ "DocumentationSearch", <| "query" -> "location of temporary directory" |> ]<>"
+"<>formatToolCallExample[ "DocumentationSearcher", <| "query" -> "location of temporary directory" |> ]<>"
 
 [system]
 * $TemporaryDirectory - (score: 9.6) $TemporaryDirectory gives the main system directory for temporary files.
@@ -995,6 +1074,18 @@ The temporary directory is located at C:\\Users\\UserName\\AppData\\Local\\Temp.
 $$expressionScheme = "attachment"|"expression";
 
 Chatbook::URIUnavailable = "The expression URI `1` is no longer available.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*FormatToolResponse*)
+FormatToolResponse // ClearAll;
+FormatToolResponse[ response_ ] := makeToolResponseString @ response;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*MakeExpressionURI*)
+MakeExpressionURI // ClearAll;
+MakeExpressionURI[ args: Repeated[ _, { 1, 3 } ] ] := makeExpressionURI @ args;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

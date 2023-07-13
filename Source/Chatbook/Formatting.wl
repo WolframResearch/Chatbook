@@ -28,7 +28,8 @@ $wlCodeString = Longest @ Alternatives[
     "Wolfram Language",
     "WolframLanguage",
     "Wolfram",
-    "Mathematica"
+    "Mathematica",
+    "Wolfram_Language"
 ];
 
 $resultCellCache = <| |>;
@@ -407,7 +408,7 @@ $textDataFormatRules = {
     "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`" /; inlineSyntaxQ @ code :> inlineCodeCell @ code,
     "`" ~~ code: Except[ "`"|"\n" ].. ~~ "`" :> inlineCodeCell @ code,
     "$$" ~~ math: Except[ "$" ].. ~~ "$$" :> mathCell @ math,
-    "$" ~~ math: Except[ "$" ].. ~~ "$" :> mathCell @ math
+    "$" ~~ math: Except[ "$" ].. ~~ "$" /; StringFreeQ[ math, "\n" ] :> mathCell @ math
 };
 
 (* ::**************************************************************************************************************:: *)
