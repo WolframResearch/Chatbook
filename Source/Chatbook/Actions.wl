@@ -1314,12 +1314,15 @@ checkResponse[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         { callPos, toolCall } = ConfirmMatch[
             $toolConfiguration[ "ToolRequestParser" ][ string ],
-            { _, _LLMToolRequest },
+            { _, _LLMToolRequest|_Failure },
             "ToolRequestParser"
         ];
 
         toolResponse = ConfirmMatch[
-            GenerateLLMToolResponse[ $toolConfiguration, toolCall ],
+            If[ FailureQ @ toolCall,
+                toolCall,
+                GenerateLLMToolResponse[ $toolConfiguration, toolCall ]
+            ],
             _LLMToolResponse | _Failure,
             "GenerateLLMToolResponse"
         ];
@@ -2272,10 +2275,14 @@ splitDynamicContent[ container_, text_String, cell_, uuid_String ] :=
     splitDynamicContent[ container, StringSplit[ text, $dynamicSplitRules ], cell, uuid ];
 
 splitDynamicContent[ container_, { static0__String, dynamic_String }, cell_, uuid_String ] :=
-    Module[ { static, boxObject, cellObject, data },
+    Catch @ Module[ { boxObject, static, cellObject, data },
+
+        boxObject = getBoxObjectFromBoxID[ cell, uuid ];
+        If[ MatchQ[ boxObject, Missing[ "CellRemoved", ___ ] ],
+            Throw[ Quiet[ TaskRemove @ $lastTask, TaskRemove::timnf ]; Null, $catchTopTag ]
+        ];
 
         static = StringJoin @ static0;
-        boxObject = getBoxObjectFromBoxID[ cell, uuid ];
         data = Block[ { $dynamicText = True }, Cell[ TextData @ reformatTextData @ static, Background -> None ] ];
         container[ "DynamicContent" ] = dynamic;
 

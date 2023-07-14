@@ -6,6 +6,7 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `$defaultChatSettings;
 `$inEpilog;
 `$suppressButtonAppearance;
+`cellObjectQ;
 `cellInformation;
 `cellOpenQ;
 `cellPrint;
@@ -179,6 +180,12 @@ $defaultChatSettings := Association @ Options @ CreateChatNotebook;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Cells*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*cellObjectQ*)
+cellObjectQ[ cell_CellObject ] := MatchQ[ Developer`CellInformation @ cell, KeyValuePattern @ { } ];
+cellObjectQ[ ___             ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -452,7 +459,19 @@ getBoxObjectFromBoxID[ obj_, None ] :=
     None;
 
 getBoxObjectFromBoxID[ cell_CellObject, uuid_ ] :=
-    getBoxObjectFromBoxID[ parentNotebook @ cell, uuid ];
+    Module[ { nbo },
+        nbo = parentNotebook @ cell;
+        If[ MatchQ[ nbo, _NotebookObject ],
+            getBoxObjectFromBoxID[ nbo, uuid ],
+            (* Getting the parent notebook can fail if the cell has been deleted: *)
+            If[ ! TrueQ @ cellObjectQ @ cell,
+                (* The cell is actually gone so return an appropriate `Missing` object: *)
+                Missing[ "CellRemoved", cell ],
+                (* The cell still exists, so something happened. Time to panic: *)
+                throwInternalFailure @ getBoxObjectFromBoxID[ cell, uuid ]
+            ]
+        ]
+    ];
 
 getBoxObjectFromBoxID[ nbo_NotebookObject, uuid_String ] :=
     MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject @ FE`BoxReference[ nbo, { { uuid } } ];
