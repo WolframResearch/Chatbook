@@ -1604,7 +1604,7 @@ Notebook[
    },
    CellFrameColor -> RGBColor[0.639216, 0.788235, 0.94902],
    CounterIncrements -> {"ChatInputCount"},
-   MenuSortingValue -> 1000
+   MenuSortingValue -> 1543
   ],
   Cell[
    StyleData["ChatInputActiveCellDingbat"],
@@ -1922,6 +1922,7 @@ Notebook[
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellFrameMargins -> {{0, Inherited}, {Inherited, Inherited}},
    CounterIncrements -> { },
+   MenuSortingValue -> 1544,
    Background -> RGBColor[0.980392, 0.988235, 1.0]
   ],
   Cell[
@@ -1936,8 +1937,7 @@ Notebook[
     ],
    StyleKeyMapping -> {"~" -> "ChatDelimiter", "'" -> "ChatInput"},
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
-   CellFrameColor -> RGBColor[0.639216, 0.788235, 0.94902],
-   MenuSortingValue -> 1000
+   CellFrameColor -> RGBColor[0.639216, 0.788235, 0.94902]
   ],
   Cell[
    StyleData[
@@ -1959,7 +1959,7 @@ Notebook[
    CellFrameColor -> RGBColor[0.639216, 0.788235, 0.94902],
    CellFrameStyle -> Dashing[{Small, Small}],
    CounterIncrements -> { },
-   MenuSortingValue -> 1000
+   MenuSortingValue -> 1545
   ],
   Cell[
    StyleData[
@@ -2268,6 +2268,7 @@ Notebook[
     {None, None}
    },
    CounterAssignments -> {{"ChatInputCount", 0}},
+   MenuSortingValue -> 1546,
    FontWeight -> "DemiBold",
    FontColor -> GrayLevel[0.2]
   ],
@@ -2343,6 +2344,7 @@ Notebook[
     {None, None}
    },
    CounterAssignments -> {{"ChatInputCount", 0}},
+   MenuSortingValue -> 1547,
    FontSize -> 6,
    Background -> GrayLevel[0.95]
   ],
