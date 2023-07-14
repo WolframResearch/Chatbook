@@ -1263,6 +1263,11 @@ dynamicAutoFormatQ // endDefinition;
 dynamicTextDisplay // beginDefinition;
 dynamicTextDisplay // Attributes = { HoldFirst };
 
+dynamicTextDisplay[ container_, reformat_ ] /; $highlightDynamicContent :=
+    Block[ { $highlightDynamicContent = False },
+        Framed[ dynamicTextDisplay[ container, reformat ], FrameStyle -> Purple ]
+    ];
+
 dynamicTextDisplay[ container_, True ] /; StringQ @ container[ "DynamicContent" ] :=
     Block[ { $dynamicText = True },
         RawBoxes @ Cell @ TextData @ reformatTextData @ container[ "DynamicContent" ]
