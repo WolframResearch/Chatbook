@@ -407,7 +407,7 @@ fasterCellToString0[ Cell[
     ___
 ] ] := (
     needsBasePrompt[ "WolframLanguage" ];
-    "LLMResourceFunction[" <> StringRiffle[ toLLMArg /@ Flatten @ { name, args }, ", " ] <> "]"
+    "LLMResourceFunction[\"" <> name <> "\"][" <> StringRiffle[ toLLMArg /@ Flatten @ { args }, ", " ] <> "]"
 );
 
 fasterCellToString0[
