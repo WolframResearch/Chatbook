@@ -14,6 +14,7 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `checkEvaluationCell;
 `currentChatSettings;
 `fixCloudCell;
+`getBoxObjectFromBoxID;
 `notebookRead;
 `parentCell;
 `parentNotebook;
@@ -273,7 +274,7 @@ cellInformation // endDefinition;
 (*parentCell*)
 parentCell // beginDefinition;
 parentCell[ cell_CellObject ] /; $cloudNotebooks := cell;
-parentCell[ cell_CellObject ] := ParentCell @ cell;
+parentCell[ obj: _CellObject|_BoxObject ] := ParentCell @ obj;
 parentCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -441,6 +442,22 @@ cloudNotebookRead // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Boxes*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getBoxObjectFromBoxID*)
+getBoxObjectFromBoxID // beginDefinition;
+
+getBoxObjectFromBoxID[ obj_, None ] :=
+    None;
+
+getBoxObjectFromBoxID[ cell_CellObject, uuid_ ] :=
+    getBoxObjectFromBoxID[ parentNotebook @ cell, uuid ];
+
+getBoxObjectFromBoxID[ nbo_NotebookObject, uuid_String ] :=
+    MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject @ FE`BoxReference[ nbo, { { uuid } } ];
+
+getBoxObjectFromBoxID // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
