@@ -215,6 +215,10 @@ resourceFromURL0 // endDefinition;
 (*scrapeResourceFromShingle*)
 scrapeResourceFromShingle // beginDefinition;
 (* TODO: we should have something in RSC to do this cleaner/better *)
+
+scrapeResourceFromShingle[ url_String ] /; StringMatchQ[ url, WhitespaceCharacter... ] :=
+    Throw[ Null, $catchTopTag ];
+
 scrapeResourceFromShingle[ url_String ] := Enclose[
     Module[ { returnInvalid, resp, bytes, xml },
 
