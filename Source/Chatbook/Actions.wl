@@ -1076,7 +1076,13 @@ submitAIAssistant // beginDefinition;
 submitAIAssistant // Attributes = { HoldFirst };
 
 submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
-    With[ { autoOpen = TrueQ @ $autoOpen, alwaysOpen = TrueQ @ $alwaysOpen, autoAssist = $autoAssistMode },
+    With[
+        {
+            autoOpen     = TrueQ @ $autoOpen,
+            alwaysOpen   = TrueQ @ $alwaysOpen,
+            autoAssist   = $autoAssistMode,
+            dynamicSplit = dynamicSplitQ @ settings
+        },
         URLSubmit[
             req,
             HandlerFunctions -> <|
@@ -1086,7 +1092,8 @@ submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
                             $autoOpen       = autoOpen,
                             $alwaysOpen     = alwaysOpen,
                             $settings       = settings,
-                            $autoAssistMode = autoAssist
+                            $autoAssistMode = autoAssist,
+                            $dynamicSplit   = dynamicSplit
                         },
                         Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                         writeChunk[ Dynamic @ container, cellObject, #1 ]
@@ -1098,7 +1105,8 @@ submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
                             $autoOpen       = autoOpen,
                             $alwaysOpen     = alwaysOpen,
                             $settings       = settings,
-                            $autoAssistMode = autoAssist
+                            $autoAssistMode = autoAssist,
+                            $dynamicSplit   = dynamicSplit
                         },
                         Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                         checkResponse[ settings, Unevaluated @ container, cellObject, #1 ]
@@ -1111,6 +1119,16 @@ submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
     ];
 
 submitAIAssistant // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*dynamicSplitQ*)
+dynamicSplitQ // beginDefinition;
+dynamicSplitQ[ as_Association ] := dynamicSplitQ @ Lookup[ as, "StreamingOutputMethod", Automatic ];
+dynamicSplitQ[ Automatic|Inherited|"PartialDynamic" ] := True;
+dynamicSplitQ[ "Legacy"|"FullDynamic"|"Dynamic"|Dynamic ] := False;
+dynamicSplitQ[ other_ ] := (messagePrint[ "InvalidStreamingOutputMethod", other ]; True);
+dynamicSplitQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1230,10 +1248,11 @@ activeAIAssistantCell[
                 } ],
                 Initialization -> None
             ],
-            Selectable        -> False,
-            Editable          -> True,
-            CellEditDuplicate -> False,
             CellDingbat       -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
+            CellEditDuplicate -> False,
+            Editable          -> True,
+            Selectable        -> True,
+            ShowCursorTracker -> False,
             TaggingRules      -> <| "ChatNotebookSettings" -> settings |>
         ]
     ];
@@ -2237,8 +2256,10 @@ writeChunk[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
     appendStringContent[ container[ "FullContent"    ], text ];
     appendStringContent[ container[ "DynamicContent" ], text ];
 
-    (* Convert as much of the dynamic content as possible to static boxes and write to cell: *)
-    splitDynamicContent[ container, cell ];
+    If[ TrueQ @ $dynamicSplit,
+        (* Convert as much of the dynamic content as possible to static boxes and write to cell: *)
+        splitDynamicContent[ container, cell ]
+    ];
 
     If[ AbsoluteTime[ ] - $lastDynamicUpdate > 0.1,
         (* Trigger updating of dynamic content in current chat output cell *)
@@ -2270,8 +2291,8 @@ $lastDynamicUpdate = 0;
 splitDynamicContent // beginDefinition;
 splitDynamicContent // Attributes = { HoldFirst };
 
-(* NotebookLocationSpecifier isn't available before 13.3: *)
-splitDynamicContent[ container_, cell_ ] /; $VersionNumber < 13.3 := Null;
+(* NotebookLocationSpecifier isn't available before 13.3 and splitting isn't yet supported in cloud: *)
+splitDynamicContent[ container_, cell_ ] /; ! $dynamicSplit || $VersionNumber < 13.3 || $cloudNotebooks := Null;
 
 splitDynamicContent[ container_, cell_ ] :=
     splitDynamicContent[ container, container[ "DynamicContent" ], cell, container[ "UUID" ] ];
@@ -2279,21 +2300,42 @@ splitDynamicContent[ container_, cell_ ] :=
 splitDynamicContent[ container_, text_String, cell_, uuid_String ] :=
     splitDynamicContent[ container, StringSplit[ text, $dynamicSplitRules ], cell, uuid ];
 
-splitDynamicContent[ container_, { static0__String, dynamic_String }, cell_, uuid_String ] :=
-    Catch @ Module[ { boxObject, static, cellObject, data },
+splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid_String ] := Enclose[
+    Catch @ Module[ { boxObject, reformatted, write, nbo },
 
-        boxObject = getBoxObjectFromBoxID[ cell, uuid ];
+        boxObject = ConfirmMatch[
+            getBoxObjectFromBoxID[ cell, uuid ],
+            _BoxObject | Missing[ "CellRemoved", ___ ],
+            "BoxObject"
+        ];
+
         If[ MatchQ[ boxObject, Missing[ "CellRemoved", ___ ] ],
             Throw[ Quiet[ TaskRemove @ $lastTask, TaskRemove::timnf ]; Null, $catchTopTag ]
         ];
 
-        static = StringJoin @ static0;
-        data = Block[ { $dynamicText = True }, Cell[ TextData @ reformatTextData @ static, Background -> None ] ];
-        container[ "DynamicContent" ] = dynamic;
+        reformatted = ConfirmMatch[
+            Block[ { $dynamicText = False }, reformatTextData @ StringJoin @ static ],
+            $$textDataList,
+            "ReformatTextData"
+        ];
 
-        NotebookWrite[ System`NotebookLocationSpecifier[ boxObject, "Before" ], data, None, AutoScroll -> False ];
-        NotebookWrite[ System`NotebookLocationSpecifier[ boxObject, "Before" ], "\n", None, AutoScroll -> False ];
-    ];
+        write = Cell[ TextData @ reformatted, Background -> None ];
+        nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
+
+        withNoRenderUpdates[
+            nbo,
+
+            container[ "DynamicContent" ] = dynamic;
+
+            NotebookWrite[ System`NotebookLocationSpecifier[ boxObject, "Before" ], write, None, AutoScroll -> False ];
+            NotebookWrite[ System`NotebookLocationSpecifier[ boxObject, "Before" ], "\n" , None, AutoScroll -> False ];
+
+            $dynamicTrigger++;
+            $lastDynamicUpdate = AbsoluteTime[ ];
+        ]
+    ],
+    throwInternalFailure[ splitDynamicContent[ container, { static, dynamic }, cell, uuid ], ## ] &
+];
 
 (* There's nothing we can write as static content yet: *)
 splitDynamicContent[ container_, { _ } | { }, cell_, uuid_ ] := Null;

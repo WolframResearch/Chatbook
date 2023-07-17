@@ -6,8 +6,8 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `$defaultChatSettings;
 `$inEpilog;
 `$suppressButtonAppearance;
-`cellObjectQ;
 `cellInformation;
+`cellObjectQ;
 `cellOpenQ;
 `cellPrint;
 `cellPrintAfter;
@@ -25,6 +25,7 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `toCompressedBoxes;
 `topLevelCellQ;
 `topParentCell;
+`withNoRenderUpdates;
 
 Begin[ "`Private`" ];
 
@@ -421,6 +422,21 @@ $cloudCellFixes := $cloudCellFixes = Dispatch @ {
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Notebooks*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*withNoRenderUpdates*)
+withNoRenderUpdates // beginDefinition;
+withNoRenderUpdates // Attributes = { HoldRest };
+
+withNoRenderUpdates[ nbo_NotebookObject, evaluation_ ] :=
+    WithCleanup[
+        FrontEndExecute @ FrontEnd`NotebookSuspendScreenUpdates @ nbo,
+        evaluation,
+        FrontEndExecute @ FrontEnd`NotebookResumeScreenUpdates @ nbo
+    ];
+
+withNoRenderUpdates // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
