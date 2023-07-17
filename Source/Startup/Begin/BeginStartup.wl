@@ -8,40 +8,49 @@ Wolfram`ChatbookStartupDump`$ContextInfo = {$Context, $ContextPath, $ContextAlia
 (* Add File > New > Chat-Enabled Notebook *)
 (*----------------------------------------*)
 
-Once[
-	FrontEndExecute[{
-		FrontEnd`AddMenuCommands["New", {
-			MenuItem[
-				"Chat-Enabled Notebook",
-				FrontEnd`KernelExecute[(
-					Needs["Wolfram`Chatbook`" -> None];
-					Wolfram`Chatbook`CreateChatNotebook[]
-				)],
-				FrontEnd`MenuEvaluator -> Automatic,
-				FrontEnd`MenuKey["n", FrontEnd`Modifiers -> {FrontEnd`Command, FrontEnd`Option}]
-			],
-			MenuItem[
-				"Chat-Driven Notebook",
-				FrontEnd`KernelExecute[(
-					Needs["Wolfram`Chatbook`" -> None];
-					Wolfram`Chatbook`CreateChatDrivenNotebook[]
-				)],
-				FrontEnd`MenuEvaluator -> Automatic
-			]
-		}](* FIXME: figure out how to make this work:
-		FrontEnd`AddMenuCommands["Paclet Repository Item", {
-			MenuItem[
-				"Prompt Repository Item",
-				FrontEnd`KernelExecute[{
-					Needs["ResourceSystemClient`" -> None];
-					ResourceSystemClient`CreateResourceNotebook["Prompt", "SuppressProgressBar" -> True]
-				}],
-				MenuEvaluator -> Automatic,
-				Method -> "Queued"
-			]
-		}]*)
-	}],
-    "FrontEndSession"
+(*
+	Only add the new chat notebook menu commands in v13.3.0 and earlier.
+
+	In v13.3.1 and later, these menu commands are built-in to the FE's
+	MenuSetup.tr global menus definitions.
+*)
+If[!PacletNewerQ[ToString[$VersionNumber] <> "." <> ToString[$ReleaseNumber], "13.3.0"],
+	Once[
+		FrontEndExecute[{
+			FrontEnd`AddMenuCommands["New", {
+				MenuItem[
+					"Chat-Enabled Notebook",
+					FrontEnd`KernelExecute[(
+						Needs["Wolfram`Chatbook`" -> None];
+						Wolfram`Chatbook`CreateChatNotebook[]
+					)],
+					FrontEnd`MenuEvaluator -> Automatic,
+					FrontEnd`MenuKey["n", FrontEnd`Modifiers -> {FrontEnd`Command, FrontEnd`Option}]
+				],
+				MenuItem[
+					"Chat-Driven Notebook",
+					FrontEnd`KernelExecute[(
+						Needs["Wolfram`Chatbook`" -> None];
+						Wolfram`Chatbook`CreateChatDrivenNotebook[]
+					)],
+					FrontEnd`MenuEvaluator -> Automatic
+				]
+			}]
+			(* FIXME: figure out how to make this work:
+			FrontEnd`AddMenuCommands["Paclet Repository Item", {
+				MenuItem[
+					"Prompt Repository Item",
+					FrontEnd`KernelExecute[{
+						Needs["ResourceSystemClient`" -> None];
+						ResourceSystemClient`CreateResourceNotebook["Prompt", "SuppressProgressBar" -> True]
+					}],
+					MenuEvaluator -> Automatic,
+					Method -> "Queued"
+				]
+			}]*)
+		}],
+		"FrontEndSession"
+	]
 ]
 
 (*----------------------------*)
