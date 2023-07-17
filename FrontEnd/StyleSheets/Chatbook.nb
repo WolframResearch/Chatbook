@@ -2004,7 +2004,9 @@ Notebook[
    CellAutoOverwrite -> True,
    ShowAutoSpellCheck -> False,
    LineSpacing -> {1.1, 0, 2},
-   Background -> RGBColor[0.988235, 0.992157, 1.0]
+   Background -> RGBColor[0.988235, 0.992157, 1.0],
+   GraphicsBoxOptions -> {ImageSizeRaw -> {{300}, {220}}},
+   Graphics3DBoxOptions -> {ImageSizeRaw -> {{300}, {220}}}
   ],
   Cell[
    StyleData[
@@ -2477,6 +2479,17 @@ Notebook[
    LanguageCategory -> "Input",
    ShowStringCharacters -> True,
    FontSize -> 14,
+   FontWeight -> "Plain",
+   Background -> GrayLevel[1]
+  ],
+  Cell[
+   StyleData[
+    "ChatPreformatted",
+    StyleDefinitions -> StyleData["Program"]
+   ],
+   CellFrame -> None,
+   ShowStringCharacters -> True,
+   FontSize -> 13,
    FontWeight -> "Plain",
    Background -> GrayLevel[1]
   ],

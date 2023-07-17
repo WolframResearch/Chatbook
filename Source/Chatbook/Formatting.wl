@@ -27,10 +27,12 @@ Needs[ "Wolfram`Chatbook`Tools`"    ];
 
 $wlCodeString = Longest @ Alternatives[
     "Wolfram Language",
+    "Wolfram_Language_Evaluator",
     "Wolfram_Language",
     "WolframLanguage",
     "Wolfram",
-    "Mathematica"
+    "Mathematica",
+    "WL"
 ];
 
 $resultCellCache = <| |>;
@@ -92,18 +94,9 @@ makeResultCell0 // beginDefinition;
 
 makeResultCell0[ str_String ] := formatTextString @ str;
 
-makeResultCell0[ codeCell[ code0_String ] ] :=
-    With[ { code = StringTrim @ code0 },
-        Which[
-            StringMatchQ[ code, "!["~~__~~"]("~~__~~")" ], image @ code,
-            StringStartsQ[ code, "TOOLCALL: " ], inlineToolCall @ code,
-            True, makeInteractiveCodeCell @ StringTrim @ code
-        ]
-    ];
-
-makeResultCell0[ externalCodeCell[ lang_String, code_String ] ] :=
-    makeInteractiveCodeCell[
-        StringReplace[ StringTrim @ lang, $externalLanguageRules, IgnoreCase -> True ],
+makeResultCell0[ codeBlockCell[ language_String, code_String ] ] :=
+    makeCodeBlockCell[
+        StringReplace[ StringTrim @ language, $externalLanguageRules, IgnoreCase -> True ],
         StringTrim @ code
     ];
 
@@ -387,12 +380,10 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 (*$textDataFormatRules*)
 $textDataFormatRules = {
     StringExpression[
-        Longest[ "```" ~~ lang: Except[ WhitespaceCharacter ].. /; externalLanguageQ @ lang ],
-        Shortest[ code__ ] ~~ ("```"|EndOfString)
-    ] /; ! StringStartsQ[ code, Whitespace~~"TOOLCALL" ] :> externalCodeCell[ lang, code ]
-    ,
-    Longest[ "```" ~~ ($wlCodeString|"") ] ~~ Shortest[ code__ ] ~~ ("```"|EndOfString) :>
-        If[ nameQ[ "System`"<>code ], inlineCodeCell @ code, codeCell @ code ]
+        Longest[ "```" ~~ language: Except[ WhitespaceCharacter ]... ] ~~ (" "...) ~~ "\n",
+        Shortest[ code__ ],
+        ("```"|EndOfString)
+    ] :> codeBlockCell[ language, code ]
     ,
     "![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
         StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
@@ -421,14 +412,12 @@ $textDataFormatRules = {
    Therefore, some of the patterns that would match up to `EndOfString` must instead be explicitly terminated here.
 *)
 $dynamicSplitRules = {
-    (* External language cell *)
+    (* Code blocks *)
     s: StringExpression[
-        Longest[ "```" ~~ lang: Except[ WhitespaceCharacter ].. /; externalLanguageQ @ lang ],
-        Shortest[ code__ ] ~~ "```"
+        Longest[ "```" ~~ language: Except[ WhitespaceCharacter ]... ] ~~ (" "...) ~~ "\n",
+        Shortest[ code__ ],
+        "```"
     ] :> s
-    ,
-    (* WL code cell *)
-    s: (Longest[ "```" ~~ ($wlCodeString|"") ] ~~ Shortest[ code__ ] ~~ "```") :> s
     ,
     (* Markdown image *)
     s: ("![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")") /;
@@ -455,6 +444,15 @@ $stringFormatRules = {
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Formatted Boxes*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*makeCodeBlockCell*)
+makeCodeBlockCell // beginDefinition;
+makeCodeBlockCell[ _, code_String ] /; StringMatchQ[ code, "!["~~__~~"]("~~__~~")" ] := image @ code;
+makeCodeBlockCell[ _, code_String ] /; StringStartsQ[ code, "TOOLCALL: " ] := inlineToolCall @ code;
+makeCodeBlockCell[ language_String, code_String ] := makeInteractiveCodeCell[ language, code ];
+makeCodeBlockCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -602,29 +600,38 @@ makeToolCallBoxLabel0 // endDefinition;
 makeInteractiveCodeCell // beginDefinition;
 
 (* TODO: define template boxes for these *)
-makeInteractiveCodeCell[ string_String ] /; $dynamicText :=
-    codeBlockFrame[ Cell[ BoxData @ string, "ChatCodeActive" ], string ];
 
-makeInteractiveCodeCell[ string_String ] :=
+makeInteractiveCodeCell[ language_, code_String ] /; nameQ[ "System`"<>code ] :=
+    makeInlineCodeCell @ code;
+
+makeInteractiveCodeCell[ language_, code_String ] /; $dynamicText :=
+    If[ TrueQ @ wolframLanguageQ @ language,
+        codeBlockFrame[ Cell[ BoxData @ code, "ChatCodeActive" ], code, language ],
+        codeBlockFrame[ Cell[ code, "ChatPreformatted" ], code, language ]
+    ];
+
+(* Wolfram Language code blocks *)
+makeInteractiveCodeCell[ lang_String? wolframLanguageQ, code_String ] :=
     Module[ { display, handler },
         display = RawBoxes @ Cell[
-            BoxData @ stringToBoxes @ string,
+            BoxData @ stringToBoxes @ code,
             "ChatCode",
             "Input",
             Background -> GrayLevel[ 1 ]
         ];
-        handler = inlineInteractiveCodeCell[ display, string ];
-        codeBlockFrame[ Cell @ BoxData @ ToBoxes @ handler, string ]
+        handler = inlineInteractiveCodeCell[ display, code ];
+        codeBlockFrame[ Cell @ BoxData @ ToBoxes @ handler, code ]
     ];
 
-makeInteractiveCodeCell[ lang_String, code_String ] :=
+(* Supported external language code blocks *)
+makeInteractiveCodeCell[ lang_String? externalLanguageQ, code_String ] :=
     Module[ { cell, display, handler },
         cell = Cell[ code, "ExternalLanguage", FontSize -> 14, System`CellEvaluationLanguage -> lang ];
         display = RawBoxes @ Cell[
             code,
             "ExternalLanguage",
             System`CellEvaluationLanguage -> lang,
-            FontSize   -> 14,
+            FontSize   -> 13,
             Background -> None,
             CellFrame  -> None
         ];
@@ -632,7 +639,27 @@ makeInteractiveCodeCell[ lang_String, code_String ] :=
         codeBlockFrame[ Cell @ BoxData @ ToBoxes @ handler, code, lang ]
     ];
 
+(* Code blocks for any other languages *)
+makeInteractiveCodeCell[ language_String, code_String ] :=
+    codeBlockFrame[
+        Cell[
+            code,
+            "ChatPreformatted",
+            Background   -> GrayLevel[ 1 ],
+            TaggingRules -> <| "CellToStringType" -> "InlineCodeCell", "CodeLanguage" -> language |>
+        ],
+        code,
+        language
+    ];
+
 makeInteractiveCodeCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*wolframLanguageQ*)
+wolframLanguageQ // ClearAll;
+wolframLanguageQ[ language_String ] := StringMatchQ[ StringTrim @ language, $wlCodeString, IgnoreCase -> True ];
+wolframLanguageQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
