@@ -1337,7 +1337,7 @@ checkResponse[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         string = ConfirmBy[ container[ "FullContent" ], StringQ, "FullContent" ];
 
         { callPos, toolCall } = ConfirmMatch[
-            $toolConfiguration[ "ToolRequestParser" ][ string ],
+            $toolConfiguration[ "ToolRequestParser" ][ convertUTF8[ string, False ] ],
             { _, _LLMToolRequest|_Failure },
             "ToolRequestParser"
         ];
@@ -2794,7 +2794,9 @@ openChatCell // endDefinition;
 (* ::Subsection::Closed:: *)
 (*convertUTF8*)
 convertUTF8 // beginDefinition;
-convertUTF8[ string_String ] := FromCharacterCode[ ToCharacterCode @ string, "UTF-8" ];
+convertUTF8[ string_String ] := convertUTF8[ string, True ];
+convertUTF8[ string_String, True  ] := FromCharacterCode[ ToCharacterCode @ string, "UTF-8" ];
+convertUTF8[ string_String, False ] := FromCharacterCode @ ToCharacterCode[ string, "UTF-8" ];
 convertUTF8 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
