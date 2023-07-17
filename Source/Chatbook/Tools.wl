@@ -150,7 +150,10 @@ selectTools[ name_String, tool_LLMTool ] :=
     $selectedTools[ name ] = $toolBox[ name ] = tool;
 
 selectTools[ name_String, Missing[ "KeyAbsent", name_ ] ] :=
-    messageFailure[ "ToolNotFound", name ];
+    If[ TrueQ @ KeyExistsQ[ $defaultChatTools0, name ],
+        Null,
+        messagePrint[ "ToolNotFound", name ]
+    ];
 
 selectTools // endDefinition;
 
