@@ -7,6 +7,7 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `$inEpilog;
 `$suppressButtonAppearance;
 `cellInformation;
+`cellObjectQ;
 `cellOpenQ;
 `cellPrint;
 `cellPrintAfter;
@@ -14,6 +15,7 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `checkEvaluationCell;
 `currentChatSettings;
 `fixCloudCell;
+`getBoxObjectFromBoxID;
 `notebookRead;
 `parentCell;
 `parentNotebook;
@@ -23,6 +25,7 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `toCompressedBoxes;
 `topLevelCellQ;
 `topParentCell;
+`withNoRenderUpdates;
 
 Begin[ "`Private`" ];
 
@@ -181,6 +184,12 @@ $defaultChatSettings := Association @ Options @ CreateChatNotebook;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*cellObjectQ*)
+cellObjectQ[ cell_CellObject ] := MatchQ[ Developer`CellInformation @ cell, KeyValuePattern @ { } ];
+cellObjectQ[ ___             ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*checkEvaluationCell*)
 checkEvaluationCell // beginDefinition;
 checkEvaluationCell[ cell_ ] /; $checkEvaluationCell := rootEvaluationCell @ cell;
@@ -273,7 +282,7 @@ cellInformation // endDefinition;
 (*parentCell*)
 parentCell // beginDefinition;
 parentCell[ cell_CellObject ] /; $cloudNotebooks := cell;
-parentCell[ cell_CellObject ] := ParentCell @ cell;
+parentCell[ obj: _CellObject|_BoxObject ] := ParentCell @ obj;
 parentCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -416,6 +425,21 @@ $cloudCellFixes := $cloudCellFixes = Dispatch @ {
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*withNoRenderUpdates*)
+withNoRenderUpdates // beginDefinition;
+withNoRenderUpdates // Attributes = { HoldRest };
+
+withNoRenderUpdates[ nbo_NotebookObject, evaluation_ ] :=
+    WithCleanup[
+        FrontEndExecute @ FrontEnd`NotebookSuspendScreenUpdates @ nbo,
+        evaluation,
+        FrontEndExecute @ FrontEnd`NotebookResumeScreenUpdates @ nbo
+    ];
+
+withNoRenderUpdates // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*parentNotebook*)
 parentNotebook // beginDefinition;
 parentNotebook[ cell_CellObject ] /; $cloudNotebooks := Notebooks @ cell;
@@ -441,6 +465,34 @@ cloudNotebookRead // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Boxes*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getBoxObjectFromBoxID*)
+getBoxObjectFromBoxID // beginDefinition;
+
+getBoxObjectFromBoxID[ obj_, None ] :=
+    None;
+
+getBoxObjectFromBoxID[ cell_CellObject, uuid_ ] :=
+    Module[ { nbo },
+        nbo = parentNotebook @ cell;
+        If[ MatchQ[ nbo, _NotebookObject ],
+            getBoxObjectFromBoxID[ nbo, uuid ],
+            (* Getting the parent notebook can fail if the cell has been deleted: *)
+            If[ ! TrueQ @ cellObjectQ @ cell,
+                (* The cell is actually gone so return an appropriate `Missing` object: *)
+                Missing[ "CellRemoved", cell ],
+                (* The cell still exists, so something happened. Time to panic: *)
+                throwInternalFailure @ getBoxObjectFromBoxID[ cell, uuid ]
+            ]
+        ]
+    ];
+
+getBoxObjectFromBoxID[ nbo_NotebookObject, uuid_String ] :=
+    MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject @ FE`BoxReference[ nbo, { { uuid } } ];
+
+getBoxObjectFromBoxID // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

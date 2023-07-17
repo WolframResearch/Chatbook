@@ -30,6 +30,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `endDefinition;
 `importResourceFunction;
 `messageFailure;
+`messagePrint;
 `throwFailure;
 `throwInternalFailure;
 
@@ -126,8 +127,11 @@ Resource `1` not found.";
 Chatbook::ToolNotFound = "\
 Tool `1` not found.";
 
-Chatbook::NotImplemented =
-"Action \"`1`\" is not implemented.";
+Chatbook::NotImplemented = "\
+Action \"`1`\" is not implemented.";
+
+Chatbook::InvalidStreamingOutputMethod = "\
+Invalid streaming output method: `1`.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
