@@ -477,6 +477,21 @@ Cell[
 
 
 (* ::Subsection::Closed:: *)
+(*ChatPreformatted*)
+
+
+Cell[
+    StyleData[ "ChatPreformatted", StyleDefinitions -> StyleData[ "Program" ] ],
+    Background           -> GrayLevel[ 1 ],
+    CellFrame            -> None,
+    FontSize             -> 13,
+    FontWeight           -> "Plain",
+    ShowStringCharacters -> True
+]
+
+
+
+(* ::Subsection::Closed:: *)
 (*ChatCodeActive*)
 
 
