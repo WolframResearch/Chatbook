@@ -675,6 +675,17 @@ fasterCellToString0[ DynamicModuleBox[
     ___
 ] ] := Block[ { $escapeMarkdown = False }, "```" <> lang <> "\n" <> fasterCellToString0 @ box <> "\n```" ];
 
+fasterCellToString0[ Cell[
+    box_,
+    ___,
+    TaggingRules -> Association @ OrderlessPatternSequence[
+        "CellToStringType" -> "InlineCodeCell",
+        "CodeLanguage"     -> lang_String,
+        ___
+    ],
+    ___
+] ] := Block[ { $escapeMarkdown = False }, "```" <> lang <> "\n" <> fasterCellToString0 @ box <> "\n```" ];
+
 fasterCellToString0[ _[
     __,
     TaggingRules -> Association @ OrderlessPatternSequence[ "CellToStringData" -> data_, ___ ],
