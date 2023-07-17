@@ -281,9 +281,27 @@ cellInformation // endDefinition;
 (* ::Subsection::Closed:: *)
 (*parentCell*)
 parentCell // beginDefinition;
-parentCell[ cell_CellObject ] /; $cloudNotebooks := cell;
+parentCell[ obj: _CellObject|_BoxObject ] /; $cloudNotebooks := cloudParentCell @ obj;
 parentCell[ obj: _CellObject|_BoxObject ] := ParentCell @ obj;
 parentCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudParentCell*)
+cloudParentCell // beginDefinition;
+cloudParentCell[ obj_ ] := cloudParentCell[ obj, ParentCell @ obj ];
+cloudParentCell[ obj_, cell_CellObject ] := cell;
+cloudParentCell[ box_BoxObject, _ ] := cloudBoxParent @ box;
+cloudParentCell[ cell_CellObject, _ ] := cell;
+cloudParentCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudBoxParent*)
+cloudBoxParent // beginDefinition;
+cloudBoxParent[ BoxObject[ path_String ] ] := cloudBoxParent @ StringSplit[ path, "/" ];
+cloudBoxParent[ { nb_String, cell_String, __ } ] := CellObject[ cell, nb ];
+cloudBoxParent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -299,8 +317,10 @@ topLevelCellQ // endDefinition;
 (* ::Subsection::Closed:: *)
 (*topParentCell*)
 topParentCell // beginDefinition;
-topParentCell[ cell_CellObject ] := With[ { p = parentCell @ cell }, topParentCell @ p /; MatchQ[ p, _CellObject ] ];
-topParentCell[ cell_CellObject ] := cell;
+topParentCell[ cell_CellObject ] := topParentCell[ cell, parentCell @ cell ];
+topParentCell[ cell_CellObject, cell_CellObject ] := cell; (* Already top (in cloud) *)
+topParentCell[ cell_CellObject, parent_CellObject ] := topParentCell @ parent; (* Recurse upwards *)
+topParentCell[ cell_CellObject, _ ] := cell; (* No parent cell *)
 topParentCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
