@@ -254,16 +254,18 @@ Cell[
 
 Cell[
     StyleData[ "ChatOutput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
-    Background          -> RGBColor[ "#fcfdff" ],
-    CellAutoOverwrite   -> True,
-    CellDingbat         -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIcon" ], Background -> None ],
-    CellElementSpacings -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
-    CellGroupingRules   -> "OutputGrouping",
-    CellMargins         -> { { 66, 25 }, { 12, 5 } },
-    CellTrayWidgets     -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
-    GeneratedCell       -> True,
-    LineSpacing         -> { 1.1, 0, 2 },
-    ShowAutoSpellCheck  -> False,
+    Background           -> RGBColor[ "#fcfdff" ],
+    CellAutoOverwrite    -> True,
+    CellDingbat          -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIcon" ], Background -> None ],
+    CellElementSpacings  -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
+    CellGroupingRules    -> "OutputGrouping",
+    CellMargins          -> { { 66, 25 }, { 12, 5 } },
+    CellTrayWidgets      -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    GeneratedCell        -> True,
+    Graphics3DBoxOptions -> { ImageSizeRaw -> { { 300 }, { 220 } } },
+    GraphicsBoxOptions   -> { ImageSizeRaw -> { { 300 }, { 220 } } },
+    LineSpacing          -> { 1.1, 0, 2 },
+    ShowAutoSpellCheck   -> False,
     menuInitializer[ "ChatOutput", RGBColor[ "#ecf0f5" ] ]
 ]
 
