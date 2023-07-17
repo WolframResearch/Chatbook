@@ -5,6 +5,7 @@ BeginPackage[ "Wolfram`Chatbook`Formatting`" ];
 
 (* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDTOOLCALL *)
 
+`$dynamicSplitRules;
 `$dynamicText;
 `$reformattedCell;
 `$resultCellCache;
@@ -26,10 +27,10 @@ Needs[ "Wolfram`Chatbook`Tools`"    ];
 
 $wlCodeString = Longest @ Alternatives[
     "Wolfram Language",
+    "Wolfram_Language",
     "WolframLanguage",
     "Wolfram",
-    "Mathematica",
-    "Wolfram_Language"
+    "Mathematica"
 ];
 
 $resultCellCache = <| |>;
@@ -93,9 +94,10 @@ makeResultCell0[ str_String ] := formatTextString @ str;
 
 makeResultCell0[ codeCell[ code0_String ] ] :=
     With[ { code = StringTrim @ code0 },
-        If[ StringMatchQ[ code, "!["~~__~~"]("~~__~~")" ],
-            image @ code,
-            makeInteractiveCodeCell @ StringTrim @ code
+        Which[
+            StringMatchQ[ code, "!["~~__~~"]("~~__~~")" ], image @ code,
+            StringStartsQ[ code, "TOOLCALL: " ], inlineToolCall @ code,
+            True, makeInteractiveCodeCell @ StringTrim @ code
         ]
     ];
 
@@ -389,11 +391,10 @@ $textDataFormatRules = {
         Shortest[ code__ ] ~~ ("```"|EndOfString)
     ] /; ! StringStartsQ[ code, Whitespace~~"TOOLCALL" ] :> externalCodeCell[ lang, code ]
     ,
-    Longest[ "```" ~~ ($wlCodeString|"") ] ~~ Shortest[ code__ ] ~~ ("```"|EndOfString) /;
-        ! StringStartsQ[ code, Whitespace~~"TOOLCALL" ] :>
-            If[ nameQ[ "System`"<>code ], inlineCodeCell @ code, codeCell @ code ]
+    Longest[ "```" ~~ ($wlCodeString|"") ] ~~ Shortest[ code__ ] ~~ ("```"|EndOfString) :>
+        If[ nameQ[ "System`"<>code ], inlineCodeCell @ code, codeCell @ code ]
     ,
-    "![" ~~ alt: Shortest[ __ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
+    "![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
         StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
             imageCell[ alt, url ]
     ,
@@ -409,6 +410,33 @@ $textDataFormatRules = {
     "`" ~~ code: Except[ "`"|"\n" ].. ~~ "`" :> inlineCodeCell @ code,
     "$$" ~~ math: Except[ "$" ].. ~~ "$$" :> mathCell @ math,
     "$" ~~ math: Except[ "$" ].. ~~ "$" /; StringFreeQ[ math, "\n" ] :> mathCell @ math
+};
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$dynamicSplitRules*)
+
+(* Defines safe points to split content into static/dynamic parts. These patterns must be different from
+   `$textDataFormatRules`, since there will be no additional formatting passes once static content is written.
+   Therefore, some of the patterns that would match up to `EndOfString` must instead be explicitly terminated here.
+*)
+$dynamicSplitRules = {
+    (* External language cell *)
+    s: StringExpression[
+        Longest[ "```" ~~ lang: Except[ WhitespaceCharacter ].. /; externalLanguageQ @ lang ],
+        Shortest[ code__ ] ~~ "```"
+    ] :> s
+    ,
+    (* WL code cell *)
+    s: (Longest[ "```" ~~ ($wlCodeString|"") ] ~~ Shortest[ code__ ] ~~ "```") :> s
+    ,
+    (* Markdown image *)
+    s: ("![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")") /;
+        StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
+            s
+    ,
+    (* Tool call *)
+    s: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ "ENDTOOLCALL") :> s
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -753,13 +781,20 @@ attachment // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*attachmentBoxes*)
 attachmentBoxes // beginDefinition;
-attachmentBoxes[ alt_, key_String, expr_ ] := markdownImageBoxes[ alt, "attachment://" <> key, expr ];
+attachmentBoxes[ alt_, key_String, expr_ ] := markdownImageBoxes[ StringTrim @ alt, "attachment://" <> key, expr ];
 attachmentBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*markdownImageBoxes*)
 markdownImageBoxes // beginDefinition;
+
+markdownImageBoxes[ "", url_String, expr_ ] := TagBox[
+    cachedBoxes @ expr,
+    "MarkdownImage",
+    AutoDelete   -> True,
+    TaggingRules -> <| "CellToStringData" -> "![]("<>url<>")" |>
+];
 
 markdownImageBoxes[ alt_String, url_String, expr_ ] := TagBox[
     TooltipBox[ cachedBoxes @ expr, ToString[ alt, InputForm ] ],
@@ -774,9 +809,16 @@ markdownImageBoxes // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*importedImage*)
 importedImage // beginDefinition;
-importedImage[ alt_String, url_String ] := importedImage[ alt, url ] = importedImage[ alt, url, Quiet @ Import[ url, "Image" ] ];
-importedImage[ alt_String, url_String, _? FailureQ | _String ] := importedImage[ alt, url, $missingImage ];
-importedImage[ alt_String, url_String, i_ ] := Cell @ BoxData @ markdownImageBoxes[ alt, url, tooltip[ i, alt ] ];
+
+importedImage[ alt_String, url_String ] := importedImage[ alt, url ] =
+    importedImage[ alt, url, Quiet @ Import[ url, "Image" ] ];
+
+importedImage[ alt_String, url_String, _? FailureQ | _String ] :=
+    importedImage[ alt, url, $missingImage ];
+
+importedImage[ alt_String, url_String, i_ ] :=
+    Cell @ BoxData @ markdownImageBoxes[ StringTrim @ alt, url, tooltip[ i, alt ] ];
+
 importedImage // endDefinition;
 
 $missingImage = RawBoxes @ TemplateBox[ { }, "ImageNotFound" ];

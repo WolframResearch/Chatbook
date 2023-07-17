@@ -35,6 +35,7 @@ CreateChatNotebook // Options = {
     "OpenAIKey"                         -> Automatic,
     "PresencePenalty"                   -> 0.1,
     "ShowMinimized"                     -> Automatic,
+    "StreamingOutputMethod"             -> Automatic,
     "Temperature"                       -> 0.7,
     "Tools"                             -> Automatic,
     "ToolsEnabled"                      -> Automatic,
