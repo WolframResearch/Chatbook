@@ -1125,8 +1125,9 @@ submitAIAssistant // endDefinition;
 (*dynamicSplitQ*)
 dynamicSplitQ // beginDefinition;
 dynamicSplitQ[ as_Association ] := dynamicSplitQ @ Lookup[ as, "StreamingOutputMethod", Automatic ];
-dynamicSplitQ[ Automatic|Inherited|"PartialDynamic" ] := True;
-dynamicSplitQ[ "Legacy"|"FullDynamic"|"Dynamic"|Dynamic ] := False;
+dynamicSplitQ[ sym_Symbol ] := dynamicSplitQ @ SymbolName @ sym;
+dynamicSplitQ[ "PartialDynamic" ] := True;
+dynamicSplitQ[ "FullDynamic"|"Dynamic"|"Automatic"|"Inherited" ] := False;
 dynamicSplitQ[ other_ ] := (messagePrint[ "InvalidStreamingOutputMethod", other ]; True);
 dynamicSplitQ // endDefinition;
 
