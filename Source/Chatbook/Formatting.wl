@@ -600,10 +600,6 @@ makeToolCallBoxLabel0 // endDefinition;
 makeInteractiveCodeCell // beginDefinition;
 
 (* TODO: define template boxes for these *)
-
-makeInteractiveCodeCell[ language_, code_String ] /; nameQ[ "System`"<>code ] :=
-    makeInlineCodeCell @ code;
-
 makeInteractiveCodeCell[ language_, code_String ] /; $dynamicText :=
     If[ TrueQ @ wolframLanguageQ @ language,
         codeBlockFrame[ Cell[ BoxData @ code, "ChatCodeActive" ], code, language ],
