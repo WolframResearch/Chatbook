@@ -3,8 +3,7 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`CreateChatNotebook`" ];
 
-ClearAll[ "`*"         ];
-ClearAll[ "`Private`*" ];
+System`ChatObject;
 
 Begin[ "`Private`" ];
 
@@ -12,6 +11,8 @@ Needs[ "Wolfram`Chatbook`"            ];
 Needs[ "Wolfram`Chatbook`Common`"     ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
 Needs[ "Wolfram`Chatbook`Tools`"      ];
+Needs[ "Wolfram`Chatbook`Formatting`" ];
+Needs[ "Wolfram`Chatbook`Actions`"    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -43,10 +44,11 @@ CreateChatNotebook // Options = {
 };
 
 
-CreateChatNotebook[ opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] := createChatNotebook @ opts;
+CreateChatNotebook[ opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] :=
+    catchMine @ createChatNotebook @ opts;
 
 CreateChatNotebook[ nbo_NotebookObject, opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] :=
-    Enclose @ Module[ { settings, options },
+    catchMine @ Enclose @ Module[ { settings, options },
         settings = makeChatNotebookSettings @ Association @ FilterRules[ { opts }, Options @ CreateChatNotebook ];
         options  = makeChatNotebookOptions[ settings, opts ];
         SetOptions[ nbo, options ];
@@ -54,7 +56,23 @@ CreateChatNotebook[ nbo_NotebookObject, opts: OptionsPattern[ { CreateChatNotebo
     ];
 
 CreateChatNotebook[ chat_ChatObject, opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] :=
-    createNotebookFromChatObject[ chat, opts ];
+    catchMine @ createNotebookFromChatObject[ chat, opts ];
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$initialChatCells*)
+$initialChatCells :=
+    If[ TrueQ @ $cloudNotebooks,
+        { Cell[ "", "ChatInput" ], $cloudSelectionMover },
+        { Cell[ "", "ChatInput" ] }
+    ];
+
+$cloudSelectionMover = Cell @ BoxData @ ToBoxes @ Dynamic[
+    SelectionMove[ First @ Cells @ EvaluationNotebook[ ], Before, CellContents ];
+    NotebookDelete @ EvaluationCell[ ];
+    ""
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -71,26 +89,21 @@ createCloudChatNotebook[ opts: OptionsPattern[ CreateChatNotebook ] ] :=
     Module[ { settings, options, notebook, deployed },
         settings = makeChatNotebookSettings @ Association @ FilterRules[ { opts }, Options @ CreateChatNotebook ];
         options  = makeChatNotebookOptions[ settings, opts ];
-        notebook = Notebook[ { Cell[ "", "ChatInput" ], $cloudSelectionMover }, options ];
+        notebook = Notebook[ Flatten @ { $initialChatCells }, options ];
         deployed = CloudDeploy[ notebook, CloudObjectURLType -> "Environment" ];
         SystemOpen @ deployed;
         deployed
     ];
 
-$cloudSelectionMover = Cell @ BoxData @ ToBoxes @ Dynamic[
-    SelectionMove[ First @ Cells @ EvaluationNotebook[ ], Before, CellContents ];
-    NotebookDelete @ EvaluationCell[ ];
-    ""
-];
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*createLocalChatNotebook*)
-createLocalChatNotebook // SetFallthroughError;
+createLocalChatNotebook // beginDefinition;
+
 createLocalChatNotebook[ opts: OptionsPattern[ CreateChatNotebook ] ] :=
     Module[ { nbo, result },
         WithCleanup[
-            nbo = NotebookPut[ Notebook @ { Cell[ "", "ChatInput" ] }, Visible -> False ],
+            nbo = NotebookPut[ Notebook @ Flatten @ { $initialChatCells }, Visible -> False ],
             result = CreateChatNotebook[ nbo, opts ],
             If[ FailureQ @ result
                 ,
@@ -103,28 +116,7 @@ createLocalChatNotebook[ opts: OptionsPattern[ CreateChatNotebook ] ] :=
         ]
     ];
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*makeChatNotebookSettings*)
-makeChatNotebookSettings // SetFallthroughError;
-makeChatNotebookSettings[ as_Association? AssociationQ ] := KeySort @ KeyMap[ ToString, as ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*makeChatNotebookOptions*)
-makeChatNotebookOptions // SetFallthroughError;
-
-makeChatNotebookOptions[ settings_Association, opts: OptionsPattern[ ] ] := Sequence @@ DeleteDuplicatesBy[
-    Flatten @ {
-        FilterRules[ { opts }, UsingFrontEnd @ Options @ Notebook ],
-        StyleDefinitions -> $chatbookStylesheet,
-        If[ settings === <| |>,
-            Nothing,
-            TaggingRules -> <| "ChatNotebookSettings" -> settings |>
-        ]
-    },
-    ToString @* First
-];
+createLocalChatNotebook // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -148,12 +140,93 @@ $inlinedStylesheet := $inlinedStylesheet = Import[
 (* ::Section::Closed:: *)
 (*CreateChatDrivenNotebook*)
 CreateChatDrivenNotebook[ opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] :=
-    CreateChatNotebook[
+    catchMine @ CreateChatNotebook[
         "ChatDrivenNotebook" -> True,
         "LLMEvaluator"       -> "PlainChat",
         DefaultNewCellStyle  -> "ChatInput",
         opts
     ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Helper Functions*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*makeChatNotebookSettings*)
+makeChatNotebookSettings // beginDefinition;
+makeChatNotebookSettings[ as_Association? AssociationQ ] := KeySort @ KeyMap[ ToString, as ];
+makeChatNotebookSettings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*makeChatNotebookOptions*)
+makeChatNotebookOptions // beginDefinition;
+
+makeChatNotebookOptions[ settings_Association, opts: OptionsPattern[ ] ] := Sequence @@ DeleteDuplicatesBy[
+    Flatten @ {
+        FilterRules[ { opts }, UsingFrontEnd @ Options @ Notebook ],
+        StyleDefinitions -> $chatbookStylesheet,
+        If[ settings === <| |>,
+            Nothing,
+            TaggingRules -> <| "ChatNotebookSettings" -> settings |>
+        ]
+    },
+    ToString @* First
+];
+
+makeChatNotebookOptions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*createNotebookFromChatObject*)
+createNotebookFromChatObject // beginDefinition;
+
+createNotebookFromChatObject[ HoldPattern @ ChatObject[ args___ ], opts: OptionsPattern[ ] ] :=
+    createNotebookFromChatObject[ { args }, opts ];
+
+createNotebookFromChatObject[ { as_Association, a___ }, opts: OptionsPattern[ ] ] := Enclose[
+    Module[ { messages, cells },
+        messages = ConfirmMatch[ as[ "Messages" ], { ___Association }, "Messages" ];
+        cells = ConfirmMatch[ createMessageCell[ as, #1 ] & /@ messages, { ___Cell }, "Cells" ];
+        Block[ { $initialChatCells = cells }, createChatNotebook[ "LLMEvaluator" -> "PlainChat", opts ] ]
+    ],
+    throwInternalFailure[ createNotebookFromChatObject[ { as, a }, opts ], ##1 ] &
+];
+
+createNotebookFromChatObject // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createMessageCell*)
+createMessageCell // beginDefinition;
+createMessageCell[ as_Association, msg_Association ] := createMessageCell0[ as, KeyMap[ ToLowerCase@*ToString, msg ] ];
+createMessageCell // endDefinition;
+
+createMessageCell0 // beginDefinition;
+
+createMessageCell0[ as_Association, msg_Association ] := Enclose[
+    Module[ { role, content },
+        role = ToLowerCase @ ConfirmBy[ msg[ "role" ], StringQ, "Role" ];
+        content = ConfirmBy[ msg[ "content" ], StringQ, "Content" ];
+        createMessageCell0[ as, role, content ]
+    ],
+    throwInternalFailure[ createMessageCell0[ as, msg ], ## ] &
+];
+
+createMessageCell0[ as_Association, "assistant", content_String ] :=
+    Cell[ TextData @ reformatTextData @ content, "ChatOutput", CellDingbat -> makeOutputDingbat @ as ];
+
+createMessageCell0[ as_Association, "system", content_String ] :=
+    Cell[ content, "ChatSystemInput" ];
+
+createMessageCell0[ as_Association, "user", content_String ] :=
+    Cell[ content,
+          "ChatInput",
+          CellDingbat -> Cell[ BoxData @ TemplateBox[ { }, "ChatInputCellDingbat" ], Background -> None ]
+    ];
+
+createMessageCell0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

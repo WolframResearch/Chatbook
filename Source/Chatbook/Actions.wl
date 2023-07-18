@@ -19,6 +19,7 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 
 `$settings;
 `autoAssistQ;
+`makeOutputDingbat;
 
 Begin[ "`Private`" ];
 
@@ -2950,7 +2951,8 @@ reformatCell // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeOutputDingbat*)
 makeOutputDingbat // beginDefinition;
-makeOutputDingbat[ as: KeyValuePattern[ "LLMEvaluator" -> config_ ] ] := makeOutputDingbat[ as, config ];
+makeOutputDingbat[ as: KeyValuePattern[ "LLMEvaluator" -> config_Association ] ] := makeOutputDingbat[ as, config ];
+makeOutputDingbat[ as_Association ] := makeOutputDingbat[ as, as ];
 makeOutputDingbat[ as_, KeyValuePattern[ "PersonaIcon" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
 makeOutputDingbat[ as_, KeyValuePattern[ "Icon" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
 makeOutputDingbat[ as_, KeyValuePattern[ "Default" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
