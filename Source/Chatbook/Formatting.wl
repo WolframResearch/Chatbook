@@ -47,15 +47,19 @@ $tinyLineBreak = StyleBox[ "\n", "TinyLineBreak", FontSize -> 3 ];
 
 $$externalLanguage = "Java"|"Julia"|"Jupyter"|"NodeJS"|"Octave"|"Python"|"R"|"Ruby"|"Shell"|"SQL"|"SQL-JDBC";
 
-$externalLanguageRules = Flatten @ {
-    "JS"         -> "NodeJS",
-    "Javascript" -> "NodeJS",
-    "NPM"        -> "NodeJS",
-    "Node"       -> "NodeJS",
-    "Bash"       -> "Shell",
-    "SH"         -> "Shell",
-    Cases[ $$externalLanguage, lang_ :> (lang -> lang) ]
-};
+$externalLanguageRules = Replace[
+    Flatten @ {
+        "JS"         -> "NodeJS",
+        "Javascript" -> "NodeJS",
+        "NPM"        -> "NodeJS",
+        "Node"       -> "NodeJS",
+        "Bash"       -> "Shell",
+        "SH"         -> "Shell",
+        Cases[ $$externalLanguage, lang_ :> (lang -> lang) ]
+    },
+    HoldPattern[ lhs_ -> rhs_ ] :> (StartOfString~~lhs~~EndOfString -> rhs),
+    { 1 }
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
