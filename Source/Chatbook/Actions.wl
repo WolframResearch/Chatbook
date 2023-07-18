@@ -302,11 +302,17 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
     withChatState @ Block[ { $autoAssistMode = False },
+        $lastMessages   = None;
+        $lastChatString = None;
         clearMinimizedChats @ nbo;
         WithCleanup[
             sendChat[ evalCell, nbo, settings ],
             waitForLastTask[ ]
-        ]
+        ];
+        If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
+            constructChatObject @ Append[ $lastMessages, <| "role" -> "Assistant", "content" -> $lastChatString |> ],
+            Null
+        ];
     ];
 
 EvaluateChatInput // endDefinition;
@@ -2829,6 +2835,7 @@ writeReformattedCell[ settings_, string_String, cell_CellObject ] :=
             pageData = CurrentValue[ cell, { TaggingRules, "PageData" } ],
             uuid     = CreateUUID[ ]
         },
+        $lastChatString = string;
         Block[ { $dynamicText = False },
             (* Global`oldCellContent = NotebookRead @ cell; *)
             WithCleanup[
