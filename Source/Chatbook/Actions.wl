@@ -1307,30 +1307,11 @@ dynamicTextDisplay // endDefinition;
 (*checkResponse*)
 checkResponse // beginDefinition;
 
-checkResponse[ settings_, container_, cell_, as: KeyValuePattern[ "StatusCode" -> Except[ 200, _Integer ] ] ] :=
-    Module[ { log, chunks, folded, body, data },
-        log    = Internal`BagPart[ $debugLog, All ];
-        chunks = Cases[ log, KeyValuePattern[ "BodyChunk" -> s_String ] :> s ];
-        folded = FoldList[ StringJoin, chunks ];
-        { body, data } = FirstCase[
-            folded,
-            s_String :> With[ { json = Quiet @ Developer`ReadRawJSONString @ s },
-                            { s, json } /; MatchQ[ json, KeyValuePattern[ "error" -> _ ] ]
-                        ],
-            { Last[ folded, Missing[ "NotAvailable" ] ], Missing[ "NotAvailable" ] }
-        ];
-        writeErrorCell[ cell, $badResponse = Association[ as, "Body" -> body, "BodyJSON" -> data ] ]
-    ];
-
-checkResponse[
-    settings: KeyValuePattern[ "ToolsEnabled" -> False ],
-    container_,
-    cell_,
-    as_Association
-] := writeReformattedCell[ settings, container, cell ];
+checkResponse[ settings: KeyValuePattern[ "ToolsEnabled" -> False ], container_, cell_, as_Association ] :=
+    writeResult[ settings, container, cell, as ];
 
 checkResponse[ settings_, container_? toolFreeQ, cell_, as_Association ] :=
-    writeReformattedCell[ settings, container, cell ];
+    writeResult[ settings, container, cell, as ];
 
 checkResponse[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
     Module[ { string, callPos, toolCall, toolResponse, output, messages, newMessages, req },
@@ -1374,6 +1355,37 @@ checkResponse[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 ];
 
 checkResponse // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*writeResult*)
+writeResult // beginDefinition;
+
+writeResult[ settings_, container_, cell_, as_Association ] :=
+    Module[ { log, chunks, folded, body, data },
+
+        log    = Internal`BagPart[ $debugLog, All ];
+        chunks = Cases[ log, KeyValuePattern[ "BodyChunk" -> s: Except[ "", _String ] ] :> s ];
+        folded = Fold[ StringJoin, chunks ];
+
+        { body, data } = FirstCase[
+            Flatten @ StringCases[
+                folded,
+                (StartOfString|"\n") ~~ "data: " ~~ s: Except[ "\n" ].. ~~ "\n" :> s
+            ],
+            s_String :> With[ { json = Quiet @ Developer`ReadRawJSONString @ s },
+                            { s, json } /; MatchQ[ json, KeyValuePattern[ "error" -> _ ] ]
+                        ],
+            { Last[ folded, Missing[ "NotAvailable" ] ], Missing[ "NotAvailable" ] }
+        ];
+
+        If[ MatchQ[ as[ "StatusCode" ], Except[ 200, _Integer ] ] || AssociationQ @ data,
+            writeErrorCell[ cell, $badResponse = Association[ as, "Body" -> body, "BodyJSON" -> data ] ],
+            writeReformattedCell[ settings, container, cell ]
+        ]
+    ];
+
+writeResult // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
