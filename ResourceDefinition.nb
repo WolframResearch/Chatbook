@@ -790,6 +790,51 @@ Notebook[
                  TagBox[
                   TemplateBox[
                    {
+                    "\"FullIcons.wxf\"",
+                    FileNameJoin[
+                     {NotebookDirectory[], "Assets", "FullIcons.wxf"}
+                    ]
+                   },
+                   "FileManagerFileOpenerTemplate"
+                  ],
+                  Function[
+                   Annotation[
+                    #1,
+                    DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                     1
+                    ]
+                   ]
+                  ]
+                 ],
+                 FileNameJoin[
+                  {NotebookDirectory[], "Assets", "FullIcons.wxf"}
+                 ],
+                 BoxID -> "FileTreePath",
+                 BaseStyle -> {"Text"}
+                ]
+               ],
+               "FileManagerFile",
+               CellMargins -> {{23 + Inherited, Inherited}, {Inherited, Inherited}},
+               CellGroupingRules -> {"SectionGrouping", 110},
+               CellFrameLabels -> {
+                {
+                 Cell[
+                  BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                  Background -> None
+                 ],
+                 Inherited
+                },
+                {Inherited, Inherited}
+               },
+               CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+               CellID -> 265999195
+              ],
+              Cell[
+               BoxData[
+                InterpretationBox[
+                 TagBox[
+                  TemplateBox[
+                   {
                     "\"Icons.wxf\"",
                     FileNameJoin[{NotebookDirectory[], "Assets", "Icons.wxf"}]
                    },
@@ -941,6 +986,51 @@ Notebook[
                 },
                 Closed
                ]
+              ],
+              Cell[
+               BoxData[
+                InterpretationBox[
+                 TagBox[
+                  TemplateBox[
+                   {
+                    "\"SandboxMessages.wl\"",
+                    FileNameJoin[
+                     {NotebookDirectory[], "Assets", "SandboxMessages.wl"}
+                    ]
+                   },
+                   "FileManagerFileOpenerTemplate"
+                  ],
+                  Function[
+                   Annotation[
+                    #1,
+                    DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                     1
+                    ]
+                   ]
+                  ]
+                 ],
+                 FileNameJoin[
+                  {NotebookDirectory[], "Assets", "SandboxMessages.wl"}
+                 ],
+                 BoxID -> "FileTreePath",
+                 BaseStyle -> {"Text"}
+                ]
+               ],
+               "FileManagerFile",
+               CellMargins -> {{23 + Inherited, Inherited}, {Inherited, Inherited}},
+               CellGroupingRules -> {"SectionGrouping", 110},
+               CellFrameLabels -> {
+                {
+                 Cell[
+                  BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                  Background -> None
+                 ],
+                 Inherited
+                },
+                {Inherited, Inherited}
+               },
+               CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+               CellID -> 671382074
               ]
              },
              Closed
@@ -1616,6 +1706,120 @@ Notebook[
                        TagBox[
                         TemplateBox[
                          {
+                          "\"ChatDrivenNotebookIcon.wl\"",
+                          FileNameJoin[
+                           {
+                            NotebookDirectory[],
+                            "Developer",
+                            "Resources",
+                            "Icons",
+                            "ChatDrivenNotebookIcon.wl"
+                           }
+                          ]
+                         },
+                         "FileManagerFileOpenerTemplate"
+                        ],
+                        Function[
+                         Annotation[
+                          #1,
+                          DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                           3
+                          ]
+                         ]
+                        ]
+                       ],
+                       FileNameJoin[
+                        {
+                         NotebookDirectory[],
+                         "Developer",
+                         "Resources",
+                         "Icons",
+                         "ChatDrivenNotebookIcon.wl"
+                        }
+                       ],
+                       BoxID -> "FileTreePath",
+                       BaseStyle -> {"Text"}
+                      ]
+                     ],
+                     "FileManagerFile",
+                     CellMargins -> {{69 + Inherited, Inherited}, {Inherited, Inherited}},
+                     CellGroupingRules -> {"SectionGrouping", 130},
+                     CellFrameLabels -> {
+                      {
+                       Cell[
+                        BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                        Background -> None
+                       ],
+                       Inherited
+                      },
+                      {Inherited, Inherited}
+                     },
+                     CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                     CellID -> 267778495
+                    ],
+                    Cell[
+                     BoxData[
+                      InterpretationBox[
+                       TagBox[
+                        TemplateBox[
+                         {
+                          "\"ChatEnabledNotebookIcon.wl\"",
+                          FileNameJoin[
+                           {
+                            NotebookDirectory[],
+                            "Developer",
+                            "Resources",
+                            "Icons",
+                            "ChatEnabledNotebookIcon.wl"
+                           }
+                          ]
+                         },
+                         "FileManagerFileOpenerTemplate"
+                        ],
+                        Function[
+                         Annotation[
+                          #1,
+                          DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                           3
+                          ]
+                         ]
+                        ]
+                       ],
+                       FileNameJoin[
+                        {
+                         NotebookDirectory[],
+                         "Developer",
+                         "Resources",
+                         "Icons",
+                         "ChatEnabledNotebookIcon.wl"
+                        }
+                       ],
+                       BoxID -> "FileTreePath",
+                       BaseStyle -> {"Text"}
+                      ]
+                     ],
+                     "FileManagerFile",
+                     CellMargins -> {{69 + Inherited, Inherited}, {Inherited, Inherited}},
+                     CellGroupingRules -> {"SectionGrouping", 130},
+                     CellFrameLabels -> {
+                      {
+                       Cell[
+                        BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                        Background -> None
+                       ],
+                       Inherited
+                      },
+                      {Inherited, Inherited}
+                     },
+                     CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                     CellID -> 103982368
+                    ],
+                    Cell[
+                     BoxData[
+                      InterpretationBox[
+                       TagBox[
+                        TemplateBox[
+                         {
                           "\"ChatExcludedWidget.wl\"",
                           FileNameJoin[
                            {
@@ -1894,6 +2098,63 @@ Notebook[
                      },
                      CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
                      CellID -> 138357612
+                    ],
+                    Cell[
+                     BoxData[
+                      InterpretationBox[
+                       TagBox[
+                        TemplateBox[
+                         {
+                          "\"ChatInputIcon.wl\"",
+                          FileNameJoin[
+                           {
+                            NotebookDirectory[],
+                            "Developer",
+                            "Resources",
+                            "Icons",
+                            "ChatInputIcon.wl"
+                           }
+                          ]
+                         },
+                         "FileManagerFileOpenerTemplate"
+                        ],
+                        Function[
+                         Annotation[
+                          #1,
+                          DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                           3
+                          ]
+                         ]
+                        ]
+                       ],
+                       FileNameJoin[
+                        {
+                         NotebookDirectory[],
+                         "Developer",
+                         "Resources",
+                         "Icons",
+                         "ChatInputIcon.wl"
+                        }
+                       ],
+                       BoxID -> "FileTreePath",
+                       BaseStyle -> {"Text"}
+                      ]
+                     ],
+                     "FileManagerFile",
+                     CellMargins -> {{69 + Inherited, Inherited}, {Inherited, Inherited}},
+                     CellGroupingRules -> {"SectionGrouping", 130},
+                     CellFrameLabels -> {
+                      {
+                       Cell[
+                        BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                        Background -> None
+                       ],
+                       Inherited
+                      },
+                      {Inherited, Inherited}
+                     },
+                     CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                     CellID -> 104036851
                     ],
                     Cell[
                      BoxData[
@@ -2414,6 +2675,177 @@ Notebook[
                        TagBox[
                         TemplateBox[
                          {
+                          "\"Delete-disabled.wl\"",
+                          FileNameJoin[
+                           {
+                            NotebookDirectory[],
+                            "Developer",
+                            "Resources",
+                            "Icons",
+                            "Delete-disabled.wl"
+                           }
+                          ]
+                         },
+                         "FileManagerFileOpenerTemplate"
+                        ],
+                        Function[
+                         Annotation[
+                          #1,
+                          DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                           3
+                          ]
+                         ]
+                        ]
+                       ],
+                       FileNameJoin[
+                        {
+                         NotebookDirectory[],
+                         "Developer",
+                         "Resources",
+                         "Icons",
+                         "Delete-disabled.wl"
+                        }
+                       ],
+                       BoxID -> "FileTreePath",
+                       BaseStyle -> {"Text"}
+                      ]
+                     ],
+                     "FileManagerFile",
+                     CellMargins -> {{69 + Inherited, Inherited}, {Inherited, Inherited}},
+                     CellGroupingRules -> {"SectionGrouping", 130},
+                     CellFrameLabels -> {
+                      {
+                       Cell[
+                        BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                        Background -> None
+                       ],
+                       Inherited
+                      },
+                      {Inherited, Inherited}
+                     },
+                     CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                     CellID -> 53419942
+                    ],
+                    Cell[
+                     BoxData[
+                      InterpretationBox[
+                       TagBox[
+                        TemplateBox[
+                         {
+                          "\"Delete-hover.wl\"",
+                          FileNameJoin[
+                           {
+                            NotebookDirectory[],
+                            "Developer",
+                            "Resources",
+                            "Icons",
+                            "Delete-hover.wl"
+                           }
+                          ]
+                         },
+                         "FileManagerFileOpenerTemplate"
+                        ],
+                        Function[
+                         Annotation[
+                          #1,
+                          DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                           3
+                          ]
+                         ]
+                        ]
+                       ],
+                       FileNameJoin[
+                        {
+                         NotebookDirectory[],
+                         "Developer",
+                         "Resources",
+                         "Icons",
+                         "Delete-hover.wl"
+                        }
+                       ],
+                       BoxID -> "FileTreePath",
+                       BaseStyle -> {"Text"}
+                      ]
+                     ],
+                     "FileManagerFile",
+                     CellMargins -> {{69 + Inherited, Inherited}, {Inherited, Inherited}},
+                     CellGroupingRules -> {"SectionGrouping", 130},
+                     CellFrameLabels -> {
+                      {
+                       Cell[
+                        BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                        Background -> None
+                       ],
+                       Inherited
+                      },
+                      {Inherited, Inherited}
+                     },
+                     CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                     CellID -> 537604978
+                    ],
+                    Cell[
+                     BoxData[
+                      InterpretationBox[
+                       TagBox[
+                        TemplateBox[
+                         {
+                          "\"Delete.wl\"",
+                          FileNameJoin[
+                           {
+                            NotebookDirectory[],
+                            "Developer",
+                            "Resources",
+                            "Icons",
+                            "Delete.wl"
+                           }
+                          ]
+                         },
+                         "FileManagerFileOpenerTemplate"
+                        ],
+                        Function[
+                         Annotation[
+                          #1,
+                          DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                           3
+                          ]
+                         ]
+                        ]
+                       ],
+                       FileNameJoin[
+                        {
+                         NotebookDirectory[],
+                         "Developer",
+                         "Resources",
+                         "Icons",
+                         "Delete.wl"
+                        }
+                       ],
+                       BoxID -> "FileTreePath",
+                       BaseStyle -> {"Text"}
+                      ]
+                     ],
+                     "FileManagerFile",
+                     CellMargins -> {{69 + Inherited, Inherited}, {Inherited, Inherited}},
+                     CellGroupingRules -> {"SectionGrouping", 130},
+                     CellFrameLabels -> {
+                      {
+                       Cell[
+                        BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                        Background -> None
+                       ],
+                       Inherited
+                      },
+                      {Inherited, Inherited}
+                     },
+                     CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                     CellID -> 107684652
+                    ],
+                    Cell[
+                     BoxData[
+                      InterpretationBox[
+                       TagBox[
+                        TemplateBox[
+                         {
                           "\"HelperIcon.wl\"",
                           FileNameJoin[
                            {
@@ -2471,6 +2903,120 @@ Notebook[
                        TagBox[
                         TemplateBox[
                          {
+                          "\"Hide-hover.wl\"",
+                          FileNameJoin[
+                           {
+                            NotebookDirectory[],
+                            "Developer",
+                            "Resources",
+                            "Icons",
+                            "Hide-hover.wl"
+                           }
+                          ]
+                         },
+                         "FileManagerFileOpenerTemplate"
+                        ],
+                        Function[
+                         Annotation[
+                          #1,
+                          DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                           3
+                          ]
+                         ]
+                        ]
+                       ],
+                       FileNameJoin[
+                        {
+                         NotebookDirectory[],
+                         "Developer",
+                         "Resources",
+                         "Icons",
+                         "Hide-hover.wl"
+                        }
+                       ],
+                       BoxID -> "FileTreePath",
+                       BaseStyle -> {"Text"}
+                      ]
+                     ],
+                     "FileManagerFile",
+                     CellMargins -> {{69 + Inherited, Inherited}, {Inherited, Inherited}},
+                     CellGroupingRules -> {"SectionGrouping", 130},
+                     CellFrameLabels -> {
+                      {
+                       Cell[
+                        BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                        Background -> None
+                       ],
+                       Inherited
+                      },
+                      {Inherited, Inherited}
+                     },
+                     CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                     CellID -> 152838187
+                    ],
+                    Cell[
+                     BoxData[
+                      InterpretationBox[
+                       TagBox[
+                        TemplateBox[
+                         {
+                          "\"Hide.wl\"",
+                          FileNameJoin[
+                           {
+                            NotebookDirectory[],
+                            "Developer",
+                            "Resources",
+                            "Icons",
+                            "Hide.wl"
+                           }
+                          ]
+                         },
+                         "FileManagerFileOpenerTemplate"
+                        ],
+                        Function[
+                         Annotation[
+                          #1,
+                          DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                           3
+                          ]
+                         ]
+                        ]
+                       ],
+                       FileNameJoin[
+                        {
+                         NotebookDirectory[],
+                         "Developer",
+                         "Resources",
+                         "Icons",
+                         "Hide.wl"
+                        }
+                       ],
+                       BoxID -> "FileTreePath",
+                       BaseStyle -> {"Text"}
+                      ]
+                     ],
+                     "FileManagerFile",
+                     CellMargins -> {{69 + Inherited, Inherited}, {Inherited, Inherited}},
+                     CellGroupingRules -> {"SectionGrouping", 130},
+                     CellFrameLabels -> {
+                      {
+                       Cell[
+                        BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                        Background -> None
+                       ],
+                       Inherited
+                      },
+                      {Inherited, Inherited}
+                     },
+                     CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                     CellID -> 160718307
+                    ],
+                    Cell[
+                     BoxData[
+                      InterpretationBox[
+                       TagBox[
+                        TemplateBox[
+                         {
                           "\"ImageNotFound.wl\"",
                           FileNameJoin[
                            {
@@ -2521,6 +3067,63 @@ Notebook[
                      },
                      CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
                      CellID -> 625503123
+                    ],
+                    Cell[
+                     BoxData[
+                      InterpretationBox[
+                       TagBox[
+                        TemplateBox[
+                         {
+                          "\"InformationTooltip.wl\"",
+                          FileNameJoin[
+                           {
+                            NotebookDirectory[],
+                            "Developer",
+                            "Resources",
+                            "Icons",
+                            "InformationTooltip.wl"
+                           }
+                          ]
+                         },
+                         "FileManagerFileOpenerTemplate"
+                        ],
+                        Function[
+                         Annotation[
+                          #1,
+                          DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                           3
+                          ]
+                         ]
+                        ]
+                       ],
+                       FileNameJoin[
+                        {
+                         NotebookDirectory[],
+                         "Developer",
+                         "Resources",
+                         "Icons",
+                         "InformationTooltip.wl"
+                        }
+                       ],
+                       BoxID -> "FileTreePath",
+                       BaseStyle -> {"Text"}
+                      ]
+                     ],
+                     "FileManagerFile",
+                     CellMargins -> {{69 + Inherited, Inherited}, {Inherited, Inherited}},
+                     CellGroupingRules -> {"SectionGrouping", 130},
+                     CellFrameLabels -> {
+                      {
+                       Cell[
+                        BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                        Background -> None
+                       ],
+                       Inherited
+                      },
+                      {Inherited, Inherited}
+                     },
+                     CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                     CellID -> 262797885
                     ],
                     Cell[
                      BoxData[
@@ -3148,6 +3751,234 @@ Notebook[
                      },
                      CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
                      CellID -> 352670237
+                    ],
+                    Cell[
+                     BoxData[
+                      InterpretationBox[
+                       TagBox[
+                        TemplateBox[
+                         {
+                          "\"PacletRepo-hover.wl\"",
+                          FileNameJoin[
+                           {
+                            NotebookDirectory[],
+                            "Developer",
+                            "Resources",
+                            "Icons",
+                            "PacletRepo-hover.wl"
+                           }
+                          ]
+                         },
+                         "FileManagerFileOpenerTemplate"
+                        ],
+                        Function[
+                         Annotation[
+                          #1,
+                          DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                           3
+                          ]
+                         ]
+                        ]
+                       ],
+                       FileNameJoin[
+                        {
+                         NotebookDirectory[],
+                         "Developer",
+                         "Resources",
+                         "Icons",
+                         "PacletRepo-hover.wl"
+                        }
+                       ],
+                       BoxID -> "FileTreePath",
+                       BaseStyle -> {"Text"}
+                      ]
+                     ],
+                     "FileManagerFile",
+                     CellMargins -> {{69 + Inherited, Inherited}, {Inherited, Inherited}},
+                     CellGroupingRules -> {"SectionGrouping", 130},
+                     CellFrameLabels -> {
+                      {
+                       Cell[
+                        BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                        Background -> None
+                       ],
+                       Inherited
+                      },
+                      {Inherited, Inherited}
+                     },
+                     CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                     CellID -> 229168076
+                    ],
+                    Cell[
+                     BoxData[
+                      InterpretationBox[
+                       TagBox[
+                        TemplateBox[
+                         {
+                          "\"PacletRepo.wl\"",
+                          FileNameJoin[
+                           {
+                            NotebookDirectory[],
+                            "Developer",
+                            "Resources",
+                            "Icons",
+                            "PacletRepo.wl"
+                           }
+                          ]
+                         },
+                         "FileManagerFileOpenerTemplate"
+                        ],
+                        Function[
+                         Annotation[
+                          #1,
+                          DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                           3
+                          ]
+                         ]
+                        ]
+                       ],
+                       FileNameJoin[
+                        {
+                         NotebookDirectory[],
+                         "Developer",
+                         "Resources",
+                         "Icons",
+                         "PacletRepo.wl"
+                        }
+                       ],
+                       BoxID -> "FileTreePath",
+                       BaseStyle -> {"Text"}
+                      ]
+                     ],
+                     "FileManagerFile",
+                     CellMargins -> {{69 + Inherited, Inherited}, {Inherited, Inherited}},
+                     CellGroupingRules -> {"SectionGrouping", 130},
+                     CellFrameLabels -> {
+                      {
+                       Cell[
+                        BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                        Background -> None
+                       ],
+                       Inherited
+                      },
+                      {Inherited, Inherited}
+                     },
+                     CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                     CellID -> 168091607
+                    ],
+                    Cell[
+                     BoxData[
+                      InterpretationBox[
+                       TagBox[
+                        TemplateBox[
+                         {
+                          "\"PeelOff-hover.wl\"",
+                          FileNameJoin[
+                           {
+                            NotebookDirectory[],
+                            "Developer",
+                            "Resources",
+                            "Icons",
+                            "PeelOff-hover.wl"
+                           }
+                          ]
+                         },
+                         "FileManagerFileOpenerTemplate"
+                        ],
+                        Function[
+                         Annotation[
+                          #1,
+                          DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                           3
+                          ]
+                         ]
+                        ]
+                       ],
+                       FileNameJoin[
+                        {
+                         NotebookDirectory[],
+                         "Developer",
+                         "Resources",
+                         "Icons",
+                         "PeelOff-hover.wl"
+                        }
+                       ],
+                       BoxID -> "FileTreePath",
+                       BaseStyle -> {"Text"}
+                      ]
+                     ],
+                     "FileManagerFile",
+                     CellMargins -> {{69 + Inherited, Inherited}, {Inherited, Inherited}},
+                     CellGroupingRules -> {"SectionGrouping", 130},
+                     CellFrameLabels -> {
+                      {
+                       Cell[
+                        BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                        Background -> None
+                       ],
+                       Inherited
+                      },
+                      {Inherited, Inherited}
+                     },
+                     CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                     CellID -> 51359406
+                    ],
+                    Cell[
+                     BoxData[
+                      InterpretationBox[
+                       TagBox[
+                        TemplateBox[
+                         {
+                          "\"PeelOff.wl\"",
+                          FileNameJoin[
+                           {
+                            NotebookDirectory[],
+                            "Developer",
+                            "Resources",
+                            "Icons",
+                            "PeelOff.wl"
+                           }
+                          ]
+                         },
+                         "FileManagerFileOpenerTemplate"
+                        ],
+                        Function[
+                         Annotation[
+                          #1,
+                          DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                           3
+                          ]
+                         ]
+                        ]
+                       ],
+                       FileNameJoin[
+                        {
+                         NotebookDirectory[],
+                         "Developer",
+                         "Resources",
+                         "Icons",
+                         "PeelOff.wl"
+                        }
+                       ],
+                       BoxID -> "FileTreePath",
+                       BaseStyle -> {"Text"}
+                      ]
+                     ],
+                     "FileManagerFile",
+                     CellMargins -> {{69 + Inherited, Inherited}, {Inherited, Inherited}},
+                     CellGroupingRules -> {"SectionGrouping", 130},
+                     CellFrameLabels -> {
+                      {
+                       Cell[
+                        BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                        Background -> None
+                       ],
+                       Inherited
+                      },
+                      {Inherited, Inherited}
+                     },
+                     CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                     CellID -> 674594049
                     ],
                     Cell[
                      BoxData[
@@ -4383,13 +5214,13 @@ Notebook[
                     TagBox[
                      TemplateBox[
                       {
-                       "\"example-of-external-evaluate-output-2.png\"",
+                       "\"example-of-evaluating-generated-wolfram.gif\"",
                        FileNameJoin[
                         {
                          NotebookDirectory[],
                          "docs",
                          "images",
-                         "example-of-external-evaluate-output-2.png"
+                         "example-of-evaluating-generated-wolfram.gif"
                         }
                        ]
                       },
@@ -4409,7 +5240,7 @@ Notebook[
                       NotebookDirectory[],
                       "docs",
                       "images",
-                      "example-of-external-evaluate-output-2.png"
+                      "example-of-evaluating-generated-wolfram.gif"
                      }
                     ],
                     BoxID -> "FileTreePath",
@@ -4422,7 +5253,7 @@ Notebook[
                   CellFrameLabels -> {
                    {
                     Cell[
-                     BoxData[TemplateBox[{}, "FileManagerPNGIconTemplate"]],
+                     BoxData[TemplateBox[{}, "FileManagerGIFIconTemplate"]],
                      Background -> None
                     ],
                     Inherited
@@ -4430,7 +5261,7 @@ Notebook[
                    {Inherited, Inherited}
                   },
                   CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
-                  CellID -> 209109670
+                  CellID -> 286127424
                  ],
                  Cell[
                   BoxData[
@@ -4438,13 +5269,13 @@ Notebook[
                     TagBox[
                      TemplateBox[
                       {
-                       "\"example-of-external-evaluate.png\"",
+                       "\"example-of-external-evaluate-output.png\"",
                        FileNameJoin[
                         {
                          NotebookDirectory[],
                          "docs",
                          "images",
-                         "example-of-external-evaluate.png"
+                         "example-of-external-evaluate-output.png"
                         }
                        ]
                       },
@@ -4464,7 +5295,7 @@ Notebook[
                       NotebookDirectory[],
                       "docs",
                       "images",
-                      "example-of-external-evaluate.png"
+                      "example-of-external-evaluate-output.png"
                      }
                     ],
                     BoxID -> "FileTreePath",
@@ -4485,62 +5316,7 @@ Notebook[
                    {Inherited, Inherited}
                   },
                   CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
-                  CellID -> 1222977198
-                 ],
-                 Cell[
-                  BoxData[
-                   InterpretationBox[
-                    TagBox[
-                     TemplateBox[
-                      {
-                       "\"example-of-text-output-2.png\"",
-                       FileNameJoin[
-                        {
-                         NotebookDirectory[],
-                         "docs",
-                         "images",
-                         "example-of-text-output-2.png"
-                        }
-                       ]
-                      },
-                      "FileManagerFileOpenerTemplate"
-                     ],
-                     Function[
-                      Annotation[
-                       #1,
-                       DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
-                        2
-                       ]
-                      ]
-                     ]
-                    ],
-                    FileNameJoin[
-                     {
-                      NotebookDirectory[],
-                      "docs",
-                      "images",
-                      "example-of-text-output-2.png"
-                     }
-                    ],
-                    BoxID -> "FileTreePath",
-                    BaseStyle -> {"Text"}
-                   ]
-                  ],
-                  "FileManagerFile",
-                  CellMargins -> {{46 + Inherited, Inherited}, {Inherited, Inherited}},
-                  CellGroupingRules -> {"SectionGrouping", 120},
-                  CellFrameLabels -> {
-                   {
-                    Cell[
-                     BoxData[TemplateBox[{}, "FileManagerPNGIconTemplate"]],
-                     Background -> None
-                    ],
-                    Inherited
-                   },
-                   {Inherited, Inherited}
-                  },
-                  CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
-                  CellID -> 1011781349
+                  CellID -> 32901710
                  ],
                  Cell[
                   BoxData[
@@ -4596,171 +5372,6 @@ Notebook[
                   },
                   CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
                   CellID -> 1233615697
-                 ],
-                 Cell[
-                  BoxData[
-                   InterpretationBox[
-                    TagBox[
-                     TemplateBox[
-                      {
-                       "\"example-of-wolfram-output-2.png\"",
-                       FileNameJoin[
-                        {
-                         NotebookDirectory[],
-                         "docs",
-                         "images",
-                         "example-of-wolfram-output-2.png"
-                        }
-                       ]
-                      },
-                      "FileManagerFileOpenerTemplate"
-                     ],
-                     Function[
-                      Annotation[
-                       #1,
-                       DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
-                        2
-                       ]
-                      ]
-                     ]
-                    ],
-                    FileNameJoin[
-                     {
-                      NotebookDirectory[],
-                      "docs",
-                      "images",
-                      "example-of-wolfram-output-2.png"
-                     }
-                    ],
-                    BoxID -> "FileTreePath",
-                    BaseStyle -> {"Text"}
-                   ]
-                  ],
-                  "FileManagerFile",
-                  CellMargins -> {{46 + Inherited, Inherited}, {Inherited, Inherited}},
-                  CellGroupingRules -> {"SectionGrouping", 120},
-                  CellFrameLabels -> {
-                   {
-                    Cell[
-                     BoxData[TemplateBox[{}, "FileManagerPNGIconTemplate"]],
-                     Background -> None
-                    ],
-                    Inherited
-                   },
-                   {Inherited, Inherited}
-                  },
-                  CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
-                  CellID -> 1571891341
-                 ],
-                 Cell[
-                  BoxData[
-                   InterpretationBox[
-                    TagBox[
-                     TemplateBox[
-                      {
-                       "\"example-of-wolfram-output-evaluated-2.png\"",
-                       FileNameJoin[
-                        {
-                         NotebookDirectory[],
-                         "docs",
-                         "images",
-                         "example-of-wolfram-output-evaluated-2.png"
-                        }
-                       ]
-                      },
-                      "FileManagerFileOpenerTemplate"
-                     ],
-                     Function[
-                      Annotation[
-                       #1,
-                       DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
-                        2
-                       ]
-                      ]
-                     ]
-                    ],
-                    FileNameJoin[
-                     {
-                      NotebookDirectory[],
-                      "docs",
-                      "images",
-                      "example-of-wolfram-output-evaluated-2.png"
-                     }
-                    ],
-                    BoxID -> "FileTreePath",
-                    BaseStyle -> {"Text"}
-                   ]
-                  ],
-                  "FileManagerFile",
-                  CellMargins -> {{46 + Inherited, Inherited}, {Inherited, Inherited}},
-                  CellGroupingRules -> {"SectionGrouping", 120},
-                  CellFrameLabels -> {
-                   {
-                    Cell[
-                     BoxData[TemplateBox[{}, "FileManagerPNGIconTemplate"]],
-                     Background -> None
-                    ],
-                    Inherited
-                   },
-                   {Inherited, Inherited}
-                  },
-                  CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
-                  CellID -> 433942793
-                 ],
-                 Cell[
-                  BoxData[
-                   InterpretationBox[
-                    TagBox[
-                     TemplateBox[
-                      {
-                       "\"example-of-wolfram-output-evaluated.png\"",
-                       FileNameJoin[
-                        {
-                         NotebookDirectory[],
-                         "docs",
-                         "images",
-                         "example-of-wolfram-output-evaluated.png"
-                        }
-                       ]
-                      },
-                      "FileManagerFileOpenerTemplate"
-                     ],
-                     Function[
-                      Annotation[
-                       #1,
-                       DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
-                        2
-                       ]
-                      ]
-                     ]
-                    ],
-                    FileNameJoin[
-                     {
-                      NotebookDirectory[],
-                      "docs",
-                      "images",
-                      "example-of-wolfram-output-evaluated.png"
-                     }
-                    ],
-                    BoxID -> "FileTreePath",
-                    BaseStyle -> {"Text"}
-                   ]
-                  ],
-                  "FileManagerFile",
-                  CellMargins -> {{46 + Inherited, Inherited}, {Inherited, Inherited}},
-                  CellGroupingRules -> {"SectionGrouping", 120},
-                  CellFrameLabels -> {
-                   {
-                    Cell[
-                     BoxData[TemplateBox[{}, "FileManagerPNGIconTemplate"]],
-                     Background -> None
-                    ],
-                    Inherited
-                   },
-                   {Inherited, Inherited}
-                  },
-                  CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
-                  CellID -> 422056739
                  ],
                  Cell[
                   BoxData[
@@ -5403,6 +6014,63 @@ Notebook[
                      },
                      CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
                      CellID -> 1079902529
+                    ],
+                    Cell[
+                     BoxData[
+                      InterpretationBox[
+                       TagBox[
+                        TemplateBox[
+                         {
+                          "\"LLMConfiguration.wl\"",
+                          FileNameJoin[
+                           {
+                            NotebookDirectory[],
+                            "LLMConfiguration",
+                            "Personas",
+                            "Birdnardo",
+                            "LLMConfiguration.wl"
+                           }
+                          ]
+                         },
+                         "FileManagerFileOpenerTemplate"
+                        ],
+                        Function[
+                         Annotation[
+                          #1,
+                          DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                           3
+                          ]
+                         ]
+                        ]
+                       ],
+                       FileNameJoin[
+                        {
+                         NotebookDirectory[],
+                         "LLMConfiguration",
+                         "Personas",
+                         "Birdnardo",
+                         "LLMConfiguration.wl"
+                        }
+                       ],
+                       BoxID -> "FileTreePath",
+                       BaseStyle -> {"Text"}
+                      ]
+                     ],
+                     "FileManagerFile",
+                     CellMargins -> {{69 + Inherited, Inherited}, {Inherited, Inherited}},
+                     CellGroupingRules -> {"SectionGrouping", 130},
+                     CellFrameLabels -> {
+                      {
+                       Cell[
+                        BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                        Background -> None
+                       ],
+                       Inherited
+                      },
+                      {Inherited, Inherited}
+                     },
+                     CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                     CellID -> 136867759
                     ],
                     Cell[
                      BoxData[
@@ -6318,6 +6986,63 @@ Notebook[
                        TagBox[
                         TemplateBox[
                          {
+                          "\"LLMConfiguration.wl\"",
+                          FileNameJoin[
+                           {
+                            NotebookDirectory[],
+                            "LLMConfiguration",
+                            "Personas",
+                            "Wolfie",
+                            "LLMConfiguration.wl"
+                           }
+                          ]
+                         },
+                         "FileManagerFileOpenerTemplate"
+                        ],
+                        Function[
+                         Annotation[
+                          #1,
+                          DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                           3
+                          ]
+                         ]
+                        ]
+                       ],
+                       FileNameJoin[
+                        {
+                         NotebookDirectory[],
+                         "LLMConfiguration",
+                         "Personas",
+                         "Wolfie",
+                         "LLMConfiguration.wl"
+                        }
+                       ],
+                       BoxID -> "FileTreePath",
+                       BaseStyle -> {"Text"}
+                      ]
+                     ],
+                     "FileManagerFile",
+                     CellMargins -> {{69 + Inherited, Inherited}, {Inherited, Inherited}},
+                     CellGroupingRules -> {"SectionGrouping", 130},
+                     CellFrameLabels -> {
+                      {
+                       Cell[
+                        BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                        Background -> None
+                       ],
+                       Inherited
+                      },
+                      {Inherited, Inherited}
+                     },
+                     CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                     CellID -> 460484402
+                    ],
+                    Cell[
+                     BoxData[
+                      InterpretationBox[
+                       TagBox[
+                        TemplateBox[
+                         {
                           "\"Post.md\"",
                           FileNameJoin[
                            {
@@ -7206,6 +7931,51 @@ Notebook[
                     TagBox[
                      TemplateBox[
                       {
+                       "\"Explode.wl\"",
+                       FileNameJoin[
+                        {NotebookDirectory[], "Source", "Chatbook", "Explode.wl"}
+                       ]
+                      },
+                      "FileManagerFileOpenerTemplate"
+                     ],
+                     Function[
+                      Annotation[
+                       #1,
+                       DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                        2
+                       ]
+                      ]
+                     ]
+                    ],
+                    FileNameJoin[
+                     {NotebookDirectory[], "Source", "Chatbook", "Explode.wl"}
+                    ],
+                    BoxID -> "FileTreePath",
+                    BaseStyle -> {"Text"}
+                   ]
+                  ],
+                  "FileManagerFile",
+                  CellMargins -> {{46 + Inherited, Inherited}, {Inherited, Inherited}},
+                  CellGroupingRules -> {"SectionGrouping", 120},
+                  CellFrameLabels -> {
+                   {
+                    Cell[
+                     BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                     Background -> None
+                    ],
+                    Inherited
+                   },
+                   {Inherited, Inherited}
+                  },
+                  CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                  CellID -> 457848523
+                 ],
+                 Cell[
+                  BoxData[
+                   InterpretationBox[
+                    TagBox[
+                     TemplateBox[
+                      {
                        "\"Formatting.wl\"",
                        FileNameJoin[
                         {
@@ -7644,6 +8414,51 @@ Notebook[
                   },
                   CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
                   CellID -> 81418890
+                 ],
+                 Cell[
+                  BoxData[
+                   InterpretationBox[
+                    TagBox[
+                     TemplateBox[
+                      {
+                       "\"Sandbox.wl\"",
+                       FileNameJoin[
+                        {NotebookDirectory[], "Source", "Chatbook", "Sandbox.wl"}
+                       ]
+                      },
+                      "FileManagerFileOpenerTemplate"
+                     ],
+                     Function[
+                      Annotation[
+                       #1,
+                       DefinitionNotebookClient`TemplateCells`PackagePrivate`fileDepth[
+                        2
+                       ]
+                      ]
+                     ]
+                    ],
+                    FileNameJoin[
+                     {NotebookDirectory[], "Source", "Chatbook", "Sandbox.wl"}
+                    ],
+                    BoxID -> "FileTreePath",
+                    BaseStyle -> {"Text"}
+                   ]
+                  ],
+                  "FileManagerFile",
+                  CellMargins -> {{46 + Inherited, Inherited}, {Inherited, Inherited}},
+                  CellGroupingRules -> {"SectionGrouping", 120},
+                  CellFrameLabels -> {
+                   {
+                    Cell[
+                     BoxData[TemplateBox[{}, "FileManagerWLIconTemplate"]],
+                     Background -> None
+                    ],
+                    Inherited
+                   },
+                   {Inherited, Inherited}
+                  },
+                  CellTags -> {"FileManagerCell", "FileManager-PacletFiles"},
+                  CellID -> 250883883
                  ],
                  Cell[
                   BoxData[
@@ -9269,7 +10084,7 @@ Notebook[
             "Code",
             "Excluded",
             InitializationCell -> True,
-            CellLabel -> "In[7]:=",
+            CellLabel -> "In[14]:=",
             CellID -> 996717066
            ],
            Cell[
@@ -9286,7 +10101,8 @@ Notebook[
                 {
                  "RunProcess",
                  "[",
-                 " ",
+                 "\n",
+                 "    ",
                  RowBox[
                   {
                    RowBox[
@@ -9309,7 +10125,8 @@ Notebook[
                     }
                    ],
                    ",",
-                   " ",
+                   "\n",
+                   "    ",
                    RowBox[
                     {
                      "ProcessDirectory",
@@ -9321,7 +10138,7 @@ Notebook[
                    ]
                   }
                  ],
-                 " ",
+                 "\n",
                  "]"
                 }
                ],
@@ -9331,7 +10148,7 @@ Notebook[
             ],
             "Code",
             "Excluded",
-            CellLabel -> "In[9]:=",
+            CellLabel -> "In[16]:=",
             CellID -> 23056019
            ],
            Cell[
@@ -9365,16 +10182,18 @@ Notebook[
                  {
                   "SetOptions",
                   "[",
-                  " ",
+                  "\n",
+                  "    ",
                   RowBox[
                    {
                     "PacletResource`Notebooks`ProcessNotebookForEmbedding",
                     ",",
-                    " ",
+                    "\n",
+                    "    ",
                     RowBox[{"\"EmbeddedHTMLImages\"", " ", "->", " ", "True"}]
                    }
                   ],
-                  " ",
+                  "\n",
                   "]"
                  }
                 ],
@@ -9386,8 +10205,89 @@ Notebook[
             "Code",
             "Excluded",
             InitializationCell -> True,
-            CellLabel -> "In[10]:=",
+            CellLabel -> "In[17]:=",
             CellID -> 29801418
+           ],
+           Cell[
+            "Remove previous build directory:",
+            "CodeText",
+            "Excluded",
+            CellID -> 115844912
+           ],
+           Cell[
+            BoxData[
+             RowBox[
+              {
+               RowBox[
+                {
+                 "Quiet",
+                 "[",
+                 "\n",
+                 "    ",
+                 RowBox[
+                  {
+                   RowBox[
+                    {
+                     "DeleteDirectory",
+                     "[",
+                     "\n",
+                     "        ",
+                     RowBox[
+                      {
+                       RowBox[
+                        {
+                         "FileNameJoin",
+                         " ",
+                         "@",
+                         " ",
+                         RowBox[
+                          {
+                           "{",
+                           " ",
+                           RowBox[
+                            {
+                             RowBox[{"NotebookDirectory", "[", " ", "]"}],
+                             ",",
+                             " ",
+                             "\"build\""
+                            }
+                           ],
+                           " ",
+                           "}"
+                          }
+                         ]
+                        }
+                       ],
+                       ",",
+                       "\n",
+                       "        ",
+                       RowBox[{"DeleteContents", " ", "->", " ", "True"}]
+                      }
+                     ],
+                     "\n",
+                     "    ",
+                     "]"
+                    }
+                   ],
+                   ",",
+                   "\n",
+                   "    ",
+                   RowBox[{"DeleteDirectory", "::", "nodir"}]
+                  }
+                 ],
+                 "\n",
+                 "]"
+                }
+               ],
+               ";"
+              }
+             ]
+            ],
+            "Code",
+            "Excluded",
+            InitializationCell -> True,
+            CellLabel -> "In[19]:=",
+            CellID -> 608592582
            ]
           },
           Open
@@ -13133,7 +14033,7 @@ Notebook[
                     {
                      TemplateBox[
                       {
-                       CheckboxBox[False, {False, "WLSystemSymbols"}],
+                       CheckboxBox["WLSystemSymbols", {False, "WLSystemSymbols"}],
                        "\" \"",
                        StyleBox[
                         TemplateBox[
@@ -13794,7 +14694,7 @@ Notebook[
    "SourceID" -> "8f99c2b0ee5e9f24d331c183562e905b4bbb1a6f"
   },
   "SubmissionReviewData" -> {"Review" -> False},
-  "ToolsOpen" -> True,
+  "ToolsOpen" -> False,
   "UpdatedTimestamp" -> 3893405629.0,
   "TemplateVersion" -> "2023.03.03",
   "StatusMessage" -> "",

@@ -407,7 +407,7 @@ fasterCellToString0[ Cell[
     ___
 ] ] := (
     needsBasePrompt[ "WolframLanguage" ];
-    "LLMResourceFunction[" <> StringRiffle[ toLLMArg /@ Flatten @ { name, args }, ", " ] <> "]"
+    "LLMResourceFunction[\"" <> name <> "\"][" <> StringRiffle[ toLLMArg /@ Flatten @ { args }, ", " ] <> "]"
 );
 
 fasterCellToString0[
@@ -669,6 +669,17 @@ fasterCellToString0[ DynamicModuleBox[
     ___,
     TaggingRules -> Association @ OrderlessPatternSequence[
         "CellToStringType" -> "InlineInteractiveCodeCell",
+        "CodeLanguage"     -> lang_String,
+        ___
+    ],
+    ___
+] ] := Block[ { $escapeMarkdown = False }, "```" <> lang <> "\n" <> fasterCellToString0 @ box <> "\n```" ];
+
+fasterCellToString0[ Cell[
+    box_,
+    ___,
+    TaggingRules -> Association @ OrderlessPatternSequence[
+        "CellToStringType" -> "InlineCodeCell",
         "CodeLanguage"     -> lang_String,
         ___
     ],

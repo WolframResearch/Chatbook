@@ -7,8 +7,13 @@ Wolfram`ChatbookLoader`$MXFile = FileNameJoin @ {
 };
 
 Quiet[
-    If[ FileExistsQ @ Wolfram`ChatbookLoader`$MXFile,
-        Get @ Wolfram`ChatbookLoader`$MXFile,
+    If[ FileExistsQ @ Wolfram`ChatbookLoader`$MXFile
+        ,
+        Unprotect[ "Wolfram`Chatbook`*" ];
+        ClearAll[ "Wolfram`Chatbook`*" ];
+        ClearAll[ "Wolfram`Chatbook`*`*" ];
+        Get @ Wolfram`ChatbookLoader`$MXFile
+        ,
         WithCleanup[
             Get[ "Wolfram`Chatbook`Main`" ],
             { $Context, $ContextPath, $ContextAliases } = { ## }

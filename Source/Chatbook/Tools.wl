@@ -2,16 +2,28 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 
-(* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDTOOLCALL, pacletreadonly, noinit, playerpass, Deflatten *)
+(* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDTOOLCALL, Deflatten, Liouville *)
 
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
+Wolfram`Chatbook`$DefaultTools;
+Wolfram`Chatbook`$ToolFunctions;
+Wolfram`Chatbook`FormatToolResponse;
+Wolfram`Chatbook`GetExpressionURI;
+Wolfram`Chatbook`GetExpressionURIs;
+Wolfram`Chatbook`MakeExpressionURI;
+
 `$attachments;
 `$defaultChatTools;
 `$toolConfiguration;
+`getToolByName;
 `initTools;
+`makeExpressionURI;
 `makeToolConfiguration;
+`makeToolResponseString;
+`resolveTools;
+`withToolBox;
 
 Begin[ "`Private`" ];
 
@@ -19,6 +31,8 @@ Needs[ "Wolfram`Chatbook`"               ];
 Needs[ "Wolfram`Chatbook`Common`"        ];
 Needs[ "Wolfram`Chatbook`Serialization`" ];
 Needs[ "Wolfram`Chatbook`Utils`"         ];
+Needs[ "Wolfram`Chatbook`Sandbox`"       ];
+Needs[ "Wolfram`Chatbook`Prompting`"     ];
 
 PacletInstall[ "Wolfram/LLMFunctions" ];
 Needs[ "Wolfram`LLMFunctions`" ];
@@ -27,31 +41,121 @@ System`LLMTool;
 System`LLMConfiguration;
 
 (* TODO:
-    WolframAlpha
     ImageSynthesize
     LongTermMemory
+    Definitions
+    TestWriter
 *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Exported Functions for Tool Repository*)
+$DefaultTools := $defaultChatTools;
+
+$ToolFunctions = <|
+    "DocumentationLookup"      -> documentationLookup,
+    "DocumentationSearcher"    -> documentationSearch,
+    "WebFetcher"               -> webFetch,
+    "WebImageSearcher"         -> webImageSearch,
+    "WebSearcher"              -> webSearch,
+    "WolframAlpha"             -> getWolframAlphaText,
+    "WolframLanguageEvaluator" -> wolframLanguageEvaluator
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Tool Configuration*)
 
-$sandboxEvaluationTimeout = 30;
+$toolBox       = <| |>;
+$selectedTools = <| |>;
+$attachments   = <| |>;
 
-$sandboxKernelCommandLine := StringRiffle @ {
-    ToString[
-        If[ $OperatingSystem === "Windows",
-            FileNameJoin @ { $InstallationDirectory, "WolframKernel" },
-            First @ $CommandLine
-        ],
-        InputForm
-    ],
-    "-wstp",
-    "-noicon",
-    "-pacletreadonly",
-    "-run",
-    "ChatbookSandbox" <> ToString @ $ProcessID
+$cloudUnsupportedTools = { "WolframLanguageEvaluator", "DocumentationSearcher" };
+
+$defaultToolOrder = {
+    "DocumentationLookup",
+    "DocumentationSearcher",
+    "WolframAlpha",
+    "WolframLanguageEvaluator"
 };
+
+$webSessionVisible = False;
+
+$toolNameAliases = <|
+    "DocumentationSearch" -> "DocumentationSearcher",
+    "WebFetch"            -> "WebFetcher",
+    "WebImageSearch"      -> "WebImageSearcher",
+    "WebSearch"           -> "WebSearcher"
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Toolbox*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*withToolBox*)
+withToolBox // beginDefinition;
+withToolBox // Attributes = { HoldFirst };
+withToolBox[ eval_ ] := Block[ { $selectedTools = <| |> }, eval ];
+withToolBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*selectTools*)
+selectTools // beginDefinition;
+
+selectTools[ as: KeyValuePattern[ "LLMEvaluator" -> KeyValuePattern[ "Tools" -> tools_ ] ] ] := (
+    selectTools @ KeyDrop[ as, "LLMEvaluator" ];
+    selectTools @ tools;
+);
+
+selectTools[ KeyValuePattern[ "Tools" -> tools_ ] ] :=
+    selectTools @ tools;
+
+selectTools[ Automatic|Inherited ] :=
+    selectTools @ $defaultChatTools;
+
+selectTools[ None ] :=
+    $selectedTools = <| |>;
+
+selectTools[ tools_Association ] :=
+    KeyValueMap[ selectTools, tools ];
+
+selectTools[ tools_List ] :=
+    selectTools /@ tools;
+
+selectTools[ name_String ] /; KeyExistsQ[ $toolBox, name ] :=
+    $selectedTools[ name ] = $toolBox[ name ];
+
+selectTools[ name_String ] /; KeyExistsQ[ $toolNameAliases, name ] :=
+    selectTools @ $toolNameAliases @ name;
+
+selectTools[ name_String ] :=
+    selectTools[ name, Lookup[ $defaultChatTools, name ] ]; (* TODO: fetch from repository *)
+
+selectTools[ tool: HoldPattern @ LLMTool[ KeyValuePattern[ "Name" -> name_ ], ___ ] ] :=
+    selectTools[ name, tool ];
+
+selectTools[ (Rule|RuleDelayed)[ name_String, tool_ ] ] :=
+    selectTools[ name, tool ];
+
+selectTools[ name_String, Automatic|Inherited ] :=
+    selectTools[ name, Lookup[ $defaultChatTools, name ] ];
+
+selectTools[ name_String, None ] :=
+    KeyDropFrom[ $selectedTools, name ];
+
+selectTools[ name_String, tool_LLMTool ] :=
+    $selectedTools[ name ] = $toolBox[ name ] = tool;
+
+selectTools[ name_String, Missing[ "KeyAbsent", name_ ] ] :=
+    If[ TrueQ @ KeyExistsQ[ $defaultChatTools0, name ],
+        Null,
+        messagePrint[ "ToolNotFound", name ]
+    ];
+
+selectTools // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -84,21 +188,33 @@ initTools // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*resolveTools*)
+resolveTools // beginDefinition;
+
+resolveTools[ settings: KeyValuePattern[ "ToolsEnabled" -> True ] ] := (
+    initTools[ ];
+    selectTools @ settings;
+    $lastSelectedTools = $selectedTools;
+    If[ KeyExistsQ[ $selectedTools, "WolframLanguageEvaluator" ], needsBasePrompt[ "WolframLanguageEvaluatorTool" ] ];
+    Append[ settings, "Tools" -> Values @ $selectedTools ]
+);
+
+resolveTools[ settings_Association ] := settings;
+
+resolveTools // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*makeToolConfiguration*)
 makeToolConfiguration // beginDefinition;
 
-makeToolConfiguration[ ] := makeToolConfiguration @ Automatic;
-makeToolConfiguration[ Inherited|Automatic ] := makeToolConfiguration @ Values @ $defaultChatTools;
-
-makeToolConfiguration[ tool_LLMTool ] := makeToolConfiguration @ { tool };
-
-makeToolConfiguration[ tools: { (Inherited|_LLMTool)... } ] := (
-    initTools[ ];
-    LLMConfiguration @ <|
-        "Tools"      -> DeleteDuplicates @ Flatten @ Replace[ tools, Inherited :> Values @ $defaultChatTools, { 1 } ],
-        "ToolPrompt" -> $toolPrompt
-    |>
-);
+makeToolConfiguration[ settings_Association ] := Enclose[
+    Module[ { tools },
+        tools = ConfirmMatch[ DeleteDuplicates @ Flatten @ Values @ $selectedTools, { ___LLMTool }, "SelectedTools" ];
+        $toolConfiguration = LLMConfiguration @ <| "Tools" -> tools, "ToolPrompt" -> $toolPrompt |>
+    ],
+    throwInternalFailure[ makeToolConfiguration @ settings, ## ] &
+];
 
 makeToolConfiguration // endDefinition;
 
@@ -110,7 +226,7 @@ $toolConfiguration := $toolConfiguration = LLMConfiguration @ <| "Tools" -> Valu
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$toolPrompt*)
-$toolPrompt := $toolPrompt = TemplateObject[
+$toolPrompt := TemplateObject[
     {
         $toolPre,
         TemplateSequence[
@@ -158,111 +274,15 @@ Do not state that you will use a tool and end your message before making the too
 
 If a user asks you to use a specific tool, you MUST attempt to use that tool as requested, \
 even if you think it will not work. \
-If the tool fails, use any error message to explain why it failed. \
+If the tool fails, use any error message to correct the issue or explain why it failed. \
 NEVER state that a tool cannot be used for a particular task without trying it first. \
 You did not create these tools, so you do not know what they can and cannot do.
 
-## Full examples
 " <> $fullExamples;
 
 
 toolTemplateDataString[ str_String ] := str;
 toolTemplateDataString[ expr_ ] := ToString[ expr, InputForm ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*Full Examples*)
-
-$fullExamples := StringJoin[
-    "\n---\n\n",
-    StringRiffle[ Values @ KeyTake[ $fullExamples0, $fullExamplesKeys ], "\n\n---\n\n" ],
-    "\n\n---\n"
-];
-
-$fullExamplesKeys :=
-    If[ TrueQ @ $CloudEvaluation,
-        { "AstroGraphicsDocumentation" },
-        { "AstroGraphicsDocumentation", "PlotEvaluate", "TemporaryDirectory" }
-    ];
-
-
-$fullExamples0 = <| |>;
-
-
-$fullExamples0[ "AstroGraphicsDocumentation" ] = "\
-[user]
-How do I use AstroGraphics?
-
-[assistant]
-Let me check the documentation for you. One moment...
-TOOLCALL: documentation_lookup
-{
-	\"names\": \"AstroGraphics\"
-}
-ENDARGUMENTS
-ENDTOOLCALL
-
-[system]
-Usage
-AstroGraphics[primitives, options] represents a two-dimensional view of space and the celestial sphere.
-
-Basic Examples
-<example text>
-
-[assistant]
-To use [AstroGraphics](paclet:ref/AstroGraphics), you need to provide a list of graphics primitives and options. \
-For example, <remainder of response>";
-
-
-$fullExamples0[ "PlotEvaluate" ] = "\
-[user]
-Plot sin(x) from -5 to 5
-
-[assistant]
-TOOLCALL: wolfram_language_evaluator
-{
-	\"code\": \"Plot[Sin[x], {x, -10, 10}, AxesLabel -> {\\\"x\\\", \\\"sin(x)\\\"}]\"
-}
-ENDARGUMENTS
-ENDTOOLCALL
-
-[system]
-Out[1]= ![result](expression://result-xxxx)
-
-[assistant]
-Here's the plot of $\\sin{x}$ from -5 to 5:
-![Plot](expression://result-xxxx)";
-
-
-$fullExamples0[ "TemporaryDirectory" ] = "\
-[user]
-Where is the temporary directory located?
-
-[assistant]
-TOOLCALL: documentation_search
-{
-	\"query\": \"location of temporary directory\"
-}
-ENDARGUMENTS
-ENDTOOLCALL
-
-[system]
-* $TemporaryDirectory - (score: 9.6) $TemporaryDirectory gives the main system directory for temporary files.
-* CreateDirectory - (score: 8.5) CreateDirectory[\"dir\"] creates ...
-
-[assistant]
-TOOLCALL: wolfram_language_evaluator
-{
-	\"code\": \"$TemporaryDirectory\"
-}
-ENDARGUMENTS
-ENDTOOLCALL
-
-[system]
-Out[2]= \"C:\\Users\\UserName\\AppData\\Local\\Temp\"
-
-[assistant]
-The temporary directory is located at C:\\Users\\UserName\\AppData\\Local\\Temp.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -274,19 +294,90 @@ $defaultChatTools := If[ TrueQ @ $CloudEvaluation,
 
 $defaultChatTools0 = <| |>;
 
-$cloudUnsupportedTools = { "wolfram_language_evaluator", "documentation_search" };
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getToolByName*)
+getToolByName // beginDefinition;
+getToolByName[ name_String ] := Lookup[ $toolBox, toCanonicalToolName @ name ];
+getToolByName // endDefinition;
 
-$defaultToolOrder = { "documentation_lookup", "documentation_search", "wolfram_alpha", "wolfram_language_evaluator" };
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toolName*)
+toolName // beginDefinition;
+toolName[ tool_ ] := toolName[ tool, Automatic ];
+toolName[ HoldPattern @ LLMTool[ KeyValuePattern[ "Name" -> name_String ], ___ ], type_ ] := toolName[ name, type ];
+toolName[ name_, Automatic ] := toolName[ name, "Canonical" ];
+toolName[ name_String, "Machine" ] := toMachineToolName @ name;
+toolName[ name_String, "Canonical" ] := toCanonicalToolName @ name;
+toolName[ name_String, "Display" ] := toDisplayToolName @ name;
+toolName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toMachineToolName*)
+toMachineToolName // beginDefinition;
+
+toMachineToolName[ s_String ] :=
+    ToLowerCase @ StringReplace[
+        StringTrim @ s,
+        { " " -> "_", a_?LowerCaseQ ~~ b_?UpperCaseQ ~~ c_?LowerCaseQ :> a<>"_"<>b<>c }
+    ];
+
+toMachineToolName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toCanonicalToolName*)
+toCanonicalToolName // beginDefinition;
+
+toCanonicalToolName[ s_String ] :=
+    Capitalize @ StringReplace[ StringTrim @ s, a_~~("_"|" ")~~b_ :> a <> ToUpperCase @ b ];
+
+toCanonicalToolName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toDisplayToolName*)
+toDisplayToolName // beginDefinition;
+
+toDisplayToolName[ s_String ] :=
+    Capitalize[
+        StringReplace[
+            StringTrim @ s,
+            { "_" :> " ", a_?LowerCaseQ ~~ b_?UpperCaseQ ~~ c_?LowerCaseQ :> a<>" "<>b<>c }
+        ],
+        "TitleCase"
+    ];
+
+toDisplayToolName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*formatToolCallExample*)
+formatToolCallExample // beginDefinition;
+
+formatToolCallExample[ name_String, params_Association ] :=
+    TemplateApply[
+        "TOOLCALL: `1`\n`2`\nENDARGUMENTS\nENDTOOLCALL",
+        { toMachineToolName @ name, Developer`WriteRawJSONString @ params }
+    ];
+
+formatToolCallExample // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*DocumentationSearch*)
-$defaultChatTools0[ "documentation_search" ] = LLMTool[
+$documentationSearchDescription = "\
+Search Wolfram Language documentation for symbols and more. \
+Follow up search results with the documentation lookup tool to get the full information.";
+
+$defaultChatTools0[ "DocumentationSearcher" ] = LLMTool[
     <|
-        "Name"        -> "documentation_search",
-        "DisplayName" -> "Documentation Search",
+        "Name"        -> toMachineToolName[ "DocumentationSearcher" ],
+        "DisplayName" -> toDisplayToolName[ "DocumentationSearcher" ],
         "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaDocumentation" ],
-        "Description" -> "Search Wolfram Language documentation for symbols and more.",
+        "Description" -> $documentationSearchDescription,
         "Parameters"  -> {
             "query" -> <|
                 "Interpreter" -> "String",
@@ -314,10 +405,10 @@ documentationSearch // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*DocumentationLookup*)
-$defaultChatTools0[ "documentation_lookup" ] = LLMTool[
+$defaultChatTools0[ "DocumentationLookup" ] = LLMTool[
     <|
-        "Name"        -> "documentation_lookup",
-        "DisplayName" -> "Documentation Lookup",
+        "Name"        -> toMachineToolName[ "DocumentationLookup" ],
+        "DisplayName" -> toDisplayToolName[ "DocumentationLookup" ],
         "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaDocumentation" ],
         "Description" -> "Get documentation pages for Wolfram Language symbols.",
         "Parameters"  -> {
@@ -430,49 +521,24 @@ $line = 0;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Evaluate*)
-
-(* $sandboxEvaluateDescription = "\
-Evaluate Wolfram Language code for the user in a separate sandboxed kernel. \
-You do not need to tell the user the input code that you are evaluating. \
-They will be able to inspect it if they want to. \
-The user does not automatically see the result. \
-You must include the result in your response in order for them to see it.
-
-Example
----
-user: Plot sin(x) from -5 to 5
-
-assistant: Let me plot that for you. Just a moment...
-TOOLCALL: wolfram_language_evaluator
-{
-	\"code\": \"Plot[Sin[x], {x, -10, 10}, AxesLabel -> {\\\"x\\\", \\\"sin(x)\\\"}]\"
-}
-ENDARGUMENTS
-ENDTOOLCALL
-
-system: Out[1]= ![result](expression://result-xxxx)
-
-assistant: Here's the plot of $sin(x)$ from $-5$ to $5$:
-![Plot](expression://result-xxxx)
-"; *)
-
 $sandboxEvaluateDescription = "\
 Evaluate Wolfram Language code for the user in a separate sandboxed kernel. \
 You do not need to tell the user the input code that you are evaluating. \
 They will be able to inspect it if they want to. \
 The user does not automatically see the result. \
-You must include the result in your response in order for them to see it.
+You must include the result in your response in order for them to see it. \
+If a formatted result is provided as a markdown link, use that in your response instead of typing out the output.
 ";
 
-$defaultChatTools0[ "wolfram_language_evaluator" ] = LLMTool[
+$defaultChatTools0[ "WolframLanguageEvaluator" ] = LLMTool[
     <|
-        "Name"        -> "wolfram_language_evaluator",
-        "DisplayName" -> "Wolfram Language Evaluator",
+        "Name"        -> toMachineToolName[ "WolframLanguageEvaluator" ],
+        "DisplayName" -> toDisplayToolName[ "WolframLanguageEvaluator" ],
         "Icon"        -> RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
         "Description" -> $sandboxEvaluateDescription,
         "Parameters"  -> {
             "code" -> <|
-                "Interpreter" -> Restricted[ "HeldExpression", All ],
+                "Interpreter" -> "String",
                 "Help"        -> "Wolfram Language code to evaluate",
                 "Required"    -> True
             |>
@@ -484,204 +550,11 @@ $defaultChatTools0[ "wolfram_language_evaluator" ] = LLMTool[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*startSandboxKernel*)
-startSandboxKernel // beginDefinition;
-
-startSandboxKernel[ ] := Enclose[
-    Module[ { pwFile, kernel, pid },
-
-        Scan[ LinkClose, Select[ Links[ ], sandboxKernelQ ] ];
-
-        (* pwFile = FileNameJoin @ { $InstallationDirectory, "Configuration", "Licensing", "playerpass" }; *)
-
-        kernel = ConfirmMatch[ LinkLaunch @ $sandboxKernelCommandLine, _LinkObject, "LinkLaunch" ];
-
-        (* Use StartProtectedMode instead of passing the -sandbox argument, since we need to initialize the FE first *)
-        LinkWrite[ kernel, Unevaluated @ EvaluatePacket[ UsingFrontEnd @ Null; Developer`StartProtectedMode[ ] ] ];
-
-        pid = pingSandboxKernel @ kernel;
-
-        (* Reset line number and leave `In[1]:=` in the buffer *)
-        LinkWrite[ kernel, Unevaluated @ EnterExpressionPacket[ $Line = 0 ] ];
-        TimeConstrained[
-            While[ ! MatchQ[ LinkRead @ kernel, _ReturnExpressionPacket ] ],
-            10,
-            Confirm[ $Failed, "LineReset" ]
-        ];
-
-        If[ IntegerQ @ pid,
-            kernel,
-            Quiet @ LinkClose @ kernel;
-            throwFailure[ "NoSandboxKernel" ]
-        ]
-    ],
-    throwInternalFailure[ startSandboxKernel[ ], ## ] &
-];
-
-startSandboxKernel // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getSandboxKernel*)
-getSandboxKernel // beginDefinition;
-getSandboxKernel[ ] := getSandboxKernel @ Select[ Links[ ], sandboxKernelQ ];
-getSandboxKernel[ { other__LinkObject, kernel_ } ] := (Scan[ LinkClose, { other } ]; getSandboxKernel @ { kernel });
-getSandboxKernel[ { kernel_LinkObject } ] := checkSandboxKernel @ kernel;
-getSandboxKernel[ { } ] := startSandboxKernel[ ];
-getSandboxKernel // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*checkSandboxKernel*)
-checkSandboxKernel // beginDefinition;
-checkSandboxKernel[ kernel_LinkObject ] /; IntegerQ @ pingSandboxKernel @ kernel := kernel;
-checkSandboxKernel[ kernel_LinkObject ] := startSandboxKernel[ ];
-checkSandboxKernel // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*pingSandboxKernel*)
-pingSandboxKernel // beginDefinition;
-
-pingSandboxKernel[ kernel_LinkObject ] := Enclose[
-    Module[ { uuid, return },
-
-        uuid   = CreateUUID[ ];
-        return = $Failed;
-
-        ConfirmMatch[
-            TimeConstrained[ While[ LinkReadyQ @ kernel, LinkRead @ kernel ], 10, $TimedOut ],
-            Except[ $TimedOut ],
-            "InitialLinkRead"
-        ];
-
-        With[ { id = uuid }, LinkWrite[ kernel, Unevaluated @ EvaluatePacket @ { id, $ProcessID } ] ];
-
-        ConfirmMatch[
-            TimeConstrained[ While[ ! MatchQ[ return = LinkRead @ kernel, ReturnPacket @ { uuid, _ } ] ], 10 ],
-            Except[ $TimedOut ],
-            "LinkReadReturn"
-        ];
-
-        ConfirmBy[
-            Replace[ return, ReturnPacket @ { _, pid_ } :> pid ],
-            IntegerQ,
-            "ProcessID"
-        ]
-    ]
-];
-
-pingSandboxKernel // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*sandboxKernelQ*)
-sandboxKernelQ[ LinkObject[ cmd_String, ___ ] ] := StringContainsQ[ cmd, "ChatbookSandbox" <> ToString @ $ProcessID ];
-sandboxKernelQ[ ___ ] := False;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*sandboxEvaluate*)
-sandboxEvaluate // beginDefinition;
-
-sandboxEvaluate[ KeyValuePattern[ "code" -> code_ ] ] := sandboxEvaluate @ code;
-
-sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
-    Module[ { kernel, null, packets, $timedOut, results, flat },
-
-        $lastSandboxEvaluation = HoldComplete @ evaluation;
-
-        kernel = ConfirmMatch[ getSandboxKernel[ ], _LinkObject, "GetKernel" ];
-
-        ConfirmMatch[ linkWriteEvaluation[ kernel, evaluation ], Null, "LinkWriteEvaluation" ];
-
-        { null, { packets } } = Reap[
-            TimeConstrained[
-                While[ ! MatchQ[ Sow @ LinkRead @ kernel, _ReturnExpressionPacket ] ],
-                $sandboxEvaluationTimeout,
-                $timedOut
-            ]
-        ];
-
-        If[ null === $timedOut,
-            AppendTo[ packets, ReturnExpressionPacket @ BinarySerialize @ HoldComplete @ $TimedOut ]
-        ];
-
-        results = Cases[
-            packets,
-            ReturnExpressionPacket[ bytes_ByteArray ] :> BinaryDeserialize @ bytes
-        ];
-
-        flat = Flatten[ HoldComplete @@ results, 1 ];
-
-        (* TODO: include prompting that explains how to use Out[n] to get previous results *)
-
-        $lastSandboxResult = <|
-            "String"  -> sandboxResultString[ flat, packets ],
-            "Result"  -> flat,
-            "Packets" -> packets
-        |>
-    ],
-    throwInternalFailure[ sandboxEvaluate @ HoldComplete @ evaluation, ## ] &
-];
-
-sandboxEvaluate // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*linkWriteEvaluation*)
-linkWriteEvaluation // beginDefinition;
-linkWriteEvaluation // Attributes = { HoldAllComplete };
-
-linkWriteEvaluation[ kernel_, evaluation_ ] :=
-    LinkWrite[
-        kernel,
-        Unevaluated @ EnterExpressionPacket @ BinarySerialize[
-            <| "Line" -> $Line, "Result" -> HoldComplete @@ { evaluation } |>
-        ]
-    ];
-
-linkWriteEvaluation // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*sandboxResultString*)
-sandboxResultString // beginDefinition;
-
-sandboxResultString[ result_, packets_ ] := sandboxResultString @ result;
-
-sandboxResultString[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result" -> result_ } ], packets_ ] :=
-    StringRiffle[
-        Flatten @ {
-            makePacketMessages[ ToString @ line, packets ],
-            "Out[" <> ToString @ line <> "]= " <> sandboxResultString @ Flatten @ HoldComplete @ result
-        },
-        "\n"
-    ];
-
-sandboxResultString[ HoldComplete[ Null..., expr_ ] ] := sandboxResultString @ HoldComplete @ expr;
-
-sandboxResultString[ HoldComplete[ expr: Except[ _Graphics|_Graphics3D ] ] ] :=
-    With[ { string = ToString[ Unevaluated @ expr, InputForm, PageWidth -> 80 ] },
-        string /; StringLength @ string < 240
-    ];
-
-sandboxResultString[ HoldComplete[ expr_ ] ] := makeExpressionURI @ Unevaluated @ expr;
-
-sandboxResultString // endDefinition;
-
-$attachments = <| |>;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*makePacketMessages*)
-makePacketMessages // beginDefinition;
-makePacketMessages[ line_, packets_List ] := makePacketMessages[ line, # ] & /@ packets;
-(* makePacketMessages[ line_String, TextPacket[ text_String ] ] /; StringStartsQ[ text, ">> " ] := text;
-makePacketMessages[ line_String, TextPacket[ text_String ] ] := "During evaluation of In[" <> line <> "]:= " <> text; *)
-makePacketMessages[ line_String, TextPacket[ text_String ] ] := text;
-makePacketMessages[ line_, _InputNamePacket|_MessagePacket|_OutputNamePacket|_ReturnExpressionPacket ] := Nothing;
-makePacketMessages // endDefinition;
+(*wolframLanguageEvaluator*)
+wolframLanguageEvaluator // beginDefinition;
+wolframLanguageEvaluator[ code_String ] := wolframLanguageEvaluator[ code, sandboxEvaluate @ code ];
+wolframLanguageEvaluator[ code_, KeyValuePattern[ "String" -> result_String ] ] := result;
+wolframLanguageEvaluator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -714,10 +587,10 @@ $wolframAlphaIcon = RawBoxes @ PaneBox[
     BaselinePosition -> Center -> Scaled[ 0.55 ]
 ];
 
-$defaultChatTools0[ "wolfram_alpha" ] = LLMTool[
+$defaultChatTools0[ "WolframAlpha" ] = LLMTool[
     <|
-        "Name"        -> "wolfram_alpha",
-        "DisplayName" -> "Wolfram Alpha",
+        "Name"        -> toMachineToolName[ "WolframAlpha" ],
+        "DisplayName" -> toDisplayToolName[ "WolframAlpha" ],
         "Icon"        -> $wolframAlphaIcon,
         "Description" -> $wolframAlphaDescription,
         "Parameters"  -> {
@@ -849,12 +722,482 @@ waResultText0[ expr_ ] :=
 waResultText0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*Utilities*)
+(* ::Subsection::Closed:: *)
+(*WebSearch*)
+$defaultChatTools0[ "WebSearcher" ] = LLMTool[
+    <|
+        "Name"        -> toMachineToolName[ "WebSearcher" ],
+        "DisplayName" -> toDisplayToolName[ "WebSearcher" ],
+        "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
+        "Description" -> "Search the web.",
+        "Parameters"  -> {
+            "query" -> <|
+                "Interpreter" -> "String",
+                "Help"        -> "Search query text",
+                "Required"    -> True
+            |>
+        },
+        "Function" -> webSearch
+    |>,
+    { }
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*webSearch*)
+webSearch // beginDefinition;
+
+webSearch[ KeyValuePattern[ "query" -> query_ ] ] := webSearch @ query;
+webSearch[ query_String ] := webSearch @ SearchQueryString @ query;
+
+webSearch[ query_SearchQueryString ] := StringJoin[
+    "Results", "\n",
+    "-------", "\n\n",
+    StringReplace[
+        Developer`WriteRawJSONString[
+            Normal @ WebSearch[ query, MaxItems -> 5 ] /. URL[ url_ ] :> url
+        ],
+        "\\/" -> "/"
+    ],
+    "\n\n",
+    "-------", "\n\n",
+    "Use the web_fetcher tool to get the content of a URL."
+];
+
+webSearch // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*WebFetch*)
+$defaultChatTools0[ "WebFetcher" ] = LLMTool[
+    <|
+        "Name"        -> toMachineToolName[ "WebFetcher" ],
+        "DisplayName" -> toDisplayToolName[ "WebFetcher" ],
+        "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
+        "Description" -> "Fetch plain text or image links from a URL.",
+        "Parameters"  -> {
+            "url" -> <|
+                "Interpreter" -> "URL",
+                "Help"        -> "The URL",
+                "Required"    -> True
+            |>,
+            "format" -> <|
+                "Interpreter" -> { "Plaintext", "ImageLinks" },
+                "Help"        -> "The type of content to retrieve (\"Plaintext\" or \"ImageLinks\")",
+                "Required"    -> True
+            |>
+        },
+        "Function" -> webFetch
+    |>,
+    { }
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*webFetch*)
+webFetch // beginDefinition;
+webFetch[ KeyValuePattern @ { "url" -> url_, "format" -> fmt_ } ] := webFetch[ url, fmt ];
+webFetch[ url_, "Plaintext" ] := fetchWebText @ url;
+webFetch[ url: _URL|_String, fmt_String ] := webFetch[ url, fmt, Import[ url, { "HTML", fmt } ] ];
+webFetch[ url_, "ImageLinks", { } ] := "No links found at " <> TextString @ url;
+webFetch[ url_, "ImageLinks", links: { __String } ] := StringRiffle[ links, "\n" ];
+webFetch[ url_, fmt_, result_String ] := result;
+webFetch // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*fetchWebText*)
+fetchWebText // beginDefinition;
+
+fetchWebText[ URL[ url_ ] ] :=
+    fetchWebText @ url;
+
+fetchWebText[ url_String ] :=
+    fetchWebText[ url, $webSession ];
+
+fetchWebText[ url_String, session_WebSessionObject ] := Enclose[
+    Module[ { body, strings },
+        ConfirmMatch[ WebExecute[ session, { "OpenPage" -> url } ], _Success | { __Success } ];
+        Pause[ 3 ]; (* Allow time for the page to load *)
+        body = ConfirmMatch[ WebExecute[ session, "LocateElements" -> "Tag" -> "body" ], { __WebElementObject } ];
+        strings = ConfirmMatch[ WebExecute[ "ElementText" -> body ], { __String } ];
+        StringRiffle[ strings, "\n\n" ]
+    ],
+    Import[ url, { "HTML", "Plaintext" } ] &
+];
+
+fetchWebText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$webSession*)
+$webSession := getWebSession[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getWebSession*)
+getWebSession // beginDefinition;
+getWebSession[ ] := getWebSession @ $currentWebSession;
+getWebSession[ session_WebSessionObject? validWebSessionQ ] := session;
+getWebSession[ session_WebSessionObject ] := (Quiet @ DeleteObject @ session; startWebSession[ ]);
+getWebSession[ _ ] := startWebSession[ ];
+getWebSession // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*validWebSessionQ*)
+validWebSessionQ // ClearAll;
+
+validWebSessionQ[ session_WebSessionObject ] :=
+    With[ { valid = Quiet @ StringQ @ WebExecute[ session, "PageURL" ] },
+        If[ valid, True, Quiet @ DeleteObject @ session; False ]
+    ];
+
+validWebSessionQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*startWebSession*)
+startWebSession // beginDefinition;
+startWebSession[ ] := $currentWebSession = StartWebSession[ Visible -> $webSessionVisible ];
+startWebSession // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*WebImageSearch*)
+$defaultChatTools0[ "WebImageSearcher" ] = LLMTool[
+    <|
+        "Name"        -> toMachineToolName[ "WebImageSearcher" ],
+        "DisplayName" -> toDisplayToolName[ "WebImageSearcher" ],
+        "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
+        "Description" -> "Search the web for images.",
+        "Parameters"  -> {
+            "query" -> <|
+                "Interpreter" -> "String",
+                "Help"        -> "Search query text",
+                "Required"    -> True
+            |>
+        },
+        "Function" -> webImageSearch
+    |>,
+    { }
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*webImageSearch*)
+webImageSearch // beginDefinition;
+webImageSearch[ KeyValuePattern[ "query" -> query_ ] ] := webImageSearch @ query;
+webImageSearch[ query_String ] := webImageSearch @ SearchQueryString @ query;
+webImageSearch[ query_SearchQueryString ] := webImageSearch[ query, WebImageSearch[ query, "ImageHyperlinks" ] ];
+webImageSearch[ query_, { } ] := "No results found";
+webImageSearch[ query_, urls: { __ } ] := StringRiffle[ TextString /@ urls, "\n" ];
+webImageSearch // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Full Examples*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$fullExamples*)
+$fullExamples :=
+    With[ { keys = $fullExamplesKeys },
+        If[ keys === { },
+            "",
+            StringJoin[
+                "## Full examples\n\n---\n\n",
+                StringRiffle[ Values @ KeyTake[ $fullExamples0, $fullExamplesKeys ], "\n\n---\n\n" ],
+                "\n\n---\n"
+            ]
+        ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$fullExamplesKeys*)
+$fullExamplesKeys :=
+    With[ { selected = Keys @ $selectedTools },
+        Select[
+            If[ TrueQ @ $CloudEvaluation,
+                { "AstroGraphicsDocumentation" },
+                {
+                    "AstroGraphicsDocumentation",
+                    "FileSystemTree",
+                    "FractionalDerivatives",
+                    "PlotEvaluate",
+                    "TemporaryDirectory"
+                }
+            ],
+            ContainsAll[ selected, $exampleDependencies[ #1 ] ] &
+        ]
+    ];
+
+$exampleDependencies = <|
+    "AstroGraphicsDocumentation" -> { "DocumentationLookup" },
+    "FileSystemTree"             -> { "DocumentationSearcher", "DocumentationLookup" },
+    "FractionalDerivatives"      -> { "DocumentationSearcher", "DocumentationLookup", "WolframLanguageEvaluator" },
+    "PlotEvaluate"               -> { "WolframLanguageEvaluator" },
+    "TemporaryDirectory"         -> { "DocumentationSearcher", "WolframLanguageEvaluator" }
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$fullExamples0*)
+$fullExamples0 = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*AstroGraphicsDocumentation*)
+$fullExamples0[ "AstroGraphicsDocumentation" ] = TemplateApply[ "\
+[user]
+How do I use AstroGraphics?
+
+[assistant]
+Let me check the documentation for you. One moment...
+`1`
+
+[system]
+Usage
+AstroGraphics[primitives, options] represents a two-dimensional view of space and the celestial sphere.
+
+Basic Examples
+...
+
+[assistant]
+To use [AstroGraphics](paclet:ref/AstroGraphics), you need to provide a list of graphics primitives and options. \
+For example, ...",
+{
+    formatToolCallExample[ "DocumentationLookup", <| "names" -> "AstroGraphics" |> ]
+} ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*FileSystemTree*)
+$fullExamples0[ "FileSystemTree" ] = "\
+[user]
+What's the best way to generate a tree of files in a given directory?
+
+[assistant]
+"<>formatToolCallExample[ "DocumentationSearcher", <| "query" -> "tree of files" |> ]<>"
+
+[system]
+* FileSystemTree - (score: 9.9) FileSystemTree[root] gives a tree whose keys are ...
+* Tree Drawing - (score: 3.0) ...
+
+[assistant]
+"<>formatToolCallExample[ "DocumentationLookup", <| "names" -> "FileSystemTree" |> ]<>"
+
+...";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*FractionalDerivatives*)
+$fullExamples0[ "FractionalDerivatives" ] = "\
+[user]
+Calculate the half-order fractional derivative of x^n with respect to x.
+
+[assistant]
+"<>formatToolCallExample[ "DocumentationSearcher", <| "query" -> "fractional derivatives" |> ]<>"
+
+[system]
+* FractionalD - (score: 9.5) FractionalD[f, {x, a}] gives ...
+* NFractionalD - (score: 9.2) ...
+
+[assistant]
+"<>formatToolCallExample[ "DocumentationLookup", <| "names" -> "FractionalD" |> ]<>"
+
+[system]
+Usage
+FractionalD[f, {x, a}] gives the Riemann-Liouville fractional derivative D_x^a f(x) of order a of the function f.
+
+Basic Examples
+<example text>
+
+[assistant]
+"<>formatToolCallExample[ "WolframLanguageEvaluator", <| "code" -> "FractionalD[x^n, {x, 1/2}]" |> ]<>"
+
+[system]
+Out[n]= Piecewise[...]
+
+![Formatted Result](expression://result-{id})
+
+[assistant]
+The half-order fractional derivative of $x^n$ with respect to $x$ is given by:
+![Fractional Derivative](expression://result-{id})
+";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*PlotEvaluate*)
+$fullExamples0[ "PlotEvaluate" ] = StringJoin[ "\
+[user]
+Plot sin(x) from -5 to 5
+
+[assistant]
+", formatToolCallExample[
+    "WolframLanguageEvaluator",
+    <| "code" -> "Plot[Sin[x], {x, -10, 10}, AxesLabel -> {\"x\", \"sin(x)\"}]" |>
+], "
+
+[system]
+Out[n]= ![image](attachment://result-{id})
+
+[assistant]
+Here's the plot of $\\sin{x}$ from -5 to 5:
+![Plot](attachment://result-{id})"
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*TemporaryDirectory*)
+$fullExamples0[ "TemporaryDirectory" ] = "\
+[user]
+Where is the temporary directory located?
+
+[assistant]
+"<>formatToolCallExample[ "DocumentationSearcher", <| "query" -> "location of temporary directory" |> ]<>"
+
+[system]
+* $TemporaryDirectory - (score: 9.6) $TemporaryDirectory gives the main system directory for temporary files.
+* CreateDirectory - (score: 8.5) CreateDirectory[\"dir\"] creates ...
+
+[assistant]
+"<>formatToolCallExample[ "WolframLanguageEvaluator", <| "code" -> "$TemporaryDirectory" |> ]<>"
+
+[system]
+Out[n]= \"C:\\Users\\UserName\\AppData\\Local\\Temp\"
+
+[assistant]
+The temporary directory is located at C:\\Users\\UserName\\AppData\\Local\\Temp.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Expression URIs*)
+$$expressionScheme = "attachment"|"expression";
+
+Chatbook::URIUnavailable = "The expression URI `1` is no longer available.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*FormatToolResponse*)
+FormatToolResponse // ClearAll;
+FormatToolResponse[ response_ ] := makeToolResponseString @ response;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*MakeExpressionURI*)
+MakeExpressionURI // ClearAll;
+MakeExpressionURI[ args: Repeated[ _, { 1, 3 } ] ] := makeExpressionURI @ args;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*GetExpressionURIs*)
+GetExpressionURIs // ClearAll;
+
+GetExpressionURIs[ str_ ] := GetExpressionURIs[ str, ## & ];
+
+GetExpressionURIs[ str_String, wrapper_ ] := catchMine @ StringSplit[
+    str,
+    link: Shortest[ "![" ~~ __ ~~ "](" ~~ __ ~~ ")" ] :> Catch[ GetExpressionURI[ link, wrapper ], $catchTopTag ]
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*GetExpressionURI*)
+GetExpressionURI // ClearAll;
+
+GetExpressionURI[ uri_ ] := catchMine @ GetExpressionURI[ uri, ## & ];
+GetExpressionURI[ URL[ uri_ ], wrapper_ ] := catchMine @ GetExpressionURI[ uri, wrapper ];
+
+GetExpressionURI[ uri_String, wrapper_ ] := catchMine @ Enclose[
+    Module[ { held },
+        held = ConfirmMatch[ getExpressionURI @ uri, _HoldComplete, "GetExpressionURI" ];
+        wrapper @@ held
+    ],
+    throwInternalFailure[ GetExpressionURI[ uri, wrapper ], ## ] &
+];
+
+GetExpressionURI[ All, wrapper_ ] := catchMine @ Enclose[
+    Module[ { attachments },
+        attachments = ConfirmBy[ $attachments, AssociationQ, "Attachments" ];
+        ConfirmAssert[ AllTrue[ attachments, MatchQ[ _HoldComplete ] ], "HeldAttachments" ];
+        Replace[ attachments, HoldComplete[ a___ ] :> RuleCondition @ wrapper @ a, { 1 } ]
+    ],
+    throwInternalFailure[ GetExpressionURI[ All, wrapper ], ## ] &
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getExpressionURI*)
+getExpressionURI // beginDefinition;
+
+getExpressionURI[ str_String ] :=
+    Module[ { split },
+        split = First[ StringSplit[ str, "![" ~~ alt__ ~~ "](" ~~ url__ ~~ ")" :> { alt, url } ], $Failed ];
+        getExpressionURI @@ split /; MatchQ[ split, { _String, _String } ]
+    ];
+
+getExpressionURI[ uri_String ] := getExpressionURI[ None, uri ];
+
+getExpressionURI[ tooltip_, uri_String ] := getExpressionURI[ tooltip, uri, URLParse @ uri ];
+
+getExpressionURI[ tooltip_, uri_, as: KeyValuePattern @ { "Scheme" -> $$expressionScheme, "Domain" -> key_ } ] :=
+    Enclose[
+        ConfirmMatch[ displayAttachment[ uri, tooltip, key ], _HoldComplete, "DisplayAttachment" ],
+        throwInternalFailure[ getExpressionURI[ tooltip, uri, as ], ## ] &
+    ];
+
+getExpressionURI // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*displayAttachment*)
+displayAttachment // beginDefinition;
+
+displayAttachment[ uri_, None, key_ ] :=
+    getAttachment[ uri, key ];
+
+displayAttachment[ uri_, tooltip_String, key_ ] := Enclose[
+    Replace[
+        ConfirmMatch[ getAttachment[ uri, key ], _HoldComplete, "GetAttachment" ],
+        HoldComplete[ expr_ ] :> HoldComplete @ Tooltip[ expr, tooltip ]
+    ],
+    throwInternalFailure[ displayAttachment[ uri, tooltip, key ], ## ] &
+];
+
+displayAttachment // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getAttachment*)
+getAttachment // beginDefinition;
+
+getAttachment[ uri_String, key_String ] :=
+    Lookup[ $attachments, key, throwFailure[ "URIUnavailable", uri ] ];
+
+getAttachment // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeToolResponseString*)
+makeToolResponseString // beginDefinition;
+
+makeToolResponseString[ expr_? simpleResultQ ] :=
+    With[ { string = TextString @ expr },
+        If[ StringLength @ string < 150,
+            If[ StringContainsQ[ string, "\n" ], "\n" <> string, string ],
+            StringJoin[
+                "\n",
+                ToString[ Unevaluated @ Short[ expr, 1 ], OutputForm, PageWidth -> 80 ], "\n\n\n",
+                makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ]
+            ]
+        ]
+    ];
+
+makeToolResponseString[ expr_ ] := makeExpressionURI @ expr;
+
+makeToolResponseString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -901,6 +1244,10 @@ expressionURIScheme[ _ ] := "expression";
 expressionURIScheme // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Utilities*)
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Documentation*)
 
@@ -922,7 +1269,6 @@ wolframLanguageData // endDefinition;
 
 (* Sort tools to their default ordering: *)
 $defaultChatTools0 = Association[ KeyTake[ $defaultChatTools0, $defaultToolOrder ], $defaultChatTools0 ];
-
 
 If[ Wolfram`ChatbookInternal`$BuildingMX,
     $toolConfiguration;

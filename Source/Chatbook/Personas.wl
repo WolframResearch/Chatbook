@@ -24,6 +24,8 @@ GetPersonaData[] returns information about all locally installed personas, inclu
 Calling GetPersonaData[] will additionally regenerate the cache used by GetCachedPersonaData.
 "];
 
+`$corePersonaNames;
+
 Begin["`Private`"]
 
 Needs["Wolfram`Chatbook`Errors`"]
@@ -36,7 +38,8 @@ GetPersonas[] := Module[{
 	paclets
 },
 	Needs["PacletTools`" -> None];
-	paclets = PacletFind[All, <| "Extension" -> "LLMConfiguration" |>];
+	(* Only look at most recent version of compatible paclets *)
+	paclets = First /@ SplitBy[PacletFind[All, <| "Extension" -> "LLMConfiguration" |>], #["Name"]&];
 
 	Flatten @ Map[
 		paclet |-> Module[{
@@ -100,7 +103,8 @@ GetPersonaData[] := Module[{
 	resourcePersonas = RaiseConfirmMatch[GetInstalledResourcePersonaData[], _Association? AssociationQ];
 
 	Needs["PacletTools`" -> None];
-	paclets = PacletFind[All, <| "Extension" -> "LLMConfiguration" |>];
+	(* Only look at most recent version of compatible paclets *)
+	paclets = First /@ SplitBy[PacletFind[All, <| "Extension" -> "LLMConfiguration" |>], #["Name"]&];
 
 	pacletPersonas = KeySort @ Flatten @ Map[
 		paclet |-> Handle[_Failure] @ Module[{
@@ -113,6 +117,7 @@ GetPersonaData[] := Module[{
 
 			Map[
 				extension |-> loadPersonaFromPacletExtension[
+					paclet,
 					PacletTools`PacletExtensionDirectory[paclet, extension],
 					extension
 				],
@@ -131,7 +136,7 @@ GetPersonaData[] := Module[{
 	]
 ]
 
-$corePersonaNames = {"CodeAssistant", "CodeWriter", "PlainChat", "Wolfie"};
+$corePersonaNames = {"CodeAssistant", "CodeWriter", "PlainChat", "RawModel"};
 
 (*------------------------------------*)
 
@@ -150,6 +155,7 @@ GetPersonaData[persona_?StringQ] := Module[{
 SetFallthroughError[loadPersonasFromPacletExtension]
 
 loadPersonaFromPacletExtension[
+	paclet_?PacletObjectQ,
 	extensionDirectory_?StringQ,
 	{"LLMConfiguration", options_?AssociationQ}
 ] := Handle[_Failure] @ Module[{
@@ -164,6 +170,7 @@ loadPersonaFromPacletExtension[
 				any one persona doesn't prevent other, valid, personas from
 				being loaded and returned. *)
 			personaName -> Handle[_Failure] @ loadPersonaFromDirectory[
+				paclet,
 				FileNameJoin[{extensionDirectory, "Personas", personaName}]
 			]
 		),
@@ -175,11 +182,12 @@ loadPersonaFromPacletExtension[
 
 SetFallthroughError[loadPersonaFromDirectory]
 
-loadPersonaFromDirectory[dir_?StringQ] := Module[{
+loadPersonaFromDirectory[paclet_PacletObject, dir_?StringQ] := Module[{
 	pre,
 	post,
 	icon,
 	config,
+	origin,
 	extra
 },
 	If[!DirectoryQ[dir],
@@ -217,7 +225,16 @@ loadPersonaFromDirectory[dir_?StringQ] := Module[{
 		Missing["NotAvailable", config]
 	];
 
-	extra = <| "Pre" -> pre, "Post" -> post, "Icon" -> icon |>;
+	origin = Replace[ paclet[ "Name" ], Except[ "Wolfram/Chatbook" ] -> "LocalPaclet" ];
+
+	extra = <|
+		"Icon"       -> icon,
+		"Origin"     -> origin,
+		"PacletName" -> paclet[ "Name" ],
+		"Post"       -> post,
+		"Pre"        -> pre,
+		"Version"    -> paclet[ "Version" ]
+	|>;
 
 	If[ AssociationQ[config],
 		Association[extra, config],

@@ -3,7 +3,7 @@
 PacletObject[<|
 	"Name" -> "Wolfram/Chatbook",
 	"PublisherID" -> "Wolfram",
-	"Version" -> "0.0.29",
+	"Version" -> "1.0.3",
 	"WolframVersion" -> "13.2+",
 	"Description" -> "Wolfram Notebooks + LLMs",
 	"License" -> "MIT",
@@ -24,7 +24,8 @@ PacletObject[<|
 			"Assets" -> {
 				{"Icons", "Icons.wxf"},
 				{"FullIcons", "FullIcons.wxf"},
-				{"AIAssistant", "AIAssistant"}
+				{"AIAssistant", "AIAssistant"},
+				{"SandboxMessages", "SandboxMessages.wl"}
 			}
 		},
 		{"LLMConfiguration",

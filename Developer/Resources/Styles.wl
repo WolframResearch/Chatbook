@@ -112,13 +112,13 @@ Cell[
 
 Cell[
     StyleData[ "ChatInput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
+    MenuSortingValue  -> 1543,
     CellFrameColor    -> RGBColor[ "#a3c9f2" ],
     CellGroupingRules -> "InputGrouping",
     CellMargins       -> { { 66, 25 }, { 1, 8 } },
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterIncrements -> { "ChatInputCount" },
     Evaluatable       -> True,
-    MenuSortingValue  -> 1000,
     StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "SideChat", "Backspace" -> "Input" },
 	CellDingbat -> Cell[
         BoxData @ DynamicBox @ ToBoxes[
@@ -193,6 +193,7 @@ Cell[
 
 Cell[
     StyleData[ "SideChat", StyleDefinitions -> StyleData[ "ChatInput" ] ],
+    MenuSortingValue  -> 1544,
     Background        -> RGBColor[ "#fafcff" ],
     CellMargins       -> { { 79, 26 }, { Inherited, Inherited } },
     CellDingbatMargin -> 0,
@@ -220,7 +221,6 @@ Cell[
     CellDingbat      -> Cell[ BoxData @ TemplateBox[ { }, "ChatQueryIcon" ], Background -> None ],
     CellFrameColor   -> RGBColor[ "#a3c9f2" ],
     CellTrayWidgets  -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
-    MenuSortingValue -> 1000,
     StyleKeyMapping  -> { "~" -> "ChatDelimiter", "'" -> "ChatInput" }
 ]
 
@@ -232,13 +232,13 @@ Cell[
 
 Cell[
     StyleData[ "ChatSystemInput", StyleDefinitions -> StyleData[ "ChatInput" ] ],
+    MenuSortingValue  -> 1545,
     CellDingbat       -> Cell[ BoxData @ TemplateBox[ { }, "ChatSystemIcon" ], Background -> None ],
     CellFrame         -> 1,
     CellFrameColor    -> RGBColor[ "#a3c9f2" ],
     CellFrameStyle    -> Dashing @ { Small, Small },
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterIncrements -> { },
-    MenuSortingValue  -> 1000,
     StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "ChatInput", "Backspace" -> "SideChat" }
 ]
 
@@ -262,10 +262,10 @@ Cell[
     CellMargins          -> { { 66, 25 }, { 12, 5 } },
     CellTrayWidgets      -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     GeneratedCell        -> True,
+    Graphics3DBoxOptions -> { ImageSizeRaw -> { { 300 }, { 220 } } },
+    GraphicsBoxOptions   -> { ImageSizeRaw -> { { 300 }, { 220 } } },
     LineSpacing          -> { 1.1, 0, 2 },
     ShowAutoSpellCheck   -> False,
-    GraphicsBoxOptions   -> { ImageSizeRaw -> { { 240 }, { 240 } } },
-    Graphics3DBoxOptions -> { ImageSizeRaw -> { { 240 }, { 240 } } },
     menuInitializer[ "ChatOutput", RGBColor[ "#ecf0f5" ] ]
 ]
 
@@ -320,6 +320,7 @@ Cell[
 
 Cell[
     StyleData[ "ChatBlockDivider", StyleDefinitions -> StyleData[ "Section" ] ],
+    MenuSortingValue    -> 1546,
     CellFrame           -> { { 0, 0 }, { 0, 8 } },
     CellFrameColor      -> GrayLevel[ 0.74902 ],
     CellGroupingRules   -> { "SectionGrouping", 30 },
@@ -342,9 +343,10 @@ Cell[
                     StandardForm
                 ],
                 "Text",
-                Background  -> None,
-                CellFrame   -> 0,
-                CellMargins -> 0
+                Background           -> None,
+                CellFrame            -> 0,
+                CellMargins          -> 0,
+                ShowStringCharacters -> False
             ],
             None
         },
@@ -360,15 +362,17 @@ Cell[
 
 Cell[
     StyleData[ "ChatDelimiter" ],
-    Background             -> GrayLevel[ 0.95 ],
-    CellElementSpacings    -> { "CellMinHeight" -> 6 },
-    CellFrameMargins       -> { { 20, 20 }, { 2, 2 } },
-    CellGroupingRules      -> { "SectionGrouping", 62 },
-    CellMargins            -> { { 5, 0 }, { 10, 10 } },
-    CellTrayWidgets        -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
-    CounterAssignments     -> { { "ChatInputCount", 0 } },
-    FontSize               -> 6,
-    ShowCellLabel          -> False,
+    MenuSortingValue    -> 1547,
+    Background          -> GrayLevel[ 0.95 ],
+    CellElementSpacings -> { "CellMinHeight" -> 6 },
+    CellFrameMargins    -> { { 20, 20 }, { 2, 2 } },
+    CellGroupingRules   -> { "SectionGrouping", 62 },
+    CellMargins         -> { { 5, 0 }, { 10, 10 } },
+    CellTrayWidgets     -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    CounterAssignments  -> { { "ChatInputCount", 0 } },
+    FontSize            -> 6,
+    ShowCellLabel       -> False,
+    StyleKeyMapping     -> { "~" -> "ChatBlockDivider", "'" -> "ChatInput" },
 
     CellEventActions -> {
         "KeyDown" :> Switch[
@@ -397,9 +401,10 @@ Cell[
                     ],
                     StandardForm
                 ],
-                Background    -> None,
-                CellFrame     -> 0,
-                CellMargins   -> 0
+                Background           -> None,
+                CellFrame            -> 0,
+                CellMargins          -> 0,
+                ShowStringCharacters -> False
             ],
             None
         },
@@ -469,6 +474,21 @@ Cell[
     ShowAutoStyles       -> True,
     ShowStringCharacters -> True,
     ShowSyntaxStyles     -> True
+]
+
+
+
+(* ::Subsection::Closed:: *)
+(*ChatPreformatted*)
+
+
+Cell[
+    StyleData[ "ChatPreformatted", StyleDefinitions -> StyleData[ "Program" ] ],
+    Background           -> GrayLevel[ 1 ],
+    CellFrame            -> None,
+    FontSize             -> 13,
+    FontWeight           -> "Plain",
+    ShowStringCharacters -> True
 ]
 
 

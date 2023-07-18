@@ -11,6 +11,7 @@ Begin[ "`Private`" ];
 Needs[ "Wolfram`Chatbook`"            ];
 Needs[ "Wolfram`Chatbook`Common`"     ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
+Needs[ "Wolfram`Chatbook`Tools`"      ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -34,7 +35,9 @@ CreateChatNotebook // Options = {
     "OpenAIKey"                         -> Automatic,
     "PresencePenalty"                   -> 0.1,
     "ShowMinimized"                     -> Automatic,
+    "StreamingOutputMethod"             -> Automatic,
     "Temperature"                       -> 0.7,
+    "Tools"                             -> Automatic,
     "ToolsEnabled"                      -> Automatic,
     "TopP"                              -> 1
 };

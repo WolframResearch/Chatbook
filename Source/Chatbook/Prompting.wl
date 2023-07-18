@@ -33,15 +33,17 @@ $basePromptOrder = {
     "ConversionFormatting",
     "VisibleUserInput",
     "TrivialCode",
+    "Packages",
     "WolframSymbolCapitalization",
     "ModernMethods",
     "FunctionalStyle",
-    "WolframLanguageStyle"
+    "WolframLanguageStyle",
+    "WolframLanguageEvaluatorTool"
 };
 
 $basePromptClasses = <|
     "Notebooks"         -> { "NotebooksPreamble" },
-    "WolframLanguage"   -> { "CodeBlocks", "DoubleBackticks", "WolframLanguageStyle" },
+    "WolframLanguage"   -> { "CodeBlocks", "DoubleBackticks", "WolframLanguageStyle", "Packages" },
     "Math"              -> { "MathExpressions" },
     "Formatting"        -> { "CodeBlocks", "MathExpressions", "EscapedCharacters" },
     "MessageConversion" -> { "ConversionLargeOutputs", "ConversionGraphics", "ConversionFormatting" },
@@ -49,25 +51,26 @@ $basePromptClasses = <|
 |>;
 
 $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
-    "GeneralInstructionsHeader"   -> { },
-    "NotebooksPreamble"           -> { },
-    "AutoAssistant"               -> { "CodeBlocks", "DoubleBackticks" },
-    "CodeBlocks"                  -> { },
-    "DoubleBackticks"             -> { },
-    "MathExpressions"             -> { "EscapedCharacters" },
-    "EscapedCharacters"           -> { },
-    "DocumentationLinkSyntax"     -> { },
-    "InlineSymbolLinks"           -> { },
-    "MessageConversionHeader"     -> { "NotebooksPreamble" },
-    "ConversionLargeOutputs"      -> { "MessageConversionHeader" },
-    "ConversionGraphics"          -> { "MessageConversionHeader" },
-    "ConversionFormatting"        -> { "MessageConversionHeader" },
-    "VisibleUserInput"            -> { },
-    "TrivialCode"                 -> { },
-    "WolframSymbolCapitalization" -> { },
-    "ModernMethods"               -> { },
-    "FunctionalStyle"             -> { },
-    "WolframLanguageStyle"        -> { "DocumentationLinkSyntax", "InlineSymbolLinks" }
+    "GeneralInstructionsHeader"    -> { },
+    "NotebooksPreamble"            -> { },
+    "AutoAssistant"                -> { "CodeBlocks", "DoubleBackticks" },
+    "CodeBlocks"                   -> { },
+    "DoubleBackticks"              -> { },
+    "MathExpressions"              -> { "EscapedCharacters" },
+    "EscapedCharacters"            -> { },
+    "DocumentationLinkSyntax"      -> { },
+    "InlineSymbolLinks"            -> { },
+    "MessageConversionHeader"      -> { "NotebooksPreamble" },
+    "ConversionLargeOutputs"       -> { "MessageConversionHeader" },
+    "ConversionGraphics"           -> { "MessageConversionHeader" },
+    "ConversionFormatting"         -> { "MessageConversionHeader" },
+    "VisibleUserInput"             -> { },
+    "TrivialCode"                  -> { },
+    "WolframSymbolCapitalization"  -> { },
+    "ModernMethods"                -> { },
+    "FunctionalStyle"              -> { },
+    "WolframLanguageStyle"         -> { "DocumentationLinkSyntax", "InlineSymbolLinks" },
+    "WolframLanguageEvaluatorTool" -> { "WolframLanguageStyle" }
 |>;
 
 $collectedPromptComponents = AssociationMap[ Identity, $basePromptOrder ];
@@ -141,6 +144,9 @@ $basePromptComponents[ "VisibleUserInput" ] = "\
 $basePromptComponents[ "TrivialCode" ] = "\
 * Avoid suggesting trivial code that does not evaluate to anything";
 
+$basePromptComponents[ "Packages" ] = "\
+* Stick to built-in system functionality. Avoid packages unless specifically requested.";
+
 $basePromptComponents[ "WolframSymbolCapitalization" ] = "\
 * ALWAYS capitalize Wolfram Language symbols correctly, ESPECIALLY in code";
 
@@ -158,7 +164,9 @@ $basePromptComponents[ "WolframLanguageStyle" ] = "
 * Do not assign global variables when it's not necessary
 * Prefer modern Wolfram Language symbols and methods
 * Many new symbols have been added to WL since your knowledge cutoff date, so check documentation as needed
-* When creating plots, add options such as labels and legends to make them easier to understand
+* When creating plots, add options such as labels and legends to make them easier to understand";
+
+$basePromptComponents[ "WolframLanguageEvaluatorTool" ] = "\
 * If the user is asking for a result instead of code to produce that result, use the wolfram_language_evaluator tool";
 
 (* ::**************************************************************************************************************:: *)
