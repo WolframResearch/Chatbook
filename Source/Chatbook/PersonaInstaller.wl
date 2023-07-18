@@ -9,11 +9,14 @@ BeginPackage[ "Wolfram`Chatbook`PersonaInstaller`" ];
 `PersonaInstallFromResourceSystem;
 `PersonaInstallFromURL;
 `PersonaInstall;
+`createPersonaManagerDialog;
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"        ];
-Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`"          ];
+Needs[ "Wolfram`Chatbook`Common`"   ];
+Needs[ "Wolfram`Chatbook`Personas`" ];
+Needs[ "Wolfram`Chatbook`UI`"       ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -72,7 +75,14 @@ personaInstall[ resource_ResourceObject ] := Enclose[
                 Dividers  -> Center
             ]
         ];
-        GetInstalledResourcePersonas[ ];
+
+        GetPersonaData[]; (* refresh cache since dialog depends on that value *)
+        If[!MatchQ[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}], {___String}],
+            CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}] =
+                DeleteCases[Keys[$CachedPersonaData], Alternatives["Birdnardo", "RawModel", "Wolfie"]]];
+        AppendTo[
+            CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}],
+            StringReplace[resource["Name"], StartOfString ~~ "Prompt: " -> ""]];
 
         installed
     ],
@@ -92,25 +102,63 @@ GetInstalledResourcePersonaData[ ] := catchMine @ Enclose[
         KeySort @ Association @ Cases[
             data,
             KeyValuePattern @ {
-				"Name" -> name_String,
-				"Configuration" -> config_Association,
-				"ResourceInformation" -> resourceAssoc_Association
-			} :> (
-				(* Include the resource description in the returned persona data. *)
-				name -> Merge[
-					{
-						config,
-						KeyTake[resourceAssoc, "Description"]
-					},
-					First
-				]
-			)
+                "Name"                -> name_String,
+                "Configuration"       -> config_Association,
+                "ResourceInformation" -> resourceAssoc_Association
+            } :>
+                name -> Merge[
+                    {
+                        config,
+                        KeyTake[
+                            resourceAssoc,
+                            { "Description", "UUID", "Version", "LatestUpdate", "ReleaseDate", "DocumentationLink" }
+                        ],
+                        <| "Origin" -> "PromptRepository" |>
+                    },
+                    First
+                ]
         ]
     ],
     throwInternalFailure[ GetInstalledResourcePersonaData[ ], ## ] &
 ];
 
 GetInstalledResourcePersonaData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*PersonaInstallFromFile*)
+PersonaInstallFromFile // beginDefinition;
+
+PersonaInstallFromFile[ ] := catchMine @ Enclose[
+    Module[ { filepath },
+
+        filepath = ConfirmMatch[
+            SystemDialogInput["FileOpen"],
+            _String|$Canceled,
+            "InputString"
+        ];
+
+        If[ filepath === $Canceled,
+            $Canceled,
+            ConfirmBy[ PersonaInstallFromFile @ filepath, AssociationQ, "Install" ]
+        ]
+    ],
+    throwInternalFailure[ PersonaInstallFromFile[ ], ## ] &
+];
+
+PersonaInstallFromFile[ filepath_String ] := Enclose[
+    (*FIXME: TODO*)
+    Null
+    (* Module[ { ro, file },
+        ro = ConfirmMatch[ resourceFromFile @ filepath, _ResourceObject, "ResourceObject" ];
+        ConfirmAssert[ ro[ "ResourceType" ] === "Prompt", "ResourceType" ];
+        file = ConfirmBy[ PersonaInstall @ ro, FileExistsQ, "PersonaInstall" ];
+        ConfirmBy[ getPersonaFile @ file, AssociationQ, "GetPersonaFile" ]
+    ] *),
+    throwInternalFailure[ PersonaInstallFromFile @ filepath, ## ] &
+];
+
+PersonaInstallFromURL // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -135,13 +183,11 @@ PersonaInstallFromURL[ ] := catchMine @ Enclose[
 ];
 
 PersonaInstallFromURL[ url_String ] := Enclose[
-    Module[ { ro, file, data },
+    Module[ { ro, file },
         ro = ConfirmMatch[ resourceFromURL @ url, _ResourceObject, "ResourceObject" ];
         ConfirmAssert[ ro[ "ResourceType" ] === "Prompt", "ResourceType" ];
         file = ConfirmBy[ PersonaInstall @ ro, FileExistsQ, "PersonaInstall" ];
-        data = ConfirmBy[ getPersonaFile @ file, AssociationQ, "GetPersonaFile" ];
-        Block[ { SystemOpen = Null & }, PersonaInstallFromResourceSystem[ ] ];
-        data
+        ConfirmBy[ getPersonaFile @ file, AssociationQ, "GetPersonaFile" ]
     ],
     throwInternalFailure[ PersonaInstallFromURL @ url, ## ] &
 ];
@@ -160,7 +206,7 @@ resourceFromURL[ url_String ] := Block[ { PrintTemporary },
 resourceFromURL // endDefinition;
 
 resourceFromURL0 // beginDefinition;
-resourceFromURL0[ url_String ] := With[ { ro = ResourceObject @ url }, ro /; promptResourceQ ];
+resourceFromURL0[ url_String ] := With[ { ro = ResourceObject @ url }, ro /; promptResourceQ @ ro ];
 resourceFromURL0[ url_String ] := scrapeResourceFromShingle @ url;
 resourceFromURL0 // endDefinition;
 
@@ -169,11 +215,25 @@ resourceFromURL0 // endDefinition;
 (*scrapeResourceFromShingle*)
 scrapeResourceFromShingle // beginDefinition;
 (* TODO: we should have something in RSC to do this cleaner/better *)
+
+scrapeResourceFromShingle[ url_String ] /; StringMatchQ[ url, WhitespaceCharacter... ] :=
+    Throw[ Null, $catchTopTag ];
+
 scrapeResourceFromShingle[ url_String ] := Enclose[
-    Module[ { resp, bytes, xml },
+    Module[ { returnInvalid, resp, bytes, xml },
+
+        returnInvalid = Throw[
+            DefinitionNotebookClient`FancyMessageDialog[ (* FIXME: needs custom dialog *)
+                "Prompt",
+                "The specified URL does not represent a valid prompt resource."
+            ],
+            $catchTopTag
+        ] &;
 
         resp = ConfirmMatch[ URLRead @ url, _HTTPResponse, "URLRead" ];
-        ConfirmAssert[ resp[ "StatusCode" ] === 200, "StatusCode" ];
+
+        If[ resp[ "StatusCode" ] =!= 200, returnInvalid[ ] ];
+
         bytes = ConfirmBy[ resp[ "BodyByteArray" ], ByteArrayQ, "BodyByteArray" ];
 
         xml = ConfirmMatch[
@@ -195,7 +255,7 @@ scrapeResourceFromShingle[ url_String ] := Enclose[
                     XMLElement[ "div", { ___, "data-clipboard-text" -> c2c_String, ___ }, _ ] :>
                         With[ { ro = Quiet @ ToExpression[ c2c, InputForm ] }, ro /; promptResourceQ @ ro ]
                     ,
-                    Missing[ ]
+                    returnInvalid[ ]
                     ,
                     Infinity
                 ],
@@ -222,24 +282,18 @@ promptResourceQ[ ___ ] := False;
 PersonaInstallFromResourceSystem // beginDefinition;
 
 PersonaInstallFromResourceSystem[ ] := catchMine @ Enclose[
-    Module[ { data, dialog },
+    Module[ { data },
+        $channelData = None;
+
         data = ConfirmMatch[
             withExternalChannelFunctions @ browseWithChannelCallback[ ],
             KeyValuePattern @ { "Listener" -> _ChannelListener, "Channel" -> _ChannelObject },
             "BrowseWithCallback"
         ];
-        ConfirmMatch[
-            GetInstalledResourcePersonas[ ],
-            { ___Association },
-            "GetInstalledResourcePersonas"
-        ];
 
-        dialog = createPersonaInstallWaitingDialog @ data;
-
-        Append[ data, "Dialog" -> dialog ]
+        $channelData = Append[ data, "Dialog" -> EvaluationNotebook[ ] ]
     ],
     (
-        setInstalledPersonas @ { };
         throwInternalFailure[ PersonaInstallFromResourceSystem[ ], ## ]
     ) &
 ];
@@ -248,84 +302,161 @@ PersonaInstallFromResourceSystem // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*setInstalledPersonas*)
-setInstalledPersonas[ data_ ] := (
-    Wolfram`Chatbook`Personas`$CachedPersonaData = None; (* Invalidate persona data cache *)
-    $installed = data
-);
+(*createPersonaManagerDialog*)
+createPersonaManagerDialog // beginDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*createPersonaInstallWaitingDialog*)
-createPersonaInstallWaitingDialog // beginDefinition;
+createPersonaManagerDialog[ ] :=
+    CreateDialog[
+        ExpressionCell[
+            DynamicModule[{favorites, delimColor},
+                favorites =
+                    Replace[
+                        CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}],
+                        Except[{___String}] :> $corePersonaNames];
 
-createPersonaInstallWaitingDialog[ data: KeyValuePattern[ "BrowseURL" -> url_ ] ] := CreateDialog[
-    {
-        RawBoxes @ Cell[
-            TextData @ {
-                "If your browser does not open automatically, click ",
-                ButtonBox[
-                    "here",
-                    BaseStyle -> "Hyperlink",
-                    ButtonData -> { URL @ url, None },
-                    ButtonNote -> url
-                ],
-                "."
-            },
-            "Text",
-            Background -> None
-        ],
-        RawBoxes @ Cell[
-            BoxData @ ToBoxes @ Dynamic[
-                If[ $installed === { },
-                    ProgressIndicator[ Appearance -> "Necklace" ],
+                Framed[
                     Grid[
-                        Prepend[
-                            formatInstalledResource /@ $installed,
+                        {
                             {
-                                "",
-                                Style[ "Name", FontWeight -> "DemiBold" ],
-                                Style[ "Description", FontWeight -> "DemiBold" ],
-                                Style[ "Version", FontWeight -> "DemiBold" ],
-                                ""
-                            }
-                        ],
+                                Pane[
+                                    Style["Add & Manage Personas", "DialogHeader"],
+                                    FrameMargins -> Dynamic[CurrentValue[{StyleDefinitions, "DialogHeader", CellMargins}]],
+                                    ImageSize -> {501, Automatic}]},
+                            {
+                                Pane[
+                                    Dynamic[
+                                        StringTemplate["`n1` personas being shown in the prompt menu. `n2` total personas available."][
+                                            <|
+                                                "n1" -> If[ListQ[#], Length[#], "\[LongDash]"]&[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}]],
+                                                "n2" -> If[Length[#] > 0, Length[#], "\[LongDash]"]&[$CachedPersonaData]|>],
+                                        TrackedSymbols :> {$CachedPersonaData}],
+                                    BaseStyle -> "DialogBody",
+                                    FrameMargins -> Dynamic[Replace[CurrentValue[{StyleDefinitions, "DialogBody", CellMargins}], {{l_, r_}, {b_, t_}} :> {{l, r}, {0, t}}]]]},
+                            {
+                                Pane[
+                                    Grid[{{
+                                        "Install from",
+                                        Button[
+                                            NotebookTools`Mousedown[
+                                                Framed["Prompt Repository", BaseStyle -> "ButtonGray1Normal", BaselinePosition -> Baseline],
+                                                Framed["Prompt Repository", BaseStyle -> "ButtonGray1Hover", BaselinePosition -> Baseline],
+                                                Framed["Prompt Repository", BaseStyle -> "ButtonGray1Pressed", BaselinePosition -> Baseline],
+                                                BaseStyle -> "DialogTextBasic"],
+                                            PersonaInstallFromResourceSystem[],
+                                            Appearance -> "Suppressed", BaselinePosition -> Baseline, Method -> "Queued"],
+                                        Button[
+                                            NotebookTools`Mousedown[
+                                                Framed["URL", BaseStyle -> "ButtonGray1Normal", BaselinePosition -> Baseline],
+                                                Framed["URL", BaseStyle -> "ButtonGray1Hover", BaselinePosition -> Baseline],
+                                                Framed["URL", BaseStyle -> "ButtonGray1Pressed", BaselinePosition -> Baseline],
+                                                BaseStyle -> "DialogTextBasic"],
+                                            Block[ { PrintTemporary }, PersonaInstallFromURL[] ],
+                                            Appearance -> "Suppressed", BaselinePosition -> Baseline, Method -> "Queued"](* ,
+                                        (* FIXME: FUTURE *)
+                                        Button[
+                                            NotebookTools`Mousedown[
+                                                Framed["File", BaseStyle -> "ButtonGray1Normal", BaselinePosition -> Baseline],
+                                                Framed["File", BaseStyle -> "ButtonGray1Hover", BaselinePosition -> Baseline],
+                                                Framed["File", BaseStyle -> "ButtonGray1Pressed", BaselinePosition -> Baseline],
+                                                BaseStyle -> "DialogTextBasic"],
+                                            If[AssociationQ[PersonaInstallFromFile[]], GetPersonaData[]],
+                                            Appearance -> "Suppressed", BaselinePosition -> Baseline, Method -> "Queued"] *)}}],
+                                    BaseStyle -> "DialogBody",
+                                    FrameMargins -> Dynamic[Replace[CurrentValue[{StyleDefinitions, "DialogBody", CellMargins}], {{l_, r_}, {b_, t_}} :> {{l, r}, {15, 5}}]]]},
+                            {
+                                Pane[#, AppearanceElements -> None, ImageSize -> {Full, UpTo[300]}, Scrollbars -> {False, Automatic}]& @
+                                Dynamic[
+                                    Grid[
+                                        Prepend[
+                                            KeyValueMap[
+                                                formatPersonaData[#1, #2]&,
+                                                Join[
+                                                    KeyTake[$CachedPersonaData, favorites],
+                                                    KeySort[$CachedPersonaData]]],
+                                            {"", "In Menu", "", "Name", ""(*FITME*), (*"Description",*) "Version", ""}],
+                                        Alignment -> {{Center, Center, {Left}}, Center},
+                                        Background -> {{}, {RGBColor["#e5e5e5"]}},
+                                        BaseStyle -> "DialogBody",
+                                        Dividers -> Dynamic @ {
+                                            {},
+                                            {
+                                                {{True}},
+                                                {
+                                                    2 -> False,
+                                                    Length[favorites] + 2 -> Directive[delimColor, AbsoluteThickness[5]]}}},
+                                        FrameStyle -> Dynamic[delimColor],
+                                        ItemSize -> {{Automatic, Automatic, Automatic, Automatic, Fit, {Automatic}}, {}},
+                                        Spacings -> {
+                                            {{{1}}, {2 -> 1, 4 -> 0.5}},
+                                            0.5}],
+                                    TrackedSymbols :> {$CachedPersonaData}]},
+                            {
+                                Item[
+                                    Button[(* give Default properties using specific FEExpression *)
+                                        NotebookTools`Mousedown[
+                                            Framed["OK", BaseStyle -> "ButtonRed1Normal", BaselinePosition -> Baseline],
+                                            Framed["OK", BaseStyle -> "ButtonRed1Hover", BaselinePosition -> Baseline],
+                                            Framed["OK", BaseStyle -> "ButtonRed1Pressed", BaselinePosition -> Baseline],
+                                            BaseStyle -> "DialogTextBasic"],
+                                        DialogReturn @ channelCleanup[ ],
+                                        Appearance -> FEPrivate`FrontEndResource["FEExpressions", "DefaultSuppressMouseDownNinePatchAppearance"],
+                                        ImageMargins -> {{0, 31}, {14, 14}},
+                                        ImageSize -> Automatic ],
+                                    Alignment -> {Right, Center}]}},
                         Alignment -> Left,
-                        BaseStyle -> "Text",
-                        Dividers -> { False, Center },
-                        FrameStyle -> GrayLevel[ 0.6 ]
-                    ]
-                ],
-                TrackedSymbols :> { $installed }
+                        BaseStyle -> {FontSize -> 1}, (* useful setting in case we want fixed-width columns; ItemSize would scale at the same rate as ImageSize *)
+                        Dividers -> {{}, {2 -> True, 4 -> Directive[delimColor, AbsoluteThickness[5]], -2 -> Directive[delimColor, AbsoluteThickness[5]]}},
+                        FrameStyle -> Dynamic[delimColor],
+                        Spacings -> {0, 0}],
+                    ContentPadding -> 0,
+                    FrameMargins -> -1,
+                    FrameStyle -> None,
+                    ImageSize -> {501, All}],
+                Initialization :> (
+                    delimColor = CurrentValue[{StyleDefinitions, "DialogDelimiter", CellFrameColor}];
+                    GetPersonaData[]; (* sets $CachedPersonaData *)
+                    (* make sure there are no unexpected extra personas *)
+                    CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}] =
+                        Intersection[
+                            CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}],
+                            Keys[$CachedPersonaData]]),
+                Deinitialization :> (CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}] = favorites)
             ],
-            "Output"
-        ],
-        DefaultButton[ DialogReturn @ channelCleanup @ data ]
-    },
-    NotebookEventActions -> {
-        "ReturnKeyDown" :> FE`Evaluate @ FEPrivate`FindAndClickDefaultButton[ ],
-        { "MenuCommand", "EvaluateCells" } :> FE`Evaluate @ FEPrivate`FindAndClickDefaultButton[ ],
-        { "MenuCommand", "HandleShiftReturn" } :> FE`Evaluate @ FEPrivate`FindAndClickDefaultButton[ ],
-        { "MenuCommand", "EvaluateNextCell" } :> FE`Evaluate @ FEPrivate`FindAndClickDefaultButton[ ],
-        "EscapeKeyDown" :> (
-            FE`Evaluate @ FEPrivate`FindAndClickCancelButton[ ];
-            channelCleanup @ data;
-            DialogReturn @ $Canceled
-        ),
-        "WindowClose" :> (
-            FE`Evaluate @ FEPrivate`FindAndClickCancelButton[ ];
-            channelCleanup @ data;
-            DialogReturn @ $Canceled
-        )
-    }
-];
+            CellMargins -> 0],
+        Background -> White,
+        CellInsertionPointCell -> None,
+        NotebookEventActions -> {
+            "ReturnKeyDown" :> FE`Evaluate @ FEPrivate`FindAndClickDefaultButton[ ],
+            { "MenuCommand", "EvaluateCells" } :> FE`Evaluate @ FEPrivate`FindAndClickDefaultButton[ ],
+            { "MenuCommand", "HandleShiftReturn" } :> FE`Evaluate @ FEPrivate`FindAndClickDefaultButton[ ],
+            { "MenuCommand", "EvaluateNextCell" } :> FE`Evaluate @ FEPrivate`FindAndClickDefaultButton[ ],
+            "EscapeKeyDown" :> (
+                FE`Evaluate @ FEPrivate`FindAndClickCancelButton[ ];
+                channelCleanup[ ];
+                DialogReturn @ $Canceled
+            ),
+            "WindowClose" :> (
+                FE`Evaluate @ FEPrivate`FindAndClickCancelButton[ ];
+                channelCleanup[ ];
+                DialogReturn @ $Canceled
+            )
+        },
+        StyleDefinitions ->
+            Notebook[{(* private stylesheet must inherit from Dialog.nb; only used to modify url link colors to match PeelOff.wl graphics *)
+                Cell[StyleData[StyleDefinitions -> "Dialog.nb"]],
+                Cell[StyleData["HyperlinkActive"], FontColor -> RGBColor[0.2392, 0.7960, 1.]],
+                Cell[StyleData["Hyperlink"], FontColor ->  RGBColor[0.0862, 0.6196, 0.8156]]}],
+        WindowTitle -> "Add & Manage Personas"];
 
-createPersonaInstallWaitingDialog // endDefinition;
+createPersonaManagerDialog // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*channelCleanup*)
 channelCleanup // beginDefinition;
+
+channelCleanup[ ] := channelCleanup @ $channelData;
+channelCleanup[ None ] := Null;
 
 channelCleanup[ KeyValuePattern @ { "Listener" -> listener_ChannelListener, "Channel" -> channel_ChannelObject } ] := (
     RemoveChannelListener @ listener;
@@ -334,53 +465,143 @@ channelCleanup[ KeyValuePattern @ { "Listener" -> listener_ChannelListener, "Cha
 
 channelCleanup // endDefinition;
 
+
+$channelData = None;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*formatInstalledResource*)
-formatInstalledResource // beginDefinition;
+(*formatPersonaData*)
+formatPersonaData // beginDefinition;
 
-formatInstalledResource[ as_ ] :=
-    formatInstalledResource[ as[ "ResourceInformation" ], as[ "Configuration" ] ];
+formatPersonaData[ name_String, as_Association ] :=
+    formatPersonaData[
+        name,
+        as,
+        as[ "DocumentationLink" ],
+        as[ "Description" ],
+        as[ "Version" ],
+        getPersonaIcon @ as,
+        as[ "Origin" ],
+        as[ "PacletName" ]
+    ];
 
-formatInstalledResource[ as_, config_ ] :=
-    formatInstalledResource[ as[ "Name" ], as[ "Description" ], as[ "Version" ], config[ "PersonaIcon" ] ];
+formatPersonaData[
+    name_String,
+    as_Association,
+    link_,
+    desc_,
+    version_,
+    KeyValuePattern[ "Default" -> icon_ ],
+    origin_,
+    pacletName_
+] :=
+    formatPersonaData[ name, as, link, desc, version, icon, origin, pacletName ];
 
-formatInstalledResource[ name_, desc_, version_, KeyValuePattern[ "Default" -> icon_ ] ] :=
-    formatInstalledResource[ name, desc, version, icon ];
-
-formatInstalledResource[ name_, desc_, version_, icon_ ] := {
+formatPersonaData[ name_String, as_Association, link_, desc_, version_, icon_, origin_, pacletName_ ] := {
+    formatPacletLink[ origin, link, pacletName ],
+    addRemovePersonaListingCheckbox[ name ],
     formatIcon @ icon,
-    formatName @ name,
-    formatDescription @ desc,
+    formatName[ origin, personaDisplayName @ name, link ],
+    "", (* used for Grid's ItemSize -> Fit *)
+    (* formatDescription @ desc, *) (* not enough room for a fixed-width dialog where the "Name" column can be quite large *)
     formatVersion @ version,
-    uninstallButton @ name
+    Which[
+        FileExistsQ[ personaInstallLocation @ name ], uninstallButton[ name, True, "\[LongDash]" ],
+        MissingQ[origin], uninstallButton[ name, False, "\[LongDash]" ],
+        origin === "LocalPaclet", uninstallButton[ name, False, pacletName ],
+        origin === "Wolfram/Chatbook", uninstallButton[ name, False, origin ] ]
 };
 
-formatInstalledResource // endDefinition;
-
+formatPersonaData // endDefinition;
 
 formatName // beginDefinition;
-formatName[ name_String ] := personaName @ name;
+formatName[ name_String ] := StringJoin[ Riffle[ DeleteCases[ StringTrim @ StringSplit[ name, RegularExpression[ "([A-Z])([a-z]+)" ] -> "$1$2 " ], "" ], " " ] ]
+formatName[ origin_String, name_String, link_Missing ] :=  formatName[ name ]
+formatName[ "PacletRepository", name_String, link_ ] := formatName[ name ]
+formatName[ origin_String, name_String, link_ ] :=
+    Hyperlink[
+        Mouseover[
+            Grid[{{formatName[ name ], chatbookIcon["PeelOff", False]}}],
+            Grid[{{formatName[ name ], chatbookIcon["PeelOff-hover", False]}}]],
+        link,
+        BaseStyle -> {LineBreakWithin -> False}];
 formatName // endDefinition;
 
 formatDescription // beginDefinition;
-formatDescription[ _Missing ] := "";
-formatDescription[ desc_String ] := desc;
+formatDescription[ _Missing ] := Style["\[LongDash]", FontColor -> GrayLevel[0.808]];
+formatDescription[ desc_String ] :=
+    Pane[(* If desc becomes a text resource then use FEPrivate`TruncateStringToWidth *)
+        If[StringLength[desc] > #nChars, StringTake[desc, UpTo[#nChars - 2]] <> "\[Ellipsis]", desc],
+        ImageSize -> {Full, Automatic},
+        ImageSizeAction -> "Clip"
+    ]&[<|"nChars" -> 30|>];
 formatDescription // endDefinition;
 
 formatVersion // beginDefinition;
-formatVersion[ _Missing ] := "";
+formatVersion[ _Missing ] := Style["\[LongDash]", FontColor -> GrayLevel[0.808]];
 formatVersion[ version: _String|None ] := version;
 formatVersion // endDefinition;
 
 formatIcon // beginDefinition;
 formatIcon[ _Missing ] := "";
 formatIcon[ KeyValuePattern[ "Default" -> icon_ ] ] := formatIcon @ icon;
-formatIcon[ icon_ ] := Pane[ icon, ImageSize -> { 30, 30 }, ImageSizeAction -> "ShrinkToFit" ];
+formatIcon[ icon_ ] := Pane[ icon, ImageSize -> { 20, 20 }, ImageSizeAction -> "ShrinkToFit" ];
 formatIcon // endDefinition;
 
+formatPacletLink // beginDefinition;
+formatPacletLink[ origin_String, url_, pacletName_ ] :=
+    Switch[origin,
+        "Wolfram/Chatbook",
+            Tooltip[
+                Hyperlink[
+                    formatIcon @ Mouseover[chatbookIcon["PacletRepo", False], chatbookIcon["PacletRepo-hover", False]],
+                    ResourceObject["Wolfram/Chatbook"]["DocumentationLink"],
+                    ImageMargins -> {{13, 0}, {0, 0}}],
+                "Persona installed from the Wolfram/Chatbook paclet. Visit page \[RightGuillemet]"],
+        "PacletRepository",
+            Tooltip[
+                Hyperlink[
+                    formatIcon @ Mouseover[chatbookIcon["PacletRepo", False], chatbookIcon["PacletRepo-hover", False]],
+                    url,
+                    ImageMargins -> {{13, 0}, {0, 0}}],
+                StringTemplate["Persona installed from the `name` paclet. Visit page \[RightGuillemet]."][<|"name" -> pacletName|>]],
+        _,
+            ""];
+formatPacletLink // endDefinition;
+
+addRemovePersonaListingCheckbox // beginDefinition;
+addRemovePersonaListingCheckbox[ name_String ] :=
+    DynamicModule[{val},
+        Checkbox[
+            Dynamic[val,
+                Function[
+                    val = #;
+                    CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}] =
+                        If[#,
+                            Union[Replace[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}], Except[{___String}] :> {}], {name}]
+                            ,
+                            DeleteCases[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}], name]]]]],
+        Initialization :> (val = MemberQ[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}], name])];
+addRemovePersonaListingCheckbox // endDefinition;
+
 uninstallButton // beginDefinition;
-uninstallButton[ name_String ] := Button[ "Uninstall", uninstallPersona @ name ];
+uninstallButton[ name_String, installedQ_, pacletName_String ] :=
+    Button[
+        PaneSelector[
+            {
+                "Default" -> formatIcon @ chatbookIcon["Delete", False],
+                "Hover" -> formatIcon @ chatbookIcon["Delete-hover", False],
+                "Disabled" ->
+                    Tooltip[
+                        formatIcon @ chatbookIcon["Delete-disabled", False],
+                        StringTemplate["This persona cannot be uninstalled because it is provided by the `1` paclet."][pacletName]]},
+            Dynamic[Which[!installedQ, "Disabled", CurrentValue["MouseOver"], "Hover", True, "Default"]],
+            ImageSize -> Automatic],
+        Block[ { PrintTemporary }, uninstallPersona @ name; GetPersonaData[] ],
+        Appearance -> "Suppressed",
+        Enabled -> installedQ,
+        ImageMargins -> {{0, 13}, {0, 0}},
+        Method -> "Queued" ];
 uninstallButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -498,7 +719,12 @@ promptResourceInstall0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*acquireResource*)
 acquireResource // beginDefinition;
-acquireResource[ KeyValuePattern[ "UUID" -> uuid_ ] ] := ResourceObject[ uuid, ResourceVersion -> "Latest" ];
+
+acquireResource[ KeyValuePattern[ "UUID" -> uuid_ ] ] := Quiet[
+    ResourceObject[ uuid, ResourceVersion -> "Latest" ],
+    ResourceObject::updav
+];
+
 acquireResource // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -618,7 +844,7 @@ GetInstalledResourcePersonas // endDefinition;
 (* ::Subsection::Closed:: *)
 (*getInstalledPersonas*)
 getInstalledPersonas // beginDefinition;
-getInstalledPersonas[ ] := setInstalledPersonas[ getPersonaFile /@ FileNames[ "*.mx", $PersonaInstallationDirectory ] ];
+getInstalledPersonas[ ] := getPersonaFile /@ FileNames[ "*.mx", $PersonaInstallationDirectory ];
 getInstalledPersonas // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

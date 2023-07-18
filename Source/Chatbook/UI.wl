@@ -35,6 +35,9 @@ CreateToolbarContent[] is called by the NotebookToolbar to generate the content 
 
 $SupportedModels
 
+`getPersonaIcon;
+`personaDisplayName;
+
 
 Begin["`Private`"]
 
@@ -51,6 +54,7 @@ Needs["Wolfram`Chatbook`Personas`"]
 Needs["Wolfram`Chatbook`PersonaInstaller`"]
 Needs["Wolfram`Chatbook`FrontEnd`"]
 Needs["Wolfram`Chatbook`InlineReferences`"]
+Needs["Wolfram`Chatbook`Actions`"]
 
 Needs["Wolfram`Chatbook`PreferencesUtils`" -> "PrefUtils`"]
 
@@ -218,13 +222,7 @@ CreatePreferencesContent[] := Module[{
 		Prepend[
 			KeyValueMap[
 				{persona, personaSettings} |-> {
-					Replace[Lookup[personaSettings, "Icon", None], {
-						None -> "",
-						RawBoxes[TemplateBox[{}, iconStyle_?StringQ]] :> (
-							chatbookIcon[iconStyle, False]
-						),
-						icon_ :> icon
-					}],
+					getPersonaMenuIcon[personaSettings, "Full"],
 					personaDisplayName[persona, personaSettings],
 					Replace[Lookup[personaSettings, "Description", None], {
 						None | _?MissingQ -> "",
@@ -250,7 +248,7 @@ CreatePreferencesContent[] := Module[{
 
 	chatbookSettings = makeFrontEndAndNotebookSettingsContent[$FrontEnd];
 
-	services = Grid[{
+	(* services = Grid[{
 			{""									, "Name"	, "State" 						},
 			{chatbookIcon["OpenAILogo", False]	, "OpenAI"	, "<Connected>" 				},
 			{""									, "Bard"	, Style["Coming soon", Italic]	},
@@ -259,7 +257,7 @@ CreatePreferencesContent[] := Module[{
 		Background -> {None, {1 -> GrayLevel[0.95]}},
 		Dividers -> {False, {False, {1 -> True, 2 -> True}}},
 		Alignment -> {Left, Center}
-	];
+	]; *)
 
 	(*-----------------------------------------*)
 	(* Return the complete settings expression *)
@@ -274,11 +272,11 @@ CreatePreferencesContent[] := Module[{
 			PrefUtils`PreferencesSection[
 				Style[tr["Installed LLM Evaluators"], "subsectionText"],
 				llmEvaluatorNamesSettings
-			],
-			PrefUtils`PreferencesSection[
+			]
+			(* PrefUtils`PreferencesSection[
 				Style[tr["LLM Service Providers"], "subsectionText"],
 				services
-			]
+			] *)
 		},
 		PrefUtils`PreferencesResetButton[
 			FrontEndExecute @ FrontEnd`RemoveOptions[$FrontEnd, {
@@ -312,44 +310,14 @@ CreateToolbarContent[] := With[{
 			True :> (
 				Dynamic @ Refresh[
 					Column[{
-						makeEnableAIChatFeaturesLabel[True],
+						Pane[
+							makeEnableAIChatFeaturesLabel[True],
+							ImageMargins -> {{5, 20}, {2.5, 2.5}}
+						],
 
-						labeledCheckbox[
-							Dynamic[
-								TrueQ[
-									CurrentValue[
-										EvaluationNotebook[],
-										{TaggingRules, "ChatNotebookSettings", "Assistance"}
-									]
-								],
-								Function[
-									If[
-										SameQ[
-											#,
-											AbsoluteCurrentValue[
-												$FrontEndSession,
-												{TaggingRules, "ChatNotebookSettings", "Assistance"}
-											]
-										],
-										CurrentValue[
-											EvaluationNotebook[],
-											{TaggingRules, "ChatNotebookSettings", "Assistance"}
-										] = Inherited,
-										CurrentValue[
-											EvaluationNotebook[],
-											{TaggingRules, "ChatNotebookSettings", "Assistance"}
-										] = #
-									]
-								]
-							],
-							Row[{
-								"Automatic Result Analysis",
-								Spacer[3],
-								Tooltip[
-									getIcon["InformationTooltip"],
-									"If enabled, automatic AI provided suggestions will be added following evaluation results."
-								]
-							}]
+						Pane[
+							makeAutomaticResultAnalysisCheckbox[EvaluationNotebook[]],
+							ImageMargins -> {{5, 20}, {2.5, 2.5}}
 						],
 
 						makeChatActionMenu[
@@ -456,6 +424,76 @@ makeEnableAIChatFeaturesLabel[enabled_?BooleanQ] :=
 
 (*====================================*)
 
+SetFallthroughError[makeAutomaticResultAnalysisCheckbox]
+
+makeAutomaticResultAnalysisCheckbox[
+	target : $FrontEnd | $FrontEndSession | _NotebookObject
+] := With[{
+	setterFunction = ConfirmReplace[target, {
+		$FrontEnd | $FrontEndSession :> (
+			Function[{newValue},
+				CurrentValue[
+					target,
+					{TaggingRules, "ChatNotebookSettings", "Assistance"}
+				] = newValue;
+			]
+		),
+		nbObj_NotebookObject :> (
+			Function[{newValue},
+				(* If the new value is the same as the value inherited from the
+				   parent scope, then set the value at the current level to
+				   inherit from the parent.
+
+				   Otherwise, if the new value differs from what would be
+				   inherited from the parent, then override it at the current
+				   level.
+
+				   The consequence of this behavior is that the notebook-level
+				   setting for Result Analysis will follow the global setting
+				   _if_ the local value is clicked to set it equal to the global
+				   setting.
+				 *)
+				If[
+					SameQ[
+						newValue,
+						AbsoluteCurrentValue[
+							$FrontEndSession,
+							{TaggingRules, "ChatNotebookSettings", "Assistance"}
+						]
+					]
+					,
+					CurrentValue[
+						nbObj,
+						{TaggingRules, "ChatNotebookSettings", "Assistance"}
+					] = Inherited
+					,
+					CurrentValue[
+						nbObj,
+						{TaggingRules, "ChatNotebookSettings", "Assistance"}
+					] = newValue
+				]
+			]
+		)
+	}]
+},
+	labeledCheckbox[
+		Dynamic[
+			autoAssistQ[target],
+			setterFunction
+		],
+		Row[{
+			"Automatic Result Analysis",
+			Spacer[3],
+			Tooltip[
+				chatbookIcon["InformationTooltip", False],
+				"If enabled, automatic AI provided suggestions will be added following evaluation results."
+			]
+		}]
+	]
+]
+
+(*====================================*)
+
 SetFallthroughError[labeledCheckbox]
 
 labeledCheckbox[value_, label_, enabled_ : Automatic] :=
@@ -469,8 +507,13 @@ labeledCheckbox[value_, label_, enabled_ : Automatic] :=
 			Spacer[3],
 			label
 		},
-		ImageMargins -> {{5, 20}, {2.5, 2.5}},
-		BaseStyle -> {"Text", FontSize -> 14}
+		BaseStyle -> {
+			"Text",
+			FontSize -> 14,
+			(* Note: Workaround increased ImageMargins of Checkbox's in
+			         Preferences.nb *)
+			CheckboxBoxOptions -> { ImageMargins -> 0 }
+		}
 	]
 
 (*=========================================*)
@@ -489,50 +532,12 @@ makeFrontEndAndNotebookSettingsContent[
 		{persona, personaSettings} |-> (
 			persona -> Row[{
 				resizeMenuIcon[
-					getPersonaMenuIcon[personaSettings]
+					getPersonaMenuIcon[personaSettings, "Full"]
 				],
 				personaDisplayName[persona, personaSettings]
 			}, Spacer[1]]
 		),
 		personas
-	];
-
-	defaultPersonaPopupItems = Append[
-		defaultPersonaPopupItems,
-		Inherited -> Row[{
-			"Inherited",
-			Spacer[3],
-			Dynamic @ With[{
-				currentValue = CurrentValue[
-					targetObj,
-					{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
-				],
-				absoluteCurrentValue = AbsoluteCurrentValue[
-					targetObj,
-					{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
-				]
-			},
-				(* NOTE:
-					If `targetObj` is a NotebookObject and the local value of
-					LLMEvaluator is not set (i.e. currentValue === Inherited),
-					then display the inherited persona in italics.
-				*)
-				If[currentValue === Inherited && absoluteCurrentValue =!= Inherited,
-					Style[
-						Row[{
-							"(",
-							If[StringQ[absoluteCurrentValue],
-								personaDisplayName[absoluteCurrentValue],
-								personaDisplayName
-							],
-							")"
-						}],
-						Italic
-					],
-					Row[{}]
-				]
-			]
-		}]
 	];
 
 	(*---------------------------------*)
@@ -544,22 +549,24 @@ makeFrontEndAndNotebookSettingsContent[
 			{Row[{
 				tr["Default LLM Evaluator:"],
 				PopupMenu[
-					Dynamic @ CurrentValue[
-						targetObj,
-						{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+					Dynamic[
+						currentChatSettings[
+							targetObj,
+							"LLMEvaluator"
+						],
+						Function[{newValue},
+							CurrentValue[
+								targetObj,
+								{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+							] = newValue
+						]
 					],
 					defaultPersonaPopupItems
 				]
 			}, Spacer[3]]},
-			{Row[{
-				Checkbox[
-					Dynamic @ CurrentValue[
-						targetObj,
-						{TaggingRules, "ChatNotebookSettings", "Assistance"}
-					]
-				],
-				"Provide automatic assistance"
-			}]}
+			{
+				makeAutomaticResultAnalysisCheckbox[targetObj]
+			}
 		},
 		Alignment -> {Left, Baseline},
 		Spacings -> {0, 0.7}
@@ -1962,6 +1969,21 @@ makeChatActionMenu[
 },
 	RaiseConfirmMatch[personas, <| (_String -> _Association)... |>];
 
+	(* initialize PrivateFrontEndOptions if they aren't already present or somehow broke *)
+	If[!MatchQ[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}], {___String}],
+        CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}] =
+            DeleteCases[Keys[personas], Alternatives["Birdnardo", "RawModel", "Wolfie"]]];
+	If[!MatchQ[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}], {___String}],
+        CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}] = {"CodeAssistant", "CodeWriter", "PlainChat"}];
+
+	(* only show visible personas and sort visible personas based on favorites setting *)
+	personas = KeyTake[personas, CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}]];
+	personas =
+		Association[
+			KeyTake[personas, #], (* favorites appear in the exact order provided in the CurrentValue *)
+			KeySort @ KeyTake[personas, Complement[Keys[personas], #]]
+		]&[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}]];
+
 	(*
 		If this menu is being rendered into a Chat-Driven notebook, make the
 		'Plain Chat' persona come first.
@@ -2176,7 +2198,6 @@ makeChatActionMenuContent[
 			}],
 			Delimiter,
 			{alignedMenuIcon[getIcon["PersonaOther"]], "Add & Manage Personas\[Ellipsis]", "PersonaManage"},
-			{alignedMenuIcon[getIcon["PersonaFromURL"]], "Install From URL\[Ellipsis]", "PersonaURLInstall"},
 			Delimiter,
 			{
 				alignedMenuIcon[getIcon["AdvancedSettings"]],
@@ -2388,6 +2409,19 @@ getPersonaMenuIcon[ KeyValuePattern[ "Default" -> icon_ ] ] := getPersonaMenuIco
 getPersonaMenuIcon[ _Missing | _Association | None ] := RawBoxes @ TemplateBox[ { }, "PersonaUnknown" ];
 getPersonaMenuIcon[ icon_ ] := icon;
 
+(* If "Full" is specified, resolve TemplateBox icons into their literal
+   icon data, so that they will render correctly in places where the Chatbook.nb
+   stylesheet is not available. *)
+getPersonaMenuIcon[ expr_, "Full" ] :=
+	Replace[getPersonaMenuIcon[expr], {
+		RawBoxes[TemplateBox[{}, iconStyle_?StringQ]] :> (
+			chatbookIcon[iconStyle, False]
+		),
+		icon_ :> icon
+	}]
+
+
+getPersonaIcon[ expr_ ] := getPersonaMenuIcon[ expr, "Full" ];
 
 
 (*========================================================*)

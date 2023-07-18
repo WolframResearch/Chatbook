@@ -17,6 +17,9 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 `StopChat;
 `WidgetSend;
 
+`$settings;
+`autoAssistQ;
+
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                  ];
@@ -56,7 +59,6 @@ ChatbookAction[ "InsertInlineReference", args___ ] := catchMine @ InsertInlineRe
 ChatbookAction[ "OpenChatBlockSettings", args___ ] := catchMine @ OpenChatBlockSettings @ args;
 ChatbookAction[ "OpenChatMenu"         , args___ ] := catchMine @ OpenChatMenu @ args;
 ChatbookAction[ "PersonaManage"        , args___ ] := catchMine @ PersonaManage @ args;
-ChatbookAction[ "PersonaURLInstall"    , args___ ] := catchMine @ PersonaURLInstall @ args;
 ChatbookAction[ "Send"                 , args___ ] := catchMine @ SendChat @ args;
 ChatbookAction[ "StopChat"             , args___ ] := catchMine @ StopChat @ args;
 ChatbookAction[ "TabLeft"              , args___ ] := catchMine @ TabLeft @ args;
@@ -228,41 +230,11 @@ definitionNotebookCellQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*PersonaURLInstall*)
-(* TODO: this will eventually get merged into the manage personas dialog instead of being a separate menu item *)
-
-PersonaURLInstall // beginDefinition;
-
-PersonaURLInstall[ dingbatCell_CellObject ] := Enclose[
-    Catch @ Module[ { cellObject, installed, name },
-        cellObject = ConfirmMatch[ topParentCell @ dingbatCell, _CellObject, "ParentCell" ];
-        installed = PersonaInstallFromURL[ ];
-        If[ installed === $Canceled, Throw @ $Canceled ];
-        ConfirmAssert[ AssociationQ @ installed, "AssociationQ" ];
-        name = ConfirmBy[ installed[ "Name" ], StringQ, "Name" ];
-        ConfirmMatch[
-            CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = name,
-            name,
-            "SetLLMEvaluator"
-        ]
-    ],
-    throwInternalFailure[ PersonaURLInstall @ dingbatCell, ## ] &
-];
-
-PersonaURLInstall // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
 (*PersonaManage*)
 PersonaManage[ a___ ] := Enclose[
-    ConfirmBy[ PersonaInstallFromResourceSystem[ ], AssociationQ, "PersonaInstallFromResourceSystem" ],
+    ConfirmMatch[ createPersonaManagerDialog[ ], _NotebookObject, "createPersonaManagerDialog" ],
     throwInternalFailure[ PersonaManage @ a, ## ] &
 ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*PersonaURLInstall*)
-(* FIXME: do the thing *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -315,13 +287,13 @@ rotateTabPage0 // endDefinition;
 (*EvaluateChatInput*)
 EvaluateChatInput // beginDefinition;
 
-EvaluateChatInput[ ] := EvaluateChatInput @ EvaluationCell[ ];
+EvaluateChatInput[ ] := EvaluateChatInput @ rootEvaluationCell[ ];
 
 EvaluateChatInput[ evalCell_CellObject? chatInputCellQ ] :=
     EvaluateChatInput[ evalCell, parentNotebook @ evalCell ];
 
-EvaluateChatInput[ _CellObject | $Failed ] :=
-    With[ { evalCell = EvaluationCell[ ] },
+EvaluateChatInput[ source: _CellObject | $Failed ] :=
+    With[ { evalCell = rootEvaluationCell @ source },
         EvaluateChatInput @ evalCell /; chatInputCellQ @ evalCell
     ];
 
@@ -329,10 +301,18 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
     EvaluateChatInput[ evalCell, nbo, currentChatSettings @ nbo ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
-    withBasePromptBuilder @ Block[ { $autoAssistMode = False },
+    withChatState @ Block[ { $autoAssistMode = False },
+        $lastMessages   = None;
+        $lastChatString = None;
         clearMinimizedChats @ nbo;
-        waitForLastTask[ ];
-        sendChat[ evalCell, nbo, settings ]
+        WithCleanup[
+            sendChat[ evalCell, nbo, settings ],
+            waitForLastTask[ ]
+        ];
+        If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
+            constructChatObject @ Append[ $lastMessages, <| "role" -> "Assistant", "content" -> $lastChatString |> ],
+            Null
+        ];
     ];
 
 EvaluateChatInput // endDefinition;
@@ -361,9 +341,14 @@ AIAutoAssist // beginDefinition;
 
 AIAutoAssist[ cell_ ] /; $cloudNotebooks := Null;
 
-AIAutoAssist[ cell_CellObject ] := AIAutoAssist[ cell, parentNotebook @ cell ];
+AIAutoAssist[ cell_CellObject ] :=
+    Block[ { $inEpilog = True },
+        With[ { root = checkEvaluationCell @ cell },
+            AIAutoAssist[ root, parentNotebook @ root ]
+        ]
+    ];
 
-AIAutoAssist[ cell_CellObject, nbo_NotebookObject ] := withBasePromptBuilder @
+AIAutoAssist[ cell_CellObject, nbo_NotebookObject ] := withChatState @
     If[ autoAssistQ[ cell, nbo ],
         Block[ { $autoAssistMode = True }, needsBasePrompt[ "AutoAssistant" ]; SendChat @ cell ],
         Null
@@ -390,6 +375,15 @@ autoAssistQ[ True|Automatic|Inherited, True|Automatic|Inherited ] := True;
 autoAssistQ[ _, True|Automatic ] := True;
 autoAssistQ[ _, _ ] := False;
 
+(* Determine if auto assistance is enabled generally within a FE or Notebook. *)
+autoAssistQ[
+	target: _FrontEndObject | $FrontEndSession | _NotebookObject
+] :=
+	autoAssistQ[
+		Inherited,
+		currentChatSettings[ target, "Assistance" ]
+	]
+
 autoAssistQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -398,15 +392,16 @@ autoAssistQ // endDefinition;
 StopChat // beginDefinition;
 
 StopChat[ cell0_CellObject ] := Enclose[
-    Module[ { cell, settings, container },
+    Module[ { cell, settings, container, content },
         cell = ConfirmMatch[ parentCell @ cell0, _CellObject, "ParentCell" ];
         settings = ConfirmBy[ currentChatSettings @ cell, AssociationQ, "ChatNotebookSettings" ];
         removeTask @ Lookup[ settings, "Task" ];
-        container = ConfirmBy[ Lookup[ settings, "Container" ], StringQ, "Container" ];
-        writeReformattedCell[ settings, container, cell ];
+        container = ConfirmBy[ Lookup[ settings, "Container" ], AssociationQ, "Container" ];
+        content = ConfirmBy[ Lookup[ container, "FullContent" ], StringQ, "Content" ];
+        writeReformattedCell[ settings, content, cell ];
         Quiet @ NotebookDelete @ cell;
     ],
-    throwInternalFailure[ StopChat @ cell, ## ] &
+    throwInternalFailure[ StopChat @ cell0, ## ] &
 ];
 
 StopChat // endDefinition;
@@ -715,7 +710,7 @@ excludeChatCells // endDefinition;
 (*WidgetSend*)
 WidgetSend // beginDefinition;
 
-WidgetSend[ cell_CellObject ] := withBasePromptBuilder @
+WidgetSend[ cell_CellObject ] := withChatState @
     Block[ { $alwaysOpen = True, cellPrint = cellPrintAfter @ cell, $finalCell = cell, $autoAssistMode = True },
         (* TODO: this is currently the only UI method to turn this back on *)
         CurrentValue[ parentNotebook @ cell, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = True;
@@ -733,7 +728,7 @@ AskChat[ ] := AskChat[ InputNotebook[ ] ];
 
 AskChat[ nbo_NotebookObject ] := AskChat[ nbo, SelectedCells @ nbo ];
 
-AskChat[ nbo_NotebookObject, { selected_CellObject } ] := withBasePromptBuilder @
+AskChat[ nbo_NotebookObject, { selected_CellObject } ] := withChatState @
     Catch @ Module[ { selection, cell, obj },
 
         selection = Replace[
@@ -776,7 +771,7 @@ chatQueryCell0[ content_ ] := Cell[ content, "ChatQuery", GeneratedCell -> False
 (*SendChat*)
 SendChat // beginDefinition;
 
-SendChat[ ] := SendChat @ EvaluationCell[ ];
+SendChat[ ] := SendChat @ rootEvaluationCell[ ];
 
 SendChat[ evalCell_CellObject, ___ ] /; MemberQ[ CurrentValue[ evalCell, CellStyle ], "ChatExcluded" ] := Null;
 
@@ -793,7 +788,7 @@ SendChat[ evalCell_CellObject, nbo_NotebookObject, settings_Association? Associa
 SendChat[ evalCell_, nbo_, settings_, Automatic ] /; $cloudNotebooks :=
     SendChat[ evalCell, nbo, settings, False ];
 
-SendChat[ evalCell_, nbo_, settings_, Automatic ] := withBasePromptBuilder @
+SendChat[ evalCell_, nbo_, settings_, Automatic ] := withChatState @
     With[ { styles = cellStyles @ evalCell },
         Block[ { $autoOpen, $alwaysOpen = $alwaysOpen },
             $autoOpen = MemberQ[ styles, $$chatInputStyle ];
@@ -802,7 +797,7 @@ SendChat[ evalCell_, nbo_, settings_, Automatic ] := withBasePromptBuilder @
         ]
     ];
 
-SendChat[ evalCell_, nbo_, settings_, minimized_ ] := withBasePromptBuilder @
+SendChat[ evalCell_, nbo_, settings_, minimized_ ] := withChatState @
     Block[ { $alwaysOpen = alwaysOpenQ[ settings, minimized ] },
         sendChat[ evalCell, nbo, addCellStyleSettings[ settings, evalCell ] ]
     ];
@@ -844,7 +839,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         ];
 
         settings = ConfirmBy[
-            resolveAutoSettings @ inheritSettings[ settings0, cells, evalCell ],
+            resolveTools @ resolveAutoSettings @ inheritSettings[ settings0, cells, evalCell ],
             AssociationQ,
             "InheritSettings"
         ];
@@ -879,7 +874,11 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
 
         AppendTo[ settings, "Data" -> data ];
 
-        container = ProgressIndicator[ Appearance -> "Percolate" ];
+        container = <|
+            "DynamicContent" -> ProgressIndicator[ Appearance -> "Percolate" ],
+            "FullContent"    -> ProgressIndicator[ Appearance -> "Percolate" ],
+            "UUID"           -> CreateUUID[ ]
+        |>;
 
         $reformattedCell = None;
         cell = activeAIAssistantCell[
@@ -1083,7 +1082,13 @@ submitAIAssistant // beginDefinition;
 submitAIAssistant // Attributes = { HoldFirst };
 
 submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
-    With[ { autoOpen = TrueQ @ $autoOpen, alwaysOpen = TrueQ @ $alwaysOpen, autoAssist = $autoAssistMode },
+    With[
+        {
+            autoOpen     = TrueQ @ $autoOpen,
+            alwaysOpen   = TrueQ @ $alwaysOpen,
+            autoAssist   = $autoAssistMode,
+            dynamicSplit = dynamicSplitQ @ settings
+        },
         URLSubmit[
             req,
             HandlerFunctions -> <|
@@ -1093,7 +1098,8 @@ submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
                             $autoOpen       = autoOpen,
                             $alwaysOpen     = alwaysOpen,
                             $settings       = settings,
-                            $autoAssistMode = autoAssist
+                            $autoAssistMode = autoAssist,
+                            $dynamicSplit   = dynamicSplit
                         },
                         Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                         writeChunk[ Dynamic @ container, cellObject, #1 ]
@@ -1105,7 +1111,8 @@ submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
                             $autoOpen       = autoOpen,
                             $alwaysOpen     = alwaysOpen,
                             $settings       = settings,
-                            $autoAssistMode = autoAssist
+                            $autoAssistMode = autoAssist,
+                            $dynamicSplit   = dynamicSplit
                         },
                         Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                         checkResponse[ settings, Unevaluated @ container, cellObject, #1 ]
@@ -1118,6 +1125,17 @@ submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
     ];
 
 submitAIAssistant // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*dynamicSplitQ*)
+dynamicSplitQ // beginDefinition;
+dynamicSplitQ[ as_Association ] := dynamicSplitQ @ Lookup[ as, "StreamingOutputMethod", Automatic ];
+dynamicSplitQ[ sym_Symbol ] := dynamicSplitQ @ SymbolName @ sym;
+dynamicSplitQ[ "PartialDynamic" ] := True;
+dynamicSplitQ[ "FullDynamic"|"Dynamic"|"Automatic"|"Inherited" ] := False;
+dynamicSplitQ[ other_ ] := (messagePrint[ "InvalidStreamingOutputMethod", other ]; True);
+dynamicSplitQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1167,7 +1185,7 @@ activeAIAssistantCell[
                                     NotebookWrite[ cellObject, $reformattedCell ];
                                     Remove[ x, cellObject ];
                                     ,
-                                    dynamicTextDisplay[ container, reformat ]
+                                    catchTop @ dynamicTextDisplay[ container, reformat ]
                                 ],
                                 TrackedSymbols :> { x },
                                 UpdateInterval -> 0.4
@@ -1182,7 +1200,7 @@ activeAIAssistantCell[
                                 NotebookWrite[ cellObject, $reformattedCell ];
                                 Remove[ x, cellObject ];
                                 ,
-                                dynamicTextDisplay[ container, reformat ]
+                                catchTop @ dynamicTextDisplay[ container, reformat ]
                             ],
                             Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
                             Deinitialization :> Quiet @ TaskRemove @ task
@@ -1199,45 +1217,50 @@ activeAIAssistantCell[
         ]
     ];
 
-activeAIAssistantCell[ container_, settings_, minimized_ ] :=
+activeAIAssistantCell[
+    container_,
+    settings: KeyValuePattern[ "CellObject" :> cellObject_ ],
+    minimized_
+] :=
     With[
         {
             label    = RawBoxes @ TemplateBox[ { }, "MinimizedChatActive" ],
             id       = $SessionID,
             reformat = dynamicAutoFormatQ @ settings,
-            task     = Lookup[ settings, "Task" ]
+            task     = Lookup[ settings, "Task" ],
+            uuid     = container[ "UUID" ]
         },
         Cell[
-            BoxData @ ToBoxes @
-                If[ TrueQ @ reformat,
-                    Dynamic[
-                        Refresh[
-                            dynamicTextDisplay[ container, reformat ],
-                            TrackedSymbols :> { },
-                            UpdateInterval -> 0.4
-                        ],
-                        Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
-                        Deinitialization :> Quiet @ TaskRemove @ task
-                    ],
-                    Dynamic[
-                        dynamicTextDisplay[ container, reformat ],
-                        Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
-                        Deinitialization :> Quiet @ TaskRemove @ task
-                    ]
+            BoxData @ TagBox[
+                ToBoxes @ Dynamic[
+                    $dynamicTrigger;
+                    (* `$dynamicTrigger` is used to precisely control when the dynamic updates, otherwise we can get an
+                       FE crash if a NotebookWrite happens at the same time. *)
+                    catchTop @ dynamicTextDisplay[ container, reformat ],
+                    TrackedSymbols :> { $dynamicTrigger },
+                    Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
+                    Deinitialization :> Quiet @ TaskRemove @ task
                 ],
+                "DynamicTextDisplay",
+                BoxID -> uuid
+            ]
+            ,
             "Output",
             "ChatOutput",
+            LineIndent -> 0,
             If[ TrueQ @ $autoAssistMode && MatchQ[ minimized, True|Automatic ],
                 Sequence @@ Flatten[ {
                     $closedChatCellOptions,
-                    Initialization :> attachMinimizedIcon[ EvaluationCell[ ], label ]
+                    Initialization :> catchTop @ attachMinimizedIcon[ EvaluationCell[ ], label ]
                 } ],
-                Sequence @@ { }
+                Initialization -> None
             ],
-            Selectable   -> False,
-            Editable     -> False,
-            CellDingbat  -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
-            TaggingRules -> <| "ChatNotebookSettings" -> settings |>
+            CellDingbat       -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
+            CellEditDuplicate -> False,
+            Editable          -> True,
+            Selectable        -> True,
+            ShowCursorTracker -> False,
+            TaggingRules      -> <| "ChatNotebookSettings" -> settings |>
         ]
     ];
 
@@ -1250,7 +1273,7 @@ smallSettings // beginDefinition;
 smallSettings[ as_Association ] := smallSettings[ as, as[ "LLMEvaluator" ] ];
 smallSettings[ as_, KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] := Append[ as, "LLMEvaluator" -> name ];
 smallSettings[ as_, _ ] := as;
-smallSettings // endDefinition
+smallSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1264,26 +1287,20 @@ dynamicAutoFormatQ // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*dynamicTextDisplay*)
 dynamicTextDisplay // beginDefinition;
+dynamicTextDisplay // Attributes = { HoldFirst };
 
-dynamicTextDisplay[ text_String, True ] :=
-    With[ { id = $SessionID },
-        Dynamic[
-            Refresh[
-                Block[ { $dynamicText = True }, RawBoxes @ Cell @ TextData @ reformatTextData @ text ],
-                TrackedSymbols :> { },
-                UpdateInterval -> 0.4
-            ],
-            Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
-        ]
+dynamicTextDisplay[ container_, reformat_ ] /; $highlightDynamicContent :=
+    Block[ { $highlightDynamicContent = False },
+        Framed[ dynamicTextDisplay[ container, reformat ], FrameStyle -> Purple ]
     ];
 
-dynamicTextDisplay[ text_String, False ] :=
-    With[ { id = $SessionID },
-        Dynamic[
-            RawBoxes @ Cell @ TextData @ text,
-            Initialization :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ]
-        ]
+dynamicTextDisplay[ container_, True ] /; StringQ @ container[ "DynamicContent" ] :=
+    Block[ { $dynamicText = True },
+        RawBoxes @ Cell @ TextData @ reformatTextData @ container[ "DynamicContent" ]
     ];
+
+dynamicTextDisplay[ container_, False ] /; StringQ @ container[ "DynamicContent" ] :=
+    RawBoxes @ Cell @ TextData @ container[ "DynamicContent" ];
 
 dynamicTextDisplay[ _Symbol, _ ] := ProgressIndicator[ Appearance -> "Percolate" ];
 
@@ -1296,43 +1313,29 @@ dynamicTextDisplay // endDefinition;
 (*checkResponse*)
 checkResponse // beginDefinition;
 
-checkResponse[ settings_, container_, cell_, as: KeyValuePattern[ "StatusCode" -> Except[ 200, _Integer ] ] ] :=
-    Module[ { log, chunks, folded, body, data },
-        log    = Internal`BagPart[ $debugLog, All ];
-        chunks = Cases[ log, KeyValuePattern[ "BodyChunk" -> s_String ] :> s ];
-        folded = FoldList[ StringJoin, chunks ];
-        { body, data } = FirstCase[
-            folded,
-            s_String :> With[ { json = Quiet @ Developer`ReadRawJSONString @ s },
-                            { s, json } /; MatchQ[ json, KeyValuePattern[ "error" -> _ ] ]
-                        ],
-            { Last[ folded, Missing[ "NotAvailable" ] ], Missing[ "NotAvailable" ] }
-        ];
-        writeErrorCell[ cell, $badResponse = Association[ as, "Body" -> body, "BodyJSON" -> data ] ]
-    ];
-
-checkResponse[
-    settings: KeyValuePattern[ "ToolsEnabled" -> False ],
-    container_,
-    cell_,
-    as_Association
-] := writeReformattedCell[ settings, container, cell ];
+checkResponse[ settings: KeyValuePattern[ "ToolsEnabled" -> False ], container_, cell_, as_Association ] :=
+    writeResult[ settings, container, cell, as ];
 
 checkResponse[ settings_, container_? toolFreeQ, cell_, as_Association ] :=
-    writeReformattedCell[ settings, container, cell ];
+    writeResult[ settings, container, cell, as ];
 
 checkResponse[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
-    Module[ { callPos, toolCall, toolResponse, output, messages, newMessages, req },
+    Module[ { string, callPos, toolCall, toolResponse, output, messages, newMessages, req },
+
+        string = ConfirmBy[ container[ "FullContent" ], StringQ, "FullContent" ];
 
         { callPos, toolCall } = ConfirmMatch[
-            $toolConfiguration[ "ToolRequestParser" ][ container ],
-            { _, _LLMToolRequest },
+            $toolConfiguration[ "ToolRequestParser" ][ convertUTF8[ string, False ] ],
+            { _, _LLMToolRequest|_Failure },
             "ToolRequestParser"
         ];
 
         toolResponse = ConfirmMatch[
-            GenerateLLMToolResponse[ $toolConfiguration, toolCall ],
-            _LLMToolResponse | _Failure, (* TODO: handle the Failure[...] case *)
+            If[ FailureQ @ toolCall,
+                toolCall,
+                GenerateLLMToolResponse[ $toolConfiguration, toolCall ]
+            ],
+            _LLMToolResponse | _Failure,
             "GenerateLLMToolResponse"
         ];
 
@@ -1343,14 +1346,13 @@ checkResponse[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         newMessages = Join[
             messages,
             {
-                <| "role" -> "assistant", "content" -> StringTrim @ container <> "\nENDTOOLCALL" |>,
+                <| "role" -> "assistant", "content" -> StringTrim @ string <> "\nENDTOOLCALL" |>,
                 <| "role" -> "system"   , "content" -> ToString @ output |>
             }
         ];
 
         req = ConfirmMatch[ makeHTTPRequest[ settings, newMessages ], _HTTPRequest, "HTTPRequest" ];
 
-        (* container = container <> "RESULT\n" <> output <> "\nENDTOOLCALL\n"; *)
         appendToolResult[ container, output ];
 
         $lastTask = submitAIAssistant[ container, req, cell, settings ]
@@ -1361,11 +1363,49 @@ checkResponse[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 checkResponse // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*writeResult*)
+writeResult // beginDefinition;
+
+writeResult[ settings_, container_, cell_, as_Association ] :=
+    Module[ { log, chunks, folded, body, data },
+
+        log    = Internal`BagPart[ $debugLog, All ];
+        chunks = Cases[ log, KeyValuePattern[ "BodyChunk" -> s: Except[ "", _String ] ] :> s ];
+        folded = Fold[ StringJoin, chunks ];
+
+        { body, data } = FirstCase[
+            Flatten @ StringCases[
+                folded,
+                (StartOfString|"\n") ~~ "data: " ~~ s: Except[ "\n" ].. ~~ "\n" :> s
+            ],
+            s_String :> With[ { json = Quiet @ Developer`ReadRawJSONString @ s },
+                            { s, json } /; MatchQ[ json, KeyValuePattern[ "error" -> _ ] ]
+                        ],
+            { Last[ folded, Missing[ "NotAvailable" ] ], Missing[ "NotAvailable" ] }
+        ];
+
+        If[ MatchQ[ as[ "StatusCode" ], Except[ 200, _Integer ] ] || AssociationQ @ data,
+            writeErrorCell[ cell, $badResponse = Association[ as, "Body" -> body, "BodyJSON" -> data ] ],
+            writeReformattedCell[ settings, container, cell ]
+        ]
+    ];
+
+writeResult // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*appendToolResult*)
 appendToolResult // beginDefinition;
 appendToolResult // Attributes = { HoldFirst };
-appendToolResult[ container_Symbol, output_String ] := container = container<>"RESULT\n"<>output<>"\nENDTOOLCALL\n";
+
+appendToolResult[ container_Symbol, output_String ] :=
+    Module[ { append },
+        append = "RESULT\n"<>output<>"\nENDTOOLCALL\n";
+        container[ "FullContent"    ] = container[ "FullContent"    ] <> append;
+        container[ "DynamicContent" ] = container[ "DynamicContent" ] <> append;
+    ];
+
 appendToolResult // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1377,28 +1417,32 @@ toolResponseString[ failed_Failure ] := ToString @ failed[ "Message" ];
 toolResponseString[ as: KeyValuePattern[ "Output" -> output_ ] ] := toolResponseString[ as, output ];
 toolResponseString[ as_, KeyValuePattern[ "String" -> output_ ] ] := toolResponseString[ as, output ];
 toolResponseString[ as_, output_String ] := output;
+toolResponseString[ as_, output_ ] := makeToolResponseString @ output;
 toolResponseString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*toolFreeQ*)
 toolFreeQ // beginDefinition;
-toolFreeQ[ s_String ] := ! MatchQ[ $toolConfiguration[ "ToolRequestParser" ][ s ], { _, _LLMToolRequest } ];
+toolFreeQ[ KeyValuePattern[ "FullContent" -> s_ ] ] := toolFreeQ @ s;
+toolFreeQ[ s_String ] := ! MatchQ[ $toolConfiguration[ "ToolRequestParser" ][ s ], { _, _LLMToolRequest|_Failure } ];
 toolFreeQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*writeErrorCell*)
-writeErrorCell // ClearAll;
+writeErrorCell // beginDefinition;
 writeErrorCell[ cell_, as_ ] := NotebookWrite[ cell, errorCell @ as ];
+writeErrorCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*errorCell*)
-errorCell // ClearAll;
+errorCell // beginDefinition;
+
 errorCell[ as_ ] :=
     Cell[
-        TextData @ {
+        TextData @ Flatten @ {
             StyleBox[ "\[WarningSign] ", FontColor -> Darker @ Red, FontSize -> 1.5 Inherited ],
             errorText @ as,
             "\n\n",
@@ -1410,15 +1454,70 @@ errorCell[ as_ ] :=
         CellAutoOverwrite -> True
     ];
 
+errorCell // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*errorText*)
 errorText // ClearAll;
 
 errorText[ KeyValuePattern[ "BodyJSON" -> KeyValuePattern[ "error" -> KeyValuePattern[ "message" -> s_String ] ] ] ] :=
-    s;
+    errorText @ s;
+
+errorText[ str_String ] /; StringMatchQ[ str, "The model: `" ~~ __ ~~ "` does not exist" ] :=
+    Module[ { model, link, help, message },
+
+        model = StringReplace[ str, "The model: `" ~~ m__ ~~ "` does not exist" :> m ];
+        link  = textLink[ "here", "https://platform.openai.com/docs/models/overview" ];
+        help  = { " Click ", link, " for information about available models." };
+
+        message = If[ MemberQ[ getModelList[ ], model ],
+                      "The specified API key does not have access to the model \"" <> model <> "\".",
+                      "The model \"" <> model <> "\" does not exist or the specified API key does not have access to it."
+                  ];
+
+        Flatten @ { message, help }
+    ];
+
+(*
+    Note the subtle difference here where `model` is not followed by a colon.
+    This is apparently the best way we can determine the difference between a model that exists but isn't revealed
+    to the user and one that actually does not exist. Yes, this is ugly and will eventually be wrong.
+*)
+errorText[ str_String ] /; StringMatchQ[ str, "The model `" ~~ __ ~~ "` does not exist" ] :=
+    Module[ { model, link, help, message },
+
+        model = StringReplace[ str, "The model `" ~~ m__ ~~ "` does not exist" :> m ];
+        link  = textLink[ "here", "https://platform.openai.com/docs/models/overview" ];
+        help  = { " Click ", link, " for information about available models." };
+
+        message = If[ MemberQ[ getModelList[ ], model ],
+                      "The specified API key does not have access to the model \"" <> model <> "\".",
+                      "The model \"" <> model <> "\" does not exist."
+                  ];
+
+        Flatten @ { message, help }
+    ];
+
+errorText[ str_String ] := str;
 
 errorText[ ___ ] := "An unexpected error occurred.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*textLink*)
+textLink // beginDefinition;
+
+textLink[ url_String ] := textLink[ url, url ];
+
+textLink[ label_, url_String ] := ButtonBox[
+    label,
+    BaseStyle  -> "Hyperlink",
+    ButtonData -> { URL @ url, None },
+    ButtonNote -> url
+];
+
+textLink // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1550,12 +1649,17 @@ inlineFunctionReferenceBoxesQ[ ___ ] := False;
 makePromptFunctionMessages // beginDefinition;
 
 makePromptFunctionMessages[ settings_, { cells___, cell0_ } ] := Enclose[
-    Module[ { modifiers, cell, name, arguments, filled, string },
+    Module[ { modifiers, cell, name, arguments, filled, prompt, string },
+        (* Ensure Wolfram/LLMFunctions is installed and loaded before calling System`LLMPrompt[..] *)
+		initTools[ ];
+
         { modifiers, cell } = ConfirmMatch[ extractModifiers @ cell0, { _, _ }, "Modifiers" ];
         name      = ConfirmBy[ extractPromptFunctionName @ cell, StringQ, "PromptFunctionName" ];
         arguments = ConfirmMatch[ extractPromptArguments @ cell, { ___String }, "PromptArguments" ];
         filled    = ConfirmMatch[ replaceArgumentTokens[ name, arguments, { cells, cell } ], { ___String }, "Tokens" ];
-        string    = ConfirmBy[ Quiet[ getLLMPrompt[ name ] @@ filled, OptionValue::nodef ], StringQ, "LLMPrompt" ];
+        prompt    = ConfirmMatch[ Quiet[ getLLMPrompt @ name, OptionValue::nodef ], _TemplateObject, "LLMPrompt" ];
+        string    = ConfirmBy[ Quiet[ TemplateApply[ prompt, filled ], OptionValue::nodef ], StringQ, "TemplateApply" ];
+
         (* FIXME: handle named slots *)
         Flatten @ {
             expandModifierMessages[ settings, modifiers, { cells }, cell ],
@@ -1571,16 +1675,28 @@ makePromptFunctionMessages // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*getLLMPrompt*)
 getLLMPrompt // beginDefinition;
+
 getLLMPrompt[ name_String ] :=
-	Block[ { PrintTemporary },
-		(* Ensure Wolfram/LLMFunctions is installed and loaded before calling System`LLMPrompt[..] *)
-		initTools[ ];
-		Quiet @ getLLMPrompt0 @ name
-	];
+    getLLMPrompt[
+        name,
+        Quiet[
+            Check[
+                Block[ { PrintTemporary }, getLLMPrompt0 @ name ],
+                (* TODO: a dialog might be better since a message could be missed in the messages window *)
+                throwFailure[ "ResourceNotFound", name ],
+                ResourceObject::notfname
+            ],
+            { ResourceObject::notfname, OptionValue::nodef }
+        ]
+    ];
+
+getLLMPrompt[ name_String, prompt: _TemplateObject|_String ] := prompt;
+
 getLLMPrompt // endDefinition;
 
+
 getLLMPrompt0 // beginDefinition;
-getLLMPrompt0[ name_ ] := With[ { t = System`LLMPrompt[ "Prompt: "<>name ] }, t /; MatchQ[ t, _TemplateObject ] ];
+getLLMPrompt0[ name_ ] := With[ { t = Quiet @ System`LLMPrompt[ "Prompt: "<>name ] }, t /; MatchQ[ t, _TemplateObject ] ];
 getLLMPrompt0[ name_ ] := System`LLMPrompt @ name;
 getLLMPrompt0 // endDefinition;
 
@@ -1742,7 +1858,7 @@ getToolPrompt[ KeyValuePattern[ "ToolsEnabled" -> False ] ] := "";
 (* TODO: include tools defined by the persona! *)
 getToolPrompt[ settings_ ] := Enclose[
     Module[ { config, string },
-        config = ConfirmMatch[ makeToolConfiguration[ ], _System`LLMConfiguration ];
+        config = ConfirmMatch[ makeToolConfiguration @ settings, _System`LLMConfiguration ];
         ConfirmBy[ TemplateApply[ config[ "ToolPrompt" ], config[ "Data" ] ], StringQ ]
     ],
     throwInternalFailure[ getToolPrompt @ settings, ## ] &
@@ -2021,11 +2137,12 @@ expandModifierMessages // endDefinition;
 expandModifierMessage // beginDefinition;
 
 expandModifierMessage[ settings_, modifier_, { cells___ }, cell_ ] := Enclose[
-    Module[ { name, arguments, filled, string, role },
+    Module[ { name, arguments, filled, prompt, string, role },
         name      = ConfirmBy[ modifier[ "PromptModifierName" ], StringQ, "ModifierName" ];
         arguments = ConfirmMatch[ modifier[ "PromptArguments" ], { ___String }, "Arguments" ];
         filled    = ConfirmMatch[ replaceArgumentTokens[ name, arguments, { cells, cell } ], { ___String }, "Tokens" ];
-        string    = ConfirmBy[ getLLMPrompt[ name ] @@ filled, StringQ, "LLMPrompt" ];
+        prompt    = ConfirmMatch[ Quiet[ getLLMPrompt @ name, OptionValue::nodef ], _TemplateObject, "LLMPrompt" ];
+        string    = ConfirmBy[ Quiet[ TemplateApply[ prompt, filled ], OptionValue::nodef ], StringQ, "TemplateApply" ];
         role      = ConfirmBy[ modifierMessageRole @ settings, StringQ, "Role" ];
         <| "role" -> role, "content" -> string |>
     ],
@@ -2154,10 +2271,22 @@ writeChunk[
 ] := Null;
 
 writeChunk[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
-    If[ StringQ @ container,
-        container = StringDelete[ container <> convertUTF8 @ text, StartOfString~~Whitespace ],
-        container = convertUTF8 @ text
+
+    appendStringContent[ container[ "FullContent"    ], text ];
+    appendStringContent[ container[ "DynamicContent" ], text ];
+
+    If[ TrueQ @ $dynamicSplit,
+        (* Convert as much of the dynamic content as possible to static boxes and write to cell: *)
+        splitDynamicContent[ container, cell ]
     ];
+
+    If[ AbsoluteTime[ ] - $lastDynamicUpdate > 0.1,
+        (* Trigger updating of dynamic content in current chat output cell *)
+        $dynamicTrigger++;
+        $lastDynamicUpdate = AbsoluteTime[ ]
+    ];
+
+    (* Handle auto-opening of assistant cells: *)
     Which[
         errorTaggedQ @ container, processErrorCell[ container, cell ],
         warningTaggedQ @ container, processWarningCell[ container, cell ],
@@ -2170,6 +2299,81 @@ writeChunk[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
 writeChunk[ Dynamic[ container_ ], cell_, chunk_String, other_ ] := Null;
 
 writeChunk // endDefinition;
+
+
+$dynamicTrigger    = 0;
+$lastDynamicUpdate = 0;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*splitDynamicContent*)
+splitDynamicContent // beginDefinition;
+splitDynamicContent // Attributes = { HoldFirst };
+
+(* NotebookLocationSpecifier isn't available before 13.3 and splitting isn't yet supported in cloud: *)
+splitDynamicContent[ container_, cell_ ] /; ! $dynamicSplit || $VersionNumber < 13.3 || $cloudNotebooks := Null;
+
+splitDynamicContent[ container_, cell_ ] :=
+    splitDynamicContent[ container, container[ "DynamicContent" ], cell, container[ "UUID" ] ];
+
+splitDynamicContent[ container_, text_String, cell_, uuid_String ] :=
+    splitDynamicContent[ container, StringSplit[ text, $dynamicSplitRules ], cell, uuid ];
+
+splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid_String ] := Enclose[
+    Catch @ Module[ { boxObject, reformatted, write, nbo },
+
+        boxObject = ConfirmMatch[
+            getBoxObjectFromBoxID[ cell, uuid ],
+            _BoxObject | Missing[ "CellRemoved", ___ ],
+            "BoxObject"
+        ];
+
+        If[ MatchQ[ boxObject, Missing[ "CellRemoved", ___ ] ],
+            Throw[ Quiet[ TaskRemove @ $lastTask, TaskRemove::timnf ]; Null, $catchTopTag ]
+        ];
+
+        reformatted = ConfirmMatch[
+            Block[ { $dynamicText = False }, reformatTextData @ StringJoin @ static ],
+            $$textDataList,
+            "ReformatTextData"
+        ];
+
+        write = Cell[ TextData @ reformatted, Background -> None ];
+        nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
+
+        withNoRenderUpdates[
+            nbo,
+
+            container[ "DynamicContent" ] = dynamic;
+
+            NotebookWrite[ System`NotebookLocationSpecifier[ boxObject, "Before" ], write, None, AutoScroll -> False ];
+            NotebookWrite[ System`NotebookLocationSpecifier[ boxObject, "Before" ], "\n" , None, AutoScroll -> False ];
+
+            $dynamicTrigger++;
+            $lastDynamicUpdate = AbsoluteTime[ ];
+        ]
+    ],
+    throwInternalFailure[ splitDynamicContent[ container, { static, dynamic }, cell, uuid ], ## ] &
+];
+
+(* There's nothing we can write as static content yet: *)
+splitDynamicContent[ container_, { _ } | { }, cell_, uuid_ ] := Null;
+
+splitDynamicContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*appendStringContent*)
+appendStringContent // beginDefinition;
+appendStringContent // Attributes = { HoldFirst };
+
+appendStringContent[ container_, text_String ] :=
+    If[ StringQ @ container,
+        container = StringDelete[ container <> convertUTF8 @ text, StartOfString~~Whitespace ],
+        container = convertUTF8 @ text
+    ];
+
+appendStringContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2205,23 +2409,23 @@ systemCredential // endDefinition;
 (* FIXME: move all cloud workarounds to separate file and define global flag to turn off workarounds *)
 cloudSystemCredential // beginDefinition;
 
-cloudSystemCredential[ name_ ] :=
-    With[ { credential = SystemCredential @ name },
-        credential /; StringQ @ credential
-    ];
-
 (* Workaround for CLOUD-22865 *)
-cloudSystemCredential[ name_ ] :=
-    Block[ { $SystemCredentialStore = $cloudCredentialStore },
-        SystemCredential @ name
-    ];
+cloudSystemCredential[ name_String ] :=
+    cloudSystemCredential[ name, PersistentSymbol[ "Chatbook/SystemCredential/" <> name ] ];
+
+cloudSystemCredential[ name_, _Missing ] :=
+    Missing[ "NotAvailable" ];
+
+cloudSystemCredential[ name_, credential_EncryptedObject ] :=
+    cloudSystemCredential[ name, Decrypt[ $cloudEncryptHash, credential ] ];
+
+cloudSystemCredential[ name_, credential_String ] :=
+    credential;
 
 cloudSystemCredential // endDefinition;
 
-$cloudCredentialStore := SystemCredentialStoreObject @ <|
-    "Backend" -> "EncryptedFile",
-    "Keyring" -> "Chatbook-"<>$MachineName
-|>;
+
+$cloudEncryptHash := Hash[ $CloudUserUUID, "SHA256", "HexString" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2236,25 +2440,16 @@ setSystemCredential // endDefinition;
 (*setCloudSystemCredential*)
 setCloudSystemCredential // beginDefinition;
 
-setCloudSystemCredential[ name_, value_ ] := Quiet[
-    Check[ SystemCredential[ name ] = value,
-           setCloudSystemCredential0[ name, value ],
-           SystemCredential::nset
+setCloudSystemCredential[ name_, value_ ] := Enclose[
+    Module[ { encrypted },
+        encrypted = ConfirmMatch[ Encrypt[ $cloudEncryptHash, value ], _EncryptedObject, "Encrypt" ];
+        PersistentSymbol[ "Chatbook/SystemCredential/" <> name ] = encrypted;
+        ConfirmAssert[ cloudSystemCredential[ name ] === value, "CheckStoredCredential" ];
     ],
-    SystemCredential::nset
+    throwInternalFailure[ setCloudSystemCredential[ name, value ], ## ] &
 ];
 
 setCloudSystemCredential // endDefinition;
-
-
-setCloudSystemCredential0 // beginDefinition;
-
-setCloudSystemCredential0[ name_, value_ ] :=
-    Block[ { $SystemCredentialStore = $cloudCredentialStore },
-        SystemCredential[ name ] = value
-    ];
-
-setCloudSystemCredential0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2410,20 +2605,45 @@ getAIAssistantModels // endDefinition;
 (*getModelList*)
 getModelList // beginDefinition;
 
+getModelList[ ] := getModelList @ toAPIKey @ Automatic;
+
 getModelList[ key_String ] := getModelList[ key, Hash @ key ];
 
 getModelList[ key_String, hash_Integer ] :=
-    getModelList[
-        hash,
-        URLExecute[
+    Module[ { resp },
+        resp = URLExecute[
             HTTPRequest[
                 "https://api.openai.com/v1/models",
                 <| "Headers" -> <| "Content-Type" -> "application/json", "Authorization" -> "Bearer "<>key |> |>
             ],
             "RawJSON",
             Interactive -> False
+        ];
+        If[ FailureQ @ resp && StringStartsQ[ key, "org-", IgnoreCase -> True ],
+            (*
+                When viewing the account settings page on OpenAI's site, it describes the organization ID as something
+                that's used in API requests, which may be confusing to someone who is looking for their API key and
+                they come across this page first. This message is meant to catch these cases and steer the user in the
+                right direction.
+
+                TODO: When more services are supported, this should only apply when using an OpenAI endpoint.
+            *)
+            throwFailure[
+                ChatbookAction::APIKeyOrganizationID,
+                Hyperlink[ "https://platform.openai.com/account/api-keys" ],
+                key
+            ],
+            getModelList[ hash, resp ]
         ]
     ];
+
+(* Could not connect to the server (maybe server is down or no internet connection available) *)
+getModelList[ hash_Integer, failure: Failure[ "ConnectionFailure", _ ] ] :=
+    throwFailure[ ChatbookAction::ConnectionFailure, failure ];
+
+(* Some other failure: *)
+getModelList[ hash_Integer, failure_? FailureQ ] :=
+    throwFailure[ ChatbookAction::ConnectionFailure2, failure ];
 
 getModelList[ hash_, KeyValuePattern[ "data" -> data_ ] ] :=
     getModelList[ hash, data ];
@@ -2461,21 +2681,22 @@ $maxTagLength = Max[ StringLength /@ (List @@ $$severityTag) ] + 2;
 
 
 errorTaggedQ // ClearAll;
-errorTaggedQ[ s_String? StringQ ] := taggedQ[ s, "ERROR" ];
-errorTaggedQ[ ___               ] := False;
+errorTaggedQ[ s_  ] := taggedQ[ s, "ERROR" ];
+errorTaggedQ[ ___ ] := False;
 
 
 warningTaggedQ // ClearAll;
-warningTaggedQ[ s_String? StringQ ] := taggedQ[ s, "WARNING" ];
-warningTaggedQ[ ___               ] := False;
+warningTaggedQ[ s_  ] := taggedQ[ s, "WARNING" ];
+warningTaggedQ[ ___ ] := False;
 
 
 infoTaggedQ // ClearAll;
-infoTaggedQ[ s_String? StringQ ] := taggedQ[ s, "INFO" ];
-infoTaggedQ[ ___               ] := False;
+infoTaggedQ[ s_  ] := taggedQ[ s, "INFO" ];
+infoTaggedQ[ ___ ] := False;
 
 
 untaggedQ // ClearAll;
+untaggedQ[ as_Association? AssociationQ ] := untaggedQ @ as[ "FullContent" ];
 untaggedQ[ s0_String? StringQ ] /; $alwaysOpen :=
     With[ { s = StringDelete[ $lastUntagged = s0, Whitespace ] },
         Or[ StringStartsQ[ s, Except[ "[" ] ],
@@ -2487,7 +2708,8 @@ untaggedQ[ ___ ] := False;
 
 
 taggedQ // ClearAll;
-taggedQ[ s_String? StringQ ] := taggedQ[ s, $$severityTag ];
+taggedQ[ s_ ] := taggedQ[ s, $$severityTag ];
+taggedQ[ as_Association? AssociationQ, tag_ ] := taggedQ[ as[ "FullContent" ], tag ];
 taggedQ[ s_String? StringQ, tag_ ] := StringStartsQ[ StringDelete[ s, Whitespace ], "["~~tag~~"]", IgnoreCase -> True ];
 taggedQ[ ___ ] := False;
 
@@ -2497,9 +2719,9 @@ taggedQ[ ___ ] := False;
 removeSeverityTag // beginDefinition;
 removeSeverityTag // Attributes = { HoldFirst };
 
-removeSeverityTag[ s_Symbol? StringQ, cell_CellObject ] :=
+removeSeverityTag[ s_Symbol? AssociationQ, cell_CellObject ] /; StringQ @ s[ "FullContent" ] :=
     Module[ { tag },
-        tag = StringReplace[ s, t:$$tagPrefix~~___~~EndOfString :> t ];
+        tag = StringReplace[ s[ "FullContent" ], t:$$tagPrefix~~___~~EndOfString :> t ];
         s = untagString @ s;
         CurrentValue[ cell, { TaggingRules, "MessageTag" } ] = ToUpperCase @ StringDelete[ tag, Whitespace ]
     ];
@@ -2510,7 +2732,12 @@ removeSeverityTag // endDefinition;
 (* ::Subsection::Closed:: *)
 (*untagString*)
 untagString // beginDefinition;
+
+untagString[ as: KeyValuePattern @ { "FullContent" -> full_, "DynamicContent" -> dynamic_ } ] :=
+    Association[ as, "FullContent" -> untagString @ full, "DynamicContent" -> untagString @ dynamic ];
+
 untagString[ str_String? StringQ ] := StringDelete[ str, $$tagPrefix, IgnoreCase -> True ];
+
 untagString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -2520,7 +2747,6 @@ processErrorCell // beginDefinition;
 processErrorCell // Attributes = { HoldFirst };
 
 processErrorCell[ container_, cell_CellObject ] := (
-    $$errorString = container;
     removeSeverityTag[ container, cell ];
     SetOptions[ cell, "AssistantOutputError" ];
     openChatCell @ cell
@@ -2535,7 +2761,6 @@ processWarningCell // beginDefinition;
 processWarningCell // Attributes = { HoldFirst };
 
 processWarningCell[ container_, cell_CellObject ] := (
-    $$warningString = container;
     removeSeverityTag[ container, cell ];
     SetOptions[ cell, "AssistantOutputWarning" ];
     openChatCell @ cell
@@ -2550,7 +2775,6 @@ processInfoCell // beginDefinition;
 processInfoCell // Attributes = { HoldFirst };
 
 processInfoCell[ container_, cell_CellObject ] := (
-    $$infoString = container;
     removeSeverityTag[ container, cell ];
     SetOptions[ cell, "AssistantOutput" ];
     $lastAutoOpen = $autoOpen;
@@ -2589,7 +2813,9 @@ openChatCell // endDefinition;
 (* ::Subsection::Closed:: *)
 (*convertUTF8*)
 convertUTF8 // beginDefinition;
-convertUTF8[ string_String ] := FromCharacterCode[ ToCharacterCode @ string, "UTF-8" ];
+convertUTF8[ string_String ] := convertUTF8[ string, True ];
+convertUTF8[ string_String, True  ] := FromCharacterCode[ ToCharacterCode @ string, "UTF-8" ];
+convertUTF8[ string_String, False ] := FromCharacterCode @ ToCharacterCode[ string, "UTF-8" ];
 convertUTF8 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -2597,20 +2823,29 @@ convertUTF8 // endDefinition;
 (*writeReformattedCell*)
 writeReformattedCell // beginDefinition;
 
+writeReformattedCell[ settings_, KeyValuePattern[ "FullContent" -> string_ ], cell_ ] :=
+    writeReformattedCell[ settings, string, cell ];
+
 writeReformattedCell[ settings_, string_String, cell_CellObject ] :=
     With[
         {
             tag      = CurrentValue[ cell, { TaggingRules, "MessageTag" } ],
             open     = $lastOpen = cellOpenQ @ cell,
             label    = RawBoxes @ TemplateBox[ { }, "MinimizedChat" ],
-            pageData = CurrentValue[ cell, { TaggingRules, "PageData" } ]
+            pageData = CurrentValue[ cell, { TaggingRules, "PageData" } ],
+            uuid     = CreateUUID[ ]
         },
+        $lastChatString = string;
         Block[ { $dynamicText = False },
-            NotebookWrite[
-                cell,
-                $reformattedCell = reformatCell[ settings, string, tag, open, label, pageData ],
-                None,
-                AutoScroll -> False
+            (* Global`oldCellContent = NotebookRead @ cell; *)
+            WithCleanup[
+                NotebookWrite[
+                    cell,
+                    $reformattedCell = reformatCell[ settings, string, tag, open, label, pageData, uuid ],
+                    None,
+                    AutoScroll -> False
+                ],
+                attachChatOutputMenu[ $lastChatOutput = CellObject @ uuid ]
             ]
         ]
     ];
@@ -2638,10 +2873,31 @@ writeReformattedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*attachChatOutputMenu*)
+attachChatOutputMenu // beginDefinition;
+
+attachChatOutputMenu[ cell_CellObject ] /; $cloudNotebooks := Null;
+
+attachChatOutputMenu[ cell_CellObject ] := (
+    $lastChatOutput = cell;
+    NotebookDelete @ Cells[ cell, AttachedCell -> True, CellStyle -> "ChatMenu" ];
+    AttachCell[
+        cell,
+        Cell[ BoxData @ TemplateBox[ { "ChatOutput", RGBColor[ "#ecf0f5" ] }, "ChatMenuButton" ], "ChatMenu" ],
+        { Right, Top },
+        Offset[ { -7, -7 }, { Right, Top } ],
+        { Right, Top }
+    ]
+);
+
+attachChatOutputMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*reformatCell*)
 reformatCell // beginDefinition;
 
-reformatCell[ settings_, string_, tag_, open_, label_, pageData_ ] := UsingFrontEnd @ Enclose[
+reformatCell[ settings_, string_, tag_, open_, label_, pageData_, uuid_ ] := UsingFrontEnd @ Enclose[
     Module[ { content, rules, dingbat },
 
         content = ConfirmMatch[
@@ -2681,10 +2937,11 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_ ] := UsingFront
                     $closedChatCellOptions,
                     Initialization :> attachMinimizedIcon[ EvaluationCell[ ], label ]
                 }
-            ]
+            ],
+            ExpressionUUID -> uuid
         ]
     ],
-    throwInternalFailure[ reformatCell[ settings, string, tag, open, label, pageData ], ## ] &
+    throwInternalFailure[ reformatCell[ settings, string, tag, open, label, pageData, uuid ], ## ] &
 ];
 
 reformatCell // endDefinition;
@@ -2855,6 +3112,18 @@ makeMinimizedIconCell[ label_, chatCell_CellObject ] := Cell[
 ];
 
 makeMinimizedIconCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Settings*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*withChatState*)
+withChatState // beginDefinition;
+withChatState // Attributes = { HoldFirst };
+withChatState[ eval_ ] := withToolBox @ withBasePromptBuilder @ eval;
+withChatState // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

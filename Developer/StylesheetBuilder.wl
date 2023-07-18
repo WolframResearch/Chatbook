@@ -162,8 +162,7 @@ menuInitializer[ name_String, color_ ] :=
                         attach,
                         { Right, Top },
                         Offset[ { -7, -7 }, { Right, Top } ],
-                        { Right, Top },
-                        RemovalConditions -> { "EvaluatorQuit" }
+                        { Right, Top }
                     ]
                 ]
             ]
@@ -211,8 +210,7 @@ assistantMenuInitializer[ name_String, color_ ] :=
                         attach,
                         { Right, Top },
                         Offset[ { -7, -7 }, { Right, Top } ],
-                        { Right, Top },
-                        RemovalConditions -> { "EvaluatorQuit" }
+                        { Right, Top }
                     ]
                 ]
             ]
