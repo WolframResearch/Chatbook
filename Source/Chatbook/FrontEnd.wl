@@ -124,6 +124,20 @@ currentChatSettings[ cell0_CellObject, key_String ] := Catch @ Enclose[
             "ChatCells"
         ];
 
+        (* There are apparently temporary mystery cells that get created that aren't in the root cell list which are
+           then immediately removed. These inherit the style specified by `DefaultNewCellStyle`. In chat-driven
+           notebooks, this is set to "ChatInput", which has a dynamic cell dingbat that needs to resolve
+           `currentChatSettings`. In this case, we have special behavior here to prevent a failure. Since that new
+           temporary cell doesn't get displayed anyway, we don't need to actually resolve the chat settings for it,
+           so we just return a default value instead. Yes, this is an ugly hack.
+        *)
+        If[ And[ MemberQ[ styles, $$chatInputStyle ], (*It's a "ChatInput" cell*)
+                 ! MemberQ[ cells, cell ], (*It's not in the list of cells*)
+                 MatchQ[ CurrentValue[ nbo, DefaultNewCellStyle ], $$chatInputStyle ] (*Due to DefaultNewCellStyle*)
+            ],
+            Throw @ Lookup[ $defaultChatSettings, key, Inherited ]
+        ];
+
         before = ConfirmMatch[
             Replace[ cells, { { a___, cell, ___ } :> { a }, ___ :> $Failed } ],
             { ___CellObject },
