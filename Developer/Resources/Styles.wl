@@ -1077,7 +1077,7 @@ Cell[
                 ],
                 With[ { $CellContext`cell = ParentCell @ EvaluationCell[ ] },
                     Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "WidgetSend", $CellContext`cell ]
+                    Catch[ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "WidgetSend", $CellContext`cell ], _ ]
                 ],
                 Appearance -> $suppressButtonAppearance
             ]
