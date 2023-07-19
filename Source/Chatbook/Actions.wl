@@ -2330,7 +2330,7 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
         ];
 
         If[ MatchQ[ boxObject, Missing[ "CellRemoved", ___ ] ],
-            Throw[ Quiet[ TaskRemove @ $lastTask, TaskRemove::timnf ]; Null, $catchTopTag ]
+            throwTop[ Quiet[ TaskRemove @ $lastTask, TaskRemove::timnf ]; Null ]
         ];
 
         reformatted = ConfirmMatch[
@@ -2857,10 +2857,8 @@ writeReformattedCell[ settings_, other_, cell_CellObject ] :=
         Cell[
             TextData @ {
                 "An unexpected error occurred.\n\n",
-                Cell @ BoxData @ ToBoxes @ Catch[
-                    throwInternalFailure @ writeReformattedCell[ settings, other, cell ],
-                    $catchTopTag
-                ]
+                Cell @ BoxData @ ToBoxes @ catchAlways @ throwInternalFailure @
+                    writeReformattedCell[ settings, other, cell ]
             },
             "ChatOutput",
             GeneratedCell     -> True,
