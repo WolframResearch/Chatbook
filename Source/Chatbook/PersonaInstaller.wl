@@ -217,17 +217,16 @@ scrapeResourceFromShingle // beginDefinition;
 (* TODO: we should have something in RSC to do this cleaner/better *)
 
 scrapeResourceFromShingle[ url_String ] /; StringMatchQ[ url, WhitespaceCharacter... ] :=
-    Throw[ Null, $catchTopTag ];
+    throwTop @ Null;
 
 scrapeResourceFromShingle[ url_String ] := Enclose[
     Module[ { returnInvalid, resp, bytes, xml },
 
-        returnInvalid = Throw[
+        returnInvalid = throwTop[
             DefinitionNotebookClient`FancyMessageDialog[ (* FIXME: needs custom dialog *)
                 "Prompt",
                 "The specified URL does not represent a valid prompt resource."
-            ],
-            $catchTopTag
+            ]
         ] &;
 
         resp = ConfirmMatch[ URLRead @ url, _HTTPResponse, "URLRead" ];

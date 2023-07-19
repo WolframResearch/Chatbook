@@ -1099,7 +1099,7 @@ GetExpressionURIs[ str_ ] := GetExpressionURIs[ str, ## & ];
 
 GetExpressionURIs[ str_String, wrapper_ ] := catchMine @ StringSplit[
     str,
-    link: Shortest[ "![" ~~ __ ~~ "](" ~~ __ ~~ ")" ] :> Catch[ GetExpressionURI[ link, wrapper ], $catchTopTag ]
+    link: Shortest[ "![" ~~ __ ~~ "](" ~~ __ ~~ ")" ] :> catchAlways @ GetExpressionURI[ link, wrapper ]
 ];
 
 (* ::**************************************************************************************************************:: *)
