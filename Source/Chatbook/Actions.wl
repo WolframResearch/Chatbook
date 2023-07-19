@@ -1109,7 +1109,7 @@ submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
         URLSubmit[
             req,
             HandlerFunctions -> <|
-                "BodyChunkReceived" -> Function @ catchTopAs[ ChatbookAction ][
+                "BodyChunkReceived" -> Function @ catchAlways[
                     Block[
                         {
                             $autoOpen       = autoOpen,
@@ -1122,7 +1122,7 @@ submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
                         writeChunk[ Dynamic @ container, cellObject, #1 ]
                     ]
                 ],
-                "TaskFinished" -> Function @ catchTopAs[ ChatbookAction ][
+                "TaskFinished" -> Function @ catchAlways[
                     Block[
                         {
                             $autoOpen       = autoOpen,
