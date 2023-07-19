@@ -185,9 +185,12 @@ assistantMenuInitializer[ name_String, color_ ] :=
                                 RawBoxes @ TemplateBox[ { }, "CloseAssistant" ],
                                 With[ { $CellContext`cell = EvaluationCell[ ] },
                                     Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-                                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
-                                        "DisableAssistance",
-                                        $CellContext`cell
+                                    Catch[
+                                        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
+                                            "DisableAssistance",
+                                            $CellContext`cell
+                                        ],
+                                        _
                                     ]
                                 ],
                                 Appearance -> $suppressButtonAppearance
@@ -326,7 +329,7 @@ tabScrollButton[ direction_ ] := Button[
     $tabButtonLabels[ direction ],
     With[ { $CellContext`cell = EvaluationCell[ ] },
         Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ direction, $CellContext`cell ]
+        Catch[ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ direction, $CellContext`cell ], _ ]
     ],
     Appearance -> $suppressButtonAppearance
 ];
