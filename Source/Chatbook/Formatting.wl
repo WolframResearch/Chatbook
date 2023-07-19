@@ -25,6 +25,8 @@ Needs[ "Wolfram`Chatbook`Tools`"    ];
 (* ::Section::Closed:: *)
 (*Config*)
 
+$maxImageSize = 1000;
+
 $wlCodeString = Longest @ Alternatives[
     "Wolfram Language",
     "Wolfram_Language_Evaluator",
@@ -160,7 +162,19 @@ toTeXBoxes // endDefinition;
 formatTextString // beginDefinition;
 
 formatTextString[ str_String ] := StringSplit[
-    StringReplace[ str, { StartOfString~~"\n\n" -> "\n", "\n\n"~~EndOfString -> "\n" } ],
+    StringReplace[
+        StringDelete[
+            str,
+            {
+                StartOfString~~("\n"...)~~"```",
+                "```"~~("\n"...)~~EndOfString
+            }
+        ],
+        {
+            StartOfString~~"\n\n" -> "\n",
+            "\n\n"~~EndOfString -> "\n"
+        }
+    ],
     $stringFormatRules,
     IgnoreCase -> True
 ];
@@ -387,7 +401,8 @@ $textDataFormatRules = {
         Longest[ "```" ~~ language: Except[ WhitespaceCharacter ]... ] ~~ (" "...) ~~ "\n",
         Shortest[ code__ ],
         ("```"|EndOfString)
-    ] :> codeBlockCell[ language, code ]
+    ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ("ENDTOOLCALL"|EndOfString) ] :>
+        codeBlockCell[ language, code ]
     ,
     "![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
         StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
@@ -421,7 +436,7 @@ $dynamicSplitRules = {
         Longest[ "```" ~~ language: Except[ WhitespaceCharacter ]... ] ~~ (" "...) ~~ "\n",
         Shortest[ code__ ],
         "```"
-    ] :> s
+    ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ("ENDTOOLCALL"|EndOfString) ] :> s
     ,
     (* Markdown image *)
     s: ("![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")") /;
@@ -844,7 +859,7 @@ importedImage[ alt_String, url_String, _? FailureQ | _String ] :=
     importedImage[ alt, url, $missingImage ];
 
 importedImage[ alt_String, url_String, i_ ] :=
-    Cell @ BoxData @ markdownImageBoxes[ StringTrim @ alt, url, tooltip[ i, alt ] ];
+    Cell @ BoxData @ markdownImageBoxes[ StringTrim @ alt, url, tooltip[ resizeImage @ i, alt ] ];
 
 importedImage // endDefinition;
 
@@ -857,6 +872,27 @@ tooltip // beginDefinition;
 tooltip[ expr_, ""|"result" ] := expr;
 tooltip[ expr_, text_ ] := Tooltip[ expr, text ];
 tooltip // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*resizeImage*)
+resizeImage // beginDefinition;
+
+resizeImage[ img_Image? ImageQ ] /; Max @ ImageDimensions @ img > $maxImageSize :=
+    showResized @ ImageResize[ img, { UpTo @ $maxImageSize, UpTo @ $maxImageSize } ];
+
+resizeImage[ other_ ] := showResized @ other;
+
+resizeImage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*showResized*)
+showResized // beginDefinition;
+showResized[ img_Image? ImageQ ] := showResized[ img, ImageDimensions @ img ];
+showResized[ img_, { w_Integer, h_Integer } ] := Show[ img, ImageSize -> UpTo /@ Floor[ { w, h } / 2 ] ];
+showResized[ img_ ] := img;
+showResized // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
