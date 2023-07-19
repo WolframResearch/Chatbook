@@ -160,7 +160,19 @@ toTeXBoxes // endDefinition;
 formatTextString // beginDefinition;
 
 formatTextString[ str_String ] := StringSplit[
-    StringReplace[ str, { StartOfString~~"\n\n" -> "\n", "\n\n"~~EndOfString -> "\n" } ],
+    StringReplace[
+        StringDelete[
+            str,
+            {
+                StartOfString~~("\n"...)~~"```",
+                "```"~~("\n"...)~~EndOfString
+            }
+        ],
+        {
+            StartOfString~~"\n\n" -> "\n",
+            "\n\n"~~EndOfString -> "\n"
+        }
+    ],
     $stringFormatRules,
     IgnoreCase -> True
 ];
@@ -387,7 +399,8 @@ $textDataFormatRules = {
         Longest[ "```" ~~ language: Except[ WhitespaceCharacter ]... ] ~~ (" "...) ~~ "\n",
         Shortest[ code__ ],
         ("```"|EndOfString)
-    ] :> codeBlockCell[ language, code ]
+    ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ("ENDTOOLCALL"|EndOfString) ] :>
+        codeBlockCell[ language, code ]
     ,
     "![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
         StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
@@ -421,7 +434,7 @@ $dynamicSplitRules = {
         Longest[ "```" ~~ language: Except[ WhitespaceCharacter ]... ] ~~ (" "...) ~~ "\n",
         Shortest[ code__ ],
         "```"
-    ] :> s
+    ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ("ENDTOOLCALL"|EndOfString) ] :> s
     ,
     (* Markdown image *)
     s: ("![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")") /;
