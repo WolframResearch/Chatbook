@@ -24,6 +24,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 
 `$catchTopTag;
 `beginDefinition;
+`catchAlways;
 `catchMine;
 `catchTop;
 `catchTopAs;
@@ -31,6 +32,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `importResourceFunction;
 `messageFailure;
 `messagePrint;
+`throwTop;
 `throwFailure;
 `throwInternalFailure;
 
@@ -52,7 +54,8 @@ $chatInputStyles      = { "ChatInput", "SideChat", "ChatQuery", "ChatSystemInput
 $chatOutputStyles     = { "ChatOutput", "AssistantOutput", "AssistantOutputWarning", "AssistantOutputError" };
 $excludeHistoryStyles = { "SideChat" };
 $nestedCellStyles     = { "InlineFunctionReference", "InlineModifierReference", "InlinePersonaReference",
-                          "ChatMenu", "ChatWidget" (* TODO: add a style name to cell dingbat cells and add it here *)
+                          "ChatMenu", "ChatWidget", "InheritFromParent"
+                          (* TODO: add a style name to cell dingbat cells and add it here *)
                         };
 
 $maxChatCells := OptionValue[ CreateChatNotebook, "ChatHistoryLength" ];
@@ -261,12 +264,28 @@ catchTop // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*catchAlways*)
+catchAlways // beginDefinition;
+catchAlways // Attributes = { HoldFirst };
+catchAlways[ eval_ ] := catchAlways[ eval, Chatbook ];
+catchAlways[ eval_, sym_Symbol ] := Catch[ catchTop[ eval, sym ], $catchTopTag ];
+catchAlways // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*catchMine*)
 catchMine // beginDefinition;
 catchMine // Attributes = { HoldFirst };
 catchMine /: HoldPattern[ f_Symbol[ args___ ] := catchMine[ rhs_ ] ] := f[ args ] := catchTop[ rhs, f ];
 catchMine[ eval_ ] := catchTop @ eval;
 catchMine // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*throwTop*)
+throwTop // beginDefinition;
+throwTop[ expr_ ] /; $catching := Throw[ Unevaluated @ expr, $catchTopTag ];
+throwTop // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

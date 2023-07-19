@@ -1618,20 +1618,24 @@ Notebook[
           {Wolfram`Chatbook`UI`Private`cell$$},
           DynamicBox[
            ToBoxes[
-            If[ TrueQ[Wolfram`Chatbook`Common`$cloudNotebooks],
-             RawBoxes[TemplateBox[{}, "ChatIconUser"]],
-             With[
-              {
-               Wolfram`Chatbook`UI`Private`personaValue = 
-                Wolfram`Chatbook`UI`Private`currentValueOrigin[
-                 Wolfram`Chatbook`UI`Private`cell$$,
-                 {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+            Quiet[
+             Wolfram`Chatbook`Common`catchAlways[
+              If[ TrueQ[Wolfram`Chatbook`Common`$cloudNotebooks],
+               RawBoxes[TemplateBox[{}, "ChatIconUser"]],
+               With[
+                {
+                 Wolfram`Chatbook`UI`Private`personaValue = 
+                  Wolfram`Chatbook`UI`Private`currentValueOrigin[
+                   Wolfram`Chatbook`UI`Private`cell$$,
+                   {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+                  ]
+                },
+                Wolfram`Chatbook`UI`Private`getPersonaMenuIcon[
+                 Lookup[
+                  Wolfram`Chatbook`Personas`GetPersonasAssociation[],
+                  Part[Wolfram`Chatbook`UI`Private`personaValue, 2]
+                 ]
                 ]
-              },
-              Wolfram`Chatbook`UI`Private`getPersonaMenuIcon[
-               Lookup[
-                Wolfram`Chatbook`Personas`GetPersonasAssociation[],
-                Part[Wolfram`Chatbook`UI`Private`personaValue, 2]
                ]
               ]
              ]
@@ -1642,7 +1646,9 @@ Notebook[
           Initialization :>
            (Quiet[Needs["Wolfram`Chatbook`" -> None]];
            Wolfram`Chatbook`UI`Private`cell$$ = 
-            Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]]),
+            Wolfram`Chatbook`Common`catchAlways[
+             Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]]
+            ]),
           DynamicModuleValues :> { },
           UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
          ],
@@ -1708,20 +1714,24 @@ Notebook[
              {Wolfram`Chatbook`UI`Private`cell$$},
              DynamicBox[
               ToBoxes[
-               If[ TrueQ[Wolfram`Chatbook`Common`$cloudNotebooks],
-                RawBoxes[TemplateBox[{}, "ChatIconUser"]],
-                With[
-                 {
-                  Wolfram`Chatbook`UI`Private`personaValue = 
-                   Wolfram`Chatbook`UI`Private`currentValueOrigin[
-                    Wolfram`Chatbook`UI`Private`cell$$,
-                    {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+               Quiet[
+                Wolfram`Chatbook`Common`catchAlways[
+                 If[ TrueQ[Wolfram`Chatbook`Common`$cloudNotebooks],
+                  RawBoxes[TemplateBox[{}, "ChatIconUser"]],
+                  With[
+                   {
+                    Wolfram`Chatbook`UI`Private`personaValue = 
+                     Wolfram`Chatbook`UI`Private`currentValueOrigin[
+                      Wolfram`Chatbook`UI`Private`cell$$,
+                      {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+                     ]
+                   },
+                   Wolfram`Chatbook`UI`Private`getPersonaMenuIcon[
+                    Lookup[
+                     Wolfram`Chatbook`Personas`GetPersonasAssociation[],
+                     Part[Wolfram`Chatbook`UI`Private`personaValue, 2]
+                    ]
                    ]
-                 },
-                 Wolfram`Chatbook`UI`Private`getPersonaMenuIcon[
-                  Lookup[
-                   Wolfram`Chatbook`Personas`GetPersonasAssociation[],
-                   Part[Wolfram`Chatbook`UI`Private`personaValue, 2]
                   ]
                  ]
                 ]
@@ -1732,7 +1742,9 @@ Notebook[
              Initialization :>
               (Quiet[Needs["Wolfram`Chatbook`" -> None]];
               Wolfram`Chatbook`UI`Private`cell$$ = 
-               Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]]),
+               Wolfram`Chatbook`Common`catchAlways[
+                Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]]
+               ]),
              DynamicModuleValues :> { },
              UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
             ],
@@ -1818,20 +1830,24 @@ Notebook[
                {Wolfram`Chatbook`UI`Private`cell$$},
                DynamicBox[
                 ToBoxes[
-                 If[ TrueQ[Wolfram`Chatbook`Common`$cloudNotebooks],
-                  RawBoxes[TemplateBox[{}, "ChatIconUser"]],
-                  With[
-                   {
-                    Wolfram`Chatbook`UI`Private`personaValue = 
-                     Wolfram`Chatbook`UI`Private`currentValueOrigin[
-                      Wolfram`Chatbook`UI`Private`cell$$,
-                      {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+                 Quiet[
+                  Wolfram`Chatbook`Common`catchAlways[
+                   If[ TrueQ[Wolfram`Chatbook`Common`$cloudNotebooks],
+                    RawBoxes[TemplateBox[{}, "ChatIconUser"]],
+                    With[
+                     {
+                      Wolfram`Chatbook`UI`Private`personaValue = 
+                       Wolfram`Chatbook`UI`Private`currentValueOrigin[
+                        Wolfram`Chatbook`UI`Private`cell$$,
+                        {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+                       ]
+                     },
+                     Wolfram`Chatbook`UI`Private`getPersonaMenuIcon[
+                      Lookup[
+                       Wolfram`Chatbook`Personas`GetPersonasAssociation[],
+                       Part[Wolfram`Chatbook`UI`Private`personaValue, 2]
+                      ]
                      ]
-                   },
-                   Wolfram`Chatbook`UI`Private`getPersonaMenuIcon[
-                    Lookup[
-                     Wolfram`Chatbook`Personas`GetPersonasAssociation[],
-                     Part[Wolfram`Chatbook`UI`Private`personaValue, 2]
                     ]
                    ]
                   ]
@@ -1842,7 +1858,9 @@ Notebook[
                Initialization :>
                 (Quiet[Needs["Wolfram`Chatbook`" -> None]];
                 Wolfram`Chatbook`UI`Private`cell$$ = 
-                 Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]]),
+                 Wolfram`Chatbook`Common`catchAlways[
+                  Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]]
+                 ]),
                DynamicModuleValues :> { },
                UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
               ],
@@ -2362,20 +2380,24 @@ Notebook[
           {Wolfram`Chatbook`UI`Private`cell$$},
           DynamicBox[
            ToBoxes[
-            If[ TrueQ[Wolfram`Chatbook`Common`$cloudNotebooks],
-             RawBoxes[TemplateBox[{}, "ChatIconUser"]],
-             With[
-              {
-               Wolfram`Chatbook`UI`Private`personaValue = 
-                Wolfram`Chatbook`UI`Private`currentValueOrigin[
-                 Wolfram`Chatbook`UI`Private`cell$$,
-                 {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+            Quiet[
+             Wolfram`Chatbook`Common`catchAlways[
+              If[ TrueQ[Wolfram`Chatbook`Common`$cloudNotebooks],
+               RawBoxes[TemplateBox[{}, "ChatIconUser"]],
+               With[
+                {
+                 Wolfram`Chatbook`UI`Private`personaValue = 
+                  Wolfram`Chatbook`UI`Private`currentValueOrigin[
+                   Wolfram`Chatbook`UI`Private`cell$$,
+                   {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+                  ]
+                },
+                Wolfram`Chatbook`UI`Private`getPersonaMenuIcon[
+                 Lookup[
+                  Wolfram`Chatbook`Personas`GetPersonasAssociation[],
+                  Part[Wolfram`Chatbook`UI`Private`personaValue, 2]
+                 ]
                 ]
-              },
-              Wolfram`Chatbook`UI`Private`getPersonaMenuIcon[
-               Lookup[
-                Wolfram`Chatbook`Personas`GetPersonasAssociation[],
-                Part[Wolfram`Chatbook`UI`Private`personaValue, 2]
                ]
               ]
              ]
@@ -2386,7 +2408,9 @@ Notebook[
           Initialization :>
            (Quiet[Needs["Wolfram`Chatbook`" -> None]];
            Wolfram`Chatbook`UI`Private`cell$$ = 
-            Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]]),
+            Wolfram`Chatbook`Common`catchAlways[
+             Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]]
+            ]),
           DynamicModuleValues :> { },
           UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
          ],
