@@ -1820,7 +1820,7 @@ $dynamicMenuLabel := DynamicModule[ { cell },
 	],
 	Initialization :> (
 		Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-		cell = parentCell @ EvaluationCell[ ]
+		cell = catchAlways @ parentCell @ EvaluationCell[ ]
 	),
 	UnsavedVariables :> {cell}
 ]
