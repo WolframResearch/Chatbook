@@ -106,56 +106,52 @@ withToolBox // endDefinition;
 selectTools // beginDefinition;
 
 selectTools[ as: KeyValuePattern[ "LLMEvaluator" -> KeyValuePattern[ "Tools" -> tools_ ] ] ] := (
-    selectTools @ KeyDrop[ as, "LLMEvaluator" ];
-    selectTools @ tools;
+    (* Select user-specified tools: *)
+    selectTools0 @ Replace[ Lookup[ as, "Tools", None ], Automatic|Inherited -> None ];
+    (* Select persona tools: *)
+    selectTools0 @ tools;
 );
 
-selectTools[ KeyValuePattern[ "Tools" -> tools_ ] ] :=
-    selectTools @ tools;
+selectTools[ as_Association ] := selectTools0 @ Lookup[ as, "Tools", Automatic ];
 
-selectTools[ Automatic|Inherited ] :=
-    selectTools @ $defaultChatTools;
+selectTools // endDefinition;
 
-selectTools[ None ] :=
-    $selectedTools = <| |>;
 
-selectTools[ tools_Association ] :=
-    KeyValueMap[ selectTools, tools ];
+selectTools0 // beginDefinition;
 
-selectTools[ tools_List ] :=
-    selectTools /@ tools;
+selectTools0[ Automatic|Inherited ] := selectTools0 @ $defaultChatTools;
+selectTools0[ None                ] := $selectedTools = <| |>;
+selectTools0[ name_String         ] /; KeyExistsQ[ $toolBox, name ] := $selectedTools[ name ] = $toolBox[ name ];
+selectTools0[ name_String         ] /; KeyExistsQ[ $toolNameAliases, name ] := selectTools0 @ $toolNameAliases @ name;
+selectTools0[ name_String         ] := selectTools0[ name, Lookup[ $defaultChatTools, name ] ];
+selectTools0[ tools_List          ] := selectTools0 /@ tools;
+selectTools0[ tools_Association   ] := KeyValueMap[ selectTools0, tools ];
 
-selectTools[ name_String ] /; KeyExistsQ[ $toolBox, name ] :=
-    $selectedTools[ name ] = $toolBox[ name ];
+(* Literal LLMTool specification: *)
+selectTools0[ tool: HoldPattern @ LLMTool[ KeyValuePattern[ "Name" -> name_ ], ___ ] ] := selectTools0[ name, tool ];
 
-selectTools[ name_String ] /; KeyExistsQ[ $toolNameAliases, name ] :=
-    selectTools @ $toolNameAliases @ name;
+(* Rules can be used to enable/disable by name: *)
+selectTools0[ (Rule|RuleDelayed)[ name_String, tool_ ] ] := selectTools0[ name, tool ];
 
-selectTools[ name_String ] :=
-    selectTools[ name, Lookup[ $defaultChatTools, name ] ]; (* TODO: fetch from repository *)
+(* Inherit from core tools: *)
+selectTools0[ name_String, Automatic|Inherited ] := selectTools0[ name, Lookup[ $defaultChatTools, name ] ];
 
-selectTools[ tool: HoldPattern @ LLMTool[ KeyValuePattern[ "Name" -> name_ ], ___ ] ] :=
-    selectTools[ name, tool ];
+(* Disable tool: *)
+selectTools0[ name_String, None ] := KeyDropFrom[ $selectedTools, name ];
 
-selectTools[ (Rule|RuleDelayed)[ name_String, tool_ ] ] :=
-    selectTools[ name, tool ];
+(* Select a literal LLMTool: *)
+selectTools0[ name_String, tool_LLMTool ] := $selectedTools[ name ] = $toolBox[ name ] = tool;
 
-selectTools[ name_String, Automatic|Inherited ] :=
-    selectTools[ name, Lookup[ $defaultChatTools, name ] ];
-
-selectTools[ name_String, None ] :=
-    KeyDropFrom[ $selectedTools, name ];
-
-selectTools[ name_String, tool_LLMTool ] :=
-    $selectedTools[ name ] = $toolBox[ name ] = tool;
-
-selectTools[ name_String, Missing[ "KeyAbsent", name_ ] ] :=
+(* Tool not found: *)
+selectTools0[ name_String, Missing[ "KeyAbsent", name_ ] ] :=
     If[ TrueQ @ KeyExistsQ[ $defaultChatTools0, name ],
+        (* A default tool that was filtered for compatibility *)
         Null,
+        (* An unknown tool name *)
         messagePrint[ "ToolNotFound", name ]
     ];
 
-selectTools // endDefinition;
+selectTools0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
