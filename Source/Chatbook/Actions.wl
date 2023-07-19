@@ -303,8 +303,9 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
     withChatState @ Block[ { $autoAssistMode = False },
-        $lastMessages   = None;
-        $lastChatString = None;
+        $lastMessages       = None;
+        $lastChatString     = None;
+        $nextTaskEvaluation = None;
         clearMinimizedChats @ nbo;
         WithCleanup[
             sendChat[ evalCell, nbo, settings ],
@@ -330,10 +331,27 @@ chatInputCellQ[ ___ ] := False;
 (* ::Subsection::Closed:: *)
 (*waitForLastTask*)
 waitForLastTask // beginDefinition;
+
 waitForLastTask[ ] := waitForLastTask @ $lastTask;
-waitForLastTask[ task_TaskObject ] := (TaskWait @ task; If[ $lastTask =!= task, waitForLastTask @ $lastTask ]);
+
+waitForLastTask[ task_TaskObject ] := (
+    TaskWait @ task;
+    runNextTask[ ];
+    If[ $lastTask =!= task, waitForLastTask @ $lastTask ]
+);
+
 waitForLastTask[ HoldPattern[ $lastTask ] ] := Null;
+
 waitForLastTask // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*runNextTask*)
+runNextTask // beginDefinition;
+runNextTask[ ] := runNextTask @ (Global`next = $nextTaskEvaluation);
+runNextTask[ Hold[ eval_ ] ] := ($nextTaskEvaluation = None; eval);
+runNextTask[ None ] := Null;
+runNextTask // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1320,7 +1338,17 @@ checkResponse[ settings: KeyValuePattern[ "ToolsEnabled" -> False ], container_,
 checkResponse[ settings_, container_? toolFreeQ, cell_, as_Association ] :=
     writeResult[ settings, container, cell, as ];
 
-checkResponse[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
+checkResponse[ settings_, container_Symbol, cell_, as_Association ] :=
+    delayedToolEvaluation[ settings, Unevaluated @ container, cell, as ];
+
+checkResponse // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*delayedToolEvaluation*)
+delayedToolEvaluation // beginDefinition;
+
+delayedToolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := $nextTaskEvaluation = Hold @ Enclose[
     Module[ { string, callPos, toolCall, toolResponse, output, messages, newMessages, req },
 
         string = ConfirmBy[ container[ "FullContent" ], StringQ, "FullContent" ];
@@ -1358,10 +1386,10 @@ checkResponse[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         $lastTask = submitAIAssistant[ container, req, cell, settings ]
     ],
-    throwInternalFailure[ checkResponse[ settings, container, cell, as ], ## ] &
+    throwInternalFailure[ delayedToolEvaluation[ settings, container, cell, as ], ## ] &
 ];
 
-checkResponse // endDefinition;
+delayedToolEvaluation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
