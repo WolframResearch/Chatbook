@@ -2054,9 +2054,12 @@ Notebook[
                 ButtonFunction :>
                  With[ { cell = EvaluationCell[] },
                   Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                  Symbol["Wolfram`Chatbook`ChatbookAction"][
-                   "DisableAssistance",
-                   cell
+                  Catch[
+                   Symbol["Wolfram`Chatbook`ChatbookAction"][
+                    "DisableAssistance",
+                    cell
+                   ],
+                   Blank[]
                   ]
                  ],
                 Appearance ->
@@ -2129,9 +2132,12 @@ Notebook[
                 ButtonFunction :>
                  With[ { cell = EvaluationCell[] },
                   Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                  Symbol["Wolfram`Chatbook`ChatbookAction"][
-                   "DisableAssistance",
-                   cell
+                  Catch[
+                   Symbol["Wolfram`Chatbook`ChatbookAction"][
+                    "DisableAssistance",
+                    cell
+                   ],
+                   Blank[]
                   ]
                  ],
                 Appearance ->
@@ -2204,9 +2210,12 @@ Notebook[
                 ButtonFunction :>
                  With[ { cell = EvaluationCell[] },
                   Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                  Symbol["Wolfram`Chatbook`ChatbookAction"][
-                   "DisableAssistance",
-                   cell
+                  Catch[
+                   Symbol["Wolfram`Chatbook`ChatbookAction"][
+                    "DisableAssistance",
+                    cell
+                   ],
+                   Blank[]
                   ]
                  ],
                 Appearance ->
@@ -5195,7 +5204,10 @@ Notebook[
         ButtonFunction :>
          With[ { cell = EvaluationCell[] },
           Quiet[Needs["Wolfram`Chatbook`" -> None]];
-          Symbol["Wolfram`Chatbook`ChatbookAction"]["StopChat", cell]
+          Catch[
+           Symbol["Wolfram`Chatbook`ChatbookAction"]["StopChat", cell],
+           Blank[]
+          ]
          ],
         Appearance -> None,
         Evaluator -> Automatic,
@@ -12537,7 +12549,10 @@ Notebook[
                  ButtonFunction :>
                   With[ { cell$ = EvaluationCell[] },
                    Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                   Symbol["Wolfram`Chatbook`ChatbookAction"]["TabLeft", cell$]
+                   Catch[
+                    Symbol["Wolfram`Chatbook`ChatbookAction"]["TabLeft", cell$],
+                    Blank[]
+                   ]
                   ],
                  Appearance ->
                   Dynamic[
@@ -12589,9 +12604,12 @@ Notebook[
                  ButtonFunction :>
                   With[ { cell$ = EvaluationCell[] },
                    Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                   Symbol["Wolfram`Chatbook`ChatbookAction"][
-                    "TabRight",
-                    cell$
+                   Catch[
+                    Symbol["Wolfram`Chatbook`ChatbookAction"][
+                     "TabRight",
+                     cell$
+                    ],
+                    Blank[]
                    ]
                   ],
                  Appearance ->
@@ -12814,9 +12832,12 @@ Notebook[
        ButtonFunction :>
         With[ { cell = ParentCell[EvaluationCell[]] },
          Quiet[Needs["Wolfram`Chatbook`" -> None]];
-         Symbol["Wolfram`Chatbook`ChatbookAction"][
-          "WidgetSend",
-          cell
+         Catch[
+          Symbol["Wolfram`Chatbook`ChatbookAction"][
+           "WidgetSend",
+           cell
+          ],
+          Blank[]
          ]
         ],
        Appearance ->
