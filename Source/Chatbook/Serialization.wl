@@ -29,7 +29,7 @@ Needs[ "Wolfram`Chatbook`FrontEnd`"   ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Config*)
-$$delimiterStyle   = "PageBreak"|"ExampleDelimiter"|"ChatDelimiter";
+$$delimiterStyle   = "PageBreak"|"ExampleDelimiter";
 $$itemStyle        = "Item"|"Notes";
 $$noCellLabelStyle = "Text"|"ChatInput"|"SideChat"|"ChatSystemInput"|"ChatBlockDivider"|$$delimiterStyle;
 $$docSearchStyle   = "ChatQuery";
