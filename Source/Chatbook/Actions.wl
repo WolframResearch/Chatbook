@@ -414,7 +414,7 @@ StopChat[ cell0_CellObject ] := Enclose[
         settings = ConfirmBy[ currentChatSettings @ cell, AssociationQ, "ChatNotebookSettings" ];
         removeTask @ Lookup[ settings, "Task" ];
         container = ConfirmBy[ Lookup[ settings, "Container" ], AssociationQ, "Container" ];
-        content = ConfirmBy[ Lookup[ container, "FullContent" ], StringQ, "Content" ];
+        content = ConfirmMatch[ Lookup[ container, "FullContent" ], _String|_ProgressIndicator, "Content" ];
         writeReformattedCell[ settings, content, cell ];
         Quiet @ NotebookDelete @ cell;
     ],
@@ -2862,6 +2862,18 @@ writeReformattedCell // beginDefinition;
 writeReformattedCell[ settings_, KeyValuePattern[ "FullContent" -> string_ ], cell_ ] :=
     writeReformattedCell[ settings, string, cell ];
 
+writeReformattedCell[ settings_, _ProgressIndicator, cell_CellObject ] :=
+    writeReformattedCell[ settings, None, cell ];
+
+writeReformattedCell[ settings_, None, cell_CellObject ] :=
+    With[ { taggingRules = Association @ CurrentValue[ cell, TaggingRules ] },
+        $lastChatString = None;
+        If[ AssociationQ @ taggingRules[ "PageData" ],
+            restoreLastPage[ settings, taggingRules, cell ],
+            NotebookDelete @ cell
+        ]
+    ];
+
 writeReformattedCell[ settings_, string_String, cell_CellObject ] :=
     With[
         {
@@ -2873,7 +2885,6 @@ writeReformattedCell[ settings_, string_String, cell_CellObject ] :=
         },
         $lastChatString = string;
         Block[ { $dynamicText = False },
-            (* Global`oldCellContent = NotebookRead @ cell; *)
             WithCleanup[
                 NotebookWrite[
                     cell,
@@ -2904,6 +2915,49 @@ writeReformattedCell[ settings_, other_, cell_CellObject ] :=
     ];
 
 writeReformattedCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*restoreLastPage*)
+restoreLastPage // beginDefinition;
+
+restoreLastPage[ settings_, rules_Association, cellObject_CellObject ] := Enclose[
+    Module[ { pageData, b64, bytes, content, dingbat, uuid, cell },
+
+        pageData = ConfirmBy[ rules[ "PageData" ], AssociationQ, "PageData" ];
+        b64      = ConfirmBy[ pageData[ "Pages", pageData[ "CurrentPage" ] ], StringQ, "Base64" ];
+        bytes    = ConfirmBy[ ByteArray @ b64, ByteArrayQ, "ByteArray" ];
+        content  = ConfirmMatch[ BinaryDeserialize @ bytes, _TextData, "TextData" ];
+        dingbat  = makeOutputDingbat @ settings;
+        uuid     = CreateUUID[ ];
+
+        cell = Cell[
+            content,
+            "ChatOutput",
+            GeneratedCell     -> True,
+            CellAutoOverwrite -> True,
+            TaggingRules      -> rules,
+            ExpressionUUID    -> uuid,
+            If[ TrueQ[ rules[ "PageData", "PageCount" ] > 1 ],
+                CellDingbat -> Cell[ BoxData @ TemplateBox[ { dingbat }, "AssistantIconTabbed" ], Background -> None ],
+                CellDingbat -> Cell[ BoxData @ dingbat, Background -> None ]
+            ]
+        ];
+
+        WithCleanup[
+            NotebookWrite[
+                cellObject,
+                $reformattedCell = cell,
+                None,
+                AutoScroll -> False
+            ],
+            attachChatOutputMenu[ $lastChatOutput = CellObject @ uuid ]
+        ]
+    ],
+    throwInternalFailure[ restoreLastPage[ settings, rules, cellObject ], ## ] &
+];
+
+restoreLastPage // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
