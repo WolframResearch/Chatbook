@@ -49,8 +49,14 @@ $PersonaInstallationDirectory := GeneralUtilities`EnsureDirectory @ {
 (*PersonaInstall*)
 PersonaInstall // beginDefinition;
 PersonaInstall[ ro_ResourceObject ] := catchMine @ personaInstall @ ro;
-PersonaInstall[ id_ ] := With[ { ro = ResourceObject @ id }, PersonaInstall @ ro /; MatchQ[ ro, _ResourceObject ] ];
+PersonaInstall[ id_ ] := With[ { ro = resourceObject @ id }, PersonaInstall @ ro /; MatchQ[ ro, _ResourceObject ] ];
 PersonaInstall // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*resourceObject*)
+resourceObject // ClearAll;
+resourceObject[ args___ ] := Quiet[ ResourceObject @ args, ResourceObject::updav ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -206,7 +212,7 @@ resourceFromURL[ url_String ] := Block[ { PrintTemporary },
 resourceFromURL // endDefinition;
 
 resourceFromURL0 // beginDefinition;
-resourceFromURL0[ url_String ] := With[ { ro = ResourceObject @ url }, ro /; promptResourceQ @ ro ];
+resourceFromURL0[ url_String ] := With[ { ro = resourceObject @ url }, ro /; promptResourceQ @ ro ];
 resourceFromURL0[ url_String ] := scrapeResourceFromShingle @ url;
 resourceFromURL0 // endDefinition;
 
@@ -246,7 +252,7 @@ scrapeResourceFromShingle[ url_String ] := Enclose[
                 xml
                 ,
                 XMLElement[ "div", { ___, "data-resource-uuid" -> uuid_String, ___ }, _ ] :>
-                    With[ { ro = Quiet @ ResourceObject @ uuid }, ro /; promptResourceQ @ ro ]
+                    With[ { ro = Quiet @ resourceObject @ uuid }, ro /; promptResourceQ @ ro ]
                 ,
                 FirstCase[
                     xml
@@ -554,7 +560,7 @@ formatPacletLink[ origin_String, url_, pacletName_ ] :=
             Tooltip[
                 Hyperlink[
                     formatIcon @ Mouseover[chatbookIcon["PacletRepo", False], chatbookIcon["PacletRepo-hover", False]],
-                    ResourceObject["Wolfram/Chatbook"]["DocumentationLink"],
+                    resourceObject["Wolfram/Chatbook"]["DocumentationLink"],
                     ImageMargins -> {{13, 0}, {0, 0}}],
                 "Persona installed from the Wolfram/Chatbook paclet. Visit page \[RightGuillemet]"],
         "PacletRepository",
@@ -718,12 +724,7 @@ promptResourceInstall0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*acquireResource*)
 acquireResource // beginDefinition;
-
-acquireResource[ KeyValuePattern[ "UUID" -> uuid_ ] ] := Quiet[
-    ResourceObject[ uuid, ResourceVersion -> "Latest" ],
-    ResourceObject::updav
-];
-
+acquireResource[ KeyValuePattern[ "UUID" -> uuid_ ] ] := resourceObject[ uuid, ResourceVersion -> "Latest" ];
 acquireResource // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
