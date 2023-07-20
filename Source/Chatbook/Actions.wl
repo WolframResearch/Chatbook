@@ -456,7 +456,13 @@ CopyChatObject // endDefinition;
 constructChatObject // beginDefinition;
 
 constructChatObject[ messages_List ] :=
-    With[ { chat = chatObject[ Append[ KeyMap[ Capitalize, #1 ], "Timestamp" -> Now ] & /@ messages ] },
+    Module[ { data, chat },
+        data = <| |>;
+        data[ "Messages" ] = MapAt[ Capitalize, KeyMap[ Capitalize, #1 ] & /@ messages, { All, "Role" } ];
+        data[ "ChatID"   ] = CreateUUID[ ];
+        data[ "History"  ] = { };
+        data[ "Usage"    ] = 0;
+        chat = chatObject @ data;
         chat /; MatchQ[ chat, _chatObject ]
     ];
 
