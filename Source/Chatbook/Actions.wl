@@ -309,13 +309,34 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
         clearMinimizedChats @ nbo;
         sendChat[ evalCell, nbo, settings ];
         waitForLastTask[ ];
-        If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
-            constructChatObject @ Append[ $lastMessages, <| "role" -> "Assistant", "content" -> $lastChatString |> ],
-            Null
-        ];
+        blockChatObject[
+            If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
+                constructChatObject @ Append[
+                    $lastMessages,
+                    <| "role" -> "Assistant", "content" -> $lastChatString |>
+                ],
+                Null
+            ];
+        ]
     ];
 
 EvaluateChatInput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*blockChatObject*)
+blockChatObject // beginDefinition;
+blockChatObject // Attributes = { HoldFirst };
+blockChatObject[ eval_ ] /; Quiet @ PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "1.1.0" ] := eval;
+blockChatObject[ eval_ ]  := Block[ { System`ChatObject = delayedChatObject, delayedChatObject }, eval ];
+blockChatObject // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*delayedChatObject*)
+delayedChatObject // beginDefinition;
+delayedChatObject[ args___ ] := delayedChatObject[ args ] = System`ChatObject @ args;
+delayedChatObject // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -456,7 +477,7 @@ CopyChatObject // endDefinition;
 constructChatObject // beginDefinition;
 
 constructChatObject[ messages_List ] :=
-    With[ { chat = chatObject[ Append[ KeyMap[ Capitalize, #1 ], "Timestamp" -> Now ] & /@ messages ] },
+    With[ { chat = chatObject[ MapAt[ Capitalize, KeyMap[ Capitalize ] /@ messages, { All, "Role" } ] ] },
         chat /; MatchQ[ chat, _chatObject ]
     ];
 
