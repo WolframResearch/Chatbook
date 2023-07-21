@@ -458,10 +458,8 @@ channelCleanup // beginDefinition;
 channelCleanup[ ] := channelCleanup @ $channelData;
 channelCleanup[ None ] := Null;
 
-channelCleanup[ KeyValuePattern @ { "Listener" -> listener_ChannelListener, "Channel" -> channel_ChannelObject } ] := (
-    RemoveChannelListener @ listener;
-    DeleteChannel @ channel;
-);
+channelCleanup[ KeyValuePattern @ { "Listener" -> listener_ChannelListener, "Channel" -> channel_ChannelObject } ] :=
+    Quiet[ RemoveChannelListener @ listener; DeleteChannel @ channel ];
 
 channelCleanup // endDefinition;
 
