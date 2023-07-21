@@ -32,9 +32,10 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `importResourceFunction;
 `messageFailure;
 `messagePrint;
-`throwTop;
 `throwFailure;
 `throwInternalFailure;
+`throwMessageDialog;
+`throwTop;
 
 `chatbookIcon;
 `$cloudVersionNumber;
@@ -135,6 +136,9 @@ Action \"`1`\" is not implemented.";
 
 Chatbook::InvalidStreamingOutputMethod = "\
 Invalid streaming output method: `1`.";
+
+Chatbook::ChannelFrameworkError = "\
+The channel framework is currently unavailable, please try installing from URL instead or try again later.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -286,6 +290,21 @@ catchMine // endDefinition;
 throwTop // beginDefinition;
 throwTop[ expr_ ] /; $catching := Throw[ Unevaluated @ expr, $catchTopTag ];
 throwTop // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*throwMessageDialog*)
+throwMessageDialog // beginDefinition;
+
+throwMessageDialog[ tag_String ] :=
+    With[ { message = MessageName[ Chatbook, tag ] },
+        throwMessageDialog @ message /; StringQ @ message
+    ];
+
+throwMessageDialog[ message_ ] :=
+    throwTop @ DefinitionNotebookClient`FancyMessageDialog[ "Chatbook", message ];
+
+throwMessageDialog // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
