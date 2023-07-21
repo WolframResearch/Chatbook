@@ -1276,7 +1276,7 @@ Notebook[
     ">" -> "ExternalLanguageDefault"
    },
    CellEpilog :>
-    With[ { cell = EvaluationCell[] },
+    With[ { cell = (FinishDynamic[]; EvaluationCell[]) },
      Quiet[Needs["Wolfram`Chatbook`" -> None]];
      Symbol["Wolfram`Chatbook`ChatbookAction"][
       "AIAutoAssist",
@@ -1565,7 +1565,7 @@ Notebook[
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellEvaluationFunction ->
     (Function[
-     With[ { cell = EvaluationCell[] },
+     With[ { cell = (FinishDynamic[]; EvaluationCell[]) },
       Quiet[Needs["Wolfram`Chatbook`" -> None]];
       Symbol["Wolfram`Chatbook`ChatbookAction"][
        "EvaluateChatInput",
@@ -2531,7 +2531,9 @@ Notebook[
     "ChatCodeActive",
     StyleDefinitions -> StyleData["ChatCode"]
    ],
-   ShowAutoStyles -> False
+   ShowAutoStyles -> False,
+   CodeAssistOptions -> {"AutoDetectHyperlinks" -> False},
+   LanguageCategory -> None
   ],
   Cell[
    StyleData["ChatCodeBlockTemplate"],
