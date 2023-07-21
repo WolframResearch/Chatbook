@@ -1273,7 +1273,7 @@ activeAIAssistantCell[
                 ToBoxes @ Dynamic[
                     $dynamicTrigger;
                     (* `$dynamicTrigger` is used to precisely control when the dynamic updates, otherwise we can get an
-                    FE crash if a NotebookWrite happens at the same time. *)
+                       FE crash if a NotebookWrite happens at the same time. *)
                     catchTop @ dynamicTextDisplay[ container, reformat ],
                     TrackedSymbols   :> { $dynamicTrigger },
                     Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
