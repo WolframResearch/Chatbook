@@ -222,7 +222,7 @@ CreatePreferencesContent[] := Module[{
 		Prepend[
 			KeyValueMap[
 				{persona, personaSettings} |-> {
-					getPersonaMenuIcon[personaSettings, "Full"],
+					resizeMenuIcon @ getPersonaMenuIcon[personaSettings, "Full"],
 					personaDisplayName[persona, personaSettings],
 					Replace[Lookup[personaSettings, "Description", None], {
 						None | _?MissingQ -> "",
