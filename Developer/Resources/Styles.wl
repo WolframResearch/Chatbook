@@ -55,7 +55,7 @@ Cell[
         ">" -> "ExternalLanguageDefault"
     },
     ContextMenu -> contextMenu[ $askMenuItem, Delimiter, "Input" ],
-    CellEpilog :> With[ { $CellContext`cell = EvaluationCell[ ] },
+    CellEpilog :> With[ { $CellContext`cell = (FinishDynamic[ ]; EvaluationCell[ ]) },
         Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
         Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AIAutoAssist", $CellContext`cell ]
     ]
@@ -132,7 +132,7 @@ Cell[
 		CellFrame -> 0,
         CellMargins -> 0
 	],
-    CellEvaluationFunction -> Function @ With[ { $CellContext`cell = EvaluationCell[ ] },
+    CellEvaluationFunction -> Function @ With[ { $CellContext`cell = (FinishDynamic[ ]; EvaluationCell[ ]) },
         Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
         Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "EvaluateChatInput", $CellContext`cell ]
     ],
@@ -151,11 +151,6 @@ Cell[
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
             Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "ModifierTemplate", $CellContext`cell ]
         ]
-        (* ,
-        { "KeyDown", ">" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
-            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "TrailingFunction", $CellContext`cell ]
-        ] *)
     }
 ]
 
