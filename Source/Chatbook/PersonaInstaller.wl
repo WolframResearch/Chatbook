@@ -228,12 +228,7 @@ scrapeResourceFromShingle[ url_String ] /; StringMatchQ[ url, WhitespaceCharacte
 scrapeResourceFromShingle[ url_String ] := Enclose[
     Module[ { returnInvalid, resp, bytes, xml },
 
-        returnInvalid = throwTop[
-            DefinitionNotebookClient`FancyMessageDialog[ (* FIXME: needs custom dialog *)
-                "Prompt",
-                "The specified URL does not represent a valid prompt resource."
-            ]
-        ] &;
+        returnInvalid = throwMessageDialog[ "The specified URL does not represent a valid prompt resource." ] &;
 
         resp = ConfirmMatch[ URLRead @ url, _HTTPResponse, "URLRead" ];
 
@@ -632,16 +627,32 @@ browseWithChannelCallback // beginDefinition;
 
 browseWithChannelCallback[ ] := Enclose[
     Module[ { perms, channel, data, handler, listener, url, shortURL, parsed, id, browseURL },
-        perms     = $channelPermissions;
-        channel   = ConfirmMatch[ CreateChannel[ Permissions -> perms ], _ChannelObject, "CreateChannel" ];
-        data      = <| "Listener" :> listener, "Channel" -> channel |>;
-        handler   = ConfirmMatch[ promptResourceInstallHandler @ data, _Function, "Handler" ];
-        listener  = ConfirmMatch[ ChannelListen[ channel, handler ], _ChannelListener, "ChannelListen" ];
+
+        perms = ConfirmMatch[ $channelPermissions, "Public"|"Private", "ChannelPermissions" ];
+
+        channel = ConfirmMatch[
+            CreateChannel[ Permissions -> perms ],
+            _ChannelObject,
+            SystemOpen @ $personaBrowseURL;
+            throwMessageDialog[ "ChannelFrameworkError" ]
+        ];
+
+        data    = <| "Listener" :> listener, "Channel" -> channel |>;
+        handler = ConfirmMatch[ promptResourceInstallHandler @ data, _Function, "Handler" ];
+
+        listener = ConfirmMatch[
+            ChannelListen[ channel, handler ],
+            _ChannelListener,
+            SystemOpen @ $personaBrowseURL;
+            throwMessageDialog[ "ChannelFrameworkError" ]
+        ];
+
         url       = ConfirmMatch[ listener[ "URL" ], _String | _URL, "ChannelListenerURL" ];
         shortURL  = ConfirmBy[ makeShortListenerURL[ channel, url ], StringQ, "URLShorten" ];
         parsed    = ConfirmMatch[ DeleteCases[ URLParse[ shortURL, "Path" ], "" ], { __String? StringQ }, "URLParse" ];
         id        = ConfirmBy[ Last @ URLParse[ shortURL, "Path" ], StringQ, "ChannelID" ];
         browseURL = ConfirmBy[ createBrowseURL @ id, StringQ, "BrowseURL" ];
+
         ConfirmMatch[ SystemOpen @ browseURL, Null, "SystemOpen" ];
         AssociationMap[ Apply @ Rule, Append[ data, "BrowseURL" -> browseURL ] ]
     ],
