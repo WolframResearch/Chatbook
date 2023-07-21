@@ -1271,20 +1271,23 @@ activeAIAssistantCell[
         Cell[
             BoxData @ TagBox[
                 ToBoxes @ Dynamic[
-                    $dynamicTrigger;
-                    (* `$dynamicTrigger` is used to precisely control when the dynamic updates, otherwise we can get an
-                       FE crash if a NotebookWrite happens at the same time. *)
-                    catchTop @ dynamicTextDisplay[ container, reformat ],
-                    TrackedSymbols :> { $dynamicTrigger },
-                    Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
-                    Deinitialization :> Quiet @ TaskRemove @ task
-                ],
+                        $dynamicTrigger;
+                        (* `$dynamicTrigger` is used to precisely control when the dynamic updates, otherwise we can get an
+                        FE crash if a NotebookWrite happens at the same time. *)
+                        catchTop @ dynamicTextDisplay[ container, reformat ],
+                        TrackedSymbols   :> { $dynamicTrigger },
+                        Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
+                        Deinitialization :> Quiet @ TaskRemove @ task
+                    ],
                 "DynamicTextDisplay",
                 BoxID -> uuid
             ]
             ,
             "Output",
             "ChatOutput",
+            ShowAutoSpellCheck -> False,
+            CodeAssistOptions -> { "AutoDetectHyperlinks" -> False },
+            LanguageCategory -> None,
             LineIndent -> 0,
             If[ TrueQ @ $autoAssistMode && MatchQ[ minimized, True|Automatic ],
                 Sequence @@ Flatten[ {
@@ -2390,7 +2393,7 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
         ];
 
         reformatted = ConfirmMatch[
-            Block[ { $dynamicText = False }, reformatTextData @ StringJoin @ static ],
+            Block[ { $dynamicText = True }, reformatTextData @ StringJoin @ static ],
             $$textDataList,
             "ReformatTextData"
         ];

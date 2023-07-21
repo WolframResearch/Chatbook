@@ -494,7 +494,9 @@ Cell[
 
 Cell[
     StyleData[ "ChatCodeActive", StyleDefinitions -> StyleData[ "ChatCode" ] ],
-    ShowAutoStyles -> False
+    CodeAssistOptions -> { "AutoDetectHyperlinks" -> False },
+    LanguageCategory  -> None,
+    ShowAutoStyles    -> False
 ]
 
 
