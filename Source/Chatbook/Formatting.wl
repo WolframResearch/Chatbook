@@ -25,7 +25,9 @@ Needs[ "Wolfram`Chatbook`Tools`"    ];
 (* ::Section::Closed:: *)
 (*Config*)
 
-$maxImageSize = 1000;
+$dynamicImageScale   = 0.25;
+$maxImageSize        = 800;
+$maxDynamicImageSize = Ceiling[ $maxImageSize * $dynamicImageScale ];
 
 $wlCodeString = Longest @ Alternatives[
     "Wolfram Language",
@@ -852,8 +854,8 @@ markdownImageBoxes // endDefinition;
 (*importedImage*)
 importedImage // beginDefinition;
 
-importedImage[ alt_String, url_String ] := importedImage[ alt, url ] =
-    importedImage[ alt, url, Quiet @ Import[ url, "Image" ] ];
+importedImage[ alt_String, url_String ] :=
+    importedImage[ alt, url, importImage @ url ];
 
 importedImage[ alt_String, url_String, _? FailureQ | _String ] :=
     importedImage[ alt, url, $missingImage ];
@@ -864,6 +866,13 @@ importedImage[ alt_String, url_String, i_ ] :=
 importedImage // endDefinition;
 
 $missingImage = RawBoxes @ TemplateBox[ { }, "ImageNotFound" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*importImage*)
+importImage // beginDefinition;
+importImage[ url_String ] := importImage[ url ] = Quiet @ Import[ url, "Image" ];
+importImage // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -877,22 +886,46 @@ tooltip // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*resizeImage*)
 resizeImage // beginDefinition;
+resizeImage[ img_ ] := resizeImage[ img, $dynamicText ];
+resizeImage[ img_, dynamic_ ] := resizeImage[ img, dynamic ] = resizeImage0 @ img;
+resizeImage // endDefinition;
 
-resizeImage[ img_Image? ImageQ ] /; Max @ ImageDimensions @ img > $maxImageSize :=
+
+resizeImage0 // beginDefinition;
+
+resizeImage0[ img_Image? ImageQ ] :=
+    resizeImage0[ img, ImageDimensions @ img ];
+
+resizeImage0[ img_Image? ImageQ, dims: { _Integer, _Integer } ] /; $dynamicText && Max @ dims > $maxDynamicImageSize :=
+    showResized @ ImageResize[ img, { UpTo[ $maxDynamicImageSize ], UpTo[ $maxDynamicImageSize ] } ];
+
+resizeImage0[ img_Image? ImageQ, dims: { _Integer, _Integer } ] /; Max @ dims > $maxImageSize :=
     showResized @ ImageResize[ img, { UpTo @ $maxImageSize, UpTo @ $maxImageSize } ];
 
-resizeImage[ other_ ] := showResized @ other;
+resizeImage0[ img_Image? ImageQ, dims: { _Integer, _Integer } ] :=
+    Show[ img, ImageSize -> dims / 2 ];
 
-resizeImage // endDefinition;
+resizeImage0[ other_ ] :=
+    other;
+
+resizeImage0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*showResized*)
 showResized // beginDefinition;
-showResized[ img_Image? ImageQ ] := showResized[ img, ImageDimensions @ img ];
-showResized[ img_, { w_Integer, h_Integer } ] := Show[ img, ImageSize -> UpTo /@ Floor[ { w, h } / 2 ] ];
+showResized[ img_Image? ImageQ ] := showResized[ img, targetImageSize @ img ];
+showResized[ img_, { w_Integer, h_Integer } ] := Show[ img, ImageSize -> { UpTo @ w, UpTo @ h } ];
 showResized[ img_ ] := img;
 showResized // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*targetImageSize*)
+targetImageSize // beginDefinition;
+targetImageSize[ img_Image? ImageQ ] /; $dynamicText := Ceiling[ (ImageDimensions @ img / 2) / $dynamicImageScale ];
+targetImageSize[ img_Image? ImageQ ] := Ceiling[ ImageDimensions @ img / 2 ];
+targetImageSize // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
