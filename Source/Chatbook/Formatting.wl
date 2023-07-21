@@ -400,7 +400,7 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 (*$textDataFormatRules*)
 $textDataFormatRules = {
     StringExpression[
-        Longest[ "```" ~~ language: Except[ WhitespaceCharacter ]... ] ~~ (" "...) ~~ "\n",
+        Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
         Shortest[ code__ ],
         ("```"|EndOfString)
     ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ("ENDTOOLCALL"|EndOfString) ] :>
@@ -435,7 +435,7 @@ $textDataFormatRules = {
 $dynamicSplitRules = {
     (* Code blocks *)
     s: StringExpression[
-        Longest[ "```" ~~ language: Except[ WhitespaceCharacter ]... ] ~~ (" "...) ~~ "\n",
+        Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
         Shortest[ code__ ],
         "```"
     ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ("ENDTOOLCALL"|EndOfString) ] :> s
