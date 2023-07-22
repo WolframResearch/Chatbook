@@ -2123,7 +2123,7 @@ makeChatActionMenuContent[
 					Slider[
 						tempValue,
 						{ 0, 2, 0.01 },
-						ImageSize  -> { 140, Automatic },
+						ImageSize  -> { 135, Automatic },
 						ImageMargins -> {{5, 0}, {5, 5}},
 						Appearance -> "Labeled"
 					],
