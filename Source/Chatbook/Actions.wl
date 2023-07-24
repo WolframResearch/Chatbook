@@ -328,7 +328,7 @@ EvaluateChatInput // endDefinition;
 blockChatObject // beginDefinition;
 blockChatObject // Attributes = { HoldFirst };
 blockChatObject[ eval_ ] /; Quiet @ PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "1.1.0" ] := eval;
-blockChatObject[ eval_ ]  := Block[ { System`ChatObject = delayedChatObject, delayedChatObject }, eval ];
+blockChatObject[ eval_ ]  := Block[ { chatObject = delayedChatObject, delayedChatObject }, eval ];
 blockChatObject // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
