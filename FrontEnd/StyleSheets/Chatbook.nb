@@ -1143,7 +1143,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.0.5.3899183259"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.1.1.3899200658"|>
   ],
   Cell[
    StyleData["Text"],
@@ -2025,7 +2025,9 @@ Notebook[
    GeneratedCell -> True,
    CellAutoOverwrite -> True,
    ShowAutoSpellCheck -> False,
+   CodeAssistOptions -> {"AutoDetectHyperlinks" -> False},
    LineSpacing -> {1.1, 0, 2},
+   LanguageCategory -> None,
    Background -> RGBColor[0.988235, 0.992157, 1.0],
    GraphicsBoxOptions -> {ImageSizeRaw -> {{300}, {220}}},
    Graphics3DBoxOptions -> {ImageSizeRaw -> {{300}, {220}}}
@@ -12875,6 +12877,5 @@ Notebook[
    }
   ]
  },
- FrontEndVersion -> "13.2 for Microsoft Windows (64-bit) (January 30, 2023)",
  StyleDefinitions -> "PrivateStylesheetFormatting.nb"
 ]
