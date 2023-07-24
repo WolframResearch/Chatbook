@@ -1385,7 +1385,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         string = ConfirmBy[ container[ "FullContent" ], StringQ, "FullContent" ];
 
         { callPos, toolCall } = ConfirmMatch[
-            $toolConfiguration[ "ToolRequestParser" ][ convertUTF8[ string, False ] ],
+            toolRequestParser[ convertUTF8[ string, False ] ],
             { _, _LLMToolRequest|_Failure },
             "ToolRequestParser"
         ];
@@ -1485,7 +1485,7 @@ toolResponseString // endDefinition;
 (*toolFreeQ*)
 toolFreeQ // beginDefinition;
 toolFreeQ[ KeyValuePattern[ "FullContent" -> s_ ] ] := toolFreeQ @ s;
-toolFreeQ[ s_String ] := ! MatchQ[ $toolConfiguration[ "ToolRequestParser" ][ s ], { _, _LLMToolRequest|_Failure } ];
+toolFreeQ[ s_String ] := ! MatchQ[ toolRequestParser @ s, { _, _LLMToolRequest|_Failure } ];
 toolFreeQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
