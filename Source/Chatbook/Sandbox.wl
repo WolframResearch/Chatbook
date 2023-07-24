@@ -119,7 +119,7 @@ pingSandboxKernel // endDefinition;
 startSandboxKernel // beginDefinition;
 
 startSandboxKernel[ ] := Enclose[
-    Module[ { pwFile, kernel, pid },
+    Module[ { pwFile, kernel, readPaths, pid },
 
         Scan[ LinkClose, Select[ Links[ ], sandboxKernelQ ] ];
 
@@ -127,8 +127,21 @@ startSandboxKernel[ ] := Enclose[
 
         kernel = ConfirmMatch[ LinkLaunch @ $sandboxKernelCommandLine, _LinkObject, "LinkLaunch" ];
 
+        readPaths = Replace[
+            $toolOptions[ "WolframLanguageEvaluator", "AllowedReadPaths" ],
+            _Missing :> $DefaultToolOptions[ "WolframLanguageEvaluator", "AllowedReadPaths" ]
+        ];
+
         (* Use StartProtectedMode instead of passing the -sandbox argument, since we need to initialize the FE first *)
-        LinkWrite[ kernel, Unevaluated @ EvaluatePacket[ UsingFrontEnd @ Null; Developer`StartProtectedMode[ ] ] ];
+        With[ { read = $resolvedReadPaths = makePaths @ readPaths },
+            LinkWrite[
+                kernel,
+                Unevaluated @ EvaluatePacket[
+                    UsingFrontEnd @ Null;
+                    Developer`StartProtectedMode[ "Read" -> read ]
+                ]
+            ]
+        ];
 
         pid = pingSandboxKernel @ kernel;
 
@@ -164,6 +177,17 @@ startSandboxKernel[ ] := Enclose[
 ];
 
 startSandboxKernel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makePaths*)
+makePaths // beginDefinition;
+makePaths[ All ] := If[ $OperatingSystem === "Windows", # <> ":\\" & /@ CharacterRange[ "A", "Z" ], "/" ];
+makePaths[ None ] := { };
+makePaths[ paths_List ] := DeleteDuplicates @ Flatten[ makePaths /@ paths ];
+makePaths[ path_String ] := path;
+makePaths[ Automatic|Inherited|_Missing ] := Automatic;
+makePaths // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -360,12 +384,17 @@ sandboxResultString[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result"
     ];
 
 sandboxResultString[ HoldComplete[ ___, expr_? simpleResultQ ] ] :=
-    With[ { string = ToString[ Unevaluated @ expr, InputForm, PageWidth -> 80 ] },
-        If[ StringLength @ string < 150,
+    With[ { string = ToString[ Unevaluated @ expr, InputForm, PageWidth -> 100 ] },
+        If[ StringLength @ string < $toolResultStringLength,
             If[ StringContainsQ[ string, "\n" ], "\n" <> string, string ],
             StringJoin[
                 "\n",
-                ToString[ Unevaluated @ Short[ expr, 1 ], OutputForm, PageWidth -> 80 ], "\n\n\n",
+                ToString[
+                    Unevaluated @ Short[ expr, Ceiling[ $toolResultStringLength/5 ] ],
+                    OutputForm,
+                    PageWidth -> 100
+                ],
+                "\n\n\n",
                 makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ]
             ]
         ]
