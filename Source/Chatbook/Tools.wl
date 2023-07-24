@@ -1239,7 +1239,7 @@ makeToolResponseString[ expr_? simpleResultQ ] :=
             StringJoin[
                 "\n",
                 ToString[
-                    Unevaluated @ Short[ expr, Ceiling[ $toolResultStringLength/5 ] ],
+                    Unevaluated @ Short[ expr, 5 ],
                     OutputForm,
                     PageWidth -> 100
                 ],
