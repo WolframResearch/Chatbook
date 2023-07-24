@@ -23,6 +23,7 @@ Wolfram`Chatbook`MakeExpressionURI;
 `makeToolConfiguration;
 `makeToolResponseString;
 `resolveTools;
+`toolRequestParser;
 `withToolBox;
 
 Begin[ "`Private`" ];
@@ -218,6 +219,17 @@ makeToolConfiguration // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*$toolConfiguration*)
 $toolConfiguration := $toolConfiguration = LLMConfiguration @ <| "Tools" -> Values @ $defaultChatTools |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolRequestParser*)
+toolRequestParser :=
+    Quiet[ Check[ $toolConfiguration[ "ToolRequestParser" ],
+                  Wolfram`LLMFunctions`LLMConfiguration`$DefaultTextualToolMethod[ "ToolRequestParser" ],
+                  LLMConfiguration::invprop
+           ],
+           LLMConfiguration::invprop
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
