@@ -38,6 +38,6 @@ PacletObject[<|
 				"Birdnardo"
 			}
 		},
-		{"FrontEnd"}
+		{"FrontEnd", "Prepend" -> True}
 	}
 |>]
