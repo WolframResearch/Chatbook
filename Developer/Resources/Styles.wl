@@ -29,6 +29,12 @@ Cell[
 ]
 
 
+Cell[
+    StyleData[ "ChatStyleSheetInformation" ],
+    TaggingRules -> <| "StyleSheetVersion" -> $stylesheetVersion |>
+]
+
+
 
 (* ::Section::Closed:: *)
 (*Text*)
