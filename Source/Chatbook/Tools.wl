@@ -536,6 +536,7 @@ They will be able to inspect it if they want to. \
 The user does not automatically see the result. \
 You must include the result in your response in order for them to see it. \
 If a formatted result is provided as a markdown link, use that in your response instead of typing out the output.
+The sandbox evaluator supports interactive content such as Manipulate.
 ";
 
 $defaultChatTools0[ "WolframLanguageEvaluator" ] = LLMTool[
