@@ -223,7 +223,7 @@ $toolConfiguration := $toolConfiguration = LLMConfiguration @ <| "Tools" -> Valu
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*toolRequestParser*)
-toolRequestParser :=
+toolRequestParser := toolRequestParser =
     Quiet[ Check[ $toolConfiguration[ "ToolRequestParser" ],
                   Wolfram`LLMFunctions`LLMConfiguration`$DefaultTextualToolMethod[ "ToolRequestParser" ],
                   LLMConfiguration::invprop
