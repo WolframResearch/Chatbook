@@ -8,6 +8,7 @@
 BeginPackage["Wolfram`Chatbook`Utils`"]
 
 `associationKeyDeflatten;
+`fixLineEndings;
 
 CellPrint2
 
@@ -95,6 +96,13 @@ FirstMatchingPositionOrder[patterns_?ListQ][a_, b_] := Module[{
 (*AssociationKeyDeflatten*)
 (* https://resources.wolframcloud.com/FunctionRepository/resources/AssociationKeyDeflatten *)
 importResourceFunction[ associationKeyDeflatten, "AssociationKeyDeflatten" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*fixLineEndings*)
+fixLineEndings // beginDefinition;
+fixLineEndings[ string_String? StringQ ] := StringReplace[ string, "\r\n" -> "\n" ];
+fixLineEndings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

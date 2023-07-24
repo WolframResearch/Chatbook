@@ -38,6 +38,7 @@ CreateChatNotebook // Options = {
     "ShowMinimized"                     -> Automatic,
     "StreamingOutputMethod"             -> Automatic,
     "Temperature"                       -> 0.7,
+    "ToolOptions"                       :> $DefaultToolOptions,
     "Tools"                             -> Automatic,
     "ToolsEnabled"                      -> Automatic,
     "TopP"                              -> 1
