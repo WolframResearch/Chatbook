@@ -520,7 +520,16 @@ BuildChatbookStylesheet[ target_ ] :=
         exported = Export[ target, $ChatbookStylesheet, "NB" ];
         PacletInstall[ "Wolfram/PacletCICD" ];
         Needs[ "Wolfram`PacletCICD`" -> None ];
-        SetOptions[ ResourceFunction[ "SaveReadableNotebook" ], "RealAccuracy" -> 10 ];
+        SetOptions[
+            ResourceFunction[ "SaveReadableNotebook" ],
+            "RealAccuracy" -> 10,
+            "ExcludedNotebookOptions" -> {
+                ExpressionUUID,
+                FrontEndVersion,
+                WindowMargins,
+                WindowSize
+            }
+        ];
         Wolfram`PacletCICD`FormatNotebooks @ exported;
         exported
     ];
