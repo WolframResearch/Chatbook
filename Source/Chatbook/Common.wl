@@ -502,9 +502,10 @@ $bugReportStack := StringRiffle[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$settings*)
-$settings := Module[ { settings, assoc },
-    settings = CurrentValue @ { TaggingRules, "ChatNotebookSettings" };
-    assoc = Association @ settings;
+$settings := Module[ { settings, styleInfo, assoc },
+    settings  = CurrentValue @ { TaggingRules, "ChatNotebookSettings" };
+    styleInfo = CurrentValue @ { StyleDefinitions, "ChatStyleSheetInformation", TaggingRules };
+    assoc     = Association @ Select[ Association /@ { settings, styleInfo }, AssociationQ ];
     If[ AssociationQ @ assoc,
         KeyDrop[ assoc, "OpenAIKey" ],
         settings

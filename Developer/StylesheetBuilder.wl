@@ -451,6 +451,19 @@ insertionPointMenuItem[ icon_, label_, shortcut_, style_ ] :=
     ] :> FrontEndTokenExecute[ EvaluationNotebook[ ], "Style", style ];
 
 
+
+(* ::Subsection::Closed:: *)
+(*Stylesheet Version*)
+
+
+$stylesheetVersion = StringJoin[
+    PacletObject[ File[ $pacletDirectory ] ][ "Version" ],
+    ".",
+    ToString @ Round @ AbsoluteTime[ ]
+];
+
+
+
 (* ::Subsection::Closed:: *)
 (*inlineResources*)
 
