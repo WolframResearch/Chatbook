@@ -7,16 +7,20 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
+Wolfram`Chatbook`$DefaultToolOptions;
 Wolfram`Chatbook`$DefaultTools;
 Wolfram`Chatbook`$ToolFunctions;
 Wolfram`Chatbook`FormatToolResponse;
 Wolfram`Chatbook`GetExpressionURI;
 Wolfram`Chatbook`GetExpressionURIs;
 Wolfram`Chatbook`MakeExpressionURI;
+Wolfram`Chatbook`SetToolOptions;
 
 `$attachments;
 `$defaultChatTools;
 `$toolConfiguration;
+`$toolOptions;
+`$toolResultStringLength;
 `getToolByName;
 `initTools;
 `makeExpressionURI;
@@ -66,10 +70,19 @@ $ToolFunctions = <|
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Tool Configuration*)
+$toolResultStringLength = 500;
+$webSessionVisible      = False;
 
-$toolBox       = <| |>;
-$selectedTools = <| |>;
+$DefaultToolOptions = <|
+    "WolframLanguageEvaluator" -> <|
+        "AllowedReadPaths" -> All
+    |>
+|>;
+
 $attachments   = <| |>;
+$selectedTools = <| |>;
+$toolBox       = <| |>;
+$toolOptions   = <| |>;
 
 $cloudUnsupportedTools = { "WolframLanguageEvaluator", "DocumentationSearcher" };
 
@@ -80,14 +93,40 @@ $defaultToolOrder = {
     "WolframLanguageEvaluator"
 };
 
-$webSessionVisible = False;
-
 $toolNameAliases = <|
     "DocumentationSearch" -> "DocumentationSearcher",
     "WebFetch"            -> "WebFetcher",
     "WebImageSearch"      -> "WebImageSearcher",
     "WebSearch"           -> "WebSearcher"
 |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Tool Options*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*SetToolOptions*)
+SetToolOptions // ClearAll;
+
+SetToolOptions[ name_String, opts: OptionsPattern[ ] ] :=
+    SetToolOptions[ $FrontEnd, name, opts ];
+
+SetToolOptions[ scope_, name_String, opts: OptionsPattern[ ] ] := UsingFrontEnd[
+    KeyValueMap[
+        (CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", "ToolOptions", name, ToString[ #1 ] } ] = #2) &,
+        Association @ Reverse @ { opts }
+    ];
+    CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", "ToolOptions" } ]
+];
+
+SetToolOptions[ name_String, Inherited ] :=
+    SetToolOptions[ $FrontEnd, name, Inherited ];
+
+SetToolOptions[ scope_, name_String, Inherited ] := UsingFrontEnd[
+    CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", "ToolOptions", name } ] = Inherited;
+    CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", "ToolOptions" } ]
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -98,7 +137,7 @@ $toolNameAliases = <|
 (*withToolBox*)
 withToolBox // beginDefinition;
 withToolBox // Attributes = { HoldFirst };
-withToolBox[ eval_ ] := Block[ { $selectedTools = <| |> }, eval ];
+withToolBox[ eval_ ] := Block[ { $selectedTools = <| |>, $toolOptions = $DefaultToolOptions }, eval ];
 withToolBox // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -191,7 +230,9 @@ resolveTools // beginDefinition;
 resolveTools[ settings: KeyValuePattern[ "ToolsEnabled" -> True ] ] := (
     initTools[ ];
     selectTools @ settings;
+    $toolOptions = Lookup[ settings, "ToolOptions", $DefaultToolOptions ];
     $lastSelectedTools = $selectedTools;
+    $lastToolOptions = $toolOptions;
     If[ KeyExistsQ[ $selectedTools, "WolframLanguageEvaluator" ], needsBasePrompt[ "WolframLanguageEvaluatorTool" ] ];
     Append[ settings, "Tools" -> Values @ $selectedTools ]
 );
@@ -263,7 +304,7 @@ $toolPost := "
 
 To call a tool, write the following on a new line at any time during your response:
 
-```
+
 TOOLCALL: <tool name>
 {
 	\"<parameter name 1>\": <value 1>
@@ -271,7 +312,7 @@ TOOLCALL: <tool name>
 }
 ENDARGUMENTS
 ENDTOOLCALL
-```
+
 
 The system will execute the requested tool call and you will receive a system message containing the result.
 
@@ -530,13 +571,12 @@ $line = 0;
 (* ::Subsection::Closed:: *)
 (*Evaluate*)
 $sandboxEvaluateDescription = "\
-Evaluate Wolfram Language code for the user in a separate sandboxed kernel. \
-You do not need to tell the user the input code that you are evaluating. \
-They will be able to inspect it if they want to. \
+Evaluate Wolfram Language code for the user in a separate kernel. \
 The user does not automatically see the result. \
 You must include the result in your response in order for them to see it. \
 If a formatted result is provided as a markdown link, use that in your response instead of typing out the output.
-The sandbox evaluator supports interactive content such as Manipulate.
+The evaluator supports interactive content such as Manipulate.
+You have read access to local files.
 ";
 
 $defaultChatTools0[ "WolframLanguageEvaluator" ] = LLMTool[
@@ -1193,12 +1233,17 @@ getAttachment // endDefinition;
 makeToolResponseString // beginDefinition;
 
 makeToolResponseString[ expr_? simpleResultQ ] :=
-    With[ { string = TextString @ expr },
-        If[ StringLength @ string < 150,
+    With[ { string = fixLineEndings @ TextString @ expr },
+        If[ StringLength @ string < $toolResultStringLength,
             If[ StringContainsQ[ string, "\n" ], "\n" <> string, string ],
             StringJoin[
                 "\n",
-                ToString[ Unevaluated @ Short[ expr, 1 ], OutputForm, PageWidth -> 80 ], "\n\n\n",
+                fixLineEndings @ ToString[
+                    Unevaluated @ Short[ expr, 5 ],
+                    OutputForm,
+                    PageWidth -> 100
+                ],
+                "\n\n\n",
                 makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ]
             ]
         ]
