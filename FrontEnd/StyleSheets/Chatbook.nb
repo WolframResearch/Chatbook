@@ -1142,6 +1142,10 @@ Notebook[
    |>
   ],
   Cell[
+   StyleData["ChatStyleSheetInformation"],
+   TaggingRules -> <|"StyleSheetVersion" -> "1.0.5.3899183259"|>
+  ],
+  Cell[
    StyleData["Text"],
    ContextMenu -> {
     MenuItem[
