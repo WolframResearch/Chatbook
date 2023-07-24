@@ -15,6 +15,7 @@ Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`Common`" ];
 Needs[ "Wolfram`Chatbook`Tools`"  ];
+Needs[ "Wolfram`Chatbook`Utils`"  ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -384,12 +385,12 @@ sandboxResultString[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result"
     ];
 
 sandboxResultString[ HoldComplete[ ___, expr_? simpleResultQ ] ] :=
-    With[ { string = ToString[ Unevaluated @ expr, InputForm, PageWidth -> 100 ] },
+    With[ { string = fixLineEndings @ ToString[ Unevaluated @ expr, InputForm, PageWidth -> 100 ] },
         If[ StringLength @ string < $toolResultStringLength,
             If[ StringContainsQ[ string, "\n" ], "\n" <> string, string ],
             StringJoin[
                 "\n",
-                ToString[
+                fixLineEndings @ ToString[
                     Unevaluated @ Short[ expr, 5 ],
                     OutputForm,
                     PageWidth -> 100

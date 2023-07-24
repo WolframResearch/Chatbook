@@ -1233,12 +1233,12 @@ getAttachment // endDefinition;
 makeToolResponseString // beginDefinition;
 
 makeToolResponseString[ expr_? simpleResultQ ] :=
-    With[ { string = TextString @ expr },
+    With[ { string = fixLineEndings @ TextString @ expr },
         If[ StringLength @ string < $toolResultStringLength,
             If[ StringContainsQ[ string, "\n" ], "\n" <> string, string ],
             StringJoin[
                 "\n",
-                ToString[
+                fixLineEndings @ ToString[
                     Unevaluated @ Short[ expr, 5 ],
                     OutputForm,
                     PageWidth -> 100
