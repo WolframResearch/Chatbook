@@ -262,9 +262,11 @@ Cell[
     CellGroupingRules    -> "OutputGrouping",
     CellMargins          -> { { 66, 25 }, { 12, 5 } },
     CellTrayWidgets      -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    CodeAssistOptions    -> { "AutoDetectHyperlinks" -> False },
     GeneratedCell        -> True,
     Graphics3DBoxOptions -> { ImageSizeRaw -> { { 300 }, { 220 } } },
     GraphicsBoxOptions   -> { ImageSizeRaw -> { { 300 }, { 220 } } },
+    LanguageCategory     -> None,
     LineSpacing          -> { 1.1, 0, 2 },
     ShowAutoSpellCheck   -> False,
     menuInitializer[ "ChatOutput", RGBColor[ "#ecf0f5" ] ]
