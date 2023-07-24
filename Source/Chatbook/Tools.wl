@@ -304,7 +304,7 @@ $toolPost := "
 
 To call a tool, write the following on a new line at any time during your response:
 
-```
+
 TOOLCALL: <tool name>
 {
 	\"<parameter name 1>\": <value 1>
@@ -312,7 +312,7 @@ TOOLCALL: <tool name>
 }
 ENDARGUMENTS
 ENDTOOLCALL
-```
+
 
 The system will execute the requested tool call and you will receive a system message containing the result.
 
