@@ -1380,7 +1380,7 @@ checkResponse // endDefinition;
 toolEvaluation // beginDefinition;
 
 toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
-    Module[ { string, callPos, toolCall, toolResponse, output, messages, newMessages, req },
+    Module[ { string, callPos, toolCall, toolResponse, output, messages, newMessages, req, toolID },
 
         string = ConfirmBy[ container[ "FullContent" ], StringQ, "FullContent" ];
 
@@ -1413,7 +1413,10 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         req = ConfirmMatch[ makeHTTPRequest[ settings, newMessages ], _HTTPRequest, "HTTPRequest" ];
 
-        appendToolResult[ container, output ];
+        toolID = Hash[ toolResponse, Automatic, "HexString" ];
+        $toolEvaluationResults[ toolID ] = toolResponse;
+
+        appendToolResult[ container, output, toolID ];
 
         $lastTask = submitAIAssistant[ container, req, cell, settings ]
     ],
@@ -1421,6 +1424,9 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 ];
 
 toolEvaluation // endDefinition;
+
+
+$toolEvaluationResults = <| |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -1459,9 +1465,9 @@ writeResult // endDefinition;
 appendToolResult // beginDefinition;
 appendToolResult // Attributes = { HoldFirst };
 
-appendToolResult[ container_Symbol, output_String ] :=
+appendToolResult[ container_Symbol, output_String, id_String ] :=
     Module[ { append },
-        append = "RESULT\n"<>output<>"\nENDTOOLCALL\n";
+        append = "RESULT\n"<>output<>"\nENDTOOLCALL(" <> id <> ")\n\n";
         container[ "FullContent"    ] = container[ "FullContent"    ] <> append;
         container[ "DynamicContent" ] = container[ "DynamicContent" ] <> append;
     ];

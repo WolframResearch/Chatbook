@@ -394,6 +394,7 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Parsing Rules*)
+$$endToolCall = Longest[ "ENDTOOLCALL" ~~ (("(" ~~ HexadecimalCharacter.. ~~ ")") | "") ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -403,14 +404,14 @@ $textDataFormatRules = {
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
         Shortest[ code__ ],
         ("```"|EndOfString)
-    ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ("ENDTOOLCALL"|EndOfString) ] :>
+    ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString) ] :>
         codeBlockCell[ language, code ]
     ,
     "![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
         StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
             imageCell[ alt, url ]
     ,
-    tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ("ENDTOOLCALL"|EndOfString)) :> inlineToolCallCell @ tool,
+    tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString)) :> inlineToolCallCell @ tool,
     ("\n"|StartOfString) ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
     ("\n"|StartOfString) ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ]
     ,
@@ -438,7 +439,7 @@ $dynamicSplitRules = {
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
         Shortest[ code__ ],
         "```"
-    ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ("ENDTOOLCALL"|EndOfString) ] :> s
+    ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString) ] :> s
     ,
     (* Markdown image *)
     s: ("![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")") /;
@@ -446,7 +447,7 @@ $dynamicSplitRules = {
             s
     ,
     (* Tool call *)
-    s: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ "ENDTOOLCALL") :> s
+    s: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ $$endToolCall) :> s
 };
 
 (* ::**************************************************************************************************************:: *)
