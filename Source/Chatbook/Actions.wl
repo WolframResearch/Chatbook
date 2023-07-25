@@ -367,7 +367,7 @@ waitForLastTask // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*runNextTask*)
 runNextTask // beginDefinition;
-runNextTask[ ] := runNextTask @ (Global`next = $nextTaskEvaluation);
+runNextTask[ ] := runNextTask @ $nextTaskEvaluation;
 runNextTask[ Hold[ eval_ ] ] := ($nextTaskEvaluation = None; eval);
 runNextTask[ None ] := Null;
 runNextTask // endDefinition;
