@@ -325,60 +325,41 @@ $tabButtonLabels = <|
 |>;
 
 
-tabScrollButton[ direction_ ] := Button[
+tabScrollButton[ direction_, cell_ ] := Button[
     $tabButtonLabels[ direction ],
-    With[ { $CellContext`cell = EvaluationCell[ ] },
-        Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-        Catch[ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ direction, $CellContext`cell ], _ ]
-    ],
+    Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+    Catch[ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ direction, cell ], _ ],
     Appearance -> $suppressButtonAppearance
 ];
 
 
-$tabbedOutputControls = Column[
-    {
-        Row @ { tabScrollButton[ "TabLeft" ], tabScrollButton[ "TabRight" ] },
-        RawBoxes @ StyleBox[
-            RowBox @ {
-                DynamicBox @ ToBoxes[
-                    If[ FEPrivate`$ProductIDName === "WolframCloud",
-                        CurrentValue[
-                            EvaluationCell[ ],
-                            { TaggingRules, "PageData", "CurrentPage" },
-                            1
+$tabbedOutputControls =
+    DynamicModule[ { cell },
+        Column[
+            {
+                Row @ { tabScrollButton[ "TabLeft", cell ], tabScrollButton[ "TabRight", cell ] },
+                RawBoxes @ StyleBox[
+                    RowBox @ {
+                        DynamicBox @ ToBoxes[
+                            CurrentValue[ cell, { TaggingRules, "PageData", "CurrentPage" }, 1 ],
+                            StandardForm
                         ],
-                        CurrentValue[
-                            ParentCell @ EvaluationCell[ ],
-                            { TaggingRules, "PageData", "CurrentPage" },
-                            1
+                        "/",
+                        DynamicBox @ ToBoxes[
+                            CurrentValue[ cell, { TaggingRules, "PageData", "PageCount" }, 1 ],
+                            StandardForm
                         ]
-                    ],
-                    StandardForm
-                ],
-                "/",
-                DynamicBox @ ToBoxes[
-                    If[ FEPrivate`$ProductIDName === "WolframCloud",
-                        CurrentValue[
-                            EvaluationCell[ ],
-                            { TaggingRules, "PageData", "PageCount" },
-                            1
-                        ],
-                        CurrentValue[
-                            ParentCell @ EvaluationCell[ ],
-                            { TaggingRules, "PageData", "PageCount" },
-                            1
-                        ]
-                    ],
-                    StandardForm
+                    },
+                    FontFamily -> "Roboto",
+                    FontSize   -> 10
                 ]
             },
-            FontFamily -> "Roboto",
-            FontSize   -> 10
-        ]
-    },
-    Alignment -> Center,
-    Spacings  -> 0.1
-];
+            Alignment -> Center,
+            Spacings  -> 0.1
+        ],
+        Initialization   :> (cell = If[ $CloudEvaluation, x; EvaluationCell[ ], ParentCell @ EvaluationCell[ ] ]),
+        UnsavedVariables :> { cell }
+    ];
 
 
 tabbedChatOutputCellDingbat[ arg_ ] := Column[
