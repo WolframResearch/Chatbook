@@ -357,7 +357,8 @@ $tabbedOutputControls =
             Alignment -> Center,
             Spacings  -> 0.1
         ],
-        Initialization :> (cell = If[ $CloudEvaluation, EvaluationCell[ ], ParentCell @ EvaluationCell[ ] ])
+        Initialization   :> (cell = If[ $CloudEvaluation, EvaluationCell[ ], ParentCell @ EvaluationCell[ ] ]),
+        UnsavedVariables :> { cell }
     ];
 
 
