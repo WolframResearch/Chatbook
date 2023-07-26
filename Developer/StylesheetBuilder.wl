@@ -383,11 +383,26 @@ $chatDelimiterCellDingbat   = Wolfram`Chatbook`UI`MakeChatDelimiterCellDingbat[ 
 
 $cellInsertionPointCell := $cellInsertionPointCell = ReplaceAll[
     FrontEndResource[ "FEExpressions", "CellInsertionMenu" ],
-    item: HoldPattern[ _ :> FrontEndTokenExecute[ EvaluationNotebook[ ], "Style", "ExternalLanguage" ] ] :> Sequence[
-        item,
-        insertionPointMenuItem[ TemplateBox[ { }, "ChatInputIcon" ], "Chat Input", "'", "ChatInput" ],
-        insertionPointMenuItem[ TemplateBox[ { }, "SideChatIcon" ], "Side Chat", "''", "SideChat" ]
-    ]
+    {
+        PaneSelectorBox[
+            args: {
+                True -> StyleBox[
+                    DynamicBox[ FEPrivate`FrontEndResource[ "CellInsertionMenu", "TextStyle2Mac" ], ___ ],
+                    ___
+                ],
+                ___
+            },
+            True|False,
+            opts___
+        ] :> PaneSelectorBox[ args, Dynamic[ $OperatingSystem === "MacOSX" ], opts ]
+        ,
+        item: HoldPattern[ _ :> FrontEndTokenExecute[ EvaluationNotebook[ ], "Style", "ExternalLanguage" ] ] :>
+            Sequence[
+                item,
+                insertionPointMenuItem[ TemplateBox[ { }, "ChatInputIcon" ], "Chat Input", "'", "ChatInput" ],
+                insertionPointMenuItem[ TemplateBox[ { }, "SideChatIcon" ], "Side Chat", "''", "SideChat" ]
+            ]
+    }
 ];
 
 
