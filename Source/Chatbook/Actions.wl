@@ -278,8 +278,11 @@ rotateTabPage // endDefinition;
 (*writePageContent*)
 writePageContent // beginDefinition;
 
-writePageContent[ cell_CellObject, newPage_Integer, content: TextData[ _String | _List ] ] /; $cloudNotebooks :=
+writePageContent[ cell_CellObject, newPage_Integer, content: TextData[ _String | _List ] ] /; $cloudNotebooks := (
+    CurrentValue[ cell, { TaggingRules, "PageData", "CurrentPage" } ] = newPage;
+    CurrentValue[ cell, TaggingRules ] = GeneralUtilities`ToAssociations @ CurrentValue[ cell, TaggingRules ];
     NotebookWrite[ cell, ReplacePart[ NotebookRead @ cell, 1 -> content ] ];
+)
 
 writePageContent[ cell_CellObject, newPage_Integer, content: TextData[ _String | _List ] ] := (
     SelectionMove[ cell, All, CellContents, AutoScroll -> False ];
