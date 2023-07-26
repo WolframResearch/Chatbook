@@ -580,7 +580,7 @@ Notebook[
                   "CellInsertionMenuStyleShortcutLabel"
                  ]
                },
-               False,
+               Dynamic[$OperatingSystem === "MacOSX"],
                ImageSize -> {Automatic, Automatic}
               ],
               "CellInsertionMenuShortcut"
@@ -1143,7 +1143,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.1.1.3899375094"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.1.1.3899380025"|>
   ],
   Cell[
    StyleData["Text"],
@@ -12677,6 +12677,7 @@ Notebook[
            Initialization :>
             (Wolfram`ChatbookStylesheetBuilder`Private`cell$$ = 
              If[ $CloudEvaluation,
+              Wolfram`ChatbookStylesheetBuilder`Private`x;
               EvaluationCell[],
               ParentCell[EvaluationCell[]]
              ]),
