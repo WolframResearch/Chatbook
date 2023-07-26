@@ -166,7 +166,7 @@ makeChatNotebookOptions // beginDefinition;
 
 makeChatNotebookOptions[ settings_Association, opts: OptionsPattern[ ] ] := Sequence @@ DeleteDuplicatesBy[
     Flatten @ {
-        FilterRules[ { opts }, UsingFrontEnd @ Options @ Notebook ],
+        FilterRules[ { opts }, $notebookOptions ],
         StyleDefinitions -> $chatbookStylesheet,
         If[ settings === <| |>,
             Nothing,
@@ -177,6 +177,11 @@ makeChatNotebookOptions[ settings_Association, opts: OptionsPattern[ ] ] := Sequ
 ];
 
 makeChatNotebookOptions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$notebookOptions*)
+$notebookOptions := $notebookOptions = UsingFrontEnd @ Block[ { $Context = "FrontEnd`" }, Options @ Notebook ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
