@@ -1496,6 +1496,7 @@ toolResponseString // endDefinition;
 (*toolFreeQ*)
 toolFreeQ // beginDefinition;
 toolFreeQ[ KeyValuePattern[ "FullContent" -> s_ ] ] := toolFreeQ @ s;
+toolFreeQ[ _ProgressIndicator ] := True;
 toolFreeQ[ s_String ] := ! MatchQ[ toolRequestParser @ s, { _, _LLMToolRequest|_Failure } ];
 toolFreeQ // endDefinition;
 
