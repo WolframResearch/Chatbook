@@ -33,8 +33,6 @@ GeneralUtilities`SetUsage[CreateToolbarContent, "
 CreateToolbarContent[] is called by the NotebookToolbar to generate the content of the 'Notebook AI Settings' attached menu.
 "]
 
-$SupportedModels
-
 `getPersonaIcon;
 `personaDisplayName;
 
@@ -62,12 +60,6 @@ Needs["Wolfram`Chatbook`PreferencesUtils`" -> "PrefUtils`"]
 Needs["Wolfram`Chatbook`ServerSentEventUtils`" -> None]
 
 (*========================================================*)
-
-$SupportedModels = {
-	(* FIXME: Replace with OpenAI logo *)
-	{"gpt-3.5-turbo", getIcon["ModelGPT35"], "GPT-3.5"},
-	{"gpt-4", getIcon["ModelGPT4"], "GPT-4"}
-};
 
 $chatMenuWidth = 225
 
@@ -155,7 +147,12 @@ $cloudModelChooser := PopupMenu[
 		],
 		Function[CurrentValue[EvaluationNotebook[], {TaggingRules, "ChatNotebookSettings", "Model"}] = #]
 	],
-	Cases[$SupportedModels, {model_, icon_, label_} :> model -> Grid[{{resizeMenuIcon[icon], label}}]],
+	KeyValueMap[
+		getModelsMenuItems[],
+		{modelName, settings} |-> (
+			modelName -> Grid[{{getModelMenuIcon[settings], modelDisplayName[modelName]}}]
+		)
+	],
 	ImageSize -> {Automatic, 30},
 	Alignment -> {Left, Baseline},
 	BaseStyle -> {FontSize -> 12}
@@ -270,7 +267,7 @@ CreatePreferencesContent[] := Module[{
 				chatbookSettings
 			],
 			PrefUtils`PreferencesSection[
-				Style[tr["Installed LLM Evaluators"], "subsectionText"],
+				Style[tr["Installed Personas"], "subsectionText"],
 				llmEvaluatorNamesSettings
 			]
 			(* PrefUtils`PreferencesSection[
@@ -482,7 +479,7 @@ makeAutomaticResultAnalysisCheckbox[
 			setterFunction
 		],
 		Row[{
-			"Automatic Result Analysis",
+			"Do automatic result analysis",
 			Spacer[3],
 			Tooltip[
 				chatbookIcon["InformationTooltip", False],
@@ -516,6 +513,23 @@ labeledCheckbox[value_, label_, enabled_ : Automatic] :=
 		}
 	]
 
+(*====================================*)
+
+makeTemperatureSlider[
+	value_
+] :=
+	Pane[
+		Slider[
+			value,
+			{ 0, 2, 0.01 },
+			ImageSize  -> { 135, Automatic },
+			ImageMargins -> {{5, 0}, {5, 5}},
+			Appearance -> "Labeled"
+		],
+		ImageSize -> { 180, Automatic },
+		BaseStyle -> { FontSize -> 12 }
+	]
+
 (*=========================================*)
 (* Common preferences content construction *)
 (*=========================================*)
@@ -526,7 +540,9 @@ makeFrontEndAndNotebookSettingsContent[
 	targetObj : _FrontEndObject | $FrontEndSession | _NotebookObject
 ] := Module[{
 	personas = GetPersonasAssociation[],
-	defaultPersonaPopupItems
+	defaultPersonaPopupItems,
+	setModelPopupItems,
+	modelPopupItems
 },
 	defaultPersonaPopupItems = KeyValueMap[
 		{persona, personaSettings} |-> (
@@ -540,6 +556,25 @@ makeFrontEndAndNotebookSettingsContent[
 		personas
 	];
 
+	(*----------------------------*)
+	(* Compute the models to show *)
+	(*----------------------------*)
+
+	setModelPopupItems[] := (
+		modelPopupItems = KeyValueMap[
+			{modelName, settings} |-> (
+				modelName -> Row[{
+					getModelMenuIcon[settings, "Full"],
+					modelDisplayName[modelName]
+				}, Spacer[1]]
+			),
+			getModelsMenuItems[]
+		];
+	);
+
+	(* Initial value. Called again if 'show advanced models' changes. *)
+	setModelPopupItems[];
+
 	(*---------------------------------*)
 	(* Return the toolbar menu content *)
 	(*---------------------------------*)
@@ -547,7 +582,7 @@ makeFrontEndAndNotebookSettingsContent[
 	Grid[
 		{
 			{Row[{
-				tr["Default LLM Evaluator:"],
+				tr["Default Persona:"],
 				PopupMenu[
 					Dynamic[
 						currentChatSettings[
@@ -564,6 +599,73 @@ makeFrontEndAndNotebookSettingsContent[
 					defaultPersonaPopupItems
 				]
 			}, Spacer[3]]},
+			{Row[{
+				tr["Default Model:"],
+				(* Note: Dynamic[PopupMenu[..]] so that changing the
+				         'show advanced models' option updates the popup. *)
+				Dynamic @ PopupMenu[
+					Dynamic[
+						currentChatSettings[
+							targetObj,
+							"Model"
+						],
+						Function[{newValue},
+							CurrentValue[
+								targetObj,
+								{TaggingRules, "ChatNotebookSettings", "Model"}
+							] = newValue
+						]
+					],
+					modelPopupItems,
+					(* This is shown if the user selects an advanced model,
+						and then unchecks the 'show advanced models' option. *)
+					Dynamic[
+						Style[
+							modelDisplayName @ currentChatSettings[targetObj, "Model"],
+							Italic
+						]
+					]
+				]
+			}, Spacer[3]]},
+			{Row[{
+				tr["Default Temperature:"],
+				makeTemperatureSlider[
+					Dynamic[
+						currentChatSettings[targetObj, "Temperature"],
+						newValue |-> (
+							CurrentValue[
+								targetObj,
+								{TaggingRules, "ChatNotebookSettings", "Temperature"}
+							] = newValue;
+						)
+					]
+				]
+			}, Spacer[3]]},
+			{
+				labeledCheckbox[
+					Dynamic[
+						showAdvancedModelsQ[],
+						newValue |-> (
+							CurrentValue[$FrontEnd, {
+								PrivateFrontEndOptions,
+								"InterfaceSettings",
+								"ChatNotebooks",
+								"ShowAdvancedModels"
+							}] = newValue;
+
+							setModelPopupItems[];
+						)
+					],
+					Row[{
+						"Show advanced LLM models",
+						Spacer[3],
+						Tooltip[
+							chatbookIcon["InformationTooltip", False],
+							"If enabled, advanced models will be included in the model selection menus."
+						]
+					}]
+				]
+			},
 			{
 				makeAutomaticResultAnalysisCheckbox[targetObj]
 			}
@@ -572,6 +674,17 @@ makeFrontEndAndNotebookSettingsContent[
 		Spacings -> {0, 0.7}
 	]
 ]
+
+(*======================================*)
+
+showAdvancedModelsQ[] :=
+	TrueQ @ CurrentValue[$FrontEnd, {
+		PrivateFrontEndOptions,
+		"InterfaceSettings",
+		"ChatNotebooks",
+		"ShowAdvancedModels"
+	}]
+
 
 (*========================================================*)
 
@@ -1965,24 +2078,46 @@ makeChatActionMenu[
 	}]
 }, Module[{
 	personas = GetPersonasAssociation[],
+	models,
 	actionCallback
 },
+	(*--------------------------------*)
+	(* Process personas list          *)
+	(*--------------------------------*)
+
 	RaiseConfirmMatch[personas, <| (_String -> _Association)... |>];
 
 	(* initialize PrivateFrontEndOptions if they aren't already present or somehow broke *)
 	If[!MatchQ[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}], {___String}],
-        CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}] =
-            DeleteCases[Keys[personas], Alternatives["Birdnardo", "RawModel", "Wolfie"]]];
+        CurrentValue[
+			$FrontEnd,
+			{PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}
+		] = DeleteCases[Keys[personas], Alternatives["Birdnardo", "RawModel", "Wolfie"]]
+	];
 	If[!MatchQ[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}], {___String}],
-        CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}] = {"CodeAssistant", "CodeWriter", "PlainChat"}];
+        CurrentValue[
+			$FrontEnd,
+			{PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}
+		] = {"CodeAssistant", "CodeWriter", "PlainChat"}
+	];
 
 	(* only show visible personas and sort visible personas based on favorites setting *)
-	personas = KeyTake[personas, CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}]];
-	personas =
+	personas = KeyTake[
+		personas,
+		CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}]
+	];
+	personas = With[{
+		favorites = CurrentValue[
+			$FrontEnd,
+			{PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}
+		]
+	},
 		Association[
-			KeyTake[personas, #], (* favorites appear in the exact order provided in the CurrentValue *)
-			KeySort @ KeyTake[personas, Complement[Keys[personas], #]]
-		]&[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}]];
+			(* favorites appear in the exact order provided in the CurrentValue *)
+			KeyTake[personas, favorites],
+			KeySort @ KeyTake[personas, Complement[Keys[personas], favorites]]
+		]
+	];
 
 	(*
 		If this menu is being rendered into a Chat-Driven notebook, make the
@@ -2006,6 +2141,14 @@ makeChatActionMenu[
 			}]
 		];
 	];
+
+	(*--------------------------------*)
+	(* Process models list            *)
+	(*--------------------------------*)
+
+	models = getModelsMenuItems[];
+
+	RaiseConfirmMatch[models, <| (_?StringQ -> _?AssociationQ)... |>];
 
 	(*--------------------------------*)
 
@@ -2051,7 +2194,7 @@ makeChatActionMenu[
 	makeChatActionMenuContent[
 		containerType,
 		personas,
-		$SupportedModels,
+		models,
 		"ActionCallback" -> actionCallback,
 		"PersonaValue" -> currentValueOrigin[
 			targetObj,
@@ -2066,16 +2209,13 @@ makeChatActionMenu[
 			{TaggingRules, "ChatNotebookSettings", "Role"}
 		],
 		"TemperatureValue" -> Dynamic[
-			CurrentValue[
-				(* "ChatInput" > CellDingbat > Persona Menu > Advanced Menu *)
-				targetObj,
-				{ TaggingRules, "ChatNotebookSettings", "TemperatureSetting" },
-				currentChatSettings[ targetObj, "Temperature" ]
-			],
-			Function[
-				CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "TemperatureSetting" } ] =
-					CurrentValue[ targetObj, { TaggingRules, "ChatNotebookSettings", "Temperature" } ] = #1;
-			]
+			currentChatSettings[ targetObj, "Temperature" ],
+			newValue |-> (
+				CurrentValue[
+					targetObj,
+					{TaggingRules, "ChatNotebookSettings", "Temperature"}
+				] = newValue;
+			)
 		]
 	]
 ]]
@@ -2095,8 +2235,7 @@ Options[makeChatActionMenuContent] = {
 makeChatActionMenuContent[
 	containerType : "Input" | "Delimiter" | "Toolbar",
 	personas_?AssociationQ,
-	(* List of {tagging rule value, icon, list item label} *)
-	models:{___List},
+	models_?AssociationQ,
 	OptionsPattern[]
 ] := With[{
 	callback = OptionValue["ActionCallback"]
@@ -2119,17 +2258,7 @@ makeChatActionMenuContent[
 			"Temperature",
 			{
 				None,
-				Pane[
-					Slider[
-						tempValue,
-						{ 0, 2, 0.01 },
-						ImageSize  -> { 135, Automatic },
-						ImageMargins -> {{5, 0}, {5, 5}},
-						Appearance -> "Labeled"
-					],
-					ImageSize -> { 180, Automatic },
-					BaseStyle -> { FontSize -> 12 }
-				],
+				makeTemperatureSlider[tempValue],
 				None
 			}
 		},
@@ -2174,14 +2303,18 @@ makeChatActionMenuContent[
 			personas
 		],
 		{"Models"},
-		Map[
-			entry |-> ConfirmReplace[entry, {
-				{model_?StringQ, icon_, listItemLabel_} :> {
-					alignedMenuIcon[model, modelValue, icon],
-					listItemLabel,
+		KeyValueMap[
+			{model, settings} |-> (
+				{
+					alignedMenuIcon[
+						model,
+						modelValue,
+						getModelMenuIcon[settings]
+					],
+					modelDisplayName[model],
 					Hold[callback["Model", model]]
 				}
-			}],
+			),
 			models
 		],
 		{
@@ -2307,6 +2440,49 @@ currentValueOrigin[
 	]
 ]
 
+(*====================================*)
+
+getModelsMenuItems[] := Module[{
+	items
+},
+	items = Select[
+		Wolfram`Chatbook`Actions`Private`getModelList[],
+		StringStartsQ["gpt-"]
+	];
+
+	RaiseAssert[MatchQ[items, {___String}]];
+
+	items = Sort[items];
+
+	If[!TrueQ[showAdvancedModelsQ[]],
+		items = Select[
+			items,
+			modelName |-> (
+				!StringMatchQ[modelName, RegularExpression["gpt-.*-[0-9]{4}"]]
+			)
+		];
+	];
+
+	items = AssociationMap[
+		modelName |-> Module[{icon},
+			icon = Which[
+				StringStartsQ[modelName, "gpt-3.5"],
+					getIcon["ModelGPT35"],
+				StringStartsQ[modelName, "gpt-4"],
+					getIcon["ModelGPT4"],
+				True,
+					None
+			];
+
+			<| "Icon" -> icon |>
+		],
+		items
+	];
+
+	RaiseAssert[MatchQ[items, <| (_?StringQ -> _?AssociationQ)... |>]];
+
+	items
+]
 
 
 (*========================================================*)
@@ -2361,8 +2537,6 @@ styleListItem[
 	}]
 )
 
-
-
 (*========================================================*)
 (* Persona property lookup helpers                        *)
 (*========================================================*)
@@ -2396,6 +2570,52 @@ getPersonaMenuIcon[ expr_, "Full" ] :=
 
 
 getPersonaIcon[ expr_ ] := getPersonaMenuIcon[ expr, "Full" ];
+
+
+(*========================================================*)
+(* Model property lookup helpers                          *)
+(*========================================================*)
+
+SetFallthroughError[modelDisplayName]
+
+modelDisplayName[{name_?StringQ, settings_?AssociationQ}] :=
+	modelDisplayName[name]
+
+modelDisplayName[name_?StringQ] := Replace[name, {
+	"gpt-3.5-turbo"           -> "GPT-3.5 Turbo",
+	"gpt-3.5-turbo-0301"      -> "GPT-3.5 Turbo (March 01)",
+	"gpt-3.5-turbo-0613"      -> "GPT-3.5 Turbo (June 13)",
+	"gpt-3.5-turbo-16k"       -> "GPT-3.5 Turbo 16k",
+	"gpt-3.5-turbo-16k-0613"  -> "GPT-3.5 Turbo 16k (June 13)",
+	"gpt-4"                   -> "GPT-4",
+	"gpt-4-0314"              -> "GPT-4 (March 14)",
+	"gpt-4-0613"              -> "GPT-4 (June 13)",
+
+	(* Leave unknown models as they are. *)
+	unknown_                  :> unknown
+}]
+
+(*====================================*)
+
+SetFallthroughError[getModelMenuIcon]
+
+getModelMenuIcon[settings_?AssociationQ] := Module[{},
+	Replace[Lookup[settings, "Icon", None], {
+		None | _Missing -> Style["", ShowContents -> False],
+		icon_ :> icon
+	}]
+]
+
+(* If "Full" is specified, resolve TemplateBox icons into their literal
+   icon data, so that they will render correctly in places where the Chatbook.nb
+   stylesheet is not available. *)
+getModelMenuIcon[settings_?AssociationQ, "Full"] :=
+	Replace[getModelMenuIcon[settings], {
+		RawBoxes[TemplateBox[{}, iconStyle_?StringQ]] :> (
+			chatbookIcon[iconStyle, False]
+		),
+		icon_ :> icon
+	}]
 
 
 (*========================================================*)

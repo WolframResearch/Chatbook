@@ -639,5 +639,6 @@ Graphics[
  },
  AspectRatio -> Automatic,
  ImageSize -> { 20.0, 20.0 },
- PlotRange -> { { 0.0, 20.0 }, { 0.0, 20.0 } }
+ PlotRange -> { { 0.0, 20.0 }, { 0.0, 20.0 } },
+ BaselinePosition -> Scaled[0.20]
 ]
