@@ -13,6 +13,11 @@ MakeMenu[$$] returns an expression representing a menu of actions.
 The generated menu expression may depend on styles from the Chatbook stylesheet.
 "]
 
+GeneralUtilities`SetUsage[AttachSubmenu, "
+AttachSubmenu[parentMenu$, submenu$] attaches submenu$ to parentMenu$, taking
+care to attach to the left or right side based on heuristic for available space.
+"]
+
 Begin["`Private`"]
 
 Needs["Wolfram`Chatbook`Common`"]
@@ -90,6 +95,42 @@ menuItem[ icon_, label_, None ] :=
 
 menuItem[ icon_, label_, code_ ] :=
 	RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label, code }, "ChatMenuItem" ];
+
+(*========================================================*)
+
+AttachSubmenu[
+	parentMenu_CellObject,
+	submenu_
+] := With[{
+	mouseX = MousePosition["WindowScaled"][[1]]
+}, {
+	(* Note: Depending on the X coordinate of the users mouse
+		when they click the 'Advanced Settings' button, either
+		show the attached submenu to the left or right of the
+		outer menu. This ensures that this submenu doesn't touch
+		the right edge of the notebook window when it is opened
+		from the 'Chat Settings' notebook toolbar. *)
+	positions = If[
+		TrueQ[mouseX < 0.5],
+		{
+			{Right, Bottom},
+			{Left, Bottom}
+		},
+		{
+			{Left, Bottom},
+			{Right, Bottom}
+		}
+	]
+},
+	AttachCell[
+		EvaluationCell[],
+		submenu,
+		positions[[1]],
+		{50, 50},
+		positions[[2]],
+		RemovalConditions -> "MouseExit"
+	]
+]
 
 (*========================================================*)
 
