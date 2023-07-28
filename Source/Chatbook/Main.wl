@@ -15,6 +15,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `ChatbookAction;
 `CreateChatNotebook;
 `Internal`$BuildingMX;
+`SetModel;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -94,6 +95,7 @@ Block[ { $ContextPath },
     Get[ "Wolfram`Chatbook`InlineReferences`"     ];
     Get[ "Wolfram`Chatbook`ServerSentEventUtils`" ];
     Get[ "Wolfram`Chatbook`PreferencesUtils`"     ];
+    Get[ "Wolfram`Chatbook`Models`"     ];
 ];
 
 (* ::**************************************************************************************************************:: *)
