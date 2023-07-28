@@ -2133,17 +2133,6 @@ makeChatActionMenuContent[
 				None
 			}
 		},
-		{"Models"},
-		Map[
-			entry |-> ConfirmReplace[entry, {
-				{model_?StringQ, icon_, listItemLabel_} :> {
-					alignedMenuIcon[model, modelValue, icon],
-					listItemLabel,
-					Hold[callback["Model", model]]
-				}
-			}],
-			models
-		],
 		{"Roles"},
 		Map[
 			entry |-> ConfirmReplace[entry, {
@@ -2183,6 +2172,17 @@ makeChatActionMenuContent[
 				}
 			],
 			personas
+		],
+		{"Models"},
+		Map[
+			entry |-> ConfirmReplace[entry, {
+				{model_?StringQ, icon_, listItemLabel_} :> {
+					alignedMenuIcon[model, modelValue, icon],
+					listItemLabel,
+					Hold[callback["Model", model]]
+				}
+			}],
+			models
 		],
 		{
 			ConfirmReplace[containerType, {
