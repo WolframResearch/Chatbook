@@ -27,7 +27,7 @@ setModel[scope_,model_Association,opts:OptionsPattern[SetModel]]:=(
 )
 
 setModel[scope_,name_String,opts:OptionsPattern[SetModel]]:=Enclose[With[{model=ConfirmBy[standardizeModelName[name],StringQ]},
-  Needs["GeneralUtilities`"];
+  Needs["GeneralUtilities`" -> None];
   If[TrueQ[OptionValue["SetLLMEvaluator"]],
   	System`$LLMEvaluator=System`LLMConfiguration[System`$LLMEvaluator,<|"Model"->model|>];
   ];
