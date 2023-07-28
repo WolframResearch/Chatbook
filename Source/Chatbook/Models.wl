@@ -14,12 +14,9 @@ SetModel[args___]:=Catch[setModel[args],"SetModel"]
 setModel[model_,opts:OptionsPattern[SetModel]]:=setModel[$FrontEndSession,model,opts]
 
 setModel[scope_,model_Association,opts:OptionsPattern[SetModel]]:=(
-  Needs["GeneralUtilities`"];
   If[TrueQ[OptionValue["SetLLMEvaluator"]],
   	System`$LLMEvaluator=System`LLMConfiguration[System`$LLMEvaluator,model];
   ];
-  CurrentValue[scope, TaggingRules] = 
-  	GeneralUtilities`ToAssociations @CurrentValue[$FrontEndSession, TaggingRules];
   CurrentValue[scope, {TaggingRules, "ChatNotebookSettings"}] = Join[
 		Replace[CurrentValue[scope, {TaggingRules, "ChatNotebookSettings"}],Except[_Association]-><||>,{0}],
 		model
@@ -27,12 +24,9 @@ setModel[scope_,model_Association,opts:OptionsPattern[SetModel]]:=(
 )
 
 setModel[scope_,name_String,opts:OptionsPattern[SetModel]]:=Enclose[With[{model=ConfirmBy[standardizeModelName[name],StringQ]},
-  Needs["GeneralUtilities`" -> None];
   If[TrueQ[OptionValue["SetLLMEvaluator"]],
   	System`$LLMEvaluator=System`LLMConfiguration[System`$LLMEvaluator,<|"Model"->model|>];
   ];
-  CurrentValue[scope, TaggingRules] = 
-  	GeneralUtilities`ToAssociations @CurrentValue[$FrontEndSession, TaggingRules];
   CurrentValue[scope, {TaggingRules, "ChatNotebookSettings","Model"}] = model
 ]
 ]
