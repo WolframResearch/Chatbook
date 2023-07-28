@@ -1,5 +1,6 @@
 BeginPackage["Wolfram`Chatbook`Models`"]
 
+Needs["Wolfram`Chatbook`"]
 Needs["GeneralUtilities`" -> None]
 
 
@@ -10,9 +11,9 @@ Options[SetModel]={"SetLLMEvaluator"->True}
 
 SetModel[args___]:=Catch[setModel[args],"SetModel"]
 
-setModel[name_String,opts:OptionValue[SetModel]]:=setModel[$FrontEndSession,name,opts]
+setModel[model_,opts:OptionsPattern[SetModel]]:=setModel[$FrontEndSession,model,opts]
 
-setModel[scope_,model_Association,opts:OptionValue[SetModel]]:=(
+setModel[scope_,model_Association,opts:OptionsPattern[SetModel]]:=(
   Needs["GeneralUtilities`"];
   If[TrueQ[OptionValue["SetLLMEvaluator"]],
   	System`$LLMEvaluator=System`LLMConfiguration[System`$LLMEvaluator,model];
@@ -25,7 +26,7 @@ setModel[scope_,model_Association,opts:OptionValue[SetModel]]:=(
   ]
 )
 
-setModel[scope_,name_String,opts:OptionValue[SetModel]]:=Enclose[With[{model=ConfirmBy[standardizeModelName[name],StringQ]},
+setModel[scope_,name_String,opts:OptionsPattern[SetModel]]:=Enclose[With[{model=ConfirmBy[standardizeModelName[name],StringQ]},
   Needs["GeneralUtilities`"];
   If[TrueQ[OptionValue["SetLLMEvaluator"]],
   	System`$LLMEvaluator=System`LLMConfiguration[System`$LLMEvaluator,<|"Model"->model|>];
@@ -35,6 +36,8 @@ setModel[scope_,name_String,opts:OptionValue[SetModel]]:=Enclose[With[{model=Con
   CurrentValue[scope, {TaggingRules, "ChatNotebookSettings","Model"}] = model
 ]
 ]
+
+setModel[___]:=$Failed
 
 standardizeModelName[gpt4_String]:="gpt-4"/;StringMatchQ[StringDelete[gpt4,WhitespaceCharacter|"-"|"_"],"gpt4",IgnoreCase->True]
 standardizeModelName[gpt35_String]:="gpt-3.5-turbo"/;StringMatchQ[StringDelete[gpt35,WhitespaceCharacter|"-"|"_"],"gpt3.5"|"gpt3.5turbo",IgnoreCase->True]
