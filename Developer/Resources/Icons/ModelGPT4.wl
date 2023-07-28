@@ -187,4 +187,6 @@ Graphics[{Thickness[0.05],
        {16.008798599243164, 3.4458000659942627}}}]}, 
    FaceForm[RGBColor[1., 1., 1., 1.]]]}, 
  ImageSize -> {{21., 21.}, {21., 21.}}, 
- PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}, AspectRatio -> Automatic]
+ PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}, AspectRatio -> Automatic,
+ BaselinePosition -> Scaled[0.15]
+ ]
