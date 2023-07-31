@@ -14,7 +14,6 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `Chatbook;
 `ChatbookAction;
 `CreateChatNotebook;
-`Internal`$BuildingMX;
 `SetModel;
 
 (* ::**************************************************************************************************************:: *)
