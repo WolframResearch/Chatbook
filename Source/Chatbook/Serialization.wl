@@ -511,6 +511,13 @@ fasterCellToString0[ TemplateBox[ args: { _, _, str_String, ___ }, "MessageTempl
     fasterCellToString0 @ str
 );
 
+(* Large Outputs *)
+fasterCellToString0[ TemplateBox[ KeyValuePattern[ "shortenedBoxes" -> boxes_ ], "OutputSizeLimitTemplate" ] ] :=
+    fasterCellToString0 @ boxes;
+
+fasterCellToString0[ TemplateBox[ { size_ }, "OutputSizeLimit`Skeleton" ] ] :=
+    " <<" <> fasterCellToString0 @ size <> ">> ";
+
 (* Row *)
 fasterCellToString0[ TemplateBox[ args_, "RowDefault", ___ ] ] := fasterCellToString0 @ args;
 
