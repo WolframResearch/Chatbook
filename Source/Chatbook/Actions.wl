@@ -255,14 +255,8 @@ TabRight // endDefinition;
 (* ::Subsection::Closed:: *)
 (*rotateTabPage*)
 rotateTabPage // beginDefinition;
-rotateTabPage[ cell_CellObject, n_Integer ] /; $cloudNotebooks := rotateTabPage0[ cell, n ];
-rotateTabPage[ cell_CellObject, n_Integer ] := rotateTabPage0[ parentCell @ cell, n ];
-rotateTabPage // endDefinition;
 
-
-rotateTabPage0 // beginDefinition;
-
-rotateTabPage0[ cell_CellObject, n_Integer ] := Enclose[
+rotateTabPage[ cell_CellObject, n_Integer ] := Enclose[
     Module[ { pageData, pageCount, currentPage, newPage, encoded, content },
 
         pageData    = ConfirmBy[ <| CurrentValue[ cell, { TaggingRules, "PageData" } ] |>, AssociationQ, "PageData" ];
@@ -272,16 +266,33 @@ rotateTabPage0[ cell_CellObject, n_Integer ] := Enclose[
         encoded     = ConfirmMatch[ pageData[ "Pages", newPage ], _String, "EncodedContent" ];
         content     = ConfirmMatch[ BinaryDeserialize @ BaseDecode @ encoded, TextData[ _String|_List ], "Content" ];
 
-        SelectionMove[ cell, All, CellContents, AutoScroll -> False ];
-        NotebookWrite[ ParentNotebook @ cell, content, None, AutoScroll -> False ];
-        SelectionMove[ cell, After, Cell, AutoScroll -> False ];
-        CurrentValue[ cell, { TaggingRules, "PageData", "CurrentPage" } ] = newPage;
-        SetOptions[ cell, CellAutoOverwrite -> True, GeneratedCell -> True ]
+        writePageContent[ cell, newPage, content ]
     ],
-    throwInternalFailure[ rotateTabPage0[ cell, n ], ## ] &
+    throwInternalFailure[ rotateTabPage[ cell, n ], ## ] &
 ];
 
-rotateTabPage0 // endDefinition;
+rotateTabPage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*writePageContent*)
+writePageContent // beginDefinition;
+
+writePageContent[ cell_CellObject, newPage_Integer, content: TextData[ _String | _List ] ] /; $cloudNotebooks := (
+    CurrentValue[ cell, { TaggingRules, "PageData", "CurrentPage" } ] = newPage;
+    CurrentValue[ cell, TaggingRules ] = GeneralUtilities`ToAssociations @ CurrentValue[ cell, TaggingRules ];
+    NotebookWrite[ cell, ReplacePart[ NotebookRead @ cell, 1 -> content ] ];
+)
+
+writePageContent[ cell_CellObject, newPage_Integer, content: TextData[ _String | _List ] ] := (
+    SelectionMove[ cell, All, CellContents, AutoScroll -> False ];
+    NotebookWrite[ parentNotebook @ cell, content, None, AutoScroll -> False ];
+    SelectionMove[ cell, After, Cell, AutoScroll -> False ];
+    CurrentValue[ cell, { TaggingRules, "PageData", "CurrentPage" } ] = newPage;
+    SetOptions[ cell, CellAutoOverwrite -> True, GeneratedCell -> True ]
+);
+
+writePageContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1491,6 +1502,7 @@ toolResponseString // endDefinition;
 (*toolFreeQ*)
 toolFreeQ // beginDefinition;
 toolFreeQ[ KeyValuePattern[ "FullContent" -> s_ ] ] := toolFreeQ @ s;
+toolFreeQ[ _ProgressIndicator ] := True;
 toolFreeQ[ s_String ] := ! MatchQ[ toolRequestParser @ s, { _, _LLMToolRequest|_Failure } ];
 toolFreeQ // endDefinition;
 

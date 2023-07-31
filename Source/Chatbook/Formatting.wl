@@ -787,7 +787,17 @@ image // beginDefinition;
 
 image[ str_String ] := First @ StringSplit[ str, "![" ~~ alt__ ~~ "](" ~~ url__ ~~ ")" :> image[ alt, url ] ];
 
-image[ alt_String, url_String ] := image[ alt, url, URLParse @ url ];
+image[ alt_String, url_String ] := Enclose[
+    Module[ { keys, key },
+        keys = ConfirmMatch[ Keys @ $attachments, { ___String? StringQ }, "Keys" ];
+        key  = SelectFirst[ keys, StringContainsQ[ url, #1, IgnoreCase -> True ] & ];
+        If[ StringQ @ key,
+            attachment[ alt, key ],
+            image[ alt, url, URLParse @ url ]
+        ]
+    ],
+    throwInternalFailure[ image[ alt, url ], ## ] &
+];
 
 image[ alt_, url_, KeyValuePattern @ { "Scheme" -> "attachment"|"expression", "Domain" -> key_String } ] :=
     attachment[ alt, key ];

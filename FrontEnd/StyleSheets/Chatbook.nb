@@ -580,7 +580,7 @@ Notebook[
                   "CellInsertionMenuStyleShortcutLabel"
                  ]
                },
-               False,
+               Dynamic[$OperatingSystem === "MacOSX"],
                ImageSize -> {Automatic, Automatic}
               ],
               "CellInsertionMenuShortcut"
@@ -1143,7 +1143,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.1.1.3899200658"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.1.1.3899380025"|>
   ],
   Cell[
    StyleData["Text"],
@@ -12511,181 +12511,178 @@ Notebook[
          },
          {#1},
          {
-          TagBox[
-           GridBox[
-            {
+          DynamicModuleBox[
+           {Wolfram`ChatbookStylesheetBuilder`Private`cell$$},
+           TagBox[
+            GridBox[
              {
-              TemplateBox[
-               {
-                ButtonBox[
-                 TagBox[
-                  PaneSelectorBox[
-                   {
-                    False ->
-                     FrameBox[
-                      GraphicsBox[
-                       {GrayLevel[0.4], PolygonBox[{{0, 0}, {0, 1}, {-0.5, 0.5}}]},
-                       ImageSize -> 4
+              {
+               TemplateBox[
+                {
+                 ButtonBox[
+                  TagBox[
+                   PaneSelectorBox[
+                    {
+                     False ->
+                      FrameBox[
+                       GraphicsBox[
+                        {GrayLevel[0.4], PolygonBox[{{0, 0}, {0, 1}, {-0.5, 0.5}}]},
+                        ImageSize -> 4
+                       ],
+                       FrameMargins -> 3,
+                       FrameStyle -> None,
+                       ImageMargins -> 0,
+                       RoundingRadius -> 2,
+                       Background -> None,
+                       StripOnInput -> False
                       ],
-                      FrameMargins -> 3,
-                      FrameStyle -> None,
-                      ImageMargins -> 0,
-                      RoundingRadius -> 2,
-                      Background -> None,
-                      StripOnInput -> False
-                     ],
-                    True ->
-                     FrameBox[
-                      GraphicsBox[
-                       {GrayLevel[0.4], PolygonBox[{{0, 0}, {0, 1}, {-0.5, 0.5}}]},
-                       ImageSize -> 4
-                      ],
-                      FrameMargins -> 3,
-                      FrameStyle -> None,
-                      ImageMargins -> 0,
-                      RoundingRadius -> 2,
-                      Background -> GrayLevel[0.9],
-                      StripOnInput -> False
-                     ]
-                   },
-                   Dynamic[CurrentValue["MouseOver"]],
-                   ImageSize -> Automatic,
-                   FrameMargins -> 0
+                     True ->
+                      FrameBox[
+                       GraphicsBox[
+                        {GrayLevel[0.4], PolygonBox[{{0, 0}, {0, 1}, {-0.5, 0.5}}]},
+                        ImageSize -> 4
+                       ],
+                       FrameMargins -> 3,
+                       FrameStyle -> None,
+                       ImageMargins -> 0,
+                       RoundingRadius -> 2,
+                       Background -> GrayLevel[0.9],
+                       StripOnInput -> False
+                      ]
+                    },
+                    Dynamic[CurrentValue["MouseOver"]],
+                    ImageSize -> Automatic,
+                    FrameMargins -> 0
+                   ],
+                   MouseAppearanceTag["LinkHand"]
                   ],
-                  MouseAppearanceTag["LinkHand"]
-                 ],
-                 ButtonFunction :>
-                  With[ { cell$ = EvaluationCell[] },
-                   Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                  ButtonFunction :>
+                   (Quiet[Needs["Wolfram`Chatbook`" -> None]];
                    Catch[
-                    Symbol["Wolfram`Chatbook`ChatbookAction"]["TabLeft", cell$],
+                    Symbol["Wolfram`Chatbook`ChatbookAction"][
+                     "TabLeft",
+                     Wolfram`ChatbookStylesheetBuilder`Private`cell$$
+                    ],
                     Blank[]
-                   ]
-                  ],
-                 Appearance ->
-                  Dynamic[
-                   FEPrivate`FrontEndResource[
-                    "FEExpressions",
-                    "SuppressMouseDownNinePatchAppearance"
-                   ]
-                  ],
-                 Evaluator -> Automatic,
-                 Method -> "Preemptive"
-                ],
-                ButtonBox[
-                 TagBox[
-                  PaneSelectorBox[
-                   {
-                    False ->
-                     FrameBox[
-                      GraphicsBox[
-                       {GrayLevel[0.4], PolygonBox[{{0, 0}, {0, 1}, {0.5, 0.5}}]},
-                       ImageSize -> 4
-                      ],
-                      FrameMargins -> 3,
-                      FrameStyle -> None,
-                      ImageMargins -> 0,
-                      RoundingRadius -> 2,
-                      Background -> None,
-                      StripOnInput -> False
-                     ],
-                    True ->
-                     FrameBox[
-                      GraphicsBox[
-                       {GrayLevel[0.4], PolygonBox[{{0, 0}, {0, 1}, {0.5, 0.5}}]},
-                       ImageSize -> 4
-                      ],
-                      FrameMargins -> 3,
-                      FrameStyle -> None,
-                      ImageMargins -> 0,
-                      RoundingRadius -> 2,
-                      Background -> GrayLevel[0.9],
-                      StripOnInput -> False
-                     ]
-                   },
-                   Dynamic[CurrentValue["MouseOver"]],
-                   ImageSize -> Automatic,
-                   FrameMargins -> 0
-                  ],
-                  MouseAppearanceTag["LinkHand"]
+                   ]),
+                  Appearance ->
+                   Dynamic[
+                    FEPrivate`FrontEndResource[
+                     "FEExpressions",
+                     "SuppressMouseDownNinePatchAppearance"
+                    ]
+                   ],
+                  Evaluator -> Automatic,
+                  Method -> "Preemptive"
                  ],
-                 ButtonFunction :>
-                  With[ { cell$ = EvaluationCell[] },
-                   Quiet[Needs["Wolfram`Chatbook`" -> None]];
+                 ButtonBox[
+                  TagBox[
+                   PaneSelectorBox[
+                    {
+                     False ->
+                      FrameBox[
+                       GraphicsBox[
+                        {GrayLevel[0.4], PolygonBox[{{0, 0}, {0, 1}, {0.5, 0.5}}]},
+                        ImageSize -> 4
+                       ],
+                       FrameMargins -> 3,
+                       FrameStyle -> None,
+                       ImageMargins -> 0,
+                       RoundingRadius -> 2,
+                       Background -> None,
+                       StripOnInput -> False
+                      ],
+                     True ->
+                      FrameBox[
+                       GraphicsBox[
+                        {GrayLevel[0.4], PolygonBox[{{0, 0}, {0, 1}, {0.5, 0.5}}]},
+                        ImageSize -> 4
+                       ],
+                       FrameMargins -> 3,
+                       FrameStyle -> None,
+                       ImageMargins -> 0,
+                       RoundingRadius -> 2,
+                       Background -> GrayLevel[0.9],
+                       StripOnInput -> False
+                      ]
+                    },
+                    Dynamic[CurrentValue["MouseOver"]],
+                    ImageSize -> Automatic,
+                    FrameMargins -> 0
+                   ],
+                   MouseAppearanceTag["LinkHand"]
+                  ],
+                  ButtonFunction :>
+                   (Quiet[Needs["Wolfram`Chatbook`" -> None]];
                    Catch[
                     Symbol["Wolfram`Chatbook`ChatbookAction"][
                      "TabRight",
-                     cell$
+                     Wolfram`ChatbookStylesheetBuilder`Private`cell$$
                     ],
                     Blank[]
-                   ]
-                  ],
-                 Appearance ->
-                  Dynamic[
-                   FEPrivate`FrontEndResource[
-                    "FEExpressions",
-                    "SuppressMouseDownNinePatchAppearance"
-                   ]
-                  ],
-                 Evaluator -> Automatic,
-                 Method -> "Preemptive"
-                ]
-               },
-               "RowDefault"
-              ]
-             },
-             {
-              StyleBox[
-               RowBox[
-                {
-                 DynamicBox[
-                  ToBoxes[
-                   If[ FEPrivate`$ProductIDName === "WolframCloud",
-                    CurrentValue[
-                     EvaluationCell[],
-                     {TaggingRules, "PageData", "CurrentPage"},
-                     1
-                    ],
-                    CurrentValue[
-                     ParentCell[EvaluationCell[]],
-                     {TaggingRules, "PageData", "CurrentPage"},
-                     1
+                   ]),
+                  Appearance ->
+                   Dynamic[
+                    FEPrivate`FrontEndResource[
+                     "FEExpressions",
+                     "SuppressMouseDownNinePatchAppearance"
                     ]
                    ],
-                   StandardForm
-                  ]
-                 ],
-                 "/",
-                 DynamicBox[
-                  ToBoxes[
-                   If[ FEPrivate`$ProductIDName === "WolframCloud",
-                    CurrentValue[
-                     EvaluationCell[],
-                     {TaggingRules, "PageData", "PageCount"},
-                     1
-                    ],
-                    CurrentValue[
-                     ParentCell[EvaluationCell[]],
-                     {TaggingRules, "PageData", "PageCount"},
-                     1
-                    ]
-                   ],
-                   StandardForm
-                  ]
+                  Evaluator -> Automatic,
+                  Method -> "Preemptive"
                  ]
-                }
-               ],
-               FontFamily -> "Roboto",
-               FontSize -> 10
-              ]
-             }
-            },
-            GridBoxAlignment -> {"Columns" -> {{Center}}},
-            DefaultBaseStyle -> "Column",
-            GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
-            GridBoxSpacings -> {"Columns" -> {{Automatic}}, "Rows" -> {{0.1}}}
+                },
+                "RowDefault"
+               ]
+              },
+              {
+               StyleBox[
+                RowBox[
+                 {
+                  DynamicBox[
+                   ToBoxes[
+                    CurrentValue[
+                     Wolfram`ChatbookStylesheetBuilder`Private`cell$$,
+                     {TaggingRules, "PageData", "CurrentPage"},
+                     1
+                    ],
+                    StandardForm
+                   ]
+                  ],
+                  "/",
+                  DynamicBox[
+                   ToBoxes[
+                    CurrentValue[
+                     Wolfram`ChatbookStylesheetBuilder`Private`cell$$,
+                     {TaggingRules, "PageData", "PageCount"},
+                     1
+                    ],
+                    StandardForm
+                   ]
+                  ]
+                 }
+                ],
+                FontFamily -> "Roboto",
+                FontSize -> 10
+               ]
+              }
+             },
+             GridBoxAlignment -> {"Columns" -> {{Center}}},
+             DefaultBaseStyle -> "Column",
+             GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+             GridBoxSpacings -> {"Columns" -> {{Automatic}}, "Rows" -> {{0.1}}}
+            ],
+            "Column"
            ],
-           "Column"
+           Initialization :>
+            (Wolfram`ChatbookStylesheetBuilder`Private`cell$$ = 
+             If[ $CloudEvaluation,
+              Wolfram`ChatbookStylesheetBuilder`Private`x;
+              EvaluationCell[],
+              ParentCell[EvaluationCell[]]
+             ]),
+           DynamicModuleValues :> { },
+           UnsavedVariables :> {Wolfram`ChatbookStylesheetBuilder`Private`cell$$}
           ]
          }
         },
