@@ -4,6 +4,7 @@
 BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 
 `$defaultChatSettings;
+`$feTaskTrigger;
 `$inEpilog;
 `$suppressButtonAppearance;
 `cellInformation;
@@ -13,6 +14,7 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `cellPrintAfter;
 `cellStyles;
 `checkEvaluationCell;
+`createFETask;
 `currentChatSettings;
 `fixCloudCell;
 `getBoxObjectFromBoxID;
@@ -21,6 +23,7 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `parentNotebook;
 `rootEvaluationCell;
 `rootEvaluationCell;
+`runFETasks;
 `selectionEvaluateCreateCell;
 `toCompressedBoxes;
 `topLevelCellQ;
@@ -38,6 +41,52 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 $checkEvaluationCell := $VersionNumber <= 13.2; (* Flag that determines whether to use workarounds for #187 *)
 
 $$feObj = _FrontEndObject | $FrontEndSession | _NotebookObject | _CellObject | _BoxObject;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Tasks*)
+
+$feTaskDebug   = True; (* FIXME: set to False *)
+$feTasks       = { };
+$feTaskTrigger = 0;
+$feTaskLog     = Internal`Bag[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*createFETask*)
+createFETask // beginDefinition;
+createFETask // Attributes = { HoldFirst };
+
+createFETask[ eval_ ] /; $cloudNotebooks :=
+    eval;
+
+createFETask[ eval_ ] := (
+    If[ $feTaskDebug, Internal`StuffBag[ $feTaskLog, <| "Task" -> Hold @ eval, "Created" -> AbsoluteTime[ ] |> ] ];
+    AppendTo[ $feTasks, Hold @ eval ];
+    ++$feTaskTrigger
+);
+
+createFETask // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*runFETasks*)
+runFETasks // beginDefinition;
+runFETasks[ ] := runFETasks @ $feTasks;
+runFETasks[ { } ] := $feTaskTrigger;
+runFETasks[ tasks_List ] := Block[ { createFETask = # & }, evalTask /@ tasks; $feTasks = { }; ++$feTaskTrigger ];
+runFETasks // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*evalTask*)
+evalTask // beginDefinition;
+
+evalTask[ Hold[ eval_ ] ] := (
+    If[ $feTaskDebug, Internal`StuffBag[ $feTaskLog, <| "Task" -> Hold @ eval, "Evaluated" -> AbsoluteTime[ ] |> ] ]; eval
+);
+
+evalTask // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
