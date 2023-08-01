@@ -1285,8 +1285,9 @@ activeAIAssistantCell[
                     $dynamicTrigger;
                     (* `$dynamicTrigger` is used to precisely control when the dynamic updates, otherwise we can get an
                        FE crash if a NotebookWrite happens at the same time. *)
+                    runFETasks[ ];
                     catchTop @ dynamicTextDisplay[ container, reformat ],
-                    TrackedSymbols   :> { $dynamicTrigger },
+                    TrackedSymbols   :> { $dynamicTrigger, $feTaskTrigger },
                     Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
                     Deinitialization :> Quiet @ TaskRemove @ task
                 ],
@@ -1507,7 +1508,7 @@ toolFreeQ // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*writeErrorCell*)
 writeErrorCell // beginDefinition;
-writeErrorCell[ cell_, as_ ] := NotebookWrite[ cell, errorCell @ as ];
+writeErrorCell[ cell_, as_ ] := createFETask @ NotebookWrite[ cell, errorCell @ as ];
 writeErrorCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -2416,7 +2417,7 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
         write = Cell[ TextData @ reformatted, Background -> None ];
         nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
 
-        withNoRenderUpdates[
+        createFETask @ withNoRenderUpdates[
             nbo,
 
             container[ "DynamicContent" ] = dynamic;
@@ -2923,7 +2924,7 @@ writeReformattedCell[ settings_, string_String, cell_CellObject ] :=
             uuid     = CreateUUID[ ]
         },
         $lastChatString = string;
-        Block[ { $dynamicText = False },
+        createFETask @ Block[ { $dynamicText = False },
             WithCleanup[
                 NotebookWrite[
                     cell,
@@ -2937,7 +2938,7 @@ writeReformattedCell[ settings_, string_String, cell_CellObject ] :=
     ];
 
 writeReformattedCell[ settings_, other_, cell_CellObject ] :=
-    NotebookWrite[
+    createFETask @ NotebookWrite[
         cell,
         Cell[
             TextData @ {
@@ -2983,7 +2984,7 @@ restoreLastPage[ settings_, rules_Association, cellObject_CellObject ] := Enclos
             ]
         ];
 
-        WithCleanup[
+        createFETask @ WithCleanup[
             NotebookWrite[
                 cellObject,
                 $reformattedCell = cell,
