@@ -501,33 +501,117 @@ inlineToolCall // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*parseToolCallString*)
 parseToolCallString // beginDefinition;
+parseToolCallString[ string_String ] := parseToolCallString[ parseToolCallID @ string, string ];
+parseToolCallString[ id_String, string_String ] := parseFullToolCallString[ id, string ];
+parseToolCallString[ _Missing, string_String ] := parsePartialToolCallString @ string;
+parseToolCallString // endDefinition;
 
-parseToolCallString[ string_String ] /; StringMatchQ[ string, "TOOLCALL:"~~__~~"{"~~___ ] :=
-    Module[ { noPrefix, noSuffix, name, tool, toolData, displayName, icon, query, result },
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*parsePartialToolCallString*)
+parsePartialToolCallString // beginDefinition;
+
+parsePartialToolCallString[ string_String ] /; StringMatchQ[ string, "TOOLCALL:"~~__~~"{"~~___ ] :=
+    Module[ { noPrefix, noSuffix, name, tool, displayName, icon, query, result },
 
         noPrefix    = StringDelete[ string, StartOfString~~"TOOLCALL:" ];
         noSuffix    = StringTrim @ StringDelete[ noPrefix, "ENDTOOLCALL"~~___~~EndOfString ];
         name        = StringTrim @ StringDelete[ noSuffix, ("\n"|"{")~~___~~EndOfString ];
         tool        = getToolByName @ name;
-        toolData    = Replace[ tool, { HoldPattern @ LLMTool[ as_Association, ___ ] :> as, _ :> <| |> } ];
-        displayName = Lookup[ toolData, "DisplayName", name ];
-        icon        = Lookup[ toolData, "Icon" ];
+        displayName = getToolDisplayName[ tool, name ];
+        icon        = getToolIcon @ tool;
         query       = First[ StringCases[ string, "TOOLCALL:" ~~ q___ ~~ "\nRESULT" :> q ], "" ];
         result      = First[ StringCases[ string, "RESULT\n" ~~ r___ ~~ "\nENDTOOLCALL" :> r ], "" ];
 
         <|
-            "Name"            -> name,
-            "DisplayName"     -> displayName,
-            "Icon"            -> icon,
-            "ToolCall"        -> StringTrim @ string,
-            "Query"           -> StringTrim @ query,
-            "Result"          -> StringTrim @ result
+            "Name"        -> name,
+            "DisplayName" -> displayName,
+            "Icon"        -> icon,
+            "ToolCall"    -> StringTrim @ string,
+            "Parameters"  -> StringTrim @ query,
+            "Result"      -> StringTrim @ result
         |>
     ];
 
-parseToolCallString[ string_String ] := <| "ToolCall" -> StringTrim @ string |>;
+parsePartialToolCallString[ string_String ] := <| "ToolCall" -> StringTrim @ string |>;
 
-parseToolCallString // endDefinition;
+parsePartialToolCallString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*parseFullToolCallString*)
+parseFullToolCallString // beginDefinition;
+
+parseFullToolCallString[ id_String, string_String ] :=
+    parseFullToolCallString[ id, $toolEvaluationResults[ id ], string ];
+
+parseFullToolCallString[ id_, _Missing, string_String ] :=
+    parsePartialToolCallString @ string;
+
+parseFullToolCallString[ id_String, resp_LLMToolResponse, string_String ] :=
+    parseFullToolCallString[
+        id,
+        resp[ "Tool" ],
+        resp[ "InterpretedParameterValues" ],
+        resp[ "Output" ],
+        string
+    ];
+
+parseFullToolCallString[ id_String, tool_LLMTool, parameters_Association, output_, string_ ] :=
+    $lastFullParsed = <|
+        "ID"          -> id,
+        "Name"        -> tool[ "Name" ],
+        "DisplayName" -> getToolDisplayName @ tool,
+        "Icon"        -> getToolIcon @ tool,
+        "ToolCall"    -> StringTrim @ string,
+        "Parameters"  -> parameters,
+        "Result"      -> output
+    |>;
+
+parseFullToolCallString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*parseToolCallID*)
+parseToolCallID // beginDefinition;
+
+parseToolCallID[ string_String? StringQ ] :=
+    Replace[
+        StringReplace[
+            string,
+            {
+                StringExpression[
+                    StartOfString,
+                    WhitespaceCharacter...,
+                    "TOOLCALL:",
+                    ___,
+                    "ENDTOOLCALL(",
+                    hex: HexadecimalCharacter..,
+                    ")",
+                    WhitespaceCharacter...,
+                    EndOfString
+                ] :> hex,
+                StartOfString ~~ ___ ~~ EndOfString :> ""
+            }
+        ],
+        "" -> Missing[ "NotAvailable" ]
+    ];
+
+parseToolCallID // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*fullToolCallStringQ*)
+fullToolCallStringQ // beginDefinition;
+fullToolCallStringQ[ string_String? StringQ ] := StringQ @ parseToolCallID @ string;
+fullToolCallStringQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatToolParameters*)
+formatToolParameters // beginDefinition;
+formatToolParameters[ ]
+formatToolParameters // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -556,29 +640,39 @@ makeToolCallBoxLabel[ as_, name_String, icon_ ] /; $dynamicText := makeToolCallB
 makeToolCallBoxLabel[ as_, name_String, icon_ ] := OpenerView[
     {
         makeToolCallBoxLabel0[ as, name, icon ],
-        Column[
-            {
-                Framed[
-                    TextCell[ as[ "Query" ], "Program", FontSize -> 0.75 * Inherited, Background -> None ],
-                    Background   -> White,
-                    FrameMargins -> 10,
-                    FrameStyle   -> None,
-                    ImageSize    -> { Scaled[ 1 ], Automatic }
-                ],
-                Framed[
-                    TextCell[
-                        as[ "Result" ],
-                        "Program",
-                        FontSize -> 0.75 * Inherited,
-                        Background -> None
+        Framed[
+            Column[
+                {
+                    Item[
+                        Pane[ Style[ "INPUT", FontSize -> 11 ], FrameMargins -> { { 5, 5 }, { 1, 1 } } ],
+                        ItemSize -> Fit,
+                        Background -> GrayLevel[ 0.95 ]
                     ],
-                    Background   -> White,
-                    FrameMargins -> 10,
-                    FrameStyle   -> None,
-                    ImageSize    -> { Scaled[ 1 ], Automatic }
-                ]
-            },
-            Alignment -> Left
+                    Framed[
+                        makeToolCallInputSection @ as,
+                        Background   -> White,
+                        FrameMargins -> 5,
+                        FrameStyle   -> None,
+                        ImageSize    -> { Scaled[ 1 ], Automatic }
+                    ],
+                    Item[
+                        Pane[ Style[ "OUTPUT", FontSize -> 11 ], FrameMargins -> { { 5, 5 }, { 1, 1 } } ],
+                        ItemSize -> Fit,
+                        Background -> GrayLevel[ 0.95 ]
+                    ],
+                    Framed[
+                        makeToolCallOutputSection @ as,
+                        Background   -> White,
+                        FrameMargins -> 5,
+                        FrameStyle   -> None,
+                        ImageSize    -> { Scaled[ 1 ], Automatic }
+                    ]
+                },
+                Alignment -> Left
+            ],
+            Background   -> White,
+            FrameStyle   -> None,
+            FrameMargins -> 10
         ]
     },
     Method -> "Active"
@@ -615,6 +709,49 @@ makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Row @ Flatten @ {
 };
 
 makeToolCallBoxLabel0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeToolCallInputSection*)
+makeToolCallInputSection // beginDefinition;
+
+makeToolCallInputSection[ KeyValuePattern[ "Parameters" -> as_Association ] ] := Grid[
+    KeyValueMap[ { #1, clickToCopy @ #2 } &, as ],
+    Alignment  -> Left,
+    BaseStyle  -> "Text",
+    Dividers   -> All,
+    FrameStyle -> GrayLevel[ 0.9 ],
+    Spacings   -> 1
+];
+
+makeToolCallInputSection[ KeyValuePattern[ "Parameters" -> query_String ] ] :=
+    TextCell[ query, "Program", FontSize -> 0.75 * Inherited, Background -> None ];
+
+makeToolCallInputSection // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*clickToCopy*)
+clickToCopy // beginDefinition;
+clickToCopy[ expr_ ] := Grid[ { { ClickToCopy @ expr, "" } }, Spacings -> 0 ];
+clickToCopy // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeToolCallOutputSection*)
+makeToolCallOutputSection // beginDefinition;
+
+makeToolCallOutputSection[ KeyValuePattern[ "Result" -> result_String ] ] := TextCell[
+    result,
+    "Program",
+    FontSize -> 0.75 * Inherited,
+    Background -> None
+];
+
+makeToolCallOutputSection[ KeyValuePattern[ "Result" -> result_ ] ] :=
+    TextCell[ ClickToCopy @ result, Background -> None ];
+
+makeToolCallOutputSection // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

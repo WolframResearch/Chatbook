@@ -19,9 +19,12 @@ Wolfram`Chatbook`SetToolOptions;
 `$attachments;
 `$defaultChatTools;
 `$toolConfiguration;
+`$toolEvaluationResults;
 `$toolOptions;
 `$toolResultStringLength;
 `getToolByName;
+`getToolIcon;
+`getToolDisplayName;
 `initTools;
 `makeExpressionURI;
 `makeToolConfiguration;
@@ -79,10 +82,11 @@ $DefaultToolOptions = <|
     |>
 |>;
 
-$attachments   = <| |>;
-$selectedTools = <| |>;
-$toolBox       = <| |>;
-$toolOptions   = <| |>;
+$attachments           = <| |>;
+$selectedTools         = <| |>;
+$toolBox               = <| |>;
+$toolEvaluationResults = <| |>;
+$toolOptions           = <| |>;
 
 $cloudUnsupportedTools = { "WolframLanguageEvaluator", "DocumentationSearcher" };
 
@@ -1316,6 +1320,38 @@ wolframLanguageData[ name_, property_ ] := Enclose[
 ];
 
 wolframLanguageData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Tool Properties*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getToolIcon*)
+getToolIcon // beginDefinition;
+getToolIcon[ HoldPattern @ LLMTool[ as_, ___ ] ] := getToolIcon @ as;
+getToolIcon[ as_Association ] := Lookup[ as, "Icon", RawBoxes @ TemplateBox[ { }, "WrenchIcon" ] ];
+getToolIcon[ _ ] := RawBoxes @ TemplateBox[ { }, "WrenchIcon" ];
+getToolIcon // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getToolDisplayName*)
+getToolDisplayName // beginDefinition;
+
+getToolDisplayName[ tool_ ] :=
+    getToolDisplayName[ tool, Missing[ "NotFound" ] ];
+
+getToolDisplayName[ HoldPattern @ LLMTool[ as_, ___ ], default_ ] :=
+    getToolDisplayName @ as;
+
+getToolDisplayName[ as_Association, default_ ] :=
+    toDisplayToolName @ Lookup[ as, "DisplayName", Lookup[ as, "Name", default ] ];
+
+getToolDisplayName[ _, default_ ] :=
+    default;
+
+getToolDisplayName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
