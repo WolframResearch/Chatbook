@@ -1436,9 +1436,6 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
 toolEvaluation // endDefinition;
 
-
-$toolEvaluationResults = <| |>;
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*writeResult*)
