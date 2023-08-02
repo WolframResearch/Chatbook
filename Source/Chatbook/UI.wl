@@ -644,24 +644,26 @@ makeFrontEndAndNotebookSettingsContent[
 			{
 				labeledCheckbox[
 					Dynamic[
-						showAdvancedModelsQ[],
+						showSnapshotModelsQ[],
 						newValue |-> (
 							CurrentValue[$FrontEnd, {
 								PrivateFrontEndOptions,
 								"InterfaceSettings",
 								"ChatNotebooks",
-								"ShowAdvancedModels"
+								"ShowSnapshotModels"
 							}] = newValue;
 
 							setModelPopupItems[];
 						)
 					],
 					Row[{
-						"Show advanced LLM models",
+						"Show temporary snapshot LLM models",
 						Spacer[3],
 						Tooltip[
 							chatbookIcon["InformationTooltip", False],
-							"If enabled, advanced models will be included in the model selection menus."
+"If enabled, temporary snapshot models will be included in the model selection menus.
+\nSnapshot models are models that are frozen at a particular date, will not be
+continuously updated, and have an expected discontinuation date."
 						]
 					}]
 				]
@@ -677,12 +679,12 @@ makeFrontEndAndNotebookSettingsContent[
 
 (*======================================*)
 
-showAdvancedModelsQ[] :=
+showSnapshotModelsQ[] :=
 	TrueQ @ CurrentValue[$FrontEnd, {
 		PrivateFrontEndOptions,
 		"InterfaceSettings",
 		"ChatNotebooks",
-		"ShowAdvancedModels"
+		"ShowSnapshotModels"
 	}]
 
 
@@ -2454,7 +2456,7 @@ getModelsMenuItems[] := Module[{
 
 	items = Sort[items];
 
-	If[!TrueQ[showAdvancedModelsQ[]],
+	If[!TrueQ[showSnapshotModelsQ[]],
 		items = Select[
 			items,
 			modelName |-> (
