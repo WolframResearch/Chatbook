@@ -1282,6 +1282,7 @@ activeAIAssistantCell[
         Cell[
             BoxData @ TagBox[
                 ToBoxes @ Dynamic[
+                    $feTaskTrigger;
                     $dynamicTrigger;
                     (* `$dynamicTrigger` is used to precisely control when the dynamic updates, otherwise we can get an
                        FE crash if a NotebookWrite happens at the same time. *)
@@ -2417,17 +2418,28 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
         write = Cell[ TextData @ reformatted, Background -> None ];
         nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
 
-        createFETask @ withNoRenderUpdates[
-            nbo,
+        container[ "DynamicContent" ] = dynamic;
 
-            container[ "DynamicContent" ] = dynamic;
+        With[ { boxObject = boxObject, write = write },
+            splitDynamicTaskFunction[
+                NotebookWrite[
+                    System`NotebookLocationSpecifier[ boxObject, "Before" ],
+                    write,
+                    None,
+                    AutoScroll -> False
+                ];
+                NotebookWrite[
+                    System`NotebookLocationSpecifier[ boxObject, "Before" ],
+                    "\n" ,
+                    None,
+                    AutoScroll -> False
+                ];
+            ]
+        ];
 
-            NotebookWrite[ System`NotebookLocationSpecifier[ boxObject, "Before" ], write, None, AutoScroll -> False ];
-            NotebookWrite[ System`NotebookLocationSpecifier[ boxObject, "Before" ], "\n" , None, AutoScroll -> False ];
+        $dynamicTrigger++;
+        $lastDynamicUpdate = AbsoluteTime[ ];
 
-            $dynamicTrigger++;
-            $lastDynamicUpdate = AbsoluteTime[ ];
-        ]
     ],
     throwInternalFailure[ splitDynamicContent[ container, { static, dynamic }, cell, uuid ], ## ] &
 ];
@@ -2436,6 +2448,10 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
 splitDynamicContent[ container_, { _ } | { }, cell_, uuid_ ] := Null;
 
 splitDynamicContent // endDefinition;
+
+
+
+splitDynamicTaskFunction = createFETask;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
