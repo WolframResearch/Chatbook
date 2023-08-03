@@ -11,10 +11,18 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$ChatSystemPre;
 `$DefaultChatInputPost;
 `$DefaultChatSystemPre;
+`$DefaultToolOptions;
+`$DefaultTools;
+`$ToolFunctions;
 `Chatbook;
 `ChatbookAction;
 `CreateChatNotebook;
+`FormatToolResponse;
+`GetExpressionURI;
+`GetExpressionURIs;
+`MakeExpressionURI;
 `SetModel;
+`SetToolOptions;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

@@ -9,13 +9,16 @@ BeginPackage[ "Wolfram`Chatbook`Sandbox`" ];
 
 `fancyResultQ;
 `sandboxEvaluate;
+`sandboxFormatter;
 `simpleResultQ;
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`Common`" ];
-Needs[ "Wolfram`Chatbook`Tools`"  ];
-Needs[ "Wolfram`Chatbook`Utils`"  ];
+Needs[ "Wolfram`Chatbook`"            ];
+Needs[ "Wolfram`Chatbook`Common`"     ];
+Needs[ "Wolfram`Chatbook`Formatting`" ];
+Needs[ "Wolfram`Chatbook`Tools`"      ];
+Needs[ "Wolfram`Chatbook`Utils`"      ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -243,7 +246,7 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
 
         $lastSandboxResult = <|
             "String"  -> sandboxResultString[ flat, packets ],
-            "Result"  -> flat,
+            "Result"  -> sandboxResult @ flat,
             "Packets" -> packets
         |>
     ],
@@ -266,6 +269,7 @@ toSandboxExpression[ s_String, $Failed ] /; StringContainsQ[ s, "'" ] :=
         new = StringReplace[ s, "'" -> "\"" ];
         held = Quiet @ ToExpression[ new, InputForm, HoldComplete ];
         If[ MatchQ[ held, _HoldComplete ],
+            sandboxStringNormalize[ s ] = new;
             held,
             HoldComplete[ ToExpression[ s, InputForm ] ]
         ]
@@ -274,6 +278,13 @@ toSandboxExpression[ s_String, $Failed ] /; StringContainsQ[ s, "'" ] :=
 toSandboxExpression[ s_String, $Failed ] := HoldComplete @ ToExpression[ s, InputForm ];
 
 toSandboxExpression // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*sandboxStringNormalize*)
+sandboxStringNormalize // beginDefinition;
+sandboxStringNormalize[ s_String ] := s;
+sandboxStringNormalize // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -370,6 +381,16 @@ undefinedSymbolQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*sandboxResult*)
+sandboxResult // beginDefinition;
+sandboxResult[ HoldComplete @ Association @ OrderlessPatternSequence[ "Result" -> res_, ___ ] ] := sandboxResult @ res;
+sandboxResult[ HoldComplete[ held_HoldComplete ] ] := sandboxResult @ held;
+sandboxResult[ HoldComplete[ ___, expr_ ] ] := HoldForm @ expr;
+sandboxResult[ res_ ] := HoldForm @ res;
+sandboxResult // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*sandboxResultString*)
 sandboxResultString // beginDefinition;
 
@@ -433,6 +454,24 @@ makePacketMessages[ line_, packets_List ] := makePacketMessages[ line, # ] & /@ 
 makePacketMessages[ line_String, TextPacket[ text_String ] ] := text;
 makePacketMessages[ line_, _InputNamePacket|_MessagePacket|_OutputNamePacket|_ReturnExpressionPacket ] := Nothing;
 makePacketMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*sandboxFormatter*)
+sandboxFormatter // beginDefinition;
+
+sandboxFormatter[ code_String, "Parameters", "code" ] :=
+    RawBoxes @ makeInteractiveCodeCell[ "Wolfram", sandboxStringNormalize @ code ];
+
+sandboxFormatter[ KeyValuePattern[ "Result" -> result_ ], "Result" ] :=
+    sandboxFormatter[ result, "Result" ];
+
+sandboxFormatter[ result_, "Result" ] :=
+    RawBoxes @ makeInteractiveCodeCell[ "Wolfram", Cell[ BoxData @ MakeBoxes @ result, "Input" ] ];
+
+sandboxFormatter[ result_, ___ ] := result;
+
+sandboxFormatter // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

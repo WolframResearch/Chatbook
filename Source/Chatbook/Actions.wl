@@ -704,9 +704,14 @@ scrape // endDefinition;
 (*AttachCodeButtons*)
 AttachCodeButtons // beginDefinition;
 
+AttachCodeButtons[ attached_, cell0_CellObject, string_, lang_ ] :=
+    With[ { cell = parentCell @ cell0 },
+        AttachCodeButtons[ attached, cell, string, lang ] /; chatCodeBlockQ @ cell
+    ];
+
 AttachCodeButtons[ Dynamic[ attached_ ], cell_CellObject, string_, lang_ ] := (
     attached = AttachCell[
-        EvaluationCell[ ],
+        cell,
         floatingButtonGrid[ attached, string, lang ],
         { Left, Bottom },
         Offset[ { 0, 13 }, { 0, 0 } ],
@@ -716,6 +721,15 @@ AttachCodeButtons[ Dynamic[ attached_ ], cell_CellObject, string_, lang_ ] := (
 );
 
 AttachCodeButtons // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatCodeBlockQ*)
+chatCodeBlockQ // beginDefinition;
+chatCodeBlockQ[ cell_CellObject ] := chatCodeBlockQ[ cell, Developer`CellInformation @ cell ];
+chatCodeBlockQ[ cell_, KeyValuePattern[ "Style" -> "ChatCodeBlock" ] ] := True;
+chatCodeBlockQ[ cell_, _ ] := False;
+chatCodeBlockQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
