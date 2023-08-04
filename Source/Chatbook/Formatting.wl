@@ -635,15 +635,24 @@ makeToolCallBoxLabel[ as_Association, name_String ] :=
 
 makeToolCallBoxLabel[ as_, name_String, icon_ ] /; $dynamicText := makeToolCallBoxLabel0[ as, name, icon ];
 
-makeToolCallBoxLabel[ as0_, name_String, icon_ ] := With[ { as = resolveToolFormatter @ as0 },
-    openerView[
-        {
-            makeToolCallBoxLabel0[ as, name, icon ],
-            makeToolCallOpenedView @ as
-        },
-        Method -> "Active"
-    ]
-];
+makeToolCallBoxLabel[ as0_, name_String, icon_ ] :=
+    With[ { as = resolveToolFormatter @ as0 },
+        openerView[
+            {
+                makeToolCallBoxLabel0[ as, name, icon ],
+                TabView[
+                    {
+                        "Raw"         -> makeToolCallRawView @ as,
+                        "Interpreted" -> makeToolCallInterpretedView @ as
+                    },
+                    2,
+                    ImageSize  -> Automatic,
+                    LabelStyle -> { FontSize -> 12 }
+                ]
+            },
+            Method -> "Active"
+        ]
+    ];
 
 makeToolCallBoxLabel // endDefinition;
 
@@ -695,10 +704,32 @@ toolCallIconPane // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
-(*makeToolCallOpenedView*)
-makeToolCallOpenedView // beginDefinition;
+(*makeToolCallRawView*)
+makeToolCallRawView // beginDefinition;
 
-makeToolCallOpenedView[ as_Association ] :=
+makeToolCallRawView[ KeyValuePattern[ "ToolCall" -> raw_String ] ] :=
+    Framed[
+        Framed[
+            TextCell[ wideScrollPane @ raw, "Text", FontSize -> 11, Background -> None ],
+            Background   -> White,
+            FrameMargins -> 5,
+            FrameStyle   -> None,
+            ImageSize    -> { Scaled[ 1 ], Automatic },
+            BaseStyle    -> "Text"
+        ],
+        Background   -> White,
+        FrameStyle   -> None,
+        FrameMargins -> 10
+    ];
+
+makeToolCallRawView // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*makeToolCallInterpretedView*)
+makeToolCallInterpretedView // beginDefinition;
+
+makeToolCallInterpretedView[ as_Association ] :=
     Framed[
         Column[
             {
@@ -734,7 +765,7 @@ makeToolCallOpenedView[ as_Association ] :=
         FrameMargins -> 10
     ];
 
-makeToolCallOpenedView // endDefinition;
+makeToolCallInterpretedView // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
