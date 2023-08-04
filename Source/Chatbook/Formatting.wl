@@ -1272,17 +1272,18 @@ unescapeInlineMarkdown // endDefinition;
 (*stringToBoxes*)
 stringToBoxes // beginDefinition;
 stringToBoxes[ s_String ] /; $dynamicText := s;
-stringToBoxes[ s_String ] := removeExtraBoxSpaces @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ s;
+stringToBoxes[ s_String ] := adjustBoxSpacing @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ s;
 stringToBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*removeExtraBoxSpaces*)
-removeExtraBoxSpaces // beginDefinition;
-removeExtraBoxSpaces[ row: RowBox @ { "(*", ___, "*)" } ] := row;
-removeExtraBoxSpaces[ RowBox[ items_List ] ] := RowBox[ removeExtraBoxSpaces /@ DeleteCases[ items, " " ] ];
-removeExtraBoxSpaces[ other_ ] := other;
-removeExtraBoxSpaces // endDefinition;
+(*adjustBoxSpacing*)
+adjustBoxSpacing // beginDefinition;
+adjustBoxSpacing[ row: RowBox @ { "(*", ___, "*)" } ] := row;
+adjustBoxSpacing[ RowBox[ items_List ] ] := RowBox[ adjustBoxSpacing /@ DeleteCases[ items, " " ] ];
+adjustBoxSpacing[ "\n" ] := "\[IndentingNewLine]";
+adjustBoxSpacing[ box_ ] := box;
+adjustBoxSpacing // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
