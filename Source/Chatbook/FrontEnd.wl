@@ -13,6 +13,7 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `cellPrintAfter;
 `cellStyles;
 `checkEvaluationCell;
+`compressUntilViewed;
 `currentChatSettings;
 `fixCloudCell;
 `getBoxObjectFromBoxID;
@@ -756,7 +757,7 @@ openerView1[ args___ ] :=
     ];
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*compressUntilViewed*)
 compressUntilViewed // beginDefinition;
 
