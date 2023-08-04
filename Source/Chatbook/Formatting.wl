@@ -636,10 +636,10 @@ makeToolCallBoxLabel[ as_Association, name_String ] :=
 makeToolCallBoxLabel[ as_, name_String, icon_ ] /; $dynamicText := makeToolCallBoxLabel0[ as, name, icon ];
 
 makeToolCallBoxLabel[ as0_, name_String, icon_ ] := With[ { as = resolveToolFormatter @ as0 },
-    OpenerView[
+    openerView[
         {
             makeToolCallBoxLabel0[ as, name, icon ],
-            makeDynamicOpenedView @ as
+            makeToolCallOpenedView @ as
         },
         Method -> "Active"
     ]
@@ -695,11 +695,11 @@ toolCallIconPane // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
-(*makeDynamicOpenedView*)
-makeDynamicOpenedView // beginDefinition;
+(*makeToolCallOpenedView*)
+makeToolCallOpenedView // beginDefinition;
 
-makeDynamicOpenedView[ as_Association ] :=
-    makeDynamicOpenedView0 @ Unevaluated @ Framed[
+makeToolCallOpenedView[ as_Association ] :=
+    Framed[
         Column[
             {
                 Item[
@@ -734,44 +734,7 @@ makeDynamicOpenedView[ as_Association ] :=
         FrameMargins -> 10
     ];
 
-makeDynamicOpenedView // endDefinition;
-
-
-makeDynamicOpenedView0 // beginDefinition;
-
-makeDynamicOpenedView0[ expr_ ] /; ByteCount @ Unevaluated @ expr < 50000 := expr;
-
-makeDynamicOpenedView0[ expr_ ] :=
-    With[ { b64 = BaseEncode @ BinarySerialize[ Unevaluated @ expr, PerformanceGoal -> "Size" ] },
-        Dynamic[
-            DynamicModule[ { display, initQ = False },
-                Dynamic[
-                    If[ ! TrueQ @ initQ,
-                        Framed[
-                            ProgressIndicator[ Appearance -> "Necklace" ],
-                            Background   -> GrayLevel[ 0.95 ],
-                            FrameMargins -> 5,
-                            FrameStyle   -> None,
-                            ImageSize    -> { Scaled[ 1 ], Automatic },
-                            Alignment    -> Center
-                        ],
-                        Dynamic[ display, TrackedSymbols :> { display } ]
-                    ],
-                    TrackedSymbols :> { initQ }
-                ],
-                Initialization :> (
-                    initQ   = False;
-                    display = BinaryDeserialize @ BaseDecode @ b64;
-                    initQ   = True
-                ),
-                DynamicModuleValues       :> { },
-                SynchronousInitialization -> False
-            ],
-            TrackedSymbols :> { }
-        ]
-    ];
-
-makeDynamicOpenedView0 // endDefinition;
+makeToolCallOpenedView // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
