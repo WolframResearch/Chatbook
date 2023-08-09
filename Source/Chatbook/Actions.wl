@@ -447,8 +447,8 @@ StopChat[ cell0_CellObject ] := Enclose[
         removeTask @ Lookup[ settings, "Task" ];
         container = ConfirmBy[ Lookup[ settings, "Container" ], AssociationQ, "Container" ];
         content = ConfirmMatch[ Lookup[ container, "FullContent" ], _String|_ProgressIndicator, "Content" ];
-        writeReformattedCell[ settings, content, cell ];
-        Quiet @ NotebookDelete @ cell;
+        FinishDynamic[ ];
+        Block[ { createFETask = # & }, writeReformattedCell[ settings, content, cell ] ]
     ],
     throwInternalFailure[ StopChat @ cell0, ## ] &
 ];
@@ -2436,17 +2436,17 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
 
         With[ { boxObject = boxObject, write = write },
             splitDynamicTaskFunction @ NotebookWrite[
-                    System`NotebookLocationSpecifier[ boxObject, "Before" ],
-                    write,
-                    None,
-                    AutoScroll -> False
-                ];
+                System`NotebookLocationSpecifier[ boxObject, "Before" ],
+                write,
+                None,
+                AutoScroll -> False
+            ];
             splitDynamicTaskFunction @ NotebookWrite[
-                    System`NotebookLocationSpecifier[ boxObject, "Before" ],
-                    "\n" ,
-                    None,
-                    AutoScroll -> False
-                ];
+                System`NotebookLocationSpecifier[ boxObject, "Before" ],
+                "\n" ,
+                None,
+                AutoScroll -> False
+            ];
         ];
 
         $dynamicTrigger++;
@@ -2953,16 +2953,16 @@ writeReformattedCell[ settings_, string_String, cell_CellObject ] := Block[ { $d
         new      = reformatCell[ settings, string, tag, open, label, pageData, uuid ];
         output   = CellObject @ uuid;
 
-        $lastChatString = string;
+        $lastChatString  = string;
         $reformattedCell = new;
         $lastChatOutput  = output;
 
         With[ { new = new, output = output },
             createFETask @ NotebookWrite[ cell, new, None, AutoScroll -> False ];
             createFETask @ attachChatOutputMenu @ output
-            ]
         ]
-    ];
+    ]
+];
 
 writeReformattedCell[ settings_, other_, cell_CellObject ] :=
     createFETask @ NotebookWrite[
