@@ -892,6 +892,8 @@ sendChat // beginDefinition;
 sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclose[
     Module[ { cells0, cells, target, settings, id, key, req, data, persona, cell, cellObject, container, task },
 
+        initFETaskWidget @ nbo;
+
         resolveInlineReferences @ evalCell;
         cells0 = ConfirmMatch[ selectChatCells[ settings0, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
 
@@ -1296,13 +1298,11 @@ activeAIAssistantCell[
         Cell[
             BoxData @ TagBox[
                 ToBoxes @ Dynamic[
-                    $feTaskTrigger;
                     $dynamicTrigger;
                     (* `$dynamicTrigger` is used to precisely control when the dynamic updates, otherwise we can get an
                        FE crash if a NotebookWrite happens at the same time. *)
-                    runFETasks[ ];
                     catchTop @ dynamicTextDisplay[ container, reformat ],
-                    TrackedSymbols   :> { $dynamicTrigger, $feTaskTrigger },
+                    TrackedSymbols   :> { $dynamicTrigger },
                     Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
                     Deinitialization :> Quiet @ TaskRemove @ task
                 ],

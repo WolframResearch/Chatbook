@@ -4,7 +4,7 @@
 BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 
 `$defaultChatSettings;
-`$feTaskTrigger;
+`$feTaskWidgetCell;
 `$inEpilog;
 `$suppressButtonAppearance;
 `cellInformation;
@@ -18,14 +18,14 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `createFETask;
 `currentChatSettings;
 `fixCloudCell;
+`flushFETasks;
 `getBoxObjectFromBoxID;
+`initFETaskWidget;
 `notebookRead;
 `openerView;
 `parentCell;
 `parentNotebook;
 `rootEvaluationCell;
-`rootEvaluationCell;
-`runFETasks;
 `selectionEvaluateCreateCell;
 `toCompressedBoxes;
 `topLevelCellQ;
@@ -48,10 +48,94 @@ $$feObj = _FrontEndObject | $FrontEndSession | _NotebookObject | _CellObject | _
 (* ::Section::Closed:: *)
 (*Tasks*)
 
-$feTaskDebug   = True; (* FIXME: set to False *)
-$feTasks       = { };
-$feTaskTrigger = 0;
-$feTaskLog     = Internal`Bag[ ];
+$feTaskDebug           = False;
+$feTasks               = { };
+$feTaskTrigger         = 0;
+$feTaskLog             = Internal`Bag[ ];
+$feTaskCreationCount   = 0;
+$feTaskEvaluationCount = 0;
+$allTaskWidgetsCleared = False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*initFETaskWidget*)
+initFETaskWidget // beginDefinition;
+
+initFETaskWidget[ nbo_NotebookObject ] /; $cloudNotebooks :=
+    Null;
+
+initFETaskWidget[ nbo_NotebookObject ] := (
+    (* Clear the existing task widget first, since there may be more than one chat notebook visible.
+       We don't want to duplicate task execution due to dynamics firing for both. *)
+    clearExistingFETaskWidget[ ];
+    $feTaskWidgetCell = AttachCell[
+        nbo,
+        $feTaskWidgetContent,
+        { Left, Bottom },
+        0,
+        { Left, Bottom },
+        RemovalConditions -> { "EvaluatorQuit" }
+    ]
+);
+
+initFETaskWidget // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*clearExistingFETaskWidget*)
+clearExistingFETaskWidget // beginDefinition;
+
+clearExistingFETaskWidget[ ] :=
+    If[ ! TrueQ @ $allTaskWidgetsCleared
+        ,
+        Scan[
+            NotebookDelete @ Cells[ #, AttachedCell -> True, CellStyle -> "FETaskWidget" ] &,
+            Notebooks[ ]
+        ];
+        $allTaskWidgetsCleared = True
+        ,
+        Quiet @ NotebookDelete @ $feTaskWidgetCell
+    ];
+
+clearExistingFETaskWidget // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$feTaskWidgetContent*)
+$feTaskWidgetContent = Cell[
+    BoxData @ ToBoxes @ Dynamic[
+        catchAlways[
+            $feTaskTrigger;
+            runFETasks[ ];
+            If[ TrueQ @ $feTaskDebug,
+                $feTaskDebugPanel,
+                Pane[ "", ImageSize -> { 0, 0 } ]
+            ]
+        ]
+        ,
+        TrackedSymbols :> { $feTaskTrigger }
+    ],
+    "FETaskWidget"
+];
+
+$feTaskDebugPanel := Framed[
+    Grid[
+        {
+            {
+                Row @ { "Created: "  , $feTaskCreationCount   },
+                Row @ { "Pending: "  , Length @ $feTasks      },
+                Row @ { "Evaluated: ", $feTaskEvaluationCount }
+            }
+        },
+        BaseStyle  -> { "Text", FontSize -> 12 },
+        Dividers   -> Center,
+        FrameStyle -> GrayLevel[ 0.75 ],
+        Spacings   -> 1
+    ],
+    Background   -> GrayLevel[ 0.98 ],
+    FrameMargins -> { { 5, 5 }, { 0, 0 } },
+    FrameStyle   -> None
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -65,6 +149,7 @@ createFETask[ eval_ ] /; $cloudNotebooks :=
 createFETask[ eval_ ] := (
     If[ $feTaskDebug, Internal`StuffBag[ $feTaskLog, <| "Task" -> Hold @ eval, "Created" -> AbsoluteTime[ ] |> ] ];
     AppendTo[ $feTasks, Hold @ eval ];
+    ++$feTaskCreationCount;
     ++$feTaskTrigger
 );
 
@@ -74,21 +159,24 @@ createFETask // endDefinition;
 (* ::Subsection::Closed:: *)
 (*runFETasks*)
 runFETasks // beginDefinition;
+
 runFETasks[ ] := runFETasks @ $feTasks;
 runFETasks[ { } ] := $feTaskTrigger;
-runFETasks[ tasks_List ] := Block[ { createFETask = # & }, evalTask /@ tasks; $feTasks = { }; ++$feTaskTrigger ];
-runFETasks // endDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*evalTask*)
-evalTask // beginDefinition;
+runFETasks[ { t_, ts___ } ] :=
+    Block[ { createFETask = # & },
+        runFETasks @ t;
+        $feTasks = { ts };
+        ++$feTaskTrigger
+    ];
 
-evalTask[ Hold[ eval_ ] ] := (
-    If[ $feTaskDebug, Internal`StuffBag[ $feTaskLog, <| "Task" -> Hold @ eval, "Evaluated" -> AbsoluteTime[ ] |> ] ]; eval
+runFETasks[ Hold[ eval_ ] ] := (
+    If[ $feTaskDebug, Internal`StuffBag[ $feTaskLog, <| "Task" -> Hold @ eval, "Evaluated" -> AbsoluteTime[ ] |> ] ];
+    ++$feTaskEvaluationCount;
+    eval
 );
 
-evalTask // endDefinition;
+runFETasks // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -824,6 +912,7 @@ compressUntilViewed // endDefinition;
 (* ::Section::Closed:: *)
 (*Package Footer*)
 If[ Wolfram`ChatbookInternal`$BuildingMX,
+    $feTaskDebug = False;
     $cloudCellFixes;
 ];
 
