@@ -2435,20 +2435,18 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
         container[ "DynamicContent" ] = dynamic;
 
         With[ { boxObject = boxObject, write = write },
-            splitDynamicTaskFunction[
-                NotebookWrite[
+            splitDynamicTaskFunction @ NotebookWrite[
                     System`NotebookLocationSpecifier[ boxObject, "Before" ],
                     write,
                     None,
                     AutoScroll -> False
                 ];
-                NotebookWrite[
+            splitDynamicTaskFunction @ NotebookWrite[
                     System`NotebookLocationSpecifier[ boxObject, "Before" ],
                     "\n" ,
                     None,
                     AutoScroll -> False
                 ];
-            ]
         ];
 
         $dynamicTrigger++;
@@ -2944,25 +2942,24 @@ writeReformattedCell[ settings_, None, cell_CellObject ] :=
         ]
     ];
 
-writeReformattedCell[ settings_, string_String, cell_CellObject ] :=
-    With[
-        {
-            tag      = CurrentValue[ cell, { TaggingRules, "MessageTag" } ],
-            open     = $lastOpen = cellOpenQ @ cell,
-            label    = RawBoxes @ TemplateBox[ { }, "MinimizedChat" ],
-            pageData = CurrentValue[ cell, { TaggingRules, "PageData" } ],
-            uuid     = CreateUUID[ ]
-        },
+writeReformattedCell[ settings_, string_String, cell_CellObject ] := Block[ { $dynamicText = False },
+    Module[ { tag, open, label, pageData, uuid, new, output },
+
+        tag      = CurrentValue[ cell, { TaggingRules, "MessageTag" } ];
+        open     = $lastOpen = cellOpenQ @ cell;
+        label    = RawBoxes @ TemplateBox[ { }, "MinimizedChat" ];
+        pageData = CurrentValue[ cell, { TaggingRules, "PageData" } ];
+        uuid     = CreateUUID[ ];
+        new      = reformatCell[ settings, string, tag, open, label, pageData, uuid ];
+        output   = CellObject @ uuid;
+
         $lastChatString = string;
-        createFETask @ Block[ { $dynamicText = False },
-            WithCleanup[
-                NotebookWrite[
-                    cell,
-                    $reformattedCell = reformatCell[ settings, string, tag, open, label, pageData, uuid ],
-                    None,
-                    AutoScroll -> False
-                ],
-                attachChatOutputMenu[ $lastChatOutput = CellObject @ uuid ]
+        $reformattedCell = new;
+        $lastChatOutput  = output;
+
+        With[ { new = new, output = output },
+            createFETask @ NotebookWrite[ cell, new, None, AutoScroll -> False ];
+            createFETask @ attachChatOutputMenu @ output
             ]
         ]
     ];
