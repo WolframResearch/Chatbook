@@ -2371,7 +2371,7 @@ writeChunk[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
         splitDynamicContent[ container, cell ]
     ];
 
-    If[ AbsoluteTime[ ] - $lastDynamicUpdate > 0.1,
+    If[ AbsoluteTime[ ] - $lastDynamicUpdate > 0.05,
         (* Trigger updating of dynamic content in current chat output cell *)
         $dynamicTrigger++;
         $lastDynamicUpdate = AbsoluteTime[ ]
@@ -2424,7 +2424,7 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
         ];
 
         reformatted = ConfirmMatch[
-            Block[ { $dynamicText = True }, reformatTextData @ StringJoin @ static ],
+            Block[ { $dynamicText = False }, reformatTextData @ StringJoin @ static ],
             $$textDataList,
             "ReformatTextData"
         ];
