@@ -9,8 +9,11 @@ BeginPackage[ "Wolfram`Chatbook`Formatting`" ];
 `$dynamicText;
 `$reformattedCell;
 `$resultCellCache;
+`clickToCopy;
 `floatingButtonGrid;
+`makeInteractiveCodeCell;
 `reformatTextData;
+`toolAutoFormatter;
 
 Begin[ "`Private`" ];
 
@@ -296,6 +299,7 @@ $insertEvaluateButtonLabel := $insertEvaluateButtonLabel = fancyTooltip[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Actions*)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*insertCodeBelow*)
@@ -394,6 +398,7 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Parsing Rules*)
+$$endToolCall = Longest[ "ENDTOOLCALL" ~~ (("(" ~~ HexadecimalCharacter.. ~~ ")") | "") ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -403,14 +408,14 @@ $textDataFormatRules = {
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
         Shortest[ code__ ],
         ("```"|EndOfString)
-    ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ("ENDTOOLCALL"|EndOfString) ] :>
+    ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString) ] :>
         codeBlockCell[ language, code ]
     ,
     "![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
         StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
             imageCell[ alt, url ]
     ,
-    tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ("ENDTOOLCALL"|EndOfString)) :> inlineToolCallCell @ tool,
+    tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString)) :> inlineToolCallCell @ tool,
     ("\n"|StartOfString) ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
     ("\n"|StartOfString) ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ]
     ,
@@ -438,7 +443,7 @@ $dynamicSplitRules = {
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
         Shortest[ code__ ],
         "```"
-    ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ("ENDTOOLCALL"|EndOfString) ] :> s
+    ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString) ] :> s
     ,
     (* Markdown image *)
     s: ("![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")") /;
@@ -446,7 +451,7 @@ $dynamicSplitRules = {
             s
     ,
     (* Tool call *)
-    s: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ "ENDTOOLCALL") :> s
+    s: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ $$endToolCall) :> s
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -491,7 +496,7 @@ inlineToolCall[ string_String, as_Association ] := Cell[
     ],
     "InlineToolCall",
     Background   -> None,
-    TaggingRules -> as
+    TaggingRules -> KeyDrop[ as, { "Icon", "Result" } ]
 ];
 
 inlineToolCall // endDefinition;
@@ -500,33 +505,111 @@ inlineToolCall // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*parseToolCallString*)
 parseToolCallString // beginDefinition;
+parseToolCallString[ string_String ] := parseToolCallString[ parseToolCallID @ string, string ];
+parseToolCallString[ id_String, string_String ] := parseFullToolCallString[ id, string ];
+parseToolCallString[ _Missing, string_String ] := parsePartialToolCallString @ string;
+parseToolCallString // endDefinition;
 
-parseToolCallString[ string_String ] /; StringMatchQ[ string, "TOOLCALL:"~~__~~"{"~~___ ] :=
-    Module[ { noPrefix, noSuffix, name, tool, toolData, displayName, icon, query, result },
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*parsePartialToolCallString*)
+parsePartialToolCallString // beginDefinition;
+
+parsePartialToolCallString[ string_String ] /; StringMatchQ[ string, "TOOLCALL:"~~__~~"{"~~___ ] :=
+    Module[ { noPrefix, noSuffix, name, tool, displayName, icon, query, result },
 
         noPrefix    = StringDelete[ string, StartOfString~~"TOOLCALL:" ];
         noSuffix    = StringTrim @ StringDelete[ noPrefix, "ENDTOOLCALL"~~___~~EndOfString ];
         name        = StringTrim @ StringDelete[ noSuffix, ("\n"|"{")~~___~~EndOfString ];
         tool        = getToolByName @ name;
-        toolData    = Replace[ tool, { HoldPattern @ LLMTool[ as_Association, ___ ] :> as, _ :> <| |> } ];
-        displayName = Lookup[ toolData, "DisplayName", name ];
-        icon        = Lookup[ toolData, "Icon" ];
+        displayName = getToolDisplayName[ tool, name ];
+        icon        = getToolIcon @ tool;
         query       = First[ StringCases[ string, "TOOLCALL:" ~~ q___ ~~ "\nRESULT" :> q ], "" ];
         result      = First[ StringCases[ string, "RESULT\n" ~~ r___ ~~ "\nENDTOOLCALL" :> r ], "" ];
 
         <|
-            "Name"            -> name,
-            "DisplayName"     -> displayName,
-            "Icon"            -> icon,
-            "ToolCall"        -> StringTrim @ string,
-            "Query"           -> StringTrim @ query,
-            "Result"          -> StringTrim @ result
+            "Name"        -> name,
+            "DisplayName" -> displayName,
+            "Icon"        -> icon,
+            "ToolCall"    -> StringTrim @ string,
+            "Parameters"  -> StringTrim @ query,
+            "Result"      -> StringTrim @ result
         |>
     ];
 
-parseToolCallString[ string_String ] := <| "ToolCall" -> StringTrim @ string |>;
+parsePartialToolCallString[ string_String ] := <| "ToolCall" -> StringTrim @ string |>;
 
-parseToolCallString // endDefinition;
+parsePartialToolCallString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*parseFullToolCallString*)
+parseFullToolCallString // beginDefinition;
+
+parseFullToolCallString[ id_String, string_String ] :=
+    parseFullToolCallString[ id, $toolEvaluationResults[ id ], string ];
+
+parseFullToolCallString[ id_, _Missing, string_String ] :=
+    parsePartialToolCallString @ string;
+
+parseFullToolCallString[ id_String, resp_LLMToolResponse, string_String ] :=
+    parseFullToolCallString[
+        id,
+        resp[ "Tool" ],
+        resp[ "InterpretedParameterValues" ],
+        resp[ "Output" ],
+        string
+    ];
+
+parseFullToolCallString[ id_String, tool_LLMTool, parameters_Association, output_, string_ ] :=
+    $lastFullParsed = <|
+        "ID"                 -> id,
+        "Name"               -> tool[ "Name" ],
+        "DisplayName"        -> getToolDisplayName @ tool,
+        "Icon"               -> getToolIcon @ tool,
+        "FormattingFunction" -> getToolFormattingFunction @ tool,
+        "ToolCall"           -> StringTrim @ string,
+        "Parameters"         -> parameters,
+        "Result"             -> output
+    |>;
+
+parseFullToolCallString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*parseToolCallID*)
+parseToolCallID // beginDefinition;
+
+parseToolCallID[ string_String? StringQ ] :=
+    Replace[
+        StringReplace[
+            string,
+            {
+                StringExpression[
+                    StartOfString,
+                    WhitespaceCharacter...,
+                    "TOOLCALL:",
+                    ___,
+                    "ENDTOOLCALL(",
+                    hex: HexadecimalCharacter..,
+                    ")",
+                    WhitespaceCharacter...,
+                    EndOfString
+                ] :> hex,
+                StartOfString ~~ ___ ~~ EndOfString :> ""
+            }
+        ],
+        "" -> Missing[ "NotAvailable" ]
+    ];
+
+parseToolCallID // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*fullToolCallStringQ*)
+fullToolCallStringQ // beginDefinition;
+fullToolCallStringQ[ string_String? StringQ ] := StringQ @ parseToolCallID @ string;
+fullToolCallStringQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -552,36 +635,24 @@ makeToolCallBoxLabel[ as_Association, name_String ] :=
 
 makeToolCallBoxLabel[ as_, name_String, icon_ ] /; $dynamicText := makeToolCallBoxLabel0[ as, name, icon ];
 
-makeToolCallBoxLabel[ as_, name_String, icon_ ] := OpenerView[
-    {
-        makeToolCallBoxLabel0[ as, name, icon ],
-        Column[
+makeToolCallBoxLabel[ as0_, name_String, icon_ ] :=
+    With[ { as = resolveToolFormatter @ as0 },
+        openerView[
             {
-                Framed[
-                    TextCell[ as[ "Query" ], "Program", FontSize -> 0.75 * Inherited, Background -> None ],
-                    Background   -> White,
-                    FrameMargins -> 10,
-                    FrameStyle   -> None,
-                    ImageSize    -> { Scaled[ 1 ], Automatic }
-                ],
-                Framed[
-                    TextCell[
-                        as[ "Result" ],
-                        "Program",
-                        FontSize -> 0.75 * Inherited,
-                        Background -> None
-                    ],
-                    Background   -> White,
-                    FrameMargins -> 10,
-                    FrameStyle   -> None,
-                    ImageSize    -> { Scaled[ 1 ], Automatic }
+                makeToolCallBoxLabel0[ as, name, icon ],
+                TabView[
+                    {
+                        "Raw"         -> makeToolCallRawView @ as,
+                        "Interpreted" -> makeToolCallInterpretedView @ as
+                    },
+                    2,
+                    ImageSize  -> Automatic,
+                    LabelStyle -> { FontSize -> 12 }
                 ]
             },
-            Alignment -> Left
+            Method -> "Active"
         ]
-    },
-    Method -> "Active"
-];
+    ];
 
 makeToolCallBoxLabel // endDefinition;
 
@@ -590,30 +661,209 @@ makeToolCallBoxLabel0 // beginDefinition;
 
 makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] := Row @ Flatten @ {
     "Using ",
-    string,
-    "\[Ellipsis]",
+    Style[ string, FontWeight -> "DemiBold" ],
     If[ MissingQ @ icon,
         Nothing,
         {
             Spacer[ 5 ],
-            Pane[ icon, ImageSize -> { 20, 20 }, ImageSizeAction -> "ShrinkToFit" ]
+            toolCallIconPane @ icon
         }
     ]
 };
 
 makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Row @ Flatten @ {
     "Used ",
-    string,
+    Style[ string, FontWeight -> "DemiBold" ],
     If[ MissingQ @ icon,
         Nothing,
         {
             Spacer[ 5 ],
-            Pane[ icon, ImageSize -> { 20, 20 }, ImageSizeAction -> "ShrinkToFit" ]
+            toolCallIconPane @ icon
         }
     ]
 };
 
 makeToolCallBoxLabel0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*toolCallIconPane*)
+toolCallIconPane // beginDefinition;
+
+toolCallIconPane[ icon_ ] :=
+    Dynamic[
+        If[ TrueQ @ $CloudEvaluation,
+            #1,
+            Pane[ #1, ImageSize -> { 20, 20 }, ImageSizeAction -> "ShrinkToFit" ]
+        ] &[ icon ],
+        SingleEvaluation -> True,
+        TrackedSymbols   :> { }
+    ];
+
+toolCallIconPane // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*makeToolCallRawView*)
+makeToolCallRawView // beginDefinition;
+
+makeToolCallRawView[ KeyValuePattern[ "ToolCall" -> raw_String ] ] :=
+    Framed[
+        Framed[
+            TextCell[ wideScrollPane @ raw, "Text", FontSize -> 11, Background -> None ],
+            Background   -> White,
+            FrameMargins -> 5,
+            FrameStyle   -> None,
+            ImageSize    -> { Scaled[ 1 ], Automatic },
+            BaseStyle    -> "Text"
+        ],
+        Background   -> White,
+        FrameStyle   -> None,
+        FrameMargins -> 10
+    ];
+
+makeToolCallRawView // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*makeToolCallInterpretedView*)
+makeToolCallInterpretedView // beginDefinition;
+
+makeToolCallInterpretedView[ as_Association ] :=
+    Framed[
+        Column[
+            {
+                Item[
+                    Pane[ Style[ "INPUT", FontSize -> 11 ], FrameMargins -> { { 5, 5 }, { 1, 1 } } ],
+                    ItemSize   -> Fit,
+                    Background -> GrayLevel[ 0.95 ]
+                ],
+                Framed[
+                    makeToolCallInputSection @ as,
+                    Background   -> White,
+                    FrameMargins -> 5,
+                    FrameStyle   -> None,
+                    ImageSize    -> { Scaled[ 1 ], Automatic }
+                ],
+                Item[
+                    Pane[ Style[ "OUTPUT", FontSize -> 11 ], FrameMargins -> { { 5, 5 }, { 1, 1 } } ],
+                    ItemSize   -> Fit,
+                    Background -> GrayLevel[ 0.95 ]
+                ],
+                Framed[
+                    makeToolCallOutputSection @ as,
+                    Background   -> White,
+                    FrameMargins -> 5,
+                    FrameStyle   -> None,
+                    ImageSize    -> { Scaled[ 1 ], Automatic }
+                ]
+            },
+            Alignment -> Left
+        ],
+        Background   -> White,
+        FrameStyle   -> None,
+        FrameMargins -> 10
+    ];
+
+makeToolCallInterpretedView // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeToolCallInputSection*)
+makeToolCallInputSection // beginDefinition;
+
+makeToolCallInputSection[ as: KeyValuePattern[ "Parameters" -> params_Association ] ] := Enclose[
+    Module[ { formatter },
+        formatter = Confirm[ as[ "FormattingFunction" ], "FormattingFunction" ];
+        Grid[
+            KeyValueMap[ { #1, formatter[ #2, "Parameters", #1 ] } &, params ],
+            Alignment  -> Left,
+            BaseStyle  -> "Text",
+            Dividers   -> All,
+            FrameStyle -> GrayLevel[ 0.9 ],
+            Spacings   -> 1
+        ]
+    ],
+    throwInternalFailure[ makeToolCallInputSection @ as, ## ] &
+];
+
+makeToolCallInputSection[ KeyValuePattern[ "Parameters" -> query_String ] ] :=
+    TextCell[ query, "Program", FontSize -> 0.75 * Inherited, Background -> None ];
+
+makeToolCallInputSection // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*resolveToolFormatter*)
+resolveToolFormatter // beginDefinition;
+resolveToolFormatter[ as_Association ] := Append[ as, "FormattingFunction" -> resolveToolFormatter0 @ as ];
+resolveToolFormatter // endDefinition;
+
+resolveToolFormatter0 // beginDefinition;
+resolveToolFormatter0[ KeyValuePattern[ "FormattingFunction" -> f_ ] ] := resolveToolFormatter0 @ f;
+resolveToolFormatter0[ Automatic ] := clickToCopy[ #1 ] &;
+resolveToolFormatter0[ Inherited ] := toolAutoFormatter;
+resolveToolFormatter0[ None      ] := #1 &;
+resolveToolFormatter0[ f_        ] := f;
+resolveToolFormatter0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*toolAutoFormatter*)
+toolAutoFormatter // beginDefinition;
+
+toolAutoFormatter[ KeyValuePattern[ "Result" -> result_ ], "Result" ] :=
+    toolAutoFormatter[ result, "Result" ];
+
+toolAutoFormatter[ result_String, "Result" ] := RawBoxes @ Cell[
+    TextData @ reformatTextData @ result,
+    "Text",
+    Background -> None
+];
+
+toolAutoFormatter[ parameter_, "Parameters", ___ ] := clickToCopy @ parameter;
+
+toolAutoFormatter[ result_, ___ ] := result;
+
+toolAutoFormatter // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*clickToCopy*)
+clickToCopy // beginDefinition;
+clickToCopy[ ClickToCopy[ args__ ] ] := clickToCopy @ args;
+clickToCopy[ HoldForm[ expr_ ], a___ ] := clickToCopy[ Defer @ expr, a ];
+clickToCopy[ expr_, a___ ] := Grid[ { { ClickToCopy[ expr, a ], "" } }, Spacings -> 0, BaseStyle -> "Text" ];
+clickToCopy // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeToolCallOutputSection*)
+makeToolCallOutputSection // beginDefinition;
+
+makeToolCallOutputSection[ as: KeyValuePattern[ "Result" -> result_ ] ] := Enclose[
+    Module[ { formatter },
+        formatter = Confirm[ as[ "FormattingFunction" ], "FormattingFunction" ];
+        TextCell[ wideScrollPane @ formatter[ result, "Result" ], "Text", Background -> None ]
+    ],
+    throwInternalFailure[ makeToolCallOutputSection @ as, ## ] &
+];
+
+makeToolCallOutputSection // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*wideScrollPane*)
+wideScrollPane // beginDefinition;
+
+wideScrollPane[ expr_ ] := Pane[
+    expr,
+    ImageSize          -> { Scaled[ 1 ], UpTo[ 400 ] },
+    Scrollbars         -> Automatic,
+    AppearanceElements -> None
+];
+
+wideScrollPane // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -628,10 +878,10 @@ makeInteractiveCodeCell[ language_, code_String ] /; $dynamicText :=
     ];
 
 (* Wolfram Language code blocks *)
-makeInteractiveCodeCell[ lang_String? wolframLanguageQ, code_String ] :=
+makeInteractiveCodeCell[ lang_String? wolframLanguageQ, code_ ] :=
     Module[ { display, handler },
         display = RawBoxes @ Cell[
-            BoxData @ stringToBoxes @ code,
+            BoxData @ If[ StringQ @ code, stringToBoxes @ code, code ],
             "ChatCode",
             "Input",
             Background -> GrayLevel[ 1 ]
@@ -692,7 +942,7 @@ inlineInteractiveCodeCell[ display_, string_, lang_ ] /; $cloudNotebooks :=
     Mouseover[ display, Column @ { display, floatingButtonGrid[ string, lang ] } ];
 
 inlineInteractiveCodeCell[ display_, string_, lang_ ] :=
-    DynamicModule[ { $CellContext`attached },
+    DynamicModule[ { $CellContext`attached, $CellContext`cell },
         EventHandler[
             display,
             {
@@ -701,15 +951,16 @@ inlineInteractiveCodeCell[ display_, string_, lang_ ] :=
                     Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
                         "AttachCodeButtons",
                         Dynamic[ $CellContext`attached ],
-                        EvaluationCell[ ],
+                        $CellContext`cell,
                         string,
                         lang
                     ]
                 )
             }
         ],
-        TaggingRules -> <| "CellToStringType" -> "InlineInteractiveCodeCell", "CodeLanguage" -> lang |>,
-        UnsavedVariables :> { $CellContext`attached }
+        TaggingRules     -> <| "CellToStringType" -> "InlineInteractiveCodeCell", "CodeLanguage" -> lang |>,
+        UnsavedVariables :> { $CellContext`attached, $CellContext`cell },
+        Initialization   :> { $CellContext`cell = EvaluationCell[ ] }
     ];
 
 inlineInteractiveCodeCell // endDefinition;
