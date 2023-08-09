@@ -704,9 +704,14 @@ scrape // endDefinition;
 (*AttachCodeButtons*)
 AttachCodeButtons // beginDefinition;
 
+AttachCodeButtons[ attached_, cell0_CellObject, string_, lang_ ] :=
+    With[ { cell = parentCell @ cell0 },
+        AttachCodeButtons[ attached, cell, string, lang ] /; chatCodeBlockQ @ cell
+    ];
+
 AttachCodeButtons[ Dynamic[ attached_ ], cell_CellObject, string_, lang_ ] := (
     attached = AttachCell[
-        EvaluationCell[ ],
+        cell,
         floatingButtonGrid[ attached, string, lang ],
         { Left, Bottom },
         Offset[ { 0, 13 }, { 0, 0 } ],
@@ -716,6 +721,15 @@ AttachCodeButtons[ Dynamic[ attached_ ], cell_CellObject, string_, lang_ ] := (
 );
 
 AttachCodeButtons // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatCodeBlockQ*)
+chatCodeBlockQ // beginDefinition;
+chatCodeBlockQ[ cell_CellObject ] := chatCodeBlockQ[ cell, Developer`CellInformation @ cell ];
+chatCodeBlockQ[ cell_, KeyValuePattern[ "Style" -> "ChatCodeBlock" ] ] := True;
+chatCodeBlockQ[ cell_, _ ] := False;
+chatCodeBlockQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1391,7 +1405,7 @@ checkResponse // endDefinition;
 toolEvaluation // beginDefinition;
 
 toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
-    Module[ { string, callPos, toolCall, toolResponse, output, messages, newMessages, req },
+    Module[ { string, callPos, toolCall, toolResponse, output, messages, newMessages, req, toolID },
 
         string = ConfirmBy[ container[ "FullContent" ], StringQ, "FullContent" ];
 
@@ -1424,7 +1438,10 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         req = ConfirmMatch[ makeHTTPRequest[ settings, newMessages ], _HTTPRequest, "HTTPRequest" ];
 
-        appendToolResult[ container, output ];
+        toolID = Hash[ toolResponse, Automatic, "HexString" ];
+        $toolEvaluationResults[ toolID ] = toolResponse;
+
+        appendToolResult[ container, output, toolID ];
 
         $lastTask = submitAIAssistant[ container, req, cell, settings ]
     ],
@@ -1470,9 +1487,9 @@ writeResult // endDefinition;
 appendToolResult // beginDefinition;
 appendToolResult // Attributes = { HoldFirst };
 
-appendToolResult[ container_Symbol, output_String ] :=
+appendToolResult[ container_Symbol, output_String, id_String ] :=
     Module[ { append },
-        append = "RESULT\n"<>output<>"\nENDTOOLCALL\n";
+        append = "RESULT\n"<>output<>"\nENDTOOLCALL(" <> id <> ")\n\n";
         container[ "FullContent"    ] = container[ "FullContent"    ] <> append;
         container[ "DynamicContent" ] = container[ "DynamicContent" ] <> append;
     ];

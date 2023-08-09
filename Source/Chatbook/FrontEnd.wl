@@ -13,10 +13,12 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `cellPrintAfter;
 `cellStyles;
 `checkEvaluationCell;
+`compressUntilViewed;
 `currentChatSettings;
 `fixCloudCell;
 `getBoxObjectFromBoxID;
 `notebookRead;
+`openerView;
 `parentCell;
 `parentNotebook;
 `rootEvaluationCell;
@@ -733,6 +735,41 @@ compressRasterBoxes[ boxes_ ] :=
     ];
 
 compressRasterBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*openerView*)
+(* Effectively equivalent to OpenerView, except strips out the unnecessary interpretation information, and compresses
+   the hidden part if it's very large.
+*)
+openerView[ args___ ] := openerView[ args ] = openerView0[ args ];
+
+openerView0 // beginDefinition;
+openerView0[ { a_, b_ }, args___ ] /; ByteCount @ b > 50000 := openerView1[ { a, compressUntilViewed @ b }, args ];
+openerView0[ { a_, b_ }, args___ ] := openerView1[ { a, b }, args ];
+openerView0 // endDefinition;
+
+
+openerView1[ args___ ] :=
+    RawBoxes @ ReplaceAll[
+        Replace[ ToBoxes @ OpenerView @ args, TagBox[ boxes_, ___ ] :> boxes ],
+        InterpretationBox[ boxes_, _OpenerView, ___ ] :> boxes
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*compressUntilViewed*)
+compressUntilViewed // beginDefinition;
+
+compressUntilViewed[ expr_ ] :=
+    With[ { b64 = BaseEncode @ BinarySerialize[ Unevaluated @ expr, PerformanceGoal -> "Size" ] },
+        If[ ByteCount @ b64 < ByteCount @ expr,
+            Dynamic[ BinaryDeserialize @ BaseDecode @ b64, SingleEvaluation -> True, DestroyAfterEvaluation -> True ],
+            expr
+        ]
+    ];
+
+compressUntilViewed // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
