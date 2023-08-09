@@ -165,8 +165,8 @@ runFETasks[ { } ] := $feTaskTrigger;
 
 runFETasks[ { t_, ts___ } ] :=
     Block[ { createFETask = # & },
-        runFETasks @ t;
         $feTasks = { ts };
+        runFETasks @ t;
         ++$feTaskTrigger
     ];
 
