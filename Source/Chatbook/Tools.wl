@@ -7,15 +7,6 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
-Wolfram`Chatbook`$DefaultToolOptions;
-Wolfram`Chatbook`$DefaultTools;
-Wolfram`Chatbook`$ToolFunctions;
-Wolfram`Chatbook`FormatToolResponse;
-Wolfram`Chatbook`GetExpressionURI;
-Wolfram`Chatbook`GetExpressionURIs;
-Wolfram`Chatbook`MakeExpressionURI;
-Wolfram`Chatbook`SetToolOptions;
-
 `$attachments;
 `$defaultChatTools;
 `$toolConfiguration;
@@ -25,6 +16,7 @@ Wolfram`Chatbook`SetToolOptions;
 `getToolByName;
 `getToolIcon;
 `getToolDisplayName;
+`getToolFormattingFunction;
 `initTools;
 `makeExpressionURI;
 `makeToolConfiguration;
@@ -37,6 +29,7 @@ Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"               ];
 Needs[ "Wolfram`Chatbook`Common`"        ];
+Needs[ "Wolfram`Chatbook`Formatting`"    ];
 Needs[ "Wolfram`Chatbook`Serialization`" ];
 Needs[ "Wolfram`Chatbook`Utils`"         ];
 Needs[ "Wolfram`Chatbook`Sandbox`"       ];
@@ -427,18 +420,19 @@ Follow up search results with the documentation lookup tool to get the full info
 
 $defaultChatTools0[ "DocumentationSearcher" ] = LLMTool[
     <|
-        "Name"        -> toMachineToolName[ "DocumentationSearcher" ],
-        "DisplayName" -> toDisplayToolName[ "DocumentationSearcher" ],
-        "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaDocumentation" ],
-        "Description" -> $documentationSearchDescription,
-        "Parameters"  -> {
+        "Name"               -> toMachineToolName[ "DocumentationSearcher" ],
+        "DisplayName"        -> toDisplayToolName[ "DocumentationSearcher" ],
+        "Icon"               -> RawBoxes @ TemplateBox[ { }, "PersonaDocumentation" ],
+        "Description"        -> $documentationSearchDescription,
+        "Function"           -> documentationSearch,
+        "FormattingFunction" -> toolAutoFormatter,
+        "Parameters"         -> {
             "query" -> <|
                 "Interpreter" -> "String",
                 "Help"        -> "A string representing a documentation search query",
                 "Required"    -> True
             |>
-        },
-        "Function" -> documentationSearch
+        }
     |>,
     { }
 ];
@@ -460,18 +454,19 @@ documentationSearch // endDefinition;
 (*DocumentationLookup*)
 $defaultChatTools0[ "DocumentationLookup" ] = LLMTool[
     <|
-        "Name"        -> toMachineToolName[ "DocumentationLookup" ],
-        "DisplayName" -> toDisplayToolName[ "DocumentationLookup" ],
-        "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaDocumentation" ],
-        "Description" -> "Get documentation pages for Wolfram Language symbols.",
-        "Parameters"  -> {
+        "Name"               -> toMachineToolName[ "DocumentationLookup" ],
+        "DisplayName"        -> toDisplayToolName[ "DocumentationLookup" ],
+        "Icon"               -> RawBoxes @ TemplateBox[ { }, "PersonaDocumentation" ],
+        "Description"        -> "Get documentation pages for Wolfram Language symbols.",
+        "Function"           -> documentationLookup,
+        "FormattingFunction" -> toolAutoFormatter,
+        "Parameters"         -> {
             "names" -> <|
                 "Interpreter" -> DelimitedSequence[ "WolframLanguageSymbol", "," ],
                 "Help"        -> "One or more Wolfram Language symbols separated by commas",
                 "Required"    -> True
             |>
-        },
-        "Function" -> documentationLookup
+        }
     |>,
     { }
 ];
@@ -585,18 +580,19 @@ You have read access to local files.
 
 $defaultChatTools0[ "WolframLanguageEvaluator" ] = LLMTool[
     <|
-        "Name"        -> toMachineToolName[ "WolframLanguageEvaluator" ],
-        "DisplayName" -> toDisplayToolName[ "WolframLanguageEvaluator" ],
-        "Icon"        -> RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
-        "Description" -> $sandboxEvaluateDescription,
-        "Parameters"  -> {
+        "Name"               -> toMachineToolName[ "WolframLanguageEvaluator" ],
+        "DisplayName"        -> toDisplayToolName[ "WolframLanguageEvaluator" ],
+        "Icon"               -> RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
+        "Description"        -> $sandboxEvaluateDescription,
+        "Function"           -> sandboxEvaluate,
+        "FormattingFunction" -> sandboxFormatter,
+        "Parameters"         -> {
             "code" -> <|
                 "Interpreter" -> "String",
                 "Help"        -> "Wolfram Language code to evaluate",
                 "Required"    -> True
             |>
-        },
-        "Function" -> sandboxEvaluate
+        }
     |>,
     { }
 ];
@@ -635,18 +631,17 @@ $wolframAlphaDescription = "\
 Use natural language queries with Wolfram|Alpha to get up-to-date computational results about entities in chemistry, \
 physics, geography, history, art, astronomy, and more.";
 
-$wolframAlphaIcon = RawBoxes @ PaneBox[
-    DynamicBox @ FEPrivate`FrontEndResource[ "FEBitmaps", "InsertionAlpha" ],
-    BaselinePosition -> Center -> Scaled[ 0.55 ]
-];
+$wolframAlphaIcon = RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEBitmaps", "InsertionAlpha" ];
 
 $defaultChatTools0[ "WolframAlpha" ] = LLMTool[
     <|
-        "Name"        -> toMachineToolName[ "WolframAlpha" ],
-        "DisplayName" -> toDisplayToolName[ "WolframAlpha" ],
-        "Icon"        -> $wolframAlphaIcon,
-        "Description" -> $wolframAlphaDescription,
-        "Parameters"  -> {
+        "Name"               -> toMachineToolName[ "WolframAlpha" ],
+        "DisplayName"        -> toDisplayToolName[ "WolframAlpha" ],
+        "Icon"               -> $wolframAlphaIcon,
+        "Description"        -> $wolframAlphaDescription,
+        "Function"           -> getWolframAlphaText,
+        "FormattingFunction" -> wolframAlphaResultFormatter,
+        "Parameters"         -> {
             "input" -> <|
                 "Interpreter" -> "String",
                 "Help"        -> "the input",
@@ -657,8 +652,7 @@ $defaultChatTools0[ "WolframAlpha" ] = LLMTool[
                 "Help"        -> "the assumption to use, passed back from a previous query with the same input.",
                 "Required"    -> False
             |>*)
-        },
-        "Function" -> getWolframAlphaText
+        }
     |>,
     { }
 ];
@@ -672,7 +666,12 @@ getWolframAlphaText[ KeyValuePattern[ "input" -> query_String ] ] :=
     getWolframAlphaText @ query;
 
 getWolframAlphaText[ query_String ] :=
-    getWolframAlphaText[ query, WolframAlpha[ query, { All, { "Title", "Plaintext", "ComputableData", "Content" } } ] ];
+    Module[ { result, data, string },
+        result = WolframAlpha @ query;
+        data   = WolframAlpha[ query, { All, { "Title", "Plaintext", "ComputableData", "Content" } } ];
+        string = getWolframAlphaText[ query, data ];
+        getWolframAlphaText[ query ] = <| "Result" -> result, "String" -> string |>
+    ];
 
 getWolframAlphaText[ query_String, { } ] :=
     "No results returned";
@@ -687,6 +686,22 @@ getWolframAlphaText[ query_String, result_String ] :=
     escapeMarkdownString @ result;
 
 getWolframAlphaText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*wolframAlphaResultFormatter*)
+wolframAlphaResultFormatter // beginDefinition;
+
+wolframAlphaResultFormatter[ query_String, "Parameters", "input" ] :=
+    clickToCopy @ query;
+
+wolframAlphaResultFormatter[ KeyValuePattern[ "Result" -> result_ ], "Result" ] :=
+    wolframAlphaResultFormatter[ result, "Result" ];
+
+wolframAlphaResultFormatter[ result_, ___ ] :=
+    result;
+
+wolframAlphaResultFormatter // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -779,18 +794,19 @@ waResultText0 // endDefinition;
 (*WebSearch*)
 $defaultChatTools0[ "WebSearcher" ] = LLMTool[
     <|
-        "Name"        -> toMachineToolName[ "WebSearcher" ],
-        "DisplayName" -> toDisplayToolName[ "WebSearcher" ],
-        "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
-        "Description" -> "Search the web.",
-        "Parameters"  -> {
+        "Name"               -> toMachineToolName[ "WebSearcher" ],
+        "DisplayName"        -> toDisplayToolName[ "WebSearcher" ],
+        "Icon"               -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
+        "Description"        -> "Search the web.",
+        "Function"           -> webSearch,
+        "FormattingFunction" -> toolAutoFormatter,
+        "Parameters"         -> {
             "query" -> <|
                 "Interpreter" -> "String",
                 "Help"        -> "Search query text",
                 "Required"    -> True
             |>
-        },
-        "Function" -> webSearch
+        }
     |>,
     { }
 ];
@@ -803,31 +819,36 @@ webSearch // beginDefinition;
 webSearch[ KeyValuePattern[ "query" -> query_ ] ] := webSearch @ query;
 webSearch[ query_String ] := webSearch @ SearchQueryString @ query;
 
-webSearch[ query_SearchQueryString ] := StringJoin[
-    "Results", "\n",
-    "-------", "\n\n",
-    StringReplace[
-        Developer`WriteRawJSONString[
-            Normal @ WebSearch[ query, MaxItems -> 5 ] /. URL[ url_ ] :> url
-        ],
-        "\\/" -> "/"
-    ],
-    "\n\n",
-    "-------", "\n\n",
-    "Use the web_fetcher tool to get the content of a URL."
+webSearch[ query_SearchQueryString ] := Enclose[
+    Module[ { result, json, string },
+        result = ConfirmMatch[ WebSearch[ query, MaxItems -> 5 ], _Dataset, "WebSearch" ];
+        json   = ConfirmBy[ Developer`WriteRawJSONString[ Normal @ result /. URL[ url_ ] :> url ], StringQ, "JSON" ];
+        json   = StringReplace[ json, "\\/" -> "/" ];
+        string = ConfirmBy[ TemplateApply[ $webSearchResultTemplate, json ], StringQ, "TemplateApply" ];
+        <| "Result" -> result, "String" -> string |>
+    ]
 ];
 
 webSearch // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$webSearchResultTemplate*)
+$webSearchResultTemplate = StringTemplate[
+    "Results\n-------\n\n`1`\n\n-------\n\nUse the web_fetcher tool to get the content of a URL."
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*WebFetch*)
 $defaultChatTools0[ "WebFetcher" ] = LLMTool[
     <|
-        "Name"        -> toMachineToolName[ "WebFetcher" ],
-        "DisplayName" -> toDisplayToolName[ "WebFetcher" ],
-        "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
-        "Description" -> "Fetch plain text or image links from a URL.",
+        "Name"               -> toMachineToolName[ "WebFetcher" ],
+        "DisplayName"        -> toDisplayToolName[ "WebFetcher" ],
+        "Icon"               -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
+        "Description"        -> "Fetch plain text or image links from a URL.",
+        "Function"           -> webFetch,
+        "FormattingFunction" -> toolAutoFormatter,
         "Parameters"  -> {
             "url" -> <|
                 "Interpreter" -> "URL",
@@ -839,8 +860,7 @@ $defaultChatTools0[ "WebFetcher" ] = LLMTool[
                 "Help"        -> "The type of content to retrieve (\"Plaintext\" or \"ImageLinks\")",
                 "Required"    -> True
             |>
-        },
-        "Function" -> webFetch
+        }
     |>,
     { }
 ];
@@ -852,9 +872,9 @@ webFetch // beginDefinition;
 webFetch[ KeyValuePattern @ { "url" -> url_, "format" -> fmt_ } ] := webFetch[ url, fmt ];
 webFetch[ url_, "Plaintext" ] := fetchWebText @ url;
 webFetch[ url: _URL|_String, fmt_String ] := webFetch[ url, fmt, Import[ url, { "HTML", fmt } ] ];
-webFetch[ url_, "ImageLinks", { } ] := "No links found at " <> TextString @ url;
-webFetch[ url_, "ImageLinks", links: { __String } ] := StringRiffle[ links, "\n" ];
-webFetch[ url_, fmt_, result_String ] := result;
+webFetch[ url_, "ImageLinks", { } ] := <| "Result" -> { }, "String" -> "No links found at " <> TextString @ url |>;
+webFetch[ url_, "ImageLinks", links: { __String } ] := <| "Result" -> links, "String" -> StringRiffle[ links, "\n" ] |>;
+webFetch[ url_, fmt_, result_String ] := niceWebText @ result;
 webFetch // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -874,12 +894,20 @@ fetchWebText[ url_String, session_WebSessionObject ] := Enclose[
         Pause[ 3 ]; (* Allow time for the page to load *)
         body = ConfirmMatch[ WebExecute[ session, "LocateElements" -> "Tag" -> "body" ], { __WebElementObject } ];
         strings = ConfirmMatch[ WebExecute[ "ElementText" -> body ], { __String } ];
-        StringRiffle[ strings, "\n\n" ]
+        niceWebText @ strings
     ],
-    Import[ url, { "HTML", "Plaintext" } ] &
+    niceWebText @ Import[ url, { "HTML", "Plaintext" } ] &
 ];
 
 fetchWebText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*niceWebText*)
+niceWebText // beginDefinition;
+niceWebText[ str_String ] := StringReplace[ StringDelete[ str, "\r" ], Longest[ "\n"~~Whitespace~~"\n" ] :> "\n\n" ];
+niceWebText[ strings_List ] := StringRiffle[ StringTrim[ niceWebText /@ strings ], "\n\n" ];
+niceWebText // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -920,18 +948,19 @@ startWebSession // endDefinition;
 (*WebImageSearch*)
 $defaultChatTools0[ "WebImageSearcher" ] = LLMTool[
     <|
-        "Name"        -> toMachineToolName[ "WebImageSearcher" ],
-        "DisplayName" -> toDisplayToolName[ "WebImageSearcher" ],
-        "Icon"        -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
-        "Description" -> "Search the web for images.",
-        "Parameters"  -> {
+        "Name"               -> toMachineToolName[ "WebImageSearcher" ],
+        "DisplayName"        -> toDisplayToolName[ "WebImageSearcher" ],
+        "Icon"               -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
+        "Description"        -> "Search the web for images.",
+        "Function"           -> webImageSearch,
+        "FormattingFunction" -> toolAutoFormatter,
+        "Parameters"         -> {
             "query" -> <|
                 "Interpreter" -> "String",
                 "Help"        -> "Search query text",
                 "Required"    -> True
             |>
-        },
-        "Function" -> webImageSearch
+        }
     |>,
     { }
 ];
@@ -940,11 +969,21 @@ $defaultChatTools0[ "WebImageSearcher" ] = LLMTool[
 (* ::Subsubsection::Closed:: *)
 (*webImageSearch*)
 webImageSearch // beginDefinition;
+
 webImageSearch[ KeyValuePattern[ "query" -> query_ ] ] := webImageSearch @ query;
 webImageSearch[ query_String ] := webImageSearch @ SearchQueryString @ query;
 webImageSearch[ query_SearchQueryString ] := webImageSearch[ query, WebImageSearch[ query, "ImageHyperlinks" ] ];
-webImageSearch[ query_, { } ] := "No results found";
-webImageSearch[ query_, urls: { __ } ] := StringRiffle[ TextString /@ urls, "\n" ];
+
+webImageSearch[ query_, { } ] := <|
+    "Result" -> { },
+    "String" -> "No results found"
+|>;
+
+webImageSearch[ query_, urls: { __ } ] := <|
+    "Result" -> Column[ Hyperlink /@ urls, BaseStyle -> "Text" ],
+    "String" -> StringRiffle[ TextString /@ urls, "\n" ]
+|>;
+
 webImageSearch // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1352,6 +1391,15 @@ getToolDisplayName[ _, default_ ] :=
     default;
 
 getToolDisplayName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getToolFormattingFunction*)
+getToolFormattingFunction // beginDefinition;
+getToolFormattingFunction[ HoldPattern @ LLMTool[ as_, ___ ] ] := getToolFormattingFunction @ as;
+getToolFormattingFunction[ as_Association ] := Lookup[ as, "FormattingFunction", Automatic ];
+getToolFormattingFunction[ _ ] := Automatic;
+getToolFormattingFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

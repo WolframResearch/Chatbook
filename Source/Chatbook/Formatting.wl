@@ -9,8 +9,11 @@ BeginPackage[ "Wolfram`Chatbook`Formatting`" ];
 `$dynamicText;
 `$reformattedCell;
 `$resultCellCache;
+`clickToCopy;
 `floatingButtonGrid;
+`makeInteractiveCodeCell;
 `reformatTextData;
+`toolAutoFormatter;
 
 Begin[ "`Private`" ];
 
@@ -296,6 +299,7 @@ $insertEvaluateButtonLabel := $insertEvaluateButtonLabel = fancyTooltip[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Actions*)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*insertCodeBelow*)
@@ -492,7 +496,7 @@ inlineToolCall[ string_String, as_Association ] := Cell[
     ],
     "InlineToolCall",
     Background   -> None,
-    TaggingRules -> as
+    TaggingRules -> KeyDrop[ as, { "Icon", "Result" } ]
 ];
 
 inlineToolCall // endDefinition;
@@ -559,13 +563,14 @@ parseFullToolCallString[ id_String, resp_LLMToolResponse, string_String ] :=
 
 parseFullToolCallString[ id_String, tool_LLMTool, parameters_Association, output_, string_ ] :=
     $lastFullParsed = <|
-        "ID"          -> id,
-        "Name"        -> tool[ "Name" ],
-        "DisplayName" -> getToolDisplayName @ tool,
-        "Icon"        -> getToolIcon @ tool,
-        "ToolCall"    -> StringTrim @ string,
-        "Parameters"  -> parameters,
-        "Result"      -> output
+        "ID"                 -> id,
+        "Name"               -> tool[ "Name" ],
+        "DisplayName"        -> getToolDisplayName @ tool,
+        "Icon"               -> getToolIcon @ tool,
+        "FormattingFunction" -> getToolFormattingFunction @ tool,
+        "ToolCall"           -> StringTrim @ string,
+        "Parameters"         -> parameters,
+        "Result"             -> output
     |>;
 
 parseFullToolCallString // endDefinition;
@@ -608,13 +613,6 @@ fullToolCallStringQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*formatToolParameters*)
-formatToolParameters // beginDefinition;
-formatToolParameters[ ]
-formatToolParameters // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*makeToolCallBoxLabel*)
 makeToolCallBoxLabel // beginDefinition;
 
@@ -637,46 +635,24 @@ makeToolCallBoxLabel[ as_Association, name_String ] :=
 
 makeToolCallBoxLabel[ as_, name_String, icon_ ] /; $dynamicText := makeToolCallBoxLabel0[ as, name, icon ];
 
-makeToolCallBoxLabel[ as_, name_String, icon_ ] := OpenerView[
-    {
-        makeToolCallBoxLabel0[ as, name, icon ],
-        Framed[
-            Column[
-                {
-                    Item[
-                        Pane[ Style[ "INPUT", FontSize -> 11 ], FrameMargins -> { { 5, 5 }, { 1, 1 } } ],
-                        ItemSize -> Fit,
-                        Background -> GrayLevel[ 0.95 ]
-                    ],
-                    Framed[
-                        makeToolCallInputSection @ as,
-                        Background   -> White,
-                        FrameMargins -> 5,
-                        FrameStyle   -> None,
-                        ImageSize    -> { Scaled[ 1 ], Automatic }
-                    ],
-                    Item[
-                        Pane[ Style[ "OUTPUT", FontSize -> 11 ], FrameMargins -> { { 5, 5 }, { 1, 1 } } ],
-                        ItemSize -> Fit,
-                        Background -> GrayLevel[ 0.95 ]
-                    ],
-                    Framed[
-                        makeToolCallOutputSection @ as,
-                        Background   -> White,
-                        FrameMargins -> 5,
-                        FrameStyle   -> None,
-                        ImageSize    -> { Scaled[ 1 ], Automatic }
-                    ]
-                },
-                Alignment -> Left
-            ],
-            Background   -> White,
-            FrameStyle   -> None,
-            FrameMargins -> 10
+makeToolCallBoxLabel[ as0_, name_String, icon_ ] :=
+    With[ { as = resolveToolFormatter @ as0 },
+        openerView[
+            {
+                makeToolCallBoxLabel0[ as, name, icon ],
+                TabView[
+                    {
+                        "Raw"         -> makeToolCallRawView @ as,
+                        "Interpreted" -> makeToolCallInterpretedView @ as
+                    },
+                    2,
+                    ImageSize  -> Automatic,
+                    LabelStyle -> { FontSize -> 12 }
+                ]
+            },
+            Method -> "Active"
         ]
-    },
-    Method -> "Active"
-];
+    ];
 
 makeToolCallBoxLabel // endDefinition;
 
@@ -685,25 +661,24 @@ makeToolCallBoxLabel0 // beginDefinition;
 
 makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] := Row @ Flatten @ {
     "Using ",
-    string,
-    "\[Ellipsis]",
+    Style[ string, FontWeight -> "DemiBold" ],
     If[ MissingQ @ icon,
         Nothing,
         {
             Spacer[ 5 ],
-            Pane[ icon, ImageSize -> { 20, 20 }, ImageSizeAction -> "ShrinkToFit" ]
+            toolCallIconPane @ icon
         }
     ]
 };
 
 makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Row @ Flatten @ {
     "Used ",
-    string,
+    Style[ string, FontWeight -> "DemiBold" ],
     If[ MissingQ @ icon,
         Nothing,
         {
             Spacer[ 5 ],
-            Pane[ icon, ImageSize -> { 20, 20 }, ImageSizeAction -> "ShrinkToFit" ]
+            toolCallIconPane @ icon
         }
     ]
 };
@@ -711,17 +686,105 @@ makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Row @ Flatten @ {
 makeToolCallBoxLabel0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*toolCallIconPane*)
+toolCallIconPane // beginDefinition;
+
+toolCallIconPane[ icon_ ] :=
+    Dynamic[
+        If[ TrueQ @ $CloudEvaluation,
+            #1,
+            Pane[ #1, ImageSize -> { 20, 20 }, ImageSizeAction -> "ShrinkToFit" ]
+        ] &[ icon ],
+        SingleEvaluation -> True,
+        TrackedSymbols   :> { }
+    ];
+
+toolCallIconPane // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*makeToolCallRawView*)
+makeToolCallRawView // beginDefinition;
+
+makeToolCallRawView[ KeyValuePattern[ "ToolCall" -> raw_String ] ] :=
+    Framed[
+        Framed[
+            TextCell[ wideScrollPane @ raw, "Text", FontSize -> 11, Background -> None ],
+            Background   -> White,
+            FrameMargins -> 5,
+            FrameStyle   -> None,
+            ImageSize    -> { Scaled[ 1 ], Automatic },
+            BaseStyle    -> "Text"
+        ],
+        Background   -> White,
+        FrameStyle   -> None,
+        FrameMargins -> 10
+    ];
+
+makeToolCallRawView // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*makeToolCallInterpretedView*)
+makeToolCallInterpretedView // beginDefinition;
+
+makeToolCallInterpretedView[ as_Association ] :=
+    Framed[
+        Column[
+            {
+                Item[
+                    Pane[ Style[ "INPUT", FontSize -> 11 ], FrameMargins -> { { 5, 5 }, { 1, 1 } } ],
+                    ItemSize   -> Fit,
+                    Background -> GrayLevel[ 0.95 ]
+                ],
+                Framed[
+                    makeToolCallInputSection @ as,
+                    Background   -> White,
+                    FrameMargins -> 5,
+                    FrameStyle   -> None,
+                    ImageSize    -> { Scaled[ 1 ], Automatic }
+                ],
+                Item[
+                    Pane[ Style[ "OUTPUT", FontSize -> 11 ], FrameMargins -> { { 5, 5 }, { 1, 1 } } ],
+                    ItemSize   -> Fit,
+                    Background -> GrayLevel[ 0.95 ]
+                ],
+                Framed[
+                    makeToolCallOutputSection @ as,
+                    Background   -> White,
+                    FrameMargins -> 5,
+                    FrameStyle   -> None,
+                    ImageSize    -> { Scaled[ 1 ], Automatic }
+                ]
+            },
+            Alignment -> Left
+        ],
+        Background   -> White,
+        FrameStyle   -> None,
+        FrameMargins -> 10
+    ];
+
+makeToolCallInterpretedView // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*makeToolCallInputSection*)
 makeToolCallInputSection // beginDefinition;
 
-makeToolCallInputSection[ KeyValuePattern[ "Parameters" -> as_Association ] ] := Grid[
-    KeyValueMap[ { #1, clickToCopy @ #2 } &, as ],
-    Alignment  -> Left,
-    BaseStyle  -> "Text",
-    Dividers   -> All,
-    FrameStyle -> GrayLevel[ 0.9 ],
-    Spacings   -> 1
+makeToolCallInputSection[ as: KeyValuePattern[ "Parameters" -> params_Association ] ] := Enclose[
+    Module[ { formatter },
+        formatter = Confirm[ as[ "FormattingFunction" ], "FormattingFunction" ];
+        Grid[
+            KeyValueMap[ { #1, formatter[ #2, "Parameters", #1 ] } &, params ],
+            Alignment  -> Left,
+            BaseStyle  -> "Text",
+            Dividers   -> All,
+            FrameStyle -> GrayLevel[ 0.9 ],
+            Spacings   -> 1
+        ]
+    ],
+    throwInternalFailure[ makeToolCallInputSection @ as, ## ] &
 ];
 
 makeToolCallInputSection[ KeyValuePattern[ "Parameters" -> query_String ] ] :=
@@ -730,10 +793,47 @@ makeToolCallInputSection[ KeyValuePattern[ "Parameters" -> query_String ] ] :=
 makeToolCallInputSection // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*resolveToolFormatter*)
+resolveToolFormatter // beginDefinition;
+resolveToolFormatter[ as_Association ] := Append[ as, "FormattingFunction" -> resolveToolFormatter0 @ as ];
+resolveToolFormatter // endDefinition;
+
+resolveToolFormatter0 // beginDefinition;
+resolveToolFormatter0[ KeyValuePattern[ "FormattingFunction" -> f_ ] ] := resolveToolFormatter0 @ f;
+resolveToolFormatter0[ Automatic ] := clickToCopy[ #1 ] &;
+resolveToolFormatter0[ Inherited ] := toolAutoFormatter;
+resolveToolFormatter0[ None      ] := #1 &;
+resolveToolFormatter0[ f_        ] := f;
+resolveToolFormatter0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*toolAutoFormatter*)
+toolAutoFormatter // beginDefinition;
+
+toolAutoFormatter[ KeyValuePattern[ "Result" -> result_ ], "Result" ] :=
+    toolAutoFormatter[ result, "Result" ];
+
+toolAutoFormatter[ result_String, "Result" ] := RawBoxes @ Cell[
+    TextData @ reformatTextData @ result,
+    "Text",
+    Background -> None
+];
+
+toolAutoFormatter[ parameter_, "Parameters", ___ ] := clickToCopy @ parameter;
+
+toolAutoFormatter[ result_, ___ ] := result;
+
+toolAutoFormatter // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*clickToCopy*)
 clickToCopy // beginDefinition;
-clickToCopy[ expr_ ] := Grid[ { { ClickToCopy @ expr, "" } }, Spacings -> 0 ];
+clickToCopy[ ClickToCopy[ args__ ] ] := clickToCopy @ args;
+clickToCopy[ HoldForm[ expr_ ], a___ ] := clickToCopy[ Defer @ expr, a ];
+clickToCopy[ expr_, a___ ] := Grid[ { { ClickToCopy[ expr, a ], "" } }, Spacings -> 0, BaseStyle -> "Text" ];
 clickToCopy // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -741,17 +841,29 @@ clickToCopy // endDefinition;
 (*makeToolCallOutputSection*)
 makeToolCallOutputSection // beginDefinition;
 
-makeToolCallOutputSection[ KeyValuePattern[ "Result" -> result_String ] ] := TextCell[
-    result,
-    "Program",
-    FontSize -> 0.75 * Inherited,
-    Background -> None
+makeToolCallOutputSection[ as: KeyValuePattern[ "Result" -> result_ ] ] := Enclose[
+    Module[ { formatter },
+        formatter = Confirm[ as[ "FormattingFunction" ], "FormattingFunction" ];
+        TextCell[ wideScrollPane @ formatter[ result, "Result" ], "Text", Background -> None ]
+    ],
+    throwInternalFailure[ makeToolCallOutputSection @ as, ## ] &
 ];
 
-makeToolCallOutputSection[ KeyValuePattern[ "Result" -> result_ ] ] :=
-    TextCell[ ClickToCopy @ result, Background -> None ];
-
 makeToolCallOutputSection // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*wideScrollPane*)
+wideScrollPane // beginDefinition;
+
+wideScrollPane[ expr_ ] := Pane[
+    expr,
+    ImageSize          -> { Scaled[ 1 ], UpTo[ 400 ] },
+    Scrollbars         -> Automatic,
+    AppearanceElements -> None
+];
+
+wideScrollPane // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -766,10 +878,10 @@ makeInteractiveCodeCell[ language_, code_String ] /; $dynamicText :=
     ];
 
 (* Wolfram Language code blocks *)
-makeInteractiveCodeCell[ lang_String? wolframLanguageQ, code_String ] :=
+makeInteractiveCodeCell[ lang_String? wolframLanguageQ, code_ ] :=
     Module[ { display, handler },
         display = RawBoxes @ Cell[
-            BoxData @ stringToBoxes @ code,
+            BoxData @ If[ StringQ @ code, stringToBoxes @ code, code ],
             "ChatCode",
             "Input",
             Background -> GrayLevel[ 1 ]
@@ -830,7 +942,7 @@ inlineInteractiveCodeCell[ display_, string_, lang_ ] /; $cloudNotebooks :=
     Mouseover[ display, Column @ { display, floatingButtonGrid[ string, lang ] } ];
 
 inlineInteractiveCodeCell[ display_, string_, lang_ ] :=
-    DynamicModule[ { $CellContext`attached },
+    DynamicModule[ { $CellContext`attached, $CellContext`cell },
         EventHandler[
             display,
             {
@@ -839,15 +951,16 @@ inlineInteractiveCodeCell[ display_, string_, lang_ ] :=
                     Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
                         "AttachCodeButtons",
                         Dynamic[ $CellContext`attached ],
-                        EvaluationCell[ ],
+                        $CellContext`cell,
                         string,
                         lang
                     ]
                 )
             }
         ],
-        TaggingRules -> <| "CellToStringType" -> "InlineInteractiveCodeCell", "CodeLanguage" -> lang |>,
-        UnsavedVariables :> { $CellContext`attached }
+        TaggingRules     -> <| "CellToStringType" -> "InlineInteractiveCodeCell", "CodeLanguage" -> lang |>,
+        UnsavedVariables :> { $CellContext`attached, $CellContext`cell },
+        Initialization   :> { $CellContext`cell = EvaluationCell[ ] }
     ];
 
 inlineInteractiveCodeCell // endDefinition;
@@ -1190,17 +1303,18 @@ unescapeInlineMarkdown // endDefinition;
 (*stringToBoxes*)
 stringToBoxes // beginDefinition;
 stringToBoxes[ s_String ] /; $dynamicText := s;
-stringToBoxes[ s_String ] := removeExtraBoxSpaces @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ s;
+stringToBoxes[ s_String ] := adjustBoxSpacing @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ s;
 stringToBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*removeExtraBoxSpaces*)
-removeExtraBoxSpaces // beginDefinition;
-removeExtraBoxSpaces[ row: RowBox @ { "(*", ___, "*)" } ] := row;
-removeExtraBoxSpaces[ RowBox[ items_List ] ] := RowBox[ removeExtraBoxSpaces /@ DeleteCases[ items, " " ] ];
-removeExtraBoxSpaces[ other_ ] := other;
-removeExtraBoxSpaces // endDefinition;
+(*adjustBoxSpacing*)
+adjustBoxSpacing // beginDefinition;
+adjustBoxSpacing[ row: RowBox @ { "(*", ___, "*)" } ] := row;
+adjustBoxSpacing[ RowBox[ items_List ] ] := RowBox[ adjustBoxSpacing /@ DeleteCases[ items, " " ] ];
+adjustBoxSpacing[ "\n" ] := "\[IndentingNewLine]";
+adjustBoxSpacing[ box_ ] := box;
+adjustBoxSpacing // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
