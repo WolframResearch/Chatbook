@@ -572,7 +572,7 @@ makeFrontEndAndNotebookSettingsContent[
 		];
 	);
 
-	(* Initial value. Called again if 'show advanced models' changes. *)
+	(* Initial value. Called again if 'show snapshot models' changes. *)
 	setModelPopupItems[];
 
 	(*---------------------------------*)
@@ -602,7 +602,7 @@ makeFrontEndAndNotebookSettingsContent[
 			{Row[{
 				tr["Default Model:"],
 				(* Note: Dynamic[PopupMenu[..]] so that changing the
-				         'show advanced models' option updates the popup. *)
+				         'show snapshot models' option updates the popup. *)
 				Dynamic @ PopupMenu[
 					Dynamic[
 						currentChatSettings[
@@ -617,11 +617,20 @@ makeFrontEndAndNotebookSettingsContent[
 						]
 					],
 					modelPopupItems,
-					(* This is shown if the user selects an advanced model,
-						and then unchecks the 'show advanced models' option. *)
+					(* This is shown if the user selects a snapshot model,
+					   and then unchecks the 'show snapshot models' option. *)
 					Dynamic[
 						Style[
-							modelDisplayName @ currentChatSettings[targetObj, "Model"],
+							With[{
+								modelName = currentChatSettings[targetObj, "Model"]
+							}, {
+								settings = getModelSettings[modelName]
+							},
+								Row[{
+									getModelMenuIcon[settings, "Full"],
+									modelDisplayName[modelName]
+								}, Spacer[1]]
+							],
 							Italic
 						]
 					]
@@ -2465,25 +2474,30 @@ getModelsMenuItems[] := Module[{
 		];
 	];
 
-	items = AssociationMap[
-		modelName |-> Module[{icon},
-			icon = Which[
-				StringStartsQ[modelName, "gpt-3.5"],
-					getIcon["ModelGPT35"],
-				StringStartsQ[modelName, "gpt-4"],
-					getIcon["ModelGPT4"],
-				True,
-					None
-			];
-
-			<| "Icon" -> icon |>
-		],
-		items
-	];
+	items = AssociationMap[getModelSettings, items];
 
 	RaiseAssert[MatchQ[items, <| (_?StringQ -> _?AssociationQ)... |>]];
 
 	items
+]
+
+(*====================================*)
+
+SetFallthroughError[getModelSettings]
+
+getModelSettings[modelName_?StringQ] := Module[{
+	icon
+},
+	icon = Which[
+		StringStartsQ[modelName, "gpt-3.5"],
+			getIcon["ModelGPT35"],
+		StringStartsQ[modelName, "gpt-4"],
+			getIcon["ModelGPT4"],
+		True,
+			None
+	];
+
+	<| "Icon" -> icon |>
 ]
 
 
