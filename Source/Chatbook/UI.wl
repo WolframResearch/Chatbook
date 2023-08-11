@@ -2448,7 +2448,7 @@ getModelsMenuItems[] := Module[{
 	items
 },
 	items = Select[
-		Wolfram`Chatbook`Actions`Private`getModelList[],
+		getModelList[],
 		StringStartsQ["gpt-"]
 	];
 

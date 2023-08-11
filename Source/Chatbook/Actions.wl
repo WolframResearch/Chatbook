@@ -20,6 +20,7 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 `$settings;
 `autoAssistQ;
 `makeOutputDingbat;
+`getModelList;
 
 Begin[ "`Private`" ];
 
