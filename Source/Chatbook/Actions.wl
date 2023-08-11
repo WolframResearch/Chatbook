@@ -448,8 +448,8 @@ StopChat[ cell0_CellObject ] := Enclose[
         removeTask @ Lookup[ settings, "Task" ];
         container = ConfirmBy[ Lookup[ settings, "Container" ], AssociationQ, "Container" ];
         content = ConfirmMatch[ Lookup[ container, "FullContent" ], _String|_ProgressIndicator, "Content" ];
-        writeReformattedCell[ settings, content, cell ];
-        Quiet @ NotebookDelete @ cell;
+        FinishDynamic[ ];
+        Block[ { createFETask = # & }, writeReformattedCell[ settings, content, cell ] ]
     ],
     throwInternalFailure[ StopChat @ cell0, ## ] &
 ];
@@ -893,6 +893,8 @@ sendChat // beginDefinition;
 sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclose[
     Module[ { cells0, cells, target, settings, id, key, req, data, persona, cell, cellObject, container, task },
 
+        initFETaskWidget @ nbo;
+
         resolveInlineReferences @ evalCell;
         cells0 = ConfirmMatch[ selectChatCells[ settings0, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
 
@@ -1196,8 +1198,8 @@ submitAIAssistant // endDefinition;
 dynamicSplitQ // beginDefinition;
 dynamicSplitQ[ as_Association ] := dynamicSplitQ @ Lookup[ as, "StreamingOutputMethod", Automatic ];
 dynamicSplitQ[ sym_Symbol ] := dynamicSplitQ @ SymbolName @ sym;
-dynamicSplitQ[ "PartialDynamic" ] := True;
-dynamicSplitQ[ "FullDynamic"|"Dynamic"|"Automatic"|"Inherited" ] := False;
+dynamicSplitQ[ "PartialDynamic"|"Automatic"|"Inherited" ] := True;
+dynamicSplitQ[ "FullDynamic"|"Dynamic" ] := False;
 dynamicSplitQ[ other_ ] := (messagePrint[ "InvalidStreamingOutputMethod", other ]; True);
 dynamicSplitQ // endDefinition;
 
@@ -1522,7 +1524,7 @@ toolFreeQ // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*writeErrorCell*)
 writeErrorCell // beginDefinition;
-writeErrorCell[ cell_, as_ ] := NotebookWrite[ cell, errorCell @ as ];
+writeErrorCell[ cell_, as_ ] := createFETask @ NotebookWrite[ cell, errorCell @ as ];
 writeErrorCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -2370,7 +2372,7 @@ writeChunk[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
         splitDynamicContent[ container, cell ]
     ];
 
-    If[ AbsoluteTime[ ] - $lastDynamicUpdate > 0.1,
+    If[ AbsoluteTime[ ] - $lastDynamicUpdate > 0.05,
         (* Trigger updating of dynamic content in current chat output cell *)
         $dynamicTrigger++;
         $lastDynamicUpdate = AbsoluteTime[ ]
@@ -2423,7 +2425,7 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
         ];
 
         reformatted = ConfirmMatch[
-            Block[ { $dynamicText = True }, reformatTextData @ StringJoin @ static ],
+            Block[ { $dynamicText = False }, reformatTextData @ StringJoin @ static ],
             $$textDataList,
             "ReformatTextData"
         ];
@@ -2431,17 +2433,26 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
         write = Cell[ TextData @ reformatted, Background -> None ];
         nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
 
-        withNoRenderUpdates[
-            nbo,
+        container[ "DynamicContent" ] = dynamic;
 
-            container[ "DynamicContent" ] = dynamic;
+        With[ { boxObject = boxObject, write = write },
+            splitDynamicTaskFunction @ NotebookWrite[
+                System`NotebookLocationSpecifier[ boxObject, "Before" ],
+                write,
+                None,
+                AutoScroll -> False
+            ];
+            splitDynamicTaskFunction @ NotebookWrite[
+                System`NotebookLocationSpecifier[ boxObject, "Before" ],
+                "\n" ,
+                None,
+                AutoScroll -> False
+            ];
+        ];
 
-            NotebookWrite[ System`NotebookLocationSpecifier[ boxObject, "Before" ], write, None, AutoScroll -> False ];
-            NotebookWrite[ System`NotebookLocationSpecifier[ boxObject, "Before" ], "\n" , None, AutoScroll -> False ];
+        $dynamicTrigger++;
+        $lastDynamicUpdate = AbsoluteTime[ ];
 
-            $dynamicTrigger++;
-            $lastDynamicUpdate = AbsoluteTime[ ];
-        ]
     ],
     throwInternalFailure[ splitDynamicContent[ container, { static, dynamic }, cell, uuid ], ## ] &
 ];
@@ -2450,6 +2461,10 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
 splitDynamicContent[ container_, { _ } | { }, cell_, uuid_ ] := Null;
 
 splitDynamicContent // endDefinition;
+
+
+
+splitDynamicTaskFunction = createFETask;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2929,31 +2944,30 @@ writeReformattedCell[ settings_, None, cell_CellObject ] :=
         ]
     ];
 
-writeReformattedCell[ settings_, string_String, cell_CellObject ] :=
-    With[
-        {
-            tag      = CurrentValue[ cell, { TaggingRules, "MessageTag" } ],
-            open     = $lastOpen = cellOpenQ @ cell,
-            label    = RawBoxes @ TemplateBox[ { }, "MinimizedChat" ],
-            pageData = CurrentValue[ cell, { TaggingRules, "PageData" } ],
-            uuid     = CreateUUID[ ]
-        },
-        $lastChatString = string;
-        Block[ { $dynamicText = False },
-            WithCleanup[
-                NotebookWrite[
-                    cell,
-                    $reformattedCell = reformatCell[ settings, string, tag, open, label, pageData, uuid ],
-                    None,
-                    AutoScroll -> False
-                ],
-                attachChatOutputMenu[ $lastChatOutput = CellObject @ uuid ]
-            ]
+writeReformattedCell[ settings_, string_String, cell_CellObject ] := Block[ { $dynamicText = False },
+    Module[ { tag, open, label, pageData, uuid, new, output },
+
+        tag      = CurrentValue[ cell, { TaggingRules, "MessageTag" } ];
+        open     = $lastOpen = cellOpenQ @ cell;
+        label    = RawBoxes @ TemplateBox[ { }, "MinimizedChat" ];
+        pageData = CurrentValue[ cell, { TaggingRules, "PageData" } ];
+        uuid     = CreateUUID[ ];
+        new      = reformatCell[ settings, string, tag, open, label, pageData, uuid ];
+        output   = CellObject @ uuid;
+
+        $lastChatString  = string;
+        $reformattedCell = new;
+        $lastChatOutput  = output;
+
+        With[ { new = new, output = output },
+            createFETask @ NotebookWrite[ cell, new, None, AutoScroll -> False ];
+            createFETask @ attachChatOutputMenu @ output
         ]
-    ];
+    ]
+];
 
 writeReformattedCell[ settings_, other_, cell_CellObject ] :=
-    NotebookWrite[
+    createFETask @ NotebookWrite[
         cell,
         Cell[
             TextData @ {
@@ -2999,7 +3013,7 @@ restoreLastPage[ settings_, rules_Association, cellObject_CellObject ] := Enclos
             ]
         ];
 
-        WithCleanup[
+        createFETask @ WithCleanup[
             NotebookWrite[
                 cellObject,
                 $reformattedCell = cell,
