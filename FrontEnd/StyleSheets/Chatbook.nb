@@ -1143,7 +1143,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.1.2.3900744841"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.1.2.3900758767"|>
   ],
   Cell[
    StyleData["Text"],
@@ -1636,7 +1636,7 @@ Notebook[
                 },
                 Wolfram`Chatbook`UI`Private`getPersonaMenuIcon[
                  Lookup[
-                  GetPersonasAssociation[],
+                  Wolfram`Chatbook`Personas`GetPersonasAssociation[],
                   Part[Wolfram`Chatbook`UI`Private`personaValue, 2]
                  ]
                 ]
@@ -1732,7 +1732,7 @@ Notebook[
                    },
                    Wolfram`Chatbook`UI`Private`getPersonaMenuIcon[
                     Lookup[
-                     GetPersonasAssociation[],
+                     Wolfram`Chatbook`Personas`GetPersonasAssociation[],
                      Part[Wolfram`Chatbook`UI`Private`personaValue, 2]
                     ]
                    ]
@@ -1848,7 +1848,7 @@ Notebook[
                      },
                      Wolfram`Chatbook`UI`Private`getPersonaMenuIcon[
                       Lookup[
-                       GetPersonasAssociation[],
+                       Wolfram`Chatbook`Personas`GetPersonasAssociation[],
                        Part[Wolfram`Chatbook`UI`Private`personaValue, 2]
                       ]
                      ]
@@ -2409,7 +2409,7 @@ Notebook[
                 },
                 Wolfram`Chatbook`UI`Private`getPersonaMenuIcon[
                  Lookup[
-                  GetPersonasAssociation[],
+                  Wolfram`Chatbook`Personas`GetPersonasAssociation[],
                   Part[Wolfram`Chatbook`UI`Private`personaValue, 2]
                  ]
                 ]
@@ -12922,7 +12922,5 @@ Notebook[
    }
   ]
  },
- FrontEndVersion -> "13.3 for Mac OS X ARM (64-bit) (June 3, 2023)",
- StyleDefinitions -> "PrivateStylesheetFormatting.nb",
- ExpressionUUID -> "3ebe1bc7-9e28-4b75-8d06-f248a5a41baf"
+ StyleDefinitions -> "PrivateStylesheetFormatting.nb"
 ]
