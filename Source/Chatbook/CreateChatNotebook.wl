@@ -122,7 +122,7 @@ createLocalChatNotebook // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$chatbookStylesheet*)
-$chatbookStylesheet := If[ TrueQ[ $cloudNotebooks && $cloudVersionNumber < 1.66 ],
+$chatbookStylesheet := If[ TrueQ[ $cloudNotebooks && PacletNewerQ[ $CloudVersionNumber, "1.66" ] ],
                            $inlinedStylesheet,
                            "Chatbook.nb"
                        ];
