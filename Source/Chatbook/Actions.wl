@@ -20,6 +20,7 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 `$settings;
 `autoAssistQ;
 `makeOutputDingbat;
+`getModelList;
 
 Begin[ "`Private`" ];
 
@@ -2709,6 +2710,7 @@ getAIAssistantModels // endDefinition;
 (*getModelList*)
 getModelList // beginDefinition;
 
+(* NOTE: This function is also called in UI.wl *)
 getModelList[ ] := getModelList @ toAPIKey @ Automatic;
 
 getModelList[ key_String ] := getModelList[ key, Hash @ key ];
