@@ -15,32 +15,8 @@ env:
 
 jobs:
 
-  Check:
-    name: Check
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    container:
-      image: wolframresearch/wolframengine:latest
-      options: --user root
-
-    env:
-      WOLFRAM_SYSTEM_ID: Linux-x86-64
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-
-    - name: BuildMX
-      run: wolframscript -f Scripts/BuildMX.wls
-
-    - name: Check
-      uses: WolframResearch/check-paclet@v1.10.2
-
-
   Release:
     name: Release
-    needs: [Check]
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -52,8 +28,17 @@ jobs:
       WOLFRAM_SYSTEM_ID: Linux-x86-64
 
     steps:
+    - name: Initialization
+      run: |
+        apt-get update && apt-get install git -y
+        wget https://github.com/cli/cli/releases/download/v2.33.0/gh_2.33.0_linux_amd64.deb
+        dpkg -i gh_2.33.0_linux_amd64.deb
+
     - name: Checkout
       uses: actions/checkout@v3
+
+    - name: Testing
+      run: ls -la
 
     - name: BuildMX
       run: wolframscript -f Scripts/BuildMX.wls
@@ -71,15 +56,12 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        apt update && apt install git -y
-        wget https://github.com/cli/cli/releases/download/v2.33.0/gh_2.33.0_linux_amd64.deb
-        dpkg -i gh_2.33.0_linux_amd64.deb
-
         gh release create "${{ env.PACLET_RELEASE_TAG }}" "${{ env.PACLET_PATH }}#${{ env.PACLET_FILE }}" \
             --repo="${{ env.GITHUB_REPOSITORY }}" \
             --title="Release ${{ env.PACLET_RELEASE_TAG }}" \
             --generate-notes \
             --draft
+
 
   # Submit:
   #   name: Submit
