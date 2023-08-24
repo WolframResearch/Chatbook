@@ -73,8 +73,7 @@ jobs:
         gh release create "${{ env.PACLET_RELEASE_TAG }}" "${{ env.PACLET_PATH }}#${{ env.PACLET_FILE }}" \
             --repo="${{ env.GITHUB_REPOSITORY }}" \
             --title="Release ${{ env.PACLET_RELEASE_TAG }}" \
-            --generate-notes \
-            --draft
+            --generate-notes
 
 
   Submit:
