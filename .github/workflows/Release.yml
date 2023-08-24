@@ -2,8 +2,6 @@ name: Release
 
 on:
   workflow_dispatch:
-  push:
-    branches: ['release/*']
 
 concurrency:
   group: ${{ github.ref }}
@@ -15,8 +13,29 @@ env:
 
 jobs:
 
+  Check:
+    name: Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    container:
+      image: wolframresearch/wolframengine:latest
+      options: --user root
+
+    env:
+      WOLFRAM_SYSTEM_ID: Linux-x86-64
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Check
+      uses: WolframResearch/check-paclet@v1.10.2
+
+
   Release:
     name: Release
+    needs: [Check]
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -29,7 +48,7 @@ jobs:
       GH_INSTALL_URL: https://github.com/cli/cli/releases/download/v2.33.0/gh_2.33.0_linux_amd64.deb
 
     steps:
-    - name: Update GIT
+    - name: Update Git
       run: |
         apt-get update && apt-get install software-properties-common -y
         add-apt-repository ppa:git-core/ppa -y
@@ -46,12 +65,6 @@ jobs:
     - name: Build
       uses: WolframResearch/build-paclet@v1.10.2
 
-    - name: UploadArtifact
-      uses: actions/upload-artifact@v3
-      with:
-        path: ${{ env.PACLET_BUILD_DIR }}
-        if-no-files-found: ignore
-
     - name: CreateRelease
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -64,31 +77,31 @@ jobs:
             --draft
 
 
-  # Submit:
-  #   name: Submit
-  #   needs:  [Check]
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 30
+  Submit:
+    name: Submit
+    needs: [Check]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
 
-  #   container:
-  #     image: wolframresearch/wolframengine:13.0.1
-  #     options: --user root
+    container:
+      image: wolframresearch/wolframengine:13.0.1
+      options: --user root
 
-  #   env:
-  #     WOLFRAM_SYSTEM_ID: Linux-x86-64
+    env:
+      WOLFRAM_SYSTEM_ID: Linux-x86-64
 
-  #   steps:
-  #   - name: Checkout
-  #     uses: actions/checkout@v3
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
 
-  #   - name: BuildMX
-  #     run: wolframscript -f Scripts/BuildMX.wls
+    - name: BuildMX
+      run: wolframscript -f Scripts/BuildMX.wls
 
-  #   - name: Submit
-  #     uses: WolframResearch/submit-paclet@v1.10.2
+    - name: Submit
+      uses: WolframResearch/submit-paclet@v1.10.2
 
-  #   - name: UploadArtifact
-  #     uses: actions/upload-artifact@v3
-  #     with:
-  #       path: ${{ env.PACLET_BUILD_DIR }}
-  #       if-no-files-found: ignore
+    - name: UploadArtifact
+      uses: actions/upload-artifact@v3
+      with:
+        path: ${{ env.PACLET_BUILD_DIR }}
+        if-no-files-found: ignore
