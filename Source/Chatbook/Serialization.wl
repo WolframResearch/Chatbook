@@ -247,7 +247,7 @@ cellToString[ cell: Cell[ _BoxData, ___ ] ] /; ! TrueQ @ $delimitedCodeBlock :=
 
 (* Prepend cell label to the cell string *)
 cellToString[ Cell[ a___, CellLabel -> label_String, b___ ] ] :=
-    With[ { str = cellToString @ Cell[ a, b ] }, (needsBasePrompt[ "Notebooks" ]; label<>" "<>str) /; StringQ @ str ];
+    With[ { str = cellToString @ Cell[ a, b ] }, (needsBasePrompt[ "CellLabels" ]; label<>" "<>str) /; StringQ @ str ];
 
 (* Item styles *)
 cellToString[ Cell[ a___, $$itemStyle, b___ ] ] :=
