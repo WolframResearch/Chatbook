@@ -26,13 +26,16 @@ jobs:
 
     env:
       WOLFRAM_SYSTEM_ID: Linux-x86-64
+      GH_INSTALL_URL: https://github.com/cli/cli/releases/download/v2.33.0/gh_2.33.0_linux_amd64.deb
 
     steps:
     - name: Initialization
       run: |
+        apt-get update && apt-get install software-properties-common -y
+        add-apt-repository ppa:git-core/ppa -y
         apt-get update && apt-get install git -y
-        wget https://github.com/cli/cli/releases/download/v2.33.0/gh_2.33.0_linux_amd64.deb
-        dpkg -i gh_2.33.0_linux_amd64.deb
+        wget ${{ env.GH_INSTALL_URL }} -O gh.deb
+        dpkg -i gh.deb
 
     - name: Checkout
       uses: actions/checkout@v3
@@ -40,7 +43,6 @@ jobs:
     - name: Testing
       run: |
         ls -la
-        git status
 
     - name: BuildMX
       run: wolframscript -f Scripts/BuildMX.wls
