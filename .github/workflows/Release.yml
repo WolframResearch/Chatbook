@@ -2,8 +2,6 @@ name: Release
 
 on:
   workflow_dispatch:
-  push:
-    branches:  ['release/*']
 
 concurrency:
   group: ${{ github.ref }}
@@ -24,15 +22,12 @@ jobs:
       image: wolframresearch/wolframengine:latest
       options: --user root
 
-    env: 
+    env:
       WOLFRAM_SYSTEM_ID: Linux-x86-64
 
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-
-    - name: BuildMX
-      run: wolframscript -f Scripts/BuildMX.wls
 
     - name: Check
       uses: WolframResearch/check-paclet@v1.10.2
@@ -40,12 +35,56 @@ jobs:
 
   Release:
     name: Release
-    needs:  [Check]
+    needs: [Check]
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     container:
       image: wolframresearch/wolframengine:latest
+      options: --user root
+
+    env:
+      WOLFRAM_SYSTEM_ID: Linux-x86-64
+      GH_INSTALL_URL: https://github.com/cli/cli/releases/download/v2.33.0/gh_2.33.0_linux_amd64.deb
+
+    steps:
+    - name: Update Git
+      run: |
+        apt-get update && apt-get install software-properties-common -y
+        add-apt-repository ppa:git-core/ppa -y
+        apt-get update && apt-get install git -y
+        wget ${{ env.GH_INSTALL_URL }} -O gh.deb
+        dpkg -i gh.deb
+
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: BuildMX
+      run: wolframscript -f Scripts/BuildMX.wls
+
+    - name: Build
+      uses: WolframResearch/build-paclet@v1.10.2
+
+    - name: CreateRelease
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git config --global --add safe.directory $(pwd)
+        gh release create "${{ env.PACLET_RELEASE_TAG }}" "${{ env.PACLET_PATH }}#${{ env.PACLET_FILE }}" \
+            --repo="${{ env.GITHUB_REPOSITORY }}" \
+            --title="Release ${{ env.PACLET_RELEASE_TAG }}" \
+            --generate-notes \
+            --draft
+
+
+  Submit:
+    name: Submit
+    needs: [Check]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    container:
+      image: wolframresearch/wolframengine:13.0.1
       options: --user root
 
     env:
@@ -58,54 +97,11 @@ jobs:
     - name: BuildMX
       run: wolframscript -f Scripts/BuildMX.wls
 
-    - name: Build
-      uses: WolframResearch/build-paclet@v1.10.2
+    - name: Submit
+      uses: WolframResearch/submit-paclet@v1.10.2
 
     - name: UploadArtifact
       uses: actions/upload-artifact@v3
-      with: 
+      with:
         path: ${{ env.PACLET_BUILD_DIR }}
         if-no-files-found: ignore
-
-    - name: CreateRelease
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        apt update && apt install git -y
-        wget https://github.com/cli/cli/releases/download/v2.33.0/gh_2.33.0_linux_amd64.deb
-        dpkg -i gh_2.33.0_linux_amd64.deb
-
-        gh release create "${{ env.PACLET_RELEASE_TAG }}" "${{ env.PACLET_PATH }}#${{ env.PACLET_FILE }}" \
-            --repo="${{ env.GITHUB_REPOSITORY }}" \
-            --title="Release ${{ env.PACLET_RELEASE_TAG }}" \
-            --generate-notes \
-            --draft
-
-  # Submit:
-  #   name: Submit
-  #   needs:  [Check]
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 30
-
-  #   container:
-  #     image: wolframresearch/wolframengine:13.0.1
-  #     options: --user root
-
-  #   env:
-  #     WOLFRAM_SYSTEM_ID: Linux-x86-64
-
-  #   steps:
-  #   - name: Checkout
-  #     uses: actions/checkout@v3
-
-  #   - name: BuildMX
-  #     run: wolframscript -f Scripts/BuildMX.wls
-
-  #   - name: Submit
-  #     uses: WolframResearch/submit-paclet@v1.10.2
-
-  #   - name: UploadArtifact
-  #     uses: actions/upload-artifact@v3
-  #     with:
-  #       path: ${{ env.PACLET_BUILD_DIR }}
-  #       if-no-files-found: ignore
