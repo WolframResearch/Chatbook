@@ -3,7 +3,7 @@ name: Release
 on:
   workflow_dispatch:
   push:
-    branches:  ['release/*']
+    branches: ['release/*']
 
 concurrency:
   group: ${{ github.ref }}
@@ -24,7 +24,7 @@ jobs:
       image: wolframresearch/wolframengine:latest
       options: --user root
 
-    env: 
+    env:
       WOLFRAM_SYSTEM_ID: Linux-x86-64
 
     steps:
@@ -40,7 +40,7 @@ jobs:
 
   Release:
     name: Release
-    needs:  [Check]
+    needs: [Check]
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -63,7 +63,7 @@ jobs:
 
     - name: UploadArtifact
       uses: actions/upload-artifact@v3
-      with: 
+      with:
         path: ${{ env.PACLET_BUILD_DIR }}
         if-no-files-found: ignore
 
