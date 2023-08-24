@@ -13,6 +13,7 @@ Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
 Needs[ "Wolfram`Chatbook`Tools`"      ];
 Needs[ "Wolfram`Chatbook`Formatting`" ];
 Needs[ "Wolfram`Chatbook`Actions`"    ];
+Needs[ "Wolfram`Chatbook`UI`"         ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -122,10 +123,34 @@ createLocalChatNotebook // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$chatbookStylesheet*)
-$chatbookStylesheet := If[ TrueQ[ $cloudNotebooks && PacletNewerQ[ $CloudVersionNumber, "1.66" ] ],
-                           $inlinedStylesheet,
-                           "Chatbook.nb"
-                       ];
+$chatbookStylesheet := If[ TrueQ @ $cloudNotebooks, $cloudStylesheet, "Chatbook.nb" ];
+
+$cloudStylesheet :=
+    With[ { dir = PacletObject[ "Wolfram/Chatbook" ][ "Location" ] },
+        If[ StringQ @ dir && StringStartsQ[ dir, $BasePacletsDirectory ],
+            "Chatbook.nb",
+            ReplaceAll[
+                $inlinedStylesheet,
+                Cell @ StyleData[ StyleDefinitions -> "Default.nb" ] :>
+                    Sequence[
+                        Cell @ StyleData[ StyleDefinitions -> "Default.nb" ],
+                        Cell[
+                            StyleData[ All, "Working" ],
+                            DockedCells -> Dynamic @ If[
+                                $CloudEvaluation,
+                                {
+                                    Cell[
+                                        BoxData @ DynamicBox @ ToBoxes @ MakeChatCloudDockedCellContents[ ],
+                                        Background -> None
+                                    ]
+                                },
+                                { }
+                            ]
+                        ]
+                    ]
+            ]
+        ]
+    ];
 
 $inlinedStylesheet := $inlinedStylesheet = Import[
     FileNameJoin @ {
