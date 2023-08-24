@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     container:
-      image: wolframresearch/wolframengine:13.0.1
+      image: wolframresearch/wolframengine:latest
       options: --user root
     env:
       WOLFRAM_SYSTEM_ID: Linux-x86-64
