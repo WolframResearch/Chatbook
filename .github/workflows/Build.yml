@@ -14,13 +14,16 @@ env:
   WOLFRAMSCRIPT_ENTITLEMENTID: ${{ secrets.WOLFRAMSCRIPT_ENTITLEMENTID }}
 
 jobs:
+
   Build:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
     container:
       image: wolframresearch/wolframengine:latest
       options: --user root
+
     env:
       WOLFRAM_SYSTEM_ID: Linux-x86-64
 
@@ -33,8 +36,6 @@ jobs:
 
     - name: Build
       uses: WolframResearch/build-paclet@v1.10.2
-      with:
-        target: Submit
 
     - name: UploadArtifact
       uses: actions/upload-artifact@v3
