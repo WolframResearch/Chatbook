@@ -148,10 +148,10 @@ $cloudModelChooser := PopupMenu[
 		Function[CurrentValue[EvaluationNotebook[], {TaggingRules, "ChatNotebookSettings", "Model"}] = #]
 	],
 	KeyValueMap[
-		getModelsMenuItems[],
 		{modelName, settings} |-> (
 			modelName -> Grid[{{getModelMenuIcon[settings], modelDisplayName[modelName]}}]
-		)
+		),
+		getModelsMenuItems[]
 	],
 	ImageSize -> {Automatic, 30},
 	Alignment -> {Left, Baseline},
