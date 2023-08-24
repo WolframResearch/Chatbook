@@ -22,6 +22,7 @@ $basePromptOrder = {
     "NotebooksPreamble",
     "AutoAssistant",
     "CodeBlocks",
+    "CellLabels",
     "DoubleBackticks",
     "MathExpressions",
     "EscapedCharacters",
@@ -55,6 +56,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "NotebooksPreamble"            -> { },
     "AutoAssistant"                -> { "CodeBlocks", "DoubleBackticks" },
     "CodeBlocks"                   -> { },
+    "CellLabels"                   -> { "CodeBlocks", "Notebooks" },
     "DoubleBackticks"              -> { },
     "MathExpressions"              -> { "EscapedCharacters" },
     "EscapedCharacters"            -> { },
@@ -102,6 +104,10 @@ $basePromptComponents[ "CodeBlocks" ] = "\
 ```language
 code
 ```";
+
+$basePromptComponents[ "CellLabels" ] = "\
+* When writing code in your response, only give the usable code; \
+NEVER include \"In[...]:=\" or \"Out[...]=\" labels or the code will not be usable by the user";
 
 $basePromptComponents[ "DoubleBackticks" ] = "\
 * ALWAYS surround inline code with double backticks to avoid ambiguity with context names: ``MyContext`MyFunction[x]``";
