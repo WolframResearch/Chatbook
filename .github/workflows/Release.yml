@@ -38,7 +38,9 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Testing
-      run: ls -la
+      run: |
+        ls -la
+        git status
 
     - name: BuildMX
       run: wolframscript -f Scripts/BuildMX.wls
