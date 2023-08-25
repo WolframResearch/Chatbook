@@ -3,7 +3,7 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 
-(* cSpell: ignore TOOLCALL, ENDTOOLCALL, nodef *)
+(* cSpell: ignore TOOLCALL, ENDTOOLCALL, ENDRESULT, nodef *)
 
 (* TODO: these probably aren't needed as exported symbols since all hooks are going through ChatbookAction *)
 `AskChat;
@@ -43,6 +43,13 @@ HoldComplete[
     System`LLMToolRequest,
     System`LLMToolResponse
 ];
+
+(* TODO: move some content from this file into separate files:
+   SendChat.wl - a huge portion of this file would move here
+   AutoAssistant.wl - code related to tagging, cell opening, etc.
+   ChatBlocks.wl - chat history, chat block settings dialog, etc.
+   Services.wl - authentication, etc.
+*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -427,12 +434,12 @@ autoAssistQ[ _, _ ] := False;
 
 (* Determine if auto assistance is enabled generally within a FE or Notebook. *)
 autoAssistQ[
-	target: _FrontEndObject | $FrontEndSession | _NotebookObject
+    target: _FrontEndObject | $FrontEndSession | _NotebookObject
 ] :=
-	autoAssistQ[
-		Inherited,
-		currentChatSettings[ target, "Assistance" ]
-	]
+    autoAssistQ[
+        Inherited,
+        currentChatSettings[ target, "Assistance" ]
+    ]
 
 autoAssistQ // endDefinition;
 
@@ -1009,13 +1016,13 @@ toolsEnabledQ[ ___ ] := False;
 getLLMEvaluator // beginDefinition;
 getLLMEvaluator[ as_Association ] := getLLMEvaluator[ as, Lookup[ as, "LLMEvaluator" ] ];
 getLLMEvaluator[ as_, name_String ] :=
-	(* If there isn't any information on `name`, getNamedLLMEvaluator just
-		returns `name`; if that happens, avoid infinite recursion by just
-		returning *)
-	Replace[getNamedLLMEvaluator[name], {
-		name -> name,
-		other_ :> getLLMEvaluator[as, other]
-	}]
+    (* If there isn't any information on `name`, getNamedLLMEvaluator just
+        returns `name`; if that happens, avoid infinite recursion by just
+        returning *)
+    Replace[getNamedLLMEvaluator[name], {
+        name -> name,
+        other_ :> getLLMEvaluator[as, other]
+    }]
 getLLMEvaluator[ as_, evaluator_Association ] := evaluator;
 getLLMEvaluator[ _, _ ] := None;
 getLLMEvaluator // endDefinition;
@@ -1492,7 +1499,7 @@ appendToolResult // Attributes = { HoldFirst };
 
 appendToolResult[ container_Symbol, output_String, id_String ] :=
     Module[ { append },
-        append = "RESULT\n"<>output<>"\nENDTOOLCALL(" <> id <> ")\n\n";
+        append = "ENDTOOLCALL\nRESULT\n"<>output<>"\nENDRESULT(" <> id <> ")\n\n";
         container[ "FullContent"    ] = container[ "FullContent"    ] <> append;
         container[ "DynamicContent" ] = container[ "DynamicContent" ] <> append;
     ];
@@ -1743,7 +1750,7 @@ makePromptFunctionMessages // beginDefinition;
 makePromptFunctionMessages[ settings_, { cells___, cell0_ } ] := Enclose[
     Module[ { modifiers, cell, name, arguments, filled, prompt, string },
         (* Ensure Wolfram/LLMFunctions is installed and loaded before calling System`LLMPrompt[..] *)
-		initTools[ ];
+        initTools[ ];
 
         { modifiers, cell } = ConfirmMatch[ extractModifiers @ cell0, { _, _ }, "Modifiers" ];
         name      = ConfirmBy[ extractPromptFunctionName @ cell, StringQ, "PromptFunctionName" ];
@@ -2671,7 +2678,7 @@ namedRolePrompt // ClearAll;
 
 namedRolePrompt[ name_String ] := Enclose[
     Module[ { data, pre, post },
-		data = ConfirmBy[GetCachedPersonaData[name], AssociationQ];
+        data = ConfirmBy[GetCachedPersonaData[name], AssociationQ];
 
         pre  = Lookup[ data, "Pre", TemplateApply @ Lookup[ data, "PromptTemplate" ] ];
         post = Lookup[ data, "Post" ];
@@ -2683,13 +2690,13 @@ namedRolePrompt[ name_String ] := Enclose[
             StringQ
         ]
     ],
-	(
-		ChatbookWarning[
-			"Error using named role prompt ``; falling back to default prompt.",
-			InputForm[name]
-		];
-		$defaultRolePrompt
-	) &
+    (
+        ChatbookWarning[
+            "Error using named role prompt ``; falling back to default prompt.",
+            InputForm[name]
+        ];
+        $defaultRolePrompt
+    ) &
 ];
 
 namedRolePrompt[ ___ ] := $defaultRolePrompt;

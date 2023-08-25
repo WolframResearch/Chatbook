@@ -1,6 +1,6 @@
 BeginPackage[ "Wolfram`Chatbook`Serialization`" ];
 
-(* cSpell: ignore TOOLCALL, ENDTOOLCALL, specialkeywords, tabletags *)
+(* cSpell: ignore TOOLCALL, specialkeywords, tabletags *)
 
 (* Avoiding context aliasing due to bug 434990: *)
 Needs[ "GeneralUtilities`" -> None ];

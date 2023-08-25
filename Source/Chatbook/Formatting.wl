@@ -3,7 +3,7 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Formatting`" ];
 
-(* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDTOOLCALL *)
+(* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDRESULT *)
 
 `$dynamicSplitRules;
 `$dynamicText;
@@ -398,7 +398,7 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Parsing Rules*)
-$$endToolCall = Longest[ "ENDTOOLCALL" ~~ (("(" ~~ HexadecimalCharacter.. ~~ ")") | "") ];
+$$endToolCall = Longest[ "ENDRESULT" ~~ (("(" ~~ HexadecimalCharacter.. ~~ ")") | "") ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -519,13 +519,13 @@ parsePartialToolCallString[ string_String ] /; StringMatchQ[ string, "TOOLCALL:"
     Module[ { noPrefix, noSuffix, name, tool, displayName, icon, query, result },
 
         noPrefix    = StringDelete[ string, StartOfString~~"TOOLCALL:" ];
-        noSuffix    = StringTrim @ StringDelete[ noPrefix, "ENDTOOLCALL"~~___~~EndOfString ];
+        noSuffix    = StringTrim @ StringDelete[ noPrefix, "ENDRESULT"~~___~~EndOfString ];
         name        = StringTrim @ StringDelete[ noSuffix, ("\n"|"{")~~___~~EndOfString ];
         tool        = getToolByName @ name;
         displayName = getToolDisplayName[ tool, name ];
         icon        = getToolIcon @ tool;
         query       = First[ StringCases[ string, "TOOLCALL:" ~~ q___ ~~ "\nRESULT" :> q ], "" ];
-        result      = First[ StringCases[ string, "RESULT\n" ~~ r___ ~~ "\nENDTOOLCALL" :> r ], "" ];
+        result      = First[ StringCases[ string, "RESULT\n" ~~ r___ ~~ "\nENDRESULT" :> r ], "" ];
 
         <|
             "Name"        -> name,
@@ -590,7 +590,7 @@ parseToolCallID[ string_String? StringQ ] :=
                     WhitespaceCharacter...,
                     "TOOLCALL:",
                     ___,
-                    "ENDTOOLCALL(",
+                    "ENDRESULT(",
                     hex: HexadecimalCharacter..,
                     ")",
                     WhitespaceCharacter...,
@@ -710,7 +710,12 @@ makeToolCallRawView // beginDefinition;
 makeToolCallRawView[ KeyValuePattern[ "ToolCall" -> raw_String ] ] :=
     Framed[
         Framed[
-            TextCell[ wideScrollPane @ raw, "Text", FontSize -> 11, Background -> None ],
+            RawBoxes @ Cell[
+                BoxData @ ToBoxes @ wideScrollPane @ raw,
+                "Text", "RawToolCall",
+                FontSize   -> 11,
+                Background -> None
+            ],
             Background   -> White,
             FrameMargins -> 5,
             FrameStyle   -> None,
@@ -761,6 +766,7 @@ makeToolCallInterpretedView[ as_Association ] :=
             Alignment -> Left
         ],
         Background   -> White,
+        BaseStyle    -> { Editable -> False },
         FrameStyle   -> None,
         FrameMargins -> 10
     ];
