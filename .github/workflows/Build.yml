@@ -35,7 +35,7 @@ jobs:
       run: wolframscript -f Scripts/BuildMX.wls
 
     - name: Build
-      uses: WolframResearch/build-paclet@v1.10.2
+      uses: WolframResearch/build-paclet@v1.11.0
 
     - name: UploadArtifact
       uses: actions/upload-artifact@v3
