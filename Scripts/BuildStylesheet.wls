@@ -21,22 +21,19 @@ $builderFile    = cFile @ FileNameJoin @ { $pacletDir, "Developer", "StylesheetB
 (* ::Section::Closed:: *)
 (*Build Stylesheet*)
 If[ FileExistsQ @ $stylesheetFile,
-    cicd`ConsoleLog[ "Removing existing stylesheet file..." ];
+    cicd`ConsoleLog @ SequenceForm[ "Removing existing stylesheet file: ", $stylesheetFile ];
     cicd`ScriptConfirm @ DeleteFile @ $stylesheetFile;
 ];
 
 cicd`ScriptConfirmAssert[ ! FileExistsQ @ $stylesheetFile ];
 
 cicd`ConsoleLog[ "Building stylesheet..." ];
-Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
-    cicd`ScriptConfirm @ CheckAbort[ Get @ $builderFile, $Failed ]
+UsingFrontEnd @ Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
+    cicd`ScriptConfirm @ CheckAbort[ Get @ $builderFile, $Failed ];
+    result = cicd`ScriptConfirmBy[ BuildChatbookStylesheet[ ], FileExistsQ ];
 ];
 
-cicd`ScriptConfirmAssert[ FileExistsQ @ $stylesheetFile ];
-
-cicd`ConsoleLog @ SequenceForm[ "Built stylesheet: ", $stylesheetFile ];
-
-result = $stylesheetFile;
+cicd`ConsoleLog @ SequenceForm[ "Built stylesheet: ", result ];
 
 (* :!CodeAnalysis::EndBlock:: *)
 
