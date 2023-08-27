@@ -1,7 +1,7 @@
 #!/usr/bin/env wolframscript
 
 BeginPackage[ "Wolfram`ChatbookScripts`" ];
-Get @ FileNameJoin @ { DirectoryName @ $InputFileName, "Common.wl" };
+If[ ! TrueQ @ $loadedDefinitions, Get @ FileNameJoin @ { DirectoryName @ $InputFileName, "Common.wl" } ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)

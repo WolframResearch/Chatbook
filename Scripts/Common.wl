@@ -336,6 +336,9 @@ Print[ "ResourceSystemBase: ", $ResourceSystemBase ];
 $defNB = File @ FileNameJoin @ { $pacletDir, "ResourceDefinition.nb" };
 Print[ "Definition Notebook: ", $defNB ];
 
+
+$loadedDefinitions = True;
+
 (* :!CodeAnalysis::EndBlock:: *)
 
 EndPackage[ ];
