@@ -1,36 +1,29 @@
 #!/usr/bin/env wolframscript
 
+BeginPackage[ "Wolfram`ChatbookScripts`" ];
+Get @ FileNameJoin @ { DirectoryName @ $InputFileName, "Common.wl" };
+
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Initialization*)
-If[ ! PacletObjectQ @ PacletObject[ "Wolfram/PacletCICD" ],
-    PacletInstall[ "https://github.com/WolframResearch/PacletCICD/releases/download/v0.34.0/Wolfram__PacletCICD-0.34.0.paclet" ]
-];
-
 Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 Needs[ "GeneralUtilities`"   -> "gu`"   ];
-
-cFile = cicd`ScriptConfirmBy[ #, FileExistsQ ] &;
-cDir  = cicd`ScriptConfirmBy[ #, DirectoryQ  ] &;
-cStr  = cicd`ScriptConfirmBy[ #, StringQ     ] &;
 
 Wolfram`ChatbookInternal`$BuildingMX = True;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Paths*)
-$inputFileName = cFile @ Replace[ $InputFileName, "" :> NotebookFileName[ ] ];
-$pacletDir     = cDir @ DirectoryName[ $inputFileName, 2 ];
-$mxFile        = cStr @ FileNameJoin @ {
-                     $pacletDir,
-                     "Source",
-                     "Chatbook",
-                     ToString @ $SystemWordLength <> "Bit",
-                     "Chatbook.mx"
-                 };
+$mxFile = cStr @ FileNameJoin @ {
+    $pacletDir,
+    "Source",
+    "Chatbook",
+    ToString @ $SystemWordLength <> "Bit",
+    "Chatbook.mx"
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -50,9 +43,13 @@ cicd`ConsoleLog @ SequenceForm[ "Building MX file: "   , $mxFile ];
 
 DumpSave[ $mxFile, { "Wolfram`Chatbook`" }, "SymbolAttributes" -> False ];
 
-If[ ! FileExistsQ @ $mxFile,
-    cicd`ConsoleError[ "Failed to build MX file!", "Fatal" -> True ],
-    $mxFile
-]
+result = If[ ! FileExistsQ @ $mxFile,
+             cicd`ConsoleError[ "Failed to build MX file!", "Fatal" -> True ],
+             $mxFile
+         ];
 
 (* :!CodeAnalysis::EndBlock:: *)
+
+EndPackage[ ];
+
+Wolfram`ChatbookScripts`result
