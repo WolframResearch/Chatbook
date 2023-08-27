@@ -14606,34 +14606,10 @@ Notebook[
          CellID -> 951557313
         ],
         Cell[
-         "This paclet is a work in progress.",
+         "$RELEASE_INFO$",
          "Text",
-         CellEventActions -> {
-          Inherited,
-          {"KeyDown", "\t"} :>
-           Replace[
-            SelectionMove[SelectedNotebook[], After, Cell];
-            NotebookFind[
-             SelectedNotebook[],
-             "TabNext",
-             Next,
-             CellTags,
-             AutoScroll -> True,
-             WrapAround -> True
-            ],
-            Blank[NotebookSelection] :>
-             SelectionMove[
-              SelectedNotebook[],
-              All,
-              CellContents,
-              AutoScroll -> True
-             ]
-           ],
-          PassEventsDown -> False,
-          PassEventsUp -> False
-         },
-         CellTags -> {"DefaultContent", "TabNext"},
-         CellID -> 908162033
+         CellTags -> {"ReleaseInfoTag", "PacletCICDTag"},
+         CellID -> 5224211
         ]
        },
        Open
@@ -14702,7 +14678,7 @@ Notebook[
  },
  CreateCellID -> True,
  DynamicEvaluationTimeout -> 60,
- FrontEndVersion -> "13.2 for Microsoft Windows (64-bit) (January 30, 2023)",
+ FrontEndVersion -> "13.3 for Microsoft Windows (64-bit) (July 24, 2023)",
  StyleDefinitions ->
   Notebook[
    {
@@ -29741,7 +29717,7 @@ Notebook[
     ]
    },
    Visible -> False,
-   FrontEndVersion -> "13.2 for Microsoft Windows (64-bit) (January 30, 2023)",
+   FrontEndVersion -> "13.3 for Microsoft Windows (64-bit) (July 24, 2023)",
    StyleDefinitions -> "PrivateStylesheetFormatting.nb"
   ],
  ExpressionUUID -> "5ac5f424-4480-4798-a5c4-363a0523c480"
