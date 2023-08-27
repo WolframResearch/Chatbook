@@ -30,7 +30,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Check
-      uses: WolframResearch/check-paclet@v1.11.0
+      run: wolframscript -f Scripts/CheckPaclet.wls
 
 
   Release:
@@ -59,11 +59,8 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: BuildMX
-      run: wolframscript -f Scripts/BuildMX.wls
-
     - name: Build
-      uses: WolframResearch/build-paclet@v1.11.0
+      run: wolframscript -f Scripts/BuildPaclet.wls
 
     - name: CreateRelease
       env:
@@ -93,11 +90,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: BuildMX
-      run: wolframscript -f Scripts/BuildMX.wls
+    - name: Build
+      run: wolframscript -f Scripts/BuildPaclet.wls
 
     - name: Submit
-      uses: WolframResearch/submit-paclet@v1.11.0
+      run: wolframscript -f Scripts/SubmitPaclet.wls
 
     - name: UploadArtifact
       uses: actions/upload-artifact@v3
