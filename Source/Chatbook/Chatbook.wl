@@ -21,3 +21,7 @@ Quiet[
     ],
     General::shdw
 ];
+
+If[ a, b, b ]
+
+<| a -> # + 1 & |>
