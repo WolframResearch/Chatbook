@@ -333,12 +333,12 @@ Notebook[
               nbobj$$ = 
                NotebookObject[
                 "e8701afc-b783-4d1e-80ce-4b58b7860257",
-                "f5681690-f75c-4a2d-a5e0-0b0a4a4ee52b"
+                "1b39565c-a61d-49ff-9486-9d4e52eb95e8"
                ],
               cellobj$$ = 
                CellObject[
-                "7eb03dfd-bf17-4de4-a5dd-f85819e9ec61",
-                "90b501f6-0191-465c-90a4-5474122a3d2a"
+                "b2f1cb2a-00b0-4670-bb46-a7b6edbfde6b",
+                "02ab51ec-09a1-4585-9eab-9be7b2d74b29"
                ]
              },
              TemplateBox[
@@ -1813,12 +1813,10 @@ Notebook[
   ]
  },
  TaggingRules -> <|"Paclet" -> "Wolfram/Chatbook"|>,
- FrontEndVersion -> "13.2 for Microsoft Windows (64-bit) (January 30, 2023)",
  StyleDefinitions ->
   FrontEnd`FileName[
    {"Wolfram"},
    "FunctionPageStylesExt.nb",
    CharacterEncoding -> "UTF-8"
-  ],
- ExpressionUUID -> "e8701afc-b783-4d1e-80ce-4b58b7860257"
+  ]
 ]
