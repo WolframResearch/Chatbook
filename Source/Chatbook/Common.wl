@@ -427,7 +427,7 @@ bugReportBody[ as_Association? AssociationQ ] :=
         $bugReportBodyTemplate,
         TemplateVerbatim /@ <|
             "DebugData" -> associationMarkdown[
-                KeyTake[ as, { "Name", "Version" } ],
+                KeyTake[ as, { "Name", "Version", "ReleaseID" } ],
                 "EvaluationEnvironment" -> $EvaluationEnvironment,
                 "FrontEndVersion"       -> $frontEndVersion,
                 "KernelVersion"         -> SystemInformation[ "Kernel", "Version" ],

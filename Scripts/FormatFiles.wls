@@ -17,13 +17,19 @@
 (* ::Section::Closed:: *)
 (*Initialization*)
 If[ ! PacletObjectQ @ PacletObject[ "Wolfram/PacletCICD" ],
-    PacletInstall[ "https://github.com/WolframResearch/PacletCICD/releases/download/v0.34.0/Wolfram__PacletCICD-0.34.0.paclet" ]
+    PacletInstall[ "https://github.com/WolframResearch/PacletCICD/releases/download/v0.35.0/Wolfram__PacletCICD-0.35.0.paclet" ]
 ];
 Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 
 SetOptions[
     ResourceFunction[ "SaveReadableNotebook" ],
-    "RealAccuracy" -> 10
+    "RealAccuracy" -> 10,
+    "ExcludedNotebookOptions" -> {
+        ExpressionUUID,
+        FrontEndVersion,
+        WindowMargins,
+        WindowSize
+    }
 ];
 
 (* ::**************************************************************************************************************:: *)
