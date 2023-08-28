@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 15
 
     container:
-      image: wolframresearch/wolframengine:latest
+      image: wolframresearch/wolframengine:13.2
       options: --user root
 
     env:
@@ -31,11 +31,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: BuildMX
-      run: wolframscript -f Scripts/BuildMX.wls
+    - name: Check
+      run: wolframscript -f Scripts/CheckPaclet.wls
 
     - name: Build
-      uses: WolframResearch/build-paclet@v1.11.0
+      run: wolframscript -f Scripts/BuildPaclet.wls
 
     - name: UploadArtifact
       uses: actions/upload-artifact@v3
