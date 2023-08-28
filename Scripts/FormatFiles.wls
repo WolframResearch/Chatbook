@@ -23,7 +23,13 @@ Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 
 SetOptions[
     ResourceFunction[ "SaveReadableNotebook" ],
-    "RealAccuracy" -> 10
+    "RealAccuracy" -> 10,
+    "ExcludedNotebookOptions" -> {
+        ExpressionUUID,
+        FrontEndVersion,
+        WindowMargins,
+        WindowSize
+    }
 ];
 
 (* ::**************************************************************************************************************:: *)
