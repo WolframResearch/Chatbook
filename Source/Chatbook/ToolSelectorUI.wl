@@ -128,7 +128,7 @@ CreateLLMToolPalette[tools_List, personas_List] :=
 														FEPrivate`Part[#, 2],
 														258]])&],
 											Dynamic[{sH, sV}],
-											Scrollbars -> {True, False}],
+											Scrollbars -> {Automatic, False}],
 
 										(* All/None and clear column: *)
 										linkedPane[
@@ -141,7 +141,7 @@ CreateLLMToolPalette[tools_List, personas_List] :=
 											Dynamic[{Automatic, h}],
 											Dynamic[{0, sV}, FEPrivate`Set[sV, FEPrivate`Part[#, 2]]&],
 											FrameMargins -> {{0, 10}, {15, 0}},
-											Scrollbars -> {False, True},
+											Scrollbars -> {False, Automatic},
 											AppearanceElements -> None]}},
 
 								Alignment -> {Left, Top},
