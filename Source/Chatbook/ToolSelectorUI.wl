@@ -2,6 +2,8 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`ToolSelectorUI`" ];
 
+(* :!CodeAnalysis::BeginBlock:: *)
+
 `CreateLLMToolPalette;
 
 Begin[ "`Private`" ];
@@ -215,6 +217,8 @@ headerStyle[expr_, opts___] := Style[expr, FontWeight -> Bold, opts];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*attachOverlay*)
+
+(* :!CodeAnalysis::Disable::NoVariables::DynamicModule:: *)
 attachOverlay[expr_, opts___] :=
 	AttachCell[
 		EvaluationNotebook[],
@@ -257,6 +261,8 @@ overlayGrid[expr:Except[_List]] := expr
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*prepTools*)
+
+(* :!CodeAnalysis::Disable::DuplicateKeys::ListOfRules:: *)
 prepTools[tools:{__Association}, Dynamic[{row_, column_}]] :=
 	MapThread[
 		EventHandler[
@@ -520,6 +526,8 @@ iconData["clear", col_] := Graphics[{col, Disk[{0, 0}, 2.5], White, Thickness[.1
 If[ Wolfram`ChatbookInternal`$BuildingMX,
     Null;
 ];
+
+(* :!CodeAnalysis::EndBlock:: *)
 
 End[ ];
 EndPackage[ ];
