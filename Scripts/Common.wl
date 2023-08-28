@@ -14,7 +14,7 @@ Off[ General::shdw           ];
 Off[ PacletInstall::samevers ];
 
 If[ ! PacletObjectQ @ PacletObject[ "Wolfram/PacletCICD" ],
-    PacletInstall[ "https://github.com/WolframResearch/PacletCICD/releases/download/v0.34.0/Wolfram__PacletCICD-0.34.0.paclet" ]
+    PacletInstall[ "https://github.com/WolframResearch/PacletCICD/releases/download/v0.35.0/Wolfram__PacletCICD-0.35.0.paclet" ]
 ];
 
 Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
