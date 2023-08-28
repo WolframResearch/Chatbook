@@ -485,18 +485,19 @@ personaNameDisp[personaNames_, Dynamic[column_]] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*inWindow*)
-inWindow[expr_] :=
-	CreateDialog[
-		Cell[BoxData @ ToBoxes @ expr,
-			CellFrameMargins -> {{0, -10}, {-2, 0}},
-			CellFrame -> {{False, 1}, {1, False}},
-			(* CellFrameMargins -> {{7, -1}, {-1, 4}},
-			CellFrame -> {{1, 1}, {1, 1}}, *)
-			CellFrameStyle -> White],
-		(* Dialog opts *)
-		WindowTitle -> "LLM Tools",
-		Background -> White,
-		Saveable -> False]
+inWindow[ expr_ ] := CreateDialog[
+    Cell[
+        BoxData @ ToBoxes @ expr,
+        CellFrame        -> { { False, 1 }, { 1, False } },
+        CellFrameMargins -> { { 0, -10 }, { -2, 0 } },
+        CellFrameStyle   -> White
+    ],
+    Background          -> White,
+    Saveable            -> False,
+    WindowClickSelect   -> False,
+    WindowFrameElements -> { "CloseBox", "ResizeArea" },
+    WindowTitle         -> "LLM Tools"
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
