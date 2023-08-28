@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 15
 
     container:
-      image: wolframresearch/wolframengine:latest
+      image: wolframresearch/wolframengine:13.2
       options: --user root
 
     env:
