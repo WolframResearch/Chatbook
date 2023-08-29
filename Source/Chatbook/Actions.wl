@@ -418,28 +418,20 @@ AIAutoAssist // endDefinition;
 (*autoAssistQ*)
 autoAssistQ // beginDefinition;
 
-autoAssistQ[ cell_CellObject, nbo_NotebookObject ] := autoAssistQ[ cellInformation @ cell, cell, nbo ];
+autoAssistQ[ cell_CellObject, nbo_NotebookObject ] :=
+    autoAssistQ @ cell;
 
-autoAssistQ[ KeyValuePattern[ "Style" -> $$chatInputStyle ], _, _ ] := False;
-
-autoAssistQ[ info_, cell_CellObject, nbo_NotebookObject ] :=
-    autoAssistQ[
-        currentChatSettings[ nbo, "Assistance" ],
-        currentChatSettings[ cell, "Assistance" ]
-    ];
-
-autoAssistQ[ True|Automatic|Inherited, True|Automatic|Inherited ] := True;
-autoAssistQ[ _, True|Automatic ] := True;
-autoAssistQ[ _, _ ] := False;
+autoAssistQ[ cell_CellObject ] := And[
+    (* Don't run auto-assist for cells that already have a chat evaluation function defined (e.g. ChatInput) *)
+    FreeQ[ CurrentValue[ cell, CellEvaluationFunction ], "Wolfram`Chatbook`ChatbookAction"|ChatbookAction ],
+    (* TODO: If value is Automatic, then there could be a one-time dialog asking for approval to run auto-assistance.
+             For now, only run assistance if setting is explicitly true *)
+    TrueQ @ currentChatSettings[ cell, "Assistance" ]
+];
 
 (* Determine if auto assistance is enabled generally within a FE or Notebook. *)
-autoAssistQ[
-    target: _FrontEndObject | $FrontEndSession | _NotebookObject
-] :=
-    autoAssistQ[
-        Inherited,
-        currentChatSettings[ target, "Assistance" ]
-    ]
+autoAssistQ[ target: _FrontEndObject | $FrontEndSession | _NotebookObject ] :=
+    TrueQ @ currentChatSettings[ target, "Assistance" ];
 
 autoAssistQ // endDefinition;
 
