@@ -1,5 +1,7 @@
 # Chatbook
 
+[![Build](https://github.com/WolframResearch/Chatbook/actions/workflows/Build.yml/badge.svg)](https://github.com/WolframResearch/Chatbook/actions/workflows/Build.yml) [![Release](https://github.com/WolframResearch/Chatbook/actions/workflows/Release.yml/badge.svg)](https://github.com/WolframResearch/Chatbook/actions/workflows/Release.yml)
+
 #### [Changelog](./docs/CHANGELOG.md)
 
 
