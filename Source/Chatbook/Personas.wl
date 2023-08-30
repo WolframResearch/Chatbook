@@ -228,6 +228,8 @@ loadPersonaFromDirectory[paclet_PacletObject, dir_?StringQ] := Module[{
 	origin = Replace[ paclet[ "Name" ], Except[ "Wolfram/Chatbook" ] -> "LocalPaclet" ];
 
 	extra = <|
+		"Name"        -> personaName,
+		"DisplayName" -> personaName,
 		"Icon"       -> icon,
 		"Origin"     -> origin,
 		"PacletName" -> paclet[ "Name" ],
@@ -243,6 +245,29 @@ loadPersonaFromDirectory[paclet_PacletObject, dir_?StringQ] := Module[{
 ]
 
 readPromptString[ file_ ] := StringReplace[ ByteArrayToString @ ReadByteArray @ file, "\r\n" -> "\n" ];
+
+
+standardizePersonaData // beginDefinition;
+
+(* Rename "PersonaIcon" key to "Icon" *)
+standardizePersonaData[ persona: KeyValuePattern[ "PersonaIcon" -> icon_ ] ] :=
+	standardizePersonaData @ KeyDrop[
+		Insert[ Association @ persona, "Icon" -> icon, Key[ "PersonaIcon" ] ],
+		"PersonaIcon"
+	];
+
+standardizePersonaData[ persona_Association? AssociationQ ] := Association[
+	"DisplayName" -> Lookup[ persona, "DisplayName", Lookup[ persona, "Name", Lookup[ persona, "LLMEvaluatorName" ] ] ],
+	"Name" -> Lookup[ persona, "Name", Lookup[ persona, "LLMEvaluatorName", Lookup[ persona, "DisplayName" ] ] ],
+	persona
+];
+
+standardizePersonaData // endDefinition;
+
+
+If[ Wolfram`ChatbookInternal`$BuildingMX,
+    loadPacletPersonas @ PacletObject[ "Wolfram/Chatbook" ];
+];
 
 End[]
 EndPackage[]
