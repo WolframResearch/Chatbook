@@ -8,8 +8,10 @@ BeginPackage[ "Wolfram`Chatbook`ToolSelectorUI`" ];
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"        ];
-Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`"          ];
+Needs[ "Wolfram`Chatbook`Common`"   ];
+Needs[ "Wolfram`Chatbook`Personas`" ];
+Needs[ "Wolfram`Chatbook`UI`"       ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -26,6 +28,11 @@ $activeBlue    = Hue[ 0.59, 0.9, 0.93 ];
 (* ::Section::Closed:: *)
 (*CreateLLMToolPalette*)
 CreateLLMToolPalette // beginDefinition;
+
+CreateLLMToolPalette[ ] := CreateLLMToolPalette[
+    Values @ $DefaultTools[[ All, 1 ]], (* TODO: use all available tools *)
+    Values @ KeyDrop[ GetCachedPersonaData[ ], "RawModel" ]
+];
 
 CreateLLMToolPalette[ tools_List, personas_List ] :=
     Module[
@@ -176,7 +183,7 @@ CreateLLMToolPalette[ tools_List, personas_List ] :=
                                                 Table[
                                                     enabledControl[
                                                         { i, tools[[ i ]][ "CanonicalName" ] },
-                                                        { j, personas[[ j ]][ "Name" ] },
+                                                        { j, personas[[ j ]][ "Name" ]       },
                                                         Dynamic @ { row, column },
                                                         Dynamic @ scope,
                                                         personaNames
@@ -541,7 +548,7 @@ prepPersonas // beginDefinition;
 prepPersonas[ personas: { __Association }, Dynamic[ { row_, column_ } ] ] := MapThread[
     Function @ EventHandler[
         Framed[
-            #1[ "Icon" ],
+            getPersonaMenuIcon[ #1, "Full" ],
             Alignment    -> { Center, Center },
             BaseStyle    -> { LineBreakWithin -> False },
             FrameMargins -> None,
