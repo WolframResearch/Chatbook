@@ -23,8 +23,8 @@ Needs[ "Wolfram`Chatbook`Utils`"      ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-
-$sandboxEvaluationTimeout = 30;
+$sandboxPingTimeout       = 30;
+$sandboxEvaluationTimeout = 60;
 
 $sandboxKernelCommandLine := StringRiffle @ {
     ToString[
@@ -90,7 +90,11 @@ pingSandboxKernel[ kernel_LinkObject ] := Enclose[
         return = $Failed;
 
         ConfirmMatch[
-            TimeConstrained[ While[ LinkReadyQ @ kernel, LinkRead @ kernel ], 10, $TimedOut ],
+            TimeConstrained[
+                While[ LinkReadyQ @ kernel, LinkRead @ kernel ],
+                $sandboxPingTimeout,
+                $TimedOut
+            ],
             Except[ $TimedOut ],
             "InitialLinkRead"
         ];
@@ -98,7 +102,11 @@ pingSandboxKernel[ kernel_LinkObject ] := Enclose[
         With[ { id = uuid }, LinkWrite[ kernel, Unevaluated @ EvaluatePacket @ { id, $ProcessID } ] ];
 
         ConfirmMatch[
-            TimeConstrained[ While[ ! MatchQ[ return = LinkRead @ kernel, ReturnPacket @ { uuid, _ } ] ], 10 ],
+            TimeConstrained[
+                While[ ! MatchQ[ return = LinkRead @ kernel, ReturnPacket @ { uuid, _ } ] ],
+                $sandboxPingTimeout,
+                $TimedOut
+            ],
             Except[ $TimedOut ],
             "LinkReadReturn"
         ];
@@ -153,9 +161,6 @@ startSandboxKernel[ ] := Enclose[
             LinkWrite[
                 kernel,
                 Unevaluated @ EnterExpressionPacket[
-                    (* Preload some paclets: *)
-                    Needs[ "FunctionResource`" -> None ];
-
                     (* Redefine some messages to provide hints to the LLM: *)
                     ReleaseHold @ messages;
 
@@ -167,7 +172,7 @@ startSandboxKernel[ ] := Enclose[
 
         TimeConstrained[
             While[ ! MatchQ[ LinkRead @ kernel, _ReturnExpressionPacket ] ],
-            30,
+            $sandboxPingTimeout,
             Confirm[ $Failed, "LineReset" ]
         ];
 
@@ -229,7 +234,7 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
         { null, { packets } } = Reap[
             TimeConstrained[
                 While[ ! MatchQ[ Sow @ LinkRead @ kernel, _ReturnExpressionPacket ] ],
-                $sandboxEvaluationTimeout,
+                2 * $sandboxEvaluationTimeout,
                 $timedOut
             ]
         ];
@@ -293,12 +298,27 @@ linkWriteEvaluation // beginDefinition;
 linkWriteEvaluation // Attributes = { HoldAllComplete };
 
 linkWriteEvaluation[ kernel_, evaluation_ ] :=
-    With[ { eval = createEvaluationWithWarnings @ evaluation },
+    With[ { eval = createEvaluationWithWarnings @ evaluation, t = $sandboxEvaluationTimeout },
         LinkWrite[
             kernel,
             Unevaluated @ EnterExpressionPacket @ <|
                 "Line"   -> $Line,
-                "Result" -> HoldComplete @@ { ReleaseHold @ eval }
+                "Result" -> Apply[
+                    HoldComplete,
+                    {
+                        TimeConstrained[
+                            ReleaseHold @ eval,
+                            t,
+                            Failure[
+                                "EvaluationTimeExceeded",
+                                <|
+                                    "MessageTemplate"   -> "Evaluation exceeded the `1` second time limit.",
+                                    "MessageParameters" -> { t }
+                                |>
+                            ]
+                        ]
+                    }
+                ]
             |>
         ]
     ];
