@@ -102,41 +102,43 @@ GetPersonaData[] := Module[{
 },
 	resourcePersonas = RaiseConfirmMatch[GetInstalledResourcePersonaData[], _Association? AssociationQ];
 
-	Needs["PacletTools`" -> None];
 	(* Only look at most recent version of compatible paclets *)
 	paclets = First /@ SplitBy[PacletFind[All, <| "Extension" -> "LLMConfiguration" |>], #["Name"]&];
-
-	pacletPersonas = KeySort @ Flatten @ Map[
-		paclet |-> Handle[_Failure] @ Module[{
-			extensions
-		},
-			extensions = RaiseConfirmMatch[
-				PacletTools`PacletExtensions[paclet, "LLMConfiguration"],
-				{{_String, _Association}...}
-			];
-
-			Map[
-				extension |-> loadPersonaFromPacletExtension[
-					paclet,
-					PacletTools`PacletExtensionDirectory[paclet, extension],
-					extension
-				],
-				extensions
-			]
-		],
-		paclets
-	];
-
+	pacletPersonas = KeySort @ Flatten @ Map[loadPacletPersonas, paclets];
 	personas = Merge[{resourcePersonas, pacletPersonas}, First];
 
 	$CachedPersonaData = RaiseConfirmMatch[
 		(* Show core personas first *)
-		Join[KeyTake[personas, $corePersonaNames], KeySort[personas]],
+		standardizePersonaData /@ Join[KeyTake[personas, $corePersonaNames], KeySort[personas]],
 		_Association? AssociationQ
 	]
 ]
 
 $corePersonaNames = {"CodeAssistant", "CodeWriter", "PlainChat", "RawModel"};
+
+
+loadPacletPersonas[ paclet_PacletObject ] := loadPacletPersonas[ paclet[ "Name" ], paclet[ "Version" ], paclet ];
+
+loadPacletPersonas[ name_, version_, paclet_ ] := loadPacletPersonas[ name, version, _ ] =
+	Handle[_Failure] @ Module[{
+		extensions
+	},
+		Needs["PacletTools`" -> None];
+
+		extensions = RaiseConfirmMatch[
+			PacletTools`PacletExtensions[paclet, "LLMConfiguration"],
+			{{_String, _Association}...}
+		];
+
+		Map[
+			extension |-> loadPersonaFromPacletExtension[
+				paclet,
+				PacletTools`PacletExtensionDirectory[paclet, extension],
+				extension
+			],
+			extensions
+		]
+	];
 
 (*------------------------------------*)
 
@@ -171,6 +173,7 @@ loadPersonaFromPacletExtension[
 				being loaded and returned. *)
 			personaName -> Handle[_Failure] @ loadPersonaFromDirectory[
 				paclet,
+				personaName,
 				FileNameJoin[{extensionDirectory, "Personas", personaName}]
 			]
 		),
@@ -182,7 +185,7 @@ loadPersonaFromPacletExtension[
 
 SetFallthroughError[loadPersonaFromDirectory]
 
-loadPersonaFromDirectory[paclet_PacletObject, dir_?StringQ] := Module[{
+loadPersonaFromDirectory[paclet_PacletObject, personaName_, dir_?StringQ] := Module[{
 	pre,
 	post,
 	icon,
@@ -230,12 +233,12 @@ loadPersonaFromDirectory[paclet_PacletObject, dir_?StringQ] := Module[{
 	extra = <|
 		"Name"        -> personaName,
 		"DisplayName" -> personaName,
-		"Icon"       -> icon,
-		"Origin"     -> origin,
-		"PacletName" -> paclet[ "Name" ],
-		"Post"       -> post,
-		"Pre"        -> pre,
-		"Version"    -> paclet[ "Version" ]
+		"Icon"        -> icon,
+		"Origin"      -> origin,
+		"PacletName"  -> paclet[ "Name" ],
+		"Post"        -> post,
+		"Pre"         -> pre,
+		"Version"     -> paclet[ "Version" ]
 	|>;
 
 	If[ AssociationQ[config],
