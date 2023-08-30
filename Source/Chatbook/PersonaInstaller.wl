@@ -105,24 +105,27 @@ GetInstalledResourcePersonaData // beginDefinition;
 GetInstalledResourcePersonaData[ ] := catchMine @ Enclose[
     Module[ { data },
         data = ConfirmMatch[ GetInstalledResourcePersonas[ ], { ___Association }, "GetInstalledResourcePersonas" ];
-        KeySort @ Association @ Cases[
-            data,
-            KeyValuePattern @ {
-                "Name"                -> name_String,
-                "Configuration"       -> config_Association,
-                "ResourceInformation" -> resourceAssoc_Association
-            } :>
-                name -> Merge[
-                    {
-                        config,
-                        KeyTake[
-                            resourceAssoc,
-                            { "Description", "UUID", "Version", "LatestUpdate", "ReleaseDate", "DocumentationLink" }
-                        ],
-                        <| "Origin" -> "PromptRepository" |>
-                    },
-                    First
-                ]
+        Block[ { TemplateObject, CloudObject },
+            SetAttributes[ TemplateObject, HoldAllComplete ];
+            KeySort @ Association @ Cases[
+                data,
+                KeyValuePattern @ {
+                    "Name"                -> name_String,
+                    "Configuration"       -> config_Association,
+                    "ResourceInformation" -> resourceAssoc_Association
+                } :>
+                    name -> Merge[
+                        {
+                            config,
+                            KeyTake[
+                                resourceAssoc,
+                                { "Description", "UUID", "Version", "LatestUpdate", "ReleaseDate", "DocumentationLink" }
+                            ],
+                            <| "Origin" -> "PromptRepository" |>
+                        },
+                        First
+                    ]
+            ]
         ]
     ],
     throwInternalFailure[ GetInstalledResourcePersonaData[ ], ## ] &
