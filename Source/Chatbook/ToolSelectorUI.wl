@@ -60,23 +60,26 @@ CreateLLMToolPalette[ tools_List, personas_List ] :=
                 h            = 258,
                 row          = None,
                 column       = None,
-                scopeMode    = $FrontEndSession &,
-                scope        = $FrontEndSession,
+                scopeMode    = $FrontEnd &,
+                scope        = $FrontEnd,
                 notInherited = None,
                 notInheritedStyle,
-                toolLookup   = Association @ MapThread[ Rule, { Through @ tools[ "Name" ], Range @ Length @ tools } ]
+                toolLookup   = Association @ MapThread[
+                    Rule,
+                    { Through @ tools[ "CanonicalName" ], Range @ Length @ tools }
+                ]
             },
 
             preppedPersonas     = prepPersonas[ personas, Dynamic @ { row, column } ];
             preppedTools        = prepTools[ tools, Dynamic @ { row, column } ];
             personaNames        = Through @ personas[ "Name" ];
             personaDisplayNames = Through @ personas[ "DisplayName" ];
-            toolNames           = Through @ tools[ "Name" ];
+            toolNames           = Through @ tools[ "CanonicalName" ];
 
             (* Produce an association whose keys are tool names, and values are all the personas which list that tool in
                their default tools to use. *)
             toolDefaultPersonas =
-                With[ { personaDefaults = (#[ "Name" ] -> Lookup[ #, "DefaultTools", { } ] &) /@ personas },
+                With[ { personaDefaults = (#[ "Name" ] -> Lookup[ #, "Tools", { } ] &) /@ personas },
                     Association @ Map[
                         Function[
                             toolName,
@@ -172,7 +175,7 @@ CreateLLMToolPalette[ tools_List, personas_List ] :=
                                             Grid[
                                                 Table[
                                                     enabledControl[
-                                                        { i, tools[[ i ]][ "Name" ]    },
+                                                        { i, tools[[ i ]][ "CanonicalName" ] },
                                                         { j, personas[[ j ]][ "Name" ] },
                                                         Dynamic @ { row, column },
                                                         Dynamic @ scope,
@@ -277,7 +280,7 @@ CreateLLMToolPalette[ tools_List, personas_List ] :=
                             Keys @ DeleteCases[
                                 Merge[
                                     {
-                                        AbsoluteCurrentValue[ $FrontEndSession, { TaggingRules, "ToolsTest" } ],
+                                        AbsoluteCurrentValue[ $FrontEnd, { TaggingRules, "ToolsTest" } ],
                                         AbsoluteCurrentValue[ scope, { TaggingRules, "ToolsTest" } ]
                                     },
                                     (* Inheriting if there are exactly two identical copies of a value. *)
@@ -321,7 +324,7 @@ CreateLLMToolPalette[ tools_List, personas_List ] :=
                 ]
             ],
             UnsavedVariables :> { sH, sV, w, h, row, column },
-            Initialization   :> (scopeMode = $FrontEndSession &)
+            Initialization   :> (scopeMode = $FrontEnd &)
         ]
     ];
 
@@ -439,7 +442,7 @@ prepTools[ tools: { __Association }, Dynamic[ { row_, column_ } ] ] :=
                                             Spacer[ 5 ],
                                             #[ "Icon" ],
                                             Spacer[ 5 ],
-                                            #[ "Name" ],
+                                            #[ "CanonicalName" ],
                                             Dynamic @ iconData[ "Cog", colCog ],
                                             Spacer[ 5 ],
                                             Dynamic @ iconData[ "Delimiter", colDelimiter ]
@@ -510,7 +513,7 @@ deleteButton[ colBin_, row_, tool_Association ] := Button[
     attachOverlay[
         {
             Style[ "Delete Tool", Bold ],
-            Row @ { tool[ "Icon" ], Spacer[ 3 ], tool[ "Name" ] },
+            Row @ { tool[ "Icon" ], Spacer[ 3 ], tool[ "CanonicalName" ] },
             {
                 "Cancel",
                 Hold @ NotebookDelete @ EvaluationCell[ ],
@@ -813,7 +816,7 @@ scopeSelector[ Dynamic[ scopeMode_ ] ] := ActionMenu[
         Row @ {
             PaneSelector[
                 {
-                    ($FrontEndSession &) -> "Global",
+                    ($FrontEnd &) -> "Global",
                     FE`Evaluate @* FEPrivate`LastActiveUserNotebook -> "Selected Notebook",
                     SelectedCells @* FE`Evaluate @* FEPrivate`LastActiveUserNotebook -> "Selected Cells"
                 },
@@ -828,7 +831,7 @@ scopeSelector[ Dynamic[ scopeMode_ ] ] := ActionMenu[
         RoundingRadius -> 2
     ],
     {
-        "Global"            :> (scopeMode = $FrontEndSession &),
+        "Global"            :> (scopeMode = $FrontEnd &),
         "Selected Notebook" :> (scopeMode = FE`Evaluate @* FEPrivate`LastActiveUserNotebook),
         "Selected Cells"    :> (scopeMode = SelectedCells @* FE`Evaluate @* FEPrivate`LastActiveUserNotebook)
     },
