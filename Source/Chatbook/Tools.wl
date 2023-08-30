@@ -360,6 +360,19 @@ toolName[ name_String, "Display" ] := toDisplayToolName @ name;
 toolName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toolNameData*)
+toolNameData // beginDefinition;
+
+toolNameData[ name_String ] := <|
+    "CanonicalName" -> toCanonicalToolName @ name,
+    "DisplayName"   -> toDisplayToolName @ name,
+    "Name"          -> toMachineToolName @ name
+|>;
+
+toolNameData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*toMachineToolName*)
 toMachineToolName // beginDefinition;
@@ -420,12 +433,12 @@ Follow up search results with the documentation lookup tool to get the full info
 
 $defaultChatTools0[ "DocumentationSearcher" ] = LLMTool[
     <|
-        "Name"               -> toMachineToolName[ "DocumentationSearcher" ],
-        "DisplayName"        -> toDisplayToolName[ "DocumentationSearcher" ],
+        toolNameData[ "DocumentationSearcher" ],
         "Icon"               -> RawBoxes @ TemplateBox[ { }, "PersonaDocumentation" ],
         "Description"        -> $documentationSearchDescription,
         "Function"           -> documentationSearch,
         "FormattingFunction" -> toolAutoFormatter,
+        "Source"             -> "BuiltIn",
         "Parameters"         -> {
             "query" -> <|
                 "Interpreter" -> "String",
@@ -454,12 +467,12 @@ documentationSearch // endDefinition;
 (*DocumentationLookup*)
 $defaultChatTools0[ "DocumentationLookup" ] = LLMTool[
     <|
-        "Name"               -> toMachineToolName[ "DocumentationLookup" ],
-        "DisplayName"        -> toDisplayToolName[ "DocumentationLookup" ],
+        toolNameData[ "DocumentationLookup" ],
         "Icon"               -> RawBoxes @ TemplateBox[ { }, "PersonaDocumentation" ],
         "Description"        -> "Get documentation pages for Wolfram Language symbols.",
         "Function"           -> documentationLookup,
         "FormattingFunction" -> toolAutoFormatter,
+        "Source"             -> "BuiltIn",
         "Parameters"         -> {
             "names" -> <|
                 "Interpreter" -> DelimitedSequence[ "WolframLanguageSymbol", "," ],
@@ -580,12 +593,12 @@ You have read access to local files.
 
 $defaultChatTools0[ "WolframLanguageEvaluator" ] = LLMTool[
     <|
-        "Name"               -> toMachineToolName[ "WolframLanguageEvaluator" ],
-        "DisplayName"        -> toDisplayToolName[ "WolframLanguageEvaluator" ],
+        toolNameData[ "WolframLanguageEvaluator" ],
         "Icon"               -> RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
         "Description"        -> $sandboxEvaluateDescription,
         "Function"           -> sandboxEvaluate,
         "FormattingFunction" -> sandboxFormatter,
+        "Source"             -> "BuiltIn",
         "Parameters"         -> {
             "code" -> <|
                 "Interpreter" -> "String",
@@ -602,7 +615,7 @@ $defaultChatTools0[ "WolframLanguageEvaluator" ] = LLMTool[
 (*wolframLanguageEvaluator*)
 wolframLanguageEvaluator // beginDefinition;
 wolframLanguageEvaluator[ code_String ] := wolframLanguageEvaluator[ code, sandboxEvaluate @ code ];
-wolframLanguageEvaluator[ code_, KeyValuePattern[ "String" -> result_String ] ] := result;
+wolframLanguageEvaluator[ code_, result_Association ] := KeyTake[ result, { "Result", "String" } ];
 wolframLanguageEvaluator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -635,12 +648,12 @@ $wolframAlphaIcon = RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEBitma
 
 $defaultChatTools0[ "WolframAlpha" ] = LLMTool[
     <|
-        "Name"               -> toMachineToolName[ "WolframAlpha" ],
-        "DisplayName"        -> toDisplayToolName[ "WolframAlpha" ],
+        toolNameData[ "WolframAlpha" ],
         "Icon"               -> $wolframAlphaIcon,
         "Description"        -> $wolframAlphaDescription,
         "Function"           -> getWolframAlphaText,
         "FormattingFunction" -> wolframAlphaResultFormatter,
+        "Source"             -> "BuiltIn",
         "Parameters"         -> {
             "input" -> <|
                 "Interpreter" -> "String",
@@ -794,12 +807,12 @@ waResultText0 // endDefinition;
 (*WebSearch*)
 $defaultChatTools0[ "WebSearcher" ] = LLMTool[
     <|
-        "Name"               -> toMachineToolName[ "WebSearcher" ],
-        "DisplayName"        -> toDisplayToolName[ "WebSearcher" ],
+        toolNameData[ "WebSearcher" ],
         "Icon"               -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
         "Description"        -> "Search the web.",
         "Function"           -> webSearch,
         "FormattingFunction" -> toolAutoFormatter,
+        "Source"             -> "BuiltIn",
         "Parameters"         -> {
             "query" -> <|
                 "Interpreter" -> "String",
@@ -843,12 +856,12 @@ $webSearchResultTemplate = StringTemplate[
 (*WebFetch*)
 $defaultChatTools0[ "WebFetcher" ] = LLMTool[
     <|
-        "Name"               -> toMachineToolName[ "WebFetcher" ],
-        "DisplayName"        -> toDisplayToolName[ "WebFetcher" ],
+        toolNameData[ "WebFetcher" ],
         "Icon"               -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
         "Description"        -> "Fetch plain text or image links from a URL.",
         "Function"           -> webFetch,
         "FormattingFunction" -> toolAutoFormatter,
+        "Source"             -> "BuiltIn",
         "Parameters"  -> {
             "url" -> <|
                 "Interpreter" -> "URL",
@@ -948,12 +961,12 @@ startWebSession // endDefinition;
 (*WebImageSearch*)
 $defaultChatTools0[ "WebImageSearcher" ] = LLMTool[
     <|
-        "Name"               -> toMachineToolName[ "WebImageSearcher" ],
-        "DisplayName"        -> toDisplayToolName[ "WebImageSearcher" ],
+        toolNameData[ "WebImageSearcher" ],
         "Icon"               -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
         "Description"        -> "Search the web for images.",
         "Function"           -> webImageSearch,
         "FormattingFunction" -> toolAutoFormatter,
+        "Source"             -> "BuiltIn",
         "Parameters"         -> {
             "query" -> <|
                 "Interpreter" -> "String",
