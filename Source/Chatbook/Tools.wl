@@ -14,14 +14,15 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 `$toolOptions;
 `$toolResultStringLength;
 `getToolByName;
-`getToolIcon;
 `getToolDisplayName;
 `getToolFormattingFunction;
+`getToolIcon;
 `initTools;
 `makeExpressionURI;
 `makeToolConfiguration;
 `makeToolResponseString;
 `resolveTools;
+`toolOptionValue;
 `toolRequestParser;
 `withToolBox;
 
@@ -66,12 +67,20 @@ $ToolFunctions = <|
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Tool Configuration*)
+$defaultWebTextLength   = 12000;
 $toolResultStringLength = 500;
 $webSessionVisible      = False;
 
 $DefaultToolOptions = <|
     "WolframLanguageEvaluator" -> <|
-        "AllowedReadPaths" -> All
+        "AllowedExecutePaths"      -> Automatic,
+        "AllowedReadPaths"         -> All,
+        "AllowedWritePaths"        -> Automatic,
+        "EvaluationTimeConstraint" -> 60,
+        "PingTimeConstraint"       -> 30
+    |>,
+    "WebFetcher" -> <|
+        "MaxContentLength" -> $defaultWebTextLength
     |>
 |>;
 
@@ -124,6 +133,19 @@ SetToolOptions[ scope_, name_String, Inherited ] := UsingFrontEnd[
     CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", "ToolOptions", name } ] = Inherited;
     CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", "ToolOptions" } ]
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toolOptionValue*)
+toolOptionValue // beginDefinition;
+toolOptionValue[ name_String, key_String ] := toolOptionValue[ name, $toolOptions[ name ], key ];
+toolOptionValue[ name_String, _Missing, key_String ] := toolOptionValue0[ $DefaultToolOptions[ name ], key ];
+toolOptionValue[ name_String, opts_Association, key_String ] := toolOptionValue0[ opts, key ];
+toolOptionValue // endDefinition;
+
+toolOptionValue0 // beginDefinition;
+toolOptionValue0[ opts_Association, key_String ] := Lookup[ opts, key, Lookup[ $DefaultToolOptions, key ] ];
+toolOptionValue0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -887,7 +909,7 @@ webFetch[ url_, "Plaintext" ] := fetchWebText @ url;
 webFetch[ url: _URL|_String, fmt_String ] := webFetch[ url, fmt, Import[ url, { "HTML", fmt } ] ];
 webFetch[ url_, "ImageLinks", { } ] := <| "Result" -> { }, "String" -> "No links found at " <> TextString @ url |>;
 webFetch[ url_, "ImageLinks", links: { __String } ] := <| "Result" -> links, "String" -> StringRiffle[ links, "\n" ] |>;
-webFetch[ url_, fmt_, result_String ] := niceWebText @ result;
+webFetch[ url_, fmt_, result_String ] := shortenWebText @ niceWebText @ result;
 webFetch // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -907,12 +929,22 @@ fetchWebText[ url_String, session_WebSessionObject ] := Enclose[
         Pause[ 3 ]; (* Allow time for the page to load *)
         body = ConfirmMatch[ WebExecute[ session, "LocateElements" -> "Tag" -> "body" ], { __WebElementObject } ];
         strings = ConfirmMatch[ WebExecute[ "ElementText" -> body ], { __String } ];
-        niceWebText @ strings
+        shortenWebText @ niceWebText @ strings
     ],
-    niceWebText @ Import[ url, { "HTML", "Plaintext" } ] &
+    shortenWebText @ niceWebText @ Import[ url, { "HTML", "Plaintext" } ] &
 ];
 
 fetchWebText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*shortenWebText*)
+shortenWebText // beginDefinition;
+shortenWebText[ text_String ] := shortenWebText[ text, toolOptionValue[ "WebFetcher", "MaxContentLength" ] ];
+shortenWebText[ text_String, len_Integer? Positive ] := StringTake[ text, UpTo[ len ] ];
+shortenWebText[ text_String, Infinity|All ] := text;
+shortenWebText[ text_String, _ ] := shortenWebText[ text, $defaultWebTextLength ];
+shortenWebText // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

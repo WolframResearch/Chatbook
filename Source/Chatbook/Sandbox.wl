@@ -11,6 +11,7 @@ BeginPackage[ "Wolfram`Chatbook`Sandbox`" ];
 `sandboxEvaluate;
 `sandboxFormatter;
 `simpleResultQ;
+`$sandboxKernelCommandLine;
 
 Begin[ "`Private`" ];
 
@@ -23,8 +24,8 @@ Needs[ "Wolfram`Chatbook`Utils`"      ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$sandboxPingTimeout       = 30;
-$sandboxEvaluationTimeout = 60;
+$sandboxPingTimeout       := toolOptionValue[ "WolframLanguageEvaluator", "PingTimeConstraint"       ];
+$sandboxEvaluationTimeout := toolOptionValue[ "WolframLanguageEvaluator", "EvaluationTimeConstraint" ];
 
 $sandboxKernelCommandLine := StringRiffle @ {
     ToString[
@@ -131,7 +132,7 @@ pingSandboxKernel // endDefinition;
 startSandboxKernel // beginDefinition;
 
 startSandboxKernel[ ] := Enclose[
-    Module[ { pwFile, kernel, readPaths, pid },
+    Module[ { pwFile, kernel, readPaths, writePaths, executePaths, pid },
 
         Scan[ LinkClose, Select[ Links[ ], sandboxKernelQ ] ];
 
@@ -139,18 +140,17 @@ startSandboxKernel[ ] := Enclose[
 
         kernel = ConfirmMatch[ LinkLaunch @ $sandboxKernelCommandLine, _LinkObject, "LinkLaunch" ];
 
-        readPaths = Replace[
-            $toolOptions[ "WolframLanguageEvaluator", "AllowedReadPaths" ],
-            _Missing :> $DefaultToolOptions[ "WolframLanguageEvaluator", "AllowedReadPaths" ]
-        ];
+        readPaths    = makePaths @ toolOptionValue[ "WolframLanguageEvaluator", "AllowedReadPaths"    ];
+        writePaths   = makePaths @ toolOptionValue[ "WolframLanguageEvaluator", "AllowedWritePaths"   ];
+        executePaths = makePaths @ toolOptionValue[ "WolframLanguageEvaluator", "AllowedExecutePaths" ];
 
         (* Use StartProtectedMode instead of passing the -sandbox argument, since we need to initialize the FE first *)
-        With[ { read = $resolvedReadPaths = makePaths @ readPaths },
+        With[ { read = readPaths, write = writePaths, execute = executePaths },
             LinkWrite[
                 kernel,
                 Unevaluated @ EvaluatePacket[
                     UsingFrontEnd @ Null;
-                    Developer`StartProtectedMode[ "Read" -> read ]
+                    Developer`StartProtectedMode[ "Read" -> read, "Write" -> write, "Execute" -> execute ]
                 ]
             ]
         ];
