@@ -9,5 +9,9 @@
 		"WebSearcher",
 		"WebFetcher",
 		"WebImageSearcher"
-	}
+	},
+	"Icon" -> <|
+		"Default" -> RawBoxes @ TemplateBox[ { }, "BirdnardoIcon" ],
+		"Active"  -> RawBoxes @ TemplateBox[ { }, "BirdnardoIconActive" ]
+	|>
 |>
