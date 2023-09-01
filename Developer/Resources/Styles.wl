@@ -125,7 +125,7 @@ Cell[
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterIncrements -> { "ChatInputCount" },
     Evaluatable       -> True,
-    StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "SideChat", "Backspace" -> "Input" },
+    StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "SideChat" },
 	CellDingbat -> Cell[
         BoxData @ DynamicBox @ ToBoxes[
             If[ TrueQ @ CloudSystem`$CloudNotebooks,
