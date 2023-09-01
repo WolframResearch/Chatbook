@@ -434,7 +434,7 @@ Follow up search results with the documentation lookup tool to get the full info
 $defaultChatTools0[ "DocumentationSearcher" ] = LLMTool[
     <|
         toolNameData[ "DocumentationSearcher" ],
-        "Icon"               -> RawBoxes @ TemplateBox[ { }, "PersonaDocumentation" ],
+        "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconDocumentationSearcher" ],
         "Description"        -> $documentationSearchDescription,
         "Function"           -> documentationSearch,
         "FormattingFunction" -> toolAutoFormatter,
@@ -468,7 +468,7 @@ documentationSearch // endDefinition;
 $defaultChatTools0[ "DocumentationLookup" ] = LLMTool[
     <|
         toolNameData[ "DocumentationLookup" ],
-        "Icon"               -> RawBoxes @ TemplateBox[ { }, "PersonaDocumentation" ],
+        "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconDocumentationLookup" ],
         "Description"        -> "Get documentation pages for Wolfram Language symbols.",
         "Function"           -> documentationLookup,
         "FormattingFunction" -> toolAutoFormatter,
@@ -808,7 +808,7 @@ waResultText0 // endDefinition;
 $defaultChatTools0[ "WebSearcher" ] = LLMTool[
     <|
         toolNameData[ "WebSearcher" ],
-        "Icon"               -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
+        "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconWebSearcher" ],
         "Description"        -> "Search the web.",
         "Function"           -> webSearch,
         "FormattingFunction" -> toolAutoFormatter,
@@ -857,7 +857,7 @@ $webSearchResultTemplate = StringTemplate[
 $defaultChatTools0[ "WebFetcher" ] = LLMTool[
     <|
         toolNameData[ "WebFetcher" ],
-        "Icon"               -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
+        "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconWebFetcher" ],
         "Description"        -> "Fetch plain text or image links from a URL.",
         "Function"           -> webFetch,
         "FormattingFunction" -> toolAutoFormatter,
@@ -962,7 +962,7 @@ startWebSession // endDefinition;
 $defaultChatTools0[ "WebImageSearcher" ] = LLMTool[
     <|
         toolNameData[ "WebImageSearcher" ],
-        "Icon"               -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
+        "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconWebImageSearcher" ],
         "Description"        -> "Search the web for images.",
         "Function"           -> webImageSearch,
         "FormattingFunction" -> toolAutoFormatter,
