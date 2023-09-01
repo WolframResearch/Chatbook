@@ -30,12 +30,12 @@ $activeBlue    = Hue[ 0.59, 0.9, 0.93 ];
 CreateLLMToolPalette // beginDefinition;
 
 CreateLLMToolPalette[ ] := CreateLLMToolPalette[
-    Values @ $DefaultTools[[ All, 1 ]], (* TODO: use all available tools *)
+    Values @ $DefaultTools[[ All, 1, { "CanonicalName", "DisplayName", "Icon" } ]], (* TODO: use all available tools *)
     Values @ KeyDrop[ GetCachedPersonaData[ ], "RawModel" ]
 ];
 
 CreateLLMToolPalette[ tools_List, personas_List ] :=
-    Module[
+    cvExpand @ Module[
         {
             preppedPersonas, preppedTools, personaNames, personaDisplayNames,
             toolNames, toolDefaultPersonas,
@@ -183,7 +183,7 @@ CreateLLMToolPalette[ tools_List, personas_List ] :=
                                                 Table[
                                                     enabledControl[
                                                         { i, tools[[ i ]][ "CanonicalName" ] },
-                                                        { j, personas[[ j ]][ "Name" ]       },
+                                                        { j, personas[[ j ]] },
                                                         Dynamic @ { row, column },
                                                         Dynamic @ scope,
                                                         personaNames
@@ -287,8 +287,8 @@ CreateLLMToolPalette[ tools_List, personas_List ] :=
                             Keys @ DeleteCases[
                                 Merge[
                                     {
-                                        AbsoluteCurrentValue[ $FrontEnd, { TaggingRules, "ToolsTest" } ],
-                                        AbsoluteCurrentValue[ scope, { TaggingRules, "ToolsTest" } ]
+                                        acv[ $FrontEnd, "ToolSelections" ],
+                                        acv[ scope    , "ToolSelections" ]
                                     },
                                     (* Inheriting if there are exactly two identical copies of a value. *)
                                     Length @ # === 2 && SameQ @@ # &
@@ -307,11 +307,8 @@ CreateLLMToolPalette[ tools_List, personas_List ] :=
                             Keys @ DeleteCases[
                                 Merge[
                                     {
-                                        AbsoluteCurrentValue[
-                                            ParentNotebook @ First @ scope,
-                                            { TaggingRules, "ToolsTest" }
-                                        ],
-                                        Splice @ AbsoluteCurrentValue[ scope, { TaggingRules, "ToolsTest" } ]
+                                        acv[ ParentNotebook @ First @ scope, "ToolSelections" ],
+                                        Splice @ acv[ scope, "ToolSelections" ]
                                     },
                                     (* Inheriting if there are exactly as many identical copies of a value as there are
                                        selected cells plus the parent scope. *)
@@ -324,7 +321,23 @@ CreateLLMToolPalette[ tools_List, personas_List ] :=
                         notInheritedStyle = ({ { #, # }, { 1, -1 } } -> Hue[ 0.59, 0.48, 1, 0.1 ] &) /@ notInherited
                     ),
 
-                    (* Otherwise we're looking at $FrontEnd (or no selection if scope is {}). *)
+                    (* Looking at $FrontEnd *)
+                    _FrontEndObject, (
+                        notInherited = toolLookup /@ Union[
+                            Keys @ Replace[
+                                cv[ $FrontEnd, "ToolSelections" ],
+                                Except[ KeyValuePattern @ { } ] -> <| |>
+                            ],
+                            Keys @ Replace[
+                                cv[ $FrontEnd, "ToolSelectionType" ],
+                                Except[ KeyValuePattern @ { } ] -> <| |>
+                            ]
+                        ];
+
+                        notInheritedStyle = ({ { #, # }, { 1, -1 } } -> Hue[ 0.59, 0.48, 1, 0.1 ] &) /@ notInherited
+                    ),
+
+                    (* Otherwise no selection if scope is {}. *)
                     _, (
                         notInherited = notInheritedStyle = None
                     )
@@ -447,7 +460,11 @@ prepTools[ tools: { __Association }, Dynamic[ { row_, column_ } ] ] :=
                                     {
                                         {
                                             Spacer[ 5 ],
-                                            #[ "Icon" ],
+                                            Pane[
+                                                #[ "Icon" ],
+                                                ImageSize       -> { 22, 20 },
+                                                ImageSizeAction -> "ShrinkToFit"
+                                            ],
                                             Spacer[ 5 ],
                                             #[ "CanonicalName" ],
                                             Dynamic @ iconData[ "Cog", colCog ],
@@ -548,7 +565,7 @@ prepPersonas // beginDefinition;
 prepPersonas[ personas: { __Association }, Dynamic[ { row_, column_ } ] ] := MapThread[
     Function @ EventHandler[
         Framed[
-            getPersonaMenuIcon[ #1, "Full" ],
+            resizeMenuIcon @ getPersonaMenuIcon[ #1, "Full" ],
             Alignment    -> { Center, Center },
             BaseStyle    -> { LineBreakWithin -> False },
             FrameMargins -> None,
@@ -570,70 +587,58 @@ enabledControl // beginDefinition;
 
 enabledControl[
     { row_, toolName_ },
-    { column_, personaName_ },
+    { column_, persona: KeyValuePattern @ { "Name" -> personaName_, "Tools" -> tools_List } },
     Dynamic[ { dRow_, dColumn_ } ],
     Dynamic[ scope_ ],
     allPersonas_
-] := EventHandler[
-    Framed[
-        Checkbox[
-            Dynamic[
-                Function[
-                    FEPrivate`If[
-                        FEPrivate`SameQ[ FEPrivate`Head @ scope, List ]
-                        ,
-                        FEPrivate`Which[
-                            (* No cells selected. *)
-                            FEPrivate`SameQ[ #, { } ],
-                                False
-                            ,
-                            (* All cells have the same setting. *)
-                            FEPrivate`SameQ @@ #,
-                                FEPrivate`Or[
-                                    FEPrivate`SameQ[ FEPrivate`Part[ #, 1 ], All ],
-                                    FEPrivate`MemberQ[ FEPrivate`Part[ #, 1 ], personaName ]
-                                ]
-                            ,
-                            (* Cells have different settings. *)
-                            True,
-                                { }
-                        ],
-                        FEPrivate`Or[ FEPrivate`SameQ[ #, All ], FEPrivate`MemberQ[ #, personaName ] ]
-                    ]
-                ][ FrontEnd`AbsoluteCurrentValue[ scope, { TaggingRules, "ToolsTest", toolName } ] ],
-                Function[
-                    CurrentValue[ scope, { TaggingRules, "ToolsTest", toolName } ] = With[
+] := cvExpand @ With[ { defaultSelected = MemberQ[ tools, toolName ] },
+    EventHandler[
+        Framed[
+            Checkbox[
+                Dynamic[
+                    Switch[
                         {
-                            list = Replace[
-                                AbsoluteCurrentValue[
-                                    (* If multiple cells are selected, take the settings of the first one to modify. *)
-                                    If[ Head @ scope === List,
-                                        First[ scope, { } ],
-                                        scope
-                                    ],
-                                    { TaggingRules, "ToolsTest", toolName }
-                                ],
-                                { None -> { }, All -> allPersonas, Except[ _List ] -> { } }
-                            ]
+                            acv[ scope, "ToolSelectionType", toolName ],
+                            acv[ scope, "ToolSelections"   , toolName, personaName ]
                         },
-                        If[ #,
-                            DeleteDuplicates @ Append[ list, personaName ],
-                            DeleteCases[ list, personaName ]
+                        { All , _                             }, True,
+                        { None, _                             }, False,
+                        { _   , Inherited | { Inherited ... } }, defaultSelected,
+                        { _   , True      | { True ..       } }, True,
+                        { _   , False     | { False ..      } }, False,
+                        { _   , _                             }, Undefined
+                    ],
+                    Function[
+                        setCV[
+                            scope, "ToolSelections", toolName, personaName,
+                            (* If the scope is $FrontEnd and the setting is default for the persona, set to Inherited *)
+                            If[ ! Xor[ #, defaultSelected ] && MatchQ[ scope, _FrontEndObject ], Inherited, # ]
+                        ];
+
+                        (* Unset the "All" or "None" setting if it exists, since a checkbox was toggled manually: *)
+                        unsetCV[ scope, "ToolSelectionType", toolName ];
+
+                        (* Cleanup empty tagging rules *)
+                        If[ MatchQ[ cv[ scope, "ToolSelections", toolName ], <| |> | { } ],
+                            unsetCV[ scope, "ToolSelections", toolName ];
+                            If[ MatchQ[ cv[ scope, "ToolSelections" ], <| |> | { } ],
+                                unsetCV[ scope, "ToolSelections" ];
+                            ]
                         ]
                     ]
-                ]
+                ],
+                { False, True }
             ],
-            { False, True }
+            Alignment    -> { Center, Center },
+            Background   -> None,
+            BaseStyle    -> { LineBreakWithin -> False },
+            FrameMargins -> None,
+            FrameStyle   -> None,
+            ImageSize    -> { $personasWidth, $rowHeight }
         ],
-        Alignment    -> { Center, Center },
-        Background   -> None,
-        BaseStyle    -> { LineBreakWithin -> False },
-        FrameMargins -> None,
-        FrameStyle   -> None,
-        ImageSize    -> { $personasWidth, $rowHeight }
-    ],
-    { "MouseEntered" :> FEPrivate`Set[ { dRow, dColumn }, { row, column } ] },
-    PassEventsDown -> True
+        { "MouseEntered" :> FEPrivate`Set[ { dRow, dColumn }, { row, column } ] },
+        PassEventsDown -> True
+    ]
 ];
 
 enabledControl // endDefinition;
@@ -649,50 +654,22 @@ rightColControl[
     Dynamic[ scope_ ],
     Dynamic[ notInherited_ ],
     defaultPersonas_
-] := EventHandler[
+] := cvExpand @ EventHandler[
     Pane[
         Grid[
             {
                 {
                     PopupMenu[
                         Dynamic[
-                            Function[
-                                FEPrivate`Which[
-                                    FEPrivate`SameQ[ #, None ]                 , None,
-                                    FEPrivate`SameQ[ #, All ]                  , All,
-                                    FEPrivate`SameQ[ FEPrivate`Head @ #, List ], List,
-                                    True                                       , List
-                                ]
-                            ][ FrontEnd`AbsoluteCurrentValue[ scope, { TaggingRules, "ToolsTest", toolName } ] ],
-
-                            FEPrivate`Which[
-                                (* If the new setting is All or None, then set the enabled personas to All or None. *)
-                                FEPrivate`MemberQ[ { All, None }, # ], (
-                                    FEPrivate`Set[
-                                        FrontEnd`CurrentValue[ scope, { TaggingRules, "ToolsTest", toolName } ],
-                                        #
-                                    ]
-                                ),
-
-                                (* If the new setting is a list (and the current setting is not a list), then set the
-                                   enabled personas to the default set. In this sense, choosing "Enabled by persona"
-                                   from the dropdown is equivalent to resetting how a tool is enabled, rather than just
-                                   replacing None with {} or All with a list of all personas. *)
-                                FEPrivate`UnsameQ[
-                                    FEPrivate`Head @ FrontEnd`AbsoluteCurrentValue[
-                                        scope,
-                                        { TaggingRules, "ToolsTest", toolName }
-                                    ],
-                                    List
-                                ], (
-                                    FEPrivate`Set[
-                                        FrontEnd`CurrentValue[ scope, { TaggingRules, "ToolsTest", toolName } ],
-                                        defaultPersonas
-                                    ]
-                                )
-                            ] &
+                            acv[ scope, "ToolSelectionType", toolName ],
+                            setCV[ scope, "ToolSelectionType", toolName, # ] &
                         ],
-                        { List -> "Enabled by persona", Delimiter, None -> "Never enabled", All -> "Always enabled" },
+                        {
+                            Inherited -> "Enabled by persona",
+                            Delimiter,
+                            None      -> "Never enabled",
+                            All       -> "Always enabled"
+                        },
                         "",
                         PaneSelector[
                             MapThread[
@@ -763,7 +740,12 @@ rightColControl[
                                         ],
                                         FrontEnd`CurrentValue[ "MouseOver" ]
                                     }
-                                ][ FrontEnd`AbsoluteCurrentValue[ scope, { TaggingRules, "ToolsTest", toolName } ] ]
+                                ][
+                                    FrontEnd`AbsoluteCurrentValue[
+                                        scope,
+                                        { TaggingRules, "ChatNotebookSettings", "ToolSelections", toolName }
+                                    ]
+                                ]
                             ],
                             "",
                             Alignment        -> { Left, Center },
@@ -784,7 +766,9 @@ rightColControl[
                                 { val, col },
                                 val -> Button[
                                     Dynamic @ iconData[ "Clear", col ],
-                                    CurrentValue[ scope, { TaggingRules, "ToolsTest", toolName } ] = Inherited,
+                                    unsetCV[ scope, "ToolSelections"   , toolName ];
+                                    unsetCV[ scope, "ToolSelectionType", toolName ];
+                                    ,
                                     Appearance -> "Suppressed",
                                     ImageSize  -> { 20, $rowHeight }
                                 ]
@@ -877,9 +861,10 @@ inWindow[ expr_ ] := CreateDialog[
         CellFrameStyle   -> White
     ],
     Background          -> White,
-    Saveable            -> False,
     StyleDefinitions    -> $toolDialogStyles,
     WindowClickSelect   -> False,
+    WindowFloating      -> True,
+    WindowFrame         -> "Palette",
     WindowFrameElements -> { "CloseBox", "ResizeArea" },
     WindowTitle         -> "LLM Tools"
 ];
@@ -913,9 +898,59 @@ iconData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*CurrentValue Tools*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*cvExpand*)
+cvExpand // beginDefinition;
+cvExpand // Attributes = { HoldFirst };
+cvExpand[ expr_ ] := expr /. $cvRules;
+cvExpand // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$cvRules*)
+$cvRules := $cvRules = Dispatch @ Flatten @ {
+    DownValues @ acv,
+    DownValues @ cv,
+    DownValues @ setCV,
+    DownValues @ unsetCV
+};
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*acv*)
+acv // beginDefinition;
+acv[ scope_, keys___ ] := AbsoluteCurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", keys } ];
+acv // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cv*)
+cv // beginDefinition;
+cv[ scope_, keys___ ] := CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", keys } ];
+cv // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*setCV*)
+setCV // beginDefinition;
+setCV[ scope_, keys___, value_ ] := CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", keys } ] = value;
+setCV // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*unsetCV*)
+unsetCV // beginDefinition;
+unsetCV[ scope_, keys___ ] := CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", keys } ] = Inherited;
+unsetCV // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Package Footer*)
 If[ Wolfram`ChatbookInternal`$BuildingMX,
-    Null;
+    $cvRules;
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)
