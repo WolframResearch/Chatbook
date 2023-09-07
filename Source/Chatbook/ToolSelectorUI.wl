@@ -12,6 +12,7 @@ Needs[ "Wolfram`Chatbook`"          ];
 Needs[ "Wolfram`Chatbook`Common`"   ];
 Needs[ "Wolfram`Chatbook`Personas`" ];
 Needs[ "Wolfram`Chatbook`UI`"       ];
+Needs[ "Wolfram`Chatbook`Tools`"    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -30,17 +31,40 @@ $activeBlue    = Hue[ 0.59, 0.9, 0.93 ];
 CreateLLMToolPalette // beginDefinition;
 
 CreateLLMToolPalette[ ] := CreateLLMToolPalette[
-    Values @ $DefaultTools[[ All, 1, { "CanonicalName", "DisplayName", "Icon" } ]], (* TODO: use all available tools *)
+    Values @ $DefaultTools, (* TODO: use all available tools *)
     Values @ KeyDrop[ GetCachedPersonaData[ ], "RawModel" ]
 ];
 
-CreateLLMToolPalette[ tools_List, personas_List ] :=
+CreateLLMToolPalette[ tools0_List, personas_List ] :=
     cvExpand @ Module[
         {
+            globalTools, personaTools, personaToolNames, personaToolLookup, tools,
             preppedPersonas, preppedTools, personaNames, personaDisplayNames,
             toolNames, toolDefaultPersonas,
             gridOpts, $sectionSpacer, sectionHeading, indent
         },
+
+        globalTools = toolName @ tools0;
+        personaTools = DeleteCases[
+            DeleteCases[
+                Association @ Cases[
+                    personas,
+                    KeyValuePattern @ { "Name" -> name_, "Tools" -> t_ } :>
+                        name -> Complement[ Flatten @ List @ t, globalTools ]
+                ],
+                Except[ _LLMTool ],
+                { 2 }
+            ],
+            { } | Automatic | Inherited | None
+        ];
+
+        personaToolNames = toolName /@ personaTools;
+        personaToolLookup = Association @ KeyValueMap[ Thread[ #2 -> #1 ] &, personaToolNames ];
+
+        tools = DeleteDuplicates @ Join[
+            toolData @ tools0,
+            toolData @ Flatten @ Values @ personaTools
+        ];
 
         gridOpts = Sequence[
             Spacings -> { 0, 0 },
@@ -73,15 +97,15 @@ CreateLLMToolPalette[ tools_List, personas_List ] :=
                 notInheritedStyle,
                 toolLookup   = Association @ MapThread[
                     Rule,
-                    { Through @ tools[ "CanonicalName" ], Range @ Length @ tools }
+                    { tools[[ All, "CanonicalName" ]], Range @ Length @ tools }
                 ]
             },
 
             preppedPersonas     = prepPersonas[ personas, Dynamic @ { row, column } ];
             preppedTools        = prepTools[ tools, Dynamic @ { row, column } ];
-            personaNames        = Through @ personas[ "Name" ];
-            personaDisplayNames = Through @ personas[ "DisplayName" ];
-            toolNames           = Through @ tools[ "CanonicalName" ];
+            personaNames        = personas[[ All, "Name" ]];
+            personaDisplayNames = personas[[ All, "DisplayName" ]];
+            toolNames           = toolName @ tools;
 
             (* Produce an association whose keys are tool names, and values are all the personas which list that tool in
                their default tools to use. *)
@@ -89,8 +113,8 @@ CreateLLMToolPalette[ tools_List, personas_List ] :=
                 With[ { personaDefaults = (#[ "Name" ] -> Lookup[ #, "Tools", { } ] &) /@ personas },
                     Association @ Map[
                         Function[
-                            toolName,
-                            toolName -> First /@ Select[ personaDefaults, MemberQ[ Last @ #, toolName ] & ]
+                            name,
+                            name -> First /@ Select[ personaDefaults, MemberQ[ Last @ #, name ] & ]
                         ],
                         toolNames
                     ]
@@ -181,12 +205,27 @@ CreateLLMToolPalette[ tools_List, personas_List ] :=
                                         linkedPane[
                                             Grid[
                                                 Table[
-                                                    enabledControl[
-                                                        { i, tools[[ i ]][ "CanonicalName" ] },
-                                                        { j, personas[[ j ]] },
-                                                        Dynamic @ { row, column },
-                                                        Dynamic @ scope,
-                                                        personaNames
+                                                    If[ And[
+                                                            StringQ @ personaToolLookup @ tools[[ i, "CanonicalName" ]],
+                                                            UnsameQ[
+                                                                personaToolLookup @ tools[[ i, "CanonicalName" ]],
+                                                                personas[[ j, "Name" ]]
+                                                            ]
+                                                        ],
+                                                        disabledControl[
+                                                            { i, Part[ tools, i ][ "CanonicalName" ] },
+                                                            { j, personas[[ j ]] },
+                                                            Dynamic @ { row, column },
+                                                            Dynamic @ scope,
+                                                            personaNames
+                                                        ],
+                                                        enabledControl[
+                                                            { i, Part[ tools, i ][ "CanonicalName" ] },
+                                                            { j, personas[[ j ]] },
+                                                            Dynamic @ { row, column },
+                                                            Dynamic @ scope,
+                                                            personaNames
+                                                        ]
                                                     ],
                                                     { i, Length @ tools    },
                                                     { j, Length @ personas }
@@ -349,6 +388,27 @@ CreateLLMToolPalette[ tools_List, personas_List ] :=
     ];
 
 CreateLLMToolPalette // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*makePersonaToolData*)
+makePersonaToolData // beginDefinition;
+
+makePersonaToolData[ personas_List, globalNames_List ] :=
+    makePersonaToolData[ #, globalNames ] & /@ personas;
+
+makePersonaToolData[ persona_Association, globalNames_List ] :=
+    makePersonaToolData[ persona, persona[ "Tools" ], globalNames ];
+
+makePersonaToolData[ persona_Association, tools_, globalNames_List ] := Enclose[
+    Module[ { toolNames },
+        toolNames = ConfirmMatch[ toolName @ tools, { ___String }, "ToolNames" ];
+        (* TODO *)
+    ],
+    throwInternalFailure[ makePersonaToolData[ persona, tools, globalNames ], ## ] &
+];
+
+makePersonaToolData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -586,20 +646,20 @@ prepPersonas // endDefinition;
 enabledControl // beginDefinition;
 
 enabledControl[
-    { row_, toolName_ },
+    { row_, nameOfTool_ },
     { column_, persona: KeyValuePattern @ { "Name" -> personaName_, "Tools" -> tools_List } },
     Dynamic[ { dRow_, dColumn_ } ],
     Dynamic[ scope_ ],
     allPersonas_
-] := cvExpand @ With[ { defaultSelected = MemberQ[ tools, toolName ] },
+] := cvExpand @ With[ { defaultSelected = MemberQ[ toolName @ tools, nameOfTool ] },
     EventHandler[
         Framed[
             Checkbox[
                 Dynamic[
                     Switch[
                         {
-                            acv[ scope, "ToolSelectionType", toolName ],
-                            acv[ scope, "ToolSelections"   , toolName, personaName ]
+                            acv[ scope, "ToolSelectionType", nameOfTool ],
+                            acv[ scope, "ToolSelections"   , nameOfTool, personaName ]
                         },
                         { All , _                             }, True,
                         { None, _                             }, False,
@@ -610,17 +670,17 @@ enabledControl[
                     ],
                     Function[
                         setCV[
-                            scope, "ToolSelections", toolName, personaName,
+                            scope, "ToolSelections", nameOfTool, personaName,
                             (* If the scope is $FrontEnd and the setting is default for the persona, set to Inherited *)
                             If[ ! Xor[ #, defaultSelected ] && MatchQ[ scope, _FrontEndObject ], Inherited, # ]
                         ];
 
                         (* Unset the "All" or "None" setting if it exists, since a checkbox was toggled manually: *)
-                        unsetCV[ scope, "ToolSelectionType", toolName ];
+                        unsetCV[ scope, "ToolSelectionType", nameOfTool ];
 
                         (* Cleanup empty tagging rules *)
-                        If[ MatchQ[ cv[ scope, "ToolSelections", toolName ], <| |> | { } ],
-                            unsetCV[ scope, "ToolSelections", toolName ];
+                        If[ MatchQ[ cv[ scope, "ToolSelections", nameOfTool ], <| |> | { } ],
+                            unsetCV[ scope, "ToolSelections", nameOfTool ];
                             If[ MatchQ[ cv[ scope, "ToolSelections" ], <| |> | { } ],
                                 unsetCV[ scope, "ToolSelections" ];
                             ]
@@ -642,6 +702,35 @@ enabledControl[
 ];
 
 enabledControl // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*disabledControl*)
+disabledControl // beginDefinition;
+
+disabledControl[
+    { row_, nameOfTool_ },
+    { column_, persona: KeyValuePattern @ { "Name" -> personaName_, "Tools" -> tools_List } },
+    Dynamic[ { dRow_, dColumn_ } ],
+    Dynamic[ scope_ ],
+    allPersonas_
+] := cvExpand @ With[ { defaultSelected = MemberQ[ toolName @ tools, nameOfTool ] },
+    EventHandler[
+        Framed[
+            Checkbox[ defaultSelected, { False, True }, Enabled -> False ],
+            Alignment    -> { Center, Center },
+            Background   -> None,
+            BaseStyle    -> { LineBreakWithin -> False },
+            FrameMargins -> None,
+            FrameStyle   -> None,
+            ImageSize    -> { $personasWidth, $rowHeight }
+        ],
+        { "MouseEntered" :> FEPrivate`Set[ { dRow, dColumn }, { row, column } ] },
+        PassEventsDown -> True
+    ]
+];
+
+disabledControl // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
