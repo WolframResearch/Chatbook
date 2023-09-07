@@ -2951,26 +2951,29 @@ writeReformattedCell[ settings_, None, cell_CellObject ] :=
         ]
     ];
 
-writeReformattedCell[ settings_, string_String, cell_CellObject ] := Block[ { $dynamicText = False },
-    Module[ { tag, open, label, pageData, uuid, new, output },
+writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
+    Block[ { $dynamicText = False },
+        Module[ { tag, open, label, pageData, uuid, new, output },
 
-        tag      = CurrentValue[ cell, { TaggingRules, "MessageTag" } ];
-        open     = $lastOpen = cellOpenQ @ cell;
-        label    = RawBoxes @ TemplateBox[ { }, "MinimizedChat" ];
-        pageData = CurrentValue[ cell, { TaggingRules, "PageData" } ];
-        uuid     = CreateUUID[ ];
-        new      = reformatCell[ settings, string, tag, open, label, pageData, uuid ];
-        output   = CellObject @ uuid;
+            tag      = ConfirmMatch[ CurrentValue[ cell, { TaggingRules, "MessageTag" } ], _String|Inherited, "Tag" ];
+            open     = $lastOpen = cellOpenQ @ cell;
+            label    = RawBoxes @ TemplateBox[ { }, "MinimizedChat" ];
+            pageData = CurrentValue[ cell, { TaggingRules, "PageData" } ];
+            uuid     = CreateUUID[ ];
+            new      = reformatCell[ settings, string, tag, open, label, pageData, uuid ];
+            output   = CellObject @ uuid;
 
-        $lastChatString  = string;
-        $reformattedCell = new;
-        $lastChatOutput  = output;
+            $lastChatString  = string;
+            $reformattedCell = new;
+            $lastChatOutput  = output;
 
-        With[ { new = new, output = output },
-            createFETask @ NotebookWrite[ cell, new, None, AutoScroll -> False ];
-            createFETask @ attachChatOutputMenu @ output
+            With[ { new = new, output = output },
+                createFETask @ NotebookWrite[ cell, new, None, AutoScroll -> False ];
+                createFETask @ attachChatOutputMenu @ output
+            ]
         ]
-    ]
+    ],
+    throwInternalFailure[ writeReformattedCell[ settings, string, cell ], ## ] &
 ];
 
 writeReformattedCell[ settings_, other_, cell_CellObject ] :=
@@ -3186,7 +3189,7 @@ makeReformattedCellTaggingRules // beginDefinition;
 makeReformattedCellTaggingRules[
     settings_,
     string_,
-    tag_,
+    tag: _String|Inherited,
     content_,
     KeyValuePattern @ { "Pages" -> pages_Association, "PageCount" -> count_Integer, "CurrentPage" -> page_Integer }
 ] :=
@@ -3203,7 +3206,7 @@ makeReformattedCellTaggingRules[
     |>
 ];
 
-makeReformattedCellTaggingRules[ settings_, string_, tag_, content_, pageData_ ] := <|
+makeReformattedCellTaggingRules[ settings_, string_, tag: _String|Inherited, content_, pageData_ ] := <|
     "CellToStringData" -> string,
     "MessageTag"       -> tag,
     "ChatData"         -> makeCompactChatData[ string, tag, settings ]
