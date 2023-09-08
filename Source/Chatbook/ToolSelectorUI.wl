@@ -4,7 +4,8 @@ BeginPackage[ "Wolfram`Chatbook`ToolSelectorUI`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-`CreateLLMToolPalette;
+`CreateLLMToolManagerPanel;
+`CreateLLMToolManagerDialog;
 
 Begin[ "`Private`" ];
 
@@ -27,15 +28,16 @@ $activeBlue    = Hue[ 0.59, 0.9, 0.93 ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*CreateLLMToolPalette*)
-CreateLLMToolPalette // beginDefinition;
+(*CreateLLMToolManagerPanel*)
+CreateLLMToolManagerPanel// beginDefinition;
 
-CreateLLMToolPalette[ ] := CreateLLMToolPalette[
+(* FIXME: this uses Chatbook template boxes, so it will pink-box if displayed in preferences *)
+CreateLLMToolManagerPanel[ ] := CreateLLMToolManagerPanel[
     Values @ $DefaultTools, (* TODO: use all available tools *)
     Values @ KeyDrop[ GetCachedPersonaData[ ], "RawModel" ]
 ];
 
-CreateLLMToolPalette[ tools0_List, personas_List ] :=
+CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
     cvExpand @ Module[
         {
             globalTools, personaTools, personaToolNames, personaToolLookup, tools,
@@ -83,7 +85,7 @@ CreateLLMToolPalette[ tools0_List, personas_List ] :=
 
         indent[ i_Integer ] := { Spacer @ { i, 0 }, #1 } &;
 
-        inWindow @ DynamicModule[
+        DynamicModule[
             {
                 sH           = 0,
                 sV           = 0,
@@ -387,7 +389,14 @@ CreateLLMToolPalette[ tools0_List, personas_List ] :=
         ]
     ];
 
-CreateLLMToolPalette // endDefinition;
+CreateLLMToolManagerPanel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*CreateLLMToolManagerDialog*)
+CreateLLMToolManagerDialog // beginDefinition;
+CreateLLMToolManagerDialog[ args___ ] := inWindow @ CreateLLMToolManagerPanel @ args;
+CreateLLMToolManagerDialog // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
