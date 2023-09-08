@@ -139,6 +139,15 @@ Invalid streaming output method: `1`.";
 Chatbook::ChannelFrameworkError = "\
 The channel framework is currently unavailable, please try installing from URL instead or try again later.";
 
+Chatbook::NotInstallableResourceType = "\
+Resource type `1` is not an installable resource type for chat notebooks. Valid types are Prompt and LLMTool.";
+
+Chatbook::InvalidResourceSpecification = "\
+The argument `1` is not a valid resource specification.";
+
+Chatbook::InvalidArguments = "\
+Invalid arguments given for `1` in `2`.";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Initialization*)
