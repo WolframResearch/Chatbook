@@ -31,7 +31,6 @@ $activeBlue    = Hue[ 0.59, 0.9, 0.93 ];
 (*CreateLLMToolManagerPanel*)
 CreateLLMToolManagerPanel// beginDefinition;
 
-(* FIXME: this uses Chatbook template boxes, so it will pink-box if displayed in preferences *)
 CreateLLMToolManagerPanel[ ] := CreateLLMToolManagerPanel[
     Values @ $DefaultTools, (* TODO: use all available tools *)
     Values @ KeyDrop[ GetCachedPersonaData[ ], "RawModel" ]
