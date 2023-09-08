@@ -327,7 +327,7 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                             toolLookup,
                             Keys @ DeleteCases[
                                 Merge[
-                                    {
+                                    DeleteCases[ Except[ KeyValuePattern @ { } ] ] @ {
                                         acv[ $FrontEnd, "ToolSelections" ],
                                         acv[ scope    , "ToolSelections" ]
                                     },
@@ -347,7 +347,7 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                             toolLookup,
                             Keys @ DeleteCases[
                                 Merge[
-                                    {
+                                    DeleteCases[ Except[ KeyValuePattern @ { } ] ] @ {
                                         acv[ ParentNotebook @ First @ scope, "ToolSelections" ],
                                         Splice @ acv[ scope, "ToolSelections" ]
                                     },
@@ -530,7 +530,7 @@ prepTools[ tools: { __Association }, Dynamic[ { row_, column_ } ] ] :=
                                         {
                                             Spacer[ 5 ],
                                             Pane[
-                                                #[ "Icon" ],
+                                                inlineTemplateBoxes @ #[ "Icon" ],
                                                 ImageSize       -> { 22, 20 },
                                                 ImageSizeAction -> "ShrinkToFit"
                                             ],
@@ -991,7 +991,7 @@ linkedPane // endDefinition;
 (* ::Section::Closed:: *)
 (*Icons*)
 iconData // beginDefinition;
-iconData[ name_String, color_ ] := Insert[ chatbookIcon[ "ToolSelectorUI"<>name ], color, { 1, 1, 1 } ];
+iconData[ name_String, color_ ] := Insert[ chatbookIcon[ "ToolSelectorUI"<>name, False ], color, { 1, 1, 1 } ];
 iconData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

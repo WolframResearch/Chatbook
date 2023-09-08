@@ -38,6 +38,8 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `throwTop;
 
 `chatbookIcon;
+`inlineTemplateBox;
+`inlineTemplateBoxes;
 
 Begin[ "`Private`" ];
 
@@ -634,10 +636,43 @@ truncatePartString[ other_, max_Integer ] := truncatePartString[ ToString[ Uneva
 *)
 chatbookIcon // beginDefinition;
 chatbookIcon[ name_String ] := chatbookIcon[ name, True ];
-chatbookIcon[ name_String, True  ] := chatbookIcon[ name, Lookup[ $chatbookIcons    , name ] ];
-chatbookIcon[ name_String, False ] := chatbookIcon[ name, Lookup[ $chatbookIconsFull, name ] ];
+chatbookIcon[ name_String, True  ] := chatbookIcon[ name, Lookup[ $chatbookIcons, name ] ];
+chatbookIcon[ name_String, False ] := inlineTemplateBox @ chatbookIcon[ name, True ];
 chatbookIcon[ name_String, icon: Except[ _Missing ] ] := icon;
 chatbookIcon // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*inlineTemplateBox*)
+inlineTemplateBox // beginDefinition;
+
+inlineTemplateBox[ TemplateBox[ args_, name_String ] ] :=
+    With[ { func = $templateBoxDisplayFunctions @ name },
+        TemplateBox[ args, name, DisplayFunction -> func ] /; MatchQ[ func, _Function ]
+    ];
+
+inlineTemplateBox[ RawBoxes[ box_TemplateBox ] ] :=
+    RawBoxes @ inlineTemplateBox @ box;
+
+inlineTemplateBox[ expr_ ] := expr;
+
+inlineTemplateBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*inlineTemplateBoxes*)
+inlineTemplateBoxes // beginDefinition;
+
+inlineTemplateBoxes[ expr_ ] :=
+    ReplaceAll[
+        expr,
+        TemplateBox[ args_, name_String ] :>
+            With[ { func = inlineTemplateBoxes @ $templateBoxDisplayFunctions @ name },
+                TemplateBox[ args, name, DisplayFunction -> func ] /; MatchQ[ func, _Function ]
+            ]
+    ];
+
+inlineTemplateBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -647,9 +682,9 @@ $chatbookIcons := $chatbookIcons =
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*$chatbookIconsFull*)
-$chatbookIconsFull := $chatbookIconsFull =
-    Developer`ReadWXFFile @ PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "FullIcons" ];
+(*$templateBoxDisplayFunctions*)
+$templateBoxDisplayFunctions := $templateBoxDisplayFunctions =
+    Developer`ReadWXFFile @ PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "DisplayFunctions" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -657,7 +692,7 @@ $chatbookIconsFull := $chatbookIconsFull =
 If[ Wolfram`ChatbookInternal`$BuildingMX,
     $debug = False;
     $chatbookIcons;
-    $chatbookIconsFull;
+    $templateBoxDisplayFunctions;
 ];
 
 End[ ];
