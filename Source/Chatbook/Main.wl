@@ -13,6 +13,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$DefaultChatSystemPre;
 `$DefaultToolOptions;
 `$DefaultTools;
+`$InstalledTools;
 `$ToolFunctions;
 `Chatbook;
 `ChatbookAction;

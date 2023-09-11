@@ -9,11 +9,12 @@ BeginPackage[ "Wolfram`Chatbook`ToolSelectorUI`" ];
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"          ];
-Needs[ "Wolfram`Chatbook`Common`"   ];
-Needs[ "Wolfram`Chatbook`Personas`" ];
-Needs[ "Wolfram`Chatbook`UI`"       ];
-Needs[ "Wolfram`Chatbook`Tools`"    ];
+Needs[ "Wolfram`Chatbook`"                   ];
+Needs[ "Wolfram`Chatbook`Common`"            ];
+Needs[ "Wolfram`Chatbook`Personas`"          ];
+Needs[ "Wolfram`Chatbook`UI`"                ];
+Needs[ "Wolfram`Chatbook`Tools`"             ];
+Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -31,13 +32,14 @@ $activeBlue    = Hue[ 0.59, 0.9, 0.93 ];
 (*CreateLLMToolManagerPanel*)
 CreateLLMToolManagerPanel// beginDefinition;
 
-CreateLLMToolManagerPanel[ ] := CreateLLMToolManagerPanel[
-    Values @ $DefaultTools, (* TODO: use all available tools *)
-    Values @ KeyDrop[ GetCachedPersonaData[ ], "RawModel" ]
+CreateLLMToolManagerPanel[ ] := catchMine @ Dynamic[
+    $installedResourceTrigger;
+    CreateLLMToolManagerPanel[ getFullToolList[ ], getFullPersonaList[ ] ],
+    TrackedSymbols :> { $installedResourceTrigger }
 ];
 
 CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
-    cvExpand @ Module[
+    catchMine @ cvExpand @ Module[
         {
             globalTools, personaTools, personaToolNames, personaToolLookup, tools,
             preppedPersonas, preppedTools, personaNames, personaDisplayNames,
@@ -399,24 +401,36 @@ CreateLLMToolManagerDialog // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*makePersonaToolData*)
-makePersonaToolData // beginDefinition;
+(*getFullToolList*)
+getFullToolList // beginDefinition;
+getFullToolList[ ] := DeleteDuplicates @ Join[ Values @ $DefaultTools, Values @ $InstalledTools ];
+getFullToolList // endDefinition;
 
-makePersonaToolData[ personas_List, globalNames_List ] :=
-    makePersonaToolData[ #, globalNames ] & /@ personas;
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getFullPersonaList*)
+getFullPersonaList // beginDefinition;
+getFullPersonaList[ ] := standardizePersonaData /@ Values @ KeyDrop[ GetCachedPersonaData[ ], "RawModel" ];
+getFullPersonaList // endDefinition;
 
-makePersonaToolData[ persona_Association, globalNames_List ] :=
-    makePersonaToolData[ persona, persona[ "Tools" ], globalNames ];
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*standardizePersonaData*)
+standardizePersonaData // beginDefinition;
 
-makePersonaToolData[ persona_Association, tools_, globalNames_List ] := Enclose[
-    Module[ { toolNames },
-        toolNames = ConfirmMatch[ toolName @ tools, { ___String }, "ToolNames" ];
-        (* TODO *)
-    ],
-    throwInternalFailure[ makePersonaToolData[ persona, tools, globalNames ], ## ] &
-];
+standardizePersonaData[ persona_Association ] :=
+    standardizePersonaData[ persona, Lookup[ persona, "Tools", { } ] ];
 
-makePersonaToolData // endDefinition;
+standardizePersonaData[ persona_Association, tools_List ] :=
+    Append[ persona, "Tools" -> tools ];
+
+standardizePersonaData[ persona_Association, tools: Automatic|Inherited ] :=
+    standardizePersonaData[ persona, Keys @ $DefaultTools ];
+
+standardizePersonaData[ persona_Association, None ] :=
+    standardizePersonaData[ persona, { } ];
+
+standardizePersonaData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -520,70 +534,8 @@ prepTools[ tools: { __Association }, Dynamic[ { row_, column_ } ] ] :=
         Function[
             EventHandler[
                 Row @ {
-                    PaneSelector[
-                        MapThread[
-                            Function[
-                                { val, colCog, colDelimiter },
-                                val -> Pane @ Grid[
-                                    {
-                                        {
-                                            Spacer[ 5 ],
-                                            Pane[
-                                                inlineTemplateBoxes @ #[ "Icon" ],
-                                                ImageSize       -> { 22, 20 },
-                                                ImageSizeAction -> "ShrinkToFit"
-                                            ],
-                                            Spacer[ 5 ],
-                                            #[ "CanonicalName" ],
-                                            Dynamic @ iconData[ "Cog", colCog ],
-                                            Spacer[ 5 ],
-                                            Dynamic @ iconData[ "Delimiter", colDelimiter ]
-                                        }
-                                    },
-                                    Alignment -> Left,
-                                    ItemSize  -> { { { 0 }, Fit, 0, 0, 0 }, 0 },
-                                    Spacings  -> { 0, 0 }
-                                ]
-                            ],
-                            {
-                                { { False, False } , { True, False }  , { True, True }   },
-                                { LineColor -> None, GrayLevel[ 0.65 ], $activeBlue      },
-                                { LineColor -> None, GrayLevel[ 0.80 ], GrayLevel[ 0.8 ] }
-                            }
-                        ],
-                        Dynamic @ { FEPrivate`SameQ[ row, #2 ], FrontEnd`CurrentValue[ "MouseOver" ] },
-                        BaselinePosition -> Center -> Center,
-                        FrameMargins     -> None,
-                        ImageSize        -> { $toolsWidth, $rowHeight }
-                    ],
-                    PaneSelector[
-                        MapThread[
-                            Function[
-                                { val, colBin, colDelimiter },
-                                val -> Grid[
-                                    {
-                                        {
-                                            Spacer[ 5 ],
-                                            deleteButton[ colBin, #2, #1 ],
-                                            Spacer[ 3 ],
-                                            Dynamic @ iconData[ "Delimiter", LineColor -> None ]
-                                        }
-                                    },
-                                    ItemSize -> { 0, 0 },
-                                    Spacings -> { 0, 0 }
-                                ]
-                            ],
-                            {
-                                { { False, False } , { True, False }  , { True, True }    },
-                                { LineColor -> None, GrayLevel[ 0.65 ], $activeBlue       },
-                                { LineColor -> None, LineColor -> None, LineColor -> None }
-                            }
-                        ],
-                        Dynamic @ { FEPrivate`SameQ[ row, #2 ], FrontEnd`CurrentValue[ "MouseOver" ] },
-                        BaselinePosition -> Center -> Center,
-                        FrameMargins     -> None,
-                        ImageSize        -> { Automatic, $rowHeight }
-                    ],
+                    configureButton[ #1, #2, Dynamic @ { row, column } ],
+                    deleteButton[ #1, #2, Dynamic @ { row, column } ],
                     Spacer[ 2 ]
                 },
                 { "MouseEntered" :> FEPrivate`Set[ { row, column }, { #2, None } ] },
@@ -596,11 +548,181 @@ prepTools[ tools: { __Association }, Dynamic[ { row_, column_ } ] ] :=
 prepTools // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
+(*configurableToolQ*)
+configurableToolQ // beginDefinition;
+configurableToolQ[ tool_Association ] := False; (* TODO *)
+configurableToolQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*deletableToolQ*)
+deletableToolQ // beginDefinition;
+deletableToolQ[ KeyValuePattern[ "Source" -> "BuiltIn" ] ] := False;
+deletableToolQ[ tool_ ] := True;
+deletableToolQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*configureButton*)
+configureButton // beginDefinition;
+
+configureButton[ tool_Association? configurableToolQ, index_Integer, Dynamic[ { row_, column_ } ] ] :=
+    PaneSelector[
+        MapThread[
+            Function[
+                { val, colCog, colDelimiter },
+                val -> Pane @ Grid[
+                    {
+                        {
+                            Spacer[ 5 ],
+                            Pane[
+                                inlineTemplateBoxes @ tool[ "Icon" ],
+                                ImageSize       -> { 22, 20 },
+                                ImageSizeAction -> "ShrinkToFit"
+                            ],
+                            Spacer[ 5 ],
+                            tool[ "CanonicalName" ],
+                            Dynamic @ iconData[ "Cog", colCog ],
+                            Spacer[ 5 ],
+                            Dynamic @ iconData[ "Delimiter", colDelimiter ]
+                        }
+                    },
+                    Alignment -> Left,
+                    ItemSize  -> { { { 0 }, Fit, 0, 0, 0 }, 0 },
+                    Spacings  -> { 0, 0 }
+                ]
+            ],
+            {
+                { { False, False } , { True, False }  , { True, True }   },
+                { LineColor -> None, GrayLevel[ 0.65 ], $activeBlue      },
+                { LineColor -> None, GrayLevel[ 0.80 ], GrayLevel[ 0.8 ] }
+            }
+        ],
+        Dynamic @ { FEPrivate`SameQ[ row, index ], FrontEnd`CurrentValue[ "MouseOver" ] },
+        BaselinePosition -> Center -> Center,
+        FrameMargins     -> None,
+        ImageSize        -> { $toolsWidth, $rowHeight }
+    ];
+
+configureButton[ tool_Association, index_Integer, Dynamic[ { row_, column_ } ] ] :=
+    PaneSelector[
+        MapThread[
+            Function[
+                { val, colCog, colDelimiter },
+                val -> Pane @ Grid[
+                    {
+                        {
+                            Spacer[ 5 ],
+                            Pane[
+                                inlineTemplateBoxes @ tool[ "Icon" ],
+                                ImageSize       -> { 22, 20 },
+                                ImageSizeAction -> "ShrinkToFit"
+                            ],
+                            Spacer[ 5 ],
+                            tool[ "CanonicalName" ],
+                            Dynamic @ iconData[ "Cog", colCog ],
+                            Spacer[ 5 ],
+                            Dynamic @ iconData[ "Delimiter", colDelimiter ]
+                        }
+                    },
+                    Alignment -> Left,
+                    ItemSize  -> { { { 0 }, Fit, 0, 0, 0 }, 0 },
+                    Spacings  -> { 0, 0 }
+                ]
+            ],
+            {
+                { { False, False } , { True, False }  , { True, True }  },
+                { LineColor -> None, GrayLevel[ 0.8 ], GrayLevel[ 0.8 ] },
+                { LineColor -> None, GrayLevel[ 0.8 ], GrayLevel[ 0.8 ] }
+            }
+        ],
+        Dynamic @ { FEPrivate`SameQ[ row, index ], FrontEnd`CurrentValue[ "MouseOver" ] },
+        BaselinePosition -> Center -> Center,
+        FrameMargins     -> None,
+        ImageSize        -> { $toolsWidth, $rowHeight }
+    ];
+
+configureButton // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*deleteButton*)
 deleteButton // beginDefinition;
 
-deleteButton[ colBin_, row_, tool_Association ] := Button[
+deleteButton[ tool_Association? deletableToolQ, index_Integer, Dynamic[ { row_, column_ } ] ] :=
+    PaneSelector[
+        MapThread[
+            Function[
+                { val, colBin, colDelimiter },
+                val -> Grid[
+                    {
+                        {
+                            Spacer[ 5 ],
+                            deleteButton0[ colBin, index, tool ],
+                            Spacer[ 3 ],
+                            Dynamic @ iconData[ "Delimiter", LineColor -> None ]
+                        }
+                    },
+                    ItemSize -> { 0, 0 },
+                    Spacings -> { 0, 0 }
+                ]
+            ],
+            {
+                { { False, False } , { True, False }  , { True, True }    },
+                { LineColor -> None, GrayLevel[ 0.65 ], $activeBlue       },
+                { LineColor -> None, LineColor -> None, LineColor -> None }
+            }
+        ],
+        Dynamic @ { FEPrivate`SameQ[ row, index ], FrontEnd`CurrentValue[ "MouseOver" ] },
+        BaselinePosition -> Center -> Center,
+        FrameMargins     -> None,
+        ImageSize        -> { Automatic, $rowHeight }
+    ];
+
+deleteButton[ tool_Association, index_Integer, Dynamic[ { row_, column_ } ] ] :=
+    PaneSelector[
+        MapThread[
+            Function[
+                { val, colBin, colDelimiter },
+                val -> Grid[
+                    {
+                        {
+                            Spacer[ 5 ],
+                            Button[
+                                Dynamic @ iconData[ "Bin", colBin ],
+                                Null,
+                                Appearance       -> "Suppressed",
+                                BaselinePosition -> Center -> Center,
+                                ContentPadding   -> False,
+                                FrameMargins     -> { { 0, 0 }, { 2, 0 } },
+                                ImageSize        -> { Automatic, $rowHeight }
+                            ],
+                            Spacer[ 3 ],
+                            Dynamic @ iconData[ "Delimiter", LineColor -> None ]
+                        }
+                    },
+                    ItemSize -> { 0, 0 },
+                    Spacings -> { 0, 0 }
+                ]
+            ],
+            {
+                { { False, False } , { True, False }  , { True, True }    },
+                { LineColor -> None, GrayLevel[ 0.8 ] , GrayLevel[ 0.8 ]  },
+                { LineColor -> None, LineColor -> None, LineColor -> None }
+            }
+        ],
+        Dynamic @ { FEPrivate`SameQ[ row, index ], FrontEnd`CurrentValue[ "MouseOver" ] },
+        BaselinePosition -> Center -> Center,
+        FrameMargins     -> None,
+        ImageSize        -> { Automatic, $rowHeight }
+    ];
+
+deleteButton // endDefinition;
+
+deleteButton0 // beginDefinition;
+
+deleteButton0[ colBin_, row_, tool_Association ] := Button[
     Dynamic @ iconData[ "Bin", colBin ],
     attachOverlay[
         {
@@ -608,9 +730,9 @@ deleteButton[ colBin_, row_, tool_Association ] := Button[
             Row @ { tool[ "Icon" ], Spacer[ 3 ], tool[ "CanonicalName" ] },
             {
                 "Cancel",
-                Hold @ NotebookDelete @ EvaluationCell[ ],
+                Hold[ NotebookDelete @ EvaluationCell[ ] ],
                 Style[ "Delete", Red ],
-                Hold @ NotebookDelete @ EvaluationCell[ ]
+                Hold[ deleteTool @ tool; NotebookDelete @ EvaluationCell[ ] ]
             }
         },
         FrameMargins -> { 13 * { 1, 1 }, 10 * { 1, 1 } },
@@ -623,7 +745,20 @@ deleteButton[ colBin_, row_, tool_Association ] := Button[
     ImageSize        -> { Automatic, $rowHeight }
 ];
 
-deleteButton // endDefinition;
+deleteButton0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*deleteTool*)
+deleteTool // beginDefinition;
+
+deleteTool[ KeyValuePattern @ { "CanonicalName" -> cName_, "ResourceName" -> rName_String } ] := (
+    unsetCV[ $FrontEnd, "ToolSelections"   , cName ];
+    unsetCV[ $FrontEnd, "ToolSelectionType", cName ];
+    ResourceUninstall[ "LLMTool", rName ]
+);
+
+deleteTool // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

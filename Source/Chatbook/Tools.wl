@@ -30,13 +30,14 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"               ];
-Needs[ "Wolfram`Chatbook`Common`"        ];
-Needs[ "Wolfram`Chatbook`Formatting`"    ];
-Needs[ "Wolfram`Chatbook`Serialization`" ];
-Needs[ "Wolfram`Chatbook`Utils`"         ];
-Needs[ "Wolfram`Chatbook`Sandbox`"       ];
-Needs[ "Wolfram`Chatbook`Prompting`"     ];
+Needs[ "Wolfram`Chatbook`"                   ];
+Needs[ "Wolfram`Chatbook`Common`"            ];
+Needs[ "Wolfram`Chatbook`Formatting`"        ];
+Needs[ "Wolfram`Chatbook`Serialization`"     ];
+Needs[ "Wolfram`Chatbook`Utils`"             ];
+Needs[ "Wolfram`Chatbook`Sandbox`"           ];
+Needs[ "Wolfram`Chatbook`Prompting`"         ];
+Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
 
 PacletInstall[ "Wolfram/LLMFunctions" ];
 Needs[ "Wolfram`LLMFunctions`" ];
@@ -50,12 +51,16 @@ System`LLMConfiguration;
     Definitions
     TestWriter
 *)
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Tool Lists*)
+$DefaultTools   := $defaultChatTools;
+$InstalledTools := $installedTools;
+$AvailableTools := Association[ $DefaultTools, $InstalledTools ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Exported Functions for Tool Repository*)
-$DefaultTools := $defaultChatTools;
-
 $ToolFunctions = <|
     "DocumentationLookup"      -> documentationLookup,
     "DocumentationSearcher"    -> documentationSearch,
@@ -109,6 +114,15 @@ $toolNameAliases = <|
     "WebImageSearch"      -> "WebImageSearcher",
     "WebSearch"           -> "WebSearcher"
 |>;
+
+$installedToolExtraKeys = {
+    "Description",
+    "DocumentationLink",
+    "Origin",
+    "ResourceName",
+    "Templated",
+    "Version"
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -215,7 +229,7 @@ selectTools0[ Automatic|Inherited ] := selectTools0 @ $defaultChatTools;
 selectTools0[ None                ] := $selectedTools = <| |>;
 selectTools0[ name_String         ] /; KeyExistsQ[ $toolBox, name ] := $selectedTools[ name ] = $toolBox[ name ];
 selectTools0[ name_String         ] /; KeyExistsQ[ $toolNameAliases, name ] := selectTools0 @ $toolNameAliases @ name;
-selectTools0[ name_String         ] := selectTools0[ name, Lookup[ $defaultChatTools, name ] ];
+selectTools0[ name_String         ] := selectTools0[ name, Lookup[ $AvailableTools, name ] ];
 selectTools0[ tools_List          ] := selectTools0 /@ tools;
 selectTools0[ tools_Association   ] := KeyValueMap[ selectTools0, tools ];
 
@@ -283,7 +297,10 @@ getToolNames[ tools_List, personaTools_List ] := Union[ getToolNames @ tools, ge
 getToolNames[ tools_List ] := DeleteDuplicates @ Flatten[ getCachedToolName /@ tools ];
 
 (* Default tools *)
-getToolNames[ Automatic|Inherited ] := Keys @ $defaultChatTools;
+getToolNames[ Automatic|Inherited ] := Keys @ $DefaultTools;
+
+(* All tools *)
+getToolNames[ All ] := Keys @ $AvailableTools;
 
 (* No tools *)
 getToolNames[ None ] := { };
@@ -314,7 +331,6 @@ getCachedToolName[ name_String ] :=
             KeyExistsQ[ $toolBox         , canonical ], canonical,
             KeyExistsQ[ $toolNameAliases , canonical ], getCachedToolName @ $toolNameAliases @ canonical,
             KeyExistsQ[ $defaultChatTools, canonical ], getCachedToolName @ $defaultChatTools @ canonical,
-            (* TODO: check for installed tools *)
             True                                      , name
         ]
     ];
@@ -334,7 +350,7 @@ getToolSelections // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getToolSelectionTypes*)
 getToolSelectionTypes // beginDefinition;
-getToolSelectionTypes[ as_Association ] := getToolSelectionTypes[ as, Lookup[ as, "ToolSelectionTypes", <| |> ] ];
+getToolSelectionTypes[ as_Association ] := getToolSelectionTypes[ as, Lookup[ as, "ToolSelectionType", <| |> ] ];
 getToolSelectionTypes[ as_, selections_Association ] := selections;
 getToolSelectionTypes[ as_, Except[ _Association ] ] := <| |>;
 getToolSelectionTypes // endDefinition;
@@ -488,6 +504,24 @@ $defaultChatTools := If[ TrueQ @ $CloudEvaluation,
                      ];
 
 $defaultChatTools0 = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Installed Tools*)
+$installedTools := Association @ Cases[
+    GetInstalledResourceData[ "LLMTool" ],
+    as: KeyValuePattern[ "Tool" -> tool_ ] :> (toolName @ tool -> addExtraToolData[ tool, as ])
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*addExtraToolData*)
+addExtraToolData // beginDefinition;
+
+addExtraToolData[ tool: HoldPattern @ LLMTool[ as_Association, a___ ], extra_Association ] :=
+    With[ { new = Join[ KeyTake[ extra, $installedToolExtraKeys ], as ] }, LLMTool[ new, a ] ];
+
+addExtraToolData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
