@@ -18,19 +18,22 @@ $ContextAliases[ "pi`" ] = "Wolfram`Chatbook`PersonaInstaller`Private`";
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
-$channelPermissions = "Public";
-$keepChannelOpen    = True;
-$debug              = False;
-$installableTypes   = { "Prompt", "LLMTool" };
-$resourceContexts   = { "PromptRepository`", "LLMToolRepository`" };
+$channelPermissions     = "Public";
+$keepChannelOpen        = True;
+$debug                  = False;
+$installableTypes       = { "Prompt", "LLMTool" };
+$resourceContexts       = { "PromptRepository`", "LLMToolRepository`" };
+$installedResourceCache = <| |>;
 
 $unsavedResourceProperties = {
     "AuthorNotes",
     "DefinitionNotebook",
     "Documentation",
     "ExampleNotebook",
+    "HeroImage",
     "Notes",
     "SampleChat",
+    "ToolTemplate",
     "Usage"
 };
 
@@ -96,6 +99,8 @@ resourceInstall[ rtype: $$installableType, info_? AssociationQ ] := Enclose[
                 Dividers  -> Center
             ]
         ];
+
+        KeyDropFrom[ $installedResourceCache, rtype ];
 
         installed
     ],
@@ -203,7 +208,7 @@ resourceInstalledContent[ "LLMTool", info_Association ] := Enclose[
         defaultTool = ConfirmMatch[ resource[ "LLMTool" ], _LLMTool, "LLMTool" ];
         template    = ConfirmMatch[ resource[ "ToolTemplate" ], _TemplateObject, "TemplateObject" ];
 
-        If[ FreeQ[ template, _TemplateSlot|_TemplateExpression ],
+        If[ FreeQ[ template, _TemplateSlot|_TemplateExpression, { 2, Infinity } ],
             <| "Tool" -> defaultTool, "Template" -> None    , "Templated" -> False |>,
             <| "Tool" -> defaultTool, "Template" -> template, "Templated" -> True  |>
         ]
@@ -281,21 +286,8 @@ dependentResourceSymbolQ[ ___ ] := False;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*GetInstalledResources*)
-GetInstalledResources // ClearAll;
-
-GetInstalledResources[ ] := catchMine @ GetInstalledResources @ All;
-GetInstalledResources[ All ] := catchMine @ AssociationMap[ getInstalledResources, $installableTypes ];
-GetInstalledResources[ rtype: $$installableType ] := catchMine @ getInstalledResources @ rtype;
-GetInstalledResources[ rtype_ ] := catchMine @ throwFailure[ "NotInstallableResourceType", rtype ];
-
-GetInstalledResources[ a___ ] :=
-    catchMine @ throwFailure[ "InvalidArguments", GetInstalledResources, HoldForm @ GetInstalledResources @ a ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*getInstalledResources*)
 getInstalledResources // beginDefinition;
-getInstalledResources[ rtype_ ] := getResourceFile /@ FileNames[ "*.mx", resourceTypeDirectory @ rtype ];
+getInstalledResources[ rtype_String ] := getResourceFile /@ FileNames[ "*.mx", resourceTypeDirectory @ rtype ];
 getInstalledResources // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -309,11 +301,25 @@ getResourceFile // endDefinition;
 (* ::Section::Closed:: *)
 (*GetInstalledResourceData*)
 GetInstalledResourceData // ClearAll;
+GetInstalledResourceData // Options = { "RegenerateCache" -> False };
 
-GetInstalledResourceData[ ] := catchMine @ GetInstalledResourceData @ All;
-GetInstalledResourceData[ All ] := catchMine @ AssociationMap[ getInstalledResourceData, $installableTypes ];
-GetInstalledResourceData[ rtype: $$installableType ] := catchMine @ getInstalledResourceData @ rtype;
-GetInstalledResourceData[ rtype_ ] := catchMine @ throwFailure[ "NotInstallableResourceType", rtype ];
+GetInstalledResourceData[ opts: OptionsPattern[ ] ] :=
+    catchMine @ GetInstalledResourceData[ All, opts ];
+
+GetInstalledResourceData[ All, opts: OptionsPattern[ ] ] :=
+    catchMine[
+        If[ TrueQ @ OptionValue[ "RegenerateCache" ], $installedResourceCache = <| |> ];
+        AssociationMap[ getInstalledResourceData, $installableTypes ]
+    ];
+
+GetInstalledResourceData[ rtype: $$installableType, opts: OptionsPattern[ ] ] :=
+    catchMine[
+        If[ TrueQ @ OptionValue[ "RegenerateCache" ], KeyDropFrom[ $installedResourceCache, rtype ] ];
+        getInstalledResourceData @ rtype
+    ];
+
+GetInstalledResourceData[ rtype_, opts: OptionsPattern[ ] ] :=
+    catchMine @ throwFailure[ "NotInstallableResourceType", rtype ];
 
 GetInstalledResourceData[ a___ ] :=
     catchMine @ throwFailure[ "InvalidArguments", GetInstalledResourceData, HoldForm @ GetInstalledResourceData @ a ];
@@ -323,12 +329,17 @@ GetInstalledResourceData[ a___ ] :=
 (*getInstalledResourceData*)
 getInstalledResourceData // beginDefinition;
 
+getInstalledResourceData[ rtype_ ] :=
+    With[ { cached = $installedResourceCache[ rtype ] },
+        cached /; ! MissingQ @ cached
+    ];
+
 getInstalledResourceData[ rtype: $$installableType ] := Enclose[
     Module[ { data },
-        data = ConfirmMatch[ GetInstalledResources @ rtype, { ___Association }, "GetInstalledResources" ];
+        data = ConfirmMatch[ getInstalledResources @ rtype, { ___Association }, "GetInstalledResources" ];
         Block[ { TemplateObject, CloudObject },
             SetAttributes[ TemplateObject, HoldAllComplete ];
-            KeySort @ Association @ Cases[
+            $installedResourceCache[ rtype ] = KeySort @ Association @ Cases[
                 data,
                 KeyValuePattern @ {
                     "Name"                -> name_String,
