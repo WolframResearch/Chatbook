@@ -4,9 +4,11 @@
 BeginPackage[ "Wolfram`Chatbook`ResourceInstaller`" ];
 
 `$ResourceInstallationDirectory;
-`GetInstalledResources;
 `GetInstalledResourceData;
 `ResourceInstall;
+`ResourceUninstall;
+
+`$installedResourceTrigger;
 
 Begin[ "`Private`" ];
 
@@ -18,12 +20,13 @@ $ContextAliases[ "pi`" ] = "Wolfram`Chatbook`PersonaInstaller`Private`";
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
-$channelPermissions     = "Public";
-$keepChannelOpen        = True;
-$debug                  = False;
-$installableTypes       = { "Prompt", "LLMTool" };
-$resourceContexts       = { "PromptRepository`", "LLMToolRepository`" };
-$installedResourceCache = <| |>;
+$channelPermissions       = "Public";
+$keepChannelOpen          = True;
+$debug                    = False;
+$installableTypes         = { "Prompt", "LLMTool" };
+$resourceContexts         = { "PromptRepository`", "LLMToolRepository`" };
+$installedResourceCache   = <| |>;
+$installedResourceTrigger = 0;
 
 $unsavedResourceProperties = {
     "AuthorNotes",
@@ -32,9 +35,21 @@ $unsavedResourceProperties = {
     "ExampleNotebook",
     "HeroImage",
     "Notes",
+    "PageHeaderClickToCopy",
+    "PromptConfiguration",
     "SampleChat",
     "ToolTemplate",
     "Usage"
+};
+
+$minimalResourceProperties = {
+    "Description",
+    "DocumentationLink",
+    "LatestUpdate",
+    "ReleaseDate",
+    "RepositoryLocation",
+    "UUID",
+    "Version"
 };
 
 $ResourceInstallationDirectory := GeneralUtilities`EnsureDirectory @ {
@@ -47,6 +62,47 @@ $ResourceInstallationDirectory := GeneralUtilities`EnsureDirectory @ {
 (*Argument Patterns*)
 $$installableType = Alternatives @@ $installableTypes;
 $$resourceContext = Alternatives @@ $resourceContexts;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ResourceUninstall*)
+ResourceUninstall // ClearAll;
+
+ResourceUninstall[ rtype: $$installableType, name_String ] :=
+    catchMine @ resourceUninstall[ rtype, name ];
+
+ResourceUninstall[ ro_ResourceObject ] :=
+    catchMine @ ResourceUninstall[ ro[ "ResourceType" ], ro[ "Name" ] ];
+
+ResourceUninstall[ id_, opts: OptionsPattern[ ] ] :=
+    catchMine @ With[ { ro = resourceObject[ id, opts ] },
+        If[ MatchQ[ ro, _ResourceObject ],
+            ResourceUninstall @ ro,
+            throwFailure[ "InvalidResourceSpecification", id ]
+        ]
+    ];
+
+ResourceUninstall[ args___ ] :=
+    catchMine @ throwFailure[ "InvalidArguments", ResourceUninstall, HoldForm @ ResourceUninstall @ args ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*resourceUninstall*)
+resourceUninstall // beginDefinition;
+
+resourceUninstall[ rtype: $$installableType, name_String ] := Enclose[
+    Module[ { target },
+        target = ConfirmBy[ resourceInstallLocation[ rtype, name ], StringQ, "InstallLocation" ];
+        If[ ! FileExistsQ @ target, throwFailure[ "ResourceNotInstalled", rtype, name ] ];
+        ConfirmMatch[ DeleteFile @ target, Null, "DeleteFile" ];
+        ConfirmAssert[ ! FileExistsQ @ target, "FileExists" ];
+        invalidateCache[ rtype ];
+        Null
+    ],
+    throwInternalFailure[ resourceUninstall[ rtype, name ], ## ] &
+];
+
+resourceUninstall // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -78,7 +134,9 @@ resourceObject[ args___ ] := Quiet[ ResourceObject @ args, ResourceObject::updav
 (*resourceInstall*)
 resourceInstall // beginDefinition;
 
-resourceInstall[ resource_ResourceObject ] := resourceInstall @ resource[ All ];
+resourceInstall[ resource: HoldPattern @ ResourceObject[ info_Association, ___ ] ] :=
+    resourceInstall @ Association[ info, resource @ All ];
+
 resourceInstall[ info_? AssociationQ ] := resourceInstall[ info[ "ResourceType" ], info ];
 
 resourceInstall[ rtype: $$installableType, info_? AssociationQ ] := Enclose[
@@ -100,7 +158,7 @@ resourceInstall[ rtype: $$installableType, info_? AssociationQ ] := Enclose[
             ]
         ];
 
-        KeyDropFrom[ $installedResourceCache, rtype ];
+        invalidateCache[ rtype ];
 
         installed
     ],
@@ -285,20 +343,6 @@ dependentResourceSymbolQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*GetInstalledResources*)
-getInstalledResources // beginDefinition;
-getInstalledResources[ rtype_String ] := getResourceFile /@ FileNames[ "*.mx", resourceTypeDirectory @ rtype ];
-getInstalledResources // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getResourceFile*)
-getResourceFile // beginDefinition;
-getResourceFile[ file_ ] := Block[ { pi`$PersonaConfig = $Failed }, Get @ file; pi`$PersonaConfig ];
-getResourceFile // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
 (*GetInstalledResourceData*)
 GetInstalledResourceData // ClearAll;
 GetInstalledResourceData // Options = { "RegenerateCache" -> False };
@@ -349,11 +393,12 @@ getInstalledResourceData[ rtype: $$installableType ] := Enclose[
                     name -> Merge[
                         {
                             config,
-                            KeyTake[
-                                resourceAssoc,
-                                { "Description", "UUID", "Version", "LatestUpdate", "ReleaseDate", "DocumentationLink" }
-                            ],
-                            <| "Origin" -> rtype<>"Repository" |> (* FIXME: these aren't always from the repository *)
+                            resourceAssoc,
+                            <|
+                                "ResourceType" -> rtype,
+                                "ResourceName" -> name,
+                                "Origin"       -> determineOrigin[ rtype, resourceAssoc ]
+                            |>
                         },
                         First
                     ]
@@ -364,6 +409,56 @@ getInstalledResourceData[ rtype: $$installableType ] := Enclose[
 ];
 
 getInstalledResourceData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getInstalledResources*)
+getInstalledResources // beginDefinition;
+getInstalledResources[ rtype_String ] := getResourceFile /@ FileNames[ "*.mx", resourceTypeDirectory @ rtype ];
+getInstalledResources // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getResourceFile*)
+getResourceFile // beginDefinition;
+getResourceFile[ file_ ] := Block[ { pi`$PersonaConfig = $Failed }, Get @ file; pi`$PersonaConfig ];
+getResourceFile // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*determineOrigin*)
+determineOrigin // beginDefinition;
+determineOrigin[ rtype: $$installableType, KeyValuePattern[ "RepositoryLocation" -> _URL ] ] := rtype<>"Repository";
+determineOrigin[ rtype_, KeyValuePattern[ "RepositoryLocation" -> _LocalObject ] ] := "Local";
+determineOrigin[ rtype_, KeyValuePattern[ "ResourceLocations" -> { _LocalObject } ] ] := "Local";
+determineOrigin[ rtype_, KeyValuePattern[ "ResourceLocations" -> { _CloudObject } ] ] := "Cloud";
+determineOrigin[ rtype_, KeyValuePattern[ "DocumentationLink" -> _URL ] ] := "Cloud";
+determineOrigin[ rtype: $$installableType, _Association ] := "Unknown";
+determineOrigin // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Cache*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*invalidateCache*)
+invalidateCache // beginDefinition;
+
+invalidateCache[ ] :=
+    invalidateCache[ All ];
+
+invalidateCache[ All ] := (
+    $installedResourceCache = <| |>;
+    $installedResourceTrigger++
+);
+
+invalidateCache[ rtype: $$installableType ] := (
+    KeyDropFrom[ $installedResourceCache, rtype ];
+    $installedResourceTrigger++
+);
+
+invalidateCache // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
