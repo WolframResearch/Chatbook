@@ -1,6 +1,6 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
-BeginPackage[ "Wolfram`Chatbook`ToolSelectorUI`" ];
+BeginPackage[ "Wolfram`Chatbook`ToolManager`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
@@ -1343,7 +1343,7 @@ linkedPane // endDefinition;
 (* ::Section::Closed:: *)
 (*Icons*)
 iconData // beginDefinition;
-iconData[ name_String, color_ ] := Insert[ chatbookIcon[ "ToolSelectorUI"<>name, False ], color, { 1, 1, 1 } ];
+iconData[ name_String, color_ ] := Insert[ chatbookIcon[ "ToolManager"<>name, False ], color, { 1, 1, 1 } ];
 iconData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
