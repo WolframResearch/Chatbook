@@ -65,7 +65,7 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                 Association @ Cases[
                     personas,
                     KeyValuePattern @ { "Name" -> name_, "Tools" -> t_ } :>
-                        name -> Complement[ Flatten @ List @ t, globalTools ]
+                        name -> addPersonaSource[ Complement[ Flatten @ List @ t, globalTools ], name ]
                 ],
                 Except[ _LLMTool ],
                 { 2 }
@@ -446,6 +446,22 @@ CreateLLMToolManagerPanel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*addPersonaSource*)
+addPersonaSource // beginDefinition;
+
+addPersonaSource[ tools_List, name_String ] :=
+    addPersonaSource[ #, name ] & /@ tools;
+
+addPersonaSource[ HoldPattern @ LLMTool[ as_Association, a___ ], name_String ] :=
+    LLMTool[ Association[ "Source" -> "Persona", "PersonaName" -> name, as ], a ];
+
+addPersonaSource[ tool_, _ ] :=
+    tool;
+
+addPersonaSource // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*grayDialogButtonLabel*)
 grayDialogButtonLabel // beginDefinition;
 
@@ -732,6 +748,7 @@ configurableToolQ // endDefinition;
 (*deletableToolQ*)
 deletableToolQ // beginDefinition;
 deletableToolQ[ KeyValuePattern[ "Source" -> "BuiltIn" ] ] := False;
+deletableToolQ[ KeyValuePattern[ "Source" -> "Persona" ] ] := False;
 deletableToolQ[ tool_ ] := True;
 deletableToolQ // endDefinition;
 
@@ -794,7 +811,7 @@ configureButton[ tool_Association, index_Integer, Dynamic[ { row_, column_ } ] ]
                             ],
                             Spacer[ 5 ],
                             tool[ "CanonicalName" ],
-                            Dynamic @ iconData[ "Cog", colCog ],
+                            Tooltip[ Dynamic @ iconData[ "Cog", colCog ], nonConfigurableTooltip @ tool ],
                             Spacer[ 5 ],
                             Dynamic @ iconData[ "Delimiter", colDelimiter ]
                         }
@@ -805,7 +822,7 @@ configureButton[ tool_Association, index_Integer, Dynamic[ { row_, column_ } ] ]
                 ]
             ],
             {
-                { { False, False } , { True, False }  , { True, True }  },
+                { { False, False } , { True, False } , { True, True }   },
                 { LineColor -> None, GrayLevel[ 0.8 ], GrayLevel[ 0.8 ] },
                 { LineColor -> None, GrayLevel[ 0.8 ], GrayLevel[ 0.8 ] }
             }
@@ -863,7 +880,7 @@ deleteButton[ tool_Association, index_Integer, Dynamic[ { row_, column_ } ] ] :=
                         {
                             Spacer[ 5 ],
                             Button[
-                                Dynamic @ iconData[ "Bin", colBin ],
+                                Tooltip[ Dynamic @ iconData[ "Bin", colBin ], nonDeletableTooltip @ tool ],
                                 Null,
                                 Appearance       -> "Suppressed",
                                 BaselinePosition -> Center -> Center,
@@ -919,6 +936,32 @@ deleteButton0[ colBin_, row_, tool_Association ] := Button[
 ];
 
 deleteButton0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*nonDeletableTooltip*)
+nonDeletableTooltip // beginDefinition;
+
+nonDeletableTooltip[ KeyValuePattern @ { "CanonicalName" -> name_String, "Source" -> "BuiltIn" } ] :=
+    name<>" is a built-in tool and cannot be deleted.";
+
+nonDeletableTooltip[ KeyValuePattern @ {
+    "CanonicalName" -> name_String,
+    "Source"        -> "Persona",
+    "PersonaName"   -> persona_String
+} ] := name<>" is provided by the persona "<>persona<>" and cannot be deleted separately.";
+
+nonDeletableTooltip // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*nonConfigurableTooltip*)
+nonConfigurableTooltip // beginDefinition;
+
+nonConfigurableTooltip[ KeyValuePattern[ "CanonicalName" -> name_String ] ] :=
+    name<>" does not have any configurable parameters.";
+
+nonConfigurableTooltip // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
