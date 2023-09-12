@@ -6,8 +6,8 @@ BeginPackage[ "Wolfram`Chatbook`ResourceInstaller`" ];
 `$ResourceInstallationDirectory;
 `GetInstalledResourceData;
 `ResourceInstall;
-`ResourceInstallFromRepository; (* TODO *)
-`ResourceInstallFromURL;        (* TODO *)
+`ResourceInstallFromRepository;
+`ResourceInstallFromURL;
 `ResourceUninstall;
 
 `$installedResourceTrigger;
@@ -22,13 +22,14 @@ $ContextAliases[ "pi`" ] = "Wolfram`Chatbook`PersonaInstaller`Private`";
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
+$channelData              = None;
 $channelPermissions       = "Public";
-$keepChannelOpen          = True;
 $debug                    = False;
 $installableTypes         = { "Prompt", "LLMTool" };
-$resourceContexts         = { "PromptRepository`", "LLMToolRepository`" };
 $installedResourceCache   = <| |>;
 $installedResourceTrigger = 0;
+$keepChannelOpen          = True;
+$resourceContexts         = { "PromptRepository`", "LLMToolRepository`" };
 
 $unsavedResourceProperties = {
     "AuthorNotes",
@@ -53,6 +54,11 @@ $minimalResourceProperties = {
     "UUID",
     "Version"
 };
+
+$resourceBrowseURLs = <|
+    "Prompt"  -> "https://resources.wolframcloud.com/PromptRepository/category/personas",
+    "LLMTool" -> "https://resources.wolframcloud.com/LLMToolRepository"
+|>;
 
 $ResourceInstallationDirectory := GeneralUtilities`EnsureDirectory @ {
     ExpandFileName @ LocalObject @ $LocalBase,
@@ -110,15 +116,257 @@ resourceUninstall // endDefinition;
 (* ::Section::Closed:: *)
 (*ResourceInstallFromRepository*)
 ResourceInstallFromRepository // beginDefinition;
-ResourceInstallFromRepository[ rtype: $$installableType ] := MessageDialog[ "Not implemented" ];
+
+ResourceInstallFromRepository[ rtype: $$installableType ] := catchMine @ Enclose[
+    Module[ { data },
+        $channelData = None;
+
+        data = ConfirmMatch[
+            withExternalChannelFunctions @ browseWithChannelCallback @ rtype,
+            KeyValuePattern @ { "Listener" -> _ChannelListener, "Channel" -> _ChannelObject },
+            "BrowseWithCallback"
+        ];
+
+        $channelData = Append[ data, "Dialog" -> EvaluationNotebook[ ] ]
+    ],
+    throwInternalFailure[ ResourceInstallFromRepository @ rtype, ##1 ] &
+];
+
 ResourceInstallFromRepository // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*withExternalChannelFunctions*)
+withExternalChannelFunctions // beginDefinition;
+withExternalChannelFunctions // Attributes = { HoldFirst };
+withExternalChannelFunctions[ eval_ ] := Block[ { $AllowExternalChannelFunctions = True }, eval ];
+withExternalChannelFunctions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*browseWithChannelCallback*)
+browseWithChannelCallback // beginDefinition;
+
+browseWithChannelCallback[ rtype: $$installableType ] := Enclose[
+    Module[ { perms, channel, data, handler, listener, url, shortURL, parsed, id, browseURL },
+
+        perms = ConfirmMatch[ $channelPermissions, "Public"|"Private", "ChannelPermissions" ];
+
+        channel = ConfirmMatch[
+            CreateChannel[ Permissions -> perms ],
+            _ChannelObject,
+            SystemOpen @ resourceBrowseURL @ rtype;
+            throwMessageDialog[ "ChannelFrameworkError" ]
+        ];
+
+        data    = <| "ResourceType" -> rtype, "Listener" :> listener, "Channel" -> channel |>;
+        handler = ConfirmMatch[ resourceInstallHandler @ data, _Function, "Handler" ];
+
+        listener = ConfirmMatch[
+            ChannelListen[ channel, handler ],
+            _ChannelListener,
+            SystemOpen @ resourceBrowseURL @ rtype;
+            throwMessageDialog[ "ChannelFrameworkError" ]
+        ];
+
+        url       = ConfirmMatch[ listener[ "URL" ], _String | _URL, "ChannelListenerURL" ];
+        shortURL  = ConfirmBy[ makeShortListenerURL[ channel, url ], StringQ, "URLShorten" ];
+        parsed    = ConfirmMatch[ DeleteCases[ URLParse[ shortURL, "Path" ], "" ], { __String? StringQ }, "URLParse" ];
+        id        = ConfirmBy[ Last @ URLParse[ shortURL, "Path" ], StringQ, "ChannelID" ];
+        browseURL = ConfirmBy[ resourceBrowseURL[ rtype, id ], StringQ, "BrowseURL" ];
+
+        ConfirmMatch[ SystemOpen @ browseURL, Null, "SystemOpen" ];
+        AssociationMap[ Apply @ Rule, Append[ data, "BrowseURL" -> browseURL ] ]
+    ],
+    throwInternalFailure[ browseWithChannelCallback @ rtype, ## ] &
+];
+
+browseWithChannelCallback // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*resourceInstallHandler*)
+resourceInstallHandler // beginDefinition;
+
+resourceInstallHandler[ metadata_Association ] := Function @ catchTop[
+    Block[ { PrintTemporary }, resourceInstallHandler0[ metadata, ## ] ],
+    ResourceInstallFromRepository
+];
+
+resourceInstallHandler // endDefinition;
+
+
+resourceInstallHandler0 // beginDefinition;
+
+resourceInstallHandler0[ channelData: KeyValuePattern[ "Listener" :> listener0_Symbol ], messageData_ ] := Enclose[
+    Module[ { data, listener, channel, message, resource, expected, actual },
+        data = AssociationMap[ Apply @ Rule, channelData ];
+
+        If[ ! TrueQ @ $keepChannelOpen,
+            listener = ConfirmMatch[ listener0, _ChannelListener, "ChannelListener" ];
+            Confirm[ RemoveChannelListener @ listener, "RemoveChannelListener" ];
+            channel = ConfirmMatch[ data[ "Channel" ], _ChannelObject, "ChannelObject" ];
+            Confirm[ DeleteChannel @ channel, "DeleteChannel" ];
+            Remove @ listener0;
+        ];
+
+        message   = ConfirmBy[ messageData[ "Message" ], AssociationQ, "Message" ];
+        resource  = ConfirmMatch[ acquireResource @ message, _ResourceObject, "ResourceObject" ];
+        expected  = ConfirmMatch[ channelData[ "ResourceType" ], $$installableType, "ResourceTypeExpected" ];
+        actual    = ConfirmMatch[ resource[ "ResourceType" ], StringQ, "ResourceTypeActual" ];
+
+        If[ actual =!= expected, throwMessageDialog[ "ExpectedInstallableResourceType", expected, actual ] ];
+
+        ResourceInstall @ resource
+    ],
+    throwInternalFailure[ resourceInstallHandler0[ channelData, messageData ], ## ] &
+];
+
+resourceInstallHandler0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*acquireResource*)
+acquireResource // beginDefinition;
+acquireResource[ KeyValuePattern[ "UUID" -> uuid_ ] ] := resourceObject[ uuid, ResourceVersion -> "Latest" ];
+acquireResource // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeShortListenerURL*)
+makeShortListenerURL // beginDefinition;
+makeShortListenerURL[ channel_, url_ ] := url;
+makeShortListenerURL // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*resourceBrowseURL*)
+resourceBrowseURL // beginDefinition;
+resourceBrowseURL[ rtype_String, id_String ] := URLBuild[ resourceBrowseURL @ rtype, { "ChannelID" -> id } ];
+resourceBrowseURL[ rtype: $$installableType ] := Lookup[ $resourceBrowseURLs, rtype, $Failed ];
+resourceBrowseURL // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*ResourceInstallFromURL*)
 ResourceInstallFromURL // beginDefinition;
-ResourceInstallFromURL[ ] := MessageDialog[ "Not implemented" ];
+
+ResourceInstallFromURL[ ] :=
+    catchMine @ ResourceInstallFromURL @ Automatic;
+
+ResourceInstallFromURL[ rtype: $$installableType|Automatic ] := catchMine @ Enclose[
+    Module[ { url },
+
+        url = ConfirmMatch[
+            DefinitionNotebookClient`FancyInputString[ "Prompt", "Enter a URL" ], (* FIXME: needs custom dialog *)
+            _String|$Canceled,
+            "InputString"
+        ];
+
+        If[ url === $Canceled,
+            $Canceled,
+            ConfirmBy[ ResourceInstallFromURL[ rtype, url ], AssociationQ, "Install" ]
+        ]
+    ],
+    throwInternalFailure[ ResourceInstallFromURL @ rtype, ## ] &
+];
+
+ResourceInstallFromURL[ rtype: $$installableType|Automatic, url_String ] := Enclose[
+    Module[ { ro, expected, actual, file },
+
+        ro       = ConfirmMatch[ resourceFromURL @ url, _ResourceObject, "ResourceObject" ];
+        expected = Replace[ rtype, Automatic -> $$installableType ];
+        actual   = ConfirmBy[ ro[ "ResourceType" ], StringQ, "ResourceType" ];
+
+        If[ ! MatchQ[ actual, expected ],
+            If[ StringQ @ expected,
+                throwMessageDialog[ "ExpectedInstallableResourceType", expected, actual ],
+                throwMessageDialog[ "NotInstallableResourceType", actual, $installableTypes ]
+            ]
+        ];
+
+        file = ConfirmBy[ ResourceInstall @ ro, FileExistsQ, "ResourceInstall" ];
+        ConfirmBy[ getResourceFile @ file, AssociationQ, "GetResourceFile" ]
+    ],
+    throwInternalFailure[ ResourceInstallFromURL[ rtype, url ], ## ] &
+];
+
 ResourceInstallFromURL // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*resourceFromURL*)
+resourceFromURL // beginDefinition;
+
+resourceFromURL[ url_String ] := Block[ { PrintTemporary },
+    Quiet[ resourceFromURL0 @ url, { CloudObject::cloudnf, Lookup::invrl, ResourceObject::notfname } ]
+];
+
+resourceFromURL // endDefinition;
+
+resourceFromURL0 // beginDefinition;
+resourceFromURL0[ url_String ] := With[ { ro = resourceObject @ url }, ro /; installableResourceQ @ ro ];
+resourceFromURL0[ url_String ] := scrapeResourceFromShingle @ url;
+resourceFromURL0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*installableResourceQ*)
+installableResourceQ[ ro_ResourceObject ] := MatchQ[ ro[ "ResourceType" ], $$installableType ];
+installableResourceQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*scrapeResourceFromShingle*)
+scrapeResourceFromShingle // beginDefinition;
+
+scrapeResourceFromShingle[ url_String ] /; StringMatchQ[ url, WhitespaceCharacter... ] :=
+    throwTop @ Null;
+
+scrapeResourceFromShingle[ url_String ] := Enclose[
+    Module[ { returnInvalid, resp, bytes, xml },
+
+        returnInvalid = throwMessageDialog[ "InvalidResourceURL" ] &;
+
+        resp = ConfirmMatch[ URLRead @ url, _HTTPResponse, "URLRead" ];
+
+        If[ resp[ "StatusCode" ] =!= 200, returnInvalid[ ] ];
+
+        bytes = ConfirmBy[ resp[ "BodyByteArray" ], ByteArrayQ, "BodyByteArray" ];
+
+        xml = ConfirmMatch[
+            Quiet @ ImportByteArray[ bytes, { "HTML", "XMLObject" } ],
+            XMLObject[ ___ ][ ___ ],
+            "XML"
+        ];
+
+        ConfirmBy[
+            FirstCase[
+                xml
+                ,
+                XMLElement[ "div", { ___, "data-resource-uuid" -> uuid_String, ___ }, _ ] :>
+                    With[ { ro = Quiet @ resourceObject @ uuid }, ro /; installableResourceQ @ ro ]
+                ,
+                FirstCase[
+                    xml
+                    ,
+                    XMLElement[ "div", { ___, "data-clipboard-text" -> c2c_String, ___ }, _ ] :>
+                        With[ { ro = Quiet @ ToExpression[ c2c, InputForm ] }, ro /; installableResourceQ @ ro ]
+                    ,
+                    returnInvalid[ ]
+                    ,
+                    Infinity
+                ],
+                Infinity
+            ],
+            installableResourceQ,
+            "ResourceObject"
+        ]
+    ],
+    throwInternalFailure[ scrapeResourceFromShingle @ url, ## ] &
+];
+
+scrapeResourceFromShingle // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -182,7 +430,7 @@ resourceInstall[ rtype: $$installableType, info_? AssociationQ ] := Enclose[
 ];
 
 resourceInstall[ rtype: Except[ $$installableType ], _ ] :=
-    throwFailure[ "NotInstallableResourceType", rtype ];
+    throwFailure[ "NotInstallableResourceType", rtype, $installableTypes ];
 
 resourceInstall // endDefinition;
 
@@ -379,7 +627,7 @@ GetInstalledResourceData[ rtype: $$installableType, opts: OptionsPattern[ ] ] :=
     ];
 
 GetInstalledResourceData[ rtype_, opts: OptionsPattern[ ] ] :=
-    catchMine @ throwFailure[ "NotInstallableResourceType", rtype ];
+    catchMine @ throwFailure[ "NotInstallableResourceType", rtype, $installableTypes ];
 
 GetInstalledResourceData[ a___ ] :=
     catchMine @ throwFailure[ "InvalidArguments", GetInstalledResourceData, HoldForm @ GetInstalledResourceData @ a ];

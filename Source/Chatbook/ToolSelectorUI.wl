@@ -154,7 +154,7 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                                     ],
                                     Button[
                                         grayDialogButtonLabel[ "URL" ],
-                                        Block[ { PrintTemporary }, ResourceInstallFromURL[ ] ],
+                                        Block[ { PrintTemporary }, ResourceInstallFromURL[ "LLMTool" ] ],
                                         Appearance       -> "Suppressed",
                                         BaselinePosition -> Baseline,
                                         Method           -> "Queued"
