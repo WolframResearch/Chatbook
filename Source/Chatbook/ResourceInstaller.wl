@@ -6,6 +6,8 @@ BeginPackage[ "Wolfram`Chatbook`ResourceInstaller`" ];
 `$ResourceInstallationDirectory;
 `GetInstalledResourceData;
 `ResourceInstall;
+`ResourceInstallFromRepository; (* TODO *)
+`ResourceInstallFromURL;        (* TODO *)
 `ResourceUninstall;
 
 `$installedResourceTrigger;
@@ -103,6 +105,20 @@ resourceUninstall[ rtype: $$installableType, name_String ] := Enclose[
 ];
 
 resourceUninstall // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ResourceInstallFromRepository*)
+ResourceInstallFromRepository // beginDefinition;
+ResourceInstallFromRepository[ rtype: $$installableType ] := MessageDialog[ "Not implemented" ];
+ResourceInstallFromRepository // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ResourceInstallFromURL*)
+ResourceInstallFromURL // beginDefinition;
+ResourceInstallFromURL[ ] := MessageDialog[ "Not implemented" ];
+ResourceInstallFromURL // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

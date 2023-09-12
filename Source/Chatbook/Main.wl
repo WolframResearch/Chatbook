@@ -122,6 +122,9 @@ $ChatContextCellStyles = <| |>;
 
 Protect @ { $DefaultChatSystemPre, $DefaultChatInputPost };
 
+(* Redraw any dynamic dialogs that might still be open *)
+Wolfram`Chatbook`ResourceInstaller`$installedResourceTrigger = 1;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
