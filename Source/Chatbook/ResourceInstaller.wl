@@ -11,11 +11,13 @@ BeginPackage[ "Wolfram`Chatbook`ResourceInstaller`" ];
 `ResourceUninstall;
 
 `$installedResourceTrigger;
+`channelCleanup;
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"        ];
-Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`"          ];
+Needs[ "Wolfram`Chatbook`Common`"   ];
+Needs[ "Wolfram`Chatbook`Personas`" ];
 
 $ContextAliases[ "pi`" ] = "Wolfram`Chatbook`PersonaInstaller`Private`";
 
@@ -188,9 +190,13 @@ browseWithChannelCallback // endDefinition;
 (*resourceInstallHandler*)
 resourceInstallHandler // beginDefinition;
 
-resourceInstallHandler[ metadata_Association ] := Function @ catchTop[
-    Block[ { PrintTemporary }, resourceInstallHandler0[ metadata, ## ] ],
-    ResourceInstallFromRepository
+resourceInstallHandler[ metadata_Association ] := Function[
+    Null,
+    Replace[
+        catchAlways @ Block[ { PrintTemporary }, resourceInstallHandler0[ metadata, ##1 ] ],
+        failed_Failure :> MessageDialog @ failed
+    ],
+    { HoldAllComplete }
 ];
 
 resourceInstallHandler // endDefinition;
@@ -200,6 +206,7 @@ resourceInstallHandler0 // beginDefinition;
 
 resourceInstallHandler0[ channelData: KeyValuePattern[ "Listener" :> listener0_Symbol ], messageData_ ] := Enclose[
     Module[ { data, listener, channel, message, resource, expected, actual },
+
         data = AssociationMap[ Apply @ Rule, channelData ];
 
         If[ ! TrueQ @ $keepChannelOpen,
@@ -213,13 +220,13 @@ resourceInstallHandler0[ channelData: KeyValuePattern[ "Listener" :> listener0_S
         message   = ConfirmBy[ messageData[ "Message" ], AssociationQ, "Message" ];
         resource  = ConfirmMatch[ acquireResource @ message, _ResourceObject, "ResourceObject" ];
         expected  = ConfirmMatch[ channelData[ "ResourceType" ], $$installableType, "ResourceTypeExpected" ];
-        actual    = ConfirmMatch[ resource[ "ResourceType" ], StringQ, "ResourceTypeActual" ];
+        actual    = ConfirmBy[ resource[ "ResourceType" ], StringQ, "ResourceTypeActual" ];
 
         If[ actual =!= expected, throwMessageDialog[ "ExpectedInstallableResourceType", expected, actual ] ];
 
         ResourceInstall @ resource
     ],
-    throwInternalFailure[ resourceInstallHandler0[ channelData, messageData ], ## ] &
+    throwInternalFailure[ resourceInstallHandler0[ channelData, messageData ], ##1 ] &
 ];
 
 resourceInstallHandler0 // endDefinition;
@@ -245,6 +252,19 @@ resourceBrowseURL // beginDefinition;
 resourceBrowseURL[ rtype_String, id_String ] := URLBuild[ resourceBrowseURL @ rtype, { "ChannelID" -> id } ];
 resourceBrowseURL[ rtype: $$installableType ] := Lookup[ $resourceBrowseURLs, rtype, $Failed ];
 resourceBrowseURL // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*channelCleanup*)
+channelCleanup // beginDefinition;
+
+channelCleanup[ ] := channelCleanup @ $channelData;
+channelCleanup[ None ] := Null;
+
+channelCleanup[ KeyValuePattern @ { "Listener" -> listener_ChannelListener, "Channel" -> channel_ChannelObject } ] :=
+    Quiet[ RemoveChannelListener @ listener; DeleteChannel @ channel ];
+
+channelCleanup // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -714,6 +734,12 @@ invalidateCache[ ] :=
 
 invalidateCache[ All ] := (
     $installedResourceCache = <| |>;
+    $installedResourceTrigger++
+);
+
+invalidateCache[ "Prompt" ] := (
+    KeyDropFrom[ $installedResourceCache, "Prompt" ];
+    GetPersonaData[ ];
     $installedResourceTrigger++
 );
 
