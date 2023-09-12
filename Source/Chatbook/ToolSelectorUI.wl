@@ -7,6 +7,8 @@ BeginPackage[ "Wolfram`Chatbook`ToolSelectorUI`" ];
 `CreateLLMToolManagerPanel;
 `CreateLLMToolManagerDialog;
 
+(* TODO: create a Dialogs.wl file containing definitions to share between this and the persona dialog *)
+
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                   ];
@@ -19,18 +21,28 @@ Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$toolsWidth    = 240;
-$personasWidth = 30;
-$rightColWidth = 107;
-$rowHeight     = 30;
-$highlightCol  = GrayLevel[ 0.95 ];
-$dividerCol    = GrayLevel[ 0.85 ];
-$activeBlue    = Hue[ 0.59, 0.9, 0.93 ];
+$toolsWidth             = 240;
+$personasWidth          = 30;
+$rightColWidth          = 107;
+$rowHeight              = 30;
+$highlightCol           = GrayLevel[ 0.95 ];
+$dividerCol             = GrayLevel[ 0.85 ];
+$activeBlue             = Hue[ 0.59, 0.9, 0.93 ];
+$dialogHeaderMargins    = { { 30, 30 }, { 13, 9 } };
+$dialogSubHeaderMargins = { { 30, 30 }, {  0, 9 } };
+$dialogBodyMargins      = { { 30, 30 }, { 13, 5 } };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*CreateLLMToolManagerDialog*)
+CreateLLMToolManagerDialog // beginDefinition;
+CreateLLMToolManagerDialog[ args___ ] := Block[ { $inWindow = True }, inWindow @ CreateLLMToolManagerPanel @ args ];
+CreateLLMToolManagerDialog // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*CreateLLMToolManagerPanel*)
-CreateLLMToolManagerPanel// beginDefinition;
+CreateLLMToolManagerPanel // beginDefinition;
 
 CreateLLMToolManagerPanel[ ] := catchMine @ Dynamic[
     $installedResourceTrigger;
@@ -91,7 +103,7 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                 sH           = 0,
                 sV           = 0,
                 w            = 167,
-                h            = 258,
+                h            = 180,
                 row          = None,
                 column       = None,
                 scopeMode    = $FrontEnd &,
@@ -127,29 +139,45 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                 Grid[
                     {
                         (* ----- Install Tools ----- *)
-                        sectionHeading[ "Install Tools", { 5, 0 } ],
-                        indent @ Grid[
-                            {
+                        dialogHeader[ "Add & Manage LLM Tools" ],
+                        dialogSubHeader[ "Install Tools" ],
+                        dialogBody[
+                            Grid @ {
                                 {
-                                    Button[ "LLM Tool Repository \[UpperRightArrow]", Null, BaseStyle -> $baseStyle ],
-                                    Spacer[ 5 ],
-                                    Button[ "Install From File...", Null, BaseStyle -> $baseStyle ]
+                                    "Install from",
+                                    Button[
+                                        grayDialogButtonLabel[ "LLM Tool Repository \[UpperRightArrow]" ],
+                                        ResourceInstallFromRepository[ "LLMTool" ],
+                                        Appearance       -> "Suppressed",
+                                        BaselinePosition -> Baseline,
+                                        Method           -> "Queued"
+                                    ],
+                                    Button[
+                                        grayDialogButtonLabel[ "URL" ],
+                                        Block[ { PrintTemporary }, ResourceInstallFromURL[ ] ],
+                                        Appearance       -> "Suppressed",
+                                        BaselinePosition -> Baseline,
+                                        Method           -> "Queued"
+                                    ]
                                 }
-                            },
-                            Spacings -> { 0, 0 }
+                            }
                         ],
-                        $sectionSpacer,
 
                         (* ----- Configure and Enable Tools ----- *)
-                        sectionHeading[ "Manage and Enable Tools", { 8, 15 } ],
-                        indent @ Row @ {
-                            "Scope for enable/disable checkboxes:",
-                            Spacer[ 5 ],
-                            scopeSelector @ Dynamic @ scopeMode
-                        },
-                        indent @ Spacer @ { 0, 17 },
 
-                        indent @ EventHandler[
+
+                        dialogSubHeader[ "Manage and Enable Tools" ],
+                        dialogBody[
+                            Grid @ {
+                                {
+                                    "Show enabled tools for:",
+                                    scopeSelector @ Dynamic @ scopeMode
+                                }
+                            },
+                            { Automatic, { 5, Automatic } }
+                        ],
+
+                        dialogBody[ EventHandler[
                             Grid[
                                 {
                                     Append[
@@ -238,25 +266,27 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                                                 ],
                                                 gridOpts
                                             ],
-                                            Dynamic[
-                                                { w, h },
-                                                Function[
+                                            With[ { w1 = w-1, w2 = w, h1 = h-1, h2 = h },
+                                                Dynamic[
+                                                    { w, h },
+                                                    Function[
 
-                                                    FEPrivate`Set[
-                                                        w,
-                                                        FEPrivate`If[
-                                                            FEPrivate`Greater[ FEPrivate`Part[ #, 1 ], 166 ],
-                                                            FEPrivate`Part[ #, 1 ],
-                                                            167
-                                                        ]
-                                                    ];
+                                                        FEPrivate`Set[
+                                                            w,
+                                                            FEPrivate`If[
+                                                                FEPrivate`Greater[ FEPrivate`Part[ #, 1 ], w1 ],
+                                                                FEPrivate`Part[ #, 1 ],
+                                                                w2
+                                                            ]
+                                                        ];
 
-                                                    FEPrivate`Set[
-                                                        h,
-                                                        FEPrivate`If[
-                                                            FEPrivate`Greater[ FEPrivate`Part[ #, 2 ], 257 ],
-                                                            FEPrivate`Part[ #, 2 ],
-                                                            258
+                                                        FEPrivate`Set[
+                                                            h,
+                                                            FEPrivate`If[
+                                                                FEPrivate`Greater[ FEPrivate`Part[ #, 2 ], h1 ],
+                                                                FEPrivate`Part[ #, 2 ],
+                                                                h2
+                                                            ]
                                                         ]
                                                     ]
                                                 ]
@@ -304,11 +334,33 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                             ],
                             { "MouseExited" :> FEPrivate`Set[ { row, column }, { None, None } ] },
                             PassEventsDown -> True
+                        ], { { Automatic, 0 }, Automatic } ],
+
+                        If[ TrueQ @ $inWindow,
+                            {
+                                Item[
+                                    Framed[
+                                        Button[
+                                            redDialogButtonLabel[ "OK" ],
+                                            NotebookClose @ EvaluationNotebook[ ],
+                                            Appearance       -> "Suppressed",
+                                            BaselinePosition -> Baseline,
+                                            Method           -> "Queued"
+                                        ],
+                                        FrameStyle -> None,
+                                        ImageSize  -> { 100, 50 },
+                                        Alignment  -> { Center, Center }
+                                    ],
+                                    Alignment -> { Right, Automatic }
+                                ],
+                                SpanFromLeft
+                            },
+                            Nothing
                         ]
                     },
                     Alignment -> { Left, Top },
                     BaseStyle -> $baseStyle,
-                    Dividers  -> { False, { False, False, False, $dividerCol, { False } } },
+                    Dividers  -> { False, { False, $dividerCol, False, $dividerCol, False, { False } } },
                     ItemSize  -> { Automatic, 0 },
                     Spacings  -> { 0, 0 }
                 ],
@@ -393,11 +445,129 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
 CreateLLMToolManagerPanel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*CreateLLMToolManagerDialog*)
-CreateLLMToolManagerDialog // beginDefinition;
-CreateLLMToolManagerDialog[ args___ ] := inWindow @ CreateLLMToolManagerPanel @ args;
-CreateLLMToolManagerDialog // endDefinition;
+(* ::Subsection::Closed:: *)
+(*grayDialogButtonLabel*)
+grayDialogButtonLabel // beginDefinition;
+
+grayDialogButtonLabel[ { normal_, hover_, pressed_ } ] :=
+    NotebookTools`Mousedown[
+        Framed[ normal , BaseStyle -> "ButtonGray1Normal" , BaselinePosition -> Baseline ],
+        Framed[ hover  , BaseStyle -> "ButtonGray1Hover"  , BaselinePosition -> Baseline ],
+        Framed[ pressed, BaseStyle -> "ButtonGray1Pressed", BaselinePosition -> Baseline ],
+        BaseStyle -> "DialogTextBasic"
+    ];
+
+grayDialogButtonLabel[ { normal_, hover_ } ] := grayDialogButtonLabel[ { normal, hover, hover } ];
+
+grayDialogButtonLabel[ label_ ] := grayDialogButtonLabel[ { label, label, label } ];
+
+grayDialogButtonLabel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*redDialogButtonLabel*)
+redDialogButtonLabel // beginDefinition;
+
+redDialogButtonLabel[ { normal_, hover_, pressed_ } ] :=
+    NotebookTools`Mousedown[
+        Framed[ normal , BaseStyle -> "ButtonRed1Normal" , BaselinePosition -> Baseline ],
+        Framed[ hover  , BaseStyle -> "ButtonRed1Hover"  , BaselinePosition -> Baseline ],
+        Framed[ pressed, BaseStyle -> "ButtonRed1Pressed", BaselinePosition -> Baseline ],
+        BaseStyle -> "DialogTextBasic"
+    ];
+
+redDialogButtonLabel[ { normal_, hover_ } ] := redDialogButtonLabel[ { normal, hover, hover } ];
+
+redDialogButtonLabel[ label_ ] := redDialogButtonLabel[ { label, label, label } ];
+
+redDialogButtonLabel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*spanAcross*)
+spanAcross // beginDefinition;
+spanAcross[ expr_ ] := { expr, SpanFromLeft };
+spanAcross // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*dialogHeader*)
+dialogHeader // beginDefinition;
+
+dialogHeader[ expr_ ] :=
+    dialogHeader[ expr, Automatic ];
+
+dialogHeader[ expr_, margins_ ] :=
+    spanAcross @ Pane[ expr, BaseStyle -> "DialogHeader", FrameMargins -> dialogHeaderMargins @ margins ];
+
+dialogHeader // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*dialogSubHeader*)
+dialogSubHeader // beginDefinition;
+
+dialogSubHeader[ expr_ ] :=
+    dialogSubHeader[ expr, Automatic ];
+
+dialogSubHeader[ expr_, margins_ ] :=
+    spanAcross @ Pane[
+        expr,
+        BaseStyle -> { FontSize -> 14, FontWeight -> "DemiBold" },
+        FrameMargins -> dialogSubHeaderMargins @ margins
+    ];
+
+dialogSubHeader // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*dialogBody*)
+dialogBody // beginDefinition;
+
+dialogBody[ expr_ ] :=
+    dialogBody[ expr, Automatic ];
+
+dialogBody[ expr_, margins_ ] :=
+    spanAcross @ Pane[ expr, BaseStyle -> "DialogBody", FrameMargins -> dialogBodyMargins @ margins ];
+
+dialogBody // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*dialogBodyMargins*)
+dialogBodyMargins // beginDefinition;
+dialogBodyMargins[ margins_ ] := dialogBodyMargins[ margins ] = autoMargins[ margins, $dialogBodyMargins ];
+dialogBodyMargins // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*dialogHeaderMargins*)
+dialogHeaderMargins // beginDefinition;
+dialogHeaderMargins[ margins_ ] := dialogHeaderMargins[ margins ] = autoMargins[ margins, $dialogHeaderMargins ];
+dialogHeaderMargins // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*dialogSubHeaderMargins*)
+dialogSubHeaderMargins // beginDefinition;
+dialogSubHeaderMargins[ margins_ ] := dialogSubHeaderMargins[ margins ] = autoMargins[ margins, $dialogSubHeaderMargins ];
+dialogSubHeaderMargins // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*autoMargins*)
+autoMargins // beginDefinition;
+autoMargins[ Automatic, defaults_ ] := autoMargins[ ConstantArray[ Automatic, { 2, 2 } ], defaults ];
+autoMargins[ { w: Automatic|_Integer, h_ }, defaults_ ] := autoMargins[ { { w, w }, h }, defaults ];
+autoMargins[ { w_, h: Automatic|_Integer }, defaults_ ] := autoMargins[ { w, { h, h } }, defaults ]
+autoMargins[ spec: { { _, _ }, { _, _ } }, default: { { _, _ }, { _, _ } } ] := autoMargins0[ spec, default ];
+autoMargins // endDefinition;
+
+autoMargins0 // beginDefinition;
+autoMargins0 // Attributes = { Listable };
+autoMargins0[ Automatic, m: Automatic|_Integer ] := m;
+autoMargins0[ m_Integer, _ ] := m;
+autoMargins0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -439,7 +609,7 @@ standardizePersonaData // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$baseStyle*)
-$baseStyle = { FontFamily -> "Source Sans Pro", FontSize -> 14, FontColor -> GrayLevel[ 0.3 ] };
+$baseStyle = { FontFamily -> "Source Sans Pro", FontSize -> 14 };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -474,8 +644,9 @@ attachOverlay[ expr_, opts___ ] := AttachCell[
                     overlayGrid @ expr,
                     Background       -> White,
                     DefaultBaseStyle -> $baseStyle,
+                    FrameMargins     -> 20,
                     FrameStyle       -> GrayLevel[ 0.85 ],
-                    RoundingRadius   -> 4,
+                    RoundingRadius   -> 8,
                     opts
                 ]
             },
@@ -500,18 +671,20 @@ overlayGrid // beginDefinition;
 
 overlayGrid[ { title_, body_, { label1_, Hold[ action1_ ], label2_, Hold[ action2_ ] } } ] := Grid[
     {
-        { headerStyle @ title, SpanFromLeft },
-        { body               , SpanFromLeft },
+        { title, SpanFromLeft },
+        { body , SpanFromLeft },
         {
             "",
-            Button[ label1, action1, BaseStyle -> $baseStyle ],
-            Spacer[ 5 ],
-            Button[ label2, action2, BaseStyle -> $baseStyle ]
+            Row @ {
+                Button[ label1, action1, BaseStyle -> $baseStyle, Appearance -> "Suppressed", Method -> "Queued" ],
+                Spacer[ 10 ],
+                Button[ label2, action2, BaseStyle -> $baseStyle, Appearance -> "Suppressed", Method -> "Queued" ]
+            }
         }
     },
-    Alignment -> Left,
+    Alignment -> { { Left, Right }, Baseline },
     ItemSize  -> { { Fit, { 0 } }, 0 },
-    Spacings  -> { 0, 0.4 }
+    Spacings  -> { 0, 1 }
 ];
 
 overlayGrid[ expr: Except[ _List ] ] := expr;
@@ -726,12 +899,12 @@ deleteButton0[ colBin_, row_, tool_Association ] := Button[
     Dynamic @ iconData[ "Bin", colBin ],
     attachOverlay[
         {
-            Style[ "Delete Tool", Bold ],
-            Row @ { tool[ "Icon" ], Spacer[ 3 ], tool[ "CanonicalName" ] },
+            Style[ "Delete Tool", "DialogHeader", FontSize -> 16, FontWeight -> "DemiBold" ],
+            Row @ { inlineTemplateBox @ tool[ "Icon" ], Spacer[ 5 ], tool[ "CanonicalName" ] },
             {
-                "Cancel",
+                redDialogButtonLabel[ " Cancel " ],
                 Hold[ NotebookDelete @ EvaluationCell[ ] ],
-                Style[ "Delete", Red ],
+                grayDialogButtonLabel[ " Delete " ],
                 Hold[ deleteTool @ tool; NotebookDelete @ EvaluationCell[ ] ]
             }
         },
@@ -975,7 +1148,7 @@ rightColControl[
                                 ][
                                     FrontEnd`AbsoluteCurrentValue[
                                         scope,
-                                        { TaggingRules, "ChatNotebookSettings", "ToolSelections", toolName }
+                                        { TaggingRules, "ChatNotebookSettings", "ToolSelectionType", toolName }
                                     ]
                                 ]
                             ],
@@ -1035,30 +1208,27 @@ rightColControl // endDefinition;
 scopeSelector // beginDefinition;
 
 scopeSelector[ Dynamic[ scopeMode_ ] ] := ActionMenu[
-    Framed[
-        Row @ {
-            PaneSelector[
-                {
-                    ($FrontEnd &) -> "Global",
-                    FE`Evaluate @* FEPrivate`LastActiveUserNotebook -> "Selected Notebook",
-                    SelectedCells @* FE`Evaluate @* FEPrivate`LastActiveUserNotebook -> "Selected Cells"
-                },
-                Dynamic @ scopeMode,
-                ImageSize -> Automatic,
-                BaseStyle -> $baseStyle
-            ],
-            " \[DownPointer]"
-        },
-        FrameMargins   -> { { Automatic, Automatic }, { 2, 2 } },
-        FrameStyle     -> GrayLevel[ 0.85 ],
-        RoundingRadius -> 2
-    ],
+    grayDialogButtonLabel @ Row @ {
+        PaneSelector[
+            {
+                ($FrontEnd &) -> "Global",
+                FE`Evaluate @* FEPrivate`LastActiveUserNotebook -> "Selected Notebook",
+                SelectedCells @* FE`Evaluate @* FEPrivate`LastActiveUserNotebook -> "Selected Cells"
+            },
+            Dynamic @ scopeMode,
+            BaselinePosition -> Baseline,
+            BaseStyle        -> $baseStyle,
+            ImageSize        -> Automatic
+        ],
+        " \[DownPointer]"
+    },
     {
         "Global"            :> (scopeMode = $FrontEnd &),
         "Selected Notebook" :> (scopeMode = FE`Evaluate @* FEPrivate`LastActiveUserNotebook),
         "Selected Cells"    :> (scopeMode = SelectedCells @* FE`Evaluate @* FEPrivate`LastActiveUserNotebook)
     },
-    Appearance -> "Frameless"
+    Appearance       -> "Frameless",
+    BaselinePosition -> Baseline
 ];
 
 scopeSelector // endDefinition;
@@ -1086,30 +1256,35 @@ personaNameDisp // endDefinition;
 inWindow // beginDefinition;
 
 inWindow[ expr_ ] := CreateDialog[
-    Cell[
-        BoxData @ ToBoxes @ expr,
-        CellFrame        -> { { False, 1 }, { 1, False } },
-        CellFrameMargins -> { { 0, -10 }, { -2, 0 } },
-        CellFrameStyle   -> White
-    ],
-    Background          -> White,
-    StyleDefinitions    -> $toolDialogStyles,
-    WindowClickSelect   -> False,
-    WindowFloating      -> True,
-    WindowFrame         -> "Palette",
-    WindowFrameElements -> { "CloseBox", "ResizeArea" },
-    WindowTitle         -> "LLM Tools"
+    ExpressionCell[ expr, CellMargins -> 0 ],
+    Background             -> White,
+    CellInsertionPointCell -> None,
+    StyleDefinitions       -> $toolDialogStyles,
+    WindowFrameElements    -> { "CloseBox" },
+    WindowTitle            -> "Add & Manage LLM Tools",
+    NotebookEventActions -> {
+        "EscapeKeyDown"                        :> (findAndClickCancel[ ]; channelCleanup[ ]; DialogReturn @ $Canceled),
+        "WindowClose"                          :> (findAndClickCancel[ ]; channelCleanup[ ]; DialogReturn @ $Canceled),
+        "ReturnKeyDown"                        :> findAndClickDefault[ ],
+        { "MenuCommand", "EvaluateCells"     } :> findAndClickDefault[ ],
+        { "MenuCommand", "EvaluateNextCell"  } :> findAndClickDefault[ ],
+        { "MenuCommand", "HandleShiftReturn" } :> findAndClickDefault[ ]
+    }
 ];
 
 inWindow // endDefinition;
+
+findAndClickDefault[ ] := FE`Evaluate @ FEPrivate`FindAndClickDefaultButton[ ];
+findAndClickCancel[ ] := FE`Evaluate @ FEPrivate`FindAndClickCancelButton[ ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$toolDialogStyles*)
 $toolDialogStyles = Notebook[
     {
-        Cell @ StyleData[ StyleDefinitions -> "Dialog.nb"   ],
-        Cell @ StyleData[ StyleDefinitions -> "Chatbook.nb" ]
+        Cell @ StyleData[ StyleDefinitions -> "Dialog.nb" ],
+        Cell[ StyleData[ "HyperlinkActive" ], FontColor -> RGBColor[ 0.2392, 0.7960, 1.0000 ] ],
+        Cell[ StyleData[ "Hyperlink"       ], FontColor -> RGBColor[ 0.0862, 0.6196, 0.8156 ] ]
     },
     StyleDefinitions -> "PrivateStylesheetFormatting.nb"
 ];
