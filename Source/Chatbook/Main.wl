@@ -105,6 +105,7 @@ Block[ { $ContextPath },
     Get[ "Wolfram`Chatbook`ServerSentEventUtils`" ];
     Get[ "Wolfram`Chatbook`PreferencesUtils`"     ];
     Get[ "Wolfram`Chatbook`Models`"               ];
+    Get[ "Wolfram`Chatbook`Dialogs`"              ];
     Get[ "Wolfram`Chatbook`ToolManager`"          ];
 ];
 
