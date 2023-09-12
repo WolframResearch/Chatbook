@@ -90,27 +90,29 @@ $$textDataList        = { (_String|_Cell|_StyleBox|_ButtonBox)... };
 (* ::Section::Closed:: *)
 (*Messages*)
 KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
-    "APIKeyOrganizationID"         -> "The value specified for the API key appears to be an organization ID instead of an API key. Visit `1` to manage your API keys.",
-    "BadResponseMessage"           -> "`1`",
-    "ChannelFrameworkError"        -> "The channel framework is currently unavailable, please try installing from URL instead or try again later.",
-    "ConnectionFailure"            -> "Server connection failure: `1`. Please try again later.",
-    "ConnectionFailure2"           -> "Could not get a valid response from the server: `1`. Please try again later.",
-    "Internal"                     -> "An unexpected error occurred. `1`",
-    "InvalidAPIKey"                -> "Invalid value for API key: `1`",
-    "InvalidArguments"             -> "Invalid arguments given for `1` in `2`.",
-    "InvalidResourceSpecification" -> "The argument `1` is not a valid resource specification.",
-    "InvalidStreamingOutputMethod" -> "Invalid streaming output method: `1`.",
-    "NoAPIKey"                     -> "No API key defined.",
-    "NoSandboxKernel"              -> "Unable to start a sandbox kernel. This may mean that the number of currently running kernels exceeds the limit defined by $LicenseProcesses.",
-    "NotImplemented"               -> "Action \"`1`\" is not implemented.",
-    "NotInstallableResourceType"   -> "Resource type `1` is not an installable resource type for chat notebooks. Valid types are Prompt and LLMTool.",
-    "RateLimitReached"             -> "Rate limit reached for requests. Please try again later.",
-    "ResourceNotFound"             -> "Resource `1` not found.",
-    "ResourceNotInstalled"         -> "The resource `1` is not installed.",
-    "ServerOverloaded"             -> "The server is currently overloaded with other requests. Please try again later.",
-    "ToolNotFound"                 -> "Tool `1` not found.",
-    "UnknownResponse"              -> "Unexpected response from OpenAI server",
-    "UnknownStatusCode"            -> "Unexpected response from OpenAI server with status code `StatusCode`"
+    "APIKeyOrganizationID"            -> "The value specified for the API key appears to be an organization ID instead of an API key. Visit `1` to manage your API keys.",
+    "BadResponseMessage"              -> "`1`",
+    "ChannelFrameworkError"           -> "The channel framework is currently unavailable, please try installing from URL instead or try again later.",
+    "ConnectionFailure"               -> "Server connection failure: `1`. Please try again later.",
+    "ConnectionFailure2"              -> "Could not get a valid response from the server: `1`. Please try again later.",
+    "ExpectedInstallableResourceType" -> "Expected a resource of type `1` instead of `2`.",
+    "Internal"                        -> "An unexpected error occurred. `1`",
+    "InvalidAPIKey"                   -> "Invalid value for API key: `1`",
+    "InvalidArguments"                -> "Invalid arguments given for `1` in `2`.",
+    "InvalidResourceSpecification"    -> "The argument `1` is not a valid resource specification.",
+    "InvalidResourceURL"              -> "The specified URL does not represent a valid resource object.",
+    "InvalidStreamingOutputMethod"    -> "Invalid streaming output method: `1`.",
+    "NoAPIKey"                        -> "No API key defined.",
+    "NoSandboxKernel"                 -> "Unable to start a sandbox kernel. This may mean that the number of currently running kernels exceeds the limit defined by $LicenseProcesses.",
+    "NotImplemented"                  -> "Action \"`1`\" is not implemented.",
+    "NotInstallableResourceType"      -> "Resource type `1` is not an installable resource type for chat notebooks. Valid types are `2`.",
+    "RateLimitReached"                -> "Rate limit reached for requests. Please try again later.",
+    "ResourceNotFound"                -> "Resource `1` not found.",
+    "ResourceNotInstalled"            -> "The resource `1` is not installed.",
+    "ServerOverloaded"                -> "The server is currently overloaded with other requests. Please try again later.",
+    "ToolNotFound"                    -> "Tool `1` not found.",
+    "UnknownResponse"                 -> "Unexpected response from OpenAI server",
+    "UnknownStatusCode"               -> "Unexpected response from OpenAI server with status code `StatusCode`"
 |> ];
 
 (* ::**************************************************************************************************************:: *)
@@ -328,9 +330,14 @@ throwTop // endDefinition;
 (*throwMessageDialog*)
 throwMessageDialog // beginDefinition;
 
-throwMessageDialog[ tag_String ] :=
-    With[ { message = MessageName[ Chatbook, tag ] },
-        throwMessageDialog @ message /; StringQ @ message
+throwMessageDialog[ t_String, args___ ] /; StringQ @ MessageName[ Chatbook, t ] :=
+    With[ { s = $messageSymbol },
+        blockProtected[ { s }, MessageName[ s, t ] = MessageName[ Chatbook, t ] ];
+        throwMessageDialog @ TemplateApply[
+            MessageName[ s, t ],
+            Replace[ { args }, { as_Association } :> as ],
+            InsertionFunction -> Function @ ToString[ Short @ #, PageWidth -> 60 ]
+        ]
     ];
 
 throwMessageDialog[ message_ ] :=
