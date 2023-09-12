@@ -30,7 +30,7 @@ Begin["`Private`"]
 
 Needs["Wolfram`Chatbook`Errors`"]
 Needs["Wolfram`Chatbook`ErrorUtils`"]
-Needs["Wolfram`Chatbook`PersonaInstaller`"]
+Needs["Wolfram`Chatbook`ResourceInstaller`"]
 
 (*========================================================*)
 
@@ -100,7 +100,10 @@ GetPersonaData[] := Module[{
 	pacletPersonas,
 	personas
 },
-	resourcePersonas = RaiseConfirmMatch[GetInstalledResourcePersonaData[], _Association? AssociationQ];
+	resourcePersonas = RaiseConfirmMatch[
+		GetInstalledResourceData["Prompt", "RegenerateCache" -> True],
+		_Association? AssociationQ
+	];
 
 	(* Only look at most recent version of compatible paclets *)
 	paclets = First /@ SplitBy[PacletFind[All, <| "Extension" -> "LLMConfiguration" |>], #["Name"]&];
