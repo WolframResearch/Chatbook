@@ -32,7 +32,12 @@ $activeBlue             = Hue[ 0.59, 0.9, 0.93 ];
 (* ::Section::Closed:: *)
 (*CreateLLMToolManagerDialog*)
 CreateLLMToolManagerDialog // beginDefinition;
-CreateLLMToolManagerDialog[ args___ ] := createDialog @ CreateLLMToolManagerPanel @ args;
+
+CreateLLMToolManagerDialog[ args___ ] := createDialog[
+    CreateLLMToolManagerPanel @ args,
+    WindowTitle -> "Add & Manage Tools"
+];
+
 CreateLLMToolManagerDialog // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -131,7 +136,8 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                                     "Install from",
                                     Button[
                                         grayDialogButtonLabel[ "LLM Tool Repository \[UpperRightArrow]" ],
-                                        ResourceInstallFromRepository[ "LLMTool" ],
+                                        (* ResourceInstallFromRepository[ "LLMTool" ] *)
+                                        MessageDialog[ "Coming soon" ],
                                         Appearance       -> "Suppressed",
                                         BaselinePosition -> Baseline,
                                         Method           -> "Queued"

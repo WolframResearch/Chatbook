@@ -100,13 +100,13 @@ Block[ { $ContextPath },
     Get[ "Wolfram`Chatbook`Menus`"                ];
     Get[ "Wolfram`Chatbook`ResourceInstaller`"    ];
     Get[ "Wolfram`Chatbook`Personas`"             ];
-    Get[ "Wolfram`Chatbook`PersonaInstaller`"     ];
     Get[ "Wolfram`Chatbook`InlineReferences`"     ];
     Get[ "Wolfram`Chatbook`ServerSentEventUtils`" ];
     Get[ "Wolfram`Chatbook`PreferencesUtils`"     ];
     Get[ "Wolfram`Chatbook`Models`"               ];
     Get[ "Wolfram`Chatbook`Dialogs`"              ];
     Get[ "Wolfram`Chatbook`ToolManager`"          ];
+    Get[ "Wolfram`Chatbook`PersonaManager`"       ];
 ];
 
 (* ::**************************************************************************************************************:: *)

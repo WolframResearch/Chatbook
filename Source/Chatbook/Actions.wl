@@ -28,7 +28,7 @@ Needs[ "Wolfram`Chatbook`"                  ];
 Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`Errors`"           ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`"       ];
-Needs[ "Wolfram`Chatbook`PersonaInstaller`" ];
+Needs[ "Wolfram`Chatbook`PersonaManager`"   ];
 Needs[ "Wolfram`Chatbook`ToolManager`"      ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`Serialization`"    ];
@@ -243,7 +243,7 @@ definitionNotebookCellQ[ ___ ] := False;
 (* ::Section::Closed:: *)
 (*PersonaManage*)
 PersonaManage[ a___ ] := Enclose[
-    ConfirmMatch[ createPersonaManagerDialog[ ], _NotebookObject, "createPersonaManagerDialog" ],
+    ConfirmMatch[ CreatePersonaManagerDialog[ ], _NotebookObject, "createPersonaManagerDialog" ],
     throwInternalFailure[ PersonaManage @ a, ## ] &
 ];
 

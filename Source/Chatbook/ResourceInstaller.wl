@@ -8,6 +8,7 @@ BeginPackage[ "Wolfram`Chatbook`ResourceInstaller`" ];
 `ResourceInstall;
 `ResourceInstallFromRepository;
 `ResourceInstallFromURL;
+`ResourceInstallLocation;
 `ResourceUninstall;
 
 `$installedResourceTrigger;
@@ -390,6 +391,28 @@ scrapeResourceFromShingle // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*ResourceInstallLocation*)
+ResourceInstallLocation // ClearAll;
+
+ResourceInstallLocation[ ro_ResourceObject ] :=
+    catchMine @ ResourceInstallLocation[ ro[ "ResourceType" ], ro[ "Name" ] ];
+
+ResourceInstallLocation[ rtype: $$installableType, name_String ] :=
+    catchMine @ resourceInstallLocation[ rtype, name ];
+
+ResourceInstallLocation[ id_, opts: OptionsPattern[ ] ] :=
+    catchMine @ With[ { ro = resourceObject[ id, opts ] },
+        If[ MatchQ[ ro, _ResourceObject ],
+            ResourceInstallLocation @ ro,
+            throwFailure[ "InvalidResourceSpecification", id ]
+        ]
+    ];
+
+ResourceInstallLocation[ args___ ] :=
+    catchMine @ throwFailure[ "InvalidArguments", ResourceInstallLocation, HoldForm @ ResourceInstallLocation @ args ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*ResourceInstall*)
 ResourceInstall // ClearAll;
 
@@ -442,6 +465,7 @@ resourceInstall[ rtype: $$installableType, info_? AssociationQ ] := Enclose[
             ]
         ];
 
+        postInstall[ rtype, info ];
         invalidateCache[ rtype ];
 
         installed
@@ -453,6 +477,32 @@ resourceInstall[ rtype: Except[ $$installableType ], _ ] :=
     throwFailure[ "NotInstallableResourceType", rtype, $installableTypes ];
 
 resourceInstall // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*postInstall*)
+postInstall // beginDefinition;
+postInstall[ "Prompt", info_ ] := addToVisiblePersonas @ resourceName @ info;
+postInstall[ rtype_, info_ ] := Null;
+postInstall // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*addToVisiblePersonas*)
+addToVisiblePersonas // beginDefinition;
+
+addToVisiblePersonas[ name_String ] := Set[
+    CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas" } ],
+    Union @ Append[
+        Replace[
+            CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas" } ],
+            Except[ _List ] :> { }
+        ],
+        name
+    ]
+];
+
+addToVisiblePersonas // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
