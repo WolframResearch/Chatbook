@@ -1164,6 +1164,7 @@ submitAIAssistant[ container_, req_, cellObject_, settings_ ] :=
             autoAssist   = $autoAssistMode,
             dynamicSplit = dynamicSplitQ @ settings
         },
+        $buffer = "";
         URLSubmit[
             req,
             HandlerFunctions -> <|
@@ -2339,39 +2340,42 @@ $styleRoles = <|
 writeChunk // beginDefinition;
 
 writeChunk[ container_, cell_, KeyValuePattern[ "BodyChunk" -> chunk_String ] ] :=
-    writeChunk[ container, cell, chunk ];
-
-writeChunk[ container_, cell_, chunk_String ] /; StringMatchQ[ chunk, "data: " ~~ __ ~~ "\n\n" ~~ __ ~~ ("\n\n"|"") ] :=
-    writeChunk[ container, cell, # ] & /@ StringSplit[ chunk, "\n\n" ];
-
-writeChunk[ container_, cell_, chunk_String ] /; StringMatchQ[ chunk, "data: " ~~ __ ~~ ("\n\n"|"") ] :=
-    Module[ { json },
-        json = StringDelete[ chunk, { StartOfString~~"data: ", ("\n\n"|"") ~~ EndOfString } ];
-        writeChunk[ container, cell, chunk, Quiet @ Developer`ReadRawJSONString @ json ]
-    ];
-
-writeChunk[ container_, cell_, "" | "data: [DONE]" | "data: [DONE]\n\n" ] := Null;
+    writeChunk[ container, cell, $buffer <> chunk ];
 
 writeChunk[ container_, cell_, chunk_String ] :=
-    With[ { json = Quiet @ Developer`ReadRawJSONString @ chunk },
-        writeChunk[ container, cell, chunk, json ] /; AssociationQ @ json
+    Module[ { parts, buffer },
+        parts   = StringTrim @ StringCases[ chunk, "data: " ~~ json: Except[ "\n" ].. ~~ "\n\n" :> json ];
+        buffer  = StringDelete[ StringDelete[ chunk, "data: " ~~ parts ~~ "\n\n" ], StartOfString ~~ "\n".. ];
+        $buffer = buffer;
+        writeChunk0[ container, cell, #1 ] & /@ parts
     ];
 
-writeChunk[
+writeChunk // endDefinition;
+
+
+writeChunk0 // beginDefinition;
+
+writeChunk0[ container_, cell_, "" | "[DONE]" | "[DONE]\n\n" ] :=
+    Null;
+
+writeChunk0[ container_, cell_, chunk_String ] :=
+    writeChunk0[ container, cell, chunk, Quiet @ Developer`ReadRawJSONString @ chunk ];
+
+writeChunk0[
     container_,
     cell_,
     chunk_String,
     KeyValuePattern[ "choices" -> { KeyValuePattern[ "delta" -> KeyValuePattern[ "content" -> text_String ] ], ___ } ]
-] := writeChunk[ container, cell, chunk, text ];
+] := writeChunk0[ container, cell, chunk, text ];
 
-writeChunk[
+writeChunk0[
     container_,
     cell_,
     chunk_String,
     KeyValuePattern[ "choices" -> { KeyValuePattern @ { "delta" -> <| |>, "finish_reason" -> "stop" }, ___ } ]
 ] := Null;
 
-writeChunk[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
+writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
 
     appendStringContent[ container[ "FullContent"    ], text ];
     appendStringContent[ container[ "DynamicContent" ], text ];
@@ -2397,13 +2401,14 @@ writeChunk[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
     ]
 );
 
-writeChunk[ Dynamic[ container_ ], cell_, chunk_String, other_ ] := Null;
+writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, other_ ] := Null;
 
-writeChunk // endDefinition;
+writeChunk0 // endDefinition;
 
 
 $dynamicTrigger    = 0;
 $lastDynamicUpdate = 0;
+$buffer            = "";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
