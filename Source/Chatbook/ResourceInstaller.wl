@@ -677,10 +677,11 @@ getInstalledResourceData[ rtype: $$installableType ] := Enclose[
                     name -> Merge[
                         {
                             config,
-                            resourceAssoc,
+                            KeyDrop[ resourceAssoc, "Name" ],
                             <|
+                                "Name"         -> name,
                                 "ResourceType" -> rtype,
-                                "ResourceName" -> name,
+                                "ResourceName" -> Lookup[ resourceAssoc, "Name", name ],
                                 "Origin"       -> determineOrigin[ rtype, resourceAssoc ]
                             |>
                         },
