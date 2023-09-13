@@ -52,6 +52,7 @@ Needs["Wolfram`Chatbook`Serialization`"]
 Needs["Wolfram`Chatbook`Menus`"]
 Needs["Wolfram`Chatbook`Personas`"]
 Needs["Wolfram`Chatbook`PersonaInstaller`"]
+Needs["Wolfram`Chatbook`ToolManager`"]
 Needs["Wolfram`Chatbook`FrontEnd`"]
 Needs["Wolfram`Chatbook`InlineReferences`"]
 Needs["Wolfram`Chatbook`Actions`"]
@@ -2344,6 +2345,7 @@ makeChatActionMenuContent[
 			}],
 			Delimiter,
 			{alignedMenuIcon[getIcon["PersonaOther"]], "Add & Manage Personas\[Ellipsis]", "PersonaManage"},
+			{alignedMenuIcon[getIcon["ToolManagerRepository"]], "Add & Manage Tools\[Ellipsis]", "ToolManage"},
 			Delimiter,
 			{
 				alignedMenuIcon[getIcon["AdvancedSettings"]],

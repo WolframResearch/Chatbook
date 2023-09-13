@@ -550,12 +550,39 @@ toolName // endDefinition;
 (* ::Subsection::Closed:: *)
 (*toolData*)
 toolData // beginDefinition;
-toolData[ HoldPattern @ LLMTool[ as_Association, ___ ] ] := toolData @ as;
-toolData[ name_String ] /; KeyExistsQ[ $toolBox, name ] := toolData @ $toolBox[ name ];
-toolData[ name_String ] /; KeyExistsQ[ $defaultChatTools, name ] := toolData @ $defaultChatTools[ name ];
-toolData[ as: KeyValuePattern @ { "Function" -> _ } ] := <| toolDefaultData @ toolName @ as, as |>;
-toolData[ tools_List ] := toolData /@ tools;
+
+toolData[ HoldPattern @ LLMTool[ as_Association, ___ ] ] :=
+    toolData @ as;
+
+toolData[ name_String ] /; KeyExistsQ[ $toolBox, name ] :=
+    toolData @ $toolBox[ name ];
+
+toolData[ name_String ] /; KeyExistsQ[ $defaultChatTools, name ] :=
+    toolData @ $defaultChatTools[ name ];
+
+toolData[ as: KeyValuePattern @ { "Function"|"ToolCall" -> _ } ] := <|
+    toolDefaultData @ toolName @ as,
+    "Icon" -> toolDefaultIcon @ as,
+    as
+|>;
+
+toolData[ tools_List ] :=
+    toolData /@ tools;
+
 toolData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolDefaultIcon*)
+toolDefaultIcon // beginDefinition;
+
+toolDefaultIcon[ KeyValuePattern[ "Origin" -> "LLMToolRepository" ] ] :=
+    RawBoxes @ TemplateBox[ { }, "ToolManagerRepository" ];
+
+toolDefaultIcon[ _Association ] :=
+    $defaultToolIcon;
+
+toolDefaultIcon // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1590,8 +1617,8 @@ wolframLanguageData // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getToolIcon*)
 getToolIcon // beginDefinition;
-getToolIcon[ HoldPattern @ LLMTool[ as_, ___ ] ] := getToolIcon @ as;
-getToolIcon[ as_Association ] := Lookup[ as, "Icon", RawBoxes @ TemplateBox[ { }, "WrenchIcon" ] ];
+getToolIcon[ HoldPattern @ LLMTool[ as_, ___ ] ] := getToolIcon @ toolData @ as;
+getToolIcon[ as_Association ] := Lookup[ toolData @ as, "Icon", RawBoxes @ TemplateBox[ { }, "WrenchIcon" ] ];
 getToolIcon[ _ ] := $defaultToolIcon;
 getToolIcon // endDefinition;
 
