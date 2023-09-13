@@ -248,7 +248,7 @@ modifierCompletion // endDefinition;
 
 $modifierNames := Select[
     DeleteDuplicates @ Flatten @ {
-        CurrentValue @ { TaggingRules, "ChatNotebookSettings", "LLMEvaluator", "LLMEvaluatorName" },
+        AbsoluteCurrentValue @ { TaggingRules, "ChatNotebookSettings", "LLMEvaluator", "LLMEvaluatorName" },
         $availableModifierNames
     },
     StringQ
@@ -517,7 +517,7 @@ functionCompletion // endDefinition;
 
 $functionNames := Select[
     DeleteDuplicates @ Flatten @ {
-        CurrentValue @ { TaggingRules, "ChatNotebookSettings", "LLMEvaluator", "LLMEvaluatorName" },
+        AbsoluteCurrentValue @ { TaggingRules, "ChatNotebookSettings", "LLMEvaluator", "LLMEvaluatorName" },
         $availableFunctionNames
     },
     StringQ
@@ -1059,7 +1059,11 @@ personaCompletion // endDefinition;
 
 
 $personaNames := Select[
-    DeleteDuplicates @ Flatten @ { Keys @ GetCachedPersonaData[ ], $availablePersonaNames },
+    DeleteDuplicates @ Flatten @ {
+        AbsoluteCurrentValue @ { TaggingRules, "ChatNotebookSettings", "LLMEvaluator", "LLMEvaluatorName" },
+        Keys @ GetCachedPersonaData[ ],
+        $availablePersonaNames
+    },
     StringQ
 ];
 
