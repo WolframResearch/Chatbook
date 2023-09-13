@@ -75,8 +75,6 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "WolframLanguageEvaluatorTool" -> { "WolframLanguageStyle" }
 |>;
 
-$collectedPromptComponents = AssociationMap[ Identity, $basePromptOrder ];
-
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Base Prompt Components*)
@@ -257,6 +255,11 @@ needsBasePrompt // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
+$collectedPromptComponents = AssociationMap[
+    Identity,
+    Keys @ Association[ KeyTake[ $basePromptComponents, $basePromptOrder ], $basePromptComponents ]
+];
+
 If[ Wolfram`ChatbookInternal`$BuildingMX,
     Null
 ];

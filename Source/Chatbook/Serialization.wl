@@ -1,6 +1,6 @@
 BeginPackage[ "Wolfram`Chatbook`Serialization`" ];
 
-(* cSpell: ignore TOOLCALL, specialkeywords, tabletags *)
+(* cSpell: ignore TOOLCALL, specialkeywords, tabletags, NFKC *)
 
 (* Avoiding context aliasing due to bug 434990: *)
 Needs[ "GeneralUtilities`" -> None ];
@@ -169,9 +169,10 @@ WOLFRAM_ALPHA_PARSED_INPUT: %%Code%%
 CellToString // SetFallthroughError;
 
 CellToString // Options = {
-    CharacterEncoding -> $cellCharacterEncoding,
-    "Debug"           :> $CellToStringDebug,
-    PageWidth         -> $cellPageWidth
+    CharacterEncoding        -> $cellCharacterEncoding,
+    "CharacterNormalization" -> "NFKC", (* FIXME: do this *)
+    "Debug"                  :> $CellToStringDebug,
+    PageWidth                -> $cellPageWidth
 };
 
 (* :!CodeAnalysis::BeginBlock:: *)

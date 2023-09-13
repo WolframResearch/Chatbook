@@ -31,14 +31,14 @@ Begin[ "`Private`" ];
 (*Paths*)
 
 
-$assetLocation      = FileNameJoin @ { DirectoryName @ $InputFileName, "Resources" };
-$iconDirectory      = FileNameJoin @ { $assetLocation, "Icons" };
-$ninePatchDirectory = FileNameJoin @ { $assetLocation, "NinePatchImages" };
-$styleDataFile      = FileNameJoin @ { $assetLocation, "Styles.wl" };
-$pacletDirectory    = DirectoryName[ $InputFileName, 2 ];
-$iconManifestFile   = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
-$fullIconsFile      = FileNameJoin @ { $pacletDirectory, "Assets", "FullIcons.wxf" };
-$styleSheetTarget   = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
+$assetLocation        = FileNameJoin @ { DirectoryName @ $InputFileName, "Resources" };
+$iconDirectory        = FileNameJoin @ { $assetLocation, "Icons" };
+$ninePatchDirectory   = FileNameJoin @ { $assetLocation, "NinePatchImages" };
+$styleDataFile        = FileNameJoin @ { $assetLocation, "Styles.wl" };
+$pacletDirectory      = DirectoryName[ $InputFileName, 2 ];
+$iconManifestFile     = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
+$displayFunctionsFile = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctions.wxf" };
+$styleSheetTarget     = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
 
 
 
@@ -81,7 +81,6 @@ $iconFiles = FileNames[ "*.wl", $iconDirectory ];
 $iconNames = FileBaseName /@ $iconFiles;
 
 Developer`WriteWXFFile[ $iconManifestFile, AssociationMap[ RawBoxes @ TemplateBox[ { }, #1 ] &, $iconNames ] ];
-Developer`WriteWXFFile[ $fullIconsFile   , Association @ Map[ FileBaseName @ # -> Import @ # &, $iconFiles ] ];
 
 
 
@@ -89,10 +88,16 @@ Developer`WriteWXFFile[ $fullIconsFile   , Association @ Map[ FileBaseName @ # -
 (*makeIconTemplateBoxStyle*)
 
 
-makeIconTemplateBoxStyle[ file_ ] :=
-    With[ { icon = ToBoxes @ Import @ file },
-        Cell[ StyleData @ FileBaseName @ file, TemplateBoxOptions -> { DisplayFunction -> (icon &) } ]
-    ];
+makeIconTemplateBoxStyle[ file_ ] := makeIconTemplateBoxStyle[ file, Import @ file ];
+
+makeIconTemplateBoxStyle[ file_, func_Function ] :=
+    makeIconTemplateBoxStyle[ file, func, ToBoxes @ func @ $$slot[ 1 ] /. $$slot -> Slot ];
+
+makeIconTemplateBoxStyle[ file_, icon_ ] :=
+    makeIconTemplateBoxStyle[ file, icon, ToBoxes @ icon ];
+
+makeIconTemplateBoxStyle[ file_, icon_, boxes_ ] :=
+    Cell[ StyleData @ FileBaseName @ file, TemplateBoxOptions -> { DisplayFunction -> (boxes &) } ];
 
 
 
@@ -476,7 +481,22 @@ inlineResources[ expr_ ] := expr /. {
 (*$styleDataCells*)
 
 
-$styleDataCells := $styleDataCells = inlineResources @ Cases[ Flatten @ ReadList @ $styleDataFile, _Cell ];
+$styleDataCells = inlineResources @ Cases[ Flatten @ ReadList @ $styleDataFile, _Cell ];
+
+
+
+(* ::Subsection::Closed:: *)
+(*$templateBoxDisplayFunctions*)
+
+
+$templateBoxDisplayFunctions = Association @ Cases[
+    $styleDataCells,
+    Cell[ StyleData[ name_String ], ___, TemplateBoxOptions -> KeyValuePattern[ DisplayFunction -> func_ ], ___ ] :>
+        (name -> func)
+];
+
+
+Developer`WriteWXFFile[ $displayFunctionsFile, $templateBoxDisplayFunctions ];
 
 
 

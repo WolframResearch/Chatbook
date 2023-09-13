@@ -27,12 +27,12 @@ BeginPackage[ "Wolfram`Chatbook`InlineReferences`" ];
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"                  ];
-Needs[ "Wolfram`Chatbook`Common`"           ];
-Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
-Needs[ "Wolfram`Chatbook`Personas`"         ];
-Needs[ "Wolfram`Chatbook`PersonaInstaller`" ];
-Needs[ "Wolfram`Chatbook`Serialization`"    ];
+Needs[ "Wolfram`Chatbook`"                   ];
+Needs[ "Wolfram`Chatbook`Common`"            ];
+Needs[ "Wolfram`Chatbook`FrontEnd`"          ];
+Needs[ "Wolfram`Chatbook`Personas`"          ];
+Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
+Needs[ "Wolfram`Chatbook`Serialization`"     ];
 
 
 
@@ -112,7 +112,7 @@ parseInlineReferences[ cellObject_CellObject, _Cell, text_String ] := Enclose[
                 parsed,
                 Cell[ __, TaggingRules -> KeyValuePattern[ "PersonaName" -> name_String ], ___ ] :> (
                     If[ ! MemberQ[ Keys @ GetCachedPersonaData[ ], name ],
-                        ConfirmBy[ PersonaInstall[ "Prompt: "<>name ], FileExistsQ, "PersonaInstall" ];
+                        ConfirmBy[ ResourceInstall[ "Prompt: "<>name ], FileExistsQ, "ResourceInstall" ];
                         ConfirmAssert[ MemberQ[ Keys @ GetCachedPersonaData[ ], name ], "GetCachedPersonaData" ]
                     ];
                     CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = name;
@@ -248,7 +248,7 @@ modifierCompletion // endDefinition;
 
 $modifierNames := Select[
     DeleteDuplicates @ Flatten @ {
-        CurrentValue @ { TaggingRules, "ChatNotebookSettings", "LLMEvaluator", "LLMEvaluatorName" },
+        AbsoluteCurrentValue @ { TaggingRules, "ChatNotebookSettings", "LLMEvaluator", "LLMEvaluatorName" },
         $availableModifierNames
     },
     StringQ
@@ -517,7 +517,7 @@ functionCompletion // endDefinition;
 
 $functionNames := Select[
     DeleteDuplicates @ Flatten @ {
-        CurrentValue @ { TaggingRules, "ChatNotebookSettings", "LLMEvaluator", "LLMEvaluatorName" },
+        AbsoluteCurrentValue @ { TaggingRules, "ChatNotebookSettings", "LLMEvaluator", "LLMEvaluatorName" },
         $availableFunctionNames
     },
     StringQ
@@ -1059,7 +1059,11 @@ personaCompletion // endDefinition;
 
 
 $personaNames := Select[
-    DeleteDuplicates @ Flatten @ { Keys @ GetCachedPersonaData[ ], $availablePersonaNames },
+    DeleteDuplicates @ Flatten @ {
+        AbsoluteCurrentValue @ { TaggingRules, "ChatNotebookSettings", "LLMEvaluator", "LLMEvaluatorName" },
+        Keys @ GetCachedPersonaData[ ],
+        $availablePersonaNames
+    },
     StringQ
 ];
 
@@ -1202,7 +1206,7 @@ writeStaticPersonaBox[ cell_CellObject, name_String ] /; $removingBox :=
 *)
 writeStaticPersonaBox[ cell_CellObject, name_String ] /; MemberQ[ $personaNames, name ] := Enclose[
     If[ ! MemberQ[ Keys @ GetCachedPersonaData[ ], name ],
-        ConfirmBy[ PersonaInstall[ "Prompt: "<>name ], FileExistsQ, "PersonaInstall" ];
+        ConfirmBy[ ResourceInstall[ "Prompt: "<>name ], FileExistsQ, "ResourceInstall" ];
         ConfirmAssert[ MemberQ[ Keys @ GetCachedPersonaData[ ], name ], "GetCachedPersonaData" ]
     ];
 
@@ -1364,7 +1368,7 @@ Enclose[
 		CurrentValue[cellobj, {TaggingRules, "PersonaName"}] = input;
 
 		If[ ! MemberQ[ Keys @ GetCachedPersonaData[ ], input ],
-	        ConfirmBy[ PersonaInstall[ "Prompt: "<>input ], FileExistsQ, "PersonaInstall" ];
+	        ConfirmBy[ ResourceInstall[ "Prompt: "<>input ], FileExistsQ, "ResourceInstall" ];
 	        ConfirmAssert[ MemberQ[ Keys @ GetCachedPersonaData[ ], input ], "GetCachedPersonaData" ]
 	    ];
 
