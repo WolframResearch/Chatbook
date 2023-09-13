@@ -29,6 +29,7 @@ Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`Errors`"           ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`"       ];
 Needs[ "Wolfram`Chatbook`PersonaInstaller`" ];
+Needs[ "Wolfram`Chatbook`ToolManager`"      ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`Serialization`"    ];
 Needs[ "Wolfram`Chatbook`Formatting`"       ];
@@ -68,6 +69,7 @@ ChatbookAction[ "InsertInlineReference", args___ ] := catchMine @ InsertInlineRe
 ChatbookAction[ "OpenChatBlockSettings", args___ ] := catchMine @ OpenChatBlockSettings @ args;
 ChatbookAction[ "OpenChatMenu"         , args___ ] := catchMine @ OpenChatMenu @ args;
 ChatbookAction[ "PersonaManage"        , args___ ] := catchMine @ PersonaManage @ args;
+ChatbookAction[ "ToolManage"           , args___ ] := catchMine @ ToolManage @ args;
 ChatbookAction[ "Send"                 , args___ ] := catchMine @ SendChat @ args;
 ChatbookAction[ "StopChat"             , args___ ] := catchMine @ StopChat @ args;
 ChatbookAction[ "TabLeft"              , args___ ] := catchMine @ TabLeft @ args;
@@ -243,6 +245,14 @@ definitionNotebookCellQ[ ___ ] := False;
 PersonaManage[ a___ ] := Enclose[
     ConfirmMatch[ createPersonaManagerDialog[ ], _NotebookObject, "createPersonaManagerDialog" ],
     throwInternalFailure[ PersonaManage @ a, ## ] &
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ToolManage*)
+ToolManage[ a___ ] := Enclose[
+    ConfirmMatch[ CreateLLMToolManagerDialog[ ], _NotebookObject, "CreateLLMToolManagerDialog" ],
+    throwInternalFailure[ ToolManage @ a, ## ] &
 ];
 
 (* ::**************************************************************************************************************:: *)

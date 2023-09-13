@@ -1143,7 +1143,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.1.3.3903502180"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.1.3.3903517535"|>
   ],
   Cell[
    StyleData["Text"],
@@ -15213,6 +15213,175 @@ Notebook[
        ImageSize -> {7, 4},
        ImagePadding -> {{0, 1}, {1, 0}},
        BaselinePosition -> Scaled[-0.5]
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ToolManagerRepository"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.05],
+        {
+         FaceForm[
+          {RGBColor[0.41961, 0.78431, 0.82745], Opacity[1.0]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {1, 4, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgBGJZIGZigAEJB73/in+/lXI5THxbY296TxzOV779sy5r\nj7jD4klWjL4tXA7nvwc/Xjpb3CE8euP+N/O4HGy5ri8usBV3KNkq+vv0Oy4H\niHniDjpXZj2TXc4N50PM44Hz+4NLVKb/l4LyheB8HibtdrFIATR5PofZofNX\nr42QgfMh8rJwPoTWh/PbxW6e+35ZH24eWNjBAG4fKl8NztfdNPf9cjc1VPkG\nNYe7KmyNU5URfIg+BB/iHmk4319OLMu3WBpuHqp/EPz+Q181YvyV4XxJljA+\n3U0SDvsOiqsFs3I7SOuDbJaAhieXQ+/0PKFmB0R8occfABJPgUQ=\n      "
+          ]
+         ]
+        },
+        {
+         Thickness[0.05],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           },
+           {
+            {0, 2, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0}
+           }
+          },
+          {
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGCQBWIQDQFqDmCqwQBCMwjB+SnW9/17p/OjyfM4TJZgCePj\nRfAhtD4aXw7O3zT3/fJjp6VRzWOQQrUPzhfD4AtEWG45UcYD5zslPL2gdJvL\noVpknfvDKjGHOUcUNhRlcDrskGt9HWgh7qALtpDDwW3b579XKsQdjoKkJ3I4\nKN/+WZe1RxxqHgfUPAk43zRulydPE4If0Ds9T4hZ0oGHSbtd7CaHgyHHGpmo\nFEmoPzgh8s3KaO5Vg/OjwArV0OTVHXzMOx0TniL4EFoGjW8A54P942aAah48\nPhB8AKePYYk=\n       "
+           ],
+           {
+            {11.0, 16.0},
+            {11.0, 7.0},
+            {9.553, 7.0},
+            {6.0, 3.558},
+            {6.0, 7.0},
+            {4.5, 7.0},
+            {4.224, 7.0},
+            {4.0, 7.224},
+            {4.0, 7.5},
+            {4.0, 15.5},
+            {4.0, 15.776},
+            {4.224, 16.0},
+            {4.5, 16.0},
+            {11.0, 16.0}
+           }
+          }
+         ]
+        },
+        {
+         FaceForm[
+          {RGBColor[0.32157, 0.6902, 0.70196], Opacity[1.0]}
+         ],
+         FilledCurveBox[
+          {
+           {
+            {1, 4, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgBGI5IGYC4g/Lj3mbc6o6MICBtMPhrxox/YdU4HywfKeK\nw7LZRxQ2FCH4EHkZOH/T3PfLj3WrOKjs/NP+5bayQ4TllhNl/5QdIsW3X2S4\np+SwoShj4lsbZYdUyUcR4uWKcL6QiP2xO1vl4Pz25eGnjFxkHOxN43Z5nkHw\n54CsX6EG56/6eMk3KUDT4e7WlpoLxrIOxUDtNfVaDiuX+DkIJyrC+VaTTtd7\n/FeC8y3SXTLzPyg7LCmw5bq+WBPu/mqRde4Pf2mg+c8Azhe/ee57sLIBavg4\nQOVh4QfkQ/Tpw/ntYkCNl/VR5XGJM6Dz5eB8HibtdrFIGVR9wPhB0QeLL6T4\nBADCVp70\n      "
+          ]
+         ]
+        },
+        {
+         Thickness[0.05],
+         FilledCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           },
+           {
+            {1, 4, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {0, 1, 0}
+           }
+          },
+          {
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGCQA2IQDQH6DmCqwcDhw/Jj3uacqnD+NOfunOfVKmjyKg66\nm+a+X+6G4EPMQfDzhZoPnFLUcuADKUxXdnBKeHpBabaWQ+lkCZawPiWH4oyJ\nb2v+azk8rBJZ556oCOd/04jpP1QqA+ffVWFrnOos7XDZN0kgolITzp9zRGFD\n0Qo1OB9mT7vYzXPfg+UcbLmuLy7Yq+QgEGG55USZIpwPdnebEpwf8njp7CMJ\nyg7Hvc07HRWU4e6PSrG+79+rjOY/GTjfB6g84akUavgwSKGGH5CPEr5APsj7\nfLwGqPLAcAU569hpaTgfIi+HxkfEE8wcFPOwqAMAkFWQcg==\n       "
+           ],
+           CompressedData[
+            "\n1:eJxTTMoPSmViYGCQAGIQDQH6DhDawCEqxfq+fy+Cj18cnS8H5/uYdzomPJVB\n0yeDpk/G4cPyY97mnKoY/AVS+ndV2lQdjnuDDFJxMI3b5cnjpOoANGx6XpCy\ngy3X9cUFe5UdBCIst5woU4Tz570HGSAP599VYWuc6izr0C5289x3YRU4f84R\nhQ1FK9Tg/A1FGRPf2mg6hDxeOvuIgpxDMZBb81/T4WGVyDr3REU4vzvn+e+V\nG5XhfJj7mLSBNvBpwN0/I0+o+cApdTT/YYYbAOT/chk=\n       "
+           ]
+          }
+         ]
+        }
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
+       PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
       ]
      ])
    }
