@@ -14,26 +14,30 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 `$toolOptions;
 `$toolResultStringLength;
 `getToolByName;
-`getToolIcon;
 `getToolDisplayName;
 `getToolFormattingFunction;
+`getToolIcon;
 `initTools;
 `makeExpressionURI;
 `makeToolConfiguration;
 `makeToolResponseString;
 `resolveTools;
+`toolData;
+`toolName;
+`toolOptionValue;
 `toolRequestParser;
 `withToolBox;
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"               ];
-Needs[ "Wolfram`Chatbook`Common`"        ];
-Needs[ "Wolfram`Chatbook`Formatting`"    ];
-Needs[ "Wolfram`Chatbook`Serialization`" ];
-Needs[ "Wolfram`Chatbook`Utils`"         ];
-Needs[ "Wolfram`Chatbook`Sandbox`"       ];
-Needs[ "Wolfram`Chatbook`Prompting`"     ];
+Needs[ "Wolfram`Chatbook`"                   ];
+Needs[ "Wolfram`Chatbook`Common`"            ];
+Needs[ "Wolfram`Chatbook`Formatting`"        ];
+Needs[ "Wolfram`Chatbook`Serialization`"     ];
+Needs[ "Wolfram`Chatbook`Utils`"             ];
+Needs[ "Wolfram`Chatbook`Sandbox`"           ];
+Needs[ "Wolfram`Chatbook`Prompting`"         ];
+Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
 
 PacletInstall[ "Wolfram/LLMFunctions" ];
 Needs[ "Wolfram`LLMFunctions`" ];
@@ -47,12 +51,16 @@ System`LLMConfiguration;
     Definitions
     TestWriter
 *)
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Tool Lists*)
+$DefaultTools   := $defaultChatTools;
+$InstalledTools := $installedTools;
+$AvailableTools := Association[ $DefaultTools, $InstalledTools ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Exported Functions for Tool Repository*)
-$DefaultTools := $defaultChatTools;
-
 $ToolFunctions = <|
     "DocumentationLookup"      -> documentationLookup,
     "DocumentationSearcher"    -> documentationSearch,
@@ -66,14 +74,24 @@ $ToolFunctions = <|
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Tool Configuration*)
+$defaultWebTextLength   = 12000;
 $toolResultStringLength = 500;
 $webSessionVisible      = False;
 
 $DefaultToolOptions = <|
     "WolframLanguageEvaluator" -> <|
-        "AllowedReadPaths" -> All
+        "AllowedExecutePaths"      -> Automatic,
+        "AllowedReadPaths"         -> All,
+        "AllowedWritePaths"        -> Automatic,
+        "EvaluationTimeConstraint" -> 60,
+        "PingTimeConstraint"       -> 30
+    |>,
+    "WebFetcher" -> <|
+        "MaxContentLength" -> $defaultWebTextLength
     |>
 |>;
+
+$defaultToolIcon = RawBoxes @ TemplateBox[ { }, "WrenchIcon" ];
 
 $attachments           = <| |>;
 $selectedTools         = <| |>;
@@ -96,6 +114,15 @@ $toolNameAliases = <|
     "WebImageSearch"      -> "WebImageSearcher",
     "WebSearch"           -> "WebSearcher"
 |>;
+
+$installedToolExtraKeys = {
+    "Description",
+    "DocumentationLink",
+    "Origin",
+    "ResourceName",
+    "Templated",
+    "Version"
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -126,6 +153,19 @@ SetToolOptions[ scope_, name_String, Inherited ] := UsingFrontEnd[
 ];
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toolOptionValue*)
+toolOptionValue // beginDefinition;
+toolOptionValue[ name_String, key_String ] := toolOptionValue[ name, $toolOptions[ name ], key ];
+toolOptionValue[ name_String, _Missing, key_String ] := toolOptionValue0[ $DefaultToolOptions[ name ], key ];
+toolOptionValue[ name_String, opts_Association, key_String ] := toolOptionValue0[ opts, key ];
+toolOptionValue // endDefinition;
+
+toolOptionValue0 // beginDefinition;
+toolOptionValue0[ opts_Association, key_String ] := Lookup[ opts, key, Lookup[ $DefaultToolOptions, key ] ];
+toolOptionValue0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Toolbox*)
 
@@ -142,25 +182,54 @@ withToolBox // endDefinition;
 (*selectTools*)
 selectTools // beginDefinition;
 
-selectTools[ as: KeyValuePattern[ "LLMEvaluator" -> KeyValuePattern[ "Tools" -> tools_ ] ] ] := (
-    (* Select user-specified tools: *)
-    selectTools0 @ Replace[ Lookup[ as, "Tools", None ], Automatic|Inherited -> None ];
-    (* Select persona tools: *)
-    selectTools0 @ tools;
-);
+selectTools[ as_Association ] := Enclose[
+    Module[ { llmEvaluatorName, toolNames, selections, selectionTypes, add, remove, selectedNames },
 
-selectTools[ as_Association ] := selectTools0 @ Lookup[ as, "Tools", Automatic ];
+        llmEvaluatorName = ConfirmBy[ getLLMEvaluatorName @ as, StringQ, "LLMEvaluatorName" ];
+        toolNames        = ConfirmMatch[ getToolNames @ as, { ___String }, "Names" ];
+        selections       = ConfirmBy[ getToolSelections @ as, AssociationQ, "Selections" ];
+        selectionTypes   = ConfirmBy[ getToolSelectionTypes @ as, AssociationQ, "SelectionTypes" ];
+
+        add = ConfirmMatch[
+            Union[
+                Keys @ Select[ selections, Lookup @ llmEvaluatorName ],
+                Keys @ Select[ selectionTypes, SameAs @ All ]
+            ],
+            { ___String },
+            "ToolAdditions"
+        ];
+
+        remove = ConfirmMatch[
+            Union[
+                Keys @ Select[ selections, Not @* Lookup[ llmEvaluatorName ] ],
+                Keys @ Select[ selectionTypes, SameAs @ None ]
+            ],
+            { ___String },
+            "ToolRemovals"
+        ];
+
+        selectedNames = ConfirmMatch[
+            Complement[ Union[ toolNames, add ], remove ],
+            { ___String },
+            "SelectedNames"
+        ];
+
+        selectTools0 /@ selectedNames
+    ],
+    throwInternalFailure[ selectTools @ as, ## ] &
+];
 
 selectTools // endDefinition;
 
 
+(* TODO: Most of this functionality is moved to `getToolNames`. This only needs to operate on strings. *)
 selectTools0 // beginDefinition;
 
 selectTools0[ Automatic|Inherited ] := selectTools0 @ $defaultChatTools;
 selectTools0[ None                ] := $selectedTools = <| |>;
 selectTools0[ name_String         ] /; KeyExistsQ[ $toolBox, name ] := $selectedTools[ name ] = $toolBox[ name ];
 selectTools0[ name_String         ] /; KeyExistsQ[ $toolNameAliases, name ] := selectTools0 @ $toolNameAliases @ name;
-selectTools0[ name_String         ] := selectTools0[ name, Lookup[ $defaultChatTools, name ] ];
+selectTools0[ name_String         ] := selectTools0[ name, Lookup[ $AvailableTools, name ] ];
 selectTools0[ tools_List          ] := selectTools0 /@ tools;
 selectTools0[ tools_Association   ] := KeyValueMap[ selectTools0, tools ];
 
@@ -189,6 +258,102 @@ selectTools0[ name_String, Missing[ "KeyAbsent", name_ ] ] :=
     ];
 
 selectTools0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getLLMEvaluatorName*)
+getLLMEvaluatorName // beginDefinition;
+getLLMEvaluatorName[ KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] := name;
+getLLMEvaluatorName[ KeyValuePattern[ "LLMEvaluator" -> name_String ] ] := name;
+getLLMEvaluatorName[ KeyValuePattern[ "LLMEvaluator" -> evaluator_Association ] ] := getLLMEvaluatorName @ evaluator;
+getLLMEvaluatorName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getToolNames*)
+getToolNames // beginDefinition;
+
+(* Persona declares tools, so combine with defaults as appropriate *)
+getToolNames[ as: KeyValuePattern[ "LLMEvaluator" -> KeyValuePattern[ "Tools" -> tools_ ] ] ] :=
+    getToolNames[ Lookup[ as, "Tools", None ], tools ];
+
+(* No tool specification by persona, so get defaults *)
+getToolNames[ as_Association ] :=
+    getToolNames @ Lookup[ as, "Tools", Automatic ];
+
+(* Persona does not want any tools *)
+getToolNames[ tools_, None ] := { };
+
+(* Persona wants default tools *)
+getToolNames[ tools_, Automatic|Inherited ] := getToolNames @ tools;
+
+(* Persona declares an explicit list of tools *)
+getToolNames[ Automatic|None|Inherited, personaTools_List ] := getToolNames @ personaTools;
+
+(* The user has specified an explicit list of tools as well, so include them *)
+getToolNames[ tools_List, personaTools_List ] := Union[ getToolNames @ tools, getToolNames @ personaTools ];
+
+(* Get name of each tool *)
+getToolNames[ tools_List ] := DeleteDuplicates @ Flatten[ getCachedToolName /@ tools ];
+
+(* Default tools *)
+getToolNames[ Automatic|Inherited ] := Keys @ $DefaultTools;
+
+(* All tools *)
+getToolNames[ All ] := Keys @ $AvailableTools;
+
+(* No tools *)
+getToolNames[ None ] := { };
+
+(* A single tool specification without an enclosing list *)
+getToolNames[ tool: Except[ _List ] ] := getToolNames @ { tool };
+
+getToolNames // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getCachedToolName*)
+getCachedToolName // beginDefinition;
+
+getCachedToolName[ tool_LLMTool ] := Enclose[
+    Module[ { name },
+        name = ConfirmBy[ toolName @ tool, StringQ, "Name" ];
+        ConfirmAssert[ AssociationQ @ $toolBox, "ToolBox" ];
+        $toolBox[ name ] = tool;
+        name
+    ],
+    throwInternalFailure[ getCachedToolName @ tool, ## ] &
+];
+
+getCachedToolName[ name_String ] :=
+    With[ { canonical = toCanonicalToolName @ name },
+        Which[
+            KeyExistsQ[ $toolBox         , canonical ], canonical,
+            KeyExistsQ[ $toolNameAliases , canonical ], getCachedToolName @ $toolNameAliases @ canonical,
+            KeyExistsQ[ $defaultChatTools, canonical ], getCachedToolName @ $defaultChatTools @ canonical,
+            True                                      , name
+        ]
+    ];
+
+getCachedToolName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getToolSelections*)
+getToolSelections // beginDefinition;
+getToolSelections[ as_Association ] := getToolSelections[ as, Lookup[ as, "ToolSelections", <| |> ] ];
+getToolSelections[ as_, selections_Association ] := selections;
+getToolSelections[ as_, Except[ _Association ] ] := <| |>;
+getToolSelections // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getToolSelectionTypes*)
+getToolSelectionTypes // beginDefinition;
+getToolSelectionTypes[ as_Association ] := getToolSelectionTypes[ as, Lookup[ as, "ToolSelectionType", <| |> ] ];
+getToolSelectionTypes[ as_, selections_Association ] := selections;
+getToolSelectionTypes[ as_, Except[ _Association ] ] := <| |>;
+getToolSelectionTypes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -341,6 +506,24 @@ $defaultChatTools := If[ TrueQ @ $CloudEvaluation,
 $defaultChatTools0 = <| |>;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Installed Tools*)
+$installedTools := Association @ Cases[
+    GetInstalledResourceData[ "LLMTool" ],
+    as: KeyValuePattern[ "Tool" -> tool_ ] :> (toolName @ tool -> addExtraToolData[ tool, as ])
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*addExtraToolData*)
+addExtraToolData // beginDefinition;
+
+addExtraToolData[ tool: HoldPattern @ LLMTool[ as_Association, a___ ], extra_Association ] :=
+    With[ { new = Join[ KeyTake[ extra, $installedToolExtraKeys ], as ] }, LLMTool[ new, a ] ];
+
+addExtraToolData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*getToolByName*)
 getToolByName // beginDefinition;
@@ -352,12 +535,68 @@ getToolByName // endDefinition;
 (*toolName*)
 toolName // beginDefinition;
 toolName[ tool_ ] := toolName[ tool, Automatic ];
-toolName[ HoldPattern @ LLMTool[ KeyValuePattern[ "Name" -> name_String ], ___ ], type_ ] := toolName[ name, type ];
-toolName[ name_, Automatic ] := toolName[ name, "Canonical" ];
+toolName[ HoldPattern @ LLMTool[ as_Association, ___ ], type_ ] := toolName[ as, type ];
+toolName[ KeyValuePattern[ "CanonicalName" -> name_String ], "Canonical" ] := name;
+toolName[ KeyValuePattern[ "DisplayName" -> name_String ], "Display" ] := name;
+toolName[ KeyValuePattern[ "Name" -> name_String ], type_ ] := toolName[ name, type ];
+toolName[ tool_, Automatic ] := toolName[ tool, "Canonical" ];
 toolName[ name_String, "Machine" ] := toMachineToolName @ name;
 toolName[ name_String, "Canonical" ] := toCanonicalToolName @ name;
 toolName[ name_String, "Display" ] := toDisplayToolName @ name;
+toolName[ tools_List, type_ ] := toolName[ #, type ] & /@ tools;
 toolName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toolData*)
+toolData // beginDefinition;
+
+toolData[ HoldPattern @ LLMTool[ as_Association, ___ ] ] :=
+    toolData @ as;
+
+toolData[ name_String ] /; KeyExistsQ[ $toolBox, name ] :=
+    toolData @ $toolBox[ name ];
+
+toolData[ name_String ] /; KeyExistsQ[ $defaultChatTools, name ] :=
+    toolData @ $defaultChatTools[ name ];
+
+toolData[ as: KeyValuePattern @ { "Function"|"ToolCall" -> _ } ] := <|
+    toolDefaultData @ toolName @ as,
+    "Icon" -> toolDefaultIcon @ as,
+    as
+|>;
+
+toolData[ tools_List ] :=
+    toolData /@ tools;
+
+toolData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolDefaultIcon*)
+toolDefaultIcon // beginDefinition;
+
+toolDefaultIcon[ KeyValuePattern[ "Origin" -> "LLMToolRepository" ] ] :=
+    RawBoxes @ TemplateBox[ { }, "ToolManagerRepository" ];
+
+toolDefaultIcon[ _Association ] :=
+    $defaultToolIcon;
+
+toolDefaultIcon // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toolDefaultData*)
+toolDefaultData // beginDefinition;
+
+toolDefaultData[ name_String ] := <|
+    "CanonicalName" -> toCanonicalToolName @ name,
+    "DisplayName"   -> toDisplayToolName @ name,
+    "Name"          -> toMachineToolName @ name,
+    "Icon"          -> $defaultToolIcon
+|>;
+
+toolDefaultData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -420,12 +659,12 @@ Follow up search results with the documentation lookup tool to get the full info
 
 $defaultChatTools0[ "DocumentationSearcher" ] = LLMTool[
     <|
-        "Name"               -> toMachineToolName[ "DocumentationSearcher" ],
-        "DisplayName"        -> toDisplayToolName[ "DocumentationSearcher" ],
-        "Icon"               -> RawBoxes @ TemplateBox[ { }, "PersonaDocumentation" ],
+        toolDefaultData[ "DocumentationSearcher" ],
+        "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconDocumentationSearcher" ],
         "Description"        -> $documentationSearchDescription,
         "Function"           -> documentationSearch,
         "FormattingFunction" -> toolAutoFormatter,
+        "Source"             -> "BuiltIn",
         "Parameters"         -> {
             "query" -> <|
                 "Interpreter" -> "String",
@@ -454,12 +693,12 @@ documentationSearch // endDefinition;
 (*DocumentationLookup*)
 $defaultChatTools0[ "DocumentationLookup" ] = LLMTool[
     <|
-        "Name"               -> toMachineToolName[ "DocumentationLookup" ],
-        "DisplayName"        -> toDisplayToolName[ "DocumentationLookup" ],
-        "Icon"               -> RawBoxes @ TemplateBox[ { }, "PersonaDocumentation" ],
+        toolDefaultData[ "DocumentationLookup" ],
+        "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconDocumentationLookup" ],
         "Description"        -> "Get documentation pages for Wolfram Language symbols.",
         "Function"           -> documentationLookup,
         "FormattingFunction" -> toolAutoFormatter,
+        "Source"             -> "BuiltIn",
         "Parameters"         -> {
             "names" -> <|
                 "Interpreter" -> DelimitedSequence[ "WolframLanguageSymbol", "," ],
@@ -580,12 +819,12 @@ You have read access to local files.
 
 $defaultChatTools0[ "WolframLanguageEvaluator" ] = LLMTool[
     <|
-        "Name"               -> toMachineToolName[ "WolframLanguageEvaluator" ],
-        "DisplayName"        -> toDisplayToolName[ "WolframLanguageEvaluator" ],
+        toolDefaultData[ "WolframLanguageEvaluator" ],
         "Icon"               -> RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
         "Description"        -> $sandboxEvaluateDescription,
         "Function"           -> sandboxEvaluate,
         "FormattingFunction" -> sandboxFormatter,
+        "Source"             -> "BuiltIn",
         "Parameters"         -> {
             "code" -> <|
                 "Interpreter" -> "String",
@@ -602,7 +841,7 @@ $defaultChatTools0[ "WolframLanguageEvaluator" ] = LLMTool[
 (*wolframLanguageEvaluator*)
 wolframLanguageEvaluator // beginDefinition;
 wolframLanguageEvaluator[ code_String ] := wolframLanguageEvaluator[ code, sandboxEvaluate @ code ];
-wolframLanguageEvaluator[ code_, KeyValuePattern[ "String" -> result_String ] ] := result;
+wolframLanguageEvaluator[ code_, result_Association ] := KeyTake[ result, { "Result", "String" } ];
 wolframLanguageEvaluator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -635,12 +874,12 @@ $wolframAlphaIcon = RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEBitma
 
 $defaultChatTools0[ "WolframAlpha" ] = LLMTool[
     <|
-        "Name"               -> toMachineToolName[ "WolframAlpha" ],
-        "DisplayName"        -> toDisplayToolName[ "WolframAlpha" ],
+        toolDefaultData[ "WolframAlpha" ],
         "Icon"               -> $wolframAlphaIcon,
         "Description"        -> $wolframAlphaDescription,
         "Function"           -> getWolframAlphaText,
         "FormattingFunction" -> wolframAlphaResultFormatter,
+        "Source"             -> "BuiltIn",
         "Parameters"         -> {
             "input" -> <|
                 "Interpreter" -> "String",
@@ -794,12 +1033,12 @@ waResultText0 // endDefinition;
 (*WebSearch*)
 $defaultChatTools0[ "WebSearcher" ] = LLMTool[
     <|
-        "Name"               -> toMachineToolName[ "WebSearcher" ],
-        "DisplayName"        -> toDisplayToolName[ "WebSearcher" ],
-        "Icon"               -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
+        toolDefaultData[ "WebSearcher" ],
+        "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconWebSearcher" ],
         "Description"        -> "Search the web.",
         "Function"           -> webSearch,
         "FormattingFunction" -> toolAutoFormatter,
+        "Source"             -> "BuiltIn",
         "Parameters"         -> {
             "query" -> <|
                 "Interpreter" -> "String",
@@ -843,12 +1082,12 @@ $webSearchResultTemplate = StringTemplate[
 (*WebFetch*)
 $defaultChatTools0[ "WebFetcher" ] = LLMTool[
     <|
-        "Name"               -> toMachineToolName[ "WebFetcher" ],
-        "DisplayName"        -> toDisplayToolName[ "WebFetcher" ],
-        "Icon"               -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
+        toolDefaultData[ "WebFetcher" ],
+        "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconWebFetcher" ],
         "Description"        -> "Fetch plain text or image links from a URL.",
         "Function"           -> webFetch,
         "FormattingFunction" -> toolAutoFormatter,
+        "Source"             -> "BuiltIn",
         "Parameters"  -> {
             "url" -> <|
                 "Interpreter" -> "URL",
@@ -874,7 +1113,7 @@ webFetch[ url_, "Plaintext" ] := fetchWebText @ url;
 webFetch[ url: _URL|_String, fmt_String ] := webFetch[ url, fmt, Import[ url, { "HTML", fmt } ] ];
 webFetch[ url_, "ImageLinks", { } ] := <| "Result" -> { }, "String" -> "No links found at " <> TextString @ url |>;
 webFetch[ url_, "ImageLinks", links: { __String } ] := <| "Result" -> links, "String" -> StringRiffle[ links, "\n" ] |>;
-webFetch[ url_, fmt_, result_String ] := niceWebText @ result;
+webFetch[ url_, fmt_, result_String ] := shortenWebText @ niceWebText @ result;
 webFetch // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -894,12 +1133,22 @@ fetchWebText[ url_String, session_WebSessionObject ] := Enclose[
         Pause[ 3 ]; (* Allow time for the page to load *)
         body = ConfirmMatch[ WebExecute[ session, "LocateElements" -> "Tag" -> "body" ], { __WebElementObject } ];
         strings = ConfirmMatch[ WebExecute[ "ElementText" -> body ], { __String } ];
-        niceWebText @ strings
+        shortenWebText @ niceWebText @ strings
     ],
-    niceWebText @ Import[ url, { "HTML", "Plaintext" } ] &
+    shortenWebText @ niceWebText @ Import[ url, { "HTML", "Plaintext" } ] &
 ];
 
 fetchWebText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*shortenWebText*)
+shortenWebText // beginDefinition;
+shortenWebText[ text_String ] := shortenWebText[ text, toolOptionValue[ "WebFetcher", "MaxContentLength" ] ];
+shortenWebText[ text_String, len_Integer? Positive ] := StringTake[ text, UpTo[ len ] ];
+shortenWebText[ text_String, Infinity|All ] := text;
+shortenWebText[ text_String, _ ] := shortenWebText[ text, $defaultWebTextLength ];
+shortenWebText // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -948,12 +1197,12 @@ startWebSession // endDefinition;
 (*WebImageSearch*)
 $defaultChatTools0[ "WebImageSearcher" ] = LLMTool[
     <|
-        "Name"               -> toMachineToolName[ "WebImageSearcher" ],
-        "DisplayName"        -> toDisplayToolName[ "WebImageSearcher" ],
-        "Icon"               -> RawBoxes @ TemplateBox[ { }, "PersonaFromURL" ],
+        toolDefaultData[ "WebImageSearcher" ],
+        "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconWebImageSearcher" ],
         "Description"        -> "Search the web for images.",
         "Function"           -> webImageSearch,
         "FormattingFunction" -> toolAutoFormatter,
+        "Source"             -> "BuiltIn",
         "Parameters"         -> {
             "query" -> <|
                 "Interpreter" -> "String",
@@ -1368,9 +1617,9 @@ wolframLanguageData // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getToolIcon*)
 getToolIcon // beginDefinition;
-getToolIcon[ HoldPattern @ LLMTool[ as_, ___ ] ] := getToolIcon @ as;
-getToolIcon[ as_Association ] := Lookup[ as, "Icon", RawBoxes @ TemplateBox[ { }, "WrenchIcon" ] ];
-getToolIcon[ _ ] := RawBoxes @ TemplateBox[ { }, "WrenchIcon" ];
+getToolIcon[ HoldPattern @ LLMTool[ as_, ___ ] ] := getToolIcon @ toolData @ as;
+getToolIcon[ as_Association ] := Lookup[ toolData @ as, "Icon", RawBoxes @ TemplateBox[ { }, "WrenchIcon" ] ];
+getToolIcon[ _ ] := $defaultToolIcon;
 getToolIcon // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

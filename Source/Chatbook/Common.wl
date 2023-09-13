@@ -3,6 +3,8 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Common`" ];
 
+(* :!CodeAnalysis::BeginBlock:: *)
+
 `$cloudNotebooks;
 `$maxChatCells;
 `$closedChatCellOptions;
@@ -38,6 +40,8 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `throwTop;
 
 `chatbookIcon;
+`inlineTemplateBox;
+`inlineTemplateBoxes;
 
 Begin[ "`Private`" ];
 
@@ -85,59 +89,31 @@ $$textDataList        = { (_String|_Cell|_StyleBox|_ButtonBox)... };
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Messages*)
-Chatbook::Internal =
-"An unexpected error occurred. `1`";
-
-Chatbook::NoAPIKey =
-"No API key defined.";
-
-Chatbook::InvalidAPIKey =
-"Invalid value for API key: `1`";
-
-Chatbook::UnknownResponse =
-"Unexpected response from OpenAI server";
-
-Chatbook::RateLimitReached =
-"Rate limit reached for requests. Please try again later.";
-
-(* TODO: use this message instead of RateLimitReached when sensible *)
-Chatbook::ServerOverloaded =
-"The server is currently overloaded with other requests. Please try again later.";
-
-Chatbook::UnknownStatusCode =
-"Unexpected response from OpenAI server with status code `StatusCode`";
-
-Chatbook::BadResponseMessage =
-"`1`";
-
-Chatbook::APIKeyOrganizationID = "\
-The value specified for the API key appears to be an organization ID instead of an API key. \
-Visit `1` to manage your API keys.";
-
-Chatbook::ConnectionFailure = "\
-Server connection failure: `1`. Please try again later.";
-
-Chatbook::ConnectionFailure2 = "\
-Could not get a valid response from the server: `1`. Please try again later.";
-
-Chatbook::NoSandboxKernel = "\
-Unable to start a sandbox kernel. \
-This may mean that the number of currently running kernels exceeds the limit defined by $LicenseProcesses.";
-
-Chatbook::ResourceNotFound = "\
-Resource `1` not found.";
-
-Chatbook::ToolNotFound = "\
-Tool `1` not found.";
-
-Chatbook::NotImplemented = "\
-Action \"`1`\" is not implemented.";
-
-Chatbook::InvalidStreamingOutputMethod = "\
-Invalid streaming output method: `1`.";
-
-Chatbook::ChannelFrameworkError = "\
-The channel framework is currently unavailable, please try installing from URL instead or try again later.";
+KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
+    "APIKeyOrganizationID"            -> "The value specified for the API key appears to be an organization ID instead of an API key. Visit `1` to manage your API keys.",
+    "BadResponseMessage"              -> "`1`",
+    "ChannelFrameworkError"           -> "The channel framework is currently unavailable, please try installing from URL instead or try again later.",
+    "ConnectionFailure"               -> "Server connection failure: `1`. Please try again later.",
+    "ConnectionFailure2"              -> "Could not get a valid response from the server: `1`. Please try again later.",
+    "ExpectedInstallableResourceType" -> "Expected a resource of type `1` instead of `2`.",
+    "Internal"                        -> "An unexpected error occurred. `1`",
+    "InvalidAPIKey"                   -> "Invalid value for API key: `1`",
+    "InvalidArguments"                -> "Invalid arguments given for `1` in `2`.",
+    "InvalidResourceSpecification"    -> "The argument `1` is not a valid resource specification.",
+    "InvalidResourceURL"              -> "The specified URL does not represent a valid resource object.",
+    "InvalidStreamingOutputMethod"    -> "Invalid streaming output method: `1`.",
+    "NoAPIKey"                        -> "No API key defined.",
+    "NoSandboxKernel"                 -> "Unable to start a sandbox kernel. This may mean that the number of currently running kernels exceeds the limit defined by $LicenseProcesses.",
+    "NotImplemented"                  -> "Action \"`1`\" is not implemented.",
+    "NotInstallableResourceType"      -> "Resource type `1` is not an installable resource type for chat notebooks. Valid types are `2`.",
+    "RateLimitReached"                -> "Rate limit reached for requests. Please try again later.",
+    "ResourceNotFound"                -> "Resource `1` not found.",
+    "ResourceNotInstalled"            -> "The resource `1` is not installed.",
+    "ServerOverloaded"                -> "The server is currently overloaded with other requests. Please try again later.",
+    "ToolNotFound"                    -> "Tool `1` not found.",
+    "UnknownResponse"                 -> "Unexpected response from OpenAI server",
+    "UnknownStatusCode"               -> "Unexpected response from OpenAI server with status code `StatusCode`"
+|> ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -147,6 +123,64 @@ $failed          = False;
 $inDef           = False;
 $internalFailure = None;
 $messageSymbol   = Chatbook;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*optimizeEnclosures*)
+optimizeEnclosures // ClearAll;
+optimizeEnclosures // Attributes = { HoldFirst };
+optimizeEnclosures[ s_Symbol ] := DownValues[ s ] = optimizeEnclosures0 @ DownValues @ s;
+
+optimizeEnclosures0 // ClearAll;
+optimizeEnclosures0[ expr_ ] :=
+    ReplaceAll[
+        expr,
+        HoldPattern[ e: Enclose[ _ ] | Enclose[ _, _ ] ] :>
+            With[ { new = addEnclosureTags[ e, $ConditionHold ] },
+                RuleCondition[ new, True ]
+            ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addEnclosureTags*)
+addEnclosureTags // ClearAll;
+addEnclosureTags // Attributes = { HoldFirst };
+
+addEnclosureTags[ Enclose[ expr_ ], wrapper_ ] :=
+    addEnclosureTags[ Enclose[ expr, #1 & ], wrapper ];
+
+addEnclosureTags[ Enclose[ expr_, func_ ], wrapper_ ] :=
+    Module[ { held, replaced },
+        held = HoldComplete @ expr;
+        replaced = held /. $enclosureTagRules;
+        Replace[ replaced, HoldComplete[ e_ ] :> wrapper @ Enclose[ e, func, $enclosure ] ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$enclosureTagRules*)
+$enclosureTagRules // ClearAll;
+(* :!CodeAnalysis::Disable::NoSurroundingEnclose:: *)
+$enclosureTagRules := $enclosureTagRules = Dispatch @ {
+    expr_Enclose                                      :> expr,
+
+    HoldPattern @ Confirm[ expr_ ]                    :> Confirm[ expr, Null, $enclosure ],
+    HoldPattern @ Confirm[ expr_, info_ ]             :> Confirm[ expr, info, $enclosure ],
+
+    HoldPattern @ ConfirmBy[ expr_, f_ ]              :> ConfirmBy[ expr, f, Null, $enclosure ],
+    HoldPattern @ ConfirmBy[ expr_, f_, info_ ]       :> ConfirmBy[ expr, f, info, $enclosure ],
+
+    HoldPattern @ ConfirmMatch[ expr_, patt_ ]        :> ConfirmMatch[ expr, patt, Null, $enclosure ],
+    HoldPattern @ ConfirmMatch[ expr_, patt_, info_ ] :> ConfirmMatch[ expr, patt, info, $enclosure ],
+
+    HoldPattern @ ConfirmQuiet[ expr_ ]               :> ConfirmQuiet[ expr, All, Null, $enclosure ],
+    HoldPattern @ ConfirmQuiet[ expr_, patt_ ]        :> ConfirmQuiet[ expr, patt, Null, $enclosure ],
+    HoldPattern @ ConfirmQuiet[ expr_, patt_, info_ ] :> ConfirmQuiet[ expr, patt, info, $enclosure ],
+
+    HoldPattern @ ConfirmAssert[ expr_ ]              :> ConfirmAssert[ expr, Null, $enclosure ],
+    HoldPattern @ ConfirmAssert[ expr_, info_ ]       :> ConfirmAssert[ expr, info, $enclosure ]
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -183,6 +217,7 @@ endDefinition[ s_Symbol, None ] := $inDef = False;
 
 endDefinition[ s_Symbol, DownValues ] :=
     WithCleanup[
+        optimizeEnclosures @ s;
         AppendTo[ DownValues @ s, e: HoldPattern @ s[ ___ ] :> throwInternalFailure @ e ],
         $inDef = False
     ];
@@ -295,9 +330,14 @@ throwTop // endDefinition;
 (*throwMessageDialog*)
 throwMessageDialog // beginDefinition;
 
-throwMessageDialog[ tag_String ] :=
-    With[ { message = MessageName[ Chatbook, tag ] },
-        throwMessageDialog @ message /; StringQ @ message
+throwMessageDialog[ t_String, args___ ] /; StringQ @ MessageName[ Chatbook, t ] :=
+    With[ { s = $messageSymbol },
+        blockProtected[ { s }, MessageName[ s, t ] = MessageName[ Chatbook, t ] ];
+        throwMessageDialog @ TemplateApply[
+            MessageName[ s, t ],
+            Replace[ { args }, { as_Association } :> as ],
+            InsertionFunction -> Function @ ToString[ Short @ #, PageWidth -> 60 ]
+        ]
     ];
 
 throwMessageDialog[ message_ ] :=
@@ -625,10 +665,43 @@ truncatePartString[ other_, max_Integer ] := truncatePartString[ ToString[ Uneva
 *)
 chatbookIcon // beginDefinition;
 chatbookIcon[ name_String ] := chatbookIcon[ name, True ];
-chatbookIcon[ name_String, True  ] := chatbookIcon[ name, Lookup[ $chatbookIcons    , name ] ];
-chatbookIcon[ name_String, False ] := chatbookIcon[ name, Lookup[ $chatbookIconsFull, name ] ];
+chatbookIcon[ name_String, True  ] := chatbookIcon[ name, Lookup[ $chatbookIcons, name ] ];
+chatbookIcon[ name_String, False ] := inlineTemplateBox @ chatbookIcon[ name, True ];
 chatbookIcon[ name_String, icon: Except[ _Missing ] ] := icon;
 chatbookIcon // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*inlineTemplateBox*)
+inlineTemplateBox // beginDefinition;
+
+inlineTemplateBox[ TemplateBox[ args_, name_String ] ] :=
+    With[ { func = $templateBoxDisplayFunctions @ name },
+        TemplateBox[ args, name, DisplayFunction -> func ] /; MatchQ[ func, _Function ]
+    ];
+
+inlineTemplateBox[ RawBoxes[ box_TemplateBox ] ] :=
+    RawBoxes @ inlineTemplateBox @ box;
+
+inlineTemplateBox[ expr_ ] := expr;
+
+inlineTemplateBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*inlineTemplateBoxes*)
+inlineTemplateBoxes // beginDefinition;
+
+inlineTemplateBoxes[ expr_ ] :=
+    ReplaceAll[
+        expr,
+        TemplateBox[ args_, name_String ] :>
+            With[ { func = inlineTemplateBoxes @ $templateBoxDisplayFunctions @ name },
+                TemplateBox[ args, name, DisplayFunction -> func ] /; MatchQ[ func, _Function ]
+            ]
+    ];
+
+inlineTemplateBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -638,9 +711,9 @@ $chatbookIcons := $chatbookIcons =
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*$chatbookIconsFull*)
-$chatbookIconsFull := $chatbookIconsFull =
-    Developer`ReadWXFFile @ PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "FullIcons" ];
+(*$templateBoxDisplayFunctions*)
+$templateBoxDisplayFunctions := $templateBoxDisplayFunctions =
+    Developer`ReadWXFFile @ PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "DisplayFunctions" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -648,8 +721,10 @@ $chatbookIconsFull := $chatbookIconsFull =
 If[ Wolfram`ChatbookInternal`$BuildingMX,
     $debug = False;
     $chatbookIcons;
-    $chatbookIconsFull;
+    $templateBoxDisplayFunctions;
 ];
+
+(* :!CodeAnalysis::EndBlock:: *)
 
 End[ ];
 EndPackage[ ];

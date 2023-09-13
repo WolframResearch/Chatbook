@@ -631,7 +631,7 @@ makeToolCallBoxLabel[ as: KeyValuePattern[ "Name" -> name_String ] ] :=
 makeToolCallBoxLabel[ as_Association ] := "Using tool\[Ellipsis]";
 
 makeToolCallBoxLabel[ as_Association, name_String ] :=
-    makeToolCallBoxLabel[ as, name, Lookup[ as, "Icon" ] ];
+    makeToolCallBoxLabel[ as, name, getToolIcon @ as ];
 
 makeToolCallBoxLabel[ as_, name_String, icon_ ] /; $dynamicText := makeToolCallBoxLabel0[ as, name, icon ];
 
@@ -1221,6 +1221,8 @@ hyperlink[ { label: _String|_StyleBox }, url_ ] := ButtonBox[
 ];
 
 hyperlink[ a_, ___ ] := a;
+
+(* TODO: if the link contains a UUID that corresponds to a notebook object, create a link that selects that notebook *)
 
 hyperlink // endDefinition;
 

@@ -13,6 +13,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$DefaultChatSystemPre;
 `$DefaultToolOptions;
 `$DefaultTools;
+`$InstalledTools;
 `$ToolFunctions;
 `Chatbook;
 `ChatbookAction;
@@ -97,12 +98,15 @@ Block[ { $ContextPath },
     Get[ "Wolfram`Chatbook`Explode`"              ];
     Get[ "Wolfram`Chatbook`Actions`"              ];
     Get[ "Wolfram`Chatbook`Menus`"                ];
+    Get[ "Wolfram`Chatbook`ResourceInstaller`"    ];
     Get[ "Wolfram`Chatbook`Personas`"             ];
-    Get[ "Wolfram`Chatbook`PersonaInstaller`"     ];
     Get[ "Wolfram`Chatbook`InlineReferences`"     ];
     Get[ "Wolfram`Chatbook`ServerSentEventUtils`" ];
     Get[ "Wolfram`Chatbook`PreferencesUtils`"     ];
-    Get[ "Wolfram`Chatbook`Models`"     ];
+    Get[ "Wolfram`Chatbook`Models`"               ];
+    Get[ "Wolfram`Chatbook`Dialogs`"              ];
+    Get[ "Wolfram`Chatbook`ToolManager`"          ];
+    Get[ "Wolfram`Chatbook`PersonaManager`"       ];
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -118,6 +122,9 @@ $ChatInputPost         = $DefaultChatInputPost;
 $ChatContextCellStyles = <| |>;
 
 Protect @ { $DefaultChatSystemPre, $DefaultChatInputPost };
+
+(* Redraw any dynamic dialogs that might still be open *)
+Wolfram`Chatbook`ResourceInstaller`$installedResourceTrigger = 1;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

@@ -28,7 +28,8 @@ Needs[ "Wolfram`Chatbook`"                  ];
 Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`Errors`"           ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`"       ];
-Needs[ "Wolfram`Chatbook`PersonaInstaller`" ];
+Needs[ "Wolfram`Chatbook`PersonaManager`"   ];
+Needs[ "Wolfram`Chatbook`ToolManager`"      ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`Serialization`"    ];
 Needs[ "Wolfram`Chatbook`Formatting`"       ];
@@ -68,6 +69,7 @@ ChatbookAction[ "InsertInlineReference", args___ ] := catchMine @ InsertInlineRe
 ChatbookAction[ "OpenChatBlockSettings", args___ ] := catchMine @ OpenChatBlockSettings @ args;
 ChatbookAction[ "OpenChatMenu"         , args___ ] := catchMine @ OpenChatMenu @ args;
 ChatbookAction[ "PersonaManage"        , args___ ] := catchMine @ PersonaManage @ args;
+ChatbookAction[ "ToolManage"           , args___ ] := catchMine @ ToolManage @ args;
 ChatbookAction[ "Send"                 , args___ ] := catchMine @ SendChat @ args;
 ChatbookAction[ "StopChat"             , args___ ] := catchMine @ StopChat @ args;
 ChatbookAction[ "TabLeft"              , args___ ] := catchMine @ TabLeft @ args;
@@ -241,8 +243,16 @@ definitionNotebookCellQ[ ___ ] := False;
 (* ::Section::Closed:: *)
 (*PersonaManage*)
 PersonaManage[ a___ ] := Enclose[
-    ConfirmMatch[ createPersonaManagerDialog[ ], _NotebookObject, "createPersonaManagerDialog" ],
+    ConfirmMatch[ CreatePersonaManagerDialog[ ], _NotebookObject, "createPersonaManagerDialog" ],
     throwInternalFailure[ PersonaManage @ a, ## ] &
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ToolManage*)
+ToolManage[ a___ ] := Enclose[
+    ConfirmMatch[ CreateLLMToolManagerDialog[ ], _NotebookObject, "CreateLLMToolManagerDialog" ],
+    throwInternalFailure[ ToolManage @ a, ## ] &
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -2943,26 +2953,29 @@ writeReformattedCell[ settings_, None, cell_CellObject ] :=
         ]
     ];
 
-writeReformattedCell[ settings_, string_String, cell_CellObject ] := Block[ { $dynamicText = False },
-    Module[ { tag, open, label, pageData, uuid, new, output },
+writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
+    Block[ { $dynamicText = False },
+        Module[ { tag, open, label, pageData, uuid, new, output },
 
-        tag      = CurrentValue[ cell, { TaggingRules, "MessageTag" } ];
-        open     = $lastOpen = cellOpenQ @ cell;
-        label    = RawBoxes @ TemplateBox[ { }, "MinimizedChat" ];
-        pageData = CurrentValue[ cell, { TaggingRules, "PageData" } ];
-        uuid     = CreateUUID[ ];
-        new      = reformatCell[ settings, string, tag, open, label, pageData, uuid ];
-        output   = CellObject @ uuid;
+            tag      = ConfirmMatch[ CurrentValue[ cell, { TaggingRules, "MessageTag" } ], _String|Inherited, "Tag" ];
+            open     = $lastOpen = cellOpenQ @ cell;
+            label    = RawBoxes @ TemplateBox[ { }, "MinimizedChat" ];
+            pageData = CurrentValue[ cell, { TaggingRules, "PageData" } ];
+            uuid     = CreateUUID[ ];
+            new      = reformatCell[ settings, string, tag, open, label, pageData, uuid ];
+            output   = CellObject @ uuid;
 
-        $lastChatString  = string;
-        $reformattedCell = new;
-        $lastChatOutput  = output;
+            $lastChatString  = string;
+            $reformattedCell = new;
+            $lastChatOutput  = output;
 
-        With[ { new = new, output = output },
-            createFETask @ NotebookWrite[ cell, new, None, AutoScroll -> False ];
-            createFETask @ attachChatOutputMenu @ output
+            With[ { new = new, output = output },
+                createFETask @ NotebookWrite[ cell, new, None, AutoScroll -> False ];
+                createFETask @ attachChatOutputMenu @ output
+            ]
         ]
-    ]
+    ],
+    throwInternalFailure[ writeReformattedCell[ settings, string, cell ], ## ] &
 ];
 
 writeReformattedCell[ settings_, other_, cell_CellObject ] :=
@@ -3178,7 +3191,7 @@ makeReformattedCellTaggingRules // beginDefinition;
 makeReformattedCellTaggingRules[
     settings_,
     string_,
-    tag_,
+    tag: _String|Inherited,
     content_,
     KeyValuePattern @ { "Pages" -> pages_Association, "PageCount" -> count_Integer, "CurrentPage" -> page_Integer }
 ] :=
@@ -3195,7 +3208,7 @@ makeReformattedCellTaggingRules[
     |>
 ];
 
-makeReformattedCellTaggingRules[ settings_, string_, tag_, content_, pageData_ ] := <|
+makeReformattedCellTaggingRules[ settings_, string_, tag: _String|Inherited, content_, pageData_ ] := <|
     "CellToStringData" -> string,
     "MessageTag"       -> tag,
     "ChatData"         -> makeCompactChatData[ string, tag, settings ]
