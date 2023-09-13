@@ -7,6 +7,8 @@ BeginPackage[ "Wolfram`Chatbook`ToolManager`" ];
 `CreateLLMToolManagerDialog;
 `CreateLLMToolManagerPanel;
 
+System`LineColor;
+
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                   ];
