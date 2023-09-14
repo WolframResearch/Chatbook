@@ -2459,7 +2459,7 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
             ];
             splitDynamicTaskFunction @ NotebookWrite[
                 System`NotebookLocationSpecifier[ boxObject, "Before" ],
-                "\n" ,
+                StyleBox[ "\n" ],
                 None,
                 AutoScroll -> False
             ];
