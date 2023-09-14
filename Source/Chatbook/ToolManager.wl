@@ -13,11 +13,13 @@ Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                   ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
+Needs[ "Wolfram`Chatbook`FrontEnd`"          ];
 Needs[ "Wolfram`Chatbook`Personas`"          ];
 Needs[ "Wolfram`Chatbook`UI`"                ];
 Needs[ "Wolfram`Chatbook`Dialogs`"           ];
 Needs[ "Wolfram`Chatbook`Tools`"             ];
 Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
+Needs[ "Wolfram`Chatbook`Actions`"           ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -163,7 +165,8 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                             Grid @ {
                                 {
                                     "Show enabled tools for:",
-                                    scopeSelector @ Dynamic @ scopeMode
+                                    scopeSelector @ Dynamic @ scopeMode,
+                                    Dynamic @ catchAlways @ toolModelWarning @ scopeMode[ ]
                                 }
                             },
                             { Automatic, { 5, Automatic } }
@@ -561,6 +564,42 @@ overlayGrid // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Misc Definitions*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toolModelWarning*)
+toolModelWarning // beginDefinition;
+toolModelWarning[ None | { } | HoldPattern @ SelectedCells @ None ] := "";
+toolModelWarning[ { cell_CellObject, ___ } ] := toolModelWarning @ cell;
+toolModelWarning[ scope_ ] := toolModelWarning[ scope, currentChatSettings[ scope, "ToolsEnabled" ] ];
+toolModelWarning[ scope_, True ] := "";
+toolModelWarning[ scope_, False ] := $toolsDisabledWarning;
+toolModelWarning[ scope_, enabled_ ] := toolModelWarning[ scope, enabled, currentChatSettings[ scope, "Model" ] ];
+toolModelWarning[ scope_, enabled_, model_? toolsEnabledQ ] := "";
+toolModelWarning[ scope_, enabled_, model_String ] := toolModelWarning0[ scope, model ];
+toolModelWarning // endDefinition;
+
+
+toolModelWarning0 // beginDefinition;
+
+toolModelWarning0[ scope_, model_String ] := Enclose[
+    Module[ { name, template, message },
+        name     = ConfirmBy[ modelDisplayName @ model, StringQ, "ModelName" ];
+        template = ConfirmBy[ Chatbook::ModelToolSupport, StringQ, "Template" ];
+        message  = ConfirmBy[ TemplateApply[ template, { name } ], StringQ, "Message" ];
+        Grid[
+            { {
+                Spacer[ 5 ],
+                Style[ "\[WarningSign]", FontWeight -> Bold, FontColor -> Darker @ Orange, FontSize -> 18 ],
+                message
+            } },
+            Alignment -> { Left, Top }
+        ]
+    ],
+    throwInternalFailure[ toolModelWarning0[ scope, model ], ## ] &
+];
+
+toolModelWarning0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

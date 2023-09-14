@@ -35,6 +35,7 @@ CreateToolbarContent[] is called by the NotebookToolbar to generate the content 
 
 `getPersonaIcon;
 `getPersonaMenuIcon;
+`modelDisplayName;
 `personaDisplayName;
 `resizeMenuIcon;
 
