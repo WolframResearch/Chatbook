@@ -37,8 +37,12 @@ Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
 $dialogHeaderMargins    = { { 30, 30 }, { 13, 9 } };
 $dialogSubHeaderMargins = { { 30, 30 }, {  0, 9 } };
 $dialogBodyMargins      = { { 30, 30 }, { 13, 5 } };
+$baseStyle             := $baseStyles[ "Default" ];
 
-$baseStyle = { FontFamily -> "Source Sans Pro", FontSize -> 14 };
+$baseStyles = <|
+    "Default"         -> { FontFamily -> "Source Sans Pro", FontSize -> 14 },
+    "DialogSubHeader" -> { FontSize -> 14, FontWeight -> "DemiBold" }
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -103,43 +107,24 @@ headerStyle // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*dialogHeader*)
 dialogHeader // beginDefinition;
-
-dialogHeader[ expr_ ] :=
-    dialogHeader[ expr, Automatic ];
-
-dialogHeader[ expr_, margins_ ] :=
-    spanAcross @ Pane[ expr, BaseStyle -> "DialogHeader", FrameMargins -> dialogHeaderMargins @ margins ];
-
+dialogHeader[ expr_           ] := dialogHeader[ expr, Automatic ];
+dialogHeader[ expr_, margins_ ] := dialogPane[ expr, "DialogHeader", margins ];
 dialogHeader // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*dialogSubHeader*)
 dialogSubHeader // beginDefinition;
-
-dialogSubHeader[ expr_ ] :=
-    dialogSubHeader[ expr, Automatic ];
-
-dialogSubHeader[ expr_, margins_ ] :=
-    spanAcross @ Pane[
-        expr,
-        BaseStyle -> { FontSize -> 14, FontWeight -> "DemiBold" },
-        FrameMargins -> dialogSubHeaderMargins @ margins
-    ];
-
+dialogSubHeader[ expr_           ] := dialogSubHeader[ expr, Automatic ];
+dialogSubHeader[ expr_, margins_ ] := dialogPane[ expr, "DialogSubHeader", margins ];
 dialogSubHeader // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*dialogBody*)
 dialogBody // beginDefinition;
-
-dialogBody[ expr_ ] :=
-    dialogBody[ expr, Automatic ];
-
-dialogBody[ expr_, margins_ ] :=
-    spanAcross @ Pane[ expr, BaseStyle -> "DialogBody", FrameMargins -> dialogBodyMargins @ margins ];
-
+dialogBody[ expr_           ] := dialogBody[ expr, Automatic ];
+dialogBody[ expr_, margins_ ] := dialogPane[ expr, "DialogBody", margins ];
 dialogBody // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -151,24 +136,50 @@ spanAcross // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*dialogBodyMargins*)
-dialogBodyMargins // beginDefinition;
-dialogBodyMargins[ margins_ ] := dialogBodyMargins[ margins ] = autoMargins[ margins, $dialogBodyMargins ];
-dialogBodyMargins // endDefinition;
+(*dialogPane*)
+dialogPane // beginDefinition;
+
+dialogPane[ expr_ ] := dialogPane[ expr, "DialogBody" ];
+dialogPane[ expr_, style_ ] := dialogPane[ expr, style, Automatic ];
+
+dialogPane[ exprs_List, style_, margins_ ] := dialogPane[ exprs, style, margins ] =
+    dialogPane0[ #, style, margins ] & /@ exprs;
+
+dialogPane[ expr_, style_, margins_ ] := dialogPane[ expr, style, margins ] =
+    { dialogPane0[ expr, style, margins ], SpanFromLeft };
+
+dialogPane // endDefinition;
+
+
+dialogPane0 // beginDefinition;
+
+dialogPane0[ expr_, style_, margins_ ] :=
+    Pane[
+        expr,
+        BaseStyle    -> dialogBaseStyle @ style,
+        FrameMargins -> dialogMargins[ style, margins ]
+    ];
+
+dialogPane0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*dialogHeaderMargins*)
-dialogHeaderMargins // beginDefinition;
-dialogHeaderMargins[ margins_ ] := dialogHeaderMargins[ margins ] = autoMargins[ margins, $dialogHeaderMargins ];
-dialogHeaderMargins // endDefinition;
+(*dialogBaseStyle*)
+dialogBaseStyle // beginDefinition;
+dialogBaseStyle[ "DialogSubHeader" ] := { FontSize -> 14, FontWeight -> "DemiBold" };
+dialogBaseStyle[ name_String ] := Lookup[ $baseStyles, name, name ];
+dialogBaseStyle[ style_ ] := style;
+dialogBaseStyle // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*dialogSubHeaderMargins*)
-dialogSubHeaderMargins // beginDefinition;
-dialogSubHeaderMargins[ margins_ ] := dialogSubHeaderMargins[ margins ] = autoMargins[ margins, $dialogSubHeaderMargins ];
-dialogSubHeaderMargins // endDefinition;
+(*dialogMargins*)
+dialogMargins // beginDefinition;
+dialogMargins[ "DialogBody"     , margins_ ] := autoMargins[ margins, $dialogBodyMargins      ];
+dialogMargins[ "DialogHeader"   , margins_ ] := autoMargins[ margins, $dialogHeaderMargins    ];
+dialogMargins[ "DialogSubHeader", margins_ ] := autoMargins[ margins, $dialogSubHeaderMargins ];
+dialogMargins[ _                , margins_ ] := margins;
+dialogMargins // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
