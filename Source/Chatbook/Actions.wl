@@ -378,6 +378,14 @@ chatInputCellQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*chatOutputCellQ*)
+chatOutputCellQ[ cell_CellObject ] := chatOutputCellQ[ cell ] = chatOutputCellQ[ cell, Developer`CellInformation @ cell ];
+chatOutputCellQ[ cell_, KeyValuePattern[ "Style" -> $$chatOutputStyle ] ] := True;
+chatOutputCellQ[ cell_CellObject, ___ ] := ($badCellObject = cell; $badCell = NotebookRead @ cell; False);
+chatOutputCellQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*waitForLastTask*)
 waitForLastTask // beginDefinition;
 
@@ -479,7 +487,7 @@ removeTask // endDefinition;
 (*CopyChatObject*)
 CopyChatObject // beginDefinition;
 
-CopyChatObject[ cell_CellObject ] := Enclose[
+CopyChatObject[ cell_CellObject? chatOutputCellQ ] := Enclose[
     Module[ { encodedString, chatData, messages, chatObject },
         Quiet[ PacletInstall[ "Wolfram/LLMFunctions" ]; Needs[ "Wolfram`LLMFunctions`" -> None ] ];
         encodedString = ConfirmBy[ CurrentValue[ cell, { TaggingRules, "ChatData" } ], StringQ, "EncodedString" ];
@@ -490,6 +498,11 @@ CopyChatObject[ cell_CellObject ] := Enclose[
     ],
     throwInternalFailure[ HoldForm @ CopyChatObject @ cell, ## ] &
 ];
+
+CopyChatObject[ source: _CellObject | $Failed ] :=
+    With[ { evalCell = rootEvaluationCell @ source },
+        CopyChatObject @ evalCell /; chatOutputCellQ @ evalCell
+    ];
 
 CopyChatObject // endDefinition;
 
