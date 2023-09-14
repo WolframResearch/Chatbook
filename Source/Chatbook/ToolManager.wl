@@ -569,6 +569,7 @@ overlayGrid // endDefinition;
 (* ::Subsection::Closed:: *)
 (*toolModelWarning*)
 toolModelWarning // beginDefinition;
+toolModelWarning[ None ] := "";
 toolModelWarning[ scope_ ] := toolModelWarning[ scope, currentChatSettings[ scope, "ToolsEnabled" ] ];
 toolModelWarning[ scope_, True ] := "";
 toolModelWarning[ scope_, False ] := $toolsDisabledWarning;
