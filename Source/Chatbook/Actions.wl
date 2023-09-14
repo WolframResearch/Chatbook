@@ -2099,7 +2099,7 @@ selectChatCells0[ cell_, cells: { __CellObject }, final_ ] := Enclose[
         selectedRange = Reverse @ Take[ before, groupPos ];
 
         (* Filter out ignored cells *)
-        filtered = DeleteCases[ selectedRange, KeyValuePattern[ "Style" -> $$chatIgnoredStyle ] ];
+        filtered = ConfirmMatch[ filterChatCells @ selectedRange, { ___Association }, "FilteredCellInfo" ];
 
         (* Delete output cells that come after the evaluation cell *)
         rest = deleteExistingChatOutputs @ Drop[ cellData, cellPosition ];
@@ -2122,6 +2122,30 @@ selectChatCells0[ cell_, cells: { __CellObject }, final_ ] := Enclose[
 ];
 
 selectChatCells0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*filterChatCells*)
+filterChatCells // beginDefinition;
+
+filterChatCells[ cellInfo: { ___Association } ] := Enclose[
+    Module[ { styleExcluded, cells, exclusions },
+
+        styleExcluded = DeleteCases[ cellInfo, KeyValuePattern[ "Style" -> $$chatIgnoredStyle ] ];
+        cells = ConfirmMatch[ styleExcluded[[ All, "CellObject" ]], { ___CellObject }, "CellObjects" ];
+
+        exclusions = ConfirmBy[
+            CurrentValue[ cells, { TaggingRules, "ChatNotebookSettings", "ExcludeFromChat" } ],
+            Length @ # === Length @ styleExcluded &,
+            "Exclusions"
+        ];
+
+        ConfirmMatch[ Pick[ styleExcluded, Not@*TrueQ /@ exclusions ], { ___Association }, "PickCells" ]
+    ],
+    throwInternalFailure[ filterChatCells @ cellInfo, ## ] &
+];
+
+filterChatCells // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
