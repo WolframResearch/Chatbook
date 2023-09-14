@@ -723,7 +723,7 @@ AttachCodeButtons[ attached_, cell0_CellObject, string_, lang_ ] :=
 AttachCodeButtons[ Dynamic[ attached_ ], cell_CellObject, string_, lang_ ] := (
     attached = AttachCell[
         cell,
-        floatingButtonGrid[ attached, string, lang ],
+        floatingButtonGrid[ attached, cell, lang ],
         { Left, Bottom },
         Offset[ { 0, 13 }, { 0, 0 } ],
         { Left, Top },

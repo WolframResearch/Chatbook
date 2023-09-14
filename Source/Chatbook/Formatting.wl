@@ -193,14 +193,14 @@ floatingButtonGrid // beginDefinition;
 
 floatingButtonGrid // Attributes = { HoldFirst };
 
-floatingButtonGrid[ attached_, string_, lang_ ] := RawBoxes @ TemplateBox[
+floatingButtonGrid[ attached_, cell_, lang_ ] := RawBoxes @ TemplateBox[
     {
         ToBoxes @ Grid[
             {
                 {
-                    button[ evaluateLanguageLabel @ lang, insertCodeBelow[ string, True ]; NotebookDelete @ attached ],
-                    button[ $insertInputButtonLabel, insertCodeBelow[ string, False ]; NotebookDelete @ attached ],
-                    button[ $copyToClipboardButtonLabel, NotebookDelete @ attached; CopyToClipboard @ string ]
+                    button[ evaluateLanguageLabel @ lang, insertCodeBelow[ cell, True ]; NotebookDelete @ attached ],
+                    button[ $insertInputButtonLabel, insertCodeBelow[ cell, False ]; NotebookDelete @ attached ],
+                    button[ $copyToClipboardButtonLabel, copyCode @ cell; NotebookDelete @ attached ]
                 }
             },
             Alignment  -> Top,
@@ -305,7 +305,12 @@ $insertEvaluateButtonLabel := $insertEvaluateButtonLabel = fancyTooltip[
 (*insertCodeBelow*)
 insertCodeBelow // beginDefinition;
 
-insertCodeBelow[ cell_Cell, evaluate_: False ] :=
+insertCodeBelow[ code_ ] := insertCodeBelow[ code, False ];
+
+insertCodeBelow[ cell_CellObject, evaluate_ ] :=
+    insertCodeBelow[ getCodeBlockContent @ cell, evaluate ];
+
+insertCodeBelow[ cell_Cell, evaluate_ ] :=
     Module[ { cellObj, nbo },
         cellObj = topParentCell @ EvaluationCell[ ];
         nbo  = parentNotebook @ cellObj;
@@ -317,9 +322,37 @@ insertCodeBelow[ cell_Cell, evaluate_: False ] :=
         ]
     ];
 
-insertCodeBelow[ string_String, evaluate_: False ] := insertCodeBelow[ Cell[ BoxData @ string, "Input" ], evaluate ];
+insertCodeBelow[ string_String, evaluate_ ] :=
+    insertCodeBelow[ Cell[ BoxData @ string, "Input" ], evaluate ];
 
 insertCodeBelow // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*copyCode*)
+copyCode // beginDefinition;
+copyCode[ cell_CellObject ] := copyCode @ getCodeBlockContent @ cell;
+copyCode[ code: _Cell|_String ] := CopyToClipboard @ code;
+copyCode // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getCodeBlockContent*)
+getCodeBlockContent // beginDefinition;
+getCodeBlockContent[ cell_CellObject ] := getCodeBlockContent @ NotebookRead @ cell;
+getCodeBlockContent[ Cell[ BoxData[ boxes_ ], ___, "ChatCodeBlock", ___ ] ] := getCodeBlockContent @ boxes;
+getCodeBlockContent[ TemplateBox[ { boxes_ }, "ChatCodeBlockTemplate", ___ ] ] := getCodeBlockContent @ boxes;
+getCodeBlockContent[ Cell[ BoxData[ boxes_ ] ] ] := getCodeBlockContent @ boxes;
+getCodeBlockContent[ DynamicModuleBox[ _, boxes_, ___ ] ] := getCodeBlockContent @ boxes;
+getCodeBlockContent[ TagBox[ boxes_, _EventHandlerTag, ___ ] ] := getCodeBlockContent @ boxes;
+getCodeBlockContent[ Cell[ boxes_, "ChatCode", "Input", ___ ] ] := Cell[ boxes, "Input" ];
+
+getCodeBlockContent[ Cell[ boxes_, "ExternalLanguage", ___, CellEvaluationLanguage -> lang_, ___ ] ] :=
+    Cell[ boxes, "ExternalLanguage", CellEvaluationLanguage -> lang ];
+
+getCodeBlockContent[ cell: Cell[ _, _String, ___ ] ] := cell;
+
+getCodeBlockContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
