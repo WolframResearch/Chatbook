@@ -7,8 +7,6 @@ BeginPackage[ "Wolfram`Chatbook`ToolManager`" ];
 `CreateLLMToolManagerDialog;
 `CreateLLMToolManagerPanel;
 
-System`LineColor;
-
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                   ];
@@ -674,9 +672,9 @@ configureButton[ tool_Association? configurableToolQ, index_Integer, Dynamic[ { 
                 ]
             ],
             {
-                { { False, False } , { True, False }  , { True, True }   },
-                { LineColor -> None, GrayLevel[ 0.65 ], $activeBlue      },
-                { LineColor -> None, GrayLevel[ 0.80 ], GrayLevel[ 0.8 ] }
+                { { False, False }, { True, False }  , { True, True }   },
+                { Transparent     , GrayLevel[ 0.65 ], $activeBlue      },
+                { Transparent     , GrayLevel[ 0.80 ], GrayLevel[ 0.8 ] }
             }
         ],
         Dynamic @ { FEPrivate`SameQ[ row, index ], FrontEnd`CurrentValue[ "MouseOver" ] },
@@ -712,9 +710,9 @@ configureButton[ tool_Association, index_Integer, Dynamic[ { row_, column_ } ] ]
                 ]
             ],
             {
-                { { False, False } , { True, False } , { True, True }   },
-                { LineColor -> None, GrayLevel[ 0.8 ], GrayLevel[ 0.8 ] },
-                { LineColor -> None, GrayLevel[ 0.8 ], GrayLevel[ 0.8 ] }
+                { { False, False }, { True, False } , { True, True }   },
+                { Transparent     , GrayLevel[ 0.8 ], GrayLevel[ 0.8 ] },
+                { Transparent     , GrayLevel[ 0.8 ], GrayLevel[ 0.8 ] }
             }
         ],
         Dynamic @ { FEPrivate`SameQ[ row, index ], FrontEnd`CurrentValue[ "MouseOver" ] },
@@ -741,7 +739,7 @@ deleteButton[ tool_Association? deletableToolQ, index_Integer, Dynamic[ { row_, 
                             Spacer[ 5 ],
                             deleteButton0[ colBin, index, tool ],
                             Spacer[ 3 ],
-                            Dynamic @ iconData[ "Delimiter", LineColor -> None ]
+                            Dynamic @ iconData[ "Delimiter", Transparent ]
                         }
                     },
                     ItemSize -> { 0, 0 },
@@ -749,9 +747,9 @@ deleteButton[ tool_Association? deletableToolQ, index_Integer, Dynamic[ { row_, 
                 ]
             ],
             {
-                { { False, False } , { True, False }  , { True, True }    },
-                { LineColor -> None, GrayLevel[ 0.65 ], $activeBlue       },
-                { LineColor -> None, LineColor -> None, LineColor -> None }
+                { { False, False }, { True, False }  , { True, True } },
+                { Transparent     , GrayLevel[ 0.65 ], $activeBlue    },
+                { Transparent     , Transparent      , Transparent    }
             }
         ],
         Dynamic @ { FEPrivate`SameQ[ row, index ], FrontEnd`CurrentValue[ "MouseOver" ] },
@@ -779,7 +777,7 @@ deleteButton[ tool_Association, index_Integer, Dynamic[ { row_, column_ } ] ] :=
                                 ImageSize        -> { Automatic, $rowHeight }
                             ],
                             Spacer[ 3 ],
-                            Dynamic @ iconData[ "Delimiter", LineColor -> None ]
+                            Dynamic @ iconData[ "Delimiter", Transparent ]
                         }
                     },
                     ItemSize -> { 0, 0 },
@@ -787,9 +785,9 @@ deleteButton[ tool_Association, index_Integer, Dynamic[ { row_, column_ } ] ] :=
                 ]
             ],
             {
-                { { False, False } , { True, False }  , { True, True }    },
-                { LineColor -> None, GrayLevel[ 0.8 ] , GrayLevel[ 0.8 ]  },
-                { LineColor -> None, LineColor -> None, LineColor -> None }
+                { { False, False }, { True, False } , { True, True }   },
+                { Transparent     , GrayLevel[ 0.8 ], GrayLevel[ 0.8 ] },
+                { Transparent     , Transparent     , Transparent      }
             }
         ],
         Dynamic @ { FEPrivate`SameQ[ row, index ], FrontEnd`CurrentValue[ "MouseOver" ] },
