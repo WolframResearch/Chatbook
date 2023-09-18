@@ -23,6 +23,20 @@ cFile = cicd`ScriptConfirmBy[ #, FileExistsQ ] &;
 cDir  = cicd`ScriptConfirmBy[ #, DirectoryQ  ] &;
 cStr  = cicd`ScriptConfirmBy[ #, StringQ     ] &;
 
+Needs[ "DefinitionNotebookClient`" -> None ];
+DefinitionNotebookClient`$DisabledHints = {
+    <|
+        "MessageTag" -> "HeroImageTooSmall",
+        "Level"      -> All,
+        "ID"         -> All
+    |>,
+    <|
+        "MessageTag" -> "InternalContextWarning",
+        "Level"      -> All,
+        "ID"         -> All
+    |>
+};
+
 $messageHistoryLength = 10;
 $messageNumber        = 0;
 $messageHistory       = <| |>;
