@@ -221,16 +221,25 @@ updatePacletInfo[ dir_ ] /; StringQ @ Environment[ "GITHUB_ACTION" ] := Enclose[
         exported
     ]; *)
 
-updateReleaseInfoCell[ dir_, url_, cmt_, run_ ] /;
+(* updateReleaseInfoCell[ dir_, url_, cmt_, run_ ] /;
     Environment[ "GITHUB_WORKFLOW" ] === "Release" :=
-    UsingFrontEnd @ Enclose @ Module[ { nbFile, nb, nbo, saved, exported },
+    UsingFrontEnd @ Enclose @ Module[ { nbFile, nb, nbo, saved },
         nbFile   = ExpandFileName @ FileNameJoin @ { dir, "ResourceDefinition.nb" };
         nb       = cicd`ScriptConfirmMatch[ Import[ nbFile, "NB" ], _Notebook, "Import" ];
         nbo      = cicd`ScriptConfirmMatch[ NotebookPut @ nb, _NotebookObject, "NotebookPut" ];
         saved    = cicd`ScriptConfirmMatch[ NotebookSave[ nbo, nbFile ], Null, "NotebookSave" ];
-        exported = cicd`ScriptConfirmBy[ Export[ nbFile, Import[ nbFile, "NB" ], "NB" ], FileExistsQ, "Export" ];
-        Print[ "Updated definition notebook: ", exported ];
-        exported
+        Print[ "Updated definition notebook: ", nbFile ];
+        nbFile
+    ]; *)
+
+updateReleaseInfoCell[ dir_, url_, cmt_, run_ ] /;
+    Environment[ "GITHUB_WORKFLOW" ] === "Release" :=
+    UsingFrontEnd @ Enclose @ Module[ { nbFile, nb, export },
+        nbFile   = ExpandFileName @ FileNameJoin @ { dir, "ResourceDefinition.nb" };
+        nb       = cicd`ScriptConfirmMatch[ Import[ nbFile, "NB" ], _Notebook, "Import" ];
+        export   = cicd`ScriptConfirmBy[ Export[ nbFile, nb, "NB" ], FileExistsQ, "Export" ];
+        Print[ "Updated definition notebook: ", export ];
+        export
     ];
 
 
