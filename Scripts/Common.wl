@@ -195,7 +195,8 @@ updatePacletInfo[ dir_ ] /; StringQ @ Environment[ "GITHUB_ACTION" ] := Enclose[
                                Close @ file
                   ];
 
-        (* updateReleaseInfoCell[ dir, url, cmt, run ] *)
+        (* Print[ "Updating definition notebook" ];
+        updateReleaseInfoCell[ dir, url, cmt, run ] *)
     ],
     Function[
         Print[ "::error::Failed to update PacletInfo template parameters." ];
@@ -207,15 +208,19 @@ updatePacletInfo[ dir_ ] /; StringQ @ Environment[ "GITHUB_ACTION" ] := Enclose[
 
 updateReleaseInfoCell[ dir_, url_, cmt_, run_ ] /;
     Environment[ "GITHUB_WORKFLOW" ] === "Release" :=
-    Enclose @ Module[ { cells, nbFile, nb, rule },
+    UsingFrontEnd @ Enclose @ Module[ { cells, nbFile, nbo, cell },
 
-        cells  = ConfirmMatch[ releaseInfoCell[ url, cmt, run ], { __Cell } ];
-        nbFile = FileNameJoin @ { dir, "ResourceDefinition.nb" };
-        nb     = ConfirmMatch[ Import[ nbFile, "NB" ], _Notebook ];
-        rule   = Cell[ ___, CellTags -> { ___, "ReleaseInfoTag", ___ }, ___ ] :>
-                     Sequence @@ cells;
+        cells  = ConfirmMatch[ releaseInfoCell[ url, cmt, run ], { __Cell }, "Cells" ];
+        nbFile = ConfirmBy[ FileNameJoin @ { dir, "ResourceDefinition.nb" }, FileExistsQ, "File" ];
+        nbo    = ConfirmMatch[ NotebookOpen @ nbFile, _NotebookObject, "Notebook" ];
+        cell   = ConfirmMatch[ First[ Cells[ nbo, CellTags -> "ReleaseInfoTag" ], $Failed ], _CellObject, "Cell" ];
 
-        Export[ nbFile, nb /. rule, "NB" ]
+        ConfirmMatch[ NotebookWrite[ cell, cells ], Null, "NotebookWrite" ];
+        ConfirmMatch[ NotebookSave @ nbo, Null, "NotebookSave" ];
+        NotebookClose @ nbo;
+
+        Print[ "Updated definition notebook: ", nbFile ];
+        nbFile
     ];
 
 
@@ -281,7 +286,12 @@ releaseInfoCell[ release_, commit_, run_ ] := Enclose[
 
 
 getIcon[ name_String ] := getIcon[ name ] =
-    Get @ FileNameJoin @ { DirectoryName @ $inputFileName, "Resources", "Icons", name<>".wl" };
+    Cell @ BoxData @ ToBoxes @ Get @ FileNameJoin @ {
+        DirectoryName @ $inputFileName,
+        "Resources",
+        "Icons",
+        name<>".wl"
+    };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
