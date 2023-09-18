@@ -7,8 +7,7 @@ If[ ! TrueQ @ $loadedDefinitions, Get @ FileNameJoin @ { DirectoryName @ $InputF
 result = checkResult @ Wolfram`PacletCICD`CheckPaclet[
     $defNB,
     "Target"           -> "Submit",
-    "FailureCondition" -> { "Warning", "Error" },
-    "DisabledHints"    -> { "HeroImageTooSmall", "InternalContextWarning" }
+    "FailureCondition" -> { "Warning", "Error" }
 ];
 
 EndPackage[ ];
