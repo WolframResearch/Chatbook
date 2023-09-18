@@ -229,7 +229,7 @@ updateReleaseInfoCell[ dir_, url_, cmt_, run_ ] /;
         Print[ "Imported: ", Short @ nb ];
         nbo      = cicd`ScriptConfirmMatch[ NotebookPut @ nb, _NotebookObject, "NotebookPut" ];
         Print[ "Put: ", nbo ];
-        saved = cicd`ScriptConfirmBy[ NotebookSave[ nbo, nbFile ], FileExistsQ, "NotebookSave" ];
+        saved = cicd`ScriptConfirmMatch[ NotebookSave[ nbo, nbFile ], Null, "NotebookSave" ];
         Print[ "Saved: ", saved ];
         exported = cicd`ScriptConfirmBy[ Export[ nbFile, nbo, "NB" ], FileExistsQ, "Export" ];
         Print[ "Updated definition notebook: ", exported ];
