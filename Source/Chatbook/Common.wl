@@ -427,13 +427,24 @@ throwInternalFailure // endDefinition;
 (*makeInternalFailureData*)
 makeInternalFailureData // Attributes = { HoldFirst };
 
-makeInternalFailureData[ eval_, Failure[ tag_, as_Association ], args___ ] := maskOpenAIKey @ <|
-    "Evaluation" :> eval,
-    "Failure"    -> Failure[ tag, Association[ KeyTake[ as, "Information" ], as ] ],
-    "Arguments"  -> { args }
-|>;
+makeInternalFailureData[ eval_, Failure[ tag_, as_Association ], args___ ] :=
+    StackInhibit @ Module[ { $stack = Stack[ _ ] },
+        maskOpenAIKey @ <|
+            "Evaluation" :> eval,
+            "Failure"    -> Failure[ tag, Association[ KeyTake[ as, "Information" ], as ] ],
+            "Arguments"  -> { args },
+            "Stack"      :> $stack
+        |>
+    ];
 
-makeInternalFailureData[ eval_, args___ ] := maskOpenAIKey @ <| "Evaluation" :> eval, "Arguments" -> { args } |>;
+makeInternalFailureData[ eval_, args___ ] :=
+    StackInhibit @ Module[ { $stack = Stack[ _ ] },
+        maskOpenAIKey @ <|
+            "Evaluation" :> eval,
+            "Arguments"  -> { args },
+            "Stack"      :> $stack
+        |>
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

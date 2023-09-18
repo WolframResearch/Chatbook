@@ -23,8 +23,6 @@ BeginPackage[ "Wolfram`Chatbook`Dialogs`" ];
 `grayDialogButtonLabel;
 `redDialogButtonLabel;
 
-(* TODO: create a Dialogs.wl file containing definitions to share between this and the persona dialog *)
-
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                   ];
