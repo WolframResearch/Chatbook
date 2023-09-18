@@ -195,6 +195,7 @@ updatePacletInfo[ dir_ ] /; StringQ @ Environment[ "GITHUB_ACTION" ] := Enclose[
                                Close @ file
                   ];
 
+        Print[ "Updating definition notebook" ];
         updateReleaseInfoCell[ dir, url, cmt, run ]
     ],
     Function[
@@ -205,7 +206,7 @@ updatePacletInfo[ dir_ ] /; StringQ @ Environment[ "GITHUB_ACTION" ] := Enclose[
 
 
 
-updateReleaseInfoCell[ dir_, url_, cmt_, run_ ] /;
+(* updateReleaseInfoCell[ dir_, url_, cmt_, run_ ] /;
     Environment[ "GITHUB_WORKFLOW" ] === "Release" :=
     Enclose @ Module[ { cells, nbFile, nb, rule, exported },
 
@@ -216,6 +217,16 @@ updateReleaseInfoCell[ dir_, url_, cmt_, run_ ] /;
                      Sequence @@ cells;
 
         exported = ConfirmBy[ Export[ nbFile, nb /. rule, "NB" ], FileExistsQ ];
+        Print[ "Updated definition notebook: ", exported ];
+        exported
+    ]; *)
+
+updateReleaseInfoCell[ dir_, url_, cmt_, run_ ] /;
+    Environment[ "GITHUB_WORKFLOW" ] === "Release" :=
+    Enclose @ Module[ { nbFile, nb, exported },
+        nbFile   = FileNameJoin @ { dir, "ResourceDefinition.nb" };
+        nb       = ConfirmMatch[ Import[ nbFile, "NB" ], _Notebook ];
+        exported = ConfirmBy[ Export[ nbFile, nb, "NB" ], FileExistsQ ];
         Print[ "Updated definition notebook: ", exported ];
         exported
     ];
