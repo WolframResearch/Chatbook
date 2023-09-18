@@ -195,7 +195,7 @@ updatePacletInfo[ dir_ ] /; StringQ @ Environment[ "GITHUB_ACTION" ] := Enclose[
                                Close @ file
                   ];
 
-        updateReleaseInfoCell[ dir, url, cmt, run ]
+        (* updateReleaseInfoCell[ dir, url, cmt, run ] *)
     ],
     Function[
         Print[ "::error::Failed to update PacletInfo template parameters." ];
