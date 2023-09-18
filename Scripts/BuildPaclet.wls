@@ -6,7 +6,7 @@ If[ ! TrueQ @ $loadedDefinitions, Get @ FileNameJoin @ { DirectoryName @ $InputF
 Get @ cFile @ FileNameJoin @ { DirectoryName @ $InputFileName, "BuildStylesheet.wls" };
 Get @ cFile @ FileNameJoin @ { DirectoryName @ $InputFileName, "BuildMX.wls" };
 
-result = checkResult @ Wolfram`PacletCICD`BuildPaclet[
+result = checkResult @ cicd`BuildPaclet[
     $defNB,
     "Check"      -> False,
     "ExitOnFail" -> True,
