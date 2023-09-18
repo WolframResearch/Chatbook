@@ -427,13 +427,24 @@ throwInternalFailure // endDefinition;
 (*makeInternalFailureData*)
 makeInternalFailureData // Attributes = { HoldFirst };
 
-makeInternalFailureData[ eval_, Failure[ tag_, as_Association ], args___ ] := maskOpenAIKey @ <|
-    "Evaluation" :> eval,
-    "Failure"    -> Failure[ tag, Association[ KeyTake[ as, "Information" ], as ] ],
-    "Arguments"  -> { args }
-|>;
+makeInternalFailureData[ eval_, Failure[ tag_, as_Association ], args___ ] :=
+    StackInhibit @ Module[ { $stack = Stack[ _ ] },
+        maskOpenAIKey @ <|
+            "Evaluation" :> eval,
+            "Failure"    -> Failure[ tag, Association[ KeyTake[ as, "Information" ], as ] ],
+            "Arguments"  -> { args },
+            "Stack"      :> $stack
+        |>
+    ];
 
-makeInternalFailureData[ eval_, args___ ] := maskOpenAIKey @ <| "Evaluation" :> eval, "Arguments" -> { args } |>;
+makeInternalFailureData[ eval_, args___ ] :=
+    StackInhibit @ Module[ { $stack = Stack[ _ ] },
+        maskOpenAIKey @ <|
+            "Evaluation" :> eval,
+            "Arguments"  -> { args },
+            "Stack"      :> $stack
+        |>
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -585,7 +596,11 @@ associationMarkdown[ data_Association? AssociationQ ] := StringJoin[
                     "| ",
                     ToString @ ToString[ Unevaluated @ k, CharacterEncoding -> "UTF-8" ],
                     " | ``",
-                    truncatePartString @ ToString[ Unevaluated @ v, InputForm, CharacterEncoding -> "UTF-8" ],
+                    escapePipes @ truncatePartString @ ToString[
+                        Unevaluated @ v,
+                        InputForm,
+                        CharacterEncoding -> "UTF-8"
+                    ],
                     "`` |"
                 ],
                 HoldAllComplete
@@ -651,6 +666,11 @@ truncatePartString[ string_String, max_Integer ] :=
     If[ StringLength @ string > max, StringTake[ string, UpTo @ max ] <> "...", string ];
 
 truncatePartString[ other_, max_Integer ] := truncatePartString[ ToString[ Unevaluated @ other, InputForm ], max ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*escapePipes*)
+escapePipes[ string_String ] := StringReplace[ string, "|" -> "\\|" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
