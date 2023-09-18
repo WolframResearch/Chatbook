@@ -4,7 +4,7 @@ BeginPackage[ "Wolfram`ChatbookScripts`" ];
 
 If[ ! TrueQ @ $loadedDefinitions, Get @ FileNameJoin @ { DirectoryName @ $InputFileName, "Common.wl" } ];
 
-result = checkResult @ cicd`CheckPaclet[
+result = checkResult @ Wolfram`PacletCICD`CheckPaclet[
     $defNB,
     "Target"           -> "Submit",
     "FailureCondition" -> { "Warning", "Error" }
