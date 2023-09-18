@@ -15923,31 +15923,7 @@ Notebook[
         Cell[
          "Additional information about limitations, issues, etc.",
          "Text",
-         CellEventActions -> {
-          Inherited,
-          {"KeyDown", "\t"} :>
-           Replace[
-            SelectionMove[SelectedNotebook[], After, Cell];
-            NotebookFind[
-             SelectedNotebook[],
-             "TabNext",
-             Next,
-             CellTags,
-             AutoScroll -> True,
-             WrapAround -> True
-            ],
-            Blank[NotebookSelection] :>
-             SelectionMove[
-              SelectedNotebook[],
-              All,
-              CellContents,
-              AutoScroll -> True
-             ]
-           ],
-          PassEventsDown -> False,
-          PassEventsUp -> False
-         },
-         CellTags -> {"DefaultContent", "TabNext"},
+         CellTags -> "ReleaseInfoTag",
          CellID -> 908162033
         ]
        },

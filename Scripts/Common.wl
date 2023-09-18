@@ -206,40 +206,20 @@ updatePacletInfo[ dir_ ] /; StringQ @ Environment[ "GITHUB_ACTION" ] := Enclose[
 
 
 
-(* updateReleaseInfoCell[ dir_, url_, cmt_, run_ ] /;
-    Environment[ "GITHUB_WORKFLOW" ] === "Release" :=
-    Enclose @ Module[ { cells, nbFile, nb, rule, exported },
-
-        cells  = ConfirmMatch[ releaseInfoCell[ url, cmt, run ], { __Cell } ];
-        nbFile = FileNameJoin @ { dir, "ResourceDefinition.nb" };
-        nb     = ConfirmMatch[ Import[ nbFile, "NB" ], _Notebook ];
-        rule   = Cell[ ___, CellTags -> { ___, "ReleaseInfoTag", ___ }, ___ ] :>
-                     Sequence @@ cells;
-
-        exported = ConfirmBy[ Export[ nbFile, nb /. rule, "NB" ], FileExistsQ ];
-        Print[ "Updated definition notebook: ", exported ];
-        exported
-    ]; *)
-
-(* updateReleaseInfoCell[ dir_, url_, cmt_, run_ ] /;
-    Environment[ "GITHUB_WORKFLOW" ] === "Release" :=
-    UsingFrontEnd @ Enclose @ Module[ { nbFile, nb, nbo, saved },
-        nbFile   = ExpandFileName @ FileNameJoin @ { dir, "ResourceDefinition.nb" };
-        nb       = cicd`ScriptConfirmMatch[ Import[ nbFile, "NB" ], _Notebook, "Import" ];
-        nbo      = cicd`ScriptConfirmMatch[ NotebookPut @ nb, _NotebookObject, "NotebookPut" ];
-        saved    = cicd`ScriptConfirmMatch[ NotebookSave[ nbo, nbFile ], Null, "NotebookSave" ];
-        Print[ "Updated definition notebook: ", nbFile ];
-        nbFile
-    ]; *)
-
 updateReleaseInfoCell[ dir_, url_, cmt_, run_ ] /;
     Environment[ "GITHUB_WORKFLOW" ] === "Release" :=
-    UsingFrontEnd @ Enclose @ Module[ { nbFile, nb, export },
-        nbFile   = ExpandFileName @ FileNameJoin @ { dir, "ResourceDefinition.nb" };
-        nb       = cicd`ScriptConfirmMatch[ Import[ nbFile, "NB" ], _Notebook, "Import" ];
-        export   = cicd`ScriptConfirmBy[ Export[ nbFile, nb, "NB" ], FileExistsQ, "Export" ];
-        Print[ "Updated definition notebook: ", export ];
-        export
+    Enclose @ Module[ { cells, nbFile, nbo, cell },
+
+        cells  = ConfirmMatch[ releaseInfoCell[ url, cmt, run ], { __Cell }, "Cells" ];
+        nbFile = ConfirmBy[ FileNameJoin @ { dir, "ResourceDefinition.nb" }, FileExistsQ, "File" ];
+        nbo    = ConfirmMatch[ NotebookOpen @ nbFile, _NotebookObject, "Notebook" ];
+        cell   = ConfirmMatch[ First[ Cells[ nbo, CellTags -> "ReleaseInfoTag" ], $Failed ], _CellObject, "Cell" ];
+
+        ConfirmMatch[ NotebookWrite[ cell, cells ], Null, "NotebookWrite" ];
+        ConfirmMatch[ NotebookSave @ nbo, Null, "NotebookSave" ];
+
+        Print[ "Updated definition notebook: ", nbFile ];
+        nbFile
     ];
 
 
@@ -305,7 +285,12 @@ releaseInfoCell[ release_, commit_, run_ ] := Enclose[
 
 
 getIcon[ name_String ] := getIcon[ name ] =
-    Get @ FileNameJoin @ { DirectoryName @ $inputFileName, "Resources", "Icons", name<>".wl" };
+    Cell @ BoxData @ ToBoxes @ Get @ FileNameJoin @ {
+        DirectoryName @ $inputFileName,
+        "Resources",
+        "Icons",
+        name<>".wl"
+    };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
