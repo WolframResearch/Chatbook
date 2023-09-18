@@ -223,10 +223,14 @@ updatePacletInfo[ dir_ ] /; StringQ @ Environment[ "GITHUB_ACTION" ] := Enclose[
 
 updateReleaseInfoCell[ dir_, url_, cmt_, run_ ] /;
     Environment[ "GITHUB_WORKFLOW" ] === "Release" :=
-    UsingFrontEnd @ Enclose @ Module[ { nbFile, nb, nbo, exported },
+    UsingFrontEnd @ Enclose @ Module[ { nbFile, nb, nbo, saved, exported },
         nbFile   = ExpandFileName @ FileNameJoin @ { dir, "ResourceDefinition.nb" };
         nb       = cicd`ScriptConfirmMatch[ Import[ nbFile, "NB" ], _Notebook, "Import" ];
+        Print[ "Imported: ", Short @ nb ];
         nbo      = cicd`ScriptConfirmMatch[ NotebookPut @ nb, _NotebookObject, "NotebookPut" ];
+        Print[ "Put: ", nbo ];
+        saved = cicd`ScriptConfirmBy[ NotebookSave[ nbo, nbFile ], FileExistsQ, "NotebookSave" ];
+        Print[ "Saved: ", saved ];
         exported = cicd`ScriptConfirmBy[ Export[ nbFile, nbo, "NB" ], FileExistsQ, "Export" ];
         Print[ "Updated definition notebook: ", exported ];
         exported
