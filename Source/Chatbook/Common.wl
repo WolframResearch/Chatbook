@@ -585,7 +585,11 @@ associationMarkdown[ data_Association? AssociationQ ] := StringJoin[
                     "| ",
                     ToString @ ToString[ Unevaluated @ k, CharacterEncoding -> "UTF-8" ],
                     " | ``",
-                    truncatePartString @ ToString[ Unevaluated @ v, InputForm, CharacterEncoding -> "UTF-8" ],
+                    escapePipes @ truncatePartString @ ToString[
+                        Unevaluated @ v,
+                        InputForm,
+                        CharacterEncoding -> "UTF-8"
+                    ],
                     "`` |"
                 ],
                 HoldAllComplete
@@ -651,6 +655,11 @@ truncatePartString[ string_String, max_Integer ] :=
     If[ StringLength @ string > max, StringTake[ string, UpTo @ max ] <> "...", string ];
 
 truncatePartString[ other_, max_Integer ] := truncatePartString[ ToString[ Unevaluated @ other, InputForm ], max ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*escapePipes*)
+escapePipes[ string_String ] := StringReplace[ string, "|" -> "\\|" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
