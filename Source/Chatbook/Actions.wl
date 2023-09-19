@@ -1958,6 +1958,7 @@ buildSystemPrompt[ as_Association ] := StringReplace[
                     "Pre"   -> getPrePrompt @ as,
                     "Post"  -> getPostPrompt @ as,
                     "Tools" -> getToolPrompt @ as,
+                    "Group" -> getGroupPrompt @ as,
                     "Base"  -> "%%BASE_PROMPT%%"
                 |>,
                 StringQ
@@ -1968,6 +1969,15 @@ buildSystemPrompt[ as_Association ] := StringReplace[
 ];
 
 buildSystemPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getGroupPrompt*)
+getGroupPrompt // beginDefinition;
+getGroupPrompt[ as_Association ] := getGroupPrompt[ as, as[ "ChatGroupSettings", "Prompt" ] ];
+getGroupPrompt[ as_, prompt_String ] := prompt;
+getGroupPrompt[ as_, _ ] := Missing[ "NotAvailable" ];
+getGroupPrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2110,7 +2120,14 @@ selectChatCells0[ cell_, cells: { __CellObject }, final_ ] := Enclose[
         (* Select all cells up to and including the evaluation cell *)
         before = Reverse @ Take[ cellData, cellPosition ];
         groupPos = ConfirmBy[
-            First @ FirstPosition[ before, KeyValuePattern[ "Style" -> $$chatDelimiterStyle ], { Length @ before } ],
+            First @ FirstPosition[
+                before,
+                Alternatives[
+                    KeyValuePattern[ "Style" -> $$chatDelimiterStyle ],
+                    KeyValuePattern[ "ChatNotebookSettings" -> KeyValuePattern[ "ChatDelimiter" -> True ] ]
+                ],
+                { Length @ before }
+            ],
             IntegerQ,
             "ChatDelimiterPosition"
         ];

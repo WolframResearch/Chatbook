@@ -369,6 +369,7 @@ currentChatSettings[ cell0_CellObject ] := Catch @ Enclose[
             styles = cellStyles @ cell;
         ];
 
+        (* TODO: make these based on the ChatDelimiter tagging rule instead of style name *)
         If[ MemberQ[ styles, $$chatDelimiterStyle ], Throw @ currentChatSettings0 @ cell ];
 
         nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
@@ -585,16 +586,18 @@ cellInformation[ nbo_NotebookObject ] := cellInformation @ Cells @ nbo;
 cellInformation[ cells: { ___CellObject } ] := Map[
     Association,
     Transpose @ {
-        Thread[ "CellObject" -> cells ],
         Developer`CellInformation @ cells,
-        Thread[ "CellAutoOverwrite" -> CurrentValue[ cells, CellAutoOverwrite ] ]
+        Thread[ "CellObject"           -> cells ],
+        Thread[ "CellAutoOverwrite"    -> CurrentValue[ cells, CellAutoOverwrite ] ],
+        Thread[ "ChatNotebookSettings" -> AbsoluteCurrentValue[ cells, { TaggingRules, "ChatNotebookSettings" } ] ]
     }
 ];
 
 cellInformation[ cell_CellObject ] := Association[
-    "CellObject" -> cell,
     Developer`CellInformation @ cell,
-    "CellAutoOverwrite" -> CurrentValue[ cell, CellAutoOverwrite ]
+    "CellObject"           -> cell,
+    "CellAutoOverwrite"    -> CurrentValue[ cell, CellAutoOverwrite ],
+    "ChatNotebookSettings" -> AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ]
 ];
 
 cellInformation // endDefinition;
