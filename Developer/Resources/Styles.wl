@@ -334,6 +334,7 @@ Cell[
     FontWeight          -> "DemiBold",
     ShowCellLabel       -> False,
     StyleKeyMapping     -> { "~" -> "ChatDelimiter", "'" -> "ChatInput" },
+    TaggingRules        -> <| "ChatNotebookSettings" -> <| "ChatDelimiter" -> True |> |>,
 
     CellFrameLabels -> {
         {
@@ -376,6 +377,7 @@ Cell[
     FontSize            -> 6,
     ShowCellLabel       -> False,
     StyleKeyMapping     -> { "~" -> "ChatBlockDivider", "'" -> "ChatInput" },
+    TaggingRules        -> <| "ChatNotebookSettings" -> <| "ChatDelimiter" -> True |> |>,
 
     CellEventActions -> {
         "KeyDown" :> Switch[
