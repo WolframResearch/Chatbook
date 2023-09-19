@@ -2164,18 +2164,16 @@ selectChatCells0 // endDefinition;
 filterChatCells // beginDefinition;
 
 filterChatCells[ cellInfo: { ___Association } ] := Enclose[
-    Module[ { styleExcluded, cells, exclusions },
+    Module[ { styleExcluded, tagExcluded, cells },
 
         styleExcluded = DeleteCases[ cellInfo, KeyValuePattern[ "Style" -> $$chatIgnoredStyle ] ];
-        cells = ConfirmMatch[ styleExcluded[[ All, "CellObject" ]], { ___CellObject }, "CellObjects" ];
 
-        exclusions = ConfirmBy[
-            CurrentValue[ cells, { TaggingRules, "ChatNotebookSettings", "ExcludeFromChat" } ],
-            Length @ # === Length @ styleExcluded &,
-            "Exclusions"
+        tagExcluded = DeleteCases[
+            styleExcluded,
+            KeyValuePattern[ "ChatNotebookSettings" -> KeyValuePattern[ "ExcludeFromChat" -> True ] ]
         ];
 
-        ConfirmMatch[ Pick[ styleExcluded, Not@*TrueQ /@ exclusions ], { ___Association }, "PickCells" ]
+        tagExcluded
     ],
     throwInternalFailure[ filterChatCells @ cellInfo, ## ] &
 ];
