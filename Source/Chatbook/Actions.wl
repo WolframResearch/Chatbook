@@ -38,6 +38,7 @@ Needs[ "Wolfram`Chatbook`Explode`"          ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
 Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 Needs[ "Wolfram`Chatbook`Prompting`"        ];
+Needs[ "Wolfram`Chatbook`ChatGroups`"       ];
 Needs[ "Wolfram`Chatbook`Tools`"            ];
 
 HoldComplete[
@@ -931,6 +932,10 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
             resolveTools @ resolveAutoSettings @ inheritSettings[ settings0, cells, evalCell ],
             AssociationQ,
             "InheritSettings"
+        ];
+
+        If[ TrueQ @ settings[ "EnableChatGroupSettings" ],
+            AppendTo[ settings, "ChatGroupSettings" -> getChatGroupSettings @ evalCell ]
         ];
 
         id  = Lookup[ settings, "ID" ];
