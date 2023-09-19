@@ -2459,10 +2459,7 @@ currentValueOrigin[
 getModelsMenuItems[] := Module[{
 	items
 },
-	items = Select[
-		getModelList[],
-		StringStartsQ["gpt-"]
-	];
+	items = Select[getModelList[], chatModelQ];
 
 	RaiseAssert[MatchQ[items, {___String}]];
 
@@ -2483,6 +2480,19 @@ getModelsMenuItems[] := Module[{
 
 	items
 ]
+
+
+chatModelQ // beginDefinition;
+chatModelQ[ _? (modelContains[ "instruct" ]) ] := False;
+chatModelQ[ _? (modelContains[ StartOfString~~"gpt" ]) ] := True;
+chatModelQ[ _String ] := False;
+chatModelQ // endDefinition;
+
+
+modelContains // beginDefinition;
+modelContains[ patt_ ] := modelContains[ #, patt ] &;
+modelContains[ m_String, patt_ ] := StringContainsQ[ m, WordBoundary~~patt~~WordBoundary, IgnoreCase -> True ];
+modelContains // endDefinition;
 
 (*====================================*)
 
@@ -2595,24 +2605,33 @@ getPersonaIcon[ expr_ ] := getPersonaMenuIcon[ expr, "Full" ];
 (* Model property lookup helpers                          *)
 (*========================================================*)
 
-SetFallthroughError[modelDisplayName]
+modelDisplayName // beginDefinition;
 
 modelDisplayName[{name_?StringQ, settings_?AssociationQ}] :=
 	modelDisplayName[name]
 
-modelDisplayName[name_?StringQ] := Replace[name, {
-	"gpt-3.5-turbo"           -> "GPT-3.5 Turbo",
-	"gpt-3.5-turbo-0301"      -> "GPT-3.5 Turbo (March 01)",
-	"gpt-3.5-turbo-0613"      -> "GPT-3.5 Turbo (June 13)",
-	"gpt-3.5-turbo-16k"       -> "GPT-3.5 Turbo 16k",
-	"gpt-3.5-turbo-16k-0613"  -> "GPT-3.5 Turbo 16k (June 13)",
-	"gpt-4"                   -> "GPT-4",
-	"gpt-4-0314"              -> "GPT-4 (March 14)",
-	"gpt-4-0613"              -> "GPT-4 (June 13)",
+modelDisplayName[ model_String ] := modelDisplayName[ model ] =
+	modelDisplayName @ StringSplit[ model, "-"|" " ];
 
-	(* Leave unknown models as they are. *)
-	unknown_                  :> unknown
-}]
+modelDisplayName[ { "gpt", rest___ } ] :=
+	modelDisplayName @ { "GPT", rest };
+
+modelDisplayName[ { before__, date_String } ] /; StringMatchQ[ date, Repeated[ DigitCharacter, { 4 } ] ] :=
+    modelDisplayName @ { before, DateObject @ Flatten @ { 0, ToExpression @ StringPartition[ date, 2 ] } };
+
+modelDisplayName[ { before___, date_DateObject } ] :=
+    modelDisplayName @ {
+		before,
+		"(" <> DateString[ date, "MonthName" ] <> " " <> DateString[ date, "DayShort" ] <> ")"
+	};
+
+modelDisplayName[ { "GPT", version_String, rest___ } ] /; StringStartsQ[ version, DigitCharacter.. ] :=
+    modelDisplayName @ { "GPT-"<>version, rest };
+
+modelDisplayName[ parts: { __String } ] :=
+	StringRiffle @ Capitalize @ parts;
+
+modelDisplayName // endDefinition;
 
 (*====================================*)
 
