@@ -73,7 +73,7 @@ getChatGroupPrompt[ cell_CellObject ] := Enclose[
         If[ parents === { }, Throw @ Missing[ "NotAvailable" ] ];
 
         prompts = Select[
-            CurrentValue[ parents, { TaggingRules, "ChatNotebookSettings", "CellGroupSettings", "Prompt" } ],
+            CurrentValue[ parents, { TaggingRules, "ChatNotebookSettings", "ChatGroupSettings", "Prompt" } ],
             StringQ
         ];
 
