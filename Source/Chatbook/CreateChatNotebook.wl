@@ -28,6 +28,7 @@ CreateChatNotebook // Options = {
     "ChatDrivenNotebook"                -> False,
     "ChatHistoryLength"                 -> 25,
     "DynamicAutoFormat"                 -> Automatic,
+    "EnableChatGroupSettings"           -> False,
     "FrequencyPenalty"                  -> 0.1,
     "IncludeHistory"                    -> Automatic,
     "LLMEvaluator"                      -> "CodeAssistant",
