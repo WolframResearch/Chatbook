@@ -4,6 +4,7 @@
 BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 
 `$defaultChatSettings;
+`$dialogInputAllowed;
 `$feTaskWidgetCell;
 `$inEpilog;
 `$suppressButtonAppearance;
@@ -43,6 +44,13 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 $checkEvaluationCell := $VersionNumber <= 13.2; (* Flag that determines whether to use workarounds for #187 *)
 
 $$feObj = _FrontEndObject | $FrontEndSession | _NotebookObject | _CellObject | _BoxObject;
+
+(* Used to determine whether or not interactive input (e.g. ChoiceDialog, DialogInput) can be used: *)
+$dialogInputAllowed := ! Or[
+    TrueQ @ $SynchronousEvaluation,
+    MathLink`IsPreemptive[ ],
+    MathLink`PreemptionEnabledQ[ ] === False
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
