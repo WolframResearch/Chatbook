@@ -2565,7 +2565,7 @@ toAPIKey[ Automatic, id_ ] := checkAPIKey @ FirstCase[
         Environment[ "OPENAI_API_KEY" ],
         apiKeyDialog[ ]
     },
-    e_ :> With[ { key = e }, key /; StringQ @ key ],
+    e_ :> With[ { key = e }, key /; MatchQ[ key, _? StringQ | Missing[ "DialogInputNotAllowed" ] ] ],
     throwFailure[ "NoAPIKey" ]
 ];
 
@@ -2640,7 +2640,7 @@ checkAPIKey // endDefinition;
 (*apiKeyDialog*)
 apiKeyDialog // beginDefinition;
 
-apiKeyDialog[ ] :=
+apiKeyDialog[ ] /; $dialogInputAllowed :=
     Enclose @ Module[ { result, key },
         result = ConfirmBy[ showAPIKeyDialog[ ], AssociationQ ];
         key    = ConfirmBy[ result[ "APIKey" ], StringQ ];
@@ -2649,6 +2649,9 @@ apiKeyDialog[ ] :=
 
         key
     ];
+
+apiKeyDialog[ ] :=
+    Missing[ "DialogInputNotAllowed" ];
 
 apiKeyDialog // endDefinition;
 
@@ -2787,6 +2790,8 @@ getModelList[ ] := getModelList @ toAPIKey @ Automatic;
 
 getModelList[ key_String ] := getModelList[ key, Hash @ key ];
 
+getModelList[ Missing[ "DialogInputNotAllowed" ] ] := $fallbackModelList;
+
 getModelList[ key_String, hash_Integer ] :=
     Module[ { resp },
         resp = URLExecute[
@@ -2830,9 +2835,9 @@ getModelList[ hash_, models: { KeyValuePattern[ "id" -> _String ].. } ] :=
     getModelList[ _String, hash ] = Cases[ models, KeyValuePattern[ "id" -> id_String ] :> id ];
 
 getModelList[ hash_, KeyValuePattern[ "error" -> as: KeyValuePattern[ "message" -> message_String ] ] ] :=
-    Module[ { newKey, newHash },
+    Catch @ Module[ { newKey, newHash },
         If[ StringStartsQ[ message, "Incorrect API key" ] && Hash @ systemCredential[ "OPENAI_API_KEY" ] === hash,
-            newKey = apiKeyDialog[ ];
+            newKey = If[ TrueQ @ $dialogInputAllowed, apiKeyDialog[ ], Throw @ $fallbackModelList ];
             newHash = Hash @ newKey;
             If[ StringQ @ newKey && newHash =!= hash,
                 getModelList[ newKey, newHash ],
@@ -2843,6 +2848,9 @@ getModelList[ hash_, KeyValuePattern[ "error" -> as: KeyValuePattern[ "message" 
     ];
 
 getModelList // endDefinition;
+
+
+$fallbackModelList = { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
