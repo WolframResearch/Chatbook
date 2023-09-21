@@ -86,6 +86,7 @@ Block[ { $ContextPath },
     Get[ "Wolfram`Chatbook`ErrorUtils`"           ];
     Get[ "Wolfram`Chatbook`Errors`"               ];
     Get[ "Wolfram`Chatbook`CreateChatNotebook`"   ];
+    Get[ "Wolfram`Chatbook`Dynamics`"             ];
     Get[ "Wolfram`Chatbook`Streaming`"            ];
     Get[ "Wolfram`Chatbook`Utils`"                ];
     Get[ "Wolfram`Chatbook`FrontEnd`"             ];
@@ -123,9 +124,6 @@ $ChatInputPost         = $DefaultChatInputPost;
 $ChatContextCellStyles = <| |>;
 
 Protect @ { $DefaultChatSystemPre, $DefaultChatInputPost };
-
-(* Redraw any dynamic dialogs that might still be open *)
-Wolfram`Chatbook`ResourceInstaller`$installedResourceTrigger = 1;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

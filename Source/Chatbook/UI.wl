@@ -44,6 +44,7 @@ Begin["`Private`"]
 
 Needs["Wolfram`Chatbook`"]
 Needs["Wolfram`Chatbook`Common`"]
+Needs["Wolfram`Chatbook`Dynamics`"]
 Needs["Wolfram`Chatbook`ErrorUtils`"]
 Needs["Wolfram`Chatbook`Errors`"]
 Needs["Wolfram`Chatbook`Debug`"]
@@ -113,8 +114,8 @@ MakeChatCloudDockedCellContents[] := Grid[
 	{{
 		Item[$cloudChatBanner, Alignment -> Left],
 		Item["", ItemSize -> Fit],
-		Row[{"Persona", Spacer[5], $cloudPersonaChooser}],
-		Row[{"Model", Spacer[5], $cloudModelChooser}]
+		Row[{"Persona", Spacer[5], trackedDynamic[$cloudPersonaChooser, "Personas"]}],
+		Row[{"Model", Spacer[5], trackedDynamic[$cloudModelChooser, "Models"]}]
 	}},
 	Dividers -> {{False, False, False, True}, False},
 	Spacings -> {2, 0},
@@ -1932,26 +1933,14 @@ chatHTTPRequest[
 
 (*========================================================*)
 
-$dynamicMenuLabel := DynamicModule[ { cell },
-	Dynamic @ Quiet @ catchAlways @ If[ TrueQ @ $cloudNotebooks,
-		RawBoxes @ TemplateBox[{}, "ChatIconUser"],
-		With[{
-			personaValue = currentValueOrigin[cell, {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}]
-		},
-			getPersonaMenuIcon @ Lookup[
-				GetPersonasAssociation[],
-				personaValue[[2]]
-			]
-		]
-	],
-	Initialization :> (
-		Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-		cell = catchAlways @ parentCell @ EvaluationCell[ ]
-	),
-	UnsavedVariables :> {cell}
-]
+MakeChatInputActiveCellDingbat[ ] :=
+	DynamicModule[ { cell },
+		trackedDynamic[ MakeChatInputActiveCellDingbat @ cell, { "ChatBlock" } ],
+		Initialization :> (cell = EvaluationCell[ ]; Needs[ "Wolfram`Chatbook`" -> None ]),
+		UnsavedVariables :> { cell }
+	];
 
-MakeChatInputActiveCellDingbat[] := Module[{
+MakeChatInputActiveCellDingbat[cell_CellObject] := Module[{
 	menuLabel,
 	button
 },
@@ -1959,7 +1948,17 @@ MakeChatInputActiveCellDingbat[] := Module[{
 	(* Construct the action menu display label *)
 	(*-----------------------------------------*)
 
-	menuLabel = $dynamicMenuLabel;
+	menuLabel = With[{
+		personaValue = currentValueOrigin[
+			parentCell @ cell,
+			{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+		]
+	},
+		getPersonaMenuIcon @ Lookup[
+			GetPersonasAssociation[],
+			personaValue[[2]]
+		]
+	];
 
 	button = Button[
 		Framed[
@@ -1998,6 +1997,8 @@ MakeChatInputActiveCellDingbat[] := Module[{
 	button
 ];
 
+(*====================================*)
+
 MakeChatInputCellDingbat[] :=
 	PaneSelector[
 		{
@@ -2015,8 +2016,24 @@ MakeChatInputCellDingbat[] :=
 		ImageSize -> All
 	]
 
+(*====================================*)
 
-MakeChatDelimiterCellDingbat[] := Module[{
+MakeChatDelimiterCellDingbat[ ] :=
+	DynamicModule[ { cell },
+		trackedDynamic[ MakeChatDelimiterCellDingbat @ cell, { "ChatBlock" } ],
+		Initialization :> (
+			cell = EvaluationCell[ ];
+			Needs[ "Wolfram`Chatbook`" -> None ];
+			updateDynamics[ "ChatBlock" ]
+		),
+		Deinitialization :> (
+			Needs[ "Wolfram`Chatbook`" -> None ];
+			updateDynamics[ "ChatBlock" ]
+		),
+		UnsavedVariables :> { cell }
+	];
+
+MakeChatDelimiterCellDingbat[cell_CellObject] := Module[{
 	menuLabel,
 	button
 },
@@ -2024,7 +2041,17 @@ MakeChatDelimiterCellDingbat[] := Module[{
 	(* Construct the action menu display label *)
 	(*-----------------------------------------*)
 
-	menuLabel = $dynamicMenuLabel;
+	menuLabel = With[{
+		personaValue = currentValueOrigin[
+			parentCell @ cell,
+			{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
+		]
+	},
+		getPersonaMenuIcon @ Lookup[
+			GetPersonasAssociation[],
+			personaValue[[2]]
+		]
+	];
 
 	button = Button[
 		Framed[
@@ -2144,14 +2171,17 @@ makeChatActionMenu[
 			}],
 			{TaggingRules, "ChatNotebookSettings", "ChatDrivenNotebook"}
 		],
-		personas = KeySort[
-			personas,
-			FirstMatchingPositionOrder[{
-				"PlainChat",
-				"RawModel",
-				"CodeWriter",
-				"CodeAssistant"
-			}]
+		personas = Association[
+			KeyTake[
+				personas,
+				{
+					"PlainChat",
+					"RawModel",
+					"CodeWriter",
+					"CodeAssistant"
+				}
+			],
+			personas
 		];
 	];
 
@@ -2310,7 +2340,7 @@ makeChatActionMenuContent[
 				{
 					alignedMenuIcon[persona, personaValue, icon],
 					personaDisplayName[persona, personaSettings],
-					Hold[callback["Persona", persona]]
+					Hold[callback["Persona", persona];updateDynamics[{"ChatBlock"}]]
 				}
 			],
 			personas
@@ -2520,7 +2550,7 @@ getModelSettings[modelName_?StringQ] := Module[{
 
 SetFallthroughError[alignedMenuIcon]
 
-alignedMenuIcon[possible_, current_, icon_] :=alignedMenuIcon[styleListItem[possible, current], icon]
+alignedMenuIcon[possible_, current_, icon_] := alignedMenuIcon[styleListItem[possible, current], icon]
 alignedMenuIcon[check_, icon_] := Row[{check, " ", resizeMenuIcon[icon]}]
 (* If menu item does not utilize a checkmark, use an invisible one to ensure it is left-aligned with others *)
 alignedMenuIcon[icon_] := alignedMenuIcon[Style["\[Checkmark]", ShowContents -> False], icon]
