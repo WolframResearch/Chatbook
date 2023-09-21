@@ -18,6 +18,7 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `compressUntilViewed;
 `createFETask;
 `currentChatSettings;
+`feParentObject;
 `fixCloudCell;
 `flushFETasks;
 `getBoxObjectFromBoxID;
@@ -795,8 +796,7 @@ withNoRenderUpdates // endDefinition;
 (* ::Subsection::Closed:: *)
 (*parentNotebook*)
 parentNotebook // beginDefinition;
-parentNotebook[ cell_CellObject ] /; $cloudNotebooks := Notebooks @ cell;
-parentNotebook[ cell_CellObject ] := ParentNotebook @ cell;
+parentNotebook[ obj: _CellObject|_BoxObject ] := Notebooks @ obj;
 parentNotebook // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
