@@ -2450,7 +2450,7 @@ absoluteCurrentValue[cell_, keyPath_] := AbsoluteCurrentValue[cell, keyPath]
 
 (*====================================*)
 
-SetFallthroughError[currentValueOrigin]
+currentValueOrigin // beginDefinition;
 
 (*
 	Get the current value and origin of a cell option value.
@@ -2470,11 +2470,13 @@ currentValueOrigin[
 },
 	value = absoluteCurrentValue[targetObj, keyPath];
 
-	inlineValue = nestedLookup[
+	(* This was causing dynamics to update on every keystroke, so it's disabled for now: *)
+	(* inlineValue = nestedLookup[
 		Options[targetObj],
 		keyPath,
 		None
-	];
+	]; *)
+	inlineValue = value;
 
 	Which[
 		inlineValue === None,
@@ -2483,6 +2485,8 @@ currentValueOrigin[
 			{"Inline", inlineValue}
 	]
 ]
+
+currentValueOrigin // endDefinition;
 
 (*====================================*)
 
