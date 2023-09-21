@@ -27,18 +27,19 @@ Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                  ];
 Needs[ "Wolfram`Chatbook`Common`"           ];
+Needs[ "Wolfram`Chatbook`ChatGroups`"       ];
+Needs[ "Wolfram`Chatbook`Dynamics`"         ];
 Needs[ "Wolfram`Chatbook`Errors`"           ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`"       ];
-Needs[ "Wolfram`Chatbook`PersonaManager`"   ];
-Needs[ "Wolfram`Chatbook`ToolManager`"      ];
-Needs[ "Wolfram`Chatbook`Personas`"         ];
-Needs[ "Wolfram`Chatbook`Serialization`"    ];
-Needs[ "Wolfram`Chatbook`Formatting`"       ];
 Needs[ "Wolfram`Chatbook`Explode`"          ];
+Needs[ "Wolfram`Chatbook`Formatting`"       ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
 Needs[ "Wolfram`Chatbook`InlineReferences`" ];
+Needs[ "Wolfram`Chatbook`PersonaManager`"   ];
+Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`Prompting`"        ];
-Needs[ "Wolfram`Chatbook`ChatGroups`"       ];
+Needs[ "Wolfram`Chatbook`Serialization`"    ];
+Needs[ "Wolfram`Chatbook`ToolManager`"      ];
 Needs[ "Wolfram`Chatbook`Tools`"            ];
 
 HoldComplete[
