@@ -1143,7 +1143,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.1.4.3904117298"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.1.4.3904279241"|>
   ],
   Cell[
    StyleData["Text"],
@@ -1611,90 +1611,23 @@ Notebook[
    TemplateBoxOptions -> {
     DisplayFunction ->
      (Function[
-      ButtonBox[
-       FrameBox[
-        PaneBox[
-         DynamicModuleBox[
-          {Wolfram`Chatbook`UI`Private`cell$$},
-          DynamicBox[
-           ToBoxes[
-            Quiet[
-             Wolfram`Chatbook`Common`catchAlways[
-              If[ TrueQ[Wolfram`Chatbook`Common`$cloudNotebooks],
-               RawBoxes[TemplateBox[{}, "ChatIconUser"]],
-               With[
-                {
-                 Wolfram`Chatbook`UI`Private`personaValue = 
-                  Wolfram`Chatbook`UI`Private`currentValueOrigin[
-                   Wolfram`Chatbook`UI`Private`cell$$,
-                   {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
-                  ]
-                },
-                Wolfram`Chatbook`UI`getPersonaMenuIcon[
-                 Lookup[
-                  Wolfram`Chatbook`Personas`GetPersonasAssociation[],
-                  Part[Wolfram`Chatbook`UI`Private`personaValue, 2]
-                 ]
-                ]
-               ]
-              ]
-             ]
-            ],
-            StandardForm
-           ]
-          ],
-          Initialization :>
-           (Quiet[Needs["Wolfram`Chatbook`" -> None]];
-           Wolfram`Chatbook`UI`Private`cell$$ = 
-            Wolfram`Chatbook`Common`catchAlways[
-             Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]]
-            ]),
-          DynamicModuleValues :> { },
-          UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
+      DynamicModuleBox[
+       {Wolfram`Chatbook`UI`Private`cell$$},
+       DynamicBox[
+        ToBoxes[
+         Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
+         Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
+          Wolfram`Chatbook`UI`Private`cell$$
          ],
-         Alignment -> {Center, Center},
-         ImageSize -> {25, 25},
-         ImageSizeAction -> "ShrinkToFit"
+         StandardForm
         ],
-        RoundingRadius -> 2,
-        FrameStyle ->
-         Dynamic[
-          If[ CurrentValue["MouseOver"], GrayLevel[0.74902], None ]
-         ],
-        Background ->
-         Dynamic[
-          If[ CurrentValue["MouseOver"], GrayLevel[0.960784], None ]
-         ],
-        FrameMargins -> 0,
-        ImageMargins -> 0,
-        ContentPadding -> False,
-        StripOnInput -> False
+        TrackedSymbols :> {Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger}
        ],
-       ButtonFunction :>
-        (AttachCell[
-         EvaluationCell[],
-         Wolfram`Chatbook`UI`Private`makeChatActionMenu[
-          "Input",
-          Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]],
-          EvaluationCell[]
-         ],
-         {Left, Bottom},
-         Offset[{0, 0}, {Left, Top}],
-         {Left, Top},
-         RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
-        ];),
-       Appearance ->
-        Dynamic[
-         FEPrivate`FrontEndResource[
-          "FEExpressions",
-          "SuppressMouseDownNinePatchAppearance"
-         ]
-        ],
-       ImageMargins -> 0,
-       FrameMargins -> 0,
-       ContentPadding -> False,
-       Evaluator -> Automatic,
-       Method -> "Preemptive"
+       Initialization :>
+        (Wolfram`Chatbook`UI`Private`cell$$ = EvaluationCell[];
+        Needs["Wolfram`Chatbook`" -> None]),
+       DynamicModuleValues :> { },
+       UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
       ]
      ])
    }
@@ -1707,90 +1640,23 @@ Notebook[
       PaneSelectorBox[
        {
         True ->
-         ButtonBox[
-          FrameBox[
-           PaneBox[
-            DynamicModuleBox[
-             {Wolfram`Chatbook`UI`Private`cell$$},
-             DynamicBox[
-              ToBoxes[
-               Quiet[
-                Wolfram`Chatbook`Common`catchAlways[
-                 If[ TrueQ[Wolfram`Chatbook`Common`$cloudNotebooks],
-                  RawBoxes[TemplateBox[{}, "ChatIconUser"]],
-                  With[
-                   {
-                    Wolfram`Chatbook`UI`Private`personaValue = 
-                     Wolfram`Chatbook`UI`Private`currentValueOrigin[
-                      Wolfram`Chatbook`UI`Private`cell$$,
-                      {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
-                     ]
-                   },
-                   Wolfram`Chatbook`UI`getPersonaMenuIcon[
-                    Lookup[
-                     Wolfram`Chatbook`Personas`GetPersonasAssociation[],
-                     Part[Wolfram`Chatbook`UI`Private`personaValue, 2]
-                    ]
-                   ]
-                  ]
-                 ]
-                ]
-               ],
-               StandardForm
-              ]
-             ],
-             Initialization :>
-              (Quiet[Needs["Wolfram`Chatbook`" -> None]];
-              Wolfram`Chatbook`UI`Private`cell$$ = 
-               Wolfram`Chatbook`Common`catchAlways[
-                Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]]
-               ]),
-             DynamicModuleValues :> { },
-             UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
+         DynamicModuleBox[
+          {Wolfram`Chatbook`UI`Private`cell$$},
+          DynamicBox[
+           ToBoxes[
+            Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
+            Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
+             Wolfram`Chatbook`UI`Private`cell$$
             ],
-            Alignment -> {Center, Center},
-            ImageSize -> {25, 25},
-            ImageSizeAction -> "ShrinkToFit"
+            StandardForm
            ],
-           RoundingRadius -> 2,
-           FrameStyle ->
-            Dynamic[
-             If[ CurrentValue["MouseOver"], GrayLevel[0.74902], None ]
-            ],
-           Background ->
-            Dynamic[
-             If[ CurrentValue["MouseOver"], GrayLevel[0.960784], None ]
-            ],
-           FrameMargins -> 0,
-           ImageMargins -> 0,
-           ContentPadding -> False,
-           StripOnInput -> False
+           TrackedSymbols :> {Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger}
           ],
-          ButtonFunction :>
-           (AttachCell[
-            EvaluationCell[],
-            Wolfram`Chatbook`UI`Private`makeChatActionMenu[
-             "Input",
-             Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]],
-             EvaluationCell[]
-            ],
-            {Left, Bottom},
-            Offset[{0, 0}, {Left, Top}],
-            {Left, Top},
-            RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
-           ];),
-          Appearance ->
-           Dynamic[
-            FEPrivate`FrontEndResource[
-             "FEExpressions",
-             "SuppressMouseDownNinePatchAppearance"
-            ]
-           ],
-          ImageMargins -> 0,
-          FrameMargins -> 0,
-          ContentPadding -> False,
-          Evaluator -> Automatic,
-          Method -> "Preemptive"
+          Initialization :>
+           (Wolfram`Chatbook`UI`Private`cell$$ = EvaluationCell[];
+           Needs["Wolfram`Chatbook`" -> None]),
+          DynamicModuleValues :> { },
+          UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
          ],
         False ->
          FrameBox[
@@ -1823,90 +1689,23 @@ Notebook[
         PaneSelectorBox[
          {
           True ->
-           ButtonBox[
-            FrameBox[
-             PaneBox[
-              DynamicModuleBox[
-               {Wolfram`Chatbook`UI`Private`cell$$},
-               DynamicBox[
-                ToBoxes[
-                 Quiet[
-                  Wolfram`Chatbook`Common`catchAlways[
-                   If[ TrueQ[Wolfram`Chatbook`Common`$cloudNotebooks],
-                    RawBoxes[TemplateBox[{}, "ChatIconUser"]],
-                    With[
-                     {
-                      Wolfram`Chatbook`UI`Private`personaValue = 
-                       Wolfram`Chatbook`UI`Private`currentValueOrigin[
-                        Wolfram`Chatbook`UI`Private`cell$$,
-                        {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
-                       ]
-                     },
-                     Wolfram`Chatbook`UI`getPersonaMenuIcon[
-                      Lookup[
-                       Wolfram`Chatbook`Personas`GetPersonasAssociation[],
-                       Part[Wolfram`Chatbook`UI`Private`personaValue, 2]
-                      ]
-                     ]
-                    ]
-                   ]
-                  ]
-                 ],
-                 StandardForm
-                ]
-               ],
-               Initialization :>
-                (Quiet[Needs["Wolfram`Chatbook`" -> None]];
-                Wolfram`Chatbook`UI`Private`cell$$ = 
-                 Wolfram`Chatbook`Common`catchAlways[
-                  Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]]
-                 ]),
-               DynamicModuleValues :> { },
-               UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
+           DynamicModuleBox[
+            {Wolfram`Chatbook`UI`Private`cell$$},
+            DynamicBox[
+             ToBoxes[
+              Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
+              Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
+               Wolfram`Chatbook`UI`Private`cell$$
               ],
-              Alignment -> {Center, Center},
-              ImageSize -> {25, 25},
-              ImageSizeAction -> "ShrinkToFit"
+              StandardForm
              ],
-             RoundingRadius -> 2,
-             FrameStyle ->
-              Dynamic[
-               If[ CurrentValue["MouseOver"], GrayLevel[0.74902], None ]
-              ],
-             Background ->
-              Dynamic[
-               If[ CurrentValue["MouseOver"], GrayLevel[0.960784], None ]
-              ],
-             FrameMargins -> 0,
-             ImageMargins -> 0,
-             ContentPadding -> False,
-             StripOnInput -> False
+             TrackedSymbols :> {Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger}
             ],
-            ButtonFunction :>
-             (AttachCell[
-              EvaluationCell[],
-              Wolfram`Chatbook`UI`Private`makeChatActionMenu[
-               "Input",
-               Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]],
-               EvaluationCell[]
-              ],
-              {Left, Bottom},
-              Offset[{0, 0}, {Left, Top}],
-              {Left, Top},
-              RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
-             ];),
-            Appearance ->
-             Dynamic[
-              FEPrivate`FrontEndResource[
-               "FEExpressions",
-               "SuppressMouseDownNinePatchAppearance"
-              ]
-             ],
-            ImageMargins -> 0,
-            FrameMargins -> 0,
-            ContentPadding -> False,
-            Evaluator -> Automatic,
-            Method -> "Preemptive"
+            Initialization :>
+             (Wolfram`Chatbook`UI`Private`cell$$ = EvaluationCell[];
+             Needs["Wolfram`Chatbook`" -> None]),
+            DynamicModuleValues :> { },
+            UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
            ],
           False ->
            FrameBox[
@@ -2386,96 +2185,27 @@ Notebook[
    TemplateBoxOptions -> {
     DisplayFunction ->
      (Function[
-      ButtonBox[
-       FrameBox[
-        PaneBox[
-         DynamicModuleBox[
-          {Wolfram`Chatbook`UI`Private`cell$$},
-          DynamicBox[
-           ToBoxes[
-            Quiet[
-             Wolfram`Chatbook`Common`catchAlways[
-              If[ TrueQ[Wolfram`Chatbook`Common`$cloudNotebooks],
-               RawBoxes[TemplateBox[{}, "ChatIconUser"]],
-               With[
-                {
-                 Wolfram`Chatbook`UI`Private`personaValue = 
-                  Wolfram`Chatbook`UI`Private`currentValueOrigin[
-                   Wolfram`Chatbook`UI`Private`cell$$,
-                   {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
-                  ]
-                },
-                Wolfram`Chatbook`UI`getPersonaMenuIcon[
-                 Lookup[
-                  Wolfram`Chatbook`Personas`GetPersonasAssociation[],
-                  Part[Wolfram`Chatbook`UI`Private`personaValue, 2]
-                 ]
-                ]
-               ]
-              ]
-             ]
-            ],
-            StandardForm
-           ]
-          ],
-          Initialization :>
-           (Quiet[Needs["Wolfram`Chatbook`" -> None]];
-           Wolfram`Chatbook`UI`Private`cell$$ = 
-            Wolfram`Chatbook`Common`catchAlways[
-             Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]]
-            ]),
-          DynamicModuleValues :> { },
-          UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
+      DynamicModuleBox[
+       {Wolfram`Chatbook`UI`Private`cell$$},
+       DynamicBox[
+        ToBoxes[
+         Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
+         Wolfram`Chatbook`UI`MakeChatDelimiterCellDingbat[
+          Wolfram`Chatbook`UI`Private`cell$$
          ],
-         Alignment -> {Center, Center},
-         ImageSize -> {25, 25},
-         ImageSizeAction -> "ShrinkToFit"
+         StandardForm
         ],
-        RoundingRadius -> 2,
-        FrameStyle ->
-         Dynamic[
-          If[ CurrentValue["MouseOver"],
-           GrayLevel[0.74902],
-           GrayLevel[0, 0]
-          ]
-         ],
-        Background ->
-         Dynamic[
-          If[ CurrentValue["MouseOver"],
-           GrayLevel[0.960784],
-           GrayLevel[1]
-          ]
-         ],
-        FrameMargins -> 0,
-        ImageMargins -> 0,
-        ContentPadding -> False,
-        StripOnInput -> False
+        TrackedSymbols :> {Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger}
        ],
-       ButtonFunction :>
-        (AttachCell[
-         EvaluationCell[],
-         Wolfram`Chatbook`UI`Private`makeChatActionMenu[
-          "Delimiter",
-          Wolfram`Chatbook`FrontEnd`parentCell[EvaluationCell[]],
-          EvaluationCell[]
-         ],
-         {Left, Bottom},
-         Offset[{0, 0}, {Left, Top}],
-         {Left, Top},
-         RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
-        ];),
-       Appearance ->
-        Dynamic[
-         FEPrivate`FrontEndResource[
-          "FEExpressions",
-          "SuppressMouseDownNinePatchAppearance"
-         ]
-        ],
-       ImageMargins -> 0,
-       FrameMargins -> 0,
-       ContentPadding -> False,
-       Evaluator -> Automatic,
-       Method -> "Preemptive"
+       Initialization :>
+        (Wolfram`Chatbook`UI`Private`cell$$ = EvaluationCell[];
+        Needs["Wolfram`Chatbook`" -> None];
+        Wolfram`Chatbook`Dynamics`updateDynamics["ChatBlock"]),
+       DynamicModuleValues :> { },
+       Deinitialization :>
+        (Needs["Wolfram`Chatbook`" -> None];
+        Wolfram`Chatbook`Dynamics`updateDynamics["ChatBlock"]),
+       UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
       ]
      ])
    }
