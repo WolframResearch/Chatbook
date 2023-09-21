@@ -1143,7 +1143,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.1.4.3904279241"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.1.4.3904282110"|>
   ],
   Cell[
    StyleData["Text"],
@@ -1615,9 +1615,12 @@ Notebook[
        {Wolfram`Chatbook`UI`Private`cell$$},
        DynamicBox[
         ToBoxes[
-         Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
-         Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
-          Wolfram`Chatbook`UI`Private`cell$$
+         Catch[
+          Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
+          Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
+           Wolfram`Chatbook`UI`Private`cell$$
+          ],
+          Blank[]
          ],
          StandardForm
         ],
@@ -1644,9 +1647,12 @@ Notebook[
           {Wolfram`Chatbook`UI`Private`cell$$},
           DynamicBox[
            ToBoxes[
-            Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
-            Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
-             Wolfram`Chatbook`UI`Private`cell$$
+            Catch[
+             Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
+             Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
+              Wolfram`Chatbook`UI`Private`cell$$
+             ],
+             Blank[]
             ],
             StandardForm
            ],
@@ -1693,9 +1699,12 @@ Notebook[
             {Wolfram`Chatbook`UI`Private`cell$$},
             DynamicBox[
              ToBoxes[
-              Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
-              Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
-               Wolfram`Chatbook`UI`Private`cell$$
+              Catch[
+               Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
+               Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
+                Wolfram`Chatbook`UI`Private`cell$$
+               ],
+               Blank[]
               ],
               StandardForm
              ],
@@ -2189,9 +2198,12 @@ Notebook[
        {Wolfram`Chatbook`UI`Private`cell$$},
        DynamicBox[
         ToBoxes[
-         Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
-         Wolfram`Chatbook`UI`MakeChatDelimiterCellDingbat[
-          Wolfram`Chatbook`UI`Private`cell$$
+         Catch[
+          Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
+          Wolfram`Chatbook`UI`MakeChatDelimiterCellDingbat[
+           Wolfram`Chatbook`UI`Private`cell$$
+          ],
+          Blank[]
          ],
          StandardForm
         ],
