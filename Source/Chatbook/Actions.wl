@@ -2633,6 +2633,7 @@ setCloudSystemCredential // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*checkAPIKey*)
 checkAPIKey // beginDefinition;
+checkAPIKey[ Missing[ "DialogInputNotAllowed" ] ] := Missing[ "DialogInputNotAllowed" ];
 checkAPIKey[ key_String ] /; MatchQ[ getModelList @ key, { __String } ] := checkAPIKey[ key ] = key;
 checkAPIKey // endDefinition;
 
@@ -2647,11 +2648,12 @@ apiKeyDialog[ ] /; $dialogInputAllowed :=
         key    = ConfirmBy[ result[ "APIKey" ], StringQ ];
 
         If[ result[ "Save" ], setSystemCredential[ "OPENAI_API_KEY", key ] ];
+        updateDynamics[ "Models" ];
 
         key
     ];
 
-apiKeyDialog[ ] :=
+apiKeyDialog[ ] /; ! TrueQ @ $dialogInputAllowed :=
     Missing[ "DialogInputNotAllowed" ];
 
 apiKeyDialog // endDefinition;
@@ -2833,7 +2835,12 @@ getModelList[ hash_, KeyValuePattern[ "data" -> data_ ] ] :=
     getModelList[ hash, data ];
 
 getModelList[ hash_, models: { KeyValuePattern[ "id" -> _String ].. } ] :=
-    getModelList[ _String, hash ] = Cases[ models, KeyValuePattern[ "id" -> id_String ] :> id ];
+    Module[ { result },
+        result = Cases[ models, KeyValuePattern[ "id" -> id_String ] :> id ];
+        getModelList[ _String, hash ] = result;
+        updateDynamics[ "Models" ];
+        result
+    ];
 
 getModelList[ hash_, KeyValuePattern[ "error" -> as: KeyValuePattern[ "message" -> message_String ] ] ] :=
     Catch @ Module[ { newKey, newHash },
