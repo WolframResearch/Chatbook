@@ -474,7 +474,7 @@ currentChatSettings[ cell0_CellObject, key_String ] := Catch @ Enclose[
         ];
 
         values = AbsoluteCurrentValue[
-            DeleteMissing @ { delimiter, cell },
+            DeleteMissing @ { cell, delimiter },
             { TaggingRules, "ChatNotebookSettings", key }
         ];
 
