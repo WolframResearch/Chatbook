@@ -27,18 +27,19 @@ Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                  ];
 Needs[ "Wolfram`Chatbook`Common`"           ];
+Needs[ "Wolfram`Chatbook`ChatGroups`"       ];
+Needs[ "Wolfram`Chatbook`Dynamics`"         ];
 Needs[ "Wolfram`Chatbook`Errors`"           ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`"       ];
-Needs[ "Wolfram`Chatbook`PersonaManager`"   ];
-Needs[ "Wolfram`Chatbook`ToolManager`"      ];
-Needs[ "Wolfram`Chatbook`Personas`"         ];
-Needs[ "Wolfram`Chatbook`Serialization`"    ];
-Needs[ "Wolfram`Chatbook`Formatting`"       ];
 Needs[ "Wolfram`Chatbook`Explode`"          ];
+Needs[ "Wolfram`Chatbook`Formatting`"       ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
 Needs[ "Wolfram`Chatbook`InlineReferences`" ];
+Needs[ "Wolfram`Chatbook`PersonaManager`"   ];
+Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`Prompting`"        ];
-Needs[ "Wolfram`Chatbook`ChatGroups`"       ];
+Needs[ "Wolfram`Chatbook`Serialization`"    ];
+Needs[ "Wolfram`Chatbook`ToolManager`"      ];
 Needs[ "Wolfram`Chatbook`Tools`"            ];
 
 HoldComplete[
@@ -2565,7 +2566,7 @@ toAPIKey[ Automatic, id_ ] := checkAPIKey @ FirstCase[
         Environment[ "OPENAI_API_KEY" ],
         apiKeyDialog[ ]
     },
-    e_ :> With[ { key = e }, key /; StringQ @ key ],
+    e_ :> With[ { key = e }, key /; MatchQ[ key, _? StringQ | Missing[ "DialogInputNotAllowed" ] ] ],
     throwFailure[ "NoAPIKey" ]
 ];
 
@@ -2632,6 +2633,7 @@ setCloudSystemCredential // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*checkAPIKey*)
 checkAPIKey // beginDefinition;
+checkAPIKey[ Missing[ "DialogInputNotAllowed" ] ] := Missing[ "DialogInputNotAllowed" ];
 checkAPIKey[ key_String ] /; MatchQ[ getModelList @ key, { __String } ] := checkAPIKey[ key ] = key;
 checkAPIKey // endDefinition;
 
@@ -2640,15 +2642,19 @@ checkAPIKey // endDefinition;
 (*apiKeyDialog*)
 apiKeyDialog // beginDefinition;
 
-apiKeyDialog[ ] :=
+apiKeyDialog[ ] /; $dialogInputAllowed :=
     Enclose @ Module[ { result, key },
         result = ConfirmBy[ showAPIKeyDialog[ ], AssociationQ ];
         key    = ConfirmBy[ result[ "APIKey" ], StringQ ];
 
         If[ result[ "Save" ], setSystemCredential[ "OPENAI_API_KEY", key ] ];
+        updateDynamics[ "Models" ];
 
         key
     ];
+
+apiKeyDialog[ ] /; ! TrueQ @ $dialogInputAllowed :=
+    Missing[ "DialogInputNotAllowed" ];
 
 apiKeyDialog // endDefinition;
 
@@ -2787,6 +2793,8 @@ getModelList[ ] := getModelList @ toAPIKey @ Automatic;
 
 getModelList[ key_String ] := getModelList[ key, Hash @ key ];
 
+getModelList[ Missing[ "DialogInputNotAllowed" ] ] := $fallbackModelList;
+
 getModelList[ key_String, hash_Integer ] :=
     Module[ { resp },
         resp = URLExecute[
@@ -2827,12 +2835,17 @@ getModelList[ hash_, KeyValuePattern[ "data" -> data_ ] ] :=
     getModelList[ hash, data ];
 
 getModelList[ hash_, models: { KeyValuePattern[ "id" -> _String ].. } ] :=
-    getModelList[ _String, hash ] = Cases[ models, KeyValuePattern[ "id" -> id_String ] :> id ];
+    Module[ { result },
+        result = Cases[ models, KeyValuePattern[ "id" -> id_String ] :> id ];
+        getModelList[ _String, hash ] = result;
+        updateDynamics[ "Models" ];
+        result
+    ];
 
 getModelList[ hash_, KeyValuePattern[ "error" -> as: KeyValuePattern[ "message" -> message_String ] ] ] :=
-    Module[ { newKey, newHash },
+    Catch @ Module[ { newKey, newHash },
         If[ StringStartsQ[ message, "Incorrect API key" ] && Hash @ systemCredential[ "OPENAI_API_KEY" ] === hash,
-            newKey = apiKeyDialog[ ];
+            newKey = If[ TrueQ @ $dialogInputAllowed, apiKeyDialog[ ], Throw @ $fallbackModelList ];
             newHash = Hash @ newKey;
             If[ StringQ @ newKey && newHash =!= hash,
                 getModelList[ newKey, newHash ],
@@ -2843,6 +2856,9 @@ getModelList[ hash_, KeyValuePattern[ "error" -> as: KeyValuePattern[ "message" 
     ];
 
 getModelList // endDefinition;
+
+
+$fallbackModelList = { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

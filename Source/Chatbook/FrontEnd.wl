@@ -4,6 +4,7 @@
 BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 
 `$defaultChatSettings;
+`$dialogInputAllowed;
 `$feTaskWidgetCell;
 `$inEpilog;
 `$suppressButtonAppearance;
@@ -17,6 +18,7 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `compressUntilViewed;
 `createFETask;
 `currentChatSettings;
+`feParentObject;
 `fixCloudCell;
 `flushFETasks;
 `getBoxObjectFromBoxID;
@@ -43,6 +45,13 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 $checkEvaluationCell := $VersionNumber <= 13.2; (* Flag that determines whether to use workarounds for #187 *)
 
 $$feObj = _FrontEndObject | $FrontEndSession | _NotebookObject | _CellObject | _BoxObject;
+
+(* Used to determine whether or not interactive input (e.g. ChoiceDialog, DialogInput) can be used: *)
+$dialogInputAllowed := ! Or[
+    TrueQ @ $SynchronousEvaluation,
+    MathLink`IsPreemptive[ ],
+    MathLink`PreemptionEnabledQ[ ] === False
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -466,7 +475,7 @@ currentChatSettings[ cell0_CellObject, key_String ] := Catch @ Enclose[
         ];
 
         values = AbsoluteCurrentValue[
-            DeleteMissing @ { delimiter, cell },
+            DeleteMissing @ { cell, delimiter },
             { TaggingRules, "ChatNotebookSettings", key }
         ];
 
@@ -787,8 +796,7 @@ withNoRenderUpdates // endDefinition;
 (* ::Subsection::Closed:: *)
 (*parentNotebook*)
 parentNotebook // beginDefinition;
-parentNotebook[ cell_CellObject ] /; $cloudNotebooks := Notebooks @ cell;
-parentNotebook[ cell_CellObject ] := ParentNotebook @ cell;
+parentNotebook[ obj: _CellObject|_BoxObject ] := Notebooks @ obj;
 parentNotebook // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
