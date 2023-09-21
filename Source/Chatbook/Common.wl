@@ -112,8 +112,8 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "ResourceNotInstalled"            -> "The resource `1` is not installed.",
     "ServerOverloaded"                -> "The server is currently overloaded with other requests. Please try again later.",
     "ToolNotFound"                    -> "Tool `1` not found.",
-    "UnknownResponse"                 -> "Unexpected response from OpenAI server",
-    "UnknownStatusCode"               -> "Unexpected response from OpenAI server with status code `StatusCode`"
+    "UnknownResponse"                 -> "Unexpected response from server",
+    "UnknownStatusCode"               -> "Unexpected response from server with status code `StatusCode`"
 |> ];
 
 (* ::**************************************************************************************************************:: *)
