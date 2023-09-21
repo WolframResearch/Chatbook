@@ -21,3 +21,6 @@ Quiet[
     ],
     General::shdw
 ];
+
+(* Redraw any dynamics that might might have pink-boxed while loading *)
+Wolfram`Chatbook`Dynamics`updateDynamics[ All ];
