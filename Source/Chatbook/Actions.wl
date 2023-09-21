@@ -3049,8 +3049,12 @@ writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
             $lastChatOutput  = output;
 
             With[ { new = new, output = output },
-                createFETask @ NotebookWrite[ cell, new, None, AutoScroll -> False ];
-                createFETask @ attachChatOutputMenu @ output
+                If[ TrueQ[ $VersionNumber >= 14.0 ],
+                    createFETask @ NotebookWrite[ cell, new, None, AutoScroll -> False ];
+                    createFETask @ attachChatOutputMenu @ output,
+                    NotebookWrite[ cell, new, None, AutoScroll -> False ];
+                    attachChatOutputMenu @ output
+                ]
             ]
         ]
     ],
