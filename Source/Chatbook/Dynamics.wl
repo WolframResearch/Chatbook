@@ -108,7 +108,10 @@ makeTrackList // endDefinition;
 (*buildDynamic*)
 buildDynamic // beginDefinition;
 buildDynamic // Attributes = { HoldFirst };
-buildDynamic[ expr_, HoldComplete[ s__Symbol ], opts___ ] := Dynamic[ s; expr, TrackedSymbols :> { s }, opts ];
+
+buildDynamic[ expr_, HoldComplete[ s__Symbol ], opts___ ] :=
+    Dynamic[ Catch[ s; expr, _ ], TrackedSymbols :> { s }, opts ];
+
 buildDynamic // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
