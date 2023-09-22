@@ -1017,6 +1017,9 @@ sendChat // endDefinition;
 (*resolveAutoSettings*)
 resolveAutoSettings // beginDefinition;
 
+resolveAutoSettings[ settings: KeyValuePattern[ key_ :> value_ ] ] :=
+    resolveAutoSettings @ Association[ settings, key -> value ];
+
 resolveAutoSettings[ settings: KeyValuePattern[ "ToolsEnabled" -> Automatic ] ] :=
     resolveAutoSettings @ Association[ settings, "ToolsEnabled" -> toolsEnabledQ @ settings ];
 
