@@ -1299,7 +1299,9 @@ chatSubmit[ container_, messages: { __Association }, cellObject_, settings_ ] :=
         standardizeMessageKeys @ messages,
         makeLLMConfiguration @ settings,
         HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
-        HandlerFunctionsKeys -> { "BodyChunk", "StatusCode", "Task", "TaskStatus", "EventName" }
+        HandlerFunctionsKeys -> { "BodyChunk", "StatusCode", "Task", "TaskStatus", "EventName" },
+        "TestConnection"     -> False,
+        "ProcessResultQ"     -> True
     ]
 );
 
@@ -1324,8 +1326,15 @@ makeLLMConfiguration // beginDefinition;
 makeLLMConfiguration[ as: KeyValuePattern[ "Model" -> model_String ] ] :=
     makeLLMConfiguration @ Append[ as, "Model" -> { "OpenAI", model } ];
 
+(* FIXME: get valid claude keys using the following patterns:
+ServiceConnectionUtilities`ConnectionInformation["Anthropic", "ProcessedRequests", "Chat", "Parameters"]
+*)
+
 makeLLMConfiguration[ as_Association ] :=
-    $lastLLMConfiguration = LLMConfiguration @ KeyDrop[ as, { "Tools" } ]; (* TODO: will ChatSubmit work with tools? *)
+    $lastLLMConfiguration = LLMConfiguration @ Association[
+        KeyTake[ as, { "Model" } ],
+        "Stop" -> { "ENDTOOLCALL" }
+    ];
 
 makeLLMConfiguration // endDefinition;
 
