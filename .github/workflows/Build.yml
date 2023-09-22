@@ -3,7 +3,7 @@ name: Build
 on:
   workflow_dispatch:
   pull_request:
-    branches: [main]
+    branches: [main, release/paclet]
 
 concurrency:
   group: ${{ github.ref }}
