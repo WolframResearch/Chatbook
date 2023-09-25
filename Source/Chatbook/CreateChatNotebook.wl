@@ -9,10 +9,8 @@ Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"            ];
 Needs[ "Wolfram`Chatbook`Common`"     ];
-Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
-Needs[ "Wolfram`Chatbook`Tools`"      ];
 Needs[ "Wolfram`Chatbook`Formatting`" ];
-Needs[ "Wolfram`Chatbook`Actions`"    ];
+Needs[ "Wolfram`Chatbook`SendChat`"   ];
 Needs[ "Wolfram`Chatbook`UI`"         ];
 
 (* ::**************************************************************************************************************:: *)
@@ -80,14 +78,16 @@ $cloudSelectionMover = Cell @ BoxData @ ToBoxes @ Dynamic[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*createChatNotebook*)
-createChatNotebook // SetFallthroughError;
+createChatNotebook // beginDefinition;
 createChatNotebook[ opts___ ] /; $cloudNotebooks := createCloudChatNotebook @ opts;
 createChatNotebook[ opts___ ] := createLocalChatNotebook @ opts;
+createChatNotebook // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*createCloudChatNotebook*)
-createCloudChatNotebook // SetFallthroughError;
+createCloudChatNotebook // beginDefinition;
+
 createCloudChatNotebook[ opts: OptionsPattern[ CreateChatNotebook ] ] :=
     Module[ { settings, options, notebook, deployed },
         settings = makeChatNotebookSettings @ Association @ FilterRules[ { opts }, Options @ CreateChatNotebook ];
@@ -97,6 +97,8 @@ createCloudChatNotebook[ opts: OptionsPattern[ CreateChatNotebook ] ] :=
         SystemOpen @ deployed;
         deployed
     ];
+
+createCloudChatNotebook // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
