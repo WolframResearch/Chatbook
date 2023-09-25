@@ -34,9 +34,6 @@ Begin[ "`Private`" ];
 (* Avoiding context aliasing due to bug 434990: *)
 Needs[ "GeneralUtilities`" -> None ];
 
-(* Clear existing definitions *)
-GeneralUtilities`UnprotectAndClearAll @ Evaluate[ # <> "*" & /@ Contexts[ "Wolfram`Chatbook`*" ] ];
-
 (* Clear subcontexts from `$Packages` to force `Needs` to run again: *)
 WithCleanup[
     Unprotect @ $Packages,
@@ -125,8 +122,6 @@ $ChatSystemPre         = $DefaultChatSystemPre;
 $ChatInputPost         = $DefaultChatInputPost;
 $ChatContextCellStyles = <| |>;
 $DefaultModel         := If[ $VersionNumber >= 13.3, "gpt-4", "gpt-3.5-turbo" ];
-
-Protect @ { $DefaultChatSystemPre, $DefaultChatInputPost };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
