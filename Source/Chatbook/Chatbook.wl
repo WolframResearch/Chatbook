@@ -15,7 +15,12 @@ Quiet[
         Get @ Wolfram`ChatbookLoader`$MXFile
         ,
         WithCleanup[
-            Get[ "Wolfram`Chatbook`Main`" ],
+            PreemptProtect[
+                Unprotect[ "Wolfram`Chatbook`*" ];
+                ClearAll[ "Wolfram`Chatbook`*" ];
+                Remove[ "Wolfram`Chatbook`*`*" ];
+                Get[ "Wolfram`Chatbook`Main`" ]
+            ],
             { $Context, $ContextPath, $ContextAliases } = { ## }
         ] & [ $Context, $ContextPath, $ContextAliases ]
     ],
