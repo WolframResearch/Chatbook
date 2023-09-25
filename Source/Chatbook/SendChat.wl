@@ -22,6 +22,7 @@ Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`Formatting`"       ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
 Needs[ "Wolfram`Chatbook`InlineReferences`" ];
+Needs[ "Wolfram`Chatbook`Models`"           ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`Prompting`"        ];
 Needs[ "Wolfram`Chatbook`Serialization`"    ];
@@ -39,6 +40,8 @@ $llmServicesAvailable := $llmServicesAvailable = (
     PacletInstall[ "Wolfram/LLMFunctions" ];
     FileExistsQ @ FindFile[ "LLMServices`" ]
 );
+
+$llmServicesAvailable = False; (* FIXME: remove this *)
 
 $$inlineModifierCell = Alternatives[
     Cell[ _, "InlineModifierReference", ___ ],

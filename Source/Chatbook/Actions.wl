@@ -24,13 +24,13 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 `$lastMessages;
 `$lastTask;
 `$nextTaskEvaluation;
+`apiKeyDialog;
 `autoAssistQ;
 `chatInputCellQ;
 `clearMinimizedChats;
-`getModelList;
 `standardizeMessageKeys;
+`systemCredential;
 `toAPIKey;
-`toModelName;
 
 Begin[ "`Private`" ];
 
@@ -40,6 +40,7 @@ Needs[ "Wolfram`Chatbook`Dynamics`"       ];
 Needs[ "Wolfram`Chatbook`Explode`"        ];
 Needs[ "Wolfram`Chatbook`Formatting`"     ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"       ];
+Needs[ "Wolfram`Chatbook`Models`"         ];
 Needs[ "Wolfram`Chatbook`PersonaManager`" ];
 Needs[ "Wolfram`Chatbook`Prompting`"      ];
 Needs[ "Wolfram`Chatbook`SendChat`"       ];
@@ -946,21 +947,6 @@ alwaysOpenQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*extractMessageText*)
-(* FIXME: unused function? *)
-extractMessageText // beginDefinition;
-
-extractMessageText[ KeyValuePattern[
-    "choices" -> {
-        KeyValuePattern[ "message" -> KeyValuePattern[ "content" -> message_String ] ],
-        ___
-    }
-] ] := untagString @ message;
-
-extractMessageText // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*clearMinimizedChats*)
 clearMinimizedChats // beginDefinition;
 
@@ -1000,18 +986,8 @@ clearMinimizedChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*dropDelimitedCells*)
-(* FIXME: unused function? *)
-dropDelimitedCells // beginDefinition;
-
-dropDelimitedCells[ cells_List ] :=
-    Drop[ cells, Max[ Position[ cellStyles @ cells, { ___, "ChatDelimiter"|"PageBreak", ___ }, { 1 } ], 0 ] ];
-
-dropDelimitedCells // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*toAPIKey*)
+(* TODO: All this API key stuff can go away once LLMServices is available *)
 toAPIKey[ key_String ] := key;
 
 toAPIKey[ Automatic ] := toAPIKey[ Automatic, None ];
@@ -1154,122 +1130,6 @@ $apiKeyDialogDescription := $apiKeyDialogDescription = Get @ FileNameJoin @ {
     PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "AIAssistant" ],
     "APIKeyDialogDescription.wl"
 };
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*Models*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*getAIAssistantModels*)
-(*FIXME: unused function? *)
-getAIAssistantModels // beginDefinition;
-getAIAssistantModels[ opts: OptionsPattern[ CreateChatNotebook ] ] := getModelList @ toAPIKey @ Automatic;
-getAIAssistantModels // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getModelList*)
-(* FIXME: move to Models.wl *)
-getModelList // beginDefinition;
-
-(* NOTE: This function is also called in UI.wl *)
-getModelList[ ] := getModelList @ toAPIKey @ Automatic;
-
-getModelList[ key_String ] := getModelList[ key, Hash @ key ];
-
-getModelList[ Missing[ "DialogInputNotAllowed" ] ] := $fallbackModelList;
-
-getModelList[ key_String, hash_Integer ] :=
-    Module[ { resp },
-        resp = URLExecute[
-            HTTPRequest[
-                "https://api.openai.com/v1/models",
-                <| "Headers" -> <| "Content-Type" -> "application/json", "Authorization" -> "Bearer "<>key |> |>
-            ],
-            "RawJSON",
-            Interactive -> False
-        ];
-        If[ FailureQ @ resp && StringStartsQ[ key, "org-", IgnoreCase -> True ],
-            (*
-                When viewing the account settings page on OpenAI's site, it describes the organization ID as something
-                that's used in API requests, which may be confusing to someone who is looking for their API key and
-                they come across this page first. This message is meant to catch these cases and steer the user in the
-                right direction.
-
-                TODO: When more services are supported, this should only apply when using an OpenAI endpoint.
-            *)
-            throwFailure[
-                ChatbookAction::APIKeyOrganizationID,
-                Hyperlink[ "https://platform.openai.com/account/api-keys" ],
-                key
-            ],
-            getModelList[ hash, resp ]
-        ]
-    ];
-
-(* Could not connect to the server (maybe server is down or no internet connection available) *)
-getModelList[ hash_Integer, failure: Failure[ "ConnectionFailure", _ ] ] :=
-    throwFailure[ ChatbookAction::ConnectionFailure, failure ];
-
-(* Some other failure: *)
-getModelList[ hash_Integer, failure_? FailureQ ] :=
-    throwFailure[ ChatbookAction::ConnectionFailure2, failure ];
-
-getModelList[ hash_, KeyValuePattern[ "data" -> data_ ] ] :=
-    getModelList[ hash, data ];
-
-getModelList[ hash_, models: { KeyValuePattern[ "id" -> _String ].. } ] :=
-    Module[ { result },
-        result = Cases[ models, KeyValuePattern[ "id" -> id_String ] :> id ];
-        getModelList[ _String, hash ] = result;
-        updateDynamics[ "Models" ];
-        result
-    ];
-
-getModelList[ hash_, KeyValuePattern[ "error" -> as: KeyValuePattern[ "message" -> message_String ] ] ] :=
-    Catch @ Module[ { newKey, newHash },
-        If[ StringStartsQ[ message, "Incorrect API key" ] && Hash @ systemCredential[ "OPENAI_API_KEY" ] === hash,
-            newKey = If[ TrueQ @ $dialogInputAllowed, apiKeyDialog[ ], Throw @ $fallbackModelList ];
-            newHash = Hash @ newKey;
-            If[ StringQ @ newKey && newHash =!= hash,
-                getModelList[ newKey, newHash ],
-                throwFailure[ ChatbookAction::BadResponseMessage, message, as ]
-            ],
-            throwFailure[ ChatbookAction::BadResponseMessage, message, as ]
-        ]
-    ];
-
-getModelList // endDefinition;
-
-
-$fallbackModelList = { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4" };
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*toModelName*)
-toModelName // beginDefinition;
-
-toModelName[ { service_String, name_String } ] := toModelName @ name;
-
-toModelName[ name_String? StringQ ] := toModelName[ name ] =
-    toModelName0 @ StringReplace[
-        ToLowerCase @ StringReplace[
-            name,
-            a_? LowerCaseQ ~~ b_? UpperCaseQ :> a<>"-"<>b
-        ],
-        "gpt"~~n:$$modelVersion~~EndOfString :> "gpt-"<>n
-    ];
-
-toModelName // endDefinition;
-
-$$modelVersion = DigitCharacter.. ~~ (("." ~~ DigitCharacter...) | "");
-
-(* cSpell:ignore chatgpt *)
-toModelName0 // beginDefinition;
-toModelName0[ "chat-gpt"|"chatgpt"|"gpt-3"|"gpt-3.5" ] := "gpt-3.5-turbo";
-toModelName0[ name_String ] := StringReplace[ name, "gpt"~~n:DigitCharacter :> "gpt-"<>n ];
-toModelName0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
