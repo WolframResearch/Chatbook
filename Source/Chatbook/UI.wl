@@ -35,7 +35,6 @@ CreateToolbarContent[] is called by the NotebookToolbar to generate the content 
 
 `getPersonaIcon;
 `getPersonaMenuIcon;
-`modelDisplayName;
 `personaDisplayName;
 `resizeMenuIcon;
 
@@ -2512,19 +2511,6 @@ getModelsMenuItems[] := Module[{
 	items
 ]
 
-
-chatModelQ // beginDefinition;
-chatModelQ[ _? (modelContains[ "instruct" ]) ] := False;
-chatModelQ[ _? (modelContains[ StartOfString~~"gpt" ]) ] := True;
-chatModelQ[ _String ] := False;
-chatModelQ // endDefinition;
-
-
-modelContains // beginDefinition;
-modelContains[ patt_ ] := modelContains[ #, patt ] &;
-modelContains[ m_String, patt_ ] := StringContainsQ[ m, WordBoundary~~patt~~WordBoundary, IgnoreCase -> True ];
-modelContains // endDefinition;
-
 (*====================================*)
 
 SetFallthroughError[getModelSettings]
@@ -2635,36 +2621,6 @@ getPersonaIcon[ expr_ ] := getPersonaMenuIcon[ expr, "Full" ];
 (*========================================================*)
 (* Model property lookup helpers                          *)
 (*========================================================*)
-
-modelDisplayName // beginDefinition;
-
-modelDisplayName[{name_?StringQ, settings_?AssociationQ}] :=
-	modelDisplayName[name]
-
-modelDisplayName[ model_String ] := modelDisplayName[ model ] =
-	modelDisplayName @ StringSplit[ model, "-"|" " ];
-
-modelDisplayName[ { "gpt", rest___ } ] :=
-	modelDisplayName @ { "GPT", rest };
-
-modelDisplayName[ { before__, date_String } ] /; StringMatchQ[ date, Repeated[ DigitCharacter, { 4 } ] ] :=
-    modelDisplayName @ { before, DateObject @ Flatten @ { 0, ToExpression @ StringPartition[ date, 2 ] } };
-
-modelDisplayName[ { before___, date_DateObject } ] :=
-    modelDisplayName @ {
-		before,
-		"(" <> DateString[ date, "MonthName" ] <> " " <> DateString[ date, "DayShort" ] <> ")"
-	};
-
-modelDisplayName[ { "GPT", version_String, rest___ } ] /; StringStartsQ[ version, DigitCharacter.. ] :=
-    modelDisplayName @ { "GPT-"<>version, rest };
-
-modelDisplayName[ parts: { __String } ] :=
-	StringRiffle @ Capitalize @ parts;
-
-modelDisplayName // endDefinition;
-
-(*====================================*)
 
 SetFallthroughError[getModelMenuIcon]
 
