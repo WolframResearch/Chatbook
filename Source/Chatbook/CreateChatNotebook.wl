@@ -34,7 +34,7 @@ CreateChatNotebook // Options = {
     "LLMEvaluator"                      -> "CodeAssistant",
     "MaxTokens"                         -> Automatic,
     "MergeMessages"                     -> True,
-    "Model"                             -> "gpt-4",
+    "Model"                             :> $DefaultModel,
     "OpenAIKey"                         -> Automatic,
     "PresencePenalty"                   -> 0.1,
     "ShowMinimized"                     -> Automatic,
