@@ -345,9 +345,7 @@ chatSubmit[ container_, messages: { __Association }, cellObject_, settings_ ] :=
         standardizeMessageKeys @ messages,
         makeLLMConfiguration @ settings,
         HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
-        HandlerFunctionsKeys -> { "BodyChunk", "StatusCode", "Task", "TaskStatus", "EventName" },
-        "TestConnection"     -> False,
-        "ProcessResultQ"     -> True
+        HandlerFunctionsKeys -> { "BodyChunk", "StatusCode", "Task", "TaskStatus", "EventName" }
     ]
 );
 

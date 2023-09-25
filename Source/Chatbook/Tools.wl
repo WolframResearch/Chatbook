@@ -33,11 +33,11 @@ Begin[ "`Private`" ];
 Needs[ "Wolfram`Chatbook`"                   ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
 Needs[ "Wolfram`Chatbook`Formatting`"        ];
-Needs[ "Wolfram`Chatbook`Serialization`"     ];
-Needs[ "Wolfram`Chatbook`Utils`"             ];
-Needs[ "Wolfram`Chatbook`Sandbox`"           ];
 Needs[ "Wolfram`Chatbook`Prompting`"         ];
 Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
+Needs[ "Wolfram`Chatbook`Sandbox`"           ];
+Needs[ "Wolfram`Chatbook`Serialization`"     ];
+Needs[ "Wolfram`Chatbook`Utils`"             ];
 
 PacletInstall[ "Wolfram/LLMFunctions" ];
 Needs[ "Wolfram`LLMFunctions`" ];

@@ -5,9 +5,10 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
+`$closedChatCellOptions;
 `$cloudNotebooks;
 `$maxChatCells;
-`$closedChatCellOptions;
+`$settings;
 
 `$chatDelimiterStyles;
 `$chatIgnoredStyles;

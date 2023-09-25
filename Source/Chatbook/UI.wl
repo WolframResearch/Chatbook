@@ -42,25 +42,21 @@ CreateToolbarContent[] is called by the NotebookToolbar to generate the content 
 
 Begin["`Private`"]
 
-Needs["Wolfram`Chatbook`"]
-Needs["Wolfram`Chatbook`Common`"]
-Needs["Wolfram`Chatbook`Dynamics`"]
-Needs["Wolfram`Chatbook`ErrorUtils`"]
-Needs["Wolfram`Chatbook`Errors`"]
-Needs["Wolfram`Chatbook`Debug`"]
-Needs["Wolfram`Chatbook`Utils`"]
-Needs["Wolfram`Chatbook`Streaming`"]
-Needs["Wolfram`Chatbook`Serialization`"]
-Needs["Wolfram`Chatbook`Menus`"]
-Needs["Wolfram`Chatbook`Personas`"]
-Needs["Wolfram`Chatbook`FrontEnd`"]
-Needs["Wolfram`Chatbook`InlineReferences`"]
-Needs["Wolfram`Chatbook`Actions`"]
-
-Needs["Wolfram`Chatbook`PreferencesUtils`" -> "PrefUtils`"]
-
-
-Needs["Wolfram`Chatbook`ServerSentEventUtils`" -> None]
+Needs[ "Wolfram`Chatbook`"                      ];
+Needs[ "Wolfram`Chatbook`Actions`"              ];
+Needs[ "Wolfram`Chatbook`Common`"               ];
+Needs[ "Wolfram`Chatbook`Debug`"                ];
+Needs[ "Wolfram`Chatbook`Dynamics`"             ];
+Needs[ "Wolfram`Chatbook`Errors`"               ];
+Needs[ "Wolfram`Chatbook`ErrorUtils`"           ];
+Needs[ "Wolfram`Chatbook`FrontEnd`"             ];
+Needs[ "Wolfram`Chatbook`Menus`"                ];
+Needs[ "Wolfram`Chatbook`Personas`"             ];
+Needs[ "Wolfram`Chatbook`PreferencesUtils`"     ];
+Needs[ "Wolfram`Chatbook`Serialization`"        ];
+Needs[ "Wolfram`Chatbook`ServerSentEventUtils`" ];
+Needs[ "Wolfram`Chatbook`Streaming`"            ];
+Needs[ "Wolfram`Chatbook`Utils`"                ];
 
 (*========================================================*)
 
@@ -263,22 +259,22 @@ CreatePreferencesContent[] := Module[{
 	(* Return the complete settings expression *)
 	(*-----------------------------------------*)
 
-	PrefUtils`PreferencesPane[
+	PreferencesPane[
 		{
-			PrefUtils`PreferencesSection[
+			PreferencesSection[
 				Style[tr["Chat Notebook Interface"], "subsectionText"],
 				chatbookSettings
 			],
-			PrefUtils`PreferencesSection[
+			PreferencesSection[
 				Style[tr["Installed Personas"], "subsectionText"],
 				llmEvaluatorNamesSettings
 			]
-			(* PrefUtils`PreferencesSection[
+			(* PreferencesSection[
 				Style[tr["LLM Service Providers"], "subsectionText"],
 				services
 			] *)
 		},
-		PrefUtils`PreferencesResetButton[
+		PreferencesResetButton[
 			FrontEndExecute @ FrontEnd`RemoveOptions[$FrontEnd, {
 				System`LLMEvaluator,
 				{TaggingRules, "ChatNotebookSettings"}
