@@ -1,3 +1,5 @@
+(* cSpell: ignore ntype *)
+
 General::messages = "Messages were generated which may indicate errors. Use the documentation_searcher tool to find solutions."
 Needs::nocont = "Context `1` was not created when Needs was evaluated. Use the documentation_searcher tool to find alternatives."
 RandomEntity::ntype = "`1` is not a valid type of Entity or EntityClass. Use the documentation_searcher tool to find alternatives."
