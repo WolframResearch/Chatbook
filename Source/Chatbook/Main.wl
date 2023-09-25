@@ -11,6 +11,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$ChatSystemPre;
 `$DefaultChatInputPost;
 `$DefaultChatSystemPre;
+`$DefaultModel;
 `$DefaultToolOptions;
 `$DefaultTools;
 `$InstalledTools;
@@ -122,6 +123,7 @@ $DefaultChatInputPost  = "";
 $ChatSystemPre         = $DefaultChatSystemPre;
 $ChatInputPost         = $DefaultChatInputPost;
 $ChatContextCellStyles = <| |>;
+$DefaultModel         := If[ $VersionNumber >= 13.3, "gpt-4", "gpt-3.5-turbo" ];
 
 Protect @ { $DefaultChatSystemPre, $DefaultChatInputPost };
 

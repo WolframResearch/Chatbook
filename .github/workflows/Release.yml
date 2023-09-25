@@ -2,6 +2,8 @@ name: Release
 
 on:
   workflow_dispatch:
+  push:
+    branches: [release/paclet]
 
 concurrency:
   group: ${{ github.ref }}
@@ -68,6 +70,7 @@ jobs:
       run: |
         git config --global --add safe.directory $(pwd)
         gh release create "${{ env.PACLET_RELEASE_TAG }}" "${{ env.PACLET_PATH }}#${{ env.PACLET_FILE }}" \
+            --target="${{ github.ref }}" \
             --repo="${{ env.GITHUB_REPOSITORY }}" \
             --title="Release ${{ env.PACLET_RELEASE_TAG }}" \
             --generate-notes
