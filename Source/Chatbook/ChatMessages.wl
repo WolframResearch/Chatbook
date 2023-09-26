@@ -58,19 +58,16 @@ CellToChatMessage // Options = { "Role" -> Automatic };
 CellToChatMessage[ cell_Cell, opts: OptionsPattern[ ] ] :=
     CellToChatMessage[ cell, <| "Cells" -> { cell }, "HistoryPosition" -> 0 |>, opts ];
 
-CellToChatMessage[ cell_Cell, settings: KeyValuePattern[ "HistoryPosition" -> 0 ], opts: OptionsPattern[ ] ] :=
-    Block[ { $cellRole = OptionValue[ "Role" ] },
-        Replace[
-            Flatten @ { makeCurrentCellMessage[ settings, Lookup[ settings, "Cells", { cell } ] ] },
-            { message_? AssociationQ } :> message
-        ]
-    ];
-
 (* TODO: this should eventually utilize "HistoryPosition" for dynamic compression rates *)
-CellToChatMessage[ cell_Cell, settings_, opts: OptionsPattern[ ] ] :=
+CellToChatMessage[ cell_Cell, settings_Association? AssociationQ, opts: OptionsPattern[ ] ] :=
     Block[ { $cellRole = OptionValue[ "Role" ] },
         Replace[
-            Flatten @ { makeCellMessage @ cell },
+            Flatten @ {
+                If[ TrueQ @ Positive @ Lookup[ settings, "HistoryPosition", 0 ],
+                    makeCellMessage @ cell,
+                    makeCurrentCellMessage[ settings, Lookup[ settings, "Cells", { cell } ] ]
+                ]
+            },
             { message_? AssociationQ } :> message
         ]
     ];
