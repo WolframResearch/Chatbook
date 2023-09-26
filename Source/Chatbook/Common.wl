@@ -386,7 +386,7 @@ messageFailure[ args___ ] :=
         message = messageFailure0;
         WithCleanup[
             StackInhibit @ quiet @ message @ args,
-            $failed = True
+            If[ TrueQ @ $catching, $failed = True ]
         ]
     ];
 
