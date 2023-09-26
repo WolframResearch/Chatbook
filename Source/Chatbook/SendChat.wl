@@ -314,7 +314,7 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association }
 
         data = DeleteCases[
             <|
-                "messages"          -> messages,
+                "messages"          -> prepareMessagesForHTTPRequest @ messages,
                 "temperature"       -> temperature,
                 "max_tokens"        -> tokens,
                 "top_p"             -> topP,
@@ -343,6 +343,24 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association }
     ];
 
 makeHTTPRequest // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*prepareMessagesForHTTPRequest*)
+prepareMessagesForHTTPRequest // beginDefinition;
+prepareMessagesForHTTPRequest[ message_Association ] := prepareMessagesForHTTPRequest0 @ KeyMap[ ToLowerCase, message ];
+prepareMessagesForHTTPRequest[ messages_List ] := prepareMessagesForHTTPRequest /@ messages;
+prepareMessagesForHTTPRequest // endDefinition;
+
+prepareMessagesForHTTPRequest0 // beginDefinition;
+
+prepareMessagesForHTTPRequest0[ message: KeyValuePattern[ "role" -> role_String ] ] :=
+    Insert[ message, "role" -> ToLowerCase @ role, Key[ "role" ] ];
+
+prepareMessagesForHTTPRequest0[ message_Association ] :=
+    message;
+
+prepareMessagesForHTTPRequest0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
