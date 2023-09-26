@@ -22,6 +22,7 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 `$finalCell;
 `$lastChatString;
 `$lastMessages;
+`$lastSettings;
 `$lastTask;
 `$nextTaskEvaluation;
 `apiKeyDialog;

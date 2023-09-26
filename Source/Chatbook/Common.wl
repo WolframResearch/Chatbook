@@ -7,6 +7,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 
 `$closedChatCellOptions;
 `$cloudNotebooks;
+`$debug;
 `$maxChatCells;
 `$settings;
 
