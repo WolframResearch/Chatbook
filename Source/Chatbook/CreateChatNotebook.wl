@@ -21,7 +21,6 @@ CreateChatNotebook // Options = {
     "AutoFormat"                        -> True,
     "BasePrompt"                        -> Automatic,
     "ChatContextCellProcessingFunction" -> Automatic,
-    "ChatContextPostEvaluationFunction" -> Automatic,
     "ChatContextPreprompt"              -> Automatic,
     "ChatDrivenNotebook"                -> False,
     "ChatHistoryLength"                 -> 25,

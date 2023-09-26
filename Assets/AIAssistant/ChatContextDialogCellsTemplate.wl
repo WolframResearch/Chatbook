@@ -308,7 +308,7 @@
        True ->
         TemplateBox[
          {
-          "ChatContextPostEvaluationFunction",
+          "ChatPost",
           Cell[
            BoxData @ FrameBox[
             Cell[ "This is the text that tells you what to do.", "MoreInfoText" ],
@@ -334,16 +334,16 @@
     "Section",
     CellTags -> {
      "Cell Post Evaluation Function",
-     "ChatContextPostEvaluationFunction",
+     "ChatPost",
      "NonDefault",
      "TemplateCellGroup"
     },
     Deletable -> False,
     Editable -> False,
-    TaggingRules -> { "TemplateGroupName" -> "ChatContextPostEvaluationFunction" }
+    TaggingRules -> { "TemplateGroupName" -> "ChatPost" }
    ],
    TemplateSlot[
-    "ChatContextPostEvaluationFunction",
+    "ChatPost",
     InsertionFunction -> Composition[ Apply @ Sequence, Flatten, List ],
     DefaultValue -> { Cell[ BoxData[ "Automatic" ], "Input", CellID -> 3, CellTags -> { "NonDefault" } ] }
    ]
