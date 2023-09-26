@@ -42,12 +42,12 @@ $promptTemplate = StringTemplate[ "%%Pre%%\n\n%%Group%%\n\n%%Base%%\n\n%%Tools%%
 $cellRole = Automatic;
 
 $styleRoles = <|
-    "ChatInput"              -> "user",
-    "ChatOutput"             -> "assistant",
-    "AssistantOutput"        -> "assistant",
-    "AssistantOutputWarning" -> "assistant",
-    "AssistantOutputError"   -> "assistant",
-    "ChatSystemInput"        -> "system"
+    "ChatInput"              -> "User",
+    "ChatOutput"             -> "Assistant",
+    "AssistantOutput"        -> "Assistant",
+    "AssistantOutputWarning" -> "Assistant",
+    "AssistantOutputError"   -> "Assistant",
+    "ChatSystemInput"        -> "System"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -61,7 +61,7 @@ CellToChatMessage[ cell_Cell, opts: OptionsPattern[ ] ] :=
 CellToChatMessage[ cell_Cell, settings: KeyValuePattern[ "HistoryPosition" -> 0 ], opts: OptionsPattern[ ] ] :=
     Block[ { $cellRole = OptionValue[ "Role" ] },
         Replace[
-            makeCurrentCellMessage[ settings, Lookup[ settings, "Cells", { cell } ] ],
+            Flatten @ { makeCurrentCellMessage[ settings, Lookup[ settings, "Cells", { cell } ] ] },
             { message_? AssociationQ } :> message
         ]
     ];
@@ -83,6 +83,8 @@ CellToChatMessage[ cell_Cell, settings_, opts: OptionsPattern[ ] ] :=
 (* ::Subsection::Closed:: *)
 (*constructMessages*)
 constructMessages // beginDefinition;
+
+constructMessages[ _Association? AssociationQ, { } ] := { };
 
 constructMessages[ settings_Association? AssociationQ, cells: { __CellObject } ] :=
     constructMessages[ settings, notebookRead @ cells ];
@@ -163,7 +165,7 @@ checkedMessageFunction[ func_, { cell_, settings_ } ] :=
     Replace[
         func[ cell, settings ],
         {
-            message_String? StringQ :> <| "role" -> cellRole @ cell, "content" -> message |>,
+            message_String? StringQ :> <| "Role" -> cellRole @ cell, "Content" -> message |>,
             Except[ $$validMessageResults ] :> CellToChatMessage[ cell, settings ]
         }
     ];
@@ -182,11 +184,11 @@ makeCurrentRole[ as_, None, _ ] :=
     Missing[ ];
 
 makeCurrentRole[ as_, role_String, _ ] :=
-    <| "role" -> "system", "content" -> role |>;
+    <| "Role" -> "System", "Content" -> role |>;
 
 makeCurrentRole[ as_, Automatic|Inherited|_Missing, name_String ] :=
     With[ { prompt = namedRolePrompt @ name },
-        <| "role" -> "system", "content" -> prompt |> /; StringQ @ prompt
+        <| "Role" -> "System", "Content" -> prompt |> /; StringQ @ prompt
     ];
 
 makeCurrentRole[ as_, _, KeyValuePattern[ "BasePrompt" -> None ] ] := (
@@ -197,12 +199,12 @@ makeCurrentRole[ as_, _, KeyValuePattern[ "BasePrompt" -> None ] ] := (
 makeCurrentRole[ as_, base_, eval_Association ] := (
     needsBasePrompt @ base;
     needsBasePrompt @ eval;
-    <| "role" -> "system", "content" -> buildSystemPrompt @ Association[ as, eval ] |>
+    <| "Role" -> "System", "Content" -> buildSystemPrompt @ Association[ as, eval ] |>
 );
 
 makeCurrentRole[ as_, base_, _ ] := (
     needsBasePrompt @ base;
-    <| "role" -> "system", "content" -> buildSystemPrompt @ as |>
+    <| "Role" -> "System", "Content" -> buildSystemPrompt @ as |>
 );
 
 makeCurrentRole // endDefinition;
@@ -336,7 +338,7 @@ makeCurrentCellMessage[ settings_, { cells___, cell0_ } ] := Enclose[
         content = ConfirmBy[ Block[ { $CurrentCell = True }, CellToString @ cell ], StringQ, "Content" ];
         Flatten @ {
             expandModifierMessages[ settings, modifiers, { cells }, cell ],
-            <| "role" -> role, "content" -> content |>
+            <| "Role" -> role, "Content" -> content |>
         }
     ],
     throwInternalFailure[ makeCurrentCellMessage[ settings, { cells, cell0 } ], ## ] &
@@ -348,7 +350,7 @@ makeCurrentCellMessage // endDefinition;
 (* ::Subsection::Closed:: *)
 (*makeCellMessage*)
 makeCellMessage // beginDefinition;
-makeCellMessage[ cell_Cell ] := <| "role" -> cellRole @ cell, "content" -> CellToString @ cell |>;
+makeCellMessage[ cell_Cell ] := <| "Role" -> cellRole @ cell, "Content" -> CellToString @ cell |>;
 makeCellMessage // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -357,16 +359,16 @@ makeCellMessage // endDefinition;
 cellRole // beginDefinition;
 
 cellRole[ cell_Cell ] :=
-    With[ { role = $cellRole }, ToLowerCase @ role /; StringQ @ role ];
+    With[ { role = $cellRole }, role /; StringQ @ role ];
 
 cellRole[ Cell[
     __,
     TaggingRules -> KeyValuePattern[ "ChatNotebookSettings" -> KeyValuePattern[ "Role" -> role_String ] ],
     ___
-] ] := ToLowerCase @ role;
+] ] := role;
 
 cellRole[ Cell[ _, styles__String, OptionsPattern[ ] ] ] :=
-    FirstCase[ { styles }, style_ :> With[ { role = $styleRoles @ style }, role /; StringQ @ role ], "user" ];
+    FirstCase[ { styles }, style_ :> With[ { role = $styleRoles @ style }, role /; StringQ @ role ], "User" ];
 
 cellRole // endDefinition;
 
@@ -374,7 +376,7 @@ cellRole // endDefinition;
 (* ::Subsection::Closed:: *)
 (*mergeMessageData*)
 mergeMessageData // beginDefinition;
-mergeMessageData[ messages_ ] := mergeMessages /@ SplitBy[ messages, Lookup[ "role" ] ];
+mergeMessageData[ messages_ ] := mergeMessages /@ SplitBy[ messages, Lookup[ "Role" ] ];
 mergeMessageData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -386,11 +388,11 @@ mergeMessages[ { } ] := Nothing;
 mergeMessages[ { message_ } ] := message;
 mergeMessages[ messages: { first_Association, __Association } ] :=
     Module[ { role, strings },
-        role    = Lookup[ first   , "role"    ];
-        strings = Lookup[ messages, "content" ];
+        role    = Lookup[ first   , "Role"    ];
+        strings = Lookup[ messages, "Content" ];
         <|
-            "role"    -> role,
-            "content" -> StringDelete[ StringRiffle[ strings, "\n\n" ], "```\n\n```" ]
+            "Role"    -> role,
+            "Content" -> StringDelete[ StringRiffle[ strings, "\n\n" ], "```\n\n```" ]
         |>
     ];
 
@@ -439,7 +441,7 @@ makePromptFunctionMessages[ settings_, { cells___, cell0_ } ] := Enclose[
         (* FIXME: handle named slots *)
         Flatten @ {
             expandModifierMessages[ settings, modifiers, { cells }, cell ],
-            <| "role" -> "user", "content" -> string |>
+            <| "Role" -> "User", "Content" -> string |>
         }
     ],
     throwInternalFailure[ makePromptFunctionMessages[ settings, { cells, cell0 } ], ## ] &
@@ -484,7 +486,7 @@ expandModifierMessage[ settings_, modifier_, { cells___ }, cell_ ] := Enclose[
         prompt    = ConfirmMatch[ Quiet[ getLLMPrompt @ name, OptionValue::nodef ], _TemplateObject, "LLMPrompt" ];
         string    = ConfirmBy[ Quiet[ TemplateApply[ prompt, filled ], OptionValue::nodef ], StringQ, "TemplateApply" ];
         role      = ConfirmBy[ modifierMessageRole @ settings, StringQ, "Role" ];
-        <| "role" -> role, "content" -> string |>
+        <| "Role" -> role, "Content" -> string |>
     ],
     throwInternalFailure[ expandModifierMessage[ modifier, { cells }, cell ], ## ] &
 ];
@@ -496,11 +498,11 @@ expandModifierMessage // endDefinition;
 (*modifierMessageRole*)
 modifierMessageRole[ KeyValuePattern[ "Model" -> model_String ] ] :=
     If[ TrueQ @ StringStartsQ[ toModelName @ model, "gpt-3.5", IgnoreCase -> True ],
-        "user",
-        "system"
+        "User",
+        "System"
     ];
 
-modifierMessageRole[ ___ ] := "system";
+modifierMessageRole[ ___ ] := "System";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
