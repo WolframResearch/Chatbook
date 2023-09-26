@@ -175,6 +175,14 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $llmServicesAvailable := catchTopAs[ 
             "CreateOutput"
         ];
 
+        getChatPre[ settings ][ <|
+            "EvaluationCell"       -> evalCell,
+            "Messages"             -> messages,
+            "CellObject"           -> cellObject,
+            "Container"            :> container,
+            "ChatNotebookSettings" -> KeyDrop[ settings, { "Data", "OpenAIKey" } ]
+        |> ];
+
         task = Confirm[ $lastTask = chatSubmit[ container, messages, cellObject, settings ] ];
 
         CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "CellObject" } ] = cellObject;
@@ -186,7 +194,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $llmServicesAvailable := catchTopAs[ 
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
 sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclose[
-    Module[ { cells0, cells, target, settings, id, key, req, data, persona, cell, cellObject, container, task },
+    Module[ { cells0, cells, target, settings, id, key, messages, req, data, persona, cell, cellObject, container, task },
 
         initFETaskWidget @ nbo;
 
@@ -220,7 +228,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
 
         { req, data } = Reap[
             ConfirmMatch[
-                makeHTTPRequest[ settings, constructMessages[ settings, cells ] ],
+                makeHTTPRequest[ settings, messages = constructMessages[ settings, cells ] ],
                 _HTTPRequest,
                 "MakeHTTPRequest"
             ],
@@ -272,6 +280,14 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
             "CreateOutput"
         ];
 
+        getChatPre[ settings ][ <|
+            "EvaluationCell"       -> evalCell,
+            "Messages"             -> messages,
+            "CellObject"           -> cellObject,
+            "Container"            :> container,
+            "ChatNotebookSettings" -> KeyDrop[ settings, { "Data", "OpenAIKey" } ]
+        |> ];
+
         task = Confirm[ $lastTask = chatSubmit[ container, req, cellObject, settings ] ];
 
         CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "CellObject" } ] = cellObject;
@@ -281,6 +297,24 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
 ];
 
 sendChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getChatPre*)
+getChatPre // beginDefinition;
+getChatPre[ settings_Association ] := getChatPre[ settings, Lookup[ settings, "ChatPre" ] ];
+getChatPre[ settings_, _Missing|Automatic|Inherited ] := $ChatPre;
+getChatPre[ settings_, pre_ ] := replaceCellContext @ pre;
+getChatPre // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getChatPost*)
+getChatPost // beginDefinition;
+getChatPost[ settings_Association ] := getChatPost[ settings, Lookup[ settings, "ChatPost" ] ];
+getChatPost[ settings_, _Missing|Automatic|Inherited ] := $ChatPost;
+getChatPost[ settings_, post_ ] := replaceCellContext @ post;
+getChatPost // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1086,7 +1120,6 @@ getToolPrompt // beginDefinition;
 
 getToolPrompt[ KeyValuePattern[ "ToolsEnabled" -> False ] ] := "";
 
-(* TODO: include tools defined by the persona! *)
 getToolPrompt[ settings_ ] := Enclose[
     Module[ { config, string },
         config = ConfirmMatch[ makeToolConfiguration @ settings, _System`LLMConfiguration ];
@@ -1094,8 +1127,6 @@ getToolPrompt[ settings_ ] := Enclose[
     ],
     throwInternalFailure[ getToolPrompt @ settings, ## ] &
 ];
-
-(* getToolPrompt[ _ ] := Missing[ ]; *)
 
 getToolPrompt // endDefinition;
 
@@ -1963,9 +1994,12 @@ writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
             With[ { new = new, output = output },
                 If[ TrueQ[ $VersionNumber >= 14.0 ],
                     createFETask @ NotebookWrite[ cell, new, None, AutoScroll -> False ];
-                    createFETask @ attachChatOutputMenu @ output,
+                    createFETask @ attachChatOutputMenu @ output;
+                    createFETask @ postApply[ output, string, settings ];
+                    ,
                     NotebookWrite[ cell, new, None, AutoScroll -> False ];
-                    attachChatOutputMenu @ output
+                    attachChatOutputMenu @ output;
+                    postApply[ output, string, settings ];
                 ]
             ]
         ]
@@ -1991,6 +2025,28 @@ writeReformattedCell[ settings_, other_, cell_CellObject ] :=
     ];
 
 writeReformattedCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*postApply*)
+postApply // beginDefinition;
+
+postApply[ output_CellObject, string_, settings_Association ] :=
+    postApply0[
+        getChatPost @ settings,
+        <|
+            "EvaluationCell"       -> output,
+            "Result"               -> string,
+            "ChatNotebookSettings" -> KeyDrop[ settings, { "Data", "OpenAIKey" } ],
+            Replace[ Lookup[ settings, "Data" ], Except[ _? AssociationQ ] -> <| |> ]
+        |>
+    ];
+
+postApply // endDefinition;
+
+postApply0 // beginDefinition;
+postApply0[ post_, data_Association? AssociationQ ] := post @ data;
+postApply0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
