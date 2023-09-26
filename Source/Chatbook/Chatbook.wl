@@ -16,9 +16,12 @@ Quiet[
         ,
         WithCleanup[
             PreemptProtect[
-                Unprotect[ "Wolfram`Chatbook`*" ];
-                ClearAll[ "Wolfram`Chatbook`*" ];
-                Remove[ "Wolfram`Chatbook`*`*" ];
+                Quiet[
+                    Unprotect[ "Wolfram`Chatbook`*" ];
+                    ClearAll[ "Wolfram`Chatbook`*" ];
+                    Remove[ "Wolfram`Chatbook`*`*" ],
+                    { Remove::rmnsm }
+                ];
                 Get[ "Wolfram`Chatbook`Main`" ]
             ],
             { $Context, $ContextPath, $ContextAliases } = { ## }
