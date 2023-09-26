@@ -606,10 +606,7 @@ createChatContextDialog[ cell_CellObject ] :=
         ];
         cellFuncCell = Cell[ BoxData @ ToBoxes @ cellFunc, "Input", CellID -> 2, CellTags -> { "NonDefault" } ];
 
-        postFunc = AbsoluteCurrentValue[
-            cell,
-            { TaggingRules, "ChatNotebookSettings", "ChatContextPostEvaluationFunction" }
-        ];
+        postFunc     = AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "ChatPost" } ];
         postFuncCell = Cell[ BoxData @ ToBoxes @ postFunc, "Input", CellID -> 3, CellTags -> { "NonDefault" } ];
 
         cells = TemplateApply[
@@ -617,7 +614,7 @@ createChatContextDialog[ cell_CellObject ] :=
             DeleteMissing @ <|
                 "ChatContextPreprompt"              -> textCell,
                 "ChatContextCellProcessingFunction" -> cellFuncCell,
-                "ChatContextPostEvaluationFunction" -> postFuncCell,
+                "ChatPost"                          -> postFuncCell,
                 "DialogButtons"                     -> chatContextDialogButtons @ cell
             |>
         ];
@@ -713,11 +710,10 @@ scrapeChatContextDialog[ nbo_NotebookObject ] :=
             KeyValuePattern[ "Result" -> _ ]
         ];
 
-
         postFunction = ConfirmMatch[
             scrape[
                 nbo,
-                "ChatContextPostEvaluationFunction",
+                "ChatPost",
                 "Expression",
                 KeyTake @ { "Result", "Definitions" },
                 "TargetContext"      -> $Context,
@@ -729,7 +725,7 @@ scrapeChatContextDialog[ nbo_NotebookObject ] :=
         DeleteMissing @ <|
             "ChatContextPreprompt"              -> StringRiffle[ text, "\n\n" ],
             "ChatContextCellProcessingFunction" -> cellProcFunction[ "Result" ],
-            "ChatContextPostEvaluationFunction" -> postFunction[ "Result" ]
+            "ChatPost"                          -> postFunction[ "Result" ]
         |>
     ];
 
