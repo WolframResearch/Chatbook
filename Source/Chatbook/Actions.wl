@@ -603,7 +603,7 @@ createChatContextDialog[ cell_CellObject ] :=
 
         cellFunc = AbsoluteCurrentValue[
             cell,
-            { TaggingRules, "ChatNotebookSettings", "ChatContextCellProcessingFunction" }
+            { TaggingRules, "ChatNotebookSettings", "CellToMessageFunction" }
         ];
         cellFuncCell = Cell[ BoxData @ ToBoxes @ cellFunc, "Input", CellID -> 2, CellTags -> { "NonDefault" } ];
 
@@ -613,10 +613,10 @@ createChatContextDialog[ cell_CellObject ] :=
         cells = TemplateApply[
             $chatContextDialogTemplateCells,
             DeleteMissing @ <|
-                "ChatContextPreprompt"              -> textCell,
-                "ChatContextCellProcessingFunction" -> cellFuncCell,
-                "ChatPost"                          -> postFuncCell,
-                "DialogButtons"                     -> chatContextDialogButtons @ cell
+                "ChatContextPreprompt"  -> textCell,
+                "CellToMessageFunction" -> cellFuncCell,
+                "ChatPost"              -> postFuncCell,
+                "DialogButtons"         -> chatContextDialogButtons @ cell
             |>
         ];
 
@@ -702,7 +702,7 @@ scrapeChatContextDialog[ nbo_NotebookObject ] :=
         cellProcFunction = ConfirmMatch[
             scrape[
                 nbo,
-                "ChatContextCellProcessingFunction",
+                "CellToMessageFunction",
                 "Expression",
                 KeyTake @ { "Result", "Definitions" },
                 "TargetContext"      -> $Context,
@@ -724,9 +724,9 @@ scrapeChatContextDialog[ nbo_NotebookObject ] :=
         ];
 
         DeleteMissing @ <|
-            "ChatContextPreprompt"              -> StringRiffle[ text, "\n\n" ],
-            "ChatContextCellProcessingFunction" -> cellProcFunction[ "Result" ],
-            "ChatPost"                          -> postFunction[ "Result" ]
+            "ChatContextPreprompt"  -> StringRiffle[ text, "\n\n" ],
+            "CellToMessageFunction" -> cellProcFunction[ "Result" ],
+            "ChatPost"              -> postFunction[ "Result" ]
         |>
     ];
 

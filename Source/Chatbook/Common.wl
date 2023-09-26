@@ -9,7 +9,6 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$cloudNotebooks;
 `$debug;
 `$maxChatCells;
-`$settings;
 
 `$chatDelimiterStyles;
 `$chatIgnoredStyles;

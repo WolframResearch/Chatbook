@@ -256,7 +256,7 @@
        True ->
         TemplateBox[
          {
-          "ChatContextCellProcessingFunction",
+          "CellToMessageFunction",
           Cell[
            BoxData @ FrameBox[
             Cell[ "This is the text that tells you what to do.", "MoreInfoText" ],
@@ -268,7 +268,7 @@
            ],
            "MoreInfoText",
            Deletable -> True,
-           CellTags -> { "SectionMoreInfoChatContextCellProcessingFunction" },
+           CellTags -> { "SectionMoreInfoCellToMessageFunction" },
            CellMargins -> { { 66, 66 }, { 15, 15 } }
           ]
          },
@@ -282,16 +282,16 @@
     "Section",
     CellTags -> {
      "Cell Processing Function",
-     "ChatContextCellProcessingFunction",
+     "CellToMessageFunction",
      "NonDefault",
      "TemplateCellGroup"
     },
     Deletable -> False,
     Editable -> False,
-    TaggingRules -> { "TemplateGroupName" -> "ChatContextCellProcessingFunction" }
+    TaggingRules -> { "TemplateGroupName" -> "CellToMessageFunction" }
    ],
    TemplateSlot[
-    "ChatContextCellProcessingFunction",
+    "CellToMessageFunction",
     InsertionFunction -> Composition[ Apply @ Sequence, Flatten, List ],
     DefaultValue -> { Cell[ BoxData[ "Automatic" ], "Input", CellID -> 2, CellTags -> { "NonDefault" } ] }
    ]

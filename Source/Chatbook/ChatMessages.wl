@@ -27,6 +27,9 @@ Needs[ "Wolfram`Chatbook`Tools`"            ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
+$$validMessageResult  = _Association? AssociationQ | _Missing | Nothing;
+$$validMessageResults = $$validMessageResult | { $$validMessageResult ... };
+
 $$inlineModifierCell = Alternatives[
     Cell[ _, "InlineModifierReference", ___ ],
     Cell[ BoxData @ Cell[ _, "InlineModifierReference", ___ ], ___ ]
@@ -35,6 +38,8 @@ $$inlineModifierCell = Alternatives[
 $$promptArgumentToken = Alternatives[ ">", "^", "^^" ];
 
 $promptTemplate = StringTemplate[ "%%Pre%%\n\n%%Group%%\n\n%%Base%%\n\n%%Tools%%\n\n%%Post%%", Delimiters -> "%%" ];
+
+$cellRole = Automatic;
 
 $styleRoles = <|
     "ChatInput"              -> "user",
@@ -48,7 +53,27 @@ $styleRoles = <|
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*CellToChatMessage*)
-CellToChatMessage (* TODO *)
+CellToChatMessage // Options = { "Role" -> Automatic };
+
+CellToChatMessage[ cell_Cell, opts: OptionsPattern[ ] ] :=
+    CellToChatMessage[ cell, <| "Cells" -> { cell }, "HistoryPosition" -> 0 |>, opts ];
+
+CellToChatMessage[ cell_Cell, settings: KeyValuePattern[ "HistoryPosition" -> 0 ], opts: OptionsPattern[ ] ] :=
+    Block[ { $cellRole = OptionValue[ "Role" ] },
+        Replace[
+            makeCurrentCellMessage[ settings, Lookup[ settings, "Cells", { cell } ] ],
+            { message_? AssociationQ } :> message
+        ]
+    ];
+
+(* TODO: this should eventually utilize "HistoryPosition" for dynamic compression rates *)
+CellToChatMessage[ cell_Cell, settings_, opts: OptionsPattern[ ] ] :=
+    Block[ { $cellRole = OptionValue[ "Role" ] },
+        Replace[
+            Flatten @ { makeCellMessage @ cell },
+            { message_? AssociationQ } :> message
+        ]
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -91,23 +116,63 @@ makeChatMessages[ settings_, { cells___, cell_ ? promptFunctionCellQ } ] := (
     makePromptFunctionMessages[ settings, { cells, cell } ]
 );
 
-makeChatMessages[ settings_, cells_List ] :=
-    Module[ { role, message, history, messages, merged },
-        role     = makeCurrentRole @ settings;
-        message  = makeCurrentCellMessage[ settings, cells ];
-        history  = Reverse[ makeCellMessage /@ Reverse @ Most @ cells ];
+makeChatMessages[ settings0_, cells_List ] := Enclose[
+    Module[ { settings, role, message, toMessage, cell, history, messages, merged },
+        settings  = ConfirmBy[ <| settings0, "HistoryPosition" -> 0, "Cells" -> cells |>, AssociationQ, "Settings" ];
+        role      = makeCurrentRole @ settings;
+        cell      = ConfirmMatch[ Last[ cells, $Failed ], _Cell, "Cell" ];
+        toMessage = Confirm[ getCellMessageFunction @ settings, "CellMessageFunction" ];
+        message   = ConfirmMatch[ toMessage[ cell, settings ], $$validMessageResults, "Message" ];
+
+        history = ConfirmMatch[
+            Reverse @ Flatten @ MapIndexed[
+                toMessage[ #1, <| settings, "HistoryPosition" -> First[ #2 ] |> ] &,
+                Reverse @ Most @ cells
+            ],
+            $$validMessageResults,
+            "History"
+        ];
+
         messages = DeleteMissing @ Flatten @ { role, history, message };
         merged   = If[ TrueQ @ Lookup[ settings, "MergeMessages" ], mergeMessageData @ messages, messages ];
         merged
-    ];
+    ],
+    throwInternalFailure[ makeChatMessages[ settings0, cells ], ## ] &
+];
 
 makeChatMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*makeCurrentRole*)
-(* FIXME: move this stuff to Prompting.wl *)
+(*getCellMessageFunction*)
+getCellMessageFunction // beginDefinition;
+getCellMessageFunction[ as_? AssociationQ ] := getCellMessageFunction[ as, as[ "CellToMessageFunction" ] ];
+getCellMessageFunction[ as_, _Missing|Automatic|Inherited ] := CellToChatMessage;
+getCellMessageFunction[ as_, toMessage_ ] := checkedMessageFunction @ replaceCellContext @ toMessage;
+getCellMessageFunction // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkedMessageFunction*)
+checkedMessageFunction // beginDefinition;
+
+checkedMessageFunction[ func_ ] :=
+    checkedMessageFunction[ func, { ## } ] &;
+
+checkedMessageFunction[ func_, { cell_, settings_ } ] :=
+    Replace[
+        func[ cell, settings ],
+        {
+            message_String? StringQ :> <| "role" -> cellRole @ cell, "content" -> message |>,
+            Except[ $$validMessageResults ] :> CellToChatMessage[ cell, settings ]
+        }
+    ];
+
+checkedMessageFunction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*makeCurrentRole*)
 makeCurrentRole // beginDefinition;
 
 makeCurrentRole[ as_Association? AssociationQ ] :=
@@ -290,6 +355,9 @@ makeCellMessage // endDefinition;
 (* ::Subsection::Closed:: *)
 (*cellRole*)
 cellRole // beginDefinition;
+
+cellRole[ cell_Cell ] :=
+    With[ { role = $cellRole }, ToLowerCase @ role /; StringQ @ role ];
 
 cellRole[ Cell[
     __,
