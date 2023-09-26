@@ -25,6 +25,8 @@ CreateChatNotebook // Options = {
     "ChatContextPreprompt"              -> Automatic,
     "ChatDrivenNotebook"                -> False,
     "ChatHistoryLength"                 -> 25,
+    "ChatPost"                          :> $ChatPost,
+    "ChatPre"                           :> $ChatPre,
     "DynamicAutoFormat"                 -> Automatic,
     "EnableChatGroupSettings"           -> False,
     "FrequencyPenalty"                  -> 0.1,
