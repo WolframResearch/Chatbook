@@ -23,6 +23,7 @@ CreateChatNotebook // Options = {
     "CellToMessageFunction"   -> CellToChatMessage,
     "ChatContextPreprompt"    -> Automatic,
     "ChatDrivenNotebook"      -> False,
+    "ChatFormattingFunction"  -> FormatChatOutput,
     "ChatHistoryLength"       -> 25,
     "ChatPost"                :> $ChatPost,
     "ChatPre"                 :> $ChatPre,
