@@ -517,6 +517,7 @@ writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
     appendStringContent[ container[ "FullContent"    ], text ];
     appendStringContent[ container[ "DynamicContent" ], text ];
 
+    (* FIXME: figure out what to do here when there's a custom formatter *)
     If[ TrueQ @ $dynamicSplit,
         (* Convert as much of the dynamic content as possible to static boxes and write to cell: *)
         splitDynamicContent[ container, cell ]
@@ -1254,10 +1255,11 @@ activeAIAssistantCell[
 ] /; $cloudNotebooks :=
     With[
         {
-            label    = RawBoxes @ TemplateBox[ { }, "MinimizedChatActive" ],
-            id       = $SessionID,
-            reformat = dynamicAutoFormatQ @ settings,
-            task     = Lookup[ settings, "Task" ]
+            label     = RawBoxes @ TemplateBox[ { }, "MinimizedChatActive" ],
+            id        = $SessionID,
+            reformat  = dynamicAutoFormatQ @ settings,
+            task      = Lookup[ settings, "Task" ],
+            formatter = getFormattingFunction @ settings
         },
         Module[ { x = 0 },
             ClearAttributes[ { x, cellObject }, Temporary ];
@@ -1272,7 +1274,7 @@ activeAIAssistantCell[
                                     NotebookWrite[ cellObject, $reformattedCell ];
                                     Remove[ x, cellObject ];
                                     ,
-                                    catchTop @ dynamicTextDisplay[ container, reformat ]
+                                    catchTop @ dynamicTextDisplay[ container, formatter, reformat ]
                                 ],
                                 TrackedSymbols :> { x },
                                 UpdateInterval -> 0.4
@@ -1287,7 +1289,7 @@ activeAIAssistantCell[
                                 NotebookWrite[ cellObject, $reformattedCell ];
                                 Remove[ x, cellObject ];
                                 ,
-                                catchTop @ dynamicTextDisplay[ container, reformat ]
+                                catchTop @ dynamicTextDisplay[ container, formatter, reformat ]
                             ],
                             Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
                             Deinitialization :> Quiet @ TaskRemove @ task
@@ -1311,11 +1313,12 @@ activeAIAssistantCell[
 ] :=
     With[
         {
-            label    = RawBoxes @ TemplateBox[ { }, "MinimizedChatActive" ],
-            id       = $SessionID,
-            reformat = dynamicAutoFormatQ @ settings,
-            task     = Lookup[ settings, "Task" ],
-            uuid     = container[ "UUID" ]
+            label     = RawBoxes @ TemplateBox[ { }, "MinimizedChatActive" ],
+            id        = $SessionID,
+            reformat  = dynamicAutoFormatQ @ settings,
+            task      = Lookup[ settings, "Task" ],
+            uuid      = container[ "UUID" ],
+            formatter = getFormattingFunction @ settings
         },
         Cell[
             BoxData @ TagBox[
@@ -1323,7 +1326,7 @@ activeAIAssistantCell[
                     $dynamicTrigger;
                     (* `$dynamicTrigger` is used to precisely control when the dynamic updates, otherwise we can get an
                        FE crash if a NotebookWrite happens at the same time. *)
-                    catchTop @ dynamicTextDisplay[ container, reformat ],
+                    catchTop @ dynamicTextDisplay[ container, formatter, reformat ],
                     TrackedSymbols   :> { $dynamicTrigger },
                     Initialization   :> If[ $SessionID =!= id, NotebookDelete @ EvaluationCell[ ] ],
                     Deinitialization :> Quiet @ TaskRemove @ task
@@ -1358,6 +1361,15 @@ activeAIAssistantCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*getFormattingFunction*)
+getFormattingFunction // beginDefinition;
+getFormattingFunction[ as_? AssociationQ ] := getFormattingFunction[ as, as[ "ChatFormattingFunction" ] ];
+getFormattingFunction[ as_, _Missing|Automatic|Inherited ] := FormatChatOutput;
+getFormattingFunction[ as_, func_ ] := replaceCellContext @ func;
+getFormattingFunction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*dynamicAutoFormatQ*)
 dynamicAutoFormatQ // beginDefinition;
 dynamicAutoFormatQ[ KeyValuePattern[ "DynamicAutoFormat" -> format: (True|False) ] ] := format;
@@ -1370,22 +1382,23 @@ dynamicAutoFormatQ // endDefinition;
 dynamicTextDisplay // beginDefinition;
 dynamicTextDisplay // Attributes = { HoldFirst };
 
-dynamicTextDisplay[ container_, reformat_ ] /; $highlightDynamicContent :=
+dynamicTextDisplay[ container_, formatter_, reformat_ ] /; $highlightDynamicContent :=
     Block[ { $highlightDynamicContent = False },
-        Framed[ dynamicTextDisplay[ container, reformat ], FrameStyle -> Purple ]
+        Framed[ dynamicTextDisplay[ container, formatter, reformat ], FrameStyle -> Purple ]
     ];
 
-dynamicTextDisplay[ container_, True ] /; StringQ @ container[ "DynamicContent" ] :=
-    Block[ { $dynamicText = True },
-        RawBoxes @ Cell @ TextData @ reformatTextData @ container[ "DynamicContent" ]
+dynamicTextDisplay[ container_, formatter_, True ] :=
+    If[ StringQ @ container[ "DynamicContent" ],
+        formatter[ container[ "DynamicContent" ], <| "Status" -> "Streaming", "Container" :> container |> ],
+        formatter[ container[ "DynamicContent" ], <| "Status" -> "Waiting"  , "Container" :> container |> ]
     ];
 
-dynamicTextDisplay[ container_, False ] /; StringQ @ container[ "DynamicContent" ] :=
+dynamicTextDisplay[ container_, formatter_, False ] /; StringQ @ container[ "DynamicContent" ] :=
     RawBoxes @ Cell @ TextData @ container[ "DynamicContent" ];
 
-dynamicTextDisplay[ _Symbol, _ ] := ProgressIndicator[ Appearance -> "Percolate" ];
+dynamicTextDisplay[ _Symbol, _, _ ] := ProgressIndicator[ Appearance -> "Percolate" ];
 
-dynamicTextDisplay[ other_, _ ] := other;
+dynamicTextDisplay[ other_, _, _ ] := other;
 
 dynamicTextDisplay // endDefinition;
 
@@ -1552,10 +1565,16 @@ postApply0 // endDefinition;
 reformatCell // beginDefinition;
 
 reformatCell[ settings_, string_, tag_, open_, label_, pageData_, uuid_ ] := UsingFrontEnd @ Enclose[
-    Module[ { content, rules, dingbat },
+    Module[ { formatter, content, rules, dingbat },
 
+        formatter = Confirm[ getFormattingFunction @ settings, "GetFormattingFunction" ];
+
+        (*FIXME: use specified ChatFormattingFunction here and figure out how to conform to TextData *)
         content = ConfirmMatch[
-            If[ TrueQ @ settings[ "AutoFormat" ], TextData @ reformatTextData @ string, TextData @ string ],
+            If[ TrueQ @ settings[ "AutoFormat" ],
+                TextData @ reformatTextData @ string,
+                TextData @ string
+            ],
             TextData[ _String | _List ],
             "Content"
         ];

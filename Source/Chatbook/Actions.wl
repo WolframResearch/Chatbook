@@ -165,6 +165,7 @@ toggleFormatting // beginDefinition;
 (* Convert a plain string to formatted TextData: *)
 toggleFormatting[ cellObject_CellObject, nbo_NotebookObject, string_String ] := Enclose[
     Module[ { textDataList },
+        (* FIXME: get chat settings from cell and use ChatFormattingFunction here *)
         textDataList = ConfirmMatch[ reformatTextData @ string, $$textDataList, "ReformatTextData" ];
         Confirm[ SelectionMove[ cellObject, All, CellContents, AutoScroll -> False ], "SelectionMove" ];
         Confirm[ NotebookWrite[ nbo, TextData @ textDataList, None ], "NotebookWrite" ]

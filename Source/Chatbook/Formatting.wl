@@ -5,6 +5,8 @@ BeginPackage[ "Wolfram`Chatbook`Formatting`" ];
 
 (* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDRESULT *)
 
+Wolfram`Chatbook`FormatChatOutput;
+
 `$dynamicSplitRules;
 `$dynamicText;
 `$reformattedCell;
@@ -71,6 +73,23 @@ $externalLanguageRules = Replace[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Chat Output Formatting*)
+FormatChatOutput // beginDefinition;
+FormatChatOutput[ output_ ] := FormatChatOutput[ output, <| |> ];
+FormatChatOutput[ output_, as_Association ] := formatChatOutput[ output, Lookup[ as, "Status", Automatic ] ];
+FormatChatOutput // endDefinition;
+(* TODO: actual error handling for invalid arguments *)
+
+formatChatOutput // beginDefinition;
+
+formatChatOutput[ output_, "Waiting" ] := ProgressIndicator[ Appearance -> "Percolate" ];
+
+formatChatOutput[ output_String, "Streaming" ] :=
+    Block[ { $dynamicText = True }, RawBoxes @ Cell @ TextData @ reformatTextData @ output ];
+
+formatChatOutput[ output_String, "Finished" ] :=
+    Block[ { $dynamicText = False }, RawBoxes @ Cell @ TextData @ reformatTextData @ output ];
+
+formatChatOutput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
