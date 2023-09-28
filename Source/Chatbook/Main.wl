@@ -8,6 +8,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 (*Declare Symbols*)
 `$ChatPost;
 `$ChatPre;
+`$DefaultChatHandlerFunctions;
 `$DefaultModel;
 `$DefaultToolOptions;
 `$DefaultTools;
@@ -90,6 +91,13 @@ Block[ { $ContextPath },
 $ChatPost      = None;
 $ChatPre       = None;
 $DefaultModel := If[ $VersionNumber >= 13.3, "gpt-4", "gpt-3.5-turbo" ];
+
+$DefaultChatHandlerFunctions = <|
+    "ChatPost" :> $ChatPost,
+    "ChatPre"  :> $ChatPre
+|>;
+
+Protect[ $DefaultChatHandlerFunctions ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

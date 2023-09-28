@@ -2,11 +2,10 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`SendChat`" ];
 
-(* cSpell: ignore ENDTOOLCALL, ENDRESULT *)
-
 (* :!CodeAnalysis::BeginBlock:: *)
 
 `$debugLog;
+`$enableLLMServices;
 `makeOutputDingbat;
 `sendChat;
 `toolsEnabledQ;
@@ -30,16 +29,18 @@ Needs[ "Wolfram`Chatbook`Utils`"            ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$resizeDingbats = True;
-
+$resizeDingbats          = True;
+$enableLLMServices       = Automatic;
 splitDynamicTaskFunction = createFETask;
+$useLLMServices         := MatchQ[ $enableLLMServices, Automatic|True ] && TrueQ @ $llmServicesAvailable;
 
 $llmServicesAvailable := $llmServicesAvailable = (
     PacletInstall[ "Wolfram/LLMFunctions" ];
     FileExistsQ @ FindFile[ "LLMServices`" ]
 );
 
-$llmServicesAvailable = False; (* FIXME: remove this *)
+$defaultHandlerKeys        = { "BodyChunk", "StatusCode", "Task", "TaskStatus", "EventName" };
+$chatSubmitDroppedHandlers = { "ChatPost", "ChatPre" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -65,7 +66,7 @@ $buffer            = "";
 (*sendChat*)
 sendChat // beginDefinition;
 
-sendChat[ evalCell_, nbo_, settings0_ ] /; $llmServicesAvailable := catchTopAs[ ChatbookAction ] @ Enclose[
+sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ ChatbookAction ] @ Enclose[
     Module[ { cells0, cells, target, settings, id, key, messages, data, persona, cell, cellObject, container, task },
 
         initFETaskWidget @ nbo;
@@ -152,7 +153,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $llmServicesAvailable := catchTopAs[ 
             "CreateOutput"
         ];
 
-        getChatPre[ settings ][ <|
+        getHandlerFunction[ settings, "ChatPre" ][ <|
             "EvaluationCell"       -> evalCell,
             "Messages"             -> messages,
             "CellObject"           -> cellObject,
@@ -257,7 +258,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
             "CreateOutput"
         ];
 
-        getChatPre[ settings ][ <|
+        getHandlerFunction[ settings, "ChatPre" ][ <|
             "EvaluationCell"       -> evalCell,
             "Messages"             -> messages,
             "CellObject"           -> cellObject,
@@ -277,27 +278,35 @@ sendChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*getChatPre*)
-getChatPre // beginDefinition;
-getChatPre[ settings_Association ] := getChatPre[ settings, Lookup[ settings, "ChatPre" ] ];
-getChatPre[ settings_, _Missing|Automatic|Inherited ] := $ChatPre;
-getChatPre[ settings_, pre_ ] := replaceCellContext @ pre;
-getChatPre // endDefinition;
+(*getHandlerFunctions*)
+getHandlerFunctions // beginDefinition;
+getHandlerFunctions[ settings_Association ] := getHandlerFunctions[ settings, Lookup[ settings, "HandlerFunctions" ] ];
+getHandlerFunctions[ _, handlers_Association ] := <| $DefaultChatHandlerFunctions, replaceCellContext @ handlers |>;
+getHandlerFunctions[ _, $$unspecified ] := $DefaultChatHandlerFunctions;
+getHandlerFunctions[ _, handlers_ ] := (messagePrint[ "InvalidHandlers", handlers ]; $DefaultChatHandlerFunctions);
+getHandlerFunctions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*getChatPost*)
-getChatPost // beginDefinition;
-getChatPost[ settings_Association ] := getChatPost[ settings, Lookup[ settings, "ChatPost" ] ];
-getChatPost[ settings_, _Missing|Automatic|Inherited ] := $ChatPost;
-getChatPost[ settings_, post_ ] := replaceCellContext @ post;
-getChatPost // endDefinition;
+(*getHandlerFunction*)
+getHandlerFunction // beginDefinition;
+
+getHandlerFunction[ settings_Association, name_String ] :=
+    getHandlerFunction[ settings, name, getHandlerFunctions @ settings ];
+
+getHandlerFunction[ settings_, name_String, handlers_Association ] :=
+    Replace[ Lookup[ handlers, name ],
+             $$unspecified :> Lookup[ $DefaultChatHandlerFunctions, name, None ]
+    ];
+
+getHandlerFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*makeHTTPRequest*)
 makeHTTPRequest // beginDefinition;
 
+(* cSpell: ignore ENDTOOLCALL *)
 makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association } ] :=
     Enclose @ Module[ { key, stream, model, tokens, temperature, topP, freqPenalty, presPenalty, data, body },
 
@@ -367,29 +376,40 @@ prepareMessagesForHTTPRequest0 // endDefinition;
 (*chatSubmit*)
 chatSubmit // beginDefinition;
 chatSubmit // Attributes = { HoldFirst };
+(* cSpell: ignore invm *)
+chatSubmit[ args__ ] := Quiet[ chatSubmit0 @ args, URLSubmit::invm ];
+chatSubmit // endDefinition;
 
-chatSubmit[ container_, messages: { __Association }, cellObject_, settings_ ] := (
+(* TODO: chatHandlers could probably filter valid keys instead of quieting URLSubmit::invm, but the list of available
+         events is defined via a private symbol that might not be safe to use:
+         URLUtilities`Submit`PackagePrivate`$eventNames
+*)
+
+chatSubmit0 // beginDefinition;
+chatSubmit0 // Attributes = { HoldFirst };
+
+chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] := (
     Needs[ "LLMServices`" -> None ];
     $lastChatSubmit = LLMServices`ChatSubmit[
         standardizeMessageKeys @ messages,
         makeLLMConfiguration @ settings,
         HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
-        HandlerFunctionsKeys -> { "BodyChunk", "StatusCode", "Task", "TaskStatus", "EventName" }
+        HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings
     ]
 );
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
-chatSubmit[ container_, req_HTTPRequest, cellObject_, settings_ ] := (
+chatSubmit0[ container_, req_HTTPRequest, cellObject_, settings_ ] := (
     $buffer = "";
     URLSubmit[
         req,
         HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
-        HandlerFunctionsKeys -> { "BodyChunk", "StatusCode", "Task", "TaskStatus", "EventName" },
+        HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
         CharacterEncoding    -> "UTF8"
     ]
 );
 
-chatSubmit // endDefinition;
+chatSubmit0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -406,10 +426,21 @@ ServiceConnectionUtilities`ConnectionInformation["Anthropic", "ProcessedRequests
 makeLLMConfiguration[ as_Association ] :=
     $lastLLMConfiguration = LLMConfiguration @ Association[
         KeyTake[ as, { "Model" } ],
-        "Stop" -> { "ENDTOOLCALL" }
+        "StopTokens" -> { "ENDTOOLCALL" }
     ];
 
 makeLLMConfiguration // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatHandlerFunctionsKeys*)
+chatHandlerFunctionsKeys // beginDefinition;
+chatHandlerFunctionsKeys[ as_? AssociationQ ] := chatHandlerFunctionsKeys[ as, as[ "HandlerFunctionsKeys" ] ];
+chatHandlerFunctionsKeys[ as_, $$unspecified ] := $defaultHandlerKeys;
+chatHandlerFunctionsKeys[ as_, keys_List ] := Union[ Select[ Flatten @ keys, StringQ ], $defaultHandlerKeys ];
+chatHandlerFunctionsKeys[ as_, key_String ] := chatHandlerFunctionsKeys[ as, { key } ];
+chatHandlerFunctionsKeys[ as_, invalid_ ] := (messagePrint[ "InvalidHandlerKeys", invalid ]; $defaultHandlerKeys);
+chatHandlerFunctionsKeys // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -418,14 +449,20 @@ chatHandlers // beginDefinition;
 chatHandlers // Attributes = { HoldFirst };
 
 chatHandlers[ container_, cellObject_, settings_ ] :=
-    With[
+    $lastHandlers = With[
         {
             autoOpen     = TrueQ @ $autoOpen,
             alwaysOpen   = TrueQ @ $alwaysOpen,
             autoAssist   = $autoAssistMode,
-            dynamicSplit = dynamicSplitQ @ settings
+            dynamicSplit = dynamicSplitQ @ settings,
+            handlers     = getHandlerFunctions @ settings
+        },
+        {
+            bodyChunkHandler    = Lookup[ handlers, "BodyChunkReceived", None ],
+            taskFinishedHandler = Lookup[ handlers, "TaskFinished"     , None ]
         },
         <|
+            KeyDrop[ handlers, $chatSubmitDroppedHandlers ],
             "BodyChunkReceived" -> Function @ catchAlways[
                 Block[
                     {
@@ -435,6 +472,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                         $autoAssistMode = autoAssist,
                         $dynamicSplit   = dynamicSplit
                     },
+                    bodyChunkHandler[ #1 ];
                     Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                     writeChunk[ Dynamic @ container, cellObject, #1 ]
                 ]
@@ -448,6 +486,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                         $autoAssistMode = autoAssist,
                         $dynamicSplit   = dynamicSplit
                     },
+                    taskFinishedHandler[ #1 ];
                     Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                     checkResponse[ settings, Unevaluated @ container, cellObject, #1 ]
                 ]
@@ -476,9 +515,11 @@ writeChunk[ container_, cell_, KeyValuePattern[ "BodyChunk" -> chunk_String ] ] 
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
 writeChunk[ container_, cell_, chunk_String ] :=
-    Module[ { parts, buffer },
-        parts   = StringTrim @ StringCases[ chunk, "data: " ~~ json: Except[ "\n" ].. ~~ "\n\n" :> json ];
-        buffer  = StringDelete[ StringDelete[ chunk, "data: " ~~ parts ~~ "\n\n" ], StartOfString ~~ "\n".. ];
+    Module[ { ws, sep, parts, buffer },
+        ws      = WhitespaceCharacter...;
+        sep     = "\n\n" | "\r\n\r\n";
+        parts   = StringTrim @ StringCases[ chunk, "data:" ~~ ws ~~ json: Except[ "\n" ].. ~~ sep :> json ];
+        buffer  = StringDelete[ StringDelete[ chunk, "data:" ~~ ws ~~ parts ~~ sep ], StartOfString ~~ "\n".. ];
         $buffer = buffer;
         writeChunk0[ container, cell, #1 ] & /@ parts
     ];
@@ -512,6 +553,14 @@ writeChunk0[
     KeyValuePattern[ "choices" -> { KeyValuePattern @ { "delta" -> <| |>, "finish_reason" -> "stop" }, ___ } ]
 ] := Null;
 
+(* TODO: this definition is obsolete once LLMServices is widely available: *)
+writeChunk0[
+    container_,
+    cell_,
+    chunk_String,
+    KeyValuePattern[ "completion" -> text_String ]
+] := writeChunk0[ container, cell, chunk, text ];
+
 writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
 
     appendStringContent[ container[ "FullContent"    ], text ];
@@ -539,9 +588,12 @@ writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, text_String ] := (
     ]
 );
 
-writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, other_ ] := Null;
+writeChunk0[ Dynamic[ container_ ], cell_, chunk_String, other_ ] :=
+     Internal`StuffBag[ $chunkDebug, <| "chunk" -> chunk, "other" -> other |> ];
 
 writeChunk0 // endDefinition;
+
+$chunkDebug = Internal`Bag[ ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -729,7 +781,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             }
         ];
 
-        req = If[ TrueQ @ $llmServicesAvailable,
+        req = If[ TrueQ @ $useLLMServices,
                   ConfirmMatch[ constructMessages[ settings, newMessages ], { __Association }, "ConstructMessages" ],
                   (* TODO: this path will be obsolete when LLMServices is widely available *)
                   ConfirmMatch[ makeHTTPRequest[ settings, newMessages ], _HTTPRequest, "HTTPRequest" ]
@@ -765,6 +817,7 @@ toolResponseString // endDefinition;
 appendToolResult // beginDefinition;
 appendToolResult // Attributes = { HoldFirst };
 
+(* cSpell: ignore ENDRESULT *)
 appendToolResult[ container_Symbol, output_String, id_String ] :=
     Module[ { append },
         append = "ENDTOOLCALL\nRESULT\n"<>output<>"\nENDRESULT(" <> id <> ")\n\n";
@@ -1364,7 +1417,7 @@ activeAIAssistantCell // endDefinition;
 (*getFormattingFunction*)
 getFormattingFunction // beginDefinition;
 getFormattingFunction[ as_? AssociationQ ] := getFormattingFunction[ as, as[ "ChatFormattingFunction" ] ];
-getFormattingFunction[ as_, _Missing|Automatic|Inherited ] := FormatChatOutput;
+getFormattingFunction[ as_, $$unspecified ] := FormatChatOutput;
 getFormattingFunction[ as_, func_ ] := replaceCellContext @ func;
 getFormattingFunction // endDefinition;
 
@@ -1544,7 +1597,7 @@ postApply // beginDefinition;
 
 postApply[ output_CellObject, string_, settings_Association ] :=
     postApply0[
-        getChatPost @ settings,
+        getHandlerFunction[ settings, "ChatPost" ],
         <|
             "EvaluationCell"       -> output,
             "Result"               -> string,

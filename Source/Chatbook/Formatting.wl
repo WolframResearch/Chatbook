@@ -74,8 +74,8 @@ $externalLanguageRules = Replace[
 (* ::Section::Closed:: *)
 (*Chat Output Formatting*)
 FormatChatOutput // beginDefinition;
-FormatChatOutput[ output_ ] := FormatChatOutput[ output, <| |> ];
-FormatChatOutput[ output_, as_Association ] := formatChatOutput[ output, Lookup[ as, "Status", Automatic ] ];
+FormatChatOutput[ output_ ] := FormatChatOutput[ output, <| "Status" -> "Finished" |> ];
+FormatChatOutput[ output_, as_Association ] := formatChatOutput[ output, Lookup[ as, "Status", "Finished" ] ];
 FormatChatOutput // endDefinition;
 (* TODO: actual error handling for invalid arguments *)
 
