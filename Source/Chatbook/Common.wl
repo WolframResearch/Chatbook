@@ -24,6 +24,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$nestedCellStyle;
 
 `$$textDataList;
+`$$unspecified;
 
 `$catchTopTag;
 `beginDefinition;
@@ -86,6 +87,7 @@ $$excludeHistoryStyle = cellStylePattern @ $excludeHistoryStyles;
 $$nestedCellStyle     = cellStylePattern @ $nestedCellStyles;
 
 $$textDataList        = { (_String|_Cell|_StyleBox|_ButtonBox)... };
+$$unspecified         = _Missing | Automatic | Inherited;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -100,6 +102,8 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "Internal"                        -> "An unexpected error occurred. `1`",
     "InvalidAPIKey"                   -> "Invalid value for API key: `1`",
     "InvalidArguments"                -> "Invalid arguments given for `1` in `2`.",
+    "InvalidHandlerKeys"              -> "Invalid setting for HandlerFunctionsKeys: `1`; using defaults instead.",
+    "InvalidHandlers"                 -> "Invalid setting for HandlerFunctions: `1`; using defaults instead.",
     "InvalidResourceSpecification"    -> "The argument `1` is not a valid resource specification.",
     "InvalidResourceURL"              -> "The specified URL does not represent a valid resource object.",
     "InvalidStreamingOutputMethod"    -> "Invalid streaming output method: `1`.",

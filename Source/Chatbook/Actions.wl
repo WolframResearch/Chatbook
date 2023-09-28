@@ -161,6 +161,7 @@ ToggleFormatting // endDefinition;
 (* ::Subsection::Closed:: *)
 (*toggleFormatting*)
 toggleFormatting // beginDefinition;
+(* FIXME: define an "Unformatted" mix-in style (with different background) that's added/removed when toggling *)
 
 (* Convert a plain string to formatted TextData: *)
 toggleFormatting[ cellObject_CellObject, nbo_NotebookObject, string_String ] := Enclose[
@@ -348,6 +349,7 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
         $lastChatString     = None;
         $nextTaskEvaluation = None;
         clearMinimizedChats @ nbo;
+        $enableLLMServices  = settings[ "EnableLLMServices" ];
         sendChat[ evalCell, nbo, settings ];
         waitForLastTask[ ];
         blockChatObject[
@@ -906,12 +908,14 @@ SendChat[ evalCell_, nbo_, settings_, Automatic ] := withChatState @
         Block[ { $autoOpen, $alwaysOpen = $alwaysOpen },
             $autoOpen = MemberQ[ styles, $$chatInputStyle ];
             $alwaysOpen = TrueQ[ $alwaysOpen || $autoOpen ];
+            $enableLLMServices  = settings[ "EnableLLMServices" ];
             sendChat[ evalCell, nbo, addCellStyleSettings[ settings, styles ] ]
         ]
     ];
 
 SendChat[ evalCell_, nbo_, settings_, minimized_ ] := withChatState @
     Block[ { $alwaysOpen = alwaysOpenQ[ settings, minimized ] },
+        $enableLLMServices  = settings[ "EnableLLMServices" ];
         sendChat[ evalCell, nbo, addCellStyleSettings[ settings, evalCell ] ]
     ];
 
@@ -1139,7 +1143,7 @@ $apiKeyDialogDescription := $apiKeyDialogDescription = Get @ FileNameJoin @ {
 (*withChatState*)
 withChatState // beginDefinition;
 withChatState // Attributes = { HoldFirst };
-withChatState[ eval_ ] := withToolBox @ withBasePromptBuilder @ eval;
+withChatState[ eval_ ] := Block[ { $enableLLMServices }, withToolBox @ withBasePromptBuilder @ eval ];
 withChatState // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
