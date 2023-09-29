@@ -5,7 +5,6 @@ BeginPackage[ "Wolfram`Chatbook`SendChat`" ];
 (* :!CodeAnalysis::BeginBlock:: *)
 
 `$debugLog;
-`$enableLLMServices;
 `makeOutputDingbat;
 `sendChat;
 `toolsEnabledQ;
@@ -23,22 +22,15 @@ Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
 Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 Needs[ "Wolfram`Chatbook`Models`"           ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
+Needs[ "Wolfram`Chatbook`Services`"         ];
 Needs[ "Wolfram`Chatbook`Tools`"            ];
 Needs[ "Wolfram`Chatbook`Utils`"            ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$resizeDingbats          = True;
-$enableLLMServices       = Automatic;
-splitDynamicTaskFunction = createFETask;
-$useLLMServices         := MatchQ[ $enableLLMServices, Automatic|True ] && TrueQ @ $llmServicesAvailable;
-
-$llmServicesAvailable := $llmServicesAvailable = (
-    PacletInstall[ "Wolfram/LLMFunctions" ];
-    FileExistsQ @ FindFile[ "LLMServices`" ]
-);
-
+$resizeDingbats            = True;
+splitDynamicTaskFunction   = createFETask;
 $defaultHandlerKeys        = { "BodyChunk", "StatusCode", "Task", "TaskStatus", "EventName" };
 $chatSubmitDroppedHandlers = { "ChatPost", "ChatPre" };
 
@@ -161,10 +153,17 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             "ChatNotebookSettings" -> KeyDrop[ settings, { "Data", "OpenAIKey" } ]
         |> ];
 
-        task = Confirm[ $lastTask = chatSubmit[ container, messages, cellObject, settings ] ];
+        task = ConfirmMatch[
+            $lastTask = chatSubmit[ container, messages, cellObject, settings ],
+            _TaskObject|_Failure,
+            "ChatSubmit"
+        ];
 
         CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "CellObject" } ] = cellObject;
         CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "Task"       } ] = task;
+
+        If[ FailureQ @ task, throwTop @ writeErrorCell[ cellObject, task ] ];
+        task
     ],
     throwInternalFailure[ sendChat[ evalCell, nbo, settings0 ], ## ] &
 ];
@@ -376,8 +375,17 @@ prepareMessagesForHTTPRequest0 // endDefinition;
 (*chatSubmit*)
 chatSubmit // beginDefinition;
 chatSubmit // Attributes = { HoldFirst };
-(* cSpell: ignore invm *)
-chatSubmit[ args__ ] := Quiet[ chatSubmit0 @ args, URLSubmit::invm ];
+
+chatSubmit[ args__ ] := Quiet[
+    chatSubmit0 @ args,
+    {
+        (* cSpell: ignore wname, invm *)
+        ServiceConnections`SavedConnections::wname,
+        ServiceConnections`ServiceConnections::wname,
+        URLSubmit::invm
+    }
+];
+
 chatSubmit // endDefinition;
 
 (* TODO: chatHandlers could probably filter valid keys instead of quieting URLSubmit::invm, but the list of available
@@ -1845,13 +1853,17 @@ attachChatOutputMenu // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*writeErrorCell*)
 writeErrorCell // beginDefinition;
-writeErrorCell[ cell_, as_ ] := createFETask @ NotebookWrite[ cell, errorCell @ as ];
+writeErrorCell[ cell_, failure_Failure ] := (createFETask @ NotebookDelete @ cell; failure);
+writeErrorCell[ cell_, as_ ] := (createFETask @ NotebookWrite[ cell, errorCell @ as ]; Null);
 writeErrorCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*errorCell*)
 errorCell // beginDefinition;
+
+errorCell[ failure_Failure ] :=
+    Cell[ BoxData @ ToBoxes @ failure, "Output" ];
 
 errorCell[ as_ ] :=
     Cell[
@@ -1867,7 +1879,9 @@ errorCell[ as_ ] :=
         CellAutoOverwrite -> True
     ];
 
-errorCell // endDefinition;(* ::**************************************************************************************************************:: *)
+errorCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*errorText*)
 errorText // ClearAll;
@@ -1911,7 +1925,7 @@ errorText[ str_String ] /; StringMatchQ[ str, "The model `" ~~ __ ~~ "` does not
     ];
 
 errorText[ str_String ] := str;
-
+errorText[ failure_Failure ] := ToString @ failure[ "Message" ];
 errorText[ ___ ] := "An unexpected error occurred.";
 
 (* ::**************************************************************************************************************:: *)
@@ -1942,7 +1956,10 @@ errorBoxes[ as: KeyValuePattern[ "StatusCode" -> 429 ] ] :=
 errorBoxes[ as: KeyValuePattern[ "StatusCode" -> code: Except[ 200 ] ] ] :=
     ToBoxes @ messageFailure[ "UnknownStatusCode", as ];
 
-errorBoxes[ as_ ] :=
+errorBoxes[ failure_Failure ] :=
+    ToBoxes @ failure;
+
+errorBoxes[ as___ ] :=
     ToBoxes @ messageFailure[ "UnknownResponse", as ];
 
 (* ::**************************************************************************************************************:: *)
