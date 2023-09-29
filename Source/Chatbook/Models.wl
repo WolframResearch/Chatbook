@@ -9,6 +9,7 @@ BeginPackage[ "Wolfram`Chatbook`Models`" ];
 `chatModelQ;
 `getModelList;
 `modelDisplayName;
+`standardizeModelData;
 `toModelName;
 
 Begin[ "`Private`" ];
@@ -22,6 +23,8 @@ Needs[ "Wolfram`Chatbook`Dynamics`" ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $$modelVersion = DigitCharacter.. ~~ (("." ~~ DigitCharacter...) | "");
+
+$defaultModelIcon = "";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -123,6 +126,14 @@ modelContains // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*modelName*)
+modelName // beginDefinition;
+modelName[ KeyValuePattern[ "Name" -> name_String ] ] := modelName @ name;
+modelName[ name_String ] := toModelName @ name;
+modelName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*toModelName*)
 toModelName // beginDefinition;
 
@@ -149,6 +160,12 @@ toModelName0 // endDefinition;
 (*modelDisplayName*)
 modelDisplayName // beginDefinition;
 
+modelDisplayName[ KeyValuePattern[ "DisplayName" -> name_String ] ] :=
+    name;
+
+modelDisplayName[ KeyValuePattern[ "Name" -> name_String ] ] :=
+    modelDisplayName @ name;
+
 modelDisplayName[{name_?StringQ, settings_?AssociationQ}] :=
 	modelDisplayName[name]
 
@@ -174,6 +191,50 @@ modelDisplayName[ parts: { __String } ] :=
 	StringRiffle @ Capitalize @ parts;
 
 modelDisplayName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*modelIcon*)
+modelIcon // beginDefinition;
+modelIcon[ KeyValuePattern[ "Icon" -> icon_ ] ] := icon;
+modelIcon[ KeyValuePattern[ "Name" -> name_String ] ] := modelIcon @ name;
+modelIcon[ name0_String ] := With[ { name = toModelName @ name0 }, modelIcon @ name /; name =!= name0 ];
+modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-3.5" ] := RawBoxes @ TemplateBox[ { }, "ModelGPT35" ];
+modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-4" ] := RawBoxes @ TemplateBox[ { }, "ModelGPT4" ];
+modelIcon[ name_String ] := $defaultModelIcon;
+modelIcon // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*standardizeModelData*)
+standardizeModelData // beginDefinition;
+
+standardizeModelData[ list_List ] :=
+    Flatten[ standardizeModelData /@ list ];
+
+standardizeModelData[ name_String ] :=
+    standardizeModelData @ <| "Name" -> name |>;
+
+standardizeModelData[ model: KeyValuePattern @ { "Name" -> _String, "DisplayName" -> _String, "Icon" -> _ } ] :=
+    Association @ model;
+
+standardizeModelData[ model_Association? AssociationQ ] :=
+    standardizeModelData[ model ] = <|
+        "Name"        -> modelName @ model,
+        "DisplayName" -> modelDisplayName @ model,
+        "Icon"        -> modelIcon @ model,
+        model
+    |>;
+
+standardizeModelData[ service_String, models_List ] :=
+    standardizeModelData[ service, # ] & /@ models;
+
+standardizeModelData[ service_String, model_ ] :=
+    With[ { as = standardizeModelData @ model },
+        (standardizeModelData[ service, model ] = <| "ServiceName" -> service, as |>) /; AssociationQ @ as
+    ];
+
+standardizeModelData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
