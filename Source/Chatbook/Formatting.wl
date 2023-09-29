@@ -604,7 +604,7 @@ parseFullToolCallString[ id_String, string_String ] :=
 parseFullToolCallString[ id_, _Missing, string_String ] :=
     parsePartialToolCallString @ string;
 
-parseFullToolCallString[ id_String, resp_LLMToolResponse, string_String ] :=
+parseFullToolCallString[ id_String, resp: HoldPattern[ _LLMToolResponse ], string_String ] :=
     parseFullToolCallString[
         id,
         resp[ "Tool" ],
@@ -613,7 +613,7 @@ parseFullToolCallString[ id_String, resp_LLMToolResponse, string_String ] :=
         string
     ];
 
-parseFullToolCallString[ id_String, tool_LLMTool, parameters_Association, output_, string_ ] :=
+parseFullToolCallString[ id_String, tool: HoldPattern[ _LLMTool ], parameters_Association, output_, string_ ] :=
     $lastFullParsed = <|
         "ID"                 -> id,
         "Name"               -> tool[ "Name" ],
