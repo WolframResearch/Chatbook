@@ -3,7 +3,9 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`CreateChatNotebook`" ];
 
-System`ChatObject;
+HoldComplete[
+    System`ChatObject
+];
 
 Begin[ "`Private`" ];
 
@@ -59,9 +61,8 @@ CreateChatNotebook[ nbo_NotebookObject, opts: OptionsPattern[ { CreateChatNotebo
         nbo
     ];
 
-CreateChatNotebook[ chat_ChatObject, opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] :=
+CreateChatNotebook[ chat: HoldPattern[ _ChatObject ], opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] :=
     catchMine @ createNotebookFromChatObject[ chat, opts ];
-
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
