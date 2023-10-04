@@ -3,6 +3,8 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 
+Wolfram`Chatbook`CurrentChatSettings;
+
 `$defaultChatSettings;
 `$dialogInputAllowed;
 `$feTaskWidgetCell;
@@ -190,7 +192,40 @@ runFETasks // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*CurrentValue Utilities*)
+(*CurrentChatSettings*)
+GeneralUtilities`SetUsage[ CurrentChatSettings, "\
+CurrentChatSettings[obj$, \"key$\"] gives the current chat settings for the CellObject or NotebookObject obj$ for the specified key.
+CurrentChatSettings[obj$] gives all current chat settings for obj$.
+CurrentChatSettings[] is equivalent to CurrentChatSettings[EvaluationCell[]].
+CurrentChatSettings[\"key$\"] is equivalent to CurrentChatSettings[EvaluationCell[], \"key$\"].\
+" ];
+
+CurrentChatSettings[ ] := catchMine @
+    If[ TrueQ @ $Notebooks,
+        CurrentChatSettings @ EvaluationCell[ ],
+        $defaultChatSettings
+    ];
+
+CurrentChatSettings[ key_String ] := catchMine @
+    If[ TrueQ @ $Notebooks,
+        CurrentChatSettings[ EvaluationCell[ ], key ],
+        Lookup[ $defaultChatSettings, key, Inherited ]
+    ];
+
+CurrentChatSettings[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession ] := catchMine @
+    If[ TrueQ @ $Notebooks,
+        currentChatSettings @ obj,
+        $defaultChatSettings
+    ];
+
+CurrentChatSettings[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := catchMine @
+    If[ TrueQ @ $notebooks,
+        currentChatSettings[ obj, key ],
+        Lookup[ $defaultChatSettings, key, Inherited ]
+    ];
+
+CurrentChatSettings[ args___ ] :=
+    catchMine @ throwFailure[ "InvalidArguments", CurrentChatSettings, HoldForm @ CurrentChatSettings @ args ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
