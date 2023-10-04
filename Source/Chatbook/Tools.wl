@@ -1060,8 +1060,12 @@ webSearch // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$webSearchResultTemplate*)
-$webSearchResultTemplate = StringTemplate[
-    "Results\n-------\n\n`1`\n\n-------\n\nUse the web_fetcher tool to get the content of a URL."
+$webSearchResultTemplate := StringTemplate @ StringJoin[
+    "Results\n-------\n\n`1`\n\n-------",
+    If[ KeyExistsQ[ $selectedTools, "WebFetcher" ],
+        "\n\nUse the web_fetcher tool to get the content of a URL.",
+        ""
+    ]
 ];
 
 (* ::**************************************************************************************************************:: *)
