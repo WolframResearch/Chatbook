@@ -11,14 +11,15 @@ Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                   ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
+Needs[ "Wolfram`Chatbook`Dialogs`"           ];
 Needs[ "Wolfram`Chatbook`Dynamics`"          ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"          ];
+Needs[ "Wolfram`Chatbook`Models`"            ];
 Needs[ "Wolfram`Chatbook`Personas`"          ];
-Needs[ "Wolfram`Chatbook`UI`"                ];
-Needs[ "Wolfram`Chatbook`Dialogs`"           ];
-Needs[ "Wolfram`Chatbook`Tools`"             ];
 Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
-Needs[ "Wolfram`Chatbook`Actions`"           ];
+Needs[ "Wolfram`Chatbook`SendChat`"          ];
+Needs[ "Wolfram`Chatbook`Tools`"             ];
+Needs[ "Wolfram`Chatbook`UI`"                ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

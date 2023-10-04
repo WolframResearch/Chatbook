@@ -17,10 +17,10 @@ CellToString[cell$] serializes a Cell expression as a string for use in chat.\
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`Errors`"     ];
+Needs[ "Wolfram`Chatbook`"            ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
-Needs[ "Wolfram`Chatbook`Prompting`"  ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"   ];
+Needs[ "Wolfram`Chatbook`Prompting`"  ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

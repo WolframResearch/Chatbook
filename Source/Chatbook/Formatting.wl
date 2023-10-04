@@ -5,6 +5,8 @@ BeginPackage[ "Wolfram`Chatbook`Formatting`" ];
 
 (* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDRESULT *)
 
+Wolfram`Chatbook`FormatChatOutput;
+
 `$dynamicSplitRules;
 `$dynamicText;
 `$reformattedCell;
@@ -71,6 +73,23 @@ $externalLanguageRules = Replace[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Chat Output Formatting*)
+FormatChatOutput // beginDefinition;
+FormatChatOutput[ output_ ] := FormatChatOutput[ output, <| "Status" -> "Finished" |> ];
+FormatChatOutput[ output_, as_Association ] := formatChatOutput[ output, Lookup[ as, "Status", "Finished" ] ];
+FormatChatOutput // endDefinition;
+(* TODO: actual error handling for invalid arguments *)
+
+formatChatOutput // beginDefinition;
+
+formatChatOutput[ output_, "Waiting" ] := ProgressIndicator[ Appearance -> "Percolate" ];
+
+formatChatOutput[ output_String, "Streaming" ] :=
+    Block[ { $dynamicText = True }, RawBoxes @ Cell @ TextData @ reformatTextData @ output ];
+
+formatChatOutput[ output_String, "Finished" ] :=
+    Block[ { $dynamicText = False }, RawBoxes @ Cell @ TextData @ reformatTextData @ output ];
+
+formatChatOutput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -585,7 +604,7 @@ parseFullToolCallString[ id_String, string_String ] :=
 parseFullToolCallString[ id_, _Missing, string_String ] :=
     parsePartialToolCallString @ string;
 
-parseFullToolCallString[ id_String, resp_LLMToolResponse, string_String ] :=
+parseFullToolCallString[ id_String, resp: HoldPattern[ _LLMToolResponse ], string_String ] :=
     parseFullToolCallString[
         id,
         resp[ "Tool" ],
@@ -594,7 +613,7 @@ parseFullToolCallString[ id_String, resp_LLMToolResponse, string_String ] :=
         string
     ];
 
-parseFullToolCallString[ id_String, tool_LLMTool, parameters_Association, output_, string_ ] :=
+parseFullToolCallString[ id_String, tool: HoldPattern[ _LLMTool ], parameters_Association, output_, string_ ] :=
     $lastFullParsed = <|
         "ID"                 -> id,
         "Name"               -> tool[ "Name" ],
