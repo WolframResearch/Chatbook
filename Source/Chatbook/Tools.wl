@@ -442,11 +442,13 @@ $toolPrompt := TemplateObject[
     {
         $toolPre,
         TemplateSequence[
-            StringTemplate[
-                "Name: `Name`\nDescription: `Description`\nArguments: `Parameters`\n\n",
-                InsertionFunction -> toolTemplateDataString
+            TemplateExpression @ StringTemplate[
+                "Tool Name: `Name`\nDescription: `Description`\nSchema:\n`Schema`\n\n"
             ],
-            TemplateExpression[ #[ "Data" ] & /@ TemplateSlot[ "Tools" ] ]
+            TemplateExpression @ Map[
+                Append[ #[ "Data" ], "Schema" -> ExportString[ #[ "JSONSchema" ], "JSON" ] ] &,
+                TemplateSlot[ "Tools" ]
+            ]
         ],
         $toolPost
     },
@@ -458,15 +460,15 @@ $toolPrompt := TemplateObject[
 $toolPre = "\
 # Tool Instructions
 
-You have access to system tools which can be used to do things, fetch data, compute, etc. while you create your response. Here are the available tools:
+You have access to tools which can be used to do things, fetch data, compute, etc. while you create your response. \
+Each tool takes input as JSON following a JSON schema. Here are the available tools and their associated schemas:
 
 ";
 
 
 $toolPost := "
 
-To call a tool, write the following on a new line at any time during your response:
-
+To call a tool, write the following at any time during your response:
 
 TOOLCALL: <tool name>
 {
@@ -476,9 +478,12 @@ TOOLCALL: <tool name>
 ENDARGUMENTS
 ENDTOOLCALL
 
+Always use valid JSON to specify the parameters in the tool call. Always follow the tool's JSON schema to specify the \
+parameters in the tool call. Fill in the values in <> brackets with the values for the particular tool. Provide as \
+many parameters as the tool requires. Always make one tool call at a time. Always write two line breaks before each \
+tool call.
 
-The system will execute the requested tool call and you will receive a system message containing the result.
-
+The system will execute the requested tool call and you will receive a system message containing the result. \
 You can then use this result to finish writing your response for the user.
 
 You must write the TOOLCALL in your CURRENT response. \
@@ -491,10 +496,6 @@ NEVER state that a tool cannot be used for a particular task without trying it f
 You did not create these tools, so you do not know what they can and cannot do.
 
 " <> $fullExamples;
-
-
-toolTemplateDataString[ str_String ] := str;
-toolTemplateDataString[ expr_ ] := ToString[ expr, InputForm ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
