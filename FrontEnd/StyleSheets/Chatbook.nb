@@ -748,7 +748,7 @@ Notebook[
     ],
    TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    CellTrayWidgets -> <|
-    "GearMenu" -> { },
+    "GearMenu" -> <|"Condition" -> False|>,
     "ChatWidget" -> <|
      "Type" -> "Focus",
      "Content" ->
@@ -1143,7 +1143,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.1.4.3904282110"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.2.1.3905399249"|>
   ],
   Cell[
    StyleData["Text"],
@@ -1431,7 +1431,7 @@ Notebook[
   ],
   Cell[
    StyleData["Output"],
-   CellTrayWidgets -> <|"GearMenu" -> {}|>,
+   CellTrayWidgets -> <|"GearMenu" -> <|"Condition" -> False|>|>,
    ContextMenu -> {
     MenuItem[
      "Ask AI Assistant",
@@ -1522,7 +1522,7 @@ Notebook[
   ],
   Cell[
    StyleData["Message"],
-   CellTrayWidgets -> <|"GearMenu" -> {}|>
+   CellTrayWidgets -> <|"GearMenu" -> <|"Condition" -> False|>|>
   ],
   Cell[
    StyleData[
