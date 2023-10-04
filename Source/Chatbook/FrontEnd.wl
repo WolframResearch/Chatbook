@@ -27,6 +27,7 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `openerView;
 `parentCell;
 `parentNotebook;
+`replaceCellContext;
 `rootEvaluationCell;
 `selectionEvaluateCreateCell;
 `toCompressedBoxes;
@@ -918,6 +919,25 @@ compressUntilViewed[ expr_ ] :=
     ];
 
 compressUntilViewed // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Misc*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*replaceCellContext*)
+replaceCellContext // beginDefinition;
+
+replaceCellContext[ expr_ ] := ReplaceAll[
+    expr,
+    s_Symbol /; AtomQ @ Unevaluated @ s && Context @ Unevaluated @ s === "$CellContext`" :>
+        With[ { new = ToExpression[ $Context <> SymbolName @ Unevaluated @ s, InputForm, $ConditionHold ] },
+            RuleCondition[ new, True ]
+        ]
+];
+
+replaceCellContext // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

@@ -15,6 +15,8 @@
 
 BeginPackage["Wolfram`Chatbook`ErrorUtils`"]
 
+Needs[ "Wolfram`Chatbook`Common`" ];
+
 (* Avoiding context aliasing due to bug 434990: *)
 Needs[ "GeneralUtilities`" -> None ];
 
@@ -80,7 +82,7 @@ GeneralUtilities`SetUsage[ConfirmReplace, "
 ConfirmReplace[expr$, rules$] applies a rule or list of rules in an attempt to transform the entire expression expr$, and raises an error if no rule matches.
 "]
 
-$RaiseThrowTag
+$RaiseThrowTag = $catchTopTag;
 
 $RegisteredErrorTags = <||>
 
@@ -142,14 +144,18 @@ Begin["`Private`"]
 
 
 SetFallthroughError[symbol_Symbol] := (
-	symbol[args___] := Raise[
-		DownValueFallthroughError,
-		<|
-			"Symbol" -> symbol,
-			"ArgumentList" -> HoldComplete[{args}]
-		|>,
-		"Arguments applied to symbol `` did not match any DownValues.",
-		HoldForm[symbol]
+	symbol[args___] := With[ {
+		failure = CreateFailure[
+			DownValueFallthroughError,
+			<|
+				"Symbol" -> symbol,
+				"ArgumentList" -> HoldComplete[{args}]
+			|>,
+			"Arguments applied to symbol `` did not match any DownValues.",
+			HoldForm[symbol]
+		]
+	},
+		throwInternalFailure[symbol[args], failure]
 	]
 )
 

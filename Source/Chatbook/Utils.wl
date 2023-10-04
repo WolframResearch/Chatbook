@@ -8,6 +8,7 @@
 BeginPackage["Wolfram`Chatbook`Utils`"]
 
 `associationKeyDeflatten;
+`convertUTF8;
 `fixLineEndings;
 
 CellPrint2
@@ -16,8 +17,10 @@ FirstMatchingPositionOrder::usage = "FirstMatchingPositionOrder[patterns][a, b] 
 
 Begin["`Private`"]
 
-Needs["Wolfram`Chatbook`ErrorUtils`"]
-Needs["Wolfram`Chatbook`Common`"]
+Needs[ "Wolfram`Chatbook`"            ];
+Needs[ "Wolfram`Chatbook`Common`"     ];
+Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
+Needs[ "Wolfram`Chatbook`UI`"         ];
 
 (*====================================*)
 
@@ -103,6 +106,15 @@ importResourceFunction[ associationKeyDeflatten, "AssociationKeyDeflatten" ];
 fixLineEndings // beginDefinition;
 fixLineEndings[ string_String? StringQ ] := StringReplace[ string, "\r\n" -> "\n" ];
 fixLineEndings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*convertUTF8*)
+convertUTF8 // beginDefinition;
+convertUTF8[ string_String ] := convertUTF8[ string, True ];
+convertUTF8[ string_String, True  ] := FromCharacterCode[ ToCharacterCode @ string, "UTF-8" ];
+convertUTF8[ string_String, False ] := FromCharacterCode @ ToCharacterCode[ string, "UTF-8" ];
+convertUTF8 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
