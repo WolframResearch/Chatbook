@@ -14,7 +14,7 @@ Cell[
     CellInsertionPointCell -> $cellInsertionPointCell,
 
     CellTrayWidgets -> <|
-        "GearMenu" -> {},
+        "GearMenu"   -> <| "Condition" -> False |>,
         "ChatWidget" -> <|
             "Type"    -> "Focus",
             "Content" -> Cell[ BoxData @ TemplateBox[ { }, "ChatWidgetButton" ], "ChatWidget" ]
@@ -76,7 +76,7 @@ Cell[
 Cell[
     StyleData[ "Output" ],
     ContextMenu -> contextMenu[ $askMenuItem, Delimiter, "Output" ],
-    CellTrayWidgets -> <| "GearMenu" -> {} |>
+    CellTrayWidgets -> <| "GearMenu" -> <| "Condition" -> False |> |>
 ]
 
 
@@ -87,7 +87,7 @@ Cell[
 
 Cell[
     StyleData[ "Message" ],
-    CellTrayWidgets -> <| "GearMenu" -> {} |>
+    CellTrayWidgets -> <| "GearMenu" -> <| "Condition" -> False |> |>
 ]
 
 
