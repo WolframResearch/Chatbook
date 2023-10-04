@@ -541,7 +541,7 @@ checkEvaluationCell // endDefinition;
 rootEvaluationCell // beginDefinition;
 
 (* Try `EvaluationCell[]` first by default: *)
-rootEvaluationCell[ ] := rootEvaluationCell @ EvaluationCell[ ];
+rootEvaluationCell[ ] := rootEvaluationCell @ (FinishDynamic[ ]; EvaluationCell[ ]);
 
 (* If `EvaluationCell[ ]` returned `$Failed` try one more time: *)
 rootEvaluationCell[ $Failed ] :=

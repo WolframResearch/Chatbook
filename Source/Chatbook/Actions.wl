@@ -57,13 +57,6 @@ HoldComplete[
     System`LLMToolResponse
 ];
 
-(* TODO: move some content from this file into separate files:
-   SendChat.wl - a huge portion of this file would move here
-   AutoAssistant.wl - code related to tagging, cell opening, etc.
-   ChatBlocks.wl - chat history, chat block settings dialog, etc.
-   Services.wl - authentication, etc.
-*)
-
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*ChatbookAction*)
@@ -96,9 +89,10 @@ ChatbookAction[ args___                          ] := catchMine @ throwInternalF
 (*CopyExplodedCells*)
 CopyExplodedCells // beginDefinition;
 
-CopyExplodedCells[ cellObject_CellObject ] := Enclose[
-    Module[ { exploded },
-        exploded = ConfirmMatch[ explodeCell @ cellObject, { ___Cell }, "ExplodeCell" ];
+CopyExplodedCells[ cellObject0_ ] := Enclose[
+    Module[ { cellObject, exploded },
+        cellObject = ConfirmMatch[ ensureChatOutputCell @ cellObject0, _CellObject, "CellObject" ];
+        exploded   = ConfirmMatch[ explodeCell @ cellObject, { ___Cell }, "ExplodeCell" ];
         CopyToClipboard @ exploded
     ],
     throwInternalFailure[ CopyExplodedCells @ cellObject, ## ] &
@@ -111,9 +105,10 @@ CopyExplodedCells // endDefinition;
 (*ExplodeDuplicate*)
 ExplodeDuplicate // beginDefinition;
 
-ExplodeDuplicate[ cellObject_CellObject ] := Enclose[
-    Module[ { exploded, nbo },
-        exploded = ConfirmMatch[ explodeCell @ cellObject, { __Cell }, "ExplodeCell" ];
+ExplodeDuplicate[ cellObject0_ ] := Enclose[
+    Module[ { cellObject, exploded, nbo },
+        cellObject = ConfirmMatch[ ensureChatOutputCell @ cellObject0, _CellObject, "CellObject" ];
+        exploded   = ConfirmMatch[ explodeCell @ cellObject, { __Cell }, "ExplodeCell" ];
         SelectionMove[ cellObject, After, Cell, AutoScroll -> False ];
         nbo = ConfirmMatch[ parentNotebook @ cellObject, _NotebookObject, "ParentNotebook" ];
         ConfirmMatch[ NotebookWrite[ nbo, exploded ], Null, "NotebookWrite" ]
@@ -128,9 +123,10 @@ ExplodeDuplicate // endDefinition;
 (*ExplodeInPlace*)
 ExplodeInPlace // beginDefinition;
 
-ExplodeInPlace[ cellObject_CellObject ] := Enclose[
-    Module[ { exploded },
-        exploded = ConfirmMatch[ explodeCell @ cellObject, { __Cell }, "ExplodeCell" ];
+ExplodeInPlace[ cellObject0_ ] := Enclose[
+    Module[ { cellObject, exploded },
+        cellObject = ConfirmMatch[ ensureChatOutputCell @ cellObject0, _CellObject, "CellObject" ];
+        exploded   = ConfirmMatch[ explodeCell @ cellObject, { __Cell }, "ExplodeCell" ];
         ConfirmMatch[ NotebookWrite[ cellObject, exploded ], Null, "NotebookWrite" ]
     ],
     throwInternalFailure[ ExplodeInPlace @ cellObject, ## ] &
@@ -143,8 +139,9 @@ ExplodeInPlace // endDefinition;
 (*ToggleFormatting*)
 ToggleFormatting // beginDefinition;
 
-ToggleFormatting[ cellObject_CellObject ] := Enclose[
-    Module[ { nbo, content },
+ToggleFormatting[ cellObject0_ ] := Enclose[
+    Module[ { cellObject, nbo, content },
+        cellObject = ConfirmMatch[ ensureChatOutputCell @ cellObject0, _CellObject, "CellObject" ];
         nbo = ConfirmMatch[ parentNotebook @ cellObject, _NotebookObject, "ParentNotebook" ];
         SelectionMove[ cellObject, All, CellContents, AutoScroll -> False ];
         content = ConfirmMatch[ NotebookRead @ nbo, _String | _List, "NotebookRead" ];
@@ -191,26 +188,39 @@ toggleFormatting // endDefinition;
 (* ::Section::Closed:: *)
 (*DisableAssistance*)
 DisableAssistance // beginDefinition;
+DisableAssistance[ cell_ ] := disableAssistance @ ensureChatOutputCell @ cell;
+DisableAssistance // endDefinition;
 
-DisableAssistance[ cell_CellObject ] := (
-    DisableAssistance @ parentNotebook @ cell;
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*disableAssistance*)
+disableAssistance // beginDefinition;
+
+disableAssistance[ cell_CellObject ] := (
+    disableAssistance @ parentNotebook @ cell;
     NotebookDelete @ parentCell @ cell;
     NotebookDelete @ cell;
 );
 
-DisableAssistance[ nbo_NotebookObject ] := (
+disableAssistance[ nbo_NotebookObject ] := (
     CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = False
 );
 
-DisableAssistance // endDefinition;
+disableAssistance // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*InsertInlineReference*)
 InsertInlineReference // beginDefinition;
-InsertInlineReference[ type_, cell_CellObject ] := insertInlineReference[ type, loadDefinitionNotebook @ cell ];
+
+InsertInlineReference[ type_, cell_ ] :=
+    insertInlineReference[ type, loadDefinitionNotebook @ ensureChatInputCell @ cell ];
+
 InsertInlineReference // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*insertInlineReference*)
 insertInlineReference // beginDefinition;
 
 insertInlineReference[ "Persona"         , args___ ] := insertPersonaInputBox @ args;
@@ -273,14 +283,14 @@ ToolManage[ a___ ] := Enclose[
 (* ::Section::Closed:: *)
 (*TabLeft*)
 TabLeft // beginDefinition;
-TabLeft[ cell_CellObject ] := rotateTabPage[ cell, -1 ];
+TabLeft[ cell_ ] := rotateTabPage[ ensureChatOutputCell @ cell, -1 ];
 TabLeft // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*TabRight*)
 TabRight // beginDefinition;
-TabRight[ cell_CellObject ] := rotateTabPage[ cell, 1 ];
+TabRight[ cell_ ] := rotateTabPage[ ensureChatOutputCell @ cell, 1 ];
 TabRight // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -392,11 +402,49 @@ chatInputCellQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*ensureChatInputCell*)
+ensureChatInputCell // beginDefinition;
+
+ensureChatInputCell[ cell_CellObject? chatInputCellQ ] :=
+    ensureChatInputCell[ cell ] = cell;
+
+ensureChatInputCell[ cell_ ] :=
+    ensureChatInputCell[ cell, rootEvaluationCell @ cell ];
+
+ensureChatInputCell[ cell_CellObject, new_CellObject? chatInputCellQ ] :=
+    ensureChatInputCell[ cell ] = ensureChatInputCell[ new ] = new;
+
+ensureChatInputCell[ cell_, new_CellObject? chatInputCellQ ] :=
+    ensureChatInputCell[ new ] = new;
+
+ensureChatInputCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*chatOutputCellQ*)
 chatOutputCellQ[ cell_CellObject ] := chatOutputCellQ[ cell ] = chatOutputCellQ[ cell, Developer`CellInformation @ cell ];
 chatOutputCellQ[ cell_, KeyValuePattern[ "Style" -> $$chatOutputStyle ] ] := True;
 chatOutputCellQ[ cell_CellObject, ___ ] := ($badCellObject = cell; $badCell = NotebookRead @ cell; False);
 chatOutputCellQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ensureChatOutputCell*)
+ensureChatOutputCell // beginDefinition;
+
+ensureChatOutputCell[ cell_CellObject? chatOutputCellQ ] :=
+    ensureChatOutputCell[ cell ] = cell;
+
+ensureChatOutputCell[ cell_ ] :=
+    ensureChatOutputCell[ cell, rootEvaluationCell @ cell ];
+
+ensureChatOutputCell[ cell_CellObject, new_CellObject? chatOutputCellQ ] :=
+    ensureChatOutputCell[ cell ] = ensureChatOutputCell[ new ] = new;
+
+ensureChatOutputCell[ cell_, new_CellObject? chatOutputCellQ ] :=
+    ensureChatOutputCell[ new ] = new;
+
+ensureChatOutputCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -475,7 +523,7 @@ StopChat // beginDefinition;
 
 StopChat[ cell0_CellObject ] := Enclose[
     Module[ { cell, settings, container, content },
-        cell = ConfirmMatch[ parentCell @ cell0, _CellObject, "ParentCell" ];
+        cell = ConfirmMatch[ ensureChatOutputCell @ parentCell @ cell0, _CellObject, "ParentCell" ];
         settings = ConfirmBy[ currentChatSettings @ cell, AssociationQ, "ChatNotebookSettings" ];
         removeTask @ Lookup[ settings, "Task" ];
         container = ConfirmBy[ Lookup[ settings, "Container" ], AssociationQ, "Container" ];
@@ -485,6 +533,9 @@ StopChat[ cell0_CellObject ] := Enclose[
     ],
     throwInternalFailure[ StopChat @ cell0, ## ] &
 ];
+
+StopChat[ $Failed ] :=
+    StopChat @ rootEvaluationCell[ ];
 
 StopChat // endDefinition;
 
@@ -501,22 +552,18 @@ removeTask // endDefinition;
 (*CopyChatObject*)
 CopyChatObject // beginDefinition;
 
-CopyChatObject[ cell_CellObject? chatOutputCellQ ] := Enclose[
-    Module[ { encodedString, chatData, messages, chatObject },
+CopyChatObject[ cell0_ ] := Enclose[
+    Module[ { cell, encodedString, chatData, messages, chatObject },
         Quiet[ PacletInstall[ "Wolfram/LLMFunctions" ]; Needs[ "Wolfram`LLMFunctions`" -> None ] ];
+        cell          = ConfirmMatch[ ensureChatOutputCell @ cell0, _CellObject, "CellObject" ];
         encodedString = ConfirmBy[ CurrentValue[ cell, { TaggingRules, "ChatData" } ], StringQ, "EncodedString" ];
         chatData      = ConfirmBy[ BinaryDeserialize @ BaseDecode @ encodedString, AssociationQ, "ChatData" ];
         messages      = ConfirmMatch[ chatData[ "Data", "Messages" ], { __Association? AssociationQ }, "Messages" ];
         chatObject    = Confirm[ constructChatObject @ messages, "ChatObject" ];
         CopyToClipboard @ chatObject
     ],
-    throwInternalFailure[ HoldForm @ CopyChatObject @ cell, ## ] &
+    throwInternalFailure[ HoldForm @ CopyChatObject @ cell0, ## ] &
 ];
-
-CopyChatObject[ source: _CellObject | $Failed ] :=
-    With[ { evalCell = rootEvaluationCell @ source },
-        CopyChatObject @ evalCell /; chatOutputCellQ @ evalCell
-    ];
 
 CopyChatObject // endDefinition;
 
@@ -832,6 +879,9 @@ WidgetSend[ cell_CellObject ] := withChatState @
         CurrentValue[ parentNotebook @ cell, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = True;
         SendChat @ cell
     ];
+
+WidgetSend[ $Failed ] :=
+    WidgetSend @ rootEvaluationCell[ ];
 
 WidgetSend // endDefinition;
 
