@@ -219,7 +219,7 @@ CurrentChatSettings[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndS
     ];
 
 CurrentChatSettings[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := catchMine @
-    If[ TrueQ @ $notebooks,
+    If[ TrueQ @ $Notebooks,
         currentChatSettings[ obj, key ],
         Lookup[ $defaultChatSettings, key, Inherited ]
     ];
