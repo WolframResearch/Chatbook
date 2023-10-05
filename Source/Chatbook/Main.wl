@@ -18,6 +18,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `Chatbook;
 `ChatbookAction;
 `CreateChatNotebook;
+`CurrentChatSettings;
 `FormatChatOutput;
 `FormatToolResponse;
 `GetExpressionURI;
