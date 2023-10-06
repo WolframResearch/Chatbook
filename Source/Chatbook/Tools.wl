@@ -379,11 +379,33 @@ initTools[ ] := initTools[ ] = (
         ]
     ];
 
-    PacletInstall[ "Wolfram/LLMFunctions" ];
-    Needs[ "Wolfram`LLMFunctions`" -> None ];
+
+    installLLMFunctions[ ];
 );
 
 initTools // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*installLLMFunctions*)
+installLLMFunctions // beginDefinition;
+
+installLLMFunctions[ ] := Enclose[
+    Module[ { paclet, opts },
+        paclet = ConfirmBy[ PacletInstall[ "Wolfram/LLMFunctions" ], PacletObjectQ, "PacletInstall" ];
+        If[ ! TrueQ @ Quiet @ PacletNewerQ[ paclet, "1.2.1" ],
+            opts = If[ $CloudEvaluation, PacletSite -> "https://pacletserver.wolfram.com", UpdatePacletSites -> True ];
+            paclet = ConfirmBy[ PacletInstall[ "Wolfram/LLMFunctions", opts ], PacletObjectQ, "PacletUpdate" ];
+            Block[ { $ContextPath }, Get[ "Wolfram`LLMFunctions`" ] ]
+        ];
+        ConfirmAssert[ PacletNewerQ[ paclet, "1.2.1" ], "PacletVersion" ];
+        Needs[ "Wolfram`LLMFunctions`" -> None ];
+        installLLMFunctions[ ] = paclet
+    ],
+    throwInternalFailure[ installLLMFunctions[ ], ## ] &
+];
+
+installLLMFunctions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
