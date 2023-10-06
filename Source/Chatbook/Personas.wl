@@ -28,9 +28,10 @@ Calling GetPersonaData[] will additionally regenerate the cache used by GetCache
 
 Begin["`Private`"]
 
-Needs["Wolfram`Chatbook`Errors`"]
-Needs["Wolfram`Chatbook`ErrorUtils`"]
-Needs["Wolfram`Chatbook`ResourceInstaller`"]
+Needs[ "Wolfram`Chatbook`"                   ];
+Needs[ "Wolfram`Chatbook`Errors`"            ];
+Needs[ "Wolfram`Chatbook`ErrorUtils`"        ];
+Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
 
 (*========================================================*)
 

@@ -1,7 +1,0 @@
-%%Pre%%
-
-%%Base%%
-
-%%Tools%%
-
-%%Post%%

@@ -3,7 +3,10 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 
+Wolfram`Chatbook`CurrentChatSettings;
+
 `$defaultChatSettings;
+`$dialogInputAllowed;
 `$feTaskWidgetCell;
 `$inEpilog;
 `$suppressButtonAppearance;
@@ -17,6 +20,7 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `compressUntilViewed;
 `createFETask;
 `currentChatSettings;
+`feParentObject;
 `fixCloudCell;
 `flushFETasks;
 `getBoxObjectFromBoxID;
@@ -25,6 +29,7 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `openerView;
 `parentCell;
 `parentNotebook;
+`replaceCellContext;
 `rootEvaluationCell;
 `selectionEvaluateCreateCell;
 `toCompressedBoxes;
@@ -43,6 +48,13 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 $checkEvaluationCell := $VersionNumber <= 13.2; (* Flag that determines whether to use workarounds for #187 *)
 
 $$feObj = _FrontEndObject | $FrontEndSession | _NotebookObject | _CellObject | _BoxObject;
+
+(* Used to determine whether or not interactive input (e.g. ChoiceDialog, DialogInput) can be used: *)
+$dialogInputAllowed := ! Or[
+    TrueQ @ $SynchronousEvaluation,
+    MathLink`IsPreemptive[ ],
+    MathLink`PreemptionEnabledQ[ ] === False
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -180,7 +192,40 @@ runFETasks // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*CurrentValue Utilities*)
+(*CurrentChatSettings*)
+GeneralUtilities`SetUsage[ CurrentChatSettings, "\
+CurrentChatSettings[obj$, \"key$\"] gives the current chat settings for the CellObject or NotebookObject obj$ for the specified key.
+CurrentChatSettings[obj$] gives all current chat settings for obj$.
+CurrentChatSettings[] is equivalent to CurrentChatSettings[EvaluationCell[]].
+CurrentChatSettings[\"key$\"] is equivalent to CurrentChatSettings[EvaluationCell[], \"key$\"].\
+" ];
+
+CurrentChatSettings[ ] := catchMine @
+    If[ TrueQ @ $Notebooks,
+        CurrentChatSettings @ EvaluationCell[ ],
+        $defaultChatSettings
+    ];
+
+CurrentChatSettings[ key_String ] := catchMine @
+    If[ TrueQ @ $Notebooks,
+        CurrentChatSettings[ EvaluationCell[ ], key ],
+        Lookup[ $defaultChatSettings, key, Inherited ]
+    ];
+
+CurrentChatSettings[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession ] := catchMine @
+    If[ TrueQ @ $Notebooks,
+        currentChatSettings @ obj,
+        $defaultChatSettings
+    ];
+
+CurrentChatSettings[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := catchMine @
+    If[ TrueQ @ $Notebooks,
+        currentChatSettings[ obj, key ],
+        Lookup[ $defaultChatSettings, key, Inherited ]
+    ];
+
+CurrentChatSettings[ args___ ] :=
+    catchMine @ throwFailure[ "InvalidArguments", CurrentChatSettings, HoldForm @ CurrentChatSettings @ args ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -369,6 +414,7 @@ currentChatSettings[ cell0_CellObject ] := Catch @ Enclose[
             styles = cellStyles @ cell;
         ];
 
+        (* TODO: make these based on the ChatDelimiter tagging rule instead of style name *)
         If[ MemberQ[ styles, $$chatDelimiterStyle ], Throw @ currentChatSettings0 @ cell ];
 
         nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
@@ -465,7 +511,7 @@ currentChatSettings[ cell0_CellObject, key_String ] := Catch @ Enclose[
         ];
 
         values = AbsoluteCurrentValue[
-            DeleteMissing @ { delimiter, cell },
+            DeleteMissing @ { cell, delimiter },
             { TaggingRules, "ChatNotebookSettings", key }
         ];
 
@@ -530,7 +576,7 @@ checkEvaluationCell // endDefinition;
 rootEvaluationCell // beginDefinition;
 
 (* Try `EvaluationCell[]` first by default: *)
-rootEvaluationCell[ ] := rootEvaluationCell @ EvaluationCell[ ];
+rootEvaluationCell[ ] := rootEvaluationCell @ (FinishDynamic[ ]; EvaluationCell[ ]);
 
 (* If `EvaluationCell[ ]` returned `$Failed` try one more time: *)
 rootEvaluationCell[ $Failed ] :=
@@ -585,16 +631,18 @@ cellInformation[ nbo_NotebookObject ] := cellInformation @ Cells @ nbo;
 cellInformation[ cells: { ___CellObject } ] := Map[
     Association,
     Transpose @ {
-        Thread[ "CellObject" -> cells ],
         Developer`CellInformation @ cells,
-        Thread[ "CellAutoOverwrite" -> CurrentValue[ cells, CellAutoOverwrite ] ]
+        Thread[ "CellObject"           -> cells ],
+        Thread[ "CellAutoOverwrite"    -> CurrentValue[ cells, CellAutoOverwrite ] ],
+        Thread[ "ChatNotebookSettings" -> AbsoluteCurrentValue[ cells, { TaggingRules, "ChatNotebookSettings" } ] ]
     }
 ];
 
 cellInformation[ cell_CellObject ] := Association[
-    "CellObject" -> cell,
     Developer`CellInformation @ cell,
-    "CellAutoOverwrite" -> CurrentValue[ cell, CellAutoOverwrite ]
+    "CellObject"           -> cell,
+    "CellAutoOverwrite"    -> CurrentValue[ cell, CellAutoOverwrite ],
+    "ChatNotebookSettings" -> AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ]
 ];
 
 cellInformation // endDefinition;
@@ -784,8 +832,7 @@ withNoRenderUpdates // endDefinition;
 (* ::Subsection::Closed:: *)
 (*parentNotebook*)
 parentNotebook // beginDefinition;
-parentNotebook[ cell_CellObject ] /; $cloudNotebooks := Notebooks @ cell;
-parentNotebook[ cell_CellObject ] := ParentNotebook @ cell;
+parentNotebook[ obj: _CellObject|_BoxObject ] := Notebooks @ obj;
 parentNotebook // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -907,6 +954,25 @@ compressUntilViewed[ expr_ ] :=
     ];
 
 compressUntilViewed // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Misc*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*replaceCellContext*)
+replaceCellContext // beginDefinition;
+
+replaceCellContext[ expr_ ] := ReplaceAll[
+    expr,
+    s_Symbol /; AtomQ @ Unevaluated @ s && Context @ Unevaluated @ s === "$CellContext`" :>
+        With[ { new = ToExpression[ $Context <> SymbolName @ Unevaluated @ s, InputForm, $ConditionHold ] },
+            RuleCondition[ new, True ]
+        ]
+];
+
+replaceCellContext // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 15
 
     container:
-      image: wolframresearch/wolframengine:13.2
+      image: wolframresearch/wolframengine:13.3
       options: --user root
 
     env:
@@ -42,7 +42,7 @@ jobs:
     timeout-minutes: 30
 
     container:
-      image: wolframresearch/wolframengine:13.2
+      image: wolframresearch/wolframengine:13.3
       options: --user root
 
     env:
@@ -70,6 +70,7 @@ jobs:
       run: |
         git config --global --add safe.directory $(pwd)
         gh release create "${{ env.PACLET_RELEASE_TAG }}" "${{ env.PACLET_PATH }}#${{ env.PACLET_FILE }}" \
+            --target="${{ github.ref }}" \
             --repo="${{ env.GITHUB_REPOSITORY }}" \
             --title="Release ${{ env.PACLET_RELEASE_TAG }}" \
             --generate-notes
@@ -82,7 +83,7 @@ jobs:
     timeout-minutes: 30
 
     container:
-      image: wolframresearch/wolframengine:13.2
+      image: wolframresearch/wolframengine:13.3
       options: --user root
 
     env:
