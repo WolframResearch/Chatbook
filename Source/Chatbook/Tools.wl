@@ -391,14 +391,19 @@ initTools // endDefinition;
 installLLMFunctions // beginDefinition;
 
 installLLMFunctions[ ] := Enclose[
-    Module[ { paclet, opts },
+    Module[ { before, paclet, opts, reload },
+        before = Quiet @ PacletObject[ "Wolfram/LLMFunctions" ];
         paclet = ConfirmBy[ PacletInstall[ "Wolfram/LLMFunctions" ], PacletObjectQ, "PacletInstall" ];
+
         If[ ! TrueQ @ Quiet @ PacletNewerQ[ paclet, "1.2.1" ],
             opts = If[ $CloudEvaluation, PacletSite -> "https://pacletserver.wolfram.com", UpdatePacletSites -> True ];
             paclet = ConfirmBy[ PacletInstall[ "Wolfram/LLMFunctions", opts ], PacletObjectQ, "PacletUpdate" ];
-            Block[ { $ContextPath }, Get[ "Wolfram`LLMFunctions`" ] ]
+            ConfirmAssert[ PacletNewerQ[ paclet, "1.2.1" ], "PacletVersion" ];
+            reload = True,
+            reload = PacletObjectQ @ before && PacletNewerQ[ paclet, before ]
         ];
-        ConfirmAssert[ PacletNewerQ[ paclet, "1.2.1" ], "PacletVersion" ];
+
+        If[ TrueQ @ reload, reloadLLMFunctions[ ] ];
         Needs[ "Wolfram`LLMFunctions`" -> None ];
         installLLMFunctions[ ] = paclet
     ],
@@ -406,6 +411,32 @@ installLLMFunctions[ ] := Enclose[
 ];
 
 installLLMFunctions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reloadLLMFunctions*)
+reloadLLMFunctions // beginDefinition;
+
+reloadLLMFunctions[ ] := Enclose[
+    Module[ { paclet, files },
+        paclet = ConfirmBy[ PacletObject[ "Wolfram/LLMFunctions" ], PacletObjectQ, "PacletObject" ];
+        files = Select[ $LoadedFiles, StringContainsQ[ "LLMFunctions" ] ];
+        If[ ! AnyTrue[ files, StringStartsQ @ paclet[ "Location" ] ],
+            (* Force paclet to reload if the new one has not been loaded *)
+            WithCleanup[
+                Unprotect @ $Packages,
+                $Packages = Select[ $Packages, Not @* StringStartsQ[ "Wolfram`LLMFunctions`" ] ];
+                ClearAll[ "Wolfram`LLMFunctions`*" ];
+                ClearAll[ "Wolfram`LLMFunctions`*`*" ];
+                Block[ { $ContextPath }, Get[ "Wolfram`LLMFunctions`" ] ],
+                Protect @ $Packages
+            ]
+        ]
+    ],
+    throwInternalFailure[ reloadLLMFunctions[ ], ## ] &
+];
+
+reloadLLMFunctions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
