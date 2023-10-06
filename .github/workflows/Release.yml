@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 15
 
     container:
-      image: wolframresearch/wolframengine:13.2
+      image: wolframresearch/wolframengine:13.3
       options: --user root
 
     env:
@@ -42,7 +42,7 @@ jobs:
     timeout-minutes: 30
 
     container:
-      image: wolframresearch/wolframengine:13.2
+      image: wolframresearch/wolframengine:13.3
       options: --user root
 
     env:
@@ -83,7 +83,7 @@ jobs:
     timeout-minutes: 30
 
     container:
-      image: wolframresearch/wolframengine:13.2
+      image: wolframresearch/wolframengine:13.3
       options: --user root
 
     env:
