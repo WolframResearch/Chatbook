@@ -3,46 +3,50 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`CreateChatNotebook`" ];
 
-System`ChatObject;
+HoldComplete[
+    System`ChatObject
+];
 
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"            ];
 Needs[ "Wolfram`Chatbook`Common`"     ];
-Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
-Needs[ "Wolfram`Chatbook`Tools`"      ];
 Needs[ "Wolfram`Chatbook`Formatting`" ];
-Needs[ "Wolfram`Chatbook`Actions`"    ];
+Needs[ "Wolfram`Chatbook`SendChat`"   ];
 Needs[ "Wolfram`Chatbook`UI`"         ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*CreateChatNotebook*)
 CreateChatNotebook // Options = {
-    "Assistance"                        -> Automatic,
-    "AutoFormat"                        -> True,
-    "BasePrompt"                        -> Automatic,
-    "ChatContextCellProcessingFunction" -> Automatic,
-    "ChatContextPostEvaluationFunction" -> Automatic,
-    "ChatContextPreprompt"              -> Automatic,
-    "ChatDrivenNotebook"                -> False,
-    "ChatHistoryLength"                 -> 25,
-    "DynamicAutoFormat"                 -> Automatic,
-    "FrequencyPenalty"                  -> 0.1,
-    "IncludeHistory"                    -> Automatic,
-    "LLMEvaluator"                      -> "CodeAssistant",
-    "MaxTokens"                         -> Automatic,
-    "MergeMessages"                     -> True,
-    "Model"                             -> "gpt-3.5-turbo",
-    "OpenAIKey"                         -> Automatic,
-    "PresencePenalty"                   -> 0.1,
-    "ShowMinimized"                     -> Automatic,
-    "StreamingOutputMethod"             -> Automatic,
-    "Temperature"                       -> 0.7,
-    "ToolOptions"                       :> $DefaultToolOptions,
-    "Tools"                             -> Automatic,
-    "ToolsEnabled"                      -> Automatic,
-    "TopP"                              -> 1
+    "Assistance"              -> Automatic,
+    "AutoFormat"              -> True,
+    "BasePrompt"              -> Automatic,
+    "CellToMessageFunction"   -> CellToChatMessage,
+    "ChatContextPreprompt"    -> Automatic,
+    "ChatDrivenNotebook"      -> False,
+    "ChatFormattingFunction"  -> FormatChatOutput,
+    "ChatHistoryLength"       -> 25,
+    "DynamicAutoFormat"       -> Automatic,
+    "EnableChatGroupSettings" -> False,
+    "EnableLLMServices"       -> Automatic, (* TODO: remove this once LLMServices is widely available *)
+    "FrequencyPenalty"        -> 0.1,
+    "HandlerFunctions"        :> $DefaultChatHandlerFunctions,
+    "HandlerFunctionsKeys"    -> Automatic,
+    "IncludeHistory"          -> Automatic,
+    "LLMEvaluator"            -> "CodeAssistant",
+    "MaxTokens"               -> Automatic,
+    "MergeMessages"           -> True,
+    "Model"                   :> $DefaultModel,
+    "OpenAIKey"               -> Automatic, (* TODO: remove this once LLMServices is widely available *)
+    "PresencePenalty"         -> 0.1,
+    "ShowMinimized"           -> Automatic,
+    "StreamingOutputMethod"   -> Automatic,
+    "Temperature"             -> 0.7,
+    "ToolOptions"             :> $DefaultToolOptions,
+    "Tools"                   -> Automatic,
+    "ToolsEnabled"            -> Automatic,
+    "TopP"                    -> 1
 };
 
 
@@ -57,9 +61,8 @@ CreateChatNotebook[ nbo_NotebookObject, opts: OptionsPattern[ { CreateChatNotebo
         nbo
     ];
 
-CreateChatNotebook[ chat_ChatObject, opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] :=
+CreateChatNotebook[ chat: HoldPattern[ _ChatObject ], opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] :=
     catchMine @ createNotebookFromChatObject[ chat, opts ];
-
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -79,14 +82,16 @@ $cloudSelectionMover = Cell @ BoxData @ ToBoxes @ Dynamic[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*createChatNotebook*)
-createChatNotebook // SetFallthroughError;
+createChatNotebook // beginDefinition;
 createChatNotebook[ opts___ ] /; $cloudNotebooks := createCloudChatNotebook @ opts;
 createChatNotebook[ opts___ ] := createLocalChatNotebook @ opts;
+createChatNotebook // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*createCloudChatNotebook*)
-createCloudChatNotebook // SetFallthroughError;
+createCloudChatNotebook // beginDefinition;
+
 createCloudChatNotebook[ opts: OptionsPattern[ CreateChatNotebook ] ] :=
     Module[ { settings, options, notebook, deployed },
         settings = makeChatNotebookSettings @ Association @ FilterRules[ { opts }, Options @ CreateChatNotebook ];
@@ -96,6 +101,8 @@ createCloudChatNotebook[ opts: OptionsPattern[ CreateChatNotebook ] ] :=
         SystemOpen @ deployed;
         deployed
     ];
+
+createCloudChatNotebook // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

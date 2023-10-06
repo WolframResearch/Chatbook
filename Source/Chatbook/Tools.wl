@@ -7,6 +7,7 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
+HoldComplete[
 `$attachments;
 `$defaultChatTools;
 `$toolConfiguration;
@@ -27,23 +28,23 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 `toolOptionValue;
 `toolRequestParser;
 `withToolBox;
+];
 
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                   ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
 Needs[ "Wolfram`Chatbook`Formatting`"        ];
-Needs[ "Wolfram`Chatbook`Serialization`"     ];
-Needs[ "Wolfram`Chatbook`Utils`"             ];
-Needs[ "Wolfram`Chatbook`Sandbox`"           ];
 Needs[ "Wolfram`Chatbook`Prompting`"         ];
 Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
+Needs[ "Wolfram`Chatbook`Sandbox`"           ];
+Needs[ "Wolfram`Chatbook`Serialization`"     ];
+Needs[ "Wolfram`Chatbook`Utils`"             ];
 
-PacletInstall[ "Wolfram/LLMFunctions" ];
-Needs[ "Wolfram`LLMFunctions`" ];
-
-System`LLMTool;
-System`LLMConfiguration;
+HoldComplete[
+    System`LLMTool;
+    System`LLMConfiguration;
+];
 
 (* TODO:
     ImageSynthesize
@@ -246,7 +247,7 @@ selectTools0[ name_String, Automatic|Inherited ] := selectTools0[ name, Lookup[ 
 selectTools0[ name_String, None ] := KeyDropFrom[ $selectedTools, name ];
 
 (* Select a literal LLMTool: *)
-selectTools0[ name_String, tool_LLMTool ] := $selectedTools[ name ] = $toolBox[ name ] = tool;
+selectTools0[ name_String, tool: HoldPattern[ _LLMTool ] ] := $selectedTools[ name ] = $toolBox[ name ] = tool;
 
 (* Tool not found: *)
 selectTools0[ name_String, Missing[ "KeyAbsent", name_ ] ] :=
@@ -315,7 +316,7 @@ getToolNames // endDefinition;
 (*getCachedToolName*)
 getCachedToolName // beginDefinition;
 
-getCachedToolName[ tool_LLMTool ] := Enclose[
+getCachedToolName[ tool: HoldPattern[ _LLMTool ] ] := Enclose[
     Module[ { name },
         name = ConfirmBy[ toolName @ tool, StringQ, "Name" ];
         ConfirmAssert[ AssociationQ @ $toolBox, "ToolBox" ];
@@ -378,11 +379,64 @@ initTools[ ] := initTools[ ] = (
         ]
     ];
 
-    PacletInstall[ "Wolfram/LLMFunctions" ];
-    Needs[ "Wolfram`LLMFunctions`" -> None ];
+
+    installLLMFunctions[ ];
 );
 
 initTools // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*installLLMFunctions*)
+installLLMFunctions // beginDefinition;
+
+installLLMFunctions[ ] := Enclose[
+    Module[ { before, paclet, opts, reload },
+        before = Quiet @ PacletObject[ "Wolfram/LLMFunctions" ];
+        paclet = ConfirmBy[ PacletInstall[ "Wolfram/LLMFunctions" ], PacletObjectQ, "PacletInstall" ];
+
+        If[ ! TrueQ @ Quiet @ PacletNewerQ[ paclet, "1.2.1" ],
+            opts = If[ $CloudEvaluation, PacletSite -> "https://pacletserver.wolfram.com", UpdatePacletSites -> True ];
+            paclet = ConfirmBy[ PacletInstall[ "Wolfram/LLMFunctions", opts ], PacletObjectQ, "PacletUpdate" ];
+            ConfirmAssert[ PacletNewerQ[ paclet, "1.2.1" ], "PacletVersion" ];
+            reload = True,
+            reload = PacletObjectQ @ before && PacletNewerQ[ paclet, before ]
+        ];
+
+        If[ TrueQ @ reload, reloadLLMFunctions[ ] ];
+        Needs[ "Wolfram`LLMFunctions`" -> None ];
+        installLLMFunctions[ ] = paclet
+    ],
+    throwInternalFailure[ installLLMFunctions[ ], ## ] &
+];
+
+installLLMFunctions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reloadLLMFunctions*)
+reloadLLMFunctions // beginDefinition;
+
+reloadLLMFunctions[ ] := Enclose[
+    Module[ { paclet, files },
+        paclet = ConfirmBy[ PacletObject[ "Wolfram/LLMFunctions" ], PacletObjectQ, "PacletObject" ];
+        files = Select[ $LoadedFiles, StringContainsQ[ "LLMFunctions" ] ];
+        If[ ! AnyTrue[ files, StringStartsQ @ paclet[ "Location" ] ],
+            (* Force paclet to reload if the new one has not been loaded *)
+            WithCleanup[
+                Unprotect @ $Packages,
+                $Packages = Select[ $Packages, Not @* StringStartsQ[ "Wolfram`LLMFunctions`" ] ];
+                ClearAll[ "Wolfram`LLMFunctions`*" ];
+                ClearAll[ "Wolfram`LLMFunctions`*`*" ];
+                Block[ { $ContextPath }, Get[ "Wolfram`LLMFunctions`" ] ],
+                Protect @ $Packages
+            ]
+        ]
+    ],
+    throwInternalFailure[ reloadLLMFunctions[ ], ## ] &
+];
+
+reloadLLMFunctions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -441,11 +495,13 @@ $toolPrompt := TemplateObject[
     {
         $toolPre,
         TemplateSequence[
-            StringTemplate[
-                "Name: `Name`\nDescription: `Description`\nArguments: `Parameters`\n\n",
-                InsertionFunction -> toolTemplateDataString
+            TemplateExpression @ StringTemplate[
+                "Tool Name: `Name`\nDescription: `Description`\nSchema:\n`Schema`\n\n"
             ],
-            TemplateExpression[ #[ "Data" ] & /@ TemplateSlot[ "Tools" ] ]
+            TemplateExpression @ Map[
+                Append[ #[ "Data" ], "Schema" -> ExportString[ #[ "JSONSchema" ], "JSON" ] ] &,
+                TemplateSlot[ "Tools" ]
+            ]
         ],
         $toolPost
     },
@@ -457,15 +513,15 @@ $toolPrompt := TemplateObject[
 $toolPre = "\
 # Tool Instructions
 
-You have access to system tools which can be used to do things, fetch data, compute, etc. while you create your response. Here are the available tools:
+You have access to tools which can be used to do things, fetch data, compute, etc. while you create your response. \
+Each tool takes input as JSON following a JSON schema. Here are the available tools and their associated schemas:
 
 ";
 
 
 $toolPost := "
 
-To call a tool, write the following on a new line at any time during your response:
-
+To call a tool, write the following at any time during your response:
 
 TOOLCALL: <tool name>
 {
@@ -475,9 +531,12 @@ TOOLCALL: <tool name>
 ENDARGUMENTS
 ENDTOOLCALL
 
+Always use valid JSON to specify the parameters in the tool call. Always follow the tool's JSON schema to specify the \
+parameters in the tool call. Fill in the values in <> brackets with the values for the particular tool. Provide as \
+many parameters as the tool requires. Always make one tool call at a time. Always write two line breaks before each \
+tool call.
 
-The system will execute the requested tool call and you will receive a system message containing the result.
-
+The system will execute the requested tool call and you will receive a system message containing the result. \
 You can then use this result to finish writing your response for the user.
 
 You must write the TOOLCALL in your CURRENT response. \
@@ -490,10 +549,6 @@ NEVER state that a tool cannot be used for a particular task without trying it f
 You did not create these tools, so you do not know what they can and cannot do.
 
 " <> $fullExamples;
-
-
-toolTemplateDataString[ str_String ] := str;
-toolTemplateDataString[ expr_ ] := ToString[ expr, InputForm ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -657,24 +712,21 @@ $documentationSearchDescription = "\
 Search Wolfram Language documentation for symbols and more. \
 Follow up search results with the documentation lookup tool to get the full information.";
 
-$defaultChatTools0[ "DocumentationSearcher" ] = LLMTool[
-    <|
-        toolDefaultData[ "DocumentationSearcher" ],
-        "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconDocumentationSearcher" ],
-        "Description"        -> $documentationSearchDescription,
-        "Function"           -> documentationSearch,
-        "FormattingFunction" -> toolAutoFormatter,
-        "Source"             -> "BuiltIn",
-        "Parameters"         -> {
-            "query" -> <|
-                "Interpreter" -> "String",
-                "Help"        -> "A string representing a documentation search query",
-                "Required"    -> True
-            |>
-        }
-    |>,
-    { }
-];
+$defaultChatTools0[ "DocumentationSearcher" ] = <|
+    toolDefaultData[ "DocumentationSearcher" ],
+    "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconDocumentationSearcher" ],
+    "Description"        -> $documentationSearchDescription,
+    "Function"           -> documentationSearch,
+    "FormattingFunction" -> toolAutoFormatter,
+    "Source"             -> "BuiltIn",
+    "Parameters"         -> {
+        "query" -> <|
+            "Interpreter" -> "String",
+            "Help"        -> "A string representing a documentation search query",
+            "Required"    -> True
+        |>
+    }
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -691,24 +743,21 @@ documentationSearch // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*DocumentationLookup*)
-$defaultChatTools0[ "DocumentationLookup" ] = LLMTool[
-    <|
-        toolDefaultData[ "DocumentationLookup" ],
-        "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconDocumentationLookup" ],
-        "Description"        -> "Get documentation pages for Wolfram Language symbols.",
-        "Function"           -> documentationLookup,
-        "FormattingFunction" -> toolAutoFormatter,
-        "Source"             -> "BuiltIn",
-        "Parameters"         -> {
-            "names" -> <|
-                "Interpreter" -> DelimitedSequence[ "WolframLanguageSymbol", "," ],
-                "Help"        -> "One or more Wolfram Language symbols separated by commas",
-                "Required"    -> True
-            |>
-        }
-    |>,
-    { }
-];
+$defaultChatTools0[ "DocumentationLookup" ] = <|
+    toolDefaultData[ "DocumentationLookup" ],
+    "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconDocumentationLookup" ],
+    "Description"        -> "Get documentation pages for Wolfram Language symbols.",
+    "Function"           -> documentationLookup,
+    "FormattingFunction" -> toolAutoFormatter,
+    "Source"             -> "BuiltIn",
+    "Parameters"         -> {
+        "names" -> <|
+            "Interpreter" -> DelimitedSequence[ "WolframLanguageSymbol", "," ],
+            "Help"        -> "One or more Wolfram Language symbols separated by commas",
+            "Required"    -> True
+        |>
+    }
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -817,24 +866,21 @@ The evaluator supports interactive content such as Manipulate.
 You have read access to local files.
 ";
 
-$defaultChatTools0[ "WolframLanguageEvaluator" ] = LLMTool[
-    <|
-        toolDefaultData[ "WolframLanguageEvaluator" ],
-        "Icon"               -> RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
-        "Description"        -> $sandboxEvaluateDescription,
-        "Function"           -> sandboxEvaluate,
-        "FormattingFunction" -> sandboxFormatter,
-        "Source"             -> "BuiltIn",
-        "Parameters"         -> {
-            "code" -> <|
-                "Interpreter" -> "String",
-                "Help"        -> "Wolfram Language code to evaluate",
-                "Required"    -> True
-            |>
-        }
-    |>,
-    { }
-];
+$defaultChatTools0[ "WolframLanguageEvaluator" ] = <|
+    toolDefaultData[ "WolframLanguageEvaluator" ],
+    "Icon"               -> RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
+    "Description"        -> $sandboxEvaluateDescription,
+    "Function"           -> sandboxEvaluate,
+    "FormattingFunction" -> sandboxFormatter,
+    "Source"             -> "BuiltIn",
+    "Parameters"         -> {
+        "code" -> <|
+            "Interpreter" -> "String",
+            "Help"        -> "Wolfram Language code to evaluate",
+            "Required"    -> True
+        |>
+    }
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -872,29 +918,26 @@ physics, geography, history, art, astronomy, and more.";
 
 $wolframAlphaIcon = RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEBitmaps", "InsertionAlpha" ];
 
-$defaultChatTools0[ "WolframAlpha" ] = LLMTool[
-    <|
-        toolDefaultData[ "WolframAlpha" ],
-        "Icon"               -> $wolframAlphaIcon,
-        "Description"        -> $wolframAlphaDescription,
-        "Function"           -> getWolframAlphaText,
-        "FormattingFunction" -> wolframAlphaResultFormatter,
-        "Source"             -> "BuiltIn",
-        "Parameters"         -> {
-            "input" -> <|
-                "Interpreter" -> "String",
-                "Help"        -> "the input",
-                "Required"    -> True
-            |>(*,
-            "assumption" -> <|
-                "Interpreter" -> "String",
-                "Help"        -> "the assumption to use, passed back from a previous query with the same input.",
-                "Required"    -> False
-            |>*)
-        }
-    |>,
-    { }
-];
+$defaultChatTools0[ "WolframAlpha" ] = <|
+    toolDefaultData[ "WolframAlpha" ],
+    "Icon"               -> $wolframAlphaIcon,
+    "Description"        -> $wolframAlphaDescription,
+    "Function"           -> getWolframAlphaText,
+    "FormattingFunction" -> wolframAlphaResultFormatter,
+    "Source"             -> "BuiltIn",
+    "Parameters"         -> {
+        "input" -> <|
+            "Interpreter" -> "String",
+            "Help"        -> "the input",
+            "Required"    -> True
+        |>(*,
+        "assumption" -> <|
+            "Interpreter" -> "String",
+            "Help"        -> "the assumption to use, passed back from a previous query with the same input.",
+            "Required"    -> False
+        |>*)
+    }
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1031,24 +1074,21 @@ waResultText0 // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*WebSearch*)
-$defaultChatTools0[ "WebSearcher" ] = LLMTool[
-    <|
-        toolDefaultData[ "WebSearcher" ],
-        "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconWebSearcher" ],
-        "Description"        -> "Search the web.",
-        "Function"           -> webSearch,
-        "FormattingFunction" -> toolAutoFormatter,
-        "Source"             -> "BuiltIn",
-        "Parameters"         -> {
-            "query" -> <|
-                "Interpreter" -> "String",
-                "Help"        -> "Search query text",
-                "Required"    -> True
-            |>
-        }
-    |>,
-    { }
-];
+$defaultChatTools0[ "WebSearcher" ] = <|
+    toolDefaultData[ "WebSearcher" ],
+    "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconWebSearcher" ],
+    "Description"        -> "Search the web.",
+    "Function"           -> webSearch,
+    "FormattingFunction" -> toolAutoFormatter,
+    "Source"             -> "BuiltIn",
+    "Parameters"         -> {
+        "query" -> <|
+            "Interpreter" -> "String",
+            "Help"        -> "Search query text",
+            "Required"    -> True
+        |>
+    }
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1073,36 +1113,37 @@ webSearch // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$webSearchResultTemplate*)
-$webSearchResultTemplate = StringTemplate[
-    "Results\n-------\n\n`1`\n\n-------\n\nUse the web_fetcher tool to get the content of a URL."
+$webSearchResultTemplate := StringTemplate @ StringJoin[
+    "Results\n-------\n\n`1`\n\n-------",
+    If[ KeyExistsQ[ $selectedTools, "WebFetcher" ],
+        "\n\nUse the web_fetcher tool to get the content of a URL.",
+        ""
+    ]
 ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*WebFetch*)
-$defaultChatTools0[ "WebFetcher" ] = LLMTool[
-    <|
-        toolDefaultData[ "WebFetcher" ],
-        "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconWebFetcher" ],
-        "Description"        -> "Fetch plain text or image links from a URL.",
-        "Function"           -> webFetch,
-        "FormattingFunction" -> toolAutoFormatter,
-        "Source"             -> "BuiltIn",
-        "Parameters"  -> {
-            "url" -> <|
-                "Interpreter" -> "URL",
-                "Help"        -> "The URL",
-                "Required"    -> True
-            |>,
-            "format" -> <|
-                "Interpreter" -> { "Plaintext", "ImageLinks" },
-                "Help"        -> "The type of content to retrieve (\"Plaintext\" or \"ImageLinks\")",
-                "Required"    -> True
-            |>
-        }
-    |>,
-    { }
-];
+$defaultChatTools0[ "WebFetcher" ] = <|
+    toolDefaultData[ "WebFetcher" ],
+    "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconWebFetcher" ],
+    "Description"        -> "Fetch plain text or image links from a URL.",
+    "Function"           -> webFetch,
+    "FormattingFunction" -> toolAutoFormatter,
+    "Source"             -> "BuiltIn",
+    "Parameters"  -> {
+        "url" -> <|
+            "Interpreter" -> "URL",
+            "Help"        -> "The URL",
+            "Required"    -> True
+        |>,
+        "format" -> <|
+            "Interpreter" -> { "Plaintext", "ImageLinks" },
+            "Help"        -> "The type of content to retrieve (\"Plaintext\" or \"ImageLinks\")",
+            "Required"    -> True
+        |>
+    }
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1195,24 +1236,21 @@ startWebSession // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*WebImageSearch*)
-$defaultChatTools0[ "WebImageSearcher" ] = LLMTool[
-    <|
-        toolDefaultData[ "WebImageSearcher" ],
-        "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconWebImageSearcher" ],
-        "Description"        -> "Search the web for images.",
-        "Function"           -> webImageSearch,
-        "FormattingFunction" -> toolAutoFormatter,
-        "Source"             -> "BuiltIn",
-        "Parameters"         -> {
-            "query" -> <|
-                "Interpreter" -> "String",
-                "Help"        -> "Search query text",
-                "Required"    -> True
-            |>
-        }
-    |>,
-    { }
-];
+$defaultChatTools0[ "WebImageSearcher" ] = <|
+    toolDefaultData[ "WebImageSearcher" ],
+    "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconWebImageSearcher" ],
+    "Description"        -> "Search the web for images.",
+    "Function"           -> webImageSearch,
+    "FormattingFunction" -> toolAutoFormatter,
+    "Source"             -> "BuiltIn",
+    "Parameters"         -> {
+        "query" -> <|
+            "Interpreter" -> "String",
+            "Help"        -> "Search query text",
+            "Required"    -> True
+        |>
+    }
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1655,7 +1693,9 @@ getToolFormattingFunction // endDefinition;
 (*Package Footer*)
 
 (* Sort tools to their default ordering: *)
-$defaultChatTools0 = Association[ KeyTake[ $defaultChatTools0, $defaultToolOrder ], $defaultChatTools0 ];
+$defaultChatTools0 = Block[ { LLMTool },
+    LLMTool[ #, { } ] & /@ Association[ KeyTake[ $defaultChatTools0, $defaultToolOrder ], $defaultChatTools0 ]
+];
 
 If[ Wolfram`ChatbookInternal`$BuildingMX,
     $toolConfiguration;

@@ -7,16 +7,14 @@ BeginPackage[ "Wolfram`Chatbook`PersonaManager`" ];
 `CreatePersonaManagerDialog;
 `CreatePersonaManagerPanel;
 
-(* TODO: create a Dialogs.wl file containing definitions to share between this and the persona dialog *)
-
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                   ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
-Needs[ "Wolfram`Chatbook`Personas`"          ];
-Needs[ "Wolfram`Chatbook`UI`"                ];
 Needs[ "Wolfram`Chatbook`Dialogs`"           ];
+Needs[ "Wolfram`Chatbook`Personas`"          ];
 Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
+Needs[ "Wolfram`Chatbook`UI`"                ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

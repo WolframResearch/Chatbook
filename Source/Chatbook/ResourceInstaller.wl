@@ -11,13 +11,13 @@ BeginPackage[ "Wolfram`Chatbook`ResourceInstaller`" ];
 `ResourceInstallLocation;
 `ResourceUninstall;
 
-`$installedResourceTrigger;
 `channelCleanup;
 
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"          ];
 Needs[ "Wolfram`Chatbook`Common`"   ];
+Needs[ "Wolfram`Chatbook`Dynamics`" ];
 Needs[ "Wolfram`Chatbook`Personas`" ];
 
 $ContextAliases[ "pi`" ] = "Wolfram`Chatbook`PersonaInstaller`Private`";
@@ -30,7 +30,6 @@ $channelPermissions       = "Public";
 $debug                    = False;
 $installableTypes         = { "Prompt", "LLMTool" };
 $installedResourceCache   = <| |>;
-$installedResourceTrigger = 0;
 $keepChannelOpen          = True;
 $resourceContexts         = { "PromptRepository`", "LLMToolRepository`" };
 
@@ -785,18 +784,18 @@ invalidateCache[ ] :=
 
 invalidateCache[ All ] := (
     $installedResourceCache = <| |>;
-    $installedResourceTrigger++
+    updateDynamics @ { "Tools", "Personas" }
 );
 
 invalidateCache[ "Prompt" ] := (
     KeyDropFrom[ $installedResourceCache, "Prompt" ];
     GetPersonaData[ ];
-    $installedResourceTrigger++
+    updateDynamics[ "Personas" ]
 );
 
-invalidateCache[ rtype: $$installableType ] := (
-    KeyDropFrom[ $installedResourceCache, rtype ];
-    $installedResourceTrigger++
+invalidateCache[ "LLMTool" ] := (
+    KeyDropFrom[ $installedResourceCache, "LLMTool" ];
+    updateDynamics[ "Tools" ]
 );
 
 invalidateCache // endDefinition;

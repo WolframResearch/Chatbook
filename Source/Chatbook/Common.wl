@@ -5,9 +5,10 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-`$cloudNotebooks;
-`$maxChatCells;
 `$closedChatCellOptions;
+`$cloudNotebooks;
+`$debug;
+`$maxChatCells;
 
 `$chatDelimiterStyles;
 `$chatIgnoredStyles;
@@ -23,6 +24,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$nestedCellStyle;
 
 `$$textDataList;
+`$$unspecified;
 
 `$catchTopTag;
 `beginDefinition;
@@ -85,6 +87,7 @@ $$excludeHistoryStyle = cellStylePattern @ $excludeHistoryStyles;
 $$nestedCellStyle     = cellStylePattern @ $nestedCellStyles;
 
 $$textDataList        = { (_String|_Cell|_StyleBox|_ButtonBox)... };
+$$unspecified         = _Missing | Automatic | Inherited;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -99,6 +102,8 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "Internal"                        -> "An unexpected error occurred. `1`",
     "InvalidAPIKey"                   -> "Invalid value for API key: `1`",
     "InvalidArguments"                -> "Invalid arguments given for `1` in `2`.",
+    "InvalidHandlerKeys"              -> "Invalid setting for HandlerFunctionsKeys: `1`; using defaults instead.",
+    "InvalidHandlers"                 -> "Invalid setting for HandlerFunctions: `1`; using defaults instead.",
     "InvalidResourceSpecification"    -> "The argument `1` is not a valid resource specification.",
     "InvalidResourceURL"              -> "The specified URL does not represent a valid resource object.",
     "InvalidStreamingOutputMethod"    -> "Invalid streaming output method: `1`.",
@@ -112,8 +117,8 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "ResourceNotInstalled"            -> "The resource `1` is not installed.",
     "ServerOverloaded"                -> "The server is currently overloaded with other requests. Please try again later.",
     "ToolNotFound"                    -> "Tool `1` not found.",
-    "UnknownResponse"                 -> "Unexpected response from OpenAI server",
-    "UnknownStatusCode"               -> "Unexpected response from OpenAI server with status code `StatusCode`"
+    "UnknownResponse"                 -> "Unexpected response from server",
+    "UnknownStatusCode"               -> "Unexpected response from server with status code `StatusCode`"
 |> ];
 
 (* ::**************************************************************************************************************:: *)
@@ -385,7 +390,7 @@ messageFailure[ args___ ] :=
         message = messageFailure0;
         WithCleanup[
             StackInhibit @ quiet @ message @ args,
-            $failed = True
+            If[ TrueQ @ $catching, $failed = True ]
         ]
     ];
 
