@@ -1409,12 +1409,13 @@ activeAIAssistantCell[
                 } ],
                 Initialization -> None
             ],
-            CellDingbat       -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
-            CellEditDuplicate -> False,
-            Editable          -> True,
-            Selectable        -> True,
-            ShowCursorTracker -> False,
-            TaggingRules      -> <| "ChatNotebookSettings" -> settings |>
+            CellDingbat          -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
+            CellEditDuplicate    -> False,
+            CellElementSpacings  -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
+            Editable             -> True,
+            Selectable           -> True,
+            ShowCursorTracker    -> False,
+            TaggingRules         -> <| "ChatNotebookSettings" -> settings |>
         ]
     ];
 
@@ -1840,7 +1841,7 @@ attachChatOutputMenu[ cell_CellObject ] := (
     NotebookDelete @ Cells[ cell, AttachedCell -> True, CellStyle -> "ChatMenu" ];
     AttachCell[
         cell,
-        Cell[ BoxData @ TemplateBox[ { "ChatOutput", RGBColor[ "#ecf0f5" ] }, "ChatMenuButton" ], "ChatMenu" ],
+        Cell[ BoxData @ TemplateBox[ { "ChatOutput", RGBColor[ "#ecf0f5" ] }, "ChatOutputButtons" ], "ChatMenu" ],
         { Right, Top },
         Offset[ { -7, -7 }, { Right, Top } ],
         { Right, Top }

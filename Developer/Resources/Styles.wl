@@ -258,7 +258,7 @@ Cell[
     Background           -> RGBColor[ "#fcfdff" ],
     CellAutoOverwrite    -> True,
     CellDingbat          -> Cell[ BoxData @ TemplateBox[ { }, "AssistantIcon" ], Background -> None ],
-    CellElementSpacings  -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
+    CellElementSpacings  -> { "CellMinHeight" -> 55, "ClosedCellHeight" -> 0 },
     CellGroupingRules    -> "OutputGrouping",
     CellMargins          -> { { 66, 25 }, { 12, 5 } },
     CellTrayWidgets      -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
@@ -621,6 +621,31 @@ Cell[
 
 (* ::Section::Closed:: *)
 (*Chat Menus*)
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatOutputButtons*)
+
+
+Cell[
+    StyleData[ "ChatOutputButtons" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> With[ { buttons = ToBoxes @ $feedbackButtons },
+            Function @ TagBox[
+                GridBox[
+                    { { TemplateBox[ { #1, #2 }, "ChatMenuButton" ] }, { buttons } },
+                    GridBoxAlignment -> { "Columns" -> { { Center } } },
+                    DefaultBaseStyle -> "Column",
+                    GridBoxItemSize  -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+                    GridBoxSpacings  -> { "Columns" -> { { Automatic } }, "Rows" -> { { 0 } } }
+                ],
+                "Column"
+            ]
+        ]
+    }
+]
+
 
 
 (* ::Subsection::Closed:: *)

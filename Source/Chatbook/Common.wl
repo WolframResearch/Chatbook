@@ -9,6 +9,9 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$cloudNotebooks;
 `$debug;
 `$maxChatCells;
+`$thisPaclet;
+`$debugData;
+`$settingsData;
 
 `$chatDelimiterStyles;
 `$chatIgnoredStyles;
@@ -466,6 +469,29 @@ $maxBugReportURLSize = 3500;
 
 $maxPartLength = 500;
 
+$thisPaclet   := PacletObject[ "Wolfram/Chatbook" ];
+$debugData    := debugData @ $thisPaclet[ "PacletInfo" ];
+$settingsData := maskOpenAIKey @ $settings;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*debugData*)
+debugData // beginDefinition;
+
+debugData[ as_Association? AssociationQ ] := <|
+    KeyTake[ as, { "Name", "Version", "ReleaseID" } ],
+    "EvaluationEnvironment" -> $EvaluationEnvironment,
+    "FrontEndVersion"       -> $frontEndVersion,
+    "KernelVersion"         -> SystemInformation[ "Kernel", "Version" ],
+    "SystemID"              -> $SystemID,
+    "Notebooks"             -> $Notebooks,
+    "DynamicEvaluation"     -> $DynamicEvaluation,
+    "SynchronousEvaluation" -> $SynchronousEvaluation,
+    "TaskEvaluation"        -> MatchQ[ $CurrentTask, _TaskObject ]
+|>;
+
+debugData // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$bugReportLink*)
@@ -477,23 +503,13 @@ $bugReportLink := Hyperlink[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*bugReportBody*)
-bugReportBody[ ] := bugReportBody @ PacletObject[ "Wolfram/Chatbook" ][ "PacletInfo" ];
+bugReportBody[ ] := bugReportBody @ $thisPaclet[ "PacletInfo" ];
 
 bugReportBody[ as_Association? AssociationQ ] :=
     TemplateApply[
         $bugReportBodyTemplate,
         TemplateVerbatim /@ <|
-            "DebugData" -> associationMarkdown[
-                KeyTake[ as, { "Name", "Version", "ReleaseID" } ],
-                "EvaluationEnvironment" -> $EvaluationEnvironment,
-                "FrontEndVersion"       -> $frontEndVersion,
-                "KernelVersion"         -> SystemInformation[ "Kernel", "Version" ],
-                "SystemID"              -> $SystemID,
-                "Notebooks"             -> $Notebooks,
-                "DynamicEvaluation"     -> $DynamicEvaluation,
-                "SynchronousEvaluation" -> $SynchronousEvaluation,
-                "TaskEvaluation"        -> MatchQ[ $CurrentTask, _TaskObject ]
-            ],
+            "DebugData"       -> associationMarkdown @ $debugData,
             "Stack"           -> $bugReportStack,
             "Settings"        -> associationMarkdown @ maskOpenAIKey @ $settings,
             "InternalFailure" -> markdownCodeBlock @ $internalFailure
