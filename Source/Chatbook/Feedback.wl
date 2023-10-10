@@ -32,7 +32,6 @@ sendFeedback // beginDefinition;
 sendFeedback[ cell_CellObject, positive: True|False ] := Enclose[
     Module[ { data },
         data = ConfirmBy[ createFeedbackData[ cell, positive ], AssociationQ, "FeedbackData" ];
-        Global`$data = data;
         ConfirmMatch[ createFeedbackDialog @ data, _NotebookObject, "FeedbackDialog" ]
     ],
     throwInternalFailure[ sendFeedback[ cell, positive ], ## ] &
@@ -46,23 +45,23 @@ sendFeedback // endDefinition;
 createFeedbackData // beginDefinition;
 
 createFeedbackData[ cell_CellObject, positive: True|False ] := Enclose[
-    Module[ { b64, wxf, data, chatData, debugData, settings, image },
+    Module[ { b64, wxf, data, chatData, systemData, settings, image },
 
-        b64       = ConfirmBy[ CurrentValue[ cell, { TaggingRules, "ChatData" } ], StringQ, "Base64" ];
-        wxf       = ConfirmBy[ BaseDecode @ b64, ByteArrayQ, "WXF" ];
-        data      = ConfirmBy[ BinaryDeserialize @ wxf, AssociationQ, "Data" ];
-        chatData  = ConfirmBy[ Lookup[ data, "Data" ], AssociationQ, "ChatData" ];
-        debugData = ConfirmBy[ $debugData, AssociationQ, "DebugData" ];
-        settings  = ConfirmBy[ Association[ $settingsData,  KeyDrop[ data, "Data" ] ], AssociationQ, "SettingsData" ];
-        image     = ConfirmBy[ cellImage @ cell, ImageQ, "Image" ];
+        b64        = ConfirmBy[ CurrentValue[ cell, { TaggingRules, "ChatData" } ], StringQ, "Base64" ];
+        wxf        = ConfirmBy[ BaseDecode @ b64, ByteArrayQ, "WXF" ];
+        data       = ConfirmBy[ BinaryDeserialize @ wxf, AssociationQ, "Data" ];
+        chatData   = ConfirmBy[ Lookup[ data, "Data" ], AssociationQ, "ChatData" ];
+        systemData = ConfirmBy[ $debugData, AssociationQ, "SystemData" ];
+        settings   = ConfirmBy[ Association[ $settingsData,  KeyDrop[ data, "Data" ] ], AssociationQ, "SettingsData" ];
+        image      = ConfirmBy[ cellImage @ cell, ImageQ, "Image" ];
 
         <|
             "ChatData"  -> chatData,
-            "DebugData" -> debugData,
             "Image"     -> image,
             "Positive"  -> positive,
             "Settings"  -> settings,
-            "Timestamp" -> DateString[ "ISODateTime" ]
+            "System"    -> systemData,
+            "Timestamp" -> StringTrim[ DateString[ "ISODateTime" ], "Z"|"z" ] <> "Z"
         |>
     ],
     throwInternalFailure[ createFeedbackData[ cell, positive ], ##1 ] &
@@ -82,7 +81,8 @@ cellImage[ cellObject_CellObject ] := Enclose[
         opts  = ConfirmMatch[ Options @ nbo, KeyValuePattern @ { }, "Options" ];
         nb    = Notebook[ { $blankCell, cell, $blankCell }, Sequence @@ opts ];
         image = ConfirmBy[ Rasterize @ nb, ImageQ, "Rasterize" ];
-        cellImage[ cellObject ] = image
+        (* cellImage[ cellObject ] = image *)
+        image
     ],
     throwInternalFailure[ cellImage @ cellObject, ## ] &
 ];
@@ -99,7 +99,7 @@ createFeedbackDialog // beginDefinition;
 
 createFeedbackDialog[ data0_Association ] := createDialog[
     DynamicModule[ { data = data0, choices },
-        choices = <| "CellImage" -> True, "ChatHistory" -> True, "LastChat" -> True |>;
+        choices = <| "CellImage" -> False, "ChatHistory" -> True, "Messages" -> True, "SystemMessage" -> True |>;
         createFeedbackDialogContent[ Dynamic @ data, Dynamic @ choices ]
     ],
     WindowTitle -> "Send Wolfram AI Chat Feedback"
@@ -131,29 +131,52 @@ createFeedbackDialogContent[ Dynamic[ data_ ], Dynamic[ choices_ ] ] := Enclose[
                     },
                     Alignment -> { Automatic, Center }
                 ],
-                dialogBody[ "Content to be sent:", { Automatic, { 0, Automatic } } ],
+                dialogBody[ "Included content:", { Automatic, { 0, Automatic } } ],
                 dialogBody @ Grid[
                     {
                         {
                             Checkbox @ Dynamic[
-                                choices[ "LastChat" ],
+                                choices[ "Messages" ],
                                 Function[
-                                    If[ ! #, choices[ "ChatHistory" ] = False ];
-                                    choices[ "LastChat" ] = #
+                                    choices[ "SystemMessage" ] = choices[ "ChatHistory" ] = #;
+                                    choices[ "Messages" ] = #
                                 ]
                             ],
-                            "Chat input and output"
+                            "Chat messages"
                         },
                         {
-                            Checkbox[
-                                Dynamic @ choices[ "ChatHistory" ],
-                                Enabled -> Dynamic @ choices[ "LastChat" ]
-                            ],
-                            "Include chat history used to generate this output"
+                            "",
+                            Grid[
+                                {
+                                    {
+                                        Checkbox[
+                                            Dynamic @ choices[ "SystemMessage" ],
+                                            Enabled -> Dynamic @ choices[ "Messages" ]
+                                        ],
+                                        "Include system message"
+                                    },
+                                    {
+                                        Checkbox[
+                                            Dynamic @ choices[ "ChatHistory" ],
+                                            Enabled -> Dynamic @ choices[ "Messages" ]
+                                        ],
+                                        "Include chat history used to generate this output"
+                                    }
+                                },
+                                Alignment -> { Left, Baseline }
+                            ]
                         },
                         {
                             Checkbox[ Dynamic @ choices[ "CellImage" ] ],
-                            "Include image of chat output"
+                            Tooltip[
+                                "Include image of chat output",
+                                ImageResize[ data[ "Image" ], Scaled[ 1/2 ] ],
+                                TooltipStyle -> {
+                                    Background     -> White,
+                                    CellFrame      -> 1,
+                                    CellFrameColor -> GrayLevel[ 0.85 ]
+                                }
+                            ]
                         }
                     },
                     Alignment -> { Left, Baseline }
@@ -162,41 +185,36 @@ createFeedbackDialogContent[ Dynamic[ data_ ], Dynamic[ choices_ ] ] := Enclose[
                     InputField[
                         Dynamic @ data[ "Comment" ],
                         String,
-                        FieldHint -> "Do you have additional feedback? (Optional)",
-                        ImageSize -> { 500, 60 }
-                    ]
+                        ContinuousAction -> True,
+                        FieldHint        -> "Do you have additional feedback? (Optional)",
+                        ImageSize        -> { 500, 60 }
+                    ],
+                    { Automatic, { 3, Automatic } }
+                ],
+                dialogBody[
+                    Style[
+                        "Your chat history and feedback may be used for training purposes.",
+                        FontColor -> GrayLevel[ 0.75 ],
+                        FontSize  -> 12
+                    ],
+                    { Automatic, { 15, 3 } }
                 ],
                 dialogBody @ OpenerView[
                     {
-                        "Preview",
-                        Dynamic[
-                            Column[
-                                {
-                                    Pane[
-                                        Developer`WriteRawJSONString[
-                                            toJSON @ Evaluate @ KeyDrop[ data, { "Image" } ]
-                                        ],
-                                        BaseStyle  -> {
-                                            "Program",
-                                            Background      -> GrayLevel[ 0.975 ],
-                                            FontSize        -> 9,
-                                            LineBreakWithin -> False,
-                                            PageWidth       -> 500,
-                                            Selectable      -> True
-                                        },
-                                        ImageSize  -> { UpTo[ 500 ], UpTo[ 200 ] },
-                                        Scrollbars -> Automatic
-                                    ],
-                                    If[ False && TrueQ @ choices[ "CellImage" ],
-                                        Pane[
-                                            data[ "Image" ],
-                                            ImageSize       -> { UpTo[ 500 ], UpTo[ 200 ] },
-                                            ImageSizeAction -> "ShrinkToFit"
-                                        ],
-                                        Nothing
-                                    ]
-                                }
-                            ]
+                        "Preview data to be sent",
+                        Pane[
+                            Dynamic @ generatePreviewData[ data, choices ],
+                            BaseStyle  -> {
+                                "Program",
+                                Background        -> GrayLevel[ 0.975 ],
+                                FontSize          -> 9,
+                                LineBreakWithin   -> False,
+                                PageWidth         -> 485,
+                                Selectable        -> True,
+                                TextClipboardType -> "PlainText"
+                            },
+                            ImageSize  -> { 485, UpTo[ 200 ] },
+                            Scrollbars -> Automatic
                         ]
                     },
                     Method -> "Active"
@@ -222,9 +240,9 @@ createFeedbackDialogContent[ Dynamic[ data_ ], Dynamic[ choices_ ] ] := Enclose[
                                     ]
                                 } }
                             ],
-                            FrameStyle -> None,
-                            ImageSize  -> { 150, 50 },
-                            Alignment  -> { Center, Center }
+                            FrameStyle   -> None,
+                            FrameMargins -> { { 0, 30 }, { 13, 13 } },
+                            Alignment    -> { Right, Center }
                         ],
                         Alignment -> { Right, Automatic }
                     ],
@@ -238,6 +256,7 @@ createFeedbackDialogContent[ Dynamic[ data_ ], Dynamic[ choices_ ] ] := Enclose[
                 {
                     False,
                     GrayLevel[ 0.85 ],
+                    False,
                     False,
                     False,
                     False,
@@ -258,6 +277,136 @@ createFeedbackDialogContent[ Dynamic[ data_ ], Dynamic[ choices_ ] ] := Enclose[
 ];
 
 createFeedbackDialogContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*generatePreviewData*)
+generatePreviewData // beginDefinition;
+
+generatePreviewData[ data_, choices_ ] := Enclose[
+    Module[ { json, readable, chosen },
+        json     = ConfirmBy[ toJSON @ Evaluate @ KeyDrop[ data, { "Image" } ], AssociationQ, "JSONData" ];
+        readable = ConfirmBy[ makeObjectsReadable @ json, AssociationQ, "Readable" ];
+        chosen   = ConfirmBy[ filterChoices[ readable, choices ], AssociationQ, "Filtered" ];
+        ConfirmBy[ Developer`WriteRawJSONString @ KeySort @ chosen, StringQ, "JSONString" ]
+    ],
+    throwInternalFailure[ generatePreviewData[ data, choices ], ## ] &
+];
+
+generatePreviewData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*filterChoices*)
+filterChoices // beginDefinition;
+
+filterChoices[ data0_Association, choices_Association ] := Enclose[
+    Module[ { data },
+        data = data0;
+        If[ choices[ "Messages" ]
+            ,
+            If[ ! choices[ "SystemMessage" ],
+                data = ConfirmBy[ dropSystemMessage @ data, AssociationQ, "DropSystemMessage" ]
+            ];
+            If[ ! choices[ "ChatHistory" ],
+                data = ConfirmBy[ dropChatHistory @ data, AssociationQ, "DropChatHistory" ]
+            ];
+            ,
+            data = ConfirmBy[ dropMessages @ data, AssociationQ, "DropMessages" ]
+        ];
+
+        If[ data[ "Comment" ] === "", KeyDropFrom[ data, "Comment" ] ];
+
+        If[ choices[ "CellImage" ],
+            data[ "CellImage" ] = "(will be uploaded upon sending)",
+            KeyDropFrom[ data, "CellImage" ]
+        ];
+
+        Replace[
+            DeleteCases[ data, _Missing | <| |> | { } ],
+            as_Association :> RuleCondition @ KeySort @ as,
+            { 1 }
+        ]
+    ],
+    throwInternalFailure[ filterChoices[ data0, choices ], ## ] &
+];
+
+filterChoices // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*dropSystemMessage*)
+dropSystemMessage // beginDefinition;
+
+dropSystemMessage[ data_Association ] :=
+    dropSystemMessage[ data, data[ "ChatData", "Messages" ] ];
+
+dropSystemMessage[ data0_Association, messages: { ___Association } ] :=
+    Module[ { data },
+        data = data0;
+
+        data[ "ChatData", "Messages" ] =
+            If[ MatchQ[ First[ messages, None ], KeyValuePattern[ "Role" -> "System" ] ],
+                Rest @ messages,
+                messages
+            ];
+
+        data
+    ];
+
+dropSystemMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*dropChatHistory*)
+dropChatHistory // beginDefinition;
+
+dropChatHistory[ data_Association ] :=
+    dropChatHistory[ data, data[ "ChatData", "Messages" ] ];
+
+dropChatHistory[
+    data0_Association,
+    { sys: KeyValuePattern[ "Role" -> "System" ], ___, in_Association, out_Association }
+] :=
+    Module[ { data },
+        data = data0;
+        data[ "ChatData", "Messages" ] = { sys, in, out };
+        data
+    ];
+
+dropChatHistory[ data0_Association, { ___, in_Association, out_Association } ] :=
+    Module[ { data },
+        data = data0;
+        data[ "ChatData", "Messages" ] = { in, out };
+        data
+    ];
+
+dropChatHistory // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*dropMessages*)
+dropMessages // beginDefinition;
+
+dropMessages[ data: KeyValuePattern[ "ChatData" -> as_Association ] ] :=
+    <| data, "ChatData" -> KeyDrop[ as, "Messages" ] |>;
+
+dropMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeObjectsReadable*)
+makeObjectsReadable // beginDefinition;
+
+makeObjectsReadable[ as_Association ] :=
+    ReplaceAll[
+        as,
+        {
+            KeyValuePattern @ { "_Object" -> "Symbol"|"DefaultTool", "Data" -> name_ } :> name
+        }
+    ];
+
+makeObjectsReadable // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
