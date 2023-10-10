@@ -1769,7 +1769,7 @@ makeCompactChatData[
             "MessageTag" -> tag,
             "Data" -> Association[
                 data,
-                "Messages" -> Append[ messages, <| "role" -> "assistant", "content" -> message |> ]
+                "Messages" -> Append[ messages, <| "Role" -> "Assistant", "Content" -> message |> ]
             ]
         ],
         PerformanceGoal -> "Size"
