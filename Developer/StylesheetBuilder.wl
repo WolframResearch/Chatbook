@@ -156,7 +156,7 @@ contextMenu[ a___ ] := Flatten @ { a };
 
 
 menuInitializer[ name_String, color_ ] :=
-    With[ { attach = Cell[ BoxData @ TemplateBox[ { name, color }, "ChatOutputButtons" ], "ChatMenu" ] },
+    With[ { attach = Cell[ BoxData @ TemplateBox[ { name, color }, "ChatMenuButton" ], "ChatMenu" ] },
         Initialization :>
             If[ ! TrueQ @ CloudSystem`$CloudNotebooks,
                 (* TODO: we need another method for menus in the cloud *)
@@ -202,8 +202,7 @@ assistantMenuInitializer[ name_String, color_ ] :=
                             ],
                             "Disable automatic assistance"
                         ],
-                        RawBoxes @ TemplateBox[ { name, color }, "ChatMenuButton" ],
-                        $feedbackButtons
+                        RawBoxes @ TemplateBox[ { name, color }, "ChatMenuButton" ]
                     },
                     Alignment -> Center,
                     Spacings  -> 0
@@ -228,7 +227,7 @@ assistantMenuInitializer[ name_String, color_ ] :=
 
 
 
-$feedbackButtons = Column[ { feedbackButton @ True, feedbackButton @ False }, Spacings -> { 0, { 0, 0.125, 0 } } ];
+$feedbackButtons = Column[ { feedbackButton @ True, feedbackButton @ False }, Spacings -> { 0, { 0, 0.25, 0 } } ];
 
 feedbackButton[ True  ] := feedbackButton[ True , "ThumbsUp"   ];
 feedbackButton[ False ] := feedbackButton[ False, "ThumbsDown" ];
