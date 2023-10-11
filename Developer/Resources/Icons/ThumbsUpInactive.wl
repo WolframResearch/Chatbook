@@ -150,6 +150,6 @@ Graphics[
   }
  },
  AspectRatio -> Automatic,
- ImageSize -> { 12.75, 12.75 },
+ ImageSize -> { 17.0, 17.0 },
  PlotRange -> { { -0.5, 16.5 }, { -0.5, 16.5 } }
 ]
