@@ -463,7 +463,8 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
             alwaysOpen   = TrueQ @ $alwaysOpen,
             autoAssist   = $autoAssistMode,
             dynamicSplit = dynamicSplitQ @ settings,
-            handlers     = getHandlerFunctions @ settings
+            handlers     = getHandlerFunctions @ settings,
+            useTasks     = feTaskQ @ settings
         },
         {
             bodyChunkHandler    = Lookup[ handlers, "BodyChunkReceived", None ],
@@ -472,7 +473,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
         <|
             KeyDrop[ handlers, $chatSubmitDroppedHandlers ],
             "BodyChunkReceived" -> Function @ catchAlways[
-                Block[
+                withFETasks[ useTasks ] @ Block[
                     {
                         $autoOpen       = autoOpen,
                         $alwaysOpen     = alwaysOpen,
@@ -486,7 +487,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                 ]
             ],
             "TaskFinished" -> Function @ catchAlways[
-                Block[
+                withFETasks[ useTasks ] @ Block[
                     {
                         $autoOpen       = autoOpen,
                         $alwaysOpen     = alwaysOpen,
@@ -494,6 +495,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                         $autoAssistMode = autoAssist,
                         $dynamicSplit   = dynamicSplit
                     },
+                    Global`taskFunc = createFETask;
                     taskFinishedHandler[ #1 ];
                     Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                     checkResponse[ settings, Unevaluated @ container, cellObject, #1 ]
@@ -503,6 +505,25 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
     ];
 
 chatHandlers // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*feTaskQ*)
+feTaskQ // beginDefinition;
+feTaskQ[ settings_ ] := feTaskQ[ settings, settings[ "NotebookWriteMethod" ] ];
+feTaskQ[ settings_, "ServiceLink"    ] := False;
+feTaskQ[ settings_, "PreemptiveLink" ] := True;
+feTaskQ[ settings_, $$unspecified    ] := True;
+feTaskQ[ settings_, invalid_         ] := (messagePrint[ "InvalidWriteMethod", invalid ]; True);
+feTaskQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*withFETasks*)
+withFETasks // beginDefinition;
+withFETasks[ False ] := Function[ eval, Block[ { createFETask = #1 & }, eval ], HoldFirst ];
+withFETasks[ True  ] := #1 &;
+withFETasks // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
