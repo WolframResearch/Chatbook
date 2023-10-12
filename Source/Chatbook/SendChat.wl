@@ -495,7 +495,6 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                         $autoAssistMode = autoAssist,
                         $dynamicSplit   = dynamicSplit
                     },
-                    Global`taskFunc = createFETask;
                     taskFinishedHandler[ #1 ];
                     Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                     checkResponse[ settings, Unevaluated @ container, cellObject, #1 ]
