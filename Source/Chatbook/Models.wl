@@ -9,6 +9,7 @@ BeginPackage[ "Wolfram`Chatbook`Models`" ];
 `chatModelQ;
 `getModelList;
 `modelDisplayName;
+`snapshotModelQ;
 `standardizeModelData;
 `toModelName;
 
@@ -112,7 +113,7 @@ $fallbackModelList = { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4" };
 (*chatModelQ*)
 chatModelQ // beginDefinition;
 chatModelQ[ _? (modelContains[ "instruct" ]) ] := False;
-chatModelQ[ _? (modelContains[ StartOfString~~"gpt" ]) ] := True;
+chatModelQ[ _? (modelContains[ StartOfString~~("gpt"|"ft:gpt") ]) ] := True;
 chatModelQ[ _String ] := False;
 chatModelQ // endDefinition;
 
@@ -140,12 +141,15 @@ toModelName // beginDefinition;
 toModelName[ { service_String, name_String } ] := toModelName @ name;
 
 toModelName[ name_String? StringQ ] := toModelName[ name ] =
-    toModelName0 @ StringReplace[
-        ToLowerCase @ StringReplace[
-            name,
-            a_? LowerCaseQ ~~ b_? UpperCaseQ :> a<>"-"<>b
-        ],
-        "gpt"~~n:$$modelVersion~~EndOfString :> "gpt-"<>n
+    If[ StringMatchQ[ name, "ft:"~~__~~":"~~__ ],
+        name,
+        toModelName0 @ StringReplace[
+            ToLowerCase @ StringReplace[
+                name,
+                a_? LowerCaseQ ~~ b_? UpperCaseQ :> a<>"-"<>b
+            ],
+            "gpt"~~n:$$modelVersion~~EndOfString :> "gpt-"<>n
+        ]
     ];
 
 toModelName // endDefinition;
@@ -154,6 +158,21 @@ toModelName0 // beginDefinition;
 toModelName0[ "chat-gpt"|"chatgpt"|"gpt-3"|"gpt-3.5" ] := "gpt-3.5-turbo";
 toModelName0[ name_String ] := StringReplace[ name, "gpt"~~n:DigitCharacter :> "gpt-"<>n ];
 toModelName0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*snapshotModelQ*)
+snapshotModelQ // beginDefinition;
+snapshotModelQ[ name_String? fineTunedModelQ ] := snapshotModelQ @ StringSplit[ name, ":" ][[ 2 ]];
+snapshotModelQ[ name_String ] := StringMatchQ[ name, "gpt-"~~__~~"-"~~Repeated[ DigitCharacter, { 4 } ] ];
+snapshotModelQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*fineTunedModelQ*)
+fineTunedModelQ // beginDefinition;
+fineTunedModelQ[ name_String ] := StringMatchQ[ name, "ft:"~~__~~":"~~__ ];
+fineTunedModelQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -170,7 +189,10 @@ modelDisplayName[{name_?StringQ, settings_?AssociationQ}] :=
 	modelDisplayName[name]
 
 modelDisplayName[ model_String ] := modelDisplayName[ model ] =
-	modelDisplayName @ StringSplit[ model, "-"|" " ];
+	If[ StringMatchQ[ model, "ft:"~~__~~":"~~__ ],
+        fineTunedModelName @ model,
+        modelDisplayName @ StringSplit[ model, "-"|" " ]
+    ];
 
 modelDisplayName[ { "gpt", rest___ } ] :=
 	modelDisplayName @ { "GPT", rest };
@@ -193,12 +215,34 @@ modelDisplayName[ parts: { __String } ] :=
 modelDisplayName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*fineTunedModelName*)
+fineTunedModelName // beginDefinition;
+
+fineTunedModelName[ name_String ] :=
+    fineTunedModelName @ StringSplit[ name, ":" ];
+
+fineTunedModelName[ { "ft", rest__ } ] :=
+    fineTunedModelName @ { rest };
+
+fineTunedModelName[ { model_String, id__String } ] :=
+    StringJoin[
+        StringDelete[ modelDisplayName @ model, " ("~~__~~")"~~EndOfString ],
+        " (",
+        Replace[ { id }, "" -> "::", { 1 } ],
+        ")"
+    ];
+
+fineTunedModelName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*modelIcon*)
 modelIcon // beginDefinition;
 modelIcon[ KeyValuePattern[ "Icon" -> icon_ ] ] := icon;
 modelIcon[ KeyValuePattern[ "Name" -> name_String ] ] := modelIcon @ name;
 modelIcon[ name0_String ] := With[ { name = toModelName @ name0 }, modelIcon @ name /; name =!= name0 ];
+modelIcon[ name_String ] /; StringStartsQ[ name, "ft:" ] := modelIcon @ StringDelete[ name, StartOfString~~"ft:" ];
 modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-3.5" ] := RawBoxes @ TemplateBox[ { }, "ModelGPT35" ];
 modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-4" ] := RawBoxes @ TemplateBox[ { }, "ModelGPT4" ];
 modelIcon[ name_String ] := $defaultModelIcon;
@@ -212,7 +256,7 @@ standardizeModelData // beginDefinition;
 standardizeModelData[ list_List ] :=
     Flatten[ standardizeModelData /@ list ];
 
-standardizeModelData[ name_String ] :=
+standardizeModelData[ name_String ] := standardizeModelData[ name ] =
     standardizeModelData @ <| "Name" -> name |>;
 
 standardizeModelData[ model: KeyValuePattern @ { "Name" -> _String, "DisplayName" -> _String, "Icon" -> _ } ] :=
