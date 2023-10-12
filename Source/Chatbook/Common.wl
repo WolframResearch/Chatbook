@@ -107,6 +107,7 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "InvalidResourceSpecification"    -> "The argument `1` is not a valid resource specification.",
     "InvalidResourceURL"              -> "The specified URL does not represent a valid resource object.",
     "InvalidStreamingOutputMethod"    -> "Invalid streaming output method: `1`.",
+    "InvalidWriteMethod"              -> "Invalid setting for NotebookWriteMethod: `1`; using default instead.",
     "ModelToolSupport"                -> "The model `1` does not support tools.",
     "NoAPIKey"                        -> "No API key defined.",
     "NoSandboxKernel"                 -> "Unable to start a sandbox kernel. This may mean that the number of currently running kernels exceeds the limit defined by $LicenseProcesses.",
