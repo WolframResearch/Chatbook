@@ -27,6 +27,15 @@ Needs[ "Wolfram`Chatbook`Utils`"      ];
 $sandboxPingTimeout       := toolOptionValue[ "WolframLanguageEvaluator", "PingTimeConstraint"       ];
 $sandboxEvaluationTimeout := toolOptionValue[ "WolframLanguageEvaluator", "EvaluationTimeConstraint" ];
 
+
+(* Tests for expressions that lose their initialized status when sending over a link: *)
+$initializationTests = HoldComplete[
+    DateObjectQ,
+    GraphQ,
+    SparseArrayQ
+];
+
+
 $sandboxKernelCommandLine := StringRiffle @ {
     ToString[
         If[ $OperatingSystem === "Windows",
@@ -223,7 +232,7 @@ sandboxEvaluate[ code_String ] := sandboxEvaluate @ toSandboxExpression @ code;
 sandboxEvaluate[ HoldComplete[ xs__, x_ ] ] := sandboxEvaluate @ HoldComplete @ CompoundExpression[ xs, x ];
 
 sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
-    Module[ { kernel, null, packets, $timedOut, results, flat },
+    Module[ { kernel, null, packets, $timedOut, results, flat, initialized },
 
         $lastSandboxEvaluation = HoldComplete @ evaluation;
 
@@ -247,11 +256,13 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
 
         flat = Flatten[ HoldComplete @@ results, 1 ];
 
+        initialized = initializeExpressions @ flat;
+
         (* TODO: include prompting that explains how to use Out[n] to get previous results *)
 
         $lastSandboxResult = <|
-            "String"  -> sandboxResultString[ flat, packets ],
-            "Result"  -> sandboxResult @ flat,
+            "String"  -> sandboxResultString[ initialized, packets ],
+            "Result"  -> sandboxResult @ initialized,
             "Packets" -> packets
         |>
     ],
@@ -259,6 +270,18 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
 ];
 
 sandboxEvaluate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*initializeExpressions*)
+initializeExpressions // beginDefinition;
+
+initializeExpressions[ flat: HoldComplete @ Association @ OrderlessPatternSequence[ "Initialized" -> pos0_, ___ ] ] :=
+    With[ { pos = { 1, Key[ "Result" ], ## } & @@@ pos0 },
+        ReplacePart[ flat, Thread[ pos -> Extract[ flat, pos ] ] ]
+    ];
+
+initializeExpressions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -298,32 +321,82 @@ linkWriteEvaluation // beginDefinition;
 linkWriteEvaluation // Attributes = { HoldAllComplete };
 
 linkWriteEvaluation[ kernel_, evaluation_ ] :=
-    With[ { eval = createEvaluationWithWarnings @ evaluation, t = $sandboxEvaluationTimeout },
-        LinkWrite[
-            kernel,
-            Unevaluated @ EnterExpressionPacket @ <|
-                "Line"   -> $Line,
-                "Result" -> Apply[
-                    HoldComplete,
-                    {
-                        TimeConstrained[
-                            ReleaseHold @ eval,
-                            t,
-                            Failure[
-                                "EvaluationTimeExceeded",
-                                <|
-                                    "MessageTemplate"   -> "Evaluation exceeded the `1` second time limit.",
-                                    "MessageParameters" -> { t }
-                                |>
-                            ]
-                        ]
-                    }
-                ]
-            |>
-        ]
+    With[ { eval = makeLinkWriteEvaluation @ evaluation },
+        LinkWrite[ kernel, Unevaluated @ EnterExpressionPacket @ ReleaseHold @ eval ]
     ];
 
 linkWriteEvaluation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeLinkWriteEvaluation*)
+makeLinkWriteEvaluation // beginDefinition;
+makeLinkWriteEvaluation // Attributes = { HoldAllComplete };
+
+makeLinkWriteEvaluation[ evaluation_ ] := Enclose[
+    Module[ { eval, constrained },
+        eval = ConfirmMatch[ createEvaluationWithWarnings @ evaluation, HoldComplete[ _ ], "Warnings" ];
+        constrained = ConfirmMatch[ addTimeConstraint @ eval, HoldComplete[ _ ], "TimeConstraint" ];
+        ConfirmMatch[ addInitializations @ constrained, HoldComplete[ _ ], "Initializations" ]
+    ],
+    throwInternalFailure[ makeLinkWriteEvaluation @ evaluation, ## ] &
+];
+
+makeLinkWriteEvaluation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addInitializations*)
+addInitializations // beginDefinition;
+
+addInitializations[ eval_HoldComplete ] := addInitializations[ eval, $initializationTest ];
+
+addInitializations[ HoldComplete[ eval_ ], initializedQ_ ] :=
+    HoldComplete @ With[ { result = HoldComplete @@ { eval } },
+        <|
+            "Line"        -> $Line,
+            "Result"      -> result,
+            "Initialized" -> Position[ result, _? initializedQ, Heads -> True ]
+        |>
+    ];
+
+addInitializations // endDefinition;
+
+
+$initializationTest := $initializationTest = Module[ { tests, slot, func },
+    tests = Flatten[ HoldComplete @@ Cases[ $initializationTests, f_ :> HoldComplete @ f @ Unevaluated @ slot[ 1 ] ] ];
+    func = Replace[ tests, HoldComplete[ t___ ] :> Function[ Null, TrueQ @ Or @ t, HoldAllComplete ] ];
+    func /. slot -> Slot
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addTimeConstraint*)
+addTimeConstraint // beginDefinition;
+addTimeConstraint[ eval_HoldComplete ] := addTimeConstraint[ eval, $sandboxEvaluationTimeout ];
+addTimeConstraint[ eval_, t_ ] := addTimeConstraint[ eval, t, timeConstraintFailure @ t ];
+addTimeConstraint[ HoldComplete[ eval_ ], t_, fail_Failure ] := HoldComplete @ TimeConstrained[ eval, t, fail ];
+addTimeConstraint // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*timeConstraintFailure*)
+timeConstraintFailure // beginDefinition;
+
+timeConstraintFailure[ t_? Positive ] := Failure[
+    "EvaluationTimeExceeded",
+    <|
+        "MessageTemplate"   -> "Evaluation exceeded the `1` second time limit.",
+        "MessageParameters" -> { t }
+    |>
+];
+
+timeConstraintFailure[ q_Quantity ] :=
+    With[ { s = UnitConvert[ q, "Seconds" ] },
+        timeConstraintFailure @ QuantityMagnitude @ s /; QuantityUnit @ s === "Seconds"
+    ];
+
+timeConstraintFailure // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -461,9 +534,8 @@ simpleResultQ // endDefinition;
 (*fancyResultQ*)
 fancyResultQ // beginDefinition;
 fancyResultQ // Attributes = { HoldAllComplete };
-fancyResultQ[ gfx_ ] /; MatchQ[ Unevaluated @ gfx, $$graphics ] := True;
 fancyResultQ[ _Manipulate|_DynamicModule ] := True;
-fancyResultQ[ _ ] := False;
+fancyResultQ[ gfx_ ] := graphicsQ @ Unevaluated @ gfx;
 fancyResultQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -507,7 +579,7 @@ $$graphics = HoldPattern[ _GeoGraphics | _Graphics | _Graphics3D | _Image | _Ima
 (* ::Subsubsection::Closed:: *)
 (*graphicsQ*)
 graphicsQ[ $$graphics ] := True;
-graphicsQ[ g_         ] := MatchQ[ Quiet @ Show @ g, $$graphics ];
+graphicsQ[ g_         ] := MatchQ[ Quiet @ Show @ Unevaluated @ g, $$graphics ];
 graphicsQ[ ___        ] := False;
 
 (* ::**************************************************************************************************************:: *)
@@ -544,6 +616,7 @@ Scan[ LinkClose, Select[ Links[ ], sandboxKernelQ ] ];
 
 If[ Wolfram`ChatbookInternal`$BuildingMX,
     $messageOverrides;
+    $initializationTest;
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)
