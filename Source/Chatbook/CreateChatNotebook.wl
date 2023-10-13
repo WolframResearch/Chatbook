@@ -38,6 +38,7 @@ CreateChatNotebook // Options = {
     "MaxTokens"               -> Automatic,
     "MergeMessages"           -> True,
     "Model"                   :> $DefaultModel,
+    "NotebookWriteMethod"     -> Automatic,
     "OpenAIKey"               -> Automatic, (* TODO: remove this once LLMServices is widely available *)
     "PresencePenalty"         -> 0.1,
     "ShowMinimized"           -> Automatic,
