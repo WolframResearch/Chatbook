@@ -47,7 +47,7 @@ Needs[ "Wolfram`Chatbook`Utils`"                ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$chatMenuWidth = 225;
+$chatMenuWidth = 260;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -579,7 +579,7 @@ makeFrontEndAndNotebookSettingsContent[
 							With[{
 								modelName = currentChatSettings[targetObj, "Model"]
 							}, {
-								settings = getModelSettings[modelName]
+								settings = standardizeModelData[modelName]
 							},
 								Row[{
 									getModelMenuIcon[settings, "Full"],
@@ -1239,38 +1239,14 @@ getModelsMenuItems[] := Module[{
 	items = Sort[items];
 
 	If[!TrueQ[showSnapshotModelsQ[]],
-		items = Select[
-			items,
-			modelName |-> (
-				!StringMatchQ[modelName, RegularExpression["gpt-.*-[0-9]{4}"]]
-			)
-		];
+		items = Select[ items, Not @* snapshotModelQ ];
 	];
 
-	items = AssociationMap[getModelSettings, items];
+	items = AssociationMap[standardizeModelData, items];
 
 	RaiseAssert[MatchQ[items, <| (_?StringQ -> _?AssociationQ)... |>]];
 
 	items
-]
-
-(*====================================*)
-
-SetFallthroughError[getModelSettings]
-
-getModelSettings[modelName_?StringQ] := Module[{
-	icon
-},
-	icon = Which[
-		StringStartsQ[modelName, "gpt-3.5"],
-			getIcon["ModelGPT35"],
-		StringStartsQ[modelName, "gpt-4"],
-			getIcon["ModelGPT4"],
-		True,
-			None
-	];
-
-	<| "Icon" -> icon |>
 ]
 
 
