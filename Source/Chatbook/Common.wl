@@ -44,6 +44,8 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `chatbookIcon;
 `inlineTemplateBox;
 `inlineTemplateBoxes;
+`sufficientVersionQ;
+`insufficientVersionQ;
 
 Begin[ "`Private`" ];
 
@@ -71,6 +73,12 @@ $closedChatCellOptions :=
         Sequence @@ { },
         Sequence @@ { CellMargins -> -2, CellOpen -> False, CellFrame -> 0, ShowCellBracket -> False }
     ];
+
+$versionRequirements = <|
+    "DynamicSplit"             -> 13.3,
+    "TaskWriteOutput"          -> 14.0,
+    "TrackScrollingWhenPlaced" -> 14.0
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -741,6 +749,28 @@ $chatbookIcons := $chatbookIcons =
 (*$templateBoxDisplayFunctions*)
 $templateBoxDisplayFunctions := $templateBoxDisplayFunctions =
     Developer`ReadWXFFile @ PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "DisplayFunctions" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Version Utilities*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*sufficientVersionQ*)
+sufficientVersionQ // beginDefinition;
+sufficientVersionQ[ version_? NumberQ ] := TrueQ[ $VersionNumber >= version ];
+sufficientVersionQ[ id_String ] := sufficientVersionQ[ id ] = sufficientVersionQ[ id, $versionRequirements[ id ] ];
+sufficientVersionQ[ id_, version_? NumberQ ] := sufficientVersionQ @ version;
+sufficientVersionQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*insufficientVersionQ*)
+insufficientVersionQ // beginDefinition;
+insufficientVersionQ[ version_? NumberQ ] := TrueQ[ $VersionNumber < version ];
+insufficientVersionQ[ id_String ] := insufficientVersionQ[ id ] = insufficientVersionQ[ id, $versionRequirements[ id ] ];
+insufficientVersionQ[ id_, version_? NumberQ ] := sufficientVersionQ @ version;
+insufficientVersionQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
