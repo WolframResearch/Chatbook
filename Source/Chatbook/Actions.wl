@@ -42,6 +42,7 @@ Needs[ "Wolfram`Chatbook`Explode`"          ];
 Needs[ "Wolfram`Chatbook`Feedback`"         ];
 Needs[ "Wolfram`Chatbook`Formatting`"       ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
+Needs[ "Wolfram`Chatbook`Handlers`"         ];
 Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 Needs[ "Wolfram`Chatbook`Models`"           ];
 Needs[ "Wolfram`Chatbook`PersonaManager`"   ];
@@ -382,10 +383,17 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
         waitForLastTask[ ];
         blockChatObject[
             If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
-                constructChatObject @ Append[
-                    $lastMessages,
-                    <| "role" -> "Assistant", "content" -> $lastChatString |>
+                With[
+                    {
+                        chat = constructChatObject @ Append[
+                            $lastMessages,
+                            <| "Role" -> "Assistant", "Content" -> $lastChatString |>
+                        ]
+                    },
+                    applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> chat |> ];
+                    chat
                 ],
+                applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> None |> ];
                 Null
             ];
         ]
@@ -399,7 +407,7 @@ EvaluateChatInput // endDefinition;
 blockChatObject // beginDefinition;
 blockChatObject // Attributes = { HoldFirst };
 blockChatObject[ eval_ ] /; Quiet @ PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "1.1.0" ] := eval;
-blockChatObject[ eval_ ]  := Block[ { chatObject = delayedChatObject, delayedChatObject }, eval ];
+blockChatObject[ eval_ ] := Block[ { chatObject = delayedChatObject, delayedChatObject }, eval ];
 blockChatObject // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1211,7 +1219,13 @@ $apiKeyDialogDescription := $apiKeyDialogDescription = Get @ FileNameJoin @ {
 (*withChatState*)
 withChatState // beginDefinition;
 withChatState // Attributes = { HoldFirst };
-withChatState[ eval_ ] := Block[ { $enableLLMServices }, withToolBox @ withBasePromptBuilder @ eval ];
+
+withChatState[ eval_ ] :=
+    Block[ { $enableLLMServices },
+        $handlerArguments = <| |>;
+        withToolBox @ withBasePromptBuilder @ eval
+    ];
+
 withChatState // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
