@@ -19,6 +19,7 @@ Needs[ "Wolfram`Chatbook`ChatMessages`"     ];
 Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`Formatting`"       ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
+Needs[ "Wolfram`Chatbook`Handlers`"         ];
 Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 Needs[ "Wolfram`Chatbook`Models`"           ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
@@ -72,6 +73,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             "HistoryAndTarget"
         ];
 
+        (* FIXME: settings should already be inherited via currentChatSettings *)
         settings = ConfirmBy[
             resolveTools @ resolveAutoSettings @ inheritSettings[ settings0, cells, evalCell ],
             AssociationQ,
@@ -145,13 +147,16 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             "CreateOutput"
         ];
 
-        getHandlerFunction[ settings, "ChatPre" ][ <|
-            "EvaluationCell"       -> evalCell,
-            "Messages"             -> messages,
-            "CellObject"           -> cellObject,
-            "Container"            :> container,
-            "ChatNotebookSettings" -> KeyDrop[ settings, { "Data", "OpenAIKey" } ]
-        |> ];
+        applyHandlerFunction[
+            settings,
+            "ChatPre",
+            <|
+                "EvaluationCell" -> evalCell,
+                "Messages"       -> messages,
+                "CellObject"     -> cellObject,
+                "Container"      :> container
+            |>
+        ];
 
         task = ConfirmMatch[
             $lastTask = chatSubmit[ container, messages, cellObject, settings ],
@@ -184,6 +189,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
             "HistoryAndTarget"
         ];
 
+        (* FIXME: settings should already be inherited via currentChatSettings *)
         settings = ConfirmBy[
             resolveTools @ resolveAutoSettings @ inheritSettings[ settings0, cells, evalCell ],
             AssociationQ,
@@ -257,13 +263,16 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
             "CreateOutput"
         ];
 
-        getHandlerFunction[ settings, "ChatPre" ][ <|
-            "EvaluationCell"       -> evalCell,
-            "Messages"             -> messages,
-            "CellObject"           -> cellObject,
-            "Container"            :> container,
-            "ChatNotebookSettings" -> KeyDrop[ settings, { "Data", "OpenAIKey" } ]
-        |> ];
+        applyHandlerFunction[
+            settings,
+            "ChatPre",
+            <|
+                "EvaluationCell" -> evalCell,
+                "Messages"       -> messages,
+                "CellObject"     -> cellObject,
+                "Container"      :> container
+            |>
+        ];
 
         task = Confirm[ $lastTask = chatSubmit[ container, req, cellObject, settings ] ];
 
@@ -274,31 +283,6 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
 ];
 
 sendChat // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getHandlerFunctions*)
-getHandlerFunctions // beginDefinition;
-getHandlerFunctions[ settings_Association ] := getHandlerFunctions[ settings, Lookup[ settings, "HandlerFunctions" ] ];
-getHandlerFunctions[ _, handlers_Association ] := <| $DefaultChatHandlerFunctions, replaceCellContext @ handlers |>;
-getHandlerFunctions[ _, $$unspecified ] := $DefaultChatHandlerFunctions;
-getHandlerFunctions[ _, handlers_ ] := (messagePrint[ "InvalidHandlers", handlers ]; $DefaultChatHandlerFunctions);
-getHandlerFunctions // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getHandlerFunction*)
-getHandlerFunction // beginDefinition;
-
-getHandlerFunction[ settings_Association, name_String ] :=
-    getHandlerFunction[ settings, name, getHandlerFunctions @ settings ];
-
-getHandlerFunction[ settings_, name_String, handlers_Association ] :=
-    Replace[ Lookup[ handlers, name ],
-             $$unspecified :> Lookup[ $DefaultChatHandlerFunctions, name, None ]
-    ];
-
-getHandlerFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -500,7 +484,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                     },
                     taskFinishedHandler[ #1 ];
                     Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
-                    checkResponse[ settings, Unevaluated @ container, cellObject, #1 ]
+                    checkResponse[ $settings, Unevaluated @ container, cellObject, #1 ]
                 ]
             ]
         |>
@@ -1053,7 +1037,7 @@ mergeSettings[ settings_? AssociationQ, group_? AssociationQ, cell_? Association
     Module[ { as },
         as = Association[ settings, Complement[ group, settings ], Complement[ cell, settings ] ];
         Association[ as, "LLMEvaluator" -> getLLMEvaluator @ as ]
-    ];\
+    ];
 
 mergeSettings // endDefinition;\
 
@@ -1094,7 +1078,10 @@ resolveAutoSettings[ settings: KeyValuePattern[ key_ :> value_ ] ] :=
 resolveAutoSettings[ settings: KeyValuePattern[ "ToolsEnabled" -> Automatic ] ] :=
     resolveAutoSettings @ Association[ settings, "ToolsEnabled" -> toolsEnabledQ @ settings ];
 
-resolveAutoSettings[ settings_Association ] := settings;
+resolveAutoSettings[ settings_Association ] := <|
+    settings,
+    "HandlerFunctions" -> getHandlerFunctions @ settings
+|>;
 
 resolveAutoSettings // endDefinition;
 
@@ -1597,16 +1584,20 @@ writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
             $reformattedCell = new;
             $lastChatOutput  = output;
 
+            addHandlerArguments @ <|
+                "EvaluationCell" -> output,
+                "Result"         -> string,
+                Replace[ Lookup[ settings, "Data" ], Except[ _? AssociationQ ] -> <| |> ]
+            |>;
+
             With[ { new = new, output = output, scroll = scroll },
                 If[ sufficientVersionQ[ "TaskWriteOutput" ],
                     createFETask @ NotebookWrite[ cell, new, None, AutoScroll -> False ];
                     createFETask @ attachChatOutputMenu @ output;
-                    createFETask @ postApply[ output, string, settings ];
                     createFETask @ scrollOutput[ scroll, output ];
                     ,
                     NotebookWrite[ cell, new, None, AutoScroll -> False ];
                     attachChatOutputMenu @ output;
-                    postApply[ output, string, settings ];
                     scrollOutput[ scroll, output ];
                 ]
             ]
@@ -1662,28 +1653,6 @@ scrollOutput[ True, cell_ ] := (
 scrollOutput[ False, cell_ ] := Null;
 
 scrollOutput // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*postApply*)
-postApply // beginDefinition;
-
-postApply[ output_CellObject, string_, settings_Association ] :=
-    postApply0[
-        getHandlerFunction[ settings, "ChatPost" ],
-        <|
-            "EvaluationCell"       -> output,
-            "Result"               -> string,
-            "ChatNotebookSettings" -> KeyDrop[ settings, { "Data", "OpenAIKey" } ],
-            Replace[ Lookup[ settings, "Data" ], Except[ _? AssociationQ ] -> <| |> ]
-        |>
-    ];
-
-postApply // endDefinition;
-
-postApply0 // beginDefinition;
-postApply0[ post_, data_Association? AssociationQ ] := post @ data;
-postApply0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
