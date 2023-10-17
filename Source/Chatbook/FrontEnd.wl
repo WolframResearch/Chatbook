@@ -202,13 +202,13 @@ CurrentChatSettings[\"key$\"] is equivalent to CurrentChatSettings[EvaluationCel
 
 CurrentChatSettings[ ] := catchMine @
     If[ TrueQ @ $Notebooks,
-        CurrentChatSettings @ EvaluationCell[ ],
+        CurrentChatSettings @ $currentEvaluationObject,
         $defaultChatSettings
     ];
 
 CurrentChatSettings[ key_String ] := catchMine @
     If[ TrueQ @ $Notebooks,
-        CurrentChatSettings[ EvaluationCell[ ], key ],
+        CurrentChatSettings[ $currentEvaluationObject, key ],
         Lookup[ $defaultChatSettings, key, Inherited ]
     ];
 
@@ -226,6 +226,22 @@ CurrentChatSettings[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndS
 
 CurrentChatSettings[ args___ ] :=
     catchMine @ throwFailure[ "InvalidArguments", CurrentChatSettings, HoldForm @ CurrentChatSettings @ args ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$currentEvaluationObject*)
+
+(* During asynchronous tasks, EvaluationCell[ ] will return $Failed, so we instead use this to take the first FE object
+   in ascending order of inheritance that we can read settings from. *)
+$currentEvaluationObject := FirstCase[
+    Unevaluated @ {
+        EvaluationCell[ ],
+        EvaluationNotebook[ ],
+        $FrontEndSession
+    },
+    obj_ :> With[ { res = obj }, res /; MatchQ[ res, $$feObj ] ],
+    throwInternalFailure @ $currentEvaluationObject
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
