@@ -212,13 +212,29 @@ CurrentChatSettings[ key_String ] := catchMine @
         Lookup[ $defaultChatSettings, key, Inherited ]
     ];
 
-CurrentChatSettings[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession ] := catchMine @
+CurrentChatSettings[ cell_CellObject ] := catchMine @
+    With[ { parent = Quiet @ parentCell @ cell },
+        If[ MatchQ[ parent, Except[ cell, _CellObject ] ],
+            CurrentChatSettings @ parent,
+            $defaultChatSettings
+        ]
+    ];
+
+CurrentChatSettings[ cell_CellObject, key_String ] := catchMine @
+    With[ { parent = Quiet @ parentCell @ cell },
+        If[ MatchQ[ parent, Except[ cell, _CellObject ] ],
+            CurrentChatSettings[ parent, key ],
+            Lookup[ $defaultChatSettings, key, Inherited ]
+        ]
+    ];
+
+CurrentChatSettings[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession ] := catchMine @
     If[ TrueQ @ $Notebooks,
         currentChatSettings @ obj,
         $defaultChatSettings
     ];
 
-CurrentChatSettings[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := catchMine @
+CurrentChatSettings[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := catchMine @
     If[ TrueQ @ $Notebooks,
         currentChatSettings[ obj, key ],
         Lookup[ $defaultChatSettings, key, Inherited ]
