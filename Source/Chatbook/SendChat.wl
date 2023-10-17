@@ -396,15 +396,18 @@ chatSubmit // endDefinition;
 chatSubmit0 // beginDefinition;
 chatSubmit0 // Attributes = { HoldFirst };
 
-chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] := (
+chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] := Quiet[
     Needs[ "LLMServices`" -> None ];
-    $lastChatSubmit = LLMServices`ChatSubmit[
-        standardizeMessageKeys @ messages,
-        makeLLMConfiguration @ settings,
-        HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
-        HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings
-    ]
-);
+    $lastChatSubmitResult = ReleaseHold[
+        $lastChatSubmit = HoldForm @ LLMServices`ChatSubmit[
+            standardizeMessageKeys @ messages,
+            makeLLMConfiguration @ settings,
+            HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
+            HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings
+        ]
+    ],
+    { LLMServices`ChatSubmit::unsupported }
+];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
 chatSubmit0[ container_, req_HTTPRequest, cellObject_, settings_ ] := (
@@ -644,7 +647,11 @@ splitDynamicContent // beginDefinition;
 splitDynamicContent // Attributes = { HoldFirst };
 
 (* NotebookLocationSpecifier isn't available before 13.3 and splitting isn't yet supported in cloud: *)
-splitDynamicContent[ container_, cell_ ] /; ! $dynamicSplit || $VersionNumber < 13.3 || $cloudNotebooks := Null;
+splitDynamicContent[ container_, cell_ ] /; Or[
+    ! $dynamicSplit,
+    insufficientVersionQ[ "DynamicSplit" ],
+    $cloudNotebooks
+] := Null;
 
 splitDynamicContent[ container_, cell_ ] :=
     splitDynamicContent[ container, container[ "DynamicContent" ], cell, container[ "UUID" ] ];
@@ -1419,10 +1426,6 @@ activeAIAssistantCell[
             ,
             "Output",
             "ChatOutput",
-            ShowAutoSpellCheck -> False,
-            CodeAssistOptions -> { "AutoDetectHyperlinks" -> False },
-            LanguageCategory -> None,
-            LineIndent -> 0,
             If[ TrueQ @ $autoAssistMode && MatchQ[ minimized, True|Automatic ],
                 Sequence @@ Flatten[ {
                     $closedChatCellOptions,
@@ -1430,13 +1433,21 @@ activeAIAssistantCell[
                 } ],
                 Initialization -> None
             ],
-            CellDingbat       -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
-            CellEditDuplicate -> False,
-            CellTrayWidgets   -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
-            Editable          -> True,
-            Selectable        -> True,
-            ShowCursorTracker -> False,
-            TaggingRules      -> <| "ChatNotebookSettings" -> settings |>
+            CellDingbat        -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
+            CellEditDuplicate  -> False,
+            CellTrayWidgets    -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
+            CodeAssistOptions  -> { "AutoDetectHyperlinks" -> False },
+            Editable           -> True,
+            LanguageCategory   -> None,
+            LineIndent         -> 0,
+            Selectable         -> True,
+            ShowAutoSpellCheck -> False,
+            ShowCursorTracker  -> False,
+            TaggingRules       -> <| "ChatNotebookSettings" -> settings |>,
+            If[ scrollOutputQ @ settings,
+                PrivateCellOptions -> { "TrackScrollingWhenPlaced" -> True },
+                Sequence @@ { }
+            ]
         ]
     ];
 
@@ -1571,8 +1582,9 @@ writeReformattedCell[ settings_, None, cell_CellObject ] :=
 
 writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
     Block[ { $dynamicText = False },
-        Module[ { tag, open, label, pageData, uuid, new, output },
+        Module[ { scroll, tag, open, label, pageData, uuid, new, output },
 
+            scroll   = scrollOutputQ[ settings, cell ];
             tag      = ConfirmMatch[ CurrentValue[ cell, { TaggingRules, "MessageTag" } ], _String|Inherited, "Tag" ];
             open     = $lastOpen = cellOpenQ @ cell;
             label    = RawBoxes @ TemplateBox[ { }, "MinimizedChat" ];
@@ -1585,15 +1597,17 @@ writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
             $reformattedCell = new;
             $lastChatOutput  = output;
 
-            With[ { new = new, output = output },
-                If[ TrueQ[ $VersionNumber >= 14.0 ],
+            With[ { new = new, output = output, scroll = scroll },
+                If[ sufficientVersionQ[ "TaskWriteOutput" ],
                     createFETask @ NotebookWrite[ cell, new, None, AutoScroll -> False ];
                     createFETask @ attachChatOutputMenu @ output;
                     createFETask @ postApply[ output, string, settings ];
+                    createFETask @ scrollOutput[ scroll, output ];
                     ,
                     NotebookWrite[ cell, new, None, AutoScroll -> False ];
                     attachChatOutputMenu @ output;
                     postApply[ output, string, settings ];
+                    scrollOutput[ scroll, output ];
                 ]
             ]
         ]
@@ -1619,6 +1633,35 @@ writeReformattedCell[ settings_, other_, cell_CellObject ] :=
     ];
 
 writeReformattedCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*scrollOutputQ*)
+scrollOutputQ // beginDefinition;
+
+scrollOutputQ[ settings_Association ] :=
+    TrueQ @ Replace[ settings[ "TrackScrollingWhenPlaced" ],
+                     $$unspecified :> sufficientVersionQ[ "TrackScrollingWhenPlaced" ]
+            ];
+
+scrollOutputQ[ settings_Association? scrollOutputQ, cell_CellObject ] :=
+    cellInformation[ cell ][ "CursorPosition" ] === "BelowCell";
+
+scrollOutputQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*scrollOutput*)
+scrollOutput // beginDefinition;
+
+scrollOutput[ True, cell_ ] := (
+    SelectionMove[ cell, Before, Cell, AutoScroll -> True ];
+    SelectionMove[ cell, After , Cell, AutoScroll -> True ];
+);
+
+scrollOutput[ False, cell_ ] := Null;
+
+scrollOutput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
