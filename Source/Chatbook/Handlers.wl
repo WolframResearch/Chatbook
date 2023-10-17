@@ -44,6 +44,7 @@ applyHandlerFunction[ settings_Association, name_String, args0_ ] := Enclose[
     Module[ { args, handler },
         args = ConfirmBy[
             <|
+                "EventName"            -> name,
                 "ChatNotebookSettings" -> KeyDrop[ settings, { "Data", "OpenAIKey" } ],
                 args0
             |>,
