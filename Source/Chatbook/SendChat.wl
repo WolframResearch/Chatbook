@@ -1636,6 +1636,8 @@ scrollOutputQ[ settings_Association ] :=
 scrollOutputQ[ settings_Association? scrollOutputQ, cell_CellObject ] :=
     cellInformation[ cell ][ "CursorPosition" ] === "BelowCell";
 
+scrollOutputQ[ settings_Association, cell_ ] := False;
+
 scrollOutputQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
