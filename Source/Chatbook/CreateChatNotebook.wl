@@ -19,35 +19,36 @@ Needs[ "Wolfram`Chatbook`UI`"         ];
 (* ::Section::Closed:: *)
 (*CreateChatNotebook*)
 CreateChatNotebook // Options = {
-    "Assistance"              -> Automatic,
-    "AutoFormat"              -> True,
-    "BasePrompt"              -> Automatic,
-    "CellToMessageFunction"   -> CellToChatMessage,
-    "ChatContextPreprompt"    -> Automatic,
-    "ChatDrivenNotebook"      -> False,
-    "ChatFormattingFunction"  -> FormatChatOutput,
-    "ChatHistoryLength"       -> 25,
-    "DynamicAutoFormat"       -> Automatic,
-    "EnableChatGroupSettings" -> False,
-    "EnableLLMServices"       -> Automatic, (* TODO: remove this once LLMServices is widely available *)
-    "FrequencyPenalty"        -> 0.1,
-    "HandlerFunctions"        :> $DefaultChatHandlerFunctions,
-    "HandlerFunctionsKeys"    -> Automatic,
-    "IncludeHistory"          -> Automatic,
-    "LLMEvaluator"            -> "CodeAssistant",
-    "MaxTokens"               -> Automatic,
-    "MergeMessages"           -> True,
-    "Model"                   :> $DefaultModel,
-    "NotebookWriteMethod"     -> Automatic,
-    "OpenAIKey"               -> Automatic, (* TODO: remove this once LLMServices is widely available *)
-    "PresencePenalty"         -> 0.1,
-    "ShowMinimized"           -> Automatic,
-    "StreamingOutputMethod"   -> Automatic,
-    "Temperature"             -> 0.7,
-    "ToolOptions"             :> $DefaultToolOptions,
-    "Tools"                   -> Automatic,
-    "ToolsEnabled"            -> Automatic,
-    "TopP"                    -> 1
+    "Assistance"               -> Automatic,
+    "AutoFormat"               -> True,
+    "BasePrompt"               -> Automatic,
+    "CellToMessageFunction"    -> CellToChatMessage,
+    "ChatContextPreprompt"     -> Automatic,
+    "ChatDrivenNotebook"       -> False,
+    "ChatFormattingFunction"   -> FormatChatOutput,
+    "ChatHistoryLength"        -> 25,
+    "DynamicAutoFormat"        -> Automatic,
+    "EnableChatGroupSettings"  -> False,
+    "EnableLLMServices"        -> Automatic, (* TODO: remove this once LLMServices is widely available *)
+    "FrequencyPenalty"         -> 0.1,
+    "HandlerFunctions"         :> $DefaultChatHandlerFunctions,
+    "HandlerFunctionsKeys"     -> Automatic,
+    "IncludeHistory"           -> Automatic,
+    "LLMEvaluator"             -> "CodeAssistant",
+    "MaxTokens"                -> Automatic,
+    "MergeMessages"            -> True,
+    "Model"                    :> $DefaultModel,
+    "NotebookWriteMethod"      -> Automatic,
+    "OpenAIKey"                -> Automatic, (* TODO: remove this once LLMServices is widely available *)
+    "PresencePenalty"          -> 0.1,
+    "ShowMinimized"            -> Automatic,
+    "StreamingOutputMethod"    -> Automatic,
+    "Temperature"              -> 0.7,
+    "ToolOptions"              :> $DefaultToolOptions,
+    "Tools"                    -> Automatic,
+    "ToolsEnabled"             -> Automatic,
+    "TopP"                     -> 1,
+    "TrackScrollingWhenPlaced" -> Automatic
 };
 
 
