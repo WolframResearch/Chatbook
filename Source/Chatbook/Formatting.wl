@@ -632,7 +632,7 @@ parseFullToolCallString[ id_String, resp: HoldPattern[ _LLMToolResponse ], strin
 parseFullToolCallString[ id_String, tool: HoldPattern[ _LLMTool ], parameters_Association, output_, string_ ] :=
     $lastFullParsed = <|
         "ID"                 -> id,
-        "Name"               -> tool[ "Name" ],
+        "Name"               -> toolName[tool],
         "DisplayName"        -> getToolDisplayName @ tool,
         "Icon"               -> getToolIcon @ tool,
         "FormattingFunction" -> getToolFormattingFunction @ tool,
