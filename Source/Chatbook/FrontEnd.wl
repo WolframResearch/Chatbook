@@ -212,13 +212,29 @@ CurrentChatSettings[ key_String ] := catchMine @
         Lookup[ $defaultChatSettings, key, Inherited ]
     ];
 
-CurrentChatSettings[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession ] := catchMine @
+CurrentChatSettings[ cell_CellObject ] := catchMine @
+    With[ { parent = Quiet @ parentCell @ cell },
+        If[ MatchQ[ parent, Except[ cell, _CellObject ] ],
+            CurrentChatSettings @ parent,
+            $defaultChatSettings
+        ]
+    ];
+
+CurrentChatSettings[ cell_CellObject, key_String ] := catchMine @
+    With[ { parent = Quiet @ parentCell @ cell },
+        If[ MatchQ[ parent, Except[ cell, _CellObject ] ],
+            CurrentChatSettings[ parent, key ],
+            Lookup[ $defaultChatSettings, key, Inherited ]
+        ]
+    ];
+
+CurrentChatSettings[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession ] := catchMine @
     If[ TrueQ @ $Notebooks,
         currentChatSettings @ obj,
         $defaultChatSettings
     ];
 
-CurrentChatSettings[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := catchMine @
+CurrentChatSettings[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := catchMine @
     If[ TrueQ @ $Notebooks,
         currentChatSettings[ obj, key ],
         Lookup[ $defaultChatSettings, key, Inherited ]
@@ -529,7 +545,7 @@ getPrecedingDelimiter[ cell_CellObject, nbo_NotebookObject ] :=
 getPrecedingDelimiter[ cell_CellObject, nbo_, { before0___CellObject, cell_, ___ } ] :=
     Module[ { before, delimiterTest, pos },
         before = Reverse @ { before0 };
-        delimiterTest = CurrentValue[ before, { TaggingRules, "ChatNotebookSettings", "ChatDelimiter" } ];
+        delimiterTest = AbsoluteCurrentValue[ before, { TaggingRules, "ChatNotebookSettings", "ChatDelimiter" } ];
         pos = FirstPosition[ delimiterTest, True ];
         If[ MissingQ @ pos, Missing[ "NotAvailable" ], Extract[ before, pos ] ]
     ];
