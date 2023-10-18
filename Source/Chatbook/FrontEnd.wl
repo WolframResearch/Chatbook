@@ -545,7 +545,7 @@ getPrecedingDelimiter[ cell_CellObject, nbo_NotebookObject ] :=
 getPrecedingDelimiter[ cell_CellObject, nbo_, { before0___CellObject, cell_, ___ } ] :=
     Module[ { before, delimiterTest, pos },
         before = Reverse @ { before0 };
-        delimiterTest = CurrentValue[ before, { TaggingRules, "ChatNotebookSettings", "ChatDelimiter" } ];
+        delimiterTest = AbsoluteCurrentValue[ before, { TaggingRules, "ChatNotebookSettings", "ChatDelimiter" } ];
         pos = FirstPosition[ delimiterTest, True ];
         If[ MissingQ @ pos, Missing[ "NotAvailable" ], Extract[ before, pos ] ]
     ];
