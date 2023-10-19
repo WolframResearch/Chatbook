@@ -118,14 +118,15 @@ Cell[
 
 Cell[
     StyleData[ "ChatInput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
-    MenuSortingValue  -> 1543,
     CellFrameColor    -> RGBColor[ "#a3c9f2" ],
     CellGroupingRules -> "InputGrouping",
     CellMargins       -> { { 66, 25 }, { 1, 8 } },
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterIncrements -> { "ChatInputCount" },
     Evaluatable       -> True,
+    MenuSortingValue  -> 1543,
     StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "SideChat" },
+    TaggingRules      -> <| "ChatNotebookSettings" -> <| |> |>,
 	CellDingbat -> Cell[
         BoxData @ DynamicBox @ ToBoxes[
             If[ TrueQ @ CloudSystem`$CloudNotebooks,
@@ -219,10 +220,11 @@ Cell[
 
 Cell[
     StyleData[ "ChatQuery", StyleDefinitions -> StyleData[ "ChatInput" ] ],
-    CellDingbat      -> Cell[ BoxData @ TemplateBox[ { }, "ChatQueryIcon" ], Background -> None ],
-    CellFrameColor   -> RGBColor[ "#a3c9f2" ],
-    CellTrayWidgets  -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
-    StyleKeyMapping  -> { "~" -> "ChatDelimiter", "'" -> "ChatInput" }
+    CellDingbat     -> Cell[ BoxData @ TemplateBox[ { }, "ChatQueryIcon" ], Background -> None ],
+    CellFrameColor  -> RGBColor[ "#a3c9f2" ],
+    CellTrayWidgets -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    StyleKeyMapping -> { "~" -> "ChatDelimiter", "'" -> "ChatInput" },
+    TaggingRules    -> <| "ChatNotebookSettings" -> <| |> |>
 ]
 
 
@@ -233,14 +235,15 @@ Cell[
 
 Cell[
     StyleData[ "ChatSystemInput", StyleDefinitions -> StyleData[ "ChatInput" ] ],
-    MenuSortingValue  -> 1545,
     CellDingbat       -> Cell[ BoxData @ TemplateBox[ { }, "ChatSystemIcon" ], Background -> None ],
     CellFrame         -> 1,
     CellFrameColor    -> RGBColor[ "#a3c9f2" ],
     CellFrameStyle    -> Dashing @ { Small, Small },
     CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterIncrements -> { },
-    StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "ChatInput", "Backspace" -> "SideChat" }
+    MenuSortingValue  -> 1545,
+    StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "ChatInput", "Backspace" -> "SideChat" },
+    TaggingRules      -> <| "ChatNotebookSettings" -> <| |> |>
 ]
 
 
@@ -269,6 +272,7 @@ Cell[
     LanguageCategory     -> None,
     LineSpacing          -> { 1.1, 0, 2 },
     ShowAutoSpellCheck   -> False,
+    TaggingRules         -> <| "ChatNotebookSettings" -> <| |> |>,
     menuInitializer[ "ChatOutput", RGBColor[ "#ecf0f5" ] ]
 ]
 
