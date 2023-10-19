@@ -74,7 +74,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         ];
 
         settings = ConfirmBy[
-            resolveTools @ resolveAutoSettings @ currentChatSettings @ evalCell,
+            resolveAutoSettings @ currentChatSettings @ evalCell,
             AssociationQ,
             "InheritSettings"
         ];
@@ -1009,49 +1009,45 @@ chatHistoryCellsAndTarget // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*inheritSettings*)
-inheritSettings // beginDefinition;
+(*resolveAutoSettings*)
+(* TODO: this could be integrated into currentChatSettings (perhaps as an option) *)
+resolveAutoSettings // beginDefinition;
 
-inheritSettings[ settings_, { first_CellObject, ___ }, evalCell_CellObject ] :=
-    inheritSettings[ settings, cellInformation @ first, evalCell ];
+(* Evaluate rhs of RuleDelayed settings to get final value *)
+resolveAutoSettings[ settings: KeyValuePattern[ _ :> _ ] ] :=
+    resolveAutoSettings @ AssociationMap[ Apply @ Rule, settings ];
 
-inheritSettings[
-    settings_Association,
-    KeyValuePattern @ { "Style" -> $$chatDelimiterStyle, "CellObject" -> delimiter_CellObject },
-    evalCell_CellObject
-] := mergeSettings[ settings, currentChatSettings @ delimiter, currentChatSettings @ evalCell ];
+(* Determine if tools are actually enabled based on settings *)
+resolveAutoSettings[ settings: KeyValuePattern[ "ToolsEnabled" -> Automatic ] ] :=
+    resolveAutoSettings @ Association[ settings, "ToolsEnabled" -> toolsEnabledQ @ settings ];
 
-inheritSettings[ settings_Association, _, evalCell_CellObject ] :=
-    mergeSettings[ settings, <| |>, currentChatSettings @ evalCell ];
+(* Add additional settings and resolve actual LLMTool expressions *)
+resolveAutoSettings[ settings_Association ] := resolveTools @ <|
+    settings,
+    "HandlerFunctions" -> getHandlerFunctions @ settings,
+    "LLMEvaluator"     -> getLLMEvaluator @ settings
+|>;
 
-inheritSettings // endDefinition;
+resolveAutoSettings // endDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*mergeSettings*)
-mergeSettings // beginDefinition;
-
-mergeSettings[ settings_? AssociationQ, group_? AssociationQ, cell_? AssociationQ ] :=
-    Module[ { as },
-        as = Association[ settings, Complement[ group, settings ], Complement[ cell, settings ] ];
-        Association[ as, "LLMEvaluator" -> getLLMEvaluator @ as ]
-    ];
-
-mergeSettings // endDefinition;\
+(* TODO: define singular `resolveAutoSetting` that expands each `Automatic` value *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*getLLMEvaluator*)
 getLLMEvaluator // beginDefinition;
 getLLMEvaluator[ as_Association ] := getLLMEvaluator[ as, Lookup[ as, "LLMEvaluator" ] ];
+
 getLLMEvaluator[ as_, name_String ] :=
-    (* If there isn't any information on `name`, getNamedLLMEvaluator just
-        returns `name`; if that happens, avoid infinite recursion by just
-        returning *)
-    Replace[getNamedLLMEvaluator[name], {
+    (* If there isn't any information on `name`, getNamedLLMEvaluator just returns `name`; if that happens, avoid
+       infinite recursion by just returning *)
+    Replace[ getNamedLLMEvaluator @ name,
+             {
                 name   -> name,
                 other_ :> getLLMEvaluator[ as, other ]
-    }]
+            }
+    ];
+
 getLLMEvaluator[ as_, evaluator_Association ] := evaluator;
 getLLMEvaluator[ _, _ ] := None;
 getLLMEvaluator // endDefinition;
@@ -1064,24 +1060,6 @@ getNamedLLMEvaluator[ name_String ] := getNamedLLMEvaluator[ name, GetCachedPers
 getNamedLLMEvaluator[ name_String, evaluator_Association ] := Append[ evaluator, "LLMEvaluatorName" -> name ];
 getNamedLLMEvaluator[ name_String, _ ] := name;
 getNamedLLMEvaluator // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*resolveAutoSettings*)
-resolveAutoSettings // beginDefinition;
-
-resolveAutoSettings[ settings: KeyValuePattern[ key_ :> value_ ] ] :=
-    resolveAutoSettings @ Association[ settings, key -> value ];
-
-resolveAutoSettings[ settings: KeyValuePattern[ "ToolsEnabled" -> Automatic ] ] :=
-    resolveAutoSettings @ Association[ settings, "ToolsEnabled" -> toolsEnabledQ @ settings ];
-
-resolveAutoSettings[ settings_Association ] := <|
-    settings,
-    "HandlerFunctions" -> getHandlerFunctions @ settings
-|>;
-
-resolveAutoSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
