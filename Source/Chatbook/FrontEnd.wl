@@ -216,7 +216,7 @@ CurrentChatSettings[ cell_CellObject ] := catchMine @
     With[ { parent = Quiet @ parentCell @ cell },
         If[ MatchQ[ parent, Except[ cell, _CellObject ] ],
             CurrentChatSettings @ parent,
-            $defaultChatSettings
+            currentChatSettings @ cell
         ]
     ];
 
@@ -224,7 +224,7 @@ CurrentChatSettings[ cell_CellObject, key_String ] := catchMine @
     With[ { parent = Quiet @ parentCell @ cell },
         If[ MatchQ[ parent, Except[ cell, _CellObject ] ],
             CurrentChatSettings[ parent, key ],
-            Lookup[ $defaultChatSettings, key, Inherited ]
+            currentChatSettings[ cell, key ]
         ]
     ];
 
