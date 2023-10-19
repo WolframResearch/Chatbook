@@ -27,7 +27,7 @@ VerificationTest[
 (*CurrentChatSettings*)
 VerificationTest[
     CurrentChatSettings[ ],
-    KeyValuePattern[ "Model" -> _ ],
+    KeyValuePattern[ (Rule|RuleDelayed)[ "Model", _ ] ],
     SameTest -> MatchQ,
     TestID   -> "CurrentChatSettings@@Tests/CurrentChatSettings.wlt:28,1-33,2"
 ]

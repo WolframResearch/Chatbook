@@ -86,9 +86,11 @@ WithTestNotebook // Attributes = { HoldFirst };
 WithTestNotebook // Options    = { NotebookClose -> True };
 
 WithTestNotebook[ eval_, { args___ }, opts: OptionsPattern[ ] ] :=
-    Block[ { $TestNotebook = CreateTestChatNotebook @ args },
-        UsingFrontEnd @ WithCleanup[ eval, If[ OptionValue @ NotebookClose, NotebookClose @ $TestNotebook ] ] /;
-            MatchQ[ $TestNotebook, _NotebookObject ]
+    UsingFrontEnd @ Block[ { $TestNotebook = CreateTestChatNotebook @ args },
+        WithCleanup[
+            eval,
+            If[ OptionValue @ NotebookClose, NotebookClose @ $TestNotebook ]
+        ]
     ];
 
 WithTestNotebook[ eval_, opts: $$rules ] :=
