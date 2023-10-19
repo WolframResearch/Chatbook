@@ -73,9 +73,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             "HistoryAndTarget"
         ];
 
-        (* FIXME: settings should already be inherited via currentChatSettings *)
         settings = ConfirmBy[
-            resolveTools @ resolveAutoSettings @ inheritSettings[ settings0, cells, evalCell ],
+            resolveTools @ resolveAutoSettings @ currentChatSettings @ evalCell,
             AssociationQ,
             "InheritSettings"
         ];
@@ -189,9 +188,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
             "HistoryAndTarget"
         ];
 
-        (* FIXME: settings should already be inherited via currentChatSettings *)
         settings = ConfirmBy[
-            resolveTools @ resolveAutoSettings @ inheritSettings[ settings0, cells, evalCell ],
+            resolveTools @ resolveAutoSettings @ currentChatSettings @ evalCell,
             AssociationQ,
             "InheritSettings"
         ];
@@ -1051,8 +1049,8 @@ getLLMEvaluator[ as_, name_String ] :=
         returns `name`; if that happens, avoid infinite recursion by just
         returning *)
     Replace[getNamedLLMEvaluator[name], {
-        name -> name,
-        other_ :> getLLMEvaluator[as, other]
+                name   -> name,
+                other_ :> getLLMEvaluator[ as, other ]
     }]
 getLLMEvaluator[ as_, evaluator_Association ] := evaluator;
 getLLMEvaluator[ _, _ ] := None;
