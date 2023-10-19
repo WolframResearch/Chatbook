@@ -8,6 +8,20 @@ VerificationTest[
     TestID   -> "GetDefinitions@@Tests/CurrentChatSettings.wlt:4,1-9,2"
 ]
 
+VerificationTest[
+    Needs[ "Wolfram`Chatbook`" ],
+    Null,
+    SameTest -> MatchQ,
+    TestID   -> "LoadContext@@Tests/CurrentChatSettings.wlt:11,1-16,2"
+]
+
+VerificationTest[
+    Context @ CurrentChatSettings,
+    "Wolfram`Chatbook`",
+    SameTest -> MatchQ,
+    TestID   -> "CurrentChatSettingsContext@@Tests/CurrentChatSettings.wlt:18,1-23,2"
+]
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*CurrentChatSettings*)
@@ -15,14 +29,14 @@ VerificationTest[
     CurrentChatSettings[ ],
     KeyValuePattern[ "Model" -> _ ],
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings@@Tests/CurrentChatSettings.wlt:14,1-19,2"
+    TestID   -> "CurrentChatSettings@@Tests/CurrentChatSettings.wlt:28,1-33,2"
 ]
 
 VerificationTest[
     CurrentChatSettings[ "Model" ],
     _String | Automatic,
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings@@Tests/CurrentChatSettings.wlt:21,1-26,2"
+    TestID   -> "CurrentChatSettings@@Tests/CurrentChatSettings.wlt:35,1-40,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -32,14 +46,14 @@ VerificationTest[
     UsingFrontEnd @ CurrentChatSettings[ $FrontEnd, "Model" ],
     _String | Automatic,
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings@@Tests/CurrentChatSettings.wlt:31,1-36,2"
+    TestID   -> "CurrentChatSettings@@Tests/CurrentChatSettings.wlt:45,1-50,2"
 ]
 
 VerificationTest[
     UsingFrontEnd @ CurrentChatSettings[ $FrontEndSession, "Model" ],
     _String | Automatic,
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings@@Tests/CurrentChatSettings.wlt:38,1-43,2"
+    TestID   -> "CurrentChatSettings@@Tests/CurrentChatSettings.wlt:52,1-57,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -52,7 +66,7 @@ VerificationTest[
     ],
     "MyModelName",
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings-Notebooks@@Tests/CurrentChatSettings.wlt:48,1-56,2"
+    TestID   -> "CurrentChatSettings-Notebooks@@Tests/CurrentChatSettings.wlt:62,1-70,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -71,7 +85,7 @@ VerificationTest[
     ],
     { Except[ "BlockModel", _String ], "BlockModel", "BlockModel" },
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings-ChatBlocks@@Tests/CurrentChatSettings.wlt:61,1-75,2"
+    TestID   -> "CurrentChatSettings-ChatBlocks@@Tests/CurrentChatSettings.wlt:75,1-89,2"
 ]
 
 VerificationTest[
@@ -88,5 +102,5 @@ VerificationTest[
     ],
     { "NotebookModel", "BlockModel", "BlockModel" },
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings-ChatBlocks@@Tests/CurrentChatSettings.wlt:77,1-92,2"
+    TestID   -> "CurrentChatSettings-ChatBlocks@@Tests/CurrentChatSettings.wlt:91,1-106,2"
 ]
