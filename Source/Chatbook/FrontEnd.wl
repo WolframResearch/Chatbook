@@ -463,7 +463,7 @@ currentChatSettings[ cell0_CellObject ] := Catch @ Enclose[
             AssociationQ
         ];
 
-        ConfirmBy[ Association[ $defaultChatSettings, settings ], AssociationQ, "CombinedSettings" ]
+        ConfirmBy[ mergeChatSettings @ Flatten @ { $defaultChatSettings, settings }, AssociationQ, "CombinedSettings" ]
     ],
     throwInternalFailure[ currentChatSettings @ cell0, ## ] &
 ];
@@ -505,6 +505,7 @@ currentChatSettings[ cell0_CellObject, key_String ] := Catch @ Enclose[
 
         values = CurrentValue[ DeleteMissing @ { cell, delimiter }, { TaggingRules, "ChatNotebookSettings", key } ];
 
+        (* TODO: this should also use `mergeChatSettings` in case the values are associations *)
         FirstCase[
             values,
             Except[ Inherited ],
@@ -537,6 +538,21 @@ currentChatSettings0[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEnd
 ];
 
 currentChatSettings0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*mergeChatSettings*)
+mergeChatSettings // beginDefinition;
+mergeChatSettings[ a_List ] := mergeChatSettings0 @ a //. DownValues @ mergeChatSettings0;
+mergeChatSettings // endDefinition;
+
+mergeChatSettings0 // beginDefinition;
+mergeChatSettings0[ { a___, Inherited, b___ } ] := mergeChatSettings0 @ { a, b };
+mergeChatSettings0[ { a_? AssociationQ, b__? AssociationQ } ] := DeleteMissing @ Merge[ { a, b }, mergeChatSettings0 ];
+mergeChatSettings0[ { __, e: Except[ _? AssociationQ ] } ] := e;
+mergeChatSettings0[ { e_ } ] := e;
+mergeChatSettings0[ { } ] := Missing[ ];
+mergeChatSettings0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
