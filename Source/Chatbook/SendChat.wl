@@ -5,6 +5,7 @@ BeginPackage[ "Wolfram`Chatbook`SendChat`" ];
 (* :!CodeAnalysis::BeginBlock:: *)
 
 `$debugLog;
+`$recordedChatStream;
 `makeOutputDingbat;
 `sendChat;
 `toolsEnabledQ;
@@ -30,6 +31,7 @@ Needs[ "Wolfram`Chatbook`Utils`"            ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
+$recordChatStream          = False;
 $resizeDingbats            = True;
 splitDynamicTaskFunction   = createFETask;
 $defaultHandlerKeys        = { "BodyChunk", "StatusCode", "Task", "TaskStatus", "EventName" };
@@ -157,6 +159,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             |>
         ];
 
+        startChatStreamRecording[ messages, settings ];
+
         task = ConfirmMatch[
             $lastTask = chatSubmit[ container, messages, cellObject, settings ],
             _TaskObject|_Failure,
@@ -271,6 +275,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
                 "Container"      :> container
             |>
         ];
+
+        startChatStreamRecording[ messages, settings ];
 
         task = Confirm[ $lastTask = chatSubmit[ container, req, cellObject, settings ] ];
 
@@ -466,6 +472,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                         $autoAssistMode = autoAssist,
                         $dynamicSplit   = dynamicSplit
                     },
+                    recordChatStream[ #1 ];
                     bodyChunkHandler[ #1 ];
                     Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                     writeChunk[ Dynamic @ container, cellObject, #1 ]
@@ -480,6 +487,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                         $autoAssistMode = autoAssist,
                         $dynamicSplit   = dynamicSplit
                     },
+                    recordChatStream[ #1 ];
                     taskFinishedHandler[ #1 ];
                     Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                     checkResponse[ $settings, Unevaluated @ container, cellObject, #1 ]
@@ -808,6 +816,9 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         $toolEvaluationResults[ toolID ] = toolResponse;
 
         appendToolResult[ container, output, toolID ];
+
+        recordChatStream @ <| "EventName" -> "ToolCall", "ToolCall" -> toolCall |>;
+        startChatStreamRecording[ messages, settings ];
 
         $lastTask = chatSubmit[ container, req, cell, settings ]
     ],
@@ -1971,6 +1982,70 @@ errorBoxes[ failure_Failure ] :=
 
 errorBoxes[ as___ ] :=
     ToBoxes @ messageFailure[ "UnknownResponse", as ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Recording/Playback for mock tests*)
+$chatStream           = Internal`Bag[ ];
+$chatStreams          = Internal`Bag[ ];
+$recordedChatStreams := getChatStreams @ $chatStreams;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getChatStreams*)
+getChatStreams // beginDefinition;
+getChatStreams[ bag_Internal`Bag ] := getChatStream /@ Internal`BagPart[ bag, All ];
+getChatStreams // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getChatStream*)
+getChatStream // beginDefinition;
+
+getChatStream[ bag_Internal`Bag ] :=
+    getChatStream @ Internal`BagPart[ bag, All ];
+
+getChatStream[ events_List ] :=
+    Module[ { start },
+        start = FirstCase[ events, KeyValuePattern @ { "Timestamp" -> t_, "EventName" -> "TaskStarted" } :> t ];
+        Cases[
+            events,
+            as: KeyValuePattern @ { "Timestamp" -> t_ } :>
+                <| "Time" -> t - start, KeyDrop[ as, { "Task", "StatusCode" } ] |>
+        ]
+    ];
+
+getChatStream // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*startChatStreamRecording*)
+startChatStreamRecording // beginDefinition;
+
+startChatStreamRecording[ messages_, settings_Association ] :=
+    If[ TrueQ @ settings[ "RecordChatStream" ]
+        ,
+        $chatStream       = Internal`Bag[ ];
+        $recordChatStream = True;
+        Internal`StuffBag[ $chatStreams, $chatStream ];
+        recordChatStream @ <| "EventName" -> "TaskStarted", "Messages" -> messages |>
+        ,
+        $recordChatStream = False;
+    ];
+
+startChatStreamRecording // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*recordChatStream*)
+recordChatStream // beginDefinition;
+
+recordChatStream[ as_Association ] /; $recordChatStream :=
+    Internal`StuffBag[ $chatStream, <| "Timestamp" -> AbsoluteTime[ ], as |> ];
+
+recordChatStream[ _ ] := Null;
+
+recordChatStream // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
