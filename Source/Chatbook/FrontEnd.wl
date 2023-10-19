@@ -455,7 +455,10 @@ currentChatSettings[ cell0_CellObject ] := Catch @ Enclose[
 
         settings = Select[
             Map[ Association,
-                 AbsoluteCurrentValue[ DeleteMissing @ { delimiter, cell }, { TaggingRules, "ChatNotebookSettings" } ]
+                 Flatten @ {
+                    AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ],
+                    CurrentValue[ DeleteMissing @ { delimiter, cell }, { TaggingRules, "ChatNotebookSettings" } ]
+                 }
             ],
             AssociationQ
         ];
@@ -500,12 +503,16 @@ currentChatSettings[ cell0_CellObject, key_String ] := Catch @ Enclose[
 
         delimiter = ConfirmMatch[ getPrecedingDelimiter[ cell, nbo, cells ], _CellObject|_Missing, "Delimiter" ];
 
-        values = AbsoluteCurrentValue[
-            DeleteMissing @ { cell, delimiter },
-            { TaggingRules, "ChatNotebookSettings", key }
-        ];
+        values = CurrentValue[ DeleteMissing @ { cell, delimiter }, { TaggingRules, "ChatNotebookSettings", key } ];
 
-        FirstCase[ values, Except[ Inherited ], Lookup[ $defaultChatSettings, key, Inherited ] ]
+        FirstCase[
+            values,
+            Except[ Inherited ],
+            Replace[
+                AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", key } ],
+                Inherited :> Lookup[ $defaultChatSettings, key, Inherited ]
+            ]
+        ]
     ],
     throwInternalFailure[ currentChatSettings[ cell0, key ], ## ] &
 ];
