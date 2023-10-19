@@ -28,9 +28,11 @@ If[ FileExistsQ @ $stylesheetFile,
 cicd`ScriptConfirmAssert[ ! FileExistsQ @ $stylesheetFile ];
 
 cicd`ConsoleLog[ "Building stylesheet..." ];
-UsingFrontEnd @ Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
-    cicd`ScriptConfirm @ CheckAbort[ Get @ $builderFile, $Failed ];
-    result = cicd`ScriptConfirmBy[ Wolfram`ChatbookStylesheetBuilder`BuildChatbookStylesheet[ ], FileExistsQ ];
+Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" }, $ContextAliases = $ContextAliases },
+    UsingFrontEnd[
+        cicd`ScriptConfirm @ CheckAbort[ Get @ $builderFile, $Failed ];
+        result = cicd`ScriptConfirmBy[ Wolfram`ChatbookStylesheetBuilder`BuildChatbookStylesheet[ ], FileExistsQ ];
+    ];
 ];
 
 cicd`ConsoleLog @ SequenceForm[ "Built stylesheet: ", result ];
