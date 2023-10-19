@@ -216,7 +216,7 @@ CurrentChatSettings[ cell_CellObject ] := catchMine @
     With[ { parent = Quiet @ parentCell @ cell },
         If[ MatchQ[ parent, Except[ cell, _CellObject ] ],
             CurrentChatSettings @ parent,
-            $defaultChatSettings
+            currentChatSettings @ cell
         ]
     ];
 
@@ -224,7 +224,7 @@ CurrentChatSettings[ cell_CellObject, key_String ] := catchMine @
     With[ { parent = Quiet @ parentCell @ cell },
         If[ MatchQ[ parent, Except[ cell, _CellObject ] ],
             CurrentChatSettings[ parent, key ],
-            Lookup[ $defaultChatSettings, key, Inherited ]
+            currentChatSettings[ cell, key ]
         ]
     ];
 
@@ -455,12 +455,15 @@ currentChatSettings[ cell0_CellObject ] := Catch @ Enclose[
 
         settings = Select[
             Map[ Association,
-                 AbsoluteCurrentValue[ DeleteMissing @ { delimiter, cell }, { TaggingRules, "ChatNotebookSettings" } ]
+                 Flatten @ {
+                    AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ],
+                    CurrentValue[ DeleteMissing @ { delimiter, cell }, { TaggingRules, "ChatNotebookSettings" } ]
+                 }
             ],
             AssociationQ
         ];
 
-        ConfirmBy[ Association[ $defaultChatSettings, settings ], AssociationQ, "CombinedSettings" ]
+        ConfirmBy[ mergeChatSettings @ Flatten @ { $defaultChatSettings, settings }, AssociationQ, "CombinedSettings" ]
     ],
     throwInternalFailure[ currentChatSettings @ cell0, ## ] &
 ];
@@ -500,12 +503,17 @@ currentChatSettings[ cell0_CellObject, key_String ] := Catch @ Enclose[
 
         delimiter = ConfirmMatch[ getPrecedingDelimiter[ cell, nbo, cells ], _CellObject|_Missing, "Delimiter" ];
 
-        values = AbsoluteCurrentValue[
-            DeleteMissing @ { cell, delimiter },
-            { TaggingRules, "ChatNotebookSettings", key }
-        ];
+        values = CurrentValue[ DeleteMissing @ { cell, delimiter }, { TaggingRules, "ChatNotebookSettings", key } ];
 
-        FirstCase[ values, Except[ Inherited ], Lookup[ $defaultChatSettings, key, Inherited ] ]
+        (* TODO: this should also use `mergeChatSettings` in case the values are associations *)
+        FirstCase[
+            values,
+            Except[ Inherited ],
+            Replace[
+                AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", key } ],
+                Inherited :> Lookup[ $defaultChatSettings, key, Inherited ]
+            ]
+        ]
     ],
     throwInternalFailure[ currentChatSettings[ cell0, key ], ## ] &
 ];
@@ -530,6 +538,21 @@ currentChatSettings0[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEnd
 ];
 
 currentChatSettings0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*mergeChatSettings*)
+mergeChatSettings // beginDefinition;
+mergeChatSettings[ a_List ] := mergeChatSettings0 @ a //. DownValues @ mergeChatSettings0;
+mergeChatSettings // endDefinition;
+
+mergeChatSettings0 // beginDefinition;
+mergeChatSettings0[ { a___, Inherited, b___ } ] := mergeChatSettings0 @ { a, b };
+mergeChatSettings0[ { a_? AssociationQ, b__? AssociationQ } ] := DeleteMissing @ Merge[ { a, b }, mergeChatSettings0 ];
+mergeChatSettings0[ { __, e: Except[ _? AssociationQ ] } ] := e;
+mergeChatSettings0[ { e_ } ] := e;
+mergeChatSettings0[ { } ] := Missing[ ];
+mergeChatSettings0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

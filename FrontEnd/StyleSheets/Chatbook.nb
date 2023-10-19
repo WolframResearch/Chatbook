@@ -1143,7 +1143,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.2.1.3905399249"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.2.2.3906691619"|>
   ],
   Cell[
    StyleData["Text"],
@@ -1562,6 +1562,7 @@ Notebook[
    StyleKeyMapping -> {"~" -> "ChatDelimiter", "'" -> "SideChat"},
    Evaluatable -> True,
    CellGroupingRules -> "InputGrouping",
+   TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellEvaluationFunction ->
     (Function[
@@ -1762,6 +1763,7 @@ Notebook[
      Background -> None
     ],
    StyleKeyMapping -> {"~" -> "ChatDelimiter", "'" -> "ChatInput"},
+   TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellFrameColor -> RGBColor[0.639216, 0.788235, 0.94902]
   ],
@@ -1781,6 +1783,7 @@ Notebook[
     "'" -> "ChatInput",
     "Backspace" -> "SideChat"
    },
+   TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellFrameColor -> RGBColor[0.639216, 0.788235, 0.94902],
    CellFrameStyle -> Dashing[{Small, Small}],
@@ -1800,6 +1803,7 @@ Notebook[
    CellMargins -> {{66, 25}, {12, 5}},
    CellElementSpacings -> {"CellMinHeight" -> 0, "ClosedCellHeight" -> 0},
    CellGroupingRules -> "OutputGrouping",
+   TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    Initialization :>
     If[ Not[TrueQ[CloudSystem`$CloudNotebooks]],

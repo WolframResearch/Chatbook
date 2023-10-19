@@ -33,7 +33,12 @@ jobs:
 
     - name: Check
       run: wolframscript -f Scripts/CheckPaclet.wls
+    
+    - name: Build
+      run: wolframscript -f Scripts/BuildPaclet.wls
 
+    - name: Test
+      run: wolframscript -f Scripts/TestPaclet.wls
 
   Release:
     name: Release
