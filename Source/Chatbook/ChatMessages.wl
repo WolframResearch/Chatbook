@@ -299,17 +299,24 @@ getToolPrompt[ KeyValuePattern[ "Tools" -> { } | None ] ] := "";
 getToolPrompt[ settings_ ] := Enclose[
     Module[ { config, string },
         config = ConfirmMatch[ makeToolConfiguration @ settings, _System`LLMConfiguration ];
-        ConfirmBy[ TemplateApply[ config[ "ToolPrompt" ], toolPromptData@config[ "Data" ] ], StringQ ]
+        ConfirmBy[ TemplateApply[ config[ "ToolPrompt" ], toolPromptData @ config[ "Data" ] ], StringQ ]
     ],
     throwInternalFailure[ getToolPrompt @ settings, ## ] &
 ];
 
 getToolPrompt // endDefinition;
 
-toolPromptData[args:KeyValuePattern[{"Tools"->tools_}]]:=
-    Append[args,"Tools"->Replace[tools,t_LLMTool:>TemplateVerbatim[t],{1}]]
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*toolPromptData*)
+toolPromptData // beginDefinition;
 
-toolPromptData[expr_]:=expr
+toolPromptData[ args: KeyValuePattern @ { "Tools" -> tools_List } ] :=
+    Append[ args, "Tools" -> Replace[ tools, t_LLMTool :> TemplateVerbatim @ t, { 1 } ] ];
+
+toolPromptData[ expr_ ] := expr;
+
+toolPromptData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
