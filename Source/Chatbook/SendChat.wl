@@ -189,7 +189,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         ];
 
         settings = ConfirmBy[
-            resolveTools @ resolveAutoSettings @ currentChatSettings @ evalCell,
+            resolveAutoSettings @ currentChatSettings @ evalCell,
             AssociationQ,
             "InheritSettings"
         ];
