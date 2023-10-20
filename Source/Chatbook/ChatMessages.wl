@@ -294,6 +294,7 @@ getPostPrompt // endDefinition;
 getToolPrompt // beginDefinition;
 
 getToolPrompt[ KeyValuePattern[ "ToolsEnabled" -> False ] ] := "";
+getToolPrompt[ KeyValuePattern[ "Tools" -> { } | None ] ] := "";
 
 getToolPrompt[ settings_ ] := Enclose[
     Module[ { config, string },
