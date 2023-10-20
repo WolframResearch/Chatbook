@@ -41,3 +41,6 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         path: ${{ env.PACLET_BUILD_DIR }}
+    
+    - name: Test
+      run: wolframscript -f Scripts/TestPaclet.wls
