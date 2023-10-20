@@ -18,7 +18,8 @@ Needs[ "Wolfram`Chatbook`FrontEnd`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$feedbackURL = "https://www.wolframcloud.com/obj/rhennigan/Chatbook/api/1.0/Feedback"; (* FIXME: deploy real endpoint *)
+$feedbackURL           = "https://www.wolframcloud.com/obj/chatbook-feedback/api/1.0/Feedback";
+$feedbackClientVersion = 1;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -233,7 +234,7 @@ createFeedbackDialogContent[ Dynamic[ data_ ], Dynamic[ choices_ ] ] := Enclose[
                                     ],
                                     Button[
                                         redDialogButtonLabel[ "Send" ],
-                                        sendDialogFeedback[ data, choices ],
+                                        sendDialogFeedback[ EvaluationNotebook[ ], data, choices ],
                                         Appearance       -> "Suppressed",
                                         BaselinePosition -> Baseline,
                                         Method           -> "Queued"
@@ -277,6 +278,91 @@ createFeedbackDialogContent[ Dynamic[ data_ ], Dynamic[ choices_ ] ] := Enclose[
 ];
 
 createFeedbackDialogContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*sendDialogFeedback*)
+sendDialogFeedback // beginDefinition;
+
+sendDialogFeedback[ nbo_NotebookObject, data_Association, choices_Association ] := Enclose[
+    Module[ { json, chosen, string, image, request, response },
+
+        CurrentValue[ nbo, { TaggingRules, "Status" } ] = "Submitting";
+
+        json   = ConfirmBy[ toJSON @ Evaluate @ KeyDrop[ data, { "Image" } ], AssociationQ, "JSONData" ];
+        chosen = ConfirmBy[ filterChoices[ json, choices ], AssociationQ, "Filtered" ];
+
+        string = ConfirmBy[
+            Developer`WriteRawJSONString[
+                KeySort @ KeyDrop[ <| chosen, "Choices" -> choices |>, "CellImage" ],
+                "Compact" -> True
+            ],
+            StringQ,
+            "JSONString"
+        ];
+
+        image = If[ TrueQ @ choices[ "CellImage" ],
+                    ConfirmBy[ createImageFile @ data, FileFormatQ[ #1, "PNG" ] &, "Image" ],
+                    None
+                ];
+
+        request  = ConfirmMatch[ makeFeedbackRequest[ image, string ], _HTTPRequest, "HTTPRequest" ];
+        response = ConfirmMatch[ URLRead @ request, _HTTPResponse, "HTTPResponse" ];
+
+        checkResponse[ nbo, response ] (* TODO *)
+    ],
+    throwInternalFailure[ sendDialogFeedback[ nbo, data, choices ], ## ] &
+];
+
+sendDialogFeedback // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createImageFile*)
+createImageFile // beginDefinition;
+createImageFile[ data_Association ] := createImageFile @ data[ "Image" ];
+createImageFile[ image_Image? ImageQ ] := Flatten @ File @ Export[ $temporaryImageFile, image, "PNG" ];
+createImageFile // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$temporaryImageFile*)
+$temporaryImageFile := FileNameJoin @ {
+    $TemporaryDirectory,
+    "chatbook-feedback-" <> IntegerString[ $SessionID, 16 ] <> ".png"
+};
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeFeedbackRequest*)
+makeFeedbackRequest // beginDefinition;
+
+makeFeedbackRequest[ image_File? FileExistsQ, data_String ] :=
+    HTTPRequest[
+        CloudObject @ $feedbackURL,
+        <|
+            "Body" -> {
+                "CellImage" -> <| "Content" -> image, "MIMEType" -> "image/png", "FileName" -> FileNameTake @ image |>,
+                "Data"      -> StringToByteArray @ data,
+                "Version"   -> IntegerString @ $feedbackClientVersion
+            },
+            "Method" -> "POST"
+        |>
+    ];
+
+makeFeedbackRequest[ None, data_String ] :=
+    HTTPRequest[
+        CloudObject @ $feedbackURL,
+        <|
+            "Body" -> {
+                "Data"    -> StringToByteArray @ data,
+                "Version" -> IntegerString @ $feedbackClientVersion
+            },
+            "Method" -> "POST"
+        |>
+    ];
+
+makeFeedbackRequest // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
