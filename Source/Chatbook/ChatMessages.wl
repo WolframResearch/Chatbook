@@ -196,7 +196,7 @@ makeCurrentRole[ as_, _, KeyValuePattern[ "BasePrompt" -> None ] ] := (
 makeCurrentRole[ as_, base_, eval_Association ] := (
     needsBasePrompt @ base;
     needsBasePrompt @ eval;
-    <| "Role" -> "System", "Content" -> buildSystemPrompt @ Association[ as, eval ] |>
+    <| "Role" -> "System", "Content" -> buildSystemPrompt @ Association[ as, KeyDrop[ eval, { "Tools" } ] ] |>
 );
 
 makeCurrentRole[ as_, base_, _ ] := (
