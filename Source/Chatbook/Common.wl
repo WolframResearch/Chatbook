@@ -83,6 +83,9 @@ $versionRequirements = <|
     "TrackScrollingWhenPlaced" -> 14.0
 |>;
 
+$mxFlag = Wolfram`ChatbookInternal`$BuildingMX;
+$resourceFunctionContext = "Wolfram`Chatbook`ResourceFunctions`";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Style Patterns*)
@@ -257,12 +260,12 @@ importResourceFunction // beginDefinition;
 importResourceFunction::failure = "[ERROR] Failed to import resource function `1`. Aborting MX build.";
 importResourceFunction // Attributes = { HoldFirst };
 
-importResourceFunction[ symbol_Symbol, name_String ] /; Wolfram`ChatbookInternal`$BuildingMX := Enclose[
+importResourceFunction[ symbol_Symbol, name_String ] /; $mxFlag := Enclose[
     Block[ { PrintTemporary },
         Module[ { sourceContext, targetContext, definition, replaced, newSymbol },
 
             sourceContext = ConfirmBy[ ResourceFunction[ name, "Context" ], StringQ ];
-            targetContext = "Wolfram`Chatbook`ResourceFunctions`"<>name<>"`";
+            targetContext = $resourceFunctionContext<>name<>"`";
             definition    = ConfirmMatch[ ResourceFunction[ name, "DefinitionList" ], _Language`DefinitionList ];
 
             replaced = ConfirmMatch[

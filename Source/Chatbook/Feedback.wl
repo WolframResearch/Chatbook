@@ -33,7 +33,7 @@ sendFeedback // beginDefinition;
 sendFeedback[ cell_CellObject, positive: True|False ] := Enclose[
     Module[ { data },
         data = ConfirmBy[ createFeedbackData[ cell, positive ], AssociationQ, "FeedbackData" ];
-        ConfirmMatch[ createFeedbackDialog @ data, _NotebookObject, "FeedbackDialog" ]
+        ConfirmMatch[ createFeedbackDialog[ cell, data ], _NotebookObject, "FeedbackDialog" ]
     ],
     throwInternalFailure[ sendFeedback[ cell, positive ], ## ] &
 ];
@@ -62,7 +62,7 @@ createFeedbackData[ cell_CellObject, positive: True|False ] := Enclose[
             "Positive"  -> positive,
             "Settings"  -> settings,
             "System"    -> systemData,
-            "Timestamp" -> StringTrim[ DateString[ "ISODateTime" ], "Z"|"z" ] <> "Z"
+            "ContentID" -> contentID @ { chatData, settings, systemData }
         |>
     ],
     throwInternalFailure[ createFeedbackData[ cell, positive ], ##1 ] &
@@ -98,10 +98,10 @@ $blankCell = Cell[ "", CellElementSpacings -> { "CellMinHeight" -> 0, "ClosedCel
 (*createFeedbackDialog*)
 createFeedbackDialog // beginDefinition;
 
-createFeedbackDialog[ data0_Association ] := createDialog[
+createFeedbackDialog[ cell_CellObject, data0_Association ] := createDialog[
     DynamicModule[ { data = data0, choices },
         choices = <| "CellImage" -> False, "ChatHistory" -> True, "Messages" -> True, "SystemMessage" -> True |>;
-        createFeedbackDialogContent[ Dynamic @ data, Dynamic @ choices ]
+        createFeedbackDialogContent[ cell, Dynamic @ data, Dynamic @ choices ]
     ],
     WindowTitle -> "Send Wolfram AI Chat Feedback"
 ];
@@ -113,7 +113,7 @@ createFeedbackDialog // endDefinition;
 (*createFeedbackDialogContent*)
 createFeedbackDialogContent // beginDefinition;
 
-createFeedbackDialogContent[ Dynamic[ data_ ], Dynamic[ choices_ ] ] := Enclose[
+createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices_ ] ] := Enclose[
     cvExpand @ Module[ { content },
         content = Grid[
             {
@@ -234,7 +234,7 @@ createFeedbackDialogContent[ Dynamic[ data_ ], Dynamic[ choices_ ] ] := Enclose[
                                     ],
                                     Button[
                                         redDialogButtonLabel[ "Send" ],
-                                        sendDialogFeedback[ EvaluationNotebook[ ], data, choices ],
+                                        sendDialogFeedback[ cell, EvaluationNotebook[ ], data, choices ],
                                         Appearance       -> "Suppressed",
                                         BaselinePosition -> Baseline,
                                         Method           -> "Queued"
@@ -272,7 +272,19 @@ createFeedbackDialogContent[ Dynamic[ data_ ], Dynamic[ choices_ ] ] := Enclose[
             Spacings  -> { 0, 0 }
         ];
 
-        content
+        PaneSelector[
+            {
+                "None"       -> content,
+                "Submitting" -> ProgressIndicator[ Appearance -> "Necklace" ],
+                "Done"       -> Style[ "Thanks for your feedback!", $baseStyle ],
+                "Error"      -> Style[
+                    Dynamic[ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ErrorText" } ] ],
+                    $baseStyle
+                ]
+            },
+            Dynamic @ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "Status" }, "None" ],
+            Alignment -> { Center, Center }
+        ]
     ],
     throwInternalFailure[ createFeedbackDialogContent @ data, ## ] &
 ];
@@ -284,17 +296,25 @@ createFeedbackDialogContent // endDefinition;
 (*sendDialogFeedback*)
 sendDialogFeedback // beginDefinition;
 
-sendDialogFeedback[ nbo_NotebookObject, data_Association, choices_Association ] := Enclose[
-    Module[ { json, chosen, string, image, request, response },
-
+sendDialogFeedback[ cell_CellObject, nbo_NotebookObject, data_Association, choices_Association ] := Enclose[
+    Module[ { uuid, json, chosen, string, image, request, response },
         CurrentValue[ nbo, { TaggingRules, "Status" } ] = "Submitting";
+
+        uuid = Replace[ CurrentValue[ cell, { TaggingRules, "FeedbackUUID" } ], Except[ _? StringQ ] :> Null ];
 
         json   = ConfirmBy[ toJSON @ Evaluate @ KeyDrop[ data, { "Image" } ], AssociationQ, "JSONData" ];
         chosen = ConfirmBy[ filterChoices[ json, choices ], AssociationQ, "Filtered" ];
 
         string = ConfirmBy[
             Developer`WriteRawJSONString[
-                KeySort @ KeyDrop[ <| chosen, "Choices" -> choices |>, "CellImage" ],
+                KeySort @ KeyDrop[
+                    <|
+                        chosen,
+                        "Choices"   -> choices,
+                        "Overwrite" -> uuid
+                    |>,
+                    "CellImage"
+                ],
                 "Compact" -> True
             ],
             StringQ,
@@ -309,12 +329,67 @@ sendDialogFeedback[ nbo_NotebookObject, data_Association, choices_Association ] 
         request  = ConfirmMatch[ makeFeedbackRequest[ image, string ], _HTTPRequest, "HTTPRequest" ];
         response = ConfirmMatch[ URLRead @ request, _HTTPResponse, "HTTPResponse" ];
 
-        checkResponse[ nbo, response ] (* TODO *)
+        checkResponse[ cell, nbo, response ]
     ],
     throwInternalFailure[ sendDialogFeedback[ nbo, data, choices ], ## ] &
 ];
 
 sendDialogFeedback // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*contentID*)
+contentID // beginDefinition;
+contentID[ data_ ] := Hash[ data, Automatic, "HexString" ];
+contentID // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkResponse*)
+checkResponse // beginDefinition;
+
+checkResponse[ cell_CellObject, nbo_NotebookObject, response_HTTPResponse ] := Enclose[
+    Module[ { bytes, string, data, code, uuid },
+        bytes  = ConfirmBy[ response[ "BodyByteArray" ], ByteArrayQ, "Bytes" ];
+        string = ConfirmBy[ ByteArrayToString @ bytes, StringQ, "String" ];
+        data   = ConfirmBy[ Developer`ReadRawJSONString @ string, AssociationQ, "Data" ];
+        code   = ConfirmBy[ response[ "StatusCode" ], IntegerQ, "StatusCode" ];
+        checkResponse[ cell, nbo, data, code ]
+    ],
+    throwInternalFailure[ checkResponse[ cell, nbo, response ], ## ] &
+];
+
+checkResponse[ cell_CellObject, nbo_NotebookObject, data_Association, 200 ] := Enclose[
+    Module[ { uuid },
+        uuid = ConfirmBy[ data[ "RequestUUID" ], StringQ, "UUID" ];
+        CurrentValue[ cell, { TaggingRules, "FeedbackUUID" } ] = uuid;
+        CurrentValue[ nbo , { TaggingRules, "Status"       } ] = "Done";
+
+        SessionSubmit @ ScheduledTask[ NotebookClose @ nbo, { 3 } ]
+    ],
+    throwInternalFailure[ checkResponse[ cell, nbo, data, 200 ], ## ] &
+];
+
+checkResponse[ cell_, nbo_, data_, code_ ] := Enclose[
+    Module[ { text },
+        text = ConfirmBy[ getErrorText[ data, code ], StringQ, "ErrorText" ];
+        CurrentValue[ nbo, { TaggingRules, "ErrorText" } ] = text;
+        CurrentValue[ nbo, { TaggingRules, "Status"    } ] = "Error";
+    ],
+    throwInternalFailure[ checkResponse[ cell, nbo, data, code ], ## ] &
+];
+
+checkResponse // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*displayError*)
+displayError // beginDefinition;
+
+displayError[ nbo_NotebookObject ] :=
+    CurrentValue[ nbo, { TaggingRules, "ErrorText" } ];
+
+displayError // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -343,9 +418,9 @@ makeFeedbackRequest[ image_File? FileExistsQ, data_String ] :=
         <|
             "Body" -> {
                 "CellImage" -> <| "Content" -> image, "MIMEType" -> "image/png", "FileName" -> FileNameTake @ image |>,
-                "Data"      -> StringToByteArray @ data,
-                "Version"   -> IntegerString @ $feedbackClientVersion
+                "Data"      -> StringToByteArray @ data
             },
+            "Query"  -> <| "Version" -> IntegerString @ $feedbackClientVersion |>,
             "Method" -> "POST"
         |>
     ];
@@ -354,10 +429,8 @@ makeFeedbackRequest[ None, data_String ] :=
     HTTPRequest[
         CloudObject @ $feedbackURL,
         <|
-            "Body" -> {
-                "Data"    -> StringToByteArray @ data,
-                "Version" -> IntegerString @ $feedbackClientVersion
-            },
+            "Body" -> { "Data" -> StringToByteArray @ data },
+            "Query"  -> <| "Version" -> IntegerString @ $feedbackClientVersion |>,
             "Method" -> "POST"
         |>
     ];
