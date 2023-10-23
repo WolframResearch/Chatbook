@@ -118,69 +118,27 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
         content = Grid[
             {
                 dialogHeader[ "Send Wolfram AI Chat Feedback" ],
-                dialogBody[ "Sending feedback helps us improve our AI features.", { Automatic, { 0, 10 } } ],
-                dialogBody @ Grid[
-                    {
+                dialogBody[
+                    Grid[
                         {
-                            RadioButton[ Dynamic @ data[ "Positive" ], True ],
-                            chatbookIcon[ "ThumbsUpActive", False ]
-                        },
-                        {
-                            RadioButton[ Dynamic @ data[ "Positive" ], False ],
-                            chatbookIcon[ "ThumbsDownActive", False ]
-                        }
-                    },
-                    Alignment -> { Automatic, Center }
-                ],
-                dialogBody[ "Included content:", { Automatic, { 0, Automatic } } ],
-                dialogBody @ Grid[
-                    {
-                        {
-                            Checkbox @ Dynamic[
-                                choices[ "Messages" ],
-                                Function[
-                                    choices[ "SystemMessage" ] = choices[ "ChatHistory" ] = #;
-                                    choices[ "Messages" ] = #
-                                ]
-                            ],
-                            "Chat messages"
-                        },
-                        {
-                            "",
-                            Grid[
-                                {
+                            {
+                                SetterBar[
+                                    Dynamic @ data[ "Positive" ],
                                     {
-                                        Checkbox[
-                                            Dynamic @ choices[ "SystemMessage" ],
-                                            Enabled -> Dynamic @ choices[ "Messages" ]
-                                        ],
-                                        "Include system message"
-                                    },
-                                    {
-                                        Checkbox[
-                                            Dynamic @ choices[ "ChatHistory" ],
-                                            Enabled -> Dynamic @ choices[ "Messages" ]
-                                        ],
-                                        "Include chat history used to generate this output"
+                                        True  -> chatbookIcon[ "ThumbsUpActive"  , False ],
+                                        False -> chatbookIcon[ "ThumbsDownActive", False ]
                                     }
-                                },
-                                Alignment -> { Left, Baseline }
-                            ]
+                                ],
+                                "Sending feedback helps us improve our AI features."
+                            }
                         },
-                        {
-                            Checkbox[ Dynamic @ choices[ "CellImage" ] ],
-                            Tooltip[
-                                "Include image of chat output",
-                                ImageResize[ data[ "Image" ], Scaled[ 1/2 ] ],
-                                TooltipStyle -> {
-                                    Background     -> White,
-                                    CellFrame      -> 1,
-                                    CellFrameColor -> GrayLevel[ 0.85 ]
-                                }
-                            ]
-                        }
-                    },
-                    Alignment -> { Left, Baseline }
+                        Alignment -> { Left, Baseline }
+                    ],
+                    { Automatic, { 0, 15 } }
+                ],
+                dialogBody[
+                    includedContentGrid[ Dynamic @ data, Dynamic @ choices ],
+                    { Automatic, { Automatic, 10 } }
                 ],
                 dialogBody[
                     InputField[
@@ -262,7 +220,6 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
                     False,
                     False,
                     False,
-                    False,
                     GrayLevel[ 0.85 ],
                     False,
                     { False }
@@ -290,6 +247,142 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
 ];
 
 createFeedbackDialogContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*includedContentGrid*)
+includedContentGrid // beginDefinition;
+
+includedContentGrid[ Dynamic[ data_ ], Dynamic[ choices_ ] ] := Enclose[
+    Module[ { image, cropped, resized },
+        image = ConfirmBy[ data[ "Image" ], ImageQ, "Image" ];
+        cropped = ConfirmBy[ cropImage @ image, ImageQ, "Cropped" ];
+        resized = ConfirmBy[ ImageResize[ image, { UpTo[ 1440 ], UpTo[ 810 ] } ], ImageQ, "Resized" ];
+        Grid[
+            {
+                {
+                    "Included content:",
+                    PaneSelector[
+                        {
+                            True -> Style[ "Output image", FontColor -> GrayLevel[ 0.75 ] ],
+                            False -> ""
+                        },
+                        Dynamic @ choices[ "CellImage" ]
+                    ]
+                },
+                {
+                    includedContentCheckboxes[ Dynamic @ data, Dynamic @ choices ],
+                    Item[
+                        PaneSelector[
+                            {
+                                True -> Tooltip[
+                                    Pane[
+                                        cropped,
+                                        ImageSize       -> { 240, UpTo[ 90 ] },
+                                        ImageSizeAction -> "ShrinkToFit",
+                                        Alignment       -> { Right, Top }
+                                    ],
+                                    resized,
+                                    TooltipStyle -> {
+                                        Background     -> White,
+                                        CellFrame      -> 1,
+                                        CellFrameColor -> GrayLevel[ 0.85 ]
+                                    }
+                                ],
+                                False -> ""
+                            },
+                            Dynamic @ choices[ "CellImage" ]
+                        ],
+                        Alignment -> { Right, Top }
+                    ]
+                }
+            },
+            Alignment -> { { Left, Right }, Top }
+        ]
+    ],
+    throwInternalFailure[ includedContentGrid[ Dynamic @ data, Dynamic @ choices ], ## ] &
+];
+
+includedContentGrid // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*infoTooltip*)
+infoTooltip // beginDefinition;
+infoTooltip[ content_, tooltip_ ] := Row @ { content, Spacer[ 5 ], infoTooltip @ tooltip };
+infoTooltip[ tooltip_ ] := Tooltip[ chatbookIcon[ "InformationTooltip", False ], tooltip ];
+infoTooltip // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cropImage*)
+cropImage // beginDefinition;
+
+cropImage[ img_? ImageQ ] := Enclose[
+    Module[ { w, h, hh },
+        { w, h } = ConfirmMatch[ ImageDimensions @ img, { _? Positive, _? Positive }, "ImageDimensions" ];
+        hh = ConfirmBy[ Round[ 0.4 * w ], IntegerQ, "Height" ];
+        If[ TrueQ[ h > hh ],
+            ConfirmBy[ ImageCrop[ img, { w, hh }, Bottom ], ImageQ, "ImageCrop" ],
+            img
+        ]
+    ],
+    throwInternalFailure[ cropImage @ img, ##1 ] &
+];
+
+cropImage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*includedContentCheckboxes*)
+includedContentCheckboxes // beginDefinition;
+
+includedContentCheckboxes[ Dynamic[ data_ ], Dynamic[ choices_ ] ] :=
+    Grid[
+        {
+            {
+                Checkbox @ Dynamic[
+                    choices[ "Messages" ],
+                    Function[ choices[ "SystemMessage" ] = choices[ "ChatHistory" ] = #1; choices[ "Messages" ] = #1 ]
+                ],
+                infoTooltip[ "Chat messages", "Chat messages involved in creating this chat output." ]
+            },
+            {
+                "",
+                Grid[
+                    {
+                        {
+                            Checkbox[ Dynamic @ choices[ "SystemMessage" ], Enabled -> Dynamic @ choices[ "Messages" ] ],
+                            infoTooltip[
+                                "System message",
+                                "The underlying system message used for giving instructions to the AI."
+                            ]
+                        },
+                        {
+                            Checkbox[ Dynamic @ choices[ "ChatHistory" ], Enabled -> Dynamic @ choices[ "Messages" ] ],
+                            infoTooltip[
+                                "Chat history used to generate this output",
+                                "Additional messages that were used as conversation history to generate this output."
+                            ]
+                        }
+                    },
+                    Alignment -> { Left, Baseline },
+                    Spacings  -> { 0.5, 0.75 }
+                ]
+            },
+            {
+                Checkbox @ Dynamic @ choices[ "CellImage" ],
+                infoTooltip[
+                    "Image of chat output",
+                    "A screenshot of the chat output, which can be used if feedback is related to the output's appearance."
+                ]
+            }
+        },
+        Alignment -> { Left, Baseline },
+        Spacings  -> { 0.5, 0.75 }
+    ];
+
+includedContentCheckboxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
