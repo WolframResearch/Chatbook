@@ -41,6 +41,9 @@ $cellCharacterEncoding = "Unicode";
 (* Set a max string length for output cells to avoid blowing up token counts *)
 $maxOutputCellStringLength = 500;
 
+(* Set an overall max string length for any type of cell *)
+$maxCellStringLength = 5000;
+
 (* Set a page width for expressions that need to be serialized as InputForm *)
 $cellPageWidth = 100;
 
@@ -311,7 +314,7 @@ cellToString[ cell_ ] := Block[ { $escapeMarkdown = False }, cellToString0 @ cel
 cellToString0[ cell0_ ] :=
     With[
         { cell = fixCloudCell @ cell0 },
-        { string = fasterCellToString @ cell },
+        { string = truncateString[ fasterCellToString @ cell, $maxCellStringLength ] },
         If[ StringQ @ string,
             string,
             slowCellToString @ cell
@@ -473,19 +476,31 @@ fasterCellToString0[ NamespaceBox[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Graphics*)
+fasterCellToString0[ box: GraphicsBox[ TagBox[ RasterBox[ _, r___ ], t___ ], g___ ] ] :=
+    StringJoin[
+        "\\!\\(\\*",
+        StringReplace[
+            inputFormString @ GraphicsBox[ TagBox[ RasterBox[ "$$DATA$$", r ], t ], g ],
+            $graphicsBoxStringReplacements
+        ],
+        "\\)"
+    ];
+
 fasterCellToString0[ box: $graphicsHeads[ ___ ] ] :=
     If[ TrueQ[ ByteCount @ box < $maxOutputCellStringLength ],
         (* For relatively small graphics expressions, we'll give an InputForm string *)
         needsBasePrompt[ "Notebooks" ];
-        makeGraphicsString @ box,
+        truncateString @ makeGraphicsString @ box,
         (* Otherwise, give the same thing you'd get in a standalone kernel*)
         needsBasePrompt[ "ConversionGraphics" ];
-        "\\!\\(\\*" <> StringReplace[ inputFormString @ box, $graphicsBoxStringReplacements ] <> "\\)"
+        truncateString[ "\\!\\(\\*" <> StringReplace[ inputFormString @ box, $graphicsBoxStringReplacements ] <> "\\)" ]
     ];
 
 
 $graphicsBoxStringReplacements = {
-    a: DigitCharacter ~~ "." ~~ b: Repeated[ DigitCharacter, { 4, Infinity } ] :> a <> "." <> StringTake[ b, 3 ]
+    a: DigitCharacter ~~ "." ~~ b: Repeated[ DigitCharacter, { 4, Infinity } ] :> a <> "." <> StringTake[ b, 3 ],
+    "\"$$DATA$$\"" -> "...",
+    "$$DATA$$" -> "..."
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -850,6 +865,7 @@ truncateString[ str_String ] := truncateString[ str, $maxOutputCellStringLength 
 truncateString[ str_String, max_Integer ] := truncateString[ str, Ceiling[ max / 2 ], Floor[ max / 2 ] ];
 truncateString[ str_String, l_Integer, r_Integer ] /; StringLength @ str <= l + r + 5 := str;
 truncateString[ str_String, l_Integer, r_Integer ] := StringTake[ str, l ] <> " ... " <> StringTake[ str, -r ];
+truncateString[ other_ ] := other;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
