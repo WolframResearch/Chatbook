@@ -9,6 +9,9 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$cloudNotebooks;
 `$debug;
 `$maxChatCells;
+`$thisPaclet;
+`$debugData;
+`$settingsData;
 
 `$chatDelimiterStyles;
 `$chatIgnoredStyles;
@@ -79,6 +82,9 @@ $versionRequirements = <|
     "TaskWriteOutput"          -> 14.0,
     "TrackScrollingWhenPlaced" -> 14.0
 |>;
+
+$mxFlag = Wolfram`ChatbookInternal`$BuildingMX;
+$resourceFunctionContext = "Wolfram`Chatbook`ResourceFunctions`";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -254,12 +260,12 @@ importResourceFunction // beginDefinition;
 importResourceFunction::failure = "[ERROR] Failed to import resource function `1`. Aborting MX build.";
 importResourceFunction // Attributes = { HoldFirst };
 
-importResourceFunction[ symbol_Symbol, name_String ] /; Wolfram`ChatbookInternal`$BuildingMX := Enclose[
+importResourceFunction[ symbol_Symbol, name_String ] /; $mxFlag := Enclose[
     Block[ { PrintTemporary },
         Module[ { sourceContext, targetContext, definition, replaced, newSymbol },
 
             sourceContext = ConfirmBy[ ResourceFunction[ name, "Context" ], StringQ ];
-            targetContext = "Wolfram`Chatbook`ResourceFunctions`"<>name<>"`";
+            targetContext = $resourceFunctionContext<>name<>"`";
             definition    = ConfirmMatch[ ResourceFunction[ name, "DefinitionList" ], _Language`DefinitionList ];
 
             replaced = ConfirmMatch[
@@ -475,6 +481,29 @@ $maxBugReportURLSize = 3500;
 
 $maxPartLength = 500;
 
+$thisPaclet   := PacletObject[ "Wolfram/Chatbook" ];
+$debugData    := debugData @ $thisPaclet[ "PacletInfo" ];
+$settingsData := maskOpenAIKey @ $settings;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*debugData*)
+debugData // beginDefinition;
+
+debugData[ as_Association? AssociationQ ] := <|
+    KeyTake[ as, { "Name", "Version", "ReleaseID" } ],
+    "EvaluationEnvironment" -> $EvaluationEnvironment,
+    "FrontEndVersion"       -> $frontEndVersion,
+    "KernelVersion"         -> SystemInformation[ "Kernel", "Version" ],
+    "SystemID"              -> $SystemID,
+    "Notebooks"             -> $Notebooks,
+    "DynamicEvaluation"     -> $DynamicEvaluation,
+    "SynchronousEvaluation" -> $SynchronousEvaluation,
+    "TaskEvaluation"        -> MatchQ[ $CurrentTask, _TaskObject ]
+|>;
+
+debugData // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$bugReportLink*)
@@ -486,23 +515,13 @@ $bugReportLink := Hyperlink[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*bugReportBody*)
-bugReportBody[ ] := bugReportBody @ PacletObject[ "Wolfram/Chatbook" ][ "PacletInfo" ];
+bugReportBody[ ] := bugReportBody @ $thisPaclet[ "PacletInfo" ];
 
 bugReportBody[ as_Association? AssociationQ ] :=
     TemplateApply[
         $bugReportBodyTemplate,
         TemplateVerbatim /@ <|
-            "DebugData" -> associationMarkdown[
-                KeyTake[ as, { "Name", "Version", "ReleaseID" } ],
-                "EvaluationEnvironment" -> $EvaluationEnvironment,
-                "FrontEndVersion"       -> $frontEndVersion,
-                "KernelVersion"         -> SystemInformation[ "Kernel", "Version" ],
-                "SystemID"              -> $SystemID,
-                "Notebooks"             -> $Notebooks,
-                "DynamicEvaluation"     -> $DynamicEvaluation,
-                "SynchronousEvaluation" -> $SynchronousEvaluation,
-                "TaskEvaluation"        -> MatchQ[ $CurrentTask, _TaskObject ]
-            ],
+            "DebugData"       -> associationMarkdown @ $debugData,
             "Stack"           -> $bugReportStack,
             "Settings"        -> associationMarkdown @ maskOpenAIKey @ $settings,
             "InternalFailure" -> markdownCodeBlock @ $internalFailure

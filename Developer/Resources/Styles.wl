@@ -107,7 +107,8 @@ Cell[
     CellFrameColor           -> RGBColor[ "#ecf0f5" ],
     CellFrameMargins         -> { { 12, 25 }, { 8, 8 } },
     PasteAutoQuoteCharacters -> { },
-    ShowCellLabel            -> False
+    ShowCellLabel            -> False,
+    TaggingRules             -> <| "ChatNotebookSettings" -> <| |> |>
 ]
 
 
@@ -264,7 +265,6 @@ Cell[
     CellElementSpacings  -> { "CellMinHeight" -> 0, "ClosedCellHeight" -> 0 },
     CellGroupingRules    -> "OutputGrouping",
     CellMargins          -> { { 66, 25 }, { 12, 5 } },
-    CellTrayWidgets      -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CodeAssistOptions    -> { "AutoDetectHyperlinks" -> False },
     GeneratedCell        -> True,
     Graphics3DBoxOptions -> { ImageSizeRaw -> { { 300 }, { 220 } } },
@@ -273,6 +273,10 @@ Cell[
     LineSpacing          -> { 1.1, 0, 2 },
     ShowAutoSpellCheck   -> False,
     TaggingRules         -> <| "ChatNotebookSettings" -> <| |> |>,
+    CellTrayWidgets      -> <|
+        "ChatWidget"   -> <| "Visible" -> False |>,
+        "ChatFeedback" -> <| "Content" -> Cell[ BoxData @ ToBoxes @ $feedbackButtons, "ChatFeedback" ] |>
+    |>,
     menuInitializer[ "ChatOutput", RGBColor[ "#ecf0f5" ] ]
 ]
 
