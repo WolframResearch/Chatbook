@@ -39,8 +39,10 @@ Needs[ "Wolfram`Chatbook`"                  ];
 Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`Dynamics`"         ];
 Needs[ "Wolfram`Chatbook`Explode`"          ];
+Needs[ "Wolfram`Chatbook`Feedback`"         ];
 Needs[ "Wolfram`Chatbook`Formatting`"       ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
+Needs[ "Wolfram`Chatbook`Handlers`"         ];
 Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 Needs[ "Wolfram`Chatbook`Models`"           ];
 Needs[ "Wolfram`Chatbook`PersonaManager`"   ];
@@ -76,6 +78,7 @@ ChatbookAction[ "OpenChatMenu"         , args___ ] := catchMine @ OpenChatMenu @
 ChatbookAction[ "PersonaManage"        , args___ ] := catchMine @ PersonaManage @ args;
 ChatbookAction[ "ToolManage"           , args___ ] := catchMine @ ToolManage @ args;
 ChatbookAction[ "Send"                 , args___ ] := catchMine @ SendChat @ args;
+ChatbookAction[ "SendFeedback"         , args___ ] := catchMine @ SendFeedback @ args;
 ChatbookAction[ "StopChat"             , args___ ] := catchMine @ StopChat @ args;
 ChatbookAction[ "TabLeft"              , args___ ] := catchMine @ TabLeft @ args;
 ChatbookAction[ "TabRight"             , args___ ] := catchMine @ TabRight @ args;
@@ -83,6 +86,21 @@ ChatbookAction[ "ToggleFormatting"     , args___ ] := catchMine @ ToggleFormatti
 ChatbookAction[ "WidgetSend"           , args___ ] := catchMine @ WidgetSend @ args;
 ChatbookAction[ name_String            , args___ ] := catchMine @ throwFailure[ "NotImplemented", name, args ];
 ChatbookAction[ args___                          ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*SendFeedback*)
+SendFeedback // beginDefinition;
+
+SendFeedback[ cellObject0_, positive: True|False ] := Enclose[
+    Module[ { cellObject },
+        cellObject = ConfirmMatch[ ensureChatOutputCell @ parentCell @ cellObject0, _CellObject, "CellObject" ];
+        ConfirmMatch[ sendFeedback[ cellObject, positive ], _NotebookObject, "SendFeedbackDialog" ]
+    ],
+    throwInternalFailure[ SendFeedback[ cellObject0, positive ], ## ] &
+];
+
+SendFeedback // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -365,10 +383,17 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
         waitForLastTask[ ];
         blockChatObject[
             If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
-                constructChatObject @ Append[
-                    $lastMessages,
-                    <| "role" -> "Assistant", "content" -> $lastChatString |>
+                With[
+                    {
+                        chat = constructChatObject @ Append[
+                            $lastMessages,
+                            <| "Role" -> "Assistant", "Content" -> $lastChatString |>
+                        ]
+                    },
+                    applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> chat |> ];
+                    chat
                 ],
+                applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> None |> ];
                 Null
             ];
         ]
@@ -382,7 +407,7 @@ EvaluateChatInput // endDefinition;
 blockChatObject // beginDefinition;
 blockChatObject // Attributes = { HoldFirst };
 blockChatObject[ eval_ ] /; Quiet @ PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "1.1.0" ] := eval;
-blockChatObject[ eval_ ]  := Block[ { chatObject = delayedChatObject, delayedChatObject }, eval ];
+blockChatObject[ eval_ ] := Block[ { chatObject = delayedChatObject, delayedChatObject }, eval ];
 blockChatObject // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1194,7 +1219,13 @@ $apiKeyDialogDescription := $apiKeyDialogDescription = Get @ FileNameJoin @ {
 (*withChatState*)
 withChatState // beginDefinition;
 withChatState // Attributes = { HoldFirst };
-withChatState[ eval_ ] := Block[ { $enableLLMServices }, withToolBox @ withBasePromptBuilder @ eval ];
+
+withChatState[ eval_ ] :=
+    Block[ { $enableLLMServices },
+        $handlerArguments = <| |>;
+        withToolBox @ withBasePromptBuilder @ eval
+    ];
+
 withChatState // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

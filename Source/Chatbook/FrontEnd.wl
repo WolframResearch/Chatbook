@@ -202,23 +202,39 @@ CurrentChatSettings[\"key$\"] is equivalent to CurrentChatSettings[EvaluationCel
 
 CurrentChatSettings[ ] := catchMine @
     If[ TrueQ @ $Notebooks,
-        CurrentChatSettings @ EvaluationCell[ ],
+        CurrentChatSettings @ $currentEvaluationObject,
         $defaultChatSettings
     ];
 
 CurrentChatSettings[ key_String ] := catchMine @
     If[ TrueQ @ $Notebooks,
-        CurrentChatSettings[ EvaluationCell[ ], key ],
+        CurrentChatSettings[ $currentEvaluationObject, key ],
         Lookup[ $defaultChatSettings, key, Inherited ]
     ];
 
-CurrentChatSettings[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession ] := catchMine @
+CurrentChatSettings[ cell_CellObject ] := catchMine @
+    With[ { parent = Quiet @ parentCell @ cell },
+        If[ MatchQ[ parent, Except[ cell, _CellObject ] ],
+            CurrentChatSettings @ parent,
+            currentChatSettings @ cell
+        ]
+    ];
+
+CurrentChatSettings[ cell_CellObject, key_String ] := catchMine @
+    With[ { parent = Quiet @ parentCell @ cell },
+        If[ MatchQ[ parent, Except[ cell, _CellObject ] ],
+            CurrentChatSettings[ parent, key ],
+            currentChatSettings[ cell, key ]
+        ]
+    ];
+
+CurrentChatSettings[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession ] := catchMine @
     If[ TrueQ @ $Notebooks,
         currentChatSettings @ obj,
         $defaultChatSettings
     ];
 
-CurrentChatSettings[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := catchMine @
+CurrentChatSettings[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := catchMine @
     If[ TrueQ @ $Notebooks,
         currentChatSettings[ obj, key ],
         Lookup[ $defaultChatSettings, key, Inherited ]
@@ -226,6 +242,22 @@ CurrentChatSettings[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndS
 
 CurrentChatSettings[ args___ ] :=
     catchMine @ throwFailure[ "InvalidArguments", CurrentChatSettings, HoldForm @ CurrentChatSettings @ args ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$currentEvaluationObject*)
+
+(* During asynchronous tasks, EvaluationCell[ ] will return $Failed, so we instead use this to take the first FE object
+   in ascending order of inheritance that we can read settings from. *)
+$currentEvaluationObject := FirstCase[
+    Unevaluated @ {
+        EvaluationCell[ ],
+        EvaluationNotebook[ ],
+        $FrontEndSession
+    },
+    obj_ :> With[ { res = obj }, res /; MatchQ[ res, $$feObj ] ],
+    throwInternalFailure @ $currentEvaluationObject
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -402,81 +434,58 @@ currentChatSettings[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession, key_
 );
 
 currentChatSettings[ cell0_CellObject ] := Catch @ Enclose[
-    Module[ { cell, styles, nbo, cells, before, info, delimiter, settings },
+    Module[ { cell, cellInfo, styles, nbo, delimiter, settings },
 
         verifyInheritance @ cell0;
 
-        cell   = cell0;
-        styles = cellStyles @ cell;
+        cell     = cell0;
+        cellInfo = ConfirmBy[ cellInformation @ cell, AssociationQ, "CellInformation" ];
+        styles   = ConfirmMatch[ Flatten @ List @ Lookup[ cellInfo, "Style" ], { ___String } ];
 
         If[ MemberQ[ styles, $$nestedCellStyle ],
             cell   = ConfirmMatch[ topParentCell @ cell, _CellObject, "ParentCell" ];
             styles = cellStyles @ cell;
         ];
 
-        (* TODO: make these based on the ChatDelimiter tagging rule instead of style name *)
-        If[ MemberQ[ styles, $$chatDelimiterStyle ], Throw @ currentChatSettings0 @ cell ];
+        If[ cellInfo[ "ChatNotebookSettings", "ChatDelimiter" ], Throw @ currentChatSettings0 @ cell ];
 
         nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
 
-        cells = ConfirmMatch[
-            Cells[ nbo, CellStyle -> Union[ $chatDelimiterStyles, styles ] ],
-            { __CellObject },
-            "ChatCells"
-        ];
-
-        before = ConfirmMatch[
-            Replace[ cells, { { a___, cell, ___ } :> { a }, ___ :> $Failed } ],
-            { ___CellObject },
-            "BeforeCells"
-        ];
-
-        info = ConfirmMatch[
-            cellInformation @ before,
-            { KeyValuePattern[ "CellObject" -> _CellObject ]... },
-            "CellInformation"
-        ];
-
-        delimiter = FirstCase[
-            Reverse @ info,
-            KeyValuePattern @ { "Style" -> $$chatDelimiterStyle, "CellObject" -> c_ } :> c,
-            Nothing
-        ];
+        delimiter = ConfirmMatch[ getPrecedingDelimiter[ cell, nbo ], _CellObject|_Missing, "Delimiter" ];
 
         settings = Select[
             Map[ Association,
-                 AbsoluteCurrentValue[ DeleteMissing @ { delimiter, cell }, { TaggingRules, "ChatNotebookSettings" } ]
+                 Flatten @ {
+                    AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ],
+                    CurrentValue[ DeleteMissing @ { delimiter, cell }, { TaggingRules, "ChatNotebookSettings" } ]
+                 }
             ],
             AssociationQ
         ];
 
-        ConfirmBy[ Association[ $defaultChatSettings, settings ], AssociationQ, "CombinedSettings" ]
+        ConfirmBy[ mergeChatSettings @ Flatten @ { $defaultChatSettings, settings }, AssociationQ, "CombinedSettings" ]
     ],
     throwInternalFailure[ currentChatSettings @ cell0, ## ] &
 ];
 
 currentChatSettings[ cell0_CellObject, key_String ] := Catch @ Enclose[
-    Module[ { cell, styles, nbo, cells, before, info, delimiter, values },
+    Module[ { cell, cellInfo, styles, nbo, cells, delimiter, values },
 
         verifyInheritance @ cell0;
 
-        cell   = cell0;
-        styles = cellStyles @ cell;
+        cell     = cell0;
+        cellInfo = ConfirmBy[ cellInformation @ cell, AssociationQ, "CellInformation" ];
+        styles   = ConfirmMatch[ Flatten @ List @ Lookup[ cellInfo, "Style" ], { ___String } ];
 
         If[ MemberQ[ styles, $$nestedCellStyle ],
             cell   = ConfirmMatch[ topParentCell @ cell, _CellObject, "ParentCell" ];
             styles = cellStyles @ cell;
         ];
 
-        If[ MemberQ[ styles, $$chatDelimiterStyle ], Throw @ currentChatSettings0[ cell, key ] ];
+        If[ cellInfo[ "ChatNotebookSettings", "ChatDelimiter" ], Throw @ currentChatSettings0[ cell, key ] ];
 
-        nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
-
-        cells = ConfirmMatch[
-            Cells[ nbo, CellStyle -> Union[ $chatDelimiterStyles, styles ] ],
-            { __CellObject },
-            "ChatCells"
-        ];
+        nbo   = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
+        cells = ConfirmMatch[ Cells @ nbo, { __CellObject }, "ChatCells" ];
 
         (* There are apparently temporary mystery cells that get created that aren't in the root cell list which are
            then immediately removed. These inherit the style specified by `DefaultNewCellStyle`. In chat-driven
@@ -492,30 +501,19 @@ currentChatSettings[ cell0_CellObject, key_String ] := Catch @ Enclose[
             Throw @ Lookup[ $defaultChatSettings, key, Inherited ]
         ];
 
-        before = ConfirmMatch[
-            Replace[ cells, { { a___, cell, ___ } :> { a }, ___ :> $Failed } ],
-            { ___CellObject },
-            "BeforeCells"
-        ];
+        delimiter = ConfirmMatch[ getPrecedingDelimiter[ cell, nbo, cells ], _CellObject|_Missing, "Delimiter" ];
 
-        info = ConfirmMatch[
-            cellInformation @ before,
-            { KeyValuePattern[ "CellObject" -> _CellObject ]... },
-            "CellInformation"
-        ];
+        values = CurrentValue[ DeleteMissing @ { cell, delimiter }, { TaggingRules, "ChatNotebookSettings", key } ];
 
-        delimiter = FirstCase[
-            Reverse @ info,
-            KeyValuePattern @ { "Style" -> $$chatDelimiterStyle, "CellObject" -> c_ } :> c,
-            Nothing
-        ];
-
-        values = AbsoluteCurrentValue[
-            DeleteMissing @ { cell, delimiter },
-            { TaggingRules, "ChatNotebookSettings", key }
-        ];
-
-        FirstCase[ values, Except[ Inherited ], Lookup[ $defaultChatSettings, key, Inherited ] ]
+        (* TODO: this should also use `mergeChatSettings` in case the values are associations *)
+        FirstCase[
+            values,
+            Except[ Inherited ],
+            Replace[
+                AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", key } ],
+                Inherited :> Lookup[ $defaultChatSettings, key, Inherited ]
+            ]
+        ]
     ],
     throwInternalFailure[ currentChatSettings[ cell0, key ], ## ] &
 ];
@@ -540,6 +538,43 @@ currentChatSettings0[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEnd
 ];
 
 currentChatSettings0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*mergeChatSettings*)
+mergeChatSettings // beginDefinition;
+mergeChatSettings[ a_List ] := mergeChatSettings0 @ a //. DownValues @ mergeChatSettings0;
+mergeChatSettings // endDefinition;
+
+mergeChatSettings0 // beginDefinition;
+mergeChatSettings0[ { a___, Inherited.., b___ } ] := mergeChatSettings0 @ { a, b };
+mergeChatSettings0[ { a_? AssociationQ, b__? AssociationQ } ] := DeleteMissing @ Merge[ { a, b }, mergeChatSettings0 ];
+mergeChatSettings0[ { a___, Except[ _? AssociationQ ].., b__? AssociationQ } ] := mergeChatSettings0 @ { a, b };
+mergeChatSettings0[ { __, e: Except[ _? AssociationQ ] } ] := e;
+mergeChatSettings0[ { e_ } ] := e;
+mergeChatSettings0[ { } ] := Missing[ ];
+mergeChatSettings0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getPrecedingDelimiter*)
+getPrecedingDelimiter // beginDefinition;
+
+getPrecedingDelimiter[ cell_CellObject ] :=
+    getPrecedingDelimiter[ cell, parentNotebook @ cell ];
+
+getPrecedingDelimiter[ cell_CellObject, nbo_NotebookObject ] :=
+    getPrecedingDelimiter[ cell, nbo, Cells @ nbo ];
+
+getPrecedingDelimiter[ cell_CellObject, nbo_, { before0___CellObject, cell_, ___ } ] :=
+    Module[ { before, delimiterTest, pos },
+        before = Reverse @ { before0 };
+        delimiterTest = AbsoluteCurrentValue[ before, { TaggingRules, "ChatNotebookSettings", "ChatDelimiter" } ];
+        pos = FirstPosition[ delimiterTest, True ];
+        If[ MissingQ @ pos, Missing[ "NotAvailable" ], Extract[ before, pos ] ]
+    ];
+
+getPrecedingDelimiter // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -608,7 +643,7 @@ rootEvaluationCell[ source_, cells: { __CellObject } ] :=
     FirstCase[
         cellInformation @ cells,
         KeyValuePattern @ { "Evaluating" -> True, "CellObject" -> cell_CellObject } :> cell,
-        throwInternalFailure[ rootEvaluationCell[ source, cells ], ## ] &
+        throwInternalFailure @ rootEvaluationCell[ source, cells ]
     ];
 
 rootEvaluationCell // endDefinition;

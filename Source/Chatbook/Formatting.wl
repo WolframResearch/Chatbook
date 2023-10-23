@@ -334,7 +334,7 @@ insertCodeBelow[ cell_Cell, evaluate_ ] :=
         cellObj = topParentCell @ EvaluationCell[ ];
         nbo  = parentNotebook @ cellObj;
         SelectionMove[ cellObj, After, Cell ];
-        NotebookWrite[ nbo, cell, All ];
+        NotebookWrite[ nbo, stripMarkdownBoxes @ cell, All ];
         If[ TrueQ @ evaluate,
             selectionEvaluateCreateCell @ nbo,
             SelectionMove[ nbo, After, CellContents ]
@@ -351,8 +351,24 @@ insertCodeBelow // endDefinition;
 (*copyCode*)
 copyCode // beginDefinition;
 copyCode[ cell_CellObject ] := copyCode @ getCodeBlockContent @ cell;
-copyCode[ code: _Cell|_String ] := CopyToClipboard @ code;
+copyCode[ code: _Cell|_String ] := CopyToClipboard @ stripMarkdownBoxes @ code;
 copyCode // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*stripMarkdownBoxes*)
+stripMarkdownBoxes // beginDefinition;
+
+stripMarkdownBoxes[ Cell[ BoxData @ TagBox[ TooltipBox[ boxes_, _String ], "MarkdownImage", ___ ], a___ ] ] :=
+    Cell[ BoxData @ boxes, a ];
+
+stripMarkdownBoxes[ Cell[ BoxData @ TagBox[ boxes_, "MarkdownImage", ___ ], a___ ] ] :=
+    Cell[ BoxData @ boxes, a ];
+
+stripMarkdownBoxes[ expr: _Cell|_String ] :=
+    expr;
+
+stripMarkdownBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -616,7 +632,7 @@ parseFullToolCallString[ id_String, resp: HoldPattern[ _LLMToolResponse ], strin
 parseFullToolCallString[ id_String, tool: HoldPattern[ _LLMTool ], parameters_Association, output_, string_ ] :=
     $lastFullParsed = <|
         "ID"                 -> id,
-        "Name"               -> tool[ "Name" ],
+        "Name"               -> toolName[tool],
         "DisplayName"        -> getToolDisplayName @ tool,
         "Icon"               -> getToolIcon @ tool,
         "FormattingFunction" -> getToolFormattingFunction @ tool,

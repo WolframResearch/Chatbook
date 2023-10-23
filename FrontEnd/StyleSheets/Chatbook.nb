@@ -1143,7 +1143,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.2.1.3905399249"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.2.2.3906691619"|>
   ],
   Cell[
    StyleData["Text"],
@@ -1562,6 +1562,7 @@ Notebook[
    StyleKeyMapping -> {"~" -> "ChatDelimiter", "'" -> "SideChat"},
    Evaluatable -> True,
    CellGroupingRules -> "InputGrouping",
+   TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellEvaluationFunction ->
     (Function[
@@ -1762,6 +1763,7 @@ Notebook[
      Background -> None
     ],
    StyleKeyMapping -> {"~" -> "ChatDelimiter", "'" -> "ChatInput"},
+   TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellFrameColor -> RGBColor[0.639216, 0.788235, 0.94902]
   ],
@@ -1781,6 +1783,7 @@ Notebook[
     "'" -> "ChatInput",
     "Backspace" -> "SideChat"
    },
+   TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellFrameColor -> RGBColor[0.639216, 0.788235, 0.94902],
    CellFrameStyle -> Dashing[{Small, Small}],
@@ -1800,7 +1803,116 @@ Notebook[
    CellMargins -> {{66, 25}, {12, 5}},
    CellElementSpacings -> {"CellMinHeight" -> 0, "ClosedCellHeight" -> 0},
    CellGroupingRules -> "OutputGrouping",
-   CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
+   CellTrayWidgets -> <|
+    "ChatWidget" -> <|"Visible" -> False|>,
+    "ChatFeedback" -> <|
+     "Content" ->
+      Cell[
+       BoxData[
+        TagBox[
+         GridBox[
+          {
+           {
+            ButtonBox[
+             TagBox[
+              TagBox[
+               TooltipBox[
+                PaneSelectorBox[
+                 {
+                  False -> TemplateBox[{}, "ThumbsUpInactive"],
+                  True -> TemplateBox[{}, "ThumbsUpActive"]
+                 },
+                 Dynamic[CurrentValue["MouseOver"]],
+                 ImageSize -> Automatic,
+                 FrameMargins -> 0
+                ],
+                "\"Send feedback to Wolfram\"",
+                TooltipStyle -> "TextStyling"
+               ],
+               Annotation[#1, "Send feedback to Wolfram", "Tooltip"] &
+              ],
+              MouseAppearanceTag["LinkHand"]
+             ],
+             ButtonFunction :>
+              With[ { cell$ = EvaluationCell[] },
+               Quiet[Needs["Wolfram`Chatbook`" -> None]];
+               Catch[
+                Symbol["Wolfram`Chatbook`ChatbookAction"][
+                 "SendFeedback",
+                 cell$,
+                 True
+                ],
+                Blank[]
+               ]
+              ],
+             Appearance ->
+              Dynamic[
+               FEPrivate`FrontEndResource[
+                "FEExpressions",
+                "SuppressMouseDownNinePatchAppearance"
+               ]
+              ],
+             Evaluator -> Automatic,
+             Method -> "Preemptive"
+            ]
+           },
+           {
+            ButtonBox[
+             TagBox[
+              TagBox[
+               TooltipBox[
+                PaneSelectorBox[
+                 {
+                  False -> TemplateBox[{}, "ThumbsDownInactive"],
+                  True -> TemplateBox[{}, "ThumbsDownActive"]
+                 },
+                 Dynamic[CurrentValue["MouseOver"]],
+                 ImageSize -> Automatic,
+                 FrameMargins -> 0
+                ],
+                "\"Send feedback to Wolfram\"",
+                TooltipStyle -> "TextStyling"
+               ],
+               Annotation[#1, "Send feedback to Wolfram", "Tooltip"] &
+              ],
+              MouseAppearanceTag["LinkHand"]
+             ],
+             ButtonFunction :>
+              With[ { cell$ = EvaluationCell[] },
+               Quiet[Needs["Wolfram`Chatbook`" -> None]];
+               Catch[
+                Symbol["Wolfram`Chatbook`ChatbookAction"][
+                 "SendFeedback",
+                 cell$,
+                 False
+                ],
+                Blank[]
+               ]
+              ],
+             Appearance ->
+              Dynamic[
+               FEPrivate`FrontEndResource[
+                "FEExpressions",
+                "SuppressMouseDownNinePatchAppearance"
+               ]
+              ],
+             Evaluator -> Automatic,
+             Method -> "Preemptive"
+            ]
+           }
+          },
+          GridBoxAlignment -> {"Columns" -> {{Left}}},
+          DefaultBaseStyle -> "Column",
+          GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+          GridBoxSpacings -> {"Columns" -> {{0}}, "Rows" -> {0, 0.25, 0}}
+         ],
+         "Column"
+        ]
+       ],
+       "ChatFeedback"
+      ]
+    |>
+   |>,
    Initialization :>
     If[ Not[TrueQ[CloudSystem`$CloudNotebooks]],
      With[ { cell$ = EvaluationCell[] },
@@ -1895,7 +2007,7 @@ Notebook[
              ]
             }
            },
-           GridBoxAlignment -> {"Columns" -> {{Left}}},
+           GridBoxAlignment -> {"Columns" -> {{Center}}},
            DefaultBaseStyle -> "Column",
            GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
            GridBoxSpacings -> {"Columns" -> {{Automatic}}, "Rows" -> {{0}}}
@@ -1973,7 +2085,7 @@ Notebook[
              ]
             }
            },
-           GridBoxAlignment -> {"Columns" -> {{Left}}},
+           GridBoxAlignment -> {"Columns" -> {{Center}}},
            DefaultBaseStyle -> "Column",
            GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
            GridBoxSpacings -> {"Columns" -> {{Automatic}}, "Rows" -> {{0}}}
@@ -2051,7 +2163,7 @@ Notebook[
              ]
             }
            },
-           GridBoxAlignment -> {"Columns" -> {{Left}}},
+           GridBoxAlignment -> {"Columns" -> {{Center}}},
            DefaultBaseStyle -> "Column",
            GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
            GridBoxSpacings -> {"Columns" -> {{Automatic}}, "Rows" -> {{0}}}
@@ -11642,6 +11754,538 @@ Notebook[
        AspectRatio -> Automatic,
        ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
        PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ThumbsDownActive"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.0625],
+        {
+         GrayLevel[0.2],
+         Thickness[0.061313],
+         Opacity[1.0],
+         CapForm["Butt"],
+         JoinForm["Round"],
+         JoinedCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           }
+          },
+          {
+           {
+            {11.34, 6.4263},
+            {13.59, 6.4263},
+            {14.073, 6.4263},
+            {14.467, 6.8253},
+            {14.469, 7.3163},
+            {14.496, 13.675},
+            {14.498, 14.166},
+            {14.108, 14.565},
+            {13.625, 14.565},
+            {11.375, 14.565},
+            {10.892, 14.565},
+            {10.498, 14.166},
+            {10.496, 13.675},
+            {10.469, 7.3163},
+            {10.467, 6.8253},
+            {10.857, 6.4263},
+            {11.34, 6.4263}
+           }
+          },
+          CurveClosed -> {1}
+         ]
+        },
+        {
+         GrayLevel[0.2],
+         Thickness[0.061313],
+         Opacity[1.0],
+         CapForm["Butt"],
+         JoinForm[{"Miter", 1.0}],
+         JoinedCurveBox[
+          {
+           {
+            {1, 4, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgBGITIGYC4uKMiW9r7L/ai1xwufHhi5LDvPfLj3mbf7W/\nJV2TaHRV0WFPyWQJlrA/9hv3v5ln80bBIcX6vn/vdCYHGH+HXOvrwB2McP75\n78GPl87+BVf/70rFSzXDT/a/T787eZhJwWHffCn9uyqf7Jv1fZZxHZN1AEpy\nrJH5ZC94fNeO3jZpByAnKsX6p/1+vjnGi7ZIOnBdX1xgy8XoAONLA3WzMUrB\n+ZIsYXy6RtJwfv+hrxox/DIODPmNLEf7JSDym6QdynUV5b/kiDv8qsvaUyIs\n7RBWu25bUr2ow6dLvkkCEVIO1SAHdQk5tIvdPPc9WMrBYLc6P/dWPofnv1d+\nvOQr5QDmLmN2ACq23OIh63Bko17eYsYf9gdPLXTd9lkezv/yF+RhRTgfbH+R\nogMzZ5d88jtGBxi/r7RQmvcBB5x/8qn9kvv7BCD2X1ZyUPYCuUjIARQ6UU+U\nHSojVpietRZ1uP0T6IEvKg6vpm7iKdSRcFjn/rBK5J0K3P+FtsAQ+6DiAAvf\n0yDn/VVxAKpa566o7fD0gtLtn/9UoOGs47DlRBkwSmDyug4MYKAM52uDHcQL\n56uyNU517uaE8yH+Z4WoM9dxUNxQBExRrJBwldB2AFoODBBWBzcQ44emgyXY\nQnZoPGk62JvG7fLk4UHjc8D5EPXMcP5VUHLiYHBIAwE1DQewciYGB91Nc98v\nZ1N3mObcnfP8939IPDxThejrZ3YABUsBMBwSwAHADufzgTUywfnVIqAQ/WMP\n43uAPQrMH+CAVnFAzy8ApdVkyA==\n      "
+          ],
+          CurveClosed -> {1}
+         ]
+        },
+        {
+         GrayLevel[0.2],
+         Thickness[0.062188],
+         Opacity[1.0],
+         CapForm["Butt"],
+         JoinForm[{"Miter", 1.0}],
+         JoinedCurveBox[
+          {{{0, 2, 0}}},
+          {{{2.3237, 8.461}, {4.3237, 8.461}}},
+          CurveClosed -> {0}
+         ]
+        },
+        {
+         GrayLevel[0.2],
+         Thickness[0.062188],
+         Opacity[1.0],
+         CapForm["Butt"],
+         JoinForm[{"Miter", 1.0}],
+         JoinedCurveBox[
+          {{{0, 2, 0}}},
+          {{{2.8741, 10.496}, {4.6661, 10.496}}},
+          CurveClosed -> {0}
+         ]
+        },
+        {
+         GrayLevel[0.2],
+         Thickness[0.062188],
+         Opacity[1.0],
+         CapForm["Butt"],
+         JoinForm[{"Miter", 1.0}],
+         JoinedCurveBox[
+          {{{0, 2, 0}}},
+          {{{3.2369, 12.53}, {5.0289, 12.53}}},
+          CurveClosed -> {0}
+         ]
+        }
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {17.0, 17.0},
+       PlotRange -> {{-0.5, 16.5}, {-0.5, 16.5}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ThumbsDownInactive"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.0625],
+        {
+         GrayLevel[0.8],
+         Thickness[0.061313],
+         Opacity[1.0],
+         CapForm["Butt"],
+         JoinForm["Round"],
+         JoinedCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           }
+          },
+          {
+           {
+            {11.34, 6.4263},
+            {13.59, 6.4263},
+            {14.073, 6.4263},
+            {14.467, 6.8253},
+            {14.469, 7.3163},
+            {14.496, 13.675},
+            {14.498, 14.166},
+            {14.108, 14.565},
+            {13.625, 14.565},
+            {11.375, 14.565},
+            {10.892, 14.565},
+            {10.498, 14.166},
+            {10.496, 13.675},
+            {10.469, 7.3163},
+            {10.467, 6.8253},
+            {10.857, 6.4263},
+            {11.34, 6.4263}
+           }
+          },
+          CurveClosed -> {1}
+         ]
+        },
+        {
+         GrayLevel[0.8],
+         Thickness[0.061313],
+         Opacity[1.0],
+         CapForm["Butt"],
+         JoinForm[{"Miter", 1.0}],
+         JoinedCurveBox[
+          {
+           {
+            {1, 4, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgBGITIGYC4uKMiW9r7L/ai1xwufHhi5LDvPfLj3mbf7W/\nJV2TaHRV0WFPyWQJlrA/9hv3v5ln80bBIcX6vn/vdCYHGH+HXOvrwB2McP75\n78GPl87+BVf/70rFSzXDT/a/T787eZhJwWHffCn9uyqf7Jv1fZZxHZN1AEpy\nrJH5ZC94fNeO3jZpByAnKsX6p/1+vjnGi7ZIOnBdX1xgy8XoAONLA3WzMUrB\n+ZIsYXy6RtJwfv+hrxox/DIODPmNLEf7JSDym6QdynUV5b/kiDv8qsvaUyIs\n7RBWu25bUr2ow6dLvkkCEVIO1SAHdQk5tIvdPPc9WMrBYLc6P/dWPofnv1d+\nvOQr5QDmLmN2ACq23OIh63Bko17eYsYf9gdPLXTd9lkezv/yF+RhRTgfbH+R\nogMzZ5d88jtGBxi/r7RQmvcBB5x/8qn9kvv7BCD2X1ZyUPYCuUjIARQ6UU+U\nHSojVpietRZ1uP0T6IEvKg6vpm7iKdSRcFjn/rBK5J0K3P+FtsAQ+6DiAAvf\n0yDn/VVxAKpa566o7fD0gtLtn/9UoOGs47DlRBkwSmDyug4MYKAM52uDHcQL\n56uyNU517uaE8yH+Z4WoM9dxUNxQBExRrJBwldB2AFoODBBWBzcQ44emgyXY\nQnZoPGk62JvG7fLk4UHjc8D5EPXMcP5VUHLiYHBIAwE1DQewciYGB91Nc98v\nZ1N3mObcnfP8939IPDxThejrZ3YABUsBMBwSwAHADufzgTUywfnVIqAQ/WMP\n43uAPQrMH+CAVnFAzy8ApdVkyA==\n      "
+          ],
+          CurveClosed -> {1}
+         ]
+        },
+        {
+         GrayLevel[0.8],
+         Thickness[0.062188],
+         Opacity[1.0],
+         CapForm["Butt"],
+         JoinForm[{"Miter", 1.0}],
+         JoinedCurveBox[
+          {{{0, 2, 0}}},
+          {{{2.3237, 8.461}, {4.3237, 8.461}}},
+          CurveClosed -> {0}
+         ]
+        },
+        {
+         GrayLevel[0.8],
+         Thickness[0.062188],
+         Opacity[1.0],
+         CapForm["Butt"],
+         JoinForm[{"Miter", 1.0}],
+         JoinedCurveBox[
+          {{{0, 2, 0}}},
+          {{{2.8741, 10.496}, {4.6661, 10.496}}},
+          CurveClosed -> {0}
+         ]
+        },
+        {
+         GrayLevel[0.8],
+         Thickness[0.062188],
+         Opacity[1.0],
+         CapForm["Butt"],
+         JoinForm[{"Miter", 1.0}],
+         JoinedCurveBox[
+          {{{0, 2, 0}}},
+          {{{3.2369, 12.53}, {5.0289, 12.53}}},
+          CurveClosed -> {0}
+         ]
+        }
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {17.0, 17.0},
+       PlotRange -> {{-0.5, 16.5}, {-0.5, 16.5}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ThumbsUpActive"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.0625],
+        {
+         GrayLevel[0.2],
+         Thickness[0.061313],
+         Opacity[1.0],
+         CapForm["Butt"],
+         JoinForm["Round"],
+         JoinedCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           }
+          },
+          {
+           {
+            {4.6599, 9.5738},
+            {2.4099, 9.5738},
+            {1.9269, 9.5738},
+            {1.5329, 9.1748},
+            {1.5309, 8.6838},
+            {1.5039, 2.3248},
+            {1.5019, 1.8338},
+            {1.8919, 1.4348},
+            {2.3749, 1.4348},
+            {4.6249, 1.4348},
+            {5.1079, 1.4348},
+            {5.5019, 1.8338},
+            {5.5039, 2.3248},
+            {5.5309, 8.6838},
+            {5.5329, 9.1748},
+            {5.1429, 9.5738},
+            {4.6599, 9.5738}
+           }
+          },
+          CurveClosed -> {1}
+         ]
+        },
+        {
+         GrayLevel[0.2],
+         Thickness[0.061313],
+         Opacity[1.0],
+         CapForm["Butt"],
+         JoinForm[{"Miter", 1.0}],
+         JoinedCurveBox[
+          {
+           {
+            {1, 4, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgBGITIGYC4k+XfJMEInQdbsaX+cuJSTnwMGm3i0XqOnif\nYLedHSrjkDHxbY19qY7D3Aa1Q23qcg7qhhxrZKK04fygHXKtryci+GyNU527\n1yDUJzy9oHR7p64DV4ZSTsUveQeQ7pTdug52L26u+SWj6KB8+2dd1h5dh4o5\ni5R32ig51GftKZl8Q8dh4Q/DZ+tUlR1sua4vLtirDecXgxz0XwnO//L3SsXL\nNAQf5JzAH4oODR77a2V3QOXVlBxq7U3jdnmqODQfOLXQtUzJoXd6nlCzg6pD\nu9jNc98vKzlUi6xzf7hLzQFouwTLNSWH3Oe/V34M0oCEx00lBy8wQ9vh/Pfg\nx0ujFR0YwEDXYYGU/l0VNgU4X5IljE93kyycD1YvLevwA0jNbtGG84GBbrnl\nhCacHwKUPrJA3QESH1KQcL6l5jDv/fJj3uYSDn9WfgTKqELdIebAvXVZ5fGX\nyg5LCoAhpCwG97880Ps75MTg4ZsF9pCYw8zd0ybwVzE7gEKBh0nM4dfb1wcs\nlf/ZzwAGw4FT4g5G5bqK8l++2UPcLQXng9U3acD55fvmS+nP1YTzA8ABqeXw\nRET25FP7f/YQf2o5hEdv3P9mHrMDyPSFrVoO7OckA29Jc0D8J6Hl8GCO4NK9\nB7kdNhQBI/SPBhpfE86HqNeG808vdN32+a+2Qwuv//opqfzQ9KDtYPrewtX9\nkyAkXhl0HFaEnzI6YijiENN/6KuGjLaDiP2xO1uB4bACGJqdjFpwPjh4whDy\nheAEpwPnAzm2XOG6DmnfnyQuvCbugJ5fAP+GVmc=\n      "
+          ],
+          CurveClosed -> {1}
+         ]
+        },
+        {
+         GrayLevel[0.2],
+         Thickness[0.062188],
+         Opacity[1.0],
+         CapForm["Butt"],
+         JoinForm[{"Miter", 1.0}],
+         JoinedCurveBox[
+          {{{0, 2, 0}}},
+          {{{13.676, 7.539}, {11.676, 7.539}}},
+          CurveClosed -> {0}
+         ]
+        },
+        {
+         GrayLevel[0.2],
+         Thickness[0.062188],
+         Opacity[1.0],
+         CapForm["Butt"],
+         JoinForm[{"Miter", 1.0}],
+         JoinedCurveBox[
+          {{{0, 2, 0}}},
+          {{{13.126, 5.5043}, {11.334, 5.5043}}},
+          CurveClosed -> {0}
+         ]
+        },
+        {
+         GrayLevel[0.2],
+         Thickness[0.062188],
+         Opacity[1.0],
+         CapForm["Butt"],
+         JoinForm[{"Miter", 1.0}],
+         JoinedCurveBox[
+          {{{0, 2, 0}}},
+          {{{12.763, 3.4695}, {10.971, 3.4695}}},
+          CurveClosed -> {0}
+         ]
+        }
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {17.0, 17.0},
+       PlotRange -> {{-0.5, 16.5}, {-0.5, 16.5}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ThumbsUpInactive"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.0625],
+        {
+         GrayLevel[0.8],
+         Thickness[0.061313],
+         Opacity[1.0],
+         CapForm["Butt"],
+         JoinForm["Round"],
+         JoinedCurveBox[
+          {
+           {
+            {0, 2, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           }
+          },
+          {
+           {
+            {4.6599, 9.5738},
+            {2.4099, 9.5738},
+            {1.9269, 9.5738},
+            {1.5329, 9.1748},
+            {1.5309, 8.6838},
+            {1.5039, 2.3248},
+            {1.5019, 1.8338},
+            {1.8919, 1.4348},
+            {2.3749, 1.4348},
+            {4.6249, 1.4348},
+            {5.1079, 1.4348},
+            {5.5019, 1.8338},
+            {5.5039, 2.3248},
+            {5.5309, 8.6838},
+            {5.5329, 9.1748},
+            {5.1429, 9.5738},
+            {4.6599, 9.5738}
+           }
+          },
+          CurveClosed -> {1}
+         ]
+        },
+        {
+         GrayLevel[0.8],
+         Thickness[0.061313],
+         Opacity[1.0],
+         CapForm["Butt"],
+         JoinForm[{"Miter", 1.0}],
+         JoinedCurveBox[
+          {
+           {
+            {1, 4, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3},
+            {1, 3, 3},
+            {0, 1, 0},
+            {1, 3, 3}
+           }
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmVmYGBgBGITIGYC4k+XfJMEInQdbsaX+cuJSTnwMGm3i0XqOnif\nYLedHSrjkDHxbY19qY7D3Aa1Q23qcg7qhhxrZKK04fygHXKtryci+GyNU527\n1yDUJzy9oHR7p64DV4ZSTsUveQeQ7pTdug52L26u+SWj6KB8+2dd1h5dh4o5\ni5R32ig51GftKZl8Q8dh4Q/DZ+tUlR1sua4vLtirDecXgxz0XwnO//L3SsXL\nNAQf5JzAH4oODR77a2V3QOXVlBxq7U3jdnmqODQfOLXQtUzJoXd6nlCzg6pD\nu9jNc98vKzlUi6xzf7hLzQFouwTLNSWH3Oe/V34M0oCEx00lBy8wQ9vh/Pfg\nx0ujFR0YwEDXYYGU/l0VNgU4X5IljE93kyycD1YvLevwA0jNbtGG84GBbrnl\nhCacHwKUPrJA3QESH1KQcL6l5jDv/fJj3uYSDn9WfgTKqELdIebAvXVZ5fGX\nyg5LCoAhpCwG97880Ps75MTg4ZsF9pCYw8zd0ybwVzE7gEKBh0nM4dfb1wcs\nlf/ZzwAGw4FT4g5G5bqK8l++2UPcLQXng9U3acD55fvmS+nP1YTzA8ABqeXw\nRET25FP7f/YQf2o5hEdv3P9mHrMDyPSFrVoO7OckA29Jc0D8J6Hl8GCO4NK9\nB7kdNhQBI/SPBhpfE86HqNeG808vdN32+a+2Qwuv//opqfzQ9KDtYPrewtX9\nkyAkXhl0HFaEnzI6YijiENN/6KuGjLaDiP2xO1uB4bACGJqdjFpwPjh4whDy\nheAEpwPnAzm2XOG6DmnfnyQuvCbugJ5fAP+GVmc=\n      "
+          ],
+          CurveClosed -> {1}
+         ]
+        },
+        {
+         GrayLevel[0.8],
+         Thickness[0.062188],
+         Opacity[1.0],
+         CapForm["Butt"],
+         JoinForm[{"Miter", 1.0}],
+         JoinedCurveBox[
+          {{{0, 2, 0}}},
+          {{{13.676, 7.539}, {11.676, 7.539}}},
+          CurveClosed -> {0}
+         ]
+        },
+        {
+         GrayLevel[0.8],
+         Thickness[0.062188],
+         Opacity[1.0],
+         CapForm["Butt"],
+         JoinForm[{"Miter", 1.0}],
+         JoinedCurveBox[
+          {{{0, 2, 0}}},
+          {{{13.126, 5.5043}, {11.334, 5.5043}}},
+          CurveClosed -> {0}
+         ]
+        },
+        {
+         GrayLevel[0.8],
+         Thickness[0.062188],
+         Opacity[1.0],
+         CapForm["Butt"],
+         JoinForm[{"Miter", 1.0}],
+         JoinedCurveBox[
+          {{{0, 2, 0}}},
+          {{{12.763, 3.4695}, {10.971, 3.4695}}},
+          CurveClosed -> {0}
+         ]
+        }
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {17.0, 17.0},
+       PlotRange -> {{-0.5, 16.5}, {-0.5, 16.5}}
       ]
      ])
    }
