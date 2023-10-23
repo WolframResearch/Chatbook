@@ -39,6 +39,7 @@ Needs[ "Wolfram`Chatbook`"                  ];
 Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`Dynamics`"         ];
 Needs[ "Wolfram`Chatbook`Explode`"          ];
+Needs[ "Wolfram`Chatbook`Feedback`"         ];
 Needs[ "Wolfram`Chatbook`Formatting`"       ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
 Needs[ "Wolfram`Chatbook`Handlers`"         ];
@@ -77,6 +78,7 @@ ChatbookAction[ "OpenChatMenu"         , args___ ] := catchMine @ OpenChatMenu @
 ChatbookAction[ "PersonaManage"        , args___ ] := catchMine @ PersonaManage @ args;
 ChatbookAction[ "ToolManage"           , args___ ] := catchMine @ ToolManage @ args;
 ChatbookAction[ "Send"                 , args___ ] := catchMine @ SendChat @ args;
+ChatbookAction[ "SendFeedback"         , args___ ] := catchMine @ SendFeedback @ args;
 ChatbookAction[ "StopChat"             , args___ ] := catchMine @ StopChat @ args;
 ChatbookAction[ "TabLeft"              , args___ ] := catchMine @ TabLeft @ args;
 ChatbookAction[ "TabRight"             , args___ ] := catchMine @ TabRight @ args;
@@ -84,6 +86,21 @@ ChatbookAction[ "ToggleFormatting"     , args___ ] := catchMine @ ToggleFormatti
 ChatbookAction[ "WidgetSend"           , args___ ] := catchMine @ WidgetSend @ args;
 ChatbookAction[ name_String            , args___ ] := catchMine @ throwFailure[ "NotImplemented", name, args ];
 ChatbookAction[ args___                          ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*SendFeedback*)
+SendFeedback // beginDefinition;
+
+SendFeedback[ cellObject0_, positive: True|False ] := Enclose[
+    Module[ { cellObject },
+        cellObject = ConfirmMatch[ ensureChatOutputCell @ parentCell @ cellObject0, _CellObject, "CellObject" ];
+        ConfirmMatch[ sendFeedback[ cellObject, positive ], _NotebookObject, "SendFeedbackDialog" ]
+    ],
+    throwInternalFailure[ SendFeedback[ cellObject0, positive ], ## ] &
+];
+
+SendFeedback // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

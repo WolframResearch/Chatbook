@@ -643,7 +643,7 @@ rootEvaluationCell[ source_, cells: { __CellObject } ] :=
     FirstCase[
         cellInformation @ cells,
         KeyValuePattern @ { "Evaluating" -> True, "CellObject" -> cell_CellObject } :> cell,
-        throwInternalFailure[ rootEvaluationCell[ source, cells ], ## ] &
+        throwInternalFailure @ rootEvaluationCell[ source, cells ]
     ];
 
 rootEvaluationCell // endDefinition;

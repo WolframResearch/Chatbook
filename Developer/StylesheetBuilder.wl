@@ -204,7 +204,8 @@ assistantMenuInitializer[ name_String, color_ ] :=
                         ],
                         RawBoxes @ TemplateBox[ { name, color }, "ChatMenuButton" ]
                     },
-                    Spacings -> 0
+                    Alignment -> Center,
+                    Spacings  -> 0
                 ],
                 "ChatMenu"
             ]
@@ -224,6 +225,31 @@ assistantMenuInitializer[ name_String, color_ ] :=
             ]
     ];
 
+
+
+$feedbackButtons = Column[ { feedbackButton @ True, feedbackButton @ False }, Spacings -> { 0, { 0, 0.25, 0 } } ];
+
+feedbackButton[ True  ] := feedbackButton[ True , "ThumbsUp"   ];
+feedbackButton[ False ] := feedbackButton[ False, "ThumbsDown" ];
+
+feedbackButton[ positive: True|False, name_String ] :=
+    Button[
+        MouseAppearance[
+            Tooltip[
+                Mouseover[
+                    RawBoxes @ TemplateBox[ { }, name<>"Inactive" ],
+                    RawBoxes @ TemplateBox[ { }, name<>"Active" ]
+                ],
+                "Send feedback to Wolfram"
+            ],
+            "LinkHand"
+        ],
+        With[ { $CellContext`cell = EvaluationCell[ ] },
+            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+            Catch[ Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "SendFeedback", $CellContext`cell, positive ], _ ]
+        ],
+        Appearance -> $suppressButtonAppearance
+    ];
 
 
 (* ::Subsection::Closed:: *)
