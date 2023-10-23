@@ -9,6 +9,9 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$cloudNotebooks;
 `$debug;
 `$maxChatCells;
+`$thisPaclet;
+`$debugData;
+`$settingsData;
 
 `$chatDelimiterStyles;
 `$chatIgnoredStyles;
@@ -44,6 +47,8 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `chatbookIcon;
 `inlineTemplateBox;
 `inlineTemplateBoxes;
+`sufficientVersionQ;
+`insufficientVersionQ;
 
 Begin[ "`Private`" ];
 
@@ -71,6 +76,15 @@ $closedChatCellOptions :=
         Sequence @@ { },
         Sequence @@ { CellMargins -> -2, CellOpen -> False, CellFrame -> 0, ShowCellBracket -> False }
     ];
+
+$versionRequirements = <|
+    "DynamicSplit"             -> 13.3,
+    "TaskWriteOutput"          -> 14.0,
+    "TrackScrollingWhenPlaced" -> 14.0
+|>;
+
+$mxFlag = Wolfram`ChatbookInternal`$BuildingMX;
+$resourceFunctionContext = "Wolfram`Chatbook`ResourceFunctions`";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -107,6 +121,7 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "InvalidResourceSpecification"    -> "The argument `1` is not a valid resource specification.",
     "InvalidResourceURL"              -> "The specified URL does not represent a valid resource object.",
     "InvalidStreamingOutputMethod"    -> "Invalid streaming output method: `1`.",
+    "InvalidWriteMethod"              -> "Invalid setting for NotebookWriteMethod: `1`; using default instead.",
     "ModelToolSupport"                -> "The model `1` does not support tools.",
     "NoAPIKey"                        -> "No API key defined.",
     "NoSandboxKernel"                 -> "Unable to start a sandbox kernel. This may mean that the number of currently running kernels exceeds the limit defined by $LicenseProcesses.",
@@ -245,12 +260,12 @@ importResourceFunction // beginDefinition;
 importResourceFunction::failure = "[ERROR] Failed to import resource function `1`. Aborting MX build.";
 importResourceFunction // Attributes = { HoldFirst };
 
-importResourceFunction[ symbol_Symbol, name_String ] /; Wolfram`ChatbookInternal`$BuildingMX := Enclose[
+importResourceFunction[ symbol_Symbol, name_String ] /; $mxFlag := Enclose[
     Block[ { PrintTemporary },
         Module[ { sourceContext, targetContext, definition, replaced, newSymbol },
 
             sourceContext = ConfirmBy[ ResourceFunction[ name, "Context" ], StringQ ];
-            targetContext = "Wolfram`Chatbook`ResourceFunctions`"<>name<>"`";
+            targetContext = $resourceFunctionContext<>name<>"`";
             definition    = ConfirmMatch[ ResourceFunction[ name, "DefinitionList" ], _Language`DefinitionList ];
 
             replaced = ConfirmMatch[
@@ -466,6 +481,29 @@ $maxBugReportURLSize = 3500;
 
 $maxPartLength = 500;
 
+$thisPaclet   := PacletObject[ "Wolfram/Chatbook" ];
+$debugData    := debugData @ $thisPaclet[ "PacletInfo" ];
+$settingsData := maskOpenAIKey @ $settings;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*debugData*)
+debugData // beginDefinition;
+
+debugData[ as_Association? AssociationQ ] := <|
+    KeyTake[ as, { "Name", "Version", "ReleaseID" } ],
+    "EvaluationEnvironment" -> $EvaluationEnvironment,
+    "FrontEndVersion"       -> $frontEndVersion,
+    "KernelVersion"         -> SystemInformation[ "Kernel", "Version" ],
+    "SystemID"              -> $SystemID,
+    "Notebooks"             -> $Notebooks,
+    "DynamicEvaluation"     -> $DynamicEvaluation,
+    "SynchronousEvaluation" -> $SynchronousEvaluation,
+    "TaskEvaluation"        -> MatchQ[ $CurrentTask, _TaskObject ]
+|>;
+
+debugData // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$bugReportLink*)
@@ -477,23 +515,13 @@ $bugReportLink := Hyperlink[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*bugReportBody*)
-bugReportBody[ ] := bugReportBody @ PacletObject[ "Wolfram/Chatbook" ][ "PacletInfo" ];
+bugReportBody[ ] := bugReportBody @ $thisPaclet[ "PacletInfo" ];
 
 bugReportBody[ as_Association? AssociationQ ] :=
     TemplateApply[
         $bugReportBodyTemplate,
         TemplateVerbatim /@ <|
-            "DebugData" -> associationMarkdown[
-                KeyTake[ as, { "Name", "Version", "ReleaseID" } ],
-                "EvaluationEnvironment" -> $EvaluationEnvironment,
-                "FrontEndVersion"       -> $frontEndVersion,
-                "KernelVersion"         -> SystemInformation[ "Kernel", "Version" ],
-                "SystemID"              -> $SystemID,
-                "Notebooks"             -> $Notebooks,
-                "DynamicEvaluation"     -> $DynamicEvaluation,
-                "SynchronousEvaluation" -> $SynchronousEvaluation,
-                "TaskEvaluation"        -> MatchQ[ $CurrentTask, _TaskObject ]
-            ],
+            "DebugData"       -> associationMarkdown @ $debugData,
             "Stack"           -> $bugReportStack,
             "Settings"        -> associationMarkdown @ maskOpenAIKey @ $settings,
             "InternalFailure" -> markdownCodeBlock @ $internalFailure
@@ -740,6 +768,28 @@ $chatbookIcons := $chatbookIcons =
 (*$templateBoxDisplayFunctions*)
 $templateBoxDisplayFunctions := $templateBoxDisplayFunctions =
     Developer`ReadWXFFile @ PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "DisplayFunctions" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Version Utilities*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*sufficientVersionQ*)
+sufficientVersionQ // beginDefinition;
+sufficientVersionQ[ version_? NumberQ ] := TrueQ[ $VersionNumber >= version ];
+sufficientVersionQ[ id_String ] := sufficientVersionQ[ id ] = sufficientVersionQ[ id, $versionRequirements[ id ] ];
+sufficientVersionQ[ id_, version_? NumberQ ] := sufficientVersionQ @ version;
+sufficientVersionQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*insufficientVersionQ*)
+insufficientVersionQ // beginDefinition;
+insufficientVersionQ[ version_? NumberQ ] := TrueQ[ $VersionNumber < version ];
+insufficientVersionQ[ id_String ] := insufficientVersionQ[ id ] = insufficientVersionQ[ id, $versionRequirements[ id ] ];
+insufficientVersionQ[ id_, version_? NumberQ ] := sufficientVersionQ @ version;
+insufficientVersionQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

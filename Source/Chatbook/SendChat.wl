@@ -19,6 +19,7 @@ Needs[ "Wolfram`Chatbook`ChatMessages`"     ];
 Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`Formatting`"       ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
+Needs[ "Wolfram`Chatbook`Handlers`"         ];
 Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 Needs[ "Wolfram`Chatbook`Models`"           ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
@@ -73,7 +74,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         ];
 
         settings = ConfirmBy[
-            resolveTools @ resolveAutoSettings @ inheritSettings[ settings0, cells, evalCell ],
+            resolveAutoSettings @ currentChatSettings @ evalCell,
             AssociationQ,
             "InheritSettings"
         ];
@@ -145,13 +146,16 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             "CreateOutput"
         ];
 
-        getHandlerFunction[ settings, "ChatPre" ][ <|
-            "EvaluationCell"       -> evalCell,
-            "Messages"             -> messages,
-            "CellObject"           -> cellObject,
-            "Container"            :> container,
-            "ChatNotebookSettings" -> KeyDrop[ settings, { "Data", "OpenAIKey" } ]
-        |> ];
+        applyHandlerFunction[
+            settings,
+            "ChatPre",
+            <|
+                "EvaluationCell" -> evalCell,
+                "Messages"       -> messages,
+                "CellObject"     -> cellObject,
+                "Container"      :> container
+            |>
+        ];
 
         task = ConfirmMatch[
             $lastTask = chatSubmit[ container, messages, cellObject, settings ],
@@ -185,7 +189,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         ];
 
         settings = ConfirmBy[
-            resolveTools @ resolveAutoSettings @ inheritSettings[ settings0, cells, evalCell ],
+            resolveAutoSettings @ currentChatSettings @ evalCell,
             AssociationQ,
             "InheritSettings"
         ];
@@ -257,13 +261,16 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
             "CreateOutput"
         ];
 
-        getHandlerFunction[ settings, "ChatPre" ][ <|
-            "EvaluationCell"       -> evalCell,
-            "Messages"             -> messages,
-            "CellObject"           -> cellObject,
-            "Container"            :> container,
-            "ChatNotebookSettings" -> KeyDrop[ settings, { "Data", "OpenAIKey" } ]
-        |> ];
+        applyHandlerFunction[
+            settings,
+            "ChatPre",
+            <|
+                "EvaluationCell" -> evalCell,
+                "Messages"       -> messages,
+                "CellObject"     -> cellObject,
+                "Container"      :> container
+            |>
+        ];
 
         task = Confirm[ $lastTask = chatSubmit[ container, req, cellObject, settings ] ];
 
@@ -274,31 +281,6 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
 ];
 
 sendChat // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getHandlerFunctions*)
-getHandlerFunctions // beginDefinition;
-getHandlerFunctions[ settings_Association ] := getHandlerFunctions[ settings, Lookup[ settings, "HandlerFunctions" ] ];
-getHandlerFunctions[ _, handlers_Association ] := <| $DefaultChatHandlerFunctions, replaceCellContext @ handlers |>;
-getHandlerFunctions[ _, $$unspecified ] := $DefaultChatHandlerFunctions;
-getHandlerFunctions[ _, handlers_ ] := (messagePrint[ "InvalidHandlers", handlers ]; $DefaultChatHandlerFunctions);
-getHandlerFunctions // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getHandlerFunction*)
-getHandlerFunction // beginDefinition;
-
-getHandlerFunction[ settings_Association, name_String ] :=
-    getHandlerFunction[ settings, name, getHandlerFunctions @ settings ];
-
-getHandlerFunction[ settings_, name_String, handlers_Association ] :=
-    Replace[ Lookup[ handlers, name ],
-             $$unspecified :> Lookup[ $DefaultChatHandlerFunctions, name, None ]
-    ];
-
-getHandlerFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -396,15 +378,18 @@ chatSubmit // endDefinition;
 chatSubmit0 // beginDefinition;
 chatSubmit0 // Attributes = { HoldFirst };
 
-chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] := (
+chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] := Quiet[
     Needs[ "LLMServices`" -> None ];
-    $lastChatSubmit = LLMServices`ChatSubmit[
-        standardizeMessageKeys @ messages,
-        makeLLMConfiguration @ settings,
-        HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
-        HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings
-    ]
-);
+    $lastChatSubmitResult = ReleaseHold[
+        $lastChatSubmit = HoldForm @ LLMServices`ChatSubmit[
+            standardizeMessageKeys @ messages,
+            makeLLMConfiguration @ settings,
+            HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
+            HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings
+        ]
+    ],
+    { LLMServices`ChatSubmit::unsupported }
+];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
 chatSubmit0[ container_, req_HTTPRequest, cellObject_, settings_ ] := (
@@ -463,7 +448,8 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
             alwaysOpen   = TrueQ @ $alwaysOpen,
             autoAssist   = $autoAssistMode,
             dynamicSplit = dynamicSplitQ @ settings,
-            handlers     = getHandlerFunctions @ settings
+            handlers     = getHandlerFunctions @ settings,
+            useTasks     = feTaskQ @ settings
         },
         {
             bodyChunkHandler    = Lookup[ handlers, "BodyChunkReceived", None ],
@@ -472,7 +458,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
         <|
             KeyDrop[ handlers, $chatSubmitDroppedHandlers ],
             "BodyChunkReceived" -> Function @ catchAlways[
-                Block[
+                withFETasks[ useTasks ] @ Block[
                     {
                         $autoOpen       = autoOpen,
                         $alwaysOpen     = alwaysOpen,
@@ -486,7 +472,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                 ]
             ],
             "TaskFinished" -> Function @ catchAlways[
-                Block[
+                withFETasks[ useTasks ] @ Block[
                     {
                         $autoOpen       = autoOpen,
                         $alwaysOpen     = alwaysOpen,
@@ -496,13 +482,32 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                     },
                     taskFinishedHandler[ #1 ];
                     Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
-                    checkResponse[ settings, Unevaluated @ container, cellObject, #1 ]
+                    checkResponse[ $settings, Unevaluated @ container, cellObject, #1 ]
                 ]
             ]
         |>
     ];
 
 chatHandlers // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*feTaskQ*)
+feTaskQ // beginDefinition;
+feTaskQ[ settings_ ] := feTaskQ[ settings, settings[ "NotebookWriteMethod" ] ];
+feTaskQ[ settings_, "ServiceLink"    ] := False;
+feTaskQ[ settings_, "PreemptiveLink" ] := True;
+feTaskQ[ settings_, $$unspecified    ] := True;
+feTaskQ[ settings_, invalid_         ] := (messagePrint[ "InvalidWriteMethod", invalid ]; True);
+feTaskQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*withFETasks*)
+withFETasks // beginDefinition;
+withFETasks[ False ] := Function[ eval, Block[ { createFETask = #1 & }, eval ], HoldFirst ];
+withFETasks[ True  ] := #1 &;
+withFETasks // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -624,7 +629,11 @@ splitDynamicContent // beginDefinition;
 splitDynamicContent // Attributes = { HoldFirst };
 
 (* NotebookLocationSpecifier isn't available before 13.3 and splitting isn't yet supported in cloud: *)
-splitDynamicContent[ container_, cell_ ] /; ! $dynamicSplit || $VersionNumber < 13.3 || $cloudNotebooks := Null;
+splitDynamicContent[ container_, cell_ ] /; Or[
+    ! $dynamicSplit,
+    insufficientVersionQ[ "DynamicSplit" ],
+    $cloudNotebooks
+] := Null;
 
 splitDynamicContent[ container_, cell_ ] :=
     splitDynamicContent[ container, container[ "DynamicContent" ], cell, container[ "UUID" ] ];
@@ -1000,49 +1009,45 @@ chatHistoryCellsAndTarget // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*inheritSettings*)
-inheritSettings // beginDefinition;
+(*resolveAutoSettings*)
+(* TODO: this could be integrated into currentChatSettings (perhaps as an option) *)
+resolveAutoSettings // beginDefinition;
 
-inheritSettings[ settings_, { first_CellObject, ___ }, evalCell_CellObject ] :=
-    inheritSettings[ settings, cellInformation @ first, evalCell ];
+(* Evaluate rhs of RuleDelayed settings to get final value *)
+resolveAutoSettings[ settings: KeyValuePattern[ _ :> _ ] ] :=
+    resolveAutoSettings @ AssociationMap[ Apply @ Rule, settings ];
 
-inheritSettings[
-    settings_Association,
-    KeyValuePattern @ { "Style" -> $$chatDelimiterStyle, "CellObject" -> delimiter_CellObject },
-    evalCell_CellObject
-] := mergeSettings[ settings, currentChatSettings @ delimiter, currentChatSettings @ evalCell ];
+(* Determine if tools are actually enabled based on settings *)
+resolveAutoSettings[ settings: KeyValuePattern[ "ToolsEnabled" -> Automatic ] ] :=
+    resolveAutoSettings @ Association[ settings, "ToolsEnabled" -> toolsEnabledQ @ settings ];
 
-inheritSettings[ settings_Association, _, evalCell_CellObject ] :=
-    mergeSettings[ settings, <| |>, currentChatSettings @ evalCell ];
+(* Add additional settings and resolve actual LLMTool expressions *)
+resolveAutoSettings[ settings_Association ] := resolveTools @ <|
+    settings,
+    "HandlerFunctions" -> getHandlerFunctions @ settings,
+    "LLMEvaluator"     -> getLLMEvaluator @ settings
+|>;
 
-inheritSettings // endDefinition;
+resolveAutoSettings // endDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*mergeSettings*)
-mergeSettings // beginDefinition;
-
-mergeSettings[ settings_? AssociationQ, group_? AssociationQ, cell_? AssociationQ ] :=
-    Module[ { as },
-        as = Association[ settings, Complement[ group, settings ], Complement[ cell, settings ] ];
-        Association[ as, "LLMEvaluator" -> getLLMEvaluator @ as ]
-    ];\
-
-mergeSettings // endDefinition;\
+(* TODO: define singular `resolveAutoSetting` that expands each `Automatic` value *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*getLLMEvaluator*)
 getLLMEvaluator // beginDefinition;
 getLLMEvaluator[ as_Association ] := getLLMEvaluator[ as, Lookup[ as, "LLMEvaluator" ] ];
+
 getLLMEvaluator[ as_, name_String ] :=
-    (* If there isn't any information on `name`, getNamedLLMEvaluator just
-        returns `name`; if that happens, avoid infinite recursion by just
-        returning *)
-    Replace[getNamedLLMEvaluator[name], {
-        name -> name,
-        other_ :> getLLMEvaluator[as, other]
-    }]
+    (* If there isn't any information on `name`, getNamedLLMEvaluator just returns `name`; if that happens, avoid
+       infinite recursion by just returning *)
+    Replace[ getNamedLLMEvaluator @ name,
+             {
+                name   -> name,
+                other_ :> getLLMEvaluator[ as, other ]
+            }
+    ];
+
 getLLMEvaluator[ as_, evaluator_Association ] := evaluator;
 getLLMEvaluator[ _, _ ] := None;
 getLLMEvaluator // endDefinition;
@@ -1055,21 +1060,6 @@ getNamedLLMEvaluator[ name_String ] := getNamedLLMEvaluator[ name, GetCachedPers
 getNamedLLMEvaluator[ name_String, evaluator_Association ] := Append[ evaluator, "LLMEvaluatorName" -> name ];
 getNamedLLMEvaluator[ name_String, _ ] := name;
 getNamedLLMEvaluator // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*resolveAutoSettings*)
-resolveAutoSettings // beginDefinition;
-
-resolveAutoSettings[ settings: KeyValuePattern[ key_ :> value_ ] ] :=
-    resolveAutoSettings @ Association[ settings, key -> value ];
-
-resolveAutoSettings[ settings: KeyValuePattern[ "ToolsEnabled" -> Automatic ] ] :=
-    resolveAutoSettings @ Association[ settings, "ToolsEnabled" -> toolsEnabledQ @ settings ];
-
-resolveAutoSettings[ settings_Association ] := settings;
-
-resolveAutoSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1359,10 +1349,11 @@ activeAIAssistantCell[
                 "Output",
                 "ChatOutput",
                 Sequence @@ Flatten[ { $closedChatCellOptions } ],
-                Selectable   -> False,
-                Editable     -> False,
-                CellDingbat  -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
-                TaggingRules -> <| "ChatNotebookSettings" -> settings |>
+                Selectable      -> False,
+                Editable        -> False,
+                CellDingbat     -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
+                CellTrayWidgets -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
+                TaggingRules    -> <| "ChatNotebookSettings" -> settings |>
             ]
         ]
     ];
@@ -1398,10 +1389,6 @@ activeAIAssistantCell[
             ,
             "Output",
             "ChatOutput",
-            ShowAutoSpellCheck -> False,
-            CodeAssistOptions -> { "AutoDetectHyperlinks" -> False },
-            LanguageCategory -> None,
-            LineIndent -> 0,
             If[ TrueQ @ $autoAssistMode && MatchQ[ minimized, True|Automatic ],
                 Sequence @@ Flatten[ {
                     $closedChatCellOptions,
@@ -1409,12 +1396,21 @@ activeAIAssistantCell[
                 } ],
                 Initialization -> None
             ],
-            CellDingbat       -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
-            CellEditDuplicate -> False,
-            Editable          -> True,
-            Selectable        -> True,
-            ShowCursorTracker -> False,
-            TaggingRules      -> <| "ChatNotebookSettings" -> settings |>
+            CellDingbat        -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
+            CellEditDuplicate  -> False,
+            CellTrayWidgets    -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
+            CodeAssistOptions  -> { "AutoDetectHyperlinks" -> False },
+            Editable           -> True,
+            LanguageCategory   -> None,
+            LineIndent         -> 0,
+            Selectable         -> True,
+            ShowAutoSpellCheck -> False,
+            ShowCursorTracker  -> False,
+            TaggingRules       -> <| "ChatNotebookSettings" -> settings |>,
+            If[ scrollOutputQ @ settings,
+                PrivateCellOptions -> { "TrackScrollingWhenPlaced" -> True },
+                Sequence @@ { }
+            ]
         ]
     ];
 
@@ -1549,8 +1545,9 @@ writeReformattedCell[ settings_, None, cell_CellObject ] :=
 
 writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
     Block[ { $dynamicText = False },
-        Module[ { tag, open, label, pageData, uuid, new, output },
+        Module[ { scroll, tag, open, label, pageData, uuid, new, output },
 
+            scroll   = scrollOutputQ[ settings, cell ];
             tag      = ConfirmMatch[ CurrentValue[ cell, { TaggingRules, "MessageTag" } ], _String|Inherited, "Tag" ];
             open     = $lastOpen = cellOpenQ @ cell;
             label    = RawBoxes @ TemplateBox[ { }, "MinimizedChat" ];
@@ -1563,15 +1560,21 @@ writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
             $reformattedCell = new;
             $lastChatOutput  = output;
 
-            With[ { new = new, output = output },
-                If[ TrueQ[ $VersionNumber >= 14.0 ],
+            addHandlerArguments @ <|
+                "EvaluationCell" -> output,
+                "Result"         -> string,
+                Replace[ Lookup[ settings, "Data" ], Except[ _? AssociationQ ] -> <| |> ]
+            |>;
+
+            With[ { new = new, output = output, scroll = scroll },
+                If[ sufficientVersionQ[ "TaskWriteOutput" ],
                     createFETask @ NotebookWrite[ cell, new, None, AutoScroll -> False ];
                     createFETask @ attachChatOutputMenu @ output;
-                    createFETask @ postApply[ output, string, settings ];
+                    createFETask @ scrollOutput[ scroll, output ];
                     ,
                     NotebookWrite[ cell, new, None, AutoScroll -> False ];
                     attachChatOutputMenu @ output;
-                    postApply[ output, string, settings ];
+                    scrollOutput[ scroll, output ];
                 ]
             ]
         ]
@@ -1600,25 +1603,34 @@ writeReformattedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
-(*postApply*)
-postApply // beginDefinition;
+(*scrollOutputQ*)
+scrollOutputQ // beginDefinition;
 
-postApply[ output_CellObject, string_, settings_Association ] :=
-    postApply0[
-        getHandlerFunction[ settings, "ChatPost" ],
-        <|
-            "EvaluationCell"       -> output,
-            "Result"               -> string,
-            "ChatNotebookSettings" -> KeyDrop[ settings, { "Data", "OpenAIKey" } ],
-            Replace[ Lookup[ settings, "Data" ], Except[ _? AssociationQ ] -> <| |> ]
-        |>
-    ];
+scrollOutputQ[ settings_Association ] :=
+    TrueQ @ Replace[ settings[ "TrackScrollingWhenPlaced" ],
+                     $$unspecified :> sufficientVersionQ[ "TrackScrollingWhenPlaced" ]
+            ];
 
-postApply // endDefinition;
+scrollOutputQ[ settings_Association? scrollOutputQ, cell_CellObject ] :=
+    cellInformation[ cell ][ "CursorPosition" ] === "BelowCell";
 
-postApply0 // beginDefinition;
-postApply0[ post_, data_Association? AssociationQ ] := post @ data;
-postApply0 // endDefinition;
+scrollOutputQ[ settings_Association, cell_ ] := False;
+
+scrollOutputQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*scrollOutput*)
+scrollOutput // beginDefinition;
+
+scrollOutput[ True, cell_ ] := (
+    SelectionMove[ cell, Before, Cell, AutoScroll -> True ];
+    SelectionMove[ cell, After , Cell, AutoScroll -> True ];
+);
+
+scrollOutput[ False, cell_ ] := Null;
+
+scrollOutput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1768,7 +1780,7 @@ makeCompactChatData[
             "MessageTag" -> tag,
             "Data" -> Association[
                 data,
-                "Messages" -> Append[ messages, <| "role" -> "assistant", "content" -> message |> ]
+                "Messages" -> Append[ messages, <| "Role" -> "Assistant", "Content" -> message |> ]
             ]
         ],
         PerformanceGoal -> "Size"
