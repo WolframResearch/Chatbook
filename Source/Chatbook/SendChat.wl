@@ -193,7 +193,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         ];
 
         settings = ConfirmBy[
-            resolveTools @ resolveAutoSettings @ currentChatSettings @ evalCell,
+            resolveAutoSettings @ currentChatSettings @ evalCell,
             AssociationQ,
             "InheritSettings"
         ];
@@ -1360,10 +1360,11 @@ activeAIAssistantCell[
                 "Output",
                 "ChatOutput",
                 Sequence @@ Flatten[ { $closedChatCellOptions } ],
-                Selectable   -> False,
-                Editable     -> False,
-                CellDingbat  -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
-                TaggingRules -> <| "ChatNotebookSettings" -> settings |>
+                Selectable      -> False,
+                Editable        -> False,
+                CellDingbat     -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
+                CellTrayWidgets -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
+                TaggingRules    -> <| "ChatNotebookSettings" -> settings |>
             ]
         ]
     ];
@@ -1399,10 +1400,6 @@ activeAIAssistantCell[
             ,
             "Output",
             "ChatOutput",
-            ShowAutoSpellCheck -> False,
-            CodeAssistOptions -> { "AutoDetectHyperlinks" -> False },
-            LanguageCategory -> None,
-            LineIndent -> 0,
             If[ TrueQ @ $autoAssistMode && MatchQ[ minimized, True|Automatic ],
                 Sequence @@ Flatten[ {
                     $closedChatCellOptions,
@@ -1412,14 +1409,19 @@ activeAIAssistantCell[
             ],
             CellDingbat        -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
             CellEditDuplicate  -> False,
+            CellTrayWidgets    -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
+            CodeAssistOptions  -> { "AutoDetectHyperlinks" -> False },
             Editable           -> True,
+            LanguageCategory   -> None,
+            LineIndent         -> 0,
+            Selectable         -> True,
+            ShowAutoSpellCheck -> False,
+            ShowCursorTracker  -> False,
+            TaggingRules       -> <| "ChatNotebookSettings" -> settings |>,
             If[ scrollOutputQ @ settings,
                 PrivateCellOptions -> { "TrackScrollingWhenPlaced" -> True },
                 Sequence @@ { }
-            ],
-            Selectable         -> True,
-            ShowCursorTracker  -> False,
-            TaggingRules       -> <| "ChatNotebookSettings" -> settings |>
+            ]
         ]
     ];
 
@@ -1789,7 +1791,7 @@ makeCompactChatData[
             "MessageTag" -> tag,
             "Data" -> Association[
                 data,
-                "Messages" -> Append[ messages, <| "role" -> "assistant", "content" -> message |> ]
+                "Messages" -> Append[ messages, <| "Role" -> "Assistant", "Content" -> message |> ]
             ]
         ],
         PerformanceGoal -> "Size"
