@@ -139,8 +139,7 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                                     "Install from",
                                     Button[
                                         grayDialogButtonLabel[ "LLM Tool Repository \[UpperRightArrow]" ],
-                                        (* ResourceInstallFromRepository[ "LLMTool" ] *)
-                                        MessageDialog[ "Coming soon" ],
+                                        ResourceInstallFromRepository[ "LLMTool" ],
                                         Appearance       -> "Suppressed",
                                         BaselinePosition -> Baseline,
                                         Method           -> "Queued"
