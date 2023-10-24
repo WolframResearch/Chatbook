@@ -130,6 +130,8 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "RateLimitReached"                -> "Rate limit reached for requests. Please try again later.",
     "ResourceNotFound"                -> "Resource `1` not found.",
     "ResourceNotInstalled"            -> "The resource `1` is not installed.",
+    "ServerMessageHeader"             -> "The server responded with the following message: \n\n",
+    "ServerMessageTemplate"           -> "The server responded with the following message: \n\n`1`",
     "ServerOverloaded"                -> "The server is currently overloaded with other requests. Please try again later.",
     "ToolNotFound"                    -> "Tool `1` not found.",
     "UnknownResponse"                 -> "Unexpected response from server",
