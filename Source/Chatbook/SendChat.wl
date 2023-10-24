@@ -722,14 +722,45 @@ checkResponse // endDefinition;
 (*writeResult*)
 writeResult // beginDefinition;
 
-writeResult[ settings_, container_, cell_, as_Association ] :=
-    Module[ { log, chunks, folded, body, data },
+writeResult[ settings_, container_, cell_, as_Association ] := Enclose[
+    Module[ { log, body, data },
 
-        log    = Internal`BagPart[ $debugLog, All ];
+        log = ConfirmMatch[ Internal`BagPart[ $debugLog, All ], { ___Association }, "DebugLog" ];
+        { body, data } = ConfirmMatch[ extractBodyData @ log, { _, _ }, "ExtractBodyData" ];
+
+        If[ MatchQ[ as[ "StatusCode" ], Except[ 200, _Integer ] ] || AssociationQ @ data,
+            writeErrorCell[ cell, $badResponse = Association[ as, "Body" -> body, "BodyJSON" -> data ] ],
+            writeReformattedCell[ settings, container, cell ]
+        ]
+    ],
+    throwInternalFailure[ writeResult[ settings, container, cell, as ], ## ] &
+];
+
+writeResult // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*extractBodyData*)
+extractBodyData // beginDefinition;
+
+extractBodyData[ log_List ] := Enclose[
+    Catch @ Module[ { chunks, folded, data },
+
+        FirstCase[
+            Reverse @ log,
+            KeyValuePattern[ "BodyChunk" -> body: Except[ "", _String ] ] :>
+                With[ { json = Quiet @ Developer`ReadRawJSONString @ body },
+                    Throw @ { body, json } /; AssociationQ @ json
+                ]
+        ];
+
         chunks = Cases[ log, KeyValuePattern[ "BodyChunk" -> s: Except[ "", _String ] ] :> s ];
         folded = Fold[ StringJoin, chunks ];
+        data   = Quiet @ Developer`ReadRawJSONString @ folded;
 
-        { body, data } = FirstCase[
+        If[ AssociationQ @ data, Throw @ { folded, data } ];
+
+        FirstCase[
             Flatten @ StringCases[
                 folded,
                 (StartOfString|"\n") ~~ "data: " ~~ s: Except[ "\n" ].. ~~ "\n" :> s
@@ -737,16 +768,13 @@ writeResult[ settings_, container_, cell_, as_Association ] :=
             s_String :> With[ { json = Quiet @ Developer`ReadRawJSONString @ s },
                             { s, json } /; MatchQ[ json, KeyValuePattern[ "error" -> _ ] ]
                         ],
-            { Last[ folded, Missing[ "NotAvailable" ] ], Missing[ "NotAvailable" ] }
-        ];
-
-        If[ MatchQ[ as[ "StatusCode" ], Except[ 200, _Integer ] ] || AssociationQ @ data,
-            writeErrorCell[ cell, $badResponse = Association[ as, "Body" -> body, "BodyJSON" -> data ] ],
-            writeReformattedCell[ settings, container, cell ]
+            { folded, Missing[ "NotAvailable" ] }
         ]
-    ];
+    ],
+    throwInternalFailure[ extractBodyData @ log, ## ] &
+];
 
-writeResult // endDefinition;
+extractBodyData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1887,8 +1915,11 @@ errorCell[ as_ ] :=
         },
         "Text",
         "ChatOutput",
+        CellAutoOverwrite -> True,
+        CellTrayWidgets   -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
+        CodeAssistOptions -> { "AutoDetectHyperlinks" -> True },
         GeneratedCell     -> True,
-        CellAutoOverwrite -> True
+        Initialization    -> None
     ];
 
 errorCell // endDefinition;
@@ -1898,47 +1929,69 @@ errorCell // endDefinition;
 (*errorText*)
 errorText // ClearAll;
 
-errorText[ KeyValuePattern[ "BodyJSON" -> KeyValuePattern[ "error" -> KeyValuePattern[ "message" -> s_String ] ] ] ] :=
-    errorText @ s;
-
-errorText[ str_String ] /; StringMatchQ[ str, "The model: `" ~~ __ ~~ "` does not exist" ] :=
-    Module[ { model, link, help, message },
-
-        model = StringReplace[ str, "The model: `" ~~ m__ ~~ "` does not exist" :> m ];
-        link  = textLink[ "here", "https://platform.openai.com/docs/models/overview" ];
-        help  = { " Click ", link, " for information about available models." };
-
-        message = If[ MemberQ[ getModelList[ ], model ],
-                      "The specified API key does not have access to the model \"" <> model <> "\".",
-                      "The model \"" <> model <> "\" does not exist or the specified API key does not have access to it."
-                  ];
-
-        Flatten @ { message, help }
+errorText[ KeyValuePattern[ "BodyJSON" -> json_ ] ] :=
+    With[ { text = errorText0 @ json },
+        text /; StringQ @ text || MatchQ[ text, $$textDataList ]
     ];
 
-(*
-    Note the subtle difference here where `model` is not followed by a colon.
-    This is apparently the best way we can determine the difference between a model that exists but isn't revealed
-    to the user and one that actually does not exist. Yes, this is ugly and will eventually be wrong.
-*)
-errorText[ str_String ] /; StringMatchQ[ str, "The model `" ~~ __ ~~ "` does not exist" ] :=
-    Module[ { model, link, help, message },
-
-        model = StringReplace[ str, "The model `" ~~ m__ ~~ "` does not exist" :> m ];
-        link  = textLink[ "here", "https://platform.openai.com/docs/models/overview" ];
-        help  = { " Click ", link, " for information about available models." };
-
-        message = If[ MemberQ[ getModelList[ ], model ],
-                      "The specified API key does not have access to the model \"" <> model <> "\".",
-                      "The model \"" <> model <> "\" does not exist."
-                  ];
-
-        Flatten @ { message, help }
-    ];
+errorText[ KeyValuePattern[
+    "BodyJSON" -> KeyValuePattern[ "Error"|"error" -> KeyValuePattern[ "Message"|"message" -> text_String ] ]
+] ] := serverMessageTextData @ text;
 
 errorText[ str_String ] := str;
 errorText[ failure_Failure ] := ToString @ failure[ "Message" ];
 errorText[ ___ ] := "An unexpected error occurred.";
+
+
+(* Overrides for server messages can be defined here: *)
+errorText0 // ClearAll;
+
+errorText0[ KeyValuePattern[ "Error"|"error" -> error_Association ] ] :=
+    errorText0 @ error;
+
+errorText0[ as: KeyValuePattern @ { "Code"|"code" -> code_, "Message"|"message" -> message_ } ] :=
+    errorText0[ as, code, message ];
+
+errorText0[ as: KeyValuePattern @ { "Message"|"message" -> message_ } ] :=
+    errorText0[ as, None, message ];
+
+errorText0[ as_, "model_not_found", message_String ] :=
+    Module[ { link, help },
+        If[ StringContainsQ[ message, "https://"|"http://" ],
+            serverMessageTextData @ message,
+            link = textLink[ "here", "https://platform.openai.com/docs/models/overview" ];
+            help = { " Click ", link, " for information about available models." };
+            Flatten @ {
+                StringReplace[
+                    StringTrim[ message, "." ] <> ".",
+                    "`" ~~ model: Except[ "`" ].. ~~ "`" :> "\""<>model<>"\""
+                ],
+                help
+            }
+        ]
+    ];
+
+errorText0[ as_, "context_length_exceeded", message_String ] :=
+    StringReplace[
+        message,
+        "Please reduce the length of the messages." ->
+            "Try using chat delimiters in order to reduce the total size of conversations."
+    ];
+
+errorText0[ as_, code_, message_String ] :=
+    serverMessageTextData @ message;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*serverMessageTextData*)
+serverMessageTextData // beginDefinition;
+
+serverMessageTextData[ textData: _String | $$textDataList ] := Flatten @ {
+    Chatbook::ServerMessageHeader,
+    StyleBox[ #, FontOpacity -> 0.75, FontSlant -> Italic ] & /@ Flatten @ { textData }
+};
+
+serverMessageTextData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)

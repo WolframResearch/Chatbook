@@ -104,3 +104,26 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "CurrentChatSettings-ChatBlocks@@Tests/CurrentChatSettings.wlt:91,1-106,2"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Regression Tests*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*#426*)
+VerificationTest[
+    Module[ { model = None, nbo },
+        WithCleanup[
+            nbo = CreateNotebook[
+                DockedCells -> { Cell @ BoxData @ ToBoxes @ Dynamic[ model = CurrentChatSettings[ "Model" ] ] }
+            ],
+            TimeConstrained[ While[ model === None, Pause[ 0.1 ] ], 5 ];
+            model,
+            NotebookClose @ nbo
+        ]
+    ],
+    Except[ _? FailureQ ],
+    SameTest -> MatchQ,
+    TestID -> "CurrentChatSettings-Regression@@Tests/CurrentChatSettings.wlt:115,1-129,2"
+]
