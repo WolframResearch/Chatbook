@@ -1961,7 +1961,13 @@ errorText0[ as_, "model_not_found", message_String ] :=
             serverMessageTextData @ message,
             link = textLink[ "here", "https://platform.openai.com/docs/models/overview" ];
             help = { " Click ", link, " for information about available models." };
-            Flatten @ { StringReplace[ message, "`" ~~ model: Except[ "`" ].. ~~ "`" :> "\""<>model<>"\"" ], help }
+            Flatten @ {
+                StringReplace[
+                    StringTrim[ message, "." ] <> ".",
+                    "`" ~~ model: Except[ "`" ].. ~~ "`" :> "\""<>model<>"\""
+                ],
+                help
+            }
         ]
     ];
 
