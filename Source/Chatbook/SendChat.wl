@@ -1915,9 +1915,11 @@ errorCell[ as_ ] :=
         },
         "Text",
         "ChatOutput",
+        CellAutoOverwrite -> True,
+        CellTrayWidgets   -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
         CodeAssistOptions -> { "AutoDetectHyperlinks" -> True },
         GeneratedCell     -> True,
-        CellAutoOverwrite -> True
+        Initialization    -> None
     ];
 
 errorCell // endDefinition;
