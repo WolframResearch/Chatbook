@@ -292,9 +292,9 @@ menuItem[ icon_, label_, action_String ] :=
         Hold @ With[
             { $CellContext`cell = EvaluationCell[ ] },
             { $CellContext`root = ParentCell @ $CellContext`cell },
-            NotebookDelete @ $CellContext`cell;
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ action, $CellContext`root ]
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ action, $CellContext`root ];
+            NotebookDelete @ $CellContext`cell;
         ]
     ];
 
@@ -303,8 +303,8 @@ menuItem[ icon_, label_, None ] :=
         icon,
         label,
         Hold[
+            MessageDialog[ "Not Implemented" ];
             NotebookDelete @ EvaluationCell[ ];
-            MessageDialog[ "Not Implemented" ]
         ]
     ];
 

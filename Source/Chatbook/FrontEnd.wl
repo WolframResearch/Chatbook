@@ -305,7 +305,10 @@ verifyInheritance0 // endDefinition;
 inheritingQ // beginDefinition;
 
 inheritingQ[ obj: $$feObj ] :=
-    TrueQ @ AbsoluteCurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "InheritanceTest" } ];
+    TrueQ @ Replace[
+        AbsoluteCurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "InheritanceTest" } ],
+        $Failed -> True
+    ];
 
 inheritingQ // endDefinition;
 
