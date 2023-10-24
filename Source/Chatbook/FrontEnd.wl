@@ -246,18 +246,7 @@ CurrentChatSettings[ args___ ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$currentEvaluationObject*)
-
-(* During asynchronous tasks, EvaluationCell[ ] will return $Failed, so we instead use this to take the first FE object
-   in ascending order of inheritance that we can read settings from. *)
-$currentEvaluationObject := FirstCase[
-    Unevaluated @ {
-        EvaluationCell[ ],
-        EvaluationNotebook[ ],
-        $FrontEndSession
-    },
-    obj_ :> With[ { res = obj }, res /; MatchQ[ res, $$feObj ] ],
-    throwInternalFailure @ $currentEvaluationObject
-];
+$currentEvaluationObject := $FrontEndSession;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
