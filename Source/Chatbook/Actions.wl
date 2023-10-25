@@ -478,6 +478,8 @@ waitForLastTask // beginDefinition;
 
 waitForLastTask[ ] := waitForLastTask @ $lastTask;
 
+waitForLastTask[ $Canceled ] := $Canceled;
+
 waitForLastTask[ task_TaskObject ] := (
     TaskWait @ task;
     runNextTask[ ];
@@ -546,9 +548,14 @@ autoAssistQ // endDefinition;
 (*StopChat*)
 StopChat // beginDefinition;
 
+StopChat[ cell_CellObject ] :=
+    With[ { parent = parentCell @ cell },
+        StopChat @ parent /; MatchQ[ parent, Except[ cell, _CellObject ] ]
+    ];
+
 StopChat[ cell0_CellObject ] := Enclose[
     Module[ { cell, settings, container, content },
-        cell = ConfirmMatch[ ensureChatOutputCell @ parentCell @ cell0, _CellObject, "ParentCell" ];
+        cell = ConfirmMatch[ ensureChatOutputCell @ cell0, _CellObject, "ParentCell" ];
         settings = ConfirmBy[ currentChatSettings @ cell, AssociationQ, "ChatNotebookSettings" ];
         removeTask @ Lookup[ settings, "Task" ];
         container = ConfirmBy[ Lookup[ settings, "Container" ], AssociationQ, "Container" ];
@@ -1222,7 +1229,7 @@ withChatState // Attributes = { HoldFirst };
 
 withChatState[ eval_ ] :=
     Block[ { $enableLLMServices },
-        $handlerArguments = <| |>;
+        $ChatHandlerArguments = <| |>;
         withToolBox @ withBasePromptBuilder @ eval
     ];
 

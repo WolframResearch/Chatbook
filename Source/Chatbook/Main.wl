@@ -6,9 +6,12 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Declare Symbols*)
+`$ChatHandlerArguments;
 `$ChatPost;
 `$ChatPre;
 `$DefaultChatHandlerFunctions;
+`$DefaultChatProcessingFunctions;
+`$DefaultChatSystemPre;
 `$DefaultModel;
 `$DefaultToolOptions;
 `$DefaultTools;
@@ -17,6 +20,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `CellToChatMessage;
 `Chatbook;
 `ChatbookAction;
+`CreateChatDrivenNotebook;
 `CreateChatNotebook;
 `CurrentChatSettings;
 `FormatChatOutput;
@@ -58,6 +62,7 @@ Chatbook is a symbol for miscellaneous chat notebook messages.\
 (*Load Files*)
 Block[ { $ContextPath },
     Get[ "Wolfram`Chatbook`Common`"             ];
+    Get[ "Wolfram`Chatbook`Settings`"           ];
     Get[ "Wolfram`Chatbook`ErrorUtils`"         ];
     Get[ "Wolfram`Chatbook`Errors`"             ];
     Get[ "Wolfram`Chatbook`CreateChatNotebook`" ];
@@ -87,20 +92,6 @@ Block[ { $ContextPath },
     Get[ "Wolfram`Chatbook`ToolManager`"        ];
     Get[ "Wolfram`Chatbook`PersonaManager`"     ];
 ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*Set Definitions*)
-$ChatPost      = None;
-$ChatPre       = None;
-$DefaultModel := If[ $VersionNumber >= 13.3, "gpt-4", "gpt-3.5-turbo" ];
-
-$DefaultChatHandlerFunctions = <|
-    "ChatPost" :> $ChatPost,
-    "ChatPre"  :> $ChatPre
-|>;
-
-Protect[ $DefaultChatHandlerFunctions ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
