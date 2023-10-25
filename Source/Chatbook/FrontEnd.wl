@@ -5,7 +5,6 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 
 Wolfram`Chatbook`CurrentChatSettings;
 
-`$defaultChatSettings;
 `$dialogInputAllowed;
 `$feTaskWidgetCell;
 `$inEpilog;
@@ -39,8 +38,9 @@ Wolfram`Chatbook`CurrentChatSettings;
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"        ];
-Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`"          ];
+Needs[ "Wolfram`Chatbook`Common`"   ];
+Needs[ "Wolfram`Chatbook`Settings`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -193,6 +193,9 @@ runFETasks // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*CurrentChatSettings*)
+
+(* TODO: move to Settings.wl *)
+
 GeneralUtilities`SetUsage[ CurrentChatSettings, "\
 CurrentChatSettings[obj$, \"key$\"] gives the current chat settings for the CellObject or NotebookObject obj$ for the specified key.
 CurrentChatSettings[obj$] gives all current chat settings for obj$.
@@ -567,11 +570,6 @@ getPrecedingDelimiter[ cell_CellObject, nbo_, { before0___CellObject, cell_, ___
     ];
 
 getPrecedingDelimiter // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*$defaultChatSettings*)
-$defaultChatSettings := Association @ Options @ CreateChatNotebook;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -991,7 +989,7 @@ compressUntilViewed // endDefinition;
 (*replaceCellContext*)
 replaceCellContext // beginDefinition;
 
-replaceCellContext[ expr_ ] := ReplaceAll[
+replaceCellContext[ expr_ ] := replaceCellContext[ expr ] = ReplaceAll[
     expr,
     s_Symbol /; AtomQ @ Unevaluated @ s && Context @ Unevaluated @ s === "$CellContext`" :>
         With[ { new = ToExpression[ $Context <> SymbolName @ Unevaluated @ s, InputForm, $ConditionHold ] },

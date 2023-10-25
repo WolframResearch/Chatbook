@@ -33,7 +33,7 @@ Needs[ "Wolfram`Chatbook`Utils`"            ];
 $resizeDingbats            = True;
 splitDynamicTaskFunction   = createFETask;
 $defaultHandlerKeys        = { "BodyChunk", "StatusCode", "Task", "TaskStatus", "EventName" };
-$chatSubmitDroppedHandlers = { "ChatPost", "ChatPre" };
+$chatSubmitDroppedHandlers = { "ChatPost", "ChatPre", "Resolved" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -159,7 +159,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
 
         task = ConfirmMatch[
             $lastTask = chatSubmit[ container, messages, cellObject, settings ],
-            _TaskObject|_Failure,
+            _TaskObject|_Failure|$Canceled,
             "ChatSubmit"
         ];
 
@@ -167,6 +167,9 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "Task"       } ] = task;
 
         If[ FailureQ @ task, throwTop @ writeErrorCell[ cellObject, task ] ];
+
+        If[ task === $Canceled, StopChat @ cellObject ];
+
         task
     ],
     throwInternalFailure[ sendChat[ evalCell, nbo, settings0 ], ## ] &
@@ -272,10 +275,18 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
             |>
         ];
 
-        task = Confirm[ $lastTask = chatSubmit[ container, req, cellObject, settings ] ];
+        task = ConfirmMatch[
+            $lastTask = chatSubmit[ container, req, cellObject, settings ],
+            _TaskObject|_Failure|$Canceled,
+            "ChatSubmit"
+        ];
 
         CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "CellObject" } ] = cellObject;
         CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "Task"       } ] = task;
+
+        If[ task === $Canceled, StopChat @ cellObject ];
+
+        task
     ],
     throwInternalFailure[ sendChat[ evalCell, nbo, settings0 ], ## ] &
 ];
@@ -380,12 +391,26 @@ chatSubmit0 // Attributes = { HoldFirst };
 
 chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] := Quiet[
     Needs[ "LLMServices`" -> None ];
+    addProcessingArguments[
+        "ChatSubmit",
+        <|
+            "Container"             :> container,
+            "Messages"              -> messages,
+            "CellObject"            -> cellObject,
+            "DefaultSubmitFunction" -> LLMServices`ChatSubmit
+        |>
+    ];
     $lastChatSubmitResult = ReleaseHold[
-        $lastChatSubmit = HoldForm @ LLMServices`ChatSubmit[
-            standardizeMessageKeys @ messages,
-            makeLLMConfiguration @ settings,
-            HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
-            HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings
+        $lastChatSubmit = HoldForm @ applyProcessingFunction[
+            settings,
+            "ChatSubmit",
+            HoldComplete[
+                standardizeMessageKeys @ messages,
+                makeLLMConfiguration @ settings,
+                HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
+                HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings
+            ],
+            LLMServices`ChatSubmit
         ]
     ],
     { LLMServices`ChatSubmit::unsupported }
@@ -394,11 +419,25 @@ chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] :
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
 chatSubmit0[ container_, req_HTTPRequest, cellObject_, settings_ ] := (
     $buffer = "";
-    URLSubmit[
-        req,
-        HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
-        HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
-        CharacterEncoding    -> "UTF8"
+    addProcessingArguments[
+        "ChatSubmit",
+        <|
+            "Container"             :> container,
+            "Request"               -> req,
+            "CellObject"            -> cellObject,
+            "DefaultSubmitFunction" -> URLSubmit
+        |>
+    ];
+    applyProcessingFunction[
+        settings,
+        "ChatSubmit",
+        HoldComplete[
+            req,
+            HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
+            HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
+            CharacterEncoding    -> "UTF8"
+        ],
+        URLSubmit
     ]
 );
 
@@ -1052,8 +1091,9 @@ resolveAutoSettings[ settings: KeyValuePattern[ "ToolsEnabled" -> Automatic ] ] 
 (* Add additional settings and resolve actual LLMTool expressions *)
 resolveAutoSettings[ settings_Association ] := resolveTools @ <|
     settings,
-    "HandlerFunctions" -> getHandlerFunctions @ settings,
-    "LLMEvaluator"     -> getLLMEvaluator @ settings
+    "HandlerFunctions"    -> getHandlerFunctions @ settings,
+    "LLMEvaluator"        -> getLLMEvaluator @ settings,
+    "ProcessingFunctions" -> getProcessingFunctions @ settings
 |>;
 
 resolveAutoSettings // endDefinition;

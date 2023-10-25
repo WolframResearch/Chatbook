@@ -42,6 +42,7 @@ Needs[ "Wolfram`Chatbook`Models`"               ];
 Needs[ "Wolfram`Chatbook`Personas`"             ];
 Needs[ "Wolfram`Chatbook`PreferencesUtils`"     ];
 Needs[ "Wolfram`Chatbook`Serialization`"        ];
+Needs[ "Wolfram`Chatbook`Settings`"             ];
 Needs[ "Wolfram`Chatbook`Utils`"                ];
 
 (* ::**************************************************************************************************************:: *)
