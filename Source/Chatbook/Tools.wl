@@ -930,6 +930,11 @@ $defaultChatTools0[ "WolframAlpha" ] = <|
             "Interpreter" -> "String",
             "Help"        -> "the input",
             "Required"    -> True
+        |>,
+        "steps" -> <|
+            "Interpreter" -> "Boolean",
+            "Help"        -> "whether to show step-by-step solution",
+            "Required"    -> False
         |>(*,
         "assumption" -> <|
             "Interpreter" -> "String",
@@ -944,27 +949,31 @@ $defaultChatTools0[ "WolframAlpha" ] = <|
 (*getWolframAlphaText*)
 getWolframAlphaText // beginDefinition;
 
-getWolframAlphaText[ KeyValuePattern[ "input" -> query_String ] ] :=
-    getWolframAlphaText @ query;
+getWolframAlphaText[ as_Association ] :=
+    getWolframAlphaText[ as[ "input" ], as[ "steps" ] ];
 
-getWolframAlphaText[ query_String ] :=
+getWolframAlphaText[ query_String, steps: True|False ] :=
     Module[ { result, data, string },
         result = WolframAlpha @ query;
-        data   = WolframAlpha[ query, { All, { "Title", "Plaintext", "ComputableData", "Content" } } ];
-        string = getWolframAlphaText[ query, data ];
-        getWolframAlphaText[ query ] = <| "Result" -> result, "String" -> string |>
+        data = WolframAlpha[
+            query,
+            { All, { "Title", "Plaintext", "ComputableData", "Content" } },
+            PodStates -> { If[ TrueQ @ steps, "Step-by-step solution", Nothing ] }
+        ];
+        string = getWolframAlphaText[ query, steps, data ];
+        getWolframAlphaText[ query, steps ] = <| "Result" -> result, "String" -> string |>
     ];
 
-getWolframAlphaText[ query_String, { } ] :=
+getWolframAlphaText[ query_String, steps_, { } ] :=
     "No results returned";
 
-getWolframAlphaText[ query_String, info_List ] :=
-    getWolframAlphaText[ query, associationKeyDeflatten[ makeKeySequenceRule /@ info ] ];
+getWolframAlphaText[ query_String, steps_, info_List ] :=
+    getWolframAlphaText[ query, steps, associationKeyDeflatten[ makeKeySequenceRule /@ info ] ];
 
-getWolframAlphaText[ query_String, as_Association? AssociationQ ] :=
-    getWolframAlphaText[ query, waResultText @ as ];
+getWolframAlphaText[ query_String, steps_, as_Association? AssociationQ ] :=
+    getWolframAlphaText[ query, steps, waResultText @ as ];
 
-getWolframAlphaText[ query_String, result_String ] :=
+getWolframAlphaText[ query_String, steps_, result_String ] :=
     escapeMarkdownString @ result;
 
 getWolframAlphaText // endDefinition;
