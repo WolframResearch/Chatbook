@@ -24,6 +24,7 @@ Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 Needs[ "Wolfram`Chatbook`Models`"           ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`Services`"         ];
+Needs[ "Wolfram`Chatbook`Settings`"         ];
 Needs[ "Wolfram`Chatbook`Tools`"            ];
 Needs[ "Wolfram`Chatbook`Utils`"            ];
 
@@ -157,11 +158,9 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             |>
         ];
 
-        task = ConfirmMatch[
-            $lastTask = chatSubmit[ container, messages, cellObject, settings ],
-            _TaskObject|_Failure|$Canceled,
-            "ChatSubmit"
-        ];
+        task = $lastTask = chatSubmit[ container, messages, cellObject, settings ];
+
+        addHandlerArguments[ "Task" -> task ];
 
         CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "CellObject" } ] = cellObject;
         CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "Task"       } ] = task;
@@ -275,14 +274,14 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
             |>
         ];
 
-        task = ConfirmMatch[
-            $lastTask = chatSubmit[ container, req, cellObject, settings ],
-            _TaskObject|_Failure|$Canceled,
-            "ChatSubmit"
-        ];
+        task = $lastTask = chatSubmit[ container, req, cellObject, settings ];
+
+        addHandlerArguments[ "Task" -> task ];
 
         CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "CellObject" } ] = cellObject;
         CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "Task"       } ] = task;
+
+        If[ FailureQ @ task, throwTop @ writeErrorCell[ cellObject, task ] ];
 
         If[ task === $Canceled, StopChat @ cellObject ];
 
@@ -391,15 +390,6 @@ chatSubmit0 // Attributes = { HoldFirst };
 
 chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] := Quiet[
     Needs[ "LLMServices`" -> None ];
-    addProcessingArguments[
-        "ChatSubmit",
-        <|
-            "Container"             :> container,
-            "Messages"              -> messages,
-            "CellObject"            -> cellObject,
-            "DefaultSubmitFunction" -> LLMServices`ChatSubmit
-        |>
-    ];
     $lastChatSubmitResult = ReleaseHold[
         $lastChatSubmit = HoldForm @ applyProcessingFunction[
             settings,
@@ -410,6 +400,12 @@ chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] :
                 HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
                 HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings
             ],
+            <|
+                "Container"             :> container,
+                "Messages"              -> messages,
+                "CellObject"            -> cellObject,
+                "DefaultSubmitFunction" -> LLMServices`ChatSubmit
+            |>,
             LLMServices`ChatSubmit
         ]
     ],
@@ -419,15 +415,6 @@ chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] :
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
 chatSubmit0[ container_, req_HTTPRequest, cellObject_, settings_ ] := (
     $buffer = "";
-    addProcessingArguments[
-        "ChatSubmit",
-        <|
-            "Container"             :> container,
-            "Request"               -> req,
-            "CellObject"            -> cellObject,
-            "DefaultSubmitFunction" -> URLSubmit
-        |>
-    ];
     applyProcessingFunction[
         settings,
         "ChatSubmit",
@@ -437,6 +424,12 @@ chatSubmit0[ container_, req_HTTPRequest, cellObject_, settings_ ] := (
             HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
             CharacterEncoding    -> "UTF8"
         ],
+        <|
+            "Container"             :> container,
+            "Request"               -> req,
+            "CellObject"            -> cellObject,
+            "DefaultSubmitFunction" -> URLSubmit
+        |>,
         URLSubmit
     ]
 );
@@ -1488,9 +1481,15 @@ activeAIAssistantCell // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getFormattingFunction*)
 getFormattingFunction // beginDefinition;
-getFormattingFunction[ as_? AssociationQ ] := getFormattingFunction[ as, as[ "ChatFormattingFunction" ] ];
-getFormattingFunction[ as_, $$unspecified ] := FormatChatOutput;
-getFormattingFunction[ as_, func_ ] := replaceCellContext @ func;
+
+getFormattingFunction[ as_? AssociationQ ] :=
+    getFormattingFunction[ as, getProcessingFunction[ as, "FormatChatOutput" ] ];
+
+getFormattingFunction[ as_, func_ ] := (
+    $ChatHandlerData[ "EventName" ] = "FormatChatOutput";
+    func @ ##
+) &;
+
 getFormattingFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1512,11 +1511,16 @@ dynamicTextDisplay[ container_, formatter_, reformat_ ] /; $highlightDynamicCont
         Framed[ dynamicTextDisplay[ container, formatter, reformat ], FrameStyle -> Purple ]
     ];
 
-dynamicTextDisplay[ container_, formatter_, True ] :=
-    If[ StringQ @ container[ "DynamicContent" ],
-        formatter[ container[ "DynamicContent" ], <| "Status" -> "Streaming", "Container" :> container |> ],
-        formatter[ container[ "DynamicContent" ], <| "Status" -> "Waiting"  , "Container" :> container |> ]
-    ];
+dynamicTextDisplay[ container_, formatter_, True ] := With[
+    {
+        data = <|
+            "Status"    -> If[ StringQ @ container[ "DynamicContent" ], "Streaming", "Waiting" ],
+            "Container" :> container,
+            $ChatHandlerData
+        |>
+    },
+    formatter[ container[ "DynamicContent" ], data ]
+];
 
 dynamicTextDisplay[ container_, formatter_, False ] /; StringQ @ container[ "DynamicContent" ] :=
     RawBoxes @ Cell @ TextData @ container[ "DynamicContent" ];

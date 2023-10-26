@@ -9,7 +9,9 @@ HoldComplete[
     `addProcessingArguments;
     `applyHandlerFunction;
     `applyProcessingFunction;
+    `getHandlerFunction;
     `getHandlerFunctions;
+    `getProcessingFunction;
     `getProcessingFunctions;
 ];
 
@@ -22,9 +24,9 @@ Needs[ "Wolfram`Chatbook`FrontEnd`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$ChatHandlerArguments = <| |>;
-
+$ChatHandlerData          = <| |>;
 $handlerDroppedParameters = { "DefaultProcessingFunction" };
+$settingsDroppedKeys      = { "Data", "OpenAIKey" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -36,14 +38,14 @@ $handlerDroppedParameters = { "DefaultProcessingFunction" };
 addHandlerArguments // beginDefinition;
 
 addHandlerArguments[ args_ ] :=
-    addHandlerArguments[ $ChatHandlerArguments, Association @ args ];
+    addHandlerArguments[ $ChatHandlerData, Association @ args ];
 
 addHandlerArguments[ current_? AssociationQ, new_? AssociationQ ] :=
-    $ChatHandlerArguments = <| current, new |>;
+    $ChatHandlerData = <| current, new |>;
 
 addHandlerArguments[ current_, new_? AssociationQ ] := (
     messagePrint[ "InvalidHandlerArguments", current ];
-    $ChatHandlerArguments = new
+    $ChatHandlerData = new
 );
 
 addHandlerArguments // endDefinition;
@@ -60,15 +62,15 @@ applyHandlerFunction[ settings_Association, name_String, args0_ ] := Enclose[
         args = ConfirmBy[
             <|
                 "EventName"            -> name,
-                "ChatNotebookSettings" -> KeyDrop[ settings, { "Data", "OpenAIKey" } ],
+                "ChatNotebookSettings" -> KeyDrop[ settings, $settingsDroppedKeys ],
                 args0
             |>,
             AssociationQ,
             "HandlerArguments"
         ];
-        $ChatHandlerArguments = ConfirmBy[ addHandlerArguments @ args, AssociationQ, "AddHandlerArguments" ];
+        $ChatHandlerData = ConfirmBy[ addHandlerArguments @ args, AssociationQ, "AddHandlerArguments" ];
         handler = Confirm[ getHandlerFunction[ settings, name ], "HandlerFunction" ];
-        handler @ KeyDrop[ $ChatHandlerArguments, $handlerDroppedParameters ]
+        handler @ KeyDrop[ $ChatHandlerData, $handlerDroppedParameters ]
     ],
     throwInternalFailure[ applyHandlerFunction[ settings, name, args0 ], ## ] &
 ];
@@ -139,14 +141,14 @@ addProcessingArguments[ args_ ] :=
     ];
 
 addProcessingArguments[ name_String, args_ ] :=
-    addProcessingArguments[ name, $ChatHandlerArguments, Association @ args ];
+    addProcessingArguments[ name, $ChatHandlerData, Association @ args ];
 
 addProcessingArguments[ name_String, current_? AssociationQ, new_? AssociationQ ] :=
-    $ChatHandlerArguments = <| current, new, "EventName" -> name |>;
+    $ChatHandlerData = <| current, new, "EventName" -> name |>;
 
 addProcessingArguments[ name_String, current_, new_? AssociationQ ] := (
     messagePrint[ "InvalidHandlerArguments", current ];
-    $ChatHandlerArguments = <| new, "EventName" -> name |>
+    $ChatHandlerData = <| new, "EventName" -> name |>
 );
 
 addProcessingArguments // endDefinition;
@@ -156,21 +158,34 @@ addProcessingArguments // endDefinition;
 (*applyProcessingFunction*)
 applyProcessingFunction // beginDefinition;
 
-applyProcessingFunction[ settings_Association, name_String, args_HoldComplete ] :=
-    applyProcessingFunction[ settings, name, args, Automatic ];
+applyProcessingFunction[ settings_, name_ ] :=
+    applyProcessingFunction[ settings, name, HoldComplete[ ] ];
 
-applyProcessingFunction[ settings_Association, name_String, args_HoldComplete, default_ ] := Enclose[
-    Module[ { function },
-        addHandlerArguments @ <|
-            "EventName"                 -> name,
-            "ChatNotebookSettings"      -> KeyDrop[ settings, { "Data", "OpenAIKey" } ],
-            "DefaultProcessingFunction" -> default
-        |>;
+applyProcessingFunction[ settings_, name_, args_ ] :=
+    applyProcessingFunction[ settings, name, args, <| |> ];
+
+applyProcessingFunction[ settings_, name_, args_, params_ ] :=
+    applyProcessingFunction[ settings, name, args, params, Automatic ];
+
+applyProcessingFunction[ settings_Association, name_String, args_HoldComplete, params0_, default_ ] := Enclose[
+    Module[ { params, function },
+        params = ConfirmBy[ Association @ params0, AssociationQ, "ProcessingArguments" ];
+        addProcessingArguments[
+            name,
+            <|
+                "ChatNotebookSettings"      -> KeyDrop[ settings, $settingsDroppedKeys ],
+                "DefaultProcessingFunction" -> default,
+                params
+            |>
+        ];
         function = Confirm[ getProcessingFunction[ settings, name, default ], "ProcessingFunction" ];
         function @@ args
     ],
     throwInternalFailure[ applyProcessingFunction[ settings, name, args, default ], ## ] &
 ];
+
+applyProcessingFunction[ settings_, name_, args: Except[ _HoldComplete ], params_, default_ ] :=
+    applyProcessingFunction[ settings, name, HoldComplete @ args, params, default ];
 
 applyProcessingFunction // endDefinition;
 
@@ -179,15 +194,18 @@ applyProcessingFunction // endDefinition;
 (*getProcessingFunction*)
 getProcessingFunction // beginDefinition;
 
+getProcessingFunction[ settings_Association, name_String ] :=
+    getProcessingFunction[ settings, name, $DefaultChatProcessingFunctions[ name ] ];
+
 getProcessingFunction[ settings_Association, name_String, default_ ] :=
     getProcessingFunction[ settings, name, default, getProcessingFunctions @ settings ];
 
-getProcessingFunction[ settings_, name_String, a: $$unspecified, handlers_Association ] :=
-    Replace[ Lookup[ handlers, name ],
+getProcessingFunction[ settings_, name_String, a: $$unspecified, functions_Association ] :=
+    Replace[ Lookup[ functions, name ],
              $$unspecified :> Lookup[
                 $DefaultChatProcessingFunctions,
                 name,
-                throwInternalFailure @ getProcessingFunction[ settings, name, a, handlers ]
+                throwInternalFailure @ getProcessingFunction[ settings, name, a, functions ]
             ]
     ];
 

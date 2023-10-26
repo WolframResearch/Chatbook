@@ -17,11 +17,13 @@ Needs[ "Wolfram`Chatbook`"                  ];
 Needs[ "Wolfram`Chatbook`Actions`"          ];
 Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
+Needs[ "Wolfram`Chatbook`Handlers`"         ];
 Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 Needs[ "Wolfram`Chatbook`Models`"           ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`Prompting`"        ];
 Needs[ "Wolfram`Chatbook`Serialization`"    ];
+Needs[ "Wolfram`Chatbook`Settings`"         ];
 Needs[ "Wolfram`Chatbook`Tools`"            ];
 
 (* ::**************************************************************************************************************:: *)
@@ -93,14 +95,22 @@ constructMessages[ settings_Association? AssociationQ, cells: { __Cell } ] :=
     constructMessages[ settings, makeChatMessages[ settings, cells ] ];
 
 constructMessages[ settings_Association? AssociationQ, messages0: { __Association } ] :=
-    Enclose @ Module[ { messages },
+    Enclose @ Module[ { messages, processed },
         If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
         needsBasePrompt @ settings;
-        messages = messages0 /. s_String :> RuleCondition @ StringReplace[ s, "%%BASE_PROMPT%%" -> $basePrompt ];
+        messages  = messages0 /. s_String :> RuleCondition @ StringReplace[ s, "%%BASE_PROMPT%%" -> $basePrompt ];
+        processed = applyProcessingFunction[ settings, "ChatMessages", HoldComplete[ messages, $ChatHandlerData ] ];
+
+        If[ ! MatchQ[ processed, $$validMessageResults ],
+            messagePrint[ "InvalidMessages", getProcessingFunction[ settings, "ChatMessages" ], processed ];
+            processed = messages
+        ];
+        Sow[ <| "Messages" -> processed |>, $chatDataTag ];
+
         $lastSettings = settings;
-        $lastMessages = messages;
-        Sow[ <| "Messages" -> messages |>, $chatDataTag ];
-        messages
+        $lastMessages = processed;
+
+        processed
     ];
 
 constructMessages // endDefinition;
@@ -145,15 +155,16 @@ makeChatMessages // endDefinition;
 (* ::Subsection::Closed:: *)
 (*getCellMessageFunction*)
 getCellMessageFunction // beginDefinition;
-getCellMessageFunction[ as_? AssociationQ ] := getCellMessageFunction[ as, as[ "CellToMessageFunction" ] ];
-getCellMessageFunction[ as_, _Missing|Automatic|Inherited ] := CellToChatMessage;
-getCellMessageFunction[ as_, toMessage_ ] := checkedMessageFunction @ replaceCellContext @ toMessage;
+getCellMessageFunction[ as_ ] := checkedMessageFunction @ getProcessingFunction[ as, "CellToChatMessage" ];
 getCellMessageFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*checkedMessageFunction*)
 checkedMessageFunction // beginDefinition;
+
+checkedMessageFunction[ CellToChatMessage ] :=
+    CellToChatMessage;
 
 checkedMessageFunction[ func_ ] :=
     checkedMessageFunction[ func, { ## } ] &;
