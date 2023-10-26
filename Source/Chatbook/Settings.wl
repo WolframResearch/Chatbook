@@ -22,10 +22,8 @@ $defaultChatSettings = <|
     "Assistance"               -> Automatic,
     "AutoFormat"               -> True,
     "BasePrompt"               -> Automatic,
-    "CellToMessageFunction"    -> CellToChatMessage,
     "ChatContextPreprompt"     -> Automatic,
     "ChatDrivenNotebook"       -> False,
-    "ChatFormattingFunction"   -> FormatChatOutput,
     "ChatHistoryLength"        -> 25,
     "DynamicAutoFormat"        -> Automatic,
     "EnableChatGroupSettings"  -> False,
@@ -78,10 +76,10 @@ $DefaultChatHandlerFunctions // Protect;
 (* ::Subsection::Closed:: *)
 (*Processing Functions*)
 $DefaultChatProcessingFunctions = <|
-    "CellToMessage"    -> CellToChatMessage, (* TODO: hook up to applyProcessingFunction *)
-    "ChatMessages"     -> Identity, (* TODO *)
+    "CellToChatMessage" -> CellToChatMessage,
+    "ChatMessages"      -> (#1 &),
     "ChatSubmit"       -> Automatic,
-    "OutputFormatting" -> FormatChatOutput (* TODO: hook up to applyProcessingFunction *)
+    "FormatChatOutput"  -> FormatChatOutput
 |>;
 
 $DefaultChatProcessingFunctions // Protect;

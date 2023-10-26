@@ -50,6 +50,7 @@ Needs[ "Wolfram`Chatbook`Prompting`"        ];
 Needs[ "Wolfram`Chatbook`SendChat`"         ];
 Needs[ "Wolfram`Chatbook`Serialization`"    ];
 Needs[ "Wolfram`Chatbook`Services`"         ];
+Needs[ "Wolfram`Chatbook`Settings`"         ];
 Needs[ "Wolfram`Chatbook`ToolManager`"      ];
 Needs[ "Wolfram`Chatbook`Tools`"            ];
 
@@ -1229,7 +1230,7 @@ withChatState // Attributes = { HoldFirst };
 
 withChatState[ eval_ ] :=
     Block[ { $enableLLMServices },
-        $ChatHandlerArguments = <| |>;
+        $ChatHandlerData = <| |>;
         withToolBox @ withBasePromptBuilder @ eval
     ];
 
