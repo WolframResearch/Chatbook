@@ -1814,23 +1814,29 @@ makeReformattedCellTaggingRules[
     KeyValuePattern @ { "Pages" -> pages_Association, "PageCount" -> count_Integer, "CurrentPage" -> page_Integer }
 ] :=
     With[ { p = count + 1 },
-    <|
-        "CellToStringData" -> string,
-        "MessageTag"       -> tag,
-        "ChatData"         -> makeCompactChatData[ string, tag, settings ],
-        "PageData"         -> <|
-            "Pages"      -> Append[ pages, p -> BaseEncode @ BinarySerialize[ content, PerformanceGoal -> "Size" ] ],
-            "PageCount"  -> p,
-            "CurrentPage"-> p
-        |>
-    |>
+    DeleteCases[ <|
+            "CellToStringData" -> string,
+            "MessageTag"       -> tag,
+            "ChatData"         -> makeCompactChatData[ string, tag, settings ],
+            "PageData"         -> <|
+                "Pages"      -> Append[ pages, p -> BaseEncode @ BinarySerialize[ content, PerformanceGoal -> "Size" ] ],
+                "PageCount"  -> p,
+                "CurrentPage"-> p
+            |>
+        |>,
+        Inherited
+    ]
 ];
 
-makeReformattedCellTaggingRules[ settings_, string_, tag: _String|Inherited, content_, pageData_ ] := <|
-    "CellToStringData" -> string,
-    "MessageTag"       -> tag,
-    "ChatData"         -> makeCompactChatData[ string, tag, settings ]
-|>;
+makeReformattedCellTaggingRules[ settings_, string_, tag: _String|Inherited, content_, pageData_ ] :=
+    DeleteCases[
+        <|
+            "CellToStringData" -> string,
+            "MessageTag"       -> tag,
+            "ChatData"         -> makeCompactChatData[ string, tag, settings ]
+        |>,
+        Inherited
+    ];
 
 makeReformattedCellTaggingRules // endDefinition;
 
@@ -1847,13 +1853,16 @@ makeCompactChatData[
     as: KeyValuePattern[ "Data" -> data: KeyValuePattern[ "Messages" -> messages_List ] ]
 ] :=
     BaseEncode @ BinarySerialize[
-        Association[
-            smallSettings @ KeyDrop[ as, "OpenAIKey" ],
-            "MessageTag" -> tag,
-            "Data" -> Association[
-                data,
-                "Messages" -> Append[ messages, <| "Role" -> "Assistant", "Content" -> message |> ]
-            ]
+        DeleteCases[
+            Association[
+                smallSettings @ KeyDrop[ as, "OpenAIKey" ],
+                "MessageTag" -> tag,
+                "Data" -> Association[
+                    data,
+                    "Messages" -> Append[ messages, <| "Role" -> "Assistant", "Content" -> message |> ]
+                ]
+            ],
+            Inherited
         ],
         PerformanceGoal -> "Size"
     ];
