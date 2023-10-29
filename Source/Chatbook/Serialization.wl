@@ -866,6 +866,8 @@ truncateString[ str_String, max_Integer ] := truncateString[ str, Ceiling[ max /
 truncateString[ str_String, l_Integer, r_Integer ] /; StringLength @ str <= l + r + 5 := str;
 truncateString[ str_String, l_Integer, r_Integer ] := StringTake[ str, l ] <> " ... " <> StringTake[ str, -r ];
 truncateString[ other_ ] := other;
+truncateString[ other_, _Integer ] := other;
+truncateString[ other_, _Integer, _Integer ] := other;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
