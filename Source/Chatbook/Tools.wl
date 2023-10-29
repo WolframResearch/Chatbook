@@ -952,7 +952,7 @@ getWolframAlphaText // beginDefinition;
 getWolframAlphaText[ as_Association ] :=
     getWolframAlphaText[ as[ "input" ], as[ "steps" ] ];
 
-getWolframAlphaText[ query_String, steps: True|False ] :=
+getWolframAlphaText[ query_String, steps: True|False|_Missing ] :=
     Module[ { result, data, string },
         result = WolframAlpha @ query;
         data = WolframAlpha[
