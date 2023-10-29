@@ -30,20 +30,20 @@ CreateToolbarContent[] is called by the NotebookToolbar to generate the content 
 
 Begin["`Private`"]
 
-Needs[ "Wolfram`Chatbook`"                      ];
-Needs[ "Wolfram`Chatbook`Actions`"              ];
-Needs[ "Wolfram`Chatbook`Common`"               ];
-Needs[ "Wolfram`Chatbook`Dynamics`"             ];
-Needs[ "Wolfram`Chatbook`Errors`"               ];
-Needs[ "Wolfram`Chatbook`ErrorUtils`"           ];
-Needs[ "Wolfram`Chatbook`FrontEnd`"             ];
-Needs[ "Wolfram`Chatbook`Menus`"                ];
-Needs[ "Wolfram`Chatbook`Models`"               ];
-Needs[ "Wolfram`Chatbook`Personas`"             ];
-Needs[ "Wolfram`Chatbook`PreferencesUtils`"     ];
-Needs[ "Wolfram`Chatbook`Serialization`"        ];
-Needs[ "Wolfram`Chatbook`Settings`"             ];
-Needs[ "Wolfram`Chatbook`Utils`"                ];
+Needs[ "Wolfram`Chatbook`"                  ];
+Needs[ "Wolfram`Chatbook`Actions`"          ];
+Needs[ "Wolfram`Chatbook`Common`"           ];
+Needs[ "Wolfram`Chatbook`Dynamics`"         ];
+Needs[ "Wolfram`Chatbook`Errors`"           ];
+Needs[ "Wolfram`Chatbook`ErrorUtils`"       ];
+Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
+Needs[ "Wolfram`Chatbook`Menus`"            ];
+Needs[ "Wolfram`Chatbook`Models`"           ];
+Needs[ "Wolfram`Chatbook`Personas`"         ];
+Needs[ "Wolfram`Chatbook`PreferencesUtils`" ];
+Needs[ "Wolfram`Chatbook`Serialization`"    ];
+Needs[ "Wolfram`Chatbook`Settings`"         ];
+Needs[ "Wolfram`Chatbook`Utils`"            ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -694,10 +694,7 @@ MakeChatInputActiveCellDingbat[cell_CellObject] := Module[{
 			{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
 		]
 	},
-		getPersonaMenuIcon @ Lookup[
-			GetPersonasAssociation[],
-			personaValue[[2]]
-		]
+		getPersonaMenuIcon @ personaValue[[2]]
 	];
 
 	button = Button[
@@ -787,10 +784,7 @@ MakeChatDelimiterCellDingbat[cell_CellObject] := Module[{
 			{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
 		]
 	},
-		getPersonaMenuIcon @ Lookup[
-			GetPersonasAssociation[],
-			personaValue[[2]]
-		]
+		getPersonaMenuIcon @ personaValue[[2]]
 	];
 
 	button = Button[
@@ -1318,6 +1312,7 @@ personaDisplayName[name_String, _] := name
 
 SetFallthroughError[getPersonaMenuIcon];
 
+getPersonaMenuIcon[ name_String ] := getPersonaMenuIcon @ Lookup[ GetPersonasAssociation[ ], name ];
 getPersonaMenuIcon[ KeyValuePattern[ "Icon"|"PersonaIcon" -> icon_ ] ] := getPersonaMenuIcon @ icon;
 getPersonaMenuIcon[ KeyValuePattern[ "Default" -> icon_ ] ] := getPersonaMenuIcon @ icon;
 getPersonaMenuIcon[ _Missing | _Association | None ] := RawBoxes @ TemplateBox[ { }, "PersonaUnknown" ];
