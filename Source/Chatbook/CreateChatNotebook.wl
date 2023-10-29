@@ -38,7 +38,21 @@ CreateChatNotebook[ chat: HoldPattern[ _ChatObject ], opts: OptionsPattern[ { Cr
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*$initialChatCells*)
+(*initialChatCells*)
+initialChatCells // beginDefinition;
+
+initialChatCells[ opts: OptionsPattern[ CreateChatNotebook ] ] :=
+    If[ TrueQ @ OptionValue[
+            CreateChatNotebook,
+            FilterRules[ { opts }, Options @ CreateChatNotebook ],
+            "InitialChatCell"
+        ],
+        $initialChatCells,
+        { }
+    ];
+
+initialChatCells // endDefinition;
+
 $initialChatCells :=
     If[ TrueQ @ $cloudNotebooks,
         { Cell[ "", "ChatInput" ], $cloudSelectionMover },
@@ -68,7 +82,7 @@ createCloudChatNotebook[ opts: OptionsPattern[ CreateChatNotebook ] ] :=
     Module[ { settings, options, notebook, deployed },
         settings = makeChatNotebookSettings @ Association @ FilterRules[ { opts }, Options @ CreateChatNotebook ];
         options  = makeChatNotebookOptions[ settings, opts ];
-        notebook = Notebook[ Flatten @ { $initialChatCells }, options ];
+        notebook = Notebook[ Flatten @ { initialChatCells @ opts }, options ];
         deployed = CloudDeploy[ notebook, CloudObjectURLType -> "Environment" ];
         SystemOpen @ deployed;
         deployed
@@ -84,13 +98,13 @@ createLocalChatNotebook // beginDefinition;
 createLocalChatNotebook[ opts: OptionsPattern[ CreateChatNotebook ] ] :=
     Module[ { nbo, result },
         WithCleanup[
-            nbo = NotebookPut[ Notebook @ Flatten @ { $initialChatCells }, Visible -> False ],
+            nbo = NotebookPut[ Notebook @ Flatten @ { initialChatCells @ opts }, Visible -> False ],
             result = CreateChatNotebook[ nbo, opts ],
             If[ FailureQ @ result
                 ,
                 NotebookClose @ nbo
                 ,
-                SelectionMove[ First @ Cells @ nbo, Before, CellContents ];
+                Replace[ Cells @ nbo, { cell_CellObject, ___ } :> SelectionMove[ cell, Before, CellContents ] ];
                 CurrentValue[ nbo, Visible ] = Inherited;
                 SetSelectedNotebook @ nbo
             ]
@@ -199,7 +213,7 @@ createNotebookFromChatObject[ { as_Association, a___ }, opts: OptionsPattern[ ] 
     Module[ { messages, cells },
         messages = ConfirmMatch[ as[ "Messages" ], { ___Association }, "Messages" ];
         cells = ConfirmMatch[ createMessageCell[ as, #1 ] & /@ messages, { ___Cell }, "Cells" ];
-        Block[ { $initialChatCells = cells }, createChatNotebook[ "LLMEvaluator" -> "PlainChat", opts ] ]
+        Block[ { initialChatCells = Evaluate @ cells & }, createChatNotebook[ "LLMEvaluator" -> "PlainChat", opts ] ]
     ],
     throwInternalFailure[ createNotebookFromChatObject[ { as, a }, opts ], ##1 ] &
 ];
