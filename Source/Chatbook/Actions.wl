@@ -62,6 +62,31 @@ HoldComplete[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*ChatCellEvaluate*)
+ChatCellEvaluate // ClearAll;
+
+ChatCellEvaluate[ ] :=
+    catchMine @ ChatCellEvaluate @ topParentCell @ EvaluationCell[ ];
+
+ChatCellEvaluate[ cell_CellObject ] :=
+    catchMine @ ChatCellEvaluate[ cell, parentNotebook @ cell ];
+
+ChatCellEvaluate[ cell_CellObject, nbo_NotebookObject ] :=
+    catchMine @ Block[ { cellPrint = cellPrintAfter @ cell },
+        Replace[
+            Reap[ EvaluateChatInput[ cell, nbo ], $chatObjectTag ],
+            {
+                { _, { { chat: HoldPattern[ _ChatObject ] } } } :> chat,
+                ___ :> Null
+            }
+        ]
+    ];
+
+ChatCellEvaluate[ args___ ] :=
+    catchMine @ throwFailure[ "InvalidArguments", ChatCellEvaluate, HoldForm @ ChatCellEvaluate @ args ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*ChatbookAction*)
 ChatbookAction[ "AIAutoAssist"         , args___ ] := catchMine @ AIAutoAssist @ args;
 ChatbookAction[ "Ask"                  , args___ ] := catchMine @ AskChat @ args;
@@ -392,9 +417,10 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
                         ]
                     },
                     applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> chat |> ];
-                    chat
+                    Sow[ chat, $chatObjectTag ]
                 ],
                 applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> None |> ];
+                Sow[ None, $chatObjectTag ];
                 Null
             ];
         ]

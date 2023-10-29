@@ -20,6 +20,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `CellToChatMessage;
 `Chatbook;
 `ChatbookAction;
+`ChatCellEvaluate;
 `CreateChatDrivenNotebook;
 `CreateChatNotebook;
 `CurrentChatSettings;
