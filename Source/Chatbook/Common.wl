@@ -796,7 +796,7 @@ sufficientVersionQ // endDefinition;
 insufficientVersionQ // beginDefinition;
 insufficientVersionQ[ version_? NumberQ ] := TrueQ[ $VersionNumber < version ];
 insufficientVersionQ[ id_String ] := insufficientVersionQ[ id ] = insufficientVersionQ[ id, $versionRequirements[ id ] ];
-insufficientVersionQ[ id_, version_? NumberQ ] := sufficientVersionQ @ version;
+insufficientVersionQ[ id_, version_? NumberQ ] := insufficientVersionQ @ version;
 insufficientVersionQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
