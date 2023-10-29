@@ -78,7 +78,7 @@ $DefaultChatHandlerFunctions // Protect;
 $DefaultChatProcessingFunctions = <|
     "CellToChatMessage" -> CellToChatMessage,
     "ChatMessages"      -> (#1 &),
-    "ChatSubmit"       -> Automatic,
+    "ChatSubmit"        -> Automatic,
     "FormatChatOutput"  -> FormatChatOutput
 |>;
 
@@ -136,6 +136,30 @@ CurrentChatSettings[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession, key_
 
 CurrentChatSettings[ args___ ] :=
     catchMine @ throwFailure[ "InvalidArguments", CurrentChatSettings, HoldForm @ CurrentChatSettings @ args ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*UpValues*)
+CurrentChatSettings /: HoldPattern @ Set[ CurrentChatSettings[ obj0_, key_String ], value_ ] :=
+    With[ { obj = obj0 },
+        (CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", key } ] = value) /; MatchQ[ obj, $$feObj ]
+    ];
+
+CurrentChatSettings /: HoldPattern @ Set[ CurrentChatSettings[ key_String ], value_ ] :=
+    CurrentValue[ $currentEvaluationObject, { TaggingRules, "ChatNotebookSettings", key } ] = value;
+
+CurrentChatSettings /: HoldPattern @ Unset[ CurrentChatSettings[ obj0_, key_String ] ] :=
+    With[ { obj = obj0 },
+        (CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", key } ] = Inherited) /; MatchQ[ obj, $$feObj ]
+    ];
+
+CurrentChatSettings /: HoldPattern @ Unset[ CurrentChatSettings[ key_String ] ] :=
+    CurrentValue[ $currentEvaluationObject, { TaggingRules, "ChatNotebookSettings", key } ] = Inherited;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Protect*)
+CurrentChatSettings // Protect;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
