@@ -325,7 +325,7 @@ rotateTabPage[ cell_CellObject, n_Integer ] := Enclose[
         currentPage = ConfirmBy[ pageData[ "CurrentPage" ], IntegerQ, "CurrentPage" ];
         newPage     = Mod[ currentPage + n, pageCount, 1 ];
         encoded     = ConfirmMatch[ pageData[ "Pages", newPage ], _String, "EncodedContent" ];
-        content     = ConfirmMatch[ BinaryDeserialize @ BaseDecode @ encoded, TextData[ _String|_List ], "Content" ];
+        content     = ConfirmMatch[ BinaryDeserialize @ BaseDecode @ encoded, TextData[ $$textData ], "Content" ];
 
         writePageContent[ cell, newPage, content ]
     ],
@@ -339,13 +339,13 @@ rotateTabPage // endDefinition;
 (*writePageContent*)
 writePageContent // beginDefinition;
 
-writePageContent[ cell_CellObject, newPage_Integer, content: TextData[ _String | _List ] ] /; $cloudNotebooks := (
+writePageContent[ cell_CellObject, newPage_Integer, content: TextData[ $$textData ] ] /; $cloudNotebooks := (
     CurrentValue[ cell, { TaggingRules, "PageData", "CurrentPage" } ] = newPage;
     CurrentValue[ cell, TaggingRules ] = GeneralUtilities`ToAssociations @ CurrentValue[ cell, TaggingRules ];
     NotebookWrite[ cell, ReplacePart[ NotebookRead @ cell, 1 -> content ] ];
 )
 
-writePageContent[ cell_CellObject, newPage_Integer, content: TextData[ _String | _List ] ] := (
+writePageContent[ cell_CellObject, newPage_Integer, content: TextData[ $$textData ] ] := (
     SelectionMove[ cell, All, CellContents, AutoScroll -> False ];
     NotebookWrite[ parentNotebook @ cell, content, None, AutoScroll -> False ];
     SelectionMove[ cell, After, Cell, AutoScroll -> False ];
