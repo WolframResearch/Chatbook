@@ -26,6 +26,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$excludeHistoryStyle;
 `$$nestedCellStyle;
 
+`$$textData;
 `$$textDataList;
 `$$unspecified;
 
@@ -100,7 +101,9 @@ $$chatOutputStyle     = cellStylePattern @ $chatOutputStyles;
 $$excludeHistoryStyle = cellStylePattern @ $excludeHistoryStyles;
 $$nestedCellStyle     = cellStylePattern @ $nestedCellStyles;
 
-$$textDataList        = { (_String|_Cell|_StyleBox|_ButtonBox)... };
+$$textDataItem        = (_String|_Cell|_StyleBox|_ButtonBox);
+$$textDataList        = { $$textDataItem... };
+$$textData            = $$textDataItem | $$textDataList;
 $$unspecified         = _Missing | Automatic | Inherited;
 
 (* ::**************************************************************************************************************:: *)
