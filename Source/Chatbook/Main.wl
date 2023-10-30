@@ -11,7 +11,6 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$ChatPre;
 `$DefaultChatHandlerFunctions;
 `$DefaultChatProcessingFunctions;
-`$DefaultChatSystemPre;
 `$DefaultModel;
 `$DefaultToolOptions;
 `$DefaultTools;
@@ -31,6 +30,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `MakeExpressionURI;
 `SetModel;
 `SetToolOptions;
+`WriteChatOutputCell;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -92,6 +92,34 @@ Block[ { $ContextPath },
     Get[ "Wolfram`Chatbook`Dialogs`"            ];
     Get[ "Wolfram`Chatbook`ToolManager`"        ];
     Get[ "Wolfram`Chatbook`PersonaManager`"     ];
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Protected Symbols*)
+Protect[
+    $DefaultChatHandlerFunctions,
+    $DefaultChatProcessingFunctions,
+    $DefaultModel,
+    $DefaultToolOptions,
+    $DefaultTools,
+    $InstalledTools,
+    $ToolFunctions,
+    CellToChatMessage,
+    Chatbook,
+    ChatbookAction,
+    ChatCellEvaluate,
+    CreateChatDrivenNotebook,
+    CreateChatNotebook,
+    CurrentChatSettings,
+    FormatChatOutput,
+    FormatToolResponse,
+    GetExpressionURI,
+    GetExpressionURIs,
+    MakeExpressionURI,
+    SetModel,
+    SetToolOptions,
+    WriteChatOutputCell
 ];
 
 (* ::**************************************************************************************************************:: *)
