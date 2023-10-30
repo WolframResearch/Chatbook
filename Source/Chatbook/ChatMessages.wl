@@ -58,16 +58,22 @@ $styleRoles = <|
 CellToChatMessage // Options = { "Role" -> Automatic };
 
 CellToChatMessage[ cell_Cell, opts: OptionsPattern[ ] ] :=
-    CellToChatMessage[ cell, <| "Cells" -> { cell }, "HistoryPosition" -> 0 |>, opts ];
+    catchMine @ CellToChatMessage[ cell, <| "Cells" -> { cell }, "HistoryPosition" -> 0 |>, opts ];
 
 (* TODO: this should eventually utilize "HistoryPosition" for dynamic compression rates *)
 CellToChatMessage[ cell_Cell, settings_Association? AssociationQ, opts: OptionsPattern[ ] ] :=
-    Block[ { $cellRole = OptionValue[ "Role" ] },
+    catchMine @ Block[ { $cellRole = OptionValue[ "Role" ] },
         Replace[
             Flatten @ {
                 If[ TrueQ @ Positive @ Lookup[ settings, "HistoryPosition", 0 ],
                     makeCellMessage @ cell,
-                    makeCurrentCellMessage[ settings, Lookup[ settings, "Cells", { cell } ] ]
+                    makeCurrentCellMessage[
+                        settings,
+                        Replace[
+                            Lookup[ settings, "Cells", { cell } ],
+                            { c___, _Cell } :> { c, cell }
+                        ]
+                    ]
                 ]
             },
             { message_? AssociationQ } :> message
@@ -174,7 +180,7 @@ checkedMessageFunction[ func_, { cell_, settings_ } ] :=
         func[ cell, settings ],
         {
             message_String? StringQ :> <| "Role" -> cellRole @ cell, "Content" -> message |>,
-            Except[ $$validMessageResults ] :> CellToChatMessage[ cell, settings ]
+            Except[ $$validMessageResults ] :> CellToChatMessage[ cell, settings ] (* TODO: issue message here? *)
         }
     ];
 
