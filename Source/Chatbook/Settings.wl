@@ -32,6 +32,7 @@ $defaultChatSettings = <|
     "HandlerFunctions"         :> $DefaultChatHandlerFunctions,
     "HandlerFunctionsKeys"     -> Automatic,
     "IncludeHistory"           -> Automatic,
+    "InitialChatCell"          -> True,
     "LLMEvaluator"             -> "CodeAssistant",
     "MaxTokens"                -> Automatic,
     "MergeMessages"            -> True,
@@ -70,19 +71,16 @@ $DefaultChatHandlerFunctions = <|
     "ChatPre"  :> $ChatPre
 |>;
 
-$DefaultChatHandlerFunctions // Protect;
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Processing Functions*)
 $DefaultChatProcessingFunctions = <|
-    "CellToChatMessage" -> CellToChatMessage,
-    "ChatMessages"      -> (#1 &),
-    "ChatSubmit"        -> Automatic,
-    "FormatChatOutput"  -> FormatChatOutput
+    "CellToChatMessage"   -> CellToChatMessage,
+    "ChatMessages"        -> (#1 &),
+    "ChatSubmit"          -> Automatic,
+    "FormatChatOutput"    -> FormatChatOutput,
+    "WriteChatOutputCell" -> WriteChatOutputCell
 |>;
-
-$DefaultChatProcessingFunctions // Protect;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -155,11 +153,6 @@ CurrentChatSettings /: HoldPattern @ Unset[ CurrentChatSettings[ obj0_, key_Stri
 
 CurrentChatSettings /: HoldPattern @ Unset[ CurrentChatSettings[ key_String ] ] :=
     CurrentValue[ $currentEvaluationObject, { TaggingRules, "ChatNotebookSettings", key } ] = Inherited;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*Protect*)
-CurrentChatSettings // Protect;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

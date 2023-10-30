@@ -1295,6 +1295,24 @@ openChatCell // endDefinition;
 (*Cells*)
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*WriteChatOutputCell*)
+WriteChatOutputCell[
+    cell_CellObject,
+    new_Cell,
+    info: KeyValuePattern @ { "ExpressionUUID" -> uuid_String, "ScrollOutput" -> scroll_ }
+] :=
+    Module[ { output },
+        output = CellObject @ uuid;
+        NotebookWrite[ cell, new, None, AutoScroll -> False ];
+        attachChatOutputMenu @ output;
+        scrollOutput[ TrueQ @ scroll, output ];
+    ];
+
+WriteChatOutputCell[ args___ ] :=
+    catchMine @ throwFailure[ "InvalidArguments", WriteChatOutputCell, HoldForm @ WriteChatOutputCell @ args ];
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*createNewChatOutput*)
 createNewChatOutput // beginDefinition;
@@ -1617,7 +1635,7 @@ writeReformattedCell[ settings_, None, cell_CellObject ] :=
 
 writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
     Block[ { $dynamicText = False },
-        Module[ { scroll, tag, open, label, pageData, uuid, new, output },
+        Module[ { scroll, tag, open, label, pageData, uuid, new, output, createTask, info },
 
             scroll   = scrollOutputQ[ settings, cell ];
             tag      = ConfirmMatch[ CurrentValue[ cell, { TaggingRules, "MessageTag" } ], _String|Inherited, "Tag" ];
@@ -1632,22 +1650,21 @@ writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
             $reformattedCell = new;
             $lastChatOutput  = output;
 
-            addHandlerArguments @ <|
-                "EvaluationCell" -> output,
-                "Result"         -> string,
-                Replace[ Lookup[ settings, "Data" ], Except[ _? AssociationQ ] -> <| |> ]
-            |>;
+            createTask = If[ TrueQ @ sufficientVersionQ[ "TaskWriteOutput" ], createFETask, Identity ];
 
-            With[ { new = new, output = output, scroll = scroll },
-                If[ sufficientVersionQ[ "TaskWriteOutput" ],
-                    createFETask @ NotebookWrite[ cell, new, None, AutoScroll -> False ];
-                    createFETask @ attachChatOutputMenu @ output;
-                    createFETask @ scrollOutput[ scroll, output ];
-                    ,
-                    NotebookWrite[ cell, new, None, AutoScroll -> False ];
-                    attachChatOutputMenu @ output;
-                    scrollOutput[ scroll, output ];
-                ]
+            info = addProcessingArguments[
+                "WriteChatOutputCell",
+                <|
+                    "EvaluationCell" -> output,
+                    "Result"         -> string,
+                    "ScrollOutput"   -> scroll,
+                    "CellOpen"       -> open,
+                    "ExpressionUUID" -> uuid
+                |>
+            ];
+
+            With[ { new = new, info = info },
+                createTask @ applyProcessingFunction[ settings, "WriteChatOutputCell", HoldComplete[ cell, new, info ] ]
             ]
         ]
     ],
@@ -1873,9 +1890,19 @@ makeCompactChatData // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*smallSettings*)
 smallSettings // beginDefinition;
-smallSettings[ as_Association ] := smallSettings[ as, as[ "LLMEvaluator" ] ];
-smallSettings[ as_, KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] := Append[ as, "LLMEvaluator" -> name ];
-smallSettings[ as_, _ ] := as;
+
+smallSettings[ as_Association ] :=
+    smallSettings[ as, as[ "LLMEvaluator" ] ];
+
+smallSettings[ as_, KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] :=
+    If[ AssociationQ @ GetCachedPersonaData @ name,
+        Append[ as, "LLMEvaluator" -> name ],
+        as
+    ];
+
+smallSettings[ as_, _ ] :=
+    as;
+
 smallSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
