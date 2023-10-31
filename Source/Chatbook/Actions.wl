@@ -50,6 +50,7 @@ Needs[ "Wolfram`Chatbook`Prompting`"        ];
 Needs[ "Wolfram`Chatbook`SendChat`"         ];
 Needs[ "Wolfram`Chatbook`Serialization`"    ];
 Needs[ "Wolfram`Chatbook`Services`"         ];
+Needs[ "Wolfram`Chatbook`Settings`"         ];
 Needs[ "Wolfram`Chatbook`ToolManager`"      ];
 Needs[ "Wolfram`Chatbook`Tools`"            ];
 
@@ -58,6 +59,31 @@ HoldComplete[
     System`LLMToolRequest,
     System`LLMToolResponse
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ChatCellEvaluate*)
+ChatCellEvaluate // ClearAll;
+
+ChatCellEvaluate[ ] :=
+    catchMine @ ChatCellEvaluate @ topParentCell @ EvaluationCell[ ];
+
+ChatCellEvaluate[ cell_CellObject ] :=
+    catchMine @ ChatCellEvaluate[ cell, parentNotebook @ cell ];
+
+ChatCellEvaluate[ cell_CellObject, nbo_NotebookObject ] :=
+    catchMine @ Block[ { cellPrint = cellPrintAfter @ cell },
+        Replace[
+            Reap[ EvaluateChatInput[ cell, nbo ], $chatObjectTag ],
+            {
+                { _, { { chat: HoldPattern[ _ChatObject ] } } } :> chat,
+                ___ :> Null
+            }
+        ]
+    ];
+
+ChatCellEvaluate[ args___ ] :=
+    catchMine @ throwFailure[ "InvalidArguments", ChatCellEvaluate, HoldForm @ ChatCellEvaluate @ args ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -324,7 +350,7 @@ rotateTabPage[ cell_CellObject, n_Integer ] := Enclose[
         currentPage = ConfirmBy[ pageData[ "CurrentPage" ], IntegerQ, "CurrentPage" ];
         newPage     = Mod[ currentPage + n, pageCount, 1 ];
         encoded     = ConfirmMatch[ pageData[ "Pages", newPage ], _String, "EncodedContent" ];
-        content     = ConfirmMatch[ BinaryDeserialize @ BaseDecode @ encoded, TextData[ _String|_List ], "Content" ];
+        content     = ConfirmMatch[ BinaryDeserialize @ BaseDecode @ encoded, TextData[ $$textData ], "Content" ];
 
         writePageContent[ cell, newPage, content ]
     ],
@@ -338,13 +364,13 @@ rotateTabPage // endDefinition;
 (*writePageContent*)
 writePageContent // beginDefinition;
 
-writePageContent[ cell_CellObject, newPage_Integer, content: TextData[ _String | _List ] ] /; $cloudNotebooks := (
+writePageContent[ cell_CellObject, newPage_Integer, content: TextData[ $$textData ] ] /; $cloudNotebooks := (
     CurrentValue[ cell, { TaggingRules, "PageData", "CurrentPage" } ] = newPage;
     CurrentValue[ cell, TaggingRules ] = GeneralUtilities`ToAssociations @ CurrentValue[ cell, TaggingRules ];
     NotebookWrite[ cell, ReplacePart[ NotebookRead @ cell, 1 -> content ] ];
 )
 
-writePageContent[ cell_CellObject, newPage_Integer, content: TextData[ _String | _List ] ] := (
+writePageContent[ cell_CellObject, newPage_Integer, content: TextData[ $$textData ] ] := (
     SelectionMove[ cell, All, CellContents, AutoScroll -> False ];
     NotebookWrite[ parentNotebook @ cell, content, None, AutoScroll -> False ];
     SelectionMove[ cell, After, Cell, AutoScroll -> False ];
@@ -390,10 +416,11 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
                             <| "Role" -> "Assistant", "Content" -> $lastChatString |>
                         ]
                     },
-                    applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> chat |> ];
-                    chat
+                    applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> chat, "NotebookObject" -> nbo |> ];
+                    Sow[ chat, $chatObjectTag ]
                 ],
-                applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> None |> ];
+                applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> None, "NotebookObject" -> nbo |> ];
+                Sow[ None, $chatObjectTag ];
                 Null
             ];
         ]
@@ -478,6 +505,8 @@ waitForLastTask // beginDefinition;
 
 waitForLastTask[ ] := waitForLastTask @ $lastTask;
 
+waitForLastTask[ $Canceled ] := $Canceled;
+
 waitForLastTask[ task_TaskObject ] := (
     TaskWait @ task;
     runNextTask[ ];
@@ -546,9 +575,14 @@ autoAssistQ // endDefinition;
 (*StopChat*)
 StopChat // beginDefinition;
 
+StopChat[ cell_CellObject ] :=
+    With[ { parent = parentCell @ cell },
+        StopChat @ parent /; MatchQ[ parent, Except[ cell, _CellObject ] ]
+    ];
+
 StopChat[ cell0_CellObject ] := Enclose[
     Module[ { cell, settings, container, content },
-        cell = ConfirmMatch[ ensureChatOutputCell @ parentCell @ cell0, _CellObject, "ParentCell" ];
+        cell = ConfirmMatch[ ensureChatOutputCell @ cell0, _CellObject, "ParentCell" ];
         settings = ConfirmBy[ currentChatSettings @ cell, AssociationQ, "ChatNotebookSettings" ];
         removeTask @ Lookup[ settings, "Task" ];
         container = ConfirmBy[ Lookup[ settings, "Container" ], AssociationQ, "Container" ];
@@ -1222,7 +1256,7 @@ withChatState // Attributes = { HoldFirst };
 
 withChatState[ eval_ ] :=
     Block[ { $enableLLMServices },
-        $handlerArguments = <| |>;
+        $ChatHandlerData = <| |>;
         withToolBox @ withBasePromptBuilder @ eval
     ];
 

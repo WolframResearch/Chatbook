@@ -24,6 +24,7 @@ Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 Needs[ "Wolfram`Chatbook`Models`"           ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`Services`"         ];
+Needs[ "Wolfram`Chatbook`Settings`"         ];
 Needs[ "Wolfram`Chatbook`Tools`"            ];
 Needs[ "Wolfram`Chatbook`Utils`"            ];
 
@@ -33,7 +34,7 @@ Needs[ "Wolfram`Chatbook`Utils`"            ];
 $resizeDingbats            = True;
 splitDynamicTaskFunction   = createFETask;
 $defaultHandlerKeys        = { "BodyChunk", "StatusCode", "Task", "TaskStatus", "EventName" };
-$chatSubmitDroppedHandlers = { "ChatPost", "ChatPre" };
+$chatSubmitDroppedHandlers = { "ChatPost", "ChatPre", "Resolved" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -157,16 +158,17 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             |>
         ];
 
-        task = ConfirmMatch[
-            $lastTask = chatSubmit[ container, messages, cellObject, settings ],
-            _TaskObject|_Failure,
-            "ChatSubmit"
-        ];
+        task = $lastTask = chatSubmit[ container, messages, cellObject, settings ];
+
+        addHandlerArguments[ "Task" -> task ];
 
         CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "CellObject" } ] = cellObject;
         CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "Task"       } ] = task;
 
         If[ FailureQ @ task, throwTop @ writeErrorCell[ cellObject, task ] ];
+
+        If[ task === $Canceled, StopChat @ cellObject ];
+
         task
     ],
     throwInternalFailure[ sendChat[ evalCell, nbo, settings0 ], ## ] &
@@ -272,10 +274,18 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
             |>
         ];
 
-        task = Confirm[ $lastTask = chatSubmit[ container, req, cellObject, settings ] ];
+        task = $lastTask = chatSubmit[ container, req, cellObject, settings ];
+
+        addHandlerArguments[ "Task" -> task ];
 
         CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "CellObject" } ] = cellObject;
         CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "Task"       } ] = task;
+
+        If[ FailureQ @ task, throwTop @ writeErrorCell[ cellObject, task ] ];
+
+        If[ task === $Canceled, StopChat @ cellObject ];
+
+        task
     ],
     throwInternalFailure[ sendChat[ evalCell, nbo, settings0 ], ## ] &
 ];
@@ -381,11 +391,22 @@ chatSubmit0 // Attributes = { HoldFirst };
 chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] := Quiet[
     Needs[ "LLMServices`" -> None ];
     $lastChatSubmitResult = ReleaseHold[
-        $lastChatSubmit = HoldForm @ LLMServices`ChatSubmit[
+        $lastChatSubmit = HoldForm @ applyProcessingFunction[
+        settings,
+        "ChatSubmit",
+        HoldComplete[
             standardizeMessageKeys @ messages,
             makeLLMConfiguration @ settings,
             HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
             HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings
+        ],
+        <|
+            "Container"             :> container,
+            "Messages"              -> messages,
+            "CellObject"            -> cellObject,
+            "DefaultSubmitFunction" -> LLMServices`ChatSubmit
+        |>,
+        LLMServices`ChatSubmit
         ]
     ],
     { LLMServices`ChatSubmit::unsupported }
@@ -394,11 +415,22 @@ chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] :
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
 chatSubmit0[ container_, req_HTTPRequest, cellObject_, settings_ ] := (
     $buffer = "";
-    URLSubmit[
-        req,
-        HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
-        HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
-        CharacterEncoding    -> "UTF8"
+    applyProcessingFunction[
+        settings,
+        "ChatSubmit",
+        HoldComplete[
+            req,
+            HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
+            HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
+            CharacterEncoding    -> "UTF8"
+        ],
+        <|
+            "Container"             :> container,
+            "Request"               -> req,
+            "CellObject"            -> cellObject,
+            "DefaultSubmitFunction" -> URLSubmit
+        |>,
+        URLSubmit
     ]
 );
 
@@ -1052,8 +1084,9 @@ resolveAutoSettings[ settings: KeyValuePattern[ "ToolsEnabled" -> Automatic ] ] 
 (* Add additional settings and resolve actual LLMTool expressions *)
 resolveAutoSettings[ settings_Association ] := resolveTools @ <|
     settings,
-    "HandlerFunctions" -> getHandlerFunctions @ settings,
-    "LLMEvaluator"     -> getLLMEvaluator @ settings
+    "HandlerFunctions"    -> getHandlerFunctions @ settings,
+    "LLMEvaluator"        -> getLLMEvaluator @ settings,
+    "ProcessingFunctions" -> getProcessingFunctions @ settings
 |>;
 
 resolveAutoSettings // endDefinition;
@@ -1262,6 +1295,24 @@ openChatCell // endDefinition;
 (*Cells*)
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*WriteChatOutputCell*)
+WriteChatOutputCell[
+    cell_CellObject,
+    new_Cell,
+    info: KeyValuePattern @ { "ExpressionUUID" -> uuid_String, "ScrollOutput" -> scroll_ }
+] :=
+    Module[ { output },
+        output = CellObject @ uuid;
+        NotebookWrite[ cell, new, None, AutoScroll -> False ];
+        attachChatOutputMenu @ output;
+        scrollOutput[ TrueQ @ scroll, output ];
+    ];
+
+WriteChatOutputCell[ args___ ] :=
+    catchMine @ throwFailure[ "InvalidArguments", WriteChatOutputCell, HoldForm @ WriteChatOutputCell @ args ];
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*createNewChatOutput*)
 createNewChatOutput // beginDefinition;
@@ -1448,9 +1499,15 @@ activeAIAssistantCell // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getFormattingFunction*)
 getFormattingFunction // beginDefinition;
-getFormattingFunction[ as_? AssociationQ ] := getFormattingFunction[ as, as[ "ChatFormattingFunction" ] ];
-getFormattingFunction[ as_, $$unspecified ] := FormatChatOutput;
-getFormattingFunction[ as_, func_ ] := replaceCellContext @ func;
+
+getFormattingFunction[ as_? AssociationQ ] :=
+    getFormattingFunction[ as, getProcessingFunction[ as, "FormatChatOutput" ] ];
+
+getFormattingFunction[ as_, func_ ] := (
+    $ChatHandlerData[ "EventName" ] = "FormatChatOutput";
+    func @ ##
+) &;
+
 getFormattingFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1472,11 +1529,16 @@ dynamicTextDisplay[ container_, formatter_, reformat_ ] /; $highlightDynamicCont
         Framed[ dynamicTextDisplay[ container, formatter, reformat ], FrameStyle -> Purple ]
     ];
 
-dynamicTextDisplay[ container_, formatter_, True ] :=
-    If[ StringQ @ container[ "DynamicContent" ],
-        formatter[ container[ "DynamicContent" ], <| "Status" -> "Streaming", "Container" :> container |> ],
-        formatter[ container[ "DynamicContent" ], <| "Status" -> "Waiting"  , "Container" :> container |> ]
-    ];
+dynamicTextDisplay[ container_, formatter_, True ] := With[
+    {
+        data = <|
+            "Status"    -> If[ StringQ @ container[ "DynamicContent" ], "Streaming", "Waiting" ],
+            "Container" :> container,
+            $ChatHandlerData
+        |>
+    },
+    formatter[ container[ "DynamicContent" ], data ]
+];
 
 dynamicTextDisplay[ container_, formatter_, False ] /; StringQ @ container[ "DynamicContent" ] :=
     RawBoxes @ Cell @ TextData @ container[ "DynamicContent" ];
@@ -1573,10 +1635,15 @@ writeReformattedCell[ settings_, None, cell_CellObject ] :=
 
 writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
     Block[ { $dynamicText = False },
-        Module[ { scroll, tag, open, label, pageData, uuid, new, output },
+        Module[ { tag, scroll, open, label, pageData, uuid, new, output, createTask, info },
+
+            tag = ConfirmMatch[
+                Replace[ CurrentValue[ cell, { TaggingRules, "MessageTag" } ], $Failed -> Inherited ],
+                _String|Inherited,
+                "Tag"
+            ];
 
             scroll   = scrollOutputQ[ settings, cell ];
-            tag      = ConfirmMatch[ CurrentValue[ cell, { TaggingRules, "MessageTag" } ], _String|Inherited, "Tag" ];
             open     = $lastOpen = cellOpenQ @ cell;
             label    = RawBoxes @ TemplateBox[ { }, "MinimizedChat" ];
             pageData = CurrentValue[ cell, { TaggingRules, "PageData" } ];
@@ -1588,22 +1655,21 @@ writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
             $reformattedCell = new;
             $lastChatOutput  = output;
 
-            addHandlerArguments @ <|
-                "EvaluationCell" -> output,
-                "Result"         -> string,
-                Replace[ Lookup[ settings, "Data" ], Except[ _? AssociationQ ] -> <| |> ]
-            |>;
+            createTask = If[ TrueQ @ sufficientVersionQ[ "TaskWriteOutput" ], createFETask, Identity ];
 
-            With[ { new = new, output = output, scroll = scroll },
-                If[ sufficientVersionQ[ "TaskWriteOutput" ],
-                    createFETask @ NotebookWrite[ cell, new, None, AutoScroll -> False ];
-                    createFETask @ attachChatOutputMenu @ output;
-                    createFETask @ scrollOutput[ scroll, output ];
-                    ,
-                    NotebookWrite[ cell, new, None, AutoScroll -> False ];
-                    attachChatOutputMenu @ output;
-                    scrollOutput[ scroll, output ];
-                ]
+            info = addProcessingArguments[
+                "WriteChatOutputCell",
+                <|
+                    "EvaluationCell" -> output,
+                    "Result"         -> string,
+                    "ScrollOutput"   -> scroll,
+                    "CellOpen"       -> open,
+                    "ExpressionUUID" -> uuid
+                |>
+            ];
+
+            With[ { new = new, info = info },
+                createTask @ applyProcessingFunction[ settings, "WriteChatOutputCell", HoldComplete[ cell, new, info ] ]
             ]
         ]
     ],
@@ -1770,23 +1836,29 @@ makeReformattedCellTaggingRules[
     KeyValuePattern @ { "Pages" -> pages_Association, "PageCount" -> count_Integer, "CurrentPage" -> page_Integer }
 ] :=
     With[ { p = count + 1 },
-    <|
-        "CellToStringData" -> string,
-        "MessageTag"       -> tag,
-        "ChatData"         -> makeCompactChatData[ string, tag, settings ],
-        "PageData"         -> <|
-            "Pages"      -> Append[ pages, p -> BaseEncode @ BinarySerialize[ content, PerformanceGoal -> "Size" ] ],
-            "PageCount"  -> p,
-            "CurrentPage"-> p
-        |>
-    |>
+    DeleteCases[ <|
+            "CellToStringData" -> string,
+            "MessageTag"       -> tag,
+            "ChatData"         -> makeCompactChatData[ string, tag, settings ],
+            "PageData"         -> <|
+                "Pages"      -> Append[ pages, p -> BaseEncode @ BinarySerialize[ content, PerformanceGoal -> "Size" ] ],
+                "PageCount"  -> p,
+                "CurrentPage"-> p
+            |>
+        |>,
+        Inherited
+    ]
 ];
 
-makeReformattedCellTaggingRules[ settings_, string_, tag: _String|Inherited, content_, pageData_ ] := <|
-    "CellToStringData" -> string,
-    "MessageTag"       -> tag,
-    "ChatData"         -> makeCompactChatData[ string, tag, settings ]
-|>;
+makeReformattedCellTaggingRules[ settings_, string_, tag: _String|Inherited, content_, pageData_ ] :=
+    DeleteCases[
+        <|
+            "CellToStringData" -> string,
+            "MessageTag"       -> tag,
+            "ChatData"         -> makeCompactChatData[ string, tag, settings ]
+        |>,
+        Inherited
+    ];
 
 makeReformattedCellTaggingRules // endDefinition;
 
@@ -1803,13 +1875,16 @@ makeCompactChatData[
     as: KeyValuePattern[ "Data" -> data: KeyValuePattern[ "Messages" -> messages_List ] ]
 ] :=
     BaseEncode @ BinarySerialize[
-        Association[
-            smallSettings @ KeyDrop[ as, "OpenAIKey" ],
-            "MessageTag" -> tag,
-            "Data" -> Association[
-                data,
-                "Messages" -> Append[ messages, <| "Role" -> "Assistant", "Content" -> message |> ]
-            ]
+        DeleteCases[
+            Association[
+                smallSettings @ KeyDrop[ as, "OpenAIKey" ],
+                "MessageTag" -> tag,
+                "Data" -> Association[
+                    data,
+                    "Messages" -> Append[ messages, <| "Role" -> "Assistant", "Content" -> message |> ]
+                ]
+            ],
+            Inherited
         ],
         PerformanceGoal -> "Size"
     ];
@@ -1820,9 +1895,19 @@ makeCompactChatData // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*smallSettings*)
 smallSettings // beginDefinition;
-smallSettings[ as_Association ] := smallSettings[ as, as[ "LLMEvaluator" ] ];
-smallSettings[ as_, KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] := Append[ as, "LLMEvaluator" -> name ];
-smallSettings[ as_, _ ] := as;
+
+smallSettings[ as_Association ] :=
+    smallSettings[ as, as[ "LLMEvaluator" ] ];
+
+smallSettings[ as_, KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] :=
+    If[ AssociationQ @ GetCachedPersonaData @ name,
+        Append[ as, "LLMEvaluator" -> name ],
+        as
+    ];
+
+smallSettings[ as_, _ ] :=
+    as;
+
 smallSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

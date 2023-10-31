@@ -6,9 +6,11 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Declare Symbols*)
+`$ChatHandlerData;
 `$ChatPost;
 `$ChatPre;
 `$DefaultChatHandlerFunctions;
+`$DefaultChatProcessingFunctions;
 `$DefaultModel;
 `$DefaultToolOptions;
 `$DefaultTools;
@@ -17,6 +19,8 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `CellToChatMessage;
 `Chatbook;
 `ChatbookAction;
+`ChatCellEvaluate;
+`CreateChatDrivenNotebook;
 `CreateChatNotebook;
 `CurrentChatSettings;
 `FormatChatOutput;
@@ -26,6 +30,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `MakeExpressionURI;
 `SetModel;
 `SetToolOptions;
+`WriteChatOutputCell;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -58,6 +63,7 @@ Chatbook is a symbol for miscellaneous chat notebook messages.\
 (*Load Files*)
 Block[ { $ContextPath },
     Get[ "Wolfram`Chatbook`Common`"             ];
+    Get[ "Wolfram`Chatbook`Settings`"           ];
     Get[ "Wolfram`Chatbook`ErrorUtils`"         ];
     Get[ "Wolfram`Chatbook`Errors`"             ];
     Get[ "Wolfram`Chatbook`CreateChatNotebook`" ];
@@ -90,17 +96,31 @@ Block[ { $ContextPath },
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Set Definitions*)
-$ChatPost      = None;
-$ChatPre       = None;
-$DefaultModel := If[ $VersionNumber >= 13.3, "gpt-4", "gpt-3.5-turbo" ];
-
-$DefaultChatHandlerFunctions = <|
-    "ChatPost" :> $ChatPost,
-    "ChatPre"  :> $ChatPre
-|>;
-
-Protect[ $DefaultChatHandlerFunctions ];
+(*Protected Symbols*)
+Protect[
+    $DefaultChatHandlerFunctions,
+    $DefaultChatProcessingFunctions,
+    $DefaultModel,
+    $DefaultToolOptions,
+    $DefaultTools,
+    $InstalledTools,
+    $ToolFunctions,
+    CellToChatMessage,
+    Chatbook,
+    ChatbookAction,
+    ChatCellEvaluate,
+    CreateChatDrivenNotebook,
+    CreateChatNotebook,
+    CurrentChatSettings,
+    FormatChatOutput,
+    FormatToolResponse,
+    GetExpressionURI,
+    GetExpressionURIs,
+    MakeExpressionURI,
+    SetModel,
+    SetToolOptions,
+    WriteChatOutputCell
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
