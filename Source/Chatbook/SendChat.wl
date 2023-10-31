@@ -392,21 +392,21 @@ chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] :
     Needs[ "LLMServices`" -> None ];
     $lastChatSubmitResult = ReleaseHold[
         $lastChatSubmit = HoldForm @ applyProcessingFunction[
-            settings,
-            "ChatSubmit",
-            HoldComplete[
-                standardizeMessageKeys @ messages,
-                makeLLMConfiguration @ settings,
-                HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
-                HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings
-            ],
-            <|
-                "Container"             :> container,
-                "Messages"              -> messages,
-                "CellObject"            -> cellObject,
-                "DefaultSubmitFunction" -> LLMServices`ChatSubmit
-            |>,
-            LLMServices`ChatSubmit
+        settings,
+        "ChatSubmit",
+        HoldComplete[
+            standardizeMessageKeys @ messages,
+            makeLLMConfiguration @ settings,
+            HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
+            HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings
+        ],
+        <|
+            "Container"             :> container,
+            "Messages"              -> messages,
+            "CellObject"            -> cellObject,
+            "DefaultSubmitFunction" -> LLMServices`ChatSubmit
+        |>,
+        LLMServices`ChatSubmit
         ]
     ],
     { LLMServices`ChatSubmit::unsupported }
@@ -1635,10 +1635,15 @@ writeReformattedCell[ settings_, None, cell_CellObject ] :=
 
 writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
     Block[ { $dynamicText = False },
-        Module[ { scroll, tag, open, label, pageData, uuid, new, output, createTask, info },
+        Module[ { tag, scroll, open, label, pageData, uuid, new, output, createTask, info },
+
+            tag = ConfirmMatch[
+                Replace[ CurrentValue[ cell, { TaggingRules, "MessageTag" } ], $Failed -> Inherited ],
+                _String|Inherited,
+                "Tag"
+            ];
 
             scroll   = scrollOutputQ[ settings, cell ];
-            tag      = ConfirmMatch[ CurrentValue[ cell, { TaggingRules, "MessageTag" } ], _String|Inherited, "Tag" ];
             open     = $lastOpen = cellOpenQ @ cell;
             label    = RawBoxes @ TemplateBox[ { }, "MinimizedChat" ];
             pageData = CurrentValue[ cell, { TaggingRules, "PageData" } ];
