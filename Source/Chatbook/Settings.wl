@@ -41,6 +41,7 @@ $defaultChatSettings = <|
     "OpenAIKey"                -> Automatic, (* TODO: remove this once LLMServices is widely available *)
     "PresencePenalty"          -> 0.1,
     "ProcessingFunctions"      :> $DefaultChatProcessingFunctions,
+    "Prompts"                  -> { },
     "ShowMinimized"            -> Automatic,
     "StreamingOutputMethod"    -> Automatic,
     "Temperature"              -> 0.7,
