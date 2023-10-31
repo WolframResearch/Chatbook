@@ -17,11 +17,13 @@ Needs[ "Wolfram`Chatbook`"                  ];
 Needs[ "Wolfram`Chatbook`Actions`"          ];
 Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
+Needs[ "Wolfram`Chatbook`Handlers`"         ];
 Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 Needs[ "Wolfram`Chatbook`Models`"           ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`Prompting`"        ];
 Needs[ "Wolfram`Chatbook`Serialization`"    ];
+Needs[ "Wolfram`Chatbook`Settings`"         ];
 Needs[ "Wolfram`Chatbook`Tools`"            ];
 
 (* ::**************************************************************************************************************:: *)
@@ -56,16 +58,22 @@ $styleRoles = <|
 CellToChatMessage // Options = { "Role" -> Automatic };
 
 CellToChatMessage[ cell_Cell, opts: OptionsPattern[ ] ] :=
-    CellToChatMessage[ cell, <| "Cells" -> { cell }, "HistoryPosition" -> 0 |>, opts ];
+    catchMine @ CellToChatMessage[ cell, <| "Cells" -> { cell }, "HistoryPosition" -> 0 |>, opts ];
 
 (* TODO: this should eventually utilize "HistoryPosition" for dynamic compression rates *)
 CellToChatMessage[ cell_Cell, settings_Association? AssociationQ, opts: OptionsPattern[ ] ] :=
-    Block[ { $cellRole = OptionValue[ "Role" ] },
+    catchMine @ Block[ { $cellRole = OptionValue[ "Role" ] },
         Replace[
             Flatten @ {
                 If[ TrueQ @ Positive @ Lookup[ settings, "HistoryPosition", 0 ],
                     makeCellMessage @ cell,
-                    makeCurrentCellMessage[ settings, Lookup[ settings, "Cells", { cell } ] ]
+                    makeCurrentCellMessage[
+                        settings,
+                        Replace[
+                            Lookup[ settings, "Cells", { cell } ],
+                            { c___, _Cell } :> { c, cell }
+                        ]
+                    ]
                 ]
             },
             { message_? AssociationQ } :> message
@@ -93,17 +101,86 @@ constructMessages[ settings_Association? AssociationQ, cells: { __Cell } ] :=
     constructMessages[ settings, makeChatMessages[ settings, cells ] ];
 
 constructMessages[ settings_Association? AssociationQ, messages0: { __Association } ] :=
-    Enclose @ Module[ { messages },
+    Enclose @ Module[ { prompted, messages, processed },
         If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
         needsBasePrompt @ settings;
-        messages = messages0 /. s_String :> RuleCondition @ StringReplace[ s, "%%BASE_PROMPT%%" -> $basePrompt ];
+        prompted  = addPrompts[ settings, messages0 ];
+        messages  = prompted /. s_String :> RuleCondition @ StringReplace[ s, "%%BASE_PROMPT%%" -> $basePrompt ];
+        processed = applyProcessingFunction[ settings, "ChatMessages", HoldComplete[ messages, $ChatHandlerData ] ];
+
+        If[ ! MatchQ[ processed, $$validMessageResults ],
+            messagePrint[ "InvalidMessages", getProcessingFunction[ settings, "ChatMessages" ], processed ];
+            processed = messages
+        ];
+        Sow[ <| "Messages" -> processed |>, $chatDataTag ];
+
         $lastSettings = settings;
-        $lastMessages = messages;
-        Sow[ <| "Messages" -> messages |>, $chatDataTag ];
-        messages
+        $lastMessages = processed;
+
+        processed
     ];
 
 constructMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addPrompts*)
+addPrompts // beginDefinition;
+
+addPrompts[ settings_Association, messages_List ] :=
+    addPrompts[ assembleCustomPrompt @ settings, messages ];
+
+addPrompts[ None, messages_List ] :=
+    messages;
+
+addPrompts[ prompt_String, { sysMessage: KeyValuePattern[ "Role" -> "System" ], messages___ } ] := Enclose[
+    Module[ { systemPrompt, newPrompt, newMessage },
+        systemPrompt = ConfirmBy[ Lookup[ sysMessage, "Content" ]             , StringQ     , "SystemPrompt" ];
+        newPrompt    = ConfirmBy[ StringJoin[ systemPrompt, "\n\n", prompt ]  , StringQ     , "NewPrompt"    ];
+        newMessage   = ConfirmBy[ Append[ sysMessage, "Content" -> newPrompt ], AssociationQ, "NewMessage"   ];
+        { newMessage, messages }
+    ]
+];
+
+addPrompts[ prompt_String, { messages___ } ] := {
+    <| "Role" -> "System", "Content" -> prompt |>,
+    messages
+};
+
+addPrompts // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*assembleCustomPrompt*)
+assembleCustomPrompt // beginDefinition;
+assembleCustomPrompt[ settings_Association ] := assembleCustomPrompt[ settings, Lookup[ settings, "Prompts" ] ];
+assembleCustomPrompt[ settings_, $$unspecified ] := None;
+assembleCustomPrompt[ settings_, prompt_String ] := prompt;
+assembleCustomPrompt[ settings_, prompts: { ___String } ] := StringRiffle[ prompts, "\n\n" ];
+
+assembleCustomPrompt[ settings_? AssociationQ, templated: { ___, _TemplateObject, ___ } ] := Enclose[
+    Module[ { params, prompts },
+        params  = ConfirmBy[ Association[ settings, $ChatHandlerData ], AssociationQ, "Params" ];
+        prompts = Replace[ templated, t_TemplateObject :> applyPromptTemplate[ t, params ], { 1 } ];
+        assembleCustomPrompt[ settings, prompts ] /; MatchQ[ prompts, { ___String } ]
+    ],
+    throwInternalFailure[ assembleCustomPrompt[ settings, templated ], ## ] &
+];
+
+assembleCustomPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*applyPromptTemplate*)
+applyPromptTemplate // beginDefinition;
+
+applyPromptTemplate[ template_TemplateObject, params_Association ] :=
+    If[ FreeQ[ template, TemplateSlot[ _String, ___ ] ],
+        TemplateApply @ template,
+        TemplateApply[ template, params ]
+    ];
+
+applyPromptTemplate // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -145,15 +222,16 @@ makeChatMessages // endDefinition;
 (* ::Subsection::Closed:: *)
 (*getCellMessageFunction*)
 getCellMessageFunction // beginDefinition;
-getCellMessageFunction[ as_? AssociationQ ] := getCellMessageFunction[ as, as[ "CellToMessageFunction" ] ];
-getCellMessageFunction[ as_, _Missing|Automatic|Inherited ] := CellToChatMessage;
-getCellMessageFunction[ as_, toMessage_ ] := checkedMessageFunction @ replaceCellContext @ toMessage;
+getCellMessageFunction[ as_ ] := checkedMessageFunction @ getProcessingFunction[ as, "CellToChatMessage" ];
 getCellMessageFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*checkedMessageFunction*)
 checkedMessageFunction // beginDefinition;
+
+checkedMessageFunction[ CellToChatMessage ] :=
+    CellToChatMessage;
 
 checkedMessageFunction[ func_ ] :=
     checkedMessageFunction[ func, { ## } ] &;
@@ -163,7 +241,7 @@ checkedMessageFunction[ func_, { cell_, settings_ } ] :=
         func[ cell, settings ],
         {
             message_String? StringQ :> <| "Role" -> cellRole @ cell, "Content" -> message |>,
-            Except[ $$validMessageResults ] :> CellToChatMessage[ cell, settings ]
+            Except[ $$validMessageResults ] :> CellToChatMessage[ cell, settings ] (* TODO: issue message here? *)
         }
     ];
 

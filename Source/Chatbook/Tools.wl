@@ -266,7 +266,10 @@ selectTools0 // endDefinition;
 getLLMEvaluatorName // beginDefinition;
 getLLMEvaluatorName[ KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] := name;
 getLLMEvaluatorName[ KeyValuePattern[ "LLMEvaluator" -> name_String ] ] := name;
-getLLMEvaluatorName[ KeyValuePattern[ "LLMEvaluator" -> evaluator_Association ] ] := getLLMEvaluatorName @ evaluator;
+
+getLLMEvaluatorName[ KeyValuePattern[ "LLMEvaluator" -> evaluator_Association ] ] :=
+    Lookup[ evaluator, "LLMEvaluatorName", Lookup[ evaluator, "Name" ] ];
+
 getLLMEvaluatorName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -952,7 +955,7 @@ getWolframAlphaText // beginDefinition;
 getWolframAlphaText[ as_Association ] :=
     getWolframAlphaText[ as[ "input" ], as[ "steps" ] ];
 
-getWolframAlphaText[ query_String, steps: True|False ] :=
+getWolframAlphaText[ query_String, steps: True|False|_Missing ] :=
     Module[ { result, data, string },
         result = WolframAlpha @ query;
         data = WolframAlpha[
@@ -1268,7 +1271,11 @@ webImageSearch // beginDefinition;
 
 webImageSearch[ KeyValuePattern[ "query" -> query_ ] ] := webImageSearch @ query;
 webImageSearch[ query_String ] := webImageSearch @ SearchQueryString @ query;
-webImageSearch[ query_SearchQueryString ] := webImageSearch[ query, WebImageSearch[ query, "ImageHyperlinks" ] ];
+
+webImageSearch[ query_SearchQueryString ] :=
+    Block[ { PrintTemporary },
+        webImageSearch[ query, WebImageSearch[ query, "ImageHyperlinks" ] ]
+    ];
 
 webImageSearch[ query_, { } ] := <|
     "Result" -> { },
