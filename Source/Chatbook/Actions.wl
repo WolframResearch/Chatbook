@@ -416,10 +416,10 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
                             <| "Role" -> "Assistant", "Content" -> $lastChatString |>
                         ]
                     },
-                    applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> chat |> ];
+                    applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> chat, "NotebookObject" -> nbo |> ];
                     Sow[ chat, $chatObjectTag ]
                 ],
-                applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> None |> ];
+                applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> None, "NotebookObject" -> nbo |> ];
                 Sow[ None, $chatObjectTag ];
                 Null
             ];
