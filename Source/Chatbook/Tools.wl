@@ -1271,7 +1271,11 @@ webImageSearch // beginDefinition;
 
 webImageSearch[ KeyValuePattern[ "query" -> query_ ] ] := webImageSearch @ query;
 webImageSearch[ query_String ] := webImageSearch @ SearchQueryString @ query;
-webImageSearch[ query_SearchQueryString ] := webImageSearch[ query, WebImageSearch[ query, "ImageHyperlinks" ] ];
+
+webImageSearch[ query_SearchQueryString ] :=
+    Block[ { PrintTemporary },
+        webImageSearch[ query, WebImageSearch[ query, "ImageHyperlinks" ] ]
+    ];
 
 webImageSearch[ query_, { } ] := <|
     "Result" -> { },
