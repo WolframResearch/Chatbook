@@ -266,7 +266,10 @@ selectTools0 // endDefinition;
 getLLMEvaluatorName // beginDefinition;
 getLLMEvaluatorName[ KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] := name;
 getLLMEvaluatorName[ KeyValuePattern[ "LLMEvaluator" -> name_String ] ] := name;
-getLLMEvaluatorName[ KeyValuePattern[ "LLMEvaluator" -> evaluator_Association ] ] := getLLMEvaluatorName @ evaluator;
+
+getLLMEvaluatorName[ KeyValuePattern[ "LLMEvaluator" -> evaluator_Association ] ] :=
+    Lookup[ evaluator, "LLMEvaluatorName", Lookup[ evaluator, "Name" ] ];
+
 getLLMEvaluatorName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
