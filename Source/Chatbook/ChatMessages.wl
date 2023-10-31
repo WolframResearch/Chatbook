@@ -101,10 +101,11 @@ constructMessages[ settings_Association? AssociationQ, cells: { __Cell } ] :=
     constructMessages[ settings, makeChatMessages[ settings, cells ] ];
 
 constructMessages[ settings_Association? AssociationQ, messages0: { __Association } ] :=
-    Enclose @ Module[ { messages, processed },
+    Enclose @ Module[ { prompted, messages, processed },
         If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
         needsBasePrompt @ settings;
-        messages  = messages0 /. s_String :> RuleCondition @ StringReplace[ s, "%%BASE_PROMPT%%" -> $basePrompt ];
+        prompted  = addPrompts[ settings, messages0 ];
+        messages  = prompted /. s_String :> RuleCondition @ StringReplace[ s, "%%BASE_PROMPT%%" -> $basePrompt ];
         processed = applyProcessingFunction[ settings, "ChatMessages", HoldComplete[ messages, $ChatHandlerData ] ];
 
         If[ ! MatchQ[ processed, $$validMessageResults ],
@@ -120,6 +121,66 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
     ];
 
 constructMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addPrompts*)
+addPrompts // beginDefinition;
+
+addPrompts[ settings_Association, messages_List ] :=
+    addPrompts[ assembleCustomPrompt @ settings, messages ];
+
+addPrompts[ None, messages_List ] :=
+    messages;
+
+addPrompts[ prompt_String, { sysMessage: KeyValuePattern[ "Role" -> "System" ], messages___ } ] := Enclose[
+    Module[ { systemPrompt, newPrompt, newMessage },
+        systemPrompt = ConfirmBy[ Lookup[ sysMessage, "Content" ]             , StringQ     , "SystemPrompt" ];
+        newPrompt    = ConfirmBy[ StringJoin[ systemPrompt, "\n\n", prompt ]  , StringQ     , "NewPrompt"    ];
+        newMessage   = ConfirmBy[ Append[ sysMessage, "Content" -> newPrompt ], AssociationQ, "NewMessage"   ];
+        { newMessage, messages }
+    ]
+];
+
+addPrompts[ prompt_String, { messages___ } ] := {
+    <| "Role" -> "System", "Content" -> prompt |>,
+    messages
+};
+
+addPrompts // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*assembleCustomPrompt*)
+assembleCustomPrompt // beginDefinition;
+assembleCustomPrompt[ settings_Association ] := assembleCustomPrompt[ settings, Lookup[ settings, "Prompts" ] ];
+assembleCustomPrompt[ settings_, $$unspecified ] := None;
+assembleCustomPrompt[ settings_, prompt_String ] := prompt;
+assembleCustomPrompt[ settings_, prompts: { ___String } ] := StringRiffle[ prompts, "\n\n" ];
+
+assembleCustomPrompt[ settings_? AssociationQ, templated: { ___, _TemplateObject, ___ } ] := Enclose[
+    Module[ { params, prompts },
+        params  = ConfirmBy[ Association[ settings, $ChatHandlerData ], AssociationQ, "Params" ];
+        prompts = Replace[ templated, t_TemplateObject :> applyPromptTemplate[ t, params ], { 1 } ];
+        assembleCustomPrompt[ settings, prompts ] /; MatchQ[ prompts, { ___String } ]
+    ],
+    throwInternalFailure[ assembleCustomPrompt[ settings, templated ], ## ] &
+];
+
+assembleCustomPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*applyPromptTemplate*)
+applyPromptTemplate // beginDefinition;
+
+applyPromptTemplate[ template_TemplateObject, params_Association ] :=
+    If[ FreeQ[ template, TemplateSlot[ _String, ___ ] ],
+        TemplateApply @ template,
+        TemplateApply[ template, params ]
+    ];
+
+applyPromptTemplate // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
