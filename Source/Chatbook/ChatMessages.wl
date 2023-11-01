@@ -112,6 +112,7 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
             messagePrint[ "InvalidMessages", getProcessingFunction[ settings, "ChatMessages" ], processed ];
             processed = messages
         ];
+        processed //= DeleteCases @ KeyValuePattern[ "Content" -> "" ];
         Sow[ <| "Messages" -> processed |>, $chatDataTag ];
 
         $lastSettings = settings;
@@ -340,11 +341,14 @@ getPrePrompt[ as_Association ] := toPromptString @ FirstCase[
         as[ "LLMEvaluator", "ChatContextPreprompt" ],
         as[ "LLMEvaluator", "Pre" ],
         as[ "LLMEvaluator", "PromptTemplate" ],
+        as[ "LLMEvaluator", "Prompts" ],
         as[ "ChatContextPreprompt" ],
         as[ "Pre" ],
         as[ "PromptTemplate" ]
     },
-    expr_ :> With[ { e = expr }, e /; MatchQ[ e, _String | _TemplateObject ] ]
+    expr_ :> With[ { e = expr },
+        e /; MatchQ[ e, _String | _TemplateObject | { (_String|_TemplateObject) ... } ]
+    ]
 ];
 
 getPrePrompt // endDefinition;
@@ -412,6 +416,12 @@ toPromptString // beginDefinition;
 toPromptString[ string_String ] := string;
 toPromptString[ template_TemplateObject ] := With[ { string = TemplateApply @ template }, string /; StringQ @ string ];
 toPromptString[ _Missing | Automatic | Inherited | None ] := Missing[ ];
+
+toPromptString[ prompts_List ] :=
+    With[ { strings = DeleteMissing[ toPromptString /@ prompts ] },
+        StringRiffle[ prompts, "\n\n" ] /; MatchQ[ strings, { ___String } ]
+    ];
+
 toPromptString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
