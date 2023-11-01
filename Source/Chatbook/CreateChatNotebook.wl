@@ -18,14 +18,19 @@ Needs[ "Wolfram`Chatbook`UI`"         ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Argument Patterns*)
+$$createChatOptions = OptionsPattern[ { CreateChatNotebook, Notebook } ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*CreateChatNotebook*)
 CreateChatNotebook // Options = Normal[ $defaultChatSettings, Association ];
 
 
-CreateChatNotebook[ opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] :=
+CreateChatNotebook[ opts: $$createChatOptions ] :=
     catchMine @ createChatNotebook @ opts;
 
-CreateChatNotebook[ nbo_NotebookObject, opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] :=
+CreateChatNotebook[ nbo_NotebookObject, opts: $$createChatOptions ] :=
     catchMine @ Enclose @ Module[ { settings, options },
         settings = makeChatNotebookSettings @ Association @ FilterRules[ { opts }, Options @ CreateChatNotebook ];
         options  = makeChatNotebookOptions[ settings, opts ];
@@ -33,7 +38,13 @@ CreateChatNotebook[ nbo_NotebookObject, opts: OptionsPattern[ { CreateChatNotebo
         nbo
     ];
 
-CreateChatNotebook[ chat: HoldPattern[ _ChatObject ], opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] :=
+CreateChatNotebook[ cell_Cell, opts: $$createChatOptions ] :=
+    catchMine @ CreateChatNotebook[ { cell }, opts ];
+
+CreateChatNotebook[ cells: { ___Cell }, opts: $$createChatOptions ] :=
+    catchMine @ Block[ { initialChatCells = cells & }, CreateChatNotebook @ opts ];
+
+CreateChatNotebook[ chat: HoldPattern[ _ChatObject ], opts: $$createChatOptions ] :=
     catchMine @ createNotebookFromChatObject[ chat, opts ];
 
 (* ::**************************************************************************************************************:: *)
@@ -158,7 +169,7 @@ $inlinedStylesheet := $inlinedStylesheet = Import[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*CreateChatDrivenNotebook*)
-CreateChatDrivenNotebook[ opts: OptionsPattern[ { CreateChatNotebook, Notebook } ] ] :=
+CreateChatDrivenNotebook[ opts: $$createChatOptions ] :=
     catchMine @ CreateChatNotebook[
         "ChatDrivenNotebook" -> True,
         "LLMEvaluator"       -> "PlainChat",
