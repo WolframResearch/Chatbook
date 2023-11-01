@@ -28,7 +28,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[2]:="
+         CellLabel -> "In[48]:="
         ],
         Cell[
          "The LLMEvaluator used to generate the window title:",
@@ -60,7 +60,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[3]:="
+         CellLabel -> "In[49]:="
         ],
         Cell[
          "Number of messages required before a title is generated:",
@@ -73,7 +73,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[4]:="
+         CellLabel -> "In[50]:="
         ],
         Cell["Prompt used to generate the title:", "Text"],
         Cell[
@@ -94,7 +94,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[5]:="
+         CellLabel -> "In[51]:="
         ],
         Cell["Called after each chat evaluation:", "Text"],
         Cell[
@@ -697,7 +697,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[6]:="
+         CellLabel -> "In[52]:="
         ]
        },
        Closed
@@ -806,7 +806,7 @@ Notebook[
                  }
                 ],
                 ",",
-                RowBox[{"Magnification", "\[Rule]", "1.5"}]
+                RowBox[{"Magnification", "\[Rule]", "2"}]
                }
               ],
               "\[IndentingNewLine]",
@@ -817,7 +817,8 @@ Notebook[
            }
           ]
          ],
-         "Input"
+         "Input",
+         CellLabel -> "In[53]:="
         ]
        },
        Open

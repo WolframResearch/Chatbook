@@ -28,7 +28,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[648]:="
+         CellLabel -> "In[100]:="
         ]
        },
        Closed
@@ -54,7 +54,7 @@ Notebook[
           ]
          ],
          "Input",
-         CellLabel -> "In[650]:="
+         CellLabel -> "In[106]:="
         ],
         Cell[
          BoxData[
@@ -89,7 +89,20 @@ Notebook[
               ],
               ",",
               "\[IndentingNewLine]",
-              RowBox[{"\"LLMEvaluator\"", "->", "\"RawModel\""}]
+              RowBox[{"\"LLMEvaluator\"", "->", "\"RawModel\""}],
+              ",",
+              "\[IndentingNewLine]",
+              RowBox[{"WindowMargins", "\[Rule]", "0"}],
+              ",",
+              RowBox[
+               {
+                "WindowSize",
+                "\[Rule]",
+                RowBox[{"{", RowBox[{"1920", ",", "1000"}], "}"}]
+               }
+              ],
+              ",",
+              RowBox[{"Magnification", "\[Rule]", "2"}]
              }
             ],
             "\[IndentingNewLine]",
@@ -97,7 +110,8 @@ Notebook[
            }
           ]
          ],
-         "Input"
+         "Input",
+         CellLabel -> "In[107]:="
         ],
         Cell[
          CellGroupData[
@@ -112,22 +126,37 @@ Notebook[
               {
                "CreateChatNotebook",
                "[",
+               "\[IndentingNewLine]",
                RowBox[
                 {
                  RowBox[{"\"Prompts\"", "\[Rule]", "prompt"}],
                  ",",
-                 RowBox[{"\"LLMEvaluator\"", "->", "\"RawModel\""}]
+                 "\[IndentingNewLine]",
+                 RowBox[{"\"LLMEvaluator\"", "->", "\"RawModel\""}],
+                 ",",
+                 "\[IndentingNewLine]",
+                 RowBox[{"WindowMargins", "\[Rule]", "0"}],
+                 ",",
+                 RowBox[
+                  {
+                   "WindowSize",
+                   "\[Rule]",
+                   RowBox[{"{", RowBox[{"1920", ",", "1000"}], "}"}]
+                  }
+                 ],
+                 ",",
+                 RowBox[{"Magnification", "\[Rule]", "2"}]
                 }
                ],
+               "\[IndentingNewLine]",
                "]"
               }
              ]
             ],
-            "Input",
-            CellLabel -> "In[655]:="
+            "Input"
            ]
           },
-          Closed
+          Open
          ]
         ],
         Cell[
@@ -233,22 +262,37 @@ Notebook[
               {
                "CreateChatNotebook",
                "[",
+               "\[IndentingNewLine]",
                RowBox[
                 {
                  RowBox[{"\"Prompts\"", "\[Rule]", "prompt"}],
                  ",",
-                 RowBox[{"\"LLMEvaluator\"", "\[Rule]", "evaluator"}]
+                 "\[IndentingNewLine]",
+                 RowBox[{"\"LLMEvaluator\"", "\[Rule]", "evaluator"}],
+                 ",",
+                 "\[IndentingNewLine]",
+                 RowBox[{"WindowMargins", "\[Rule]", "0"}],
+                 ",",
+                 RowBox[
+                  {
+                   "WindowSize",
+                   "\[Rule]",
+                   RowBox[{"{", RowBox[{"1920", ",", "1000"}], "}"}]
+                  }
+                 ],
+                 ",",
+                 RowBox[{"Magnification", "\[Rule]", "2"}]
                 }
                ],
+               "\[IndentingNewLine]",
                "]"
               }
              ]
             ],
-            "Input",
-            CellLabel -> "In[693]:="
+            "Input"
            ]
           },
-          Closed
+          Open
          ]
         ],
         Cell[
@@ -396,7 +440,20 @@ Notebook[
                  RowBox[{"\"LLMEvaluator\"", "\[Rule]", "evaluator"}],
                  ",",
                  "\[IndentingNewLine]",
-                 RowBox[{"StyleDefinitions", "->", "stylesheet"}]
+                 RowBox[{"StyleDefinitions", "->", "stylesheet"}],
+                 ",",
+                 "\[IndentingNewLine]",
+                 RowBox[{"WindowMargins", "\[Rule]", "0"}],
+                 ",",
+                 RowBox[
+                  {
+                   "WindowSize",
+                   "\[Rule]",
+                   RowBox[{"{", RowBox[{"1920", ",", "1000"}], "}"}]
+                  }
+                 ],
+                 ",",
+                 RowBox[{"Magnification", "\[Rule]", "2"}]
                 }
                ],
                "\[IndentingNewLine]",
@@ -404,11 +461,10 @@ Notebook[
               }
              ]
             ],
-            "Input",
-            CellLabel -> "In[687]:="
+            "Input"
            ]
           },
-          Closed
+          Open
          ]
         ],
         Cell[
@@ -485,7 +541,7 @@ Notebook[
                    ]
                   ],
                   "Code",
-                  CellLabel -> "In[667]:="
+                  CellLabel -> "In[101]:="
                  ],
                  Cell[
                   BoxData[
@@ -552,7 +608,7 @@ Notebook[
                    ]
                   ],
                   "Code",
-                  CellLabel -> "In[668]:="
+                  CellLabel -> "In[102]:="
                  ],
                  Cell[
                   BoxData[
@@ -760,7 +816,7 @@ Notebook[
                    ]
                   ],
                   "Code",
-                  CellLabel -> "In[669]:="
+                  CellLabel -> "In[103]:="
                  ],
                  Cell[
                   BoxData[
@@ -936,7 +992,7 @@ Notebook[
                    ]
                   ],
                   "Code",
-                  CellLabel -> "In[670]:="
+                  CellLabel -> "In[104]:="
                  ],
                  Cell[
                   BoxData[
@@ -967,7 +1023,7 @@ Notebook[
                    ]
                   ],
                   "Code",
-                  CellLabel -> "In[671]:="
+                  CellLabel -> "In[105]:="
                  ]
                 },
                 Closed
@@ -1012,7 +1068,20 @@ Notebook[
                        ],
                        ",",
                        "\[IndentingNewLine]",
-                       RowBox[{"StyleDefinitions", "->", "stylesheet"}]
+                       RowBox[{"StyleDefinitions", "->", "stylesheet"}],
+                       ",",
+                       "\[IndentingNewLine]",
+                       RowBox[{"WindowMargins", "\[Rule]", "0"}],
+                       ",",
+                       RowBox[
+                        {
+                         "WindowSize",
+                         "\[Rule]",
+                         RowBox[{"{", RowBox[{"1920", ",", "1000"}], "}"}]
+                        }
+                       ],
+                       ",",
+                       RowBox[{"Magnification", "\[Rule]", "2"}]
                       }
                      ],
                      "\[IndentingNewLine]",
@@ -1020,8 +1089,7 @@ Notebook[
                     }
                    ]
                   ],
-                  "Input",
-                  CellLabel -> "In[672]:="
+                  "Input"
                  ]
                 },
                 Open
@@ -1141,7 +1209,20 @@ Notebook[
                     ],
                     ",",
                     "\[IndentingNewLine]",
-                    RowBox[{"StyleDefinitions", "->", "stylesheet"}]
+                    RowBox[{"StyleDefinitions", "->", "stylesheet"}],
+                    ",",
+                    "\[IndentingNewLine]",
+                    RowBox[{"WindowMargins", "\[Rule]", "0"}],
+                    ",",
+                    RowBox[
+                     {
+                      "WindowSize",
+                      "\[Rule]",
+                      RowBox[{"{", RowBox[{"1920", ",", "1000"}], "}"}]
+                     }
+                    ],
+                    ",",
+                    RowBox[{"Magnification", "\[Rule]", "2"}]
                    }
                   ],
                   "\[IndentingNewLine]",
@@ -1149,8 +1230,7 @@ Notebook[
                  }
                 ]
                ],
-               "Input",
-               CellLabel -> "In[677]:="
+               "Input"
               ]
              },
              Open
