@@ -33,7 +33,7 @@ Needs[ "Wolfram`Chatbook`Utils`"            ];
 (*Configuration*)
 $resizeDingbats            = True;
 splitDynamicTaskFunction   = createFETask;
-$defaultHandlerKeys        = { "BodyChunk", "StatusCode", "Task", "TaskStatus", "EventName" };
+$defaultHandlerKeys        = { "Body", "BodyChunk", "StatusCode", "Task", "TaskStatus", "EventName" };
 $chatSubmitDroppedHandlers = { "ChatPost", "ChatPre", "Resolved" };
 
 (* ::**************************************************************************************************************:: *)
@@ -755,12 +755,13 @@ checkResponse // endDefinition;
 writeResult // beginDefinition;
 
 writeResult[ settings_, container_, cell_, as_Association ] := Enclose[
-    Module[ { log, body, data },
+    Module[ { log, processed, body, data },
 
         log = ConfirmMatch[ Internal`BagPart[ $debugLog, All ], { ___Association }, "DebugLog" ];
+        processed = StringJoin @ Cases[ log, KeyValuePattern[ "BodyChunkProcessed" -> s_String ] :> s ];
         { body, data } = ConfirmMatch[ extractBodyData @ log, { _, _ }, "ExtractBodyData" ];
 
-        If[ MatchQ[ as[ "StatusCode" ], Except[ 200, _Integer ] ] || AssociationQ @ data,
+        If[ MatchQ[ as[ "StatusCode" ], Except[ 200, _Integer ] ] || (processed === "" && AssociationQ @ data),
             writeErrorCell[ cell, $badResponse = Association[ as, "Body" -> body, "BodyJSON" -> data ] ],
             writeReformattedCell[ settings, container, cell ]
         ]
