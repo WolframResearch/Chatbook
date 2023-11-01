@@ -854,8 +854,8 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         newMessages = Join[
             messages,
             {
-                <| "role" -> "assistant", "content" -> StringTrim @ string <> "\nENDTOOLCALL" |>,
-                <| "role" -> "system"   , "content" -> ToString @ output |>
+                <| "Role" -> "assistant", "Content" -> StringTrim @ string <> "\nENDTOOLCALL" |>,
+                <| "Role" -> "system"   , "Content" -> ToString @ output |>
             }
         ];
 
