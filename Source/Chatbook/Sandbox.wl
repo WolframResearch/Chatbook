@@ -24,6 +24,7 @@ Needs[ "Wolfram`Chatbook`Utils`"      ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
+$SandboxKernel             = None;
 $sandboxPingTimeout       := toolOptionValue[ "WolframLanguageEvaluator", "PingTimeConstraint"       ];
 $sandboxEvaluationTimeout := toolOptionValue[ "WolframLanguageEvaluator", "EvaluationTimeConstraint" ];
 
@@ -186,7 +187,7 @@ startSandboxKernel[ ] := Enclose[
         ];
 
         If[ IntegerQ @ pid,
-            kernel,
+            $SandboxKernel = kernel,
             Quiet @ LinkClose @ kernel;
             throwFailure[ "NoSandboxKernel" ]
         ]
