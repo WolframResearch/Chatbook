@@ -15,6 +15,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$DefaultToolOptions;
 `$DefaultTools;
 `$InstalledTools;
+`$SandboxKernel;
 `$ToolFunctions;
 `CellToChatMessage;
 `Chatbook;
