@@ -28,7 +28,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[86]:="
+         CellLabel -> "In[60]:="
         ],
         Cell[
          "The LLMEvaluator used to generate the list of suggested chat inputs:",
@@ -67,7 +67,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[87]:="
+         CellLabel -> "In[61]:="
         ],
         Cell["Prompt used to generate the suggestions:", "Text"],
         Cell[
@@ -88,7 +88,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[88]:="
+         CellLabel -> "In[62]:="
         ],
         Cell["Called after each chat evaluation:", "Text"],
         Cell[
@@ -821,7 +821,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[89]:="
+         CellLabel -> "In[63]:="
         ],
         Cell[
          CellGroupData[
@@ -974,7 +974,7 @@ Notebook[
              }
             ],
             "Code",
-            CellLabel -> "In[90]:="
+            CellLabel -> "In[64]:="
            ]
           },
           Closed
@@ -1077,7 +1077,7 @@ Notebook[
              ]
             ],
             "Code",
-            CellLabel -> "In[92]:="
+            CellLabel -> "In[66]:="
            ],
            Cell[
             "Each suggestion is an individual button that will insert the suggestion text as a new chat input and evaluate it:",
@@ -1364,7 +1364,7 @@ Notebook[
              ]
             ],
             "Code",
-            CellLabel -> "In[93]:="
+            CellLabel -> "In[67]:="
            ],
            Cell[
             "The function called by suggestionButton to insert and evaluate the suggested text:",
@@ -1604,7 +1604,7 @@ Notebook[
              ]
             ],
             "Code",
-            CellLabel -> "In[94]:="
+            CellLabel -> "In[68]:="
            ]
           },
           Closed
@@ -1618,6 +1618,10 @@ Notebook[
       CellGroupData[
        {
         Cell["Create Notebook", "Section"],
+        Cell[
+         "Specify a ChatPost function that will append a bar to the chat output containing buttons with several suggested chat inputs:",
+         "Text"
+        ],
         Cell[
          BoxData[
           RowBox[
@@ -1729,7 +1733,7 @@ Notebook[
           ]
          ],
          "Input",
-         CellLabel -> "In[98]:="
+         CellLabel -> "In[69]:="
         ]
        },
        Open

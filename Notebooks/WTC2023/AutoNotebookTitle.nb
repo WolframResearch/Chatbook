@@ -28,7 +28,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[48]:="
+         CellLabel -> "In[81]:="
         ],
         Cell[
          "The LLMEvaluator used to generate the window title:",
@@ -60,7 +60,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[49]:="
+         CellLabel -> "In[82]:="
         ],
         Cell[
          "Number of messages required before a title is generated:",
@@ -73,7 +73,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[50]:="
+         CellLabel -> "In[83]:="
         ],
         Cell["Prompt used to generate the title:", "Text"],
         Cell[
@@ -94,7 +94,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[51]:="
+         CellLabel -> "In[84]:="
         ],
         Cell["Called after each chat evaluation:", "Text"],
         Cell[
@@ -697,7 +697,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[52]:="
+         CellLabel -> "In[85]:="
         ]
        },
        Closed
@@ -707,6 +707,10 @@ Notebook[
       CellGroupData[
        {
         Cell["Create Chat Notebook", "Section"],
+        Cell[
+         "Specify a ChatPost function that will update the window title of the notebook:",
+         "Text"
+        ],
         Cell[
          BoxData[
           RowBox[
@@ -750,7 +754,7 @@ Notebook[
                         {
                          TagBox["\"Byte count: \"", "IconizedLabel"],
                          "\[InvisibleSpace]",
-                         TagBox["304", "IconizedItem"]
+                         TagBox["272", "IconizedItem"]
                         }
                        ]
                       }
@@ -766,7 +770,7 @@ Notebook[
                  ],
                  {
                   Cell[
-                   "I'm currently showing off chat notebooks at the Wolfram Tech Conference, so do your best to make me look cool in front of everyone.",
+                   "I'm currently showing off chat notebooks at the Wolfram Tech Conference, so try to behave yourself.",
                    "ChatInput"
                   ]
                  },
@@ -818,7 +822,7 @@ Notebook[
           ]
          ],
          "Input",
-         CellLabel -> "In[53]:="
+         CellLabel -> "In[100]:="
         ]
        },
        Open
