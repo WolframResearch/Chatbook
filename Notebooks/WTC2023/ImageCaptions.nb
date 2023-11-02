@@ -28,7 +28,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[58]:="
+         CellLabel -> "In[138]:="
         ]
        },
        Closed
@@ -437,7 +437,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[59]:="
+         CellLabel -> "In[139]:="
         ],
         Cell["Test image caption generation:", "Text"],
         Cell[
@@ -925,7 +925,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[60]:="
+         CellLabel -> "In[140]:="
         ],
         Cell["Include metadata, if any:", "Text"],
         Cell[
@@ -1072,7 +1072,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[61]:="
+         CellLabel -> "In[141]:="
         ],
         Cell[
          "Extract messages from pink boxes in graphics with errors:",
@@ -1376,7 +1376,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[62]:="
+         CellLabel -> "In[142]:="
         ],
         Cell[
          "Extra instructions for the LLM so it knows how to interpret these captions:",
@@ -1400,7 +1400,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[63]:="
+         CellLabel -> "In[143]:="
         ],
         Cell[
          "Helper function to create text cells containing inline images:",
@@ -1459,7 +1459,7 @@ Notebook[
           ]
          ],
          "Code",
-         CellLabel -> "In[64]:="
+         CellLabel -> "In[144]:="
         ],
         Cell[
          BoxData[
@@ -1601,7 +1601,7 @@ Notebook[
           }
          ],
          "Code",
-         CellLabel -> "In[65]:="
+         CellLabel -> "In[145]:="
         ]
        },
        Closed
@@ -1611,7 +1611,10 @@ Notebook[
       CellGroupData[
        {
         Cell["Testing", "Section"],
-        Cell["Create chat notebook:", "Text"],
+        Cell[
+         "Create chat notebook with a custom CellToChatMessage function that inserts image captions in place of graphics:",
+         "Text"
+        ],
         Cell[
          BoxData[
           RowBox[
@@ -1835,7 +1838,7 @@ Notebook[
           ]
          ],
          "Input",
-         CellLabel -> "In[78]:="
+         CellLabel -> "In[152]:="
         ]
        },
        Open
