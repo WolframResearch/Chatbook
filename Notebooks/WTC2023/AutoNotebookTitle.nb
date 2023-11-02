@@ -1,0 +1,838 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* Created By: SaveReadableNotebook *)
+(* https://resources.wolframcloud.com/FunctionRepository/resources/SaveReadableNotebook *)
+
+Notebook[
+ {
+  Cell[
+   CellGroupData[
+    {
+     Cell["Automatically Generate Window Title", "Title"],
+     Cell[
+      CellGroupData[
+       {
+        Cell["Definitions", "Section"],
+        Cell[
+         BoxData[
+          RowBox[
+           {
+            RowBox[
+             {"Needs", "[", " ", "\"Wolfram`Chatbook`\"", " ", "]"}
+            ],
+            ";"
+           }
+          ]
+         ],
+         "Code",
+         CellLabel -> "In[81]:="
+        ],
+        Cell[
+         "The LLMEvaluator used to generate the window title:",
+         "Text"
+        ],
+        Cell[
+         BoxData[
+          RowBox[
+           {
+            RowBox[
+             {
+              "$titleEvaluator",
+              " ",
+              "=",
+              " ",
+              RowBox[
+               {
+                "<|",
+                " ",
+                RowBox[{"\"Model\"", " ", "->", " ", "\"gpt-4\""}],
+                " ",
+                "|>"
+               }
+              ]
+             }
+            ],
+            ";"
+           }
+          ]
+         ],
+         "Code",
+         CellLabel -> "In[82]:="
+        ],
+        Cell[
+         "Number of messages required before a title is generated:",
+         "Text"
+        ],
+        Cell[
+         BoxData[
+          RowBox[
+           {RowBox[{"$minimumMessageCount", " ", "=", " ", "6"}], ";"}
+          ]
+         ],
+         "Code",
+         CellLabel -> "In[83]:="
+        ],
+        Cell["Prompt used to generate the title:", "Text"],
+        Cell[
+         BoxData[
+          RowBox[
+           {
+            RowBox[
+             {
+              "$titlePrompt",
+              " ",
+              "=",
+              " ",
+              "\"\\\nPlease come up with a meaningful title for the chat transcript below using no more than 30 characters.\nThe title should be specific to the topics discussed in the chat.\nDo not give generic titles such as \\\"Chat\\\", \\\"Transcript\\\", or \\\"Chat Transcript\\\".\nRespond only with the title and nothing else.\n\n=====\n`1`\""
+             }
+            ],
+            ";"
+           }
+          ]
+         ],
+         "Code",
+         CellLabel -> "In[84]:="
+        ],
+        Cell["Called after each chat evaluation:", "Text"],
+        Cell[
+         BoxData[
+          RowBox[
+           {
+            RowBox[
+             {
+              RowBox[
+               {
+                "updateWindowTitle",
+                "[",
+                " ",
+                "info_Association",
+                " ",
+                "]"
+               }
+              ],
+              " ",
+              ":=",
+              " ",
+              RowBox[
+               {
+                "SessionSubmit",
+                " ",
+                "@",
+                " ",
+                RowBox[
+                 {
+                  "Enclose",
+                  " ",
+                  "@",
+                  "\n",
+                  "    ",
+                  RowBox[
+                   {
+                    "Module",
+                    "[",
+                    " ",
+                    RowBox[
+                     {
+                      RowBox[
+                       {
+                        "{",
+                        " ",
+                        RowBox[
+                         {
+                          "notebook",
+                          ",",
+                          " ",
+                          "messages",
+                          ",",
+                          " ",
+                          "chatJSON",
+                          ",",
+                          " ",
+                          "title"
+                         }
+                        ],
+                        " ",
+                        "}"
+                       }
+                      ],
+                      ",",
+                      "\n",
+                      "        ",
+                      RowBox[
+                       {
+                        "(*",
+                        " ",
+                        RowBox[
+                         {
+                          "Get",
+                          " ",
+                          "the",
+                          " ",
+                          "current",
+                          " ",
+                          "chat",
+                          " ",
+                          "notebook",
+                          " ",
+                          "as",
+                          " ",
+                          "a",
+                          " ",
+                          RowBox[{"NotebookObject", ":"}]
+                         }
+                        ],
+                        " ",
+                        "*)"
+                       }
+                      ],
+                      "\n",
+                      "        ",
+                      RowBox[
+                       {
+                        RowBox[
+                         {
+                          "notebook",
+                          " ",
+                          "=",
+                          " ",
+                          RowBox[{"info", "[", " ", "\"NotebookObject\"", " ", "]"}]
+                         }
+                        ],
+                        ";",
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "(*",
+                          " ",
+                          RowBox[
+                           {
+                            "Stop",
+                            " ",
+                            "if",
+                            " ",
+                            "title",
+                            " ",
+                            "is",
+                            " ",
+                            "already",
+                            " ",
+                            RowBox[{"set", ":"}]
+                           }
+                          ],
+                          " ",
+                          "*)"
+                         }
+                        ],
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "ConfirmAssert",
+                          "[",
+                          " ",
+                          RowBox[
+                           {
+                            "!",
+                            " ",
+                            RowBox[
+                             {
+                              "StringQ",
+                              " ",
+                              "@",
+                              " ",
+                              RowBox[
+                               {
+                                "CurrentValue",
+                                "[",
+                                " ",
+                                RowBox[{"notebook", ",", " ", "WindowTitle"}],
+                                " ",
+                                "]"
+                               }
+                              ]
+                             }
+                            ]
+                           }
+                          ],
+                          " ",
+                          "]"
+                         }
+                        ],
+                        ";",
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "(*",
+                          " ",
+                          RowBox[
+                           {
+                            "Drop",
+                            " ",
+                            "system",
+                            " ",
+                            "message",
+                            " ",
+                            "and",
+                            " ",
+                            "add",
+                            " ",
+                            "the",
+                            " ",
+                            "latest",
+                            " ",
+                            RowBox[{"response", ":"}]
+                           }
+                          ],
+                          " ",
+                          "*)"
+                         }
+                        ],
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "messages",
+                          " ",
+                          "=",
+                          " ",
+                          RowBox[
+                           {
+                            "Append",
+                            "[",
+                            "\n",
+                            "            ",
+                            RowBox[
+                             {
+                              RowBox[
+                               {
+                                "Replace",
+                                "[",
+                                " ",
+                                RowBox[
+                                 {
+                                  RowBox[{"info", "[", " ", "\"Messages\"", " ", "]"}],
+                                  ",",
+                                  " ",
+                                  RowBox[
+                                   {
+                                    RowBox[
+                                     {
+                                      "{",
+                                      " ",
+                                      RowBox[
+                                       {
+                                        RowBox[
+                                         {
+                                          "KeyValuePattern",
+                                          "[",
+                                          " ",
+                                          RowBox[{"\"Role\"", " ", "->", " ", "\"System\""}],
+                                          " ",
+                                          "]"
+                                         }
+                                        ],
+                                        ",",
+                                        " ",
+                                        "msgs___"
+                                       }
+                                      ],
+                                      " ",
+                                      "}"
+                                     }
+                                    ],
+                                    " ",
+                                    ":>",
+                                    " ",
+                                    RowBox[{"{", " ", "msgs", " ", "}"}]
+                                   }
+                                  ]
+                                 }
+                                ],
+                                " ",
+                                "]"
+                               }
+                              ],
+                              ",",
+                              "\n",
+                              "            ",
+                              RowBox[
+                               {
+                                "<|",
+                                " ",
+                                RowBox[
+                                 {
+                                  RowBox[{"\"Role\"", " ", "->", " ", "\"Assistant\""}],
+                                  ",",
+                                  " ",
+                                  RowBox[
+                                   {
+                                    "\"Content\"",
+                                    " ",
+                                    "->",
+                                    " ",
+                                    RowBox[{"info", "[", " ", "\"Result\"", " ", "]"}]
+                                   }
+                                  ]
+                                 }
+                                ],
+                                " ",
+                                "|>"
+                               }
+                              ]
+                             }
+                            ],
+                            "\n",
+                            "        ",
+                            "]"
+                           }
+                          ]
+                         }
+                        ],
+                        ";",
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "(*",
+                          " ",
+                          RowBox[
+                           {
+                            "Stop",
+                            " ",
+                            "if",
+                            " ",
+                            "we",
+                            " ",
+                            RowBox[{"don", "'"}],
+                            "t",
+                            " ",
+                            "have",
+                            " ",
+                            "enough",
+                            " ",
+                            "messages",
+                            " ",
+                            RowBox[{"yet", ":"}]
+                           }
+                          ],
+                          " ",
+                          "*)"
+                         }
+                        ],
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "ConfirmAssert",
+                          "[",
+                          " ",
+                          RowBox[
+                           {
+                            RowBox[{"Length", " ", "@", " ", "messages"}],
+                            " ",
+                            ">=",
+                            " ",
+                            "$minimumMessageCount"
+                           }
+                          ],
+                          " ",
+                          "]"
+                         }
+                        ],
+                        ";",
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "(*",
+                          " ",
+                          RowBox[
+                           {
+                            "Create",
+                            " ",
+                            "a",
+                            " ",
+                            "transcript",
+                            " ",
+                            "of",
+                            " ",
+                            "the",
+                            " ",
+                            "chat",
+                            " ",
+                            "as",
+                            " ",
+                            "a",
+                            " ",
+                            "JSON",
+                            " ",
+                            RowBox[{"string", ":"}]
+                           }
+                          ],
+                          " ",
+                          "*)"
+                         }
+                        ],
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "chatJSON",
+                          " ",
+                          "=",
+                          " ",
+                          RowBox[
+                           {
+                            "ConfirmBy",
+                            "[",
+                            " ",
+                            RowBox[
+                             {
+                              RowBox[
+                               {
+                                "ExportString",
+                                "[",
+                                " ",
+                                RowBox[{"messages", ",", " ", "\"RawJSON\""}],
+                                " ",
+                                "]"
+                               }
+                              ],
+                              ",",
+                              " ",
+                              "StringQ"
+                             }
+                            ],
+                            " ",
+                            "]"
+                           }
+                          ]
+                         }
+                        ],
+                        ";",
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "(*",
+                          " ",
+                          RowBox[
+                           {
+                            "Pass",
+                            " ",
+                            "it",
+                            " ",
+                            "to",
+                            " ",
+                            "an",
+                            " ",
+                            "LLM",
+                            " ",
+                            "along",
+                            " ",
+                            "with",
+                            " ",
+                            "a",
+                            " ",
+                            "prompt",
+                            " ",
+                            "to",
+                            " ",
+                            "come",
+                            " ",
+                            "up",
+                            " ",
+                            "with",
+                            " ",
+                            "a",
+                            " ",
+                            RowBox[{"title", ":"}]
+                           }
+                          ],
+                          " ",
+                          "*)"
+                         }
+                        ],
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "title",
+                          " ",
+                          "=",
+                          " ",
+                          RowBox[
+                           {
+                            "ConfirmBy",
+                            "[",
+                            "\n",
+                            "            ",
+                            RowBox[
+                             {
+                              RowBox[
+                               {
+                                RowBox[
+                                 {
+                                  "LLMFunction",
+                                  "[",
+                                  " ",
+                                  RowBox[
+                                   {
+                                    "$titlePrompt",
+                                    ",",
+                                    " ",
+                                    RowBox[{"LLMEvaluator", " ", "->", " ", "$titleEvaluator"}]
+                                   }
+                                  ],
+                                  " ",
+                                  "]"
+                                 }
+                                ],
+                                "[",
+                                " ",
+                                "chatJSON",
+                                " ",
+                                "]"
+                               }
+                              ],
+                              ",",
+                              "\n",
+                              "            ",
+                              "StringQ"
+                             }
+                            ],
+                            "\n",
+                            "        ",
+                            "]"
+                           }
+                          ]
+                         }
+                        ],
+                        ";",
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "(*",
+                          " ",
+                          RowBox[
+                           {
+                            "Set",
+                            " ",
+                            "the",
+                            " ",
+                            "window",
+                            " ",
+                            "title",
+                            " ",
+                            "of",
+                            " ",
+                            "the",
+                            " ",
+                            RowBox[{"notebook", ":"}]
+                           }
+                          ],
+                          " ",
+                          "*)"
+                         }
+                        ],
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "SetOptions",
+                          "[",
+                          " ",
+                          RowBox[
+                           {
+                            "notebook",
+                            ",",
+                            " ",
+                            RowBox[
+                             {
+                              "WindowTitle",
+                              " ",
+                              "->",
+                              " ",
+                              RowBox[
+                               {
+                                "StringTrim",
+                                "[",
+                                " ",
+                                RowBox[{"title", ",", " ", "\"\\\"\""}],
+                                " ",
+                                "]"
+                               }
+                              ]
+                             }
+                            ]
+                           }
+                          ],
+                          " ",
+                          "]"
+                         }
+                        ]
+                       }
+                      ]
+                     }
+                    ],
+                    "\n",
+                    "    ",
+                    "]"
+                   }
+                  ]
+                 }
+                ]
+               }
+              ]
+             }
+            ],
+            ";"
+           }
+          ]
+         ],
+         "Code",
+         CellLabel -> "In[85]:="
+        ]
+       },
+       Closed
+      ]
+     ],
+     Cell[
+      CellGroupData[
+       {
+        Cell["Create Chat Notebook", "Section"],
+        Cell[
+         "Specify a ChatPost function that will update the window title of the notebook:",
+         "Text"
+        ],
+        Cell[
+         BoxData[
+          RowBox[
+           {
+            RowBox[
+             {
+              "CreateChatNotebook",
+              "[",
+              "\[IndentingNewLine]",
+              RowBox[
+               {
+                InterpretationBox[
+                 DynamicModuleBox[
+                  {Typeset`open = False},
+                  TemplateBox[
+                   {
+                    "List",
+                    "ListIcon",
+                    GridBox[
+                     {
+                      {
+                       RowBox[
+                        {
+                         TagBox["\"Head: \"", "IconizedLabel"],
+                         "\[InvisibleSpace]",
+                         TagBox["List", "IconizedItem"]
+                        }
+                       ]
+                      },
+                      {
+                       RowBox[
+                        {
+                         TagBox["\"Length: \"", "IconizedLabel"],
+                         "\[InvisibleSpace]",
+                         TagBox["1", "IconizedItem"]
+                        }
+                       ]
+                      },
+                      {
+                       RowBox[
+                        {
+                         TagBox["\"Byte count: \"", "IconizedLabel"],
+                         "\[InvisibleSpace]",
+                         TagBox["272", "IconizedItem"]
+                        }
+                       ]
+                      }
+                     },
+                     GridBoxAlignment -> {"Columns" -> {{Left}}},
+                     DefaultBaseStyle -> "Column",
+                     GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}
+                    ],
+                    Dynamic[Typeset`open]
+                   },
+                   "IconizedObject"
+                  ]
+                 ],
+                 {
+                  Cell[
+                   "I'm currently showing off chat notebooks at the Wolfram Tech Conference, so try to behave yourself.",
+                   "ChatInput"
+                  ]
+                 },
+                 SelectWithContents -> True,
+                 Selectable -> False
+                ],
+                ",",
+                "\[IndentingNewLine]",
+                RowBox[
+                 {
+                  "\"HandlerFunctions\"",
+                  "->",
+                  RowBox[
+                   {
+                    "<|",
+                    RowBox[{"\"ChatPost\"", "->", "updateWindowTitle"}],
+                    "|>"
+                   }
+                  ]
+                 }
+                ],
+                ",",
+                "\[IndentingNewLine]",
+                RowBox[{"\"Model\"", "->", "\"gpt-3.5-turbo\""}],
+                ",",
+                "\[IndentingNewLine]",
+                RowBox[{"\"LLMEvaluator\"", "->", "\"Birdnardo\""}],
+                ",",
+                "\[IndentingNewLine]",
+                RowBox[{"WindowMargins", "\[Rule]", "0"}],
+                ",",
+                RowBox[
+                 {
+                  "WindowSize",
+                  "\[Rule]",
+                  RowBox[{"{", RowBox[{"1920", ",", "1000"}], "}"}]
+                 }
+                ],
+                ",",
+                RowBox[{"Magnification", "\[Rule]", "2"}]
+               }
+              ],
+              "\[IndentingNewLine]",
+              "]"
+             }
+            ],
+            ";"
+           }
+          ]
+         ],
+         "Input",
+         CellLabel -> "In[100]:="
+        ]
+       },
+       Open
+      ]
+     ]
+    },
+    Open
+   ]
+  ]
+ },
+ Magnification :> 1.5 * Inherited,
+ StyleDefinitions -> "Default.nb"
+]

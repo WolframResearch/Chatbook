@@ -1,0 +1,1749 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* Created By: SaveReadableNotebook *)
+(* https://resources.wolframcloud.com/FunctionRepository/resources/SaveReadableNotebook *)
+
+Notebook[
+ {
+  Cell[
+   CellGroupData[
+    {
+     Cell["Add Suggestions Bar to Chat Outputs", "Title"],
+     Cell[
+      CellGroupData[
+       {
+        Cell["Definitions", "Section"],
+        Cell[
+         BoxData[
+          RowBox[
+           {
+            RowBox[
+             {"Needs", "[", " ", "\"Wolfram`Chatbook`\"", " ", "]"}
+            ],
+            ";"
+           }
+          ]
+         ],
+         "Code",
+         CellLabel -> "In[60]:="
+        ],
+        Cell[
+         "The LLMEvaluator used to generate the list of suggested chat inputs:",
+         "Text"
+        ],
+        Cell[
+         BoxData[
+          RowBox[
+           {
+            RowBox[
+             {
+              "$suggestionEvaluator",
+              " ",
+              "=",
+              " ",
+              RowBox[
+               {
+                "<|",
+                " ",
+                RowBox[
+                 {
+                  RowBox[{"\"Model\"", " ", "->", " ", "\"gpt-3.5-turbo\""}],
+                  ",",
+                  " ",
+                  RowBox[{"\"Temperature\"", " ", "->", " ", "0.7"}]
+                 }
+                ],
+                " ",
+                "|>"
+               }
+              ]
+             }
+            ],
+            ";"
+           }
+          ]
+         ],
+         "Code",
+         CellLabel -> "In[61]:="
+        ],
+        Cell["Prompt used to generate the suggestions:", "Text"],
+        Cell[
+         BoxData[
+          RowBox[
+           {
+            RowBox[
+             {
+              "$suggestionPrompt",
+              " ",
+              "=",
+              " ",
+              "\"\\\nPlease look at the chat transcript provided below and come up with one to \\\nthree suggested follow-up prompts that \\\"User\\\" may want to use as their next \\\nmessage to \\\"Assistant\\\".\nThese prompts will appear as a suggestions bar where the user can just click \\\non one of the prompts to use that as their next chat message.\nPrompts should be relevant and concise.\nEach prompt should be 35 characters or less, since all three will need to be \\\ndisplayed in a single horizontal row that will fit on the screen.\nSeparate each prompt with two new line characters.\nRespond only with the suggested prompts and nothing else.\n\n=====\n`1`\""
+             }
+            ],
+            ";"
+           }
+          ]
+         ],
+         "Code",
+         CellLabel -> "In[62]:="
+        ],
+        Cell["Called after each chat evaluation:", "Text"],
+        Cell[
+         BoxData[
+          RowBox[
+           {
+            RowBox[
+             {
+              RowBox[
+               {
+                "addSuggestionsBar",
+                "[",
+                " ",
+                "info_Association",
+                " ",
+                "]"
+               }
+              ],
+              " ",
+              ":=",
+              " ",
+              RowBox[
+               {
+                "SessionSubmit",
+                " ",
+                "@",
+                " ",
+                RowBox[
+                 {
+                  "Enclose",
+                  " ",
+                  "@",
+                  "\n",
+                  "    ",
+                  RowBox[
+                   {
+                    "Module",
+                    "[",
+                    " ",
+                    RowBox[
+                     {
+                      RowBox[
+                       {
+                        "{",
+                        " ",
+                        RowBox[
+                         {
+                          "messages",
+                          ",",
+                          " ",
+                          "chatJSON",
+                          ",",
+                          " ",
+                          "suggestionString",
+                          ",",
+                          " ",
+                          "suggestions",
+                          ",",
+                          " ",
+                          "cell",
+                          ",",
+                          " ",
+                          "margins"
+                         }
+                        ],
+                        " ",
+                        "}"
+                       }
+                      ],
+                      ",",
+                      "\n",
+                      "        ",
+                      RowBox[
+                       {
+                        "(*",
+                        " ",
+                        RowBox[
+                         {
+                          "Add",
+                          " ",
+                          "the",
+                          " ",
+                          "latest",
+                          " ",
+                          "response",
+                          " ",
+                          "to",
+                          " ",
+                          "the",
+                          " ",
+                          "list",
+                          " ",
+                          "of",
+                          " ",
+                          RowBox[{"messages", ":"}]
+                         }
+                        ],
+                        " ",
+                        "*)"
+                       }
+                      ],
+                      "\n",
+                      "        ",
+                      RowBox[
+                       {
+                        RowBox[
+                         {
+                          "messages",
+                          " ",
+                          "=",
+                          " ",
+                          RowBox[
+                           {
+                            "Append",
+                            "[",
+                            "\n",
+                            "            ",
+                            RowBox[
+                             {
+                              RowBox[
+                               {
+                                "Replace",
+                                "[",
+                                " ",
+                                RowBox[
+                                 {
+                                  RowBox[{"info", "[", " ", "\"Messages\"", " ", "]"}],
+                                  ",",
+                                  " ",
+                                  RowBox[
+                                   {
+                                    RowBox[
+                                     {
+                                      "{",
+                                      " ",
+                                      RowBox[
+                                       {
+                                        RowBox[
+                                         {
+                                          "KeyValuePattern",
+                                          "[",
+                                          " ",
+                                          RowBox[{"\"Role\"", " ", "->", " ", "\"System\""}],
+                                          " ",
+                                          "]"
+                                         }
+                                        ],
+                                        ",",
+                                        " ",
+                                        "msgs___"
+                                       }
+                                      ],
+                                      " ",
+                                      "}"
+                                     }
+                                    ],
+                                    " ",
+                                    ":>",
+                                    " ",
+                                    RowBox[{"{", " ", "msgs", " ", "}"}]
+                                   }
+                                  ]
+                                 }
+                                ],
+                                " ",
+                                "]"
+                               }
+                              ],
+                              ",",
+                              "\n",
+                              "            ",
+                              RowBox[
+                               {
+                                "<|",
+                                " ",
+                                RowBox[
+                                 {
+                                  RowBox[{"\"Role\"", " ", "->", " ", "\"Assistant\""}],
+                                  ",",
+                                  " ",
+                                  RowBox[
+                                   {
+                                    "\"Content\"",
+                                    " ",
+                                    "->",
+                                    " ",
+                                    RowBox[{"info", "[", " ", "\"Result\"", " ", "]"}]
+                                   }
+                                  ]
+                                 }
+                                ],
+                                " ",
+                                "|>"
+                               }
+                              ]
+                             }
+                            ],
+                            "\n",
+                            "        ",
+                            "]"
+                           }
+                          ]
+                         }
+                        ],
+                        ";",
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "(*",
+                          " ",
+                          RowBox[
+                           {
+                            "Create",
+                            " ",
+                            "a",
+                            " ",
+                            "transcript",
+                            " ",
+                            "of",
+                            " ",
+                            "the",
+                            " ",
+                            "chat",
+                            " ",
+                            "as",
+                            " ",
+                            "a",
+                            " ",
+                            "JSON",
+                            " ",
+                            RowBox[{"string", ":"}]
+                           }
+                          ],
+                          " ",
+                          "*)"
+                         }
+                        ],
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "chatJSON",
+                          " ",
+                          "=",
+                          " ",
+                          RowBox[
+                           {
+                            "ConfirmBy",
+                            "[",
+                            " ",
+                            RowBox[
+                             {
+                              RowBox[
+                               {
+                                "ExportString",
+                                "[",
+                                " ",
+                                RowBox[{"messages", ",", " ", "\"RawJSON\""}],
+                                " ",
+                                "]"
+                               }
+                              ],
+                              ",",
+                              " ",
+                              "StringQ"
+                             }
+                            ],
+                            " ",
+                            "]"
+                           }
+                          ]
+                         }
+                        ],
+                        ";",
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "(*",
+                          " ",
+                          RowBox[
+                           {
+                            "Pass",
+                            " ",
+                            "it",
+                            " ",
+                            "to",
+                            " ",
+                            "an",
+                            " ",
+                            "LLM",
+                            " ",
+                            "along",
+                            " ",
+                            "with",
+                            " ",
+                            "a",
+                            " ",
+                            "prompt",
+                            " ",
+                            "to",
+                            " ",
+                            "come",
+                            " ",
+                            "up",
+                            " ",
+                            "with",
+                            " ",
+                            "a",
+                            " ",
+                            "few",
+                            " ",
+                            RowBox[{"suggestions", ":"}]
+                           }
+                          ],
+                          " ",
+                          "*)"
+                         }
+                        ],
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "suggestionString",
+                          " ",
+                          "=",
+                          " ",
+                          RowBox[
+                           {
+                            "ConfirmBy",
+                            "[",
+                            "\n",
+                            "            ",
+                            RowBox[
+                             {
+                              RowBox[
+                               {
+                                RowBox[
+                                 {
+                                  "LLMFunction",
+                                  "[",
+                                  " ",
+                                  RowBox[
+                                   {
+                                    "$suggestionPrompt",
+                                    ",",
+                                    " ",
+                                    RowBox[
+                                     {"LLMEvaluator", " ", "->", " ", "$suggestionEvaluator"}
+                                    ]
+                                   }
+                                  ],
+                                  " ",
+                                  "]"
+                                 }
+                                ],
+                                "[",
+                                " ",
+                                "chatJSON",
+                                " ",
+                                "]"
+                               }
+                              ],
+                              ",",
+                              "\n",
+                              "            ",
+                              "StringQ"
+                             }
+                            ],
+                            "\n",
+                            "        ",
+                            "]"
+                           }
+                          ]
+                         }
+                        ],
+                        ";",
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "(*",
+                          " ",
+                          RowBox[
+                           {
+                            "Parse",
+                            " ",
+                            "string",
+                            " ",
+                            "into",
+                            " ",
+                            "a",
+                            " ",
+                            "list",
+                            " ",
+                            "of",
+                            " ",
+                            "suggested",
+                            " ",
+                            RowBox[{"inputs", ":"}]
+                           }
+                          ],
+                          " ",
+                          "*)"
+                         }
+                        ],
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "suggestions",
+                          " ",
+                          "=",
+                          " ",
+                          RowBox[
+                           {
+                            "DeleteCases",
+                            "[",
+                            " ",
+                            RowBox[
+                             {
+                              RowBox[
+                               {
+                                "cleanupSuggestions",
+                                " ",
+                                "@",
+                                " ",
+                                RowBox[
+                                 {
+                                  "StringSplit",
+                                  "[",
+                                  " ",
+                                  RowBox[{"suggestionString", ",", " ", "\"\\n\""}],
+                                  " ",
+                                  "]"
+                                 }
+                                ]
+                               }
+                              ],
+                              ",",
+                              " ",
+                              "\"\""
+                             }
+                            ],
+                            " ",
+                            "]"
+                           }
+                          ]
+                         }
+                        ],
+                        ";",
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "(*",
+                          " ",
+                          RowBox[
+                           {
+                            "Get",
+                            " ",
+                            "the",
+                            " ",
+                            "chat",
+                            " ",
+                            "output",
+                            " ",
+                            "cell",
+                            " ",
+                            "and",
+                            " ",
+                            "attach",
+                            " ",
+                            "the",
+                            " ",
+                            "suggestions",
+                            " ",
+                            RowBox[{"bar", ":"}]
+                           }
+                          ],
+                          " ",
+                          "*)"
+                         }
+                        ],
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "cell",
+                          " ",
+                          "=",
+                          " ",
+                          RowBox[{"info", "[", " ", "\"EvaluationCell\"", " ", "]"}]
+                         }
+                        ],
+                        ";",
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "margins",
+                          " ",
+                          "=",
+                          " ",
+                          RowBox[
+                           {
+                            "Replace",
+                            "[",
+                            "\n",
+                            "            ",
+                            RowBox[
+                             {
+                              RowBox[
+                               {
+                                "AbsoluteCurrentValue",
+                                "[",
+                                " ",
+                                RowBox[{"cell", ",", " ", "CellMargins"}],
+                                " ",
+                                "]"
+                               }
+                              ],
+                              ",",
+                              "\n",
+                              "            ",
+                              RowBox[
+                               {
+                                RowBox[
+                                 {
+                                  "{",
+                                  " ",
+                                  RowBox[
+                                   {
+                                    RowBox[
+                                     {"{", " ", RowBox[{"l_", ",", " ", "r_"}], " ", "}"}
+                                    ],
+                                    ",",
+                                    " ",
+                                    RowBox[
+                                     {"{", " ", RowBox[{"b_", ",", " ", "t_"}], " ", "}"}
+                                    ]
+                                   }
+                                  ],
+                                  " ",
+                                  "}"
+                                 }
+                                ],
+                                " ",
+                                ":>",
+                                " ",
+                                RowBox[
+                                 {
+                                  "{",
+                                  " ",
+                                  RowBox[
+                                   {
+                                    RowBox[
+                                     {
+                                      "{",
+                                      " ",
+                                      RowBox[{"l", ",", " ", RowBox[{"r", " ", "+", " ", "15"}]}],
+                                      " ",
+                                      "}"
+                                     }
+                                    ],
+                                    ",",
+                                    " ",
+                                    RowBox[
+                                     {
+                                      "{",
+                                      " ",
+                                      RowBox[{"b", ",", " ", RowBox[{"t", " ", "+", " ", "2"}]}],
+                                      " ",
+                                      "}"
+                                     }
+                                    ]
+                                   }
+                                  ],
+                                  " ",
+                                  "}"
+                                 }
+                                ]
+                               }
+                              ]
+                             }
+                            ],
+                            "\n",
+                            "        ",
+                            "]"
+                           }
+                          ]
+                         }
+                        ],
+                        ";",
+                        "\n",
+                        "        ",
+                        RowBox[
+                         {
+                          "$attached",
+                          " ",
+                          "=",
+                          " ",
+                          RowBox[
+                           {
+                            "AttachCell",
+                            "[",
+                            "\n",
+                            "            ",
+                            RowBox[
+                             {
+                              "cell",
+                              ",",
+                              "\n",
+                              "            ",
+                              RowBox[
+                               {
+                                "Cell",
+                                "[",
+                                "\n",
+                                "                ",
+                                RowBox[
+                                 {
+                                  RowBox[
+                                   {
+                                    "TextData",
+                                    " ",
+                                    "@",
+                                    " ",
+                                    RowBox[{"suggestionBar", " ", "@", " ", "suggestions"}]
+                                   }
+                                  ],
+                                  ",",
+                                  "\n",
+                                  "                ",
+                                  "\"ChatOutput\"",
+                                  ",",
+                                  "\n",
+                                  "                ",
+                                  RowBox[
+                                   {
+                                    "CellFrame",
+                                    "      ",
+                                    "->",
+                                    " ",
+                                    RowBox[
+                                     {
+                                      "{",
+                                      " ",
+                                      RowBox[
+                                       {
+                                        RowBox[{"{", " ", RowBox[{"2", ",", " ", "2"}], " ", "}"}],
+                                        ",",
+                                        " ",
+                                        RowBox[{"{", " ", RowBox[{"2", ",", " ", "0"}], " ", "}"}]
+                                       }
+                                      ],
+                                      " ",
+                                      "}"
+                                     }
+                                    ]
+                                   }
+                                  ],
+                                  ",",
+                                  "\n",
+                                  "                ",
+                                  RowBox[{"CellMargins", "    ", "->", " ", "margins"}],
+                                  ",",
+                                  "\n",
+                                  "                ",
+                                  RowBox[
+                                   {
+                                    "Magnification",
+                                    "  ",
+                                    "->",
+                                    " ",
+                                    RowBox[
+                                     {
+                                      "CurrentValue",
+                                      "[",
+                                      " ",
+                                      RowBox[{"cell", ",", " ", "Magnification"}],
+                                      " ",
+                                      "]"
+                                     }
+                                    ]
+                                   }
+                                  ],
+                                  ",",
+                                  "\n",
+                                  "                ",
+                                  RowBox[{"Initialization", " ", "->", " ", "None"}]
+                                 }
+                                ],
+                                "\n",
+                                "            ",
+                                "]"
+                               }
+                              ],
+                              ",",
+                              "\n",
+                              "            ",
+                              "\"Inline\""
+                             }
+                            ],
+                            "\n",
+                            "        ",
+                            "]"
+                           }
+                          ]
+                         }
+                        ]
+                       }
+                      ]
+                     }
+                    ],
+                    "\n",
+                    "    ",
+                    "]"
+                   }
+                  ]
+                 }
+                ]
+               }
+              ]
+             }
+            ],
+            ";"
+           }
+          ]
+         ],
+         "Code",
+         CellLabel -> "In[63]:="
+        ],
+        Cell[
+         CellGroupData[
+          {
+           Cell["cleanupSuggestions", "Subsubsection"],
+           Cell[
+            "Some string processing to standardize the suggestion format:",
+            "Text"
+           ],
+           Cell[
+            BoxData[
+             {
+              RowBox[
+               {
+                RowBox[
+                 {
+                  RowBox[
+                   {"cleanupSuggestions", " ", "//", " ", "Attributes"}
+                  ],
+                  " ",
+                  "=",
+                  " ",
+                  RowBox[{"{", " ", "Listable", " ", "}"}]
+                 }
+                ],
+                ";"
+               }
+              ],
+              "\n",
+              RowBox[
+               {
+                RowBox[
+                 {
+                  RowBox[
+                   {
+                    "cleanupSuggestions",
+                    "[",
+                    " ",
+                    "suggestion_String",
+                    " ",
+                    "]"
+                   }
+                  ],
+                  " ",
+                  ":=",
+                  " ",
+                  "\n",
+                  "    ",
+                  RowBox[
+                   {
+                    "FixedPoint",
+                    "[",
+                    "\n",
+                    "        ",
+                    RowBox[
+                     {
+                      RowBox[
+                       {
+                        RowBox[
+                         {
+                          "StringDelete",
+                          "[",
+                          "\n",
+                          "            ",
+                          RowBox[
+                           {
+                            RowBox[
+                             {
+                              "StringTrim",
+                              "[",
+                              " ",
+                              RowBox[
+                               {
+                                "#",
+                                ",",
+                                " ",
+                                RowBox[
+                                 {
+                                  RowBox[
+                                   {
+                                    "(",
+                                    RowBox[
+                                     {
+                                      "\"\\\"\"",
+                                      "|",
+                                      "WhitespaceCharacter",
+                                      "|",
+                                      "\":\"",
+                                      "|",
+                                      "\".\"",
+                                      "|",
+                                      "\"-\""
+                                     }
+                                    ],
+                                    ")"
+                                   }
+                                  ],
+                                  ".."
+                                 }
+                                ]
+                               }
+                              ],
+                              " ",
+                              "]"
+                             }
+                            ],
+                            ",",
+                            "\n",
+                            "            ",
+                            RowBox[
+                             {
+                              "StartOfString",
+                              " ",
+                              "~~",
+                              " ",
+                              RowBox[{"DigitCharacter", ".."}],
+                              " ",
+                              "~~",
+                              " ",
+                              RowBox[{"(", RowBox[{"\".\"", "|", "\"\""}], ")"}]
+                             }
+                            ]
+                           }
+                          ],
+                          "\n",
+                          "        ",
+                          "]"
+                         }
+                        ],
+                        " ",
+                        "&"
+                       }
+                      ],
+                      ",",
+                      "\n",
+                      "        ",
+                      "suggestion"
+                     }
+                    ],
+                    "\n",
+                    "    ",
+                    "]"
+                   }
+                  ]
+                 }
+                ],
+                ";"
+               }
+              ]
+             }
+            ],
+            "Code",
+            CellLabel -> "In[64]:="
+           ]
+          },
+          Closed
+         ]
+        ],
+        Cell[
+         CellGroupData[
+          {
+           Cell["Suggestions Bar", "Subsection"],
+           Cell[
+            "Display a row of buttons corresponding to each of the suggestions:",
+            "Text"
+           ],
+           Cell[
+            BoxData[
+             RowBox[
+              {
+               RowBox[
+                {
+                 RowBox[
+                  {"suggestionBar", "[", " ", "suggestions_List", " ", "]"}
+                 ],
+                 " ",
+                 ":=",
+                 " ",
+                 RowBox[
+                  {
+                   "Riffle",
+                   "[",
+                   "\n",
+                   "    ",
+                   RowBox[
+                    {
+                     RowBox[
+                      {
+                       RowBox[
+                        {
+                         "Cell",
+                         " ",
+                         "@*",
+                         " ",
+                         "BoxData",
+                         " ",
+                         "@*",
+                         " ",
+                         "ToBoxes",
+                         " ",
+                         "@*",
+                         " ",
+                         "suggestionButton"
+                        }
+                       ],
+                       " ",
+                       "/@",
+                       " ",
+                       "suggestions"
+                      }
+                     ],
+                     ",",
+                     "\n",
+                     "    ",
+                     RowBox[
+                      {
+                       "StyleBox",
+                       "[",
+                       " ",
+                       RowBox[
+                        {
+                         "\" | \"",
+                         ",",
+                         " ",
+                         RowBox[
+                          {
+                           "FontColor",
+                           " ",
+                           "->",
+                           " ",
+                           RowBox[{"GrayLevel", "[", " ", "0.92549", " ", "]"}]
+                          }
+                         ],
+                         ",",
+                         " ",
+                         RowBox[{"FontWeight", " ", "->", " ", "Bold"}]
+                        }
+                       ],
+                       " ",
+                       "]"
+                      }
+                     ]
+                    }
+                   ],
+                   "\n",
+                   "]"
+                  }
+                 ]
+                }
+               ],
+               ";"
+              }
+             ]
+            ],
+            "Code",
+            CellLabel -> "In[66]:="
+           ],
+           Cell[
+            "Each suggestion is an individual button that will insert the suggestion text as a new chat input and evaluate it:",
+            "Text"
+           ],
+           Cell[
+            BoxData[
+             RowBox[
+              {
+               RowBox[
+                {
+                 RowBox[
+                  {
+                   "suggestionButton",
+                   "[",
+                   " ",
+                   "suggestion_String",
+                   " ",
+                   "]"
+                  }
+                 ],
+                 " ",
+                 ":=",
+                 " ",
+                 "\n",
+                 "    ",
+                 RowBox[
+                  {
+                   "RawBoxes",
+                   " ",
+                   "@",
+                   " ",
+                   RowBox[
+                    {
+                     "ButtonBox",
+                     "[",
+                     "\n",
+                     "        ",
+                     RowBox[
+                      {
+                       RowBox[
+                        {
+                         "TagBox",
+                         "[",
+                         "\n",
+                         "            ",
+                         RowBox[
+                          {
+                           RowBox[
+                            {
+                             "ToBoxes",
+                             " ",
+                             "@",
+                             " ",
+                             RowBox[
+                              {
+                               "Tooltip",
+                               "[",
+                               "\n",
+                               "                ",
+                               RowBox[
+                                {
+                                 RowBox[
+                                  {
+                                   "Pane",
+                                   "[",
+                                   " ",
+                                   RowBox[
+                                    {
+                                     "suggestion",
+                                     ",",
+                                     " ",
+                                     RowBox[
+                                      {
+                                       "ImageSize",
+                                       " ",
+                                       "->",
+                                       " ",
+                                       RowBox[
+                                        {
+                                         "{",
+                                         " ",
+                                         RowBox[
+                                          {
+                                           RowBox[
+                                            {
+                                             "UpTo",
+                                             "[",
+                                             " ",
+                                             RowBox[{"Scaled", "[", " ", "0.3", " ", "]"}],
+                                             " ",
+                                             "]"
+                                            }
+                                           ],
+                                           ",",
+                                           " ",
+                                           "25"
+                                          }
+                                         ],
+                                         " ",
+                                         "}"
+                                        }
+                                       ]
+                                      }
+                                     ],
+                                     ",",
+                                     " ",
+                                     RowBox[
+                                      {
+                                       "Alignment",
+                                       " ",
+                                       "->",
+                                       " ",
+                                       RowBox[
+                                        {"{", " ", RowBox[{"Left", ",", " ", "Center"}], " ", "}"}
+                                       ]
+                                      }
+                                     ]
+                                    }
+                                   ],
+                                   "  ",
+                                   "]"
+                                  }
+                                 ],
+                                 ",",
+                                 "\n",
+                                 "                ",
+                                 "suggestion"
+                                }
+                               ],
+                               "\n",
+                               "            ",
+                               "]"
+                              }
+                             ]
+                            }
+                           ],
+                           ",",
+                           "\n",
+                           "            ",
+                           RowBox[
+                            {"MouseAppearanceTag", "[", " ", "\"LinkHand\"", " ", "]"}
+                           ],
+                           ",",
+                           "\n",
+                           "            ",
+                           RowBox[
+                            {
+                             "DefaultBaseStyle",
+                             " ",
+                             "->",
+                             " ",
+                             RowBox[
+                              {
+                               "Dynamic",
+                               " ",
+                               "@",
+                               " ",
+                               RowBox[
+                                {
+                                 "If",
+                                 "[",
+                                 " ",
+                                 RowBox[
+                                  {
+                                   RowBox[
+                                    {"CurrentValue", "[", " ", "\"MouseOver\"", " ", "]"}
+                                   ],
+                                   ",",
+                                   " ",
+                                   RowBox[{"{", " ", "\"HyperlinkActive\"", " ", "}"}],
+                                   ",",
+                                   " ",
+                                   RowBox[{"{", " ", "\"Hyperlink\"", " ", "}"}]
+                                  }
+                                 ],
+                                 " ",
+                                 "]"
+                                }
+                               ]
+                              }
+                             ]
+                            }
+                           ]
+                          }
+                         ],
+                         "\n",
+                         "        ",
+                         "]"
+                        }
+                       ],
+                       ",",
+                       "\n",
+                       "        ",
+                       RowBox[
+                        {
+                         "ButtonFunction",
+                         " ",
+                         ":>",
+                         " ",
+                         RowBox[
+                          {
+                           "useSuggested",
+                           "[",
+                           " ",
+                           RowBox[
+                            {
+                             RowBox[{"EvaluationCell", "[", " ", "]"}],
+                             ",",
+                             " ",
+                             "suggestion"
+                            }
+                           ],
+                           " ",
+                           "]"
+                          }
+                         ]
+                        }
+                       ],
+                       ",",
+                       "\n",
+                       "        ",
+                       RowBox[{"Evaluator", "      ", "->", " ", "Automatic"}],
+                       ",",
+                       "\n",
+                       "        ",
+                       RowBox[{"Method", "         ", "->", " ", "\"Queued\""}],
+                       ",",
+                       "\n",
+                       "        ",
+                       RowBox[
+                        {
+                         "BaseStyle",
+                         " ",
+                         "->",
+                         " ",
+                         RowBox[
+                          {
+                           "{",
+                           " ",
+                           "\n",
+                           "            ",
+                           RowBox[
+                            {
+                             "\"Hyperlink\"",
+                             ",",
+                             "\n",
+                             "            ",
+                             "\"ChatInput\"",
+                             ",",
+                             "\n",
+                             "            ",
+                             RowBox[{"FontSize", "             ", "->", " ", "11"}],
+                             ",",
+                             "\n",
+                             "            ",
+                             RowBox[{"ShowStringCharacters", " ", "->", " ", "False"}],
+                             ",",
+                             "\n",
+                             "            ",
+                             RowBox[{"LineBreakWithin", "      ", "->", " ", "False"}]
+                            }
+                           ],
+                           "\n",
+                           "        ",
+                           "}"
+                          }
+                         ]
+                        }
+                       ]
+                      }
+                     ],
+                     "\n",
+                     "    ",
+                     "]"
+                    }
+                   ]
+                  }
+                 ]
+                }
+               ],
+               ";"
+              }
+             ]
+            ],
+            "Code",
+            CellLabel -> "In[67]:="
+           ],
+           Cell[
+            "The function called by suggestionButton to insert and evaluate the suggested text:",
+            "Text"
+           ],
+           Cell[
+            BoxData[
+             RowBox[
+              {
+               RowBox[
+                {
+                 RowBox[
+                  {
+                   "useSuggested",
+                   "[",
+                   " ",
+                   RowBox[
+                    {"suggestionBar_CellObject", ",", " ", "suggestion_String"}
+                   ],
+                   " ",
+                   "]"
+                  }
+                 ],
+                 " ",
+                 ":=",
+                 " ",
+                 "\n",
+                 "    ",
+                 RowBox[
+                  {
+                   "Module",
+                   "[",
+                   " ",
+                   RowBox[
+                    {
+                     RowBox[
+                      {
+                       "{",
+                       " ",
+                       RowBox[
+                        {
+                         "chatOutput",
+                         ",",
+                         " ",
+                         "uuid",
+                         ",",
+                         " ",
+                         "notebook",
+                         ",",
+                         " ",
+                         "chatInput"
+                        }
+                       ],
+                       " ",
+                       "}"
+                      }
+                     ],
+                     ",",
+                     "\n",
+                     "        ",
+                     RowBox[
+                      {
+                       RowBox[
+                        {
+                         "chatOutput",
+                         " ",
+                         "=",
+                         " ",
+                         RowBox[
+                          {
+                           "NestWhile",
+                           "[",
+                           " ",
+                           RowBox[
+                            {
+                             "ParentCell",
+                             ",",
+                             " ",
+                             "suggestionBar",
+                             ",",
+                             " ",
+                             RowBox[{"Not", "@*", "FailureQ"}],
+                             ",",
+                             " ",
+                             "1",
+                             ",",
+                             " ",
+                             "5",
+                             ",",
+                             " ",
+                             RowBox[{"-", "1"}]
+                            }
+                           ],
+                           " ",
+                           "]"
+                          }
+                         ]
+                        }
+                       ],
+                       ";",
+                       "\n",
+                       "        ",
+                       RowBox[
+                        {
+                         "uuid",
+                         " ",
+                         "=",
+                         " ",
+                         RowBox[{"CreateUUID", "[", " ", "]"}]
+                        }
+                       ],
+                       ";",
+                       "\n",
+                       "        ",
+                       RowBox[
+                        {
+                         "notebook",
+                         " ",
+                         "=",
+                         " ",
+                         RowBox[{"ParentNotebook", " ", "@", " ", "chatOutput"}]
+                        }
+                       ],
+                       ";",
+                       "\n",
+                       "        ",
+                       RowBox[
+                        {
+                         "SelectionMove",
+                         "[",
+                         " ",
+                         RowBox[{"chatOutput", ",", " ", "After", ",", " ", "Cell"}],
+                         " ",
+                         "]"
+                        }
+                       ],
+                       ";",
+                       "\n",
+                       "        ",
+                       RowBox[
+                        {
+                         "NotebookWrite",
+                         "[",
+                         " ",
+                         RowBox[
+                          {
+                           "notebook",
+                           ",",
+                           " ",
+                           RowBox[
+                            {
+                             "Cell",
+                             "[",
+                             " ",
+                             RowBox[
+                              {
+                               "suggestion",
+                               ",",
+                               " ",
+                               "\"ChatInput\"",
+                               ",",
+                               " ",
+                               RowBox[{"ExpressionUUID", " ", "->", " ", "uuid"}]
+                              }
+                             ],
+                             " ",
+                             "]"
+                            }
+                           ]
+                          }
+                         ],
+                         " ",
+                         "]"
+                        }
+                       ],
+                       ";",
+                       "\n",
+                       "        ",
+                       RowBox[
+                        {
+                         "chatInput",
+                         " ",
+                         "=",
+                         " ",
+                         RowBox[
+                          {
+                           "First",
+                           "[",
+                           " ",
+                           RowBox[
+                            {
+                             RowBox[
+                              {
+                               "Cells",
+                               "[",
+                               " ",
+                               RowBox[
+                                {
+                                 "notebook",
+                                 ",",
+                                 " ",
+                                 RowBox[{"ExpressionUUID", " ", "->", " ", "uuid"}]
+                                }
+                               ],
+                               " ",
+                               "]"
+                              }
+                             ],
+                             ",",
+                             " ",
+                             "$Failed"
+                            }
+                           ],
+                           " ",
+                           "]"
+                          }
+                         ]
+                        }
+                       ],
+                       ";",
+                       "\n",
+                       "        ",
+                       RowBox[{"ChatCellEvaluate", " ", "@", " ", "chatInput"}]
+                      }
+                     ]
+                    }
+                   ],
+                   "\n",
+                   "    ",
+                   "]"
+                  }
+                 ]
+                }
+               ],
+               ";"
+              }
+             ]
+            ],
+            "Code",
+            CellLabel -> "In[68]:="
+           ]
+          },
+          Closed
+         ]
+        ]
+       },
+       Closed
+      ]
+     ],
+     Cell[
+      CellGroupData[
+       {
+        Cell["Create Notebook", "Section"],
+        Cell[
+         "Specify a ChatPost function that will append a bar to the chat output containing buttons with several suggested chat inputs:",
+         "Text"
+        ],
+        Cell[
+         BoxData[
+          RowBox[
+           {
+            RowBox[
+             {
+              "CreateChatNotebook",
+              "[",
+              "\[IndentingNewLine]",
+              RowBox[
+               {
+                InterpretationBox[
+                 DynamicModuleBox[
+                  {Typeset`open = False},
+                  TemplateBox[
+                   {
+                    "List",
+                    "ListIcon",
+                    GridBox[
+                     {
+                      {
+                       RowBox[
+                        {
+                         TagBox["\"Head: \"", "IconizedLabel"],
+                         "\[InvisibleSpace]",
+                         TagBox["List", "IconizedItem"]
+                        }
+                       ]
+                      },
+                      {
+                       RowBox[
+                        {
+                         TagBox["\"Length: \"", "IconizedLabel"],
+                         "\[InvisibleSpace]",
+                         TagBox["1", "IconizedItem"]
+                        }
+                       ]
+                      },
+                      {
+                       RowBox[
+                        {
+                         TagBox["\"Byte count: \"", "IconizedLabel"],
+                         "\[InvisibleSpace]",
+                         TagBox["304", "IconizedItem"]
+                        }
+                       ]
+                      }
+                     },
+                     GridBoxAlignment -> {"Columns" -> {{Left}}},
+                     DefaultBaseStyle -> "Column",
+                     GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}
+                    ],
+                    Dynamic[Typeset`open]
+                   },
+                   "IconizedObject"
+                  ]
+                 ],
+                 {
+                  Cell[
+                   "I'm currently showing off chat notebooks at the Wolfram Tech Conference, so do your best to make me look cool in front of everyone.",
+                   "ChatInput"
+                  ]
+                 },
+                 SelectWithContents -> True,
+                 Selectable -> False
+                ],
+                ",",
+                "\[IndentingNewLine]",
+                RowBox[
+                 {
+                  "\"HandlerFunctions\"",
+                  "->",
+                  RowBox[
+                   {
+                    "<|",
+                    RowBox[{"\"ChatPost\"", "->", "addSuggestionsBar"}],
+                    "|>"
+                   }
+                  ]
+                 }
+                ],
+                ",",
+                "\[IndentingNewLine]",
+                RowBox[{"\"LLMEvaluator\"", "->", "\"Birdnardo\""}],
+                ",",
+                "\[IndentingNewLine]",
+                RowBox[{"\"Model\"", "->", "\"gpt-3.5-turbo\""}],
+                ",",
+                "\[IndentingNewLine]",
+                RowBox[{"WindowMargins", "\[Rule]", "0"}],
+                ",",
+                RowBox[
+                 {
+                  "WindowSize",
+                  "\[Rule]",
+                  RowBox[{"{", RowBox[{"1920", ",", "1000"}], "}"}]
+                 }
+                ],
+                ",",
+                RowBox[{"Magnification", "\[Rule]", "2"}]
+               }
+              ],
+              "\[IndentingNewLine]",
+              "]"
+             }
+            ],
+            ";"
+           }
+          ]
+         ],
+         "Input",
+         CellLabel -> "In[69]:="
+        ]
+       },
+       Open
+      ]
+     ]
+    },
+    Open
+   ]
+  ]
+ },
+ Magnification :> 1.5 * Inherited,
+ StyleDefinitions -> "Default.nb"
+]
