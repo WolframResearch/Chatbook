@@ -79,6 +79,7 @@ $closedChatCellOptions :=
     ];
 
 $versionRequirements = <|
+    "AccentedCells"            -> 14.0,
     "DynamicSplit"             -> 13.3,
     "TaskWriteOutput"          -> 14.0,
     "TrackScrollingWhenPlaced" -> 14.0

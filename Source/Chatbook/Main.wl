@@ -14,6 +14,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$DefaultModel;
 `$DefaultToolOptions;
 `$DefaultTools;
+`$IncludedCellWidget;
 `$InstalledTools;
 `$SandboxKernel;
 `$ToolFunctions;
@@ -26,6 +27,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `CurrentChatSettings;
 `FormatChatOutput;
 `FormatToolResponse;
+`GetChatHistory;
 `GetExpressionURI;
 `GetExpressionURIs;
 `MakeExpressionURI;
@@ -93,6 +95,7 @@ Block[ { $ContextPath },
     Get[ "Wolfram`Chatbook`Dialogs`"            ];
     Get[ "Wolfram`Chatbook`ToolManager`"        ];
     Get[ "Wolfram`Chatbook`PersonaManager`"     ];
+    Get[ "Wolfram`Chatbook`ChatHistory`"        ];
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -115,6 +118,7 @@ Protect[
     CurrentChatSettings,
     FormatChatOutput,
     FormatToolResponse,
+    GetChatHistory,
     GetExpressionURI,
     GetExpressionURIs,
     MakeExpressionURI,
