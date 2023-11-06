@@ -636,9 +636,9 @@ fasterCellToString0[ box: GridBox[ grid_? MatrixQ, ___ ] ] :=
             padded   = Transpose @ Apply[ StringPadRight, Transpose @ { tr, colSizes }, { 1 } ];
             columns  = StringRiffle[ #, " | " ] & /@ padded;
             If[ TrueQ @ $columnHeadings,
-                StringRiffle[ insertColumnDelimiter[ columns, colSizes, box ], "\n" ],
+                StringRiffle[ "| "<>#<> " |" & /@ insertColumnDelimiter[ columns, colSizes, box ], "\n" ],
                 StringRiffle[
-                    Join[
+                    "| "<>#<> " |" & /@ Join[
                         {
                             StringRiffle[ StringRepeat[ " ", # ] & /@ colSizes, " | " ],
                             StringRiffle[ createAlignedDelimiters[ colSizes, box ], " | " ]
