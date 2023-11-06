@@ -97,6 +97,7 @@ $stringStripHeads = Alternatives[
     FormBox,
     FrameBox,
     ItemBox,
+    PaneBox,
     PanelBox,
     RowBox,
     StyleBox,
@@ -380,7 +381,7 @@ fasterCellToString0[ a_String /; StringMatchQ[ a, "\""~~___~~("\\!"|"\!")~~___~~
     With[ { res = ToString @ ToExpression[ a, InputForm ] },
         If[ TrueQ @ $showStringCharacters,
             res,
-            StringTrim[ res, "\"" ]
+            StringReplace[ StringTrim[ res, "\"" ], { "\\\"" -> "\"" } ]
         ] /; FreeQ[ res, s_String /; StringContainsQ[ s, ("\\!"|"\!") ] ]
     ];
 
@@ -390,7 +391,11 @@ fasterCellToString0[ a_String /; StringContainsQ[ a, ("\\!"|"\!") ] ] :=
 (* Other strings *)
 fasterCellToString0[ a_String ] :=
     ToString[
-        escapeMarkdownCharacters @ If[ TrueQ @ $showStringCharacters, a, StringTrim[ a, "\"" ] ],
+        escapeMarkdownCharacters @
+            If[ TrueQ @ $showStringCharacters,
+                a,
+                StringReplace[ StringTrim[ a, "\"" ], { "\\\"" -> "\"" } ]
+            ],
         CharacterEncoding -> $cellCharacterEncoding
     ];
 
@@ -621,6 +626,89 @@ fasterCellToString0[ InterpretationBox[ boxes_, (Definition|FullDefinition)[ _Sy
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
+(*Tables*)
+fasterCellToString0[ box: GridBox[ grid_? MatrixQ, ___ ] ] :=
+    Module[ { strings, tr, colSizes, padded, columns },
+        strings = Map[ fasterCellToString0, grid, { 2 } ];
+        (
+            tr       = Transpose @ strings /. "\[Null]"|"\[InvisibleSpace]" -> "";
+            colSizes = Max[ #, 1 ] & /@ Map[ StringLength, tr, { 2 } ];
+            padded   = Transpose @ Apply[ StringPadRight, Transpose @ { tr, colSizes }, { 1 } ];
+            columns  = StringRiffle[ #, " | " ] & /@ padded;
+            If[ TrueQ @ $columnHeadings,
+                StringRiffle[ insertColumnDelimiter[ columns, colSizes, box ], "\n" ],
+                StringRiffle[
+                    Join[
+                        {
+                            StringRiffle[ StringRepeat[ " ", # ] & /@ colSizes, " | " ],
+                            StringRiffle[ createAlignedDelimiters[ colSizes, box ], " | " ]
+                        },
+                        columns
+                    ],
+                    "\n"
+                ]
+            ]
+        ) /; AllTrue[ strings, StringQ, 2 ]
+    ];
+
+fasterCellToString0[ TagBox[ grid_GridBox, { _, OutputFormsDump`HeadedColumns }, ___ ] ] :=
+    Block[ { $columnHeadings = True }, fasterCellToString0 @ grid ];
+
+
+insertColumnDelimiter // beginDefinition;
+
+insertColumnDelimiter[ { headings_String, rows__String }, colSizes: { __Integer }, box_ ] := {
+    headings,
+    StringRiffle[ createAlignedDelimiters[ colSizes, box ], " | " ],
+    rows
+};
+
+insertColumnDelimiter[ rows_List, _List, box_ ] := rows;
+
+insertColumnDelimiter // endDefinition;
+
+
+createAlignedDelimiters // beginDefinition;
+
+createAlignedDelimiters[ colSizes_, GridBox[ ___, GridBoxAlignment -> { ___, "Columns" -> alignments_, ___ }, ___ ] ] :=
+    createAlignedDelimiters[ colSizes, alignments ];
+
+createAlignedDelimiters[ colSizes_List, alignments_List ] /; Length @ colSizes === Length @ alignments :=
+    createAlignedDelimiter @@@ Transpose @ {
+        colSizes,
+        Replace[
+            alignments,
+            { (Center|"Center"|{Center|"Center"}).. } :> ConstantArray[ Automatic, Length @ colSizes ]
+        ]
+    };
+
+createAlignedDelimiters[ colSizes_List, { a: Except[ { _ } ]..., { repeat_ }, b: Except[ { _ } ]... } ] :=
+    Module[ { total, current, need, expanded, full, alignments },
+        total      = Length @ colSizes;
+        current    = Length @ { a, b };
+        need       = Max[ total - current, 0 ];
+        expanded   = ConstantArray[ repeat, need ];
+        full       = Join[ { a }, expanded, { b } ];
+        alignments = Take[ full, UpTo @ total ];
+        createAlignedDelimiter @@@ Transpose @ {
+            colSizes,
+            Replace[ alignments, { (Center|"Center").. } :> ConstantArray[ Automatic, total ] ]
+        }
+    ];
+
+createAlignedDelimiters // endDefinition;
+
+
+createAlignedDelimiter // beginDefinition;
+createAlignedDelimiter[ size_Integer, "Left"  | Left   ] := ":" <> StringRepeat[ "-", Max[ size-1, 1 ] ];
+createAlignedDelimiter[ size_Integer, "Right" | Right  ] := StringRepeat[ "-", Max[ size-1, 1 ] ] <> ":";
+createAlignedDelimiter[ size_Integer, "Center"| Center ] := ":" <> StringRepeat[ "-", Max[ size-2, 1 ] ] <> ":";
+createAlignedDelimiter[ size_Integer, { alignment_ } ] := createAlignedDelimiter[ size, alignment ];
+createAlignedDelimiter[ size_Integer, _ ] := StringRepeat[ "-", Max[ size, 1 ] ];
+createAlignedDelimiter // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
 (*Other*)
 fasterCellToString0[ Cell[ _, "ObjectNameTranslation", ___ ] ] := "";
 
@@ -642,29 +730,18 @@ fasterCellToString0[ list_List ] :=
     ];
 
 fasterCellToString0[ cell: Cell[ a_, ___ ] ] :=
-    Block[ { $showStringCharacters = showStringCharactersQ @ cell }, fasterCellToString0 @ a ];
+    Block[
+        {
+            $showStringCharacters = showStringCharactersQ @ cell,
+            $escapeMarkdown       = escapeMarkdownCharactersQ @ cell
+        },
+        fasterCellToString0 @ a
+    ];
 
 fasterCellToString0[ InterpretationBox[ _, expr_, ___ ] ] := (
     needsBasePrompt[ "WolframLanguage" ];
     inputFormString @ Unevaluated @ expr
 );
-
-fasterCellToString0[ GridBox[ grid_? MatrixQ, ___ ] ] :=
-    Module[ { strings, tr, colSizes },
-        strings = Map[ fasterCellToString0, grid, { 2 } ];
-        (
-            tr = Transpose @ strings;
-            colSizes = Max /@ Map[ StringLength, tr, { 2 } ];
-            StringRiffle[
-                StringRiffle /@ Transpose @ Apply[
-                    StringPadRight,
-                    Transpose @ { tr, colSizes },
-                    { 1 }
-                ],
-                "\n"
-            ]
-        ) /; AllTrue[ strings, StringQ, 2 ]
-    ];
 
 fasterCellToString0[ Cell[ TextData @ { _, _, text_String, _, Cell[ _, "ExampleCount", ___ ] }, ___ ] ] :=
     fasterCellToString0 @ text;
@@ -851,11 +928,14 @@ sowMessageData[ ___ ] := Null;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*showStringCharactersQ*)
-
-(* This would normally give False for things like output cells, but the LLM needs to see the difference between symbols
-   and strings. However, there might be cases in the future where we want to change this behavior, so this is left in
-   as a stub definition for now. *)
+showStringCharactersQ[ Cell[ __, "TextTableForm", ___ ] ] := False;
 showStringCharactersQ[ ___ ] := True;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*escapeMarkdownCharactersQ*)
+escapeMarkdownCharactersQ[ Cell[ __, "TextTableForm", ___ ] ] := False;
+escapeMarkdownCharactersQ[ ___ ] := True;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
