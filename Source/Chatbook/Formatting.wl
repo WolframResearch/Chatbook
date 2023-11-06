@@ -70,8 +70,8 @@ $externalLanguageRules = Replace[
     { 1 }
 ];
 
-$$mdRow   = Except[ "\n" ].. ~~ ("|" ~~ Except[ "\n" ]..).. ~~ ("\n"|EndOfString);
-$$mdTable = $$mdRow ..;
+$$mdRow   = Except[ "\n" ].. ~~ Repeated[ ("|" ~~ Except[ "\n" ]..), { 2, Infinity } ] ~~ ("\n"|EndOfString);
+$$mdTable = $$mdRow ~~ $$mdRow ..;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
