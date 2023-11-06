@@ -70,6 +70,9 @@ $externalLanguageRules = Replace[
     { 1 }
 ];
 
+$$mdRow   = Except[ "\n" ].. ~~ Repeated[ ("|" ~~ Except[ "\n" ]..), { 2, Infinity } ] ~~ ("\n"|EndOfString);
+$$mdTable = $$mdRow ~~ $$mdRow ..;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Chat Output Formatting*)
@@ -164,7 +167,115 @@ makeResultCell0[ inlineToolCallCell[ string_String ] ] := (
     $lastFormattedToolCall = inlineToolCall @ string
 );
 
+makeResultCell0[ tableCell[ string_String ] ] :=
+    makeTableCell @ string;
+
 makeResultCell0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeTableCell*)
+makeTableCell // beginDefinition;
+
+makeTableCell[ table_String ] := Flatten @ {
+    $tinyLineBreak,
+    Map[
+        makeTableCell0 @ StringRiffle[ #1, "\n" ] &,
+        SplitBy[ StringSplit[ table, "\n" ], StringCount[ #1, "|" ] & ]
+    ],
+    $tinyLineBreak
+};
+
+makeTableCell // endDefinition;
+
+
+makeTableCell0 // beginDefinition;
+
+makeTableCell0[ string_String ] :=
+    makeTableCell0[ StringTrim /@ StringSplit[ StringSplit[ string, "\n" ], "|" ] ];
+
+makeTableCell0 @ { { __String? emptyTableItemQ }, { b__String? delimiterItemQ }, items__ } :=
+    Cell[ BoxData @ alignTable[ ToBoxes @ textTableForm @ { items }, { b } ], "TextTableForm" ];
+
+makeTableCell0[ { a_List, { b__String? delimiterItemQ }, c__ } ] :=
+    Cell[
+        BoxData @ alignTable[ ToBoxes @ textTableForm[ { c }, TableHeadings -> { None, formatRaw /@ a } ], { b } ],
+        "TextTableForm"
+    ];
+
+makeTableCell0[ items_List? MatrixQ ] :=
+    Cell[ BoxData @ ToBoxes @ textTableForm @ items, "TextTableForm" ];
+
+makeTableCell0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*alignTable*)
+alignTable // beginDefinition;
+
+alignTable[ boxes_, delimiters_List ] :=
+    boxes /. HoldPattern[ ColumnAlignments -> _ ] :>
+        (ColumnAlignments -> delimiterAlignment /@ delimiters);
+
+alignTable // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*delimiterAlignment*)
+delimiterAlignment[ s_String ] := delimiterAlignment @ StringSplit[ StringDelete[ s, Whitespace ], "-".. -> " " ];
+delimiterAlignment[ { ":", " "      } ] := Left;
+delimiterAlignment[ { ":", " ", ":" } ] := Center;
+delimiterAlignment[ {      " ", ":" } ] := Right;
+delimiterAlignment[ ___               ] := Center;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*textTableForm*)
+textTableForm // beginDefinition;
+
+textTableForm[ items_? MatrixQ, opts___ ] := Pane[
+    Style[
+        TableForm[ Map[ formatRaw, items, { 2 } ], opts ],
+        "Text",
+        ShowStringCharacters -> False
+    ],
+    ImageMargins -> { { 0, 0 }, { 5, 5 } }
+];
+
+textTableForm // endDefinition;
+
+
+formatRaw // beginDefinition;
+formatRaw[ "" ] := "";
+formatRaw[ item_String ] := formatRaw[ item, styleBox @ item ];
+formatRaw[ item_, { } ] := item;
+formatRaw[ item_, StyleBox[ box_ ] ] := formatRaw[ item, box ];
+formatRaw[ item_, box: _ButtonBox|_Cell|_StyleBox ] := RawBoxes @ box;
+formatRaw[ item_, string_String ] := string;
+formatRaw // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Table Item String Patterns*)
+$$ws            = WhitespaceCharacter...;
+$$delimiterItem = $$ws ~~ (":"|"") ~~ $$ws ~~ "-".. ~~ $$ws ~~ (":"|"") ~~ $$ws;
+$$delimiterRow  = $$delimiterItem ~~ ("|" ~~ $$delimiterItem)..;
+
+
+emptyTableItemQ[ ""               ] := True;
+emptyTableItemQ[ " "              ] := True;
+emptyTableItemQ[ "\"\""           ] := True;
+emptyTableItemQ[ "\" \""          ] := True;
+emptyTableItemQ[ string_? StringQ ] := StringMatchQ[ StringTrim[ string, "\"" ], Whitespace ];
+emptyTableItemQ[ ___              ] := False;
+
+
+delimiterItemQ[ "-"              ] := True;
+delimiterItemQ[ " - "            ] := True;
+delimiterItemQ[ "---"            ] := True;
+delimiterItemQ[ " --- "          ] := True;
+delimiterItemQ[ string_? StringQ ] := StringMatchQ[ string, $$delimiterItem ];
+delimiterItemQ[ ___              ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -485,7 +596,8 @@ $textDataFormatRules = {
     ,
     tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString)) :> inlineToolCallCell @ tool,
     ("\n"|StartOfString) ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
-    ("\n"|StartOfString) ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ]
+    ("\n"|StartOfString) ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ],
+    table: $$mdTable :> tableCell @ table
     ,
     "[`" ~~ label: Except[ "[" ].. ~~ "`](" ~~ url: Except[ ")" ].. ~~ ")" :> "[" <> label <> "]("<>url<>")",
     "\\`" :> "`",
@@ -1096,6 +1208,7 @@ styleBox[ text_String, a___ ] := styleBox[ formatTextString @ text, a ];
 styleBox[ { text: _ButtonBox|_String }, a___ ] := StyleBox[ text, a ];
 styleBox[ { StyleBox[ text_, a___ ] }, b___ ] := DeleteDuplicates @ StyleBox[ text, a, b ];
 styleBox[ { Cell[ text_, a___ ] }, b___ ] := DeleteDuplicates @ Cell[ text, a, b ];
+styleBox[ { }, ___ ] := "";
 
 styleBox[ { a___, b: Except[ _ButtonBox|_Cell|_String|_StyleBox ], c___ }, d___ ] :=
     styleBox[ { a, Cell @ BoxData @ b, c }, d ];
@@ -1342,6 +1455,8 @@ $languageIcons := $languageIcons = Enclose[
 (* ::Subsection::Closed:: *)
 (*joinAdjacentStrings*)
 joinAdjacentStrings // beginDefinition;
+joinAdjacentStrings[ { content___, "\n"|StyleBox[ "\n", ___ ] } ] := joinAdjacentStrings @ { content };
+joinAdjacentStrings[ { "\n"|StyleBox[ "\n", ___ ], content___ } ] := joinAdjacentStrings @ { content };
 joinAdjacentStrings[ content_List ] := joinAdjacentStrings0 /@ SplitBy[ content, StringQ ];
 joinAdjacentStrings // endDefinition;
 
