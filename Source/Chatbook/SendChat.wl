@@ -15,6 +15,7 @@ Begin[ "`Private`" ];
 Needs[ "Wolfram`Chatbook`"                  ];
 Needs[ "Wolfram`Chatbook`Actions`"          ];
 Needs[ "Wolfram`Chatbook`ChatGroups`"       ];
+Needs[ "Wolfram`Chatbook`ChatHistory`"      ];
 Needs[ "Wolfram`Chatbook`ChatMessages`"     ];
 Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`Formatting`"       ];
@@ -996,28 +997,6 @@ selectChatCells0[ cell_, cells: { __CellObject }, final_ ] := Enclose[
 ];
 
 selectChatCells0 // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*filterChatCells*)
-filterChatCells // beginDefinition;
-
-filterChatCells[ cellInfo: { ___Association } ] := Enclose[
-    Module[ { styleExcluded, tagExcluded, cells },
-
-        styleExcluded = DeleteCases[ cellInfo, KeyValuePattern[ "Style" -> $$chatIgnoredStyle ] ];
-
-        tagExcluded = DeleteCases[
-            styleExcluded,
-            KeyValuePattern[ "ChatNotebookSettings" -> KeyValuePattern[ "ExcludeFromChat" -> True ] ]
-        ];
-
-        tagExcluded
-    ],
-    throwInternalFailure[ filterChatCells @ cellInfo, ## ] &
-];
-
-filterChatCells // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

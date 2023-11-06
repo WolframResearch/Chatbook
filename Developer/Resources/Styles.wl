@@ -14,8 +14,9 @@ Cell[
     CellInsertionPointCell -> $cellInsertionPointCell,
 
     CellTrayWidgets -> <|
-        "GearMenu"   -> <| "Condition" -> False |>,
-        "ChatWidget" -> <|
+        "GearMenu"     -> <| "Condition" -> False |>,
+        "ChatIncluded" -> <| "Condition" -> False, "Content" -> $includedCellWidget |>,
+        "ChatWidget"   -> <|
             "Type"    -> "Focus",
             "Content" -> Cell[ BoxData @ TemplateBox[ { }, "ChatWidgetButton" ], "ChatWidget" ]
         |>
@@ -25,7 +26,13 @@ Cell[
         "CellBracket" -> contextMenu[ $askMenuItem, $excludeMenuItem, Delimiter, "CellBracket" ],
         "CellGroup"   -> contextMenu[ $excludeMenuItem, Delimiter, "CellGroup" ],
         "CellRange"   -> contextMenu[ $excludeMenuItem, Delimiter, "CellRange" ]
-    |>
+    |>,
+
+    PrivateCellOptions -> {
+        "AccentStyle" -> {
+            CellTrayWidgets -> <| "ChatIncluded" -> <| "Condition" -> True |> |>
+        }
+    }
 ]
 
 
@@ -145,19 +152,34 @@ Cell[
         Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "EvaluateChatInput", $CellContext`cell ]
     ],
     CellEventActions -> {
+        (* Insert persona prompt input template: *)
         { "KeyDown", "@" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
             Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "PersonaTemplate", $CellContext`cell ]
         ]
         ,
+        (* Insert function prompt input template: *)
         { "KeyDown", "!" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
             Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "FunctionTemplate", $CellContext`cell ]
         ]
         ,
+        (* Insert modifier prompt input template: *)
         { "KeyDown", "#" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
             Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "ModifierTemplate", $CellContext`cell ]
+        ]
+        ,
+        (* Highlight cells that will be included in chat context: *)
+        "MouseEntered" :> With[ { $CellContext`cell = EvaluationCell[ ] },
+            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AccentIncludedCells", $CellContext`cell ]
+        ]
+        ,
+        (* Remove cell highlights: *)
+        "MouseExited" :> With[ { $CellContext`cell = EvaluationCell[ ] },
+            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "RemoveCellAccents", $CellContext`cell ]
         ]
     }
 ]
