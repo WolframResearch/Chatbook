@@ -679,6 +679,13 @@ inlineToolCall[ string_String, as_Association ] := Cell[
     TaggingRules -> KeyDrop[ as, { "Icon", "Result" } ]
 ];
 
+inlineToolCall[ string_String, failed_Failure ] := Cell[
+    BoxData @ ToBoxes @ failed,
+    "FailedToolCall",
+    Background   -> None,
+    TaggingRules -> <| "ToolCall" -> string |>
+];
+
 inlineToolCall // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -731,6 +738,9 @@ parseFullToolCallString[ id_String, string_String ] :=
 
 parseFullToolCallString[ id_, _Missing, string_String ] :=
     parsePartialToolCallString @ string;
+
+parseFullToolCallString[ id_, failed_Failure, string_String ] :=
+    failed;
 
 parseFullToolCallString[ id_String, resp: HoldPattern[ _LLMToolResponse ], string_String ] :=
     parseFullToolCallString[
