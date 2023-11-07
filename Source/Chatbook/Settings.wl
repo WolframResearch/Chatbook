@@ -38,6 +38,7 @@ $defaultChatSettings = <|
     "MaxTokens"                -> Automatic,
     "MergeMessages"            -> True,
     "Model"                    :> $DefaultModel,
+    "Multimodal"               -> False,
     "NotebookWriteMethod"      -> Automatic,
     "OpenAIKey"                -> Automatic, (* TODO: remove this once LLMServices is widely available *)
     "PresencePenalty"          -> 0.1,
