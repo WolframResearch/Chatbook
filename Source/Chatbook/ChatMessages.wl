@@ -9,6 +9,8 @@ BeginPackage[ "Wolfram`Chatbook`ChatMessages`" ];
 Wolfram`Chatbook`CellToChatMessage;
 
 `$chatDataTag;
+`$multimodalMessages;
+`$multimodalContentTag;
 `constructMessages;
 
 Begin[ "`Private`" ];
@@ -29,6 +31,7 @@ Needs[ "Wolfram`Chatbook`Tools`"            ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
+$multimodalMessages   = False;
 $$validMessageResult  = _Association? AssociationQ | _Missing | Nothing;
 $$validMessageResults = $$validMessageResult | { $$validMessageResult ... };
 
@@ -188,12 +191,22 @@ applyPromptTemplate // endDefinition;
 (*makeChatMessages*)
 makeChatMessages // beginDefinition;
 
-makeChatMessages[ settings_, { cells___, cell_ ? promptFunctionCellQ } ] := (
+makeChatMessages[ settings_, cells_ ] :=
+    Block[ { $multimodalMessages = TrueQ @ settings[ "Multimodal" ] },
+        makeChatMessages0[ settings, cells ]
+    ];
+
+makeChatMessages // endDefinition;
+
+
+makeChatMessages0 // beginDefinition;
+
+makeChatMessages0[ settings_, { cells___, cell_ ? promptFunctionCellQ } ] := (
     Sow[ <| "RawOutput" -> True |>, $chatDataTag ];
     makePromptFunctionMessages[ settings, { cells, cell } ]
 );
 
-makeChatMessages[ settings0_, cells_List ] := Enclose[
+makeChatMessages0[ settings0_, cells_List ] := Enclose[
     Module[ { settings, role, message, toMessage, cell, history, messages, merged },
         settings  = ConfirmBy[ <| settings0, "HistoryPosition" -> 0, "Cells" -> cells |>, AssociationQ, "Settings" ];
         role      = makeCurrentRole @ settings;
@@ -214,10 +227,10 @@ makeChatMessages[ settings0_, cells_List ] := Enclose[
         merged   = If[ TrueQ @ Lookup[ settings, "MergeMessages" ], mergeMessageData @ messages, messages ];
         merged
     ],
-    throwInternalFailure[ makeChatMessages[ settings0, cells ], ## ] &
+    throwInternalFailure[ makeChatMessages0[ settings0, cells ], ## ] &
 ];
 
-makeChatMessages // endDefinition;
+makeChatMessages0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -433,7 +446,7 @@ makeCurrentCellMessage[ settings_, { cells___, cell0_ } ] := Enclose[
     Module[ { modifiers, cell, role, content },
         { modifiers, cell } = ConfirmMatch[ extractModifiers @ cell0, { _, _ }, "Modifiers" ];
         role = ConfirmBy[ cellRole @ cell, StringQ, "CellRole" ];
-        content = ConfirmBy[ Block[ { $CurrentCell = True }, CellToString @ cell ], StringQ, "Content" ];
+        content = ConfirmBy[ Block[ { $CurrentCell = True }, makeMessageContent @ cell ], validContentQ, "Content" ];
         Flatten @ {
             expandModifierMessages[ settings, modifiers, { cells }, cell ],
             <| "Role" -> role, "Content" -> content |>
@@ -445,10 +458,55 @@ makeCurrentCellMessage[ settings_, { cells___, cell0_ } ] := Enclose[
 makeCurrentCellMessage // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeMessageContent*)
+makeMessageContent // beginDefinition;
+
+makeMessageContent[ cell_Cell ] /; $multimodalMessages && ! FreeQ[ cell, _GraphicsBox|_Graphics3DBox ] := {
+    <| "type" -> "image_url", "image_url" -> <| "url" -> toDataURI @ cell |> |>,
+    <| "type" -> "text", "text" -> CellToString @ cell |>
+};
+
+makeMessageContent[ cell_Cell ] :=
+    CellToString @ cell;
+
+makeMessageContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*validContentQ*)
+validContentQ[ string_String ] := StringQ @ string;
+validContentQ[ content_List ] := AllTrue[ content, validContentPartQ ];
+validContentQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*validContentPartQ*)
+validContentPartQ[ KeyValuePattern @ { "type" -> "text", "text" -> string_String } ] :=
+    StringQ @ string;
+
+validContentPartQ[ KeyValuePattern @ {
+    "type"      -> "image_url",
+    "image_url" -> KeyValuePattern[ "url" -> url_String ]
+} ] := StringQ @ url;
+
+validContentPartQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toDataURI*)
+toDataURI // beginDefinition;
+
+toDataURI[ image_ ] := toDataURI[ image ] =
+    "data:image/png;base64," <> StringDelete[ ExportString[ Rasterize @ image, { "Base64", "PNG" } ], "\n" ];
+
+toDataURI // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*makeCellMessage*)
 makeCellMessage // beginDefinition;
-makeCellMessage[ cell_Cell ] := <| "Role" -> cellRole @ cell, "Content" -> CellToString @ cell |>;
+makeCellMessage[ cell_Cell ] := <| "Role" -> cellRole @ cell, "Content" -> makeMessageContent @ cell |>;
 makeCellMessage // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -474,7 +532,7 @@ cellRole // endDefinition;
 (* ::Subsection::Closed:: *)
 (*mergeMessageData*)
 mergeMessageData // beginDefinition;
-mergeMessageData[ messages_ ] := mergeMessages /@ SplitBy[ messages, Lookup[ "Role" ] ];
+mergeMessageData[ messages_ ] := Flatten[ mergeMessages /@ SplitBy[ messages, Lookup[ "Role" ] ] ];
 mergeMessageData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -488,10 +546,13 @@ mergeMessages[ messages: { first_Association, __Association } ] :=
     Module[ { role, strings },
         role    = Lookup[ first   , "Role"    ];
         strings = Lookup[ messages, "Content" ];
-        <|
-            "Role"    -> role,
-            "Content" -> StringDelete[ StringRiffle[ strings, "\n\n" ], "```\n\n```" ]
-        |>
+        If[ AllTrue[ strings, StringQ ],
+            <|
+                "Role"    -> role,
+                "Content" -> StringDelete[ StringRiffle[ strings, "\n\n" ], "```\n\n```" ]
+            |>,
+            messages
+        ]
     ];
 
 mergeMessages // endDefinition;

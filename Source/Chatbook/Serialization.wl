@@ -17,10 +17,11 @@ CellToString[cell$] serializes a Cell expression as a string for use in chat.\
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"            ];
-Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
-Needs[ "Wolfram`Chatbook`FrontEnd`"   ];
-Needs[ "Wolfram`Chatbook`Prompting`"  ];
+Needs[ "Wolfram`Chatbook`"              ];
+Needs[ "Wolfram`Chatbook`ErrorUtils`"   ];
+Needs[ "Wolfram`Chatbook`FrontEnd`"     ];
+Needs[ "Wolfram`Chatbook`Prompting`"    ];
+Needs[ "Wolfram`Chatbook`ChatMessages`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -502,11 +503,60 @@ fasterCellToString0[ box: $graphicsHeads[ ___ ] ] :=
     ];
 
 
+(* TODO *)
+(*
+fasterCellToString0[ box: $graphicsHeads[ ___ ] ] :=
+    Which[
+        (* For relatively small graphics expressions, we'll give an InputForm string *)
+        TrueQ[ ByteCount @ box < $maxOutputCellStringLength ],
+        (
+            needsBasePrompt[ "Notebooks" ];
+            truncateString @ makeGraphicsString @ box
+        ),
+
+        (* If in multimodal mode, sow the rasterized box and insert the id: *)
+        TrueQ @ $multimodalMessages,
+        sowRasterizedContent @ box,
+
+        (* Otherwise, give the same thing you'd get in a standalone kernel*)
+        True,
+        (
+            needsBasePrompt[ "ConversionGraphics" ];
+            truncateString[
+                "\\!\\(\\*" <> StringReplace[ inputFormString @ box, $graphicsBoxStringReplacements ] <> "\\)"
+            ]
+        )
+    ];
+*)
+
+
 $graphicsBoxStringReplacements = {
     a: DigitCharacter ~~ "." ~~ b: Repeated[ DigitCharacter, { 4, Infinity } ] :> a <> "." <> StringTake[ b, 3 ],
     "\"$$DATA$$\"" -> "...",
     "$$DATA$$" -> "..."
 };
+
+
+
+sowRasterizedContent // beginDefinition;
+
+sowRasterizedContent[ graphics_ ] := Enclose[
+    Module[ { img, rasterID, head },
+        img      = ConfirmBy[ rasterizeGraphics @ graphics, ImageQ, "RasterizeGraphics" ];
+        rasterID = ConfirmBy[ Hash[ graphics, Automatic, "HexString" ], StringQ, "RasterID" ];
+        head = ToString @ Head @ graphics;
+        Sow[ rasterID -> img, $multimodalContentTag ];
+        "\\!\\(\\*"<>head<>"[<<"<>rasterID<>">>]\\)"
+    ],
+    throwInternalFailure[ sowRasterizedContent @ graphics, ## ] &
+];
+
+sowRasterizedContent // endDefinition;
+
+
+rasterizeGraphics // beginDefinition;
+rasterizeGraphics[ gfx: $graphicsHeads[ ___ ] ] := rasterizeGraphics[ gfx ] = Rasterize @ RawBoxes @ gfx;
+rasterizeGraphics // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
