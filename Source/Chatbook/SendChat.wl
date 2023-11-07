@@ -2,6 +2,8 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`SendChat`" ];
 
+(* cSpell: ignore evaliator *)
+
 (* :!CodeAnalysis::BeginBlock:: *)
 
 `$debugLog;
@@ -649,11 +651,22 @@ appendStringContent // Attributes = { HoldFirst };
 
 appendStringContent[ container_, text_String ] :=
     If[ StringQ @ container,
-        container = StringDelete[ container <> convertUTF8 @ text, StartOfString~~Whitespace ],
-        container = convertUTF8 @ text
+        container = autoCorrect @ StringDelete[ container <> convertUTF8 @ text, StartOfString~~Whitespace ],
+        container = autoCorrect @ convertUTF8 @ text
     ];
 
 appendStringContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*autoCorrect*)
+autoCorrect // beginDefinition;
+autoCorrect[ string_String ] := StringReplace[ string, $dumbLLMAutoCorrectRules ];
+autoCorrect // endDefinition;
+
+$dumbLLMAutoCorrectRules = {
+    "wolfram_language_evaliator" -> "wolfram_language_evaluator"
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
