@@ -36,6 +36,7 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                  ];
+Needs[ "Wolfram`Chatbook`ChatHistory`"      ];
 Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`Dynamics`"         ];
 Needs[ "Wolfram`Chatbook`Explode`"          ];
@@ -88,6 +89,7 @@ ChatCellEvaluate[ args___ ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*ChatbookAction*)
+ChatbookAction[ "AccentIncludedCells"  , args___ ] := catchMine @ accentIncludedCells @ args;
 ChatbookAction[ "AIAutoAssist"         , args___ ] := catchMine @ AIAutoAssist @ args;
 ChatbookAction[ "Ask"                  , args___ ] := catchMine @ AskChat @ args;
 ChatbookAction[ "AttachCodeButtons"    , args___ ] := catchMine @ AttachCodeButtons @ args;
@@ -102,13 +104,14 @@ ChatbookAction[ "InsertInlineReference", args___ ] := catchMine @ InsertInlineRe
 ChatbookAction[ "OpenChatBlockSettings", args___ ] := catchMine @ OpenChatBlockSettings @ args;
 ChatbookAction[ "OpenChatMenu"         , args___ ] := catchMine @ OpenChatMenu @ args;
 ChatbookAction[ "PersonaManage"        , args___ ] := catchMine @ PersonaManage @ args;
-ChatbookAction[ "ToolManage"           , args___ ] := catchMine @ ToolManage @ args;
+ChatbookAction[ "RemoveCellAccents"    , args___ ] := catchMine @ removeCellAccents @ args;
 ChatbookAction[ "Send"                 , args___ ] := catchMine @ SendChat @ args;
 ChatbookAction[ "SendFeedback"         , args___ ] := catchMine @ SendFeedback @ args;
 ChatbookAction[ "StopChat"             , args___ ] := catchMine @ StopChat @ args;
 ChatbookAction[ "TabLeft"              , args___ ] := catchMine @ TabLeft @ args;
 ChatbookAction[ "TabRight"             , args___ ] := catchMine @ TabRight @ args;
 ChatbookAction[ "ToggleFormatting"     , args___ ] := catchMine @ ToggleFormatting @ args;
+ChatbookAction[ "ToolManage"           , args___ ] := catchMine @ ToolManage @ args;
 ChatbookAction[ "WidgetSend"           , args___ ] := catchMine @ WidgetSend @ args;
 ChatbookAction[ name_String            , args___ ] := catchMine @ throwFailure[ "NotImplemented", name, args ];
 ChatbookAction[ args___                          ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
