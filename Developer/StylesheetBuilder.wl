@@ -85,6 +85,17 @@ Developer`WriteWXFFile[ $iconManifestFile, AssociationMap[ RawBoxes @ TemplateBo
 
 
 (* ::Subsection::Closed:: *)
+(*$includedCellWidget*)
+
+
+$includedCellWidget = Cell[
+    BoxData @ ToBoxes @ Dynamic[ $IncludedCellWidget, SingleEvaluation -> True ],
+    "ChatIncluded"
+];
+
+
+
+(* ::Subsection::Closed:: *)
 (*makeIconTemplateBoxStyle*)
 
 

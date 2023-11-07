@@ -7,6 +7,7 @@ BeginPackage[ "Wolfram`Chatbook`Settings`" ];
 HoldComplete[
     `$defaultChatSettings;
     `currentChatSettings;
+    `getPrecedingDelimiter;
 ];
 
 Begin[ "`Private`" ];
