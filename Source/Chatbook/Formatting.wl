@@ -606,7 +606,9 @@ $textDataFormatRules = {
     "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`" /; inlineSyntaxQ @ code :> inlineCodeCell @ code,
     "`" ~~ code: Except[ "`"|"\n" ].. ~~ "`" :> inlineCodeCell @ code,
     "$$" ~~ math: Except[ "$" ].. ~~ "$$" :> mathCell @ math,
-    "$" ~~ math: Except[ "$" ].. ~~ "$" /; StringFreeQ[ math, "\n" ] :> mathCell @ math
+    "\\(" ~~ math__ ~~ "\\)" /; StringFreeQ[ math, "\\(" ] :> mathCell @ math,
+    "\\[" ~~ math__ ~~ "\\]" /; StringFreeQ[ math, "\\[" ] :> mathCell @ math,
+    "$" ~~ math: Except[ "$" ].. ~~ "$" :> mathCell @ math
 };
 
 (* ::**************************************************************************************************************:: *)
