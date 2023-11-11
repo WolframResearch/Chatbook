@@ -11,17 +11,23 @@ CellToString[cell$] serializes a Cell expression as a string for use in chat.\
 
 `$CellToStringDebug;
 `$CurrentCell;
+`$defaultMaxCellStringLength;
+`$defaultMaxOutputCellStringLength;
 `documentationSearchAPI;
 `escapeMarkdownString;
-`$maxOutputCellStringLength;
+`truncateString;
 
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"              ];
+Needs[ "Wolfram`Chatbook`ChatMessages`" ];
+Needs[ "Wolfram`Chatbook`Common`"       ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`"   ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"     ];
+Needs[ "Wolfram`Chatbook`Models`"       ];
 Needs[ "Wolfram`Chatbook`Prompting`"    ];
-Needs[ "Wolfram`Chatbook`ChatMessages`" ];
+Needs[ "Wolfram`Chatbook`Tools`"        ];
+Needs[ "Wolfram`Chatbook`Utils`"        ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -40,13 +46,23 @@ $$outputStyle      = "Output"|"Print"|"Echo";
 $cellCharacterEncoding = "Unicode";
 
 (* Set a max string length for output cells to avoid blowing up token counts *)
-$maxOutputCellStringLength = 500;
+$maxOutputCellStringLength        = Automatic;
+$defaultMaxOutputCellStringLength = 500;
 
 (* Set an overall max string length for any type of cell *)
-$maxCellStringLength = 5000;
+$maxCellStringLength        = Automatic;
+$defaultMaxCellStringLength = 10000;
 
 (* Set a page width for expressions that need to be serialized as InputForm *)
 $cellPageWidth = 100;
+$defaultCellPageWidth = $cellPageWidth;
+
+(* Window width to use when converting cells to multimodal images (Automatic means derive from $cellPageWidth):  *)
+$windowWidth        = Automatic;
+$defaultWindowWidth = 625;
+
+(* Maximum number of images to include in multimodal messages per cell before switching to a fully rasterized cell: *)
+$maxMarkdownBoxes = 5;
 
 (* Whether to collect data that can help discover missing definitions *)
 $CellToStringDebug = False;
@@ -90,6 +106,8 @@ $graphicsHeads = Alternatives[
     NamespaceBox,
     Graphics3DBox
 ];
+
+$$graphicsBox = $graphicsHeads[ ___ ] | TemplateBox[ _, "Legended", ___ ];
 
 (* Serialize the first argument of these and ignore the rest *)
 $stringStripHeads = Alternatives[
@@ -174,10 +192,13 @@ WOLFRAM_ALPHA_PARSED_INPUT: %%Code%%
 CellToString // SetFallthroughError;
 
 CellToString // Options = {
-    CharacterEncoding        -> $cellCharacterEncoding,
+    "CharacterEncoding"         -> $cellCharacterEncoding,
     "CharacterNormalization" -> "NFKC", (* FIXME: do this *)
     "Debug"                  :> $CellToStringDebug,
-    PageWidth                -> $cellPageWidth
+    "MaxCellStringLength"       -> $maxCellStringLength,
+    "MaxOutputCellStringLength" -> $maxOutputCellStringLength,
+    "PageWidth"                 -> $cellPageWidth,
+    "WindowWidth"               -> $windowWidth
 };
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -187,9 +208,22 @@ CellToString[ cell_, opts: OptionsPattern[ ] ] :=
         {
             $cellCharacterEncoding = OptionValue[ "CharacterEncoding" ],
             $CellToStringDebug     = TrueQ @ OptionValue[ "Debug" ],
-            $cellPageWidth         = OptionValue[ "PageWidth" ]
+            $cellPageWidth, $windowWidth, $maxCellStringLength, $maxOutputCellStringLength
         },
-        $fasterCellToStringFailBag = Internal`Bag[ ];
+        $cellPageWidth = toSize[ OptionValue @ PageWidth, $defaultCellPageWidth ];
+        $windowWidth = toWindowWidth[ OptionValue @ WindowWidth, $cellPageWidth ];
+
+        $maxCellStringLength = Ceiling @ toSize[
+            OptionValue[ "MaxCellStringLength" ],
+            $defaultMaxCellStringLength
+        ];
+
+        $maxOutputCellStringLength = Ceiling @ toSize[
+            OptionValue[ "MaxOutputCellStringLength" ],
+            $defaultMaxOutputCellStringLength
+        ];
+
+        If[ $CellToStringDebug, $fasterCellToStringFailBag = Internal`Bag[ ] ];
         If[ ! StringQ @ $cellCharacterEncoding, $cellCharacterEncoding = "UTF-8" ];
         WithCleanup[
             Replace[
@@ -207,8 +241,23 @@ CellToString[ cell_, opts: OptionsPattern[ ] ] :=
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*toSize*)
+toSize // beginDefinition;
+toSize[ size: $$size, default_ ] := size;
+toSize[ size_, default: $$size ] := default;
+toSize // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toWindowWidth*)
+toWindowWidth[ width: $$size, pageWidth_ ] := width;
+toWindowWidth[ width_, pageWidth: $$size ] := 6.25 * pageWidth;
+toWindowWidth[ ___ ] := $defaultWindowWidth;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*cellToString*)
-cellToString // SetFallthroughError;
+cellToString // beginDefinition;
 
 (* Argument normalization *)
 cellToString[ data: _TextData|_BoxData|_RawData ] := cellToString @ Cell @ data;
@@ -312,6 +361,8 @@ cellToString[ cell: Cell[ _String, "ChatOutput", ___ ] ] := Block[ { $escapeMark
 cellToString[ cell: Cell[ _TextData|_String, ___ ] ] := Block[ { $escapeMarkdown = True }, cellToString0 @ cell ];
 cellToString[ cell_ ] := Block[ { $escapeMarkdown = False }, cellToString0 @ cell ];
 
+cellToString // endDefinition;
+
 (* Recursive serialization of the cell content *)
 cellToString0[ cell0_ ] :=
     With[
@@ -347,10 +398,10 @@ fasterCellToString[ arg_ ] :=
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
-(*Ignored/Skipped*)
-
-fasterCellToString0[ $ignoredBoxPatterns ] := "";
-fasterCellToString0[ $stringStripHeads[ a_, ___ ] ] := fasterCellToString0 @ a;
+(*Multimodal Cell Images*)
+fasterCellToString0[ cell: Cell[ _BoxData, ___ ] ] /;
+    $multimodalMessages && Count[ cell, $$graphicsBox, Infinity ] > $maxMarkdownBoxes :=
+        toMarkdownImageBox @ cell;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -482,7 +533,7 @@ fasterCellToString0[ NamespaceBox[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Graphics*)
-fasterCellToString0[ box: GraphicsBox[ TagBox[ RasterBox[ _, r___ ], t___ ], g___ ] ] :=
+fasterCellToString0[ box: GraphicsBox[ TagBox[ RasterBox[ _, r___ ], t___ ], g___ ] ] /; ! TrueQ @ $multimodalMessages :=
     StringJoin[
         "\\!\\(\\*",
         StringReplace[
@@ -492,31 +543,18 @@ fasterCellToString0[ box: GraphicsBox[ TagBox[ RasterBox[ _, r___ ], t___ ], g__
         "\\)"
     ];
 
-fasterCellToString0[ box: $graphicsHeads[ ___ ] ] :=
-    If[ TrueQ[ ByteCount @ box < $maxOutputCellStringLength ],
-        (* For relatively small graphics expressions, we'll give an InputForm string *)
-        needsBasePrompt[ "Notebooks" ];
-        truncateString @ makeGraphicsString @ box,
-        (* Otherwise, give the same thing you'd get in a standalone kernel*)
-        needsBasePrompt[ "ConversionGraphics" ];
-        truncateString[ "\\!\\(\\*" <> StringReplace[ inputFormString @ box, $graphicsBoxStringReplacements ] <> "\\)" ]
-    ];
-
-
-(* TODO *)
-(*
-fasterCellToString0[ box: $graphicsHeads[ ___ ] ] :=
+fasterCellToString0[ box: $$graphicsBox ] :=
     Which[
+        (* If in multimodal mode, sow the rasterized box and insert the id: *)
+        TrueQ @ $multimodalMessages,
+        toMarkdownImageBox @ box,
+
         (* For relatively small graphics expressions, we'll give an InputForm string *)
         TrueQ[ ByteCount @ box < $maxOutputCellStringLength ],
         (
             needsBasePrompt[ "Notebooks" ];
             truncateString @ makeGraphicsString @ box
         ),
-
-        (* If in multimodal mode, sow the rasterized box and insert the id: *)
-        TrueQ @ $multimodalMessages,
-        sowRasterizedContent @ box,
 
         (* Otherwise, give the same thing you'd get in a standalone kernel*)
         True,
@@ -527,7 +565,7 @@ fasterCellToString0[ box: $graphicsHeads[ ___ ] ] :=
             ]
         )
     ];
-*)
+
 
 
 $graphicsBoxStringReplacements = {
@@ -536,26 +574,33 @@ $graphicsBoxStringReplacements = {
     "$$DATA$$" -> "..."
 };
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*toMarkdownImageBox*)
+toMarkdownImageBox // beginDefinition;
 
-
-sowRasterizedContent // beginDefinition;
-
-sowRasterizedContent[ graphics_ ] := Enclose[
-    Module[ { img, rasterID, head },
+toMarkdownImageBox[ graphics_ ] := Enclose[
+    Module[ { img, uri },
         img      = ConfirmBy[ rasterizeGraphics @ graphics, ImageQ, "RasterizeGraphics" ];
-        rasterID = ConfirmBy[ Hash[ graphics, Automatic, "HexString" ], StringQ, "RasterID" ];
-        head = ToString @ Head @ graphics;
-        Sow[ rasterID -> img, $multimodalContentTag ];
-        "\\!\\(\\*"<>head<>"[<<"<>rasterID<>">>]\\)"
+        uri    = ConfirmBy[ MakeExpressionURI[ "image", img ], StringQ, "RasterID" ];
+        needsBasePrompt[ "MarkdownImageBox" ];
+        "\\!\\(\\*MarkdownImageBox[\"" <> uri <> "\"]\\)"
     ],
-    throwInternalFailure[ sowRasterizedContent @ graphics, ## ] &
+    throwInternalFailure[ toMarkdownImageBox @ graphics, ## ] &
 ];
 
-sowRasterizedContent // endDefinition;
+toMarkdownImageBox // endDefinition;
 
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*rasterizeGraphics*)
 rasterizeGraphics // beginDefinition;
-rasterizeGraphics[ gfx: $graphicsHeads[ ___ ] ] := rasterizeGraphics[ gfx ] = Rasterize @ RawBoxes @ gfx;
+rasterizeGraphics[ gfx: $$graphicsBox ] := rasterizeGraphics[ gfx ] = Rasterize @ RawBoxes @ gfx;
+rasterizeGraphics[ cell_Cell ] := rasterizeGraphics[ cell, 6.25*$cellPageWidth ];
+
+rasterizeGraphics[ cell_Cell, width_Real ] := rasterizeGraphics[ cell, width ] =
+    Rasterize @ Append[ cell, PageWidth -> width ];
+
 rasterizeGraphics // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -990,14 +1035,13 @@ escapeMarkdownCharactersQ[ ___ ] := True;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*truncateString*)
-truncateString // SetFallthroughError;
+truncateString // beginDefinition;
 truncateString[ str_String ] := truncateString[ str, $maxOutputCellStringLength ];
-truncateString[ str_String, max_Integer ] := truncateString[ str, Ceiling[ max / 2 ], Floor[ max / 2 ] ];
-truncateString[ str_String, l_Integer, r_Integer ] /; StringLength @ str <= l + r + 5 := str;
-truncateString[ str_String, l_Integer, r_Integer ] := StringTake[ str, l ] <> " ... " <> StringTake[ str, -r ];
+truncateString[ str_String, Automatic ] := truncateString[ str, $defaultMaxOutputCellStringLength ];
+truncateString[ str_String, max: $$size ] := stringTrimMiddle[ str, max ];
 truncateString[ other_ ] := other;
 truncateString[ other_, _Integer ] := other;
-truncateString[ other_, _Integer, _Integer ] := other;
+truncateString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1332,5 +1376,9 @@ firstMatchingCellGroup[ nb_, patt_, "Content" ] := Catch[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
+If[ Wolfram`ChatbookInternal`$BuildingMX,
+    Null;
+];
+
 End[ ];
 EndPackage[ ];

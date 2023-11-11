@@ -9,6 +9,7 @@ BeginPackage[ "Wolfram`Chatbook`Models`" ];
 `chatModelQ;
 `getModelList;
 `modelDisplayName;
+`multimodalModelQ;
 `snapshotModelQ;
 `standardizeModelData;
 `toModelName;
@@ -138,6 +139,9 @@ modelName // endDefinition;
 (*toModelName*)
 toModelName // beginDefinition;
 
+toModelName[ KeyValuePattern @ { "Service" -> service_, "Model" -> model_ } ] :=
+    toModelName @ { service, model };
+
 toModelName[ { service_String, name_String } ] := toModelName @ name;
 
 toModelName[ name_String? StringQ ] := toModelName[ name ] =
@@ -163,16 +167,34 @@ toModelName0 // endDefinition;
 (* ::Subsection::Closed:: *)
 (*snapshotModelQ*)
 snapshotModelQ // beginDefinition;
-snapshotModelQ[ name_String? fineTunedModelQ ] := snapshotModelQ @ StringSplit[ name, ":" ][[ 2 ]];
-snapshotModelQ[ name_String ] := StringMatchQ[ name, "gpt-"~~__~~"-"~~Repeated[ DigitCharacter, { 4 } ] ];
+
+snapshotModelQ[ name_String? fineTunedModelQ ] := snapshotModelQ[ name ] =
+    snapshotModelQ @ StringSplit[ name, ":" ][[ 2 ]];
+
+snapshotModelQ[ name_String? StringQ ] := snapshotModelQ[ name ] =
+    StringMatchQ[ toModelName @ name, "gpt-"~~__~~"-"~~Repeated[ DigitCharacter, { 4 } ]~~(""|"-preview") ];
+
+snapshotModelQ[ other_ ] :=
+    With[ { name = toModelName @ other }, snapshotModelQ @ name /; StringQ @ name ];
+
 snapshotModelQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*fineTunedModelQ*)
 fineTunedModelQ // beginDefinition;
-fineTunedModelQ[ name_String ] := StringMatchQ[ name, "ft:"~~__~~":"~~__ ];
+fineTunedModelQ[ name_String ] := StringMatchQ[ toModelName @ name, "ft:"~~__~~":"~~__ ];
+fineTunedModelQ[ other_ ] := With[ { name = toModelName @ other }, fineTunedModelQ @ name /; StringQ @ name ];
 fineTunedModelQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*multimodalModelQ*)
+(* FIXME: this should be a queryable property from LLMServices: *)
+multimodalModelQ // beginDefinition;
+multimodalModelQ[ name_String? StringQ ] := StringContainsQ[ toModelName @ name, "gpt-"~~$$modelVersion~~"-vision" ];
+multimodalModelQ[ other_ ] := With[ { name = toModelName @ other }, multimodalModelQ @ name /; StringQ @ name ];
+multimodalModelQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -199,6 +221,9 @@ modelDisplayName[ { "gpt", rest___ } ] :=
 
 modelDisplayName[ { before__, date_String } ] /; StringMatchQ[ date, Repeated[ DigitCharacter, { 4 } ] ] :=
     modelDisplayName @ { before, DateObject @ Flatten @ { 0, ToExpression @ StringPartition[ date, 2 ] } };
+
+modelDisplayName[ { before__, "preview" } ] :=
+    modelDisplayName @ { before } <> " (Preview)";
 
 modelDisplayName[ { before___, date_DateObject } ] :=
     modelDisplayName @ {

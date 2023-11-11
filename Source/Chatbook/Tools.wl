@@ -828,7 +828,7 @@ documentationBasicExamples // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*cellToString*)
-cellToString[ args___ ] := Block[ { $maxOutputCellStringLength = 100 }, CellToString @ args ];
+cellToString[ args___ ] := CellToString[ args, "MaxCellStringLength" -> 100 ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1489,31 +1489,40 @@ MakeExpressionURI[ args: Repeated[ _, { 1, 3 } ] ] := makeExpressionURI @ args;
 (* ::Subsection::Closed:: *)
 (*GetExpressionURIs*)
 GetExpressionURIs // ClearAll;
+GetExpressionURIs // Options = { Tooltip -> Automatic };
 
-GetExpressionURIs[ str_ ] := GetExpressionURIs[ str, ## & ];
+GetExpressionURIs[ str_, opts: OptionsPattern[ ] ] :=
+    GetExpressionURIs[ str, ## &, opts ];
 
-GetExpressionURIs[ str_String, wrapper_ ] := catchMine @ StringSplit[
-    str,
-    link: Shortest[ "![" ~~ __ ~~ "](" ~~ __ ~~ ")" ] :> catchAlways @ GetExpressionURI[ link, wrapper ]
-];
+GetExpressionURIs[ str_String, wrapper_, opts: OptionsPattern[ ] ] :=
+    catchMine @ Block[ { $uriTooltip = OptionValue @ Tooltip },
+        StringSplit[
+            str,
+            link: Shortest[ "![" ~~ __ ~~ "](" ~~ __ ~~ ")" ] :> catchAlways @ GetExpressionURI[ link, wrapper ]
+        ]
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*GetExpressionURI*)
 GetExpressionURI // ClearAll;
+GetExpressionURI // Options = { Tooltip -> Automatic };
 
-GetExpressionURI[ uri_ ] := catchMine @ GetExpressionURI[ uri, ## & ];
-GetExpressionURI[ URL[ uri_ ], wrapper_ ] := catchMine @ GetExpressionURI[ uri, wrapper ];
+GetExpressionURI[ uri_, opts: OptionsPattern[ ] ] :=
+    catchMine @ GetExpressionURI[ uri, ## &, opts ];
 
-GetExpressionURI[ uri_String, wrapper_ ] := catchMine @ Enclose[
+GetExpressionURI[ URL[ uri_ ], wrapper_, opts: OptionsPattern[ ] ] :=
+    catchMine @ GetExpressionURI[ uri, wrapper, opts ];
+
+GetExpressionURI[ uri_String, wrapper_, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
     Module[ { held },
-        held = ConfirmMatch[ getExpressionURI @ uri, _HoldComplete, "GetExpressionURI" ];
+        held = ConfirmMatch[ getExpressionURI[ uri, OptionValue[ Tooltip ] ], _HoldComplete, "GetExpressionURI" ];
         wrapper @@ held
     ],
     throwInternalFailure[ GetExpressionURI[ uri, wrapper ], ## ] &
 ];
 
-GetExpressionURI[ All, wrapper_ ] := catchMine @ Enclose[
+GetExpressionURI[ All, wrapper_, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
     Module[ { attachments },
         attachments = ConfirmBy[ $attachments, AssociationQ, "Attachments" ];
         ConfirmAssert[ AllTrue[ attachments, MatchQ[ _HoldComplete ] ], "HeldAttachments" ];
@@ -1524,26 +1533,31 @@ GetExpressionURI[ All, wrapper_ ] := catchMine @ Enclose[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*getExpressionURI*)
+(*getExpressionURI0*)
 getExpressionURI // beginDefinition;
+getExpressionURI[ uri_, tooltip_ ] := Block[ { $tooltip = tooltip }, getExpressionURI0 @ uri ];
+getExpressionURI // endDefinition;
 
-getExpressionURI[ str_String ] :=
+
+getExpressionURI0 // beginDefinition;
+
+getExpressionURI0[ str_String ] :=
     Module[ { split },
         split = First[ StringSplit[ str, "![" ~~ alt__ ~~ "](" ~~ url__ ~~ ")" :> { alt, url } ], $Failed ];
-        getExpressionURI @@ split /; MatchQ[ split, { _String, _String } ]
+        getExpressionURI0 @@ split /; MatchQ[ split, { _String, _String } ]
     ];
 
-getExpressionURI[ uri_String ] := getExpressionURI[ None, uri ];
+getExpressionURI0[ uri_String ] := getExpressionURI0[ None, uri ];
 
-getExpressionURI[ tooltip_, uri_String ] := getExpressionURI[ tooltip, uri, URLParse @ uri ];
+getExpressionURI0[ tooltip_, uri_String ] := getExpressionURI0[ tooltip, uri, URLParse @ uri ];
 
-getExpressionURI[ tooltip_, uri_, as: KeyValuePattern @ { "Scheme" -> $$expressionScheme, "Domain" -> key_ } ] :=
+getExpressionURI0[ tooltip_, uri_, as: KeyValuePattern @ { "Scheme" -> $$expressionScheme, "Domain" -> key_ } ] :=
     Enclose[
         ConfirmMatch[ displayAttachment[ uri, tooltip, key ], _HoldComplete, "DisplayAttachment" ],
-        throwInternalFailure[ getExpressionURI[ tooltip, uri, as ], ## ] &
+        throwInternalFailure[ getExpressionURI0[ tooltip, uri, as ], ## ] &
     ];
 
-getExpressionURI // endDefinition;
+getExpressionURI0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1556,7 +1570,11 @@ displayAttachment[ uri_, None, key_ ] :=
 displayAttachment[ uri_, tooltip_String, key_ ] := Enclose[
     Replace[
         ConfirmMatch[ getAttachment[ uri, key ], _HoldComplete, "GetAttachment" ],
-        HoldComplete[ expr_ ] :> HoldComplete @ Tooltip[ expr, tooltip ]
+        HoldComplete[ expr_ ] :>
+            If[ TrueQ @ $tooltip,
+                HoldComplete @ Tooltip[ expr, tooltip ],
+                HoldComplete @ expr
+            ]
     ],
     throwInternalFailure[ displayAttachment[ uri, tooltip, key ], ## ] &
 ];
@@ -1577,6 +1595,8 @@ getAttachment // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeToolResponseString*)
 makeToolResponseString // beginDefinition;
+
+makeToolResponseString[ failure_Failure ] := makeFailureString @ failure;
 
 makeToolResponseString[ expr_? simpleResultQ ] :=
     With[ { string = fixLineEndings @ TextString @ expr },

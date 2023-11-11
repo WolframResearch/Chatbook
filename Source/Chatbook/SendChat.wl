@@ -26,6 +26,7 @@ Needs[ "Wolfram`Chatbook`Handlers`"         ];
 Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 Needs[ "Wolfram`Chatbook`Models`"           ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
+Needs[ "Wolfram`Chatbook`Serialization`"    ];
 Needs[ "Wolfram`Chatbook`Services`"         ];
 Needs[ "Wolfram`Chatbook`Settings`"         ];
 Needs[ "Wolfram`Chatbook`Tools`"            ];
@@ -308,12 +309,12 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association }
         stream      = True;
 
         (* model parameters *)
-        model       = Lookup[ settings, "Model"           , "gpt-3.5-turbo" ];
-        tokens      = Lookup[ settings, "MaxTokens"       , Automatic       ];
-        temperature = Lookup[ settings, "Temperature"     , 0.7             ];
-        topP        = Lookup[ settings, "TopP"            , 1               ];
-        freqPenalty = Lookup[ settings, "FrequencyPenalty", 0.1             ];
-        presPenalty = Lookup[ settings, "PresencePenalty" , 0.1             ];
+        model       = Lookup[ settings, "Model"           , $DefaultModel ];
+        tokens      = Lookup[ settings, "MaxTokens"       , Automatic     ];
+        temperature = Lookup[ settings, "Temperature"     , 0.7           ];
+        topP        = Lookup[ settings, "TopP"            , 1             ];
+        freqPenalty = Lookup[ settings, "FrequencyPenalty", 0.1           ];
+        presPenalty = Lookup[ settings, "PresencePenalty" , 0.1           ];
 
         data = DeleteCases[
             <|
@@ -332,6 +333,7 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association }
 
         body = ConfirmBy[ Developer`WriteRawJSONString[ data, "Compact" -> True ], StringQ ];
 
+        $lastHTTPParameters = data;
         $lastRequest = HTTPRequest[
             "https://api.openai.com/v1/chat/completions",
             <|
@@ -351,19 +353,128 @@ makeHTTPRequest // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*prepareMessagesForHTTPRequest*)
 prepareMessagesForHTTPRequest // beginDefinition;
-prepareMessagesForHTTPRequest[ message_Association ] := prepareMessagesForHTTPRequest0 @ KeyMap[ ToLowerCase, message ];
-prepareMessagesForHTTPRequest[ messages_List ] := prepareMessagesForHTTPRequest /@ messages;
+prepareMessagesForHTTPRequest[ messages_List ] := $lastHTTPMessages = prepareMessageForHTTPRequest /@ messages;
 prepareMessagesForHTTPRequest // endDefinition;
 
-prepareMessagesForHTTPRequest0 // beginDefinition;
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*prepareMessageForHTTPRequest*)
+prepareMessageForHTTPRequest // beginDefinition;
+prepareMessageForHTTPRequest[ message_Association? AssociationQ ] := AssociationMap[ prepareMessageRule, message ];
+prepareMessageForHTTPRequest // endDefinition;
 
-prepareMessagesForHTTPRequest0[ message: KeyValuePattern[ "role" -> role_String ] ] :=
-    Insert[ message, "role" -> ToLowerCase @ role, Key[ "role" ] ];
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*prepareMessageRule*)
+prepareMessageRule // beginDefinition;
+prepareMessageRule[ "Role"|"role"       -> role_String ] := "role"    -> ToLowerCase @ role;
+prepareMessageRule[ "Content"|"content" -> content_    ] := "content" -> prepareMessageContent @ content;
+prepareMessageRule[ key_String          -> value_      ] := ToLowerCase @ key -> value;
+prepareMessageRule // endDefinition;
 
-prepareMessagesForHTTPRequest0[ message_Association ] :=
-    message;
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*prepareMessageContent*)
+prepareMessageContent // beginDefinition;
+prepareMessageContent[ content_String ] := content;
+prepareMessageContent[ content_List   ] := prepareMessagePart /@ content;
+prepareMessageContent // endDefinition;
 
-prepareMessagesForHTTPRequest0 // endDefinition;
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*prepareMessagePart*)
+prepareMessagePart // beginDefinition;
+prepareMessagePart[ text_String         ] := prepareMessagePart @ <| "Type" -> "Text" , "Data" -> text  |>;
+prepareMessagePart[ image_? graphicsQ   ] := prepareMessagePart @ <| "Type" -> "Image", "Data" -> image |>;
+prepareMessagePart[ file_File           ] := prepareMessagePart @ <| "Type" -> partType @ file, "Data" -> file |>;
+prepareMessagePart[ url_URL             ] := prepareMessagePart @ <| "Type" -> partType @ url , "Data" -> url  |>;
+prepareMessagePart[ part_? AssociationQ ] := prepareMessagePart0 @ KeyMap[ ToLowerCase, part ];
+prepareMessagePart // endDefinition;
+
+prepareMessagePart0 // beginDefinition;
+
+prepareMessagePart0[ part_Association ] := <|
+    KeyDrop[ part, "data" ],
+    prepareMessagePart0[ part[ "type" ], part[ "data" ] ]
+|>;
+
+prepareMessagePart0[ "Text" , text_   ] := <| "type" -> "text"     , "text"      -> prepareTextPart @ text    |>;
+prepareMessagePart0[ "Image", img_    ] := <| "type" -> "image_url", "image_url" -> prepareImageURLPart @ img |>;
+prepareMessagePart0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*prepareImageURLPart*)
+prepareImageURLPart // beginDefinition;
+prepareImageURLPart[ URL[ url_String ] ] := <| "url" -> url |>;
+prepareImageURLPart[ file_File ] := With[ { img = importImage @ file }, prepareImageURLPart @ img /; graphicsQ @ img ];
+prepareImageURLPart[ image_ ] := prepareImageURLPart @ URL @ toDataURI @ image;
+prepareImageURLPart // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*importImage*)
+importImage // beginDefinition;
+importImage[ file_File ] := importImage[ file, fastFileHash @ file ];
+importImage[ file_, hash_Integer ] := With[ { img = $importImageCache[ file, hash ] }, img /; image2DQ @ img ];
+importImage[ file_, hash_Integer ] := $importImageCache[ file ] = <| hash -> importImage0 @ file |>;
+importImage // endDefinition;
+
+$importImageCache = <| |>;
+
+importImage0 // beginDefinition;
+importImage0[ file_ ] := importImage0[ file, Import[ file, "Image" ] ];
+importImage0[ file_, img_? graphicsQ ] := img;
+importImage0 // endDefinition;
+
+(* TODO: if an "ExternalFile" type of chat cell is defined, this should throw appropriate error text here *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*prepareTextPart*)
+prepareTextPart // beginDefinition;
+prepareTextPart[ text_String? StringQ   ] := text;
+prepareTextPart[ file_File? FileExistsQ ] := prepareTextPart @ readString @ file;
+prepareTextPart[ url_URL                ] := prepareTextPart @ URLRead[ url, "Body" ];
+prepareTextPart[ failure_Failure        ] := makeFailureString @ failure;
+prepareTextPart // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*partType*)
+partType // beginDefinition;
+partType[ url_URL   ] := "Image"; (* this could determine type automatically, but it would likely be too slow *)
+partType[ file_File ] := partType[ file, fastFileHash @ file ];
+partType[ file_, hash_Integer ] := With[ { type = $partTypeCache[ file, hash ] }, type /; StringQ @ type ];
+partType[ file_, hash_Integer ] := With[ { t = partType0 @ file }, $partTypeCache[ file ] = <| hash -> t |>; t ];
+partType // endDefinition;
+
+$partTypeCache = <| |>;
+
+partType0 // beginDefinition;
+partType0[ file_ ] := partType0[ file, FileFormat @ file ];
+partType0[ file_, fmt_String ] := partType0[ file, fmt, FileFormatProperties[ fmt, "ImportElements" ] ];
+partType0[ file_, fmt_, { ___, "Image", ___ } ] := "Image";
+partType0[ file_, fmt_, _List ] := "Text";
+partType0 // endDefinition;
+
+(* TODO: if an "ExternalFile" type of chat cell is defined, this should throw appropriate error text here *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toDataURI*)
+toDataURI // beginDefinition;
+
+toDataURI[ image_ ] := Enclose[
+    Module[ { resized, base64 },
+        resized = ConfirmBy[ resizeMultimodalImage @ image, image2DQ, "Resized" ];
+        base64 = ConfirmBy[ ExportString[ resized, { "Base64", "PNG" } ], StringQ, "Base64" ];
+        toDataURI[ image ] = "data:image/png;base64," <> StringDelete[ base64, "\n" ]
+    ],
+    throwInternalFailure[ toDataURI @ image, ## ] &
+];
+
+toDataURI // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -661,11 +772,12 @@ appendStringContent // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*autoCorrect*)
 autoCorrect // beginDefinition;
-autoCorrect[ string_String ] := StringReplace[ string, $dumbLLMAutoCorrectRules ];
+autoCorrect[ string_String ] := StringReplace[ string, $llmAutoCorrectRules ];
 autoCorrect // endDefinition;
 
-$dumbLLMAutoCorrectRules = {
-    "wolfram_language_evaliator" -> "wolfram_language_evaluator"
+$llmAutoCorrectRules = {
+    "wolfram_language_evaliator" -> "wolfram_language_evaluator",
+    "\\!\\(\\*MarkdownImageBox[\"" ~~ uri__ ~~ "\"]\\)" :> uri
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -1070,12 +1182,8 @@ resolveAutoSettings // beginDefinition;
 resolveAutoSettings[ settings: KeyValuePattern[ _ :> _ ] ] :=
     resolveAutoSettings @ AssociationMap[ Apply @ Rule, settings ];
 
-(* Determine if tools are actually enabled based on settings *)
-resolveAutoSettings[ settings: KeyValuePattern[ "ToolsEnabled" -> Automatic ] ] :=
-    resolveAutoSettings @ Association[ settings, "ToolsEnabled" -> toolsEnabledQ @ settings ];
-
 (* Add additional settings and resolve actual LLMTool expressions *)
-resolveAutoSettings[ settings_Association ] := resolveTools @ <|
+resolveAutoSettings[ settings_Association ] := resolveAutoSettings0 @ <|
     settings,
     "HandlerFunctions"    -> getHandlerFunctions @ settings,
     "LLMEvaluator"        -> getLLMEvaluator @ settings,
@@ -1084,7 +1192,157 @@ resolveAutoSettings[ settings_Association ] := resolveTools @ <|
 
 resolveAutoSettings // endDefinition;
 
-(* TODO: define singular `resolveAutoSetting` that expands each `Automatic` value *)
+
+resolveAutoSettings0 // beginDefinition;
+
+resolveAutoSettings0[ settings_Association ] := Enclose[
+    Module[ { auto, sorted, resolved },
+        auto     = ConfirmBy[ Select[ settings, SameAs @ Automatic ], AssociationQ, "Auto" ];
+        sorted   = ConfirmBy[ <| KeyTake[ auto, $autoSettingKeyPriority ], auto |>, AssociationQ, "Sorted" ];
+        resolved = ConfirmBy[ Fold[ resolveAutoSetting, settings, Normal @ sorted ], AssociationQ, "Resolved" ];
+        ConfirmBy[ resolveTools @ KeySort @ resolved, AssociationQ, "ResolveTools" ]
+    ],
+    throwInternalFailure[ resolveAutoSettings0 @ settings, ## ] &
+];
+
+resolveAutoSettings0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*resolveAutoSetting*)
+resolveAutoSetting // beginDefinition;
+resolveAutoSetting[ settings_, key_ -> value_ ] := <| settings, key -> resolveAutoSetting0[ settings, key ] |>;
+resolveAutoSetting // endDefinition;
+
+resolveAutoSetting0 // beginDefinition;
+resolveAutoSetting0[ as_, "ToolsEnabled"              ] := toolsEnabledQ @ as;
+resolveAutoSetting0[ as_, "DynamicAutoFormat"         ] := dynamicAutoFormatQ @ as;
+resolveAutoSetting0[ as_, "EnableLLMServices"         ] := $useLLMServices;
+resolveAutoSetting0[ as_, "HandlerFunctionsKeys"      ] := chatHandlerFunctionsKeys @ as;
+resolveAutoSetting0[ as_, "IncludeHistory"            ] := Automatic;
+resolveAutoSetting0[ as_, "NotebookWriteMethod"       ] := "PreemptiveLink";
+resolveAutoSetting0[ as_, "ShowMinimized"             ] := Automatic;
+resolveAutoSetting0[ as_, "StreamingOutputMethod"     ] := "PartialDynamic";
+resolveAutoSetting0[ as_, "TrackScrollingWhenPlaced"  ] := scrollOutputQ @ as;
+resolveAutoSetting0[ as_, "Multimodal"                ] := multimodalQ @ as;
+resolveAutoSetting0[ as_, "MaxContextTokens"          ] := autoMaxContextTokens @ as;
+resolveAutoSetting0[ as_, "MaxTokens"                 ] := autoMaxTokens @ as;
+resolveAutoSetting0[ as_, "MaxCellStringLength"       ] := chooseMaxCellStringLength @ as;
+resolveAutoSetting0[ as_, "MaxOutputCellStringLength" ] := chooseMaxOutputCellStringLength @ as;
+resolveAutoSetting0[ as_, "Tokenizer"                 ] := getTokenizer @ as;
+resolveAutoSetting0[ as_, key_String                  ] := Automatic;
+resolveAutoSetting0 // endDefinition;
+
+(* Settings that require other settings to be resolved first: *)
+$autoSettingKeyDependencies = <|
+    "HandlerFunctionsKeys"      -> "EnableLLMServices",
+    "MaxCellStringLength"       -> { "Model", "MaxContextTokens" },
+    "MaxContextTokens"          -> "Model",
+    "MaxOutputCellStringLength" -> "MaxCellStringLength",
+    "MaxTokens"                 -> "Model",
+    "Multimodal"                -> { "EnableLLMServices", "Model" },
+    "Tokenizer"                 -> "Model",
+    "Tools"                     -> { "LLMEvaluator", "ToolsEnabled" },
+    "ToolsEnabled"              -> "Model"
+|>;
+
+(* Sort topologically so dependencies will be satisfied in order: *)
+$autoSettingKeyPriority := Enclose[
+    $autoSettingKeyPriority = ConfirmMatch[
+        TopologicalSort @ Flatten @ KeyValueMap[
+            Thread @* Reverse @* Rule,
+            $autoSettingKeyDependencies
+        ],
+        { __String? StringQ }
+    ],
+    throwInternalFailure[ $autoSettingKeyPriority, ## ] &
+];
+
+(* TODO: resolve these automatic values here:
+    * BasePrompt (might not be possible here)
+    * ChatContextPreprompt
+*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chooseMaxCellStringLength*)
+(* FIXME: need to hook into token pressure to gradually decrease limits *)
+chooseMaxCellStringLength // beginDefinition;
+chooseMaxCellStringLength[ as_Association ] := chooseMaxCellStringLength[ as, as[ "MaxContextTokens" ] ];
+chooseMaxCellStringLength[ as_, tokens: $$size ] := Ceiling[ $defaultMaxCellStringLength * tokens / 2^13 ];
+chooseMaxCellStringLength // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chooseMaxOutputCellStringLength*)
+chooseMaxOutputCellStringLength // beginDefinition;
+chooseMaxOutputCellStringLength[ as_Association ] := chooseMaxOutputCellStringLength[ as, as[ "MaxCellStringLength" ] ];
+chooseMaxOutputCellStringLength[ as_, size: $$size ] := Min[ Ceiling[ size / 10 ], 1000 ];
+chooseMaxOutputCellStringLength // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*autoMaxContextTokens*)
+autoMaxContextTokens // beginDefinition;
+autoMaxContextTokens[ as_Association ] := autoMaxContextTokens[ as, as[ "Model" ] ];
+autoMaxContextTokens[ as_, model_ ] := autoMaxContextTokens[ as, model, toModelName @ model ];
+autoMaxContextTokens[ _, _, name_String ] := autoMaxContextTokens0 @ name;
+autoMaxContextTokens // endDefinition;
+
+autoMaxContextTokens0 // beginDefinition;
+autoMaxContextTokens0[ name_String ] := autoMaxContextTokens0 @ StringSplit[ name, "-"|Whitespace ];
+autoMaxContextTokens0[ { ___, "gpt", "4", "vision", ___ } ] := 2^17;
+autoMaxContextTokens0[ { ___, "gpt", "4", "turbo" , ___ } ] := 2^17;
+autoMaxContextTokens0[ { ___, "claude", "2"       , ___ } ] := 10^5;
+autoMaxContextTokens0[ { ___, "16k"               , ___ } ] := 2^14;
+autoMaxContextTokens0[ { ___, "32k"               , ___ } ] := 2^15;
+autoMaxContextTokens0[ { ___, "gpt", "4"          , ___ } ] := 2^13;
+autoMaxContextTokens0[ { ___, "gpt", "3.5"        , ___ } ] := 2^12;
+autoMaxContextTokens0[ _List                              ] := 2^12;
+autoMaxContextTokens0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*autoMaxTokens*)
+autoMaxTokens // beginDefinition;
+autoMaxTokens[ as_Association ] := autoMaxTokens[ as, as[ "Model" ] ];
+autoMaxTokens[ as_, model_ ] := autoMaxTokens[ as, model, toModelName @ model ];
+autoMaxTokens[ as_, model_, name_String ] := Lookup[ $maxTokensTable, name, Automatic ];
+autoMaxTokens // endDefinition;
+
+(* FIXME: this should be something queryable from LLMServices: *)
+$maxTokensTable = <|
+    "gpt-4-vision-preview" -> 4096,
+    "gpt-4-1106-preview"   -> 4096
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*multimodalQ*)
+multimodalQ // beginDefinition;
+multimodalQ[ as_Association ] := multimodalQ[ as, multimodalModelQ @ as[ "Model" ], as[ "EnableLLMServices" ] ];
+multimodalQ[ as_, True , False ] := True;
+multimodalQ[ as_, True , True  ] := multimodalPacletsAvailable[ ];
+multimodalQ[ as_, False, _     ] := False;
+multimodalQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*$multimodalPacletsAvailable*)
+multimodalPacletsAvailable // beginDefinition;
+
+multimodalPacletsAvailable[ ] := multimodalPacletsAvailable[ ] = (
+    initTools[ ];
+    multimodalPacletsAvailable[
+        PacletObject[ "Wolfram/LLMFunctions"     ],
+        PacletObject[ "ServiceConnection_OpenAI" ]
+    ]
+);
+
+multimodalPacletsAvailable[ llmFunctions_PacletObject? PacletObjectQ, openAI_PacletObject? PacletObjectQ ] :=
+    TrueQ @ And[ PacletNewerQ[ llmFunctions, "1.2.4" ], PacletNewerQ[ openAI, "13.3.18" ] ];
+
+multimodalPacletsAvailable // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1663,7 +1921,9 @@ writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
 
             With[ { new = new, info = info },
                 createTask @ applyProcessingFunction[ settings, "WriteChatOutputCell", HoldComplete[ cell, new, info ] ]
-            ]
+            ];
+
+            waitForCellObject[ settings, output ]
         ]
     ],
     throwInternalFailure[ writeReformattedCell[ settings, string, cell ], ## ] &
@@ -1687,6 +1947,19 @@ writeReformattedCell[ settings_, other_, cell_CellObject ] :=
     ];
 
 writeReformattedCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*waitForCellObject*)
+waitForCellObject // beginDefinition;
+
+waitForCellObject[ settings_, cell_CellObject, timeout_: 1 ] :=
+    If[ settings[ "HandlerFunctions", "ChatPost" ] =!= None,
+        TimeConstrained[ While[ ! StringQ @ CurrentValue[ cell, ExpressionUUID ], Pause[ 0.05 ] ], timeout ];
+        cell
+    ];
+
+waitForCellObject // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -2109,7 +2382,7 @@ errorBoxes[ as___ ] :=
 (* ::Section::Closed:: *)
 (*Package Footer*)
 If[ Wolfram`ChatbookInternal`$BuildingMX,
-    Null;
+    $autoSettingKeyPriority;
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)

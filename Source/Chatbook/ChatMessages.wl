@@ -10,8 +10,11 @@ Wolfram`Chatbook`CellToChatMessage;
 
 `$chatDataTag;
 `$multimodalMessages;
-`$multimodalContentTag;
+`$tokenBudget;
+`$tokenPressure;
 `constructMessages;
+`getTokenizer;
+`resizeMultimodalImage;
 
 Begin[ "`Private`" ];
 
@@ -27,11 +30,18 @@ Needs[ "Wolfram`Chatbook`Prompting`"        ];
 Needs[ "Wolfram`Chatbook`Serialization`"    ];
 Needs[ "Wolfram`Chatbook`Settings`"         ];
 Needs[ "Wolfram`Chatbook`Tools`"            ];
+Needs[ "Wolfram`Chatbook`Utils`"            ];
+
+$ContextAliases[ "tokens`" ] = "Wolfram`LLMFunctions`Utilities`Tokenization`";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
+$maxMMImageSize       = 512;
 $multimodalMessages   = False;
+$tokenBudget          = 2^13;
+$tokenPressure        = 0.0;
+$cellStringBudget     = Automatic;
 $$validMessageResult  = _Association? AssociationQ | _Missing | Nothing;
 $$validMessageResults = $$validMessageResult | { $$validMessageResult ... };
 
@@ -192,7 +202,13 @@ applyPromptTemplate // endDefinition;
 makeChatMessages // beginDefinition;
 
 makeChatMessages[ settings_, cells_ ] :=
-    Block[ { $multimodalMessages = TrueQ @ settings[ "Multimodal" ] },
+    Block[
+        {
+            $multimodalMessages = TrueQ @ settings[ "Multimodal" ],
+            $tokenBudget        = settings[ "MaxContextTokens" ],
+            $tokenPressure      = 0.0
+        },
+        If[ settings[ "BasePrompt" ] =!= None, decreaseTokenBudget[ settings, $fullBasePrompt ] ];
         makeChatMessages0[ settings, cells ]
     ];
 
@@ -207,12 +223,20 @@ makeChatMessages0[ settings_, { cells___, cell_ ? promptFunctionCellQ } ] := (
 );
 
 makeChatMessages0[ settings0_, cells_List ] := Enclose[
-    Module[ { settings, role, message, toMessage, cell, history, messages, merged },
-        settings  = ConfirmBy[ <| settings0, "HistoryPosition" -> 0, "Cells" -> cells |>, AssociationQ, "Settings" ];
-        role      = makeCurrentRole @ settings;
-        cell      = ConfirmMatch[ Last[ cells, $Failed ], _Cell, "Cell" ];
-        toMessage = Confirm[ getCellMessageFunction @ settings, "CellMessageFunction" ];
-        message   = ConfirmMatch[ toMessage[ cell, settings ], $$validMessageResults, "Message" ];
+    Module[ { settings, role, message, toMessage0, toMessage, cell, history, messages, merged },
+        settings   = ConfirmBy[ <| settings0, "HistoryPosition" -> 0, "Cells" -> cells |>, AssociationQ, "Settings" ];
+        role       = makeCurrentRole @ settings;
+        cell       = ConfirmMatch[ Last[ cells, $Failed ], _Cell, "Cell" ];
+        toMessage0 = Confirm[ getCellMessageFunction @ settings, "CellMessageFunction" ];
+
+        $tokenBudgetLog = Internal`Bag[ ];
+        toMessage = Function @ With[
+            { msg = toMessage0[ #1, <| #2, "TokenBudget" -> $tokenBudget, "TokenPressure" -> $tokenPressure |> ] },
+            decreaseTokenBudget[ settings, msg ];
+            msg
+        ];
+
+        message = ConfirmMatch[ toMessage[ cell, settings ], $$validMessageResults, "Message" ];
 
         history = ConfirmMatch[
             Reverse @ Flatten @ MapIndexed[
@@ -225,12 +249,91 @@ makeChatMessages0[ settings0_, cells_List ] := Enclose[
 
         messages = DeleteMissing @ Flatten @ { role, history, message };
         merged   = If[ TrueQ @ Lookup[ settings, "MergeMessages" ], mergeMessageData @ messages, messages ];
-        merged
+        $lastMessageList = merged
     ],
     throwInternalFailure[ makeChatMessages0[ settings0, cells ], ## ] &
 ];
 
 makeChatMessages0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*decreaseTokenBudget*)
+decreaseTokenBudget // beginDefinition;
+
+decreaseTokenBudget[ as_Association, message_ ] := Enclose[
+    Module[ { count, budget },
+
+        count  = ConfirmMatch[ tokenCount[ as, message ], $$size|0, "Count" ];
+        budget = ConfirmMatch[ $tokenBudget, $$size|0, "Budget" ];
+
+        $tokenBudget      = Max[ 0, budget - count ];
+        $tokenPressure    = 1.0 - ($tokenBudget / as[ "MaxContextTokens" ]);
+        $cellStringBudget = Ceiling[ (1 - $tokenPressure) * $defaultMaxCellStringLength ];
+
+        Internal`StuffBag[
+            $tokenBudgetLog,
+            <|
+                "PreviousBudget"   -> budget,
+                "TokenBudget"      -> $tokenBudget,
+                "Pressure"         -> $tokenPressure,
+                "CellStringBudget" -> $cellStringBudget,
+                "MessageTokens"    -> count,
+                "Message"          -> message
+            |>
+        ]
+    ],
+    throwInternalFailure[ decreaseTokenBudget[ as, message ], ## ] &
+];
+
+decreaseTokenBudget // endDefinition;
+
+
+$tokenBudgetLog = Internal`Bag[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*tokenCount*)
+tokenCount // beginDefinition;
+
+tokenCount[ as_Association, message_ ] := Enclose[
+    Module[ { tokenizer, content },
+        tokenizer = getTokenizer @ as;
+        content = ConfirmBy[ messageContent @ message, validContentQ, "Content" ];
+        Length @ ConfirmMatch[ applyTokenizer[ tokenizer, content ], _List, "TokenCount" ]
+    ],
+    throwInternalFailure[ tokenCount[ as, message ], ## ] &
+];
+
+tokenCount // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*applyTokenizer*)
+applyTokenizer // beginDefinition;
+applyTokenizer[ tokenizer_, content_String ] := tokenizer @ content;
+applyTokenizer[ tokenizer_, content_? graphicsQ ] := tokenizer @ content;
+applyTokenizer[ tokenizer_, content_List ] := Flatten[ tokenizer /@ content ];
+applyTokenizer[ tokenizer_, KeyValuePattern[ "Data" -> data_ ] ] := tokenizer @ data;
+applyTokenizer // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*messageContent*)
+messageContent // beginDefinition;
+
+messageContent[ content_String ] := content;
+messageContent[ KeyValuePattern[ "Content" -> content_ ] ] := messageContent @ content;
+messageContent[ KeyValuePattern @ { "Type" -> "Text"|"Image", "Data" -> content_ } ] := messageContent @ content;
+
+messageContent[ content_List ] :=
+    With[ { s = messageContent /@ content },
+        StringRiffle[ s, "\n\n" ] /; AllTrue[ s, StringQ ]
+    ];
+
+messageContent[ content_ ] := content;
+
+messageContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -462,15 +565,35 @@ makeCurrentCellMessage // endDefinition;
 (*makeMessageContent*)
 makeMessageContent // beginDefinition;
 
-makeMessageContent[ cell_Cell ] /; $multimodalMessages && ! FreeQ[ cell, _GraphicsBox|_Graphics3DBox ] := {
-    <| "type" -> "image_url", "image_url" -> <| "url" -> toDataURI @ cell |> |>,
-    <| "type" -> "text", "text" -> CellToString @ cell |>
-};
+makeMessageContent[ cell_Cell ] /; $multimodalMessages := Enclose[
+    Module[ { string, split, joined },
+        string = ConfirmBy[ cellToString @ cell, StringQ, "CellToString" ];
+
+        split = Flatten @ StringSplit[
+            string,
+            md: Shortest[ "MarkdownImageBox[\"" ~~ link: ("![" ~~ __ ~~ "](" ~~ __ ~~ ")") ~~ "\"]" ] :> {
+                md,
+                ConfirmBy[ GetExpressionURI[ link, Tooltip -> False ], ImageQ, "GetExpressionURI" ]
+            }
+        ];
+
+        joined = FixedPoint[ Replace[ { a___, b_String, c_String, d___ } :> { a, b<>c, d } ], split ];
+        Replace[ joined, { msg_String } :> msg ]
+    ],
+    throwInternalFailure[ makeMessageContent @ cell, ## ] &
+];
 
 makeMessageContent[ cell_Cell ] :=
-    CellToString @ cell;
+    cellToString @ cell;
 
 makeMessageContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cellToString*)
+cellToString // beginDefinition;
+cellToString[ cell_Cell ] := CellToString[ cell, "MaxCellStringLength" -> $cellStringBudget ];
+cellToString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -482,25 +605,11 @@ validContentQ[ ___ ] := False;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*validContentPartQ*)
-validContentPartQ[ KeyValuePattern @ { "type" -> "text", "text" -> string_String } ] :=
-    StringQ @ string;
-
-validContentPartQ[ KeyValuePattern @ {
-    "type"      -> "image_url",
-    "image_url" -> KeyValuePattern[ "url" -> url_String ]
-} ] := StringQ @ url;
-
+validContentPartQ[ _String? StringQ ] := True;
+validContentPartQ[ _URL | _File     ] := True;
+validContentPartQ[ _? graphicsQ     ] := True;
+validContentPartQ[ KeyValuePattern[ "Type" -> _String ] ] := True;
 validContentPartQ[ ___ ] := False;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*toDataURI*)
-toDataURI // beginDefinition;
-
-toDataURI[ image_ ] := toDataURI[ image ] =
-    "data:image/png;base64," <> StringDelete[ ExportString[ Rasterize @ image, { "Base64", "PNG" } ], "\n" ];
-
-toDataURI // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -543,15 +652,27 @@ mergeMessages // beginDefinition;
 mergeMessages[ { } ] := Nothing;
 mergeMessages[ { message_ } ] := message;
 mergeMessages[ messages: { first_Association, __Association } ] :=
-    Module[ { role, strings },
-        role    = Lookup[ first   , "Role"    ];
-        strings = Lookup[ messages, "Content" ];
-        If[ AllTrue[ strings, StringQ ],
+    Module[ { role, content, stitch },
+        role    = Lookup[ first, "Role" ];
+        content = Flatten @ Lookup[ messages, "Content" ];
+        stitch  = StringDelete[ #1, "```\n\n```" ] &;
+
+        If[ AllTrue[ content, StringQ ],
             <|
                 "Role"    -> role,
-                "Content" -> StringDelete[ StringRiffle[ strings, "\n\n" ], "```\n\n```" ]
+                "Content" -> stitch @ StringRiffle[ content, "\n\n" ]
             |>,
-            messages
+            <|
+                "Role" -> role,
+                "Content" -> FixedPoint[
+                    Replace @ {
+                        { a___, b_String, c_String, d___ } :> { a, stitch[ b<>"\n\n"<>c ], d },
+                        { a___, b_String, { c_String, d___ }, e___ } :> { a, { stitch[ b<>"\n\n"<>c ], d }, e },
+                        { a___, { b___, c_String }, d_String, e___ } :> { a, { b, stitch[ c<>"\n\n"<>d ] }, e }
+                    },
+                    content
+                ]
+            |>
         ]
     ];
 
@@ -768,7 +889,7 @@ argumentTokenToString[
             b___
         ]
     }
-] := CellToString @ Cell[ TextData @ { a }, "ChatInput", b ];
+] := cellToString @ Cell[ TextData @ { a }, "ChatInput", b ];
 
 argumentTokenToString[
     ">",
@@ -783,17 +904,125 @@ argumentTokenToString[
     }
 ] := "";
 
-argumentTokenToString[ "^", name_, { ___, cell_, _ } ] := CellToString @ cell;
+argumentTokenToString[ "^", name_, { ___, cell_, _ } ] := cellToString @ cell;
 
-argumentTokenToString[ "^^", name_, { history___, _ } ] := StringRiffle[ CellToString /@ { history }, "\n\n" ];
+argumentTokenToString[ "^^", name_, { history___, _ } ] := StringRiffle[ cellToString /@ { history }, "\n\n" ];
 
 argumentTokenToString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Tokenization*)
+$tokenizer := gpt2Tokenizer;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getTokenizer*)
+getTokenizer // beginDefinition;
+getTokenizer[ KeyValuePattern[ "Tokenizer" -> tokenizer: Except[ $$unspecified ] ] ] := tokenizer;
+getTokenizer[ KeyValuePattern[ "Model" -> model_ ] ] := getTokenizer @ model;
+getTokenizer[ model_ ] := cachedTokenizer @ toModelName @ model;
+getTokenizer // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cachedTokenizer*)
+cachedTokenizer // beginDefinition;
+cachedTokenizer[ All ] := AssociationMap[ cachedTokenizer, $cachedTokenizerNames ];
+cachedTokenizer[ name_String ] := cachedTokenizer0 @ tokenizerName @ toModelName @ name;
+cachedTokenizer // endDefinition;
+
+
+cachedTokenizer0 // beginDefinition;
+
+cachedTokenizer0[ "chat-bison" ] = ToCharacterCode[ #, "UTF8" ] &;
+
+cachedTokenizer0[ "gpt-4-vision" ] :=
+    If[ graphicsQ[ # ],
+        gpt4ImageTokenizer[ # ],
+        cachedTokenizer[ "gpt-4" ][ # ]
+    ] &;
+
+cachedTokenizer0[ model_String ] := Enclose[
+    Quiet @ Module[ { name, tokenizer },
+        initTools[ ];
+        Quiet @ Needs[ "Wolfram`LLMFunctions`Utilities`Tokenization`" -> None ];
+        name      = ConfirmBy[ tokens`FindTokenizer @ model, StringQ, "Name" ];
+        tokenizer = ConfirmMatch[ tokens`LLMTokenizer[ Method -> name ], Except[ _tokens`LLMTokenizer ], "Tokenizer" ];
+        ConfirmMatch[ tokenizer[ "test" ], _List, "TokenizerTest" ];
+        cachedTokenizer0[ model ] = tokenizer
+    ],
+    gpt2Tokenizer &
+];
+
+cachedTokenizer0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*tokenizerName*)
+tokenizerName // beginDefinition;
+tokenizerName[ name_String ] := SelectFirst[ $cachedTokenizerNames, StringContainsQ[ name, # ] &, name ];
+tokenizerName // endDefinition;
+
+$cachedTokenizerNames = { "gpt-4-vision", "gpt-4", "gpt-3.5", "gpt-2", "claude-2", "claude-instant-1", "chat-bison" };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*GPT-4 Vision Image Tokenizer *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*resizeMultimodalImage*)
+resizeMultimodalImage // beginDefinition;
+
+resizeMultimodalImage[ image0_ ] := Enclose[
+    Module[ { image, dimensions, max, small, resized },
+        image = ConfirmBy[ If[ image2DQ @ image0, image0, Rasterize @ image0 ], image2DQ, "Image" ];
+        dimensions = ConfirmMatch[ ImageDimensions @ image, { _Integer, _Integer }, "Dimensions" ];
+        max = ConfirmMatch[ $maxMMImageSize, _Integer? Positive, "MaxSize" ];
+        small = ConfirmMatch[ AllTrue[ dimensions, LessThan @ max ], True|False, "Small" ];
+        resized = ConfirmBy[ If[ small, image, ImageResize[ image, { UpTo @ max, UpTo @ max } ] ], ImageQ, "Resized" ];
+        resizeMultimodalImage[ image0 ] = resized
+    ],
+    throwInternalFailure[ resizeMultimodalImage @ image0, ## ] &
+];
+
+resizeMultimodalImage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*gpt4ImageTokenizer*)
+gpt4ImageTokenizer // beginDefinition;
+gpt4ImageTokenizer[ image_ ] := gpt4ImageTokenizer[ image, gpt4ImageTokenCount @ image ];
+gpt4ImageTokenizer[ image_, count: $$size ] := ConstantArray[ 0, count ]; (* TODO: just a placeholder for counting *)
+gpt4ImageTokenizer // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*gpt4ImageTokenCount*)
+gpt4ImageTokenCount // beginDefinition;
+gpt4ImageTokenCount[ image_ ] := gpt4ImageTokenCount[ image, gpt4ImageTokenCount0 @ image ];
+gpt4ImageTokenCount[ image_, count: $$size ] := gpt4ImageTokenCount[ image ] = count;
+gpt4ImageTokenCount // endDefinition;
+
+
+gpt4ImageTokenCount0 // beginDefinition;
+gpt4ImageTokenCount0[ image_ ] := gpt4ImageTokenCount0[ image, resizeMultimodalImage @ image ];
+gpt4ImageTokenCount0[ image_, resized_Image ] := gpt4ImageTokenCount0[ image, ImageDimensions @ resized ];
+gpt4ImageTokenCount0[ image_, { w_, h_ } ] := gpt4ImageTokenCount0[ w, h ];
+gpt4ImageTokenCount0[ w_Integer, h_Integer ] := 85 + 170 * Ceiling[ h / 512 ] * Ceiling[ w / 512 ];
+gpt4ImageTokenCount0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Fallback Tokenizer*)
+gpt2Tokenizer := gpt2Tokenizer = ResourceFunction[ "GPT2Tokenizer" ][ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Package Footer*)
 If[ Wolfram`ChatbookInternal`$BuildingMX,
-    Null;
+    cachedTokenizer[ All ];
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)
