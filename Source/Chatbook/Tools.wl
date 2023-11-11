@@ -2,7 +2,7 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 
-(* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDTOOLCALL, Deflatten, Liouville *)
+(* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDTOOLCALL, Deflatten, Liouville, unexp *)
 
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
@@ -89,6 +89,18 @@ $DefaultToolOptions = <|
     |>,
     "WebFetcher" -> <|
         "MaxContentLength" -> $defaultWebTextLength
+    |>,
+    "WebSearcher" -> <|
+        "AllowAdultContent" -> Inherited,
+        "Language"          -> Inherited,
+        "MaxItems"          -> 5,
+        "Method"            -> "Google"
+    |>,
+    "WebImageSearcher" -> <|
+        "AllowAdultContent" -> Inherited,
+        "Language"          -> Inherited,
+        "MaxItems"          -> 5,
+        "Method"            -> "Google"
     |>
 |>;
 
@@ -165,6 +177,34 @@ toolOptionValue // endDefinition;
 toolOptionValue0 // beginDefinition;
 toolOptionValue0[ opts_Association, key_String ] := Lookup[ opts, key, Lookup[ $DefaultToolOptions, key ] ];
 toolOptionValue0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toolOptions*)
+toolOptions // beginDefinition;
+
+toolOptions[ name_String ] :=
+    toolOptions[ name, $toolOptions[ name ], $DefaultToolOptions[ name ] ];
+
+toolOptions[ name_, opts_Association, defaults_Association ] :=
+    toolOptions[ name, <| DeleteCases[ defaults, Inherited ], DeleteCases[ opts, Inherited ] |> ];
+
+toolOptions[ name_, _Missing, defaults_Association ] :=
+    toolOptions[ name, DeleteCases[ defaults, Inherited ] ];
+
+toolOptions[ name_, opts_Association ] :=
+    Normal[ KeyMap[ toOptionKey, opts ], Association ];
+
+toolOptions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toOptionKey*)
+toOptionKey // beginDefinition;
+toOptionKey[ name_String ] /; StringContainsQ[ name, "`" ] := toOptionKey @ Last @ StringSplit[ name, "`" ];
+toOptionKey[ name_String ] /; NameQ[ "System`" <> name ] := Symbol @ name;
+toOptionKey[ symbol_Symbol ] := symbol;
+toOptionKey // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1108,19 +1148,56 @@ $defaultChatTools0[ "WebSearcher" ] = <|
 webSearch // beginDefinition;
 
 webSearch[ KeyValuePattern[ "query" -> query_ ] ] := webSearch @ query;
-webSearch[ query_String ] := webSearch @ SearchQueryString @ query;
+webSearch[ query_String ] := Block[ { PrintTemporary }, webSearch @ SearchQueryString @ query ];
 
 webSearch[ query_SearchQueryString ] := Enclose[
-    Module[ { result, json, string },
-        result = ConfirmMatch[ WebSearch[ query, MaxItems -> 5 ], _Dataset, "WebSearch" ];
+    Catch @ Module[ { result, json, string },
+        result = ConfirmMatch[ webSearch0 @ query, _Dataset|_Failure, "WebSearch" ];
+
+        If[ MatchQ[ result, _Failure ],
+            Throw @ <| "Result" -> result, "String" -> makeFailureString @ result |>
+        ];
+
         json   = ConfirmBy[ Developer`WriteRawJSONString[ Normal @ result /. URL[ url_ ] :> url ], StringQ, "JSON" ];
         json   = StringReplace[ json, "\\/" -> "/" ];
         string = ConfirmBy[ TemplateApply[ $webSearchResultTemplate, json ], StringQ, "TemplateApply" ];
+
         <| "Result" -> result, "String" -> string |>
-    ]
+    ],
+    throwInternalFailure[ webSearch @ query, ## ] &
 ];
 
 webSearch // endDefinition;
+
+
+webSearch0 // beginDefinition;
+
+webSearch0[ query_SearchQueryString ] := Enclose[
+    Module[ { opts, raw, result, held, $unavailable },
+        opts   = Sequence @@ ConfirmMatch[ toolOptions[ "WebSearcher" ], { $$optionsSequence }, "Options" ];
+        result = Quiet[
+            Check[
+                raw = WebSearch[ query, opts ],
+                $unavailable,
+                IntegratedServices`IntegratedServices::unexp
+            ],
+            IntegratedServices`IntegratedServices::unexp
+        ];
+
+        held = HoldForm @ Evaluate @ raw;
+
+        Quiet @ Replace[
+            result,
+            {
+                $unavailable       :> messageFailure[ "IntegratedServiceUnavailable", "WebSearch", held ],
+                Except[ _Dataset ] :> messageFailure[ "IntegratedServiceError"      , "WebSearch", held ]
+            }
+        ]
+    ],
+    throwInternalFailure[ webImageSearch0 @ query, ## ] &
+];
+
+webSearch0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1270,12 +1347,8 @@ $defaultChatTools0[ "WebImageSearcher" ] = <|
 webImageSearch // beginDefinition;
 
 webImageSearch[ KeyValuePattern[ "query" -> query_ ] ] := webImageSearch @ query;
-webImageSearch[ query_String ] := webImageSearch @ SearchQueryString @ query;
-
-webImageSearch[ query_SearchQueryString ] :=
-    Block[ { PrintTemporary },
-        webImageSearch[ query, WebImageSearch[ query, "ImageHyperlinks" ] ]
-    ];
+webImageSearch[ query_String ] := Block[ { PrintTemporary }, webImageSearch @ SearchQueryString @ query ];
+webImageSearch[ query_SearchQueryString ] := webImageSearch[ query, webImageSearch0[ query ] ];
 
 webImageSearch[ query_, { } ] := <|
     "Result" -> { },
@@ -1287,7 +1360,42 @@ webImageSearch[ query_, urls: { __ } ] := <|
     "String" -> StringRiffle[ TextString /@ urls, "\n" ]
 |>;
 
+webImageSearch[ query_, failed_Failure ] := <|
+    "Result" -> failed,
+    "String" -> makeFailureString @ failed
+|>;
+
 webImageSearch // endDefinition;
+
+
+webImageSearch0 // beginDefinition;
+
+webImageSearch0[ query_SearchQueryString ] := Enclose[
+    Module[ { opts, raw, result, held, $unavailable },
+        opts   = Sequence @@ ConfirmMatch[ toolOptions[ "WebImageSearcher" ], { $$optionsSequence }, "Options" ];
+        result = Quiet[
+            Check[
+                raw = WebImageSearch[ query, "ImageHyperlinks", opts ],
+                $unavailable,
+                IntegratedServices`IntegratedServices::unexp
+            ],
+            IntegratedServices`IntegratedServices::unexp
+        ];
+
+        held = HoldForm @ Evaluate @ raw;
+
+        Quiet @ Replace[
+            result,
+            {
+                $unavailable    :> messageFailure[ "IntegratedServiceUnavailable", "WebImageSearch", held ],
+                Except[ _List ] :> messageFailure[ "IntegratedServiceError"      , "WebImageSearch", held ]
+            }
+        ]
+    ],
+    throwInternalFailure[ webImageSearch0 @ query, ## ] &
+];
+
+webImageSearch0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
