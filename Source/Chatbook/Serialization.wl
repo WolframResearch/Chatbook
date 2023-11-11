@@ -629,6 +629,12 @@ fasterCellToString0[ StyleBox[ code_, "TI", ___ ] ] :=
         "``" <> fasterCellToString0 @ code <> "``"
     ];
 
+fasterCellToString0[ Cell[ code_, "InlineCode", ___ ] ] :=
+    Block[ { $escapeMarkdown = False },
+        needsBasePrompt[ "DoubleBackticks" ];
+        "``" <> fasterCellToString0 @ code <> "``"
+    ];
+
 (* Messages *)
 fasterCellToString0[ TemplateBox[ args: { _, _, str_String, ___ }, "MessageTemplate" ] ] := (
     needsBasePrompt[ "WolframLanguage" ];
