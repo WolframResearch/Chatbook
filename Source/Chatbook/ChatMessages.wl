@@ -1066,7 +1066,7 @@ gpt4ImageTokenCount0 // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Fallback Tokenizer*)
-gpt2Tokenizer := gpt2Tokenizer = ResourceFunction[ "GPT2Tokenizer" ][ ];
+gpt2Tokenizer := gpt2Tokenizer = ResourceFunction[ "GPTTokenizer" ][ ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
