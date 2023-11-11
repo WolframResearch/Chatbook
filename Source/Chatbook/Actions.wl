@@ -113,7 +113,6 @@ ChatbookAction[ "TabRight"             , args___ ] := catchMine @ TabRight @ arg
 ChatbookAction[ "ToggleFormatting"     , args___ ] := catchMine @ ToggleFormatting @ args;
 ChatbookAction[ "ToolManage"           , args___ ] := catchMine @ ToolManage @ args;
 ChatbookAction[ "WidgetSend"           , args___ ] := catchMine @ WidgetSend @ args;
-ChatbookAction[ name_String            , args___ ] := catchMine @ throwFailure[ "NotImplemented", name, args ];
 ChatbookAction[ args___                          ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
 
 (* ::**************************************************************************************************************:: *)
@@ -634,8 +633,9 @@ CopyChatObject // endDefinition;
 (*constructChatObject*)
 constructChatObject // beginDefinition;
 
+(* cSpell: ignore bdprompt *)
 constructChatObject[ messages_List ] :=
-    With[ { chat = chatObject @ standardizeMessageKeys @ messages },
+    With[ { chat = Quiet[ ChatObject @ standardizeMessageKeys @ messages, ChatObject::bdprompt ] },
         chat /; MatchQ[ chat, _chatObject ]
     ];
 
@@ -643,8 +643,6 @@ constructChatObject[ messages_List ] :=
     Dataset[ KeyMap[ Capitalize ] /@ messages ];
 
 constructChatObject // endDefinition;
-
-chatObject := chatObject = Symbol[ "System`ChatObject" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

@@ -20,43 +20,49 @@ Needs[ "Wolfram`Chatbook`FrontEnd`" ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $defaultChatSettings = <|
-    "Assistance"               -> Automatic,
-    "AutoFormat"               -> True,
-    "BasePrompt"               -> Automatic,
-    "ChatContextPreprompt"     -> Automatic,
-    "ChatDrivenNotebook"       -> False,
-    "ChatHistoryLength"        -> 25,
-    "DynamicAutoFormat"        -> Automatic,
-    "EnableChatGroupSettings"  -> False,
-    "EnableLLMServices"        -> Automatic, (* TODO: remove this once LLMServices is widely available *)
-    "FrequencyPenalty"         -> 0.1,
-    "HandlerFunctions"         :> $DefaultChatHandlerFunctions,
-    "HandlerFunctionsKeys"     -> Automatic,
-    "IncludeHistory"           -> Automatic,
-    "InitialChatCell"          -> True,
-    "LLMEvaluator"             -> "CodeAssistant",
-    "MaxTokens"                -> Automatic,
-    "MergeMessages"            -> True,
-    "Model"                    :> $DefaultModel,
-    "NotebookWriteMethod"      -> Automatic,
-    "OpenAIKey"                -> Automatic, (* TODO: remove this once LLMServices is widely available *)
-    "PresencePenalty"          -> 0.1,
-    "ProcessingFunctions"      :> $DefaultChatProcessingFunctions,
-    "Prompts"                  -> { },
-    "ShowMinimized"            -> Automatic,
-    "StreamingOutputMethod"    -> Automatic,
-    "Temperature"              -> 0.7,
-    "ToolOptions"              :> $DefaultToolOptions,
-    "Tools"                    -> Automatic,
-    "ToolsEnabled"             -> Automatic,
-    "TopP"                     -> 1,
-    "TrackScrollingWhenPlaced" -> Automatic
+    "Assistance"                -> Automatic,
+    "AutoFormat"                -> True,
+    "BasePrompt"                -> Automatic,
+    "ChatContextPreprompt"      -> Automatic,
+    "ChatDrivenNotebook"        -> False,
+    "ChatHistoryLength"         -> 100,
+    "DynamicAutoFormat"         -> Automatic,
+    "EnableChatGroupSettings"   -> False,
+    "EnableLLMServices"         -> Automatic, (* TODO: remove this once LLMServices is widely available *)
+    "FrequencyPenalty"          -> 0.1,
+    "HandlerFunctions"          :> $DefaultChatHandlerFunctions,
+    "HandlerFunctionsKeys"      -> Automatic,
+    "IncludeHistory"            -> Automatic,
+    "InitialChatCell"           -> True,
+    "LLMEvaluator"              -> "CodeAssistant",
+    "MaxCellStringLength"       -> Automatic,
+    "MaxContextTokens"          -> Automatic,
+    "MaxOutputCellStringLength" -> Automatic,
+    "MaxTokens"                 -> Automatic,
+    "MergeMessages"             -> True,
+    "Model"                     :> $DefaultModel,
+    "Multimodal"                -> Automatic,
+    "NotebookWriteMethod"       -> Automatic,
+    "OpenAIKey"                 -> Automatic, (* TODO: remove this once LLMServices is widely available *)
+    "PresencePenalty"           -> 0.1,
+    "ProcessingFunctions"       :> $DefaultChatProcessingFunctions,
+    "Prompts"                   -> { },
+    "ShowMinimized"             -> Automatic,
+    "StreamingOutputMethod"     -> Automatic,
+    "Temperature"               -> 0.7,
+    "Tokenizer"                 -> Automatic,
+    "ToolOptions"               :> $DefaultToolOptions,
+    "Tools"                     -> Automatic,
+    "ToolsEnabled"              -> Automatic,
+    "TopP"                      -> 1,
+    "TrackScrollingWhenPlaced"  -> Automatic
 |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Argument Patterns*)
 $$feObj = _FrontEndObject | $FrontEndSession | _NotebookObject | _CellObject | _BoxObject;
+$$validRootSettingValue = Inherited | _? (AssociationQ@*Association);
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -140,21 +146,120 @@ CurrentChatSettings[ args___ ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*UpValues*)
-CurrentChatSettings /: HoldPattern @ Set[ CurrentChatSettings[ obj0_, key_String ], value_ ] :=
-    With[ { obj = obj0 },
-        (CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", key } ] = value) /; MatchQ[ obj, $$feObj ]
+CurrentChatSettings /: HoldPattern @ Set[ CurrentChatSettings[ args___ ], value_ ] :=
+    catchTop[ UsingFrontEnd @ setCurrentChatSettings[ args, value ], CurrentChatSettings ];
+
+CurrentChatSettings /: HoldPattern @ Unset[ CurrentChatSettings[ args___ ] ] :=
+    catchTop[ UsingFrontEnd @ unsetCurrentChatSettings @ args, CurrentChatSettings ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*setCurrentChatSettings*)
+setCurrentChatSettings // beginDefinition;
+
+(* Root settings: *)
+setCurrentChatSettings[ value: $$validRootSettingValue ] :=
+    setCurrentChatSettings0[ $FrontEnd, value ];
+
+setCurrentChatSettings[ obj: $$feObj, value: $$validRootSettingValue ] :=
+    setCurrentChatSettings0[ obj, value ];
+
+(* Key settings: *)
+setCurrentChatSettings[ key_String? StringQ, value_ ] :=
+    setCurrentChatSettings0[ $FrontEnd, key, value ];
+
+setCurrentChatSettings[ obj: $$feObj, key_String? StringQ, value_ ] :=
+    setCurrentChatSettings0[ obj, key, value ];
+
+(* Invalid scope: *)
+setCurrentChatSettings[ obj: Except[ $$feObj ], a__ ] := throwFailure[
+    "InvalidFrontEndScope",
+    obj,
+    CurrentChatSettings,
+    HoldForm @ setCurrentChatSettings[ obj, a ]
+];
+
+(* Invalid key: *)
+setCurrentChatSettings[ obj: $$feObj, key_, value_ ] := throwFailure[
+    "InvalidSettingsKey",
+    key,
+    CurrentChatSettings,
+    HoldForm @ setCurrentChatSettings[ obj, key, value ]
+];
+
+(* Invalid root settings: *)
+setCurrentChatSettings[ value: Except[ $$validRootSettingValue ] ] := throwFailure[
+    "InvalidRootSettings",
+    value,
+    CurrentChatSettings,
+    HoldForm @ setCurrentChatSettings @ value
+];
+
+setCurrentChatSettings[ obj: $$feObj, value: Except[ $$validRootSettingValue ] ] := throwFailure[
+    "InvalidRootSettings",
+    value,
+    CurrentChatSettings,
+    HoldForm @ setCurrentChatSettings @ value
+];
+
+setCurrentChatSettings // endDefinition;
+
+
+setCurrentChatSettings0 // beginDefinition;
+
+setCurrentChatSettings0[ scope: $$feObj, Inherited ] :=
+    CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" } ] = Inherited;
+
+setCurrentChatSettings0[ scope: $$feObj, value_ ] :=
+    With[ { as = Association @ value },
+        (CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" } ] = as) /; AssociationQ @ as
     ];
 
-CurrentChatSettings /: HoldPattern @ Set[ CurrentChatSettings[ key_String ], value_ ] :=
-    CurrentValue[ $currentEvaluationObject, { TaggingRules, "ChatNotebookSettings", key } ] = value;
+setCurrentChatSettings0[ scope: $$feObj, key_String? StringQ, value_ ] :=
+    CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", key } ] = value;
 
-CurrentChatSettings /: HoldPattern @ Unset[ CurrentChatSettings[ obj0_, key_String ] ] :=
-    With[ { obj = obj0 },
-        (CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", key } ] = Inherited) /; MatchQ[ obj, $$feObj ]
-    ];
+setCurrentChatSettings0 // endDefinition;
 
-CurrentChatSettings /: HoldPattern @ Unset[ CurrentChatSettings[ key_String ] ] :=
-    CurrentValue[ $currentEvaluationObject, { TaggingRules, "ChatNotebookSettings", key } ] = Inherited;
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*unsetCurrentChatSettings*)
+unsetCurrentChatSettings // beginDefinition;
+
+(* Root settings: *)
+unsetCurrentChatSettings[ ] := unsetCurrentChatSettings0 @ $FrontEnd;
+unsetCurrentChatSettings[ obj: $$feObj ] := unsetCurrentChatSettings0 @ obj;
+
+(* Key settings: *)
+unsetCurrentChatSettings[ key_? StringQ ] := unsetCurrentChatSettings0[ $FrontEnd, key ];
+unsetCurrentChatSettings[ obj: $$feObj, key_? StringQ ] := unsetCurrentChatSettings0[ obj, key ];
+
+(* Invalid scope: *)
+unsetCurrentChatSettings[ obj: Except[ $$feObj ], a___ ] := throwFailure[
+    "InvalidFrontEndScope",
+    obj,
+    CurrentChatSettings,
+    HoldForm @ unsetCurrentChatSettings[ obj, a ]
+];
+
+(* Invalid key: *)
+unsetCurrentChatSettings[ obj: $$feObj, key_ ] := throwFailure[
+    "InvalidSettingsKey",
+    key,
+    CurrentChatSettings,
+    HoldForm @ unsetCurrentChatSettings[ obj, key ]
+];
+
+unsetCurrentChatSettings // endDefinition;
+
+unsetCurrentChatSettings0 // beginDefinition;
+
+unsetCurrentChatSettings0[ obj: $$feObj ] :=
+    (CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ] = Inherited);
+
+unsetCurrentChatSettings0[ obj: $$feObj, key_? StringQ ] :=
+    (CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ] = Inherited);
+
+unsetCurrentChatSettings0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -292,6 +397,8 @@ mergeChatSettings0[ { __, e: Except[ _? AssociationQ ] } ] := e;
 mergeChatSettings0[ { e_ } ] := e;
 mergeChatSettings0[ { } ] := Missing[ ];
 mergeChatSettings0 // endDefinition;
+
+(* TODO: need to apply special merging/inheritance for things like "Prompts" *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
