@@ -415,6 +415,15 @@ fasterCellToString0[ (Cell|StyleBox)[ a_, "ChatBlockDivider", ___ ] ] := "# "<>f
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
+(*Styles*)
+fasterCellToString0[ (h: Cell|StyleBox)[ a__, FontWeight -> Bold|"Bold", b___ ] ] :=
+    "**" <> fasterCellToString0 @ h[ a, b ] <> "**";
+
+fasterCellToString0[ (h: Cell|StyleBox)[ a__, FontSlant -> Italic|"Italic", b___ ] ] :=
+    "*" <> fasterCellToString0 @ h[ a, b ] <> "*";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
 (*String Normalization*)
 
 (* Add spacing between RowBox elements that are comma separated *)
