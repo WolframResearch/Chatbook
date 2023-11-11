@@ -37,13 +37,15 @@ $ContextAliases[ "tokens`" ] = "Wolfram`LLMFunctions`Utilities`Tokenization`";
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$maxMMImageSize       = 512;
-$multimodalMessages   = False;
-$tokenBudget          = 2^13;
-$tokenPressure        = 0.0;
-$cellStringBudget     = Automatic;
-$$validMessageResult  = _Association? AssociationQ | _Missing | Nothing;
-$$validMessageResults = $$validMessageResult | { $$validMessageResult ... };
+$maxMMImageSize          = 512;
+$multimodalMessages      = False;
+$tokenBudget             = 2^13;
+$tokenPressure           = 0.0;
+$reservedTokens          = 500; (* TODO: determine this at submit time *)
+$cellStringBudget        = Automatic;
+$initialCellStringBudget = $defaultMaxCellStringLength;
+$$validMessageResult     = _Association? AssociationQ | _Missing | Nothing;
+$$validMessageResults    = $$validMessageResult | { $$validMessageResult ... };
 
 $$inlineModifierCell = Alternatives[
     Cell[ _, "InlineModifierReference", ___ ],
@@ -209,6 +211,7 @@ makeChatMessages[ settings_, cells_ ] :=
             $tokenPressure      = 0.0
         },
         If[ settings[ "BasePrompt" ] =!= None, decreaseTokenBudget[ settings, $fullBasePrompt ] ];
+        (* FIXME: need to account for persona/tool prompting as well *)
         makeChatMessages0[ settings, cells ]
     ];
 
@@ -230,6 +233,11 @@ makeChatMessages0[ settings0_, cells_List ] := Enclose[
         toMessage0 = Confirm[ getCellMessageFunction @ settings, "CellMessageFunction" ];
 
         $tokenBudgetLog = Internal`Bag[ ];
+        $initialCellStringBudget = Replace[
+            settings[ "MaxCellStringLength" ],
+            Except[ $$size ] -> $defaultMaxCellStringLength
+        ];
+
         toMessage = Function @ With[
             { msg = toMessage0[ #1, <| #2, "TokenBudget" -> $tokenBudget, "TokenPressure" -> $tokenPressure |> ] },
             decreaseTokenBudget[ settings, msg ];
@@ -247,8 +255,9 @@ makeChatMessages0[ settings0_, cells_List ] := Enclose[
             "History"
         ];
 
-        messages = DeleteMissing @ Flatten @ { role, history, message };
-        merged   = If[ TrueQ @ Lookup[ settings, "MergeMessages" ], mergeMessageData @ messages, messages ];
+        messages = addExcisedCellMessage @ DeleteMissing @ Flatten @ { role, history, message };
+
+        merged = If[ TrueQ @ Lookup[ settings, "MergeMessages" ], mergeMessageData @ messages, messages ];
         $lastMessageList = merged
     ],
     throwInternalFailure[ makeChatMessages0[ settings0, cells ], ## ] &
@@ -258,18 +267,48 @@ makeChatMessages0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*addExcisedCellMessage*)
+addExcisedCellMessage // beginDefinition;
+
+addExcisedCellMessage[ messages: { ___Association } ] := Enclose[
+    Module[ { split },
+        split = SplitBy[ messages, MatchQ @ KeyValuePattern[ "Content" -> "[Cell Excised]" ] ];
+        ConfirmMatch[ Flatten[ combineExcisedMessages /@ split ], { ___Association }, "Messages" ]
+    ],
+    throwInternalFailure[ addExcisedCellMessage @ messages, ## ] &
+];
+
+addExcisedCellMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*combineExcisedMessages*)
+combineExcisedMessages // beginDefinition;
+
+combineExcisedMessages[ messages: { msg: KeyValuePattern[ "Content" -> "[Cell Excised]" ], ___ } ] :=
+    <| "Role" -> "System", "Content" -> "[" <> ToString @ Length @ messages <> " Cells Excised]" |>;
+
+combineExcisedMessages[ messages_ ] := messages;
+
+combineExcisedMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*decreaseTokenBudget*)
 decreaseTokenBudget // beginDefinition;
 
 decreaseTokenBudget[ as_Association, message_ ] := Enclose[
     Module[ { count, budget },
 
-        count  = ConfirmMatch[ tokenCount[ as, message ], $$size|0, "Count" ];
-        budget = ConfirmMatch[ $tokenBudget, $$size|0, "Budget" ];
+        count  = ConfirmMatch[ tokenCount[ as, message ], $$size, "Count" ];
+        budget = ConfirmMatch[ $tokenBudget, $$size, "Budget" ];
 
         $tokenBudget      = Max[ 0, budget - count ];
         $tokenPressure    = 1.0 - ($tokenBudget / as[ "MaxContextTokens" ]);
-        $cellStringBudget = Ceiling[ (1 - $tokenPressure) * $defaultMaxCellStringLength ];
+        $cellStringBudget = If[ $tokenBudget < $reservedTokens,
+                                0,
+                                Ceiling[ (1 - $tokenPressure) * $initialCellStringBudget ]
+                            ];
 
         Internal`StuffBag[
             $tokenBudgetLog,
@@ -322,6 +361,7 @@ applyTokenizer // endDefinition;
 (*messageContent*)
 messageContent // beginDefinition;
 
+messageContent[ "[Cell Excised]" ] := "";
 messageContent[ content_String ] := content;
 messageContent[ KeyValuePattern[ "Content" -> content_ ] ] := messageContent @ content;
 messageContent[ KeyValuePattern @ { "Type" -> "Text"|"Image", "Data" -> content_ } ] := messageContent @ content;
@@ -641,8 +681,18 @@ cellRole // endDefinition;
 (* ::Subsection::Closed:: *)
 (*mergeMessageData*)
 mergeMessageData // beginDefinition;
-mergeMessageData[ messages_ ] := Flatten[ mergeMessages /@ SplitBy[ messages, Lookup[ "Role" ] ] ];
+
+mergeMessageData[ { sys: KeyValuePattern[ "Role" -> "System" ], rest___ } ] :=
+    Flatten @ { sys, mergeMessageData0 @ { rest } };
+
+mergeMessageData[ messages_List ] :=
+    mergeMessageData0 @ messages;
+
 mergeMessageData // endDefinition;
+
+mergeMessageData0 // beginDefinition;
+mergeMessageData0[ messages_List ] := Flatten[ mergeMessages /@ SplitBy[ messages, Lookup[ "Role" ] ] ];
+mergeMessageData0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

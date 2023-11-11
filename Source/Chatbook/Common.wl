@@ -108,7 +108,7 @@ $$textDataItem        = (_String|_Cell|_StyleBox|_ButtonBox);
 $$textDataList        = { $$textDataItem... };
 $$textData            = $$textDataItem | $$textDataList;
 $$optionsSequence     = (Rule|RuleDelayed)[ _Symbol|_String, _ ] ...;
-$$size                = Infinity | (_Real|_Integer)? Positive;
+$$size                = Infinity | (_Real|_Integer)? NonNegative;
 $$unspecified         = _Missing | Automatic | Inherited;
 
 (* ::**************************************************************************************************************:: *)
