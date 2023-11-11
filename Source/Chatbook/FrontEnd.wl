@@ -599,12 +599,14 @@ openerView0[ { a_, b_ }, args___ ] /; ByteCount @ b > 50000 := openerView1[ { a,
 openerView0[ { a_, b_ }, args___ ] := openerView1[ { a, b }, args ];
 openerView0 // endDefinition;
 
-
-openerView1[ args___ ] :=
+(*cspell: ignore patv *)
+openerView1[ args___ ] := Quiet[
     RawBoxes @ ReplaceAll[
         Replace[ ToBoxes @ OpenerView @ args, TagBox[ boxes_, ___ ] :> boxes ],
         InterpretationBox[ boxes_, _OpenerView, ___ ] :> boxes
-    ];
+    ],
+    Pattern::patv
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

@@ -606,7 +606,9 @@ $textDataFormatRules = {
     "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`" /; inlineSyntaxQ @ code :> inlineCodeCell @ code,
     "`" ~~ code: Except[ "`"|"\n" ].. ~~ "`" :> inlineCodeCell @ code,
     "$$" ~~ math: Except[ "$" ].. ~~ "$$" :> mathCell @ math,
-    "$" ~~ math: Except[ "$" ].. ~~ "$" /; StringFreeQ[ math, "\n" ] :> mathCell @ math
+    "\\(" ~~ math__ ~~ "\\)" /; StringFreeQ[ math, "\\)" ] :> mathCell @ math,
+    "\\[" ~~ math__ ~~ "\\]" /; StringFreeQ[ math, "\\]" ] :> mathCell @ math,
+    "$" ~~ math: Except[ "$" ].. ~~ "$" :> mathCell @ math
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -637,6 +639,8 @@ $dynamicSplitRules = {
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$stringFormatRules*)
+
+(* cSpell: ignore textit, textbf *)
 $stringFormatRules = {
     "***" ~~ text: Except[ "*" ].. ~~ "***" :> styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
     "___" ~~ text: Except[ "_" ].. ~~ "___" :> styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
@@ -644,7 +648,9 @@ $stringFormatRules = {
     "__" ~~ text: Except[ "_" ].. ~~ "__" :> styleBox[ text, FontWeight -> Bold ],
     "*" ~~ text: Except[ "*" ].. ~~ "*" :> styleBox[ text, FontSlant -> Italic ],
     "_" ~~ text: Except[ "_" ].. ~~ "_" :> styleBox[ text, FontSlant -> Italic ],
-    "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :> hyperlink[ label, url ]
+    "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :> hyperlink[ label, url ],
+    "\\textit{" ~~ text__ ~~ "}" /; StringFreeQ[ text, "{"|"}" ] :> styleBox[ text, FontSlant -> Italic ],
+    "\\textbf{" ~~ text__ ~~ "}" /; StringFreeQ[ text, "{"|"}" ] :> styleBox[ text, FontWeight -> Bold ]
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -677,6 +683,13 @@ inlineToolCall[ string_String, as_Association ] := Cell[
     "InlineToolCall",
     Background   -> None,
     TaggingRules -> KeyDrop[ as, { "Icon", "Result" } ]
+];
+
+inlineToolCall[ string_String, failed_Failure ] := Cell[
+    BoxData @ ToBoxes @ failed,
+    "FailedToolCall",
+    Background   -> None,
+    TaggingRules -> <| "ToolCall" -> string |>
 ];
 
 inlineToolCall // endDefinition;
@@ -731,6 +744,9 @@ parseFullToolCallString[ id_String, string_String ] :=
 
 parseFullToolCallString[ id_, _Missing, string_String ] :=
     parsePartialToolCallString @ string;
+
+parseFullToolCallString[ id_, failed_Failure, string_String ] :=
+    failed;
 
 parseFullToolCallString[ id_String, resp: HoldPattern[ _LLMToolResponse ], string_String ] :=
     parseFullToolCallString[

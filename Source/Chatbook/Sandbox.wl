@@ -568,48 +568,6 @@ sandboxFormatter // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Misc*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*Graphics Utilities*)
-
-$$graphics = HoldPattern[ _GeoGraphics | _Graphics | _Graphics3D | _Image | _Image3D | _Legended ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*graphicsQ*)
-graphicsQ[ $$graphics ] := True;
-graphicsQ[ g_         ] := MatchQ[ Quiet @ Show @ Unevaluated @ g, $$graphics ];
-graphicsQ[ ___        ] := False;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*validGraphicsQ*)
-validGraphicsQ[ g_? graphicsQ ] := getGraphicsErrors @ Unevaluated @ g === { };
-validGraphicsQ[ ___ ] := False;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getGraphicsErrors*)
-getGraphicsErrors // beginDefinition;
-
-(* TODO: hook this up to outputs to give feedback about pink boxes *)
-getGraphicsErrors[ gfx_ ] :=
-    Module[ { cell, nbo },
-        cell = Cell @ BoxData @ MakeBoxes @ gfx;
-        UsingFrontEnd @ WithCleanup[
-            nbo = NotebookPut[ Notebook @ { cell }, Visible -> False ],
-            SelectionMove[ First @ Cells @ nbo, All, Cell ];
-            MathLink`CallFrontEnd @ FrontEnd`GetErrorsInSelectionPacket @ nbo,
-            NotebookClose @ nbo
-        ]
-    ];
-
-getGraphicsErrors // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
 (*Package Footer*)
 
 (* Close previous sandbox kernel if package is being reloaded: *)
