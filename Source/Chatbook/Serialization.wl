@@ -917,6 +917,12 @@ fasterCellToString0[ DynamicModuleBox[ a___ ] ] /; ! TrueQ @ $CellToStringDebug 
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
+(*Ignored/Skipped*)
+fasterCellToString0[ $ignoredBoxPatterns ] := "";
+fasterCellToString0[ $stringStripHeads[ a_, ___ ] ] := fasterCellToString0 @ a;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
 (*Missing Definition*)
 fasterCellToString0[ a___ ] := (
     If[ TrueQ @ $CellToStringDebug, Internal`StuffBag[ $fasterCellToStringFailBag, HoldComplete @ a ] ];
