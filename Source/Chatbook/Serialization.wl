@@ -54,7 +54,7 @@ $maxCellStringLength        = Automatic;
 $defaultMaxCellStringLength = 10000;
 
 (* Set a page width for expressions that need to be serialized as InputForm *)
-$cellPageWidth = 100;
+$cellPageWidth        = 100;
 $defaultCellPageWidth = $cellPageWidth;
 
 (* Window width to use when converting cells to multimodal images (Automatic means derive from $cellPageWidth):  *)
@@ -193,8 +193,8 @@ CellToString // SetFallthroughError;
 
 CellToString // Options = {
     "CharacterEncoding"         -> $cellCharacterEncoding,
-    "CharacterNormalization" -> "NFKC", (* FIXME: do this *)
-    "Debug"                  :> $CellToStringDebug,
+    "CharacterNormalization"    -> "NFKC", (* FIXME: do this *)
+    "Debug"                     :> $CellToStringDebug,
     "MaxCellStringLength"       -> $maxCellStringLength,
     "MaxOutputCellStringLength" -> $maxOutputCellStringLength,
     "PageWidth"                 -> $cellPageWidth,
@@ -207,7 +207,7 @@ CellToString[ cell_, opts: OptionsPattern[ ] ] :=
     Block[
         {
             $cellCharacterEncoding = OptionValue[ "CharacterEncoding" ],
-            $CellToStringDebug     = TrueQ @ OptionValue[ "Debug" ],
+            $CellToStringDebug = TrueQ @ OptionValue[ "Debug" ],
             $cellPageWidth, $windowWidth, $maxCellStringLength, $maxOutputCellStringLength
         },
         $cellPageWidth = toSize[ OptionValue @ PageWidth, $defaultCellPageWidth ];
@@ -590,7 +590,7 @@ toMarkdownImageBox // beginDefinition;
 
 toMarkdownImageBox[ graphics_ ] := Enclose[
     Module[ { img, uri },
-        img      = ConfirmBy[ rasterizeGraphics @ graphics, ImageQ, "RasterizeGraphics" ];
+        img    = ConfirmBy[ rasterizeGraphics @ graphics, ImageQ, "RasterizeGraphics" ];
         uri    = ConfirmBy[ MakeExpressionURI[ "image", img ], StringQ, "RasterID" ];
         needsBasePrompt[ "MarkdownImageBox" ];
         "\\!\\(\\*MarkdownImageBox[\"" <> uri <> "\"]\\)"
@@ -684,6 +684,17 @@ fasterCellToString0[ ButtonBox[ StyleBox[ label_, "SymbolsRefLink", ___ ], ___, 
     needsBasePrompt[ "WolframLanguage" ];
     "[" <> fasterCellToString0 @ label <> "](" <> uri <> ")"
 );
+
+fasterCellToString0[
+    ButtonBox[
+        label_,
+        OrderlessPatternSequence[
+            BaseStyle  -> "Hyperlink",
+            ButtonData -> { url: _String|_URL, _ },
+            ___
+        ]
+    ]
+] := "[" <> fasterCellToString0 @ label <> "](" <> TextString @ url <> ")";
 
 (* TeXAssistantTemplate *)
 fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> string_ ], "TeXAssistantTemplate" ] ] := (
