@@ -564,7 +564,7 @@ ServiceConnectionUtilities`ConnectionInformation["Anthropic", "ProcessedRequests
 
 makeLLMConfiguration[ as_Association ] :=
     $lastLLMConfiguration = LLMConfiguration @ Association[
-        KeyTake[ as, { "Model" } ],
+        KeyTake[ as, { "Model", "MaxTokens" } ],
         "StopTokens" -> { "ENDTOOLCALL" }
     ];
 

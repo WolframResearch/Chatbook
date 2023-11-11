@@ -204,7 +204,7 @@ CellToString // Options = {
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 CellToString[ cell_, opts: OptionsPattern[ ] ] :=
-    Block[
+    Catch @ Block[
         {
             $cellCharacterEncoding = OptionValue[ "CharacterEncoding" ],
             $CellToStringDebug = TrueQ @ OptionValue[ "Debug" ],
@@ -217,6 +217,8 @@ CellToString[ cell_, opts: OptionsPattern[ ] ] :=
             OptionValue[ "MaxCellStringLength" ],
             $defaultMaxCellStringLength
         ];
+
+        If[ $maxCellStringLength <= 0, Throw[ "[Cell Excised]" ] ];
 
         $maxOutputCellStringLength = Ceiling @ toSize[
             OptionValue[ "MaxOutputCellStringLength" ],
