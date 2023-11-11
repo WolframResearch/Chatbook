@@ -9,6 +9,8 @@ Begin[ "`Private`" ];
 Needs[ "Wolfram`Chatbook`"        ];
 Needs[ "Wolfram`Chatbook`Common`" ];
 
+$$newCellStyle = "Section"|"Subsection"|"Subsubsection"|"Subsubsubsection"|"Item"|"Input"|"ExternalLanguage";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Explode Cell*)
@@ -86,7 +88,14 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
                 "Used " <> Lookup[ tags, "DisplayName", Lookup[ tags, "Name", "LLMTool" ] ]
             ],
             "Input"
-        ]
+        ],
+
+    (* Nested text data cells: *)
+    { a___, b: StyleBox[ _, $$newCellStyle, ___ ], c___ } :>
+        { a, Cell @@ b, c },
+
+    (* Tiny line breaks: *)
+    StyleBox[ "\n", "TinyLineBreak", ___ ] :> "\n"
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -103,8 +112,12 @@ regroupCells[ { grouped___ }, { grouping___ }, { cell: Cell[ _BoxData ], rest___
 regroupCells[ { grouped___ }, { grouping___ }, { box: _StyleBox|_ButtonBox|Cell[ _, "InlineCode", ___ ], rest___ } ] :=
     regroupCells[ { grouped }, { grouping, box }, { rest } ];
 
-regroupCells[ { grouped___ }, { grouping___ }, { cell: Cell[ _, "Input"|"ExternalLanguage", ___ ], rest___ } ] :=
-    regroupCells[ { grouped, Cell[ TextData @ { grouping }, "Text" ], cell }, { }, { rest } ];
+regroupCells[ { grouped___ }, { grouping___ }, { cell: (Cell|StyleBox)[ _, $$newCellStyle, ___ ], rest___ } ] :=
+    regroupCells[
+        { grouped, Cell[ TextData @ { grouping }, "Text" ], DeleteCases[ Cell @@ cell, FontSize -> _ ] },
+        { },
+        { rest }
+    ];
 
 regroupCells[ { grouped___ }, { grouping___ }, { string_String, rest___ } ] /; StringFreeQ[ string, "\n" ] :=
     regroupCells[ { grouped }, { grouping, string }, { rest } ];
