@@ -32,6 +32,8 @@ $basePromptOrder = {
     "ConversionLargeOutputs",
     "ConversionGraphics",
     "MarkdownImageBox",
+    "Checkboxes",
+    "CheckboxesIndeterminate",
     "ConversionFormatting",
     "VisibleUserInput",
     "TrivialCode",
@@ -58,6 +60,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "AutoAssistant"                -> { "CodeBlocks", "DoubleBackticks" },
     "CodeBlocks"                   -> { },
     "CellLabels"                   -> { "CodeBlocks", "Notebooks" },
+    "CheckboxesIndeterminate"      -> { "Checkboxes" },
     "DoubleBackticks"              -> { },
     "MathExpressions"              -> { "EscapedCharacters" },
     "EscapedCharacters"            -> { },
@@ -142,6 +145,14 @@ $basePromptComponents[ "MarkdownImageBox" ] = "\
 	* If there are images embedded in the notebook, they will be replaced by a box representation in the \
 form ``MarkdownImageBox[\"![label](uri)\"]``. You will also receive the original image immediately after this. \
 You can use the markdown from this box ``![label](uri)`` in your responses if you want to display the original image.";
+
+$basePromptComponents[ "Checkboxes" ] = "\
+    * Checkboxes in the UI will be replaced with one of the following text representations:
+        * A Checkbox that's selected becomes ``[\[Checkmark]]``
+        * A Checkbox that's not selected becomes ``[ ]``";
+
+$basePromptComponents[ "CheckboxesIndeterminate" ] = "\
+        * An indeterminate Checkbox becomes ``[-]``";
 
 $basePromptComponents[ "ConversionFormatting" ] = "\
 	* Cell formatting is removed when converting to text, so \

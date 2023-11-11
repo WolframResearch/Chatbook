@@ -775,9 +775,10 @@ autoCorrect // beginDefinition;
 autoCorrect[ string_String ] := StringReplace[ string, $llmAutoCorrectRules ];
 autoCorrect // endDefinition;
 
-$llmAutoCorrectRules = {
+$llmAutoCorrectRules = Flatten @ {
     "wolfram_language_evaliator" -> "wolfram_language_evaluator",
-    "\\!\\(\\*MarkdownImageBox[\"" ~~ uri__ ~~ "\"]\\)" :> uri
+    "\\!\\(\\*MarkdownImageBox[\"" ~~ uri__ ~~ "\"]\\)" :> uri,
+    $longNameCharacters
 };
 
 (* ::**************************************************************************************************************:: *)
