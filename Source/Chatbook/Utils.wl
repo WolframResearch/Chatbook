@@ -4,13 +4,19 @@ BeginPackage[ "Wolfram`Chatbook`Utils`" ];
 
 HoldComplete[
     `associationKeyDeflatten;
+    `clickToCopy;
     `convertUTF8;
+    `exportDataURI;
     `fastFileHash;
+    `fileFormatQ;
     `fixLineEndings;
+    `formatToMIMEType;
     `getPinkBoxErrors;
     `graphicsQ;
     `image2DQ;
+    `importDataURI;
     `makeFailureString;
+    `mimeTypeToFormat;
     `readString;
     `stringTrimMiddle;
     `validGraphicsQ;
@@ -27,6 +33,12 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (*AssociationKeyDeflatten*)
 (* https://resources.wolframcloud.com/FunctionRepository/resources/AssociationKeyDeflatten *)
 importResourceFunction[ associationKeyDeflatten, "AssociationKeyDeflatten" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ClickToCopy*)
+(* https://resources.wolframcloud.com/FunctionRepository/resources/ClickToCopy *)
+importResourceFunction[ clickToCopy, "ClickToCopy" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -214,9 +226,144 @@ image2DQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*File Format Utilities*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$fileFormats*)
+$fileFormats := ToLowerCase @ Union[ $ImportFormats, $ExportFormats ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*fileFormatQ*)
+fileFormatQ // beginDefinition;
+fileFormatQ[ fmt_String ] := fileFormatQ[ fmt ] = MemberQ[ $fileFormats, ToLowerCase @ fmt ];
+fileFormatQ[ _ ] := False
+fileFormatQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*formatToMIMEType*)
+formatToMIMEType // beginDefinition;
+formatToMIMEType[ Automatic ] := "application/octet-stream";
+formatToMIMEType[ mime_String ] /; StringContainsQ[ mime, "/" ] := ToLowerCase @ mime;
+formatToMIMEType[ fmt_String ] := formatToMIMEType[ fmt, FileFormatProperties[ fmt, "MIMETypes" ] ];
+formatToMIMEType[ fmt_, _? FailureQ | { } | _FileFormatProperties ] := "application/octet-stream";
+formatToMIMEType[ fmt_, { mimeType_String, ___ } ] := mimeType;
+formatToMIMEType // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*mimeTypeToFormat*)
+mimeTypeToFormat // beginDefinition;
+mimeTypeToFormat[ fmt_String ] /; StringFreeQ[ fmt, "/" ] := fmt;
+mimeTypeToFormat[ mime_String ] := mimeTypeToFormat @ MIMETypeToFormatList @ mime;
+mimeTypeToFormat[ { fmt_String, ___ } ] := fmt;
+mimeTypeToFormat[ { } ] := "Binary";
+mimeTypeToFormat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*importDataURI*)
+importDataURI // beginDefinition;
+
+importDataURI[ uri_ ] :=
+    importDataURI[ uri, Automatic ];
+
+importDataURI[ URL[ uri_String ], fmt_ ] :=
+    importDataURI[ uri, fmt ];
+
+importDataURI[ uri_String, fmt0_ ] := Enclose[
+    Module[ { info, bytes, fmt, fmts, result, $failed },
+
+        info  = ConfirmBy[ uriData @ uri, AssociationQ, "URIData" ];
+        bytes = ConfirmBy[ info[ "Data" ], ByteArrayQ, "Data" ];
+        fmt   = If[ StringQ @ fmt0, fmt0, Nothing ];
+
+        fmts = ConfirmMatch[
+            DeleteDuplicates @ Flatten @ { fmt, info[ "Formats" ], Automatic },
+            { (Automatic|_String).. },
+            "Formats"
+        ];
+
+        result = FirstCase[
+            fmts,
+            f_ :> With[ { res = ImportByteArray[ bytes, f ] },
+                res /; MatchQ[ res, Except[ _ImportByteArray | _? FailureQ ] ]
+            ],
+            $failed
+        ];
+
+        ConfirmMatch[ result, Except[ $failed ], "Result" ]
+    ],
+    throwInternalFailure[ importDataURI[ uri, fmt0 ], ## ] &
+];
+
+importDataURI // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*uriData*)
+uriData // beginDefinition;
+
+uriData[ uri_String ] /; StringMatchQ[ uri, "data:" ~~ ___ ~~ "," ~~ __ ] :=
+    uriData @ StringSplit[ StringDelete[ uri, StartOfString~~"data:" ], "," ];
+
+uriData[ { contentType_String, data_String } ] :=
+    uriData[ StringSplit[ ToLowerCase @ contentType, ";" ], data ];
+
+uriData[ { data_String } ] :=
+    uriData @ { "text/plain;charset=US-ASCII", data };
+
+uriData[ { mimeType_String, "base64" }, data_String ] := <|
+    "Formats" -> MIMETypeToFormatList @ mimeType,
+    "Data"    -> BaseDecode @ data
+|>;
+
+uriData[ { mimeType_String, rule_String, rest___ }, data_String ] /; StringContainsQ[ rule, "=" ] :=
+    uriData[ { mimeType <> ";" <> rule, rest }, data ];
+
+uriData[ { mimeType_String }, data_String ] := <|
+    "Formats" -> MIMETypeToFormatList @ mimeType,
+    "Data"    -> StringToByteArray @ URLDecode @ data
+|>;
+
+uriData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*exportDataURI*)
+exportDataURI // beginDefinition;
+
+exportDataURI[ data_ ] :=
+    exportDataURI[ data, guessExpressionMimeType @ data ];
+
+exportDataURI[ data_, fmt_String ] := Enclose[
+    Module[ { mime, base64 },
+        mime   = ConfirmBy[ formatToMIMEType @ fmt, StringQ, "MIMEType" ];
+        base64 = ConfirmBy[ ExportString[ data, { "Base64", fmt } ], StringQ, "Base64" ];
+        "data:" <> mime <> ";base64," <> StringDelete[ base64, "\n" ]
+    ],
+    throwInternalFailure[ exportDataURI[ data, fmt ], ## ] &
+];
+
+exportDataURI // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*guessExpressionMimeType*)
+guessExpressionMimeType // beginDefinition;
+guessExpressionMimeType[ _? image2DQ      ] := "image/jpeg";
+guessExpressionMimeType[ _? graphicsQ     ] := "image/png";
+guessExpressionMimeType[ _String? StringQ ] := "text/plain";
+guessExpressionMimeType[ ___              ] := "application/octet-stream";
+guessExpressionMimeType // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Package Footer*)
 If[ Wolfram`ChatbookInternal`$BuildingMX,
-    Null;
+    Scan[ fileFormatQ, $fileFormats ];
 ];
 
 End[ ];
