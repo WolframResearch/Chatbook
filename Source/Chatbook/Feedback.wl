@@ -10,16 +10,23 @@ HoldComplete[
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"          ];
-Needs[ "Wolfram`Chatbook`Common`"   ];
-Needs[ "Wolfram`Chatbook`Dialogs`"  ];
-Needs[ "Wolfram`Chatbook`FrontEnd`" ];
+Needs[ "Wolfram`Chatbook`"               ];
+Needs[ "Wolfram`Chatbook`ChatMessages`"  ];
+Needs[ "Wolfram`Chatbook`Common`"        ];
+Needs[ "Wolfram`Chatbook`Dialogs`"       ];
+Needs[ "Wolfram`Chatbook`FrontEnd`"      ];
+Needs[ "Wolfram`Chatbook`SendChat`"      ];
+Needs[ "Wolfram`Chatbook`Serialization`" ];
+Needs[ "Wolfram`Chatbook`Utils`"         ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
 $feedbackURL           = "https://www.wolframcloud.com/obj/chatbook-feedback/api/1.0/Feedback";
 $feedbackClientVersion = 1;
+$maxJSONObjectSize     = 10000;
+$simpleDisplayObjects  = { "DefaultTool", "Symbol", "Tokenizer" };
+$$simpleDisplayObject  = Alternatives @@ $simpleDisplayObjects;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -654,7 +661,7 @@ makeObjectsReadable[ as_Association ] :=
     ReplaceAll[
         as,
         {
-            KeyValuePattern @ { "_Object" -> "Symbol"|"DefaultTool", "Data" -> name_ } :> name
+            KeyValuePattern @ { "_Object" -> $$simpleDisplayObject, "Data" -> name_ } :> name
         }
     ];
 
@@ -702,13 +709,78 @@ toJSON[ sym_Symbol /; AtomQ @ Unevaluated @ sym ] :=
 toJSON[ tool: HoldPattern[ _LLMTool ] ] :=
     toolJSON @ tool;
 
+toJSON[ image_? graphicsQ ] :=
+    imageJSON @ image;
+
 toJSON[ RawBoxes @ TemplateBox[ { }, name_String ] ] :=
     <| "_Object" -> "NamedTemplateBox", "Data" -> name |>;
 
-toJSON[ other_ ] :=
-    <| "_Object" -> "Expression", "Data" -> ToString[ Unevaluated @ other, InputForm ] |>;
+toJSON[ File[ file_String ] ] :=
+    <| "_Object" -> "File", "Data" -> file |>;
+
+toJSON[ URL[ uri_String ] ] /; StringStartsQ[ uri, "data:" ] :=
+    With[ { expr = Quiet @ catchAlways @ importDataURI @ uri },
+        toJSON @ expr /; ! FailureQ @ expr
+    ];
+
+toJSON[ URL[ url_String ] ] :=
+    <| "_Object" -> "URL", "Data" -> url |>;
+
+toJSON[ tokenizer_ ] :=
+    With[ { name = tokenizerToName @ tokenizer },
+        <| "_Object" -> "Tokenizer", "Data" -> name |> /; StringQ @ name
+    ];
+
+toJSON[ other_ ] := <|
+    "_Object" -> "Expression",
+    "Data"    -> toJSONObjectString @ Unevaluated @ other
+|>;
 
 toJSON // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*imageJSON*)
+imageJSON // beginDefinition;
+
+imageJSON[ image_ ] := Enclose[
+    Module[ { uri, raster, resized },
+        uri = ConfirmBy[ toImageURI @ image, StringQ, "URI" ];
+        If[ TrueQ[ StringLength @ uri < $maxJSONObjectSize ],
+            <| "_Object" -> "Image", "Data" -> uri |>,
+            raster  = ConfirmBy[ If[ image2DQ @ image, image, Rasterize @ image ], ImageQ, "Rasterize" ];
+            resized = ConfirmBy[ ImageResize[ raster, Scaled[ 1/2 ] ], ImageQ, "Resize" ];
+            imageJSON[ image ] = <|
+                ConfirmMatch[
+                    imageJSON @ Evaluate @ resized,
+                    KeyValuePattern[ "_Object" -> "Image"|"ThumbnailImage" ],
+                    "ResizedJSON"
+                ],
+                "_Object"            -> "ThumbnailImage",
+                "OriginalDimensions" -> ImageDimensions @ raster
+            |>
+        ]
+    ],
+    throwInternalFailure[ imageJSON @ image, ## ] &
+];
+
+imageJSON // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toJSONObjectString*)
+toJSONObjectString // beginDefinition;
+toJSONObjectString[ expr_ ] := truncateString[ ToString[ Unevaluated @ expr, InputForm ], $maxJSONObjectSize ];
+toJSONObjectString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*tokenizerToName*)
+tokenizerToName // beginDefinition;
+tokenizerToName[ tokenizer_ ] := tokenizerToName[ tokenizer, cachedTokenizer @ All ];
+tokenizerToName[ tokenizer_, KeyValuePattern[ name_String -> tokenizer_ ] ] := name;
+tokenizerToName[ tokenizer_, _Association ] := Missing[ "NotFound" ];
+tokenizerToName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -718,10 +790,10 @@ toolJSON // beginDefinition;
 toolJSON[ tool: HoldPattern[ _LLMTool ] ] :=
     Module[ { names, name },
         names = AssociationMap[ Reverse, $DefaultTools ];
-        name = Lookup[ names, tool ];
+        name  = Lookup[ names, tool ];
         If[ StringQ @ name,
             <| "_Object" -> "DefaultTool", "Data" -> name |>,
-            <| "_Object" -> "Expression", "Data" -> ToString[ Unevaluated @ tool, InputForm ] |>
+            <| "_Object" -> "Expression" , "Data" -> toJSONObjectString @ tool |>
         ]
     ];
 

@@ -12,6 +12,7 @@ Wolfram`Chatbook`CellToChatMessage;
 `$multimodalMessages;
 `$tokenBudget;
 `$tokenPressure;
+`cachedTokenizer;
 `constructMessages;
 `getTokenizer;
 `resizeMultimodalImage;
