@@ -575,7 +575,7 @@ toolModelWarning[ scope_, True ] := "";
 toolModelWarning[ scope_, False ] := $toolsDisabledWarning;
 toolModelWarning[ scope_, enabled_ ] := toolModelWarning[ scope, enabled, currentChatSettings[ scope, "Model" ] ];
 toolModelWarning[ scope_, enabled_, model_? toolsEnabledQ ] := "";
-toolModelWarning[ scope_, enabled_, model_String ] := toolModelWarning0[ scope, model ];
+toolModelWarning[ scope_, enabled_, model_ ] := toolModelWarning0[ scope, model ];
 toolModelWarning // endDefinition;
 
 
@@ -597,6 +597,11 @@ toolModelWarning0[ scope_, model_String ] := Enclose[
     ],
     throwInternalFailure[ toolModelWarning0[ scope, model ], ## ] &
 ];
+
+toolModelWarning0[ scope_, model: Except[ _String ] ] :=
+    With[ { name = toModelName @ model },
+        toolModelWarning0[ scope, name ] /; StringQ @ name
+    ];
 
 toolModelWarning0 // endDefinition;
 
