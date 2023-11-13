@@ -168,19 +168,31 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
                 dialogBody @ OpenerView[
                     {
                         "Preview data to be sent",
-                        Pane[
-                            Dynamic @ generatePreviewData[ data, choices ],
-                            BaseStyle  -> {
-                                "Program",
-                                Background        -> GrayLevel[ 0.975 ],
-                                FontSize          -> 9,
-                                LineBreakWithin   -> False,
-                                PageWidth         -> 485,
-                                Selectable        -> True,
-                                TextClipboardType -> "PlainText"
-                            },
-                            ImageSize  -> { 485, UpTo[ 200 ] },
-                            Scrollbars -> Automatic
+                        topRightOverlay[
+                            Pane[
+                                Dynamic @ generatePreviewData[ data, choices ],
+                                BaseStyle  -> {
+                                    "Program",
+                                    Background        -> GrayLevel[ 0.975 ],
+                                    FontSize          -> 9,
+                                    LineBreakWithin   -> False,
+                                    PageWidth         -> 485,
+                                    Selectable        -> True,
+                                    TextClipboardType -> "PlainText"
+                                },
+                                ImageSize  -> { 485, UpTo[ 200 ] },
+                                Scrollbars -> Automatic
+                            ],
+                            Framed[
+                                clickToCopy[
+                                    chatbookIcon[ "AssistantCopyClipboard", False ],
+                                    Unevaluated @ Developer`ReadRawJSONString @ generatePreviewData[ data, choices ]
+                                ],
+                                Background     -> GrayLevel[ 0.975 ],
+                                ContentPadding -> False,
+                                FrameMargins   -> 0,
+                                FrameStyle     -> None
+                            ]
                         ]
                     },
                     Method -> "Active"
@@ -254,6 +266,26 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
 ];
 
 createFeedbackDialogContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*topRightOverlay*)
+topRightOverlay // beginDefinition;
+
+topRightOverlay[ pane_, attached_ ] :=
+    DynamicWrapper[
+        pane,
+        AttachCell[
+            EvaluationBox[ ],
+            attached,
+            { Right, Top },
+            Offset[ { -20, -5 }, { 0, 0 } ],
+            { Right, Top }
+        ],
+        SingleEvaluation -> True
+    ];
+
+topRightOverlay // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -529,7 +561,7 @@ makeFeedbackRequest[ None, data_String ] :=
     HTTPRequest[
         CloudObject @ $feedbackURL,
         <|
-            "Body" -> { "Data" -> StringToByteArray @ data },
+            "Body"   -> { "Data" -> StringToByteArray @ data },
             "Query"  -> <| "Version" -> IntegerString @ $feedbackClientVersion |>,
             "Method" -> "POST"
         |>
