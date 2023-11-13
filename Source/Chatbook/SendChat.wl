@@ -9,6 +9,7 @@ BeginPackage[ "Wolfram`Chatbook`SendChat`" ];
 `$debugLog;
 `makeOutputDingbat;
 `sendChat;
+`toImageURI;
 `toolsEnabledQ;
 `writeReformattedCell;
 
@@ -408,7 +409,7 @@ prepareMessagePart0 // endDefinition;
 prepareImageURLPart // beginDefinition;
 prepareImageURLPart[ URL[ url_String ] ] := <| "url" -> url |>;
 prepareImageURLPart[ file_File ] := With[ { img = importImage @ file }, prepareImageURLPart @ img /; graphicsQ @ img ];
-prepareImageURLPart[ image_ ] := prepareImageURLPart @ URL @ toDataURI @ image;
+prepareImageURLPart[ image_ ] := prepareImageURLPart @ URL @ toImageURI @ image;
 prepareImageURLPart // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -462,19 +463,25 @@ partType0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*toDataURI*)
-toDataURI // beginDefinition;
+(*toImageURI*)
+toImageURI // beginDefinition;
 
-toDataURI[ image_ ] := Enclose[
-    Module[ { resized, base64 },
+toImageURI[ image_? image2DQ ] :=
+    toImageURI[ image, "JPEG" ];
+
+toImageURI[ image_ ] :=
+    toImageURI[ image, "PNG" ];
+
+toImageURI[ image_, fmt_ ] := Enclose[
+    Module[ { resized, uri },
         resized = ConfirmBy[ resizeMultimodalImage @ image, image2DQ, "Resized" ];
-        base64 = ConfirmBy[ ExportString[ resized, { "Base64", "PNG" } ], StringQ, "Base64" ];
-        toDataURI[ image ] = "data:image/png;base64," <> StringDelete[ base64, "\n" ]
+        uri     = ConfirmBy[ exportDataURI[ resized, fmt ], StringQ, "URI" ];
+        toImageURI[ image ] = uri
     ],
-    throwInternalFailure[ toDataURI @ image, ## ] &
+    throwInternalFailure[ toImageURI @ image, ## ] &
 ];
 
-toDataURI // endDefinition;
+toImageURI // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
