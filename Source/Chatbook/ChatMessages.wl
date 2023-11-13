@@ -211,7 +211,7 @@ makeChatMessages[ settings_, cells_ ] :=
             $tokenBudget        = settings[ "MaxContextTokens" ],
             $tokenPressure      = 0.0
         },
-        If[ settings[ "BasePrompt" ] =!= None, decreaseTokenBudget[ settings, $fullBasePrompt ] ];
+        If[ settings[ "BasePrompt" ] =!= None, tokenCheckedMessage[ settings, $fullBasePrompt ] ];
         (* FIXME: need to account for persona/tool prompting as well *)
         makeChatMessages0[ settings, cells ]
     ];
@@ -241,8 +241,7 @@ makeChatMessages0[ settings0_, cells_List ] := Enclose[
 
         toMessage = Function @ With[
             { msg = toMessage0[ #1, <| #2, "TokenBudget" -> $tokenBudget, "TokenPressure" -> $tokenPressure |> ] },
-            decreaseTokenBudget[ settings, msg ];
-            msg
+            tokenCheckedMessage[ settings, msg ]
         ];
 
         message = ConfirmMatch[ toMessage[ cell, settings ], $$validMessageResults, "Message" ];
@@ -295,14 +294,20 @@ combineExcisedMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*decreaseTokenBudget*)
-decreaseTokenBudget // beginDefinition;
+(*tokenCheckedMessage*)
+tokenCheckedMessage // beginDefinition;
 
-decreaseTokenBudget[ as_Association, message_ ] := Enclose[
-    Module[ { count, budget },
+tokenCheckedMessage[ as_Association, message_ ] := Enclose[
+    Catch @ Module[ { count, budget, resized },
 
         count  = ConfirmMatch[ tokenCount[ as, message ], $$size, "Count" ];
         budget = ConfirmMatch[ $tokenBudget, $$size, "Budget" ];
+
+        If[ count > budget,
+            resized = cutMessageContent[ as, message, count, budget ];
+            ConfirmAssert[ resized =!= message, "Resized" ];
+            Throw @ tokenCheckedMessage[ as, resized ]
+        ];
 
         $tokenBudget      = Max[ 0, budget - count ];
         $tokenPressure    = 1.0 - ($tokenBudget / as[ "MaxContextTokens" ]);
@@ -321,15 +326,41 @@ decreaseTokenBudget[ as_Association, message_ ] := Enclose[
                 "MessageTokens"    -> count,
                 "Message"          -> message
             |>
-        ]
+        ];
+
+        message
     ],
-    throwInternalFailure[ decreaseTokenBudget[ as, message ], ## ] &
+    throwInternalFailure[ tokenCheckedMessage[ as, message ], ## ] &
 ];
 
-decreaseTokenBudget // endDefinition;
-
+tokenCheckedMessage // endDefinition;
 
 $tokenBudgetLog = Internal`Bag[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cutMessageContent*)
+cutMessageContent // beginDefinition;
+
+cutMessageContent[ as_, message: KeyValuePattern[ "Content" -> content_String ], count_, budget_ ] := Enclose[
+    Module[ { scale, resized },
+        scale   = ConfirmBy[ 0.9 * N[ budget / count ], NumberQ, "Scale" ];
+        resized = ConfirmBy[ truncateString[ content, Floor[ scale * StringLength @ content ] ], StringQ, "Resized" ];
+        <| message, "Content" -> resized |>
+    ],
+    throwInternalFailure[ cutMessageContent[ as, message, count, budget ], ## ] &
+];
+
+cutMessageContent[ as_, message: KeyValuePattern[ "Content" -> _? graphicsQ ], count_, budget_ ] :=
+    <| message, "Content" -> "" |>;
+
+cutMessageContent[ as_, message: KeyValuePattern[ "Content" -> { a___, _? graphicsQ, b___ } ], count_, budget_ ] :=
+    <| message, "Content" -> { a, b } |>;
+
+cutMessageContent[ as_, message: KeyValuePattern[ "Content" -> { content___String } ], count_, budget_ ] :=
+    cutMessageContent[ as, <| message, "Content" -> StringJoin @ content |>, count, budget ];
+
+cutMessageContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
