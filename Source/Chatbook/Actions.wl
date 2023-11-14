@@ -269,6 +269,7 @@ InsertInlineReference // endDefinition;
 (*insertInlineReference*)
 insertInlineReference // beginDefinition;
 
+(* FIXME: these four are unused, need to remove relevant definitions *)
 insertInlineReference[ "Persona"         , args___ ] := insertPersonaInputBox @ args;
 insertInlineReference[ "TrailingFunction", args___ ] := insertTrailingFunctionInputBox @ args;
 insertInlineReference[ "Function"        , args___ ] := insertFunctionInputBox @ args;
@@ -277,6 +278,7 @@ insertInlineReference[ "Modifier"        , args___ ] := insertModifierInputBox @
 insertInlineReference[ "PersonaTemplate" , args___ ] := insertPersonaTemplate @ args;
 insertInlineReference[ "FunctionTemplate", args___ ] := insertFunctionTemplate @ args;
 insertInlineReference[ "ModifierTemplate", args___ ] := insertModifierTemplate @ args;
+insertInlineReference[ "WLTemplate"      , args___ ] := insertWLTemplate @ args;
 
 insertInlineReference // endDefinition;
 
@@ -635,7 +637,7 @@ constructChatObject // beginDefinition;
 
 (* cSpell: ignore bdprompt *)
 constructChatObject[ messages_List ] :=
-    With[ { chat = Quiet[ ChatObject @ standardizeMessageKeys @ messages, ChatObject::bdprompt ] },
+    With[ { chat = Quiet[ chatObject @ standardizeMessageKeys @ messages, ChatObject::bdprompt ] },
         chat /; MatchQ[ chat, _chatObject ]
     ];
 
@@ -643,6 +645,8 @@ constructChatObject[ messages_List ] :=
     Dataset[ KeyMap[ Capitalize ] /@ messages ];
 
 constructChatObject // endDefinition;
+
+chatObject := chatObject = Symbol[ "System`ChatObject" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
