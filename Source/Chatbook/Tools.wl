@@ -33,6 +33,7 @@ HoldComplete[
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                   ];
+Needs[ "Wolfram`Chatbook`ChatMessages`"      ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
 Needs[ "Wolfram`Chatbook`Formatting`"        ];
 Needs[ "Wolfram`Chatbook`Prompting`"         ];
@@ -75,9 +76,9 @@ $ToolFunctions = <|
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Tool Configuration*)
-$defaultWebTextLength   = 12000;
-$toolResultStringLength = 500;
-$webSessionVisible      = False;
+$defaultWebTextLength    = 12000;
+$toolResultStringLength := Ceiling[ $initialCellStringBudget/2 ];
+$webSessionVisible       = False;
 
 $DefaultToolOptions = <|
     "WolframLanguageEvaluator" -> <|
@@ -592,6 +593,11 @@ NEVER state that a tool cannot be used for a particular task without trying it f
 You did not create these tools, so you do not know what they can and cannot do.
 
 " <> $fullExamples;
+
+(* TODO:
+    Create a preference setting called "ToolCallFrequency" that inserts a prompt here telling the LLM how often it
+    should be making tool calls.
+*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1713,7 +1719,7 @@ makeToolResponseString[ expr_? simpleResultQ ] :=
             StringJoin[
                 "\n",
                 fixLineEndings @ ToString[
-                    Unevaluated @ Short[ expr, 5 ],
+                    Unevaluated @ Short[ expr, Floor[ $toolResultStringLength / 100 ] ],
                     OutputForm,
                     PageWidth -> 100
                 ],

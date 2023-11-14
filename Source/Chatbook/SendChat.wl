@@ -85,6 +85,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             "InheritSettings"
         ];
 
+        $multimodalMessages = TrueQ @ settings[ "Multimodal" ];
+
         If[ TrueQ @ settings[ "EnableChatGroupSettings" ],
             AppendTo[ settings, "ChatGroupSettings" -> getChatGroupSettings @ evalCell ]
         ];
@@ -200,6 +202,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
             AssociationQ,
             "InheritSettings"
         ];
+
+        $multimodalMessages = TrueQ @ settings[ "Multimodal" ];
 
         If[ TrueQ @ settings[ "EnableChatGroupSettings" ],
             AppendTo[ settings, "ChatGroupSettings" -> getChatGroupSettings @ evalCell ]
@@ -989,7 +993,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             messages,
             {
                 <| "Role" -> "assistant", "Content" -> StringTrim @ string <> "\nENDTOOLCALL" |>,
-                <| "Role" -> "system"   , "Content" -> ToString @ output |>
+                <| "Role" -> "system"   , "Content" -> expandMultimodalString @ ToString @ output |>
             }
         ];
 
