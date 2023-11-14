@@ -14,10 +14,12 @@ BeginPackage[ "Wolfram`Chatbook`InlineReferences`" ];
 `insertPersonaTemplate;
 `insertFunctionTemplate;
 `insertModifierTemplate;
+`insertWLTemplate;
 
 `personaTemplateBoxes;
 `functionTemplateBoxes;
 `modifierTemplateBoxes;
+`wlTemplateBoxes;
 
 `parseInlineReferences;
 `resolveLastInlineReference;
@@ -1933,6 +1935,193 @@ insertFunctionTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
 		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
 	];
 
+
+(* ::Section::Closed:: *)
+(*WL Template*)
+
+
+(* ::Subsection::Closed:: *)
+(*setWLState*)
+
+
+SetAttributes[setWLState, HoldFirst]
+
+setWLState[state_, "Input", input_] := (
+	state = "Input";
+	MathLink`CallFrontEnd[FrontEnd`BoxReferenceFind[
+			FE`BoxReference[MathLink`CallFrontEnd[FrontEnd`Value[FEPrivate`Self[]]],
+			{FE`Parent["ChatbookWLTemplateID"]}],
+			AutoScroll -> True
+		]];
+	FrontEndExecute[FrontEnd`FrontEndToken["MoveNextPlaceHolder"]];
+)
+
+setWLState[state_, "Chosen", input_] :=
+Enclose[
+	With[{cellobj = EvaluationCell[]},
+		state = "Chosen";
+		SelectionMove[cellobj, All, Cell];
+		FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]];
+		CurrentValue[cellobj, TaggingRules] = <| "WLCode" -> input |>;
+	]
+	,
+	throwInternalFailure[ setWLState[state, "Chosen", input], ## ]&
+]
+
+setWLState[ state_, "Replace", input_ ] := (
+    SelectionMove[ EvaluationCell[ ], All, Cell ];
+    NotebookWrite[
+        InputNotebook[ ],
+        First[
+            FrontEndExecute @ FrontEnd`ExportPacket[ Cell @ BoxData @ RowBox @ { "\\", input }, "PlainText" ],
+            "\\"
+        ]
+    ]
+);
+
+
+(* ::Subsection::Closed:: *)
+(*wlTemplateBoxes*)
+
+
+SetAttributes[wlTemplateBoxes, HoldRest];
+
+wlTemplateBoxes[version: 1, input_, state_, uuid_, opts: OptionsPattern[]] /; state === "Input" :=
+	EventHandler[
+		Style[
+			Framed[
+				Grid[
+					{
+						{
+							RawBoxes[TemplateBox[{}, "AssistantEvaluate"]],
+							InputField[
+								Dynamic[ input ],
+								Boxes,
+								Alignment               -> { Left, Baseline },
+								ContinuousAction        -> False,
+								BaselinePosition        -> Baseline,
+								FieldSize               -> { { 5, Infinity }, Automatic },
+								Appearance              -> "Frameless",
+								(*ContentPadding          -> False,*)
+								FrameMargins            -> 0,
+								BoxID                   -> uuid,
+                                BaseStyle -> {
+                                    "Notebook",
+                                    "Input",
+                                    ShowCodeAssist   -> True,
+                                    ShowSyntaxStyles -> True,
+                                    FontFamily       -> "Source Sans Pro",
+                                    FontSize         -> 14
+                                }
+							] // overrideKeyEvents
+						}
+					},
+					Spacings         -> 0,
+					Alignment        -> { Automatic, Baseline },
+					BaselinePosition -> { 1, 2 }
+				],
+				BaselinePosition -> Baseline,
+				FrameStyle       -> GrayLevel[0.9],
+				ImageMargins     -> {{1,1},{0,0}},
+				$frameOptions
+			],
+			"Text",
+			ShowStringCharacters -> False
+		],
+		{
+			(*{ "KeyDown", "!" } :> NotebookWrite[ EvaluationNotebook[ ], "!" ],*)
+			"EscapeKeyDown" :> setWLState[state, "Replace", input],
+			"ReturnKeyDown" :> setWLState[state, "Chosen", input]
+		}
+	]
+
+wlTemplateBoxes[ version: 1, input_, state_, uuid_, opts: OptionsPattern[ ] ] /; state === "Chosen" :=
+    Button[
+        NotebookTools`Mousedown @@ MapThread[
+            Framed[
+                Grid[
+                    {
+                        {
+                            RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
+                            Style[
+                                RawBoxes @ input,
+                                "Input",
+                                ShowCodeAssist       -> True,
+                                ShowSyntaxStyles     -> True,
+                                FontFamily           -> "Source Sans Pro",
+                                FontSize             -> 14,
+                                ShowStringCharacters -> True
+                            ]
+                        }
+                    },
+                    Spacings  -> 0,
+                    Alignment -> { Automatic, Baseline }
+                ],
+                BaselinePosition -> { 1, 2 },
+                RoundingRadius   -> 2,
+                Background       -> #1,
+                FrameStyle       -> #2,
+                FrameMargins     -> 2,
+                ImageMargins     -> { { 1, 1 }, { 0, 0 } }
+            ] &,
+            {
+                { GrayLevel[ 0.95 ], GrayLevel[ 0.975 ], GrayLevel[ 1.0 ] },
+                { GrayLevel[ 0.90 ], GrayLevel[ 0.800 ], GrayLevel[ 0.9 ] }
+            }
+        ],
+        setWLState[ state, "Input", input ]
+        ,
+        Appearance       -> "Suppressed",
+        BaseStyle        -> { },
+        DefaultBaseStyle -> { },
+        BaselinePosition -> Baseline
+    ];
+
+(* FIXME: Add a wlTemplateBoxes rule for unknown version number *)
+
+
+(* ::Subsection::Closed:: *)
+(*wlTemplateCell*)
+
+
+wlTemplateCell[input_String, state: ("Input" | "Chosen"), uuid_String] :=
+Cell[BoxData[FormBox[
+	TemplateBox[<|"input" -> input, "state" -> state, "uuid" -> uuid|>,
+		"ChatbookWLTemplate"
+	], TextForm]],
+	"InlineWLReference",
+	Background -> None,
+	Deployed -> True
+]
+
+
+(* ::Subsection::Closed:: *)
+(*insertWLTemplate*)
+
+
+insertWLTemplate[ cell_CellObject ] :=
+    insertWLTemplate[ cell, parentNotebook @ cell ];
+
+insertWLTemplate[ parent_CellObject, nbo_NotebookObject ] :=
+	Module[ { uuid, cellexpr },
+		resolveInlineReferences @ parent;
+		uuid = CreateUUID[ ];
+		cellexpr = wlTemplateCell[ "", "Input", uuid ];
+		NotebookWrite[ nbo, cellexpr ];
+		(* FIXME: Can we get rid of the need for this UUID, and use BoxReference-something? *)
+		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
+	];
+
+insertWLTemplate[ name_String, cell_CellObject ] := insertWLTemplate[ name, cell, parentNotebook @ cell ];
+
+insertWLTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
+	Module[ { uuid, cellexpr },
+		resolveInlineReferences @ ParentCell @ parent;
+		uuid = CreateUUID[ ];
+		cellexpr = wlTemplateCell[ name, "Input", uuid ];
+		NotebookWrite[ parent, cellexpr ];
+		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
+	];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
