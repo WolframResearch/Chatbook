@@ -78,6 +78,9 @@ $defaultWindowWidth = 625;
 (* Maximum number of images to include in multimodal messages per cell before switching to a fully rasterized cell: *)
 $maxMarkdownBoxes = 5;
 
+(* Whether to generate a transcript and preview images for Video[...] expressions: *)
+$serializeVideo = False;
+
 (* Whether to collect data that can help discover missing definitions *)
 $CellToStringDebug = False;
 
@@ -662,6 +665,45 @@ rasterizeGraphics // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
+(*Video*)
+fasterCellToString0[ box: TemplateBox[ _, "VideoBox2", ___ ] ] /; $multimodalMessages && $serializeVideo :=
+    With[ { video = ToExpression[ box, StandardForm ] },
+        serializeVideo @ video /; VideoQ @ video
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*serializeVideo*)
+serializeVideo // beginDefinition;
+
+serializeVideo[ video_? VideoQ ] := Enclose[
+    Module[ { small, audio, transcript, w, h, t, d, frames, preview },
+
+        small      = ConfirmBy[ ImageResize[ video, { UpTo[ 150 ], UpTo[ 150 ] } ], VideoQ, "Resize" ];
+        audio      = ConfirmBy[ Audio @ video, AudioQ, "Audio" ];
+        transcript = ConfirmBy[ SpeechRecognize[ audio, Method -> "OpenAI" ], StringQ, "Transcript" ];
+        w          = 4;
+        h          = 6;
+        t          = ConfirmBy[ Information[ small, "Duration" ], QuantityQ, "Duration" ];
+        d          = t / (w * h);
+        t          = Table[ (i - 0.5) * d, { i, w * h } ];
+        frames     = ConfirmMatch[ VideoExtractFrames[ small, t ], { __Image }, "Frames" ];
+        preview    = ToBoxes @ ConfirmBy[ ImageAssemble[ Partition[ frames, w ], Spacings -> 3 ], ImageQ, "Assemble" ];
+
+        serializeVideo[ video ] = StringJoin[
+            "VIDEO TRANSCRIPT\n-----\n",
+            transcript,
+            "\n\nVIDEO PREVIEW\n-----\n",
+            ConfirmBy[ toMarkdownImageBox @ preview, StringQ, "Preview" ]
+        ]
+    ],
+    throwInternalFailure[ serializeVideo @ video, ##1 ] &
+];
+
+serializeVideo // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
 (*Template Boxes*)
 
 (* Inline Code *)
@@ -979,7 +1021,7 @@ fasterCellToString0[ cell: Cell[ a_, ___ ] ] :=
 
 fasterCellToString0[ InterpretationBox[ _, expr_, ___ ] ] :=
     With[ { held = replaceCellContext @ HoldComplete @ expr },
-    needsBasePrompt[ "WolframLanguage" ];
+        needsBasePrompt[ "WolframLanguage" ];
         Replace[ held, HoldComplete[ e_ ] :> inputFormString @ Unevaluated @ e ]
     ];
 

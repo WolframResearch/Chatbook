@@ -9,11 +9,13 @@ BeginPackage[ "Wolfram`Chatbook`ChatMessages`" ];
 Wolfram`Chatbook`CellToChatMessage;
 
 `$chatDataTag;
+`$initialCellStringBudget;
 `$multimodalMessages;
 `$tokenBudget;
 `$tokenPressure;
 `cachedTokenizer;
 `constructMessages;
+`expandMultimodalString;
 `getTokenizer;
 `resizeMultimodalImage;
 
@@ -640,17 +642,7 @@ makeMessageContent // beginDefinition;
 makeMessageContent[ cell_Cell ] /; $multimodalMessages := Enclose[
     Module[ { string, split, joined },
         string = ConfirmBy[ cellToString @ cell, StringQ, "CellToString" ];
-
-        split = Flatten @ StringSplit[
-            string,
-            md: Shortest[ "MarkdownImageBox[\"" ~~ link: ("![" ~~ __ ~~ "](" ~~ __ ~~ ")") ~~ "\"]" ] :> {
-                md,
-                ConfirmBy[ GetExpressionURI[ link, Tooltip -> False ], ImageQ, "GetExpressionURI" ]
-            }
-        ];
-
-        joined = FixedPoint[ Replace[ { a___, b_String, c_String, d___ } :> { a, b<>c, d } ], split ];
-        Replace[ joined, { msg_String } :> msg ]
+        expandMultimodalString @ string
     ],
     throwInternalFailure[ makeMessageContent @ cell, ## ] &
 ];
@@ -659,6 +651,56 @@ makeMessageContent[ cell_Cell ] :=
     cellToString @ cell;
 
 makeMessageContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*expandMultimodalStrings*)
+expandMultimodalString // beginDefinition;
+
+expandMultimodalString[ string_String ] := Enclose[
+    Module[ { split, joined },
+
+        split = Flatten @ StringSplit[
+            string,
+            {
+                md: Shortest[ "MarkdownImageBox[\"" ~~ link: ("![" ~~ __ ~~ "](" ~~ uri__ ~~ ")") ~~ "\"]" ] /;
+                    expressionURIQ @ uri :> {
+                        md,
+                        ConfirmBy[ GetExpressionURI[ link, Tooltip -> False ], graphicsQ, "MarkdownImageBox" ]
+                    },
+                md: Shortest[ link: ("![" ~~ __ ~~ "](" ~~ uri__ ~~ ")") ] /; graphicsURIQ @ uri :> {
+                    md,
+                    ConfirmBy[ GetExpressionURI[ link, Tooltip -> False ], graphicsQ, "GetExpressionURI" ]
+                }
+            }
+        ];
+
+        joined = FixedPoint[ Replace[ { a___, b_String, c_String, d___ } :> { a, b<>c, d } ], split ];
+        Replace[ joined, { msg_String } :> msg ]
+    ],
+    throwInternalFailure[ expandMultimodalString @ string, ## ] &
+];
+
+expandMultimodalString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*expressionURIQ*)
+expressionURIQ // beginDefinition;
+expressionURIQ[ uri_String ] := KeyExistsQ[ $attachments, StringDelete[ uri, StartOfString ~~ __ ~~ "://" ] ];
+expressionURIQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*graphicsURIQ*)
+graphicsURIQ // beginDefinition;
+
+graphicsURIQ[ uri_String ] := MatchQ[
+    Lookup[ $attachments, StringDelete[ uri, StartOfString ~~ __ ~~ "://" ] ],
+    HoldComplete[ e_ ] /; graphicsQ @ Unevaluated @ e
+];
+
+graphicsURIQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

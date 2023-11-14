@@ -506,7 +506,7 @@ sandboxResultString[ HoldComplete[ ___, expr_? simpleResultQ ] ] :=
             StringJoin[
                 "\n",
                 fixLineEndings @ ToString[
-                    Unevaluated @ Short[ expr, 5 ],
+                    Unevaluated @ Short[ expr, Floor[ $toolResultStringLength / 100 ] ],
                     OutputForm,
                     PageWidth -> 100
                 ],
