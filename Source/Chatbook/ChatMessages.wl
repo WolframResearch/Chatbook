@@ -9,6 +9,7 @@ BeginPackage[ "Wolfram`Chatbook`ChatMessages`" ];
 Wolfram`Chatbook`CellToChatMessage;
 
 `$chatDataTag;
+`$initialCellStringBudget;
 `$multimodalMessages;
 `$tokenBudget;
 `$tokenPressure;
