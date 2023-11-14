@@ -750,6 +750,17 @@ fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> string_ ], "TeXAss
     "$" <> string <> "$"
 );
 
+(* Inline WL code template *)
+fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> input_ ], "ChatbookWLTemplate", ___ ] ] :=
+    Replace[
+        Quiet[ ToExpression[ input, StandardForm ], ToExpression::esntx ],
+        {
+            string_String? StringQ :> string,
+            $Failed :> "\n\n[Inline parse failure: " <> ToString[ fasterCellToString0 @ input, InputForm ] <> "]",
+            expr_ :> fasterCellToString0 @ ToBoxes @ expr
+        }
+    ];
+
 (* Other *)
 fasterCellToString0[ TemplateBox[ args_, name_String, ___ ] ] :=
     With[ { f = $templateBoxRules @ name },
