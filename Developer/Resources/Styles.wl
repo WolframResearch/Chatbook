@@ -170,6 +170,12 @@ Cell[
             Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "ModifierTemplate", $CellContext`cell ]
         ]
         ,
+        (* Insert WL code input template: *)
+        { "KeyDown", "\\" } :> With[ { $CellContext`cell = EvaluationCell[ ] },
+            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "InsertInlineReference", "WLTemplate", $CellContext`cell ]
+        ]
+        ,
         (* Highlight cells that will be included in chat context: *)
         "MouseEntered" :> With[ { $CellContext`cell = EvaluationCell[ ] },
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
@@ -1055,6 +1061,28 @@ Cell[
 				]
 			]&),
 		InterpretationFunction -> (InterpretationBox["", "!"<>#input]&)
+	}
+]
+
+
+(* ::Subsection::Closed:: *)
+(*ChatbookWLTemplate*)
+
+
+Cell[
+	StyleData["ChatbookWLTemplate"],
+	TemplateBoxOptions -> {
+		DisplayFunction -> (
+			NamespaceBox["ChatbookWLTemplateID",
+				DynamicModuleBox[{},
+					DynamicBox[ToBoxes @ Wolfram`Chatbook`InlineReferences`wlTemplateBoxes[1, #input, #state, #uuid]],
+					Initialization :> (
+						Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+						Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = EvaluationCell[ ]
+					)
+				]
+			]&),
+		InterpretationFunction -> (InterpretationBox["", RowBox[{"\\",#input}]]&)
 	}
 ]
 

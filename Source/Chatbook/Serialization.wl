@@ -750,6 +750,17 @@ fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> string_ ], "TeXAss
     "$" <> string <> "$"
 );
 
+(* Inline WL code template *)
+fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> input_ ], "ChatbookWLTemplate", ___ ] ] :=
+    Replace[
+        Quiet[ ToExpression[ input, StandardForm ], ToExpression::esntx ],
+        {
+            string_String? StringQ :> string,
+            $Failed :> "\n\n[Inline parse failure: " <> ToString[ fasterCellToString0 @ input, InputForm ] <> "]",
+            expr_ :> fasterCellToString0 @ ToBoxes @ expr
+        }
+    ];
+
 (* Other *)
 fasterCellToString0[ TemplateBox[ args_, name_String, ___ ] ] :=
     With[ { f = $templateBoxRules @ name },
@@ -966,10 +977,11 @@ fasterCellToString0[ cell: Cell[ a_, ___ ] ] :=
         fasterCellToString0 @ a
     ];
 
-fasterCellToString0[ InterpretationBox[ _, expr_, ___ ] ] := (
+fasterCellToString0[ InterpretationBox[ _, expr_, ___ ] ] :=
+    With[ { held = replaceCellContext @ HoldComplete @ expr },
     needsBasePrompt[ "WolframLanguage" ];
-    inputFormString @ Unevaluated @ expr
-);
+        Replace[ held, HoldComplete[ e_ ] :> inputFormString @ Unevaluated @ e ]
+    ];
 
 fasterCellToString0[ Cell[ TextData @ { _, _, text_String, _, Cell[ _, "ExampleCount", ___ ] }, ___ ] ] :=
     fasterCellToString0 @ text;
