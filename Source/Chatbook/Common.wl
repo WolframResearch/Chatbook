@@ -173,12 +173,31 @@ optimizeEnclosures[ s_Symbol ] := DownValues[ s ] = optimizeEnclosures0 @ DownVa
 optimizeEnclosures0 // ClearAll;
 optimizeEnclosures0[ expr_ ] :=
     ReplaceAll[
-        expr,
+        expandThrowInternalFailures @ expr,
         HoldPattern[ e: Enclose[ _ ] | Enclose[ _, _ ] ] :>
             With[ { new = addEnclosureTags[ e, $ConditionHold ] },
                 RuleCondition[ new, True ]
             ]
     ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*expandThrowInternalFailures*)
+expandThrowInternalFailures // beginDefinition;
+
+expandThrowInternalFailures[ expr_ ] :=
+    ReplaceAll[
+        expr,
+        HoldPattern[ Verbatim[ HoldPattern ][ lhs_ ] :> rhs_ ] /;
+            ! FreeQ[ HoldComplete @ rhs, HoldPattern @ Enclose[ _, throwInternalFailure ] ] :>
+            ReplaceAll[
+                HoldPattern[ e$: lhs ] :> rhs,
+                HoldPattern @ Enclose[ eval_, throwInternalFailure ] :>
+                    Enclose[ eval, throwInternalFailure[ e$, ##1 ] & ]
+            ]
+    ];
+
+expandThrowInternalFailures // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
