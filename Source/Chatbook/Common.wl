@@ -168,12 +168,12 @@ $messageSymbol   = Chatbook;
 (*optimizeEnclosures*)
 optimizeEnclosures // ClearAll;
 optimizeEnclosures // Attributes = { HoldFirst };
-optimizeEnclosures[ s_Symbol ] := DownValues[ s ] = optimizeEnclosures0 @ DownValues @ s;
+optimizeEnclosures[ s_Symbol ] := DownValues[ s ] = expandThrowInternalFailures @ optimizeEnclosures0 @ DownValues @ s;
 
 optimizeEnclosures0 // ClearAll;
 optimizeEnclosures0[ expr_ ] :=
     ReplaceAll[
-        expandThrowInternalFailures @ expr,
+        expr,
         HoldPattern[ e: Enclose[ _ ] | Enclose[ _, _ ] ] :>
             With[ { new = addEnclosureTags[ e, $ConditionHold ] },
                 RuleCondition[ new, True ]
@@ -189,11 +189,11 @@ expandThrowInternalFailures[ expr_ ] :=
     ReplaceAll[
         expr,
         HoldPattern[ Verbatim[ HoldPattern ][ lhs_ ] :> rhs_ ] /;
-            ! FreeQ[ HoldComplete @ rhs, HoldPattern @ Enclose[ _, throwInternalFailure ] ] :>
+            ! FreeQ[ HoldComplete @ rhs, HoldPattern @ Enclose[ _, throwInternalFailure, $enclosure ] ] :>
             ReplaceAll[
                 HoldPattern[ e$: lhs ] :> rhs,
-                HoldPattern @ Enclose[ eval_, throwInternalFailure ] :>
-                    Enclose[ eval, throwInternalFailure[ e$, ##1 ] & ]
+                    HoldPattern @ Enclose[ eval_, throwInternalFailure, $enclosure ] :>
+                        Enclose[ eval, throwInternalFailure[ e$, ##1 ] &, $enclosure ]
             ]
     ];
 
