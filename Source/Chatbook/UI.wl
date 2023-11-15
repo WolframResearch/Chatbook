@@ -486,6 +486,13 @@ makeTemperatureSlider[
 		BaseStyle -> { FontSize -> 12 }
 	]
 
+makeOpenAiApiCompletionURLForm[value_]:= Pane[
+	InputField[value,
+		String,
+		ImageSize -> {180, Automatic},
+		BaseStyle -> {FontSize -> 12}]
+]
+
 (*=========================================*)
 (* Common preferences content construction *)
 (*=========================================*)
@@ -601,6 +608,21 @@ makeFrontEndAndNotebookSettingsContent[
 							CurrentValue[
 								targetObj,
 								{TaggingRules, "ChatNotebookSettings", "Temperature"}
+							] = newValue;
+						)
+					]
+				]
+			}, Spacer[3]]},
+
+			{Row[{
+				tr["Default OpenAi Chat Completion Endpoint"],
+				makeOpenAiApiCompletionURLForm[
+					Dynamic[
+						currentChatSettings[targetObj, "OpenAiApiCompletionURL"],
+						newValue |-> (
+							CurrentValue[
+								targetObj,
+								{TaggingRules, "ChatNotebookSettings", "OpenAiApiCompletionURL"}
 							] = newValue;
 						)
 					]

@@ -44,6 +44,7 @@ $defaultChatSettings = <|
     "Multimodal"                -> Automatic,
     "NotebookWriteMethod"       -> Automatic,
     "OpenAIKey"                 -> Automatic, (* TODO: remove this once LLMServices is widely available *)
+    "OpenAiApiCompletionURL"    -> "https://api.openai.com/v1/chat/completions",
     "PresencePenalty"           -> 0.1,
     "ProcessingFunctions"       :> $DefaultChatProcessingFunctions,
     "Prompts"                   -> { },
