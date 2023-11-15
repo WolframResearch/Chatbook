@@ -308,10 +308,11 @@ makeHTTPRequest // beginDefinition;
 
 (* cSpell: ignore ENDTOOLCALL *)
 makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association } ] :=
-    Enclose @ Module[ { key, stream, model, tokens, temperature, topP, freqPenalty, presPenalty, data, body },
+    Enclose @ Module[ { key, stream, model, tokens, temperature, topP, freqPenalty, presPenalty, data, body, apiCompletionURL },
 
         key         = ConfirmBy[ Lookup[ settings, "OpenAIKey" ], StringQ ];
         stream      = True;
+        apiCompletionURL = ConfirmBy[ Lookup[ settings, "OpenAiApiCompletionURL" ], StringQ ];
 
         (* model parameters *)
         model       = Lookup[ settings, "Model"           , $DefaultModel ];
@@ -340,7 +341,7 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association }
 
         $lastHTTPParameters = data;
         $lastRequest = HTTPRequest[
-            "https://api.openai.com/v1/chat/completions",
+            apiCompletionURL,
             <|
                 "Headers" -> <|
                     "Content-Type"  -> "application/json",
