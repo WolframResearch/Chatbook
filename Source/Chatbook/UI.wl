@@ -471,6 +471,98 @@ labeledCheckbox[value_, label_, enabled_ : Automatic] :=
 
 (*====================================*)
 
+makeToolCallFrequencySlider[ obj_ ] := Pane[
+    Grid[
+        {
+            {
+                labeledCheckbox[
+                    Dynamic[
+                        currentChatSettings[ obj, "ToolCallFrequency" ] === Automatic,
+                        Function[
+                            If[ TrueQ[ # ],
+                                CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = Inherited,
+                                CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = 0.5
+                            ]
+                        ]
+                    ],
+                    Style[ "Choose automatically", "ChatMenuLabel" ]
+                ]
+            },
+            {
+                Pane[
+                    Slider[
+                        Dynamic[
+                            Replace[ currentChatSettings[ obj, "ToolCallFrequency" ], Automatic -> 0.5 ],
+                            (CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = #) &
+                        ],
+                        { 0, 1, 0.01 },
+                        (* Enabled      -> Dynamic[ currentChatSettings[ obj, "ToolCallFrequency" ] =!= Automatic ], *)
+                        ImageSize    -> { 150, Automatic },
+                        ImageMargins -> { { 5, 0 }, { 5, 5 } }
+                    ],
+                    ImageSize -> { 180, Automatic },
+                    BaseStyle -> { FontSize -> 12 }
+                ],
+                SpanFromLeft
+            }
+        },
+        Alignment -> Left,
+        Spacings  -> { Automatic, 0 }
+    ],
+    ImageMargins -> { { 5, 0 }, { 5, 5 } }
+];
+
+makeToolCallFrequencySlider[ obj_ ] :=
+    Module[ { checkbox, slider },
+        checkbox = labeledCheckbox[
+            Dynamic[
+                currentChatSettings[ obj, "ToolCallFrequency" ] === Automatic,
+                Function[
+                    If[ TrueQ[ # ],
+                        CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = Inherited,
+                        CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = 0.5
+                    ]
+                ]
+            ],
+            Style[ "Choose automatically", "ChatMenuLabel" ]
+        ];
+        slider = Pane[
+            Grid[
+                {
+                    {
+                        Style[ "Rare", "ChatMenuLabel", FontSize -> 12 ],
+                        Slider[
+                            Dynamic[
+                                Replace[ currentChatSettings[ obj, "ToolCallFrequency" ], Automatic -> 0.5 ],
+                                (CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = #) &
+                            ],
+                            { 0, 1, 0.01 },
+                            ImageSize    -> { 100, Automatic },
+                            ImageMargins -> { { 0, 0 }, { 5, 5 } }
+                        ],
+                        Style[ "Often", "ChatMenuLabel", FontSize -> 12 ]
+                    }
+                },
+                Spacings -> { { 0, { 0.5 }, 0 }, 0 },
+                Alignment -> { { Left, Center, Right }, Baseline }
+            ],
+            ImageMargins -> 0,
+            ImageSize    -> { 170, Automatic }
+        ];
+        Pane[
+            PaneSelector[
+                {
+                    True -> Column[ { checkbox }, Alignment -> Left ],
+                    False -> Column[ { slider, checkbox }, Alignment -> Left ]
+                },
+                Dynamic[ currentChatSettings[ obj, "ToolCallFrequency" ] === Automatic ],
+                ImageSize -> Automatic
+            ],
+            ImageMargins -> { { 5, 0 }, { 5, 5 } }
+        ]
+    ];
+
+
 makeTemperatureSlider[
 	value_
 ] :=
@@ -591,6 +683,10 @@ makeFrontEndAndNotebookSettingsContent[
 						]
 					]
 				]
+			}, Spacer[3]]},
+			{Row[{
+				tr["Default Tool Call Frequency:"],
+				makeToolCallFrequencySlider[ targetObj ]
 			}, Spacer[3]]},
 			{Row[{
 				tr["Default Temperature:"],
@@ -985,6 +1081,7 @@ makeChatActionMenu[
 			targetObj,
 			{TaggingRules, "ChatNotebookSettings", "Role"}
 		],
+		"ToolCallFrequency" -> targetObj,
 		"TemperatureValue" -> Dynamic[
 			currentChatSettings[ targetObj, "Temperature" ],
 			newValue |-> (
@@ -1005,6 +1102,7 @@ Options[makeChatActionMenuContent] = {
 	"PersonaValue" -> Automatic,
 	"ModelValue" -> Automatic,
 	"RoleValue" -> Automatic,
+	"ToolCallFrequency" -> Automatic,
 	"TemperatureValue" -> Automatic,
 	"ActionCallback" -> (Null &)
 }
@@ -1020,6 +1118,7 @@ makeChatActionMenuContent[
 	personaValue = OptionValue["PersonaValue"],
 	modelValue = OptionValue["ModelValue"],
 	roleValue = OptionValue["RoleValue"],
+	toolValue = OptionValue["ToolCallFrequency"],
 	tempValue = OptionValue["TemperatureValue"],
 	advancedSettingsMenu,
 	menuLabel,
@@ -1036,6 +1135,14 @@ makeChatActionMenuContent[
 			{
 				None,
 				makeTemperatureSlider[tempValue],
+				None
+			}
+		},
+        {
+			"Tool Call Frequency",
+			{
+				None,
+				makeToolCallFrequencySlider[toolValue],
 				None
 			}
 		},
