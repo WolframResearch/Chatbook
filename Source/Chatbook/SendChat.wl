@@ -312,7 +312,7 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association }
 
         key         = ConfirmBy[ Lookup[ settings, "OpenAIKey" ], StringQ ];
         stream      = True;
-        apiCompletionURL = ConfirmBy[ Lookup[ settings, "OpenAiApiCompletionURL" ], StringQ ];
+        apiCompletionURL = ConfirmBy[ Lookup[ settings, "OpenAIAPICompletionURL" ], StringQ ];
 
         (* model parameters *)
         model       = Lookup[ settings, "Model"           , $DefaultModel ];
