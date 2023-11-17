@@ -9,6 +9,7 @@ HoldComplete[
     `$enableLLMServices;
     `$servicesLoaded;
     `$useLLMServices;
+    `getLLMServicesModelList;
 ];
 
 Begin[ "`Private`" ];
@@ -16,6 +17,8 @@ Begin[ "`Private`" ];
 Needs[ "Wolfram`Chatbook`"        ];
 Needs[ "Wolfram`Chatbook`Common`" ];
 Needs[ "Wolfram`Chatbook`Models`" ];
+
+$ContextAliases[ "llm`" ] = "LLMServices`";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -32,6 +35,71 @@ $llmServicesAvailable := $llmServicesAvailable = (
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Available Services*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$availableServiceNames*)
+$availableServiceNames := getAvailableServiceNames[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getAvailableServiceNames*)
+getAvailableServiceNames // beginDefinition;
+getAvailableServiceNames[ ] := getAvailableServiceNames @ $useLLMServices;
+getAvailableServiceNames[ False ] := Keys @ $fallBackServices;
+getAvailableServiceNames[ True ] := getAvailableServiceNames0[ ];
+getAvailableServiceNames // endDefinition;
+
+
+getAvailableServiceNames0 // beginDefinition;
+
+getAvailableServiceNames0[ ] := (
+    PacletInstall[ "Wolfram/LLMFunctions" ];
+    Needs[ "LLMServices`" -> None ];
+    getAvailableServiceNames0 @ llm`LLMServiceInformation @ llm`ChatSubmit
+);
+
+getAvailableServiceNames0[ services_Association ] :=
+    Keys @ services;
+
+getAvailableServiceNames0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getServiceModels*)
+getServiceModelList // beginDefinition;
+
+getServiceModelList[ name_String ] :=
+    getServiceModelList[ name, llm`LLMServiceInformation[ llm`ChatSubmit, name ] ];
+
+getServiceModelList[ name_String, info_Association ] :=
+    getServiceModelList[ name, info, getModelListQuietly @ info ];
+
+getServiceModelList[ name_, info_, Missing[ "NotConnected" ] ] :=
+    Missing[ "NotConnected" ];
+
+getServiceModelList[ "OpenAI", info_, models: { "gpt-4", "gpt-3.5-turbo-0613" } ] :=
+    With[ { full = getOpenAIChatModels[ ] },
+        getServiceModelList[ "OpenAI", info, full ] /; MatchQ[ full, Except[ models, { __String } ] ]
+    ];
+
+getServiceModelList[ name_String, info_, models: { ___String } ] :=
+    getServiceModelList[ name ] = <| "Service" -> name, "Name" -> #1 |> & /@ models;
+
+getServiceModelList // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getModelListQuietly*)
+getModelListQuietly // beginDefinition;
+
+(* cSpell: ignore nprmtv, genconerr, invs, nolink *)
+getModelListQuietly[ info_Association ] := Quiet[
+    Check[ info[ "ModelList" ], Missing[ "NotConnected" ], DialogInput::nprmtv ],
+    { DialogInput::nprmtv, ServiceConnect::genconerr, ServiceConnect::invs, ServiceExecute::nolink }
+];
+
+getModelListQuietly // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -52,19 +120,19 @@ getAvailableServices0 // beginDefinition;
 getAvailableServices0[ ] := (
     PacletInstall[ "Wolfram/LLMFunctions" ];
     Needs[ "LLMServices`" -> None ];
-    getAvailableServices0 @ LLMServices`LLMServiceInformation[ LLMServices`ChatSubmit, "Services" ]
+    getAvailableServices0 @ llm`LLMServiceInformation @ llm`ChatSubmit
 );
 
 getAvailableServices0[ services0_Association? AssociationQ ] := Enclose[
     Catch @ Module[ { services, withServiceName, withModels },
 
-        services = Replace[ services0, <| |> :> $fallBackServices ];
+        services        = Replace[ services0, <| |> :> $fallBackServices ];
         withServiceName = Association @ KeyValueMap[ #1 -> <| "ServiceName" -> #1, #2 |> &, services ];
 
         withModels = Replace[
             withServiceName,
-            as: KeyValuePattern @ { "ServiceName" -> service_String, "ModelList" -> func_ } :>
-                RuleCondition @ With[ { models = func[ ] },
+            as: KeyValuePattern @ { "ServiceName" -> service_String } :>
+                RuleCondition @ With[ { models = getServiceModelList @ service },
                     If[ ListQ @ models, (* workaround for KeyValuePattern bug *)
                         <| as, "Models" -> standardizeModelData[ service, models ] |>,
                         as
