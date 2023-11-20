@@ -42,6 +42,7 @@ Needs[ "Wolfram`Chatbook`Models`"           ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`PreferencesUtils`" ];
 Needs[ "Wolfram`Chatbook`Serialization`"    ];
+Needs[ "Wolfram`Chatbook`Services`"         ];
 Needs[ "Wolfram`Chatbook`Settings`"         ];
 Needs[ "Wolfram`Chatbook`Utils`"            ];
 
@@ -578,6 +579,7 @@ makeTemperatureSlider[
 		BaseStyle -> { FontSize -> 12 }
 	]
 
+(* cSpell: ignore AIAPI *)
 makeOpenAIAPICompletionURLForm[value_]:= Pane[
 	InputField[value,
 		String,
@@ -710,7 +712,9 @@ makeFrontEndAndNotebookSettingsContent[
 				]
 			}, Spacer[3]]},
 
-			{Row[{
+			If[ TrueQ @ $useLLMServices,
+				Nothing,
+				{Row[{
 				tr["Chat Completion URL:"],
 				makeOpenAIAPICompletionURLForm[
 					Dynamic[
@@ -723,7 +727,7 @@ makeFrontEndAndNotebookSettingsContent[
 						)
 					]
 				]
-			}, Spacer[3]]},
+			}, Spacer[3]]}],
 			{
 				labeledCheckbox[
 					Dynamic[
