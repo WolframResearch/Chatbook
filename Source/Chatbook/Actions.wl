@@ -637,7 +637,7 @@ constructChatObject // beginDefinition;
 
 (* cSpell: ignore bdprompt *)
 constructChatObject[ messages_List ] :=
-    With[ { chat = Quiet[ chatObject @ standardizeMessageKeys @ messages, ChatObject::bdprompt ] },
+    With[ { chat = Quiet[ chatObject @ checkMultimodal @ standardizeMessageKeys @ messages, ChatObject::bdprompt ] },
         chat /; MatchQ[ chat, _chatObject ]
     ];
 
@@ -647,6 +647,32 @@ constructChatObject[ messages_List ] :=
 constructChatObject // endDefinition;
 
 chatObject := chatObject = Symbol[ "System`ChatObject" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkMultimodal*)
+(* TODO: this is temporary until ChatObject supports multimodal content: *)
+checkMultimodal // beginDefinition;
+checkMultimodal[ messages_ ] := checkMultimodal[ messages, multimodalPacletsAvailable[ ] ];
+checkMultimodal[ messages_, False ] := revertMultimodalContent @ messages;
+checkMultimodal[ messages_, True  ] := messages;
+checkMultimodal // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*revertMultimodalContent*)
+revertMultimodalContent // beginDefinition;
+
+revertMultimodalContent[ messages_List ] :=
+    revertMultimodalContent /@ messages;
+
+revertMultimodalContent[ as: KeyValuePattern[ "Content" -> content_List ] ] :=
+    <| as, "Content" -> StringJoin @ Select[ content, StringQ ] |>;
+
+revertMultimodalContent[ as: KeyValuePattern[ "Content" -> _String ] ] :=
+    as;
+
+revertMultimodalContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

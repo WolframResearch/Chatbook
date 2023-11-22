@@ -8,6 +8,7 @@ BeginPackage[ "Wolfram`Chatbook`SendChat`" ];
 
 `$debugLog;
 `makeOutputDingbat;
+`multimodalPacletsAvailable;
 `sendChat;
 `toImageURI;
 `toolsEnabledQ;
