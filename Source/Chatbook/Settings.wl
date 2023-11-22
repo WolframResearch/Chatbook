@@ -376,7 +376,9 @@ currentChatSettings0[ cell_CellObject ] /; $cloudInheritanceFix := Enclose[
     Module[ { cellSettings, nbSettings },
 
         cellSettings = ConfirmBy[
-            Block[ { $cloudInheritanceFix = False }, currentChatSettings0 @ cell ],
+            Block[ { $defaultChatSettings = <| |>, $cloudInheritanceFix = False },
+                currentChatSettings0 @ cell
+            ],
             AssociationQ,
             "CellSettings"
         ];
