@@ -52,7 +52,7 @@ $$validMessageResults    = $$validMessageResult | { $$validMessageResult ... };
 
 $$inlineModifierCell = Alternatives[
     Cell[ _, "InlineModifierReference", ___ ],
-    Cell[ BoxData @ Cell[ _, "InlineModifierReference", ___ ], ___ ]
+    Cell[ BoxData[ Cell[ _, "InlineModifierReference", ___ ], ___ ], ___ ]
 ];
 
 $$promptArgumentToken = Alternatives[ ">", "^", "^^" ];

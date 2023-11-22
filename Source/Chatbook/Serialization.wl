@@ -956,7 +956,7 @@ fasterCellToString0 @ DynamicBox[ ToBoxes[ If[ $OperatingSystem === os_String, a
 
 (* Checkboxes: *)
 fasterCellToString0[ Cell[
-    BoxData @ TagBox[ grid_GridBox, "Grid", ___ ],
+    BoxData[ TagBox[ grid_GridBox, "Grid", ___ ], ___ ],
     ___,
     CellTags -> { ___, "CheckboxCell", ___ },
     ___
@@ -997,12 +997,12 @@ fasterCellToString0[
     TagBox[ _, "MarkdownImage", ___, TaggingRules -> KeyValuePattern[ "CellToStringData" -> string_String ], ___ ]
 ] := string;
 
-fasterCellToString0[ BoxData[ boxes_List ] ] :=
+fasterCellToString0[ BoxData[ boxes_List, ___ ] ] :=
     With[ { strings = fasterCellToString0 /@ boxes },
         StringRiffle[ strings, "\n" ] /; AllTrue[ strings, StringQ ]
     ];
 
-fasterCellToString0[ BoxData[ boxes_ ] ] :=
+fasterCellToString0[ BoxData[ boxes_, ___ ] ] :=
     fasterCellToString0 @ boxes;
 
 fasterCellToString0[ list_List ] :=
@@ -1032,11 +1032,14 @@ fasterCellToString0[ DynamicModuleBox[
     _,
     TagBox[
         Cell[
-            BoxData @ TagBox[
-                _,
-                "MarkdownImage",
-                ___,
-                TaggingRules -> Association @ OrderlessPatternSequence[ "CellToStringData" -> str_String, ___ ]
+            BoxData[
+                TagBox[
+                    _,
+                    "MarkdownImage",
+                    ___,
+                    TaggingRules -> Association @ OrderlessPatternSequence[ "CellToStringData" -> str_String, ___ ]
+                ],
+                ___
             ],
             __
         ],
@@ -1164,7 +1167,7 @@ stringToBoxes[ string_String ] :=
         Quiet @ UsingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`UndocumentedTestFEParserPacket[ string, True ]
     ];
 
-stringToBoxes[ string_, { BoxData[ boxes_ ], ___ } ] := boxes;
+stringToBoxes[ string_, { BoxData[ boxes_, ___ ], ___ } ] := boxes;
 stringToBoxes[ string_, other_ ] := string;
 
 (* ::**************************************************************************************************************:: *)
@@ -1417,9 +1420,9 @@ makeUsageString // SetFallthroughError;
 
 makeUsageString[ usage_List ] := StringRiffle[ Flatten[ makeUsageString /@ usage ], "\n" ];
 
-makeUsageString[ Cell[ BoxData @ GridBox[ grid_List, ___ ], "Usage", ___ ] ] := makeUsageString0 /@ grid;
+makeUsageString[ Cell[ BoxData[ GridBox[ grid_List, ___ ], ___ ], "Usage", ___ ] ] := makeUsageString0 /@ grid;
 
-makeUsageString[ Cell[ BoxData @ GridBox @ { { cell_, _ } }, "ObjectNameGrid", ___ ] ] :=
+makeUsageString[ Cell[ BoxData[ GridBox[ { { cell_, _ } }, ___ ], ___ ], "ObjectNameGrid", ___ ] ] :=
     "# " <> cellToString @ cell <> "\n";
 
 makeUsageString0 // SetFallthroughError;
