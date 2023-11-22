@@ -19,6 +19,9 @@ Needs[ "Wolfram`Chatbook`FrontEnd`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
+$cloudInheritanceFix := $cloudNotebooks && ! PacletNewerQ[ $CloudVersionNumber, "1.67.1" ];
+
+(* cSpell: ignore AIAPI *)
 $defaultChatSettings = <|
     "Assistance"                -> Automatic,
     "AutoFormat"                -> True,
@@ -368,6 +371,49 @@ currentChatSettings // endDefinition;
 
 currentChatSettings0 // beginDefinition;
 
+(* Workaround for AbsoluteCurrentValue not properly inheriting TaggingRules in cloud notebooks: *)
+currentChatSettings0[ cell_CellObject ] /; $cloudInheritanceFix := Enclose[
+    Module[ { cellSettings, nbSettings },
+
+        cellSettings = ConfirmBy[
+            Block[ { $cloudInheritanceFix = False }, currentChatSettings0 @ cell ],
+            AssociationQ,
+            "CellSettings"
+        ];
+
+        (* Since inheritance is not working correctly for cell, we'll manually get notebook settings here: *)
+        nbSettings = ConfirmBy[
+            currentChatSettings0 @ parentNotebook @ cell,
+            AssociationQ,
+            "NotebookSettings"
+        ];
+
+        (* This should effectively inherit settings like AbsoluteCurrentValue would: *)
+        ConfirmBy[
+            mergeChatSettings @ Flatten @ { $defaultChatSettings, nbSettings, cellSettings },
+            AssociationQ,
+            "MergedSettings"
+        ]
+    ],
+    throwInternalFailure
+];
+
+(* A similar workaround when getting one setting: *)
+currentChatSettings0[ cell_CellObject, key_String ] /; $cloudInheritanceFix :=
+    Module[ { setting },
+        (* Locally make $defaultChatSettings empty so we get Inherited if the cell does not explicitly set the value: *)
+        setting = Block[ { $defaultChatSettings = <| |>, $cloudInheritanceFix = False },
+            currentChatSettings0[ cell, key ]
+        ];
+
+        (* If Inherited, then look at the parent notebook for the relevant value: *)
+        If[ setting === Inherited,
+            currentChatSettings0[ parentNotebook @ cell, key ],
+            setting
+        ]
+    ];
+
+(* On desktop we inherit settings as usual: *)
 currentChatSettings0[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession ] :=
     Association[
         $defaultChatSettings,
@@ -388,7 +434,7 @@ currentChatSettings0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*mergeChatSettings*)
 mergeChatSettings // beginDefinition;
-mergeChatSettings[ a_List ] := mergeChatSettings0 @ a //. DownValues @ mergeChatSettings0;
+mergeChatSettings[ a_List ] := mergeChatSettings0 @ a //. $mergeSettingsDispatch;
 mergeChatSettings // endDefinition;
 
 mergeChatSettings0 // beginDefinition;
@@ -399,6 +445,13 @@ mergeChatSettings0[ { __, e: Except[ _? AssociationQ ] } ] := e;
 mergeChatSettings0[ { e_ } ] := e;
 mergeChatSettings0[ { } ] := Missing[ ];
 mergeChatSettings0 // endDefinition;
+
+
+$mergeSettingsDispatch := $mergeSettingsDispatch = Dispatch @ Flatten @ {
+    DownValues @ mergeChatSettings0,
+    HoldPattern @ Merge[ { a___, b_, b_, c___ }, mergeChatSettings0 ] :> Merge[ { a, b, c }, mergeChatSettings0 ],
+    HoldPattern @ Merge[ { a_ }, mergeChatSettings0 ] :> a
+};
 
 (* TODO: need to apply special merging/inheritance for things like "Prompts" *)
 
@@ -567,7 +620,7 @@ associationComplement // endDefinition;
 (* ::Section::Closed:: *)
 (*Package Footer*)
 If[ Wolfram`ChatbookInternal`$BuildingMX,
-    Null;
+    $mergeSettingsDispatch;
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)
