@@ -509,7 +509,7 @@ makeToolConfiguration // beginDefinition;
 makeToolConfiguration[ settings_Association ] := Enclose[
     Module[ { tools },
         tools = ConfirmMatch[ DeleteDuplicates @ Flatten @ Values @ $selectedTools, { ___LLMTool }, "SelectedTools" ];
-        $toolConfiguration = LLMConfiguration @ <| "Tools" -> tools, "ToolPrompt" -> $toolPrompt |>
+        $toolConfiguration = LLMConfiguration @ <| "Tools" -> tools, "ToolPrompt" -> makeToolPrompt @ settings |>
     ],
     throwInternalFailure[ makeToolConfiguration @ settings, ## ] &
 ];
@@ -534,6 +534,35 @@ toolRequestParser := toolRequestParser =
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*makeToolPrompt*)
+makeToolPrompt // beginDefinition;
+
+makeToolPrompt[ settings_Association ] := $lastToolPrompt = TemplateObject[
+    Riffle[
+        DeleteMissing @ {
+            $toolPre,
+            TemplateSequence[
+                TemplateExpression @ StringTemplate[
+                    "Tool Name: `Name`\nDescription: `Description`\nSchema:\n`Schema`\n\n"
+                ],
+                TemplateExpression @ Map[
+                    Append[ #[ "Data" ], "Schema" -> ExportString[ #[ "JSONSchema" ], "JSON" ] ] &,
+                    TemplateSlot[ "Tools" ]
+                ]
+            ],
+            $toolPost,
+            makeToolPreferencePrompt @ settings
+        },
+        "\n\n"
+    ],
+    CombinerFunction  -> StringJoin,
+    InsertionFunction -> TextString
+];
+
+makeToolPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*$toolPrompt*)
 $toolPrompt := TemplateObject[
     {
@@ -547,7 +576,8 @@ $toolPrompt := TemplateObject[
                 TemplateSlot[ "Tools" ]
             ]
         ],
-        $toolPost
+        $toolPost,
+        $fullExamples
     },
     CombinerFunction  -> StringJoin,
     InsertionFunction -> TextString
@@ -558,13 +588,10 @@ $toolPre = "\
 # Tool Instructions
 
 You have access to tools which can be used to do things, fetch data, compute, etc. while you create your response. \
-Each tool takes input as JSON following a JSON schema. Here are the available tools and their associated schemas:
-
-";
+Each tool takes input as JSON following a JSON schema. Here are the available tools and their associated schemas:";
 
 
-$toolPost := "
-
+$toolPost := "\
 To call a tool, write the following at any time during your response:
 
 TOOLCALL: <tool name>
@@ -590,14 +617,47 @@ If a user asks you to use a specific tool, you MUST attempt to use that tool as 
 even if you think it will not work. \
 If the tool fails, use any error message to correct the issue or explain why it failed. \
 NEVER state that a tool cannot be used for a particular task without trying it first. \
-You did not create these tools, so you do not know what they can and cannot do.
+You did not create these tools, so you do not know what they can and cannot do.";
 
-" <> $fullExamples;
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*makeToolPreferencePrompt*)
+makeToolPreferencePrompt // beginDefinition;
 
-(* TODO:
-    Create a preference setting called "ToolCallFrequency" that inserts a prompt here telling the LLM how often it
-    should be making tool calls.
-*)
+makeToolPreferencePrompt[ settings_ ] :=
+    makeToolPreferencePrompt[ settings, settings[ "ToolCallFrequency" ] ];
+
+makeToolPreferencePrompt[ settings_, Automatic ] :=
+    Missing[ "NotAvailable" ];
+
+makeToolPreferencePrompt[ settings_, freq_? NumberQ ] :=
+    With[ { key = Round @ Clip[ 5 * freq, { 0, 5 } ] },
+        TemplateApply[
+            $toolPreferencePrompt,
+            <| "Number" -> Round[ freq * 100 ], "Explanation" -> Lookup[ $toolFrequencyExplanations, key, "" ] |>
+        ]
+    ];
+
+makeToolPreferencePrompt // endDefinition;
+
+
+$toolPreferencePrompt = "\
+## User Tool Call Preferences
+
+The user has specified their desired tool calling frequency to be `Number`% with the following instructions:
+
+IMPORTANT
+`Explanation`";
+
+
+$toolFrequencyExplanations = <|
+    0 -> "Only use a tool if explicitly instructed to use tools. Never use tools unless specifically asked to.",
+    1 -> "Avoid using tools unless you think it is necessary.",
+    2 -> "Only use tools if you think it will significantly improve the quality of your response.",
+    3 -> "Use tools whenever it is appropriate to do so.",
+    4 -> "Use tools whenever there's even a slight chance that it could improve the quality of your response (e.g. fact checking).",
+    5 -> "ALWAYS make a tool call in EVERY response, no matter what."
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
