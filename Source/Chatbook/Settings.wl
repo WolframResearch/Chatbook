@@ -304,7 +304,7 @@ currentChatSettings[ cell0_CellObject ] := Catch @ Enclose[
         settings = Select[
             Map[ Association,
                  Flatten @ {
-                    AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ],
+                    absoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ],
                     CurrentValue[ DeleteMissing @ { delimiter, cell }, { TaggingRules, "ChatNotebookSettings" } ]
                  }
             ],
@@ -358,7 +358,7 @@ currentChatSettings[ cell0_CellObject, key_String ] := Catch @ Enclose[
             values,
             Except[ Inherited ],
             Replace[
-                AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", key } ],
+                absoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", key } ],
                 Inherited :> Lookup[ $defaultChatSettings, key, Inherited ]
             ]
         ]
@@ -371,66 +371,50 @@ currentChatSettings // endDefinition;
 
 currentChatSettings0 // beginDefinition;
 
-(* Workaround for AbsoluteCurrentValue not properly inheriting TaggingRules in cloud notebooks: *)
-currentChatSettings0[ cell_CellObject ] /; $cloudInheritanceFix := Enclose[
-    Module[ { cellSettings, nbSettings },
-
-        cellSettings = ConfirmBy[
-            Block[ { $defaultChatSettings = <| |>, $cloudInheritanceFix = False },
-                currentChatSettings0 @ cell
-            ],
-            AssociationQ,
-            "CellSettings"
-        ];
-
-        (* Since inheritance is not working correctly for cell, we'll manually get notebook settings here: *)
-        nbSettings = ConfirmBy[
-            currentChatSettings0 @ parentNotebook @ cell,
-            AssociationQ,
-            "NotebookSettings"
-        ];
-
-        (* This should effectively inherit settings like AbsoluteCurrentValue would: *)
-        ConfirmBy[
-            mergeChatSettings @ Flatten @ { $defaultChatSettings, nbSettings, cellSettings },
-            AssociationQ,
-            "MergedSettings"
-        ]
-    ],
-    throwInternalFailure
-];
-
-(* A similar workaround when getting one setting: *)
-currentChatSettings0[ cell_CellObject, key_String ] /; $cloudInheritanceFix :=
-    Module[ { setting },
-        (* Locally make $defaultChatSettings empty so we get Inherited if the cell does not explicitly set the value: *)
-        setting = Block[ { $defaultChatSettings = <| |>, $cloudInheritanceFix = False },
-            currentChatSettings0[ cell, key ]
-        ];
-
-        (* If Inherited, then look at the parent notebook for the relevant value: *)
-        If[ setting === Inherited,
-            currentChatSettings0[ parentNotebook @ cell, key ],
-            setting
-        ]
-    ];
-
-(* On desktop we inherit settings as usual: *)
 currentChatSettings0[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession ] :=
     Association[
         $defaultChatSettings,
         Replace[
-            Association @ AbsoluteCurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ],
+            Association @ absoluteCurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ],
             Except[ _? AssociationQ ] :> <| |>
         ]
     ];
 
 currentChatSettings0[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := Replace[
-    AbsoluteCurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", key } ],
+    absoluteCurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", key } ],
     Inherited :> Lookup[ $defaultChatSettings, key, Inherited ]
 ];
 
 currentChatSettings0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*absoluteCurrentValue*)
+absoluteCurrentValue // beginDefinition;
+
+(* Workaround for AbsoluteCurrentValue not properly inheriting TaggingRules in cloud notebooks: *)
+absoluteCurrentValue[ cell_CellObject, { TaggingRules, "ChatNotebookSettings" } ] /; $cloudInheritanceFix :=
+    mergeChatSettings @ {
+        Replace[
+            Association @ AbsoluteCurrentValue[ parentNotebook @ cell, { TaggingRules, "ChatNotebookSettings" } ],
+            Except[ _? AssociationQ ] -> <| |>
+        ],
+        Replace[
+            Association @ AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ],
+            Except[ _? AssociationQ ] -> <| |>
+        ]
+    };
+
+absoluteCurrentValue[ cell_CellObject, { TaggingRules, "ChatNotebookSettings", key_ } ] /; $cloudInheritanceFix :=
+    Replace[
+        AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", key } ],
+        Inherited :> AbsoluteCurrentValue[ parentNotebook @ cell, { TaggingRules, "ChatNotebookSettings", key } ]
+    ];
+
+absoluteCurrentValue[ args___ ] :=
+    AbsoluteCurrentValue @ args;
+
+absoluteCurrentValue // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
