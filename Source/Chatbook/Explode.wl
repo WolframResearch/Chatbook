@@ -23,7 +23,7 @@ explodeCell // beginDefinition;
 explodeCell[ cellObject_CellObject ] := explodeCell @ NotebookRead @ cellObject;
 explodeCell[ Cell[ content_, ___ ] ] := explodeCell @ content;
 explodeCell[ string_String ] := Cell[ #, "Text" ] & /@ StringSplit[ string, Longest[ "\n".. ] ];
-explodeCell[ (BoxData|TextData)[ textData_ ] ] := explodeCell @ Flatten @ List @ textData;
+explodeCell[ (BoxData|TextData)[ textData_, ___ ] ] := explodeCell @ Flatten @ List @ textData;
 
 explodeCell[ textData_List ] := Enclose[
     Module[ { processed },
@@ -40,7 +40,7 @@ explodeCell // endDefinition;
 (*$preprocessingRules*)
 $preprocessingRules := $preprocessingRules = Dispatch @ {
     (* Convert TextRefLink to plain hyperlink: *)
-    Cell @ BoxData @ TemplateBox[ { label_, uri_ }, "TextRefLink" ] :>
+    Cell @ BoxData[ TemplateBox[ { label_, uri_ }, "TextRefLink" ], ___ ] :>
         Cell @ BoxData @ ButtonBox[
             StyleBox[ label, "Text" ],
             BaseStyle  -> "Link",
@@ -61,20 +61,20 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
     ] :> cell,
 
     (* Convert "ChatCodeInlineTemplate" to "InlineCode" cells: *)
-    Cell[ BoxData @ TemplateBox[ { boxes_ }, "ChatCodeInlineTemplate" ], "ChatCode"|"ChatCodeActive", ___ ] :>
+    Cell[ BoxData[ TemplateBox[ { boxes_ }, "ChatCodeInlineTemplate" ], "ChatCode"|"ChatCodeActive", ___ ], ___ ] :>
         Cell[ BoxData @ boxes, "InlineCode" ],
 
     (* Remove "ChatCode" styling from inputs: *)
     Cell[ boxes_, "ChatCode", "Input", ___ ] :> Cell[ boxes, "Input" ],
 
     (* Remove "ChatCodeBlock" styling: *)
-    Cell[ BoxData[ cell_Cell ], "ChatCodeBlock", ___ ] :> cell,
+    Cell[ BoxData[ cell_Cell, ___ ], "ChatCodeBlock", ___ ] :> cell,
 
     (* Remove "ChatCodeBlockTemplate" template boxes: *)
     TemplateBox[ { cell_Cell }, "ChatCodeBlockTemplate" ] :> cell,
 
     (* Remove nested cells: *)
-    Cell @ BoxData[ cell_Cell ] :> cell,
+    Cell @ BoxData[ cell_Cell, ___ ] :> cell,
 
     (* Remove extra style overrides from external language cells: *)
     Cell[ content_, "ExternalLanguage", OrderlessPatternSequence[ System`CellEvaluationLanguage -> lang_, __ ] ] :>

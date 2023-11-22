@@ -470,10 +470,10 @@ copyCode // endDefinition;
 (*stripMarkdownBoxes*)
 stripMarkdownBoxes // beginDefinition;
 
-stripMarkdownBoxes[ Cell[ BoxData @ TagBox[ TooltipBox[ boxes_, _String ], "MarkdownImage", ___ ], a___ ] ] :=
+stripMarkdownBoxes[ Cell[ BoxData[ TagBox[ TooltipBox[ boxes_, _String ], "MarkdownImage", ___ ], ___ ], a___ ] ] :=
     Cell[ BoxData @ boxes, a ];
 
-stripMarkdownBoxes[ Cell[ BoxData @ TagBox[ boxes_, "MarkdownImage", ___ ], a___ ] ] :=
+stripMarkdownBoxes[ Cell[ BoxData[ TagBox[ boxes_, "MarkdownImage", ___ ], a___ ], ___ ] ] :=
     Cell[ BoxData @ boxes, a ];
 
 stripMarkdownBoxes[ expr: _Cell|_String ] :=
@@ -486,9 +486,9 @@ stripMarkdownBoxes // endDefinition;
 (*getCodeBlockContent*)
 getCodeBlockContent // beginDefinition;
 getCodeBlockContent[ cell_CellObject ] := getCodeBlockContent @ NotebookRead @ cell;
-getCodeBlockContent[ Cell[ BoxData[ boxes_ ], ___, "ChatCodeBlock", ___ ] ] := getCodeBlockContent @ boxes;
+getCodeBlockContent[ Cell[ BoxData[ boxes_, ___ ], ___, "ChatCodeBlock", ___ ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ TemplateBox[ { boxes_ }, "ChatCodeBlockTemplate", ___ ] ] := getCodeBlockContent @ boxes;
-getCodeBlockContent[ Cell[ BoxData[ boxes_ ] ] ] := getCodeBlockContent @ boxes;
+getCodeBlockContent[ Cell[ BoxData[ boxes_, ___ ] ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ DynamicModuleBox[ _, boxes_, ___ ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ TagBox[ boxes_, _EventHandlerTag, ___ ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ Cell[ boxes_, "ChatCode", "Input", ___ ] ] := Cell[ boxes, "Input" ];
