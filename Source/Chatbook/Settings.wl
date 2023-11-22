@@ -52,6 +52,7 @@ $defaultChatSettings = <|
     "StreamingOutputMethod"     -> Automatic,
     "Temperature"               -> 0.7,
     "Tokenizer"                 -> Automatic,
+    "ToolCallFrequency"         -> Automatic,
     "ToolOptions"               :> $DefaultToolOptions,
     "Tools"                     -> Automatic,
     "ToolsEnabled"              -> Automatic,
@@ -433,7 +434,7 @@ $currentEvaluationObject := $FrontEndSession;
 verifyInheritance // beginDefinition;
 verifyInheritance[ obj: $$feObj ] /; $cloudNotebooks := True;
 verifyInheritance[ obj: $$feObj? inheritingQ ] := True;
-verifyInheritance[ obj: $$feObj ] := With[ { verified = verifyInheritance0 @ obj }, True /; inheritingQ @ obj ];
+verifyInheritance[ obj: $$feObj ] := With[ { verified = verifyInheritance0 @ obj }, inheritingQ @ obj ];
 verifyInheritance // endDefinition;
 
 

@@ -576,7 +576,7 @@ ServiceConnectionUtilities`ConnectionInformation["Anthropic", "ProcessedRequests
 
 makeLLMConfiguration[ as_Association ] :=
     $lastLLMConfiguration = LLMConfiguration @ Association[
-        KeyTake[ as, { "Model", "MaxTokens" } ],
+        KeyTake[ as, { "Model", "MaxTokens", "Temperature" } ],
         "StopTokens" -> { "ENDTOOLCALL" }
     ];
 
@@ -1228,21 +1228,22 @@ resolveAutoSetting[ settings_, key_ -> value_ ] := <| settings, key -> resolveAu
 resolveAutoSetting // endDefinition;
 
 resolveAutoSetting0 // beginDefinition;
-resolveAutoSetting0[ as_, "ToolsEnabled"              ] := toolsEnabledQ @ as;
 resolveAutoSetting0[ as_, "DynamicAutoFormat"         ] := dynamicAutoFormatQ @ as;
 resolveAutoSetting0[ as_, "EnableLLMServices"         ] := $useLLMServices;
 resolveAutoSetting0[ as_, "HandlerFunctionsKeys"      ] := chatHandlerFunctionsKeys @ as;
 resolveAutoSetting0[ as_, "IncludeHistory"            ] := Automatic;
+resolveAutoSetting0[ as_, "MaxCellStringLength"       ] := chooseMaxCellStringLength @ as;
+resolveAutoSetting0[ as_, "MaxContextTokens"          ] := autoMaxContextTokens @ as;
+resolveAutoSetting0[ as_, "MaxOutputCellStringLength" ] := chooseMaxOutputCellStringLength @ as;
+resolveAutoSetting0[ as_, "MaxTokens"                 ] := autoMaxTokens @ as;
+resolveAutoSetting0[ as_, "Multimodal"                ] := multimodalQ @ as;
 resolveAutoSetting0[ as_, "NotebookWriteMethod"       ] := "PreemptiveLink";
 resolveAutoSetting0[ as_, "ShowMinimized"             ] := Automatic;
 resolveAutoSetting0[ as_, "StreamingOutputMethod"     ] := "PartialDynamic";
-resolveAutoSetting0[ as_, "TrackScrollingWhenPlaced"  ] := scrollOutputQ @ as;
-resolveAutoSetting0[ as_, "Multimodal"                ] := multimodalQ @ as;
-resolveAutoSetting0[ as_, "MaxContextTokens"          ] := autoMaxContextTokens @ as;
-resolveAutoSetting0[ as_, "MaxTokens"                 ] := autoMaxTokens @ as;
-resolveAutoSetting0[ as_, "MaxCellStringLength"       ] := chooseMaxCellStringLength @ as;
-resolveAutoSetting0[ as_, "MaxOutputCellStringLength" ] := chooseMaxOutputCellStringLength @ as;
 resolveAutoSetting0[ as_, "Tokenizer"                 ] := getTokenizer @ as;
+resolveAutoSetting0[ as_, "ToolCallFrequency"         ] := Automatic;
+resolveAutoSetting0[ as_, "ToolsEnabled"              ] := toolsEnabledQ @ as;
+resolveAutoSetting0[ as_, "TrackScrollingWhenPlaced"  ] := scrollOutputQ @ as;
 resolveAutoSetting0[ as_, key_String                  ] := Automatic;
 resolveAutoSetting0 // endDefinition;
 
@@ -1256,7 +1257,7 @@ $autoSettingKeyDependencies = <|
     "Multimodal"                -> { "EnableLLMServices", "Model" },
     "Tokenizer"                 -> "Model",
     "Tools"                     -> { "LLMEvaluator", "ToolsEnabled" },
-    "ToolsEnabled"              -> "Model"
+    "ToolsEnabled"              -> { "Model", "ToolCallFrequency" }
 |>;
 
 (* Sort topologically so dependencies will be satisfied in order: *)
@@ -1392,6 +1393,7 @@ getNamedLLMEvaluator // endDefinition;
 (*toolsEnabledQ*)
 (*FIXME: move to Tools.wl *)
 toolsEnabledQ[ KeyValuePattern[ "ToolsEnabled" -> enabled: True|False ] ] := enabled;
+toolsEnabledQ[ KeyValuePattern[ "ToolCallFrequency" -> freq: (_Integer|_Real)? NonPositive ] ] := False;
 toolsEnabledQ[ KeyValuePattern[ "Model" -> model_ ] ] := toolsEnabledQ @ toModelName @ model;
 toolsEnabledQ[ "chat-bison-001" ] := False;
 toolsEnabledQ[ model_String ] := ! TrueQ @ StringContainsQ[ model, "gpt-3", IgnoreCase -> True ];
