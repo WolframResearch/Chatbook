@@ -1,0 +1,1260 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* Created By: SaveReadableNotebook *)
+(* https://resources.wolframcloud.com/FunctionRepository/resources/SaveReadableNotebook *)
+
+Notebook[
+ {
+  Cell[
+   CellGroupData[
+    {
+     Cell["Create an LLM kernel", "Title"],
+     Cell[
+      CellGroupData[
+       {
+        Cell["Initialization", "Section"],
+        Cell[
+         BoxData[
+          RowBox[
+           {
+            RowBox[
+             {"Needs", "[", " ", "\"Wolfram`Chatbook`\"", " ", "]"}
+            ],
+            ";"
+           }
+          ]
+         ],
+         "Code",
+         CellLabel -> "In[168]:="
+        ]
+       },
+       Closed
+      ]
+     ],
+     Cell[
+      CellGroupData[
+       {
+        Cell["Basic implementation", "Section"],
+        Cell[
+         BoxData[
+          RowBox[
+           {
+            RowBox[
+             {
+              "prompt",
+              "=",
+              "\"I want you to act as a Wolfram Language kernel that gives outputs for the inputs that I enter. You should only reply with Wolfram kernel output and nothing else. I will enter inputs in the following format:\n```\nIn[n]:= <input>\n```\nYou will respond in the following format:\n```\nOut[n]= <output>\n```\nFor example, if I enter:\n```\nIn[1]:= Table[i^2, {i, 1, 5}]\n```\nYou will respond with:\n```\nOut[1]= {1, 4, 9, 16, 25}\n```\nIf there are messages printed during the evaluation, include them before the output (separated by two new line characters) in the following format:\n```\nDuring evaluation of In[n]:= <message1>\n\nDuring evaluation of In[n]:= <message2>\n\nOut[n]= <output>\n```\nIf there is no output, return Null.\n\""
+             }
+            ],
+            ";"
+           }
+          ]
+         ],
+         "Input",
+         CellLabel -> "In[174]:="
+        ],
+        Cell[
+         BoxData[
+          RowBox[
+           {
+            "CreateChatNotebook",
+            "[",
+            "\[IndentingNewLine]",
+            RowBox[
+             {
+              RowBox[
+               {
+                "{",
+                RowBox[
+                 {
+                  RowBox[
+                   {
+                    "Cell",
+                    "[",
+                    RowBox[{"prompt", ",", "\"ChatSystemInput\""}],
+                    "]"
+                   }
+                  ],
+                  ",",
+                  RowBox[
+                   {"Cell", "[", RowBox[{"\"\"", ",", "\"ChatInput\""}], "]"}
+                  ]
+                 }
+                ],
+                "}"
+               }
+              ],
+              ",",
+              "\[IndentingNewLine]",
+              RowBox[{"\"LLMEvaluator\"", "->", "\"RawModel\""}],
+              ",",
+              "\[IndentingNewLine]",
+              RowBox[{"WindowMargins", "\[Rule]", "0"}],
+              ",",
+              RowBox[
+               {
+                "WindowSize",
+                "\[Rule]",
+                RowBox[{"{", RowBox[{"1920", ",", "1000"}], "}"}]
+               }
+              ],
+              ",",
+              RowBox[{"Magnification", "\[Rule]", "2"}]
+             }
+            ],
+            "\[IndentingNewLine]",
+            "]"
+           }
+          ]
+         ],
+         "Input",
+         CellLabel -> "In[175]:="
+        ],
+        Cell[
+         CellGroupData[
+          {
+           Cell[
+            "Embed prompt in notebook instead of a cell",
+            "Subsection"
+           ],
+           Cell[
+            BoxData[
+             RowBox[
+              {
+               "CreateChatNotebook",
+               "[",
+               "\[IndentingNewLine]",
+               RowBox[
+                {
+                 RowBox[{"\"Prompts\"", "\[Rule]", "prompt"}],
+                 ",",
+                 "\[IndentingNewLine]",
+                 RowBox[{"\"LLMEvaluator\"", "->", "\"RawModel\""}],
+                 ",",
+                 "\[IndentingNewLine]",
+                 RowBox[{"WindowMargins", "\[Rule]", "0"}],
+                 ",",
+                 RowBox[
+                  {
+                   "WindowSize",
+                   "\[Rule]",
+                   RowBox[{"{", RowBox[{"1920", ",", "1000"}], "}"}]
+                  }
+                 ],
+                 ",",
+                 RowBox[{"Magnification", "\[Rule]", "2"}]
+                }
+               ],
+               "\[IndentingNewLine]",
+               "]"
+              }
+             ]
+            ],
+            "Input",
+            CellLabel -> "In[180]:="
+           ]
+          },
+          Open
+         ]
+        ],
+        Cell[
+         CellGroupData[
+          {
+           Cell["Add custom decoration", "Subsection"],
+           Cell[
+            BoxData[
+             RowBox[
+              {
+               RowBox[
+                {
+                 "evaluator",
+                 "=",
+                 RowBox[
+                  {
+                   "\[LeftAssociation]",
+                   RowBox[
+                    {
+                     RowBox[{"\"Name\"", "\[Rule]", "\"WolframKernel\""}],
+                     ",",
+                     RowBox[
+                      {
+                       "\"Icon\"",
+                       "\[Rule]",
+                       GraphicsBox[
+                        {
+                         Thickness[0.05],
+                         {
+                          FaceForm[{RGBColor[0.86667, 0.066667, 0.0], Opacity[1.0]}],
+                          FilledCurveBox[
+                           {
+                            {
+                             {0, 2, 0},
+                             {0, 1, 0},
+                             {0, 1, 0},
+                             {0, 1, 0},
+                             {0, 1, 0},
+                             {0, 1, 0},
+                             {0, 1, 0},
+                             {0, 1, 0},
+                             {0, 1, 0},
+                             {0, 1, 0},
+                             {0, 1, 0},
+                             {0, 1, 0},
+                             {0, 1, 0},
+                             {0, 1, 0},
+                             {0, 1, 0},
+                             {0, 1, 0},
+                             {0, 1, 0},
+                             {0, 1, 0},
+                             {0, 1, 0},
+                             {0, 1, 0}
+                            }
+                           },
+                           CompressedData[
+                            "\n1:eJxTTMoPSmVmYGBgBGJRIGYC4q3LKo9rVik4KG4oypj4Vt9hx3rm5z0aIg7S\n+ndV2BINHc51XLr3oFvUYcUxb/POg9oODPmNLEf7/9sf/qoR0++k5VD0k//l\ndn1BiDyjqsO0TTyFa7r/2wezLp5k1SjvsCXy685bXaIOEL6Mw9wGtUNt6iIO\nQEW3Mxh4HTT4uYFOUHBwZ67gVgHae1zTatLp/8oOy7jcVEuZGBwWSAEd0qbu\noHNl1jNZoL7Kl2qGHG90Hdg/iHkE/OFxeFdjbxpnpesgt/yFh169jMMuTx4m\nbXYjKF/eYc4RBaDP9B16p+cJNTOowuXB7nXUcqgWWef+EKgfLH9A22GyBEsY\n31soP8HQQXfT3PfLgfZDxPXh7oOYZ+yAHn4AVnqDgg==\n          "
+                           ]
+                          ]
+                         },
+                         {
+                          FaceForm[{RGBColor[1.0, 1.0, 1.0], Opacity[1.0]}],
+                          FilledCurveBox[
+                           {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}}},
+                           {
+                            {
+                             {8.0, 14.502},
+                             {8.0, 6.5018},
+                             {14.0, 10.522},
+                             {8.0, 14.502}
+                            }
+                           }
+                          ]
+                         }
+                        },
+                        AspectRatio -> Automatic,
+                        ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
+                        PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
+                       ]
+                      }
+                     ],
+                     ",",
+                     RowBox[{"\"Tools\"", "->", "None"}],
+                     ",",
+                     RowBox[{"\"BasePrompt\"", "->", "None"}]
+                    }
+                   ],
+                   "\[RightAssociation]"
+                  }
+                 ]
+                }
+               ],
+               ";"
+              }
+             ]
+            ],
+            "Input",
+            CellLabel -> "In[182]:="
+           ],
+           Cell[
+            BoxData[
+             RowBox[
+              {
+               "CreateChatNotebook",
+               "[",
+               "\[IndentingNewLine]",
+               RowBox[
+                {
+                 RowBox[{"\"Prompts\"", "\[Rule]", "prompt"}],
+                 ",",
+                 "\[IndentingNewLine]",
+                 RowBox[{"\"LLMEvaluator\"", "\[Rule]", "evaluator"}],
+                 ",",
+                 "\[IndentingNewLine]",
+                 RowBox[{"WindowMargins", "\[Rule]", "0"}],
+                 ",",
+                 RowBox[
+                  {
+                   "WindowSize",
+                   "\[Rule]",
+                   RowBox[{"{", RowBox[{"1920", ",", "1000"}], "}"}]
+                  }
+                 ],
+                 ",",
+                 RowBox[{"Magnification", "\[Rule]", "2"}]
+                }
+               ],
+               "\[IndentingNewLine]",
+               "]"
+              }
+             ]
+            ],
+            "Input",
+            CellLabel -> "In[183]:="
+           ]
+          },
+          Open
+         ]
+        ],
+        Cell[
+         CellGroupData[
+          {
+           Cell["Stylesheet customization", "Subsection"],
+           Cell[
+            "Any cell type can be used as a chat input\[LongDash]here we hook up regular input cells to ChatCellEvaluate:",
+            "Text"
+           ],
+           Cell[
+            BoxData[
+             RowBox[
+              {
+               RowBox[
+                {
+                 "stylesheet",
+                 "=",
+                 RowBox[
+                  {
+                   "Notebook",
+                   "[",
+                   RowBox[
+                    {
+                     RowBox[
+                      {
+                       "{",
+                       "\[IndentingNewLine]",
+                       RowBox[
+                        {
+                         RowBox[
+                          {
+                           "Cell",
+                           "[",
+                           RowBox[
+                            {
+                             "StyleData",
+                             "[",
+                             RowBox[{"StyleDefinitions", "\[Rule]", "\"Chatbook.nb\""}],
+                             "]"
+                            }
+                           ],
+                           "]"
+                          }
+                         ],
+                         ",",
+                         "\[IndentingNewLine]",
+                         RowBox[
+                          {
+                           "Cell",
+                           "[",
+                           RowBox[
+                            {
+                             RowBox[{"StyleData", "[", "\"Input\"", "]"}],
+                             ",",
+                             RowBox[
+                              {
+                               "CellEvaluationFunction",
+                               "\[Rule]",
+                               RowBox[
+                                {
+                                 "(",
+                                 RowBox[
+                                  {
+                                   RowBox[
+                                    {
+                                     "(",
+                                     RowBox[{RowBox[{"ChatCellEvaluate", "[", "]"}], ";"}],
+                                     ")"
+                                    }
+                                   ],
+                                   "&"
+                                  }
+                                 ],
+                                 ")"
+                                }
+                               ]
+                              }
+                             ]
+                            }
+                           ],
+                           "]"
+                          }
+                         ]
+                        }
+                       ],
+                       "\[IndentingNewLine]",
+                       "}"
+                      }
+                     ],
+                     ",",
+                     "\[IndentingNewLine]",
+                     RowBox[
+                      {
+                       "StyleDefinitions",
+                       "\[Rule]",
+                       "\"PrivateStylesheetFormatting.nb\""
+                      }
+                     ]
+                    }
+                   ],
+                   "\[IndentingNewLine]",
+                   "]"
+                  }
+                 ]
+                }
+               ],
+               ";"
+              }
+             ]
+            ],
+            "Input",
+            CellLabel -> "In[184]:="
+           ],
+           Cell[
+            BoxData[
+             RowBox[
+              {
+               "CreateChatNotebook",
+               "[",
+               "\[IndentingNewLine]",
+               RowBox[
+                {
+                 RowBox[
+                  {
+                   "{",
+                   RowBox[
+                    {
+                     "Cell",
+                     "[",
+                     RowBox[
+                      {RowBox[{"BoxData", "[", "\"\"", "]"}], ",", "\"Input\""}
+                     ],
+                     "]"
+                    }
+                   ],
+                   "}"
+                  }
+                 ],
+                 ",",
+                 "\[IndentingNewLine]",
+                 RowBox[{"\"Prompts\"", "\[Rule]", "prompt"}],
+                 ",",
+                 "\[IndentingNewLine]",
+                 RowBox[{"\"LLMEvaluator\"", "\[Rule]", "evaluator"}],
+                 ",",
+                 "\[IndentingNewLine]",
+                 RowBox[{"StyleDefinitions", "->", "stylesheet"}],
+                 ",",
+                 "\[IndentingNewLine]",
+                 RowBox[{"WindowMargins", "\[Rule]", "0"}],
+                 ",",
+                 RowBox[
+                  {
+                   "WindowSize",
+                   "\[Rule]",
+                   RowBox[{"{", RowBox[{"1920", ",", "1000"}], "}"}]
+                  }
+                 ],
+                 ",",
+                 RowBox[{"Magnification", "\[Rule]", "2"}]
+                }
+               ],
+               "\[IndentingNewLine]",
+               "]"
+              }
+             ]
+            ],
+            "Input",
+            CellLabel -> "In[185]:="
+           ]
+          },
+          Open
+         ]
+        ],
+        Cell[
+         CellGroupData[
+          {
+           Cell["Custom processing functions", "Subsection"],
+           Cell[
+            CellGroupData[
+             {
+              Cell["WriteChatOutputCell", "Subsubsection"],
+              Cell[
+               CellGroupData[
+                {
+                 Cell["Definitions", "Subsubsubsection"],
+                 Cell[
+                  BoxData[
+                   RowBox[
+                    {
+                     RowBox[
+                      {
+                       RowBox[
+                        {
+                         "writeEvaluatorOutput",
+                         "[",
+                         " ",
+                         RowBox[
+                          {
+                           "target_CellObject",
+                           ",",
+                           " ",
+                           "cell_Cell",
+                           ",",
+                           " ",
+                           "info_"
+                          }
+                         ],
+                         " ",
+                         "]"
+                        }
+                       ],
+                       " ",
+                       ":=",
+                       "\n",
+                       "\t",
+                       RowBox[
+                        {
+                         "NotebookWrite",
+                         "[",
+                         " ",
+                         RowBox[
+                          {
+                           "target",
+                           ",",
+                           " ",
+                           RowBox[
+                            {
+                             "makeOutputCells",
+                             " ",
+                             "@",
+                             " ",
+                             RowBox[{"info", "[", " ", "\"Result\"", " ", "]"}]
+                            }
+                           ]
+                          }
+                         ],
+                         " ",
+                         "]"
+                        }
+                       ]
+                      }
+                     ],
+                     ";"
+                    }
+                   ]
+                  ],
+                  "Code",
+                  CellLabel -> "In[169]:="
+                 ],
+                 Cell[
+                  BoxData[
+                   RowBox[
+                    {
+                     RowBox[
+                      {
+                       RowBox[
+                        {"makeOutputCells", "[", " ", "string_String", " ", "]"}
+                       ],
+                       " ",
+                       ":=",
+                       "\n",
+                       "\t",
+                       RowBox[
+                        {
+                         "makeOutputCell",
+                         " ",
+                         "/@",
+                         " ",
+                         RowBox[
+                          {
+                           "StringTrim",
+                           " ",
+                           "@",
+                           " ",
+                           RowBox[
+                            {
+                             "StringSplit",
+                             "[",
+                             "\n",
+                             "\t\t",
+                             RowBox[
+                              {
+                               RowBox[
+                                {
+                                 "StringDelete",
+                                 "[",
+                                 " ",
+                                 RowBox[{"string", ",", " ", "\"```\""}],
+                                 " ",
+                                 "]"
+                                }
+                               ],
+                               ",",
+                               "\n",
+                               "\t\t",
+                               "\"\\n\\n\""
+                              }
+                             ],
+                             "\n",
+                             "\t",
+                             "]"
+                            }
+                           ]
+                          }
+                         ]
+                        }
+                       ]
+                      }
+                     ],
+                     ";"
+                    }
+                   ]
+                  ],
+                  "Code",
+                  CellLabel -> "In[170]:="
+                 ],
+                 Cell[
+                  BoxData[
+                   RowBox[
+                    {
+                     RowBox[
+                      {
+                       RowBox[
+                        {
+                         RowBox[
+                          {"makeOutputCell", "[", " ", "string_String", " ", "]"}
+                         ],
+                         " ",
+                         "/;",
+                         " ",
+                         "\n",
+                         "\t",
+                         RowBox[
+                          {
+                           "StringStartsQ",
+                           "[",
+                           " ",
+                           RowBox[
+                            {
+                             "string",
+                             ",",
+                             " ",
+                             RowBox[
+                              {
+                               "\"Out[\"",
+                               " ",
+                               "~~",
+                               " ",
+                               RowBox[{"DigitCharacter", ".."}],
+                               " ",
+                               "~~",
+                               " ",
+                               "\"]=\""
+                              }
+                             ]
+                            }
+                           ],
+                           " ",
+                           "]"
+                          }
+                         ]
+                        }
+                       ],
+                       " ",
+                       ":=",
+                       " ",
+                       "\n",
+                       "    ",
+                       RowBox[
+                        {
+                         "Cell",
+                         "[",
+                         "\n",
+                         "        ",
+                         RowBox[
+                          {
+                           RowBox[
+                            {
+                             "BoxData",
+                             " ",
+                             "@",
+                             " ",
+                             RowBox[
+                              {
+                               "StringDelete",
+                               "[",
+                               "\n",
+                               "            ",
+                               RowBox[
+                                {
+                                 "string",
+                                 ",",
+                                 "\n",
+                                 "            ",
+                                 RowBox[
+                                  {
+                                   "StartOfString",
+                                   " ",
+                                   "~~",
+                                   " ",
+                                   "\"Out[\"",
+                                   " ",
+                                   "~~",
+                                   " ",
+                                   RowBox[{"DigitCharacter", ".."}],
+                                   " ",
+                                   "~~",
+                                   " ",
+                                   "\"]=\"",
+                                   " ",
+                                   "~~",
+                                   " ",
+                                   RowBox[{"WhitespaceCharacter", ".."}]
+                                  }
+                                 ]
+                                }
+                               ],
+                               "\n",
+                               "        ",
+                               "]"
+                              }
+                             ]
+                            }
+                           ],
+                           ",",
+                           "\n",
+                           "        ",
+                           "\"Output\"",
+                           ",",
+                           "\n",
+                           "        ",
+                           RowBox[
+                            {
+                             "CellLabel",
+                             " ",
+                             "->",
+                             "\n",
+                             "            ",
+                             RowBox[
+                              {
+                               "StringJoin",
+                               "[",
+                               "\n",
+                               "                ",
+                               RowBox[
+                                {
+                                 "\"Out\[InvisibleSpace][\"",
+                                 ",",
+                                 "\n",
+                                 "                ",
+                                 RowBox[
+                                  {
+                                   "First",
+                                   " ",
+                                   "@",
+                                   " ",
+                                   RowBox[
+                                    {
+                                     "StringCases",
+                                     "[",
+                                     " ",
+                                     RowBox[
+                                      {
+                                       "string",
+                                       ",",
+                                       " ",
+                                       RowBox[
+                                        {
+                                         RowBox[
+                                          {
+                                           "\"Out[\"",
+                                           " ",
+                                           "~~",
+                                           " ",
+                                           RowBox[{"n", ":", " ", RowBox[{"DigitCharacter", ".."}]}],
+                                           " ",
+                                           "~~",
+                                           " ",
+                                           "\"]=\""
+                                          }
+                                         ],
+                                         " ",
+                                         ":>",
+                                         " ",
+                                         "n"
+                                        }
+                                       ]
+                                      }
+                                     ],
+                                     " ",
+                                     "]"
+                                    }
+                                   ]
+                                  }
+                                 ],
+                                 ",",
+                                 "\n",
+                                 "                ",
+                                 "\"]=\""
+                                }
+                               ],
+                               "\n",
+                               "            ",
+                               "]"
+                              }
+                             ]
+                            }
+                           ]
+                          }
+                         ],
+                         "\n",
+                         "    ",
+                         "]"
+                        }
+                       ]
+                      }
+                     ],
+                     ";"
+                    }
+                   ]
+                  ],
+                  "Code",
+                  CellLabel -> "In[171]:="
+                 ],
+                 Cell[
+                  BoxData[
+                   RowBox[
+                    {
+                     RowBox[
+                      {
+                       RowBox[
+                        {
+                         RowBox[
+                          {"makeOutputCell", "[", " ", "string_String", " ", "]"}
+                         ],
+                         " ",
+                         "/;",
+                         "\n",
+                         "    ",
+                         RowBox[
+                          {
+                           "StringStartsQ",
+                           "[",
+                           " ",
+                           RowBox[
+                            {
+                             "string",
+                             ",",
+                             " ",
+                             RowBox[
+                              {
+                               "\"During evaluation of In[\"",
+                               " ",
+                               "~~",
+                               " ",
+                               RowBox[{"DigitCharacter", ".."}],
+                               " ",
+                               "~~",
+                               " ",
+                               "\"]:=\""
+                              }
+                             ]
+                            }
+                           ],
+                           " ",
+                           "]"
+                          }
+                         ]
+                        }
+                       ],
+                       " ",
+                       ":=",
+                       " ",
+                       "\n",
+                       "    ",
+                       RowBox[
+                        {
+                         "Cell",
+                         "[",
+                         "\n",
+                         "        ",
+                         RowBox[
+                          {
+                           RowBox[
+                            {
+                             "StringTrim",
+                             " ",
+                             "@",
+                             " ",
+                             RowBox[
+                              {
+                               "StringDelete",
+                               "[",
+                               " ",
+                               "\n",
+                               "            ",
+                               RowBox[
+                                {
+                                 "string",
+                                 ",",
+                                 "\n",
+                                 "            ",
+                                 RowBox[
+                                  {
+                                   "StartOfString",
+                                   " ",
+                                   "~~",
+                                   " ",
+                                   "\"During evaluation of In[\"",
+                                   " ",
+                                   "~~",
+                                   " ",
+                                   RowBox[{"DigitCharacter", ".."}],
+                                   " ",
+                                   "~~",
+                                   " ",
+                                   "\"]:=\""
+                                  }
+                                 ]
+                                }
+                               ],
+                               " ",
+                               "\n",
+                               "        ",
+                               "]"
+                              }
+                             ]
+                            }
+                           ],
+                           ",",
+                           "\n",
+                           "        ",
+                           "\"Message\"",
+                           ",",
+                           "\n",
+                           "        ",
+                           RowBox[
+                            {
+                             "CellLabel",
+                             " ",
+                             "->",
+                             " ",
+                             RowBox[
+                              {
+                               "First",
+                               " ",
+                               "@",
+                               " ",
+                               RowBox[
+                                {
+                                 "StringCases",
+                                 "[",
+                                 "\n",
+                                 "            ",
+                                 RowBox[
+                                  {
+                                   "string",
+                                   ",",
+                                   "\n",
+                                   "            ",
+                                   RowBox[
+                                    {
+                                     "\"During evaluation of In[\"",
+                                     " ",
+                                     "~~",
+                                     " ",
+                                     RowBox[{"DigitCharacter", ".."}],
+                                     " ",
+                                     "~~",
+                                     " ",
+                                     "\"]:=\""
+                                    }
+                                   ]
+                                  }
+                                 ],
+                                 "\n",
+                                 "        ",
+                                 "]"
+                                }
+                               ]
+                              }
+                             ]
+                            }
+                           ]
+                          }
+                         ],
+                         "\n",
+                         "    ",
+                         "]"
+                        }
+                       ]
+                      }
+                     ],
+                     ";"
+                    }
+                   ]
+                  ],
+                  "Code",
+                  CellLabel -> "In[172]:="
+                 ],
+                 Cell[
+                  BoxData[
+                   RowBox[
+                    {
+                     RowBox[
+                      {
+                       RowBox[
+                        {"makeOutputCell", "[", " ", "string_String", " ", "]"}
+                       ],
+                       " ",
+                       ":=",
+                       " ",
+                       RowBox[
+                        {
+                         "Cell",
+                         "[",
+                         " ",
+                         RowBox[{"string", ",", " ", "\"Program\""}],
+                         " ",
+                         "]"
+                        }
+                       ]
+                      }
+                     ],
+                     ";"
+                    }
+                   ]
+                  ],
+                  "Code",
+                  CellLabel -> "In[173]:="
+                 ]
+                },
+                Closed
+               ]
+              ],
+              Cell[
+               CellGroupData[
+                {
+                 Cell["Create chat notebook", "Subsubsubsection"],
+                 Cell[
+                  BoxData[
+                   RowBox[
+                    {
+                     "CreateChatNotebook",
+                     "[",
+                     "\[IndentingNewLine]",
+                     RowBox[
+                      {
+                       RowBox[{"\"Prompts\"", "\[Rule]", "prompt"}],
+                       ",",
+                       "\[IndentingNewLine]",
+                       RowBox[{"\"LLMEvaluator\"", "\[Rule]", "evaluator"}],
+                       ",",
+                       "\[IndentingNewLine]",
+                       RowBox[{"\"InitialChatCell\"", "->", "False"}],
+                       ",",
+                       "\[IndentingNewLine]",
+                       RowBox[
+                        {
+                         "\"ProcessingFunctions\"",
+                         "->",
+                         RowBox[
+                          {
+                           "<|",
+                           RowBox[
+                            {"\"WriteChatOutputCell\"", "->", "writeEvaluatorOutput"}
+                           ],
+                           "|>"
+                          }
+                         ]
+                        }
+                       ],
+                       ",",
+                       "\[IndentingNewLine]",
+                       RowBox[{"StyleDefinitions", "->", "stylesheet"}],
+                       ",",
+                       "\[IndentingNewLine]",
+                       RowBox[{"WindowMargins", "\[Rule]", "0"}],
+                       ",",
+                       RowBox[
+                        {
+                         "WindowSize",
+                         "\[Rule]",
+                         RowBox[{"{", RowBox[{"1920", ",", "1000"}], "}"}]
+                        }
+                       ],
+                       ",",
+                       RowBox[{"Magnification", "\[Rule]", "2"}]
+                      }
+                     ],
+                     "\[IndentingNewLine]",
+                     "]"
+                    }
+                   ]
+                  ],
+                  "Input",
+                  CellLabel -> "In[187]:="
+                 ]
+                },
+                Open
+               ]
+              ]
+             },
+             Open
+            ]
+           ],
+           Cell[
+            CellGroupData[
+             {
+              Cell["FormatChatOutput", "Subsubsection"],
+              Cell[
+               BoxData[
+                RowBox[
+                 {
+                  "CreateChatNotebook",
+                  "[",
+                  "\[IndentingNewLine]",
+                  RowBox[
+                   {
+                    RowBox[{"\"Prompts\"", "\[Rule]", "prompt"}],
+                    ",",
+                    "\[IndentingNewLine]",
+                    RowBox[{"\"LLMEvaluator\"", "\[Rule]", "evaluator"}],
+                    ",",
+                    "\[IndentingNewLine]",
+                    RowBox[{"\"InitialChatCell\"", "->", "False"}],
+                    ",",
+                    "\[IndentingNewLine]",
+                    RowBox[
+                     {
+                      "\"ProcessingFunctions\"",
+                      "->",
+                      RowBox[
+                       {
+                        "<|",
+                        "\[IndentingNewLine]",
+                        RowBox[
+                         {
+                          RowBox[
+                           {"\"WriteChatOutputCell\"", "->", "writeEvaluatorOutput"}
+                          ],
+                          ",",
+                          "\[IndentingNewLine]",
+                          RowBox[
+                           {
+                            "\"FormatChatOutput\"",
+                            "->",
+                            RowBox[
+                             {
+                              "Function",
+                              "@",
+                              "\[IndentingNewLine]",
+                              RowBox[
+                               {
+                                "If",
+                                "[",
+                                RowBox[
+                                 {
+                                  RowBox[
+                                   {
+                                    RowBox[{"#2", "[", "\"Status\"", "]"}],
+                                    "===",
+                                    "\"Streaming\""
+                                   }
+                                  ],
+                                  ",",
+                                  RowBox[
+                                   {
+                                    "Column",
+                                    "[",
+                                    RowBox[
+                                     {
+                                      "{",
+                                      RowBox[
+                                       {
+                                        "\"Computing stuff...\"",
+                                        ",",
+                                        RowBox[
+                                         {
+                                          "ProgressIndicator",
+                                          "[",
+                                          RowBox[{"Appearance", "->", "\"Indeterminate\""}],
+                                          "]"
+                                         }
+                                        ]
+                                       }
+                                      ],
+                                      "}"
+                                     }
+                                    ],
+                                    "]"
+                                   }
+                                  ],
+                                  ",",
+                                  "\[IndentingNewLine]",
+                                  "#1"
+                                 }
+                                ],
+                                "\[IndentingNewLine]",
+                                "]"
+                               }
+                              ]
+                             }
+                            ]
+                           }
+                          ]
+                         }
+                        ],
+                        "\[IndentingNewLine]",
+                        "|>"
+                       }
+                      ]
+                     }
+                    ],
+                    ",",
+                    "\[IndentingNewLine]",
+                    RowBox[{"StyleDefinitions", "->", "stylesheet"}],
+                    ",",
+                    "\[IndentingNewLine]",
+                    RowBox[{"WindowMargins", "\[Rule]", "0"}],
+                    ",",
+                    RowBox[
+                     {
+                      "WindowSize",
+                      "\[Rule]",
+                      RowBox[{"{", RowBox[{"1920", ",", "1000"}], "}"}]
+                     }
+                    ],
+                    ",",
+                    RowBox[{"Magnification", "\[Rule]", "2"}]
+                   }
+                  ],
+                  "\[IndentingNewLine]",
+                  "]"
+                 }
+                ]
+               ],
+               "Input",
+               CellLabel -> "In[190]:="
+              ]
+             },
+             Open
+            ]
+           ]
+          },
+          Open
+         ]
+        ]
+       },
+       Open
+      ]
+     ]
+    },
+    Open
+   ]
+  ]
+ },
+ TaggingRules -> <|"TryRealOnly" -> False|>,
+ Magnification :> 1.5 * Inherited,
+ StyleDefinitions -> "Default.nb"
+]

@@ -32,6 +32,7 @@ Needs[ "Wolfram`Chatbook`"                   ];
 Needs[ "Wolfram`Chatbook`Errors`"            ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`"        ];
 Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
+Needs[ "Wolfram`Chatbook`Utils`"             ];
 
 (*========================================================*)
 
@@ -213,12 +214,12 @@ loadPersonaFromDirectory[paclet_PacletObject, personaName_, dir_?StringQ] := Mod
 	config = FileNameJoin[{dir, "LLMConfiguration.wl"}];
 
 	pre = If[FileType[pre] === File,
-		readPromptString[pre],
+		readString[pre],
 		Missing["NotAvailable", pre]
 	];
 
 	post = If[FileType[post] === File,
-		readPromptString[post],
+		readString[post],
 		Missing["NotAvailable", post]
 	];
 
@@ -250,8 +251,6 @@ loadPersonaFromDirectory[paclet_PacletObject, personaName_, dir_?StringQ] := Mod
 		extra
 	]
 ]
-
-readPromptString[ file_ ] := StringReplace[ ByteArrayToString @ ReadByteArray @ file, "\r\n" -> "\n" ];
 
 
 standardizePersonaData // beginDefinition;

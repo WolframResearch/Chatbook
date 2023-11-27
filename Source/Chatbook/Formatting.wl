@@ -70,6 +70,9 @@ $externalLanguageRules = Replace[
     { 1 }
 ];
 
+$$mdRow   = Except[ "\n" ].. ~~ Repeated[ ("|" ~~ Except[ "\n" ]..), { 2, Infinity } ] ~~ ("\n"|EndOfString);
+$$mdTable = $$mdRow ~~ $$mdRow ..;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Chat Output Formatting*)
@@ -164,7 +167,115 @@ makeResultCell0[ inlineToolCallCell[ string_String ] ] := (
     $lastFormattedToolCall = inlineToolCall @ string
 );
 
+makeResultCell0[ tableCell[ string_String ] ] :=
+    makeTableCell @ string;
+
 makeResultCell0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeTableCell*)
+makeTableCell // beginDefinition;
+
+makeTableCell[ table_String ] := Flatten @ {
+    $tinyLineBreak,
+    Map[
+        makeTableCell0 @ StringRiffle[ #1, "\n" ] &,
+        SplitBy[ StringSplit[ table, "\n" ], StringCount[ #1, "|" ] & ]
+    ],
+    $tinyLineBreak
+};
+
+makeTableCell // endDefinition;
+
+
+makeTableCell0 // beginDefinition;
+
+makeTableCell0[ string_String ] :=
+    makeTableCell0[ StringTrim /@ StringSplit[ StringSplit[ string, "\n" ], "|" ] ];
+
+makeTableCell0 @ { { __String? emptyTableItemQ }, { b__String? delimiterItemQ }, items__ } :=
+    Cell[ BoxData @ alignTable[ ToBoxes @ textTableForm @ { items }, { b } ], "TextTableForm" ];
+
+makeTableCell0[ { a_List, { b__String? delimiterItemQ }, c__ } ] :=
+    Cell[
+        BoxData @ alignTable[ ToBoxes @ textTableForm[ { c }, TableHeadings -> { None, formatRaw /@ a } ], { b } ],
+        "TextTableForm"
+    ];
+
+makeTableCell0[ items_List? MatrixQ ] :=
+    Cell[ BoxData @ ToBoxes @ textTableForm @ items, "TextTableForm" ];
+
+makeTableCell0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*alignTable*)
+alignTable // beginDefinition;
+
+alignTable[ boxes_, delimiters_List ] :=
+    boxes /. HoldPattern[ ColumnAlignments -> _ ] :>
+        (ColumnAlignments -> delimiterAlignment /@ delimiters);
+
+alignTable // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*delimiterAlignment*)
+delimiterAlignment[ s_String ] := delimiterAlignment @ StringSplit[ StringDelete[ s, Whitespace ], "-".. -> " " ];
+delimiterAlignment[ { ":", " "      } ] := Left;
+delimiterAlignment[ { ":", " ", ":" } ] := Center;
+delimiterAlignment[ {      " ", ":" } ] := Right;
+delimiterAlignment[ ___               ] := Center;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*textTableForm*)
+textTableForm // beginDefinition;
+
+textTableForm[ items_? MatrixQ, opts___ ] := Pane[
+    Style[
+        TableForm[ Map[ formatRaw, items, { 2 } ], opts ],
+        "Text",
+        ShowStringCharacters -> False
+    ],
+    ImageMargins -> { { 0, 0 }, { 5, 5 } }
+];
+
+textTableForm // endDefinition;
+
+
+formatRaw // beginDefinition;
+formatRaw[ "" ] := "";
+formatRaw[ item_String ] := formatRaw[ item, styleBox @ item ];
+formatRaw[ item_, { } ] := item;
+formatRaw[ item_, StyleBox[ box_ ] ] := formatRaw[ item, box ];
+formatRaw[ item_, box: _ButtonBox|_Cell|_StyleBox ] := RawBoxes @ box;
+formatRaw[ item_, string_String ] := string;
+formatRaw // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Table Item String Patterns*)
+$$ws            = WhitespaceCharacter...;
+$$delimiterItem = $$ws ~~ (":"|"") ~~ $$ws ~~ "-".. ~~ $$ws ~~ (":"|"") ~~ $$ws;
+$$delimiterRow  = $$delimiterItem ~~ ("|" ~~ $$delimiterItem)..;
+
+
+emptyTableItemQ[ ""               ] := True;
+emptyTableItemQ[ " "              ] := True;
+emptyTableItemQ[ "\"\""           ] := True;
+emptyTableItemQ[ "\" \""          ] := True;
+emptyTableItemQ[ string_? StringQ ] := StringMatchQ[ StringTrim[ string, "\"" ], Whitespace ];
+emptyTableItemQ[ ___              ] := False;
+
+
+delimiterItemQ[ "-"              ] := True;
+delimiterItemQ[ " - "            ] := True;
+delimiterItemQ[ "---"            ] := True;
+delimiterItemQ[ " --- "          ] := True;
+delimiterItemQ[ string_? StringQ ] := StringMatchQ[ string, $$delimiterItem ];
+delimiterItemQ[ ___              ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -359,10 +470,10 @@ copyCode // endDefinition;
 (*stripMarkdownBoxes*)
 stripMarkdownBoxes // beginDefinition;
 
-stripMarkdownBoxes[ Cell[ BoxData @ TagBox[ TooltipBox[ boxes_, _String ], "MarkdownImage", ___ ], a___ ] ] :=
+stripMarkdownBoxes[ Cell[ BoxData[ TagBox[ TooltipBox[ boxes_, _String ], "MarkdownImage", ___ ], ___ ], a___ ] ] :=
     Cell[ BoxData @ boxes, a ];
 
-stripMarkdownBoxes[ Cell[ BoxData @ TagBox[ boxes_, "MarkdownImage", ___ ], a___ ] ] :=
+stripMarkdownBoxes[ Cell[ BoxData[ TagBox[ boxes_, "MarkdownImage", ___ ], a___ ], ___ ] ] :=
     Cell[ BoxData @ boxes, a ];
 
 stripMarkdownBoxes[ expr: _Cell|_String ] :=
@@ -375,9 +486,9 @@ stripMarkdownBoxes // endDefinition;
 (*getCodeBlockContent*)
 getCodeBlockContent // beginDefinition;
 getCodeBlockContent[ cell_CellObject ] := getCodeBlockContent @ NotebookRead @ cell;
-getCodeBlockContent[ Cell[ BoxData[ boxes_ ], ___, "ChatCodeBlock", ___ ] ] := getCodeBlockContent @ boxes;
+getCodeBlockContent[ Cell[ BoxData[ boxes_, ___ ], ___, "ChatCodeBlock", ___ ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ TemplateBox[ { boxes_ }, "ChatCodeBlockTemplate", ___ ] ] := getCodeBlockContent @ boxes;
-getCodeBlockContent[ Cell[ BoxData[ boxes_ ] ] ] := getCodeBlockContent @ boxes;
+getCodeBlockContent[ Cell[ BoxData[ boxes_, ___ ] ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ DynamicModuleBox[ _, boxes_, ___ ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ TagBox[ boxes_, _EventHandlerTag, ___ ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ Cell[ boxes_, "ChatCode", "Input", ___ ] ] := Cell[ boxes, "Input" ];
@@ -485,7 +596,8 @@ $textDataFormatRules = {
     ,
     tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString)) :> inlineToolCallCell @ tool,
     ("\n"|StartOfString) ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
-    ("\n"|StartOfString) ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ]
+    ("\n"|StartOfString) ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ],
+    table: $$mdTable :> tableCell @ table
     ,
     "[`" ~~ label: Except[ "[" ].. ~~ "`](" ~~ url: Except[ ")" ].. ~~ ")" :> "[" <> label <> "]("<>url<>")",
     "\\`" :> "`",
@@ -494,7 +606,9 @@ $textDataFormatRules = {
     "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`" /; inlineSyntaxQ @ code :> inlineCodeCell @ code,
     "`" ~~ code: Except[ "`"|"\n" ].. ~~ "`" :> inlineCodeCell @ code,
     "$$" ~~ math: Except[ "$" ].. ~~ "$$" :> mathCell @ math,
-    "$" ~~ math: Except[ "$" ].. ~~ "$" /; StringFreeQ[ math, "\n" ] :> mathCell @ math
+    "\\(" ~~ math__ ~~ "\\)" /; StringFreeQ[ math, "\\)" ] :> mathCell @ math,
+    "\\[" ~~ math__ ~~ "\\]" /; StringFreeQ[ math, "\\]" ] :> mathCell @ math,
+    "$" ~~ math: Except[ "$" ].. ~~ "$" :> mathCell @ math
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -525,6 +639,8 @@ $dynamicSplitRules = {
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$stringFormatRules*)
+
+(* cSpell: ignore textit, textbf *)
 $stringFormatRules = {
     "***" ~~ text: Except[ "*" ].. ~~ "***" :> styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
     "___" ~~ text: Except[ "_" ].. ~~ "___" :> styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
@@ -532,7 +648,9 @@ $stringFormatRules = {
     "__" ~~ text: Except[ "_" ].. ~~ "__" :> styleBox[ text, FontWeight -> Bold ],
     "*" ~~ text: Except[ "*" ].. ~~ "*" :> styleBox[ text, FontSlant -> Italic ],
     "_" ~~ text: Except[ "_" ].. ~~ "_" :> styleBox[ text, FontSlant -> Italic ],
-    "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :> hyperlink[ label, url ]
+    "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :> hyperlink[ label, url ],
+    "\\textit{" ~~ text__ ~~ "}" /; StringFreeQ[ text, "{"|"}" ] :> styleBox[ text, FontSlant -> Italic ],
+    "\\textbf{" ~~ text__ ~~ "}" /; StringFreeQ[ text, "{"|"}" ] :> styleBox[ text, FontWeight -> Bold ]
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -565,6 +683,13 @@ inlineToolCall[ string_String, as_Association ] := Cell[
     "InlineToolCall",
     Background   -> None,
     TaggingRules -> KeyDrop[ as, { "Icon", "Result" } ]
+];
+
+inlineToolCall[ string_String, failed_Failure ] := Cell[
+    BoxData @ ToBoxes @ failed,
+    "FailedToolCall",
+    Background   -> None,
+    TaggingRules -> <| "ToolCall" -> string |>
 ];
 
 inlineToolCall // endDefinition;
@@ -619,6 +744,9 @@ parseFullToolCallString[ id_String, string_String ] :=
 
 parseFullToolCallString[ id_, _Missing, string_String ] :=
     parsePartialToolCallString @ string;
+
+parseFullToolCallString[ id_, failed_Failure, string_String ] :=
+    failed;
 
 parseFullToolCallString[ id_String, resp: HoldPattern[ _LLMToolResponse ], string_String ] :=
     parseFullToolCallString[
@@ -1096,6 +1224,7 @@ styleBox[ text_String, a___ ] := styleBox[ formatTextString @ text, a ];
 styleBox[ { text: _ButtonBox|_String }, a___ ] := StyleBox[ text, a ];
 styleBox[ { StyleBox[ text_, a___ ] }, b___ ] := DeleteDuplicates @ StyleBox[ text, a, b ];
 styleBox[ { Cell[ text_, a___ ] }, b___ ] := DeleteDuplicates @ Cell[ text, a, b ];
+styleBox[ { }, ___ ] := "";
 
 styleBox[ { a___, b: Except[ _ButtonBox|_Cell|_String|_StyleBox ], c___ }, d___ ] :=
     styleBox[ { a, Cell @ BoxData @ b, c }, d ];
@@ -1342,6 +1471,8 @@ $languageIcons := $languageIcons = Enclose[
 (* ::Subsection::Closed:: *)
 (*joinAdjacentStrings*)
 joinAdjacentStrings // beginDefinition;
+joinAdjacentStrings[ { content___, "\n"|StyleBox[ "\n", ___ ] } ] := joinAdjacentStrings @ { content };
+joinAdjacentStrings[ { "\n"|StyleBox[ "\n", ___ ], content___ } ] := joinAdjacentStrings @ { content };
 joinAdjacentStrings[ content_List ] := joinAdjacentStrings0 /@ SplitBy[ content, StringQ ];
 joinAdjacentStrings // endDefinition;
 

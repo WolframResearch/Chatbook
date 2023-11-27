@@ -11,16 +11,24 @@ CellToString[cell$] serializes a Cell expression as a string for use in chat.\
 
 `$CellToStringDebug;
 `$CurrentCell;
+`$defaultMaxCellStringLength;
+`$defaultMaxOutputCellStringLength;
+`$longNameCharacters;
 `documentationSearchAPI;
 `escapeMarkdownString;
-`$maxOutputCellStringLength;
+`truncateString;
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"            ];
-Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
-Needs[ "Wolfram`Chatbook`FrontEnd`"   ];
-Needs[ "Wolfram`Chatbook`Prompting`"  ];
+Needs[ "Wolfram`Chatbook`"              ];
+Needs[ "Wolfram`Chatbook`ChatMessages`" ];
+Needs[ "Wolfram`Chatbook`Common`"       ];
+Needs[ "Wolfram`Chatbook`ErrorUtils`"   ];
+Needs[ "Wolfram`Chatbook`FrontEnd`"     ];
+Needs[ "Wolfram`Chatbook`Models`"       ];
+Needs[ "Wolfram`Chatbook`Prompting`"    ];
+Needs[ "Wolfram`Chatbook`Tools`"        ];
+Needs[ "Wolfram`Chatbook`Utils`"        ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -31,21 +39,47 @@ Needs[ "Wolfram`Chatbook`Prompting`"  ];
 (*Config*)
 $$delimiterStyle   = "PageBreak"|"ExampleDelimiter";
 $$itemStyle        = "Item"|"Notes";
-$$noCellLabelStyle = "Text"|"ChatInput"|"SideChat"|"ChatSystemInput"|"ChatBlockDivider"|$$delimiterStyle;
 $$docSearchStyle   = "ChatQuery";
 $$outputStyle      = "Output"|"Print"|"Echo";
+$$noCellLabelStyle = Alternatives[
+    "ChatBlockDivider",
+    "ChatInput",
+    "ChatSystemInput",
+    "Section",
+    "SideChat",
+    "Subsection",
+    "Subsubsection",
+    "Subsubsubsection",
+    "Subsubsubsubsection",
+    "Text",
+    "Title",
+    $$delimiterStyle
+];
 
 (* Default character encoding for strings created from cells *)
 $cellCharacterEncoding = "Unicode";
 
 (* Set a max string length for output cells to avoid blowing up token counts *)
-$maxOutputCellStringLength = 500;
+$maxOutputCellStringLength        = Automatic;
+$defaultMaxOutputCellStringLength = 500;
 
 (* Set an overall max string length for any type of cell *)
-$maxCellStringLength = 5000;
+$maxCellStringLength        = Automatic;
+$defaultMaxCellStringLength = 10000;
 
 (* Set a page width for expressions that need to be serialized as InputForm *)
-$cellPageWidth = 100;
+$cellPageWidth        = 100;
+$defaultCellPageWidth = $cellPageWidth;
+
+(* Window width to use when converting cells to multimodal images (Automatic means derive from $cellPageWidth):  *)
+$windowWidth        = Automatic;
+$defaultWindowWidth = 625;
+
+(* Maximum number of images to include in multimodal messages per cell before switching to a fully rasterized cell: *)
+$maxMarkdownBoxes = 5;
+
+(* Whether to generate a transcript and preview images for Video[...] expressions: *)
+$serializeVideo = False;
 
 (* Whether to collect data that can help discover missing definitions *)
 $CellToStringDebug = False;
@@ -55,11 +89,31 @@ $showStringCharacters = True;
 
 (* Add spacing around these operators *)
 $$spacedInfixOperator = Alternatives[
-    "^", "*", "+", "=", "|", "<", ">", ";", "?", "/", ":", "!=", "@*", "^=", "&&", "*=", "-=", "->", "+=", "==", "~~",
+    "^", "*", "+", "=", "|", "<", ">", "?", "/", ":", "!=", "@*", "^=", "&&", "*=", "-=", "->", "+=", "==", "~~",
     "||", "<=", "<>", ">=", ";;", "/@", "/*", "/=", "/.", "/;", ":=", ":>", "::", "^:=", "=!=", "===", "|->", "<->",
     "//@", "//.", "\[Equal]", "\[GreaterEqual]", "\[LessEqual]", "\[NotEqual]", "\[Function]", "\[Rule]",
     "\[RuleDelayed]", "\[TwoWayRule]"
 ];
+
+$delimiterString = "\n\n---\n\n";
+
+(* Characters that should be serialized as long-form representations: *)
+$longNameCharacterList = {
+    "\[AltKey]",
+    "\[CommandKey]",
+    "\[ControlKey]",
+    "\[DeleteKey]",
+    "\[EnterKey]",
+    "\[EscapeKey]",
+    "\[OptionKey]",
+    "\[ReturnKey]",
+    "\[SpaceKey]",
+    "\[SystemEnterKey]",
+    "\[TabKey]"
+};
+
+$longNameCharacters = Normal @ AssociationMap[ "\\[" <> CharacterName[ # ] <> "]" &, $longNameCharacterList ];
+$$longNameCharacter = Alternatives @@ $longNameCharacterList;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -90,6 +144,8 @@ $graphicsHeads = Alternatives[
     Graphics3DBox
 ];
 
+$$graphicsBox = $graphicsHeads[ ___ ] | TemplateBox[ _, "Legended", ___ ];
+
 (* Serialize the first argument of these and ignore the rest *)
 $stringStripHeads = Alternatives[
     ButtonBox,
@@ -97,6 +153,7 @@ $stringStripHeads = Alternatives[
     FormBox,
     FrameBox,
     ItemBox,
+    PaneBox,
     PanelBox,
     RowBox,
     StyleBox,
@@ -107,7 +164,6 @@ $stringStripHeads = Alternatives[
 
 (* Boxes that should be ignored during serialization *)
 $ignoredBoxPatterns = Alternatives[
-    _CheckboxBox,
     _PaneSelectorBox,
     StyleBox[ _GraphicsBox, ___, "NewInGraphic", ___ ]
 ];
@@ -172,22 +228,40 @@ WOLFRAM_ALPHA_PARSED_INPUT: %%Code%%
 CellToString // SetFallthroughError;
 
 CellToString // Options = {
-    CharacterEncoding        -> $cellCharacterEncoding,
-    "CharacterNormalization" -> "NFKC", (* FIXME: do this *)
-    "Debug"                  :> $CellToStringDebug,
-    PageWidth                -> $cellPageWidth
+    "CharacterEncoding"         -> $cellCharacterEncoding,
+    "CharacterNormalization"    -> "NFKC", (* FIXME: do this *)
+    "Debug"                     :> $CellToStringDebug,
+    "MaxCellStringLength"       -> $maxCellStringLength,
+    "MaxOutputCellStringLength" -> $maxOutputCellStringLength,
+    "PageWidth"                 -> $cellPageWidth,
+    "WindowWidth"               -> $windowWidth
 };
 
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 CellToString[ cell_, opts: OptionsPattern[ ] ] :=
-    Block[
+    Catch @ Block[
         {
             $cellCharacterEncoding = OptionValue[ "CharacterEncoding" ],
-            $CellToStringDebug     = TrueQ @ OptionValue[ "Debug" ],
-            $cellPageWidth         = OptionValue[ "PageWidth" ]
+            $CellToStringDebug = TrueQ @ OptionValue[ "Debug" ],
+            $cellPageWidth, $windowWidth, $maxCellStringLength, $maxOutputCellStringLength
         },
-        $fasterCellToStringFailBag = Internal`Bag[ ];
+        $cellPageWidth = toSize[ OptionValue @ PageWidth, $defaultCellPageWidth ];
+        $windowWidth = toWindowWidth[ OptionValue @ WindowWidth, $cellPageWidth ];
+
+        $maxCellStringLength = Ceiling @ toSize[
+            OptionValue[ "MaxCellStringLength" ],
+            $defaultMaxCellStringLength
+        ];
+
+        If[ $maxCellStringLength <= 0, Throw[ "[Cell Excised]" ] ];
+
+        $maxOutputCellStringLength = Ceiling @ toSize[
+            OptionValue[ "MaxOutputCellStringLength" ],
+            $defaultMaxOutputCellStringLength
+        ];
+
+        If[ $CellToStringDebug, $fasterCellToStringFailBag = Internal`Bag[ ] ];
         If[ ! StringQ @ $cellCharacterEncoding, $cellCharacterEncoding = "UTF-8" ];
         WithCleanup[
             Replace[
@@ -205,8 +279,23 @@ CellToString[ cell_, opts: OptionsPattern[ ] ] :=
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*toSize*)
+toSize // beginDefinition;
+toSize[ size: $$size, default_ ] := size;
+toSize[ size_, default: $$size ] := default;
+toSize // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toWindowWidth*)
+toWindowWidth[ width: $$size, pageWidth_ ] := width;
+toWindowWidth[ width_, pageWidth: $$size ] := 6.25 * pageWidth;
+toWindowWidth[ ___ ] := $defaultWindowWidth;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*cellToString*)
-cellToString // SetFallthroughError;
+cellToString // beginDefinition;
 
 (* Argument normalization *)
 cellToString[ data: _TextData|_BoxData|_RawData ] := cellToString @ Cell @ data;
@@ -220,11 +309,11 @@ cellToString[ nbo_NotebookObject ] := cellToString @ Cells @ nbo;
 cellToString[ cells: { __CellObject } ] := cellsToString @ NotebookRead @ cells;
 
 (* Drop cell label for some styles *)
-cellToString[ Cell[ a__, $$noCellLabelStyle, b___, CellLabel -> _, c___ ] ] :=
-    cellToString @ Cell[ a, b, c ];
+cellToString[ Cell[ a__, style: $$noCellLabelStyle, b___, CellLabel -> _, c___ ] ] :=
+    cellToString @ Cell[ a, style, b, c ];
 
 (* Convert delimiters to equivalent markdown *)
-cellToString[ Cell[ __, $$delimiterStyle, ___ ] ] := "\n---\n";
+cellToString[ Cell[ __, $$delimiterStyle, ___ ] ] := $delimiterString;
 cellToString[ Cell[ __, "ExcludedChatDelimiter", ___ ] ] := "";
 
 (* Styles that should include documentation search *)
@@ -238,7 +327,7 @@ cellToString[ Cell[ a__, $$docSearchStyle, b___ ] ] :=
     ];
 
 (* Delimit code blocks with triple backticks *)
-cellToString[ cell: Cell[ _BoxData, ___ ] ] /; ! TrueQ @ $delimitedCodeBlock :=
+cellToString[ cell: Cell[ _BoxData, ___ ] ] /; ! TrueQ @ $delimitedCodeBlock && codeBlockQ @ cell :=
     Block[ { $delimitedCodeBlock = True },
         With[ { s = cellToString @ cell },
             If[ StringQ @ s,
@@ -310,6 +399,8 @@ cellToString[ cell: Cell[ _String, "ChatOutput", ___ ] ] := Block[ { $escapeMark
 cellToString[ cell: Cell[ _TextData|_String, ___ ] ] := Block[ { $escapeMarkdown = True }, cellToString0 @ cell ];
 cellToString[ cell_ ] := Block[ { $escapeMarkdown = False }, cellToString0 @ cell ];
 
+cellToString // endDefinition;
+
 (* Recursive serialization of the cell content *)
 cellToString0[ cell0_ ] :=
     With[
@@ -345,20 +436,36 @@ fasterCellToString[ arg_ ] :=
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
-(*Ignored/Skipped*)
-
-fasterCellToString0[ $ignoredBoxPatterns ] := "";
-fasterCellToString0[ $stringStripHeads[ a_, ___ ] ] := fasterCellToString0 @ a;
+(*Multimodal Cell Images*)
+fasterCellToString0[ cell: Cell[ _BoxData, ___ ] ] /;
+    $multimodalMessages && Count[ cell, $$graphicsBox, Infinity ] > $maxMarkdownBoxes :=
+        toMarkdownImageBox @ cell;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Headings*)
-fasterCellToString0[ (Cell|StyleBox)[ a_, "Section", ___ ] ] := "# "<>fasterCellToString0 @ a;
-fasterCellToString0[ (Cell|StyleBox)[ a_, "Subsection", ___ ] ] := "## "<>fasterCellToString0 @ a;
-fasterCellToString0[ (Cell|StyleBox)[ a_, "Subsubsection", ___ ] ] := "### "<>fasterCellToString0 @ a;
-fasterCellToString0[ (Cell|StyleBox)[ a_, "Subsubsubsection", ___ ] ] := "#### "<>fasterCellToString0 @ a;
-fasterCellToString0[ (Cell|StyleBox)[ a_, "Subsubsubsubsection", ___ ] ] := "##### "<>fasterCellToString0 @ a;
-fasterCellToString0[ (Cell|StyleBox)[ a_, "ChatBlockDivider", ___ ] ] := "# "<>fasterCellToString0 @ a;
+fasterCellToString0[ (Cell|StyleBox)[ a_, "Title", ___ ] ] := "# "<>fasterCellToString0 @ a;
+fasterCellToString0[ (Cell|StyleBox)[ a_, "Section", ___ ] ] := "## "<>fasterCellToString0 @ a;
+fasterCellToString0[ (Cell|StyleBox)[ a_, "Subsection", ___ ] ] := "### "<>fasterCellToString0 @ a;
+fasterCellToString0[ (Cell|StyleBox)[ a_, "Subsubsection", ___ ] ] := "#### "<>fasterCellToString0 @ a;
+fasterCellToString0[ (Cell|StyleBox)[ a_, "Subsubsubsection", ___ ] ] := "##### "<>fasterCellToString0 @ a;
+fasterCellToString0[ (Cell|StyleBox)[ a_, "Subsubsubsubsection", ___ ] ] := "###### "<>fasterCellToString0 @ a;
+fasterCellToString0[ (Cell|StyleBox)[ a_, "ChatBlockDivider", ___ ] ] := "## "<>fasterCellToString0 @ a;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Styles*)
+fasterCellToString0[ (h: Cell|StyleBox)[ a__, FontWeight -> Bold|"Bold", b___ ] ] :=
+    "**" <> fasterCellToString0 @ h[ a, b ] <> "**";
+
+fasterCellToString0[ (h: Cell|StyleBox)[ a__, FontSlant -> Italic|"Italic", b___ ] ] :=
+    "*" <> fasterCellToString0 @ h[ a, b ] <> "*";
+
+fasterCellToString0[ (h: Cell|StyleBox)[ a__, ShowStringCharacters -> b: True|False, c___ ] ] :=
+    Block[ { $showStringCharacters = b }, fasterCellToString0 @ h[ a, c ] ];
+
+fasterCellToString0[ (box_)[ a__, BaseStyle -> { b___, ShowStringCharacters -> c: True|False, d___ }, e___ ] ] :=
+    Block[ { $showStringCharacters = c }, fasterCellToString0 @ box[ a, BaseStyle -> { b, d }, e ] ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -373,14 +480,20 @@ fasterCellToString0[ RowBox[ row: { ___, ","|$$spacedInfixOperator, " ", ___ } ]
 (* IndentingNewline *)
 fasterCellToString0[ FromCharacterCode[ 62371 ] ] := "\n\t";
 
-fasterCellToString0[ "\[Bullet]" ] := "*";
+fasterCellToString0[ "\[Bullet]"|"\[FilledSmallSquare]" ] := "*";
+
+(* Long name characters: *)
+fasterCellToString0[ char: $$longNameCharacter ] := Lookup[ $longNameCharacters, char, char ];
+
+fasterCellToString0[ string_String ] /; StringContainsQ[ string, $$longNameCharacter ] :=
+    fasterCellToString0 @ StringReplace[ string, $longNameCharacters ];
 
 (* StandardForm strings *)
 fasterCellToString0[ a_String /; StringMatchQ[ a, "\""~~___~~("\\!"|"\!")~~___~~"\"" ] ] :=
     With[ { res = ToString @ ToExpression[ a, InputForm ] },
         If[ TrueQ @ $showStringCharacters,
             res,
-            StringTrim[ res, "\"" ]
+            StringReplace[ StringTrim[ res, "\"" ], { "\\\"" -> "\"" } ]
         ] /; FreeQ[ res, s_String /; StringContainsQ[ s, ("\\!"|"\!") ] ]
     ];
 
@@ -390,7 +503,11 @@ fasterCellToString0[ a_String /; StringContainsQ[ a, ("\\!"|"\!") ] ] :=
 (* Other strings *)
 fasterCellToString0[ a_String ] :=
     ToString[
-        escapeMarkdownCharacters @ If[ TrueQ @ $showStringCharacters, a, StringTrim[ a, "\"" ] ],
+        escapeMarkdownCharacters @
+            If[ TrueQ @ $showStringCharacters,
+                a,
+                StringReplace[ StringTrim[ a, "\"" ], { "\\\"" -> "\"" } ]
+            ],
         CharacterEncoding -> $cellCharacterEncoding
     ];
 
@@ -476,7 +593,7 @@ fasterCellToString0[ NamespaceBox[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Graphics*)
-fasterCellToString0[ box: GraphicsBox[ TagBox[ RasterBox[ _, r___ ], t___ ], g___ ] ] :=
+fasterCellToString0[ box: GraphicsBox[ TagBox[ RasterBox[ _, r___ ], t___ ], g___ ] ] /; ! TrueQ @ $multimodalMessages :=
     StringJoin[
         "\\!\\(\\*",
         StringReplace[
@@ -486,15 +603,29 @@ fasterCellToString0[ box: GraphicsBox[ TagBox[ RasterBox[ _, r___ ], t___ ], g__
         "\\)"
     ];
 
-fasterCellToString0[ box: $graphicsHeads[ ___ ] ] :=
-    If[ TrueQ[ ByteCount @ box < $maxOutputCellStringLength ],
+fasterCellToString0[ box: $$graphicsBox ] :=
+    Which[
+        (* If in multimodal mode, sow the rasterized box and insert the id: *)
+        TrueQ @ $multimodalMessages,
+        toMarkdownImageBox @ box,
+
         (* For relatively small graphics expressions, we'll give an InputForm string *)
-        needsBasePrompt[ "Notebooks" ];
-        truncateString @ makeGraphicsString @ box,
+        TrueQ[ ByteCount @ box < $maxOutputCellStringLength ],
+        (
+            needsBasePrompt[ "Notebooks" ];
+            truncateString @ makeGraphicsString @ box
+        ),
+
         (* Otherwise, give the same thing you'd get in a standalone kernel*)
-        needsBasePrompt[ "ConversionGraphics" ];
-        truncateString[ "\\!\\(\\*" <> StringReplace[ inputFormString @ box, $graphicsBoxStringReplacements ] <> "\\)" ]
+        True,
+        (
+            needsBasePrompt[ "ConversionGraphics" ];
+            truncateString[
+                "\\!\\(\\*" <> StringReplace[ inputFormString @ box, $graphicsBoxStringReplacements ] <> "\\)"
+            ]
+        )
     ];
+
 
 
 $graphicsBoxStringReplacements = {
@@ -502,6 +633,74 @@ $graphicsBoxStringReplacements = {
     "\"$$DATA$$\"" -> "...",
     "$$DATA$$" -> "..."
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*toMarkdownImageBox*)
+toMarkdownImageBox // beginDefinition;
+
+toMarkdownImageBox[ graphics_ ] := Enclose[
+    Module[ { img, uri },
+        img    = ConfirmBy[ rasterizeGraphics @ graphics, ImageQ, "RasterizeGraphics" ];
+        uri    = ConfirmBy[ MakeExpressionURI[ "image", img ], StringQ, "RasterID" ];
+        needsBasePrompt[ "MarkdownImageBox" ];
+        "\\!\\(\\*MarkdownImageBox[\"" <> uri <> "\"]\\)"
+    ],
+    throwInternalFailure[ toMarkdownImageBox @ graphics, ## ] &
+];
+
+toMarkdownImageBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*rasterizeGraphics*)
+rasterizeGraphics // beginDefinition;
+rasterizeGraphics[ gfx: $$graphicsBox ] := rasterizeGraphics[ gfx ] = Rasterize @ RawBoxes @ gfx;
+rasterizeGraphics[ cell_Cell ] := rasterizeGraphics[ cell, 6.25*$cellPageWidth ];
+
+rasterizeGraphics[ cell_Cell, width_Real ] := rasterizeGraphics[ cell, width ] =
+    Rasterize @ Append[ cell, PageWidth -> width ];
+
+rasterizeGraphics // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Video*)
+fasterCellToString0[ box: TemplateBox[ _, "VideoBox2", ___ ] ] /; $multimodalMessages && $serializeVideo :=
+    With[ { video = ToExpression[ box, StandardForm ] },
+        serializeVideo @ video /; VideoQ @ video
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*serializeVideo*)
+serializeVideo // beginDefinition;
+
+serializeVideo[ video_? VideoQ ] := Enclose[
+    Module[ { small, audio, transcript, w, h, t, d, frames, preview },
+
+        small      = ConfirmBy[ ImageResize[ video, { UpTo[ 150 ], UpTo[ 150 ] } ], VideoQ, "Resize" ];
+        audio      = ConfirmBy[ Audio @ video, AudioQ, "Audio" ];
+        transcript = ConfirmBy[ SpeechRecognize[ audio, Method -> "OpenAI" ], StringQ, "Transcript" ];
+        w          = 4;
+        h          = 6;
+        t          = ConfirmBy[ Information[ small, "Duration" ], QuantityQ, "Duration" ];
+        d          = t / (w * h);
+        t          = Table[ (i - 0.5) * d, { i, w * h } ];
+        frames     = ConfirmMatch[ VideoExtractFrames[ small, t ], { __Image }, "Frames" ];
+        preview    = ToBoxes @ ConfirmBy[ ImageAssemble[ Partition[ frames, w ], Spacings -> 3 ], ImageQ, "Assemble" ];
+
+        serializeVideo[ video ] = StringJoin[
+            "VIDEO TRANSCRIPT\n-----\n",
+            transcript,
+            "\n\nVIDEO PREVIEW\n-----\n",
+            ConfirmBy[ toMarkdownImageBox @ preview, StringQ, "Preview" ]
+        ]
+    ],
+    throwInternalFailure[ serializeVideo @ video, ##1 ] &
+];
+
+serializeVideo // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -515,6 +714,12 @@ fasterCellToString0[ TemplateBox[ { code_ }, "ChatCodeInlineTemplate" ] ] :=
     ];
 
 fasterCellToString0[ StyleBox[ code_, "TI", ___ ] ] :=
+    Block[ { $escapeMarkdown = False },
+        needsBasePrompt[ "DoubleBackticks" ];
+        "``" <> fasterCellToString0 @ code <> "``"
+    ];
+
+fasterCellToString0[ Cell[ code_, "InlineCode", ___ ] ] :=
     Block[ { $escapeMarkdown = False },
         needsBasePrompt[ "DoubleBackticks" ];
         "``" <> fasterCellToString0 @ code <> "``"
@@ -570,11 +775,33 @@ fasterCellToString0[ ButtonBox[ StyleBox[ label_, "SymbolsRefLink", ___ ], ___, 
     "[" <> fasterCellToString0 @ label <> "](" <> uri <> ")"
 );
 
+fasterCellToString0[
+    ButtonBox[
+        label_,
+        OrderlessPatternSequence[
+            BaseStyle  -> "Hyperlink",
+            ButtonData -> { url: _String|_URL, _ },
+            ___
+        ]
+    ]
+] := "[" <> fasterCellToString0 @ label <> "](" <> TextString @ url <> ")";
+
 (* TeXAssistantTemplate *)
 fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> string_ ], "TeXAssistantTemplate" ] ] := (
     needsBasePrompt[ "Math" ];
     "$" <> string <> "$"
 );
+
+(* Inline WL code template *)
+fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> input_ ], "ChatbookWLTemplate", ___ ] ] :=
+    Replace[
+        Quiet[ ToExpression[ input, StandardForm ], ToExpression::esntx ],
+        {
+            string_String? StringQ :> string,
+            $Failed :> "\n\n[Inline parse failure: " <> ToString[ fasterCellToString0 @ input, InputForm ] <> "]",
+            expr_ :> fasterCellToString0 @ ToBoxes @ expr
+        }
+    ];
 
 (* Other *)
 fasterCellToString0[ TemplateBox[ args_, name_String, ___ ] ] :=
@@ -621,6 +848,148 @@ fasterCellToString0[ InterpretationBox[ boxes_, (Definition|FullDefinition)[ _Sy
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
+(*Tables*)
+fasterCellToString0[ box: GridBox[ grid_? MatrixQ, ___ ] ] :=
+    Module[ { strings, tr, colSizes, padded, columns },
+        strings = Map[ fasterCellToString0, grid, { 2 } ];
+        (
+            tr       = Transpose @ strings /. "\[Null]"|"\[InvisibleSpace]" -> "";
+            colSizes = Max[ #, 1 ] & /@ Map[ StringLength, tr, { 2 } ];
+            padded   = Transpose @ Apply[ StringPadRight, Transpose @ { tr, colSizes }, { 1 } ];
+            columns  = StringRiffle[ #, " | " ] & /@ padded;
+            If[ TrueQ @ $columnHeadings,
+                StringRiffle[ "| "<>#<> " |" & /@ insertColumnDelimiter[ columns, colSizes, box ], "\n" ],
+                StringRiffle[
+                    "| "<>#<> " |" & /@ Join[
+                        {
+                            StringRiffle[ StringRepeat[ " ", # ] & /@ colSizes, " | " ],
+                            StringRiffle[ createAlignedDelimiters[ colSizes, box ], " | " ]
+                        },
+                        columns
+                    ],
+                    "\n"
+                ]
+            ]
+        ) /; AllTrue[ strings, StringQ, 2 ]
+    ];
+
+fasterCellToString0[ TagBox[ grid_GridBox, { _, OutputFormsDump`HeadedColumns }, ___ ] ] :=
+    Block[ { $columnHeadings = True }, fasterCellToString0 @ grid ];
+
+
+insertColumnDelimiter // beginDefinition;
+
+insertColumnDelimiter[ { headings_String, rows__String }, colSizes: { __Integer }, box_ ] := {
+    headings,
+    StringRiffle[ createAlignedDelimiters[ colSizes, box ], " | " ],
+    rows
+};
+
+insertColumnDelimiter[ rows_List, _List, box_ ] := rows;
+
+insertColumnDelimiter // endDefinition;
+
+
+createAlignedDelimiters // beginDefinition;
+
+createAlignedDelimiters[ colSizes_, GridBox[ ___, GridBoxAlignment -> { ___, "Columns" -> alignments_, ___ }, ___ ] ] :=
+    createAlignedDelimiters[ colSizes, alignments ];
+
+createAlignedDelimiters[ colSizes_, _GridBox ] :=
+    StringRepeat[ "-", Max[ #, 1 ] ] & /@ colSizes;
+
+createAlignedDelimiters[ colSizes_List, alignments_List ] /; Length @ colSizes === Length @ alignments :=
+    createAlignedDelimiter @@@ Transpose @ {
+        colSizes,
+        Replace[
+            alignments,
+            { (Center|"Center"|{Center|"Center"}).. } :> ConstantArray[ Automatic, Length @ colSizes ]
+        ]
+    };
+
+createAlignedDelimiters[ colSizes_List, { a: Except[ { _ } ]..., { repeat_ }, b: Except[ { _ } ]... } ] :=
+    Module[ { total, current, need, expanded, full, alignments },
+        total      = Length @ colSizes;
+        current    = Length @ { a, b };
+        need       = Max[ total - current, 0 ];
+        expanded   = ConstantArray[ repeat, need ];
+        full       = Join[ { a }, expanded, { b } ];
+        alignments = Take[ full, UpTo @ total ];
+        createAlignedDelimiter @@@ Transpose @ {
+            colSizes,
+            Replace[ alignments, { (Center|"Center").. } :> ConstantArray[ Automatic, total ] ]
+        }
+    ];
+
+createAlignedDelimiters // endDefinition;
+
+
+createAlignedDelimiter // beginDefinition;
+createAlignedDelimiter[ size_Integer, "Left"  | Left   ] := ":" <> StringRepeat[ "-", Max[ size-1, 1 ] ];
+createAlignedDelimiter[ size_Integer, "Right" | Right  ] := StringRepeat[ "-", Max[ size-1, 1 ] ] <> ":";
+createAlignedDelimiter[ size_Integer, "Center"| Center ] := ":" <> StringRepeat[ "-", Max[ size-2, 1 ] ] <> ":";
+createAlignedDelimiter[ size_Integer, { alignment_ } ] := createAlignedDelimiter[ size, alignment ];
+createAlignedDelimiter[ size_Integer, _ ] := StringRepeat[ "-", Max[ size, 1 ] ];
+createAlignedDelimiter // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Resource Definition Notebooks*)
+
+(* Text from info buttons: *)
+fasterCellToString0[
+    PaneSelectorBox[ { ___, True -> button: TemplateBox[ _, "MoreInfoOpenerButtonTemplate", ___ ], ___ }, ___ ]
+] := fasterCellToString0 @ button;
+
+fasterCellToString0[ TemplateBox[ { _, info_ }, "MoreInfoOpenerButtonTemplate", ___ ] ] :=
+    StringJoin[
+        $delimiterString,
+        "[ Instructions ]\n\n",
+        fasterCellToString0 @ info,
+        $delimiterString,
+        "\n"
+    ];
+
+(* OS-specific displays: *)
+fasterCellToString0 @ DynamicBox[ ToBoxes[ If[ $OperatingSystem === os_String, a_, b_ ], StandardForm ], ___ ] :=
+    If[ $OperatingSystem === os, fasterCellToString0 @ a, fasterCellToString0 @ b ];
+
+(* Checkboxes: *)
+fasterCellToString0[ Cell[
+    BoxData[ TagBox[ grid_GridBox, "Grid", ___ ], ___ ],
+    ___,
+    CellTags -> { ___, "CheckboxCell", ___ },
+    ___
+] ] :=
+    Block[ { $showStringCharacters = False },
+        StringRiffle[
+            Cases[
+                grid,
+                { checkbox_CheckboxBox, ___, label: _StyleBox | _String } :>
+                    StringRiffle @ { fasterCellToString0 @ checkbox, fasterCellToString0 @ label },
+                Infinity
+            ],
+            "\n"
+        ]
+    ];
+
+fasterCellToString0[ CheckboxBox[ a_, { a_, __ }, ___ ] ] := checkbox @ False;
+fasterCellToString0[ CheckboxBox[ b_, { _, b_, ___ }, ___ ] ] := checkbox @ True;
+fasterCellToString0[ CheckboxBox[ True, ___ ] ] := checkbox @ True;
+fasterCellToString0[ CheckboxBox[ False, ___ ] ] := checkbox @ False;
+fasterCellToString0[ CheckboxBox[ ___ ] ] := checkbox @ None;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*checkbox*)
+checkbox // beginDefinition;
+checkbox[ True  ] := (needsBasePrompt["Checkboxes"]; "[\[Checkmark]]");
+checkbox[ False ] := (needsBasePrompt["Checkboxes"]; "[ ]");
+checkbox[ None  ] := (needsBasePrompt["CheckboxesIndeterminate"]; "[-]");
+checkbox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
 (*Other*)
 fasterCellToString0[ Cell[ _, "ObjectNameTranslation", ___ ] ] := "";
 
@@ -628,12 +997,12 @@ fasterCellToString0[
     TagBox[ _, "MarkdownImage", ___, TaggingRules -> KeyValuePattern[ "CellToStringData" -> string_String ], ___ ]
 ] := string;
 
-fasterCellToString0[ BoxData[ boxes_List ] ] :=
+fasterCellToString0[ BoxData[ boxes_List, ___ ] ] :=
     With[ { strings = fasterCellToString0 /@ boxes },
         StringRiffle[ strings, "\n" ] /; AllTrue[ strings, StringQ ]
     ];
 
-fasterCellToString0[ BoxData[ boxes_ ] ] :=
+fasterCellToString0[ BoxData[ boxes_, ___ ] ] :=
     fasterCellToString0 @ boxes;
 
 fasterCellToString0[ list_List ] :=
@@ -642,28 +1011,18 @@ fasterCellToString0[ list_List ] :=
     ];
 
 fasterCellToString0[ cell: Cell[ a_, ___ ] ] :=
-    Block[ { $showStringCharacters = showStringCharactersQ @ cell }, fasterCellToString0 @ a ];
+    Block[
+        {
+            $showStringCharacters = showStringCharactersQ @ cell,
+            $escapeMarkdown       = escapeMarkdownCharactersQ @ cell
+        },
+        fasterCellToString0 @ a
+    ];
 
-fasterCellToString0[ InterpretationBox[ _, expr_, ___ ] ] := (
-    needsBasePrompt[ "WolframLanguage" ];
-    inputFormString @ Unevaluated @ expr
-);
-
-fasterCellToString0[ GridBox[ grid_? MatrixQ, ___ ] ] :=
-    Module[ { strings, tr, colSizes },
-        strings = Map[ fasterCellToString0, grid, { 2 } ];
-        (
-            tr = Transpose @ strings;
-            colSizes = Max /@ Map[ StringLength, tr, { 2 } ];
-            StringRiffle[
-                StringRiffle /@ Transpose @ Apply[
-                    StringPadRight,
-                    Transpose @ { tr, colSizes },
-                    { 1 }
-                ],
-                "\n"
-            ]
-        ) /; AllTrue[ strings, StringQ, 2 ]
+fasterCellToString0[ InterpretationBox[ _, expr_, ___ ] ] :=
+    With[ { held = replaceCellContext @ HoldComplete @ expr },
+        needsBasePrompt[ "WolframLanguage" ];
+        Replace[ held, HoldComplete[ e_ ] :> inputFormString @ Unevaluated @ e ]
     ];
 
 fasterCellToString0[ Cell[ TextData @ { _, _, text_String, _, Cell[ _, "ExampleCount", ___ ] }, ___ ] ] :=
@@ -673,11 +1032,14 @@ fasterCellToString0[ DynamicModuleBox[
     _,
     TagBox[
         Cell[
-            BoxData @ TagBox[
-                _,
-                "MarkdownImage",
-                ___,
-                TaggingRules -> Association @ OrderlessPatternSequence[ "CellToStringData" -> str_String, ___ ]
+            BoxData[
+                TagBox[
+                    _,
+                    "MarkdownImage",
+                    ___,
+                    TaggingRules -> Association @ OrderlessPatternSequence[ "CellToStringData" -> str_String, ___ ]
+                ],
+                ___
             ],
             __
         ],
@@ -727,6 +1089,12 @@ fasterCellToString0[ DynamicModuleBox[ a___ ] ] /; ! TrueQ @ $CellToStringDebug 
     needsBasePrompt[ "ConversionLargeOutputs" ];
     "DynamicModule[<<" <> ToString @ Length @ HoldComplete @ a <> ">>]"
 );
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Ignored/Skipped*)
+fasterCellToString0[ $ignoredBoxPatterns ] := "";
+fasterCellToString0[ $stringStripHeads[ a_, ___ ] ] := fasterCellToString0 @ a;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -799,7 +1167,7 @@ stringToBoxes[ string_String ] :=
         Quiet @ UsingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`UndocumentedTestFEParserPacket[ string, True ]
     ];
 
-stringToBoxes[ string_, { BoxData[ boxes_ ], ___ } ] := boxes;
+stringToBoxes[ string_, { BoxData[ boxes_, ___ ], ___ } ] := boxes;
 stringToBoxes[ string_, other_ ] := string;
 
 (* ::**************************************************************************************************************:: *)
@@ -851,21 +1219,27 @@ sowMessageData[ ___ ] := Null;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*showStringCharactersQ*)
-
-(* This would normally give False for things like output cells, but the LLM needs to see the difference between symbols
-   and strings. However, there might be cases in the future where we want to change this behavior, so this is left in
-   as a stub definition for now. *)
+showStringCharactersQ[ Cell[ __, "TextTableForm", ___ ] ] := False;
+showStringCharactersQ[ Cell[ __, "MoreInfoText", ___ ] ] := False;
 showStringCharactersQ[ ___ ] := True;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*escapeMarkdownCharactersQ*)
+escapeMarkdownCharactersQ[ Cell[ __, "TextTableForm", ___ ] ] := False;
+escapeMarkdownCharactersQ[ Cell[ _BoxData, ___ ] ] := False;
+escapeMarkdownCharactersQ[ ___ ] := True;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*truncateString*)
-truncateString // SetFallthroughError;
+truncateString // beginDefinition;
 truncateString[ str_String ] := truncateString[ str, $maxOutputCellStringLength ];
-truncateString[ str_String, max_Integer ] := truncateString[ str, Ceiling[ max / 2 ], Floor[ max / 2 ] ];
-truncateString[ str_String, l_Integer, r_Integer ] /; StringLength @ str <= l + r + 5 := str;
-truncateString[ str_String, l_Integer, r_Integer ] := StringTake[ str, l ] <> " ... " <> StringTake[ str, -r ];
+truncateString[ str_String, Automatic ] := truncateString[ str, $defaultMaxOutputCellStringLength ];
+truncateString[ str_String, max: $$size ] := stringTrimMiddle[ str, max ];
 truncateString[ other_ ] := other;
+truncateString[ other_, _Integer ] := other;
+truncateString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1006,6 +1380,10 @@ makeSearchResultString[ as_ ] := ToString[ as, InputForm ];
 $noDocSearchResultsString = "BEGIN_DOCUMENTATION_SEARCH_RESULTS\n(no results found)\nEND_DOCUMENTATION_SEARCH_RESULTS";
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Documentation Notebooks*)
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*makeDocumentationString*)
 makeDocumentationString // SetFallthroughError;
@@ -1042,9 +1420,9 @@ makeUsageString // SetFallthroughError;
 
 makeUsageString[ usage_List ] := StringRiffle[ Flatten[ makeUsageString /@ usage ], "\n" ];
 
-makeUsageString[ Cell[ BoxData @ GridBox[ grid_List, ___ ], "Usage", ___ ] ] := makeUsageString0 /@ grid;
+makeUsageString[ Cell[ BoxData[ GridBox[ grid_List, ___ ], ___ ], "Usage", ___ ] ] := makeUsageString0 /@ grid;
 
-makeUsageString[ Cell[ BoxData @ GridBox @ { { cell_, _ } }, "ObjectNameGrid", ___ ] ] :=
+makeUsageString[ Cell[ BoxData[ GridBox[ { { cell_, _ } }, ___ ], ___ ], "ObjectNameGrid", ___ ] ] :=
     "# " <> cellToString @ cell <> "\n";
 
 makeUsageString0 // SetFallthroughError;
@@ -1115,6 +1493,15 @@ formatMetadata[ ___ ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Cell Utilities*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*codeBlockQ*)
+codeBlockQ // beginDefinition;
+codeBlockQ[ Cell[ __, CellTags -> { ___, "CheckboxCell", ___ }, ___ ] ] := False;
+codeBlockQ[ Cell[ _BoxData, ___ ] ] := True;
+codeBlockQ[ Cell[ _TextData, ___ ] ] := False;
+codeBlockQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1200,5 +1587,9 @@ firstMatchingCellGroup[ nb_, patt_, "Content" ] := Catch[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
+If[ Wolfram`ChatbookInternal`$BuildingMX,
+    Null;
+];
+
 End[ ];
 EndPackage[ ];

@@ -26,6 +26,9 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$excludeHistoryStyle;
 `$$nestedCellStyle;
 
+`$$optionsSequence;
+`$$size;
+`$$textData;
 `$$textDataList;
 `$$unspecified;
 
@@ -78,6 +81,7 @@ $closedChatCellOptions :=
     ];
 
 $versionRequirements = <|
+    "AccentedCells"            -> 14.0,
     "DynamicSplit"             -> 13.3,
     "TaskWriteOutput"          -> 14.0,
     "TrackScrollingWhenPlaced" -> 14.0
@@ -100,7 +104,11 @@ $$chatOutputStyle     = cellStylePattern @ $chatOutputStyles;
 $$excludeHistoryStyle = cellStylePattern @ $excludeHistoryStyles;
 $$nestedCellStyle     = cellStylePattern @ $nestedCellStyles;
 
-$$textDataList        = { (_String|_Cell|_StyleBox|_ButtonBox)... };
+$$textDataItem        = (_String|_Cell|_StyleBox|_ButtonBox);
+$$textDataList        = { $$textDataItem... };
+$$textData            = $$textDataItem | $$textDataList;
+$$optionsSequence     = (Rule|RuleDelayed)[ _Symbol|_String, _ ] ...;
+$$size                = Infinity | (_Real|_Integer)? NonNegative;
 $$unspecified         = _Missing | Automatic | Inherited;
 
 (* ::**************************************************************************************************************:: *)
@@ -113,13 +121,21 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "ConnectionFailure"               -> "Server connection failure: `1`. Please try again later.",
     "ConnectionFailure2"              -> "Could not get a valid response from the server: `1`. Please try again later.",
     "ExpectedInstallableResourceType" -> "Expected a resource of type `1` instead of `2`.",
+    "IntegratedServiceError"          -> "The `1` service returned an error: `2`",
+    "IntegratedServiceUnavailable"    -> "The `1` service is currently not available. Please try again in a few minutes.",
     "Internal"                        -> "An unexpected error occurred. `1`",
     "InvalidAPIKey"                   -> "Invalid value for API key: `1`",
     "InvalidArguments"                -> "Invalid arguments given for `1` in `2`.",
+    "InvalidFrontEndScope"            -> "The value `1` is not a valid scope for `2`.",
+    "InvalidFunctions"                -> "Invalid setting for ProcessingFunctions: `1`; using defaults instead.",
+    "InvalidHandlerArguments"         -> "Invalid value for $ChatHandlerData: `1`; resetting to default value.",
     "InvalidHandlerKeys"              -> "Invalid setting for HandlerFunctionsKeys: `1`; using defaults instead.",
     "InvalidHandlers"                 -> "Invalid setting for HandlerFunctions: `1`; using defaults instead.",
+    "InvalidMessages"                 -> "The value `2` returned by `1` is not a valid list of messages.",
     "InvalidResourceSpecification"    -> "The argument `1` is not a valid resource specification.",
     "InvalidResourceURL"              -> "The specified URL does not represent a valid resource object.",
+    "InvalidRootSettings"             -> "The value `1` is not valid for root chat settings.",
+    "InvalidSettingsKey"              -> "The value `1` is not a valid key for `2`.",
     "InvalidStreamingOutputMethod"    -> "Invalid streaming output method: `1`.",
     "InvalidWriteMethod"              -> "Invalid setting for NotebookWriteMethod: `1`; using default instead.",
     "ModelToolSupport"                -> "The model `1` does not support tools.",
@@ -152,7 +168,7 @@ $messageSymbol   = Chatbook;
 (*optimizeEnclosures*)
 optimizeEnclosures // ClearAll;
 optimizeEnclosures // Attributes = { HoldFirst };
-optimizeEnclosures[ s_Symbol ] := DownValues[ s ] = optimizeEnclosures0 @ DownValues @ s;
+optimizeEnclosures[ s_Symbol ] := DownValues[ s ] = expandThrowInternalFailures @ optimizeEnclosures0 @ DownValues @ s;
 
 optimizeEnclosures0 // ClearAll;
 optimizeEnclosures0[ expr_ ] :=
@@ -163,6 +179,25 @@ optimizeEnclosures0[ expr_ ] :=
                 RuleCondition[ new, True ]
             ]
     ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*expandThrowInternalFailures*)
+expandThrowInternalFailures // beginDefinition;
+
+expandThrowInternalFailures[ expr_ ] :=
+    ReplaceAll[
+        expr,
+        HoldPattern[ Verbatim[ HoldPattern ][ lhs_ ] :> rhs_ ] /;
+            ! FreeQ[ HoldComplete @ rhs, HoldPattern @ Enclose[ _, throwInternalFailure, $enclosure ] ] :>
+                ReplaceAll[
+                    HoldPattern[ e$: lhs ] :> rhs,
+                    HoldPattern @ Enclose[ eval_, throwInternalFailure, $enclosure ] :>
+                        Enclose[ eval, throwInternalFailure[ e$, ##1 ] &, $enclosure ]
+                ]
+    ];
+
+expandThrowInternalFailures // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -229,6 +264,31 @@ beginDefinition[ s_Symbol ] /; $debug && $inDef :=
 beginDefinition[ s_Symbol ] := WithCleanup[ Unprotect @ s; ClearAll @ s, $inDef = True ];
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*appendFallthroughError*)
+appendFallthroughError // ClearAll;
+appendFallthroughError // Attributes = { HoldFirst };
+
+appendFallthroughError[ s_Symbol, values: DownValues|UpValues ] :=
+    Module[ { block = Internal`InheritedBlock, before, after },
+        block[ { s },
+            before = values @ s;
+            appendFallthroughError0[ s, values ];
+            after = values @ s;
+        ];
+
+        If[ TrueQ[ Length @ after > Length @ before ],
+            values[ s ] = after,
+            values[ s ]
+        ]
+    ];
+
+appendFallthroughError0 // ClearAll;
+appendFallthroughError0[ s_Symbol, OwnValues  ] := e: HoldPattern @ s               := throwInternalFailure @ e;
+appendFallthroughError0[ s_Symbol, DownValues ] := e: HoldPattern @ s[ ___ ]        := throwInternalFailure @ e;
+appendFallthroughError0[ s_Symbol, UpValues   ] := e: HoldPattern @ s[ ___ ][ ___ ] := throwInternalFailure @ e;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*endDefinition*)
 endDefinition // beginDefinition;
@@ -238,16 +298,10 @@ endDefinition[ s_Symbol ] := endDefinition[ s, DownValues ];
 
 endDefinition[ s_Symbol, None ] := $inDef = False;
 
-endDefinition[ s_Symbol, DownValues ] :=
+endDefinition[ s_Symbol, values: DownValues|UpValues ] :=
     WithCleanup[
         optimizeEnclosures @ s;
-        AppendTo[ DownValues @ s, e: HoldPattern @ s[ ___ ] :> throwInternalFailure @ e ],
-        $inDef = False
-    ];
-
-endDefinition[ s_Symbol, SubValues ] :=
-    WithCleanup[
-        AppendTo[ SubValues @ s, e: HoldPattern @ s[ ___ ][ ___ ] :> throwInternalFailure @ e ],
+        appendFallthroughError[ s, values ],
         $inDef = False
     ];
 
@@ -790,7 +844,7 @@ sufficientVersionQ // endDefinition;
 insufficientVersionQ // beginDefinition;
 insufficientVersionQ[ version_? NumberQ ] := TrueQ[ $VersionNumber < version ];
 insufficientVersionQ[ id_String ] := insufficientVersionQ[ id ] = insufficientVersionQ[ id, $versionRequirements[ id ] ];
-insufficientVersionQ[ id_, version_? NumberQ ] := sufficientVersionQ @ version;
+insufficientVersionQ[ id_, version_? NumberQ ] := insufficientVersionQ @ version;
 insufficientVersionQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

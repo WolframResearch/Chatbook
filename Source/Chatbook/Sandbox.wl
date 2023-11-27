@@ -24,6 +24,7 @@ Needs[ "Wolfram`Chatbook`Utils`"      ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
+$SandboxKernel             = None;
 $sandboxPingTimeout       := toolOptionValue[ "WolframLanguageEvaluator", "PingTimeConstraint"       ];
 $sandboxEvaluationTimeout := toolOptionValue[ "WolframLanguageEvaluator", "EvaluationTimeConstraint" ];
 
@@ -186,7 +187,7 @@ startSandboxKernel[ ] := Enclose[
         ];
 
         If[ IntegerQ @ pid,
-            kernel,
+            $SandboxKernel = kernel,
             Quiet @ LinkClose @ kernel;
             throwFailure[ "NoSandboxKernel" ]
         ]
@@ -505,7 +506,7 @@ sandboxResultString[ HoldComplete[ ___, expr_? simpleResultQ ] ] :=
             StringJoin[
                 "\n",
                 fixLineEndings @ ToString[
-                    Unevaluated @ Short[ expr, 5 ],
+                    Unevaluated @ Short[ expr, Floor[ $toolResultStringLength / 100 ] ],
                     OutputForm,
                     PageWidth -> 100
                 ],
@@ -564,48 +565,6 @@ sandboxFormatter[ result_, "Result" ] :=
 sandboxFormatter[ result_, ___ ] := result;
 
 sandboxFormatter // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*Misc*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*Graphics Utilities*)
-
-$$graphics = HoldPattern[ _GeoGraphics | _Graphics | _Graphics3D | _Image | _Image3D | _Legended ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*graphicsQ*)
-graphicsQ[ $$graphics ] := True;
-graphicsQ[ g_         ] := MatchQ[ Quiet @ Show @ Unevaluated @ g, $$graphics ];
-graphicsQ[ ___        ] := False;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*validGraphicsQ*)
-validGraphicsQ[ g_? graphicsQ ] := getGraphicsErrors @ Unevaluated @ g === { };
-validGraphicsQ[ ___ ] := False;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getGraphicsErrors*)
-getGraphicsErrors // beginDefinition;
-
-(* TODO: hook this up to outputs to give feedback about pink boxes *)
-getGraphicsErrors[ gfx_ ] :=
-    Module[ { cell, nbo },
-        cell = Cell @ BoxData @ MakeBoxes @ gfx;
-        UsingFrontEnd @ WithCleanup[
-            nbo = NotebookPut[ Notebook @ { cell }, Visible -> False ],
-            SelectionMove[ First @ Cells @ nbo, All, Cell ];
-            MathLink`CallFrontEnd @ FrontEnd`GetErrorsInSelectionPacket @ nbo,
-            NotebookClose @ nbo
-        ]
-    ];
-
-getGraphicsErrors // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

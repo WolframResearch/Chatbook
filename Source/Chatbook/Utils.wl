@@ -1,99 +1,33 @@
-(*
-	This package contains utility functions that are not tied to Chatbook
-	directly in any way.
-*)
+(* ::Section::Closed:: *)
+(*Package Header*)
+BeginPackage[ "Wolfram`Chatbook`Utils`" ];
+
+HoldComplete[
+    `associationKeyDeflatten;
+    `clickToCopy;
+    `convertUTF8;
+    `exportDataURI;
+    `fastFileHash;
+    `fileFormatQ;
+    `fixLineEndings;
+    `formatToMIMEType;
+    `getPinkBoxErrors;
+    `graphicsQ;
+    `image2DQ;
+    `importDataURI;
+    `makeFailureString;
+    `mimeTypeToFormat;
+    `readString;
+    `stringTrimMiddle;
+    `validGraphicsQ;
+];
+
+Begin[ "`Private`" ];
+
+Needs[ "Wolfram`Chatbook`"        ];
+Needs[ "Wolfram`Chatbook`Common`" ];
 
 (* cSpell: ignore deflatten *)
-
-BeginPackage["Wolfram`Chatbook`Utils`"]
-
-`associationKeyDeflatten;
-`convertUTF8;
-`fixLineEndings;
-
-CellPrint2
-
-FirstMatchingPositionOrder::usage = "FirstMatchingPositionOrder[patterns][a, b] returns an ordering value based on the positions of the first pattern in patterns to match a and b."
-
-Begin["`Private`"]
-
-Needs[ "Wolfram`Chatbook`"            ];
-Needs[ "Wolfram`Chatbook`Common`"     ];
-Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
-Needs[ "Wolfram`Chatbook`UI`"         ];
-
-(*====================================*)
-
-SetFallthroughError[CellPrint2]
-
-(*
-	Alternative to CellPrint[] where the first argument is an evaluation input
-	cell, and the new cell will be printed after any existing output cells.
-
-	`CellPrint[arg]` is conceptually `CellPrint2[EvaluationCell[], arg]`.
-*)
-CellPrint2[
-	evalCell_CellObject,
-	Cell[cellData_, cellStyles___?StringQ, cellOpts___?OptionQ]
-] := With[{
-	uuid = CreateUUID[]
-}, Module[{
-	cell = Cell[
-		cellData,
-		cellStyles,
-		GeneratedCell -> True,
-		CellAutoOverwrite -> True,
-		ExpressionUUID -> uuid,
-		cellOpts
-	],
-	obj
-},
-	RaiseAssert[
-		Experimental`CellExistsQ[evalCell],
-		"Unable to print cell: evaluation cell does not exist."
-	];
-
-	Wolfram`Chatbook`UI`Private`moveAfterPreviousOutputs[evalCell];
-
-	RaiseConfirm @ NotebookWrite[ParentNotebook[evalCell], cell];
-
-	obj = CellObject[uuid];
-
-	RaiseAssert[
-		Experimental`CellExistsQ[obj],
-		<| "CellExpression" -> cell |>,
-		"Error printing cell: written cell was not created or could not be found."
-	];
-
-	obj
-]]
-
-(*====================================*)
-
-FirstMatchingPositionOrder[patterns_?ListQ][a_, b_] := Module[{
-	aPos,
-	bPos
-},
-	aPos = FirstPosition[patterns, _?(patt |-> MatchQ[a, patt]), None, {1}];
-	bPos = FirstPosition[patterns, _?(patt |-> MatchQ[b, patt]), None, {1}];
-
-	Replace[{aPos, bPos}, {
-		(* If neither `a` nor `b` match, then they are already in order. *)
-		{None, None} -> True,
-		(* If only `a` matches, it's already in order. *)
-		{Except[None], None} -> True,
-		(* If only `b` matches, it should come earlier. *)
-		{None, Except[None]} -> -1,
-		(* If both `a` and `b` match, sort based on the position of the matched pattern. *)
-		{{aIdx_?IntegerQ}, {bIdx_?IntegerQ}} :> Order[aIdx, bIdx],
-		other_ :> FailureMessage[
-			FirstMatchingPositionOrder::unexpected,
-			"Unexpected position values: ``",
-			{other}
-		]
-	}]
-]
-
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*AssociationKeyDeflatten*)
@@ -102,13 +36,23 @@ importResourceFunction[ associationKeyDeflatten, "AssociationKeyDeflatten" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*ClickToCopy*)
+(* https://resources.wolframcloud.com/FunctionRepository/resources/ClickToCopy *)
+importResourceFunction[ clickToCopy, "ClickToCopy" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Strings*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*fixLineEndings*)
 fixLineEndings // beginDefinition;
 fixLineEndings[ string_String? StringQ ] := StringReplace[ string, "\r\n" -> "\n" ];
 fixLineEndings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*convertUTF8*)
 convertUTF8 // beginDefinition;
 convertUTF8[ string_String ] := convertUTF8[ string, True ];
@@ -117,10 +61,309 @@ convertUTF8[ string_String, False ] := FromCharacterCode @ ToCharacterCode[ stri
 convertUTF8 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*stringTrimMiddle*)
+stringTrimMiddle // beginDefinition;
+stringTrimMiddle[ str_String, Infinity ] := str;
+stringTrimMiddle[ str_String, max_Integer? Positive ] := stringTrimMiddle[ str, Ceiling[ max / 2 ], Floor[ max / 2 ] ];
+stringTrimMiddle[ str_String, l_Integer, r_Integer ] /; StringLength @ str <= l + r + 5 := str;
+stringTrimMiddle[ str_String, l_Integer, r_Integer ] := StringTake[ str, l ] <> " ... " <> StringTake[ str, -r ];
+stringTrimMiddle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*makeFailureString*)
+makeFailureString // beginDefinition;
+
+makeFailureString[ failure: Failure[ tag_, as_Association ] ] := Enclose[
+    Module[ { message },
+        message = ToString @ ConfirmBy[ failure[ "Message" ], StringQ, "Message" ];
+        StringJoin[
+            "Failure[",
+                ToString[ tag, InputForm ],
+                ", ",
+                StringReplace[
+                    ToString[ as, InputForm ],
+                    StartOfString~~"<|" -> "<|" <> ToString[ "Message" -> message, InputForm ] <> ", "
+                ],
+            "]"
+        ]
+    ],
+    throwInternalFailure[ makeFailureString @ failure, ##1 ] &
+];
+
+makeFailureString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Files*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*readString*)
+readString // beginDefinition;
+
+readString[ file_ ] := Quiet[ readString[ file, ReadByteArray @ file ], $CharacterEncoding::utf8 ];
+
+readString[ file_, bytes_? ByteArrayQ ] := readString[ file, ByteArrayToString @ bytes ];
+readString[ file_, string_? StringQ   ] := fixLineEndings @ string;
+readString[ file_, failure_Failure    ] := failure;
+
+readString[ file_, $Failed ] :=
+    Module[ { exists, tag, template },
+        exists   = TrueQ @ FileExistsQ @ file;
+        tag      = If[ exists, "FileUnreadable", "FileNotFound" ];
+        template = If[ exists, "Cannot read content from `1`.", "The file `1` does not exist." ];
+        Failure[ tag, <| "MessageTemplate" -> template, "MessageParameters" -> { file } |> ]
+    ];
+
+readString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*unreadableFileFailure*)
+unreadableFileFailure // beginDefinition;
+
+unreadableFileFailure[ file_ ] :=
+    Failure[
+        "FileUnreadable",
+        <|
+            "MessageTemplate" -> "Cannot read content from `1`.",
+            "MessageParameters" -> { file }
+        |>
+    ];
+
+unreadableFileFailure // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*fastFileHash*)
+fastFileHash // beginDefinition;
+fastFileHash[ file_ ] := fastFileHash[ file, ReadByteArray @ file ];
+fastFileHash[ file_, bytes_ByteArray ] := Hash @ bytes;
+fastFileHash // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Graphics*)
+$$graphics = HoldPattern @ Alternatives[
+    _System`AstroGraphics,
+    _GeoGraphics,
+    _Graphics,
+    _Graphics3D,
+    _Image,
+    _Image3D,
+    _Legended
+];
+
+$$definitelyNotGraphics = HoldPattern @ Alternatives[
+    _Association,
+    _CloudObject,
+    _File,
+    _List,
+    _String,
+    _URL,
+    Null,
+    True|False
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*graphicsQ*)
+graphicsQ[ $$graphics              ] := True;
+graphicsQ[ $$definitelyNotGraphics ] := False;
+graphicsQ[ g_                      ] := MatchQ[ Quiet @ Show @ Unevaluated @ g, $$graphics ];
+graphicsQ[ ___                     ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*validGraphicsQ*)
+validGraphicsQ[ g_? graphicsQ ] := getPinkBoxErrors @ Unevaluated @ g === { };
+validGraphicsQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getPinkBoxErrors*)
+getPinkBoxErrors // beginDefinition;
+(* TODO: hook this up to evaluator outputs and CellToString to give feedback about pink boxes *)
+
+getPinkBoxErrors[ { } ] :=
+    { };
+
+getPinkBoxErrors[ cells: _CellObject | { __CellObject } ] :=
+    getPinkBoxErrors @ NotebookRead @ cells;
+
+getPinkBoxErrors[ cells: _Cell | { __Cell } ] :=
+    Module[ { nbo },
+        UsingFrontEnd @ WithCleanup[
+            nbo = NotebookPut[ Notebook @ Flatten @ { cells }, Visible -> False ],
+            SelectionMove[ nbo, All, Notebook ];
+            MathLink`CallFrontEnd @ FrontEnd`GetErrorsInSelectionPacket @ nbo,
+            NotebookClose @ nbo
+        ]
+    ];
+
+getPinkBoxErrors[ data: _TextData | _BoxData | { __BoxData } ] :=
+    getPinkBoxErrors @ Cell @ data;
+
+getPinkBoxErrors[ exprs_List ] :=
+    getPinkBoxErrors[ Cell @* BoxData /@ MakeBoxes /@ Unevaluated @ exprs ];
+
+getPinkBoxErrors[ expr_ ] :=
+    getPinkBoxErrors @ { Cell @ BoxData @ MakeBoxes @ expr };
+
+getPinkBoxErrors // endDefinition;
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*image2DQ*)
+(* Matches against the head in addition to checking ImageQ to avoid passing Image3D when a 2D image is expected: *)
+image2DQ // beginDefinition;
+image2DQ[ _Image? ImageQ ] := True;
+image2DQ[ _              ] := False;
+image2DQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*File Format Utilities*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$fileFormats*)
+$fileFormats := ToLowerCase @ Union[ $ImportFormats, $ExportFormats ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*fileFormatQ*)
+fileFormatQ // beginDefinition;
+fileFormatQ[ fmt_String ] := fileFormatQ[ fmt ] = MemberQ[ $fileFormats, ToLowerCase @ fmt ];
+fileFormatQ[ _ ] := False
+fileFormatQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*formatToMIMEType*)
+formatToMIMEType // beginDefinition;
+formatToMIMEType[ Automatic ] := "application/octet-stream";
+formatToMIMEType[ mime_String ] /; StringContainsQ[ mime, "/" ] := ToLowerCase @ mime;
+formatToMIMEType[ fmt_String ] := formatToMIMEType[ fmt, FileFormatProperties[ fmt, "MIMETypes" ] ];
+formatToMIMEType[ fmt_, _? FailureQ | { } | _FileFormatProperties ] := "application/octet-stream";
+formatToMIMEType[ fmt_, { mimeType_String, ___ } ] := mimeType;
+formatToMIMEType // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*mimeTypeToFormat*)
+mimeTypeToFormat // beginDefinition;
+mimeTypeToFormat[ fmt_String ] /; StringFreeQ[ fmt, "/" ] := fmt;
+mimeTypeToFormat[ mime_String ] := mimeTypeToFormat @ MIMETypeToFormatList @ mime;
+mimeTypeToFormat[ { fmt_String, ___ } ] := fmt;
+mimeTypeToFormat[ { } ] := "Binary";
+mimeTypeToFormat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*importDataURI*)
+importDataURI // beginDefinition;
+
+importDataURI[ uri_ ] :=
+    importDataURI[ uri, Automatic ];
+
+importDataURI[ URL[ uri_String ], fmt_ ] :=
+    importDataURI[ uri, fmt ];
+
+importDataURI[ uri_String, fmt0_ ] := Enclose[
+    Module[ { info, bytes, fmt, fmts, result, $failed },
+
+        info  = ConfirmBy[ uriData @ uri, AssociationQ, "URIData" ];
+        bytes = ConfirmBy[ info[ "Data" ], ByteArrayQ, "Data" ];
+        fmt   = If[ StringQ @ fmt0, fmt0, Nothing ];
+
+        fmts = ConfirmMatch[
+            DeleteDuplicates @ Flatten @ { fmt, info[ "Formats" ], Automatic },
+            { (Automatic|_String).. },
+            "Formats"
+        ];
+
+        result = FirstCase[
+            fmts,
+            f_ :> With[ { res = ImportByteArray[ bytes, f ] },
+                res /; MatchQ[ res, Except[ _ImportByteArray | _? FailureQ ] ]
+            ],
+            $failed
+        ];
+
+        ConfirmMatch[ result, Except[ $failed ], "Result" ]
+    ],
+    throwInternalFailure[ importDataURI[ uri, fmt0 ], ## ] &
+];
+
+importDataURI // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*uriData*)
+uriData // beginDefinition;
+
+uriData[ uri_String ] /; StringMatchQ[ uri, "data:" ~~ ___ ~~ "," ~~ __ ] :=
+    uriData @ StringSplit[ StringDelete[ uri, StartOfString~~"data:" ], "," ];
+
+uriData[ { contentType_String, data_String } ] :=
+    uriData[ StringSplit[ ToLowerCase @ contentType, ";" ], data ];
+
+uriData[ { data_String } ] :=
+    uriData @ { "text/plain;charset=US-ASCII", data };
+
+uriData[ { mimeType_String, "base64" }, data_String ] := <|
+    "Formats" -> MIMETypeToFormatList @ mimeType,
+    "Data"    -> BaseDecode @ data
+|>;
+
+uriData[ { mimeType_String, rule_String, rest___ }, data_String ] /; StringContainsQ[ rule, "=" ] :=
+    uriData[ { mimeType <> ";" <> rule, rest }, data ];
+
+uriData[ { mimeType_String }, data_String ] := <|
+    "Formats" -> MIMETypeToFormatList @ mimeType,
+    "Data"    -> StringToByteArray @ URLDecode @ data
+|>;
+
+uriData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*exportDataURI*)
+exportDataURI // beginDefinition;
+
+exportDataURI[ data_ ] :=
+    exportDataURI[ data, guessExpressionMimeType @ data ];
+
+exportDataURI[ data_, fmt_String ] := Enclose[
+    Module[ { mime, base64 },
+        mime   = ConfirmBy[ formatToMIMEType @ fmt, StringQ, "MIMEType" ];
+        base64 = ConfirmBy[ ExportString[ data, { "Base64", fmt } ], StringQ, "Base64" ];
+        "data:" <> mime <> ";base64," <> StringDelete[ base64, "\n" ]
+    ],
+    throwInternalFailure[ exportDataURI[ data, fmt ], ## ] &
+];
+
+exportDataURI // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*guessExpressionMimeType*)
+guessExpressionMimeType // beginDefinition;
+guessExpressionMimeType[ _? image2DQ      ] := "image/jpeg";
+guessExpressionMimeType[ _? graphicsQ     ] := "image/png";
+guessExpressionMimeType[ _String? StringQ ] := "text/plain";
+guessExpressionMimeType[ ___              ] := "application/octet-stream";
+guessExpressionMimeType // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
 If[ Wolfram`ChatbookInternal`$BuildingMX,
-    Null;
+    Scan[ fileFormatQ, $fileFormats ];
 ];
 
 End[ ];

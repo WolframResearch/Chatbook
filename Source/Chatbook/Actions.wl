@@ -36,6 +36,7 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                  ];
+Needs[ "Wolfram`Chatbook`ChatHistory`"      ];
 Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`Dynamics`"         ];
 Needs[ "Wolfram`Chatbook`Explode`"          ];
@@ -50,6 +51,7 @@ Needs[ "Wolfram`Chatbook`Prompting`"        ];
 Needs[ "Wolfram`Chatbook`SendChat`"         ];
 Needs[ "Wolfram`Chatbook`Serialization`"    ];
 Needs[ "Wolfram`Chatbook`Services`"         ];
+Needs[ "Wolfram`Chatbook`Settings`"         ];
 Needs[ "Wolfram`Chatbook`ToolManager`"      ];
 Needs[ "Wolfram`Chatbook`Tools`"            ];
 
@@ -61,7 +63,33 @@ HoldComplete[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*ChatCellEvaluate*)
+ChatCellEvaluate // ClearAll;
+
+ChatCellEvaluate[ ] :=
+    catchMine @ ChatCellEvaluate @ topParentCell @ EvaluationCell[ ];
+
+ChatCellEvaluate[ cell_CellObject ] :=
+    catchMine @ ChatCellEvaluate[ cell, parentNotebook @ cell ];
+
+ChatCellEvaluate[ cell_CellObject, nbo_NotebookObject ] :=
+    catchMine @ Block[ { cellPrint = cellPrintAfter @ cell },
+        Replace[
+            Reap[ EvaluateChatInput[ cell, nbo ], $chatObjectTag ],
+            {
+                { _, { { chat: HoldPattern[ _ChatObject ] } } } :> chat,
+                ___ :> Null
+            }
+        ]
+    ];
+
+ChatCellEvaluate[ args___ ] :=
+    catchMine @ throwFailure[ "InvalidArguments", ChatCellEvaluate, HoldForm @ ChatCellEvaluate @ args ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*ChatbookAction*)
+ChatbookAction[ "AccentIncludedCells"  , args___ ] := catchMine @ accentIncludedCells @ args;
 ChatbookAction[ "AIAutoAssist"         , args___ ] := catchMine @ AIAutoAssist @ args;
 ChatbookAction[ "Ask"                  , args___ ] := catchMine @ AskChat @ args;
 ChatbookAction[ "AttachCodeButtons"    , args___ ] := catchMine @ AttachCodeButtons @ args;
@@ -76,15 +104,15 @@ ChatbookAction[ "InsertInlineReference", args___ ] := catchMine @ InsertInlineRe
 ChatbookAction[ "OpenChatBlockSettings", args___ ] := catchMine @ OpenChatBlockSettings @ args;
 ChatbookAction[ "OpenChatMenu"         , args___ ] := catchMine @ OpenChatMenu @ args;
 ChatbookAction[ "PersonaManage"        , args___ ] := catchMine @ PersonaManage @ args;
-ChatbookAction[ "ToolManage"           , args___ ] := catchMine @ ToolManage @ args;
+ChatbookAction[ "RemoveCellAccents"    , args___ ] := catchMine @ removeCellAccents @ args;
 ChatbookAction[ "Send"                 , args___ ] := catchMine @ SendChat @ args;
 ChatbookAction[ "SendFeedback"         , args___ ] := catchMine @ SendFeedback @ args;
 ChatbookAction[ "StopChat"             , args___ ] := catchMine @ StopChat @ args;
 ChatbookAction[ "TabLeft"              , args___ ] := catchMine @ TabLeft @ args;
 ChatbookAction[ "TabRight"             , args___ ] := catchMine @ TabRight @ args;
 ChatbookAction[ "ToggleFormatting"     , args___ ] := catchMine @ ToggleFormatting @ args;
+ChatbookAction[ "ToolManage"           , args___ ] := catchMine @ ToolManage @ args;
 ChatbookAction[ "WidgetSend"           , args___ ] := catchMine @ WidgetSend @ args;
-ChatbookAction[ name_String            , args___ ] := catchMine @ throwFailure[ "NotImplemented", name, args ];
 ChatbookAction[ args___                          ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
 
 (* ::**************************************************************************************************************:: *)
@@ -241,6 +269,7 @@ InsertInlineReference // endDefinition;
 (*insertInlineReference*)
 insertInlineReference // beginDefinition;
 
+(* FIXME: these four are unused, need to remove relevant definitions *)
 insertInlineReference[ "Persona"         , args___ ] := insertPersonaInputBox @ args;
 insertInlineReference[ "TrailingFunction", args___ ] := insertTrailingFunctionInputBox @ args;
 insertInlineReference[ "Function"        , args___ ] := insertFunctionInputBox @ args;
@@ -249,6 +278,7 @@ insertInlineReference[ "Modifier"        , args___ ] := insertModifierInputBox @
 insertInlineReference[ "PersonaTemplate" , args___ ] := insertPersonaTemplate @ args;
 insertInlineReference[ "FunctionTemplate", args___ ] := insertFunctionTemplate @ args;
 insertInlineReference[ "ModifierTemplate", args___ ] := insertModifierTemplate @ args;
+insertInlineReference[ "WLTemplate"      , args___ ] := insertWLTemplate @ args;
 
 insertInlineReference // endDefinition;
 
@@ -324,7 +354,7 @@ rotateTabPage[ cell_CellObject, n_Integer ] := Enclose[
         currentPage = ConfirmBy[ pageData[ "CurrentPage" ], IntegerQ, "CurrentPage" ];
         newPage     = Mod[ currentPage + n, pageCount, 1 ];
         encoded     = ConfirmMatch[ pageData[ "Pages", newPage ], _String, "EncodedContent" ];
-        content     = ConfirmMatch[ BinaryDeserialize @ BaseDecode @ encoded, TextData[ _String|_List ], "Content" ];
+        content     = ConfirmMatch[ BinaryDeserialize @ BaseDecode @ encoded, TextData[ $$textData ], "Content" ];
 
         writePageContent[ cell, newPage, content ]
     ],
@@ -338,13 +368,13 @@ rotateTabPage // endDefinition;
 (*writePageContent*)
 writePageContent // beginDefinition;
 
-writePageContent[ cell_CellObject, newPage_Integer, content: TextData[ _String | _List ] ] /; $cloudNotebooks := (
+writePageContent[ cell_CellObject, newPage_Integer, content: TextData[ $$textData ] ] /; $cloudNotebooks := (
     CurrentValue[ cell, { TaggingRules, "PageData", "CurrentPage" } ] = newPage;
     CurrentValue[ cell, TaggingRules ] = GeneralUtilities`ToAssociations @ CurrentValue[ cell, TaggingRules ];
     NotebookWrite[ cell, ReplacePart[ NotebookRead @ cell, 1 -> content ] ];
 )
 
-writePageContent[ cell_CellObject, newPage_Integer, content: TextData[ _String | _List ] ] := (
+writePageContent[ cell_CellObject, newPage_Integer, content: TextData[ $$textData ] ] := (
     SelectionMove[ cell, All, CellContents, AutoScroll -> False ];
     NotebookWrite[ parentNotebook @ cell, content, None, AutoScroll -> False ];
     SelectionMove[ cell, After, Cell, AutoScroll -> False ];
@@ -390,10 +420,11 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
                             <| "Role" -> "Assistant", "Content" -> $lastChatString |>
                         ]
                     },
-                    applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> chat |> ];
-                    chat
+                    applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> chat, "NotebookObject" -> nbo |> ];
+                    Sow[ chat, $chatObjectTag ]
                 ],
-                applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> None |> ];
+                applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> None, "NotebookObject" -> nbo |> ];
+                Sow[ None, $chatObjectTag ];
                 Null
             ];
         ]
@@ -478,6 +509,8 @@ waitForLastTask // beginDefinition;
 
 waitForLastTask[ ] := waitForLastTask @ $lastTask;
 
+waitForLastTask[ $Canceled ] := $Canceled;
+
 waitForLastTask[ task_TaskObject ] := (
     TaskWait @ task;
     runNextTask[ ];
@@ -546,9 +579,14 @@ autoAssistQ // endDefinition;
 (*StopChat*)
 StopChat // beginDefinition;
 
+StopChat[ cell_CellObject ] :=
+    With[ { parent = parentCell @ cell },
+        StopChat @ parent /; MatchQ[ parent, Except[ cell, _CellObject ] ]
+    ];
+
 StopChat[ cell0_CellObject ] := Enclose[
     Module[ { cell, settings, container, content },
-        cell = ConfirmMatch[ ensureChatOutputCell @ parentCell @ cell0, _CellObject, "ParentCell" ];
+        cell = ConfirmMatch[ ensureChatOutputCell @ cell0, _CellObject, "ParentCell" ];
         settings = ConfirmBy[ currentChatSettings @ cell, AssociationQ, "ChatNotebookSettings" ];
         removeTask @ Lookup[ settings, "Task" ];
         container = ConfirmBy[ Lookup[ settings, "Container" ], AssociationQ, "Container" ];
@@ -597,8 +635,9 @@ CopyChatObject // endDefinition;
 (*constructChatObject*)
 constructChatObject // beginDefinition;
 
+(* cSpell: ignore bdprompt *)
 constructChatObject[ messages_List ] :=
-    With[ { chat = chatObject @ standardizeMessageKeys @ messages },
+    With[ { chat = Quiet[ chatObject @ checkMultimodal @ standardizeMessageKeys @ messages, ChatObject::bdprompt ] },
         chat /; MatchQ[ chat, _chatObject ]
     ];
 
@@ -608,6 +647,32 @@ constructChatObject[ messages_List ] :=
 constructChatObject // endDefinition;
 
 chatObject := chatObject = Symbol[ "System`ChatObject" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkMultimodal*)
+(* TODO: this is temporary until ChatObject supports multimodal content: *)
+checkMultimodal // beginDefinition;
+checkMultimodal[ messages_ ] := checkMultimodal[ messages, multimodalPacletsAvailable[ ] ];
+checkMultimodal[ messages_, False ] := revertMultimodalContent @ messages;
+checkMultimodal[ messages_, True  ] := messages;
+checkMultimodal // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*revertMultimodalContent*)
+revertMultimodalContent // beginDefinition;
+
+revertMultimodalContent[ messages_List ] :=
+    revertMultimodalContent /@ messages;
+
+revertMultimodalContent[ as: KeyValuePattern[ "Content" -> content_List ] ] :=
+    <| as, "Content" -> StringJoin @ Select[ content, StringQ ] |>;
+
+revertMultimodalContent[ as: KeyValuePattern[ "Content" -> _String ] ] :=
+    as;
+
+revertMultimodalContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1222,7 +1287,7 @@ withChatState // Attributes = { HoldFirst };
 
 withChatState[ eval_ ] :=
     Block[ { $enableLLMServices },
-        $handlerArguments = <| |>;
+        $ChatHandlerData = <| |>;
         withToolBox @ withBasePromptBuilder @ eval
     ];
 

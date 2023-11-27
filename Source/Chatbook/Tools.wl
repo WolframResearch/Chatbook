@@ -2,7 +2,7 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 
-(* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDTOOLCALL, Deflatten, Liouville *)
+(* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDTOOLCALL, Deflatten, Liouville, unexp *)
 
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
@@ -33,6 +33,7 @@ HoldComplete[
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                   ];
+Needs[ "Wolfram`Chatbook`ChatMessages`"      ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
 Needs[ "Wolfram`Chatbook`Formatting`"        ];
 Needs[ "Wolfram`Chatbook`Prompting`"         ];
@@ -75,9 +76,9 @@ $ToolFunctions = <|
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Tool Configuration*)
-$defaultWebTextLength   = 12000;
-$toolResultStringLength = 500;
-$webSessionVisible      = False;
+$defaultWebTextLength    = 12000;
+$toolResultStringLength := Ceiling[ $initialCellStringBudget/2 ];
+$webSessionVisible       = False;
 
 $DefaultToolOptions = <|
     "WolframLanguageEvaluator" -> <|
@@ -89,6 +90,18 @@ $DefaultToolOptions = <|
     |>,
     "WebFetcher" -> <|
         "MaxContentLength" -> $defaultWebTextLength
+    |>,
+    "WebSearcher" -> <|
+        "AllowAdultContent" -> Inherited,
+        "Language"          -> Inherited,
+        "MaxItems"          -> 5,
+        "Method"            -> "Google"
+    |>,
+    "WebImageSearcher" -> <|
+        "AllowAdultContent" -> Inherited,
+        "Language"          -> Inherited,
+        "MaxItems"          -> 5,
+        "Method"            -> "Google"
     |>
 |>;
 
@@ -165,6 +178,34 @@ toolOptionValue // endDefinition;
 toolOptionValue0 // beginDefinition;
 toolOptionValue0[ opts_Association, key_String ] := Lookup[ opts, key, Lookup[ $DefaultToolOptions, key ] ];
 toolOptionValue0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toolOptions*)
+toolOptions // beginDefinition;
+
+toolOptions[ name_String ] :=
+    toolOptions[ name, $toolOptions[ name ], $DefaultToolOptions[ name ] ];
+
+toolOptions[ name_, opts_Association, defaults_Association ] :=
+    toolOptions[ name, <| DeleteCases[ defaults, Inherited ], DeleteCases[ opts, Inherited ] |> ];
+
+toolOptions[ name_, _Missing, defaults_Association ] :=
+    toolOptions[ name, DeleteCases[ defaults, Inherited ] ];
+
+toolOptions[ name_, opts_Association ] :=
+    Normal[ KeyMap[ toOptionKey, opts ], Association ];
+
+toolOptions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toOptionKey*)
+toOptionKey // beginDefinition;
+toOptionKey[ name_String ] /; StringContainsQ[ name, "`" ] := toOptionKey @ Last @ StringSplit[ name, "`" ];
+toOptionKey[ name_String ] /; NameQ[ "System`" <> name ] := Symbol @ name;
+toOptionKey[ symbol_Symbol ] := symbol;
+toOptionKey // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -266,7 +307,10 @@ selectTools0 // endDefinition;
 getLLMEvaluatorName // beginDefinition;
 getLLMEvaluatorName[ KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] := name;
 getLLMEvaluatorName[ KeyValuePattern[ "LLMEvaluator" -> name_String ] ] := name;
-getLLMEvaluatorName[ KeyValuePattern[ "LLMEvaluator" -> evaluator_Association ] ] := getLLMEvaluatorName @ evaluator;
+
+getLLMEvaluatorName[ KeyValuePattern[ "LLMEvaluator" -> evaluator_Association ] ] :=
+    Lookup[ evaluator, "LLMEvaluatorName", Lookup[ evaluator, "Name" ] ];
+
 getLLMEvaluatorName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -465,7 +509,7 @@ makeToolConfiguration // beginDefinition;
 makeToolConfiguration[ settings_Association ] := Enclose[
     Module[ { tools },
         tools = ConfirmMatch[ DeleteDuplicates @ Flatten @ Values @ $selectedTools, { ___LLMTool }, "SelectedTools" ];
-        $toolConfiguration = LLMConfiguration @ <| "Tools" -> tools, "ToolPrompt" -> $toolPrompt |>
+        $toolConfiguration = LLMConfiguration @ <| "Tools" -> tools, "ToolPrompt" -> makeToolPrompt @ settings |>
     ],
     throwInternalFailure[ makeToolConfiguration @ settings, ## ] &
 ];
@@ -490,37 +534,43 @@ toolRequestParser := toolRequestParser =
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*$toolPrompt*)
-$toolPrompt := TemplateObject[
-    {
-        $toolPre,
-        TemplateSequence[
-            TemplateExpression @ StringTemplate[
-                "Tool Name: `Name`\nDescription: `Description`\nSchema:\n`Schema`\n\n"
+(*makeToolPrompt*)
+makeToolPrompt // beginDefinition;
+
+makeToolPrompt[ settings_Association ] := $lastToolPrompt = TemplateObject[
+    Riffle[
+        DeleteMissing @ {
+            $toolPre,
+            TemplateSequence[
+                TemplateExpression @ StringTemplate[
+                    "Tool Name: `Name`\nDescription: `Description`\nSchema:\n`Schema`\n\n"
+                ],
+                TemplateExpression @ Map[
+                    Append[ #[ "Data" ], "Schema" -> ExportString[ #[ "JSONSchema" ], "JSON" ] ] &,
+                    TemplateSlot[ "Tools" ]
+                ]
             ],
-            TemplateExpression @ Map[
-                Append[ #[ "Data" ], "Schema" -> ExportString[ #[ "JSONSchema" ], "JSON" ] ] &,
-                TemplateSlot[ "Tools" ]
-            ]
-        ],
-        $toolPost
-    },
+            $toolPost,
+            $fullExamples,
+            makeToolPreferencePrompt @ settings
+        },
+        "\n\n"
+    ],
     CombinerFunction  -> StringJoin,
     InsertionFunction -> TextString
 ];
+
+makeToolPrompt // endDefinition;
 
 
 $toolPre = "\
 # Tool Instructions
 
 You have access to tools which can be used to do things, fetch data, compute, etc. while you create your response. \
-Each tool takes input as JSON following a JSON schema. Here are the available tools and their associated schemas:
-
-";
+Each tool takes input as JSON following a JSON schema. Here are the available tools and their associated schemas:";
 
 
-$toolPost := "
-
+$toolPost := "\
 To call a tool, write the following at any time during your response:
 
 TOOLCALL: <tool name>
@@ -546,9 +596,47 @@ If a user asks you to use a specific tool, you MUST attempt to use that tool as 
 even if you think it will not work. \
 If the tool fails, use any error message to correct the issue or explain why it failed. \
 NEVER state that a tool cannot be used for a particular task without trying it first. \
-You did not create these tools, so you do not know what they can and cannot do.
+You did not create these tools, so you do not know what they can and cannot do.";
 
-" <> $fullExamples;
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*makeToolPreferencePrompt*)
+makeToolPreferencePrompt // beginDefinition;
+
+makeToolPreferencePrompt[ settings_ ] :=
+    makeToolPreferencePrompt[ settings, settings[ "ToolCallFrequency" ] ];
+
+makeToolPreferencePrompt[ settings_, Automatic ] :=
+    Missing[ "NotAvailable" ];
+
+makeToolPreferencePrompt[ settings_, freq_? NumberQ ] :=
+    With[ { key = Round @ Clip[ 5 * freq, { 0, 5 } ] },
+        TemplateApply[
+            $toolPreferencePrompt,
+            <| "Number" -> Round[ freq * 100 ], "Explanation" -> Lookup[ $toolFrequencyExplanations, key, "" ] |>
+        ]
+    ];
+
+makeToolPreferencePrompt // endDefinition;
+
+
+$toolPreferencePrompt = "\
+## User Tool Call Preferences
+
+The user has specified their desired tool calling frequency to be `Number`% with the following instructions:
+
+IMPORTANT
+`Explanation`";
+
+
+$toolFrequencyExplanations = <|
+    0 -> "Only use a tool if explicitly instructed to use tools. Never use tools unless specifically asked to.",
+    1 -> "Avoid using tools unless you think it is necessary.",
+    2 -> "Only use tools if you think it will significantly improve the quality of your response.",
+    3 -> "Use tools whenever it is appropriate to do so.",
+    4 -> "Use tools whenever there's even a slight chance that it could improve the quality of your response (e.g. fact checking).",
+    5 -> "ALWAYS make a tool call in EVERY response, no matter what."
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -825,7 +913,7 @@ documentationBasicExamples // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*cellToString*)
-cellToString[ args___ ] := Block[ { $maxOutputCellStringLength = 100 }, CellToString @ args ];
+cellToString[ args___ ] := CellToString[ args, "MaxCellStringLength" -> 100 ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -930,6 +1018,11 @@ $defaultChatTools0[ "WolframAlpha" ] = <|
             "Interpreter" -> "String",
             "Help"        -> "the input",
             "Required"    -> True
+        |>,
+        "steps" -> <|
+            "Interpreter" -> "Boolean",
+            "Help"        -> "whether to show step-by-step solution",
+            "Required"    -> False
         |>(*,
         "assumption" -> <|
             "Interpreter" -> "String",
@@ -944,27 +1037,31 @@ $defaultChatTools0[ "WolframAlpha" ] = <|
 (*getWolframAlphaText*)
 getWolframAlphaText // beginDefinition;
 
-getWolframAlphaText[ KeyValuePattern[ "input" -> query_String ] ] :=
-    getWolframAlphaText @ query;
+getWolframAlphaText[ as_Association ] :=
+    getWolframAlphaText[ as[ "input" ], as[ "steps" ] ];
 
-getWolframAlphaText[ query_String ] :=
+getWolframAlphaText[ query_String, steps: True|False|_Missing ] :=
     Module[ { result, data, string },
         result = WolframAlpha @ query;
-        data   = WolframAlpha[ query, { All, { "Title", "Plaintext", "ComputableData", "Content" } } ];
-        string = getWolframAlphaText[ query, data ];
-        getWolframAlphaText[ query ] = <| "Result" -> result, "String" -> string |>
+        data = WolframAlpha[
+            query,
+            { All, { "Title", "Plaintext", "ComputableData", "Content" } },
+            PodStates -> { If[ TrueQ @ steps, "Step-by-step solution", Nothing ] }
+        ];
+        string = getWolframAlphaText[ query, steps, data ];
+        getWolframAlphaText[ query, steps ] = <| "Result" -> result, "String" -> string |>
     ];
 
-getWolframAlphaText[ query_String, { } ] :=
+getWolframAlphaText[ query_String, steps_, { } ] :=
     "No results returned";
 
-getWolframAlphaText[ query_String, info_List ] :=
-    getWolframAlphaText[ query, associationKeyDeflatten[ makeKeySequenceRule /@ info ] ];
+getWolframAlphaText[ query_String, steps_, info_List ] :=
+    getWolframAlphaText[ query, steps, associationKeyDeflatten[ makeKeySequenceRule /@ info ] ];
 
-getWolframAlphaText[ query_String, as_Association? AssociationQ ] :=
-    getWolframAlphaText[ query, waResultText @ as ];
+getWolframAlphaText[ query_String, steps_, as_Association? AssociationQ ] :=
+    getWolframAlphaText[ query, steps, waResultText @ as ];
 
-getWolframAlphaText[ query_String, result_String ] :=
+getWolframAlphaText[ query_String, steps_, result_String ] :=
     escapeMarkdownString @ result;
 
 getWolframAlphaText // endDefinition;
@@ -1096,19 +1193,56 @@ $defaultChatTools0[ "WebSearcher" ] = <|
 webSearch // beginDefinition;
 
 webSearch[ KeyValuePattern[ "query" -> query_ ] ] := webSearch @ query;
-webSearch[ query_String ] := webSearch @ SearchQueryString @ query;
+webSearch[ query_String ] := Block[ { PrintTemporary }, webSearch @ SearchQueryString @ query ];
 
 webSearch[ query_SearchQueryString ] := Enclose[
-    Module[ { result, json, string },
-        result = ConfirmMatch[ WebSearch[ query, MaxItems -> 5 ], _Dataset, "WebSearch" ];
+    Catch @ Module[ { result, json, string },
+        result = ConfirmMatch[ webSearch0 @ query, _Dataset|_Failure, "WebSearch" ];
+
+        If[ MatchQ[ result, _Failure ],
+            Throw @ <| "Result" -> result, "String" -> makeFailureString @ result |>
+        ];
+
         json   = ConfirmBy[ Developer`WriteRawJSONString[ Normal @ result /. URL[ url_ ] :> url ], StringQ, "JSON" ];
         json   = StringReplace[ json, "\\/" -> "/" ];
         string = ConfirmBy[ TemplateApply[ $webSearchResultTemplate, json ], StringQ, "TemplateApply" ];
+
         <| "Result" -> result, "String" -> string |>
-    ]
+    ],
+    throwInternalFailure[ webSearch @ query, ## ] &
 ];
 
 webSearch // endDefinition;
+
+
+webSearch0 // beginDefinition;
+
+webSearch0[ query_SearchQueryString ] := Enclose[
+    Module[ { opts, raw, result, held, $unavailable },
+        opts   = Sequence @@ ConfirmMatch[ toolOptions[ "WebSearcher" ], { $$optionsSequence }, "Options" ];
+        result = Quiet[
+            Check[
+                raw = WebSearch[ query, opts ],
+                $unavailable,
+                IntegratedServices`IntegratedServices::unexp
+            ],
+            IntegratedServices`IntegratedServices::unexp
+        ];
+
+        held = HoldForm @ Evaluate @ raw;
+
+        Quiet @ Replace[
+            result,
+            {
+                $unavailable       :> messageFailure[ "IntegratedServiceUnavailable", "WebSearch", held ],
+                Except[ _Dataset ] :> messageFailure[ "IntegratedServiceError"      , "WebSearch", held ]
+            }
+        ]
+    ],
+    throwInternalFailure[ webImageSearch0 @ query, ## ] &
+];
+
+webSearch0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1258,8 +1392,8 @@ $defaultChatTools0[ "WebImageSearcher" ] = <|
 webImageSearch // beginDefinition;
 
 webImageSearch[ KeyValuePattern[ "query" -> query_ ] ] := webImageSearch @ query;
-webImageSearch[ query_String ] := webImageSearch @ SearchQueryString @ query;
-webImageSearch[ query_SearchQueryString ] := webImageSearch[ query, WebImageSearch[ query, "ImageHyperlinks" ] ];
+webImageSearch[ query_String ] := Block[ { PrintTemporary }, webImageSearch @ SearchQueryString @ query ];
+webImageSearch[ query_SearchQueryString ] := webImageSearch[ query, webImageSearch0[ query ] ];
 
 webImageSearch[ query_, { } ] := <|
     "Result" -> { },
@@ -1271,7 +1405,42 @@ webImageSearch[ query_, urls: { __ } ] := <|
     "String" -> StringRiffle[ TextString /@ urls, "\n" ]
 |>;
 
+webImageSearch[ query_, failed_Failure ] := <|
+    "Result" -> failed,
+    "String" -> makeFailureString @ failed
+|>;
+
 webImageSearch // endDefinition;
+
+
+webImageSearch0 // beginDefinition;
+
+webImageSearch0[ query_SearchQueryString ] := Enclose[
+    Module[ { opts, raw, result, held, $unavailable },
+        opts   = Sequence @@ ConfirmMatch[ toolOptions[ "WebImageSearcher" ], { $$optionsSequence }, "Options" ];
+        result = Quiet[
+            Check[
+                raw = WebImageSearch[ query, "ImageHyperlinks", opts ],
+                $unavailable,
+                IntegratedServices`IntegratedServices::unexp
+            ],
+            IntegratedServices`IntegratedServices::unexp
+        ];
+
+        held = HoldForm @ Evaluate @ raw;
+
+        Quiet @ Replace[
+            result,
+            {
+                $unavailable    :> messageFailure[ "IntegratedServiceUnavailable", "WebImageSearch", held ],
+                Except[ _List ] :> messageFailure[ "IntegratedServiceError"      , "WebImageSearch", held ]
+            }
+        ]
+    ],
+    throwInternalFailure[ webImageSearch0 @ query, ## ] &
+];
+
+webImageSearch0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1473,31 +1642,40 @@ MakeExpressionURI[ args: Repeated[ _, { 1, 3 } ] ] := makeExpressionURI @ args;
 (* ::Subsection::Closed:: *)
 (*GetExpressionURIs*)
 GetExpressionURIs // ClearAll;
+GetExpressionURIs // Options = { Tooltip -> Automatic };
 
-GetExpressionURIs[ str_ ] := GetExpressionURIs[ str, ## & ];
+GetExpressionURIs[ str_, opts: OptionsPattern[ ] ] :=
+    GetExpressionURIs[ str, ## &, opts ];
 
-GetExpressionURIs[ str_String, wrapper_ ] := catchMine @ StringSplit[
-    str,
-    link: Shortest[ "![" ~~ __ ~~ "](" ~~ __ ~~ ")" ] :> catchAlways @ GetExpressionURI[ link, wrapper ]
-];
+GetExpressionURIs[ str_String, wrapper_, opts: OptionsPattern[ ] ] :=
+    catchMine @ Block[ { $uriTooltip = OptionValue @ Tooltip },
+        StringSplit[
+            str,
+            link: Shortest[ "![" ~~ __ ~~ "](" ~~ __ ~~ ")" ] :> catchAlways @ GetExpressionURI[ link, wrapper ]
+        ]
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*GetExpressionURI*)
 GetExpressionURI // ClearAll;
+GetExpressionURI // Options = { Tooltip -> Automatic };
 
-GetExpressionURI[ uri_ ] := catchMine @ GetExpressionURI[ uri, ## & ];
-GetExpressionURI[ URL[ uri_ ], wrapper_ ] := catchMine @ GetExpressionURI[ uri, wrapper ];
+GetExpressionURI[ uri_, opts: OptionsPattern[ ] ] :=
+    catchMine @ GetExpressionURI[ uri, ## &, opts ];
 
-GetExpressionURI[ uri_String, wrapper_ ] := catchMine @ Enclose[
+GetExpressionURI[ URL[ uri_ ], wrapper_, opts: OptionsPattern[ ] ] :=
+    catchMine @ GetExpressionURI[ uri, wrapper, opts ];
+
+GetExpressionURI[ uri_String, wrapper_, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
     Module[ { held },
-        held = ConfirmMatch[ getExpressionURI @ uri, _HoldComplete, "GetExpressionURI" ];
+        held = ConfirmMatch[ getExpressionURI[ uri, OptionValue[ Tooltip ] ], _HoldComplete, "GetExpressionURI" ];
         wrapper @@ held
     ],
     throwInternalFailure[ GetExpressionURI[ uri, wrapper ], ## ] &
 ];
 
-GetExpressionURI[ All, wrapper_ ] := catchMine @ Enclose[
+GetExpressionURI[ All, wrapper_, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
     Module[ { attachments },
         attachments = ConfirmBy[ $attachments, AssociationQ, "Attachments" ];
         ConfirmAssert[ AllTrue[ attachments, MatchQ[ _HoldComplete ] ], "HeldAttachments" ];
@@ -1508,26 +1686,31 @@ GetExpressionURI[ All, wrapper_ ] := catchMine @ Enclose[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*getExpressionURI*)
+(*getExpressionURI0*)
 getExpressionURI // beginDefinition;
+getExpressionURI[ uri_, tooltip_ ] := Block[ { $tooltip = tooltip }, getExpressionURI0 @ uri ];
+getExpressionURI // endDefinition;
 
-getExpressionURI[ str_String ] :=
+
+getExpressionURI0 // beginDefinition;
+
+getExpressionURI0[ str_String ] :=
     Module[ { split },
         split = First[ StringSplit[ str, "![" ~~ alt__ ~~ "](" ~~ url__ ~~ ")" :> { alt, url } ], $Failed ];
-        getExpressionURI @@ split /; MatchQ[ split, { _String, _String } ]
+        getExpressionURI0 @@ split /; MatchQ[ split, { _String, _String } ]
     ];
 
-getExpressionURI[ uri_String ] := getExpressionURI[ None, uri ];
+getExpressionURI0[ uri_String ] := getExpressionURI0[ None, uri ];
 
-getExpressionURI[ tooltip_, uri_String ] := getExpressionURI[ tooltip, uri, URLParse @ uri ];
+getExpressionURI0[ tooltip_, uri_String ] := getExpressionURI0[ tooltip, uri, URLParse @ uri ];
 
-getExpressionURI[ tooltip_, uri_, as: KeyValuePattern @ { "Scheme" -> $$expressionScheme, "Domain" -> key_ } ] :=
+getExpressionURI0[ tooltip_, uri_, as: KeyValuePattern @ { "Scheme" -> $$expressionScheme, "Domain" -> key_ } ] :=
     Enclose[
         ConfirmMatch[ displayAttachment[ uri, tooltip, key ], _HoldComplete, "DisplayAttachment" ],
-        throwInternalFailure[ getExpressionURI[ tooltip, uri, as ], ## ] &
+        throwInternalFailure[ getExpressionURI0[ tooltip, uri, as ], ## ] &
     ];
 
-getExpressionURI // endDefinition;
+getExpressionURI0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1540,7 +1723,11 @@ displayAttachment[ uri_, None, key_ ] :=
 displayAttachment[ uri_, tooltip_String, key_ ] := Enclose[
     Replace[
         ConfirmMatch[ getAttachment[ uri, key ], _HoldComplete, "GetAttachment" ],
-        HoldComplete[ expr_ ] :> HoldComplete @ Tooltip[ expr, tooltip ]
+        HoldComplete[ expr_ ] :>
+            If[ TrueQ @ $tooltip,
+                HoldComplete @ Tooltip[ expr, tooltip ],
+                HoldComplete @ expr
+            ]
     ],
     throwInternalFailure[ displayAttachment[ uri, tooltip, key ], ## ] &
 ];
@@ -1562,6 +1749,8 @@ getAttachment // endDefinition;
 (*makeToolResponseString*)
 makeToolResponseString // beginDefinition;
 
+makeToolResponseString[ failure_Failure ] := makeFailureString @ failure;
+
 makeToolResponseString[ expr_? simpleResultQ ] :=
     With[ { string = fixLineEndings @ TextString @ expr },
         If[ StringLength @ string < $toolResultStringLength,
@@ -1569,7 +1758,7 @@ makeToolResponseString[ expr_? simpleResultQ ] :=
             StringJoin[
                 "\n",
                 fixLineEndings @ ToString[
-                    Unevaluated @ Short[ expr, 5 ],
+                    Unevaluated @ Short[ expr, Floor[ $toolResultStringLength / 100 ] ],
                     OutputForm,
                     PageWidth -> 100
                 ],

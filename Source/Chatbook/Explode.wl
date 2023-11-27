@@ -9,6 +9,8 @@ Begin[ "`Private`" ];
 Needs[ "Wolfram`Chatbook`"        ];
 Needs[ "Wolfram`Chatbook`Common`" ];
 
+$$newCellStyle = "Section"|"Subsection"|"Subsubsection"|"Subsubsubsection"|"Item"|"Input"|"ExternalLanguage";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Explode Cell*)
@@ -21,7 +23,7 @@ explodeCell // beginDefinition;
 explodeCell[ cellObject_CellObject ] := explodeCell @ NotebookRead @ cellObject;
 explodeCell[ Cell[ content_, ___ ] ] := explodeCell @ content;
 explodeCell[ string_String ] := Cell[ #, "Text" ] & /@ StringSplit[ string, Longest[ "\n".. ] ];
-explodeCell[ (BoxData|TextData)[ textData_ ] ] := explodeCell @ Flatten @ List @ textData;
+explodeCell[ (BoxData|TextData)[ textData_, ___ ] ] := explodeCell @ Flatten @ List @ textData;
 
 explodeCell[ textData_List ] := Enclose[
     Module[ { processed },
@@ -38,7 +40,7 @@ explodeCell // endDefinition;
 (*$preprocessingRules*)
 $preprocessingRules := $preprocessingRules = Dispatch @ {
     (* Convert TextRefLink to plain hyperlink: *)
-    Cell @ BoxData @ TemplateBox[ { label_, uri_ }, "TextRefLink" ] :>
+    Cell @ BoxData[ TemplateBox[ { label_, uri_ }, "TextRefLink" ], ___ ] :>
         Cell @ BoxData @ ButtonBox[
             StyleBox[ label, "Text" ],
             BaseStyle  -> "Link",
@@ -59,20 +61,20 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
     ] :> cell,
 
     (* Convert "ChatCodeInlineTemplate" to "InlineCode" cells: *)
-    Cell[ BoxData @ TemplateBox[ { boxes_ }, "ChatCodeInlineTemplate" ], "ChatCode"|"ChatCodeActive", ___ ] :>
+    Cell[ BoxData[ TemplateBox[ { boxes_ }, "ChatCodeInlineTemplate" ], "ChatCode"|"ChatCodeActive", ___ ], ___ ] :>
         Cell[ BoxData @ boxes, "InlineCode" ],
 
     (* Remove "ChatCode" styling from inputs: *)
     Cell[ boxes_, "ChatCode", "Input", ___ ] :> Cell[ boxes, "Input" ],
 
     (* Remove "ChatCodeBlock" styling: *)
-    Cell[ BoxData[ cell_Cell ], "ChatCodeBlock", ___ ] :> cell,
+    Cell[ BoxData[ cell_Cell, ___ ], "ChatCodeBlock", ___ ] :> cell,
 
     (* Remove "ChatCodeBlockTemplate" template boxes: *)
     TemplateBox[ { cell_Cell }, "ChatCodeBlockTemplate" ] :> cell,
 
     (* Remove nested cells: *)
-    Cell @ BoxData[ cell_Cell ] :> cell,
+    Cell @ BoxData[ cell_Cell, ___ ] :> cell,
 
     (* Remove extra style overrides from external language cells: *)
     Cell[ content_, "ExternalLanguage", OrderlessPatternSequence[ System`CellEvaluationLanguage -> lang_, __ ] ] :>
@@ -86,7 +88,14 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
                 "Used " <> Lookup[ tags, "DisplayName", Lookup[ tags, "Name", "LLMTool" ] ]
             ],
             "Input"
-        ]
+        ],
+
+    (* Nested text data cells: *)
+    { a___, b: StyleBox[ _, $$newCellStyle, ___ ], c___ } :>
+        { a, Cell @@ b, c },
+
+    (* Tiny line breaks: *)
+    StyleBox[ "\n", "TinyLineBreak", ___ ] :> "\n"
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -103,8 +112,12 @@ regroupCells[ { grouped___ }, { grouping___ }, { cell: Cell[ _BoxData ], rest___
 regroupCells[ { grouped___ }, { grouping___ }, { box: _StyleBox|_ButtonBox|Cell[ _, "InlineCode", ___ ], rest___ } ] :=
     regroupCells[ { grouped }, { grouping, box }, { rest } ];
 
-regroupCells[ { grouped___ }, { grouping___ }, { cell: Cell[ _, "Input"|"ExternalLanguage", ___ ], rest___ } ] :=
-    regroupCells[ { grouped, Cell[ TextData @ { grouping }, "Text" ], cell }, { }, { rest } ];
+regroupCells[ { grouped___ }, { grouping___ }, { cell: (Cell|StyleBox)[ _, $$newCellStyle, ___ ], rest___ } ] :=
+    regroupCells[
+        { grouped, Cell[ TextData @ { grouping }, "Text" ], DeleteCases[ Cell @@ cell, FontSize -> _ ] },
+        { },
+        { rest }
+    ];
 
 regroupCells[ { grouped___ }, { grouping___ }, { string_String, rest___ } ] /; StringFreeQ[ string, "\n" ] :=
     regroupCells[ { grouped }, { grouping, string }, { rest } ];

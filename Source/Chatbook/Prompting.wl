@@ -2,9 +2,9 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Prompting`" ];
 
-(* TODO: select portions of base prompt during serialization as needed *)
 `$basePrompt;
 `$basePromptComponents;
+`$fullBasePrompt;
 `needsBasePrompt;
 `withBasePromptBuilder;
 
@@ -31,6 +31,9 @@ $basePromptOrder = {
     "MessageConversionHeader",
     "ConversionLargeOutputs",
     "ConversionGraphics",
+    "MarkdownImageBox",
+    "Checkboxes",
+    "CheckboxesIndeterminate",
     "ConversionFormatting",
     "VisibleUserInput",
     "TrivialCode",
@@ -57,6 +60,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "AutoAssistant"                -> { "CodeBlocks", "DoubleBackticks" },
     "CodeBlocks"                   -> { },
     "CellLabels"                   -> { "CodeBlocks", "Notebooks" },
+    "CheckboxesIndeterminate"      -> { "Checkboxes" },
     "DoubleBackticks"              -> { },
     "MathExpressions"              -> { "EscapedCharacters" },
     "EscapedCharacters"            -> { },
@@ -65,6 +69,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "MessageConversionHeader"      -> { "NotebooksPreamble" },
     "ConversionLargeOutputs"       -> { "MessageConversionHeader" },
     "ConversionGraphics"           -> { "MessageConversionHeader" },
+    "MarkdownImageBox"             -> { "MessageConversionHeader" },
     "ConversionFormatting"         -> { "MessageConversionHeader" },
     "VisibleUserInput"             -> { },
     "TrivialCode"                  -> { },
@@ -111,10 +116,10 @@ $basePromptComponents[ "DoubleBackticks" ] = "\
 * ALWAYS surround inline code with double backticks to avoid ambiguity with context names: ``MyContext`MyFunction[x]``";
 
 $basePromptComponents[ "MathExpressions" ] = "\
-* Write math expressions using LaTeX and surround them with dollar signs: $x^2 + y^2$";
+* Write math expressions using LaTeX and surround them with dollar signs: $$x^2 + y^2$$";
 
 $basePromptComponents[ "EscapedCharacters" ] = "\
-* IMPORTANT! Whenever you write a literal backtick or dollar sign in text, ALWAYS escape it with a backslash. \
+* IMPORTANT! Whenever you write a literal backtick (`) or dollar sign ($) in text, ALWAYS escape it with a backslash. \
 Example: It costs me \\$99.95 every time you forget to escape \\` or \\$ properly!";
 
 $basePromptComponents[ "DocumentationLinkSyntax" ] = "\
@@ -136,11 +141,23 @@ $basePromptComponents[ "ConversionLargeOutputs" ] = "\
 $basePromptComponents[ "ConversionGraphics" ] = "\
 	* Rendered graphics will typically be replaced with a shortened box representation: \\!\\(\\*GraphicsBox[<<>>]\\)";
 
+$basePromptComponents[ "MarkdownImageBox" ] = "\
+	* If there are images embedded in the notebook, they will be replaced by a box representation in the \
+form ``MarkdownImageBox[\"![label](uri)\"]``. You will also receive the original image immediately after this. \
+You can use the markdown from this box ``![label](uri)`` in your responses if you want to display the original image.";
+
+$basePromptComponents[ "Checkboxes" ] = "\
+    * Checkboxes in the UI will be replaced with one of the following text representations:
+        * A Checkbox that's selected becomes ``[\[Checkmark]]``
+        * A Checkbox that's not selected becomes ``[ ]``";
+
+$basePromptComponents[ "CheckboxesIndeterminate" ] = "\
+        * An indeterminate Checkbox becomes ``[-]``";
+
 $basePromptComponents[ "ConversionFormatting" ] = "\
 	* Cell formatting is removed when converting to text, so \
 ``Cell[TextData[{StyleBox[\"Styled\", FontSlant -> \"Italic\"], \" message\"}], \"ChatInput\"]`` \
-becomes \
-``Styled message``.";
+becomes ``Styled message``.";
 
 $basePromptComponents[ "VisibleUserInput" ] = "\
 * The user can still see their input, so there's no need to repeat it in your response";
@@ -260,8 +277,10 @@ $collectedPromptComponents = AssociationMap[
     Keys @ Association[ KeyTake[ $basePromptComponents, $basePromptOrder ], $basePromptComponents ]
 ];
 
+$fullBasePrompt = $basePrompt;
+
 If[ Wolfram`ChatbookInternal`$BuildingMX,
-    Null
+    Null;
 ];
 
 End[ ];

@@ -749,6 +749,19 @@ Notebook[
    TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    CellTrayWidgets -> <|
     "GearMenu" -> <|"Condition" -> False|>,
+    "ChatIncluded" -> <|
+     "Condition" -> False,
+     "Content" ->
+      Cell[
+       BoxData[
+        DynamicBox[
+         ToBoxes[Wolfram`Chatbook`$IncludedCellWidget, StandardForm],
+         SingleEvaluation -> True
+        ]
+       ],
+       "ChatIncluded"
+      ]
+    |>,
     "ChatWidget" -> <|
      "Type" -> "Focus",
      "Content" ->
@@ -1139,11 +1152,16 @@ Notebook[
       }
      ]
     }
-   |>
+   |>,
+   PrivateCellOptions -> {
+    "AccentStyle" -> {
+     CellTrayWidgets -> <|"ChatIncluded" -> <|"Condition" -> True|>|>
+    }
+   }
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.3.0.3907219780"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.3.1.3910074547"|>
   ],
   Cell[
    StyleData["Text"],
@@ -1600,6 +1618,31 @@ Notebook[
       Symbol["Wolfram`Chatbook`ChatbookAction"][
        "InsertInlineReference",
        "ModifierTemplate",
+       cell
+      ]
+     ],
+    {"KeyDown", "\\"} :>
+     With[ { cell = EvaluationCell[] },
+      Quiet[Needs["Wolfram`Chatbook`" -> None]];
+      Symbol["Wolfram`Chatbook`ChatbookAction"][
+       "InsertInlineReference",
+       "WLTemplate",
+       cell
+      ]
+     ],
+    "MouseEntered" :>
+     With[ { cell = EvaluationCell[] },
+      Quiet[Needs["Wolfram`Chatbook`" -> None]];
+      Symbol["Wolfram`Chatbook`ChatbookAction"][
+       "AccentIncludedCells",
+       cell
+      ]
+     ],
+    "MouseExited" :>
+     With[ { cell = EvaluationCell[] },
+      Quiet[Needs["Wolfram`Chatbook`" -> None]];
+      Symbol["Wolfram`Chatbook`ChatbookAction"][
+       "RemoveCellAccents",
        cell
       ]
      ]
@@ -17022,6 +17065,36 @@ Notebook[
      ]),
     InterpretationFunction ->
      (InterpretationBox["", StringJoin["!", #input]] &)
+   }
+  ],
+  Cell[
+   StyleData["ChatbookWLTemplate"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      NamespaceBox[
+       "ChatbookWLTemplateID",
+       DynamicModuleBox[
+        { },
+        DynamicBox[
+         ToBoxes[
+          Wolfram`Chatbook`InlineReferences`wlTemplateBoxes[
+           1,
+           #input,
+           #state,
+           #uuid
+          ]
+         ]
+        ],
+        Initialization :>
+         (Quiet[Needs["Wolfram`Chatbook`" -> None]];
+         Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = 
+          EvaluationCell[])
+       ]
+      ]
+     ]),
+    InterpretationFunction ->
+     (InterpretationBox["", RowBox[{"\\", #input}]] &)
    }
   ],
   Cell[
