@@ -657,7 +657,7 @@ makeMessageContent // endDefinition;
 (*expandMultimodalStrings*)
 expandMultimodalString // beginDefinition;
 
-expandMultimodalString[ string_String ] := Enclose[
+expandMultimodalString[ string_String ] /; $multimodalMessages := Enclose[
     Module[ { split, joined },
 
         split = Flatten @ StringSplit[
@@ -680,6 +680,9 @@ expandMultimodalString[ string_String ] := Enclose[
     ],
     throwInternalFailure[ expandMultimodalString @ string, ## ] &
 ];
+
+expandMultimodalString[ string_String ] :=
+    string;
 
 expandMultimodalString // endDefinition;
 
