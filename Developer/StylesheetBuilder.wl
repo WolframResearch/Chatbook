@@ -156,24 +156,10 @@ $excludeMenuItem = MenuItem[
 (*contextMenu*)
 
 
-contextMenu[ a___, name_String, b___ ] :=
-    contextMenu[ a, frontEndResource[ "ContextMenus", name ], b ];
+contextMenu[ a___, name_String, b___ ] := contextMenu[ a, FrontEndResource[ "ContextMenus", name ], b ];
+contextMenu[ a___, list_List, b___ ] := contextMenu @@ Flatten @ { a, list, b };
+contextMenu[ a___ ] := Flatten @ { a };
 
-contextMenu[ a___, list_List, b___ ] :=
-    contextMenu @@ Flatten @ { a, list, b };
-
-contextMenu[ a___ ] :=
-    With[ { items = Flatten @ { a } },
-        If[ MemberQ[ items, _frontEndResource ],
-            Dynamic[ items ] /. frontEndResource -> FrontEndResource,
-            items
-        ]
-    ];
-
-
-
-(* Workaround for FrontEndResource failing when used within the wolframengine docker image: *)
-frontEndResource[ args___ ] := With[ { res = FrontEndResource @ args }, res /; res =!= $Failed ];
 
 
 (* ::Subsection::Closed:: *)
