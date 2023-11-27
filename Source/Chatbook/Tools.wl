@@ -551,6 +551,7 @@ makeToolPrompt[ settings_Association ] := $lastToolPrompt = TemplateObject[
                 ]
             ],
             $toolPost,
+            $fullExamples,
             makeToolPreferencePrompt @ settings
         },
         "\n\n"
@@ -560,28 +561,6 @@ makeToolPrompt[ settings_Association ] := $lastToolPrompt = TemplateObject[
 ];
 
 makeToolPrompt // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*$toolPrompt*)
-$toolPrompt := TemplateObject[
-    {
-        $toolPre,
-        TemplateSequence[
-            TemplateExpression @ StringTemplate[
-                "Tool Name: `Name`\nDescription: `Description`\nSchema:\n`Schema`\n\n"
-            ],
-            TemplateExpression @ Map[
-                Append[ #[ "Data" ], "Schema" -> ExportString[ #[ "JSONSchema" ], "JSON" ] ] &,
-                TemplateSlot[ "Tools" ]
-            ]
-        ],
-        $toolPost,
-        $fullExamples
-    },
-    CombinerFunction  -> StringJoin,
-    InsertionFunction -> TextString
-];
 
 
 $toolPre = "\
