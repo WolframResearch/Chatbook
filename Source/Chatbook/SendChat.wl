@@ -1372,10 +1372,16 @@ multimodalOpenAIQ // beginDefinition;
 
 multimodalOpenAIQ[ openAI_PacletObject ] := Enclose[
     Catch @ Module[ { dir, file, multimodal },
+
         dir = ConfirmBy[ openAI[ "Location" ], DirectoryQ, "Location" ];
         file = ConfirmBy[ FileNameJoin @ { dir, "Kernel", "OpenAI.m" }, FileExistsQ, "File" ];
-        Quiet @ Close @ file;
-        multimodal = ConfirmMatch[ Find[ file, "data:image/jpeg;base64," ], _String? StringQ | EndOfFile, "Find" ];
+
+        multimodal = WithCleanup[
+            Quiet @ Close @ file,
+            ConfirmMatch[ Find[ file, "data:image/jpeg;base64," ], _String? StringQ | EndOfFile, "Find" ],
+            Quiet @ Close @ file
+        ];
+
         StringQ @ multimodal
     ],
     throwInternalFailure
