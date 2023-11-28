@@ -1356,9 +1356,32 @@ multimodalPacletsAvailable[ ] := multimodalPacletsAvailable[ ] = (
 );
 
 multimodalPacletsAvailable[ llmFunctions_PacletObject? PacletObjectQ, openAI_PacletObject? PacletObjectQ ] :=
-    TrueQ @ And[ PacletNewerQ[ llmFunctions, "1.2.4" ], PacletNewerQ[ openAI, "13.3.18" ] ];
+    TrueQ @ And[
+        PacletNewerQ[ llmFunctions, "1.2.4" ],
+        Or[ PacletNewerQ[ openAI, "13.3.18" ],
+            openAI[ "Version" ] === "13.3.18" && multimodalOpenAIQ @ openAI
+        ]
+    ];
 
 multimodalPacletsAvailable // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*multimodalOpenAIQ*)
+multimodalOpenAIQ // beginDefinition;
+
+multimodalOpenAIQ[ openAI_PacletObject ] := Enclose[
+    Catch @ Module[ { dir, file, multimodal },
+        dir = ConfirmBy[ openAI[ "Location" ], DirectoryQ, "Location" ];
+        file = ConfirmBy[ FileNameJoin @ { dir, "Kernel", "OpenAI.m" }, FileExistsQ, "File" ];
+        Quiet @ Close @ file;
+        multimodal = ConfirmMatch[ Find[ file, "data:image/jpeg;base64," ], _String? StringQ | EndOfFile, "Find" ];
+        StringQ @ multimodal
+    ],
+    throwInternalFailure
+];
+
+multimodalOpenAIQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
