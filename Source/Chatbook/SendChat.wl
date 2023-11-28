@@ -673,12 +673,12 @@ withFETasks // endDefinition;
 (*writeChunk*)
 writeChunk // beginDefinition;
 
-writeChunk[ container_, cell_, KeyValuePattern[ "BodyChunkProcessed" -> chunk_String ] ] :=
-    writeChunk0[ container, cell, chunk, chunk ];
-
-writeChunk[ container_, cell_, KeyValuePattern[ "BodyChunkProcessed" -> { chunks___String } ] ] :=
-    With[ { chunk = StringJoin @ chunks },
-        writeChunk0[ container, cell, chunk, chunk ]
+writeChunk[ container_, cell_, KeyValuePattern[ "BodyChunkProcessed" -> chunks_ ] ] :=
+    With[ { chunk = StringJoin @ Select[ Flatten @ { chunks }, StringQ ] },
+        If[ chunk === "",
+            Null,
+            writeChunk0[ container, cell, chunk, chunk ]
+        ]
     ];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
@@ -1373,7 +1373,7 @@ multimodalOpenAIQ // beginDefinition;
 multimodalOpenAIQ[ openAI_PacletObject ] := Enclose[
     Catch @ Module[ { dir, file, multimodal },
 
-        dir = ConfirmBy[ openAI[ "Location" ], DirectoryQ, "Location" ];
+        dir  = ConfirmBy[ openAI[ "Location" ], DirectoryQ, "Location" ];
         file = ConfirmBy[ FileNameJoin @ { dir, "Kernel", "OpenAI.m" }, FileExistsQ, "File" ];
 
         multimodal = WithCleanup[
