@@ -8,6 +8,7 @@ BeginPackage[ "Wolfram`Chatbook`SendChat`" ];
 
 `$debugLog;
 `makeOutputDingbat;
+`multimodalPacletsAvailable;
 `sendChat;
 `toImageURI;
 `toolsEnabledQ;
@@ -308,10 +309,11 @@ makeHTTPRequest // beginDefinition;
 
 (* cSpell: ignore ENDTOOLCALL *)
 makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association } ] :=
-    Enclose @ Module[ { key, stream, model, tokens, temperature, topP, freqPenalty, presPenalty, data, body },
+    Enclose @ Module[ { key, stream, model, tokens, temperature, topP, freqPenalty, presPenalty, data, body, apiCompletionURL },
 
         key         = ConfirmBy[ Lookup[ settings, "OpenAIKey" ], StringQ ];
         stream      = True;
+        apiCompletionURL = ConfirmBy[ Lookup[ settings, "OpenAIAPICompletionURL" ], StringQ ];
 
         (* model parameters *)
         model       = Lookup[ settings, "Model"           , $DefaultModel ];
@@ -340,7 +342,7 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association }
 
         $lastHTTPParameters = data;
         $lastRequest = HTTPRequest[
-            "https://api.openai.com/v1/chat/completions",
+            apiCompletionURL,
             <|
                 "Headers" -> <|
                     "Content-Type"  -> "application/json",
@@ -671,12 +673,12 @@ withFETasks // endDefinition;
 (*writeChunk*)
 writeChunk // beginDefinition;
 
-writeChunk[ container_, cell_, KeyValuePattern[ "BodyChunkProcessed" -> chunk_String ] ] :=
-    writeChunk0[ container, cell, chunk, chunk ];
-
-writeChunk[ container_, cell_, KeyValuePattern[ "BodyChunkProcessed" -> { chunks___String } ] ] :=
-    With[ { chunk = StringJoin @ chunks },
-        writeChunk0[ container, cell, chunk, chunk ]
+writeChunk[ container_, cell_, KeyValuePattern[ "BodyChunkProcessed" -> chunks_ ] ] :=
+    With[ { chunk = StringJoin @ Select[ Flatten @ { chunks }, StringQ ] },
+        If[ chunk === "",
+            Null,
+            writeChunk0[ container, cell, chunk, chunk ]
+        ]
     ];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
@@ -1354,9 +1356,38 @@ multimodalPacletsAvailable[ ] := multimodalPacletsAvailable[ ] = (
 );
 
 multimodalPacletsAvailable[ llmFunctions_PacletObject? PacletObjectQ, openAI_PacletObject? PacletObjectQ ] :=
-    TrueQ @ And[ PacletNewerQ[ llmFunctions, "1.2.4" ], PacletNewerQ[ openAI, "13.3.18" ] ];
+    TrueQ @ And[
+        PacletNewerQ[ llmFunctions, "1.2.4" ],
+        Or[ PacletNewerQ[ openAI, "13.3.18" ],
+            openAI[ "Version" ] === "13.3.18" && multimodalOpenAIQ @ openAI
+        ]
+    ];
 
 multimodalPacletsAvailable // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*multimodalOpenAIQ*)
+multimodalOpenAIQ // beginDefinition;
+
+multimodalOpenAIQ[ openAI_PacletObject ] := Enclose[
+    Catch @ Module[ { dir, file, multimodal },
+
+        dir  = ConfirmBy[ openAI[ "Location" ], DirectoryQ, "Location" ];
+        file = ConfirmBy[ FileNameJoin @ { dir, "Kernel", "OpenAI.m" }, FileExistsQ, "File" ];
+
+        multimodal = WithCleanup[
+            Quiet @ Close @ file,
+            ConfirmMatch[ Find[ file, "data:image/jpeg;base64," ], _String? StringQ | EndOfFile, "Find" ],
+            Quiet @ Close @ file
+        ];
+
+        StringQ @ multimodal
+    ],
+    throwInternalFailure
+];
+
+multimodalOpenAIQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

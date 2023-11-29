@@ -168,7 +168,7 @@ $messageSymbol   = Chatbook;
 (*optimizeEnclosures*)
 optimizeEnclosures // ClearAll;
 optimizeEnclosures // Attributes = { HoldFirst };
-optimizeEnclosures[ s_Symbol ] := DownValues[ s ] = optimizeEnclosures0 @ DownValues @ s;
+optimizeEnclosures[ s_Symbol ] := DownValues[ s ] = expandThrowInternalFailures @ optimizeEnclosures0 @ DownValues @ s;
 
 optimizeEnclosures0 // ClearAll;
 optimizeEnclosures0[ expr_ ] :=
@@ -179,6 +179,25 @@ optimizeEnclosures0[ expr_ ] :=
                 RuleCondition[ new, True ]
             ]
     ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*expandThrowInternalFailures*)
+expandThrowInternalFailures // beginDefinition;
+
+expandThrowInternalFailures[ expr_ ] :=
+    ReplaceAll[
+        expr,
+        HoldPattern[ Verbatim[ HoldPattern ][ lhs_ ] :> rhs_ ] /;
+            ! FreeQ[ HoldComplete @ rhs, HoldPattern @ Enclose[ _, throwInternalFailure, $enclosure ] ] :>
+                ReplaceAll[
+                    HoldPattern[ e$: lhs ] :> rhs,
+                    HoldPattern @ Enclose[ eval_, throwInternalFailure, $enclosure ] :>
+                        Enclose[ eval, throwInternalFailure[ e$, ##1 ] &, $enclosure ]
+                ]
+    ];
+
+expandThrowInternalFailures // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -245,6 +264,31 @@ beginDefinition[ s_Symbol ] /; $debug && $inDef :=
 beginDefinition[ s_Symbol ] := WithCleanup[ Unprotect @ s; ClearAll @ s, $inDef = True ];
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*appendFallthroughError*)
+appendFallthroughError // ClearAll;
+appendFallthroughError // Attributes = { HoldFirst };
+
+appendFallthroughError[ s_Symbol, values: DownValues|UpValues ] :=
+    Module[ { block = Internal`InheritedBlock, before, after },
+        block[ { s },
+            before = values @ s;
+            appendFallthroughError0[ s, values ];
+            after = values @ s;
+        ];
+
+        If[ TrueQ[ Length @ after > Length @ before ],
+            values[ s ] = after,
+            values[ s ]
+        ]
+    ];
+
+appendFallthroughError0 // ClearAll;
+appendFallthroughError0[ s_Symbol, OwnValues  ] := e: HoldPattern @ s               := throwInternalFailure @ e;
+appendFallthroughError0[ s_Symbol, DownValues ] := e: HoldPattern @ s[ ___ ]        := throwInternalFailure @ e;
+appendFallthroughError0[ s_Symbol, UpValues   ] := e: HoldPattern @ s[ ___ ][ ___ ] := throwInternalFailure @ e;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*endDefinition*)
 endDefinition // beginDefinition;
@@ -254,16 +298,10 @@ endDefinition[ s_Symbol ] := endDefinition[ s, DownValues ];
 
 endDefinition[ s_Symbol, None ] := $inDef = False;
 
-endDefinition[ s_Symbol, DownValues ] :=
+endDefinition[ s_Symbol, values: DownValues|UpValues ] :=
     WithCleanup[
         optimizeEnclosures @ s;
-        AppendTo[ DownValues @ s, e: HoldPattern @ s[ ___ ] :> throwInternalFailure @ e ],
-        $inDef = False
-    ];
-
-endDefinition[ s_Symbol, SubValues ] :=
-    WithCleanup[
-        AppendTo[ SubValues @ s, e: HoldPattern @ s[ ___ ][ ___ ] :> throwInternalFailure @ e ],
+        appendFallthroughError[ s, values ],
         $inDef = False
     ];
 
