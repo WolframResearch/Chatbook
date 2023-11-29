@@ -386,7 +386,7 @@ tokenCount // endDefinition;
 applyTokenizer // beginDefinition;
 applyTokenizer[ tokenizer_, content_String ] := tokenizer @ content;
 applyTokenizer[ tokenizer_, content_? graphicsQ ] := tokenizer @ content;
-applyTokenizer[ tokenizer_, content_List ] := Flatten[ tokenizer /@ content ];
+applyTokenizer[ tokenizer_, content_List ] := Flatten[ applyTokenizer[ tokenizer, # ] & /@ content ];
 applyTokenizer[ tokenizer_, KeyValuePattern[ "Data" -> data_ ] ] := tokenizer @ data;
 applyTokenizer // endDefinition;
 
