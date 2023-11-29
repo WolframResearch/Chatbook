@@ -19,6 +19,9 @@ Needs[ "Wolfram`Chatbook`FrontEnd`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
+$cloudInheritanceFix := $cloudNotebooks && ! PacletNewerQ[ $CloudVersionNumber, "1.67.1" ];
+
+(* cSpell: ignore AIAPI *)
 $defaultChatSettings = <|
     "Assistance"                -> Automatic,
     "AutoFormat"                -> True,
@@ -44,6 +47,7 @@ $defaultChatSettings = <|
     "Multimodal"                -> Automatic,
     "NotebookWriteMethod"       -> Automatic,
     "OpenAIKey"                 -> Automatic, (* TODO: remove this once LLMServices is widely available *)
+    "OpenAIAPICompletionURL"    -> "https://api.openai.com/v1/chat/completions",
     "PresencePenalty"           -> 0.1,
     "ProcessingFunctions"       :> $DefaultChatProcessingFunctions,
     "Prompts"                   -> { },
@@ -300,7 +304,7 @@ currentChatSettings[ cell0_CellObject ] := Catch @ Enclose[
         settings = Select[
             Map[ Association,
                  Flatten @ {
-                    AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ],
+                    absoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ],
                     CurrentValue[ DeleteMissing @ { delimiter, cell }, { TaggingRules, "ChatNotebookSettings" } ]
                  }
             ],
@@ -354,7 +358,7 @@ currentChatSettings[ cell0_CellObject, key_String ] := Catch @ Enclose[
             values,
             Except[ Inherited ],
             Replace[
-                AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", key } ],
+                absoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", key } ],
                 Inherited :> Lookup[ $defaultChatSettings, key, Inherited ]
             ]
         ]
@@ -371,13 +375,13 @@ currentChatSettings0[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEnd
     Association[
         $defaultChatSettings,
         Replace[
-            Association @ AbsoluteCurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ],
+            Association @ absoluteCurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ],
             Except[ _? AssociationQ ] :> <| |>
         ]
     ];
 
 currentChatSettings0[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := Replace[
-    AbsoluteCurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", key } ],
+    absoluteCurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", key } ],
     Inherited :> Lookup[ $defaultChatSettings, key, Inherited ]
 ];
 
@@ -385,9 +389,38 @@ currentChatSettings0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*absoluteCurrentValue*)
+absoluteCurrentValue // beginDefinition;
+
+(* Workaround for AbsoluteCurrentValue not properly inheriting TaggingRules in cloud notebooks: *)
+absoluteCurrentValue[ cell_CellObject, { TaggingRules, "ChatNotebookSettings" } ] /; $cloudInheritanceFix :=
+    mergeChatSettings @ {
+        Replace[
+            Association @ AbsoluteCurrentValue[ parentNotebook @ cell, { TaggingRules, "ChatNotebookSettings" } ],
+            Except[ _? AssociationQ ] -> <| |>
+        ],
+        Replace[
+            Association @ AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ],
+            Except[ _? AssociationQ ] -> <| |>
+        ]
+    };
+
+absoluteCurrentValue[ cell_CellObject, { TaggingRules, "ChatNotebookSettings", key_ } ] /; $cloudInheritanceFix :=
+    Replace[
+        AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", key } ],
+        Inherited :> AbsoluteCurrentValue[ parentNotebook @ cell, { TaggingRules, "ChatNotebookSettings", key } ]
+    ];
+
+absoluteCurrentValue[ args___ ] :=
+    AbsoluteCurrentValue @ args;
+
+absoluteCurrentValue // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*mergeChatSettings*)
 mergeChatSettings // beginDefinition;
-mergeChatSettings[ a_List ] := mergeChatSettings0 @ a //. DownValues @ mergeChatSettings0;
+mergeChatSettings[ a_List ] := mergeChatSettings0 @ a //. $mergeSettingsDispatch;
 mergeChatSettings // endDefinition;
 
 mergeChatSettings0 // beginDefinition;
@@ -398,6 +431,13 @@ mergeChatSettings0[ { __, e: Except[ _? AssociationQ ] } ] := e;
 mergeChatSettings0[ { e_ } ] := e;
 mergeChatSettings0[ { } ] := Missing[ ];
 mergeChatSettings0 // endDefinition;
+
+
+$mergeSettingsDispatch := $mergeSettingsDispatch = Dispatch @ Flatten @ {
+    DownValues @ mergeChatSettings0,
+    HoldPattern @ Merge[ { a___, b_, b_, c___ }, mergeChatSettings0 ] :> Merge[ { a, b, c }, mergeChatSettings0 ],
+    HoldPattern @ Merge[ { a_ }, mergeChatSettings0 ] :> a
+};
 
 (* TODO: need to apply special merging/inheritance for things like "Prompts" *)
 
@@ -566,7 +606,7 @@ associationComplement // endDefinition;
 (* ::Section::Closed:: *)
 (*Package Footer*)
 If[ Wolfram`ChatbookInternal`$BuildingMX,
-    Null;
+    $mergeSettingsDispatch;
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)

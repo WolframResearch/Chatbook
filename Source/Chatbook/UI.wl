@@ -42,6 +42,7 @@ Needs[ "Wolfram`Chatbook`Models`"           ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`PreferencesUtils`" ];
 Needs[ "Wolfram`Chatbook`Serialization`"    ];
+Needs[ "Wolfram`Chatbook`Services`"         ];
 Needs[ "Wolfram`Chatbook`Settings`"         ];
 Needs[ "Wolfram`Chatbook`Utils`"            ];
 
@@ -578,6 +579,14 @@ makeTemperatureSlider[
 		BaseStyle -> { FontSize -> 12 }
 	]
 
+(* cSpell: ignore AIAPI *)
+makeOpenAIAPICompletionURLForm[value_]:= Pane[
+	InputField[value,
+		String,
+		ImageSize -> {240, Automatic},
+		BaseStyle -> {FontSize -> 12}]
+]
+
 (*=========================================*)
 (* Common preferences content construction *)
 (*=========================================*)
@@ -702,6 +711,23 @@ makeFrontEndAndNotebookSettingsContent[
 					]
 				]
 			}, Spacer[3]]},
+
+			If[ TrueQ @ $useLLMServices,
+				Nothing,
+				{Row[{
+				tr["Chat Completion URL:"],
+				makeOpenAIAPICompletionURLForm[
+					Dynamic[
+						currentChatSettings[targetObj, "OpenAIAPICompletionURL"],
+						newValue |-> (
+							CurrentValue[
+								targetObj,
+								{TaggingRules, "ChatNotebookSettings", "OpenAIAPICompletionURL"}
+							] = newValue;
+						)
+					]
+				]
+			}, Spacer[3]]}],
 			{
 				labeledCheckbox[
 					Dynamic[
