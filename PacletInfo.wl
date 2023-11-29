@@ -11,6 +11,7 @@ PacletObject[ <|
     "ReleaseDate"    -> "$RELEASE_DATE$",
     "ReleaseURL"     -> "$RELEASE_URL$",
     "ActionURL"      -> "$ACTION_URL$",
+    "CommitURL"      -> "$COMMIT_URL$",
     "Loading" 		 -> "Startup",
     "PrimaryContext" -> "Wolfram`Chatbook`",
     "Extensions"     -> {
