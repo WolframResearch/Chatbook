@@ -107,6 +107,13 @@ messageString[ ___ ] := "-- Message text not found --";
 (* ::Section::Closed:: *)
 (*Definitions*)
 
+$envSHA = SelectFirst[
+    { Environment[ "GITHUB_SHA" ], Environment[ "BUILD_VCS_NUMBER_WolframLanguage_Paclets_Chatbook_PacChatbook" ] },
+    StringQ
+];
+
+$inCICD = StringQ @ $envSHA;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*gitCommand*)
@@ -125,7 +132,7 @@ gitCommand[ cmd_ ] := gitCommand[ cmd, Directory[ ] ];
 (* ::Subsection::Closed:: *)
 (*releaseID*)
 releaseID[ dir_ ] :=
-    With[ { sha = Environment[ "GITHUB_SHA" ] },
+    With[ { sha = $envSHA },
         If[ StringQ @ sha,
             sha,
             gitCommand[ { "rev-parse", "HEAD" }, dir ]
@@ -135,13 +142,15 @@ releaseID[ dir_ ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*releaseURL*)
-releaseURL[ file_ ] :=
+releaseURL[ file_ ] := Enclose[
     Enclose @ Module[ { pac, repo, ver },
         pac  = PacletObject @ Flatten @ File @ file;
         repo = ConfirmBy[ Environment[ "GITHUB_REPOSITORY" ], StringQ ];
         ver  = ConfirmBy[ pac[ "Version" ], StringQ ];
         TemplateApply[ "https://github.com/`1`/releases/tag/v`2`", { repo, ver } ]
-    ];
+    ],
+    "None" &
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -154,13 +163,13 @@ actionURL[ ] := Enclose[
         runID  = cs @ Environment[ "GITHUB_RUN_ID"     ];
         cs @ URLBuild @ { domain, repo, "actions", "runs", runID }
     ],
-    "$ACTION_URL$" &
+    "None" &
 ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*updatePacletInfo*)
-updatePacletInfo[ dir_ ] /; StringQ @ Environment[ "GITHUB_ACTION" ] := Enclose[
+updatePacletInfo[ dir_ ] /; $inCICD := Enclose[
     Module[
         { cs, file, string, id, date, url, run, cmt, new },
 
@@ -181,7 +190,8 @@ updatePacletInfo[ dir_ ] /; StringQ @ Environment[ "GITHUB_ACTION" ] := Enclose[
                 "$RELEASE_ID$"   -> id,
                 "$RELEASE_DATE$" -> date,
                 "$RELEASE_URL$"  -> url,
-                "$ACTION_URL$"   -> run
+                "$ACTION_URL$"   -> run,
+                "$COMMIT_URL$"   -> cmt
             }
         ];
 
@@ -190,6 +200,7 @@ updatePacletInfo[ dir_ ] /; StringQ @ Environment[ "GITHUB_ACTION" ] := Enclose[
         Print[ "    ReleaseDate: ", date ];
         Print[ "    ReleaseURL:  ", url  ];
         Print[ "    ActionURL:   ", run  ];
+        Print[ "    CommitURL:   ", cmt  ];
 
         Confirm @ WithCleanup[ BinaryWrite[ file, new ],
                                Close @ file
@@ -224,12 +235,7 @@ updateReleaseInfoCell[ dir_, url_, cmt_, run_ ] /;
     ];
 
 
-commitURL[ sha_String ] := Enclose @ URLBuild @ {
-    "https://github.com",
-    ConfirmBy[ Environment[ "GITHUB_REPOSITORY" ], StringQ ],
-    "commit",
-    sha
-};
+commitURL[ sha_String ] := URLBuild @ { "https://github.com/WolframResearch/Chatbook/commit", sha };
 
 
 releaseInfoCell[ release_, commit_, run_ ] := Enclose[
