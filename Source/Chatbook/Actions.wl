@@ -666,8 +666,13 @@ revertMultimodalContent // beginDefinition;
 revertMultimodalContent[ messages_List ] :=
     revertMultimodalContent /@ messages;
 
-revertMultimodalContent[ as: KeyValuePattern[ "Content" -> content_List ] ] :=
-    <| as, "Content" -> StringJoin @ Select[ content, StringQ ] |>;
+revertMultimodalContent[ as: KeyValuePattern[ "Content" -> content_List ] ] := <|
+    as,
+    "Content" -> StringJoin @ Cases[
+        content,
+        s_String | KeyValuePattern @ { "Type" -> "Text", "Data" -> s_String } :> s
+    ]
+|>;
 
 revertMultimodalContent[ as: KeyValuePattern[ "Content" -> _String ] ] :=
     as;
