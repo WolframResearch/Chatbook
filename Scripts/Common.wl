@@ -131,13 +131,11 @@ gitCommand[ cmd_ ] := gitCommand[ cmd, Directory[ ] ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*releaseID*)
-releaseID[ dir_ ] :=
-    With[ { sha = $envSHA },
-        If[ StringQ @ sha,
-            sha,
-            gitCommand[ { "rev-parse", "HEAD" }, dir ]
-        ]
-    ];
+releaseID[ dir_ ] := FirstCase[
+    Unevaluated @ { $envSHA, gitCommand[ { "rev-parse", "HEAD" }, dir ] },
+    expr_ :> With[ { id = expr }, id /; StringQ @ id ],
+    "None"
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
