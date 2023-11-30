@@ -12,7 +12,7 @@ PacletObject[ <|
     "ReleaseURL"     -> "$RELEASE_URL$",
     "ActionURL"      -> "$ACTION_URL$",
     "CommitURL"      -> "$COMMIT_URL$",
-    "Loading" 		 -> "Startup",
+    "Loading"        -> "Startup",
     "PrimaryContext" -> "Wolfram`Chatbook`",
     "Extensions"     -> {
         (* NOTE: The BeginStartup and EndStartup contexts are special, and need to
