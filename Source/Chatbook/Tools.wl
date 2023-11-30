@@ -387,7 +387,7 @@ getCachedToolName // endDefinition;
 (*getToolSelections*)
 getToolSelections // beginDefinition;
 getToolSelections[ as_Association ] := getToolSelections[ as, Lookup[ as, "ToolSelections", <| |> ] ];
-getToolSelections[ as_, selections_Association ] := selections;
+getToolSelections[ as_, selections_Association ] := KeyTake[ selections, Keys @ $AvailableTools ];
 getToolSelections[ as_, Except[ _Association ] ] := <| |>;
 getToolSelections // endDefinition;
 
@@ -396,7 +396,7 @@ getToolSelections // endDefinition;
 (*getToolSelectionTypes*)
 getToolSelectionTypes // beginDefinition;
 getToolSelectionTypes[ as_Association ] := getToolSelectionTypes[ as, Lookup[ as, "ToolSelectionType", <| |> ] ];
-getToolSelectionTypes[ as_, selections_Association ] := selections;
+getToolSelectionTypes[ as_, selections_Association ] := KeyTake[ selections, Keys @ $AvailableTools ];
 getToolSelectionTypes[ as_, Except[ _Association ] ] := <| |>;
 getToolSelectionTypes // endDefinition;
 
