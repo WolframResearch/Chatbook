@@ -968,7 +968,7 @@ toolFreeQ // endDefinition;
 toolEvaluation // beginDefinition;
 
 toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
-    Module[ { string, callPos, toolCall, toolResponse, output, messages, newMessages, req, toolID },
+    Module[ { string, callPos, toolCall, toolResponse, output, messages, newMessages, req, toolID, task },
 
         string = ConfirmBy[ container[ "FullContent" ], StringQ, "FullContent" ];
 
@@ -1010,7 +1010,18 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         appendToolResult[ container, output, toolID ];
 
-        $lastTask = chatSubmit[ container, req, cell, settings ]
+        task = $lastTask = chatSubmit[ container, req, cell, settings ];
+
+        addHandlerArguments[ "Task" -> task ];
+
+        CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "CellObject" } ] = cell;
+        CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "Task"       } ] = task;
+
+        If[ FailureQ @ task, throwTop @ writeErrorCell[ cell, task ] ];
+
+        If[ task === $Canceled, StopChat @ cell ];
+
+        task
     ],
     throwInternalFailure[ toolEvaluation[ settings, container, cell, as ], ## ] &
 ];
