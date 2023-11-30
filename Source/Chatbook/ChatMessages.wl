@@ -708,8 +708,22 @@ inferMultimodalTypes // endDefinition;
 inferMultimodalTypes0 // beginDefinition;
 inferMultimodalTypes0[ content_List        ] := inferMultimodalTypes0 /@ content;
 inferMultimodalTypes0[ content_String      ] := <| "Type" -> "Text" , "Data" -> content |>;
-inferMultimodalTypes0[ content_? graphicsQ ] := <| "Type" -> "Image", "Data" -> content |>;
+inferMultimodalTypes0[ content_? graphicsQ ] := <| "Type" -> "Image", "Data" -> ensureCompatibleImage @ content |>;
 inferMultimodalTypes0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*ensureCompatibleImage*)
+ensureCompatibleImage // beginDefinition;
+ensureCompatibleImage[ img_ ] /; $useRasterizationCompatibility && ! Image`PossibleImageQ @ img := Rasterize @ img;
+ensureCompatibleImage[ img_ ] := img;
+ensureCompatibleImage // endDefinition;
+
+
+$useRasterizationCompatibility := Enclose[
+    $useRasterizationCompatibility =
+        ! PacletNewerQ[ ConfirmBy[ PacletObject[ "ServiceConnection_OpenAI" ], PacletObjectQ ], "13.3.18" ]
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
