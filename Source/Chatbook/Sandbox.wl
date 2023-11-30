@@ -233,7 +233,7 @@ sandboxEvaluate[ code_String ] := sandboxEvaluate @ toSandboxExpression @ code;
 sandboxEvaluate[ HoldComplete[ xs__, x_ ] ] := sandboxEvaluate @ HoldComplete @ CompoundExpression[ xs, x ];
 
 sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
-    Module[ { kernel, null, packets, $timedOut, results, flat, initialized },
+    Module[ { kernel, null, packets, $sandboxTag, $timedOut, results, flat, initialized },
 
         $lastSandboxEvaluation = HoldComplete @ evaluation;
 
@@ -243,12 +243,13 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
 
         { null, { packets } } = ConfirmMatch[
             Reap[
-                Sow @ Nothing;
+                Sow[ Nothing, $sandboxTag ];
                 TimeConstrained[
-                    While[ ! MatchQ[ Sow @ LinkRead @ kernel, _ReturnExpressionPacket ] ],
+                    While[ ! MatchQ[ Sow[ LinkRead @ kernel, $sandboxTag ], _ReturnExpressionPacket ] ],
                     2 * $sandboxEvaluationTimeout,
                     $timedOut
-                ]
+                ],
+                $sandboxTag
             ],
             { _, { _List } },
             "LinkRead"
