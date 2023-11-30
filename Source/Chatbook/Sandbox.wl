@@ -241,16 +241,26 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
 
         ConfirmMatch[ linkWriteEvaluation[ kernel, evaluation ], Null, "LinkWriteEvaluation" ];
 
-        { null, { packets } } = Reap[
-            TimeConstrained[
-                While[ ! MatchQ[ Sow @ LinkRead @ kernel, _ReturnExpressionPacket ] ],
-                2 * $sandboxEvaluationTimeout,
-                $timedOut
-            ]
+        { null, { packets } } = ConfirmMatch[
+            Reap[
+                Sow @ Nothing;
+                TimeConstrained[
+                    While[ ! MatchQ[ Sow @ LinkRead @ kernel, _ReturnExpressionPacket ] ],
+                    2 * $sandboxEvaluationTimeout,
+                    $timedOut
+                ]
+            ],
+            { _, { _List } },
+            "LinkRead"
         ];
 
         If[ null === $timedOut,
-            AppendTo[ packets, ReturnExpressionPacket @ HoldComplete @ $TimedOut ]
+            AppendTo[
+                packets,
+                With[ { fail = timeConstraintFailure @ $sandboxEvaluationTimeout },
+                    ReturnExpressionPacket @ HoldComplete @ fail
+                ]
+            ]
         ];
 
         results = Cases[ packets, ReturnExpressionPacket[ expr_ ] :> expr ];
@@ -281,6 +291,9 @@ initializeExpressions[ flat: HoldComplete @ Association @ OrderlessPatternSequen
     With[ { pos = { 1, Key[ "Result" ], ## } & @@@ pos0 },
         ReplacePart[ flat, Thread[ pos -> Extract[ flat, pos ] ] ]
     ];
+
+initializeExpressions[ failed: HoldComplete[ _Failure ] ] :=
+    failed;
 
 initializeExpressions // endDefinition;
 
