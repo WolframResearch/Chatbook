@@ -171,7 +171,7 @@ updatePacletInfo[ dir_ ] /; $inCICD := Enclose[
     Module[
         { cs, file, string, id, date, url, run, cmt, new },
 
-        cs     = ConfirmBy[ Echo[ #1, "Update PacletInfo: " <> ToString @ #2 ], StringQ, #2 ] &;
+        cs     = ConfirmBy[ Echo[ #1, "Update PacletInfo [" <> ToString @ #2 <> "]: " ], StringQ, #2 ] &;
         file   = cs[ FileNameJoin @ { dir, "PacletInfo.wl" }, "Original PacletInfo" ];
         string = cs[ ReadString @ file, "ReadString" ];
         id     = cs[ releaseID @ dir, "ReleaseID" ];
