@@ -113,7 +113,7 @@ $toolBox               = <| |>;
 $toolEvaluationResults = <| |>;
 $toolOptions           = <| |>;
 
-$cloudUnsupportedTools = { "WolframLanguageEvaluator", "DocumentationSearcher" };
+$cloudUnsupportedTools = { "DocumentationSearcher" };
 
 $defaultToolOrder = {
     "DocumentationLookup",
