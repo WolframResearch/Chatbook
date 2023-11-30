@@ -386,7 +386,7 @@ tokenCount // endDefinition;
 applyTokenizer // beginDefinition;
 applyTokenizer[ tokenizer_, content_String ] := tokenizer @ content;
 applyTokenizer[ tokenizer_, content_? graphicsQ ] := tokenizer @ content;
-applyTokenizer[ tokenizer_, content_List ] := Flatten[ tokenizer /@ content ];
+applyTokenizer[ tokenizer_, content_List ] := Flatten[ applyTokenizer[ tokenizer, # ] & /@ content ];
 applyTokenizer[ tokenizer_, KeyValuePattern[ "Data" -> data_ ] ] := tokenizer @ data;
 applyTokenizer // endDefinition;
 
@@ -658,7 +658,7 @@ makeMessageContent // endDefinition;
 expandMultimodalString // beginDefinition;
 
 expandMultimodalString[ string_String ] /; $multimodalMessages := Enclose[
-    Module[ { split, joined },
+    Module[ { split, joined, typed },
 
         split = Flatten @ StringSplit[
             string,
@@ -675,8 +675,9 @@ expandMultimodalString[ string_String ] /; $multimodalMessages := Enclose[
             }
         ];
 
-        joined = FixedPoint[ Replace[ { a___, b_String, c_String, d___ } :> { a, b<>c, d } ], split ];
-        Replace[ joined, { msg_String } :> msg ]
+        joined = Flatten @ Replace[ SplitBy[ split, StringQ ], s: { _String, ___ } :> StringJoin @ s, { 1 } ];
+        typed  = ConfirmMatch[ inferMultimodalTypes @ joined, { ___? AssociationQ } | { ___? StringQ }, "Typed" ];
+        Replace[ typed, { msg_String } :> msg ]
     ],
     throwInternalFailure[ expandMultimodalString @ string, ## ] &
 ];
@@ -685,6 +686,44 @@ expandMultimodalString[ string_String ] :=
     string;
 
 expandMultimodalString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*inferMultimodalTypes*)
+inferMultimodalTypes // beginDefinition;
+
+inferMultimodalTypes[ content_List ] := Enclose[
+    Module[ { typed },
+        typed = ConfirmMatch[ inferMultimodalTypes0 @ content, { ___? AssociationQ }, "Typed" ];
+        If[ MatchQ[ typed, { KeyValuePattern[ "Type" -> "Text" ] .. } ],
+            ConfirmMatch[ Lookup[ typed, "Data" ], { __String }, "TextData" ],
+            typed
+        ]
+    ],
+    throwInternalFailure
+];
+
+inferMultimodalTypes // endDefinition;
+
+inferMultimodalTypes0 // beginDefinition;
+inferMultimodalTypes0[ content_List        ] := inferMultimodalTypes0 /@ content;
+inferMultimodalTypes0[ content_String      ] := <| "Type" -> "Text" , "Data" -> content |>;
+inferMultimodalTypes0[ content_? graphicsQ ] := <| "Type" -> "Image", "Data" -> ensureCompatibleImage @ content |>;
+inferMultimodalTypes0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*ensureCompatibleImage*)
+ensureCompatibleImage // beginDefinition;
+ensureCompatibleImage[ img_ ] /; $useRasterizationCompatibility && ! Image`PossibleImageQ @ img := Rasterize @ img;
+ensureCompatibleImage[ img_ ] := img;
+ensureCompatibleImage // endDefinition;
+
+
+$useRasterizationCompatibility := Enclose[
+    $useRasterizationCompatibility =
+        ! PacletNewerQ[ ConfirmBy[ PacletObject[ "ServiceConnection_OpenAI" ], PacletObjectQ ], "13.3.18" ]
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

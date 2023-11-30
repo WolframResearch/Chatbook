@@ -387,7 +387,7 @@ getCachedToolName // endDefinition;
 (*getToolSelections*)
 getToolSelections // beginDefinition;
 getToolSelections[ as_Association ] := getToolSelections[ as, Lookup[ as, "ToolSelections", <| |> ] ];
-getToolSelections[ as_, selections_Association ] := selections;
+getToolSelections[ as_, selections_Association ] := KeyTake[ selections, Keys @ $AvailableTools ];
 getToolSelections[ as_, Except[ _Association ] ] := <| |>;
 getToolSelections // endDefinition;
 
@@ -396,7 +396,7 @@ getToolSelections // endDefinition;
 (*getToolSelectionTypes*)
 getToolSelectionTypes // beginDefinition;
 getToolSelectionTypes[ as_Association ] := getToolSelectionTypes[ as, Lookup[ as, "ToolSelectionType", <| |> ] ];
-getToolSelectionTypes[ as_, selections_Association ] := selections;
+getToolSelectionTypes[ as_, selections_Association ] := KeyTake[ selections, Keys @ $AvailableTools ];
 getToolSelectionTypes[ as_, Except[ _Association ] ] := <| |>;
 getToolSelectionTypes // endDefinition;
 
@@ -542,8 +542,20 @@ makeToolPrompt[ settings_Association ] := $lastToolPrompt = TemplateObject[
         DeleteMissing @ {
             $toolPre,
             TemplateSequence[
-                TemplateExpression @ StringTemplate[
-                    "Tool Name: `Name`\nDescription: `Description`\nSchema:\n`Schema`\n\n"
+                TemplateExpression @ TemplateObject[
+                    {
+                        "Tool Name: ",
+                        TemplateSlot[ "Name" ],
+                        "\nDisplay Name: ",
+                        TemplateSlot[ "DisplayName", DefaultValue :> toDisplayToolName @ TemplateSlot[ "Name" ] ],
+                        "\nDescription: ",
+                        TemplateSlot[ "Description" ],
+                        "\nSchema:\n",
+                        TemplateSlot[ "Schema" ],
+                        "\n\n"
+                    },
+                    CombinerFunction  -> StringJoin,
+                    InsertionFunction -> TextString
                 ],
                 TemplateExpression @ Map[
                     Append[ #[ "Data" ], "Schema" -> ExportString[ #[ "JSONSchema" ], "JSON" ] ] &,
@@ -596,7 +608,11 @@ If a user asks you to use a specific tool, you MUST attempt to use that tool as 
 even if you think it will not work. \
 If the tool fails, use any error message to correct the issue or explain why it failed. \
 NEVER state that a tool cannot be used for a particular task without trying it first. \
-You did not create these tools, so you do not know what they can and cannot do.";
+You did not create these tools, so you do not know what they can and cannot do.
+
+You should try to avoid mentioning tools by name in your response and instead speak generally about their function. \
+For example, if there were a number_adder tool, you would instead talk about \"adding numbers\". If you must mention \
+a tool by name, you should use the DisplayName property instead of the tool name.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -1250,10 +1266,17 @@ webSearch0 // endDefinition;
 $webSearchResultTemplate := StringTemplate @ StringJoin[
     "Results\n-------\n\n`1`\n\n-------",
     If[ KeyExistsQ[ $selectedTools, "WebFetcher" ],
-        "\n\nUse the web_fetcher tool to get the content of a URL.",
+        $webSearchFetchPrompt,
         ""
     ]
 ];
+
+$webSearchFetchPrompt = "
+
+Important: The snippet text is not enough information to write an informed response! If there are any relevant \
+results, you should now immediately use the web_fetcher tool to retrieve them before responding. Do not ask the user \
+for permission first. If it made sense to use the web_searcher tool, it's also implied that you should use the \
+web_fetcher tool.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

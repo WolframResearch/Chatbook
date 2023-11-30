@@ -673,12 +673,12 @@ withFETasks // endDefinition;
 (*writeChunk*)
 writeChunk // beginDefinition;
 
-writeChunk[ container_, cell_, KeyValuePattern[ "BodyChunkProcessed" -> chunk_String ] ] :=
-    writeChunk0[ container, cell, chunk, chunk ];
-
-writeChunk[ container_, cell_, KeyValuePattern[ "BodyChunkProcessed" -> { chunks___String } ] ] :=
-    With[ { chunk = StringJoin @ chunks },
-        writeChunk0[ container, cell, chunk, chunk ]
+writeChunk[ container_, cell_, KeyValuePattern[ "BodyChunkProcessed" -> chunks_ ] ] :=
+    With[ { chunk = StringJoin @ Select[ Flatten @ { chunks }, StringQ ] },
+        If[ chunk === "",
+            Null,
+            writeChunk0[ container, cell, chunk, chunk ]
+        ]
     ];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
@@ -968,7 +968,7 @@ toolFreeQ // endDefinition;
 toolEvaluation // beginDefinition;
 
 toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
-    Module[ { string, callPos, toolCall, toolResponse, output, messages, newMessages, req, toolID },
+    Module[ { string, callPos, toolCall, toolResponse, output, messages, newMessages, req, toolID, task },
 
         string = ConfirmBy[ container[ "FullContent" ], StringQ, "FullContent" ];
 
@@ -1010,7 +1010,18 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         appendToolResult[ container, output, toolID ];
 
-        $lastTask = chatSubmit[ container, req, cell, settings ]
+        task = $lastTask = chatSubmit[ container, req, cell, settings ];
+
+        addHandlerArguments[ "Task" -> task ];
+
+        CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "CellObject" } ] = cell;
+        CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "Task"       } ] = task;
+
+        If[ FailureQ @ task, throwTop @ writeErrorCell[ cell, task ] ];
+
+        If[ task === $Canceled, StopChat @ cell ];
+
+        task
     ],
     throwInternalFailure[ toolEvaluation[ settings, container, cell, as ], ## ] &
 ];
@@ -1356,9 +1367,38 @@ multimodalPacletsAvailable[ ] := multimodalPacletsAvailable[ ] = (
 );
 
 multimodalPacletsAvailable[ llmFunctions_PacletObject? PacletObjectQ, openAI_PacletObject? PacletObjectQ ] :=
-    TrueQ @ And[ PacletNewerQ[ llmFunctions, "1.2.4" ], PacletNewerQ[ openAI, "13.3.18" ] ];
+    TrueQ @ And[
+        PacletNewerQ[ llmFunctions, "1.2.4" ],
+        Or[ PacletNewerQ[ openAI, "13.3.18" ],
+            openAI[ "Version" ] === "13.3.18" && multimodalOpenAIQ @ openAI
+        ]
+    ];
 
 multimodalPacletsAvailable // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*multimodalOpenAIQ*)
+multimodalOpenAIQ // beginDefinition;
+
+multimodalOpenAIQ[ openAI_PacletObject ] := Enclose[
+    Catch @ Module[ { dir, file, multimodal },
+
+        dir  = ConfirmBy[ openAI[ "Location" ], DirectoryQ, "Location" ];
+        file = ConfirmBy[ FileNameJoin @ { dir, "Kernel", "OpenAI.m" }, FileExistsQ, "File" ];
+
+        multimodal = WithCleanup[
+            Quiet @ Close @ file,
+            ConfirmMatch[ Find[ file, "data:image/jpeg;base64," ], _String? StringQ | EndOfFile, "Find" ],
+            Quiet @ Close @ file
+        ];
+
+        StringQ @ multimodal
+    ],
+    throwInternalFailure
+];
+
+multimodalOpenAIQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
