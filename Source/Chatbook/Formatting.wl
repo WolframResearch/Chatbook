@@ -1138,10 +1138,16 @@ inlineInteractiveCodeCell // beginDefinition;
 inlineInteractiveCodeCell[ display_, string_ ] /; $dynamicText := display;
 
 inlineInteractiveCodeCell[ display_, string_ ] :=
-    inlineInteractiveCodeCell[ display, string, contentLanguage @ string ];
+    With[ { lang = contentLanguage @ string },
+        Dynamic[
+            inlineInteractiveCodeCell[ display, string, lang ],
+            Initialization   :> Quiet @ Needs[ "Wolfram`Chatbook`" -> None ],
+            SingleEvaluation -> True
+        ]
+    ];
 
 inlineInteractiveCodeCell[ display_, string_, lang_ ] /; $cloudNotebooks :=
-    Mouseover[ display, Column @ { display, floatingButtonGrid[ string, lang ] } ];
+    cloudInlineInteractiveCodeCell[ display, string, lang ];
 
 inlineInteractiveCodeCell[ display_, string_, lang_ ] :=
     DynamicModule[ { $CellContext`attached, $CellContext`cell },
@@ -1166,6 +1172,54 @@ inlineInteractiveCodeCell[ display_, string_, lang_ ] :=
     ];
 
 inlineInteractiveCodeCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudInlineInteractiveCodeCell*)
+cloudInlineInteractiveCodeCell // beginDefinition;
+
+cloudInlineInteractiveCodeCell[ display_, string_, lang_ ] :=
+    Module[ { padded, buttons },
+
+        padded = Pane[ display, ImageSize -> { { 100, Automatic }, { 30, Automatic } } ];
+
+        buttons = Framed[
+            floatingButtonGrid[ string, lang ],
+            Background     -> White,
+            FrameMargins   -> { { 1, 0 }, { 0, 1 } },
+            FrameStyle     -> White,
+            ImageMargins   -> 1,
+            RoundingRadius -> 3
+        ];
+
+        Mouseover[
+            buttonOverlay[ padded, Invisible @ buttons ],
+            buttonOverlay[ padded, buttons ],
+            ContentPadding -> False,
+            FrameMargins   -> 0,
+            ImageMargins   -> 0,
+            ImageSize      -> All
+        ]
+    ];
+
+cloudInlineInteractiveCodeCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*buttonOverlay*)
+buttonOverlay // beginDefinition;
+
+buttonOverlay[ a_, b_ ] := Overlay[
+    { a, b },
+    All,
+    2,
+    Alignment      -> { Left, Bottom },
+    ContentPadding -> False,
+    FrameMargins   -> 0,
+    ImageMargins   -> 0
+];
+
+buttonOverlay // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
