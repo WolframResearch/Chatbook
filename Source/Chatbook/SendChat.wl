@@ -1212,7 +1212,14 @@ resolveAutoSettings[ settings_Association ] := resolveAutoSettings0 @ <|
     settings,
     "HandlerFunctions"    -> getHandlerFunctions @ settings,
     "LLMEvaluator"        -> getLLMEvaluator @ settings,
-    "ProcessingFunctions" -> getProcessingFunctions @ settings
+    "ProcessingFunctions" -> getProcessingFunctions @ settings,
+    If[ StringQ @ settings[ "Tokenizer" ],
+        <|
+            "TokenizerName" -> getTokenizerName @ settings,
+            "Tokenizer"     -> Automatic
+        |>,
+        "TokenizerName" -> Automatic
+    ]
 |>;
 
 resolveAutoSettings // endDefinition;
@@ -1253,6 +1260,7 @@ resolveAutoSetting0[ as_, "NotebookWriteMethod"       ] := "PreemptiveLink";
 resolveAutoSetting0[ as_, "ShowMinimized"             ] := Automatic;
 resolveAutoSetting0[ as_, "StreamingOutputMethod"     ] := "PartialDynamic";
 resolveAutoSetting0[ as_, "Tokenizer"                 ] := getTokenizer @ as;
+resolveAutoSetting0[ as_, "TokenizerName"             ] := getTokenizerName @ as;
 resolveAutoSetting0[ as_, "ToolCallFrequency"         ] := Automatic;
 resolveAutoSetting0[ as_, "ToolsEnabled"              ] := toolsEnabledQ @ as;
 resolveAutoSetting0[ as_, "TrackScrollingWhenPlaced"  ] := scrollOutputQ @ as;
@@ -1267,7 +1275,8 @@ $autoSettingKeyDependencies = <|
     "MaxOutputCellStringLength" -> "MaxCellStringLength",
     "MaxTokens"                 -> "Model",
     "Multimodal"                -> { "EnableLLMServices", "Model" },
-    "Tokenizer"                 -> "Model",
+    "Tokenizer"                 -> "TokenizerName",
+    "TokenizerName"             -> "Model",
     "Tools"                     -> { "LLMEvaluator", "ToolsEnabled" },
     "ToolsEnabled"              -> { "Model", "ToolCallFrequency" }
 |>;
@@ -2201,7 +2210,7 @@ makeCompactChatData[
     BaseEncode @ BinarySerialize[
         DeleteCases[
             Association[
-                smallSettings @ KeyDrop[ as, "OpenAIKey" ],
+                smallSettings @ as,
                 "MessageTag" -> tag,
                 "Data" -> Association[
                     data,
@@ -2219,20 +2228,27 @@ makeCompactChatData // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*smallSettings*)
 smallSettings // beginDefinition;
+smallSettings[ as_Association ] := smallSettings0 @ KeyDrop[ as, { "OpenAIKey", "Tokenizer" } ] /. $exprToNameRules;
+smallSettings // endDefinition;
 
-smallSettings[ as_Association ] :=
-    smallSettings[ as, as[ "LLMEvaluator" ] ];
+smallSettings0 // beginDefinition;
 
-smallSettings[ as_, KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] :=
+smallSettings0[ as_Association ] :=
+    smallSettings0[ as, as[ "LLMEvaluator" ] ];
+
+smallSettings0[ as_, KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] :=
     If[ AssociationQ @ GetCachedPersonaData @ name,
         Append[ as, "LLMEvaluator" -> name ],
         as
     ];
 
-smallSettings[ as_, _ ] :=
+smallSettings0[ as_, _ ] :=
     as;
 
-smallSettings // endDefinition;
+smallSettings0 // endDefinition;
+
+
+$exprToNameRules := AssociationMap[ Reverse, $AvailableTools ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
