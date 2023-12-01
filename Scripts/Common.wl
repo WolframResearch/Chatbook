@@ -141,7 +141,7 @@ releaseID[ dir_ ] := FirstCase[
 (* ::Subsection::Closed:: *)
 (*releaseURL*)
 releaseURL[ file_ ] := Enclose[
-    Enclose @ Module[ { pac, repo, ver },
+    Module[ { pac, repo, ver },
         pac  = PacletObject @ Flatten @ File @ file;
         repo = ConfirmBy[ Environment[ "GITHUB_REPOSITORY" ], StringQ ];
         ver  = ConfirmBy[ pac[ "Version" ], StringQ ];
