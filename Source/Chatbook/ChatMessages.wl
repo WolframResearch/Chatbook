@@ -1192,7 +1192,7 @@ tokenizerName // beginDefinition;
 
 tokenizerName[ name_String ] :=
     SelectFirst[
-        $cachedTokenizerNames,
+        ReverseSortBy[ $cachedTokenizerNames, StringLength ],
         StringContainsQ[ name, #, IgnoreCase -> True ] &,
         name
     ];
