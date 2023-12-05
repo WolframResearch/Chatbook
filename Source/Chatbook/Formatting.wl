@@ -1137,14 +1137,9 @@ inlineInteractiveCodeCell // beginDefinition;
 
 inlineInteractiveCodeCell[ display_, string_ ] /; $dynamicText := display;
 
+(* TODO: make this switch dynamically depending on $cloudNotebooks (likely as a TemplateBox)*)
 inlineInteractiveCodeCell[ display_, string_ ] :=
-    With[ { lang = contentLanguage @ string },
-        Dynamic[
-            inlineInteractiveCodeCell[ display, string, lang ],
-            Initialization   :> Quiet @ Needs[ "Wolfram`Chatbook`" -> None ],
-            SingleEvaluation -> True
-        ]
-    ];
+    inlineInteractiveCodeCell[ display, string, contentLanguage @ string ];
 
 inlineInteractiveCodeCell[ display_, string_, lang_ ] /; $cloudNotebooks :=
     cloudInlineInteractiveCodeCell[ display, string, lang ];
