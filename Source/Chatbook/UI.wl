@@ -262,26 +262,7 @@ CreateToolbarContent[] := With[{
 	PaneSelector[
 		{
 			True :> (
-				Dynamic @ Refresh[
-					Column[{
-						Pane[
-							makeEnableAIChatFeaturesLabel[True],
-							ImageMargins -> {{5, 20}, {2.5, 2.5}}
-						],
-
-						Pane[
-							makeAutomaticResultAnalysisCheckbox[EvaluationNotebook[]],
-							ImageMargins -> {{5, 20}, {2.5, 2.5}}
-						],
-
-						makeChatActionMenu[
-							"Toolbar",
-							EvaluationNotebook[],
-							Automatic
-						]
-					}],
-					None
-				]
+				Dynamic[ makeToolbarMenuContent @ menuCell, SingleEvaluation -> True, DestroyAfterEvaluation -> True ]
 			),
 			False :> (
 				Dynamic @ Refresh[
@@ -293,7 +274,29 @@ CreateToolbarContent[] := With[{
 		Dynamic @ CurrentValue[menuCell, {TaggingRules, "IsChatEnabled"}],
 		ImageSize -> Automatic
 	]
-]
+];
+
+makeToolbarMenuContent[ menuCell_ ] := Enclose[
+    Module[ { items, item1, item2, new },
+
+        items = ConfirmBy[ makeChatActionMenu[ "Toolbar", EvaluationNotebook[ ], Automatic, "List" ], ListQ, "Items" ];
+
+        item1 = Pane[
+            makeEnableAIChatFeaturesLabel @ True,
+            ImageMargins -> { { 5, 20 }, { 2.5, 2.5 } }
+        ];
+
+        item2 = Pane[
+            makeAutomaticResultAnalysisCheckbox @ EvaluationNotebook[ ],
+            ImageMargins -> { { 5, 20 }, { 2.5, 2.5 } }
+        ];
+
+        new = Join[ { { None, item1, None }, { None, item2, None } }, items ];
+
+        MakeMenu[ new, Transparent, $chatMenuWidth ]
+    ],
+    throwInternalFailure
+];
 
 (*====================================*)
 
@@ -346,11 +349,7 @@ tryMakeChatEnabledNotebook[
 					"",
 					RawBoxes @ Cell["Are you sure you wish to continue?", "Text"]
 				}],
-				Background -> White,
-				WindowMargins -> ConfirmReplace[
-					MousePosition["ScreenAbsolute"],
-					{x_, y_} :> {{x, Automatic}, {Automatic, y}}
-				]
+				Background -> White
 			],
 			_?BooleanQ
 		]
@@ -962,7 +961,8 @@ makeChatActionMenu[
 	targetObj : _CellObject | _NotebookObject,
 	(* The cell that will be the parent of the attached cell that contains this
 		chat action menu content. *)
-	attachedCellParent : _CellObject | Automatic
+	attachedCellParent : _CellObject | Automatic,
+    format_ : "Cell"
 ] := With[{
 	closeMenu = ConfirmReplace[attachedCellParent, {
 		parent_CellObject -> Function[
@@ -981,7 +981,6 @@ makeChatActionMenu[
 	}]
 }, Module[{
 	personas = GetPersonasAssociation[],
-	models,
 	actionCallback
 },
 	(*--------------------------------*)
@@ -1049,14 +1048,6 @@ makeChatActionMenu[
 	];
 
 	(*--------------------------------*)
-	(* Process models list            *)
-	(*--------------------------------*)
-
-	models = getModelsMenuItems[];
-
-	RaiseConfirmMatch[models, <| (_?StringQ -> _?AssociationQ)... |>];
-
-	(*--------------------------------*)
 
 	actionCallback = Function[{field, value}, Replace[field, {
 		"Persona" :> (
@@ -1073,13 +1064,6 @@ makeChatActionMenu[
 			If[Head[targetObj] === CellObject,
 				SetOptions[targetObj, CellDingbat -> Inherited];
 			];
-		),
-		"Model" :> (
-			CurrentValue[
-				targetObj,
-				{TaggingRules, "ChatNotebookSettings", "Model"}
-			] = value;
-			closeMenu[];
 		),
 		"Role" :> (
 			CurrentValue[
@@ -1101,7 +1085,7 @@ makeChatActionMenu[
         targetObj,
 		containerType,
 		personas,
-		models,
+        format,
 		"ActionCallback" -> actionCallback,
 		"PersonaValue" -> currentValueOrigin[
 			targetObj,
@@ -1146,7 +1130,7 @@ makeChatActionMenuContent[
     targetObj_,
 	containerType : "Input" | "Delimiter" | "Toolbar",
 	personas_?AssociationQ,
-	models_?AssociationQ,
+    format_,
 	OptionsPattern[]
 ] := With[{
 	callback = OptionValue["ActionCallback"]
@@ -1238,49 +1222,42 @@ makeChatActionMenuContent[
 			{alignedMenuIcon[getIcon["PersonaOther"]], "Add & Manage Personas\[Ellipsis]", "PersonaManage"},
 			{alignedMenuIcon[getIcon["ToolManagerRepository"]], "Add & Manage Tools\[Ellipsis]", "ToolManage"},
 			Delimiter,
-            {
-                alignedMenuIcon[getIcon["ChatBlockSettingsMenuIcon"]],
-                submenuLabel[ "Models" ],
-                Hold @ With[ { root = EvaluationBox[ ] },
-                    AttachSubmenu[ root, createServiceMenu[ targetObj, ParentCell @ root ] ]
-                ]
-            },
-			{
-				alignedMenuIcon[getIcon["AdvancedSettings"]],
-				submenuLabel[ "Advanced Settings" ],
-				Hold @ AttachSubmenu[
-					EvaluationBox[],
-					advancedSettingsMenu
-				]
-			}
-		}
-	];
+            <|
+                "Label"   -> "Models",
+                "Type"    -> "Submenu",
+                "Icon"    -> alignedMenuIcon @ getIcon[ "ChatBlockSettingsMenuIcon" ],
+                "Content" :> createServiceMenu[ targetObj, ParentCell @ EvaluationCell[ ] ]
+            |>,
+            <|
+                "Label"   -> "Advanced Settings",
+                "Type"    -> "Submenu",
+                "Icon"    -> alignedMenuIcon @ getIcon[ "AdvancedSettings" ],
+                "Content" -> advancedSettingsMenu
+            |>
+        }
+    ];
 
-	menu = MakeMenu[
-		menuItems,
-		GrayLevel[0.85],
-		$chatMenuWidth
-	];
-
-	Cell[ BoxData @ ToBoxes @ menu, "AttachedChatMenu" ]
-]]
+    Replace[
+        format,
+        {
+            "List" :> menuItems
+            ,
+            "Expression" :> MakeMenu[ menuItems, GrayLevel[ 0.85 ], $chatMenuWidth ]
+            ,
+            "Cell"|Automatic :> Cell[
+                BoxData @ ToBoxes @ MakeMenu[ menuItems, GrayLevel[ 0.85 ], $chatMenuWidth ],
+                "AttachedChatMenu"
+            ]
+            ,
+            expr_ :> throwInternalFailure[ makeChatActionMenuContent, expr ]
+        }
+    ]
+]];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*getIcon*)
 getIcon[ name_ ] := RawBoxes @ TemplateBox[ { }, name ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*submenuLabel*)
-submenuLabel // beginDefinition;
-
-submenuLabel[ label_ ] := Grid[
-    { { Item[ label, ItemSize -> Fit, Alignment -> Left ], RawBoxes @ TemplateBox[ { }, "Triangle" ] } },
-    Spacings -> 0
-];
-
-submenuLabel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1310,11 +1287,12 @@ createServiceMenu // endDefinition;
 (*createServiceItem*)
 createServiceItem // beginDefinition;
 
-createServiceItem[ obj_, model_, root_, service_String ] := {
-    serviceSelectionCheckmark[ model, service ],
-    submenuLabel @ service,
-    Hold @ AttachSubmenu[ EvaluationBox[ ], dynamicModelMenu[ obj, root, model, service ] ]
-};
+createServiceItem[ obj_, model_, root_, service_String ] := <|
+    "Type"    -> "Submenu",
+    "Label"   -> service,
+    "Icon"    -> serviceSelectionCheckmark[ model, service ],
+    "Content" :> dynamicModelMenu[ obj, root, model, service ]
+|>;
 
 createServiceItem // endDefinition;
 

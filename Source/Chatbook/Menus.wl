@@ -74,6 +74,21 @@ MakeMenu // endDefinition;
 (*menuItem*)
 menuItem // beginDefinition;
 
+menuItem[ spec: KeyValuePattern[ "Content" -> content_ ] ] :=
+    menuItem @ <| spec, "Content" :> content |>;
+
+menuItem[ spec: KeyValuePattern @ { "Type" -> "Submenu", "Content" :> content_ } ] :=
+    EventHandler[
+        menuItem[
+            Lookup[ spec, "Icon", Spacer[ 0 ] ],
+            submenuLabel @ Lookup[ spec, "Label", "" ],
+            None
+        ],
+        {
+            "MouseEntered" :> With[ { root = EvaluationBox[ ] }, AttachSubmenu[ root, content ] ]
+        }
+    ];
+
 menuItem[ { args__ } ] :=
     menuItem @ args;
 
@@ -111,14 +126,7 @@ menuItem[ None, content_, None ] :=
     content;
 
 menuItem[ icon_, label_, None ] :=
-    menuItem[
-        icon,
-        label,
-        Hold[
-            MessageDialog[ "Not Implemented" ];
-            NotebookDelete @ EvaluationCell[ ];
-        ]
-    ];
+    menuItem[ icon, label, Hold @ Null ];
 
 menuItem[ icon_, label_, code_ ] :=
     RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label, code }, "ChatMenuItem" ];
@@ -126,18 +134,38 @@ menuItem[ icon_, label_, code_ ] :=
 menuItem // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*submenuLabel*)
+submenuLabel // beginDefinition;
+
+submenuLabel[ label_ ] := Grid[
+    { { Item[ label, ItemSize -> Fit, Alignment -> Left ], RawBoxes @ TemplateBox[ { }, "Triangle" ] } },
+    Spacings -> 0
+];
+
+submenuLabel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*AttachSubmenu*)
 AttachSubmenu[ parentMenu_, submenu: Cell[ __, "AttachedChatMenu", ___ ] ] := Enclose[
-    Module[ { pos, oPos, offset },
+    Module[ { pos, oPos, offsetX, offsetY, magnification },
+
         NotebookDelete @ Cells[ parentMenu, AttachedCell -> True, CellStyle -> "AttachedChatMenu" ];
         { pos, oPos } = ConfirmMatch[ determineAttachmentPosition[ ], { { _, _ }, { _, _ } }, "Position" ];
-        offset = If[ MatchQ[ pos, { Left, _ } ], { -3, 0 }, { 3, 0 } ];
+        offsetX = If[ MatchQ[ pos, { Left, _ } ], -3, 3 ];
+        offsetY = If[ MatchQ[ pos, { _, Top } ], 5, -5 ];
+
+        magnification = Replace[
+            AbsoluteCurrentValue[ parentMenu, Magnification ],
+            Except[ _? NumberQ ] :> If[ $OperatingSystem === "Windows", 0.75, 1 ]
+        ];
+
         AttachCell[
             parentMenu,
-            submenu,
+            Append[ submenu, Magnification -> magnification ],
             pos,
-            Offset[ offset, { 0, 0 } ],
+            Offset[ { offsetX, offsetY }, { 0, 0 } ],
             oPos,
             RemovalConditions -> { "MouseClickOutside", "EvaluatorQuit" }
         ]
@@ -160,11 +188,12 @@ AttachSubmenu[ expr_ ] :=
 determineAttachmentPosition // beginDefinition;
 determineAttachmentPosition[ ] := determineAttachmentPosition @ MousePosition[ "WindowScaled" ];
 determineAttachmentPosition[ pos_List ] := determineAttachmentPosition[ pos, quadrant @ pos ];
-determineAttachmentPosition[ _, { h_, v_ } ] := { { Replace[ h, { Left -> Right, Right -> Left } ], v }, { h, v } };
+determineAttachmentPosition[ _, { h_, v_ } ] := { { Replace[ h, { Left -> Right, Right -> Left } ], v }, { h, Center } };
 determineAttachmentPosition // endDefinition;
 
 quadrant // beginDefinition;
-quadrant[ { x_? NumberQ, y_? NumberQ } ] := quadrant[ TrueQ[ x >= 0.5 ], TrueQ[ y >= 0.5 ] ];
+quadrant[ None ] := None;
+quadrant[ { x_? NumberQ, y_? NumberQ } ] := quadrant[ TrueQ[ x >= 0.67 ], TrueQ[ y >= 0.67 ] ];
 quadrant[ True , True  ] := { Right, Bottom };
 quadrant[ True , False ] := { Right, Top    };
 quadrant[ False, True  ] := { Left , Bottom };
