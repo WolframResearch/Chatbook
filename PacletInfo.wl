@@ -1,7 +1,7 @@
 PacletObject[ <|
     "Name"           -> "Wolfram/Chatbook",
     "PublisherID"    -> "Wolfram",
-    "Version"        -> "1.3.1",
+    "Version"        -> "1.3.3",
     "WolframVersion" -> "13.3+",
     "Description"    -> "Wolfram Notebooks + LLMs",
     "License"        -> "MIT",
@@ -11,7 +11,8 @@ PacletObject[ <|
     "ReleaseDate"    -> "$RELEASE_DATE$",
     "ReleaseURL"     -> "$RELEASE_URL$",
     "ActionURL"      -> "$ACTION_URL$",
-    "Loading" 		 -> "Startup",
+    "CommitURL"      -> "$COMMIT_URL$",
+    "Loading"        -> "Startup",
     "PrimaryContext" -> "Wolfram`Chatbook`",
     "Extensions"     -> {
         (* NOTE: The BeginStartup and EndStartup contexts are special, and need to
