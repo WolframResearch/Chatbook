@@ -3,141 +3,198 @@
 
 *)
 
-BeginPackage["Wolfram`Chatbook`Menus`"]
+(* ::Section::Closed:: *)
+(*Package Header*)
+BeginPackage[ "Wolfram`Chatbook`Menus`" ];
 
-Needs["GeneralUtilities`" -> None]
+(* :!CodeAnalysis::BeginBlock:: *)
+
+HoldComplete[
+    `AttachSubmenu;
+    `MakeMenu;
+    `removeChatMenus;
+];
+
+Needs[ "GeneralUtilities`" -> None ];
 
 GeneralUtilities`SetUsage[MakeMenu, "
 MakeMenu[$$] returns an expression representing a menu of actions.
 
 The generated menu expression may depend on styles from the Chatbook stylesheet.
-"]
+"];
 
 GeneralUtilities`SetUsage[AttachSubmenu, "
 AttachSubmenu[parentMenu$, submenu$] attaches submenu$ to parentMenu$, taking
 care to attach to the left or right side based on heuristic for available space.
-"]
+"];
 
-Begin["`Private`"]
+Begin[ "`Private`" ];
 
-Needs["Wolfram`Chatbook`Common`"]
-Needs["Wolfram`Chatbook`ErrorUtils`"]
+Needs[ "Wolfram`Chatbook`Common`"     ];
+Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
+Needs[ "Wolfram`Chatbook`FrontEnd`"   ];
 
-(*========================================================*)
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*MakeMenu*)
+MakeMenu // beginDefinition;
 
-SetFallthroughError[MakeMenu]
+MakeMenu[ items_List ] :=
+    MakeMenu[ items, Automatic ];
 
-MakeMenu[
-	items_List,
-	frameColor_,
-	width_
-] :=
-	Pane[
-		RawBoxes @ TemplateBox[
-			{
-				ToBoxes @ Column[ menuItem /@ items, ItemSize -> Automatic, Spacings -> 0, Alignment -> Left ],
-				FrameMargins   -> 3,
-				Background     -> GrayLevel[ 0.98 ],
-				RoundingRadius -> 3,
-				FrameStyle     -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
-				ImageMargins   -> 0
-			},
-			"Highlighted"
-		],
-		ImageSize -> { width, Automatic }
-	];
+MakeMenu[ items_List, frameColor_ ] :=
+    MakeMenu[ items, frameColor, Automatic ];
 
-(*====================================*)
+MakeMenu[ items_List, Automatic, width_ ] :=
+    MakeMenu[ items, GrayLevel[ 0.85 ], width ];
 
-SetFallthroughError[menuItem]
+MakeMenu[ items_List, frameColor_, Automatic ] :=
+    MakeMenu[ items, frameColor, 200 ];
 
-menuItem[ { args__ } ] := menuItem @ args;
+MakeMenu[ items_List, frameColor_, width_ ] :=
+    Pane[
+        RawBoxes @ TemplateBox[
+            {
+                ToBoxes @ Column[ menuItem /@ items, ItemSize -> Automatic, Spacings -> 0, Alignment -> Left ],
+                Background     -> GrayLevel[ 0.98 ],
+                FrameMargins   -> 3,
+                FrameStyle     -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
+                ImageMargins   -> 0,
+                RoundingRadius -> 3
+            },
+            "Highlighted"
+        ],
+        ImageSize -> { width, Automatic }
+    ];
 
-menuItem[ Delimiter ] := RawBoxes @ TemplateBox[ { }, "ChatMenuItemDelimiter" ];
+MakeMenu // endDefinition;
 
-menuItem[ label_ :> action_ ] := menuItem[Graphics[{}, ImageSize -> 0], label, Hold[action]]
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*menuItem*)
+menuItem // beginDefinition;
 
-menuItem[ section_ ] := RawBoxes @ TemplateBox[ { ToBoxes @ section }, "ChatMenuSection" ];
+menuItem[ { args__ } ] :=
+    menuItem @ args;
+
+menuItem[ Delimiter ] :=
+    RawBoxes @ TemplateBox[ { }, "ChatMenuItemDelimiter" ];
+
+menuItem[ label_ :> action_ ] :=
+    menuItem[ Graphics[ { }, ImageSize -> 0 ], label, Hold @ action ];
+
+menuItem[ section_ ] :=
+    RawBoxes @ TemplateBox[ { ToBoxes @ section }, "ChatMenuSection" ];
 
 menuItem[ name_String, label_, code_ ] :=
-	With[ { icon = chatbookIcon @ name },
-		If[ MissingQ @ icon,
-			menuItem[ RawBoxes @ TemplateBox[ { name }, "ChatMenuItemToolbarIcon" ], label, code ],
-			menuItem[ icon, label, code ]
-		]
-	];
+    With[ { icon = chatbookIcon @ name },
+        If[ MissingQ @ icon,
+            menuItem[ RawBoxes @ TemplateBox[ { name }, "ChatMenuItemToolbarIcon" ], label, code ],
+            menuItem[ icon, label, code ]
+        ]
+    ];
 
 menuItem[ icon_, label_, action_String ] :=
-	menuItem[
-		icon,
-		label,
-		Hold @ With[
-			{ $CellContext`cell = EvaluationCell[ ] },
-			{ $CellContext`root = ParentCell @ $CellContext`cell },
-			Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-			Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ action, $CellContext`root ];
-			NotebookDelete @ $CellContext`cell;
-		]
-	];
+    menuItem[
+        icon,
+        label,
+        Hold @ With[
+            { $CellContext`cell = EvaluationCell[ ] },
+            { $CellContext`root = ParentCell @ $CellContext`cell },
+            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ action, $CellContext`root ];
+            NotebookDelete @ $CellContext`cell;
+        ]
+    ];
 
 menuItem[ None, content_, None ] :=
-	content;
+    content;
 
 menuItem[ icon_, label_, None ] :=
-	menuItem[
-		icon,
-		label,
-		Hold[
-			MessageDialog[ "Not Implemented" ];
-			NotebookDelete @ EvaluationCell[ ];
-		]
-	];
+    menuItem[
+        icon,
+        label,
+        Hold[
+            MessageDialog[ "Not Implemented" ];
+            NotebookDelete @ EvaluationCell[ ];
+        ]
+    ];
 
 menuItem[ icon_, label_, code_ ] :=
-	RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label, code }, "ChatMenuItem" ];
+    RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label, code }, "ChatMenuItem" ];
 
-(*========================================================*)
+menuItem // endDefinition;
 
-AttachSubmenu[
-	parentMenu_CellObject,
-	submenu_
-] := With[{
-	mouseX = MousePosition["WindowScaled"][[1]]
-}, {
-	(* Note: Depending on the X coordinate of the users mouse
-		when they click the 'Advanced Settings' button, either
-		show the attached submenu to the left or right of the
-		outer menu. This ensures that this submenu doesn't touch
-		the right edge of the notebook window when it is opened
-		from the 'Chat Settings' notebook toolbar. *)
-	positions = If[
-		TrueQ[mouseX < 0.5],
-		{
-			{Right, Bottom},
-			{Left, Bottom}
-		},
-		{
-			{Left, Bottom},
-			{Right, Bottom}
-		}
-	]
-},
-	AttachCell[
-		EvaluationCell[],
-		submenu,
-		positions[[1]],
-		{50, 50},
-		positions[[2]],
-		RemovalConditions -> "MouseExit"
-	]
-]
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*AttachSubmenu*)
+AttachSubmenu[ parentMenu_, submenu: Cell[ __, "AttachedChatMenu", ___ ] ] := Enclose[
+    Module[ { pos, oPos, offset },
+        NotebookDelete @ Cells[ parentMenu, AttachedCell -> True, CellStyle -> "AttachedChatMenu" ];
+        { pos, oPos } = ConfirmMatch[ determineAttachmentPosition[ ], { { _, _ }, { _, _ } }, "Position" ];
+        offset = If[ MatchQ[ pos, { Left, _ } ], { -3, 0 }, { 3, 0 } ];
+        AttachCell[
+            parentMenu,
+            submenu,
+            pos,
+            Offset[ offset, { 0, 0 } ],
+            oPos,
+            RemovalConditions -> { "MouseClickOutside", "EvaluatorQuit" }
+        ]
+    ],
+    throwInternalFailure
+];
 
-(*========================================================*)
+AttachSubmenu[ parentMenu_, Cell[ boxes_, style__String, opts: OptionsPattern[ ] ] ] :=
+    AttachSubmenu[ parentMenu, Cell[ boxes, style, "AttachedChatMenu", opts ] ];
 
+AttachSubmenu[ parentMenu_, expr: Except[ _Cell ] ] :=
+    AttachSubmenu[ parentMenu, Cell[ BoxData @ ToBoxes @ expr, "AttachedChatMenu" ] ];
+
+AttachSubmenu[ expr_ ] :=
+    AttachSubmenu[ EvaluationCell[ ], expr ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*determineAttachmentPosition*)
+determineAttachmentPosition // beginDefinition;
+determineAttachmentPosition[ ] := determineAttachmentPosition @ MousePosition[ "WindowScaled" ];
+determineAttachmentPosition[ pos_List ] := determineAttachmentPosition[ pos, quadrant @ pos ];
+determineAttachmentPosition[ _, { h_, v_ } ] := { { Replace[ h, { Left -> Right, Right -> Left } ], v }, { h, v } };
+determineAttachmentPosition // endDefinition;
+
+quadrant // beginDefinition;
+quadrant[ { x_? NumberQ, y_? NumberQ } ] := quadrant[ TrueQ[ x >= 0.5 ], TrueQ[ y >= 0.5 ] ];
+quadrant[ True , True  ] := { Right, Bottom };
+quadrant[ True , False ] := { Right, Top    };
+quadrant[ False, True  ] := { Left , Bottom };
+quadrant[ False, False ] := { Left , Top    };
+quadrant // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*removeChatMenus*)
+removeChatMenus // beginDefinition;
+
+removeChatMenus[ box_BoxObject ] :=
+    removeChatMenus @ parentCell @ box;
+
+removeChatMenus[ cell_CellObject ] /; MemberQ[ cellStyles @ cell, "AttachedChatMenu" ] :=
+    removeChatMenus @ parentCell @ cell;
+
+removeChatMenus[ cell_CellObject ] :=
+    NotebookDelete @ Cells[ cell, AttachedCell -> True, CellStyle -> "AttachedChatMenu" ];
+
+removeChatMenus // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Package Footer*)
 If[ Wolfram`ChatbookInternal`$BuildingMX,
     Null;
 ];
 
-End[]
+(* :!CodeAnalysis::EndBlock:: *)
 
-EndPackage[]
+End[ ];
+EndPackage[ ];

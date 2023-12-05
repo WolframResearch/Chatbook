@@ -139,7 +139,7 @@ modelName // endDefinition;
 (*toModelName*)
 toModelName // beginDefinition;
 
-toModelName[ KeyValuePattern @ { "Service" -> service_, "Model" -> model_ } ] :=
+toModelName[ KeyValuePattern @ { "Service" -> service_, "Name"|"Model" -> model_ } ] :=
     toModelName @ { service, model };
 
 toModelName[ { service_String, name_String } ] := toModelName @ name;
@@ -300,7 +300,7 @@ standardizeModelData[ service_String, models_List ] :=
 
 standardizeModelData[ service_String, model_ ] :=
     With[ { as = standardizeModelData @ model },
-        (standardizeModelData[ service, model ] = <| "ServiceName" -> service, as |>) /; AssociationQ @ as
+        (standardizeModelData[ service, model ] = <| "Service" -> service, as |>) /; AssociationQ @ as
     ];
 
 standardizeModelData // endDefinition;
