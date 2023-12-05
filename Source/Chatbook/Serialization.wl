@@ -1022,11 +1022,13 @@ fasterCellToString0[ cell: Cell[ a_, ___ ] ] :=
         fasterCellToString0 @ a
     ];
 
-fasterCellToString0[ InterpretationBox[ _, expr_, ___ ] ] :=
+fasterCellToString0[ InterpretationBox[ _, expr_, ___ ] ] := Quiet[
     With[ { held = replaceCellContext @ HoldComplete @ expr },
         needsBasePrompt[ "WolframLanguage" ];
         Replace[ held, HoldComplete[ e_ ] :> inputFormString @ Unevaluated @ e ]
-    ];
+    ],
+    Rule::rhs
+];
 
 fasterCellToString0[ Cell[ TextData @ { _, _, text_String, _, Cell[ _, "ExampleCount", ___ ] }, ___ ] ] :=
     fasterCellToString0 @ text;
