@@ -35,7 +35,7 @@ $basePromptOrder = {
     "Checkboxes",
     "CheckboxesIndeterminate",
     "ConversionFormatting",
-    "SpecialURIs",
+    "SpecialURI",
     "SpecialURIAudio",
     "SpecialURIVideo",
     "SpecialURIDynamic",
@@ -77,9 +77,9 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "MarkdownImageBox"             -> { "MessageConversionHeader" },
     "ConversionFormatting"         -> { "MessageConversionHeader" },
     "SpecialURIs"                  -> { },
-    "SpecialURIAudio"              -> { "SpecialURIs" },
-    "SpecialURIVideo"              -> { "SpecialURIs" },
-    "SpecialURIDynamic"            -> { "SpecialURIs" },
+    "SpecialURIAudio"              -> { "SpecialURI" },
+    "SpecialURIVideo"              -> { "SpecialURI" },
+    "SpecialURIDynamic"            -> { "SpecialURI" },
     "VisibleUserInput"             -> { },
     "TrivialCode"                  -> { },
     "WolframSymbolCapitalization"  -> { },
@@ -168,7 +168,7 @@ $basePromptComponents[ "ConversionFormatting" ] = "\
 ``Cell[TextData[{StyleBox[\"Styled\", FontSlant -> \"Italic\"], \" message\"}], \"ChatInput\"]`` \
 becomes ``Styled message``.";
 
-$basePromptComponents[ "SpecialURIs" ] = "\
+$basePromptComponents[ "SpecialURI" ] = "\
 * You will occasionally see markdown links with special URI schemes, e.g. ![label](scheme://content-id) that represent \
 interactive interface elements. You can use these in your responses to display the same elements to the user.";
 
