@@ -79,7 +79,7 @@ $defaultWindowWidth = 625;
 $maxMarkdownBoxes = 5;
 
 (* Whether to generate a transcript and preview images for Video[...] expressions: *)
-$serializeVideo = False;
+$generateVideoPrompt = False;
 
 (* Whether to collect data that can help discover missing definitions *)
 $CellToStringDebug = False;
@@ -666,17 +666,27 @@ rasterizeGraphics // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Video*)
-fasterCellToString0[ box: TemplateBox[ _, "VideoBox2", ___ ] ] /; $multimodalMessages && $serializeVideo :=
-    With[ { video = ToExpression[ box, StandardForm ] },
-        serializeVideo @ video /; VideoQ @ video
-    ];
+fasterCellToString0[ box: TemplateBox[ _, "VideoBox2", ___ ] ] /; $multimodalMessages && $generateVideoPrompt :=
+    generateVideoPrompt @ box;
+
+fasterCellToString0[ box: TemplateBox[ _, "VideoBox2", ___ ] ] :=
+    serializeVideo @ box;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
-(*serializeVideo*)
-serializeVideo // beginDefinition;
+(*generateVideoPrompt*)
+generateVideoPrompt // beginDefinition;
 
-serializeVideo[ video_? VideoQ ] := Enclose[
+generateVideoPrompt[ box: TemplateBox[ _, "VideoBox2", ___ ] ] := generateVideoPrompt[ box ] =
+    With[ { video = Quiet @ ToExpression[ box, StandardForm ] },
+        If[ VideoQ @ video,
+            generateVideoPrompt @ video,
+            "\\!\\(\\*VideoBox[...]\\)"
+        ]
+    ];
+
+
+generateVideoPrompt[ video_? VideoQ ] := Enclose[
     Module[ { small, audio, transcript, w, h, t, d, frames, preview },
 
         small      = ConfirmBy[ ImageResize[ video, { UpTo[ 150 ], UpTo[ 150 ] } ], VideoQ, "Resize" ];
@@ -690,17 +700,58 @@ serializeVideo[ video_? VideoQ ] := Enclose[
         frames     = ConfirmMatch[ VideoExtractFrames[ small, t ], { __Image }, "Frames" ];
         preview    = ToBoxes @ ConfirmBy[ ImageAssemble[ Partition[ frames, w ], Spacings -> 3 ], ImageQ, "Assemble" ];
 
-        serializeVideo[ video ] = StringJoin[
+        StringJoin[
             "VIDEO TRANSCRIPT\n-----\n",
             transcript,
             "\n\nVIDEO PREVIEW\n-----\n",
             ConfirmBy[ toMarkdownImageBox @ preview, StringQ, "Preview" ]
         ]
     ],
-    throwInternalFailure[ serializeVideo @ video, ##1 ] &
+    throwInternalFailure
+];
+
+generateVideoPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*serializeVideo*)
+serializeVideo // beginDefinition;
+
+serializeVideo[ box: TemplateBox[ _, "VideoBox2", ___ ] ] := serializeVideo[ box ] =
+    serializeVideo[ box, Quiet @ ToExpression[ box, StandardForm ] ];
+
+serializeVideo[ box_, video_ ] := Enclose[
+    If[ VideoQ @ video,
+        "\\!\\(\\*VideoBox[\"" <> ConfirmBy[ MakeExpressionURI @ video, StringQ, "URI" ] <> "\"]\\)",
+        "\\!\\(\\*VideoBox[...]\\)"
+    ],
+    throwInternalFailure
 ];
 
 serializeVideo // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Audio*)
+fasterCellToString0[ box: TagBox[ _, _Audio`AudioBox, ___ ] ] := serializeAudio @ box;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*serializeAudio*)
+serializeAudio // beginDefinition;
+
+serializeAudio[ box: TagBox[ content_, _Audio`AudioBox, ___ ] ] := serializeAudio[ box ] =
+    serializeAudio[ content, Quiet @ ToExpression[ box, StandardForm ] ];
+
+serializeAudio[ content_, audio_ ] := Enclose[
+    If[ AudioQ @ audio,
+        "\\!\\(\\*AudioBox[\"" <> ConfirmBy[ MakeExpressionURI @ audio, StringQ, "URI" ] <> "\"]\\)",
+        "\\!\\(\\*AudioBox[...]\\)"
+    ],
+    throwInternalFailure
+];
+
+serializeAudio // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -956,7 +1007,7 @@ fasterCellToString0 @ DynamicBox[ ToBoxes[ If[ $OperatingSystem === os_String, a
 
 (* Checkboxes: *)
 fasterCellToString0[ Cell[
-    BoxData @ TagBox[ grid_GridBox, "Grid", ___ ],
+    BoxData[ TagBox[ grid_GridBox, "Grid", ___ ], ___ ],
     ___,
     CellTags -> { ___, "CheckboxCell", ___ },
     ___
@@ -993,16 +1044,19 @@ checkbox // endDefinition;
 (*Other*)
 fasterCellToString0[ Cell[ _, "ObjectNameTranslation", ___ ] ] := "";
 
+fasterCellToString0[ PaneSelectorBox[ { ___, False -> b_, ___ }, Dynamic[ CurrentValue[ "MouseOver" ], ___ ], ___ ] ] :=
+    fasterCellToString0 @ b;
+
 fasterCellToString0[
     TagBox[ _, "MarkdownImage", ___, TaggingRules -> KeyValuePattern[ "CellToStringData" -> string_String ], ___ ]
 ] := string;
 
-fasterCellToString0[ BoxData[ boxes_List ] ] :=
+fasterCellToString0[ BoxData[ boxes_List, ___ ] ] :=
     With[ { strings = fasterCellToString0 /@ boxes },
         StringRiffle[ strings, "\n" ] /; AllTrue[ strings, StringQ ]
     ];
 
-fasterCellToString0[ BoxData[ boxes_ ] ] :=
+fasterCellToString0[ BoxData[ boxes_, ___ ] ] :=
     fasterCellToString0 @ boxes;
 
 fasterCellToString0[ list_List ] :=
@@ -1019,11 +1073,13 @@ fasterCellToString0[ cell: Cell[ a_, ___ ] ] :=
         fasterCellToString0 @ a
     ];
 
-fasterCellToString0[ InterpretationBox[ _, expr_, ___ ] ] :=
+fasterCellToString0[ InterpretationBox[ _, expr_, ___ ] ] := Quiet[
     With[ { held = replaceCellContext @ HoldComplete @ expr },
         needsBasePrompt[ "WolframLanguage" ];
         Replace[ held, HoldComplete[ e_ ] :> inputFormString @ Unevaluated @ e ]
-    ];
+    ],
+    Rule::rhs
+];
 
 fasterCellToString0[ Cell[ TextData @ { _, _, text_String, _, Cell[ _, "ExampleCount", ___ ] }, ___ ] ] :=
     fasterCellToString0 @ text;
@@ -1032,11 +1088,14 @@ fasterCellToString0[ DynamicModuleBox[
     _,
     TagBox[
         Cell[
-            BoxData @ TagBox[
-                _,
-                "MarkdownImage",
-                ___,
-                TaggingRules -> Association @ OrderlessPatternSequence[ "CellToStringData" -> str_String, ___ ]
+            BoxData[
+                TagBox[
+                    _,
+                    "MarkdownImage",
+                    ___,
+                    TaggingRules -> Association @ OrderlessPatternSequence[ "CellToStringData" -> str_String, ___ ]
+                ],
+                ___
             ],
             __
         ],
@@ -1164,7 +1223,7 @@ stringToBoxes[ string_String ] :=
         Quiet @ UsingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`UndocumentedTestFEParserPacket[ string, True ]
     ];
 
-stringToBoxes[ string_, { BoxData[ boxes_ ], ___ } ] := boxes;
+stringToBoxes[ string_, { BoxData[ boxes_, ___ ], ___ } ] := boxes;
 stringToBoxes[ string_, other_ ] := string;
 
 (* ::**************************************************************************************************************:: *)
@@ -1417,9 +1476,9 @@ makeUsageString // SetFallthroughError;
 
 makeUsageString[ usage_List ] := StringRiffle[ Flatten[ makeUsageString /@ usage ], "\n" ];
 
-makeUsageString[ Cell[ BoxData @ GridBox[ grid_List, ___ ], "Usage", ___ ] ] := makeUsageString0 /@ grid;
+makeUsageString[ Cell[ BoxData[ GridBox[ grid_List, ___ ], ___ ], "Usage", ___ ] ] := makeUsageString0 /@ grid;
 
-makeUsageString[ Cell[ BoxData @ GridBox @ { { cell_, _ } }, "ObjectNameGrid", ___ ] ] :=
+makeUsageString[ Cell[ BoxData[ GridBox[ { { cell_, _ } }, ___ ], ___ ], "ObjectNameGrid", ___ ] ] :=
     "# " <> cellToString @ cell <> "\n";
 
 makeUsageString0 // SetFallthroughError;

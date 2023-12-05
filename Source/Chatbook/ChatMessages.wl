@@ -17,6 +17,7 @@ Wolfram`Chatbook`CellToChatMessage;
 `constructMessages;
 `expandMultimodalString;
 `getTokenizer;
+`getTokenizerName;
 `resizeMultimodalImage;
 
 Begin[ "`Private`" ];
@@ -52,7 +53,7 @@ $$validMessageResults    = $$validMessageResult | { $$validMessageResult ... };
 
 $$inlineModifierCell = Alternatives[
     Cell[ _, "InlineModifierReference", ___ ],
-    Cell[ BoxData @ Cell[ _, "InlineModifierReference", ___ ], ___ ]
+    Cell[ BoxData[ Cell[ _, "InlineModifierReference", ___ ], ___ ], ___ ]
 ];
 
 $$promptArgumentToken = Alternatives[ ">", "^", "^^" ];
@@ -69,6 +70,10 @@ $styleRoles = <|
     "AssistantOutputError"   -> "Assistant",
     "ChatSystemInput"        -> "System"
 |>;
+
+$cachedTokenizerNames = { "chat-bison", "claude", "gpt-2", "gpt-3.5", "gpt-4-vision", "gpt-4" };
+$cachedTokenizers     = <| |>;
+$fallbackTokenizer    = "gpt-2";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -386,7 +391,7 @@ tokenCount // endDefinition;
 applyTokenizer // beginDefinition;
 applyTokenizer[ tokenizer_, content_String ] := tokenizer @ content;
 applyTokenizer[ tokenizer_, content_? graphicsQ ] := tokenizer @ content;
-applyTokenizer[ tokenizer_, content_List ] := Flatten[ tokenizer /@ content ];
+applyTokenizer[ tokenizer_, content_List ] := Flatten[ applyTokenizer[ tokenizer, # ] & /@ content ];
 applyTokenizer[ tokenizer_, KeyValuePattern[ "Data" -> data_ ] ] := tokenizer @ data;
 applyTokenizer // endDefinition;
 
@@ -657,8 +662,8 @@ makeMessageContent // endDefinition;
 (*expandMultimodalStrings*)
 expandMultimodalString // beginDefinition;
 
-expandMultimodalString[ string_String ] := Enclose[
-    Module[ { split, joined },
+expandMultimodalString[ string_String ] /; $multimodalMessages := Enclose[
+    Module[ { split, joined, typed },
 
         split = Flatten @ StringSplit[
             string,
@@ -675,13 +680,55 @@ expandMultimodalString[ string_String ] := Enclose[
             }
         ];
 
-        joined = FixedPoint[ Replace[ { a___, b_String, c_String, d___ } :> { a, b<>c, d } ], split ];
-        Replace[ joined, { msg_String } :> msg ]
+        joined = Flatten @ Replace[ SplitBy[ split, StringQ ], s: { _String, ___ } :> StringJoin @ s, { 1 } ];
+        typed  = ConfirmMatch[ inferMultimodalTypes @ joined, { ___? AssociationQ } | { ___? StringQ }, "Typed" ];
+        Replace[ typed, { msg_String } :> msg ]
     ],
     throwInternalFailure[ expandMultimodalString @ string, ## ] &
 ];
 
+expandMultimodalString[ string_String ] :=
+    string;
+
 expandMultimodalString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*inferMultimodalTypes*)
+inferMultimodalTypes // beginDefinition;
+
+inferMultimodalTypes[ content_List ] := Enclose[
+    Module[ { typed },
+        typed = ConfirmMatch[ inferMultimodalTypes0 @ content, { ___? AssociationQ }, "Typed" ];
+        If[ MatchQ[ typed, { KeyValuePattern[ "Type" -> "Text" ] .. } ],
+            ConfirmMatch[ Lookup[ typed, "Data" ], { __String }, "TextData" ],
+            typed
+        ]
+    ],
+    throwInternalFailure
+];
+
+inferMultimodalTypes // endDefinition;
+
+inferMultimodalTypes0 // beginDefinition;
+inferMultimodalTypes0[ content_List        ] := inferMultimodalTypes0 /@ content;
+inferMultimodalTypes0[ content_String      ] := <| "Type" -> "Text" , "Data" -> content |>;
+inferMultimodalTypes0[ content_? graphicsQ ] := <| "Type" -> "Image", "Data" -> ensureCompatibleImage @ content |>;
+inferMultimodalTypes0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*ensureCompatibleImage*)
+ensureCompatibleImage // beginDefinition;
+ensureCompatibleImage[ img_ ] /; $useRasterizationCompatibility && ! Image`PossibleImageQ @ img := Rasterize @ img;
+ensureCompatibleImage[ img_ ] := img;
+ensureCompatibleImage // endDefinition;
+
+
+$useRasterizationCompatibility := Enclose[
+    $useRasterizationCompatibility =
+        ! PacletNewerQ[ ConfirmBy[ PacletObject[ "ServiceConnection_OpenAI" ], PacletObjectQ ], "13.3.18" ]
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1037,58 +1084,120 @@ argumentTokenToString // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Tokenization*)
-$tokenizer := gpt2Tokenizer;
+$tokenizer := $gpt2Tokenizer;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getTokenizerName*)
+getTokenizerName // beginDefinition;
+
+getTokenizerName[ KeyValuePattern[ "TokenizerName"|"Tokenizer" -> name_String ] ] :=
+    tokenizerName @ name;
+
+getTokenizerName[ KeyValuePattern[ "Tokenizer" -> Except[ $$unspecified ] ] ] :=
+    "Custom";
+
+getTokenizerName[ KeyValuePattern[ "Model" -> model_ ] ] :=
+    With[ { name = tokenizerName @ toModelName @ model },
+        If[ MemberQ[ $cachedTokenizerNames, name ],
+            name,
+            $fallbackTokenizer
+        ]
+    ];
+
+getTokenizerName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*getTokenizer*)
 getTokenizer // beginDefinition;
 getTokenizer[ KeyValuePattern[ "Tokenizer" -> tokenizer: Except[ $$unspecified ] ] ] := tokenizer;
-getTokenizer[ KeyValuePattern[ "Model" -> model_ ] ] := getTokenizer @ model;
-getTokenizer[ model_ ] := cachedTokenizer @ toModelName @ model;
+getTokenizer[ KeyValuePattern[ "TokenizerName" -> name_String ] ] := cachedTokenizer @ name;
+getTokenizer[ KeyValuePattern[ "Model" -> model_ ] ] := cachedTokenizer @ toModelName @ model;
 getTokenizer // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*cachedTokenizer*)
 cachedTokenizer // beginDefinition;
-cachedTokenizer[ All ] := AssociationMap[ cachedTokenizer, $cachedTokenizerNames ];
-cachedTokenizer[ name_String ] := cachedTokenizer0 @ tokenizerName @ toModelName @ name;
+
+cachedTokenizer[ All ] :=
+    AssociationMap[ cachedTokenizer, $cachedTokenizerNames ];
+
+cachedTokenizer[ id_String ] :=
+    With[ { tokenizer = $cachedTokenizers[ tokenizerName @ toModelName @ id ] },
+        tokenizer /; ! MatchQ[ tokenizer, $$unspecified ]
+    ];
+
+cachedTokenizer[ id_String ] := Enclose[
+    Module[ { name, tokenizer },
+        name      = ConfirmBy[ tokenizerName @ toModelName @ id, StringQ, "Name" ];
+        tokenizer = findTokenizer @ name;
+        If[ MissingQ @ tokenizer,
+            (* Fallback to the GPT-2 tokenizer: *)
+            tokenizer = ConfirmMatch[ $gpt2Tokenizer, Except[ $$unspecified ], "GPT2Tokenizer" ];
+            If[ TrueQ @ Wolfram`ChatbookInternal`$BuildingMX,
+                tokenizer, (* Avoid caching fallback values into MX definitions *)
+                cacheTokenizer[ name, tokenizer ]
+            ],
+            cacheTokenizer[ name, ConfirmMatch[ tokenizer, Except[ $$unspecified ], "Tokenizer" ] ]
+        ]
+    ],
+    throwInternalFailure
+];
+
 cachedTokenizer // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*cacheTokenizer*)
+cacheTokenizer // beginDefinition;
 
-cachedTokenizer0 // beginDefinition;
+cacheTokenizer[ name_String, tokenizer: Except[ $$unspecified ] ] := (
+    $cachedTokenizerNames = Union[ $cachedTokenizerNames, { name } ];
+    $cachedTokenizers[ name ] = tokenizer
+);
 
-cachedTokenizer0[ "chat-bison" ] = ToCharacterCode[ #, "UTF8" ] &;
+cacheTokenizer // endDefinition;
 
-cachedTokenizer0[ "gpt-4-vision" ] :=
-    If[ graphicsQ[ # ],
-        gpt4ImageTokenizer[ # ],
-        cachedTokenizer[ "gpt-4" ][ # ]
-    ] &;
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*findTokenizer*)
+findTokenizer // beginDefinition;
 
-cachedTokenizer0[ model_String ] := Enclose[
+findTokenizer[ model_String ] := Enclose[
     Quiet @ Module[ { name, tokenizer },
         initTools[ ];
         Quiet @ Needs[ "Wolfram`LLMFunctions`Utilities`Tokenization`" -> None ];
         name      = ConfirmBy[ tokens`FindTokenizer @ model, StringQ, "Name" ];
         tokenizer = ConfirmMatch[ tokens`LLMTokenizer[ Method -> name ], Except[ _tokens`LLMTokenizer ], "Tokenizer" ];
         ConfirmMatch[ tokenizer[ "test" ], _List, "TokenizerTest" ];
-        cachedTokenizer0[ model ] = tokenizer
+        tokenizer
     ],
-    gpt2Tokenizer &
+    Missing[ "NotFound" ] &
 ];
 
-cachedTokenizer0 // endDefinition;
+findTokenizer // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Pre-cached small tokenizer functions*)
+$cachedTokenizers[ "chat-bison"   ] = ToCharacterCode[ #, "UTF8" ] &;
+$cachedTokenizers[ "gpt-4-vision" ] = If[ graphicsQ[ # ], gpt4ImageTokenizer[ # ], cachedTokenizer[ "gpt-4" ][ # ] ] &;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*tokenizerName*)
 tokenizerName // beginDefinition;
-tokenizerName[ name_String ] := SelectFirst[ $cachedTokenizerNames, StringContainsQ[ name, # ] &, name ];
-tokenizerName // endDefinition;
 
-$cachedTokenizerNames = { "gpt-4-vision", "gpt-4", "gpt-3.5", "gpt-2", "claude-2", "claude-instant-1", "chat-bison" };
+tokenizerName[ name_String ] :=
+    SelectFirst[
+        ReverseSortBy[ $cachedTokenizerNames, StringLength ],
+        StringContainsQ[ name, #, IgnoreCase -> True ] &,
+        name
+    ];
+
+tokenizerName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1140,13 +1249,19 @@ gpt4ImageTokenCount0 // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Fallback Tokenizer*)
-gpt2Tokenizer := gpt2Tokenizer = ResourceFunction[ "GPTTokenizer" ][ ];
+$gpt2Tokenizer := $gpt2Tokenizer = gpt2Tokenizer[ ];
+
+(* https://resources.wolframcloud.com/FunctionRepository/resources/GPTTokenizer *)
+importResourceFunction[ gpt2Tokenizer, "GPTTokenizer" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
 If[ Wolfram`ChatbookInternal`$BuildingMX,
     cachedTokenizer[ All ];
+    $gpt2Tokenizer;
+    (* This is only needed to generate $gpt2Tokenizer once, so it can be removed to reduce MX file size: *)
+    Remove[ "Wolfram`Chatbook`ResourceFunctions`GPTTokenizer`GPTTokenizer" ];
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)

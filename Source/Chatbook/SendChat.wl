@@ -8,6 +8,7 @@ BeginPackage[ "Wolfram`Chatbook`SendChat`" ];
 
 `$debugLog;
 `makeOutputDingbat;
+`multimodalPacletsAvailable;
 `sendChat;
 `toImageURI;
 `toolsEnabledQ;
@@ -308,10 +309,11 @@ makeHTTPRequest // beginDefinition;
 
 (* cSpell: ignore ENDTOOLCALL *)
 makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association } ] :=
-    Enclose @ Module[ { key, stream, model, tokens, temperature, topP, freqPenalty, presPenalty, data, body },
+    Enclose @ Module[ { key, stream, model, tokens, temperature, topP, freqPenalty, presPenalty, data, body, apiCompletionURL },
 
         key         = ConfirmBy[ Lookup[ settings, "OpenAIKey" ], StringQ ];
         stream      = True;
+        apiCompletionURL = ConfirmBy[ Lookup[ settings, "OpenAIAPICompletionURL" ], StringQ ];
 
         (* model parameters *)
         model       = Lookup[ settings, "Model"           , $DefaultModel ];
@@ -340,7 +342,7 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association }
 
         $lastHTTPParameters = data;
         $lastRequest = HTTPRequest[
-            "https://api.openai.com/v1/chat/completions",
+            apiCompletionURL,
             <|
                 "Headers" -> <|
                     "Content-Type"  -> "application/json",
@@ -575,7 +577,7 @@ ServiceConnectionUtilities`ConnectionInformation["Anthropic", "ProcessedRequests
 
 makeLLMConfiguration[ as_Association ] :=
     $lastLLMConfiguration = LLMConfiguration @ Association[
-        KeyTake[ as, { "Model", "MaxTokens" } ],
+        KeyTake[ as, { "Model", "MaxTokens", "Temperature" } ],
         "StopTokens" -> { "ENDTOOLCALL" }
     ];
 
@@ -671,12 +673,12 @@ withFETasks // endDefinition;
 (*writeChunk*)
 writeChunk // beginDefinition;
 
-writeChunk[ container_, cell_, KeyValuePattern[ "BodyChunkProcessed" -> chunk_String ] ] :=
-    writeChunk0[ container, cell, chunk, chunk ];
-
-writeChunk[ container_, cell_, KeyValuePattern[ "BodyChunkProcessed" -> { chunks___String } ] ] :=
-    With[ { chunk = StringJoin @ chunks },
-        writeChunk0[ container, cell, chunk, chunk ]
+writeChunk[ container_, cell_, KeyValuePattern[ "BodyChunkProcessed" -> chunks_ ] ] :=
+    With[ { chunk = StringJoin @ Select[ Flatten @ { chunks }, StringQ ] },
+        If[ chunk === "",
+            Null,
+            writeChunk0[ container, cell, chunk, chunk ]
+        ]
     ];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
@@ -966,7 +968,7 @@ toolFreeQ // endDefinition;
 toolEvaluation // beginDefinition;
 
 toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
-    Module[ { string, callPos, toolCall, toolResponse, output, messages, newMessages, req, toolID },
+    Module[ { string, callPos, toolCall, toolResponse, output, messages, newMessages, req, toolID, task },
 
         string = ConfirmBy[ container[ "FullContent" ], StringQ, "FullContent" ];
 
@@ -1008,7 +1010,18 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         appendToolResult[ container, output, toolID ];
 
-        $lastTask = chatSubmit[ container, req, cell, settings ]
+        task = $lastTask = chatSubmit[ container, req, cell, settings ];
+
+        addHandlerArguments[ "Task" -> task ];
+
+        CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "CellObject" } ] = cell;
+        CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "Task"       } ] = task;
+
+        If[ FailureQ @ task, throwTop @ writeErrorCell[ cell, task ] ];
+
+        If[ task === $Canceled, StopChat @ cell ];
+
+        task
     ],
     throwInternalFailure[ toolEvaluation[ settings, container, cell, as ], ## ] &
 ];
@@ -1199,7 +1212,14 @@ resolveAutoSettings[ settings_Association ] := resolveAutoSettings0 @ <|
     settings,
     "HandlerFunctions"    -> getHandlerFunctions @ settings,
     "LLMEvaluator"        -> getLLMEvaluator @ settings,
-    "ProcessingFunctions" -> getProcessingFunctions @ settings
+    "ProcessingFunctions" -> getProcessingFunctions @ settings,
+    If[ StringQ @ settings[ "Tokenizer" ],
+        <|
+            "TokenizerName" -> getTokenizerName @ settings,
+            "Tokenizer"     -> Automatic
+        |>,
+        "TokenizerName" -> Automatic
+    ]
 |>;
 
 resolveAutoSettings // endDefinition;
@@ -1227,21 +1247,23 @@ resolveAutoSetting[ settings_, key_ -> value_ ] := <| settings, key -> resolveAu
 resolveAutoSetting // endDefinition;
 
 resolveAutoSetting0 // beginDefinition;
-resolveAutoSetting0[ as_, "ToolsEnabled"              ] := toolsEnabledQ @ as;
 resolveAutoSetting0[ as_, "DynamicAutoFormat"         ] := dynamicAutoFormatQ @ as;
 resolveAutoSetting0[ as_, "EnableLLMServices"         ] := $useLLMServices;
 resolveAutoSetting0[ as_, "HandlerFunctionsKeys"      ] := chatHandlerFunctionsKeys @ as;
 resolveAutoSetting0[ as_, "IncludeHistory"            ] := Automatic;
+resolveAutoSetting0[ as_, "MaxCellStringLength"       ] := chooseMaxCellStringLength @ as;
+resolveAutoSetting0[ as_, "MaxContextTokens"          ] := autoMaxContextTokens @ as;
+resolveAutoSetting0[ as_, "MaxOutputCellStringLength" ] := chooseMaxOutputCellStringLength @ as;
+resolveAutoSetting0[ as_, "MaxTokens"                 ] := autoMaxTokens @ as;
+resolveAutoSetting0[ as_, "Multimodal"                ] := multimodalQ @ as;
 resolveAutoSetting0[ as_, "NotebookWriteMethod"       ] := "PreemptiveLink";
 resolveAutoSetting0[ as_, "ShowMinimized"             ] := Automatic;
 resolveAutoSetting0[ as_, "StreamingOutputMethod"     ] := "PartialDynamic";
-resolveAutoSetting0[ as_, "TrackScrollingWhenPlaced"  ] := scrollOutputQ @ as;
-resolveAutoSetting0[ as_, "Multimodal"                ] := multimodalQ @ as;
-resolveAutoSetting0[ as_, "MaxContextTokens"          ] := autoMaxContextTokens @ as;
-resolveAutoSetting0[ as_, "MaxTokens"                 ] := autoMaxTokens @ as;
-resolveAutoSetting0[ as_, "MaxCellStringLength"       ] := chooseMaxCellStringLength @ as;
-resolveAutoSetting0[ as_, "MaxOutputCellStringLength" ] := chooseMaxOutputCellStringLength @ as;
 resolveAutoSetting0[ as_, "Tokenizer"                 ] := getTokenizer @ as;
+resolveAutoSetting0[ as_, "TokenizerName"             ] := getTokenizerName @ as;
+resolveAutoSetting0[ as_, "ToolCallFrequency"         ] := Automatic;
+resolveAutoSetting0[ as_, "ToolsEnabled"              ] := toolsEnabledQ @ as;
+resolveAutoSetting0[ as_, "TrackScrollingWhenPlaced"  ] := scrollOutputQ @ as;
 resolveAutoSetting0[ as_, key_String                  ] := Automatic;
 resolveAutoSetting0 // endDefinition;
 
@@ -1253,9 +1275,10 @@ $autoSettingKeyDependencies = <|
     "MaxOutputCellStringLength" -> "MaxCellStringLength",
     "MaxTokens"                 -> "Model",
     "Multimodal"                -> { "EnableLLMServices", "Model" },
-    "Tokenizer"                 -> "Model",
+    "Tokenizer"                 -> "TokenizerName",
+    "TokenizerName"             -> "Model",
     "Tools"                     -> { "LLMEvaluator", "ToolsEnabled" },
-    "ToolsEnabled"              -> "Model"
+    "ToolsEnabled"              -> { "Model", "ToolCallFrequency" }
 |>;
 
 (* Sort topologically so dependencies will be satisfied in order: *)
@@ -1353,9 +1376,38 @@ multimodalPacletsAvailable[ ] := multimodalPacletsAvailable[ ] = (
 );
 
 multimodalPacletsAvailable[ llmFunctions_PacletObject? PacletObjectQ, openAI_PacletObject? PacletObjectQ ] :=
-    TrueQ @ And[ PacletNewerQ[ llmFunctions, "1.2.4" ], PacletNewerQ[ openAI, "13.3.18" ] ];
+    TrueQ @ And[
+        PacletNewerQ[ llmFunctions, "1.2.4" ],
+        Or[ PacletNewerQ[ openAI, "13.3.18" ],
+            openAI[ "Version" ] === "13.3.18" && multimodalOpenAIQ @ openAI
+        ]
+    ];
 
 multimodalPacletsAvailable // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*multimodalOpenAIQ*)
+multimodalOpenAIQ // beginDefinition;
+
+multimodalOpenAIQ[ openAI_PacletObject ] := Enclose[
+    Catch @ Module[ { dir, file, multimodal },
+
+        dir  = ConfirmBy[ openAI[ "Location" ], DirectoryQ, "Location" ];
+        file = ConfirmBy[ FileNameJoin @ { dir, "Kernel", "OpenAI.m" }, FileExistsQ, "File" ];
+
+        multimodal = WithCleanup[
+            Quiet @ Close @ file,
+            ConfirmMatch[ Find[ file, "data:image/jpeg;base64," ], _String? StringQ | EndOfFile, "Find" ],
+            Quiet @ Close @ file
+        ];
+
+        StringQ @ multimodal
+    ],
+    throwInternalFailure
+];
+
+multimodalOpenAIQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1391,6 +1443,7 @@ getNamedLLMEvaluator // endDefinition;
 (*toolsEnabledQ*)
 (*FIXME: move to Tools.wl *)
 toolsEnabledQ[ KeyValuePattern[ "ToolsEnabled" -> enabled: True|False ] ] := enabled;
+toolsEnabledQ[ KeyValuePattern[ "ToolCallFrequency" -> freq: (_Integer|_Real)? NonPositive ] ] := False;
 toolsEnabledQ[ KeyValuePattern[ "Model" -> model_ ] ] := toolsEnabledQ @ toModelName @ model;
 toolsEnabledQ[ "chat-bison-001" ] := False;
 toolsEnabledQ[ model_String ] := ! TrueQ @ StringContainsQ[ model, "gpt-3", IgnoreCase -> True ];
@@ -2157,7 +2210,7 @@ makeCompactChatData[
     BaseEncode @ BinarySerialize[
         DeleteCases[
             Association[
-                smallSettings @ KeyDrop[ as, "OpenAIKey" ],
+                smallSettings @ as,
                 "MessageTag" -> tag,
                 "Data" -> Association[
                     data,
@@ -2175,20 +2228,27 @@ makeCompactChatData // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*smallSettings*)
 smallSettings // beginDefinition;
+smallSettings[ as_Association ] := smallSettings0 @ KeyDrop[ as, { "OpenAIKey", "Tokenizer" } ] /. $exprToNameRules;
+smallSettings // endDefinition;
 
-smallSettings[ as_Association ] :=
-    smallSettings[ as, as[ "LLMEvaluator" ] ];
+smallSettings0 // beginDefinition;
 
-smallSettings[ as_, KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] :=
+smallSettings0[ as_Association ] :=
+    smallSettings0[ as, as[ "LLMEvaluator" ] ];
+
+smallSettings0[ as_, KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] :=
     If[ AssociationQ @ GetCachedPersonaData @ name,
         Append[ as, "LLMEvaluator" -> name ],
         as
     ];
 
-smallSettings[ as_, _ ] :=
+smallSettings0[ as_, _ ] :=
     as;
 
-smallSettings // endDefinition;
+smallSettings0 // endDefinition;
+
+
+$exprToNameRules := AssociationMap[ Reverse, $AvailableTools ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

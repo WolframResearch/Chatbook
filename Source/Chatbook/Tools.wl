@@ -113,7 +113,7 @@ $toolBox               = <| |>;
 $toolEvaluationResults = <| |>;
 $toolOptions           = <| |>;
 
-$cloudUnsupportedTools = { "WolframLanguageEvaluator", "DocumentationSearcher" };
+$cloudUnsupportedTools = { "DocumentationSearcher" };
 
 $defaultToolOrder = {
     "DocumentationLookup",
@@ -387,7 +387,7 @@ getCachedToolName // endDefinition;
 (*getToolSelections*)
 getToolSelections // beginDefinition;
 getToolSelections[ as_Association ] := getToolSelections[ as, Lookup[ as, "ToolSelections", <| |> ] ];
-getToolSelections[ as_, selections_Association ] := selections;
+getToolSelections[ as_, selections_Association ] := KeyTake[ selections, Keys @ $AvailableTools ];
 getToolSelections[ as_, Except[ _Association ] ] := <| |>;
 getToolSelections // endDefinition;
 
@@ -396,7 +396,7 @@ getToolSelections // endDefinition;
 (*getToolSelectionTypes*)
 getToolSelectionTypes // beginDefinition;
 getToolSelectionTypes[ as_Association ] := getToolSelectionTypes[ as, Lookup[ as, "ToolSelectionType", <| |> ] ];
-getToolSelectionTypes[ as_, selections_Association ] := selections;
+getToolSelectionTypes[ as_, selections_Association ] := KeyTake[ selections, Keys @ $AvailableTools ];
 getToolSelectionTypes[ as_, Except[ _Association ] ] := <| |>;
 getToolSelectionTypes // endDefinition;
 
@@ -509,7 +509,7 @@ makeToolConfiguration // beginDefinition;
 makeToolConfiguration[ settings_Association ] := Enclose[
     Module[ { tools },
         tools = ConfirmMatch[ DeleteDuplicates @ Flatten @ Values @ $selectedTools, { ___LLMTool }, "SelectedTools" ];
-        $toolConfiguration = LLMConfiguration @ <| "Tools" -> tools, "ToolPrompt" -> $toolPrompt |>
+        $toolConfiguration = LLMConfiguration @ <| "Tools" -> tools, "ToolPrompt" -> makeToolPrompt @ settings |>
     ],
     throwInternalFailure[ makeToolConfiguration @ settings, ## ] &
 ];
@@ -534,37 +534,55 @@ toolRequestParser := toolRequestParser =
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*$toolPrompt*)
-$toolPrompt := TemplateObject[
-    {
-        $toolPre,
-        TemplateSequence[
-            TemplateExpression @ StringTemplate[
-                "Tool Name: `Name`\nDescription: `Description`\nSchema:\n`Schema`\n\n"
+(*makeToolPrompt*)
+makeToolPrompt // beginDefinition;
+
+makeToolPrompt[ settings_Association ] := $lastToolPrompt = TemplateObject[
+    Riffle[
+        DeleteMissing @ {
+            $toolPre,
+            TemplateSequence[
+                TemplateExpression @ TemplateObject[
+                    {
+                        "Tool Name: ",
+                        TemplateSlot[ "Name" ],
+                        "\nDisplay Name: ",
+                        TemplateSlot[ "DisplayName", DefaultValue :> toDisplayToolName @ TemplateSlot[ "Name" ] ],
+                        "\nDescription: ",
+                        TemplateSlot[ "Description" ],
+                        "\nSchema:\n",
+                        TemplateSlot[ "Schema" ],
+                        "\n\n"
+                    },
+                    CombinerFunction  -> StringJoin,
+                    InsertionFunction -> TextString
+                ],
+                TemplateExpression @ Map[
+                    Append[ #[ "Data" ], "Schema" -> ExportString[ #[ "JSONSchema" ], "JSON" ] ] &,
+                    TemplateSlot[ "Tools" ]
+                ]
             ],
-            TemplateExpression @ Map[
-                Append[ #[ "Data" ], "Schema" -> ExportString[ #[ "JSONSchema" ], "JSON" ] ] &,
-                TemplateSlot[ "Tools" ]
-            ]
-        ],
-        $toolPost
-    },
+            $toolPost,
+            $fullExamples,
+            makeToolPreferencePrompt @ settings
+        },
+        "\n\n"
+    ],
     CombinerFunction  -> StringJoin,
     InsertionFunction -> TextString
 ];
+
+makeToolPrompt // endDefinition;
 
 
 $toolPre = "\
 # Tool Instructions
 
 You have access to tools which can be used to do things, fetch data, compute, etc. while you create your response. \
-Each tool takes input as JSON following a JSON schema. Here are the available tools and their associated schemas:
-
-";
+Each tool takes input as JSON following a JSON schema. Here are the available tools and their associated schemas:";
 
 
-$toolPost := "
-
+$toolPost := "\
 To call a tool, write the following at any time during your response:
 
 TOOLCALL: <tool name>
@@ -592,12 +610,49 @@ If the tool fails, use any error message to correct the issue or explain why it 
 NEVER state that a tool cannot be used for a particular task without trying it first. \
 You did not create these tools, so you do not know what they can and cannot do.
 
-" <> $fullExamples;
+You should try to avoid mentioning tools by name in your response and instead speak generally about their function. \
+For example, if there were a number_adder tool, you would instead talk about \"adding numbers\". If you must mention \
+a tool by name, you should use the DisplayName property instead of the tool name.";
 
-(* TODO:
-    Create a preference setting called "ToolCallFrequency" that inserts a prompt here telling the LLM how often it
-    should be making tool calls.
-*)
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*makeToolPreferencePrompt*)
+makeToolPreferencePrompt // beginDefinition;
+
+makeToolPreferencePrompt[ settings_ ] :=
+    makeToolPreferencePrompt[ settings, settings[ "ToolCallFrequency" ] ];
+
+makeToolPreferencePrompt[ settings_, Automatic ] :=
+    Missing[ "NotAvailable" ];
+
+makeToolPreferencePrompt[ settings_, freq_? NumberQ ] :=
+    With[ { key = Round @ Clip[ 5 * freq, { 0, 5 } ] },
+        TemplateApply[
+            $toolPreferencePrompt,
+            <| "Number" -> Round[ freq * 100 ], "Explanation" -> Lookup[ $toolFrequencyExplanations, key, "" ] |>
+        ]
+    ];
+
+makeToolPreferencePrompt // endDefinition;
+
+
+$toolPreferencePrompt = "\
+## User Tool Call Preferences
+
+The user has specified their desired tool calling frequency to be `Number`% with the following instructions:
+
+IMPORTANT
+`Explanation`";
+
+
+$toolFrequencyExplanations = <|
+    0 -> "Only use a tool if explicitly instructed to use tools. Never use tools unless specifically asked to.",
+    1 -> "Avoid using tools unless you think it is necessary.",
+    2 -> "Only use tools if you think it will significantly improve the quality of your response.",
+    3 -> "Use tools whenever it is appropriate to do so.",
+    4 -> "Use tools whenever there's even a slight chance that it could improve the quality of your response (e.g. fact checking).",
+    5 -> "ALWAYS make a tool call in EVERY response, no matter what."
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1211,10 +1266,17 @@ webSearch0 // endDefinition;
 $webSearchResultTemplate := StringTemplate @ StringJoin[
     "Results\n-------\n\n`1`\n\n-------",
     If[ KeyExistsQ[ $selectedTools, "WebFetcher" ],
-        "\n\nUse the web_fetcher tool to get the content of a URL.",
+        $webSearchFetchPrompt,
         ""
     ]
 ];
+
+$webSearchFetchPrompt = "
+
+Important: The snippet text is not enough information to write an informed response! If there are any relevant \
+results, you should now immediately use the web_fetcher tool to retrieve them before responding. Do not ask the user \
+for permission first. If it made sense to use the web_searcher tool, it's also implied that you should use the \
+web_fetcher tool.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1529,11 +1591,11 @@ Basic Examples
 [system]
 Out[n]= Piecewise[...]
 
-![Formatted Result](expression://result-{id})
+![Formatted Result](expression://content-{id})
 
 [assistant]
 The half-order fractional derivative of $x^n$ with respect to $x$ is given by:
-![Fractional Derivative](expression://result-{id})
+![Fractional Derivative](expression://content-{id})
 ";
 
 (* ::**************************************************************************************************************:: *)
@@ -1550,11 +1612,11 @@ Plot sin(x) from -5 to 5
 ], "
 
 [system]
-Out[n]= ![image](attachment://result-{id})
+Out[n]= ![image](attachment://content-{id})
 
 [assistant]
 Here's the plot of $\\sin{x}$ from -5 to 5:
-![Plot](attachment://result-{id})"
+![Plot](attachment://content-{id})"
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -1583,7 +1645,8 @@ The temporary directory is located at C:\\Users\\UserName\\AppData\\Local\\Temp.
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Expression URIs*)
-$$expressionScheme = "attachment"|"expression";
+$expressionSchemes = { "attachment", "audio", "dynamic", "expression", "video" };
+$$expressionScheme = Alternatives @@ $expressionSchemes;
 
 Chatbook::URIUnavailable = "The expression URI `1` is no longer available.";
 
@@ -1751,7 +1814,7 @@ makeExpressionURI[ scheme_, Automatic, expr_ ] :=
     makeExpressionURI[ scheme, expressionURILabel @ expr, Unevaluated @ expr ];
 
 makeExpressionURI[ scheme_, label_, expr_ ] :=
-    With[ { id = "result-" <> Hash[ Unevaluated @ expr, Automatic, "HexString" ] },
+    With[ { id = "content-" <> Hash[ Unevaluated @ expr, Automatic, "HexString" ] },
         $attachments[ id ] = HoldComplete @ expr;
         "![" <> TextString @ label <> "](" <> TextString @ scheme <> "://" <> id <> ")"
     ];
@@ -1763,9 +1826,31 @@ makeExpressionURI // endDefinition;
 (*expressionURILabel*)
 expressionURILabel // beginDefinition;
 expressionURILabel // Attributes = { HoldAllComplete };
-expressionURILabel[ _Graphics|_Graphics3D|_Image|_Image3D|_Legended|_RawBoxes ] := "image";
-expressionURILabel[ _List|_Association ] := "data";
-expressionURILabel[ _ ] := "result";
+
+(* Audio *)
+expressionURILabel[ Audio[ path_String, ___ ] ] := "Audio Player: " <> path;
+expressionURILabel[ Audio[ File[ path_String ], ___ ] ] := "Audio Player: " <> path;
+expressionURILabel[ _Audio ] := "Embedded Audio Player";
+
+(* Video *)
+expressionURILabel[ Video[ path_String, ___ ] ] := "Video Player: " <> path;
+expressionURILabel[ Video[ File[ path_String ], ___ ] ] := "Video Player: " <> path;
+expressionURILabel[ _Video ] := "Embedded Video Player";
+
+(* Dynamic *)
+expressionURILabel[ _Manipulate ] := "Embedded Interactive Content";
+
+(* Graphics *)
+expressionURILabel[ _Graph|_Graph3D ] := "Graph";
+expressionURILabel[ _Tree ] := "Tree";
+expressionURILabel[ _Graphics|_Graphics3D|_Image|_Image3D|_Legended|_RawBoxes ] := "Image";
+
+(* Data *)
+expressionURILabel[ _List|_Association ] := "Data";
+
+(* Other *)
+expressionURILabel[ _ ] := "Content";
+
 expressionURILabel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1773,7 +1858,10 @@ expressionURILabel // endDefinition;
 (*expressionURIScheme*)
 expressionURIScheme // beginDefinition;
 expressionURIScheme // Attributes = { HoldAllComplete };
-expressionURIScheme[ _Graphics|_Graphics3D|_Image|_Image3D|_Legended|_RawBoxes ] := "attachment";
+expressionURIScheme[ _Video ] := (needsBasePrompt[ "SpecialURIVideo" ]; "video");
+expressionURIScheme[ _Audio ] := (needsBasePrompt[ "SpecialURIAudio" ]; "audio");
+expressionURIScheme[ _Manipulate|_DynamicModule|_Dynamic ] := (needsBasePrompt[ "SpecialURIDynamic" ]; "dynamic");
+expressionURIScheme[ _Graph|_Graph3D|_Graphics|_Graphics3D|_Image|_Image3D|_Legended|_Tree|_RawBoxes ] := "attachment";
 expressionURIScheme[ _ ] := "expression";
 expressionURIScheme // endDefinition;
 

@@ -336,15 +336,19 @@ uriData // endDefinition;
 exportDataURI // beginDefinition;
 
 exportDataURI[ data_ ] :=
-    exportDataURI[ data, guessExpressionMimeType @ data ];
+    With[ { mime = guessExpressionMimeType @ data },
+        exportDataURI[ data, mimeTypeToFormat @ mime, mime ]
+    ];
 
-exportDataURI[ data_, fmt_String ] := Enclose[
-    Module[ { mime, base64 },
-        mime   = ConfirmBy[ formatToMIMEType @ fmt, StringQ, "MIMEType" ];
+exportDataURI[ data_, fmt_String ] :=
+    exportDataURI[ data, fmt, formatToMIMEType @ fmt ];
+
+exportDataURI[ data_, fmt_String, mime_String ] := Enclose[
+    Module[ { base64 },
         base64 = ConfirmBy[ ExportString[ data, { "Base64", fmt } ], StringQ, "Base64" ];
         "data:" <> mime <> ";base64," <> StringDelete[ base64, "\n" ]
     ],
-    throwInternalFailure[ exportDataURI[ data, fmt ], ## ] &
+    throwInternalFailure
 ];
 
 exportDataURI // endDefinition;
@@ -353,10 +357,11 @@ exportDataURI // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*guessExpressionMimeType*)
 guessExpressionMimeType // beginDefinition;
-guessExpressionMimeType[ _? image2DQ      ] := "image/jpeg";
-guessExpressionMimeType[ _? graphicsQ     ] := "image/png";
-guessExpressionMimeType[ _String? StringQ ] := "text/plain";
-guessExpressionMimeType[ ___              ] := "application/octet-stream";
+guessExpressionMimeType[ _? image2DQ            ] := "image/jpeg";
+guessExpressionMimeType[ _? graphicsQ           ] := "image/png";
+guessExpressionMimeType[ _String? StringQ       ] := "text/plain";
+guessExpressionMimeType[ _ByteArray? ByteArrayQ ] := "application/octet-stream";
+guessExpressionMimeType[ ___                    ] := "application/vnd.wolfram.wl";
 guessExpressionMimeType // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
