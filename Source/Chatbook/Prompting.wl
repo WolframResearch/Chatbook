@@ -35,6 +35,10 @@ $basePromptOrder = {
     "Checkboxes",
     "CheckboxesIndeterminate",
     "ConversionFormatting",
+    "SpecialURI",
+    "SpecialURIAudio",
+    "SpecialURIVideo",
+    "SpecialURIDynamic",
     "VisibleUserInput",
     "TrivialCode",
     "Packages",
@@ -51,6 +55,7 @@ $basePromptClasses = <|
     "Math"              -> { "MathExpressions" },
     "Formatting"        -> { "CodeBlocks", "MathExpressions", "EscapedCharacters" },
     "MessageConversion" -> { "ConversionLargeOutputs", "ConversionGraphics", "ConversionFormatting" },
+    "SpecialURIs"       -> { "SpecialURIAudio", "SpecialURIVideo", "SpecialURIDynamic" },
     "All"               -> $basePromptOrder
 |>;
 
@@ -71,6 +76,10 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "ConversionGraphics"           -> { "MessageConversionHeader" },
     "MarkdownImageBox"             -> { "MessageConversionHeader" },
     "ConversionFormatting"         -> { "MessageConversionHeader" },
+    "SpecialURI"                   -> { },
+    "SpecialURIAudio"              -> { "SpecialURI" },
+    "SpecialURIVideo"              -> { "SpecialURI" },
+    "SpecialURIDynamic"            -> { "SpecialURI" },
     "VisibleUserInput"             -> { },
     "TrivialCode"                  -> { },
     "WolframSymbolCapitalization"  -> { },
@@ -158,6 +167,19 @@ $basePromptComponents[ "ConversionFormatting" ] = "\
 	* Cell formatting is removed when converting to text, so \
 ``Cell[TextData[{StyleBox[\"Styled\", FontSlant -> \"Italic\"], \" message\"}], \"ChatInput\"]`` \
 becomes ``Styled message``.";
+
+$basePromptComponents[ "SpecialURI" ] = "\
+* You will occasionally see markdown links with special URI schemes, e.g. ![label](scheme://content-id) that represent \
+interactive interface elements. You can use these in your responses to display the same elements to the user.";
+
+$basePromptComponents[ "SpecialURIAudio" ] = "\
+    * ![label](audio://content-id) represents an interactive audio player.";
+
+$basePromptComponents[ "SpecialURIVideo" ] = "\
+    * ![label](video://content-id) represents an interactive video player.";
+
+$basePromptComponents[ "SpecialURIDynamic" ] = "\
+    * ![label](dynamic://content-id) represents an embedded dynamic UI.";
 
 $basePromptComponents[ "VisibleUserInput" ] = "\
 * The user can still see their input, so there's no need to repeat it in your response";
