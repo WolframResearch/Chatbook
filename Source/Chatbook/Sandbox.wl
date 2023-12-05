@@ -27,13 +27,19 @@ Needs[ "Wolfram`Chatbook`Utils`"      ];
 $SandboxKernel             = None;
 $sandboxPingTimeout       := toolOptionValue[ "WolframLanguageEvaluator", "PingTimeConstraint"       ];
 $sandboxEvaluationTimeout := toolOptionValue[ "WolframLanguageEvaluator", "EvaluationTimeConstraint" ];
-
+$cloudEvaluatorLocation    = "/Chatbook/Tools/WolframLanguageEvaluator/Evaluate";
+$cloudLineNumber           = 1;
 
 (* Tests for expressions that lose their initialized status when sending over a link: *)
 $initializationTests = HoldComplete[
+    AudioQ,
+    BoundaryMeshRegionQ,
     DateObjectQ,
     GraphQ,
-    SparseArrayQ
+    MeshRegionQ,
+    SparseArrayQ,
+    TreeQ,
+    VideoQ
 ];
 
 
@@ -231,9 +237,10 @@ sandboxEvaluate // beginDefinition;
 sandboxEvaluate[ KeyValuePattern[ "code" -> code_ ] ] := sandboxEvaluate @ code;
 sandboxEvaluate[ code_String ] := sandboxEvaluate @ toSandboxExpression @ code;
 sandboxEvaluate[ HoldComplete[ xs__, x_ ] ] := sandboxEvaluate @ HoldComplete @ CompoundExpression[ xs, x ];
+sandboxEvaluate[ HoldComplete[ evaluation_ ] ] /; $CloudEvaluation := cloudSandboxEvaluate @ HoldComplete @ evaluation;
 
 sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
-    Module[ { kernel, null, packets, $timedOut, results, flat, initialized },
+    Module[ { kernel, null, packets, $sandboxTag, $timedOut, results, flat, initialized },
 
         $lastSandboxEvaluation = HoldComplete @ evaluation;
 
@@ -241,16 +248,27 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
 
         ConfirmMatch[ linkWriteEvaluation[ kernel, evaluation ], Null, "LinkWriteEvaluation" ];
 
-        { null, { packets } } = Reap[
-            TimeConstrained[
-                While[ ! MatchQ[ Sow @ LinkRead @ kernel, _ReturnExpressionPacket ] ],
-                2 * $sandboxEvaluationTimeout,
-                $timedOut
-            ]
+        { null, { packets } } = ConfirmMatch[
+            Reap[
+                Sow[ Nothing, $sandboxTag ];
+                TimeConstrained[
+                    While[ ! MatchQ[ Sow[ LinkRead @ kernel, $sandboxTag ], _ReturnExpressionPacket ] ],
+                    2 * $sandboxEvaluationTimeout,
+                    $timedOut
+                ],
+                $sandboxTag
+            ],
+            { _, { _List } },
+            "LinkRead"
         ];
 
         If[ null === $timedOut,
-            AppendTo[ packets, ReturnExpressionPacket @ HoldComplete @ $TimedOut ]
+            AppendTo[
+                packets,
+                With[ { fail = timeConstraintFailure @ $sandboxEvaluationTimeout },
+                    ReturnExpressionPacket @ HoldComplete @ fail
+                ]
+            ]
         ];
 
         results = Cases[ packets, ReturnExpressionPacket[ expr_ ] :> expr ];
@@ -274,6 +292,138 @@ sandboxEvaluate // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*cloudSandboxEvaluate*)
+cloudSandboxEvaluate // beginDefinition;
+
+cloudSandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
+    Catch @ Module[ { api, held, wxf, response, result, packets, initialized },
+
+        $lastSandboxEvaluation = HoldComplete @ evaluation;
+
+        api = ConfirmMatch[ getCloudEvaluatorAPI[ ], _CloudObject|_Failure, "CloudEvaluator" ];
+        If[ FailureQ @ api, Throw @ api ];
+        held = ConfirmMatch[ makeCloudEvaluation @ evaluation, HoldComplete[ _ ], "Evaluation" ];
+        wxf = ConfirmBy[ BinarySerialize[ held, PerformanceGoal -> "Size" ], ByteArrayQ, "WXF" ];
+
+        response = ConfirmMatch[
+            URLExecute[
+                api,
+                { "Evaluation" -> BaseEncode @ wxf, "TimeConstraint" -> $sandboxEvaluationTimeout },
+                "WXF"
+            ],
+            KeyValuePattern[ (Rule|RuleDelayed)[ "Result", _HoldComplete ] ] | _Failure,
+            "Response"
+        ];
+
+        If[ FailureQ @ response, Throw @ response ];
+
+        result = ConfirmMatch[ Lookup[ response, "Result" ], _HoldComplete, "Result" ];
+        packets = { }; (* TODO: create packets from messages and print outputs *)
+        initialized = initializeExpressions @ result;
+
+        $lastSandboxResult = <|
+            "String"  -> sandboxResultString[ initialized, packets ],
+            "Result"  -> sandboxResult @ initialized,
+            "Packets" -> packets
+        |>
+    ],
+    throwInternalFailure
+];
+
+cloudSandboxEvaluate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeCloudEvaluation*)
+makeCloudEvaluation // beginDefinition;
+makeCloudEvaluation // Attributes = { HoldAllComplete };
+
+makeCloudEvaluation[ evaluation_ ] :=
+    With[ { line = $cloudLineNumber++ },
+        makeLinkWriteEvaluation[ $Line = line; evaluation ]
+    ];
+
+makeCloudEvaluation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getCloudEvaluatorAPI*)
+getCloudEvaluatorAPI // beginDefinition;
+
+getCloudEvaluatorAPI[ ] :=
+    getCloudEvaluatorAPI @ CloudObject @ $cloudEvaluatorLocation;
+
+getCloudEvaluatorAPI[ target_CloudObject ] :=
+    Module[ { deployed },
+        deployed = deployCloudEvaluator @ target;
+        If[ validCloudEvaluatorQ @ deployed,
+            getCloudEvaluatorAPI[ ] = deployed,
+            getCloudEvaluatorAPI[ ] = Failure[
+                "CloudEvaluatorUnavailable",
+                <|
+                    "MessageTemplate"   -> "No cloud evaluator available.",
+                    "MessageParameters" -> { }
+                |>
+            ]
+        ]
+    ];
+
+getCloudEvaluatorAPI // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*validCloudEvaluatorQ*)
+validCloudEvaluatorQ // beginDefinition;
+
+validCloudEvaluatorQ[ obj_CloudObject ] := MatchQ[
+    URLExecute[ obj, { "Evaluation" -> BaseEncode @ BinarySerialize @ HoldComplete[ 1 + 1 ] }, "WXF" ],
+    KeyValuePattern[ (Rule|RuleDelayed)[ "Result", HoldComplete[ 2 ] ] ]
+];
+
+validCloudEvaluatorQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*deployCloudEvaluator*)
+deployCloudEvaluator // beginDefinition;
+
+deployCloudEvaluator[ target_CloudObject ] := With[ { messages = $messageOverrides },
+    CloudDeploy[
+        APIFunction[
+            { "Evaluation" -> "String", "TimeConstraint" -> "Number" -> $sandboxEvaluationTimeout },
+            Function[
+                ReleaseHold @ messages;
+                BinarySerialize[
+                    EvaluationData[
+                        HoldComplete @@ {
+                            TimeConstrained[
+                                BinaryDeserialize[ BaseDecode[ #Evaluation ], ReleaseHold ],
+                                #TimeConstraint,
+                                Failure[
+                                    "EvaluationTimeExceeded",
+                                    <|
+                                        "MessageTemplate"   -> "Evaluation exceeded the `1` second time limit.",
+                                        "MessageParameters" -> { #TimeConstraint }
+                                    |>
+                                ]
+                            ]
+                        }
+                    ],
+                    PerformanceGoal -> "Size"
+                ]
+            ],
+            "Binary"
+        ],
+        target,
+        EvaluationPrivileges -> None,
+        Permissions          -> "Private"
+    ]
+];
+
+deployCloudEvaluator // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*initializeExpressions*)
 initializeExpressions // beginDefinition;
 
@@ -281,6 +431,9 @@ initializeExpressions[ flat: HoldComplete @ Association @ OrderlessPatternSequen
     With[ { pos = { 1, Key[ "Result" ], ## } & @@@ pos0 },
         ReplacePart[ flat, Thread[ pos -> Extract[ flat, pos ] ] ]
     ];
+
+initializeExpressions[ failed: HoldComplete[ _Failure ] ] :=
+    failed;
 
 initializeExpressions // endDefinition;
 
@@ -524,6 +677,14 @@ sandboxResultString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*initializedQ*)
+initializedQ // beginDefinition;
+initializedQ // Attributes = { HoldAllComplete };
+initializedQ[ expr_ ] := $initializationTest @ Unevaluated @ expr;
+initializedQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*simpleResultQ*)
 simpleResultQ // beginDefinition;
 simpleResultQ // Attributes = { HoldAllComplete };
@@ -535,7 +696,7 @@ simpleResultQ // endDefinition;
 (*fancyResultQ*)
 fancyResultQ // beginDefinition;
 fancyResultQ // Attributes = { HoldAllComplete };
-fancyResultQ[ _Manipulate|_DynamicModule ] := True;
+fancyResultQ[ _Manipulate|_DynamicModule|_Video|_Audio|_Tree ] := True;
 fancyResultQ[ gfx_ ] := graphicsQ @ Unevaluated @ gfx;
 fancyResultQ // endDefinition;
 
