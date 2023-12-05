@@ -76,7 +76,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "ConversionGraphics"           -> { "MessageConversionHeader" },
     "MarkdownImageBox"             -> { "MessageConversionHeader" },
     "ConversionFormatting"         -> { "MessageConversionHeader" },
-    "SpecialURIs"                  -> { },
+    "SpecialURI"                   -> { },
     "SpecialURIAudio"              -> { "SpecialURI" },
     "SpecialURIVideo"              -> { "SpecialURI" },
     "SpecialURIDynamic"            -> { "SpecialURI" },
