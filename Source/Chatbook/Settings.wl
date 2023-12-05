@@ -66,15 +66,14 @@ $defaultChatSettings = <|
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Argument Patterns*)
-$$feObj = _FrontEndObject | $FrontEndSession | _NotebookObject | _CellObject | _BoxObject;
 $$validRootSettingValue = Inherited | _? (AssociationQ@*Association);
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Defaults*)
-$ChatPost      = None;
-$ChatPre       = None;
-$DefaultModel := If[ $VersionNumber >= 13.3, "gpt-4", "gpt-3.5-turbo" ];
+$ChatPost     = None;
+$ChatPre      = None;
+$DefaultModel = <| "Service" -> "OpenAI", "Name" -> "gpt-4" |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

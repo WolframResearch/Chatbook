@@ -9,7 +9,9 @@ HoldComplete[
     `$enableLLMServices;
     `$servicesLoaded;
     `$useLLMServices;
-    `getLLMServicesModelList;
+    `getAvailableServiceNames;
+    `getServiceModelList;
+    `modelListCachedQ;
 ];
 
 Begin[ "`Private`" ];
@@ -35,6 +37,13 @@ $llmServicesAvailable := $llmServicesAvailable = (
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Available Services*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*modelListCachedQ*)
+modelListCachedQ // beginDefinition;
+modelListCachedQ[ name_String ] := False;
+modelListCachedQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -84,7 +93,10 @@ getServiceModelList[ "OpenAI", info_, models: { "gpt-4", "gpt-3.5-turbo-0613" } 
     ];
 
 getServiceModelList[ name_String, info_, models: { ___String } ] :=
-    getServiceModelList[ name ] = <| "Service" -> name, "Name" -> #1 |> & /@ models;
+    WithCleanup[
+        getServiceModelList[ name ] = standardizeModelData[ name, <| "Service" -> name, "Name" -> #1 |> & /@ models ],
+        modelListCachedQ[ name ] = True
+    ];
 
 getServiceModelList // endDefinition;
 
@@ -127,11 +139,11 @@ getAvailableServices0[ services0_Association? AssociationQ ] := Enclose[
     Catch @ Module[ { services, withServiceName, withModels },
 
         services        = Replace[ services0, <| |> :> $fallBackServices ];
-        withServiceName = Association @ KeyValueMap[ #1 -> <| "ServiceName" -> #1, #2 |> &, services ];
+        withServiceName = Association @ KeyValueMap[ #1 -> <| "Service" -> #1, #2 |> &, services ];
 
         withModels = Replace[
             withServiceName,
-            as: KeyValuePattern @ { "ServiceName" -> service_String } :>
+            as: KeyValuePattern @ { "Service" -> service_String } :>
                 RuleCondition @ With[ { models = getServiceModelList @ service },
                     If[ ListQ @ models, (* workaround for KeyValuePattern bug *)
                         <| as, "Models" -> standardizeModelData[ service, models ] |>,
