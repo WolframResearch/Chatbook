@@ -32,9 +32,14 @@ $cloudLineNumber           = 1;
 
 (* Tests for expressions that lose their initialized status when sending over a link: *)
 $initializationTests = HoldComplete[
+    AudioQ,
+    BoundaryMeshRegionQ,
     DateObjectQ,
     GraphQ,
-    SparseArrayQ
+    MeshRegionQ,
+    SparseArrayQ,
+    TreeQ,
+    VideoQ
 ];
 
 
@@ -672,6 +677,14 @@ sandboxResultString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*initializedQ*)
+initializedQ // beginDefinition;
+initializedQ // Attributes = { HoldAllComplete };
+initializedQ[ expr_ ] := $initializationTest @ Unevaluated @ expr;
+initializedQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*simpleResultQ*)
 simpleResultQ // beginDefinition;
 simpleResultQ // Attributes = { HoldAllComplete };
@@ -683,7 +696,7 @@ simpleResultQ // endDefinition;
 (*fancyResultQ*)
 fancyResultQ // beginDefinition;
 fancyResultQ // Attributes = { HoldAllComplete };
-fancyResultQ[ _Manipulate|_DynamicModule ] := True;
+fancyResultQ[ _Manipulate|_DynamicModule|_Video|_Audio|_Tree ] := True;
 fancyResultQ[ gfx_ ] := graphicsQ @ Unevaluated @ gfx;
 fancyResultQ // endDefinition;
 
