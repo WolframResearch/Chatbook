@@ -26,7 +26,9 @@ $ContextAliases[ "llm`" ] = "LLMServices`";
 (* ::Section::Closed:: *)
 (*Configuration*)
 $enableLLMServices = Automatic;
-$servicesLoaded   := False;
+$modelListCache    = <| |>;
+$modelSortOrder    = { "Snapshot", "FineTuned", "DisplayName" };
+$servicesLoaded    = False;
 $useLLMServices   := MatchQ[ $enableLLMServices, Automatic|True ] && TrueQ @ $llmServicesAvailable;
 
 $llmServicesAvailable := $llmServicesAvailable = (
@@ -42,7 +44,7 @@ $llmServicesAvailable := $llmServicesAvailable = (
 (* ::Subsection::Closed:: *)
 (*modelListCachedQ*)
 modelListCachedQ // beginDefinition;
-modelListCachedQ[ name_String ] := False;
+modelListCachedQ[ service_String ] := ListQ @ Lookup[ $modelListCache, service ];
 modelListCachedQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -78,13 +80,17 @@ getAvailableServiceNames0 // endDefinition;
 (*getServiceModels*)
 getServiceModelList // beginDefinition;
 
-getServiceModelList[ name_String ] :=
-    getServiceModelList[ name, llm`LLMServiceInformation[ llm`ChatSubmit, name ] ];
+getServiceModelList[ service_String ] :=
+    Lookup[
+        $modelListCache,
+        service,
+        getServiceModelList[ service, llm`LLMServiceInformation[ llm`ChatSubmit, service ] ]
+    ];
 
-getServiceModelList[ name_String, info_Association ] :=
-    getServiceModelList[ name, info, getModelListQuietly @ info ];
+getServiceModelList[ service_String, info_Association ] :=
+    getServiceModelList[ service, info, getModelListQuietly @ info ];
 
-getServiceModelList[ name_, info_, Missing[ "NotConnected" ] ] :=
+getServiceModelList[ service_, info_, Missing[ "NotConnected" ] ] :=
     Missing[ "NotConnected" ];
 
 getServiceModelList[ "OpenAI", info_, models: { "gpt-4", "gpt-3.5-turbo-0613" } ] :=
@@ -92,11 +98,15 @@ getServiceModelList[ "OpenAI", info_, models: { "gpt-4", "gpt-3.5-turbo-0613" } 
         getServiceModelList[ "OpenAI", info, full ] /; MatchQ[ full, Except[ models, { __String } ] ]
     ];
 
-getServiceModelList[ name_String, info_, models: { ___String } ] :=
-    WithCleanup[
-        getServiceModelList[ name ] = standardizeModelData[ name, <| "Service" -> name, "Name" -> #1 |> & /@ models ],
-        modelListCachedQ[ name ] = True
-    ];
+getServiceModelList[ service_String, info_, models0_List ] := Enclose[
+    Module[ { models, ordering, sorted },
+        models   = ConfirmMatch[ standardizeModelData[ service, models0 ], { ___Association }, "Models" ];
+        ordering = Lookup /@ ConfirmMatch[ $modelSortOrder, { __String }, "ModelSortOrder" ];
+        sorted   = SortBy[ models, ordering ];
+        $modelListCache[ service ] = sorted
+    ],
+    throwInternalFailure
+];
 
 getServiceModelList // endDefinition;
 
