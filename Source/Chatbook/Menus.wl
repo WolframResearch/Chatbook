@@ -193,7 +193,7 @@ determineAttachmentPosition // endDefinition;
 
 quadrant // beginDefinition;
 quadrant[ None ] := None;
-quadrant[ { x_? NumberQ, y_? NumberQ } ] := quadrant[ TrueQ[ x >= 0.67 ], TrueQ[ y >= 0.67 ] ];
+quadrant[ { x_? NumberQ, y_? NumberQ } ] := quadrant[ TrueQ[ x >= 0.5 ], TrueQ[ y >= 0.67 ] ];
 quadrant[ True , True  ] := { Right, Bottom };
 quadrant[ True , False ] := { Right, Top    };
 quadrant[ False, True  ] := { Left , Bottom };
