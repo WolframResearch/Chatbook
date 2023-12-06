@@ -17,9 +17,10 @@ BeginPackage[ "Wolfram`Chatbook`Models`" ];
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"          ];
-Needs[ "Wolfram`Chatbook`Common`"   ];
 Needs[ "Wolfram`Chatbook`Actions`"  ];
+Needs[ "Wolfram`Chatbook`Common`"   ];
 Needs[ "Wolfram`Chatbook`Dynamics`" ];
+Needs[ "Wolfram`Chatbook`UI`"       ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -267,13 +268,31 @@ fineTunedModelName // endDefinition;
 (* ::Subsection::Closed:: *)
 (*modelIcon*)
 modelIcon // beginDefinition;
-modelIcon[ KeyValuePattern[ "Icon" -> icon_ ] ] := icon;
-modelIcon[ KeyValuePattern[ "Name" -> name_String ] ] := modelIcon @ name;
-modelIcon[ name0_String ] := With[ { name = toModelName @ name0 }, modelIcon @ name /; name =!= name0 ];
-modelIcon[ name_String ] /; StringStartsQ[ name, "ft:" ] := modelIcon @ StringDelete[ name, StartOfString~~"ft:" ];
-modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-3.5" ] := RawBoxes @ TemplateBox[ { }, "ModelGPT35" ];
-modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-4" ] := RawBoxes @ TemplateBox[ { }, "ModelGPT4" ];
-modelIcon[ name_String ] := $defaultModelIcon;
+
+modelIcon[ KeyValuePattern[ "Icon" -> icon_ ] ] :=
+    icon;
+
+modelIcon[ KeyValuePattern @ { "Name" -> name_String, "Service" -> service_String } ] :=
+    Replace[ modelIcon @ name, $defaultModelIcon :> serviceIcon @ service ];
+
+modelIcon[ KeyValuePattern[ "Name" -> name_String ] ] :=
+    modelIcon @ name;
+
+modelIcon[ name0_String ] :=
+    With[ { name = toModelName @ name0 }, modelIcon @ name /; name =!= name0 ];
+
+modelIcon[ name_String ] /; StringStartsQ[ name, "ft:" ] :=
+    modelIcon @ StringDelete[ name, StartOfString~~"ft:" ];
+
+modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-3.5" ] :=
+    RawBoxes @ TemplateBox[ { }, "ModelGPT35" ];
+
+modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-4" ] :=
+    RawBoxes @ TemplateBox[ { }, "ModelGPT4" ];
+
+modelIcon[ name_String ] :=
+    $defaultModelIcon;
+
 modelIcon // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
