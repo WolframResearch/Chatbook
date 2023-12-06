@@ -142,6 +142,9 @@ toModelName // beginDefinition;
 toModelName[ KeyValuePattern @ { "Service" -> service_, "Name"|"Model" -> model_ } ] :=
     toModelName @ { service, model };
 
+toModelName[ KeyValuePattern[ "Name"|"Model" -> model_ ] ] :=
+    toModelName @ model;
+
 toModelName[ { service_String, name_String } ] := toModelName @ name;
 
 toModelName[ name_String? StringQ ] := toModelName[ name ] =
@@ -284,19 +287,22 @@ standardizeModelData[ list_List ] :=
 standardizeModelData[ name_String ] := standardizeModelData[ name ] =
     standardizeModelData @ <| "Name" -> name |>;
 
-standardizeModelData[ model: KeyValuePattern @ { "Name" -> _String, "DisplayName" -> _String, "Icon" -> _ } ] :=
-    Association @ model;
-
-standardizeModelData[ model_Association? AssociationQ ] :=
+standardizeModelData[ model: KeyValuePattern @ { } ] :=
     standardizeModelData[ model ] = <|
-        "Name"        -> modelName @ model,
         "DisplayName" -> modelDisplayName @ model,
+        "FineTuned"   -> fineTunedModelQ @ model,
         "Icon"        -> modelIcon @ model,
+        "Multimodal"  -> multimodalModelQ @ model,
+        "Name"        -> modelName @ model,
+        "Snapshot"    -> snapshotModelQ @ model,
         model
     |>;
 
 standardizeModelData[ service_String, models_List ] :=
     standardizeModelData[ service, # ] & /@ models;
+
+standardizeModelData[ service_String, model_String ] :=
+    standardizeModelData @ <| "Service" -> service, "Name" -> model |>;
 
 standardizeModelData[ service_String, model_ ] :=
     With[ { as = standardizeModelData @ model },
