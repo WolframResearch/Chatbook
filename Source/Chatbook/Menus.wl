@@ -12,6 +12,7 @@ BeginPackage[ "Wolfram`Chatbook`Menus`" ];
 HoldComplete[
     `AttachSubmenu;
     `MakeMenu;
+    `menuMagnification;
     `removeChatMenus;
 ];
 
@@ -74,10 +75,10 @@ MakeMenu // endDefinition;
 (*menuItem*)
 menuItem // beginDefinition;
 
-menuItem[ spec: KeyValuePattern[ "Content" -> content_ ] ] :=
-    menuItem @ <| spec, "Content" :> content |>;
+menuItem[ spec: KeyValuePattern[ "Data" -> content_ ] ] :=
+    menuItem @ <| spec, "Data" :> content |>;
 
-menuItem[ spec: KeyValuePattern @ { "Type" -> "Submenu", "Content" :> content_ } ] :=
+menuItem[ spec: KeyValuePattern @ { "Type" -> "Submenu", "Data" :> content_ } ] :=
     EventHandler[
         menuItem[
             Lookup[ spec, "Icon", Spacer[ 0 ] ],
@@ -181,6 +182,15 @@ AttachSubmenu[ parentMenu_, expr: Except[ _Cell ] ] :=
 
 AttachSubmenu[ expr_ ] :=
     AttachSubmenu[ EvaluationCell[ ], expr ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*menuMagnification*)
+menuMagnification // beginDefinition;
+menuMagnification[ obj_ ] := menuMagnification[ $OperatingSystem, AbsoluteCurrentValue[ obj, Magnification ] ];
+menuMagnification[ "Windows", magnification_? NumberQ ] := Min[ magnification * 0.75, 1.5 ];
+menuMagnification[ _, magnification_ ] := magnification;
+menuMagnification // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

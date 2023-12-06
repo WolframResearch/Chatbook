@@ -26,6 +26,7 @@ CreateToolbarContent[] is called by the NotebookToolbar to generate the content 
 `getPersonaMenuIcon;
 `personaDisplayName;
 `resizeMenuIcon;
+`serviceIcon;
 
 
 Begin["`Private`"]
@@ -106,6 +107,7 @@ $cloudModelChooser := PopupMenu[
 		{modelName, settings} |-> (
 			modelName -> Grid[{{getModelMenuIcon[settings], modelDisplayName[modelName]}}]
 		),
+        (* FIXME: use the new system *)
 		getModelsMenuItems[]
 	],
 	ImageSize -> {Automatic, 30},
@@ -1223,16 +1225,16 @@ makeChatActionMenuContent[
 			{alignedMenuIcon[getIcon["ToolManagerRepository"]], "Add & Manage Tools\[Ellipsis]", "ToolManage"},
 			Delimiter,
             <|
-                "Label"   -> "Models",
-                "Type"    -> "Submenu",
-                "Icon"    -> alignedMenuIcon @ getIcon[ "ChatBlockSettingsMenuIcon" ],
-                "Content" :> createServiceMenu[ targetObj, ParentCell @ EvaluationCell[ ] ]
+                "Label" -> "Models",
+                "Type"  -> "Submenu",
+                "Icon"  -> alignedMenuIcon @ getIcon[ "ChatBlockSettingsMenuIcon" ],
+                "Data"  :> createServiceMenu[ targetObj, ParentCell @ EvaluationCell[ ] ]
             |>,
             <|
-                "Label"   -> "Advanced Settings",
-                "Type"    -> "Submenu",
-                "Icon"    -> alignedMenuIcon @ getIcon[ "AdvancedSettings" ],
-                "Content" -> advancedSettingsMenu
+                "Label" -> "Advanced Settings",
+                "Type"  -> "Submenu",
+                "Icon"  -> alignedMenuIcon @ getIcon[ "AdvancedSettings" ],
+                "Data"  -> advancedSettingsMenu
             |>
         }
     ];
@@ -1240,19 +1242,37 @@ makeChatActionMenuContent[
     Replace[
         format,
         {
-            "List" :> menuItems
-            ,
-            "Expression" :> MakeMenu[ menuItems, GrayLevel[ 0.85 ], $chatMenuWidth ]
-            ,
-            "Cell"|Automatic :> Cell[
-                BoxData @ ToBoxes @ MakeMenu[ menuItems, GrayLevel[ 0.85 ], $chatMenuWidth ],
-                "AttachedChatMenu"
-            ]
-            ,
-            expr_ :> throwInternalFailure[ makeChatActionMenuContent, expr ]
+            "List"       :> menuItems,
+            "Expression" :> makeChatMenuExpression @ menuItems,
+            "Cell"       :> makeChatMenuCell[ menuItems, menuMagnification @ targetObj ],
+            expr_        :> throwInternalFailure[ makeChatActionMenuContent, expr ]
         }
     ]
 ]];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*makeChatMenuExpression*)
+makeChatMenuExpression // beginDefinition;
+makeChatMenuExpression[ menuItems_ ] := MakeMenu[ menuItems, GrayLevel[ 0.85 ], $chatMenuWidth ];
+makeChatMenuExpression // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*makeChatMenuCell*)
+makeChatMenuCell // beginDefinition;
+
+makeChatMenuCell[ menuItems_ ] :=
+    makeChatMenuCell[ menuItems, CurrentValue[ Magnification ] ];
+
+makeChatMenuCell[ menuItems_, magnification_ ] :=
+    Cell[
+        BoxData @ ToBoxes @ makeChatMenuExpression @ menuItems,
+        "AttachedChatMenu",
+        Magnification -> magnification
+    ];
+
+makeChatMenuCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1276,7 +1296,7 @@ createServiceMenu[ obj_, root_ ] :=
                 (createServiceItem[ obj, model, root, #1 ] &) /@ getAvailableServiceNames[ ]
             ],
             GrayLevel[ 0.85 ],
-            120
+            140
         ]
     ];
 
@@ -1288,22 +1308,37 @@ createServiceMenu // endDefinition;
 createServiceItem // beginDefinition;
 
 createServiceItem[ obj_, model_, root_, service_String ] := <|
-    "Type"    -> "Submenu",
-    "Label"   -> service,
-    "Icon"    -> serviceSelectionCheckmark[ model, service ],
-    "Content" :> dynamicModelMenu[ obj, root, model, service ]
+    "Type"  -> "Submenu",
+    "Label" -> service,
+    "Icon"  -> serviceIcon[ model, service ],
+    "Data"  :> dynamicModelMenu[ obj, root, model, service ]
 |>;
 
 createServiceItem // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*serviceSelectionCheckmark*)
-serviceSelectionCheckmark // beginDefinition;
-serviceSelectionCheckmark[ KeyValuePattern[ "Service" -> service_String ], service_String ] := $currentSelectionCheck;
-serviceSelectionCheckmark[ _String, "OpenAI" ] := $currentSelectionCheck;
-serviceSelectionCheckmark[ _, _ ] := Style[ $currentSelectionCheck, ShowContents -> False ];
-serviceSelectionCheckmark // endDefinition;
+(*serviceIcon*)
+serviceIcon // beginDefinition;
+
+serviceIcon[ KeyValuePattern[ "Service" -> service_String ], service_String ] :=
+    alignedMenuIcon[ $currentSelectionCheck, serviceIcon @ service ];
+
+serviceIcon[ _String, "OpenAI" ] :=
+    alignedMenuIcon[ $currentSelectionCheck, serviceIcon @ "OpenAI" ];
+
+serviceIcon[ _, service_String ] :=
+    alignedMenuIcon[ Style[ $currentSelectionCheck, ShowContents -> False ], serviceIcon @ service ];
+
+serviceIcon[ KeyValuePattern[ "Service" -> service_String ] ] :=
+    serviceIcon @ service;
+
+serviceIcon[ "OpenAI"       ] := chatbookIcon[ "ServiceIconOpenAI"   , True ];
+serviceIcon[ "Anthropic"    ] := chatbookIcon[ "ServiceIconAnthropic", True ];
+serviceIcon[ "PaLM"         ] := chatbookIcon[ "ServiceIconPaLM"     , True ];
+serviceIcon[ service_String ] := "";
+
+serviceIcon // endDefinition;
 
 $currentSelectionCheck = Style[ "\[Checkmark]", FontColor -> GrayLevel[ 0.25 ] ];
 
@@ -1339,7 +1374,7 @@ dynamicModelMenu[ obj_, root_, model_, service_ ] :=
         Dynamic[ display, TrackedSymbols :> { display } ],
         Initialization :> Quiet[
             Needs[ "Wolfram`Chatbook`" -> None ];
-            display = makeServiceModelMenu[ obj, root, model, service ]
+            display = catchAlways @ makeServiceModelMenu[ obj, root, model, service ]
         ],
         SynchronousInitialization -> False
     ];
@@ -1351,27 +1386,80 @@ dynamicModelMenu // endDefinition;
 (*makeServiceModelMenu*)
 makeServiceModelMenu // beginDefinition;
 
-makeServiceModelMenu[ obj_, root_, model_, service_String ] :=
-	makeServiceModelMenu[ obj, root, model, service, getServiceModelList @ service ];
+makeServiceModelMenu[ obj_, root_, currentModel_, service_String ] :=
+	makeServiceModelMenu[ obj, root, currentModel, service, getServiceModelList @ service ];
 
-makeServiceModelMenu[ obj_, root_, model_, service_String, models_List ] :=
-    MakeMenu[
-        Join[
-            { service },
-            Map[
-                Function @ {
-                    alignedMenuIcon[ modelSelectionCheckmark[ model, #Name ], #Icon ],
-                    #DisplayName,
-                    Hold[ removeChatMenus @ root; setModel[ obj, #1 ] ]
-                },
-                Union @ models
-            ]
-        ],
-        GrayLevel[ 0.85 ],
-        280
-    ];
+makeServiceModelMenu[ obj_, root_, currentModel_, service_String, models_List ] :=
+    MakeMenu[ Join[ { service }, groupMenuModels[ obj, root, currentModel, models ] ], GrayLevel[ 0.85 ], 280 ];
 
 makeServiceModelMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*groupMenuModels*)
+groupMenuModels // beginDefinition;
+
+groupMenuModels[ obj_, root_, currentModel_, models_List ] :=
+    groupMenuModels[ obj, root, currentModel, GroupBy[ models, modelGroupName ] ];
+
+groupMenuModels[ obj_, root_, currentModel_, models_Association ] /; Length @ models === 1 :=
+    modelMenuItem[ obj, root, currentModel ] /@ First @ models;
+
+groupMenuModels[ obj_, root_, currentModel_, models_Association ] :=
+    Flatten[ KeyValueMap[ menuModelGroup[ obj, root, currentModel ], models ], 1 ];
+
+groupMenuModels // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*menuModelGroup*)
+menuModelGroup // beginDefinition;
+
+menuModelGroup[ obj_, root_, currentModel_ ] :=
+    menuModelGroup[ obj, root, currentModel, ## ] &;
+
+menuModelGroup[ obj_, root_, currentModel_, None, models_List ] :=
+    modelMenuItem[ obj, root, currentModel ] /@ models;
+
+menuModelGroup[ obj_, root_, currentModel_, "Snapshot Models", models_List ] :=
+    If[ TrueQ @ showSnapshotModelsQ[ ],
+        Join[ { "Snapshot Models" }, modelMenuItem[ obj, root, currentModel ] /@ models ],
+        { }
+    ];
+
+menuModelGroup[ obj_, root_, currentModel_, name_String, models_List ] :=
+    Join[ { name }, modelMenuItem[ obj, root, currentModel ] /@ models ];
+
+menuModelGroup // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*modelGroupName*)
+modelGroupName // beginDefinition;
+modelGroupName[ KeyValuePattern[ "FineTuned" -> True ] ] := "Fine Tuned Models";
+modelGroupName[ KeyValuePattern[ "Snapshot"  -> True ] ] := "Snapshot Models";
+modelGroupName[ _ ] := None;
+modelGroupName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*modelMenuItem*)
+modelMenuItem // beginDefinition;
+
+modelMenuItem[ obj_, root_, currentModel_ ] := modelMenuItem[ obj, root, currentModel, #1 ] &;
+
+modelMenuItem[
+    obj_,
+    root_,
+    currentModel_,
+    model: KeyValuePattern @ { "Name" -> name_, "Icon" -> icon_, "DisplayName" -> displayName_ }
+] := {
+    alignedMenuIcon[ modelSelectionCheckmark[ currentModel, name ], icon ],
+    displayName,
+    Hold[ removeChatMenus @ root; setModel[ obj, model ] ]
+};
+
+modelMenuItem // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
