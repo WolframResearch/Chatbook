@@ -146,11 +146,20 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
         delimColor = CurrentValue[{StyleDefinitions, "DialogDelimiter", CellFrameColor}];
         GetPersonaData[]; (* sets $CachedPersonaData *)
         (* make sure there are no unexpected extra personas *)
-        CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}] =
-            Intersection[
-                CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}],
-                Keys[$CachedPersonaData]]),
-    Deinitialization :> (CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}] = favorites)
+        Enclose[
+            CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}] =
+            ConfirmBy[
+                Intersection[
+                    CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}],
+                    Keys[$CachedPersonaData]
+                ],
+                ListQ
+            ]
+        ]
+    ),
+    Deinitialization :> If[ MatchQ[ favorites, { ___String } ],
+        CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook","PersonaFavorites"}] = favorites
+    ]
 ];
 
 CreatePersonaManagerPanel // endDefinition;
