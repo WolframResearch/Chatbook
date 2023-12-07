@@ -403,6 +403,12 @@ resetChatPreferences[ "Tools" ] := (
     updateDynamics[ "Preferences" ];
 );
 
+resetChatPreferences[ "Services" ] := (
+    (* TODO: choice dialog to clear service connections *)
+    resetChatPreferences[ "Notebooks" ];
+    updateDynamics[ "Preferences" ];
+);
+
 resetChatPreferences // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

@@ -31,6 +31,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `GetChatHistory;
 `GetExpressionURI;
 `GetExpressionURIs;
+`InvalidateServiceCache;
 `MakeExpressionURI;
 `SetModel;
 `SetToolOptions;
