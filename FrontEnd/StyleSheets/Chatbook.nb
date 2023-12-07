@@ -760,7 +760,7 @@ Notebook[
       Cell[
        BoxData[
         DynamicBox[
-         ToBoxes[$IncludedCellWidget, StandardForm],
+         ToBoxes[Wolfram`Chatbook`$IncludedCellWidget, StandardForm],
          SingleEvaluation -> True
         ]
        ],
@@ -1161,7 +1161,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.3.4.3910857306"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.3.4.3910935567"|>
   ],
   Cell[
    StyleData["Text"],
