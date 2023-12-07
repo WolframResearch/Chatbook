@@ -569,22 +569,24 @@ $ChatbookStylesheet = Notebook[
 BuildChatbookStylesheet[ ] := BuildChatbookStylesheet @ $styleSheetTarget;
 
 BuildChatbookStylesheet[ target_ ] :=
-    Module[ { exported },
-        exported = Export[ target, $ChatbookStylesheet, "NB" ];
-        PacletInstall[ "Wolfram/PacletCICD" ];
-        Needs[ "Wolfram`PacletCICD`" -> None ];
-        SetOptions[
-            ResourceFunction[ "SaveReadableNotebook" ],
-            "RealAccuracy" -> 10,
-            "ExcludedNotebookOptions" -> {
-                ExpressionUUID,
-                FrontEndVersion,
-                WindowMargins,
-                WindowSize
-            }
-        ];
-        Wolfram`PacletCICD`FormatNotebooks @ exported;
-        exported
+    Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
+        Module[ { exported },
+            exported = Export[ target, $ChatbookStylesheet, "NB" ];
+            PacletInstall[ "Wolfram/PacletCICD" ];
+            Needs[ "Wolfram`PacletCICD`" -> None ];
+            SetOptions[
+                ResourceFunction[ "SaveReadableNotebook" ],
+                "RealAccuracy" -> 10,
+                "ExcludedNotebookOptions" -> {
+                    ExpressionUUID,
+                    FrontEndVersion,
+                    WindowMargins,
+                    WindowSize
+                }
+            ];
+            Wolfram`PacletCICD`FormatNotebooks @ exported;
+            exported
+        ]
     ];
 
 
