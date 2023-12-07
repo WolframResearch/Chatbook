@@ -292,7 +292,7 @@ makeFrontEndAndNotebookSettingsContent[
                             CurrentValue[$FrontEnd, {
                                 PrivateFrontEndOptions,
                                 "InterfaceSettings",
-                                "ChatNotebooks",
+                                "Chatbook",
                                 "ShowSnapshotModels"
                             }] = newValue;
 

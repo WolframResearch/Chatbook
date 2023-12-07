@@ -513,7 +513,7 @@ showSnapshotModelsQ[] :=
 	TrueQ @ CurrentValue[$FrontEnd, {
 		PrivateFrontEndOptions,
 		"InterfaceSettings",
-		"ChatNotebooks",
+		"Chatbook",
 		"ShowSnapshotModels"
 	}]
 
