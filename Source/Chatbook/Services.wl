@@ -7,6 +7,7 @@ BeginPackage[ "Wolfram`Chatbook`Services`" ];
 HoldComplete[
     `$availableServices;
     `$enableLLMServices;
+    `$serviceCache;
     `$servicesLoaded;
     `$useLLMServices;
     `getAvailableServiceNames;
