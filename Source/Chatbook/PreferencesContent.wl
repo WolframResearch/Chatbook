@@ -185,9 +185,7 @@ makeDefaultSettingsContent[ ] := Enclose[
 makeDefaultSettingsContent // endDefinition;
 
 (* FIXME: temporary definitions *)
-makeSnapshotModelCheckbox[ ] := Checkbox[ ];
 makeSnapshotModelHelp[ ] := Tooltip[ "?", "" ];
-makeTemperatureSlider[ ] := Slider[ ];
 makeInterfaceContent[ ] := "Test content, please ignore.";
 
 (* ::**************************************************************************************************************:: *)
@@ -823,31 +821,30 @@ $resetButton =
 (*resetChatPreferences*)
 resetChatPreferences // beginDefinition;
 
-resetChatPreferences[ "Notebooks" ] :=
+resetChatPreferences[ "Notebooks" ] := (
     FrontEndExecute @ FrontEnd`RemoveOptions[
         $FrontEnd,
         { System`LLMEvaluator, { TaggingRules, "ChatNotebookSettings" } }
     ];
+    updateDynamics[ "Preferences" ];
+);
 
 resetChatPreferences[ "Personas" ] :=
     With[ { path = Sequence[ PrivateFrontEndOptions, "InterfaceSettings", "Chatbook" ] },
         (* TODO: choice dialog to uninstall personas *)
-        resetChatPreferences[ "Notebooks" ];
         CurrentValue[ $FrontEnd, { path, "VisiblePersonas"  } ] = $corePersonaNames;
         CurrentValue[ $FrontEnd, { path, "PersonaFavorites" } ] = $corePersonaNames;
-        updateDynamics[ "Preferences" ];
+        resetChatPreferences[ "Notebooks" ];
     ];
 
 resetChatPreferences[ "Tools" ] := (
     (* TODO: choice dialog to uninstall tools *)
     resetChatPreferences[ "Notebooks" ];
-    updateDynamics[ "Preferences" ];
 );
 
 resetChatPreferences[ "Services" ] := (
     (* TODO: choice dialog to clear service connections *)
     resetChatPreferences[ "Notebooks" ];
-    updateDynamics[ "Preferences" ];
 );
 
 resetChatPreferences // endDefinition;
