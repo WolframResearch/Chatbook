@@ -9,18 +9,18 @@ HoldComplete[
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"          ];
-Needs[ "Wolfram`Chatbook`Common`"   ];
-Needs[ "Wolfram`Chatbook`Personas`" ];
-Needs[ "Wolfram`Chatbook`UI`" ];
-Needs[ "Wolfram`Chatbook`Errors`" ];
+Needs[ "Wolfram`Chatbook`"                  ];
+Needs[ "Wolfram`Chatbook`Common`"           ];
+Needs[ "Wolfram`Chatbook`Dynamics`"         ];
+Needs[ "Wolfram`Chatbook`Errors`"           ];
+Needs[ "Wolfram`Chatbook`Models`"           ];
+Needs[ "Wolfram`Chatbook`PersonaManager`"   ];
+Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`PreferencesUtils`" ];
-Needs[ "Wolfram`Chatbook`Settings`" ];
-Needs[ "Wolfram`Chatbook`Models`" ];
-Needs[ "Wolfram`Chatbook`Services`" ];
-Needs[ "Wolfram`Chatbook`Dynamics`" ];
-Needs[ "Wolfram`Chatbook`ToolManager`" ];
-Needs[ "Wolfram`Chatbook`PersonaManager`" ];
+Needs[ "Wolfram`Chatbook`Services`"         ];
+Needs[ "Wolfram`Chatbook`Settings`"         ];
+Needs[ "Wolfram`Chatbook`ToolManager`"      ];
+Needs[ "Wolfram`Chatbook`UI`"               ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -361,21 +361,49 @@ $resetButton =
         Button[
             label,
 
-            FrontEndExecute @ FrontEnd`RemoveOptions[
+            Needs[ "Wolfram`Chatbook`" -> None ];
+            resetChatPreferences @ CurrentValue[
                 $FrontEnd,
-                { System`LLMEvaluator, { TaggingRules, "ChatNotebookSettings" } }
-            ];
-
-            CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "ChatNotebooks" } ] = Inherited
+                { PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PreferencesTab" }
+            ]
             ,
             BaseStyle -> {
                 FontFamily -> Dynamic @ FrontEnd`CurrentValue[ "ControlsFontFamily" ],
                 FontSize   -> Dynamic @ FrontEnd`CurrentValue[ "ControlsFontSize" ],
                 FontColor  -> Black
             },
-            ImageSize -> Automatic
+            ImageSize -> Automatic,
+            Method    -> "Queued"
         ]
     ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*resetChatPreferences*)
+resetChatPreferences // beginDefinition;
+
+resetChatPreferences[ "Notebooks" ] :=
+    FrontEndExecute @ FrontEnd`RemoveOptions[
+        $FrontEnd,
+        { System`LLMEvaluator, { TaggingRules, "ChatNotebookSettings" } }
+    ];
+
+resetChatPreferences[ "Personas" ] :=
+    With[ { path = Sequence[ PrivateFrontEndOptions, "InterfaceSettings", "Chatbook" ] },
+        (* TODO: choice dialog to uninstall personas *)
+        resetChatPreferences[ "Notebooks" ];
+        CurrentValue[ $FrontEnd, { path, "VisiblePersonas"  } ] = $corePersonaNames;
+        CurrentValue[ $FrontEnd, { path, "PersonaFavorites" } ] = $corePersonaNames;
+        updateDynamics[ "Preferences" ];
+    ];
+
+resetChatPreferences[ "Tools" ] := (
+    (* TODO: choice dialog to uninstall tools *)
+    resetChatPreferences[ "Notebooks" ];
+    updateDynamics[ "Preferences" ];
+);
+
+resetChatPreferences // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
