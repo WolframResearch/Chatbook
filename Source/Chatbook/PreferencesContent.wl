@@ -235,10 +235,10 @@ makeModelSelector[ ] :=
 makeModelSelector[ services_Association? AssociationQ ] := Enclose[
     DynamicModule[ { default, service, model, state, serviceSelector, modelSelector },
 
-        default         = currentChatSettings[ $FrontEnd, "Model" ];
-        service         = ConfirmBy[ extractServiceName @ default, StringQ, "ServiceName" ];
-        model           = ConfirmBy[ extractModelName @ default  , StringQ, "ModelName"   ];
-        state           = If[ modelListCachedQ @ service, "Loaded", "Loading" ];
+        default = currentChatSettings[ $FrontEnd, "Model" ];
+        service = ConfirmBy[ extractServiceName @ default, StringQ, "ServiceName" ];
+        model   = ConfirmBy[ extractModelName @ default  , StringQ, "ModelName"   ];
+        state   = If[ modelListCachedQ @ service, "Loaded", "Loading" ];
 
         modelSelector = If[ state === "Loaded",
                             makeModelNameSelector[ Dynamic @ service, Dynamic @ model ],
