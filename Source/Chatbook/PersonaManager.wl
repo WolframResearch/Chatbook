@@ -266,18 +266,24 @@ formatPacletLink[ origin_String, url_, pacletName_ ] :=
 formatPacletLink // endDefinition;
 
 addRemovePersonaListingCheckbox // beginDefinition;
+
 addRemovePersonaListingCheckbox[ name_String ] :=
-    DynamicModule[{val},
-        Checkbox[
-            Dynamic[val,
-                Function[
-                    val = #;
-                    CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}] =
-                        If[#,
-                            Union[Replace[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}], Except[{___String}] :> {}], {name}]
-                            ,
-                            DeleteCases[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}], name]]]]],
-        Initialization :> (val = MemberQ[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}], name])];
+    With[
+        {
+            path = { PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas" },
+            core = $corePersonaNames
+        },
+        Checkbox @ Dynamic[
+            MemberQ[ CurrentValue[ $FrontEnd, path, core ], name ],
+            Function[
+                CurrentValue[ $FrontEnd, path ] =
+                    With[ { current = Replace[ CurrentValue[ $FrontEnd, path ], Except[ { ___String } ] :> core ] },
+                        If[ #, Union[ current, { name } ], Complement[ current, { name } ] ]
+                    ]
+            ]
+        ]
+    ];
+
 addRemovePersonaListingCheckbox // endDefinition;
 
 uninstallButton // beginDefinition;
