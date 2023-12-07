@@ -23,18 +23,19 @@ CreateToolbarContent[] is called by the NotebookToolbar to generate the content 
 "]
 
 HoldComplete[
+    `getModelMenuIcon;
     `getPersonaIcon;
     `getPersonaMenuIcon;
+    `labeledCheckbox;
+    `makeAutomaticResultAnalysisCheckbox;
+    `makeTemperatureSlider;
+    `makeToolCallFrequencySlider;
+    `modelGroupName;
     `personaDisplayName;
     `resizeMenuIcon;
     `serviceIcon;
-    `tr;
-    `getModelMenuIcon;
-    `makeToolCallFrequencySlider;
-    `makeTemperatureSlider;
-    `labeledCheckbox;
     `showSnapshotModelsQ;
-    `makeAutomaticResultAnalysisCheckbox;
+    `tr;
 ];
 
 Begin["`Private`"]
@@ -1081,7 +1082,7 @@ serviceIcon[ KeyValuePattern[ "Service" -> service_String ] ] :=
 serviceIcon[ "OpenAI"       ] := chatbookIcon[ "ServiceIconOpenAI"   , True ];
 serviceIcon[ "Anthropic"    ] := chatbookIcon[ "ServiceIconAnthropic", True ];
 serviceIcon[ "PaLM"         ] := chatbookIcon[ "ServiceIconPaLM"     , True ];
-serviceIcon[ service_String ] := "";
+serviceIcon[ service_String ] := Replace[ $availableServices[ service, "Icon" ], $$unspecified -> "" ];
 
 serviceIcon // endDefinition;
 
@@ -1165,12 +1166,6 @@ menuModelGroup[ obj_, root_, currentModel_ ] :=
 
 menuModelGroup[ obj_, root_, currentModel_, None, models_List ] :=
     modelMenuItem[ obj, root, currentModel ] /@ models;
-
-menuModelGroup[ obj_, root_, currentModel_, "Snapshot Models", models_List ] :=
-    If[ TrueQ @ showSnapshotModelsQ[ ],
-        Join[ { "Snapshot Models" }, modelMenuItem[ obj, root, currentModel ] /@ models ],
-        { }
-    ];
 
 menuModelGroup[ obj_, root_, currentModel_, name_String, models_List ] :=
     Join[ { name }, modelMenuItem[ obj, root, currentModel ] /@ models ];
