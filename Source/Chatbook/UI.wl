@@ -1072,6 +1072,9 @@ serviceIcon[ _String, "OpenAI" ] :=
 serviceIcon[ _, service_String ] :=
     alignedMenuIcon[ Style[ $currentSelectionCheck, ShowContents -> False ], serviceIcon @ service ];
 
+serviceIcon[ KeyValuePattern @ { "Service" -> _String, "Icon" -> icon: Except[ "" ] } ] :=
+    icon;
+
 serviceIcon[ KeyValuePattern[ "Service" -> service_String ] ] :=
     serviceIcon @ service;
 

@@ -610,7 +610,7 @@ toolModelWarning[ scope_, enabled_, model_? toolsEnabledQ ] := "";
 toolModelWarning[ scope_, enabled_, model_ ] := toolModelWarning0[ scope, model ];
 toolModelWarning // endDefinition;
 
-
+(* FIXME: add a link to open the Notebooks preferences tab *)
 toolModelWarning0 // beginDefinition;
 
 toolModelWarning0[ scope_, model_String ] := Enclose[

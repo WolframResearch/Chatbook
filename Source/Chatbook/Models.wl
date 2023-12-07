@@ -328,6 +328,9 @@ standardizeModelData[ service_String, model_ ] :=
         (standardizeModelData[ service, model ] = <| "Service" -> service, as |>) /; AssociationQ @ as
     ];
 
+standardizeModelData[ KeyValuePattern[ "Service" -> service_String ], model_ ] :=
+    standardizeModelData[ service, model ];
+
 standardizeModelData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
