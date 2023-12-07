@@ -22,30 +22,39 @@ GeneralUtilities`SetUsage[CreateToolbarContent, "
 CreateToolbarContent[] is called by the NotebookToolbar to generate the content of the 'Notebook AI Settings' attached menu.
 "]
 
-`getPersonaIcon;
-`getPersonaMenuIcon;
-`personaDisplayName;
-`resizeMenuIcon;
-`serviceIcon;
-
+HoldComplete[
+    `getPersonaIcon;
+    `getPersonaMenuIcon;
+    `personaDisplayName;
+    `resizeMenuIcon;
+    `serviceIcon;
+    `tr;
+    `getModelMenuIcon;
+    `makeToolCallFrequencySlider;
+    `makeTemperatureSlider;
+    `labeledCheckbox;
+    `showSnapshotModelsQ;
+    `makeAutomaticResultAnalysisCheckbox;
+];
 
 Begin["`Private`"]
 
-Needs[ "Wolfram`Chatbook`"                  ];
-Needs[ "Wolfram`Chatbook`Actions`"          ];
-Needs[ "Wolfram`Chatbook`Common`"           ];
-Needs[ "Wolfram`Chatbook`Dynamics`"         ];
-Needs[ "Wolfram`Chatbook`Errors`"           ];
-Needs[ "Wolfram`Chatbook`ErrorUtils`"       ];
-Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
-Needs[ "Wolfram`Chatbook`Menus`"            ];
-Needs[ "Wolfram`Chatbook`Models`"           ];
-Needs[ "Wolfram`Chatbook`Personas`"         ];
-Needs[ "Wolfram`Chatbook`PreferencesUtils`" ];
-Needs[ "Wolfram`Chatbook`Serialization`"    ];
-Needs[ "Wolfram`Chatbook`Services`"         ];
-Needs[ "Wolfram`Chatbook`Settings`"         ];
-Needs[ "Wolfram`Chatbook`Utils`"            ];
+Needs[ "Wolfram`Chatbook`"                    ];
+Needs[ "Wolfram`Chatbook`Actions`"            ];
+Needs[ "Wolfram`Chatbook`Common`"             ];
+Needs[ "Wolfram`Chatbook`Dynamics`"           ];
+Needs[ "Wolfram`Chatbook`Errors`"             ];
+Needs[ "Wolfram`Chatbook`ErrorUtils`"         ];
+Needs[ "Wolfram`Chatbook`FrontEnd`"           ];
+Needs[ "Wolfram`Chatbook`Menus`"              ];
+Needs[ "Wolfram`Chatbook`Models`"             ];
+Needs[ "Wolfram`Chatbook`Personas`"           ];
+Needs[ "Wolfram`Chatbook`PreferencesContent`" ];
+Needs[ "Wolfram`Chatbook`PreferencesUtils`"   ];
+Needs[ "Wolfram`Chatbook`Serialization`"      ];
+Needs[ "Wolfram`Chatbook`Services`"           ];
+Needs[ "Wolfram`Chatbook`Settings`"           ];
+Needs[ "Wolfram`Chatbook`Utils`"              ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -165,91 +174,7 @@ $cloudChatBanner := PaneSelector[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Preferences Panel*)
-CreatePreferencesContent[] := Module[{
-	personas = GetPersonasAssociation[],
-	chatbookSettings,
-	llmEvaluatorNamesSettings,
-	services,
-	grid
-},
-
-	llmEvaluatorNamesSettings = Grid[
-		Prepend[
-			KeyValueMap[
-				{persona, personaSettings} |-> {
-					resizeMenuIcon @ getPersonaMenuIcon[personaSettings, "Full"],
-					personaDisplayName[persona, personaSettings],
-					Replace[Lookup[personaSettings, "Description", None], {
-						None | _?MissingQ -> "",
-						desc_?StringQ :> desc,
-						other_ :> (
-							ChatbookWarning[
-								"Unexpected non-String persona `` description: ``",
-								InputForm[persona],
-								InputForm[other]
-							];
-							other
-						)
-					}]
-				},
-				personas
-			],
-			{"", "Name", "Description"}
-		],
-		Background -> {None, {1 -> GrayLevel[0.95]}},
-		Dividers -> {False, {False, {1 -> True, 2 -> True}}},
-		Alignment -> {Left, Center}
-	];
-
-	chatbookSettings = makeFrontEndAndNotebookSettingsContent[$FrontEnd];
-
-	(* services = Grid[{
-			{""									, "Name"	, "State" 						},
-			{chatbookIcon["OpenAILogo", False]	, "OpenAI"	, "<Connected>" 				},
-			{""									, "Bard"	, Style["Coming soon", Italic]	},
-			{""									, "Claude"	, Style["Coming soon", Italic]	}
-		},
-		Background -> {None, {1 -> GrayLevel[0.95]}},
-		Dividers -> {False, {False, {1 -> True, 2 -> True}}},
-		Alignment -> {Left, Center}
-	]; *)
-
-	(*-----------------------------------------*)
-	(* Return the complete settings expression *)
-	(*-----------------------------------------*)
-
-	PreferencesPane[
-		{
-			PreferencesSection[
-				Style[tr["Chat Notebook Interface"], "subsectionText"],
-				chatbookSettings
-			],
-			PreferencesSection[
-				Style[tr["Installed Personas"], "subsectionText"],
-				llmEvaluatorNamesSettings
-			]
-			(* PreferencesSection[
-				Style[tr["LLM Service Providers"], "subsectionText"],
-				services
-			] *)
-		},
-		PreferencesResetButton[
-			FrontEndExecute @ FrontEnd`RemoveOptions[$FrontEnd, {
-				System`LLMEvaluator,
-				{TaggingRules, "ChatNotebookSettings"}
-			}];
-
-			CurrentValue[
-				$FrontEnd,
-				{
-					PrivateFrontEndOptions,
-					"InterfaceSettings",
-					"ChatNotebooks"
-				}
-			] = Inherited;
-		]
-	]
-]
+CreatePreferencesContent[ ] := trackedDynamic[ createPreferencesContent[ ], { "Preferences" } ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -382,7 +307,7 @@ makeEnableAIChatFeaturesLabel[enabled_?BooleanQ] :=
 SetFallthroughError[makeAutomaticResultAnalysisCheckbox]
 
 makeAutomaticResultAnalysisCheckbox[
-	target : $FrontEnd | $FrontEndSession | _NotebookObject
+	target : _FrontEndObject | $FrontEndSession | _NotebookObject
 ] := With[{
 	setterFunction = ConfirmReplace[target, {
 		$FrontEnd | $FrontEndSession :> (
@@ -580,192 +505,9 @@ makeTemperatureSlider[
 		BaseStyle -> { FontSize -> 12 }
 	]
 
-(* cSpell: ignore AIAPI *)
-makeOpenAIAPICompletionURLForm[value_]:= Pane[
-	InputField[value,
-		String,
-		ImageSize -> {240, Automatic},
-		BaseStyle -> {FontSize -> 12}]
-]
-
 (*=========================================*)
 (* Common preferences content construction *)
 (*=========================================*)
-
-SetFallthroughError[makeFrontEndAndNotebookSettingsContent]
-
-makeFrontEndAndNotebookSettingsContent[
-	targetObj : _FrontEndObject | $FrontEndSession | _NotebookObject
-] := Module[{
-	personas = GetPersonasAssociation[],
-	defaultPersonaPopupItems,
-	setModelPopupItems,
-	modelPopupItems
-},
-	defaultPersonaPopupItems = KeyValueMap[
-		{persona, personaSettings} |-> (
-			persona -> Row[{
-				resizeMenuIcon[
-					getPersonaMenuIcon[personaSettings, "Full"]
-				],
-				personaDisplayName[persona, personaSettings]
-			}, Spacer[1]]
-		),
-		personas
-	];
-
-	(*----------------------------*)
-	(* Compute the models to show *)
-	(*----------------------------*)
-
-	setModelPopupItems[] := (
-		modelPopupItems = KeyValueMap[
-			{modelName, settings} |-> (
-				modelName -> Row[{
-					getModelMenuIcon[settings, "Full"],
-					modelDisplayName[modelName]
-				}, Spacer[1]]
-			),
-			getModelsMenuItems[]
-		];
-	);
-
-	(* Initial value. Called again if 'show snapshot models' changes. *)
-	setModelPopupItems[];
-
-	(*---------------------------------*)
-	(* Return the toolbar menu content *)
-	(*---------------------------------*)
-
-	Grid[
-		{
-			{Row[{
-				tr["Default Persona:"],
-				PopupMenu[
-					Dynamic[
-						currentChatSettings[
-							targetObj,
-							"LLMEvaluator"
-						],
-						Function[{newValue},
-							CurrentValue[
-								targetObj,
-								{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
-							] = newValue
-						]
-					],
-					defaultPersonaPopupItems
-				]
-			}, Spacer[3]]},
-			{Row[{
-				tr["Default Model:"],
-				(* Note: Dynamic[PopupMenu[..]] so that changing the
-				         'show snapshot models' option updates the popup. *)
-				Dynamic @ PopupMenu[
-					Dynamic[
-						currentChatSettings[
-							targetObj,
-							"Model"
-						],
-						Function[{newValue},
-							CurrentValue[
-								targetObj,
-								{TaggingRules, "ChatNotebookSettings", "Model"}
-							] = newValue
-						]
-					],
-					modelPopupItems,
-					(* This is shown if the user selects a snapshot model,
-					   and then unchecks the 'show snapshot models' option. *)
-					Dynamic[
-						Style[
-							With[{
-								modelName = currentChatSettings[targetObj, "Model"]
-							}, {
-								settings = standardizeModelData[modelName]
-							},
-								Row[{
-									getModelMenuIcon[settings, "Full"],
-									modelDisplayName[modelName]
-								}, Spacer[1]]
-							],
-							Italic
-						]
-					]
-				]
-			}, Spacer[3]]},
-			{Row[{
-				tr["Default Tool Call Frequency:"],
-				makeToolCallFrequencySlider[ targetObj ]
-			}, Spacer[3]]},
-			{Row[{
-				tr["Default Temperature:"],
-				makeTemperatureSlider[
-					Dynamic[
-						currentChatSettings[targetObj, "Temperature"],
-						newValue |-> (
-							CurrentValue[
-								targetObj,
-								{TaggingRules, "ChatNotebookSettings", "Temperature"}
-							] = newValue;
-						)
-					]
-				]
-			}, Spacer[3]]},
-
-			If[ TrueQ @ $useLLMServices,
-				Nothing,
-				{Row[{
-				tr["Chat Completion URL:"],
-				makeOpenAIAPICompletionURLForm[
-					Dynamic[
-						currentChatSettings[targetObj, "OpenAIAPICompletionURL"],
-						newValue |-> (
-							CurrentValue[
-								targetObj,
-								{TaggingRules, "ChatNotebookSettings", "OpenAIAPICompletionURL"}
-							] = newValue;
-						)
-					]
-				]
-			}, Spacer[3]]}],
-			{
-				labeledCheckbox[
-					Dynamic[
-						showSnapshotModelsQ[],
-						newValue |-> (
-							CurrentValue[$FrontEnd, {
-								PrivateFrontEndOptions,
-								"InterfaceSettings",
-								"ChatNotebooks",
-								"ShowSnapshotModels"
-							}] = newValue;
-
-							setModelPopupItems[];
-						)
-					],
-					Row[{
-						"Show temporary snapshot LLM models",
-						Spacer[3],
-						Tooltip[
-							chatbookIcon["InformationTooltip", False],
-"If enabled, temporary snapshot models will be included in the model selection menus.
-\nSnapshot models are models that are frozen at a particular date, will not be
-continuously updated, and have an expected discontinuation date."
-						]
-					}]
-				]
-			},
-			{
-				makeAutomaticResultAnalysisCheckbox[targetObj]
-			}
-		},
-		Alignment -> {Left, Baseline},
-		Spacings -> {0, 0.7}
-	]
-]
-
-(*======================================*)
 
 showSnapshotModelsQ[] :=
 	TrueQ @ CurrentValue[$FrontEnd, {

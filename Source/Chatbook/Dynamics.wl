@@ -17,10 +17,11 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $dynamicTriggers = <|
-    "ChatBlock" :> $chatBlockTrigger,
-    "Models"    :> $modelsTrigger,
-    "Personas"  :> $personasTrigger,
-    "Tools"     :> $toolsTrigger
+    "ChatBlock"   :> $chatBlockTrigger,
+    "Models"      :> $modelsTrigger,
+    "Personas"    :> $personasTrigger,
+    "Preferences" :> $preferencesTrigger,
+    "Tools"       :> $toolsTrigger
 |>;
 
 Cases[ $dynamicTriggers, sym_Symbol :> (sym = 0) ];
