@@ -224,6 +224,10 @@ removeChatMenus[ cell_CellObject ] /; MemberQ[ cellStyles @ cell, "AttachedChatM
 removeChatMenus[ cell_CellObject ] :=
     NotebookDelete @ Cells[ cell, AttachedCell -> True, CellStyle -> "AttachedChatMenu" ];
 
+(* Cell has already been removed: *)
+removeChatMenus[ $Failed ] :=
+    Null;
+
 removeChatMenus // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
