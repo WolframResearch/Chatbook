@@ -185,7 +185,6 @@ makeDefaultSettingsContent[ ] := Enclose[
 makeDefaultSettingsContent // endDefinition;
 
 (* FIXME: temporary definitions *)
-makeSnapshotModelHelp[ ] := Tooltip[ "?", "" ];
 makeInterfaceContent[ ] := "Test content, please ignore.";
 
 (* ::**************************************************************************************************************:: *)
