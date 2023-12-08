@@ -35,14 +35,19 @@ $$preferencesPage = Alternatives @@ $preferencesPages;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*createPreferencesContent*)
+(* Displays all the content found in the "AI Settings" tab in the preferences dialog. *)
+createPreferencesContent // beginDefinition;
+
 createPreferencesContent[ ] := Enclose[
     Module[ { notebookSettings, serviceSettings, personaSettings, toolSettings, tabView, reset },
 
-        notebookSettings = ConfirmMatch[ preferencesContent[ "Notebooks" ], _Dynamic|_DynamicModule, "Notebooks" ];
-        serviceSettings  = ConfirmMatch[ preferencesContent[ "Services"  ], _Dynamic|_DynamicModule, "Services"  ];
-        personaSettings  = ConfirmMatch[ preferencesContent[ "Personas"  ], _Dynamic|_DynamicModule, "Personas"  ];
-        toolSettings     = ConfirmMatch[ preferencesContent[ "Tools"     ], _Dynamic|_DynamicModule, "Tools"     ];
+        (* Retrieve the dynamic content for each preferences tab, confirming that it matches the expected types: *)
+        notebookSettings = ConfirmMatch[ preferencesContent[ "Notebooks" ], _Dynamic | _DynamicModule, "Notebooks" ];
+        serviceSettings  = ConfirmMatch[ preferencesContent[ "Services"  ], _Dynamic | _DynamicModule, "Services"  ];
+        personaSettings  = ConfirmMatch[ preferencesContent[ "Personas"  ], _Dynamic | _DynamicModule, "Personas"  ];
+        toolSettings     = ConfirmMatch[ preferencesContent[ "Tools"     ], _Dynamic | _DynamicModule, "Tools"     ];
 
+        (* Create a TabView for the preferences content, with the tab state stored in the FE's private options: *)
         tabView = TabView[
             {
                 { "Notebooks", "Notebooks" -> notebookSettings },
@@ -59,11 +64,13 @@ createPreferencesContent[ ] := Enclose[
             FrameMargins -> { { 2, 2 }, { 2, 3 } },
             ImageMargins -> { { 10, 10 }, { 2, 2 } },
             ImageSize    -> { 640, Automatic },
-            LabelStyle   -> "feTabView"
+            LabelStyle   -> "feTabView" (* Defined in the SystemDialog stylesheet: *)
         ];
 
+        (* Create a reset button that will reset preferences to default settings: *)
         reset = Pane[ $resetButton, ImageMargins -> { { 20, 0 }, { 0, 10 } }, ImageSize -> 640 ];
 
+        (* Arrange the TabView and reset button in a Grid layout with vertical spacers: *)
         Grid[
             {
                 $verticalSpacer,
@@ -73,7 +80,7 @@ createPreferencesContent[ ] := Enclose[
                 $verticalSpacer
             },
             Alignment  -> Left,
-            BaseStyle  -> "defaultGrid",
+            BaseStyle  -> "defaultGrid",  (* Defined in the SystemDialog stylesheet *)
             AutoDelete -> False,
             FrameStyle -> { AbsoluteThickness[ 1 ], GrayLevel[ 0.898 ] },
             Dividers   -> { False, { 4 -> True } },
@@ -83,14 +90,27 @@ createPreferencesContent[ ] := Enclose[
     throwInternalFailure
 ];
 
+createPreferencesContent // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*preferencesContent*)
+(* Define dynamic content for each of the preferences tabs. *)
 preferencesContent // beginDefinition;
+
+(* Content for the "Notebooks" tab: *)
 preferencesContent[ "Notebooks" ] := trackedDynamic[ notebookSettingsPanel[ ], { "Models" } ];
-preferencesContent[ "Personas"  ] := trackedDynamic[ personaSettingsPanel[ ], { "Personas" } ];
-preferencesContent[ "Services"  ] := trackedDynamic[ "Coming soon.", { "Models" } ];
-preferencesContent[ "Tools"     ] := toolSettingsPanel[ ];
+
+(* Content for the "Personas" tab: *)
+preferencesContent[ "Personas" ] := trackedDynamic[ personaSettingsPanel[ ], { "Personas" } ];
+
+(* Content for the "Services" tab: *)
+(* FIXME: this is placeholder code *)
+preferencesContent[ "Services" ] := trackedDynamic[ "Coming soon.", { "Models" } ];
+
+(* Content for the "Tools" tab: *)
+preferencesContent[ "Tools" ] := toolSettingsPanel[ ];
+
 preferencesContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -104,8 +124,10 @@ notebookSettingsPanel // beginDefinition;
 
 notebookSettingsPanel[ ] := Pane[
     DynamicModule[
+        (* Display a progress indicator until content is loaded via initialization: *)
         { display = ProgressIndicator[ Appearance -> "Percolate" ] },
         Dynamic[ display ],
+        (* createNotebookSettingsPanel is called to initialize the content of the panel: *)
         Initialization :> (display = createNotebookSettingsPanel[ ]),
         SynchronousInitialization -> False
     ],
@@ -121,25 +143,31 @@ notebookSettingsPanel // endDefinition;
 createNotebookSettingsPanel // beginDefinition;
 
 createNotebookSettingsPanel[ ] := Enclose[
-    Module[ { defaultSettingsLabel, defaultSettingsContent, interfaceLabel, interfaceContent },
+    Module[ { defaultSettingsLabel, defaultSettingsContent, interfaceLabel, interfaceContent, content },
 
+        (* Label for the default settings section using a style from SystemDialog.nb: *)
         defaultSettingsLabel = Style[ "Default Settings", "subsectionText" ];
 
+        (* Retrieve and confirm the content for default settings: *)
         defaultSettingsContent = ConfirmMatch[
             trackedDynamic[ makeDefaultSettingsContent[ ], "Preferences" ],
-            Except[ _makeDefaultSettingsContent ],
+            _Dynamic,
             "DefaultSettings"
         ];
 
+        (* Label for the interface section using a style from SystemDialog.nb: *)
         interfaceLabel = Style[ "Chat Notebook Interface", "subsectionText" ];
 
+        (* Retrieve and confirm the content for the chat notebook interface,
+           ensuring it is not an error from makeInterfaceContent: *)
         interfaceContent = ConfirmMatch[
             makeInterfaceContent[ ],
             Except[ _makeInterfaceContent ],
             "Interface"
         ];
 
-        createNotebookSettingsPanel[ ] = Grid[
+        (* Assemble the default settings and interface content into a grid layout: *)
+        content = Grid[
             {
                 { defaultSettingsLabel   },
                 { defaultSettingsContent },
@@ -149,7 +177,10 @@ createNotebookSettingsPanel[ ] := Enclose[
             },
             Alignment -> { Left, Baseline },
             Spacings  -> { 0, 0.7 }
-        ]
+        ];
+
+        (* Cache the content in case panel is redrawn: *)
+        createNotebookSettingsPanel[ ] = content
     ],
     throwInternalFailure
 ];
@@ -163,12 +194,16 @@ makeDefaultSettingsContent // beginDefinition;
 
 makeDefaultSettingsContent[ ] := Enclose[
     Module[ { personaSelector, modelSelector, temperatureSlider, row },
-
-        personaSelector   = ConfirmMatch[ makePersonaSelector[ ], _PopupMenu, "PersonaSelector" ];
-        modelSelector     = ConfirmMatch[ makeModelSelector[ ], _DynamicModule, "ModelSelector" ];
+        (* The personaSelector is a pop-up menu for selecting the default persona: *)
+        personaSelector = ConfirmMatch[ makePersonaSelector[ ], _PopupMenu, "PersonaSelector" ];
+        (* The modelSelector is a dynamic module containing menus to select the service and model separately: *)
+        modelSelector = ConfirmMatch[ makeModelSelector[ ], _DynamicModule, "ModelSelector" ];
+        (* The temperatureSlider is a control for setting the default 'temperature' for responses: *)
         temperatureSlider = ConfirmMatch[ makeTemperatureSlider[ ], _Slider, "TemperatureSlider" ];
-        row               = Row[ { ## }, Spacer[ 3 ] ] &;
+        (* Helper function to create a row layout with spacers between elements: *)
+        row = Row[ { ## }, Spacer[ 3 ] ] &;
 
+        (* Assemble the persona selector, model selector, and temperature slider into a grid layout: *)
         Grid[
             {
                 { row[ "Default Persona:"    , personaSelector   ] },
@@ -192,12 +227,17 @@ makeInterfaceContent[ ] := "Test content, please ignore.";
 (*makePersonaSelector*)
 makePersonaSelector // beginDefinition;
 
+(* Top-level function without arguments, calls the version with personas from GetPersonasAssociation *)
 makePersonaSelector[ ] :=
     makePersonaSelector @ GetPersonasAssociation[ ];
 
+(* Overload of makePersonaSelector that takes an Association of personas,
+   converts it to a list of labels for PopupMenu *)
 makePersonaSelector[ personas_Association? AssociationQ ] :=
     makePersonaSelector @ KeyValueMap[ personaPopupLabel, personas ];
 
+(* Overload of makePersonaSelector that takes a list of rules where each rule is a string to an association,
+   creates a PopupMenu with this list *)
 makePersonaSelector[ personas: { (_String -> _).. } ] := PopupMenu[
     Dynamic[
         currentChatSettings[ $FrontEnd, "LLMEvaluator" ],
