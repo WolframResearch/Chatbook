@@ -143,7 +143,13 @@ notebookSettingsPanel // endDefinition;
 createNotebookSettingsPanel // beginDefinition;
 
 createNotebookSettingsPanel[ ] := Enclose[
-    Module[ { defaultSettingsLabel, defaultSettingsContent, interfaceLabel, interfaceContent, content },
+    Module[
+        {
+            defaultSettingsLabel, defaultSettingsContent,
+            interfaceLabel, interfaceContent,
+            featuresLabel, featuresContent,
+            content
+        },
 
         (* Label for the default settings section using a style from SystemDialog.nb: *)
         defaultSettingsLabel = Style[ "Default Settings", "subsectionText" ];
@@ -166,16 +172,34 @@ createNotebookSettingsPanel[ ] := Enclose[
             "Interface"
         ];
 
+        (* Label for the features section using a style from SystemDialog.nb: *)
+        featuresLabel = Style[ "Features", "subsectionText" ];
+
+        (* Retrieve and confirm the content for the chat notebook features,
+           ensuring it is not an error from makeFeaturesContent: *)
+        featuresContent = ConfirmMatch[
+            makeFeaturesContent[ ],
+            Except[ _makeFeaturesContent ],
+            "Features"
+        ];
+
         (* Assemble the default settings and interface content into a grid layout: *)
         content = Grid[
             {
                 { defaultSettingsLabel   },
                 { defaultSettingsContent },
                 { Spacer[ 1 ]            },
+                { Spacer[ 1 ]            },
                 { interfaceLabel         },
-                { interfaceContent       }
+                { interfaceContent       },
+                { Spacer[ 1 ]            },
+                { Spacer[ 1 ]            },
+                { featuresLabel          },
+                { featuresContent        }
             },
             Alignment -> { Left, Baseline },
+            Dividers  -> { False, { 4 -> True, 8 -> True } },
+            ItemSize  -> { Fit, Automatic },
             Spacings  -> { 0, 0.7 }
         ];
 
@@ -193,22 +217,25 @@ createNotebookSettingsPanel // endDefinition;
 makeDefaultSettingsContent // beginDefinition;
 
 makeDefaultSettingsContent[ ] := Enclose[
-    Module[ { personaSelector, modelSelector, temperatureSlider, row },
+    Module[ { personaSelector, modelSelector, assistanceCheckbox, temperatureInput, row },
         (* The personaSelector is a pop-up menu for selecting the default persona: *)
         personaSelector = ConfirmMatch[ makePersonaSelector[ ], _PopupMenu, "PersonaSelector" ];
         (* The modelSelector is a dynamic module containing menus to select the service and model separately: *)
         modelSelector = ConfirmMatch[ makeModelSelector[ ], _DynamicModule, "ModelSelector" ];
-        (* The temperatureSlider is a control for setting the default 'temperature' for responses: *)
-        temperatureSlider = ConfirmMatch[ makeTemperatureSlider[ ], _Slider, "TemperatureSlider" ];
+        (* Checkbox to enable automatic assistance for normal shift-enter evaluations: *)
+        assistanceCheckbox = ConfirmMatch[ makeAssistanceCheckbox[ ], _Grid|_Row, "AssistanceCheckbox" ];
+        (* The temperatureInput is an input field for setting the default 'temperature' for responses: *)
+        temperatureInput = ConfirmMatch[ makeTemperatureInput[ ], _Grid, "TemperatureInput" ];
         (* Helper function to create a row layout with spacers between elements: *)
         row = Row[ { ## }, Spacer[ 3 ] ] &;
 
         (* Assemble the persona selector, model selector, and temperature slider into a grid layout: *)
         Grid[
             {
-                { row[ "Default Persona:"    , personaSelector   ] },
-                { row[ modelSelector                             ] },
-                { row[ "Default Temperature:", temperatureSlider ] }
+                { row[ "Default Persona:", personaSelector ] },
+                { modelSelector },
+                { assistanceCheckbox },
+                { temperatureInput }
             },
             Alignment -> { Left, Baseline },
             Spacings  -> { 0, 0.7 }
@@ -218,9 +245,6 @@ makeDefaultSettingsContent[ ] := Enclose[
 ];
 
 makeDefaultSettingsContent // endDefinition;
-
-(* FIXME: temporary definitions *)
-makeInterfaceContent[ ] := "Test content, please ignore.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -454,20 +478,251 @@ modelSelectCallback[
 modelSelectCallback // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*makeTemperatureSlider*)
-makeTemperatureSlider // beginDefinition;
+(* ::Subsubsection::Closed:: *)
+(*makeAssistanceCheckbox*)
+makeAssistanceCheckbox // beginDefinition;
 
-makeTemperatureSlider[ ] :=
-    Slider[
-        Dynamic[ CurrentChatSettings[ $FrontEnd, "Temperature" ] ],
-        { 0, 2, 0.01 },
-        ImageSize    -> { 135, Automatic },
-        ImageMargins -> { { 5, 0 }, { 5, 5 } },
-        Appearance   -> "Labeled"
+makeAssistanceCheckbox[ ] :=
+    prefsCheckbox[
+        Dynamic[
+            TrueQ @ CurrentChatSettings[ $FrontEnd, "Assistance" ],
+            (CurrentChatSettings[ $FrontEnd, "Assistance" ] = #1) &
+        ],
+        infoTooltip[
+            "Enable automatic assistance",
+            "If enabled, automatic AI provided suggestions will be added following evaluation results."
+        ]
     ];
 
-makeTemperatureSlider // endDefinition;
+makeAssistanceCheckbox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeTemperatureInput*)
+makeTemperatureInput // beginDefinition;
+
+makeTemperatureInput[ ] :=
+    prefsInputField[
+        "Temperature:",
+        Dynamic[
+            CurrentChatSettings[ $FrontEnd, "Temperature" ],
+            {
+                None,
+                If[ NumberQ @ #, CurrentChatSettings[ $FrontEnd, "Temperature" ] = # ] &
+            }
+        ],
+        Number,
+        ImageSize -> { 50, Automatic }
+    ];
+
+makeTemperatureInput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*makeInterfaceContent*)
+makeInterfaceContent // beginDefinition;
+
+makeInterfaceContent[ ] := Enclose[
+    Module[ { formatCheckbox, includeHistory, chatHistoryLength, mergeMessages },
+
+        formatCheckbox = ConfirmMatch[ makeFormatCheckbox[ ], _Grid|_Row, "FormatCheckbox" ];
+        includeHistory = ConfirmMatch[ makeIncludeHistoryCheckbox[ ], _Grid|_Row, "ChatHistory" ];
+        chatHistoryLength = ConfirmMatch[ makeChatHistoryLengthInput[ ], _Grid|_Row, "ChatHistoryLength" ];
+        mergeMessages = ConfirmMatch[ makeMergeMessagesCheckbox[ ], _Grid|_Row, "MergeMessages" ];
+
+        Grid[
+            {
+                { formatCheckbox    },
+                { includeHistory    },
+                { chatHistoryLength },
+                { mergeMessages     }
+            },
+            Alignment -> { Left, Baseline },
+            Spacings  -> { 0, 0.7 }
+        ]
+    ],
+    throwInternalFailure
+];
+
+makeInterfaceContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeFormatCheckbox*)
+makeFormatCheckbox // beginDefinition;
+
+makeFormatCheckbox[ ] :=
+    prefsCheckbox[
+        Dynamic[
+            TrueQ @ CurrentChatSettings[ $FrontEnd, "AutoFormat" ],
+            (CurrentChatSettings[ $FrontEnd, "AutoFormat" ] = #1) &
+        ],
+        "Format chat output"
+    ];
+
+makeFormatCheckbox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeIncludeHistoryCheckbox*)
+makeIncludeHistoryCheckbox // beginDefinition;
+
+makeIncludeHistoryCheckbox[ ] :=
+    prefsCheckbox[
+        Dynamic[
+            MatchQ[ CurrentChatSettings[ $FrontEnd, "IncludeHistory" ], True|Automatic ],
+            (CurrentChatSettings[ $FrontEnd, "IncludeHistory" ] = #1) &
+        ],
+        infoTooltip[
+            "Include chat history",
+            "If enabled, cells preceding the chat input will be included as additional context for the LLM."
+        ]
+    ];
+
+makeIncludeHistoryCheckbox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeChatHistoryLengthInput*)
+makeChatHistoryLengthInput // beginDefinition;
+
+makeChatHistoryLengthInput[ ] :=
+    infoTooltip[
+        prefsInputField[
+            "Chat history length:",
+            Dynamic[
+                CurrentChatSettings[ $FrontEnd, "ChatHistoryLength" ],
+                {
+                    None,
+                    If[ NumberQ @ #, CurrentChatSettings[ $FrontEnd, "ChatHistoryLength" ] = Floor[ # ] ] &
+                }
+            ],
+            Number,
+            ImageSize -> { 50, Automatic }
+        ],
+        "Maximum number of cells to include in chat history"
+    ];
+
+makeChatHistoryLengthInput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeMergeMessagesCheckbox*)
+makeMergeMessagesCheckbox // beginDefinition;
+
+makeMergeMessagesCheckbox[ ] :=
+    prefsCheckbox[
+        Dynamic[
+            MatchQ[ CurrentChatSettings[ $FrontEnd, "MergeMessages" ], True|Automatic ],
+            (CurrentChatSettings[ $FrontEnd, "MergeMessages" ] = #1) &
+        ],
+        infoTooltip[
+            "Merge chat messages",
+            "If enabled, adjacent cells with the same author will be merged into a single chat message."
+        ]
+    ];
+
+makeMergeMessagesCheckbox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*makeFeaturesContent*)
+makeFeaturesContent // beginDefinition;
+
+makeFeaturesContent[ ] := Enclose[
+    Module[ { multimodal, toolsEnabled, toolFrequency },
+
+        multimodal = ConfirmMatch[ makeMultimodalMenu[ ], _Grid|_Row, "Multimodal" ];
+        toolsEnabled = ConfirmMatch[ makeToolsEnabledMenu[ ], _Grid|_Row, "ToolsEnabled" ];
+        toolFrequency = ConfirmMatch[ makeToolCallFrequencySelector[ ], _Grid|_Row, "ToolFrequency" ];
+
+        Grid[
+            {
+                { multimodal    },
+                { toolsEnabled  },
+                { toolFrequency }
+            },
+            Alignment -> { Left, Baseline },
+            Spacings  -> { 0, 0.7 }
+        ]
+    ],
+    throwInternalFailure
+];
+
+makeFeaturesContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeMultimodalMenu*)
+makeMultimodalMenu // beginDefinition;
+
+makeMultimodalMenu[ ] :=
+    Grid[
+        {
+            {
+                Style[ "Enable multimodal content: ", "leadinText" ],
+                PopupMenu[
+                    Dynamic @ CurrentChatSettings[ $FrontEnd, "Multimodal" ],
+                    {
+                        Automatic -> "Automatic by model",
+                        True      -> "Always enabled",
+                        False     -> "Always disabled"
+                    },
+                    MenuStyle -> "controlText"
+                ]
+            }
+        },
+        Alignment -> { Left, Baseline },
+        Spacings  -> 0.5
+    ];
+
+makeMultimodalMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeToolsEnabledMenu*)
+makeToolsEnabledMenu // beginDefinition;
+
+makeToolsEnabledMenu[ ] :=
+    Grid[
+        {
+            {
+                Style[ "Enable tools: ", "leadinText" ],
+                PopupMenu[
+                    Dynamic @ CurrentChatSettings[ $FrontEnd, "ToolsEnabled" ],
+                    {
+                        Automatic -> "Automatic by model",
+                        True      -> "Always enabled",
+                        False     -> "Always disabled"
+                    },
+                    MenuStyle -> "controlText"
+                ]
+            }
+        },
+        Alignment -> { Left, Baseline },
+        Spacings  -> 0.5
+    ];
+
+makeToolsEnabledMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeToolCallFrequencySelector*)
+makeToolCallFrequencySelector // beginDefinition;
+
+makeToolCallFrequencySelector[ ] :=
+    Grid[
+        {
+            {
+                Style[ "Tool call frequency:", "leadinText" ],
+                makeToolCallFrequencySlider[ $FrontEnd ]
+            }
+        },
+        Alignment -> { Left, Baseline },
+        Spacings  -> 0.5
+    ];
+
+makeToolCallFrequencySelector // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -517,6 +772,85 @@ toolSettingsPanel // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Common*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*prefsInputField*)
+prefsInputField // beginDefinition;
+
+(* cSpell: ignore leadin *)
+prefsInputField[ label_, value_Dynamic, type_, opts: OptionsPattern[ ] ] := Grid[
+    { { label, prefsInputField0[ value, type, opts ] } },
+    Alignment -> { Automatic, Baseline },
+    BaseStyle -> { "leadinText" },
+    Spacings  -> 0.5
+];
+
+prefsInputField // endDefinition;
+
+
+prefsInputField0 // beginDefinition;
+
+prefsInputField0[ value_Dynamic, type_, opts: OptionsPattern[ ] ] := RawBoxes @ StyleBox[
+    TemplateBox[
+        {
+            value,
+            type,
+            DeleteDuplicatesBy[
+                Flatten @ {
+                    opts,
+                    Alignment        -> { Left, Top },
+                    BaseStyle        -> { "controlText" },
+                    ContinuousAction -> False,
+                    ImageMargins     -> { { Automatic, Automatic }, { Automatic, Automatic } }
+                },
+                ToString @* First
+            ],
+            Automatic
+        },
+        "InputFieldAppearance:RoundedFrame"
+    ],
+    FrameBoxOptions -> { BaselinePosition -> Top -> Scaled[ 1.3 ] }
+];
+
+prefsInputField0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*prefsCheckbox*)
+prefsCheckbox // beginDefinition;
+
+prefsCheckbox[ value_Dynamic, label_, rest___ ] :=
+    Grid[
+        { { Checkbox[ value, rest ], clickableCheckboxLabel[ value, label ] } },
+        Alignment -> { Left, Center },
+        Spacings  -> 0.2
+    ];
+
+prefsCheckbox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*clickableCheckboxLabel*)
+clickableCheckboxLabel // beginDefinition;
+
+clickableCheckboxLabel[ value_Dynamic, label_ ] := Toggler[
+    value,
+    { True -> label, False -> label },
+    BaselinePosition -> Scaled[ 0.2 ],
+    BaseStyle        -> { "checkboxText" }
+];
+
+clickableCheckboxLabel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*infoTooltip*)
+infoTooltip // beginDefinition;
+infoTooltip[ label_, tooltip_ ] := Row @ { label, Spacer[ 3 ], Tooltip[ $infoIcon, tooltip ] };
+infoTooltip // endDefinition;
+
+$infoIcon = chatbookIcon[ "InformationTooltip", False ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
