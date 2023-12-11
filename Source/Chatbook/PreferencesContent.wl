@@ -1267,6 +1267,9 @@ resetChatPreferences // endDefinition;
 (*openPreferencesPage*)
 openPreferencesPage // beginDefinition;
 
+openPreferencesPage[ ] :=
+    openPreferencesPage[ "Notebooks" ];
+
 openPreferencesPage[ page: $$preferencesPage ] :=
     NotebookTools`OpenPreferencesDialog @ { "AI", page };
 
