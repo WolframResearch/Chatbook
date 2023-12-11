@@ -105,8 +105,7 @@ preferencesContent[ "Notebooks" ] := trackedDynamic[ notebookSettingsPanel[ ], {
 preferencesContent[ "Personas" ] := trackedDynamic[ personaSettingsPanel[ ], { "Personas" } ];
 
 (* Content for the "Services" tab: *)
-(* FIXME: this is placeholder code *)
-preferencesContent[ "Services" ] := trackedDynamic[ "Coming soon.", { "Models" } ];
+preferencesContent[ "Services" ] := trackedDynamic[ servicesSettingsPanel[ ], { "Models" } ];
 
 (* Content for the "Tools" tab: *)
 preferencesContent[ "Tools" ] := toolSettingsPanel[ ];
@@ -731,8 +730,9 @@ makeToolsEnabledMenu[ ] := highlightControl[
                 ]
             }
         },
-        Alignment -> { Left, Baseline },
-        Spacings  -> 0.5
+        Alignment        -> { Left, Baseline },
+        BaselinePosition -> 1,
+        Spacings         -> 0.5
     ],
     "Notebooks",
     "ToolsEnabled"
@@ -746,15 +746,71 @@ makeToolsEnabledMenu // endDefinition;
 makeToolCallFrequencySelector // beginDefinition;
 
 makeToolCallFrequencySelector[ ] := highlightControl[
-    Grid[
-        {
+    DynamicModule[ { type, frequency },
+        Grid[
             {
-                Style[ "Tool call frequency:", "leadinText" ],
-                makeToolCallFrequencySlider[ $FrontEnd ]
-            }
-        },
-        Alignment -> { Left, Baseline },
-        Spacings  -> 0.5
+                {
+                    Style[ "Tool call frequency:", "leadinText" ],
+                    PopupMenu[
+                        Dynamic[
+                            type,
+                            Function[
+                                If[ # === Automatic
+                                    ,
+                                    type = Automatic;
+                                    CurrentChatSettings[ $FrontEnd, "ToolCallFrequency" ] = Automatic
+                                    ,
+                                    type = "Custom";
+                                    CurrentChatSettings[ $FrontEnd, "ToolCallFrequency" ] = 0.5
+                                ]
+                            ]
+                        ],
+                        {
+                            Automatic -> "Automatic",
+                            "Custom"  -> "Custom"
+                        },
+                        MenuStyle -> "controlText"
+                    ],
+                    PaneSelector[
+                        {
+                            Automatic -> "",
+                            "Custom" -> Grid[
+                                {
+                                    {
+                                        Spacer[ 5 ],
+                                        Style[ "Rare", "defaultSubtext" ],
+                                        Slider[
+                                            Dynamic[
+                                                frequency,
+                                                {
+                                                    Function[ frequency = # ],
+                                                    Function[
+                                                        CurrentChatSettings[ $FrontEnd, "ToolCallFrequency" ] = #;
+                                                        frequency = #
+                                                    ]
+                                                }
+                                            ],
+                                            ImageSize -> { 100, Automatic }
+                                        ],
+                                        Style[ "Often", "defaultSubtext" ]
+                                    }
+                                },
+                                Spacings -> { 0.4, 0.7 }
+                            ]
+                        },
+                        Dynamic[ type ],
+                        ImageSize -> Automatic
+                    ]
+                }
+            },
+            Alignment        -> { Left, Baseline },
+            BaselinePosition -> 1,
+            Spacings         -> 0.5
+        ],
+        Initialization :> With[ { val = CurrentChatSettings[ $FrontEnd, "ToolCallFrequency" ] },
+            type      = If[ NumberQ @ val, "Custom", Automatic ];
+            frequency = If[ NumberQ @ val, val, 0.5 ];
+        ]
     ],
     "Notebooks",
     "ToolCallFrequency"
@@ -765,7 +821,13 @@ makeToolCallFrequencySelector // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Services*)
-(* TODO *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*servicesSettingsPanel*)
+servicesSettingsPanel // beginDefinition;
+servicesSettingsPanel[ ] := "Test text, please ignore";
+servicesSettingsPanel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
