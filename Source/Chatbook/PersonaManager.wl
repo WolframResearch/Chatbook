@@ -87,7 +87,7 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
                                         KeySort[$CachedPersonaData]]],
                                 {"", "In Menu", "", "Name", ""(*FITME*), (*"Description",*) "Version", ""}],
                             Alignment -> {{Center, Center, {Left}}, Center},
-                            Background -> {{}, {RGBColor["#e5e5e5"]}},
+                            Background -> {{}, {RGBColor["#e5e5e5"], {White}}},
                             BaseStyle -> "DialogBody",
                             Dividers -> Dynamic @ {
                                 {},
