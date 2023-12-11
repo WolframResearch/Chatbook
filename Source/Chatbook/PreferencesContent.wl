@@ -57,7 +57,7 @@ createPreferencesContent[ ] := Enclose[
             },
             Dynamic @ CurrentValue[
                 $FrontEnd,
-                { PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PreferencesTab" },
+                { PrivateFrontEndOptions, "DialogSettings", "Preferences", "TabSettings", "AI", "Top" },
                 "Notebooks"
             ],
             Background   -> None,
@@ -217,25 +217,23 @@ createNotebookSettingsPanel // endDefinition;
 makeDefaultSettingsContent // beginDefinition;
 
 makeDefaultSettingsContent[ ] := Enclose[
-    Module[ { personaSelector, modelSelector, assistanceCheckbox, temperatureInput, row },
+    Module[ { personaSelector, modelSelector, assistanceCheckbox, temperatureInput },
         (* The personaSelector is a pop-up menu for selecting the default persona: *)
-        personaSelector = ConfirmMatch[ makePersonaSelector[ ], _PopupMenu, "PersonaSelector" ];
+        personaSelector = ConfirmMatch[ makePersonaSelector[ ], _Style, "PersonaSelector" ];
         (* The modelSelector is a dynamic module containing menus to select the service and model separately: *)
         modelSelector = ConfirmMatch[ makeModelSelector[ ], _DynamicModule, "ModelSelector" ];
         (* Checkbox to enable automatic assistance for normal shift-enter evaluations: *)
-        assistanceCheckbox = ConfirmMatch[ makeAssistanceCheckbox[ ], _Grid|_Row, "AssistanceCheckbox" ];
+        assistanceCheckbox = ConfirmMatch[ makeAssistanceCheckbox[ ], _Style, "AssistanceCheckbox" ];
         (* The temperatureInput is an input field for setting the default 'temperature' for responses: *)
-        temperatureInput = ConfirmMatch[ makeTemperatureInput[ ], _Grid, "TemperatureInput" ];
-        (* Helper function to create a row layout with spacers between elements: *)
-        row = Row[ { ## }, Spacer[ 3 ] ] &;
+        temperatureInput = ConfirmMatch[ makeTemperatureInput[ ], _Style, "TemperatureInput" ];
 
         (* Assemble the persona selector, model selector, and temperature slider into a grid layout: *)
         Grid[
             {
-                { row[ "Default Persona:", personaSelector ] },
-                { modelSelector },
+                { personaSelector    },
+                { modelSelector      },
                 { assistanceCheckbox },
-                { temperatureInput }
+                { temperatureInput   }
             },
             Alignment -> { Left, Baseline },
             Spacings  -> { 0, 0.7 }
@@ -262,13 +260,22 @@ makePersonaSelector[ personas_Association? AssociationQ ] :=
 
 (* Overload of makePersonaSelector that takes a list of rules where each rule is a string to an association,
    creates a PopupMenu with this list *)
-makePersonaSelector[ personas: { (_String -> _).. } ] := PopupMenu[
-    Dynamic[
-        currentChatSettings[ $FrontEnd, "LLMEvaluator" ],
-        (CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = #1) &
-    ],
-    personas
-];
+makePersonaSelector[ personas: { (_String -> _).. } ] :=
+    highlightControl[
+        Row @ {
+            "Default Persona:",
+            Spacer[ 3 ],
+            PopupMenu[
+                Dynamic[
+                    currentChatSettings[ $FrontEnd, "LLMEvaluator" ],
+                    (CurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = #1) &
+                ],
+                personas
+            ]
+        },
+        "Notebooks",
+        "DefaultPersona"
+    ];
 
 makePersonaSelector // endDefinition;
 
@@ -294,7 +301,7 @@ makeModelSelector[ ] :=
     makeModelSelector @ $availableServices;
 
 makeModelSelector[ services_Association? AssociationQ ] := Enclose[
-    DynamicModule[ { default, service, model, state, serviceSelector, modelSelector },
+    DynamicModule[ { default, service, model, state, serviceSelector, modelSelector, highlight },
 
         default = currentChatSettings[ $FrontEnd, "Model" ];
         service = ConfirmBy[ extractServiceName @ default, StringQ, "ServiceName" ];
@@ -314,16 +321,18 @@ makeModelSelector[ services_Association? AssociationQ ] := Enclose[
             services
         ];
 
+        highlight = highlightControl[ Row @ { #1, Spacer[ 1 ], #2 }, "Notebooks", #3 ] &;
+
         Row @ {
-            "Default LLM Service:",
-            Spacer[ 1 ],
-            serviceSelector,
+            highlight[ "Default LLM Service:", serviceSelector, "DefaultService" ],
             Spacer[ 5 ],
-            "Default Model:",
-            Spacer[ 1 ],
-            Dynamic[
-                If[ state === "Loading", $loadingPopupMenu, modelSelector ],
-                TrackedSymbols :> { state, modelSelector }
+            highlight[
+                "Default Model:",
+                    Dynamic[
+                    If[ state === "Loading", $loadingPopupMenu, modelSelector ],
+                    TrackedSymbols :> { state, modelSelector }
+                ],
+                "DefaultModel"
             ]
         },
 
@@ -482,7 +491,7 @@ modelSelectCallback // endDefinition;
 (*makeAssistanceCheckbox*)
 makeAssistanceCheckbox // beginDefinition;
 
-makeAssistanceCheckbox[ ] :=
+makeAssistanceCheckbox[ ] := highlightControl[
     prefsCheckbox[
         Dynamic[
             TrueQ @ CurrentChatSettings[ $FrontEnd, "Assistance" ],
@@ -492,7 +501,10 @@ makeAssistanceCheckbox[ ] :=
             "Enable automatic assistance",
             "If enabled, automatic AI provided suggestions will be added following evaluation results."
         ]
-    ];
+    ],
+    "Notebooks",
+    "Assistance"
+];
 
 makeAssistanceCheckbox // endDefinition;
 
@@ -501,7 +513,7 @@ makeAssistanceCheckbox // endDefinition;
 (*makeTemperatureInput*)
 makeTemperatureInput // beginDefinition;
 
-makeTemperatureInput[ ] :=
+makeTemperatureInput[ ] := highlightControl[
     prefsInputField[
         "Temperature:",
         Dynamic[
@@ -513,7 +525,10 @@ makeTemperatureInput[ ] :=
         ],
         Number,
         ImageSize -> { 50, Automatic }
-    ];
+    ],
+    "Notebooks",
+    "Temperature"
+];
 
 makeTemperatureInput // endDefinition;
 
@@ -525,10 +540,10 @@ makeInterfaceContent // beginDefinition;
 makeInterfaceContent[ ] := Enclose[
     Module[ { formatCheckbox, includeHistory, chatHistoryLength, mergeMessages },
 
-        formatCheckbox = ConfirmMatch[ makeFormatCheckbox[ ], _Grid|_Row, "FormatCheckbox" ];
-        includeHistory = ConfirmMatch[ makeIncludeHistoryCheckbox[ ], _Grid|_Row, "ChatHistory" ];
-        chatHistoryLength = ConfirmMatch[ makeChatHistoryLengthInput[ ], _Grid|_Row, "ChatHistoryLength" ];
-        mergeMessages = ConfirmMatch[ makeMergeMessagesCheckbox[ ], _Grid|_Row, "MergeMessages" ];
+        formatCheckbox    = ConfirmMatch[ makeFormatCheckbox[ ]        , _Style, "FormatCheckbox"    ];
+        includeHistory    = ConfirmMatch[ makeIncludeHistoryCheckbox[ ], _Style, "ChatHistory"       ];
+        chatHistoryLength = ConfirmMatch[ makeChatHistoryLengthInput[ ], _Style, "ChatHistoryLength" ];
+        mergeMessages     = ConfirmMatch[ makeMergeMessagesCheckbox[ ] , _Style, "MergeMessages"     ];
 
         Grid[
             {
@@ -551,14 +566,17 @@ makeInterfaceContent // endDefinition;
 (*makeFormatCheckbox*)
 makeFormatCheckbox // beginDefinition;
 
-makeFormatCheckbox[ ] :=
+makeFormatCheckbox[ ] := highlightControl[
     prefsCheckbox[
         Dynamic[
             TrueQ @ CurrentChatSettings[ $FrontEnd, "AutoFormat" ],
             (CurrentChatSettings[ $FrontEnd, "AutoFormat" ] = #1) &
         ],
         "Format chat output"
-    ];
+    ],
+    "Notebooks",
+    "AutoFormat"
+];
 
 makeFormatCheckbox // endDefinition;
 
@@ -567,7 +585,7 @@ makeFormatCheckbox // endDefinition;
 (*makeIncludeHistoryCheckbox*)
 makeIncludeHistoryCheckbox // beginDefinition;
 
-makeIncludeHistoryCheckbox[ ] :=
+makeIncludeHistoryCheckbox[ ] := highlightControl[
     prefsCheckbox[
         Dynamic[
             MatchQ[ CurrentChatSettings[ $FrontEnd, "IncludeHistory" ], True|Automatic ],
@@ -577,7 +595,10 @@ makeIncludeHistoryCheckbox[ ] :=
             "Include chat history",
             "If enabled, cells preceding the chat input will be included as additional context for the LLM."
         ]
-    ];
+    ],
+    "Notebooks",
+    "IncludeHistory"
+];
 
 makeIncludeHistoryCheckbox // endDefinition;
 
@@ -586,7 +607,7 @@ makeIncludeHistoryCheckbox // endDefinition;
 (*makeChatHistoryLengthInput*)
 makeChatHistoryLengthInput // beginDefinition;
 
-makeChatHistoryLengthInput[ ] :=
+makeChatHistoryLengthInput[ ] := highlightControl[
     infoTooltip[
         prefsInputField[
             "Chat history length:",
@@ -601,7 +622,10 @@ makeChatHistoryLengthInput[ ] :=
             ImageSize -> { 50, Automatic }
         ],
         "Maximum number of cells to include in chat history"
-    ];
+    ],
+    "Notebooks",
+    "ChatHistoryLength"
+];
 
 makeChatHistoryLengthInput // endDefinition;
 
@@ -610,7 +634,7 @@ makeChatHistoryLengthInput // endDefinition;
 (*makeMergeMessagesCheckbox*)
 makeMergeMessagesCheckbox // beginDefinition;
 
-makeMergeMessagesCheckbox[ ] :=
+makeMergeMessagesCheckbox[ ] := highlightControl[
     prefsCheckbox[
         Dynamic[
             MatchQ[ CurrentChatSettings[ $FrontEnd, "MergeMessages" ], True|Automatic ],
@@ -620,7 +644,10 @@ makeMergeMessagesCheckbox[ ] :=
             "Merge chat messages",
             "If enabled, adjacent cells with the same author will be merged into a single chat message."
         ]
-    ];
+    ],
+    "Notebooks",
+    "MergeMessages"
+];
 
 makeMergeMessagesCheckbox // endDefinition;
 
@@ -632,9 +659,9 @@ makeFeaturesContent // beginDefinition;
 makeFeaturesContent[ ] := Enclose[
     Module[ { multimodal, toolsEnabled, toolFrequency },
 
-        multimodal = ConfirmMatch[ makeMultimodalMenu[ ], _Grid|_Row, "Multimodal" ];
-        toolsEnabled = ConfirmMatch[ makeToolsEnabledMenu[ ], _Grid|_Row, "ToolsEnabled" ];
-        toolFrequency = ConfirmMatch[ makeToolCallFrequencySelector[ ], _Grid|_Row, "ToolFrequency" ];
+        multimodal    = ConfirmMatch[ makeMultimodalMenu[ ]           , _Style, "Multimodal"    ];
+        toolsEnabled  = ConfirmMatch[ makeToolsEnabledMenu[ ]         , _Style, "ToolsEnabled"  ];
+        toolFrequency = ConfirmMatch[ makeToolCallFrequencySelector[ ], _Style, "ToolFrequency" ];
 
         Grid[
             {
@@ -656,7 +683,7 @@ makeFeaturesContent // endDefinition;
 (*makeMultimodalMenu*)
 makeMultimodalMenu // beginDefinition;
 
-makeMultimodalMenu[ ] :=
+makeMultimodalMenu[ ] := highlightControl[
     Grid[
         {
             {
@@ -674,7 +701,10 @@ makeMultimodalMenu[ ] :=
         },
         Alignment -> { Left, Baseline },
         Spacings  -> 0.5
-    ];
+    ],
+    "Notebooks",
+    "Multimodal"
+];
 
 makeMultimodalMenu // endDefinition;
 
@@ -683,7 +713,7 @@ makeMultimodalMenu // endDefinition;
 (*makeToolsEnabledMenu*)
 makeToolsEnabledMenu // beginDefinition;
 
-makeToolsEnabledMenu[ ] :=
+makeToolsEnabledMenu[ ] := highlightControl[
     Grid[
         {
             {
@@ -701,7 +731,10 @@ makeToolsEnabledMenu[ ] :=
         },
         Alignment -> { Left, Baseline },
         Spacings  -> 0.5
-    ];
+    ],
+    "Notebooks",
+    "ToolsEnabled"
+];
 
 makeToolsEnabledMenu // endDefinition;
 
@@ -710,7 +743,7 @@ makeToolsEnabledMenu // endDefinition;
 (*makeToolCallFrequencySelector*)
 makeToolCallFrequencySelector // beginDefinition;
 
-makeToolCallFrequencySelector[ ] :=
+makeToolCallFrequencySelector[ ] := highlightControl[
     Grid[
         {
             {
@@ -720,7 +753,10 @@ makeToolCallFrequencySelector[ ] :=
         },
         Alignment -> { Left, Baseline },
         Spacings  -> 0.5
-    ];
+    ],
+    "Notebooks",
+    "ToolCallFrequency"
+];
 
 makeToolCallFrequencySelector // endDefinition;
 
@@ -1176,7 +1212,7 @@ $resetButton =
             Needs[ "Wolfram`Chatbook`" -> None ];
             resetChatPreferences @ CurrentValue[
                 $FrontEnd,
-                { PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PreferencesTab" }
+                { PrivateFrontEndOptions, "DialogSettings", "Preferences", "TabSettings", "AI", "Top" }
             ]
             ,
             BaseStyle -> {
@@ -1231,13 +1267,40 @@ resetChatPreferences // endDefinition;
 (*openPreferencesPage*)
 openPreferencesPage // beginDefinition;
 
-openPreferencesPage[ page: $$preferencesPage ] := (
-    CurrentValue[ $FrontEnd, { "PreferencesSettings", "Page" } ] = "AI";
-    CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PreferencesTab" } ] = page;
-    FrontEndTokenExecute[ "PreferencesDialog" ]
-);
+openPreferencesPage[ page: $$preferencesPage ] :=
+    NotebookTools`OpenPreferencesDialog @ { "AI", page };
+
+openPreferencesPage[ page: $$preferencesPage, id_ ] :=
+    NotebookTools`OpenPreferencesDialog[ { "AI", page }, { "AI", page, id } ];
 
 openPreferencesPage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*highlightControl*)
+highlightControl // beginDefinition;
+highlightControl[ expr_, tab_, id_ ] := Style[ expr, Background -> highlightColor[ tab, id ] ];
+highlightControl // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*highlightColor*)
+highlightColor // beginDefinition;
+
+highlightColor[ tab_, id_ ] :=
+    With[
+        {
+            hid := FrontEnd`AbsoluteCurrentValue[
+                $FrontEndSession,
+                { PrivateFrontEndOptions, "DialogSettings", "Preferences", "ControlHighlight", "HighlightID" },
+                None
+            ],
+            color := FrontEnd`AbsoluteCurrentValue[ EvaluationNotebook[ ], { TaggingRules, "HighlightColor" }, None ]
+        },
+        Dynamic @ If[ hid === { "AI", tab, id }, color, None ]
+    ];
+
+highlightColor // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
