@@ -615,7 +615,9 @@ makeChatHistoryLengthInput[ ] := highlightControl[
                 CurrentChatSettings[ $FrontEnd, "ChatHistoryLength" ],
                 {
                     None,
-                    If[ NumberQ @ #, CurrentChatSettings[ $FrontEnd, "ChatHistoryLength" ] = Floor[ # ] ] &
+                    If[ NumberQ @ # && NonNegative @ #,
+                        CurrentChatSettings[ $FrontEnd, "ChatHistoryLength" ] = Floor[ # ]
+                    ] &
                 }
             ],
             Number,
