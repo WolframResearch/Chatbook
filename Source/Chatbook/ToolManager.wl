@@ -65,7 +65,7 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
         {
             globalTools, personaTools, personaToolNames, personaToolLookup, tools,
             preppedPersonas, preppedTools, personaNames, personaDisplayNames,
-            toolNames, toolDefaultPersonas, gridOpts, marginL, marginH, margins
+            toolNames, toolDefaultPersonas, gridOpts
         },
 
         globalTools = toolName @ tools0;
@@ -133,19 +133,13 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                     ]
                 ];
 
-            marginL = If[ TrueQ @ $inDialog, Automatic, 5 ];
-            marginH = { marginL, Automatic };
-            margins = { marginH, Automatic };
-
             DynamicWrapper[
                 Grid[
                     {
-                        (* ----- Install Tools ----- *)
                         If[ TrueQ @ $inDialog, dialogHeader[ "Add & Manage LLM Tools" ], Nothing ],
-                        dialogSubHeader[
-                            "Install Tools",
-                            margins
-                        ],
+
+                        (* ----- Install Tools ----- *)
+                        dialogSubHeader[ "Install Tools" ],
                         dialogBody[
                             Grid @ {
                                 {
@@ -165,14 +159,11 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                                         Method           -> "Queued"
                                     ]
                                 }
-                            },
-                            margins
+                            }
                         ],
 
                         (* ----- Configure and Enable Tools ----- *)
-
-
-                        dialogSubHeader[ "Manage and Enable Tools", margins ],
+                        dialogSubHeader[ "Manage and Enable Tools" ],
                         dialogBody[
                             Grid @ {
                                 {
@@ -181,7 +172,7 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                                     Dynamic @ catchAlways @ toolModelWarning @ scopeMode[ ]
                                 }
                             },
-                            { marginH, { 5, Automatic } }
+                            { Automatic, { 5, Automatic } }
                         ],
 
                         dialogBody[ EventHandler[
@@ -346,8 +337,9 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                             ],
                             { "MouseExited" :> FEPrivate`Set[ { row, column }, { None, None } ] },
                             PassEventsDown -> True
-                        ], { { marginL, 0 }, Automatic } ],
+                        ], { { Automatic, 0 }, Automatic } ],
 
+                        (* ----- Dialog Buttons ----- *)
                         If[ TrueQ @ $inDialog,
                             {
                                 Item[
@@ -372,7 +364,16 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                     },
                     Alignment -> { Left, Top },
                     BaseStyle -> $baseStyle,
-                    Dividers  -> { False, { False, $dividerCol, False, $dividerCol, False, { False } } },
+                    Dividers  -> {
+                        False,
+                        {
+                            If[ TrueQ @ $inDialog, Sequence @@ { False, $dividerCol }, False ],
+                            False,
+                            $dividerCol,
+                            False,
+                            { False }
+                        }
+                    },
                     ItemSize  -> { Automatic, 0 },
                     Spacings  -> { 0, 0 }
                 ],
