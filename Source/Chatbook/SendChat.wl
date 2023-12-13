@@ -67,7 +67,7 @@ $buffer            = "";
 sendChat // beginDefinition;
 
 sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ ChatbookAction ] @ Enclose[
-    Module[ { cells0, cells, target, settings, id, key, messages, data, persona, cell, cellObject, container, task },
+    Module[ { cells0, cells, target, settings, messages, data, persona, cell, cellObject, container, task },
 
         initFETaskWidget @ nbo;
 
@@ -92,14 +92,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             AppendTo[ settings, "ChatGroupSettings" -> getChatGroupSettings @ evalCell ]
         ];
 
-        id  = Lookup[ settings, "ID" ];
-        key = toAPIKey[ Automatic, id ];
-
         If[ ! settings[ "IncludeHistory" ], cells = { evalCell } ];
-
-        If[ ! StringQ @ key, throwFailure[ "NoAPIKey" ] ];
-
-        settings[ "OpenAIKey" ] = key;
 
         { messages, data } = Reap[
             ConfirmMatch[
