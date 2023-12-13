@@ -105,7 +105,7 @@ preferencesContent[ "Notebooks" ] := trackedDynamic[ notebookSettingsPanel[ ], {
 preferencesContent[ "Personas" ] := trackedDynamic[ personaSettingsPanel[ ], { "Personas" } ];
 
 (* Content for the "Services" tab: *)
-preferencesContent[ "Services" ] := trackedDynamic[ servicesSettingsPanel[ ], { "Models" } ];
+preferencesContent[ "Services" ] := trackedDynamic[ servicesSettingsPanel[ ], { "Models", "Services" } ];
 
 (* Content for the "Tools" tab: *)
 preferencesContent[ "Tools" ] := toolSettingsPanel[ ];
@@ -216,22 +216,22 @@ createNotebookSettingsPanel // endDefinition;
 makeDefaultSettingsContent // beginDefinition;
 
 makeDefaultSettingsContent[ ] := Enclose[
-    Module[ { personaSelector, modelSelector, assistanceCheckbox, temperatureInput },
+    Module[ { assistanceCheckbox, personaSelector, modelSelector, temperatureInput },
+        (* Checkbox to enable automatic assistance for normal shift-enter evaluations: *)
+        assistanceCheckbox = ConfirmMatch[ makeAssistanceCheckbox[ ], _Style, "AssistanceCheckbox" ];
         (* The personaSelector is a pop-up menu for selecting the default persona: *)
         personaSelector = ConfirmMatch[ makePersonaSelector[ ], _Style, "PersonaSelector" ];
         (* The modelSelector is a dynamic module containing menus to select the service and model separately: *)
         modelSelector = ConfirmMatch[ makeModelSelector[ ], _DynamicModule, "ModelSelector" ];
-        (* Checkbox to enable automatic assistance for normal shift-enter evaluations: *)
-        assistanceCheckbox = ConfirmMatch[ makeAssistanceCheckbox[ ], _Style, "AssistanceCheckbox" ];
         (* The temperatureInput is an input field for setting the default 'temperature' for responses: *)
         temperatureInput = ConfirmMatch[ makeTemperatureInput[ ], _Style, "TemperatureInput" ];
 
         (* Assemble the persona selector, model selector, and temperature slider into a grid layout: *)
         Grid[
             {
+                { assistanceCheckbox },
                 { personaSelector    },
                 { modelSelector      },
-                { assistanceCheckbox },
                 { temperatureInput   }
             },
             Alignment -> { Left, Baseline },
@@ -273,7 +273,7 @@ makePersonaSelector[ personas: { (_String -> _).. } ] :=
             ]
         },
         "Notebooks",
-        "DefaultPersona"
+        "LLMEvaluator"
     ];
 
 makePersonaSelector // endDefinition;
@@ -308,7 +308,12 @@ makeModelSelector[ services_Association? AssociationQ ] := Enclose[
         state   = If[ modelListCachedQ @ service, "Loaded", "Loading" ];
 
         modelSelector = If[ state === "Loaded",
-                            makeModelNameSelector[ Dynamic @ service, Dynamic @ model ],
+                            makeModelNameSelector[
+                                Dynamic @ service,
+                                Dynamic @ model,
+                                Dynamic @ modelSelector,
+                                Dynamic @ state
+                            ],
                             ""
                         ];
 
@@ -322,21 +327,30 @@ makeModelSelector[ services_Association? AssociationQ ] := Enclose[
 
         highlight = highlightControl[ Row @ { #1, Spacer[ 1 ], #2 }, "Notebooks", #3 ] &;
 
-        Row @ {
-            highlight[ "Default LLM Service:", serviceSelector, "DefaultService" ],
-            Spacer[ 5 ],
-            highlight[
-                "Default Model:",
-                    Dynamic[
-                    If[ state === "Loading", $loadingPopupMenu, modelSelector ],
-                    TrackedSymbols :> { state, modelSelector }
-                ],
-                "DefaultModel"
-            ]
-        },
+        highlightControl[
+            Row @ {
+                highlight[ "Default LLM Service:", serviceSelector, "ModelService" ],
+                Spacer[ 5 ],
+                highlight[
+                    "Default Model:",
+                        Dynamic[
+                        If[ state === "Loading", $loadingPopupMenu, modelSelector ],
+                        TrackedSymbols :> { state, modelSelector }
+                    ],
+                    "ModelName"
+                ]
+            },
+            "Notebooks",
+            "Model"
+        ],
 
         Initialization :> (
-            modelSelector = catchAlways @ makeModelNameSelector[ Dynamic @ service, Dynamic @ model ];
+            modelSelector = catchAlways @ makeModelNameSelector[
+                Dynamic @ service,
+                Dynamic @ model,
+                Dynamic @ modelSelector,
+                Dynamic @ state
+            ];
             state = "Loaded";
         ),
         SynchronousInitialization -> False,
@@ -400,10 +414,20 @@ serviceSelectCallback[
     (* Finish loading the model name selector: *)
     If[ state === "Loading",
         SessionSubmit[
-            modelSelector = makeModelNameSelector[ Dynamic @ service, Dynamic @ model ];
+            modelSelector = makeModelNameSelector[
+                Dynamic @ service,
+                Dynamic @ model,
+                Dynamic @ modelSelector,
+                Dynamic @ state
+            ];
             state = "Loaded"
         ],
-        modelSelector = makeModelNameSelector[ Dynamic @ service, Dynamic @ model ]
+        modelSelector = makeModelNameSelector[
+            Dynamic @ service,
+            Dynamic @ model,
+            Dynamic @ modelSelector,
+            Dynamic @ state
+        ]
     ]
 ];
 
@@ -414,13 +438,41 @@ serviceSelectCallback // endDefinition;
 (*makeModelNameSelector*)
 makeModelNameSelector // beginDefinition;
 
-makeModelNameSelector[ Dynamic[ service_ ], Dynamic[ model_ ] ] := Enclose[
-    Module[ { models, current, default, fallback },
+makeModelNameSelector[
+    Dynamic[ service_ ],
+    Dynamic[ model_ ],
+    Dynamic[ modelSelector_ ],
+    Dynamic[ state_ ]
+] := Enclose[
+    Catch @ Module[ { models, current, default, fallback },
 
         ensureServiceName @ service;
         ConfirmAssert[ StringQ @ service, "ServiceName" ];
 
-        models   = ConfirmMatch[ getServiceModelList @ service, { __Association }, "ServiceModelList" ];
+        models = ConfirmMatch[
+            Block[ { $allowConnectionDialog = False }, getServiceModelList @ service ],
+            { __Association } | Missing[ "NotConnected" ] | Missing[ "NoModelList" ],
+            "ServiceModelList"
+        ];
+
+        If[ models === Missing[ "NotConnected" ],
+            Throw @ serviceConnectButton[
+                Dynamic @ service,
+                Dynamic @ model,
+                Dynamic @ modelSelector,
+                Dynamic @ state
+            ]
+        ];
+
+        If[ models === Missing[ "NoModelList" ],
+            Throw @ modelNameInputField[
+                Dynamic @ service,
+                Dynamic @ model,
+                Dynamic @ modelSelector,
+                Dynamic @ state
+            ]
+        ];
+
         current  = extractModelName @ CurrentChatSettings[ $FrontEnd, "Model" ];
         default  = ConfirmBy[ getServiceDefaultModel @ service, StringQ, "DefaultName" ];
         fallback = <| "Service" -> service, "Name" -> default |>;
@@ -451,6 +503,60 @@ makeModelNameSelector[ Dynamic[ service_ ], Dynamic[ model_ ] ] := Enclose[
 ];
 
 makeModelNameSelector // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*modelNameInputField*)
+modelNameInputField // beginDefinition;
+
+modelNameInputField[ Dynamic[ service_ ], Dynamic[ model_ ], Dynamic[ modelSelector_ ], Dynamic[ state_ ] ] :=
+    prefsInputField[
+        "Model:",
+        Dynamic[
+            Replace[
+                extractModelName @ CurrentChatSettings[ $FrontEnd, "Model" ],
+                Except[ _String ] :> ""
+            ],
+            { None, modelSelectCallback[ Dynamic @ service, Dynamic @ model ] }
+        ],
+        String,
+        ImageSize -> { 200, Automatic }
+    ];
+
+modelNameInputField // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*serviceConnectButton*)
+serviceConnectButton // beginDefinition;
+
+serviceConnectButton[
+    Dynamic[ service_ ],
+    Dynamic[ model_ ],
+    Dynamic[ modelSelector_ ],
+    Dynamic[ state_ ]
+] :=
+    Button[
+        "Connect for model list",
+        Needs[ "Wolfram`LLMFunctions`" -> None ];
+        Replace[
+            (* cSpell: ignore genconerr *)
+            Quiet[ Wolfram`LLMFunctions`APIs`Common`ConnectToService @ service, { ServiceConnect::genconerr } ],
+            _ServiceObject :>
+                If[ ListQ @ getServiceModelList @ service,
+                    serviceSelectCallback[
+                        service,
+                        Dynamic @ service,
+                        Dynamic @ model,
+                        Dynamic @ modelSelector,
+                        Dynamic @ state
+                    ]
+                ]
+        ],
+        Method -> "Queued"
+    ];
+
+serviceConnectButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
@@ -826,8 +932,179 @@ makeToolCallFrequencySelector // endDefinition;
 (* ::Subsection::Closed:: *)
 (*servicesSettingsPanel*)
 servicesSettingsPanel // beginDefinition;
-servicesSettingsPanel[ ] := "Test text, please ignore";
+
+servicesSettingsPanel[ ] := Enclose[
+    Module[ { settingsLabel, settings, serviceGrid },
+
+        settingsLabel = Style[ "Registered Services", "subsectionText" ];
+        settings      = ConfirmMatch[ makeModelSelector[ ], _DynamicModule, "ServicesSettings" ];
+        serviceGrid   = ConfirmMatch[ makeServiceGrid[ ], _Grid, "ServiceGrid" ];
+
+        Pane[
+            Grid[
+                {
+                    { settingsLabel },
+                    { settings      },
+                    { serviceGrid   }
+                },
+                Alignment -> { Left, Baseline },
+                ItemSize  -> { Fit, Automatic },
+                Spacings  -> { 0, 0.7 }
+            ],
+            ImageMargins -> 8
+        ]
+    ],
+    throwInternalFailure
+];
+
 servicesSettingsPanel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*makeServiceGrid*)
+makeServiceGrid // beginDefinition;
+
+makeServiceGrid[ ] := Grid[
+    Join[
+        { { Spacer[ 1 ], "Service", SpanFromLeft, "Authentication", "", Spacer[ 1 ] } },
+        KeyValueMap[ makeServiceGridRow, $availableServices ]
+    ],
+    Alignment  -> { Left, Baseline },
+    Background -> { { }, { GrayLevel[ 0.898 ], { White } } },
+    ItemSize   -> { { Automatic, Automatic, Scaled[ .3 ], Fit, Automatic }, Automatic },
+    Dividers   -> { True, All },
+    FrameStyle -> GrayLevel[ 0.898 ],
+    Spacings   -> { Automatic, 0.7 }
+];
+
+makeServiceGrid // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeServiceGridRow*)
+makeServiceGridRow // beginDefinition;
+
+makeServiceGridRow[ name_String, data_Association ] := {
+    Spacer[ 1 ],
+    resizeMenuIcon @ inlineTemplateBoxes @ serviceIcon @ data,
+    name,
+    makeServiceAuthenticationDisplay @ name,
+    deleteServiceButton @ name,
+    Spacer[ 1 ]
+};
+
+makeServiceGridRow // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*deleteServiceButton*)
+deleteServiceButton // beginDefinition;
+
+deleteServiceButton[ "OpenAI" ] := Framed[
+    Button[
+        Insert[ chatbookIcon[ "ToolManagerBin", False ], GrayLevel[ 0.8 ], { 1, 1, 1 } ],
+        Null,
+        Enabled -> False,
+        $deleteServiceButtonOptions
+    ],
+    $deleteServiceButtonFrameOptions
+];
+
+deleteServiceButton[ service_String ] := Tooltip[
+    Framed[
+        Button[
+            $trashBin,
+            Needs[ "LLMServices`" -> None ];
+            LLMServices`UnregisterService @ service;
+            disconnectService @ service;
+            updateDynamics[ { "Services", "Preferences" } ],
+            $deleteServiceButtonOptions
+        ],
+        $deleteServiceButtonFrameOptions
+    ],
+    "Unregister service connection"
+];
+
+deleteServiceButton // endDefinition;
+
+
+$deleteServiceButtonOptions = Sequence[
+    Appearance     -> "Suppressed",
+    ContentPadding -> False,
+    FrameMargins   -> 0,
+    ImageMargins   -> 0,
+    Method         -> "Queued"
+];
+
+
+$deleteServiceButtonFrameOptions = Sequence[
+    ContentPadding -> False,
+    FrameMargins   -> 0,
+    FrameStyle     -> Transparent,
+    ImageMargins   -> 0
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeServiceAuthenticationDisplay*)
+makeServiceAuthenticationDisplay // beginDefinition;
+
+makeServiceAuthenticationDisplay[ service_String ] :=
+    DynamicModule[ { display },
+        display = ProgressIndicator[ Appearance -> "Percolate" ];
+        Dynamic[ display, TrackedSymbols :> { display } ],
+        Initialization :> createServiceAuthenticationDisplay[ service, Dynamic[ display ] ],
+        SynchronousInitialization -> False
+    ];
+
+makeServiceAuthenticationDisplay // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*createServiceAuthenticationDisplay*)
+createServiceAuthenticationDisplay // beginDefinition;
+
+createServiceAuthenticationDisplay[ service_, Dynamic[ display_ ] ] := Enclose[
+    Module[ { type },
+        type = ConfirmBy[ credentialType @ service, StringQ, "CredentialType" ];
+        display = Row[
+            {
+                Pane[ type, ImageSize -> { 120, Automatic } ],
+                connectOrDisconnectButton[ service, type, Dynamic @ display ]
+            },
+            Alignment -> { Left, Baseline }
+        ];
+    ],
+    throwInternalFailure
+];
+
+createServiceAuthenticationDisplay // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*connectOrDisconnectButton*)
+connectOrDisconnectButton // beginDefinition;
+
+connectOrDisconnectButton[ service_String, "None", Dynamic[ display_ ] ] :=
+    Button[
+        "Connect",
+        display = ProgressIndicator[ Appearance -> "Percolate" ];
+        clearConnectionCache[ service, False ];
+        Quiet[ Wolfram`LLMFunctions`APIs`Common`ConnectToService @ service, { ServiceConnect::genconerr } ];
+        createServiceAuthenticationDisplay[ service, Dynamic @ display ],
+        Method -> "Queued"
+    ];
+
+connectOrDisconnectButton[ service_String, "SystemCredential"|"Environment"|"ServiceConnect", Dynamic[ display_ ] ] :=
+    Button[
+        "Disconnect",
+        display = ProgressIndicator[ Appearance -> "Percolate" ];
+        disconnectService @ service;
+        createServiceAuthenticationDisplay[ service, Dynamic @ display ],
+        Method -> "Queued"
+    ];
+
+connectOrDisconnectButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1047,197 +1324,105 @@ chooseDefaultModelName[ service_ ] := Automatic;
 chooseDefaultModelName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*makeFrontEndAndNotebookSettingsContent*)
-makeFrontEndAndNotebookSettingsContent // beginDefinition;
+(* ::Section::Closed:: *)
+(*ServiceConnection Utilities*)
 
-makeFrontEndAndNotebookSettingsContent[
-    targetObj : _FrontEndObject | $FrontEndSession | _NotebookObject
-] := Module[{
-    personas = GetPersonasAssociation[],
-    defaultPersonaPopupItems,
-    setModelPopupItems,
-    modelPopupItems
-},
-    defaultPersonaPopupItems = KeyValueMap[
-        {persona, personaSettings} |-> (
-            persona -> Row[{
-                resizeMenuIcon[
-                    getPersonaMenuIcon[personaSettings, "Full"]
-                ],
-                personaDisplayName[persona, personaSettings]
-            }, Spacer[1]]
-        ),
-        personas
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*disconnectService*)
+disconnectService // beginDefinition;
+
+disconnectService[ service_String ] :=
+    With[ { key = credentialKey @ service },
+        Unset @ SystemCredential @ key;
+        SetEnvironment[ key -> None ];
+        clearConnectionCache @ service;
+        If[ extractServiceName @ CurrentChatSettings[ $FrontEnd, "Model" ] === service,
+            CurrentChatSettings[ $FrontEnd, "Model" ] = $DefaultModel
+        ];
+        updateDynamics[ "Services" ]
     ];
 
-    (*----------------------------*)
-    (* Compute the models to show *)
-    (*----------------------------*)
+disconnectService // endDefinition;
 
-    setModelPopupItems[] := (
-        modelPopupItems = KeyValueMap[
-            {modelName, settings} |-> (
-                modelName -> Row[{
-                    getModelMenuIcon[settings, "Full"],
-                    modelDisplayName[modelName]
-                }, Spacer[1]]
-            ),
-            Association[#Name -> # & /@ getServiceModelList["OpenAI"]]
-        ];
-    );
-
-    (* Initial value. Called again if 'show snapshot models' changes. *)
-    setModelPopupItems[];
-
-    (*---------------------------------*)
-    (* Return the toolbar menu content *)
-    (*---------------------------------*)
-
-    Grid[
-        {
-            {Row[{
-                tr["Default Persona:"],
-                PopupMenu[
-                    Dynamic[
-                        currentChatSettings[
-                            targetObj,
-                            "LLMEvaluator"
-                        ],
-                        Function[{newValue},
-                            CurrentValue[
-                                targetObj,
-                                {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
-                            ] = newValue
-                        ]
-                    ],
-                    defaultPersonaPopupItems
-                ]
-            }, Spacer[3]]},
-            {Row[{
-                tr["Default Model:"],
-                (* Note: Dynamic[PopupMenu[..]] so that changing the
-                        'show snapshot models' option updates the popup. *)
-                Dynamic @ PopupMenu[
-                    Dynamic[
-                        currentChatSettings[
-                            targetObj,
-                            "Model"
-                        ],
-                        Function[{newValue},
-                            CurrentValue[
-                                targetObj,
-                                {TaggingRules, "ChatNotebookSettings", "Model"}
-                            ] = newValue
-                        ]
-                    ],
-                    modelPopupItems,
-                    (* This is shown if the user selects a snapshot model,
-                    and then unchecks the 'show snapshot models' option. *)
-                    Dynamic[
-                        Style[
-                            With[{
-                                modelName = currentChatSettings[targetObj, "Model"]
-                            }, {
-                                settings = standardizeModelData[modelName]
-                            },
-                                Row[{
-                                    getModelMenuIcon[settings, "Full"],
-                                    modelDisplayName[modelName]
-                                }, Spacer[1]]
-                            ],
-                            Italic
-                        ]
-                    ]
-                ]
-            }, Spacer[3]]},
-            {Row[{
-                tr["Default Tool Call Frequency:"],
-                makeToolCallFrequencySlider[ targetObj ]
-            }, Spacer[3]]},
-            {Row[{
-                tr["Default Temperature:"],
-                makeTemperatureSlider[
-                    Dynamic[
-                        currentChatSettings[targetObj, "Temperature"],
-                        newValue |-> (
-                            CurrentValue[
-                                targetObj,
-                                {TaggingRules, "ChatNotebookSettings", "Temperature"}
-                            ] = newValue;
-                        )
-                    ]
-                ]
-            }, Spacer[3]]},
-
-            If[ TrueQ @ $useLLMServices,
-                Nothing,
-                {Row[{
-                tr["Chat Completion URL:"],
-                makeOpenAIAPICompletionURLForm[
-                    Dynamic[
-                        currentChatSettings[targetObj, "OpenAIAPICompletionURL"],
-                        newValue |-> (
-                            CurrentValue[
-                                targetObj,
-                                {TaggingRules, "ChatNotebookSettings", "OpenAIAPICompletionURL"}
-                            ] = newValue;
-                        )
-                    ]
-                ]
-            }, Spacer[3]]}],
-            {
-                labeledCheckbox[
-                    Dynamic[
-                        showSnapshotModelsQ[],
-                        newValue |-> (
-                            CurrentValue[$FrontEnd, {
-                                PrivateFrontEndOptions,
-                                "InterfaceSettings",
-                                "Chatbook",
-                                "ShowSnapshotModels"
-                            }] = newValue;
-
-                            setModelPopupItems[];
-                        )
-                    ],
-                    Row[{
-                        "Show temporary snapshot LLM models",
-                        Spacer[3],
-                        Tooltip[
-                            chatbookIcon["InformationTooltip", False],
-"If enabled, temporary snapshot models will be included in the model selection menus.
-\nSnapshot models are models that are frozen at a particular date, will not be
-continuously updated, and have an expected discontinuation date."
-                        ]
-                    }]
-                ]
-            },
-            {
-                makeAutomaticResultAnalysisCheckbox[targetObj]
-            }
-        },
-        Alignment -> {Left, Baseline},
-        Spacings -> {0, 0.7}
-    ]
-];
-
-makeFrontEndAndNotebookSettingsContent // endDefinition;
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*credentialType*)
+credentialType // beginDefinition;
+credentialType[ service_String? systemCredentialQ      ] := "SystemCredential";
+credentialType[ service_String? environmentCredentialQ ] := "Environment";
+credentialType[ service_String? savedConnectionQ       ] := "ServiceConnect";
+credentialType[ service_String? serviceConnectionQ     ] := "ServiceConnect";
+credentialType[ service_String ] := "None";
+credentialType // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*makeOpenAIAPICompletionURLForm*)
-(* cSpell: ignore AIAPI *)
-makeOpenAIAPICompletionURLForm // beginDefinition;
+(*systemCredentialQ*)
+systemCredentialQ // beginDefinition;
+systemCredentialQ[ service_String ] := StringQ[ SystemCredential @ credentialKey @ service ];
+systemCredentialQ // endDefinition;
 
-makeOpenAIAPICompletionURLForm[ value_ ] := Pane @ InputField[
-    value,
-    String,
-    ImageSize -> { 240, Automatic },
-    BaseStyle -> { FontSize -> 12 }
-];
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*environmentCredentialQ*)
+environmentCredentialQ // beginDefinition;
+environmentCredentialQ[ service_String ] := StringQ[ Environment @ credentialKey @ service ];
+environmentCredentialQ // endDefinition;
 
-makeOpenAIAPICompletionURLForm // endDefinition;
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*credentialKey*)
+credentialKey // beginDefinition;
+credentialKey[ service_String ] := ToUpperCase @ service <> "_API_KEY";
+credentialKey // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*savedConnectionQ*)
+savedConnectionQ // beginDefinition;
+
+savedConnectionQ[ service_String ] := (
+    Needs[ "OAuth`" -> None ];
+    MatchQ[ ServiceConnections`SavedConnections @ service, { __ } ]
+);
+
+savedConnectionQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*serviceConnectionQ*)
+serviceConnectionQ // beginDefinition;
+
+serviceConnectionQ[ service_String ] := (
+    Needs[ "OAuth`" -> None ];
+    MatchQ[ ServiceConnections`ServiceConnections @ service, { __ } ]
+);
+
+serviceConnectionQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*clearConnectionCache*)
+clearConnectionCache // beginDefinition;
+
+clearConnectionCache[ service_String ] :=
+    clearConnectionCache[ service, True ];
+
+clearConnectionCache[ service_String, delete: True|False ] := (
+    Needs[ "Wolfram`LLMFunctions`" -> None ];
+    If[ delete,
+        Needs[ "OAuth`" -> None ];
+        ServiceConnections`DeleteConnection /@ ServiceConnections`SavedConnections @ service;
+        ServiceConnections`DeleteConnection /@ ServiceConnections`ServiceConnections @ service;
+    ];
+    If[ AssociationQ @ Wolfram`LLMFunctions`APIs`Common`$ConnectionCache,
+        KeyDropFrom[ Wolfram`LLMFunctions`APIs`Common`$ConnectionCache, service ]
+    ];
+    InvalidateServiceCache[ ];
+);
+
+clearConnectionCache // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1252,6 +1437,14 @@ $loadingPopupMenu = PopupMenu[ "x", { "x" -> ProgressIndicator[ Appearance -> "P
 (* ::Subsection::Closed:: *)
 (*$verticalSpacer*)
 $verticalSpacer = { Pane[ "", ImageSize -> { Automatic, 20 } ], SpanFromLeft };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$trashBin*)
+$trashBin := Mouseover[
+    Insert[ chatbookIcon[ "ToolManagerBin", False ], GrayLevel[ 0.65 ], { 1, 1, 1 } ],
+    Insert[ chatbookIcon[ "ToolManagerBin", False ], Hue[ 0.59, 0.9, 0.93 ], { 1, 1, 1 } ]
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1317,6 +1510,9 @@ resetChatPreferences[ "Tools" ] := (
 
 resetChatPreferences[ "Services" ] := (
     (* TODO: choice dialog to clear service connections *)
+    Needs[ "LLMServices`" -> None ];
+    LLMServices`ResetServices[ ];
+    InvalidateServiceCache[ ];
     resetChatPreferences[ "Notebooks" ];
 );
 
