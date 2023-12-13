@@ -21,6 +21,7 @@ $dynamicTriggers = <|
     "Models"      :> $modelsTrigger,
     "Personas"    :> $personasTrigger,
     "Preferences" :> $preferencesTrigger,
+    "Services"    :> $servicesTrigger,
     "Tools"       :> $toolsTrigger
 |>;
 

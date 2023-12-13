@@ -5,6 +5,7 @@ BeginPackage[ "Wolfram`Chatbook`Services`" ];
 (* :!CodeAnalysis::BeginBlock:: *)
 
 HoldComplete[
+    `$allowConnectionDialog;
     `$availableServices;
     `$enableLLMServices;
     `$serviceCache;
@@ -28,12 +29,13 @@ $ContextAliases[ "llm`" ] = "LLMServices`";
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$enableLLMServices = Automatic;
-$modelListCache    = <| |>;
-$modelSortOrder    = { "Snapshot", "FineTuned", "DisplayName" };
-$servicesLoaded    = False;
-$useLLMServices   := MatchQ[ $enableLLMServices, Automatic|True ] && TrueQ @ $llmServicesAvailable;
-$serviceCache      = None;
+$allowConnectionDialog = True;
+$enableLLMServices     = Automatic;
+$modelListCache        = <| |>;
+$modelSortOrder        = { "Snapshot", "FineTuned", "DisplayName" };
+$servicesLoaded        = False;
+$useLLMServices       := MatchQ[ $enableLLMServices, Automatic|True ] && TrueQ @ $llmServicesAvailable;
+$serviceCache          = None;
 
 $llmServicesAvailable := $llmServicesAvailable = (
     PacletInstall[ "Wolfram/LLMFunctions" ];
@@ -110,7 +112,9 @@ getServiceModelList[ service_String, info_, models0_List ] := Enclose[
     Module[ { models },
         models = ConfirmMatch[ preprocessModelList[ service, models0 ], { ___Association }, "Models" ];
         ConfirmAssert[ AssociationQ @ $serviceCache[ service ], "ServiceCache" ];
-        $serviceCache[ service, "CachedModels" ] = models
+        $serviceCache[ service, "CachedModels" ] = models;
+        updateDynamics[ "Services" ];
+        models
     ],
     throwInternalFailure
 ];
@@ -139,13 +143,44 @@ preprocessModelList // endDefinition;
 (*getModelListQuietly*)
 getModelListQuietly // beginDefinition;
 
+getModelListQuietly[ info_Association ] /; ! $allowConnectionDialog :=
+    Block[ { $allowConnectionDialog = True, DialogInput = $Failed & },
+        getModelListQuietly @ info
+    ];
+
 (* cSpell: ignore nprmtv, genconerr, invs, nolink *)
 getModelListQuietly[ info_Association ] := Quiet[
-    Check[ info[ "ModelList" ], Missing[ "NotConnected" ], DialogInput::nprmtv ],
+    checkModelList[ info, Check[ info[ "ModelList" ], Missing[ "NotConnected" ], DialogInput::nprmtv ] ],
     { DialogInput::nprmtv, ServiceConnect::genconerr, ServiceConnect::invs, ServiceExecute::nolink }
 ];
 
 getModelListQuietly // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkModelList*)
+checkModelList // beginDefinition;
+
+checkModelList[ info_, models_List ] :=
+    models;
+
+checkModelList[ info_, $Canceled | $Failed | Missing[ "NotConnected" ] ] :=
+    Missing[ "NotConnected" ];
+
+checkModelList[ info_, Failure[ "ConfirmationFailed", KeyValuePattern[ "Expression" :> expr_ ] ] ] :=
+    checkModelList[ info, expr ];
+
+checkModelList[ info_, _ServiceExecute ] := (
+    If[ AssociationQ @ Wolfram`LLMFunctions`APIs`Common`$ConnectionCache,
+        KeyDropFrom[ Wolfram`LLMFunctions`APIs`Common`$ConnectionCache, info[ "Service" ] ]
+    ];
+    Missing[ "NotConnected" ]
+);
+
+checkModelList[ info_, other_ ] :=
+    Missing[ "NoModelList" ];
+
+checkModelList // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
