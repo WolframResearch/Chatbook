@@ -35,19 +35,28 @@ makeChatCloudDockedCellContents // beginDefinition;
 
 makeChatCloudDockedCellContents[ ] :=
     Block[ { $preferencesScope := EvaluationNotebook[ ] },
-        Grid[
-            {
+        DynamicWrapper[
+            Grid[
                 {
-                    Item[ $cloudChatBanner, Alignment -> Left ],
-                    Item[ "", ItemSize -> Fit ],
-                    makePersonaSelector[ ],
-                    makeModelSelector[ ]
-                }
-            },
-            Dividers   -> { { False, False, False, True }, False },
-            Spacings   -> { 2, 0 },
-            BaseStyle  -> { "Text", FontSize -> 14, FontColor -> GrayLevel[ 0.4 ] },
-            FrameStyle -> Directive[ Thickness[ 2 ], GrayLevel[ 0.9 ] ]
+                    {
+                        Item[ $cloudChatBanner, Alignment -> Left ],
+                        Item[ "", ItemSize -> Fit ],
+                        makePersonaSelector[ ],
+                        makeModelSelector[ ]
+                    }
+                },
+                Alignment  -> { Left, Baseline },
+                Dividers   -> { { False, False, False, True }, False },
+                Spacings   -> { 2, 0 },
+                BaseStyle  -> { "Text", FontSize -> 14, FontColor -> GrayLevel[ 0.4 ] },
+                FrameStyle -> Directive[ Thickness[ 2 ], GrayLevel[ 0.9 ] ]
+            ],
+            Needs[ "GeneralUtilities`" -> None ];
+            CurrentValue[ EvaluationNotebook[ ], TaggingRules ] =
+                GeneralUtilities`ToAssociations @ Replace[
+                    CurrentValue[ EvaluationNotebook[ ], TaggingRules ],
+                    Except[ KeyValuePattern @ { } ] :> <| |>
+                ]
         ]
     ];
 
