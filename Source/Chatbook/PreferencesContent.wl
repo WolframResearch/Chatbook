@@ -596,7 +596,9 @@ makeModelNameSelector[
                     ],
                     modelSelectCallback[ Dynamic @ service, Dynamic @ model ]
                 ],
-                Map[ popupValue[ #[ "Name" ], #[ "DisplayName" ], #[ "Icon" ] ] &, models ],
+                Block[ { $noIcons = TrueQ @ $cloudNotebooks },
+                    Map[ popupValue[ #[ "Name" ], #[ "DisplayName" ], #[ "Icon" ] ] &, models ]
+                ],
                 ImageSize -> Automatic
             ]
         ]
@@ -1348,7 +1350,10 @@ popupValue[ value_String, label: Except[ $$unspecified ] ] :=
     value -> label;
 
 popupValue[ value_String, label: Except[ $$unspecified ], icon: Except[ $$unspecified ] ] :=
-    value -> Row[ { resizeMenuIcon @ inlineTemplateBoxes @ icon, label }, Spacer[ 1 ] ];
+    If[ TrueQ @ $noIcons,
+        value -> label,
+        value -> Row[ { resizeMenuIcon @ inlineTemplateBoxes @ icon, label }, Spacer[ 1 ] ]
+    ];
 
 popupValue // endDefinition;
 
