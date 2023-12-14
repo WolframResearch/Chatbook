@@ -42,6 +42,7 @@ Begin["`Private`"]
 
 Needs[ "Wolfram`Chatbook`"                    ];
 Needs[ "Wolfram`Chatbook`Actions`"            ];
+Needs[ "Wolfram`Chatbook`CloudToolbar`"       ];
 Needs[ "Wolfram`Chatbook`Common`"             ];
 Needs[ "Wolfram`Chatbook`Dynamics`"           ];
 Needs[ "Wolfram`Chatbook`Errors`"             ];
@@ -69,108 +70,7 @@ $chatMenuWidth = 220;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*MakeChatCloudDockedCellContents*)
-MakeChatCloudDockedCellContents[] := Grid[
-	{{
-		Item[$cloudChatBanner, Alignment -> Left],
-		Item["", ItemSize -> Fit],
-		Row[{"Persona", Spacer[5], trackedDynamic[$cloudPersonaChooser, "Personas"]}],
-		Row[{"Model", Spacer[5], trackedDynamic[$cloudModelChooser, "Models"]}]
-	}},
-	Dividers -> {{False, False, False, True}, False},
-	Spacings -> {2, 0},
-	BaseStyle -> {"Text", FontSize -> 14, FontColor -> GrayLevel[0.4]},
-	FrameStyle -> Directive[Thickness[2], GrayLevel[0.9]]
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*$cloudPersonaChooser*)
-$cloudPersonaChooser := PopupMenu[
-	Dynamic[
-		Replace[
-			CurrentValue[EvaluationNotebook[], {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}],
-			Inherited :> Lookup[$defaultChatSettings, "LLMEvaluator", "CodeAssistant"]
-		],
-		Function[CurrentValue[EvaluationNotebook[], {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}] = #]
-	],
-	KeyValueMap[
-		Function[{key, as}, key -> Grid[{{resizeMenuIcon[getPersonaMenuIcon[as]], personaDisplayName[key, as]}}]],
-		GetCachedPersonaData[]
-	],
-	ImageSize -> {Automatic, 30},
-	Alignment -> {Left, Baseline},
-	BaseStyle -> {FontSize -> 12}
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*$cloudModelChooser*)
-$cloudModelChooser := PopupMenu[
-	Dynamic[
-		Replace[
-			CurrentValue[EvaluationNotebook[], {TaggingRules, "ChatNotebookSettings", "Model"}],
-			Inherited :> Lookup[$defaultChatSettings, "Model", "gpt-3.5-turbo"]
-		],
-		Function[CurrentValue[EvaluationNotebook[], {TaggingRules, "ChatNotebookSettings", "Model"}] = #]
-	],
-	KeyValueMap[
-		{modelName, settings} |-> (
-			modelName -> Grid[{{getModelMenuIcon[settings], modelDisplayName[modelName]}}]
-		),
-        (* FIXME: use the new system *)
-		getModelsMenuItems[]
-	],
-	ImageSize -> {Automatic, 30},
-	Alignment -> {Left, Baseline},
-	BaseStyle -> {FontSize -> 12}
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*$cloudChatBanner*)
-$cloudChatBanner := PaneSelector[
-    {
-        True -> Grid[
-			{
-				{
-					"",
-					chatbookIcon[ "ChatDrivenNotebookIcon", False ],
-					Style[
-						"Chat-Driven Notebook",
-						FontColor  -> RGBColor[ "#333333" ],
-						FontFamily -> "Source Sans Pro",
-						FontSize   -> 16,
-						FontWeight -> "DemiBold"
-					]
-				}
-			},
-			Alignment -> { Automatic, Center },
-			Spacings  -> 0.5
-		],
-        False -> Grid[
-			{
-				{
-					"",
-					chatbookIcon[ "ChatEnabledNotebookIcon", False ],
-					Style[
-						"Chat-Enabled Notebook",
-						FontColor  -> RGBColor[ "#333333" ],
-						FontFamily -> "Source Sans Pro",
-						FontSize   -> 16,
-						FontWeight -> "DemiBold"
-					]
-				}
-			},
-			Alignment -> { Automatic, Center },
-			Spacings  -> 0.5
-		]
-    },
-    Dynamic @ TrueQ @ CurrentValue[
-		EvaluationNotebook[ ],
-		{ TaggingRules, "ChatNotebookSettings", "ChatDrivenNotebook" }
-	],
-    ImageSize -> Automatic
-]
+MakeChatCloudDockedCellContents[] := makeChatCloudDockedCellContents[ ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -398,47 +298,6 @@ labeledCheckbox[value_, label_, enabled_ : Automatic] :=
 	]
 
 (*====================================*)
-
-makeToolCallFrequencySlider[ obj_ ] := Pane[
-    Grid[
-        {
-            {
-                labeledCheckbox[
-                    Dynamic[
-                        currentChatSettings[ obj, "ToolCallFrequency" ] === Automatic,
-                        Function[
-                            If[ TrueQ[ # ],
-                                CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = Inherited,
-                                CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = 0.5
-                            ]
-                        ]
-                    ],
-                    Style[ "Choose automatically", "ChatMenuLabel" ]
-                ]
-            },
-            {
-                Pane[
-                    Slider[
-                        Dynamic[
-                            Replace[ currentChatSettings[ obj, "ToolCallFrequency" ], Automatic -> 0.5 ],
-                            (CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = #) &
-                        ],
-                        { 0, 1, 0.01 },
-                        (* Enabled      -> Dynamic[ currentChatSettings[ obj, "ToolCallFrequency" ] =!= Automatic ], *)
-                        ImageSize    -> { 150, Automatic },
-                        ImageMargins -> { { 5, 0 }, { 5, 5 } }
-                    ],
-                    ImageSize -> { 180, Automatic },
-                    BaseStyle -> { FontSize -> 12 }
-                ],
-                SpanFromLeft
-            }
-        },
-        Alignment -> Left,
-        Spacings  -> { Automatic, 0 }
-    ],
-    ImageMargins -> { { 5, 0 }, { 5, 5 } }
-];
 
 makeToolCallFrequencySlider[ obj_ ] :=
     Module[ { checkbox, slider },

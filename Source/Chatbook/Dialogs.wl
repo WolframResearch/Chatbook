@@ -256,6 +256,7 @@ redDialogButtonLabel // endDefinition;
 cvExpand // beginDefinition;
 cvExpand // Attributes = { HoldFirst };
 cvExpand[ expr_ ] := expr /. $cvRules;
+cvExpand /: SetDelayed[ lhs_, cvExpand[ rhs_ ] ] := Unevaluated @ SetDelayed[ lhs, rhs ] /. $cvRules;
 cvExpand // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
