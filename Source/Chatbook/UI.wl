@@ -444,7 +444,7 @@ MakeChatInputActiveCellDingbat[cell_CellObject] := Module[{
 			ImageMargins -> 0,
 			ContentPadding -> False
 		],
-		(
+		With[ { pos = Replace[ MousePosition[ "WindowScaled" ], { { _, y_ } :> y, _ :> 0 } ] },
 			attachMenuCell[
 				EvaluationCell[],
 				makeChatActionMenu[
@@ -452,12 +452,12 @@ MakeChatInputActiveCellDingbat[cell_CellObject] := Module[{
 					parentCell[EvaluationCell[]],
 					EvaluationCell[]
 				],
-				{Left, Bottom},
+				{Left, If[ pos < 0.5, Bottom, Top ]},
 				Offset[{0, 0}, {Left, Top}],
-				{Left, Top},
+				{Left, If[ pos < 0.5, Top, Bottom ]},
 				RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
-			];
-		),
+			]
+        ],
 		Appearance -> $suppressButtonAppearance,
 		ImageMargins -> 0,
 		FrameMargins -> 0,
@@ -536,7 +536,7 @@ MakeChatDelimiterCellDingbat[cell_CellObject] := Module[{
 			ImageMargins -> 0,
 			ContentPadding -> False
 		],
-		(
+		With[ { pos = Replace[ MousePosition[ "WindowScaled" ], { { _, y_ } :> y, _ :> 0 } ] },
 			attachMenuCell[
 				EvaluationCell[],
 				makeChatActionMenu[
@@ -544,12 +544,12 @@ MakeChatDelimiterCellDingbat[cell_CellObject] := Module[{
 					parentCell[EvaluationCell[]],
 					EvaluationCell[]
 				],
-				{Left, Bottom},
+				{Left, If[ pos < 0.5, Bottom, Top ]},
 				Offset[{0, 0}, {Left, Top}],
-				{Left, Top},
+				{Left, If[ pos < 0.5, Top, Bottom ]},
 				RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
 			];
-		),
+		],
 		Appearance -> $suppressButtonAppearance,
 		ImageMargins -> 0,
 		FrameMargins -> 0,
