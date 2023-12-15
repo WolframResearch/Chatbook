@@ -38,6 +38,11 @@ Needs[ "Wolfram`Chatbook`FrontEnd`"   ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Configuration*)
+$submenuItems = False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*MakeMenu*)
 MakeMenu // beginDefinition;
 
@@ -53,20 +58,26 @@ MakeMenu[ items_List, Automatic, width_ ] :=
 MakeMenu[ items_List, frameColor_, Automatic ] :=
     MakeMenu[ items, frameColor, 200 ];
 
+MakeMenu[ items_List, frameColor_, width_ ] /;
+    ! $submenuItems && MemberQ[ items, KeyValuePattern[ "Type" -> "Submenu" ] ] :=
+        Block[ { $submenuItems = True }, MakeMenu[ items, frameColor, width ] ];
+
 MakeMenu[ items_List, frameColor_, width_ ] :=
-    Pane[
-        RawBoxes @ TemplateBox[
-            {
-                ToBoxes @ Column[ menuItem /@ items, ItemSize -> Automatic, Spacings -> 0, Alignment -> Left ],
-                Background     -> GrayLevel[ 0.98 ],
-                FrameMargins   -> 3,
-                FrameStyle     -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
-                ImageMargins   -> 0,
-                RoundingRadius -> 3
-            },
-            "Highlighted"
-        ],
-        ImageSize -> { width, Automatic }
+    RawBoxes @ TemplateBox[
+        {
+            ToBoxes @ Pane[
+                Column[ menuItem /@ items, ItemSize -> Automatic, Spacings -> 0, Alignment -> Left ],
+                AppearanceElements -> None,
+                ImageSize          -> { width, UpTo[ 450 ] },
+                Scrollbars         -> { False, Automatic }
+            ],
+            Background     -> GrayLevel[ 0.98 ],
+            FrameMargins   -> 3,
+            FrameStyle     -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
+            ImageMargins   -> 0,
+            RoundingRadius -> 3
+        },
+        "Highlighted"
     ];
 
 MakeMenu // endDefinition;
@@ -81,13 +92,16 @@ menuItem[ spec: KeyValuePattern[ "Data" -> content_ ] ] :=
 
 menuItem[ spec: KeyValuePattern @ { "Type" -> "Submenu", "Data" :> content_ } ] :=
     EventHandler[
-        menuItem[
-            Lookup[ spec, "Icon", Spacer[ 0 ] ],
-            submenuLabel @ Lookup[ spec, "Label", "" ],
-            None
+        Block[ { $submenuItems = False },
+            menuItem[
+                Lookup[ spec, "Icon", Spacer[ 0 ] ],
+                submenuLabel @ Lookup[ spec, "Label", "" ],
+                None
+            ]
         ],
         {
-            "MouseEntered" :> With[ { root = EvaluationBox[ ] }, AttachSubmenu[ root, content ] ]
+            "MouseEntered" :> With[ { root = EvaluationBox[ ] }, AttachSubmenu[ root, content ] ],
+            "MouseDown"    :> With[ { root = EvaluationBox[ ] }, AttachSubmenu[ root, content ] ]
         }
     ];
 
@@ -95,13 +109,13 @@ menuItem[ { args__ } ] :=
     menuItem @ args;
 
 menuItem[ Delimiter ] :=
-    RawBoxes @ TemplateBox[ { }, "ChatMenuItemDelimiter" ];
+    addSubmenuHandler @ RawBoxes @ TemplateBox[ { }, "ChatMenuItemDelimiter" ];
 
 menuItem[ label_ :> action_ ] :=
     menuItem[ Graphics[ { }, ImageSize -> 0 ], label, Hold @ action ];
 
 menuItem[ section_ ] :=
-    RawBoxes @ TemplateBox[ { ToBoxes @ section }, "ChatMenuSection" ];
+    addSubmenuHandler @ RawBoxes @ TemplateBox[ { ToBoxes @ section }, "ChatMenuSection" ];
 
 menuItem[ name_String, label_, code_ ] :=
     With[ { icon = chatbookIcon @ name },
@@ -125,15 +139,35 @@ menuItem[ icon_, label_, action_String ] :=
     ];
 
 menuItem[ None, content_, None ] :=
-    content;
+    addSubmenuHandler @ content;
 
 menuItem[ icon_, label_, None ] :=
     menuItem[ icon, label, Hold @ Null ];
 
 menuItem[ icon_, label_, code_ ] :=
-    RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label, code }, "ChatMenuItem" ];
+    addSubmenuHandler @ RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label, code }, "ChatMenuItem" ];
 
 menuItem // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addSubmenuHandler*)
+addSubmenuHandler // beginDefinition;
+
+addSubmenuHandler[ expr_ ] /; $submenuItems := EventHandler[
+    expr,
+    {
+        "MouseEntered" :> NotebookDelete @ Cells[
+            EvaluationCell[ ],
+            AttachedCell -> True,
+            CellStyle    -> "AttachedChatMenu"
+        ]
+    }
+];
+
+addSubmenuHandler[ expr_ ] := expr;
+
+addSubmenuHandler // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -216,16 +250,33 @@ menuMagnification // endDefinition;
 (*determineAttachmentPosition*)
 determineAttachmentPosition // beginDefinition;
 
-determineAttachmentPosition[ info_Association ] :=
-    Lookup[ info, "Position", determineAttachmentPosition @ MousePosition[ "WindowScaled" ] ];
+determineAttachmentPosition[ KeyValuePattern[ "Position" -> { { pH_, pV_ }, { oH_, oV_ } } ] ] :=
+    { { pH, pV }, { oH, chooseVerticalOffset @ MousePosition[ "WindowScaled" ] } };
+
+determineAttachmentPosition[ _Association ] :=
+    determineAttachmentPosition @ MousePosition[ "WindowScaled" ];
 
 determineAttachmentPosition[ pos_List ] :=
     determineAttachmentPosition[ pos, quadrant @ pos ];
 
-determineAttachmentPosition[ _, { h_, v_ } ] :=
-    { { Replace[ h, { Left -> Right, Right -> Left } ], v }, { h, Center } };
+determineAttachmentPosition[ { x_, y_ }, { h_, v_ } ] := {
+    { Replace[ h, { Left -> Right, Right -> Left } ], v },
+    { h, chooseVerticalOffset @ { x, y } }
+};
+
+determineAttachmentPosition[ None ] :=
+    { { Right, Top }, { Left, Top } };
 
 determineAttachmentPosition // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chooseVerticalOffset*)
+chooseVerticalOffset // beginDefinition;
+chooseVerticalOffset[ { x_, y_ } ] /; y < 0.33 := Top;
+chooseVerticalOffset[ { x_, y_ } ] /; y > 0.67 := Bottom;
+chooseVerticalOffset[ { x_, y_ } ] := Center;
+chooseVerticalOffset // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
