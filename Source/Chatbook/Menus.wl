@@ -63,21 +63,21 @@ MakeMenu[ items_List, frameColor_, width_ ] /;
         Block[ { $submenuItems = True }, MakeMenu[ items, frameColor, width ] ];
 
 MakeMenu[ items_List, frameColor_, width_ ] :=
-        RawBoxes @ TemplateBox[
-            {
+    RawBoxes @ TemplateBox[
+        {
             ToBoxes @ Pane[
                 Column[ menuItem /@ items, ItemSize -> Automatic, Spacings -> 0, Alignment -> Left ],
                 AppearanceElements -> None,
                 ImageSize          -> { width, UpTo[ 450 ] },
                 Scrollbars         -> { False, Automatic }
             ],
-                Background     -> GrayLevel[ 0.98 ],
-                FrameMargins   -> 3,
-                FrameStyle     -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
-                ImageMargins   -> 0,
-                RoundingRadius -> 3
-            },
-            "Highlighted"
+            Background     -> GrayLevel[ 0.98 ],
+            FrameMargins   -> 3,
+            FrameStyle     -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
+            ImageMargins   -> 0,
+            RoundingRadius -> 3
+        },
+        "Highlighted"
     ];
 
 MakeMenu // endDefinition;
@@ -93,10 +93,10 @@ menuItem[ spec: KeyValuePattern[ "Data" -> content_ ] ] :=
 menuItem[ spec: KeyValuePattern @ { "Type" -> "Submenu", "Data" :> content_ } ] :=
     EventHandler[
         Block[ { $submenuItems = False },
-        menuItem[
-            Lookup[ spec, "Icon", Spacer[ 0 ] ],
-            submenuLabel @ Lookup[ spec, "Label", "" ],
-            None
+            menuItem[
+                Lookup[ spec, "Icon", Spacer[ 0 ] ],
+                submenuLabel @ Lookup[ spec, "Label", "" ],
+                None
             ]
         ],
         {
@@ -250,16 +250,33 @@ menuMagnification // endDefinition;
 (*determineAttachmentPosition*)
 determineAttachmentPosition // beginDefinition;
 
-determineAttachmentPosition[ info_Association ] :=
-    Lookup[ info, "Position", determineAttachmentPosition @ MousePosition[ "WindowScaled" ] ];
+determineAttachmentPosition[ KeyValuePattern[ "Position" -> { { pH_, pV_ }, { oH_, oV_ } } ] ] :=
+    { { pH, pV }, { oH, chooseVerticalOffset @ MousePosition[ "WindowScaled" ] } };
+
+determineAttachmentPosition[ _Association ] :=
+    determineAttachmentPosition @ MousePosition[ "WindowScaled" ];
 
 determineAttachmentPosition[ pos_List ] :=
     determineAttachmentPosition[ pos, quadrant @ pos ];
 
-determineAttachmentPosition[ _, { h_, v_ } ] :=
-    { { Replace[ h, { Left -> Right, Right -> Left } ], v }, { h, Center } };
+determineAttachmentPosition[ { x_, y_ }, { h_, v_ } ] := {
+    { Replace[ h, { Left -> Right, Right -> Left } ], v },
+    { h, chooseVerticalOffset @ { x, y } }
+};
+
+determineAttachmentPosition[ None ] :=
+    { { Right, Top }, { Left, Top } };
 
 determineAttachmentPosition // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chooseVerticalOffset*)
+chooseVerticalOffset // beginDefinition;
+chooseVerticalOffset[ { x_, y_ } ] /; y < 0.33 := Top;
+chooseVerticalOffset[ { x_, y_ } ] /; y > 0.67 := Bottom;
+chooseVerticalOffset[ { x_, y_ } ] := Center;
+chooseVerticalOffset // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
