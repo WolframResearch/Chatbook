@@ -63,10 +63,14 @@ MakeMenu[ items_List, frameColor_, width_ ] /;
         Block[ { $submenuItems = True }, MakeMenu[ items, frameColor, width ] ];
 
 MakeMenu[ items_List, frameColor_, width_ ] :=
-    Pane[
         RawBoxes @ TemplateBox[
             {
-                ToBoxes @ Column[ menuItem /@ items, ItemSize -> Automatic, Spacings -> 0, Alignment -> Left ],
+            ToBoxes @ Pane[
+                Column[ menuItem /@ items, ItemSize -> Automatic, Spacings -> 0, Alignment -> Left ],
+                AppearanceElements -> None,
+                ImageSize          -> { width, UpTo[ 450 ] },
+                Scrollbars         -> { False, Automatic }
+            ],
                 Background     -> GrayLevel[ 0.98 ],
                 FrameMargins   -> 3,
                 FrameStyle     -> Directive[ AbsoluteThickness[ 1 ], frameColor ],
@@ -74,8 +78,6 @@ MakeMenu[ items_List, frameColor_, width_ ] :=
                 RoundingRadius -> 3
             },
             "Highlighted"
-        ],
-        ImageSize -> { width, Automatic }
     ];
 
 MakeMenu // endDefinition;
