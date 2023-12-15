@@ -31,6 +31,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$textData;
 `$$textDataList;
 `$$unspecified;
+`$$feObj;
 
 `$catchTopTag;
 `beginDefinition;
@@ -107,9 +108,14 @@ $$nestedCellStyle     = cellStylePattern @ $nestedCellStyles;
 $$textDataItem        = (_String|_Cell|_StyleBox|_ButtonBox);
 $$textDataList        = { $$textDataItem... };
 $$textData            = $$textDataItem | $$textDataList;
-$$optionsSequence     = (Rule|RuleDelayed)[ _Symbol|_String, _ ] ...;
-$$size                = Infinity | (_Real|_Integer)? NonNegative;
-$$unspecified         = _Missing | Automatic | Inherited;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Other Argument Patterns *)
+$$optionsSequence = (Rule|RuleDelayed)[ _Symbol|_String, _ ] ...;
+$$size            = Infinity | (_Real|_Integer)? NonNegative;
+$$unspecified     = _Missing | Automatic | Inherited;
+$$feObj           = _FrontEndObject | $FrontEndSession | _NotebookObject | _CellObject | _BoxObject;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

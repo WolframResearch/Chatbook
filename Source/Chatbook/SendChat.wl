@@ -67,7 +67,7 @@ $buffer            = "";
 sendChat // beginDefinition;
 
 sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ ChatbookAction ] @ Enclose[
-    Module[ { cells0, cells, target, settings, id, key, messages, data, persona, cell, cellObject, container, task },
+    Module[ { cells0, cells, target, settings, messages, data, persona, cell, cellObject, container, task },
 
         initFETaskWidget @ nbo;
 
@@ -92,14 +92,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             AppendTo[ settings, "ChatGroupSettings" -> getChatGroupSettings @ evalCell ]
         ];
 
-        id  = Lookup[ settings, "ID" ];
-        key = toAPIKey[ Automatic, id ];
-
         If[ ! settings[ "IncludeHistory" ], cells = { evalCell } ];
-
-        If[ ! StringQ @ key, throwFailure[ "NoAPIKey" ] ];
-
-        settings[ "OpenAIKey" ] = key;
 
         { messages, data } = Reap[
             ConfirmMatch[
@@ -307,12 +300,13 @@ sendChat // endDefinition;
 (*makeHTTPRequest*)
 makeHTTPRequest // beginDefinition;
 
-(* cSpell: ignore ENDTOOLCALL *)
+(* cSpell: ignore ENDTOOLCALL, AIAPI *)
 makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association } ] :=
-    Enclose @ Module[ { key, stream, model, tokens, temperature, topP, freqPenalty, presPenalty, data, body, apiCompletionURL },
+    Enclose @ Module[
+        { key, stream, model, tokens, temperature, topP, freqPenalty, presPenalty, data, body, apiCompletionURL },
 
-        key         = ConfirmBy[ Lookup[ settings, "OpenAIKey" ], StringQ ];
-        stream      = True;
+        key              = ConfirmBy[ Lookup[ settings, "OpenAIKey" ], StringQ ];
+        stream           = True;
         apiCompletionURL = ConfirmBy[ Lookup[ settings, "OpenAIAPICompletionURL" ], StringQ ];
 
         (* model parameters *)
@@ -1445,6 +1439,7 @@ getNamedLLMEvaluator // endDefinition;
 toolsEnabledQ[ KeyValuePattern[ "ToolsEnabled" -> enabled: True|False ] ] := enabled;
 toolsEnabledQ[ KeyValuePattern[ "ToolCallFrequency" -> freq: (_Integer|_Real)? NonPositive ] ] := False;
 toolsEnabledQ[ KeyValuePattern[ "Model" -> model_ ] ] := toolsEnabledQ @ toModelName @ model;
+toolsEnabledQ[ model: KeyValuePattern @ { "Service" -> _, "Name" -> _ } ] := toolsEnabledQ @ toModelName @ model;
 toolsEnabledQ[ "chat-bison-001" ] := False;
 toolsEnabledQ[ model_String ] := ! TrueQ @ StringContainsQ[ model, "gpt-3", IgnoreCase -> True ];
 toolsEnabledQ[ ___ ] := False;

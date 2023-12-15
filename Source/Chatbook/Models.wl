@@ -17,9 +17,10 @@ BeginPackage[ "Wolfram`Chatbook`Models`" ];
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"          ];
-Needs[ "Wolfram`Chatbook`Common`"   ];
 Needs[ "Wolfram`Chatbook`Actions`"  ];
+Needs[ "Wolfram`Chatbook`Common`"   ];
 Needs[ "Wolfram`Chatbook`Dynamics`" ];
+Needs[ "Wolfram`Chatbook`UI`"       ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -139,8 +140,11 @@ modelName // endDefinition;
 (*toModelName*)
 toModelName // beginDefinition;
 
-toModelName[ KeyValuePattern @ { "Service" -> service_, "Model" -> model_ } ] :=
+toModelName[ KeyValuePattern @ { "Service" -> service_, "Name"|"Model" -> model_ } ] :=
     toModelName @ { service, model };
+
+toModelName[ KeyValuePattern[ "Name"|"Model" -> model_ ] ] :=
+    toModelName @ model;
 
 toModelName[ { service_String, name_String } ] := toModelName @ name;
 
@@ -264,13 +268,31 @@ fineTunedModelName // endDefinition;
 (* ::Subsection::Closed:: *)
 (*modelIcon*)
 modelIcon // beginDefinition;
-modelIcon[ KeyValuePattern[ "Icon" -> icon_ ] ] := icon;
-modelIcon[ KeyValuePattern[ "Name" -> name_String ] ] := modelIcon @ name;
-modelIcon[ name0_String ] := With[ { name = toModelName @ name0 }, modelIcon @ name /; name =!= name0 ];
-modelIcon[ name_String ] /; StringStartsQ[ name, "ft:" ] := modelIcon @ StringDelete[ name, StartOfString~~"ft:" ];
-modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-3.5" ] := RawBoxes @ TemplateBox[ { }, "ModelGPT35" ];
-modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-4" ] := RawBoxes @ TemplateBox[ { }, "ModelGPT4" ];
-modelIcon[ name_String ] := $defaultModelIcon;
+
+modelIcon[ KeyValuePattern[ "Icon" -> icon_ ] ] :=
+    icon;
+
+modelIcon[ KeyValuePattern @ { "Name" -> name_String, "Service" -> service_String } ] :=
+    Replace[ modelIcon @ name, $defaultModelIcon :> serviceIcon @ service ];
+
+modelIcon[ KeyValuePattern[ "Name" -> name_String ] ] :=
+    modelIcon @ name;
+
+modelIcon[ name0_String ] :=
+    With[ { name = toModelName @ name0 }, modelIcon @ name /; name =!= name0 ];
+
+modelIcon[ name_String ] /; StringStartsQ[ name, "ft:" ] :=
+    modelIcon @ StringDelete[ name, StartOfString~~"ft:" ];
+
+modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-3.5" ] :=
+    RawBoxes @ TemplateBox[ { }, "ModelGPT35" ];
+
+modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-4" ] :=
+    RawBoxes @ TemplateBox[ { }, "ModelGPT4" ];
+
+modelIcon[ name_String ] :=
+    $defaultModelIcon;
+
 modelIcon // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -284,24 +306,30 @@ standardizeModelData[ list_List ] :=
 standardizeModelData[ name_String ] := standardizeModelData[ name ] =
     standardizeModelData @ <| "Name" -> name |>;
 
-standardizeModelData[ model: KeyValuePattern @ { "Name" -> _String, "DisplayName" -> _String, "Icon" -> _ } ] :=
-    Association @ model;
-
-standardizeModelData[ model_Association? AssociationQ ] :=
+standardizeModelData[ model: KeyValuePattern @ { } ] :=
     standardizeModelData[ model ] = <|
-        "Name"        -> modelName @ model,
         "DisplayName" -> modelDisplayName @ model,
+        "FineTuned"   -> fineTunedModelQ @ model,
         "Icon"        -> modelIcon @ model,
+        "Multimodal"  -> multimodalModelQ @ model,
+        "Name"        -> modelName @ model,
+        "Snapshot"    -> snapshotModelQ @ model,
         model
     |>;
 
 standardizeModelData[ service_String, models_List ] :=
     standardizeModelData[ service, # ] & /@ models;
 
+standardizeModelData[ service_String, model_String ] :=
+    standardizeModelData @ <| "Service" -> service, "Name" -> model |>;
+
 standardizeModelData[ service_String, model_ ] :=
     With[ { as = standardizeModelData @ model },
-        (standardizeModelData[ service, model ] = <| "ServiceName" -> service, as |>) /; AssociationQ @ as
+        (standardizeModelData[ service, model ] = <| "Service" -> service, as |>) /; AssociationQ @ as
     ];
+
+standardizeModelData[ KeyValuePattern[ "Service" -> service_String ], model_ ] :=
+    standardizeModelData[ service, model ];
 
 standardizeModelData // endDefinition;
 
