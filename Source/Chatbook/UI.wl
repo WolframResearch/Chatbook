@@ -279,7 +279,7 @@ makeAutomaticResultAnalysisCheckbox[
 
 SetFallthroughError[labeledCheckbox]
 
-labeledCheckbox[value_, label_, enabled_ : Automatic] :=
+labeledCheckbox[value_, label_, enabled_ : Automatic] := Style[
 	Row[
 		{
 			Checkbox[
@@ -297,7 +297,9 @@ labeledCheckbox[value_, label_, enabled_ : Automatic] :=
 			         Preferences.nb *)
 			CheckboxBoxOptions -> { ImageMargins -> 0 }
 		}
-	]
+	],
+	LineBreakWithin -> False
+]
 
 (*====================================*)
 
