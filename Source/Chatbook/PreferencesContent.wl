@@ -363,7 +363,15 @@ makePersonaSelector0[ personas: { (_String -> _).. } ] :=
             "Persona:",
             Spacer[ 3 ],
             PopupMenu[
-                scopedDynamic @ CurrentChatSettings[ $preferencesScope, "LLMEvaluator" ],
+                scopedDynamic[
+                    CurrentChatSettings[ $preferencesScope, "LLMEvaluator" ],
+                    Function[
+                        CurrentValue[
+                            $preferencesScope,
+                            { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }
+                        ] = #1
+                    ]
+                ],
                 personas
             ]
         },
