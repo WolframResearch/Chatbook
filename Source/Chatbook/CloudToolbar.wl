@@ -13,6 +13,7 @@ Needs[ "Wolfram`Chatbook`Common`"             ];
 Needs[ "Wolfram`Chatbook`Dialogs`"            ];
 Needs[ "Wolfram`Chatbook`Dynamics`"           ];
 Needs[ "Wolfram`Chatbook`PreferencesContent`" ];
+Needs[ "Wolfram`Chatbook`Services`"           ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -42,7 +43,7 @@ makeChatCloudDockedCellContents[ ] :=
                         Item[ $cloudChatBanner, Alignment -> Left ],
                         Item[ "", ItemSize -> Fit ],
                         makePersonaSelector[ ],
-                        makeModelSelector[ ]
+                        cloudModelSelector[ ]
                     }
                 },
                 Alignment  -> { Left, Baseline },
@@ -61,6 +62,114 @@ makeChatCloudDockedCellContents[ ] :=
     ];
 
 makeChatCloudDockedCellContents // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudModelSelector*)
+cloudModelSelector // beginDefinition;
+
+cloudModelSelector[ ] :=
+    DynamicModule[ { serviceSelector, modelSelector },
+
+        serviceSelector = PopupMenu[
+            Dynamic[
+                Replace[
+                    CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ChatNotebookSettings", "Model" } ],
+                    {
+                        _String|Inherited :> "OpenAI",
+                        KeyValuePattern[ "Service" -> service_String ] :> service,
+                        _ :> Set[
+                            CurrentValue[
+                                EvaluationNotebook[ ],
+                                { TaggingRules, "ChatNotebookSettings", "Model" }
+                            ],
+                            $DefaultModel
+                        ][ "Service" ]
+                    }
+                ],
+                Function[
+                    CurrentValue[
+                        EvaluationNotebook[ ],
+                        { TaggingRules, "ChatNotebookSettings", "Model", "Service" }
+                    ] = #1;
+
+                    CurrentValue[
+                        EvaluationNotebook[ ],
+                        { TaggingRules, "ChatNotebookSettings", "Model", "Name" }
+                    ] = Automatic;
+
+                    cloudModelNameSelector[ Dynamic @ modelSelector, #1 ]
+                ]
+            ],
+            KeyValueMap[
+                #1 -> Row @ { inlineTemplateBoxes[ #2[ "Icon" ] ], Spacer[ 1 ], #2[ "Service" ] } &,
+                $availableServices
+            ]
+        ];
+
+        cloudModelNameSelector[
+            Dynamic @ modelSelector,
+            Replace[
+                CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ChatNotebookSettings", "Model" } ],
+                {
+                    _String|Inherited :> "OpenAI",
+                    KeyValuePattern[ "Service" -> service_String ] :> service,
+                    _ :> Set[
+                        CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ChatNotebookSettings", "Model" } ],
+                        $DefaultModel
+                    ][ "Service" ]
+                }
+            ]
+        ];
+
+        Row @ {
+            "LLM Service: ", serviceSelector,
+            Spacer[ 5 ],
+            "Model: ", Dynamic @ modelSelector
+        }
+    ];
+
+cloudModelSelector // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudModelNameSelector*)
+cloudModelNameSelector // beginDefinition;
+
+cloudModelNameSelector[ Dynamic[ modelSelector_ ], service_String ] :=
+    modelSelector = DynamicModule[ { display, models },
+        display = ProgressIndicator[ Appearance -> "Percolate" ];
+        Dynamic[ display ],
+        Initialization :> (
+            models = getServiceModelList @ service;
+            If[ SameQ[
+                    CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ChatNotebookSettings", "Model", "Name" } ],
+                    Automatic
+                ],
+                CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ChatNotebookSettings", "Model", "Name" } ] =
+                    First[ models, <| "Name" -> Automatic |> ][ "Name" ]
+            ];
+
+            display = PopupMenu[
+                Dynamic[
+                    Replace[
+                        CurrentChatSettings[ EvaluationNotebook[ ], "Model" ],
+                        { KeyValuePattern[ "Name" -> model_String ] :> model, _ :> Automatic }
+                    ],
+                    Function[
+                        CurrentValue[
+                            EvaluationNotebook[ ],
+                            { TaggingRules, "ChatNotebookSettings", "Model", "Name" }
+                        ] = #1
+                    ]
+                ],
+                (#Name -> #DisplayName &) /@ models
+            ]
+        ),
+        SynchronousInitialization -> False
+    ];
+
+cloudModelNameSelector // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
