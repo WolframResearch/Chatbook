@@ -38,6 +38,11 @@ Needs[ "Wolfram`Chatbook`FrontEnd`"   ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Configuration*)
+$submenuItems = False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*MakeMenu*)
 MakeMenu // beginDefinition;
 
@@ -52,6 +57,10 @@ MakeMenu[ items_List, Automatic, width_ ] :=
 
 MakeMenu[ items_List, frameColor_, Automatic ] :=
     MakeMenu[ items, frameColor, 200 ];
+
+MakeMenu[ items_List, frameColor_, width_ ] /;
+    ! $submenuItems && MemberQ[ items, KeyValuePattern[ "Type" -> "Submenu" ] ] :=
+        Block[ { $submenuItems = True }, MakeMenu[ items, frameColor, width ] ];
 
 MakeMenu[ items_List, frameColor_, width_ ] :=
     Pane[
@@ -81,13 +90,16 @@ menuItem[ spec: KeyValuePattern[ "Data" -> content_ ] ] :=
 
 menuItem[ spec: KeyValuePattern @ { "Type" -> "Submenu", "Data" :> content_ } ] :=
     EventHandler[
+        Block[ { $submenuItems = False },
         menuItem[
             Lookup[ spec, "Icon", Spacer[ 0 ] ],
             submenuLabel @ Lookup[ spec, "Label", "" ],
             None
+            ]
         ],
         {
-            "MouseEntered" :> With[ { root = EvaluationBox[ ] }, AttachSubmenu[ root, content ] ]
+            "MouseEntered" :> With[ { root = EvaluationBox[ ] }, AttachSubmenu[ root, content ] ],
+            "MouseDown"    :> With[ { root = EvaluationBox[ ] }, AttachSubmenu[ root, content ] ]
         }
     ];
 
@@ -95,13 +107,13 @@ menuItem[ { args__ } ] :=
     menuItem @ args;
 
 menuItem[ Delimiter ] :=
-    RawBoxes @ TemplateBox[ { }, "ChatMenuItemDelimiter" ];
+    addSubmenuHandler @ RawBoxes @ TemplateBox[ { }, "ChatMenuItemDelimiter" ];
 
 menuItem[ label_ :> action_ ] :=
     menuItem[ Graphics[ { }, ImageSize -> 0 ], label, Hold @ action ];
 
 menuItem[ section_ ] :=
-    RawBoxes @ TemplateBox[ { ToBoxes @ section }, "ChatMenuSection" ];
+    addSubmenuHandler @ RawBoxes @ TemplateBox[ { ToBoxes @ section }, "ChatMenuSection" ];
 
 menuItem[ name_String, label_, code_ ] :=
     With[ { icon = chatbookIcon @ name },
@@ -125,15 +137,35 @@ menuItem[ icon_, label_, action_String ] :=
     ];
 
 menuItem[ None, content_, None ] :=
-    content;
+    addSubmenuHandler @ content;
 
 menuItem[ icon_, label_, None ] :=
     menuItem[ icon, label, Hold @ Null ];
 
 menuItem[ icon_, label_, code_ ] :=
-    RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label, code }, "ChatMenuItem" ];
+    addSubmenuHandler @ RawBoxes @ TemplateBox[ { ToBoxes @ icon, ToBoxes @ label, code }, "ChatMenuItem" ];
 
 menuItem // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addSubmenuHandler*)
+addSubmenuHandler // beginDefinition;
+
+addSubmenuHandler[ expr_ ] /; $submenuItems := EventHandler[
+    expr,
+    {
+        "MouseEntered" :> NotebookDelete @ Cells[
+            EvaluationCell[ ],
+            AttachedCell -> True,
+            CellStyle    -> "AttachedChatMenu"
+        ]
+    }
+];
+
+addSubmenuHandler[ expr_ ] := expr;
+
+addSubmenuHandler // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
