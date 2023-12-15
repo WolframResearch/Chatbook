@@ -300,12 +300,13 @@ sendChat // endDefinition;
 (*makeHTTPRequest*)
 makeHTTPRequest // beginDefinition;
 
-(* cSpell: ignore ENDTOOLCALL *)
+(* cSpell: ignore ENDTOOLCALL, AIAPI *)
 makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association } ] :=
-    Enclose @ Module[ { key, stream, model, tokens, temperature, topP, freqPenalty, presPenalty, data, body, apiCompletionURL },
+    Enclose @ Module[
+        { key, stream, model, tokens, temperature, topP, freqPenalty, presPenalty, data, body, apiCompletionURL },
 
-        key         = ConfirmBy[ Lookup[ settings, "OpenAIKey" ], StringQ ];
-        stream      = True;
+        key              = ConfirmBy[ Lookup[ settings, "OpenAIKey" ], StringQ ];
+        stream           = True;
         apiCompletionURL = ConfirmBy[ Lookup[ settings, "OpenAIAPICompletionURL" ], StringQ ];
 
         (* model parameters *)
