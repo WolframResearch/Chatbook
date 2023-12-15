@@ -87,6 +87,8 @@ CreateToolbarContent[] := With[{
 	CurrentValue[menuCell, {TaggingRules, "IsChatEnabled"}] =
 		TrueQ[CurrentValue[nbObj, {StyleDefinitions, "ChatInput", Evaluatable}]];
 
+	CurrentValue[menuCell, {TaggingRules, "MenuData", "Root"}] = menuCell;
+
 	PaneSelector[
 		{
 			True :> (
@@ -441,7 +443,7 @@ MakeChatInputActiveCellDingbat[cell_CellObject] := Module[{
 			ContentPadding -> False
 		],
 		(
-			AttachCell[
+			attachMenuCell[
 				EvaluationCell[],
 				makeChatActionMenu[
 					"Input",
@@ -533,7 +535,7 @@ MakeChatDelimiterCellDingbat[cell_CellObject] := Module[{
 			ContentPadding -> False
 		],
 		(
-			AttachCell[
+			attachMenuCell[
 				EvaluationCell[],
 				makeChatActionMenu[
 					"Delimiter",

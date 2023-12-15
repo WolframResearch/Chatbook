@@ -10,6 +10,7 @@ BeginPackage[ "Wolfram`Chatbook`Menus`" ];
 (* :!CodeAnalysis::BeginBlock:: *)
 
 HoldComplete[
+    `attachMenuCell;
     `AttachSubmenu;
     `MakeMenu;
     `menuMagnification;
@@ -149,27 +150,43 @@ submenuLabel // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*AttachSubmenu*)
+AttachSubmenu // beginDefinition;
+
 AttachSubmenu[ parentMenu_, submenu: Cell[ __, "AttachedChatMenu", ___ ] ] := Enclose[
-    Module[ { pos, oPos, offsetX, offsetY, magnification },
+    Module[ { parentInfo, root, pos, oPos, offsetX, offsetY, magnification, tags, attached },
 
         NotebookDelete @ Cells[ parentMenu, AttachedCell -> True, CellStyle -> "AttachedChatMenu" ];
-        { pos, oPos } = ConfirmMatch[ determineAttachmentPosition[ ], { { _, _ }, { _, _ } }, "Position" ];
+
+        parentInfo = Replace[
+            Association @ CurrentValue[ parentMenu, { TaggingRules, "MenuData" } ],
+            Except[ _? AssociationQ ] :> <| |>
+        ];
+
+        { pos, oPos } = ConfirmMatch[ determineAttachmentPosition @ parentInfo, { { _, _ }, { _, _ } }, "Position" ];
         offsetX = If[ MatchQ[ pos, { Left, _ } ], -3, 3 ];
         offsetY = If[ MatchQ[ pos, { _, Top } ], 5, -5 ];
 
         magnification = Replace[
-            AbsoluteCurrentValue[ parentMenu, Magnification ],
+            Lookup[ parentInfo, "Magnification", AbsoluteCurrentValue[ parentMenu, Magnification ] ],
             Except[ _? NumberQ ] :> If[ $OperatingSystem === "Windows", 0.75, 1 ]
         ];
 
-        AttachCell[
+        tags = <| "MenuData" -> <| parentInfo, "Magnification" -> magnification, "Position" -> { pos, oPos } |> |>;
+
+        attached = AttachCell[
             parentMenu,
-            Append[ submenu, Magnification -> magnification ],
+            Append[ submenu, Unevaluated @ Sequence[ Magnification -> magnification, TaggingRules -> tags ] ],
             pos,
             Offset[ { offsetX, offsetY }, { 0, 0 } ],
             oPos,
             RemovalConditions -> { "MouseClickOutside", "EvaluatorQuit" }
-        ]
+        ];
+
+        If[ ! MatchQ[ tags[ "MenuData", "Root" ], _CellObject ],
+            CurrentValue[ attached, { TaggingRules, "MenuData", "Root" } ] = attached;
+        ];
+
+        attached
     ],
     throwInternalFailure
 ];
@@ -182,6 +199,8 @@ AttachSubmenu[ parentMenu_, expr: Except[ _Cell ] ] :=
 
 AttachSubmenu[ expr_ ] :=
     AttachSubmenu[ EvaluationCell[ ], expr ];
+
+AttachSubmenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -196,11 +215,21 @@ menuMagnification // endDefinition;
 (* ::Subsection::Closed:: *)
 (*determineAttachmentPosition*)
 determineAttachmentPosition // beginDefinition;
-determineAttachmentPosition[ ] := determineAttachmentPosition @ MousePosition[ "WindowScaled" ];
-determineAttachmentPosition[ pos_List ] := determineAttachmentPosition[ pos, quadrant @ pos ];
-determineAttachmentPosition[ _, { h_, v_ } ] := { { Replace[ h, { Left -> Right, Right -> Left } ], v }, { h, Center } };
+
+determineAttachmentPosition[ info_Association ] :=
+    Lookup[ info, "Position", determineAttachmentPosition @ MousePosition[ "WindowScaled" ] ];
+
+determineAttachmentPosition[ pos_List ] :=
+    determineAttachmentPosition[ pos, quadrant @ pos ];
+
+determineAttachmentPosition[ _, { h_, v_ } ] :=
+    { { Replace[ h, { Left -> Right, Right -> Left } ], v }, { h, Center } };
+
 determineAttachmentPosition // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*quadrant*)
 quadrant // beginDefinition;
 quadrant[ None ] := None;
 quadrant[ { x_? NumberQ, y_? NumberQ } ] := quadrant[ TrueQ[ x >= 0.5 ], TrueQ[ y >= 0.67 ] ];
@@ -212,8 +241,17 @@ quadrant // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Attaching and Removing Menus*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*removeChatMenus*)
 removeChatMenus // beginDefinition;
+
+removeChatMenus[ obj: $$feObj ] :=
+    With[ { root = CurrentValue[ obj, { TaggingRules, "MenuData", "Root" } ] },
+        NotebookDelete @ root /; MatchQ[ root, _CellObject ]
+    ];
 
 removeChatMenus[ box_BoxObject ] :=
     removeChatMenus @ parentCell @ box;
@@ -229,6 +267,27 @@ removeChatMenus[ $Failed ] :=
     Null;
 
 removeChatMenus // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*attachMenuCell*)
+attachMenuCell // beginDefinition;
+
+attachMenuCell[ parent: $$feObj, args___ ] :=
+    Module[ { attached, root },
+        attached = AttachCell[ parent, args ];
+
+        root = Replace[
+            CurrentValue[ parent, { TaggingRules, "MenuData", "Root" } ],
+            Except[ _CellObject ] :> attached
+        ];
+
+        CurrentValue[ attached, { TaggingRules, "MenuData", "Root" } ] = root;
+
+        attached
+    ];
+
+attachMenuCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
