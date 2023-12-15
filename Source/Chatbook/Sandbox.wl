@@ -432,7 +432,7 @@ initializeExpressions[ flat: HoldComplete @ Association @ OrderlessPatternSequen
         ReplacePart[ flat, Thread[ pos -> Extract[ flat, pos ] ] ]
     ];
 
-initializeExpressions[ failed: HoldComplete[ _Failure ] ] :=
+initializeExpressions[ failed: HoldComplete[ _Failure|$Failed|$Aborted ] ] :=
     failed;
 
 initializeExpressions // endDefinition;

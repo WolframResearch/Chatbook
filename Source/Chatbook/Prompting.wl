@@ -170,7 +170,8 @@ becomes ``Styled message``.";
 
 $basePromptComponents[ "SpecialURI" ] = "\
 * You will occasionally see markdown links with special URI schemes, e.g. ![label](scheme://content-id) that represent \
-interactive interface elements. You can use these in your responses to display the same elements to the user.";
+interactive interface elements. You can use these in your responses to display the same elements to the user, but they \
+must be formatted as image links (include the '!' at the beginning). If you do not include the '!', the link will fail.";
 
 $basePromptComponents[ "SpecialURIAudio" ] = "\
     * ![label](audio://content-id) represents an interactive audio player.";
