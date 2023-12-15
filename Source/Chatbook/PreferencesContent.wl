@@ -310,7 +310,7 @@ createNotebookSettingsPanel // endDefinition;
 makeDefaultSettingsContent // beginDefinition;
 
 makeDefaultSettingsContent[ ] := Enclose[
-    Module[ { assistanceCheckbox, personaSelector, modelSelector, temperatureInput },
+    Module[ { assistanceCheckbox, personaSelector, modelSelector, temperatureInput, openAICompletionURLInput },
         (* Checkbox to enable automatic assistance for normal shift-enter evaluations: *)
         assistanceCheckbox = ConfirmMatch[ makeAssistanceCheckbox[ ], _Style, "AssistanceCheckbox" ];
         (* The personaSelector is a pop-up menu for selecting the default persona: *)
@@ -319,14 +319,21 @@ makeDefaultSettingsContent[ ] := Enclose[
         modelSelector = ConfirmMatch[ makeModelSelector[ ], _Dynamic, "ModelSelector" ];
         (* The temperatureInput is an input field for setting the default 'temperature' for responses: *)
         temperatureInput = ConfirmMatch[ makeTemperatureInput[ ], _Style, "TemperatureInput" ];
+        (* The openAICompletionURLInput is an input field for setting URL used for API calls to OpenAI: *)
+        openAICompletionURLInput = ConfirmMatch[
+            makeOpenAICompletionURLInput[ ],
+            _Style|Nothing, (* Returns Nothing if we're relying on LLMServices for API requests *)
+            "OpenAICompletionURLInput"
+        ];
 
         (* Assemble the persona selector, model selector, and temperature slider into a grid layout: *)
         Grid[
-            {
-                { assistanceCheckbox },
-                { personaSelector    },
-                { modelSelector      },
-                { temperatureInput   }
+            List /@ {
+                assistanceCheckbox,
+                personaSelector,
+                modelSelector,
+                temperatureInput,
+                openAICompletionURLInput
             },
             Alignment -> { Left, Baseline },
             Spacings  -> { 0, 0.7 }
@@ -748,6 +755,37 @@ makeTemperatureInput[ ] := highlightControl[
 ];
 
 makeTemperatureInput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeOpenAICompletionURLInput*)
+makeOpenAICompletionURLInput // beginDefinition;
+
+makeOpenAICompletionURLInput[ ] :=
+    makeOpenAICompletionURLInput @ $useLLMServices;
+
+makeOpenAICompletionURLInput[ True ] :=
+    Nothing;
+
+makeOpenAICompletionURLInput[ False ] := highlightControl[
+    prefsInputField[
+        "Chat Completion URL:",
+        scopedDynamic[
+            (* cSpell: ignore AIAPI *)
+            CurrentChatSettings[ $preferencesScope, "OpenAIAPICompletionURL" ],
+            {
+                None,
+                If[ StringQ @ #, CurrentChatSettings[ $preferencesScope, "OpenAIAPICompletionURL" ] = # ] &
+            }
+        ],
+        String,
+        ImageSize -> { 200, Automatic }
+    ],
+    "Notebooks",
+    "OpenAIAPICompletionURL"
+];
+
+makeOpenAICompletionURLInput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

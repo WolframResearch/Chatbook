@@ -192,7 +192,7 @@ $availableServices := getAvailableServices[ ];
 (*getAvailableServices*)
 getAvailableServices // beginDefinition;
 getAvailableServices[ ] := getAvailableServices @ $useLLMServices;
-getAvailableServices[ False ] := $fallBackServices;
+getAvailableServices[ False ] := getAvailableServices0 @ $fallBackServices;
 getAvailableServices[ True ] := getAvailableServices0[ ];
 getAvailableServices // endDefinition;
 
