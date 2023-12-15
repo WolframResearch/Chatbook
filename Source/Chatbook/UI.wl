@@ -955,7 +955,10 @@ $currentSelectionCheck = Style[ "\[Checkmark]", FontColor -> GrayLevel[ 0.25 ] ]
 dynamicModelMenu // beginDefinition;
 
 dynamicModelMenu[ obj_, root_, model_, service_? modelListCachedQ ] :=
-    makeServiceModelMenu[ obj, root, model, service ];
+    Module[ { display },
+        makeServiceModelMenu[ Dynamic @ display, obj, root, model, service ];
+        display
+    ];
 
 dynamicModelMenu[ obj_, root_, model_, service_ ] :=
     DynamicModule[ { display },
@@ -981,7 +984,7 @@ dynamicModelMenu[ obj_, root_, model_, service_ ] :=
         Dynamic[ display, TrackedSymbols :> { display } ],
         Initialization :> Quiet[
             Needs[ "Wolfram`Chatbook`" -> None ];
-            display = catchAlways @ makeServiceModelMenu[ obj, root, model, service ]
+            catchAlways @ makeServiceModelMenu[ Dynamic @ display, obj, root, model, service ]
         ],
         SynchronousInitialization -> False
     ];
@@ -993,13 +996,55 @@ dynamicModelMenu // endDefinition;
 (*makeServiceModelMenu*)
 makeServiceModelMenu // beginDefinition;
 
-makeServiceModelMenu[ obj_, root_, currentModel_, service_String ] :=
-	makeServiceModelMenu[ obj, root, currentModel, service, getServiceModelList @ service ];
+makeServiceModelMenu[ display_, obj_, root_, currentModel_, service_String ] :=
+    makeServiceModelMenu[
+        display,
+        obj,
+        root,
+        currentModel,
+        service,
+        Block[ { $allowConnectionDialog = False }, getServiceModelList @ service ]
+    ];
 
-makeServiceModelMenu[ obj_, root_, currentModel_, service_String, models_List ] :=
-    MakeMenu[ Join[ { service }, groupMenuModels[ obj, root, currentModel, models ] ], GrayLevel[ 0.85 ], 280 ];
+makeServiceModelMenu[ Dynamic[ display_ ], obj_, root_, currentModel_, service_String, models_List ] :=
+    display = MakeMenu[
+        Join[ { service }, groupMenuModels[ obj, root, currentModel, models ] ],
+        GrayLevel[ 0.85 ],
+        280
+    ];
+
+makeServiceModelMenu[ Dynamic[ display_ ], obj_, root_, currentModel_, service_String, Missing[ "NotConnected" ] ] :=
+    display = MakeMenu[
+        {
+            { service },
+            {
+                Spacer[ 0 ],
+                "Connect for model list",
+                Hold[
+                    display = simpleModelMenuDisplay[ service, ProgressIndicator[ Appearance -> "Percolate" ] ];
+                    makeServiceModelMenu[
+                        Dynamic @ display,
+                        obj,
+                        root,
+                        currentModel,
+                        service,
+                        getServiceModelList @ service
+                    ]
+                ]
+            }
+        },
+        GrayLevel[ 0.85 ],
+        200
+    ];
 
 makeServiceModelMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*simpleModelMenuDisplay*)
+simpleModelMenuDisplay // beginDefinition;
+simpleModelMenuDisplay[ service_, expr_ ] := MakeMenu[ { { service }, { None, expr, None } }, GrayLevel[ 0.85 ], 200 ];
+simpleModelMenuDisplay // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1057,7 +1102,7 @@ modelMenuItem[
 ] := {
     alignedMenuIcon[ modelSelectionCheckmark[ currentModel, name ], icon ],
     displayName,
-    Hold[ removeChatMenus @ root; setModel[ obj, model ] ]
+    Hold[ removeChatMenus @ EvaluationCell[ ]; setModel[ obj, model ] ]
 };
 
 modelMenuItem // endDefinition;
