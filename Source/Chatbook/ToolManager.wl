@@ -50,10 +50,15 @@ CreateLLMToolManagerDialog // endDefinition;
 (*CreateLLMToolManagerPanel*)
 CreateLLMToolManagerPanel // beginDefinition;
 
-CreateLLMToolManagerPanel[ ] := catchMine @ trackedDynamic[
-    CreateLLMToolManagerPanel[ getFullToolList[ ], getFullPersonaList[ ] ],
-    { "Tools", "Personas" }
-];
+CreateLLMToolManagerPanel[ ] := catchMine @
+    With[ { inDialog = $inDialog },
+        trackedDynamic[
+            Block[ { $inDialog = inDialog },
+                CreateLLMToolManagerPanel[ getFullToolList[ ], getFullPersonaList[ ] ]
+            ],
+            { "Tools", "Personas" }
+        ]
+    ];
 
 CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
     catchMine @ cvExpand @ Module[
@@ -95,8 +100,8 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
             {
                 sH           = 0,
                 sV           = 0,
-                w            = 167,
-                h            = 180,
+                w            = If[ TrueQ @ $inDialog, 167, UpTo[ 230 ] ],
+                h            = If[ TrueQ @ $inDialog, 180, Automatic ],
                 row          = None,
                 column       = None,
                 scopeMode    = $FrontEnd &,
@@ -131,8 +136,9 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
             DynamicWrapper[
                 Grid[
                     {
+                        If[ TrueQ @ $inDialog, dialogHeader[ "Add & Manage LLM Tools" ], Nothing ],
+
                         (* ----- Install Tools ----- *)
-                        dialogHeader[ "Add & Manage LLM Tools" ],
                         dialogSubHeader[ "Install Tools" ],
                         dialogBody[
                             Grid @ {
@@ -157,8 +163,6 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                         ],
 
                         (* ----- Configure and Enable Tools ----- *)
-
-
                         dialogSubHeader[ "Manage and Enable Tools" ],
                         dialogBody[
                             Grid @ {
@@ -176,12 +180,15 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                                 {
                                     Append[
                                         Map[
-                                            Function @ EventHandler[
-                                                Pane[ #, FrameMargins -> { { 0, 0 }, { 2, 2 } } ],
-                                                { "MouseEntered" :> FEPrivate`Set[ { row, column }, { None, None } ] }
+                                            Function @ Item[
+                                                EventHandler[
+                                                    Pane[ #, FrameMargins -> { { 0, 0 }, { 2, 2 } } ],
+                                                    { "MouseEntered" :> FEPrivate`Set[ { row, column }, { None, None } ] }
+                                                ],
+                                                Background -> GrayLevel[ 0.898 ]
                                             ],
                                             {
-                                                "Tool",
+                                                Row @ { Spacer[ 4 ], "Tool" },
                                                 Row @ {
                                                     Spacer[ 4 ],
                                                     "Enabled for\[VeryThinSpace]:",
@@ -229,7 +236,7 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                                         (* Checkbox grid: *)
                                         linkedPane[
                                             Grid[
-                                                Table[
+                                                (*fitLastColumn @*) Table[
                                                     If[ And[
                                                             StringQ @ personaToolLookup @ tools[[ i, "CanonicalName" ]],
                                                             UnsameQ[
@@ -286,7 +293,8 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                                                 ]
                                             ],
                                             Dynamic @ { sH, sV },
-                                            Scrollbars -> { Automatic, False }
+                                            Scrollbars -> { Automatic, False },
+                                            AppearanceElements -> If[ TrueQ @ $inDialog, Automatic, None ]
                                         ],
 
                                         (* All/None and clear column: *)
@@ -317,11 +325,12 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                                         ]
                                     }
                                 },
-                                Alignment -> { Left, Top },
-                                BaseStyle -> $baseStyle,
-                                ItemSize  -> { 0, 0 },
-                                Spacings  -> { 0, 0 },
-                                Dividers  -> {
+                                Alignment  -> { Left, Top },
+                                Background -> White,
+                                BaseStyle  -> $baseStyle,
+                                ItemSize   -> { 0, 0 },
+                                Spacings   -> { 0, 0 },
+                                Dividers   -> {
                                     { False, $dividerCol, $dividerCol, { False } },
                                     { False, False      , $dividerCol, { False } }
                                 }
@@ -330,6 +339,7 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                             PassEventsDown -> True
                         ], { { Automatic, 0 }, Automatic } ],
 
+                        (* ----- Dialog Buttons ----- *)
                         If[ TrueQ @ $inDialog,
                             {
                                 Item[
@@ -354,7 +364,16 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                     },
                     Alignment -> { Left, Top },
                     BaseStyle -> $baseStyle,
-                    Dividers  -> { False, { False, $dividerCol, False, $dividerCol, False, { False } } },
+                    Dividers  -> {
+                        False,
+                        {
+                            If[ TrueQ @ $inDialog, Sequence @@ { False, $dividerCol }, False ],
+                            False,
+                            $dividerCol,
+                            False,
+                            { False }
+                        }
+                    },
                     ItemSize  -> { Automatic, 0 },
                     Spacings  -> { 0, 0 }
                 ],
@@ -437,6 +456,20 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
     ];
 
 CreateLLMToolManagerPanel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*fitLastColumn*)
+fitLastColumn // beginDefinition;
+
+fitLastColumn[ grid_? MatrixQ ] :=
+    MapAt[
+        Item[ #, ItemSize -> { Fit, Automatic }, Alignment -> { Left, Automatic } ] &,
+        grid,
+        { All, -1 }
+    ];
+
+fitLastColumn // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -578,7 +611,7 @@ toolModelWarning[ scope_, enabled_, model_? toolsEnabledQ ] := "";
 toolModelWarning[ scope_, enabled_, model_ ] := toolModelWarning0[ scope, model ];
 toolModelWarning // endDefinition;
 
-
+(* FIXME: add a link to open the Notebooks preferences tab *)
 toolModelWarning0 // beginDefinition;
 
 toolModelWarning0[ scope_, model_String ] := Enclose[
@@ -589,8 +622,8 @@ toolModelWarning0[ scope_, model_String ] := Enclose[
         Grid[
             { {
                 Spacer[ 5 ],
-                Style[ "\[WarningSign]", FontWeight -> Bold, FontColor -> Darker @ Orange, FontSize -> 18 ],
-                message
+                Style[ "\[WarningSign]", FontWeight -> Bold, FontColor -> Gray, FontSize -> 18 ],
+                Style[ message, FontColor -> Gray, FontSlant -> Italic ]
             } },
             Alignment -> { Left, Top }
         ]

@@ -22,34 +22,46 @@ GeneralUtilities`SetUsage[CreateToolbarContent, "
 CreateToolbarContent[] is called by the NotebookToolbar to generate the content of the 'Notebook AI Settings' attached menu.
 "]
 
-`getPersonaIcon;
-`getPersonaMenuIcon;
-`personaDisplayName;
-`resizeMenuIcon;
-
+HoldComplete[
+    `getModelMenuIcon;
+    `getPersonaIcon;
+    `getPersonaMenuIcon;
+    `labeledCheckbox;
+    `makeAutomaticResultAnalysisCheckbox;
+    `makeTemperatureSlider;
+    `makeToolCallFrequencySlider;
+    `modelGroupName;
+    `personaDisplayName;
+    `resizeMenuIcon;
+    `serviceIcon;
+    `showSnapshotModelsQ;
+    `tr;
+];
 
 Begin["`Private`"]
 
-Needs[ "Wolfram`Chatbook`"                  ];
-Needs[ "Wolfram`Chatbook`Actions`"          ];
-Needs[ "Wolfram`Chatbook`Common`"           ];
-Needs[ "Wolfram`Chatbook`Dynamics`"         ];
-Needs[ "Wolfram`Chatbook`Errors`"           ];
-Needs[ "Wolfram`Chatbook`ErrorUtils`"       ];
-Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
-Needs[ "Wolfram`Chatbook`Menus`"            ];
-Needs[ "Wolfram`Chatbook`Models`"           ];
-Needs[ "Wolfram`Chatbook`Personas`"         ];
-Needs[ "Wolfram`Chatbook`PreferencesUtils`" ];
-Needs[ "Wolfram`Chatbook`Serialization`"    ];
-Needs[ "Wolfram`Chatbook`Services`"         ];
-Needs[ "Wolfram`Chatbook`Settings`"         ];
-Needs[ "Wolfram`Chatbook`Utils`"            ];
+Needs[ "Wolfram`Chatbook`"                    ];
+Needs[ "Wolfram`Chatbook`Actions`"            ];
+Needs[ "Wolfram`Chatbook`CloudToolbar`"       ];
+Needs[ "Wolfram`Chatbook`Common`"             ];
+Needs[ "Wolfram`Chatbook`Dynamics`"           ];
+Needs[ "Wolfram`Chatbook`Errors`"             ];
+Needs[ "Wolfram`Chatbook`ErrorUtils`"         ];
+Needs[ "Wolfram`Chatbook`FrontEnd`"           ];
+Needs[ "Wolfram`Chatbook`Menus`"              ];
+Needs[ "Wolfram`Chatbook`Models`"             ];
+Needs[ "Wolfram`Chatbook`Personas`"           ];
+Needs[ "Wolfram`Chatbook`PreferencesContent`" ];
+Needs[ "Wolfram`Chatbook`PreferencesUtils`"   ];
+Needs[ "Wolfram`Chatbook`Serialization`"      ];
+Needs[ "Wolfram`Chatbook`Services`"           ];
+Needs[ "Wolfram`Chatbook`Settings`"           ];
+Needs[ "Wolfram`Chatbook`Utils`"              ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$chatMenuWidth = 260;
+$chatMenuWidth = 220;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -58,196 +70,12 @@ $chatMenuWidth = 260;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*MakeChatCloudDockedCellContents*)
-MakeChatCloudDockedCellContents[] := Grid[
-	{{
-		Item[$cloudChatBanner, Alignment -> Left],
-		Item["", ItemSize -> Fit],
-		Row[{"Persona", Spacer[5], trackedDynamic[$cloudPersonaChooser, "Personas"]}],
-		Row[{"Model", Spacer[5], trackedDynamic[$cloudModelChooser, "Models"]}]
-	}},
-	Dividers -> {{False, False, False, True}, False},
-	Spacings -> {2, 0},
-	BaseStyle -> {"Text", FontSize -> 14, FontColor -> GrayLevel[0.4]},
-	FrameStyle -> Directive[Thickness[2], GrayLevel[0.9]]
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*$cloudPersonaChooser*)
-$cloudPersonaChooser := PopupMenu[
-	Dynamic[
-		Replace[
-			CurrentValue[EvaluationNotebook[], {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}],
-			Inherited :> Lookup[$defaultChatSettings, "LLMEvaluator", "CodeAssistant"]
-		],
-		Function[CurrentValue[EvaluationNotebook[], {TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}] = #]
-	],
-	KeyValueMap[
-		Function[{key, as}, key -> Grid[{{resizeMenuIcon[getPersonaMenuIcon[as]], personaDisplayName[key, as]}}]],
-		GetCachedPersonaData[]
-	],
-	ImageSize -> {Automatic, 30},
-	Alignment -> {Left, Baseline},
-	BaseStyle -> {FontSize -> 12}
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*$cloudModelChooser*)
-$cloudModelChooser := PopupMenu[
-	Dynamic[
-		Replace[
-			CurrentValue[EvaluationNotebook[], {TaggingRules, "ChatNotebookSettings", "Model"}],
-			Inherited :> Lookup[$defaultChatSettings, "Model", "gpt-3.5-turbo"]
-		],
-		Function[CurrentValue[EvaluationNotebook[], {TaggingRules, "ChatNotebookSettings", "Model"}] = #]
-	],
-	KeyValueMap[
-		{modelName, settings} |-> (
-			modelName -> Grid[{{getModelMenuIcon[settings], modelDisplayName[modelName]}}]
-		),
-		getModelsMenuItems[]
-	],
-	ImageSize -> {Automatic, 30},
-	Alignment -> {Left, Baseline},
-	BaseStyle -> {FontSize -> 12}
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*$cloudChatBanner*)
-$cloudChatBanner := PaneSelector[
-    {
-        True -> Grid[
-			{
-				{
-					"",
-					chatbookIcon[ "ChatDrivenNotebookIcon", False ],
-					Style[
-						"Chat-Driven Notebook",
-						FontColor  -> RGBColor[ "#333333" ],
-						FontFamily -> "Source Sans Pro",
-						FontSize   -> 16,
-						FontWeight -> "DemiBold"
-					]
-				}
-			},
-			Alignment -> { Automatic, Center },
-			Spacings  -> 0.5
-		],
-        False -> Grid[
-			{
-				{
-					"",
-					chatbookIcon[ "ChatEnabledNotebookIcon", False ],
-					Style[
-						"Chat-Enabled Notebook",
-						FontColor  -> RGBColor[ "#333333" ],
-						FontFamily -> "Source Sans Pro",
-						FontSize   -> 16,
-						FontWeight -> "DemiBold"
-					]
-				}
-			},
-			Alignment -> { Automatic, Center },
-			Spacings  -> 0.5
-		]
-    },
-    Dynamic @ TrueQ @ CurrentValue[
-		EvaluationNotebook[ ],
-		{ TaggingRules, "ChatNotebookSettings", "ChatDrivenNotebook" }
-	],
-    ImageSize -> Automatic
-]
+MakeChatCloudDockedCellContents[] := makeChatCloudDockedCellContents[ ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Preferences Panel*)
-CreatePreferencesContent[] := Module[{
-	personas = GetPersonasAssociation[],
-	chatbookSettings,
-	llmEvaluatorNamesSettings,
-	services,
-	grid
-},
-
-	llmEvaluatorNamesSettings = Grid[
-		Prepend[
-			KeyValueMap[
-				{persona, personaSettings} |-> {
-					resizeMenuIcon @ getPersonaMenuIcon[personaSettings, "Full"],
-					personaDisplayName[persona, personaSettings],
-					Replace[Lookup[personaSettings, "Description", None], {
-						None | _?MissingQ -> "",
-						desc_?StringQ :> desc,
-						other_ :> (
-							ChatbookWarning[
-								"Unexpected non-String persona `` description: ``",
-								InputForm[persona],
-								InputForm[other]
-							];
-							other
-						)
-					}]
-				},
-				personas
-			],
-			{"", "Name", "Description"}
-		],
-		Background -> {None, {1 -> GrayLevel[0.95]}},
-		Dividers -> {False, {False, {1 -> True, 2 -> True}}},
-		Alignment -> {Left, Center}
-	];
-
-	chatbookSettings = makeFrontEndAndNotebookSettingsContent[$FrontEnd];
-
-	(* services = Grid[{
-			{""									, "Name"	, "State" 						},
-			{chatbookIcon["OpenAILogo", False]	, "OpenAI"	, "<Connected>" 				},
-			{""									, "Bard"	, Style["Coming soon", Italic]	},
-			{""									, "Claude"	, Style["Coming soon", Italic]	}
-		},
-		Background -> {None, {1 -> GrayLevel[0.95]}},
-		Dividers -> {False, {False, {1 -> True, 2 -> True}}},
-		Alignment -> {Left, Center}
-	]; *)
-
-	(*-----------------------------------------*)
-	(* Return the complete settings expression *)
-	(*-----------------------------------------*)
-
-	PreferencesPane[
-		{
-			PreferencesSection[
-				Style[tr["Chat Notebook Interface"], "subsectionText"],
-				chatbookSettings
-			],
-			PreferencesSection[
-				Style[tr["Installed Personas"], "subsectionText"],
-				llmEvaluatorNamesSettings
-			]
-			(* PreferencesSection[
-				Style[tr["LLM Service Providers"], "subsectionText"],
-				services
-			] *)
-		},
-		PreferencesResetButton[
-			FrontEndExecute @ FrontEnd`RemoveOptions[$FrontEnd, {
-				System`LLMEvaluator,
-				{TaggingRules, "ChatNotebookSettings"}
-			}];
-
-			CurrentValue[
-				$FrontEnd,
-				{
-					PrivateFrontEndOptions,
-					"InterfaceSettings",
-					"ChatNotebooks"
-				}
-			] = Inherited;
-		]
-	]
-]
+CreatePreferencesContent[ ] := trackedDynamic[ createPreferencesContent[ ], { "Preferences" } ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -259,29 +87,12 @@ CreateToolbarContent[] := With[{
 	CurrentValue[menuCell, {TaggingRules, "IsChatEnabled"}] =
 		TrueQ[CurrentValue[nbObj, {StyleDefinitions, "ChatInput", Evaluatable}]];
 
+	CurrentValue[menuCell, {TaggingRules, "MenuData", "Root"}] = menuCell;
+
 	PaneSelector[
 		{
 			True :> (
-				Dynamic @ Refresh[
-					Column[{
-						Pane[
-							makeEnableAIChatFeaturesLabel[True],
-							ImageMargins -> {{5, 20}, {2.5, 2.5}}
-						],
-
-						Pane[
-							makeAutomaticResultAnalysisCheckbox[EvaluationNotebook[]],
-							ImageMargins -> {{5, 20}, {2.5, 2.5}}
-						],
-
-						makeChatActionMenu[
-							"Toolbar",
-							EvaluationNotebook[],
-							Automatic
-						]
-					}],
-					None
-				]
+				Dynamic[ makeToolbarMenuContent @ menuCell, SingleEvaluation -> True, DestroyAfterEvaluation -> True ]
 			),
 			False :> (
 				Dynamic @ Refresh[
@@ -293,7 +104,29 @@ CreateToolbarContent[] := With[{
 		Dynamic @ CurrentValue[menuCell, {TaggingRules, "IsChatEnabled"}],
 		ImageSize -> Automatic
 	]
-]
+];
+
+makeToolbarMenuContent[ menuCell_ ] := Enclose[
+    Module[ { items, item1, item2, new },
+
+        items = ConfirmBy[ makeChatActionMenu[ "Toolbar", EvaluationNotebook[ ], Automatic, "List" ], ListQ, "Items" ];
+
+        item1 = Pane[
+            makeEnableAIChatFeaturesLabel @ True,
+            ImageMargins -> { { 5, 20 }, { 2.5, 2.5 } }
+        ];
+
+        item2 = Pane[
+            makeAutomaticResultAnalysisCheckbox @ EvaluationNotebook[ ],
+            ImageMargins -> { { 5, 20 }, { 2.5, 2.5 } }
+        ];
+
+        new = Join[ { { None, item1, None }, { None, item2, None } }, items ];
+
+        MakeMenu[ new, Transparent, $chatMenuWidth ]
+    ],
+    throwInternalFailure
+];
 
 (*====================================*)
 
@@ -346,11 +179,7 @@ tryMakeChatEnabledNotebook[
 					"",
 					RawBoxes @ Cell["Are you sure you wish to continue?", "Text"]
 				}],
-				Background -> White,
-				WindowMargins -> ConfirmReplace[
-					MousePosition["ScreenAbsolute"],
-					{x_, y_} :> {{x, Automatic}, {Automatic, y}}
-				]
+				Background -> White
 			],
 			_?BooleanQ
 		]
@@ -381,7 +210,7 @@ makeEnableAIChatFeaturesLabel[enabled_?BooleanQ] :=
 SetFallthroughError[makeAutomaticResultAnalysisCheckbox]
 
 makeAutomaticResultAnalysisCheckbox[
-	target : $FrontEnd | $FrontEndSession | _NotebookObject
+	target : _FrontEndObject | $FrontEndSession | _NotebookObject
 ] := With[{
 	setterFunction = ConfirmReplace[target, {
 		$FrontEnd | $FrontEndSession :> (
@@ -450,7 +279,7 @@ makeAutomaticResultAnalysisCheckbox[
 
 SetFallthroughError[labeledCheckbox]
 
-labeledCheckbox[value_, label_, enabled_ : Automatic] :=
+labeledCheckbox[value_, label_, enabled_ : Automatic] := Style[
 	Row[
 		{
 			Checkbox[
@@ -468,50 +297,11 @@ labeledCheckbox[value_, label_, enabled_ : Automatic] :=
 			         Preferences.nb *)
 			CheckboxBoxOptions -> { ImageMargins -> 0 }
 		}
-	]
+	],
+	LineBreakWithin -> False
+]
 
 (*====================================*)
-
-makeToolCallFrequencySlider[ obj_ ] := Pane[
-    Grid[
-        {
-            {
-                labeledCheckbox[
-                    Dynamic[
-                        currentChatSettings[ obj, "ToolCallFrequency" ] === Automatic,
-                        Function[
-                            If[ TrueQ[ # ],
-                                CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = Inherited,
-                                CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = 0.5
-                            ]
-                        ]
-                    ],
-                    Style[ "Choose automatically", "ChatMenuLabel" ]
-                ]
-            },
-            {
-                Pane[
-                    Slider[
-                        Dynamic[
-                            Replace[ currentChatSettings[ obj, "ToolCallFrequency" ], Automatic -> 0.5 ],
-                            (CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "ToolCallFrequency" } ] = #) &
-                        ],
-                        { 0, 1, 0.01 },
-                        (* Enabled      -> Dynamic[ currentChatSettings[ obj, "ToolCallFrequency" ] =!= Automatic ], *)
-                        ImageSize    -> { 150, Automatic },
-                        ImageMargins -> { { 5, 0 }, { 5, 5 } }
-                    ],
-                    ImageSize -> { 180, Automatic },
-                    BaseStyle -> { FontSize -> 12 }
-                ],
-                SpanFromLeft
-            }
-        },
-        Alignment -> Left,
-        Spacings  -> { Automatic, 0 }
-    ],
-    ImageMargins -> { { 5, 0 }, { 5, 5 } }
-];
 
 makeToolCallFrequencySlider[ obj_ ] :=
     Module[ { checkbox, slider },
@@ -579,198 +369,15 @@ makeTemperatureSlider[
 		BaseStyle -> { FontSize -> 12 }
 	]
 
-(* cSpell: ignore AIAPI *)
-makeOpenAIAPICompletionURLForm[value_]:= Pane[
-	InputField[value,
-		String,
-		ImageSize -> {240, Automatic},
-		BaseStyle -> {FontSize -> 12}]
-]
-
 (*=========================================*)
 (* Common preferences content construction *)
 (*=========================================*)
-
-SetFallthroughError[makeFrontEndAndNotebookSettingsContent]
-
-makeFrontEndAndNotebookSettingsContent[
-	targetObj : _FrontEndObject | $FrontEndSession | _NotebookObject
-] := Module[{
-	personas = GetPersonasAssociation[],
-	defaultPersonaPopupItems,
-	setModelPopupItems,
-	modelPopupItems
-},
-	defaultPersonaPopupItems = KeyValueMap[
-		{persona, personaSettings} |-> (
-			persona -> Row[{
-				resizeMenuIcon[
-					getPersonaMenuIcon[personaSettings, "Full"]
-				],
-				personaDisplayName[persona, personaSettings]
-			}, Spacer[1]]
-		),
-		personas
-	];
-
-	(*----------------------------*)
-	(* Compute the models to show *)
-	(*----------------------------*)
-
-	setModelPopupItems[] := (
-		modelPopupItems = KeyValueMap[
-			{modelName, settings} |-> (
-				modelName -> Row[{
-					getModelMenuIcon[settings, "Full"],
-					modelDisplayName[modelName]
-				}, Spacer[1]]
-			),
-			getModelsMenuItems[]
-		];
-	);
-
-	(* Initial value. Called again if 'show snapshot models' changes. *)
-	setModelPopupItems[];
-
-	(*---------------------------------*)
-	(* Return the toolbar menu content *)
-	(*---------------------------------*)
-
-	Grid[
-		{
-			{Row[{
-				tr["Default Persona:"],
-				PopupMenu[
-					Dynamic[
-						currentChatSettings[
-							targetObj,
-							"LLMEvaluator"
-						],
-						Function[{newValue},
-							CurrentValue[
-								targetObj,
-								{TaggingRules, "ChatNotebookSettings", "LLMEvaluator"}
-							] = newValue
-						]
-					],
-					defaultPersonaPopupItems
-				]
-			}, Spacer[3]]},
-			{Row[{
-				tr["Default Model:"],
-				(* Note: Dynamic[PopupMenu[..]] so that changing the
-				         'show snapshot models' option updates the popup. *)
-				Dynamic @ PopupMenu[
-					Dynamic[
-						currentChatSettings[
-							targetObj,
-							"Model"
-						],
-						Function[{newValue},
-							CurrentValue[
-								targetObj,
-								{TaggingRules, "ChatNotebookSettings", "Model"}
-							] = newValue
-						]
-					],
-					modelPopupItems,
-					(* This is shown if the user selects a snapshot model,
-					   and then unchecks the 'show snapshot models' option. *)
-					Dynamic[
-						Style[
-							With[{
-								modelName = currentChatSettings[targetObj, "Model"]
-							}, {
-								settings = standardizeModelData[modelName]
-							},
-								Row[{
-									getModelMenuIcon[settings, "Full"],
-									modelDisplayName[modelName]
-								}, Spacer[1]]
-							],
-							Italic
-						]
-					]
-				]
-			}, Spacer[3]]},
-			{Row[{
-				tr["Default Tool Call Frequency:"],
-				makeToolCallFrequencySlider[ targetObj ]
-			}, Spacer[3]]},
-			{Row[{
-				tr["Default Temperature:"],
-				makeTemperatureSlider[
-					Dynamic[
-						currentChatSettings[targetObj, "Temperature"],
-						newValue |-> (
-							CurrentValue[
-								targetObj,
-								{TaggingRules, "ChatNotebookSettings", "Temperature"}
-							] = newValue;
-						)
-					]
-				]
-			}, Spacer[3]]},
-
-			If[ TrueQ @ $useLLMServices,
-				Nothing,
-				{Row[{
-				tr["Chat Completion URL:"],
-				makeOpenAIAPICompletionURLForm[
-					Dynamic[
-						currentChatSettings[targetObj, "OpenAIAPICompletionURL"],
-						newValue |-> (
-							CurrentValue[
-								targetObj,
-								{TaggingRules, "ChatNotebookSettings", "OpenAIAPICompletionURL"}
-							] = newValue;
-						)
-					]
-				]
-			}, Spacer[3]]}],
-			{
-				labeledCheckbox[
-					Dynamic[
-						showSnapshotModelsQ[],
-						newValue |-> (
-							CurrentValue[$FrontEnd, {
-								PrivateFrontEndOptions,
-								"InterfaceSettings",
-								"ChatNotebooks",
-								"ShowSnapshotModels"
-							}] = newValue;
-
-							setModelPopupItems[];
-						)
-					],
-					Row[{
-						"Show temporary snapshot LLM models",
-						Spacer[3],
-						Tooltip[
-							chatbookIcon["InformationTooltip", False],
-"If enabled, temporary snapshot models will be included in the model selection menus.
-\nSnapshot models are models that are frozen at a particular date, will not be
-continuously updated, and have an expected discontinuation date."
-						]
-					}]
-				]
-			},
-			{
-				makeAutomaticResultAnalysisCheckbox[targetObj]
-			}
-		},
-		Alignment -> {Left, Baseline},
-		Spacings -> {0, 0.7}
-	]
-]
-
-(*======================================*)
 
 showSnapshotModelsQ[] :=
 	TrueQ @ CurrentValue[$FrontEnd, {
 		PrivateFrontEndOptions,
 		"InterfaceSettings",
-		"ChatNotebooks",
+		"Chatbook",
 		"ShowSnapshotModels"
 	}]
 
@@ -795,6 +402,10 @@ tr[name_?StringQ] := name
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Cell Dingbats*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*MakeChatInputActiveCellDingbat*)
 MakeChatInputActiveCellDingbat[ ] :=
 	DynamicModule[ { cell },
 		trackedDynamic[ MakeChatInputActiveCellDingbat @ cell, { "ChatBlock" } ],
@@ -833,20 +444,20 @@ MakeChatInputActiveCellDingbat[cell_CellObject] := Module[{
 			ImageMargins -> 0,
 			ContentPadding -> False
 		],
-		(
-			AttachCell[
+		With[ { pos = Replace[ MousePosition[ "WindowScaled" ], { { _, y_ } :> y, _ :> 0 } ] },
+			attachMenuCell[
 				EvaluationCell[],
 				makeChatActionMenu[
 					"Input",
 					parentCell[EvaluationCell[]],
 					EvaluationCell[]
 				],
-				{Left, Bottom},
+				{Left, If[ pos < 0.5, Bottom, Top ]},
 				Offset[{0, 0}, {Left, Top}],
-				{Left, Top},
+				{Left, If[ pos < 0.5, Top, Bottom ]},
 				RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
-			];
-		),
+			]
+        ],
 		Appearance -> $suppressButtonAppearance,
 		ImageMargins -> 0,
 		FrameMargins -> 0,
@@ -856,8 +467,9 @@ MakeChatInputActiveCellDingbat[cell_CellObject] := Module[{
 	button
 ];
 
-(*====================================*)
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*MakeChatInputCellDingbat*)
 MakeChatInputCellDingbat[] :=
 	PaneSelector[
 		{
@@ -875,8 +487,9 @@ MakeChatInputCellDingbat[] :=
 		ImageSize -> All
 	]
 
-(*====================================*)
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*MakeChatDelimiterCellDingbat*)
 MakeChatDelimiterCellDingbat[ ] :=
 	DynamicModule[ { cell },
 		trackedDynamic[ MakeChatDelimiterCellDingbat @ cell, { "ChatBlock" } ],
@@ -923,20 +536,20 @@ MakeChatDelimiterCellDingbat[cell_CellObject] := Module[{
 			ImageMargins -> 0,
 			ContentPadding -> False
 		],
-		(
-			AttachCell[
+		With[ { pos = Replace[ MousePosition[ "WindowScaled" ], { { _, y_ } :> y, _ :> 0 } ] },
+			attachMenuCell[
 				EvaluationCell[],
 				makeChatActionMenu[
 					"Delimiter",
 					parentCell[EvaluationCell[]],
 					EvaluationCell[]
 				],
-				{Left, Bottom},
+				{Left, If[ pos < 0.5, Bottom, Top ]},
 				Offset[{0, 0}, {Left, Top}],
-				{Left, Top},
+				{Left, If[ pos < 0.5, Top, Bottom ]},
 				RemovalConditions -> {"EvaluatorQuit", "MouseClickOutside"}
 			];
-		),
+		],
 		Appearance -> $suppressButtonAppearance,
 		ImageMargins -> 0,
 		FrameMargins -> 0,
@@ -946,8 +559,9 @@ MakeChatDelimiterCellDingbat[cell_CellObject] := Module[{
 	button
 ];
 
-(*====================================*)
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeChatActionMenu*)
 SetFallthroughError[makeChatActionMenu]
 
 makeChatActionMenu[
@@ -955,7 +569,8 @@ makeChatActionMenu[
 	targetObj : _CellObject | _NotebookObject,
 	(* The cell that will be the parent of the attached cell that contains this
 		chat action menu content. *)
-	attachedCellParent : _CellObject | Automatic
+	attachedCellParent : _CellObject | Automatic,
+    format_ : "Cell"
 ] := With[{
 	closeMenu = ConfirmReplace[attachedCellParent, {
 		parent_CellObject -> Function[
@@ -974,7 +589,6 @@ makeChatActionMenu[
 	}]
 }, Module[{
 	personas = GetPersonasAssociation[],
-	models,
 	actionCallback
 },
 	(*--------------------------------*)
@@ -1042,14 +656,6 @@ makeChatActionMenu[
 	];
 
 	(*--------------------------------*)
-	(* Process models list            *)
-	(*--------------------------------*)
-
-	models = getModelsMenuItems[];
-
-	RaiseConfirmMatch[models, <| (_?StringQ -> _?AssociationQ)... |>];
-
-	(*--------------------------------*)
 
 	actionCallback = Function[{field, value}, Replace[field, {
 		"Persona" :> (
@@ -1066,13 +672,6 @@ makeChatActionMenu[
 			If[Head[targetObj] === CellObject,
 				SetOptions[targetObj, CellDingbat -> Inherited];
 			];
-		),
-		"Model" :> (
-			CurrentValue[
-				targetObj,
-				{TaggingRules, "ChatNotebookSettings", "Model"}
-			] = value;
-			closeMenu[];
 		),
 		"Role" :> (
 			CurrentValue[
@@ -1091,9 +690,10 @@ makeChatActionMenu[
 	}]];
 
 	makeChatActionMenuContent[
+        targetObj,
 		containerType,
 		personas,
-		models,
+        format,
 		"ActionCallback" -> actionCallback,
 		"PersonaValue" -> currentValueOrigin[
 			targetObj,
@@ -1120,8 +720,9 @@ makeChatActionMenu[
 	]
 ]]
 
-(*====================================*)
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeChatActionMenuContent*)
 SetFallthroughError[makeChatActionMenuContent]
 
 Options[makeChatActionMenuContent] = {
@@ -1134,9 +735,10 @@ Options[makeChatActionMenuContent] = {
 }
 
 makeChatActionMenuContent[
+    targetObj_,
 	containerType : "Input" | "Delimiter" | "Toolbar",
 	personas_?AssociationQ,
-	models_?AssociationQ,
+    format_,
 	OptionsPattern[]
 ] := With[{
 	callback = OptionValue["ActionCallback"]
@@ -1212,21 +814,6 @@ makeChatActionMenuContent[
 			],
 			personas
 		],
-		{"Models"},
-		KeyValueMap[
-			{model, settings} |-> (
-				{
-					alignedMenuIcon[
-						model,
-						modelValue,
-						getModelMenuIcon[settings]
-					],
-					modelDisplayName[model],
-					Hold[callback["Model", model]]
-				}
-			),
-			models
-		],
 		{
 			ConfirmReplace[containerType, {
 				"Input" | "Toolbar" -> Nothing,
@@ -1243,80 +830,321 @@ makeChatActionMenuContent[
 			{alignedMenuIcon[getIcon["PersonaOther"]], "Add & Manage Personas\[Ellipsis]", "PersonaManage"},
 			{alignedMenuIcon[getIcon["ToolManagerRepository"]], "Add & Manage Tools\[Ellipsis]", "ToolManage"},
 			Delimiter,
-			{
-				alignedMenuIcon[getIcon["AdvancedSettings"]],
-				Grid[
-					{{
-						Item["Advanced Settings", ItemSize -> Fit, Alignment -> Left],
-						RawBoxes[TemplateBox[{}, "Triangle"]]
-					}},
-					Spacings -> 0
-				],
-				Hold @ AttachSubmenu[
-					EvaluationCell[],
-					advancedSettingsMenu
-				]
-			}
-		}
-	];
+            <|
+                "Label" -> "Models",
+                "Type"  -> "Submenu",
+                "Icon"  -> alignedMenuIcon @ getIcon[ "ChatBlockSettingsMenuIcon" ],
+                "Data"  :> createServiceMenu[ targetObj, ParentCell @ EvaluationCell[ ] ]
+            |>,
+            <|
+                "Label" -> "Advanced Settings",
+                "Type"  -> "Submenu",
+                "Icon"  -> alignedMenuIcon @ getIcon[ "AdvancedSettings" ],
+                "Data"  -> advancedSettingsMenu
+            |>
+        }
+    ];
 
-	menu = MakeMenu[
-		menuItems,
-		GrayLevel[0.85],
-		$chatMenuWidth
-	];
+    Replace[
+        format,
+        {
+            "List"       :> menuItems,
+            "Expression" :> makeChatMenuExpression @ menuItems,
+            "Cell"       :> makeChatMenuCell[ menuItems, menuMagnification @ targetObj ],
+            expr_        :> throwInternalFailure[ makeChatActionMenuContent, expr ]
+        }
+    ]
+]];
 
-	menu
-]]
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*makeChatMenuExpression*)
+makeChatMenuExpression // beginDefinition;
+makeChatMenuExpression[ menuItems_ ] := MakeMenu[ menuItems, GrayLevel[ 0.85 ], $chatMenuWidth ];
+makeChatMenuExpression // endDefinition;
 
-(*====================================*)
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*makeChatMenuCell*)
+makeChatMenuCell // beginDefinition;
 
-(* getIcon[filename_?StringQ] := Module[{
-	icon
-},
-	icon = Import @ FileNameJoin @ {
-		PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "Icons" ],
-		filename
-	};
+makeChatMenuCell[ menuItems_ ] :=
+    makeChatMenuCell[ menuItems, CurrentValue[ Magnification ] ];
 
-	If[!MatchQ[icon, _Graphics],
-		Raise[
-			ChatbookError,
-			"Unexpected result loading icon from from file ``: ``",
-			filename,
-			InputForm[icon]
-		];
-	];
+makeChatMenuCell[ menuItems_, magnification_ ] :=
+    Cell[
+        BoxData @ ToBoxes @ makeChatMenuExpression @ menuItems,
+        "AttachedChatMenu",
+        Magnification -> magnification
+    ];
 
-	(* NOTE: If the graphic doesn't have an existing BaselinePosition set,
-		use a default baseline that looks vertically centered for most visually
-		balanced icons. *)
-	If[BaselinePosition /. Options[icon, BaselinePosition] === Automatic,
-		(* TODO: Force the image size too. *)
-		icon = Show[icon, BaselinePosition -> Scaled[0.24]];
-	];
+makeChatMenuCell // endDefinition;
 
-	(* Cache the icon so we don't have to load it from disk again. *)
-	getIcon[filename] = icon;
-
-	icon
-] *)
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getIcon*)
 getIcon[ name_ ] := RawBoxes @ TemplateBox[ { }, name ];
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Model selection submenu*)
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createServiceMenu*)
+createServiceMenu // beginDefinition;
 
-(*========================================================*)
-(* Chat settings lookup helpers                           *)
-(*========================================================*)
+createServiceMenu[ obj_, root_ ] :=
+    With[ { model = currentChatSettings[ obj, "Model" ] },
+        MakeMenu[
+            Join[
+                { "Services" },
+                (createServiceItem[ obj, model, root, #1 ] &) /@ getAvailableServiceNames[ ]
+            ],
+            GrayLevel[ 0.85 ],
+            140
+        ]
+    ];
 
+createServiceMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createServiceItem*)
+createServiceItem // beginDefinition;
+
+createServiceItem[ obj_, model_, root_, service_String ] := <|
+    "Type"  -> "Submenu",
+    "Label" -> service,
+    "Icon"  -> serviceIcon[ model, service ],
+    "Data"  :> dynamicModelMenu[ obj, root, model, service ]
+|>;
+
+createServiceItem // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*serviceIcon*)
+serviceIcon // beginDefinition;
+
+serviceIcon[ KeyValuePattern[ "Service" -> service_String ], service_String ] :=
+    alignedMenuIcon[ $currentSelectionCheck, serviceIcon @ service ];
+
+serviceIcon[ _String, "OpenAI" ] :=
+    alignedMenuIcon[ $currentSelectionCheck, serviceIcon @ "OpenAI" ];
+
+serviceIcon[ _, service_String ] :=
+    alignedMenuIcon[ Style[ $currentSelectionCheck, ShowContents -> False ], serviceIcon @ service ];
+
+serviceIcon[ KeyValuePattern @ { "Service" -> _String, "Icon" -> icon: Except[ "" ] } ] :=
+    icon;
+
+serviceIcon[ KeyValuePattern[ "Service" -> service_String ] ] :=
+    serviceIcon @ service;
+
+serviceIcon[ "OpenAI"       ] := chatbookIcon[ "ServiceIconOpenAI"   , True ];
+serviceIcon[ "Anthropic"    ] := chatbookIcon[ "ServiceIconAnthropic", True ];
+serviceIcon[ "PaLM"         ] := chatbookIcon[ "ServiceIconPaLM"     , True ];
+serviceIcon[ service_String ] := Replace[ $availableServices[ service, "Icon" ], $$unspecified -> "" ];
+
+serviceIcon // endDefinition;
+
+$currentSelectionCheck = Style[ "\[Checkmark]", FontColor -> GrayLevel[ 0.25 ] ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*dynamicModelMenu*)
+dynamicModelMenu // beginDefinition;
+
+dynamicModelMenu[ obj_, root_, model_, service_? modelListCachedQ ] :=
+    Module[ { display },
+        makeServiceModelMenu[ Dynamic @ display, obj, root, model, service ];
+        display
+    ];
+
+dynamicModelMenu[ obj_, root_, model_, service_ ] :=
+    DynamicModule[ { display },
+        display = MakeMenu[
+            {
+                { service },
+                {
+                    None,
+                    Pane[
+                        Column @ {
+                            Style[ "Getting available models\[Ellipsis]", "ChatMenuLabel" ],
+                            ProgressIndicator[ Appearance -> "Percolate" ]
+                        },
+                        ImageMargins -> 5
+                    ],
+                    None
+                }
+            },
+            GrayLevel[ 0.85 ],
+            200
+        ];
+
+        Dynamic[ display, TrackedSymbols :> { display } ],
+        Initialization :> Quiet[
+            Needs[ "Wolfram`Chatbook`" -> None ];
+            catchAlways @ makeServiceModelMenu[ Dynamic @ display, obj, root, model, service ]
+        ],
+        SynchronousInitialization -> False
+    ];
+
+dynamicModelMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeServiceModelMenu*)
+makeServiceModelMenu // beginDefinition;
+
+makeServiceModelMenu[ display_, obj_, root_, currentModel_, service_String ] :=
+    makeServiceModelMenu[
+        display,
+        obj,
+        root,
+        currentModel,
+        service,
+        Block[ { $allowConnectionDialog = False }, getServiceModelList @ service ]
+    ];
+
+makeServiceModelMenu[ Dynamic[ display_ ], obj_, root_, currentModel_, service_String, models_List ] :=
+    display = MakeMenu[
+        Join[ { service }, groupMenuModels[ obj, root, currentModel, models ] ],
+        GrayLevel[ 0.85 ],
+        280
+    ];
+
+makeServiceModelMenu[ Dynamic[ display_ ], obj_, root_, currentModel_, service_String, Missing[ "NotConnected" ] ] :=
+    display = MakeMenu[
+        {
+            { service },
+            {
+                Spacer[ 0 ],
+                "Connect for model list",
+                Hold[
+                    display = simpleModelMenuDisplay[ service, ProgressIndicator[ Appearance -> "Percolate" ] ];
+                    makeServiceModelMenu[
+                        Dynamic @ display,
+                        obj,
+                        root,
+                        currentModel,
+                        service,
+                        getServiceModelList @ service
+                    ]
+                ]
+            }
+        },
+        GrayLevel[ 0.85 ],
+        200
+    ];
+
+makeServiceModelMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*simpleModelMenuDisplay*)
+simpleModelMenuDisplay // beginDefinition;
+simpleModelMenuDisplay[ service_, expr_ ] := MakeMenu[ { { service }, { None, expr, None } }, GrayLevel[ 0.85 ], 200 ];
+simpleModelMenuDisplay // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*groupMenuModels*)
+groupMenuModels // beginDefinition;
+
+groupMenuModels[ obj_, root_, currentModel_, models_List ] :=
+    groupMenuModels[ obj, root, currentModel, GroupBy[ models, modelGroupName ] ];
+
+groupMenuModels[ obj_, root_, currentModel_, models_Association ] /; Length @ models === 1 :=
+    modelMenuItem[ obj, root, currentModel ] /@ First @ models;
+
+groupMenuModels[ obj_, root_, currentModel_, models_Association ] :=
+    Flatten[ KeyValueMap[ menuModelGroup[ obj, root, currentModel ], models ], 1 ];
+
+groupMenuModels // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*menuModelGroup*)
+menuModelGroup // beginDefinition;
+
+menuModelGroup[ obj_, root_, currentModel_ ] :=
+    menuModelGroup[ obj, root, currentModel, ## ] &;
+
+menuModelGroup[ obj_, root_, currentModel_, None, models_List ] :=
+    modelMenuItem[ obj, root, currentModel ] /@ models;
+
+menuModelGroup[ obj_, root_, currentModel_, name_String, models_List ] :=
+    Join[ { name }, modelMenuItem[ obj, root, currentModel ] /@ models ];
+
+menuModelGroup // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*modelGroupName*)
+modelGroupName // beginDefinition;
+modelGroupName[ KeyValuePattern[ "FineTuned" -> True ] ] := "Fine Tuned Models";
+modelGroupName[ KeyValuePattern[ "Snapshot"  -> True ] ] := "Snapshot Models";
+modelGroupName[ _ ] := None;
+modelGroupName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*modelMenuItem*)
+modelMenuItem // beginDefinition;
+
+modelMenuItem[ obj_, root_, currentModel_ ] := modelMenuItem[ obj, root, currentModel, #1 ] &;
+
+modelMenuItem[
+    obj_,
+    root_,
+    currentModel_,
+    model: KeyValuePattern @ { "Name" -> name_, "Icon" -> icon_, "DisplayName" -> displayName_ }
+] := {
+    alignedMenuIcon[ modelSelectionCheckmark[ currentModel, name ], icon ],
+    displayName,
+    Hold[ removeChatMenus @ EvaluationCell[ ]; setModel[ obj, model ] ]
+};
+
+modelMenuItem // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*modelSelectionCheckmark*)
+modelSelectionCheckmark // beginDefinition;
+modelSelectionCheckmark[ KeyValuePattern[ "Name" -> model_String ], model_String ] := $currentSelectionCheck;
+modelSelectionCheckmark[ model_String, model_String ] := $currentSelectionCheck;
+modelSelectionCheckmark[ _, _ ] := Style[ $currentSelectionCheck, ShowContents -> False ];
+modelSelectionCheckmark // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*setModel*)
+setModel // beginDefinition;
+
+setModel[ obj_, KeyValuePattern @ { "Service" -> service_String, "Name" -> model_String } ] := (
+    CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "Model" } ] =
+        <| "Service" -> service, "Name" -> model |>
+);
+
+setModel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Chat settings lookup helpers*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*absoluteCurrentValue*)
 SetFallthroughError[absoluteCurrentValue]
 
 absoluteCurrentValue[cell_, {TaggingRules, "ChatNotebookSettings", key_}] := currentChatSettings[cell, key]
 absoluteCurrentValue[cell_, keyPath_] := AbsoluteCurrentValue[cell, keyPath]
 
-(*====================================*)
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*currentValueOrigin*)
 currentValueOrigin // beginDefinition;
 
 (*
@@ -1355,8 +1183,9 @@ currentValueOrigin[
 
 currentValueOrigin // endDefinition;
 
-(*====================================*)
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getModelsMenuItems*)
 getModelsMenuItems[] := Module[{
 	items
 },
@@ -1378,10 +1207,13 @@ getModelsMenuItems[] := Module[{
 ]
 
 
-(*========================================================*)
-(* Menu construction helpers                              *)
-(*========================================================*)
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Menu construction helpers*)
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*alignedMenuIcon*)
 SetFallthroughError[alignedMenuIcon]
 
 alignedMenuIcon[possible_, current_, icon_] := alignedMenuIcon[styleListItem[possible, current], icon]
@@ -1389,8 +1221,9 @@ alignedMenuIcon[check_, icon_] := Row[{check, " ", resizeMenuIcon[icon]}]
 (* If menu item does not utilize a checkmark, use an invisible one to ensure it is left-aligned with others *)
 alignedMenuIcon[icon_] := alignedMenuIcon[Style["\[Checkmark]", ShowContents -> False], icon]
 
-(*====================================*)
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*resizeMenuIcon*)
 resizeMenuIcon[ icon: _Graphics|_Graphics3D ] :=
 	Show[ icon, ImageSize -> { 21, 21 } ];
 
@@ -1401,8 +1234,9 @@ resizeMenuIcon[ icon_ ] := Pane[
 	ContentPadding  -> False
 ];
 
-(*====================================*)
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*styleListItem*)
 SetFallthroughError[styleListItem]
 
 (*
@@ -1430,10 +1264,13 @@ styleListItem[
 	}]
 )
 
-(*========================================================*)
-(* Persona property lookup helpers                        *)
-(*========================================================*)
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Persona property lookup helpers*)
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*personaDisplayName*)
 SetFallthroughError[personaDisplayName]
 
 personaDisplayName[name_String] := personaDisplayName[name, GetCachedPersonaData[name]]
@@ -1441,8 +1278,9 @@ personaDisplayName[name_String, data_Association] := personaDisplayName[name, da
 personaDisplayName[name_String, displayName_String] := displayName
 personaDisplayName[name_String, _] := name
 
-(*====================================*)
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getPersonaMenuIcon*)
 SetFallthroughError[getPersonaMenuIcon];
 
 getPersonaMenuIcon[ name_String ] := getPersonaMenuIcon @ Lookup[ GetPersonasAssociation[ ], name ];
@@ -1462,14 +1300,18 @@ getPersonaMenuIcon[ expr_, "Full" ] :=
 		icon_ :> icon
 	}]
 
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getPersonaIcon*)
 getPersonaIcon[ expr_ ] := getPersonaMenuIcon[ expr, "Full" ];
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Model property lookup helpers*)
 
-(*========================================================*)
-(* Model property lookup helpers                          *)
-(*========================================================*)
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getModelMenuIcon*)
 SetFallthroughError[getModelMenuIcon]
 
 getModelMenuIcon[settings_?AssociationQ] := Module[{},
@@ -1490,11 +1332,13 @@ getModelMenuIcon[settings_?AssociationQ, "Full"] :=
 		icon_ :> icon
 	}]
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Generic Utilities*)
 
-(*========================================================*)
-(* Generic Utilities                                      *)
-(*========================================================*)
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*nestedLookup*)
 SetFallthroughError[nestedLookup]
 Attributes[nestedLookup] = {HoldRest}
 
@@ -1517,12 +1361,14 @@ nestedLookup[as_, key:Except[_List], default_] :=
 
 nestedLookup[as_, keys_] := nestedLookup[as, keys, Missing["KeySequenceAbsent", keys]]
 
-
-(*========================================================*)
-
-
-End[]
-
-EndPackage[]
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Package Footer*)
+If[ Wolfram`ChatbookInternal`$BuildingMX,
+    Null;
+];
 
 (* :!CodeAnalysis::EndBlock:: *)
+
+End[ ];
+EndPackage[ ];
