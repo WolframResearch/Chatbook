@@ -453,7 +453,7 @@ insertCodeBelow[ cell_Cell, evaluate_ ] :=
     ];
 
 insertCodeBelow[ string_String, evaluate_ ] :=
-    insertCodeBelow[ Cell[ BoxData @ string, "Input" ], evaluate ];
+    insertCodeBelow[ reparseCodeBoxes @ Cell[ BoxData @ string, "Input" ], evaluate ];
 
 insertCodeBelow // endDefinition;
 
