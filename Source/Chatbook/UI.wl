@@ -745,7 +745,7 @@ makeChatActionMenuContent[
 }, Module[{
 	personaValue = OptionValue["PersonaValue"],
 	modelValue = OptionValue["ModelValue"],
-	roleValue = OptionValue["RoleValue"],
+	roleValue = Replace[OptionValue["RoleValue"], {source_, Inherited} :> {source, "User"}],
 	toolValue = OptionValue["ToolCallFrequency"],
 	tempValue = OptionValue["TemperatureValue"],
 	advancedSettingsMenu,
