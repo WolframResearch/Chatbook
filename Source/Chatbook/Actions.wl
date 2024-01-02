@@ -392,7 +392,10 @@ EvaluateChatInput // beginDefinition;
 EvaluateChatInput[ ] := EvaluateChatInput @ rootEvaluationCell[ ];
 
 EvaluateChatInput[ evalCell_CellObject? chatInputCellQ ] :=
-    EvaluateChatInput[ evalCell, parentNotebook @ evalCell ];
+    If[ chatExcludedQ @ evalCell,
+        Null,
+        EvaluateChatInput[ evalCell, parentNotebook @ evalCell ]
+    ];
 
 EvaluateChatInput[ source: _CellObject | $Failed ] :=
     With[ { evalCell = rootEvaluationCell @ source },
@@ -1034,7 +1037,7 @@ SendChat // beginDefinition;
 
 SendChat[ ] := SendChat @ rootEvaluationCell[ ];
 
-SendChat[ evalCell_CellObject, ___ ] /; MemberQ[ CurrentValue[ evalCell, CellStyle ], "ChatExcluded" ] := Null;
+SendChat[ evalCell_CellObject? chatExcludedQ, ___ ] := Null;
 
 SendChat[ evalCell_CellObject ] := SendChat[ evalCell, parentNotebook @ evalCell ];
 
