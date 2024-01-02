@@ -491,7 +491,7 @@ getCodeBlockContent[ TemplateBox[ { boxes_ }, "ChatCodeBlockTemplate", ___ ] ] :
 getCodeBlockContent[ Cell[ BoxData[ boxes_, ___ ] ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ DynamicModuleBox[ _, boxes_, ___ ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ TagBox[ boxes_, _EventHandlerTag, ___ ] ] := getCodeBlockContent @ boxes;
-getCodeBlockContent[ Cell[ boxes_, "ChatCode", "Input", ___ ] ] := Cell[ boxes, "Input" ];
+getCodeBlockContent[ Cell[ boxes_, "ChatCode", "Input", ___ ] ] := reparseCodeBoxes @ Cell[ boxes, "Input" ];
 
 getCodeBlockContent[ Cell[ boxes_, "ExternalLanguage", ___, CellEvaluationLanguage -> lang_, ___ ] ] :=
     Cell[ boxes, "ExternalLanguage", CellEvaluationLanguage -> lang ];
@@ -499,6 +499,19 @@ getCodeBlockContent[ Cell[ boxes_, "ExternalLanguage", ___, CellEvaluationLangua
 getCodeBlockContent[ cell: Cell[ _, _String, ___ ] ] := cell;
 
 getCodeBlockContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reparseCodeBoxes*)
+reparseCodeBoxes // beginDefinition;
+
+reparseCodeBoxes[ Cell[ BoxData[ s_String ], a___ ] ] /; $cloudNotebooks :=
+    Cell[ BoxData @ UsingFrontEnd @ stringToBoxes @ s, a ];
+
+reparseCodeBoxes[ cell_Cell ] :=
+    cell;
+
+reparseCodeBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
