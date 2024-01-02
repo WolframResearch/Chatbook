@@ -2297,14 +2297,7 @@ attachChatOutputMenu[ cell_CellObject ] /; $cloudNotebooks := Null;
 
 attachChatOutputMenu[ cell_CellObject ] := (
     $lastChatOutput = cell;
-    NotebookDelete @ Cells[ cell, AttachedCell -> True, CellStyle -> "ChatMenu" ];
-    AttachCell[
-        cell,
-        Cell[ BoxData @ TemplateBox[ { "ChatOutput", RGBColor[ "#ecf0f5" ] }, "ChatMenuButton" ], "ChatMenu" ],
-        { Right, Top },
-        Offset[ { -7, -7 }, { Right, Top } ],
-        { Right, Top }
-    ]
+    Block[ { EvaluationCell = cell & }, CurrentValue[ cell, Initialization ] ]
 );
 
 attachChatOutputMenu // endDefinition;
