@@ -1120,6 +1120,9 @@ selectChatCells0[ cell_, cells: { __CellObject }, final_ ] := Enclose[
         (* Filter out ignored cells *)
         filtered = ConfirmMatch[ filterChatCells @ selectedRange, { ___Association }, "FilteredCellInfo" ];
 
+        (* If all cells are excluded, do nothing *)
+        If[ filtered === { }, throwTop @ Null ];
+
         (* Delete output cells that come after the evaluation cell *)
         rest = deleteExistingChatOutputs @ Drop[ cellData, cellPosition ];
 
