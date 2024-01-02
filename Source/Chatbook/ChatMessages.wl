@@ -216,8 +216,14 @@ makeChatMessages[ settings_, cells_ ] :=
         {
             $multimodalMessages = TrueQ @ settings[ "Multimodal" ],
             $tokenBudget        = settings[ "MaxContextTokens" ],
-            $tokenPressure      = 0.0
+            $tokenPressure      = 0.0,
+            $initialCellStringBudget = Replace[
+                settings[ "MaxCellStringLength" ],
+                Except[ $$size ] -> $defaultMaxCellStringLength
+            ],
+            $cellStringBudget
         },
+        $cellStringBudget = $initialCellStringBudget;
         If[ settings[ "BasePrompt" ] =!= None, tokenCheckedMessage[ settings, $fullBasePrompt ] ];
         (* FIXME: need to account for persona/tool prompting as well *)
         makeChatMessages0[ settings, cells ]
@@ -241,10 +247,6 @@ makeChatMessages0[ settings0_, cells_List ] := Enclose[
         toMessage0 = Confirm[ getCellMessageFunction @ settings, "CellMessageFunction" ];
 
         $tokenBudgetLog = Internal`Bag[ ];
-        $initialCellStringBudget = Replace[
-            settings[ "MaxCellStringLength" ],
-            Except[ $$size ] -> $defaultMaxCellStringLength
-        ];
 
         toMessage = Function @ With[
             { msg = toMessage0[ #1, <| #2, "TokenBudget" -> $tokenBudget, "TokenPressure" -> $tokenPressure |> ] },
@@ -303,6 +305,8 @@ combineExcisedMessages // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*tokenCheckedMessage*)
 tokenCheckedMessage // beginDefinition;
+
+tokenCheckedMessage[ as_Association, message_ ] /; $cellStringBudget === Infinity := message;
 
 tokenCheckedMessage[ as_Association, message_ ] := Enclose[
     Catch @ Module[ { count, budget, resized },

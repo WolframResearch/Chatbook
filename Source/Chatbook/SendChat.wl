@@ -1301,6 +1301,7 @@ $autoSettingKeyPriority := Enclose[
 (* FIXME: need to hook into token pressure to gradually decrease limits *)
 chooseMaxCellStringLength // beginDefinition;
 chooseMaxCellStringLength[ as_Association ] := chooseMaxCellStringLength[ as, as[ "MaxContextTokens" ] ];
+chooseMaxCellStringLength[ as_, Infinity ] := Infinity;
 chooseMaxCellStringLength[ as_, tokens: $$size ] := Ceiling[ $defaultMaxCellStringLength * tokens / 2^13 ];
 chooseMaxCellStringLength // endDefinition;
 
