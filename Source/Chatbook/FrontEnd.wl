@@ -592,7 +592,7 @@ compressRasterBoxes // endDefinition;
 (* Effectively equivalent to OpenerView, except strips out the unnecessary interpretation information, and compresses
    the hidden part if it's very large.
 *)
-openerView[ args___ ] := openerView[ args ] = openerView0[ args ];
+openerView[ args___ ] := Verbatim[ openerView[ args ] ] = openerView0[ args ];
 
 openerView0 // beginDefinition;
 openerView0[ { a_, b_ }, args___ ] /; ByteCount @ b > 50000 := openerView1[ { a, compressUntilViewed @ b }, args ];
