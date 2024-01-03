@@ -1120,6 +1120,9 @@ selectChatCells0[ cell_, cells: { __CellObject }, final_ ] := Enclose[
         (* Filter out ignored cells *)
         filtered = ConfirmMatch[ filterChatCells @ selectedRange, { ___Association }, "FilteredCellInfo" ];
 
+        (* If all cells are excluded, do nothing *)
+        If[ filtered === { }, throwTop @ Null ];
+
         (* Delete output cells that come after the evaluation cell *)
         rest = deleteExistingChatOutputs @ Drop[ cellData, cellPosition ];
 
@@ -1298,6 +1301,7 @@ $autoSettingKeyPriority := Enclose[
 (* FIXME: need to hook into token pressure to gradually decrease limits *)
 chooseMaxCellStringLength // beginDefinition;
 chooseMaxCellStringLength[ as_Association ] := chooseMaxCellStringLength[ as, as[ "MaxContextTokens" ] ];
+chooseMaxCellStringLength[ as_, Infinity ] := Infinity;
 chooseMaxCellStringLength[ as_, tokens: $$size ] := Ceiling[ $defaultMaxCellStringLength * tokens / 2^13 ];
 chooseMaxCellStringLength // endDefinition;
 
@@ -2297,14 +2301,7 @@ attachChatOutputMenu[ cell_CellObject ] /; $cloudNotebooks := Null;
 
 attachChatOutputMenu[ cell_CellObject ] := (
     $lastChatOutput = cell;
-    NotebookDelete @ Cells[ cell, AttachedCell -> True, CellStyle -> "ChatMenu" ];
-    AttachCell[
-        cell,
-        Cell[ BoxData @ TemplateBox[ { "ChatOutput", RGBColor[ "#ecf0f5" ] }, "ChatMenuButton" ], "ChatMenu" ],
-        { Right, Top },
-        Offset[ { -7, -7 }, { Right, Top } ],
-        { Right, Top }
-    ]
+    Block[ { EvaluationCell = cell & }, CurrentValue[ cell, Initialization ] ]
 );
 
 attachChatOutputMenu // endDefinition;

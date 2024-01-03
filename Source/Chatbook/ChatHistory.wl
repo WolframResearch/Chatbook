@@ -6,6 +6,7 @@ BeginPackage[ "Wolfram`Chatbook`ChatHistory`" ];
 
 HoldComplete[
     `accentIncludedCells;
+    `chatExcludedQ;
     `extraCellHeight;
     `filterChatCells;
     `getCellsInChatHistory;
@@ -172,24 +173,27 @@ selectChatHistoryCells // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*chatExcludedQ*)
+chatExcludedQ // beginDefinition;
+
+chatExcludedQ[ cell_CellObject ] := chatExcludedQ @ cellInformation @ cell;
+
+chatExcludedQ[ Cell[ __, $$chatIgnoredStyle, ___ ] ] := True;
+chatExcludedQ[ Cell[ __, TaggingRules -> tags_, ___ ] ] := chatExcludedQ @ tags;
+chatExcludedQ[ Cell[ ___ ] ] := False;
+
+chatExcludedQ[ KeyValuePattern[ "Style" -> $$chatIgnoredStyle ] ] := True;
+chatExcludedQ[ KeyValuePattern[ "ChatNotebookSettings" -> settings_ ] ] := chatExcludedQ @ settings;
+chatExcludedQ[ KeyValuePattern[ "ExcludeFromChat" -> exclude_ ] ] := TrueQ @ exclude;
+chatExcludedQ[ KeyValuePattern[ { } ] ] := False;
+
+chatExcludedQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*filterChatCells*)
 filterChatCells // beginDefinition;
-
-filterChatCells[ cellInfo: { ___Association } ] := Enclose[
-    Module[ { styleExcluded, tagExcluded, cells },
-
-        styleExcluded = DeleteCases[ cellInfo, KeyValuePattern[ "Style" -> $$chatIgnoredStyle ] ];
-
-        tagExcluded = DeleteCases[
-            styleExcluded,
-            KeyValuePattern[ "ChatNotebookSettings" -> KeyValuePattern[ "ExcludeFromChat" -> True ] ]
-        ];
-
-        tagExcluded
-    ],
-    throwInternalFailure[ filterChatCells @ cellInfo, ## ] &
-];
-
+filterChatCells[ cellInfo: { ___Association } ] := Select[ cellInfo, Not @* chatExcludedQ ];
 filterChatCells // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
