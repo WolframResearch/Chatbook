@@ -9,7 +9,7 @@ Begin[ "`Private`" ];
 Needs[ "Wolfram`Chatbook`"        ];
 Needs[ "Wolfram`Chatbook`Common`" ];
 
-$$newCellStyle = "Section"|"Subsection"|"Subsubsection"|"Subsubsubsection"|"Item"|"Input"|"ExternalLanguage";
+$$newCellStyle = "Section"|"Subsection"|"Subsubsection"|"Subsubsubsection"|"Item"|"Input"|"ExternalLanguage"|"Program";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -69,6 +69,9 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
 
     (* Remove "ChatCodeBlock" styling: *)
     Cell[ BoxData[ cell_Cell, ___ ], "ChatCodeBlock", ___ ] :> cell,
+
+    (* Language-agnostic code blocks: *)
+    Cell[ text_, "ChatPreformatted", ___ ] :> Cell[ text, "Program" ],
 
     (* Remove "ChatCodeBlockTemplate" template boxes: *)
     TemplateBox[ { cell_Cell }, "ChatCodeBlockTemplate" ] :> cell,
