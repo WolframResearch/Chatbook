@@ -1176,7 +1176,7 @@ inlineInteractiveCodeCell[ display_, string_, lang_ ] :=
         ],
         TaggingRules     -> <| "CellToStringType" -> "InlineInteractiveCodeCell", "CodeLanguage" -> lang |>,
         UnsavedVariables :> { $CellContext`attached, $CellContext`cell },
-        Initialization   :> { $CellContext`cell = EvaluationCell[ ] }
+        Initialization   :> { $CellContext`cell = (FinishDynamic[ ]; EvaluationCell[ ]) }
     ];
 
 inlineInteractiveCodeCell // endDefinition;
