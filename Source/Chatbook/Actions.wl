@@ -20,6 +20,7 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 `$autoAssistMode;
 `$autoOpen;
 `$finalCell;
+`$lastCellObject;
 `$lastChatString;
 `$lastMessages;
 `$lastSettings;
@@ -406,14 +407,32 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
     EvaluateChatInput[ evalCell, nbo, currentChatSettings @ nbo ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
-    withChatState @ Block[ { $autoAssistMode = False },
-        $lastMessages       = None;
+    withChatState @ Block[ { $autoAssistMode = False, $aborted = False },
+        $lastCellObject     = None;
         $lastChatString     = None;
+        $lastMessages       = None;
         $nextTaskEvaluation = None;
-        clearMinimizedChats @ nbo;
         $enableLLMServices  = settings[ "EnableLLMServices" ];
+        clearMinimizedChats @ nbo;
+
+        (* Send chat while listening for an abort: *)
+        CheckAbort[
         sendChat[ evalCell, nbo, settings ];
-        waitForLastTask[ ];
+            waitForLastTask[ ]
+            ,
+            (* The user has issued an abort: *)
+            $aborted = True;
+            (* Clean up the current chat evaluation: *)
+            With[ { cell = $lastCellObject },
+                If[ MatchQ[ cell, _CellObject ],
+                    StopChat @ cell,
+                    removeTask @ $lastTask
+                ]
+            ]
+            ,
+            PropagateAborts -> False
+        ];
+
         blockChatObject[
             If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
                 With[
