@@ -902,12 +902,7 @@ scrape // endDefinition;
 (*AttachCodeButtons*)
 AttachCodeButtons // beginDefinition;
 
-AttachCodeButtons[ attached_, cell0_CellObject, string_, lang_ ] :=
-    With[ { cell = parentCell @ cell0 },
-        AttachCodeButtons[ attached, cell, string, lang ] /; chatCodeBlockQ @ cell
-    ];
-
-AttachCodeButtons[ Dynamic[ attached_ ], cell_CellObject, string_, lang_ ] := (
+AttachCodeButtons[ Dynamic[ attached_ ], cell_CellObject? chatCodeBlockQ, string_, lang_ ] := (
     attached = AttachCell[
         cell,
         floatingButtonGrid[ attached, cell, lang ],
@@ -918,15 +913,44 @@ AttachCodeButtons[ Dynamic[ attached_ ], cell_CellObject, string_, lang_ ] := (
     ]
 );
 
+AttachCodeButtons[ attached_, cell_CellObject, string_, lang_ ] := Enclose[
+    Catch @ Module[ { parent, evalCell, newParent },
+        parent = parentCell @ cell;
+
+        (* The parent cell is the chat code block as expected, so attach there *)
+        If[ chatCodeBlockQ @ parent, Throw @ AttachCodeButtons[ attached, parent, string, lang ] ];
+
+        (* Otherwise, we have an EvaluationCell[] failure, so try to recover by retrying EvaluationCell[] *)
+        evalCell  = ConfirmMatch[ (FinishDynamic[ ]; EvaluationCell[ ]), _CellObject, "EvaluationCell" ];
+
+        (* The chat code block should be the parent of the current evaluation cell *)
+        newParent = ConfirmBy[ parentCell @ evalCell, chatCodeBlockQ, "ParentCell" ];
+
+        (* Finish attaching now that we have the correct cell *)
+        AttachCodeButtons[ attached, newParent, string, lang ]
+    ],
+    throwInternalFailure
+];
+
 AttachCodeButtons // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*chatCodeBlockQ*)
 chatCodeBlockQ // beginDefinition;
-chatCodeBlockQ[ cell_CellObject ] := chatCodeBlockQ[ cell, Developer`CellInformation @ cell ];
+
+(* Many operations that return cell objects can return $Failed, but error handling should be done elsewhere: *)
+chatCodeBlockQ[ $Failed ] := False;
+
+(* Cache the result, since we might be calling this multiple times on the same cell in AttachCodeButtons: *)
+chatCodeBlockQ[ cell_CellObject ] := chatCodeBlockQ[ cell ] = chatCodeBlockQ[ cell, Developer`CellInformation @ cell ];
+
+(* The expected style of a chat code block cell: *)
 chatCodeBlockQ[ cell_, KeyValuePattern[ "Style" -> "ChatCodeBlock" ] ] := True;
+
+(* Anything else means it's not a chat block: *)
 chatCodeBlockQ[ cell_, _ ] := False;
+
 chatCodeBlockQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
