@@ -64,8 +64,8 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
     Cell[ BoxData[ TemplateBox[ { boxes_ }, "ChatCodeInlineTemplate" ], ___ ], "ChatCode"|"ChatCodeActive", ___ ] :>
         Cell[ BoxData @ boxes, "InlineCode" ],
 
-    (* Remove "ChatCode" styling from inputs: *)
-    Cell[ boxes_, "ChatCode", "Input", ___ ] :> Cell[ boxes, "Input" ],
+    (* Remove "ChatCode" styling: *)
+    Cell[ boxes_, "ChatCode", style___String, OptionsPattern[ ] ] :> Cell[ boxes, style ],
 
     (* Remove "ChatCodeBlock" styling: *)
     Cell[ BoxData[ cell_Cell, ___ ], "ChatCodeBlock", ___ ] :> cell,
