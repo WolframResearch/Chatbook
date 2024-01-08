@@ -20,6 +20,7 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 `$autoAssistMode;
 `$autoOpen;
 `$finalCell;
+`$lastCellObject;
 `$lastChatString;
 `$lastMessages;
 `$lastSettings;
@@ -406,14 +407,32 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
     EvaluateChatInput[ evalCell, nbo, currentChatSettings @ nbo ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
-    withChatState @ Block[ { $autoAssistMode = False },
-        $lastMessages       = None;
+    withChatState @ Block[ { $autoAssistMode = False, $aborted = False },
+        $lastCellObject     = None;
         $lastChatString     = None;
+        $lastMessages       = None;
         $nextTaskEvaluation = None;
-        clearMinimizedChats @ nbo;
         $enableLLMServices  = settings[ "EnableLLMServices" ];
-        sendChat[ evalCell, nbo, settings ];
-        waitForLastTask[ ];
+        clearMinimizedChats @ nbo;
+
+        (* Send chat while listening for an abort: *)
+        CheckAbort[
+            sendChat[ evalCell, nbo, settings ];
+            waitForLastTask[ ]
+            ,
+            (* The user has issued an abort: *)
+            $aborted = True;
+            (* Clean up the current chat evaluation: *)
+            With[ { cell = $lastCellObject },
+                If[ MatchQ[ cell, _CellObject ],
+                    StopChat @ cell,
+                    removeTask @ $lastTask
+                ]
+            ]
+            ,
+            PropagateAborts -> False
+        ];
+
         blockChatObject[
             If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
                 With[
@@ -423,17 +442,30 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
                             <| "Role" -> "Assistant", "Content" -> $lastChatString |>
                         ]
                     },
-                    applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> chat, "NotebookObject" -> nbo |> ];
-                    Sow[ chat, $chatObjectTag ]
+                    applyChatPost[ chat, settings, nbo, $aborted ]
                 ],
-                applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> None, "NotebookObject" -> nbo |> ];
-                Sow[ None, $chatObjectTag ];
+                applyChatPost[ None, settings, nbo, $aborted ];
                 Null
             ];
         ]
     ];
 
 EvaluateChatInput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*applyChatPost*)
+applyChatPost // beginDefinition;
+
+applyChatPost[ chat_, settings_, nbo_, aborted: True|False ] := (
+    If[ aborted,
+        applyHandlerFunction[ settings, "ChatAbort", <| "ChatObject" -> chat, "NotebookObject" -> nbo |> ],
+        applyHandlerFunction[ settings, "ChatPost" , <| "ChatObject" -> chat, "NotebookObject" -> nbo |> ]
+    ];
+    Sow[ chat, $chatObjectTag ]
+);
+
+applyChatPost // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

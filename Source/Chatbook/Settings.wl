@@ -71,6 +71,7 @@ $$validRootSettingValue = Inherited | _? (AssociationQ@*Association);
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Defaults*)
+$ChatAbort    = None;
 $ChatPost     = None;
 $ChatPre      = None;
 $DefaultModel = <| "Service" -> "OpenAI", "Name" -> "gpt-4" |>;
@@ -79,8 +80,9 @@ $DefaultModel = <| "Service" -> "OpenAI", "Name" -> "gpt-4" |>;
 (* ::Subsection::Closed:: *)
 (*Handler Functions*)
 $DefaultChatHandlerFunctions = <|
-    "ChatPost" :> $ChatPost,
-    "ChatPre"  :> $ChatPre
+    "ChatAbort" :> $ChatAbort,
+    "ChatPost"  :> $ChatPost,
+    "ChatPre"   :> $ChatPre
 |>;
 
 (* ::**************************************************************************************************************:: *)
