@@ -1124,7 +1124,7 @@ selectChatCells0[ cell_, cells: { __CellObject }, final_ ] := Enclose[
         If[ filtered === { }, throwTop @ Null ];
 
         (* Delete output cells that come after the evaluation cell *)
-        rest = deleteExistingChatOutputs @ Drop[ cellData, cellPosition ];
+        rest = keepValidGeneratedCells @ Drop[ cellData, cellPosition ];
 
         (* Get the selected cell objects from the filtered cell info *)
         selectedCells = ConfirmMatch[
@@ -1147,8 +1147,8 @@ selectChatCells0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*deleteExistingChatOutputs*)
-deleteExistingChatOutputs // beginDefinition;
+(*keepValidGeneratedCells*)
+keepValidGeneratedCells // beginDefinition;
 
 (* When chat is triggered by an evaluation instead of a chat input, there can be generated cells between the
    evaluation cell and the previous chat output. For example:
@@ -1160,10 +1160,10 @@ deleteExistingChatOutputs // beginDefinition;
 
    At this point, the front end has already cleared previous output cells (messages, output, etc.), but the previous
    chat output cell is still there. We need to delete it so that the new chat output cell can be inserted in its place.
-   `deleteExistingChatOutputs` gathers up all the generated cells that come after the evaluation cell and if it finds
+   `keepValidGeneratedCells` gathers up all the generated cells that come after the evaluation cell and if it finds
    a chat output cell, it deletes it.
 *)
-deleteExistingChatOutputs[ cellData: { KeyValuePattern[ "CellObject" -> _CellObject ] ... } ] /; $autoAssistMode :=
+keepValidGeneratedCells[ cellData: { KeyValuePattern[ "CellObject" -> _CellObject ] ... } ] /; $autoAssistMode :=
     Module[ { delete, chatOutputs, cells },
         delete      = TakeWhile[ cellData, MatchQ @ KeyValuePattern[ "CellAutoOverwrite" -> True ] ];
         chatOutputs = Cases[ delete, KeyValuePattern[ "Style" -> $$chatOutputStyle ] ];
@@ -1172,10 +1172,11 @@ deleteExistingChatOutputs[ cellData: { KeyValuePattern[ "CellObject" -> _CellObj
         DeleteCases[ delete, KeyValuePattern[ "CellObject" -> Alternatives @@ cells ] ]
     ];
 
-deleteExistingChatOutputs[ cellData_ ] :=
-    TakeWhile[ cellData, MatchQ @ KeyValuePattern[ "CellAutoOverwrite" -> True ] ];
+(* When chat is triggered by a normal chat input evaluation, we only want to keep the next chat output if it exists: *)
+keepValidGeneratedCells[ cellData_ ] :=
+    TakeWhile[ cellData, MatchQ @ KeyValuePattern @ { "CellAutoOverwrite" -> True, "Style" -> $$chatOutputStyle } ];
 
-deleteExistingChatOutputs // endDefinition;
+keepValidGeneratedCells // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
