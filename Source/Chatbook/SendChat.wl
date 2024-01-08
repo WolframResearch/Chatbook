@@ -2301,7 +2301,7 @@ attachChatOutputMenu[ cell_CellObject ] /; $cloudNotebooks := Null;
 
 attachChatOutputMenu[ cell_CellObject ] := (
     $lastChatOutput = cell;
-    Block[ { EvaluationCell = cell & }, CurrentValue[ cell, Initialization ] ]
+    Lookup[ Options[ cell, Initialization ] /. HoldPattern @ EvaluationCell[ ] -> cell, Initialization ]
 );
 
 attachChatOutputMenu // endDefinition;
