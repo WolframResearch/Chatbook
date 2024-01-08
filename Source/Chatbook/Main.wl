@@ -7,6 +7,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 (* ::Subsection::Closed:: *)
 (*Declare Symbols*)
 `$AvailableTools;
+`$ChatAbort;
 `$ChatHandlerData;
 `$ChatPost;
 `$ChatPre;
