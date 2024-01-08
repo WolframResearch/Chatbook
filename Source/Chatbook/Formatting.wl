@@ -73,6 +73,8 @@ $externalLanguageRules = Replace[
 $$mdRow   = Except[ "\n" ].. ~~ Repeated[ ("|" ~~ Except[ "\n" ]..), { 2, Infinity } ] ~~ ("\n"|EndOfString);
 $$mdTable = $$mdRow ~~ $$mdRow ..;
 
+$chatGeneratedCellTag = "ChatGeneratedCell";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Chat Output Formatting*)
@@ -444,8 +446,7 @@ insertCodeBelow[ cell_Cell, evaluate_ ] :=
     Module[ { cellObj, nbo },
         cellObj = topParentCell @ EvaluationCell[ ];
         nbo  = parentNotebook @ cellObj;
-        SelectionMove[ cellObj, After, Cell ];
-        NotebookWrite[ nbo, stripMarkdownBoxes @ cell, All ];
+        insertAfterChatGeneratedCells[ cellObj, cell ];
         If[ TrueQ @ evaluate,
             selectionEvaluateCreateCell @ nbo,
             SelectionMove[ nbo, After, CellContents ]
@@ -459,11 +460,63 @@ insertCodeBelow // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*insertAfterChatGeneratedCells*)
+insertAfterChatGeneratedCells // beginDefinition;
+
+insertAfterChatGeneratedCells[ cellObj_CellObject, cell_Cell ] := Enclose[
+    Module[ { nbo, allCells, cellsAfter, tagged, inserted, insertionPoint },
+
+        nbo = ConfirmMatch[ parentNotebook @ cellObj, _NotebookObject, "ParentNotebook" ];
+        allCells = ConfirmMatch[ Cells @ nbo, { __CellObject }, "AllCells" ];
+        cellsAfter = Replace[ allCells, { { ___, cellObj, after___ } :> { after }, _ :> { } } ];
+
+        tagged = ConfirmBy[
+            AssociationThread[ cellsAfter -> Flatten @* List /@ CurrentValue[ cellsAfter, CellTags ] ],
+            AssociationQ,
+            "Tagged"
+        ];
+
+        inserted = ConfirmBy[ TakeWhile[ tagged, MemberQ[ $chatGeneratedCellTag ] ], AssociationQ, "Inserted" ];
+        insertionPoint = ConfirmMatch[ Last[ Keys @ inserted, cellObj ], _CellObject, "InsertionPoint" ];
+
+        SelectionMove[ insertionPoint, After, Cell ];
+        NotebookWrite[ nbo, preprocessInsertedCell @ cell, All ];
+    ],
+    throwInternalFailure
+];
+
+insertAfterChatGeneratedCells // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*copyCode*)
 copyCode // beginDefinition;
 copyCode[ cell_CellObject ] := copyCode @ getCodeBlockContent @ cell;
 copyCode[ code: _Cell|_String ] := CopyToClipboard @ stripMarkdownBoxes @ code;
 copyCode // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*preprocessInsertedCell*)
+preprocessInsertedCell // beginDefinition;
+preprocessInsertedCell[ cell_ ] := addInsertedCellTags @ stripMarkdownBoxes @ cell;
+preprocessInsertedCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addInsertedCellTags*)
+addInsertedCellTags // beginDefinition;
+
+addInsertedCellTags[ Cell[ a__, CellTags -> tag_String, b___ ] ] :=
+    addInsertedCellTags @ Cell[ a, CellTags -> { tag }, b ];
+
+addInsertedCellTags[ Cell[ a__, CellTags -> { tags___String }, b___ ] ] :=
+    Cell[ a, CellTags -> DeleteDuplicates @ { $chatGeneratedCellTag, tags }, b ];
+
+addInsertedCellTags[ Cell[ a: Except[ CellTags -> _ ].. ] ] :=
+    Cell[ a, CellTags -> { $chatGeneratedCellTag } ];
+
+addInsertedCellTags // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
