@@ -1750,7 +1750,7 @@ activeAIAssistantCell[
                 Editable        -> False,
                 CellDingbat     -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
                 CellTrayWidgets -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
-                TaggingRules    -> <| "ChatNotebookSettings" -> settings |>
+                TaggingRules    -> <| "ChatNotebookSettings" -> smallSettings @ settings |>
             ]
         ]
     ];
@@ -1803,7 +1803,7 @@ activeAIAssistantCell[
             Selectable         -> True,
             ShowAutoSpellCheck -> False,
             ShowCursorTracker  -> False,
-            TaggingRules       -> <| "ChatNotebookSettings" -> settings |>,
+            TaggingRules       -> <| "ChatNotebookSettings" -> smallSettings @ settings |>,
             If[ scrollOutputQ @ settings,
                 PrivateCellOptions -> { "TrackScrollingWhenPlaced" -> True },
                 Sequence @@ { }
@@ -1897,8 +1897,10 @@ makeActiveOutputDingbat // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeOutputDingbat*)
 makeOutputDingbat // beginDefinition;
+makeOutputDingbat[ as: KeyValuePattern[ "LLMEvaluator" -> name_String ] ] := makeOutputDingbat[ as, name ];
 makeOutputDingbat[ as: KeyValuePattern[ "LLMEvaluator" -> config_Association ] ] := makeOutputDingbat[ as, config ];
 makeOutputDingbat[ as_Association ] := makeOutputDingbat[ as, as ];
+makeOutputDingbat[ as_, name_String ] := makeOutputDingbat[ as, GetCachedPersonaData @ name ];
 makeOutputDingbat[ as_, KeyValuePattern[ "PersonaIcon" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
 makeOutputDingbat[ as_, KeyValuePattern[ "Icon" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
 makeOutputDingbat[ as_, KeyValuePattern[ "Default" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
