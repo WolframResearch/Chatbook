@@ -34,142 +34,77 @@ $notebookTypeLabelOptions = Sequence[
 (*makeChatCloudDockedCellContents*)
 makeChatCloudDockedCellContents // beginDefinition;
 
-makeChatCloudDockedCellContents[ ] :=
-    Block[ { $preferencesScope := EvaluationNotebook[ ] },
-        DynamicWrapper[
-            Grid[
-                {
-                    {
-                        Item[ $cloudChatBanner, Alignment -> Left ],
-                        Item[ "", ItemSize -> Fit ],
-                        makePersonaSelector[ ],
-                        cloudModelSelector[ ]
-                    }
-                },
-                Alignment  -> { Left, Baseline },
-                Dividers   -> { { False, False, False, True }, False },
-                Spacings   -> { 2, 0 },
-                BaseStyle  -> { "Text", FontSize -> 14, FontColor -> GrayLevel[ 0.4 ] },
-                FrameStyle -> Directive[ Thickness[ 2 ], GrayLevel[ 0.9 ] ]
-            ],
-            Needs[ "GeneralUtilities`" -> None ];
-            CurrentValue[ EvaluationNotebook[ ], TaggingRules ] =
-                GeneralUtilities`ToAssociations @ Replace[
-                    CurrentValue[ EvaluationNotebook[ ], TaggingRules ],
-                    Except[ KeyValuePattern @ { } ] :> <| |>
-                ]
-        ]
-    ];
+makeChatCloudDockedCellContents[ ] := Grid[
+    {
+        {
+            Item[ $cloudChatBanner, Alignment -> Left ],
+            Item[ "", ItemSize -> Fit ],
+            makePersonaSelector[ ],
+            cloudModelSelector[ ],
+            cloudPreferencesButton[ ]
+        }
+    },
+    Alignment  -> { Left, Baseline },
+    Dividers   -> { { False, False, False, True, True }, False },
+    Spacings   -> { 2, 0 },
+    BaseStyle  -> { "Text", FontSize -> 14, FontColor -> GrayLevel[ 0.4 ] },
+    FrameStyle -> Directive[ Thickness[ 2 ], GrayLevel[ 0.9 ] ]
+];
 
 makeChatCloudDockedCellContents // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*cloudModelSelector*)
-cloudModelSelector // beginDefinition;
+(*cloudPreferencesButton*)
+cloudPreferencesButton // beginDefinition;
 
-cloudModelSelector[ ] :=
-    DynamicModule[ { serviceSelector, modelSelector },
+cloudPreferencesButton[ ] := Enclose[
+    Module[ { iconTemplate, colorTemplate, mouseover, buttonIcon, button },
 
-        serviceSelector = PopupMenu[
-            Dynamic[
-                Replace[
-                    CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ChatNotebookSettings", "Model" } ],
-                    {
-                        _String|Inherited :> "OpenAI",
-                        KeyValuePattern[ "Service" -> service_String ] :> service,
-                        _ :> Set[
-                            CurrentValue[
-                                EvaluationNotebook[ ],
-                                { TaggingRules, "ChatNotebookSettings", "Model" }
-                            ],
-                            $DefaultModel
-                        ][ "Service" ]
-                    }
-                ],
-                Function[
-                    CurrentValue[
-                        EvaluationNotebook[ ],
-                        { TaggingRules, "ChatNotebookSettings", "Model", "Service" }
-                    ] = #1;
-
-                    CurrentValue[
-                        EvaluationNotebook[ ],
-                        { TaggingRules, "ChatNotebookSettings", "Model", "Name" }
-                    ] = Automatic;
-
-                    cloudModelNameSelector[ Dynamic @ modelSelector, #1 ]
-                ]
-            ],
-            KeyValueMap[
-                #1 -> Row @ { inlineTemplateBoxes[ #2[ "Icon" ] ], Spacer[ 1 ], #2[ "Service" ] } &,
-                $availableServices
-            ]
+        iconTemplate = ConfirmMatch[
+            chatbookIcon[ "ToolManagerCog", False ],
+            RawBoxes @ TemplateBox[ { }, __ ],
+            "IconTemplate"
         ];
 
-        cloudModelNameSelector[
-            Dynamic @ modelSelector,
-            Replace[
-                CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ChatNotebookSettings", "Model" } ],
-                {
-                    _String|Inherited :> "OpenAI",
-                    KeyValuePattern[ "Service" -> service_String ] :> service,
-                    _ :> Set[
-                        CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ChatNotebookSettings", "Model" } ],
-                        $DefaultModel
-                    ][ "Service" ]
-                }
-            ]
+        colorTemplate = ConfirmMatch[
+            Insert[ iconTemplate, #, { 1, 1, 1 } ],
+            RawBoxes @ TemplateBox[ { _? ColorQ }, __ ],
+            "Colorize"
+        ] &;
+
+        mouseover = Mouseover[
+            colorTemplate @ GrayLevel[ 0.65 ],
+            colorTemplate @ Hue[ 0.59, 0.9, 0.93 ]
         ];
 
-        Row @ {
-            "LLM Service: ", serviceSelector,
-            Spacer[ 5 ],
-            "Model: ", Dynamic @ modelSelector
-        }
-    ];
+        buttonIcon = DeleteCases[
+            mouseover /. HoldPattern[ ImageSize -> _ ] :> ImageSize -> { 22, 22 },
+            BaselinePosition -> _,
+            Infinity
+        ];
 
-cloudModelSelector // endDefinition;
+        button = Button[
+            Tooltip[ buttonIcon, "Global chat preferences" ],
+            $cloudEvaluationNotebook = EvaluationNotebook[ ];
+            CreateDialog @ Style[ Dynamic @ notebookSettingsPanel[ ], "Text" ],
+            Appearance -> "Suppressed",
+            Method     -> "Queued"
+        ];
+
+        cloudPreferencesButton[ ] = Pane[ button, FrameMargins -> { { 0, 10 }, { 0, 0 } } ]
+    ],
+    throwInternalFailure
+];
+
+cloudPreferencesButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*cloudModelNameSelector*)
-cloudModelNameSelector // beginDefinition;
-
-cloudModelNameSelector[ Dynamic[ modelSelector_ ], service_String ] :=
-    modelSelector = DynamicModule[ { display, models },
-        display = ProgressIndicator[ Appearance -> "Percolate" ];
-        Dynamic[ display ],
-        Initialization :> (
-            models = getServiceModelList @ service;
-            If[ SameQ[
-                    CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ChatNotebookSettings", "Model", "Name" } ],
-                    Automatic
-                ],
-                CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ChatNotebookSettings", "Model", "Name" } ] =
-                    First[ models, <| "Name" -> Automatic |> ][ "Name" ]
-            ];
-
-            display = PopupMenu[
-                Dynamic[
-                    Replace[
-                        CurrentChatSettings[ EvaluationNotebook[ ], "Model" ],
-                        { KeyValuePattern[ "Name" -> model_String ] :> model, _ :> Automatic }
-                    ],
-                    Function[
-                        CurrentValue[
-                            EvaluationNotebook[ ],
-                            { TaggingRules, "ChatNotebookSettings", "Model", "Name" }
-                        ] = #1
-                    ]
-                ],
-                (#Name -> #DisplayName &) /@ models
-            ]
-        ),
-        SynchronousInitialization -> False
-    ];
-
-cloudModelNameSelector // endDefinition;
+(*cloudModelSelector*)
+cloudModelSelector // beginDefinition;
+cloudModelSelector[ ] := makeModelSelector[ ];
+cloudModelSelector // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
