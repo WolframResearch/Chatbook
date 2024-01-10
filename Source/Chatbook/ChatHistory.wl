@@ -186,6 +186,7 @@ chatExcludedQ[ KeyValuePattern[ "Style" -> $$chatIgnoredStyle ] ] := True;
 chatExcludedQ[ KeyValuePattern[ "ChatNotebookSettings" -> settings_ ] ] := chatExcludedQ @ settings;
 chatExcludedQ[ KeyValuePattern[ "ExcludeFromChat" -> exclude_ ] ] := TrueQ @ exclude;
 chatExcludedQ[ KeyValuePattern[ { } ] ] := False;
+chatExcludedQ[ Inherited ] := False;
 
 chatExcludedQ // endDefinition;
 
