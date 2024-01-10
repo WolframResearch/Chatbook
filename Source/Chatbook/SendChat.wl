@@ -39,7 +39,7 @@ Needs[ "Wolfram`Chatbook`Utils`"            ];
 (*Configuration*)
 $resizeDingbats            = True;
 splitDynamicTaskFunction   = createFETask;
-$defaultHandlerKeys        = { "Body", "BodyChunk", "StatusCode", "Task", "TaskStatus", "EventName" };
+$defaultHandlerKeys        = { "Body", "BodyChunk", "BodyChunkProcessed", "StatusCode", "TaskStatus", "EventName" };
 $chatSubmitDroppedHandlers = { "ChatPost", "ChatPre", "Resolved" };
 
 (* ::**************************************************************************************************************:: *)
@@ -492,10 +492,11 @@ chatSubmit // Attributes = { HoldFirst };
 chatSubmit[ args__ ] := Quiet[
     chatSubmit0 @ args,
     {
-        (* cSpell: ignore wname, invm *)
+        (* cSpell: ignore wname, invm, invk *)
         ServiceConnections`SavedConnections::wname,
         ServiceConnections`ServiceConnections::wname,
-        URLSubmit::invm
+        URLSubmit::invm,
+        URLSubmit::invk
     }
 ];
 
