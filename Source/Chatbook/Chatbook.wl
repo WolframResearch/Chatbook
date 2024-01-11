@@ -12,7 +12,16 @@ Quiet[
         Unprotect[ "Wolfram`Chatbook`*" ];
         ClearAll[ "Wolfram`Chatbook`*" ];
         ClearAll[ "Wolfram`Chatbook`*`*" ];
-        Get @ Wolfram`ChatbookLoader`$MXFile
+        Get @ Wolfram`ChatbookLoader`$MXFile;
+        (* Ensure all subcontexts are in $Packages to avoid reloading subcontexts out of order: *)
+        WithCleanup[
+            Unprotect @ $Packages,
+            $Packages = DeleteDuplicates @ Join[
+                $Packages,
+                Select[ Contexts[ "Wolfram`Chatbook`*" ], StringFreeQ[ "`Private`" ] ]
+            ],
+            Protect @ $Packages
+        ]
         ,
         WithCleanup[
             PreemptProtect[
