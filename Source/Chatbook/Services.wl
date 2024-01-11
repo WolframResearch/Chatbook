@@ -185,7 +185,7 @@ checkModelList // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$availableServices*)
-$availableServices := getAvailableServices[ ];
+$availableServices := Block[ { $availableServices = <| |> }, getAvailableServices[ ] ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
