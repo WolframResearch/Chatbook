@@ -8,6 +8,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 (*Declare Symbols*)
 `$AvailableTools;
 `$ChatAbort;
+`$ChatbookContexts;
 `$ChatHandlerData;
 `$ChatPost;
 `$ChatPre;
@@ -130,6 +131,11 @@ Protect[
     SetToolOptions,
     WriteChatOutputCell
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Subcontexts*)
+$ChatbookContexts = Select[ Contexts[ "Wolfram`Chatbook`*" ], StringFreeQ[ "`Private`" ] ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

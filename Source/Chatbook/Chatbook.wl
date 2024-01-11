@@ -14,13 +14,12 @@ Quiet[
         ClearAll[ "Wolfram`Chatbook`*`*" ];
         Get @ Wolfram`ChatbookLoader`$MXFile;
         (* Ensure all subcontexts are in $Packages to avoid reloading subcontexts out of order: *)
-        WithCleanup[
-            Unprotect @ $Packages,
-            $Packages = DeleteDuplicates @ Join[
-                $Packages,
-                Select[ Contexts[ "Wolfram`Chatbook`*" ], StringFreeQ[ "`Private`" ] ]
-            ],
-            Protect @ $Packages
+        If[ MatchQ[ Wolfram`Chatbook`$ChatbookContexts, { __String } ],
+            WithCleanup[
+                Unprotect @ $Packages,
+                $Packages = DeleteDuplicates @ Join[ $Packages, Wolfram`Chatbook`$ChatbookContexts ],
+                Protect @ $Packages
+            ]
         ]
         ,
         WithCleanup[
