@@ -30,6 +30,7 @@ Needs[ "Wolfram`Chatbook`UI`"               ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
+$preferencesWidth        = 640;
 $cloudEvaluationNotebook = None;
 
 $preferencesPages = { "Notebooks", "Services", "Personas", "Tools" };
@@ -37,6 +38,15 @@ $$preferencesPage = Alternatives @@ $preferencesPages;
 
 $preferencesScope := $FrontEnd;
 $inFrontEndScope  := MatchQ[ OwnValues @ $preferencesScope, { _ :> $FrontEnd|_FrontEndObject } ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Cloud Overrides*)
+$displayedPreferencesPages :=
+    If[ $CloudEvaluation,
+        { "Notebooks", "Services"(*, "Personas", "Tools"*) },
+        $preferencesPages
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -131,32 +141,23 @@ currentTabPage // endDefinition;
 createPreferencesContent // beginDefinition;
 
 createPreferencesContent[ ] := Enclose[
-    Module[ { notebookSettings, serviceSettings, personaSettings, toolSettings, tabView, reset },
-
+    Module[ { tabs, tabView, reset },
         (* Retrieve the dynamic content for each preferences tab, confirming that it matches the expected types: *)
-        notebookSettings = ConfirmMatch[ preferencesContent[ "Notebooks" ], _Dynamic | _DynamicModule, "Notebooks" ];
-        serviceSettings  = ConfirmMatch[ preferencesContent[ "Services"  ], _Dynamic | _DynamicModule, "Services"  ];
-        personaSettings  = ConfirmMatch[ preferencesContent[ "Personas"  ], _Dynamic | _DynamicModule, "Personas"  ];
-        toolSettings     = ConfirmMatch[ preferencesContent[ "Tools"     ], _Dynamic | _DynamicModule, "Tools"     ];
+        tabs = ConfirmMatch[ createTabViewTabs[ ], { { _String, _String -> _Dynamic|_DynamicModule }.. }, "Tabs" ];
 
         (* Create a TabView for the preferences content, with the tab state stored in the FE's private options: *)
         tabView = TabView[
-            {
-                { "Notebooks", "Notebooks" -> notebookSettings },
-                { "Services" , "Services"  -> serviceSettings  },
-                { "Personas" , "Personas"  -> personaSettings  },
-                { "Tools"    , "Tools"     -> toolSettings     }
-            },
+            tabs,
             currentTabPageDynamic @ $preferencesScope,
             Background   -> None,
             FrameMargins -> { { 2, 2 }, { 2, 3 } },
             ImageMargins -> { { 10, 10 }, { 2, 2 } },
-            ImageSize    -> { 640, Automatic },
+            ImageSize    -> { $preferencesWidth, Automatic },
             LabelStyle   -> "feTabView" (* Defined in the SystemDialog stylesheet: *)
         ];
 
         (* Create a reset button that will reset preferences to default settings: *)
-        reset = Pane[ $resetButton, ImageMargins -> { { 20, 0 }, { 0, 10 } }, ImageSize -> 640 ];
+        reset = Pane[ $resetButton, ImageMargins -> { { 20, 0 }, { 0, 10 } }, ImageSize -> $preferencesWidth ];
 
         (* Arrange the TabView and reset button in a Grid layout with vertical spacers: *)
         Grid[
@@ -179,6 +180,21 @@ createPreferencesContent[ ] := Enclose[
 ];
 
 createPreferencesContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createTabViewTabs*)
+createTabViewTabs // beginDefinition;
+createTabViewTabs[ ] := createTabViewTabs @ $displayedPreferencesPages;
+createTabViewTabs[ pages: { __String } ] := createTabViewTab /@ pages;
+createTabViewTabs // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createTabViewTab*)
+createTabViewTab // beginDefinition;
+createTabViewTab[ name_String ] := { name, name -> preferencesContent @ name };
+createTabViewTab // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -359,48 +375,13 @@ makePersonaSelector0[ personas: { (_String -> _).. } ] :=
         Row @ {
             "Persona:",
             Spacer[ 3 ],
-            PopupMenu[
-                scopedDynamic[
-                    CurrentChatSettings[ $preferencesScope, "LLMEvaluator" ],
-                    Function[
-                        CurrentChatSettings[ $preferencesScope, "LLMEvaluator" ] = #;
-                        refreshCloudToolbar[ ]
-                    ]
-                ],
-                personas
-            ]
+            PopupMenu[ scopedDynamic @ CurrentChatSettings[ $preferencesScope, "LLMEvaluator" ], personas ]
         },
         "Notebooks",
         "LLMEvaluator"
     ];
 
 makePersonaSelector0 // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*refreshCloudToolbar*)
-refreshCloudToolbar // beginDefinition;
-
-refreshCloudToolbar[ ] :=
-    If[ TrueQ @ $CloudEvaluation,
-        refreshCloudToolbar[ EvaluationNotebook[ ], $cloudEvaluationNotebook ]
-    ];
-
-refreshCloudToolbar[ nbo_NotebookObject, nbo_NotebookObject ] :=
-    Null;
-
-refreshCloudToolbar[ _, None ] :=
-    Null;
-
-refreshCloudToolbar[ _NotebookObject, nbo_NotebookObject ] :=
-    Module[ { dc },
-        dc = Replace[ CurrentValue[ nbo, DockedCells ], Except[ Inherited | _List ] :> Inherited ];
-        SetOptions[ nbo, DockedCells -> { } ];
-        Pause[ 1 ];
-        SetOptions[ nbo, DockedCells -> dc ];
-    ];
-
-refreshCloudToolbar // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -463,7 +444,7 @@ makeModelSelector0[ services_Association? AssociationQ ] := Enclose[
                 highlight[
                     "Model:",
                     Dynamic[
-                        If[ state === "Loading", $loadingPopupMenu, modelSelector ],
+                        If[ state === "Loading" || MatchQ[ modelSelector, _Symbol ], $loadingPopupMenu, modelSelector ],
                         TrackedSymbols :> { state, modelSelector }
                     ],
                     "ModelName"
@@ -559,9 +540,7 @@ serviceSelectCallback[
             Dynamic @ modelSelector,
             Dynamic @ state
         ]
-    ];
-
-    refreshCloudToolbar[ ]
+    ]
 ];
 
 serviceSelectCallback // endDefinition;
@@ -642,7 +621,7 @@ modelNameInputField // beginDefinition;
 
 modelNameInputField[ Dynamic[ service_ ], Dynamic[ model_ ], Dynamic[ modelSelector_ ], Dynamic[ state_ ] ] :=
     prefsInputField[
-        "Model:",
+        None,
         scopedDynamic[
             Replace[
                 extractModelName @ CurrentChatSettings[ $preferencesScope, "Model" ],
@@ -707,18 +686,15 @@ modelSelectCallback[
     ensureServiceName @ service;
     ConfirmAssert[ StringQ @ service, "ServiceName" ];
 
+    (* Store the service/model in FE settings: *)
+    CurrentChatSettings[ $preferencesScope, "Model" ] = <| "Service" -> service, "Name" -> model |>;
+
     (* Remember the selected model for the given service, so it will be automatically chosen
        when choosing this service again: *)
     CurrentChatSettings[ $preferencesScope, "ServiceDefaultModel" ] = Append[
         CurrentChatSettings[ $preferencesScope, "ServiceDefaultModel" ],
         service -> model
-    ];
-
-    (* Store the service/model in FE settings: *)
-    CurrentChatSettings[ $preferencesScope, "Model" ] = <| "Service" -> service, "Name" -> model |>;
-
-    updateDynamics[ "Models" ];
-    refreshCloudToolbar[ ]
+    ]
     ,
     throwInternalFailure
 ];
@@ -1338,6 +1314,9 @@ subsectionText // endDefinition;
 prefsInputField // beginDefinition;
 
 (* cSpell: ignore leadin *)
+prefsInputField[ None, value_Dynamic, type_, opts: OptionsPattern[ ] ] :=
+    prefsInputField0[ value, type, opts ];
+
 prefsInputField[ label_, value_Dynamic, type_, opts: OptionsPattern[ ] ] := Grid[
     { { label, prefsInputField0[ value, type, opts ] } },
     Alignment -> { Automatic, Baseline },
