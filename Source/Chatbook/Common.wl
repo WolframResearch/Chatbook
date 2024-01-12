@@ -466,13 +466,36 @@ messageFailure[ args___ ] :=
         quiet   = If[ TrueQ @ $failed, Quiet, Identity ];
         message = messageFailure0;
         WithCleanup[
-            StackInhibit @ quiet @ message @ args,
+            StackInhibit @ convertCloudFailure @ quiet @ message @ args,
             If[ TrueQ @ $catching, $failed = True ]
         ]
     ];
 
 (* https://resources.wolframcloud.com/FunctionRepository/resources/MessageFailure *)
 importResourceFunction[ messageFailure0, "MessageFailure" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*convertCloudFailure*)
+convertCloudFailure // beginDefinition;
+
+convertCloudFailure[ Failure[
+    "Chatbook::Internal",
+    as: KeyValuePattern @ { "MessageParameters" :> { Hyperlink[ _, url_ ], params___ } }
+] ] /; $CloudEvaluation :=
+    Failure[
+        "Chatbook::Internal",
+        Association[
+            as,
+            "MessageParameters" -> { "", params },
+            "Link"              -> Hyperlink[ "Report this issue \[RightGuillemet]", url ]
+        ]
+    ];
+
+convertCloudFailure[ failure_ ] :=
+    failure;
+
+convertCloudFailure // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
