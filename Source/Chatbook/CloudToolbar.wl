@@ -14,6 +14,7 @@ Needs[ "Wolfram`Chatbook`Dialogs`"            ];
 Needs[ "Wolfram`Chatbook`Dynamics`"           ];
 Needs[ "Wolfram`Chatbook`PreferencesContent`" ];
 Needs[ "Wolfram`Chatbook`Services`"           ];
+Needs[ "Wolfram`Chatbook`UI`"                 ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -39,13 +40,10 @@ makeChatCloudDockedCellContents[ ] := Grid[
         {
             Item[ $cloudChatBanner, Alignment -> Left ],
             Item[ "", ItemSize -> Fit ],
-            makePersonaSelector[ ],
-            cloudModelSelector[ ],
             cloudPreferencesButton[ ]
         }
     },
     Alignment  -> { Left, Baseline },
-    Dividers   -> { { False, False, False, True, True }, False },
     Spacings   -> { 2, 0 },
     BaseStyle  -> { "Text", FontSize -> 14, FontColor -> GrayLevel[ 0.4 ] },
     FrameStyle -> Directive[ Thickness[ 2 ], GrayLevel[ 0.9 ] ]
@@ -59,7 +57,7 @@ makeChatCloudDockedCellContents // endDefinition;
 cloudPreferencesButton // beginDefinition;
 
 cloudPreferencesButton[ ] := Enclose[
-    Module[ { iconTemplate, colorTemplate, mouseover, buttonIcon, button },
+    Module[ { iconTemplate, colorTemplate, buttonLabel, mouseover, buttonIcon, button },
 
         iconTemplate = ConfirmMatch[
             chatbookIcon[ "ToolManagerCog", False ],
@@ -73,24 +71,20 @@ cloudPreferencesButton[ ] := Enclose[
             "Colorize"
         ] &;
 
-        mouseover = Mouseover[
-            colorTemplate @ GrayLevel[ 0.65 ],
-            colorTemplate @ Hue[ 0.59, 0.9, 0.93 ]
-        ];
+        buttonLabel = Grid[
+            { { Style[ "Chat Settings", FontColor -> # ], colorTemplate @ # } },
+            Alignment -> { Left, Baseline }
+        ] &;
+
+        mouseover = Mouseover[ buttonLabel @ GrayLevel[ 0.25 ], buttonLabel @ Hue[ 0.59, 0.9, 0.93 ] ];
 
         buttonIcon = DeleteCases[
-            mouseover /. HoldPattern[ ImageSize -> _ ] :> ImageSize -> { 22, 22 },
+            mouseover (*/. HoldPattern[ ImageSize -> _ ] :> ImageSize -> { 22, 22 }*),
             BaselinePosition -> _,
             Infinity
         ];
 
-        button = Button[
-            Tooltip[ buttonIcon, "Global chat preferences" ],
-            $cloudEvaluationNotebook = EvaluationNotebook[ ];
-            CreateDialog @ Style[ Dynamic @ notebookSettingsPanel[ ], "Text" ],
-            Appearance -> "Suppressed",
-            Method     -> "Queued"
-        ];
+        button = Button[ buttonIcon, togglePreferences @ EvaluationNotebook[ ], Method -> "Queued" ];
 
         cloudPreferencesButton[ ] = Pane[ button, FrameMargins -> { { 0, 10 }, { 0, 0 } } ]
     ],
@@ -98,6 +92,58 @@ cloudPreferencesButton[ ] := Enclose[
 ];
 
 cloudPreferencesButton // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*togglePreferences*)
+togglePreferences // beginDefinition;
+
+togglePreferences[ nbo_NotebookObject ] :=
+    togglePreferences[ nbo, Flatten @ List @ CurrentValue[ nbo, DockedCells ] ];
+
+togglePreferences[ nbo_NotebookObject, { cell_Cell } ] :=
+    SetOptions[ nbo, DockedCells -> { cell, $cloudPreferencesCell } ];
+
+togglePreferences[ nbo_NotebookObject, { Inherited|$Failed } ] := SetOptions[
+    nbo,
+    DockedCells -> {
+        Cell[ BoxData @ DynamicBox @ ToBoxes @ MakeChatCloudDockedCellContents[ ], Background -> None ],
+        $cloudPreferencesCell
+    }
+];
+
+togglePreferences[ nbo_NotebookObject, { cell_Cell, _Cell } ] :=
+    SetOptions[ nbo, DockedCells -> { cell } ];
+
+togglePreferences[ nbo_NotebookObject, _ ] :=
+    SetOptions[ nbo, DockedCells -> Inherited ];
+
+togglePreferences // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*$cloudPreferencesCell*)
+$cloudPreferencesCell := $cloudPreferencesCell = Cell[
+    BoxData @ ToBoxes @ Pane[
+        Dynamic[
+            Replace[
+                createCloudPreferencesContent[ ],
+                _createCloudPreferencesContent -> ProgressIndicator[ Appearance -> "Percolate" ]
+            ],
+            BaseStyle -> { "Text" }
+        ],
+        ImageSize -> { Scaled[ 1 ], Automatic },
+        Alignment -> { Center, Top }
+    ],
+    Background -> GrayLevel[ 0.95 ]
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createCloudPreferencesContent*)
+createCloudPreferencesContent // beginDefinition;
+createCloudPreferencesContent[ ] := createCloudPreferencesContent[ ] = createPreferencesContent[ ];
+createCloudPreferencesContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
