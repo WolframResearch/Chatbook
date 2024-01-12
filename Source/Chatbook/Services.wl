@@ -92,9 +92,13 @@ getServiceModelList[ KeyValuePattern[ "Service" -> service_String ] ] :=
 
 getServiceModelList[ service_String ] :=
     With[ { models = $availableServices[ service, "CachedModels" ] },
-        If[ ListQ @ models,
+        Replace[
             models,
-            getServiceModelList[ service, $availableServices[ service ] ]
+            {
+                {  } | None :> Missing[ "NoModelList" ],
+                list_List :> list,
+                _ :> getServiceModelList[ service, $availableServices[ service ] ]
+            }
         ]
     ];
 
