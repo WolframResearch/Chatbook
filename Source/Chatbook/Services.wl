@@ -19,10 +19,11 @@ HoldComplete[
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"        ];
-Needs[ "Wolfram`Chatbook`Common`" ];
-Needs[ "Wolfram`Chatbook`Models`" ];
-Needs[ "Wolfram`Chatbook`UI`"     ];
+Needs[ "Wolfram`Chatbook`"          ];
+Needs[ "Wolfram`Chatbook`Common`"   ];
+Needs[ "Wolfram`Chatbook`Dynamics`" ];
+Needs[ "Wolfram`Chatbook`Models`"   ];
+Needs[ "Wolfram`Chatbook`UI`"       ];
 
 $ContextAliases[ "llm`" ] = "LLMServices`";
 
@@ -46,7 +47,7 @@ $llmServicesAvailable := $llmServicesAvailable = (
 (* ::Section::Closed:: *)
 (*InvalidateServiceCache*)
 InvalidateServiceCache // beginDefinition;
-InvalidateServiceCache[ ] := ($serviceCache = None; Null);
+InvalidateServiceCache[ ] := catchAlways[ $serviceCache = None; updateDynamics[ { "Models", "Services" } ]; ];
 InvalidateServiceCache // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
