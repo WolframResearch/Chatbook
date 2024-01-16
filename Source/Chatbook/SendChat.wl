@@ -1212,6 +1212,7 @@ resolveAutoSettings[ settings_Association ] := resolveAutoSettings0 @ <|
     "HandlerFunctions"    -> getHandlerFunctions @ settings,
     "LLMEvaluator"        -> getLLMEvaluator @ settings,
     "ProcessingFunctions" -> getProcessingFunctions @ settings,
+    "Model"               -> resolveFullModelSpec @ settings,
     If[ StringQ @ settings[ "Tokenizer" ],
         <|
             "TokenizerName" -> getTokenizerName @ settings,
@@ -2235,6 +2236,9 @@ smallSettings[ as_Association ] := smallSettings0 @ KeyDrop[ as, { "OpenAIKey", 
 smallSettings // endDefinition;
 
 smallSettings0 // beginDefinition;
+
+smallSettings0[ as: KeyValuePattern[ "Model" -> model: KeyValuePattern[ "Icon" -> _ ] ] ] :=
+    smallSettings0 @ <| as, "Model" -> KeyTake[ model, { "Service", "Name" } ] |>;
 
 smallSettings0[ as_Association ] :=
     smallSettings0[ as, as[ "LLMEvaluator" ] ];
