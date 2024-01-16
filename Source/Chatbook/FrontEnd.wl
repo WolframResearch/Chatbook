@@ -463,9 +463,8 @@ fixCloudCell // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*applyCloudCellFixes*)
 applyCloudCellFixes // beginDefinition;
-applyCloudCellFixes[ text_String ] := text;
-applyCloudCellFixes[ boxes_BoxData ] := boxes;
 applyCloudCellFixes[ text_TextData ] := ReplaceRepeated[ text, $cloudCellFixes ];
+applyCloudCellFixes[ boxes_ ] := boxes;
 applyCloudCellFixes // endDefinition;
 
 $cloudCellFixes := $cloudCellFixes = Dispatch @ {

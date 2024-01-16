@@ -44,7 +44,7 @@ $inFrontEndScope  := MatchQ[ OwnValues @ $preferencesScope, { _ :> $FrontEnd|_Fr
 (*Cloud Overrides*)
 $displayedPreferencesPages :=
     If[ $CloudEvaluation,
-        { "Notebooks", "Services"(*, "Personas", "Tools"*) },
+        { "Notebooks", "Services", "Personas"(*, "Tools"*) },
         $preferencesPages
     ];
 
@@ -1650,14 +1650,12 @@ resetChatPreferences[ "Notebooks" ] := expandScope[
     updateDynamics[ "Preferences" ];
 ];
 
-resetChatPreferences[ "Personas" ] :=
-    (* TODO: this won't work when $preferencesScope is something other than $FrontEnd *)
-    With[ { path = Sequence[ PrivateFrontEndOptions, "InterfaceSettings", "Chatbook" ] },
-        (* TODO: choice dialog to uninstall personas *)
-        CurrentValue[ $preferencesScope, { path, "VisiblePersonas"  } ] = $corePersonaNames;
-        CurrentValue[ $preferencesScope, { path, "PersonaFavorites" } ] = $corePersonaNames;
-        updateDynamics[ "Personas" ];
-    ];
+resetChatPreferences[ "Personas" ] := (
+    (* TODO: choice dialog to uninstall personas *)
+    CurrentChatSettings[ $preferencesScope, "VisiblePersonas"  ] = $corePersonaNames;
+    CurrentChatSettings[ $preferencesScope, "PersonaFavorites" ] = $corePersonaNames;
+    updateDynamics[ "Personas" ];
+);
 
 resetChatPreferences[ "Tools" ] := expandScope[
     CurrentChatSettings[ $preferencesScope, "ToolSelectionType" ] = Inherited;

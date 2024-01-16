@@ -213,6 +213,15 @@ autoMargins0 // endDefinition;
 (*grayDialogButtonLabel*)
 grayDialogButtonLabel // beginDefinition;
 
+grayDialogButtonLabel[ { normal_, hover_, pressed_ } ] /; $cloudNotebooks :=
+    Mouseover[
+        Framed[ normal , BaseStyle -> "ButtonGray1Normal" , BaselinePosition -> Baseline ],
+        Framed[ hover  , BaseStyle -> "ButtonGray1Hover"  , BaselinePosition -> Baseline ],
+        BaseStyle      -> "DialogTextBasic",
+        ContentPadding -> False,
+        ImageSize      -> All
+    ];
+
 grayDialogButtonLabel[ { normal_, hover_, pressed_ } ] :=
     NotebookTools`Mousedown[
         Framed[ normal , BaseStyle -> "ButtonGray1Normal" , BaselinePosition -> Baseline ],
@@ -231,6 +240,15 @@ grayDialogButtonLabel // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*redDialogButtonLabel*)
 redDialogButtonLabel // beginDefinition;
+
+redDialogButtonLabel[ { normal_, hover_, pressed_ } ] /; $cloudNotebooks :=
+    Mouseover[
+        Framed[ normal , BaseStyle -> "ButtonRed1Normal" , BaselinePosition -> Baseline ],
+        Framed[ hover  , BaseStyle -> "ButtonRed1Hover"  , BaselinePosition -> Baseline ],
+        BaseStyle      -> "DialogTextBasic",
+        ContentPadding -> False,
+        ImageSize      -> All
+    ];
 
 redDialogButtonLabel[ { normal_, hover_, pressed_ } ] :=
     NotebookTools`Mousedown[
