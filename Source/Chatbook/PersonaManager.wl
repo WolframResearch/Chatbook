@@ -39,10 +39,10 @@ CreatePersonaManagerDialog // endDefinition;
 CreatePersonaManagerPanel // beginDefinition;
 
 CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
-    favorites =
-        Replace[
-            CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}],
-            Except[{___String}] :> $corePersonaNames];
+    favorites = Replace[
+        CurrentChatSettings[ $FrontEnd, "PersonaFavorites" ],
+        Except[ { ___String } ] :> $corePersonaNames
+    ];
 
     Framed[
         Grid[
@@ -154,18 +154,14 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
         GetPersonaData[]; (* sets $CachedPersonaData *)
         (* make sure there are no unexpected extra personas *)
         Enclose[
-            CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}] =
-            ConfirmBy[
-                Intersection[
-                    CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}],
-                    Keys[$CachedPersonaData]
-                ],
+            CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ] = ConfirmBy[
+                Quiet @ Intersection[ CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ], Keys @ $CachedPersonaData ],
                 ListQ
             ]
         ]
     ),
     Deinitialization :> If[ MatchQ[ favorites, { ___String } ],
-        CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook","PersonaFavorites"}] = favorites
+        CurrentChatSettings[ $FrontEnd, "PersonaFavorites" ] = favorites
     ]
 ];
 
@@ -275,17 +271,13 @@ formatPacletLink // endDefinition;
 addRemovePersonaListingCheckbox // beginDefinition;
 
 addRemovePersonaListingCheckbox[ name_String ] :=
-    With[
-        {
-            path = { PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas" },
-            core = $corePersonaNames
-        },
+    With[ { core = $corePersonaNames },
         Checkbox @ Dynamic[
-            MemberQ[ CurrentValue[ $FrontEnd, path, core ], name ],
+            MemberQ[ CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ], name ],
             Function[
-                CurrentValue[ $FrontEnd, path ] =
-                    With[ { current = Replace[ CurrentValue[ $FrontEnd, path ], Except[ { ___String } ] :> core ] },
-                        If[ #, Union[ current, { name } ], Complement[ current, { name } ] ]
+                CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ] = With[
+                    { current = Replace[ CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ], Except[ { ___String } ] :> core ] },
+                    If[ #1, Union[ current, { name } ], Complement[ current, { name } ] ]
                     ]
             ]
         ]
