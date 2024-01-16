@@ -714,6 +714,7 @@ inferMultimodalTypes[ content_List ] := Enclose[
 
 inferMultimodalTypes // endDefinition;
 
+(* TODO: add a way to control image detail and insert "Detail" -> "..." here when appropriate: *)
 inferMultimodalTypes0 // beginDefinition;
 inferMultimodalTypes0[ content_List        ] := inferMultimodalTypes0 /@ content;
 inferMultimodalTypes0[ content_String      ] := <| "Type" -> "Text" , "Data" -> content |>;

@@ -3,6 +3,7 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 
+(* TODO: Figure out how to show autocomplete menu when field is empty *)
 
 BeginPackage[ "Wolfram`Chatbook`InlineReferences`" ];
 
