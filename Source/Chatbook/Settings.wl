@@ -15,6 +15,7 @@ Begin[ "`Private`" ];
 Needs[ "Wolfram`Chatbook`"                   ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"          ];
+Needs[ "Wolfram`Chatbook`Personas`"          ];
 Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
 
 (* ::**************************************************************************************************************:: *)
@@ -61,7 +62,8 @@ $defaultChatSettings = <|
     "Tools"                     -> Automatic,
     "ToolsEnabled"              -> Automatic,
     "TopP"                      -> 1,
-    "TrackScrollingWhenPlaced"  -> Automatic
+    "TrackScrollingWhenPlaced"  -> Automatic,
+    "VisiblePersonas"           -> $corePersonaNames
 |>;
 
 $cachedGlobalSettings := $cachedGlobalSettings = getGlobalSettingsFile[ ];

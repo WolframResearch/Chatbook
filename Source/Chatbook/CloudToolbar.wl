@@ -4,6 +4,7 @@ BeginPackage[ "Wolfram`Chatbook`CloudToolbar`" ];
 
 HoldComplete[
     `makeChatCloudDockedCellContents;
+    `forceRefreshCloudPreferences;
 ];
 
 Begin[ "`Private`" ];
@@ -84,7 +85,7 @@ cloudPreferencesButton[ ] := Enclose[
             Infinity
         ];
 
-        button = Button[ buttonIcon, togglePreferences @ EvaluationNotebook[ ], Method -> "Queued" ];
+        button = Button[ buttonIcon, toggleCloudPreferences @ EvaluationNotebook[ ], Method -> "Queued" ];
 
         cloudPreferencesButton[ ] = Pane[ button, FrameMargins -> { { 0, 10 }, { 0, 0 } } ]
     ],
@@ -95,16 +96,16 @@ cloudPreferencesButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*togglePreferences*)
-togglePreferences // beginDefinition;
+(*toggleCloudPreferences*)
+toggleCloudPreferences // beginDefinition;
 
-togglePreferences[ nbo_NotebookObject ] :=
-    togglePreferences[ nbo, Flatten @ List @ CurrentValue[ nbo, DockedCells ] ];
+toggleCloudPreferences[ nbo_NotebookObject ] :=
+    toggleCloudPreferences[ nbo, Flatten @ List @ CurrentValue[ nbo, DockedCells ] ];
 
-togglePreferences[ nbo_NotebookObject, { cell_Cell } ] :=
+toggleCloudPreferences[ nbo_NotebookObject, { cell_Cell } ] :=
     SetOptions[ nbo, DockedCells -> { cell, $cloudPreferencesCell } ];
 
-togglePreferences[ nbo_NotebookObject, { Inherited|$Failed } ] := SetOptions[
+toggleCloudPreferences[ nbo_NotebookObject, { Inherited|$Failed } ] := SetOptions[
     nbo,
     DockedCells -> {
         Cell[ BoxData @ DynamicBox @ ToBoxes @ MakeChatCloudDockedCellContents[ ], Background -> None ],
@@ -112,13 +113,13 @@ togglePreferences[ nbo_NotebookObject, { Inherited|$Failed } ] := SetOptions[
     }
 ];
 
-togglePreferences[ nbo_NotebookObject, { cell_Cell, _Cell } ] :=
+toggleCloudPreferences[ nbo_NotebookObject, { cell_Cell, _Cell } ] :=
     SetOptions[ nbo, DockedCells -> { cell } ];
 
-togglePreferences[ nbo_NotebookObject, _ ] :=
+toggleCloudPreferences[ nbo_NotebookObject, _ ] :=
     SetOptions[ nbo, DockedCells -> Inherited ];
 
-togglePreferences // endDefinition;
+toggleCloudPreferences // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -194,6 +195,27 @@ $chatEnabledNotebookLabel := Grid[
     Alignment -> { Automatic, Center },
     Spacings  -> 0.5
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Utilities*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*forceRefreshCloudPreferences*)
+forceRefreshCloudPreferences // beginDefinition;
+
+forceRefreshCloudPreferences[ ] /; ! TrueQ @ $cloudNotebooks := Null;
+
+forceRefreshCloudPreferences[ ] := forceRefreshCloudPreferences @ EvaluationNotebook[ ];
+
+forceRefreshCloudPreferences[ nbo_NotebookObject ] := (
+    SetOptions[ nbo, DockedCells -> Inherited ];
+    Pause[ 0.5 ];
+    toggleCloudPreferences @ nbo
+);
+
+forceRefreshCloudPreferences // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

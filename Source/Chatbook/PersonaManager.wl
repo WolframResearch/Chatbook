@@ -10,6 +10,7 @@ BeginPackage[ "Wolfram`Chatbook`PersonaManager`" ];
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                   ];
+Needs[ "Wolfram`Chatbook`CloudToolbar`"      ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
 Needs[ "Wolfram`Chatbook`Dialogs`"           ];
 Needs[ "Wolfram`Chatbook`Personas`"          ];
@@ -39,10 +40,10 @@ CreatePersonaManagerDialog // endDefinition;
 CreatePersonaManagerPanel // beginDefinition;
 
 CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
-    favorites =
-        Replace[
-            CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}],
-            Except[{___String}] :> $corePersonaNames];
+    favorites = Replace[
+        CurrentChatSettings[ $FrontEnd, "PersonaFavorites" ],
+        Except[ { ___String } ] :> $corePersonaNames
+    ];
 
     Framed[
         Grid[
@@ -57,6 +58,7 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
                             "Install from",
                             Button[
                                 grayDialogButtonLabel[ "Prompt Repository \[UpperRightArrow]" ],
+                                If[ $CloudEvaluation, SetOptions[ EvaluationNotebook[ ], DockedCells -> Inherited ] ];
                                 ResourceInstallFromRepository[ "Prompt" ],
                                 Appearance       -> "Suppressed",
                                 BaselinePosition -> Baseline,
@@ -64,6 +66,7 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
                             ],
                             Button[
                                 grayDialogButtonLabel[ "URL" ],
+                                If[ $CloudEvaluation, SetOptions[ EvaluationNotebook[ ], DockedCells -> Inherited ] ];
                                 Block[ { PrintTemporary }, ResourceInstallFromURL[ "Prompt" ] ],
                                 Appearance       -> "Suppressed",
                                 BaselinePosition -> Baseline,
@@ -154,18 +157,14 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
         GetPersonaData[]; (* sets $CachedPersonaData *)
         (* make sure there are no unexpected extra personas *)
         Enclose[
-            CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}] =
-            ConfirmBy[
-                Intersection[
-                    CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}],
-                    Keys[$CachedPersonaData]
-                ],
+            CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ] = ConfirmBy[
+                Quiet @ Intersection[ CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ], Keys @ $CachedPersonaData ],
                 ListQ
             ]
         ]
     ),
     Deinitialization :> If[ MatchQ[ favorites, { ___String } ],
-        CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook","PersonaFavorites"}] = favorites
+        CurrentChatSettings[ $FrontEnd, "PersonaFavorites" ] = favorites
     ]
 ];
 
@@ -275,18 +274,14 @@ formatPacletLink // endDefinition;
 addRemovePersonaListingCheckbox // beginDefinition;
 
 addRemovePersonaListingCheckbox[ name_String ] :=
-    With[
-        {
-            path = { PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas" },
-            core = $corePersonaNames
-        },
+    With[ { core = $corePersonaNames },
         Checkbox @ Dynamic[
-            MemberQ[ CurrentValue[ $FrontEnd, path, core ], name ],
+            MemberQ[ CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ], name ],
             Function[
-                CurrentValue[ $FrontEnd, path ] =
-                    With[ { current = Replace[ CurrentValue[ $FrontEnd, path ], Except[ { ___String } ] :> core ] },
-                        If[ #, Union[ current, { name } ], Complement[ current, { name } ] ]
-                    ]
+                CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ] = With[
+                    { current = Replace[ CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ], Except[ { ___String } ] :> core ] },
+                    If[ #1, Union[ current, { name } ], Complement[ current, { name } ] ]
+                ]
             ]
         ]
     ];
@@ -306,7 +301,11 @@ uninstallButton[ name_String, installedQ_, pacletName_String ] :=
                         StringTemplate["This persona cannot be uninstalled because it is provided by the `1` paclet."][pacletName]]},
             Dynamic[Which[!installedQ, "Disabled", CurrentValue["MouseOver"], "Hover", True, "Default"]],
             ImageSize -> Automatic],
-        Block[ { PrintTemporary }, ResourceUninstall[ "Prompt", name ]; GetPersonaData[] ],
+        Block[ { PrintTemporary },
+            ResourceUninstall[ "Prompt", name ];
+            GetPersonaData[ ];
+            forceRefreshCloudPreferences[ ]
+        ],
         Appearance -> "Suppressed",
         Enabled -> installedQ,
         ImageMargins -> {{0, 13}, {0, 0}},
