@@ -1485,25 +1485,6 @@ getServiceDefaultModel[ service_String ] := Enclose[
 getServiceDefaultModel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsubsection::Closed:: *)
-(*chooseDefaultModelName*)
-(*
-    Choose a default initial model according to the following rules:
-        1. If the service name is the same as the one in $DefaultModel, use the model name in $DefaultModel.
-        2. If the registered service specifies a "DefaultModel" property, we'll use that.
-        3. If the model list is already cached for the service, we'll use the first model in that list.
-        4. Otherwise, give Automatic to indicate a model name that must be resolved later.
-*)
-chooseDefaultModelName // beginDefinition;
-chooseDefaultModelName[ service_String ] /; service === $DefaultModel[ "Service" ] := $DefaultModel[ "Name" ];
-chooseDefaultModelName[ service_String ] := chooseDefaultModelName @ $availableServices @ service;
-chooseDefaultModelName[ KeyValuePattern[ "DefaultModel" -> model_ ] ] := toModelName @ model;
-chooseDefaultModelName[ KeyValuePattern[ "CachedModels" -> models_List ] ] := chooseDefaultModelName @ models;
-chooseDefaultModelName[ { model_, ___ } ] := toModelName @ model;
-chooseDefaultModelName[ service_ ] := Automatic;
-chooseDefaultModelName // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*ServiceConnection Utilities*)
 
