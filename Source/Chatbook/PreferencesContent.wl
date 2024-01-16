@@ -1687,11 +1687,15 @@ openPreferencesPage // beginDefinition;
 openPreferencesPage[ ] :=
     openPreferencesPage[ "Notebooks" ];
 
-openPreferencesPage[ page: $$preferencesPage ] :=
-    NotebookTools`OpenPreferencesDialog @ { "AI", page };
+openPreferencesPage[ page: $$preferencesPage ] := (
+    CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = page;
+    NotebookTools`OpenPreferencesDialog @ { "AI", page }
+);
 
-openPreferencesPage[ page: $$preferencesPage, id_ ] :=
-    NotebookTools`OpenPreferencesDialog[ { "AI", page }, { "AI", page, id } ];
+openPreferencesPage[ page: $$preferencesPage, id_ ] := (
+    CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = page;
+    NotebookTools`OpenPreferencesDialog[ { "AI", page }, { "AI", page, id } ]
+);
 
 openPreferencesPage // endDefinition;
 
