@@ -607,6 +607,7 @@ toolModelWarning[ scope_ ] := toolModelWarning[ scope, currentChatSettings[ scop
 toolModelWarning[ scope_, True ] := "";
 toolModelWarning[ scope_, False ] := $toolsDisabledWarning;
 toolModelWarning[ scope_, enabled_ ] := toolModelWarning[ scope, enabled, currentChatSettings[ scope, "Model" ] ];
+toolModelWarning[ scope_, enabled_, KeyValuePattern[ "Name" -> Automatic ] ] := "";
 toolModelWarning[ scope_, enabled_, model_? toolsEnabledQ ] := "";
 toolModelWarning[ scope_, enabled_, model_ ] := toolModelWarning0[ scope, model ];
 toolModelWarning // endDefinition;
