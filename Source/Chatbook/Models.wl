@@ -6,13 +6,17 @@ BeginPackage[ "Wolfram`Chatbook`Models`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-`chatModelQ;
-`getModelList;
-`modelDisplayName;
-`multimodalModelQ;
-`snapshotModelQ;
-`standardizeModelData;
-`toModelName;
+HoldComplete[
+    `chatModelQ;
+    `chooseDefaultModelName;
+    `getModelList;
+    `modelDisplayName;
+    `multimodalModelQ;
+    `snapshotModelQ;
+    `standardizeModelData;
+    `resolveFullModelSpec;
+    `toModelName;
+];
 
 Begin[ "`Private`" ];
 
@@ -20,6 +24,7 @@ Needs[ "Wolfram`Chatbook`"          ];
 Needs[ "Wolfram`Chatbook`Actions`"  ];
 Needs[ "Wolfram`Chatbook`Common`"   ];
 Needs[ "Wolfram`Chatbook`Dynamics`" ];
+Needs[ "Wolfram`Chatbook`Services`" ];
 Needs[ "Wolfram`Chatbook`UI`"       ];
 
 (* ::**************************************************************************************************************:: *)
@@ -109,6 +114,10 @@ getModelList // endDefinition;
 
 
 $fallbackModelList = { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4" };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Model Utility Functions*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -331,7 +340,61 @@ standardizeModelData[ service_String, model_ ] :=
 standardizeModelData[ KeyValuePattern[ "Service" -> service_String ], model_ ] :=
     standardizeModelData[ service, model ];
 
+standardizeModelData[ $$unspecified ] :=
+    With[ { model = $DefaultModel },
+        standardizeModelData @ model /; MatchQ[ model, Except[ $$unspecified ] ]
+    ];
+
 standardizeModelData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chooseDefaultModelName*)
+(*
+    Choose a default initial model according to the following rules:
+        1. If the service name is the same as the one in $DefaultModel, use the model name in $DefaultModel.
+        2. If the registered service specifies a "DefaultModel" property, we'll use that.
+        3. If the model list is already cached for the service, we'll use the first model in that list.
+        4. Otherwise, give Automatic to indicate a model name that must be resolved later.
+*)
+chooseDefaultModelName // beginDefinition;
+chooseDefaultModelName[ service_String ] /; service === $DefaultModel[ "Service" ] := $DefaultModel[ "Name" ];
+chooseDefaultModelName[ service_String ] := chooseDefaultModelName @ $availableServices @ service;
+chooseDefaultModelName[ KeyValuePattern[ "DefaultModel" -> model_ ] ] := toModelName @ model;
+chooseDefaultModelName[ KeyValuePattern[ "CachedModels" -> models_List ] ] := chooseDefaultModelName @ models;
+chooseDefaultModelName[ { model_, ___ } ] := toModelName @ model;
+chooseDefaultModelName[ service_ ] := Automatic;
+chooseDefaultModelName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*resolveFullModelSpec*)
+resolveFullModelSpec // beginDefinition;
+
+resolveFullModelSpec[ settings: KeyValuePattern[ "Model" -> model_ ] ] :=
+    resolveFullModelSpec @ model;
+
+resolveFullModelSpec[ { service_String, Automatic } ] :=
+    resolveFullModelSpec @ <| "Service" -> service, "Name" -> Automatic |>;
+
+resolveFullModelSpec[ model: KeyValuePattern @ { "Service" -> service_String, "Name" -> Automatic } ] := Enclose[
+    Catch @ Module[ { default, models, name },
+        default = ConfirmMatch[ chooseDefaultModelName @ service, Automatic | _String, "Default" ];
+        If[ StringQ @ default, Throw @ standardizeModelData @ <| model, "Name" -> default |> ];
+        models = ConfirmMatch[ getServiceModelList @ service, _List | Missing[ "NotConnected" ], "Models" ];
+        If[ MissingQ @ models, throwTop @ $Canceled ];
+        name = ConfirmBy[ chooseDefaultModelName @ models, StringQ, "ResolvedName" ];
+        standardizeModelData @ <| model, "Name" -> name |>
+    ],
+    throwInternalFailure
+];
+
+resolveFullModelSpec[ model_ ] :=
+    With[ { spec = standardizeModelData @ model },
+        spec /; AssociationQ @ spec
+    ];
+
+resolveFullModelSpec // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
