@@ -10,6 +10,7 @@ BeginPackage[ "Wolfram`Chatbook`PersonaManager`" ];
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                   ];
+Needs[ "Wolfram`Chatbook`CloudToolbar`"      ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
 Needs[ "Wolfram`Chatbook`Dialogs`"           ];
 Needs[ "Wolfram`Chatbook`Personas`"          ];
@@ -57,6 +58,7 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
                             "Install from",
                             Button[
                                 grayDialogButtonLabel[ "Prompt Repository \[UpperRightArrow]" ],
+                                If[ $CloudEvaluation, SetOptions[ EvaluationNotebook[ ], DockedCells -> Inherited ] ];
                                 ResourceInstallFromRepository[ "Prompt" ],
                                 Appearance       -> "Suppressed",
                                 BaselinePosition -> Baseline,
@@ -64,6 +66,7 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
                             ],
                             Button[
                                 grayDialogButtonLabel[ "URL" ],
+                                If[ $CloudEvaluation, SetOptions[ EvaluationNotebook[ ], DockedCells -> Inherited ] ];
                                 Block[ { PrintTemporary }, ResourceInstallFromURL[ "Prompt" ] ],
                                 Appearance       -> "Suppressed",
                                 BaselinePosition -> Baseline,
@@ -278,7 +281,7 @@ addRemovePersonaListingCheckbox[ name_String ] :=
                 CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ] = With[
                     { current = Replace[ CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ], Except[ { ___String } ] :> core ] },
                     If[ #1, Union[ current, { name } ], Complement[ current, { name } ] ]
-                    ]
+                ]
             ]
         ]
     ];
@@ -298,7 +301,11 @@ uninstallButton[ name_String, installedQ_, pacletName_String ] :=
                         StringTemplate["This persona cannot be uninstalled because it is provided by the `1` paclet."][pacletName]]},
             Dynamic[Which[!installedQ, "Disabled", CurrentValue["MouseOver"], "Hover", True, "Default"]],
             ImageSize -> Automatic],
-        Block[ { PrintTemporary }, ResourceUninstall[ "Prompt", name ]; GetPersonaData[] ],
+        Block[ { PrintTemporary },
+            ResourceUninstall[ "Prompt", name ];
+            GetPersonaData[ ];
+            forceRefreshCloudPreferences[ ]
+        ],
         Appearance -> "Suppressed",
         Enabled -> installedQ,
         ImageMargins -> {{0, 13}, {0, 0}},
