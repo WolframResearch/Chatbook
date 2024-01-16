@@ -1646,10 +1646,7 @@ $resetButton :=
 resetChatPreferences // beginDefinition;
 
 resetChatPreferences[ "Notebooks" ] := expandScope[
-    FrontEndExecute @ FrontEnd`RemoveOptions[
-        $preferencesScope,
-        { LLMEvaluator, { TaggingRules, "ChatNotebookSettings" } }
-    ];
+    CurrentChatSettings[ $preferencesScope ] = Inherited;
     updateDynamics[ "Preferences" ];
 ];
 
@@ -1659,20 +1656,21 @@ resetChatPreferences[ "Personas" ] :=
         (* TODO: choice dialog to uninstall personas *)
         CurrentValue[ $preferencesScope, { path, "VisiblePersonas"  } ] = $corePersonaNames;
         CurrentValue[ $preferencesScope, { path, "PersonaFavorites" } ] = $corePersonaNames;
-        resetChatPreferences[ "Notebooks" ];
+        updateDynamics[ "Personas" ];
     ];
 
-resetChatPreferences[ "Tools" ] := (
+resetChatPreferences[ "Tools" ] := expandScope[
+    CurrentChatSettings[ $preferencesScope, "ToolSelectionType" ] = Inherited;
+    CurrentChatSettings[ $preferencesScope, "ToolSelections"    ] = Inherited;
     (* TODO: choice dialog to uninstall tools *)
-    resetChatPreferences[ "Notebooks" ];
-);
+    updateDynamics[ "Tools" ];
+];
 
 resetChatPreferences[ "Services" ] := (
     (* TODO: choice dialog to clear service connections *)
     Needs[ "LLMServices`" -> None ];
     LLMServices`ResetServices[ ];
     InvalidateServiceCache[ ];
-    resetChatPreferences[ "Notebooks" ];
 );
 
 resetChatPreferences // endDefinition;
@@ -1689,11 +1687,15 @@ openPreferencesPage // beginDefinition;
 openPreferencesPage[ ] :=
     openPreferencesPage[ "Notebooks" ];
 
-openPreferencesPage[ page: $$preferencesPage ] :=
-    NotebookTools`OpenPreferencesDialog @ { "AI", page };
+openPreferencesPage[ page: $$preferencesPage ] := (
+    CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = page;
+    NotebookTools`OpenPreferencesDialog @ { "AI", page }
+);
 
-openPreferencesPage[ page: $$preferencesPage, id_ ] :=
-    NotebookTools`OpenPreferencesDialog[ { "AI", page }, { "AI", page, id } ];
+openPreferencesPage[ page: $$preferencesPage, id_ ] := (
+    CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = page;
+    NotebookTools`OpenPreferencesDialog[ { "AI", page }, { "AI", page, id } ]
+);
 
 openPreferencesPage // endDefinition;
 
