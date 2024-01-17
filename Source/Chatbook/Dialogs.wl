@@ -32,15 +32,23 @@ Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
+$inDialog               = False;
 $dialogHeaderMargins    = { { 30, 30 }, { 13, 9 } };
 $dialogSubHeaderMargins = { { 30, 30 }, {  0, 9 } };
 $dialogBodyMargins      = { { 30, 30 }, { 13, 5 } };
+$paneHeaderMargins      = { {  5, 30 }, { 13, 9 } };
+$paneSubHeaderMargins   = { {  5, 30 }, {  0, 9 } };
+$paneBodyMargins        = { {  5, 30 }, { 13, 5 } };
 $baseStyle             := $baseStyles[ "Default" ];
 
 $baseStyles = <|
     "Default"         -> { FontFamily -> "Source Sans Pro", FontSize -> 14 },
     "DialogSubHeader" -> { FontSize -> 14, FontWeight -> "DemiBold" }
 |>;
+
+$headerMargins    := If[ TrueQ @ $inDialog, $dialogHeaderMargins   , $paneHeaderMargins    ];
+$subHeaderMargins := If[ TrueQ @ $inDialog, $dialogSubHeaderMargins, $paneSubHeaderMargins ];
+$bodyMargins      := If[ TrueQ @ $inDialog, $dialogBodyMargins     , $paneBodyMargins      ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -139,11 +147,12 @@ dialogPane // beginDefinition;
 
 dialogPane[ expr_ ] := dialogPane[ expr, "DialogBody" ];
 dialogPane[ expr_, style_ ] := dialogPane[ expr, style, Automatic ];
+dialogPane[ expr_, style_, margins_ ] := dialogPane[ expr, style, margins, $inDialog ];
 
-dialogPane[ exprs_List, style_, margins_ ] := dialogPane[ exprs, style, margins ] =
+dialogPane[ exprs_List, style_, margins_, inDialog_ ] := dialogPane[ exprs, style, margins, inDialog ] =
     dialogPane0[ #, style, margins ] & /@ exprs;
 
-dialogPane[ expr_, style_, margins_ ] := dialogPane[ expr, style, margins ] =
+dialogPane[ expr_, style_, margins_, inDialog_ ] := dialogPane[ expr, style, margins, inDialog ] =
     { dialogPane0[ expr, style, margins ], SpanFromLeft };
 
 dialogPane // endDefinition;
@@ -173,9 +182,9 @@ dialogBaseStyle // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*dialogMargins*)
 dialogMargins // beginDefinition;
-dialogMargins[ "DialogBody"     , margins_ ] := autoMargins[ margins, $dialogBodyMargins      ];
-dialogMargins[ "DialogHeader"   , margins_ ] := autoMargins[ margins, $dialogHeaderMargins    ];
-dialogMargins[ "DialogSubHeader", margins_ ] := autoMargins[ margins, $dialogSubHeaderMargins ];
+dialogMargins[ "DialogBody"     , margins_ ] := autoMargins[ margins, $bodyMargins      ];
+dialogMargins[ "DialogHeader"   , margins_ ] := autoMargins[ margins, $headerMargins    ];
+dialogMargins[ "DialogSubHeader", margins_ ] := autoMargins[ margins, $subHeaderMargins ];
 dialogMargins[ _                , margins_ ] := margins;
 dialogMargins // endDefinition;
 
@@ -204,6 +213,15 @@ autoMargins0 // endDefinition;
 (*grayDialogButtonLabel*)
 grayDialogButtonLabel // beginDefinition;
 
+grayDialogButtonLabel[ { normal_, hover_, pressed_ } ] /; $cloudNotebooks :=
+    Mouseover[
+        Framed[ normal , BaseStyle -> "ButtonGray1Normal" , BaselinePosition -> Baseline ],
+        Framed[ hover  , BaseStyle -> "ButtonGray1Hover"  , BaselinePosition -> Baseline ],
+        BaseStyle      -> "DialogTextBasic",
+        ContentPadding -> False,
+        ImageSize      -> All
+    ];
+
 grayDialogButtonLabel[ { normal_, hover_, pressed_ } ] :=
     NotebookTools`Mousedown[
         Framed[ normal , BaseStyle -> "ButtonGray1Normal" , BaselinePosition -> Baseline ],
@@ -222,6 +240,15 @@ grayDialogButtonLabel // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*redDialogButtonLabel*)
 redDialogButtonLabel // beginDefinition;
+
+redDialogButtonLabel[ { normal_, hover_, pressed_ } ] /; $cloudNotebooks :=
+    Mouseover[
+        Framed[ normal , BaseStyle -> "ButtonRed1Normal" , BaselinePosition -> Baseline ],
+        Framed[ hover  , BaseStyle -> "ButtonRed1Hover"  , BaselinePosition -> Baseline ],
+        BaseStyle      -> "DialogTextBasic",
+        ContentPadding -> False,
+        ImageSize      -> All
+    ];
 
 redDialogButtonLabel[ { normal_, hover_, pressed_ } ] :=
     NotebookTools`Mousedown[
@@ -247,6 +274,7 @@ redDialogButtonLabel // endDefinition;
 cvExpand // beginDefinition;
 cvExpand // Attributes = { HoldFirst };
 cvExpand[ expr_ ] := expr /. $cvRules;
+cvExpand /: SetDelayed[ lhs_, cvExpand[ rhs_ ] ] := Unevaluated @ SetDelayed[ lhs, rhs ] /. $cvRules;
 cvExpand // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

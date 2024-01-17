@@ -6,20 +6,26 @@ BeginPackage[ "Wolfram`Chatbook`Models`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-`chatModelQ;
-`getModelList;
-`modelDisplayName;
-`multimodalModelQ;
-`snapshotModelQ;
-`standardizeModelData;
-`toModelName;
+HoldComplete[
+    `chatModelQ;
+    `chooseDefaultModelName;
+    `getModelList;
+    `modelDisplayName;
+    `multimodalModelQ;
+    `snapshotModelQ;
+    `standardizeModelData;
+    `resolveFullModelSpec;
+    `toModelName;
+];
 
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"          ];
-Needs[ "Wolfram`Chatbook`Common`"   ];
 Needs[ "Wolfram`Chatbook`Actions`"  ];
+Needs[ "Wolfram`Chatbook`Common`"   ];
 Needs[ "Wolfram`Chatbook`Dynamics`" ];
+Needs[ "Wolfram`Chatbook`Services`" ];
+Needs[ "Wolfram`Chatbook`UI`"       ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -110,6 +116,10 @@ getModelList // endDefinition;
 $fallbackModelList = { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4" };
 
 (* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Model Utility Functions*)
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*chatModelQ*)
 chatModelQ // beginDefinition;
@@ -139,8 +149,11 @@ modelName // endDefinition;
 (*toModelName*)
 toModelName // beginDefinition;
 
-toModelName[ KeyValuePattern @ { "Service" -> service_, "Model" -> model_ } ] :=
+toModelName[ KeyValuePattern @ { "Service" -> service_, "Name"|"Model" -> model_ } ] :=
     toModelName @ { service, model };
+
+toModelName[ KeyValuePattern[ "Name"|"Model" -> model_ ] ] :=
+    toModelName @ model;
 
 toModelName[ { service_String, name_String } ] := toModelName @ name;
 
@@ -264,13 +277,31 @@ fineTunedModelName // endDefinition;
 (* ::Subsection::Closed:: *)
 (*modelIcon*)
 modelIcon // beginDefinition;
-modelIcon[ KeyValuePattern[ "Icon" -> icon_ ] ] := icon;
-modelIcon[ KeyValuePattern[ "Name" -> name_String ] ] := modelIcon @ name;
-modelIcon[ name0_String ] := With[ { name = toModelName @ name0 }, modelIcon @ name /; name =!= name0 ];
-modelIcon[ name_String ] /; StringStartsQ[ name, "ft:" ] := modelIcon @ StringDelete[ name, StartOfString~~"ft:" ];
-modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-3.5" ] := RawBoxes @ TemplateBox[ { }, "ModelGPT35" ];
-modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-4" ] := RawBoxes @ TemplateBox[ { }, "ModelGPT4" ];
-modelIcon[ name_String ] := $defaultModelIcon;
+
+modelIcon[ KeyValuePattern[ "Icon" -> icon_ ] ] :=
+    icon;
+
+modelIcon[ KeyValuePattern @ { "Name" -> name_String, "Service" -> service_String } ] :=
+    Replace[ modelIcon @ name, $defaultModelIcon :> serviceIcon @ service ];
+
+modelIcon[ KeyValuePattern[ "Name" -> name_String ] ] :=
+    modelIcon @ name;
+
+modelIcon[ name0_String ] :=
+    With[ { name = toModelName @ name0 }, modelIcon @ name /; name =!= name0 ];
+
+modelIcon[ name_String ] /; StringStartsQ[ name, "ft:" ] :=
+    modelIcon @ StringDelete[ name, StartOfString~~"ft:" ];
+
+modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-3.5" ] :=
+    RawBoxes @ TemplateBox[ { }, "ModelGPT35" ];
+
+modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-4" ] :=
+    RawBoxes @ TemplateBox[ { }, "ModelGPT4" ];
+
+modelIcon[ name_String ] :=
+    $defaultModelIcon;
+
 modelIcon // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -284,26 +315,86 @@ standardizeModelData[ list_List ] :=
 standardizeModelData[ name_String ] := standardizeModelData[ name ] =
     standardizeModelData @ <| "Name" -> name |>;
 
-standardizeModelData[ model: KeyValuePattern @ { "Name" -> _String, "DisplayName" -> _String, "Icon" -> _ } ] :=
-    Association @ model;
-
-standardizeModelData[ model_Association? AssociationQ ] :=
+standardizeModelData[ model: KeyValuePattern @ { } ] :=
     standardizeModelData[ model ] = <|
-        "Name"        -> modelName @ model,
         "DisplayName" -> modelDisplayName @ model,
+        "FineTuned"   -> fineTunedModelQ @ model,
         "Icon"        -> modelIcon @ model,
+        "Multimodal"  -> multimodalModelQ @ model,
+        "Name"        -> modelName @ model,
+        "Snapshot"    -> snapshotModelQ @ model,
         model
     |>;
 
 standardizeModelData[ service_String, models_List ] :=
     standardizeModelData[ service, # ] & /@ models;
 
+standardizeModelData[ service_String, model_String ] :=
+    standardizeModelData @ <| "Service" -> service, "Name" -> model |>;
+
 standardizeModelData[ service_String, model_ ] :=
     With[ { as = standardizeModelData @ model },
-        (standardizeModelData[ service, model ] = <| "ServiceName" -> service, as |>) /; AssociationQ @ as
+        (standardizeModelData[ service, model ] = <| "Service" -> service, as |>) /; AssociationQ @ as
+    ];
+
+standardizeModelData[ KeyValuePattern[ "Service" -> service_String ], model_ ] :=
+    standardizeModelData[ service, model ];
+
+standardizeModelData[ $$unspecified ] :=
+    With[ { model = $DefaultModel },
+        standardizeModelData @ model /; MatchQ[ model, Except[ $$unspecified ] ]
     ];
 
 standardizeModelData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chooseDefaultModelName*)
+(*
+    Choose a default initial model according to the following rules:
+        1. If the service name is the same as the one in $DefaultModel, use the model name in $DefaultModel.
+        2. If the registered service specifies a "DefaultModel" property, we'll use that.
+        3. If the model list is already cached for the service, we'll use the first model in that list.
+        4. Otherwise, give Automatic to indicate a model name that must be resolved later.
+*)
+chooseDefaultModelName // beginDefinition;
+chooseDefaultModelName[ service_String ] /; service === $DefaultModel[ "Service" ] := $DefaultModel[ "Name" ];
+chooseDefaultModelName[ service_String ] := chooseDefaultModelName @ $availableServices @ service;
+chooseDefaultModelName[ KeyValuePattern[ "DefaultModel" -> model_ ] ] := toModelName @ model;
+chooseDefaultModelName[ KeyValuePattern[ "CachedModels" -> models_List ] ] := chooseDefaultModelName @ models;
+chooseDefaultModelName[ { model_, ___ } ] := toModelName @ model;
+chooseDefaultModelName[ service_ ] := Automatic;
+chooseDefaultModelName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*resolveFullModelSpec*)
+resolveFullModelSpec // beginDefinition;
+
+resolveFullModelSpec[ settings: KeyValuePattern[ "Model" -> model_ ] ] :=
+    resolveFullModelSpec @ model;
+
+resolveFullModelSpec[ { service_String, Automatic } ] :=
+    resolveFullModelSpec @ <| "Service" -> service, "Name" -> Automatic |>;
+
+resolveFullModelSpec[ model: KeyValuePattern @ { "Service" -> service_String, "Name" -> Automatic } ] := Enclose[
+    Catch @ Module[ { default, models, name },
+        default = ConfirmMatch[ chooseDefaultModelName @ service, Automatic | _String, "Default" ];
+        If[ StringQ @ default, Throw @ standardizeModelData @ <| model, "Name" -> default |> ];
+        models = ConfirmMatch[ getServiceModelList @ service, _List | Missing[ "NotConnected" ], "Models" ];
+        If[ MissingQ @ models, throwTop @ $Canceled ];
+        name = ConfirmBy[ chooseDefaultModelName @ models, StringQ, "ResolvedName" ];
+        standardizeModelData @ <| model, "Name" -> name |>
+    ],
+    throwInternalFailure
+];
+
+resolveFullModelSpec[ model_ ] :=
+    With[ { spec = standardizeModelData @ model },
+        spec /; AssociationQ @ spec
+    ];
+
+resolveFullModelSpec // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

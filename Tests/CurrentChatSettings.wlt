@@ -34,7 +34,7 @@ VerificationTest[
 
 VerificationTest[
     CurrentChatSettings[ "Model" ],
-    _String | Automatic,
+    KeyValuePattern @ { "Service" -> _String, "Name" -> _String } | _String | Automatic,
     SameTest -> MatchQ,
     TestID   -> "CurrentChatSettings@@Tests/CurrentChatSettings.wlt:35,1-40,2"
 ]
@@ -44,14 +44,14 @@ VerificationTest[
 (*Scoped*)
 VerificationTest[
     UsingFrontEnd @ CurrentChatSettings[ $FrontEnd, "Model" ],
-    _String | Automatic,
+    KeyValuePattern @ { "Service" -> _String, "Name" -> _String } | _String | Automatic,
     SameTest -> MatchQ,
     TestID   -> "CurrentChatSettings@@Tests/CurrentChatSettings.wlt:45,1-50,2"
 ]
 
 VerificationTest[
     UsingFrontEnd @ CurrentChatSettings[ $FrontEndSession, "Model" ],
-    _String | Automatic,
+    KeyValuePattern @ { "Service" -> _String, "Name" -> _String } | _String | Automatic,
     SameTest -> MatchQ,
     TestID   -> "CurrentChatSettings@@Tests/CurrentChatSettings.wlt:52,1-57,2"
 ]
@@ -83,9 +83,13 @@ VerificationTest[
             }
         }
     ],
-    { Except[ "BlockModel", _String ], "BlockModel", "BlockModel" },
+    {
+        Except[ "BlockModel", KeyValuePattern @ { "Service" -> _String, "Name" -> _String } ],
+        "BlockModel",
+        "BlockModel"
+    },
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings-ChatBlocks@@Tests/CurrentChatSettings.wlt:75,1-89,2"
+    TestID   -> "CurrentChatSettings-ChatBlocks@@Tests/CurrentChatSettings.wlt:75,1-93,2"
 ]
 
 VerificationTest[
@@ -102,7 +106,7 @@ VerificationTest[
     ],
     { "NotebookModel", "BlockModel", "BlockModel" },
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings-ChatBlocks@@Tests/CurrentChatSettings.wlt:91,1-106,2"
+    TestID   -> "CurrentChatSettings-ChatBlocks@@Tests/CurrentChatSettings.wlt:95,1-110,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -125,5 +129,5 @@ VerificationTest[
     ],
     Except[ _? FailureQ ],
     SameTest -> MatchQ,
-    TestID -> "CurrentChatSettings-Regression@@Tests/CurrentChatSettings.wlt:115,1-129,2"
+    TestID   -> "CurrentChatSettings-Regression@@Tests/CurrentChatSettings.wlt:119,1-133,2"
 ]

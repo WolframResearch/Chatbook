@@ -9,7 +9,7 @@ Begin[ "`Private`" ];
 Needs[ "Wolfram`Chatbook`"        ];
 Needs[ "Wolfram`Chatbook`Common`" ];
 
-$$newCellStyle = "Section"|"Subsection"|"Subsubsection"|"Subsubsubsection"|"Item"|"Input"|"ExternalLanguage";
+$$newCellStyle = "Section"|"Subsection"|"Subsubsection"|"Subsubsubsection"|"Item"|"Input"|"ExternalLanguage"|"Program";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -61,14 +61,17 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
     ] :> cell,
 
     (* Convert "ChatCodeInlineTemplate" to "InlineCode" cells: *)
-    Cell[ BoxData[ TemplateBox[ { boxes_ }, "ChatCodeInlineTemplate" ], "ChatCode"|"ChatCodeActive", ___ ], ___ ] :>
+    Cell[ BoxData[ TemplateBox[ { boxes_ }, "ChatCodeInlineTemplate" ], ___ ], "ChatCode"|"ChatCodeActive", ___ ] :>
         Cell[ BoxData @ boxes, "InlineCode" ],
 
-    (* Remove "ChatCode" styling from inputs: *)
-    Cell[ boxes_, "ChatCode", "Input", ___ ] :> Cell[ boxes, "Input" ],
+    (* Remove "ChatCode" styling: *)
+    Cell[ boxes_, "ChatCode", style___String, OptionsPattern[ ] ] :> Cell[ boxes, style ],
 
     (* Remove "ChatCodeBlock" styling: *)
     Cell[ BoxData[ cell_Cell, ___ ], "ChatCodeBlock", ___ ] :> cell,
+
+    (* Language-agnostic code blocks: *)
+    Cell[ text_, "ChatPreformatted", ___ ] :> Cell[ text, "Program" ],
 
     (* Remove "ChatCodeBlockTemplate" template boxes: *)
     TemplateBox[ { cell_Cell }, "ChatCodeBlockTemplate" ] :> cell,

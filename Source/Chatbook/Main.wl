@@ -6,6 +6,9 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Declare Symbols*)
+`$AvailableTools;
+`$ChatAbort;
+`$ChatbookContexts;
 `$ChatHandlerData;
 `$ChatPost;
 `$ChatPre;
@@ -30,6 +33,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `GetChatHistory;
 `GetExpressionURI;
 `GetExpressionURIs;
+`InvalidateServiceCache;
 `MakeExpressionURI;
 `SetModel;
 `SetToolOptions;
@@ -96,6 +100,7 @@ Block[ { $ContextPath },
     Get[ "Wolfram`Chatbook`ToolManager`"        ];
     Get[ "Wolfram`Chatbook`PersonaManager`"     ];
     Get[ "Wolfram`Chatbook`ChatHistory`"        ];
+    Get[ "Wolfram`Chatbook`CloudToolbar`"       ];
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -126,6 +131,11 @@ Protect[
     SetToolOptions,
     WriteChatOutputCell
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Subcontexts*)
+$ChatbookContexts = Select[ Contexts[ "Wolfram`Chatbook`*" ], StringFreeQ[ "`Private`" ] ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

@@ -131,19 +131,17 @@ gitCommand[ cmd_ ] := gitCommand[ cmd, Directory[ ] ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*releaseID*)
-releaseID[ dir_ ] :=
-    With[ { sha = $envSHA },
-        If[ StringQ @ sha,
-            sha,
-            gitCommand[ { "rev-parse", "HEAD" }, dir ]
-        ]
-    ];
+releaseID[ dir_ ] := FirstCase[
+    Unevaluated @ { $envSHA, gitCommand[ { "rev-parse", "HEAD" }, dir ] },
+    expr_ :> With[ { id = expr }, id /; StringQ @ id ],
+    "None"
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*releaseURL*)
 releaseURL[ file_ ] := Enclose[
-    Enclose @ Module[ { pac, repo, ver },
+    Module[ { pac, repo, ver },
         pac  = PacletObject @ Flatten @ File @ file;
         repo = ConfirmBy[ Environment[ "GITHUB_REPOSITORY" ], StringQ ];
         ver  = ConfirmBy[ pac[ "Version" ], StringQ ];
@@ -173,26 +171,29 @@ updatePacletInfo[ dir_ ] /; $inCICD := Enclose[
     Module[
         { cs, file, string, id, date, url, run, cmt, new },
 
-        cs     = ConfirmBy[ #, StringQ ] &;
-        file   = cs @ FileNameJoin @ { dir, "PacletInfo.wl" };
-        string = cs @ ReadString @ file;
-        id     = cs @ releaseID @ dir;
-        date   = cs @ DateString[ "ISODateTime", TimeZone -> 0 ];
+        cs     = ConfirmBy[ Echo[ #1, "Update PacletInfo [" <> ToString @ #2 <> "]: " ], StringQ, #2 ] &;
+        file   = cs[ FileNameJoin @ { dir, "PacletInfo.wl" }, "Original PacletInfo" ];
+        string = cs[ ReadString @ file, "ReadString" ];
+        id     = cs[ releaseID @ dir, "ReleaseID" ];
+        date   = cs[ DateString[ "ISODateTime", TimeZone -> 0 ], "Timestamp" ];
         date   = StringTrim[ date, "Z" ] <> "Z";
-        url    = cs @ releaseURL @ file;
-        run    = cs @ actionURL[ ];
-        cmt    = cs @ commitURL @ id;
+        url    = cs[ releaseURL @ file, "ReleaseURL" ];
+        run    = cs[ actionURL[ ], "ActionURL" ];
+        cmt    = cs[ commitURL @ id, "CommitURL" ];
 
-        new = cs @ StringReplace[
-            string,
-            {
-                "\r\n"           -> "\n",
-                "$RELEASE_ID$"   -> id,
-                "$RELEASE_DATE$" -> date,
-                "$RELEASE_URL$"  -> url,
-                "$ACTION_URL$"   -> run,
-                "$COMMIT_URL$"   -> cmt
-            }
+        new = cs[
+            StringReplace[
+                string,
+                {
+                    "\r\n"           -> "\n",
+                    "$RELEASE_ID$"   -> id,
+                    "$RELEASE_DATE$" -> date,
+                    "$RELEASE_URL$"  -> url,
+                    "$ACTION_URL$"   -> run,
+                    "$COMMIT_URL$"   -> cmt
+                }
+            ],
+            "Updated PacletInfo"
         ];
 
         Print[ "Updating PacletInfo"     ];
@@ -211,7 +212,8 @@ updatePacletInfo[ dir_ ] /; $inCICD := Enclose[
     ],
     Function[
         Print[ "::error::Failed to update PacletInfo template parameters." ];
-        Exit[ 1 ]
+        Print[ "    ", ToString[ #, InputForm ] ];
+        If[ StringQ @ Environment[ "GITHUB_ACTION" ], Exit[ 1 ] ]
     ]
 ];
 
@@ -366,6 +368,7 @@ Print[ "ResourceSystemBase: ", $ResourceSystemBase ];
 $defNB = File @ FileNameJoin @ { $pacletDir, "ResourceDefinition.nb" };
 Print[ "Definition Notebook: ", $defNB ];
 
+PacletDirectoryLoad @ $pacletDir;
 
 $loadedDefinitions = True;
 

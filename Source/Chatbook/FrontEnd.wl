@@ -463,9 +463,8 @@ fixCloudCell // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*applyCloudCellFixes*)
 applyCloudCellFixes // beginDefinition;
-applyCloudCellFixes[ text_String ] := text;
-applyCloudCellFixes[ boxes_BoxData ] := boxes;
 applyCloudCellFixes[ text_TextData ] := ReplaceRepeated[ text, $cloudCellFixes ];
+applyCloudCellFixes[ boxes_ ] := boxes;
 applyCloudCellFixes // endDefinition;
 
 $cloudCellFixes := $cloudCellFixes = Dispatch @ {
@@ -592,7 +591,7 @@ compressRasterBoxes // endDefinition;
 (* Effectively equivalent to OpenerView, except strips out the unnecessary interpretation information, and compresses
    the hidden part if it's very large.
 *)
-openerView[ args___ ] := openerView[ args ] = openerView0[ args ];
+openerView[ args___ ] := Verbatim[ openerView[ args ] ] = openerView0[ args ];
 
 openerView0 // beginDefinition;
 openerView0[ { a_, b_ }, args___ ] /; ByteCount @ b > 50000 := openerView1[ { a, compressUntilViewed @ b }, args ];

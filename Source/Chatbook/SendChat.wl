@@ -39,7 +39,7 @@ Needs[ "Wolfram`Chatbook`Utils`"            ];
 (*Configuration*)
 $resizeDingbats            = True;
 splitDynamicTaskFunction   = createFETask;
-$defaultHandlerKeys        = { "Body", "BodyChunk", "StatusCode", "Task", "TaskStatus", "EventName" };
+$defaultHandlerKeys        = { "Body", "BodyChunk", "BodyChunkProcessed", "StatusCode", "TaskStatus", "EventName" };
 $chatSubmitDroppedHandlers = { "ChatPost", "ChatPre", "Resolved" };
 
 (* ::**************************************************************************************************************:: *)
@@ -67,7 +67,7 @@ $buffer            = "";
 sendChat // beginDefinition;
 
 sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ ChatbookAction ] @ Enclose[
-    Module[ { cells0, cells, target, settings, id, key, messages, data, persona, cell, cellObject, container, task },
+    Module[ { cells0, cells, target, settings, messages, data, persona, cell, cellObject, container, task },
 
         initFETaskWidget @ nbo;
 
@@ -92,14 +92,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             AppendTo[ settings, "ChatGroupSettings" -> getChatGroupSettings @ evalCell ]
         ];
 
-        id  = Lookup[ settings, "ID" ];
-        key = toAPIKey[ Automatic, id ];
-
         If[ ! settings[ "IncludeHistory" ], cells = { evalCell } ];
-
-        If[ ! StringQ @ key, throwFailure[ "NoAPIKey" ] ];
-
-        settings[ "OpenAIKey" ] = key;
 
         { messages, data } = Reap[
             ConfirmMatch[
@@ -307,12 +300,13 @@ sendChat // endDefinition;
 (*makeHTTPRequest*)
 makeHTTPRequest // beginDefinition;
 
-(* cSpell: ignore ENDTOOLCALL *)
+(* cSpell: ignore ENDTOOLCALL, AIAPI *)
 makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association } ] :=
-    Enclose @ Module[ { key, stream, model, tokens, temperature, topP, freqPenalty, presPenalty, data, body, apiCompletionURL },
+    Enclose @ Module[
+        { key, stream, model, tokens, temperature, topP, freqPenalty, presPenalty, data, body, apiCompletionURL },
 
-        key         = ConfirmBy[ Lookup[ settings, "OpenAIKey" ], StringQ ];
-        stream      = True;
+        key              = ConfirmBy[ Lookup[ settings, "OpenAIKey" ], StringQ ];
+        stream           = True;
         apiCompletionURL = ConfirmBy[ Lookup[ settings, "OpenAIAPICompletionURL" ], StringQ ];
 
         (* model parameters *)
@@ -498,10 +492,11 @@ chatSubmit // Attributes = { HoldFirst };
 chatSubmit[ args__ ] := Quiet[
     chatSubmit0 @ args,
     {
-        (* cSpell: ignore wname, invm *)
+        (* cSpell: ignore wname, invm, invk *)
         ServiceConnections`SavedConnections::wname,
         ServiceConnections`ServiceConnections::wname,
-        URLSubmit::invm
+        URLSubmit::invm,
+        URLSubmit::invk
     }
 ];
 
@@ -968,7 +963,7 @@ toolFreeQ // endDefinition;
 toolEvaluation // beginDefinition;
 
 toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
-    Module[ { string, callPos, toolCall, toolResponse, output, messages, newMessages, req, toolID },
+    Module[ { string, callPos, toolCall, toolResponse, output, messages, newMessages, req, toolID, task },
 
         string = ConfirmBy[ container[ "FullContent" ], StringQ, "FullContent" ];
 
@@ -1010,7 +1005,18 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         appendToolResult[ container, output, toolID ];
 
-        $lastTask = chatSubmit[ container, req, cell, settings ]
+        task = $lastTask = chatSubmit[ container, req, cell, settings ];
+
+        addHandlerArguments[ "Task" -> task ];
+
+        CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "CellObject" } ] = cell;
+        CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "Task"       } ] = task;
+
+        If[ FailureQ @ task, throwTop @ writeErrorCell[ cell, task ] ];
+
+        If[ task === $Canceled, StopChat @ cell ];
+
+        task
     ],
     throwInternalFailure[ toolEvaluation[ settings, container, cell, as ], ## ] &
 ];
@@ -1115,8 +1121,11 @@ selectChatCells0[ cell_, cells: { __CellObject }, final_ ] := Enclose[
         (* Filter out ignored cells *)
         filtered = ConfirmMatch[ filterChatCells @ selectedRange, { ___Association }, "FilteredCellInfo" ];
 
+        (* If all cells are excluded, do nothing *)
+        If[ filtered === { }, throwTop @ Null ];
+
         (* Delete output cells that come after the evaluation cell *)
-        rest = deleteExistingChatOutputs @ Drop[ cellData, cellPosition ];
+        rest = keepValidGeneratedCells @ Drop[ cellData, cellPosition ];
 
         (* Get the selected cell objects from the filtered cell info *)
         selectedCells = ConfirmMatch[
@@ -1139,8 +1148,8 @@ selectChatCells0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*deleteExistingChatOutputs*)
-deleteExistingChatOutputs // beginDefinition;
+(*keepValidGeneratedCells*)
+keepValidGeneratedCells // beginDefinition;
 
 (* When chat is triggered by an evaluation instead of a chat input, there can be generated cells between the
    evaluation cell and the previous chat output. For example:
@@ -1152,10 +1161,10 @@ deleteExistingChatOutputs // beginDefinition;
 
    At this point, the front end has already cleared previous output cells (messages, output, etc.), but the previous
    chat output cell is still there. We need to delete it so that the new chat output cell can be inserted in its place.
-   `deleteExistingChatOutputs` gathers up all the generated cells that come after the evaluation cell and if it finds
+   `keepValidGeneratedCells` gathers up all the generated cells that come after the evaluation cell and if it finds
    a chat output cell, it deletes it.
 *)
-deleteExistingChatOutputs[ cellData: { KeyValuePattern[ "CellObject" -> _CellObject ] ... } ] /; $autoAssistMode :=
+keepValidGeneratedCells[ cellData: { KeyValuePattern[ "CellObject" -> _CellObject ] ... } ] /; $autoAssistMode :=
     Module[ { delete, chatOutputs, cells },
         delete      = TakeWhile[ cellData, MatchQ @ KeyValuePattern[ "CellAutoOverwrite" -> True ] ];
         chatOutputs = Cases[ delete, KeyValuePattern[ "Style" -> $$chatOutputStyle ] ];
@@ -1164,10 +1173,11 @@ deleteExistingChatOutputs[ cellData: { KeyValuePattern[ "CellObject" -> _CellObj
         DeleteCases[ delete, KeyValuePattern[ "CellObject" -> Alternatives @@ cells ] ]
     ];
 
-deleteExistingChatOutputs[ cellData_ ] :=
-    TakeWhile[ cellData, MatchQ @ KeyValuePattern[ "CellAutoOverwrite" -> True ] ];
+(* When chat is triggered by a normal chat input evaluation, we only want to keep the next chat output if it exists: *)
+keepValidGeneratedCells[ cellData_ ] :=
+    TakeWhile[ cellData, MatchQ @ KeyValuePattern @ { "CellAutoOverwrite" -> True, "Style" -> $$chatOutputStyle } ];
 
-deleteExistingChatOutputs // endDefinition;
+keepValidGeneratedCells // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1201,7 +1211,15 @@ resolveAutoSettings[ settings_Association ] := resolveAutoSettings0 @ <|
     settings,
     "HandlerFunctions"    -> getHandlerFunctions @ settings,
     "LLMEvaluator"        -> getLLMEvaluator @ settings,
-    "ProcessingFunctions" -> getProcessingFunctions @ settings
+    "ProcessingFunctions" -> getProcessingFunctions @ settings,
+    "Model"               -> resolveFullModelSpec @ settings,
+    If[ StringQ @ settings[ "Tokenizer" ],
+        <|
+            "TokenizerName" -> getTokenizerName @ settings,
+            "Tokenizer"     -> Automatic
+        |>,
+        "TokenizerName" -> Automatic
+    ]
 |>;
 
 resolveAutoSettings // endDefinition;
@@ -1242,6 +1260,7 @@ resolveAutoSetting0[ as_, "NotebookWriteMethod"       ] := "PreemptiveLink";
 resolveAutoSetting0[ as_, "ShowMinimized"             ] := Automatic;
 resolveAutoSetting0[ as_, "StreamingOutputMethod"     ] := "PartialDynamic";
 resolveAutoSetting0[ as_, "Tokenizer"                 ] := getTokenizer @ as;
+resolveAutoSetting0[ as_, "TokenizerName"             ] := getTokenizerName @ as;
 resolveAutoSetting0[ as_, "ToolCallFrequency"         ] := Automatic;
 resolveAutoSetting0[ as_, "ToolsEnabled"              ] := toolsEnabledQ @ as;
 resolveAutoSetting0[ as_, "TrackScrollingWhenPlaced"  ] := scrollOutputQ @ as;
@@ -1256,7 +1275,8 @@ $autoSettingKeyDependencies = <|
     "MaxOutputCellStringLength" -> "MaxCellStringLength",
     "MaxTokens"                 -> "Model",
     "Multimodal"                -> { "EnableLLMServices", "Model" },
-    "Tokenizer"                 -> "Model",
+    "Tokenizer"                 -> "TokenizerName",
+    "TokenizerName"             -> "Model",
     "Tools"                     -> { "LLMEvaluator", "ToolsEnabled" },
     "ToolsEnabled"              -> { "Model", "ToolCallFrequency" }
 |>;
@@ -1284,6 +1304,7 @@ $autoSettingKeyPriority := Enclose[
 (* FIXME: need to hook into token pressure to gradually decrease limits *)
 chooseMaxCellStringLength // beginDefinition;
 chooseMaxCellStringLength[ as_Association ] := chooseMaxCellStringLength[ as, as[ "MaxContextTokens" ] ];
+chooseMaxCellStringLength[ as_, Infinity ] := Infinity;
 chooseMaxCellStringLength[ as_, tokens: $$size ] := Ceiling[ $defaultMaxCellStringLength * tokens / 2^13 ];
 chooseMaxCellStringLength // endDefinition;
 
@@ -1425,6 +1446,7 @@ getNamedLLMEvaluator // endDefinition;
 toolsEnabledQ[ KeyValuePattern[ "ToolsEnabled" -> enabled: True|False ] ] := enabled;
 toolsEnabledQ[ KeyValuePattern[ "ToolCallFrequency" -> freq: (_Integer|_Real)? NonPositive ] ] := False;
 toolsEnabledQ[ KeyValuePattern[ "Model" -> model_ ] ] := toolsEnabledQ @ toModelName @ model;
+toolsEnabledQ[ model: KeyValuePattern @ { "Service" -> _, "Name" -> _ } ] := toolsEnabledQ @ toModelName @ model;
 toolsEnabledQ[ "chat-bison-001" ] := False;
 toolsEnabledQ[ model_String ] := ! TrueQ @ StringContainsQ[ model, "gpt-3", IgnoreCase -> True ];
 toolsEnabledQ[ ___ ] := False;
@@ -1730,7 +1752,7 @@ activeAIAssistantCell[
                 Editable        -> False,
                 CellDingbat     -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
                 CellTrayWidgets -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
-                TaggingRules    -> <| "ChatNotebookSettings" -> settings |>
+                TaggingRules    -> <| "ChatNotebookSettings" -> smallSettings @ settings |>
             ]
         ]
     ];
@@ -1783,7 +1805,7 @@ activeAIAssistantCell[
             Selectable         -> True,
             ShowAutoSpellCheck -> False,
             ShowCursorTracker  -> False,
-            TaggingRules       -> <| "ChatNotebookSettings" -> settings |>,
+            TaggingRules       -> <| "ChatNotebookSettings" -> smallSettings @ settings |>,
             If[ scrollOutputQ @ settings,
                 PrivateCellOptions -> { "TrackScrollingWhenPlaced" -> True },
                 Sequence @@ { }
@@ -1877,8 +1899,10 @@ makeActiveOutputDingbat // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeOutputDingbat*)
 makeOutputDingbat // beginDefinition;
+makeOutputDingbat[ as: KeyValuePattern[ "LLMEvaluator" -> name_String ] ] := makeOutputDingbat[ as, name ];
 makeOutputDingbat[ as: KeyValuePattern[ "LLMEvaluator" -> config_Association ] ] := makeOutputDingbat[ as, config ];
 makeOutputDingbat[ as_Association ] := makeOutputDingbat[ as, as ];
+makeOutputDingbat[ as_, name_String ] := makeOutputDingbat[ as, GetCachedPersonaData @ name ];
 makeOutputDingbat[ as_, KeyValuePattern[ "PersonaIcon" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
 makeOutputDingbat[ as_, KeyValuePattern[ "Icon" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
 makeOutputDingbat[ as_, KeyValuePattern[ "Default" -> icon_ ] ] := makeOutputDingbat[ as, icon ];
@@ -2190,7 +2214,7 @@ makeCompactChatData[
     BaseEncode @ BinarySerialize[
         DeleteCases[
             Association[
-                smallSettings @ KeyDrop[ as, "OpenAIKey" ],
+                smallSettings @ as,
                 "MessageTag" -> tag,
                 "Data" -> Association[
                     data,
@@ -2208,20 +2232,30 @@ makeCompactChatData // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*smallSettings*)
 smallSettings // beginDefinition;
+smallSettings[ as_Association ] := smallSettings0 @ KeyDrop[ as, { "OpenAIKey", "Tokenizer" } ] /. $exprToNameRules;
+smallSettings // endDefinition;
 
-smallSettings[ as_Association ] :=
-    smallSettings[ as, as[ "LLMEvaluator" ] ];
+smallSettings0 // beginDefinition;
 
-smallSettings[ as_, KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] :=
+smallSettings0[ as: KeyValuePattern[ "Model" -> model: KeyValuePattern[ "Icon" -> _ ] ] ] :=
+    smallSettings0 @ <| as, "Model" -> KeyTake[ model, { "Service", "Name" } ] |>;
+
+smallSettings0[ as_Association ] :=
+    smallSettings0[ as, as[ "LLMEvaluator" ] ];
+
+smallSettings0[ as_, KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] :=
     If[ AssociationQ @ GetCachedPersonaData @ name,
         Append[ as, "LLMEvaluator" -> name ],
         as
     ];
 
-smallSettings[ as_, _ ] :=
+smallSettings0[ as_, _ ] :=
     as;
 
-smallSettings // endDefinition;
+smallSettings0 // endDefinition;
+
+
+$exprToNameRules := AssociationMap[ Reverse, $AvailableTools ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2275,14 +2309,7 @@ attachChatOutputMenu[ cell_CellObject ] /; $cloudNotebooks := Null;
 
 attachChatOutputMenu[ cell_CellObject ] := (
     $lastChatOutput = cell;
-    NotebookDelete @ Cells[ cell, AttachedCell -> True, CellStyle -> "ChatMenu" ];
-    AttachCell[
-        cell,
-        Cell[ BoxData @ TemplateBox[ { "ChatOutput", RGBColor[ "#ecf0f5" ] }, "ChatMenuButton" ], "ChatMenu" ],
-        { Right, Top },
-        Offset[ { -7, -7 }, { Right, Top } ],
-        { Right, Top }
-    ]
+    Lookup[ Options[ cell, Initialization ] /. HoldPattern @ EvaluationCell[ ] -> cell, Initialization ]
 );
 
 attachChatOutputMenu // endDefinition;
