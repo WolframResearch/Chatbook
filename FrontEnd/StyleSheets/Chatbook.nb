@@ -746,6 +746,11 @@ Notebook[
      Magnification -> 1,
      FontSize -> 0.1
     ],
+   PrivateCellOptions -> {
+    "AccentStyle" -> {
+     CellTrayWidgets -> <|"ChatIncluded" -> <|"Condition" -> True|>|>
+    }
+   },
    TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
    CellTrayWidgets -> <|
     "GearMenu" -> <|"Condition" -> False|>,
@@ -1152,16 +1157,11 @@ Notebook[
       }
      ]
     }
-   |>,
-   PrivateCellOptions -> {
-    "AccentStyle" -> {
-     CellTrayWidgets -> <|"ChatIncluded" -> <|"Condition" -> True|>|>
-    }
-   }
+   |>
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.3.1.3910074547"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.4.1.3913792210"|>
   ],
   Cell[
    StyleData["Text"],
@@ -11699,6 +11699,415 @@ Notebook[
        AspectRatio -> Automatic,
        ImageSize -> {20.0, 20.0},
        PlotRange -> {{0.0, 20.0}, {0.0, 20.0}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ServiceIconAnthropic"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.0625],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {
+            {
+             {0, 2, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0}
+            },
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}}
+           },
+           {
+            {
+             {5.0525, 13.543},
+             {1.1665, 3.5431},
+             {3.3395, 3.5431},
+             {4.1345, 5.6431},
+             {8.1995, 5.6431},
+             {8.9945, 3.5431},
+             {11.167, 3.5431},
+             {7.2805, 13.543},
+             {5.0525, 13.543}
+            },
+            {
+             {6.1675, 11.015},
+             {7.4975, 7.5011},
+             {4.8375, 7.5011},
+             {6.1675, 11.015}
+            }
+           }
+          ]
+         },
+         {FaceForm[RGBColor[0.12157, 0.12157, 0.11765, 1.0]]},
+         StripOnInput -> False
+        ],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}},
+           {
+            {
+             {9.1665, 13.543},
+             {13.042, 3.5432},
+             {15.167, 3.5432},
+             {11.293, 13.543},
+             {9.1665, 13.543}
+            }
+           }
+          ]
+         },
+         {FaceForm[RGBColor[0.12157, 0.12157, 0.11765, 1.0]]},
+         StripOnInput -> False
+        ]
+       },
+       ImageSize -> {17.0, 17.0},
+       PlotRange -> {{-0.5, 16.5}, {-0.5, 16.5}},
+       AspectRatio -> Automatic
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ServiceIconOpenAI"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.0625],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {
+            {
+             {0, 2, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0}
+            },
+            {
+             {0, 2, 0},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0}
+            },
+            {
+             {1, 4, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3}
+            },
+            {
+             {0, 2, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3}
+            },
+            {
+             {1, 4, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3}
+            },
+            {
+             {1, 4, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3}
+            },
+            {
+             {1, 4, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3}
+            },
+            {
+             {1, 4, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3}
+            }
+           },
+           {
+            {
+             {6.3529, 8.9548},
+             {8.0239, 9.9098},
+             {9.6949, 8.9548},
+             {9.6949, 7.0448},
+             {8.0239, 6.0898},
+             {6.3529, 7.0448},
+             {6.3529, 8.9548}
+            },
+            CompressedData[
+             "\n1:eJxTTMoPSmViYGCQAmIQrSj/JSdsr5iDwW51fu6tsg7CnxzPp00VdAhSX9C5\nIVEBzldla5zq3K0O53+65JskMEPDAcS9qi7kYMt1fXHBXk2HjQ9fTt3kI+ww\nayYIaDl0bQAKFIk4PP+98uOlXm0HkLEPNcUc3LZ9/nvFQsfh3uT21ihhCQdj\nENis41AZscL07G9JB8UNRRkTdXUdBI/v2tHrJuMw8W2NvWmcrsOqhJAg9QQ5\nuLzS32+lD2wUHBa5Ag0U0XWoSTQKNfBSdNhyomzf/Fk6Dt6RbRbXVJUcwvh0\nN819r43BB3GP8io5AF0P9IK2wy1poAlfFeH8R0Dv8GwUd2DSbhe76afhwJDf\nyHLUX9yh+cCpha5mGg5Mszik58mJO7CADJTVcGA92m9Y/lbMYbIEUOStugMs\nfKc5d+c8343gLwEZvxjBXzb7iMKGIgQfFh8AiR6qEA==\n        "
+            ],
+            CompressedData[
+             "\n1:eJxTTMoPSmViYGCQAmIQrRnTf+hrhrbDwVMLXbcZqzig8807HROeBmg72JvG\n7fL0UXHYIdf6OtACwT//PfjxUmlVB5F17g+rrqg7AEV5mF6rOEyWYAnje6vu\ncN+/d3reJQQ/X6j5wKmFCH6hLdf1xQUIPgMIOCD4jVOdu3PUVeDmz+KQnheX\nKengplrKNKtDGc6PsNxyoqxOzUGjrmdn9kslhzUyUSnW8loOzBXcKhr3lB26\nc57/XrlRC+4+kLcuPNJyWPXxkm+SgBqcX75vvpS+rDqc7wLSqKnhIK1/V4Wt\nUctBHuj9HXKaDntKgC68punwrgYYEr80HS4q3f5Zp6XpcBoYbJ/3ajkwabeL\n3fTTcAA5a5+8toO6IQfQSeoOK455m3c2ajvcPAcMuFQ1iPgsbQdgKAk1O6hi\nhD8ARCyk8Q==\n        "
+            ],
+            CompressedData[
+             "\n1:eJxTTMoPSmViYGAQB2IQvch12+e/VzQcgtQXdG5IVHDIM2nY7pCk6LDO/WGV\nyDoVh69ekW0W35Qdbv+sy9pjouaQ+/z3yo9CWg6vpm7iKVyj5LDLk4dJm13b\noXbdtqR6SSWHGXlCzQdOaTvoKsp/yQlTdGh9HbhDzlUHbn5xxsS3Nft1HDi7\n5JPf3ZJzSBKIsNzCoeuQ/6H1ZMhBGYfHS2cfUfig43CjsdhtSpmUQ4r1ff/e\n6zoOKjv/tH+JlnAAGr7QtUzHAaQ9ykkMbt8b/d3q/N0iDpZbTpTtk9d2MBE0\ns9l7Scjhrgpb41RnLYeKOYuUd9YIOoCsO2Gm6TCrHCQgAOe/YgHpkIfzn61T\nfdI8D8E/rmk16fR/eQd5sIc0HZLrb9pWSihg8BdI6QOt1HS4vOexiKynggN6\n+AIA6SqZow==\n        "
+            ],
+            CompressedData[
+             "\n1:eJxTTMoPSmViYGAQBWIQnfb9SeLCa3/te6fnCTU7qDropEo+ipjO6HDz3Pfg\nx6lqDlO+scXPOMPqYBq3y5PHSd2hSz75XdQhLodpzt05z3cj+KpsjVOduxH8\nixNj/jlXKcD5l/c8FpH1RPCT62/aVkooOLSdDDm4QoXb4bim1aTT/+Udmord\npnxr43Z4tk71SfM8eQeP/bWyFs+5HV7cXPMrJlfewUE48fDl1TwOr1hMBM1s\n5B3eHLBU9rKWhZizRMzh3uT21ihhCQeg5N6gacIOoj1er1i2sDvsVufn3rpM\nykFl55/2L9FMDmWF0rwPdGUc8hYz7mEV+msPlKw8vlLO4Sf/y+3rmX/ZHwQa\nW31YweG9hat70c9v9n8kiq8LGSk51F7YHPl153f7reY/DqW8UnZADz8Aqo+U\nXg==\n        "
+            ],
+            CompressedData[
+             "\n1:eJxTTMoPSmViYGAQB2IQPcNHtMcri9WhaqmOs8xrfgeF5HdRTvuYHEIPrlji\n5yDkoJMq+ShiOqPDuVXnr4a9EYHLu035xhY/QxyD/2yd6pNmOWYHkLBdhrjD\nowjx7RcbEHyXX29fH/gp6jD/LMhAAQfVUqZZHNFiDrvV+bm3qgk4KHtVN+v3\nIPisR/sNy98i+Az5jSxH/cXh/Ecvp27i2YjgP9jHN8f4kTjcfLHfp9+dTFZ2\nkLVId8l8LwHnG4EcyizsALJeOk7K4f4D7skrm9jh5mX5fu4LLmFxyA2rXbdt\nkYjDivBTRkc2Mjt8m353cvtRQYekhddM3luwOjBzdskn5/E6yLx+ZCZ1gM2B\n94HuhAUVHA4hJSrT/0/gckAPXwAX85Sr\n        "
+            ],
+            CompressedData[
+             "\n1:eJxTTMoPSmViYGAQAWIQ/bp4q+jv1YoOXX1PPslf+mpvoLVS+IKKApx/8qn9\nkvv/ZB2+lz6YI7j0p72BzzIut6fSDuZSB6IVHBkc0PnCnxzPp4nKOBgf2aiX\nt5jBQfD4rh29bgg+Awg4qDjsYRUSsT/G51Boy3V9cYGKQ3Og59wGNX6HD8uP\neZt3qjjU/7YqONfB75Av1Hzg1EIVh93q/Nxb1QQcEp5eULq9U8VhziLlnX/a\nEfxZ5SARBL/m04aAbClBOB/sTlVFh+e/V3685Kvu8IrFRNDMRh7Oh6lPAwN1\nh7TvTxIXXmOB64eFB3p4AQDL0Y6N\n        "
+            ],
+            CompressedData[
+             "\n1:eJxdVHtQVGUUXwlWopV3y8Iswt1dYJfdu5thBPj4fomCmIo8SiW0knZKR1rk\nYQ4SDeGKUYKISAUFoeE4OEpoKYVJFpPPRsQJbEeeatEq7Y5Ly2OB7t2dvX/0\nzdz55nzfOeee3+/8zkdt06VqXXg8XhLzsftQof/pRIrGdp6uxLVLgg0Ha9/1\nLaURfXPJ+u5uKVa88eCWpI5GiN6YcqFfxt0/SrmwUG8MQ7fEMFm8gwZrpUyE\nY5v3pthz7jR8SzuvfeUmR0G1yPXVChXYNIZJOZrrfgltbVOintly34kEG92R\nH4k/p0+abx9UojFIc0/GVyDhuyczd2JUsIcVR+B4zjKP3hEVTokz3loyEIam\nVYyDPw0euyBDFLvOqlCjPZC1pUgKtowru2nE/t6VvbhRAh1bEKWGMe/bZ6db\nKGRWXh6X16vhXRjdsvx8KDrymUKFGhzQZ/R0SEPwfZLARZmowZixM1bqEczZ\ne0s1a5uvBXK2dA1z8okQN2+wS41Di96jqQE/fMCgqu6jEbB6g00U5cPVb+W/\n/unaGk8OL/ze/LmnRQC67Yt/TvAj4RO99GKq0B2M97Gciwr8cWoqM3uVq4P3\neAWyu2bb9ubysIt1aJVj0mv0/JmnpoiTb/dlda80tFgIS98eRQQ8f3zus0iR\nibCsJa8Lx+b9MQwjw8TZz0ue9VFN5wzk6gNyfGC5FDv6d5VX3B8kwexBA4Uk\n9Rw18+8I+VURd/j6XAhUdz5/GHxijKQdpSoKzGK8f+vs5vF2K+kryUs4sjuI\n+7+s3VZmeU2Ewq9V8WLjE1IekjWWsULI3Zv0V9N/kvuDV1U8HZczTjY+0vwQ\n4eWLfFnt3KHiCeKI88LQM9UnP0yxEQcOAVTawOFNtfMQ+pI568YWPuxxlXyw\n1stX5mHldp1JnySA2bKGgTpLnPyzKAoGJ0h569BoTa6/o+8brWR4tKZN8E0A\n9i1IPnNEO0VYNl6MCUQdg/Kv1RaSnhrR+JEpCOzWOvSYmIRMwj4x1ndXZc7G\nPyTNHglhBZcX4m/XxUzr7pGGpQxD+0MddQb0kp1PTza+XU1xtig8ze3Y81LO\nHkhmGntbBnb6KheNEIVdmOFg3Q7HmYlT/8767TrPk3N4KWaKqh7LYSif0Vrv\nz8dYEXlh65QCPf2DDHPuDp3OVyLdTqwHAu7+Zk0bUcKlw83XnyxAHhNddEkF\nJ9/O+d5T3yRtL/KBPb2NtstUqfUDk61MeFcNZz9tjIzXSTSYKbMYeksC8fFO\nVtlq6OwNFsOerlMNp35OJzIvjlqNL7cqrnuXUfj/+/Mf6Ef9+w==\n        "
+            ]
+           }
+          ]
+         },
+         {FaceForm[RGBColor[0.2, 0.2, 0.2, 1.0]]},
+         StripOnInput -> False
+        ]
+       },
+       ImageSize -> {17.0, 17.0},
+       PlotRange -> {{-0.5, 16.5}, {-0.5, 16.5}},
+       AspectRatio -> Automatic
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ServiceIconPaLM"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.0625],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {
+            {
+             {1, 4, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3}
+            }
+           },
+           {
+            {
+             {8.1487, 1.0},
+             {10.039, 1.0},
+             {11.62, 1.63},
+             {12.775, 2.698},
+             {10.523, 4.448},
+             {9.8927, 4.027},
+             {9.0937, 3.771},
+             {8.1487, 3.771},
+             {6.3227, 3.771},
+             {4.7767, 5.002},
+             {4.2227, 6.664},
+             {1.9017, 6.664},
+             {1.9017, 4.862},
+             {3.0507, 2.575},
+             {5.4127, 1.0},
+             {8.1487, 1.0}
+            }
+           }
+          ]
+         },
+         {FaceForm[RGBColor[0.20392, 0.65882, 0.32549, 1.0]]},
+         StripOnInput -> False
+        ],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {
+            {
+             {1, 4, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3}
+            }
+           },
+           {
+            {
+             {14.851, 7.8425},
+             {14.851, 8.3035},
+             {14.81, 8.7405},
+             {14.74, 9.1665},
+             {8.1483, 9.1665},
+             {8.1483, 6.5355},
+             {11.923, 6.5355},
+             {11.753, 5.6725},
+             {11.258, 4.9435},
+             {10.523, 4.4475},
+             {10.523, 2.6975},
+             {12.774, 2.6975},
+             {14.093, 3.9165},
+             {14.851, 5.7135},
+             {14.851, 7.8425}
+            }
+           }
+          ]
+         },
+         {FaceForm[RGBColor[0.25882, 0.52157, 0.95686, 1.0]]},
+         StripOnInput -> False
+        ],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {
+            {
+             {1, 4, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0}
+            }
+           },
+           {
+            {
+             {4.2229, 6.6642},
+             {4.0769, 7.0842},
+             {4.0009, 7.5332},
+             {4.0009, 8.0002},
+             {4.0009, 8.4662},
+             {4.0829, 8.9162},
+             {4.2229, 9.3362},
+             {4.2229, 11.138},
+             {1.9009, 11.138},
+             {1.4229, 10.193},
+             {1.1489, 9.1312},
+             {1.1489, 8.0002},
+             {1.1489, 6.8682},
+             {1.4229, 5.8062},
+             {1.9009, 4.8622},
+             {4.2229, 6.6642}
+            }
+           }
+          ]
+         },
+         {FaceForm[RGBColor[0.98431, 0.73725, 0.019608, 1.0]]},
+         StripOnInput -> False
+        ],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {
+            {
+             {1, 4, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3}
+            }
+           },
+           {
+            {
+             {8.1487, 12.229},
+             {9.1817, 12.229},
+             {10.103, 11.873},
+             {10.832, 11.179},
+             {12.827, 13.174},
+             {11.62, 14.306},
+             {10.039, 15.0},
+             {8.1487, 15.0},
+             {5.4127, 15.0},
+             {3.0507, 13.425},
+             {1.9017, 11.138},
+             {4.2227, 9.3362},
+             {4.7767, 10.998},
+             {6.3227, 12.229},
+             {8.1487, 12.229}
+            }
+           }
+          ]
+         },
+         {FaceForm[RGBColor[0.91765, 0.26275, 0.20784, 1.0]]},
+         StripOnInput -> False
+        ]
+       },
+       ImageSize -> {17.0, 17.0},
+       PlotRange -> {{-0.5, 16.5}, {-0.5, 16.5}},
+       AspectRatio -> Automatic
       ]
      ])
    }

@@ -20,6 +20,7 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 `$autoAssistMode;
 `$autoOpen;
 `$finalCell;
+`$lastCellObject;
 `$lastChatString;
 `$lastMessages;
 `$lastSettings;
@@ -392,7 +393,10 @@ EvaluateChatInput // beginDefinition;
 EvaluateChatInput[ ] := EvaluateChatInput @ rootEvaluationCell[ ];
 
 EvaluateChatInput[ evalCell_CellObject? chatInputCellQ ] :=
-    EvaluateChatInput[ evalCell, parentNotebook @ evalCell ];
+    If[ chatExcludedQ @ evalCell,
+        Null,
+        EvaluateChatInput[ evalCell, parentNotebook @ evalCell ]
+    ];
 
 EvaluateChatInput[ source: _CellObject | $Failed ] :=
     With[ { evalCell = rootEvaluationCell @ source },
@@ -403,14 +407,32 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
     EvaluateChatInput[ evalCell, nbo, currentChatSettings @ nbo ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
-    withChatState @ Block[ { $autoAssistMode = False },
-        $lastMessages       = None;
+    withChatState @ Block[ { $autoAssistMode = False, $aborted = False },
+        $lastCellObject     = None;
         $lastChatString     = None;
+        $lastMessages       = None;
         $nextTaskEvaluation = None;
-        clearMinimizedChats @ nbo;
         $enableLLMServices  = settings[ "EnableLLMServices" ];
-        sendChat[ evalCell, nbo, settings ];
-        waitForLastTask[ ];
+        clearMinimizedChats @ nbo;
+
+        (* Send chat while listening for an abort: *)
+        CheckAbort[
+            sendChat[ evalCell, nbo, settings ];
+            waitForLastTask[ ]
+            ,
+            (* The user has issued an abort: *)
+            $aborted = True;
+            (* Clean up the current chat evaluation: *)
+            With[ { cell = $lastCellObject },
+                If[ MatchQ[ cell, _CellObject ],
+                    StopChat @ cell,
+                    removeTask @ $lastTask
+                ]
+            ]
+            ,
+            PropagateAborts -> False
+        ];
+
         blockChatObject[
             If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
                 With[
@@ -420,17 +442,30 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
                             <| "Role" -> "Assistant", "Content" -> $lastChatString |>
                         ]
                     },
-                    applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> chat, "NotebookObject" -> nbo |> ];
-                    Sow[ chat, $chatObjectTag ]
+                    applyChatPost[ chat, settings, nbo, $aborted ]
                 ],
-                applyHandlerFunction[ settings, "ChatPost", <| "ChatObject" -> None, "NotebookObject" -> nbo |> ];
-                Sow[ None, $chatObjectTag ];
+                applyChatPost[ None, settings, nbo, $aborted ];
                 Null
             ];
         ]
     ];
 
 EvaluateChatInput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*applyChatPost*)
+applyChatPost // beginDefinition;
+
+applyChatPost[ chat_, settings_, nbo_, aborted: True|False ] := (
+    If[ aborted,
+        applyHandlerFunction[ settings, "ChatAbort", <| "ChatObject" -> chat, "NotebookObject" -> nbo |> ],
+        applyHandlerFunction[ settings, "ChatPost" , <| "ChatObject" -> chat, "NotebookObject" -> nbo |> ]
+    ];
+    Sow[ chat, $chatObjectTag ]
+);
+
+applyChatPost // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -899,12 +934,7 @@ scrape // endDefinition;
 (*AttachCodeButtons*)
 AttachCodeButtons // beginDefinition;
 
-AttachCodeButtons[ attached_, cell0_CellObject, string_, lang_ ] :=
-    With[ { cell = parentCell @ cell0 },
-        AttachCodeButtons[ attached, cell, string, lang ] /; chatCodeBlockQ @ cell
-    ];
-
-AttachCodeButtons[ Dynamic[ attached_ ], cell_CellObject, string_, lang_ ] := (
+AttachCodeButtons[ Dynamic[ attached_ ], cell_CellObject? chatCodeBlockQ, string_, lang_ ] := (
     attached = AttachCell[
         cell,
         floatingButtonGrid[ attached, cell, lang ],
@@ -915,15 +945,48 @@ AttachCodeButtons[ Dynamic[ attached_ ], cell_CellObject, string_, lang_ ] := (
     ]
 );
 
+AttachCodeButtons[ attached_, cell_CellObject, string_, lang_ ] := Enclose[
+    Catch @ Module[ { parent, evalCell, newParent },
+        parent = parentCell @ cell;
+
+        (* The parent cell is the chat code block as expected, so attach there *)
+        If[ chatCodeBlockQ @ parent, Throw @ AttachCodeButtons[ attached, parent, string, lang ] ];
+
+        (* Otherwise, we have an EvaluationCell[] failure, so try to recover by retrying EvaluationCell[] *)
+        evalCell = ConfirmMatch[ (FinishDynamic[ ]; EvaluationCell[ ]), _CellObject, "EvaluationCell" ];
+
+        (* The chat code block should be the parent of the current evaluation cell *)
+        newParent = ConfirmBy[
+            If[ chatCodeBlockQ @ evalCell, evalCell, parentCell @ evalCell ],
+            chatCodeBlockQ,
+            "ParentCell"
+        ];
+
+        (* Finish attaching now that we have the correct cell *)
+        AttachCodeButtons[ attached, newParent, string, lang ]
+    ],
+    throwInternalFailure
+];
+
 AttachCodeButtons // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*chatCodeBlockQ*)
 chatCodeBlockQ // beginDefinition;
-chatCodeBlockQ[ cell_CellObject ] := chatCodeBlockQ[ cell, Developer`CellInformation @ cell ];
+
+(* Many operations that return cell objects can return $Failed, but error handling should be done elsewhere: *)
+chatCodeBlockQ[ $Failed ] := False;
+
+(* Cache the result, since we might be calling this multiple times on the same cell in AttachCodeButtons: *)
+chatCodeBlockQ[ cell_CellObject ] := chatCodeBlockQ[ cell ] = chatCodeBlockQ[ cell, Developer`CellInformation @ cell ];
+
+(* The expected style of a chat code block cell: *)
 chatCodeBlockQ[ cell_, KeyValuePattern[ "Style" -> "ChatCodeBlock" ] ] := True;
+
+(* Anything else means it's not a chat block: *)
 chatCodeBlockQ[ cell_, _ ] := False;
+
 chatCodeBlockQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1034,7 +1097,7 @@ SendChat // beginDefinition;
 
 SendChat[ ] := SendChat @ rootEvaluationCell[ ];
 
-SendChat[ evalCell_CellObject, ___ ] /; MemberQ[ CurrentValue[ evalCell, CellStyle ], "ChatExcluded" ] := Null;
+SendChat[ evalCell_CellObject? chatExcludedQ, ___ ] := Null;
 
 SendChat[ evalCell_CellObject ] := SendChat[ evalCell, parentNotebook @ evalCell ];
 

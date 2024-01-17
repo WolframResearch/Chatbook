@@ -160,9 +160,11 @@ makeReadable[ file_, formatted_File ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Run*)
-If[ MemberQ[ $ScriptCommandLine, "--unformat" ],
-    makeUnreadable /@ getFiles[ ],
-    makeReadable /@ Echo[ getFiles[ ] ]
+Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
+    If[ MemberQ[ $ScriptCommandLine, "--unformat" ],
+        makeUnreadable /@ getFiles[ ],
+        makeReadable /@ Echo[ getFiles[ ] ]
+    ]
 ]
 
 (* :!CodeAnalysis::EndBlock:: *)

@@ -837,11 +837,11 @@ Basic Examples
 [system]
 Out[n]= Piecewise[...]
 
-![Formatted Result](expression://result-{id})
+![Formatted Result](expression://content-{id})
 
 [assistant]
 The half-order fractional derivative of $x^n$ with respect to $x$ is given by:
-![Fractional Derivative](expression://result-{id})
+![Fractional Derivative](expression://content-{id})
 ";
 
 (* ::**************************************************************************************************************:: *)
@@ -858,11 +858,11 @@ Plot sin(x) from -5 to 5
 ], "
 
 [system]
-Out[n]= ![image](attachment://result-{id})
+Out[n]= ![image](attachment://content-{id})
 
 [assistant]
 Here's the plot of $\\sin{x}$ from -5 to 5:
-![Plot](attachment://result-{id})"
+![Plot](attachment://content-{id})"
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -891,7 +891,8 @@ The temporary directory is located at C:\\Users\\UserName\\AppData\\Local\\Temp.
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Expression URIs*)
-$$expressionScheme = "attachment"|"expression";
+$expressionSchemes = { "attachment", "audio", "dynamic", "expression", "video" };
+$$expressionScheme = Alternatives @@ $expressionSchemes;
 
 Chatbook::URIUnavailable = "The expression URI `1` is no longer available.";
 
@@ -1059,7 +1060,7 @@ makeExpressionURI[ scheme_, Automatic, expr_ ] :=
     makeExpressionURI[ scheme, expressionURILabel @ expr, Unevaluated @ expr ];
 
 makeExpressionURI[ scheme_, label_, expr_ ] :=
-    With[ { id = "result-" <> Hash[ Unevaluated @ expr, Automatic, "HexString" ] },
+    With[ { id = "content-" <> Hash[ Unevaluated @ expr, Automatic, "HexString" ] },
         $attachments[ id ] = HoldComplete @ expr;
         "![" <> TextString @ label <> "](" <> TextString @ scheme <> "://" <> id <> ")"
     ];
@@ -1071,9 +1072,31 @@ makeExpressionURI // endDefinition;
 (*expressionURILabel*)
 expressionURILabel // beginDefinition;
 expressionURILabel // Attributes = { HoldAllComplete };
-expressionURILabel[ _Graphics|_Graphics3D|_Image|_Image3D|_Legended|_RawBoxes ] := "image";
-expressionURILabel[ _List|_Association ] := "data";
-expressionURILabel[ _ ] := "result";
+
+(* Audio *)
+expressionURILabel[ Audio[ path_String, ___ ] ] := "Audio Player: " <> path;
+expressionURILabel[ Audio[ File[ path_String ], ___ ] ] := "Audio Player: " <> path;
+expressionURILabel[ _Audio ] := "Embedded Audio Player";
+
+(* Video *)
+expressionURILabel[ Video[ path_String, ___ ] ] := "Video Player: " <> path;
+expressionURILabel[ Video[ File[ path_String ], ___ ] ] := "Video Player: " <> path;
+expressionURILabel[ _Video ] := "Embedded Video Player";
+
+(* Dynamic *)
+expressionURILabel[ _Manipulate ] := "Embedded Interactive Content";
+
+(* Graphics *)
+expressionURILabel[ _Graph|_Graph3D ] := "Graph";
+expressionURILabel[ _Tree ] := "Tree";
+expressionURILabel[ _Graphics|_Graphics3D|_Image|_Image3D|_Legended|_RawBoxes ] := "Image";
+
+(* Data *)
+expressionURILabel[ _List|_Association ] := "Data";
+
+(* Other *)
+expressionURILabel[ _ ] := "Content";
+
 expressionURILabel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1081,7 +1104,10 @@ expressionURILabel // endDefinition;
 (*expressionURIScheme*)
 expressionURIScheme // beginDefinition;
 expressionURIScheme // Attributes = { HoldAllComplete };
-expressionURIScheme[ _Graphics|_Graphics3D|_Image|_Image3D|_Legended|_RawBoxes ] := "attachment";
+expressionURIScheme[ _Video ] := (needsBasePrompt[ "SpecialURIVideo" ]; "video");
+expressionURIScheme[ _Audio ] := (needsBasePrompt[ "SpecialURIAudio" ]; "audio");
+expressionURIScheme[ _Manipulate|_DynamicModule|_Dynamic ] := (needsBasePrompt[ "SpecialURIDynamic" ]; "dynamic");
+expressionURIScheme[ _Graph|_Graph3D|_Graphics|_Graphics3D|_Image|_Image3D|_Legended|_Tree|_RawBoxes ] := "attachment";
 expressionURIScheme[ _ ] := "expression";
 expressionURIScheme // endDefinition;
 

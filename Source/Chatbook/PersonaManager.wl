@@ -10,6 +10,7 @@ BeginPackage[ "Wolfram`Chatbook`PersonaManager`" ];
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                   ];
+Needs[ "Wolfram`Chatbook`CloudToolbar`"      ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
 Needs[ "Wolfram`Chatbook`Dialogs`"           ];
 Needs[ "Wolfram`Chatbook`Personas`"          ];
@@ -39,62 +40,46 @@ CreatePersonaManagerDialog // endDefinition;
 CreatePersonaManagerPanel // beginDefinition;
 
 CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
-    favorites =
-        Replace[
-            CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}],
-            Except[{___String}] :> $corePersonaNames];
+    favorites = Replace[
+        CurrentChatSettings[ $FrontEnd, "PersonaFavorites" ],
+        Except[ { ___String } ] :> $corePersonaNames
+    ];
 
     Framed[
         Grid[
             {
-                {
-                    Pane[
-                        Style["Add & Manage Personas", "DialogHeader"],
-                        FrameMargins -> Dynamic[CurrentValue[{StyleDefinitions, "DialogHeader", CellMargins}]],
-                        ImageSize -> {501, Automatic}]},
-                {
-                    Pane[
-                        Dynamic[
-                            StringTemplate["`n1` personas being shown in the prompt menu. `n2` total personas available."][
-                                <|
-                                    "n1" -> If[ListQ[#], Length[#], "\[LongDash]"]&[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}]],
-                                    "n2" -> If[Length[#] > 0, Length[#], "\[LongDash]"]&[$CachedPersonaData]|>],
-                            TrackedSymbols :> {$CachedPersonaData}],
-                        BaseStyle -> "DialogBody",
-                        FrameMargins -> Dynamic[Replace[CurrentValue[{StyleDefinitions, "DialogBody", CellMargins}], {{l_, r_}, {b_, t_}} :> {{l, r}, {0, t}}]]]},
-                {
-                    Pane[
-                        Grid[{{
+                If[ TrueQ @ $inDialog, dialogHeader[ "Add & Manage Personas" ], Nothing ],
+
+                (* ----- Install Personas ----- *)
+                dialogSubHeader[ "Install Personas" ],
+                dialogBody[
+                    Grid @ {
+                        {
                             "Install from",
                             Button[
-                                NotebookTools`Mousedown[
-                                    Framed["Prompt Repository", BaseStyle -> "ButtonGray1Normal", BaselinePosition -> Baseline],
-                                    Framed["Prompt Repository", BaseStyle -> "ButtonGray1Hover", BaselinePosition -> Baseline],
-                                    Framed["Prompt Repository", BaseStyle -> "ButtonGray1Pressed", BaselinePosition -> Baseline],
-                                    BaseStyle -> "DialogTextBasic"],
+                                grayDialogButtonLabel[ "Prompt Repository \[UpperRightArrow]" ],
+                                If[ $CloudEvaluation, SetOptions[ EvaluationNotebook[ ], DockedCells -> Inherited ] ];
                                 ResourceInstallFromRepository[ "Prompt" ],
-                                Appearance -> "Suppressed", BaselinePosition -> Baseline, Method -> "Queued"],
+                                Appearance       -> "Suppressed",
+                                BaselinePosition -> Baseline,
+                                Method           -> "Queued"
+                            ],
                             Button[
-                                NotebookTools`Mousedown[
-                                    Framed["URL", BaseStyle -> "ButtonGray1Normal", BaselinePosition -> Baseline],
-                                    Framed["URL", BaseStyle -> "ButtonGray1Hover", BaselinePosition -> Baseline],
-                                    Framed["URL", BaseStyle -> "ButtonGray1Pressed", BaselinePosition -> Baseline],
-                                    BaseStyle -> "DialogTextBasic"],
+                                grayDialogButtonLabel[ "URL" ],
+                                If[ $CloudEvaluation, SetOptions[ EvaluationNotebook[ ], DockedCells -> Inherited ] ];
                                 Block[ { PrintTemporary }, ResourceInstallFromURL[ "Prompt" ] ],
-                                Appearance -> "Suppressed", BaselinePosition -> Baseline, Method -> "Queued"](* ,
-                            (* FIXME: FUTURE *)
-                            Button[
-                                NotebookTools`Mousedown[
-                                    Framed["File", BaseStyle -> "ButtonGray1Normal", BaselinePosition -> Baseline],
-                                    Framed["File", BaseStyle -> "ButtonGray1Hover", BaselinePosition -> Baseline],
-                                    Framed["File", BaseStyle -> "ButtonGray1Pressed", BaselinePosition -> Baseline],
-                                    BaseStyle -> "DialogTextBasic"],
-                                If[AssociationQ[PersonaInstallFromFile[]], GetPersonaData[]],
-                                Appearance -> "Suppressed", BaselinePosition -> Baseline, Method -> "Queued"] *)}}],
-                        BaseStyle -> "DialogBody",
-                        FrameMargins -> Dynamic[Replace[CurrentValue[{StyleDefinitions, "DialogBody", CellMargins}], {{l_, r_}, {b_, t_}} :> {{l, r}, {15, 5}}]]]},
+                                Appearance       -> "Suppressed",
+                                BaselinePosition -> Baseline,
+                                Method           -> "Queued"
+                            ]
+                        }
+                    }
+                ],
+
+                (* ----- Configure and Enable Personas ----- *)
+                dialogSubHeader[ "Manage and Enable Personas", { Automatic, { 5, Automatic } } ],
                 {
-                    Pane[#, AppearanceElements -> None, ImageSize -> {Full, UpTo[300]}, Scrollbars -> {False, Automatic}]& @
+                    If[ $inDialog, Pane[#, AppearanceElements -> None, ImageSize -> {Full, UpTo[300]}, Scrollbars -> {False, Automatic}], # ]& @
                     Dynamic[
                         Grid[
                             Prepend[
@@ -105,7 +90,7 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
                                         KeySort[$CachedPersonaData]]],
                                 {"", "In Menu", "", "Name", ""(*FITME*), (*"Description",*) "Version", ""}],
                             Alignment -> {{Center, Center, {Left}}, Center},
-                            Background -> {{}, {RGBColor["#e5e5e5"]}},
+                            Background -> {{}, {RGBColor["#e5e5e5"], {White}}},
                             BaseStyle -> "DialogBody",
                             Dividers -> Dynamic @ {
                                 {},
@@ -113,44 +98,74 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
                                     {{True}},
                                     {
                                         2 -> False,
-                                        Length[favorites] + 2 -> Directive[delimColor, AbsoluteThickness[5]]}}},
+                                        Length[favorites] + 2 -> Directive[delimColor, AbsoluteThickness[5]]
+                                    }
+                                }
+                            },
                             FrameStyle -> Dynamic[delimColor],
                             ItemSize -> {{Automatic, Automatic, Automatic, Automatic, Fit, {Automatic}}, {}},
                             Spacings -> {
                                 {{{1}}, {2 -> 1, 4 -> 0.5}},
-                                0.5}],
-                        TrackedSymbols :> {$CachedPersonaData}]},
-                {
-                    Item[
-                        Button[(* give Default properties using specific FEExpression *)
-                            NotebookTools`Mousedown[
-                                Framed["OK", BaseStyle -> "ButtonRed1Normal", BaselinePosition -> Baseline],
-                                Framed["OK", BaseStyle -> "ButtonRed1Hover", BaselinePosition -> Baseline],
-                                Framed["OK", BaseStyle -> "ButtonRed1Pressed", BaselinePosition -> Baseline],
-                                BaseStyle -> "DialogTextBasic"],
-                            DialogReturn @ channelCleanup[ ],
-                            Appearance -> FEPrivate`FrontEndResource["FEExpressions", "DefaultSuppressMouseDownNinePatchAppearance"],
-                            ImageMargins -> {{0, 31}, {14, 14}},
-                            ImageSize -> Automatic ],
-                        Alignment -> {Right, Center}]}},
+                                {{{0.5}}, {Length[favorites] + 2 -> 1}}
+                            }
+                        ],
+                        TrackedSymbols :> {$CachedPersonaData}
+                    ]
+                },
+
+                (* ----- Dialog Buttons ----- *)
+                If[ TrueQ @ $inDialog,
+                    {
+                        Item[
+                            Button[(* give Default properties using specific FEExpression *)
+                                redDialogButtonLabel[ "OK" ],
+                                DialogReturn @ channelCleanup[ ],
+                                Appearance -> FEPrivate`FrontEndResource["FEExpressions", "DefaultSuppressMouseDownNinePatchAppearance"],
+                                ImageMargins -> {{0, 31}, {14, 14}},
+                                ImageSize -> Automatic
+                            ],
+                            Alignment -> {Right, Center}
+                        ]
+                    },
+                    { "" }
+                ]
+            },
             Alignment -> Left,
-            BaseStyle -> {FontSize -> 1}, (* useful setting in case we want fixed-width columns; ItemSize would scale at the same rate as ImageSize *)
-            Dividers -> {{}, {2 -> True, 4 -> Directive[delimColor, AbsoluteThickness[5]], -2 -> Directive[delimColor, AbsoluteThickness[5]]}},
+            BaseStyle -> $baseStyle, (* useful setting in case we want fixed-width columns; ItemSize would scale at the same rate as ImageSize *)
+            Dividers -> {
+                {},
+                If[ TrueQ @ $inDialog,
+                    {
+                        2 -> True,
+                        4 -> True,
+                        -2 -> Directive[delimColor, AbsoluteThickness[5]]
+                    },
+                    {
+                        3 -> True
+                    }
+                ]
+            },
             FrameStyle -> Dynamic[delimColor],
-            Spacings -> {0, 0}],
+            Spacings -> {0, 0}
+        ],
         ContentPadding -> 0,
         FrameMargins -> -1,
         FrameStyle -> None,
-        ImageSize -> {501, All}],
+        ImageSize -> { If[ TrueQ @ $inDialog, 501, Automatic ], All}],
     Initialization :> (
         delimColor = CurrentValue[{StyleDefinitions, "DialogDelimiter", CellFrameColor}];
         GetPersonaData[]; (* sets $CachedPersonaData *)
         (* make sure there are no unexpected extra personas *)
-        CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}] =
-            Intersection[
-                CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}],
-                Keys[$CachedPersonaData]]),
-    Deinitialization :> (CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}] = favorites)
+        Enclose[
+            CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ] = ConfirmBy[
+                Quiet @ Intersection[ CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ], Keys @ $CachedPersonaData ],
+                ListQ
+            ]
+        ]
+    ),
+    Deinitialization :> If[ MatchQ[ favorites, { ___String } ],
+        CurrentChatSettings[ $FrontEnd, "PersonaFavorites" ] = favorites
+    ]
 ];
 
 CreatePersonaManagerPanel // endDefinition;
@@ -257,18 +272,20 @@ formatPacletLink[ origin_String, url_, pacletName_ ] :=
 formatPacletLink // endDefinition;
 
 addRemovePersonaListingCheckbox // beginDefinition;
+
 addRemovePersonaListingCheckbox[ name_String ] :=
-    DynamicModule[{val},
-        Checkbox[
-            Dynamic[val,
-                Function[
-                    val = #;
-                    CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}] =
-                        If[#,
-                            Union[Replace[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}], Except[{___String}] :> {}], {name}]
-                            ,
-                            DeleteCases[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}], name]]]]],
-        Initialization :> (val = MemberQ[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}], name])];
+    With[ { core = $corePersonaNames },
+        Checkbox @ Dynamic[
+            MemberQ[ CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ], name ],
+            Function[
+                CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ] = With[
+                    { current = Replace[ CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ], Except[ { ___String } ] :> core ] },
+                    If[ #1, Union[ current, { name } ], Complement[ current, { name } ] ]
+                ]
+            ]
+        ]
+    ];
+
 addRemovePersonaListingCheckbox // endDefinition;
 
 uninstallButton // beginDefinition;
@@ -284,7 +301,11 @@ uninstallButton[ name_String, installedQ_, pacletName_String ] :=
                         StringTemplate["This persona cannot be uninstalled because it is provided by the `1` paclet."][pacletName]]},
             Dynamic[Which[!installedQ, "Disabled", CurrentValue["MouseOver"], "Hover", True, "Default"]],
             ImageSize -> Automatic],
-        Block[ { PrintTemporary }, ResourceUninstall[ "Prompt", name ]; GetPersonaData[] ],
+        Block[ { PrintTemporary },
+            ResourceUninstall[ "Prompt", name ];
+            GetPersonaData[ ];
+            forceRefreshCloudPreferences[ ]
+        ],
         Appearance -> "Suppressed",
         Enabled -> installedQ,
         ImageMargins -> {{0, 13}, {0, 0}},
