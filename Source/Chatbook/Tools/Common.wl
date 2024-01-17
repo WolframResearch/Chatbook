@@ -90,7 +90,7 @@ $toolBox               = <| |>;
 $toolEvaluationResults = <| |>;
 $toolOptions           = <| |>;
 
-$cloudUnsupportedTools = { "WolframLanguageEvaluator", "DocumentationSearcher" };
+$cloudUnsupportedTools = { "DocumentationSearcher" };
 
 $defaultToolOrder = {
     "DocumentationLookup",
@@ -611,7 +611,10 @@ makeToolPrompt[ settings_Association ] := $lastToolPrompt = TemplateObject[
                         "Tool Name: ",
                         TemplateSlot[ "Name" ],
                         "\nDisplay Name: ",
-                        TemplateSlot[ "DisplayName", DefaultValue :> toDisplayToolName @ TemplateSlot[ "Name" ] ],
+                        TemplateSlot[
+                            "DisplayName",
+                            DefaultValue :> TemplateExpression @ toDisplayToolName @ TemplateSlot[ "Name" ]
+                        ],
                         "\nDescription: ",
                         TemplateSlot[ "Description" ],
                         "\nSchema:\n",
