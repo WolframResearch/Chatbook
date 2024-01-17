@@ -24,7 +24,9 @@ Needs[ "Wolfram`Chatbook`Utils`"             ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*ChatPreferences*)
-$defaultChatTools0[ "ChatPreferences" ] = <|
+
+(* Uncomment the following when the ChatPreferences tool is ready: *)
+(* $defaultChatTools0[ "ChatPreferences" ] = <|
     toolDefaultData[ "ChatPreferences" ],
     "Icon"               -> RawBoxes @ TemplateBox[ { }, "ChatBlockSettingsMenuIcon" ],
     "Description"        -> $chatPreferencesDescription,
@@ -53,7 +55,7 @@ $defaultChatTools0[ "ChatPreferences" ] = <|
             "Required"    -> False
         |>
     }
-|>;
+|>; *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
