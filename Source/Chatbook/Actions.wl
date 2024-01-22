@@ -513,10 +513,23 @@ ensureChatInputCell // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*chatOutputCellQ*)
-chatOutputCellQ[ cell_CellObject ] := chatOutputCellQ[ cell ] = chatOutputCellQ[ cell, Developer`CellInformation @ cell ];
-chatOutputCellQ[ cell_, KeyValuePattern[ "Style" -> $$chatOutputStyle ] ] := True;
-chatOutputCellQ[ cell_CellObject, ___ ] := ($badCellObject = cell; $badCell = NotebookRead @ cell; False);
-chatOutputCellQ[ ___ ] := False;
+chatOutputCellQ[ cell_CellObject ] := chatOutputCellQ[ cell ] =
+    chatOutputCellQ[ cell, Developer`CellInformation @ cell ];
+
+chatOutputCellQ[ cell_, KeyValuePattern[ "Style" -> $$chatOutputStyle ] ] :=
+    True;
+
+chatOutputCellQ[ cell_CellObject, KeyValuePattern[ "Style" -> "Output" ] ] /; $cloudNotebooks :=
+    MatchQ[ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "CellObject" } ], _CellObject ];
+
+chatOutputCellQ[ cell_CellObject, ___ ] := (
+    $badCellObject = cell;
+    $badCell = NotebookRead @ cell;
+    False
+);
+
+chatOutputCellQ[ ___ ] :=
+    False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
