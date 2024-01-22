@@ -584,6 +584,9 @@ fetchWebText[ url_String, session_WebSessionObject ] := Enclose[
     shortenWebText @ niceWebText @ Import[ url, { "HTML", "Plaintext" } ] &
 ];
 
+fetchWebText[ url_String, _Missing | _? FailureQ ] :=
+    shortenWebText @ niceWebText @ Import[ url, { "HTML", "Plaintext" } ];
+
 fetchWebText // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -635,7 +638,13 @@ validWebSessionQ[ ___ ] := False;
 (* ::Subsubsection::Closed:: *)
 (*startWebSession*)
 startWebSession // beginDefinition;
-startWebSession[ ] := $currentWebSession = StartWebSession[ Visible -> $webSessionVisible ];
+
+startWebSession[ ] := $currentWebSession =
+    If[ TrueQ @ $CloudEvaluation,
+        Missing[ "NotAvailable" ],
+        StartWebSession[ Visible -> $webSessionVisible ]
+    ];
+
 startWebSession // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
