@@ -61,7 +61,7 @@ CreateLLMToolManagerPanel[ ] := catchMine @
     ];
 
 CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
-    catchMine @ cvExpand @ Module[
+    catchMine @ cvExpand @ Catch @ Module[
         {
             globalTools, personaTools, personaToolNames, personaToolLookup, tools,
             preppedPersonas, preppedTools, personaNames, personaDisplayNames,
@@ -89,6 +89,8 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
             toolData @ tools0,
             toolData @ Flatten @ Values @ personaTools
         ];
+
+        If[ TrueQ @ $cloudNotebooks, Throw @ cloudToolManager @ tools ];
 
         gridOpts = Sequence[
             Spacings -> { 0, 0 },
@@ -136,44 +138,13 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
             DynamicWrapper[
                 Grid[
                     {
-                        If[ TrueQ @ $inDialog, dialogHeader[ "Add & Manage LLM Tools" ], Nothing ],
+                        titleSection[ ],
 
                         (* ----- Install Tools ----- *)
-                        dialogSubHeader[ "Install Tools" ],
-                        dialogBody[
-                            Grid @ {
-                                {
-                                    "Install from",
-                                    Button[
-                                        grayDialogButtonLabel[ "LLM Tool Repository \[UpperRightArrow]" ],
-                                        ResourceInstallFromRepository[ "LLMTool" ],
-                                        Appearance       -> "Suppressed",
-                                        BaselinePosition -> Baseline,
-                                        Method           -> "Queued"
-                                    ],
-                                    Button[
-                                        grayDialogButtonLabel[ "URL" ],
-                                        Block[ { PrintTemporary }, ResourceInstallFromURL[ "LLMTool" ] ],
-                                        Appearance       -> "Suppressed",
-                                        BaselinePosition -> Baseline,
-                                        Method           -> "Queued"
-                                    ]
-                                }
-                            }
-                        ],
+                        installToolsSection[ ],
 
                         (* ----- Configure and Enable Tools ----- *)
-                        dialogSubHeader[ "Manage and Enable Tools" ],
-                        dialogBody[
-                            Grid @ {
-                                {
-                                    "Show enabled tools for:",
-                                    scopeSelector @ Dynamic @ scopeMode,
-                                    Dynamic @ catchAlways @ toolModelWarning @ scopeMode[ ]
-                                }
-                            },
-                            { Automatic, { 5, Automatic } }
-                        ],
+                        manageAndEnableToolsSection @ Dynamic[ scopeMode ],
 
                         dialogBody[ EventHandler[
                             Grid[
@@ -340,27 +311,7 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                         ], { { Automatic, 0 }, Automatic } ],
 
                         (* ----- Dialog Buttons ----- *)
-                        If[ TrueQ @ $inDialog,
-                            {
-                                Item[
-                                    Framed[
-                                        Button[
-                                            redDialogButtonLabel[ "OK" ],
-                                            NotebookClose @ EvaluationNotebook[ ],
-                                            Appearance       -> "Suppressed",
-                                            BaselinePosition -> Baseline,
-                                            Method           -> "Queued"
-                                        ],
-                                        FrameStyle -> None,
-                                        ImageSize  -> { 100, 50 },
-                                        Alignment  -> { Center, Center }
-                                    ],
-                                    Alignment -> { Right, Automatic }
-                                ],
-                                SpanFromLeft
-                            },
-                            Nothing
-                        ]
+                        dialogButtonSection[ ]
                     },
                     Alignment -> { Left, Top },
                     BaseStyle -> $baseStyle,
@@ -896,7 +847,10 @@ nonConfigurableTooltip // endDefinition;
 (*deleteTool*)
 deleteTool // beginDefinition;
 
-deleteTool[ KeyValuePattern @ { "CanonicalName" -> cName_, "ResourceName" -> rName_String } ] := (
+deleteTool[ KeyValuePattern @ { "CanonicalName" -> cName_, "ResourceName" -> rName_String } ] :=
+    deleteTool[ cName, rName ];
+
+deleteTool[ cName_, rName_String ] := (
     unsetCV[ $FrontEnd, "ToolSelections"   , cName ];
     unsetCV[ $FrontEnd, "ToolSelectionType", cName ];
     ResourceUninstall[ "LLMTool", rName ]
@@ -1234,6 +1188,275 @@ linkedPane // endDefinition;
 iconData // beginDefinition;
 iconData[ name_String, color_ ] := Insert[ chatbookIcon[ "ToolManager"<>name, False ], color, { 1, 1, 1 } ];
 iconData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Dialog Elements*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*titleSection*)
+titleSection // beginDefinition;
+titleSection[ ] := If[ TrueQ @ $inDialog, dialogHeader[ "Add & Manage LLM Tools" ], Nothing ];
+titleSection // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*installToolsSection*)
+installToolsSection // beginDefinition;
+
+installToolsSection[ ] := Sequence[
+    dialogSubHeader[ "Install Tools" ],
+    dialogBody[
+        Grid @ {
+            {
+                "Install from",
+                Button[
+                    grayDialogButtonLabel[ "LLM Tool Repository \[UpperRightArrow]" ],
+                    If[ $CloudEvaluation, SetOptions[ EvaluationNotebook[ ], DockedCells -> Inherited ] ];
+                    ResourceInstallFromRepository[ "LLMTool" ],
+                    Appearance       -> "Suppressed",
+                    BaselinePosition -> Baseline,
+                    Method           -> "Queued"
+                ],
+                Button[
+                    grayDialogButtonLabel[ "URL" ],
+                    If[ $CloudEvaluation, SetOptions[ EvaluationNotebook[ ], DockedCells -> Inherited ] ];
+                    Block[ { PrintTemporary }, ResourceInstallFromURL[ "LLMTool" ] ],
+                    Appearance       -> "Suppressed",
+                    BaselinePosition -> Baseline,
+                    Method           -> "Queued"
+                ]
+            }
+        }
+    ]
+];
+
+installToolsSection // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*manageAndEnableToolsSection*)
+manageAndEnableToolsSection // beginDefinition;
+
+manageAndEnableToolsSection[ Dynamic[ scopeMode_ ] ] := Sequence[
+    manageAndEnableToolsSection[ ],
+    dialogBody[
+        Grid @ {
+            {
+                "Show enabled tools for:",
+                scopeSelector @ Dynamic @ scopeMode,
+                Dynamic @ catchAlways @ toolModelWarning @ scopeMode[ ]
+            }
+        },
+        { Automatic, { 5, Automatic } }
+    ]
+];
+
+manageAndEnableToolsSection[ ] := dialogSubHeader[ "Manage and Enable Tools" ];
+
+manageAndEnableToolsSection // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*dialogButtonSection*)
+dialogButtonSection // beginDefinition;
+
+dialogButtonSection[ ] :=
+    If[ TrueQ @ $inDialog,
+        {
+            Item[
+                Framed[
+                    Button[
+                        redDialogButtonLabel[ "OK" ],
+                        NotebookClose @ EvaluationNotebook[ ],
+                        Appearance -> "Suppressed",
+                        BaselinePosition -> Baseline,
+                        Method -> "Queued"
+                    ],
+                    FrameStyle -> None,
+                    ImageSize -> { 100, 50 },
+                    Alignment -> { Center, Center }
+                ],
+                Alignment -> { Right, Automatic }
+            ],
+            SpanFromLeft
+        },
+        Nothing
+    ];
+
+dialogButtonSection // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Cloud Definitions*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*cloudToolManager*)
+cloudToolManager // beginDefinition;
+
+cloudToolManager[ tools: { __Association } ] := Grid[
+    {
+        titleSection[ ],
+
+        (* ----- Install Tools ----- *)
+        installToolsSection[ ],
+
+        (* ----- Configure and Enable Tools ----- *)
+        manageAndEnableToolsSection[ ],
+
+        (* ----- Tool Grid ----- *)
+        dialogBody[ cloudToolGrid @ tools, { { Automatic, 0 }, Automatic } ],
+
+        (* ----- Dialog Buttons ----- *)
+        dialogButtonSection[ ]
+    },
+    Alignment -> { Left, Top },
+    BaseStyle -> $baseStyle,
+    Dividers  -> {
+        False,
+        {
+            If[ TrueQ @ $inDialog, Sequence @@ { False, $dividerCol }, False ],
+            False,
+            $dividerCol,
+            False,
+            { False }
+        }
+    },
+    ItemSize  -> { Automatic, 0 },
+    Spacings  -> { 0, 0 }
+];
+
+cloudToolManager // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*cloudToolGrid*)
+cloudToolGrid // beginDefinition;
+
+cloudToolGrid[ tools: { __Association } ] := Grid[
+    Join[
+        { {
+            "Tool",
+            "",
+            "",
+            "",
+            "Enabled"
+        } },
+        cloudToolGridRow /@ tools
+    ],
+    Alignment  -> { Left, Center },
+    Background -> { White, { GrayLevel[ 0.898 ], White } },
+    BaseStyle  -> "Text",
+    Dividers   -> { True, All },
+    FrameStyle -> GrayLevel[ 0.898 ]
+];
+
+cloudToolGrid // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudToolGridRow*)
+cloudToolGridRow // beginDefinition;
+
+cloudToolGridRow[ tool_Association ] := {
+    Grid[
+        { {
+            Pane[
+                tool[ "Icon" ],
+                ImageSize       -> { 22, 20 },
+                ImageSizeAction -> "ShrinkToFit"
+            ],
+            tool[ "CanonicalName" ]
+        } },
+        Alignment -> { { Center, Left }, Center },
+        Spacings  -> 0.5
+    ],
+    Item[ "", ItemSize -> Fit ],
+    cloudDeleteToolButton @ tool,
+    cloudConfigureToolButton @ tool,
+    Item[ cloudToolEnablePopup @ tool, Alignment -> Right ]
+};
+
+cloudToolGridRow // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudToolEnablePopup*)
+cloudToolEnablePopup // beginDefinition;
+
+cloudToolEnablePopup[ KeyValuePattern[ "CanonicalName" -> name_String ] ] :=
+    cloudToolEnablePopup @ name;
+
+cloudToolEnablePopup[ name_String ] :=
+    PopupMenu[
+        Dynamic[
+            Replace[ CurrentChatSettings[ $FrontEnd, "ToolSelectionType" ][ name ], Except[ None|All ] -> Inherited ],
+            Function[
+                CurrentChatSettings[ $FrontEnd, "ToolSelectionType" ] =
+                    DeleteCases[
+                        Append[
+                            Replace[
+                                CurrentChatSettings[ $FrontEnd, "ToolSelectionType" ],
+                                Except[ _? AssociationQ ] -> <| |>
+                            ],
+                            name -> #1
+                        ],
+                        Inherited
+                    ]
+            ]
+        ],
+        {
+            All       -> "Always enabled",
+            Inherited -> "Automatic by persona",
+            None      -> "Never enabled"
+        }
+    ];
+
+cloudToolEnablePopup // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudConfigureToolButton*)
+cloudConfigureToolButton // beginDefinition;
+
+(* TODO: needs a definition for configurable tools *)
+
+cloudConfigureToolButton[ tool_Association ] :=
+    Tooltip[
+        Dynamic @ iconData[ "Cog", GrayLevel[ 0.8 ] ],
+        nonConfigurableTooltip @ tool
+    ];
+
+cloudConfigureToolButton // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudDeleteToolButton*)
+cloudDeleteToolButton // beginDefinition;
+
+cloudDeleteToolButton[ tool_Association? deletableToolQ ] :=
+    With[ { cName = tool[ "CanonicalName" ], rName = tool[ "ResourceName" ] },
+        Button[
+            $cloudDeleteToolButtonLabel,
+            deleteTool[ cName, rName ],
+            Appearance -> "Suppressed"
+        ]
+    ];
+
+cloudDeleteToolButton[ tool_Association ] :=
+    Tooltip[
+        Dynamic @ iconData[ "Bin", GrayLevel[ 0.8 ] ],
+        nonDeletableTooltip @ tool
+    ];
+
+cloudDeleteToolButton // endDefinition;
+
+$cloudDeleteToolButtonLabel = Mouseover[
+    Dynamic @ iconData[ "Bin", GrayLevel[ 0.65 ] ],
+    Dynamic @ iconData[ "Bin", $activeBlue ]
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
