@@ -48,8 +48,8 @@ $defaultChatSettings = <|
     "Model"                     :> $DefaultModel,
     "Multimodal"                -> Automatic,
     "NotebookWriteMethod"       -> Automatic,
-    "OpenAIKey"                 -> Automatic, (* TODO: remove this once LLMServices is widely available *)
     "OpenAIAPICompletionURL"    -> "https://api.openai.com/v1/chat/completions",
+    "OpenAIKey"                 -> Automatic, (* TODO: remove this once LLMServices is widely available *)
     "PresencePenalty"           -> 0.1,
     "ProcessingFunctions"       :> $DefaultChatProcessingFunctions,
     "Prompts"                   -> { },
@@ -60,6 +60,7 @@ $defaultChatSettings = <|
     "ToolCallFrequency"         -> Automatic,
     "ToolOptions"               :> $DefaultToolOptions,
     "Tools"                     -> Automatic,
+    "ToolSelectionType"         -> <| |>,
     "ToolsEnabled"              -> Automatic,
     "TopP"                      -> 1,
     "TrackScrollingWhenPlaced"  -> Automatic,
@@ -105,6 +106,9 @@ $DefaultChatProcessingFunctions = <|
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*CurrentChatSettings*)
+
+(* TODO: need to support something like CurrentChatSettings[scope, {"key1", "key2", ...}] for nested values *)
+
 GeneralUtilities`SetUsage[ CurrentChatSettings, "\
 CurrentChatSettings[obj$, \"key$\"] gives the current chat settings for the CellObject or NotebookObject obj$ for the specified key.
 CurrentChatSettings[obj$] gives all current chat settings for obj$.
