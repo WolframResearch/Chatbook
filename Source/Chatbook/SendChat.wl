@@ -67,7 +67,7 @@ $buffer            = "";
 sendChat // beginDefinition;
 
 sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ ChatbookAction ] @ Enclose[
-    Module[ { cells0, cells, target, settings, messages, data, persona, cell, cellObject, container, task },
+    Module[ { cells0, cells, target, settings, messages, data, persona, cellTags, cell, cellObject, container, task },
 
         initFETaskWidget @ nbo;
 
@@ -122,9 +122,11 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         |>;
 
         $reformattedCell = None;
+        cellTags = CurrentValue[ evalCell, CellTags ];
         cell = activeAIAssistantCell[
             container,
-            Association[ settings, "Container" :> container, "CellObject" :> cellObject, "Task" :> task ]
+            Association[ settings, "Container" :> container, "CellObject" :> cellObject, "Task" :> task ],
+            cellTags
         ];
 
         Quiet[
@@ -178,7 +180,11 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
 sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclose[
-    Module[ { cells0, cells, target, settings, id, key, messages, req, data, persona, cell, cellObject, container, task },
+    Module[
+        {
+            cells0, cells, target, settings, id, key, messages, req, data, persona,
+            cellTags, cell, cellObject, container, task
+        },
 
         initFETaskWidget @ nbo;
 
@@ -240,9 +246,11 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         |>;
 
         $reformattedCell = None;
+        cellTags = CurrentValue[ evalCell, CellTags ];
         cell = activeAIAssistantCell[
             container,
-            Association[ settings, "Container" :> container, "CellObject" :> cellObject, "Task" :> task ]
+            Association[ settings, "Container" :> container, "CellObject" :> cellObject, "Task" :> task ],
+            cellTags
         ];
 
         Quiet[
@@ -1695,12 +1703,13 @@ prepareChatOutputPage // endDefinition;
 activeAIAssistantCell // beginDefinition;
 activeAIAssistantCell // Attributes = { HoldFirst };
 
-activeAIAssistantCell[ container_, settings_Association? AssociationQ ] :=
-    activeAIAssistantCell[ container, settings, Lookup[ settings, "ShowMinimized", Automatic ] ];
+activeAIAssistantCell[ container_, settings_Association? AssociationQ, cellTags_ ] :=
+    activeAIAssistantCell[ container, settings, cellTags, Lookup[ settings, "ShowMinimized", Automatic ] ];
 
 activeAIAssistantCell[
     container_,
     settings: KeyValuePattern[ "CellObject" :> cellObject_ ],
+    cellTags0_,
     minimized_
 ] /; $cloudNotebooks :=
     With[
@@ -1709,7 +1718,8 @@ activeAIAssistantCell[
             id        = $SessionID,
             reformat  = dynamicAutoFormatQ @ settings,
             task      = Lookup[ settings, "Task" ],
-            formatter = getFormattingFunction @ settings
+            formatter = getFormattingFunction @ settings,
+            cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ]
         },
         Module[ { x = 0 },
             ClearAttributes[ { x, cellObject }, Temporary ];
@@ -1751,6 +1761,7 @@ activeAIAssistantCell[
                 Selectable      -> False,
                 Editable        -> False,
                 CellDingbat     -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
+                CellTags        -> cellTags,
                 CellTrayWidgets -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
                 TaggingRules    -> <| "ChatNotebookSettings" -> smallSettings @ settings |>
             ]
@@ -1760,6 +1771,7 @@ activeAIAssistantCell[
 activeAIAssistantCell[
     container_,
     settings: KeyValuePattern[ "CellObject" :> cellObject_ ],
+    cellTags0_,
     minimized_
 ] :=
     With[
@@ -1769,7 +1781,8 @@ activeAIAssistantCell[
             reformat  = dynamicAutoFormatQ @ settings,
             task      = Lookup[ settings, "Task" ],
             uuid      = container[ "UUID" ],
-            formatter = getFormattingFunction @ settings
+            formatter = getFormattingFunction @ settings,
+            cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ]
         },
         Cell[
             BoxData @ TagBox[
@@ -1797,6 +1810,7 @@ activeAIAssistantCell[
             ],
             CellDingbat        -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
             CellEditDuplicate  -> False,
+            CellTags           -> cellTags,
             CellTrayWidgets    -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
             CodeAssistOptions  -> { "AutoDetectHyperlinks" -> False },
             Editable           -> True,
@@ -1957,7 +1971,7 @@ writeReformattedCell[ settings_, None, cell_CellObject ] :=
 
 writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
     Block[ { $dynamicText = False },
-        Module[ { tag, scroll, open, label, pageData, uuid, new, output, createTask, info },
+        Module[ { tag, scroll, open, label, pageData, cellTags, uuid, new, output, createTask, info },
 
             tag = ConfirmMatch[
                 Replace[ CurrentValue[ cell, { TaggingRules, "MessageTag" } ], $Failed -> Inherited ],
@@ -1969,8 +1983,9 @@ writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
             open     = $lastOpen = cellOpenQ @ cell;
             label    = RawBoxes @ TemplateBox[ { }, "MinimizedChat" ];
             pageData = CurrentValue[ cell, { TaggingRules, "PageData" } ];
+            cellTags = CurrentValue[ cell, CellTags ];
             uuid     = CreateUUID[ ];
-            new      = reformatCell[ settings, string, tag, open, label, pageData, uuid ];
+            new      = reformatCell[ settings, string, tag, open, label, pageData, cellTags, uuid ];
             output   = CellObject @ uuid;
 
             $lastChatString  = string;
@@ -2068,7 +2083,7 @@ scrollOutput // endDefinition;
 (*reformatCell*)
 reformatCell // beginDefinition;
 
-reformatCell[ settings_, string_, tag_, open_, label_, pageData_, uuid_ ] := UsingFrontEnd @ Enclose[
+reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uuid_ ] := UsingFrontEnd @ Enclose[
     Module[ { formatter, content, rules, dingbat },
 
         formatter = Confirm[ getFormattingFunction @ settings, "GetFormattingFunction" ];
@@ -2103,6 +2118,7 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, uuid_ ] := Usi
             ],
             GeneratedCell     -> True,
             CellAutoOverwrite -> True,
+            CellTags          -> cellTags,
             TaggingRules      -> rules,
             If[ TrueQ[ rules[ "PageData", "PageCount" ] > 1 ],
                 CellDingbat -> Cell[ BoxData @ TemplateBox[ { dingbat }, "AssistantIconTabbed" ], Background -> None ],
@@ -2118,7 +2134,7 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, uuid_ ] := Usi
             ExpressionUUID -> uuid
         ]
     ],
-    throwInternalFailure[ reformatCell[ settings, string, tag, open, label, pageData, uuid ], ## ] &
+    throwInternalFailure
 ];
 
 reformatCell // endDefinition;
