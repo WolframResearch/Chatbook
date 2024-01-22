@@ -3,10 +3,12 @@
 BeginPackage[ "Wolfram`Chatbook`PreferencesContent`" ];
 
 HoldComplete[
+    `$cloudEvaluationNotebook;
     `$preferencesScope;
     `createPreferencesContent;
     `makeModelSelector;
     `makePersonaSelector;
+    `notebookSettingsPanel;
     `openPreferencesPage;
 ];
 
@@ -28,11 +30,19 @@ Needs[ "Wolfram`Chatbook`UI`"               ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
+$preferencesWidth        = 640;
+$cloudEvaluationNotebook = None;
+
 $preferencesPages = { "Notebooks", "Services", "Personas", "Tools" };
 $$preferencesPage = Alternatives @@ $preferencesPages;
 
 $preferencesScope := $FrontEnd;
 $inFrontEndScope  := MatchQ[ OwnValues @ $preferencesScope, { _ :> $FrontEnd|_FrontEndObject } ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Cloud Overrides*)
+$displayedPreferencesPages := $preferencesPages;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -97,16 +107,9 @@ scopedTrackedDynamic // endDefinition;
 (*currentTabPageDynamic*)
 currentTabPageDynamic // beginDefinition;
 
-currentTabPageDynamic[ scope_FrontEndObject ] := Dynamic @ CurrentValue[
-    $FrontEnd,
-    { PrivateFrontEndOptions, "DialogSettings", "Preferences", "TabSettings", "AI", "Top" },
-    "Notebooks"
-];
-
-currentTabPageDynamic[ scope_ ] := Dynamic @ CurrentValue[
-    scope,
-    { TaggingRules, "ChatNotebookSettings", "CurrentPreferencesTab" },
-    "Notebooks"
+currentTabPageDynamic[ scope_ ] := Dynamic[
+    Replace[ CurrentChatSettings[ scope, "CurrentPreferencesTab" ], $$unspecified -> "Notebooks" ],
+    (CurrentChatSettings[ scope, "CurrentPreferencesTab" ] = #1) &
 ];
 
 currentTabPageDynamic // endDefinition;
@@ -116,16 +119,9 @@ currentTabPageDynamic // endDefinition;
 (*currentTabPage*)
 currentTabPage // beginDefinition;
 
-currentTabPage[ scope_FrontEndObject ] := CurrentValue[
-    $FrontEnd,
-    { PrivateFrontEndOptions, "DialogSettings", "Preferences", "TabSettings", "AI", "Top" },
-    "Notebooks"
-];
-
-currentTabPage[ scope_ ] := CurrentValue[
-    scope,
-    { TaggingRules, "ChatNotebookSettings", "CurrentPreferencesTab" },
-    "Notebooks"
+currentTabPage[ scope_ ] := Replace[
+    CurrentChatSettings[ scope, "CurrentPreferencesTab" ],
+    $$unspecified -> "Notebooks"
 ];
 
 currentTabPage // endDefinition;
@@ -141,32 +137,23 @@ currentTabPage // endDefinition;
 createPreferencesContent // beginDefinition;
 
 createPreferencesContent[ ] := Enclose[
-    Module[ { notebookSettings, serviceSettings, personaSettings, toolSettings, tabView, reset },
-
+    Module[ { tabs, tabView, reset },
         (* Retrieve the dynamic content for each preferences tab, confirming that it matches the expected types: *)
-        notebookSettings = ConfirmMatch[ preferencesContent[ "Notebooks" ], _Dynamic | _DynamicModule, "Notebooks" ];
-        serviceSettings  = ConfirmMatch[ preferencesContent[ "Services"  ], _Dynamic | _DynamicModule, "Services"  ];
-        personaSettings  = ConfirmMatch[ preferencesContent[ "Personas"  ], _Dynamic | _DynamicModule, "Personas"  ];
-        toolSettings     = ConfirmMatch[ preferencesContent[ "Tools"     ], _Dynamic | _DynamicModule, "Tools"     ];
+        tabs = ConfirmMatch[ createTabViewTabs[ ], { { _String, _String -> _Dynamic|_DynamicModule }.. }, "Tabs" ];
 
         (* Create a TabView for the preferences content, with the tab state stored in the FE's private options: *)
         tabView = TabView[
-            {
-                { "Notebooks", "Notebooks" -> notebookSettings },
-                { "Services" , "Services"  -> serviceSettings  },
-                { "Personas" , "Personas"  -> personaSettings  },
-                { "Tools"    , "Tools"     -> toolSettings     }
-            },
+            tabs,
             currentTabPageDynamic @ $preferencesScope,
             Background   -> None,
             FrameMargins -> { { 2, 2 }, { 2, 3 } },
             ImageMargins -> { { 10, 10 }, { 2, 2 } },
-            ImageSize    -> { 640, Automatic },
+            ImageSize    -> { $preferencesWidth, Automatic },
             LabelStyle   -> "feTabView" (* Defined in the SystemDialog stylesheet: *)
         ];
 
         (* Create a reset button that will reset preferences to default settings: *)
-        reset = Pane[ $resetButton, ImageMargins -> { { 20, 0 }, { 0, 10 } }, ImageSize -> 640 ];
+        reset = Pane[ $resetButton, ImageMargins -> { { 20, 0 }, { 0, 10 } }, ImageSize -> $preferencesWidth ];
 
         (* Arrange the TabView and reset button in a Grid layout with vertical spacers: *)
         Grid[
@@ -189,6 +176,21 @@ createPreferencesContent[ ] := Enclose[
 ];
 
 createPreferencesContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createTabViewTabs*)
+createTabViewTabs // beginDefinition;
+createTabViewTabs[ ] := createTabViewTabs @ $displayedPreferencesPages;
+createTabViewTabs[ pages: { __String } ] := createTabViewTab /@ pages;
+createTabViewTabs // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createTabViewTab*)
+createTabViewTab // beginDefinition;
+createTabViewTab[ name_String ] := { name, name -> preferencesContent @ name };
+createTabViewTab // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -256,7 +258,7 @@ createNotebookSettingsPanel[ ] := Enclose[
         ];
 
         (* Label for the interface section using a style from SystemDialog.nb: *)
-        interfaceLabel = Style[ "Chat Notebook Cells", "subsectionText" ];
+        interfaceLabel = subsectionText[ "Chat Notebook Cells" ];
 
         (* Retrieve and confirm the content for the chat notebook interface,
            ensuring it is not an error from makeInterfaceContent: *)
@@ -267,7 +269,7 @@ createNotebookSettingsPanel[ ] := Enclose[
         ];
 
         (* Label for the features section using a style from SystemDialog.nb: *)
-        featuresLabel = Style[ "Features", "subsectionText" ];
+        featuresLabel = subsectionText[ "Features" ];
 
         (* Retrieve and confirm the content for the chat notebook features,
            ensuring it is not an error from makeFeaturesContent: *)
@@ -312,7 +314,7 @@ makeDefaultSettingsContent // beginDefinition;
 makeDefaultSettingsContent[ ] := Enclose[
     Module[ { assistanceCheckbox, personaSelector, modelSelector, temperatureInput, openAICompletionURLInput },
         (* Checkbox to enable automatic assistance for normal shift-enter evaluations: *)
-        assistanceCheckbox = ConfirmMatch[ makeAssistanceCheckbox[ ], _Style, "AssistanceCheckbox" ];
+        assistanceCheckbox = ConfirmMatch[ makeAssistanceCheckbox[ ], _Style|Nothing, "AssistanceCheckbox" ];
         (* The personaSelector is a pop-up menu for selecting the default persona: *)
         personaSelector = ConfirmMatch[ makePersonaSelector[ ], _Dynamic, "PersonaSelector" ];
         (* The modelSelector is a dynamic module containing menus to select the service and model separately: *)
@@ -369,18 +371,7 @@ makePersonaSelector0[ personas: { (_String -> _).. } ] :=
         Row @ {
             "Persona:",
             Spacer[ 3 ],
-            PopupMenu[
-                scopedDynamic[
-                    CurrentChatSettings[ $preferencesScope, "LLMEvaluator" ],
-                    Function[
-                        CurrentValue[
-                            $preferencesScope,
-                            { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" }
-                        ] = #1
-                    ]
-                ],
-                personas
-            ]
+            PopupMenu[ scopedDynamic @ CurrentChatSettings[ $preferencesScope, "LLMEvaluator" ], personas ]
         },
         "Notebooks",
         "LLMEvaluator"
@@ -417,7 +408,7 @@ makeModelSelector0[ ] :=
 makeModelSelector0[ services_Association? AssociationQ ] := Enclose[
     DynamicModule[ { default, service, model, state, serviceSelector, modelSelector, highlight },
 
-        default = currentChatSettings[ $preferencesScope, "Model" ];
+        default = CurrentChatSettings[ $preferencesScope, "Model" ];
         service = ConfirmBy[ extractServiceName @ default, StringQ, "ServiceName" ];
         model   = ConfirmBy[ extractModelName @ default  , StringQ, "ModelName"   ];
         state   = If[ modelListCachedQ @ service, "Loaded", "Loading" ];
@@ -449,7 +440,7 @@ makeModelSelector0[ services_Association? AssociationQ ] := Enclose[
                 highlight[
                     "Model:",
                     Dynamic[
-                        If[ state === "Loading", $loadingPopupMenu, modelSelector ],
+                        If[ state === "Loading" || MatchQ[ modelSelector, _Symbol ], $loadingPopupMenu, modelSelector ],
                         TrackedSymbols :> { state, modelSelector }
                     ],
                     "ModelName"
@@ -528,7 +519,7 @@ serviceSelectCallback[
 
     (* Finish loading the model name selector: *)
     If[ state === "Loading",
-        expandScope @ SessionSubmit[
+        expandScope @ If[ $CloudEvaluation, Identity, SessionSubmit ][
             Block[ { $scopePlaceholder := $preferencesScope },
                 modelSelector = makeModelNameSelector[
                     Dynamic @ service,
@@ -595,7 +586,7 @@ makeModelNameSelector[
         fallback = <| "Service" -> service, "Name" -> default |>;
 
         If[ ! MemberQ[ models, KeyValuePattern[ "Name" -> current ] ],
-            CurrentValue[ $preferencesScope, { TaggingRules, "ChatNotebookSettings", "Model" } ] = fallback
+            CurrentChatSettings[ $preferencesScope, "Model" ] = fallback
         ];
 
         With[ { m = fallback },
@@ -603,11 +594,7 @@ makeModelNameSelector[
                 scopedDynamic[
                     Replace[
                         extractModelName @ CurrentChatSettings[ $preferencesScope, "Model" ],
-                        {
-                            Except[ _String ] :> (
-                                CurrentValue[ $preferencesScope, { TaggingRules, "ChatNotebookSettings", "Model" } ] = m
-                            )
-                        }
+                        Except[ _String ] :> (CurrentChatSettings[ $preferencesScope, "Model" ] = m)
                     ],
                     modelSelectCallback[ Dynamic @ service, Dynamic @ model ]
                 ],
@@ -630,7 +617,7 @@ modelNameInputField // beginDefinition;
 
 modelNameInputField[ Dynamic[ service_ ], Dynamic[ model_ ], Dynamic[ modelSelector_ ], Dynamic[ state_ ] ] :=
     prefsInputField[
-        "Model:",
+        None,
         scopedDynamic[
             Replace[
                 extractModelName @ CurrentChatSettings[ $preferencesScope, "Model" ],
@@ -695,15 +682,15 @@ modelSelectCallback[
     ensureServiceName @ service;
     ConfirmAssert[ StringQ @ service, "ServiceName" ];
 
+    (* Store the service/model in FE settings: *)
+    CurrentChatSettings[ $preferencesScope, "Model" ] = <| "Service" -> service, "Name" -> model |>;
+
     (* Remember the selected model for the given service, so it will be automatically chosen
        when choosing this service again: *)
-    CurrentValue[ $preferencesScope, { TaggingRules, "ChatNotebookSettings", "ServiceDefaultModel", service } ] = model;
-
-    (* Store the service/model in FE settings: *)
-    CurrentValue[ $preferencesScope, { TaggingRules, "ChatNotebookSettings", "Model" } ] = <|
-        "Service" -> service,
-        "Name"    -> model
-    |>
+    CurrentChatSettings[ $preferencesScope, "ServiceDefaultModel" ] = Append[
+        CurrentChatSettings[ $preferencesScope, "ServiceDefaultModel" ],
+        service -> model
+    ]
     ,
     throwInternalFailure
 ];
@@ -715,20 +702,24 @@ modelSelectCallback // endDefinition;
 (*makeAssistanceCheckbox*)
 makeAssistanceCheckbox // beginDefinition;
 
-makeAssistanceCheckbox[ ] := highlightControl[
-    prefsCheckbox[
-        scopedDynamic[
-            TrueQ @ CurrentChatSettings[ $preferencesScope, "Assistance" ],
-            (CurrentChatSettings[ $preferencesScope, "Assistance" ] = #1) &
-        ],
-        infoTooltip[
-            "Enable automatic assistance",
-            "If enabled, automatic AI provided suggestions will be added following evaluation results."
+makeAssistanceCheckbox[ ] :=
+    If[ TrueQ @ $cloudNotebooks,
+        Nothing,
+        highlightControl[
+            prefsCheckbox[
+                scopedDynamic[
+                    TrueQ @ CurrentChatSettings[ $preferencesScope, "Assistance" ],
+                    (CurrentChatSettings[ $preferencesScope, "Assistance" ] = #1) &
+                ],
+                infoTooltip[
+                    "Enable automatic assistance",
+                    "If enabled, automatic AI provided suggestions will be added following evaluation results."
+                ]
+            ],
+            "Notebooks",
+            "Assistance"
         ]
-    ],
-    "Notebooks",
-    "Assistance"
-];
+    ];
 
 makeAssistanceCheckbox // endDefinition;
 
@@ -1087,7 +1078,7 @@ servicesSettingsPanel // beginDefinition;
 servicesSettingsPanel[ ] := Enclose[
     Module[ { settingsLabel, settings, serviceGrid },
 
-        settingsLabel = Style[ "Registered Services", "subsectionText" ];
+        settingsLabel = subsectionText[ "Registered Services" ];
         settings      = ConfirmMatch[ makeModelSelector[ ], _Dynamic, "ServicesSettings" ];
         serviceGrid   = ConfirmMatch[ makeServiceGrid[ ], _Grid, "ServiceGrid" ];
 
@@ -1307,10 +1298,21 @@ toolSettingsPanel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*subsectionText*)
+subsectionText // beginDefinition;
+subsectionText[ text_ ] /; $CloudEvaluation := Style[ text, "subsectionText", FontSize -> 16, FontWeight -> "DemiBold" ];
+subsectionText[ text_ ] := Style[ text, "subsectionText" ];
+subsectionText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*prefsInputField*)
 prefsInputField // beginDefinition;
 
 (* cSpell: ignore leadin *)
+prefsInputField[ None, value_Dynamic, type_, opts: OptionsPattern[ ] ] :=
+    prefsInputField0[ value, type, opts ];
+
 prefsInputField[ label_, value_Dynamic, type_, opts: OptionsPattern[ ] ] := Grid[
     { { label, prefsInputField0[ value, type, opts ] } },
     Alignment -> { Automatic, Baseline },
@@ -1342,7 +1344,11 @@ prefsInputField0[ value_Dynamic, type_, opts: OptionsPattern[ ] ] := RawBoxes @ 
         },
         "InputFieldAppearance:RoundedFrame"
     ],
-    FrameBoxOptions -> { BaselinePosition -> Top -> Scaled[ 1.3 ] }
+    (* The following FrameBoxOptions do not work well in cloud, so disable if needed: *)
+    If[ TrueQ @ $CloudEvaluation,
+        Sequence @@ { },
+        FrameBoxOptions -> { BaselinePosition -> Top -> Scaled[ 1.3 ] }
+    ]
 ];
 
 prefsInputField0 // endDefinition;
@@ -1444,42 +1450,35 @@ extractModelName // endDefinition;
 (*getServiceDefaultModel*)
 getServiceDefaultModel // beginDefinition;
 
-getServiceDefaultModel[ selected_String ] := Replace[
-    (* Use the last model name that was selected for this service if it exists: *)
-    CurrentValue[
-        $preferencesScope,
-        { TaggingRules, "ChatNotebookSettings", "ServiceDefaultModel", selected }
-    ],
+getServiceDefaultModel[ service_String ] := Enclose[
+    Module[ { lastSelected, name },
+        (* Get last selected models by service: *)
+        lastSelected = Replace[
+            Association @ CurrentChatSettings[ $preferencesScope, "ServiceDefaultModel" ],
+            Except[ _? AssociationQ ] :> <| |>
+        ];
 
-    (* Otherwise determine a starting model from the registered service: *)
-    $$unspecified :> (
-        CurrentValue[
-            $preferencesScope,
-            { TaggingRules, "ChatNotebookSettings", "ServiceDefaultModel", selected }
-        ] = chooseDefaultModelName @ selected
-    )
+        (* The last model name that was selected for this service (if it exists): *)
+        name = ConfirmMatch[
+            Lookup[ lastSelected, service, Inherited ],
+            _String|Automatic|Inherited,
+            "Name"
+        ];
+
+        (* If the service has not been selected before, choose a default model by service name and save it: *)
+        If[ ! StringQ @ name,
+            name = ConfirmMatch[ chooseDefaultModelName @ service, _String|Automatic, "DefaultName" ];
+            lastSelected[ service ] = name;
+            CurrentChatSettings[ $preferencesScope, "ServiceDefaultModel" ] = lastSelected;
+        ];
+
+        (* Return the name: *)
+        ConfirmMatch[ name, _String|Automatic, "Result" ]
+    ],
+    throwInternalFailure
 ];
 
 getServiceDefaultModel // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsubsection::Closed:: *)
-(*chooseDefaultModelName*)
-(*
-    Choose a default initial model according to the following rules:
-        1. If the service name is the same as the one in $DefaultModel, use the model name in $DefaultModel.
-        2. If the registered service specifies a "DefaultModel" property, we'll use that.
-        3. If the model list is already cached for the service, we'll use the first model in that list.
-        4. Otherwise, give Automatic to indicate a model name that must be resolved later.
-*)
-chooseDefaultModelName // beginDefinition;
-chooseDefaultModelName[ service_String ] /; service === $DefaultModel[ "Service" ] := $DefaultModel[ "Name" ];
-chooseDefaultModelName[ service_String ] := chooseDefaultModelName @ $availableServices @ service;
-chooseDefaultModelName[ KeyValuePattern[ "DefaultModel" -> model_ ] ] := toModelName @ model;
-chooseDefaultModelName[ KeyValuePattern[ "CachedModels" -> models_List ] ] := chooseDefaultModelName @ models;
-chooseDefaultModelName[ { model_, ___ } ] := toModelName @ model;
-chooseDefaultModelName[ service_ ] := Automatic;
-chooseDefaultModelName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1643,33 +1642,29 @@ $resetButton :=
 resetChatPreferences // beginDefinition;
 
 resetChatPreferences[ "Notebooks" ] := expandScope[
-    FrontEndExecute @ FrontEnd`RemoveOptions[
-        $preferencesScope,
-        { LLMEvaluator, { TaggingRules, "ChatNotebookSettings" } }
-    ];
+    CurrentChatSettings[ $preferencesScope ] = Inherited;
     updateDynamics[ "Preferences" ];
 ];
 
-resetChatPreferences[ "Personas" ] :=
-    (* TODO: this won't work when $preferencesScope is something other than $FrontEnd *)
-    With[ { path = Sequence[ PrivateFrontEndOptions, "InterfaceSettings", "Chatbook" ] },
-        (* TODO: choice dialog to uninstall personas *)
-        CurrentValue[ $preferencesScope, { path, "VisiblePersonas"  } ] = $corePersonaNames;
-        CurrentValue[ $preferencesScope, { path, "PersonaFavorites" } ] = $corePersonaNames;
-        resetChatPreferences[ "Notebooks" ];
-    ];
-
-resetChatPreferences[ "Tools" ] := (
-    (* TODO: choice dialog to uninstall tools *)
-    resetChatPreferences[ "Notebooks" ];
+resetChatPreferences[ "Personas" ] := (
+    (* TODO: choice dialog to uninstall personas *)
+    CurrentChatSettings[ $preferencesScope, "VisiblePersonas"  ] = $corePersonaNames;
+    CurrentChatSettings[ $preferencesScope, "PersonaFavorites" ] = $corePersonaNames;
+    updateDynamics[ "Personas" ];
 );
+
+resetChatPreferences[ "Tools" ] := expandScope[
+    CurrentChatSettings[ $preferencesScope, "ToolSelectionType" ] = Inherited;
+    CurrentChatSettings[ $preferencesScope, "ToolSelections"    ] = Inherited;
+    (* TODO: choice dialog to uninstall tools *)
+    updateDynamics[ "Tools" ];
+];
 
 resetChatPreferences[ "Services" ] := (
     (* TODO: choice dialog to clear service connections *)
     Needs[ "LLMServices`" -> None ];
     LLMServices`ResetServices[ ];
     InvalidateServiceCache[ ];
-    resetChatPreferences[ "Notebooks" ];
 );
 
 resetChatPreferences // endDefinition;
@@ -1686,11 +1681,15 @@ openPreferencesPage // beginDefinition;
 openPreferencesPage[ ] :=
     openPreferencesPage[ "Notebooks" ];
 
-openPreferencesPage[ page: $$preferencesPage ] :=
-    NotebookTools`OpenPreferencesDialog @ { "AI", page };
+openPreferencesPage[ page: $$preferencesPage ] := (
+    CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = page;
+    NotebookTools`OpenPreferencesDialog @ { "AI", page }
+);
 
-openPreferencesPage[ page: $$preferencesPage, id_ ] :=
-    NotebookTools`OpenPreferencesDialog[ { "AI", page }, { "AI", page, id } ];
+openPreferencesPage[ page: $$preferencesPage, id_ ] := (
+    CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = page;
+    NotebookTools`OpenPreferencesDialog[ { "AI", page }, { "AI", page, id } ]
+);
 
 openPreferencesPage // endDefinition;
 

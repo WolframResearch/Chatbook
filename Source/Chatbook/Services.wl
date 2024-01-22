@@ -19,10 +19,11 @@ HoldComplete[
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"        ];
-Needs[ "Wolfram`Chatbook`Common`" ];
-Needs[ "Wolfram`Chatbook`Models`" ];
-Needs[ "Wolfram`Chatbook`UI`"     ];
+Needs[ "Wolfram`Chatbook`"          ];
+Needs[ "Wolfram`Chatbook`Common`"   ];
+Needs[ "Wolfram`Chatbook`Dynamics`" ];
+Needs[ "Wolfram`Chatbook`Models`"   ];
+Needs[ "Wolfram`Chatbook`UI`"       ];
 
 $ContextAliases[ "llm`" ] = "LLMServices`";
 
@@ -46,7 +47,7 @@ $llmServicesAvailable := $llmServicesAvailable = (
 (* ::Section::Closed:: *)
 (*InvalidateServiceCache*)
 InvalidateServiceCache // beginDefinition;
-InvalidateServiceCache[ ] := ($serviceCache = None; Null);
+InvalidateServiceCache[ ] := catchAlways[ $serviceCache = None; updateDynamics[ { "Models", "Services" } ]; ];
 InvalidateServiceCache // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -91,9 +92,13 @@ getServiceModelList[ KeyValuePattern[ "Service" -> service_String ] ] :=
 
 getServiceModelList[ service_String ] :=
     With[ { models = $availableServices[ service, "CachedModels" ] },
-        If[ ListQ @ models,
+        Replace[
             models,
-            getServiceModelList[ service, $availableServices[ service ] ]
+            {
+                {  } | None :> Missing[ "NoModelList" ],
+                list_List :> list,
+                _ :> getServiceModelList[ service, $availableServices[ service ] ]
+            }
         ]
     ];
 
@@ -185,7 +190,7 @@ checkModelList // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$availableServices*)
-$availableServices := getAvailableServices[ ];
+$availableServices := Block[ { $availableServices = <| |> }, getAvailableServices[ ] ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

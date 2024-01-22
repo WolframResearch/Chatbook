@@ -4,6 +4,7 @@ BeginPackage[ "Wolfram`Chatbook`CloudToolbar`" ];
 
 HoldComplete[
     `makeChatCloudDockedCellContents;
+    `forceRefreshCloudPreferences;
 ];
 
 Begin[ "`Private`" ];
@@ -14,6 +15,7 @@ Needs[ "Wolfram`Chatbook`Dialogs`"            ];
 Needs[ "Wolfram`Chatbook`Dynamics`"           ];
 Needs[ "Wolfram`Chatbook`PreferencesContent`" ];
 Needs[ "Wolfram`Chatbook`Services`"           ];
+Needs[ "Wolfram`Chatbook`UI`"                 ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -25,6 +27,9 @@ $notebookTypeLabelOptions = Sequence[
     FontWeight -> "DemiBold"
 ];
 
+$buttonHeight     = 20;
+$menuItemIconSize = { 20, 20 };
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Docked Cell Contents*)
@@ -34,142 +39,175 @@ $notebookTypeLabelOptions = Sequence[
 (*makeChatCloudDockedCellContents*)
 makeChatCloudDockedCellContents // beginDefinition;
 
-makeChatCloudDockedCellContents[ ] :=
-    Block[ { $preferencesScope := EvaluationNotebook[ ] },
-        DynamicWrapper[
-            Grid[
-                {
-                    {
-                        Item[ $cloudChatBanner, Alignment -> Left ],
-                        Item[ "", ItemSize -> Fit ],
-                        makePersonaSelector[ ],
-                        cloudModelSelector[ ]
-                    }
-                },
-                Alignment  -> { Left, Baseline },
-                Dividers   -> { { False, False, False, True }, False },
-                Spacings   -> { 2, 0 },
-                BaseStyle  -> { "Text", FontSize -> 14, FontColor -> GrayLevel[ 0.4 ] },
-                FrameStyle -> Directive[ Thickness[ 2 ], GrayLevel[ 0.9 ] ]
-            ],
-            Needs[ "GeneralUtilities`" -> None ];
-            CurrentValue[ EvaluationNotebook[ ], TaggingRules ] =
-                GeneralUtilities`ToAssociations @ Replace[
-                    CurrentValue[ EvaluationNotebook[ ], TaggingRules ],
-                    Except[ KeyValuePattern @ { } ] :> <| |>
-                ]
-        ]
-    ];
+makeChatCloudDockedCellContents[ ] := Grid[
+    {
+        {
+            Item[ $cloudChatBanner, Alignment -> Left ],
+            Item[ "", ItemSize -> Fit ],
+            cloudCellInsertMenu[ ],
+            cloudPreferencesButton[ ]
+        }
+    },
+    Alignment  -> { Left, Center },
+    Spacings   -> { 0.7, 0 },
+    BaseStyle  -> { "Text", FontSize -> 14 },
+    FrameStyle -> Directive[ Thickness[ 2 ], GrayLevel[ 0.9 ] ]
+];
 
 makeChatCloudDockedCellContents // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*cloudModelSelector*)
-cloudModelSelector // beginDefinition;
+(*cloudCellInsertMenu*)
+cloudCellInsertMenu // beginDefinition;
 
-cloudModelSelector[ ] :=
-    DynamicModule[ { serviceSelector, modelSelector },
+cloudCellInsertMenu[ ] := ActionMenu[
+    toolbarButtonLabel @ Row @ { "Insert Chat Cell", Spacer[ 5 ], RawBoxes @ TemplateBox[ { }, "ChatInputIcon" ] },
+    {
+        insertStyleMenuItem[ "ChatInputIcon", "ChatInput", "'" ],
+        insertStyleMenuItem[ "SideChatIcon", "SideChat", "' '" ],
+        insertStyleMenuItem[ "ChatSystemIcon", "ChatSystemInput", "' ' '" ],
+        Delimiter,
+        insertStyleMenuItem[ None, "ChatDelimiter", "~" ],
+        insertStyleMenuItem[ None, "ChatBlockDivider", "~ ~" ]
+    },
+    FrameMargins -> { { 0, 0 }, { 0, 0 } }
+];
 
-        serviceSelector = PopupMenu[
-            Dynamic[
-                Replace[
-                    CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ChatNotebookSettings", "Model" } ],
-                    {
-                        _String|Inherited :> "OpenAI",
-                        KeyValuePattern[ "Service" -> service_String ] :> service,
-                        _ :> Set[
-                            CurrentValue[
-                                EvaluationNotebook[ ],
-                                { TaggingRules, "ChatNotebookSettings", "Model" }
-                            ],
-                            $DefaultModel
-                        ][ "Service" ]
-                    }
-                ],
-                Function[
-                    CurrentValue[
-                        EvaluationNotebook[ ],
-                        { TaggingRules, "ChatNotebookSettings", "Model", "Service" }
-                    ] = #1;
-
-                    CurrentValue[
-                        EvaluationNotebook[ ],
-                        { TaggingRules, "ChatNotebookSettings", "Model", "Name" }
-                    ] = Automatic;
-
-                    cloudModelNameSelector[ Dynamic @ modelSelector, #1 ]
-                ]
-            ],
-            KeyValueMap[
-                #1 -> Row @ { inlineTemplateBoxes[ #2[ "Icon" ] ], Spacer[ 1 ], #2[ "Service" ] } &,
-                $availableServices
-            ]
-        ];
-
-        cloudModelNameSelector[
-            Dynamic @ modelSelector,
-            Replace[
-                CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ChatNotebookSettings", "Model" } ],
-                {
-                    _String|Inherited :> "OpenAI",
-                    KeyValuePattern[ "Service" -> service_String ] :> service,
-                    _ :> Set[
-                        CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ChatNotebookSettings", "Model" } ],
-                        $DefaultModel
-                    ][ "Service" ]
-                }
-            ]
-        ];
-
-        Row @ {
-            "LLM Service: ", serviceSelector,
-            Spacer[ 5 ],
-            "Model: ", Dynamic @ modelSelector
-        }
-    ];
-
-cloudModelSelector // endDefinition;
+cloudCellInsertMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*cloudModelNameSelector*)
-cloudModelNameSelector // beginDefinition;
+(*toolbarButtonLabel*)
+toolbarButtonLabel // beginDefinition;
 
-cloudModelNameSelector[ Dynamic[ modelSelector_ ], service_String ] :=
-    modelSelector = DynamicModule[ { display, models },
-        display = ProgressIndicator[ Appearance -> "Percolate" ];
-        Dynamic[ display ],
-        Initialization :> (
-            models = getServiceModelList @ service;
-            If[ SameQ[
-                    CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ChatNotebookSettings", "Model", "Name" } ],
-                    Automatic
-                ],
-                CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ChatNotebookSettings", "Model", "Name" } ] =
-                    First[ models, <| "Name" -> Automatic |> ][ "Name" ]
-            ];
+toolbarButtonLabel[ label_ ] := Pane[
+    label,
+    ImageSize    -> { Automatic, $buttonHeight },
+    Alignment    -> { Center, Baseline },
+    FrameMargins -> { { 8, 0 }, { 2, 2 } }
+];
 
-            display = PopupMenu[
-                Dynamic[
-                    Replace[
-                        CurrentChatSettings[ EvaluationNotebook[ ], "Model" ],
-                        { KeyValuePattern[ "Name" -> model_String ] :> model, _ :> Automatic }
-                    ],
-                    Function[
-                        CurrentValue[
-                            EvaluationNotebook[ ],
-                            { TaggingRules, "ChatNotebookSettings", "Model", "Name" }
-                        ] = #1
-                    ]
-                ],
-                (#Name -> #DisplayName &) /@ models
-            ]
-        ),
-        SynchronousInitialization -> False
-    ];
+toolbarButtonLabel // endDefinition;
 
-cloudModelNameSelector // endDefinition;
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*insertStyleMenuItem*)
+insertStyleMenuItem // beginDefinition;
+
+insertStyleMenuItem[ icon_String, style_, shortcut_ ] :=
+    insertStyleMenuItem[ chatbookIcon[ icon, False ], style, shortcut ];
+
+insertStyleMenuItem[ None, style_, shortcut_ ] :=
+    insertStyleMenuItem[ Spacer[ 0 ], style, shortcut ];
+
+insertStyleMenuItem[ icon_, style_, shortcut_ ] :=
+    Grid[
+        { {
+            Pane[ icon, ImageSize -> $menuItemIconSize ],
+            Item[ style, ItemSize -> 12 ],
+            Style[ shortcut, FontColor -> GrayLevel[ 0.75 ] ]
+        } },
+        Alignment -> { { Center, Left, Right }, Center }
+    ] :> insertCellStyle @ style;
+
+insertStyleMenuItem // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*insertCellStyle*)
+insertCellStyle // beginDefinition;
+
+insertCellStyle[ style_String ] :=
+    insertCellStyle[ style, EvaluationNotebook[ ] ];
+
+insertCellStyle[ style_String, nbo_NotebookObject ] := Enclose[
+    Module[ { tag, cell, cellObject },
+        tag = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
+        cell = Cell[ "", style, CellTags -> tag ];
+        SelectionMove[ nbo, After, Notebook ];
+        NotebookWrite[ nbo, cell ];
+        cellObject = ConfirmMatch[ First[ Cells[ nbo, CellTags -> tag ], $Failed ], _CellObject, "CellObject" ];
+        If[ style =!= "ChatDelimiter", SelectionMove[ cellObject, Before, CellContents ] ];
+        SetOptions[ cellObject, CellTags -> Inherited ];
+        cellObject
+    ],
+    throwInternalFailure
+];
+
+insertCellStyle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudPreferencesButton*)
+cloudPreferencesButton // beginDefinition;
+
+cloudPreferencesButton[ ] := Button[
+    toolbarButtonLabel @ Row @ { "Chat Settings", Spacer[ 5 ], RawBoxes @ TemplateBox[ { }, "AdvancedSettings" ] },
+    toggleCloudPreferences @ EvaluationNotebook[ ],
+    FrameMargins -> { { 0, 4 }, { 0, 0 } }
+];
+
+cloudPreferencesButton // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toggleCloudPreferences*)
+toggleCloudPreferences // beginDefinition;
+
+toggleCloudPreferences[ nbo_NotebookObject ] :=
+    toggleCloudPreferences[ nbo, Flatten @ List @ CurrentValue[ nbo, DockedCells ] ];
+
+toggleCloudPreferences[ nbo_NotebookObject, { cell_Cell } ] :=
+    SetOptions[ nbo, DockedCells -> { cell, $cloudPreferencesCell } ];
+
+toggleCloudPreferences[ nbo_NotebookObject, { Inherited|$Failed } ] := SetOptions[
+    nbo,
+    DockedCells -> {
+        Cell[ BoxData @ DynamicBox @ ToBoxes @ MakeChatCloudDockedCellContents[ ], Background -> None ],
+        $cloudPreferencesCell
+    }
+];
+
+toggleCloudPreferences[ nbo_NotebookObject, { cell_Cell, _Cell } ] :=
+    SetOptions[ nbo, DockedCells -> { cell } ];
+
+toggleCloudPreferences[ nbo_NotebookObject, _ ] :=
+    SetOptions[ nbo, DockedCells -> Inherited ];
+
+toggleCloudPreferences // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*$cloudPreferencesCell*)
+$cloudPreferencesCell := $cloudPreferencesCell = Cell[
+    BoxData @ ToBoxes @ Pane[
+        Dynamic[
+            Replace[
+                createCloudPreferencesContent[ ],
+                _createCloudPreferencesContent -> ProgressIndicator[ Appearance -> "Percolate" ]
+            ],
+            BaseStyle -> { "Text" }
+        ],
+        ImageSize -> { Scaled[ 1 ], Automatic },
+        Alignment -> { Center, Top }
+    ],
+    Background -> GrayLevel[ 0.95 ]
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createCloudPreferencesContent*)
+createCloudPreferencesContent // beginDefinition;
+createCloudPreferencesContent[ ] := createCloudPreferencesContent[ ] = createPreferencesContent[ ];
+createCloudPreferencesContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudModelSelector*)
+cloudModelSelector // beginDefinition;
+cloudModelSelector[ ] := makeModelSelector[ ];
+cloudModelSelector // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -213,6 +251,27 @@ $chatEnabledNotebookLabel := Grid[
     Alignment -> { Automatic, Center },
     Spacings  -> 0.5
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Utilities*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*forceRefreshCloudPreferences*)
+forceRefreshCloudPreferences // beginDefinition;
+
+forceRefreshCloudPreferences[ ] /; ! TrueQ @ $cloudNotebooks := Null;
+
+forceRefreshCloudPreferences[ ] := forceRefreshCloudPreferences @ EvaluationNotebook[ ];
+
+forceRefreshCloudPreferences[ nbo_NotebookObject ] := (
+    SetOptions[ nbo, DockedCells -> Inherited ];
+    Pause[ 0.5 ];
+    toggleCloudPreferences @ nbo
+);
+
+forceRefreshCloudPreferences // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
