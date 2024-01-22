@@ -27,6 +27,9 @@ $notebookTypeLabelOptions = Sequence[
     FontWeight -> "DemiBold"
 ];
 
+$buttonHeight     = 20;
+$menuItemIconSize = { 20, 20 };
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Docked Cell Contents*)
@@ -41,12 +44,13 @@ makeChatCloudDockedCellContents[ ] := Grid[
         {
             Item[ $cloudChatBanner, Alignment -> Left ],
             Item[ "", ItemSize -> Fit ],
+            cloudCellInsertMenu[ ],
             cloudPreferencesButton[ ]
         }
     },
-    Alignment  -> { Left, Baseline },
-    Spacings   -> { 2, 0 },
-    BaseStyle  -> { "Text", FontSize -> 14, FontColor -> GrayLevel[ 0.4 ] },
+    Alignment  -> { Left, Center },
+    Spacings   -> { 0.7, 0 },
+    BaseStyle  -> { "Text", FontSize -> 14 },
     FrameStyle -> Directive[ Thickness[ 2 ], GrayLevel[ 0.9 ] ]
 ];
 
@@ -54,42 +58,94 @@ makeChatCloudDockedCellContents // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*cloudCellInsertMenu*)
+cloudCellInsertMenu // beginDefinition;
+
+cloudCellInsertMenu[ ] := ActionMenu[
+    toolbarButtonLabel @ Row @ { "Insert Chat Cell", Spacer[ 5 ], RawBoxes @ TemplateBox[ { }, "ChatInputIcon" ] },
+    {
+        insertStyleMenuItem[ "ChatInputIcon", "ChatInput", "'" ],
+        insertStyleMenuItem[ "SideChatIcon", "SideChat", "' '" ],
+        insertStyleMenuItem[ "ChatSystemIcon", "ChatSystemInput", "' ' '" ],
+        Delimiter,
+        insertStyleMenuItem[ None, "ChatDelimiter", "~" ],
+        insertStyleMenuItem[ None, "ChatBlockDivider", "~ ~" ]
+    },
+    FrameMargins -> { { 0, 0 }, { 0, 0 } }
+];
+
+cloudCellInsertMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolbarButtonLabel*)
+toolbarButtonLabel // beginDefinition;
+
+toolbarButtonLabel[ label_ ] := Pane[
+    label,
+    ImageSize    -> { Automatic, $buttonHeight },
+    Alignment    -> { Center, Baseline },
+    FrameMargins -> { { 8, 0 }, { 2, 2 } }
+];
+
+toolbarButtonLabel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*insertStyleMenuItem*)
+insertStyleMenuItem // beginDefinition;
+
+insertStyleMenuItem[ icon_String, style_, shortcut_ ] :=
+    insertStyleMenuItem[ chatbookIcon[ icon, False ], style, shortcut ];
+
+insertStyleMenuItem[ None, style_, shortcut_ ] :=
+    insertStyleMenuItem[ Spacer[ 0 ], style, shortcut ];
+
+insertStyleMenuItem[ icon_, style_, shortcut_ ] :=
+    Grid[
+        { {
+            Pane[ icon, ImageSize -> $menuItemIconSize ],
+            Item[ style, ItemSize -> 12 ],
+            Style[ shortcut, FontColor -> GrayLevel[ 0.75 ] ]
+        } },
+        Alignment -> { { Center, Left, Right }, Center }
+    ] :> insertCellStyle @ style;
+
+insertStyleMenuItem // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*insertCellStyle*)
+insertCellStyle // beginDefinition;
+
+insertCellStyle[ style_String ] :=
+    insertCellStyle[ style, EvaluationNotebook[ ] ];
+
+insertCellStyle[ style_String, nbo_NotebookObject ] := Enclose[
+    Module[ { tag, cell, cellObject },
+        tag = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
+        cell = Cell[ "", style, CellTags -> tag ];
+        SelectionMove[ nbo, After, Notebook ];
+        NotebookWrite[ nbo, cell ];
+        cellObject = ConfirmMatch[ First[ Cells[ nbo, CellTags -> tag ], $Failed ], _CellObject, "CellObject" ];
+        If[ style =!= "ChatDelimiter", SelectionMove[ cellObject, Before, CellContents ] ];
+        SetOptions[ cellObject, CellTags -> Inherited ];
+        cellObject
+    ],
+    throwInternalFailure
+];
+
+insertCellStyle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*cloudPreferencesButton*)
 cloudPreferencesButton // beginDefinition;
 
-cloudPreferencesButton[ ] := Enclose[
-    Module[ { iconTemplate, colorTemplate, buttonLabel, mouseover, buttonIcon, button },
-
-        iconTemplate = ConfirmMatch[
-            chatbookIcon[ "ToolManagerCog", False ],
-            RawBoxes @ TemplateBox[ { }, __ ],
-            "IconTemplate"
-        ];
-
-        colorTemplate = ConfirmMatch[
-            Insert[ iconTemplate, #, { 1, 1, 1 } ],
-            RawBoxes @ TemplateBox[ { _? ColorQ }, __ ],
-            "Colorize"
-        ] &;
-
-        buttonLabel = Grid[
-            { { Style[ "Chat Settings", FontColor -> # ], colorTemplate @ # } },
-            Alignment -> { Left, Baseline }
-        ] &;
-
-        mouseover = Mouseover[ buttonLabel @ GrayLevel[ 0.25 ], buttonLabel @ Hue[ 0.59, 0.9, 0.93 ] ];
-
-        buttonIcon = DeleteCases[
-            mouseover (*/. HoldPattern[ ImageSize -> _ ] :> ImageSize -> { 22, 22 }*),
-            BaselinePosition -> _,
-            Infinity
-        ];
-
-        button = Button[ buttonIcon, toggleCloudPreferences @ EvaluationNotebook[ ], Method -> "Queued" ];
-
-        cloudPreferencesButton[ ] = Pane[ button, FrameMargins -> { { 0, 10 }, { 0, 0 } } ]
-    ],
-    throwInternalFailure
+cloudPreferencesButton[ ] := Button[
+    toolbarButtonLabel @ Row @ { "Chat Settings", Spacer[ 5 ], RawBoxes @ TemplateBox[ { }, "AdvancedSettings" ] },
+    toggleCloudPreferences @ EvaluationNotebook[ ],
+    FrameMargins -> { { 0, 4 }, { 0, 0 } }
 ];
 
 cloudPreferencesButton // endDefinition;
