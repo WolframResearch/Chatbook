@@ -42,11 +42,7 @@ $inFrontEndScope  := MatchQ[ OwnValues @ $preferencesScope, { _ :> $FrontEnd|_Fr
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Cloud Overrides*)
-$displayedPreferencesPages :=
-    If[ $CloudEvaluation,
-        { "Notebooks", "Services", "Personas"(*, "Tools"*) },
-        $preferencesPages
-    ];
+$displayedPreferencesPages := $preferencesPages;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
