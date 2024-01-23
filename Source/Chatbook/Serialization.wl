@@ -868,6 +868,21 @@ fasterCellToString0[ TemplateBox[ args_, ___, InterpretationFunction -> f_, ___ 
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
+(*TeX*)
+fasterCellToString0[ FormBox[
+    StyleBox[ RowBox @ { "L", StyleBox[ AdjustmentBox[ "A", ___ ], ___ ], "T", AdjustmentBox[ "E", ___ ], "X" }, ___ ],
+    TraditionalForm,
+    ___
+] ] := "LaTeX";
+
+fasterCellToString0[ FormBox[
+    StyleBox[ RowBox @ { "T", AdjustmentBox[ "E", ___ ], "X" }, ___ ],
+    TraditionalForm,
+    ___
+] ] := "TeX";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
 (*Math Boxes*)
 
 (* Sqrt *)
