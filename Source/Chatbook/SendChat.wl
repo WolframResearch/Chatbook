@@ -1200,6 +1200,10 @@ chatHistoryCellsAndTarget // endDefinition;
 (* TODO: this could be integrated into currentChatSettings (perhaps as an option) *)
 resolveAutoSettings // beginDefinition;
 
+(* Don't do anything if settings have already been resolved *)
+resolveAutoSettings[ settings: KeyValuePattern[ "ResolvedAutoSettings" -> True ] ] :=
+    settings;
+
 (* Evaluate rhs of RuleDelayed settings to get final value *)
 resolveAutoSettings[ settings: KeyValuePattern[ _ :> _ ] ] :=
     resolveAutoSettings @ AssociationMap[ Apply @ Rule, settings ];
@@ -1209,8 +1213,9 @@ resolveAutoSettings[ settings_Association ] := resolveAutoSettings0 @ <|
     settings,
     "HandlerFunctions"    -> getHandlerFunctions @ settings,
     "LLMEvaluator"        -> getLLMEvaluator @ settings,
-    "ProcessingFunctions" -> getProcessingFunctions @ settings,
     "Model"               -> resolveFullModelSpec @ settings,
+    "ProcessingFunctions"  -> getProcessingFunctions @ settings,
+    "ResolvedAutoSettings" -> True,
     If[ StringQ @ settings[ "Tokenizer" ],
         <|
             "TokenizerName" -> getTokenizerName @ settings,
