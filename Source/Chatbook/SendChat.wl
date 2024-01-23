@@ -6,13 +6,16 @@ BeginPackage[ "Wolfram`Chatbook`SendChat`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-`$debugLog;
-`makeOutputDingbat;
-`multimodalPacletsAvailable;
-`sendChat;
-`toImageURI;
-`toolsEnabledQ;
-`writeReformattedCell;
+HoldComplete[
+    `$debugLog;
+    `makeOutputDingbat;
+    `multimodalPacletsAvailable;
+    `resolveAutoSettings;
+    `sendChat;
+    `toImageURI;
+    `toolsEnabledQ;
+    `writeReformattedCell;
+];
 
 Begin[ "`Private`" ];
 
@@ -67,23 +70,18 @@ $buffer            = "";
 sendChat // beginDefinition;
 
 sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ ChatbookAction ] @ Enclose[
-    Module[ { cells0, cells, target, settings, messages, data, persona, cellTags, cell, cellObject, container, task },
+    Module[ { settings, cells0, cells, target, messages, data, persona, cellTags, cell, cellObject, container, task },
 
         initFETaskWidget @ nbo;
-
         resolveInlineReferences @ evalCell;
-        cells0 = ConfirmMatch[ selectChatCells[ settings0, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
+
+        settings = ConfirmBy[ resolveAutoSettings @ settings0, AssociationQ, "ResolveSettings" ];
+        cells0 = ConfirmMatch[ selectChatCells[ settings, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
 
         { cells, target } = ConfirmMatch[
             chatHistoryCellsAndTarget @ cells0,
             { { __CellObject }, _CellObject | None },
             "HistoryAndTarget"
-        ];
-
-        settings = ConfirmBy[
-            resolveAutoSettings @ currentChatSettings @ evalCell,
-            AssociationQ,
-            "InheritSettings"
         ];
 
         $multimodalMessages = TrueQ @ settings[ "Multimodal" ];
@@ -182,25 +180,20 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
 sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclose[
     Module[
         {
-            cells0, cells, target, settings, id, key, messages, req, data, persona,
+            settings, cells0, cells, target, id, key, messages, req, data, persona,
             cellTags, cell, cellObject, container, task
         },
 
         initFETaskWidget @ nbo;
-
         resolveInlineReferences @ evalCell;
-        cells0 = ConfirmMatch[ selectChatCells[ settings0, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
+
+        settings = ConfirmBy[ resolveAutoSettings @ settings0, AssociationQ, "ResolveSettings" ];
+        cells0 = ConfirmMatch[ selectChatCells[ settings, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
 
         { cells, target } = ConfirmMatch[
             chatHistoryCellsAndTarget @ cells0,
             { { __CellObject }, _CellObject | None },
             "HistoryAndTarget"
-        ];
-
-        settings = ConfirmBy[
-            resolveAutoSettings @ currentChatSettings @ evalCell,
-            AssociationQ,
-            "InheritSettings"
         ];
 
         $multimodalMessages = TrueQ @ settings[ "Multimodal" ];
@@ -1210,6 +1203,10 @@ chatHistoryCellsAndTarget // endDefinition;
 (* TODO: this could be integrated into currentChatSettings (perhaps as an option) *)
 resolveAutoSettings // beginDefinition;
 
+(* Don't do anything if settings have already been resolved *)
+resolveAutoSettings[ settings: KeyValuePattern[ "ResolvedAutoSettings" -> True ] ] :=
+    settings;
+
 (* Evaluate rhs of RuleDelayed settings to get final value *)
 resolveAutoSettings[ settings: KeyValuePattern[ _ :> _ ] ] :=
     resolveAutoSettings @ AssociationMap[ Apply @ Rule, settings ];
@@ -1217,10 +1214,11 @@ resolveAutoSettings[ settings: KeyValuePattern[ _ :> _ ] ] :=
 (* Add additional settings and resolve actual LLMTool expressions *)
 resolveAutoSettings[ settings_Association ] := resolveAutoSettings0 @ <|
     settings,
-    "HandlerFunctions"    -> getHandlerFunctions @ settings,
-    "LLMEvaluator"        -> getLLMEvaluator @ settings,
-    "ProcessingFunctions" -> getProcessingFunctions @ settings,
-    "Model"               -> resolveFullModelSpec @ settings,
+    "HandlerFunctions"     -> getHandlerFunctions @ settings,
+    "LLMEvaluator"         -> getLLMEvaluator @ settings,
+    "Model"                -> resolveFullModelSpec @ settings,
+    "ProcessingFunctions"  -> getProcessingFunctions @ settings,
+    "ResolvedAutoSettings" -> True,
     If[ StringQ @ settings[ "Tokenizer" ],
         <|
             "TokenizerName" -> getTokenizerName @ settings,
@@ -1255,6 +1253,7 @@ resolveAutoSetting[ settings_, key_ -> value_ ] := <| settings, key -> resolveAu
 resolveAutoSetting // endDefinition;
 
 resolveAutoSetting0 // beginDefinition;
+resolveAutoSetting0[ as_, "Assistance"                ] := False;
 resolveAutoSetting0[ as_, "DynamicAutoFormat"         ] := dynamicAutoFormatQ @ as;
 resolveAutoSetting0[ as_, "EnableLLMServices"         ] := $useLLMServices;
 resolveAutoSetting0[ as_, "HandlerFunctionsKeys"      ] := chatHandlerFunctionsKeys @ as;

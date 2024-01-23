@@ -404,7 +404,7 @@ EvaluateChatInput[ source: _CellObject | $Failed ] :=
     ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
-    EvaluateChatInput[ evalCell, nbo, currentChatSettings @ nbo ];
+    EvaluateChatInput[ evalCell, nbo, currentChatSettings @ evalCell ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
     withChatState @ Block[ { $autoAssistMode = False, $aborted = False },
@@ -1117,7 +1117,7 @@ SendChat[ evalCell_CellObject ] := SendChat[ evalCell, parentNotebook @ evalCell
 SendChat[ evalCell_CellObject, nbo_NotebookObject? queuedEvaluationsQ ] := Null;
 
 SendChat[ evalCell_CellObject, nbo_NotebookObject ] :=
-    SendChat[ evalCell, nbo, currentChatSettings @ nbo ];
+    SendChat[ evalCell, nbo, currentChatSettings @ evalCell ];
 
 SendChat[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
     SendChat[ evalCell, nbo, settings, Lookup[ settings, "ShowMinimized", Automatic ] ];
