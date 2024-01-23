@@ -19,6 +19,7 @@ Needs[ "Wolfram`Chatbook`"              ];
 Needs[ "Wolfram`Chatbook`ChatMessages`" ];
 Needs[ "Wolfram`Chatbook`Common`"       ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"     ];
+Needs[ "Wolfram`Chatbook`SendChat`"     ];
 Needs[ "Wolfram`Chatbook`Settings`"     ];
 
 (* ::**************************************************************************************************************:: *)
@@ -69,6 +70,7 @@ GetChatHistory[ cell_CellObject, property: $$historyProperty ] := catchMine @ En
         { cells, data } = Reap[ getCellsInChatHistory @ cell, $chatHistoryTag ];
         ConfirmMatch[ cells, { ___CellObject }, "CellObjects" ];
         as = ConfirmBy[ <| data, "CellObjects" -> cells |>, AssociationQ, "Data" ];
+        If[ KeyExistsQ[ as, "Settings" ], as[ "Settings" ] = resolveAutoSettings @ as[ "Settings" ] ];
         ConfirmMatch[ selectProperties[ as, property ], Except[ _selectProperties ], "SelectedProperties" ]
     ],
     throwInternalFailure[ GetChatHistory[ cell, property ], ## ] &
@@ -87,7 +89,7 @@ selectProperties[ as_Association, prop_String ] /; KeyExistsQ[ as, prop ] := as[
 selectProperties[ as_Association, "ChatHistoryLength" ] := as[ "Settings", "ChatHistoryLength" ];
 selectProperties[ as_Association, "IncludeHistory" ] := as[ "Settings", "IncludeHistory" ];
 selectProperties[ as_Association, "Cells" ] := getCellExpressions @ as;
-selectProperties[ as_Association, "Messages" ] := constructMessages[ as, as[ "CellObjects" ] ];
+selectProperties[ as_Association, "Messages" ] := constructMessages[ as[ "Settings" ], as[ "CellObjects" ] ];
 selectProperties // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

@@ -6,13 +6,16 @@ BeginPackage[ "Wolfram`Chatbook`SendChat`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-`$debugLog;
-`makeOutputDingbat;
-`multimodalPacletsAvailable;
-`sendChat;
-`toImageURI;
-`toolsEnabledQ;
-`writeReformattedCell;
+HoldComplete[
+    `$debugLog;
+    `makeOutputDingbat;
+    `multimodalPacletsAvailable;
+    `resolveAutoSettings;
+    `sendChat;
+    `toImageURI;
+    `toolsEnabledQ;
+    `writeReformattedCell;
+];
 
 Begin[ "`Private`" ];
 
@@ -1211,9 +1214,9 @@ resolveAutoSettings[ settings: KeyValuePattern[ _ :> _ ] ] :=
 (* Add additional settings and resolve actual LLMTool expressions *)
 resolveAutoSettings[ settings_Association ] := resolveAutoSettings0 @ <|
     settings,
-    "HandlerFunctions"    -> getHandlerFunctions @ settings,
-    "LLMEvaluator"        -> getLLMEvaluator @ settings,
-    "Model"               -> resolveFullModelSpec @ settings,
+    "HandlerFunctions"     -> getHandlerFunctions @ settings,
+    "LLMEvaluator"         -> getLLMEvaluator @ settings,
+    "Model"                -> resolveFullModelSpec @ settings,
     "ProcessingFunctions"  -> getProcessingFunctions @ settings,
     "ResolvedAutoSettings" -> True,
     If[ StringQ @ settings[ "Tokenizer" ],
