@@ -892,7 +892,10 @@ serializeTraditionalForm[ box: FormBox[ inner_, ___ ] ] := serializeTraditionalF
     Module[ { string },
         string = Quiet @ ExportString[ Cell @ BoxData @ box, "TeXFragment" ];
         If[ StringQ @ string && StringMatchQ[ string, "\\("~~__~~"\\)"~~WhitespaceCharacter... ],
-            StringReplace[ StringTrim @ string, StartOfString~~"\\("~~math__~~"\\)"~~EndOfString :> "$$"<>math<>"$$" ],
+            fixLineEndings @ StringReplace[
+                StringTrim @ string,
+                StartOfString~~"\\("~~math__~~"\\)"~~EndOfString :> "$$"<>math<>"$$"
+            ],
             fasterCellToString0 @ inner
         ]
     ];
