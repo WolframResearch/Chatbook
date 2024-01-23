@@ -128,6 +128,7 @@ $basePromptComponents[ "MathExpressions" ] = "\
 * Write math expressions using LaTeX and surround them with dollar signs: $$x^2 + y^2$$";
 
 $basePromptComponents[ "EscapedCharacters" ] = "\
+* If your response contains currency in dollars, write with an escaped dollar sign: \\$99.95.
 * IMPORTANT! Whenever you write a literal backtick (`) or dollar sign ($) in text, ALWAYS escape it with a backslash. \
 Example: It costs me \\$99.95 every time you forget to escape \\` or \\$ properly!";
 
