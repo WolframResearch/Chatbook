@@ -137,6 +137,9 @@ makeResultCell0[ codeBlockCell[ language_String, code_String ] ] :=
 
 makeResultCell0[ inlineCodeCell[ code_String ] ] := makeInlineCodeCell @ code;
 
+makeResultCell0[ mathCell[ math_String ] ] /; StringMatchQ[ math, (DigitCharacter|"."|","|" ").. ] :=
+    math;
+
 makeResultCell0[ mathCell[ math_String ] ] :=
     With[ { boxes = Quiet @ InputAssistant`TeXAssistant @ StringTrim @ math },
         If[ MatchQ[ boxes, _RawBoxes ],
