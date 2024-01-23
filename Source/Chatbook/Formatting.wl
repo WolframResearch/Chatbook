@@ -677,7 +677,7 @@ $textDataFormatRules = {
     "$$" ~~ math: Except[ "$" ].. ~~ "$$" :> mathCell @ math,
     "\\(" ~~ math__ ~~ "\\)" /; StringFreeQ[ math, "\\)" ] :> mathCell @ math,
     "\\[" ~~ math__ ~~ "\\]" /; StringFreeQ[ math, "\\]" ] :> mathCell @ math,
-    "$" ~~ math: Except[ "$" ].. ~~ "$" :> mathCell @ math
+    "$" ~~ math: Except[ "$" ].. ~~ "$" /; probablyMathQ @ math :> mathCell @ math
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -1615,6 +1615,19 @@ nameQ[ ___ ] := False;
 (*inlineSyntaxQ*)
 inlineSyntaxQ[ s_String ] := ! StringStartsQ[ s, "`" ] && Internal`SymbolNameQ[ unescapeInlineMarkdown @ s<>"x", True ];
 inlineSyntaxQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*probablyMathQ*)
+probablyMathQ[ s_String ] := And[
+    StringFreeQ[ s, "\n" ],
+    StringLength @ s < 100,
+    Or[ StringMatchQ[ s, (LetterCharacter|DigitCharacter|"("|")").. ],
+        StringContainsQ[ s, "+" | "-" | "=" | "^" | ("\\" ~~ WordCharacter..) ]
+    ]
+];
+
+probablyMathQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
