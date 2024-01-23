@@ -150,7 +150,6 @@ $$graphicsBox = $graphicsHeads[ ___ ] | TemplateBox[ _, "Legended", ___ ];
 $stringStripHeads = Alternatives[
     ButtonBox,
     CellGroupData,
-    FormBox,
     FrameBox,
     ItemBox,
     PaneBox,
@@ -840,7 +839,7 @@ fasterCellToString0[
 (* TeXAssistantTemplate *)
 fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> string_ ], "TeXAssistantTemplate" ] ] := (
     needsBasePrompt[ "Math" ];
-    "$" <> string <> "$"
+    "$$" <> string <> "$$"
 );
 
 (* Inline WL code template *)
@@ -865,6 +864,43 @@ fasterCellToString0[ TemplateBox[ { args___ }, ___, InterpretationFunction -> f_
 
 fasterCellToString0[ TemplateBox[ args_, ___, InterpretationFunction -> f_, ___ ] ] :=
     fasterCellToString0 @ f @ args;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*TeX*)
+fasterCellToString0[ FormBox[
+    StyleBox[ RowBox @ { "L", StyleBox[ AdjustmentBox[ "A", ___ ], ___ ], "T", AdjustmentBox[ "E", ___ ], "X" }, ___ ],
+    TraditionalForm,
+    ___
+] ] := "LaTeX";
+
+fasterCellToString0[ FormBox[
+    StyleBox[ RowBox @ { "T", AdjustmentBox[ "E", ___ ], "X" }, ___ ],
+    TraditionalForm,
+    ___
+] ] := "TeX";
+
+fasterCellToString0[ box: FormBox[ _, TraditionalForm, ___ ] ] :=
+    serializeTraditionalForm @ box;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*serializeTraditionalForm*)
+serializeTraditionalForm // beginDefinition;
+
+serializeTraditionalForm[ box: FormBox[ inner_, ___ ] ] := serializeTraditionalForm[ box ] =
+    Module[ { string },
+        string = Quiet @ ExportString[ Cell @ BoxData @ box, "TeXFragment" ];
+        If[ StringQ @ string && StringMatchQ[ string, "\\("~~__~~"\\)"~~WhitespaceCharacter... ],
+            fixLineEndings @ StringReplace[
+                StringTrim @ string,
+                StartOfString~~"\\("~~math__~~"\\)"~~EndOfString :> "$$"<>math<>"$$"
+            ],
+            fasterCellToString0 @ inner
+        ]
+    ];
+
+serializeTraditionalForm // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -1149,6 +1185,7 @@ fasterCellToString0[ DynamicModuleBox[ a___ ] ] /; ! TrueQ @ $CellToStringDebug 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Ignored/Skipped*)
+fasterCellToString0[ FormBox[ box_, ___ ] ] := fasterCellToString0 @ box;
 fasterCellToString0[ $ignoredBoxPatterns ] := "";
 fasterCellToString0[ $stringStripHeads[ a_, ___ ] ] := fasterCellToString0 @ a;
 
