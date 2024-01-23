@@ -1250,6 +1250,7 @@ resolveAutoSetting[ settings_, key_ -> value_ ] := <| settings, key -> resolveAu
 resolveAutoSetting // endDefinition;
 
 resolveAutoSetting0 // beginDefinition;
+resolveAutoSetting0[ as_, "Assistance"                ] := False;
 resolveAutoSetting0[ as_, "DynamicAutoFormat"         ] := dynamicAutoFormatQ @ as;
 resolveAutoSetting0[ as_, "EnableLLMServices"         ] := $useLLMServices;
 resolveAutoSetting0[ as_, "HandlerFunctionsKeys"      ] := chatHandlerFunctionsKeys @ as;
