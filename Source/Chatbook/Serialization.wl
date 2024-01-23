@@ -840,7 +840,7 @@ fasterCellToString0[
 (* TeXAssistantTemplate *)
 fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> string_ ], "TeXAssistantTemplate" ] ] := (
     needsBasePrompt[ "Math" ];
-    "$" <> string <> "$"
+    "$$" <> string <> "$$"
 );
 
 (* Inline WL code template *)
