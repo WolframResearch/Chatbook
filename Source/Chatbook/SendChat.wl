@@ -67,23 +67,18 @@ $buffer            = "";
 sendChat // beginDefinition;
 
 sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ ChatbookAction ] @ Enclose[
-    Module[ { cells0, cells, target, settings, messages, data, persona, cellTags, cell, cellObject, container, task },
+    Module[ { settings, cells0, cells, target, messages, data, persona, cellTags, cell, cellObject, container, task },
 
         initFETaskWidget @ nbo;
-
         resolveInlineReferences @ evalCell;
-        cells0 = ConfirmMatch[ selectChatCells[ settings0, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
+
+        settings = ConfirmBy[ resolveAutoSettings @ settings0, AssociationQ, "ResolveSettings" ];
+        cells0 = ConfirmMatch[ selectChatCells[ settings, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
 
         { cells, target } = ConfirmMatch[
             chatHistoryCellsAndTarget @ cells0,
             { { __CellObject }, _CellObject | None },
             "HistoryAndTarget"
-        ];
-
-        settings = ConfirmBy[
-            resolveAutoSettings @ currentChatSettings @ evalCell,
-            AssociationQ,
-            "InheritSettings"
         ];
 
         $multimodalMessages = TrueQ @ settings[ "Multimodal" ];
@@ -182,25 +177,20 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
 sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclose[
     Module[
         {
-            cells0, cells, target, settings, id, key, messages, req, data, persona,
+            settings, cells0, cells, target, id, key, messages, req, data, persona,
             cellTags, cell, cellObject, container, task
         },
 
         initFETaskWidget @ nbo;
-
         resolveInlineReferences @ evalCell;
-        cells0 = ConfirmMatch[ selectChatCells[ settings0, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
+
+        settings = ConfirmBy[ resolveAutoSettings @ settings0, AssociationQ, "ResolveSettings" ];
+        cells0 = ConfirmMatch[ selectChatCells[ settings, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
 
         { cells, target } = ConfirmMatch[
             chatHistoryCellsAndTarget @ cells0,
             { { __CellObject }, _CellObject | None },
             "HistoryAndTarget"
-        ];
-
-        settings = ConfirmBy[
-            resolveAutoSettings @ currentChatSettings @ evalCell,
-            AssociationQ,
-            "InheritSettings"
         ];
 
         $multimodalMessages = TrueQ @ settings[ "Multimodal" ];
