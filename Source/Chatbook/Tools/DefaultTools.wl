@@ -854,7 +854,7 @@ Out[n]= Piecewise[...]
 ![Formatted Result](expression://content-{id})
 
 [assistant]
-The half-order fractional derivative of $x^n$ with respect to $x$ is given by:
+The half-order fractional derivative of $$x^n$$ with respect to $$x$$ is given by:
 ![Fractional Derivative](expression://content-{id})
 ";
 
@@ -875,7 +875,7 @@ Plot sin(x) from -5 to 5
 Out[n]= ![image](attachment://content-{id})
 
 [assistant]
-Here's the plot of $\\sin{x}$ from -5 to 5:
+Here's the plot of $$\\sin{x}$$ from -5 to 5:
 ![Plot](attachment://content-{id})"
 ];
 
