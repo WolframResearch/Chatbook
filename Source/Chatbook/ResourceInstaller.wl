@@ -712,32 +712,36 @@ getInstalledResourceData[ rtype_ ] :=
     ];
 
 getInstalledResourceData[ rtype: $$installableType ] := Enclose[
-    Module[ { data },
+    Module[ { tempHold, data, held, merged, released },
+        tempHold // Attributes = { Temporary, HoldAllComplete };
         data = ConfirmMatch[ getInstalledResources @ rtype, { ___Association }, "GetInstalledResources" ];
-        Block[ { TemplateObject, CloudObject },
-            SetAttributes[ TemplateObject, HoldAllComplete ];
-            $installedResourceCache[ rtype ] = KeySort @ Association @ Cases[
-                data,
-                KeyValuePattern @ {
-                    "Name"                -> name_String,
-                    "Configuration"       -> config_Association,
-                    "ResourceInformation" -> resourceAssoc_Association
-                } :>
-                    name -> Merge[
-                        {
-                            config,
-                            KeyDrop[ resourceAssoc, "Name" ],
-                            <|
-                                "Name"         -> name,
-                                "ResourceType" -> rtype,
-                                "ResourceName" -> Lookup[ resourceAssoc, "Name", name ],
-                                "Origin"       -> determineOrigin[ rtype, resourceAssoc ]
-                            |>
-                        },
-                        First
-                    ]
-            ]
-        ]
+        held = data /. expr: Except[ _List | _Association | _String | _Symbol ] :> tempHold @ expr;
+
+        merged = KeySort @ Association @ Cases[
+            held,
+            KeyValuePattern @ {
+                "Name"                -> name_String,
+                "Configuration"       -> config_Association,
+                "ResourceInformation" -> resourceAssoc_Association
+            } :>
+                name -> Merge[
+                    {
+                        config,
+                        KeyDrop[ resourceAssoc, "Name" ],
+                        <|
+                            "Name"         -> name,
+                            "ResourceType" -> rtype,
+                            "ResourceName" -> Lookup[ resourceAssoc, "Name", name ],
+                            "Origin"       -> determineOrigin[ rtype, resourceAssoc ]
+                        |>
+                    },
+                    First
+                ]
+        ];
+
+        released = ConfirmBy[ merged /. tempHold[ expr_ ] :> expr, FreeQ @ tempHold, "Release" ];
+
+        $installedResourceCache[ rtype ] = released
     ],
     throwInternalFailure[ getInstalledResourceData @ rtype, ## ] &
 ];
