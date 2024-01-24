@@ -386,6 +386,9 @@ waResultText0[ as: KeyValuePattern @ { "Title" -> title_String, "Data" -> data_ 
 waResultText0[ as: KeyValuePattern[ _Integer -> _ ] ] :=
     waResultText0 /@ Values @ KeySort @ KeySelect[ as, IntegerQ ];
 
+waResultText0[ KeyValuePattern @ { "Content"|"ComputableData" -> expr_ } ] /;
+    ! FreeQ[ Unevaluated @ expr, _Missing ] := Nothing;
+
 waResultText0[ KeyValuePattern @ { "Plaintext" -> text_String, "ComputableData" -> Hold[ expr_ ] } ] :=
     If[ ByteCount @ Unevaluated @ expr >= 500,
         If[ StringFreeQ[ text, "["|"]"|"\n" ],
@@ -851,7 +854,7 @@ Out[n]= Piecewise[...]
 ![Formatted Result](expression://content-{id})
 
 [assistant]
-The half-order fractional derivative of $x^n$ with respect to $x$ is given by:
+The half-order fractional derivative of $$x^n$$ with respect to $$x$$ is given by:
 ![Fractional Derivative](expression://content-{id})
 ";
 
@@ -872,7 +875,7 @@ Plot sin(x) from -5 to 5
 Out[n]= ![image](attachment://content-{id})
 
 [assistant]
-Here's the plot of $\\sin{x}$ from -5 to 5:
+Here's the plot of $$\\sin{x}$$ from -5 to 5:
 ![Plot](attachment://content-{id})"
 ];
 
