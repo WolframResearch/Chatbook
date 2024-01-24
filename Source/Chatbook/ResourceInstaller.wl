@@ -482,6 +482,7 @@ resourceInstall // endDefinition;
 (*postInstall*)
 postInstall // beginDefinition;
 postInstall[ "Prompt", info_ ] := addToVisiblePersonas @ resourceName @ info;
+postInstall[ "LLMTool", info_ ] := enableTool @ resourceName @ info;
 postInstall[ rtype_, info_ ] := Null;
 postInstall // endDefinition;
 
@@ -490,18 +491,32 @@ postInstall // endDefinition;
 (*addToVisiblePersonas*)
 addToVisiblePersonas // beginDefinition;
 
-addToVisiblePersonas[ name_String ] := Set[
-    CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas" } ],
+addToVisiblePersonas[ name_String ] := CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ] =
     Union @ Append[
         Replace[
-            CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas" } ],
+            CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ],
             Except[ _List ] :> { }
         ],
         name
-    ]
-];
+    ];
 
 addToVisiblePersonas // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*enableTool*)
+enableTool // beginDefinition;
+
+enableTool[ name_String ] := CurrentChatSettings[ $FrontEnd, "ToolSelectionType" ] =
+    Append[
+        Replace[
+            Association @ CurrentChatSettings[ $FrontEnd, "ToolSelectionType" ],
+            Except[ _? AssociationQ ] :> <| |>
+        ],
+        name -> All
+    ];
+
+enableTool // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
