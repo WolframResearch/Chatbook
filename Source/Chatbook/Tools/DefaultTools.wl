@@ -386,6 +386,9 @@ waResultText0[ as: KeyValuePattern @ { "Title" -> title_String, "Data" -> data_ 
 waResultText0[ as: KeyValuePattern[ _Integer -> _ ] ] :=
     waResultText0 /@ Values @ KeySort @ KeySelect[ as, IntegerQ ];
 
+waResultText0[ KeyValuePattern @ { "Content"|"ComputableData" -> expr_ } ] /;
+    ! FreeQ[ Unevaluated @ expr, _Missing ] := Nothing;
+
 waResultText0[ KeyValuePattern @ { "Plaintext" -> text_String, "ComputableData" -> Hold[ expr_ ] } ] :=
     If[ ByteCount @ Unevaluated @ expr >= 500,
         If[ StringFreeQ[ text, "["|"]"|"\n" ],
