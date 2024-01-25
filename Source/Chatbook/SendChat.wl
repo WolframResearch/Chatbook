@@ -1654,9 +1654,14 @@ createNewChatOutput // endDefinition;
 prepareChatOutputPage // beginDefinition;
 
 prepareChatOutputPage[ target_CellObject, cell_Cell ] := Enclose[
-    Module[ { prevCellExpr, prevPage, encoded, pageData, newCellObject },
+    Catch @ Module[ { prevCellExpr, prevPage, encoded, pageData, newCellObject },
 
-        prevCellExpr = ConfirmMatch[ NotebookRead @ target, _Cell, "NotebookRead" ];
+        prevCellExpr = ConfirmMatch[ NotebookRead @ target, _Cell | $Failed, "NotebookRead" ];
+
+        If[ FailureQ @ prevCellExpr,
+            (* The target cell is gone, so just create a new one instead of trying to page outputs: *)
+            Throw @ cellPrint @ cell
+        ];
 
         prevPage = ConfirmMatch[
             Replace[ First @ prevCellExpr, text_String :> TextData @ { text } ],
@@ -1691,7 +1696,7 @@ prepareChatOutputPage[ target_CellObject, cell_Cell ] := Enclose[
         CurrentValue[ newCellObject, { TaggingRules, "PageData" } ] = pageData;
         newCellObject
     ],
-    throwInternalFailure[ prepareChatOutputPage[ target, cell ], ## ] &
+    throwInternalFailure
 ];
 
 prepareChatOutputPage // endDefinition;
