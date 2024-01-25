@@ -73,6 +73,18 @@ $ResourceInstallationDirectory := GeneralUtilities`EnsureDirectory @ {
 $$installableType = Alternatives @@ $installableTypes;
 $$resourceContext = Alternatives @@ $resourceContexts;
 
+$$notHeld = Alternatives[
+    _Association, _File, _Function, _List, _Missing, _String, _URL,
+    All, Association, Automatic, False, File, Function, List, Missing, None, String, True, URL
+];
+
+tempHold // Attributes = { HoldAllComplete };
+held[ expr_ ] := HoldPattern[ tempHold @ expr | expr ];
+
+$$cloudObject = held[ _CloudObject ];
+$$localObject = held[ _LocalObject ];
+$$url         = held[ _URL ];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*ResourceUninstall*)
@@ -727,10 +739,9 @@ getInstalledResourceData[ rtype_ ] :=
     ];
 
 getInstalledResourceData[ rtype: $$installableType ] := Enclose[
-    Module[ { tempHold, data, held, merged, released },
-        tempHold // Attributes = { Temporary, HoldAllComplete };
+    Module[ { data, held, merged, released },
         data = ConfirmMatch[ getInstalledResources @ rtype, { ___Association }, "GetInstalledResources" ];
-        held = data /. expr: Except[ _List | _Association | _String | _Symbol ] :> tempHold @ expr;
+        held = data /. expr: Except[ $$notHeld ] :> tempHold @ expr;
 
         merged = KeySort @ Association @ Cases[
             held,
@@ -758,7 +769,7 @@ getInstalledResourceData[ rtype: $$installableType ] := Enclose[
 
         $installedResourceCache[ rtype ] = released
     ],
-    throwInternalFailure[ getInstalledResourceData @ rtype, ## ] &
+    throwInternalFailure
 ];
 
 getInstalledResourceData // endDefinition;
@@ -781,11 +792,11 @@ getResourceFile // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*determineOrigin*)
 determineOrigin // beginDefinition;
-determineOrigin[ rtype: $$installableType, KeyValuePattern[ "RepositoryLocation" -> _URL ] ] := rtype<>"Repository";
-determineOrigin[ rtype_, KeyValuePattern[ "RepositoryLocation" -> _LocalObject ] ] := "Local";
-determineOrigin[ rtype_, KeyValuePattern[ "ResourceLocations" -> { _LocalObject } ] ] := "Local";
-determineOrigin[ rtype_, KeyValuePattern[ "ResourceLocations" -> { _CloudObject } ] ] := "Cloud";
-determineOrigin[ rtype_, KeyValuePattern[ "DocumentationLink" -> _URL ] ] := "Cloud";
+determineOrigin[ rtype: $$installableType, KeyValuePattern[ "RepositoryLocation" -> $$url ] ] := rtype<>"Repository";
+determineOrigin[ rtype_, KeyValuePattern[ "RepositoryLocation" -> $$localObject ] ] := "Local";
+determineOrigin[ rtype_, KeyValuePattern[ "ResourceLocations" -> { $$localObject } ] ] := "Local";
+determineOrigin[ rtype_, KeyValuePattern[ "ResourceLocations" -> { $$cloudObject } ] ] := "Cloud";
+determineOrigin[ rtype_, KeyValuePattern[ "DocumentationLink" -> $$url ] ] := "Cloud";
 determineOrigin[ rtype: $$installableType, _Association ] := "Unknown";
 determineOrigin // endDefinition;
 
