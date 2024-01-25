@@ -31,6 +31,12 @@ HoldComplete[
 *)
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Argument Patterns*)
+$$llmTool  = HoldPattern[ _LLMTool ];
+$$llmToolH = HoldPattern[ LLMTool ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Tool Lists*)
 $DefaultTools   := $defaultChatTools;
 $InstalledTools := $installedTools;
@@ -115,6 +121,15 @@ $installedToolExtraKeys = {
     "Version"
 };
 
+$autoAppearanceRules = <|
+    "DocumentationLink"  -> None,
+    "FormattingFunction" -> Automatic,
+    "Icon"               -> $defaultToolIcon,
+    "Origin"             -> "Unknown"
+|>;
+
+$appearanceRulesKeys = Keys @ $autoAppearanceRules;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Default Tools*)
@@ -155,7 +170,7 @@ getToolByName // endDefinition;
 (*toolName*)
 toolName // beginDefinition;
 toolName[ tool_ ] := toolName[ tool, Automatic ];
-toolName[ HoldPattern @ LLMTool[ as_Association, ___ ], type_ ] := toolName[ as, type ];
+toolName[ tool: $$llmTool, type_ ] := toolName[ tool type ] = toolName[ toolData @ tool, type ];
 toolName[ KeyValuePattern[ "CanonicalName" -> name_String ], "Canonical" ] := name;
 toolName[ KeyValuePattern[ "DisplayName" -> name_String ], "Display" ] := name;
 toolName[ KeyValuePattern[ "Name" -> name_String ], type_ ] := toolName[ name, type ];
@@ -171,8 +186,8 @@ toolName // endDefinition;
 (*toolData*)
 toolData // beginDefinition;
 
-toolData[ HoldPattern @ LLMTool[ as_Association, ___ ] ] :=
-    toolData @ as;
+toolData[ tool: $$llmToolH[ as_Association, ___ ] ] := toolData[ tool ] =
+    toolData @ <| toolAppearanceRules @ tool, as |>;
 
 toolData[ name_String ] /; KeyExistsQ[ $toolBox, name ] :=
     toolData @ $toolBox[ name ];
@@ -183,13 +198,37 @@ toolData[ name_String ] /; KeyExistsQ[ $defaultChatTools, name ] :=
 toolData[ as: KeyValuePattern @ { "Function"|"ToolCall" -> _ } ] := <|
     toolDefaultData @ toolName @ as,
     "Icon" -> toolDefaultIcon @ as,
-    as
+    DeleteCases[ as, Automatic ]
 |>;
 
 toolData[ tools_List ] :=
     toolData /@ tools;
 
 toolData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolAppearanceRules*)
+toolAppearanceRules // beginDefinition;
+
+toolAppearanceRules[ tool: $$llmToolH[ as_Association, { opts: OptionsPattern[ ] }, ___ ] ] := Enclose[
+    Module[ { optValue, optSetting, inlineSetting, autoSettings, combined },
+        (* cSpell: ignore nodef *)
+        optValue      = Association @ Quiet[ OptionValue[ LLMTool, { opts }, AppearanceRules ], OptionValue::nodef ];
+        optSetting    = If[ AssociationQ @ optValue, optValue, <| |> ];
+        inlineSetting = ConfirmBy[ KeyTake[ as, $appearanceRulesKeys ], AssociationQ, "Inline" ];
+        autoSettings  = ConfirmBy[ $autoAppearanceRules, AssociationQ, "Auto" ];
+        combined      = ConfirmBy[ <| $autoAppearanceRules, inlineSetting, optSetting |> , AssociationQ, "Combined" ];
+
+        toolAppearanceRules[ tool ] = combined
+    ],
+    throwInternalFailure
+];
+
+toolAppearanceRules[ tool: $$llmToolH[ as_Association, ___ ] ] :=
+    <| $autoAppearanceRules, KeyTake[ as, $appearanceRulesKeys ] |>;
+
+toolAppearanceRules // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
