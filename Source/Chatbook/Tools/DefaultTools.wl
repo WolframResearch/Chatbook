@@ -1153,7 +1153,7 @@ wolframLanguageData // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getToolIcon*)
 getToolIcon // beginDefinition;
-getToolIcon[ HoldPattern @ LLMTool[ as_, ___ ] ] := getToolIcon @ toolData @ as;
+getToolIcon[ tool: $$llmTool ] := getToolIcon @ toolData @ tool;
 getToolIcon[ as_Association ] := Lookup[ toolData @ as, "Icon", RawBoxes @ TemplateBox[ { }, "WrenchIcon" ] ];
 getToolIcon[ _ ] := $defaultToolIcon;
 getToolIcon // endDefinition;
@@ -1166,8 +1166,8 @@ getToolDisplayName // beginDefinition;
 getToolDisplayName[ tool_ ] :=
     getToolDisplayName[ tool, Missing[ "NotFound" ] ];
 
-getToolDisplayName[ HoldPattern @ LLMTool[ as_, ___ ], default_ ] :=
-    getToolDisplayName @ as;
+getToolDisplayName[ tool: $$llmTool, default_ ] :=
+    getToolDisplayName @ toolData @ tool;
 
 getToolDisplayName[ as_Association, default_ ] :=
     toDisplayToolName @ Lookup[ as, "DisplayName", Lookup[ as, "Name", default ] ];
