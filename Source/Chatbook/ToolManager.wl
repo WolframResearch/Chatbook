@@ -431,7 +431,7 @@ addPersonaSource[ tools_List, name_String ] :=
     addPersonaSource[ #, name ] & /@ tools;
 
 addPersonaSource[ HoldPattern @ LLMTool[ as_Association, a___ ], name_String ] :=
-    LLMTool[ Association[ "Source" -> "Persona", "PersonaName" -> name, as ], a ];
+    LLMTool[ Association[ "Origin" -> "Persona", "PersonaName" -> name, as ], a ];
 
 addPersonaSource[ tool_, _ ] :=
     tool;
@@ -626,8 +626,8 @@ configurableToolQ // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*deletableToolQ*)
 deletableToolQ // beginDefinition;
-deletableToolQ[ KeyValuePattern[ "Source" -> "BuiltIn" ] ] := False;
-deletableToolQ[ KeyValuePattern[ "Source" -> "Persona" ] ] := False;
+deletableToolQ[ KeyValuePattern[ "Origin" -> "BuiltIn" ] ] := False;
+deletableToolQ[ KeyValuePattern[ "Origin" -> "Persona" ] ] := False;
 deletableToolQ[ tool_ ] := True;
 deletableToolQ // endDefinition;
 
@@ -821,12 +821,12 @@ deleteButton0 // endDefinition;
 (*nonDeletableTooltip*)
 nonDeletableTooltip // beginDefinition;
 
-nonDeletableTooltip[ KeyValuePattern @ { "CanonicalName" -> name_String, "Source" -> "BuiltIn" } ] :=
+nonDeletableTooltip[ KeyValuePattern @ { "CanonicalName" -> name_String, "Origin" -> "BuiltIn" } ] :=
     name<>" is a built-in tool and cannot be deleted.";
 
 nonDeletableTooltip[ KeyValuePattern @ {
     "CanonicalName" -> name_String,
-    "Source"        -> "Persona",
+    "Origin"        -> "Persona",
     "PersonaName"   -> persona_String
 } ] := name<>" is provided by the persona "<>persona<>" and cannot be deleted separately.";
 

@@ -32,7 +32,7 @@ Needs[ "Wolfram`Chatbook`Utils`"             ];
     "Description"        -> $chatPreferencesDescription,
     "Function"           -> chatPreferences,
     "FormattingFunction" -> toolAutoFormatter,
-    "Source"             -> "BuiltIn",
+    "Origin"             -> "BuiltIn",
     "Parameters"         -> {
         "action" -> <|
             "Interpreter" -> { "get", "set" },
@@ -70,7 +70,7 @@ $defaultChatTools0[ "DocumentationSearcher" ] = <|
     "Description"        -> $documentationSearchDescription,
     "Function"           -> documentationSearch,
     "FormattingFunction" -> toolAutoFormatter,
-    "Source"             -> "BuiltIn",
+    "Origin"             -> "BuiltIn",
     "Parameters"         -> {
         "query" -> <|
             "Interpreter" -> "String",
@@ -101,7 +101,7 @@ $defaultChatTools0[ "DocumentationLookup" ] = <|
     "Description"        -> "Get documentation pages for Wolfram Language symbols.",
     "Function"           -> documentationLookup,
     "FormattingFunction" -> toolAutoFormatter,
-    "Source"             -> "BuiltIn",
+    "Origin"             -> "BuiltIn",
     "Parameters"         -> {
         "names" -> <|
             "Interpreter" -> DelimitedSequence[ "WolframLanguageSymbol", "," ],
@@ -224,7 +224,7 @@ $defaultChatTools0[ "WolframLanguageEvaluator" ] = <|
     "Description"        -> $sandboxEvaluateDescription,
     "Function"           -> sandboxEvaluate,
     "FormattingFunction" -> sandboxFormatter,
-    "Source"             -> "BuiltIn",
+    "Origin"             -> "BuiltIn",
     "Parameters"         -> {
         "code" -> <|
             "Interpreter" -> "String",
@@ -276,7 +276,7 @@ $defaultChatTools0[ "WolframAlpha" ] = <|
     "Description"        -> $wolframAlphaDescription,
     "Function"           -> getWolframAlphaText,
     "FormattingFunction" -> wolframAlphaResultFormatter,
-    "Source"             -> "BuiltIn",
+    "Origin"             -> "BuiltIn",
     "Parameters"         -> {
         "input" -> <|
             "Interpreter" -> "String",
@@ -444,7 +444,7 @@ $defaultChatTools0[ "WebSearcher" ] = <|
     "Description"        -> "Search the web.",
     "Function"           -> webSearch,
     "FormattingFunction" -> toolAutoFormatter,
-    "Source"             -> "BuiltIn",
+    "Origin"             -> "BuiltIn",
     "Parameters"         -> {
         "query" -> <|
             "Interpreter" -> "String",
@@ -538,7 +538,7 @@ $defaultChatTools0[ "WebFetcher" ] = <|
     "Description"        -> "Fetch plain text or image links from a URL.",
     "Function"           -> webFetch,
     "FormattingFunction" -> toolAutoFormatter,
-    "Source"             -> "BuiltIn",
+    "Origin"             -> "BuiltIn",
     "Parameters"  -> {
         "url" -> <|
             "Interpreter" -> "URL",
@@ -659,7 +659,7 @@ $defaultChatTools0[ "WebImageSearcher" ] = <|
     "Description"        -> "Search the web for images.",
     "Function"           -> webImageSearch,
     "FormattingFunction" -> toolAutoFormatter,
-    "Source"             -> "BuiltIn",
+    "Origin"             -> "BuiltIn",
     "Parameters"         -> {
         "query" -> <|
             "Interpreter" -> "String",
