@@ -21,6 +21,7 @@ $basePromptOrder = {
     "GeneralInstructionsHeader",
     "NotebooksPreamble",
     "AutoAssistant",
+    "Markdown",
     "CodeBlocks",
     "CellLabels",
     "DoubleBackticks",
@@ -53,7 +54,7 @@ $basePromptClasses = <|
     "Notebooks"         -> { "NotebooksPreamble" },
     "WolframLanguage"   -> { "CodeBlocks", "DoubleBackticks", "WolframLanguageStyle", "Packages" },
     "Math"              -> { "MathExpressions" },
-    "Formatting"        -> { "CodeBlocks", "MathExpressions", "EscapedCharacters" },
+    "Formatting"        -> { "Markdown", "CodeBlocks", "MathExpressions", "EscapedCharacters" },
     "MessageConversion" -> { "ConversionLargeOutputs", "ConversionGraphics", "ConversionFormatting" },
     "SpecialURIs"       -> { "SpecialURIAudio", "SpecialURIVideo", "SpecialURIDynamic" },
     "All"               -> $basePromptOrder
@@ -111,6 +112,11 @@ $basePromptComponents[ "AutoAssistant" ] = "\
 	* [WARNING] to indicate that the user has likely made a mistake, but the code will still run without errors
 	* [INFO] for all other responses";
 
+$basePromptComponents[ "Markdown" ] = "\
+* Your responses will be parsed as markdown and formatted for the user, so you can use markdown syntax to format your \
+responses. Ensure you escape characters as needed if you do not wish to format as markdown. For example, if you want \
+to display a literal asterisk, you must escape it with a backslash: \\*";
+
 $basePromptComponents[ "CodeBlocks" ] = "\
 * Whenever your response contains a block of code, surround it with three backticks and include the language when applicable:
 ```language
@@ -165,9 +171,9 @@ $basePromptComponents[ "CheckboxesIndeterminate" ] = "\
         * An indeterminate Checkbox becomes ``[-]``";
 
 $basePromptComponents[ "ConversionFormatting" ] = "\
-	* Cell formatting is removed when converting to text, so \
+	* Cell formatting is converted to markdown where possible, so \
 ``Cell[TextData[{StyleBox[\"Styled\", FontSlant -> \"Italic\"], \" message\"}], \"ChatInput\"]`` \
-becomes ``Styled message``.";
+becomes ``*Styled* message``.";
 
 $basePromptComponents[ "SpecialURI" ] = "\
 * You will occasionally see markdown links with special URI schemes, e.g. ![label](scheme://content-id) that represent \
