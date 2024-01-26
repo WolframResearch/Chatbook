@@ -12,7 +12,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$thisPaclet;
 `$debugData;
 `$settingsData;
-
+`$chatIndicatorSymbol;
 `$chatDelimiterStyles;
 `$chatIgnoredStyles;
 `$chatInputStyles;
@@ -63,6 +63,8 @@ $cloudNotebooks := TrueQ @ CloudSystem`$CloudNotebooks;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
+$chatIndicatorSymbol  = "\|01f4ac";
+
 $chatDelimiterStyles  = { "ChatBlockDivider", "ChatDelimiter", "ExcludedChatDelimiter" };
 $chatIgnoredStyles    = { "ChatExcluded" };
 $chatInputStyles      = { "ChatInput", "SideChat", "ChatQuery", "ChatSystemInput" };
