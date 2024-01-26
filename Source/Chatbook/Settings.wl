@@ -31,6 +31,7 @@ $defaultChatSettings = <|
     "ChatContextPreprompt"      -> Automatic,
     "ChatDrivenNotebook"        -> False,
     "ChatHistoryLength"         -> 100,
+    "ChatInputIndicator"        -> Automatic,
     "DynamicAutoFormat"         -> Automatic,
     "EnableChatGroupSettings"   -> False,
     "EnableLLMServices"         -> Automatic, (* TODO: remove this once LLMServices is widely available *)
@@ -654,8 +655,8 @@ $currentEvaluationObject := $FrontEndSession;
 (* ::Subsection::Closed:: *)
 (*verifyInheritance*)
 verifyInheritance // beginDefinition;
-verifyInheritance[ obj: $$feObj ] /; $cloudNotebooks := True;
-verifyInheritance[ obj: $$feObj? inheritingQ ] := True;
+verifyInheritance[ obj_ ] /; $SynchronousEvaluation || $cloudNotebooks := True;
+verifyInheritance[ obj_? inheritingQ ] := True;
 verifyInheritance[ obj: $$feObj ] := With[ { verified = verifyInheritance0 @ obj }, inheritingQ @ obj ];
 verifyInheritance // endDefinition;
 

@@ -221,6 +221,7 @@ makeChatMessages[ settings_, cells_ ] :=
                 settings[ "MaxCellStringLength" ],
                 Except[ $$size ] -> $defaultMaxCellStringLength
             ],
+            $chatInputIndicator = mixedContentQ @ cells,
             $cellStringBudget
         },
         $cellStringBudget = $initialCellStringBudget;
@@ -273,6 +274,18 @@ makeChatMessages0[ settings0_, cells_List ] := Enclose[
 ];
 
 makeChatMessages0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*mixedContentQ*)
+mixedContentQ // beginDefinition;
+
+mixedContentQ[ cells: { ___Cell } ] := And[
+    MemberQ[ cells, Cell[ __, $$chatInputStyle, ___ ] ],
+    MemberQ[ cells, Cell[ _, Except[ $$chatInputStyle|$$chatOutputStyle, _String ], ___ ] ]
+];
+
+mixedContentQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

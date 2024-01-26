@@ -30,6 +30,7 @@ $basePromptOrder = {
     "DocumentationLinkSyntax",
     "InlineSymbolLinks",
     "MessageConversionHeader",
+    "ChatInputIndicator",
     "ConversionLargeOutputs",
     "ConversionGraphics",
     "MarkdownImageBox",
@@ -73,6 +74,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "DocumentationLinkSyntax"      -> { },
     "InlineSymbolLinks"            -> { },
     "MessageConversionHeader"      -> { "NotebooksPreamble" },
+    "ChatInputIndicator"           -> { "MessageConversionHeader" },
     "ConversionLargeOutputs"       -> { "MessageConversionHeader" },
     "ConversionGraphics"           -> { "MessageConversionHeader" },
     "MarkdownImageBox"             -> { "MessageConversionHeader" },
@@ -150,6 +152,11 @@ Only do this in text, not code.";
 
 $basePromptComponents[ "MessageConversionHeader" ] = "\
 * The messages you see have been converted from notebook content, and will often be different from what the user sees:";
+
+$basePromptComponents[ "ChatInputIndicator" ] = "\
+	* Users send you chat messages via special evaluatable \"ChatInput\" cells and will be indicated with the string \
+$$chatIndicatorSymbol$$. Cells appearing above the chat input are included to provide additional context, \
+but chat inputs represent the actual message from the user to you.";
 
 $basePromptComponents[ "ConversionLargeOutputs" ] = "\
 	* Large outputs may be shortened: ``DynamicModule[<<4>>]``";
@@ -234,13 +241,19 @@ $basePrompt := buildPrompt[ ];
 (*buildPrompt*)
 buildPrompt // beginDefinition;
 
-buildPrompt[ ] := (
-    expandPromptComponents[ ];
-    StringRiffle[
-        Values @ KeyTake[ $basePromptComponents, Values @ KeyTake[ $collectedPromptComponents, $basePromptOrder ] ],
-        "\n"
-    ]
-);
+buildPrompt[ ] := Enclose[
+    Module[ { keys, ordered, string },
+        expandPromptComponents[ ];
+        keys = ConfirmMatch[ Values @ KeyTake[ $collectedPromptComponents, $basePromptOrder ], { ___String }, "Keys" ];
+        ordered = ConfirmMatch[ Values @ KeyTake[ $basePromptComponents, keys ], { ___String }, "Ordered" ];
+        string = ConfirmBy[ StringRiffle[ ordered, "\n" ], StringQ, "String" ];
+        If[ StringQ @ $chatIndicatorSymbol,
+            StringReplace[ string, "$$chatIndicatorSymbol$$" -> $chatIndicatorSymbol ],
+            string
+        ]
+    ],
+    throwInternalFailure
+];
 
 buildPrompt // endDefinition;
 

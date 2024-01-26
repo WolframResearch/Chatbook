@@ -85,6 +85,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         ];
 
         $multimodalMessages = TrueQ @ settings[ "Multimodal" ];
+        $chatIndicatorSymbol = chatIndicatorSymbol @ settings;
 
         If[ TrueQ @ settings[ "EnableChatGroupSettings" ],
             AppendTo[ settings, "ChatGroupSettings" -> getChatGroupSettings @ evalCell ]
@@ -197,6 +198,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         ];
 
         $multimodalMessages = TrueQ @ settings[ "Multimodal" ];
+        $chatIndicatorSymbol = chatIndicatorSymbol @ settings;
 
         If[ TrueQ @ settings[ "EnableChatGroupSettings" ],
             AppendTo[ settings, "ChatGroupSettings" -> getChatGroupSettings @ evalCell ]
@@ -350,6 +352,16 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association }
     ];
 
 makeHTTPRequest // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatIndicatorSymbol*)
+chatIndicatorSymbol // beginDefinition;
+chatIndicatorSymbol[ settings_Association ] := chatIndicatorSymbol @ settings[ "ChatInputIndicator" ];
+chatIndicatorSymbol[ $$unspecified ] := $chatIndicatorSymbol;
+chatIndicatorSymbol[ None|"" ] := None;
+chatIndicatorSymbol[ string_String? StringQ ] := string;
+chatIndicatorSymbol // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1255,6 +1267,7 @@ resolveAutoSetting // endDefinition;
 resolveAutoSetting0 // beginDefinition;
 resolveAutoSetting0[ as_, "Assistance"                ] := False;
 resolveAutoSetting0[ as_, "DynamicAutoFormat"         ] := dynamicAutoFormatQ @ as;
+resolveAutoSetting0[ as_, "ChatInputIndicator"        ] := "\|01f4ac";
 resolveAutoSetting0[ as_, "EnableLLMServices"         ] := $useLLMServices;
 resolveAutoSetting0[ as_, "HandlerFunctionsKeys"      ] := chatHandlerFunctionsKeys @ as;
 resolveAutoSetting0[ as_, "IncludeHistory"            ] := Automatic;
