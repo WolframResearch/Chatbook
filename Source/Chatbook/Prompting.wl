@@ -21,6 +21,7 @@ $basePromptOrder = {
     "GeneralInstructionsHeader",
     "NotebooksPreamble",
     "AutoAssistant",
+    "Markdown",
     "CodeBlocks",
     "CellLabels",
     "DoubleBackticks",
@@ -29,6 +30,7 @@ $basePromptOrder = {
     "DocumentationLinkSyntax",
     "InlineSymbolLinks",
     "MessageConversionHeader",
+    "ChatInputIndicator",
     "ConversionLargeOutputs",
     "ConversionGraphics",
     "MarkdownImageBox",
@@ -53,7 +55,7 @@ $basePromptClasses = <|
     "Notebooks"         -> { "NotebooksPreamble" },
     "WolframLanguage"   -> { "CodeBlocks", "DoubleBackticks", "WolframLanguageStyle", "Packages" },
     "Math"              -> { "MathExpressions" },
-    "Formatting"        -> { "CodeBlocks", "MathExpressions", "EscapedCharacters" },
+    "Formatting"        -> { "Markdown", "CodeBlocks", "MathExpressions", "EscapedCharacters" },
     "MessageConversion" -> { "ConversionLargeOutputs", "ConversionGraphics", "ConversionFormatting" },
     "SpecialURIs"       -> { "SpecialURIAudio", "SpecialURIVideo", "SpecialURIDynamic" },
     "All"               -> $basePromptOrder
@@ -72,6 +74,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "DocumentationLinkSyntax"      -> { },
     "InlineSymbolLinks"            -> { },
     "MessageConversionHeader"      -> { "NotebooksPreamble" },
+    "ChatInputIndicator"           -> { "MessageConversionHeader" },
     "ConversionLargeOutputs"       -> { "MessageConversionHeader" },
     "ConversionGraphics"           -> { "MessageConversionHeader" },
     "MarkdownImageBox"             -> { "MessageConversionHeader" },
@@ -111,6 +114,11 @@ $basePromptComponents[ "AutoAssistant" ] = "\
 	* [WARNING] to indicate that the user has likely made a mistake, but the code will still run without errors
 	* [INFO] for all other responses";
 
+$basePromptComponents[ "Markdown" ] = "\
+* Your responses will be parsed as markdown and formatted for the user, so you can use markdown syntax to format your \
+responses. Ensure you escape characters as needed if you do not wish to format as markdown. For example, if you want \
+to display a literal asterisk, you must escape it with a backslash: \\*";
+
 $basePromptComponents[ "CodeBlocks" ] = "\
 * Whenever your response contains a block of code, surround it with three backticks and include the language when applicable:
 ```language
@@ -145,6 +153,11 @@ Only do this in text, not code.";
 $basePromptComponents[ "MessageConversionHeader" ] = "\
 * The messages you see have been converted from notebook content, and will often be different from what the user sees:";
 
+$basePromptComponents[ "ChatInputIndicator" ] = "\
+	* Users send you chat messages via special evaluatable \"ChatInput\" cells and will be indicated with the string \
+$$chatIndicatorSymbol$$. Cells appearing above the chat input are included to provide additional context, \
+but chat inputs represent the actual message from the user to you.";
+
 $basePromptComponents[ "ConversionLargeOutputs" ] = "\
 	* Large outputs may be shortened: ``DynamicModule[<<4>>]``";
 
@@ -165,9 +178,9 @@ $basePromptComponents[ "CheckboxesIndeterminate" ] = "\
         * An indeterminate Checkbox becomes ``[-]``";
 
 $basePromptComponents[ "ConversionFormatting" ] = "\
-	* Cell formatting is removed when converting to text, so \
+	* Cell formatting is converted to markdown where possible, so \
 ``Cell[TextData[{StyleBox[\"Styled\", FontSlant -> \"Italic\"], \" message\"}], \"ChatInput\"]`` \
-becomes ``Styled message``.";
+becomes ``*Styled* message``.";
 
 $basePromptComponents[ "SpecialURI" ] = "\
 * You will occasionally see markdown links with special URI schemes, e.g. ![label](scheme://content-id) that represent \
@@ -228,13 +241,19 @@ $basePrompt := buildPrompt[ ];
 (*buildPrompt*)
 buildPrompt // beginDefinition;
 
-buildPrompt[ ] := (
-    expandPromptComponents[ ];
-    StringRiffle[
-        Values @ KeyTake[ $basePromptComponents, Values @ KeyTake[ $collectedPromptComponents, $basePromptOrder ] ],
-        "\n"
-    ]
-);
+buildPrompt[ ] := Enclose[
+    Module[ { keys, ordered, string },
+        expandPromptComponents[ ];
+        keys = ConfirmMatch[ Values @ KeyTake[ $collectedPromptComponents, $basePromptOrder ], { ___String }, "Keys" ];
+        ordered = ConfirmMatch[ Values @ KeyTake[ $basePromptComponents, keys ], { ___String }, "Ordered" ];
+        string = ConfirmBy[ StringRiffle[ ordered, "\n" ], StringQ, "String" ];
+        If[ StringQ @ $chatIndicatorSymbol,
+            StringReplace[ string, "$$chatIndicatorSymbol$$" -> $chatIndicatorSymbol ],
+            string
+        ]
+    ],
+    throwInternalFailure
+];
 
 buildPrompt // endDefinition;
 
