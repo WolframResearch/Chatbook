@@ -11,6 +11,7 @@ CellToString[cell$] serializes a Cell expression as a string for use in chat.\
 
 `$CellToStringDebug;
 `$CurrentCell;
+`$chatInputIndicator;
 `$defaultMaxCellStringLength;
 `$defaultMaxOutputCellStringLength;
 `$longNameCharacters;
@@ -310,6 +311,13 @@ cellToString[ cells: { __CellObject } ] := cellsToString @ NotebookRead @ cells;
 (* Drop cell label for some styles *)
 cellToString[ Cell[ a__, style: $$noCellLabelStyle, b___, CellLabel -> _, c___ ] ] :=
     cellToString @ Cell[ a, style, b, c ];
+
+(* Include chat input indicator for mixed content *)
+cellToString[ cell: Cell[ __, $$chatInputStyle, ___ ] ] /; $chatInputIndicator && StringQ @ $chatIndicatorSymbol :=
+    Block[ { $chatInputIndicator = False },
+        needsBasePrompt[ "ChatInputIndicator" ];
+        $chatIndicatorSymbol <> " " <> cellToString @ cell
+    ];
 
 (* Convert delimiters to equivalent markdown *)
 cellToString[ Cell[ __, $$delimiterStyle, ___ ] ] := $delimiterString;
