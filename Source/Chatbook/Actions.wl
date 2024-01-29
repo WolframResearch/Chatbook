@@ -30,6 +30,7 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 `autoAssistQ;
 `chatInputCellQ;
 `clearMinimizedChats;
+`revertMultimodalContent;
 `standardizeMessageKeys;
 `systemCredential;
 `toAPIKey;
@@ -667,7 +668,7 @@ CopyChatObject[ cell0_ ] := Enclose[
     Module[ { cell, encodedString, chatData, messages, chatObject },
 
         Quiet[ PacletInstall[ "Wolfram/LLMFunctions" ]; Needs[ "Wolfram`LLMFunctions`" -> None ] ];
-        cell          = ConfirmMatch[ ensureChatOutputCell @ cell0, _CellObject, "CellObject" ];
+        cell = ConfirmMatch[ ensureChatOutputCell @ cell0, _CellObject, "CellObject" ];
 
         encodedString = ConfirmMatch[
             CurrentValue[ cell, { TaggingRules, "ChatData" } ],
@@ -677,9 +678,9 @@ CopyChatObject[ cell0_ ] := Enclose[
 
         If[ encodedString === Inherited, throwMessageDialog[ "ChatObjectNotAvailable" ] ];
 
-        chatData      = ConfirmBy[ BinaryDeserialize @ BaseDecode @ encodedString, AssociationQ, "ChatData" ];
-        messages      = ConfirmMatch[ chatData[ "Data", "Messages" ], { __Association? AssociationQ }, "Messages" ];
-        chatObject    = Confirm[ constructChatObject @ messages, "ChatObject" ];
+        chatData   = ConfirmBy[ BinaryDeserialize @ BaseDecode @ encodedString, AssociationQ, "ChatData" ];
+        messages   = ConfirmMatch[ chatData[ "Data", "Messages" ], { __Association? AssociationQ }, "Messages" ];
+        chatObject = Confirm[ constructChatObject @ messages, "ChatObject" ];
 
         CopyToClipboard @ chatObject
     ],
