@@ -2251,7 +2251,10 @@ makeCompactChatData[
                 "MessageTag" -> tag,
                 "Data" -> Association[
                     data,
-                    "Messages" -> Append[ messages, <| "Role" -> "Assistant", "Content" -> message |> ]
+                    "Messages" -> revertMultimodalContent @ Append[
+                        messages,
+                        <| "Role" -> "Assistant", "Content" -> message |>
+                    ]
                 ]
             ],
             Inherited
