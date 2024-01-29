@@ -126,6 +126,7 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "APIKeyOrganizationID"            -> "The value specified for the API key appears to be an organization ID instead of an API key. Visit `1` to manage your API keys.",
     "BadResponseMessage"              -> "`1`",
     "ChannelFrameworkError"           -> "The channel framework is currently unavailable, please try installing from URL instead or try again later.",
+    "ChatObjectNotAvailable"          -> "The chat object for this cell is no longer available.",
     "ConnectionFailure"               -> "Server connection failure: `1`. Please try again later.",
     "ConnectionFailure2"              -> "Could not get a valid response from the server: `1`. Please try again later.",
     "ExpectedInstallableResourceType" -> "Expected a resource of type `1` instead of `2`.",
