@@ -1402,6 +1402,9 @@ attachment[ alt_String, key_String ] := attachment[ alt, key, $attachments[ key 
 attachment[ alt_String, key_String, HoldComplete[ expr_ ] ] := attachment[ alt, key, Defer @ expr ];
 attachment[ alt_String, key_String, _Missing ] := attachment[ alt, key, $missingImage ];
 
+attachment[ alt_String, key_String, Defer[ img_Image ] ] /; ImageQ @ Unevaluated @ img :=
+    Cell[ BoxData @ PaneBox[ attachmentBoxes[ alt, key, resizeImage @ img ], ImageMargins -> 10 ], Background -> None ];
+
 attachment[ alt_String, key_String, expr_ ] /; $dynamicText :=
     codeBlockFrame[ Cell[ BoxData @ attachmentBoxes[ alt, key, expr ], "ChatCodeActive" ], expr ];
 
