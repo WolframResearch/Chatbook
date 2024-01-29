@@ -165,6 +165,11 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*$ChatNotebookEvaluation*)
+$ChatNotebookEvaluation = False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Initialization*)
 $debug           = True;
 $failed          = False;
@@ -375,11 +380,12 @@ catchTop[ eval_ ] := catchTop[ eval, Chatbook ];
 catchTop[ eval_, sym_Symbol ] :=
     Block[
         {
-            $messageSymbol = Replace[ $messageSymbol, Chatbook -> sym ],
-            $catching      = True,
-            $failed        = False,
-            catchTop       = # &,
-            catchTopAs     = (#1 &) &
+            $ChatNotebookEvaluation = True,
+            $messageSymbol          = Replace[ $messageSymbol, Chatbook -> sym ],
+            $catching               = True,
+            $failed                 = False,
+            catchTop                = # &,
+            catchTopAs              = (#1 &) &
         },
         Catch[ eval, $catchTopTag ]
     ];
