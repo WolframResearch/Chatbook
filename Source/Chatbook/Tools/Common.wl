@@ -650,10 +650,7 @@ makeToolPrompt[ settings_Association ] := $lastToolPrompt = TemplateObject[
                         "Tool Name: ",
                         TemplateSlot[ "Name" ],
                         "\nDisplay Name: ",
-                        TemplateSlot[
-                            "DisplayName",
-                            DefaultValue :> TemplateExpression @ toDisplayToolName @ TemplateSlot[ "Name" ]
-                        ],
+                        TemplateSlot[ "DisplayName" ],
                         "\nDescription: ",
                         TemplateSlot[ "Description" ],
                         "\nSchema:\n",
@@ -664,7 +661,11 @@ makeToolPrompt[ settings_Association ] := $lastToolPrompt = TemplateObject[
                     InsertionFunction -> TextString
                 ],
                 TemplateExpression @ Map[
-                    Append[ #[ "Data" ], "Schema" -> ExportString[ #[ "JSONSchema" ], "JSON" ] ] &,
+                    Association[
+                        #[ "Data" ],
+                        "Schema" -> ExportString[ #[ "JSONSchema" ], "JSON" ],
+                        "DisplayName" -> getToolDisplayName @ #
+                    ] &,
                     TemplateSlot[ "Tools" ]
                 ]
             ],

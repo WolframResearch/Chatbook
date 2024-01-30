@@ -10,6 +10,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$ChatAbort;
 `$ChatbookContexts;
 `$ChatHandlerData;
+`$ChatNotebookEvaluation;
 `$ChatPost;
 `$ChatPre;
 `$DefaultChatHandlerFunctions;
@@ -107,6 +108,7 @@ Block[ { $ContextPath },
 (* ::Section::Closed:: *)
 (*Protected Symbols*)
 Protect[
+    $ChatNotebookEvaluation,
     $DefaultChatHandlerFunctions,
     $DefaultChatProcessingFunctions,
     $DefaultModel,
