@@ -42,7 +42,12 @@ attachInlineChat[ nbo_NotebookObject ] :=
 
 attachInlineChat[ nbo_NotebookObject, { ___, cell_CellObject } ] := (
     NotebookDelete @ $attachedInlineChat;
-    $attachedInlineChat = AttachCell[ cell, $inlineChatInputCell, "Inline", RemovalConditions -> { "SelectionExit" } ];
+    $attachedInlineChat = AttachCell[
+        cell,
+        $inlineChatInputCell,
+        "Inline",
+        RemovalConditions -> { "MouseClickOutside", "SelectionExit" }
+    ];
     SelectionMove[ $attachedInlineChat, All, CellContents ];
     FrontEndExecute @ FrontEnd`FrontEndToken[ "MoveNextPlaceHolder" ]
 );
@@ -68,7 +73,7 @@ attachInlineChat[ nbo_NotebookObject, _ ] := (
         { Left, Bottom },
         0,
         { Left, Bottom },
-        RemovalConditions -> { "SelectionExit" }
+        RemovalConditions -> { "MouseClickOutside", "SelectionExit" }
     ];
 
     SelectionMove[ $attachedInlineChat, All, CellContents ];
@@ -94,11 +99,24 @@ evaluateInlineChat // endDefinition;
 (*attachInlineChatOutput*)
 attachInlineChatOutput // beginDefinition;
 
-attachInlineChatOutput[ settings_, evalCell_CellObject, cell_Cell ] :=
-    With[ { attached = AttachCell[ evalCell, cell, "Inline", RemovalConditions -> { "SelectionExit" } ] },
+attachInlineChatOutput[ settings_, evalCell_CellObject, cell_Cell ] := Enclose[
+    Module[ { attached },
+        attached = ConfirmMatch[
+            AttachCell[
+                evalCell,
+                cell,
+                "Inline",
+                RemovalConditions -> { "MouseClickOutside", "SelectionExit" }
+            ],
+            _CellObject,
+            "AttachCell"
+        ];
+        (* FIXME: handle these better in the actual definition of ensureChatOutputCell instead of this override *)
         ensureChatOutputCell[ attached ] = True;
         attached
-    ];
+    ],
+    throwInternalFailure
+];
 
 attachInlineChatOutput // endDefinition;
 
