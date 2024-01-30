@@ -102,6 +102,7 @@ Block[ { $ContextPath },
     Get[ "Wolfram`Chatbook`PersonaManager`"     ];
     Get[ "Wolfram`Chatbook`ChatHistory`"        ];
     Get[ "Wolfram`Chatbook`CloudToolbar`"       ];
+    Get[ "Wolfram`Chatbook`InlineChat`"         ];
 ];
 
 (* ::**************************************************************************************************************:: *)

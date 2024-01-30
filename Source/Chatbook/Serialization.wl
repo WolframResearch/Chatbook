@@ -312,6 +312,11 @@ cellToString[ cells: { __CellObject } ] := cellsToString @ NotebookRead @ cells;
 cellToString[ Cell[ a__, style: $$noCellLabelStyle, b___, CellLabel -> _, c___ ] ] :=
     cellToString @ Cell[ a, style, b, c ];
 
+(* Inline chat cells *)
+cellToString[
+    Cell[ __, "AttachedChatInput", ___, TaggingRules -> KeyValuePattern[ "InlineChatInput" -> input_String ], ___ ]
+] := input;
+
 (* Include chat input indicator for mixed content *)
 cellToString[ cell: Cell[ __, $$chatInputStyle, ___ ] ] /; $chatInputIndicator && StringQ @ $chatIndicatorSymbol :=
     Block[ { $chatInputIndicator = False },

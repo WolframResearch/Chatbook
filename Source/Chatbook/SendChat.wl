@@ -28,6 +28,7 @@ Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`Formatting`"       ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
 Needs[ "Wolfram`Chatbook`Handlers`"         ];
+Needs[ "Wolfram`Chatbook`InlineChat`"       ];
 Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 Needs[ "Wolfram`Chatbook`Models`"           ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
@@ -144,7 +145,10 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         ];
 
         cellObject = $lastCellObject = ConfirmMatch[
-            createNewChatOutput[ settings, target, cell ],
+            If[ TrueQ @ $inlineChat,
+                attachInlineChatOutput[ settings, evalCell, cell ],
+                createNewChatOutput[ settings, target, cell ]
+            ],
             _CellObject,
             "CreateOutput"
         ];
@@ -1089,6 +1093,15 @@ selectChatCells // endDefinition;
 
 selectChatCells0 // beginDefinition;
 
+selectChatCells0[ cell_CellObject, cells_ ] /; $inlineChat && cell === $attachedInlineChat := Enclose[
+    Module[ { parent, selected },
+        parent = ConfirmMatch[ parentCell @ cell, _CellObject, "ParentCell" ];
+        selected = ConfirmMatch[ selectChatCells0[ parent, cells ], { ___CellObject }, "Selected" ];
+        Append[ selected, cell ]
+    ],
+    throwInternalFailure
+];
+
 (* If `$finalCell` is defined, it means we are evaluating through the cell tray widget button. This can be invoked from
    a cell that is in the middle of other generated outputs, e.g. a message cell that lies between an input and output.
    In these cases, we want to make sure we don't delete chat output cells that come after the generated cells,
@@ -1154,7 +1167,7 @@ selectChatCells0[ cell_, cells: { __CellObject }, final_ ] := Enclose[
             "ChatHistoryLengthCellObjects"
         ]
     ],
-    throwInternalFailure[ selectChatCells0[ cell, cells, final ], ## ] &
+    throwInternalFailure
 ];
 
 selectChatCells0 // endDefinition;
@@ -1196,6 +1209,9 @@ keepValidGeneratedCells // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*chatHistoryCellsAndTarget*)
 chatHistoryCellsAndTarget // beginDefinition;
+
+chatHistoryCellsAndTarget[ { before___CellObject, after_CellObject } ] /; $inlineChat :=
+    { { before, after }, None };
 
 chatHistoryCellsAndTarget[ { before___CellObject, after_CellObject } ] :=
     If[ MatchQ[ cellInformation @ after, KeyValuePattern[ "Style" -> $$chatOutputStyle ] ],
@@ -1825,6 +1841,12 @@ activeAIAssistantCell[
                 } ],
                 Initialization -> None
             ],
+            If[ TrueQ @ $inlineChat,
+                Sequence @@ {
+                    CellMargins -> { { 66, 66 }, { 0, 10 } }
+                },
+                Sequence @@ { }
+            ],
             CellDingbat        -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
             CellEditDuplicate  -> False,
             CellTags           -> cellTags,
@@ -1971,6 +1993,7 @@ toDingbatBoxes // endDefinition;
 (*writeReformattedCell*)
 writeReformattedCell // beginDefinition;
 
+(* FIXME: this writes at the end of the notebook for attached inline chat *)
 writeReformattedCell[ settings_, KeyValuePattern[ "FullContent" -> string_ ], cell_ ] :=
     writeReformattedCell[ settings, string, cell ];
 

@@ -36,21 +36,29 @@ If[!PacletNewerQ[ToString[$VersionNumber] <> "." <> ToString[$ReleaseNumber], "1
 					FrontEnd`MenuEvaluator -> Automatic
 				]
 			}]
-			(* FIXME: figure out how to make this work:
-			FrontEnd`AddMenuCommands["Paclet Repository Item", {
-				MenuItem[
-					"Prompt Repository Item",
-					FrontEnd`KernelExecute[{
-						Needs["ResourceSystemClient`" -> None];
-						ResourceSystemClient`CreateResourceNotebook["Prompt", "SuppressProgressBar" -> True]
-					}],
-					MenuEvaluator -> Automatic,
-					Method -> "Queued"
-				]
-			}]*)
 		}],
 		"FrontEndSession"
 	]
+]
+
+Once[
+	FrontEndExecute @ FrontEnd`AddMenuCommands[
+		"CellMerge",
+		{
+			MenuItem[
+				"Inline Chat",
+				FrontEnd`KernelExecute[
+					Function[
+						Needs[ "Wolfram`Chatbook`" -> None ];
+						Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachInlineChat", # ]
+					][ InputNotebook[ ] ]
+				],
+				FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { "Control" } ],
+				FrontEnd`MenuEvaluator -> "Local"
+			]
+		}
+	],
+	"FrontEndSession"
 ]
 
 (*----------------------------*)

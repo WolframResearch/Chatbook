@@ -67,7 +67,7 @@ $chatIndicatorSymbol  = "\|01f4ac";
 
 $chatDelimiterStyles  = { "ChatBlockDivider", "ChatDelimiter", "ExcludedChatDelimiter" };
 $chatIgnoredStyles    = { "ChatExcluded" };
-$chatInputStyles      = { "ChatInput", "SideChat", "ChatQuery", "ChatSystemInput" };
+$chatInputStyles      = { "ChatInput", "SideChat", "ChatQuery", "ChatSystemInput", "AttachedChatInput" };
 $chatOutputStyles     = { "ChatOutput", "AssistantOutput", "AssistantOutputWarning", "AssistantOutputError" };
 $excludeHistoryStyles = { "SideChat" };
 $nestedCellStyles     = { "InlineFunctionReference", "InlineModifierReference", "InlinePersonaReference",

@@ -213,8 +213,12 @@ toolAppearanceRules // beginDefinition;
 
 toolAppearanceRules[ tool: $$llmToolH[ as_Association, { opts: OptionsPattern[ ] }, ___ ] ] := Enclose[
     Module[ { optValue, optSetting, inlineSetting, autoSettings, combined },
-        (* cSpell: ignore nodef *)
-        optValue      = Association @ Quiet[ OptionValue[ LLMTool, { opts }, AppearanceRules ], OptionValue::nodef ];
+        (* cSpell: ignore nodef, optnf *)
+        optValue = Association @ Quiet[
+            OptionValue[ LLMTool, { opts }, AppearanceRules ],
+            { OptionValue::nodef, OptionValue::optnf }
+        ];
+
         optSetting    = If[ AssociationQ @ optValue, optValue, <| |> ];
         inlineSetting = ConfirmBy[ KeyTake[ as, $appearanceRulesKeys ], AssociationQ, "Inline" ];
         autoSettings  = ConfirmBy[ $autoAppearanceRules, AssociationQ, "Auto" ];
