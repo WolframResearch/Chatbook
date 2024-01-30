@@ -566,12 +566,23 @@ $ChatbookStylesheet = Notebook[
 (*BuildChatbookStylesheet*)
 
 
+fixContexts[ expr_ ] := ResourceFunction[ "ReplaceContext" ][
+    expr,
+    {
+        "Wolfram`ChatbookStylesheetBuilder`"         -> "Wolfram`ChatNB`",
+        "Wolfram`ChatbookStylesheetBuilder`Private`" -> "Wolfram`ChatNB`",
+        "$CellContext`"                              -> "Wolfram`ChatNB`",
+        $Context                                     -> "Wolfram`ChatNB`"
+    }
+];
+
+
 BuildChatbookStylesheet[ ] := BuildChatbookStylesheet @ $styleSheetTarget;
 
 BuildChatbookStylesheet[ target_ ] :=
     Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
         Module[ { exported },
-            exported = Export[ target, $ChatbookStylesheet, "NB" ];
+            exported = Export[ target, fixContexts @ $ChatbookStylesheet, "NB" ];
             PacletInstall[ "Wolfram/PacletCICD" ];
             Needs[ "Wolfram`PacletCICD`" -> None ];
             SetOptions[
