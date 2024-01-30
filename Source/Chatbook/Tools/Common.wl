@@ -213,8 +213,7 @@ toolAppearanceRules // beginDefinition;
 
 toolAppearanceRules[ tool: $$llmToolH[ as_Association, { opts: OptionsPattern[ ] }, ___ ] ] := Enclose[
     Module[ { optValue, optSetting, inlineSetting, autoSettings, combined },
-        (* cSpell: ignore nodef *)
-        optValue      = Association @ Quiet[ OptionValue[ LLMTool, { opts }, AppearanceRules ], OptionValue::nodef ];
+        optValue      = Association @ quietOptionValue[ LLMTool, { opts }, AppearanceRules ];
         optSetting    = If[ AssociationQ @ optValue, optValue, <| |> ];
         inlineSetting = ConfirmBy[ KeyTake[ as, $appearanceRulesKeys ], AssociationQ, "Inline" ];
         autoSettings  = ConfirmBy[ $autoAppearanceRules, AssociationQ, "Auto" ];
@@ -229,6 +228,22 @@ toolAppearanceRules[ tool: $$llmToolH[ as_Association, ___ ] ] :=
     <| $autoAppearanceRules, KeyTake[ as, $appearanceRulesKeys ] |>;
 
 toolAppearanceRules // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*quietOptionValue*)
+quietOptionValue // beginDefinition;
+
+quietOptionValue[ sym_Symbol, opts_List, name_ ] :=
+    quietOptionValue[ sym, opts, name, Automatic ];
+
+quietOptionValue[ sym_Symbol, { opts: OptionsPattern[ ] }, name_, default_ ] := Quiet[
+    Replace[ OptionValue[ sym, { opts }, name ], HoldPattern[ name ] :> default ],
+    (* cSpell: ignore nodef, optnf *)
+    { OptionValue::nodef, OptionValue::optnf }
+];
+
+quietOptionValue // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
