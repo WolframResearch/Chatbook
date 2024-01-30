@@ -1170,7 +1170,7 @@ getToolDisplayName[ tool: $$llmTool, default_ ] :=
     getToolDisplayName @ toolData @ tool;
 
 getToolDisplayName[ as_Association, default_ ] :=
-    toDisplayToolName @ Lookup[ as, "DisplayName", Lookup[ as, "Name", default ] ];
+    Lookup[ as, "DisplayName", toDisplayToolName @ Lookup[ as, "Name", default ] ];
 
 getToolDisplayName[ _, default_ ] :=
     default;
