@@ -5,6 +5,7 @@ BeginPackage[ "Wolfram`Chatbook`Utils`" ];
 HoldComplete[
     `associationKeyDeflatten;
     `clickToCopy;
+    `contextBlock;
     `convertUTF8;
     `exportDataURI;
     `fastFileHash;
@@ -363,6 +364,18 @@ guessExpressionMimeType[ _String? StringQ       ] := "text/plain";
 guessExpressionMimeType[ _ByteArray? ByteArrayQ ] := "application/octet-stream";
 guessExpressionMimeType[ ___                    ] := "application/vnd.wolfram.wl";
 guessExpressionMimeType // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Misc*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*contextBlock*)
+contextBlock // beginDefinition;
+contextBlock // Attributes = { HoldFirst };
+contextBlock[ eval_ ] := Block[ { $Context = "Global`", $ContextPath = { "Global`", "System`" } }, eval ];
+contextBlock // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
