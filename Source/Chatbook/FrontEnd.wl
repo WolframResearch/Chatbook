@@ -399,7 +399,7 @@ cellPrintAfter[ target_ ][ cell_ ] := cellPrintAfter[ target, cell ];
 
 cellPrintAfter[ target_CellObject, cell: Cell[ __, ExpressionUUID -> uuid_, ___ ] ] := (
     SelectionMove[ target, After, Cell, AutoScroll -> False ];
-    NotebookWrite[ parentNotebook @ target, cell ];
+    contextBlock @ NotebookWrite[ parentNotebook @ target, cell ];
     CellObject @ uuid
 );
 
