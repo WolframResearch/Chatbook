@@ -246,6 +246,7 @@ Cell[
             TemplateBox[ { 12 }, "Spacer1" ]
         },
         CellFrame        -> { { 0, 0 }, { 0, 2 } },
+        CellFrameColor   -> RGBColor[ "#a3c9f2" ],
         CellFrameMargins -> 6
     ]
 ]
