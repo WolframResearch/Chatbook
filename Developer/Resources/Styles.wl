@@ -235,8 +235,17 @@ Cell[
     StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "ChatSystemInput", "Backspace" -> "ChatInput" },
     TaggingRules      -> <| "ChatNotebookSettings" -> <| "IncludeHistory" -> False |> |>,
     CellDingbat       -> Cell[
-        BoxData @ RowBox @ { ToBoxes @ $chatInputCellDingbat, TemplateBox[ { 12 }, "Spacer1" ] },
-        CellFrame        -> { { 0, 0 }, { 0, 2 } },
+        BoxData @ RowBox @ {
+            DynamicBox @ ToBoxes[
+                If[ TrueQ @ CloudSystem`$CloudNotebooks,
+                    RawBoxes @ TemplateBox[ { }, "ChatIconUser" ],
+                    RawBoxes @ TemplateBox[ { }, "ChatInputActiveCellDingbat" ]
+                ],
+                StandardForm
+            ],
+            TemplateBox[ { 12 }, "Spacer1" ]
+        },
+        CellFrame -> { { 0, 0 }, { 0, 2 } },
         CellFrameMargins -> 5
     ]
 ]
