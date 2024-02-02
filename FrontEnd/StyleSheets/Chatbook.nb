@@ -1161,7 +1161,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.4.2.3915873757"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.4.2.3915874681"|>
   ],
   Cell[
    StyleData["Text"],
@@ -1751,7 +1751,8 @@ Notebook[
       ]
      ],
      CellFrame -> {{0, 0}, {0, 2}},
-     CellFrameMargins -> 5
+     CellFrameColor -> RGBColor[0.639216, 0.788235, 0.94902],
+     CellFrameMargins -> 6
     ],
    CellMargins -> {{79, 26}, {Inherited, Inherited}},
    CellDingbatMargin -> 0,
