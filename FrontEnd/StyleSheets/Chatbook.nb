@@ -781,13 +781,13 @@ Notebook[
      MenuItem[
       "Ask AI Assistant",
       KernelExecute[
-       With[ { nbo = InputNotebook[] },
-        {cells = SelectedCells[nbo]},
+       With[ { Wolfram`ChatNB`nbo = InputNotebook[] },
+        {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]},
         Quiet[Needs["Wolfram`Chatbook`" -> None]];
         Symbol["Wolfram`Chatbook`ChatbookAction"][
          "Ask",
-         nbo,
-         cells
+         Wolfram`ChatNB`nbo,
+         Wolfram`ChatNB`cells
         ]
        ]
       ],
@@ -797,13 +797,13 @@ Notebook[
      MenuItem[
       "Include/Exclude From AI Chat",
       KernelExecute[
-       With[ { nbo = InputNotebook[] },
-        {cells = SelectedCells[nbo]},
+       With[ { Wolfram`ChatNB`nbo = InputNotebook[] },
+        {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]},
         Quiet[Needs["Wolfram`Chatbook`" -> None]];
         Symbol["Wolfram`Chatbook`ChatbookAction"][
          "ExclusionToggle",
-         nbo,
-         cells
+         Wolfram`ChatNB`nbo,
+         Wolfram`ChatNB`cells
         ]
        ]
       ],
@@ -998,13 +998,13 @@ Notebook[
      MenuItem[
       "Include/Exclude From AI Chat",
       KernelExecute[
-       With[ { nbo = InputNotebook[] },
-        {cells = SelectedCells[nbo]},
+       With[ { Wolfram`ChatNB`nbo = InputNotebook[] },
+        {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]},
         Quiet[Needs["Wolfram`Chatbook`" -> None]];
         Symbol["Wolfram`Chatbook`ChatbookAction"][
          "ExclusionToggle",
-         nbo,
-         cells
+         Wolfram`ChatNB`nbo,
+         Wolfram`ChatNB`cells
         ]
        ]
       ],
@@ -1080,13 +1080,13 @@ Notebook[
      MenuItem[
       "Include/Exclude From AI Chat",
       KernelExecute[
-       With[ { nbo = InputNotebook[] },
-        {cells = SelectedCells[nbo]},
+       With[ { Wolfram`ChatNB`nbo = InputNotebook[] },
+        {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]},
         Quiet[Needs["Wolfram`Chatbook`" -> None]];
         Symbol["Wolfram`Chatbook`ChatbookAction"][
          "ExclusionToggle",
-         nbo,
-         cells
+         Wolfram`ChatNB`nbo,
+         Wolfram`ChatNB`cells
         ]
        ]
       ],
@@ -1161,7 +1161,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.4.1.3913792210"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.4.2.3915874681"|>
   ],
   Cell[
    StyleData["Text"],
@@ -1169,13 +1169,13 @@ Notebook[
     MenuItem[
      "Ask AI Assistant",
      KernelExecute[
-      With[ { nbo = InputNotebook[] },
-       {cells = SelectedCells[nbo]},
+      With[ { Wolfram`ChatNB`nbo = InputNotebook[] },
+       {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]},
        Quiet[Needs["Wolfram`Chatbook`" -> None]];
        Symbol["Wolfram`Chatbook`ChatbookAction"][
         "Ask",
-        nbo,
-        cells
+        Wolfram`ChatNB`nbo,
+        Wolfram`ChatNB`cells
        ]
       ]
      ],
@@ -1298,24 +1298,24 @@ Notebook[
     ">" -> "ExternalLanguageDefault"
    },
    CellEpilog :>
-    With[ { cell = (FinishDynamic[]; EvaluationCell[]) },
+    With[ { Wolfram`ChatNB`cell = (FinishDynamic[]; EvaluationCell[]) },
      Quiet[Needs["Wolfram`Chatbook`" -> None]];
      Symbol["Wolfram`Chatbook`ChatbookAction"][
       "AIAutoAssist",
-      cell
+      Wolfram`ChatNB`cell
      ]
     ],
    ContextMenu -> {
     MenuItem[
      "Ask AI Assistant",
      KernelExecute[
-      With[ { nbo = InputNotebook[] },
-       {cells = SelectedCells[nbo]},
+      With[ { Wolfram`ChatNB`nbo = InputNotebook[] },
+       {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]},
        Quiet[Needs["Wolfram`Chatbook`" -> None]];
        Symbol["Wolfram`Chatbook`ChatbookAction"][
         "Ask",
-        nbo,
-        cells
+        Wolfram`ChatNB`nbo,
+        Wolfram`ChatNB`cells
        ]
       ]
      ],
@@ -1454,13 +1454,13 @@ Notebook[
     MenuItem[
      "Ask AI Assistant",
      KernelExecute[
-      With[ { nbo = InputNotebook[] },
-       {cells = SelectedCells[nbo]},
+      With[ { Wolfram`ChatNB`nbo = InputNotebook[] },
+       {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]},
        Quiet[Needs["Wolfram`Chatbook`" -> None]];
        Symbol["Wolfram`Chatbook`ChatbookAction"][
         "Ask",
-        nbo,
-        cells
+        Wolfram`ChatNB`nbo,
+        Wolfram`ChatNB`cells
        ]
       ]
      ],
@@ -1585,65 +1585,65 @@ Notebook[
    CellTrayWidgets -> <|"ChatWidget" -> <|"Visible" -> False|>|>,
    CellEvaluationFunction ->
     (Function[
-     With[ { cell = (FinishDynamic[]; EvaluationCell[]) },
+     With[ { Wolfram`ChatNB`cell = (FinishDynamic[]; EvaluationCell[]) },
       Quiet[Needs["Wolfram`Chatbook`" -> None]];
       Symbol["Wolfram`Chatbook`ChatbookAction"][
        "EvaluateChatInput",
-       cell
+       Wolfram`ChatNB`cell
       ]
      ]
     ]),
    CellEventActions -> {
     {"KeyDown", "@"} :>
-     With[ { cell = EvaluationCell[] },
+     With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
       Quiet[Needs["Wolfram`Chatbook`" -> None]];
       Symbol["Wolfram`Chatbook`ChatbookAction"][
        "InsertInlineReference",
        "PersonaTemplate",
-       cell
+       Wolfram`ChatNB`cell
       ]
      ],
     {"KeyDown", "!"} :>
-     With[ { cell = EvaluationCell[] },
+     With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
       Quiet[Needs["Wolfram`Chatbook`" -> None]];
       Symbol["Wolfram`Chatbook`ChatbookAction"][
        "InsertInlineReference",
        "FunctionTemplate",
-       cell
+       Wolfram`ChatNB`cell
       ]
      ],
     {"KeyDown", "#"} :>
-     With[ { cell = EvaluationCell[] },
+     With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
       Quiet[Needs["Wolfram`Chatbook`" -> None]];
       Symbol["Wolfram`Chatbook`ChatbookAction"][
        "InsertInlineReference",
        "ModifierTemplate",
-       cell
+       Wolfram`ChatNB`cell
       ]
      ],
     {"KeyDown", "\\"} :>
-     With[ { cell = EvaluationCell[] },
+     With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
       Quiet[Needs["Wolfram`Chatbook`" -> None]];
       Symbol["Wolfram`Chatbook`ChatbookAction"][
        "InsertInlineReference",
        "WLTemplate",
-       cell
+       Wolfram`ChatNB`cell
       ]
      ],
     "MouseEntered" :>
-     With[ { cell = EvaluationCell[] },
+     With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
       Quiet[Needs["Wolfram`Chatbook`" -> None]];
       Symbol["Wolfram`Chatbook`ChatbookAction"][
        "AccentIncludedCells",
-       cell
+       Wolfram`ChatNB`cell
       ]
      ],
     "MouseExited" :>
-     With[ { cell = EvaluationCell[] },
+     With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
       Quiet[Needs["Wolfram`Chatbook`" -> None]];
       Symbol["Wolfram`Chatbook`ChatbookAction"][
        "RemoveCellAccents",
-       cell
+       Wolfram`ChatNB`cell
       ]
      ]
    },
@@ -1737,50 +1737,22 @@ Notebook[
      BoxData[
       RowBox[
        {
-        PaneSelectorBox[
-         {
-          True ->
-           DynamicModuleBox[
-            {Wolfram`Chatbook`UI`Private`cell$$},
-            DynamicBox[
-             ToBoxes[
-              Catch[
-               Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
-               Wolfram`Chatbook`UI`MakeChatInputActiveCellDingbat[
-                Wolfram`Chatbook`UI`Private`cell$$
-               ],
-               Blank[]
-              ],
-              StandardForm
-             ],
-             TrackedSymbols :> {Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger}
-            ],
-            Initialization :>
-             (Wolfram`Chatbook`UI`Private`cell$$ = EvaluationCell[];
-             Needs["Wolfram`Chatbook`" -> None]),
-            DynamicModuleValues :> { },
-            UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
-           ],
-          False ->
-           FrameBox[
-            TemplateBox[{}, "ChatIconUser"],
-            RoundingRadius -> 3,
-            FrameMargins -> 2,
-            ImageMargins -> {{0, 3}, {0, 0}},
-            FrameStyle -> GrayLevel[0, 0],
-            FrameMargins -> 0,
-            StripOnInput -> False
-           ]
-         },
-         Dynamic[CurrentValue["MouseOver"]],
-         ImageSize -> All
+        DynamicBox[
+         ToBoxes[
+          If[ TrueQ[CloudSystem`$CloudNotebooks],
+           RawBoxes[TemplateBox[{}, "ChatIconUser"]],
+           RawBoxes[TemplateBox[{}, "ChatInputActiveCellDingbat"]]
+          ],
+          StandardForm
+         ]
         ],
         TemplateBox[{12}, "Spacer1"]
        }
       ]
      ],
      CellFrame -> {{0, 0}, {0, 2}},
-     CellFrameMargins -> 5
+     CellFrameColor -> RGBColor[0.639216, 0.788235, 0.94902],
+     CellFrameMargins -> 6
     ],
    CellMargins -> {{79, 26}, {Inherited, Inherited}},
    CellDingbatMargin -> 0,
@@ -1879,12 +1851,12 @@ Notebook[
               MouseAppearanceTag["LinkHand"]
              ],
              ButtonFunction :>
-              With[ { cell$ = EvaluationCell[] },
+              With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
                Quiet[Needs["Wolfram`Chatbook`" -> None]];
                Catch[
                 Symbol["Wolfram`Chatbook`ChatbookAction"][
                  "SendFeedback",
-                 cell$,
+                 Wolfram`ChatNB`cell$,
                  True
                 ],
                 Blank[]
@@ -1923,12 +1895,12 @@ Notebook[
               MouseAppearanceTag["LinkHand"]
              ],
              ButtonFunction :>
-              With[ { cell$ = EvaluationCell[] },
+              With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
                Quiet[Needs["Wolfram`Chatbook`" -> None]];
                Catch[
                 Symbol["Wolfram`Chatbook`ChatbookAction"][
                  "SendFeedback",
-                 cell$,
+                 Wolfram`ChatNB`cell$,
                  False
                 ],
                 Blank[]
@@ -1960,14 +1932,18 @@ Notebook[
    |>,
    Initialization :>
     If[ Not[TrueQ[CloudSystem`$CloudNotebooks]],
-     With[ { cell$ = EvaluationCell[] },
+     With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
       
       NotebookDelete[
-       Cells[cell$, AttachedCell -> True, CellStyle -> "ChatMenu"]
+       Cells[
+        Wolfram`ChatNB`cell$,
+        AttachedCell -> True,
+        CellStyle -> "ChatMenu"
+       ]
       ];
 
       AttachCell[
-       cell$,
+       Wolfram`ChatNB`cell$,
        Cell[
         BoxData[
          TemplateBox[
@@ -2000,14 +1976,18 @@ Notebook[
    ],
    Initialization :>
     If[ Not[TrueQ[CloudSystem`$CloudNotebooks]],
-     With[ { cell$ = EvaluationCell[] },
+     With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
       
       NotebookDelete[
-       Cells[cell$, AttachedCell -> True, CellStyle -> "ChatMenu"]
+       Cells[
+        Wolfram`ChatNB`cell$,
+        AttachedCell -> True,
+        CellStyle -> "ChatMenu"
+       ]
       ];
 
       AttachCell[
-       cell$,
+       Wolfram`ChatNB`cell$,
        Cell[
         BoxData[
          TagBox[
@@ -2019,12 +1999,12 @@ Notebook[
                ButtonBox[
                 TemplateBox[{}, "CloseAssistant"],
                 ButtonFunction :>
-                 With[ { cell = EvaluationCell[] },
+                 With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
                   Quiet[Needs["Wolfram`Chatbook`" -> None]];
                   Catch[
                    Symbol["Wolfram`Chatbook`ChatbookAction"][
                     "DisableAssistance",
-                    cell
+                    Wolfram`ChatNB`cell
                    ],
                    Blank[]
                   ]
@@ -2078,14 +2058,18 @@ Notebook[
    ],
    Initialization :>
     If[ Not[TrueQ[CloudSystem`$CloudNotebooks]],
-     With[ { cell$ = EvaluationCell[] },
+     With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
       
       NotebookDelete[
-       Cells[cell$, AttachedCell -> True, CellStyle -> "ChatMenu"]
+       Cells[
+        Wolfram`ChatNB`cell$,
+        AttachedCell -> True,
+        CellStyle -> "ChatMenu"
+       ]
       ];
 
       AttachCell[
-       cell$,
+       Wolfram`ChatNB`cell$,
        Cell[
         BoxData[
          TagBox[
@@ -2097,12 +2081,12 @@ Notebook[
                ButtonBox[
                 TemplateBox[{}, "CloseAssistant"],
                 ButtonFunction :>
-                 With[ { cell = EvaluationCell[] },
+                 With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
                   Quiet[Needs["Wolfram`Chatbook`" -> None]];
                   Catch[
                    Symbol["Wolfram`Chatbook`ChatbookAction"][
                     "DisableAssistance",
-                    cell
+                    Wolfram`ChatNB`cell
                    ],
                    Blank[]
                   ]
@@ -2156,14 +2140,18 @@ Notebook[
    ],
    Initialization :>
     If[ Not[TrueQ[CloudSystem`$CloudNotebooks]],
-     With[ { cell$ = EvaluationCell[] },
+     With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
       
       NotebookDelete[
-       Cells[cell$, AttachedCell -> True, CellStyle -> "ChatMenu"]
+       Cells[
+        Wolfram`ChatNB`cell$,
+        AttachedCell -> True,
+        CellStyle -> "ChatMenu"
+       ]
       ];
 
       AttachCell[
-       cell$,
+       Wolfram`ChatNB`cell$,
        Cell[
         BoxData[
          TagBox[
@@ -2175,12 +2163,12 @@ Notebook[
                ButtonBox[
                 TemplateBox[{}, "CloseAssistant"],
                 ButtonFunction :>
-                 With[ { cell = EvaluationCell[] },
+                 With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
                   Quiet[Needs["Wolfram`Chatbook`" -> None]];
                   Catch[
                    Symbol["Wolfram`Chatbook`ChatbookAction"][
                     "DisableAssistance",
-                    cell
+                    Wolfram`ChatNB`cell
                    ],
                    Blank[]
                   ]
@@ -2539,12 +2527,12 @@ Notebook[
            ButtonBox[
             TemplateBox[{}, "ChatMenuIcon"],
             ButtonFunction :>
-             With[ { cell = EvaluationCell[] },
+             With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
               Quiet[Needs["Wolfram`Chatbook`" -> None]];
               Symbol["Wolfram`Chatbook`ChatbookAction"][
                "OpenChatMenu",
                #1,
-               cell
+               Wolfram`ChatNB`cell
               ]
              ],
             Appearance ->
@@ -2569,12 +2557,12 @@ Notebook[
            ButtonBox[
             TemplateBox[{}, "ChatMenuIcon"],
             ButtonFunction :>
-             With[ { cell = EvaluationCell[] },
+             With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
               Quiet[Needs["Wolfram`Chatbook`" -> None]];
               Symbol["Wolfram`Chatbook`ChatbookAction"][
                "OpenChatMenu",
                #1,
-               cell
+               Wolfram`ChatNB`cell
               ]
              ],
             Appearance ->
@@ -2773,16 +2761,16 @@ Notebook[
                TemplateBox[{"DivideCellsIcon"}, "ChatMenuItemToolbarIcon"],
                "\"Explode Cells (In Place)\"",
                Hold[
-                With[ { cell$ = EvaluationCell[] },
-                 {root$ = ParentCell[cell$]},
+                With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                 {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
                  Quiet[Needs["Wolfram`Chatbook`" -> None]];
                  
                  Symbol["Wolfram`Chatbook`ChatbookAction"][
                   "ExplodeInPlace",
-                  root$
+                  Wolfram`ChatNB`root$
                  ];
 
-                 NotebookDelete[cell$];
+                 NotebookDelete[Wolfram`ChatNB`cell$];
                 ]
                ]
               },
@@ -2795,16 +2783,16 @@ Notebook[
                TemplateBox[{"OverflowIcon"}, "ChatMenuItemToolbarIcon"],
                "\"Explode Cells (Duplicate)\"",
                Hold[
-                With[ { cell$ = EvaluationCell[] },
-                 {root$ = ParentCell[cell$]},
+                With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                 {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
                  Quiet[Needs["Wolfram`Chatbook`" -> None]];
                  
                  Symbol["Wolfram`Chatbook`ChatbookAction"][
                   "ExplodeDuplicate",
-                  root$
+                  Wolfram`ChatNB`root$
                  ];
 
-                 NotebookDelete[cell$];
+                 NotebookDelete[Wolfram`ChatNB`cell$];
                 ]
                ]
               },
@@ -2820,16 +2808,16 @@ Notebook[
                ],
                "\"Copy Exploded Cells\"",
                Hold[
-                With[ { cell$ = EvaluationCell[] },
-                 {root$ = ParentCell[cell$]},
+                With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                 {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
                  Quiet[Needs["Wolfram`Chatbook`" -> None]];
                  
                  Symbol["Wolfram`Chatbook`ChatbookAction"][
                   "CopyExplodedCells",
-                  root$
+                  Wolfram`ChatNB`root$
                  ];
 
-                 NotebookDelete[cell$];
+                 NotebookDelete[Wolfram`ChatNB`cell$];
                 ]
                ]
               },
@@ -2843,16 +2831,16 @@ Notebook[
                TemplateBox[{"TypesettingIcon"}, "ChatMenuItemToolbarIcon"],
                "\"Toggle Formatting\"",
                Hold[
-                With[ { cell$ = EvaluationCell[] },
-                 {root$ = ParentCell[cell$]},
+                With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                 {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
                  Quiet[Needs["Wolfram`Chatbook`" -> None]];
                  
                  Symbol["Wolfram`Chatbook`ChatbookAction"][
                   "ToggleFormatting",
-                  root$
+                  Wolfram`ChatNB`root$
                  ];
 
-                 NotebookDelete[cell$];
+                 NotebookDelete[Wolfram`ChatNB`cell$];
                 ]
                ]
               },
@@ -2865,16 +2853,16 @@ Notebook[
                TemplateBox[{"InPlaceIcon"}, "ChatMenuItemToolbarIcon"],
                "\"Copy ChatObject\"",
                Hold[
-                With[ { cell$ = EvaluationCell[] },
-                 {root$ = ParentCell[cell$]},
+                With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
+                 {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
                  Quiet[Needs["Wolfram`Chatbook`" -> None]];
                  
                  Symbol["Wolfram`Chatbook`ChatbookAction"][
                   "CopyChatObject",
-                  root$
+                  Wolfram`ChatNB`root$
                  ];
 
-                 NotebookDelete[cell$];
+                 NotebookDelete[Wolfram`ChatNB`cell$];
                 ]
                ]
               },
@@ -3521,26 +3509,21 @@ Notebook[
     DisplayFunction ->
      (Function[
       DynamicModuleBox[
-       {
-        Wolfram`ChatbookStylesheetBuilder`Private`running$$ = True
-       },
+       {Wolfram`ChatNB`running$$ = True},
        TagBox[
         TagBox[
          DynamicModuleBox[
-          {Wolfram`ChatbookStylesheetBuilder`Private`frame$$},
+          {Wolfram`ChatNB`frame$$},
           OverlayBox[
            {
             PaneBox[
              AnimatorBox[
-              Dynamic[Wolfram`ChatbookStylesheetBuilder`Private`frame$$],
+              Dynamic[Wolfram`ChatNB`frame$$],
               {1, 10, 1},
               AutoAction -> False,
               AnimationRate -> Automatic,
               DisplayAllSteps -> True,
-              AnimationRunning ->
-               Dynamic[
-                Wolfram`ChatbookStylesheetBuilder`Private`running$$
-               ],
+              AnimationRunning -> Dynamic[Wolfram`ChatNB`running$$],
               DefaultDuration -> 0.2,
               AppearanceElements -> None
              ],
@@ -3789,7 +3772,7 @@ Notebook[
                 ImageSize -> 32
                ]
              },
-             Dynamic[Wolfram`ChatbookStylesheetBuilder`Private`frame$$],
+             Dynamic[Wolfram`ChatNB`frame$$],
              ImageSize -> All,
              Alignment -> Automatic,
              BaseStyle -> None,
@@ -3806,10 +3789,8 @@ Notebook[
         EventHandlerTag[
          {
           "MouseClicked" :>
-           (Wolfram`ChatbookStylesheetBuilder`Private`running$$ = 
-            Not[
-             TrueQ[Wolfram`ChatbookStylesheetBuilder`Private`running$$]
-            ]),
+           (Wolfram`ChatNB`running$$ = 
+            Not[TrueQ[Wolfram`ChatNB`running$$]]),
           Method -> "Preemptive",
           PassEventsDown -> Automatic,
           PassEventsUp -> True
@@ -5425,10 +5406,13 @@ Notebook[
          Annotation[#1, "Stop", "Tooltip"] &
         ],
         ButtonFunction :>
-         With[ { cell = EvaluationCell[] },
+         With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
           Quiet[Needs["Wolfram`Chatbook`" -> None]];
           Catch[
-           Symbol["Wolfram`Chatbook`ChatbookAction"]["StopChat", cell],
+           Symbol["Wolfram`Chatbook`ChatbookAction"][
+            "StopChat",
+            Wolfram`ChatNB`cell
+           ],
            Blank[]
           ]
          ],
@@ -17200,7 +17184,7 @@ Notebook[
          {#1},
          {
           DynamicModuleBox[
-           {Wolfram`ChatbookStylesheetBuilder`Private`cell$$},
+           {Wolfram`ChatNB`cell$$},
            TagBox[
             GridBox[
              {
@@ -17249,7 +17233,7 @@ Notebook[
                    Catch[
                     Symbol["Wolfram`Chatbook`ChatbookAction"][
                      "TabLeft",
-                     Wolfram`ChatbookStylesheetBuilder`Private`cell$$
+                     Wolfram`ChatNB`cell$$
                     ],
                     Blank[]
                    ]),
@@ -17305,7 +17289,7 @@ Notebook[
                    Catch[
                     Symbol["Wolfram`Chatbook`ChatbookAction"][
                      "TabRight",
-                     Wolfram`ChatbookStylesheetBuilder`Private`cell$$
+                     Wolfram`ChatNB`cell$$
                     ],
                     Blank[]
                    ]),
@@ -17330,7 +17314,7 @@ Notebook[
                   DynamicBox[
                    ToBoxes[
                     CurrentValue[
-                     Wolfram`ChatbookStylesheetBuilder`Private`cell$$,
+                     Wolfram`ChatNB`cell$$,
                      {TaggingRules, "PageData", "CurrentPage"},
                      1
                     ],
@@ -17341,7 +17325,7 @@ Notebook[
                   DynamicBox[
                    ToBoxes[
                     CurrentValue[
-                     Wolfram`ChatbookStylesheetBuilder`Private`cell$$,
+                     Wolfram`ChatNB`cell$$,
                      {TaggingRules, "PageData", "PageCount"},
                      1
                     ],
@@ -17363,14 +17347,14 @@ Notebook[
             "Column"
            ],
            Initialization :>
-            (Wolfram`ChatbookStylesheetBuilder`Private`cell$$ = 
+            (Wolfram`ChatNB`cell$$ = 
              If[ $CloudEvaluation,
-              Wolfram`ChatbookStylesheetBuilder`Private`x;
+              Wolfram`ChatNB`x;
               EvaluationCell[],
               ParentCell[EvaluationCell[]]
              ]),
            DynamicModuleValues :> { },
-           UnsavedVariables :> {Wolfram`ChatbookStylesheetBuilder`Private`cell$$}
+           UnsavedVariables :> {Wolfram`ChatNB`cell$$}
           ]
          }
         },
@@ -17553,12 +17537,12 @@ Notebook[
         MouseAppearanceTag["LinkHand"]
        ],
        ButtonFunction :>
-        With[ { cell = ParentCell[EvaluationCell[]] },
+        With[ { Wolfram`ChatNB`cell = ParentCell[EvaluationCell[]] },
          Quiet[Needs["Wolfram`Chatbook`" -> None]];
          Catch[
           Symbol["Wolfram`Chatbook`ChatbookAction"][
            "WidgetSend",
-           cell
+           Wolfram`ChatNB`cell
           ],
           Blank[]
          ]

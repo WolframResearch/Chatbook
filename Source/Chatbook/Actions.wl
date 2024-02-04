@@ -30,6 +30,7 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 `autoAssistQ;
 `chatInputCellQ;
 `clearMinimizedChats;
+`revertMultimodalContent;
 `standardizeMessageKeys;
 `systemCredential;
 `toAPIKey;
@@ -404,7 +405,7 @@ EvaluateChatInput[ source: _CellObject | $Failed ] :=
     ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
-    EvaluateChatInput[ evalCell, nbo, currentChatSettings @ nbo ];
+    EvaluateChatInput[ evalCell, nbo, currentChatSettings @ evalCell ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
     withChatState @ Block[ { $autoAssistMode = False, $aborted = False },
@@ -665,15 +666,25 @@ CopyChatObject // beginDefinition;
 
 CopyChatObject[ cell0_ ] := Enclose[
     Module[ { cell, encodedString, chatData, messages, chatObject },
+
         Quiet[ PacletInstall[ "Wolfram/LLMFunctions" ]; Needs[ "Wolfram`LLMFunctions`" -> None ] ];
-        cell          = ConfirmMatch[ ensureChatOutputCell @ cell0, _CellObject, "CellObject" ];
-        encodedString = ConfirmBy[ CurrentValue[ cell, { TaggingRules, "ChatData" } ], StringQ, "EncodedString" ];
-        chatData      = ConfirmBy[ BinaryDeserialize @ BaseDecode @ encodedString, AssociationQ, "ChatData" ];
-        messages      = ConfirmMatch[ chatData[ "Data", "Messages" ], { __Association? AssociationQ }, "Messages" ];
-        chatObject    = Confirm[ constructChatObject @ messages, "ChatObject" ];
+        cell = ConfirmMatch[ ensureChatOutputCell @ cell0, _CellObject, "CellObject" ];
+
+        encodedString = ConfirmMatch[
+            CurrentValue[ cell, { TaggingRules, "ChatData" } ],
+            _String|Inherited,
+            "EncodedString"
+        ];
+
+        If[ encodedString === Inherited, throwMessageDialog[ "ChatObjectNotAvailable" ] ];
+
+        chatData   = ConfirmBy[ BinaryDeserialize @ BaseDecode @ encodedString, AssociationQ, "ChatData" ];
+        messages   = ConfirmMatch[ chatData[ "Data", "Messages" ], { __Association? AssociationQ }, "Messages" ];
+        chatObject = Confirm[ constructChatObject @ messages, "ChatObject" ];
+
         CopyToClipboard @ chatObject
     ],
-    throwInternalFailure[ HoldForm @ CopyChatObject @ cell0, ## ] &
+    throwInternalFailure
 ];
 
 CopyChatObject // endDefinition;
@@ -1117,7 +1128,7 @@ SendChat[ evalCell_CellObject ] := SendChat[ evalCell, parentNotebook @ evalCell
 SendChat[ evalCell_CellObject, nbo_NotebookObject? queuedEvaluationsQ ] := Null;
 
 SendChat[ evalCell_CellObject, nbo_NotebookObject ] :=
-    SendChat[ evalCell, nbo, currentChatSettings @ nbo ];
+    SendChat[ evalCell, nbo, currentChatSettings @ evalCell ];
 
 SendChat[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
     SendChat[ evalCell, nbo, settings, Lookup[ settings, "ShowMinimized", Automatic ] ];

@@ -32,7 +32,7 @@ Needs[ "Wolfram`Chatbook`Utils`"             ];
     "Description"        -> $chatPreferencesDescription,
     "Function"           -> chatPreferences,
     "FormattingFunction" -> toolAutoFormatter,
-    "Source"             -> "BuiltIn",
+    "Origin"             -> "BuiltIn",
     "Parameters"         -> {
         "action" -> <|
             "Interpreter" -> { "get", "set" },
@@ -70,7 +70,7 @@ $defaultChatTools0[ "DocumentationSearcher" ] = <|
     "Description"        -> $documentationSearchDescription,
     "Function"           -> documentationSearch,
     "FormattingFunction" -> toolAutoFormatter,
-    "Source"             -> "BuiltIn",
+    "Origin"             -> "BuiltIn",
     "Parameters"         -> {
         "query" -> <|
             "Interpreter" -> "String",
@@ -101,7 +101,7 @@ $defaultChatTools0[ "DocumentationLookup" ] = <|
     "Description"        -> "Get documentation pages for Wolfram Language symbols.",
     "Function"           -> documentationLookup,
     "FormattingFunction" -> toolAutoFormatter,
-    "Source"             -> "BuiltIn",
+    "Origin"             -> "BuiltIn",
     "Parameters"         -> {
         "names" -> <|
             "Interpreter" -> DelimitedSequence[ "WolframLanguageSymbol", "," ],
@@ -224,7 +224,7 @@ $defaultChatTools0[ "WolframLanguageEvaluator" ] = <|
     "Description"        -> $sandboxEvaluateDescription,
     "Function"           -> sandboxEvaluate,
     "FormattingFunction" -> sandboxFormatter,
-    "Source"             -> "BuiltIn",
+    "Origin"             -> "BuiltIn",
     "Parameters"         -> {
         "code" -> <|
             "Interpreter" -> "String",
@@ -276,7 +276,7 @@ $defaultChatTools0[ "WolframAlpha" ] = <|
     "Description"        -> $wolframAlphaDescription,
     "Function"           -> getWolframAlphaText,
     "FormattingFunction" -> wolframAlphaResultFormatter,
-    "Source"             -> "BuiltIn",
+    "Origin"             -> "BuiltIn",
     "Parameters"         -> {
         "input" -> <|
             "Interpreter" -> "String",
@@ -386,6 +386,9 @@ waResultText0[ as: KeyValuePattern @ { "Title" -> title_String, "Data" -> data_ 
 waResultText0[ as: KeyValuePattern[ _Integer -> _ ] ] :=
     waResultText0 /@ Values @ KeySort @ KeySelect[ as, IntegerQ ];
 
+waResultText0[ KeyValuePattern @ { "Content"|"ComputableData" -> expr_ } ] /;
+    ! FreeQ[ Unevaluated @ expr, _Missing ] := Nothing;
+
 waResultText0[ KeyValuePattern @ { "Plaintext" -> text_String, "ComputableData" -> Hold[ expr_ ] } ] :=
     If[ ByteCount @ Unevaluated @ expr >= 500,
         If[ StringFreeQ[ text, "["|"]"|"\n" ],
@@ -441,7 +444,7 @@ $defaultChatTools0[ "WebSearcher" ] = <|
     "Description"        -> "Search the web.",
     "Function"           -> webSearch,
     "FormattingFunction" -> toolAutoFormatter,
-    "Source"             -> "BuiltIn",
+    "Origin"             -> "BuiltIn",
     "Parameters"         -> {
         "query" -> <|
             "Interpreter" -> "String",
@@ -535,7 +538,7 @@ $defaultChatTools0[ "WebFetcher" ] = <|
     "Description"        -> "Fetch plain text or image links from a URL.",
     "Function"           -> webFetch,
     "FormattingFunction" -> toolAutoFormatter,
-    "Source"             -> "BuiltIn",
+    "Origin"             -> "BuiltIn",
     "Parameters"  -> {
         "url" -> <|
             "Interpreter" -> "URL",
@@ -656,7 +659,7 @@ $defaultChatTools0[ "WebImageSearcher" ] = <|
     "Description"        -> "Search the web for images.",
     "Function"           -> webImageSearch,
     "FormattingFunction" -> toolAutoFormatter,
-    "Source"             -> "BuiltIn",
+    "Origin"             -> "BuiltIn",
     "Parameters"         -> {
         "query" -> <|
             "Interpreter" -> "String",
@@ -851,7 +854,7 @@ Out[n]= Piecewise[...]
 ![Formatted Result](expression://content-{id})
 
 [assistant]
-The half-order fractional derivative of $x^n$ with respect to $x$ is given by:
+The half-order fractional derivative of $$x^n$$ with respect to $$x$$ is given by:
 ![Fractional Derivative](expression://content-{id})
 ";
 
@@ -872,7 +875,7 @@ Plot sin(x) from -5 to 5
 Out[n]= ![image](attachment://content-{id})
 
 [assistant]
-Here's the plot of $\\sin{x}$ from -5 to 5:
+Here's the plot of $$\\sin{x}$$ from -5 to 5:
 ![Plot](attachment://content-{id})"
 ];
 
@@ -1150,7 +1153,7 @@ wolframLanguageData // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getToolIcon*)
 getToolIcon // beginDefinition;
-getToolIcon[ HoldPattern @ LLMTool[ as_, ___ ] ] := getToolIcon @ toolData @ as;
+getToolIcon[ tool: $$llmTool ] := getToolIcon @ toolData @ tool;
 getToolIcon[ as_Association ] := Lookup[ toolData @ as, "Icon", RawBoxes @ TemplateBox[ { }, "WrenchIcon" ] ];
 getToolIcon[ _ ] := $defaultToolIcon;
 getToolIcon // endDefinition;
@@ -1163,11 +1166,11 @@ getToolDisplayName // beginDefinition;
 getToolDisplayName[ tool_ ] :=
     getToolDisplayName[ tool, Missing[ "NotFound" ] ];
 
-getToolDisplayName[ HoldPattern @ LLMTool[ as_, ___ ], default_ ] :=
-    getToolDisplayName @ as;
+getToolDisplayName[ tool: $$llmTool, default_ ] :=
+    getToolDisplayName @ toolData @ tool;
 
 getToolDisplayName[ as_Association, default_ ] :=
-    toDisplayToolName @ Lookup[ as, "DisplayName", Lookup[ as, "Name", default ] ];
+    Lookup[ as, "DisplayName", toDisplayToolName @ Lookup[ as, "Name", default ] ];
 
 getToolDisplayName[ _, default_ ] :=
     default;

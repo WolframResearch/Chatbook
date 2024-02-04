@@ -137,6 +137,9 @@ makeResultCell0[ codeBlockCell[ language_String, code_String ] ] :=
 
 makeResultCell0[ inlineCodeCell[ code_String ] ] := makeInlineCodeCell @ code;
 
+makeResultCell0[ mathCell[ math_String ] ] /; StringMatchQ[ math, (DigitCharacter|"."|","|" ").. ] :=
+    math;
+
 makeResultCell0[ mathCell[ math_String ] ] :=
     With[ { boxes = Quiet @ InputAssistant`TeXAssistant @ StringTrim @ math },
         If[ MatchQ[ boxes, _RawBoxes ],
@@ -671,10 +674,10 @@ $textDataFormatRules = {
     "``" ~~ code__ ~~ "``" /; StringFreeQ[ code, "``" ] :> inlineCodeCell @ code,
     "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`" /; inlineSyntaxQ @ code :> inlineCodeCell @ code,
     "`" ~~ code: Except[ "`"|"\n" ].. ~~ "`" :> inlineCodeCell @ code,
-    "$$" ~~ math: Except[ "$" ].. ~~ "$$" :> mathCell @ math,
+    "$$" ~~ math__ ~~ "$$" /; StringFreeQ[ math, "$$" ] :> mathCell @ math,
     "\\(" ~~ math__ ~~ "\\)" /; StringFreeQ[ math, "\\)" ] :> mathCell @ math,
     "\\[" ~~ math__ ~~ "\\]" /; StringFreeQ[ math, "\\]" ] :> mathCell @ math,
-    "$" ~~ math: Except[ "$" ].. ~~ "$" :> mathCell @ math
+    "$" ~~ math: Except[ "$" ].. ~~ "$" /; probablyMathQ @ math :> mathCell @ math
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -708,15 +711,32 @@ $dynamicSplitRules = {
 
 (* cSpell: ignore textit, textbf *)
 $stringFormatRules = {
-    "***" ~~ text: Except[ "*" ].. ~~ "***" :> styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
-    "___" ~~ text: Except[ "_" ].. ~~ "___" :> styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
-    "**" ~~ text: Except[ "*" ].. ~~ "**" :> styleBox[ text, FontWeight -> Bold ],
-    "__" ~~ text: Except[ "_" ].. ~~ "__" :> styleBox[ text, FontWeight -> Bold ],
-    "*" ~~ text: Except[ "*" ].. ~~ "*" :> styleBox[ text, FontSlant -> Italic ],
-    "_" ~~ text: Except[ "_" ].. ~~ "_" :> styleBox[ text, FontSlant -> Italic ],
-    "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :> hyperlink[ label, url ],
-    "\\textit{" ~~ text__ ~~ "}" /; StringFreeQ[ text, "{"|"}" ] :> styleBox[ text, FontSlant -> Italic ],
-    "\\textbf{" ~~ text__ ~~ "}" /; StringFreeQ[ text, "{"|"}" ] :> styleBox[ text, FontWeight -> Bold ]
+    "***" ~~ text: Except[ "*" ].. ~~ "***" /; StringFreeQ[ text, "\n" ] :>
+        styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
+
+    "___" ~~ text: Except[ "_" ].. ~~ "___" /; StringFreeQ[ text, "\n" ] :>
+        styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
+
+    "**" ~~ text: Except[ "*" ].. ~~ "**" /; StringFreeQ[ text, "\n" ] :>
+        styleBox[ text, FontWeight -> Bold ],
+
+    "__" ~~ text: Except[ "_" ].. ~~ "__" /; StringFreeQ[ text, "\n" ] :>
+        styleBox[ text, FontWeight -> Bold ],
+
+    "*" ~~ text: Except[ "*" ].. ~~ "*" /; StringFreeQ[ text, "\n" ] :>
+        styleBox[ text, FontSlant -> Italic ],
+
+    "_" ~~ text: Except[ "_" ].. ~~ "_" /; StringFreeQ[ text, "\n" ] :>
+        styleBox[ text, FontSlant -> Italic ],
+
+    "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :>
+        hyperlink[ label, url ],
+
+    "\\textit{" ~~ text__ ~~ "}" /; StringFreeQ[ text, "{"|"}" ] :>
+        styleBox[ text, FontSlant -> Italic ],
+
+    "\\textbf{" ~~ text__ ~~ "}" /; StringFreeQ[ text, "{"|"}" ] :>
+        styleBox[ text, FontWeight -> Bold ]
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -1382,6 +1402,9 @@ attachment[ alt_String, key_String ] := attachment[ alt, key, $attachments[ key 
 attachment[ alt_String, key_String, HoldComplete[ expr_ ] ] := attachment[ alt, key, Defer @ expr ];
 attachment[ alt_String, key_String, _Missing ] := attachment[ alt, key, $missingImage ];
 
+attachment[ alt_String, key_String, Defer[ img_Image ] ] /; ImageQ @ Unevaluated @ img :=
+    Cell[ BoxData @ PaneBox[ attachmentBoxes[ alt, key, resizeImage @ img ], ImageMargins -> 10 ], Background -> None ];
+
 attachment[ alt_String, key_String, expr_ ] /; $dynamicText :=
     codeBlockFrame[ Cell[ BoxData @ attachmentBoxes[ alt, key, expr ], "ChatCodeActive" ], expr ];
 
@@ -1612,6 +1635,19 @@ nameQ[ ___ ] := False;
 (*inlineSyntaxQ*)
 inlineSyntaxQ[ s_String ] := ! StringStartsQ[ s, "`" ] && Internal`SymbolNameQ[ unescapeInlineMarkdown @ s<>"x", True ];
 inlineSyntaxQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*probablyMathQ*)
+probablyMathQ[ s_String ] := And[
+    StringFreeQ[ s, "\n" ],
+    StringLength @ s < 100,
+    Or[ StringMatchQ[ s, (LetterCharacter|DigitCharacter|"("|")").. ],
+        StringContainsQ[ s, "+" | "-" | "=" | "^" | ("\\" ~~ WordCharacter..) ]
+    ]
+];
+
+probablyMathQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

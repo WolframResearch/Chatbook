@@ -73,6 +73,18 @@ $ResourceInstallationDirectory := GeneralUtilities`EnsureDirectory @ {
 $$installableType = Alternatives @@ $installableTypes;
 $$resourceContext = Alternatives @@ $resourceContexts;
 
+$$notHeld = Alternatives[
+    _Association, _File, _Function, _List, _Missing, _String, _URL,
+    All, Association, Automatic, False, File, Function, List, Missing, None, String, True, URL
+];
+
+tempHold // Attributes = { HoldAllComplete };
+held[ expr_ ] := HoldPattern[ tempHold @ expr | expr ];
+
+$$cloudObject = held[ _CloudObject ];
+$$localObject = held[ _LocalObject ];
+$$url         = held[ _URL ];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*ResourceUninstall*)
@@ -482,6 +494,7 @@ resourceInstall // endDefinition;
 (*postInstall*)
 postInstall // beginDefinition;
 postInstall[ "Prompt", info_ ] := addToVisiblePersonas @ resourceName @ info;
+postInstall[ "LLMTool", info_ ] := enableTool @ resourceName @ info;
 postInstall[ rtype_, info_ ] := Null;
 postInstall // endDefinition;
 
@@ -490,18 +503,32 @@ postInstall // endDefinition;
 (*addToVisiblePersonas*)
 addToVisiblePersonas // beginDefinition;
 
-addToVisiblePersonas[ name_String ] := Set[
-    CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas" } ],
+addToVisiblePersonas[ name_String ] := CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ] =
     Union @ Append[
         Replace[
-            CurrentValue[ $FrontEnd, { PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas" } ],
+            CurrentChatSettings[ $FrontEnd, "VisiblePersonas" ],
             Except[ _List ] :> { }
         ],
         name
-    ]
-];
+    ];
 
 addToVisiblePersonas // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*enableTool*)
+enableTool // beginDefinition;
+
+enableTool[ name_String ] := CurrentChatSettings[ $FrontEnd, "ToolSelectionType" ] =
+    Append[
+        Replace[
+            Association @ CurrentChatSettings[ $FrontEnd, "ToolSelectionType" ],
+            Except[ _? AssociationQ ] :> <| |>
+        ],
+        name -> All
+    ];
+
+enableTool // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -712,34 +739,37 @@ getInstalledResourceData[ rtype_ ] :=
     ];
 
 getInstalledResourceData[ rtype: $$installableType ] := Enclose[
-    Module[ { data },
+    Module[ { data, held, merged, released },
         data = ConfirmMatch[ getInstalledResources @ rtype, { ___Association }, "GetInstalledResources" ];
-        Block[ { TemplateObject, CloudObject },
-            SetAttributes[ TemplateObject, HoldAllComplete ];
-            $installedResourceCache[ rtype ] = KeySort @ Association @ Cases[
-                data,
-                KeyValuePattern @ {
-                    "Name"                -> name_String,
-                    "Configuration"       -> config_Association,
-                    "ResourceInformation" -> resourceAssoc_Association
-                } :>
-                    name -> Merge[
-                        {
-                            config,
-                            KeyDrop[ resourceAssoc, "Name" ],
-                            <|
-                                "Name"         -> name,
-                                "ResourceType" -> rtype,
-                                "ResourceName" -> Lookup[ resourceAssoc, "Name", name ],
-                                "Origin"       -> determineOrigin[ rtype, resourceAssoc ]
-                            |>
-                        },
-                        First
-                    ]
-            ]
-        ]
+        held = data /. expr: Except[ $$notHeld ] :> tempHold @ expr;
+
+        merged = KeySort @ Association @ Cases[
+            held,
+            KeyValuePattern @ {
+                "Name"                -> name_String,
+                "Configuration"       -> config_Association,
+                "ResourceInformation" -> resourceAssoc_Association
+            } :>
+                name -> Merge[
+                    {
+                        config,
+                        KeyDrop[ resourceAssoc, "Name" ],
+                        <|
+                            "Name"         -> name,
+                            "ResourceType" -> rtype,
+                            "ResourceName" -> Lookup[ resourceAssoc, "Name", name ],
+                            "Origin"       -> determineOrigin[ rtype, resourceAssoc ]
+                        |>
+                    },
+                    First
+                ]
+        ];
+
+        released = ConfirmBy[ merged /. tempHold[ expr_ ] :> expr, FreeQ @ tempHold, "Release" ];
+
+        $installedResourceCache[ rtype ] = released
     ],
-    throwInternalFailure[ getInstalledResourceData @ rtype, ## ] &
+    throwInternalFailure
 ];
 
 getInstalledResourceData // endDefinition;
@@ -762,11 +792,11 @@ getResourceFile // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*determineOrigin*)
 determineOrigin // beginDefinition;
-determineOrigin[ rtype: $$installableType, KeyValuePattern[ "RepositoryLocation" -> _URL ] ] := rtype<>"Repository";
-determineOrigin[ rtype_, KeyValuePattern[ "RepositoryLocation" -> _LocalObject ] ] := "Local";
-determineOrigin[ rtype_, KeyValuePattern[ "ResourceLocations" -> { _LocalObject } ] ] := "Local";
-determineOrigin[ rtype_, KeyValuePattern[ "ResourceLocations" -> { _CloudObject } ] ] := "Cloud";
-determineOrigin[ rtype_, KeyValuePattern[ "DocumentationLink" -> _URL ] ] := "Cloud";
+determineOrigin[ rtype: $$installableType, KeyValuePattern[ "RepositoryLocation" -> $$url ] ] := rtype<>"Repository";
+determineOrigin[ rtype_, KeyValuePattern[ "RepositoryLocation" -> $$localObject ] ] := "Local";
+determineOrigin[ rtype_, KeyValuePattern[ "ResourceLocations" -> { $$localObject } ] ] := "Local";
+determineOrigin[ rtype_, KeyValuePattern[ "ResourceLocations" -> { $$cloudObject } ] ] := "Cloud";
+determineOrigin[ rtype_, KeyValuePattern[ "DocumentationLink" -> $$url ] ] := "Cloud";
 determineOrigin[ rtype: $$installableType, _Association ] := "Unknown";
 determineOrigin // endDefinition;
 

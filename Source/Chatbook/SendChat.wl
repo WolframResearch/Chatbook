@@ -6,13 +6,16 @@ BeginPackage[ "Wolfram`Chatbook`SendChat`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-`$debugLog;
-`makeOutputDingbat;
-`multimodalPacletsAvailable;
-`sendChat;
-`toImageURI;
-`toolsEnabledQ;
-`writeReformattedCell;
+HoldComplete[
+    `$debugLog;
+    `makeOutputDingbat;
+    `multimodalPacletsAvailable;
+    `resolveAutoSettings;
+    `sendChat;
+    `toImageURI;
+    `toolsEnabledQ;
+    `writeReformattedCell;
+];
 
 Begin[ "`Private`" ];
 
@@ -67,12 +70,13 @@ $buffer            = "";
 sendChat // beginDefinition;
 
 sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ ChatbookAction ] @ Enclose[
-    Module[ { cells0, cells, target, settings, messages, data, persona, cellTags, cell, cellObject, container, task },
+    Module[ { settings, cells0, cells, target, messages, data, persona, cellTags, cell, cellObject, container, task },
 
         initFETaskWidget @ nbo;
-
         resolveInlineReferences @ evalCell;
-        cells0 = ConfirmMatch[ selectChatCells[ settings0, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
+
+        settings = ConfirmBy[ resolveAutoSettings @ settings0, AssociationQ, "ResolveSettings" ];
+        cells0 = ConfirmMatch[ selectChatCells[ settings, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
 
         { cells, target } = ConfirmMatch[
             chatHistoryCellsAndTarget @ cells0,
@@ -80,13 +84,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             "HistoryAndTarget"
         ];
 
-        settings = ConfirmBy[
-            resolveAutoSettings @ currentChatSettings @ evalCell,
-            AssociationQ,
-            "InheritSettings"
-        ];
-
         $multimodalMessages = TrueQ @ settings[ "Multimodal" ];
+        $chatIndicatorSymbol = chatIndicatorSymbol @ settings;
 
         If[ TrueQ @ settings[ "EnableChatGroupSettings" ],
             AppendTo[ settings, "ChatGroupSettings" -> getChatGroupSettings @ evalCell ]
@@ -140,7 +139,10 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         If[ ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
             SetOptions[
                 evalCell,
-                CellDingbat -> Cell[ BoxData @ TemplateBox[ { }, "ChatInputCellDingbat" ], Background -> None ]
+                CellDingbat -> ReplaceAll[
+                    CurrentValue[ evalCell, CellDingbat ],
+                    TemplateBox[ { }, "ChatInputActiveCellDingbat" ] -> TemplateBox[ { }, "ChatInputCellDingbat" ]
+                ]
             ]
         ];
 
@@ -182,14 +184,15 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
 sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclose[
     Module[
         {
-            cells0, cells, target, settings, id, key, messages, req, data, persona,
+            settings, cells0, cells, target, id, key, messages, req, data, persona,
             cellTags, cell, cellObject, container, task
         },
 
         initFETaskWidget @ nbo;
-
         resolveInlineReferences @ evalCell;
-        cells0 = ConfirmMatch[ selectChatCells[ settings0, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
+
+        settings = ConfirmBy[ resolveAutoSettings @ settings0, AssociationQ, "ResolveSettings" ];
+        cells0 = ConfirmMatch[ selectChatCells[ settings, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
 
         { cells, target } = ConfirmMatch[
             chatHistoryCellsAndTarget @ cells0,
@@ -197,13 +200,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
             "HistoryAndTarget"
         ];
 
-        settings = ConfirmBy[
-            resolveAutoSettings @ currentChatSettings @ evalCell,
-            AssociationQ,
-            "InheritSettings"
-        ];
-
         $multimodalMessages = TrueQ @ settings[ "Multimodal" ];
+        $chatIndicatorSymbol = chatIndicatorSymbol @ settings;
 
         If[ TrueQ @ settings[ "EnableChatGroupSettings" ],
             AppendTo[ settings, "ChatGroupSettings" -> getChatGroupSettings @ evalCell ]
@@ -264,7 +262,10 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         If[ ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
             SetOptions[
                 evalCell,
-                CellDingbat -> Cell[ BoxData @ TemplateBox[ { }, "ChatInputCellDingbat" ], Background -> None ]
+                CellDingbat -> ReplaceAll[
+                    CurrentValue[ evalCell, CellDingbat ],
+                    TemplateBox[ { }, "ChatInputActiveCellDingbat" ] -> TemplateBox[ { }, "ChatInputCellDingbat" ]
+                ]
             ]
         ];
 
@@ -357,6 +358,16 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association }
     ];
 
 makeHTTPRequest // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatIndicatorSymbol*)
+chatIndicatorSymbol // beginDefinition;
+chatIndicatorSymbol[ settings_Association ] := chatIndicatorSymbol @ settings[ "ChatInputIndicator" ];
+chatIndicatorSymbol[ $$unspecified ] := $chatIndicatorSymbol;
+chatIndicatorSymbol[ None|"" ] := None;
+chatIndicatorSymbol[ string_String? StringQ ] := string;
+chatIndicatorSymbol // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1210,6 +1221,10 @@ chatHistoryCellsAndTarget // endDefinition;
 (* TODO: this could be integrated into currentChatSettings (perhaps as an option) *)
 resolveAutoSettings // beginDefinition;
 
+(* Don't do anything if settings have already been resolved *)
+resolveAutoSettings[ settings: KeyValuePattern[ "ResolvedAutoSettings" -> True ] ] :=
+    settings;
+
 (* Evaluate rhs of RuleDelayed settings to get final value *)
 resolveAutoSettings[ settings: KeyValuePattern[ _ :> _ ] ] :=
     resolveAutoSettings @ AssociationMap[ Apply @ Rule, settings ];
@@ -1217,10 +1232,11 @@ resolveAutoSettings[ settings: KeyValuePattern[ _ :> _ ] ] :=
 (* Add additional settings and resolve actual LLMTool expressions *)
 resolveAutoSettings[ settings_Association ] := resolveAutoSettings0 @ <|
     settings,
-    "HandlerFunctions"    -> getHandlerFunctions @ settings,
-    "LLMEvaluator"        -> getLLMEvaluator @ settings,
-    "ProcessingFunctions" -> getProcessingFunctions @ settings,
-    "Model"               -> resolveFullModelSpec @ settings,
+    "HandlerFunctions"     -> getHandlerFunctions @ settings,
+    "LLMEvaluator"         -> getLLMEvaluator @ settings,
+    "Model"                -> resolveFullModelSpec @ settings,
+    "ProcessingFunctions"  -> getProcessingFunctions @ settings,
+    "ResolvedAutoSettings" -> True,
     If[ StringQ @ settings[ "Tokenizer" ],
         <|
             "TokenizerName" -> getTokenizerName @ settings,
@@ -1255,7 +1271,9 @@ resolveAutoSetting[ settings_, key_ -> value_ ] := <| settings, key -> resolveAu
 resolveAutoSetting // endDefinition;
 
 resolveAutoSetting0 // beginDefinition;
+resolveAutoSetting0[ as_, "Assistance"                ] := False;
 resolveAutoSetting0[ as_, "DynamicAutoFormat"         ] := dynamicAutoFormatQ @ as;
+resolveAutoSetting0[ as_, "ChatInputIndicator"        ] := "\|01f4ac";
 resolveAutoSetting0[ as_, "EnableLLMServices"         ] := $useLLMServices;
 resolveAutoSetting0[ as_, "HandlerFunctionsKeys"      ] := chatHandlerFunctionsKeys @ as;
 resolveAutoSetting0[ as_, "IncludeHistory"            ] := Automatic;
@@ -1655,9 +1673,14 @@ createNewChatOutput // endDefinition;
 prepareChatOutputPage // beginDefinition;
 
 prepareChatOutputPage[ target_CellObject, cell_Cell ] := Enclose[
-    Module[ { prevCellExpr, prevPage, encoded, pageData, newCellObject },
+    Catch @ Module[ { prevCellExpr, prevPage, encoded, pageData, newCellObject },
 
-        prevCellExpr = ConfirmMatch[ NotebookRead @ target, _Cell, "NotebookRead" ];
+        prevCellExpr = ConfirmMatch[ NotebookRead @ target, _Cell | $Failed, "NotebookRead" ];
+
+        If[ FailureQ @ prevCellExpr,
+            (* The target cell is gone, so just create a new one instead of trying to page outputs: *)
+            Throw @ cellPrint @ cell
+        ];
 
         prevPage = ConfirmMatch[
             Replace[ First @ prevCellExpr, text_String :> TextData @ { text } ],
@@ -1692,7 +1715,7 @@ prepareChatOutputPage[ target_CellObject, cell_Cell ] := Enclose[
         CurrentValue[ newCellObject, { TaggingRules, "PageData" } ] = pageData;
         newCellObject
     ],
-    throwInternalFailure[ prepareChatOutputPage[ target, cell ], ## ] &
+    throwInternalFailure
 ];
 
 prepareChatOutputPage // endDefinition;
@@ -2234,7 +2257,10 @@ makeCompactChatData[
                 "MessageTag" -> tag,
                 "Data" -> Association[
                     data,
-                    "Messages" -> Append[ messages, <| "Role" -> "Assistant", "Content" -> message |> ]
+                    "Messages" -> revertMultimodalContent @ Append[
+                        messages,
+                        <| "Role" -> "Assistant", "Content" -> message |>
+                    ]
                 ]
             ],
             Inherited
