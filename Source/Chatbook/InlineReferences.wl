@@ -1064,7 +1064,7 @@ personaCompletion // endDefinition;
 $personaNames := Select[
     DeleteDuplicates @ Flatten @ {
         AbsoluteCurrentValue @ { TaggingRules, "ChatNotebookSettings", "LLMEvaluator", "LLMEvaluatorName" },
-        Keys @ GetCachedPersonaData[ ],
+        Keys @ GetCachedPersonaData[ "IncludeHidden" -> False ],
         $availablePersonaNames
     },
     StringQ
