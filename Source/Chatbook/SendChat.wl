@@ -45,6 +45,17 @@ splitDynamicTaskFunction   = createFETask;
 $defaultHandlerKeys        = { "Body", "BodyChunk", "BodyChunkProcessed", "StatusCode", "TaskStatus", "EventName" };
 $chatSubmitDroppedHandlers = { "ChatPost", "ChatPre", "Resolved" };
 
+$disallowedPersonaSettings = {
+    "ChatDrivenNotebook",
+    "CurrentPreferencesTab",
+    "EnableLLMServices",
+    "InheritanceTest",
+    "InitialChatCell",
+    "LLMEvaluator",
+    "PersonaFavorites",
+    "ServiceDefaultModel"
+};
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Severity Tag String Patterns*)
@@ -1230,21 +1241,34 @@ resolveAutoSettings[ settings: KeyValuePattern[ _ :> _ ] ] :=
     resolveAutoSettings @ AssociationMap[ Apply @ Rule, settings ];
 
 (* Add additional settings and resolve actual LLMTool expressions *)
-resolveAutoSettings[ settings_Association ] := resolveAutoSettings0 @ <|
-    settings,
-    "HandlerFunctions"     -> getHandlerFunctions @ settings,
-    "LLMEvaluator"         -> getLLMEvaluator @ settings,
-    "Model"                -> resolveFullModelSpec @ settings,
-    "ProcessingFunctions"  -> getProcessingFunctions @ settings,
-    "ResolvedAutoSettings" -> True,
-    If[ StringQ @ settings[ "Tokenizer" ],
-        <|
-            "TokenizerName" -> getTokenizerName @ settings,
-            "Tokenizer"     -> Automatic
-        |>,
-        "TokenizerName" -> Automatic
-    ]
-|>;
+resolveAutoSettings[ settings0_Association ] := Enclose[
+    Module[ { persona, settings, resolved },
+
+        persona = ConfirmMatch[ getLLMEvaluator @ settings0, _String |_Association | None, "LLMEvaluator" ];
+
+        settings = If[ AssociationQ @ persona,
+                       <| settings0, DeleteCases[ KeyDrop[ persona, $disallowedPersonaSettings ], $$unspecified ] |>,
+                       settings0
+                   ];
+
+        resolved = resolveAutoSettings0 @ <|
+            settings,
+            "HandlerFunctions"     -> getHandlerFunctions @ settings,
+            "LLMEvaluator"         -> persona,
+            "Model"                -> resolveFullModelSpec @ settings,
+            "ProcessingFunctions"  -> getProcessingFunctions @ settings,
+            "ResolvedAutoSettings" -> True,
+            If[ StringQ @ settings[ "Tokenizer" ],
+                <|
+                    "TokenizerName" -> getTokenizerName @ settings,
+                    "Tokenizer"     -> Automatic
+                |>,
+                "TokenizerName" -> Automatic
+            ]
+        |>
+    ],
+    throwInternalFailure
+];
 
 resolveAutoSettings // endDefinition;
 
