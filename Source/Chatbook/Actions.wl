@@ -404,8 +404,9 @@ EvaluateChatInput[ source: _CellObject | $Failed ] :=
         EvaluateChatInput @ evalCell /; chatInputCellQ @ evalCell
     ];
 
+(* TODO: resolve auto settings here and set as a Block symbol *)
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
-    EvaluateChatInput[ evalCell, nbo, currentChatSettings @ evalCell ];
+    EvaluateChatInput[ evalCell, nbo, resolveAutoSettings @ currentChatSettings @ evalCell ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
     withChatState @ Block[ { $autoAssistMode = False, $aborted = False },
@@ -1128,7 +1129,7 @@ SendChat[ evalCell_CellObject ] := SendChat[ evalCell, parentNotebook @ evalCell
 SendChat[ evalCell_CellObject, nbo_NotebookObject? queuedEvaluationsQ ] := Null;
 
 SendChat[ evalCell_CellObject, nbo_NotebookObject ] :=
-    SendChat[ evalCell, nbo, currentChatSettings @ evalCell ];
+    SendChat[ evalCell, nbo, resolveAutoSettings @ currentChatSettings @ evalCell ];
 
 SendChat[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
     SendChat[ evalCell, nbo, settings, Lookup[ settings, "ShowMinimized", Automatic ] ];
