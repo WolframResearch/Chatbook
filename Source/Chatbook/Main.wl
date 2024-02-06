@@ -30,6 +30,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `CreateChatNotebook;
 `CurrentChatSettings;
 `FormatChatOutput;
+`FormatToolCall;
 `FormatToolResponse;
 `GetChatHistory;
 `GetExpressionURI;
@@ -124,6 +125,7 @@ Protect[
     CreateChatNotebook,
     CurrentChatSettings,
     FormatChatOutput,
+    FormatToolCall,
     FormatToolResponse,
     GetChatHistory,
     GetExpressionURI,

@@ -628,12 +628,13 @@ chatHandlers // Attributes = { HoldFirst };
 chatHandlers[ container_, cellObject_, settings_ ] :=
     $lastHandlers = With[
         {
-            autoOpen     = TrueQ @ $autoOpen,
-            alwaysOpen   = TrueQ @ $alwaysOpen,
-            autoAssist   = $autoAssistMode,
-            dynamicSplit = dynamicSplitQ @ settings,
-            handlers     = getHandlerFunctions @ settings,
-            useTasks     = feTaskQ @ settings
+            autoOpen      = TrueQ @ $autoOpen,
+            alwaysOpen    = TrueQ @ $alwaysOpen,
+            autoAssist    = $autoAssistMode,
+            dynamicSplit  = dynamicSplitQ @ settings,
+            handlers      = getHandlerFunctions @ settings,
+            useTasks      = feTaskQ @ settings,
+            toolFormatter = getToolFormatter @ settings
         },
         {
             bodyChunkHandler    = Lookup[ handlers, "BodyChunkReceived", None ],
@@ -644,11 +645,12 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
             "BodyChunkReceived" -> Function @ catchAlways[
                 withFETasks[ useTasks ] @ Block[
                     {
-                        $autoOpen       = autoOpen,
-                        $alwaysOpen     = alwaysOpen,
-                        $settings       = settings,
-                        $autoAssistMode = autoAssist,
-                        $dynamicSplit   = dynamicSplit
+                        $alwaysOpen          = alwaysOpen,
+                        $autoAssistMode      = autoAssist,
+                        $autoOpen            = autoOpen,
+                        $customToolFormatter = toolFormatter,
+                        $dynamicSplit        = dynamicSplit,
+                        $settings            = settings
                     },
                     bodyChunkHandler[ #1 ];
                     Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
@@ -658,11 +660,12 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
             "TaskFinished" -> Function @ catchAlways[
                 withFETasks[ useTasks ] @ Block[
                     {
-                        $autoOpen       = autoOpen,
-                        $alwaysOpen     = alwaysOpen,
-                        $settings       = settings,
-                        $autoAssistMode = autoAssist,
-                        $dynamicSplit   = dynamicSplit
+                        $alwaysOpen          = alwaysOpen,
+                        $autoAssistMode      = autoAssist,
+                        $autoOpen            = autoOpen,
+                        $customToolFormatter = toolFormatter,
+                        $dynamicSplit        = dynamicSplit,
+                        $settings            = settings
                     },
                     taskFinishedHandler[ #1 ];
                     Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
@@ -1893,6 +1896,21 @@ getFormattingFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*getToolFormatter*)
+getToolFormatter // beginDefinition;
+
+getToolFormatter[ as_? AssociationQ ] :=
+    getToolFormatter[ as, getProcessingFunction[ as, "FormatToolCall" ] ];
+
+getToolFormatter[ as_, func_ ] := (
+    $ChatHandlerData[ "EventName" ] = "FormatToolCall";
+    func @ ##
+) &;
+
+getToolFormatter // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*dynamicAutoFormatQ*)
 dynamicAutoFormatQ // beginDefinition;
 dynamicAutoFormatQ[ KeyValuePattern[ "DynamicAutoFormat" -> format: (True|False) ] ] := format;
@@ -2131,18 +2149,21 @@ scrollOutput // endDefinition;
 reformatCell // beginDefinition;
 
 reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uuid_ ] := UsingFrontEnd @ Enclose[
-    Module[ { formatter, content, rules, dingbat },
+    Module[ { formatter, toolFormatter, content, rules, dingbat },
 
         formatter = Confirm[ getFormattingFunction @ settings, "GetFormattingFunction" ];
+        toolFormatter = Confirm[ getToolFormatter @ settings, "GetToolFormatter" ];
 
         (*FIXME: use specified ChatFormattingFunction here and figure out how to conform to TextData *)
-        content = ConfirmMatch[
-            If[ TrueQ @ settings[ "AutoFormat" ],
-                TextData @ reformatTextData @ string,
-                TextData @ string
-            ],
-            TextData[ _String | _List ],
-            "Content"
+        content = Block[ { $customToolFormatter = toolFormatter },
+            ConfirmMatch[
+                If[ TrueQ @ settings[ "AutoFormat" ],
+                    TextData @ reformatTextData @ string,
+                    TextData @ string
+                ],
+                TextData[ _String | _List ],
+                "Content"
+            ]
         ];
 
         rules = ConfirmBy[

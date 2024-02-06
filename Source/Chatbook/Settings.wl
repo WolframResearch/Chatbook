@@ -101,6 +101,7 @@ $DefaultChatProcessingFunctions = <|
     "ChatMessages"        -> (#1 &),
     "ChatSubmit"          -> Automatic,
     "FormatChatOutput"    -> FormatChatOutput,
+    "FormatToolCall"      -> FormatToolCall,
     "WriteChatOutputCell" -> WriteChatOutputCell
 |>;
 
