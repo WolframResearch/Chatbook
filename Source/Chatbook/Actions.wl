@@ -406,7 +406,7 @@ EvaluateChatInput[ source: _CellObject | $Failed ] :=
 
 (* TODO: resolve auto settings here and set as a Block symbol *)
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
-    EvaluateChatInput[ evalCell, nbo, resolveAutoSettings @ currentChatSettings @ evalCell ];
+    withChatState @ EvaluateChatInput[ evalCell, nbo, resolveAutoSettings @ currentChatSettings @ evalCell ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
     withChatState @ Block[ { $autoAssistMode = False, $aborted = False },
@@ -1129,7 +1129,7 @@ SendChat[ evalCell_CellObject ] := SendChat[ evalCell, parentNotebook @ evalCell
 SendChat[ evalCell_CellObject, nbo_NotebookObject? queuedEvaluationsQ ] := Null;
 
 SendChat[ evalCell_CellObject, nbo_NotebookObject ] :=
-    SendChat[ evalCell, nbo, resolveAutoSettings @ currentChatSettings @ evalCell ];
+    withChatState @ SendChat[ evalCell, nbo, resolveAutoSettings @ currentChatSettings @ evalCell ];
 
 SendChat[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
     SendChat[ evalCell, nbo, settings, Lookup[ settings, "ShowMinimized", Automatic ] ];
@@ -1379,7 +1379,7 @@ withChatState // beginDefinition;
 withChatState // Attributes = { HoldFirst };
 
 withChatState[ eval_ ] :=
-    Block[ { $enableLLMServices },
+    Block[ { $enableLLMServices, withChatState = # & },
         $ChatHandlerData = <| |>;
         withToolBox @ withBasePromptBuilder @ eval
     ];
