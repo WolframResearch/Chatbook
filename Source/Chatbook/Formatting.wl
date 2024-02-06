@@ -6,7 +6,9 @@ BeginPackage[ "Wolfram`Chatbook`Formatting`" ];
 (* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDRESULT *)
 
 Wolfram`Chatbook`FormatChatOutput;
+Wolfram`Chatbook`FormatToolCall;
 
+`$customToolFormatter;
 `$dynamicSplitRules;
 `$dynamicText;
 `$reformattedCell;
@@ -29,7 +31,7 @@ Needs[ "Wolfram`Chatbook`Tools`"    ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
-
+$customToolFormatter = None;
 $dynamicImageScale   = 0.25;
 $maxImageSize        = 800;
 $maxDynamicImageSize = Ceiling[ $maxImageSize * $dynamicImageScale ];
@@ -78,6 +80,10 @@ $chatGeneratedCellTag = "ChatGeneratedCell";
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Chat Output Formatting*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*FormatChatOutput*)
 FormatChatOutput // beginDefinition;
 FormatChatOutput[ output_ ] := FormatChatOutput[ output, <| "Status" -> "Finished" |> ];
 FormatChatOutput[ output_, as_Association ] := formatChatOutput[ output, Lookup[ as, "Status", "Finished" ] ];
@@ -95,6 +101,54 @@ formatChatOutput[ output_String, "Finished" ] :=
     Block[ { $dynamicText = False }, RawBoxes @ Cell @ TextData @ reformatTextData @ output ];
 
 formatChatOutput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*FormatToolCall*)
+FormatToolCall // beginDefinition;
+
+FormatToolCall[ string_String, parsed_Association ] :=
+    FormatToolCall[ string, parsed, <| "Status" -> If[ TrueQ @ $dynamicText, "Streaming", "Finished" ] |> ];
+
+FormatToolCall[ string_String, parsed_Association, info_Association ] :=
+    formatToolCall[ string, parsed, Lookup[ info, "Status", "Finished" ] ];
+
+FormatToolCall // endDefinition;
+
+
+formatToolCall // beginDefinition;
+
+formatToolCall[ string_String, parsed_Association, "Streaming" ] :=
+    Block[ { $dynamicText = True }, formatToolCall0[ string, parsed ] ];
+
+formatToolCall[ string_String, parsed_Association, "Finished" ] :=
+    Block[ { $dynamicText = False }, formatToolCall0[ string, parsed ] ];
+
+formatToolCall // endDefinition;
+
+
+formatToolCall0 // beginDefinition;
+
+formatToolCall0[ string_String, as_Association ] := Cell[
+    BoxData @ ToBoxes @ Panel[
+        makeToolCallBoxLabel @ as,
+        BaseStyle    -> "Text",
+        Background   -> GrayLevel[ 0.95 ],
+        ImageMargins -> 10
+    ],
+    "InlineToolCall",
+    Background   -> None,
+    TaggingRules -> KeyDrop[ as, { "Icon", "Result" } ]
+];
+
+formatToolCall0[ string_String, failed_Failure ] := Cell[
+    BoxData @ ToBoxes @ failed,
+    "FailedToolCall",
+    Background   -> None,
+    TaggingRules -> <| "ToolCall" -> string |>
+];
+
+formatToolCall0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -759,24 +813,11 @@ inlineToolCall // beginDefinition;
 
 inlineToolCall[ string_String ] := inlineToolCall[ string, parseToolCallString @ string ];
 
-inlineToolCall[ string_String, as_Association ] := Cell[
-    BoxData @ ToBoxes @ Panel[
-        makeToolCallBoxLabel @ as,
-        BaseStyle    -> "Text",
-        Background   -> GrayLevel[ 0.95 ],
-        ImageMargins -> 10
-    ],
-    "InlineToolCall",
-    Background   -> None,
-    TaggingRules -> KeyDrop[ as, { "Icon", "Result" } ]
-];
+inlineToolCall[ string_String, as_Association ] /; $customToolFormatter =!= None :=
+    $customToolFormatter[ string, as ];
 
-inlineToolCall[ string_String, failed_Failure ] := Cell[
-    BoxData @ ToBoxes @ failed,
-    "FailedToolCall",
-    Background   -> None,
-    TaggingRules -> <| "ToolCall" -> string |>
-];
+inlineToolCall[ string_String, as_Association ] :=
+    FormatToolCall[ string, as, <| "Status" -> If[ TrueQ @ $dynamicText, "Streaming", "Finished" ] |> ];
 
 inlineToolCall // endDefinition;
 
