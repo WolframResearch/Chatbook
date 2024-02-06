@@ -177,7 +177,11 @@ documentationBasicExamples // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*cellToString*)
-cellToString[ args___ ] := CellToString[ args, "MaxCellStringLength" -> 100 ];
+cellToString[ args___ ] := CellToString[
+    args,
+    "ContentTypes"        -> If[ TrueQ @ $multimodalMessages, { "Text", "Image" }, Automatic ],
+    "MaxCellStringLength" -> 100
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

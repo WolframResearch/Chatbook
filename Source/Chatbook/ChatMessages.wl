@@ -771,7 +771,13 @@ graphicsURIQ // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*cellToString*)
 cellToString // beginDefinition;
-cellToString[ cell_Cell ] := CellToString[ cell, "MaxCellStringLength" -> $cellStringBudget ];
+
+cellToString[ cell_Cell ] := CellToString[
+    cell,
+    "ContentTypes"        -> If[ TrueQ @ $multimodalMessages, { "Text", "Image" }, Automatic ],
+    "MaxCellStringLength" -> $cellStringBudget
+];
+
 cellToString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
