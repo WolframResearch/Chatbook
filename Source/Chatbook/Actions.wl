@@ -1387,7 +1387,7 @@ withChatState // beginDefinition;
 withChatState // Attributes = { HoldFirst };
 
 withChatState[ eval_ ] :=
-    Block[ { $enableLLMServices, withChatState = # & },
+    Block[ { $enableLLMServices = Automatic, withChatState = # & },
         $ChatHandlerData = <| |>;
         withToolBox @ withBasePromptBuilder @ eval
     ];
