@@ -126,6 +126,11 @@ $longNameCharacterList = {
 $longNameCharacters = Normal @ AssociationMap[ "\\[" <> CharacterName[ # ] <> "]" &, $longNameCharacterList ];
 $$longNameCharacter = Alternatives @@ $longNameCharacterList;
 
+$$invisibleCharacter = Alternatives[
+    FromCharacterCode[ 8203 ], (* U+200B Zero Width Space *)
+    FromCharacterCode[ 62304 ] (* InvisibleSpace *)
+];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*Conversion Rules*)
@@ -486,6 +491,7 @@ fasterCellToString[ arg_ ] :=
         Catch[
             With[ { string = fasterCellToString0 @ arg },
                 If[ StringQ @ string,
+                    (* FIXME: does this actually need StringTrim here? *)
                     StringDelete[ StringTrim @ string, "$$NO_TRIM$$" ],
                     $Failed
                 ]
@@ -542,11 +548,14 @@ fasterCellToString0[ FromCharacterCode[ 62371 ] ] := "\n\t";
 
 fasterCellToString0[ "\[Bullet]"|"\[FilledSmallSquare]" ] := "*";
 
+(* Invisible characters *)
+fasterCellToString0[ $$invisibleCharacter ] := "";
+
 (* Long name characters: *)
 fasterCellToString0[ char: $$longNameCharacter ] := Lookup[ $longNameCharacters, char, char ];
 
-fasterCellToString0[ string_String ] /; StringContainsQ[ string, $$longNameCharacter ] :=
-    fasterCellToString0 @ StringReplace[ string, $longNameCharacters ];
+fasterCellToString0[ string_String ] /; StringContainsQ[ string, $$longNameCharacter|$$invisibleCharacter ] :=
+    fasterCellToString0 @ StringDelete[ StringReplace[ string, $longNameCharacters ], $$invisibleCharacter ];
 
 (* StandardForm strings *)
 fasterCellToString0[ a_String /; StringMatchQ[ a, "\""~~___~~("\\!"|"\!")~~___~~"\"" ] ] :=
