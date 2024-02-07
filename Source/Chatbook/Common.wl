@@ -165,8 +165,9 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*$ChatNotebookEvaluation*)
+(*Current State Values*)
 $ChatNotebookEvaluation = False;
+$AutomaticAssistance    = False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

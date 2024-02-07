@@ -17,7 +17,6 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 `WidgetSend;
 
 `$alwaysOpen;
-`$autoAssistMode;
 `$autoOpen;
 `$finalCell;
 `$lastCellObject;
@@ -409,7 +408,7 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
     withChatState @ EvaluateChatInput[ evalCell, nbo, resolveAutoSettings @ currentChatSettings @ evalCell ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
-    withChatState @ Block[ { $autoAssistMode = False, $aborted = False },
+    withChatState @ Block[ { $AutomaticAssistance = False, $aborted = False },
         $lastCellObject     = None;
         $lastChatString     = None;
         $lastMessages       = None;
@@ -595,9 +594,15 @@ AIAutoAssist[ cell_CellObject ] :=
     ];
 
 AIAutoAssist[ cell_CellObject, nbo_NotebookObject ] := withChatState @
-    If[ autoAssistQ[ cell, nbo ],
-        Block[ { $autoAssistMode = True }, needsBasePrompt[ "AutoAssistant" ]; SendChat @ cell ],
-        Null
+    Module[ { settings },
+        settings = resolveAutoSettings @ currentChatSettings @ cell;
+        If[ autoAssistQ @ settings,
+            Block[ { $AutomaticAssistance = True },
+                needsBasePrompt[ "AutoAssistant" ];
+                SendChat[ cell, parentNotebook @ cell, settings ]
+            ],
+            Null
+        ]
     ];
 
 AIAutoAssist // endDefinition;
@@ -606,6 +611,9 @@ AIAutoAssist // endDefinition;
 (* ::Subsection::Closed:: *)
 (*autoAssistQ*)
 autoAssistQ // beginDefinition;
+
+autoAssistQ[ settings_Association ] :=
+    TrueQ @ settings[ "Assistance" ];
 
 autoAssistQ[ cell_CellObject, nbo_NotebookObject ] :=
     autoAssistQ @ cell;
@@ -1057,7 +1065,7 @@ excludeChatCells // endDefinition;
 WidgetSend // beginDefinition;
 
 WidgetSend[ cell_CellObject ] := withChatState @
-    Block[ { $alwaysOpen = True, cellPrint = cellPrintAfter @ cell, $finalCell = cell, $autoAssistMode = True },
+    Block[ { $alwaysOpen = True, cellPrint = cellPrintAfter @ cell, $finalCell = cell, $AutomaticAssistance = True },
         (* TODO: this is currently the only UI method to turn this back on *)
         CurrentValue[ parentNotebook @ cell, { TaggingRules, "ChatNotebookSettings", "Assistance" } ] = True;
         SendChat @ cell

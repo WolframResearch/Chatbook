@@ -6,6 +6,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Declare Symbols*)
+`$AutomaticAssistance;
 `$AvailableTools;
 `$ChatAbort;
 `$ChatbookContexts;
@@ -109,6 +110,7 @@ Block[ { $ContextPath },
 (* ::Section::Closed:: *)
 (*Protected Symbols*)
 Protect[
+    $AutomaticAssistance,
     $ChatNotebookEvaluation,
     $DefaultChatHandlerFunctions,
     $DefaultChatProcessingFunctions,
