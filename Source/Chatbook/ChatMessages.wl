@@ -215,12 +215,9 @@ makeChatMessages[ settings_, cells_ ] :=
     Block[
         {
             $multimodalMessages = TrueQ @ settings[ "Multimodal" ],
-            $tokenBudget        = settings[ "MaxContextTokens" ],
+            $tokenBudget             = makeTokenBudget @ settings,
             $tokenPressure      = 0.0,
-            $initialCellStringBudget = Replace[
-                settings[ "MaxCellStringLength" ],
-                Except[ $$size ] -> $defaultMaxCellStringLength
-            ],
+            $initialCellStringBudget = makeCellStringBudget @ settings,
             $chatInputIndicator = mixedContentQ @ cells,
             $cellStringBudget
         },
@@ -274,6 +271,33 @@ makeChatMessages0[ settings0_, cells_List ] := Enclose[
 ];
 
 makeChatMessages0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeTokenBudget*)
+makeTokenBudget // beginDefinition;
+
+makeTokenBudget[ settings_Association ] :=
+    makeTokenBudget[ settings[ "MaxContextTokens" ], settings[ "TokenBudgetMultiplier" ] ];
+
+makeTokenBudget[ max: $$size, $$unspecified ] :=
+    max;
+
+makeTokenBudget[ max: $$size, multiplier: $$size ] :=
+    With[ { budget = Ceiling[ max * multiplier ] },
+        budget /; MatchQ[ budget, $$size ]
+    ];
+
+makeTokenBudget // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeCellStringBudget*)
+makeCellStringBudget // beginDefinition;
+makeCellStringBudget[ settings_Association ] := makeCellStringBudget @ settings[ "MaxCellStringLength" ];
+makeCellStringBudget[ max: $$size ] := max;
+makeCellStringBudget[ Except[ $$size ] ] := $defaultMaxCellStringLength;
+makeCellStringBudget // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

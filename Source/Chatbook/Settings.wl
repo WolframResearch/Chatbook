@@ -57,6 +57,7 @@ $defaultChatSettings = <|
     "ShowMinimized"             -> Automatic,
     "StreamingOutputMethod"     -> Automatic,
     "Temperature"               -> 0.7,
+    "TokenBudgetMultiplier"     -> Automatic,
     "Tokenizer"                 -> Automatic,
     "ToolCallFrequency"         -> Automatic,
     "ToolOptions"               :> $DefaultToolOptions,
