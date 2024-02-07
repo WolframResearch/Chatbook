@@ -214,11 +214,11 @@ makeChatMessages // beginDefinition;
 makeChatMessages[ settings_, cells_ ] :=
     Block[
         {
-            $multimodalMessages = TrueQ @ settings[ "Multimodal" ],
+            $multimodalMessages      = TrueQ @ settings[ "Multimodal" ],
             $tokenBudget             = makeTokenBudget @ settings,
-            $tokenPressure      = 0.0,
+            $tokenPressure           = 0.0,
             $initialCellStringBudget = makeCellStringBudget @ settings,
-            $chatInputIndicator = mixedContentQ @ cells,
+            $chatInputIndicator      = mixedContentQ @ cells,
             $cellStringBudget
         },
         $cellStringBudget = $initialCellStringBudget;
@@ -407,6 +407,9 @@ cutMessageContent[ as_, message: KeyValuePattern[ "Content" -> { a___, _? graphi
 
 cutMessageContent[ as_, message: KeyValuePattern[ "Content" -> { content___String } ], count_, budget_ ] :=
     cutMessageContent[ as, <| message, "Content" -> StringJoin @ content |>, count, budget ];
+
+cutMessageContent[ as_, message_String, count_, budget_ ] :=
+    cutMessageContent[ as, <| "Content" -> message, "Type" -> "Text" |>, count, budget ];
 
 cutMessageContent // endDefinition;
 
