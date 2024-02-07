@@ -45,10 +45,11 @@ splitDynamicTaskFunction   = createFETask;
 $defaultHandlerKeys        = { "Body", "BodyChunk", "BodyChunkProcessed", "StatusCode", "TaskStatus", "EventName" };
 $chatSubmitDroppedHandlers = { "ChatPost", "ChatPre", "Resolved" };
 
-$disallowedPersonaSettings = {
+$nonInheritedPersonaValues = {
     "ChatDrivenNotebook",
     "CurrentPreferencesTab",
     "EnableLLMServices",
+    "Icon",
     "InheritanceTest",
     "InitialChatCell",
     "LLMEvaluator",
@@ -603,7 +604,7 @@ ServiceConnectionUtilities`ConnectionInformation["Anthropic", "ProcessedRequests
 makeLLMConfiguration[ as_Association ] :=
     $lastLLMConfiguration = LLMConfiguration @ Association[
         KeyTake[ as, { "Model", "MaxTokens", "Temperature" } ],
-        "StopTokens" -> { "ENDTOOLCALL" }
+        "StopTokens" -> { "ENDTOOLCALL", "[INFO]" }
     ];
 
 makeLLMConfiguration // endDefinition;
@@ -630,7 +631,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
         {
             autoOpen      = TrueQ @ $autoOpen,
             alwaysOpen    = TrueQ @ $alwaysOpen,
-            autoAssist    = $autoAssistMode,
+            autoAssist    = $AutomaticAssistance,
             dynamicSplit  = dynamicSplitQ @ settings,
             handlers      = getHandlerFunctions @ settings,
             useTasks      = feTaskQ @ settings,
@@ -646,7 +647,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                 withFETasks[ useTasks ] @ Block[
                     {
                         $alwaysOpen          = alwaysOpen,
-                        $autoAssistMode      = autoAssist,
+                        $AutomaticAssistance = autoAssist,
                         $autoOpen            = autoOpen,
                         $customToolFormatter = toolFormatter,
                         $dynamicSplit        = dynamicSplit,
@@ -661,7 +662,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                 withFETasks[ useTasks ] @ Block[
                     {
                         $alwaysOpen          = alwaysOpen,
-                        $autoAssistMode      = autoAssist,
+                        $AutomaticAssistance = autoAssist,
                         $autoOpen            = autoOpen,
                         $customToolFormatter = toolFormatter,
                         $dynamicSplit        = dynamicSplit,
@@ -898,19 +899,19 @@ splitDynamicContent // endDefinition;
 checkResponse // beginDefinition;
 
 checkResponse[ settings: KeyValuePattern[ "ToolsEnabled" -> False ], container_, cell_, as_Association ] :=
-    If[ TrueQ @ $autoAssistMode,
+    If[ TrueQ @ $AutomaticAssistance,
         writeResult[ settings, container, cell, as ],
         $nextTaskEvaluation = Hold @ writeResult[ settings, container, cell, as ]
     ];
 
 checkResponse[ settings_, container_? toolFreeQ, cell_, as_Association ] :=
-    If[ TrueQ @ $autoAssistMode,
+    If[ TrueQ @ $AutomaticAssistance,
         writeResult[ settings, container, cell, as ],
         $nextTaskEvaluation = Hold @ writeResult[ settings, container, cell, as ]
     ];
 
 checkResponse[ settings_, container_Symbol, cell_, as_Association ] :=
-    If[ TrueQ @ $autoAssistMode,
+    If[ TrueQ @ $AutomaticAssistance,
         toolEvaluation[ settings, Unevaluated @ container, cell, as ],
         $nextTaskEvaluation = Hold @ toolEvaluation[ settings, Unevaluated @ container, cell, as ]
     ];
@@ -1197,7 +1198,7 @@ keepValidGeneratedCells // beginDefinition;
    `keepValidGeneratedCells` gathers up all the generated cells that come after the evaluation cell and if it finds
    a chat output cell, it deletes it.
 *)
-keepValidGeneratedCells[ cellData: { KeyValuePattern[ "CellObject" -> _CellObject ] ... } ] /; $autoAssistMode :=
+keepValidGeneratedCells[ cellData: { KeyValuePattern[ "CellObject" -> _CellObject ] ... } ] /; $AutomaticAssistance :=
     Module[ { delete, chatOutputs, cells },
         delete      = TakeWhile[ cellData, MatchQ @ KeyValuePattern[ "CellAutoOverwrite" -> True ] ];
         chatOutputs = Cases[ delete, KeyValuePattern[ "Style" -> $$chatOutputStyle ] ];
@@ -1245,16 +1246,18 @@ resolveAutoSettings[ settings: KeyValuePattern[ _ :> _ ] ] :=
 
 (* Add additional settings and resolve actual LLMTool expressions *)
 resolveAutoSettings[ settings0_Association ] := Enclose[
-    Module[ { persona, settings, resolved },
+    Module[ { persona, combined, settings },
 
         persona = ConfirmMatch[ getLLMEvaluator @ settings0, _String |_Association | None, "LLMEvaluator" ];
 
-        settings = If[ AssociationQ @ persona,
-                       <| settings0, DeleteCases[ KeyDrop[ persona, $disallowedPersonaSettings ], $$unspecified ] |>,
+        combined = If[ AssociationQ @ persona,
+                       <| settings0, DeleteCases[ KeyDrop[ persona, $nonInheritedPersonaValues ], $$unspecified ] |>,
                        settings0
                    ];
 
-        resolved = resolveAutoSettings0 @ <|
+        settings = ConfirmBy[ evaluateSettings @ combined, AssociationQ, "Evaluated" ];
+
+        resolveAutoSettings0 @ <|
             settings,
             "HandlerFunctions"     -> getHandlerFunctions @ settings,
             "LLMEvaluator"         -> persona,
@@ -1289,6 +1292,14 @@ resolveAutoSettings0[ settings_Association ] := Enclose[
 ];
 
 resolveAutoSettings0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*evaluateSettings*)
+(* Evaluate rhs of RuleDelayed settings to get final value *)
+evaluateSettings // beginDefinition;
+evaluateSettings[ settings_? AssociationQ ] := AssociationMap[ Apply @ Rule, settings ];
+evaluateSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1851,7 +1862,7 @@ activeAIAssistantCell[
             ,
             "Output",
             "ChatOutput",
-            If[ TrueQ @ $autoAssistMode && MatchQ[ minimized, True|Automatic ],
+            If[ TrueQ @ $AutomaticAssistance && MatchQ[ minimized, True|Automatic ],
                 Sequence @@ Flatten[ {
                     $closedChatCellOptions,
                     Initialization :> catchTop @ attachMinimizedIcon[ EvaluationCell[ ], label ]
@@ -2176,7 +2187,7 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
 
         Cell[
             content,
-            If[ TrueQ @ $autoAssistMode,
+            If[ TrueQ @ $AutomaticAssistance,
                 Switch[ tag,
                         "[ERROR]"  , "AssistantOutputError",
                         "[WARNING]", "AssistantOutputWarning",
