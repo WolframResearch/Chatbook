@@ -1240,10 +1240,6 @@ resolveAutoSettings // beginDefinition;
 resolveAutoSettings[ settings: KeyValuePattern[ "ResolvedAutoSettings" -> True ] ] :=
     settings;
 
-(* Evaluate rhs of RuleDelayed settings to get final value *)
-resolveAutoSettings[ settings: KeyValuePattern[ _ :> _ ] ] :=
-    resolveAutoSettings @ AssociationMap[ Apply @ Rule, settings ];
-
 (* Add additional settings and resolve actual LLMTool expressions *)
 resolveAutoSettings[ settings0_Association ] := Enclose[
     Module[ { persona, combined, settings },
@@ -1256,6 +1252,10 @@ resolveAutoSettings[ settings0_Association ] := Enclose[
                    ];
 
         settings = ConfirmBy[ evaluateSettings @ combined, AssociationQ, "Evaluated" ];
+
+        (* Evaluate initialization if defined: *)
+        Lookup[ settings, { Initialization, "Initialization" } ];
+        KeyDropFrom[ settings, { Initialization, "Initialization" } ];
 
         resolveAutoSettings0 @ <|
             settings,
@@ -1280,6 +1280,10 @@ resolveAutoSettings // endDefinition;
 
 
 resolveAutoSettings0 // beginDefinition;
+
+(* Evaluate rhs of RuleDelayed settings to get final value *)
+resolveAutoSettings0[ settings: KeyValuePattern[ _ :> _ ] ] :=
+    resolveAutoSettings @ AssociationMap[ Apply @ Rule, settings ];
 
 resolveAutoSettings0[ settings_Association ] := Enclose[
     Module[ { auto, sorted, resolved },
