@@ -120,14 +120,14 @@ CurrentChatSettings[\"key$\"] is equivalent to CurrentChatSettings[EvaluationCel
 " ];
 
 CurrentChatSettings[ ] := catchMine @
-    If[ TrueQ @ $Notebooks,
-        CurrentChatSettings @ $currentEvaluationObject,
+    If[ TrueQ[ $Notebooks || $CloudEvaluation ],
+        CurrentChatSettings @ $FrontEnd,
         $defaultChatSettings
     ];
 
 CurrentChatSettings[ key_String ] := catchMine @
-    If[ TrueQ @ $Notebooks,
-        CurrentChatSettings[ $currentEvaluationObject, key ],
+    If[ TrueQ[ $Notebooks || $CloudEvaluation ],
+        CurrentChatSettings[ $FrontEnd, key ],
         Lookup[ $defaultChatSettings, key, Inherited ]
     ];
 
@@ -647,11 +647,6 @@ getPrecedingDelimiter[ cell_CellObject, nbo_, { before0___CellObject, cell_, ___
     ];
 
 getPrecedingDelimiter // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*$currentEvaluationObject*)
-$currentEvaluationObject := $FrontEndSession;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
