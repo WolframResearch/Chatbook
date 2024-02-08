@@ -129,5 +129,18 @@ VerificationTest[
     ],
     Except[ _? FailureQ ],
     SameTest -> MatchQ,
-    TestID   -> "CurrentChatSettings-Regression@@Tests/CurrentChatSettings.wlt:119,1-133,2"
+    TestID   -> "CurrentChatSettings-Regression#426@@Tests/CurrentChatSettings.wlt:119,1-133,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*#592*)
+VerificationTest[
+    If[ StringQ @ Environment[ "GITHUB_ACTIONS" ],
+        Missing[ "TestSkipped" ],
+        CloudEvaluate[ CurrentChatSettings[ "Model" ] ]
+    ],
+    Except[ _? FailureQ ],
+    SameTest -> MatchQ,
+    TestID   -> "CurrentChatSettings-Regression#592@@Tests/CurrentChatSettings.wlt:138,1-146,2"
 ]
