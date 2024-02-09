@@ -1327,6 +1327,7 @@ resolveAutoSetting0[ as_, "Multimodal"                ] := multimodalQ @ as;
 resolveAutoSetting0[ as_, "NotebookWriteMethod"       ] := "PreemptiveLink";
 resolveAutoSetting0[ as_, "ShowMinimized"             ] := Automatic;
 resolveAutoSetting0[ as_, "StreamingOutputMethod"     ] := "PartialDynamic";
+resolveAutoSetting0[ as_, "TokenBudgetMultiplier"     ] := 1;
 resolveAutoSetting0[ as_, "Tokenizer"                 ] := getTokenizer @ as;
 resolveAutoSetting0[ as_, "TokenizerName"             ] := getTokenizerName @ as;
 resolveAutoSetting0[ as_, "ToolCallFrequency"         ] := Automatic;
