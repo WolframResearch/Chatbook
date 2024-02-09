@@ -603,8 +603,15 @@ ServiceConnectionUtilities`ConnectionInformation["Anthropic", "ProcessedRequests
 
 makeLLMConfiguration[ as_Association ] :=
     $lastLLMConfiguration = LLMConfiguration @ Association[
-        KeyTake[ as, { "Model", "MaxTokens", "Temperature" } ],
-        "StopTokens" -> { "ENDTOOLCALL", "[INFO]" }
+        KeyTake[ as, { "Model", "MaxTokens", "Temperature", "PresencePenalty" } ],
+        "StopTokens" -> Select[
+            Flatten @ {
+                as[ "StopTokens" ],
+                If[ as[ "ToolMethod" ] === "Simple", "\n/exec", "ENDTOOLCALL" ],
+                If[ TrueQ @ $AutomaticAssistance, "[INFO]", Nothing ]
+            },
+            StringQ
+        ]
     ];
 
 makeLLMConfiguration // endDefinition;
