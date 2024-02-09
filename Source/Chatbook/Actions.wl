@@ -33,6 +33,7 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 `standardizeMessageKeys;
 `systemCredential;
 `toAPIKey;
+`withChatState;
 
 Begin[ "`Private`" ];
 
