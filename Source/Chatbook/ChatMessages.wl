@@ -125,16 +125,21 @@ constructMessages[ settings_Association? AssociationQ, cells: { __Cell } ] :=
 
 constructMessages[ settings_Association? AssociationQ, messages0: { __Association } ] :=
     Enclose @ Module[ { prompted, messages, processed },
+
         If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
         needsBasePrompt @ settings;
         prompted  = addPrompts[ settings, messages0 ];
-        messages  = prompted /. s_String :> RuleCondition @ StringReplace[ s, "%%BASE_PROMPT%%" -> $basePrompt ];
+
+        messages = prompted /.
+            s_String :> RuleCondition @ StringTrim @ StringReplace[ s, "%%BASE_PROMPT%%" :> $basePrompt ];
+
         processed = applyProcessingFunction[ settings, "ChatMessages", HoldComplete[ messages, $ChatHandlerData ] ];
 
         If[ ! MatchQ[ processed, $$validMessageResults ],
             messagePrint[ "InvalidMessages", getProcessingFunction[ settings, "ChatMessages" ], processed ];
             processed = messages
         ];
+
         processed //= DeleteCases @ KeyValuePattern[ "Content" -> "" ];
         Sow[ <| "Messages" -> processed |>, $chatDataTag ];
 
@@ -495,26 +500,15 @@ makeCurrentRole // beginDefinition;
 makeCurrentRole[ as_Association? AssociationQ ] :=
     makeCurrentRole[ as, as[ "BasePrompt" ], as[ "LLMEvaluator" ] ];
 
-makeCurrentRole[ as_, None, _ ] :=
-    Missing[ ];
-
-makeCurrentRole[ as_, role_String, _ ] :=
-    <| "Role" -> "System", "Content" -> role |>;
-
-makeCurrentRole[ as_, Automatic|Inherited|_Missing, name_String ] :=
-    With[ { prompt = namedRolePrompt @ name },
-        <| "Role" -> "System", "Content" -> prompt |> /; StringQ @ prompt
+makeCurrentRole[ as_, base_, name_String ] :=
+    With[ { persona = GetCachedPersonaData @ name },
+        makeCurrentRole[ as, base, persona ] /; AssociationQ @ persona
     ];
 
-makeCurrentRole[ as_, _, KeyValuePattern[ "BasePrompt" -> None ] ] := (
-    needsBasePrompt @ None;
-    Missing[ ]
-);
-
-makeCurrentRole[ as_, base_, eval_Association ] := (
+makeCurrentRole[ as_, base_, persona_Association ] := (
     needsBasePrompt @ base;
-    needsBasePrompt @ eval;
-    <| "Role" -> "System", "Content" -> buildSystemPrompt @ Association[ as, KeyDrop[ eval, { "Tools" } ] ] |>
+    needsBasePrompt @ persona;
+    <| "Role" -> "System", "Content" -> buildSystemPrompt @ Association[ as, KeyDrop[ persona, { "Tools" } ] ] |>
 );
 
 makeCurrentRole[ as_, base_, _ ] := (
@@ -523,28 +517,6 @@ makeCurrentRole[ as_, base_, _ ] := (
 );
 
 makeCurrentRole // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*namedRolePrompt*)
-namedRolePrompt // ClearAll;
-
-namedRolePrompt[ name_String ] := Enclose[
-    Catch @ Module[ { data, pre, post, params },
-        data   = ConfirmBy[ GetCachedPersonaData @ name, AssociationQ, "GetCachedPersonaData" ];
-        pre    = Lookup[ data, "Pre", TemplateApply @ Lookup[ data, "PromptTemplate" ] ];
-        post   = Lookup[ data, "Post" ];
-        params = Select[ <| "Pre" -> pre, "Post" -> post |>, StringQ ];
-
-        If[ params === <| |>,
-            Missing[ "NotAvailable" ],
-            ConfirmBy[ TemplateApply[ $promptTemplate, params ], StringQ, "TemplateApply" ]
-        ]
-    ],
-    throwInternalFailure[ namedRolePrompt @ name, ## ] &
-];
-
-namedRolePrompt[ ___ ] := Missing[ "NotAvailable" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -583,7 +555,8 @@ getPrePrompt[ as_Association ] := toPromptString @ FirstCase[
         as[ "LLMEvaluator", "Prompts" ],
         as[ "ChatContextPreprompt" ],
         as[ "Pre" ],
-        as[ "PromptTemplate" ]
+        as[ "PromptTemplate" ],
+        as[ "Prompts" ]
     },
     expr_ :> With[ { e = expr },
         e /; MatchQ[ e, _String | _TemplateObject | { (_String|_TemplateObject) ... } ]
