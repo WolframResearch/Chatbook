@@ -224,6 +224,7 @@ You have read access to local files.
 
 $defaultChatTools0[ "WolframLanguageEvaluator" ] = <|
     toolDefaultData[ "WolframLanguageEvaluator" ],
+    "Command"            -> "wl",
     "Icon"               -> RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
     "Description"        -> $sandboxEvaluateDescription,
     "Function"           -> sandboxEvaluate,
@@ -276,6 +277,8 @@ $wolframAlphaIcon = RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEBitma
 
 $defaultChatTools0[ "WolframAlpha" ] = <|
     toolDefaultData[ "WolframAlpha" ],
+    "DisplayName"        -> "Wolfram|Alpha",
+    "Command"            -> "wa",
     "Icon"               -> $wolframAlphaIcon,
     "Description"        -> $wolframAlphaDescription,
     "Function"           -> getWolframAlphaText,

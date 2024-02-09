@@ -60,6 +60,7 @@ $defaultChatSettings = <|
     "TokenBudgetMultiplier"     -> Automatic,
     "Tokenizer"                 -> Automatic,
     "ToolCallFrequency"         -> Automatic,
+    "ToolMethod"                -> Automatic,
     "ToolOptions"               :> $DefaultToolOptions,
     "Tools"                     -> Automatic,
     "ToolSelectionType"         -> <| |>,
