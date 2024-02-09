@@ -16,6 +16,7 @@ HoldComplete[
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"              ];
+Needs[ "Wolfram`Chatbook`Actions`"      ];
 Needs[ "Wolfram`Chatbook`ChatMessages`" ];
 Needs[ "Wolfram`Chatbook`Common`"       ];
 Needs[ "Wolfram`Chatbook`FrontEnd`"     ];
@@ -66,7 +67,7 @@ GetChatHistory[ cell_CellObject, "CellObjects" ] :=
     catchMine @ getCellsInChatHistory @ cell;
 
 GetChatHistory[ cell_CellObject, property: $$historyProperty ] := catchMine @ Enclose[
-    Module[ { cells, data, as },
+    withChatState @ Module[ { cells, data, as },
         { cells, data } = Reap[ getCellsInChatHistory @ cell, $chatHistoryTag ];
         ConfirmMatch[ cells, { ___CellObject }, "CellObjects" ];
         as = ConfirmBy[ <| data, "CellObjects" -> cells |>, AssociationQ, "Data" ];
