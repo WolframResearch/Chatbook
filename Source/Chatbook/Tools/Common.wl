@@ -655,6 +655,9 @@ toolRequestParser := toolRequestParser =
 (*makeToolPrompt*)
 makeToolPrompt // beginDefinition;
 
+makeToolPrompt[ settings: KeyValuePattern[ "ToolMethod" -> "Simple" ] ] :=
+    makeSimpleToolPrompt @ settings;
+
 makeToolPrompt[ settings_Association ] := $lastToolPrompt = TemplateObject[
     Riffle[
         DeleteMissing @ {
@@ -735,6 +738,151 @@ You did not create these tools, so you do not know what they can and cannot do.
 You should try to avoid mentioning tools by name in your response and instead speak generally about their function. \
 For example, if there were a number_adder tool, you would instead talk about \"adding numbers\". If you must mention \
 a tool by name, you should use the DisplayName property instead of the tool name.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeSimpleToolPrompt*)
+makeSimpleToolPrompt // beginDefinition;
+
+makeSimpleToolPrompt[ settings_Association ] := $lastToolPrompt = TemplateObject[
+    Riffle[
+        Flatten @ {
+            $simpleToolPre,
+            TemplateExpression @ StringRiffle[ simpleToolSchema /@ TemplateSlot[ "Tools" ], "\n\n" ],
+            (* TODO: generate simple examples instead of this hardcoded value *)
+            $simpleToolExamples,
+            $simpleToolPost
+        },
+        "\n\n"
+    ],
+    CombinerFunction  -> StringJoin,
+    InsertionFunction -> TextString
+];
+
+makeSimpleToolPrompt // endDefinition;
+
+
+$simpleToolPre = "\
+# Tools
+
+You have access to tools which can be used to compute results.
+To call a tool, write the following before ending your response:
+
+/command
+arg1
+arg2
+/exec
+
+After you write /exec, the system will execute the tool call for you and return the result.
+Reply with /end if the tool call provides a satisfactory answer, otherwise respond normally.
+
+## Available Tools";
+
+
+$simpleToolPost = "\
+## Important
+
+You should use these tools any time your response contains factual information, even if it seems like common knowledge.
+The inputs and outputs of these tool evaluations are formatted in a way that lets the user know that these are \
+fact-checked.
+If you say that you are going to compute something, you must do it immediately before ending your response.
+If you end your response without making a tool call, input returns to the user and they will be wondering why you \
+aren't doing anything.";
+
+
+$simpleToolExamples = "\
+## Examples
+
+User: What's the 10th prime
+Assistant: /wl
+Prime[10]
+/exec
+System: 29
+Assistant: /end
+
+User: What are the five biggest countries
+Assistant: /wa
+5 largest countries by area
+/exec
+System: <country list>
+Assistant: /end
+
+User: How do I solve x^2 + 4x + 6 = 0
+Assistant: /wa
+solve x^2 + 4x + 6 = 0
+true
+/exec
+System: <solution steps>
+Assistant: <explanation>";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*simpleToolSchema*)
+simpleToolSchema // beginDefinition;
+
+simpleToolSchema[ $$llmToolH[ as_, ___ ] ] :=
+    simpleToolSchema @ as;
+
+simpleToolSchema[ as_Association ] := Enclose[
+    Module[ { data, name, command, description, args, argStrings },
+
+        data        = ConfirmBy[ toolData @ as, AssociationQ, "Data" ];
+        name        = ConfirmBy[ toolName[ data, "Display" ], StringQ, "Name" ];
+        command     = ConfirmBy[ Lookup[ data, "Command", toolName[ data, "Machine" ] ], StringQ, "Command" ];
+        description = ConfirmBy[ data[ "Description" ], StringQ, "Description" ];
+        args        = ConfirmMatch[ as[ "Parameters" ], KeyValuePattern @ { }, "Arguments" ];
+        argStrings  = ConfirmMatch[ simpleArgStrings @ args, { __String }, "ArgStrings" ];
+
+        TemplateApply[
+            $simpleSchemaTemplate,
+            <|
+                "DisplayName" -> name,
+                "Command"     -> command,
+                "Description" -> description,
+                "Arguments"   -> StringRiffle[ argStrings, "\n" ]
+            |>
+        ]
+    ],
+    throwInternalFailure
+];
+
+simpleToolSchema // endDefinition;
+
+
+$simpleSchemaTemplate = StringTemplate[
+    "%%DisplayName%% (/%%Command%%)\n%%Description%%\nArguments\n%%Arguments%%",
+    Delimiters -> "%%"
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*simpleArgString*)
+simpleArgStrings // beginDefinition;
+simpleArgStrings[ params_Association? AssociationQ ] := KeyValueMap[ simpleArgString, params ];
+simpleArgStrings[ params: KeyValuePattern @ { } ] := Cases[ params, _[ a_, b_ ] :> simpleArgString[ a, b ] ];
+simpleArgStrings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*simpleArgString*)
+simpleArgString // beginDefinition;
+
+simpleArgString[ name_String, info_Association ] :=
+    "\t" <> StringTrim @ simpleArgString[ name, info[ "Interpreter" ], info[ "Help" ], info[ "Required" ] ];
+
+simpleArgString[ name_String, "String", _Missing, required_ ] :=
+    StringRiffle @ { name, If[ required === False, "(optional)", Nothing ] };
+
+simpleArgString[ name_String, "String", help_String, required_ ] :=
+    StringRiffle @ { name, "-", help, If[ required === False, "(optional)", Nothing ] };
+
+simpleArgString[ name_String, type_String, _Missing, required_ ] :=
+    StringRiffle @ { name, If[ required === False, "(" <> type <> ", optional)", "("<>type<>")" ] };
+
+simpleArgString[ name_String, type_String, help_String, required_ ] :=
+    StringRiffle @ { name, "-", help, If[ required === False, "(" <> type <> ", optional)", "("<>type<>")" ] };
+
+simpleArgString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
