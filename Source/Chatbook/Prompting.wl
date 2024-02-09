@@ -304,7 +304,7 @@ withBasePromptBuilder // endDefinition;
 needsBasePrompt // beginDefinition;
 needsBasePrompt[ name_String ] /; KeyExistsQ[ $collectedPromptComponents, name ] := Null;
 needsBasePrompt[ name_String ] := $collectedPromptComponents[ name ] = name;
-needsBasePrompt[ Automatic|Inherited|_Missing ] := Null;
+needsBasePrompt[ $$unspecified ] := Null;
 needsBasePrompt[ None ] := $collectedPromptComponents = <| |>;
 needsBasePrompt[ KeyValuePattern[ "BasePrompt" -> base_ ] ] := needsBasePrompt @ base;
 needsBasePrompt[ KeyValuePattern[ "LLMEvaluator" -> as_Association ] ] := needsBasePrompt @ as;

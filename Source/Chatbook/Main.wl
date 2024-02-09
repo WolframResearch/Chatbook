@@ -141,10 +141,14 @@ Protect[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Subcontexts*)
-$ChatbookContexts = Select[ Contexts[ "Wolfram`Chatbook`*" ], StringFreeQ[ "`Private`" ] ];
+$ChatbookContexts := $ChatbookContexts = Select[ Contexts[ "Wolfram`Chatbook`*" ], StringFreeQ[ "`Private`" ] ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
+If[ Wolfram`ChatbookInternal`$BuildingMX,
+    $ChatbookContexts;
+];
+
 End[ ];
 EndPackage[ ];
