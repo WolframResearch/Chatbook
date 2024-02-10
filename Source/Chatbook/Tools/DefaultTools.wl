@@ -287,7 +287,7 @@ $defaultChatTools0[ "WolframAlpha" ] = <|
     "Icon"               -> $wolframAlphaIcon,
     "Origin"             -> "BuiltIn",
     "Parameters"         -> {
-        "input" -> <|
+        "query" -> <|
             "Interpreter" -> "String",
             "Help"        -> "the input",
             "Required"    -> True
