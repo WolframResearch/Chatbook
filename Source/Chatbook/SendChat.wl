@@ -31,6 +31,7 @@ Needs[ "Wolfram`Chatbook`Handlers`"         ];
 Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 Needs[ "Wolfram`Chatbook`Models`"           ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
+Needs[ "Wolfram`Chatbook`Prompting`"        ];
 Needs[ "Wolfram`Chatbook`Serialization`"    ];
 Needs[ "Wolfram`Chatbook`Services`"         ];
 Needs[ "Wolfram`Chatbook`Settings`"         ];
@@ -911,10 +912,12 @@ checkResponse[ settings: KeyValuePattern[ "ToolsEnabled" -> False ], container_,
         $nextTaskEvaluation = Hold @ writeResult[ settings, container, cell, as ]
     ];
 
-checkResponse[ settings_, container_? toolFreeQ, cell_, as_Association ] :=
-    If[ TrueQ @ $AutomaticAssistance,
-        writeResult[ settings, container, cell, as ],
-        $nextTaskEvaluation = Hold @ writeResult[ settings, container, cell, as ]
+checkResponse[ settings_, container_, cell_, as_Association ] :=
+    Block[ { toolFreeQ = If[ settings[ "ToolMethod" ] === "Simple", simpleToolFreeQ, toolFreeQ ] },
+        If[ TrueQ @ $AutomaticAssistance,
+            writeResult[ settings, container, cell, as ],
+            $nextTaskEvaluation = Hold @ writeResult[ settings, container, cell, as ]
+        ] /; toolFreeQ @ container
     ];
 
 checkResponse[ settings_, container_Symbol, cell_, as_Association ] :=
@@ -932,6 +935,10 @@ writeResult // beginDefinition;
 
 writeResult[ settings_, container_, cell_, as_Association ] := Enclose[
     Module[ { log, processed, body, data },
+
+        If[ TrueQ @ $AutomaticAssistance,
+            NotebookDelete @ Cells[ PreviousCell @ cell, AttachedCell -> True, CellStyle -> "MinimizedChatIcon" ]
+        ];
 
         log = ConfirmMatch[ Internal`BagPart[ $debugLog, All ], { ___Association }, "DebugLog" ];
         processed = StringJoin @ Cases[ log, KeyValuePattern[ "BodyChunkProcessed" -> s_String ] :> s ];
@@ -1000,16 +1007,30 @@ toolFreeQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*simpleToolFreeQ*)
+simpleToolFreeQ // beginDefinition;
+simpleToolFreeQ[ KeyValuePattern[ "FullContent" -> s_ ] ] := simpleToolFreeQ @ s;
+simpleToolFreeQ[ _ProgressIndicator ] := True;
+simpleToolFreeQ[ s_String ] := ! MatchQ[ simpleToolRequestParser @ s, { _, _LLMToolRequest|_Failure } ];
+simpleToolFreeQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*toolEvaluation*)
 toolEvaluation // beginDefinition;
 
 toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
-    Module[ { string, callPos, toolCall, toolResponse, output, messages, newMessages, req, toolID, task },
+    Module[
+        { string, simple, parser, callPos, toolCall, toolResponse, output, messages, newMessages, req, toolID, task },
 
         string = ConfirmBy[ container[ "FullContent" ], StringQ, "FullContent" ];
 
+        simple = settings[ "ToolMethod" ] === "Simple";
+        parser = If[ simple, simpleToolRequestParser, toolRequestParser ];
+
+        (* TODO: implement a `getToolRequestParser` that gives the appropriate parser based on ToolMethod *)
         { callPos, toolCall } = ConfirmMatch[
-            toolRequestParser[ convertUTF8[ string, False ] ],
+            parser[ convertUTF8[ string, False ] ],
             { _, _LLMToolRequest|_Failure },
             "ToolRequestParser"
         ];
@@ -1024,13 +1045,18 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         ];
 
         output = ConfirmBy[ toolResponseString @ toolResponse, StringQ, "ToolResponseString" ];
+        If[ simple, output = output <> "\n\n" <> $noRepeatMessage ];
 
-        messages = ConfirmMatch[ settings[ "Data", "Messages" ], { __Association }, "Messages" ];
+        messages = ConfirmMatch[
+            removeBasePrompt[ settings[ "Data", "Messages" ], { "AutoAssistant" } ],
+            { __Association },
+            "Messages"
+        ];
 
         newMessages = Join[
             messages,
             {
-                <| "Role" -> "assistant", "Content" -> StringTrim @ string <> "\nENDTOOLCALL" |>,
+                <| "Role" -> "assistant", "Content" -> appendToolCallEndToken[ settings, StringTrim @ string ] |>,
                 <| "Role" -> "system"   , "Content" -> expandMultimodalString @ ToString @ output |>
             }
         ];
@@ -1044,7 +1070,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         toolID = Hash[ toolResponse, Automatic, "HexString" ];
         $toolEvaluationResults[ toolID ] = toolResponse;
 
-        appendToolResult[ container, output, toolID ];
+        appendToolResult[ container, settings, output, toolID ];
 
         task = $lastTask = chatSubmit[ container, req, cell, settings ];
 
@@ -1064,6 +1090,18 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
 toolEvaluation // endDefinition;
 
+$noRepeatMessage = "\
+The user has already been provided with this result, so you do not need to repeat it.
+Reply with /end if the tool call provides a satisfactory answer, otherwise respond normally.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*appendToolCallEndToken*)
+appendToolCallEndToken // beginDefinition;
+appendToolCallEndToken[ settings_, string_String ] /; settings[ "ToolMethod" ] === "Simple" := string <> "\n/exec";
+appendToolCallEndToken[ settings_, string_String ] := string <> "\nENDTOOLCALL";
+appendToolCallEndToken // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*toolResponseString*)
@@ -1082,8 +1120,15 @@ toolResponseString // endDefinition;
 appendToolResult // beginDefinition;
 appendToolResult // Attributes = { HoldFirst };
 
+appendToolResult[ container_Symbol, KeyValuePattern[ "ToolMethod" -> "Simple" ], output_String, id_String ] :=
+    Module[ { append },
+        append = "\n/exec\nRESULT\n"<>output<>"\nENDRESULT(" <> id <> ")\n\n";
+        container[ "FullContent"    ] = container[ "FullContent"    ] <> append;
+        container[ "DynamicContent" ] = container[ "DynamicContent" ] <> append;
+    ];
+
 (* cSpell: ignore ENDRESULT *)
-appendToolResult[ container_Symbol, output_String, id_String ] :=
+appendToolResult[ container_Symbol, settings_, output_String, id_String ] :=
     Module[ { append },
         append = "ENDTOOLCALL\nRESULT\n"<>output<>"\nENDRESULT(" <> id <> ")\n\n";
         container[ "FullContent"    ] = container[ "FullContent"    ] <> append;
@@ -1297,6 +1342,7 @@ resolveAutoSettings0[ settings_Association ] := Enclose[
         auto     = ConfirmBy[ Select[ settings, SameAs @ Automatic ], AssociationQ, "Auto" ];
         sorted   = ConfirmBy[ <| KeyTake[ auto, $autoSettingKeyPriority ], auto |>, AssociationQ, "Sorted" ];
         resolved = ConfirmBy[ Fold[ resolveAutoSetting, settings, Normal @ sorted ], AssociationQ, "Resolved" ];
+        If[ resolved[ "Assistance" ] && $chatState, $AutomaticAssistance = True ];
         ConfirmBy[ resolveTools @ KeySort @ resolved, AssociationQ, "ResolveTools" ]
     ],
     throwInternalFailure[ resolveAutoSettings0 @ settings, ## ] &

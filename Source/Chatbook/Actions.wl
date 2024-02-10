@@ -18,6 +18,7 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 
 `$alwaysOpen;
 `$autoOpen;
+`$chatState;
 `$finalCell;
 `$lastCellObject;
 `$lastChatString;
@@ -1388,7 +1389,13 @@ withChatState // beginDefinition;
 withChatState // Attributes = { HoldFirst };
 
 withChatState[ eval_ ] :=
-    Block[ { $enableLLMServices = Automatic, withChatState = # & },
+    Block[
+        {
+            $AutomaticAssistance = False,
+            $chatState           = True,
+            $enableLLMServices   = Automatic,
+            withChatState        = # &
+        },
         $ChatHandlerData = <| |>;
         withToolBox @ withBasePromptBuilder @ eval
     ];
