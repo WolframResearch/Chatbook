@@ -1072,7 +1072,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
                   ConfirmMatch[ makeHTTPRequest[ settings, newMessages ], _HTTPRequest, "HTTPRequest" ]
               ];
 
-        toolID = Hash[ toolResponse, Automatic, "HexString" ];
+        toolID = tinyHash @ toolResponse;
         $toolEvaluationResults[ toolID ] = toolResponse;
 
         appendToolResult[ container, settings, output, toolID ];

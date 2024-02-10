@@ -1083,7 +1083,7 @@ makeExpressionURI[ scheme_, Automatic, expr_ ] :=
     makeExpressionURI[ scheme, expressionURILabel @ expr, Unevaluated @ expr ];
 
 makeExpressionURI[ scheme_, label_, expr_ ] :=
-    With[ { id = "content-" <> Hash[ Unevaluated @ expr, Automatic, "HexString" ] },
+    With[ { id = "content-" <> tinyHash @ Unevaluated @ expr },
         $attachments[ id ] = HoldComplete @ expr;
         "![" <> TextString @ label <> "](" <> TextString @ scheme <> "://" <> id <> ")"
     ];

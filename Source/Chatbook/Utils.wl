@@ -20,6 +20,7 @@ HoldComplete[
     `mimeTypeToFormat;
     `readString;
     `stringTrimMiddle;
+    `tinyHash;
     `validGraphicsQ;
 ];
 
@@ -27,6 +28,11 @@ Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"        ];
 Needs[ "Wolfram`Chatbook`Common`" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Config*)
+$tinyHashLength = 5;
 
 (* cSpell: ignore deflatten *)
 (* ::**************************************************************************************************************:: *)
@@ -376,6 +382,14 @@ contextBlock // beginDefinition;
 contextBlock // Attributes = { HoldFirst };
 contextBlock[ eval_ ] := Block[ { $Context = "Global`", $ContextPath = { "Global`", "System`" } }, eval ];
 contextBlock // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*tinyHash*)
+tinyHash // beginDefinition;
+tinyHash[ e_ ] := tinyHash[ Unevaluated @ e, $tinyHashLength ];
+tinyHash[ e_, n_ ] := StringTake[ IntegerString[ Hash @ Unevaluated @ e, 36 ], -n ];
+tinyHash // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
