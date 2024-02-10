@@ -707,7 +707,7 @@ simpleToolRequestParser // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*toolCommandString*)
 toolCommandString // beginDefinition;
-toolCommandString[ $$llmToolH[ as_Association, ___ ] ] := Lookup[ as, "Command", Lookup[ as, "Name" ] ];
+toolCommandString[ $$llmToolH[ as_Association, ___ ] ] := Lookup[ as, "ShortName", Lookup[ as, "Name" ] ];
 toolCommandString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -888,7 +888,7 @@ simpleToolSchema[ as_Association ] := Enclose[
 
         data        = ConfirmBy[ toolData @ as, AssociationQ, "Data" ];
         name        = ConfirmBy[ toolName[ data, "Display" ], StringQ, "Name" ];
-        command     = ConfirmBy[ Lookup[ data, "Command", toolName[ data, "Machine" ] ], StringQ, "Command" ];
+        command     = ConfirmBy[ Lookup[ data, "ShortName", toolName[ data, "Machine" ] ], StringQ, "ShortName" ];
         description = ConfirmBy[ data[ "Description" ], StringQ, "Description" ];
         args        = ConfirmMatch[ as[ "Parameters" ], KeyValuePattern @ { }, "Arguments" ];
         argStrings  = ConfirmMatch[ simpleArgStrings @ args, { __String }, "ArgStrings" ];
@@ -897,7 +897,7 @@ simpleToolSchema[ as_Association ] := Enclose[
             $simpleSchemaTemplate,
             <|
                 "DisplayName" -> name,
-                "Command"     -> command,
+                "ShortName"   -> command,
                 "Description" -> description,
                 "Arguments"   -> StringRiffle[ argStrings, "\n" ]
             |>
@@ -909,9 +909,12 @@ simpleToolSchema[ as_Association ] := Enclose[
 simpleToolSchema // endDefinition;
 
 
-$simpleSchemaTemplate = StringTemplate[
-    "%%DisplayName%% (/%%Command%%)\n%%Description%%\nArguments\n%%Arguments%%",
-    Delimiters -> "%%"
+$simpleSchemaTemplate = StringTemplate[ "\
+%%DisplayName%% (/%%ShortName%%)
+%%Description%%
+Arguments
+%%Arguments%%",
+Delimiters -> "%%"
 ];
 
 (* ::**************************************************************************************************************:: *)
