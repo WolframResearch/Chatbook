@@ -851,7 +851,7 @@ splitDynamicContent[ container_, text_String, cell_, uuid_String ] :=
     splitDynamicContent[ container, StringSplit[ text, $dynamicSplitRules ], cell, uuid ];
 
 splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid_String ] := Enclose[
-    Catch @ Module[ { boxObject, reformatted, write, nbo },
+    Catch @ Module[ { boxObject, settings, reformatted, write, nbo },
 
         boxObject = ConfirmMatch[
             getBoxObjectFromBoxID[ cell, uuid ],
@@ -863,8 +863,13 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
             throwTop[ Quiet[ TaskRemove @ $lastTask, TaskRemove::timnf ]; Null ]
         ];
 
+        settings = ConfirmBy[ $ChatHandlerData[ "ChatNotebookSettings" ], AssociationQ, "Settings" ];
+
         reformatted = ConfirmMatch[
+            If[ TrueQ @ settings[ "AutoFormat" ],
             Block[ { $dynamicText = False }, reformatTextData @ StringJoin @ static ],
+                { StringJoin @ static }
+            ],
             $$textDataList,
             "ReformatTextData"
         ];
