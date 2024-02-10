@@ -546,21 +546,21 @@ chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] :
     Needs[ "LLMServices`" -> None ];
     $lastChatSubmitResult = ReleaseHold[
         $lastChatSubmit = HoldForm @ applyProcessingFunction[
-        settings,
-        "ChatSubmit",
-        HoldComplete[
-            standardizeMessageKeys @ messages,
-            makeLLMConfiguration @ settings,
-            HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
-            HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings
-        ],
-        <|
-            "Container"             :> container,
-            "Messages"              -> messages,
-            "CellObject"            -> cellObject,
-            "DefaultSubmitFunction" -> LLMServices`ChatSubmit
-        |>,
-        LLMServices`ChatSubmit
+            settings,
+            "ChatSubmit",
+            HoldComplete[
+                standardizeMessageKeys @ messages,
+                makeLLMConfiguration @ settings,
+                HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
+                HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings
+            ],
+            <|
+                "Container"             :> container,
+                "Messages"              -> messages,
+                "CellObject"            -> cellObject,
+                "DefaultSubmitFunction" -> LLMServices`ChatSubmit
+            |>,
+            LLMServices`ChatSubmit
         ]
     ],
     { LLMServices`ChatSubmit::unsupported }
@@ -606,9 +606,9 @@ makeLLMConfiguration[ as_Association ] :=
     $lastLLMConfiguration = LLMConfiguration @ Association[
         KeyTake[ as, { "Model", "MaxTokens", "Temperature", "PresencePenalty" } ],
         "StopTokens" -> Select[
-            Flatten @ {
+            DeleteDuplicates @ Flatten @ {
                 as[ "StopTokens" ],
-                If[ as[ "ToolMethod" ] === "Simple", "\n/exec", "ENDTOOLCALL" ],
+                If[ as[ "ToolMethod" ] === "Simple", { "\n/exec" }, "ENDTOOLCALL" ],
                 If[ TrueQ @ $AutomaticAssistance, "[INFO]", Nothing ]
             },
             StringQ
@@ -867,7 +867,7 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
 
         reformatted = ConfirmMatch[
             If[ TrueQ @ settings[ "AutoFormat" ],
-            Block[ { $dynamicText = False }, reformatTextData @ StringJoin @ static ],
+                Block[ { $dynamicText = False }, reformatTextData @ StringJoin @ static ],
                 { StringJoin @ static }
             ],
             $$textDataList,
@@ -1076,6 +1076,8 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         $toolEvaluationResults[ toolID ] = toolResponse;
 
         appendToolResult[ container, settings, output, toolID ];
+        $dynamicTrigger++;
+        $lastDynamicUpdate = AbsoluteTime[ ];
 
         task = $lastTask = chatSubmit[ container, req, cell, settings ];
 
