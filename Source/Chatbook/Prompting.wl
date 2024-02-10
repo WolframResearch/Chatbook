@@ -6,6 +6,7 @@ BeginPackage[ "Wolfram`Chatbook`Prompting`" ];
 `$basePromptComponents;
 `$fullBasePrompt;
 `needsBasePrompt;
+`removeBasePrompt;
 `withBasePromptBuilder;
 
 Begin[ "`Private`" ];
@@ -311,6 +312,33 @@ needsBasePrompt[ KeyValuePattern[ "LLMEvaluator" -> as_Association ] ] := needsB
 needsBasePrompt[ _Association ] := Null;
 needsBasePrompt[ list_List ] := needsBasePrompt /@ list;
 needsBasePrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*removeBasePrompt*)
+removeBasePrompt // beginDefinition;
+
+removeBasePrompt[ name_String ] := removeBasePrompt @ { name };
+removeBasePrompt[ names: { ___String } ] := KeyDropFrom[ $collectedPromptComponents, names ];
+
+removeBasePrompt[ message_, name_String ] :=
+    removeBasePrompt[ message, { name } ];
+
+removeBasePrompt[ message_String, names: { ___String } ] := (
+    removeBasePrompt @ names;
+    StringDelete[ message, Values @ KeyTake[ $basePromptComponents, names ] ]
+);
+
+removeBasePrompt[ message: KeyValuePattern @ { "Content" -> content_String }, names_ ] :=
+    Append[ message, "Content" -> removeBasePrompt[ content, names ] ];
+
+removeBasePrompt[ { message_, rest___ }, names_ ] :=
+    If[ MatchQ[ message, KeyValuePattern[ "Role" -> "System" ] ],
+        { removeBasePrompt[ message, names ], rest },
+        { message, rest }
+    ];
+
+removeBasePrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

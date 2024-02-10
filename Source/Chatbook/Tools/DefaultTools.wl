@@ -225,10 +225,11 @@ You have read access to local files.
 $defaultChatTools0[ "WolframLanguageEvaluator" ] = <|
     toolDefaultData[ "WolframLanguageEvaluator" ],
     "Command"            -> "wl",
-    "Icon"               -> RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
     "Description"        -> $sandboxEvaluateDescription,
-    "Function"           -> sandboxEvaluate,
+    "Enabled"            :> ! TrueQ @ $AutomaticAssistance,
     "FormattingFunction" -> sandboxFormatter,
+    "Function"           -> sandboxEvaluate,
+    "Icon"               -> RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
     "Origin"             -> "BuiltIn",
     "Parameters"         -> {
         "code" -> <|
@@ -277,12 +278,13 @@ $wolframAlphaIcon = RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEBitma
 
 $defaultChatTools0[ "WolframAlpha" ] = <|
     toolDefaultData[ "WolframAlpha" ],
-    "DisplayName"        -> "Wolfram|Alpha",
     "Command"            -> "wa",
-    "Icon"               -> $wolframAlphaIcon,
     "Description"        -> $wolframAlphaDescription,
-    "Function"           -> getWolframAlphaText,
+    "DisplayName"        -> "Wolfram|Alpha",
+    "Enabled"            :> ! TrueQ @ $AutomaticAssistance,
     "FormattingFunction" -> wolframAlphaResultFormatter,
+    "Function"           -> getWolframAlphaText,
+    "Icon"               -> $wolframAlphaIcon,
     "Origin"             -> "BuiltIn",
     "Parameters"         -> {
         "input" -> <|

@@ -18,6 +18,7 @@ HoldComplete[
     `makeToolConfiguration;
     `makeToolResponseString;
     `resolveTools;
+    `simpleToolRequestParser;
     `toolData;
     `toolName;
     `toolOptionValue;

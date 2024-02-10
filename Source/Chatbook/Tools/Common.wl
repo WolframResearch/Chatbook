@@ -343,7 +343,7 @@ withToolBox // endDefinition;
 selectTools // beginDefinition;
 
 selectTools[ as_Association ] := Enclose[
-    Module[ { llmEvaluatorName, toolNames, selections, selectionTypes, add, remove, selectedNames },
+    Module[ { llmEvaluatorName, toolNames, selections, selectionTypes, add, remove, selectedNames, tools },
 
         llmEvaluatorName = ConfirmBy[ getLLMEvaluatorName @ as, StringQ, "LLMEvaluatorName" ];
         toolNames        = ConfirmMatch[ getToolNames @ as, { ___String }, "Names" ];
@@ -374,9 +374,11 @@ selectTools[ as_Association ] := Enclose[
             "SelectedNames"
         ];
 
-        selectTools0 /@ selectedNames
+        selectTools0 /@ selectedNames;
+
+        $selectedTools = Select[ $selectedTools, toolEnabledQ ]
     ],
-    throwInternalFailure[ selectTools @ as, ## ] &
+    throwInternalFailure
 ];
 
 selectTools // endDefinition;
@@ -418,6 +420,13 @@ selectTools0[ name_String, Missing[ "KeyAbsent", name_ ] ] :=
     ];
 
 selectTools0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolEnabledQ*)
+toolEnabledQ // beginDefinition;
+toolEnabledQ[ $$llmToolH[ as_, ___ ] ] := as[ "Enabled" ] =!= False;
+toolEnabledQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -649,6 +658,57 @@ toolRequestParser := toolRequestParser =
            ],
            LLMConfiguration::invprop
     ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*simpleToolRequestParser*)
+simpleToolRequestParser // beginDefinition;
+
+simpleToolRequestParser[ string_String ] := Enclose[
+    Catch @ Module[
+        {
+            tools, commands, calls, command, argString, callString, callPos, tool, name, paramNames, argStrings,
+            padded, params
+        },
+
+        tools = ConfirmMatch[ Values @ $selectedTools, { ___LLMTool }, "Tools" ];
+        commands = ConfirmMatch[ toolCommandString /@ tools, { ___String }, "Commands" ];
+
+        calls = StringCases[
+            StringDelete[ string, "/" ~~ commands ~~ ___ ~~ "/exec" ],
+            Longest[ StartOfString ~~ ___ ~~ StartOfLine ~~ s: ("/" ~~ (cmd: commands) ~~ args___) ~~ EndOfString ] :>
+                { StringTrim @ cmd, StringTrim @ args, s }
+        ];
+
+        If[ calls === { }, Throw @ None ];
+
+        { command, argString, callString } = ConfirmMatch[ First @ calls, { _String, _String, _String }, "CallParts" ];
+
+        callPos = ConfirmMatch[ Last[ StringPosition[ string, callString ], $Failed ], { __Integer }, "CallPosition" ];
+        tool = ConfirmMatch[ AssociationThread[ commands -> tools ][ command ], _LLMTool, "Tool" ];
+
+        name = ConfirmBy[ tool[[ 1, "Name" ]], StringQ, "ToolName" ];
+
+        paramNames = Keys @ ConfirmMatch[ tool[[ 1, "Parameters" ]], KeyValuePattern @ { }, "ParameterNames" ];
+        argStrings = If[ Length @ paramNames === 1, { argString }, StringSplit[ argString, "\n" ] ];
+        If[ Length @ argStrings > Length @ paramNames, Throw @ None ];
+
+        padded = PadRight[ argStrings, Length @ paramNames, "" ];
+        params = Normal @ ConfirmBy[ AssociationThread[ paramNames -> padded ], AssociationQ, "Parameters" ];
+
+        { callPos, LLMToolRequest[ name, params, callString ] }
+    ],
+    throwInternalFailure
+];
+
+simpleToolRequestParser // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolCommandString*)
+toolCommandString // beginDefinition;
+toolCommandString[ $$llmToolH[ as_Association, ___ ] ] := Lookup[ as, "Command", Lookup[ as, "Name" ] ];
+toolCommandString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
