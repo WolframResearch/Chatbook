@@ -107,10 +107,10 @@ formatChatOutput // endDefinition;
 (*FormatToolCall*)
 FormatToolCall // beginDefinition;
 
-FormatToolCall[ string_String, parsed_Association ] :=
+FormatToolCall[ string_String, parsed_ ] :=
     FormatToolCall[ string, parsed, <| "Status" -> If[ TrueQ @ $dynamicText, "Streaming", "Finished" ] |> ];
 
-FormatToolCall[ string_String, parsed_Association, info_Association ] :=
+FormatToolCall[ string_String, parsed_, info_Association ] :=
     formatToolCall[ string, parsed, Lookup[ info, "Status", "Finished" ] ];
 
 FormatToolCall // endDefinition;
@@ -118,10 +118,10 @@ FormatToolCall // endDefinition;
 
 formatToolCall // beginDefinition;
 
-formatToolCall[ string_String, parsed_Association, "Streaming" ] :=
+formatToolCall[ string_String, parsed_, "Streaming" ] :=
     Block[ { $dynamicText = True }, formatToolCall0[ string, parsed ] ];
 
-formatToolCall[ string_String, parsed_Association, "Finished" ] :=
+formatToolCall[ string_String, parsed_, "Finished" ] :=
     Block[ { $dynamicText = False }, formatToolCall0[ string, parsed ] ];
 
 formatToolCall // endDefinition;
