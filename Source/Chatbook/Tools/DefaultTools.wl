@@ -315,7 +315,7 @@ getWolframAlphaText[ as_Association ] :=
 
 getWolframAlphaText[ query_String, steps: True|False|_Missing ] :=
     Module[ { result, data, string },
-        result = WolframAlpha @ query;
+        result = wolframAlpha @ query;
         data = WolframAlpha[
             query,
             { All, { "Title", "Plaintext", "ComputableData", "Content" } },
@@ -338,6 +338,134 @@ getWolframAlphaText[ query_String, steps_, result_String ] :=
     escapeMarkdownString @ result;
 
 getWolframAlphaText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*wolframAlpha*)
+wolframAlpha // beginDefinition;
+wolframAlpha[ args___ ] /; $cloudNotebooks := fasterWolframAlphaPods @ args;
+(* wolframAlpha[ args___ ] := wolframAlpha[ args ] = WolframAlpha @ args; *)
+wolframAlpha[ args___ ] := fasterWolframAlphaPods @ args;
+wolframAlpha // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*fasterWolframAlphaPods*)
+fasterWolframAlphaPods // beginDefinition;
+
+fasterWolframAlphaPods[ query_String ] := Enclose[
+    Catch @ Module[ { titlesAndCells, grouped, formatted, framed },
+        titlesAndCells = Confirm[ WolframAlpha[ query, { All, { "Title", "Cell" } } ], "WolframAlpha" ];
+        If[ titlesAndCells === { }, Throw @ Missing[ "NoResults" ] ];
+        grouped = SortBy[ #1, podOrder ] & /@ GroupBy[ titlesAndCells, podKey ];
+        formatted = ConfirmBy[ cloudUsingFrontEnd[ formatPod /@ grouped ], AssociationQ, "Formatted" ];
+        framed = Framed[
+            Column[ Values @ formatted, Alignment -> Left, Spacings -> 1 ],
+            Background     -> GrayLevel[ 0.95 ],
+            FrameMargins   -> { { 10, 10 }, { 10, 10 } },
+            FrameStyle     -> GrayLevel[ 0.8 ],
+            RoundingRadius -> 3
+        ];
+        fasterWolframAlphaPods[ query ] = framed
+    ],
+    throwInternalFailure
+];
+
+fasterWolframAlphaPods // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*podOrder*)
+podOrder // beginDefinition;
+podOrder[ key_ -> _ ] := podOrder @ key;
+podOrder[ { { _String, idx_Integer }, _String } ] := idx;
+podOrder // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*podKey*)
+podKey // beginDefinition;
+podKey[ key_ -> _ ] := podKey @ key;
+podKey[ { { key_String, _Integer }, _String } ] := key;
+podKey // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatPod*)
+formatPod // beginDefinition;
+
+formatPod[ pod_ ] /; ByteCount @ pod > $maximumWAPodByteCount :=
+    Nothing;
+
+formatPod[ content_List ] := Framed[
+    Column[ formatPodItem /@ content, Alignment -> Left ],
+    Background     -> White,
+    FrameMargins   -> 5,
+    FrameStyle     -> GrayLevel[ 0.8 ],
+    ImageSize      -> { 600, Automatic },
+    RoundingRadius -> 3
+];
+
+formatPod // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatPodItem*)
+formatPodItem // beginDefinition;
+
+formatPodItem[ key_ -> value_ ] :=
+    formatPodItem[ key, value ];
+
+formatPodItem[ { _, "Title" }, title_String ] :=
+    Style[ StringTrim[ title, ":" ] <> ":", "Text", FontColor -> GrayLevel[ 0.4 ], FontSize -> 12 ];
+
+formatPodItem[ { _, "Cell" }, cell_ ] /; ByteCount @ cell > 1000000 :=
+    With[
+        { raster = rasterizeWAPod @ cell },
+        { dim = ImageDimensions @ raster },
+        Pane[
+            Show[ raster, ImageSize -> dim ],
+            ImageSize       -> { UpTo[ 550 ], Automatic },
+            ImageSizeAction -> "ShrinkToFit",
+            ImageMargins    -> { { 10, 0 }, { 0, 0 } }
+        ] /; ByteCount @ raster < ByteCount @ cell
+    ];
+
+formatPodItem[ { _, "Cell" }, cell_ ] :=
+    Pane[ cell, ImageMargins -> { { 10, 0 }, { 0, 0 } } ];
+
+formatPodItem // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*rasterizeWAPod*)
+rasterizeWAPod // beginDefinition;
+rasterizeWAPod[ expr_ ] := rasterizeWAPod[ expr ] = ImageCrop @ Rasterize[ expr, ImageResolution -> 72 ];
+rasterizeWAPod // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudUsingFrontEnd*)
+cloudUsingFrontEnd // beginDefinition;
+cloudUsingFrontEnd // Attributes = { HoldFirst };
+
+(* cloudUsingFrontEnd[ eval_ ] :=
+    Module[ { fe },
+        Quiet[
+            WithCleanup[
+                Developer`UninstallFrontEnd[ ];
+                fe = Developer`InstallFrontEnd[ Developer`ForceLaunch -> True ]
+                ,
+                MathLink`FrontEndBlock[ eval, fe ]
+                ,
+                Developer`UninstallFrontEnd[ ]
+            ],
+            LinkObject::linkn
+        ]
+    ]; *)
+cloudUsingFrontEnd[ eval_ ] := eval;
+
+cloudUsingFrontEnd // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1112,7 +1240,7 @@ expressionURILabel[ _Manipulate ] := "Embedded Interactive Content";
 (* Graphics *)
 expressionURILabel[ _Graph|_Graph3D ] := "Graph";
 expressionURILabel[ _Tree ] := "Tree";
-expressionURILabel[ _Graphics|_Graphics3D|_Image|_Image3D|_Legended|_RawBoxes ] := "Image";
+expressionURILabel[ gfx_ ] /; graphicsQ @ Unevaluated @ gfx := "Image";
 
 (* Data *)
 expressionURILabel[ _List|_Association ] := "Data";
@@ -1130,7 +1258,7 @@ expressionURIScheme // Attributes = { HoldAllComplete };
 expressionURIScheme[ _Video ] := (needsBasePrompt[ "SpecialURIVideo" ]; "video");
 expressionURIScheme[ _Audio ] := (needsBasePrompt[ "SpecialURIAudio" ]; "audio");
 expressionURIScheme[ _Manipulate|_DynamicModule|_Dynamic ] := (needsBasePrompt[ "SpecialURIDynamic" ]; "dynamic");
-expressionURIScheme[ _Graph|_Graph3D|_Graphics|_Graphics3D|_Image|_Image3D|_Legended|_Tree|_RawBoxes ] := "attachment";
+expressionURIScheme[ gfx_ ] /; graphicsQ @ Unevaluated @ gfx := "attachment";
 expressionURIScheme[ _ ] := "expression";
 expressionURIScheme // endDefinition;
 

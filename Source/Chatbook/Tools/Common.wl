@@ -60,6 +60,7 @@ $ToolFunctions = <|
 (* ::Section::Closed:: *)
 (*Tool Configuration*)
 $defaultWebTextLength    = 12000;
+$maximumWAPodByteCount   = 1000000;
 $toolResultStringLength := Ceiling[ $initialCellStringBudget/2 ];
 $webSessionVisible       = False;
 
@@ -871,7 +872,6 @@ Assistant: /end
 User: How do I solve x^2 + 4x + 6 = 0
 Assistant: /wa
 solve x^2 + 4x + 6 = 0
-true
 /exec
 System: <solution steps>
 Assistant: <explanation>";
