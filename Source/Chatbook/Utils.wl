@@ -174,13 +174,36 @@ $$definitelyNotGraphics = HoldPattern @ Alternatives[
     True|False
 ];
 
+$$graphicsBoxIgnoredHead = HoldPattern @ Alternatives[
+    BoxData,
+    Cell,
+    FormBox,
+    PaneBox,
+    StyleBox,
+    TagBox
+];
+
+$$graphicsBoxIgnoredTemplates = Alternatives[
+    "Labeled",
+    "Legended"
+];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*graphicsQ*)
 graphicsQ[ $$graphics              ] := True;
 graphicsQ[ $$definitelyNotGraphics ] := False;
+graphicsQ[ RawBoxes[ boxes_ ]      ] := graphicsBoxQ @ Unevaluated @ boxes;
 graphicsQ[ g_                      ] := MatchQ[ Quiet @ Show @ Unevaluated @ g, $$graphics ];
 graphicsQ[ ___                     ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*graphicsBoxQ*)
+graphicsBoxQ[ _GraphicsBox|_Graphics3DBox ] := True;
+graphicsBoxQ[ $$graphicsBoxIgnoredHead[ box_, ___ ] ] := graphicsBoxQ @ Unevaluated @ box;
+graphicsBoxQ[ TemplateBox[ { box_, ___ }, $$graphicsBoxIgnoredTemplates, ___ ] ] := graphicsBoxQ @ Unevaluated @ box;
+graphicsBoxQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
