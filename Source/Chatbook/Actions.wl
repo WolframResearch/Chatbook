@@ -1388,6 +1388,7 @@ $apiKeyDialogDescription := $apiKeyDialogDescription = Get @ FileNameJoin @ {
 withChatState // beginDefinition;
 withChatState // Attributes = { HoldFirst };
 
+(* TODO: create a `$CurrentChatSettings` symbol that's scoped here and defined as soon as settings are resolved *)
 withChatState[ eval_ ] :=
     Block[
         {
