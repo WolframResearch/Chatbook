@@ -311,7 +311,7 @@ $defaultChatTools0[ "WolframAlpha" ] = <|
 getWolframAlphaText // beginDefinition;
 
 getWolframAlphaText[ as_Association ] :=
-    getWolframAlphaText[ as[ "input" ], as[ "steps" ] ];
+    getWolframAlphaText[ as[ "query" ], as[ "steps" ] ];
 
 getWolframAlphaText[ query_String, steps: True|False|_Missing ] :=
     Module[ { result, data, string },
@@ -344,7 +344,7 @@ getWolframAlphaText // endDefinition;
 (*wolframAlphaResultFormatter*)
 wolframAlphaResultFormatter // beginDefinition;
 
-wolframAlphaResultFormatter[ query_String, "Parameters", "input" ] :=
+wolframAlphaResultFormatter[ query_String, "Parameters", "query" ] :=
     clickToCopy @ query;
 
 wolframAlphaResultFormatter[ KeyValuePattern[ "Result" -> result_ ], "Result" ] :=
