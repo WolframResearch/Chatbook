@@ -917,12 +917,10 @@ checkResponse[ settings: KeyValuePattern[ "ToolsEnabled" -> False ], container_,
         $nextTaskEvaluation = Hold @ writeResult[ settings, container, cell, as ]
     ];
 
-checkResponse[ settings_, container_, cell_, as_Association ] :=
-    Block[ { toolFreeQ = If[ settings[ "ToolMethod" ] === "Simple", simpleToolFreeQ, toolFreeQ ] },
+checkResponse[ settings_, container_, cell_, as_Association ] /; toolFreeQ[ settings, container ] :=
         If[ TrueQ @ $AutomaticAssistance,
             writeResult[ settings, container, cell, as ],
             $nextTaskEvaluation = Hold @ writeResult[ settings, container, cell, as ]
-        ] /; toolFreeQ @ container
     ];
 
 checkResponse[ settings_, container_Symbol, cell_, as_Association ] :=
@@ -1005,17 +1003,20 @@ extractBodyData // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*toolFreeQ*)
 toolFreeQ // beginDefinition;
-toolFreeQ[ KeyValuePattern[ "FullContent" -> s_ ] ] := toolFreeQ @ s;
-toolFreeQ[ _ProgressIndicator ] := True;
-toolFreeQ[ s_String ] := ! MatchQ[ toolRequestParser @ s, { _, _LLMToolRequest|_Failure } ];
+toolFreeQ[ settings_, KeyValuePattern[ "FullContent" -> s_ ] ] := toolFreeQ[ settings[ "ToolMethod" ], s ];
+toolFreeQ[ method_, _ProgressIndicator ] := True;
+toolFreeQ[ "Simple", s_String ] := simpleToolFreeQ @ s;
+toolFreeQ[ _, s_String ] := toolFreeQ0 @ s;
 toolFreeQ // endDefinition;
+
+toolFreeQ0 // beginDefinition;
+toolFreeQ0[ s_String ] := ! MatchQ[ toolRequestParser @ s, { _, _LLMToolRequest|_Failure } ];
+toolFreeQ0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*simpleToolFreeQ*)
 simpleToolFreeQ // beginDefinition;
-simpleToolFreeQ[ KeyValuePattern[ "FullContent" -> s_ ] ] := simpleToolFreeQ @ s;
-simpleToolFreeQ[ _ProgressIndicator ] := True;
 simpleToolFreeQ[ s_String ] := ! MatchQ[ simpleToolRequestParser @ s, { _, _LLMToolRequest|_Failure } ];
 simpleToolFreeQ // endDefinition;
 
@@ -1092,7 +1093,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         task
     ],
-    throwInternalFailure[ toolEvaluation[ settings, container, cell, as ], ## ] &
+    throwInternalFailure
 ];
 
 toolEvaluation // endDefinition;
