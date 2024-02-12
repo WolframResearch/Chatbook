@@ -674,6 +674,7 @@ simpleToolRequestParser[ string_String ] := Enclose[
         tools = ConfirmMatch[ Values @ $selectedTools, { ___LLMTool }, "Tools" ];
         commands = ConfirmMatch[ toolCommandString /@ tools, { ___String }, "Commands" ];
 
+        (* TODO: return failure when trying to use an invalid tool command string *)
         calls = StringCases[
             StringDelete[ string, "/" ~~ commands ~~ ___ ~~ "/exec" ],
             Longest[ StartOfString ~~ ___ ~~ StartOfLine ~~ s: ("/" ~~ (cmd: commands) ~~ args___) ~~ EndOfString ] :>
