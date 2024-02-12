@@ -700,7 +700,7 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Parsing Rules*)
-$$endToolCall = Longest[ "ENDRESULT" ~~ (("(" ~~ HexadecimalCharacter.. ~~ ")") | "") ];
+$$endToolCall = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -914,7 +914,7 @@ parseToolCallID[ string_String? StringQ ] :=
                     "TOOLCALL:",
                     ___,
                     "ENDRESULT(",
-                    hex: HexadecimalCharacter..,
+                    hex: (LetterCharacter|DigitCharacter)..,
                     ")",
                     WhitespaceCharacter...,
                     EndOfString
