@@ -129,23 +129,20 @@ formatToolCall // endDefinition;
 
 formatToolCall0 // beginDefinition;
 
-formatToolCall0[ string_String, as_Association ] := Cell[
-    BoxData @ ToBoxes @ Panel[
-        makeToolCallBoxLabel @ as,
-        BaseStyle    -> "Text",
-        Background   -> GrayLevel[ 0.95 ],
-        ImageMargins -> 10
-    ],
-    "InlineToolCall",
-    Background   -> None,
-    TaggingRules -> KeyDrop[ as, { "Icon", "Result" } ]
+formatToolCall0[ string_String, as_Association ] := Panel[
+    makeToolCallBoxLabel @ as,
+    BaseStyle    -> "Text",
+    Background   -> GrayLevel[ 0.95 ],
+    ImageMargins -> 10
 ];
 
-formatToolCall0[ string_String, failed_Failure ] := Cell[
-    BoxData @ ToBoxes @ failed,
-    "FailedToolCall",
-    Background   -> None,
-    TaggingRules -> <| "ToolCall" -> string |>
+formatToolCall0[ string_String, failed_Failure ] := Framed[
+    failed,
+    Background   -> White,
+    BaseStyle    -> "Output",
+    FrameMargins -> 10,
+    FrameStyle   -> GrayLevel[ 0.95 ],
+    ImageMargins -> { { 0, 0 }, { 10, 10 } }
 ];
 
 formatToolCall0 // endDefinition;
@@ -811,15 +808,45 @@ makeCodeBlockCell // endDefinition;
 (*inlineToolCall*)
 inlineToolCall // beginDefinition;
 
-inlineToolCall[ string_String ] := inlineToolCall[ string, parseToolCallString @ string ];
+inlineToolCall[ string_String ] :=
+    inlineToolCall[ string, parseToolCallString @ string ];
 
-inlineToolCall[ string_String, as_Association ] /; $customToolFormatter =!= None :=
-    $customToolFormatter[ string, as ];
+inlineToolCall[ string_String, as_ ] /; $customToolFormatter =!= None :=
+    makeInlineToolCallCell[
+        $customToolFormatter[ string, as ],
+        string,
+        as
+    ];
 
-inlineToolCall[ string_String, as_Association ] :=
-    FormatToolCall[ string, as, <| "Status" -> If[ TrueQ @ $dynamicText, "Streaming", "Finished" ] |> ];
+inlineToolCall[ string_String, as_ ] :=
+    makeInlineToolCallCell[
+        FormatToolCall[ string, as, <| "Status" -> If[ TrueQ @ $dynamicText, "Streaming", "Finished" ] |> ],
+        string,
+        as
+    ];
 
 inlineToolCall // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeInlineToolCallCell*)
+makeInlineToolCallCell // beginDefinition;
+
+makeInlineToolCallCell[ expr_, string_, as_Association ] := Cell[
+    BoxData @ ToBoxes @ expr,
+    "InlineToolCall",
+    Background   -> None,
+    TaggingRules -> KeyDrop[ as, { "Icon", "Result" } ]
+];
+
+makeInlineToolCallCell[ expr_, string_String, failed_Failure ] := Cell[
+    BoxData @ ToBoxes @ expr,
+    "FailedToolCall",
+    Background   -> None,
+    TaggingRules -> <| "ToolCall" -> string |>
+];
+
+makeInlineToolCallCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
