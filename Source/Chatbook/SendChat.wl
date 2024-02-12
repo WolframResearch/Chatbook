@@ -918,9 +918,9 @@ checkResponse[ settings: KeyValuePattern[ "ToolsEnabled" -> False ], container_,
     ];
 
 checkResponse[ settings_, container_, cell_, as_Association ] /; toolFreeQ[ settings, container ] :=
-        If[ TrueQ @ $AutomaticAssistance,
-            writeResult[ settings, container, cell, as ],
-            $nextTaskEvaluation = Hold @ writeResult[ settings, container, cell, as ]
+    If[ TrueQ @ $AutomaticAssistance,
+        writeResult[ settings, container, cell, as ],
+        $nextTaskEvaluation = Hold @ writeResult[ settings, container, cell, as ]
     ];
 
 checkResponse[ settings_, container_Symbol, cell_, as_Association ] :=
@@ -1302,7 +1302,7 @@ resolveAutoSettings[ settings: KeyValuePattern[ "ResolvedAutoSettings" -> True ]
 
 (* Add additional settings and resolve actual LLMTool expressions *)
 resolveAutoSettings[ settings0_Association ] := Enclose[
-    Module[ { persona, combined, settings },
+    Module[ { persona, combined, settings, resolved },
 
         persona = ConfirmMatch[ getLLMEvaluator @ settings0, _String |_Association | None, "LLMEvaluator" ];
 
@@ -1317,21 +1317,29 @@ resolveAutoSettings[ settings0_Association ] := Enclose[
         Lookup[ settings, { Initialization, "Initialization" } ];
         KeyDropFrom[ settings, { Initialization, "Initialization" } ];
 
-        resolveAutoSettings0 @ <|
-            settings,
-            "HandlerFunctions"     -> getHandlerFunctions @ settings,
-            "LLMEvaluator"         -> persona,
-            "Model"                -> resolveFullModelSpec @ settings,
-            "ProcessingFunctions"  -> getProcessingFunctions @ settings,
-            "ResolvedAutoSettings" -> True,
-            If[ StringQ @ settings[ "Tokenizer" ],
-                <|
-                    "TokenizerName" -> getTokenizerName @ settings,
-                    "Tokenizer"     -> Automatic
-                |>,
-                "TokenizerName" -> Automatic
-            ]
-        |>
+        resolved = ConfirmBy[
+            resolveAutoSettings0 @ <|
+                settings,
+                "HandlerFunctions"     -> getHandlerFunctions @ settings,
+                "LLMEvaluator"         -> persona,
+                "Model"                -> resolveFullModelSpec @ settings,
+                "ProcessingFunctions"  -> getProcessingFunctions @ settings,
+                "ResolvedAutoSettings" -> True,
+                If[ StringQ @ settings[ "Tokenizer" ],
+                    <|
+                        "TokenizerName" -> getTokenizerName @ settings,
+                        "Tokenizer"     -> Automatic
+                    |>,
+                    "TokenizerName" -> Automatic
+                ]
+            |>,
+            AssociationQ,
+            "Resolved"
+        ];
+
+        If[ TrueQ @ $chatState, addHandlerArguments[ "ChatNotebookSettings" -> resolved ] ];
+
+        resolved
     ],
     throwInternalFailure
 ];
