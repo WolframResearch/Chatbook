@@ -1029,6 +1029,10 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
     Module[
         { string, simple, parser, callPos, toolCall, toolResponse, output, messages, newMessages, req, toolID, task },
 
+        (* Ensure dynamic text is up to date: *)
+        $dynamicTrigger++;
+        $lastDynamicUpdate = AbsoluteTime[ ];
+
         string = ConfirmBy[ container[ "FullContent" ], StringQ, "FullContent" ];
 
         simple = settings[ "ToolMethod" ] === "Simple";
@@ -1077,6 +1081,8 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         $toolEvaluationResults[ toolID ] = toolResponse;
 
         appendToolResult[ container, settings, output, toolID ];
+
+        (* Update dynamic text with tool result before waiting for the next response: *)
         $dynamicTrigger++;
         $lastDynamicUpdate = AbsoluteTime[ ];
 
