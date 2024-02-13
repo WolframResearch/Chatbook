@@ -89,15 +89,17 @@ createChatNotebook // endDefinition;
 (*createCloudChatNotebook*)
 createCloudChatNotebook // beginDefinition;
 
-createCloudChatNotebook[ opts: OptionsPattern[ CreateChatNotebook ] ] :=
+createCloudChatNotebook[ opts: OptionsPattern[ CreateChatNotebook ] ] := Enclose[
     Module[ { settings, options, notebook, deployed },
         settings = makeChatNotebookSettings @ Association @ FilterRules[ { opts }, Options @ CreateChatNotebook ];
         options  = makeChatNotebookOptions[ settings, opts ];
-        notebook = Notebook[ Flatten @ { initialChatCells @ opts }, options ];
-        deployed = CloudDeploy[ notebook, CloudObjectURLType -> "Environment" ];
+        notebook = Notebook[ ConfirmMatch[ Flatten @ { initialChatCells @ opts }, { ___Cell }, "Cells" ], options ];
+        deployed = ConfirmMatch[ CloudDeploy[ notebook, CloudObjectURLType -> "Environment" ], _CloudObject, "Deploy" ];
         SystemOpen @ deployed;
         deployed
-    ];
+    ],
+    throwInternalFailure
+];
 
 createCloudChatNotebook // endDefinition;
 
