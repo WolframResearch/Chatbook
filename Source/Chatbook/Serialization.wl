@@ -937,6 +937,9 @@ fasterCellToString0[ TemplateBox[ { args___ }, ___, InterpretationFunction -> f_
 fasterCellToString0[ TemplateBox[ args_, ___, InterpretationFunction -> f_, ___ ] ] :=
     fasterCellToString0 @ f @ args;
 
+fasterCellToString0[ OverlayBox[ { a_, ___ }, ___ ] ] :=
+    fasterCellToString0 @ a;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*TeX*)
@@ -1244,6 +1247,9 @@ fasterCellToString0[ Cell[
     ],
     ___
 ] ] := Block[ { $escapeMarkdown = False }, "```" <> lang <> "\n" <> fasterCellToString0 @ box <> "\n```" ];
+
+fasterCellToString0[ Cell[ BoxData[ boxes_, ___ ], "ChatCodeBlock", ___ ] ] :=
+    Block[ { $escapeMarkdown = False },  "```\n" <> fasterCellToString0 @ boxes <> "\n```" ];
 
 fasterCellToString0[ _[
     __,
