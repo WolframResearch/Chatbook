@@ -77,6 +77,8 @@ $$mdTable = $$mdRow ~~ $$mdRow ..;
 
 $chatGeneratedCellTag = "ChatGeneratedCell";
 
+$simpleToolMethod := $ChatHandlerData[ "ChatNotebookSettings", "ToolMethod" ] === "Simple";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Chat Output Formatting*)
@@ -714,7 +716,18 @@ $textDataFormatRules = {
         StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
             imageCell[ alt, url ]
     ,
-    tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString)) :> inlineToolCallCell @ tool,
+    tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString)) :> inlineToolCallCell @ tool
+    ,
+    tool: Shortest @ StringExpression[
+        StartOfLine,
+        "/" ~~ cmd: LetterCharacter..,
+        (WhitespaceCharacter...),
+        "\n",
+        args___,
+        ($$endToolCall|EndOfString)
+     ] /; $simpleToolMethod && toolShortNameQ @ cmd :>
+        inlineToolCallCell @ tool
+    ,
     ("\n"|StartOfString) ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
     ("\n"|StartOfString) ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ],
     table: $$mdTable :> tableCell @ table
@@ -732,6 +745,13 @@ $textDataFormatRules = {
 };
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolShortNameQ*)
+toolShortNameQ // beginDefinition;
+toolShortNameQ[ cmd_String ] := MatchQ[ $ChatHandlerData[ "ToolShortNames" ][ cmd ], _LLMTool ];
+toolShortNameQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$dynamicSplitRules*)
 
@@ -746,6 +766,7 @@ $dynamicSplitRules = {
         Shortest[ code__ ],
         "```"
     ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString) ] :> s
+    (* TODO: simple tool syntax splitting *)
     ,
     (* Markdown image *)
     s: ("![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")") /;
@@ -811,11 +832,13 @@ inlineToolCall // beginDefinition;
 inlineToolCall[ string_String ] :=
     inlineToolCall[ string, parseToolCallString @ string ];
 
-inlineToolCall[ string_String, as_ ] /; $customToolFormatter =!= None :=
-    makeInlineToolCallCell[
-        $customToolFormatter[ string, as ],
-        string,
-        as
+inlineToolCall[ string_String, as_ ] :=
+    With[ { formatter = $ChatHandlerData[ "ChatNotebookSettings", "ProcessingFunctions", "FormatToolCall" ] },
+        makeInlineToolCallCell[
+            formatter[ string, as ],
+            string,
+            as
+        ] /; MatchQ[ formatter, Except[ None | _Missing ] ]
     ];
 
 inlineToolCall[ string_String, as_ ] :=
@@ -862,6 +885,53 @@ parseToolCallString // endDefinition;
 (*parsePartialToolCallString*)
 parsePartialToolCallString // beginDefinition;
 
+parsePartialToolCallString[ string_String ] /; $simpleToolMethod := Enclose[
+    Module[ { command, argString, tool, name, paramNames, argStrings, padded, params, result },
+        command = ConfirmBy[
+            StringReplace[
+                string,
+                StartOfString ~~ "/" ~~ cmd: LetterCharacter.. ~~ WhitespaceCharacter... ~~ "\n" ~~ ___ :> cmd
+            ],
+            toolShortNameQ,
+            "Command"
+        ];
+
+        argString = First[
+            StringCases[
+                string,
+                StartOfString ~~ "/" ~~ command ~~ WhitespaceCharacter... ~~ "\n" ~~ a___ ~~ ("/exec"|EndOfString) :>
+                    a,
+                1
+            ],
+            Missing[ ]
+        ];
+
+        tool = ConfirmMatch[ $ChatHandlerData[ "ToolShortNames" ][ command ], _LLMTool, "Tool" ];
+        name = ConfirmBy[ toolName @ tool, StringQ, "ToolName" ];
+
+        If[ StringQ @ argString,
+            paramNames = Keys @ ConfirmMatch[ tool[[ 1, "Parameters" ]], KeyValuePattern @ { }, "ParameterNames" ];
+            argStrings = If[ Length @ paramNames === 1, { argString }, StringSplit[ argString, "\n" ] ];
+            padded = PadRight[ argStrings, Length @ paramNames, "" ];
+            params = ConfirmBy[ AssociationThread[ paramNames -> padded ], AssociationQ, "Parameters" ]
+            ,
+            params = <| |>
+        ];
+
+        result = First[ StringCases[ string, "RESULT\n" ~~ r___ ~~ "\nENDRESULT" :> r ], "" ];
+
+        DeleteMissing @ <|
+            "Name"        -> name,
+            "DisplayName" -> getToolDisplayName @ tool,
+            "Icon"        -> getToolIcon @ tool,
+            "ToolCall"    -> StringTrim @ string,
+            "Parameters"  -> params,
+            "Result"      -> result
+        |>
+    ],
+    throwInternalFailure
+];
+
 parsePartialToolCallString[ string_String ] /; StringMatchQ[ string, "TOOLCALL:"~~__~~"{"~~___ ] :=
     Module[ { noPrefix, noSuffix, name, tool, displayName, icon, query, result },
 
@@ -896,6 +966,7 @@ parseFullToolCallString // beginDefinition;
 parseFullToolCallString[ id_String, string_String ] :=
     parseFullToolCallString[ id, $toolEvaluationResults[ id ], string ];
 
+(* FIXME: handle simple syntax too *)
 parseFullToolCallString[ id_, _Missing, string_String ] :=
     parsePartialToolCallString @ string;
 
@@ -938,7 +1009,11 @@ parseToolCallID[ string_String? StringQ ] :=
                 StringExpression[
                     StartOfString,
                     WhitespaceCharacter...,
-                    "TOOLCALL:",
+                    Alternatives[
+                        "TOOLCALL:",
+                        StartOfLine ~~ "/" ~~ cmd: LetterCharacter.. ~~ WhitespaceCharacter... ~~ "\n" /;
+                            toolShortNameQ @ cmd
+                    ],
                     ___,
                     "ENDRESULT(",
                     hex: (LetterCharacter|DigitCharacter)..,

@@ -10,6 +10,7 @@ Needs[ "Wolfram`Chatbook`"                   ];
 Needs[ "Wolfram`Chatbook`ChatMessages`"      ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
 Needs[ "Wolfram`Chatbook`Formatting`"        ];
+Needs[ "Wolfram`Chatbook`Handlers`"          ];
 Needs[ "Wolfram`Chatbook`Models`"            ];
 Needs[ "Wolfram`Chatbook`Personas`"          ];
 Needs[ "Wolfram`Chatbook`Prompting`"         ];
@@ -165,6 +166,13 @@ addExtraToolData // endDefinition;
 getToolByName // beginDefinition;
 getToolByName[ name_String ] := Lookup[ $toolBox, toCanonicalToolName @ name ];
 getToolByName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getToolByShortName*)
+getToolByShortName // beginDefinition;
+getToolByShortName[ cmd_String ] := SelectFirst[ $toolBox, toolShortName[ #1 ] === cmd & ];
+getToolByShortName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -344,7 +352,7 @@ withToolBox // endDefinition;
 selectTools // beginDefinition;
 
 selectTools[ as_Association ] := Enclose[
-    Module[ { llmEvaluatorName, toolNames, selections, selectionTypes, add, remove, selectedNames, tools },
+    Module[ { llmEvaluatorName, toolNames, selections, selectionTypes, add, remove, selectedNames, tools, short },
 
         llmEvaluatorName = ConfirmBy[ getLLMEvaluatorName @ as, StringQ, "LLMEvaluatorName" ];
         toolNames        = ConfirmMatch[ getToolNames @ as, { ___String }, "Names" ];
@@ -377,7 +385,12 @@ selectTools[ as_Association ] := Enclose[
 
         selectTools0 /@ selectedNames;
 
-        $selectedTools = Select[ $selectedTools, toolEnabledQ ]
+        $selectedTools = Select[ $selectedTools, toolEnabledQ ];
+        short = <| (toolShortName[ # ] -> # &) /@ Values[ $selectedTools ] |>;
+
+        addHandlerArguments[ "ToolShortNames" -> short ];
+
+        $selectedTools
     ],
     throwInternalFailure
 ];
@@ -673,7 +686,7 @@ simpleToolRequestParser[ string_String ] := Enclose[
         },
 
         tools = ConfirmMatch[ Values @ $selectedTools, { ___LLMTool }, "Tools" ];
-        commands = ConfirmMatch[ toolCommandString /@ tools, { ___String }, "Commands" ];
+        commands = ConfirmMatch[ toolShortName /@ tools, { ___String }, "Commands" ];
 
         (* TODO: return failure when trying to use an invalid tool command string *)
         calls = StringCases[
@@ -707,10 +720,10 @@ simpleToolRequestParser // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*toolCommandString*)
-toolCommandString // beginDefinition;
-toolCommandString[ $$llmToolH[ as_Association, ___ ] ] := Lookup[ as, "ShortName", Lookup[ as, "Name" ] ];
-toolCommandString // endDefinition;
+(*toolShortName*)
+toolShortName // beginDefinition;
+toolShortName[ $$llmToolH[ as_Association, ___ ] ] := Lookup[ as, "ShortName", Lookup[ as, "Name" ] ];
+toolShortName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -889,19 +902,22 @@ simpleToolSchema[ as_Association ] := Enclose[
 
         data        = ConfirmBy[ toolData @ as, AssociationQ, "Data" ];
         name        = ConfirmBy[ toolName[ data, "Display" ], StringQ, "Name" ];
-        command     = ConfirmBy[ Lookup[ data, "ShortName", toolName[ data, "Machine" ] ], StringQ, "ShortName" ];
+        command     = ConfirmBy[ Lookup[ data, "ShortName", toolName[ data, "Canonical" ] ], StringQ, "ShortName" ];
         description = ConfirmBy[ data[ "Description" ], StringQ, "Description" ];
         args        = ConfirmMatch[ as[ "Parameters" ], KeyValuePattern @ { }, "Arguments" ];
         argStrings  = ConfirmMatch[ simpleArgStrings @ args, { __String }, "ArgStrings" ];
 
-        TemplateApply[
-            $simpleSchemaTemplate,
-            <|
-                "DisplayName" -> name,
-                "ShortName"   -> command,
-                "Description" -> description,
-                "Arguments"   -> StringRiffle[ argStrings, "\n" ]
-            |>
+        StringReplace[
+            TemplateApply[
+                $simpleSchemaTemplate,
+                <|
+                    "DisplayName" -> name,
+                    "ShortName"   -> command,
+                    "Description" -> description,
+                    "Arguments"   -> StringRiffle[ argStrings, "\n" ]
+                |>
+            ],
+        "\n\n" -> "\n"
         ]
     ],
     throwInternalFailure
@@ -940,11 +956,17 @@ simpleArgString[ name_String, "String", _Missing, required_ ] :=
 simpleArgString[ name_String, "String", help_String, required_ ] :=
     StringRiffle @ { name, "-", help, If[ required === False, "(optional)", Nothing ] };
 
+simpleArgString[ name_String, type_String, help_, required_ ] /; ToLowerCase @ name === ToLowerCase @ type :=
+    simpleArgString[ name, "String", help, required ];
+
 simpleArgString[ name_String, type_String, _Missing, required_ ] :=
     StringRiffle @ { name, If[ required === False, "(" <> type <> ", optional)", "("<>type<>")" ] };
 
 simpleArgString[ name_String, type_String, help_String, required_ ] :=
     StringRiffle @ { name, "-", help, If[ required === False, "(" <> type <> ", optional)", "("<>type<>")" ] };
+
+simpleArgString[ name_String, type: Except[ _String ], help_, required_ ] :=
+    simpleArgString[ name, "String", help, required ];
 
 simpleArgString // endDefinition;
 
