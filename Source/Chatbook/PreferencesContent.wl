@@ -563,6 +563,13 @@ makeModelNameSelector[
             "ServiceModelList"
         ];
 
+        (* TODO:
+               If the underlying ServiceExecute in getServiceModelList fails (e.g. due to API issues), it currently
+               returns Missing["NoModelList"]. It might be better to have it return an appropriate Failure[...] instead.
+               In this case, we would want to indicate to the user that the service is not available, rather than
+               falling back to the input field method.
+        *)
+
         If[ models === Missing[ "NotConnected" ],
             Throw @ serviceConnectButton[
                 Dynamic @ service,

@@ -1800,6 +1800,13 @@ prepareChatOutputPage[ target_CellObject, cell_Cell ] := Enclose[
             Throw @ cellPrint @ cell
         ];
 
+        If[ MatchQ[ prevCellExpr, Cell[ BoxData[ TagBox[ _, "DynamicTextDisplay", ___ ], ___ ], ___ ] ],
+            (* The target cell is a left-over dynamic chat output that hasn't been cleaned up properly,
+               so delete it and create a new chat output. *)
+            NotebookDelete @ target;
+            Throw @ cellPrint @ cell
+        ];
+
         prevPage = ConfirmMatch[
             Replace[ First @ prevCellExpr, text_String :> TextData @ { text } ],
             _TextData,
