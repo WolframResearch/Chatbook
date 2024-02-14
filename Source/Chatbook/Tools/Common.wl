@@ -35,6 +35,7 @@ HoldComplete[
 (*Argument Patterns*)
 $$llmTool  = HoldPattern[ _LLMTool ];
 $$llmToolH = HoldPattern[ LLMTool ];
+$$template = _String|_TemplateObject|_TemplateExpression|_TemplateSequence;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -730,40 +731,13 @@ toolShortName // endDefinition;
 (*makeToolPrompt*)
 makeToolPrompt // beginDefinition;
 
-makeToolPrompt[ settings: KeyValuePattern[ "ToolMethod" -> "Simple" ] ] :=
-    makeSimpleToolPrompt @ settings;
-
 makeToolPrompt[ settings_Association ] := $lastToolPrompt = TemplateObject[
     Riffle[
-        DeleteMissing @ {
-            $toolPre,
-            TemplateSequence[
-                TemplateExpression @ TemplateObject[
-                    {
-                        "Tool Name: ",
-                        TemplateSlot[ "Name" ],
-                        "\nDisplay Name: ",
-                        TemplateSlot[ "DisplayName" ],
-                        "\nDescription: ",
-                        TemplateSlot[ "Description" ],
-                        "\nSchema:\n",
-                        TemplateSlot[ "Schema" ],
-                        "\n\n"
-                    },
-                    CombinerFunction  -> StringJoin,
-                    InsertionFunction -> TextString
-                ],
-                TemplateExpression @ Map[
-                    Association[
-                        #[ "Data" ],
-                        "Schema" -> ExportString[ #[ "JSONSchema" ], "JSON" ],
-                        "DisplayName" -> getToolDisplayName @ #
-                    ] &,
-                    TemplateSlot[ "Tools" ]
-                ]
-            ],
-            $toolPost,
-            $fullExamples,
+        DeleteMissing @ Flatten @ {
+            getToolPrePrompt @ settings,
+            getToolListingPrompt @ settings,
+            getToolPostPrompt @ settings,
+            getToolExamplePrompt @ settings,
             makeToolPreferencePrompt @ settings
         },
         "\n\n"
@@ -774,12 +748,58 @@ makeToolPrompt[ settings_Association ] := $lastToolPrompt = TemplateObject[
 
 makeToolPrompt // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getToolPrePrompt*)
+getToolPrePrompt // beginDefinition;
+getToolPrePrompt[ as_Association ] := getToolPrePrompt[ as, as[ "ToolMethod" ], as[ "ToolPrePrompt" ] ];
+getToolPrePrompt[ as_, "Simple", $$unspecified ] := $simpleToolPre;
+getToolPrePrompt[ as_, method_, $$unspecified ] := $toolPre;
+getToolPrePrompt[ as_, method_, prompt: $$template ] := prompt;
+getToolPrePrompt[ as_, method_, None ] := Nothing;
+getToolPrePrompt // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getToolListingPrompt*)
+getToolListingPrompt // beginDefinition;
+getToolListingPrompt[ as_Association ] := getToolListingPrompt[ as, as[ "ToolMethod" ], as[ "ToolListingPrompt" ] ];
+getToolListingPrompt[ as_, "Simple", $$unspecified ] := $simpleToolListing;
+getToolListingPrompt[ as_, method_, $$unspecified ] := $toolListing;
+getToolListingPrompt[ as_, method_, prompt: $$template ] := prompt;
+getToolListingPrompt[ as_, method_, None ] := Nothing;
+getToolListingPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getToolPostPrompt*)
+getToolPostPrompt // beginDefinition;
+getToolPostPrompt[ as_Association ] := getToolPostPrompt[ as, as[ "ToolMethod" ], as[ "ToolPostPrompt" ] ];
+getToolPostPrompt[ as_, "Simple", $$unspecified ] := $simpleToolPost;
+getToolPostPrompt[ as_, method_, $$unspecified ] := $toolPost;
+getToolPostPrompt[ as_, method_, prompt: $$template ] := prompt;
+getToolPostPrompt[ as_, method_, None ] := Nothing;
+getToolPostPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getToolExamplePrompt*)
+getToolExamplePrompt // beginDefinition;
+getToolExamplePrompt[ as_Association ] := getToolExamplePrompt[ as, as[ "ToolMethod" ], as[ "ToolExamplePrompt" ] ];
+getToolExamplePrompt[ as_, "Simple", $$unspecified ] := Nothing;
+getToolExamplePrompt[ as_, method_, $$unspecified ] := $fullExamples;
+getToolExamplePrompt[ as_, method_, prompt: $$template ] := prompt;
+getToolExamplePrompt[ as_, method_, None ] := Nothing;
+getToolExamplePrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Tool Prompt Components*)
 $toolPre = "\
 # Tool Instructions
 
 You have access to tools which can be used to do things, fetch data, compute, etc. while you create your response. \
-Each tool takes input as JSON following a JSON schema. Here are the available tools and their associated schemas:";
+Each tool takes input as JSON following a JSON schema.";
 
 
 $toolPost := "\
@@ -814,27 +834,35 @@ You should try to avoid mentioning tools by name in your response and instead sp
 For example, if there were a number_adder tool, you would instead talk about \"adding numbers\". If you must mention \
 a tool by name, you should use the DisplayName property instead of the tool name.";
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*makeSimpleToolPrompt*)
-makeSimpleToolPrompt // beginDefinition;
 
-makeSimpleToolPrompt[ settings_Association ] := $lastToolPrompt = TemplateObject[
-    Riffle[
-        Flatten @ {
-            $simpleToolPre,
-            TemplateExpression @ StringRiffle[ simpleToolSchema /@ TemplateSlot[ "Tools" ], "\n\n" ],
-            (* TODO: generate simple examples instead of this hardcoded value *)
-            $simpleToolExamples,
-            $simpleToolPost
-        },
-        "\n\n"
-    ],
-    CombinerFunction  -> StringJoin,
-    InsertionFunction -> TextString
-];
-
-makeSimpleToolPrompt // endDefinition;
+$toolListing = {
+    "Here are the available tools and their associated schemas:\n\n",
+    TemplateSequence[
+        TemplateExpression @ TemplateObject[
+            {
+                "Tool Name: ",
+                TemplateSlot[ "Name" ],
+                "\nDisplay Name: ",
+                TemplateSlot[ "DisplayName" ],
+                "\nDescription: ",
+                TemplateSlot[ "Description" ],
+                "\nSchema:\n",
+                TemplateSlot[ "Schema" ],
+                "\n\n"
+            },
+            CombinerFunction  -> StringJoin,
+            InsertionFunction -> TextString
+        ],
+        TemplateExpression @ Map[
+            Association[
+                #[ "Data" ],
+                "Schema" -> ExportString[ #[ "JSONSchema" ], "JSON" ],
+                "DisplayName" -> getToolDisplayName @ #
+            ] &,
+            TemplateSlot[ "Tools" ]
+        ]
+    ]
+};
 
 
 $simpleToolPre = "\
@@ -848,46 +876,20 @@ arg1
 arg2
 /exec
 
-After you write /exec, the system will execute the tool call for you and return the result.
-Reply with /end if the tool call provides a satisfactory answer, otherwise respond normally.
-
-## Available Tools";
+After you write /exec, the system will execute the tool call for you and return the result.";
 
 
 $simpleToolPost = "\
 ## Important
 
-You should use these tools any time your response contains factual information, even if it seems like common knowledge.
-The inputs and outputs of these tool evaluations are formatted in a way that lets the user know that these are \
-fact-checked.
-If you say that you are going to compute something, you must do it immediately before ending your response.
-If you end your response without making a tool call, input returns to the user and they will be wondering why you \
-aren't doing anything.";
+You must write the tool call in your CURRENT response. \
+Do not state that you will use a tool and end your message before making the tool call.";
 
 
-$simpleToolExamples = "\
-## Examples
-
-User: What's the 10th prime
-Assistant: /wl
-Prime[10]
-/exec
-System: 29
-Assistant: /end
-
-User: What are the five biggest countries
-Assistant: /wa
-5 largest countries by area
-/exec
-System: <country list>
-Assistant: /end
-
-User: How do I solve x^2 + 4x + 6 = 0
-Assistant: /wa
-solve x^2 + 4x + 6 = 0
-/exec
-System: <solution steps>
-Assistant: <explanation>";
+$simpleToolListing = {
+    "## Available Tools\n\n",
+    TemplateExpression @ StringRiffle[ simpleToolSchema /@ TemplateSlot[ "Tools" ], "\n\n" ]
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
