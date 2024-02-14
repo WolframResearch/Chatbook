@@ -699,7 +699,17 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Parsing Rules*)
-$$endToolCall = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
+$$endToolCall       = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
+$$eol               = " "... ~~ "\n";
+$$cmd               = Repeated[ DigitCharacter|LetterCharacter|"_"|"$", { 1, 80 } ];
+$$simpleToolCommand = StartOfLine ~~ ("/" ~~ c: $$cmd) ~~ $$eol /; $simpleToolMethod && toolShortNameQ @ c;
+$$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|EndOfString) ];
+
+
+(* TODO:
+    Maybe it would be simpler to use a regex here? The command string part would need to be dynamically generated.
+    RegularExpression["(?m)^(\\/wl|\\/wa)\\n(((?!\\/).*\\n)*?)\\/exec$"] :> simpleToolCallCell["$1", "$2"]
+*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -718,15 +728,7 @@ $textDataFormatRules = {
     ,
     tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString)) :> inlineToolCallCell @ tool
     ,
-    tool: Shortest @ StringExpression[
-        StartOfLine,
-        "/" ~~ cmd: LetterCharacter..,
-        (WhitespaceCharacter...),
-        "\n",
-        args___,
-        ($$endToolCall|EndOfString)
-     ] /; $simpleToolMethod && toolShortNameQ @ cmd :>
-        inlineToolCallCell @ tool
+    tool: $$simpleToolCall :> inlineToolCallCell @ tool
     ,
     ("\n"|StartOfString) ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
     ("\n"|StartOfString) ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ],
@@ -766,7 +768,6 @@ $dynamicSplitRules = {
         Shortest[ code__ ],
         "```"
     ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString) ] :> s
-    (* TODO: simple tool syntax splitting *)
     ,
     (* Markdown image *)
     s: ("![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")") /;
@@ -774,7 +775,8 @@ $dynamicSplitRules = {
             s
     ,
     (* Tool call *)
-    s: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ $$endToolCall) :> s
+    s: Shortest[ "TOOLCALL:" ~~ ___ ~~ $$endToolCall ] :> s,
+    s: Shortest[ $$simpleToolCommand ~~ ___ ~~ $$endToolCall ] :> s
 };
 
 (* ::**************************************************************************************************************:: *)
