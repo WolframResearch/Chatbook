@@ -124,6 +124,9 @@ getServiceModelList[ service_String, info_, models0_List ] := Enclose[
     throwInternalFailure
 ];
 
+getServiceModelList[ service_String, info_, Missing[ "NoModelList" ] ] :=
+    Missing[ "NoModelList" ];
+
 getServiceModelList // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
