@@ -598,29 +598,23 @@ makeChatActionMenu[
 	RaiseConfirmMatch[personas, <| (_String -> _Association)... |>];
 
 	(* initialize PrivateFrontEndOptions if they aren't already present or somehow broke *)
-	If[!MatchQ[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}], {___String}],
-        CurrentValue[
-			$FrontEnd,
-			{PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}
-		] = DeleteCases[Keys[personas], Alternatives["Birdnardo", "RawModel", "Wolfie"]]
+	If[!MatchQ[CurrentChatSettings[$FrontEnd, "VisiblePersonas"], {___String}],
+        CurrentChatSettings[$FrontEnd, "VisiblePersonas"] = DeleteCases[
+			Keys[personas],
+			Alternatives["Birdnardo", "RawModel", "Wolfie"]
+		]
 	];
-	If[!MatchQ[CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}], {___String}],
-        CurrentValue[
-			$FrontEnd,
-			{PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}
-		] = {"CodeAssistant", "CodeWriter", "PlainChat"}
+	If[!MatchQ[CurrentChatSettings[$FrontEnd, "PersonaFavorites"], {___String}],
+        CurrentChatSettings[$FrontEnd, "PersonaFavorites"] = {"CodeAssistant", "CodeWriter", "PlainChat"}
 	];
 
 	(* only show visible personas and sort visible personas based on favorites setting *)
 	personas = KeyTake[
 		personas,
-		CurrentValue[$FrontEnd, {PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "VisiblePersonas"}]
+		CurrentChatSettings[$FrontEnd, "VisiblePersonas"]
 	];
 	personas = With[{
-		favorites = CurrentValue[
-			$FrontEnd,
-			{PrivateFrontEndOptions, "InterfaceSettings", "Chatbook", "PersonaFavorites"}
-		]
+		favorites = CurrentChatSettings[$FrontEnd, "PersonaFavorites"]
 	},
 		Association[
 			(* favorites appear in the exact order provided in the CurrentValue *)
