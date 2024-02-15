@@ -21,7 +21,7 @@ Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$cloudInheritanceFix := $cloudNotebooks && ! PacletNewerQ[ $CloudVersionNumber, "1.67.1" ];
+$cloudInheritanceFix := $cloudNotebooks;
 
 (* cSpell: ignore AIAPI *)
 $defaultChatSettings = <|
