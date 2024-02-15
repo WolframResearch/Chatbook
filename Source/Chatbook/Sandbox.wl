@@ -59,6 +59,8 @@ $sandboxKernelCommandLine := StringRiffle @ {
     "ChatbookSandbox" <> ToString @ $ProcessID
 };
 
+$$outputForm := $$outputForm = Alternatives @@ $OutputForms;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Kernel Management*)
@@ -652,6 +654,19 @@ sandboxResultString[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result"
         "\n"
     ];
 
+sandboxResultString[ HoldComplete[ ___, expr_? outputFormQ ] ] :=
+    With[ { string = fixLineEndings @ ToString[ Unevaluated @ expr, PageWidth -> 100 ] },
+        If[ StringLength @ string < $toolResultStringLength,
+            If[ StringContainsQ[ string, "\n" ], "\n" <> string, string ],
+            StringJoin[
+                "\n",
+                stringTrimMiddle[ string, $toolResultStringLength ],
+                "\n\n\n",
+                makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ]
+            ]
+        ]
+    ];
+
 sandboxResultString[ HoldComplete[ ___, expr_? simpleResultQ ] ] :=
     With[ { string = fixLineEndings @ ToString[ Unevaluated @ expr, InputForm, PageWidth -> 100 ] },
         If[ StringLength @ string < $toolResultStringLength,
@@ -674,6 +689,15 @@ sandboxResultString[ HoldComplete[ ___, expr_ ] ] := makeExpressionURI @ Unevalu
 sandboxResultString[ HoldComplete[ ] ] := "Null";
 
 sandboxResultString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*outputFormQ*)
+outputFormQ // beginDefinition;
+outputFormQ[ $$outputForm[ ___ ] ] := True;
+outputFormQ[ _ ] := False;
+outputFormQ // Attributes = { HoldAllComplete };
+outputFormQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
