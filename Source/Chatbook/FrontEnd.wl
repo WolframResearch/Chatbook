@@ -21,10 +21,12 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `flushFETasks;
 `getBoxObjectFromBoxID;
 `initFETaskWidget;
+`nextCell;
 `notebookRead;
 `openerView;
 `parentCell;
 `parentNotebook;
+`previousCell;
 `replaceCellContext;
 `rootEvaluationCell;
 `selectionEvaluateCreateCell;
@@ -321,6 +323,28 @@ parentCell // beginDefinition;
 parentCell[ obj: _CellObject|_BoxObject ] /; $cloudNotebooks := cloudParentCell @ obj;
 parentCell[ obj: _CellObject|_BoxObject ] := ParentCell @ obj;
 parentCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*nextCell*)
+nextCell // beginDefinition;
+nextCell[ cell_CellObject ] /; $cloudNotebooks := nextCell[ cell, parentNotebook @ cell ];
+nextCell[ cell_CellObject ] := NextCell @ cell;
+nextCell[ cell_CellObject, nbo_NotebookObject ] := nextCell[ cell, Cells @ nbo ];
+nextCell[ cell_, { ___, cell_, next_CellObject, ___ } ] := next;
+nextCell[ _CellObject, ___ ] := None;
+nextCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*previousCell*)
+previousCell // beginDefinition;
+previousCell[ cell_CellObject ] /; $cloudNotebooks := previousCell[ cell, parentNotebook @ cell ];
+previousCell[ cell_CellObject ] := PreviousCell @ cell;
+previousCell[ cell_CellObject, nbo_NotebookObject ] := previousCell[ cell, Cells @ nbo ];
+previousCell[ cell_, { ___, previous_CellObject, cell_, ___ } ] := previous;
+previousCell[ _CellObject, ___ ] := None;
+previousCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
