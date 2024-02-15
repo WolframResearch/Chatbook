@@ -2149,7 +2149,7 @@ writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
             cellTags = CurrentValue[ cell, CellTags ];
             uuid     = CreateUUID[ ];
             new      = reformatCell[ settings, string, tag, open, label, pageData, cellTags, uuid ];
-            output   = CellObject @ uuid;
+            output   = uuidToCellObject[ uuid, cell ];
 
             $lastChatString  = string;
             $reformattedCell = new;
@@ -2196,6 +2196,15 @@ writeReformattedCell[ settings_, other_, cell_CellObject ] :=
     ];
 
 writeReformattedCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*uuidToCellObject*)
+uuidToCellObject // beginDefinition;
+uuidToCellObject[ uuid_String, cell_CellObject ] /; $cloudNotebooks := uuidToCellObject[ uuid, parentNotebook @ cell ];
+uuidToCellObject[ uuid1_String, NotebookObject[ _, uuid2_String ] ] := CellObject[ uuid1, uuid2 ];
+uuidToCellObject[ uuid_String, _ ] := CellObject @ uuid;
+uuidToCellObject // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
