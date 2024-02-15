@@ -364,7 +364,8 @@ fasterWolframAlphaPods[ query_String ] := Enclose[
             Background     -> GrayLevel[ 0.95 ],
             FrameMargins   -> { { 10, 10 }, { 10, 10 } },
             FrameStyle     -> GrayLevel[ 0.8 ],
-            RoundingRadius -> 3
+            RoundingRadius -> 3,
+            TaggingRules   -> <| "WolframAlphaPods" -> True |>
         ];
         fasterWolframAlphaPods[ query ] = framed
     ],
@@ -402,7 +403,7 @@ formatPod[ content_List ] := Framed[
     Background     -> White,
     FrameMargins   -> 5,
     FrameStyle     -> GrayLevel[ 0.8 ],
-    ImageSize      -> { 600, Automatic },
+    ImageSize      -> { If[ $CloudEvaluation, Scaled[ 0.98 ], Scaled[ 1 ] ], Automatic },
     RoundingRadius -> 3
 ];
 
