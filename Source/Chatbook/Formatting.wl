@@ -163,7 +163,7 @@ makeResultCell0[ bulletCell[ whitespace_String, item_String ] ] := Flatten @ {
 
 makeResultCell0[ sectionCell[ n_, section_String ] ] := Flatten @ {
     "\n",
-    StyleBox[ formatTextString @ section, sectionStyle @ n, "InlineSection", FontSize -> .8*Inherited ],
+    styleBox[ formatTextString @ section, sectionStyle @ n, "InlineSection", FontSize -> .8*Inherited ],
     $tinyLineBreak
 };
 
