@@ -194,7 +194,7 @@ makeResultCell0[ mathCell[ math_String ] ] /; StringMatchQ[ math, (DigitCharacte
     math;
 
 makeResultCell0[ mathCell[ math_String ] ] :=
-    With[ { boxes = Quiet @ InputAssistant`TeXAssistant @ StringTrim @ math },
+    With[ { boxes = Quiet @ InputAssistant`TeXAssistant @ preprocessMathString @ math },
         If[ MatchQ[ boxes, _RawBoxes ],
             Cell @ BoxData @ toTeXBoxes @ boxes,
             makeResultCell0 @ inlineCodeCell @ math
@@ -229,6 +229,24 @@ makeResultCell0[ tableCell[ string_String ] ] :=
     makeTableCell @ string;
 
 makeResultCell0 // endDefinition;
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*preprocessMathString*)
+preprocessMathString // beginDefinition;
+preprocessMathString[ math_String ] := FixedPoint[ StringReplace @ $preprocessMathRules, StringTrim @ math, 3 ];
+preprocessMathString // endDefinition;
+
+
+$preprocessMathRules = {
+    (* Remove commas from large numbers: *)
+    n: (Repeated[ DigitCharacter, { 3 } ] ~~ ("," ~~ Repeated[ DigitCharacter, { 3 } ])..) :> StringDelete[ n, "," ],
+    (* Add missing brackets to superscripts: *)
+    "^\\text{" ~~ s: LetterCharacter.. ~~ "}" :> "^{\\text{"<>s<>"}}",
+    (* Format superscript text: *)
+    n: DigitCharacter ~~ "^{" ~~ s: "st"|"nd"|"rd"|"th" ~~ "}" :> n<>"^{\\text{"<>s<>"}}"
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
