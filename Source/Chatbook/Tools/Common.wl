@@ -35,7 +35,6 @@ HoldComplete[
 (*Argument Patterns*)
 $$llmTool  = HoldPattern[ _LLMTool ];
 $$llmToolH = HoldPattern[ LLMTool ];
-$$template = _String|_TemplateObject|_TemplateExpression|_TemplateSequence;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
