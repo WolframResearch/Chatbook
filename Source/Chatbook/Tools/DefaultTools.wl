@@ -357,7 +357,7 @@ fasterWolframAlphaPods[ query_String ] := Enclose[
     Catch @ Module[ { titlesAndCells, grouped, formatted, framed },
         titlesAndCells = Confirm[ WolframAlpha[ query, { All, { "Title", "Cell" } } ], "WolframAlpha" ];
         If[ titlesAndCells === { }, Throw @ Missing[ "NoResults" ] ];
-        grouped = SortBy[ #1, podOrder ] & /@ GroupBy[ titlesAndCells, podKey ];
+        grouped = DeleteCases[ SortBy[ #1, podOrder ] & /@ GroupBy[ titlesAndCells, podKey ], CellSize -> _, Infinity ];
         formatted = ConfirmBy[ cloudUsingFrontEnd[ formatPod /@ grouped ], AssociationQ, "Formatted" ];
         framed = Framed[
             Column[ Values @ formatted, Alignment -> Left, Spacings -> 1 ],
