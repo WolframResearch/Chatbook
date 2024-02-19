@@ -149,7 +149,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         $resultCellCache = <| |>;
         $debugLog = Internal`Bag[ ];
 
-        If[ ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
+        If[ settings[ "SetCellDingbat" ] && ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
             SetOptions[
                 evalCell,
                 CellDingbat -> ReplaceAll[
@@ -272,7 +272,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         $resultCellCache = <| |>;
         $debugLog = Internal`Bag[ ];
 
-        If[ ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
+        If[ settings[ "SetCellDingbat" ] && ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
             SetOptions[
                 evalCell,
                 CellDingbat -> ReplaceAll[
@@ -1055,7 +1055,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         ];
 
         output = ConfirmBy[ toolResponseString @ toolResponse, StringQ, "ToolResponseString" ];
-        If[ simple, output = output <> "\n\n" <> $noRepeatMessage ];
+        (* If[ simple, output = output <> "\n\n" <> $noRepeatMessage ]; *)
 
         messages = ConfirmMatch[
             removeBasePrompt[ settings[ "Data", "Messages" ], { "AutoAssistant" } ],
@@ -1104,9 +1104,9 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
 toolEvaluation // endDefinition;
 
-$noRepeatMessage = "\
+(* $noRepeatMessage = "\
 The user has already been provided with this result, so you do not need to repeat it.
-Reply with /end if the tool call provides a satisfactory answer, otherwise respond normally.";
+Reply with /end if the tool call provides a satisfactory answer, otherwise respond normally."; *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1908,7 +1908,10 @@ activeAIAssistantCell[
                 Sequence @@ Flatten[ { $closedChatCellOptions } ],
                 Selectable      -> False,
                 Editable        -> False,
-                CellDingbat     -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
+                If[ TrueQ @ settings[ "SetCellDingbat" ],
+                    CellDingbat -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
+                    Sequence @@ { }
+                ],
                 CellTags        -> cellTags,
                 CellTrayWidgets -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
                 TaggingRules    -> <| "ChatNotebookSettings" -> smallSettings @ settings |>
@@ -1956,7 +1959,10 @@ activeAIAssistantCell[
                 } ],
                 Initialization -> None
             ],
-            CellDingbat        -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
+            If[ TrueQ @ settings[ "SetCellDingbat" ],
+                CellDingbat -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
+                Sequence @@ { }
+            ],
             CellEditDuplicate  -> False,
             CellTags           -> cellTags,
             CellTrayWidgets    -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
@@ -2297,7 +2303,10 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
             TaggingRules      -> rules,
             If[ TrueQ[ rules[ "PageData", "PageCount" ] > 1 ],
                 CellDingbat -> Cell[ BoxData @ TemplateBox[ { dingbat }, "AssistantIconTabbed" ], Background -> None ],
-                CellDingbat -> Cell[ BoxData @ dingbat, Background -> None ]
+                If[ TrueQ @ settings[ "SetCellDingbat" ],
+                    CellDingbat -> Cell[ BoxData @ dingbat, Background -> None ],
+                    Sequence @@ { }
+                ]
             ],
             If[ TrueQ @ open,
                 Sequence @@ { },
