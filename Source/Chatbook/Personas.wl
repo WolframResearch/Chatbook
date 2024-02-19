@@ -31,6 +31,7 @@ Calling GetPersonaData[] will additionally regenerate the cache used by GetCache
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                   ];
+Needs[ "Wolfram`Chatbook`Common`"            ];
 Needs[ "Wolfram`Chatbook`Errors`"            ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`"        ];
 Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
@@ -41,6 +42,11 @@ Needs[ "Wolfram`Chatbook`Utils`"             ];
 (*Config*)
 $CachedPersonaData = None;
 $corePersonaNames  = { "CodeAssistant", "CodeWriter", "PlainChat", "RawModel" };
+
+$promptFileBaseNames  = { "Pre", "Post", "ToolExamplePrompt", "ToolPostPrompt", "ToolPrePrompt" };
+$$promptFileBaseName  = Alternatives @@ $promptFileBaseNames;
+$$promptFileExtension = "md"|"txt"|"wl"|"m"|"wxf";
+$$promptFileName      = $$promptFileBaseName ~~ "." ~~ $$promptFileExtension;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -238,70 +244,74 @@ loadPersonaFromPacletExtension // endDefinition;
 (*loadPersonaFromDirectory*)
 loadPersonaFromDirectory // beginDefinition;
 
-loadPersonaFromDirectory[paclet_PacletObject, personaName_, dir_?StringQ] := Module[{
-	pre,
-	post,
-	icon,
-	config,
-	origin,
-	extra
-},
-	If[!DirectoryQ[dir],
-		Raise[
-			ChatbookError,
-			<| "PersonaDirectory" -> dir |>,
-			"Persona does not exist in expected directory: ``",
-			InputForm[dir]
+loadPersonaFromDirectory[ paclet_PacletObject, personaName_, dir_? StringQ ] := Enclose[
+	Module[ { icon, config, origin, prompts, extra },
+
+		If[ ! DirectoryQ @ dir,
+			Raise[
+				ChatbookError,
+				<| "PersonaDirectory" -> dir |>,
+				"Persona does not exist in expected directory: ``",
+				InputForm @ dir
+			];
 		];
-	];
 
-	pre = FileNameJoin[{dir, "Pre.md"}];
-	post = FileNameJoin[{dir, "Post.md"}];
-	(* TODO: Support .png, .jpg, etc. icons. *)
-	icon = FileNameJoin[{dir, "Icon.wl"}];
-	config = FileNameJoin[{dir, "LLMConfiguration.wl"}];
+		icon = FileNameJoin @ { dir, "Icon.wl" };
+		config = FileNameJoin @ { dir, "LLMConfiguration.wl" };
+		icon = If[ FileType @ icon === File, Import @ icon, Missing[ "NotAvailable", icon ] ];
+		config = If[ FileType @ config === File, Get @ config, Missing[ "NotAvailable", config ] ];
+		origin = Replace[ paclet[ "Name" ], Except[ "Wolfram/Chatbook" ] -> "LocalPaclet" ];
 
-	pre = If[FileType[pre] === File,
-		readString[pre],
-		Missing["NotAvailable", pre]
-	];
+		prompts = ConfirmBy[ getPromptFiles @ dir, AssociationQ, "GetPromptFiles" ];
+		ConfirmAssert[ AllTrue[ prompts, MatchQ[ $$template ] ], "Templates" ];
 
-	post = If[FileType[post] === File,
-		readString[post],
-		Missing["NotAvailable", post]
-	];
+		extra = DeleteMissing @ <|
+			"Name"        -> personaName,
+			"DisplayName" -> personaName,
+			"Hidden"      -> False,
+			"Icon"        -> icon,
+			"Origin"      -> origin,
+			"PacletName"  -> paclet[ "Name" ],
+			"Version"     -> paclet[ "Version" ]
+		|>;
 
-	icon = If[FileType[icon] === File,
-		Import[icon],
-		Missing["NotAvailable", icon]
-	];
-
-	config = If[FileType[config] === File,
-		Get[config],
-		Missing["NotAvailable", config]
-	];
-
-	origin = Replace[ paclet[ "Name" ], Except[ "Wolfram/Chatbook" ] -> "LocalPaclet" ];
-
-	extra = <|
-		"Name"        -> personaName,
-		"DisplayName" -> personaName,
-		"Hidden"      -> False,
-		"Icon"        -> icon,
-		"Origin"      -> origin,
-		"PacletName"  -> paclet[ "Name" ],
-		"Post"        -> post,
-		"Pre"         -> pre,
-		"Version"     -> paclet[ "Version" ]
-	|>;
-
-	If[ AssociationQ[config],
-		Association[extra, config],
-		extra
-	]
+		If[ AssociationQ @ config,
+			<| extra, prompts, DeleteMissing @ config |>,
+			<| extra, prompts |>
+		]
+	],
+	throwInternalFailure
 ];
 
 loadPersonaFromDirectory // endDefinition;
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getPromptFiles*)
+getPromptFiles // beginDefinition;
+getPromptFiles[ dir_? DirectoryQ ] := getPromptFiles @ FileNames[ $$promptFileName, dir, IgnoreCase -> True ];
+getPromptFiles[ files_List ] := Association[ getPromptFile /@ files ];
+getPromptFiles // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*getPromptFile*)
+getPromptFile // beginDefinition;
+
+getPromptFile[ file_ ] := getPromptFile[ FileBaseName @ file, ToLowerCase @ FileExtension @ file, file ];
+
+getPromptFile[ base: $$promptFileBaseName, "md"|"txt", file_ ] := base -> readString @ file;
+getPromptFile[ base: $$promptFileBaseName, "wl"|"m"  , file_ ] := base -> Get @ file;
+getPromptFile[ base: $$promptFileBaseName, "wxf"     , file_ ] := base -> Developer`ReadWXFFile @ file;
+
+getPromptFile[ base0_String, ext_String, file_ ] :=
+	Module[ { base },
+		base = AssociationThread[ ToLowerCase @ $promptFileBaseNames, $promptFileBaseNames ][ ToLowerCase @ base0 ];
+		getPromptFile[ base, ext, file ] /; MatchQ[ base, $$promptFileBaseName ]
+	];
+
+getPromptFile // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
