@@ -26,6 +26,7 @@ $cloudInheritanceFix := $cloudNotebooks;
 (* cSpell: ignore AIAPI *)
 $defaultChatSettings = <|
     "Assistance"                -> Automatic,
+    "Authentication"            -> Automatic,
     "AutoFormat"                -> True,
     "BasePrompt"                -> Automatic,
     "ChatContextPreprompt"      -> Automatic,
