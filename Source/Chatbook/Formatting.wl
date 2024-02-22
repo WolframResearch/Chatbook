@@ -15,6 +15,7 @@ Wolfram`Chatbook`FormatToolCall;
 `$resultCellCache;
 `clickToCopy;
 `floatingButtonGrid;
+`insertCodeBelow;
 `makeInteractiveCodeCell;
 `reformatTextData;
 `toolAutoFormatter;
