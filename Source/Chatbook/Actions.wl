@@ -103,6 +103,7 @@ ChatbookAction[ "EvaluateChatInput"    , args___ ] := catchMine @ EvaluateChatIn
 ChatbookAction[ "ExclusionToggle"      , args___ ] := catchMine @ ExclusionToggle @ args;
 ChatbookAction[ "ExplodeDuplicate"     , args___ ] := catchMine @ ExplodeDuplicate @ args;
 ChatbookAction[ "ExplodeInPlace"       , args___ ] := catchMine @ ExplodeInPlace @ args;
+ChatbookAction[ "InsertCodeBelow",       args___ ] := catchMine @ insertCodeBelow @ args;
 ChatbookAction[ "InsertInlineReference", args___ ] := catchMine @ InsertInlineReference @ args;
 ChatbookAction[ "OpenChatBlockSettings", args___ ] := catchMine @ OpenChatBlockSettings @ args;
 ChatbookAction[ "OpenChatMenu"         , args___ ] := catchMine @ OpenChatMenu @ args;
