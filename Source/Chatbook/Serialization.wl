@@ -898,7 +898,7 @@ fasterCellToString0[ TemplateBox[ { _, box_, ___ }, "EntityProperty" ] ] := fast
 fasterCellToString0[ TemplateBox[ _, "Spacer1" ] ] := " ";
 
 (* Links *)
-fasterCellToString0[ TemplateBox[ { label_, uri_String }, "TextRefLink" ] ] := (
+fasterCellToString0[ TemplateBox[ { label_, uri_String, ___ }, "TextRefLink" ] ] := (
     needsBasePrompt[ "WolframLanguage" ];
     "[" <> fasterCellToString0 @ label <> "](" <> uri <> ")"
 );

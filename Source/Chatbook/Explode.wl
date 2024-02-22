@@ -40,7 +40,7 @@ explodeCell // endDefinition;
 (*$preprocessingRules*)
 $preprocessingRules := $preprocessingRules = Dispatch @ {
     (* Convert TextRefLink to plain hyperlink: *)
-    Cell @ BoxData[ TemplateBox[ { label_, uri_ }, "TextRefLink" ], ___ ] :>
+    Cell @ BoxData[ TemplateBox[ { label_, uri_, ___ }, "TextRefLink" ], ___ ] :>
         Cell @ BoxData @ ButtonBox[
             StyleBox[ label, "Text" ],
             BaseStyle  -> "Link",
