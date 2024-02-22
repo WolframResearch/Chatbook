@@ -133,7 +133,7 @@ Cell[
     CounterIncrements -> { "ChatInputCount" },
     Evaluatable       -> True,
     MenuSortingValue  -> 1543,
-    StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "SideChat" },
+    StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "SideChat", "=" -> "WolframAlphaShort", "*" -> "Item" },
     TaggingRules      -> <| "ChatNotebookSettings" -> <| |> |>,
 	CellDingbat -> Cell[
         BoxData @ DynamicBox @ ToBoxes[

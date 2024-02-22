@@ -1725,7 +1725,18 @@ $boxCache = <| |>;
 hyperlink // beginDefinition;
 
 hyperlink[ label_String | { label_String }, uri_String ] /; StringStartsQ[ uri, "paclet:" ] :=
-    Cell @ BoxData @ TemplateBox[ { StringTrim[ label, (Whitespace|"`"|"\\").. ], uri }, "TextRefLink" ];
+    Cell @ BoxData @ TemplateBox[
+        {
+            StringTrim[ label, (Whitespace|"`"|"\\").. ],
+            uri,
+            StringReplace[
+                uri,
+                StartOfString ~~ "paclet:" ~~ ref__ ~~ EndOfString :>
+                    "https://reference.wolfram.com/language/"<>ref<>".html"
+            ]
+        },
+        "TextRefLink"
+    ];
 
 hyperlink[ label_String, url_String ] := hyperlink[ formatTextString @ label, url ];
 
