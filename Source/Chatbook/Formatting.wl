@@ -543,7 +543,13 @@ insertAfterChatGeneratedCells[ cellObj_CellObject, cell_Cell ] /; $cloudNotebook
     Module[ { nbo },
         nbo = ConfirmMatch[ parentNotebook @ cellObj, _NotebookObject, "ParentNotebook" ];
         SelectionMove[ cellObj, After, CellContents ];
-        SelectionMove[ nbo, After, Cell ];
+        SelectionMove[ nbo, All, Cell ];
+        (* If the selection is in the next chat input cell, create cell immediately before so the next chat input
+           stays at the bottom *)
+        If[ MatchQ[ NotebookRead @ nbo, Cell[ _, "ChatInput", ___ ] ],
+            SelectionMove[ nbo, Before, Cell ],
+            SelectionMove[ nbo, After, Cell ]
+        ];
         NotebookWrite[ nbo, preprocessInsertedCell @ cell, All ];
     ],
     throwInternalFailure
