@@ -538,6 +538,17 @@ insertCodeBelow // endDefinition;
 (*insertAfterChatGeneratedCells*)
 insertAfterChatGeneratedCells // beginDefinition;
 
+(* FIXME: outputs do not inherit the "ChatGeneratedCell" tag from inputs in cloud notebooks, so this is a workaround *)
+insertAfterChatGeneratedCells[ cellObj_CellObject, cell_Cell ] /; $cloudNotebooks := Enclose[
+    Module[ { nbo },
+        nbo = ConfirmMatch[ parentNotebook @ cellObj, _NotebookObject, "ParentNotebook" ];
+        SelectionMove[ cellObj, After, CellContents ];
+        SelectionMove[ nbo, After, Cell ];
+        NotebookWrite[ nbo, preprocessInsertedCell @ cell, All ];
+    ],
+    throwInternalFailure
+];
+
 insertAfterChatGeneratedCells[ cellObj_CellObject, cell_Cell ] := Enclose[
     Module[ { nbo, allCells, cellsAfter, tagged, inserted, insertionPoint },
 
