@@ -32,6 +32,7 @@ $basePromptOrder = {
     "InlineSymbolLinks",
     "MessageConversionHeader",
     "ChatInputIndicator",
+    "WolframAlphaInputIndicator",
     "ConversionLargeOutputs",
     "ConversionGraphics",
     "MarkdownImageBox",
@@ -76,6 +77,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "InlineSymbolLinks"            -> { },
     "MessageConversionHeader"      -> { "NotebooksPreamble" },
     "ChatInputIndicator"           -> { "MessageConversionHeader" },
+    "WolframAlphaInputIndicator"   -> { "MessageConversionHeader" },
     "ConversionLargeOutputs"       -> { "MessageConversionHeader" },
     "ConversionGraphics"           -> { "MessageConversionHeader" },
     "MarkdownImageBox"             -> { "MessageConversionHeader" },
@@ -158,6 +160,10 @@ $basePromptComponents[ "ChatInputIndicator" ] = "\
 	* Users send you chat messages via special evaluatable \"ChatInput\" cells and will be indicated with the string \
 $$chatIndicatorSymbol$$. Cells appearing above the chat input are included to provide additional context, \
 but chat inputs represent the actual message from the user to you.";
+
+$basePromptComponents[ "WolframAlphaInputIndicator" ] = "\
+    * Inputs denoted with \[FreeformPrompt] are Wolfram Alpha inputs. When available, the parsed Wolfram \
+Language code will be included on the next line.";
 
 $basePromptComponents[ "ConversionLargeOutputs" ] = "\
 	* Large outputs may be shortened: ``DynamicModule[<<4>>]``";
