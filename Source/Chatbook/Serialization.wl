@@ -231,9 +231,8 @@ that are not relevant to the query.
 (* ::Subsubsection::Closed:: *)
 (*Wolfram Alpha Input*)
 $wolframAlphaInputTemplate = codeTemplate[ "\
-WolframAlpha[\"%%Query%%\"]
-
-WOLFRAM_ALPHA_PARSED_INPUT: %%Code%%
+\[FreeformPrompt] %%Query%%
+(%%Code%%)
 
 " ];
 
@@ -651,13 +650,25 @@ fasterCellToString0[ NamespaceBox[
         ___
     ],
     ___
-] ] := TemplateApply[ $wolframAlphaInputTemplate, <| "Query" -> query, "Code" -> code |> ];
+] ] := (
+    needsBasePrompt[ "WolframAlphaInputIndicator" ];
+    TemplateApply[ $wolframAlphaInputTemplate, <| "Query" -> query, "Code" -> code |> ]
+);
 
 fasterCellToString0[ NamespaceBox[
     "WolframAlphaQueryParseResults",
     DynamicModuleBox[ { ___, Typeset`chosen$$ = code_String, ___ }, ___ ],
     ___
 ] ] := code;
+
+fasterCellToString0[ Cell[
+    BoxData[ DynamicModuleBox[ { ___, _ = <| ___, "query" -> query_String, ___ |>, ___ }, __ ], ___ ],
+    "DeployedNLInput",
+    ___
+] ] := (
+    needsBasePrompt[ "WolframAlphaInputIndicator" ];
+    "\[FreeformPrompt] " <> query
+);
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)

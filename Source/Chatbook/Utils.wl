@@ -113,7 +113,7 @@ readString // beginDefinition;
 readString[ file_ ] := Quiet[ readString[ file, ReadByteArray @ file ], $CharacterEncoding::utf8 ];
 
 readString[ file_, bytes_? ByteArrayQ ] := readString[ file, ByteArrayToString @ bytes ];
-readString[ file_, string_? StringQ   ] := fixLineEndings @ string;
+readString[ file_, string_? StringQ   ] := replaceSpecialCharacters @ fixLineEndings @ string;
 readString[ file_, failure_Failure    ] := failure;
 
 readString[ file_, $Failed ] :=
@@ -125,6 +125,18 @@ readString[ file_, $Failed ] :=
     ];
 
 readString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*replaceSpecialCharacters*)
+replaceSpecialCharacters // beginDefinition;
+
+replaceSpecialCharacters[ string_String? StringQ ] := StringReplace[
+    string,
+    special: ("\\[" ~~ LetterCharacter.. ~~ "]") :> ToExpression[ "\""<>special<>"\"" ]
+];
+
+replaceSpecialCharacters // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
