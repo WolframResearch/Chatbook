@@ -43,6 +43,7 @@ $ContextAliases[ "tokens`" ] = "Wolfram`LLMFunctions`Utilities`Tokenization`";
 (*Configuration*)
 $maxMMImageSize          = 512;
 $multimodalMessages      = False;
+$currentMessageMinimumTokens = 16;
 $tokenBudget             = 2^13;
 $tokenPressure           = 0.0;
 $reservedTokens          = 500; (* TODO: determine this at submit time *)
@@ -256,7 +257,12 @@ makeChatMessages0[ settings0_, cells_List ] := Enclose[
             tokenCheckedMessage[ settings, msg ]
         ];
 
-        message = ConfirmMatch[ toMessage[ cell, settings ], $$validMessageResults, "Message" ];
+        message = ConfirmMatch[
+            (* Ensure _some_ content from current chat input is used, regardless of remaining tokens: *)
+            Block[ { $tokenBudget = Max[ $tokenBudget, $currentMessageMinimumTokens ] }, toMessage[ cell, settings ] ],
+            $$validMessageResults,
+            "Message"
+        ];
 
         history = ConfirmMatch[
             Reverse @ Flatten @ MapIndexed[
