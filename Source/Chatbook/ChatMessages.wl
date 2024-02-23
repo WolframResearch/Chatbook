@@ -41,16 +41,16 @@ $ContextAliases[ "tokens`" ] = "Wolfram`LLMFunctions`Utilities`Tokenization`";
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$maxMMImageSize          = 512;
-$multimodalMessages      = False;
+$maxMMImageSize              = 512;
+$multimodalMessages          = False;
 $currentMessageMinimumTokens = 16;
-$tokenBudget             = 2^13;
-$tokenPressure           = 0.0;
-$reservedTokens          = 500; (* TODO: determine this at submit time *)
-$cellStringBudget        = Automatic;
-$initialCellStringBudget = $defaultMaxCellStringLength;
-$$validMessageResult     = _Association? AssociationQ | _Missing | Nothing;
-$$validMessageResults    = $$validMessageResult | { $$validMessageResult ... };
+$tokenBudget                 = 2^13;
+$tokenPressure               = 0.0;
+$reservedTokens              = 500; (* TODO: determine this at submit time *)
+$cellStringBudget            = Automatic;
+$initialCellStringBudget     = $defaultMaxCellStringLength;
+$$validMessageResult         = _Association? AssociationQ | _Missing | Nothing;
+$$validMessageResults        = $$validMessageResult | { $$validMessageResult ... };
 
 $$inlineModifierCell = Alternatives[
     Cell[ _, "InlineModifierReference", ___ ],
@@ -631,16 +631,32 @@ getGroupPrompt // endDefinition;
 (* ::Subsection::Closed:: *)
 (*toPromptString*)
 toPromptString // beginDefinition;
-toPromptString[ string_String ] := string;
-toPromptString[ template_TemplateObject ] := With[ { string = TemplateApply @ template }, string /; StringQ @ string ];
-toPromptString[ _Missing | Automatic | Inherited | None ] := Missing[ ];
 
-toPromptString[ prompts_List ] :=
-    With[ { strings = DeleteMissing[ toPromptString /@ prompts ] },
-        StringRiffle[ prompts, "\n\n" ] /; MatchQ[ strings, { ___String } ]
-    ];
+toPromptString[ expr_ ] := Enclose[
+    Module[ { prompt },
+        prompt = ConfirmMatch[ toPromptString0 @ expr, _String|_Missing, "PromptString" ];
+        If[ StringQ @ prompt, StringTrim @ prompt, prompt ]
+    ],
+    throwInternalFailure
+];
 
 toPromptString // endDefinition;
+
+
+toPromptString0 // beginDefinition;
+toPromptString0[ string_String ] := string;
+toPromptString0[ template_TemplateObject ] := With[ { string = TemplateApply @ template }, string /; StringQ @ string ];
+toPromptString0[ _Missing | Automatic | Inherited | None ] := Missing[ ];
+
+toPromptString0[ prompts_List ] :=
+    With[ { strings = DeleteMissing[ toPromptString0 /@ prompts ] },
+        StringRiffle[
+            DeleteCases[ StringTrim[ strings, ("\r"|"\n").. ], "" ],
+            "\n\n"
+        ] /; MatchQ[ strings, { ___String } ]
+    ];
+
+toPromptString0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
