@@ -168,6 +168,7 @@ startSandboxKernel[ ] := Enclose[
                 kernel,
                 Unevaluated @ EvaluatePacket[
                     UsingFrontEnd @ Null;
+                    SetOptions[ First @ Streams[ "stdout" ], PageWidth -> Infinity ];
                     Developer`StartProtectedMode[ "Read" -> read, "Write" -> write, "Execute" -> execute ]
                 ]
             ]
