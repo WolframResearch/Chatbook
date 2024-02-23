@@ -642,19 +642,24 @@ sandboxResult // endDefinition;
 (* ::Subsection::Closed:: *)
 (*sandboxResultString*)
 sandboxResultString // beginDefinition;
+sandboxResultString[ result_, packets_ ] := checkDocSearchMessageStrings @ sandboxResultString0[ result, packets ];
+sandboxResultString // endDefinition;
 
-sandboxResultString[ result_, packets_ ] := sandboxResultString @ result;
 
-sandboxResultString[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result" -> result_ } ], packets_ ] :=
+sandboxResultString0 // beginDefinition;
+
+sandboxResultString0[ result_, packets_ ] := sandboxResultString0 @ result;
+
+sandboxResultString0[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result" -> result_ } ], packets_ ] :=
     StringRiffle[
         Flatten @ {
             makePacketMessages[ ToString @ line, packets ],
-            "Out[" <> ToString @ line <> "]= " <> sandboxResultString @ Flatten @ HoldComplete @ result
+            "Out[" <> ToString @ line <> "]= " <> sandboxResultString0 @ Flatten @ HoldComplete @ result
         },
         "\n"
     ];
 
-sandboxResultString[ HoldComplete[ ___, expr_? outputFormQ ] ] :=
+sandboxResultString0[ HoldComplete[ ___, expr_? outputFormQ ] ] :=
     With[ { string = fixLineEndings @ ToString[ Unevaluated @ expr, PageWidth -> 100 ] },
         If[ StringLength @ string < $toolResultStringLength,
             If[ StringContainsQ[ string, "\n" ], "\n" <> string, string ],
@@ -667,7 +672,7 @@ sandboxResultString[ HoldComplete[ ___, expr_? outputFormQ ] ] :=
         ]
     ];
 
-sandboxResultString[ HoldComplete[ ___, expr_? simpleResultQ ] ] :=
+sandboxResultString0[ HoldComplete[ ___, expr_? simpleResultQ ] ] :=
     With[ { string = fixLineEndings @ ToString[ Unevaluated @ expr, InputForm, PageWidth -> 100 ] },
         If[ StringLength @ string < $toolResultStringLength,
             If[ StringContainsQ[ string, "\n" ], "\n" <> string, string ],
@@ -684,11 +689,24 @@ sandboxResultString[ HoldComplete[ ___, expr_? simpleResultQ ] ] :=
         ]
     ];
 
-sandboxResultString[ HoldComplete[ ___, expr_ ] ] := makeExpressionURI @ Unevaluated @ expr;
+sandboxResultString0[ HoldComplete[ ___, expr_ ] ] := makeExpressionURI @ Unevaluated @ expr;
 
-sandboxResultString[ HoldComplete[ ] ] := "Null";
+sandboxResultString0[ HoldComplete[ ] ] := "Null";
 
-sandboxResultString // endDefinition;
+sandboxResultString0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkDocSearchMessageStrings*)
+checkDocSearchMessageStrings // beginDefinition;
+checkDocSearchMessageStrings[ string_String ] /; KeyExistsQ[ $selectedTools, "DocumentationSearcher" ] := string;
+checkDocSearchMessageStrings[ string_String ] := StringDelete[ string, $docSearchMessageStrings ];
+checkDocSearchMessageStrings // endDefinition;
+
+$docSearchMessageStrings = {
+    " Use the documentation_searcher tool to find solutions.",
+    " Use the documentation_searcher tool to find alternatives."
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
