@@ -5,6 +5,7 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 HoldComplete[
     `$attachments;
     `$defaultChatTools;
+    `$selectedTools;
     `$toolConfiguration;
     `$toolEvaluationResults;
     `$toolOptions;
