@@ -735,8 +735,8 @@ makeToolPrompt[ settings_Association ] := $lastToolPrompt = TemplateObject[
         DeleteMissing @ Flatten @ {
             getToolPrePrompt @ settings,
             getToolListingPrompt @ settings,
-            getToolPostPrompt @ settings,
             getToolExamplePrompt @ settings,
+            getToolPostPrompt @ settings,
             makeToolPreferencePrompt @ settings
         },
         "\n\n"
