@@ -58,6 +58,7 @@ $defaultChatSettings = <|
     "SetCellDingbat"            -> True,
     "ShowMinimized"             -> Automatic,
     "StreamingOutputMethod"     -> Automatic,
+    "TargetCloudObject"         :> CloudObject[ ],
     "Temperature"               -> 0.7,
     "TokenBudgetMultiplier"     -> Automatic,
     "Tokenizer"                 -> Automatic,
