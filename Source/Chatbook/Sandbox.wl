@@ -321,7 +321,7 @@ cloudSandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
         If[ FailureQ @ response, Throw @ response ];
 
         result = ConfirmMatch[ Lookup[ response, "Result" ], _HoldComplete, "Result" ];
-        packets = { }; (* TODO: create packets from messages and print outputs *)
+        packets = TextPacket /@ Flatten @ { response[ "OutputLog" ], response[ "MessagesText" ] };
         initialized = initializeExpressions @ result;
 
         $lastSandboxResult = <|
