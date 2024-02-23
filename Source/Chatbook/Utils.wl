@@ -72,6 +72,7 @@ convertUTF8 // endDefinition;
 (*stringTrimMiddle*)
 stringTrimMiddle // beginDefinition;
 stringTrimMiddle[ str_String, Infinity ] := str;
+stringTrimMiddle[ str_String, 0 ] := "";
 stringTrimMiddle[ str_String, max_Integer? Positive ] := stringTrimMiddle[ str, Ceiling[ max / 2 ], Floor[ max / 2 ] ];
 stringTrimMiddle[ str_String, l_Integer, r_Integer ] /; StringLength @ str <= l + r + 5 := str;
 stringTrimMiddle[ str_String, l_Integer, r_Integer ] := StringTake[ str, l ] <> " ... " <> StringTake[ str, -r ];
