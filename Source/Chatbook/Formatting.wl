@@ -236,7 +236,13 @@ makeResultCell0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*preprocessMathString*)
 preprocessMathString // beginDefinition;
-preprocessMathString[ math_String ] := FixedPoint[ StringReplace @ $preprocessMathRules, StringTrim @ math, 3 ];
+
+preprocessMathString[ math_String ] := FixedPoint[
+    StringReplace @ $preprocessMathRules,
+    texUTF8Convert @ StringTrim @ math,
+    3
+];
+
 preprocessMathString // endDefinition;
 
 
@@ -248,6 +254,36 @@ $preprocessMathRules = {
     (* Format superscript text: *)
     n: DigitCharacter ~~ "^{" ~~ s: "st"|"nd"|"rd"|"th" ~~ "}" :> n<>"^{\\text{"<>s<>"}}"
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*texUTF8Convert*)
+texUTF8Convert // beginDefinition;
+
+texUTF8Convert[ string_String ] := Enclose[
+    Catch @ Module[ { chars, texChars, rules },
+        chars    = Select[ Union @ Characters @ string, Max @ ToCharacterCode[ # ] > 255 & ];
+        texChars = ConfirmMatch[ texUTF8Convert0 /@ chars, { ___String }, "Characters" ];
+        rules    = DeleteCases[ Thread[ chars -> texChars ], _ -> "" ];
+        texUTF8Convert[ string ] = ConfirmBy[ StringReplace[ string, rules ], StringQ, "Converted" ]
+    ],
+    throwInternalFailure
+];
+
+texUTF8Convert // endDefinition;
+
+
+texUTF8Convert0 // beginDefinition;
+
+texUTF8Convert0[ c_String ] := texUTF8Convert0[ c ] = StringReplace[
+    StringTrim @ Replace[ Quiet @ ExportString[ c, "TeXFragment" ], Except[ _String ] :> "" ],
+    {
+        StartOfString ~~ "\\[" ~~ tex: ("\\" ~~ WordCharacter..) ~~ "\\]" ~~ EndOfString :> tex,
+        StartOfString ~~ __ ~~ EndOfString :> ""
+    }
+];
+
+texUTF8Convert0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
