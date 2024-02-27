@@ -27,6 +27,7 @@ Needs[ "Wolfram`Chatbook`Utils`"      ];
 $SandboxKernel             = None;
 $sandboxPingTimeout       := toolOptionValue[ "WolframLanguageEvaluator", "PingTimeConstraint"       ];
 $sandboxEvaluationTimeout := toolOptionValue[ "WolframLanguageEvaluator", "EvaluationTimeConstraint" ];
+$includeDefinitions       := toolOptionValue[ "WolframLanguageEvaluator", "IncludeDefinitions"       ];
 $cloudEvaluatorLocation    = "/Chatbook/Tools/WolframLanguageEvaluator/Evaluate";
 $cloudLineNumber           = 1;
 
@@ -491,15 +492,34 @@ makeLinkWriteEvaluation // beginDefinition;
 makeLinkWriteEvaluation // Attributes = { HoldAllComplete };
 
 makeLinkWriteEvaluation[ evaluation_ ] := Enclose[
-    Module[ { eval, constrained },
+    Module[ { eval, constrained, initializations },
         eval = ConfirmMatch[ createEvaluationWithWarnings @ evaluation, HoldComplete[ _ ], "Warnings" ];
         constrained = ConfirmMatch[ addTimeConstraint @ eval, HoldComplete[ _ ], "TimeConstraint" ];
-        ConfirmMatch[ addInitializations @ constrained, HoldComplete[ _ ], "Initializations" ]
+        initializations = ConfirmMatch[ addInitializations @ constrained, HoldComplete[ _ ], "Initializations" ];
+        ConfirmMatch[ includeDefinitions @ initializations, HoldComplete[ _ ], "IncludeDefinitions" ]
     ],
-    throwInternalFailure[ makeLinkWriteEvaluation @ evaluation, ## ] &
+    throwInternalFailure
 ];
 
 makeLinkWriteEvaluation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*includeDefinitions*)
+includeDefinitions // beginDefinition;
+
+includeDefinitions[ eval_HoldComplete ] :=
+    includeDefinitions[ eval, $includeDefinitions ];
+
+includeDefinitions[ h: HoldComplete[ eval___ ], True|$$unspecified ] :=
+    With[ { def = Language`ExtendedFullDefinition @ h },
+        HoldComplete[ Language`ExtendedFullDefinition[ ] = def; eval ] /; MatchQ[ def, _Language`DefinitionList ]
+    ];
+
+includeDefinitions[ h_HoldComplete, _ ] :=
+    h;
+
+includeDefinitions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
