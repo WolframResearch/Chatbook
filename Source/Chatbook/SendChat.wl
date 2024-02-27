@@ -1041,7 +1041,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         (* TODO: implement a `getToolRequestParser` that gives the appropriate parser based on ToolMethod *)
         { callPos, toolCall } = ConfirmMatch[
-            parser[ convertUTF8[ string, False ] ],
+            parser[ convertUTF8[ string, True ] ],
             { _, _LLMToolRequest|_Failure },
             "ToolRequestParser"
         ];
