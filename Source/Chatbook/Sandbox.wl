@@ -40,7 +40,8 @@ $initializationTests = HoldComplete[
     MeshRegionQ,
     SparseArrayQ,
     TreeQ,
-    VideoQ
+    VideoQ,
+    Function[ Null, MatchQ[ Unevaluated @ #, _Rational ] && AtomQ @ Unevaluated @ #, HoldFirst ]
 ];
 
 
