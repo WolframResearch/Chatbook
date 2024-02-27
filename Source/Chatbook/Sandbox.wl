@@ -30,6 +30,7 @@ $sandboxEvaluationTimeout := toolOptionValue[ "WolframLanguageEvaluator", "Evalu
 $includeDefinitions       := toolOptionValue[ "WolframLanguageEvaluator", "IncludeDefinitions"       ];
 $cloudEvaluatorLocation    = "/Chatbook/Tools/WolframLanguageEvaluator/Evaluate";
 $cloudLineNumber           = 1;
+$cloudSession              = None;
 
 (* Tests for expressions that lose their initialized status when sending over a link: *)
 $initializationTests = HoldComplete[
@@ -41,7 +42,8 @@ $initializationTests = HoldComplete[
     SparseArrayQ,
     TreeQ,
     VideoQ,
-    Function[ Null, MatchQ[ Unevaluated @ #, _Rational ] && AtomQ @ Unevaluated @ #, HoldFirst ]
+    Function[ Null, MatchQ[ Unevaluated @ #, _Rational ] && AtomQ @ Unevaluated @ #, HoldFirst ],
+    Function[ Null, MatchQ[ Unevaluated @ #, _Dataset ] && System`Private`HoldNoEntryQ @ #, HoldFirst ]
 ];
 
 
@@ -301,7 +303,7 @@ sandboxEvaluate // endDefinition;
 cloudSandboxEvaluate // beginDefinition;
 
 cloudSandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
-    Catch @ Module[ { api, held, wxf, response, result, packets, initialized },
+    Catch @ Module[ { api, held, wxf, definitions, response, result, packets, initialized },
 
         $lastSandboxEvaluation = HoldComplete @ evaluation;
 
@@ -309,11 +311,22 @@ cloudSandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
         If[ FailureQ @ api, Throw @ api ];
         held = ConfirmMatch[ makeCloudEvaluation @ evaluation, HoldComplete[ _ ], "Evaluation" ];
         wxf = ConfirmBy[ BinarySerialize[ held, PerformanceGoal -> "Size" ], ByteArrayQ, "WXF" ];
+        definitions = makeCloudDefinitionsWXF @ HoldComplete @ evaluation;
 
         response = ConfirmMatch[
             URLExecute[
-                api,
-                { "Evaluation" -> BaseEncode @ wxf, "TimeConstraint" -> $sandboxEvaluationTimeout },
+                HTTPRequest[
+                    api,
+                    <|
+                        "Method" -> "POST",
+                        "Body" -> {
+                            "Evaluation" -> BaseEncode @ wxf,
+                            "TimeConstraint" -> $sandboxEvaluationTimeout,
+                            If[ ByteArrayQ @ definitions  , "Definitions" -> BaseEncode @ definitions  , Nothing ],
+                            If[ ByteArrayQ @ $cloudSession, "SessionMX"   -> BaseEncode @ $cloudSession, Nothing ]
+                        }
+                    |>
+                ],
                 "WXF"
             ],
             KeyValuePattern[ (Rule|RuleDelayed)[ "Result", _HoldComplete ] ] | _Failure,
@@ -327,15 +340,25 @@ cloudSandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
         initialized = initializeExpressions @ result;
 
         $lastSandboxResult = <|
-            "String"  -> sandboxResultString[ initialized, packets ],
-            "Result"  -> sandboxResult @ initialized,
-            "Packets" -> packets
+            "String"    -> sandboxResultString[ initialized, packets ],
+            "Result"    -> sandboxResult @ initialized,
+            "Packets"   -> packets,
+            "SessionMX" -> setCloudSessionString @ response
         |>
     ],
     throwInternalFailure
 ];
 
 cloudSandboxEvaluate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*setCloudSessionString*)
+setCloudSessionString // beginDefinition;
+setCloudSessionString[ KeyValuePattern[ "SessionMX" -> mx_ ] ] := setCloudSessionString @ mx;
+setCloudSessionString[ mx_ByteArray ] := $cloudSession = mx;
+setCloudSessionString[ s_String ] := setCloudSessionString @ ByteArray @ s;
+setCloudSessionString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -395,24 +418,56 @@ deployCloudEvaluator // beginDefinition;
 deployCloudEvaluator[ target_CloudObject ] := With[ { messages = $messageOverrides },
     CloudDeploy[
         APIFunction[
-            { "Evaluation" -> "String", "TimeConstraint" -> "Number" -> $sandboxEvaluationTimeout },
-            Function[
+            {
+                "Evaluation"     -> "String",
+                "Definitions"    -> "String" -> None,
+                "SessionMX"      -> "String" -> None,
+                "TimeConstraint" -> "Number" -> $sandboxEvaluationTimeout
+            },
+            Function @ Module[ { file },
+
+                (* Clear existing global symbols *)
+                Remove[ "Global`*" ];
+
+                (* Define custom message text *)
                 ReleaseHold @ messages;
+
+                (* Forward user definitions *)
+                If[ StringQ @ #Definitions,
+                    Language`ExtendedFullDefinition[ ] = BinaryDeserialize @ BaseDecode[ #Definitions ]
+                ];
+
+                (* Restore definitions from previous session *)
+                file = FileNameJoin @ { $TemporaryDirectory, "Session.mx" };
+                If[ StringQ @ #SessionMX,
+                    BinaryWrite[ file, ByteArray[ #SessionMX ] ];
+                    Close @ file;
+                    Get @ file;
+                ];
+
+                (* Evaluate the input *)
                 BinarySerialize[
-                    EvaluationData[
-                        HoldComplete @@ {
-                            TimeConstrained[
-                                BinaryDeserialize[ BaseDecode[ #Evaluation ], ReleaseHold ],
-                                #TimeConstraint,
-                                Failure[
-                                    "EvaluationTimeExceeded",
-                                    <|
-                                        "MessageTemplate"   -> "Evaluation exceeded the `1` second time limit.",
-                                        "MessageParameters" -> { #TimeConstraint }
-                                    |>
+                    Append[
+                        EvaluationData[
+                            HoldComplete @@ {
+                                TimeConstrained[
+                                    BinaryDeserialize[ BaseDecode[ #Evaluation ], ReleaseHold ],
+                                    #TimeConstraint,
+                                    Failure[
+                                        "EvaluationTimeExceeded",
+                                        <|
+                                            "MessageTemplate"   -> "Evaluation exceeded the `1` second time limit.",
+                                            "MessageParameters" -> { #TimeConstraint }
+                                        |>
+                                    ]
                                 ]
-                            ]
-                        }
+                            }
+                        ],
+                        (* Save any new definitions as a session byte array *)
+                        "SessionMX" -> (
+                            DumpSave[ file, "Global`", "SymbolAttributes" -> False ];
+                            ReadByteArray @ file
+                        )
                     ],
                     PerformanceGoal -> "Size"
                 ]
@@ -480,7 +535,7 @@ linkWriteEvaluation // beginDefinition;
 linkWriteEvaluation // Attributes = { HoldAllComplete };
 
 linkWriteEvaluation[ kernel_, evaluation_ ] :=
-    With[ { eval = makeLinkWriteEvaluation @ evaluation },
+    With[ { eval = includeDefinitions @ makeLinkWriteEvaluation @ evaluation },
         LinkWrite[ kernel, Unevaluated @ EnterExpressionPacket @ ReleaseHold @ eval ]
     ];
 
@@ -493,11 +548,10 @@ makeLinkWriteEvaluation // beginDefinition;
 makeLinkWriteEvaluation // Attributes = { HoldAllComplete };
 
 makeLinkWriteEvaluation[ evaluation_ ] := Enclose[
-    Module[ { eval, constrained, initializations },
+    Module[ { eval, constrained },
         eval = ConfirmMatch[ createEvaluationWithWarnings @ evaluation, HoldComplete[ _ ], "Warnings" ];
         constrained = ConfirmMatch[ addTimeConstraint @ eval, HoldComplete[ _ ], "TimeConstraint" ];
-        initializations = ConfirmMatch[ addInitializations @ constrained, HoldComplete[ _ ], "Initializations" ];
-        ConfirmMatch[ includeDefinitions @ initializations, HoldComplete[ _ ], "IncludeDefinitions" ]
+        ConfirmMatch[ addInitializations @ constrained, HoldComplete[ _ ], "Initializations" ]
     ],
     throwInternalFailure
 ];
@@ -521,6 +575,24 @@ includeDefinitions[ h_HoldComplete, _ ] :=
     h;
 
 includeDefinitions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeCloudDefinitionsWXF*)
+makeCloudDefinitionsWXF // beginDefinition;
+
+makeCloudDefinitionsWXF[ eval_HoldComplete ] :=
+    makeCloudDefinitionsWXF[ eval, $includeDefinitions ];
+
+makeCloudDefinitionsWXF[ h_HoldComplete, True|$$unspecified ] :=
+    With[ { def = Language`ExtendedFullDefinition @ h },
+        BinarySerialize[ def, PerformanceGoal -> "Size" ] /; MatchQ[ def, _Language`DefinitionList ]
+    ];
+
+makeCloudDefinitionsWXF[ h_HoldComplete, _ ] :=
+    None;
+
+makeCloudDefinitionsWXF // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
