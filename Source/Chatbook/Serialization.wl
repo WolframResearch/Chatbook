@@ -735,11 +735,11 @@ toMarkdownImageBox // endDefinition;
 (* ::Subsubsubsubsection::Closed:: *)
 (*rasterizeGraphics*)
 rasterizeGraphics // beginDefinition;
-rasterizeGraphics[ gfx: $$graphicsBox ] := rasterizeGraphics[ gfx ] = Rasterize @ RawBoxes @ gfx;
+rasterizeGraphics[ gfx: $$graphicsBox ] := rasterizeGraphics[ gfx ] = rasterize @ RawBoxes @ gfx;
 rasterizeGraphics[ cell_Cell ] := rasterizeGraphics[ cell, 6.25*$cellPageWidth ];
 
 rasterizeGraphics[ cell_Cell, width_Real ] := rasterizeGraphics[ cell, width ] =
-    Rasterize @ Append[ cell, PageWidth -> width ];
+    rasterize @ Append[ cell, PageWidth -> width ];
 
 rasterizeGraphics // endDefinition;
 
@@ -891,8 +891,13 @@ fasterCellToString0[
 );
 
 (* Entity *)
-fasterCellToString0[ TemplateBox[ { _, box_, ___ }, "Entity" ] ] := fasterCellToString0 @ box;
-fasterCellToString0[ TemplateBox[ { _, box_, ___ }, "EntityProperty" ] ] := fasterCellToString0 @ box;
+$$entityBoxType = "Entity"|"EntityClass"|"EntityProperty"|"EntityType";
+fasterCellToString0[ TemplateBox[ { _, box_, ___ }, $$entityBoxType ] ] := fasterCellToString0 @ box;
+
+(* Quantities *)
+$$quantityBoxType = "QuantityPrefixUnit"|"QuantityPrefix"|"Quantity"|"QuantityPostfix";
+fasterCellToString0[ box: TemplateBox[ _, $$quantityBoxType, ___ ] ] :=
+    With[ { s = makeExpressionString @ box }, s /; StringQ @ s ];
 
 (* Spacers *)
 fasterCellToString0[ TemplateBox[ _, "Spacer1" ] ] := " ";
@@ -1343,6 +1348,15 @@ inputFormString[ expr_, opts: OptionsPattern[ ] ] :=
               PageWidth         -> $cellPageWidth,
               CharacterEncoding -> $cellCharacterEncoding
     ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeExpressionString*)
+makeExpressionString // beginDefinition;
+makeExpressionString[ box_ ] := makeExpressionString[ box, ToExpression[ box, StandardForm, HoldComplete ] ];
+makeExpressionString[ box_, HoldComplete[ e_ ] ] := makeExpressionString[ box ] = inputFormString @ Unevaluated @ e;
+makeExpressionString[ box_, _ ] := makeExpressionString[ box ] = $Failed;
+makeExpressionString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

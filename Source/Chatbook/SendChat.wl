@@ -349,7 +349,14 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association }
                 "presence_penalty"  -> presPenalty,
                 "model"             -> toModelName @ model,
                 "stream"            -> stream,
-                "stop"              -> "ENDTOOLCALL"
+                "stop"              -> Select[
+                    DeleteDuplicates @ Flatten @ {
+                        settings[ "StopTokens" ],
+                        If[ settings[ "ToolMethod" ] === "Simple", { "\n/exec" }, "ENDTOOLCALL" ],
+                        If[ TrueQ @ $AutomaticAssistance, "[INFO]", Nothing ]
+                    },
+                    StringQ
+                ]
             |>,
             Automatic|_Missing
         ];

@@ -13,6 +13,7 @@ Needs[ "Wolfram`Chatbook`"                   ];
 Needs[ "Wolfram`Chatbook`ChatMessages`"      ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
 Needs[ "Wolfram`Chatbook`Formatting`"        ];
+Needs[ "Wolfram`Chatbook`FrontEnd`"          ];
 Needs[ "Wolfram`Chatbook`Models`"            ];
 Needs[ "Wolfram`Chatbook`Personas`"          ];
 Needs[ "Wolfram`Chatbook`Prompting`"         ];
@@ -216,9 +217,10 @@ $line = 0;
 $sandboxEvaluateDescription = "\
 Evaluate Wolfram Language code for the user in a separate kernel. \
 The user does not automatically see the result. \
+Do not ask permission to evaluate code. \
 You must include the result in your response in order for them to see it. \
-If a formatted result is provided as a markdown link, use that in your response instead of typing out the output.
-The evaluator supports interactive content such as Manipulate.
+If a formatted result is provided as a markdown link, use that in your response instead of typing out the output. \
+The evaluator supports interactive content such as Manipulate. \
 You have read access to local files.
 ";
 
@@ -441,7 +443,7 @@ formatPodItem // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*rasterizeWAPod*)
 rasterizeWAPod // beginDefinition;
-rasterizeWAPod[ expr_ ] := rasterizeWAPod[ expr ] = ImageCrop @ Rasterize[ expr, ImageResolution -> 72 ];
+rasterizeWAPod[ expr_ ] := rasterizeWAPod[ expr ] = ImageCrop @ rasterize[ expr, ImageResolution -> 72 ];
 rasterizeWAPod // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -524,8 +526,9 @@ waResultText0[ as: KeyValuePattern @ { "Title" -> title_String, "Data" -> data_ 
 waResultText0[ as: KeyValuePattern[ _Integer -> _ ] ] :=
     waResultText0 /@ Values @ KeySort @ KeySelect[ as, IntegerQ ];
 
-waResultText0[ KeyValuePattern @ { "Content"|"ComputableData" -> expr_ } ] /;
-    ! FreeQ[ Unevaluated @ expr, _Missing ] := Nothing;
+waResultText0[ as: KeyValuePattern @ { "Content"|"ComputableData" -> expr_ } ] /;
+    ! FreeQ[ Unevaluated @ expr, _Missing ] :=
+        Replace[ Lookup[ as, "Plaintext" ], Except[ _String ] :> Nothing ];
 
 waResultText0[ KeyValuePattern @ { "Plaintext" -> text_String, "ComputableData" -> Hold[ expr_ ] } ] :=
     If[ ByteCount @ Unevaluated @ expr >= 500,
@@ -888,16 +891,13 @@ $fullExamples :=
 $fullExamplesKeys :=
     With[ { selected = Keys @ $selectedTools },
         Select[
-            If[ TrueQ @ $CloudEvaluation,
-                { "AstroGraphicsDocumentation" },
-                {
-                    "AstroGraphicsDocumentation",
-                    "FileSystemTree",
-                    "FractionalDerivatives",
-                    "PlotEvaluate",
-                    "TemporaryDirectory"
-                }
-            ],
+            {
+                "AstroGraphicsDocumentation",
+                "FileSystemTree",
+                "FractionalDerivatives",
+                "PlotEvaluate",
+                "TemporaryDirectory"
+            },
             ContainsAll[ selected, $exampleDependencies[ #1 ] ] &
         ]
     ];
