@@ -760,7 +760,7 @@ inferMultimodalTypes0 // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*ensureCompatibleImage*)
 ensureCompatibleImage // beginDefinition;
-ensureCompatibleImage[ img_ ] /; $useRasterizationCompatibility && ! Image`PossibleImageQ @ img := Rasterize @ img;
+ensureCompatibleImage[ img_ ] /; $useRasterizationCompatibility && ! Image`PossibleImageQ @ img := rasterize @ img;
 ensureCompatibleImage[ img_ ] := img;
 ensureCompatibleImage // endDefinition;
 
@@ -1256,7 +1256,7 @@ resizeMultimodalImage // beginDefinition;
 
 resizeMultimodalImage[ image0_ ] := Enclose[
     Module[ { image, dimensions, max, small, resized },
-        image = ConfirmBy[ If[ image2DQ @ image0, image0, Rasterize @ image0 ], image2DQ, "Image" ];
+        image = ConfirmBy[ If[ image2DQ @ image0, image0, rasterize @ image0 ], image2DQ, "Image" ];
         dimensions = ConfirmMatch[ ImageDimensions @ image, { _Integer, _Integer }, "Dimensions" ];
         max = ConfirmMatch[ $maxMMImageSize, _Integer? Positive, "MaxSize" ];
         small = ConfirmMatch[ AllTrue[ dimensions, LessThan @ max ], True|False, "Small" ];

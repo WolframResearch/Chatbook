@@ -27,6 +27,7 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `parentCell;
 `parentNotebook;
 `previousCell;
+`rasterize;
 `replaceCellContext;
 `rootEvaluationCell;
 `selectionEvaluateCreateCell;
@@ -45,6 +46,10 @@ Needs[ "Wolfram`Chatbook`Utils`"    ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
+
+(* cSpell: ignore Rasterizer *)
+$cloudRasterizerLocation = "/Chatbook/API/RasterizerService";
+
 $checkEvaluationCell := $VersionNumber <= 13.2; (* Flag that determines whether to use workarounds for #187 *)
 
 (* Used to determine whether or not interactive input (e.g. ChoiceDialog, DialogInput) can be used: *)
@@ -650,6 +655,72 @@ compressUntilViewed // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Misc*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*rasterize*)
+rasterize // beginDefinition;
+
+rasterize[ expr_ ] :=
+    If[ TrueQ @ $CloudEvaluation,
+        cloudRasterize @ Unevaluated @ expr,
+        Rasterize @ Unevaluated @ expr
+    ];
+
+(* rasterize[ expr_ ] :=
+    With[ { id = CreateUUID[ ] },
+        WithCleanup[
+            PutAppend[ <| "ID" -> id, "Expression" :> expr, "Event" -> "Before" |>, CloudObject[ "tmp/rasterizeLog.wl" ] ],
+            TimeConstrained[ UsingFrontEnd @ Rasterize @ expr, 5, UsingFrontEnd @ Rasterize @ expr ],
+            PutAppend[ <| "ID" -> id, "Expression" :> expr, "Event" -> "After" |>, CloudObject[ "tmp/rasterizeLog.wl" ] ]
+        ]
+    ]; *)
+
+rasterize // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudRasterize*)
+cloudRasterize // beginDefinition;
+
+cloudRasterize[ expr_, opts: OptionsPattern[ Rasterize ] ] := Enclose[
+    Module[ { api, wxf, b64, req, img },
+        api = ConfirmMatch[ getCloudRasterizer[ ], _CloudObject, "RasterizerAPI" ];
+        wxf = ConfirmBy[ BinarySerialize[ Unevaluated @ expr, PerformanceGoal -> "Size" ], ByteArrayQ, "WXF" ];
+        b64 = ConfirmBy[ BaseEncode @ wxf, StringQ, "Base64" ];
+        req = HTTPRequest[ api, <| "Method" -> "POST", "Body" -> { "Expression" -> b64 } |> ];
+        img = ConfirmBy[ URLExecute[ req, "PNG" ], ImageQ, "Image" ];
+        cloudRasterize[ expr, opts ] = img
+    ],
+    throwInternalFailure
+];
+
+cloudRasterize // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getCloudRasterizer*)
+getCloudRasterizer // beginDefinition;
+
+getCloudRasterizer[ ] := Enclose[
+    getCloudRasterizer[ ] = ConfirmMatch[
+        CloudDeploy[
+            APIFunction[
+                (* TODO: options and format *)
+                { "Expression" -> "String" },
+                Rasterize @ BinaryDeserialize @ BaseDecode[ #Expression ] &,
+                "PNG"
+            ],
+            CloudObject @ $cloudRasterizerLocation,
+            EvaluationPrivileges -> None,
+            Permissions          -> "Private"
+        ],
+        _CloudObject
+    ],
+    throwInternalFailure
+];
+
+getCloudRasterizer // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
