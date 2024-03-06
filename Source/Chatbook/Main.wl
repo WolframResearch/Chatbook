@@ -6,6 +6,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Declare Symbols*)
+`$AutomaticAssistance;
 `$AvailableTools;
 `$ChatAbort;
 `$ChatbookContexts;
@@ -30,6 +31,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `CreateChatNotebook;
 `CurrentChatSettings;
 `FormatChatOutput;
+`FormatToolCall;
 `FormatToolResponse;
 `GetChatHistory;
 `GetExpressionURI;
@@ -108,6 +110,7 @@ Block[ { $ContextPath },
 (* ::Section::Closed:: *)
 (*Protected Symbols*)
 Protect[
+    $AutomaticAssistance,
     $ChatNotebookEvaluation,
     $DefaultChatHandlerFunctions,
     $DefaultChatProcessingFunctions,
@@ -124,6 +127,7 @@ Protect[
     CreateChatNotebook,
     CurrentChatSettings,
     FormatChatOutput,
+    FormatToolCall,
     FormatToolResponse,
     GetChatHistory,
     GetExpressionURI,
@@ -137,10 +141,14 @@ Protect[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Subcontexts*)
-$ChatbookContexts = Select[ Contexts[ "Wolfram`Chatbook`*" ], StringFreeQ[ "`Private`" ] ];
+$ChatbookContexts := $ChatbookContexts = Select[ Contexts[ "Wolfram`Chatbook`*" ], StringFreeQ[ "`Private`" ] ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
+If[ Wolfram`ChatbookInternal`$BuildingMX,
+    $ChatbookContexts;
+];
+
 End[ ];
 EndPackage[ ];

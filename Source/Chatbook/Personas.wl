@@ -1,4 +1,6 @@
-BeginPackage["Wolfram`Chatbook`Personas`"]
+(* ::Section::Closed:: *)
+(*Package Header*)
+BeginPackage[ "Wolfram`Chatbook`Personas`" ];
 
 Needs["GeneralUtilities`" -> None]
 
@@ -26,19 +28,39 @@ Calling GetPersonaData[] will additionally regenerate the cache used by GetCache
 
 `$corePersonaNames;
 
-Begin["`Private`"]
+Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                   ];
+Needs[ "Wolfram`Chatbook`Common`"            ];
 Needs[ "Wolfram`Chatbook`Errors`"            ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`"        ];
 Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
 Needs[ "Wolfram`Chatbook`Utils`"             ];
 
-(*========================================================*)
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Config*)
+$CachedPersonaData = None;
+$corePersonaNames  = { "CodeAssistant", "CodeWriter", "PlainChat", "RawModel" };
+
+$promptFileBaseNames  = { "Pre", "Post", "ToolExamplePrompt", "ToolPostPrompt", "ToolPrePrompt" };
+$$promptFileBaseName  = Alternatives @@ $promptFileBaseNames;
+$$promptFileExtension = "md"|"txt"|"wl"|"m"|"wxf";
+$$promptFileName      = $$promptFileBaseName ~~ "." ~~ $$promptFileExtension;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Get Personas*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*GetPersonas*)
+GetPersonas // beginDefinition;
 
 GetPersonas[] := Module[{
 	paclets
 },
+	(* TODO: avoid this to reduce load time: *)
 	Needs["PacletTools`" -> None];
 	(* Only look at most recent version of compatible paclets *)
 	paclets = First /@ SplitBy[PacletFind[All, <| "Extension" -> "LLMConfiguration" |>], #["Name"]&];
@@ -68,33 +90,57 @@ GetPersonas[] := Module[{
 		],
 		paclets
 	]
-]
+];
 
-(*========================================================*)
+GetPersonas // endDefinition;
 
-GetPersonasAssociation[] := Module[{
-	personas
-},
-	personas = RaiseConfirmMatch[
-		GetCachedPersonaData[],
-		_?AssociationQ
-	];
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*GetPersonasAssociation*)
+GetPersonasAssociation // beginDefinition;
+GetPersonasAssociation // Options = { "IncludeHidden" -> True };
 
-	personas
-]
+GetPersonasAssociation[ opts: OptionsPattern[ ] ] := Enclose[
+	ConfirmBy[ GetCachedPersonaData @ opts, AssociationQ ],
+	throwInternalFailure
+];
 
-(*========================================================*)
+GetPersonasAssociation // endDefinition;
 
-SetFallthroughError[GetCachedPersonaData]
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*GetCachedPersonaData*)
+GetCachedPersonaData // beginDefinition;
+GetCachedPersonaData // Options = { "IncludeHidden" -> True };
 
-GetCachedPersonaData[] := If[AssociationQ[$CachedPersonaData], $CachedPersonaData, GetPersonaData[]]
-GetCachedPersonaData[persona_] := Lookup[GetCachedPersonaData[], persona, GetPersonaData[persona]]
+GetCachedPersonaData[ opts: OptionsPattern[ ] ] := Enclose[
+	Module[ { data },
+		data = ConfirmBy[
+			If[ AssociationQ @ $CachedPersonaData, $CachedPersonaData, GetPersonaData[ ] ],
+			AssociationQ,
+			"PersonaData"
+		];
 
-$CachedPersonaData = None
+		If[ TrueQ @ OptionValue[ "IncludeHidden" ],
+			data,
+			DeleteCases[ data, KeyValuePattern[ "Hidden" -> True ] ]
+		]
+	],
+	throwInternalFailure
+];
 
-(*========================================================*)
+GetCachedPersonaData[ persona_String ] := Lookup[
+	GetCachedPersonaData[ "IncludeHidden" -> True ],
+	persona,
+	GetPersonaData @ persona
+];
 
-SetFallthroughError[GetPersonaData]
+GetCachedPersonaData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*GetPersonaData*)
+GetPersonaData // beginDefinition;
 
 GetPersonaData[] := Module[{
 	resourcePersonas,
@@ -119,8 +165,22 @@ GetPersonaData[] := Module[{
 	]
 ]
 
-$corePersonaNames = {"CodeAssistant", "CodeWriter", "PlainChat", "RawModel"};
+GetPersonaData[persona_?StringQ] := Module[{
+	data = GetPersonaData[]
+},
+	Lookup[
+		data,
+		persona,
+		Missing["NotAvailable", <| "Persona" -> persona |>]
+	]
+]
 
+GetPersonaData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*loadPacletPersonas*)
+loadPacletPersonas // beginDefinition;
 
 loadPacletPersonas[ paclet_PacletObject ] := loadPacletPersonas[ paclet[ "Name" ], paclet[ "Version" ], paclet ];
 
@@ -145,21 +205,12 @@ loadPacletPersonas[ name_, version_, paclet_ ] := loadPacletPersonas[ name, vers
 		]
 	];
 
-(*------------------------------------*)
+loadPacletPersonas // endDefinition;
 
-GetPersonaData[persona_?StringQ] := Module[{
-	data = GetPersonaData[]
-},
-	Lookup[
-		data,
-		persona,
-		Missing["NotAvailable", <| "Persona" -> persona |>]
-	]
-]
-
-(*====================================*)
-
-SetFallthroughError[loadPersonasFromPacletExtension]
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*loadPersonaFromPacletExtension*)
+loadPersonaFromPacletExtension // beginDefinition;
 
 loadPersonaFromPacletExtension[
 	paclet_?PacletObjectQ,
@@ -184,75 +235,87 @@ loadPersonaFromPacletExtension[
 		),
 		personas
 	]
-]
+];
 
-(*====================================*)
+loadPersonaFromPacletExtension // endDefinition;
 
-SetFallthroughError[loadPersonaFromDirectory]
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*loadPersonaFromDirectory*)
+loadPersonaFromDirectory // beginDefinition;
 
-loadPersonaFromDirectory[paclet_PacletObject, personaName_, dir_?StringQ] := Module[{
-	pre,
-	post,
-	icon,
-	config,
-	origin,
-	extra
-},
-	If[!DirectoryQ[dir],
-		Raise[
-			ChatbookError,
-			<| "PersonaDirectory" -> dir |>,
-			"Persona does not exist in expected directory: ``",
-			InputForm[dir]
+loadPersonaFromDirectory[ paclet_PacletObject, personaName_, dir_? StringQ ] := Enclose[
+	Module[ { icon, config, origin, prompts, extra },
+
+		If[ ! DirectoryQ @ dir,
+			Raise[
+				ChatbookError,
+				<| "PersonaDirectory" -> dir |>,
+				"Persona does not exist in expected directory: ``",
+				InputForm @ dir
+			];
 		];
+
+		icon = FileNameJoin @ { dir, "Icon.wl" };
+		config = FileNameJoin @ { dir, "LLMConfiguration.wl" };
+		icon = If[ FileType @ icon === File, Import @ icon, Missing[ "NotAvailable", icon ] ];
+		config = If[ FileType @ config === File, Get @ config, Missing[ "NotAvailable", config ] ];
+		origin = Replace[ paclet[ "Name" ], Except[ "Wolfram/Chatbook" ] -> "LocalPaclet" ];
+
+		prompts = ConfirmBy[ getPromptFiles @ dir, AssociationQ, "GetPromptFiles" ];
+		ConfirmAssert[ AllTrue[ prompts, MatchQ[ $$template ] ], "Templates" ];
+
+		extra = DeleteMissing @ <|
+			"Name"        -> personaName,
+			"DisplayName" -> personaName,
+			"Hidden"      -> False,
+			"Icon"        -> icon,
+			"Origin"      -> origin,
+			"PacletName"  -> paclet[ "Name" ],
+			"Version"     -> paclet[ "Version" ]
+		|>;
+
+		If[ AssociationQ @ config,
+			<| extra, prompts, DeleteMissing @ config |>,
+			<| extra, prompts |>
+		]
+	],
+	throwInternalFailure
+];
+
+loadPersonaFromDirectory // endDefinition;
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getPromptFiles*)
+getPromptFiles // beginDefinition;
+getPromptFiles[ dir_? DirectoryQ ] := getPromptFiles @ FileNames[ $$promptFileName, dir, IgnoreCase -> True ];
+getPromptFiles[ files_List ] := Association[ getPromptFile /@ files ];
+getPromptFiles // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*getPromptFile*)
+getPromptFile // beginDefinition;
+
+getPromptFile[ file_ ] := getPromptFile[ FileBaseName @ file, ToLowerCase @ FileExtension @ file, file ];
+
+getPromptFile[ base: $$promptFileBaseName, "md"|"txt", file_ ] := base -> readString @ file;
+getPromptFile[ base: $$promptFileBaseName, "wl"|"m"  , file_ ] := base -> Get @ file;
+getPromptFile[ base: $$promptFileBaseName, "wxf"     , file_ ] := base -> Developer`ReadWXFFile @ file;
+
+getPromptFile[ base0_String, ext_String, file_ ] :=
+	Module[ { base },
+		base = AssociationThread[ ToLowerCase @ $promptFileBaseNames, $promptFileBaseNames ][ ToLowerCase @ base0 ];
+		getPromptFile[ base, ext, file ] /; MatchQ[ base, $$promptFileBaseName ]
 	];
 
-	pre = FileNameJoin[{dir, "Pre.md"}];
-	post = FileNameJoin[{dir, "Post.md"}];
-	(* TODO: Support .png, .jpg, etc. icons. *)
-	icon = FileNameJoin[{dir, "Icon.wl"}];
-	config = FileNameJoin[{dir, "LLMConfiguration.wl"}];
+getPromptFile // endDefinition;
 
-	pre = If[FileType[pre] === File,
-		readString[pre],
-		Missing["NotAvailable", pre]
-	];
-
-	post = If[FileType[post] === File,
-		readString[post],
-		Missing["NotAvailable", post]
-	];
-
-	icon = If[FileType[icon] === File,
-		Import[icon],
-		Missing["NotAvailable", icon]
-	];
-
-	config = If[FileType[config] === File,
-		Get[config],
-		Missing["NotAvailable", config]
-	];
-
-	origin = Replace[ paclet[ "Name" ], Except[ "Wolfram/Chatbook" ] -> "LocalPaclet" ];
-
-	extra = <|
-		"Name"        -> personaName,
-		"DisplayName" -> personaName,
-		"Icon"        -> icon,
-		"Origin"      -> origin,
-		"PacletName"  -> paclet[ "Name" ],
-		"Post"        -> post,
-		"Pre"         -> pre,
-		"Version"     -> paclet[ "Version" ]
-	|>;
-
-	If[ AssociationQ[config],
-		Association[extra, config],
-		extra
-	]
-]
-
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*standardizePersonaData*)
 standardizePersonaData // beginDefinition;
 
 (* Rename "PersonaIcon" key to "Icon" *)
@@ -270,10 +333,12 @@ standardizePersonaData[ persona_Association? AssociationQ ] := Association[
 
 standardizePersonaData // endDefinition;
 
-
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Package Footer*)
 If[ Wolfram`ChatbookInternal`$BuildingMX,
     loadPacletPersonas @ PacletObject[ "Wolfram/Chatbook" ];
 ];
 
-End[]
-EndPackage[]
+End[ ];
+EndPackage[ ];

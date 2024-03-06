@@ -20,13 +20,20 @@ HoldComplete[
     `mimeTypeToFormat;
     `readString;
     `stringTrimMiddle;
+    `tinyHash;
     `validGraphicsQ;
 ];
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"        ];
-Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`"          ];
+Needs[ "Wolfram`Chatbook`Common`"   ];
+Needs[ "Wolfram`Chatbook`FrontEnd`" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Config*)
+$tinyHashLength = 5;
 
 (* cSpell: ignore deflatten *)
 (* ::**************************************************************************************************************:: *)
@@ -66,6 +73,7 @@ convertUTF8 // endDefinition;
 (*stringTrimMiddle*)
 stringTrimMiddle // beginDefinition;
 stringTrimMiddle[ str_String, Infinity ] := str;
+stringTrimMiddle[ str_String, 0 ] := "";
 stringTrimMiddle[ str_String, max_Integer? Positive ] := stringTrimMiddle[ str, Ceiling[ max / 2 ], Floor[ max / 2 ] ];
 stringTrimMiddle[ str_String, l_Integer, r_Integer ] /; StringLength @ str <= l + r + 5 := str;
 stringTrimMiddle[ str_String, l_Integer, r_Integer ] := StringTake[ str, l ] <> " ... " <> StringTake[ str, -r ];
@@ -107,7 +115,7 @@ readString // beginDefinition;
 readString[ file_ ] := Quiet[ readString[ file, ReadByteArray @ file ], $CharacterEncoding::utf8 ];
 
 readString[ file_, bytes_? ByteArrayQ ] := readString[ file, ByteArrayToString @ bytes ];
-readString[ file_, string_? StringQ   ] := fixLineEndings @ string;
+readString[ file_, string_? StringQ   ] := replaceSpecialCharacters @ fixLineEndings @ string;
 readString[ file_, failure_Failure    ] := failure;
 
 readString[ file_, $Failed ] :=
@@ -119,6 +127,18 @@ readString[ file_, $Failed ] :=
     ];
 
 readString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*replaceSpecialCharacters*)
+replaceSpecialCharacters // beginDefinition;
+
+replaceSpecialCharacters[ string_String? StringQ ] := StringReplace[
+    string,
+    special: ("\\[" ~~ LetterCharacter.. ~~ "]") :> ToExpression[ "\""<>special<>"\"" ]
+];
+
+replaceSpecialCharacters // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -168,13 +188,36 @@ $$definitelyNotGraphics = HoldPattern @ Alternatives[
     True|False
 ];
 
+$$graphicsBoxIgnoredHead = HoldPattern @ Alternatives[
+    BoxData,
+    Cell,
+    FormBox,
+    PaneBox,
+    StyleBox,
+    TagBox
+];
+
+$$graphicsBoxIgnoredTemplates = Alternatives[
+    "Labeled",
+    "Legended"
+];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*graphicsQ*)
 graphicsQ[ $$graphics              ] := True;
 graphicsQ[ $$definitelyNotGraphics ] := False;
+graphicsQ[ RawBoxes[ boxes_ ]      ] := graphicsBoxQ @ Unevaluated @ boxes;
 graphicsQ[ g_                      ] := MatchQ[ Quiet @ Show @ Unevaluated @ g, $$graphics ];
 graphicsQ[ ___                     ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*graphicsBoxQ*)
+graphicsBoxQ[ _GraphicsBox|_Graphics3DBox ] := True;
+graphicsBoxQ[ $$graphicsBoxIgnoredHead[ box_, ___ ] ] := graphicsBoxQ @ Unevaluated @ box;
+graphicsBoxQ[ TemplateBox[ { box_, ___ }, $$graphicsBoxIgnoredTemplates, ___ ] ] := graphicsBoxQ @ Unevaluated @ box;
+graphicsBoxQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -346,7 +389,7 @@ exportDataURI[ data_, fmt_String ] :=
 
 exportDataURI[ data_, fmt_String, mime_String ] := Enclose[
     Module[ { base64 },
-        base64 = ConfirmBy[ ExportString[ data, { "Base64", fmt } ], StringQ, "Base64" ];
+        base64 = ConfirmBy[ UsingFrontEnd @ ExportString[ data, { "Base64", fmt } ], StringQ, "Base64" ];
         "data:" <> mime <> ";base64," <> StringDelete[ base64, "\n" ]
     ],
     throwInternalFailure
@@ -376,6 +419,14 @@ contextBlock // beginDefinition;
 contextBlock // Attributes = { HoldFirst };
 contextBlock[ eval_ ] := Block[ { $Context = "Global`", $ContextPath = { "Global`", "System`" } }, eval ];
 contextBlock // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*tinyHash*)
+tinyHash // beginDefinition;
+tinyHash[ e_ ] := tinyHash[ Unevaluated @ e, $tinyHashLength ];
+tinyHash[ e_, n_ ] := StringTake[ IntegerString[ Hash @ Unevaluated @ e, 36 ], -n ];
+tinyHash // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

@@ -13,6 +13,7 @@ Needs[ "Wolfram`Chatbook`"                   ];
 Needs[ "Wolfram`Chatbook`ChatMessages`"      ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
 Needs[ "Wolfram`Chatbook`Formatting`"        ];
+Needs[ "Wolfram`Chatbook`FrontEnd`"          ];
 Needs[ "Wolfram`Chatbook`Models`"            ];
 Needs[ "Wolfram`Chatbook`Personas`"          ];
 Needs[ "Wolfram`Chatbook`Prompting`"         ];
@@ -177,7 +178,11 @@ documentationBasicExamples // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*cellToString*)
-cellToString[ args___ ] := CellToString[ args, "MaxCellStringLength" -> 100 ];
+cellToString[ args___ ] := CellToString[
+    args,
+    "ContentTypes"        -> If[ TrueQ @ $multimodalMessages, { "Text", "Image" }, Automatic ],
+    "MaxCellStringLength" -> 100
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -212,18 +217,21 @@ $line = 0;
 $sandboxEvaluateDescription = "\
 Evaluate Wolfram Language code for the user in a separate kernel. \
 The user does not automatically see the result. \
+Do not ask permission to evaluate code. \
 You must include the result in your response in order for them to see it. \
-If a formatted result is provided as a markdown link, use that in your response instead of typing out the output.
-The evaluator supports interactive content such as Manipulate.
+If a formatted result is provided as a markdown link, use that in your response instead of typing out the output. \
+The evaluator supports interactive content such as Manipulate. \
 You have read access to local files.
 ";
 
 $defaultChatTools0[ "WolframLanguageEvaluator" ] = <|
     toolDefaultData[ "WolframLanguageEvaluator" ],
-    "Icon"               -> RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
+    "ShortName"          -> "wl",
     "Description"        -> $sandboxEvaluateDescription,
-    "Function"           -> sandboxEvaluate,
+    "Enabled"            :> ! TrueQ @ $AutomaticAssistance,
     "FormattingFunction" -> sandboxFormatter,
+    "Function"           -> sandboxEvaluate,
+    "Icon"               -> RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
     "Origin"             -> "BuiltIn",
     "Parameters"         -> {
         "code" -> <|
@@ -272,13 +280,16 @@ $wolframAlphaIcon = RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEBitma
 
 $defaultChatTools0[ "WolframAlpha" ] = <|
     toolDefaultData[ "WolframAlpha" ],
-    "Icon"               -> $wolframAlphaIcon,
+    "ShortName"          -> "wa",
     "Description"        -> $wolframAlphaDescription,
-    "Function"           -> getWolframAlphaText,
+    "DisplayName"        -> "Wolfram|Alpha",
+    "Enabled"            :> ! TrueQ @ $AutomaticAssistance,
     "FormattingFunction" -> wolframAlphaResultFormatter,
+    "Function"           -> getWolframAlphaText,
+    "Icon"               -> $wolframAlphaIcon,
     "Origin"             -> "BuiltIn",
     "Parameters"         -> {
-        "input" -> <|
+        "query" -> <|
             "Interpreter" -> "String",
             "Help"        -> "the input",
             "Required"    -> True
@@ -302,11 +313,11 @@ $defaultChatTools0[ "WolframAlpha" ] = <|
 getWolframAlphaText // beginDefinition;
 
 getWolframAlphaText[ as_Association ] :=
-    getWolframAlphaText[ as[ "input" ], as[ "steps" ] ];
+    getWolframAlphaText[ as[ "query" ], as[ "steps" ] ];
 
 getWolframAlphaText[ query_String, steps: True|False|_Missing ] :=
     Module[ { result, data, string },
-        result = WolframAlpha @ query;
+        result = wolframAlpha @ query;
         data = WolframAlpha[
             query,
             { All, { "Title", "Plaintext", "ComputableData", "Content" } },
@@ -332,10 +343,139 @@ getWolframAlphaText // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*wolframAlpha*)
+wolframAlpha // beginDefinition;
+wolframAlpha[ args___ ] /; $cloudNotebooks := fasterWolframAlphaPods @ args;
+(* wolframAlpha[ args___ ] := wolframAlpha[ args ] = WolframAlpha @ args; *)
+wolframAlpha[ args___ ] := fasterWolframAlphaPods @ args;
+wolframAlpha // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*fasterWolframAlphaPods*)
+fasterWolframAlphaPods // beginDefinition;
+
+fasterWolframAlphaPods[ query_String ] := Enclose[
+    Catch @ Module[ { titlesAndCells, grouped, formatted, framed },
+        titlesAndCells = Confirm[ WolframAlpha[ query, { All, { "Title", "Cell" } } ], "WolframAlpha" ];
+        If[ titlesAndCells === { }, Throw @ Missing[ "NoResults" ] ];
+        grouped = DeleteCases[ SortBy[ #1, podOrder ] & /@ GroupBy[ titlesAndCells, podKey ], CellSize -> _, Infinity ];
+        formatted = ConfirmBy[ cloudUsingFrontEnd[ formatPod /@ grouped ], AssociationQ, "Formatted" ];
+        framed = Framed[
+            Column[ Values @ formatted, Alignment -> Left, Spacings -> 1 ],
+            Background     -> GrayLevel[ 0.95 ],
+            FrameMargins   -> { { 10, 10 }, { 10, 10 } },
+            FrameStyle     -> GrayLevel[ 0.8 ],
+            RoundingRadius -> 3,
+            TaggingRules   -> <| "WolframAlphaPods" -> True |>
+        ];
+        fasterWolframAlphaPods[ query ] = framed
+    ],
+    throwInternalFailure
+];
+
+fasterWolframAlphaPods // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*podOrder*)
+podOrder // beginDefinition;
+podOrder[ key_ -> _ ] := podOrder @ key;
+podOrder[ { { _String, idx_Integer }, _String } ] := idx;
+podOrder // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*podKey*)
+podKey // beginDefinition;
+podKey[ key_ -> _ ] := podKey @ key;
+podKey[ { { key_String, _Integer }, _String } ] := key;
+podKey // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatPod*)
+formatPod // beginDefinition;
+
+formatPod[ pod_ ] /; ByteCount @ pod > $maximumWAPodByteCount :=
+    Nothing;
+
+formatPod[ content_List ] := Framed[
+    Column[ formatPodItem /@ content, Alignment -> Left ],
+    Background     -> White,
+    FrameMargins   -> 5,
+    FrameStyle     -> GrayLevel[ 0.8 ],
+    ImageSize      -> { If[ $CloudEvaluation, Scaled[ 0.98 ], Scaled[ 1 ] ], Automatic },
+    RoundingRadius -> 3
+];
+
+formatPod // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatPodItem*)
+formatPodItem // beginDefinition;
+
+formatPodItem[ key_ -> value_ ] :=
+    formatPodItem[ key, value ];
+
+formatPodItem[ { _, "Title" }, title_String ] :=
+    Style[ StringTrim[ title, ":" ] <> ":", "Text", FontColor -> GrayLevel[ 0.4 ], FontSize -> 12 ];
+
+formatPodItem[ { _, "Cell" }, cell_ ] /; ByteCount @ cell > 1000000 :=
+    With[
+        { raster = rasterizeWAPod @ cell },
+        { dim = ImageDimensions @ raster },
+        Pane[
+            Show[ raster, ImageSize -> dim ],
+            ImageSize       -> { UpTo[ 550 ], Automatic },
+            ImageSizeAction -> "ShrinkToFit",
+            ImageMargins    -> { { 10, 0 }, { 0, 0 } }
+        ] /; ByteCount @ raster < ByteCount @ cell
+    ];
+
+formatPodItem[ { _, "Cell" }, cell_ ] :=
+    Pane[ cell, ImageMargins -> { { 10, 0 }, { 0, 0 } } ];
+
+formatPodItem // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*rasterizeWAPod*)
+rasterizeWAPod // beginDefinition;
+rasterizeWAPod[ expr_ ] := rasterizeWAPod[ expr ] = ImageCrop @ rasterize[ expr, ImageResolution -> 72 ];
+rasterizeWAPod // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudUsingFrontEnd*)
+cloudUsingFrontEnd // beginDefinition;
+cloudUsingFrontEnd // Attributes = { HoldFirst };
+
+(* cloudUsingFrontEnd[ eval_ ] :=
+    Module[ { fe },
+        Quiet[
+            WithCleanup[
+                Developer`UninstallFrontEnd[ ];
+                fe = Developer`InstallFrontEnd[ Developer`ForceLaunch -> True ]
+                ,
+                MathLink`FrontEndBlock[ eval, fe ]
+                ,
+                Developer`UninstallFrontEnd[ ]
+            ],
+            LinkObject::linkn
+        ]
+    ]; *)
+cloudUsingFrontEnd[ eval_ ] := eval;
+
+cloudUsingFrontEnd // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*wolframAlphaResultFormatter*)
 wolframAlphaResultFormatter // beginDefinition;
 
-wolframAlphaResultFormatter[ query_String, "Parameters", "input" ] :=
+wolframAlphaResultFormatter[ query_String, "Parameters", "query" ] :=
     clickToCopy @ query;
 
 wolframAlphaResultFormatter[ KeyValuePattern[ "Result" -> result_ ], "Result" ] :=
@@ -386,8 +526,9 @@ waResultText0[ as: KeyValuePattern @ { "Title" -> title_String, "Data" -> data_ 
 waResultText0[ as: KeyValuePattern[ _Integer -> _ ] ] :=
     waResultText0 /@ Values @ KeySort @ KeySelect[ as, IntegerQ ];
 
-waResultText0[ KeyValuePattern @ { "Content"|"ComputableData" -> expr_ } ] /;
-    ! FreeQ[ Unevaluated @ expr, _Missing ] := Nothing;
+waResultText0[ as: KeyValuePattern @ { "Content"|"ComputableData" -> expr_ } ] /;
+    ! FreeQ[ Unevaluated @ expr, _Missing ] :=
+        Replace[ Lookup[ as, "Plaintext" ], Except[ _String ] :> Nothing ];
 
 waResultText0[ KeyValuePattern @ { "Plaintext" -> text_String, "ComputableData" -> Hold[ expr_ ] } ] :=
     If[ ByteCount @ Unevaluated @ expr >= 500,
@@ -750,16 +891,13 @@ $fullExamples :=
 $fullExamplesKeys :=
     With[ { selected = Keys @ $selectedTools },
         Select[
-            If[ TrueQ @ $CloudEvaluation,
-                { "AstroGraphicsDocumentation" },
-                {
-                    "AstroGraphicsDocumentation",
-                    "FileSystemTree",
-                    "FractionalDerivatives",
-                    "PlotEvaluate",
-                    "TemporaryDirectory"
-                }
-            ],
+            {
+                "AstroGraphicsDocumentation",
+                "FileSystemTree",
+                "FractionalDerivatives",
+                "PlotEvaluate",
+                "TemporaryDirectory"
+            },
             ContainsAll[ selected, $exampleDependencies[ #1 ] ] &
         ]
     ];
@@ -1074,7 +1212,7 @@ makeExpressionURI[ scheme_, Automatic, expr_ ] :=
     makeExpressionURI[ scheme, expressionURILabel @ expr, Unevaluated @ expr ];
 
 makeExpressionURI[ scheme_, label_, expr_ ] :=
-    With[ { id = "content-" <> Hash[ Unevaluated @ expr, Automatic, "HexString" ] },
+    With[ { id = "content-" <> tinyHash @ Unevaluated @ expr },
         $attachments[ id ] = HoldComplete @ expr;
         "![" <> TextString @ label <> "](" <> TextString @ scheme <> "://" <> id <> ")"
     ];
@@ -1103,7 +1241,7 @@ expressionURILabel[ _Manipulate ] := "Embedded Interactive Content";
 (* Graphics *)
 expressionURILabel[ _Graph|_Graph3D ] := "Graph";
 expressionURILabel[ _Tree ] := "Tree";
-expressionURILabel[ _Graphics|_Graphics3D|_Image|_Image3D|_Legended|_RawBoxes ] := "Image";
+expressionURILabel[ gfx_ ] /; graphicsQ @ Unevaluated @ gfx := "Image";
 
 (* Data *)
 expressionURILabel[ _List|_Association ] := "Data";
@@ -1121,7 +1259,7 @@ expressionURIScheme // Attributes = { HoldAllComplete };
 expressionURIScheme[ _Video ] := (needsBasePrompt[ "SpecialURIVideo" ]; "video");
 expressionURIScheme[ _Audio ] := (needsBasePrompt[ "SpecialURIAudio" ]; "audio");
 expressionURIScheme[ _Manipulate|_DynamicModule|_Dynamic ] := (needsBasePrompt[ "SpecialURIDynamic" ]; "dynamic");
-expressionURIScheme[ _Graph|_Graph3D|_Graphics|_Graphics3D|_Image|_Image3D|_Legended|_Tree|_RawBoxes ] := "attachment";
+expressionURIScheme[ gfx_ ] /; graphicsQ @ Unevaluated @ gfx := "attachment";
 expressionURIScheme[ _ ] := "expression";
 expressionURIScheme // endDefinition;
 

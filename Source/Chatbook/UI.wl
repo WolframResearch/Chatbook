@@ -588,7 +588,7 @@ makeChatActionMenu[
 		]
 	}]
 }, Module[{
-	personas = GetPersonasAssociation[],
+	personas = GetPersonasAssociation[ "IncludeHidden" -> False ],
 	actionCallback
 },
 	(*--------------------------------*)

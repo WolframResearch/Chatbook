@@ -18,6 +18,11 @@ Needs[ "Wolfram`Chatbook`UI`"         ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Config*)
+$unsavedSettings = { "InitialChatCell", "TargetCloudObject" };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Argument Patterns*)
 $$createChatOptions = OptionsPattern[ { CreateChatNotebook, Notebook } ];
 
@@ -89,17 +94,29 @@ createChatNotebook // endDefinition;
 (*createCloudChatNotebook*)
 createCloudChatNotebook // beginDefinition;
 
-createCloudChatNotebook[ opts: OptionsPattern[ CreateChatNotebook ] ] :=
-    Module[ { settings, options, notebook, deployed },
-        settings = makeChatNotebookSettings @ Association @ FilterRules[ { opts }, Options @ CreateChatNotebook ];
-        options  = makeChatNotebookOptions[ settings, opts ];
-        notebook = Notebook[ Flatten @ { initialChatCells @ opts }, options ];
-        deployed = CloudDeploy[ notebook, CloudObjectURLType -> "Environment" ];
+createCloudChatNotebook[ opts: OptionsPattern[ CreateChatNotebook ] ] := Enclose[
+    Module[ { validOpts, settings, options, notebook, location, deployed },
+        validOpts = FilterRules[ { opts }, Options @ CreateChatNotebook ];
+        settings  = makeChatNotebookSettings @ Association @ validOpts;
+        options   = makeChatNotebookOptions[ settings, opts ];
+        notebook  = Notebook[ ConfirmMatch[ Flatten @ { initialChatCells @ opts }, { ___Cell }, "Cells" ], options ];
+        location  = OptionValue[ CreateChatNotebook, validOpts, "TargetCloudObject" ];
+        deployed  = ConfirmMatch[ deployCloudNotebook[ notebook, location ], _CloudObject, "Deploy" ];
         SystemOpen @ deployed;
         deployed
-    ];
+    ],
+    throwInternalFailure
+];
 
 createCloudChatNotebook // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*deployCloudNotebook*)
+deployCloudNotebook // beginDefinition;
+deployCloudNotebook[ nb_Notebook, obj_CloudObject ] := CloudDeploy[ nb, obj, CloudObjectURLType -> "Environment" ];
+deployCloudNotebook[ nb_Notebook, _ ] := CloudDeploy[ nb, CloudObjectURLType -> "Environment" ];
+deployCloudNotebook // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -185,7 +202,12 @@ CreateChatDrivenNotebook[ opts: $$createChatOptions ] :=
 (* ::Subsection::Closed:: *)
 (*makeChatNotebookSettings*)
 makeChatNotebookSettings // beginDefinition;
-makeChatNotebookSettings[ as_Association? AssociationQ ] := KeySort @ KeyMap[ ToString, as ];
+
+makeChatNotebookSettings[ as_Association? AssociationQ ] := KeyDrop[
+    KeySort @ KeyMap[ ToString, as ],
+    $unsavedSettings
+];
+
 makeChatNotebookSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

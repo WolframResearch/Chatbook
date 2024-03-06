@@ -27,7 +27,7 @@ Quiet[
                 Quiet[
                     Unprotect[ "Wolfram`Chatbook`*" ];
                     ClearAll[ "Wolfram`Chatbook`*" ];
-                    Remove[ "Wolfram`Chatbook`*`*" ],
+                    ClearAll[ "Wolfram`Chatbook`*`*" ],
                     { Remove::rmnsm }
                 ];
                 Get[ "Wolfram`Chatbook`Main`" ]
