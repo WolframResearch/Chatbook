@@ -38,6 +38,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `GetExpressionURIs;
 `InvalidateServiceCache;
 `MakeExpressionURI;
+`SandboxLinguisticAssistantData;
 `SetModel;
 `SetToolOptions;
 `WriteChatOutputCell;
@@ -133,6 +134,7 @@ Protect[
     GetExpressionURI,
     GetExpressionURIs,
     MakeExpressionURI,
+    SandboxLinguisticAssistantData,
     SetModel,
     SetToolOptions,
     WriteChatOutputCell

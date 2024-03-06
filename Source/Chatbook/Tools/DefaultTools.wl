@@ -222,6 +222,12 @@ You must include the result in your response in order for them to see it. \
 If a formatted result is provided as a markdown link, use that in your response instead of typing out the output. \
 The evaluator supports interactive content such as Manipulate. \
 You have read access to local files.
+Parse natural language input with `\[FreeformPrompt][\"query\"]`, which is analogous to ctrl-= input in notebooks. \
+Natural language input is parsed before evaluation, so it works like macro expansion. \
+You should ALWAYS use this natural language input to obtain things like `Quantity`, `DateObject`, `Entity`, etc. \
+Provide a second argument to \[FreeformPrompt] to specify the type of the result. \
+This can be a symbol e.g. `DateObject`, an entity or unit type name, or a pattern e.g. `Entity[\"City\", _]`.\
+\[FreeformPrompt] should be written as \\uf351 in JSON.
 ";
 
 $defaultChatTools0[ "WolframLanguageEvaluator" ] = <|
@@ -895,6 +901,7 @@ $fullExamplesKeys :=
                 "AstroGraphicsDocumentation",
                 "FileSystemTree",
                 "FractionalDerivatives",
+                "NaturalLanguageInput",
                 "PlotEvaluate",
                 "TemporaryDirectory"
             },
@@ -906,6 +913,7 @@ $exampleDependencies = <|
     "AstroGraphicsDocumentation" -> { "DocumentationLookup" },
     "FileSystemTree"             -> { "DocumentationSearcher", "DocumentationLookup" },
     "FractionalDerivatives"      -> { "DocumentationSearcher", "DocumentationLookup", "WolframLanguageEvaluator" },
+    "NaturalLanguageInput"       -> { "WolframLanguageEvaluator" },
     "PlotEvaluate"               -> { "WolframLanguageEvaluator" },
     "TemporaryDirectory"         -> { "DocumentationSearcher", "WolframLanguageEvaluator" }
 |>;
@@ -939,6 +947,51 @@ For example, ...",
 {
     formatToolCallExample[ "DocumentationLookup", <| "names" -> "AstroGraphics" |> ]
 } ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*NaturalLanguageInput*)
+$fullExamples0[ "NaturalLanguageInput" ] = "\
+[user]
+How far away is NYC from Boston?
+
+[assistant]
+"<>formatToolCallExample[
+    "WolframLanguageEvaluator",
+    <|
+        "code" -> "GeoDistance[\[FreeformPrompt][\"Boston, MA\"], \[FreeformPrompt][\"New York City\"]]"
+    |>
+]<>"
+
+[system]
+Quantity[164.41, \"Miles\"]
+
+[assistant]
+It's 164.41 miles from Boston to New York City.
+
+[user]
+If I made the trip in 3h 17m, how fast was I going?
+
+[assistant]
+"<>formatToolCallExample[
+    "WolframLanguageEvaluator",
+    <| "code" -> "\[FreeformPrompt][\"164.41 Miles\"] / \[FreeformPrompt][\"3h 17m\"]" |>
+]<>"\
+
+[system]
+Quantity[50.071, \"Miles\" / \"Hours\"]
+
+[assistant]
+You were going 50.071 miles per hour.
+
+[user]
+What time would I arrive if I left right now?
+
+[assistant]
+"<>formatToolCallExample[
+    "WolframLanguageEvaluator",
+    <| "code" -> "\[FreeformPrompt][\"3h 17m from now\"]" |>
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
