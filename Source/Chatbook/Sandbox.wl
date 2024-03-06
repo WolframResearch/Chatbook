@@ -27,8 +27,10 @@ Needs[ "Wolfram`Chatbook`Utils`"      ];
 $SandboxKernel             = None;
 $sandboxPingTimeout       := toolOptionValue[ "WolframLanguageEvaluator", "PingTimeConstraint"       ];
 $sandboxEvaluationTimeout := toolOptionValue[ "WolframLanguageEvaluator", "EvaluationTimeConstraint" ];
+$includeDefinitions       := toolOptionValue[ "WolframLanguageEvaluator", "IncludeDefinitions"       ];
 $cloudEvaluatorLocation    = "/Chatbook/Tools/WolframLanguageEvaluator/Evaluate";
 $cloudLineNumber           = 1;
+$cloudSession              = None;
 
 (* Tests for expressions that lose their initialized status when sending over a link: *)
 $initializationTests = HoldComplete[
@@ -39,7 +41,9 @@ $initializationTests = HoldComplete[
     MeshRegionQ,
     SparseArrayQ,
     TreeQ,
-    VideoQ
+    VideoQ,
+    Function[ Null, MatchQ[ Unevaluated @ #, _Rational ] && AtomQ @ Unevaluated @ #, HoldFirst ],
+    Function[ Null, MatchQ[ Unevaluated @ #, _Dataset ] && System`Private`HoldNoEntryQ @ #, HoldFirst ]
 ];
 
 
@@ -58,6 +62,8 @@ $sandboxKernelCommandLine := StringRiffle @ {
     "-run",
     "ChatbookSandbox" <> ToString @ $ProcessID
 };
+
+$$outputForm := $$outputForm = Alternatives @@ $OutputForms;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -166,6 +172,7 @@ startSandboxKernel[ ] := Enclose[
                 kernel,
                 Unevaluated @ EvaluatePacket[
                     UsingFrontEnd @ Null;
+                    SetOptions[ First @ Streams[ "stdout" ], PageWidth -> Infinity ];
                     Developer`StartProtectedMode[ "Read" -> read, "Write" -> write, "Execute" -> execute ]
                 ]
             ]
@@ -296,7 +303,7 @@ sandboxEvaluate // endDefinition;
 cloudSandboxEvaluate // beginDefinition;
 
 cloudSandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
-    Catch @ Module[ { api, held, wxf, response, result, packets, initialized },
+    Catch @ Module[ { api, held, wxf, definitions, response, result, packets, initialized },
 
         $lastSandboxEvaluation = HoldComplete @ evaluation;
 
@@ -304,11 +311,22 @@ cloudSandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
         If[ FailureQ @ api, Throw @ api ];
         held = ConfirmMatch[ makeCloudEvaluation @ evaluation, HoldComplete[ _ ], "Evaluation" ];
         wxf = ConfirmBy[ BinarySerialize[ held, PerformanceGoal -> "Size" ], ByteArrayQ, "WXF" ];
+        definitions = makeCloudDefinitionsWXF @ HoldComplete @ evaluation;
 
         response = ConfirmMatch[
             URLExecute[
-                api,
-                { "Evaluation" -> BaseEncode @ wxf, "TimeConstraint" -> $sandboxEvaluationTimeout },
+                HTTPRequest[
+                    api,
+                    <|
+                        "Method" -> "POST",
+                        "Body" -> {
+                            "Evaluation" -> BaseEncode @ wxf,
+                            "TimeConstraint" -> $sandboxEvaluationTimeout,
+                            If[ ByteArrayQ @ definitions  , "Definitions" -> BaseEncode @ definitions  , Nothing ],
+                            If[ ByteArrayQ @ $cloudSession, "SessionMX"   -> BaseEncode @ $cloudSession, Nothing ]
+                        }
+                    |>
+                ],
                 "WXF"
             ],
             KeyValuePattern[ (Rule|RuleDelayed)[ "Result", _HoldComplete ] ] | _Failure,
@@ -318,19 +336,29 @@ cloudSandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
         If[ FailureQ @ response, Throw @ response ];
 
         result = ConfirmMatch[ Lookup[ response, "Result" ], _HoldComplete, "Result" ];
-        packets = { }; (* TODO: create packets from messages and print outputs *)
+        packets = TextPacket /@ Flatten @ { response[ "OutputLog" ], response[ "MessagesText" ] };
         initialized = initializeExpressions @ result;
 
         $lastSandboxResult = <|
-            "String"  -> sandboxResultString[ initialized, packets ],
-            "Result"  -> sandboxResult @ initialized,
-            "Packets" -> packets
+            "String"    -> sandboxResultString[ initialized, packets ],
+            "Result"    -> sandboxResult @ initialized,
+            "Packets"   -> packets,
+            "SessionMX" -> setCloudSessionString @ response
         |>
     ],
     throwInternalFailure
 ];
 
 cloudSandboxEvaluate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*setCloudSessionString*)
+setCloudSessionString // beginDefinition;
+setCloudSessionString[ KeyValuePattern[ "SessionMX" -> mx_ ] ] := setCloudSessionString @ mx;
+setCloudSessionString[ mx_ByteArray ] := $cloudSession = mx;
+setCloudSessionString[ s_String ] := setCloudSessionString @ ByteArray @ s;
+setCloudSessionString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -390,24 +418,56 @@ deployCloudEvaluator // beginDefinition;
 deployCloudEvaluator[ target_CloudObject ] := With[ { messages = $messageOverrides },
     CloudDeploy[
         APIFunction[
-            { "Evaluation" -> "String", "TimeConstraint" -> "Number" -> $sandboxEvaluationTimeout },
-            Function[
+            {
+                "Evaluation"     -> "String",
+                "Definitions"    -> "String" -> None,
+                "SessionMX"      -> "String" -> None,
+                "TimeConstraint" -> "Number" -> $sandboxEvaluationTimeout
+            },
+            Function @ Module[ { file },
+
+                (* Clear existing global symbols *)
+                Remove[ "Global`*" ];
+
+                (* Define custom message text *)
                 ReleaseHold @ messages;
+
+                (* Forward user definitions *)
+                If[ StringQ @ #Definitions,
+                    Language`ExtendedFullDefinition[ ] = BinaryDeserialize @ BaseDecode[ #Definitions ]
+                ];
+
+                (* Restore definitions from previous session *)
+                file = FileNameJoin @ { $TemporaryDirectory, "Session.mx" };
+                If[ StringQ @ #SessionMX,
+                    BinaryWrite[ file, ByteArray[ #SessionMX ] ];
+                    Close @ file;
+                    Get @ file;
+                ];
+
+                (* Evaluate the input *)
                 BinarySerialize[
-                    EvaluationData[
-                        HoldComplete @@ {
-                            TimeConstrained[
-                                BinaryDeserialize[ BaseDecode[ #Evaluation ], ReleaseHold ],
-                                #TimeConstraint,
-                                Failure[
-                                    "EvaluationTimeExceeded",
-                                    <|
-                                        "MessageTemplate"   -> "Evaluation exceeded the `1` second time limit.",
-                                        "MessageParameters" -> { #TimeConstraint }
-                                    |>
+                    Append[
+                        EvaluationData[
+                            HoldComplete @@ {
+                                TimeConstrained[
+                                    BinaryDeserialize[ BaseDecode[ #Evaluation ], ReleaseHold ],
+                                    #TimeConstraint,
+                                    Failure[
+                                        "EvaluationTimeExceeded",
+                                        <|
+                                            "MessageTemplate"   -> "Evaluation exceeded the `1` second time limit.",
+                                            "MessageParameters" -> { #TimeConstraint }
+                                        |>
+                                    ]
                                 ]
-                            ]
-                        }
+                            }
+                        ],
+                        (* Save any new definitions as a session byte array *)
+                        "SessionMX" -> (
+                            DumpSave[ file, "Global`", "SymbolAttributes" -> False ];
+                            ReadByteArray @ file
+                        )
                     ],
                     PerformanceGoal -> "Size"
                 ]
@@ -475,7 +535,7 @@ linkWriteEvaluation // beginDefinition;
 linkWriteEvaluation // Attributes = { HoldAllComplete };
 
 linkWriteEvaluation[ kernel_, evaluation_ ] :=
-    With[ { eval = makeLinkWriteEvaluation @ evaluation },
+    With[ { eval = includeDefinitions @ makeLinkWriteEvaluation @ evaluation },
         LinkWrite[ kernel, Unevaluated @ EnterExpressionPacket @ ReleaseHold @ eval ]
     ];
 
@@ -493,10 +553,46 @@ makeLinkWriteEvaluation[ evaluation_ ] := Enclose[
         constrained = ConfirmMatch[ addTimeConstraint @ eval, HoldComplete[ _ ], "TimeConstraint" ];
         ConfirmMatch[ addInitializations @ constrained, HoldComplete[ _ ], "Initializations" ]
     ],
-    throwInternalFailure[ makeLinkWriteEvaluation @ evaluation, ## ] &
+    throwInternalFailure
 ];
 
 makeLinkWriteEvaluation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*includeDefinitions*)
+includeDefinitions // beginDefinition;
+
+includeDefinitions[ eval_HoldComplete ] :=
+    includeDefinitions[ eval, $includeDefinitions ];
+
+includeDefinitions[ h: HoldComplete[ eval___ ], True|$$unspecified ] :=
+    With[ { def = Language`ExtendedFullDefinition @ h },
+        HoldComplete[ Language`ExtendedFullDefinition[ ] = def; eval ] /; MatchQ[ def, _Language`DefinitionList ]
+    ];
+
+includeDefinitions[ h_HoldComplete, _ ] :=
+    h;
+
+includeDefinitions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeCloudDefinitionsWXF*)
+makeCloudDefinitionsWXF // beginDefinition;
+
+makeCloudDefinitionsWXF[ eval_HoldComplete ] :=
+    makeCloudDefinitionsWXF[ eval, $includeDefinitions ];
+
+makeCloudDefinitionsWXF[ h_HoldComplete, True|$$unspecified ] :=
+    With[ { def = Language`ExtendedFullDefinition @ h },
+        BinarySerialize[ def, PerformanceGoal -> "Size" ] /; MatchQ[ def, _Language`DefinitionList ]
+    ];
+
+makeCloudDefinitionsWXF[ h_HoldComplete, _ ] :=
+    None;
+
+makeCloudDefinitionsWXF // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -640,19 +736,37 @@ sandboxResult // endDefinition;
 (* ::Subsection::Closed:: *)
 (*sandboxResultString*)
 sandboxResultString // beginDefinition;
+sandboxResultString[ result_, packets_ ] := checkDocSearchMessageStrings @ sandboxResultString0[ result, packets ];
+sandboxResultString // endDefinition;
 
-sandboxResultString[ result_, packets_ ] := sandboxResultString @ result;
 
-sandboxResultString[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result" -> result_ } ], packets_ ] :=
+sandboxResultString0 // beginDefinition;
+
+sandboxResultString0[ result_, packets_ ] := sandboxResultString0 @ result;
+
+sandboxResultString0[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result" -> result_ } ], packets_ ] :=
     StringRiffle[
         Flatten @ {
             makePacketMessages[ ToString @ line, packets ],
-            "Out[" <> ToString @ line <> "]= " <> sandboxResultString @ Flatten @ HoldComplete @ result
+            "Out[" <> ToString @ line <> "]= " <> sandboxResultString0 @ Flatten @ HoldComplete @ result
         },
         "\n"
     ];
 
-sandboxResultString[ HoldComplete[ ___, expr_? simpleResultQ ] ] :=
+sandboxResultString0[ HoldComplete[ ___, expr_? outputFormQ ] ] :=
+    With[ { string = fixLineEndings @ ToString[ Unevaluated @ expr, PageWidth -> 100 ] },
+        If[ StringLength @ string < $toolResultStringLength,
+            If[ StringContainsQ[ string, "\n" ], "\n" <> string, string ],
+            StringJoin[
+                "\n",
+                stringTrimMiddle[ string, $toolResultStringLength ],
+                "\n\n\n",
+                makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ]
+            ]
+        ]
+    ];
+
+sandboxResultString0[ HoldComplete[ ___, expr_? simpleResultQ ] ] :=
     With[ { string = fixLineEndings @ ToString[ Unevaluated @ expr, InputForm, PageWidth -> 100 ] },
         If[ StringLength @ string < $toolResultStringLength,
             If[ StringContainsQ[ string, "\n" ], "\n" <> string, string ],
@@ -669,11 +783,33 @@ sandboxResultString[ HoldComplete[ ___, expr_? simpleResultQ ] ] :=
         ]
     ];
 
-sandboxResultString[ HoldComplete[ ___, expr_ ] ] := makeExpressionURI @ Unevaluated @ expr;
+sandboxResultString0[ HoldComplete[ ___, expr_ ] ] := makeExpressionURI @ Unevaluated @ expr;
 
-sandboxResultString[ HoldComplete[ ] ] := "Null";
+sandboxResultString0[ HoldComplete[ ] ] := "Null";
 
-sandboxResultString // endDefinition;
+sandboxResultString0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkDocSearchMessageStrings*)
+checkDocSearchMessageStrings // beginDefinition;
+checkDocSearchMessageStrings[ string_String ] /; KeyExistsQ[ $selectedTools, "DocumentationSearcher" ] := string;
+checkDocSearchMessageStrings[ string_String ] := StringDelete[ string, $docSearchMessageStrings ];
+checkDocSearchMessageStrings // endDefinition;
+
+$docSearchMessageStrings = {
+    " Use the documentation_searcher tool to find solutions.",
+    " Use the documentation_searcher tool to find alternatives."
+};
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*outputFormQ*)
+outputFormQ // beginDefinition;
+outputFormQ[ $$outputForm[ ___ ] ] := True;
+outputFormQ[ _ ] := False;
+outputFormQ // Attributes = { HoldAllComplete };
+outputFormQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

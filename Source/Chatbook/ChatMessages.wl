@@ -41,15 +41,16 @@ $ContextAliases[ "tokens`" ] = "Wolfram`LLMFunctions`Utilities`Tokenization`";
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$maxMMImageSize          = 512;
-$multimodalMessages      = False;
-$tokenBudget             = 2^13;
-$tokenPressure           = 0.0;
-$reservedTokens          = 500; (* TODO: determine this at submit time *)
-$cellStringBudget        = Automatic;
-$initialCellStringBudget = $defaultMaxCellStringLength;
-$$validMessageResult     = _Association? AssociationQ | _Missing | Nothing;
-$$validMessageResults    = $$validMessageResult | { $$validMessageResult ... };
+$maxMMImageSize              = 512;
+$multimodalMessages          = False;
+$currentMessageMinimumTokens = 16;
+$tokenBudget                 = 2^13;
+$tokenPressure               = 0.0;
+$reservedTokens              = 500; (* TODO: determine this at submit time *)
+$cellStringBudget            = Automatic;
+$initialCellStringBudget     = $defaultMaxCellStringLength;
+$$validMessageResult         = _Association? AssociationQ | _Missing | Nothing;
+$$validMessageResults        = $$validMessageResult | { $$validMessageResult ... };
 
 $$inlineModifierCell = Alternatives[
     Cell[ _, "InlineModifierReference", ___ ],
@@ -125,16 +126,21 @@ constructMessages[ settings_Association? AssociationQ, cells: { __Cell } ] :=
 
 constructMessages[ settings_Association? AssociationQ, messages0: { __Association } ] :=
     Enclose @ Module[ { prompted, messages, processed },
+
         If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
         needsBasePrompt @ settings;
         prompted  = addPrompts[ settings, messages0 ];
-        messages  = prompted /. s_String :> RuleCondition @ StringReplace[ s, "%%BASE_PROMPT%%" -> $basePrompt ];
+
+        messages = prompted /.
+            s_String :> RuleCondition @ StringTrim @ StringReplace[ s, "%%BASE_PROMPT%%" :> $basePrompt ];
+
         processed = applyProcessingFunction[ settings, "ChatMessages", HoldComplete[ messages, $ChatHandlerData ] ];
 
         If[ ! MatchQ[ processed, $$validMessageResults ],
             messagePrint[ "InvalidMessages", getProcessingFunction[ settings, "ChatMessages" ], processed ];
             processed = messages
         ];
+
         processed //= DeleteCases @ KeyValuePattern[ "Content" -> "" ];
         Sow[ <| "Messages" -> processed |>, $chatDataTag ];
 
@@ -214,14 +220,11 @@ makeChatMessages // beginDefinition;
 makeChatMessages[ settings_, cells_ ] :=
     Block[
         {
-            $multimodalMessages = TrueQ @ settings[ "Multimodal" ],
-            $tokenBudget        = settings[ "MaxContextTokens" ],
-            $tokenPressure      = 0.0,
-            $initialCellStringBudget = Replace[
-                settings[ "MaxCellStringLength" ],
-                Except[ $$size ] -> $defaultMaxCellStringLength
-            ],
-            $chatInputIndicator = mixedContentQ @ cells,
+            $multimodalMessages      = TrueQ @ settings[ "Multimodal" ],
+            $tokenBudget             = makeTokenBudget @ settings,
+            $tokenPressure           = 0.0,
+            $initialCellStringBudget = makeCellStringBudget @ settings,
+            $chatInputIndicator      = mixedContentQ @ cells,
             $cellStringBudget
         },
         $cellStringBudget = $initialCellStringBudget;
@@ -254,7 +257,12 @@ makeChatMessages0[ settings0_, cells_List ] := Enclose[
             tokenCheckedMessage[ settings, msg ]
         ];
 
-        message = ConfirmMatch[ toMessage[ cell, settings ], $$validMessageResults, "Message" ];
+        message = ConfirmMatch[
+            (* Ensure _some_ content from current chat input is used, regardless of remaining tokens: *)
+            Block[ { $tokenBudget = Max[ $tokenBudget, $currentMessageMinimumTokens ] }, toMessage[ cell, settings ] ],
+            $$validMessageResults,
+            "Message"
+        ];
 
         history = ConfirmMatch[
             Reverse @ Flatten @ MapIndexed[
@@ -274,6 +282,33 @@ makeChatMessages0[ settings0_, cells_List ] := Enclose[
 ];
 
 makeChatMessages0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeTokenBudget*)
+makeTokenBudget // beginDefinition;
+
+makeTokenBudget[ settings_Association ] :=
+    makeTokenBudget[ settings[ "MaxContextTokens" ], settings[ "TokenBudgetMultiplier" ] ];
+
+makeTokenBudget[ max: $$size, $$unspecified ] :=
+    max;
+
+makeTokenBudget[ max: $$size, multiplier: $$size ] :=
+    With[ { budget = Ceiling[ max * multiplier ] },
+        budget /; MatchQ[ budget, $$size ]
+    ];
+
+makeTokenBudget // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeCellStringBudget*)
+makeCellStringBudget // beginDefinition;
+makeCellStringBudget[ settings_Association ] := makeCellStringBudget @ settings[ "MaxCellStringLength" ];
+makeCellStringBudget[ max: $$size ] := max;
+makeCellStringBudget[ Except[ $$size ] ] := $defaultMaxCellStringLength;
+makeCellStringBudget // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -384,6 +419,9 @@ cutMessageContent[ as_, message: KeyValuePattern[ "Content" -> { a___, _? graphi
 cutMessageContent[ as_, message: KeyValuePattern[ "Content" -> { content___String } ], count_, budget_ ] :=
     cutMessageContent[ as, <| message, "Content" -> StringJoin @ content |>, count, budget ];
 
+cutMessageContent[ as_, message_String, count_, budget_ ] :=
+    cutMessageContent[ as, <| "Content" -> message, "Type" -> "Text" |>, count, budget ];
+
 cutMessageContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -468,26 +506,15 @@ makeCurrentRole // beginDefinition;
 makeCurrentRole[ as_Association? AssociationQ ] :=
     makeCurrentRole[ as, as[ "BasePrompt" ], as[ "LLMEvaluator" ] ];
 
-makeCurrentRole[ as_, None, _ ] :=
-    Missing[ ];
-
-makeCurrentRole[ as_, role_String, _ ] :=
-    <| "Role" -> "System", "Content" -> role |>;
-
-makeCurrentRole[ as_, Automatic|Inherited|_Missing, name_String ] :=
-    With[ { prompt = namedRolePrompt @ name },
-        <| "Role" -> "System", "Content" -> prompt |> /; StringQ @ prompt
+makeCurrentRole[ as_, base_, name_String ] :=
+    With[ { persona = GetCachedPersonaData @ name },
+        makeCurrentRole[ as, base, persona ] /; AssociationQ @ persona
     ];
 
-makeCurrentRole[ as_, _, KeyValuePattern[ "BasePrompt" -> None ] ] := (
-    needsBasePrompt @ None;
-    Missing[ ]
-);
-
-makeCurrentRole[ as_, base_, eval_Association ] := (
+makeCurrentRole[ as_, base_, persona_Association ] := (
     needsBasePrompt @ base;
-    needsBasePrompt @ eval;
-    <| "Role" -> "System", "Content" -> buildSystemPrompt @ Association[ as, KeyDrop[ eval, { "Tools" } ] ] |>
+    needsBasePrompt @ persona;
+    <| "Role" -> "System", "Content" -> buildSystemPrompt @ Association[ as, KeyDrop[ persona, { "Tools" } ] ] |>
 );
 
 makeCurrentRole[ as_, base_, _ ] := (
@@ -496,28 +523,6 @@ makeCurrentRole[ as_, base_, _ ] := (
 );
 
 makeCurrentRole // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*namedRolePrompt*)
-namedRolePrompt // ClearAll;
-
-namedRolePrompt[ name_String ] := Enclose[
-    Catch @ Module[ { data, pre, post, params },
-        data   = ConfirmBy[ GetCachedPersonaData @ name, AssociationQ, "GetCachedPersonaData" ];
-        pre    = Lookup[ data, "Pre", TemplateApply @ Lookup[ data, "PromptTemplate" ] ];
-        post   = Lookup[ data, "Post" ];
-        params = Select[ <| "Pre" -> pre, "Post" -> post |>, StringQ ];
-
-        If[ params === <| |>,
-            Missing[ "NotAvailable" ],
-            ConfirmBy[ TemplateApply[ $promptTemplate, params ], StringQ, "TemplateApply" ]
-        ]
-    ],
-    throwInternalFailure[ namedRolePrompt @ name, ## ] &
-];
-
-namedRolePrompt[ ___ ] := Missing[ "NotAvailable" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -556,7 +561,8 @@ getPrePrompt[ as_Association ] := toPromptString @ FirstCase[
         as[ "LLMEvaluator", "Prompts" ],
         as[ "ChatContextPreprompt" ],
         as[ "Pre" ],
-        as[ "PromptTemplate" ]
+        as[ "PromptTemplate" ],
+        as[ "Prompts" ]
     },
     expr_ :> With[ { e = expr },
         e /; MatchQ[ e, _String | _TemplateObject | { (_String|_TemplateObject) ... } ]
@@ -625,16 +631,32 @@ getGroupPrompt // endDefinition;
 (* ::Subsection::Closed:: *)
 (*toPromptString*)
 toPromptString // beginDefinition;
-toPromptString[ string_String ] := string;
-toPromptString[ template_TemplateObject ] := With[ { string = TemplateApply @ template }, string /; StringQ @ string ];
-toPromptString[ _Missing | Automatic | Inherited | None ] := Missing[ ];
 
-toPromptString[ prompts_List ] :=
-    With[ { strings = DeleteMissing[ toPromptString /@ prompts ] },
-        StringRiffle[ prompts, "\n\n" ] /; MatchQ[ strings, { ___String } ]
-    ];
+toPromptString[ expr_ ] := Enclose[
+    Module[ { prompt },
+        prompt = ConfirmMatch[ toPromptString0 @ expr, _String|_Missing, "PromptString" ];
+        If[ StringQ @ prompt, StringTrim @ prompt, prompt ]
+    ],
+    throwInternalFailure
+];
 
 toPromptString // endDefinition;
+
+
+toPromptString0 // beginDefinition;
+toPromptString0[ string_String ] := string;
+toPromptString0[ template_TemplateObject ] := With[ { string = TemplateApply @ template }, string /; StringQ @ string ];
+toPromptString0[ _Missing | Automatic | Inherited | None ] := Missing[ ];
+
+toPromptString0[ prompts_List ] :=
+    With[ { strings = DeleteMissing[ toPromptString0 /@ prompts ] },
+        StringRiffle[
+            DeleteCases[ StringTrim[ strings, ("\r"|"\n").. ], "" ],
+            "\n\n"
+        ] /; MatchQ[ strings, { ___String } ]
+    ];
+
+toPromptString0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -738,7 +760,7 @@ inferMultimodalTypes0 // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*ensureCompatibleImage*)
 ensureCompatibleImage // beginDefinition;
-ensureCompatibleImage[ img_ ] /; $useRasterizationCompatibility && ! Image`PossibleImageQ @ img := Rasterize @ img;
+ensureCompatibleImage[ img_ ] /; $useRasterizationCompatibility && ! Image`PossibleImageQ @ img := rasterize @ img;
 ensureCompatibleImage[ img_ ] := img;
 ensureCompatibleImage // endDefinition;
 
@@ -771,7 +793,13 @@ graphicsURIQ // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*cellToString*)
 cellToString // beginDefinition;
-cellToString[ cell_Cell ] := CellToString[ cell, "MaxCellStringLength" -> $cellStringBudget ];
+
+cellToString[ cell_Cell ] := CellToString[
+    cell,
+    "ContentTypes"        -> If[ TrueQ @ $multimodalMessages, { "Text", "Image" }, Automatic ],
+    "MaxCellStringLength" -> $cellStringBudget
+];
+
 cellToString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1228,7 +1256,7 @@ resizeMultimodalImage // beginDefinition;
 
 resizeMultimodalImage[ image0_ ] := Enclose[
     Module[ { image, dimensions, max, small, resized },
-        image = ConfirmBy[ If[ image2DQ @ image0, image0, Rasterize @ image0 ], image2DQ, "Image" ];
+        image = ConfirmBy[ If[ image2DQ @ image0, image0, rasterize @ image0 ], image2DQ, "Image" ];
         dimensions = ConfirmMatch[ ImageDimensions @ image, { _Integer, _Integer }, "Dimensions" ];
         max = ConfirmMatch[ $maxMMImageSize, _Integer? Positive, "MaxSize" ];
         small = ConfirmMatch[ AllTrue[ dimensions, LessThan @ max ], True|False, "Small" ];

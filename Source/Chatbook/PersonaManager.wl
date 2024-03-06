@@ -81,13 +81,14 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
                 {
                     If[ $inDialog, Pane[#, AppearanceElements -> None, ImageSize -> {Full, UpTo[300]}, Scrollbars -> {False, Automatic}], # ]& @
                     Dynamic[
+                        $CachedPersonaData;
                         Grid[
                             Prepend[
                                 KeyValueMap[
                                     formatPersonaData[#1, #2]&,
                                     Join[
-                                        KeyTake[$CachedPersonaData, favorites],
-                                        KeySort[$CachedPersonaData]]],
+                                        KeyTake[GetCachedPersonaData[ "IncludeHidden" -> False ], favorites],
+                                        KeySort[GetCachedPersonaData[ "IncludeHidden" -> False ]]]],
                                 {"", "In Menu", "", "Name", ""(*FITME*), (*"Description",*) "Version", ""}],
                             Alignment -> {{Center, Center, {Left}}, Center},
                             Background -> {{}, {RGBColor["#e5e5e5"], {White}}},

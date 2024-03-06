@@ -88,7 +88,7 @@ cellImage[ cellObject_CellObject ] := Enclose[
         nbo   = ConfirmMatch[ parentNotebook @ cellObject, _NotebookObject, "NotebookObject" ];
         opts  = ConfirmMatch[ Options @ nbo, KeyValuePattern @ { }, "Options" ];
         nb    = Notebook[ { $blankCell, cell, $blankCell }, Sequence @@ opts ];
-        image = ConfirmBy[ Rasterize @ nb, ImageQ, "Rasterize" ];
+        image = ConfirmBy[ rasterize @ nb, ImageQ, "Rasterize" ];
         (* cellImage[ cellObject ] = image *)
         image
     ],
@@ -780,7 +780,7 @@ imageJSON[ image_ ] := Enclose[
         uri = ConfirmBy[ toImageURI @ image, StringQ, "URI" ];
         If[ TrueQ[ StringLength @ uri < $maxJSONObjectSize ],
             <| "_Object" -> "Image", "Data" -> uri |>,
-            raster  = ConfirmBy[ If[ image2DQ @ image, image, Rasterize @ image ], ImageQ, "Rasterize" ];
+            raster  = ConfirmBy[ If[ image2DQ @ image, image, rasterize @ image ], ImageQ, "Rasterize" ];
             resized = ConfirmBy[ ImageResize[ raster, Scaled[ 1/2 ] ], ImageQ, "Resize" ];
             imageJSON[ image ] = <|
                 ConfirmMatch[

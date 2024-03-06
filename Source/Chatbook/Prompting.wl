@@ -6,6 +6,7 @@ BeginPackage[ "Wolfram`Chatbook`Prompting`" ];
 `$basePromptComponents;
 `$fullBasePrompt;
 `needsBasePrompt;
+`removeBasePrompt;
 `withBasePromptBuilder;
 
 Begin[ "`Private`" ];
@@ -31,6 +32,7 @@ $basePromptOrder = {
     "InlineSymbolLinks",
     "MessageConversionHeader",
     "ChatInputIndicator",
+    "WolframAlphaInputIndicator",
     "ConversionLargeOutputs",
     "ConversionGraphics",
     "MarkdownImageBox",
@@ -75,6 +77,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "InlineSymbolLinks"            -> { },
     "MessageConversionHeader"      -> { "NotebooksPreamble" },
     "ChatInputIndicator"           -> { "MessageConversionHeader" },
+    "WolframAlphaInputIndicator"   -> { "MessageConversionHeader" },
     "ConversionLargeOutputs"       -> { "MessageConversionHeader" },
     "ConversionGraphics"           -> { "MessageConversionHeader" },
     "MarkdownImageBox"             -> { "MessageConversionHeader" },
@@ -157,6 +160,10 @@ $basePromptComponents[ "ChatInputIndicator" ] = "\
 	* Users send you chat messages via special evaluatable \"ChatInput\" cells and will be indicated with the string \
 $$chatIndicatorSymbol$$. Cells appearing above the chat input are included to provide additional context, \
 but chat inputs represent the actual message from the user to you.";
+
+$basePromptComponents[ "WolframAlphaInputIndicator" ] = "\
+    * Inputs denoted with \[FreeformPrompt] are Wolfram Alpha inputs. When available, the parsed Wolfram \
+Language code will be included on the next line.";
 
 $basePromptComponents[ "ConversionLargeOutputs" ] = "\
 	* Large outputs may be shortened: ``DynamicModule[<<4>>]``";
@@ -304,13 +311,40 @@ withBasePromptBuilder // endDefinition;
 needsBasePrompt // beginDefinition;
 needsBasePrompt[ name_String ] /; KeyExistsQ[ $collectedPromptComponents, name ] := Null;
 needsBasePrompt[ name_String ] := $collectedPromptComponents[ name ] = name;
-needsBasePrompt[ Automatic|Inherited|_Missing ] := Null;
+needsBasePrompt[ $$unspecified ] := Null;
 needsBasePrompt[ None ] := $collectedPromptComponents = <| |>;
 needsBasePrompt[ KeyValuePattern[ "BasePrompt" -> base_ ] ] := needsBasePrompt @ base;
 needsBasePrompt[ KeyValuePattern[ "LLMEvaluator" -> as_Association ] ] := needsBasePrompt @ as;
 needsBasePrompt[ _Association ] := Null;
 needsBasePrompt[ list_List ] := needsBasePrompt /@ list;
 needsBasePrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*removeBasePrompt*)
+removeBasePrompt // beginDefinition;
+
+removeBasePrompt[ name_String ] := removeBasePrompt @ { name };
+removeBasePrompt[ names: { ___String } ] := KeyDropFrom[ $collectedPromptComponents, names ];
+
+removeBasePrompt[ message_, name_String ] :=
+    removeBasePrompt[ message, { name } ];
+
+removeBasePrompt[ message_String, names: { ___String } ] := (
+    removeBasePrompt @ names;
+    StringDelete[ message, Values @ KeyTake[ $basePromptComponents, names ] ]
+);
+
+removeBasePrompt[ message: KeyValuePattern @ { "Content" -> content_String }, names_ ] :=
+    Append[ message, "Content" -> removeBasePrompt[ content, names ] ];
+
+removeBasePrompt[ { message_, rest___ }, names_ ] :=
+    If[ MatchQ[ message, KeyValuePattern[ "Role" -> "System" ] ],
+        { removeBasePrompt[ message, names ], rest },
+        { message, rest }
+    ];
+
+removeBasePrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

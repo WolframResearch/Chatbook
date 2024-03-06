@@ -32,6 +32,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$textDataList;
 `$$unspecified;
 `$$feObj;
+`$$template;
 
 `$catchTopTag;
 `beginDefinition;
@@ -118,6 +119,7 @@ $$optionsSequence = (Rule|RuleDelayed)[ _Symbol|_String, _ ] ...;
 $$size            = Infinity | (_Real|_Integer)? NonNegative;
 $$unspecified     = _Missing | Automatic | Inherited;
 $$feObj           = _FrontEndObject | $FrontEndSession | _NotebookObject | _CellObject | _BoxObject;
+$$template        = _String|_TemplateObject|_TemplateExpression|_TemplateSequence;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -165,8 +167,9 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*$ChatNotebookEvaluation*)
+(*Current State Values*)
 $ChatNotebookEvaluation = False;
+$AutomaticAssistance    = False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

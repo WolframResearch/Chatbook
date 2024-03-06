@@ -26,6 +26,7 @@ $cloudInheritanceFix := $cloudNotebooks;
 (* cSpell: ignore AIAPI *)
 $defaultChatSettings = <|
     "Assistance"                -> Automatic,
+    "Authentication"            -> Automatic,
     "AutoFormat"                -> True,
     "BasePrompt"                -> Automatic,
     "ChatContextPreprompt"      -> Automatic,
@@ -54,11 +55,15 @@ $defaultChatSettings = <|
     "PresencePenalty"           -> 0.1,
     "ProcessingFunctions"       :> $DefaultChatProcessingFunctions,
     "Prompts"                   -> { },
+    "SetCellDingbat"            -> True,
     "ShowMinimized"             -> Automatic,
     "StreamingOutputMethod"     -> Automatic,
+    "TargetCloudObject"         -> Automatic,
     "Temperature"               -> 0.7,
+    "TokenBudgetMultiplier"     -> Automatic,
     "Tokenizer"                 -> Automatic,
     "ToolCallFrequency"         -> Automatic,
+    "ToolMethod"                -> Automatic,
     "ToolOptions"               :> $DefaultToolOptions,
     "Tools"                     -> Automatic,
     "ToolSelectionType"         -> <| |>,
@@ -101,6 +106,7 @@ $DefaultChatProcessingFunctions = <|
     "ChatMessages"        -> (#1 &),
     "ChatSubmit"          -> Automatic,
     "FormatChatOutput"    -> FormatChatOutput,
+    "FormatToolCall"      -> FormatToolCall,
     "WriteChatOutputCell" -> WriteChatOutputCell
 |>;
 

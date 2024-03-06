@@ -6,13 +6,16 @@ BeginPackage[ "Wolfram`Chatbook`Formatting`" ];
 (* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDRESULT *)
 
 Wolfram`Chatbook`FormatChatOutput;
+Wolfram`Chatbook`FormatToolCall;
 
+`$customToolFormatter;
 `$dynamicSplitRules;
 `$dynamicText;
 `$reformattedCell;
 `$resultCellCache;
 `clickToCopy;
 `floatingButtonGrid;
+`insertCodeBelow;
 `makeInteractiveCodeCell;
 `reformatTextData;
 `toolAutoFormatter;
@@ -29,7 +32,7 @@ Needs[ "Wolfram`Chatbook`Tools`"    ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
-
+$customToolFormatter = None;
 $dynamicImageScale   = 0.25;
 $maxImageSize        = 800;
 $maxDynamicImageSize = Ceiling[ $maxImageSize * $dynamicImageScale ];
@@ -75,9 +78,15 @@ $$mdTable = $$mdRow ~~ $$mdRow ..;
 
 $chatGeneratedCellTag = "ChatGeneratedCell";
 
+$simpleToolMethod := $ChatHandlerData[ "ChatNotebookSettings", "ToolMethod" ] === "Simple";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Chat Output Formatting*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*FormatChatOutput*)
 FormatChatOutput // beginDefinition;
 FormatChatOutput[ output_ ] := FormatChatOutput[ output, <| "Status" -> "Finished" |> ];
 FormatChatOutput[ output_, as_Association ] := formatChatOutput[ output, Lookup[ as, "Status", "Finished" ] ];
@@ -95,6 +104,51 @@ formatChatOutput[ output_String, "Finished" ] :=
     Block[ { $dynamicText = False }, RawBoxes @ Cell @ TextData @ reformatTextData @ output ];
 
 formatChatOutput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*FormatToolCall*)
+FormatToolCall // beginDefinition;
+
+FormatToolCall[ string_String, parsed_ ] :=
+    FormatToolCall[ string, parsed, <| "Status" -> If[ TrueQ @ $dynamicText, "Streaming", "Finished" ] |> ];
+
+FormatToolCall[ string_String, parsed_, info_Association ] :=
+    formatToolCall[ string, parsed, Lookup[ info, "Status", "Finished" ] ];
+
+FormatToolCall // endDefinition;
+
+
+formatToolCall // beginDefinition;
+
+formatToolCall[ string_String, parsed_, "Streaming" ] :=
+    Block[ { $dynamicText = True }, formatToolCall0[ string, parsed ] ];
+
+formatToolCall[ string_String, parsed_, "Finished" ] :=
+    Block[ { $dynamicText = False }, formatToolCall0[ string, parsed ] ];
+
+formatToolCall // endDefinition;
+
+
+formatToolCall0 // beginDefinition;
+
+formatToolCall0[ string_String, as_Association ] := Panel[
+    makeToolCallBoxLabel @ as,
+    BaseStyle    -> "Text",
+    Background   -> GrayLevel[ 0.95 ],
+    ImageMargins -> 10
+];
+
+formatToolCall0[ string_String, failed_Failure ] := Framed[
+    failed,
+    Background   -> White,
+    BaseStyle    -> "Output",
+    FrameMargins -> 10,
+    FrameStyle   -> GrayLevel[ 0.95 ],
+    ImageMargins -> { { 0, 0 }, { 10, 10 } }
+];
+
+formatToolCall0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -141,7 +195,7 @@ makeResultCell0[ mathCell[ math_String ] ] /; StringMatchQ[ math, (DigitCharacte
     math;
 
 makeResultCell0[ mathCell[ math_String ] ] :=
-    With[ { boxes = Quiet @ InputAssistant`TeXAssistant @ StringTrim @ math },
+    With[ { boxes = Quiet @ InputAssistant`TeXAssistant @ preprocessMathString @ math },
         If[ MatchQ[ boxes, _RawBoxes ],
             Cell @ BoxData @ toTeXBoxes @ boxes,
             makeResultCell0 @ inlineCodeCell @ math
@@ -176,6 +230,60 @@ makeResultCell0[ tableCell[ string_String ] ] :=
     makeTableCell @ string;
 
 makeResultCell0 // endDefinition;
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*preprocessMathString*)
+preprocessMathString // beginDefinition;
+
+preprocessMathString[ math_String ] := FixedPoint[
+    StringReplace @ $preprocessMathRules,
+    texUTF8Convert @ StringTrim @ math,
+    3
+];
+
+preprocessMathString // endDefinition;
+
+
+$preprocessMathRules = {
+    (* Remove commas from large numbers: *)
+    n: (Repeated[ DigitCharacter, { 3 } ] ~~ ("," ~~ Repeated[ DigitCharacter, { 3 } ])..) :> StringDelete[ n, "," ],
+    (* Add missing brackets to superscripts: *)
+    "^\\text{" ~~ s: LetterCharacter.. ~~ "}" :> "^{\\text{"<>s<>"}}",
+    (* Format superscript text: *)
+    n: DigitCharacter ~~ "^{" ~~ s: "st"|"nd"|"rd"|"th" ~~ "}" :> n<>"^{\\text{"<>s<>"}}"
+};
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*texUTF8Convert*)
+texUTF8Convert // beginDefinition;
+
+texUTF8Convert[ string_String ] := Enclose[
+    Catch @ Module[ { chars, texChars, rules },
+        chars    = Select[ Union @ Characters @ string, Max @ ToCharacterCode[ # ] > 255 & ];
+        texChars = ConfirmMatch[ texUTF8Convert0 /@ chars, { ___String }, "Characters" ];
+        rules    = DeleteCases[ Thread[ chars -> texChars ], _ -> "" ];
+        texUTF8Convert[ string ] = ConfirmBy[ StringReplace[ string, rules ], StringQ, "Converted" ]
+    ],
+    throwInternalFailure
+];
+
+texUTF8Convert // endDefinition;
+
+
+texUTF8Convert0 // beginDefinition;
+
+texUTF8Convert0[ c_String ] := texUTF8Convert0[ c ] = StringReplace[
+    StringTrim @ Replace[ Quiet @ ExportString[ c, "TeXFragment" ], Except[ _String ] :> "" ],
+    {
+        StartOfString ~~ "\\[" ~~ tex: ("\\" ~~ WordCharacter..) ~~ "\\]" ~~ EndOfString :> tex,
+        StartOfString ~~ __ ~~ EndOfString :> ""
+    }
+];
+
+texUTF8Convert0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -466,6 +574,23 @@ insertCodeBelow // endDefinition;
 (*insertAfterChatGeneratedCells*)
 insertAfterChatGeneratedCells // beginDefinition;
 
+(* FIXME: outputs do not inherit the "ChatGeneratedCell" tag from inputs in cloud notebooks, so this is a workaround *)
+insertAfterChatGeneratedCells[ cellObj_CellObject, cell_Cell ] /; $cloudNotebooks := Enclose[
+    Module[ { nbo },
+        nbo = ConfirmMatch[ parentNotebook @ cellObj, _NotebookObject, "ParentNotebook" ];
+        SelectionMove[ cellObj, After, CellContents ];
+        SelectionMove[ nbo, All, Cell ];
+        (* If the selection is in the next chat input cell, create cell immediately before so the next chat input
+           stays at the bottom *)
+        If[ MatchQ[ NotebookRead @ nbo, Cell[ _, "ChatInput", ___ ] ],
+            SelectionMove[ nbo, Before, Cell ],
+            SelectionMove[ nbo, After, Cell ]
+        ];
+        NotebookWrite[ nbo, preprocessInsertedCell @ cell, All ];
+    ],
+    throwInternalFailure
+];
+
 insertAfterChatGeneratedCells[ cellObj_CellObject, cell_Cell ] := Enclose[
     Module[ { nbo, allCells, cellsAfter, tagged, inserted, insertionPoint },
 
@@ -646,7 +771,17 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Parsing Rules*)
-$$endToolCall = Longest[ "ENDRESULT" ~~ (("(" ~~ HexadecimalCharacter.. ~~ ")") | "") ];
+$$endToolCall       = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
+$$eol               = " "... ~~ "\n";
+$$cmd               = Repeated[ DigitCharacter|LetterCharacter|"_"|"$", { 1, 80 } ];
+$$simpleToolCommand = StartOfLine ~~ ("/" ~~ c: $$cmd) ~~ $$eol /; $simpleToolMethod && toolShortNameQ @ c;
+$$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|EndOfString) ];
+
+
+(* TODO:
+    Maybe it would be simpler to use a regex here? The command string part would need to be dynamically generated.
+    RegularExpression["(?m)^(\\/wl|\\/wa)\\n(((?!\\/).*\\n)*?)\\/exec$"] :> simpleToolCallCell["$1", "$2"]
+*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -663,7 +798,10 @@ $textDataFormatRules = {
         StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
             imageCell[ alt, url ]
     ,
-    tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString)) :> inlineToolCallCell @ tool,
+    tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString)) :> inlineToolCallCell @ tool
+    ,
+    tool: $$simpleToolCall :> inlineToolCallCell @ tool
+    ,
     ("\n"|StartOfString) ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
     ("\n"|StartOfString) ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ],
     table: $$mdTable :> tableCell @ table
@@ -679,6 +817,13 @@ $textDataFormatRules = {
     "\\[" ~~ math__ ~~ "\\]" /; StringFreeQ[ math, "\\]" ] :> mathCell @ math,
     "$" ~~ math: Except[ "$" ].. ~~ "$" /; probablyMathQ @ math :> mathCell @ math
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolShortNameQ*)
+toolShortNameQ // beginDefinition;
+toolShortNameQ[ cmd_String ] := MatchQ[ $ChatHandlerData[ "ToolShortNames" ][ cmd ], _LLMTool ];
+toolShortNameQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -702,7 +847,8 @@ $dynamicSplitRules = {
             s
     ,
     (* Tool call *)
-    s: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ $$endToolCall) :> s
+    s: Shortest[ "TOOLCALL:" ~~ ___ ~~ $$endToolCall ] :> s,
+    s: Shortest[ $$simpleToolCommand ~~ ___ ~~ $$endToolCall ] :> s
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -757,28 +903,47 @@ makeCodeBlockCell // endDefinition;
 (*inlineToolCall*)
 inlineToolCall // beginDefinition;
 
-inlineToolCall[ string_String ] := inlineToolCall[ string, parseToolCallString @ string ];
+inlineToolCall[ string_String ] :=
+    inlineToolCall[ string, parseToolCallString @ string ];
 
-inlineToolCall[ string_String, as_Association ] := Cell[
-    BoxData @ ToBoxes @ Panel[
-        makeToolCallBoxLabel @ as,
-        BaseStyle    -> "Text",
-        Background   -> GrayLevel[ 0.95 ],
-        ImageMargins -> 10
-    ],
+inlineToolCall[ string_String, as_ ] :=
+    With[ { formatter = $ChatHandlerData[ "ChatNotebookSettings", "ProcessingFunctions", "FormatToolCall" ] },
+        makeInlineToolCallCell[
+            formatter[ string, as ],
+            string,
+            as
+        ] /; MatchQ[ formatter, Except[ None | _Missing ] ]
+    ];
+
+inlineToolCall[ string_String, as_ ] :=
+    makeInlineToolCallCell[
+        FormatToolCall[ string, as, <| "Status" -> If[ TrueQ @ $dynamicText, "Streaming", "Finished" ] |> ],
+        string,
+        as
+    ];
+
+inlineToolCall // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeInlineToolCallCell*)
+makeInlineToolCallCell // beginDefinition;
+
+makeInlineToolCallCell[ expr_, string_, as_Association ] := Cell[
+    BoxData @ ToBoxes @ expr,
     "InlineToolCall",
     Background   -> None,
     TaggingRules -> KeyDrop[ as, { "Icon", "Result" } ]
 ];
 
-inlineToolCall[ string_String, failed_Failure ] := Cell[
-    BoxData @ ToBoxes @ failed,
+makeInlineToolCallCell[ expr_, string_String, failed_Failure ] := Cell[
+    BoxData @ ToBoxes @ expr,
     "FailedToolCall",
     Background   -> None,
     TaggingRules -> <| "ToolCall" -> string |>
 ];
 
-inlineToolCall // endDefinition;
+makeInlineToolCallCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -793,6 +958,53 @@ parseToolCallString // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*parsePartialToolCallString*)
 parsePartialToolCallString // beginDefinition;
+
+parsePartialToolCallString[ string_String ] /; $simpleToolMethod := Enclose[
+    Module[ { command, argString, tool, name, paramNames, argStrings, padded, params, result },
+        command = ConfirmBy[
+            StringReplace[
+                string,
+                StartOfString ~~ "/" ~~ cmd: LetterCharacter.. ~~ WhitespaceCharacter... ~~ "\n" ~~ ___ :> cmd
+            ],
+            toolShortNameQ,
+            "Command"
+        ];
+
+        argString = First[
+            StringCases[
+                string,
+                StartOfString ~~ "/" ~~ command ~~ WhitespaceCharacter... ~~ "\n" ~~ a___ ~~ ("/exec"|EndOfString) :>
+                    a,
+                1
+            ],
+            Missing[ ]
+        ];
+
+        tool = ConfirmMatch[ $ChatHandlerData[ "ToolShortNames" ][ command ], _LLMTool, "Tool" ];
+        name = ConfirmBy[ toolName @ tool, StringQ, "ToolName" ];
+
+        If[ StringQ @ argString,
+            paramNames = Keys @ ConfirmMatch[ tool[[ 1, "Parameters" ]], KeyValuePattern @ { }, "ParameterNames" ];
+            argStrings = If[ Length @ paramNames === 1, { argString }, StringSplit[ argString, "\n" ] ];
+            padded = PadRight[ argStrings, Length @ paramNames, "" ];
+            params = ConfirmBy[ AssociationThread[ paramNames -> padded ], AssociationQ, "Parameters" ]
+            ,
+            params = <| |>
+        ];
+
+        result = First[ StringCases[ string, "RESULT\n" ~~ r___ ~~ "\nENDRESULT" :> r ], "" ];
+
+        DeleteMissing @ <|
+            "Name"        -> name,
+            "DisplayName" -> getToolDisplayName @ tool,
+            "Icon"        -> getToolIcon @ tool,
+            "ToolCall"    -> StringTrim @ string,
+            "Parameters"  -> params,
+            "Result"      -> result
+        |>
+    ],
+    throwInternalFailure
+];
 
 parsePartialToolCallString[ string_String ] /; StringMatchQ[ string, "TOOLCALL:"~~__~~"{"~~___ ] :=
     Module[ { noPrefix, noSuffix, name, tool, displayName, icon, query, result },
@@ -828,6 +1040,7 @@ parseFullToolCallString // beginDefinition;
 parseFullToolCallString[ id_String, string_String ] :=
     parseFullToolCallString[ id, $toolEvaluationResults[ id ], string ];
 
+(* FIXME: handle simple syntax too *)
 parseFullToolCallString[ id_, _Missing, string_String ] :=
     parsePartialToolCallString @ string;
 
@@ -870,10 +1083,14 @@ parseToolCallID[ string_String? StringQ ] :=
                 StringExpression[
                     StartOfString,
                     WhitespaceCharacter...,
-                    "TOOLCALL:",
+                    Alternatives[
+                        "TOOLCALL:",
+                        StartOfLine ~~ "/" ~~ cmd: LetterCharacter.. ~~ WhitespaceCharacter... ~~ "\n" /;
+                            toolShortNameQ @ cmd
+                    ],
                     ___,
                     "ENDRESULT(",
-                    hex: HexadecimalCharacter..,
+                    hex: (LetterCharacter|DigitCharacter)..,
                     ")",
                     WhitespaceCharacter...,
                     EndOfString
@@ -1544,7 +1761,18 @@ $boxCache = <| |>;
 hyperlink // beginDefinition;
 
 hyperlink[ label_String | { label_String }, uri_String ] /; StringStartsQ[ uri, "paclet:" ] :=
-    Cell @ BoxData @ TemplateBox[ { StringTrim[ label, (Whitespace|"`"|"\\").. ], uri }, "TextRefLink" ];
+    Cell @ BoxData @ TemplateBox[
+        {
+            StringTrim[ label, (Whitespace|"`"|"\\").. ],
+            uri,
+            StringReplace[
+                uri,
+                StartOfString ~~ "paclet:" ~~ ref__ ~~ EndOfString :>
+                    "https://reference.wolfram.com/language/"<>ref<>".html"
+            ]
+        },
+        "TextRefLink"
+    ];
 
 hyperlink[ label_String, url_String ] := hyperlink[ formatTextString @ label, url ];
 
