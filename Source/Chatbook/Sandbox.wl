@@ -21,6 +21,10 @@ Needs[ "Wolfram`Chatbook`Formatting`" ];
 Needs[ "Wolfram`Chatbook`Tools`"      ];
 Needs[ "Wolfram`Chatbook`Utils`"      ];
 
+$ContextAliases[ "sp`" ] = "Wolfram`Chatbook`SandboxParsing`";
+(* :!CodeAnalysis::Disable::UnexpectedLetterlikeCharacter:: *)
+sp`\[FreeformPrompt];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
@@ -64,6 +68,42 @@ $sandboxKernelCommandLine := StringRiffle @ {
 };
 
 $$outputForm := $$outputForm = Alternatives @@ $OutputForms;
+
+$nlpData = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*SandboxLinguisticAssistantData*)
+SandboxLinguisticAssistantData // beginDefinition;
+SandboxLinguisticAssistantData[ query_String ] := catchMine @ SandboxLinguisticAssistantData[ query, _ ];
+SandboxLinguisticAssistantData[ query_String, patt_ ] := catchMine @ sandboxLinguisticAssistantData[ query, patt ];
+SandboxLinguisticAssistantData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*sandboxLinguisticAssistantData*)
+sandboxLinguisticAssistantData // beginDefinition;
+
+sandboxLinguisticAssistantData[ query_String, patt_ ] :=
+    sandboxLinguisticAssistantData[ query, patt, $nlpData[ query ] ];
+
+sandboxLinguisticAssistantData[ query_String, patt_, _Missing ] := (
+    parseControlEquals[ query, patt ];
+    $nlpData[ query, HoldPattern @ patt ]
+);
+
+sandboxLinguisticAssistantData[ query_String, patt_, data_Association ] :=
+    sandboxLinguisticAssistantData[ query, patt, data, data[ HoldPattern[ patt ] ] ];
+
+sandboxLinguisticAssistantData[ query_String, patt_, _Association, _Missing ] := (
+    parseControlEquals[ query, patt ];
+    $nlpData[ query, HoldPattern @ patt ]
+);
+
+sandboxLinguisticAssistantData[ query_String, patt_, _Association, data_Association ] :=
+    data;
+
+sandboxLinguisticAssistantData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -502,9 +542,13 @@ initializeExpressions // endDefinition;
 (*toSandboxExpression*)
 toSandboxExpression // beginDefinition;
 
-toSandboxExpression[ s_String ] := toSandboxExpression[ s, Quiet @ ToExpression[ s, InputForm, HoldComplete ] ];
+toSandboxExpression[ s_String ] :=
+    Block[ { $Context = $Context, $ContextPath = Prepend[ $ContextPath, "Wolfram`Chatbook`SandboxParsing`" ] },
+        toSandboxExpression[ s, Quiet @ ToExpression[ preprocessSandboxString @ s, InputForm, HoldComplete ] ]
+    ];
 
-toSandboxExpression[ s_, expr_HoldComplete ] := expr;
+toSandboxExpression[ s_, expr_HoldComplete ] :=
+    expandSandboxMacros @ expr;
 
 toSandboxExpression[ s_String, $Failed ] /; StringContainsQ[ s, "'" ] :=
     Module[ { new, held },
@@ -520,6 +564,238 @@ toSandboxExpression[ s_String, $Failed ] /; StringContainsQ[ s, "'" ] :=
 toSandboxExpression[ s_String, $Failed ] := HoldComplete @ ToExpression[ s, InputForm ];
 
 toSandboxExpression // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*preprocessSandboxString*)
+preprocessSandboxString // beginDefinition;
+
+preprocessSandboxString[ s_String ] := StringReplace[
+    s,
+    "\[FreeformPrompt][" ~~ query: Except[ "\"" ].. ~~ "]" /; StringFreeQ[ query, "[" | "]" ] :>
+        "\[FreeformPrompt][\"" <> query <> "\"]"
+];
+
+preprocessSandboxString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*expandSandboxMacros*)
+expandSandboxMacros // beginDefinition;
+
+expandSandboxMacros[ expr_HoldComplete ] := Enclose[
+    Catch @ Module[ { msgBag, expanded },
+
+        msgBag = Internal`Bag[ ];
+
+        expanded = expr /. sp`\[FreeformPrompt][ a___ ] :>
+            With[ { e = ConfirmMatch[ parseControlEquals[ msgBag, HoldComplete @ a ], _$ConditionHold, "Parse" ] },
+                RuleCondition[ e, True ]
+            ];
+
+        With[ { messages = Internal`BagPart[ msgBag, All ] },
+            Replace[ expanded, HoldComplete[ e___ ] :> HoldComplete[ Scan[ Print, messages ]; e ] ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+expandSandboxMacros // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*parseControlEquals*)
+parseControlEquals // beginDefinition;
+
+parseControlEquals[ q_String ] := parseControlEquals[ q, _ ];
+
+parseControlEquals[ q_String, patt_ ] :=
+    Module[ { bag },
+        bag = Internal`Bag[ ];
+        Replace[
+            parseControlEquals[ bag, HoldComplete[ q, patt ] ],
+            $ConditionHold[ expr_ ] :> HoldComplete[ expr ]
+        ]
+    ];
+
+parseControlEquals[ messages_, HoldComplete[ q_String ] ] :=
+    parseControlEquals[ messages, HoldComplete[ q, _ ] ];
+
+parseControlEquals[ messages_, HoldComplete[ q_String, patt_ ] ] :=
+    parseControlEquals0[
+        messages,
+        q,
+        makeInterpretationPattern @ patt,
+        semanticInterpretation[ q, _, HoldComplete, AmbiguityFunction -> All ]
+    ];
+
+parseControlEquals[ messages_Internal`Bag, HoldComplete[ a___ ] ] := (
+    Internal`StuffBag[ messages, "[ERROR] invalid arguments in " <> smallExpressionString @ sp`\[FreeformPrompt] @ a ];
+    $ConditionHold @ $Failed
+);
+
+parseControlEquals // endDefinition;
+
+
+parseControlEquals0 // beginDefinition;
+
+(* ambiguity: *)
+parseControlEquals0[ messages_Internal`Bag, q_String, patt_, HoldComplete[ a_AmbiguityList ] ] := Enclose[
+    Catch @ Module[ { expanded, matching, selected, alternates, parsed },
+        expanded = ConfirmMatch[ expandAmbiguityLists @ a, { HoldComplete[ _ ].. }, "ExpandAmbiguityLists" ];
+        matching = Cases[ expanded, HoldComplete[ patt ] ];
+        If[ matching === { }, Throw @ parseControlEquals0[ messages, q, patt, $Failed ] ];
+        selected = ConfirmMatch[ First @ matching, HoldComplete[ _ ], "Selected" ];
+        alternates = ConfirmMatch[ Rest @ matching, { HoldComplete[ _ ]... }, "Alternates" ];
+        If[ alternates === { }, Throw @ parseControlEquals0[ messages, q, patt, selected ] ];
+        Internal`StuffBag[
+            messages,
+            StringJoin[
+                "[WARNING] Interpreted \"", q, "\" as ",
+                smallExpressionString @@ selected,
+                " with other possible interpretations: ",
+                Cases[ alternates, HoldComplete[ e_ ] :> "\n\t" <> smallExpressionString @ e ]
+            ]
+        ];
+        parsed = selected //. HoldPattern @ AmbiguityList[ { x_, ___ }, ___ ] :> x;
+        If[ ! AssociationQ @ $nlpData[ q ], $nlpData[ q ] = <| |> ];
+        $nlpData[ q, patt ] = <| "Alternates" -> alternates, "Parse" -> parsed, "Pattern" -> patt, "Query" -> q |>;
+        $ConditionHold @@ parsed
+    ],
+    throwInternalFailure
+];
+
+(* no ambiguity: *)
+parseControlEquals0[ messages_Internal`Bag, q_String, patt_, HoldComplete[ expr_ ] ] :=
+    Module[ { parsed },
+        If[ MatchQ[ HoldComplete @ expr, HoldComplete @ patt ],
+            Internal`StuffBag[ messages, "[INFO] Interpreted \"" <> q <> "\" as: " <> smallExpressionString @ expr ];
+            parsed = HoldComplete[ expr ] //. HoldPattern @ AmbiguityList[ { x_, ___ }, ___ ] :> x;
+            If[ ! AssociationQ @ $nlpData[ q ], $nlpData[ q ] = <| |> ];
+            $nlpData[ q, patt ] = <| "Parse" -> parsed, "Pattern" -> patt, "Query" -> q |>;
+            $ConditionHold @@ parsed,
+            parseControlEquals0[ messages, q, patt, $Failed ]
+        ]
+    ];
+
+(* parsing failed: *)
+parseControlEquals0[ messages_Internal`Bag, q_String, patt_, _? FailureQ ] := (
+    Internal`StuffBag[ messages, "[ERROR] Failed to interpret \"" <> q <> "\" as valid WL input." ];
+    If[ ! AssociationQ @ $nlpData[ q ], $nlpData[ q ] = <| |> ];
+    $nlpData[ q, patt ] = <| "Parse" -> $Failed, "Pattern" -> patt, "Query" -> q |>;
+    $ConditionHold @ $Failed
+);
+
+parseControlEquals0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeInterpretationPattern*)
+makeInterpretationPattern // beginDefinition;
+makeInterpretationPattern // Attributes = { HoldAllComplete };
+
+makeInterpretationPattern[ h_Symbol ] := HoldPattern @ Blank @ h;
+makeInterpretationPattern[ "Date"|"date" ] := _DateObject;
+makeInterpretationPattern[ "Unit"|"unit" ] := _Quantity;
+makeInterpretationPattern[ type_String ] := HoldPattern @ Quantity[ _, type ] | (Entity|EntityClass)[ type, ___ ];
+
+makeInterpretationPattern[ patt_ ] :=
+    HoldPattern @ patt /. {
+        (* quasi-safe pattern tests: *)
+        Verbatim[ PatternTest ][ p_, DateObjectQ ] :> PatternTest[ p, strictPatternTest[ _DateObject, DateObjectQ ] ],
+        Verbatim[ PatternTest ][ p_, QuantityQ   ] :> PatternTest[ p, strictPatternTest[ _Quantity  , QuantityQ   ] ],
+
+        (* prevent potentially dangerous evaluation leaks: *)
+        Verbatim[ PatternTest ][ p_, _ ] :> p,
+        Verbatim[ Condition   ][ p_, _ ] :> p
+    };
+
+makeInterpretationPattern // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*strictPatternTest*)
+strictPatternTest // beginDefinition;
+strictPatternTest[ p_, q_ ] := Function[ Null, MatchQ[ Unevaluated @ #, p ] && q @ Unevaluated @ #, HoldAllComplete ];
+strictPatternTest // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*expandAmbiguityLists*)
+expandAmbiguityLists // beginDefinition;
+expandAmbiguityLists // Attributes = { HoldAllComplete };
+
+
+expandAmbiguityLists[ expr_AmbiguityList ] :=
+    Module[ { bag },
+        bag = Internal`Bag[ ];
+        expandAmbiguityLists[ bag, expr ];
+        Internal`BagPart[ bag, All ]
+    ];
+
+
+expandAmbiguityLists[
+    bag_,
+    AmbiguityList[ { e_, rest___ }, ___ ]
+] /; FreeQ[ Unevaluated @ e, AmbiguityList ] := (
+    Internal`StuffBag[ bag, HoldComplete @ e ];
+    expandAmbiguityLists[ bag, AmbiguityList @ { rest } ]
+);
+
+
+expandAmbiguityLists[
+    bag_,
+    AmbiguityList[ { Quantity[ m_, AmbiguityList[ { units___ }, ___ ] ], rest___ }, ___ ]
+] /; FreeQ[ HoldComplete[ m, units ], AmbiguityList ] := (
+    Cases[ HoldComplete @ units, u_ :> Internal`StuffBag[ bag, HoldComplete @ Quantity[ m, u ] ] ];
+    expandAmbiguityLists[ bag, AmbiguityList @ { rest } ]
+);
+
+
+expandAmbiguityLists[
+    bag_,
+    AmbiguityList[ { AmbiguityList[ { exprs___ }, ___ ], rest___ }, ___ ]
+] /; FreeQ[ HoldComplete @ exprs, AmbiguityList ] := (
+    Cases[ HoldComplete @ exprs, e_ :> Internal`StuffBag[ bag, HoldComplete @ e ] ];
+    expandAmbiguityLists[ bag, AmbiguityList @ { rest } ]
+);
+
+
+expandAmbiguityLists[ bag_, _AmbiguityList ] :=
+    Null;
+
+
+(* FIXME: Need a more general approach. Things like this are unhandled:
+    SemanticInterpretation[ "in 10000 hours", _, HoldComplete, AmbiguityFunction -> All ]
+    DatePlus[ Now, Quantity[ 10000, AmbiguityList[ { "Hours", "MeanSolarHours", "SiderealHours" }, "hours" ] ] ]
+*)
+
+expandAmbiguityLists // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*smallExpressionString*)
+smallExpressionString // beginDefinition;
+smallExpressionString // Attributes = { HoldAllComplete };
+smallExpressionString[ expr_ ] := smallExpressionString[ expr, 100 ];
+smallExpressionString[ expr_, n_ ] := stringTrimMiddle[ ToString[ Unevaluated @ expr, InputForm ], n ];
+smallExpressionString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*semanticInterpretation*)
+semanticInterpretation // beginDefinition;
+
+semanticInterpretation[ in_, patt: Verbatim[ _ ], args___ ] := Verbatim @ semanticInterpretation[ in, patt, args ] =
+    SemanticInterpretation[ in, patt, args ];
+
+semanticInterpretation[ in_, patt_, args___ ] := Verbatim @ semanticInterpretation[ in, patt, args ] =
+    SemanticInterpretation[ in, _? (Function[ Null, MatchQ[ Unevaluated @ #, patt ], HoldAllComplete ]), args ];
+
+semanticInterpretation[ args___ ] := Verbatim @ semanticInterpretation[ args ] =
+    SemanticInterpretation @ args;
+
+semanticInterpretation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -851,7 +1127,7 @@ makePacketMessages // endDefinition;
 sandboxFormatter // beginDefinition;
 
 sandboxFormatter[ code_String, "Parameters", "code" ] :=
-    RawBoxes @ makeInteractiveCodeCell[ "Wolfram", sandboxStringNormalize @ code ];
+    RawBoxes @ makeInteractiveCodeCell[ "Wolfram", expandNLInputBoxes @ sandboxStringNormalize @ code ];
 
 sandboxFormatter[ KeyValuePattern[ "Result" -> result_ ], "Result" ] :=
     sandboxFormatter[ result, "Result" ];
@@ -862,6 +1138,30 @@ sandboxFormatter[ result_, "Result" ] :=
 sandboxFormatter[ result_, ___ ] := result;
 
 sandboxFormatter // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*expandNLInputBoxes*)
+expandNLInputBoxes // beginDefinition;
+
+expandNLInputBoxes[ code_String ] := expandNLInputBoxes @ stringToBoxes @ code;
+
+expandNLInputBoxes[ boxes_ ] := boxes /. {
+    RowBox @ { "\[FreeformPrompt]", "[", b__, "]" } :> With[
+        { e = Quiet @ ToExpression[ RowBox @ { "HoldComplete", "[", b, "]" }, StandardForm, expandNLInputBoxes0 ] },
+        e /; ! FailureQ @ e
+    ]
+};
+
+expandNLInputBoxes // endDefinition;
+
+
+expandNLInputBoxes0 // beginDefinition;
+expandNLInputBoxes0[ HoldComplete[ q_String ] ] := expandNLInputBoxes0 @ SandboxLinguisticAssistantData @ q;
+expandNLInputBoxes0[ HoldComplete[ q_String, p_ ] ] := expandNLInputBoxes0 @ SandboxLinguisticAssistantData[ q, p ];
+expandNLInputBoxes0[ KeyValuePattern[ "Parse" -> HoldComplete[ expr_ ] ] ] := MakeBoxes @ expr;
+expandNLInputBoxes0[ _ ] := $Failed;
+expandNLInputBoxes0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
