@@ -18,6 +18,7 @@ Wolfram`Chatbook`FormatToolCall;
 `insertCodeBelow;
 `makeInteractiveCodeCell;
 `reformatTextData;
+`stringToBoxes;
 `toolAutoFormatter;
 
 Begin[ "`Private`" ];

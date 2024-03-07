@@ -836,6 +836,7 @@ autoCorrect // endDefinition;
 $llmAutoCorrectRules = Flatten @ {
     "wolfram_language_evaliator" -> "wolfram_language_evaluator",
     "\\!\\(\\*MarkdownImageBox[\"" ~~ uri__ ~~ "\"]\\)" :> uri,
+    "\\uf351" -> "\[FreeformPrompt]",
     $longNameCharacters
 };
 
