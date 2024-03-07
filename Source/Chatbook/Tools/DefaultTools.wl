@@ -225,8 +225,6 @@ You have read access to local files.
 Parse natural language input with `\[FreeformPrompt][\"query\"]`, which is analogous to ctrl-= input in notebooks. \
 Natural language input is parsed before evaluation, so it works like macro expansion. \
 You should ALWAYS use this natural language input to obtain things like `Quantity`, `DateObject`, `Entity`, etc. \
-Provide a second argument to \[FreeformPrompt] to specify the type of the result. \
-This can be a symbol e.g. `DateObject`, an entity or unit type name, or a pattern e.g. `Entity[\"City\", _]`.\
 \[FreeformPrompt] should be written as \\uf351 in JSON.
 ";
 
