@@ -1453,7 +1453,7 @@ inlineInteractiveCodeCell[ display_, string_, lang_ ] :=
         EventHandler[
             display,
             {
-                "MouseEntered" :> (
+                "MouseEntered" :> If[ ! TrueQ @ $CloudEvaluation,
                     Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
                     Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
                         "AttachCodeButtons",
@@ -1462,7 +1462,7 @@ inlineInteractiveCodeCell[ display_, string_, lang_ ] :=
                         string,
                         lang
                     ]
-                )
+                ]
             }
         ],
         TaggingRules     -> <| "CellToStringType" -> "InlineInteractiveCodeCell", "CodeLanguage" -> lang |>,
