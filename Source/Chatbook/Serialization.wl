@@ -446,6 +446,11 @@ cellToString[ cell: Cell[ _String, "ChatOutput", ___ ] ] := Block[ { $escapeMark
 cellToString[ cell: Cell[ _TextData|_String, ___ ] ] := Block[ { $escapeMarkdown = True }, cellToString0 @ cell ];
 cellToString[ cell_ ] := Block[ { $escapeMarkdown = False }, cellToString0 @ cell ];
 
+(* Rasterize entire cell if it contains enough graphics boxes *)
+cellToString[ cell: Cell[ _BoxData, Except[ $$chatInputStyle|$$chatOutputStyle ], ___ ] ] /;
+    $multimodalImages && Count[ cell, $$graphicsBox, Infinity ] > $maxMarkdownBoxes :=
+        toMarkdownImageBox @ cell;
+
 cellToString // endDefinition;
 
 (* Recursive serialization of the cell content *)
@@ -498,13 +503,6 @@ fasterCellToString[ arg_ ] :=
             $stringFail
         ]
     ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*Multimodal Cell Images*)
-fasterCellToString0[ cell: Cell[ _BoxData, ___ ] ] /;
-    $multimodalImages && Count[ cell, $$graphicsBox, Infinity ] > $maxMarkdownBoxes :=
-        toMarkdownImageBox @ cell;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
