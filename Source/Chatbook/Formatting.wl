@@ -7,6 +7,7 @@ BeginPackage[ "Wolfram`Chatbook`Formatting`" ];
 
 Wolfram`Chatbook`FormatChatOutput;
 Wolfram`Chatbook`FormatToolCall;
+Wolfram`Chatbook`StringToBoxes;
 
 `$customToolFormatter;
 `$dynamicSplitRules;
@@ -81,6 +82,28 @@ $$mdTable = $$mdRow ~~ $$mdRow ..;
 $chatGeneratedCellTag = "ChatGeneratedCell";
 
 $simpleToolMethod := $ChatHandlerData[ "ChatNotebookSettings", "ToolMethod" ] === "Simple";
+
+$autoOperatorRenderings = <|
+    "|->" -> "\[Function]",
+    "->"  -> "\[Rule]",
+    ":>"  -> "\[RuleDelayed]",
+    "<="  -> "\[LessEqual]",
+    ">="  -> "\[GreaterEqual]",
+    "!="  -> "\[NotEqual]",
+    "=="  -> "\[Equal]",
+    "<->" -> "\[TwoWayRule]",
+    "[["  -> "\[LeftDoubleBracket]",
+    "]]"  -> "\[RightDoubleBracket]",
+    "<|"  -> "\[LeftAssociation]",
+    "|>"  -> "\[RightAssociation]"
+ |>;
+
+(* ::**************************************************************************************************************:: *)
+ (* ::Section::Closed:: *)
+ (*StringToBoxes*)
+StringToBoxes // beginDefinition;
+StringToBoxes[ string_String? StringQ ] := catchAlways[ stringToBoxes @ string, StringToBoxes ];
+StringToBoxes // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1908,6 +1931,7 @@ adjustBoxSpacing // beginDefinition;
 adjustBoxSpacing[ row: RowBox @ { "(*", ___, "*)" } ] := row;
 adjustBoxSpacing[ RowBox[ items_List ] ] := RowBox[ adjustBoxSpacing /@ DeleteCases[ items, " " ] ];
 adjustBoxSpacing[ "\n" ] := "\[IndentingNewLine]";
+adjustBoxSpacing[ s_String ] /; $CloudEvaluation := Lookup[ $autoOperatorRenderings, s, s ];
 adjustBoxSpacing[ box_ ] := box;
 adjustBoxSpacing // endDefinition;
 
