@@ -41,6 +41,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `catchTop;
 `catchTopAs;
 `endDefinition;
+`endExportedDefinition;
 `importResourceFunction;
 `messageFailure;
 `messagePrint;
@@ -137,6 +138,7 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "Internal"                        -> "An unexpected error occurred. `1`",
     "InvalidAPIKey"                   -> "Invalid value for API key: `1`",
     "InvalidArguments"                -> "Invalid arguments given for `1` in `2`.",
+    "InvalidExpressionURI"            -> "The string \"`1`\" is not a valid expression URI.",
     "InvalidFrontEndScope"            -> "The value `1` is not a valid scope for `2`.",
     "InvalidFunctions"                -> "Invalid setting for ProcessingFunctions: `1`; using defaults instead.",
     "InvalidHandlerArguments"         -> "Invalid value for $ChatHandlerData: `1`; resetting to default value.",
@@ -306,6 +308,30 @@ appendFallthroughError0[ s_Symbol, DownValues ] := e: HoldPattern @ s[ ___ ]    
 appendFallthroughError0[ s_Symbol, UpValues   ] := e: HoldPattern @ s[ ___ ][ ___ ] := throwInternalFailure @ e;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*appendExportedFallthroughError*)
+appendExportedFallthroughError // ClearAll;
+appendExportedFallthroughError // Attributes = { HoldFirst };
+
+appendExportedFallthroughError[ s_Symbol ] :=
+    Module[ { block = Internal`InheritedBlock, before, after },
+        block[ { s },
+            before = DownValues @ s;
+            appendExportedFallthroughError0 @ s;
+            after = DownValues @ s;
+        ];
+
+        If[ TrueQ[ Length @ after > Length @ before ],
+            DownValues[ s ] = after,
+            DownValues[ s ]
+        ]
+    ];
+
+appendExportedFallthroughError0 // ClearAll;
+appendExportedFallthroughError0[ f_Symbol ] := f[ a___ ] :=
+    catchTop[ throwFailure[ "InvalidArguments", f, HoldForm @ f @ a ], f ];
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*endDefinition*)
 endDefinition // beginDefinition;
@@ -325,6 +351,21 @@ endDefinition[ s_Symbol, values: DownValues|UpValues ] :=
 endDefinition[ s_Symbol, list_List ] := (endDefinition[ s, #1 ] &) /@ list;
 
 endDefinition // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*endExportedDefinition*)
+endExportedDefinition // beginDefinition;
+endExportedDefinition // Attributes = { HoldFirst };
+
+endExportedDefinition[ s_Symbol ] :=
+    WithCleanup[
+        optimizeEnclosures @ s;
+        appendExportedFallthroughError @ s,
+        $inDef = False
+    ];
+
+endExportedDefinition // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
