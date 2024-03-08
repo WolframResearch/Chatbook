@@ -7,6 +7,7 @@ BeginPackage[ "Wolfram`Chatbook`Formatting`" ];
 
 Wolfram`Chatbook`FormatChatOutput;
 Wolfram`Chatbook`FormatToolCall;
+Wolfram`Chatbook`StringToBoxes;
 
 `$customToolFormatter;
 `$dynamicSplitRules;
@@ -96,6 +97,13 @@ $autoOperatorRenderings = <|
     "<|"  -> "\[LeftAssociation]",
     "|>"  -> "\[RightAssociation]"
  |>;
+
+(* ::**************************************************************************************************************:: *)
+ (* ::Section::Closed:: *)
+ (*StringToBoxes*)
+StringToBoxes // beginDefinition;
+StringToBoxes[ string_String? StringQ ] := catchAlways[ stringToBoxes @ string, StringToBoxes ];
+StringToBoxes // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
