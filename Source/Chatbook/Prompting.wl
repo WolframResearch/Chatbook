@@ -36,10 +36,12 @@ $basePromptOrder = {
     "ConversionLargeOutputs",
     "ConversionGraphics",
     "MarkdownImageBox",
+    "MarkdownImageBoxImporting",
     "Checkboxes",
     "CheckboxesIndeterminate",
     "ConversionFormatting",
     "SpecialURI",
+    "SpecialURIImporting",
     "SpecialURIAudio",
     "SpecialURIVideo",
     "SpecialURIDynamic",
@@ -81,8 +83,10 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "ConversionLargeOutputs"       -> { "MessageConversionHeader" },
     "ConversionGraphics"           -> { "MessageConversionHeader" },
     "MarkdownImageBox"             -> { "MessageConversionHeader" },
+    "MarkdownImageBoxImporting"    -> { "MarkdownImageBox" },
     "ConversionFormatting"         -> { "MessageConversionHeader" },
     "SpecialURI"                   -> { },
+    "SpecialURIImporting"          -> { "SpecialURI" },
     "SpecialURIAudio"              -> { "SpecialURI" },
     "SpecialURIVideo"              -> { "SpecialURI" },
     "SpecialURIDynamic"            -> { "SpecialURI" },
@@ -162,7 +166,7 @@ $$chatIndicatorSymbol$$. Cells appearing above the chat input are included to pr
 but chat inputs represent the actual message from the user to you.";
 
 $basePromptComponents[ "WolframAlphaInputIndicator" ] = "\
-    * Inputs denoted with \[FreeformPrompt] are Wolfram Alpha inputs. When available, the parsed Wolfram \
+	* Inputs denoted with \[FreeformPrompt] are Wolfram Alpha inputs. When available, the parsed Wolfram \
 Language code will be included on the next line.";
 
 $basePromptComponents[ "ConversionLargeOutputs" ] = "\
@@ -172,17 +176,23 @@ $basePromptComponents[ "ConversionGraphics" ] = "\
 	* Rendered graphics will typically be replaced with a shortened box representation: \\!\\(\\*GraphicsBox[<<>>]\\)";
 
 $basePromptComponents[ "MarkdownImageBox" ] = "\
-	* If there are images embedded in the notebook, they will be replaced by a box representation in the \
-form ``MarkdownImageBox[\"![label](uri)\"]``. You will also receive the original image immediately after this. \
-You can use the markdown from this box ``![label](uri)`` in your responses if you want to display the original image.";
+	* If there are images embedded in the notebook, they will be replaced by a box representation in the form \
+``MarkdownImageBox[\"![label](attachment://content-id)\"]``. You will also receive the original image immediately \
+after this. You can use the markdown from this box ``![label](attachment://content-id)`` in your responses if you \
+want to display the original image.";
+
+$basePromptComponents[ "MarkdownImageBoxImporting" ] = "\
+		* Use the syntax <!attachment://content-id!> to inline one of these images in code you write for the evaluator \
+tool. For example, ``ColorNegate[<!attachment://content-id!>]``. The expression will be inserted in place. Do not \
+include the MarkdownImageBox wrapper. You can also use this syntax to inline images into WL code blocks.";
 
 $basePromptComponents[ "Checkboxes" ] = "\
-    * Checkboxes in the UI will be replaced with one of the following text representations:
-        * A Checkbox that's selected becomes ``[\[Checkmark]]``
-        * A Checkbox that's not selected becomes ``[ ]``";
+	* Checkboxes in the UI will be replaced with one of the following text representations:
+		* A Checkbox that's selected becomes ``[\[Checkmark]]``
+		* A Checkbox that's not selected becomes ``[ ]``";
 
 $basePromptComponents[ "CheckboxesIndeterminate" ] = "\
-        * An indeterminate Checkbox becomes ``[-]``";
+    	* An indeterminate Checkbox becomes ``[-]``";
 
 $basePromptComponents[ "ConversionFormatting" ] = "\
 	* Cell formatting is converted to markdown where possible, so \
@@ -194,14 +204,18 @@ $basePromptComponents[ "SpecialURI" ] = "\
 interactive interface elements. You can use these in your responses to display the same elements to the user, but they \
 must be formatted as image links (include the '!' at the beginning). If you do not include the '!', the link will fail.";
 
+$basePromptComponents[ "SpecialURIImporting" ] = "\
+	* Use the syntax <!scheme://content-id!> to inline one of these expressions in code you write for the evaluator \
+tool.";
+
 $basePromptComponents[ "SpecialURIAudio" ] = "\
-    * ![label](audio://content-id) represents an interactive audio player.";
+	* ![label](audio://content-id) represents an interactive audio player.";
 
 $basePromptComponents[ "SpecialURIVideo" ] = "\
-    * ![label](video://content-id) represents an interactive video player.";
+	* ![label](video://content-id) represents an interactive video player.";
 
 $basePromptComponents[ "SpecialURIDynamic" ] = "\
-    * ![label](dynamic://content-id) represents an embedded dynamic UI.";
+	* ![label](dynamic://content-id) represents an embedded dynamic UI.";
 
 $basePromptComponents[ "VisibleUserInput" ] = "\
 * The user can still see their input, so there's no need to repeat it in your response";

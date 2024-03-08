@@ -3,6 +3,7 @@
 BeginPackage[ "Wolfram`Chatbook`Utils`" ];
 
 HoldComplete[
+    `$tinyHashLength;
     `associationKeyDeflatten;
     `clickToCopy;
     `contextBlock;
