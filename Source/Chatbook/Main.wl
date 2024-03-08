@@ -41,6 +41,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `SandboxLinguisticAssistantData;
 `SetModel;
 `SetToolOptions;
+`StringToBoxes;
 `WriteChatOutputCell;
 
 (* ::**************************************************************************************************************:: *)
@@ -137,6 +138,7 @@ Protect[
     SandboxLinguisticAssistantData,
     SetModel,
     SetToolOptions,
+    StringToBoxes,
     WriteChatOutputCell
 ];
 
