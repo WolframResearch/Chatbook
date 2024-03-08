@@ -10,6 +10,7 @@ HoldComplete[
     `$toolEvaluationResults;
     `$toolOptions;
     `$toolResultStringLength;
+    `expressionURIKeyQ;
     `getToolByName;
     `getToolDisplayName;
     `getToolFormattingFunction;

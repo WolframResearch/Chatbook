@@ -7,11 +7,13 @@ BeginPackage[ "Wolfram`Chatbook`Sandbox`" ];
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
+`$sandboxKernelCommandLine;
 `fancyResultQ;
+`inlineExpressionURIs;
+`preprocessSandboxString;
 `sandboxEvaluate;
 `sandboxFormatter;
 `simpleResultQ;
-`$sandboxKernelCommandLine;
 
 Begin[ "`Private`" ];
 
@@ -24,6 +26,7 @@ Needs[ "Wolfram`Chatbook`Utils`"      ];
 $ContextAliases[ "sp`" ] = "Wolfram`Chatbook`SandboxParsing`";
 (* :!CodeAnalysis::Disable::UnexpectedLetterlikeCharacter:: *)
 sp`\[FreeformPrompt];
+sp`InlinedExpression;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -202,9 +205,9 @@ startSandboxKernel[ ] := Enclose[
 
         kernel = ConfirmMatch[ LinkLaunch @ $sandboxKernelCommandLine, _LinkObject, "LinkLaunch" ];
 
-        readPaths    = makePaths @ toolOptionValue[ "WolframLanguageEvaluator", "AllowedReadPaths"    ];
-        writePaths   = makePaths @ toolOptionValue[ "WolframLanguageEvaluator", "AllowedWritePaths"   ];
-        executePaths = makePaths @ toolOptionValue[ "WolframLanguageEvaluator", "AllowedExecutePaths" ];
+        readPaths    = makeReadPaths    @ toolOptionValue[ "WolframLanguageEvaluator", "AllowedReadPaths"    ];
+        writePaths   = makeWritePaths   @ toolOptionValue[ "WolframLanguageEvaluator", "AllowedWritePaths"   ];
+        executePaths = makeExecutePaths @ toolOptionValue[ "WolframLanguageEvaluator", "AllowedExecutePaths" ];
 
         (* Use StartProtectedMode instead of passing the -sandbox argument, since we need to initialize the FE first *)
         With[ { read = readPaths, write = writePaths, execute = executePaths },
@@ -252,13 +255,110 @@ startSandboxKernel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*makeReadPaths*)
+makeReadPaths // beginDefinition;
+makeReadPaths[ spec_ ] := replaceAutoPath[ makePaths @ spec, $defaultReadPaths, "AllowedReadPaths" ];
+makeReadPaths // endDefinition;
+
+$defaultReadPaths := $defaultReadPaths = Select[
+    {
+        $InstallationDirectory,
+        $TemporaryDirectory,
+        FileNameJoin @ { $BaseDirectory, "Paclets" },
+        FileNameJoin @ { $BaseDirectory, "Autoload", "PacletManager" },
+        FileNameJoin @ { $UserBaseDirectory, "Paclets" },
+        FileNameJoin @ { $UserBaseDirectory, "Autoload", "PacletManager" },
+        FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "CloudObject", "Authentication" },
+        FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Parallel", "Preferences" },
+        FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Credentials" },
+        FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Astro" },
+        SystemInformation[ "FrontEnd", "DocumentationInformation" ][ "Directory" ],
+        ExpandFileName @ URL @ $LocalBase
+    },
+    StringQ
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeWritePaths*)
+makeWritePaths // beginDefinition;
+makeWritePaths[ spec_ ] := replaceAutoPath[ makePaths @ spec, $defaultWritePaths, "AllowedWritePaths" ];
+makeWritePaths // endDefinition;
+
+$defaultWritePaths := $defaultWritePaths = Select[
+    {
+        $TemporaryDirectory,
+        FileNameJoin @ { $BaseDirectory, "Paclets" },
+        FileNameJoin @ { $BaseDirectory, "Autoload", "PacletManager" },
+        FileNameJoin @ { $UserBaseDirectory, "Paclets" },
+        FileNameJoin @ { $UserBaseDirectory, "Autoload", "PacletManager" },
+        FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "CloudObject", "Authentication" },
+        FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Parallel", "Preferences" },
+        FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Credentials" },
+        FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Astro" },
+        FileNameJoin @ { ExpandFileName @ URL @ $LocalBase, "Resources" }
+    },
+    StringQ
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeExecutePaths*)
+makeExecutePaths // beginDefinition;
+makeExecutePaths[ spec_ ] := replaceAutoPath[ makePaths @ spec, $defaultExecutePaths, "AllowedExecutePaths" ];
+makeExecutePaths // endDefinition;
+
+$defaultExecutePaths := $defaultExecutePaths = Select[
+    {
+        FileNameJoin @ { $InstallationDirectory, "SystemFiles", "Links" },
+        FileNameJoin @ { $InstallationDirectory, "SystemFiles", "Libraries" },
+        FileNameJoin @ { $InstallationDirectory, "SystemFiles", "Components" },
+        FileNameJoin @ { $InstallationDirectory, "SystemFiles", "Java", $SystemID },
+        FileNameJoin @ { $InstallationDirectory, "SystemFiles", "Converters", "Binaries", $SystemID },
+        FileNameJoin @ { $InstallationDirectory, "SystemFiles", "Autoload", "PacletManager", "LibraryResources" },
+        Switch[ $OperatingSystem,
+                "Windows", FileNameJoin @ { $InstallationDirectory, "WolframKernel.exe" },
+                "MacOSX" , FileNameJoin @ { $InstallationDirectory, "MacOS", "WolframKernel" },
+                "Unix"   , FileNameJoin @ { $InstallationDirectory, "Executables", "wolfram" }
+        ],
+        FileNameJoin @ { $BaseDirectory, "Paclets" },
+        FileNameJoin @ { $UserBaseDirectory, "Paclets" }
+    },
+    StringQ
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*replaceAutoPath*)
+replaceAutoPath // beginDefinition;
+replaceAutoPath // Attributes = { HoldRest };
+
+replaceAutoPath[ paths_, default_, inherit_String ] :=
+    DeleteDuplicates @ Flatten @ Replace[
+        DeleteDuplicates @ Flatten @ { paths },
+        {
+            Automatic :> default,
+            Inherited|ParentList :> Replace[
+                makePaths @ $DefaultToolOptions[ "WolframLanguageEvaluator", inherit ],
+                Automatic :> default
+            ]
+        },
+        { 1 }
+    ];
+
+replaceAutoPath // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*makePaths*)
 makePaths // beginDefinition;
 makePaths[ All ] := If[ $OperatingSystem === "Windows", # <> ":\\" & /@ CharacterRange[ "A", "Z" ], "/" ];
 makePaths[ None ] := { };
-makePaths[ paths_List ] := DeleteDuplicates @ Flatten[ makePaths /@ paths ];
+makePaths[ paths_List ] := DeleteDuplicates @ Flatten[ makePaths /@ Flatten @ paths ];
 makePaths[ path_String ] := path;
-makePaths[ Automatic|Inherited|_Missing ] := Automatic;
+makePaths[ h: _Hold|_HoldComplete ] := makePaths @ ReleaseHold @ h;
+makePaths[ ParentList|Inherited ] := ParentList;
+makePaths[ $$unspecified ] := Automatic;
 makePaths // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -542,8 +642,9 @@ initializeExpressions // endDefinition;
 (*toSandboxExpression*)
 toSandboxExpression // beginDefinition;
 
-toSandboxExpression[ s_String ] :=
+toSandboxExpression[ s_String ] := $lastSandboxExpression =
     Block[ { $Context = $Context, $ContextPath = Prepend[ $ContextPath, "Wolfram`Chatbook`SandboxParsing`" ] },
+        $lastSandboxString = s;
         toSandboxExpression[ s, Quiet @ ToExpression[ preprocessSandboxString @ s, InputForm, HoldComplete ] ]
     ];
 
@@ -552,7 +653,7 @@ toSandboxExpression[ s_, expr_HoldComplete ] :=
 
 toSandboxExpression[ s_String, $Failed ] /; StringContainsQ[ s, "'" ] :=
     Module[ { new, held },
-        new = StringReplace[ s, "'" -> "\"" ];
+        new = preprocessSandboxString @ StringReplace[ s, "'" -> "\"" ];
         held = Quiet @ ToExpression[ new, InputForm, HoldComplete ];
         If[ MatchQ[ held, _HoldComplete ],
             sandboxStringNormalize[ s ] = new;
@@ -570,10 +671,22 @@ toSandboxExpression // endDefinition;
 (*preprocessSandboxString*)
 preprocessSandboxString // beginDefinition;
 
-preprocessSandboxString[ s_String ] := StringReplace[
+preprocessSandboxString[ s_String ] := sandboxStringNormalize[ s ] = StringReplace[
     s,
-    "\[FreeformPrompt][" ~~ query: Except[ "\"" ].. ~~ "]" /; StringFreeQ[ query, "[" | "]" ] :>
-        "\[FreeformPrompt][\"" <> query <> "\"]"
+    {
+        "\[FreeformPrompt][" ~~ query: Except[ "\"" ].. ~~ "]" /; StringFreeQ[ query, "[" | "]" ] :>
+            "\[FreeformPrompt][\"" <> query <> "\"]",
+        ("Import"|"Get") ~~ "[\"<!" ~~ uri: Except[ "!" ].. ~~ "!>\"]" :>
+            "InlinedExpression[\"" <> uri <> "\"]",
+        ("Import"|"Get") ~~ "[\"!["~~___~~"](" ~~ uri: (__ ~~ "://" ~~ key__) ~~ ")\"]" /; expressionURIKeyQ @ key :>
+            "InlinedExpression[\"" <> uri <> "\"]",
+        "\"!["~~___~~"](" ~~ uri: (__ ~~ "://" ~~ key__) ~~ ")\"" /; expressionURIKeyQ @ key :>
+            "InlinedExpression[\"" <> uri <> "\"]",
+        "!["~~___~~"](" ~~ uri: (__ ~~ "://" ~~ key__) ~~ ")" /; expressionURIKeyQ @ key :>
+            "InlinedExpression[\"" <> uri <> "\"]",
+        "<!" ~~ uri: Except[ "!" ].. ~~ "!>" :>
+            "InlinedExpression[\"" <> uri <> "\"]"
+    }
 ];
 
 preprocessSandboxString // endDefinition;
@@ -588,10 +701,17 @@ expandSandboxMacros[ expr_HoldComplete ] := Enclose[
 
         msgBag = Internal`Bag[ ];
 
-        expanded = expr /. sp`\[FreeformPrompt][ a___ ] :>
-            With[ { e = ConfirmMatch[ parseControlEquals[ msgBag, HoldComplete @ a ], _$ConditionHold, "Parse" ] },
-                RuleCondition[ e, True ]
-            ];
+        expanded = expr /. {
+            sp`\[FreeformPrompt][ a___ ] :>
+                With[ { e = ConfirmMatch[ parseControlEquals[ msgBag, HoldComplete @ a ], _$ConditionHold, "Parse" ] },
+                    RuleCondition[ e, True ]
+                ]
+            ,
+            sp`InlinedExpression[ uri_String ] :>
+                With[ { e = ConfirmMatch[ parseExpressionURI[ msgBag, uri ], _$ConditionHold, "ExpressionURI" ] },
+                    RuleCondition[ e, True ]
+                ]
+        };
 
         With[ { messages = Internal`BagPart[ msgBag, All ] },
             Replace[ expanded, HoldComplete[ e___ ] :> HoldComplete[ Scan[ Print, messages ]; e ] ]
@@ -601,6 +721,34 @@ expandSandboxMacros[ expr_HoldComplete ] := Enclose[
 ];
 
 expandSandboxMacros // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*parseExpressionURI*)
+parseExpressionURI // beginDefinition;
+
+parseExpressionURI[ messages_, uri_String ] := Enclose[
+    Module[ { expression, message },
+
+        expression = ConfirmMatch[
+            Quiet @ GetExpressionURI[ uri, $ConditionHold ],
+            _Failure|_$ConditionHold,
+            "GetExpressionURI"
+        ];
+
+        If[ FailureQ @ expression
+            ,
+            message = ConfirmBy[ expression[ "Message" ], StringQ, "Message" ];
+            Internal`StuffBag[ messages, "[ERROR] " <> message ];
+            $ConditionHold @@ { expression }
+            ,
+            expression
+        ]
+    ],
+    throwInternalFailure
+];
+
+parseExpressionURI // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1038,6 +1186,7 @@ sandboxResultString0[ HoldComplete[ ___, expr_? outputFormQ ] ] :=
                 stringTrimMiddle[ string, $toolResultStringLength ],
                 "\n\n\n",
                 makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ]
+                (* TODO: this could include instructions about using the URI in future inputs *)
             ]
         ]
     ];
@@ -1055,6 +1204,7 @@ sandboxResultString0[ HoldComplete[ ___, expr_? simpleResultQ ] ] :=
                 ],
                 "\n\n\n",
                 makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ]
+                (* TODO: this could include instructions about using the URI in future inputs *)
             ]
         ]
     ];
@@ -1127,7 +1277,10 @@ makePacketMessages // endDefinition;
 sandboxFormatter // beginDefinition;
 
 sandboxFormatter[ code_String, "Parameters", "code" ] :=
-    RawBoxes @ makeInteractiveCodeCell[ "Wolfram", expandNLInputBoxes @ sandboxStringNormalize @ code ];
+    RawBoxes @ makeInteractiveCodeCell[
+        "Wolfram",
+        inlineExpressionURIs @ expandNLInputBoxes @ sandboxStringNormalize @ code
+    ];
 
 sandboxFormatter[ KeyValuePattern[ "Result" -> result_ ], "Result" ] :=
     sandboxFormatter[ result, "Result" ];
@@ -1138,6 +1291,39 @@ sandboxFormatter[ result_, "Result" ] :=
 sandboxFormatter[ result_, ___ ] := result;
 
 sandboxFormatter // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inlineExpressionURIs*)
+inlineExpressionURIs // beginDefinition;
+
+inlineExpressionURIs[ boxes_ ] := boxes /. {
+    RowBox @ { "InlinedExpression", "[", uri_String, "]" } :>
+        With[ { e = Quiet @ ToExpression[ uri, StandardForm, inlineExpressionURI ] },
+            e /; True
+        ]
+};
+
+inlineExpressionURIs // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inlineExpressionURI*)
+inlineExpressionURI // beginDefinition;
+inlineExpressionURI // Attributes = { HoldAllComplete };
+
+inlineExpressionURI[ uri_String ] :=
+    With[ { expr = Quiet @ catchAlways @ GetExpressionURI[ uri, HoldComplete ] },
+        inlineExpressionURI[ uri, expr ]
+    ];
+
+inlineExpressionURI[ uri_, failed_? FailureQ ] :=
+    ToBoxes @ failed;
+
+inlineExpressionURI[ uri_, HoldComplete[ expr_ ] ] :=
+    MakeBoxes @ expr;
+
+inlineExpressionURI // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
