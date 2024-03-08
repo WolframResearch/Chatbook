@@ -1069,7 +1069,7 @@ sandboxResultString0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*checkDocSearchMessageStrings*)
 checkDocSearchMessageStrings // beginDefinition;
-checkDocSearchMessageStrings[ string_String ] /; KeyExistsQ[ $selectedTools, "DocumentationSearcher" ] := string;
+checkDocSearchMessageStrings[ string_String ] /; toolSelectedQ[ "DocumentationSearcher" ] := string;
 checkDocSearchMessageStrings[ string_String ] := StringDelete[ string, $docSearchMessageStrings ];
 checkDocSearchMessageStrings // endDefinition;
 

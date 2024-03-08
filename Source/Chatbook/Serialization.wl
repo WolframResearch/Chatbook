@@ -722,6 +722,7 @@ toMarkdownImageBox[ graphics_ ] := Enclose[
         img    = ConfirmBy[ rasterizeGraphics @ graphics, ImageQ, "RasterizeGraphics" ];
         uri    = ConfirmBy[ MakeExpressionURI[ "image", img ], StringQ, "RasterID" ];
         needsBasePrompt[ "MarkdownImageBox" ];
+        If[ toolSelectedQ[ "WolframLanguageEvaluator" ], needsBasePrompt[ "MarkdownImageBoxImporting" ] ];
         "\\!\\(\\*MarkdownImageBox[\"" <> uri <> "\"]\\)"
     ],
     throwInternalFailure[ toMarkdownImageBox @ graphics, ## ] &
