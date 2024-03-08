@@ -767,7 +767,9 @@ ensureCompatibleImage // endDefinition;
 
 $useRasterizationCompatibility := Enclose[
     $useRasterizationCompatibility =
-        ! PacletNewerQ[ ConfirmBy[ PacletObject[ "ServiceConnection_OpenAI" ], PacletObjectQ ], "13.3.18" ]
+        Or[ $CloudEvaluation,
+            ! PacletNewerQ[ ConfirmBy[ PacletObject[ "ServiceConnection_OpenAI" ], PacletObjectQ ], "13.3.18" ]
+        ]
 ];
 
 (* ::**************************************************************************************************************:: *)
