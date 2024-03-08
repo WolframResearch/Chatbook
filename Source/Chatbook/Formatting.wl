@@ -82,6 +82,21 @@ $chatGeneratedCellTag = "ChatGeneratedCell";
 
 $simpleToolMethod := $ChatHandlerData[ "ChatNotebookSettings", "ToolMethod" ] === "Simple";
 
+$autoOperatorRenderings = <|
+    "|->" -> "\[Function]",
+    "->"  -> "\[Rule]",
+    ":>"  -> "\[RuleDelayed]",
+    "<="  -> "\[LessEqual]",
+    ">="  -> "\[GreaterEqual]",
+    "!="  -> "\[NotEqual]",
+    "=="  -> "\[Equal]",
+    "<->" -> "\[TwoWayRule]",
+    "[["  -> "\[LeftDoubleBracket]",
+    "]]"  -> "\[RightDoubleBracket]",
+    "<|"  -> "\[LeftAssociation]",
+    "|>"  -> "\[RightAssociation]"
+ |>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Chat Output Formatting*)
@@ -1908,6 +1923,7 @@ adjustBoxSpacing // beginDefinition;
 adjustBoxSpacing[ row: RowBox @ { "(*", ___, "*)" } ] := row;
 adjustBoxSpacing[ RowBox[ items_List ] ] := RowBox[ adjustBoxSpacing /@ DeleteCases[ items, " " ] ];
 adjustBoxSpacing[ "\n" ] := "\[IndentingNewLine]";
+adjustBoxSpacing[ s_String ] /; $CloudEvaluation := Lookup[ $autoOperatorRenderings, s, s ];
 adjustBoxSpacing[ box_ ] := box;
 adjustBoxSpacing // endDefinition;
 
