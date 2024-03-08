@@ -683,7 +683,18 @@ rasterize // endDefinition;
 (*cloudRasterize*)
 cloudRasterize // beginDefinition;
 
-cloudRasterize[ expr_, opts: OptionsPattern[ Rasterize ] ] := Enclose[
+cloudRasterize[ expr_, opts: OptionsPattern[ Rasterize ] ] :=
+    Progress`EvaluateWithProgress[
+        cloudRasterize0[ expr, opts ],
+        <| "Text" -> "Preparing image...", "ElapsedTime" -> Automatic |>
+    ];
+
+cloudRasterize // endDefinition;
+
+
+cloudRasterize0 // beginDefinition;
+
+cloudRasterize0[ expr_, opts: OptionsPattern[ Rasterize ] ] := Enclose[
     Module[ { api, wxf, b64, req, img },
         api = ConfirmMatch[ getCloudRasterizer[ ], _CloudObject, "RasterizerAPI" ];
         wxf = ConfirmBy[ BinarySerialize[ Unevaluated @ expr, PerformanceGoal -> "Size" ], ByteArrayQ, "WXF" ];
@@ -695,7 +706,7 @@ cloudRasterize[ expr_, opts: OptionsPattern[ Rasterize ] ] := Enclose[
     throwInternalFailure
 ];
 
-cloudRasterize // endDefinition;
+cloudRasterize0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
