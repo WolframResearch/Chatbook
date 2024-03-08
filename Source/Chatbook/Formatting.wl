@@ -26,6 +26,7 @@ Begin[ "`Private`" ];
 Needs[ "Wolfram`Chatbook`"          ];
 Needs[ "Wolfram`Chatbook`Common`"   ];
 Needs[ "Wolfram`Chatbook`FrontEnd`" ];
+Needs[ "Wolfram`Chatbook`Sandbox`"  ];
 Needs[ "Wolfram`Chatbook`Tools`"    ];
 
 (* FIXME: Use ParagraphSpacing to squeeze text closer together *)
@@ -1387,7 +1388,7 @@ makeInteractiveCodeCell[ language_, code_String ] /; $dynamicText :=
 makeInteractiveCodeCell[ lang_String? wolframLanguageQ, code_ ] :=
     Module[ { display, handler },
         display = RawBoxes @ Cell[
-            BoxData @ If[ StringQ @ code, stringToBoxes @ code, code ],
+            BoxData @ If[ StringQ @ code, wlStringToBoxes @ code, code ],
             "ChatCode",
             "Input",
             Background -> GrayLevel[ 1 ]
@@ -1426,6 +1427,13 @@ makeInteractiveCodeCell[ language_String, code_String ] :=
     ];
 
 makeInteractiveCodeCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*wlStringToBoxes*)
+wlStringToBoxes // beginDefinition;
+wlStringToBoxes[ string_String ] := inlineExpressionURIs @ stringToBoxes @ preprocessSandboxString @ string;
+wlStringToBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

@@ -661,7 +661,7 @@ webSearch0 // endDefinition;
 (*$webSearchResultTemplate*)
 $webSearchResultTemplate := StringTemplate @ StringJoin[
     "Results\n-------\n\n`1`\n\n-------",
-    If[ KeyExistsQ[ $selectedTools, "WebFetcher" ],
+    If[ toolSelectedQ[ "WebFetcher" ],
         $webSearchFetchPrompt,
         ""
     ]
@@ -1131,7 +1131,7 @@ GetExpressionURIs[ str_String, wrapper_, opts: OptionsPattern[ ] ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*GetExpressionURI*)
-GetExpressionURI // ClearAll;
+GetExpressionURI // beginDefinition;
 GetExpressionURI // Options = { Tooltip -> Automatic };
 
 GetExpressionURI[ uri_, opts: OptionsPattern[ ] ] :=
@@ -1145,7 +1145,7 @@ GetExpressionURI[ uri_String, wrapper_, opts: OptionsPattern[ ] ] := catchMine @
         held = ConfirmMatch[ getExpressionURI[ uri, OptionValue[ Tooltip ] ], _HoldComplete, "GetExpressionURI" ];
         wrapper @@ held
     ],
-    throwInternalFailure[ GetExpressionURI[ uri, wrapper ], ## ] &
+    throwInternalFailure
 ];
 
 GetExpressionURI[ All, wrapper_, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
@@ -1154,8 +1154,10 @@ GetExpressionURI[ All, wrapper_, opts: OptionsPattern[ ] ] := catchMine @ Enclos
         ConfirmAssert[ AllTrue[ attachments, MatchQ[ _HoldComplete ] ], "HeldAttachments" ];
         Replace[ attachments, HoldComplete[ a___ ] :> RuleCondition @ wrapper @ a, { 1 } ]
     ],
-    throwInternalFailure[ GetExpressionURI[ All, wrapper ], ## ] &
+    throwInternalFailure
 ];
+
+GetExpressionURI // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1175,15 +1177,33 @@ getExpressionURI0[ str_String ] :=
 
 getExpressionURI0[ uri_String ] := getExpressionURI0[ None, uri ];
 
+getExpressionURI0[ tooltip_, uri_String? expressionURIKeyQ ] :=
+    getExpressionURI0[ tooltip, uri, <| "Domain" -> uri |> ];
+
 getExpressionURI0[ tooltip_, uri_String ] := getExpressionURI0[ tooltip, uri, URLParse @ uri ];
 
-getExpressionURI0[ tooltip_, uri_, as: KeyValuePattern @ { "Scheme" -> $$expressionScheme, "Domain" -> key_ } ] :=
-    Enclose[
-        ConfirmMatch[ displayAttachment[ uri, tooltip, key ], _HoldComplete, "DisplayAttachment" ],
-        throwInternalFailure[ getExpressionURI0[ tooltip, uri, as ], ## ] &
-    ];
+getExpressionURI0[ tooltip_, uri_, as: KeyValuePattern[ "Domain" -> key_? expressionURIKeyQ ] ] :=  Enclose[
+    ConfirmMatch[ displayAttachment[ uri, tooltip, key ], _HoldComplete, "DisplayAttachment" ],
+    throwInternalFailure
+];
+
+getExpressionURI0[ tooltip_, uri_String, as_ ] :=
+    throwFailure[ "InvalidExpressionURI", uri ];
 
 getExpressionURI0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*expressionURIKeyQ*)
+expressionURIKeyQ // beginDefinition;
+
+expressionURIKeyQ[ key_String ] :=
+    StringMatchQ[ key, "content-" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ];
+
+expressionURIKeyQ[ _ ] :=
+    False;
+
+expressionURIKeyQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1202,7 +1222,7 @@ displayAttachment[ uri_, tooltip_String, key_ ] := Enclose[
                 HoldComplete @ expr
             ]
     ],
-    throwInternalFailure[ displayAttachment[ uri, tooltip, key ], ## ] &
+    throwInternalFailure
 ];
 
 displayAttachment // endDefinition;
@@ -1307,12 +1327,24 @@ expressionURILabel // endDefinition;
 (*expressionURIScheme*)
 expressionURIScheme // beginDefinition;
 expressionURIScheme // Attributes = { HoldAllComplete };
-expressionURIScheme[ _Video ] := (needsBasePrompt[ "SpecialURIVideo" ]; "video");
-expressionURIScheme[ _Audio ] := (needsBasePrompt[ "SpecialURIAudio" ]; "audio");
-expressionURIScheme[ _Manipulate|_DynamicModule|_Dynamic ] := (needsBasePrompt[ "SpecialURIDynamic" ]; "dynamic");
+expressionURIScheme[ _Video ] := (needsURIPrompt[ "SpecialURIVideo" ]; "video");
+expressionURIScheme[ _Audio ] := (needsURIPrompt[ "SpecialURIAudio" ]; "audio");
+expressionURIScheme[ _Manipulate|_DynamicModule|_Dynamic ] := (needsURIPrompt[ "SpecialURIDynamic" ]; "dynamic");
 expressionURIScheme[ gfx_ ] /; graphicsQ @ Unevaluated @ gfx := "attachment";
 expressionURIScheme[ _ ] := "expression";
 expressionURIScheme // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*needsURIPrompt*)
+needsURIPrompt // beginDefinition;
+
+needsURIPrompt[ name_String ] := (
+    needsBasePrompt[ name ];
+    If[ toolSelectedQ[ "WolframLanguageEvaluator" ], needsBasePrompt[ "SpecialURIImporting" ] ]
+);
+
+needsURIPrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

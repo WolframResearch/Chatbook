@@ -10,6 +10,7 @@ HoldComplete[
     `$toolEvaluationResults;
     `$toolOptions;
     `$toolResultStringLength;
+    `expressionURIKeyQ;
     `getToolByName;
     `getToolDisplayName;
     `getToolFormattingFunction;
@@ -20,11 +21,12 @@ HoldComplete[
     `makeToolResponseString;
     `resolveTools;
     `simpleToolRequestParser;
-    `toolShortName;
     `toolData;
     `toolName;
     `toolOptionValue;
     `toolRequestParser;
+    `toolSelectedQ;
+    `toolShortName;
     `withToolBox;
 ];
 
