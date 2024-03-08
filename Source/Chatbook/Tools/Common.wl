@@ -340,6 +340,15 @@ formatToolCallExample // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*toolSelectedQ*)
+toolSelectedQ // beginDefinition;
+toolSelectedQ[ name_String ] := KeyExistsQ[ $selectedTools, name ];
+toolSelectedQ[ tools_List ] := AllTrue[ tools, toolSelectedQ ];
+toolSelectedQ[ tool_ ] := KeyExistsQ[ $selectedTools, toolName @ tool ];
+toolSelectedQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*withToolBox*)
 withToolBox // beginDefinition;
 withToolBox // Attributes = { HoldFirst };
