@@ -20,11 +20,12 @@ HoldComplete[
     `makeToolResponseString;
     `resolveTools;
     `simpleToolRequestParser;
-    `toolShortName;
     `toolData;
     `toolName;
     `toolOptionValue;
     `toolRequestParser;
+    `toolSelectedQ;
+    `toolShortName;
     `withToolBox;
 ];
 

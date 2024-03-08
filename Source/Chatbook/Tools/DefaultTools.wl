@@ -661,7 +661,7 @@ webSearch0 // endDefinition;
 (*$webSearchResultTemplate*)
 $webSearchResultTemplate := StringTemplate @ StringJoin[
     "Results\n-------\n\n`1`\n\n-------",
-    If[ KeyExistsQ[ $selectedTools, "WebFetcher" ],
+    If[ toolSelectedQ[ "WebFetcher" ],
         $webSearchFetchPrompt,
         ""
     ]
