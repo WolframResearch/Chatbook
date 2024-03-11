@@ -760,6 +760,7 @@ inferMultimodalTypes0 // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*ensureCompatibleImage*)
 ensureCompatibleImage // beginDefinition;
+ensureCompatibleImage[ img_RawBoxes ] := rasterize @ img; (* Workaround for 446030 *)
 ensureCompatibleImage[ img_ ] /; $useRasterizationCompatibility && ! Image`PossibleImageQ @ img := rasterize @ img;
 ensureCompatibleImage[ img_ ] := img;
 ensureCompatibleImage // endDefinition;
