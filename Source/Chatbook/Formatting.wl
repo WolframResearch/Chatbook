@@ -98,11 +98,14 @@ $autoOperatorRenderings = <|
     "|>"  -> "\[RightAssociation]"
  |>;
 
+ $expressionURIPlaceholder = "\[LeftSkeleton]\[Ellipsis]\[RightSkeleton]";
+
 (* ::**************************************************************************************************************:: *)
  (* ::Section::Closed:: *)
  (*StringToBoxes*)
 StringToBoxes // beginDefinition;
 StringToBoxes[ string_String? StringQ ] := catchAlways[ stringToBoxes @ string, StringToBoxes ];
+StringToBoxes[ string_String? StringQ, "WL" ] := catchAlways[ wlStringToBoxes @ string, StringToBoxes ];
 StringToBoxes // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1920,8 +1923,16 @@ unescapeInlineMarkdown // endDefinition;
 (* ::Subsection::Closed:: *)
 (*stringToBoxes*)
 stringToBoxes // beginDefinition;
-stringToBoxes[ s_String ] /; $dynamicText := s;
-stringToBoxes[ s_String ] := adjustBoxSpacing @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ s;
+
+stringToBoxes[ s_String ] /; $dynamicText := StringReplace[
+    s,
+    "InlinedExpression[\"" ~~ LetterCharacter.. ~~ "://" ~~ (LetterCharacter|DigitCharacter|"-").. ~~ "\"]" :>
+        $expressionURIPlaceholder
+];
+
+stringToBoxes[ s_String ] :=
+    adjustBoxSpacing @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ s;
+
 stringToBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
