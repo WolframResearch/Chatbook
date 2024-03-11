@@ -1398,7 +1398,16 @@ smallBoxesQ[ TemplateBox[ boxes_List, "CopyTag", ___ ] ] := AnyTrue[ boxes, smal
 smallBoxesQ[ RowBox @ { ___, StyleBox[ _, "NonInterpretableSummary", ___ ], ___ } ] := True;
 smallBoxesQ[ _InterpretationBox ] := True;
 smallBoxesQ[ _GraphicsBox | _Graphics3DBox ] := True;
+
+smallBoxesQ[ boxes_RowBox ] :=
+    Module[ { graphicsCount, withoutGraphics },
+        graphicsCount   = 0;
+        withoutGraphics = boxes /. _GraphicsBox|_Graphics3DBox :> RuleCondition[ graphicsCount++; "" ];
+        graphicsCount  <= 3 && ByteCount @ withoutGraphics <= 10000
+    ];
+
 smallBoxesQ[ boxes_ ] := ByteCount @ boxes <= 10000;
+
 smallBoxesQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
