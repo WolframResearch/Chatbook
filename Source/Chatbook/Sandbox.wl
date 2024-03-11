@@ -730,9 +730,8 @@ parseExpressionURI // beginDefinition;
 
 parseExpressionURI[ messages_, uri_String ] := Enclose[
     Module[ { expression, message },
-
         expression = ConfirmMatch[
-            Quiet @ GetExpressionURI[ uri, $ConditionHold ],
+            catchAlways @ Quiet @ GetExpressionURI[ uri, $ConditionHold ],
             _Failure|_$ConditionHold,
             "GetExpressionURI"
         ];
