@@ -1097,8 +1097,6 @@ The temporary directory is located at C:\\Users\\UserName\\AppData\\Local\\Temp.
 $expressionSchemes = { "attachment", "audio", "dynamic", "expression", "video" };
 $$expressionScheme = Alternatives @@ $expressionSchemes;
 
-Chatbook::URIUnavailable = "The expression URI `1` is no longer available.";
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*FormatToolResponse*)
