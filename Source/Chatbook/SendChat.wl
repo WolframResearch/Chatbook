@@ -674,6 +674,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                     },
                     taskFinishedHandler[ #1 ];
                     Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
+                    logUsage @ container;
                     checkResponse[ $settings, Unevaluated @ container, cellObject, #1 ]
                 ]
             ]

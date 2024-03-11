@@ -26,7 +26,7 @@ Quiet[
             PreemptProtect[
                 Quiet[
                     Unprotect[ "Wolfram`Chatbook`*" ];
-                    Remove[ "Wolfram`Chatbook`*" ];
+                    ClearAll[ "Wolfram`Chatbook`*" ];
                     Remove[ "Wolfram`Chatbook`*`*" ],
                     { Remove::rmnsm }
                 ];
