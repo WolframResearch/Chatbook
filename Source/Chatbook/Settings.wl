@@ -908,13 +908,16 @@ currentChatSettings // endDefinition;
 currentChatSettings0 // beginDefinition;
 
 currentChatSettings0[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession ] :=
-    Association[
+    mergeChatSettings @ Map[
+        evaluateSettings,
+        {
             $defaultChatSettings,
             $cachedGlobalSettings,
             Replace[
                 Association @ absoluteCurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ],
                 Except[ _? AssociationQ ] :> <| |>
             ]
+        }
     ];
 
 currentChatSettings0[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := Replace[
