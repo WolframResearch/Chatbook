@@ -1207,6 +1207,22 @@ expressionURIKeyQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*expressionURIKey*)
+expressionURIKey // beginDefinition;
+
+expressionURIKey[ str_String ] := expressionURIKey[ str ] = FixedPoint[
+    StringDelete @ {
+        StartOfString ~~ "![" ~~ __ ~~ "](",
+        StartOfString ~~ LetterCharacter.. ~~ "://",
+        ")"~~EndOfString
+    },
+    str
+];
+
+expressionURIKey // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*displayAttachment*)
 displayAttachment // beginDefinition;
 

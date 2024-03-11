@@ -67,6 +67,7 @@ $webSessionVisible       = False;
 
 $DefaultToolOptions = <|
     "WolframLanguageEvaluator" -> <|
+        "AppendURIPrompt"          -> False,
         "AllowedExecutePaths"      -> Automatic,
         "AllowedReadPaths"         -> All,
         "AllowedWritePaths"        -> Automatic,
