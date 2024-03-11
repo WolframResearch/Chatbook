@@ -1177,7 +1177,7 @@ sandboxResultString0[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result
             },
             "\n"
         ],
-        HoldComplete @ result
+        Flatten @ HoldComplete @ result
     ];
 
 sandboxResultString0[ HoldComplete[ ___, expr_? outputFormQ ] ] :=
