@@ -132,7 +132,15 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
         prompted  = addPrompts[ settings, messages0 ];
 
         messages = prompted /.
-            s_String :> RuleCondition @ StringTrim @ StringReplace[ s, "%%BASE_PROMPT%%" :> $basePrompt ];
+            s_String :> RuleCondition @ StringTrim @ StringReplace[
+                s,
+                {
+                    "%%BASE_PROMPT%%" :> $basePrompt,
+                    (* cSpell: ignore ENDRESULT *)
+                    "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :>
+                        "\nENDRESULT\n"
+                }
+            ];
 
         processed = applyProcessingFunction[ settings, "ChatMessages", HoldComplete[ messages, $ChatHandlerData ] ];
 
