@@ -960,7 +960,7 @@ absoluteCurrentValue // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*mergeChatSettings*)
 mergeChatSettings // beginDefinition;
-mergeChatSettings[ a_List ] := mergeChatSettings0 @ a //. $mergeSettingsDispatch;
+mergeChatSettings[ a_List ] := mergeChatSettings[ a ] = mergeChatSettings0 @ a //. $mergeSettingsDispatch;
 mergeChatSettings // endDefinition;
 
 mergeChatSettings0 // beginDefinition;
