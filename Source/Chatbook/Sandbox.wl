@@ -1218,7 +1218,7 @@ appendURIInstructions // endDefinition;
 appendURIInstructions0 // beginDefinition;
 
 appendURIInstructions0[ string_String, HoldComplete[ ___, expr_? appendURIQ ] ] := Enclose[
-    Module[ { uri, key },
+    Module[ { uri, key, message },
 
         uri = ConfirmBy[
             makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ],
@@ -1226,14 +1226,10 @@ appendURIInstructions0[ string_String, HoldComplete[ ___, expr_? appendURIQ ] ] 
             "ExpressionURI"
         ];
 
-        key = ConfirmBy[ expressionURIKey @ uri, StringQ, "ExpressionURIKey" ];
+        key     = ConfirmBy[ expressionURIKey @ uri, StringQ, "ExpressionURIKey" ];
+        message = ConfirmBy[ TemplateApply[ $uriPromptTemplate, key ], StringQ, "URIPrompt" ];
 
-        StringJoin[
-            string,
-            "\n\n\
-(* You can inline this expression in future evaluator inputs or WL code blocks (with proper formatting) using \
-the syntax: <!expression://"<>key<>"!> *)"
-        ]
+        string <> "\n\n" <> message
     ],
     throwInternalFailure
 ];
@@ -1241,6 +1237,17 @@ the syntax: <!expression://"<>key<>"!> *)"
 appendURIInstructions0[ string_String, _ ] := string;
 
 appendURIInstructions0 // endDefinition;
+
+
+$uriPromptTemplate = StringTemplate[ "\
+(* You can inline this expression in future evaluator inputs or WL code blocks (with proper formatting) using \
+the syntax: <!expression://%%1%%!>
+
+Always use this syntax when referring to this expression instead of writing it out manually.
+This syntax is only available to you. Do not mention it to the user. *)\
+", Delimiters -> "%%" ];
+
+(* FIXME: there should be post processing that automatically strips this message if the URI is no longer available *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1359,15 +1366,40 @@ inlineExpressionURI[ uri_String ] :=
     ];
 
 inlineExpressionURI[ uri_, failed_? FailureQ ] :=
-    ToBoxes @ failed;
+    makeCachedBoxes @ failed;
+
+inlineExpressionURI[ uri_, HoldComplete[ expr_ ] ] /; graphicsQ @ Unevaluated @ expr :=
+    makeCachedBoxes @ expr;
 
 inlineExpressionURI[ uri_, HoldComplete[ expr_ ] ] :=
-    If[ graphicsQ @ Unevaluated @ expr || ByteCount @ expr <= 10000,
-        MakeBoxes @ expr,
-        MakeBoxes @ IconizedObject[ expr, Automatic, Method -> Compress ]
+    With[ { boxes = makeCachedBoxes @ expr },
+        If[ smallBoxesQ @ boxes,
+            boxes,
+            makeCachedBoxes @ IconizedObject[ expr, Automatic, Method -> Compress ]
+        ]
     ];
 
 inlineExpressionURI // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeCachedBoxes*)
+makeCachedBoxes // beginDefinition;
+makeCachedBoxes // Attributes = { HoldAllComplete };
+makeCachedBoxes[ expr_ ] := Verbatim[ makeCachedBoxes @ expr ] = MakeBoxes @ expr;
+makeCachedBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*smallBoxesQ*)
+smallBoxesQ // beginDefinition;
+smallBoxesQ[ TagBox[ box_, ___ ] ] := smallBoxesQ @ box;
+smallBoxesQ[ TemplateBox[ boxes_List, "CopyTag", ___ ] ] := AnyTrue[ boxes, smallBoxesQ ];
+smallBoxesQ[ RowBox @ { ___, StyleBox[ _, "NonInterpretableSummary", ___ ], ___ } ] := True;
+smallBoxesQ[ _InterpretationBox ] := True;
+smallBoxesQ[ _GraphicsBox | _Graphics3DBox ] := True;
+smallBoxesQ[ boxes_ ] := ByteCount @ boxes <= 10000;
+smallBoxesQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
