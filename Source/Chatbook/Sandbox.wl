@@ -32,9 +32,10 @@ sp`InlinedExpression;
 (* ::Section::Closed:: *)
 (*Configuration*)
 $SandboxKernel             = None;
-$sandboxPingTimeout       := toolOptionValue[ "WolframLanguageEvaluator", "PingTimeConstraint"       ];
-$sandboxEvaluationTimeout := toolOptionValue[ "WolframLanguageEvaluator", "EvaluationTimeConstraint" ];
+$appendURIPrompt          := toolOptionValue[ "WolframLanguageEvaluator", "AppendURIPrompt"          ];
 $includeDefinitions       := toolOptionValue[ "WolframLanguageEvaluator", "IncludeDefinitions"       ];
+$sandboxEvaluationTimeout := toolOptionValue[ "WolframLanguageEvaluator", "EvaluationTimeConstraint" ];
+$sandboxPingTimeout       := toolOptionValue[ "WolframLanguageEvaluator", "PingTimeConstraint"       ];
 $cloudEvaluatorLocation    = "/Chatbook/Tools/WolframLanguageEvaluator/Evaluate";
 $cloudLineNumber           = 1;
 $cloudSession              = None;
@@ -1169,25 +1170,22 @@ sandboxResultString0 // beginDefinition;
 sandboxResultString0[ result_, packets_ ] := sandboxResultString0 @ result;
 
 sandboxResultString0[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result" -> result_ } ], packets_ ] :=
-    StringRiffle[
-        Flatten @ {
-            makePacketMessages[ ToString @ line, packets ],
-            "Out[" <> ToString @ line <> "]= " <> sandboxResultString0 @ Flatten @ HoldComplete @ result
-        },
-        "\n"
+    appendURIInstructions[
+        StringRiffle[
+            Flatten @ {
+                makePacketMessages[ ToString @ line, packets ],
+                "Out[" <> ToString @ line <> "]= " <> sandboxResultString0 @ Flatten @ HoldComplete @ result
+            },
+            "\n"
+        ],
+        HoldComplete @ result
     ];
 
 sandboxResultString0[ HoldComplete[ ___, expr_? outputFormQ ] ] :=
     With[ { string = fixLineEndings @ ToString[ Unevaluated @ expr, PageWidth -> 100 ] },
         If[ StringLength @ string < $toolResultStringLength,
             If[ StringContainsQ[ string, "\n" ], "\n" <> string, string ],
-            StringJoin[
-                "\n",
-                stringTrimMiddle[ string, $toolResultStringLength ],
-                "\n\n\n",
-                makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ]
-                (* TODO: this could include instructions about using the URI in future inputs *)
-            ]
+            stringTrimMiddle[ string, $toolResultStringLength ]
         ]
     ];
 
@@ -1195,16 +1193,10 @@ sandboxResultString0[ HoldComplete[ ___, expr_? simpleResultQ ] ] :=
     With[ { string = fixLineEndings @ ToString[ Unevaluated @ expr, InputForm, PageWidth -> 100 ] },
         If[ StringLength @ string < $toolResultStringLength,
             If[ StringContainsQ[ string, "\n" ], "\n" <> string, string ],
-            StringJoin[
-                "\n",
-                fixLineEndings @ ToString[
-                    Unevaluated @ Short[ expr, Floor[ $toolResultStringLength / 100 ] ],
-                    OutputForm,
-                    PageWidth -> 100
-                ],
-                "\n\n\n",
-                makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ]
-                (* TODO: this could include instructions about using the URI in future inputs *)
+            fixLineEndings @ ToString[
+                Unevaluated @ Short[ expr, Floor[ $toolResultStringLength / 100 ] ],
+                OutputForm,
+                PageWidth -> 100
             ]
         ]
     ];
@@ -1214,6 +1206,56 @@ sandboxResultString0[ HoldComplete[ ___, expr_ ] ] := makeExpressionURI @ Uneval
 sandboxResultString0[ HoldComplete[ ] ] := "Null";
 
 sandboxResultString0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*appendURIInstructions*)
+appendURIInstructions // beginDefinition;
+appendURIInstructions[ string_String, held_HoldComplete ] /; $appendURIPrompt := appendURIInstructions0[ string, held ];
+appendURIInstructions[ string_String, _ ] := string;
+appendURIInstructions // endDefinition;
+
+
+appendURIInstructions0 // beginDefinition;
+
+appendURIInstructions0[ string_String, HoldComplete[ ___, expr_? appendURIQ ] ] := Enclose[
+    Module[ { uri, key },
+
+        uri = ConfirmBy[
+            makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ],
+            StringQ,
+            "ExpressionURI"
+        ];
+
+        key = ConfirmBy[ expressionURIKey @ uri, StringQ, "ExpressionURIKey" ];
+
+        StringJoin[
+            string,
+            "\n\n\
+(* You can inline this expression in future evaluator inputs or WL code blocks (with proper formatting) using \
+the syntax: <!expression://"<>key<>"!> *)"
+        ]
+    ],
+    throwInternalFailure
+];
+
+appendURIInstructions0[ string_String, _ ] := string;
+
+appendURIInstructions0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*appendURIQ*)
+appendURIQ // beginDefinition;
+appendURIQ // Attributes = { HoldAllComplete };
+
+appendURIQ[ expr_ ] := TrueQ @ Or[
+    ByteCount @ Unevaluated @ expr > 500,
+    graphicsQ @ Unevaluated @ expr,
+    ! FreeQ[ Unevaluated @ expr, _Quantity|_Entity|_EntityClass|_EntityProperty|_DateObject ]
+];
+
+appendURIQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1321,7 +1363,10 @@ inlineExpressionURI[ uri_, failed_? FailureQ ] :=
     ToBoxes @ failed;
 
 inlineExpressionURI[ uri_, HoldComplete[ expr_ ] ] :=
-    MakeBoxes @ expr;
+    If[ graphicsQ @ Unevaluated @ expr || ByteCount @ expr <= 10000,
+        MakeBoxes @ expr,
+        MakeBoxes @ IconizedObject[ expr, Automatic, Method -> Compress ]
+    ];
 
 inlineExpressionURI // endDefinition;
 
