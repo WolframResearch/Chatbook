@@ -23,6 +23,8 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$InstalledTools;
 `$SandboxKernel;
 `$ToolFunctions;
+`AbsoluteCurrentChatSettings;
+`AppendURIInstructions;
 `CellToChatMessage;
 `Chatbook;
 `ChatbookAction;
@@ -121,6 +123,8 @@ Protect[
     $DefaultTools,
     $InstalledTools,
     $ToolFunctions,
+    AbsoluteCurrentChatSettings,
+    AppendURIInstructions,
     CellToChatMessage,
     Chatbook,
     ChatbookAction,
