@@ -461,8 +461,11 @@ tokenCount // endDefinition;
 (*logUsage*)
 logUsage // beginDefinition;
 
-logUsage[ KeyValuePattern[ "FullContent" -> response_String ] ] :=
+logUsage[ KeyValuePattern[ "FullContent" -> response_ ] ] :=
     logUsage @ response;
+
+logUsage[ _ProgressIndicator ] :=
+    Null;
 
 logUsage[ response_String ] := logUsage[
     $ChatHandlerData[ "ChatNotebookSettings" ],
