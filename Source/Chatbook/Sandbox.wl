@@ -32,9 +32,10 @@ sp`InlinedExpression;
 (* ::Section::Closed:: *)
 (*Configuration*)
 $SandboxKernel             = None;
-$sandboxPingTimeout       := toolOptionValue[ "WolframLanguageEvaluator", "PingTimeConstraint"       ];
-$sandboxEvaluationTimeout := toolOptionValue[ "WolframLanguageEvaluator", "EvaluationTimeConstraint" ];
+$appendURIPrompt          := toolOptionValue[ "WolframLanguageEvaluator", "AppendURIPrompt"          ];
 $includeDefinitions       := toolOptionValue[ "WolframLanguageEvaluator", "IncludeDefinitions"       ];
+$sandboxEvaluationTimeout := toolOptionValue[ "WolframLanguageEvaluator", "EvaluationTimeConstraint" ];
+$sandboxPingTimeout       := toolOptionValue[ "WolframLanguageEvaluator", "PingTimeConstraint"       ];
 $cloudEvaluatorLocation    = "/Chatbook/Tools/WolframLanguageEvaluator/Evaluate";
 $cloudLineNumber           = 1;
 $cloudSession              = None;
@@ -729,9 +730,8 @@ parseExpressionURI // beginDefinition;
 
 parseExpressionURI[ messages_, uri_String ] := Enclose[
     Module[ { expression, message },
-
         expression = ConfirmMatch[
-            Quiet @ GetExpressionURI[ uri, $ConditionHold ],
+            catchAlways @ Quiet @ GetExpressionURI[ uri, $ConditionHold ],
             _Failure|_$ConditionHold,
             "GetExpressionURI"
         ];
@@ -1123,9 +1123,26 @@ addWarnings // endDefinition;
 addMessageHandler // beginDefinition;
 
 addMessageHandler[ HoldComplete[ eval_ ] ] :=
-    HoldComplete @ WithCleanup[
-        eval,
-        If[ MatchQ[ $MessageList, { __ } ], Message[ General::messages ] ]
+    With[ { nlSym = Entity|EntityProperty|EntityClass|Quantity|DateObject|ExampleData },
+        HoldComplete @ Module[ { $issueNLMessage = False, $nlMessageType },
+            WithCleanup[
+                Internal`HandlerBlock[
+                    {
+                        "Message",
+                        Function[
+                            If[ #[[ 2 ]] && ! FreeQ[ #, nlSym ],
+                                $issueNLMessage = True;
+                                $nlMessageType  = FirstCase[ #, nlSym, None, Infinity, Heads -> True ]
+                            ]
+                        ]
+                    },
+                    eval
+                ],
+                (* cSpell: ignore usenl *)
+                If[ $issueNLMessage, Message[ General::usenl, $nlMessageType ] ];
+                If[ MatchQ[ $MessageList, { __ } ], Message[ General::messages ] ]
+            ]
+        ]
     ];
 
 addMessageHandler // endDefinition;
@@ -1169,25 +1186,22 @@ sandboxResultString0 // beginDefinition;
 sandboxResultString0[ result_, packets_ ] := sandboxResultString0 @ result;
 
 sandboxResultString0[ HoldComplete[ KeyValuePattern @ { "Line" -> line_, "Result" -> result_ } ], packets_ ] :=
-    StringRiffle[
-        Flatten @ {
-            makePacketMessages[ ToString @ line, packets ],
-            "Out[" <> ToString @ line <> "]= " <> sandboxResultString0 @ Flatten @ HoldComplete @ result
-        },
-        "\n"
+    appendURIInstructions[
+        StringRiffle[
+            Flatten @ {
+                makePacketMessages[ ToString @ line, packets ],
+                "Out[" <> ToString @ line <> "]= " <> sandboxResultString0 @ Flatten @ HoldComplete @ result
+            },
+            "\n"
+        ],
+        Flatten @ HoldComplete @ result
     ];
 
 sandboxResultString0[ HoldComplete[ ___, expr_? outputFormQ ] ] :=
     With[ { string = fixLineEndings @ ToString[ Unevaluated @ expr, PageWidth -> 100 ] },
         If[ StringLength @ string < $toolResultStringLength,
             If[ StringContainsQ[ string, "\n" ], "\n" <> string, string ],
-            StringJoin[
-                "\n",
-                stringTrimMiddle[ string, $toolResultStringLength ],
-                "\n\n\n",
-                makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ]
-                (* TODO: this could include instructions about using the URI in future inputs *)
-            ]
+            stringTrimMiddle[ string, $toolResultStringLength ]
         ]
     ];
 
@@ -1195,16 +1209,10 @@ sandboxResultString0[ HoldComplete[ ___, expr_? simpleResultQ ] ] :=
     With[ { string = fixLineEndings @ ToString[ Unevaluated @ expr, InputForm, PageWidth -> 100 ] },
         If[ StringLength @ string < $toolResultStringLength,
             If[ StringContainsQ[ string, "\n" ], "\n" <> string, string ],
-            StringJoin[
-                "\n",
-                fixLineEndings @ ToString[
-                    Unevaluated @ Short[ expr, Floor[ $toolResultStringLength / 100 ] ],
-                    OutputForm,
-                    PageWidth -> 100
-                ],
-                "\n\n\n",
-                makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ]
-                (* TODO: this could include instructions about using the URI in future inputs *)
+            fixLineEndings @ ToString[
+                Unevaluated @ Short[ expr, Floor[ $toolResultStringLength / 100 ] ],
+                OutputForm,
+                PageWidth -> 100
             ]
         ]
     ];
@@ -1214,6 +1222,73 @@ sandboxResultString0[ HoldComplete[ ___, expr_ ] ] := makeExpressionURI @ Uneval
 sandboxResultString0[ HoldComplete[ ] ] := "Null";
 
 sandboxResultString0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*appendURIInstructions*)
+appendURIInstructions // beginDefinition;
+
+appendURIInstructions[ as: KeyValuePattern @ { "String" -> s_, "Result" -> expr_ } ] :=
+    <| as, "String" -> appendURIInstructions[ s, expr ] |>;
+
+appendURIInstructions[ string_String, expr_ ] /; $appendURIPrompt :=
+    appendURIInstructions0[ string, expr ];
+
+appendURIInstructions[ string_String, _ ] :=
+    string;
+
+appendURIInstructions // endDefinition;
+
+
+appendURIInstructions0 // beginDefinition;
+
+appendURIInstructions0[ string_String, HoldForm[ expr_ ] ] := appendURIInstructions0[ string, HoldComplete @ expr ];
+
+appendURIInstructions0[ string_String, HoldComplete[ ___, expr_? appendURIQ ] ] := Enclose[
+    Module[ { uri, key, message },
+
+        uri = ConfirmBy[
+            makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ],
+            StringQ,
+            "ExpressionURI"
+        ];
+
+        key     = ConfirmBy[ expressionURIKey @ uri, StringQ, "ExpressionURIKey" ];
+        message = ConfirmBy[ TemplateApply[ $uriPromptTemplate, key ], StringQ, "URIPrompt" ];
+
+        string <> "\n\n" <> message
+    ],
+    throwInternalFailure
+];
+
+appendURIInstructions0[ string_String, _ ] := string;
+
+appendURIInstructions0 // endDefinition;
+
+
+$uriPromptTemplate = StringTemplate[ "\
+(* You can inline this expression in future evaluator inputs or WL code blocks (with proper formatting) using \
+the syntax: <!expression://%%1%%!>
+
+Always use this syntax when referring to this expression instead of writing it out manually.
+This syntax is only available to you. Do not mention it to the user. *)\
+", Delimiters -> "%%" ];
+
+(* FIXME: there should be post processing that automatically strips this message if the URI is no longer available *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*appendURIQ*)
+appendURIQ // beginDefinition;
+appendURIQ // Attributes = { HoldAllComplete };
+
+appendURIQ[ expr_ ] := TrueQ @ Or[
+    ByteCount @ Unevaluated @ expr > 500,
+    graphicsQ @ Unevaluated @ expr,
+    ! FreeQ[ Unevaluated @ expr, _Quantity|_Entity|_EntityClass|_EntityProperty|_DateObject ]
+];
+
+appendURIQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1318,12 +1393,49 @@ inlineExpressionURI[ uri_String ] :=
     ];
 
 inlineExpressionURI[ uri_, failed_? FailureQ ] :=
-    ToBoxes @ failed;
+    makeCachedBoxes @ failed;
+
+inlineExpressionURI[ uri_, HoldComplete[ expr_ ] ] /; graphicsQ @ Unevaluated @ expr :=
+    makeCachedBoxes @ expr;
 
 inlineExpressionURI[ uri_, HoldComplete[ expr_ ] ] :=
-    MakeBoxes @ expr;
+    With[ { boxes = makeCachedBoxes @ expr },
+        If[ smallBoxesQ @ boxes,
+            boxes,
+            makeCachedBoxes @ IconizedObject[ expr, Automatic, Method -> Compress ]
+        ]
+    ];
 
 inlineExpressionURI // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeCachedBoxes*)
+makeCachedBoxes // beginDefinition;
+makeCachedBoxes // Attributes = { HoldAllComplete };
+makeCachedBoxes[ expr_ ] := Verbatim[ makeCachedBoxes @ expr ] = MakeBoxes @ expr;
+makeCachedBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*smallBoxesQ*)
+smallBoxesQ // beginDefinition;
+smallBoxesQ[ TagBox[ box_, ___ ] ] := smallBoxesQ @ box;
+smallBoxesQ[ TemplateBox[ boxes_List, "CopyTag", ___ ] ] := AnyTrue[ boxes, smallBoxesQ ];
+smallBoxesQ[ RowBox @ { ___, StyleBox[ _, "NonInterpretableSummary", ___ ], ___ } ] := True;
+smallBoxesQ[ _InterpretationBox ] := True;
+smallBoxesQ[ _GraphicsBox | _Graphics3DBox ] := True;
+
+smallBoxesQ[ boxes_RowBox ] :=
+    Module[ { graphicsCount, withoutGraphics },
+        graphicsCount   = 0;
+        withoutGraphics = boxes /. _GraphicsBox|_Graphics3DBox :> RuleCondition[ graphicsCount++; "" ];
+        graphicsCount  <= 3 && ByteCount @ withoutGraphics <= 10000
+    ];
+
+smallBoxesQ[ boxes_ ] := ByteCount @ boxes <= 10000;
+
+smallBoxesQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1348,6 +1460,13 @@ expandNLInputBoxes0[ HoldComplete[ q_String, p_ ] ] := expandNLInputBoxes0 @ San
 expandNLInputBoxes0[ KeyValuePattern[ "Parse" -> HoldComplete[ expr_ ] ] ] := MakeBoxes @ expr;
 expandNLInputBoxes0[ _ ] := $Failed;
 expandNLInputBoxes0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*AppendURIInstructions*)
+AppendURIInstructions // beginDefinition;
+AppendURIInstructions[ arg__ ] := catchMine @ Block[ { $appendURIPrompt = True }, appendURIInstructions @ arg ];
+AppendURIInstructions // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

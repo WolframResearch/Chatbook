@@ -164,7 +164,8 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "ServerOverloaded"                -> "The server is currently overloaded with other requests. Please try again later.",
     "ToolNotFound"                    -> "Tool `1` not found.",
     "UnknownResponse"                 -> "Unexpected response from server",
-    "UnknownStatusCode"               -> "Unexpected response from server with status code `StatusCode`"
+    "UnknownStatusCode"               -> "Unexpected response from server with status code `StatusCode`",
+    "URIUnavailable"                  -> "The URI `1` is from a previous kernel session and no longer available."
 |> ];
 
 (* ::**************************************************************************************************************:: *)

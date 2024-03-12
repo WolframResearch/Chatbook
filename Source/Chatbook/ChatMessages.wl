@@ -18,6 +18,7 @@ Wolfram`Chatbook`CellToChatMessage;
 `expandMultimodalString;
 `getTokenizer;
 `getTokenizerName;
+`logUsage;
 `resizeMultimodalImage;
 
 Begin[ "`Private`" ];
@@ -132,7 +133,15 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
         prompted  = addPrompts[ settings, messages0 ];
 
         messages = prompted /.
-            s_String :> RuleCondition @ StringTrim @ StringReplace[ s, "%%BASE_PROMPT%%" :> $basePrompt ];
+            s_String :> RuleCondition @ StringTrim @ StringReplace[
+                s,
+                {
+                    "%%BASE_PROMPT%%" :> $basePrompt,
+                    (* cSpell: ignore ENDRESULT *)
+                    "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :>
+                        "\nENDRESULT\n"
+                }
+            ];
 
         processed = applyProcessingFunction[ settings, "ChatMessages", HoldComplete[ messages, $ChatHandlerData ] ];
 
@@ -429,16 +438,70 @@ cutMessageContent // endDefinition;
 (*tokenCount*)
 tokenCount // beginDefinition;
 
+tokenCount[ as_, KeyValuePattern[ "TokenCount" -> n_Integer ] ] := n;
+
+tokenCount[ as_, messages_List ] :=
+    With[ { counts = tokenCount[ as, # ] & /@ messages },
+        Total @ counts /; MatchQ[ counts, { ___Integer } ]
+    ];
+
 tokenCount[ as_Association, message_ ] := Enclose[
     Module[ { tokenizer, content },
         tokenizer = getTokenizer @ as;
         content = ConfirmBy[ messageContent @ message, validContentQ, "Content" ];
         Length @ ConfirmMatch[ applyTokenizer[ tokenizer, content ], _List, "TokenCount" ]
     ],
-    throwInternalFailure[ tokenCount[ as, message ], ## ] &
+    throwInternalFailure
 ];
 
 tokenCount // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*logUsage*)
+logUsage // beginDefinition;
+
+logUsage[ KeyValuePattern[ "FullContent" -> response_String ] ] :=
+    logUsage @ response;
+
+logUsage[ response_String ] := logUsage[
+    $ChatHandlerData[ "ChatNotebookSettings" ],
+    $ChatHandlerData[ "Messages" ],
+    response
+];
+
+logUsage[ settings_, messages_List, response_String ] :=
+    logUsage[ settings, messages, response, $ChatHandlerData[ "Usage" ] ];
+
+logUsage[ settings_, messages_List, response_String, usage_Association ] := Enclose[
+    Module[ { prompt1, completion1, prompt2, completion2, prompt, completion, requests },
+
+        prompt1     = ConfirmMatch[ usage[ "Prompt"     ]           , $$size, "Prompt1"     ];
+        completion1 = ConfirmMatch[ usage[ "Completion" ]           , $$size, "Completion1" ];
+        prompt2     = ConfirmMatch[ tokenCount[ settings, messages ], $$size, "Prompt2"     ];
+        completion2 = ConfirmMatch[ tokenCount[ settings, response ], $$size, "Completion2" ];
+
+        prompt     = prompt1     + prompt2;
+        completion = completion1 + completion2;
+        requests   = Replace[ usage[ "Requests" ], Except[ $$size ] :> 0 ] + 1;
+
+        addHandlerArguments[ "Usage" -> <| "Prompt" -> prompt, "Completion" -> completion, "Requests" -> requests |> ]
+    ],
+    throwInternalFailure
+];
+
+logUsage[ settings_, messages_List, response_String, $$unspecified ] :=
+    addHandlerArguments[
+        "Usage" -> <|
+            "Prompt"     -> tokenCount[ settings, messages ],
+            "Completion" -> tokenCount[ settings, response ],
+            "Requests"   -> 1
+        |>
+    ];
+
+logUsage // endDefinition;
+
+(* TODO: this could log usage by model since the model could technically change during a chat evaluation *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -760,6 +823,7 @@ inferMultimodalTypes0 // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*ensureCompatibleImage*)
 ensureCompatibleImage // beginDefinition;
+ensureCompatibleImage[ img_RawBoxes ] := rasterize @ img; (* Workaround for 446030 *)
 ensureCompatibleImage[ img_ ] /; $useRasterizationCompatibility && ! Image`PossibleImageQ @ img := rasterize @ img;
 ensureCompatibleImage[ img_ ] := img;
 ensureCompatibleImage // endDefinition;
