@@ -1123,9 +1123,26 @@ addWarnings // endDefinition;
 addMessageHandler // beginDefinition;
 
 addMessageHandler[ HoldComplete[ eval_ ] ] :=
-    HoldComplete @ WithCleanup[
-        eval,
-        If[ MatchQ[ $MessageList, { __ } ], Message[ General::messages ] ]
+    With[ { nlSym = Entity|EntityProperty|EntityClass|Quantity|DateObject|ExampleData },
+        HoldComplete @ Module[ { $issueNLMessage = False, $nlMessageType },
+            WithCleanup[
+                Internal`HandlerBlock[
+                    {
+                        "Message",
+                        Function[
+                            If[ #[[ 2 ]] && ! FreeQ[ #, nlSym ],
+                                $issueNLMessage = True;
+                                $nlMessageType  = FirstCase[ #, nlSym, None, Infinity, Heads -> True ]
+                            ]
+                        ]
+                    },
+                    eval
+                ],
+                (* cSpell: ignore usenl *)
+                If[ $issueNLMessage, Message[ General::usenl, $nlMessageType ] ];
+                If[ MatchQ[ $MessageList, { __ } ], Message[ General::messages ] ]
+            ]
+        ]
     ];
 
 addMessageHandler // endDefinition;
@@ -1210,12 +1227,22 @@ sandboxResultString0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*appendURIInstructions*)
 appendURIInstructions // beginDefinition;
-appendURIInstructions[ string_String, held_HoldComplete ] /; $appendURIPrompt := appendURIInstructions0[ string, held ];
-appendURIInstructions[ string_String, _ ] := string;
+
+appendURIInstructions[ as: KeyValuePattern @ { "String" -> s_, "Result" -> expr_ } ] :=
+    <| as, "String" -> appendURIInstructions[ s, expr ] |>;
+
+appendURIInstructions[ string_String, expr_ ] /; $appendURIPrompt :=
+    appendURIInstructions0[ string, expr ];
+
+appendURIInstructions[ string_String, _ ] :=
+    string;
+
 appendURIInstructions // endDefinition;
 
 
 appendURIInstructions0 // beginDefinition;
+
+appendURIInstructions0[ string_String, HoldForm[ expr_ ] ] := appendURIInstructions0[ string, HoldComplete @ expr ];
 
 appendURIInstructions0[ string_String, HoldComplete[ ___, expr_? appendURIQ ] ] := Enclose[
     Module[ { uri, key, message },
@@ -1433,6 +1460,13 @@ expandNLInputBoxes0[ HoldComplete[ q_String, p_ ] ] := expandNLInputBoxes0 @ San
 expandNLInputBoxes0[ KeyValuePattern[ "Parse" -> HoldComplete[ expr_ ] ] ] := MakeBoxes @ expr;
 expandNLInputBoxes0[ _ ] := $Failed;
 expandNLInputBoxes0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*AppendURIInstructions*)
+AppendURIInstructions // beginDefinition;
+AppendURIInstructions[ arg__ ] := catchMine @ Block[ { $appendURIPrompt = True }, appendURIInstructions @ arg ];
+AppendURIInstructions // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
