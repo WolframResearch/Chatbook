@@ -950,12 +950,19 @@ writeResult[ settings_, container_, cell_, as_Association ] := Enclose[
         processed = StringJoin @ Cases[ log, KeyValuePattern[ "BodyChunkProcessed" -> s_String ] :> s ];
         { body, data } = ConfirmMatch[ extractBodyData @ log, { _, _ }, "ExtractBodyData" ];
 
-        If[ MatchQ[ as[ "StatusCode" ], Except[ 200, _Integer ] ] || (processed === "" && AssociationQ @ data),
-            writeErrorCell[ cell, $badResponse = Association[ as, "Body" -> body, "BodyJSON" -> data ] ],
-            writeReformattedCell[ settings, container, cell ]
+        $lastFullResponseData = <| "Body" -> body, "Processed" -> processed, "Data" -> data |>;
+
+        Which[ MatchQ[ as[ "StatusCode" ], Except[ 200, _Integer ] ] || (processed === "" && AssociationQ @ data),
+               writeErrorCell[ cell, $badResponse = Association[ as, "Body" -> body, "BodyJSON" -> data ] ]
+               ,
+               processed === body === "",
+               writeErrorCell[ cell, $badResponse = Association[ as, "Error" -> "ServerResponseEmpty" ] ]
+               ,
+               True,
+               writeReformattedCell[ settings, container, cell ]
         ]
     ],
-    throwInternalFailure[ writeResult[ settings, container, cell, as ], ## ] &
+    throwInternalFailure
 ];
 
 writeResult // endDefinition;
@@ -966,7 +973,7 @@ writeResult // endDefinition;
 extractBodyData // beginDefinition;
 
 extractBodyData[ log_List ] := Enclose[
-    Catch @ Module[ { chunks, folded, data },
+    Catch @ Module[ { chunks, folded, data, xml },
 
         FirstCase[
             Reverse @ log,
@@ -977,10 +984,13 @@ extractBodyData[ log_List ] := Enclose[
         ];
 
         chunks = Cases[ log, KeyValuePattern[ "BodyChunk" -> s: Except[ "", _String ] ] :> s ];
-        folded = Fold[ StringJoin, chunks ];
+        folded = Fold[ StringJoin, "", chunks ];
         data   = Quiet @ Developer`ReadRawJSONString @ folded;
 
         If[ AssociationQ @ data, Throw @ { folded, data } ];
+
+        xml = parseXMLResponse @ folded;
+        If[ AssociationQ @ xml, Throw @ { folded, xml } ];
 
         FirstCase[
             Flatten @ StringCases[
@@ -993,10 +1003,53 @@ extractBodyData[ log_List ] := Enclose[
             { folded, Missing[ "NotAvailable" ] }
         ]
     ],
-    throwInternalFailure[ extractBodyData @ log, ## ] &
+    throwInternalFailure
 ];
 
 extractBodyData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*parseXMLResponse*)
+parseXMLResponse // beginDefinition;
+
+parseXMLResponse[ response_String ] :=
+    If[ StringContainsQ[ response, "<" ~~ __ ~~ ">" ~~ ___ ~~ "</" ~~ ___ ~~ ">" ],
+        parseXMLResponse[ Quiet @ ImportString[ response, "XML" ] ],
+        $Failed
+    ];
+
+parseXMLResponse[ XMLObject[ ___ ][ ___, elem_XMLElement, ___ ] ] :=
+    With[ { as = Association @ parseXMLElement @ elem },
+        If[ AssociationQ @ as,
+            as,
+            $Failed
+        ]
+    ];
+
+parseXMLResponse[ failure_? FailureQ ] := failure;
+
+parseXMLResponse // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*parseXMLElement*)
+parseXMLElement // beginDefinition;
+
+parseXMLElement[ XMLElement[ _, _List, content_List ] ] := parseXMLElement /@ content;
+parseXMLElement[ XMLElement[ key_String, { ___ }, value_String ] ] := key -> value;
+parseXMLElement[ XMLElement[ key_String, { ___ }, { value_String } ] ] := key -> value;
+parseXMLElement[ XMLElement[ key_String, { ___ }, { values__String } ] ] := key -> { values };
+
+parseXMLElement[ xml: XMLElement[ key_String, { ___ }, data_List ] ] :=
+    With[ { as = parseXMLElement /@ data },
+       If[ AssociationQ @ Association @ as,
+           key -> Association @ as,
+           xml
+       ]
+    ];
+
+parseXMLElement // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -2222,22 +2275,32 @@ errorCell // beginDefinition;
 errorCell[ failure_Failure ] :=
     Cell[ BoxData @ ToBoxes @ failure, "Output" ];
 
-errorCell[ as_ ] :=
-    Cell[
-        TextData @ Flatten @ {
-            StyleBox[ "\[WarningSign] ", FontColor -> Darker @ Red, FontSize -> 1.5 Inherited ],
-            errorText @ as,
-            "\n\n",
-            Cell @ BoxData @ errorBoxes @ as
-        },
-        "Text",
-        "ChatOutput",
-        CellAutoOverwrite -> True,
-        CellTrayWidgets   -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
-        CodeAssistOptions -> { "AutoDetectHyperlinks" -> True },
-        GeneratedCell     -> True,
-        Initialization    -> None
-    ];
+errorCell[ as_ ] := Enclose[
+    Module[ { text },
+        text = ConfirmMatch[ errorText @ as, _String|$$textDataList, "ErrorText" ];
+        Cell[
+            TextData @ Flatten @ {
+                StyleBox[ "\[WarningSign] ", FontColor -> Darker @ Red, FontSize -> 1.5 Inherited ],
+                If[ StringQ @ text,
+                    {
+                        text,
+                        "\n\n",
+                        Cell @ BoxData @ Quiet @ errorBoxes @ as
+                    },
+                    text
+                ]
+            },
+            "Text",
+            "ChatOutput",
+            CellAutoOverwrite -> True,
+            CellTrayWidgets   -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
+            CodeAssistOptions -> { "AutoDetectHyperlinks" -> True },
+            GeneratedCell     -> True,
+            Initialization    -> None
+        ]
+    ],
+    throwInternalFailure
+];
 
 errorCell // endDefinition;
 
@@ -2245,6 +2308,9 @@ errorCell // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*errorText*)
 errorText // ClearAll;
+
+errorText[ KeyValuePattern[ "Error" -> "ServerResponseEmpty" ] ] :=
+    Chatbook::ServerResponseEmpty;
 
 errorText[ KeyValuePattern[ "BodyJSON" -> json_ ] ] :=
     With[ { text = errorText0 @ json },
@@ -2263,7 +2329,7 @@ errorText[ ___ ] := "An unexpected error occurred.";
 (* Overrides for server messages can be defined here: *)
 errorText0 // ClearAll;
 
-errorText0[ KeyValuePattern[ "Error"|"error" -> error_Association ] ] :=
+errorText0[ KeyValuePattern[ "Error"|"error"|"GeneralResponseEntity" -> error_Association ] ] :=
     errorText0 @ error;
 
 errorText0[ as: KeyValuePattern @ { "Code"|"code" -> code_, "Message"|"message" -> message_ } ] :=
@@ -2332,6 +2398,9 @@ textLink // endDefinition;
 errorBoxes // ClearAll;
 
 (* TODO: define error messages for other documented responses *)
+errorBoxes[ as: KeyValuePattern[ "Error" -> "ServerResponseEmpty" ] ] :=
+    ToBoxes @ messageFailure[ "ServerResponseEmpty", as ];
+
 errorBoxes[ as: KeyValuePattern[ "StatusCode" -> 429 ] ] :=
     ToBoxes @ messageFailure[ "RateLimitReached", as ];
 

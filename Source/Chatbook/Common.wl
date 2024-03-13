@@ -162,6 +162,7 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "ServerMessageHeader"             -> "The server responded with the following message: \n\n",
     "ServerMessageTemplate"           -> "The server responded with the following message: \n\n`1`",
     "ServerOverloaded"                -> "The server is currently overloaded with other requests. Please try again later.",
+    "ServerResponseEmpty"             -> "No content was received from server.",
     "ToolNotFound"                    -> "Tool `1` not found.",
     "UnknownResponse"                 -> "Unexpected response from server",
     "UnknownStatusCode"               -> "Unexpected response from server with status code `StatusCode`",
