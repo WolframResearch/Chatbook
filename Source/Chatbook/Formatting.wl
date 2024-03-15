@@ -101,6 +101,7 @@ $autoOperatorRenderings = <|
  |>;
 
  $expressionURIPlaceholder = "\[LeftSkeleton]\[Ellipsis]\[RightSkeleton]";
+ $freeformPromptBox        = StyleBox[ "\[FreeformPrompt]", FontColor -> RGBColor[ "#ff6f00" ], FontSize -> 9 ];
 
 (* ::**************************************************************************************************************:: *)
  (* ::Section::Closed:: *)
@@ -226,7 +227,7 @@ makeResultCell0[ codeBlockCell[ language_String, code_String ] ] :=
 
 makeResultCell0[ inlineCodeCell[ code_String ] ] := ReplaceAll[
     makeInlineCodeCell @ code,
-    "\[FreeformPrompt]" :> DynamicBox @ FEPrivate`FrontEndResource[ "WABitmaps", "EqualSmall" ]
+    "\[FreeformPrompt]" :> RuleCondition @ $freeformPromptBox
 ];
 
 makeResultCell0[ mathCell[ math_String ] ] /; StringMatchQ[ math, (DigitCharacter|"."|","|" ").. ] :=
@@ -945,7 +946,7 @@ $stringFormatRules = {
 
     "\[FreeformPrompt]" :>
         Cell @ BoxData @ TemplateBox[
-            { DynamicBox @ FEPrivate`FrontEndResource[ "WABitmaps", "EqualSmall" ], "paclet:guide/KnowledgeRepresentationAndAccess#203374175" },
+            { $freeformPromptBox, "paclet:guide/KnowledgeRepresentationAndAccess#203374175" },
             "HyperlinkPaclet"
         ]
 };
@@ -1542,7 +1543,7 @@ formatNLInputFast[ q_String ] := OverlayBox[
             FrameMargins   -> { { 6, 3 }, { 3, 3 } },
             StripOnInput   -> False
         ],
-        DynamicBox @ FEPrivate`FrontEndResource[ "WABitmaps", "EqualSmall" ]
+        Append[ $freeformPromptBox, Background -> White ]
     },
     Alignment -> { Left, Center }
 ];
