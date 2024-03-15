@@ -673,8 +673,8 @@ initializeExpressions[ flat: HoldComplete @ Association @ OrderlessPatternSequen
         ReplacePart[ flat, Thread[ pos -> Extract[ flat, pos ] ] ]
     ];
 
-initializeExpressions[ HoldComplete @ Hold[ failure_ ] ] :=
-    With[ { as = <| "Line" -> $currentLineNumber-1, "Result" -> Hold @ failure, "Initialized" -> { } |> },
+initializeExpressions[ HoldComplete[ failure_ ] ] :=
+    With[ { as = <| "Line" -> $currentLineNumber-1, "Result" -> HoldComplete @ failure, "Initialized" -> { } |> },
         HoldComplete @ as
     ];
 
