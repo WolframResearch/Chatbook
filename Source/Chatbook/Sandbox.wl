@@ -313,6 +313,7 @@ $defaultReadPaths := $defaultReadPaths = Select[
         FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Parallel", "Preferences" },
         FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Credentials" },
         FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Astro" },
+        FileNameJoin @ { $UserBaseDirectory, "Knowledgebase" },
         SystemInformation[ "FrontEnd", "DocumentationInformation" ][ "Directory" ],
         ExpandFileName @ URL @ $LocalBase
     },
@@ -337,6 +338,7 @@ $defaultWritePaths := $defaultWritePaths = Select[
         FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Parallel", "Preferences" },
         FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Credentials" },
         FileNameJoin @ { $UserBaseDirectory, "ApplicationData", "Astro" },
+        FileNameJoin @ { $UserBaseDirectory, "Knowledgebase" },
         FileNameJoin @ { ExpandFileName @ URL @ $LocalBase, "Resources" }
     },
     StringQ
