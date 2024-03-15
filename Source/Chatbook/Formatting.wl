@@ -76,7 +76,9 @@ $externalLanguageRules = Replace[
     { 1 }
 ];
 
-$$mdRow   = Except[ "\n" ].. ~~ Repeated[ ("|" ~~ Except[ "\n" ]..), { 2, Infinity } ] ~~ ("\n"|EndOfString);
+$$mdRow1  = WhitespaceCharacter... ~~ "|" ~~ Except[ "\n" ].. ~~ "|" ~~ WhitespaceCharacter... ~~ ("\n"|EndOfString);
+$$mdRow2  = Except[ "\n" ].. ~~ Repeated[ ("|" ~~ Except[ "\n" ]..), { 2, Infinity } ] ~~ ("\n"|EndOfString);
+$$mdRow   = $$mdRow1 | $$mdRow2;
 $$mdTable = $$mdRow ~~ $$mdRow ..;
 
 $chatGeneratedCellTag = "ChatGeneratedCell";
@@ -320,10 +322,7 @@ makeTableCell // beginDefinition;
 
 makeTableCell[ table_String ] := Flatten @ {
     $tinyLineBreak,
-    Map[
-        makeTableCell0 @ StringRiffle[ #1, "\n" ] &,
-        SplitBy[ StringSplit[ table, "\n" ], StringCount[ #1, "|" ] & ]
-    ],
+    makeTableCell0 @ table,
     $tinyLineBreak
 };
 
@@ -344,7 +343,7 @@ makeTableCell0[ { a_List, { b__String? delimiterItemQ }, c__ } ] :=
         "TextTableForm"
     ];
 
-makeTableCell0[ items_List? MatrixQ ] :=
+makeTableCell0[ items_List ] :=
     Cell[ BoxData @ ToBoxes @ textTableForm @ items, "TextTableForm" ];
 
 makeTableCell0 // endDefinition;
