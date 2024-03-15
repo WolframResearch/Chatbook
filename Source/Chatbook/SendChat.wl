@@ -972,6 +972,9 @@ writeResult // endDefinition;
 (*extractBodyData*)
 extractBodyData // beginDefinition;
 
+extractBodyData[ { ___, KeyValuePattern[ "TaskStatus" -> "Finished" ], rest__ } ] :=
+    extractBodyData @ { rest };
+
 extractBodyData[ log_List ] := Enclose[
     Catch @ Module[ { chunks, folded, data, xml },
 
