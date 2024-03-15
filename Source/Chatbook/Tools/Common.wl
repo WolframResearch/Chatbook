@@ -830,8 +830,10 @@ tool call.
 The system will execute the requested tool call and you will receive a system message containing the result. \
 You can then use this result to finish writing your response for the user.
 
-You must write the TOOLCALL in your CURRENT response. \
-Do not state that you will use a tool and end your message before making the tool call.
+These are text-based tools, which you call by writing text, \
+so you must write the tool call DURING your CURRENT response. \
+Do not state that you will use a tool and end your message text before making the tool call \
+or the entire system will fail catastrophically.
 
 If a user asks you to use a specific tool, you MUST attempt to use that tool as requested, \
 even if you think it will not work. \
