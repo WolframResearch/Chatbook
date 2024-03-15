@@ -76,8 +76,8 @@ $externalLanguageRules = Replace[
     { 1 }
 ];
 
-$$mdRow1  = WhitespaceCharacter... ~~ "|" ~~ Except[ "\n" ].. ~~ "|" ~~ WhitespaceCharacter... ~~ ("\n"|EndOfString);
-$$mdRow2  = Except[ "\n" ].. ~~ Repeated[ ("|" ~~ Except[ "\n" ]..), { 2, Infinity } ] ~~ ("\n"|EndOfString);
+$$mdRow1  = WhitespaceCharacter... ~~ "|" ~~ Except[ "\n" ]... ~~ "|" ~~ WhitespaceCharacter... ~~ ("\n"|EndOfString);
+$$mdRow2  = Except[ "\n" ].. ~~ Repeated[ ("|" ~~ Except[ "\n" ]...), { 2, Infinity } ] ~~ ("\n"|EndOfString);
 $$mdRow   = $$mdRow1 | $$mdRow2;
 $$mdTable = $$mdRow ~~ $$mdRow ..;
 
@@ -118,8 +118,13 @@ StringToBoxes // endExportedDefinition;
 (* ::Subsection::Closed:: *)
 (*FormatChatOutput*)
 FormatChatOutput // beginDefinition;
-FormatChatOutput[ output_ ] := FormatChatOutput[ output, <| "Status" -> "Finished" |> ];
-FormatChatOutput[ output_, as_Association ] := formatChatOutput[ output, Lookup[ as, "Status", "Finished" ] ];
+
+FormatChatOutput[ output_ ] :=
+    FormatChatOutput[ output, <| "Status" -> If[ TrueQ @ $dynamicText, "Streaming", "Finished" ] |> ];
+
+FormatChatOutput[ output_, as_Association ] :=
+    formatChatOutput[ output, Lookup[ as, "Status", "Finished" ] ];
+
 FormatChatOutput // endDefinition;
 (* TODO: actual error handling for invalid arguments *)
 
@@ -219,7 +224,10 @@ makeResultCell0[ codeBlockCell[ language_String, code_String ] ] :=
         StringTrim @ code
     ];
 
-makeResultCell0[ inlineCodeCell[ code_String ] ] := makeInlineCodeCell @ code;
+makeResultCell0[ inlineCodeCell[ code_String ] ] := ReplaceAll[
+    makeInlineCodeCell @ code,
+    "\[FreeformPrompt]" :> DynamicBox @ FEPrivate`FrontEndResource[ "WABitmaps", "EqualSmall" ]
+];
 
 makeResultCell0[ mathCell[ math_String ] ] /; StringMatchQ[ math, (DigitCharacter|"."|","|" ").. ] :=
     math;
@@ -933,7 +941,13 @@ $stringFormatRules = {
         styleBox[ text, FontSlant -> Italic ],
 
     "\\textbf{" ~~ text__ ~~ "}" /; StringFreeQ[ text, "{"|"}" ] :>
-        styleBox[ text, FontWeight -> Bold ]
+        styleBox[ text, FontWeight -> Bold ],
+
+    "\[FreeformPrompt]" :>
+        Cell @ BoxData @ TemplateBox[
+            { DynamicBox @ FEPrivate`FrontEndResource[ "WABitmaps", "EqualSmall" ], "paclet:guide/KnowledgeRepresentationAndAccess#203374175" },
+            "HyperlinkPaclet"
+        ]
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -1429,7 +1443,7 @@ makeInteractiveCodeCell // beginDefinition;
 (* TODO: define template boxes for these *)
 makeInteractiveCodeCell[ language_, code_String ] /; $dynamicText :=
     If[ TrueQ @ wolframLanguageQ @ language,
-        codeBlockFrame[ Cell[ BoxData @ code, "ChatCodeActive" ], code, language ],
+        codeBlockFrame[ Cell[ BoxData @ wlStringToBoxes @ code, "ChatCodeActive" ], code, language ],
         codeBlockFrame[ Cell[ code, "ChatPreformatted" ], code, language ]
     ];
 
@@ -1481,8 +1495,77 @@ makeInteractiveCodeCell // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*wlStringToBoxes*)
 wlStringToBoxes // beginDefinition;
-wlStringToBoxes[ string_String ] := inlineExpressionURIs @ stringToBoxes @ preprocessSandboxString @ string;
+
+wlStringToBoxes[ string_String ] /; $dynamicText := formatNLInputs @ string;
+
+wlStringToBoxes[ string_String ] :=
+    formatNLInputs @ inlineExpressionURIs @ stringToBoxes @ preprocessSandboxString @ string;
+
 wlStringToBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatNLInputs*)
+formatNLInputs // beginDefinition;
+
+formatNLInputs[ string_String ] :=
+    StringReplace[
+        string,
+        "\[FreeformPrompt][\"" ~~ q: Except[ "\"" ].. ~~ ("\"]"|EndOfString) :>
+            ToString[ RawBoxes @ formatNLInputFast @ q, StandardForm ]
+    ];
+
+formatNLInputs[ boxes_ ] :=
+    boxes /. {
+        RowBox @ { "\[FreeformPrompt]", "[", q_String, "]" } /; StringMatchQ[ q, "\""~~Except[ "\""]..~~"\"" ] :>
+            RuleCondition @ If[ TrueQ @ $dynamicText, formatNLInputFast @ q, formatNLInputSlow @ q ]
+        ,
+        RowBox @ { "\[FreeformPrompt]", "[", q_String } /; StringMatchQ[ q, "\""~~Except[ "\""]..~~("\""|"") ] :>
+            RuleCondition @ formatNLInputFast @ q
+    };
+
+formatNLInputs // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatNLInputFast*)
+formatNLInputFast // beginDefinition;
+
+formatNLInputFast[ q_String ] := OverlayBox[
+    {
+        FrameBox[
+            StyleBox[ q, ShowStringCharacters -> False, FontWeight -> Plain ],
+            BaseStyle      -> { "CalculateInput", LineBreakWithin -> False },
+            FrameStyle     -> GrayLevel[ 0.85 ],
+            RoundingRadius -> 3,
+            ImageMargins   -> { { 5, 0 }, { 0, 0 } },
+            FrameMargins   -> { { 6, 3 }, { 3, 3 } },
+            StripOnInput   -> False
+        ],
+        DynamicBox @ FEPrivate`FrontEndResource[ "WABitmaps", "EqualSmall" ]
+    },
+    Alignment -> { Left, Center }
+];
+
+formatNLInputFast // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatNLInputSlow*)
+formatNLInputSlow // beginDefinition;
+
+formatNLInputSlow[ query_String ] :=
+    With[ { h = ToExpression[ query, InputForm, HoldComplete ] },
+        (
+            formatNLInputSlow[ query ] =
+                ReplaceAll[
+                    ToBoxes @ WolframAlpha[ ReleaseHold @ h, "LinguisticAssistant" ],
+                    as: KeyValuePattern[ "open" -> { 1, 2 } ] :> RuleCondition @ <| as, "open" -> { 1 } |>
+                ]
+        ) /; MatchQ[ h, HoldComplete[ _String ] ]
+    ];
+
+formatNLInputSlow // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
