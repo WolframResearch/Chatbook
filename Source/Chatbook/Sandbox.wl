@@ -189,6 +189,46 @@ pingSandboxKernel[ kernel_LinkObject ] := Enclose[
 pingSandboxKernel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$currentLineNumber*)
+$currentLineNumber := If[ $CloudEvaluation, $cloudLineNumber, getCurrentLineNumber[ ] ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getCurrentLineNumber*)
+getCurrentLineNumber // beginDefinition;
+
+getCurrentLineNumber[ ] := getCurrentLineNumber @ getSandboxKernel[ ];
+
+getCurrentLineNumber[ kernel_LinkObject ] := Enclose[
+    Module[ { return },
+
+        return = $Failed;
+
+        LinkWrite[ kernel, Unevaluated @ EvaluatePacket @ $Line ];
+
+        ConfirmMatch[
+            TimeConstrained[
+                While[ ! MatchQ[ return = LinkRead @ kernel, ReturnPacket[ _Integer ] ] ],
+                $sandboxPingTimeout,
+                $TimedOut
+            ],
+            Except[ $TimedOut ],
+            "LinkReadReturn"
+        ];
+
+        ConfirmBy[
+            Replace[ return, ReturnPacket[ n_Integer ] :> n ],
+            IntegerQ,
+            "LineNumber"
+        ]
+    ],
+    throwInternalFailure
+];
+
+getCurrentLineNumber // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Start Kernel*)
 
@@ -470,13 +510,13 @@ cloudSandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
                 ],
                 "WXF"
             ],
-            KeyValuePattern[ (Rule|RuleDelayed)[ "Result", _HoldComplete ] ] | _Failure,
+            KeyValuePattern[ (Rule|RuleDelayed)[ "Result", _HoldComplete|_Hold ] ] | _Failure,
             "Response"
         ];
 
         If[ FailureQ @ response, Throw @ response ];
 
-        result = ConfirmMatch[ Lookup[ response, "Result" ], _HoldComplete, "Result" ];
+        result = HoldComplete @@ ConfirmMatch[ Lookup[ response, "Result" ], _HoldComplete|_Hold, "Result" ];
         packets = TextPacket /@ Flatten @ { response[ "OutputLog" ], response[ "MessagesText" ] };
         initialized = initializeExpressions @ result;
 
@@ -631,6 +671,11 @@ initializeExpressions // beginDefinition;
 initializeExpressions[ flat: HoldComplete @ Association @ OrderlessPatternSequence[ "Initialized" -> pos0_, ___ ] ] :=
     With[ { pos = { 1, Key[ "Result" ], ## } & @@@ pos0 },
         ReplacePart[ flat, Thread[ pos -> Extract[ flat, pos ] ] ]
+    ];
+
+initializeExpressions[ HoldComplete @ Hold[ failure_ ] ] :=
+    With[ { as = <| "Line" -> $currentLineNumber-1, "Result" -> Hold @ failure, "Initialized" -> { } |> },
+        HoldComplete @ as
     ];
 
 initializeExpressions[ failed: HoldComplete[ _Failure|$Failed|$Aborted ] ] :=
