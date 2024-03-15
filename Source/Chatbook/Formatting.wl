@@ -383,9 +383,33 @@ textTableForm[ items_? MatrixQ, opts___ ] := Pane[
     ImageMargins -> { { 0, 0 }, { 5, 5 } }
 ];
 
+(* Not a rectangular set of table items, so we'll pad as necessary: *)
+textTableForm[ items: { __List }, opts___ ] := Enclose[
+    Module[ { width, padded, trimmed },
+        (* Get the maximum row length: *)
+        width = ConfirmBy[ Max[ Length /@ items ], Positive, "Width" ];
+
+        (* Pad all rows to match: *)
+        padded = ConfirmBy[ PadRight[ #, width, "" ] & /@ items, MatrixQ, "Padded" ];
+
+        (* Remove the right-most column if it just contains empty strings: *)
+        trimmed = ConfirmBy[
+            FixedPoint[ Replace[ i: { { __, "" }.. } :> i[[ All, 1;;-2 ]] ], padded ],
+            MatrixQ,
+            "Trimmed"
+        ];
+
+        (* Items are now rectangular, so proceed with previous definition: *)
+        textTableForm[ trimmed, opts ]
+    ],
+    throwInternalFailure
+];
+
 textTableForm // endDefinition;
 
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*formatRaw*)
 formatRaw // beginDefinition;
 formatRaw[ "" ] := "";
 formatRaw[ item_String ] := formatRaw[ item, styleBox @ item ];
