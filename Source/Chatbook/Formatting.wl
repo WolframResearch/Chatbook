@@ -1545,7 +1545,7 @@ formatNLInputFast[ q_String ] := OverlayBox[
         ],
         Append[ $freeformPromptBox, Background -> White ]
     },
-    Alignment -> { Left, Center }
+    Alignment -> { Left, Baseline }
 ];
 
 formatNLInputFast // endDefinition;
