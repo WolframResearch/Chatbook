@@ -189,6 +189,46 @@ pingSandboxKernel[ kernel_LinkObject ] := Enclose[
 pingSandboxKernel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$currentLineNumber*)
+$currentLineNumber := If[ $CloudEvaluation, $cloudLineNumber, getCurrentLineNumber[ ] ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getCurrentLineNumber*)
+getCurrentLineNumber // beginDefinition;
+
+getCurrentLineNumber[ ] := getCurrentLineNumber @ getSandboxKernel[ ];
+
+getCurrentLineNumber[ kernel_LinkObject ] := Enclose[
+    Module[ { return },
+
+        return = $Failed;
+
+        LinkWrite[ kernel, Unevaluated @ EvaluatePacket @ $Line ];
+
+        ConfirmMatch[
+            TimeConstrained[
+                While[ ! MatchQ[ return = LinkRead @ kernel, ReturnPacket[ _Integer ] ] ],
+                $sandboxPingTimeout,
+                $TimedOut
+            ],
+            Except[ $TimedOut ],
+            "LinkReadReturn"
+        ];
+
+        ConfirmBy[
+            Replace[ return, ReturnPacket[ n_Integer ] :> n ],
+            IntegerQ,
+            "LineNumber"
+        ]
+    ],
+    throwInternalFailure
+];
+
+getCurrentLineNumber // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Start Kernel*)
 
@@ -388,10 +428,9 @@ sandboxEvaluate[ HoldComplete[ xs__, x_ ] ] := sandboxEvaluate @ HoldComplete @ 
 sandboxEvaluate[ HoldComplete[ evaluation_ ] ] /; $CloudEvaluation := cloudSandboxEvaluate @ HoldComplete @ evaluation;
 
 sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
-    Module[ { kernel, null, packets, $sandboxTag, $timedOut, results, flat, initialized },
+    Module[ { kernel, null, packets, $sandboxTag, $timedOut, $kernelQuit, results, flat, initialized },
 
         $lastSandboxEvaluation = HoldComplete @ evaluation;
-
         kernel = ConfirmMatch[ getSandboxKernel[ ], _LinkObject, "GetKernel" ];
 
         ConfirmMatch[ linkWriteEvaluation[ kernel, evaluation ], Null, "LinkWriteEvaluation" ];
@@ -400,7 +439,19 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
             Reap[
                 Sow[ Nothing, $sandboxTag ];
                 TimeConstrained[
-                    While[ ! MatchQ[ Sow[ LinkRead @ kernel, $sandboxTag ], _ReturnExpressionPacket ] ],
+                    Quiet[
+                        Check[
+                            While[
+                                ! MatchQ[
+                                    Sow[ LinkRead @ kernel, $sandboxTag ],
+                                    _LinkRead|_ReturnExpressionPacket|$Failed
+                                ]
+                            ],
+                            $kernelQuit,
+                            { LinkObject::linkd, LinkObject::linkn }
+                        ],
+                        { LinkObject::linkd, LinkObject::linkn }
+                    ],
                     2 * $sandboxEvaluationTimeout,
                     $timedOut
                 ],
@@ -414,6 +465,15 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
             AppendTo[
                 packets,
                 With[ { fail = timeConstraintFailure @ $sandboxEvaluationTimeout },
+                    ReturnExpressionPacket @ HoldComplete @ fail
+                ]
+            ]
+        ];
+
+        If[ null === $kernelQuit,
+            AppendTo[
+                packets,
+                With[ { fail = kernelQuitFailure[ ] },
                     ReturnExpressionPacket @ HoldComplete @ fail
                 ]
             ]
@@ -454,6 +514,7 @@ cloudSandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
         wxf = ConfirmBy[ BinarySerialize[ held, PerformanceGoal -> "Size" ], ByteArrayQ, "WXF" ];
         definitions = makeCloudDefinitionsWXF @ HoldComplete @ evaluation;
 
+        (* TODO: figure out a way to handle kernel quitting like the desktop evaluator *)
         response = ConfirmMatch[
             URLExecute[
                 HTTPRequest[
@@ -468,15 +529,16 @@ cloudSandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
                         }
                     |>
                 ],
-                "WXF"
+                "WXF",
+                TimeConstraint -> 2*$sandboxEvaluationTimeout
             ],
-            KeyValuePattern[ (Rule|RuleDelayed)[ "Result", _HoldComplete ] ] | _Failure,
+            KeyValuePattern[ (Rule|RuleDelayed)[ "Result", _HoldComplete|_Hold ] ] | _Failure,
             "Response"
         ];
 
         If[ FailureQ @ response, Throw @ response ];
 
-        result = ConfirmMatch[ Lookup[ response, "Result" ], _HoldComplete, "Result" ];
+        result = HoldComplete @@ ConfirmMatch[ Lookup[ response, "Result" ], _HoldComplete|_Hold, "Result" ];
         packets = TextPacket /@ Flatten @ { response[ "OutputLog" ], response[ "MessagesText" ] };
         initialized = initializeExpressions @ result;
 
@@ -631,6 +693,11 @@ initializeExpressions // beginDefinition;
 initializeExpressions[ flat: HoldComplete @ Association @ OrderlessPatternSequence[ "Initialized" -> pos0_, ___ ] ] :=
     With[ { pos = { 1, Key[ "Result" ], ## } & @@@ pos0 },
         ReplacePart[ flat, Thread[ pos -> Extract[ flat, pos ] ] ]
+    ];
+
+initializeExpressions[ HoldComplete[ failure_ ] ] :=
+    With[ { as = <| "Line" -> $currentLineNumber-1, "Result" -> HoldComplete @ failure, "Initialized" -> { } |> },
+        HoldComplete @ as
     ];
 
 initializeExpressions[ failed: HoldComplete[ _Failure|$Failed|$Aborted ] ] :=
@@ -1073,6 +1140,21 @@ timeConstraintFailure[ q_Quantity ] :=
 timeConstraintFailure // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*kernelQuitFailure*)
+kernelQuitFailure // beginDefinition;
+
+kernelQuitFailure[ ] := Failure[
+    "KernelQuit",
+    <|
+        "MessageTemplate"   -> "The kernel quit unexpectedly during an evaluation.",
+        "MessageParameters" -> { }
+    |>
+];
+
+kernelQuitFailure // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*createEvaluationWithWarnings*)
 createEvaluationWithWarnings // beginDefinition;
@@ -1340,10 +1422,12 @@ fancyResultQ // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*makePacketMessages*)
+$$noMessagePacket = _InputNamePacket|_MessagePacket|_OutputNamePacket|_ReturnExpressionPacket|_LinkRead|$Failed;
+
 makePacketMessages // beginDefinition;
 makePacketMessages[ line_, packets_List ] := makePacketMessages[ line, # ] & /@ packets;
 makePacketMessages[ line_String, TextPacket[ text_String ] ] := text;
-makePacketMessages[ line_, _InputNamePacket|_MessagePacket|_OutputNamePacket|_ReturnExpressionPacket ] := Nothing;
+makePacketMessages[ line_, $$noMessagePacket ] := Nothing;
 makePacketMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
