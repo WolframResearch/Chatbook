@@ -263,12 +263,13 @@ createMessageCell // endDefinition;
 createMessageCell0 // beginDefinition;
 
 createMessageCell0[ as_Association, msg_Association ] := Enclose[
-    Module[ { role, content },
+    Module[ { role, content, string },
         role = ToLowerCase @ ConfirmBy[ msg[ "role" ], StringQ, "Role" ];
-        content = ConfirmBy[ msg[ "content" ], StringQ, "Content" ];
-        createMessageCell0[ as, role, content ]
+        content = ConfirmMatch[ msg[ "content" ], _String|_Association, "Content" ];
+        string = ConfirmBy[ If[ StringQ @ content, content, content[ "Data" ] ], StringQ, "String" ];
+        createMessageCell0[ as, role, string ]
     ],
-    throwInternalFailure[ createMessageCell0[ as, msg ], ## ] &
+    throwInternalFailure
 ];
 
 createMessageCell0[ as_Association, "assistant", content_String ] :=

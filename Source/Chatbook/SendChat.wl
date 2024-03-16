@@ -807,11 +807,13 @@ $chunkDebug = Internal`Bag[ ];
 appendStringContent // beginDefinition;
 appendStringContent // Attributes = { HoldFirst };
 
-appendStringContent[ container_, text_String ] :=
+appendStringContent[ container_, text_String ] := Quiet[
     If[ StringQ @ container,
         container = autoCorrect @ StringDelete[ container <> convertUTF8 @ text, StartOfString~~Whitespace ],
         container = autoCorrect @ convertUTF8 @ text
-    ];
+    ],
+    $CharacterEncoding::utf8
+];
 
 appendStringContent // endDefinition;
 
@@ -1101,7 +1103,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         (* TODO: implement a `getToolRequestParser` that gives the appropriate parser based on ToolMethod *)
         { callPos, toolCall } = ConfirmMatch[
-            parser[ convertUTF8[ string, True ] ],
+            parser[ Quiet[ convertUTF8[ string, True ], $CharacterEncoding::utf8 ] ],
             { _, _LLMToolRequest|_Failure },
             "ToolRequestParser"
         ];
