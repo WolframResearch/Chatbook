@@ -41,17 +41,25 @@ $cloudLineNumber           = 1;
 $cloudSession              = None;
 
 (* Tests for expressions that lose their initialized status when sending over a link: *)
-$initializationTests = HoldComplete[
-    AudioQ,
-    BoundaryMeshRegionQ,
-    DateObjectQ,
-    GraphQ,
-    MeshRegionQ,
-    SparseArrayQ,
-    TreeQ,
-    VideoQ,
-    Function[ Null, MatchQ[ Unevaluated @ #, _Rational ] && AtomQ @ Unevaluated @ #, HoldFirst ],
-    Function[ Null, MatchQ[ Unevaluated @ #, _Dataset ] && System`Private`HoldNoEntryQ @ #, HoldFirst ]
+$initializationTests = Join[
+    HoldComplete @@ Cases[
+        HoldComplete[
+            AudioQ,
+            BoundaryMeshRegionQ,
+            DateObjectQ,
+            GraphQ,
+            MeshRegionQ,
+            SparseArrayQ,
+            TreeQ,
+            VideoQ
+        ],
+        q_ :> Function[ Null, q @ Unevaluated @ #, HoldAllComplete ]
+    ],
+    HoldComplete[
+        StructuredArray`HeldStructuredArrayQ,
+        Function[ Null, MatchQ[ Unevaluated[ #1 ], _Dataset ] && System`Private`HoldNoEntryQ[ #1 ], HoldAllComplete ],
+        Function[ Null, MatchQ[ Unevaluated[ #1 ], _Rational ] && AtomQ @ Unevaluated[ #1 ], HoldAllComplete ]
+    ]
 ];
 
 
