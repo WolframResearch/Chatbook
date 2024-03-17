@@ -360,13 +360,15 @@ wolframAlpha // endDefinition;
 fasterWolframAlphaPods // beginDefinition;
 
 fasterWolframAlphaPods[ query_String ] := Enclose[
-    Catch @ Module[ { titlesAndCells, grouped, formatted, framed },
+    Catch @ Module[ { titlesAndCells, grouped, small, formatted, framed },
         titlesAndCells = Confirm[ WolframAlpha[ query, { All, { "Title", "Cell" } } ], "WolframAlpha" ];
         If[ titlesAndCells === { }, Throw @ Missing[ "NoResults" ] ];
         grouped = DeleteCases[ SortBy[ #1, podOrder ] & /@ GroupBy[ titlesAndCells, podKey ], CellSize -> _, Infinity ];
-        formatted = ConfirmBy[ cloudUsingFrontEnd[ formatPod /@ grouped ], AssociationQ, "Formatted" ];
+        small = Select[ grouped, ByteCount @ # < $maximumWAPodByteCount & ];
+        formatted = ConfirmMatch[ formatPods[ query, small ], { (_Framed|_RawBoxes|_Item).. }, "Formatted" ];
+
         framed = Framed[
-            Column[ Values @ formatted, Alignment -> Left, Spacings -> 1 ],
+            Column[ formatted, Alignment -> Left, Spacings -> 1 ],
             Background     -> GrayLevel[ 0.95 ],
             FrameMargins   -> { { 10, 10 }, { 10, 10 } },
             FrameStyle     -> GrayLevel[ 0.8 ],
@@ -395,6 +397,155 @@ podKey // beginDefinition;
 podKey[ key_ -> _ ] := podKey @ key;
 podKey[ { { key_String, _Integer }, _String } ] := key;
 podKey // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatPods*)
+formatPods // beginDefinition;
+
+formatPods[ query_, as: KeyValuePattern @ { "Input" -> input_, "Result" -> result_ } ] /; $cloudNotebooks := Enclose[
+    Module[ { rest },
+        rest = Values @ KeyDrop[ as, { "Input", "Result" } ];
+        Flatten @ {
+            formatPod @ input,
+            formatPod @ result,
+            If[ rest === { },
+                Nothing,
+                openerView[
+                    {
+                        Style[ "More details", "Text", FontColor -> GrayLevel[ 0.4 ], FontSize -> 12 ],
+                        Column[ Append[ formatPod /@ rest, waFooterMenu @ query ], Alignment -> Left, Spacings -> 1 ]
+                    },
+                    Method -> "Active"
+                ]
+            ]
+        }
+    ],
+    throwInternalFailure
+];
+
+formatPods[ query_, as_Association ] /; $cloudNotebooks && Length @ as > 3 := Enclose[
+    Module[ { show, hide },
+        { show, hide } = ConfirmMatch[ TakeDrop[ as, 3 ], { _Association, _Association }, "TakeDrop" ];
+        Flatten @ {
+            formatPod /@ Values @ show,
+            openerView[
+                {
+                    Style[ "More details", "Text", FontColor -> GrayLevel[ 0.4 ], FontSize -> 12 ],
+                    Column[
+                        Append[ formatPod /@ Values @ hide, waFooterMenu @ query ],
+                        Alignment -> Left,
+                        Spacings -> 1
+                    ]
+                },
+                Method -> "Active"
+            ]
+        }
+    ],
+    throwInternalFailure
+];
+
+formatPods[ query_, grouped_Association ] :=
+    Append[ Map[ formatPod, Values @ grouped ], waFooterMenu @ query ];
+
+formatPods // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*waFooterMenu*)
+waFooterMenu // beginDefinition;
+
+(* cSpell: ignore Localizable *)
+waFooterMenu[ query_String ] := Item[
+    DynamicModule[ { display = "" },
+        Grid[
+            {
+                {
+                    Hyperlink[
+                        Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "WALocalizableBitmaps", "WolframAlpha" ],
+                        "https://www.wolframalpha.com",
+                        Alignment -> Left
+                    ],
+                    Pane[ Dynamic @ display, ImageSize -> { 18, Automatic }, Alignment -> Right ]
+                }
+            },
+            Spacings -> 0
+        ],
+        SynchronousInitialization -> False,
+        Initialization :>
+            If[ display === "",
+                Needs[ "Wolfram`Chatbook`" -> None ];
+                display = Replace[ makeWebLinksMenu @ query, Except[ _Tooltip ] :> "" ]
+            ]
+    ],
+    Alignment -> Right
+];
+
+waFooterMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeWebLinksMenu*)
+makeWebLinksMenu // beginDefinition;
+
+makeWebLinksMenu[ query_String ] /; $dynamicText :=
+    Nothing;
+
+makeWebLinksMenu[ query_String ] := Enclose[
+    Module[ { sources, url, actions },
+
+        sources = ConfirmMatch[ WolframAlpha[ query, "Sources" ], KeyValuePattern @ { } ];
+
+        (* cSpell: ignore wolframalpha *)
+        url = URLBuild @ <|
+            "Scheme" -> "https",
+            "Domain" -> "www.wolframalpha.com",
+            "Path"   -> { "", "input" },
+            "Query"  -> { "i" -> query }
+        |>;
+
+        actions = With[ { u = url },
+            Flatten @ {
+                "Web version" :> NotebookLocate @ { URL @ u, None },
+                If[ sources === { },
+                    Nothing,
+                    {
+                        Delimiter,
+                        KeyValueMap[
+                            Row @ { "Source information: " <> #1 } :> NotebookLocate @ { URL[ #2 ], None } &,
+                            Association @ sources
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        makeWebLinksMenu @ actions
+    ],
+    "" &
+];
+
+makeWebLinksMenu[ actions: { (_RuleDelayed|Delimiter).. } ] := Tooltip[
+    ActionMenu[
+        Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "FEBitmaps", "CirclePlusIconScalable" ],
+        actions,
+        Appearance -> None
+    ],
+    "Links"
+];
+
+makeWebLinksMenu[ ___ ] := "";
+
+makeWebLinksMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getWASources*)
+getWASources // beginDefinition;
+getWASources[ query_String ] := getWASources[ query, WolframAlpha[ query, "Sources" ] ];
+getWASources[ query_String, sources: KeyValuePattern @ { } ] := getWASources[ query ] = sources;
+getWASources[ query_String, _ ] := $Failed;
+getWASources // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
