@@ -1887,9 +1887,11 @@ writeReformattedCell[ settings_, None, cell_CellObject ] :=
         ]
     ];
 
-writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
+writeReformattedCell[ settings_, string0_String, cell_CellObject ] := Enclose[
     Block[ { $dynamicText = False },
-        Module[ { tag, scroll, open, label, pageData, cellTags, uuid, new, output, createTask, info },
+        Module[ { string, tag, scroll, open, label, pageData, cellTags, uuid, new, output, createTask, info },
+
+            string = ConfirmBy[ StringTrim @ string0, StringQ, "String" ];
 
             tag = ConfirmMatch[
                 Replace[ CurrentValue[ cell, { TaggingRules, "MessageTag" } ], $Failed -> Inherited ],
@@ -1930,7 +1932,7 @@ writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
             waitForCellObject[ settings, output ]
         ]
     ],
-    throwInternalFailure[ writeReformattedCell[ settings, string, cell ], ## ] &
+    throwInternalFailure
 ];
 
 writeReformattedCell[ settings_, other_, cell_CellObject ] :=
