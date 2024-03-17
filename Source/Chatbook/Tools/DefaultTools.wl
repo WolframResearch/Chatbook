@@ -368,7 +368,7 @@ fasterWolframAlphaPods[ query_String ] := Enclose[
         formatted = ConfirmMatch[ formatPods[ query, small ], { (_Framed|_RawBoxes|_Item).. }, "Formatted" ];
 
         framed = Framed[
-            Column[ formatted, Alignment -> Left, Spacings -> 1 ],
+            Column[ formatted, Alignment -> Left, Spacings -> { { 1 }, -2 -> 0.5, -1 -> 0 } ],
             Background     -> GrayLevel[ 0.95 ],
             FrameMargins   -> { { 10, 10 }, { 10, 10 } },
             FrameStyle     -> GrayLevel[ 0.8 ],
@@ -413,8 +413,15 @@ formatPods[ query_, as: KeyValuePattern @ { "Input" -> input_, "Result" -> resul
                 Nothing,
                 openerView[
                     {
-                        Style[ "More details", "Text", FontColor -> GrayLevel[ 0.4 ], FontSize -> 12 ],
-                        Column[ Append[ formatPod /@ rest, waFooterMenu @ query ], Alignment -> Left, Spacings -> 1 ]
+                        MouseAppearance[
+                            Style[ "More details", "Text", FontColor -> GrayLevel[ 0.4 ], FontSize -> 12 ],
+                            "LinkHand"
+                        ],
+                        Column[
+                            Append[ formatPod /@ rest, waFooterMenu @ query ],
+                            Alignment -> Left,
+                            Spacings -> { { 1 }, -2 -> 0.5, -1 -> 0 }
+                        ]
                     },
                     Method -> "Active"
                 ]
@@ -431,11 +438,14 @@ formatPods[ query_, as_Association ] /; $cloudNotebooks && Length @ as > 3 := En
             formatPod /@ Values @ show,
             openerView[
                 {
-                    Style[ "More details", "Text", FontColor -> GrayLevel[ 0.4 ], FontSize -> 12 ],
+                    MouseAppearance[
+                        Style[ "More details", "Text", FontColor -> GrayLevel[ 0.4 ], FontSize -> 12 ],
+                        "LinkHand"
+                    ],
                     Column[
                         Append[ formatPod /@ Values @ hide, waFooterMenu @ query ],
                         Alignment -> Left,
-                        Spacings -> 1
+                        Spacings -> { { 1 }, -2 -> 0.5, -1 -> 0 }
                     ]
                 },
                 Method -> "Active"
@@ -457,7 +467,12 @@ waFooterMenu // beginDefinition;
 
 (* cSpell: ignore Localizable *)
 waFooterMenu[ query_String ] := Item[
-    DynamicModule[ { display = "" },
+    DynamicModule[ { display },
+        display = Button[
+            Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "FEBitmaps", "CirclePlusIconScalable" ],
+            Null,
+            Appearance -> None
+        ];
         Grid[
             {
                 {
@@ -466,14 +481,17 @@ waFooterMenu[ query_String ] := Item[
                         "https://www.wolframalpha.com",
                         Alignment -> Left
                     ],
-                    Pane[ Dynamic @ display, ImageSize -> { 18, Automatic }, Alignment -> Right ]
+                    Pane[
+                        Dynamic @ display,
+                        FrameMargins -> { { 0, If[ $CloudEvaluation, 23, 3 ] }, { 0, 0 } }
+                    ]
                 }
             },
-            Spacings -> 0
+            Spacings -> 0.5
         ],
         SynchronousInitialization -> False,
         Initialization :>
-            If[ display === "",
+            If[ ! MatchQ[ display, _Tooltip ],
                 Needs[ "Wolfram`Chatbook`" -> None ];
                 display = Replace[ makeWebLinksMenu @ query, Except[ _Tooltip ] :> "" ]
             ]
@@ -560,7 +578,8 @@ formatPod[ content_List ] := Framed[
     Background     -> White,
     FrameMargins   -> 5,
     FrameStyle     -> GrayLevel[ 0.8 ],
-    ImageSize      -> { If[ $CloudEvaluation, Scaled[ 0.98 ], Scaled[ 1 ] ], Automatic },
+    ImageSize      -> { Scaled[ 1 ], Automatic },
+    ImageMargins   -> If[ $CloudEvaluation, { { 0, 25 }, { 0, 0 } }, 0 ],
     RoundingRadius -> 3
 ];
 
