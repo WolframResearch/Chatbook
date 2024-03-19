@@ -1115,7 +1115,7 @@ addInitializations // endDefinition;
 
 
 $initializationTest := $initializationTest = Module[ { tests, slot, func },
-    tests = Flatten[ HoldComplete @@ Cases[ $initializationTests, f_ :> HoldComplete @ f @ Unevaluated @ slot[ 1 ] ] ];
+    tests = Flatten[ HoldComplete @@ Cases[ $initializationTests, f_ :> HoldComplete @ f @ slot[ 1 ] ] ];
     func = Replace[ tests, HoldComplete[ t___ ] :> Function[ Null, TrueQ @ Or @ t, HoldAllComplete ] ];
     func /. slot -> Slot
 ];
