@@ -941,7 +941,7 @@ mergeMessages[ messages: { first_Association, __Association } ] :=
     Module[ { role, content, stitch },
         role    = Lookup[ first, "Role" ];
         content = Flatten @ Lookup[ messages, "Content" ];
-        stitch  = StringDelete[ #1, "```\n\n```" ] &;
+        stitch  = StringDelete[ #1, Longest[ "```\n\n```"~~("wl"|"") ] ] &;
 
         If[ AllTrue[ content, StringQ ],
             <|
