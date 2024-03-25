@@ -167,7 +167,10 @@ documentationBasicExamples[ name_, examples_List ] := Enclose[
         strings = ConfirmMatch[ cellToString /@ cells, { ___String }, "CellToString" ];
         If[ strings === { },
             Missing[ ],
-            StringDelete[ "## Basic Examples\n\n" <> StringRiffle[ strings, "\n\n" ], "```\n\n```" ]
+            StringDelete[
+                "## Basic Examples\n\n" <> StringRiffle[ strings, "\n\n" ],
+                Longest[ "```\n\n```"~~("wl"|"") ]
+            ]
         ]
     ],
     throwInternalFailure[ documentationBasicExamples[ name, examples ], ## ] &
