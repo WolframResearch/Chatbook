@@ -1,8 +1,8 @@
 PacletObject[ <|
     "Name"           -> "Wolfram/Chatbook",
     "PublisherID"    -> "Wolfram",
-    "Version"        -> "1.4.5",
-    "WolframVersion" -> "13.3+",
+    "Version"        -> "1.4.6",
+    "WolframVersion" -> "14.0+",
     "Description"    -> "Wolfram Notebooks + LLMs",
     "License"        -> "MIT",
     "Creator"        -> "Connor Gray, Theodore Gray, Richard Hennigan",

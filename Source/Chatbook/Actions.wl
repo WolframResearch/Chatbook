@@ -1348,7 +1348,7 @@ showAPIKeyDialog[ ] := AuthenticationDialog[
         {
             "APIKey" -> <|
                 "Masked"  -> True,
-                "Label"   -> "API Key",
+                "Label"   -> tr["ActionsAPIKeyDialogAPIKey"],
                 "Control" -> Function[
                     InputField[
                         ##,
@@ -1360,10 +1360,10 @@ showAPIKeyDialog[ ] := AuthenticationDialog[
                     ]
                 ]
             |>,
-            "Save" -> <| "Interpreter" -> "Boolean" |>
+            "Save" -> <| "Interpreter" -> "Boolean", "Label" -> tr["ActionsAPIKeyDialogSave"] |>
         },
         AppearanceRules -> {
-            "Title"       -> "Please enter your OpenAI API key",
+            "Title"       -> tr["ActionsAPIKeyDialogTitle"],
             "Description" -> $apiKeyDialogDescription
         }
     ],
