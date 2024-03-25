@@ -109,7 +109,9 @@ $basePromptComponents[ "GeneralInstructionsHeader" ] = "\
 ";
 
 $basePromptComponents[ "NotebooksPreamble" ] = "\
-You are interacting with a user through a Wolfram Notebook interface. \
+You are interacting with a user through a special Wolfram Chat Notebook. \
+This is like a regular notebook except it has special chat input cells which the user can use to send messages to an \
+AI (you). \
 The messages you receive from the user have been converted to plain text from notebook content. \
 Similarly, your messages are automatically converted from plain text before being displayed to the user. \
 For this to work correctly, you must adhere to the following guidelines:
@@ -331,6 +333,7 @@ needsBasePrompt[ KeyValuePattern[ "BasePrompt" -> base_ ] ] := needsBasePrompt @
 needsBasePrompt[ KeyValuePattern[ "LLMEvaluator" -> as_Association ] ] := needsBasePrompt @ as;
 needsBasePrompt[ _Association ] := Null;
 needsBasePrompt[ list_List ] := needsBasePrompt /@ list;
+needsBasePrompt[ All ] := needsBasePrompt /@ Keys[ $basePromptComponents ];
 needsBasePrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -359,6 +362,14 @@ removeBasePrompt[ { message_, rest___ }, names_ ] :=
     ];
 
 removeBasePrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*BasePrompt*)
+BasePrompt // beginDefinition;
+BasePrompt[ part: _String | All ] := catchMine @ BasePrompt @ { part };
+BasePrompt[ parts_List ] := catchMine @ withBasePromptBuilder[ needsBasePrompt /@ Flatten @ parts; $basePrompt ];
+BasePrompt // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
