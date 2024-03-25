@@ -62,7 +62,7 @@ makeChatCloudDockedCellContents // endDefinition;
 cloudCellInsertMenu // beginDefinition;
 
 cloudCellInsertMenu[ ] := ActionMenu[
-    toolbarButtonLabel @ Row @ { "Insert Chat Cell", Spacer[ 5 ], RawBoxes @ TemplateBox[ { }, "ChatInputIcon" ] },
+    toolbarButtonLabel @ Row @ { tr["ChatToolbarInsertChatCell"], Spacer[ 5 ], RawBoxes @ TemplateBox[ { }, "ChatInputIcon" ] },
     {
         insertStyleMenuItem[ "ChatInputIcon", "ChatInput", "'" ],
         insertStyleMenuItem[ "SideChatIcon", "SideChat", "' '" ],
@@ -143,7 +143,7 @@ insertCellStyle // endDefinition;
 cloudPreferencesButton // beginDefinition;
 
 cloudPreferencesButton[ ] := Button[
-    toolbarButtonLabel @ Row @ { "Chat Settings", Spacer[ 5 ], RawBoxes @ TemplateBox[ { }, "AdvancedSettings" ] },
+    toolbarButtonLabel @ Row @ { tr["ChatToolbarChatSettings"], Spacer[ 5 ], RawBoxes @ TemplateBox[ { }, "AdvancedSettings" ] },
     toggleCloudPreferences @ EvaluationNotebook[ ],
     FrameMargins -> { { 0, 4 }, { 0, 0 } }
 ];
@@ -230,7 +230,7 @@ $chatDrivenNotebookLabel := Grid[
         {
             "",
             chatbookIcon[ "ChatDrivenNotebookIcon", False ],
-            Style[ "Chat-Driven Notebook", $notebookTypeLabelOptions ]
+            Style[ tr["ChatToolbarChatDrivenLabel"], $notebookTypeLabelOptions ]
         }
     },
     Alignment -> { Automatic, Center },
@@ -245,7 +245,7 @@ $chatEnabledNotebookLabel := Grid[
         {
             "",
             chatbookIcon[ "ChatEnabledNotebookIcon", False ],
-            Style[ "Chat-Enabled Notebook", $notebookTypeLabelOptions ]
+            Style[ tr["ChatToolbarChatEnabledLabel"], $notebookTypeLabelOptions ]
         }
     },
     Alignment -> { Automatic, Center },
