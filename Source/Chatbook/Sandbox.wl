@@ -42,8 +42,22 @@ $cloudSession              = None;
 
 (* Tests for expressions that lose their initialized status when sending over a link: *)
 $initializationTests = Join[
+
+    (* Pattern matching: *)
     HoldComplete @@ Cases[
         HoldComplete[
+            _AstroPosition? Astronomy`AstroPositionQ,
+            _ChatObject? System`Private`HoldNoEntryQ,
+            _Dataset? System`Private`HoldNoEntryQ,
+            _Rational? AtomQ
+        ],
+        p_ :> Function[ Null, MatchQ[ Unevaluated @ #, p ], HoldAllComplete ]
+    ],
+
+    (* Test functions that need to hold their argument: *)
+    HoldComplete @@ Cases[
+        HoldComplete[
+            AssociationQ,
             AudioQ,
             BoundaryMeshRegionQ,
             DateObjectQ,
@@ -55,10 +69,10 @@ $initializationTests = Join[
         ],
         q_ :> Function[ Null, q @ Unevaluated @ #, HoldAllComplete ]
     ],
+
+    (* Test functions that already hold: *)
     HoldComplete[
-        StructuredArray`HeldStructuredArrayQ,
-        Function[ Null, MatchQ[ Unevaluated[ #1 ], _Dataset ] && System`Private`HoldNoEntryQ[ #1 ], HoldAllComplete ],
-        Function[ Null, MatchQ[ Unevaluated[ #1 ], _Rational ] && AtomQ @ Unevaluated[ #1 ], HoldAllComplete ]
+        StructuredArray`HeldStructuredArrayQ
     ]
 ];
 
@@ -1115,7 +1129,7 @@ addInitializations // endDefinition;
 
 
 $initializationTest := $initializationTest = Module[ { tests, slot, func },
-    tests = Flatten[ HoldComplete @@ Cases[ $initializationTests, f_ :> HoldComplete @ f @ Unevaluated @ slot[ 1 ] ] ];
+    tests = Flatten[ HoldComplete @@ Cases[ $initializationTests, f_ :> HoldComplete @ f @ slot[ 1 ] ] ];
     func = Replace[ tests, HoldComplete[ t___ ] :> Function[ Null, TrueQ @ Or @ t, HoldAllComplete ] ];
     func /. slot -> Slot
 ];
