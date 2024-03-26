@@ -1147,7 +1147,7 @@ Cell[
         DisplayFunction -> Function[
             Evaluate @ ToBoxes @ Button[
                 MouseAppearance[
-                    Tooltip[ RawBoxes @ TemplateBox[ { }, "ChatWidgetIcon" ], "Send to LLM" ],
+                    Tooltip[ RawBoxes @ TemplateBox[ { }, "ChatWidgetIcon" ], tr["StylesheetChatWidgetButtonTooltip"] ],
                     "LinkHand"
                 ],
                 With[ { $CellContext`cell = ParentCell @ EvaluationCell[ ] },

@@ -137,7 +137,11 @@
 "UIAdvancedChooseAutomatically" -> "Choose automatically",
 "UIAdvancedRoles" -> "Roles",
 "UITryEnableChatDialogMainText" -> "Enabling Chat Notebook functionality will destroy the private styles defined in this notebook, and replace them with the shared Chatbook stylesheet.",
-"UITryEnableChatDialogConfirm" -> "Are you sure you wish to continue?"
+"UITryEnableChatDialogConfirm" -> "Are you sure you wish to continue?",
+
+"StylesheetChatWidgetButtonTooltip" -> "Send to LLM",
+"StylesheetAssistantMenuInitializerButtonTooltip" -> "Disable automatic assistance",
+"StylesheetFeedbackButtonTooltip" -> "Send feedback to Wolfram"
 }
 @|
 @|
