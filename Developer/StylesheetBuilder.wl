@@ -211,7 +211,7 @@ assistantMenuInitializer[ name_String, color_ ] :=
                                 ],
                                 Appearance -> $suppressButtonAppearance
                             ],
-                            "Disable automatic assistance"
+                            tr["StylesheetAssistantMenuInitializerButtonTooltip"]
                         ],
                         RawBoxes @ TemplateBox[ { name, color }, "ChatMenuButton" ]
                     },
@@ -251,7 +251,7 @@ feedbackButton[ positive: True|False, name_String ] :=
                     RawBoxes @ TemplateBox[ { }, name<>"Inactive" ],
                     RawBoxes @ TemplateBox[ { }, name<>"Active" ]
                 ],
-                "Send feedback to Wolfram"
+                tr["StylesheetFeedbackButtonTooltip"]
             ],
             "LinkHand"
         ],
