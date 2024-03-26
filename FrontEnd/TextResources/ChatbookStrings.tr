@@ -25,6 +25,14 @@
 "ActionsAPIKeyDialogTitle" -> "Please enter your OpenAI API key",
 "ActionsAPIKeyDialogAPIKey" -> "API Key",
 "ActionsAPIKeyDialogSave" -> "Save",
+"APIKeyDialogCreateKeyTemplate" -> "If you do not yet have an API key, you can create one `1`.",
+"APIKeyDialogSaveKeyTemplate" -> "To avoid seeing this dialog in the future, choose \"Save\" to store the key in `1`.",
+
+"ChatContextDialogSystemPromptText" -> "System Prompt Text",
+"ChatContextDialogCellProcessingFunction" -> "Cell Processing Function",
+"ChatContextDialogCellPostEvaluationFunction" -> "Cell Post Evaluation Function",
+"ChatContextDialogDescription" -> "This is the text that tells you what to do.",
+"ChatContextDialogClickForMoreInfo" -> "Click for more information",
 
 "ChatToolbarInsertChatCell" -> "Insert Chat Cell",
 "ChatToolbarChatSettings" -> "Chat Settings",

@@ -825,13 +825,13 @@ deleteButton0 // endDefinition;
 nonDeletableTooltip // beginDefinition;
 
 nonDeletableTooltip[ KeyValuePattern @ { "CanonicalName" -> name_String, "Origin" -> "BuiltIn" } ] :=
-    trt["ToolManagerTooltipNonDeletable1"][<|"name" -> name|>];
+    trStringTemplate["ToolManagerTooltipNonDeletable1"][<|"name" -> name|>];
 
 nonDeletableTooltip[ KeyValuePattern @ {
     "CanonicalName" -> name_String,
     "Origin"        -> "Persona",
     "PersonaName"   -> persona_String
-} ] := trt["ToolManagerTooltipNonDeletable2"][<|"name" -> name, "persona" -> persona|>];
+} ] := trStringTemplate["ToolManagerTooltipNonDeletable2"][<|"name" -> name, "persona" -> persona|>];
 
 nonDeletableTooltip // endDefinition;
 
@@ -841,7 +841,7 @@ nonDeletableTooltip // endDefinition;
 nonConfigurableTooltip // beginDefinition;
 
 nonConfigurableTooltip[ KeyValuePattern[ "CanonicalName" -> name_String ] ] :=
-    trt["ToolManagerTooltipNonConfigurable"][<|"name" -> name|>];
+    trStringTemplate["ToolManagerTooltipNonConfigurable"][<|"name" -> name|>];
 
 nonConfigurableTooltip // endDefinition;
 

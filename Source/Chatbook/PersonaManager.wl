@@ -267,7 +267,7 @@ formatPacletLink[ origin_String, url_, pacletName_ ] :=
                     formatIcon @ Mouseover[chatbookIcon["PacletRepo", False], chatbookIcon["PacletRepo-hover", False]],
                     url,
                     ImageMargins -> {{13, 0}, {0, 0}}],
-                trt["PersonaManagerOriginRepositoryTooltip"][<|"name" -> pacletName|>]],
+                trStringTemplate["PersonaManagerOriginRepositoryTooltip"][<|"name" -> pacletName|>]],
         _,
             ""];
 formatPacletLink // endDefinition;
@@ -299,7 +299,7 @@ uninstallButton[ name_String, installedQ_, pacletName_String ] :=
                 "Disabled" ->
                     Tooltip[
                         formatIcon @ chatbookIcon["Delete-disabled", False],
-                        trt["PersonaManagerPersonaUninstallTooltip"][pacletName]]},
+                        trStringTemplate["PersonaManagerPersonaUninstallTooltip"][pacletName]]},
             Dynamic[Which[!installedQ, "Disabled", CurrentValue["MouseOver"], "Hover", True, "Default"]],
             ImageSize -> Automatic],
         Block[ { PrintTemporary },

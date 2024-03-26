@@ -379,9 +379,15 @@ showSnapshotModelsQ[] :=
 
 (* Look up translations for `name` in text resources data files. *)
 tr[name_?StringQ] := Dynamic[FEPrivate`FrontEndResource["ChatbookStrings", name]]
+trRaw[name_?StringQ] := FrontEndResource["ChatbookStrings", name]
 
 (* Templated strings require the kernel *)
-trt[name_?StringQ] := StringTemplate[FrontEndResource["ChatbookStrings", name]]
+trStringTemplate[name_?StringQ] := StringTemplate[trRaw[name]]
+
+(* There might be a better way to implement this, but the rationale is we should avoid placing huge
+	expressions or linear syntax within text resource files.
+	The following is compatible with injection into Row or TextData expressions using numbered sequential slots. *)
+trExprTemplate[name_?StringQ] := TemplateObject[Splice[StringSplit[trRaw[name], "`" ~~ d:DigitCharacter.. ~~ "`" :> TemplateSlot[d]]]]
 
 (*
 
