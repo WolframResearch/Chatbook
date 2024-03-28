@@ -368,6 +368,14 @@ removeBasePrompt // endDefinition;
 (* ::Section::Closed:: *)
 (*BasePrompt*)
 BasePrompt // beginDefinition;
+
+GeneralUtilities`SetUsage[ BasePrompt, "\
+BasePrompt[] gives the list of available prompt component names.
+BasePrompt[\"name$\"] gives a base prompt from the given component name.
+BasePrompt[{\"name$1\", \"name$2\", ...}] gives a base prompt built from multiple components.
+BasePrompt[Automatic] gives the base prompt that has been built so far in the current chat notebook evaluation.
+" ];
+
 BasePrompt[ ] := Union[ $basePromptOrder, Keys @ $basePromptClasses ];
 BasePrompt[ part: _String | All | Automatic ] := catchMine @ BasePrompt @ { part };
 BasePrompt[ parts_List ] := catchMine @ Internal`InheritedBlock[ { $collectedPromptComponents }, basePrompt @ parts ];
