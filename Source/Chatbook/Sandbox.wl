@@ -57,13 +57,13 @@ $initializationTests = Join[
     (* Test functions that need to hold their argument: *)
     HoldComplete @@ Cases[
         HoldComplete[
-            AssociationQ,
             AudioQ,
             BoundaryMeshRegionQ,
             DateObjectQ,
             GraphQ,
             MeshRegionQ,
             SparseArrayQ,
+            TimeObjectQ,
             TreeQ,
             VideoQ
         ],
@@ -452,7 +452,7 @@ sandboxEvaluate[ HoldComplete[ xs__, x_ ] ] := sandboxEvaluate @ HoldComplete @ 
 sandboxEvaluate[ HoldComplete[ evaluation_ ] ] /; $CloudEvaluation := cloudSandboxEvaluate @ HoldComplete @ evaluation;
 
 sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
-    Module[ { kernel, null, packets, $sandboxTag, $timedOut, $kernelQuit, results, flat, initialized },
+    Module[ { kernel, null, packets, $sandboxTag, $timedOut, $kernelQuit, results, flat, initialized, final },
 
         $lastSandboxEvaluation = HoldComplete @ evaluation;
         kernel = ConfirmMatch[ getSandboxKernel[ ], _LinkObject, "GetKernel" ];
@@ -467,7 +467,7 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
                         Check[
                             While[
                                 ! MatchQ[
-                                    Sow[ LinkRead @ kernel, $sandboxTag ],
+                                    Sow[ deserializePacket @ LinkRead @ kernel, $sandboxTag ],
                                     _LinkRead|_ReturnExpressionPacket|$Failed
                                 ]
                             ],
@@ -511,16 +511,34 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
 
         (* TODO: include prompting that explains how to use Out[n] to get previous results *)
 
-        $lastSandboxResult = <|
+        final = $lastSandboxResult = <|
             "String"  -> sandboxResultString[ initialized, packets ],
             "Result"  -> sandboxResult @ initialized,
             "Packets" -> packets
-        |>
+        |>;
+
+        If[ TrueQ @ $ChatNotebookEvaluation,
+            final,
+            final[ "String" ]
+        ]
     ],
     throwInternalFailure[ sandboxEvaluate @ HoldComplete @ evaluation, ## ] &
 ];
 
 sandboxEvaluate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*deserializePacket*)
+deserializePacket // beginDefinition;
+
+deserializePacket[ ReturnExpressionPacket[ b_ByteArray ] ] :=
+    ReturnExpressionPacket @ BinaryDeserialize[ b, HoldComplete ];
+
+deserializePacket[ packet_ ] :=
+    packet;
+
+deserializePacket // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1050,11 +1068,18 @@ linkWriteEvaluation // beginDefinition;
 linkWriteEvaluation // Attributes = { HoldAllComplete };
 
 linkWriteEvaluation[ kernel_, evaluation_ ] :=
-    With[ { eval = includeDefinitions @ makeLinkWriteEvaluation @ evaluation },
-        LinkWrite[ kernel, Unevaluated @ EnterExpressionPacket @ ReleaseHold @ eval ]
+    With[ { eval = toWXFEvaluation @ includeDefinitions @ makeLinkWriteEvaluation @ evaluation },
+        LinkWrite[ kernel, Unevaluated @ EnterExpressionPacket @ BinaryDeserialize[ eval, BinarySerialize ] ]
     ];
 
 linkWriteEvaluation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toWXFEvaluation*)
+toWXFEvaluation // beginDefinition;
+toWXFEvaluation[ HoldComplete[ eval_ ] ] := BinarySerialize @ Unevaluated @ eval;
+toWXFEvaluation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
