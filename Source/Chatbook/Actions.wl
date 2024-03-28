@@ -992,14 +992,12 @@ AttachCodeButtons[ attached_, cell_CellObject, string_, lang_ ] := Enclose[
         evalCell = ConfirmMatch[ (FinishDynamic[ ]; EvaluationCell[ ]), _CellObject, "EvaluationCell" ];
 
         (* The chat code block should be the parent of the current evaluation cell *)
-        newParent = ConfirmBy[
-            If[ chatCodeBlockQ @ evalCell, evalCell, parentCell @ evalCell ],
-            chatCodeBlockQ,
-            "ParentCell"
-        ];
+        newParent = If[ chatCodeBlockQ @ evalCell, evalCell, parentCell @ evalCell ];
 
         (* Finish attaching now that we have the correct cell *)
-        AttachCodeButtons[ attached, newParent, string, lang ]
+        If[ chatCodeBlockQ @ newParent,
+            AttachCodeButtons[ attached, newParent, string, lang ]
+        ]
     ],
     throwInternalFailure
 ];
