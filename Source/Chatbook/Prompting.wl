@@ -333,6 +333,7 @@ needsBasePrompt[ KeyValuePattern[ "BasePrompt" -> base_ ] ] := needsBasePrompt @
 needsBasePrompt[ KeyValuePattern[ "LLMEvaluator" -> as_Association ] ] := needsBasePrompt @ as;
 needsBasePrompt[ _Association ] := Null;
 needsBasePrompt[ list_List ] := needsBasePrompt /@ list;
+needsBasePrompt[ name_ -> None ] := removeBasePrompt @ name;
 needsBasePrompt[ All ] := needsBasePrompt /@ Keys[ $basePromptComponents ];
 needsBasePrompt // endDefinition;
 
@@ -367,9 +368,17 @@ removeBasePrompt // endDefinition;
 (* ::Section::Closed:: *)
 (*BasePrompt*)
 BasePrompt // beginDefinition;
-BasePrompt[ part: _String | All ] := catchMine @ BasePrompt @ { part };
-BasePrompt[ parts_List ] := catchMine @ withBasePromptBuilder[ needsBasePrompt /@ Flatten @ parts; $basePrompt ];
+BasePrompt[ ] := Union[ $basePromptOrder, Keys @ $basePromptClasses ];
+BasePrompt[ part: _String | All | Automatic ] := catchMine @ BasePrompt @ { part };
+BasePrompt[ parts_List ] := catchMine @ Internal`InheritedBlock[ { $collectedPromptComponents }, basePrompt @ parts ];
 BasePrompt // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*basePrompt*)
+basePrompt // beginDefinition;
+basePrompt[ parts_List ] := withBasePromptBuilder[ needsBasePrompt /@ Flatten @ parts; $basePrompt ];
+basePrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
