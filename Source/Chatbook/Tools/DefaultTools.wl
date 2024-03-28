@@ -324,7 +324,7 @@ getWolframAlphaText[ as_Association ] :=
 
 getWolframAlphaText[ query_String, steps: True|False|_Missing ] :=
     Module[ { result, data, string },
-        result = wolframAlpha @ query;
+        result = wolframAlpha[ query, steps ];
         data = WolframAlpha[
             query,
             { All, { "Title", "Plaintext", "ComputableData", "Content" } },
@@ -362,9 +362,16 @@ wolframAlpha // endDefinition;
 (*fasterWolframAlphaPods*)
 fasterWolframAlphaPods // beginDefinition;
 
-fasterWolframAlphaPods[ query_String ] := Enclose[
+fasterWolframAlphaPods[ query_String, steps: True|False|_Missing ] := Enclose[
     Catch @ Module[ { titlesAndCells, grouped, small, formatted, framed },
-        titlesAndCells = Confirm[ WolframAlpha[ query, { All, { "Title", "Cell" } } ], "WolframAlpha" ];
+        titlesAndCells = Confirm[
+            WolframAlpha[
+                query,
+                { All, { "Title", "Cell" } },
+                PodStates -> { If[ TrueQ @ steps, "Step-by-step solution", Nothing ] }
+            ],
+            "WolframAlpha"
+        ];
         If[ titlesAndCells === { }, Throw @ Missing[ "NoResults" ] ];
         grouped = DeleteCases[ SortBy[ #1, podOrder ] & /@ GroupBy[ titlesAndCells, podKey ], CellSize -> _, Infinity ];
         small = Select[ grouped, ByteCount @ # < $maximumWAPodByteCount & ];
@@ -378,7 +385,7 @@ fasterWolframAlphaPods[ query_String ] := Enclose[
             RoundingRadius -> 3,
             TaggingRules   -> <| "WolframAlphaPods" -> True |>
         ];
-        fasterWolframAlphaPods[ query ] = framed
+        fasterWolframAlphaPods[ query, steps ] = framed
     ],
     throwInternalFailure
 ];
