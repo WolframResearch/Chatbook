@@ -1,5 +1,5 @@
 <|
-    "BasePrompt"  -> { "WolframLanguageStyle" },
+    "BasePrompt"  -> { "Notebooks", "WolframLanguageStyle" },
     "DisplayName" -> "Code Assistant",
     "Icon"        -> RawBoxes @ TemplateBox[ { }, "ChatIconCodeAssistant" ],
     "Tools"       -> { "DocumentationLookup", "DocumentationSearcher", "WolframAlpha", "WolframLanguageEvaluator" },
