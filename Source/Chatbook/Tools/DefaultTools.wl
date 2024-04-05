@@ -1237,7 +1237,7 @@ Plot sin(x) from -5 to 5
 [assistant]
 ", formatToolCallExample[
     "WolframLanguageEvaluator",
-    <| "code" -> "Plot[Sin[x], {x, -10, 10}, AxesLabel -> {\"x\", \"sin(x)\"}]" |>
+    <| "code" -> "Plot[Sin[x], {x, -5, 5}, AxesLabel -> {\"x\", \"sin(x)\"}]" |>
 ], "
 
 [system]
