@@ -205,8 +205,27 @@ fineTunedModelQ // endDefinition;
 (*multimodalModelQ*)
 (* FIXME: this should be a queryable property from LLMServices: *)
 multimodalModelQ // beginDefinition;
-multimodalModelQ[ name_String? StringQ ] := StringContainsQ[ toModelName @ name, "gpt-"~~$$modelVersion~~"-vision" ];
-multimodalModelQ[ other_ ] := With[ { name = toModelName @ other }, multimodalModelQ @ name /; StringQ @ name ];
+
+multimodalModelQ[ "gpt-4-turbo" ] :=
+    True;
+
+multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "claude-3" ] :=
+    True;
+
+multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4-turbo-" ] :=
+    StringMatchQ[ name, "gpt-4-turbo-"~~DatePattern @ { "Year", "Month", "Day" } ];
+
+multimodalModelQ[ name_String? StringQ ] :=
+    StringContainsQ[ toModelName @ name, "gpt-"~~$$modelVersion~~"-vision" ];
+
+multimodalModelQ[ KeyValuePattern[ "Multimodal" -> multimodal_ ] ] :=
+    TrueQ @ multimodal;
+
+multimodalModelQ[ other_ ] :=
+    With[ { name = toModelName @ other },
+        multimodalModelQ @ name /; StringQ @ name
+    ];
+
 multimodalModelQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

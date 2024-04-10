@@ -1298,7 +1298,8 @@ findTokenizer // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*Pre-cached small tokenizer functions*)
 $cachedTokenizers[ "chat-bison"   ] = ToCharacterCode[ #, "UTF8" ] &;
-$cachedTokenizers[ "gpt-4-vision" ] = If[ graphicsQ[ # ], gpt4ImageTokenizer[ # ], cachedTokenizer[ "gpt-4" ][ # ] ] &;
+$cachedTokenizers[ "gpt-4-vision" ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4" ] ][ # ] &;
+$cachedTokenizers[ "claude3"      ] = If[ graphicsQ @ #, claude3ImageTokenizer, cachedTokenizer[ "claude" ] ][ # ] &;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1347,6 +1348,14 @@ gpt4ImageTokenizer // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*claude3ImageTokenizer*)
+claude3ImageTokenizer // beginDefinition;
+claude3ImageTokenizer[ image_ ] := claude3ImageTokenizer[ image, claude3ImageTokenCount @ image ];
+claude3ImageTokenizer[ image_, count: $$size ] := ConstantArray[ 0, count ]; (* TODO: just a placeholder for counting *)
+claude3ImageTokenizer // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*gpt4ImageTokenCount*)
 gpt4ImageTokenCount // beginDefinition;
 gpt4ImageTokenCount[ image_ ] := gpt4ImageTokenCount[ image, gpt4ImageTokenCount0 @ image ];
@@ -1360,6 +1369,22 @@ gpt4ImageTokenCount0[ image_, resized_Image ] := gpt4ImageTokenCount0[ image, Im
 gpt4ImageTokenCount0[ image_, { w_, h_ } ] := gpt4ImageTokenCount0[ w, h ];
 gpt4ImageTokenCount0[ w_Integer, h_Integer ] := 85 + 170 * Ceiling[ h / 512 ] * Ceiling[ w / 512 ];
 gpt4ImageTokenCount0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*claude3ImageTokenCount*)
+claude3ImageTokenCount // beginDefinition;
+claude3ImageTokenCount[ image_ ] := claude3ImageTokenCount[ image, claude3ImageTokenCount0 @ image ];
+claude3ImageTokenCount[ image_, count: $$size ] := claude3ImageTokenCount[ image ] = count;
+claude3ImageTokenCount // endDefinition;
+
+
+claude3ImageTokenCount0 // beginDefinition;
+claude3ImageTokenCount0[ image_ ] := claude3ImageTokenCount0[ image, resizeMultimodalImage @ image ];
+claude3ImageTokenCount0[ image_, resized_Image ] := claude3ImageTokenCount0[ image, ImageDimensions @ resized ];
+claude3ImageTokenCount0[ image_, { w_, h_ } ] := claude3ImageTokenCount0[ w, h ];
+claude3ImageTokenCount0[ w_Integer, h_Integer ] := Ceiling[ (w * h) / 750 ];
+claude3ImageTokenCount0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
