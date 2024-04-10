@@ -141,6 +141,13 @@ $$invisibleCharacter = Alternatives[
     FromCharacterCode[ 62304 ] (* InvisibleSpace *)
 ];
 
+(* Characters that should be automatically escaped when they appear in plain text to be valid markdown: *)
+$escapedMarkdownCharacters = { "`", "$", "*", "_", "#", "|" };
+
+(* Not included for implementation reasons:
+    [] () {} + - . !
+*)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*Conversion Rules*)
@@ -2052,7 +2059,7 @@ escapeMarkdownCharacters[ text_ ] := text;
 
 $escapeMarkdown = False;
 
-$markdownReplacements = { "\\`" -> "\\`", "\\$" -> "\\$", "`" -> "\\`", "$" -> "\\$" };
+$markdownReplacements = Flatten[ { "\\" <> # -> "\\" <> #, # -> "\\" <> # } & /@ $escapedMarkdownCharacters ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
