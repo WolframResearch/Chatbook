@@ -867,8 +867,15 @@ $textDataFormatRules = {
     table: $$mdTable :> tableCell @ table
     ,
     "[`" ~~ label: Except[ "[" ].. ~~ "`](" ~~ url: Except[ ")" ].. ~~ ")" :> "[" <> label <> "]("<>url<>")",
+
+    (* Escaped markdown characters: *)
     "\\`" :> "`",
     "\\$" :> "$",
+    "\\*" :> "*",
+    "\\_" :> "_",
+    "\\#" :> "#",
+    "\\|" :> "|",
+
     "``" ~~ code__ ~~ "``" /; StringFreeQ[ code, "``" ] :> inlineCodeCell @ code,
     "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`" /; inlineSyntaxQ @ code :> inlineCodeCell @ code,
     "`" ~~ code: Except[ "`"|"\n" ].. ~~ "`" :> inlineCodeCell @ code,
