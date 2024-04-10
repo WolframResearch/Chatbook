@@ -363,6 +363,14 @@ combineExcisedMessages // endDefinition;
 (*tokenCheckedMessage*)
 tokenCheckedMessage // beginDefinition;
 
+tokenCheckedMessage[
+    as: KeyValuePattern[ "TokenizerName" -> "claude-3" ],
+    message0: KeyValuePattern @ { "Role" -> "Assistant", "Content" -> Except[ _String ] }
+] :=
+    With[ { message = revertMultimodalContent @ message0 },
+        tokenCheckedMessage[ as, message ] /; MatchQ[ message, KeyValuePattern[ "Content" -> _String ] ]
+    ];
+
 tokenCheckedMessage[ as_Association, message_ ] /; $cellStringBudget === Infinity := message;
 
 tokenCheckedMessage[ as_Association, message_ ] := Enclose[
