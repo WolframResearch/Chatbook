@@ -55,6 +55,13 @@ Get[ "Wolfram`Chatbook`" ];
 
 
 (* ::Subsection::Closed:: *)
+(*tr*)
+
+
+tr = Wolfram`Chatbook`Common`tr;
+
+
+(* ::Subsection::Closed:: *)
 (*$floatingButtonNinePatch*)
 
 

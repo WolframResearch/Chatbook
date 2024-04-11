@@ -3,6 +3,16 @@
 Begin[ "Wolfram`ChatbookStylesheetBuilder`Private`" ];
 
 
+(* ::Section::Closed:: *)
+(*Resources*)
+
+
+(* ::Subsection::Closed:: *)
+(*tr*)
+
+
+tr = Wolfram`Chatbook`Common`tr;
+
 
 (* ::Section::Closed:: *)
 (*Notebook*)
