@@ -102,7 +102,7 @@ jobs:
       run: wolframscript -f Scripts/BuildMX.wls
 
     - name: Submit
-      uses: WolframResearch/submit-paclet@v1.11.0
+      run: wolframscript -f Scripts/SubmitPaclet.wls
 
     - name: UploadArtifact
       uses: actions/upload-artifact@v4
