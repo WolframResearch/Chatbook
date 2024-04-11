@@ -73,7 +73,17 @@ $styleRoles = <|
     "ChatSystemInput"        -> "System"
 |>;
 
-$cachedTokenizerNames = { "chat-bison", "claude", "claude-3", "gpt-2", "gpt-3.5", "gpt-4-vision", "gpt-4" };
+$cachedTokenizerNames = {
+    "chat-bison",
+    "claude-3",
+    "claude",
+    "gpt-2",
+    "gpt-3.5",
+    "gpt-4-turbo",
+    "gpt-4-vision",
+    "gpt-4"
+};
+
 $cachedTokenizers     = <| |>;
 $fallbackTokenizer    = "gpt-2";
 
