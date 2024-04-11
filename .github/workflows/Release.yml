@@ -29,7 +29,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Check
       run: wolframscript -f Scripts/CheckPaclet.wls
@@ -64,7 +64,7 @@ jobs:
         dpkg -i gh.deb
 
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Build
       run: wolframscript -f Scripts/BuildPaclet.wls
@@ -96,7 +96,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: BuildMX
       run: wolframscript -f Scripts/BuildMX.wls
@@ -105,7 +105,7 @@ jobs:
       uses: WolframResearch/submit-paclet@v1.11.0
 
     - name: UploadArtifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         path: ${{ env.PACLET_BUILD_DIR }}
         if-no-files-found: ignore
