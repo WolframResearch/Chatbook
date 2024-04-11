@@ -21,10 +21,13 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `flushFETasks;
 `getBoxObjectFromBoxID;
 `initFETaskWidget;
+`nextCell;
 `notebookRead;
 `openerView;
 `parentCell;
 `parentNotebook;
+`previousCell;
+`rasterize;
 `replaceCellContext;
 `rootEvaluationCell;
 `selectionEvaluateCreateCell;
@@ -43,6 +46,10 @@ Needs[ "Wolfram`Chatbook`Utils`"    ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
+
+(* cSpell: ignore Rasterizer *)
+$cloudRasterizerLocation = "/Chatbook/API/RasterizerService";
+
 $checkEvaluationCell := $VersionNumber <= 13.2; (* Flag that determines whether to use workarounds for #187 *)
 
 (* Used to determine whether or not interactive input (e.g. ChoiceDialog, DialogInput) can be used: *)
@@ -321,6 +328,28 @@ parentCell // beginDefinition;
 parentCell[ obj: _CellObject|_BoxObject ] /; $cloudNotebooks := cloudParentCell @ obj;
 parentCell[ obj: _CellObject|_BoxObject ] := ParentCell @ obj;
 parentCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*nextCell*)
+nextCell // beginDefinition;
+nextCell[ cell_CellObject ] /; $cloudNotebooks := nextCell[ cell, parentNotebook @ cell ];
+nextCell[ cell_CellObject ] := NextCell @ cell;
+nextCell[ cell_CellObject, nbo_NotebookObject ] := nextCell[ cell, Cells @ nbo ];
+nextCell[ cell_, { ___, cell_, next_CellObject, ___ } ] := next;
+nextCell[ _CellObject, ___ ] := None;
+nextCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*previousCell*)
+previousCell // beginDefinition;
+previousCell[ cell_CellObject ] /; $cloudNotebooks := previousCell[ cell, parentNotebook @ cell ];
+previousCell[ cell_CellObject ] := PreviousCell @ cell;
+previousCell[ cell_CellObject, nbo_NotebookObject ] := previousCell[ cell, Cells @ nbo ];
+previousCell[ cell_, { ___, previous_CellObject, cell_, ___ } ] := previous;
+previousCell[ _CellObject, ___ ] := None;
+previousCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -626,6 +655,83 @@ compressUntilViewed // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Misc*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*rasterize*)
+rasterize // beginDefinition;
+
+rasterize[ expr_ ] :=
+    If[ TrueQ @ $CloudEvaluation,
+        cloudRasterize @ Unevaluated @ expr,
+        Rasterize @ Unevaluated @ expr
+    ];
+
+(* rasterize[ expr_ ] :=
+    With[ { id = CreateUUID[ ] },
+        WithCleanup[
+            PutAppend[ <| "ID" -> id, "Expression" :> expr, "Event" -> "Before" |>, CloudObject[ "tmp/rasterizeLog.wl" ] ],
+            TimeConstrained[ UsingFrontEnd @ Rasterize @ expr, 5, UsingFrontEnd @ Rasterize @ expr ],
+            PutAppend[ <| "ID" -> id, "Expression" :> expr, "Event" -> "After" |>, CloudObject[ "tmp/rasterizeLog.wl" ] ]
+        ]
+    ]; *)
+
+rasterize // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudRasterize*)
+cloudRasterize // beginDefinition;
+
+cloudRasterize[ expr_, opts: OptionsPattern[ Rasterize ] ] :=
+    Progress`EvaluateWithProgress[
+        cloudRasterize0[ expr, opts ],
+        <| "Text" -> "Preparing image...", "ElapsedTime" -> Automatic |>
+    ];
+
+cloudRasterize // endDefinition;
+
+
+cloudRasterize0 // beginDefinition;
+
+cloudRasterize0[ expr_, opts: OptionsPattern[ Rasterize ] ] := Enclose[
+    Module[ { api, wxf, b64, req, img },
+        api = ConfirmMatch[ getCloudRasterizer[ ], _CloudObject, "RasterizerAPI" ];
+        wxf = ConfirmBy[ BinarySerialize[ Unevaluated @ expr, PerformanceGoal -> "Size" ], ByteArrayQ, "WXF" ];
+        b64 = ConfirmBy[ BaseEncode @ wxf, StringQ, "Base64" ];
+        req = HTTPRequest[ api, <| "Method" -> "POST", "Body" -> { "Expression" -> b64 } |> ];
+        img = ConfirmBy[ URLExecute[ req, "PNG" ], ImageQ, "Image" ];
+        cloudRasterize[ expr, opts ] = img
+    ],
+    throwInternalFailure
+];
+
+cloudRasterize0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getCloudRasterizer*)
+getCloudRasterizer // beginDefinition;
+
+getCloudRasterizer[ ] := Enclose[
+    getCloudRasterizer[ ] = ConfirmMatch[
+        CloudDeploy[
+            APIFunction[
+                (* TODO: options and format *)
+                { "Expression" -> "String" },
+                Rasterize @ BinaryDeserialize @ BaseDecode[ #Expression ] &,
+                "PNG"
+            ],
+            CloudObject @ $cloudRasterizerLocation,
+            EvaluationPrivileges -> None,
+            Permissions          -> "Private"
+        ],
+        _CloudObject
+    ],
+    throwInternalFailure
+];
+
+getCloudRasterizer // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

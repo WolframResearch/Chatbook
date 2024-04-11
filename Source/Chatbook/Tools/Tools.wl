@@ -5,10 +5,13 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 HoldComplete[
     `$attachments;
     `$defaultChatTools;
+    `$selectedTools;
     `$toolConfiguration;
     `$toolEvaluationResults;
     `$toolOptions;
     `$toolResultStringLength;
+    `expressionURIKey;
+    `expressionURIKeyQ;
     `getToolByName;
     `getToolDisplayName;
     `getToolFormattingFunction;
@@ -18,10 +21,13 @@ HoldComplete[
     `makeToolConfiguration;
     `makeToolResponseString;
     `resolveTools;
+    `simpleToolRequestParser;
     `toolData;
     `toolName;
     `toolOptionValue;
     `toolRequestParser;
+    `toolSelectedQ;
+    `toolShortName;
     `withToolBox;
 ];
 

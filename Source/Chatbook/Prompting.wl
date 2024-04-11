@@ -6,6 +6,7 @@ BeginPackage[ "Wolfram`Chatbook`Prompting`" ];
 `$basePromptComponents;
 `$fullBasePrompt;
 `needsBasePrompt;
+`removeBasePrompt;
 `withBasePromptBuilder;
 
 Begin[ "`Private`" ];
@@ -31,13 +32,16 @@ $basePromptOrder = {
     "InlineSymbolLinks",
     "MessageConversionHeader",
     "ChatInputIndicator",
+    "WolframAlphaInputIndicator",
     "ConversionLargeOutputs",
     "ConversionGraphics",
     "MarkdownImageBox",
+    "MarkdownImageBoxImporting",
     "Checkboxes",
     "CheckboxesIndeterminate",
     "ConversionFormatting",
     "SpecialURI",
+    "SpecialURIImporting",
     "SpecialURIAudio",
     "SpecialURIVideo",
     "SpecialURIDynamic",
@@ -75,11 +79,14 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "InlineSymbolLinks"            -> { },
     "MessageConversionHeader"      -> { "NotebooksPreamble" },
     "ChatInputIndicator"           -> { "MessageConversionHeader" },
+    "WolframAlphaInputIndicator"   -> { "MessageConversionHeader" },
     "ConversionLargeOutputs"       -> { "MessageConversionHeader" },
     "ConversionGraphics"           -> { "MessageConversionHeader" },
     "MarkdownImageBox"             -> { "MessageConversionHeader" },
+    "MarkdownImageBoxImporting"    -> { "MarkdownImageBox" },
     "ConversionFormatting"         -> { "MessageConversionHeader" },
     "SpecialURI"                   -> { },
+    "SpecialURIImporting"          -> { "SpecialURI" },
     "SpecialURIAudio"              -> { "SpecialURI" },
     "SpecialURIVideo"              -> { "SpecialURI" },
     "SpecialURIDynamic"            -> { "SpecialURI" },
@@ -102,7 +109,9 @@ $basePromptComponents[ "GeneralInstructionsHeader" ] = "\
 ";
 
 $basePromptComponents[ "NotebooksPreamble" ] = "\
-You are interacting with a user through a Wolfram Notebook interface. \
+You are interacting with a user through a special Wolfram Chat Notebook. \
+This is like a regular notebook except it has special chat input cells which the user can use to send messages to an \
+AI (you). \
 The messages you receive from the user have been converted to plain text from notebook content. \
 Similarly, your messages are automatically converted from plain text before being displayed to the user. \
 For this to work correctly, you must adhere to the following guidelines:
@@ -158,6 +167,10 @@ $basePromptComponents[ "ChatInputIndicator" ] = "\
 $$chatIndicatorSymbol$$. Cells appearing above the chat input are included to provide additional context, \
 but chat inputs represent the actual message from the user to you.";
 
+$basePromptComponents[ "WolframAlphaInputIndicator" ] = "\
+	* Inputs denoted with \[FreeformPrompt] are Wolfram Alpha inputs. When available, the parsed Wolfram \
+Language code will be included on the next line.";
+
 $basePromptComponents[ "ConversionLargeOutputs" ] = "\
 	* Large outputs may be shortened: ``DynamicModule[<<4>>]``";
 
@@ -165,17 +178,23 @@ $basePromptComponents[ "ConversionGraphics" ] = "\
 	* Rendered graphics will typically be replaced with a shortened box representation: \\!\\(\\*GraphicsBox[<<>>]\\)";
 
 $basePromptComponents[ "MarkdownImageBox" ] = "\
-	* If there are images embedded in the notebook, they will be replaced by a box representation in the \
-form ``MarkdownImageBox[\"![label](uri)\"]``. You will also receive the original image immediately after this. \
-You can use the markdown from this box ``![label](uri)`` in your responses if you want to display the original image.";
+	* If there are images embedded in the notebook, they will be replaced by a box representation in the form \
+``MarkdownImageBox[\"![label](attachment://content-id)\"]``. You will also receive the original image immediately \
+after this. You can use the markdown from this box ``![label](attachment://content-id)`` in your responses if you \
+want to display the original image.";
+
+$basePromptComponents[ "MarkdownImageBoxImporting" ] = "\
+		* Use the syntax <!attachment://content-id!> to inline one of these images in code you write for the evaluator \
+tool. For example, ``ColorNegate[<!attachment://content-id!>]``. The expression will be inserted in place. Do not \
+include the MarkdownImageBox wrapper. You can also use this syntax to inline images into WL code blocks.";
 
 $basePromptComponents[ "Checkboxes" ] = "\
-    * Checkboxes in the UI will be replaced with one of the following text representations:
-        * A Checkbox that's selected becomes ``[\[Checkmark]]``
-        * A Checkbox that's not selected becomes ``[ ]``";
+	* Checkboxes in the UI will be replaced with one of the following text representations:
+		* A Checkbox that's selected becomes ``[\[Checkmark]]``
+		* A Checkbox that's not selected becomes ``[ ]``";
 
 $basePromptComponents[ "CheckboxesIndeterminate" ] = "\
-        * An indeterminate Checkbox becomes ``[-]``";
+    	* An indeterminate Checkbox becomes ``[-]``";
 
 $basePromptComponents[ "ConversionFormatting" ] = "\
 	* Cell formatting is converted to markdown where possible, so \
@@ -187,14 +206,18 @@ $basePromptComponents[ "SpecialURI" ] = "\
 interactive interface elements. You can use these in your responses to display the same elements to the user, but they \
 must be formatted as image links (include the '!' at the beginning). If you do not include the '!', the link will fail.";
 
+$basePromptComponents[ "SpecialURIImporting" ] = "\
+	* Use the syntax <!scheme://content-id!> to inline one of these expressions in code you write for the evaluator \
+tool.";
+
 $basePromptComponents[ "SpecialURIAudio" ] = "\
-    * ![label](audio://content-id) represents an interactive audio player.";
+	* ![label](audio://content-id) represents an interactive audio player.";
 
 $basePromptComponents[ "SpecialURIVideo" ] = "\
-    * ![label](video://content-id) represents an interactive video player.";
+	* ![label](video://content-id) represents an interactive video player.";
 
 $basePromptComponents[ "SpecialURIDynamic" ] = "\
-    * ![label](dynamic://content-id) represents an embedded dynamic UI.";
+	* ![label](dynamic://content-id) represents an embedded dynamic UI.";
 
 $basePromptComponents[ "VisibleUserInput" ] = "\
 * The user can still see their input, so there's no need to repeat it in your response";
@@ -304,13 +327,66 @@ withBasePromptBuilder // endDefinition;
 needsBasePrompt // beginDefinition;
 needsBasePrompt[ name_String ] /; KeyExistsQ[ $collectedPromptComponents, name ] := Null;
 needsBasePrompt[ name_String ] := $collectedPromptComponents[ name ] = name;
-needsBasePrompt[ Automatic|Inherited|_Missing ] := Null;
+needsBasePrompt[ $$unspecified ] := Null;
 needsBasePrompt[ None ] := $collectedPromptComponents = <| |>;
 needsBasePrompt[ KeyValuePattern[ "BasePrompt" -> base_ ] ] := needsBasePrompt @ base;
 needsBasePrompt[ KeyValuePattern[ "LLMEvaluator" -> as_Association ] ] := needsBasePrompt @ as;
 needsBasePrompt[ _Association ] := Null;
 needsBasePrompt[ list_List ] := needsBasePrompt /@ list;
+needsBasePrompt[ name_ -> None ] := removeBasePrompt @ name;
+needsBasePrompt[ All ] := needsBasePrompt /@ Keys[ $basePromptComponents ];
 needsBasePrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*removeBasePrompt*)
+removeBasePrompt // beginDefinition;
+
+removeBasePrompt[ name_String ] := removeBasePrompt @ { name };
+removeBasePrompt[ names: { ___String } ] := KeyDropFrom[ $collectedPromptComponents, names ];
+
+removeBasePrompt[ message_, name_String ] :=
+    removeBasePrompt[ message, { name } ];
+
+removeBasePrompt[ message_String, names: { ___String } ] := (
+    removeBasePrompt @ names;
+    StringDelete[ message, Values @ KeyTake[ $basePromptComponents, names ] ]
+);
+
+removeBasePrompt[ message: KeyValuePattern @ { "Content" -> content_String }, names_ ] :=
+    Append[ message, "Content" -> removeBasePrompt[ content, names ] ];
+
+removeBasePrompt[ { message_, rest___ }, names_ ] :=
+    If[ MatchQ[ message, KeyValuePattern[ "Role" -> "System" ] ],
+        { removeBasePrompt[ message, names ], rest },
+        { message, rest }
+    ];
+
+removeBasePrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*BasePrompt*)
+BasePrompt // beginDefinition;
+
+GeneralUtilities`SetUsage[ BasePrompt, "\
+BasePrompt[] gives the list of available prompt component names.
+BasePrompt[\"name$\"] gives a base prompt from the given component name.
+BasePrompt[{\"name$1\", \"name$2\", ...}] gives a base prompt built from multiple components.
+BasePrompt[Automatic] gives the base prompt that has been built so far in the current chat notebook evaluation.
+" ];
+
+BasePrompt[ ] := Union[ $basePromptOrder, Keys @ $basePromptClasses ];
+BasePrompt[ part: _String | All | Automatic ] := catchMine @ BasePrompt @ { part };
+BasePrompt[ parts_List ] := catchMine @ Internal`InheritedBlock[ { $collectedPromptComponents }, basePrompt @ parts ];
+BasePrompt // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*basePrompt*)
+basePrompt // beginDefinition;
+basePrompt[ parts_List ] := withBasePromptBuilder[ needsBasePrompt /@ Flatten @ parts; $basePrompt ];
+basePrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

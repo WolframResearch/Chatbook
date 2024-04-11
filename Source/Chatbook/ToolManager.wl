@@ -449,7 +449,10 @@ getFullToolList // endDefinition;
 (* ::Subsection::Closed:: *)
 (*getFullPersonaList*)
 getFullPersonaList // beginDefinition;
-getFullPersonaList[ ] := standardizePersonaData /@ Values @ KeyDrop[ GetCachedPersonaData[ ], "RawModel" ];
+
+getFullPersonaList[ ] :=
+    standardizePersonaData /@ Values @ KeyDrop[ GetCachedPersonaData[ "IncludeHidden" -> False ], "RawModel" ];
+
 getFullPersonaList // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

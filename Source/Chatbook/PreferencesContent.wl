@@ -357,7 +357,7 @@ makePersonaSelector0 // beginDefinition;
 
 (* Top-level function without arguments, calls the version with personas from GetPersonasAssociation *)
 makePersonaSelector0[ ] :=
-    makePersonaSelector0 @ GetPersonasAssociation[ ];
+    makePersonaSelector0 @ GetPersonasAssociation[ "IncludeHidden" -> False ];
 
 (* Overload of makePersonaSelector0 that takes an Association of personas,
    converts it to a list of labels for PopupMenu *)

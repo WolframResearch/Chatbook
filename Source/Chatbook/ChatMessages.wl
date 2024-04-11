@@ -18,6 +18,7 @@ Wolfram`Chatbook`CellToChatMessage;
 `expandMultimodalString;
 `getTokenizer;
 `getTokenizerName;
+`logUsage;
 `resizeMultimodalImage;
 
 Begin[ "`Private`" ];
@@ -41,15 +42,16 @@ $ContextAliases[ "tokens`" ] = "Wolfram`LLMFunctions`Utilities`Tokenization`";
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$maxMMImageSize          = 512;
-$multimodalMessages      = False;
-$tokenBudget             = 2^13;
-$tokenPressure           = 0.0;
-$reservedTokens          = 500; (* TODO: determine this at submit time *)
-$cellStringBudget        = Automatic;
-$initialCellStringBudget = $defaultMaxCellStringLength;
-$$validMessageResult     = _Association? AssociationQ | _Missing | Nothing;
-$$validMessageResults    = $$validMessageResult | { $$validMessageResult ... };
+$maxMMImageSize              = 512;
+$multimodalMessages          = False;
+$currentMessageMinimumTokens = 16;
+$tokenBudget                 = 2^13;
+$tokenPressure               = 0.0;
+$reservedTokens              = 500; (* TODO: determine this at submit time *)
+$cellStringBudget            = Automatic;
+$initialCellStringBudget     = $defaultMaxCellStringLength;
+$$validMessageResult         = _Association? AssociationQ | _Missing | Nothing;
+$$validMessageResults        = $$validMessageResult | { $$validMessageResult ... };
 
 $$inlineModifierCell = Alternatives[
     Cell[ _, "InlineModifierReference", ___ ],
@@ -71,7 +73,17 @@ $styleRoles = <|
     "ChatSystemInput"        -> "System"
 |>;
 
-$cachedTokenizerNames = { "chat-bison", "claude", "gpt-2", "gpt-3.5", "gpt-4-vision", "gpt-4" };
+$cachedTokenizerNames = {
+    "chat-bison",
+    "claude-3",
+    "claude",
+    "gpt-2",
+    "gpt-3.5",
+    "gpt-4-turbo",
+    "gpt-4-vision",
+    "gpt-4"
+};
+
 $cachedTokenizers     = <| |>;
 $fallbackTokenizer    = "gpt-2";
 
@@ -125,16 +137,29 @@ constructMessages[ settings_Association? AssociationQ, cells: { __Cell } ] :=
 
 constructMessages[ settings_Association? AssociationQ, messages0: { __Association } ] :=
     Enclose @ Module[ { prompted, messages, processed },
+
         If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
         needsBasePrompt @ settings;
         prompted  = addPrompts[ settings, messages0 ];
-        messages  = prompted /. s_String :> RuleCondition @ StringReplace[ s, "%%BASE_PROMPT%%" -> $basePrompt ];
+
+        messages = prompted /.
+            s_String :> RuleCondition @ StringTrim @ StringReplace[
+                s,
+                {
+                    "%%BASE_PROMPT%%" :> $basePrompt,
+                    (* cSpell: ignore ENDRESULT *)
+                    "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :>
+                        "\nENDRESULT\n"
+                }
+            ];
+
         processed = applyProcessingFunction[ settings, "ChatMessages", HoldComplete[ messages, $ChatHandlerData ] ];
 
         If[ ! MatchQ[ processed, $$validMessageResults ],
             messagePrint[ "InvalidMessages", getProcessingFunction[ settings, "ChatMessages" ], processed ];
             processed = messages
         ];
+
         processed //= DeleteCases @ KeyValuePattern[ "Content" -> "" ];
         Sow[ <| "Messages" -> processed |>, $chatDataTag ];
 
@@ -214,14 +239,11 @@ makeChatMessages // beginDefinition;
 makeChatMessages[ settings_, cells_ ] :=
     Block[
         {
-            $multimodalMessages = TrueQ @ settings[ "Multimodal" ],
-            $tokenBudget        = settings[ "MaxContextTokens" ],
-            $tokenPressure      = 0.0,
-            $initialCellStringBudget = Replace[
-                settings[ "MaxCellStringLength" ],
-                Except[ $$size ] -> $defaultMaxCellStringLength
-            ],
-            $chatInputIndicator = mixedContentQ @ cells,
+            $multimodalMessages      = TrueQ @ settings[ "Multimodal" ],
+            $tokenBudget             = makeTokenBudget @ settings,
+            $tokenPressure           = 0.0,
+            $initialCellStringBudget = makeCellStringBudget @ settings,
+            $chatInputIndicator      = mixedContentQ @ cells,
             $cellStringBudget
         },
         $cellStringBudget = $initialCellStringBudget;
@@ -254,7 +276,12 @@ makeChatMessages0[ settings0_, cells_List ] := Enclose[
             tokenCheckedMessage[ settings, msg ]
         ];
 
-        message = ConfirmMatch[ toMessage[ cell, settings ], $$validMessageResults, "Message" ];
+        message = ConfirmMatch[
+            (* Ensure _some_ content from current chat input is used, regardless of remaining tokens: *)
+            Block[ { $tokenBudget = Max[ $tokenBudget, $currentMessageMinimumTokens ] }, toMessage[ cell, settings ] ],
+            $$validMessageResults,
+            "Message"
+        ];
 
         history = ConfirmMatch[
             Reverse @ Flatten @ MapIndexed[
@@ -274,6 +301,33 @@ makeChatMessages0[ settings0_, cells_List ] := Enclose[
 ];
 
 makeChatMessages0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeTokenBudget*)
+makeTokenBudget // beginDefinition;
+
+makeTokenBudget[ settings_Association ] :=
+    makeTokenBudget[ settings[ "MaxContextTokens" ], settings[ "TokenBudgetMultiplier" ] ];
+
+makeTokenBudget[ max: $$size, $$unspecified ] :=
+    max;
+
+makeTokenBudget[ max: $$size, multiplier: $$size ] :=
+    With[ { budget = Ceiling[ max * multiplier ] },
+        budget /; MatchQ[ budget, $$size ]
+    ];
+
+makeTokenBudget // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeCellStringBudget*)
+makeCellStringBudget // beginDefinition;
+makeCellStringBudget[ settings_Association ] := makeCellStringBudget @ settings[ "MaxCellStringLength" ];
+makeCellStringBudget[ max: $$size ] := max;
+makeCellStringBudget[ Except[ $$size ] ] := $defaultMaxCellStringLength;
+makeCellStringBudget // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -318,6 +372,14 @@ combineExcisedMessages // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*tokenCheckedMessage*)
 tokenCheckedMessage // beginDefinition;
+
+tokenCheckedMessage[
+    as: KeyValuePattern[ "TokenizerName" -> "claude-3" ],
+    message0: KeyValuePattern @ { "Role" -> "Assistant", "Content" -> Except[ _String ] }
+] :=
+    With[ { message = revertMultimodalContent @ message0 },
+        tokenCheckedMessage[ as, message ] /; MatchQ[ message, KeyValuePattern[ "Content" -> _String ] ]
+    ];
 
 tokenCheckedMessage[ as_Association, message_ ] /; $cellStringBudget === Infinity := message;
 
@@ -384,6 +446,9 @@ cutMessageContent[ as_, message: KeyValuePattern[ "Content" -> { a___, _? graphi
 cutMessageContent[ as_, message: KeyValuePattern[ "Content" -> { content___String } ], count_, budget_ ] :=
     cutMessageContent[ as, <| message, "Content" -> StringJoin @ content |>, count, budget ];
 
+cutMessageContent[ as_, message_String, count_, budget_ ] :=
+    cutMessageContent[ as, <| "Content" -> message, "Type" -> "Text" |>, count, budget ];
+
 cutMessageContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -391,16 +456,73 @@ cutMessageContent // endDefinition;
 (*tokenCount*)
 tokenCount // beginDefinition;
 
+tokenCount[ as_, KeyValuePattern[ "TokenCount" -> n_Integer ] ] := n;
+
+tokenCount[ as_, messages_List ] :=
+    With[ { counts = tokenCount[ as, # ] & /@ messages },
+        Total @ counts /; MatchQ[ counts, { ___Integer } ]
+    ];
+
 tokenCount[ as_Association, message_ ] := Enclose[
     Module[ { tokenizer, content },
         tokenizer = getTokenizer @ as;
         content = ConfirmBy[ messageContent @ message, validContentQ, "Content" ];
         Length @ ConfirmMatch[ applyTokenizer[ tokenizer, content ], _List, "TokenCount" ]
     ],
-    throwInternalFailure[ tokenCount[ as, message ], ## ] &
+    throwInternalFailure
 ];
 
 tokenCount // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*logUsage*)
+logUsage // beginDefinition;
+
+logUsage[ KeyValuePattern[ "FullContent" -> response_ ] ] :=
+    logUsage @ response;
+
+logUsage[ _ProgressIndicator ] :=
+    Null;
+
+logUsage[ response_String ] := logUsage[
+    $ChatHandlerData[ "ChatNotebookSettings" ],
+    $ChatHandlerData[ "Messages" ],
+    response
+];
+
+logUsage[ settings_, messages_List, response_String ] :=
+    logUsage[ settings, messages, response, $ChatHandlerData[ "Usage" ] ];
+
+logUsage[ settings_, messages_List, response_String, usage_Association ] := Enclose[
+    Module[ { prompt1, completion1, prompt2, completion2, prompt, completion, requests },
+
+        prompt1     = ConfirmMatch[ usage[ "Prompt"     ]           , $$size, "Prompt1"     ];
+        completion1 = ConfirmMatch[ usage[ "Completion" ]           , $$size, "Completion1" ];
+        prompt2     = ConfirmMatch[ tokenCount[ settings, messages ], $$size, "Prompt2"     ];
+        completion2 = ConfirmMatch[ tokenCount[ settings, response ], $$size, "Completion2" ];
+
+        prompt     = prompt1     + prompt2;
+        completion = completion1 + completion2;
+        requests   = Replace[ usage[ "Requests" ], Except[ $$size ] :> 0 ] + 1;
+
+        addHandlerArguments[ "Usage" -> <| "Prompt" -> prompt, "Completion" -> completion, "Requests" -> requests |> ]
+    ],
+    throwInternalFailure
+];
+
+logUsage[ settings_, messages_List, response_String, $$unspecified ] :=
+    addHandlerArguments[
+        "Usage" -> <|
+            "Prompt"     -> tokenCount[ settings, messages ],
+            "Completion" -> tokenCount[ settings, response ],
+            "Requests"   -> 1
+        |>
+    ];
+
+logUsage // endDefinition;
+
+(* TODO: this could log usage by model since the model could technically change during a chat evaluation *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -468,26 +590,15 @@ makeCurrentRole // beginDefinition;
 makeCurrentRole[ as_Association? AssociationQ ] :=
     makeCurrentRole[ as, as[ "BasePrompt" ], as[ "LLMEvaluator" ] ];
 
-makeCurrentRole[ as_, None, _ ] :=
-    Missing[ ];
-
-makeCurrentRole[ as_, role_String, _ ] :=
-    <| "Role" -> "System", "Content" -> role |>;
-
-makeCurrentRole[ as_, Automatic|Inherited|_Missing, name_String ] :=
-    With[ { prompt = namedRolePrompt @ name },
-        <| "Role" -> "System", "Content" -> prompt |> /; StringQ @ prompt
+makeCurrentRole[ as_, base_, name_String ] :=
+    With[ { persona = GetCachedPersonaData @ name },
+        makeCurrentRole[ as, base, persona ] /; AssociationQ @ persona
     ];
 
-makeCurrentRole[ as_, _, KeyValuePattern[ "BasePrompt" -> None ] ] := (
-    needsBasePrompt @ None;
-    Missing[ ]
-);
-
-makeCurrentRole[ as_, base_, eval_Association ] := (
+makeCurrentRole[ as_, base_, persona_Association ] := (
     needsBasePrompt @ base;
-    needsBasePrompt @ eval;
-    <| "Role" -> "System", "Content" -> buildSystemPrompt @ Association[ as, KeyDrop[ eval, { "Tools" } ] ] |>
+    needsBasePrompt @ persona;
+    <| "Role" -> "System", "Content" -> buildSystemPrompt @ Association[ as, KeyDrop[ persona, { "Tools" } ] ] |>
 );
 
 makeCurrentRole[ as_, base_, _ ] := (
@@ -496,28 +607,6 @@ makeCurrentRole[ as_, base_, _ ] := (
 );
 
 makeCurrentRole // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*namedRolePrompt*)
-namedRolePrompt // ClearAll;
-
-namedRolePrompt[ name_String ] := Enclose[
-    Catch @ Module[ { data, pre, post, params },
-        data   = ConfirmBy[ GetCachedPersonaData @ name, AssociationQ, "GetCachedPersonaData" ];
-        pre    = Lookup[ data, "Pre", TemplateApply @ Lookup[ data, "PromptTemplate" ] ];
-        post   = Lookup[ data, "Post" ];
-        params = Select[ <| "Pre" -> pre, "Post" -> post |>, StringQ ];
-
-        If[ params === <| |>,
-            Missing[ "NotAvailable" ],
-            ConfirmBy[ TemplateApply[ $promptTemplate, params ], StringQ, "TemplateApply" ]
-        ]
-    ],
-    throwInternalFailure[ namedRolePrompt @ name, ## ] &
-];
-
-namedRolePrompt[ ___ ] := Missing[ "NotAvailable" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -556,7 +645,8 @@ getPrePrompt[ as_Association ] := toPromptString @ FirstCase[
         as[ "LLMEvaluator", "Prompts" ],
         as[ "ChatContextPreprompt" ],
         as[ "Pre" ],
-        as[ "PromptTemplate" ]
+        as[ "PromptTemplate" ],
+        as[ "Prompts" ]
     },
     expr_ :> With[ { e = expr },
         e /; MatchQ[ e, _String | _TemplateObject | { (_String|_TemplateObject) ... } ]
@@ -625,16 +715,32 @@ getGroupPrompt // endDefinition;
 (* ::Subsection::Closed:: *)
 (*toPromptString*)
 toPromptString // beginDefinition;
-toPromptString[ string_String ] := string;
-toPromptString[ template_TemplateObject ] := With[ { string = TemplateApply @ template }, string /; StringQ @ string ];
-toPromptString[ _Missing | Automatic | Inherited | None ] := Missing[ ];
 
-toPromptString[ prompts_List ] :=
-    With[ { strings = DeleteMissing[ toPromptString /@ prompts ] },
-        StringRiffle[ prompts, "\n\n" ] /; MatchQ[ strings, { ___String } ]
-    ];
+toPromptString[ expr_ ] := Enclose[
+    Module[ { prompt },
+        prompt = ConfirmMatch[ toPromptString0 @ expr, _String|_Missing, "PromptString" ];
+        If[ StringQ @ prompt, StringTrim @ prompt, prompt ]
+    ],
+    throwInternalFailure
+];
 
 toPromptString // endDefinition;
+
+
+toPromptString0 // beginDefinition;
+toPromptString0[ string_String ] := string;
+toPromptString0[ template_TemplateObject ] := With[ { string = TemplateApply @ template }, string /; StringQ @ string ];
+toPromptString0[ _Missing | Automatic | Inherited | None ] := Missing[ ];
+
+toPromptString0[ prompts_List ] :=
+    With[ { strings = DeleteMissing[ toPromptString0 /@ prompts ] },
+        StringRiffle[
+            DeleteCases[ StringTrim[ strings, ("\r"|"\n").. ], "" ],
+            "\n\n"
+        ] /; MatchQ[ strings, { ___String } ]
+    ];
+
+toPromptString0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -738,14 +844,17 @@ inferMultimodalTypes0 // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*ensureCompatibleImage*)
 ensureCompatibleImage // beginDefinition;
-ensureCompatibleImage[ img_ ] /; $useRasterizationCompatibility && ! Image`PossibleImageQ @ img := Rasterize @ img;
+ensureCompatibleImage[ img_RawBoxes ] := rasterize @ img; (* Workaround for 446030 *)
+ensureCompatibleImage[ img_ ] /; $useRasterizationCompatibility && ! Image`PossibleImageQ @ img := rasterize @ img;
 ensureCompatibleImage[ img_ ] := img;
 ensureCompatibleImage // endDefinition;
 
 
 $useRasterizationCompatibility := Enclose[
     $useRasterizationCompatibility =
-        ! PacletNewerQ[ ConfirmBy[ PacletObject[ "ServiceConnection_OpenAI" ], PacletObjectQ ], "13.3.18" ]
+        Or[ $CloudEvaluation,
+            ! PacletNewerQ[ ConfirmBy[ PacletObject[ "ServiceConnection_OpenAI" ], PacletObjectQ ], "13.3.18" ]
+        ]
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -771,7 +880,13 @@ graphicsURIQ // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*cellToString*)
 cellToString // beginDefinition;
-cellToString[ cell_Cell ] := CellToString[ cell, "MaxCellStringLength" -> $cellStringBudget ];
+
+cellToString[ cell_Cell ] := CellToString[
+    cell,
+    "ContentTypes"        -> If[ TrueQ @ $multimodalMessages, { "Text", "Image" }, Automatic ],
+    "MaxCellStringLength" -> $cellStringBudget
+];
+
 cellToString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -844,7 +959,7 @@ mergeMessages[ messages: { first_Association, __Association } ] :=
     Module[ { role, content, stitch },
         role    = Lookup[ first, "Role" ];
         content = Flatten @ Lookup[ messages, "Content" ];
-        stitch  = StringDelete[ #1, "```\n\n```" ] &;
+        stitch  = StringDelete[ #1, Longest[ "```\n\n```"~~("wl"|"") ] ] &;
 
         If[ AllTrue[ content, StringQ ],
             <|
@@ -1201,12 +1316,16 @@ findTokenizer // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*Pre-cached small tokenizer functions*)
 $cachedTokenizers[ "chat-bison"   ] = ToCharacterCode[ #, "UTF8" ] &;
-$cachedTokenizers[ "gpt-4-vision" ] = If[ graphicsQ[ # ], gpt4ImageTokenizer[ # ], cachedTokenizer[ "gpt-4" ][ # ] ] &;
+$cachedTokenizers[ "gpt-4-turbo"  ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4" ] ][ # ] &;
+$cachedTokenizers[ "gpt-4-vision" ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4" ] ][ # ] &;
+$cachedTokenizers[ "claude-3"     ] = If[ graphicsQ @ #, claude3ImageTokenizer, cachedTokenizer[ "claude" ] ][ # ] &;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*tokenizerName*)
 tokenizerName // beginDefinition;
+
+tokenizerName[ "gpt-4-turbo-preview" ] = "gpt-4";
 
 tokenizerName[ name_String ] :=
     SelectFirst[
@@ -1228,7 +1347,7 @@ resizeMultimodalImage // beginDefinition;
 
 resizeMultimodalImage[ image0_ ] := Enclose[
     Module[ { image, dimensions, max, small, resized },
-        image = ConfirmBy[ If[ image2DQ @ image0, image0, Rasterize @ image0 ], image2DQ, "Image" ];
+        image = ConfirmBy[ If[ image2DQ @ image0, image0, rasterize @ image0 ], image2DQ, "Image" ];
         dimensions = ConfirmMatch[ ImageDimensions @ image, { _Integer, _Integer }, "Dimensions" ];
         max = ConfirmMatch[ $maxMMImageSize, _Integer? Positive, "MaxSize" ];
         small = ConfirmMatch[ AllTrue[ dimensions, LessThan @ max ], True|False, "Small" ];
@@ -1250,6 +1369,14 @@ gpt4ImageTokenizer // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*claude3ImageTokenizer*)
+claude3ImageTokenizer // beginDefinition;
+claude3ImageTokenizer[ image_ ] := claude3ImageTokenizer[ image, claude3ImageTokenCount @ image ];
+claude3ImageTokenizer[ image_, count: $$size ] := ConstantArray[ 0, count ]; (* TODO: just a placeholder for counting *)
+claude3ImageTokenizer // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*gpt4ImageTokenCount*)
 gpt4ImageTokenCount // beginDefinition;
 gpt4ImageTokenCount[ image_ ] := gpt4ImageTokenCount[ image, gpt4ImageTokenCount0 @ image ];
@@ -1263,6 +1390,22 @@ gpt4ImageTokenCount0[ image_, resized_Image ] := gpt4ImageTokenCount0[ image, Im
 gpt4ImageTokenCount0[ image_, { w_, h_ } ] := gpt4ImageTokenCount0[ w, h ];
 gpt4ImageTokenCount0[ w_Integer, h_Integer ] := 85 + 170 * Ceiling[ h / 512 ] * Ceiling[ w / 512 ];
 gpt4ImageTokenCount0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*claude3ImageTokenCount*)
+claude3ImageTokenCount // beginDefinition;
+claude3ImageTokenCount[ image_ ] := claude3ImageTokenCount[ image, claude3ImageTokenCount0 @ image ];
+claude3ImageTokenCount[ image_, count: $$size ] := claude3ImageTokenCount[ image ] = count;
+claude3ImageTokenCount // endDefinition;
+
+
+claude3ImageTokenCount0 // beginDefinition;
+claude3ImageTokenCount0[ image_ ] := claude3ImageTokenCount0[ image, resizeMultimodalImage @ image ];
+claude3ImageTokenCount0[ image_, resized_Image ] := claude3ImageTokenCount0[ image, ImageDimensions @ resized ];
+claude3ImageTokenCount0[ image_, { w_, h_ } ] := claude3ImageTokenCount0[ w, h ];
+claude3ImageTokenCount0[ w_Integer, h_Integer ] := Ceiling[ (w * h) / 750 ];
+claude3ImageTokenCount0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

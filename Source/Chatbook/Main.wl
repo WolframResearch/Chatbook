@@ -6,6 +6,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Declare Symbols*)
+`$AutomaticAssistance;
 `$AvailableTools;
 `$ChatAbort;
 `$ChatbookContexts;
@@ -22,6 +23,9 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$InstalledTools;
 `$SandboxKernel;
 `$ToolFunctions;
+`AbsoluteCurrentChatSettings;
+`AppendURIInstructions;
+`BasePrompt;
 `CellToChatMessage;
 `Chatbook;
 `ChatbookAction;
@@ -30,14 +34,17 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `CreateChatNotebook;
 `CurrentChatSettings;
 `FormatChatOutput;
+`FormatToolCall;
 `FormatToolResponse;
 `GetChatHistory;
 `GetExpressionURI;
 `GetExpressionURIs;
 `InvalidateServiceCache;
 `MakeExpressionURI;
+`SandboxLinguisticAssistantData;
 `SetModel;
 `SetToolOptions;
+`StringToBoxes;
 `WriteChatOutputCell;
 
 (* ::**************************************************************************************************************:: *)
@@ -108,6 +115,7 @@ Block[ { $ContextPath },
 (* ::Section::Closed:: *)
 (*Protected Symbols*)
 Protect[
+    $AutomaticAssistance,
     $ChatNotebookEvaluation,
     $DefaultChatHandlerFunctions,
     $DefaultChatProcessingFunctions,
@@ -116,6 +124,9 @@ Protect[
     $DefaultTools,
     $InstalledTools,
     $ToolFunctions,
+    AbsoluteCurrentChatSettings,
+    AppendURIInstructions,
+    BasePrompt,
     CellToChatMessage,
     Chatbook,
     ChatbookAction,
@@ -124,23 +135,30 @@ Protect[
     CreateChatNotebook,
     CurrentChatSettings,
     FormatChatOutput,
+    FormatToolCall,
     FormatToolResponse,
     GetChatHistory,
     GetExpressionURI,
     GetExpressionURIs,
     MakeExpressionURI,
+    SandboxLinguisticAssistantData,
     SetModel,
     SetToolOptions,
+    StringToBoxes,
     WriteChatOutputCell
 ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Subcontexts*)
-$ChatbookContexts = Select[ Contexts[ "Wolfram`Chatbook`*" ], StringFreeQ[ "`Private`" ] ];
+$ChatbookContexts := $ChatbookContexts = Select[ Contexts[ "Wolfram`Chatbook`*" ], StringFreeQ[ "`Private`" ] ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
+If[ Wolfram`ChatbookInternal`$BuildingMX,
+    $ChatbookContexts;
+];
+
 End[ ];
 EndPackage[ ];

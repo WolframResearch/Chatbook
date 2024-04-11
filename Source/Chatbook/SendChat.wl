@@ -8,12 +8,12 @@ BeginPackage[ "Wolfram`Chatbook`SendChat`" ];
 
 HoldComplete[
     `$debugLog;
+    `chatHandlerFunctionsKeys;
+    `dynamicAutoFormatQ;
     `makeOutputDingbat;
-    `multimodalPacletsAvailable;
-    `resolveAutoSettings;
+    `scrollOutputQ;
     `sendChat;
     `toImageURI;
-    `toolsEnabledQ;
     `writeReformattedCell;
 ];
 
@@ -31,6 +31,7 @@ Needs[ "Wolfram`Chatbook`Handlers`"         ];
 Needs[ "Wolfram`Chatbook`InlineReferences`" ];
 Needs[ "Wolfram`Chatbook`Models`"           ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
+Needs[ "Wolfram`Chatbook`Prompting`"        ];
 Needs[ "Wolfram`Chatbook`Serialization`"    ];
 Needs[ "Wolfram`Chatbook`Services`"         ];
 Needs[ "Wolfram`Chatbook`Settings`"         ];
@@ -136,7 +137,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         $resultCellCache = <| |>;
         $debugLog = Internal`Bag[ ];
 
-        If[ ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
+        If[ settings[ "SetCellDingbat" ] && ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
             SetOptions[
                 evalCell,
                 CellDingbat -> ReplaceAll[
@@ -259,7 +260,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         $resultCellCache = <| |>;
         $debugLog = Internal`Bag[ ];
 
-        If[ ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
+        If[ settings[ "SetCellDingbat" ] && ! TrueQ @ $cloudNotebooks && chatInputCellQ @ evalCell,
             SetOptions[
                 evalCell,
                 CellDingbat -> ReplaceAll[
@@ -336,7 +337,14 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association }
                 "presence_penalty"  -> presPenalty,
                 "model"             -> toModelName @ model,
                 "stream"            -> stream,
-                "stop"              -> "ENDTOOLCALL"
+                "stop"              -> Select[
+                    DeleteDuplicates @ Flatten @ {
+                        settings[ "StopTokens" ],
+                        If[ settings[ "ToolMethod" ] === "Simple", { "\n/exec" }, "ENDTOOLCALL" ],
+                        If[ TrueQ @ $AutomaticAssistance, "[INFO]", Nothing ]
+                    },
+                    StringQ
+                ]
             |>,
             Automatic|_Missing
         ];
@@ -533,21 +541,22 @@ chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] :
     Needs[ "LLMServices`" -> None ];
     $lastChatSubmitResult = ReleaseHold[
         $lastChatSubmit = HoldForm @ applyProcessingFunction[
-        settings,
-        "ChatSubmit",
-        HoldComplete[
-            standardizeMessageKeys @ messages,
-            makeLLMConfiguration @ settings,
-            HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
-            HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings
-        ],
-        <|
-            "Container"             :> container,
-            "Messages"              -> messages,
-            "CellObject"            -> cellObject,
-            "DefaultSubmitFunction" -> LLMServices`ChatSubmit
-        |>,
-        LLMServices`ChatSubmit
+            settings,
+            "ChatSubmit",
+            HoldComplete[
+                standardizeMessageKeys @ messages,
+                makeLLMConfiguration @ settings,
+                Authentication       -> settings[ "Authentication" ],
+                HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
+                HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings
+            ],
+            <|
+                "Container"             :> container,
+                "Messages"              -> messages,
+                "CellObject"            -> cellObject,
+                "DefaultSubmitFunction" -> LLMServices`ChatSubmit
+            |>,
+            LLMServices`ChatSubmit
         ]
     ],
     { LLMServices`ChatSubmit::unsupported }
@@ -591,8 +600,15 @@ ServiceConnectionUtilities`ConnectionInformation["Anthropic", "ProcessedRequests
 
 makeLLMConfiguration[ as_Association ] :=
     $lastLLMConfiguration = LLMConfiguration @ Association[
-        KeyTake[ as, { "Model", "MaxTokens", "Temperature" } ],
-        "StopTokens" -> { "ENDTOOLCALL" }
+        KeyTake[ as, { "Model", "MaxTokens", "Temperature", "PresencePenalty" } ],
+        "StopTokens" -> Select[
+            DeleteDuplicates @ Flatten @ {
+                as[ "StopTokens" ],
+                If[ as[ "ToolMethod" ] === "Simple", { "\n/exec" }, "ENDTOOLCALL" ],
+                If[ TrueQ @ $AutomaticAssistance, "[INFO]", Nothing ]
+            },
+            StringQ
+        ]
     ];
 
 makeLLMConfiguration // endDefinition;
@@ -617,12 +633,13 @@ chatHandlers // Attributes = { HoldFirst };
 chatHandlers[ container_, cellObject_, settings_ ] :=
     $lastHandlers = With[
         {
-            autoOpen     = TrueQ @ $autoOpen,
-            alwaysOpen   = TrueQ @ $alwaysOpen,
-            autoAssist   = $autoAssistMode,
-            dynamicSplit = dynamicSplitQ @ settings,
-            handlers     = getHandlerFunctions @ settings,
-            useTasks     = feTaskQ @ settings
+            autoOpen      = TrueQ @ $autoOpen,
+            alwaysOpen    = TrueQ @ $alwaysOpen,
+            autoAssist    = $AutomaticAssistance,
+            dynamicSplit  = dynamicSplitQ @ settings,
+            handlers      = getHandlerFunctions @ settings,
+            useTasks      = feTaskQ @ settings,
+            toolFormatter = getToolFormatter @ settings
         },
         {
             bodyChunkHandler    = Lookup[ handlers, "BodyChunkReceived", None ],
@@ -633,11 +650,12 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
             "BodyChunkReceived" -> Function @ catchAlways[
                 withFETasks[ useTasks ] @ Block[
                     {
-                        $autoOpen       = autoOpen,
-                        $alwaysOpen     = alwaysOpen,
-                        $settings       = settings,
-                        $autoAssistMode = autoAssist,
-                        $dynamicSplit   = dynamicSplit
+                        $alwaysOpen          = alwaysOpen,
+                        $AutomaticAssistance = autoAssist,
+                        $autoOpen            = autoOpen,
+                        $customToolFormatter = toolFormatter,
+                        $dynamicSplit        = dynamicSplit,
+                        $settings            = settings
                     },
                     bodyChunkHandler[ #1 ];
                     Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
@@ -647,14 +665,16 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
             "TaskFinished" -> Function @ catchAlways[
                 withFETasks[ useTasks ] @ Block[
                     {
-                        $autoOpen       = autoOpen,
-                        $alwaysOpen     = alwaysOpen,
-                        $settings       = settings,
-                        $autoAssistMode = autoAssist,
-                        $dynamicSplit   = dynamicSplit
+                        $alwaysOpen          = alwaysOpen,
+                        $AutomaticAssistance = autoAssist,
+                        $autoOpen            = autoOpen,
+                        $customToolFormatter = toolFormatter,
+                        $dynamicSplit        = dynamicSplit,
+                        $settings            = settings
                     },
                     taskFinishedHandler[ #1 ];
                     Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
+                    logUsage @ container;
                     checkResponse[ $settings, Unevaluated @ container, cellObject, #1 ]
                 ]
             ]
@@ -787,11 +807,13 @@ $chunkDebug = Internal`Bag[ ];
 appendStringContent // beginDefinition;
 appendStringContent // Attributes = { HoldFirst };
 
-appendStringContent[ container_, text_String ] :=
+appendStringContent[ container_, text_String ] := Quiet[
     If[ StringQ @ container,
         container = autoCorrect @ StringDelete[ container <> convertUTF8 @ text, StartOfString~~Whitespace ],
         container = autoCorrect @ convertUTF8 @ text
-    ];
+    ],
+    $CharacterEncoding::utf8
+];
 
 appendStringContent // endDefinition;
 
@@ -804,7 +826,15 @@ autoCorrect // endDefinition;
 
 $llmAutoCorrectRules = Flatten @ {
     "wolfram_language_evaliator" -> "wolfram_language_evaluator",
-    "\\!\\(\\*MarkdownImageBox[\"" ~~ uri__ ~~ "\"]\\)" :> uri,
+    "\\!\\(\\*MarkdownImageBox[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
+    "\\!\\(MarkdownImageBox[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
+    "\"\\\\!\\\\(\\\\*MarkdownImageBox[\\\"" ~~ Shortest[ uri__ ] ~~ "\\\"]\\\\)\"" :> uri,
+    "\"\\\\!\\\\(MarkdownImageBox[\\\"" ~~ Shortest[ uri__ ] ~~ "\\\"]\\\\)\"" :> uri,
+    "<" ~~ Shortest[ scheme: LetterCharacter.. ~~ "://" ~~ id: Except[ "!" ].. ] ~~ ">" :>
+        "<!" <> scheme <> "://" <> id <> "!>",
+    "\\uf351" -> "\[FreeformPrompt]",
+    "\n<|image_sentinel|>\n" :> "\n",
+    "<|image_sentinel|>" :> "",
     $longNameCharacters
 };
 
@@ -828,7 +858,7 @@ splitDynamicContent[ container_, text_String, cell_, uuid_String ] :=
     splitDynamicContent[ container, StringSplit[ text, $dynamicSplitRules ], cell, uuid ];
 
 splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid_String ] := Enclose[
-    Catch @ Module[ { boxObject, reformatted, write, nbo },
+    Catch @ Module[ { boxObject, settings, reformatted, write, nbo },
 
         boxObject = ConfirmMatch[
             getBoxObjectFromBoxID[ cell, uuid ],
@@ -840,8 +870,13 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
             throwTop[ Quiet[ TaskRemove @ $lastTask, TaskRemove::timnf ]; Null ]
         ];
 
+        settings = ConfirmBy[ $ChatHandlerData[ "ChatNotebookSettings" ], AssociationQ, "Settings" ];
+
         reformatted = ConfirmMatch[
-            Block[ { $dynamicText = False }, reformatTextData @ StringJoin @ static ],
+            If[ TrueQ @ settings[ "AutoFormat" ],
+                Block[ { $dynamicText = False }, reformatTextData @ StringJoin @ static ],
+                { StringJoin @ static }
+            ],
             $$textDataList,
             "ReformatTextData"
         ];
@@ -884,19 +919,19 @@ splitDynamicContent // endDefinition;
 checkResponse // beginDefinition;
 
 checkResponse[ settings: KeyValuePattern[ "ToolsEnabled" -> False ], container_, cell_, as_Association ] :=
-    If[ TrueQ @ $autoAssistMode,
+    If[ TrueQ @ $AutomaticAssistance,
         writeResult[ settings, container, cell, as ],
         $nextTaskEvaluation = Hold @ writeResult[ settings, container, cell, as ]
     ];
 
-checkResponse[ settings_, container_? toolFreeQ, cell_, as_Association ] :=
-    If[ TrueQ @ $autoAssistMode,
+checkResponse[ settings_, container_, cell_, as_Association ] /; toolFreeQ[ settings, container ] :=
+    If[ TrueQ @ $AutomaticAssistance,
         writeResult[ settings, container, cell, as ],
         $nextTaskEvaluation = Hold @ writeResult[ settings, container, cell, as ]
     ];
 
 checkResponse[ settings_, container_Symbol, cell_, as_Association ] :=
-    If[ TrueQ @ $autoAssistMode,
+    If[ TrueQ @ $AutomaticAssistance,
         toolEvaluation[ settings, Unevaluated @ container, cell, as ],
         $nextTaskEvaluation = Hold @ toolEvaluation[ settings, Unevaluated @ container, cell, as ]
     ];
@@ -911,16 +946,27 @@ writeResult // beginDefinition;
 writeResult[ settings_, container_, cell_, as_Association ] := Enclose[
     Module[ { log, processed, body, data },
 
+        If[ TrueQ @ $AutomaticAssistance,
+            NotebookDelete @ Cells[ PreviousCell @ cell, AttachedCell -> True, CellStyle -> "MinimizedChatIcon" ]
+        ];
+
         log = ConfirmMatch[ Internal`BagPart[ $debugLog, All ], { ___Association }, "DebugLog" ];
         processed = StringJoin @ Cases[ log, KeyValuePattern[ "BodyChunkProcessed" -> s_String ] :> s ];
         { body, data } = ConfirmMatch[ extractBodyData @ log, { _, _ }, "ExtractBodyData" ];
 
-        If[ MatchQ[ as[ "StatusCode" ], Except[ 200, _Integer ] ] || (processed === "" && AssociationQ @ data),
-            writeErrorCell[ cell, $badResponse = Association[ as, "Body" -> body, "BodyJSON" -> data ] ],
-            writeReformattedCell[ settings, container, cell ]
+        $lastFullResponseData = <| "Body" -> body, "Processed" -> processed, "Data" -> data |>;
+
+        Which[ MatchQ[ as[ "StatusCode" ], Except[ 200, _Integer ] ] || (processed === "" && AssociationQ @ data),
+               writeErrorCell[ cell, $badResponse = Association[ as, "Body" -> body, "BodyJSON" -> data ] ]
+               ,
+               processed === body === "",
+               writeErrorCell[ cell, $badResponse = Association[ as, "Error" -> "ServerResponseEmpty" ] ]
+               ,
+               True,
+               writeReformattedCell[ settings, container, cell ]
         ]
     ],
-    throwInternalFailure[ writeResult[ settings, container, cell, as ], ## ] &
+    throwInternalFailure
 ];
 
 writeResult // endDefinition;
@@ -930,8 +976,11 @@ writeResult // endDefinition;
 (*extractBodyData*)
 extractBodyData // beginDefinition;
 
+extractBodyData[ { ___, KeyValuePattern[ "TaskStatus" -> "Finished" ], rest__ } ] :=
+    extractBodyData @ { rest };
+
 extractBodyData[ log_List ] := Enclose[
-    Catch @ Module[ { chunks, folded, data },
+    Catch @ Module[ { chunks, folded, data, xml },
 
         FirstCase[
             Reverse @ log,
@@ -942,10 +991,13 @@ extractBodyData[ log_List ] := Enclose[
         ];
 
         chunks = Cases[ log, KeyValuePattern[ "BodyChunk" -> s: Except[ "", _String ] ] :> s ];
-        folded = Fold[ StringJoin, chunks ];
+        folded = Fold[ StringJoin, "", chunks ];
         data   = Quiet @ Developer`ReadRawJSONString @ folded;
 
         If[ AssociationQ @ data, Throw @ { folded, data } ];
+
+        xml = parseXMLResponse @ folded;
+        If[ AssociationQ @ xml, Throw @ { folded, xml } ];
 
         FirstCase[
             Flatten @ StringCases[
@@ -958,10 +1010,53 @@ extractBodyData[ log_List ] := Enclose[
             { folded, Missing[ "NotAvailable" ] }
         ]
     ],
-    throwInternalFailure[ extractBodyData @ log, ## ] &
+    throwInternalFailure
 ];
 
 extractBodyData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*parseXMLResponse*)
+parseXMLResponse // beginDefinition;
+
+parseXMLResponse[ response_String ] :=
+    If[ StringContainsQ[ response, "<" ~~ __ ~~ ">" ~~ ___ ~~ "</" ~~ ___ ~~ ">" ],
+        parseXMLResponse[ Quiet @ ImportString[ response, "XML" ] ],
+        $Failed
+    ];
+
+parseXMLResponse[ XMLObject[ ___ ][ ___, elem_XMLElement, ___ ] ] :=
+    With[ { as = Association @ parseXMLElement @ elem },
+        If[ AssociationQ @ as,
+            as,
+            $Failed
+        ]
+    ];
+
+parseXMLResponse[ failure_? FailureQ ] := failure;
+
+parseXMLResponse // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*parseXMLElement*)
+parseXMLElement // beginDefinition;
+
+parseXMLElement[ XMLElement[ _, _List, content_List ] ] := parseXMLElement /@ content;
+parseXMLElement[ XMLElement[ key_String, { ___ }, value_String ] ] := key -> value;
+parseXMLElement[ XMLElement[ key_String, { ___ }, { value_String } ] ] := key -> value;
+parseXMLElement[ XMLElement[ key_String, { ___ }, { values__String } ] ] := key -> { values };
+
+parseXMLElement[ xml: XMLElement[ key_String, { ___ }, data_List ] ] :=
+    With[ { as = parseXMLElement /@ data },
+       If[ AssociationQ @ Association @ as,
+           key -> Association @ as,
+           xml
+       ]
+    ];
+
+parseXMLElement // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -971,10 +1066,22 @@ extractBodyData // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*toolFreeQ*)
 toolFreeQ // beginDefinition;
-toolFreeQ[ KeyValuePattern[ "FullContent" -> s_ ] ] := toolFreeQ @ s;
-toolFreeQ[ _ProgressIndicator ] := True;
-toolFreeQ[ s_String ] := ! MatchQ[ toolRequestParser @ s, { _, _LLMToolRequest|_Failure } ];
+toolFreeQ[ settings_, KeyValuePattern[ "FullContent" -> s_ ] ] := toolFreeQ[ settings[ "ToolMethod" ], s ];
+toolFreeQ[ method_, _ProgressIndicator ] := True;
+toolFreeQ[ "Simple", s_String ] := simpleToolFreeQ @ s;
+toolFreeQ[ _, s_String ] := toolFreeQ0 @ s;
 toolFreeQ // endDefinition;
+
+toolFreeQ0 // beginDefinition;
+toolFreeQ0[ s_String ] := ! MatchQ[ toolRequestParser @ s, { _, _LLMToolRequest|_Failure } ];
+toolFreeQ0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*simpleToolFreeQ*)
+simpleToolFreeQ // beginDefinition;
+simpleToolFreeQ[ s_String ] := ! MatchQ[ simpleToolRequestParser @ s, { _, _LLMToolRequest|_Failure } ];
+simpleToolFreeQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -982,12 +1089,21 @@ toolFreeQ // endDefinition;
 toolEvaluation // beginDefinition;
 
 toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
-    Module[ { string, callPos, toolCall, toolResponse, output, messages, newMessages, req, toolID, task },
+    Module[
+        { string, simple, parser, callPos, toolCall, toolResponse, output, messages, newMessages, req, toolID, task },
+
+        (* Ensure dynamic text is up to date: *)
+        $dynamicTrigger++;
+        $lastDynamicUpdate = AbsoluteTime[ ];
 
         string = ConfirmBy[ container[ "FullContent" ], StringQ, "FullContent" ];
 
+        simple = settings[ "ToolMethod" ] === "Simple";
+        parser = If[ simple, simpleToolRequestParser, toolRequestParser ];
+
+        (* TODO: implement a `getToolRequestParser` that gives the appropriate parser based on ToolMethod *)
         { callPos, toolCall } = ConfirmMatch[
-            toolRequestParser[ convertUTF8[ string, False ] ],
+            parser[ Quiet[ convertUTF8[ string, True ], $CharacterEncoding::utf8 ] ],
             { _, _LLMToolRequest|_Failure },
             "ToolRequestParser"
         ];
@@ -1002,13 +1118,18 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         ];
 
         output = ConfirmBy[ toolResponseString @ toolResponse, StringQ, "ToolResponseString" ];
+        (* If[ simple, output = output <> "\n\n" <> $noRepeatMessage ]; *)
 
-        messages = ConfirmMatch[ settings[ "Data", "Messages" ], { __Association }, "Messages" ];
+        messages = ConfirmMatch[
+            removeBasePrompt[ settings[ "Data", "Messages" ], { "AutoAssistant" } ],
+            { __Association },
+            "Messages"
+        ];
 
         newMessages = Join[
             messages,
             {
-                <| "Role" -> "assistant", "Content" -> StringTrim @ string <> "\nENDTOOLCALL" |>,
+                <| "Role" -> "assistant", "Content" -> appendToolCallEndToken[ settings, StringTrim @ string ] |>,
                 <| "Role" -> "system"   , "Content" -> expandMultimodalString @ ToString @ output |>
             }
         ];
@@ -1019,10 +1140,14 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
                   ConfirmMatch[ makeHTTPRequest[ settings, newMessages ], _HTTPRequest, "HTTPRequest" ]
               ];
 
-        toolID = Hash[ toolResponse, Automatic, "HexString" ];
+        toolID = tinyHash @ toolResponse;
         $toolEvaluationResults[ toolID ] = toolResponse;
 
-        appendToolResult[ container, output, toolID ];
+        appendToolResult[ container, settings, output, toolID ];
+
+        (* Update dynamic text with tool result before waiting for the next response: *)
+        $dynamicTrigger++;
+        $lastDynamicUpdate = AbsoluteTime[ ];
 
         task = $lastTask = chatSubmit[ container, req, cell, settings ];
 
@@ -1037,10 +1162,22 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
 
         task
     ],
-    throwInternalFailure[ toolEvaluation[ settings, container, cell, as ], ## ] &
+    throwInternalFailure
 ];
 
 toolEvaluation // endDefinition;
+
+(* $noRepeatMessage = "\
+The user has already been provided with this result, so you do not need to repeat it.
+Reply with /end if the tool call provides a satisfactory answer, otherwise respond normally."; *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*appendToolCallEndToken*)
+appendToolCallEndToken // beginDefinition;
+appendToolCallEndToken[ settings_, string_String ] /; settings[ "ToolMethod" ] === "Simple" := string <> "\n/exec";
+appendToolCallEndToken[ settings_, string_String ] := string <> "\nENDTOOLCALL";
+appendToolCallEndToken // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1060,8 +1197,15 @@ toolResponseString // endDefinition;
 appendToolResult // beginDefinition;
 appendToolResult // Attributes = { HoldFirst };
 
+appendToolResult[ container_Symbol, KeyValuePattern[ "ToolMethod" -> "Simple" ], output_String, id_String ] :=
+    Module[ { append },
+        append = "\n/exec\nRESULT\n"<>output<>"\nENDRESULT(" <> id <> ")\n\n";
+        container[ "FullContent"    ] = container[ "FullContent"    ] <> append;
+        container[ "DynamicContent" ] = container[ "DynamicContent" ] <> append;
+    ];
+
 (* cSpell: ignore ENDRESULT *)
-appendToolResult[ container_Symbol, output_String, id_String ] :=
+appendToolResult[ container_Symbol, settings_, output_String, id_String ] :=
     Module[ { append },
         append = "ENDTOOLCALL\nRESULT\n"<>output<>"\nENDRESULT(" <> id <> ")\n\n";
         container[ "FullContent"    ] = container[ "FullContent"    ] <> append;
@@ -1183,7 +1327,7 @@ keepValidGeneratedCells // beginDefinition;
    `keepValidGeneratedCells` gathers up all the generated cells that come after the evaluation cell and if it finds
    a chat output cell, it deletes it.
 *)
-keepValidGeneratedCells[ cellData: { KeyValuePattern[ "CellObject" -> _CellObject ] ... } ] /; $autoAssistMode :=
+keepValidGeneratedCells[ cellData: { KeyValuePattern[ "CellObject" -> _CellObject ] ... } ] /; $AutomaticAssistance :=
     Module[ { delete, chatOutputs, cells },
         delete      = TakeWhile[ cellData, MatchQ @ KeyValuePattern[ "CellAutoOverwrite" -> True ] ];
         chatOutputs = Cases[ delete, KeyValuePattern[ "Style" -> $$chatOutputStyle ] ];
@@ -1210,283 +1354,6 @@ chatHistoryCellsAndTarget[ { before___CellObject, after_CellObject } ] :=
     ];
 
 chatHistoryCellsAndTarget // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*Settings*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*resolveAutoSettings*)
-(* TODO: this could be integrated into currentChatSettings (perhaps as an option) *)
-resolveAutoSettings // beginDefinition;
-
-(* Don't do anything if settings have already been resolved *)
-resolveAutoSettings[ settings: KeyValuePattern[ "ResolvedAutoSettings" -> True ] ] :=
-    settings;
-
-(* Evaluate rhs of RuleDelayed settings to get final value *)
-resolveAutoSettings[ settings: KeyValuePattern[ _ :> _ ] ] :=
-    resolveAutoSettings @ AssociationMap[ Apply @ Rule, settings ];
-
-(* Add additional settings and resolve actual LLMTool expressions *)
-resolveAutoSettings[ settings_Association ] := resolveAutoSettings0 @ <|
-    settings,
-    "HandlerFunctions"     -> getHandlerFunctions @ settings,
-    "LLMEvaluator"         -> getLLMEvaluator @ settings,
-    "Model"                -> resolveFullModelSpec @ settings,
-    "ProcessingFunctions"  -> getProcessingFunctions @ settings,
-    "ResolvedAutoSettings" -> True,
-    If[ StringQ @ settings[ "Tokenizer" ],
-        <|
-            "TokenizerName" -> getTokenizerName @ settings,
-            "Tokenizer"     -> Automatic
-        |>,
-        "TokenizerName" -> Automatic
-    ]
-|>;
-
-resolveAutoSettings // endDefinition;
-
-
-resolveAutoSettings0 // beginDefinition;
-
-resolveAutoSettings0[ settings_Association ] := Enclose[
-    Module[ { auto, sorted, resolved },
-        auto     = ConfirmBy[ Select[ settings, SameAs @ Automatic ], AssociationQ, "Auto" ];
-        sorted   = ConfirmBy[ <| KeyTake[ auto, $autoSettingKeyPriority ], auto |>, AssociationQ, "Sorted" ];
-        resolved = ConfirmBy[ Fold[ resolveAutoSetting, settings, Normal @ sorted ], AssociationQ, "Resolved" ];
-        ConfirmBy[ resolveTools @ KeySort @ resolved, AssociationQ, "ResolveTools" ]
-    ],
-    throwInternalFailure[ resolveAutoSettings0 @ settings, ## ] &
-];
-
-resolveAutoSettings0 // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*resolveAutoSetting*)
-resolveAutoSetting // beginDefinition;
-resolveAutoSetting[ settings_, key_ -> value_ ] := <| settings, key -> resolveAutoSetting0[ settings, key ] |>;
-resolveAutoSetting // endDefinition;
-
-resolveAutoSetting0 // beginDefinition;
-resolveAutoSetting0[ as_, "Assistance"                ] := False;
-resolveAutoSetting0[ as_, "DynamicAutoFormat"         ] := dynamicAutoFormatQ @ as;
-resolveAutoSetting0[ as_, "ChatInputIndicator"        ] := "\|01f4ac";
-resolveAutoSetting0[ as_, "EnableLLMServices"         ] := $useLLMServices;
-resolveAutoSetting0[ as_, "HandlerFunctionsKeys"      ] := chatHandlerFunctionsKeys @ as;
-resolveAutoSetting0[ as_, "IncludeHistory"            ] := Automatic;
-resolveAutoSetting0[ as_, "MaxCellStringLength"       ] := chooseMaxCellStringLength @ as;
-resolveAutoSetting0[ as_, "MaxContextTokens"          ] := autoMaxContextTokens @ as;
-resolveAutoSetting0[ as_, "MaxOutputCellStringLength" ] := chooseMaxOutputCellStringLength @ as;
-resolveAutoSetting0[ as_, "MaxTokens"                 ] := autoMaxTokens @ as;
-resolveAutoSetting0[ as_, "Multimodal"                ] := multimodalQ @ as;
-resolveAutoSetting0[ as_, "NotebookWriteMethod"       ] := "PreemptiveLink";
-resolveAutoSetting0[ as_, "ShowMinimized"             ] := Automatic;
-resolveAutoSetting0[ as_, "StreamingOutputMethod"     ] := "PartialDynamic";
-resolveAutoSetting0[ as_, "Tokenizer"                 ] := getTokenizer @ as;
-resolveAutoSetting0[ as_, "TokenizerName"             ] := getTokenizerName @ as;
-resolveAutoSetting0[ as_, "ToolCallFrequency"         ] := Automatic;
-resolveAutoSetting0[ as_, "ToolsEnabled"              ] := toolsEnabledQ @ as;
-resolveAutoSetting0[ as_, "TrackScrollingWhenPlaced"  ] := scrollOutputQ @ as;
-resolveAutoSetting0[ as_, key_String                  ] := Automatic;
-resolveAutoSetting0 // endDefinition;
-
-(* Settings that require other settings to be resolved first: *)
-$autoSettingKeyDependencies = <|
-    "HandlerFunctionsKeys"      -> "EnableLLMServices",
-    "MaxCellStringLength"       -> { "Model", "MaxContextTokens" },
-    "MaxContextTokens"          -> "Model",
-    "MaxOutputCellStringLength" -> "MaxCellStringLength",
-    "MaxTokens"                 -> "Model",
-    "Multimodal"                -> { "EnableLLMServices", "Model" },
-    "Tokenizer"                 -> "TokenizerName",
-    "TokenizerName"             -> "Model",
-    "Tools"                     -> { "LLMEvaluator", "ToolsEnabled" },
-    "ToolsEnabled"              -> { "Model", "ToolCallFrequency" }
-|>;
-
-(* Sort topologically so dependencies will be satisfied in order: *)
-$autoSettingKeyPriority := Enclose[
-    $autoSettingKeyPriority = ConfirmMatch[
-        TopologicalSort @ Flatten @ KeyValueMap[
-            Thread @* Reverse @* Rule,
-            $autoSettingKeyDependencies
-        ],
-        { __String? StringQ }
-    ],
-    throwInternalFailure[ $autoSettingKeyPriority, ## ] &
-];
-
-(* TODO: resolve these automatic values here:
-    * BasePrompt (might not be possible here)
-    * ChatContextPreprompt
-*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*chooseMaxCellStringLength*)
-(* FIXME: need to hook into token pressure to gradually decrease limits *)
-chooseMaxCellStringLength // beginDefinition;
-chooseMaxCellStringLength[ as_Association ] := chooseMaxCellStringLength[ as, as[ "MaxContextTokens" ] ];
-chooseMaxCellStringLength[ as_, Infinity ] := Infinity;
-chooseMaxCellStringLength[ as_, tokens: $$size ] := Ceiling[ $defaultMaxCellStringLength * tokens / 2^13 ];
-chooseMaxCellStringLength // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*chooseMaxOutputCellStringLength*)
-chooseMaxOutputCellStringLength // beginDefinition;
-chooseMaxOutputCellStringLength[ as_Association ] := chooseMaxOutputCellStringLength[ as, as[ "MaxCellStringLength" ] ];
-chooseMaxOutputCellStringLength[ as_, size: $$size ] := Min[ Ceiling[ size / 10 ], 1000 ];
-chooseMaxOutputCellStringLength // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*autoMaxContextTokens*)
-autoMaxContextTokens // beginDefinition;
-autoMaxContextTokens[ as_Association ] := autoMaxContextTokens[ as, as[ "Model" ] ];
-autoMaxContextTokens[ as_, model_ ] := autoMaxContextTokens[ as, model, toModelName @ model ];
-autoMaxContextTokens[ _, _, name_String ] := autoMaxContextTokens0 @ name;
-autoMaxContextTokens // endDefinition;
-
-autoMaxContextTokens0 // beginDefinition;
-autoMaxContextTokens0[ name_String ] := autoMaxContextTokens0 @ StringSplit[ name, "-"|Whitespace ];
-autoMaxContextTokens0[ { ___, "gpt", "4", "vision"  , ___ } ] := 2^17;
-autoMaxContextTokens0[ { ___, "gpt", "4", "turbo"   , ___ } ] := 2^17;
-autoMaxContextTokens0[ { ___, "claude", "2"         , ___ } ] := 10^5;
-autoMaxContextTokens0[ { ___, "16k"                 , ___ } ] := 2^14;
-autoMaxContextTokens0[ { ___, "32k"                 , ___ } ] := 2^15;
-autoMaxContextTokens0[ { ___, "gpt", "4"            , ___ } ] := 2^13;
-autoMaxContextTokens0[ { ___, "gpt", "3.5"          , ___ } ] := 2^12;
-autoMaxContextTokens0[ { ___, "chat", "bison", "001", ___ } ] := 20000;
-autoMaxContextTokens0[ _List                                ] := 2^12;
-autoMaxContextTokens0 // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*autoMaxTokens*)
-autoMaxTokens // beginDefinition;
-autoMaxTokens[ as_Association ] := autoMaxTokens[ as, as[ "Model" ] ];
-autoMaxTokens[ as_, model_ ] := autoMaxTokens[ as, model, toModelName @ model ];
-autoMaxTokens[ as_, model_, name_String ] := Lookup[ $maxTokensTable, name, Automatic ];
-autoMaxTokens // endDefinition;
-
-(* FIXME: this should be something queryable from LLMServices: *)
-$maxTokensTable = <|
-    "gpt-4-vision-preview" -> 4096,
-    "gpt-4-1106-preview"   -> 4096
-|>;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*multimodalQ*)
-multimodalQ // beginDefinition;
-multimodalQ[ as_Association ] := multimodalQ[ as, multimodalModelQ @ as[ "Model" ], as[ "EnableLLMServices" ] ];
-multimodalQ[ as_, True , False ] := True;
-multimodalQ[ as_, True , True  ] := multimodalPacletsAvailable[ ];
-multimodalQ[ as_, False, _     ] := False;
-multimodalQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*$multimodalPacletsAvailable*)
-multimodalPacletsAvailable // beginDefinition;
-
-multimodalPacletsAvailable[ ] := multimodalPacletsAvailable[ ] = (
-    initTools[ ];
-    multimodalPacletsAvailable[
-        PacletObject[ "Wolfram/LLMFunctions"     ],
-        PacletObject[ "ServiceConnection_OpenAI" ]
-    ]
-);
-
-multimodalPacletsAvailable[ llmFunctions_PacletObject? PacletObjectQ, openAI_PacletObject? PacletObjectQ ] :=
-    TrueQ @ And[
-        PacletNewerQ[ llmFunctions, "1.2.4" ],
-        Or[ PacletNewerQ[ openAI, "13.3.18" ],
-            openAI[ "Version" ] === "13.3.18" && multimodalOpenAIQ @ openAI
-        ]
-    ];
-
-multimodalPacletsAvailable // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*multimodalOpenAIQ*)
-multimodalOpenAIQ // beginDefinition;
-
-multimodalOpenAIQ[ openAI_PacletObject ] := Enclose[
-    Catch @ Module[ { dir, file, multimodal },
-
-        dir  = ConfirmBy[ openAI[ "Location" ], DirectoryQ, "Location" ];
-        file = ConfirmBy[ FileNameJoin @ { dir, "Kernel", "OpenAI.m" }, FileExistsQ, "File" ];
-
-        multimodal = WithCleanup[
-            Quiet @ Close @ file,
-            ConfirmMatch[ Find[ file, "data:image/jpeg;base64," ], _String? StringQ | EndOfFile, "Find" ],
-            Quiet @ Close @ file
-        ];
-
-        StringQ @ multimodal
-    ],
-    throwInternalFailure
-];
-
-multimodalOpenAIQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getLLMEvaluator*)
-getLLMEvaluator // beginDefinition;
-getLLMEvaluator[ as_Association ] := getLLMEvaluator[ as, Lookup[ as, "LLMEvaluator" ] ];
-
-getLLMEvaluator[ as_, name_String ] :=
-    (* If there isn't any information on `name`, getNamedLLMEvaluator just returns `name`; if that happens, avoid
-       infinite recursion by just returning *)
-    Replace[ getNamedLLMEvaluator @ name,
-             {
-                name   -> name,
-                other_ :> getLLMEvaluator[ as, other ]
-            }
-    ];
-
-getLLMEvaluator[ as_, evaluator_Association ] := evaluator;
-getLLMEvaluator[ _, _ ] := None;
-getLLMEvaluator // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getNamedLLMEvaluator*)
-getNamedLLMEvaluator // beginDefinition;
-getNamedLLMEvaluator[ name_String ] := getNamedLLMEvaluator[ name, GetCachedPersonaData @ name ];
-getNamedLLMEvaluator[ name_String, evaluator_Association ] := Append[ evaluator, "LLMEvaluatorName" -> name ];
-getNamedLLMEvaluator[ name_String, _ ] := name;
-getNamedLLMEvaluator // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*toolsEnabledQ*)
-(*FIXME: move to Tools.wl *)
-toolsEnabledQ[ KeyValuePattern[ "ToolsEnabled" -> enabled: True|False ] ] := enabled;
-toolsEnabledQ[ KeyValuePattern[ "ToolCallFrequency" -> freq: (_Integer|_Real)? NonPositive ] ] := False;
-toolsEnabledQ[ KeyValuePattern[ "Model" -> model_ ] ] := toolsEnabledQ @ toModelName @ model;
-toolsEnabledQ[ model: KeyValuePattern @ { "Service" -> _, "Name" -> _ } ] := toolsEnabledQ @ toModelName @ model;
-toolsEnabledQ[ "chat-bison-001" ] := False;
-toolsEnabledQ[ model_String ] := ! TrueQ @ StringContainsQ[ model, "gpt-3", IgnoreCase -> True ];
-toolsEnabledQ[ ___ ] := False;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*dynamicSplitQ*)
-dynamicSplitQ // beginDefinition;
-dynamicSplitQ[ as_Association ] := dynamicSplitQ @ Lookup[ as, "StreamingOutputMethod", Automatic ];
-dynamicSplitQ[ sym_Symbol ] := dynamicSplitQ @ SymbolName @ sym;
-dynamicSplitQ[ "PartialDynamic"|"Automatic"|"Inherited" ] := True;
-dynamicSplitQ[ "FullDynamic"|"Dynamic" ] := False;
-dynamicSplitQ[ other_ ] := (messagePrint[ "InvalidStreamingOutputMethod", other ]; True);
-dynamicSplitQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1790,7 +1657,10 @@ activeAIAssistantCell[
                 Sequence @@ Flatten[ { $closedChatCellOptions } ],
                 Selectable      -> False,
                 Editable        -> False,
-                CellDingbat     -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
+                If[ TrueQ @ settings[ "SetCellDingbat" ],
+                    CellDingbat -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
+                    Sequence @@ { }
+                ],
                 CellTags        -> cellTags,
                 CellTrayWidgets -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
                 TaggingRules    -> <| "ChatNotebookSettings" -> smallSettings @ settings |>
@@ -1831,14 +1701,17 @@ activeAIAssistantCell[
             ,
             "Output",
             "ChatOutput",
-            If[ TrueQ @ $autoAssistMode && MatchQ[ minimized, True|Automatic ],
+            If[ TrueQ @ $AutomaticAssistance && MatchQ[ minimized, True|Automatic ],
                 Sequence @@ Flatten[ {
                     $closedChatCellOptions,
                     Initialization :> catchTop @ attachMinimizedIcon[ EvaluationCell[ ], label ]
                 } ],
                 Initialization -> None
             ],
-            CellDingbat        -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
+            If[ TrueQ @ settings[ "SetCellDingbat" ],
+                CellDingbat -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
+                Sequence @@ { }
+            ],
             CellEditDuplicate  -> False,
             CellTags           -> cellTags,
             CellTrayWidgets    -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
@@ -1873,6 +1746,21 @@ getFormattingFunction[ as_, func_ ] := (
 ) &;
 
 getFormattingFunction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getToolFormatter*)
+getToolFormatter // beginDefinition;
+
+getToolFormatter[ as_? AssociationQ ] :=
+    getToolFormatter[ as, getProcessingFunction[ as, "FormatToolCall" ] ];
+
+getToolFormatter[ as_, func_ ] := (
+    $ChatHandlerData[ "EventName" ] = "FormatToolCall";
+    func @ ##
+) &;
+
+getToolFormatter // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1999,9 +1887,11 @@ writeReformattedCell[ settings_, None, cell_CellObject ] :=
         ]
     ];
 
-writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
+writeReformattedCell[ settings_, string0_String, cell_CellObject ] := Enclose[
     Block[ { $dynamicText = False },
-        Module[ { tag, scroll, open, label, pageData, cellTags, uuid, new, output, createTask, info },
+        Module[ { string, tag, scroll, open, label, pageData, cellTags, uuid, new, output, createTask, info },
+
+            string = ConfirmBy[ StringTrim @ string0, StringQ, "String" ];
 
             tag = ConfirmMatch[
                 Replace[ CurrentValue[ cell, { TaggingRules, "MessageTag" } ], $Failed -> Inherited ],
@@ -2016,7 +1906,7 @@ writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
             cellTags = CurrentValue[ cell, CellTags ];
             uuid     = CreateUUID[ ];
             new      = reformatCell[ settings, string, tag, open, label, pageData, cellTags, uuid ];
-            output   = CellObject @ uuid;
+            output   = uuidToCellObject[ uuid, cell ];
 
             $lastChatString  = string;
             $reformattedCell = new;
@@ -2042,7 +1932,7 @@ writeReformattedCell[ settings_, string_String, cell_CellObject ] := Enclose[
             waitForCellObject[ settings, output ]
         ]
     ],
-    throwInternalFailure[ writeReformattedCell[ settings, string, cell ], ## ] &
+    throwInternalFailure
 ];
 
 writeReformattedCell[ settings_, other_, cell_CellObject ] :=
@@ -2063,6 +1953,15 @@ writeReformattedCell[ settings_, other_, cell_CellObject ] :=
     ];
 
 writeReformattedCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*uuidToCellObject*)
+uuidToCellObject // beginDefinition;
+uuidToCellObject[ uuid_String, cell_CellObject ] /; $cloudNotebooks := uuidToCellObject[ uuid, parentNotebook @ cell ];
+uuidToCellObject[ uuid1_String, NotebookObject[ _, uuid2_String ] ] := CellObject[ uuid1, uuid2 ];
+uuidToCellObject[ uuid_String, _ ] := CellObject @ uuid;
+uuidToCellObject // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2114,18 +2013,21 @@ scrollOutput // endDefinition;
 reformatCell // beginDefinition;
 
 reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uuid_ ] := UsingFrontEnd @ Enclose[
-    Module[ { formatter, content, rules, dingbat },
+    Module[ { formatter, toolFormatter, content, rules, dingbat },
 
         formatter = Confirm[ getFormattingFunction @ settings, "GetFormattingFunction" ];
+        toolFormatter = Confirm[ getToolFormatter @ settings, "GetToolFormatter" ];
 
         (*FIXME: use specified ChatFormattingFunction here and figure out how to conform to TextData *)
-        content = ConfirmMatch[
-            If[ TrueQ @ settings[ "AutoFormat" ],
-                TextData @ reformatTextData @ string,
-                TextData @ string
-            ],
-            TextData[ _String | _List ],
-            "Content"
+        content = Block[ { $customToolFormatter = toolFormatter },
+            ConfirmMatch[
+                If[ TrueQ @ settings[ "AutoFormat" ],
+                    TextData @ reformatTextData @ string,
+                    TextData @ string
+                ],
+                TextData[ _String | _List ],
+                "Content"
+            ]
         ];
 
         rules = ConfirmBy[
@@ -2138,7 +2040,7 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
 
         Cell[
             content,
-            If[ TrueQ @ $autoAssistMode,
+            If[ TrueQ @ $AutomaticAssistance,
                 Switch[ tag,
                         "[ERROR]"  , "AssistantOutputError",
                         "[WARNING]", "AssistantOutputWarning",
@@ -2152,7 +2054,10 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
             TaggingRules      -> rules,
             If[ TrueQ[ rules[ "PageData", "PageCount" ] > 1 ],
                 CellDingbat -> Cell[ BoxData @ TemplateBox[ { dingbat }, "AssistantIconTabbed" ], Background -> None ],
-                CellDingbat -> Cell[ BoxData @ dingbat, Background -> None ]
+                If[ TrueQ @ settings[ "SetCellDingbat" ],
+                    CellDingbat -> Cell[ BoxData @ dingbat, Background -> None ],
+                    Sequence @@ { }
+                ]
             ],
             If[ TrueQ @ open,
                 Sequence @@ { },
@@ -2379,22 +2284,32 @@ errorCell // beginDefinition;
 errorCell[ failure_Failure ] :=
     Cell[ BoxData @ ToBoxes @ failure, "Output" ];
 
-errorCell[ as_ ] :=
-    Cell[
-        TextData @ Flatten @ {
-            StyleBox[ "\[WarningSign] ", FontColor -> Darker @ Red, FontSize -> 1.5 Inherited ],
-            errorText @ as,
-            "\n\n",
-            Cell @ BoxData @ errorBoxes @ as
-        },
-        "Text",
-        "ChatOutput",
-        CellAutoOverwrite -> True,
-        CellTrayWidgets   -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
-        CodeAssistOptions -> { "AutoDetectHyperlinks" -> True },
-        GeneratedCell     -> True,
-        Initialization    -> None
-    ];
+errorCell[ as_ ] := Enclose[
+    Module[ { text },
+        text = ConfirmMatch[ errorText @ as, _String|$$textDataList, "ErrorText" ];
+        Cell[
+            TextData @ Flatten @ {
+                StyleBox[ "\[WarningSign] ", FontColor -> Darker @ Red, FontSize -> 1.5 Inherited ],
+                If[ StringQ @ text,
+                    {
+                        text,
+                        "\n\n",
+                        Cell @ BoxData @ Quiet @ errorBoxes @ as
+                    },
+                    text
+                ]
+            },
+            "Text",
+            "ChatOutput",
+            CellAutoOverwrite -> True,
+            CellTrayWidgets   -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
+            CodeAssistOptions -> { "AutoDetectHyperlinks" -> True },
+            GeneratedCell     -> True,
+            Initialization    -> None
+        ]
+    ],
+    throwInternalFailure
+];
 
 errorCell // endDefinition;
 
@@ -2402,6 +2317,9 @@ errorCell // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*errorText*)
 errorText // ClearAll;
+
+errorText[ KeyValuePattern[ "Error" -> "ServerResponseEmpty" ] ] :=
+    Chatbook::ServerResponseEmpty;
 
 errorText[ KeyValuePattern[ "BodyJSON" -> json_ ] ] :=
     With[ { text = errorText0 @ json },
@@ -2420,7 +2338,7 @@ errorText[ ___ ] := "An unexpected error occurred.";
 (* Overrides for server messages can be defined here: *)
 errorText0 // ClearAll;
 
-errorText0[ KeyValuePattern[ "Error"|"error" -> error_Association ] ] :=
+errorText0[ KeyValuePattern[ "Error"|"error"|"GeneralResponseEntity" -> error_Association ] ] :=
     errorText0 @ error;
 
 errorText0[ as: KeyValuePattern @ { "Code"|"code" -> code_, "Message"|"message" -> message_ } ] :=
@@ -2489,6 +2407,9 @@ textLink // endDefinition;
 errorBoxes // ClearAll;
 
 (* TODO: define error messages for other documented responses *)
+errorBoxes[ as: KeyValuePattern[ "Error" -> "ServerResponseEmpty" ] ] :=
+    ToBoxes @ messageFailure[ "ServerResponseEmpty", as ];
+
 errorBoxes[ as: KeyValuePattern[ "StatusCode" -> 429 ] ] :=
     ToBoxes @ messageFailure[ "RateLimitReached", as ];
 
