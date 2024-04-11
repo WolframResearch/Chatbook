@@ -368,7 +368,8 @@ Print[ "ResourceSystemBase: ", $ResourceSystemBase ];
 $defNB = File @ FileNameJoin @ { $pacletDir, "ResourceDefinition.nb" };
 Print[ "Definition Notebook: ", $defNB ];
 
-PacletDirectoryLoad @ $pacletDir;
+cicd`ScriptConfirmBy[ PacletDirectoryLoad @ $pacletDir, MemberQ @ $pacletDir ];
+cicd`ScriptConfirmAssert @ StringStartsQ[ FindFile[ "Wolfram`Chatbook`" ], $pacletDir ];
 
 $loadedDefinitions = True;
 
