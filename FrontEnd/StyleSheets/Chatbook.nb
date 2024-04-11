@@ -1161,7 +1161,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.4.2.3915874681"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3921824518"|>
   ],
   Cell[
    StyleData["Text"],
@@ -1578,7 +1578,12 @@ Notebook[
      CellMargins -> 0
     ],
    CellMargins -> {{66, 25}, {1, 8}},
-   StyleKeyMapping -> {"~" -> "ChatDelimiter", "'" -> "SideChat"},
+   StyleKeyMapping -> {
+    "~" -> "ChatDelimiter",
+    "'" -> "SideChat",
+    "=" -> "WolframAlphaShort",
+    "*" -> "Item"
+   },
    Evaluatable -> True,
    CellGroupingRules -> "InputGrouping",
    TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
@@ -1843,10 +1848,24 @@ Notebook[
                  ImageSize -> Automatic,
                  FrameMargins -> 0
                 ],
-                "\"Send feedback to Wolfram\"",
-                TooltipStyle -> "TextStyling"
+                RowBox[
+                 {
+                  "Wolfram`Chatbook`Common`tr",
+                  "[",
+                  "\"StylesheetFeedbackButtonTooltip\"",
+                  "]"
+                 }
+                ]
                ],
-               Annotation[#1, "Send feedback to Wolfram", "Tooltip"] &
+               Function[
+                Annotation[
+                 #1,
+                 Wolfram`Chatbook`Common`tr[
+                  "StylesheetFeedbackButtonTooltip"
+                 ],
+                 "Tooltip"
+                ]
+               ]
               ],
               MouseAppearanceTag["LinkHand"]
              ],
@@ -1887,10 +1906,24 @@ Notebook[
                  ImageSize -> Automatic,
                  FrameMargins -> 0
                 ],
-                "\"Send feedback to Wolfram\"",
-                TooltipStyle -> "TextStyling"
+                RowBox[
+                 {
+                  "Wolfram`Chatbook`Common`tr",
+                  "[",
+                  "\"StylesheetFeedbackButtonTooltip\"",
+                  "]"
+                 }
+                ]
                ],
-               Annotation[#1, "Send feedback to Wolfram", "Tooltip"] &
+               Function[
+                Annotation[
+                 #1,
+                 Wolfram`Chatbook`Common`tr[
+                  "StylesheetFeedbackButtonTooltip"
+                 ],
+                 "Tooltip"
+                ]
+               ]
               ],
               MouseAppearanceTag["LinkHand"]
              ],
@@ -2019,10 +2052,24 @@ Notebook[
                 Evaluator -> Automatic,
                 Method -> "Preemptive"
                ],
-               "\"Disable automatic assistance\"",
-               TooltipStyle -> "TextStyling"
+               RowBox[
+                {
+                 "Wolfram`Chatbook`Common`tr",
+                 "[",
+                 "\"StylesheetAssistantMenuInitializerButtonTooltip\"",
+                 "]"
+                }
+               ]
               ],
-              Annotation[#1, "Disable automatic assistance", "Tooltip"] &
+              Function[
+               Annotation[
+                #1,
+                Wolfram`Chatbook`Common`tr[
+                 "StylesheetAssistantMenuInitializerButtonTooltip"
+                ],
+                "Tooltip"
+               ]
+              ]
              ]
             },
             {
@@ -2101,10 +2148,24 @@ Notebook[
                 Evaluator -> Automatic,
                 Method -> "Preemptive"
                ],
-               "\"Disable automatic assistance\"",
-               TooltipStyle -> "TextStyling"
+               RowBox[
+                {
+                 "Wolfram`Chatbook`Common`tr",
+                 "[",
+                 "\"StylesheetAssistantMenuInitializerButtonTooltip\"",
+                 "]"
+                }
+               ]
               ],
-              Annotation[#1, "Disable automatic assistance", "Tooltip"] &
+              Function[
+               Annotation[
+                #1,
+                Wolfram`Chatbook`Common`tr[
+                 "StylesheetAssistantMenuInitializerButtonTooltip"
+                ],
+                "Tooltip"
+               ]
+              ]
              ]
             },
             {
@@ -2183,10 +2244,24 @@ Notebook[
                 Evaluator -> Automatic,
                 Method -> "Preemptive"
                ],
-               "\"Disable automatic assistance\"",
-               TooltipStyle -> "TextStyling"
+               RowBox[
+                {
+                 "Wolfram`Chatbook`Common`tr",
+                 "[",
+                 "\"StylesheetAssistantMenuInitializerButtonTooltip\"",
+                 "]"
+                }
+               ]
               ],
-              Annotation[#1, "Disable automatic assistance", "Tooltip"] &
+              Function[
+               Annotation[
+                #1,
+                Wolfram`Chatbook`Common`tr[
+                 "StylesheetAssistantMenuInitializerButtonTooltip"
+                ],
+                "Tooltip"
+               ]
+              ]
              ]
             },
             {
@@ -17529,10 +17604,24 @@ Notebook[
         TagBox[
          TooltipBox[
           TemplateBox[{}, "ChatWidgetIcon"],
-          "\"Send to LLM\"",
-          TooltipStyle -> "TextStyling"
+          RowBox[
+           {
+            "Wolfram`Chatbook`Common`tr",
+            "[",
+            "\"StylesheetChatWidgetButtonTooltip\"",
+            "]"
+           }
+          ]
          ],
-         Annotation[#1, "Send to LLM", "Tooltip"] &
+         Function[
+          Annotation[
+           #1,
+           Wolfram`Chatbook`Common`tr[
+            "StylesheetChatWidgetButtonTooltip"
+           ],
+           "Tooltip"
+          ]
+         ]
         ],
         MouseAppearanceTag["LinkHand"]
        ],

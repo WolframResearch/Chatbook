@@ -369,7 +369,7 @@ makePersonaSelector0[ personas_Association? AssociationQ ] :=
 makePersonaSelector0[ personas: { (_String -> _).. } ] :=
     highlightControl[
         Row @ {
-            tr["Persona:"],
+            tr["PreferencesContentPersonaLabel"],
             Spacer[ 3 ],
             PopupMenu[ scopedDynamic @ CurrentChatSettings[ $preferencesScope, "LLMEvaluator" ], personas ]
         },
