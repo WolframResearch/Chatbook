@@ -1325,6 +1325,8 @@ $cachedTokenizers[ "claude-3"     ] = If[ graphicsQ @ #, claude3ImageTokenizer, 
 (*tokenizerName*)
 tokenizerName // beginDefinition;
 
+tokenizerName[ "gpt-4-turbo-preview" ] = "gpt-4";
+
 tokenizerName[ name_String ] :=
     SelectFirst[
         ReverseSortBy[ $cachedTokenizerNames, StringLength ],
