@@ -369,7 +369,13 @@ $defNB = File @ FileNameJoin @ { $pacletDir, "ResourceDefinition.nb" };
 Print[ "Definition Notebook: ", $defNB ];
 
 cicd`ScriptConfirmBy[ PacletDirectoryLoad @ $pacletDir, MemberQ @ $pacletDir ];
-cicd`ScriptConfirmAssert @ StringStartsQ[ FindFile[ "Wolfram`Chatbook`" ], $pacletDir ];
+cicd`ScriptConfirmAssert[
+    StringStartsQ[ FindFile[ "Wolfram`Chatbook`" ], $pacletDir ],
+    TemplateApply[
+        "Chatbook context points to \"`1`\" which is not contained in the expected paclet directory \"`2`\".",
+        { FindFile["Wolfram`Chatbook`"], $pacletDir }
+    ]
+];
 
 $loadedDefinitions = True;
 
