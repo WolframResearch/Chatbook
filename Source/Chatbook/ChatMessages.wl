@@ -73,7 +73,17 @@ $styleRoles = <|
     "ChatSystemInput"        -> "System"
 |>;
 
-$cachedTokenizerNames = { "chat-bison", "claude", "claude-3", "gpt-2", "gpt-3.5", "gpt-4-vision", "gpt-4" };
+$cachedTokenizerNames = {
+    "chat-bison",
+    "claude-3",
+    "claude",
+    "gpt-2",
+    "gpt-3.5",
+    "gpt-4-turbo",
+    "gpt-4-vision",
+    "gpt-4"
+};
+
 $cachedTokenizers     = <| |>;
 $fallbackTokenizer    = "gpt-2";
 
@@ -1306,6 +1316,7 @@ findTokenizer // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*Pre-cached small tokenizer functions*)
 $cachedTokenizers[ "chat-bison"   ] = ToCharacterCode[ #, "UTF8" ] &;
+$cachedTokenizers[ "gpt-4-turbo"  ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4" ] ][ # ] &;
 $cachedTokenizers[ "gpt-4-vision" ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4" ] ][ # ] &;
 $cachedTokenizers[ "claude-3"     ] = If[ graphicsQ @ #, claude3ImageTokenizer, cachedTokenizer[ "claude" ] ][ # ] &;
 
@@ -1313,6 +1324,8 @@ $cachedTokenizers[ "claude-3"     ] = If[ graphicsQ @ #, claude3ImageTokenizer, 
 (* ::Subsubsection::Closed:: *)
 (*tokenizerName*)
 tokenizerName // beginDefinition;
+
+tokenizerName[ "gpt-4-turbo-preview" ] = "gpt-4";
 
 tokenizerName[ name_String ] :=
     SelectFirst[
