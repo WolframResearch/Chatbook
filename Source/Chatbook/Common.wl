@@ -380,7 +380,7 @@ importResourceFunction[ symbol_Symbol, name_String ] /; $mxFlag := Enclose[
     Block[ { PrintTemporary },
         Module[ { sourceContext, targetContext, definition, replaced, newSymbol },
 
-            sourceContext = ConfirmBy[ ResourceFunction[ name, "Context" ], StringQ ];
+            sourceContext = ConfirmBy[ ResourceFunction[ name, "Context", ResourceVersion -> "Latest" ], StringQ ];
             targetContext = $resourceFunctionContext<>name<>"`";
             definition    = ConfirmMatch[ ResourceFunction[ name, "DefinitionList" ], _Language`DefinitionList ];
 
