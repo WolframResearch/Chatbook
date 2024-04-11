@@ -11,7 +11,7 @@ Begin[ "Wolfram`ChatbookStylesheetBuilder`Private`" ];
 (*tr*)
 
 
-tr = Wolfram`Chatbook`Common`tr;
+tr[name_?StringQ] := Dynamic[FEPrivate`FrontEndResource["ChatbookStrings", name]]
 
 
 (* ::Section::Closed:: *)

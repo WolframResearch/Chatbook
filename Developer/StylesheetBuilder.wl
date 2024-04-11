@@ -58,7 +58,7 @@ Get[ "Wolfram`Chatbook`" ];
 (*tr*)
 
 
-tr = Wolfram`Chatbook`Common`tr;
+tr[name_?StringQ] := Dynamic[FEPrivate`FrontEndResource["ChatbookStrings", name]]
 
 
 (* ::Subsection::Closed:: *)

@@ -1161,7 +1161,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3921824518"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3921825551"|>
   ],
   Cell[
    StyleData["Text"],
@@ -1848,20 +1848,24 @@ Notebook[
                  ImageSize -> Automatic,
                  FrameMargins -> 0
                 ],
-                RowBox[
-                 {
-                  "Wolfram`Chatbook`Common`tr",
-                  "[",
-                  "\"StylesheetFeedbackButtonTooltip\"",
-                  "]"
-                 }
+                DynamicBox[
+                 ToBoxes[
+                  FEPrivate`FrontEndResource[
+                   "ChatbookStrings",
+                   "StylesheetFeedbackButtonTooltip"
+                  ],
+                  StandardForm
+                 ]
                 ]
                ],
                Function[
                 Annotation[
                  #1,
-                 Wolfram`Chatbook`Common`tr[
-                  "StylesheetFeedbackButtonTooltip"
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                   "ChatbookStrings",
+                   "StylesheetFeedbackButtonTooltip"
+                  ]
                  ],
                  "Tooltip"
                 ]
@@ -1906,20 +1910,24 @@ Notebook[
                  ImageSize -> Automatic,
                  FrameMargins -> 0
                 ],
-                RowBox[
-                 {
-                  "Wolfram`Chatbook`Common`tr",
-                  "[",
-                  "\"StylesheetFeedbackButtonTooltip\"",
-                  "]"
-                 }
+                DynamicBox[
+                 ToBoxes[
+                  FEPrivate`FrontEndResource[
+                   "ChatbookStrings",
+                   "StylesheetFeedbackButtonTooltip"
+                  ],
+                  StandardForm
+                 ]
                 ]
                ],
                Function[
                 Annotation[
                  #1,
-                 Wolfram`Chatbook`Common`tr[
-                  "StylesheetFeedbackButtonTooltip"
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                   "ChatbookStrings",
+                   "StylesheetFeedbackButtonTooltip"
+                  ]
                  ],
                  "Tooltip"
                 ]
@@ -2052,20 +2060,24 @@ Notebook[
                 Evaluator -> Automatic,
                 Method -> "Preemptive"
                ],
-               RowBox[
-                {
-                 "Wolfram`Chatbook`Common`tr",
-                 "[",
-                 "\"StylesheetAssistantMenuInitializerButtonTooltip\"",
-                 "]"
-                }
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetAssistantMenuInitializerButtonTooltip"
+                 ],
+                 StandardForm
+                ]
                ]
               ],
               Function[
                Annotation[
                 #1,
-                Wolfram`Chatbook`Common`tr[
-                 "StylesheetAssistantMenuInitializerButtonTooltip"
+                Dynamic[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetAssistantMenuInitializerButtonTooltip"
+                 ]
                 ],
                 "Tooltip"
                ]
@@ -2148,20 +2160,24 @@ Notebook[
                 Evaluator -> Automatic,
                 Method -> "Preemptive"
                ],
-               RowBox[
-                {
-                 "Wolfram`Chatbook`Common`tr",
-                 "[",
-                 "\"StylesheetAssistantMenuInitializerButtonTooltip\"",
-                 "]"
-                }
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetAssistantMenuInitializerButtonTooltip"
+                 ],
+                 StandardForm
+                ]
                ]
               ],
               Function[
                Annotation[
                 #1,
-                Wolfram`Chatbook`Common`tr[
-                 "StylesheetAssistantMenuInitializerButtonTooltip"
+                Dynamic[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetAssistantMenuInitializerButtonTooltip"
+                 ]
                 ],
                 "Tooltip"
                ]
@@ -2244,20 +2260,24 @@ Notebook[
                 Evaluator -> Automatic,
                 Method -> "Preemptive"
                ],
-               RowBox[
-                {
-                 "Wolfram`Chatbook`Common`tr",
-                 "[",
-                 "\"StylesheetAssistantMenuInitializerButtonTooltip\"",
-                 "]"
-                }
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetAssistantMenuInitializerButtonTooltip"
+                 ],
+                 StandardForm
+                ]
                ]
               ],
               Function[
                Annotation[
                 #1,
-                Wolfram`Chatbook`Common`tr[
-                 "StylesheetAssistantMenuInitializerButtonTooltip"
+                Dynamic[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetAssistantMenuInitializerButtonTooltip"
+                 ]
                 ],
                 "Tooltip"
                ]
@@ -17604,20 +17624,24 @@ Notebook[
         TagBox[
          TooltipBox[
           TemplateBox[{}, "ChatWidgetIcon"],
-          RowBox[
-           {
-            "Wolfram`Chatbook`Common`tr",
-            "[",
-            "\"StylesheetChatWidgetButtonTooltip\"",
-            "]"
-           }
+          DynamicBox[
+           ToBoxes[
+            FEPrivate`FrontEndResource[
+             "ChatbookStrings",
+             "StylesheetChatWidgetButtonTooltip"
+            ],
+            StandardForm
+           ]
           ]
          ],
          Function[
           Annotation[
            #1,
-           Wolfram`Chatbook`Common`tr[
-            "StylesheetChatWidgetButtonTooltip"
+           Dynamic[
+            FEPrivate`FrontEndResource[
+             "ChatbookStrings",
+             "StylesheetChatWidgetButtonTooltip"
+            ]
            ],
            "Tooltip"
           ]
