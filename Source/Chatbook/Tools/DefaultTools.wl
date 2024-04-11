@@ -253,8 +253,13 @@ $defaultChatTools0[ "WolframLanguageEvaluator" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*wolframLanguageEvaluator*)
 wolframLanguageEvaluator // beginDefinition;
-wolframLanguageEvaluator[ code_String ] := wolframLanguageEvaluator[ code, sandboxEvaluate @ code ];
-wolframLanguageEvaluator[ code_, result_Association ] := KeyTake[ result, { "Result", "String" } ];
+
+wolframLanguageEvaluator[ code_String ] :=
+    Block[ { $ChatNotebookEvaluation = True }, wolframLanguageEvaluator[ code, sandboxEvaluate @ code ] ];
+
+wolframLanguageEvaluator[ code_, result_Association ] :=
+    KeyTake[ result, { "Result", "String" } ];
+
 wolframLanguageEvaluator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
