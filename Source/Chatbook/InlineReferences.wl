@@ -347,7 +347,7 @@ modifierInputBox[ args_List, uuid_ ] :=
                                     ContinuousAction        -> False,
                                     FieldCompletionFunction -> modifierCompletion,
                                     FieldSize               -> { { 15, Infinity }, Automatic },
-                                    FieldHint               -> "PromptName",
+                                    FieldHint               -> tr[ "InlineReferencesFieldHint" ],
                                     BaseStyle               -> $inputFieldStyle,
                                     Appearance              -> "Frameless",
                                     ContentPadding          -> False,
@@ -620,7 +620,7 @@ functionInputBox[ args_List, uuid_ ] :=
                                     ContinuousAction        -> False,
                                     FieldCompletionFunction -> functionCompletion,
                                     FieldSize               -> { { 15, Infinity }, Automatic },
-                                    FieldHint               -> "PromptName",
+                                    FieldHint               -> tr[ "InlineReferencesFieldHint" ],
                                     BaseStyle               -> $inputFieldStyle,
                                     Appearance              -> "Frameless",
                                     ContentPadding          -> False,
@@ -1600,7 +1600,7 @@ modifierTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 								System`CommitAction -> (modifierCommitAction[#, input, params, state]&),
 								BaselinePosition -> Baseline,
 								FieldSize               -> { { 15, Infinity }, Automatic },
-								FieldHint               -> "PromptName", (* FIXME: Is this right? *)
+								FieldHint               -> tr[ "InlineReferencesFieldHint" ], (* FIXME: Is this right? *)
 								BaseStyle               -> $inputFieldStyle,
 								Appearance              -> "Frameless",
 								(*ContentPadding          -> False,*)
@@ -1815,7 +1815,7 @@ functionTemplateBoxes[version: 1, input_, params_, state_, uuid_, opts: OptionsP
 								System`CommitAction -> (functionCommitAction[#, input, params, state]&),
 								BaselinePosition -> Baseline,
 								FieldSize               -> { { 15, Infinity }, Automatic },
-								FieldHint               -> "PromptName", (* FIXME: Is this right? *)
+								FieldHint               -> tr[ "InlineReferencesFieldHint" ], (* FIXME: Is this right? *)
 								BaseStyle               -> $inputFieldStyle,
 								Appearance              -> "Frameless",
 								(*ContentPadding          -> False,*)
@@ -2132,10 +2132,10 @@ $cloudInlineReferenceButtons = Block[ { NotebookTools`Mousedown = Mouseover[ #1,
     Grid[
         {
             {
-                Style[ "Insert:", "Text" ],
+                Style[ tr[ "InlineReferencesInsertLabel" ], "Text" ],
                 Button[
                     First @ personaTemplateBoxes[ 1, "Persona", "Chosen", "PersonaInsertButton" ],
-                    With[ { name = InputString[ "Enter a persona name" ], uuid = CreateUUID[ ] },
+                    With[ { name = InputString[ tr[ "InlineReferencesInsertPersonaPrompt" ] ], uuid = CreateUUID[ ] },
                         If[ MemberQ[ $personaNames, name ],
                             NotebookWrite[
                                 EvaluationNotebook[ ],
@@ -2150,7 +2150,9 @@ $cloudInlineReferenceButtons = Block[ { NotebookTools`Mousedown = Mouseover[ #1,
                             ] = name;
                             ,
                             If[ StringQ @ name,
-                                MessageDialog[ "No persona with name \""<>name<>"\" found.\"" ]
+                                MessageDialog @ trStringTemplate[ "InlineReferencesInsertPersonaFail" ][
+                                    <| "name" -> name |>
+                                ]
                             ]
                         ]
                     ],
@@ -2159,7 +2161,7 @@ $cloudInlineReferenceButtons = Block[ { NotebookTools`Mousedown = Mouseover[ #1,
                 ],
                 Button[
                     First @ modifierTemplateBoxes[ 1, "Modifier", { }, "Chosen", "ModifierInsertButton" ],
-                    With[ { s = InputString[ "Enter a modifier prompt" ], uuid = CreateUUID[ ] },
+                    With[ { s = InputString[ tr[ "InlineReferencesInsertModifierPrompt" ] ], uuid = CreateUUID[ ] },
                         Replace[
                             functionInputSetting @ s,
                             { name_String, args___String } :>
@@ -2176,7 +2178,9 @@ $cloudInlineReferenceButtons = Block[ { NotebookTools`Mousedown = Mouseover[ #1,
                                     ]
                                     ,
                                     If[ StringQ @ name,
-                                        MessageDialog[ "No modifier with name \""<>name<>"\" found.\"" ]
+                                        MessageDialog @ trStringTemplate[ "InlineReferencesInsertModifierFail" ][
+                                            <| "name" -> name |>
+                                        ]
                                     ]
                                 ]
                         ]
@@ -2186,7 +2190,7 @@ $cloudInlineReferenceButtons = Block[ { NotebookTools`Mousedown = Mouseover[ #1,
                 ],
                 Button[
                     First @ functionTemplateBoxes[ 1, "Function", { }, "Chosen", "FunctionInsertButton" ],
-                    With[ { s = InputString[ "Enter a function prompt" ], uuid = CreateUUID[ ] },
+                    With[ { s = InputString[ tr[ "InlineReferencesInsertFunctionPrompt" ] ], uuid = CreateUUID[ ] },
                         Replace[
                             functionInputSetting @ s,
                             { name_String, args___String } :>
@@ -2203,7 +2207,9 @@ $cloudInlineReferenceButtons = Block[ { NotebookTools`Mousedown = Mouseover[ #1,
                                     ]
                                     ,
                                     If[ StringQ @ name,
-                                        MessageDialog[ "No function with name \""<>name<>"\" found.\"" ]
+                                        MessageDialog @ trStringTemplate[ "InlineReferencesInsertFunctionFail" ][
+                                            <| "name" -> name |>
+                                        ]
                                     ]
                                 ]
                         ]
