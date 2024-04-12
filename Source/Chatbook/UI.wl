@@ -169,9 +169,9 @@ tryMakeChatEnabledNotebook[
 				Column[{
 					Item[Magnify["\[WarningSign]", 3], Alignment -> Center],
 					"",
-					tr["UITryEnableChatDialogMainText"],
+					tr[ "UITryEnableChatDialogMainText" ],
 					"",
-					tr["UITryEnableChatDialogConfirm"]
+					tr[ "UITryEnableChatDialogConfirm" ]
 				}, BaseStyle -> {"DialogTextBasic", FontSize -> 15, LineIndent -> 0}, Spacings -> {0, 0}],
 				Background -> White
 			],
@@ -196,8 +196,8 @@ tryMakeChatEnabledNotebook[
 
 SetFallthroughError[makeEnableAIChatFeaturesLabel]
 
-makeEnableAIChatFeaturesLabel[enabled_?BooleanQ] :=
-	labeledCheckbox[enabled, tr["UIEnableChatFeatures"], !enabled]
+makeEnableAIChatFeaturesLabel[ enabled_? BooleanQ ] :=
+	labeledCheckbox[ enabled, tr[ "UIEnableChatFeatures" ], ! enabled ];
 
 (*====================================*)
 
@@ -254,15 +254,12 @@ makeAutomaticResultAnalysisCheckbox[
 	}]
 },
 	labeledCheckbox[
-		Dynamic[
-			autoAssistQ[target],
-			setterFunction
-		],
-		Row[{
-			tr["UIAutomaticAnalysisLabel"],
-			Spacer[3],
-			Tooltip[chatbookIcon["InformationTooltip", False], tr["UIAutomaticAnalysisTooltip"]]
-		}]
+		Dynamic[ autoAssistQ @ target, setterFunction ],
+		Row @ {
+			tr[ "UIAutomaticAnalysisLabel" ],
+			Spacer[ 3 ],
+			Tooltip[ chatbookIcon[ "InformationTooltip", False ], tr[ "UIAutomaticAnalysisTooltip" ] ]
+		}
 	]
 ]
 
@@ -306,13 +303,13 @@ makeToolCallFrequencySlider[ obj_ ] :=
                     ]
                 ]
             ],
-            Style[ tr["UIAdvancedChooseAutomatically"], "ChatMenuLabel" ]
+            Style[ tr[ "UIAdvancedChooseAutomatically" ], "ChatMenuLabel" ]
         ];
         slider = Pane[
             Grid[
                 {
                     {
-                        Style[ tr["Rare"], "ChatMenuLabel", FontSize -> 12 ],
+                        Style[ tr[ "Rare" ], "ChatMenuLabel", FontSize -> 12 ],
                         Slider[
                             Dynamic[
                                 Replace[ currentChatSettings[ obj, "ToolCallFrequency" ], Automatic -> 0.5 ],
@@ -322,7 +319,7 @@ makeToolCallFrequencySlider[ obj_ ] :=
                             ImageSize    -> { 100, Automatic },
                             ImageMargins -> { { 0, 0 }, { 5, 5 } }
                         ],
-                        Style[ tr["Often"], "ChatMenuLabel", FontSize -> 12 ]
+                        Style[ tr[ "Often" ], "ChatMenuLabel", FontSize -> 12 ]
                     }
                 },
                 Spacings -> { { 0, { 0.5 }, 0 }, 0 },
@@ -738,7 +735,7 @@ makeChatActionMenuContent[
 
 	advancedSettingsMenu = Join[
 		{
-			tr["UIAdvancedTemperature"],
+			tr[ "UIAdvancedTemperature" ],
 			{
 				None,
 				makeTemperatureSlider[tempValue],
@@ -746,14 +743,14 @@ makeChatActionMenuContent[
 			}
 		},
         {
-			tr["UIAdvancedToolCallFrequency"],
+			tr[ "UIAdvancedToolCallFrequency" ],
 			{
 				None,
 				makeToolCallFrequencySlider[toolValue],
 				None
 			}
 		},
-		{tr["UIAdvancedRoles"]},
+		{ tr[ "UIAdvancedRoles" ] },
 		Map[
 			entry |-> ConfirmReplace[entry, {
 				{role_?StringQ, icon_} :> {
@@ -780,7 +777,7 @@ makeChatActionMenuContent[
 	(*------------------------------------*)
 
 	menuItems = Join[
-		{tr["UIPersonas"]},
+		{ tr[ "UIPersonas" ] },
 		KeyValueMap[
 			{persona, personaSettings} |-> With[{
 				icon = getPersonaMenuIcon[personaSettings]
@@ -800,23 +797,23 @@ makeChatActionMenuContent[
 					Delimiter,
 					{
 						alignedMenuIcon[getIcon["ChatBlockSettingsMenuIcon"]],
-						tr["UIChatBlockSettings"],
+						tr[ "UIChatBlockSettings" ],
 						"OpenChatBlockSettings"
 					}
 				}]
 			}],
 			Delimiter,
-			{alignedMenuIcon[getIcon["PersonaOther"]], tr["UIAddAndManagePersonas"], "PersonaManage"},
-			{alignedMenuIcon[getIcon["ToolManagerRepository"]], tr["UIAddAndManageTools"], "ToolManage"},
+			{alignedMenuIcon[getIcon["PersonaOther"]], tr[ "UIAddAndManagePersonas" ], "PersonaManage"},
+			{alignedMenuIcon[getIcon["ToolManagerRepository"]], tr[ "UIAddAndManageTools" ], "ToolManage"},
 			Delimiter,
             <|
-                "Label" -> tr["UIModels"],
+                "Label" -> tr[ "UIModels" ],
                 "Type"  -> "Submenu",
                 "Icon"  -> alignedMenuIcon @ getIcon[ "ChatBlockSettingsMenuIcon" ],
                 "Data"  :> createServiceMenu[ targetObj, ParentCell @ EvaluationCell[ ] ]
             |>,
             <|
-                "Label" -> tr["UIAdvancedSettings"],
+                "Label" -> tr[ "UIAdvancedSettings" ],
                 "Type"  -> "Submenu",
                 "Icon"  -> alignedMenuIcon @ getIcon[ "AdvancedSettings" ],
                 "Data"  -> advancedSettingsMenu
@@ -877,7 +874,7 @@ createServiceMenu[ obj_, root_ ] :=
     With[ { model = currentChatSettings[ obj, "Model" ] },
         MakeMenu[
             Join[
-                { tr["UIModelsServices"] },
+                { tr[ "UIModelsServices" ] },
                 (createServiceItem[ obj, model, root, #1 ] &) /@ getAvailableServiceNames[ ]
             ],
             GrayLevel[ 0.85 ],
@@ -950,7 +947,7 @@ dynamicModelMenu[ obj_, root_, model_, service_ ] :=
                     None,
                     Pane[
                         Column @ {
-                            Style[ tr["UIModelsGet"], "ChatMenuLabel" ],
+                            Style[ tr[ "UIModelsGet" ], "ChatMenuLabel" ],
                             ProgressIndicator[ Appearance -> "Percolate" ]
                         },
                         ImageMargins -> 5
@@ -1000,7 +997,7 @@ makeServiceModelMenu[ Dynamic[ display_ ], obj_, root_, currentModel_, service_S
             { service },
             {
                 Spacer[ 0 ],
-                tr["UIModelsNoList"],
+                tr[ "UIModelsNoList" ],
                 Hold[
                     display = simpleModelMenuDisplay[ service, ProgressIndicator[ Appearance -> "Percolate" ] ];
                     makeServiceModelMenu[
@@ -1063,8 +1060,8 @@ menuModelGroup // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*modelGroupName*)
 modelGroupName // beginDefinition;
-modelGroupName[ KeyValuePattern[ "FineTuned" -> True ] ] := tr["UIModelsFineTuned"];
-modelGroupName[ KeyValuePattern[ "Snapshot"  -> True ] ] := tr["UIModelsSnapshot"];
+modelGroupName[ KeyValuePattern[ "FineTuned" -> True ] ] := tr[ "UIModelsFineTuned" ];
+modelGroupName[ KeyValuePattern[ "Snapshot"  -> True ] ] := tr[ "UIModelsSnapshot"  ];
 modelGroupName[ _ ] := None;
 modelGroupName // endDefinition;
 

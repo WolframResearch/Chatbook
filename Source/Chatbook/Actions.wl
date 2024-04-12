@@ -1348,7 +1348,7 @@ showAPIKeyDialog[ ] := AuthenticationDialog[
         {
             "APIKey" -> <|
                 "Masked"  -> True,
-                "Label"   -> tr["ActionsAPIKeyDialogAPIKey"],
+                "Label"   -> tr[ "ActionsAPIKeyDialogAPIKey" ],
                 "Control" -> Function[
                     InputField[
                         ##,
@@ -1360,10 +1360,10 @@ showAPIKeyDialog[ ] := AuthenticationDialog[
                     ]
                 ]
             |>,
-            "Save" -> <| "Interpreter" -> "Boolean", "Label" -> tr["ActionsAPIKeyDialogSave"] |>
+            "Save" -> <| "Interpreter" -> "Boolean", "Label" -> tr[ "ActionsAPIKeyDialogSave" ] |>
         },
         AppearanceRules -> {
-            "Title"       -> tr["ActionsAPIKeyDialogTitle"],
+            "Title"       -> tr[ "ActionsAPIKeyDialogTitle" ],
             "Description" -> $apiKeyDialogDescription
         }
     ],

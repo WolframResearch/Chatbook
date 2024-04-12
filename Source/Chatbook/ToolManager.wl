@@ -40,7 +40,7 @@ CreateLLMToolManagerDialog // beginDefinition;
 
 CreateLLMToolManagerDialog[ args___ ] := createDialog[
     CreateLLMToolManagerPanel @ args,
-    WindowTitle -> tr["ToolManagerTitle"]
+    WindowTitle -> tr[ "ToolManagerTitle" ]
 ];
 
 CreateLLMToolManagerDialog // endDefinition;
@@ -159,10 +159,10 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                                                 Background -> GrayLevel[ 0.898 ]
                                             ],
                                             {
-                                                Row @ { Spacer[ 4 ], tr["ToolManagerTool"] },
+                                                Row @ { Spacer[ 4 ], tr[ "ToolManagerTool" ] },
                                                 Row @ {
                                                     Spacer[ 4 ],
-                                                    tr["ToolManagerEnabledFor"],
+                                                    tr[ "ToolManagerEnabledFor" ],
                                                     Spacer[ 5 ],
                                                     personaNameDisp[ personaDisplayNames, Dynamic @ column ]
                                                 }
@@ -798,13 +798,14 @@ deleteButton0[ colBin_, row_, tool_Association ] := Button[
     Dynamic @ iconData[ "Bin", colBin ],
     attachOverlay[
         {
-            Style[ tr["ToolManagerDeleteTool"], "DialogHeader", FontSize -> 16, FontWeight -> "DemiBold" ],
+            Style[ tr[ "ToolManagerDeleteTool" ], "DialogHeader", FontSize -> 16, FontWeight -> "DemiBold" ],
             Row @ { inlineTemplateBox @ tool[ "Icon" ], Spacer[ 5 ], tool[ "CanonicalName" ] },
             {
-                redDialogButtonLabel[ Row[{" ", tr["CancelButton"], " "}] ],
-                Hold[ NotebookDelete @ EvaluationCell[ ] ],
-                grayDialogButtonLabel[ Row[{" ", tr["DeleteButton"], " "}] ],
-                Hold[ deleteTool @ tool; NotebookDelete @ EvaluationCell[ ] ]
+                redDialogButtonLabel @ Row @ { " ", tr[ "CancelButton" ], " " },
+                Hold @ NotebookDelete @ EvaluationCell[ ],
+                grayDialogButtonLabel @ Row @ { " ", tr[ "DeleteButton" ], " " },
+                Hold[ deleteTool @ tool;
+                NotebookDelete @ EvaluationCell[ ] ]
             }
         },
         FrameMargins -> { 13 * { 1, 1 }, 10 * { 1, 1 } },
@@ -825,13 +826,13 @@ deleteButton0 // endDefinition;
 nonDeletableTooltip // beginDefinition;
 
 nonDeletableTooltip[ KeyValuePattern @ { "CanonicalName" -> name_String, "Origin" -> "BuiltIn" } ] :=
-    trStringTemplate["ToolManagerTooltipNonDeletable1"][<|"name" -> name|>];
+    trStringTemplate[ "ToolManagerTooltipNonDeletable1" ][ <| "name" -> name |> ];
 
 nonDeletableTooltip[ KeyValuePattern @ {
     "CanonicalName" -> name_String,
     "Origin"        -> "Persona",
     "PersonaName"   -> persona_String
-} ] := trStringTemplate["ToolManagerTooltipNonDeletable2"][<|"name" -> name, "persona" -> persona|>];
+} ] := trStringTemplate[ "ToolManagerTooltipNonDeletable2" ][ <| "name" -> name, "persona" -> persona |> ];
 
 nonDeletableTooltip // endDefinition;
 
@@ -841,7 +842,7 @@ nonDeletableTooltip // endDefinition;
 nonConfigurableTooltip // beginDefinition;
 
 nonConfigurableTooltip[ KeyValuePattern[ "CanonicalName" -> name_String ] ] :=
-    trStringTemplate["ToolManagerTooltipNonConfigurable"][<|"name" -> name|>];
+    trStringTemplate[ "ToolManagerTooltipNonConfigurable" ][ <| "name" -> name |> ];
 
 nonConfigurableTooltip // endDefinition;
 
@@ -998,10 +999,10 @@ rightColControl[
                             setCV[ scope, "ToolSelectionType", toolName, # ] &
                         ],
                         {
-                            Inherited -> tr["ToolManagerEnabledByPersona"],
+                            Inherited -> tr[ "ToolManagerEnabledByPersona" ],
                             Delimiter,
-                            None      -> tr["ToolManagerEnabledNever"],
-                            All       -> tr["ToolManagerEnabledAlways"]
+                            None      -> tr[ "ToolManagerEnabledNever"  ],
+                            All       -> tr[ "ToolManagerEnabledAlways" ]
                         },
                         "",
                         PaneSelector[
@@ -1033,7 +1034,7 @@ rightColControl[
                                     Join[
                                         Map[
                                             Nest[ Unevaluated, Splice @ { #, Spacer[ 5 ] }, 2 ] &,
-                                            { tr["Always"], tr["Always"], tr["Never"], tr["Never"] }
+                                            { tr[ "Always" ], tr[ "Always" ], tr[ "Never" ], tr[ "Never" ] }
                                         ],
                                         { "", "" }
                                     ],
@@ -1139,9 +1140,9 @@ scopeSelector[ Dynamic[ scopeMode_ ] ] := ActionMenu[
     grayDialogButtonLabel @ Row @ {
         PaneSelector[
             {
-                ($FrontEnd &) -> tr["ScopeGlobal"],
-                FE`Evaluate @* FEPrivate`LastActiveUserNotebook -> tr["ScopeNotebook"],
-                SelectedCells @* FE`Evaluate @* FEPrivate`LastActiveUserNotebook -> tr["ScopeCells"]
+                ($FrontEnd &) -> tr[ "ScopeGlobal" ],
+                FE`Evaluate @* FEPrivate`LastActiveUserNotebook -> tr[ "ScopeNotebook" ],
+                SelectedCells @* FE`Evaluate @* FEPrivate`LastActiveUserNotebook -> tr[ "ScopeCells" ]
             },
             Dynamic @ scopeMode,
             BaselinePosition -> Baseline,
@@ -1151,9 +1152,9 @@ scopeSelector[ Dynamic[ scopeMode_ ] ] := ActionMenu[
         " \[DownPointer]"
     },
     {
-        tr["ScopeGlobal"]   :> (scopeMode = $FrontEnd &),
-        tr["ScopeNotebook"] :> (scopeMode = FE`Evaluate @* FEPrivate`LastActiveUserNotebook),
-        tr["ScopeCells"]    :> (scopeMode = SelectedCells @* FE`Evaluate @* FEPrivate`LastActiveUserNotebook)
+        tr[ "ScopeGlobal"   ] :> (scopeMode = $FrontEnd &),
+        tr[ "ScopeNotebook" ] :> (scopeMode = FE`Evaluate @* FEPrivate`LastActiveUserNotebook),
+        tr[ "ScopeCells"    ] :> (scopeMode = SelectedCells @* FE`Evaluate @* FEPrivate`LastActiveUserNotebook)
     },
     Appearance       -> "Frameless",
     BaselinePosition -> Baseline
@@ -1200,7 +1201,7 @@ iconData // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*titleSection*)
 titleSection // beginDefinition;
-titleSection[ ] := If[ TrueQ @ $inDialog, dialogHeader[ tr["ToolManagerTitle"] ], Nothing ];
+titleSection[ ] := If[ TrueQ @ $inDialog, dialogHeader @ tr[ "ToolManagerTitle" ], Nothing ];
 titleSection // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1209,13 +1210,13 @@ titleSection // endDefinition;
 installToolsSection // beginDefinition;
 
 installToolsSection[ ] := Sequence[
-    dialogSubHeader[ tr["ToolManagerInstallTools"] ],
+    dialogSubHeader @ tr[ "ToolManagerInstallTools" ],
     dialogBody[
         Grid @ {
             {
-                tr["ToolManagerInstallFrom"],
+                tr[ "ToolManagerInstallFrom" ],
                 Button[
-                    grayDialogButtonLabel[ tr["ToolManagerInstallFromLLMToolRepo"] ],
+                    grayDialogButtonLabel @ tr[ "ToolManagerInstallFromLLMToolRepo" ],
                     If[ $CloudEvaluation, SetOptions[ EvaluationNotebook[ ], DockedCells -> Inherited ] ];
                     ResourceInstallFromRepository[ "LLMTool" ],
                     Appearance       -> "Suppressed",
@@ -1223,7 +1224,7 @@ installToolsSection[ ] := Sequence[
                     Method           -> "Queued"
                 ],
                 Button[
-                    grayDialogButtonLabel[ tr["URLButton"] ],
+                    grayDialogButtonLabel @ tr[ "URLButton" ],
                     If[ $CloudEvaluation, SetOptions[ EvaluationNotebook[ ], DockedCells -> Inherited ] ];
                     Block[ { PrintTemporary }, ResourceInstallFromURL[ "LLMTool" ] ],
                     Appearance       -> "Suppressed",
@@ -1247,7 +1248,7 @@ manageAndEnableToolsSection[ Dynamic[ scopeMode_ ] ] := Sequence[
     dialogBody[
         Grid @ {
             {
-                tr["ToolManagerShowEnabledFor"],
+                tr[ "ToolManagerShowEnabledFor" ],
                 scopeSelector @ Dynamic @ scopeMode,
                 Dynamic @ catchAlways @ toolModelWarning @ scopeMode[ ]
             }
@@ -1256,7 +1257,7 @@ manageAndEnableToolsSection[ Dynamic[ scopeMode_ ] ] := Sequence[
     ]
 ];
 
-manageAndEnableToolsSection[ ] := dialogSubHeader[ tr["ToolManagerManageTools"] ];
+manageAndEnableToolsSection[ ] := dialogSubHeader @ tr[ "ToolManagerManageTools" ];
 
 manageAndEnableToolsSection // endDefinition;
 
@@ -1271,15 +1272,15 @@ dialogButtonSection[ ] :=
             Item[
                 Framed[
                     Button[
-                        redDialogButtonLabel[ tr["OKButton"] ],
+                        redDialogButtonLabel @ tr[ "OKButton" ],
                         NotebookClose @ EvaluationNotebook[ ],
-                        Appearance -> "Suppressed",
+                        Appearance       -> "Suppressed",
                         BaselinePosition -> Baseline,
-                        Method -> "Queued"
+                        Method           -> "Queued"
                     ],
+                    Alignment  -> { Center, Center },
                     FrameStyle -> None,
-                    ImageSize -> { 100, 50 },
-                    Alignment -> { Center, Center }
+                    ImageSize  -> { 100, 50 }
                 ],
                 Alignment -> { Right, Automatic }
             ],
@@ -1411,9 +1412,9 @@ cloudToolEnablePopup[ name_String ] :=
             ]
         ],
         {
-            All       -> tr["EnabledAlways"],
-            Inherited -> tr["EnabledByPersona"],
-            None      -> tr["EnabledNever2"]
+            All       -> tr[ "EnabledAlways"    ],
+            Inherited -> tr[ "EnabledByPersona" ],
+            None      -> tr[ "EnabledNever2"    ]
         }
     ];
 
