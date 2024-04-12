@@ -292,7 +292,7 @@ Notebook[
          TemplateBox[
           {
            TemplateBox[ { }, "MoreInfoOpenerIconTemplate" ],
-           "\"Click for more information\""
+           tr["ChatContextDialogClickForMoreInfo"]
           },
           "PrettyTooltipTemplate"
          ],

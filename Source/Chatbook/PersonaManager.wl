@@ -29,7 +29,7 @@ CreatePersonaManagerDialog // beginDefinition;
 
 CreatePersonaManagerDialog[ args___ ] := createDialog[
     CreatePersonaManagerPanel @ args,
-    WindowTitle -> "Add & Manage Personas"
+    WindowTitle -> tr[ "PersonaManagerTitle" ]
 ];
 
 CreatePersonaManagerDialog // endDefinition;
@@ -48,16 +48,16 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
     Framed[
         Grid[
             {
-                If[ TrueQ @ $inDialog, dialogHeader[ "Add & Manage Personas" ], Nothing ],
+                If[ TrueQ @ $inDialog, dialogHeader @ tr[ "PersonaManagerTitle" ], Nothing ],
 
                 (* ----- Install Personas ----- *)
-                dialogSubHeader[ "Install Personas" ],
+                dialogSubHeader @ tr[ "PersonaManagerInstallPersonas" ],
                 dialogBody[
                     Grid @ {
                         {
-                            "Install from",
+                            tr[ "PersonaManagerInstallFrom" ],
                             Button[
-                                grayDialogButtonLabel[ "Prompt Repository \[UpperRightArrow]" ],
+                                grayDialogButtonLabel @ tr[ "PersonaManagerInstallFromPromptRepo" ],
                                 If[ $CloudEvaluation, SetOptions[ EvaluationNotebook[ ], DockedCells -> Inherited ] ];
                                 ResourceInstallFromRepository[ "Prompt" ],
                                 Appearance       -> "Suppressed",
@@ -65,7 +65,7 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
                                 Method           -> "Queued"
                             ],
                             Button[
-                                grayDialogButtonLabel[ "URL" ],
+                                grayDialogButtonLabel @ tr[ "URLButton" ],
                                 If[ $CloudEvaluation, SetOptions[ EvaluationNotebook[ ], DockedCells -> Inherited ] ];
                                 Block[ { PrintTemporary }, ResourceInstallFromURL[ "Prompt" ] ],
                                 Appearance       -> "Suppressed",
@@ -77,7 +77,7 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
                 ],
 
                 (* ----- Configure and Enable Personas ----- *)
-                dialogSubHeader[ "Manage and Enable Personas", { Automatic, { 5, Automatic } } ],
+                dialogSubHeader[ tr[ "PersonaManagerManagePersonas" ], { Automatic, { 5, Automatic } } ],
                 {
                     If[ $inDialog, Pane[#, AppearanceElements -> None, ImageSize -> {Full, UpTo[300]}, Scrollbars -> {False, Automatic}], # ]& @
                     Dynamic[
@@ -89,7 +89,16 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
                                     Join[
                                         KeyTake[GetCachedPersonaData[ "IncludeHidden" -> False ], favorites],
                                         KeySort[GetCachedPersonaData[ "IncludeHidden" -> False ]]]],
-                                {"", "In Menu", "", "Name", ""(*FITME*), (*"Description",*) "Version", ""}],
+                                {
+                                    "",
+                                    tr[ "PersonaManagerInMenu" ],
+                                    "",
+                                    tr[ "PersonaManagerName" ],
+                                    "",
+                                    tr[ "PersonaManagerVersion" ],
+                                    ""
+                                }
+                            ],
                             Alignment -> {{Center, Center, {Left}}, Center},
                             Background -> {{}, {RGBColor["#e5e5e5"], {White}}},
                             BaseStyle -> "DialogBody",
@@ -119,7 +128,7 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
                     {
                         Item[
                             Button[(* give Default properties using specific FEExpression *)
-                                redDialogButtonLabel[ "OK" ],
+                                redDialogButtonLabel @ tr[ "OKButton" ],
                                 DialogReturn @ channelCleanup[ ],
                                 Appearance -> FEPrivate`FrontEndResource["FEExpressions", "DefaultSuppressMouseDownNinePatchAppearance"],
                                 ImageMargins -> {{0, 31}, {14, 14}},
@@ -260,14 +269,14 @@ formatPacletLink[ origin_String, url_, pacletName_ ] :=
                     formatIcon @ Mouseover[chatbookIcon["PacletRepo", False], chatbookIcon["PacletRepo-hover", False]],
                     $chatbookDocumentationURL,
                     ImageMargins -> {{13, 0}, {0, 0}}],
-                "Persona installed from the Wolfram/Chatbook paclet. Visit page \[RightGuillemet]"],
+                tr[ "PersonaManagerOriginChatbookTooltip" ]],
         "PacletRepository",
             Tooltip[
                 Hyperlink[
                     formatIcon @ Mouseover[chatbookIcon["PacletRepo", False], chatbookIcon["PacletRepo-hover", False]],
                     url,
                     ImageMargins -> {{13, 0}, {0, 0}}],
-                StringTemplate["Persona installed from the `name` paclet. Visit page \[RightGuillemet]."][<|"name" -> pacletName|>]],
+                trStringTemplate[ "PersonaManagerOriginRepositoryTooltip" ][ <| "name" -> pacletName |> ]],
         _,
             ""];
 formatPacletLink // endDefinition;
@@ -299,7 +308,7 @@ uninstallButton[ name_String, installedQ_, pacletName_String ] :=
                 "Disabled" ->
                     Tooltip[
                         formatIcon @ chatbookIcon["Delete-disabled", False],
-                        StringTemplate["This persona cannot be uninstalled because it is provided by the `1` paclet."][pacletName]]},
+                        trStringTemplate[ "PersonaManagerPersonaUninstallTooltip" ][ pacletName ]]},
             Dynamic[Which[!installedQ, "Disabled", CurrentValue["MouseOver"], "Hover", True, "Default"]],
             ImageSize -> Automatic],
         Block[ { PrintTemporary },

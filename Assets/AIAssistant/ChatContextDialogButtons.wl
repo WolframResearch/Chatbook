@@ -16,7 +16,7 @@ Function[
              {
               StyleBox[
                TemplateBox[
-                { "\"Cancel\"" },
+                { ToBoxes[tr["CancelButton"]] },
                 "Row",
                 DisplayFunction ->
                  (Function[
@@ -161,7 +161,7 @@ Function[
              {
               StyleBox[
                TemplateBox[
-                { "\"OK\"" },
+                { ToBoxes[tr["OKButton"]] },
                 "Row",
                 DisplayFunction ->
                  (Function[

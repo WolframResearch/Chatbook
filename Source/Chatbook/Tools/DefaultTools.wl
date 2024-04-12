@@ -564,7 +564,7 @@ makeWebLinksMenu[ actions: { (_RuleDelayed|Delimiter).. } ] := Tooltip[
         actions,
         Appearance -> None
     ],
-    "Links"
+    tr[ "DefaultToolsLinks" ]
 ];
 
 makeWebLinksMenu[ ___ ] := "";

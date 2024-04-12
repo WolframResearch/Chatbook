@@ -190,7 +190,7 @@
   {
    Cell[
     TextData @ {
-     "System Prompt Text",
+     trRaw["ChatContextDialogSystemPromptText"],
      Cell @ BoxData @ PaneSelectorBox[
       {
        True ->
@@ -199,7 +199,7 @@
           "ChatContextPreprompt",
           Cell[
            BoxData @ FrameBox[
-            Cell[ "This is the text that tells you what to do.", "MoreInfoText" ],
+            Cell[ trRaw["ChatContextDialogDescription"], "MoreInfoText" ],
             Background -> GrayLevel[ 0.95 ],
             FrameMargins -> 20,
             FrameStyle -> GrayLevel[ 0.9 ],
@@ -250,7 +250,7 @@
   {
    Cell[
     TextData @ {
-     "Cell Processing Function",
+     trRaw["ChatContextDialogCellProcessingFunction"],
      Cell @ BoxData @ PaneSelectorBox[
       {
        True ->
@@ -259,7 +259,7 @@
           "CellToMessageFunction",
           Cell[
            BoxData @ FrameBox[
-            Cell[ "This is the text that tells you what to do.", "MoreInfoText" ],
+            Cell[ trRaw["ChatContextDialogDescription"], "MoreInfoText" ],
             Background -> GrayLevel[ 0.95 ],
             FrameMargins -> 20,
             FrameStyle -> GrayLevel[ 0.9 ],
@@ -302,7 +302,7 @@
   {
    Cell[
     TextData @ {
-     "Cell Post Evaluation Function",
+     trRaw["ChatContextDialogCellPostEvaluationFunction"],
      Cell @ BoxData @ PaneSelectorBox[
       {
        True ->
@@ -311,7 +311,7 @@
           "ChatPost",
           Cell[
            BoxData @ FrameBox[
-            Cell[ "This is the text that tells you what to do.", "MoreInfoText" ],
+            Cell[ trRaw["ChatContextDialogDescription"], "MoreInfoText" ],
             Background -> GrayLevel[ 0.95 ],
             FrameMargins -> 20,
             FrameStyle -> GrayLevel[ 0.9 ],

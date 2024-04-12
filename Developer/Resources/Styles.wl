@@ -3,6 +3,16 @@
 Begin[ "Wolfram`ChatbookStylesheetBuilder`Private`" ];
 
 
+(* ::Section::Closed:: *)
+(*Resources*)
+
+
+(* ::Subsection::Closed:: *)
+(*tr*)
+
+
+tr[name_?StringQ] := Dynamic[FEPrivate`FrontEndResource["ChatbookStrings", name]]
+
 
 (* ::Section::Closed:: *)
 (*Notebook*)
@@ -1147,7 +1157,7 @@ Cell[
         DisplayFunction -> Function[
             Evaluate @ ToBoxes @ Button[
                 MouseAppearance[
-                    Tooltip[ RawBoxes @ TemplateBox[ { }, "ChatWidgetIcon" ], "Send to LLM" ],
+                    Tooltip[ RawBoxes @ TemplateBox[ { }, "ChatWidgetIcon" ], tr["StylesheetChatWidgetButtonTooltip"] ],
                     "LinkHand"
                 ],
                 With[ { $CellContext`cell = ParentCell @ EvaluationCell[ ] },

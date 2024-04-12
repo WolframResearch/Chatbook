@@ -124,7 +124,7 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
     cvExpand @ Module[ { content },
         content = Grid[
             {
-                dialogHeader[ "Send Wolfram AI Chat Feedback" ],
+                dialogHeader[ tr[ "FeedbackDialogHeader" ] ],
                 dialogBody[
                     Grid[
                         {
@@ -136,7 +136,7 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
                                         False -> chatbookIcon[ "ThumbsDownActive", False ]
                                     }
                                 ],
-                                "Sending feedback helps us improve our AI features."
+                                tr[ "FeedbackDialogBodyThumbs" ]
                             }
                         },
                         Alignment -> { Left, Baseline }
@@ -152,14 +152,14 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
                         Dynamic @ data[ "Comment" ],
                         String,
                         ContinuousAction -> True,
-                        FieldHint        -> "Do you have additional feedback? (Optional)",
+                        FieldHint        -> tr[ "FeedbackDialogCommentFieldHint" ],
                         ImageSize        -> { 500, 60 }
                     ],
                     { Automatic, { 3, Automatic } }
                 ],
                 dialogBody[
                     Style[
-                        "Your chat history and feedback may be used for training purposes.",
+                        tr[ "FeedbackDialogBodyUsedForTraining" ],
                         FontColor -> GrayLevel[ 0.75 ],
                         FontSize  -> 12
                     ],
@@ -167,7 +167,7 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
                 ],
                 dialogBody @ OpenerView[
                     {
-                        "Preview data to be sent",
+                        tr[ "FeedbackDialogBodyPreviewData" ],
                         topRightOverlay[
                             Pane[
                                 Dynamic @ generatePreviewData[ data, choices ],
@@ -203,14 +203,14 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
                             Grid[
                                 { {
                                     Button[
-                                        grayDialogButtonLabel[ "Cancel" ],
+                                        grayDialogButtonLabel[ tr[ "CancelButton" ] ],
                                         NotebookClose @ EvaluationNotebook[ ],
                                         Appearance       -> "Suppressed",
                                         BaselinePosition -> Baseline,
                                         Method           -> "Queued"
                                     ],
                                     Button[
-                                        redDialogButtonLabel[ "Send" ],
+                                        redDialogButtonLabel[ tr[ "SendButton" ] ],
                                         sendDialogFeedback[ cell, EvaluationNotebook[ ], data, choices ],
                                         Appearance       -> "Suppressed",
                                         BaselinePosition -> Baseline,
@@ -252,7 +252,7 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
             {
                 "None"       -> content,
                 "Submitting" -> ProgressIndicator[ Appearance -> "Necklace" ],
-                "Done"       -> Style[ "Thanks for your feedback!", $baseStyle ],
+                "Done"       -> Style[ tr[ "FeedbackDialogThanks" ], $baseStyle ],
                 "Error"      -> Style[
                     Dynamic[ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ErrorText" } ] ],
                     $baseStyle
@@ -300,10 +300,13 @@ includedContentGrid[ Dynamic[ data_ ], Dynamic[ choices_ ] ] := Enclose[
         Grid[
             {
                 {
-                    "Included content:",
+                    tr[ "FeedbackDialogContentIncludedLabel" ],
                     PaneSelector[
                         {
-                            True -> Style[ "Output image", FontColor -> GrayLevel[ 0.75 ] ],
+                            True -> Style[
+                                tr[ "FeedbackDialogContentOutputImageLabel" ],
+                                FontColor -> GrayLevel[ 0.75 ]
+                            ],
                             False -> ""
                         },
                         Dynamic @ choices[ "CellImage" ]
@@ -384,7 +387,7 @@ includedContentCheckboxes[ Dynamic[ data_ ], Dynamic[ choices_ ] ] :=
                     choices[ "Messages" ],
                     Function[ choices[ "SystemMessage" ] = choices[ "ChatHistory" ] = #1; choices[ "Messages" ] = #1 ]
                 ],
-                infoTooltip[ "Chat messages", "Chat messages involved in creating this chat output." ]
+                infoTooltip[ tr[ "FeedbackChatMessagesContent" ], tr[ "FeedbackChatMessagesTooltip" ] ]
             },
             {
                 "",
@@ -392,17 +395,11 @@ includedContentCheckboxes[ Dynamic[ data_ ], Dynamic[ choices_ ] ] :=
                     {
                         {
                             Checkbox[ Dynamic @ choices[ "SystemMessage" ], Enabled -> Dynamic @ choices[ "Messages" ] ],
-                            infoTooltip[
-                                "System message",
-                                "The underlying system message used for giving instructions to the AI."
-                            ]
+                            infoTooltip[ tr[ "FeedbackSystemMessageContent" ], tr[ "FeedbackSystemMessageTooltip" ] ]
                         },
                         {
                             Checkbox[ Dynamic @ choices[ "ChatHistory" ], Enabled -> Dynamic @ choices[ "Messages" ] ],
-                            infoTooltip[
-                                "Chat history used to generate this output",
-                                "Additional messages that were used as conversation history to generate this output."
-                            ]
+                            infoTooltip[ tr[ "FeedbackChatHistoryContent" ], tr[ "FeedbackChatHistoryTooltip" ] ]
                         }
                     },
                     Alignment -> { Left, Baseline },
@@ -411,10 +408,7 @@ includedContentCheckboxes[ Dynamic[ data_ ], Dynamic[ choices_ ] ] :=
             },
             {
                 Checkbox @ Dynamic @ choices[ "CellImage" ],
-                infoTooltip[
-                    "Image of chat output",
-                    "A screenshot of the chat output, which can be used if feedback is related to the output's appearance."
-                ]
+                infoTooltip[ tr[ "FeedbackChatImageContent" ], tr[ "FeedbackChatImageTooltip" ] ]
             }
         },
         Alignment -> { Left, Baseline },
