@@ -144,6 +144,7 @@ $$template        = _String|_TemplateObject|_TemplateExpression|_TemplateSequenc
 (*tr*)
 (* Look up translations for `name` in text resources data files. *)
 tr // beginDefinition;
+tr[ name_? StringQ ] /; $CloudEvaluation := cloudTextResource @ name;
 tr[ name_? StringQ ] := Dynamic @ FEPrivate`FrontEndResource[ "ChatbookStrings", name ];
 tr // endDefinition;
 
@@ -151,6 +152,7 @@ tr // endDefinition;
 (* ::Subsection::Closed:: *)
 (*trRaw*)
 trRaw // beginDefinition;
+trRaw[ name_? StringQ ] /; $CloudEvaluation := cloudTextResource @ name;
 trRaw[ name_? StringQ ] := FrontEndResource[ "ChatbookStrings", name ];
 trRaw // endDefinition;
 
@@ -174,6 +176,57 @@ trExprTemplate[ name_? StringQ ] :=
     TemplateObject @ Splice @ StringSplit[ trRaw @ name, "`" ~~ d: DigitCharacter.. ~~ "`" :> TemplateSlot @ d ];
 
 trExprTemplate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$cloudTextResources*)
+$cloudTextResources := getCloudTextResources[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*cloudTextResource*)
+cloudTextResource // beginDefinition;
+cloudTextResource[ name_String ] := cloudTextResource[ name, $cloudTextResources ];
+cloudTextResource[ name_String, resources_Association ] := cloudTextResource[ name, resources[ name ] ];
+cloudTextResource[ name_String, string_String ] := cloudTextResource[ name ] = string;
+cloudTextResource // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getCloudTextResources*)
+getCloudTextResources // beginDefinition;
+
+getCloudTextResources[ ] := Enclose[
+    Module[ { file, string, assoc },
+
+        file = ConfirmBy[
+            FileNameJoin @ { $thisPaclet[ "Location" ], "FrontEnd", "TextResources", "ChatbookStrings.tr" },
+            FileExistsQ,
+            "File"
+        ];
+
+        string = ConfirmBy[ ReadString @ file, StringQ, "String" ];
+
+        assoc = ConfirmBy[
+            First[
+                StringCases[
+                    string,
+                    "@@resource ChatbookStrings" ~~ WhitespaceCharacter... ~~ rules: Shortest[ "{" ~~ ___ ~~ "}" ] :>
+                        Association @ ToExpression @ rules,
+                    1
+                ],
+                $Failed
+            ],
+            AssociationQ,
+            "Association"
+        ];
+
+        getCloudTextResources[ ] = assoc
+    ],
+    throwInternalFailure
+];
+
+getCloudTextResources // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -997,6 +1050,7 @@ If[ Wolfram`ChatbookInternal`$BuildingMX,
     $debug = False;
     $chatbookIcons;
     $templateBoxDisplayFunctions;
+    $cloudTextResources;
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)
