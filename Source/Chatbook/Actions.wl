@@ -1429,9 +1429,7 @@ getAssetFile // endDefinition;
 (* ::Section::Closed:: *)
 (*Package Footer*)
 If[ Wolfram`ChatbookInternal`$BuildingMX,
-    $chatContextDialogButtons;
-    $chatContextDialogTemplateCells;
-    $chatContextDialogStyles;
+    Null;
 ];
 
 End[ ];
