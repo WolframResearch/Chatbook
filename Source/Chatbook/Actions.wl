@@ -886,26 +886,17 @@ setChatSectionSettings // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$chatContextDialogButtons*)
-$chatContextDialogButtons := $chatContextDialogButtons = Get @ FileNameJoin @ {
-    PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "AIAssistant" ],
-    "ChatContextDialogButtons.wl"
-};
+$chatContextDialogButtons := getAsset[ "ChatContextDialogButtons" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$chatContextDialogTemplateCells*)
-$chatContextDialogTemplateCells := $chatContextDialogTemplateCells = Get @ FileNameJoin @ {
-    PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "AIAssistant" ],
-    "ChatContextDialogCellsTemplate.wl"
-};
+$chatContextDialogTemplateCells := getAsset[ "ChatContextDialogCellsTemplate" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$chatContextDialogStyles*)
-$chatContextDialogStyles := $chatContextDialogStyles = Get @ FileNameJoin @ {
-    PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "AIAssistant" ],
-    "ChatContextDialogStyles.wl"
-};
+$chatContextDialogStyles := getAsset[ "ChatContextDialogStyles" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1364,7 +1355,7 @@ showAPIKeyDialog[ ] := AuthenticationDialog[
         },
         AppearanceRules -> {
             "Title"       -> tr[ "ActionsAPIKeyDialogTitle" ],
-            "Description" -> $apiKeyDialogDescription
+            "Description" -> getAsset[ "APIKeyDialogDescription" ]
         }
     ],
     WindowSize     -> { 400, All },
@@ -1372,12 +1363,6 @@ showAPIKeyDialog[ ] := AuthenticationDialog[
 ];
 
 showAPIKeyDialog // endDefinition;
-
-
-$apiKeyDialogDescription := $apiKeyDialogDescription = Get @ FileNameJoin @ {
-    PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "AIAssistant" ],
-    "APIKeyDialogDescription.wl"
-};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1406,12 +1391,49 @@ withChatState // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Paclet Assets*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getAsset*)
+getAsset // beginDefinition;
+
+getAsset[ name0_String? StringQ ] := Enclose[
+    Module[ { name, dir, file, expr },
+        name = StringDelete[ name0, ".wl"~~EndOfString ] <> ".wl";
+        dir  = ConfirmBy[ $thisPaclet[ "AssetLocation", "AIAssistant" ], DirectoryQ, "Directory" ];
+        file = ConfirmBy[ FileNameJoin @ { dir, name }, FileExistsQ, "File" ];
+        expr = Confirm[ getAssetFile @ file, "Expression" ];
+        getAsset[ name ] = expr
+    ],
+    throwInternalFailure
+];
+
+getAsset // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getAssetFile*)
+getAssetFile // beginDefinition;
+
+getAssetFile[ file_? FileExistsQ ] :=
+    Block[
+        {
+            $Context     = "Wolfram`ChatNB`",
+            $ContextPath = { "Wolfram`ChatNB`", "Wolfram`Chatbook`Common`", "System`" }
+        },
+        Get @ file
+    ];
+
+getAssetFile // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Package Footer*)
 If[ Wolfram`ChatbookInternal`$BuildingMX,
     $chatContextDialogButtons;
     $chatContextDialogTemplateCells;
     $chatContextDialogStyles;
-    $apiKeyDialogDescription;
 ];
 
 End[ ];
