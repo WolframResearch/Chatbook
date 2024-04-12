@@ -124,7 +124,7 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
     cvExpand @ Module[ { content },
         content = Grid[
             {
-                dialogHeader[ tr["FeedbackDialogHeader"] ],
+                dialogHeader[ tr[ "FeedbackDialogHeader" ] ],
                 dialogBody[
                     Grid[
                         {
@@ -136,7 +136,7 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
                                         False -> chatbookIcon[ "ThumbsDownActive", False ]
                                     }
                                 ],
-                                tr["FeedbackDialogBodyThumbs"]
+                                tr[ "FeedbackDialogBodyThumbs" ]
                             }
                         },
                         Alignment -> { Left, Baseline }
@@ -152,14 +152,14 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
                         Dynamic @ data[ "Comment" ],
                         String,
                         ContinuousAction -> True,
-                        FieldHint        -> tr["FeedbackDialogCommentFieldHint"],
+                        FieldHint        -> tr[ "FeedbackDialogCommentFieldHint" ],
                         ImageSize        -> { 500, 60 }
                     ],
                     { Automatic, { 3, Automatic } }
                 ],
                 dialogBody[
                     Style[
-                        tr["FeedbackDialogBodyUsedForTraining"],
+                        tr[ "FeedbackDialogBodyUsedForTraining" ],
                         FontColor -> GrayLevel[ 0.75 ],
                         FontSize  -> 12
                     ],
@@ -167,7 +167,7 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
                 ],
                 dialogBody @ OpenerView[
                     {
-                        tr["FeedbackDialogBodyPreviewData"],
+                        tr[ "FeedbackDialogBodyPreviewData" ],
                         topRightOverlay[
                             Pane[
                                 Dynamic @ generatePreviewData[ data, choices ],
@@ -203,14 +203,14 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
                             Grid[
                                 { {
                                     Button[
-                                        grayDialogButtonLabel[ tr["CancelButton"] ],
+                                        grayDialogButtonLabel[ tr[ "CancelButton" ] ],
                                         NotebookClose @ EvaluationNotebook[ ],
                                         Appearance       -> "Suppressed",
                                         BaselinePosition -> Baseline,
                                         Method           -> "Queued"
                                     ],
                                     Button[
-                                        redDialogButtonLabel[ tr["SendButton"] ],
+                                        redDialogButtonLabel[ tr[ "SendButton" ] ],
                                         sendDialogFeedback[ cell, EvaluationNotebook[ ], data, choices ],
                                         Appearance       -> "Suppressed",
                                         BaselinePosition -> Baseline,
@@ -252,7 +252,7 @@ createFeedbackDialogContent[ cell_CellObject, Dynamic[ data_ ], Dynamic[ choices
             {
                 "None"       -> content,
                 "Submitting" -> ProgressIndicator[ Appearance -> "Necklace" ],
-                "Done"       -> Style[ tr["FeedbackDialogThanks"], $baseStyle ],
+                "Done"       -> Style[ tr[ "FeedbackDialogThanks" ], $baseStyle ],
                 "Error"      -> Style[
                     Dynamic[ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ErrorText" } ] ],
                     $baseStyle
@@ -300,10 +300,13 @@ includedContentGrid[ Dynamic[ data_ ], Dynamic[ choices_ ] ] := Enclose[
         Grid[
             {
                 {
-                    tr["FeedbackDialogContentIncludedLabel"],
+                    tr[ "FeedbackDialogContentIncludedLabel" ],
                     PaneSelector[
                         {
-                            True -> Style[ tr["FeedbackDialogContentOutputImageLabel"], FontColor -> GrayLevel[ 0.75 ] ],
+                            True -> Style[
+                                tr[ "FeedbackDialogContentOutputImageLabel" ],
+                                FontColor -> GrayLevel[ 0.75 ]
+                            ],
                             False -> ""
                         },
                         Dynamic @ choices[ "CellImage" ]
@@ -384,7 +387,7 @@ includedContentCheckboxes[ Dynamic[ data_ ], Dynamic[ choices_ ] ] :=
                     choices[ "Messages" ],
                     Function[ choices[ "SystemMessage" ] = choices[ "ChatHistory" ] = #1; choices[ "Messages" ] = #1 ]
                 ],
-                infoTooltip[ tr["FeedbackChatMessagesContent"], tr["FeedbackChatMessagesTooltip"] ]
+                infoTooltip[ tr[ "FeedbackChatMessagesContent" ], tr[ "FeedbackChatMessagesTooltip" ] ]
             },
             {
                 "",
@@ -392,11 +395,11 @@ includedContentCheckboxes[ Dynamic[ data_ ], Dynamic[ choices_ ] ] :=
                     {
                         {
                             Checkbox[ Dynamic @ choices[ "SystemMessage" ], Enabled -> Dynamic @ choices[ "Messages" ] ],
-                            infoTooltip[tr["FeedbackSystemMessageContent"], tr["FeedbackSystemMessageTooltip"]]
+                            infoTooltip[ tr[ "FeedbackSystemMessageContent" ], tr[ "FeedbackSystemMessageTooltip" ] ]
                         },
                         {
                             Checkbox[ Dynamic @ choices[ "ChatHistory" ], Enabled -> Dynamic @ choices[ "Messages" ] ],
-                            infoTooltip[tr["FeedbackChatHistoryContent"], tr["FeedbackChatHistoryTooltip"]]
+                            infoTooltip[ tr[ "FeedbackChatHistoryContent" ], tr[ "FeedbackChatHistoryTooltip" ] ]
                         }
                     },
                     Alignment -> { Left, Baseline },
@@ -405,7 +408,7 @@ includedContentCheckboxes[ Dynamic[ data_ ], Dynamic[ choices_ ] ] :=
             },
             {
                 Checkbox @ Dynamic @ choices[ "CellImage" ],
-                infoTooltip[tr["FeedbackChatImageContent"], tr["FeedbackChatImageTooltip"]]
+                infoTooltip[ tr[ "FeedbackChatImageContent" ], tr[ "FeedbackChatImageTooltip" ] ]
             }
         },
         Alignment -> { Left, Baseline },

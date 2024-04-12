@@ -542,7 +542,7 @@ evaluateLanguageLabel[ name_String ] :=
     With[ { icon = $languageIcons @ name },
         fancyTooltip[
             MouseAppearance[ buttonMouseover[ buttonFrameDefault @ icon, buttonFrameActive @ icon ], "LinkHand" ],
-            tr["FormattingInsertContentAndEvaluateTooltip"]
+            tr[ "FormattingInsertContentAndEvaluateTooltip" ]
         ] /; MatchQ[ icon, _Graphics | _Image ]
     ];
 
@@ -568,7 +568,7 @@ $copyToClipboardButtonLabel := $copyToClipboardButtonLabel = fancyTooltip[
         ],
         "LinkHand"
     ],
-    tr["FormattingCopyToClipboardTooltip"]
+    tr[ "FormattingCopyToClipboardTooltip" ]
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -582,7 +582,7 @@ $insertInputButtonLabel := $insertInputButtonLabel = fancyTooltip[
         ],
         "LinkHand"
     ],
-    tr["FormattingInsertContentTooltip"]
+    tr[ "FormattingInsertContentTooltip" ]
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -596,7 +596,7 @@ $insertEvaluateButtonLabel := $insertEvaluateButtonLabel = fancyTooltip[
         ],
         "LinkHand"
     ],
-    tr["FormattingInsertContentAndEvaluateTooltip"]
+    tr[ "FormattingInsertContentAndEvaluateTooltip" ]
 ];
 
 (* ::**************************************************************************************************************:: *)

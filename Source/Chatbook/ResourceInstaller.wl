@@ -290,7 +290,7 @@ ResourceInstallFromURL[ rtype: $$installableType|Automatic ] := catchMine @ Encl
     Module[ { url },
 
         url = ConfirmMatch[
-            DefinitionNotebookClient`FancyInputString[ "Prompt", tr["ResourceInstallerFromURLPrompt"] ], (* FIXME: needs custom dialog *)
+            DefinitionNotebookClient`FancyInputString[ "Prompt", tr[ "ResourceInstallerFromURLPrompt" ] ], (* FIXME: needs custom dialog *)
             _String|$Canceled,
             "InputString"
         ];

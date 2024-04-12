@@ -258,7 +258,7 @@ createNotebookSettingsPanel[ ] := Enclose[
         ];
 
         (* Label for the interface section using a style from SystemDialog.nb: *)
-        interfaceLabel = subsectionText[ tr["PreferencesContentSubsectionChat"] ];
+        interfaceLabel = subsectionText @ tr[ "PreferencesContentSubsectionChat" ];
 
         (* Retrieve and confirm the content for the chat notebook interface,
            ensuring it is not an error from makeInterfaceContent: *)
@@ -269,7 +269,7 @@ createNotebookSettingsPanel[ ] := Enclose[
         ];
 
         (* Label for the features section using a style from SystemDialog.nb: *)
-        featuresLabel = subsectionText[ tr["PreferencesContentSubsectionFeatures"] ];
+        featuresLabel = subsectionText @ tr[ "PreferencesContentSubsectionFeatures" ];
 
         (* Retrieve and confirm the content for the chat notebook features,
            ensuring it is not an error from makeFeaturesContent: *)
@@ -369,7 +369,7 @@ makePersonaSelector0[ personas_Association? AssociationQ ] :=
 makePersonaSelector0[ personas: { (_String -> _).. } ] :=
     highlightControl[
         Row @ {
-            tr["PreferencesContentPersonaLabel"],
+            tr[ "PreferencesContentPersonaLabel" ],
             Spacer[ 3 ],
             PopupMenu[ scopedDynamic @ CurrentChatSettings[ $preferencesScope, "LLMEvaluator" ], personas ]
         },
@@ -435,10 +435,10 @@ makeModelSelector0[ services_Association? AssociationQ ] := Enclose[
 
         highlightControl[
             Row @ {
-                highlight[ tr["PreferencesContentLLMServiceLabel"], serviceSelector, "ModelService" ],
+                highlight[ tr[ "PreferencesContentLLMServiceLabel" ], serviceSelector, "ModelService" ],
                 Spacer[ 5 ],
                 highlight[
-                    tr["PreferencesContentModelLabel"],
+                    tr[ "PreferencesContentModelLabel" ],
                     Dynamic[
                         If[ state === "Loading" || MatchQ[ modelSelector, _Symbol ], $loadingPopupMenu, modelSelector ],
                         TrackedSymbols :> { state, modelSelector }
@@ -650,7 +650,7 @@ serviceConnectButton[
     Dynamic[ state_ ]
 ] :=
     Button[
-        tr["PreferencesContentServiceConnectButton"],
+        tr[ "PreferencesContentServiceConnectButton" ],
         Needs[ "Wolfram`LLMFunctions`" -> None ];
         Replace[
             (* cSpell: ignore genconerr *)
@@ -718,7 +718,10 @@ makeAssistanceCheckbox[ ] :=
                     TrueQ @ CurrentChatSettings[ $preferencesScope, "Assistance" ],
                     (CurrentChatSettings[ $preferencesScope, "Assistance" ] = #1) &
                 ],
-                infoTooltip[tr["PreferencesContentEnableAssistanceLabel"], tr["PreferencesContentEnableAssistanceTooltip"]]
+                infoTooltip[
+                    tr[ "PreferencesContentEnableAssistanceLabel" ],
+                    tr[ "PreferencesContentEnableAssistanceTooltip" ]
+                ]
             ],
             "Notebooks",
             "Assistance"
@@ -734,7 +737,7 @@ makeTemperatureInput // beginDefinition;
 
 makeTemperatureInput[ ] := highlightControl[
     prefsInputField[
-        tr["PreferencesContentTemperatureLabel"],
+        tr[ "PreferencesContentTemperatureLabel" ],
         scopedDynamic[
             CurrentChatSettings[ $preferencesScope, "Temperature" ],
             {
@@ -764,7 +767,7 @@ makeOpenAICompletionURLInput[ True ] :=
 
 makeOpenAICompletionURLInput[ False ] := highlightControl[
     prefsInputField[
-        tr["PreferencesContentOpenAICompletionURLLabel"],
+        tr[ "PreferencesContentOpenAICompletionURLLabel" ],
         scopedDynamic[
             (* cSpell: ignore AIAPI *)
             CurrentChatSettings[ $preferencesScope, "OpenAIAPICompletionURL" ],
@@ -822,7 +825,7 @@ makeFormatCheckbox[ ] := highlightControl[
             TrueQ @ CurrentChatSettings[ $preferencesScope, "AutoFormat" ],
             (CurrentChatSettings[ $preferencesScope, "AutoFormat" ] = #1) &
         ],
-        tr["PreferencesContentFormatOutputLabel"]
+        tr[ "PreferencesContentFormatOutputLabel" ]
     ],
     "Notebooks",
     "AutoFormat"
@@ -841,7 +844,7 @@ makeIncludeHistoryCheckbox[ ] := highlightControl[
             MatchQ[ CurrentChatSettings[ $preferencesScope, "IncludeHistory" ], True|Automatic ],
             (CurrentChatSettings[ $preferencesScope, "IncludeHistory" ] = #1) &
         ],
-        infoTooltip[tr["PreferencesContentIncludeHistoryLabel"], tr["PreferencesContentIncludeHistoryTooltip"]]
+        infoTooltip[ tr[ "PreferencesContentIncludeHistoryLabel" ], tr[ "PreferencesContentIncludeHistoryTooltip" ] ]
     ],
     "Notebooks",
     "IncludeHistory"
@@ -857,7 +860,7 @@ makeChatHistoryLengthInput // beginDefinition;
 makeChatHistoryLengthInput[ ] := highlightControl[
     infoTooltip[
         prefsInputField[
-            tr["PreferencesContentHistoryLengthLabel"],
+            tr[ "PreferencesContentHistoryLengthLabel" ],
             scopedDynamic[
                 CurrentChatSettings[ $preferencesScope, "ChatHistoryLength" ],
                 {
@@ -870,7 +873,7 @@ makeChatHistoryLengthInput[ ] := highlightControl[
             Number,
             ImageSize -> { 50, Automatic }
         ],
-        tr["PreferencesContentHistoryLengthTooltip"]
+        tr[ "PreferencesContentHistoryLengthTooltip" ]
     ],
     "Notebooks",
     "ChatHistoryLength"
@@ -889,7 +892,7 @@ makeMergeMessagesCheckbox[ ] := highlightControl[
             MatchQ[ CurrentChatSettings[ $preferencesScope, "MergeMessages" ], True|Automatic ],
             (CurrentChatSettings[ $preferencesScope, "MergeMessages" ] = #1) &
         ],
-        infoTooltip[tr["PreferencesContentMergeChatLabel"], tr["PreferencesContentMergeChatTooltip"]]
+        infoTooltip[ tr[ "PreferencesContentMergeChatLabel" ], tr[ "PreferencesContentMergeChatTooltip" ] ]
     ],
     "Notebooks",
     "MergeMessages"
@@ -933,13 +936,13 @@ makeMultimodalMenu[ ] := highlightControl[
     Grid[
         {
             {
-                Style[ tr["PreferencesContentEnableMultimodalLabel"], "leadinText" ],
+                Style[ tr[ "PreferencesContentEnableMultimodalLabel" ], "leadinText" ],
                 PopupMenu[
                     scopedDynamic @ CurrentChatSettings[ $preferencesScope, "Multimodal" ],
                     {
-                        Automatic -> tr["EnabledByModel"],
-                        True      -> tr["EnabledAlways"],
-                        False     -> tr["EnabledNever"]
+                        Automatic -> tr[ "EnabledByModel" ],
+                        True      -> tr[ "EnabledAlways"  ],
+                        False     -> tr[ "EnabledNever"   ]
                     },
                     MenuStyle -> "controlText"
                 ]
@@ -963,13 +966,13 @@ makeToolsEnabledMenu[ ] := highlightControl[
     Grid[
         {
             {
-                Style[ tr["PreferencesContentEnableTools"], "leadinText" ],
+                Style[ tr[ "PreferencesContentEnableTools" ], "leadinText" ],
                 PopupMenu[
                     scopedDynamic @ CurrentChatSettings[ $preferencesScope, "ToolsEnabled" ],
                     {
-                        Automatic -> tr["EnabledByModel"],
-                        True      -> tr["EnabledAlways"],
-                        False     -> tr["EnabledNever"]
+                        Automatic -> tr[ "EnabledByModel" ],
+                        True      -> tr[ "EnabledAlways"  ],
+                        False     -> tr[ "EnabledNever"   ]
                     },
                     MenuStyle -> "controlText"
                 ]
@@ -995,7 +998,7 @@ makeToolCallFrequencySelector[ ] := highlightControl[
         Grid[
             {
                 {
-                    Style[ tr["PreferencesContentToolCallFrequency"], "leadinText" ],
+                    Style[ tr[ "PreferencesContentToolCallFrequency" ], "leadinText" ],
                     PopupMenu[
                         scopedDynamic[
                             type,
@@ -1011,8 +1014,8 @@ makeToolCallFrequencySelector[ ] := highlightControl[
                             ]
                         ],
                         {
-                            Automatic -> tr["Automatic"],
-                            "Custom"  -> tr["Custom"]
+                            Automatic -> tr[ "Automatic" ],
+                            "Custom"  -> tr[ "Custom"    ]
                         },
                         MenuStyle -> "controlText"
                     ],
@@ -1023,7 +1026,7 @@ makeToolCallFrequencySelector[ ] := highlightControl[
                                 {
                                     {
                                         Spacer[ 5 ],
-                                        Style[ tr["Rare"], "defaultSubtext" ],
+                                        Style[ tr[ "Rare" ], "defaultSubtext" ],
                                         Slider[
                                             scopedDynamic[
                                                 frequency,
@@ -1037,7 +1040,7 @@ makeToolCallFrequencySelector[ ] := highlightControl[
                                             ],
                                             ImageSize -> { 100, Automatic }
                                         ],
-                                        Style[ tr["Often"], "defaultSubtext" ]
+                                        Style[ tr[ "Often" ], "defaultSubtext" ]
                                     }
                                 },
                                 Spacings -> { 0.4, 0.7 }
@@ -1076,7 +1079,7 @@ servicesSettingsPanel // beginDefinition;
 servicesSettingsPanel[ ] := Enclose[
     Module[ { settingsLabel, settings, serviceGrid },
 
-        settingsLabel = subsectionText[ tr["PreferencesContentSubsectionRegisteredServices"] ];
+        settingsLabel = subsectionText @ tr[ "PreferencesContentSubsectionRegisteredServices" ];
         settings      = ConfirmMatch[ makeModelSelector[ ], _Dynamic, "ServicesSettings" ];
         serviceGrid   = ConfirmMatch[ makeServiceGrid[ ], _Grid, "ServiceGrid" ];
 
@@ -1106,12 +1109,21 @@ makeServiceGrid // beginDefinition;
 
 makeServiceGrid[ ] := Grid[
     Join[
-        { { Spacer[ 1 ], tr["PreferencesContentService"], SpanFromLeft, tr["PreferencesContentAuthentication"], "", Spacer[ 1 ] } },
+        {
+            {
+                Spacer[ 1 ],
+                tr[ "PreferencesContentService" ],
+                SpanFromLeft,
+                tr[ "PreferencesContentAuthentication" ],
+                "",
+                Spacer[ 1 ]
+            }
+        },
         KeyValueMap[ makeServiceGridRow, $availableServices ]
     ],
     Alignment  -> { Left, Baseline },
     Background -> { { }, { GrayLevel[ 0.898 ], { White } } },
-    ItemSize   -> { { Automatic, Automatic, Scaled[ .3 ], Fit, Automatic }, Automatic },
+    ItemSize   -> { { Automatic, Automatic, Scaled[ 0.3 ], Fit, Automatic }, Automatic },
     Dividers   -> { True, All },
     FrameStyle -> GrayLevel[ 0.898 ],
     Spacings   -> { Automatic, 0.7 }
@@ -1162,7 +1174,7 @@ deleteServiceButton[ service_String ] := Tooltip[
         ],
         $deleteServiceButtonFrameOptions
     ],
-    tr["PreferencesContentUnregisterTooltip"]
+    tr[ "PreferencesContentUnregisterTooltip" ]
 ];
 
 deleteServiceButton // endDefinition;
@@ -1231,7 +1243,7 @@ connectOrDisconnectButton // beginDefinition;
 
 connectOrDisconnectButton[ service_String, "None", Dynamic[ display_ ] ] :=
     Button[
-        tr["ConnectButton"],
+        tr[ "ConnectButton" ],
         display = ProgressIndicator[ Appearance -> "Percolate" ];
         clearConnectionCache[ service, False ];
         Quiet[ Wolfram`LLMFunctions`APIs`Common`ConnectToService @ service, { ServiceConnect::genconerr } ];
@@ -1241,7 +1253,7 @@ connectOrDisconnectButton[ service_String, "None", Dynamic[ display_ ] ] :=
 
 connectOrDisconnectButton[ service_String, "SystemCredential"|"Environment"|"ServiceConnect", Dynamic[ display_ ] ] :=
     Button[
-        tr["DisconnectButton"],
+        tr[ "DisconnectButton" ],
         display = ProgressIndicator[ Appearance -> "Percolate" ];
         disconnectService @ service;
         createServiceAuthenticationDisplay[ service, Dynamic @ display ],
