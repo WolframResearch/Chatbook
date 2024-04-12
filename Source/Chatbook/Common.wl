@@ -99,6 +99,14 @@ $versionRequirements = <|
 
 $mxFlag = Wolfram`ChatbookInternal`$BuildingMX;
 $resourceFunctionContext = "Wolfram`Chatbook`ResourceFunctions`";
+(* cSpell: ignore Deflatten *)
+$resourceVersions = <|
+    "AssociationKeyDeflatten" -> "1.0.0",
+    "ClickToCopy"             -> "1.0.0",
+    "GPTTokenizer"            -> "1.1.0",
+    "MessageFailure"          -> "1.0.0",
+    "ReplaceContext"          -> "1.0.0"
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -421,16 +429,22 @@ importResourceFunction // beginDefinition;
 importResourceFunction::failure = "[ERROR] Failed to import resource function `1`. Aborting MX build.";
 importResourceFunction // Attributes = { HoldFirst };
 
-importResourceFunction[ symbol_Symbol, name_String ] /; $mxFlag := Enclose[
+importResourceFunction[ symbol_Symbol, name_String ] :=
+    importResourceFunction[ symbol, name, Lookup[ $resourceVersions, name, "Latest" ] ];
+
+importResourceFunction[ symbol_Symbol, name_String, version_String ] /; $mxFlag := Enclose[
     Block[ { PrintTemporary },
         Module[ { sourceContext, targetContext, definition, replaced, newSymbol },
 
-            sourceContext = ConfirmBy[ ResourceFunction[ name, "Context" ], StringQ ];
+            sourceContext = ConfirmBy[ ResourceFunction[ name, "Context", ResourceVersion -> version ], StringQ ];
             targetContext = $resourceFunctionContext<>name<>"`";
             definition    = ConfirmMatch[ ResourceFunction[ name, "DefinitionList" ], _Language`DefinitionList ];
 
             replaced = ConfirmMatch[
-                ResourceFunction[ "ReplaceContext" ][ definition, sourceContext -> targetContext ],
+                ResourceFunction[ "ReplaceContext", ResourceVersion -> $resourceVersions[ "ReplaceContext" ] ][
+                    definition,
+                    sourceContext -> targetContext
+                ],
                 _Language`DefinitionList
             ];
 
@@ -444,8 +458,8 @@ importResourceFunction[ symbol_Symbol, name_String ] /; $mxFlag := Enclose[
     (Message[ importResourceFunction::failure, name ]; Abort[ ]) &
 ];
 
-importResourceFunction[ symbol_Symbol, name_String ] :=
-    symbol := symbol = Block[ { PrintTemporary }, ResourceFunction[ name, "Function" ] ];
+importResourceFunction[ symbol_Symbol, name_String, version_String ] :=
+    symbol := symbol = Block[ { PrintTemporary }, ResourceFunction[ name, "Function", ResourceVersion -> version ] ];
 
 importResourceFunction // endDefinition;
 

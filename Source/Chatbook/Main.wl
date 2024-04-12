@@ -25,6 +25,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$ToolFunctions;
 `AbsoluteCurrentChatSettings;
 `AppendURIInstructions;
+`BasePrompt;
 `CellToChatMessage;
 `Chatbook;
 `ChatbookAction;
@@ -125,6 +126,7 @@ Protect[
     $ToolFunctions,
     AbsoluteCurrentChatSettings,
     AppendURIInstructions,
+    BasePrompt,
     CellToChatMessage,
     Chatbook,
     ChatbookAction,

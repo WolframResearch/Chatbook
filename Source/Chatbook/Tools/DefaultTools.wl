@@ -167,7 +167,10 @@ documentationBasicExamples[ name_, examples_List ] := Enclose[
         strings = ConfirmMatch[ cellToString /@ cells, { ___String }, "CellToString" ];
         If[ strings === { },
             Missing[ ],
-            StringDelete[ "## Basic Examples\n\n" <> StringRiffle[ strings, "\n\n" ], "```\n\n```" ]
+            StringDelete[
+                "## Basic Examples\n\n" <> StringRiffle[ strings, "\n\n" ],
+                Longest[ "```\n\n```"~~("wl"|"") ]
+            ]
         ]
     ],
     throwInternalFailure[ documentationBasicExamples[ name, examples ], ## ] &
@@ -250,8 +253,13 @@ $defaultChatTools0[ "WolframLanguageEvaluator" ] = <|
 (* ::Subsubsection::Closed:: *)
 (*wolframLanguageEvaluator*)
 wolframLanguageEvaluator // beginDefinition;
-wolframLanguageEvaluator[ code_String ] := wolframLanguageEvaluator[ code, sandboxEvaluate @ code ];
-wolframLanguageEvaluator[ code_, result_Association ] := KeyTake[ result, { "Result", "String" } ];
+
+wolframLanguageEvaluator[ code_String ] :=
+    Block[ { $ChatNotebookEvaluation = True }, wolframLanguageEvaluator[ code, sandboxEvaluate @ code ] ];
+
+wolframLanguageEvaluator[ code_, result_Association ] :=
+    KeyTake[ result, { "Result", "String" } ];
+
 wolframLanguageEvaluator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -321,7 +329,7 @@ getWolframAlphaText[ as_Association ] :=
 
 getWolframAlphaText[ query_String, steps: True|False|_Missing ] :=
     Module[ { result, data, string },
-        result = wolframAlpha @ query;
+        result = wolframAlpha[ query, steps ];
         data = WolframAlpha[
             query,
             { All, { "Title", "Plaintext", "ComputableData", "Content" } },
@@ -359,9 +367,16 @@ wolframAlpha // endDefinition;
 (*fasterWolframAlphaPods*)
 fasterWolframAlphaPods // beginDefinition;
 
-fasterWolframAlphaPods[ query_String ] := Enclose[
+fasterWolframAlphaPods[ query_String, steps: True|False|_Missing ] := Enclose[
     Catch @ Module[ { titlesAndCells, grouped, small, formatted, framed },
-        titlesAndCells = Confirm[ WolframAlpha[ query, { All, { "Title", "Cell" } } ], "WolframAlpha" ];
+        titlesAndCells = Confirm[
+            WolframAlpha[
+                query,
+                { All, { "Title", "Cell" } },
+                PodStates -> { If[ TrueQ @ steps, "Step-by-step solution", Nothing ] }
+            ],
+            "WolframAlpha"
+        ];
         If[ titlesAndCells === { }, Throw @ Missing[ "NoResults" ] ];
         grouped = DeleteCases[ SortBy[ #1, podOrder ] & /@ GroupBy[ titlesAndCells, podKey ], CellSize -> _, Infinity ];
         small = Select[ grouped, ByteCount @ # < $maximumWAPodByteCount & ];
@@ -375,7 +390,7 @@ fasterWolframAlphaPods[ query_String ] := Enclose[
             RoundingRadius -> 3,
             TaggingRules   -> <| "WolframAlphaPods" -> True |>
         ];
-        fasterWolframAlphaPods[ query ] = framed
+        fasterWolframAlphaPods[ query, steps ] = framed
     ],
     throwInternalFailure
 ];
@@ -1227,7 +1242,7 @@ Plot sin(x) from -5 to 5
 [assistant]
 ", formatToolCallExample[
     "WolframLanguageEvaluator",
-    <| "code" -> "Plot[Sin[x], {x, -10, 10}, AxesLabel -> {\"x\", \"sin(x)\"}]" |>
+    <| "code" -> "Plot[Sin[x], {x, -5, 5}, AxesLabel -> {\"x\", \"sin(x)\"}]" |>
 ], "
 
 [system]

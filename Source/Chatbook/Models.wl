@@ -185,7 +185,14 @@ snapshotModelQ[ name_String? fineTunedModelQ ] := snapshotModelQ[ name ] =
     snapshotModelQ @ StringSplit[ name, ":" ][[ 2 ]];
 
 snapshotModelQ[ name_String? StringQ ] := snapshotModelQ[ name ] =
-    StringMatchQ[ toModelName @ name, "gpt-"~~__~~"-"~~Repeated[ DigitCharacter, { 4 } ]~~(""|"-preview") ];
+    StringMatchQ[
+        toModelName @ name,
+        Alternatives[
+            "gpt-" ~~ __ ~~ "-" ~~ Repeated[ DigitCharacter, { 4 } ] ~~ (""|"-vision") ~~ (""|"-preview"),
+            "gpt-" ~~ __ ~~ "-" ~~ DatePattern @ { "Year", "Month", "Day" } ~~ (""|"-vision") ~~ (""|"-preview"),
+            __ ~~ "-" ~~ Repeated[ DigitCharacter, { 8 } ]
+        ]
+    ];
 
 snapshotModelQ[ other_ ] :=
     With[ { name = toModelName @ other }, snapshotModelQ @ name /; StringQ @ name ];
@@ -205,8 +212,27 @@ fineTunedModelQ // endDefinition;
 (*multimodalModelQ*)
 (* FIXME: this should be a queryable property from LLMServices: *)
 multimodalModelQ // beginDefinition;
-multimodalModelQ[ name_String? StringQ ] := StringContainsQ[ toModelName @ name, "gpt-"~~$$modelVersion~~"-vision" ];
-multimodalModelQ[ other_ ] := With[ { name = toModelName @ other }, multimodalModelQ @ name /; StringQ @ name ];
+
+multimodalModelQ[ "gpt-4-turbo" ] :=
+    True;
+
+multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "claude-3" ] :=
+    True;
+
+multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4-turbo-" ] :=
+    StringMatchQ[ name, "gpt-4-turbo-"~~DatePattern @ { "Year", "Month", "Day" } ];
+
+multimodalModelQ[ name_String? StringQ ] :=
+    StringContainsQ[ toModelName @ name, "gpt-"~~$$modelVersion~~"-vision" ];
+
+multimodalModelQ[ KeyValuePattern[ "Multimodal" -> multimodal_ ] ] :=
+    TrueQ @ multimodal;
+
+multimodalModelQ[ other_ ] :=
+    With[ { name = toModelName @ other },
+        multimodalModelQ @ name /; StringQ @ name
+    ];
+
 multimodalModelQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -235,8 +261,20 @@ modelDisplayName[ { "gpt", rest___ } ] :=
 modelDisplayName[ { before__, date_String } ] /; StringMatchQ[ date, Repeated[ DigitCharacter, { 4 } ] ] :=
     modelDisplayName @ { before, DateObject @ Flatten @ { 0, ToExpression @ StringPartition[ date, 2 ] } };
 
+modelDisplayName[ { before__, date_String } ] /; StringMatchQ[ date, Repeated[ DigitCharacter, { 8 } ] ] :=
+    modelDisplayName @ { before, DateObject @ StringInsert[ date, "-", { 5, 7 } ] };
+
+modelDisplayName[ { before__, y_String, m_String, d_String } ] :=
+    With[ { date = StringRiffle[ { y, m, d }, "-" ] },
+        modelDisplayName @ { before, DateObject @ date } /;
+            StringMatchQ[ date, DatePattern @ { "Year", "Month", "Day" } ]
+    ];
+
 modelDisplayName[ { before__, "preview" } ] :=
     modelDisplayName @ { before } <> " (Preview)";
+
+modelDisplayName[ { before__, "vision" } ] :=
+    modelDisplayName @ { before } <> " Vision";
 
 modelDisplayName[ { before___, date_DateObject } ] :=
     modelDisplayName @ {
