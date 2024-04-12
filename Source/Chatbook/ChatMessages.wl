@@ -73,7 +73,17 @@ $styleRoles = <|
     "ChatSystemInput"        -> "System"
 |>;
 
-$cachedTokenizerNames = { "chat-bison", "claude", "gpt-2", "gpt-3.5", "gpt-4-vision", "gpt-4" };
+$cachedTokenizerNames = {
+    "chat-bison",
+    "claude-3",
+    "claude",
+    "gpt-2",
+    "gpt-3.5",
+    "gpt-4-turbo",
+    "gpt-4-vision",
+    "gpt-4"
+};
+
 $cachedTokenizers     = <| |>;
 $fallbackTokenizer    = "gpt-2";
 
@@ -362,6 +372,14 @@ combineExcisedMessages // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*tokenCheckedMessage*)
 tokenCheckedMessage // beginDefinition;
+
+tokenCheckedMessage[
+    as: KeyValuePattern[ "TokenizerName" -> "claude-3" ],
+    message0: KeyValuePattern @ { "Role" -> "Assistant", "Content" -> Except[ _String ] }
+] :=
+    With[ { message = revertMultimodalContent @ message0 },
+        tokenCheckedMessage[ as, message ] /; MatchQ[ message, KeyValuePattern[ "Content" -> _String ] ]
+    ];
 
 tokenCheckedMessage[ as_Association, message_ ] /; $cellStringBudget === Infinity := message;
 
@@ -941,7 +959,7 @@ mergeMessages[ messages: { first_Association, __Association } ] :=
     Module[ { role, content, stitch },
         role    = Lookup[ first, "Role" ];
         content = Flatten @ Lookup[ messages, "Content" ];
-        stitch  = StringDelete[ #1, "```\n\n```" ] &;
+        stitch  = StringDelete[ #1, Longest[ "```\n\n```"~~("wl"|"") ] ] &;
 
         If[ AllTrue[ content, StringQ ],
             <|
@@ -1298,12 +1316,16 @@ findTokenizer // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*Pre-cached small tokenizer functions*)
 $cachedTokenizers[ "chat-bison"   ] = ToCharacterCode[ #, "UTF8" ] &;
-$cachedTokenizers[ "gpt-4-vision" ] = If[ graphicsQ[ # ], gpt4ImageTokenizer[ # ], cachedTokenizer[ "gpt-4" ][ # ] ] &;
+$cachedTokenizers[ "gpt-4-turbo"  ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4" ] ][ # ] &;
+$cachedTokenizers[ "gpt-4-vision" ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4" ] ][ # ] &;
+$cachedTokenizers[ "claude-3"     ] = If[ graphicsQ @ #, claude3ImageTokenizer, cachedTokenizer[ "claude" ] ][ # ] &;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*tokenizerName*)
 tokenizerName // beginDefinition;
+
+tokenizerName[ "gpt-4-turbo-preview" ] = "gpt-4";
 
 tokenizerName[ name_String ] :=
     SelectFirst[
@@ -1347,6 +1369,14 @@ gpt4ImageTokenizer // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*claude3ImageTokenizer*)
+claude3ImageTokenizer // beginDefinition;
+claude3ImageTokenizer[ image_ ] := claude3ImageTokenizer[ image, claude3ImageTokenCount @ image ];
+claude3ImageTokenizer[ image_, count: $$size ] := ConstantArray[ 0, count ]; (* TODO: just a placeholder for counting *)
+claude3ImageTokenizer // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*gpt4ImageTokenCount*)
 gpt4ImageTokenCount // beginDefinition;
 gpt4ImageTokenCount[ image_ ] := gpt4ImageTokenCount[ image, gpt4ImageTokenCount0 @ image ];
@@ -1360,6 +1390,22 @@ gpt4ImageTokenCount0[ image_, resized_Image ] := gpt4ImageTokenCount0[ image, Im
 gpt4ImageTokenCount0[ image_, { w_, h_ } ] := gpt4ImageTokenCount0[ w, h ];
 gpt4ImageTokenCount0[ w_Integer, h_Integer ] := 85 + 170 * Ceiling[ h / 512 ] * Ceiling[ w / 512 ];
 gpt4ImageTokenCount0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*claude3ImageTokenCount*)
+claude3ImageTokenCount // beginDefinition;
+claude3ImageTokenCount[ image_ ] := claude3ImageTokenCount[ image, claude3ImageTokenCount0 @ image ];
+claude3ImageTokenCount[ image_, count: $$size ] := claude3ImageTokenCount[ image ] = count;
+claude3ImageTokenCount // endDefinition;
+
+
+claude3ImageTokenCount0 // beginDefinition;
+claude3ImageTokenCount0[ image_ ] := claude3ImageTokenCount0[ image, resizeMultimodalImage @ image ];
+claude3ImageTokenCount0[ image_, resized_Image ] := claude3ImageTokenCount0[ image, ImageDimensions @ resized ];
+claude3ImageTokenCount0[ image_, { w_, h_ } ] := claude3ImageTokenCount0[ w, h ];
+claude3ImageTokenCount0[ w_Integer, h_Integer ] := Ceiling[ (w * h) / 750 ];
+claude3ImageTokenCount0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

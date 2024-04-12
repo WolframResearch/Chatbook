@@ -99,7 +99,7 @@ $toolBox               = <| |>;
 $toolEvaluationResults = <| |>;
 $toolOptions           = <| |>;
 
-$cloudUnsupportedTools = { "DocumentationSearcher" };
+$cloudUnsupportedTools = { };
 
 $defaultToolOrder = {
     "DocumentationLookup",
