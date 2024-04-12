@@ -224,10 +224,12 @@ cloudModelSelector // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$cloudChatBanner*)
-$cloudChatBanner := $cloudChatBanner = cvExpand @ PaneSelector[
-    { True -> $chatDrivenNotebookLabel, False -> $chatEnabledNotebookLabel },
-    Dynamic @ TrueQ @ cv[ EvaluationNotebook[ ], "ChatDrivenNotebook" ],
-    ImageSize -> Automatic
+$cloudChatBanner := Block[ { $CloudEvaluation = True },
+    $cloudChatBanner = cvExpand @ PaneSelector[
+        { True -> $chatDrivenNotebookLabel, False -> $chatEnabledNotebookLabel },
+        Dynamic @ TrueQ @ cv[ EvaluationNotebook[ ], "ChatDrivenNotebook" ],
+        ImageSize -> Automatic
+    ]
 ];
 
 (* ::**************************************************************************************************************:: *)
