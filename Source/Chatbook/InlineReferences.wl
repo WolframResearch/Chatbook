@@ -2150,7 +2150,9 @@ $cloudInlineReferenceButtons = Block[ { NotebookTools`Mousedown = Mouseover[ #1,
                             ] = name;
                             ,
                             If[ StringQ @ name,
-                                MessageDialog[ trStringTemplate["InlineReferencesInsertPersonaFail"][<|"name" -> name|>] ]
+                                MessageDialog @ trStringTemplate[ "InlineReferencesInsertPersonaFail" ][
+                                    <| "name" -> name |>
+                                ]
                             ]
                         ]
                     ],
@@ -2176,7 +2178,9 @@ $cloudInlineReferenceButtons = Block[ { NotebookTools`Mousedown = Mouseover[ #1,
                                     ]
                                     ,
                                     If[ StringQ @ name,
-                                        MessageDialog[ trStringTemplate["InlineReferencesInsertModifierFail"][<|"name" -> name|>] ]
+                                        MessageDialog @ trStringTemplate[ "InlineReferencesInsertModifierFail" ][
+                                            <| "name" -> name |>
+                                        ]
                                     ]
                                 ]
                         ]
@@ -2203,7 +2207,9 @@ $cloudInlineReferenceButtons = Block[ { NotebookTools`Mousedown = Mouseover[ #1,
                                     ]
                                     ,
                                     If[ StringQ @ name,
-                                        MessageDialog[ trStringTemplate["InlineReferencesInsertFunctionFail"][<|"name" -> name|>] ]
+                                        MessageDialog @ trStringTemplate[ "InlineReferencesInsertFunctionFail" ][
+                                            <| "name" -> name |>
+                                        ]
                                     ]
                                 ]
                         ]
