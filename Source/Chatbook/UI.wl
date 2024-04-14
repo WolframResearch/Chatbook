@@ -1060,8 +1060,8 @@ menuModelGroup // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*modelGroupName*)
 modelGroupName // beginDefinition;
-modelGroupName[ KeyValuePattern[ "FineTuned" -> True ] ] := tr[ "UIModelsFineTuned" ];
-modelGroupName[ KeyValuePattern[ "Snapshot"  -> True ] ] := tr[ "UIModelsSnapshot"  ];
+modelGroupName[ KeyValuePattern[ "FineTuned" -> True ] ] := trRaw[ "UIModelsFineTuned" ];
+modelGroupName[ KeyValuePattern[ "Snapshot"  -> True ] ] := trRaw[ "UIModelsSnapshot"  ];
 modelGroupName[ _ ] := None;
 modelGroupName // endDefinition;
 
