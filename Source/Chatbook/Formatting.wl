@@ -192,12 +192,36 @@ formatToolCall0 // endDefinition;
 reformatTextData // beginDefinition;
 
 reformatTextData[ string_String ] := joinAdjacentStrings @ Flatten[
-    makeResultCell /@ StringSplit[ string, $textDataFormatRules, IgnoreCase -> True ]
+    makeResultCell /@ discardBadToolCalls @ StringSplit[ string, $textDataFormatRules, IgnoreCase -> True ]
 ];
 
 reformatTextData[ other_ ] := other;
 
 reformatTextData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*discardBadToolCalls*)
+discardBadToolCalls // beginDefinition;
+
+discardBadToolCalls[ {
+    a___,
+    tc_inlineToolCallCell,
+    b: Except[ _inlineToolCallCell ]...,
+    $discardPreviousToolCall,
+    c___
+} ] := discardBadToolCalls @ { a, $lastDiscarded = discardedMaterial[ tc, b ], c };
+
+discardBadToolCalls[ { a: Except[ _inlineToolCallCell ]..., $discardPreviousToolCall, b___ } ] :=
+    discardBadToolCalls @ { a, b };
+
+discardBadToolCalls[ { a___, discardedMaterial[ b___ ], discardedMaterial[ c___ ], d___ } ] :=
+    discardBadToolCalls @ { a, $lastDiscarded = discardedMaterial[ b, c ], d };
+
+discardBadToolCalls[ textData_List ] :=
+    textData;
+
+discardBadToolCalls // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -216,6 +240,9 @@ makeResultCell // endDefinition;
 
 
 makeResultCell0 // beginDefinition;
+
+(* TODO: make an opener to show discarded material that is not serialized into chat history. *)
+makeResultCell0[ _discardedMaterial ] := "\n<<Discarded material>>\n";
 
 makeResultCell0[ str_String ] := formatTextString @ str;
 
@@ -861,6 +888,8 @@ $textDataFormatRules = {
     tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString)) :> inlineToolCallCell @ tool
     ,
     tool: $$simpleToolCall :> inlineToolCallCell @ tool
+    ,
+    StartOfLine ~~ "/retry" ~~ (WhitespaceCharacter|EndOfString) :> $discardPreviousToolCall
     ,
     ("\n"|StartOfString) ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
     ("\n"|StartOfString) ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ],
