@@ -1753,7 +1753,7 @@ fasterCellToString0[
 ] := string;
 
 fasterCellToString0[ BoxData[ boxes_List, ___ ] ] :=
-    With[ { strings = fasterCellToString0 /@ boxes },
+    With[ { strings = fasterCellToString0 /@ DeleteCases[ boxes, "\n" ] },
         StringRiffle[ strings, "\n" ] /; AllTrue[ strings, StringQ ]
     ];
 
