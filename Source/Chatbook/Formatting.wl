@@ -241,8 +241,8 @@ makeResultCell // endDefinition;
 
 makeResultCell0 // beginDefinition;
 
-(* TODO: make an opener to show discarded material that is not serialized into chat history. *)
-makeResultCell0[ _discardedMaterial ] := "\n<<Discarded material>>\n";
+makeResultCell0[ discardedMaterial[ stuff___ ] ] :=
+    makeDiscardedMaterialCell @ stuff;
 
 makeResultCell0[ str_String ] := formatTextString @ str;
 
@@ -297,6 +297,35 @@ makeResultCell0[ tableCell[ string_String ] ] :=
 
 makeResultCell0 // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeDiscardedMaterialCell*)
+makeDiscardedMaterialCell // beginDefinition;
+
+makeDiscardedMaterialCell[ stuff___ ] := (* TODO: make this an opener *)
+    { Cell[ BoxData @ $discardedMaterialLabelClosed, "DiscardedMaterial", Background -> None ], "\n" };
+
+makeDiscardedMaterialCell // endDefinition;
+
+
+$discardedMaterialLabelClosed := $discardedMaterialLabelClosed = ToBoxes @ Framed[
+    Grid[
+        {
+            {
+                chatbookIcon[ "DiscardedMaterial", False ], (* TODO: use TemplateBox *)
+                "Discarded material",
+                RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEBitmaps", "IconizeOpener" ]
+            }
+        },
+        Alignment -> { Automatic, Baseline }
+    ],
+    Background     -> RGBColor[ "#f2f7fc" ],
+    BaseStyle      -> { "Text", "IconizedDefaultName", ShowStringCharacters -> False },
+    FrameMargins   -> 2,
+    FrameStyle     -> RGBColor[ "#e8eef3" ],
+    ImageMargins   -> 10,
+    RoundingRadius -> 5
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
