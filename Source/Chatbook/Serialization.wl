@@ -61,7 +61,8 @@ $$noCellLabelStyle = Alternatives[
 
 $$ignoredCellStyle = Alternatives[
     "AnchorBarGrid",
-    "CitationContainerCell"
+    "CitationContainerCell",
+    "DiscardedMaterial"
 ];
 
 (* Cell styles that will prevent wrapping BoxData in triple backticks: *)
