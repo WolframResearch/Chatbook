@@ -302,30 +302,25 @@ makeResultCell0 // endDefinition;
 (*makeDiscardedMaterialCell*)
 makeDiscardedMaterialCell // beginDefinition;
 
-makeDiscardedMaterialCell[ stuff___ ] := (* TODO: make this an opener *)
-    { Cell[ BoxData @ $discardedMaterialLabelClosed, "DiscardedMaterial", Background -> None ], "\n" };
+makeDiscardedMaterialCell[ stuff___ ] := {
+    Cell[
+        BoxData @ TemplateBox[
+            {
+                Cell[
+                    TextData @ joinAdjacentStrings @ Flatten[ makeResultCell /@ { stuff } ],
+                    "Text",
+                    Background -> None
+                ]
+            },
+            "DiscardedMaterialOpener"
+        ],
+        "DiscardedMaterial",
+        Background -> None
+    ],
+    "\n"
+};
 
 makeDiscardedMaterialCell // endDefinition;
-
-
-$discardedMaterialLabelClosed := $discardedMaterialLabelClosed = ToBoxes @ Framed[
-    Grid[
-        {
-            {
-                chatbookIcon[ "DiscardedMaterial", False ], (* TODO: use TemplateBox *)
-                "Discarded material",
-                RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEBitmaps", "IconizeOpener" ]
-            }
-        },
-        Alignment -> { Automatic, Baseline }
-    ],
-    Background     -> RGBColor[ "#f2f7fc" ],
-    BaseStyle      -> { "Text", "IconizedDefaultName", ShowStringCharacters -> False },
-    FrameMargins   -> 2,
-    FrameStyle     -> RGBColor[ "#e8eef3" ],
-    ImageMargins   -> 10,
-    RoundingRadius -> 5
-];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
