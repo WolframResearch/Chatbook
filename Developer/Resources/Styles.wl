@@ -1238,6 +1238,7 @@ Cell[
                     ]
                 },
                 Dynamic @ Typeset`open$$,
+                ImageMargins   -> 10,
                 ImageSize      -> Automatic,
                 Alignment      -> Left,
                 ContentPadding -> False
