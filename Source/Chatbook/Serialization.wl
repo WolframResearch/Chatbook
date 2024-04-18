@@ -474,13 +474,12 @@ cellToString[ Cell[ a__, "Message", "MSG", b___ ] ] :=
         ]
     ];
 
-(* External language cells get converted to an equivalent ExternalEvaluate input *)
+(* External language cells get converted to a code block with the corresponding language specifier  *)
 cellToString[ Cell[ code_, "ExternalLanguage", ___, $$cellEvaluationLanguage -> lang_String, ___ ] ] :=
-    Module[ { string },
-        string = cellToString0 @ code;
+    With[ { string = cellToString0 @ code },
         (
-            needsBasePrompt[ "WolframLanguage" ];
-            "ExternalEvaluate[\""<>lang<>"\", \""<>string<>"\"]"
+            needsBasePrompt[ "ExternalLanguageCells" ];
+            "```"<>lang<>"\n"<>string<>"\n```"
         ) /; StringQ @ string
     ];
 
@@ -1830,7 +1829,10 @@ fasterCellToString0[ Cell[
 ] ] := Block[ { $escapeMarkdown = False }, "```" <> lang <> "\n" <> fasterCellToString0 @ box <> "\n```" ];
 
 fasterCellToString0[ Cell[ BoxData[ boxes_, ___ ], "ChatCodeBlock", ___ ] ] :=
-    Block[ { $escapeMarkdown = False },  "```\n" <> fasterCellToString0 @ boxes <> "\n```" ];
+    Module[ { string },
+        string = Block[ { $escapeMarkdown = False }, fasterCellToString0 @ boxes ];
+        If[ StringMatchQ[ string, "```" ~~ __ ~~ "```" ], string, "```\n"<>string<>"\n```" ]
+    ];
 
 fasterCellToString0[ _[
     __,
