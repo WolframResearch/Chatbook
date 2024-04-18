@@ -637,30 +637,6 @@ rasterizeWAPod // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*cloudUsingFrontEnd*)
-cloudUsingFrontEnd // beginDefinition;
-cloudUsingFrontEnd // Attributes = { HoldFirst };
-
-(* cloudUsingFrontEnd[ eval_ ] :=
-    Module[ { fe },
-        Quiet[
-            WithCleanup[
-                Developer`UninstallFrontEnd[ ];
-                fe = Developer`InstallFrontEnd[ Developer`ForceLaunch -> True ]
-                ,
-                MathLink`FrontEndBlock[ eval, fe ]
-                ,
-                Developer`UninstallFrontEnd[ ]
-            ],
-            LinkObject::linkn
-        ]
-    ]; *)
-cloudUsingFrontEnd[ eval_ ] := eval;
-
-cloudUsingFrontEnd // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*wolframAlphaResultFormatter*)
 wolframAlphaResultFormatter // beginDefinition;
 

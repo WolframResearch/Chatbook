@@ -390,7 +390,7 @@ exportDataURI[ data_, fmt_String ] :=
 
 exportDataURI[ data_, fmt_String, mime_String ] := Enclose[
     Module[ { base64 },
-        base64 = ConfirmBy[ UsingFrontEnd @ ExportString[ data, { "Base64", fmt } ], StringQ, "Base64" ];
+        base64 = ConfirmBy[ usingFrontEnd @ ExportString[ data, { "Base64", fmt } ], StringQ, "Base64" ];
         "data:" <> mime <> ";base64," <> StringDelete[ base64, "\n" ]
     ],
     throwInternalFailure
