@@ -306,10 +306,11 @@ makeDiscardedMaterialCell[ stuff___ ] := {
     Cell[
         BoxData @ TemplateBox[
             {
-                Cell[
+                ToBoxes @ compressUntilViewed @ RawBoxes @ Cell[
                     TextData @ joinAdjacentStrings @ Flatten[ makeResultCell /@ { stuff } ],
                     "Text",
-                    Background -> None
+                    Background  -> None,
+                    FontOpacity -> 0.5
                 ]
             },
             "DiscardedMaterialOpener"
