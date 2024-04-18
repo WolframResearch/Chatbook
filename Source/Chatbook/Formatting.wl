@@ -2042,7 +2042,7 @@ $languageIcons := $languageIcons = Enclose[
 joinAdjacentStrings // beginDefinition;
 joinAdjacentStrings[ { content___, "\n"|StyleBox[ "\n", ___ ] } ] := joinAdjacentStrings @ { content };
 joinAdjacentStrings[ { "\n"|StyleBox[ "\n", ___ ], content___ } ] := joinAdjacentStrings @ { content };
-joinAdjacentStrings[ content_List ] := joinAdjacentStrings0 /@ SplitBy[ content, StringQ ];
+joinAdjacentStrings[ content_List ] := trimWhitespace[ joinAdjacentStrings0 /@ SplitBy[ content, StringQ ] ];
 joinAdjacentStrings // endDefinition;
 
 joinAdjacentStrings0 // beginDefinition;
@@ -2053,6 +2053,43 @@ joinAdjacentStrings0[ { strings__String } ] :=
 joinAdjacentStrings0[ { other___ } ] := other;
 
 joinAdjacentStrings0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*trimWhitespace*)
+trimWhitespace // beginDefinition;
+trimWhitespace[ { } ] := { };
+trimWhitespace[ { a_, b___, c_ } ] := { trimWhitespaceL @ a, b, trimWhitespaceR @ c };
+trimWhitespace[ { a_ } ] := { trimWhitespaceB @ a };
+trimWhitespace // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*trimWhitespaceB*)
+trimWhitespaceB // beginDefinition;
+trimWhitespaceB[ a_String ] := StringTrim @ a;
+trimWhitespaceB[ other_ ] := trimWhitespaceR @ trimWhitespaceL @ other;
+trimWhitespaceB // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*trimWhitespaceL*)
+trimWhitespaceL // beginDefinition;
+trimWhitespaceL[ a_String ] := StringDelete[ a, StartOfString ~~ WhitespaceCharacter.. ];
+trimWhitespaceL[ (h: Cell|StyleBox|TextData|BoxData)[ a_, b___ ] ] := h[ trimWhitespaceL @ a, b ];
+trimWhitespaceL[ { a_, b___ } ] := { trimWhitespaceL @ a, b };
+trimWhitespaceL[ other_ ] := other;
+trimWhitespaceL // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*trimWhitespaceR*)
+trimWhitespaceR // beginDefinition;
+trimWhitespaceR[ a_String ] := StringDelete[ a, WhitespaceCharacter.. ~~ EndOfString ];
+trimWhitespaceR[ (h: Cell|StyleBox|TextData|BoxData)[ a_, b___ ] ] := h[ trimWhitespaceR @ a, b ];
+trimWhitespaceR[ { a___, b_ } ] := { a, trimWhitespaceR @ b };
+trimWhitespaceR[ other_ ] := other;
+trimWhitespaceR // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
