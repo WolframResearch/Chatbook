@@ -1828,7 +1828,10 @@ fasterCellToString0[ Cell[
 ] ] := Block[ { $escapeMarkdown = False }, "```" <> lang <> "\n" <> fasterCellToString0 @ box <> "\n```" ];
 
 fasterCellToString0[ Cell[ BoxData[ boxes_, ___ ], "ChatCodeBlock", ___ ] ] :=
-    Block[ { $escapeMarkdown = False },  "```\n" <> fasterCellToString0 @ boxes <> "\n```" ];
+    Module[ { string },
+        string = Block[ { $escapeMarkdown = False }, fasterCellToString0 @ boxes ];
+        If[ StringMatchQ[ string, "```" ~~ __ ~~ "```" ], string, "```\n"<>string<>"\n```" ]
+    ];
 
 fasterCellToString0[ _[
     __,
