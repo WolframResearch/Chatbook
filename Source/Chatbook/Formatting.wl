@@ -799,7 +799,7 @@ getCodeBlockContent // endDefinition;
 reparseCodeBoxes // beginDefinition;
 
 reparseCodeBoxes[ Cell[ BoxData[ s_String ], a___ ] ] /; $cloudNotebooks :=
-    Cell[ BoxData @ UsingFrontEnd @ stringToBoxes @ s, a ];
+    Cell[ BoxData @ usingFrontEnd @ stringToBoxes @ s, a ];
 
 reparseCodeBoxes[ cell_Cell ] :=
     cell;

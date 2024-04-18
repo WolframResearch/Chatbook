@@ -2012,7 +2012,8 @@ scrollOutput // endDefinition;
 (*reformatCell*)
 reformatCell // beginDefinition;
 
-reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uuid_ ] := UsingFrontEnd @ Enclose[
+(* FIXME: why does this actually need UsingFrontEnd here? *)
+reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uuid_ ] := usingFrontEnd @ Enclose[
     Module[ { formatter, toolFormatter, content, rules, dingbat },
 
         formatter = Confirm[ getFormattingFunction @ settings, "GetFormattingFunction" ];
