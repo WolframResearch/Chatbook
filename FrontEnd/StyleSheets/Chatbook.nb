@@ -1161,7 +1161,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3921825551"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3922429268"|>
   ],
   Cell[
    StyleData["Text"],
@@ -7124,6 +7124,97 @@ Notebook[
        ImageSize -> {{14.0, 17.0}, {14.0, 17.0}},
        PlotRange -> {{-0.5, 13.5}, {-0.5, 16.5}},
        AspectRatio -> Automatic
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["DiscardedMaterial"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.066667],
+        FaceForm[
+         {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.0]}
+        ],
+        FilledCurveBox[
+         {
+          {
+           {1, 4, 3},
+           {0, 1, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {0, 1, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {1, 3, 3},
+           {0, 1, 0}
+          },
+          {
+           {0, 2, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {0, 1, 0},
+           {1, 3, 3},
+           {1, 3, 3},
+           {1, 3, 3},
+           {0, 1, 0},
+           {0, 1, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {1, 3, 3}
+          },
+          {
+           {0, 2, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0}
+          }
+         },
+         {
+          CompressedData[
+           "\n1:eJxTTMoPSmViYGCQAmIQDQFaDmCqQdMBxtfdNPf98mOacBqXOgjNBOf7mHc6\nJjxlQJNnQDOHAc0cmHpROH/Z7CMKG4pE0MwTQbNPxGGNTFSK9X1BOD/h6QWl\n2z+F0OSFHbacKNs3X0oYzofIC8H5+ndV2BqnsjoAOf6902Uc3gTukGvNFnbQ\nbhe7ee67jMOMPKHmA6eEHdy2ff57pUIWzT1yqHy4v0TQ/A1TrwX3H2o4iaLy\ngeYAADp3VlE=\n      "
+          ],
+          CompressedData[
+           "\n1:eJxTTMoPSmViYGCQBWIQDQE6DmCqQdMBhc8gCudHWG45UWYn5BDyeOnsIw+0\noOICaPoEHHKf/1758ZIcnK+7ae775W7CDkE75FpfB36y9zHvdEx4KuRw9gwI\nfLAXv3nue3CyEFT9B/s1MlEp1vcF4fyXaoYca+Yg+DxM2u1ikYIOGRPf1tib\nfrCfNRMIJAUdzn8PBrrsg71TwtMLStECDmD69kd7sLv38Tv8AEkf+QLnQ8z7\ngcaH+oeBCc4HG/Pzhz2q/Ad7WHjA+KjhBeXDw+WDPSzcUM2DhTPMPsx4QA1v\nHfziQH0Arfp+zg==\n      "
+          ],
+          {
+           {10.316, 11.109},
+           {8.207, 9.0},
+           {10.316, 6.891},
+           {9.609, 6.184},
+           {7.5, 8.293},
+           {5.391, 6.184},
+           {4.684, 6.891},
+           {6.793, 9.0},
+           {4.684, 11.109},
+           {5.391, 11.816},
+           {7.5, 9.707},
+           {9.609, 11.816},
+           {10.316, 11.109}
+          }
+         }
+        ]
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {16.0, 16.0},
+       PlotRange -> {{-0.5, 15.5}, {-0.5, 15.5}}
       ]
      ])
    }
@@ -17684,6 +17775,296 @@ Notebook[
        FontSize -> 10,
        FontColor -> RGBColor[0.55433, 0.707942, 0.925795],
        FontWeight -> Plain
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["DiscardedMaterialOpener"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      DynamicModuleBox[
+       {Typeset`hover$$ = False, Typeset`open$$ = False},
+       PaneSelectorBox[
+        {
+         False ->
+          TagBox[
+           GridBox[
+            {
+             {
+              TagBox[
+               TagBox[
+                FrameBox[
+                 TagBox[
+                  GridBox[
+                   {
+                    {
+                     TemplateBox[{}, "DiscardedMaterial"],
+                     "\"Discarded material\"",
+                     PaneSelectorBox[
+                      {
+                       {True, False} ->
+                        TemplateBox[
+                         {RGBColor[0.3451, 0.72157, 0.98039]},
+                         "DiscardedMaterialOpenerIcon"
+                        ],
+                       {False, False} ->
+                        TemplateBox[
+                         {GrayLevel[0.7451]},
+                         "DiscardedMaterialOpenerIcon"
+                        ],
+                       {True, True} ->
+                        TemplateBox[
+                         {RGBColor[0.3451, 0.72157, 0.98039]},
+                         "DiscardedMaterialCloserIcon"
+                        ],
+                       {False, True} ->
+                        TemplateBox[
+                         {GrayLevel[0.7451]},
+                         "DiscardedMaterialCloserIcon"
+                        ]
+                      },
+                      Dynamic[{Typeset`hover$$, Typeset`open$$}]
+                     ]
+                    }
+                   },
+                   GridBoxAlignment -> {"Columns" -> {{Automatic}}, "Rows" -> {{Baseline}}},
+                   AutoDelete -> False,
+                   GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}
+                  ],
+                  "Grid"
+                 ],
+                 Background ->
+                  Dynamic[
+                   FEPrivate`If[
+                    Typeset`hover$$,
+                    GrayLevel[1],
+                    RGBColor[0.94902, 0.96863, 0.98824]
+                   ]
+                  ],
+                 BaseStyle -> {
+                  "Text",
+                  "IconizedDefaultName",
+                  ShowStringCharacters -> False
+                 },
+                 FrameMargins -> 2,
+                 FrameStyle -> RGBColor[0.9098, 0.93333, 0.95294],
+                 RoundingRadius -> 5,
+                 StripOnInput -> False
+                ],
+                EventHandlerTag[
+                 {
+                  "MouseEntered" :> FEPrivate`Set[Typeset`hover$$, True],
+                  "MouseExited" :> FEPrivate`Set[Typeset`hover$$, False],
+                  "MouseClicked" :>
+                   FEPrivate`Set[
+                    Typeset`open$$,
+                    FEPrivate`If[Typeset`open$$, False, True]
+                   ],
+                  PassEventsDown -> True,
+                  Method -> "Preemptive",
+                  PassEventsUp -> True
+                 }
+                ]
+               ],
+               MouseAppearanceTag["LinkHand"]
+              ]
+             }
+            },
+            DefaultBaseStyle -> "Column",
+            GridBoxAlignment -> {"Columns" -> {{Left}}},
+            GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+            GridBoxSpacings -> {"Columns" -> {{Automatic}}, "Rows" -> {{0.25}}}
+           ],
+           "Column"
+          ],
+         True ->
+          TagBox[
+           GridBox[
+            {
+             {
+              TagBox[
+               TagBox[
+                FrameBox[
+                 TagBox[
+                  GridBox[
+                   {
+                    {
+                     TemplateBox[{}, "DiscardedMaterial"],
+                     "\"Discarded material\"",
+                     PaneSelectorBox[
+                      {
+                       {True, False} ->
+                        TemplateBox[
+                         {RGBColor[0.3451, 0.72157, 0.98039]},
+                         "DiscardedMaterialOpenerIcon"
+                        ],
+                       {False, False} ->
+                        TemplateBox[
+                         {GrayLevel[0.7451]},
+                         "DiscardedMaterialOpenerIcon"
+                        ],
+                       {True, True} ->
+                        TemplateBox[
+                         {RGBColor[0.3451, 0.72157, 0.98039]},
+                         "DiscardedMaterialCloserIcon"
+                        ],
+                       {False, True} ->
+                        TemplateBox[
+                         {GrayLevel[0.7451]},
+                         "DiscardedMaterialCloserIcon"
+                        ]
+                      },
+                      Dynamic[{Typeset`hover$$, Typeset`open$$}]
+                     ]
+                    }
+                   },
+                   GridBoxAlignment -> {"Columns" -> {{Automatic}}, "Rows" -> {{Baseline}}},
+                   AutoDelete -> False,
+                   GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}
+                  ],
+                  "Grid"
+                 ],
+                 Background ->
+                  Dynamic[
+                   FEPrivate`If[
+                    Typeset`hover$$,
+                    GrayLevel[1],
+                    RGBColor[0.94902, 0.96863, 0.98824]
+                   ]
+                  ],
+                 BaseStyle -> {
+                  "Text",
+                  "IconizedDefaultName",
+                  ShowStringCharacters -> False
+                 },
+                 FrameMargins -> 2,
+                 FrameStyle -> RGBColor[0.9098, 0.93333, 0.95294],
+                 RoundingRadius -> 5,
+                 StripOnInput -> False
+                ],
+                EventHandlerTag[
+                 {
+                  "MouseEntered" :> FEPrivate`Set[Typeset`hover$$, True],
+                  "MouseExited" :> FEPrivate`Set[Typeset`hover$$, False],
+                  "MouseClicked" :>
+                   FEPrivate`Set[
+                    Typeset`open$$,
+                    FEPrivate`If[Typeset`open$$, False, True]
+                   ],
+                  PassEventsDown -> True,
+                  Method -> "Preemptive",
+                  PassEventsUp -> True
+                 }
+                ]
+               ],
+               MouseAppearanceTag["LinkHand"]
+              ]
+             },
+             {
+              FrameBox[
+               #1,
+               Background -> RGBColor[0.94902, 0.96863, 0.98824],
+               FrameMargins -> 10,
+               FrameStyle -> RGBColor[0.9098, 0.93333, 0.95294],
+               ImageSize -> {Full, Automatic},
+               RoundingRadius -> 5,
+               StripOnInput -> False
+              ]
+             }
+            },
+            DefaultBaseStyle -> "Column",
+            GridBoxAlignment -> {"Columns" -> {{Left}}},
+            GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+            GridBoxSpacings -> {"Columns" -> {{Automatic}}, "Rows" -> {{0.25}}}
+           ],
+           "Column"
+          ]
+        },
+        Dynamic[Typeset`open$$],
+        ImageMargins -> 10,
+        ImageSize -> Automatic,
+        Alignment -> Left,
+        ContentPadding -> False
+       ],
+       DynamicModuleValues :> { },
+       UnsavedVariables :> {Typeset`hover$$}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["DiscardedMaterialOpenerIcon"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        #1,
+        Thickness[0.090909],
+        Opacity[1.0],
+        FilledCurveBox[
+         {
+          {
+           {0, 2, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0}
+          }
+         },
+         {
+          {
+           {8.5, 4.5},
+           {6.5, 4.5},
+           {6.5, 2.5},
+           {4.5, 2.5},
+           {4.5, 4.5},
+           {2.5, 4.5},
+           {2.5, 6.5},
+           {4.5, 6.5},
+           {4.5, 8.5},
+           {6.5, 8.5},
+           {6.5, 6.5},
+           {8.5, 6.5}
+          }
+         }
+        ]
+       },
+       AspectRatio -> Automatic,
+       BaselinePosition -> Center -> Center,
+       ImageSize -> {11.0, 11.0},
+       PlotRange -> {{0.0, 11.0}, {0.0, 11.0}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["DiscardedMaterialCloserIcon"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        #1,
+        Thickness[0.090909],
+        Opacity[1.0],
+        FilledCurveBox[
+         {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}}},
+         {{{8.5, 4.5}, {2.5, 4.5}, {2.5, 6.5}, {8.5, 6.5}}}
+        ]
+       },
+       AspectRatio -> Automatic,
+       BaselinePosition -> Center -> Center,
+       ImageSize -> {11.0, 11.0},
+       PlotRange -> {{0.0, 11.0}, {0.0, 11.0}}
       ]
      ])
    }

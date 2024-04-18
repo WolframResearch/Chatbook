@@ -1002,7 +1002,7 @@ inlineTemplateBoxes[ expr_ ] :=
     ReplaceAll[
         expr,
         TemplateBox[ args_, name_String ] :>
-            With[ { func = inlineTemplateBoxes @ $templateBoxDisplayFunctions @ name },
+            With[ { func = inlineTemplateBox @ $templateBoxDisplayFunctions @ name },
                 TemplateBox[ args, name, DisplayFunction -> func ] /; MatchQ[ func, _Function ]
             ]
     ];

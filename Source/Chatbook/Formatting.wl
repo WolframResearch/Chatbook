@@ -192,12 +192,36 @@ formatToolCall0 // endDefinition;
 reformatTextData // beginDefinition;
 
 reformatTextData[ string_String ] := joinAdjacentStrings @ Flatten[
-    makeResultCell /@ StringSplit[ string, $textDataFormatRules, IgnoreCase -> True ]
+    makeResultCell /@ discardBadToolCalls @ StringSplit[ string, $textDataFormatRules, IgnoreCase -> True ]
 ];
 
 reformatTextData[ other_ ] := other;
 
 reformatTextData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*discardBadToolCalls*)
+discardBadToolCalls // beginDefinition;
+
+discardBadToolCalls[ {
+    a___,
+    tc_inlineToolCallCell,
+    b: Except[ _inlineToolCallCell ]...,
+    $discardPreviousToolCall,
+    c___
+} ] := discardBadToolCalls @ { a, $lastDiscarded = discardedMaterial[ tc, b ], c };
+
+discardBadToolCalls[ { a: Except[ _inlineToolCallCell ]..., $discardPreviousToolCall, b___ } ] :=
+    discardBadToolCalls @ { a, b };
+
+discardBadToolCalls[ { a___, discardedMaterial[ b___ ], discardedMaterial[ c___ ], d___ } ] :=
+    discardBadToolCalls @ { a, $lastDiscarded = discardedMaterial[ b, c ], d };
+
+discardBadToolCalls[ textData_List ] :=
+    textData;
+
+discardBadToolCalls // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -216,6 +240,9 @@ makeResultCell // endDefinition;
 
 
 makeResultCell0 // beginDefinition;
+
+makeResultCell0[ discardedMaterial[ stuff___ ] ] :=
+    makeDiscardedMaterialCell @ stuff;
 
 makeResultCell0[ str_String ] := formatTextString @ str;
 
@@ -270,6 +297,31 @@ makeResultCell0[ tableCell[ string_String ] ] :=
 
 makeResultCell0 // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeDiscardedMaterialCell*)
+makeDiscardedMaterialCell // beginDefinition;
+
+makeDiscardedMaterialCell[ stuff___ ] := {
+    Cell[
+        BoxData @ TemplateBox[
+            {
+                ToBoxes @ compressUntilViewed @ RawBoxes @ Cell[
+                    TextData @ joinAdjacentStrings @ Flatten[ makeResultCell /@ { stuff } ],
+                    "Text",
+                    Background  -> None,
+                    FontOpacity -> 0.5
+                ]
+            },
+            "DiscardedMaterialOpener"
+        ],
+        "DiscardedMaterial",
+        Background -> None
+    ],
+    "\n"
+};
+
+makeDiscardedMaterialCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -861,6 +913,8 @@ $textDataFormatRules = {
     tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString)) :> inlineToolCallCell @ tool
     ,
     tool: $$simpleToolCall :> inlineToolCallCell @ tool
+    ,
+    StartOfLine ~~ "/retry" ~~ (WhitespaceCharacter|EndOfString) :> $discardPreviousToolCall
     ,
     ("\n"|StartOfString) ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
     ("\n"|StartOfString) ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ],
@@ -1988,7 +2042,7 @@ $languageIcons := $languageIcons = Enclose[
 joinAdjacentStrings // beginDefinition;
 joinAdjacentStrings[ { content___, "\n"|StyleBox[ "\n", ___ ] } ] := joinAdjacentStrings @ { content };
 joinAdjacentStrings[ { "\n"|StyleBox[ "\n", ___ ], content___ } ] := joinAdjacentStrings @ { content };
-joinAdjacentStrings[ content_List ] := joinAdjacentStrings0 /@ SplitBy[ content, StringQ ];
+joinAdjacentStrings[ content_List ] := trimWhitespace[ joinAdjacentStrings0 /@ SplitBy[ content, StringQ ] ];
 joinAdjacentStrings // endDefinition;
 
 joinAdjacentStrings0 // beginDefinition;
@@ -1999,6 +2053,43 @@ joinAdjacentStrings0[ { strings__String } ] :=
 joinAdjacentStrings0[ { other___ } ] := other;
 
 joinAdjacentStrings0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*trimWhitespace*)
+trimWhitespace // beginDefinition;
+trimWhitespace[ { } ] := { };
+trimWhitespace[ { a_, b___, c_ } ] := { trimWhitespaceL @ a, b, trimWhitespaceR @ c };
+trimWhitespace[ { a_ } ] := { trimWhitespaceB @ a };
+trimWhitespace // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*trimWhitespaceB*)
+trimWhitespaceB // beginDefinition;
+trimWhitespaceB[ a_String ] := StringTrim @ a;
+trimWhitespaceB[ other_ ] := trimWhitespaceR @ trimWhitespaceL @ other;
+trimWhitespaceB // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*trimWhitespaceL*)
+trimWhitespaceL // beginDefinition;
+trimWhitespaceL[ a_String ] := StringDelete[ a, StartOfString ~~ WhitespaceCharacter.. ];
+trimWhitespaceL[ (h: Cell|StyleBox|TextData|BoxData)[ a_, b___ ] ] := h[ trimWhitespaceL @ a, b ];
+trimWhitespaceL[ { a_, b___ } ] := { trimWhitespaceL @ a, b };
+trimWhitespaceL[ other_ ] := other;
+trimWhitespaceL // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*trimWhitespaceR*)
+trimWhitespaceR // beginDefinition;
+trimWhitespaceR[ a_String ] := StringDelete[ a, WhitespaceCharacter.. ~~ EndOfString ];
+trimWhitespaceR[ (h: Cell|StyleBox|TextData|BoxData)[ a_, b___ ] ] := h[ trimWhitespaceR @ a, b ];
+trimWhitespaceR[ { a___, b_ } ] := { a, trimWhitespaceR @ b };
+trimWhitespaceR[ other_ ] := other;
+trimWhitespaceR // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
