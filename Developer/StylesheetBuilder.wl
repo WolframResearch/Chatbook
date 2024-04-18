@@ -496,6 +496,62 @@ insertionPointMenuItem[ icon_, label_, shortcut_, style_ ] :=
     ] :> FrontEndTokenExecute[ EvaluationNotebook[ ], "Style", style ];
 
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*DiscardedMaterialOpener*)
+
+discardedMaterialLabelBox[ Dynamic[ hover_ ], Dynamic[ open_ ] ] := TagBox[
+    TagBox[
+        FrameBox[
+            TagBox[
+                GridBox[
+                    {
+                        {
+                            TemplateBox[ { }, "DiscardedMaterial" ],
+                            "\"Discarded material\"",
+                            discardedMaterialLabelIcon[ Dynamic @ hover, Dynamic @ open ]
+                        }
+                    },
+                    GridBoxAlignment -> { "Columns" -> { { Automatic } }, "Rows" -> { { Baseline } } },
+                    AutoDelete -> False,
+                    GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } }
+                ],
+                "Grid"
+            ],
+            Background -> Dynamic @ FEPrivate`If[ hover, GrayLevel[ 1 ], RGBColor[ 0.94902, 0.96863, 0.98824 ] ],
+            BaseStyle -> { "Text", "IconizedDefaultName", ShowStringCharacters -> False },
+            FrameMargins -> 2,
+            FrameStyle -> RGBColor[ 0.9098, 0.93333, 0.95294 ],
+            RoundingRadius -> 5,
+            StripOnInput -> False
+        ],
+        EventHandlerTag @ {
+            "MouseEntered" :> FEPrivate`Set[ hover, True ],
+            "MouseExited"  :> FEPrivate`Set[ hover, False ],
+            "MouseClicked" :> FEPrivate`Set[ open, FEPrivate`If[ open, False, True ] ],
+            PassEventsDown -> True,
+            Method         -> "Preemptive",
+            PassEventsUp   -> True
+        }
+    ],
+    MouseAppearanceTag[ "LinkHand" ]
+];
+
+discardedMaterialLabelIcon[ Dynamic[ hover_ ], Dynamic[ open_ ] ] :=
+    With[ { hoverColor = RGBColor[ 0.3451, 0.72157, 0.98039 ], defaultColor = GrayLevel[ 0.7451 ] },
+        PaneSelectorBox[
+            {
+                { True , False } -> TemplateBox[ { hoverColor   }, "DiscardedMaterialOpenerIcon" ],
+                { False, False } -> TemplateBox[ { defaultColor }, "DiscardedMaterialOpenerIcon" ],
+                { True , True  } -> TemplateBox[ { hoverColor   }, "DiscardedMaterialCloserIcon" ],
+                { False, True  } -> TemplateBox[ { defaultColor }, "DiscardedMaterialCloserIcon" ]
+            },
+            Dynamic[ { hover, open } ]
+        ]
+    ];
+
+
+$discardedMaterialLabel = discardedMaterialLabelBox[ Dynamic @ Typeset`hover$$, Dynamic @ Typeset`open$$ ];
 
 (* ::Subsection::Closed:: *)
 (*Stylesheet Version*)
@@ -516,7 +572,8 @@ $stylesheetVersion = StringJoin[
 inlineResources[ expr_ ] := expr /. {
     HoldPattern @ $askMenuItem              :> RuleCondition @ $askMenuItem,
     HoldPattern @ $defaultChatbookSettings  :> RuleCondition @ $defaultChatbookSettings,
-    HoldPattern @ $suppressButtonAppearance :> RuleCondition @ $suppressButtonAppearance
+    HoldPattern @ $suppressButtonAppearance :> RuleCondition @ $suppressButtonAppearance,
+    HoldPattern @ $discardedMaterialLabel   :> RuleCondition @ $discardedMaterialLabel
 };
 
 
