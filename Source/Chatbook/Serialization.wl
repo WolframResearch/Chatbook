@@ -1732,6 +1732,8 @@ $$ignoredBox = Alternatives[
     Cell[ __, "NotesThumbnails", ___ ]
     ,
     Cell[ __, "TutorialJumpBox", ___ ]
+    ,
+    Cell[ __, $$ignoredCellStyle, ___ ]
 ];
 
 
