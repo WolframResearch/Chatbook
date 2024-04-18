@@ -517,7 +517,7 @@ chatSubmit // beginDefinition;
 chatSubmit // Attributes = { HoldFirst };
 
 chatSubmit[ args__ ] := Quiet[
-    chatSubmit0 @ args,
+    rasterizeBlock @ chatSubmit0 @ args,
     {
         (* cSpell: ignore wname, invm, invk *)
         ServiceConnections`SavedConnections::wname,
