@@ -40,6 +40,7 @@ $basePromptOrder = {
     "Checkboxes",
     "CheckboxesIndeterminate",
     "ConversionFormatting",
+    "ExternalLanguageCells",
     "SpecialURI",
     "SpecialURIImporting",
     "SpecialURIAudio",
@@ -85,6 +86,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "MarkdownImageBox"             -> { "MessageConversionHeader" },
     "MarkdownImageBoxImporting"    -> { "MarkdownImageBox" },
     "ConversionFormatting"         -> { "MessageConversionHeader" },
+    "ExternalLanguageCells"        -> { "MessageConversionHeader" },
     "SpecialURI"                   -> { },
     "SpecialURIImporting"          -> { "SpecialURI" },
     "SpecialURIAudio"              -> { "SpecialURI" },
@@ -200,6 +202,10 @@ $basePromptComponents[ "ConversionFormatting" ] = "\
 	* Cell formatting is converted to markdown where possible, so \
 ``Cell[TextData[{StyleBox[\"Styled\", FontSlant -> \"Italic\"], \" message\"}], \"ChatInput\"]`` \
 becomes ``*Styled* message``.";
+
+$basePromptComponents[ "ExternalLanguageCells" ] = "\
+	* When you see code blocks denoted with languages other than Wolfram Language, they are external language cells, \
+which is a cell type that evaluates other languages through ExternalEvaluate returning a WL output.";
 
 $basePromptComponents[ "SpecialURI" ] = "\
 * You will occasionally see markdown links with special URI schemes, e.g. ![label](scheme://content-id) that represent \

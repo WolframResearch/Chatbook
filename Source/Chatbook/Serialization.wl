@@ -473,13 +473,12 @@ cellToString[ Cell[ a__, "Message", "MSG", b___ ] ] :=
         ]
     ];
 
-(* External language cells get converted to an equivalent ExternalEvaluate input *)
+(* External language cells get converted to a code block with the corresponding language specifier  *)
 cellToString[ Cell[ code_, "ExternalLanguage", ___, $$cellEvaluationLanguage -> lang_String, ___ ] ] :=
-    Module[ { string },
-        string = cellToString0 @ code;
+    With[ { string = cellToString0 @ code },
         (
-            needsBasePrompt[ "WolframLanguage" ];
-            "ExternalEvaluate[\""<>lang<>"\", \""<>string<>"\"]"
+            needsBasePrompt[ "ExternalLanguageCells" ];
+            "```"<>lang<>"\n"<>string<>"\n```"
         ) /; StringQ @ string
     ];
 
