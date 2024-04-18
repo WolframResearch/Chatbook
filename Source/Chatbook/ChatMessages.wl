@@ -955,32 +955,69 @@ mergeMessages // beginDefinition;
 
 mergeMessages[ { } ] := Nothing;
 mergeMessages[ { message_ } ] := message;
-mergeMessages[ messages: { first_Association, __Association } ] :=
-    Module[ { role, content, stitch },
-        role    = Lookup[ first, "Role" ];
-        content = Flatten @ Lookup[ messages, "Content" ];
-        stitch  = StringDelete[ #1, Longest[ "```\n\n```"~~("wl"|"") ] ] &;
+mergeMessages[ messages: { first_Association, __Association } ] := Enclose[
+    Module[ { role, content, merged },
+        role = ConfirmBy[ Lookup[ first, "Role" ], StringQ, "Role" ];
 
-        If[ AllTrue[ content, StringQ ],
-            <|
-                "Role"    -> role,
-                "Content" -> stitch @ StringRiffle[ content, "\n\n" ]
-            |>,
-            <|
-                "Role" -> role,
-                "Content" -> FixedPoint[
-                    Replace @ {
-                        { a___, b_String, c_String, d___ } :> { a, stitch[ b<>"\n\n"<>c ], d },
-                        { a___, b_String, { c_String, d___ }, e___ } :> { a, { stitch[ b<>"\n\n"<>c ], d }, e },
-                        { a___, { b___, c_String }, d_String, e___ } :> { a, { b, stitch[ c<>"\n\n"<>d ] }, e }
-                    },
-                    content
-                ]
-            |>
-        ]
-    ];
+        content = Replace[
+            Flatten @ Lookup[ messages, "Content" ],
+            KeyValuePattern @ { "Type" -> "Text", "Data" -> s_String } :> s,
+            { 1 }
+        ];
+
+        merged = ConfirmMatch[ mergeCodeBlocks @ content, { (_String|_Association)... }, "Merged" ];
+
+        <| "Role" -> role, "Content" -> merged |>
+    ],
+    throwInternalFailure
+];
 
 mergeMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*mergeCodeBlocks*)
+mergeCodeBlocks // beginDefinition;
+
+mergeCodeBlocks[ content_List ] := Enclose[
+    Module[ { split, joined },
+        split = SplitBy[ content, StringQ ];
+        joined = Replace[ split, s: { __String } :> mergeCodeBlocks @ StringRiffle[ s, "\n\n" ], { 1 } ];
+        Flatten @ joined
+    ],
+    throwInternalFailure
+];
+
+mergeCodeBlocks[ string0_String ] := Enclose[
+    Catch @ Module[ { string, split, strings },
+        string = StringReplace[ string0, "```\n\n"~~("\n"..)~~"```" :> "```\n\n```" ];
+
+        split = StringSplit[
+            string,
+            Shortest[ "```" ~~ lang: Except[ WhitespaceCharacter ]... ~~ "\n" ~~ code__ ~~ "\n```" ] :>
+                codeBlock[ StringTrim @ lang, StringTrim @ code ]
+        ];
+
+        strings = Replace[
+            FixedPoint[
+                Replace[
+                    { a___, codeBlock[ lang_, code1_ ], "\n\n", codeBlock[ lang_, code2_ ], b___ } :>
+                        { a, codeBlock[ lang, code1<>"\n\n"<>code2 ], b }
+                ],
+                split
+            ],
+            codeBlock[ lang_, code_ ] :> "```"<>lang<>"\n"<>code<>"\n```",
+            { 1 }
+        ];
+
+        ConfirmAssert[ AllTrue[ strings, StringQ ], "StringCheck" ];
+
+        mergeCodeBlocks[ string0 ] = StringJoin @ strings
+    ],
+    throwInternalFailure
+];
+
+mergeCodeBlocks // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
