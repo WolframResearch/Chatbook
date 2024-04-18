@@ -1161,7 +1161,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3922422197"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3922429268"|>
   ],
   Cell[
    StyleData["Text"],
@@ -17983,6 +17983,7 @@ Notebook[
           ]
         },
         Dynamic[Typeset`open$$],
+        ImageMargins -> 10,
         ImageSize -> Automatic,
         Alignment -> Left,
         ContentPadding -> False
