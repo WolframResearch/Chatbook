@@ -687,7 +687,7 @@ fasterCellToString0[ s_String /; StringContainsQ[ s, "\!\(" ~~ Except[ "\)" ] ..
         split = StringSplit[
             s,
             "\!\(" ~~ b: Except[ "\)" ].. ~~ "\)" :>
-                UsingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket[ "\!\("<>b<>"\)" ]
+                usingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket[ "\!\("<>b<>"\)" ]
             ];
 
         StringJoin[ fasterCellToString0 /@ split ] /; ! MatchQ[ split, { s } ]
@@ -1885,7 +1885,7 @@ slowCellToString[ cell_Cell ] :=
     Module[ { format, plain, string },
 
         format = If[ TrueQ @ $showStringCharacters, "InputText", "PlainText" ];
-        plain  = Quiet @ UsingFrontEnd @ FrontEndExecute @ FrontEnd`ExportPacket[ cell, format ];
+        plain  = Quiet @ usingFrontEnd @ FrontEndExecute @ FrontEnd`ExportPacket[ cell, format ];
         string = Replace[ plain, { { s_String? StringQ, ___ } :> s, ___ :> $Failed } ];
 
         If[ StringQ @ string,
@@ -1962,7 +1962,7 @@ stringToBoxes[ string_String ] :=
     stringToBoxes[
         string,
         (* TODO: there could be a kernel implementation of this *)
-        Quiet @ UsingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`UndocumentedTestFEParserPacket[ string, True ]
+        Quiet @ usingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`UndocumentedTestFEParserPacket[ string, True ]
     ];
 
 stringToBoxes[ string_, { BoxData[ boxes_, ___ ], ___ } ] := boxes;

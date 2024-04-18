@@ -28,12 +28,14 @@ BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
 `parentNotebook;
 `previousCell;
 `rasterize;
+`rasterizeBlock;
 `replaceCellContext;
 `rootEvaluationCell;
 `selectionEvaluateCreateCell;
 `toCompressedBoxes;
 `topLevelCellQ;
 `topParentCell;
+`usingFrontEnd;
 `withNoRenderUpdates;
 
 Begin[ "`Private`" ];
@@ -659,80 +661,52 @@ compressUntilViewed // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*usingFrontEnd*)
+usingFrontEnd // beginDefinition;
+usingFrontEnd // Attributes = { HoldFirst };
+
+usingFrontEnd[ eval_ ] :=
+    Block[ { usingFrontEnd = # &, $usingFE = True },
+        If[ TrueQ @ $CloudEvaluation,
+            PreemptProtect @ UsingFrontEnd @ eval,
+            UsingFrontEnd @ eval
+        ]
+    ];
+
+usingFrontEnd // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*rasterizeBlock*)
+(* Ensures that any Rasterize calls that occur in `eval` will get wrapped in `PreemptProtect` when in cloud. *)
+rasterizeBlock // beginDefinition;
+rasterizeBlock // Attributes = { HoldFirst };
+
+rasterizeBlock[ eval_ ] := Block[ { rasterizeBlock = # & },
+    Internal`InheritedBlock[ { Rasterize },
+
+        Unprotect @ Rasterize;
+
+        PrependTo[
+            DownValues @ Rasterize,
+            HoldPattern @ Rasterize[ a___ ] /; ! TrueQ @ $usingFE :>
+                usingFrontEnd @ Rasterize @ a
+        ];
+
+        Protect @ Rasterize;
+
+        eval
+    ]
+];
+
+rasterizeBlock // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*rasterize*)
 rasterize // beginDefinition;
-
-rasterize[ expr_ ] :=
-    If[ TrueQ @ $CloudEvaluation,
-        cloudRasterize @ Unevaluated @ expr,
-        Rasterize @ Unevaluated @ expr
-    ];
-
-(* rasterize[ expr_ ] :=
-    With[ { id = CreateUUID[ ] },
-        WithCleanup[
-            PutAppend[ <| "ID" -> id, "Expression" :> expr, "Event" -> "Before" |>, CloudObject[ "tmp/rasterizeLog.wl" ] ],
-            TimeConstrained[ UsingFrontEnd @ Rasterize @ expr, 5, UsingFrontEnd @ Rasterize @ expr ],
-            PutAppend[ <| "ID" -> id, "Expression" :> expr, "Event" -> "After" |>, CloudObject[ "tmp/rasterizeLog.wl" ] ]
-        ]
-    ]; *)
-
+rasterize[ expr_ ] := usingFrontEnd @ Rasterize @ expr;
 rasterize // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*cloudRasterize*)
-cloudRasterize // beginDefinition;
-
-cloudRasterize[ expr_, opts: OptionsPattern[ Rasterize ] ] :=
-    Progress`EvaluateWithProgress[
-        cloudRasterize0[ expr, opts ],
-        <| "Text" -> "Preparing image...", "ElapsedTime" -> Automatic |>
-    ];
-
-cloudRasterize // endDefinition;
-
-
-cloudRasterize0 // beginDefinition;
-
-cloudRasterize0[ expr_, opts: OptionsPattern[ Rasterize ] ] := Enclose[
-    Module[ { api, wxf, b64, req, img },
-        api = ConfirmMatch[ getCloudRasterizer[ ], _CloudObject, "RasterizerAPI" ];
-        wxf = ConfirmBy[ BinarySerialize[ Unevaluated @ expr, PerformanceGoal -> "Size" ], ByteArrayQ, "WXF" ];
-        b64 = ConfirmBy[ BaseEncode @ wxf, StringQ, "Base64" ];
-        req = HTTPRequest[ api, <| "Method" -> "POST", "Body" -> { "Expression" -> b64 } |> ];
-        img = ConfirmBy[ URLExecute[ req, "PNG" ], ImageQ, "Image" ];
-        cloudRasterize[ expr, opts ] = img
-    ],
-    throwInternalFailure
-];
-
-cloudRasterize0 // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getCloudRasterizer*)
-getCloudRasterizer // beginDefinition;
-
-getCloudRasterizer[ ] := Enclose[
-    getCloudRasterizer[ ] = ConfirmMatch[
-        CloudDeploy[
-            APIFunction[
-                (* TODO: options and format *)
-                { "Expression" -> "String" },
-                Rasterize @ BinaryDeserialize @ BaseDecode[ #Expression ] &,
-                "PNG"
-            ],
-            CloudObject @ $cloudRasterizerLocation,
-            EvaluationPrivileges -> None,
-            Permissions          -> "Private"
-        ],
-        _CloudObject
-    ],
-    throwInternalFailure
-];
-
-getCloudRasterizer // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
