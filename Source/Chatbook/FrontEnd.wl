@@ -486,6 +486,7 @@ fixCloudCell // beginDefinition;
 fixCloudCell[ cell_ ] /; ! TrueQ @ $cloudNotebooks := cell;
 fixCloudCell[ Cell[ CellGroupData[ cells_, a___ ] ] ] := Cell[ CellGroupData[ fixCloudCell @ cells, a ] ];
 fixCloudCell[ Cell[ text_, args___ ] ] := Cell[ applyCloudCellFixes @ text, args ];
+fixCloudCell[ content: _BoxData|_TextData|_String ] := applyCloudCellFixes @ content;
 fixCloudCell[ cells_List ] := fixCloudCell /@ cells;
 fixCloudCell // endDefinition;
 
