@@ -1308,7 +1308,10 @@ sandboxResult // endDefinition;
 (* ::Subsection::Closed:: *)
 (*sandboxResultString*)
 sandboxResultString // beginDefinition;
-sandboxResultString[ result_, packets_ ] := checkDocSearchMessageStrings @ sandboxResultString0[ result, packets ];
+
+sandboxResultString[ result_, packets_ ] :=
+    mergeComments @ appendRetryNotice @ checkDocSearchMessageStrings @ sandboxResultString0[ result, packets ];
+
 sandboxResultString // endDefinition;
 
 
@@ -1353,6 +1356,39 @@ sandboxResultString0[ HoldComplete[ ___, expr_ ] ] := makeExpressionURI @ Uneval
 sandboxResultString0[ HoldComplete[ ] ] := "Null";
 
 sandboxResultString0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*mergeComments*)
+mergeComments // beginDefinition;
+
+mergeComments[ string_String ] := StringReplace[
+    string,
+    {
+        "*)" ~~ WhitespaceCharacter... ~~ "\n" ~~ WhitespaceCharacter... ~~ "(*" -> "\n\n",
+        "*)" ~~ WhitespaceCharacter... ~~ "(*" -> "\n"
+    }
+];
+
+mergeComments // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*appendRetryNotice*)
+appendRetryNotice // beginDefinition;
+
+appendRetryNotice[ string_String ] :=
+    If[ StringContainsQ[ string, "General::messages" ],
+        string<>"\n\n"<>$retryMessage,
+        string
+    ];
+
+appendRetryNotice // endDefinition;
+
+$retryMessage = "(* \
+IMPORTANT! If this tool call failed to provide the desired result for any reason, \
+you MUST write /retry before making the next tool call. \
+*)";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

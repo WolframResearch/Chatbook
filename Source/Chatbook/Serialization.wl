@@ -61,7 +61,8 @@ $$noCellLabelStyle = Alternatives[
 
 $$ignoredCellStyle = Alternatives[
     "AnchorBarGrid",
-    "CitationContainerCell"
+    "CitationContainerCell",
+    "DiscardedMaterial"
 ];
 
 (* Cell styles that will prevent wrapping BoxData in triple backticks: *)
@@ -1731,6 +1732,8 @@ $$ignoredBox = Alternatives[
     Cell[ __, "NotesThumbnails", ___ ]
     ,
     Cell[ __, "TutorialJumpBox", ___ ]
+    ,
+    Cell[ __, $$ignoredCellStyle, ___ ]
 ];
 
 

@@ -843,7 +843,17 @@ You did not create these tools, so you do not know what they can and cannot do.
 
 You should try to avoid mentioning tools by name in your response and instead speak generally about their function. \
 For example, if there were a number_adder tool, you would instead talk about \"adding numbers\". If you must mention \
-a tool by name, you should use the DisplayName property instead of the tool name.";
+a tool by name, you should use the DisplayName property instead of the tool name.
+
+IMPORTANT! If a tool call fails to give the desired result for any reason, \
+you MUST write /retry before making the next tool call:
+
+/retry
+TOOLCALL: <tool name>
+<new parameters>
+
+This will hide the previous tool call in a collapsed section that the user can open if they wish to see prior attempts.
+If you fail to do this, the user will have a hard time knowing which tool calls contain the correct results.";
 
 
 $toolListing = {
