@@ -38,8 +38,31 @@ Needs[ "Wolfram`Chatbook`Utils`"        ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Config*)
-$$delimiterStyle   = "PageBreak"|"ExampleDelimiter"|"GuideDelimiterSubsection"|"WorkflowDelimiter";
-$$itemStyle        = "Item"|"Notes"|"FeaturedExampleMoreAbout";
+$$delimiterStyle = Alternatives[
+    "Delimiter",
+    "ExampleDelimiter",
+    "GuideDelimiter",
+    "GuideDelimiterSubsection",
+    "GuideMoreAboutDelimiter",
+    "HistoryDelimiter",
+    "HowToDelimiter",
+    "KeyEventDelimiter",
+    "MenuNameDelimiter",
+    "PageBreak",
+    "PageDelimiter",
+    "PointerEventDelimiter",
+    "RootMoreAboutDelimiter",
+    "WeakDivider",
+    "WorkflowDelimiter",
+    "WorkflowFooterBottomDelimiter",
+    "WorkflowFooterDelimiter",
+    "WorkflowFooterTopDelimiter",
+    "WorkflowGuideDelimiter",
+    "WorkflowHeaderDelimiter",
+    "WorkflowPlatformDelimiter"
+];
+
+$$itemStyle        = "Item"|"Notes"|"FeaturedExampleMoreAbout"|"InterpreterNotes";
 $$subItemStyle     = "Subitem";
 $$subSubItemStyle  = "Subsubitem";
 $$docSearchStyle   = "ChatQuery";
@@ -1128,6 +1151,7 @@ $$refLinkTemplate = Alternatives[
     "StringTypeLink",
     "TealLink",
     "TextRefLink",
+    "WebLink",
     "WFOrangeLink"
 ];
 
