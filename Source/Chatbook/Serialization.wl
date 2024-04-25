@@ -1431,6 +1431,7 @@ fasterCellToString0[ box: GridBox[ grid_? MatrixQ, ___ ] ] :=
         strings = Map[ fasterCellToString0, grid, { 2 } ];
         (
             tr       = Transpose @ strings /. "\[Null]"|"\[InvisibleSpace]" -> "";
+            tr       = Select[ tr, AnyTrue[ #, Not @* StringMatchQ[ WhitespaceCharacter... ] ] & ];
             colSizes = Max[ #, 1 ] & /@ Map[ StringLength, tr, { 2 } ];
             padded   = Transpose @ Apply[ StringPadRight, Transpose @ { tr, colSizes }, { 1 } ];
             columns  = StringRiffle[ #, " | " ] & /@ padded;
