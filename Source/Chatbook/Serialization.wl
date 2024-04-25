@@ -1455,6 +1455,9 @@ fasterCellToString0[ TagBox[ grid_GridBox, { _, OutputFormsDump`HeadedColumns },
     Block[ { $columnHeadings = True }, fasterCellToString0 @ grid ];
 
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*insertColumnDelimiter*)
 insertColumnDelimiter // beginDefinition;
 
 insertColumnDelimiter[ { headings_String, rows__String }, colSizes: { __Integer }, box_ ] := {
@@ -1467,7 +1470,9 @@ insertColumnDelimiter[ rows_List, _List, box_ ] := rows;
 
 insertColumnDelimiter // endDefinition;
 
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*createAlignedDelimiters*)
 createAlignedDelimiters // beginDefinition;
 
 createAlignedDelimiters[ colSizes_, GridBox[ ___, GridBoxAlignment -> { ___, "Columns" -> alignments_, ___ }, ___ ] ] :=
@@ -1499,9 +1504,14 @@ createAlignedDelimiters[ colSizes_List, { a: Except[ { _ } ]..., { repeat_ }, b:
         }
     ];
 
+createAlignedDelimiters[ colSizes_List, { alignment: Except[ _List ] } ] :=
+    createAlignedDelimiters[ colSizes, ConstantArray[ alignment, Length @ colSizes ] ];
+
 createAlignedDelimiters // endDefinition;
 
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*createAlignedDelimiter*)
 createAlignedDelimiter // beginDefinition;
 createAlignedDelimiter[ size_Integer, "Left"  | Left   ] := ":" <> StringRepeat[ "-", Max[ size-1, 1 ] ];
 createAlignedDelimiter[ size_Integer, "Right" | Right  ] := StringRepeat[ "-", Max[ size-1, 1 ] ] <> ":";
