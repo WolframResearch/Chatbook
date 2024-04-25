@@ -806,6 +806,13 @@ fasterCellToString0[ Cell[
     "\[FreeformPrompt] " <> query
 );
 
+(* Control equals input *)
+fasterCellToString0[ NamespaceBox[
+    "LinguisticAssistant",
+    DynamicModuleBox[ { ___, Typeset`query$$ = query_String, ___ }, __ ],
+    ___
+] ] := "\[FreeformPrompt][\""<>query<>"\"]";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Graphics*)
