@@ -1371,10 +1371,19 @@ fasterCellToString0[ TemplateBox[ { _, label_, ___ }, "IconizedObject", ___ ] ] 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Definitions*)
-fasterCellToString0[ InterpretationBox[ boxes_, (Definition|FullDefinition)[ _Symbol ], ___ ] ] := (
+fasterCellToString0[ InterpretationBox[ GridBox[ boxes_List, ___ ], (Definition|FullDefinition)[ ___ ], ___ ] ] := (
     needsBasePrompt[ "WolframLanguage" ];
-    fasterCellToString0 @ boxes
+    StringRiffle[ DeleteCases[ StringTrim[ fasterCellToString0 /@ gridFlatten @ boxes ], "" ], "\n\n" ]
 );
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*gridFlatten*)
+gridFlatten // beginDefinition;
+gridFlatten[ GridBox[ grid_List, ___ ] ] := gridFlatten @ Flatten @ grid;
+gridFlatten[ boxes_List ] := Flatten[ gridFlatten /@ boxes ];
+gridFlatten[ other_ ] := other;
+gridFlatten // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
