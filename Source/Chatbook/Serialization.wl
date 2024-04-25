@@ -898,10 +898,11 @@ rasterizeGraphics // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Video*)
-fasterCellToString0[ box: TemplateBox[ _, "VideoBox2", ___ ] ] /; $multimodalImages && $generateVideoPrompt :=
+fasterCellToString0[ box: TemplateBox[ _, "VideoBox1"|"VideoBox2", ___ ] ] /;
+    $multimodalImages && $generateVideoPrompt :=
     generateVideoPrompt @ box;
 
-fasterCellToString0[ box: TemplateBox[ _, "VideoBox2", ___ ] ] :=
+fasterCellToString0[ box: TemplateBox[ _, "VideoBox1"|"VideoBox2", ___ ] ] :=
     serializeVideo @ box;
 
 (* ::**************************************************************************************************************:: *)
@@ -909,7 +910,7 @@ fasterCellToString0[ box: TemplateBox[ _, "VideoBox2", ___ ] ] :=
 (*generateVideoPrompt*)
 generateVideoPrompt // beginDefinition;
 
-generateVideoPrompt[ box: TemplateBox[ _, "VideoBox2", ___ ] ] := generateVideoPrompt[ box ] =
+generateVideoPrompt[ box: TemplateBox[ _, "VideoBox1"|"VideoBox2", ___ ] ] := generateVideoPrompt[ box ] =
     With[ { video = Quiet @ ToExpression[ box, StandardForm ] },
         If[ VideoQ @ video,
             generateVideoPrompt @ video,
@@ -949,7 +950,7 @@ generateVideoPrompt // endDefinition;
 (*serializeVideo*)
 serializeVideo // beginDefinition;
 
-serializeVideo[ box: TemplateBox[ _, "VideoBox2", ___ ] ] := serializeVideo[ box ] =
+serializeVideo[ box: TemplateBox[ _, "VideoBox1"|"VideoBox2", ___ ] ] := serializeVideo[ box ] =
     serializeVideo[ box, Quiet @ ToExpression[ box, StandardForm ] ];
 
 serializeVideo[ box_, video_ ] := Enclose[
