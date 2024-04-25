@@ -77,6 +77,7 @@ $$noCodeBlockStyle = Alternatives[
     "UsageInputs"
 ];
 
+$maxInputFormByteCount       = 2^18;
 $maxStandardFormStringLength = 2^15;
 
 (* Default character encoding for strings created from cells *)
@@ -1928,6 +1929,14 @@ $exportPacketStringReplacements = {
 (* ::Subsubsection::Closed:: *)
 (*inputFormString*)
 inputFormString // SetFallthroughError;
+
+inputFormString[ expr: h_[ args___ ], opts: OptionsPattern[ ] ] /;
+    ByteCount @ Unevaluated @ expr > $maxInputFormByteCount :=
+        StringJoin[
+            inputFormString @ Unevaluated @ h,
+            "[\[LeftSkeleton]", ToString @ Length @ HoldComplete @ args, "\[RightSkeleton]]"
+        ];
+
 inputFormString[ expr_, opts: OptionsPattern[ ] ] := StringReplace[
     ToString[ Unevaluated @ expr,
               InputForm,
