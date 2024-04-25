@@ -1379,6 +1379,9 @@ fasterCellToString0[ InterpretationBox[ boxes_, (Definition|FullDefinition)[ _Sy
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Tables*)
+fasterCellToString0[ GridBox[ { row: { ___ } }, ___ ] ] :=
+    fasterCellToString0 @ RowBox @ row;
+
 (* Columns combined via row: *)
 fasterCellToString0[ box: GridBox[ grids: { { GridBox[ _? MatrixQ, ___ ].. } }, ___ ] ] :=
     Module[ { subGrids, dim, reshaped, spliced },
