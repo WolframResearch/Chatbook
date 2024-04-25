@@ -77,6 +77,8 @@ $$noCodeBlockStyle = Alternatives[
     "UsageInputs"
 ];
 
+$maxStandardFormStringLength = 2^15;
+
 (* Default character encoding for strings created from cells *)
 $cellCharacterEncoding = "Unicode";
 
@@ -682,7 +684,10 @@ fasterCellToString0[ string_String ] /; StringContainsQ[ string, $$longNameChara
     fasterCellToString0 @ StringDelete[ StringReplace[ string, $longNameCharacters ], $$invisibleCharacter ];
 
 (* StandardForm strings *)
-fasterCellToString0[ s_String /; StringContainsQ[ s, "\!\(" ~~ Except[ "\)" ] .. ~~ "\)" ] ] :=
+fasterCellToString0[ s_String ] /; StringContainsQ[
+    s,
+    a: ("\!\(" ~~ Except[ "\)" ] .. ~~ "\)") /; StringLength @ a < $maxStandardFormStringLength
+] :=
     Module[ { split },
         split = StringSplit[
             s,
@@ -693,7 +698,8 @@ fasterCellToString0[ s_String /; StringContainsQ[ s, "\!\(" ~~ Except[ "\)" ] ..
         StringJoin[ fasterCellToString0 /@ split ] /; ! MatchQ[ split, { s } ]
     ];
 
-fasterCellToString0[ a_String /; StringMatchQ[ a, "\""~~___~~("\\!"|"\!")~~___~~"\"" ] ] :=
+fasterCellToString0[ a_String ] /;
+    StringLength @ a < $maxStandardFormStringLength && StringMatchQ[ a, "\""~~___~~("\\!"|"\!")~~___~~"\"" ] :=
     With[ { res = ToString @ ToExpression[ a, InputForm ] },
         If[ TrueQ @ $showStringCharacters,
             res,
@@ -701,7 +707,8 @@ fasterCellToString0[ a_String /; StringMatchQ[ a, "\""~~___~~("\\!"|"\!")~~___~~
         ] /; FreeQ[ res, s_String /; StringContainsQ[ s, ("\\!"|"\!") ] ]
     ];
 
-fasterCellToString0[ a_String /; StringContainsQ[ a, ("\\!"|"\!") ] ] :=
+fasterCellToString0[ a_String ] /;
+    StringLength @ a < $maxStandardFormStringLength && StringContainsQ[ a, ("\\!"|"\!") ] :=
     With[ { res = stringToBoxes @ a }, res /; FreeQ[ res, s_String /; StringContainsQ[ s, ("\\!"|"\!") ] ] ];
 
 (* Other strings *)
