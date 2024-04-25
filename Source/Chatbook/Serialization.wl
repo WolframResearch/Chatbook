@@ -717,23 +717,23 @@ fasterCellToString0[ s_String ] /; StringContainsQ[
             s,
             "\!\(" ~~ b: Except[ "\)" ].. ~~ "\)" :>
                 usingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket[ "\!\("<>b<>"\)" ]
-            ];
+        ];
 
         StringJoin[ fasterCellToString0 /@ split ] /; ! MatchQ[ split, { s } ]
     ];
 
 fasterCellToString0[ a_String ] /;
     StringLength @ a < $maxStandardFormStringLength && StringMatchQ[ a, "\""~~___~~("\\!"|"\!")~~___~~"\"" ] :=
-    With[ { res = ToString @ ToExpression[ a, InputForm ] },
-        If[ TrueQ @ $showStringCharacters,
-            res,
-            StringReplace[ StringTrim[ res, "\"" ], { "\\\"" -> "\"" } ]
-        ] /; FreeQ[ res, s_String /; StringContainsQ[ s, ("\\!"|"\!") ] ]
-    ];
+        With[ { res = ToString @ ToExpression[ a, InputForm ] },
+            If[ TrueQ @ $showStringCharacters,
+                res,
+                StringReplace[ StringTrim[ res, "\"" ], { "\\\"" -> "\"" } ]
+            ] /; FreeQ[ res, s_String /; StringContainsQ[ s, ("\\!"|"\!") ] ]
+        ];
 
 fasterCellToString0[ a_String ] /;
     StringLength @ a < $maxStandardFormStringLength && StringContainsQ[ a, ("\\!"|"\!") ] :=
-    With[ { res = stringToBoxes @ a }, res /; FreeQ[ res, s_String /; StringContainsQ[ s, ("\\!"|"\!") ] ] ];
+        With[ { res = stringToBoxes @ a }, res /; FreeQ[ res, s_String /; StringContainsQ[ s, ("\\!"|"\!") ] ] ];
 
 (* Other strings *)
 fasterCellToString0[ a_String ] :=
@@ -923,7 +923,7 @@ rasterizeGraphics // endDefinition;
 (*Video*)
 fasterCellToString0[ box: TemplateBox[ _, "VideoBox1"|"VideoBox2", ___ ] ] /;
     $multimodalImages && $generateVideoPrompt :=
-    generateVideoPrompt @ box;
+        generateVideoPrompt @ box;
 
 fasterCellToString0[ box: TemplateBox[ _, "VideoBox1"|"VideoBox2", ___ ] ] :=
     serializeVideo @ box;
