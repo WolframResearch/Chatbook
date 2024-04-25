@@ -1428,7 +1428,9 @@ fasterCellToString0[ box: GridBox[ grids: { { GridBox[ _? MatrixQ, ___ ].. } }, 
 
 fasterCellToString0[ box: GridBox[ grid_? MatrixQ, ___ ] ] :=
     Module[ { strings, tr, colSizes, padded, columns },
-        strings = Map[ fasterCellToString0, grid, { 2 } ];
+        strings = Block[ { $maxOutputCellStringLength = 2*$cellPageWidth },
+            Map[ truncateString@*escapeTableCharacters@*fasterCellToString0, grid, { 2 } ]
+        ];
         (
             tr       = Transpose @ strings /. "\[Null]"|"\[InvisibleSpace]" -> "";
             tr       = Select[ tr, AnyTrue[ #, Not @* StringMatchQ[ WhitespaceCharacter... ] ] & ];
@@ -1454,6 +1456,12 @@ fasterCellToString0[ box: GridBox[ grid_? MatrixQ, ___ ] ] :=
 fasterCellToString0[ TagBox[ grid_GridBox, { _, OutputFormsDump`HeadedColumns }, ___ ] ] :=
     Block[ { $columnHeadings = True }, fasterCellToString0 @ grid ];
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*escapeTableCharacters*)
+escapeTableCharacters // beginDefinition;
+escapeTableCharacters[ str_String ] := StringReplace[ str, { "|" -> "\\|", "\n" -> " " } ];
+escapeTableCharacters // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
