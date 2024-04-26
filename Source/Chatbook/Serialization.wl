@@ -1417,6 +1417,9 @@ gridFlatten // endDefinition;
 fasterCellToString0[ GridBox[ { row: { ___ } }, ___ ] ] :=
     fasterCellToString0 @ RowBox @ Riffle[ row, "\t" ];
 
+fasterCellToString0[ TagBox[ GridBox[ items_List, ___ ], "Column" ] ] :=
+    StringRiffle[ fasterCellToString0 /@ items, "\n" ];
+
 (* Columns combined via row: *)
 fasterCellToString0[ box: GridBox[ grids: { { GridBox[ _? MatrixQ, ___ ].. } }, ___ ] ] :=
     Module[ { subGrids, dim, reshaped, spliced },
