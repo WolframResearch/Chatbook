@@ -1029,7 +1029,7 @@ fasterCellToString0[
     Cell[ BoxData[ link: TemplateBox[ _, $$refLinkTemplate, ___ ], ___ ], "InlineCode"|"InlineFormula", ___ ]
 ] /; ! $inlineCode := fasterCellToString0 @ link;
 
-fasterCellToString0[ Cell[ code_, "InlineCode"|"InlineFormula", ___ ] ] /; ! $inlineCode :=
+fasterCellToString0[ (Cell|StyleBox)[ code_, "InlineCode"|"InlineFormula", ___ ] ] /; ! $inlineCode :=
     Block[ { $escapeMarkdown = False, $inlineCode = True },
         needsBasePrompt[ "DoubleBackticks" ];
         "``" <> fasterCellToString0 @ code <> "``"
