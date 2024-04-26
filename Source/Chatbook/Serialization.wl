@@ -1439,7 +1439,7 @@ fasterCellToString0[ box: GridBox[ grid_? MatrixQ, ___ ] ] :=
             tr       = Transpose @ strings /. "\[Null]"|"\[InvisibleSpace]" -> "";
             tr       = Select[ tr, AnyTrue[ #, Not @* StringMatchQ[ WhitespaceCharacter... ] ] & ];
             colSizes = Max[ #, 1 ] & /@ Map[ StringLength, tr, { 2 } ];
-            padded   = Transpose @ Apply[ StringPadRight, Transpose @ { tr, colSizes }, { 1 } ];
+            padded   = padColumns[ colSizes, tr ];
             columns  = StringRiffle[ #, " | " ] & /@ padded;
             If[ TrueQ @ $columnHeadings,
                 StringRiffle[ "| "<>#<> " |" & /@ insertColumnDelimiter[ columns, colSizes, box ], "\n" ],
@@ -1459,6 +1459,28 @@ fasterCellToString0[ box: GridBox[ grid_? MatrixQ, ___ ] ] :=
 
 fasterCellToString0[ TagBox[ grid_GridBox, { _, OutputFormsDump`HeadedColumns }, ___ ] ] :=
     Block[ { $columnHeadings = True }, fasterCellToString0 @ grid ];
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*padColumns*)
+padColumns // beginDefinition;
+
+padColumns[ colSizes0_, tr_ ] :=
+    Module[ { colSizes },
+        colSizes = If[ AnyTrue[ colSizes0, GreaterThan[ $cellPageWidth ] ], Clip[ colSizes0, { 1, 3 } ], colSizes0 ];
+        Transpose @ Apply[ padColumn, Transpose @ { tr, colSizes }, { 1 } ]
+    ];
+
+padColumns // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*padColumn*)
+padColumn // beginDefinition;
+padColumn[ string_String, size_Integer ] := If[ StringLength @ string >= size, string, StringPadRight[ string, size ] ];
+padColumn[ strings_List, size_Integer ] := padColumn[ #, size ] & /@ strings;
+padColumn // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
@@ -1491,7 +1513,10 @@ createAlignedDelimiters[ colSizes_, GridBox[ ___, GridBoxAlignment -> { ___, "Co
     createAlignedDelimiters[ colSizes, alignments ];
 
 createAlignedDelimiters[ colSizes_, _GridBox ] :=
-    StringRepeat[ "-", Max[ #, 1 ] ] & /@ colSizes;
+    If[ AnyTrue[ colSizes, GreaterThan[ $cellPageWidth ] ],
+        StringRepeat[ "-", Min[ 3, Max[ #, 1 ] ] ] & /@ colSizes,
+        StringRepeat[ "-", Min[ $cellPageWidth, Max[ #, 1 ] ] ] & /@ colSizes
+    ];
 
 createAlignedDelimiters[ colSizes_List, alignments_List ] /; Length @ colSizes === Length @ alignments :=
     createAlignedDelimiter @@@ Transpose @ {
@@ -1511,7 +1536,7 @@ createAlignedDelimiters[ colSizes_List, { a: Except[ { _ } ]..., { repeat_ }, b:
         full       = Join[ { a }, expanded, { b } ];
         alignments = Take[ full, UpTo @ total ];
         createAlignedDelimiter @@@ Transpose @ {
-            colSizes,
+            If[ AnyTrue[ colSizes, GreaterThan[ $cellPageWidth ] ], Clip[ colSizes, { 1, 3 } ], colSizes ],
             Replace[ alignments, { (Center|"Center").. } :> ConstantArray[ Automatic, total ] ]
         }
     ];
