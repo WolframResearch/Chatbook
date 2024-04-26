@@ -1442,16 +1442,18 @@ fasterCellToString0[ box: GridBox[ grid_? MatrixQ, ___ ] ] :=
             padded   = padColumns[ colSizes, tr ];
             columns  = StringRiffle[ #, " | " ] & /@ padded;
             If[ TrueQ @ $columnHeadings,
-                StringRiffle[ "| "<>#<> " |" & /@ insertColumnDelimiter[ columns, colSizes, box ], "\n" ],
-                StringRiffle[
+                riffleTableString[ "| "<>#<> " |" & /@ insertColumnDelimiter[ columns, colSizes, box ] ],
+                riffleTableString[
                     "| "<>#<> " |" & /@ Join[
                         {
-                            StringRiffle[ StringRepeat[ " ", # ] & /@ colSizes, " | " ],
+                            If[ AnyTrue[ colSizes, GreaterThan[ $cellPageWidth ] ],
+                                StringRiffle[ StringRepeat[ " ", Min[ 3, # ] ] & /@ colSizes, " | " ],
+                                StringRiffle[ StringRepeat[ " ", # ] & /@ colSizes, " | " ]
+                            ],
                             StringRiffle[ createAlignedDelimiters[ colSizes, box ], " | " ]
                         },
                         columns
-                    ],
-                    "\n"
+                    ]
                 ]
             ]
         ) /; AllTrue[ strings, StringQ, 2 ]
@@ -1460,6 +1462,55 @@ fasterCellToString0[ box: GridBox[ grid_? MatrixQ, ___ ] ] :=
 fasterCellToString0[ TagBox[ grid_GridBox, { _, OutputFormsDump`HeadedColumns }, ___ ] ] :=
     Block[ { $columnHeadings = True }, fasterCellToString0 @ grid ];
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*riffleTableString*)
+riffleTableString // beginDefinition;
+
+riffleTableString[ rows: { ___String } ] := Enclose[
+    Catch @ Module[ { count, lengths, max, a, b, remaining, removed, message },
+        count = Length @ rows;
+        If[ count <= 3, Throw @ StringRiffle[ rows, "\n" ] ];
+        lengths = StringLength @ rows;
+
+        max = ConfirmMatch[
+            Replace[ $maxCellStringLength, Except[ _Integer ] :> $defaultMaxCellStringLength ],
+            $$size,
+            "Max"
+        ];
+
+        If[ Total @ lengths <= max, Throw @ StringRiffle[ rows, "\n" ] ];
+        a = Max[ LengthWhile[ Accumulate @ lengths, # <= Floor[ 2 * (max / 3) ] & ], 3 ];
+        remaining = ConfirmMatch[ max - Total @ lengths[[ 1;;a ]], $$size, "Remaining" ];
+        b = LengthWhile[ Accumulate @ Reverse @ lengths, # <= remaining & ];
+        removed = ConfirmMatch[ count - (a + b), $$size, "Removed" ];
+        If[ removed === 0, Throw @ StringRiffle[ rows, "\n" ] ];
+
+        message = ConfirmBy[
+            Replace[
+                removed,
+                {
+                    1 :> "one row removed",
+                    _? Positive :> ToString @ removed <> " rows removed"
+                }
+            ],
+            StringQ,
+            "Message"
+        ];
+
+        StringRiffle[
+            Join[
+                rows[[ 1;;a ]],
+                { "\[LeftSkeleton]" <> message <> "\[RightSkeleton]" },
+                rows[[ -b ;; All ]]
+            ],
+            "\n"
+        ]
+    ],
+    throwInternalFailure
+];
+
+riffleTableString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
@@ -2140,12 +2191,32 @@ escapeMarkdownCharactersQ[ ___ ] := True;
 (* ::Subsubsection::Closed:: *)
 (*truncateString*)
 truncateString // beginDefinition;
+truncateString[ str_String? truncatedTableStringQ ] := str;
 truncateString[ str_String ] := truncateString[ str, $maxOutputCellStringLength ];
 truncateString[ str_String, Automatic ] := truncateString[ str, $defaultMaxOutputCellStringLength ];
 truncateString[ str_String, max: $$size ] := stringTrimMiddle[ str, max ];
 truncateString[ other_ ] := other;
 truncateString[ other_, _Integer ] := other;
 truncateString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*truncatedTableStringQ*)
+truncatedTableStringQ // beginDefinition;
+
+truncatedTableStringQ[ str_String ] := TrueQ @ And[
+    StringStartsQ[ str, "|" ],
+    StringMatchQ[
+        str,
+        StringExpression[
+            Shortest[ ("| " ~~ Except[ "\n" ].. ~~ " |\n").. ],
+            "\[LeftSkeleton]" ~~ ("one row removed" | (DigitCharacter.. ~~ " rows removed")) ~~ "\[RightSkeleton]\n",
+            Shortest[ ("| " ~~ Except[ "\n" ].. ~~ " |" ~~ ("\n"|EndOfString))... ]
+        ]
+    ]
+];
+
+truncatedTableStringQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
