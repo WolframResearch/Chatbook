@@ -1432,7 +1432,7 @@ fasterCellToString0[ box: GridBox[ grids: { { GridBox[ _? MatrixQ, ___ ].. } }, 
 
 fasterCellToString0[ box: GridBox[ grid_? MatrixQ, ___ ] ] :=
     Module[ { strings, tr, colSizes, padded, columns },
-        strings = Block[ { $maxOutputCellStringLength = 2*$cellPageWidth },
+        strings = Block[ { $maxOutputCellStringLength = 2*$cellPageWidth, $inlineCode = True },
             Map[ truncateString@*escapeTableCharacters@*fasterCellToString0, grid, { 2 } ]
         ];
         (
