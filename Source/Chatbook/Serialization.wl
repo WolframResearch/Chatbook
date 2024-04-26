@@ -62,7 +62,8 @@ $$delimiterStyle = Alternatives[
     "WorkflowPlatformDelimiter"
 ];
 
-$$itemStyle        = "Item"|"Notes"|"FeaturedExampleMoreAbout"|"InterpreterNotes";
+$$itemStyle = "Item"|"Notes"|"FeaturedExampleMoreAbout"|"InterpreterNotes"|"BulletedText"|"MonographBulletedText";
+
 $$subItemStyle     = "Subitem";
 $$subSubItemStyle  = "Subsubitem";
 $$docSearchStyle   = "ChatQuery";
