@@ -903,29 +903,56 @@ createServiceItem // endDefinition;
 (*serviceIcon*)
 serviceIcon // beginDefinition;
 
-serviceIcon[ KeyValuePattern[ "Service" -> service_String ], service_String ] :=
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Definitions for the model submenu*)
+
+(* OpenAI is the only service that can have raw strings as a model spec: *)
+serviceIcon[ model_String, "OpenAI" ] :=
+    alignedMenuIcon[ $currentSelectionCheck, serviceIcon[ "OpenAI" ] ];
+
+(* Show a checkmark if the currently selected model belongs to this service: *)
+serviceIcon[ model: KeyValuePattern[ "Service" -> service_String ], service_String ] :=
     alignedMenuIcon[ $currentSelectionCheck, serviceIcon @ service ];
 
-serviceIcon[ _String, "OpenAI" ] :=
-    alignedMenuIcon[ $currentSelectionCheck, serviceIcon @ "OpenAI" ];
-
-serviceIcon[ _, service_String ] :=
+(* Otherwise hide the checkmark: *)
+serviceIcon[ model_, service_String ] :=
     alignedMenuIcon[ Style[ $currentSelectionCheck, ShowContents -> False ], serviceIcon @ service ];
 
-serviceIcon[ KeyValuePattern @ { "Service" -> _String, "Icon" -> icon: Except[ "" ] } ] :=
+$currentSelectionCheck = Style[ "\[Checkmark]", FontColor -> GrayLevel[ 0.25 ] ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Services specified as associations*)
+(* These services have template box definitions for icons built into the chatbook stylesheet: *)
+serviceIcon[ KeyValuePattern[ "Service" -> service: "OpenAI"|"Anthropic"|"PaLM" ] ] :=
+	serviceIcon @ service;
+
+(* Evaluate delayed icon specs: *)
+serviceIcon[ as: KeyValuePattern[ "Icon" :> icon_ ] ] :=
+    serviceIcon @ <| as, "Icon" -> icon |>;
+
+(* Use the icon specified in the service specification: *)
+serviceIcon[ KeyValuePattern @ { "Service" -> _String, "Icon" -> icon: Except[ ""|$$unspecified ] } ] :=
     icon;
 
+(* Fallback to name-based icon: *)
 serviceIcon[ KeyValuePattern[ "Service" -> service_String ] ] :=
     serviceIcon @ service;
 
-serviceIcon[ "OpenAI"       ] := chatbookIcon[ "ServiceIconOpenAI"   , True ];
-serviceIcon[ "Anthropic"    ] := chatbookIcon[ "ServiceIconAnthropic", True ];
-serviceIcon[ "PaLM"         ] := chatbookIcon[ "ServiceIconPaLM"     , True ];
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Services specified as strings*)
+
+(* Services with icons defined in template boxes: *)
+serviceIcon[ "OpenAI"    ] := chatbookIcon[ "ServiceIconOpenAI"   , True ];
+serviceIcon[ "Anthropic" ] := chatbookIcon[ "ServiceIconAnthropic", True ];
+serviceIcon[ "PaLM"      ] := chatbookIcon[ "ServiceIconPaLM"     , True ];
+
+(* Otherwise look in registered service info for an icon: *)
 serviceIcon[ service_String ] := Replace[ $availableServices[ service, "Icon" ], $$unspecified -> "" ];
 
 serviceIcon // endDefinition;
-
-$currentSelectionCheck = Style[ "\[Checkmark]", FontColor -> GrayLevel[ 0.25 ] ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
