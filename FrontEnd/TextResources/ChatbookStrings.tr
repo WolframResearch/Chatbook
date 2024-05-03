@@ -83,6 +83,10 @@
 "PersonaManagerOriginRepositoryTooltip" -> "Persona installed from the `name` paclet. Visit page \[RightGuillemet].",
 "PersonaManagerPersonaUninstallTooltip" -> "This persona cannot be uninstalled because it is provided by the `1` paclet.",
 
+"PreferencesContentNotebooksTab" -> "Notebooks",
+"PreferencesContentPersonasTab" -> "Personas",
+"PreferencesContentServicesTab" -> "Services",
+"PreferencesContentToolsTab" -> "Tools",
 "PreferencesContentEnableAssistanceLabel" -> "Enable automatic assistance",
 "PreferencesContentEnableAssistanceTooltip" -> "If enabled, automatic AI provided suggestions will be added following evaluation results.",
 "PreferencesContentPersonaLabel" -> "Persona:",
