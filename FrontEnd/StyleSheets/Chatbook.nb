@@ -1161,7 +1161,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3922429268"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3923736444"|>
   ],
   Cell[
    StyleData["Text"],
@@ -2854,7 +2854,15 @@ Notebook[
              TemplateBox[
               {
                TemplateBox[{"DivideCellsIcon"}, "ChatMenuItemToolbarIcon"],
-               "\"Explode Cells (In Place)\"",
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetExplodeCellsInPlace"
+                 ],
+                 StandardForm
+                ]
+               ],
                Hold[
                 With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
                  {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
@@ -2876,7 +2884,15 @@ Notebook[
              TemplateBox[
               {
                TemplateBox[{"OverflowIcon"}, "ChatMenuItemToolbarIcon"],
-               "\"Explode Cells (Duplicate)\"",
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetExplodeCellsDuplicate"
+                 ],
+                 StandardForm
+                ]
+               ],
                Hold[
                 With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
                  {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
@@ -2901,7 +2917,15 @@ Notebook[
                 {"HyperlinkCopyIcon"},
                 "ChatMenuItemToolbarIcon"
                ],
-               "\"Copy Exploded Cells\"",
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetCopyExplodedCells"
+                 ],
+                 StandardForm
+                ]
+               ],
                Hold[
                 With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
                  {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
@@ -2924,7 +2948,15 @@ Notebook[
              TemplateBox[
               {
                TemplateBox[{"TypesettingIcon"}, "ChatMenuItemToolbarIcon"],
-               "\"Toggle Formatting\"",
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetToggleFormatting"
+                 ],
+                 StandardForm
+                ]
+               ],
                Hold[
                 With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
                  {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
@@ -2946,7 +2978,15 @@ Notebook[
              TemplateBox[
               {
                TemplateBox[{"InPlaceIcon"}, "ChatMenuItemToolbarIcon"],
-               "\"Copy ChatObject\"",
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetCopyChatObject"
+                 ],
+                 StandardForm
+                ]
+               ],
                Hold[
                 With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
                  {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},

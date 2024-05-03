@@ -331,13 +331,13 @@ menuItem[ icon_, label_, code_ ] :=
 
 $chatOutputMenu := $chatOutputMenu = ToBoxes @ makeMenu[
     {
-        (* Icon              , Label                      , ActionName          *)
-        { "DivideCellsIcon"  , "Explode Cells (In Place)" , "ExplodeInPlace"     },
-        { "OverflowIcon"     , "Explode Cells (Duplicate)", "ExplodeDuplicate"   },
-        { "HyperlinkCopyIcon", "Copy Exploded Cells"      , "CopyExplodedCells"  },
+        (* Icon              , Label                                  , ActionName          *)
+        { "DivideCellsIcon"  , tr[ "StylesheetExplodeCellsInPlace" ]  , "ExplodeInPlace"     },
+        { "OverflowIcon"     , tr[ "StylesheetExplodeCellsDuplicate" ], "ExplodeDuplicate"   },
+        { "HyperlinkCopyIcon", tr[ "StylesheetCopyExplodedCells" ]    , "CopyExplodedCells"  },
         Delimiter,
-        { "TypesettingIcon"  , "Toggle Formatting"        , "ToggleFormatting"   },
-        { "InPlaceIcon"      , "Copy ChatObject"          , "CopyChatObject"     }
+        { "TypesettingIcon"  , tr[ "StylesheetToggleFormatting" ]     , "ToggleFormatting"   },
+        { "InPlaceIcon"      , tr[ "StylesheetCopyChatObject" ]       , "CopyChatObject"     }
     },
     GrayLevel[ 0.85 ],
     250

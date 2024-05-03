@@ -149,7 +149,12 @@
 
 "StylesheetChatWidgetButtonTooltip" -> "Send to LLM",
 "StylesheetAssistantMenuInitializerButtonTooltip" -> "Disable automatic assistance",
-"StylesheetFeedbackButtonTooltip" -> "Send feedback to Wolfram"
+"StylesheetFeedbackButtonTooltip" -> "Send feedback to Wolfram",
+"StylesheetExplodeCellsInPlace" -> "Explode Cells (In Place)",
+"StylesheetExplodeCellsDuplicate" -> "Explode Cells (Duplicate)",
+"StylesheetCopyExplodedCells" -> "Copy Exploded Cells",
+"StylesheetToggleFormatting" -> "Toggle Formatting",
+"StylesheetCopyChatObject" -> "Copy ChatObject"
 }
 @|
 @|
