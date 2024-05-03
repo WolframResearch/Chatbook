@@ -398,7 +398,15 @@ Notebook[
               TemplateBox[{}, "ChatInputIcon"],
               BaselinePosition -> Center -> Scaled[0.55]
              ],
-             StyleBox["Chat Input", "CellInsertionMenu"],
+             StyleBox[
+              Dynamic[
+               FEPrivate`FrontEndResource[
+                "ChatbookStrings",
+                "StylesheetInsertionMenuChatInput"
+               ]
+              ],
+              "CellInsertionMenu"
+             ],
              StyleBox[
               StyleBox["'", "CellInsertionMenuShortcut"],
               "CellInsertionMenuShortcut"
@@ -471,7 +479,15 @@ Notebook[
               TemplateBox[{}, "SideChatIcon"],
               BaselinePosition -> Center -> Scaled[0.55]
              ],
-             StyleBox["Side Chat", "CellInsertionMenu"],
+             StyleBox[
+              Dynamic[
+               FEPrivate`FrontEndResource[
+                "ChatbookStrings",
+                "StylesheetInsertionMenuSideChat"
+               ]
+              ],
+              "CellInsertionMenu"
+             ],
              StyleBox[
               StyleBox["''", "CellInsertionMenuShortcut"],
               "CellInsertionMenuShortcut"
@@ -1161,7 +1177,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3922429268"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3923737613"|>
   ],
   Cell[
    StyleData["Text"],

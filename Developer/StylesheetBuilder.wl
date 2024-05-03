@@ -448,8 +448,8 @@ $cellInsertionPointCell := $cellInsertionPointCell = ReplaceAll[
         item: HoldPattern[ _ :> FrontEndTokenExecute[ EvaluationNotebook[ ], "Style", "ExternalLanguage" ] ] :>
             Sequence[
                 item,
-                insertionPointMenuItem[ TemplateBox[ { }, "ChatInputIcon" ], "Chat Input", "'", "ChatInput" ],
-                insertionPointMenuItem[ TemplateBox[ { }, "SideChatIcon" ], "Side Chat", "''", "SideChat" ]
+                insertionPointMenuItem[ TemplateBox[ { }, "ChatInputIcon" ], tr[ "StylesheetInsertionMenuChatInput" ], "'", "ChatInput" ],
+                insertionPointMenuItem[ TemplateBox[ { }, "SideChatIcon" ], tr[ "StylesheetInsertionMenuSideChat" ], "''", "SideChat" ]
             ]
     }
 ];
