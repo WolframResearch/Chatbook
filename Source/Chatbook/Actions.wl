@@ -1382,7 +1382,8 @@ withChatState[ eval_ ] :=
             withChatState        = # &
         },
         $ChatHandlerData = <| |>;
-        withToolBox @ withBasePromptBuilder @ eval
+        (* cSpell: ignore multser *)
+        Quiet[ withToolBox @ withBasePromptBuilder @ eval, ServiceExecute::multser ]
     ];
 
 withChatState // endDefinition;
