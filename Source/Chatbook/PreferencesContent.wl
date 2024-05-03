@@ -189,7 +189,7 @@ createTabViewTabs // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*createTabViewTab*)
 createTabViewTab // beginDefinition;
-createTabViewTab[ name_String ] := { name, name -> preferencesContent @ name };
+createTabViewTab[ name_String ] := { name, tr[ "PreferencesContent" <> name <> "Tab" ] -> preferencesContent @ name };
 createTabViewTab // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
