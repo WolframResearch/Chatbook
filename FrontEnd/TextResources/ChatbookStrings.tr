@@ -149,7 +149,9 @@
 
 "StylesheetChatWidgetButtonTooltip" -> "Send to LLM",
 "StylesheetAssistantMenuInitializerButtonTooltip" -> "Disable automatic assistance",
-"StylesheetFeedbackButtonTooltip" -> "Send feedback to Wolfram"
+"StylesheetFeedbackButtonTooltip" -> "Send feedback to Wolfram",
+"StylesheetInsertionMenuChatInput" -> "Chat Input",
+"StylesheetInsertionMenuSideChat" -> "Side Chat"
 }
 @|
 @|
