@@ -1,6 +1,6 @@
 <|
     "BasePrompt"  -> Automatic,
-    "DisplayName" -> "Plain Chat",
+    "DisplayName" -> Dynamic @ FEPrivate`FrontEndResource[ "ChatbookStrings", "PersonaNamePlainChat" ],
     "Icon"        -> RawBoxes @ TemplateBox[ { }, "ChatIconPlainChat" ],
     "Pre"         -> "",
     "Tools"       -> { "WebSearcher", "WebImageSearcher", "WebFetcher" },

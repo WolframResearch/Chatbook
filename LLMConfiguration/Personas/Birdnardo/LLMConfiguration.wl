@@ -1,5 +1,6 @@
 <|
 	"Description"       -> "The one and only Birdnardo",
+	"DisplayName"    	-> Dynamic @ FEPrivate`FrontEndResource[ "ChatbookStrings", "PersonaNameBirdnardo" ],
 	"DocumentationLink" -> "https://resources.wolframcloud.com/PromptRepository/resources/Birdnardo/",
 	"Tools"             -> {
 		"DocumentationLookup",
