@@ -399,7 +399,7 @@ Notebook[
               BaselinePosition -> Center -> Scaled[0.55]
              ],
              StyleBox[
-              Dynamic[
+              DynamicBox[
                FEPrivate`FrontEndResource[
                 "ChatbookStrings",
                 "StylesheetInsertionMenuChatInput"
@@ -480,7 +480,7 @@ Notebook[
               BaselinePosition -> Center -> Scaled[0.55]
              ],
              StyleBox[
-              Dynamic[
+              DynamicBox[
                FEPrivate`FrontEndResource[
                 "ChatbookStrings",
                 "StylesheetInsertionMenuSideChat"
@@ -1177,7 +1177,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3924157945"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3924158197"|>
   ],
   Cell[
    StyleData["Text"],
