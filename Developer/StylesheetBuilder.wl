@@ -59,6 +59,7 @@ Get[ "Wolfram`Chatbook`" ];
 
 
 tr[name_?StringQ] := Dynamic[FEPrivate`FrontEndResource["ChatbookStrings", name]]
+trBox[name_?StringQ] := DynamicBox[FEPrivate`FrontEndResource["ChatbookStrings", name]]
 
 
 (* ::Subsection::Closed:: *)
@@ -448,8 +449,8 @@ $cellInsertionPointCell := $cellInsertionPointCell = ReplaceAll[
         item: HoldPattern[ _ :> FrontEndTokenExecute[ EvaluationNotebook[ ], "Style", "ExternalLanguage" ] ] :>
             Sequence[
                 item,
-                insertionPointMenuItem[ TemplateBox[ { }, "ChatInputIcon" ], tr[ "StylesheetInsertionMenuChatInput" ], "'", "ChatInput" ],
-                insertionPointMenuItem[ TemplateBox[ { }, "SideChatIcon" ], tr[ "StylesheetInsertionMenuSideChat" ], "''", "SideChat" ]
+                insertionPointMenuItem[ TemplateBox[ { }, "ChatInputIcon" ], trBox[ "StylesheetInsertionMenuChatInput" ], "'", "ChatInput" ],
+                insertionPointMenuItem[ TemplateBox[ { }, "SideChatIcon" ], trBox[ "StylesheetInsertionMenuSideChat" ], "''", "SideChat" ]
             ]
     }
 ];
