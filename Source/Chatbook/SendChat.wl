@@ -1789,7 +1789,7 @@ dynamicTextDisplay[ container_, formatter_, True ] := With[
             $ChatHandlerData
         |>
     },
-    formatter[ container[ "DynamicContent" ], data ]
+    conformToExpression @ formatter[ container[ "DynamicContent" ], data ]
 ];
 
 dynamicTextDisplay[ container_, formatter_, False ] /; StringQ @ container[ "DynamicContent" ] :=
@@ -2019,11 +2019,10 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
         formatter = Confirm[ getFormattingFunction @ settings, "GetFormattingFunction" ];
         toolFormatter = Confirm[ getToolFormatter @ settings, "GetToolFormatter" ];
 
-        (*FIXME: use specified ChatFormattingFunction here and figure out how to conform to TextData *)
         content = Block[ { $customToolFormatter = toolFormatter },
             ConfirmMatch[
                 If[ TrueQ @ settings[ "AutoFormat" ],
-                    TextData @ reformatTextData @ string,
+                    conformToTextData @ formatter[ string, settings ],
                     TextData @ string
                 ],
                 TextData[ _String | _List ],
@@ -2074,6 +2073,33 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
 ];
 
 reformatCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*conformToTextData*)
+conformToTextData // beginDefinition;
+conformToTextData[ text_TextData ] := text;
+conformToTextData[ text_List ] := TextData @ Flatten @ Map[ conformToTextData0, Flatten @ { text } ];
+conformToTextData[ expr_ ] := conformToTextData @ { expr };
+conformToTextData // endDefinition;
+
+
+conformToTextData0 // beginDefinition;
+conformToTextData0[ text_String ] := text;
+conformToTextData0[ (Cell|TextData)[ text_ ] ] := conformToTextData0 @ text;
+conformToTextData0[ Cell[ text_, "ChatOutput" ] ] := conformToTextData0 @ text;
+conformToTextData0[ text: $$textData ] := text;
+conformToTextData0[ boxes_BoxData ] := Cell @ boxes;
+conformToTextData0[ expr_ ] := With[ { b = ToBoxes @ expr }, conformToTextData0 @ b /; MatchQ[ b, $$textData ] ];
+conformToTextData0[ expr_ ] := Cell @ BoxData @ ToBoxes @ expr;
+conformToTextData0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*conformToExpression*)
+conformToExpression // beginDefinition;
+conformToExpression[ expr_ ] := RawBoxes @ Cell @ conformToTextData @ expr;
+conformToExpression // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
