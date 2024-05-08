@@ -1,6 +1,6 @@
 <|
     "BasePrompt"        -> { "WolframLanguageStyle" },
-    "DisplayName"       -> "Code Writer",
+    "DisplayName"       -> Dynamic @ FEPrivate`FrontEndResource[ "ChatbookStrings", "PersonaNameCodeWriter" ],
     "Icon"              -> RawBoxes @ TemplateBox[ { }, "ChatIconCodeWriter" ],
     "Tools"             -> { "DocumentationLookup", "DocumentationSearcher" },
     "Description"       -> "AI code generation with minimal commentary",
