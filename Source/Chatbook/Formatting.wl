@@ -1776,6 +1776,7 @@ codeBlockFrame // endDefinition;
 styleBox // beginDefinition;
 
 styleBox[ text_String, a___ ] := styleBox[ formatTextString @ text, a ];
+styleBox[ { link: Cell @ BoxData[ TemplateBox[ { _, ___ }, "TextRefLink", ___ ], ___ ] }, ___ ] := link;
 styleBox[ { text: _ButtonBox|_String }, a___ ] := StyleBox[ text, a ];
 styleBox[ { StyleBox[ text_, a___ ] }, b___ ] := DeleteDuplicates @ StyleBox[ text, a, b ];
 styleBox[ { Cell[ text_, a___ ] }, b___ ] := DeleteDuplicates @ Cell[ text, a, b ];
