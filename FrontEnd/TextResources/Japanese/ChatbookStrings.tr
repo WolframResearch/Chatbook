@@ -154,7 +154,9 @@
 "StylesheetExplodeCellsDuplicate" -> "Explode Cells (Duplicate)",
 "StylesheetCopyExplodedCells" -> "Copy Exploded Cells",
 "StylesheetToggleFormatting" -> "Toggle Formatting",
-"StylesheetCopyChatObject" -> "Copy ChatObject"
+"StylesheetCopyChatObject" -> "Copy ChatObject",
+"StylesheetInsertionMenuChatInput" -> "Chat Input",
+"StylesheetInsertionMenuSideChat" -> "Side Chat"
 }
 @|
 @|
