@@ -1278,7 +1278,7 @@ SetFallthroughError[personaDisplayName]
 
 personaDisplayName[name_String] := personaDisplayName[name, GetCachedPersonaData[name]]
 personaDisplayName[name_String, data_Association] := personaDisplayName[name, data["DisplayName"]]
-personaDisplayName[name_String, displayName_String] := displayName
+personaDisplayName[name_String, displayName: Except[$$unspecified]] := displayName
 personaDisplayName[name_String, _] := name
 
 (* ::**************************************************************************************************************:: *)
