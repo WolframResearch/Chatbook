@@ -139,7 +139,11 @@ createPreferencesContent // beginDefinition;
 createPreferencesContent[ ] := Enclose[
     Module[ { tabs, tabView, reset },
         (* Retrieve the dynamic content for each preferences tab, confirming that it matches the expected types: *)
-        tabs = ConfirmMatch[ createTabViewTabs[ ], { { _String, _Dynamic -> _Dynamic|_DynamicModule }.. }, "Tabs" ];
+        tabs = ConfirmMatch[
+            createTabViewTabs[ ],
+            { { _String, _Dynamic|_String -> _Dynamic|_DynamicModule }.. },
+            "Tabs"
+        ];
 
         (* Create a TabView for the preferences content, with the tab state stored in the FE's private options: *)
         tabView = TabView[

@@ -226,19 +226,40 @@ formatPersonaData[ name_String, as_Association, link_, desc_, version_, icon_, o
 
 formatPersonaData // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatName*)
 formatName // beginDefinition;
-formatName[ name_String ] := StringJoin[ Riffle[ DeleteCases[ StringTrim @ StringSplit[ name, RegularExpression[ "([A-Z])([a-z]+)" ] -> "$1$2 " ], "" ], " " ] ]
-formatName[ origin_String, name_String, link_Missing ] :=  formatName[ name ]
-formatName[ "PacletRepository", name_String, link_ ] := formatName[ name ]
-formatName[ origin_String, name_String, link_ ] :=
+
+formatName[ name_String ] := StringRiffle @ DeleteCases[
+    StringTrim @ StringSplit[ name, RegularExpression[ "([A-Z])([a-z]+)" ] -> "$1$2 " ],
+    ""
+];
+
+formatName[ name: Except[ $$unspecified ] ] :=
+    name;
+
+formatName[ origin_String, name: Except[ $$unspecified ], link_Missing ] :=
+    formatName @ name;
+
+formatName[ "PacletRepository", name: Except[ $$unspecified ], link_ ] :=
+    formatName @ name;
+
+formatName[ origin_String, name: Except[ $$unspecified ], link_ ] :=
     Hyperlink[
         Mouseover[
-            Grid[{{formatName[ name ], chatbookIcon["PeelOff", False]}}],
-            Grid[{{formatName[ name ], chatbookIcon["PeelOff-hover", False]}}]],
+            Grid @ { { formatName @ name, chatbookIcon[ "PeelOff", False ] } },
+            Grid @ { { formatName @ name, chatbookIcon[ "PeelOff-hover", False ] } }
+        ],
         link,
-        BaseStyle -> {LineBreakWithin -> False}];
+        BaseStyle -> { LineBreakWithin -> False }
+    ];
+
 formatName // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatDescription*)
 formatDescription // beginDefinition;
 formatDescription[ _Missing ] := Style["\[LongDash]", FontColor -> GrayLevel[0.808]];
 formatDescription[ desc_String ] :=
@@ -249,17 +270,26 @@ formatDescription[ desc_String ] :=
     ]&[<|"nChars" -> 30|>];
 formatDescription // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatVersion*)
 formatVersion // beginDefinition;
 formatVersion[ _Missing ] := Style["\[LongDash]", FontColor -> GrayLevel[0.808]];
 formatVersion[ version: _String|None ] := version;
 formatVersion // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatIcon*)
 formatIcon // beginDefinition;
 formatIcon[ _Missing ] := "";
 formatIcon[ KeyValuePattern[ "Default" -> icon_ ] ] := formatIcon @ icon;
 formatIcon[ icon_ ] := Pane[ icon, ImageSize -> { 20, 20 }, ImageSizeAction -> "ShrinkToFit" ];
 formatIcon // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatPacletLink*)
 formatPacletLink // beginDefinition;
 formatPacletLink[ origin_String, url_, pacletName_ ] :=
     Switch[origin,
@@ -281,6 +311,9 @@ formatPacletLink[ origin_String, url_, pacletName_ ] :=
             ""];
 formatPacletLink // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*addRemovePersonaListingCheckbox*)
 addRemovePersonaListingCheckbox // beginDefinition;
 
 addRemovePersonaListingCheckbox[ name_String ] :=
@@ -298,6 +331,9 @@ addRemovePersonaListingCheckbox[ name_String ] :=
 
 addRemovePersonaListingCheckbox // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*uninstallButton*)
 uninstallButton // beginDefinition;
 uninstallButton[ name_String, installedQ_, pacletName_String ] :=
     Button[
