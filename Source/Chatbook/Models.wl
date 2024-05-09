@@ -223,7 +223,7 @@ multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4-turbo-" 
     StringMatchQ[ name, "gpt-4-turbo-"~~DatePattern @ { "Year", "Month", "Day" } ];
 
 multimodalModelQ[ name_String? StringQ ] :=
-    StringContainsQ[ toModelName @ name, "gpt-"~~$$modelVersion~~"-vision" ];
+    StringContainsQ[ toModelName @ name, WordBoundary~~"vision"~~WordBoundary, IgnoreCase -> True ];
 
 multimodalModelQ[ KeyValuePattern[ "Multimodal" -> multimodal_ ] ] :=
     TrueQ @ multimodal;
