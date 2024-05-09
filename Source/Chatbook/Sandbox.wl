@@ -1611,24 +1611,33 @@ smallBoxesQ // endDefinition;
 (*expandNLInputBoxes*)
 expandNLInputBoxes // beginDefinition;
 
-expandNLInputBoxes[ code_String ] := expandNLInputBoxes @ stringToBoxes @ code;
-
-expandNLInputBoxes[ boxes_ ] := boxes /. {
-    RowBox @ { "\[FreeformPrompt]", "[", b__, "]" } :> With[
-        { e = Quiet @ ToExpression[ RowBox @ { "HoldComplete", "[", b, "]" }, StandardForm, expandNLInputBoxes0 ] },
-        e /; ! FailureQ @ e
-    ]
-};
+expandNLInputBoxes[ boxes0_ ] :=
+    Module[ { boxes },
+        boxes = If[ StringQ @ boxes0, stringToBoxes @ boxes0, boxes0 ];
+        boxes /. RowBox @ { "\[FreeformPrompt]", "[", b__, "]" } :>
+            With[ { expanded = expandNLInputBoxes0 @ b }, expanded /; ! FailureQ @ expanded ]
+    ];
 
 expandNLInputBoxes // endDefinition;
 
 
 expandNLInputBoxes0 // beginDefinition;
-expandNLInputBoxes0[ HoldComplete[ q_String ] ] := expandNLInputBoxes0 @ SandboxLinguisticAssistantData @ q;
-expandNLInputBoxes0[ HoldComplete[ q_String, p_ ] ] := expandNLInputBoxes0 @ SandboxLinguisticAssistantData[ q, p ];
-expandNLInputBoxes0[ KeyValuePattern[ "Parse" -> HoldComplete[ expr_ ] ] ] := MakeBoxes @ expr;
-expandNLInputBoxes0[ _ ] := $Failed;
+
+expandNLInputBoxes0[ boxes__ ] := Quiet @ ToExpression[
+    RowBox @ { "System`HoldComplete", "[", boxes, "]" },
+    StandardForm,
+    expandNLInputBoxes1
+];
+
 expandNLInputBoxes0 // endDefinition;
+
+
+expandNLInputBoxes1 // beginDefinition;
+expandNLInputBoxes1[ HoldComplete[ q_String ] ] := expandNLInputBoxes1 @ SandboxLinguisticAssistantData @ q;
+expandNLInputBoxes1[ HoldComplete[ q_String, p_ ] ] := expandNLInputBoxes1 @ SandboxLinguisticAssistantData[ q, p ];
+expandNLInputBoxes1[ KeyValuePattern[ "Parse" -> HoldComplete[ expr_ ] ] ] := MakeBoxes @ expr;
+expandNLInputBoxes1[ _ ] := $Failed;
+expandNLInputBoxes1 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
