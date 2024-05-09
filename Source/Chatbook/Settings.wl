@@ -441,12 +441,20 @@ getNamedLLMEvaluator // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*toolsEnabledQ*)
+$$disabledToolsModel = Alternatives[
+    ___ ~~ "gpt-3" ~~ ___,
+    "chat-bison-001",
+    "claude-instant-1.2",
+    "gemini-1.0-pro" ~~ ___,
+    "gemini-pro-vision",
+    "gemini-pro"
+];
+
 toolsEnabledQ[ KeyValuePattern[ "ToolsEnabled" -> enabled: True|False ] ] := enabled;
 toolsEnabledQ[ KeyValuePattern[ "ToolCallFrequency" -> freq: (_Integer|_Real)? NonPositive ] ] := False;
 toolsEnabledQ[ KeyValuePattern[ "Model" -> model_ ] ] := toolsEnabledQ @ toModelName @ model;
 toolsEnabledQ[ model: KeyValuePattern @ { "Service" -> _, "Name" -> _ } ] := toolsEnabledQ @ toModelName @ model;
-toolsEnabledQ[ "chat-bison-001" ] := False;
-toolsEnabledQ[ model_String ] := ! TrueQ @ StringContainsQ[ model, "gpt-3", IgnoreCase -> True ];
+toolsEnabledQ[ model_String ] := ! StringMatchQ[ model, $$disabledToolsModel, IgnoreCase -> True ];
 toolsEnabledQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
