@@ -77,6 +77,7 @@ $cachedTokenizerNames = {
     "chat-bison",
     "claude-3",
     "claude",
+    "generic",
     "gpt-2",
     "gpt-3.5",
     "gpt-4-turbo",
@@ -84,8 +85,8 @@ $cachedTokenizerNames = {
     "gpt-4"
 };
 
-$cachedTokenizers     = <| |>;
-$fallbackTokenizer    = "gpt-2";
+$cachedTokenizers  = <| |>;
+$fallbackTokenizer = "generic";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1305,7 +1306,7 @@ cachedTokenizer[ id_String ] := Enclose[
         tokenizer = findTokenizer @ name;
         If[ MissingQ @ tokenizer,
             (* Fallback to the GPT-2 tokenizer: *)
-            tokenizer = ConfirmMatch[ $gpt2Tokenizer, Except[ $$unspecified ], "GPT2Tokenizer" ];
+            tokenizer = ConfirmMatch[ $genericTokenizer, Except[ $$unspecified ], "GPT2Tokenizer" ];
             If[ TrueQ @ Wolfram`ChatbookInternal`$BuildingMX,
                 tokenizer, (* Avoid caching fallback values into MX definitions *)
                 cacheTokenizer[ name, tokenizer ]
@@ -1356,6 +1357,7 @@ $cachedTokenizers[ "chat-bison"   ] = ToCharacterCode[ #, "UTF8" ] &;
 $cachedTokenizers[ "gpt-4-turbo"  ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4" ] ][ # ] &;
 $cachedTokenizers[ "gpt-4-vision" ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4" ] ][ # ] &;
 $cachedTokenizers[ "claude-3"     ] = If[ graphicsQ @ #, claude3ImageTokenizer, cachedTokenizer[ "claude" ] ][ # ] &;
+$cachedTokenizers[ "generic"      ] = If[ graphicsQ @ #, { }, $gpt2Tokenizer @ # ] &;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
