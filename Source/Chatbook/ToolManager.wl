@@ -1170,8 +1170,9 @@ personaNameDisp // beginDefinition;
 personaNameDisp[ personaNames_, Dynamic[ column_ ] ] :=
     With[ { allowedIndices = Range @ Length @ personaNames },
         PaneSelector[
-            { True -> Dynamic @ FEPrivate`Part[ personaNames, column ], False -> "" },
-            Dynamic @ FEPrivate`MemberQ[ allowedIndices, column ],
+            Thread[ allowedIndices -> personaNames ],
+            Dynamic @ column,
+            "",
             BaseStyle -> { FontColor -> GrayLevel[ 0.5 ], $baseStyle },
             ImageSize -> Automatic
         ]
