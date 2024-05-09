@@ -797,10 +797,10 @@ unsetCurrentChatSettings0 // endDefinition;
 (*currentChatSettings*)
 currentChatSettings // beginDefinition;
 
-currentChatSettings[ fe: $$frontEndObject ] /; $cloudNotebooks :=
+currentChatSettings[ fe: $$frontEndObject ] /; $CloudEvaluation :=
     getGlobalChatSettings[ ];
 
-currentChatSettings[ fe: $$frontEndObject, key_String ] /; $cloudNotebooks :=
+currentChatSettings[ fe: $$frontEndObject, key_String ] /; $CloudEvaluation :=
     getGlobalChatSettings[ key ];
 
 currentChatSettings[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession ] := (
@@ -1006,7 +1006,7 @@ getPrecedingDelimiter // endDefinition;
 (* ::Subsection::Closed:: *)
 (*verifyInheritance*)
 verifyInheritance // beginDefinition;
-verifyInheritance[ obj_ ] /; $SynchronousEvaluation || $cloudNotebooks := True;
+verifyInheritance[ obj_ ] /; $SynchronousEvaluation || $CloudEvaluation := True;
 verifyInheritance[ obj_? inheritingQ ] := True;
 verifyInheritance[ obj: $$feObj ] := With[ { verified = verifyInheritance0 @ obj }, inheritingQ @ obj ];
 verifyInheritance // endDefinition;
