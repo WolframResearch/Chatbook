@@ -83,6 +83,10 @@
 "PersonaManagerOriginRepositoryTooltip" -> "Persona instalada desde el paclet `name`. Visite la p\[AAcute]gina \[RightGuillemet].",
 "PersonaManagerPersonaUninstallTooltip" -> "Esta persona no puede desinstalarse ya que ha sido proporcionada por el paclet `1`.",
 
+"PreferencesContentNotebooksTab" -> "Cuadernos",
+"PreferencesContentPersonasTab" -> "Personas",
+"PreferencesContentServicesTab" -> "Servicios",
+"PreferencesContentToolsTab" -> "Herramientas",
 "PreferencesContentEnableAssistanceLabel" -> "Habilitar asistencia autom\[AAcute]tica",
 "PreferencesContentEnableAssistanceTooltip" -> "Si ha sido habilitada, las sugerencias autom\[AAcute]ticas proporcionadas por IA ser\[AAcute]n agregadas luego de los resultados de evaluaci\[OAcute]n.",
 "PreferencesContentPersonaLabel" -> "Persona:",
