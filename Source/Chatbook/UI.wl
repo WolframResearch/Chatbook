@@ -1274,12 +1274,24 @@ styleListItem[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*personaDisplayName*)
-SetFallthroughError[personaDisplayName]
+personaDisplayName // beginDefinition;
 
-personaDisplayName[name_String] := personaDisplayName[name, GetCachedPersonaData[name]]
-personaDisplayName[name_String, data_Association] := personaDisplayName[name, data["DisplayName"]]
-personaDisplayName[name_String, displayName: Except[$$unspecified]] := displayName
-personaDisplayName[name_String, _] := name
+personaDisplayName[ name_String ] :=
+	personaDisplayName[ name, GetCachedPersonaData @ name ];
+
+personaDisplayName[ name_String, data_Association ] :=
+	personaDisplayName[ name, data[ "DisplayName" ] ];
+
+personaDisplayName[ name_String, Dynamic @ FEPrivate`FrontEndResource[ "ChatbookStrings", id_ ] ] /; $CloudEvaluation :=
+    tr @ id;
+
+personaDisplayName[ name_String, displayName: Except[ $$unspecified ] ] :=
+	displayName;
+
+personaDisplayName[ name_String, _ ] :=
+	name;
+
+personaDisplayName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
