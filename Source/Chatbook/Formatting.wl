@@ -275,18 +275,16 @@ makeResultCell0[ imageCell[ alt_String, url_String ] ] := image[ alt, url ];
 makeResultCell0[ hyperlinkCell[ label_String, url_String ] ] := hyperlink[ label, url ];
 
 makeResultCell0[ bulletCell[ whitespace_String, item_String ] ] := Flatten @ {
-    $tinyLineBreak,
+    "\n",
     whitespace,
-    StyleBox[ "\[Bullet]", FontColor -> GrayLevel[ 0.5 ] ],
+    StyleBox[ "\[Bullet]", "InlineItem", FontColor -> GrayLevel[ 0.5 ] ],
     " ",
-    reformatTextData @ item,
-    $tinyLineBreak
+    formatTextString @ item
 };
 
 makeResultCell0[ sectionCell[ n_, section_String ] ] := Flatten @ {
     "\n",
-    styleBox[ formatTextString @ section, sectionStyle @ n, "InlineSection", FontSize -> .8*Inherited ],
-    $tinyLineBreak
+    inlineSection[ section, sectionStyle @ n ]
 };
 
 makeResultCell0[ inlineToolCallCell[ string_String ] ] := (
@@ -298,6 +296,33 @@ makeResultCell0[ tableCell[ string_String ] ] :=
     makeTableCell @ string;
 
 makeResultCell0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inlineSection*)
+inlineSection // beginDefinition;
+
+inlineSection[ content_, style_String ] :=
+    inlineSection[ content, style, sectionMargins @ style ];
+
+inlineSection[ content_, style_String, margins: { { _, _ }, { _, _ } } ] := Cell[
+    BoxData @ PaneBox[ StyleBox[ ToBoxes @ content, style, ShowStringCharacters -> False ], ImageMargins -> margins ],
+    "InlineSection",
+    Background -> None
+];
+
+inlineSection[ content_, style_String, { bottom_Integer, top_Integer } ] :=
+    inlineSection[ content, style, { { 0, 0 }, { bottom, top } } ];
+
+inlineSection // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*sectionMargins*)
+sectionMargins // beginDefinition;
+sectionMargins[ "Title"|"Section"|"Subsection"|"Subsubsection" ] := { { 0, 0 }, { 5, 15 } };
+sectionMargins[ _String ] := { { 0, 0 }, { 2, 5 } };
+sectionMargins // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -384,9 +409,8 @@ texUTF8Convert0 // endDefinition;
 makeTableCell // beginDefinition;
 
 makeTableCell[ table_String ] := Flatten @ {
-    $tinyLineBreak,
-    makeTableCell0 @ table,
-    $tinyLineBreak
+    "\n",
+    makeTableCell0 @ StringTrim @ table
 };
 
 makeTableCell // endDefinition;
@@ -402,7 +426,10 @@ makeTableCell0 @ { { __String? emptyTableItemQ }, { b__String? delimiterItemQ },
 
 makeTableCell0[ { a_List, { b__String? delimiterItemQ }, c__ } ] :=
     Cell[
-        BoxData @ alignTable[ ToBoxes @ textTableForm[ { c }, TableHeadings -> { None, formatRaw /@ a } ], { b } ],
+        BoxData @ PaneBox[
+            alignTable[ ToBoxes @ textTableForm[ { c }, TableHeadings -> { None, formatRaw /@ a } ], { b } ],
+            ImageMargins -> { { 0, 0 }, { 5, 5 } }
+        ],
         "TextTableForm"
     ];
 
@@ -918,8 +945,12 @@ $textDataFormatRules = {
     ,
     StartOfLine ~~ "/retry" ~~ (WhitespaceCharacter|EndOfString) :> $discardPreviousToolCall
     ,
-    ("\n"|StartOfString) ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
-    ("\n"|StartOfString) ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ],
+    ("\n"|StartOfString).. ~~ w:" "... ~~ ("* "|"- ") ~~ item: Longest[ Except[ "\n" ].. ] :>
+        bulletCell[ w, item ]
+    ,
+    ("\n"|StartOfString).. ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :>
+        sectionCell[ StringLength @ h, sec ]
+    ,
     table: $$mdTable :> tableCell @ table
     ,
     "[`" ~~ label: Except[ "[" ].. ~~ "`](" ~~ url: Except[ ")" ].. ~~ ")" :> "[" <> label <> "]("<>url<>")",
@@ -1858,18 +1889,24 @@ attachmentBoxes // endDefinition;
 (*markdownImageBoxes*)
 markdownImageBoxes // beginDefinition;
 
-markdownImageBoxes[ "", url_String, expr_ ] := TagBox[
+markdownImageBoxes[ "", url_String, expr_ ] := PaneBox[
+    TagBox[
     cachedBoxes @ expr,
     "MarkdownImage",
     AutoDelete   -> True,
     TaggingRules -> <| "CellToStringData" -> "![]("<>url<>")" |>
+    ],
+    ImageMargins -> { { 0, 0 }, { 10, 10 } }
 ];
 
-markdownImageBoxes[ alt_String, url_String, expr_ ] := TagBox[
+markdownImageBoxes[ alt_String, url_String, expr_ ] := PaneBox[
+    TagBox[
     TooltipBox[ cachedBoxes @ expr, ToString[ alt, InputForm ] ],
     "MarkdownImage",
     AutoDelete   -> True,
     TaggingRules -> <| "CellToStringData" -> "!["<>alt<>"]("<>url<>")" |>
+    ],
+    ImageMargins -> { { 0, 0 }, { 10, 10 } }
 ];
 
 markdownImageBoxes // endDefinition;
@@ -1928,7 +1965,7 @@ resizeImage0[ img_Image? ImageQ, dims: { _Integer, _Integer } ] /; Max @ dims > 
     showResized @ ImageResize[ img, { UpTo @ $maxImageSize, UpTo @ $maxImageSize } ];
 
 resizeImage0[ img_Image? ImageQ, dims: { _Integer, _Integer } ] :=
-    Show[ img, ImageSize -> dims / 2 ];
+    Show[ img, Options[ img, ImageSize ] ];
 
 resizeImage0[ other_ ] :=
     other;

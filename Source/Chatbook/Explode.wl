@@ -50,6 +50,10 @@ explodeCell // endDefinition;
 (* ::Subsection::Closed:: *)
 (*$preprocessingRules*)
 $preprocessingRules := $preprocessingRules = Dispatch @ {
+    (* Remove "InlineSection" styling: *)
+    Cell[ BoxData @ PaneBox[ StyleBox[ text_String, style_, ___ ], ___ ], "InlineSection", ___ ] :>
+        StyleBox[ StringTrim[ text, "\"" ], style ],
+
     (* Convert TextRefLink to plain hyperlink: *)
     Cell @ BoxData[ TemplateBox[ { label_, uri_, ___ }, "TextRefLink" ], ___ ] :>
         Cell @ BoxData @ ButtonBox[
@@ -89,6 +93,8 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
 
     (* Remove nested cells: *)
     Cell @ BoxData[ cell_Cell, ___ ] :> cell,
+
+    StyleBox[ a_String, "InlineItem", b___ ] :> StyleBox[ "\n"<>a, b ],
 
     (* Format text tables: *)
     Cell[ content__, "TextTableForm", opts: OptionsPattern[ ] ] :>
