@@ -1062,6 +1062,9 @@ fasterCellToString0[ TemplateBox[ { sep_, items__ }, "RowWithSeparator" ] ] :=
 fasterCellToString0[ TemplateBox[ { a_, ___ }, "PrettyTooltipTemplate", ___ ] ] := fasterCellToString0 @ a;
 
 (* Control-Equal Input *)
+fasterCellToString0[ TemplateBox[ KeyValuePattern[ "query" -> query_String ], "LinguisticAssistantTemplate" ] ] :=
+    "\[FreeformPrompt][\""<>query<>"\"]";
+
 fasterCellToString0[ TemplateBox[ KeyValuePattern[ "boxes" -> box_ ], "LinguisticAssistantTemplate" ] ] :=
     fasterCellToString0 @ box;
 
