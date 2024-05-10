@@ -9,7 +9,18 @@ Begin[ "`Private`" ];
 Needs[ "Wolfram`Chatbook`"        ];
 Needs[ "Wolfram`Chatbook`Common`" ];
 
-$$newCellStyle = "Section"|"Subsection"|"Subsubsection"|"Subsubsubsection"|"Item"|"Input"|"ExternalLanguage"|"Program";
+$$newCellStyle = Alternatives[
+    "ExternalLanguage",
+    "Input",
+    "Item",
+    "Program",
+    "Section",
+    "Subsection",
+    "Subsubsection",
+    "Subsubsubsection",
+    "TextTableForm",
+    "Title"
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
