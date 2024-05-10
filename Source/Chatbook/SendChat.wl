@@ -944,11 +944,13 @@ checkResponse // endDefinition;
 writeResult // beginDefinition;
 
 writeResult[ settings_, container_, cell_, as_Association ] := Enclose[
-    Module[ { log, processed, body, data },
+    Catch @ Module[ { log, processed, body, data },
 
         If[ TrueQ @ $AutomaticAssistance,
             NotebookDelete @ Cells[ PreviousCell @ cell, AttachedCell -> True, CellStyle -> "MinimizedChatIcon" ]
         ];
+
+        If[ settings[ "BypassResponseChecking" ], Throw @ writeReformattedCell[ settings, container, cell ] ];
 
         log = ConfirmMatch[ Internal`BagPart[ $debugLog, All ], { ___Association }, "DebugLog" ];
         processed = StringJoin @ Cases[ log, KeyValuePattern[ "BodyChunkProcessed" -> s_String ] :> s ];

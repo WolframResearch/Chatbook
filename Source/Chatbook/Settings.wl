@@ -41,6 +41,7 @@ $defaultChatSettings = <|
     "Authentication"            -> Automatic,
     "AutoFormat"                -> True,
     "BasePrompt"                -> Automatic,
+    "BypassResponseChecking"    -> False,
     "ChatContextPreprompt"      -> Automatic,
     "ChatDrivenNotebook"        -> False,
     "ChatHistoryLength"         -> 100,
