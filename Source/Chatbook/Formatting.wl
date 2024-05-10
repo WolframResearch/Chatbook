@@ -77,7 +77,8 @@ $externalLanguageRules = Replace[
     { 1 }
 ];
 
-$$mdRow1  = WhitespaceCharacter... ~~ "|" ~~ Except[ "\n" ]... ~~ "|" ~~ WhitespaceCharacter... ~~ ("\n"|EndOfString);
+$$ws      = Shortest[ WhitespaceCharacter... ];
+$$mdRow1  = $$ws ~~ "|" ~~ Except[ "\n" ]... ~~ "|" ~~ $$ws ~~ ("\n"|EndOfString);
 $$mdRow2  = Except[ "\n" ].. ~~ Repeated[ ("|" ~~ Except[ "\n" ]...), { 2, Infinity } ] ~~ ("\n"|EndOfString);
 $$mdRow   = $$mdRow1 | $$mdRow2;
 $$mdTable = $$mdRow ~~ $$mdRow ..;
