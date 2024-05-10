@@ -1025,6 +1025,16 @@ $stringFormatRules = {
 
     "~~" ~~ text: Except[ "~" ].. ~~ "~~" /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontVariations -> { "StrikeThrough" -> True } ],
+
+    "``" ~~ code__ ~~ "``" /; StringFreeQ[ code, "``" ] :>
+        makeResultCell @ inlineCodeCell @ code,
+
+    "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`" /; inlineSyntaxQ @ code :>
+        makeResultCell @ inlineCodeCell @ code,
+
+    "`" ~~ code: Except[ "`"|"\n" ].. ~~ "`" :>
+        makeResultCell @ inlineCodeCell @ code,
+
     "*" ~~ text: Except[ "*" ].. ~~ "*" /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontSlant -> Italic ],
 
@@ -1893,20 +1903,20 @@ markdownImageBoxes // beginDefinition;
 
 markdownImageBoxes[ "", url_String, expr_ ] := PaneBox[
     TagBox[
-    cachedBoxes @ expr,
-    "MarkdownImage",
-    AutoDelete   -> True,
-    TaggingRules -> <| "CellToStringData" -> "![]("<>url<>")" |>
+        cachedBoxes @ expr,
+        "MarkdownImage",
+        AutoDelete   -> True,
+        TaggingRules -> <| "CellToStringData" -> "![]("<>url<>")" |>
     ],
     ImageMargins -> { { 0, 0 }, { 10, 10 } }
 ];
 
 markdownImageBoxes[ alt_String, url_String, expr_ ] := PaneBox[
     TagBox[
-    TooltipBox[ cachedBoxes @ expr, ToString[ alt, InputForm ] ],
-    "MarkdownImage",
-    AutoDelete   -> True,
-    TaggingRules -> <| "CellToStringData" -> "!["<>alt<>"]("<>url<>")" |>
+        TooltipBox[ cachedBoxes @ expr, ToString[ alt, InputForm ] ],
+        "MarkdownImage",
+        AutoDelete   -> True,
+        TaggingRules -> <| "CellToStringData" -> "!["<>alt<>"]("<>url<>")" |>
     ],
     ImageMargins -> { { 0, 0 }, { 10, 10 } }
 ];
