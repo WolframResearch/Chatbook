@@ -1023,6 +1023,8 @@ $stringFormatRules = {
     "__" ~~ text: Except[ "_" ].. ~~ "__" /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontWeight -> Bold ],
 
+    "~~" ~~ text: Except[ "~" ].. ~~ "~~" /; StringFreeQ[ text, "\n" ] :>
+        styleBox[ text, FontVariations -> { "StrikeThrough" -> True } ],
     "*" ~~ text: Except[ "*" ].. ~~ "*" /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontSlant -> Italic ],
 
