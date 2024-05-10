@@ -606,6 +606,8 @@ $globalStringReplacements = {
     "\[RightAssociation]"          -> "|>",
     "\[RightSkeleton]"             -> "\:00BB",
     "\[Rule]"                      -> "->",
+    "\n\n" ~~ Longest[ "\n".. ]    -> "\n\n",
+    "```\n```"                     -> "```\n\n```",
     "\n\n\t\n"                     -> "\n",
     "``$$" ~~ math__ ~~ "$$``"     :> "$$"<>math<>"$$",
     link: ("``[" ~~ Except[ "]" ].. ~~ "](" ~~ Except[ ")" ].. ~~ ")``") :> StringTrim[ link, "``" ]
@@ -668,6 +670,13 @@ fasterCellToString0[ (Cell|StyleBox)[ a_, $$subsectionStyle, ___ ] ] := "### "<>
 fasterCellToString0[ (Cell|StyleBox)[ a_, $$subsubsectionStyle, ___ ] ] := "#### "<>fasterCellToString0 @ a;
 fasterCellToString0[ (Cell|StyleBox)[ a_, $$subsubsubsectionStyle, ___ ] ] := "##### "<>fasterCellToString0 @ a;
 fasterCellToString0[ (Cell|StyleBox)[ a_, $$subsubsubsubsectionStyle, ___ ] ] := "###### "<>fasterCellToString0 @ a;
+
+fasterCellToString0[ Cell[ BoxData @ PaneBox[ StyleBox[ box_, style_String, ___ ], ___ ], "InlineSection", ___ ] ] :=
+    StringJoin[
+        "\n",
+        fasterCellToString0 @ Cell[ StringTrim[ box, "\"" ], style ],
+        "\n"
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -1062,6 +1071,9 @@ fasterCellToString0[ TemplateBox[ { sep_, items__ }, "RowWithSeparator" ] ] :=
 fasterCellToString0[ TemplateBox[ { a_, ___ }, "PrettyTooltipTemplate", ___ ] ] := fasterCellToString0 @ a;
 
 (* Control-Equal Input *)
+fasterCellToString0[ TemplateBox[ KeyValuePattern[ "query" -> query_String ], "LinguisticAssistantTemplate" ] ] :=
+    "\[FreeformPrompt][\""<>query<>"\"]";
+
 fasterCellToString0[ TemplateBox[ KeyValuePattern[ "boxes" -> box_ ], "LinguisticAssistantTemplate" ] ] :=
     fasterCellToString0 @ box;
 
