@@ -79,6 +79,10 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
     (* Remove nested cells: *)
     Cell @ BoxData[ cell_Cell, ___ ] :> cell,
 
+    (* Format text tables: *)
+    Cell[ content__, "TextTableForm", opts: OptionsPattern[ ] ] :>
+        Cell[ content, "TextTableForm", "Text", opts ],
+
     (* Remove extra style overrides from external language cells: *)
     Cell[ content_, "ExternalLanguage", OrderlessPatternSequence[ System`CellEvaluationLanguage -> lang_, __ ] ] :>
         Cell[ content, "ExternalLanguage", System`CellEvaluationLanguage -> lang ],
