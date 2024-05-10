@@ -52,10 +52,11 @@ $wlCodeString = Longest @ Alternatives[
 
 $resultCellCache = <| |>;
 
-sectionStyle[ 1 ] := "Section";
-sectionStyle[ 2 ] := "Subsection";
-sectionStyle[ 3 ] := "Subsubsection";
-sectionStyle[ 4 ] := "Subsubsubsection";
+sectionStyle[ 1 ] := "Title";
+sectionStyle[ 2 ] := "Section";
+sectionStyle[ 3 ] := "Subsection";
+sectionStyle[ 4 ] := "Subsubsection";
+sectionStyle[ 5 ] := "Subsubsubsection";
 sectionStyle[ _ ] := "Subsubsubsubsection";
 
 $tinyLineBreak = StyleBox[ "\n", "TinyLineBreak", FontSize -> 3 ];
