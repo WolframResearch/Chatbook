@@ -323,15 +323,18 @@ autoMaxContextTokens // endDefinition;
 
 autoMaxContextTokens0 // beginDefinition;
 autoMaxContextTokens0[ name_String ] := autoMaxContextTokens0 @ StringSplit[ name, "-"|Whitespace ];
-autoMaxContextTokens0[ { ___, "gpt", "4", "vision"  , ___ } ] := 2^17;
-autoMaxContextTokens0[ { ___, "gpt", "4", "turbo"   , ___ } ] := 2^17;
-autoMaxContextTokens0[ { ___, "claude", "2"         , ___ } ] := 10^5;
-autoMaxContextTokens0[ { ___, "16k"                 , ___ } ] := 2^14;
-autoMaxContextTokens0[ { ___, "32k"                 , ___ } ] := 2^15;
-autoMaxContextTokens0[ { ___, "gpt", "4"            , ___ } ] := 2^13;
-autoMaxContextTokens0[ { ___, "gpt", "3.5"          , ___ } ] := 2^12;
-autoMaxContextTokens0[ { ___, "chat", "bison", "001", ___ } ] := 20000;
-autoMaxContextTokens0[ _List                                ] := 2^12;
+autoMaxContextTokens0[ { ___, "gpt", "4", "vision"          , ___ } ] := 2^17;
+autoMaxContextTokens0[ { ___, "gpt", "4", "turbo"           , ___ } ] := 2^17;
+autoMaxContextTokens0[ { ___, "claude", "2"                 , ___ } ] := 10^5;
+autoMaxContextTokens0[ { ___, "claude", "2.1"|"3"           , ___ } ] := 2*10^5;
+autoMaxContextTokens0[ { ___, "16k"                         , ___ } ] := 2^14;
+autoMaxContextTokens0[ { ___, "32k"                         , ___ } ] := 2^15;
+autoMaxContextTokens0[ { ___, "gpt", "4"                    , ___ } ] := 2^13;
+autoMaxContextTokens0[ { ___, "gpt", "3.5"                  , ___ } ] := 2^12;
+autoMaxContextTokens0[ { ___, "chat", "bison", "001"        , ___ } ] := 20000;
+autoMaxContextTokens0[ { ___, "gemini", ___, "pro", "vision", ___ } ] := 12288;
+autoMaxContextTokens0[ { ___, "gemini", ___, "pro"          , ___ } ] := 30720;
+autoMaxContextTokens0[ _List                                        ] := 2^12;
 autoMaxContextTokens0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -438,12 +441,20 @@ getNamedLLMEvaluator // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*toolsEnabledQ*)
+$$disabledToolsModel = Alternatives[
+    ___ ~~ "gpt-3" ~~ ___,
+    "chat-bison-001",
+    "claude-instant-1.2",
+    "gemini-1.0-pro" ~~ ___,
+    "gemini-pro-vision",
+    "gemini-pro"
+];
+
 toolsEnabledQ[ KeyValuePattern[ "ToolsEnabled" -> enabled: True|False ] ] := enabled;
 toolsEnabledQ[ KeyValuePattern[ "ToolCallFrequency" -> freq: (_Integer|_Real)? NonPositive ] ] := False;
 toolsEnabledQ[ KeyValuePattern[ "Model" -> model_ ] ] := toolsEnabledQ @ toModelName @ model;
 toolsEnabledQ[ model: KeyValuePattern @ { "Service" -> _, "Name" -> _ } ] := toolsEnabledQ @ toModelName @ model;
-toolsEnabledQ[ "chat-bison-001" ] := False;
-toolsEnabledQ[ model_String ] := ! TrueQ @ StringContainsQ[ model, "gpt-3", IgnoreCase -> True ];
+toolsEnabledQ[ model_String ] := ! StringMatchQ[ model, $$disabledToolsModel, IgnoreCase -> True ];
 toolsEnabledQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
