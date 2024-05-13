@@ -207,6 +207,9 @@ multimodalModelQ[ "gpt-4-turbo" ] :=
 multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "claude-3" ] :=
     True;
 
+multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4o" ] :=
+    True;
+
 multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4-turbo-" ] :=
     StringMatchQ[ name, "gpt-4-turbo-"~~DatePattern @ { "Year", "Month", "Day" } ];
 
@@ -302,6 +305,10 @@ modelNameData0[ { before__, s_String, "vision" } ] :=
 
 modelNameData0[ { "GPT", version_String, rest___ } ] /; StringStartsQ[ version, DigitCharacter.. ] :=
     modelNameData0 @ { "GPT-"<>version, rest };
+
+(* cSpell: ignore omni *)
+modelNameData0[ { "GPT-4o", rest___ } ] :=
+    modelNameData0 @ { "GPT-4", "Omni", rest };
 
 modelNameData0[ parts: { __String } ] :=
 	<| "BaseName" -> StringRiffle @ Capitalize @ parts |>;
