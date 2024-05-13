@@ -30,7 +30,35 @@ Needs[ "Wolfram`Chatbook`FrontEnd`" ];
 Needs[ "Wolfram`Chatbook`Sandbox`"  ];
 Needs[ "Wolfram`Chatbook`Tools`"    ];
 
-(* FIXME: Use ParagraphSpacing to squeeze text closer together *)
+(* TODO
+
+Block quotes:
+
+Grid[
+    {
+        {
+            Pane[
+                "Block quotes are useful for quoting someone or highlighting a piece of text.",
+                ImageMargins -> 5,
+                ImageSize -> { Full, Automatic },
+                BaseStyle -> { "Text", FontColor -> GrayLevel[ 0.35 ] }
+            ]
+        }
+    },
+    Dividers -> { 1 -> Directive[ LightBlue, AbsoluteThickness[ 4 ] ], False },
+    Background -> GrayLevel[ 1 ]
+]
+
+Delimiters:
+
+Grid[
+    { { "" }, { "" } },
+    Dividers -> Center,
+    ItemSize -> { Fit, Automatic },
+    FrameStyle -> Directive[ GrayLevel[ 0.8 ], AbsoluteThickness[ 1 ] ]
+]
+
+*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
