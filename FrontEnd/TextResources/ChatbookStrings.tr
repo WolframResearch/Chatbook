@@ -143,6 +143,7 @@
 "UIModelsNoList" -> "Connect for model list",
 "UIModelsFineTuned" -> "Fine Tuned Models",
 "UIModelsSnapshot" -> "Snapshot Models",
+"UIModelsPreview" -> "Preview Models",
 "UIAdvancedSettings" -> "Advanced Settings",
 "UIAdvancedTemperature" -> "Temperature",
 "UIAdvancedToolCallFrequency" -> "Tool Call Frequency",
