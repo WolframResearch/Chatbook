@@ -31,6 +31,7 @@ Needs[ "Wolfram`Chatbook`UI`"               ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $preferencesWidth        = 640;
+$cloudPreferencesHeight  = 400;
 $cloudEvaluationNotebook = None;
 
 $preferencesPages = { "Notebooks", "Services", "Personas", "Tools" };
@@ -160,7 +161,7 @@ createPreferencesContent[ ] := Enclose[
         reset = Pane[ $resetButton, ImageMargins -> { { 20, 0 }, { 0, 10 } }, ImageSize -> $preferencesWidth ];
 
         (* Arrange the TabView and reset button in a Grid layout with vertical spacers: *)
-        Grid[
+        makeScrollableInCloud @ Grid[
             {
                 $verticalSpacer,
                 { tabView, "" },
@@ -180,6 +181,22 @@ createPreferencesContent[ ] := Enclose[
 ];
 
 createPreferencesContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeScrollableInCloud*)
+makeScrollableInCloud // beginDefinition;
+
+makeScrollableInCloud[ expr_ ] /; $CloudEvaluation :=
+    Pane[ Pane[ expr, ImageMargins -> { { 0, 10 }, { 0, 0 } } ],
+          ImageSize  -> { Automatic, $cloudPreferencesHeight },
+          Scrollbars -> { None, True }
+    ];
+
+makeScrollableInCloud[ expr_ ] :=
+    Pane @ expr;
+
+makeScrollableInCloud // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
