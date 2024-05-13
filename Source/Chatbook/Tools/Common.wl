@@ -67,11 +67,12 @@ $webSessionVisible       = False;
 
 $DefaultToolOptions = <|
     "WolframLanguageEvaluator" -> <|
-        "AppendURIPrompt"          -> False,
         "AllowedExecutePaths"      -> Automatic,
         "AllowedReadPaths"         -> All,
         "AllowedWritePaths"        -> Automatic,
+        "AppendURIPrompt"          -> False,
         "EvaluationTimeConstraint" -> 60,
+        "Method"                   -> Automatic,
         "PingTimeConstraint"       -> 30
     |>,
     "WebFetcher" -> <|
