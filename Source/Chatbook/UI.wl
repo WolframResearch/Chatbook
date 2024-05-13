@@ -1088,6 +1088,7 @@ menuModelGroup // endDefinition;
 (*modelGroupName*)
 modelGroupName // beginDefinition;
 modelGroupName[ KeyValuePattern[ "FineTuned" -> True ] ] := trRaw[ "UIModelsFineTuned" ];
+modelGroupName[ KeyValuePattern[ "Preview"   -> True ] ] := trRaw[ "UIModelsPreview"   ];
 modelGroupName[ KeyValuePattern[ "Snapshot"  -> True ] ] := trRaw[ "UIModelsSnapshot"  ];
 modelGroupName[ _ ] := None;
 modelGroupName // endDefinition;

@@ -180,31 +180,16 @@ toModelName0 // endDefinition;
 (* ::Subsection::Closed:: *)
 (*snapshotModelQ*)
 snapshotModelQ // beginDefinition;
-
-snapshotModelQ[ name_String? fineTunedModelQ ] := snapshotModelQ[ name ] =
-    snapshotModelQ @ StringSplit[ name, ":" ][[ 2 ]];
-
-snapshotModelQ[ name_String? StringQ ] := snapshotModelQ[ name ] =
-    StringMatchQ[
-        toModelName @ name,
-        Alternatives[
-            "gpt-" ~~ __ ~~ "-" ~~ Repeated[ DigitCharacter, { 4 } ] ~~ (""|"-vision") ~~ (""|"-preview"),
-            "gpt-" ~~ __ ~~ "-" ~~ DatePattern @ { "Year", "Month", "Day" } ~~ (""|"-vision") ~~ (""|"-preview"),
-            __ ~~ "-" ~~ Repeated[ DigitCharacter, { 8 } ]
-        ]
-    ];
-
-snapshotModelQ[ other_ ] :=
-    With[ { name = toModelName @ other }, snapshotModelQ @ name /; StringQ @ name ];
-
+snapshotModelQ[ model_ ] := snapshotModelQ[ model, modelNameData @ model ];
+snapshotModelQ[ model_, KeyValuePattern[ "Date" -> date_ ] ] := modelDateSpecQ @ date;
 snapshotModelQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*fineTunedModelQ*)
 fineTunedModelQ // beginDefinition;
-fineTunedModelQ[ name_String ] := StringMatchQ[ toModelName @ name, "ft:"~~__~~":"~~__ ];
-fineTunedModelQ[ other_ ] := With[ { name = toModelName @ other }, fineTunedModelQ @ name /; StringQ @ name ];
+fineTunedModelQ[ model_ ] := fineTunedModelQ[ model, modelNameData @ model ];
+fineTunedModelQ[ model_, KeyValuePattern[ "FineTuned" -> bool: True|False ] ] := bool;
 fineTunedModelQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -213,10 +198,16 @@ fineTunedModelQ // endDefinition;
 (* FIXME: this should be a queryable property from LLMServices: *)
 multimodalModelQ // beginDefinition;
 
+multimodalModelQ[ KeyValuePattern[ "Multimodal" -> multimodal_ ] ] :=
+    TrueQ @ multimodal;
+
 multimodalModelQ[ "gpt-4-turbo" ] :=
     True;
 
 multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "claude-3" ] :=
+    True;
+
+multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4o" ] :=
     True;
 
 multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4-turbo-" ] :=
@@ -224,9 +215,6 @@ multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4-turbo-" 
 
 multimodalModelQ[ name_String? StringQ ] :=
     StringContainsQ[ toModelName @ name, WordBoundary~~"vision"~~WordBoundary, IgnoreCase -> True ];
-
-multimodalModelQ[ KeyValuePattern[ "Multimodal" -> multimodal_ ] ] :=
-    TrueQ @ multimodal;
 
 multimodalModelQ[ other_ ] :=
     With[ { name = toModelName @ other },
@@ -237,58 +225,212 @@ multimodalModelQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*modelDisplayName*)
-modelDisplayName // beginDefinition;
+(*modelNameData*)
+modelNameData // beginDefinition;
 
-modelDisplayName[ KeyValuePattern[ "DisplayName" -> name_String ] ] :=
-    name;
+modelNameData[ data: KeyValuePattern @ {
+    "Name"         -> _String,
+    "BaseName"     -> _String,
+    "Date"         -> _? modelDateSpecQ | None,
+    "Preview"      -> True|False,
+    "FineTuned"    -> True|False,
+    "Organization" -> _String|None,
+    "ID"           -> _String|None
+} ] := modelNameData[ data ] = KeySort @ data;
 
-modelDisplayName[ KeyValuePattern[ "Name" -> name_String ] ] :=
-    modelDisplayName @ name;
+modelNameData[ as: KeyValuePattern[ "Name" -> name_String ] ] :=
+    <| modelNameData @ name, DeleteCases[ as, $$unspecified|None ] |>;
 
-modelDisplayName[{name_?StringQ, settings_?AssociationQ}] :=
-	modelDisplayName[name]
+modelNameData[ model0_ ] := Enclose[
+    Module[ { model, defaults, data },
 
-modelDisplayName[ model_String ] := modelDisplayName[ model ] =
-	If[ StringMatchQ[ model, "ft:"~~__~~":"~~__ ],
-        fineTunedModelName @ model,
-        modelDisplayName @ StringSplit[ model, "-"|" " ]
+        model = ConfirmBy[ toModelName @ model0, StringQ, "Model" ];
+
+        defaults = <|
+            "Name"         -> model,
+            "Date"         -> None,
+            "Preview"      -> False,
+            "FineTuned"    -> False,
+            "Organization" -> None,
+            "ID"           -> None
+        |>;
+
+        data = ConfirmBy[
+            If[ StringMatchQ[ model, "ft:" ~~ __ ~~ ":" ~~ __ ],
+                fineTunedModelNameData @ model,
+                modelNameData0 @ model
+            ],
+            AssociationQ,
+            "Data"
+        ];
+
+        data = <| defaults, data |>;
+        data[ "DisplayName" ] = ConfirmBy[ createModelDisplayName @ data, StringQ, "DisplayName" ];
+        data //= KeySort;
+
+        modelNameData[ model0 ] = ConfirmBy[ data, AssociationQ, "FullData" ]
+    ],
+    throwInternalFailure
+];
+
+modelNameData // endDefinition;
+
+
+modelNameData0 // beginDefinition;
+
+modelNameData0[ model_String ] :=
+    modelNameData0 @ StringSplit[ model, "-"|" " ]
+
+modelNameData0[ { "gpt", rest___ } ] :=
+    modelNameData0 @ { "GPT", rest };
+
+modelNameData0[ { before__, s_String } ] :=
+    With[ { date = modelDate @ s },
+        <| "Date" -> date, modelNameData0 @ { before } |> /; modelDateSpecQ @ date
     ];
 
-modelDisplayName[ { "gpt", rest___ } ] :=
-	modelDisplayName @ { "GPT", rest };
-
-modelDisplayName[ { before__, date_String } ] /; StringMatchQ[ date, Repeated[ DigitCharacter, { 4 } ] ] :=
-    modelDisplayName @ { before, DateObject @ Flatten @ { 0, ToExpression @ StringPartition[ date, 2 ] } };
-
-modelDisplayName[ { before__, date_String } ] /; StringMatchQ[ date, Repeated[ DigitCharacter, { 8 } ] ] :=
-    modelDisplayName @ { before, DateObject @ StringInsert[ date, "-", { 5, 7 } ] };
-
-modelDisplayName[ { before__, y_String, m_String, d_String } ] :=
+modelNameData0[ { before__, y_String, m_String, d_String } ] :=
     With[ { date = StringRiffle[ { y, m, d }, "-" ] },
-        modelDisplayName @ { before, DateObject @ date } /;
+        <| "Date" -> DateObject @ date, modelNameData0 @ { before } |> /;
             StringMatchQ[ date, DatePattern @ { "Year", "Month", "Day" } ]
     ];
 
-modelDisplayName[ { before__, "preview" } ] :=
-    modelDisplayName @ { before } <> " (Preview)";
+modelNameData0[ { before__, "preview" } ] :=
+    <| "Preview" -> True, modelNameData0 @ { before } |>;
 
-modelDisplayName[ { before__, "vision" } ] :=
-    modelDisplayName @ { before } <> " Vision";
+modelNameData0[ { before__, s_String, "vision" } ] :=
+    With[ { date = modelDate @ s },
+        <| "Date" -> date, modelNameData0 @ { before, "vision" } |> /; modelDateSpecQ @ date
+    ];
 
-modelDisplayName[ { before___, date_DateObject } ] :=
-    modelDisplayName @ {
-		before,
-		"(" <> DateString[ date, "MonthName" ] <> " " <> DateString[ date, "DayShort" ] <> ")"
-	};
+modelNameData0[ { "GPT", version_String, rest___ } ] /; StringStartsQ[ version, DigitCharacter.. ] :=
+    modelNameData0 @ { "GPT-"<>version, rest };
 
-modelDisplayName[ { "GPT", version_String, rest___ } ] /; StringStartsQ[ version, DigitCharacter.. ] :=
-    modelDisplayName @ { "GPT-"<>version, rest };
+(* cSpell: ignore omni *)
+modelNameData0[ { "GPT-4o", rest___ } ] :=
+    modelNameData0 @ { "GPT-4", "Omni", rest };
 
-modelDisplayName[ parts: { __String } ] :=
-	StringRiffle @ Capitalize @ parts;
+modelNameData0[ parts: { __String } ] :=
+	<| "BaseName" -> StringRiffle @ Capitalize @ parts |>;
 
+modelNameData0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*modelDateSpecQ*)
+modelDateSpecQ // beginDefinition;
+modelDateSpecQ[ date_DateObject ] := DateObjectQ @ date;
+modelDateSpecQ[ "Latest" ] := True;
+modelDateSpecQ[ _ ] := False
+modelDateSpecQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createModelDisplayName*)
+createModelDisplayName // beginDefinition;
+
+createModelDisplayName[ KeyValuePattern @ {
+    "BaseName"     -> base_String,
+    "Date"         -> date0_,
+    "Preview"      -> preview0_,
+    "Organization" -> org0_,
+    "ID"           -> id0_
+} ] :=
+    Module[ { date, preview, id, org, ftID },
+        date    = Replace[ modelDateString @ date0, Except[ _String? StringQ ] -> Nothing ];
+        preview = If[ TrueQ @ preview0, "(Preview)", Nothing ];
+        id      = If[ StringQ @ id0, id0, Nothing ];
+        org     = If[ StringQ @ org0, org0, Nothing ];
+        ftID    = If[ StringQ @ id || StringQ @ org, "(" <> StringRiffle[ { id, org }, "::" ] <> ")", Nothing ];
+        StringReplace[
+            StringRiffle[ { base, date, preview, ftID }, " " ],
+            {
+                ") (Preview)" -> " Preview)",
+                ") (" -> ", "
+            }
+        ]
+    ];
+
+createModelDisplayName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*modelDateString*)
+modelDateString // beginDefinition;
+modelDateString[ None ] := None;
+modelDateString[ "Latest" ] := "(Latest)";
+modelDateString[ date_DateObject ] := modelDateString[ date, Quiet @ DateString[ date, "LocaleDateShort" ] ];
+modelDateString[ date_DateObject, string_String ] := "(" <> string <> ")";
+modelDateString[ date_DateObject, _ ] := With[ { s = DateString @ date }, modelDateString[ date, s ] /; StringQ @ s ];
+modelDateString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*fineTunedModelNameData*)
+fineTunedModelNameData // beginDefinition;
+
+fineTunedModelNameData[ name_String ] :=
+    fineTunedModelNameData @ StringSplit[ name, "::" ];
+
+fineTunedModelNameData[ { before_String, id_String } ] :=
+    fineTunedModelNameData @ { StringSplit[ before, ":" ], id };
+
+fineTunedModelNameData[ { { "ft", rest__ }, id_String } ] :=
+    fineTunedModelNameData @ { { rest }, id };
+
+fineTunedModelNameData[ { { name_String, org_String }, id_String } ] := <|
+    modelNameData0 @ name,
+    "Organization" -> org,
+    "ID" -> id,
+    "FineTuned" -> True
+|>;
+
+fineTunedModelNameData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*modelDisplayName*)
+modelDisplayName // beginDefinition;
+modelDisplayName[ model_ ] := modelDisplayName[ model, modelNameData @ model ];
+modelDisplayName[ model_, KeyValuePattern[ "DisplayName" -> name_String ] ] := name;
 modelDisplayName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*modelDate*)
+modelDate // beginDefinition;
+
+modelDate[ KeyValuePattern[ "Date" -> date_? modelDateSpecQ ] ] :=
+    date;
+
+modelDate[ KeyValuePattern[ "Name" -> name_String ] ] :=
+    modelDate @ name;
+
+modelDate[ model_String ] := modelDate[ model ] =
+    modelDate @ StringSplit[ model, "-"|" " ];
+
+modelDate[ { ___, "latest" } ] :=
+    "Latest";
+
+(* Hack for OpenAI's poor choice of 4 digit dates: *)
+modelDate[ { ___, "0125" } ] :=
+    DateObject @ { 2024, 1, 25 };
+
+modelDate[ { ___, date_String } ] /; StringMatchQ[ date, Repeated[ DigitCharacter, { 4 } ] ] :=
+    DateObject @ Flatten @ { 2023, ToExpression @ StringPartition[ date, 2 ] };
+
+modelDate[ { ___, date_String } ] /; StringMatchQ[ date, Repeated[ DigitCharacter, { 8 } ] ] :=
+    DateObject @ StringInsert[ date, "-", { 5, 7 } ];
+
+modelDate[ { ___, y_String, m_String, d_String } ] :=
+    With[ { date = StringRiffle[ { y, m, d }, "-" ] },
+        DateObject @ StringRiffle[ { y, m, d }, "-" ] /; StringMatchQ[ date, DatePattern @ { "Year", "Month", "Day" } ]
+    ];
+
+modelDate[ { ___String } ] :=
+    None;
+
+modelDate // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -354,7 +496,9 @@ standardizeModelData[ name_String ] := standardizeModelData[ name ] =
     standardizeModelData @ <| "Name" -> name |>;
 
 standardizeModelData[ model: KeyValuePattern @ { } ] :=
-    standardizeModelData[ model ] = <|
+    standardizeModelData[ model ] = KeySort @ <|
+        modelNameData @ model,
+        "Date"        -> modelDate @ model,
         "DisplayName" -> modelDisplayName @ model,
         "FineTuned"   -> fineTunedModelQ @ model,
         "Icon"        -> modelIcon @ model,

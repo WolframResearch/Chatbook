@@ -139,6 +139,7 @@
 "UIModelsNoList" -> "\:30e2\:30c7\:30eb\:30ea\:30b9\:30c8\:3078\:306e\:63a5\:7d9a",
 "UIModelsFineTuned" -> "\:5fae\:8abf\:6574\:3055\:308c\:305f\:30e2\:30c7\:30eb",
 "UIModelsSnapshot" -> "\:30e2\:30c7\:30eb\:306e\:30b9\:30ca\:30c3\:30d7\:30b7\:30e7\:30c3\:30c8",
+"UIModelsPreview" -> "Preview Models",
 "UIAdvancedSettings" -> "\:8a73\:7d30\:8a2d\:5b9a",
 "UIAdvancedTemperature" -> "\:6e29\:5ea6",
 "UIAdvancedToolCallFrequency" -> "\:30c4\:30fc\:30eb\:547c\:51fa\:3057\:306e\:983b\:5ea6",
