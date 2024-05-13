@@ -13,6 +13,7 @@ Wolfram`Chatbook`CellToChatMessage;
 `$multimodalMessages;
 `$tokenBudget;
 `$tokenPressure;
+`allowedMultimodalRoles;
 `cachedTokenizer;
 `constructMessages;
 `expandMultimodalString;
@@ -102,7 +103,7 @@ CellToChatMessage[ cell_Cell, settings_Association? AssociationQ, opts: OptionsP
         Replace[
             Flatten @ {
                 If[ TrueQ @ Positive @ Lookup[ settings, "HistoryPosition", 0 ],
-                    makeCellMessage @ cell,
+                    makeCellMessage[ cell, settings ],
                     makeCurrentCellMessage[
                         settings,
                         Replace[
@@ -752,13 +753,19 @@ makeCurrentCellMessage[ settings_, { cells___, cell0_ } ] := Enclose[
     Module[ { modifiers, cell, role, content },
         { modifiers, cell } = ConfirmMatch[ extractModifiers @ cell0, { _, _ }, "Modifiers" ];
         role = ConfirmBy[ cellRole @ cell, StringQ, "CellRole" ];
-        content = ConfirmBy[ Block[ { $CurrentCell = True }, makeMessageContent @ cell ], validContentQ, "Content" ];
+
+        content = ConfirmBy[
+            Block[ { $CurrentCell = True }, makeMessageContent[ cell, role, settings ] ],
+            validContentQ,
+            "Content"
+        ];
+
         Flatten @ {
             expandModifierMessages[ settings, modifiers, { cells }, cell ],
             <| "Role" -> role, "Content" -> content |>
         }
     ],
-    throwInternalFailure[ makeCurrentCellMessage[ settings, { cells, cell0 } ], ## ] &
+    throwInternalFailure
 ];
 
 makeCurrentCellMessage // endDefinition;
@@ -768,18 +775,40 @@ makeCurrentCellMessage // endDefinition;
 (*makeMessageContent*)
 makeMessageContent // beginDefinition;
 
-makeMessageContent[ cell_Cell ] /; $multimodalMessages := Enclose[
-    Module[ { string, split, joined },
+makeMessageContent[ cell_Cell, role_String, settings_ ] /; $multimodalMessages := Enclose[
+    Module[ { string, roles },
         string = ConfirmBy[ cellToString @ cell, StringQ, "CellToString" ];
-        expandMultimodalString @ string
+        roles = ConfirmMatch[ allowedMultimodalRoles @ settings, All | { ___String }, "Roles" ];
+        If[ MatchQ[ roles, All | { ___, role, ___ } ],
+            expandMultimodalString @ string,
+            string
+        ]
     ],
-    throwInternalFailure[ makeMessageContent @ cell, ## ] &
+    throwInternalFailure
 ];
 
-makeMessageContent[ cell_Cell ] :=
+makeMessageContent[ cell_Cell, role_, settings_ ] :=
     cellToString @ cell;
 
 makeMessageContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*allowedMultimodalRoles*)
+allowedMultimodalRoles // beginDefinition;
+allowedMultimodalRoles[ settings_ ] := allowedMultimodalRoles0 @ toModelName @ settings[ "Model" ];
+allowedMultimodalRoles // endDefinition;
+
+
+allowedMultimodalRoles0 // beginDefinition;
+
+allowedMultimodalRoles0[ model_String ] := allowedMultimodalRoles0[ model ] =
+    If[ StringContainsQ[ model, WordBoundary~~"gpt-4o"~~WordBoundary ],
+        { "User" },
+        All
+    ];
+
+allowedMultimodalRoles0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -910,7 +939,15 @@ validContentPartQ[ ___ ] := False;
 (* ::Subsection::Closed:: *)
 (*makeCellMessage*)
 makeCellMessage // beginDefinition;
-makeCellMessage[ cell_Cell ] := <| "Role" -> cellRole @ cell, "Content" -> makeMessageContent @ cell |>;
+
+makeCellMessage[ cell_Cell, settings_ ] :=
+    With[ { role = cellRole @ cell },
+        <|
+            "Role"    -> role,
+            "Content" -> makeMessageContent[ cell, role, settings  ]
+        |>
+    ];
+
 makeCellMessage // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1354,7 +1391,6 @@ findTokenizer // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*Pre-cached small tokenizer functions*)
 $cachedTokenizers[ "chat-bison"   ] = ToCharacterCode[ #, "UTF8" ] &;
-$cachedTokenizers[ "gpt-4-turbo"  ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4" ] ][ # ] &;
 $cachedTokenizers[ "gpt-4-vision" ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4" ] ][ # ] &;
 $cachedTokenizers[ "claude-3"     ] = If[ graphicsQ @ #, claude3ImageTokenizer, cachedTokenizer[ "claude" ] ][ # ] &;
 $cachedTokenizers[ "generic"      ] = If[ graphicsQ @ #, { }, $gpt2Tokenizer @ # ] &;
@@ -1365,6 +1401,8 @@ $cachedTokenizers[ "generic"      ] = If[ graphicsQ @ #, { }, $gpt2Tokenizer @ #
 tokenizerName // beginDefinition;
 
 tokenizerName[ "gpt-4-turbo-preview" ] = "gpt-4";
+tokenizerName[ "gpt-4-turbo"         ] = "gpt-4-vision";
+tokenizerName[ "gpt-4o"              ] = "gpt-4-vision";
 
 tokenizerName[ name_String ] :=
     SelectFirst[

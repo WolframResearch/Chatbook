@@ -1092,7 +1092,10 @@ toolEvaluation // beginDefinition;
 
 toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
     Module[
-        { string, simple, parser, callPos, toolCall, toolResponse, output, messages, newMessages, req, toolID, task },
+        {
+            string, simple, parser, callPos, toolCall, toolResponse, output,
+            messages, roles, response, newMessages, req, toolID, task
+        },
 
         (* Ensure dynamic text is up to date: *)
         $dynamicTrigger++;
@@ -1128,11 +1131,19 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             "Messages"
         ];
 
+        roles = ConfirmMatch[ allowedMultimodalRoles @ settings, All | { __String }, "Roles" ];
+
+        response =
+            If[ roles === All || MemberQ[ roles, "System" ],
+                expandMultimodalString @ ToString @ output,
+                ToString @ output
+            ];
+
         newMessages = Join[
             messages,
             {
                 <| "Role" -> "assistant", "Content" -> appendToolCallEndToken[ settings, StringTrim @ string ] |>,
-                <| "Role" -> "system"   , "Content" -> expandMultimodalString @ ToString @ output |>
+                <| "Role" -> "system"   , "Content" -> response |>
             }
         ];
 
