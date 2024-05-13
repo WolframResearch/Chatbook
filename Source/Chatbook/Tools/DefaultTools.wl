@@ -765,10 +765,10 @@ $defaultChatTools0[ "WebSearcher" ] = <|
 (*webSearch*)
 webSearch // beginDefinition;
 
-webSearch[ KeyValuePattern[ "query" -> query_ ] ] := webSearch @ query;
-webSearch[ query_String ] := Block[ { PrintTemporary }, webSearch @ SearchQueryString @ query ];
+webSearch[ KeyValuePattern[ "query" -> query_ ] ] :=
+    Block[ { PrintTemporary }, webSearch @ query ];
 
-webSearch[ query_SearchQueryString ] := Enclose[
+webSearch[ query_String ] := Enclose[
     Catch @ Module[ { result, json, string },
         result = ConfirmMatch[ webSearch0 @ query, _Dataset|_Failure, "WebSearch" ];
 
@@ -782,7 +782,7 @@ webSearch[ query_SearchQueryString ] := Enclose[
 
         <| "Result" -> result, "String" -> string |>
     ],
-    throwInternalFailure[ webSearch @ query, ## ] &
+    throwInternalFailure
 ];
 
 webSearch // endDefinition;
@@ -790,7 +790,7 @@ webSearch // endDefinition;
 
 webSearch0 // beginDefinition;
 
-webSearch0[ query_SearchQueryString ] := Enclose[
+webSearch0[ query_String ] := Enclose[
     Module[ { opts, raw, result, held, $unavailable },
         opts   = Sequence @@ ConfirmMatch[ toolOptions[ "WebSearcher" ], { $$optionsSequence }, "Options" ];
         result = Quiet[
@@ -812,7 +812,7 @@ webSearch0[ query_SearchQueryString ] := Enclose[
             }
         ]
     ],
-    throwInternalFailure[ webImageSearch0 @ query, ## ] &
+    throwInternalFailure
 ];
 
 webSearch0 // endDefinition;
@@ -980,9 +980,8 @@ $defaultChatTools0[ "WebImageSearcher" ] = <|
 (*webImageSearch*)
 webImageSearch // beginDefinition;
 
-webImageSearch[ KeyValuePattern[ "query" -> query_ ] ] := webImageSearch @ query;
-webImageSearch[ query_String ] := Block[ { PrintTemporary }, webImageSearch @ SearchQueryString @ query ];
-webImageSearch[ query_SearchQueryString ] := webImageSearch[ query, webImageSearch0[ query ] ];
+webImageSearch[ KeyValuePattern[ "query" -> query_ ] ] := Block[ { PrintTemporary }, webImageSearch @ query ];
+webImageSearch[ query_String ] := webImageSearch[ query, webImageSearch0[ query ] ];
 
 webImageSearch[ query_, { } ] := <|
     "Result" -> { },
@@ -1004,7 +1003,7 @@ webImageSearch // endDefinition;
 
 webImageSearch0 // beginDefinition;
 
-webImageSearch0[ query_SearchQueryString ] := Enclose[
+webImageSearch0[ query_String ] := Enclose[
     Module[ { opts, raw, result, held, $unavailable },
         opts   = Sequence @@ ConfirmMatch[ toolOptions[ "WebImageSearcher" ], { $$optionsSequence }, "Options" ];
         result = Quiet[
@@ -1026,7 +1025,7 @@ webImageSearch0[ query_SearchQueryString ] := Enclose[
             }
         ]
     ],
-    throwInternalFailure[ webImageSearch0 @ query, ## ] &
+    throwInternalFailure
 ];
 
 webImageSearch0 // endDefinition;
