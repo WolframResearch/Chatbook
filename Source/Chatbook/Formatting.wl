@@ -222,7 +222,10 @@ formatToolCall0 // endDefinition;
 reformatTextData // beginDefinition;
 
 reformatTextData[ string_String ] := joinAdjacentStrings @ Flatten[
-    makeResultCell /@ discardBadToolCalls @ StringSplit[ string, $textDataFormatRules, IgnoreCase -> True ]
+    makeResultCell /@ discardBadToolCalls @ DeleteCases[
+        StringSplit[ string, $textDataFormatRules, IgnoreCase -> True ],
+        ""
+    ]
 ];
 
 reformatTextData[ other_ ] := other;
