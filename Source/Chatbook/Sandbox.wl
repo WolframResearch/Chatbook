@@ -36,6 +36,7 @@ $appendURIPrompt          := toolOptionValue[ "WolframLanguageEvaluator", "Appen
 $includeDefinitions       := toolOptionValue[ "WolframLanguageEvaluator", "IncludeDefinitions"       ];
 $sandboxEvaluationTimeout := toolOptionValue[ "WolframLanguageEvaluator", "EvaluationTimeConstraint" ];
 $sandboxPingTimeout       := toolOptionValue[ "WolframLanguageEvaluator", "PingTimeConstraint"       ];
+$evaluatorMethod          := toolOptionValue[ "WolframLanguageEvaluator", "Method"                   ];
 $cloudEvaluatorLocation    = "/Chatbook/Tools/WolframLanguageEvaluator/Evaluate";
 $cloudLineNumber           = 1;
 $cloudSession              = None;
@@ -449,11 +450,13 @@ sandboxEvaluate // beginDefinition;
 sandboxEvaluate[ KeyValuePattern[ "code" -> code_ ] ] := sandboxEvaluate @ code;
 sandboxEvaluate[ code_String ] := sandboxEvaluate @ toSandboxExpression @ code;
 sandboxEvaluate[ HoldComplete[ xs__, x_ ] ] := sandboxEvaluate @ HoldComplete @ CompoundExpression[ xs, x ];
-sandboxEvaluate[ HoldComplete[ evaluation_ ] ] /; $CloudEvaluation := cloudSandboxEvaluate @ HoldComplete @ evaluation;
+sandboxEvaluate[ HoldComplete[ eval_ ] ] /; useCloudSandboxQ[ ] := cloudSandboxEvaluate @ HoldComplete @ eval;
+sandboxEvaluate[ HoldComplete[ eval_ ] ] /; useSessionQ[ ] := sessionEvaluate @ HoldComplete @ eval;
 
 sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
     Module[ { kernel, null, packets, $sandboxTag, $timedOut, $kernelQuit, results, flat, initialized, final },
 
+        $lastSandboxMethod = "Local";
         $lastSandboxEvaluation = HoldComplete @ evaluation;
         kernel = ConfirmMatch[ getSandboxKernel[ ], _LinkObject, "GetKernel" ];
 
@@ -522,10 +525,30 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
             final[ "String" ]
         ]
     ],
-    throwInternalFailure[ sandboxEvaluate @ HoldComplete @ evaluation, ## ] &
+    throwInternalFailure
 ];
 
 sandboxEvaluate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*useCloudSandboxQ*)
+useCloudSandboxQ // beginDefinition;
+useCloudSandboxQ[ ] := useCloudSandboxQ @ $evaluatorMethod;
+useCloudSandboxQ[ "Cloud" ] := True;
+useCloudSandboxQ[ $$unspecified ] := TrueQ @ $CloudEvaluation;
+useCloudSandboxQ[ _ ] := False;
+useCloudSandboxQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*useSessionQ*)
+useSessionQ // beginDefinition;
+useSessionQ[ ] := useSessionQ @ $evaluatorMethod;
+useSessionQ[ "Session"|None ] := True;
+useSessionQ[ $$unspecified ] := False;
+useSessionQ[ _ ] := False;
+useSessionQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -548,6 +571,7 @@ cloudSandboxEvaluate // beginDefinition;
 cloudSandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
     Catch @ Module[ { api, held, wxf, definitions, response, result, packets, initialized },
 
+        $lastSandboxMethod = "Cloud";
         $lastSandboxEvaluation = HoldComplete @ evaluation;
 
         api = ConfirmMatch[ getCloudEvaluatorAPI[ ], _CloudObject|_Failure, "CloudEvaluator" ];
@@ -726,6 +750,61 @@ deployCloudEvaluator[ target_CloudObject ] := With[ { messages = $messageOverrid
 ];
 
 deployCloudEvaluator // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sessionEvaluate*)
+sessionEvaluate // beginDefinition;
+
+sessionEvaluate[ HoldComplete[ eval0_ ] ] := Enclose[
+    Module[ { response, eval, result, packets, initialized },
+
+        $lastSandboxMethod = "Session";
+        $lastSandboxEvaluation = HoldComplete @ eval0;
+
+        (* TODO: this evaluator method does not redefine any messages,
+                 so the LLM will not receive the associated custom prompting
+        *)
+
+        response = $Failed;
+        eval = makeLinkWriteEvaluation @ eval0;
+
+        With[ { held = eval, tc = $sandboxEvaluationTimeout },
+            (* Using SessionSubmit so that messages from AI code will not print to the current notebook: *)
+            TaskWait @ SessionSubmit[
+                EvaluationData[
+                    HoldComplete @@ {
+                        TimeConstrained[
+                            ReleaseHold @ held,
+                            tc,
+                            Failure[
+                                "EvaluationTimeExceeded",
+                                <|
+                                    "MessageTemplate"   -> "Evaluation exceeded the `1` second time limit.",
+                                    "MessageParameters" -> { tc }
+                                |>
+                            ]
+                        ]
+                    }
+                ],
+                HandlerFunctions -> <| "TaskFinished" -> Function[ response = #EvaluationResult ] |>
+            ]
+        ];
+
+        result = HoldComplete @@ ConfirmMatch[ Lookup[ response, "Result" ], _HoldComplete|_Hold, "Result" ];
+        packets = TextPacket /@ Flatten @ { response[ "OutputLog" ], response[ "MessagesText" ] };
+        initialized = initializeExpressions @ result;
+
+        $lastSandboxResult = <|
+            "String"    -> sandboxResultString[ initialized, packets ],
+            "Result"    -> sandboxResult @ initialized,
+            "Packets"   -> packets
+        |>
+    ],
+    throwInternalFailure
+];
+
+sessionEvaluate // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
