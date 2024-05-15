@@ -31,6 +31,20 @@ Needs[ "Wolfram`Chatbook`Prompting`"    ];
 Needs[ "Wolfram`Chatbook`Tools`"        ];
 Needs[ "Wolfram`Chatbook`Utils`"        ];
 
+(* TODO:
+
+    There should be a way to pass custom serialization rules in chat settings, e.g.
+    ```
+    "ConversionRules" -> {
+        _GraphicsBox -> "[Image]",
+        Cell[box_, "MyStyle"] :> formatMyStyle[box]
+    }
+    ```
+
+    These replacements should be done prior to calling `cellToString`, but need to be tagged in some way so we don't
+    try to serialize the results again via `fasterCellToString0`.
+*)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Initialization*)

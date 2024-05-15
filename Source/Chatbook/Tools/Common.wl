@@ -328,6 +328,18 @@ toDisplayToolName // endDefinition;
 formatToolCallExample // beginDefinition;
 
 formatToolCallExample[ name_String, params_Association ] :=
+    formatToolCallExample[ name, params, $ChatHandlerData[ "ChatNotebookSettings", "ToolMethod" ] ];
+
+formatToolCallExample[ name_String, params_Association, "Simple" ] := Enclose[
+    Module[ { command, values },
+        command = ConfirmBy[ toolShortName @ name, StringQ, "Command" ];
+        values = ConfirmMatch[ Values @ params, { ___String }, "Values" ];
+        TemplateApply[ "/`1`\n`2`\n/exec", { command, StringRiffle[ values, "\n" ] } ]
+    ],
+    throwInternalFailure
+];
+
+formatToolCallExample[ name_String, params_Association, _ ] :=
     TemplateApply[
         (* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDTOOLCALL *)
         "TOOLCALL: `1`\n`2`\nENDARGUMENTS\nENDTOOLCALL",
@@ -733,7 +745,15 @@ simpleToolRequestParser // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*toolShortName*)
 toolShortName // beginDefinition;
-toolShortName[ $$llmToolH[ as_Association, ___ ] ] := Lookup[ as, "ShortName", Lookup[ as, "Name" ] ];
+
+toolShortName[ $$llmToolH[ as_Association, ___ ] ] :=
+    Lookup[ as, "ShortName", Lookup[ as, "Name" ] ];
+
+toolShortName[ name_String ] :=
+    With[ { tool = getToolByName @ name },
+        toolShortName @ tool /; MatchQ[ tool, $$llmTool ]
+    ];
+
 toolShortName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -795,11 +815,19 @@ getToolPostPrompt // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getToolExamplePrompt*)
 getToolExamplePrompt // beginDefinition;
-getToolExamplePrompt[ as_Association ] := getToolExamplePrompt[ as, as[ "ToolMethod" ], as[ "ToolExamplePrompt" ] ];
-getToolExamplePrompt[ as_, "Simple", $$unspecified ] := Nothing;
-getToolExamplePrompt[ as_, method_, $$unspecified ] := $fullExamples;
-getToolExamplePrompt[ as_, method_, prompt: $$template ] := prompt;
-getToolExamplePrompt[ as_, method_, None ] := Nothing;
+
+getToolExamplePrompt[ as_Association ] :=
+    getToolExamplePrompt[ as, as[ "ToolMethod" ], as[ "ToolExamplePrompt" ], as[ "ToolCallExamplePromptStyle" ] ];
+
+getToolExamplePrompt[ as_, method_, $$unspecified, style_String ] :=
+    Block[ { $messageTemplateType = style }, $fullExamples ];
+
+getToolExamplePrompt[ as_, method_, prompt: $$template, style_ ] :=
+    prompt;
+
+getToolExamplePrompt[ as_, method_, None, style_ ] :=
+    Nothing;
+
 getToolExamplePrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
