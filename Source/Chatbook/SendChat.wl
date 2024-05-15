@@ -337,14 +337,7 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association }
                 "presence_penalty"  -> presPenalty,
                 "model"             -> toModelName @ model,
                 "stream"            -> stream,
-                "stop"              -> Select[
-                    DeleteDuplicates @ Flatten @ {
-                        settings[ "StopTokens" ],
-                        If[ settings[ "ToolMethod" ] === "Simple", { "\n/exec" }, "ENDTOOLCALL" ],
-                        If[ TrueQ @ $AutomaticAssistance, "[INFO]", Nothing ]
-                    },
-                    StringQ
-                ]
+                "stop"              -> makeStopTokens @ settings
             |>,
             Automatic|_Missing
         ];
@@ -366,6 +359,23 @@ makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association }
     ];
 
 makeHTTPRequest // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeStopTokens*)
+makeStopTokens // beginDefinition;
+
+makeStopTokens[ settings_Association ] :=
+    Select[
+        DeleteDuplicates @ Flatten @ {
+            settings[ "StopTokens" ],
+            If[ settings[ "ToolMethod" ] === "Simple", { "\n/exec", "/end" }, { "ENDTOOLCALL", "/end" } ],
+            If[ TrueQ @ $AutomaticAssistance, "[INFO]", Nothing ]
+        },
+        StringQ
+    ];
+
+makeStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -594,21 +604,10 @@ makeLLMConfiguration // beginDefinition;
 makeLLMConfiguration[ as: KeyValuePattern[ "Model" -> model_String ] ] :=
     makeLLMConfiguration @ Append[ as, "Model" -> { "OpenAI", model } ];
 
-(* FIXME: get valid claude keys using the following patterns:
-ServiceConnectionUtilities`ConnectionInformation["Anthropic", "ProcessedRequests", "Chat", "Parameters"]
-*)
-
 makeLLMConfiguration[ as_Association ] :=
     $lastLLMConfiguration = LLMConfiguration @ Association[
         KeyTake[ as, { "Model", "MaxTokens", "Temperature", "PresencePenalty" } ],
-        "StopTokens" -> Select[
-            DeleteDuplicates @ Flatten @ {
-                as[ "StopTokens" ],
-                If[ as[ "ToolMethod" ] === "Simple", { "\n/exec" }, "ENDTOOLCALL" ],
-                If[ TrueQ @ $AutomaticAssistance, "[INFO]", Nothing ]
-            },
-            StringQ
-        ]
+        "StopTokens" -> makeStopTokens @ as
     ];
 
 makeLLMConfiguration // endDefinition;
