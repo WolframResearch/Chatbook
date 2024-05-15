@@ -190,6 +190,8 @@ chatExcludedQ[ KeyValuePattern[ "ChatNotebookSettings" -> settings_ ] ] := chatE
 chatExcludedQ[ KeyValuePattern[ "ExcludeFromChat" -> exclude_ ] ] := TrueQ @ exclude;
 chatExcludedQ[ KeyValuePattern[ { } ] ] := False;
 chatExcludedQ[ Inherited ] := False;
+chatExcludedQ[ _? FailureQ ] := False;
+chatExcludedQ[ _FrontEnd`AbsoluteCurrentValue ] := False;
 
 chatExcludedQ // endDefinition;
 
