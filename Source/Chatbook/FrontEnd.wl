@@ -304,14 +304,17 @@ cellInformation // beginDefinition;
 
 cellInformation[ nbo_NotebookObject ] := cellInformation @ Cells @ nbo;
 
-cellInformation[ cells: { ___CellObject } ] := Map[
-    Association,
-    Transpose @ {
-        Developer`CellInformation @ cells,
-        Thread[ "CellObject"           -> cells ],
-        Thread[ "CellAutoOverwrite"    -> CurrentValue[ cells, CellAutoOverwrite ] ],
-        Thread[ "ChatNotebookSettings" -> AbsoluteCurrentValue[ cells, { TaggingRules, "ChatNotebookSettings" } ] ]
-    }
+cellInformation[ cells: { ___CellObject } ] := Select[
+    Map[
+        Association,
+        Transpose @ {
+            Developer`CellInformation @ cells,
+            Thread[ "CellObject"           -> cells ],
+            Thread[ "CellAutoOverwrite"    -> CurrentValue[ cells, CellAutoOverwrite ] ],
+            Thread[ "ChatNotebookSettings" -> AbsoluteCurrentValue[ cells, { TaggingRules, "ChatNotebookSettings" } ] ]
+        }
+    ],
+    AssociationQ
 ];
 
 cellInformation[ cell_CellObject ] := Association[
