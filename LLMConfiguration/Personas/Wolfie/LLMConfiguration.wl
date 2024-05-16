@@ -8,6 +8,7 @@
 		"WolframAlpha",
 		"WolframLanguageEvaluator",
 		"WebSearcher",
-		"WebFetcher"
+		"WebFetcher",
+		ParentList
 	}
 |>
