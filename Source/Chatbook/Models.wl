@@ -234,6 +234,7 @@ modelNameData[ data: KeyValuePattern @ {
     "Date"         -> _? modelDateSpecQ | None,
     "Preview"      -> True|False,
     "FineTuned"    -> True|False,
+    "FineTuneName" -> _String|None,
     "Organization" -> _String|None,
     "ID"           -> _String|None
 } ] := modelNameData[ data ] = KeySort @ data;
@@ -251,6 +252,7 @@ modelNameData[ model0_ ] := Enclose[
             "Date"         -> None,
             "Preview"      -> False,
             "FineTuned"    -> False,
+            "FineTuneName" -> None,
             "Organization" -> None,
             "ID"           -> None
         |>;
@@ -334,14 +336,25 @@ createModelDisplayName[ KeyValuePattern @ {
     "Date"         -> date0_,
     "Preview"      -> preview0_,
     "Organization" -> org0_,
+    "FineTuneName" -> name0_,
     "ID"           -> id0_
 } ] :=
-    Module[ { date, preview, id, org, ftID },
+    Module[ { date, preview, id, org, ftName, ftID },
+
         date    = Replace[ modelDateString @ date0, Except[ _String? StringQ ] -> Nothing ];
         preview = If[ TrueQ @ preview0, "(Preview)", Nothing ];
-        id      = If[ StringQ @ id0, id0, Nothing ];
-        org     = If[ StringQ @ org0, org0, Nothing ];
-        ftID    = If[ StringQ @ id || StringQ @ org, "(" <> StringRiffle[ { id, org }, "::" ] <> ")", Nothing ];
+        id      = If[ StringQ @ id0 && id0 =!= "", id0, Nothing ];
+        org     = If[ StringQ @ org0 && ! MatchQ[ org0, ""|"personal" ], org0, Nothing ];
+        ftName  = If[ StringQ @ name0 && name0 =!= "", name0, Nothing ];
+
+        ftID = Which[
+            StringQ @ ftName && StringQ @ org, "(" <> StringRiffle[ { org, ftName }, ":" ] <> ")",
+            StringQ @ id || StringQ @ org, "(" <> StringRiffle[ { org, ftName, id }, ":" ] <> ")",
+            True, Nothing
+        ];
+
+        If[ StringQ @ ftID, date = Nothing ];
+
         StringReplace[
             StringRiffle[ { base, date, preview, ftID }, " " ],
             {
@@ -370,18 +383,21 @@ modelDateString // endDefinition;
 fineTunedModelNameData // beginDefinition;
 
 fineTunedModelNameData[ name_String ] :=
-    fineTunedModelNameData @ StringSplit[ name, "::" ];
+    fineTunedModelNameData @ StringSplit[ name, ":" ];
 
-fineTunedModelNameData[ { before_String, id_String } ] :=
-    fineTunedModelNameData @ { StringSplit[ before, ":" ], id };
-
-fineTunedModelNameData[ { { "ft", rest__ }, id_String } ] :=
-    fineTunedModelNameData @ { { rest }, id };
-
-fineTunedModelNameData[ { { name_String, org_String }, id_String } ] := <|
-    modelNameData0 @ name,
+fineTunedModelNameData[ { "ft", model_, org_, name_, id_ } ] := <|
+    modelNameData0 @ model,
     "Organization" -> org,
-    "ID" -> id,
+    "ID"           -> id,
+    "FineTuneName" -> name,
+    "FineTuned"    -> True
+|>;
+
+fineTunedModelNameData[ { "ft", rest__String } ] :=
+    fineTunedModelNameData @ { rest };
+
+fineTunedModelNameData[ other: { __String } ] := <|
+    modelNameData0 @ StringRiffle[ other, ":" ],
     "FineTuned" -> True
 |>;
 
