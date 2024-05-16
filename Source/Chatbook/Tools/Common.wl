@@ -693,13 +693,99 @@ $toolConfiguration := $toolConfiguration = LLMConfiguration @ <| "Tools" -> Valu
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*toolRequestParser*)
-toolRequestParser := toolRequestParser =
-    Quiet[ Check[ $toolConfiguration[ "ToolRequestParser" ],
-                  Wolfram`LLMFunctions`LLMConfiguration`$DefaultTextualToolMethod[ "ToolRequestParser" ],
-                  LLMConfiguration::invprop
-           ],
-           LLMConfiguration::invprop
-    ];
+toolRequestParser // beginDefinition;
+
+toolRequestParser[ content_String ] := Enclose[
+    Catch @ Module[ { calls, toolName, paramsJSON, rawCallString, callPosition, bag, params },
+
+        calls = StringCases[
+            content,
+            StringExpression[
+                StartOfString,
+                Longest[ ___ ],
+                callString: StringExpression[
+                    "TOOLCALL: ",
+                    Shortest[ toolNameStr__ ],
+                    EndOfLine,
+                    Shortest[ paramsStr__ ],
+                    "ENDARGUMENTS",
+                    WhitespaceCharacter...,
+                    EndOfString
+                ]
+            ] :> { StringTrim @ toolNameStr, paramsStr, StringTrim @ callString }
+        ];
+
+        If[ Length @ calls =!= 1, Throw @ None ];
+        { toolName, paramsJSON, rawCallString } = First @ calls;
+        callPosition = Last @ StringPosition[ content, rawCallString ];
+        bag = Internal`Bag[ ];
+
+        params = Quiet @ Internal`HandlerBlock[ { "Message", jsonMessageHandler @ bag },
+                             Developer`ReadRawJSONString @ paramsJSON
+                         ];
+
+        If[ FailureQ @ params,
+            Throw @ { callPosition, Failure[ "InvalidJSON", <| "Message" -> makeJSONFailureMessage @ bag |> ] }
+        ];
+
+        {
+            callPosition,
+            System`LLMToolRequest[ toolName, Normal @ params, rawCallString<>"\nENDTOOLCALL" ]
+        }
+    ],
+    throwInternalFailure
+];
+
+toolRequestParser // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeJSONFailureMessage*)
+makeJSONFailureMessage // beginDefinition;
+
+makeJSONFailureMessage[ bag_Internal`Bag ] :=
+    makeJSONFailureMessage @ Internal`BagPart[ bag, All ];
+
+makeJSONFailureMessage[ messages: { __String } ] := StringRiffle[
+    Flatten @ { "Parsing arguments as JSON failed with the following messages:", "\t" <> # & /@ messages },
+    "\n"
+];
+
+makeJSONFailureMessage[ ___ ] :=
+    "Arguments were not valid JSON.";
+
+makeJSONFailureMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*jsonMessageHandler*)
+jsonMessageHandler // beginDefinition;
+
+jsonMessageHandler[ bag_Internal`Bag ] :=
+    jsonMessageHandler[ bag, # ] &;
+
+jsonMessageHandler[
+    bag_Internal`Bag,
+    Hold[ Message[ msg: MessageName[ Developer`ReadRawJSONString, tag__ ], params___ ], _ ]
+] := Enclose[
+    Module[ { template, args, string },
+        template = ConfirmBy[ If[ StringQ @ msg, msg, MessageName[ General, tag ] ], StringQ ];
+        args = ConfirmMatch[ messageParameterString /@ Unevaluated @ { params }, { ___String } ];
+        string = ConfirmBy[ TemplateApply[ template, args ], StringQ ];
+        Internal`StuffBag[ bag, string ]
+    ],
+    throwInternalFailure
+];
+
+jsonMessageHandler // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*messageParameterString*)
+messageParameterString // beginDefinition;
+messageParameterString // Attributes = { HoldAllComplete };
+messageParameterString[ expr_ ] := ToString[ Unevaluated @ Short[ expr, 1 ], PageWidth -> 80 ];
+messageParameterString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
