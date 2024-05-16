@@ -9,7 +9,8 @@
 		"WolframLanguageEvaluator",
 		"WebSearcher",
 		"WebFetcher",
-		"WebImageSearcher"
+		"WebImageSearcher",
+		ParentList
 	},
 	"Icon" -> <|
 		"Default" -> RawBoxes @ TemplateBox[ { }, "BirdnardoIcon" ],
