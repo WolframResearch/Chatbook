@@ -83,6 +83,10 @@
 "PersonaManagerOriginRepositoryTooltip" -> "Personnage install\[EAcute] \[AGrave] partir du paquet `name`. Visiter la page \[RightGuillemet].",
 "PersonaManagerPersonaUninstallTooltip" -> "Ce personnage ne peut pas \[EHat]tre d\[EAcute]sinstall\[EAcute] car il est fourni par le paquet `1`.",
 
+"PreferencesContentNotebooksTab" -> "Notebooks",
+"PreferencesContentPersonasTab" -> "Personnages",
+"PreferencesContentServicesTab" -> "Services",
+"PreferencesContentToolsTab" -> "Outils",
 "PreferencesContentEnableAssistanceLabel" -> "Activer l\[CloseCurlyQuote]assistance automatique",
 "PreferencesContentEnableAssistanceTooltip" -> "Si cette option est activ\[EAcute]e, des suggestions automatiques fournies par l\[CloseCurlyQuote]IA seront ajout\[EAcute]es en fonction des r\[EAcute]sultats de l\[CloseCurlyQuote]\[EAcute]valuation.",
 "PreferencesContentPersonaLabel" -> "Personnage\[NonBreakingSpace]:",
@@ -139,6 +143,7 @@
 "UIModelsNoList" -> "Se connecter pour obtenir la liste des mod\[EGrave]les",
 "UIModelsFineTuned" -> "Mod\[EGrave]les affin\[EAcute]s",
 "UIModelsSnapshot" -> "Mod\[EGrave]les d\[CloseCurlyQuote]instantan\[EAcute]s",
+"UIModelsPreview" -> "Pr\[EAcute]visualiser les mod\[EGrave]les",
 "UIAdvancedSettings" -> "Param\[EGrave]tres avanc\[EAcute]s",
 "UIAdvancedTemperature" -> "Temp\[EAcute]rature",
 "UIAdvancedToolCallFrequency" -> "Fr\[EAcute]quence d\[CloseCurlyQuote]appel de l\[CloseCurlyQuote]outil",
@@ -149,7 +154,21 @@
 
 "StylesheetChatWidgetButtonTooltip" -> "Envoyer au LLM",
 "StylesheetAssistantMenuInitializerButtonTooltip" -> "D\[EAcute]sactiver l\[CloseCurlyQuote]assistance automatique",
-"StylesheetFeedbackButtonTooltip" -> "Envoyer un commentaire \[AGrave] Wolfram"
+"StylesheetFeedbackButtonTooltip" -> "Envoyer un commentaire \[AGrave] Wolfram",
+"StylesheetExplodeCellsInPlace" -> "\[CapitalEAcute]clater les cellules (en place)",
+"StylesheetExplodeCellsDuplicate" -> "\[CapitalEAcute]clater les cellules (dupliquer)",
+"StylesheetCopyExplodedCells" -> "Copier les cellules \[EAcute]clat\[EAcute]es",
+"StylesheetToggleFormatting" -> "Basculer la mise en forme",
+"StylesheetCopyChatObject" -> "Copier l\[CloseCurlyQuote]objet de Chat",
+"StylesheetInsertionMenuChatInput" -> "Entr\[EAcute]e de chat",
+"StylesheetInsertionMenuSideChat" -> "Chat lat\[EAcute]ral",
+
+"PersonaNameBirdnardo" -> "Birdnardo",
+"PersonaNameCodeAssistant" -> "Assistant de code",
+"PersonaNameCodeWriter" -> "R\[EAcute]dacteur de code",
+"PersonaNamePlainChat" -> "Chat simple",
+"PersonaNameRawModel" -> "Mod\[EGrave]le brut",
+"PersonaNameWolfie" -> "Wolfie"
 }
 @|
 @|
