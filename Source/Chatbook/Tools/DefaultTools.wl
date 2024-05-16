@@ -1677,8 +1677,9 @@ getToolFormattingFunction // endDefinition;
 (*Package Footer*)
 
 (* Sort tools to their default ordering: *)
-$defaultChatTools0 = Block[ { LLMTool },
-    LLMTool[ #, { } ] & /@ Association[ KeyTake[ $defaultChatTools0, $defaultToolOrder ], $defaultChatTools0 ]
+$defaultChatTools0 = Map[
+    LLMTool[ #, { } ] &,
+    <| KeyTake[ $defaultChatTools0, $defaultToolOrder ], $defaultChatTools0 |>
 ];
 
 If[ Wolfram`ChatbookInternal`$BuildingMX,
