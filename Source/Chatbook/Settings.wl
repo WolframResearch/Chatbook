@@ -1043,7 +1043,9 @@ mergeChatSettings[ a_List ] := mergeChatSettings[ a ] = mergeChatSettings0 @ a /
 mergeChatSettings // endDefinition;
 
 mergeChatSettings0 // beginDefinition;
-mergeChatSettings0[ { a___, Inherited.., b___ } ] := mergeChatSettings0 @ { a, b };
+mergeChatSettings0[ { a___, (Inherited|ParentList).., b___ } ] := mergeChatSettings0 @ { a, b };
+mergeChatSettings0[ { a___, { b___ }, { c___, ParentList, d___ } } ] := mergeChatSettings0 @ { a, { c, b, d } };
+mergeChatSettings0[ { a___, b: Except[ $$unspecified ], { c___, ParentList, d___ } } ] := mergeChatSettings0 @ { a, { c, b, d } };
 mergeChatSettings0[ { a_? AssociationQ, b__? AssociationQ } ] := DeleteMissing @ Merge[ { a, b }, mergeChatSettings0 ];
 mergeChatSettings0[ { a___, Except[ _? AssociationQ ].., b__? AssociationQ } ] := mergeChatSettings0 @ { a, b };
 mergeChatSettings0[ { __, e: Except[ _? AssociationQ ] } ] := e;

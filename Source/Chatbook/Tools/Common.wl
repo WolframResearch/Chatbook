@@ -190,6 +190,7 @@ toolName[ name_String, "Machine" ] := toMachineToolName @ name;
 toolName[ name_String, "Canonical" ] := toCanonicalToolName @ name;
 toolName[ name_String, "Display" ] := toDisplayToolName @ name;
 toolName[ tools_List, type_ ] := toolName[ #, type ] & /@ tools;
+toolName[ Inherited|ParentList, type_ ] := Missing[ "NotAvailable" ];
 toolName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -494,16 +495,20 @@ getToolNames[ as_Association ] :=
 getToolNames[ tools_, None ] := { };
 
 (* Persona wants default tools *)
-getToolNames[ tools_, Automatic|Inherited ] := getToolNames @ tools;
+getToolNames[ tools_, Automatic|Inherited|ParentList ] := getToolNames @ tools;
 
 (* Persona declares an explicit list of tools *)
 getToolNames[ Automatic|None|Inherited, personaTools_List ] := getToolNames @ personaTools;
+
+(* Persona inherits tools: *)
+getToolNames[ { parent___ }, { a___, ParentList, b___ } ] := getToolNames @ { a, parent, b };
 
 (* The user has specified an explicit list of tools as well, so include them *)
 getToolNames[ tools_List, personaTools_List ] := Union[ getToolNames @ tools, getToolNames @ personaTools ];
 
 (* Get name of each tool *)
-getToolNames[ tools_List ] := DeleteDuplicates @ Flatten[ getCachedToolName /@ tools ];
+getToolNames[ tools_List ] :=
+    DeleteDuplicates @ Flatten[ getCachedToolName /@ DeleteCases[ tools, $$unspecified|ParentList ] ];
 
 (* Default tools *)
 getToolNames[ Automatic|Inherited ] := Keys @ $DefaultTools;
@@ -531,7 +536,7 @@ getCachedToolName[ tool: HoldPattern[ _LLMTool ] ] := Enclose[
         $toolBox[ name ] = tool;
         name
     ],
-    throwInternalFailure[ getCachedToolName @ tool, ## ] &
+    throwInternalFailure
 ];
 
 getCachedToolName[ name_String ] :=
