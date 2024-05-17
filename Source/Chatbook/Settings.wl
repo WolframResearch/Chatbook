@@ -46,6 +46,7 @@ $defaultChatSettings = <|
     "ChatDrivenNotebook"         -> False,
     "ChatHistoryLength"          -> 1000,
     "ChatInputIndicator"         -> Automatic,
+    "ConversionRules"            -> None,
     "DynamicAutoFormat"          -> Automatic,
     "EnableChatGroupSettings"    -> False,
     "EnableLLMServices"          -> Automatic,

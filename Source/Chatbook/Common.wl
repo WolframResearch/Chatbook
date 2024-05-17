@@ -244,6 +244,7 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "Internal"                        -> "An unexpected error occurred. `1`",
     "InvalidAPIKey"                   -> "Invalid value for API key: `1`",
     "InvalidArguments"                -> "Invalid arguments given for `1` in `2`.",
+    "InvalidConversionRules"          -> "`1` is neither a list of replacement rules nor a valid dispatch table, and so cannot be used for replacing.",
     "InvalidExpressionURI"            -> "The string \"`1`\" is not a valid expression URI.",
     "InvalidFrontEndScope"            -> "The value `1` is not a valid scope for `2`.",
     "InvalidFunctions"                -> "Invalid setting for ProcessingFunctions: `1`; using defaults instead.",

@@ -493,6 +493,7 @@ fixCloudCell[ Cell[ CellGroupData[ cells_, a___ ] ] ] := Cell[ CellGroupData[ fi
 fixCloudCell[ Cell[ text_, args___ ] ] := Cell[ applyCloudCellFixes @ text, args ];
 fixCloudCell[ content: _BoxData|_TextData|_String ] := applyCloudCellFixes @ content;
 fixCloudCell[ cells_List ] := fixCloudCell /@ cells;
+fixCloudCell[ cell_ ] := cell;
 fixCloudCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
