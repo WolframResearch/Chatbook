@@ -10,8 +10,9 @@ CellToString[cell$] serializes a Cell expression as a string for use in chat.\
 " ];
 
 `$CellToStringDebug;
-`$CurrentCell;
 `$chatInputIndicator;
+`$conversionRules;
+`$CurrentCell;
 `$defaultMaxCellStringLength;
 `$defaultMaxOutputCellStringLength;
 `$longNameCharacters;
@@ -149,6 +150,9 @@ $CellToStringDebug = False;
 (* Can be redefined locally depending on cell style *)
 $showStringCharacters = True;
 $inlineCode           = False;
+
+(* Replacement rules that are applied to the cell before serialization: *)
+$conversionRules = None;
 
 (* Add spacing around these operators *)
 $$spacedInfixOperator = Alternatives[
@@ -312,6 +316,7 @@ CellToString // Options = {
     "CharacterEncoding"         -> $cellCharacterEncoding,
     "CharacterNormalization"    -> "NFKC", (* FIXME: do this *)
     "ContentTypes"              -> Automatic,
+    "ConversionRules"           :> $conversionRules,
     "Debug"                     :> $CellToStringDebug,
     "MaxCellStringLength"       -> $maxCellStringLength,
     "MaxOutputCellStringLength" -> $maxOutputCellStringLength,
@@ -353,7 +358,7 @@ CellToString[ cell_, opts: OptionsPattern[ ] ] :=
         If[ ! StringQ @ $cellCharacterEncoding, $cellCharacterEncoding = "UTF-8" ];
         WithCleanup[
             StringTrim @ Replace[
-                cellToString @ cell,
+                cellToString @ applyConversionRules[ cell, OptionValue[ "ConversionRules" ] ],
                 (* TODO: give a failure here *)
                 Except[ _String? StringQ ] :> ""
             ],
@@ -364,6 +369,24 @@ CellToString[ cell_, opts: OptionsPattern[ ] ] :=
         ]
     ];
 (* :!CodeAnalysis::EndBlock:: *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*applyConversionRules*)
+applyConversionRules // beginDefinition;
+applyConversionRules[ cell_, rules_ ] := applyConversionRules[ cell, rules, makeConversionRules @ rules ];
+applyConversionRules[ cell_, rules_, None | { } ] := cell;
+applyConversionRules[ cell_, rules_, dispatch_Dispatch? DispatchQ ] := ReplaceRepeated[ cell, dispatch ];
+applyConversionRules // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeConversionRules*)
+makeConversionRules // beginDefinition;
+makeConversionRules[ rules_ ] := makeConversionRules[ rules, Quiet @ Dispatch @ rules ];
+makeConversionRules[ rules_, dispatch_Dispatch? DispatchQ ] := makeConversionRules[ rules ] = dispatch;
+makeConversionRules[ rules_, other_ ] := (messagePrint[ "InvalidConversionRules", rules ]; None);
+makeConversionRules // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -540,6 +563,9 @@ cellToString[ cell: Cell[ _BoxData, Except[ $$chatInputStyle|$$chatOutputStyle ]
     $multimodalImages && Count[ cell, $$graphicsBox, Infinity ] > $maxMarkdownBoxes :=
         toMarkdownImageBox @ cell;
 
+cellToString[ other_ ] :=
+    cellToString0 @ other;
+
 cellToString // endDefinition;
 
 (* Recursive serialization of the cell content *)
@@ -710,6 +736,9 @@ fasterCellToString0[ (box_)[ a__, BaseStyle -> { b___, ShowStringCharacters -> c
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*String Normalization*)
+
+(* Conversion Rules can specify Verbatim["..."] to prevent any further processing on strings: *)
+fasterCellToString0[ Verbatim[ Verbatim ][ string_String? StringQ ] ] := string;
 
 (* Add spacing between RowBox elements that are comma separated *)
 fasterCellToString0[ "," ] := ", ";

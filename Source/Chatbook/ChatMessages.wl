@@ -246,8 +246,9 @@ makeChatMessages[ settings_, cells_ ] :=
             $tokenPressure           = 0.0,
             $initialCellStringBudget = makeCellStringBudget @ settings,
             $chatInputIndicator      = mixedContentQ @ cells,
-            $cellStringBudget
+            $cellStringBudget, $conversionRules
         },
+        $conversionRules = settings[ "ConversionRules" ];
         $cellStringBudget = $initialCellStringBudget;
         If[ settings[ "BasePrompt" ] =!= None, tokenCheckedMessage[ settings, $fullBasePrompt ] ];
         (* FIXME: need to account for persona/tool prompting as well *)
