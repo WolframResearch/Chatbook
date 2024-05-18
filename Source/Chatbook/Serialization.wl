@@ -383,6 +383,7 @@ applyConversionRules // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeConversionRules*)
 makeConversionRules // beginDefinition;
+makeConversionRules[ None | { } ] := None;
 makeConversionRules[ rules_ ] := makeConversionRules[ rules, Quiet @ Dispatch @ rules ];
 makeConversionRules[ rules_, dispatch_Dispatch? DispatchQ ] := makeConversionRules[ rules ] = dispatch;
 makeConversionRules[ rules_, other_ ] := (messagePrint[ "InvalidConversionRules", rules ]; None);
