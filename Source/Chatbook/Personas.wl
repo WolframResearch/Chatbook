@@ -158,7 +158,7 @@ GetPersonaData[] := Module[{
 	pacletPersonas = KeySort @ Flatten @ Map[loadPacletPersonas, paclets];
 	personas = Merge[{resourcePersonas, pacletPersonas}, First];
 
-	$CachedPersonaData = RaiseConfirmMatch[
+	$CachedPersonaData = fixFEResourceBoxes @ RaiseConfirmMatch[
 		(* Show core personas first *)
 		standardizePersonaData /@ Join[KeyTake[personas, $corePersonaNames], KeySort[personas]],
 		_Association? AssociationQ
@@ -176,6 +176,13 @@ GetPersonaData[persona_?StringQ] := Module[{
 ]
 
 GetPersonaData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*fixFEResourceBoxes*)
+fixFEResourceBoxes // beginDefinition;
+fixFEResourceBoxes[ expr_ ] := expr /. Dynamic[ res_FEPrivate`FrontEndResource ] :> RawBoxes @ DynamicBox @ res;
+fixFEResourceBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
