@@ -793,9 +793,9 @@ sessionEvaluate[ HoldComplete[ eval0_ ] ] := Enclose[
         initialized = result;
 
         $lastSandboxResult = <|
-            "String"    -> sandboxResultString[ initialized, packets ],
-            "Result"    -> sandboxResult @ initialized,
-            "Packets"   -> packets
+            "String"  -> sandboxResultString[ initialized, packets ],
+            "Result"  -> sandboxResult @ initialized,
+            "Packets" -> packets
         |>
     ],
     throwInternalFailure
