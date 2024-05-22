@@ -1111,8 +1111,16 @@ $chatMessageTemplates[ "Instruct", "System"    ] = "[INST]%%1%%[/INST]";
 (*Zephyr*)
 $chatMessageTemplates[ "Zephyr" ] = <| |>;
 $chatMessageTemplates[ "Zephyr", "User"      ] = "<|user|>\n%%1%%</s>";
-$chatMessageTemplates[ "Zephyr", "Assistant" ] = "<|assistant|>\n%%1%%/end";
+$chatMessageTemplates[ "Zephyr", "Assistant" ] = "<|assistant|>\n%%1%%\n/end";
 $chatMessageTemplates[ "Zephyr", "System"    ] = "<|system|>\n%%1%%</s>";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Phi*)
+$chatMessageTemplates[ "Phi" ] = <| |>;
+$chatMessageTemplates[ "Phi", "User"      ] = "<|user|>\n%%1%%<|end|>";
+$chatMessageTemplates[ "Phi", "Assistant" ] = "<|assistant|>\n%%1%%\n/end<|end|>";
+$chatMessageTemplates[ "Phi", "System"    ] = "<|user|>\n%%1%%<|end|>";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
