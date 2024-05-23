@@ -1402,7 +1402,8 @@ inheritingOffQ // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*localStack*)
 localStack // beginDefinition;
-localStack[ HoldForm @ { ___, { ___, { $stackTag::begin }, ___ }, rest___ } ] := HoldForm @ { rest };
+localStack[ HoldForm @ { ___, { ___, { $stackTag::begin }, ___ }, stack___ } ] := localStack @ HoldForm @ { stack };
+localStack[ HoldForm @ { stack___, { ___, { $stackTag::end }, ___ }, ___ } ] := localStack @ HoldForm @ { stack };
 localStack[ stack_ ] := stack;
 localStack // endDefinition;
 
@@ -1425,7 +1426,7 @@ generalMessagePattern // endDefinition;
 (*catchEverything*)
 catchEverything // beginDefinition;
 catchEverything // Attributes = { HoldAllComplete };
-catchEverything[ eval_ ] := catchEverything0 @ Catch @ Catch[ contained @ eval, _, uncaughtThrow ];
+catchEverything[ e_ ] := catchEverything0 @ CheckAbort[ Catch @ Catch[ contained @ e, _, uncaughtThrow ], $Aborted ];
 catchEverything // endDefinition;
 
 
@@ -1435,9 +1436,12 @@ catchEverything0 // Attributes = { SequenceHold };
 catchEverything0[ contained[ result___ ] ] :=
     result;
 
+catchEverything0[ $Aborted ] :=
+    makeHeldResultAssociation @ $Aborted;
+
 catchEverything0[ uncaughtThrow[ uncaught__ ] ] := (
     Message[ Throw::nocatch, HoldForm @ Throw @ uncaught ];
-    HoldComplete @@ { <| "Line" -> $Line, "Result" -> HoldComplete @ Hold @ Throw @ uncaught, "Initialized" -> { } |> }
+    makeHeldResultAssociation @ Hold @ Throw @ uncaught
 );
 
 catchEverything0[ uncaught_ ] :=
@@ -1448,10 +1452,22 @@ catchEverything0[ uncaught___ ] :=
 
 catchEverything0 // endDefinition;
 
-(* TODO: catch aborts too *)
+(* TODO: Figure out a reliable way to intercept Exit and Quit.
+   Note: Quit is locked in cloud, so we can't use a Block to redefine it. *)
 
 contained // Attributes = { SequenceHold };
 uncaughtThrow // Attributes = { HoldAllComplete };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeHeldResultAssociation*)
+makeHeldResultAssociation // beginDefinition;
+makeHeldResultAssociation // Attributes = { HoldAllComplete };
+
+makeHeldResultAssociation[ e_ ] :=
+    HoldComplete @@ { <| "Line" -> $Line, "Result" -> HoldComplete @ e, "Initialized" -> { } |> };
+
+makeHeldResultAssociation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
