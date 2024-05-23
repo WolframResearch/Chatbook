@@ -41,6 +41,7 @@ $cloudEvaluatorLocation    = "/Chatbook/Tools/WolframLanguageEvaluator/Evaluate"
 $cloudLineNumber           = 1;
 $cloudSession              = None;
 $maxSandboxMessages        = 10;
+$maxMessageParameterLength = 100;
 
 (* Tests for expressions that lose their initialized status when sending over a link: *)
 $initializationTests = Join[
@@ -1285,12 +1286,54 @@ $messageOverrideTemplates := $messageOverrideTemplates = Association @ Cases[
 (*applyMessageTemplate*)
 applyMessageTemplate // beginDefinition;
 
-applyMessageTemplate[ label_String, template_String, { args___ } ] :=
-    label <> ": " <> ToString @ StringForm[ template, args ];
+applyMessageTemplate[ label_String, template_String, args_List ] :=
+    label <> ": " <> ToString @ StringForm[ template, Sequence @@ shortenMessageParameters @ args ];
 
 applyMessageTemplate // endDefinition;
 
-(* TODO: shorten message parameter strings by an appropriate heuristic *)
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*shortenMessageParameters*)
+shortenMessageParameters // beginDefinition;
+shortenMessageParameters // Attributes = { HoldAllComplete };
+shortenMessageParameters[ { } ] := { };
+shortenMessageParameters[ args_List ] := shortenMessageParameter[ countLargeParameters @ args ] /@ Unevaluated @ args;
+shortenMessageParameters // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*countLargeParameters*)
+countLargeParameters // beginDefinition;
+countLargeParameters // Attributes = { HoldFirst };
+countLargeParameters[ { } ] := 0;
+countLargeParameters[ { args__ } ] := Length @ Select[ HoldComplete @ args, largeParameterQ ];
+countLargeParameters // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*largeParameterQ*)
+largeParameterQ // beginDefinition;
+largeParameterQ[ _String ] := True;
+largeParameterQ[ $$atomic ] := False;
+largeParameterQ[ HoldForm[ expr_ ] ] := largeParameterQ @ expr;
+largeParameterQ[ _ ] := True;
+largeParameterQ // Attributes = { HoldAllComplete };
+largeParameterQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*shortenMessageParameter*)
+shortenMessageParameter // beginDefinition;
+
+shortenMessageParameter[ count_Integer? Positive ] :=
+    With[ { len = Max[ 50, Ceiling[ $maxMessageParameterLength / count ] ] },
+        Function[ Null, shortenMessageParameter[ len, Unevaluated @ # ], HoldAllComplete ]
+    ];
+
+shortenMessageParameter[ len_Integer? NonNegative, expr_ ] :=
+    ToString[ Unevaluated @ Short @ expr, PageWidth -> len ];
+
+shortenMessageParameter // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
