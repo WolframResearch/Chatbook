@@ -57,6 +57,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `importResourceFunction;
 `messageFailure;
 `messagePrint;
+`setServiceCaller;
 `throwFailure;
 `throwInternalFailure;
 `throwMessageDialog;
@@ -566,7 +567,7 @@ catchTop[ eval_, sym_Symbol ] :=
             catchTop                = # &,
             catchTopAs              = (#1 &) &
         },
-        Catch[ eval, $catchTopTag ]
+        Catch[ setServiceCaller @ eval, $catchTopTag ]
     ];
 
 catchTop // endDefinition;
@@ -738,6 +739,27 @@ makeInternalFailureData[ eval_, args___ ] :=
             "Stack"      :> $stack
         |>
     ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*setServiceCaller*)
+setServiceCaller // beginDefinition;
+setServiceCaller // Attributes = { HoldFirst };
+
+setServiceCaller[ eval_ ] := (
+    Needs[ "ServiceConnectionUtilities`" -> None ];
+    setServiceCaller[ eval, ServiceConnectionUtilities`$Caller ]
+);
+
+setServiceCaller[ eval_, { c___ } ] :=
+    Block[ { ServiceConnectionUtilities`$Caller = { c, "Chatbook" }, setServiceCaller = # & },
+        eval
+    ];
+
+setServiceCaller[ eval_, _ ] :=
+    setServiceCaller[ eval, { } ];
+
+setServiceCaller // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
