@@ -816,9 +816,9 @@ simpleToolRequestParser[ string_String ] := Enclose[
         callPos = ConfirmMatch[ Last[ StringPosition[ string, callString ], $Failed ], { __Integer }, "CallPosition" ];
         tool = ConfirmMatch[ AssociationThread[ commands -> tools ][ command ], _LLMTool, "Tool" ];
 
-        name = ConfirmBy[ tool[[ 1, "Name" ]], StringQ, "ToolName" ];
+        name = ConfirmBy[ tool[ "Name" ], StringQ, "ToolName" ];
 
-        paramNames = Keys @ ConfirmMatch[ tool[[ 1, "Parameters" ]], KeyValuePattern @ { }, "ParameterNames" ];
+        paramNames = Keys @ ConfirmMatch[ tool[ "Parameters" ], KeyValuePattern @ { }, "ParameterNames" ];
         argStrings = If[ Length @ paramNames === 1, { argString }, StringSplit[ argString, "\n" ] ];
         If[ Length @ argStrings > Length @ paramNames, Throw @ None ];
 
