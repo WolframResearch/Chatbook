@@ -33,6 +33,13 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$unspecified;
 `$$feObj;
 `$$template;
+`$$complex;
+`$$integer;
+`$$rational;
+`$$real;
+`$$string;
+`$$symbol;
+`$$atomic;
 
 `tr;
 `trRaw;
@@ -134,6 +141,19 @@ $$size            = Infinity | (_Real|_Integer)? NonNegative;
 $$unspecified     = _Missing | Automatic | Inherited;
 $$feObj           = _FrontEndObject | $FrontEndSession | _NotebookObject | _CellObject | _BoxObject;
 $$template        = _String|_TemplateObject|_TemplateExpression|_TemplateSequence;
+
+(* Helper functions for held pattern tests: *)
+u[ f_ ] := Function[ Null, f @ Unevaluated @ #, HoldAllComplete ];
+pt[ patt_, f_ ] := PatternTest[ patt, Evaluate @ u @ f ];
+
+(* Atomic expressions (not including raw objects like Association etc): *)
+$$complex  = pt[ _Complex , AtomQ             ];
+$$integer  = pt[ _Integer , IntegerQ          ];
+$$rational = pt[ _Rational, AtomQ             ];
+$$real     = pt[ _Real    , Developer`RealQ   ];
+$$string   = pt[ _String  , StringQ           ];
+$$symbol   = pt[ _Symbol  , Developer`SymbolQ ];
+$$atomic   = $$complex | $$integer | $$rational | $$real | $$string | $$symbol;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

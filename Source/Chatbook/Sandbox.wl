@@ -40,6 +40,8 @@ $evaluatorMethod          := toolOptionValue[ "WolframLanguageEvaluator", "Metho
 $cloudEvaluatorLocation    = "/Chatbook/Tools/WolframLanguageEvaluator/Evaluate";
 $cloudLineNumber           = 1;
 $cloudSession              = None;
+$maxSandboxMessages        = 10;
+$maxMessageParameterLength = 100;
 
 (* Tests for expressions that lose their initialized status when sending over a link: *)
 $initializationTests = Join[
@@ -762,15 +764,10 @@ sessionEvaluate[ HoldComplete[ eval0_ ] ] := Enclose[
         $lastSandboxMethod = "Session";
         $lastSandboxEvaluation = HoldComplete @ eval0;
 
-        (* TODO: this evaluator method does not redefine any messages,
-                 so the LLM will not receive the associated custom prompting
-        *)
-
         response = $Failed;
         eval = makeLinkWriteEvaluation @ eval0;
 
         With[ { held = eval, tc = $sandboxEvaluationTimeout },
-            (* Using SessionSubmit so that messages from AI code will not print to the current notebook: *)
             response = evaluationData[
                 HoldComplete @@ {
                     TimeConstrained[
@@ -1144,11 +1141,12 @@ evaluationData // beginDefinition;
 evaluationData // Attributes = { HoldAllComplete };
 
 evaluationData[ eval_ ] := Enclose[
-    Module[ { outputs, result, $fail },
+    Module[ { outputs, result, stopped, $fail },
         outputs = Internal`Bag[ ];
         result = $fail;
+        stopped = <| |>;
         Internal`HandlerBlock[
-            { "Message", evaluationMessageHandler @ outputs },
+            { "Message", evaluationMessageHandler[ stopped, outputs ] },
             Internal`HandlerBlock[
                 { "Wolfram.System.Print.Veto", evaluationPrintHandler @ outputs },
                 result = Quiet @ Quiet[ catchEverything @ eval, $stackTag::begin ]
@@ -1162,8 +1160,6 @@ evaluationData[ eval_ ] := Enclose[
 ];
 
 evaluationData // endDefinition;
-
-
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1183,6 +1179,8 @@ setOutput[ line_Integer, HoldComplete[ result___ ] ] :=
     ];
 
 setOutput // endDefinition;
+
+(* TODO: Should probably also set things like In[], InString[], etc. *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1206,10 +1204,49 @@ makePrintText // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*evaluationMessageHandler*)
 evaluationMessageHandler // beginDefinition;
-evaluationMessageHandler[ outputs_Internal`Bag ] := evaluationMessageHandler[ outputs, # ] &;
-evaluationMessageHandler[ outputs_, Hold[ message_? messageQuietedQ, _ ] ] := Null;
-evaluationMessageHandler[ outputs_, Hold[ message_, _ ] ] := Internal`StuffBag[ outputs, makeMessageText @ message ];
+evaluationMessageHandler // Attributes = { HoldFirst };
+(* `stopped` is a held association that's used to mark messages that have triggered a `General::stop`, and `outputs`
+   contains the message and print text to be inserted into to the tool output for the LLM. *)
+evaluationMessageHandler[ stopped_, outputs_ ] := Quiet @ evaluationMessageHandler0[ stopped, outputs ];
 evaluationMessageHandler // endDefinition;
+
+
+evaluationMessageHandler0 // beginDefinition;
+evaluationMessageHandler0 // Attributes = { HoldFirst };
+
+evaluationMessageHandler0[ stopped_, outputs_Internal`Bag ] := evaluationMessageHandler0[ stopped, outputs, # ] &;
+
+(* Message is locally quiet, so do nothing: *)
+evaluationMessageHandler0[ _, _, Hold[ message_? messageQuietedQ, _ ] ] := Null;
+
+(* Message is not from LLM code, so we don't want to insert it into the tool response: *)
+evaluationMessageHandler0[ _, _, Hold[ _, _ ] ] /; $suppressMessageCollection := Null;
+
+(* Already collected the max number of messages, so do nothing: *)
+evaluationMessageHandler0[ _, outputs_Internal`Bag, _ ] /; Internal`BagLength @ outputs > $maxSandboxMessages := Null;
+
+(* Message already triggered a General::stop, so do nothing: *)
+evaluationMessageHandler0[ stopped_, outputs_, Hold[ Message[ mn_, ___ ], _ ] ] /; stopped @ HoldComplete @ mn := Null;
+
+(* Otherwise, collect message text: *)
+evaluationMessageHandler0[ stopped_, outputs_, Hold[ message_, _ ] ] :=
+    Block[ { $suppressMessageCollection = True }, (* Any messages occurring in here are not from LLM code *)
+        (* If message is General::stop, tag the message in its argument as stopped so it won't be collected again: *)
+        checkMessageStop[ stopped, message ];
+        (* Create message text and save it: *)
+        Internal`StuffBag[ outputs, makeMessageText @ message ]
+    ];
+
+evaluationMessageHandler0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*checkMessageStop*)
+checkMessageStop // beginDefinition;
+checkMessageStop // Attributes = { HoldAllComplete };
+checkMessageStop[ stopped_, Message[ General::stop, HoldForm[ stop_ ] ] ] := stopped[ HoldComplete @ stop ] = True;
+checkMessageStop[ stopped_, _Message ] := Null;
+checkMessageStop // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1219,12 +1256,11 @@ makeMessageText // Attributes = { HoldAllComplete };
 
 makeMessageText[ Message[ mn: MessageName[ sym_Symbol, tag__String ], args0___ ] ] :=
     Module[ { template, label, args },
-        template = SelectFirst[ { mn, MessageName[ General, tag ] }, StringQ ];
+        template = SelectFirst[ { messageOverrideTemplate @ mn, mn, MessageName[ General, tag ] }, StringQ ];
         label    = ToString @ Unevaluated @ mn;
         args     = HoldForm /@ Unevaluated @ { args0 };
         If[ StringQ @ template,
             applyMessageTemplate[ label, template, args ],
-            (* FIXME: handle special sandbox messages like `General::messages` here *)
             undefinedMessageText[ label, args ]
         ]
     ];
@@ -1233,15 +1269,71 @@ makeMessageText // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*messageOverrideTemplate*)
+messageOverrideTemplate // beginDefinition;
+messageOverrideTemplate // Attributes = { HoldAllComplete };
+messageOverrideTemplate[ mn_MessageName ] := Lookup[ $messageOverrideTemplates, HoldComplete @ mn ];
+messageOverrideTemplate // endDefinition;
+
+
+$messageOverrideTemplates := $messageOverrideTemplates = Association @ Cases[
+    $messageOverrides,
+    HoldPattern[ mn_MessageName = template_String ] :> (HoldComplete @ mn -> template)
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*applyMessageTemplate*)
 applyMessageTemplate // beginDefinition;
 
-applyMessageTemplate[ label_String, template_String, { args___ } ] :=
-    label <> ": " <> ToString @ StringForm[ template, args ];
+applyMessageTemplate[ label_String, template_String, args_List ] :=
+    label <> ": " <> ToString @ StringForm[ template, Sequence @@ shortenMessageParameters @ args ];
 
 applyMessageTemplate // endDefinition;
 
-(* TODO: shorten message parameter strings by an appropriate heuristic *)
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*shortenMessageParameters*)
+shortenMessageParameters // beginDefinition;
+shortenMessageParameters // Attributes = { HoldAllComplete };
+shortenMessageParameters[ { } ] := { };
+shortenMessageParameters[ args_List ] := shortenMessageParameter[ countLargeParameters @ args ] /@ Unevaluated @ args;
+shortenMessageParameters // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*countLargeParameters*)
+countLargeParameters // beginDefinition;
+countLargeParameters // Attributes = { HoldFirst };
+countLargeParameters[ { } ] := 0;
+countLargeParameters[ { args__ } ] := Length @ Select[ HoldComplete @ args, largeParameterQ ];
+countLargeParameters // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*largeParameterQ*)
+largeParameterQ // beginDefinition;
+largeParameterQ[ _String ] := True;
+largeParameterQ[ $$atomic ] := False;
+largeParameterQ[ HoldForm[ expr_ ] ] := largeParameterQ @ expr;
+largeParameterQ[ _ ] := True;
+largeParameterQ // Attributes = { HoldAllComplete };
+largeParameterQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*shortenMessageParameter*)
+shortenMessageParameter // beginDefinition;
+
+shortenMessageParameter[ count_Integer? Positive ] :=
+    With[ { len = Max[ 50, Ceiling[ $maxMessageParameterLength / count ] ] },
+        Function[ Null, shortenMessageParameter[ len, Unevaluated @ # ], HoldAllComplete ]
+    ];
+
+shortenMessageParameter[ len_Integer? NonNegative, expr_ ] :=
+    ToString[ Unevaluated @ Short @ expr, PageWidth -> len ];
+
+shortenMessageParameter // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1310,7 +1402,8 @@ inheritingOffQ // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*localStack*)
 localStack // beginDefinition;
-localStack[ HoldForm @ { ___, { ___, { $stackTag::begin }, ___ }, rest___ } ] := HoldForm @ { rest };
+localStack[ HoldForm @ { ___, { ___, { $stackTag::begin }, ___ }, stack___ } ] := localStack @ HoldForm @ { stack };
+localStack[ HoldForm @ { stack___, { ___, { $stackTag::end }, ___ }, ___ } ] := localStack @ HoldForm @ { stack };
 localStack[ stack_ ] := stack;
 localStack // endDefinition;
 
@@ -1333,7 +1426,7 @@ generalMessagePattern // endDefinition;
 (*catchEverything*)
 catchEverything // beginDefinition;
 catchEverything // Attributes = { HoldAllComplete };
-catchEverything[ eval_ ] := catchEverything0 @ Catch @ Catch[ contained @ eval, _, uncaughtThrow ];
+catchEverything[ e_ ] := catchEverything0 @ CheckAbort[ Catch @ Catch[ contained @ e, _, uncaughtThrow ], $Aborted ];
 catchEverything // endDefinition;
 
 
@@ -1343,9 +1436,12 @@ catchEverything0 // Attributes = { SequenceHold };
 catchEverything0[ contained[ result___ ] ] :=
     result;
 
+catchEverything0[ $Aborted ] :=
+    makeHeldResultAssociation @ $Aborted;
+
 catchEverything0[ uncaughtThrow[ uncaught__ ] ] := (
     Message[ Throw::nocatch, HoldForm @ Throw @ uncaught ];
-    HoldComplete @@ { <| "Line" -> $Line, "Result" -> HoldComplete @ Hold @ Throw @ uncaught, "Initialized" -> { } |> }
+    makeHeldResultAssociation @ Hold @ Throw @ uncaught
 );
 
 catchEverything0[ uncaught_ ] :=
@@ -1356,10 +1452,22 @@ catchEverything0[ uncaught___ ] :=
 
 catchEverything0 // endDefinition;
 
-(* TODO: catch aborts too *)
+(* TODO: Figure out a reliable way to intercept Exit and Quit.
+   Note: Quit is locked in cloud, so we can't use a Block to redefine it. *)
 
 contained // Attributes = { SequenceHold };
 uncaughtThrow // Attributes = { HoldAllComplete };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeHeldResultAssociation*)
+makeHeldResultAssociation // beginDefinition;
+makeHeldResultAssociation // Attributes = { HoldAllComplete };
+
+makeHeldResultAssociation[ e_ ] :=
+    HoldComplete @@ { <| "Line" -> $Line, "Result" -> HoldComplete @ e, "Initialized" -> { } |> };
+
+makeHeldResultAssociation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
