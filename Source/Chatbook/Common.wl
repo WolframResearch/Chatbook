@@ -747,7 +747,7 @@ setServiceCaller // beginDefinition;
 setServiceCaller // Attributes = { HoldFirst };
 
 setServiceCaller[ eval_ ] := (
-    Needs[ "ServiceConnectionUtilities`" -> None ];
+    Quiet @ Needs[ "ServiceConnectionUtilities`" -> None ];
     setServiceCaller[ eval, ServiceConnectionUtilities`$Caller ]
 );
 
