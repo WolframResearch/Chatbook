@@ -1187,7 +1187,7 @@ parsePartialToolCallString[ string_String ] /; $simpleToolMethod := Enclose[
         name = ConfirmBy[ toolName @ tool, StringQ, "ToolName" ];
 
         If[ StringQ @ argString,
-            paramNames = Keys @ ConfirmMatch[ tool[[ 1, "Parameters" ]], KeyValuePattern @ { }, "ParameterNames" ];
+            paramNames = Keys @ ConfirmMatch[ tool[ "Parameters" ], KeyValuePattern @ { }, "ParameterNames" ];
             argStrings = If[ Length @ paramNames === 1, { argString }, StringSplit[ argString, "\n" ] ];
             padded = PadRight[ argStrings, Length @ paramNames, "" ];
             params = ConfirmBy[ AssociationThread[ paramNames -> padded ], AssociationQ, "Parameters" ]
@@ -1243,7 +1243,6 @@ parseFullToolCallString // beginDefinition;
 parseFullToolCallString[ id_String, string_String ] :=
     parseFullToolCallString[ id, $toolEvaluationResults[ id ], string ];
 
-(* FIXME: handle simple syntax too *)
 parseFullToolCallString[ id_, _Missing, string_String ] :=
     parsePartialToolCallString @ string;
 
@@ -1262,7 +1261,7 @@ parseFullToolCallString[ id_String, resp: HoldPattern[ _LLMToolResponse ], strin
 parseFullToolCallString[ id_String, tool: HoldPattern[ _LLMTool ], parameters_Association, output_, string_ ] :=
     $lastFullParsed = <|
         "ID"                 -> id,
-        "Name"               -> toolName[tool],
+        "Name"               -> toolName @ tool,
         "DisplayName"        -> getToolDisplayName @ tool,
         "Icon"               -> getToolIcon @ tool,
         "FormattingFunction" -> getToolFormattingFunction @ tool,
