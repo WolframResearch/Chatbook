@@ -1207,7 +1207,7 @@ evaluationMessageHandler // beginDefinition;
 evaluationMessageHandler // Attributes = { HoldFirst };
 (* `stopped` is a held association that's used to mark messages that have triggered a `General::stop`, and `outputs`
    contains the message and print text to be inserted into to the tool output for the LLM. *)
-evaluationMessageHandler[ stopped_, outputs_ ] := Quiet @ evaluationMessageHandler0[ stopped, outputs ];
+evaluationMessageHandler[ stopped_, outputs_ ] := evaluationMessageHandler0[ stopped, outputs, # ] &;
 evaluationMessageHandler // endDefinition;
 
 
