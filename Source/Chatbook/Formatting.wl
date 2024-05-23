@@ -1877,7 +1877,7 @@ image[ alt_String, url_String ] := Enclose[
         key  = SelectFirst[ keys, StringContainsQ[ url, #1, IgnoreCase -> True ] & ];
         If[ StringQ @ key,
             attachment[ alt, key ],
-            image[ alt, url, URLParse @ url ]
+            image[ alt, url, urlParse @ url ]
         ]
     ],
     throwInternalFailure[ image[ alt, url ], ## ] &
@@ -1886,9 +1886,36 @@ image[ alt_String, url_String ] := Enclose[
 image[ alt_, url_, KeyValuePattern @ { "Scheme" -> "attachment"|"expression", "Domain" -> key_String } ] :=
     attachment[ alt, key ];
 
-image[ alt_, url_, _ ] := importedImage[ alt, url ];
+image[ alt_, url_, KeyValuePattern @ { "Scheme" -> "file", "Path" -> path_String } ] :=
+    importedImage[ alt, path ];
+
+image[ alt_, url_, _ ] :=
+    importedImage[ alt, url ];
 
 image // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*urlParse*)
+urlParse // beginDefinition;
+urlParse[ url_String ] := With[ { parsed = localParse @ url }, parsed /; AssociationQ @ parsed ];
+urlParse[ url_String ] := URLParse @ url;
+urlParse // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*localParse*)
+localParse // beginDefinition;
+
+localParse[ uri_String ] /; StringStartsQ[ uri, ("attachment"|"file")~~"://" ] :=
+    With[ { path = StringDelete[ uri, StartOfString ~~ ("attachment"|"file") ~~ "://" ] },
+        <| "Scheme" -> "file", "Path" -> path |> /; FileExistsQ @ path
+    ];
+
+localParse[ uri_String ] :=
+    Missing[ "NotAvailable" ];
+
+localParse // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

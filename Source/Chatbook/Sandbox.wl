@@ -1141,7 +1141,8 @@ evaluationData // beginDefinition;
 evaluationData // Attributes = { HoldAllComplete };
 
 evaluationData[ eval_ ] := Enclose[
-    Module[ { outputs, result, stopped, $fail },
+    Module[ {  result, stopped, $fail },
+        $suppressMessageCollection = False;
         outputs = Internal`Bag[ ];
         result = $fail;
         stopped = <| |>;
@@ -1207,26 +1208,37 @@ evaluationMessageHandler // beginDefinition;
 evaluationMessageHandler // Attributes = { HoldFirst };
 (* `stopped` is a held association that's used to mark messages that have triggered a `General::stop`, and `outputs`
    contains the message and print text to be inserted into to the tool output for the LLM. *)
-evaluationMessageHandler[ stopped_, outputs_ ] := Quiet @ evaluationMessageHandler0[ stopped, outputs ];
+evaluationMessageHandler[ stopped_, outputs_ ] := evaluationMessageHandler0[ stopped, outputs, # ] &;
 evaluationMessageHandler // endDefinition;
 
 
 evaluationMessageHandler0 // beginDefinition;
 evaluationMessageHandler0 // Attributes = { HoldFirst };
 
-evaluationMessageHandler0[ stopped_, outputs_Internal`Bag ] := evaluationMessageHandler0[ stopped, outputs, # ] &;
+(* Message is not from LLM code or we've collected too many, so we don't want to insert it into the tool response: *)
+evaluationMessageHandler0[ _, _, _ ] /; $suppressMessageCollection := Null;
+
+(* cSpell: ignore newsym *)
+(* Messages that are so frequent we don't want to waste time analyzing them: *)
+evaluationMessageHandler0[ _, _, Hold[ Message[ $CharacterEncoding::utf8 | General::newsym, ___ ], _ ] ] := Null;
+
+(* Message already triggered a General::stop, so do nothing: *)
+evaluationMessageHandler0[ stopped_, outputs_, Hold[ Message[ mn_, ___ ], _ ] ] /; stopped @ HoldComplete @ mn := Null;
 
 (* Message is locally quiet, so do nothing: *)
 evaluationMessageHandler0[ _, _, Hold[ message_? messageQuietedQ, _ ] ] := Null;
 
-(* Message is not from LLM code, so we don't want to insert it into the tool response: *)
-evaluationMessageHandler0[ _, _, Hold[ _, _ ] ] /; $suppressMessageCollection := Null;
+(* Message has triggered a `General::stop`, but it's locally quiet, so mark it and otherwise do nothing: *)
+evaluationMessageHandler0[ stopped_, _, Hold[ Message[ General::stop, HoldForm[ msg_? messageQuietedQ ] ], _ ] ] := (
+    stopped[ HoldComplete @ msg ] = True;
+    Null
+);
 
 (* Already collected the max number of messages, so do nothing: *)
-evaluationMessageHandler0[ _, outputs_Internal`Bag, _ ] /; Internal`BagLength @ outputs > $maxSandboxMessages := Null;
-
-(* Message already triggered a General::stop, so do nothing: *)
-evaluationMessageHandler0[ stopped_, outputs_, Hold[ Message[ mn_, ___ ], _ ] ] /; stopped @ HoldComplete @ mn := Null;
+evaluationMessageHandler0[ _, outputs_Internal`Bag, _ ] /; Internal`BagLength @ outputs > $maxSandboxMessages := (
+    $suppressMessageCollection = True;
+    Null
+);
 
 (* Otherwise, collect message text: *)
 evaluationMessageHandler0[ stopped_, outputs_, Hold[ message_, _ ] ] :=
@@ -1325,8 +1337,8 @@ largeParameterQ // endDefinition;
 (*shortenMessageParameter*)
 shortenMessageParameter // beginDefinition;
 
-shortenMessageParameter[ count_Integer? Positive ] :=
-    With[ { len = Max[ 50, Ceiling[ $maxMessageParameterLength / count ] ] },
+shortenMessageParameter[ count_Integer? NonNegative ] :=
+    With[ { len = Max[ 50, Ceiling[ $maxMessageParameterLength / Max[ 1, count ] ] ] },
         Function[ Null, shortenMessageParameter[ len, Unevaluated @ # ], HoldAllComplete ]
     ];
 
