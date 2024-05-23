@@ -1325,8 +1325,8 @@ largeParameterQ // endDefinition;
 (*shortenMessageParameter*)
 shortenMessageParameter // beginDefinition;
 
-shortenMessageParameter[ count_Integer? Positive ] :=
-    With[ { len = Max[ 50, Ceiling[ $maxMessageParameterLength / count ] ] },
+shortenMessageParameter[ count_Integer? NonNegative ] :=
+    With[ { len = Max[ 50, Ceiling[ $maxMessageParameterLength / Max[ 1, count ] ] ] },
         Function[ Null, shortenMessageParameter[ len, Unevaluated @ # ], HoldAllComplete ]
     ];
 
