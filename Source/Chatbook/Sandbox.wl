@@ -40,6 +40,7 @@ $evaluatorMethod          := toolOptionValue[ "WolframLanguageEvaluator", "Metho
 $cloudEvaluatorLocation    = "/Chatbook/Tools/WolframLanguageEvaluator/Evaluate";
 $cloudLineNumber           = 1;
 $cloudSession              = None;
+$maxSandboxMessages        = 10;
 
 (* Tests for expressions that lose their initialized status when sending over a link: *)
 $initializationTests = Join[
@@ -770,7 +771,6 @@ sessionEvaluate[ HoldComplete[ eval0_ ] ] := Enclose[
         eval = makeLinkWriteEvaluation @ eval0;
 
         With[ { held = eval, tc = $sandboxEvaluationTimeout },
-            (* Using SessionSubmit so that messages from AI code will not print to the current notebook: *)
             response = evaluationData[
                 HoldComplete @@ {
                     TimeConstrained[
@@ -1144,11 +1144,12 @@ evaluationData // beginDefinition;
 evaluationData // Attributes = { HoldAllComplete };
 
 evaluationData[ eval_ ] := Enclose[
-    Module[ { outputs, result, $fail },
+    Module[ { outputs, result, stopped, $fail },
         outputs = Internal`Bag[ ];
         result = $fail;
+        stopped = <| |>;
         Internal`HandlerBlock[
-            { "Message", evaluationMessageHandler @ outputs },
+            { "Message", evaluationMessageHandler[ stopped, outputs ] },
             Internal`HandlerBlock[
                 { "Wolfram.System.Print.Veto", evaluationPrintHandler @ outputs },
                 result = Quiet @ Quiet[ catchEverything @ eval, $stackTag::begin ]
@@ -1162,8 +1163,6 @@ evaluationData[ eval_ ] := Enclose[
 ];
 
 evaluationData // endDefinition;
-
-
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1183,6 +1182,8 @@ setOutput[ line_Integer, HoldComplete[ result___ ] ] :=
     ];
 
 setOutput // endDefinition;
+
+(* TODO: Should probably also set things like In[], InString[], etc. *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1206,10 +1207,49 @@ makePrintText // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*evaluationMessageHandler*)
 evaluationMessageHandler // beginDefinition;
-evaluationMessageHandler[ outputs_Internal`Bag ] := evaluationMessageHandler[ outputs, # ] &;
-evaluationMessageHandler[ outputs_, Hold[ message_? messageQuietedQ, _ ] ] := Null;
-evaluationMessageHandler[ outputs_, Hold[ message_, _ ] ] := Internal`StuffBag[ outputs, makeMessageText @ message ];
+evaluationMessageHandler // Attributes = { HoldFirst };
+(* `stopped` is a held association that's used to mark messages that have triggered a `General::stop`, and `outputs`
+   contains the message and print text to be inserted into to the tool output for the LLM. *)
+evaluationMessageHandler[ stopped_, outputs_ ] := Quiet @ evaluationMessageHandler0[ stopped, outputs ];
 evaluationMessageHandler // endDefinition;
+
+
+evaluationMessageHandler0 // beginDefinition;
+evaluationMessageHandler0 // Attributes = { HoldFirst };
+
+evaluationMessageHandler0[ stopped_, outputs_Internal`Bag ] := evaluationMessageHandler0[ stopped, outputs, # ] &;
+
+(* Message is locally quiet, so do nothing: *)
+evaluationMessageHandler0[ _, _, Hold[ message_? messageQuietedQ, _ ] ] := Null;
+
+(* Message is not from LLM code, so we don't want to insert it into the tool response: *)
+evaluationMessageHandler0[ _, _, Hold[ _, _ ] ] /; $suppressMessageCollection := Null;
+
+(* Already collected the max number of messages, so do nothing: *)
+evaluationMessageHandler0[ _, outputs_Internal`Bag, _ ] /; Internal`BagLength @ outputs > $maxSandboxMessages := Null;
+
+(* Message already triggered a General::stop, so do nothing: *)
+evaluationMessageHandler0[ stopped_, outputs_, Hold[ Message[ mn_, ___ ], _ ] ] /; stopped @ HoldComplete @ mn := Null;
+
+(* Otherwise, collect message text: *)
+evaluationMessageHandler0[ stopped_, outputs_, Hold[ message_, _ ] ] :=
+    Block[ { $suppressMessageCollection = True }, (* Any messages occurring in here are not from LLM code *)
+        (* If message is General::stop, tag the message in its argument as stopped so it won't be collected again: *)
+        checkMessageStop[ stopped, message ];
+        (* Create message text and save it: *)
+        Internal`StuffBag[ outputs, makeMessageText @ message ]
+    ];
+
+evaluationMessageHandler0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*checkMessageStop*)
+checkMessageStop // beginDefinition;
+checkMessageStop // Attributes = { HoldAllComplete };
+checkMessageStop[ stopped_, Message[ General::stop, HoldForm[ stop_ ] ] ] := stopped[ HoldComplete @ stop ] = True;
+checkMessageStop[ stopped_, _Message ] := Null;
+checkMessageStop // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
