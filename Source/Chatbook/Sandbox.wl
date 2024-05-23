@@ -763,10 +763,6 @@ sessionEvaluate[ HoldComplete[ eval0_ ] ] := Enclose[
         $lastSandboxMethod = "Session";
         $lastSandboxEvaluation = HoldComplete @ eval0;
 
-        (* TODO: this evaluator method does not redefine any messages,
-                 so the LLM will not receive the associated custom prompting
-        *)
-
         response = $Failed;
         eval = makeLinkWriteEvaluation @ eval0;
 
@@ -1259,17 +1255,30 @@ makeMessageText // Attributes = { HoldAllComplete };
 
 makeMessageText[ Message[ mn: MessageName[ sym_Symbol, tag__String ], args0___ ] ] :=
     Module[ { template, label, args },
-        template = SelectFirst[ { mn, MessageName[ General, tag ] }, StringQ ];
+        template = SelectFirst[ { messageOverrideTemplate @ mn, mn, MessageName[ General, tag ] }, StringQ ];
         label    = ToString @ Unevaluated @ mn;
         args     = HoldForm /@ Unevaluated @ { args0 };
         If[ StringQ @ template,
             applyMessageTemplate[ label, template, args ],
-            (* FIXME: handle special sandbox messages like `General::messages` here *)
             undefinedMessageText[ label, args ]
         ]
     ];
 
 makeMessageText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*messageOverrideTemplate*)
+messageOverrideTemplate // beginDefinition;
+messageOverrideTemplate // Attributes = { HoldAllComplete };
+messageOverrideTemplate[ mn_MessageName ] := Lookup[ $messageOverrideTemplates, HoldComplete @ mn ];
+messageOverrideTemplate // endDefinition;
+
+
+$messageOverrideTemplates := $messageOverrideTemplates = Association @ Cases[
+    $messageOverrides,
+    HoldPattern[ mn_MessageName = template_String ] :> (HoldComplete @ mn -> template)
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
