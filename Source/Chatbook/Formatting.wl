@@ -124,6 +124,7 @@ $autoOperatorRenderings = <|
         "Grid"
     ],
     "MarkdownDelimiter",
+    Background           -> None,
     ShowStringCharacters -> False
 ];
 
