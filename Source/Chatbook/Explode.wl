@@ -10,14 +10,17 @@ Needs[ "Wolfram`Chatbook`"        ];
 Needs[ "Wolfram`Chatbook`Common`" ];
 
 $$newCellStyle = Alternatives[
+    "BlockQuote",
     "ExternalLanguage",
     "Input",
     "Item",
+    "MarkdownDelimiter",
     "Program",
     "Section",
     "Subsection",
     "Subsubsection",
     "Subsubsubsection",
+    "Text",
     "TextTableForm",
     "Title"
 ];
@@ -51,8 +54,8 @@ explodeCell // endDefinition;
 (*$preprocessingRules*)
 $preprocessingRules := $preprocessingRules = Dispatch @ {
     (* Remove "InlineSection" styling: *)
-    Cell[ BoxData @ PaneBox[ StyleBox[ text_String, style_, ___ ], ___ ], "InlineSection", ___ ] :>
-        StyleBox[ StringTrim[ text, "\"" ], style ],
+    Cell[ BoxData @ PaneBox[ StyleBox[ text_, style_, ___ ], ___ ], "InlineSection", ___ ] :>
+        RuleCondition @ StyleBox[ extractText @ text, style ],
 
     (* Convert TextRefLink to plain hyperlink: *)
     Cell @ BoxData[ TemplateBox[ { label_, uri_, ___ }, "TextRefLink" ], ___ ] :>
@@ -119,8 +122,20 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
         { a, Cell @@ b, c },
 
     (* Tiny line breaks: *)
-    StyleBox[ "\n", "TinyLineBreak", ___ ] :> "\n"
+    StyleBox[ "\n", "TinyLineBreak", ___ ] :> "\n",
+
+    Cell[ boxes_, style: "MarkdownDelimiter"|"BlockQuote", a___ ] :>
+        Cell[ boxes, "Text", style, a ]
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*extractText*)
+extractText // beginDefinition;
+extractText[ text_String ] := If[ StringMatchQ[ text, "\"" ~~ ___ ~~ "\"" ], ToExpression @ text, text ];
+extractText[ (Cell|StyleBox)[ text_, ___ ] ] := extractText @ text;
+extractText[ text_ ] := extractText[ text ] = CellToString @ text;
+extractText // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
