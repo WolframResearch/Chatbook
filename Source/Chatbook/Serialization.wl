@@ -714,10 +714,12 @@ fasterCellToString0[ (Cell|StyleBox)[ a_, $$subsubsubsectionStyle, ___ ] ] := "#
 fasterCellToString0[ (Cell|StyleBox)[ a_, $$subsubsubsubsectionStyle, ___ ] ] := "###### "<>fasterCellToString0 @ a;
 
 fasterCellToString0[ Cell[ BoxData @ PaneBox[ StyleBox[ box_, style_String, ___ ], ___ ], "InlineSection", ___ ] ] :=
-    StringJoin[
-        "\n",
-        fasterCellToString0 @ Cell[ fasterCellToString0 @ box, style ],
-        "\n"
+    Block[ { $showStringCharacters = False },
+        StringJoin[
+            "\n",
+            fasterCellToString0 @ Cell[ fasterCellToString0 @ box, style ],
+            "\n"
+        ]
     ];
 
 fasterCellToString0[ Cell[ __, $$delimiterStyle, ___ ] ] := $delimiterString;
