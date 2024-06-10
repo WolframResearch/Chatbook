@@ -854,7 +854,7 @@ splitDynamicContent[ container_, cell_ ] :=
     splitDynamicContent[ container, container[ "DynamicContent" ], cell, container[ "UUID" ] ];
 
 splitDynamicContent[ container_, text_String, cell_, uuid_String ] :=
-    splitDynamicContent[ container, StringSplit[ text, $dynamicSplitRules ], cell, uuid ];
+    splitDynamicContent[ container, DeleteCases[ StringSplit[ text, $dynamicSplitRules ], "" ], cell, uuid ];
 
 splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid_String ] := Enclose[
     Catch @ Module[ { boxObject, settings, reformatted, write, nbo },
