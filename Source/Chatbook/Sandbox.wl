@@ -1838,8 +1838,26 @@ appendURIInstructions[ as: KeyValuePattern @ { "String" -> s_, "Result" -> expr_
 appendURIInstructions[ string_String, expr_ ] /; $appendURIPrompt :=
     appendURIInstructions0[ string, expr ];
 
-appendURIInstructions[ string_String, _ ] :=
+appendURIInstructions[ string_String, HoldComplete[ e_? simpleFormattingQ ] ] :=
     string;
+
+appendURIInstructions[ string_String, HoldComplete[ ___, expr_ ] ] := Enclose[
+    Module[ { uri, key },
+        uri = ConfirmBy[
+            makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ],
+            StringQ,
+            "ExpressionURI"
+        ];
+
+        key = ConfirmBy[ expressionURIKey @ uri, StringQ, "ExpressionURIKey" ];
+
+        If[ StringContainsQ[ string, key ],
+            string,
+            string <> "\n\n(* "<> uri <>" *)"
+        ]
+    ],
+    throwInternalFailure
+];
 
 appendURIInstructions // endDefinition;
 
@@ -1889,7 +1907,7 @@ appendURIQ // Attributes = { HoldAllComplete };
 appendURIQ[ expr_ ] := TrueQ @ Or[
     ByteCount @ Unevaluated @ expr > 500,
     graphicsQ @ Unevaluated @ expr,
-    ! FreeQ[ Unevaluated @ expr, _Quantity|_Entity|_EntityClass|_EntityProperty|_DateObject ]
+    ! simpleFormattingQ @ expr
 ];
 
 appendURIQ // endDefinition;
@@ -1931,6 +1949,21 @@ simpleResultQ // beginDefinition;
 simpleResultQ // Attributes = { HoldAllComplete };
 simpleResultQ[ expr_ ] := FreeQ[ Unevaluated @ expr, _? fancyResultQ ];
 simpleResultQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*simpleFormattingQ*)
+simpleFormattingQ // beginDefinition;
+simpleFormattingQ // Attributes = { HoldAllComplete };
+simpleFormattingQ[ _String ] := True;
+simpleFormattingQ[ e_ ] := simpleFormattingQ[ HoldPattern @ Verbatim[ e ] ] = simpleFormattingQ0 @ MakeBoxes @ e;
+simpleFormattingQ // endDefinition;
+
+simpleFormattingQ0 // beginDefinition;
+simpleFormattingQ0[ _String ] := True;
+simpleFormattingQ0[ RowBox[ boxes_List ] ] := AllTrue[ boxes, simpleFormattingQ0 ];
+simpleFormattingQ0[ ___ ] := False;
+simpleFormattingQ0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
