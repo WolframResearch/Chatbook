@@ -84,6 +84,11 @@ $$mdTable = $$mdRow ~~ $$mdRow ..;
 $$blockQuoteLine = StartOfLine ~~ ">" ~~ $$ws ~~ Except[ "\n" ].. ~~ ("\n"|EndOfString);
 $$blockQuote     = Longest[ $$blockQuoteLine.. ];
 
+$$hyphenDelimiter     = Repeated[ "-", { 3, Infinity } ];
+$$asteriskDelimiter   = Repeated[ "*", { 3, Infinity } ];
+$$underscoreDelimiter = Repeated[ "_", { 3, Infinity } ];
+$$delimiter           = StartOfLine ~~ ($$hyphenDelimiter|$$asteriskDelimiter|$$underscoreDelimiter) ~~ EndOfLine;
+
 $chatGeneratedCellTag = "ChatGeneratedCell";
 
 $simpleToolMethod := $ChatHandlerData[ "ChatNotebookSettings", "ToolMethod" ] === "Simple";
@@ -1010,7 +1015,7 @@ $textDataFormatRules = {
     ("\n"|StartOfString).. ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :>
         sectionCell[ StringLength @ h, sec ]
     ,
-    StartOfLine ~~ Repeated[ "-", { 3, Infinity } ] ~~ EndOfLine :> delimiterCell[ ]
+    $$delimiter :> delimiterCell[ ]
     ,
     table: $$mdTable :> tableCell @ table
     ,
