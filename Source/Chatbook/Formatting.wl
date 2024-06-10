@@ -980,7 +980,7 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 $$endToolCall       = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
 $$eol               = " "... ~~ "\n";
 $$cmd               = Repeated[ DigitCharacter|LetterCharacter|"_"|"$", { 1, 80 } ];
-$$simpleToolCommand = StartOfLine ~~ ("/" ~~ c: $$cmd) ~~ $$eol /; $simpleToolMethod && toolShortNameQ @ c;
+$$simpleToolCommand = StartOfLine ~~ $$ws ~~ ("/" ~~ c: $$cmd) ~~ $$eol /; $simpleToolMethod && toolShortNameQ @ c;
 $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|EndOfString) ];
 
 
@@ -1217,7 +1217,7 @@ parsePartialToolCallString[ string_String ] /; $simpleToolMethod := Enclose[
         command = ConfirmBy[
             StringReplace[
                 string,
-                StartOfString ~~ "/" ~~ cmd: LetterCharacter.. ~~ WhitespaceCharacter... ~~ "\n" ~~ ___ :> cmd
+                StartOfString ~~ $$ws ~~ "/" ~~ cmd: LetterCharacter.. ~~ $$ws ~~ "\n" ~~ ___ :> cmd
             ],
             toolShortNameQ,
             "Command"
@@ -1226,8 +1226,16 @@ parsePartialToolCallString[ string_String ] /; $simpleToolMethod := Enclose[
         argString = First[
             StringCases[
                 string,
-                StartOfString ~~ "/" ~~ command ~~ WhitespaceCharacter... ~~ "\n" ~~ a___ ~~ ("/exec"|EndOfString) :>
-                    a,
+                StringExpression[
+                    StartOfString,
+                    $$ws,
+                    "/",
+                    command,
+                    WhitespaceCharacter...,
+                    "\n",
+                    a___,
+                    "/exec"|EndOfString
+                ] :> a,
                 1
             ],
             Missing[ ]

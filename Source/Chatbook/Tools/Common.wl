@@ -805,8 +805,14 @@ simpleToolRequestParser[ string_String ] := Enclose[
         (* TODO: return failure when trying to use an invalid tool command string *)
         calls = StringCases[
             StringDelete[ string, "/" ~~ commands ~~ ___ ~~ "/exec" ],
-            Longest[ StartOfString ~~ ___ ~~ StartOfLine ~~ s: ("/" ~~ (cmd: commands) ~~ args___) ~~ EndOfString ] :>
-                { StringTrim @ cmd, StringTrim @ args, s }
+            Longest @ StringExpression[
+                StartOfString,
+                ___,
+                StartOfLine,
+                WhitespaceCharacter...,
+                s: ("/" ~~ cmd: commands ~~ args___),
+                EndOfString
+            ] :> { StringTrim @ cmd, StringTrim @ args, s }
         ];
 
         If[ calls === { }, Throw @ None ];
