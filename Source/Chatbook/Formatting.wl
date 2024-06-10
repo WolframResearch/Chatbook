@@ -30,36 +30,6 @@ Needs[ "Wolfram`Chatbook`FrontEnd`" ];
 Needs[ "Wolfram`Chatbook`Sandbox`"  ];
 Needs[ "Wolfram`Chatbook`Tools`"    ];
 
-(* TODO
-
-Block quotes:
-
-Grid[
-    {
-        {
-            Pane[
-                "Block quotes are useful for quoting someone or highlighting a piece of text.",
-                ImageMargins -> 5,
-                ImageSize -> { Full, Automatic },
-                BaseStyle -> { "Text", FontColor -> GrayLevel[ 0.35 ] }
-            ]
-        }
-    },
-    Dividers -> { 1 -> Directive[ LightBlue, AbsoluteThickness[ 4 ] ], False },
-    Background -> GrayLevel[ 1 ]
-]
-
-Delimiters:
-
-Grid[
-    { { "" }, { "" } },
-    Dividers -> Center,
-    ItemSize -> { Fit, Automatic },
-    FrameStyle -> Directive[ GrayLevel[ 0.8 ], AbsoluteThickness[ 1 ] ]
-]
-
-*)
-
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
@@ -111,6 +81,9 @@ $$mdRow2  = Except[ "\n" ].. ~~ Repeated[ ("|" ~~ Except[ "\n" ]...), { 2, Infin
 $$mdRow   = $$mdRow1 | $$mdRow2;
 $$mdTable = $$mdRow ~~ $$mdRow ..;
 
+$$blockQuoteLine = StartOfLine ~~ ">" ~~ $$ws ~~ Except[ "\n" ].. ~~ ("\n"|EndOfString);
+$$blockQuote     = Longest[ $$blockQuoteLine.. ];
+
 $chatGeneratedCellTag = "ChatGeneratedCell";
 
 $simpleToolMethod := $ChatHandlerData[ "ChatNotebookSettings", "ToolMethod" ] === "Simple";
@@ -132,6 +105,22 @@ $autoOperatorRenderings = <|
 
  $expressionURIPlaceholder = "\[LeftSkeleton]\[Ellipsis]\[RightSkeleton]";
  $freeformPromptBox        = StyleBox[ "\[FreeformPrompt]", FontColor -> RGBColor[ "#ff6f00" ], FontSize -> 9 ];
+
+
+ $delimiterCell = Cell[
+    BoxData @ TagBox[
+        GridBox[
+            { { TemplateBox[ { 0 }, "Spacer1" ] }, { TemplateBox[ { 0 }, "Spacer1" ] } },
+            AutoDelete      -> False,
+            GridBoxDividers -> { "Columns" -> { False, { True }, False }, "Rows" -> { False, { True }, False } },
+            GridBoxItemSize -> { "Columns" -> { { Fit } }, "Rows" -> { { Automatic } } },
+            FrameStyle      -> Directive[ GrayLevel[ 0.8 ], AbsoluteThickness[ 1 ] ]
+        ],
+        "Grid"
+    ],
+    "MarkdownDelimiter",
+    ShowStringCharacters -> False
+];
 
 (* ::**************************************************************************************************************:: *)
  (* ::Section::Closed:: *)
@@ -325,6 +314,33 @@ makeResultCell0[ inlineToolCallCell[ string_String ] ] := (
 
 makeResultCell0[ tableCell[ string_String ] ] :=
     makeTableCell @ string;
+
+makeResultCell0[ delimiterCell[ ] ] :=
+    $delimiterCell;
+
+makeResultCell0[ blockQuoteCell[ quote_String ] ] := Cell[
+    BoxData @ GridBox[
+        {
+            {
+                PaneBox[
+                    formatTextToBoxes @ StringDelete[ StringTrim @ quote, StartOfLine ~~ ">" ~~ " "... ],
+                    ImageMargins -> 5,
+                    ImageSize    -> { Full, Automatic },
+                    BaseStyle    -> { "Text", FontColor -> GrayLevel[ 0.35 ] }
+                ]
+            }
+        },
+        AutoDelete        -> False,
+        GridBoxBackground -> { "Columns" -> { { GrayLevel[ 1 ] } } },
+        GridBoxDividers   -> {
+            "ColumnsIndexed" -> { 1 -> Directive[ RGBColor[ 0.87, 0.94, 1 ], AbsoluteThickness[ 4 ] ] },
+            "Rows"           -> { { False } }
+        },
+        GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } }
+    ],
+    "BlockQuote",
+    Background -> None
+];
 
 makeResultCell0 // endDefinition;
 
@@ -994,7 +1010,11 @@ $textDataFormatRules = {
     ("\n"|StartOfString).. ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :>
         sectionCell[ StringLength @ h, sec ]
     ,
+    StartOfLine ~~ Repeated[ "-", { 3, Infinity } ] ~~ EndOfLine :> delimiterCell[ ]
+    ,
     table: $$mdTable :> tableCell @ table
+    ,
+    quote: $$blockQuote :> blockQuoteCell @ quote
     ,
     "[`" ~~ label: Except[ "[" ].. ~~ "`](" ~~ url: Except[ ")" ].. ~~ ")" :> "[" <> label <> "]("<>url<>")",
 
