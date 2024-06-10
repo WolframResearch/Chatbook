@@ -337,7 +337,10 @@ inlineSection[ content_, style_String ] :=
     inlineSection[ content, style, sectionMargins @ style ];
 
 inlineSection[ content_, style_String, margins: { { _, _ }, { _, _ } } ] := Cell[
-    BoxData @ PaneBox[ StyleBox[ ToBoxes @ content, style, ShowStringCharacters -> False ], ImageMargins -> margins ],
+    BoxData @ PaneBox[
+        StyleBox[ formatTextToBoxes @ content, style, ShowStringCharacters -> False ],
+        ImageMargins -> margins
+    ],
     "InlineSection",
     Background -> None
 ];
@@ -346,6 +349,15 @@ inlineSection[ content_, style_String, { bottom_Integer, top_Integer } ] :=
     inlineSection[ content, style, { { 0, 0 }, { bottom, top } } ];
 
 inlineSection // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*formatTextToBoxes*)
+formatTextToBoxes // beginDefinition;
+formatTextToBoxes[ text_String ] := formatTextToBoxes[ text, styleBox @ text ];
+formatTextToBoxes[ text_String, formatted_String ] := ToBoxes @ formatted;
+formatTextToBoxes[ text_String, data: $$textData ] := Cell[ TextData @ Flatten @ { data }, Background -> None ];
+formatTextToBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -1071,6 +1083,18 @@ $stringFormatRules = {
 
     "_" ~~ text: Except[ "_" ].. ~~ "_" /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontSlant -> Italic ],
+
+    "$$" ~~ math__ ~~ "$$" /; StringFreeQ[ math, "$$" ] :>
+        makeResultCell @ mathCell @ math,
+
+    "\\(" ~~ math__ ~~ "\\)" /; StringFreeQ[ math, "\\)" ] :>
+        makeResultCell @ mathCell @ math,
+
+    "\\[" ~~ math__ ~~ "\\]" /; StringFreeQ[ math, "\\]" ] :>
+        makeResultCell @ mathCell @ math,
+
+    "$" ~~ math: Except[ "$" ].. ~~ "$" /; probablyMathQ @ math :>
+        makeResultCell @ mathCell @ math,
 
     "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :>
         hyperlink[ label, url ],
@@ -1852,6 +1876,8 @@ styleBox // beginDefinition;
 
 styleBox[ text_String, a___ ] := styleBox[ formatTextString @ text, a ];
 styleBox[ { link: Cell @ BoxData[ TemplateBox[ { _, ___ }, "TextRefLink", ___ ], ___ ] }, ___ ] := link;
+styleBox[ { text_String } ] := text;
+styleBox[ { StyleBox[ text_ ], a___ } ] := styleBox @ { text, a };
 styleBox[ { text: _ButtonBox|_String }, a___ ] := StyleBox[ text, a ];
 styleBox[ { StyleBox[ text_, a___ ] }, b___ ] := DeleteDuplicates @ StyleBox[ text, a, b ];
 styleBox[ { Cell[ text_, a___ ] }, b___ ] := DeleteDuplicates @ Cell[ text, a, b ];
