@@ -70,8 +70,17 @@ $availableServiceNames := getAvailableServiceNames[ ];
 (* ::Subsection::Closed:: *)
 (*getAvailableServiceNames*)
 getAvailableServiceNames // beginDefinition;
-getAvailableServiceNames[ ] := getAvailableServiceNames @ $availableServices;
-getAvailableServiceNames[ services_Association ] := Keys @ services;
+getAvailableServiceNames // Options = { "IncludeHidden" -> True };
+
+getAvailableServiceNames[ opts: OptionsPattern[ ] ] :=
+    getAvailableServiceNames[ $availableServices, opts ];
+
+getAvailableServiceNames[ services_Association, opts: OptionsPattern[ ] ] :=
+    If[ TrueQ @ OptionValue[ "IncludeHidden" ],
+        Keys @ services,
+        Keys @ DeleteCases[ services, KeyValuePattern[ "Hidden" -> True ] ]
+    ];
+
 getAvailableServiceNames // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
