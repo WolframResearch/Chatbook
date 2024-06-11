@@ -506,7 +506,10 @@ makeServiceSelector[
             extractServiceName @ CurrentChatSettings[ $preferencesScope, "Model" ],
             serviceSelectCallback[ Dynamic @ service, Dynamic @ model, Dynamic @ modelSelector, Dynamic @ state ]
         ],
-        KeyValueMap[ popupValue[ #1, #2[ "Service" ], #2[ "Icon" ] ] &, services ]
+        KeyValueMap[
+            popupValue[ #1, #2[ "Service" ], #2[ "Icon" ] ] &,
+            DeleteCases[ services, KeyValuePattern[ "Hidden" -> True ] ]
+        ]
     ];
 
 makeServiceSelector // endDefinition;
@@ -1140,7 +1143,7 @@ makeServiceGrid[ ] := Grid[
                 Spacer[ 1 ]
             }
         },
-        KeyValueMap[ makeServiceGridRow, $availableServices ]
+        KeyValueMap[ makeServiceGridRow, DeleteCases[ $availableServices, KeyValuePattern[ "Hidden" -> True ] ] ]
     ],
     Alignment  -> { Left, Baseline },
     Background -> { { }, { GrayLevel[ 0.898 ], { White } } },

@@ -875,7 +875,7 @@ createServiceMenu[ obj_, root_ ] :=
         MakeMenu[
             Join[
                 { tr[ "UIModelsServices" ] },
-                (createServiceItem[ obj, model, root, #1 ] &) /@ getAvailableServiceNames[ ]
+                (createServiceItem[ obj, model, root, #1 ] &) /@ getAvailableServiceNames[ "IncludeHidden" -> False ]
             ],
             GrayLevel[ 0.85 ],
             140
