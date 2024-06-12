@@ -67,6 +67,7 @@ Follow up search results with the documentation lookup tool to get the full info
 
 $defaultChatTools0[ "DocumentationSearcher" ] = <|
     toolDefaultData[ "DocumentationSearcher" ],
+    "ShortName"          -> "doc_search",
     "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconDocumentationSearcher" ],
     "Description"        -> $documentationSearchDescription,
     "Function"           -> documentationSearch,
@@ -98,6 +99,7 @@ documentationSearch // endDefinition;
 (*DocumentationLookup*)
 $defaultChatTools0[ "DocumentationLookup" ] = <|
     toolDefaultData[ "DocumentationLookup" ],
+    "ShortName"          -> "doc_lookup",
     "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconDocumentationLookup" ],
     "Description"        -> "Get documentation pages for Wolfram Language symbols.",
     "Function"           -> documentationLookup,
@@ -746,6 +748,7 @@ waResultText0 // endDefinition;
 (*WebSearch*)
 $defaultChatTools0[ "WebSearcher" ] = <|
     toolDefaultData[ "WebSearcher" ],
+    "ShortName"          -> "web_search",
     "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconWebSearcher" ],
     "Description"        -> "Search the web.",
     "Function"           -> webSearch,
@@ -840,6 +843,7 @@ web_fetcher tool.";
 (*WebFetch*)
 $defaultChatTools0[ "WebFetcher" ] = <|
     toolDefaultData[ "WebFetcher" ],
+    "ShortName"          -> "web_fetch",
     "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconWebFetcher" ],
     "Description"        -> "Fetch plain text or image links from a URL.",
     "Function"           -> webFetch,
@@ -961,6 +965,7 @@ startWebSession // endDefinition;
 (*WebImageSearch*)
 $defaultChatTools0[ "WebImageSearcher" ] = <|
     toolDefaultData[ "WebImageSearcher" ],
+    "ShortName"          -> "img_search",
     "Icon"               -> RawBoxes @ TemplateBox[ { }, "ToolIconWebImageSearcher" ],
     "Description"        -> "Search the web for images.",
     "Function"           -> webImageSearch,
