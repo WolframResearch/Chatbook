@@ -979,7 +979,7 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 (*Parsing Rules*)
 $$endToolCall       = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
 $$eol               = " "... ~~ "\n";
-$$cmd               = Repeated[ DigitCharacter|LetterCharacter|"_"|"$", { 1, 80 } ];
+$$cmd               = Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ];
 $$simpleToolCommand = StartOfLine ~~ $$ws ~~ ("/" ~~ c: $$cmd) ~~ $$eol /; $simpleToolMethod && toolShortNameQ @ c;
 $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|EndOfString) ];
 
@@ -1212,12 +1212,14 @@ parseToolCallString // endDefinition;
 (*parsePartialToolCallString*)
 parsePartialToolCallString // beginDefinition;
 
+(* TODO: define a `parsePartialSimpleToolCallString` that can also be used in `simpleToolRequestParser` *)
+
 parsePartialToolCallString[ string_String ] /; $simpleToolMethod := Enclose[
     Module[ { command, argString, tool, name, paramNames, argStrings, padded, params, result },
         command = ConfirmBy[
             StringReplace[
                 string,
-                StartOfString ~~ $$ws ~~ "/" ~~ cmd: LetterCharacter.. ~~ $$ws ~~ "\n" ~~ ___ :> cmd
+                StartOfString ~~ $$ws ~~ ("/" ~~ cmd: $$cmd) ~~ $$eol ~~ ___ :> cmd
             ],
             toolShortNameQ,
             "Command"
