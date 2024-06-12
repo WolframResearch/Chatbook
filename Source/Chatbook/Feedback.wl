@@ -6,13 +6,8 @@ Begin[ "`Private`" ];
 (* :!CodeAnalysis::BeginBlock:: *)
 
 Needs[ "Wolfram`Chatbook`"               ];
-Needs[ "Wolfram`Chatbook`ChatMessages`"  ];
 Needs[ "Wolfram`Chatbook`Common`"        ];
-Needs[ "Wolfram`Chatbook`Dialogs`"       ];
-Needs[ "Wolfram`Chatbook`FrontEnd`"      ];
-Needs[ "Wolfram`Chatbook`SendChat`"      ];
 Needs[ "Wolfram`Chatbook`Serialization`" ];
-Needs[ "Wolfram`Chatbook`Utils`"         ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

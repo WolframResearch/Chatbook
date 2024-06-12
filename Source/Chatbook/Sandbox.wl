@@ -6,11 +6,8 @@ Begin[ "`Private`" ];
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
-Needs[ "Wolfram`Chatbook`"            ];
-Needs[ "Wolfram`Chatbook`Common`"     ];
-Needs[ "Wolfram`Chatbook`Formatting`" ];
-Needs[ "Wolfram`Chatbook`Tools`"      ];
-Needs[ "Wolfram`Chatbook`Utils`"      ];
+Needs[ "Wolfram`Chatbook`"        ];
+Needs[ "Wolfram`Chatbook`Common`" ];
 
 $ContextAliases[ "sp`" ] = "Wolfram`Chatbook`SandboxParsing`";
 (* :!CodeAnalysis::Disable::UnexpectedLetterlikeCharacter:: *)

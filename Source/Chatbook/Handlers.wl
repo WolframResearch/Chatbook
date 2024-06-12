@@ -5,9 +5,8 @@ Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-Needs[ "Wolfram`Chatbook`"          ];
-Needs[ "Wolfram`Chatbook`Common`"   ];
-Needs[ "Wolfram`Chatbook`FrontEnd`" ];
+Needs[ "Wolfram`Chatbook`"        ];
+Needs[ "Wolfram`Chatbook`Common`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
