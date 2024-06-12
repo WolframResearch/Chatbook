@@ -1140,11 +1140,11 @@ setModel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*absoluteCurrentValue*)
-SetFallthroughError[absoluteCurrentValue]
+(*absoluteCurrentValueOrigin*)
+SetFallthroughError[absoluteCurrentValueOrigin]
 
-absoluteCurrentValue[cell_, {TaggingRules, "ChatNotebookSettings", key_}] := currentChatSettings[cell, key]
-absoluteCurrentValue[cell_, keyPath_] := AbsoluteCurrentValue[cell, keyPath]
+absoluteCurrentValueOrigin[cell_, {TaggingRules, "ChatNotebookSettings", key_}] := currentChatSettings[cell, key]
+absoluteCurrentValueOrigin[cell_, keyPath_] := AbsoluteCurrentValue[cell, keyPath]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1167,7 +1167,7 @@ currentValueOrigin[
 	value,
 	inlineValue
 },
-	value = absoluteCurrentValue[targetObj, keyPath];
+	value = absoluteCurrentValueOrigin[targetObj, keyPath];
 
 	(* This was causing dynamics to update on every keystroke, so it's disabled for now: *)
 	(* inlineValue = nestedLookup[

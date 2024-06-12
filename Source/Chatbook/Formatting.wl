@@ -14,7 +14,6 @@ Wolfram`Chatbook`StringToBoxes;
 `$dynamicText;
 `$reformattedCell;
 `$resultCellCache;
-`clickToCopy;
 `floatingButtonGrid;
 `insertCodeBelow;
 `makeInteractiveCodeCell;
@@ -29,6 +28,7 @@ Needs[ "Wolfram`Chatbook`Common`"   ];
 Needs[ "Wolfram`Chatbook`FrontEnd`" ];
 Needs[ "Wolfram`Chatbook`Sandbox`"  ];
 Needs[ "Wolfram`Chatbook`Tools`"    ];
+Needs[ "Wolfram`Chatbook`Utils`"    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1569,11 +1569,11 @@ resolveToolFormatter[ as_Association ] := Append[ as, "FormattingFunction" -> re
 resolveToolFormatter // endDefinition;
 
 resolveToolFormatter0 // beginDefinition;
-resolveToolFormatter0[ KeyValuePattern[ "FormattingFunction" -> f_ ] ] := resolveToolFormatter0 @ f;
-resolveToolFormatter0[ Automatic ] := clickToCopy[ #1 ] &;
-resolveToolFormatter0[ Inherited ] := toolAutoFormatter;
-resolveToolFormatter0[ None      ] := #1 &;
-resolveToolFormatter0[ f_        ] := f;
+resolveToolFormatter0[ as_Association ] := resolveToolFormatter0 @ Lookup[ as, "FormattingFunction", Inherited ];
+resolveToolFormatter0[ Automatic      ] := clickToCopy[ #1 ] &;
+resolveToolFormatter0[ Inherited      ] := toolAutoFormatter;
+resolveToolFormatter0[ None           ] := #1 &;
+resolveToolFormatter0[ f_             ] := f;
 resolveToolFormatter0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1595,15 +1595,6 @@ toolAutoFormatter[ parameter_, "Parameters", ___ ] := clickToCopy @ parameter;
 toolAutoFormatter[ result_, ___ ] := result;
 
 toolAutoFormatter // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*clickToCopy*)
-clickToCopy // beginDefinition;
-clickToCopy[ ClickToCopy[ args__ ] ] := clickToCopy @ args;
-clickToCopy[ HoldForm[ expr_ ], a___ ] := clickToCopy[ Defer @ expr, a ];
-clickToCopy[ expr_, a___ ] := Grid[ { { ClickToCopy[ expr, a ], "" } }, Spacings -> 0, BaseStyle -> "Text" ];
-clickToCopy // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
