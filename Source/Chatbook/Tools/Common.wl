@@ -275,12 +275,16 @@ toolDefaultIcon // endDefinition;
 (*toolDefaultData*)
 toolDefaultData // beginDefinition;
 
-toolDefaultData[ name_String ] := <|
-    "CanonicalName" -> toCanonicalToolName @ name,
-    "DisplayName"   -> toDisplayToolName @ name,
-    "Name"          -> toMachineToolName @ name,
-    "Icon"          -> $defaultToolIcon
-|>;
+toolDefaultData[ name_String ] :=
+    With[ { mName = toMachineToolName @ name },
+        <|
+            "CanonicalName" -> toCanonicalToolName @ name,
+            "DisplayName"   -> toDisplayToolName @ name,
+            "Name"          -> mName,
+            "ShortName"     -> mName,
+            "Icon"          -> $defaultToolIcon
+        |>
+    ];
 
 toolDefaultData // endDefinition;
 
@@ -793,11 +797,7 @@ messageParameterString // endDefinition;
 simpleToolRequestParser // beginDefinition;
 
 simpleToolRequestParser[ string_String ] := Enclose[
-    Catch @ Module[
-        {
-            tools, commands, calls, command, argString, callString, callPos, tool, name, paramNames, argStrings,
-            padded, params
-        },
+    Catch @ Module[ { tools, commands, calls, command, argString, callString, callPos, tool, name, paramNames, params },
 
         tools = ConfirmMatch[ Values @ $selectedTools, { ___LLMTool }, "Tools" ];
         commands = ConfirmMatch[ toolShortName /@ tools, { ___String }, "Commands" ];
@@ -825,11 +825,7 @@ simpleToolRequestParser[ string_String ] := Enclose[
         name = ConfirmBy[ tool[ "Name" ], StringQ, "ToolName" ];
 
         paramNames = Keys @ ConfirmMatch[ tool[ "Parameters" ], KeyValuePattern @ { }, "ParameterNames" ];
-        argStrings = If[ Length @ paramNames === 1, { argString }, StringSplit[ argString, "\n" ] ];
-        If[ Length @ argStrings > Length @ paramNames, Throw @ None ];
-
-        padded = PadRight[ argStrings, Length @ paramNames, "" ];
-        params = Normal @ ConfirmBy[ AssociationThread[ paramNames -> padded ], AssociationQ, "Parameters" ];
+        params = ConfirmBy[ parseSimpleToolCallParameterStrings[ paramNames, argString ], AssociationQ, "Parameters" ];
 
         { callPos, LLMToolRequest[ name, params, callString ] }
     ],
@@ -840,10 +836,48 @@ simpleToolRequestParser // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*parseSimpleToolCallParameterStrings*)
+parseSimpleToolCallParameterStrings // beginDefinition;
+
+parseSimpleToolCallParameterStrings[ { param_String }, argString_String ] :=
+    <| param -> StringDelete[ argString, StartOfString ~~ WhitespaceCharacter... ~~ param ~~ ":" ~~ " "... ] |>;
+
+parseSimpleToolCallParameterStrings[ paramNames: { __String }, argString_String ] := Enclose[
+    Catch @ Module[ { namedSplit, defaults, pairs },
+        namedSplit = StringSplit[ argString, StartOfLine ~~ (" "|"\t")... ~~ p: paramNames ~~ ":" ~~ " "... :> p ];
+        If[ OddQ @ Length @ namedSplit, Throw @ parseSimpleToolCallParameterStrings0[ paramNames, argString ] ];
+        defaults = AssociationMap[ "" &, paramNames ];
+        pairs = ConfirmMatch[ Partition[ namedSplit, 2 ], { { _String, _String } .. }, "Pairs" ];
+        ConfirmBy[ <| defaults, Rule @@@ pairs |>, AssociationQ, "Parameters" ]
+    ],
+    throwInternalFailure
+];
+
+parseSimpleToolCallParameterStrings // endDefinition;
+
+
+parseSimpleToolCallParameterStrings0 // beginDefinition;
+
+parseSimpleToolCallParameterStrings0[ paramNames: { __String }, argString_String ] := Enclose[
+    Module[ { split, padded },
+        split = StringSplit[ argString, "\n" ];
+        padded = PadRight[ split, Length @ paramNames, "" ];
+        ConfirmBy[ AssociationThread[ paramNames -> padded ], AssociationQ, "Parameters" ]
+    ],
+    throwInternalFailure
+];
+
+parseSimpleToolCallParameterStrings0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*toolShortName*)
 toolShortName // beginDefinition;
 
 toolShortName[ $$llmToolH[ as_Association, ___ ] ] :=
+    toolShortName @ as;
+
+toolShortName[ as_Association ] :=
     Lookup[ as, "ShortName", Lookup[ as, "Name" ] ];
 
 toolShortName[ name_String ] :=
@@ -1051,7 +1085,7 @@ simpleToolSchema[ as_Association ] := Enclose[
 
         data        = ConfirmBy[ toolData @ as, AssociationQ, "Data" ];
         name        = ConfirmBy[ toolName[ data, "Display" ], StringQ, "Name" ];
-        command     = ConfirmBy[ Lookup[ data, "ShortName", toolName[ data, "Canonical" ] ], StringQ, "ShortName" ];
+        command     = ConfirmBy[ toolShortName @ data, StringQ, "ShortName" ];
         description = ConfirmBy[ data[ "Description" ], StringQ, "Description" ];
         args        = ConfirmMatch[ as[ "Parameters" ], KeyValuePattern @ { }, "Arguments" ];
         argStrings  = ConfirmMatch[ simpleArgStrings @ args, { __String }, "ArgStrings" ];

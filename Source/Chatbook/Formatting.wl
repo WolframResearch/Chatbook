@@ -979,7 +979,7 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 (*Parsing Rules*)
 $$endToolCall       = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
 $$eol               = " "... ~~ "\n";
-$$cmd               = Repeated[ DigitCharacter|LetterCharacter|"_"|"$", { 1, 80 } ];
+$$cmd               = Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ];
 $$simpleToolCommand = StartOfLine ~~ $$ws ~~ ("/" ~~ c: $$cmd) ~~ $$eol /; $simpleToolMethod && toolShortNameQ @ c;
 $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|EndOfString) ];
 
@@ -1212,12 +1212,14 @@ parseToolCallString // endDefinition;
 (*parsePartialToolCallString*)
 parsePartialToolCallString // beginDefinition;
 
+(* TODO: define a `parsePartialSimpleToolCallString` that can also be used in `simpleToolRequestParser` *)
+
 parsePartialToolCallString[ string_String ] /; $simpleToolMethod := Enclose[
     Module[ { command, argString, tool, name, paramNames, argStrings, padded, params, result },
         command = ConfirmBy[
             StringReplace[
                 string,
-                StartOfString ~~ $$ws ~~ "/" ~~ cmd: LetterCharacter.. ~~ $$ws ~~ "\n" ~~ ___ :> cmd
+                StartOfString ~~ $$ws ~~ ("/" ~~ cmd: $$cmd) ~~ $$eol ~~ ___ :> cmd
             ],
             toolShortNameQ,
             "Command"
@@ -1226,7 +1228,7 @@ parsePartialToolCallString[ string_String ] /; $simpleToolMethod := Enclose[
         argString = First[
             StringCases[
                 string,
-                StringExpression[
+                Shortest @ StringExpression[
                     StartOfString,
                     $$ws,
                     "/",
@@ -1246,9 +1248,11 @@ parsePartialToolCallString[ string_String ] /; $simpleToolMethod := Enclose[
 
         If[ StringQ @ argString,
             paramNames = Keys @ ConfirmMatch[ tool[ "Parameters" ], KeyValuePattern @ { }, "ParameterNames" ];
-            argStrings = If[ Length @ paramNames === 1, { argString }, StringSplit[ argString, "\n" ] ];
-            padded = PadRight[ argStrings, Length @ paramNames, "" ];
-            params = ConfirmBy[ AssociationThread[ paramNames -> padded ], AssociationQ, "Parameters" ]
+            params = ConfirmBy[
+                parseSimpleToolCallParameterStrings[ paramNames, argString ],
+                AssociationQ,
+                "Parameters"
+            ]
             ,
             params = <| |>
         ];
@@ -1345,7 +1349,7 @@ parseToolCallID[ string_String? StringQ ] :=
                     WhitespaceCharacter...,
                     Alternatives[
                         "TOOLCALL:",
-                        StartOfLine ~~ "/" ~~ cmd: LetterCharacter.. ~~ WhitespaceCharacter... ~~ "\n" /;
+                        StartOfLine ~~ "/" ~~ cmd: Except[ WhitespaceCharacter ].. ~~ WhitespaceCharacter... ~~ "\n" /;
                             toolShortNameQ @ cmd
                     ],
                     ___,
