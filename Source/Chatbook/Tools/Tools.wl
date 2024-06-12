@@ -20,6 +20,7 @@ HoldComplete[
     `makeExpressionURI;
     `makeToolConfiguration;
     `makeToolResponseString;
+    `parseSimpleToolCallParameterStrings;
     `resolveTools;
     `simpleToolRequestParser;
     `toolData;
