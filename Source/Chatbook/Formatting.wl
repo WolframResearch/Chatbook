@@ -1228,7 +1228,7 @@ parsePartialToolCallString[ string_String ] /; $simpleToolMethod := Enclose[
         argString = First[
             StringCases[
                 string,
-                StringExpression[
+                Shortest @ StringExpression[
                     StartOfString,
                     $$ws,
                     "/",
@@ -1248,9 +1248,11 @@ parsePartialToolCallString[ string_String ] /; $simpleToolMethod := Enclose[
 
         If[ StringQ @ argString,
             paramNames = Keys @ ConfirmMatch[ tool[ "Parameters" ], KeyValuePattern @ { }, "ParameterNames" ];
-            argStrings = If[ Length @ paramNames === 1, { argString }, StringSplit[ argString, "\n" ] ];
-            padded = PadRight[ argStrings, Length @ paramNames, "" ];
-            params = ConfirmBy[ AssociationThread[ paramNames -> padded ], AssociationQ, "Parameters" ]
+            params = ConfirmBy[
+                parseSimpleToolCallParameterStrings[ paramNames, argString ],
+                AssociationQ,
+                "Parameters"
+            ]
             ,
             params = <| |>
         ];
