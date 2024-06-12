@@ -22,14 +22,6 @@ GeneralUtilities`SetUsage[CreateToolbarContent, "
 CreateToolbarContent[] is called by the NotebookToolbar to generate the content of the 'Notebook AI Settings' attached menu.
 "]
 
-HoldComplete[
-    `getPersonaIcon;
-    `getPersonaMenuIcon;
-    `personaDisplayName;
-    `resizeMenuIcon;
-    `serviceIcon;
-];
-
 Begin["`Private`"]
 
 Needs[ "Wolfram`Chatbook`"                    ];

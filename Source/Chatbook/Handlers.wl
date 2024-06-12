@@ -1,20 +1,9 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Handlers`" ];
+Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
-
-HoldComplete[
-    `addHandlerArguments;
-    `addProcessingArguments;
-    `applyHandlerFunction;
-    `applyProcessingFunction;
-    `getHandlerFunctions;
-    `getProcessingFunction;
-    `getProcessingFunctions;
-];
-
-Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"          ];
 Needs[ "Wolfram`Chatbook`Common`"   ];

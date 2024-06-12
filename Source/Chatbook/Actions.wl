@@ -16,26 +16,6 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 `StopChat;
 `WidgetSend;
 
-`$alwaysOpen;
-`$autoOpen;
-`$chatState;
-`$finalCell;
-`$lastCellObject;
-`$lastChatString;
-`$lastMessages;
-`$lastSettings;
-`$lastTask;
-`$nextTaskEvaluation;
-`apiKeyDialog;
-`autoAssistQ;
-`chatInputCellQ;
-`clearMinimizedChats;
-`revertMultimodalContent;
-`standardizeMessageKeys;
-`systemCredential;
-`toAPIKey;
-`withChatState;
-
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                  ];

@@ -9,17 +9,6 @@ GeneralUtilities`SetUsage[ `CellToString, "\
 CellToString[cell$] serializes a Cell expression as a string for use in chat.\
 " ];
 
-`$CellToStringDebug;
-`$chatInputIndicator;
-`$conversionRules;
-`$CurrentCell;
-`$defaultMaxCellStringLength;
-`$defaultMaxOutputCellStringLength;
-`$longNameCharacters;
-`documentationSearchAPI;
-`escapeMarkdownString;
-`truncateString;
-
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"              ];

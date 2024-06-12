@@ -2,37 +2,6 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`FrontEnd`" ];
-
-`$dialogInputAllowed;
-`$feTaskWidgetCell;
-`$inEpilog;
-`$suppressButtonAppearance;
-`cellInformation;
-`cellOpenQ;
-`cellPrint;
-`cellPrintAfter;
-`cellStyles;
-`checkEvaluationCell;
-`compressUntilViewed;
-`createFETask;
-`feParentObject;
-`fixCloudCell;
-`flushFETasks;
-`getBoxObjectFromBoxID;
-`initFETaskWidget;
-`notebookRead;
-`openerView;
-`parentCell;
-`parentNotebook;
-`rasterize;
-`rasterizeBlock;
-`replaceCellContext;
-`rootEvaluationCell;
-`selectionEvaluateCreateCell;
-`toCompressedBoxes;
-`topParentCell;
-`usingFrontEnd;
-
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"          ];

@@ -11,8 +11,6 @@ BeginPackage[ "Wolfram`Chatbook`ResourceInstaller`" ];
 `ResourceInstallLocation;
 `ResourceUninstall;
 
-`channelCleanup;
-
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"          ];

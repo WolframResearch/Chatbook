@@ -2,25 +2,6 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Formatting`" ];
-
-(* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDRESULT *)
-
-Wolfram`Chatbook`FormatChatOutput;
-Wolfram`Chatbook`FormatToolCall;
-Wolfram`Chatbook`StringToBoxes;
-
-`$customToolFormatter;
-`$dynamicSplitRules;
-`$dynamicText;
-`$reformattedCell;
-`$resultCellCache;
-`floatingButtonGrid;
-`insertCodeBelow;
-`makeInteractiveCodeCell;
-`reformatTextData;
-`stringToBoxes;
-`toolAutoFormatter;
-
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"          ];
@@ -977,6 +958,8 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Parsing Rules*)
+
+(* cSpell: ignore ENDRESULT *)
 $$endToolCall       = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
 $$eol               = " "... ~~ "\n";
 $$cmd               = Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ];
@@ -992,6 +975,8 @@ $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|End
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$textDataFormatRules*)
+
+(* cSpell: ignore TOOLCALL *)
 $textDataFormatRules = {
     StringExpression[
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",

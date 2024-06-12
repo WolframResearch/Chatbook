@@ -1,20 +1,10 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Sandbox`" ];
-
-(* cSpell: ignore noinit pacletreadonly playerpass sntx *)
+Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
-
-`$sandboxKernelCommandLine;
-`inlineExpressionURIs;
-`preprocessSandboxString;
-`sandboxEvaluate;
-`sandboxFormatter;
-`simpleResultQ;
-
-Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"            ];
 Needs[ "Wolfram`Chatbook`Common`"     ];
@@ -78,7 +68,7 @@ $initializationTests = Join[
     ]
 ];
 
-
+(* cSpell: ignore noinit, pacletreadonly *)
 $sandboxKernelCommandLine := StringRiffle @ {
     ToString[
         If[ $OperatingSystem === "Windows",
@@ -266,6 +256,7 @@ startSandboxKernel[ ] := Enclose[
 
         Scan[ LinkClose, Select[ Links[ ], sandboxKernelQ ] ];
 
+        (* cSpell: ignore playerpass *)
         (* pwFile = FileNameJoin @ { $InstallationDirectory, "Configuration", "Licensing", "playerpass" }; *)
 
         kernel = ConfirmMatch[ LinkLaunch @ $sandboxKernelCommandLine, _LinkObject, "LinkLaunch" ];

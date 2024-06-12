@@ -1,14 +1,6 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Prompting`" ];
-
-`$basePrompt;
-`$basePromptComponents;
-`$fullBasePrompt;
-`needsBasePrompt;
-`removeBasePrompt;
-`withBasePromptBuilder;
-
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"        ];

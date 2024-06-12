@@ -1,15 +1,6 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`PreferencesContent`" ];
-
-HoldComplete[
-    `$cloudEvaluationNotebook;
-    `$preferencesScope;
-    `createPreferencesContent;
-    `makeModelSelector;
-    `openPreferencesPage;
-];
-
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                  ];
