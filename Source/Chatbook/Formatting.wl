@@ -1347,7 +1347,7 @@ parseToolCallID[ string_String? StringQ ] :=
                     WhitespaceCharacter...,
                     Alternatives[
                         "TOOLCALL:",
-                        StartOfLine ~~ "/" ~~ cmd: LetterCharacter.. ~~ WhitespaceCharacter... ~~ "\n" /;
+                        StartOfLine ~~ "/" ~~ cmd: Except[ WhitespaceCharacter ].. ~~ WhitespaceCharacter... ~~ "\n" /;
                             toolShortNameQ @ cmd
                     ],
                     ___,
