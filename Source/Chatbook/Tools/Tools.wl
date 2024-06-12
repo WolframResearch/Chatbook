@@ -28,7 +28,6 @@ HoldComplete[
     `toolOptionValue;
     `toolRequestParser;
     `toolSelectedQ;
-    `toolShortName;
     `withToolBox;
 ];
 

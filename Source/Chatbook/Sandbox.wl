@@ -8,7 +8,6 @@ BeginPackage[ "Wolfram`Chatbook`Sandbox`" ];
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
 `$sandboxKernelCommandLine;
-`fancyResultQ;
 `inlineExpressionURIs;
 `preprocessSandboxString;
 `sandboxEvaluate;

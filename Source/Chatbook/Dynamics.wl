@@ -5,7 +5,6 @@ BeginPackage[ "Wolfram`Chatbook`Dynamics`" ];
 (* :!CodeAnalysis::BeginBlock:: *)
 
 `trackedDynamic;
-`trackedDynamicWrapper;
 `updateDynamics;
 
 Begin[ "`Private`" ];

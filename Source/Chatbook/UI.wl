@@ -23,18 +23,11 @@ CreateToolbarContent[] is called by the NotebookToolbar to generate the content 
 "]
 
 HoldComplete[
-    `getModelMenuIcon;
     `getPersonaIcon;
     `getPersonaMenuIcon;
-    `labeledCheckbox;
-    `makeAutomaticResultAnalysisCheckbox;
-    `makeTemperatureSlider;
-    `makeToolCallFrequencySlider;
-    `modelGroupName;
     `personaDisplayName;
     `resizeMenuIcon;
     `serviceIcon;
-    `showSnapshotModelsQ;
 ];
 
 Begin["`Private`"]

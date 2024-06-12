@@ -7,9 +7,7 @@ BeginPackage[ "Wolfram`Chatbook`ChatHistory`" ];
 HoldComplete[
     `accentIncludedCells;
     `chatExcludedQ;
-    `extraCellHeight;
     `filterChatCells;
-    `getCellsInChatHistory;
     `removeCellAccents;
 ];
 

@@ -17,13 +17,7 @@ BeginPackage[ "Wolfram`Chatbook`InlineReferences`" ];
 `insertModifierTemplate;
 `insertWLTemplate;
 
-`personaTemplateBoxes;
-`functionTemplateBoxes;
-`modifierTemplateBoxes;
-`wlTemplateBoxes;
-
 `parseInlineReferences;
-`resolveLastInlineReference;
 `resolveInlineReferences;
 
 `$cloudInlineReferenceButtons;

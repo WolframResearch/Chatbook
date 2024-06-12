@@ -7,8 +7,6 @@ HoldComplete[
     `$preferencesScope;
     `createPreferencesContent;
     `makeModelSelector;
-    `makePersonaSelector;
-    `notebookSettingsPanel;
     `openPreferencesPage;
 ];
 
