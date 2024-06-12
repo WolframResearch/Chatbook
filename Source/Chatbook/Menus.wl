@@ -31,7 +31,6 @@ Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`Common`"     ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
-Needs[ "Wolfram`Chatbook`FrontEnd`"   ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

@@ -4,12 +4,8 @@
 BeginPackage[ "Wolfram`Chatbook`Formatting`" ];
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"          ];
-Needs[ "Wolfram`Chatbook`Common`"   ];
-Needs[ "Wolfram`Chatbook`FrontEnd`" ];
-Needs[ "Wolfram`Chatbook`Sandbox`"  ];
-Needs[ "Wolfram`Chatbook`Tools`"    ];
-Needs[ "Wolfram`Chatbook`Utils`"    ];
+Needs[ "Wolfram`Chatbook`"        ];
+Needs[ "Wolfram`Chatbook`Common`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

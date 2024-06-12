@@ -9,12 +9,9 @@ HoldComplete[
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"            ];
-Needs[ "Wolfram`Chatbook`Common`"     ];
-Needs[ "Wolfram`Chatbook`Formatting`" ];
-Needs[ "Wolfram`Chatbook`SendChat`"   ];
-Needs[ "Wolfram`Chatbook`Settings`"   ];
-Needs[ "Wolfram`Chatbook`UI`"         ];
+Needs[ "Wolfram`Chatbook`"        ];
+Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`UI`"     ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

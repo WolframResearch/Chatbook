@@ -3,13 +3,9 @@
 BeginPackage[ "Wolfram`Chatbook`CloudToolbar`" ];
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"                    ];
-Needs[ "Wolfram`Chatbook`Common`"             ];
-Needs[ "Wolfram`Chatbook`Dialogs`"            ];
-Needs[ "Wolfram`Chatbook`Dynamics`"           ];
-Needs[ "Wolfram`Chatbook`PreferencesContent`" ];
-Needs[ "Wolfram`Chatbook`Services`"           ];
-Needs[ "Wolfram`Chatbook`UI`"                 ];
+Needs[ "Wolfram`Chatbook`"        ];
+Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`UI`"     ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

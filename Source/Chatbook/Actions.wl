@@ -18,25 +18,11 @@ BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"                  ];
-Needs[ "Wolfram`Chatbook`ChatHistory`"      ];
-Needs[ "Wolfram`Chatbook`Common`"           ];
-Needs[ "Wolfram`Chatbook`Dynamics`"         ];
-Needs[ "Wolfram`Chatbook`Explode`"          ];
-Needs[ "Wolfram`Chatbook`Feedback`"         ];
-Needs[ "Wolfram`Chatbook`Formatting`"       ];
-Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
-Needs[ "Wolfram`Chatbook`Handlers`"         ];
-Needs[ "Wolfram`Chatbook`InlineReferences`" ];
-Needs[ "Wolfram`Chatbook`Models`"           ];
-Needs[ "Wolfram`Chatbook`PersonaManager`"   ];
-Needs[ "Wolfram`Chatbook`Prompting`"        ];
-Needs[ "Wolfram`Chatbook`SendChat`"         ];
-Needs[ "Wolfram`Chatbook`Serialization`"    ];
-Needs[ "Wolfram`Chatbook`Services`"         ];
-Needs[ "Wolfram`Chatbook`Settings`"         ];
-Needs[ "Wolfram`Chatbook`ToolManager`"      ];
-Needs[ "Wolfram`Chatbook`Tools`"            ];
+Needs[ "Wolfram`Chatbook`"                ];
+Needs[ "Wolfram`Chatbook`Common`"         ];
+Needs[ "Wolfram`Chatbook`PersonaManager`" ];
+Needs[ "Wolfram`Chatbook`Serialization`"  ];
+Needs[ "Wolfram`Chatbook`ToolManager`"    ];
 
 HoldComplete[
     System`GenerateLLMToolResponse,

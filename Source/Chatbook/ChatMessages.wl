@@ -5,19 +5,11 @@ Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-Needs[ "Wolfram`Chatbook`"                  ];
-Needs[ "Wolfram`Chatbook`Actions`"          ];
-Needs[ "Wolfram`Chatbook`Common`"           ];
-Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
-Needs[ "Wolfram`Chatbook`Handlers`"         ];
-Needs[ "Wolfram`Chatbook`InlineReferences`" ];
-Needs[ "Wolfram`Chatbook`Models`"           ];
-Needs[ "Wolfram`Chatbook`Personas`"         ];
-Needs[ "Wolfram`Chatbook`Prompting`"        ];
-Needs[ "Wolfram`Chatbook`Serialization`"    ];
-Needs[ "Wolfram`Chatbook`Settings`"         ];
-Needs[ "Wolfram`Chatbook`Tools`"            ];
-Needs[ "Wolfram`Chatbook`Utils`"            ];
+Needs[ "Wolfram`Chatbook`"               ];
+Needs[ "Wolfram`Chatbook`Actions`"       ];
+Needs[ "Wolfram`Chatbook`Common`"        ];
+Needs[ "Wolfram`Chatbook`Personas`"      ];
+Needs[ "Wolfram`Chatbook`Serialization`" ];
 
 $ContextAliases[ "tokens`" ] = "Wolfram`LLMFunctions`Utilities`Tokenization`";
 

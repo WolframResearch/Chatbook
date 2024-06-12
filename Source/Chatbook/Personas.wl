@@ -33,7 +33,6 @@ Needs[ "Wolfram`Chatbook`Common`"            ];
 Needs[ "Wolfram`Chatbook`Errors`"            ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`"        ];
 Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
-Needs[ "Wolfram`Chatbook`Utils`"             ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

@@ -5,11 +5,9 @@ Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-Needs[ "Wolfram`Chatbook`"          ];
-Needs[ "Wolfram`Chatbook`Common`"   ];
-Needs[ "Wolfram`Chatbook`Dynamics`" ];
-Needs[ "Wolfram`Chatbook`Models`"   ];
-Needs[ "Wolfram`Chatbook`UI`"       ];
+Needs[ "Wolfram`Chatbook`"        ];
+Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`UI`"     ];
 
 $ContextAliases[ "llm`" ] = "LLMServices`";
 

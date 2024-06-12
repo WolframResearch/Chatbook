@@ -24,23 +24,15 @@ CreateToolbarContent[] is called by the NotebookToolbar to generate the content 
 
 Begin["`Private`"]
 
-Needs[ "Wolfram`Chatbook`"                    ];
-Needs[ "Wolfram`Chatbook`Actions`"            ];
-Needs[ "Wolfram`Chatbook`CloudToolbar`"       ];
-Needs[ "Wolfram`Chatbook`Common`"             ];
-Needs[ "Wolfram`Chatbook`Dynamics`"           ];
-Needs[ "Wolfram`Chatbook`Errors`"             ];
-Needs[ "Wolfram`Chatbook`ErrorUtils`"         ];
-Needs[ "Wolfram`Chatbook`FrontEnd`"           ];
-Needs[ "Wolfram`Chatbook`Menus`"              ];
-Needs[ "Wolfram`Chatbook`Models`"             ];
-Needs[ "Wolfram`Chatbook`Personas`"           ];
-Needs[ "Wolfram`Chatbook`PreferencesContent`" ];
-Needs[ "Wolfram`Chatbook`PreferencesUtils`"   ];
-Needs[ "Wolfram`Chatbook`Serialization`"      ];
-Needs[ "Wolfram`Chatbook`Services`"           ];
-Needs[ "Wolfram`Chatbook`Settings`"           ];
-Needs[ "Wolfram`Chatbook`Utils`"              ];
+Needs[ "Wolfram`Chatbook`"                  ];
+Needs[ "Wolfram`Chatbook`Actions`"          ];
+Needs[ "Wolfram`Chatbook`Common`"           ];
+Needs[ "Wolfram`Chatbook`Errors`"           ];
+Needs[ "Wolfram`Chatbook`ErrorUtils`"       ];
+Needs[ "Wolfram`Chatbook`Menus`"            ];
+Needs[ "Wolfram`Chatbook`Personas`"         ];
+Needs[ "Wolfram`Chatbook`PreferencesUtils`" ];
+Needs[ "Wolfram`Chatbook`Serialization`"    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
