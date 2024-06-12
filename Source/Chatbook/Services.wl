@@ -12,7 +12,6 @@ HoldComplete[
     `$servicesLoaded;
     `$useLLMServices;
     `getAvailableServiceNames;
-    `getAvailableServices;
     `getServiceModelList;
     `modelListCachedQ;
 ];

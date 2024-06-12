@@ -4,7 +4,6 @@ BeginPackage[ "Wolfram`Chatbook`ChatGroups`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-`getChatGroupPrompt;
 `getChatGroupSettings;
 
 Begin[ "`Private`" ];

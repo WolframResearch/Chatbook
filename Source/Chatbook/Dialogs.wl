@@ -15,7 +15,6 @@ BeginPackage[ "Wolfram`Chatbook`Dialogs`" ];
 `setCV;
 `unsetCV;
 
-`headerStyle;
 `dialogHeader;
 `dialogSubHeader;
 `dialogBody;

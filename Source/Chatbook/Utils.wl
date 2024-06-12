@@ -10,19 +10,14 @@ HoldComplete[
     `convertUTF8;
     `exportDataURI;
     `fastFileHash;
-    `fileFormatQ;
     `fixLineEndings;
-    `formatToMIMEType;
-    `getPinkBoxErrors;
     `graphicsQ;
     `image2DQ;
     `importDataURI;
     `makeFailureString;
-    `mimeTypeToFormat;
     `readString;
     `stringTrimMiddle;
     `tinyHash;
-    `validGraphicsQ;
 ];
 
 Begin[ "`Private`" ];

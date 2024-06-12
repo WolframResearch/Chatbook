@@ -9,7 +9,6 @@ HoldComplete[
     `addProcessingArguments;
     `applyHandlerFunction;
     `applyProcessingFunction;
-    `getHandlerFunction;
     `getHandlerFunctions;
     `getProcessingFunction;
     `getProcessingFunctions;
