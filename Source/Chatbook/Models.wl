@@ -169,6 +169,9 @@ toModelName[ name_String? StringQ ] := toModelName[ name ] =
         ]
     ];
 
+toModelName[ missing_Missing ] :=
+    missing;
+
 toModelName // endDefinition;
 
 toModelName0 // beginDefinition;

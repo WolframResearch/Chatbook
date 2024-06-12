@@ -809,6 +809,8 @@ allowedMultimodalRoles0[ model_String ] := allowedMultimodalRoles0[ model ] =
         All
     ];
 
+allowedMultimodalRoles0[ _Missing ] := All;
+
 allowedMultimodalRoles0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
