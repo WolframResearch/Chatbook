@@ -1,12 +1,6 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`CloudToolbar`" ];
-
-HoldComplete[
-    `makeChatCloudDockedCellContents;
-    `forceRefreshCloudPreferences;
-];
-
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                    ];

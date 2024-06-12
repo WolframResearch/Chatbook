@@ -1,14 +1,9 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Feedback`" ];
+Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
-
-HoldComplete[
-    `sendFeedback;
-];
-
-Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"               ];
 Needs[ "Wolfram`Chatbook`ChatMessages`"  ];

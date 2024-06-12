@@ -1,12 +1,9 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`ChatGroups`" ];
+Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
-
-`getChatGroupSettings;
-
-Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"          ];
 Needs[ "Wolfram`Chatbook`Common`"   ];

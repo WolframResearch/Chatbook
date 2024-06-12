@@ -1,9 +1,6 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Explode`" ];
-
-`explodeCell;
-
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"        ];

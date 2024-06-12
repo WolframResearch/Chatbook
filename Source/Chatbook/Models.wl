@@ -1,24 +1,9 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Models`" ];
-
-(* cSpell: ignore chatgpt *)
+Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
-
-HoldComplete[
-    `chatModelQ;
-    `chooseDefaultModelName;
-    `getModelList;
-    `modelDisplayName;
-    `multimodalModelQ;
-    `snapshotModelQ;
-    `standardizeModelData;
-    `resolveFullModelSpec;
-    `toModelName;
-];
-
-Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"          ];
 Needs[ "Wolfram`Chatbook`Actions`"  ];

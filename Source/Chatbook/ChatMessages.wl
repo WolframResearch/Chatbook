@@ -1,28 +1,9 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`ChatMessages`" ];
-
-(* cSpell: ignore nodef *)
+Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
-
-Wolfram`Chatbook`CellToChatMessage;
-
-`$chatDataTag;
-`$initialCellStringBudget;
-`$multimodalMessages;
-`$tokenBudget;
-`$tokenPressure;
-`allowedMultimodalRoles;
-`cachedTokenizer;
-`constructMessages;
-`expandMultimodalString;
-`getTokenizer;
-`getTokenizerName;
-`logUsage;
-`resizeMultimodalImage;
-
-Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                  ];
 Needs[ "Wolfram`Chatbook`Actions`"          ];
@@ -1088,6 +1069,7 @@ inlineFunctionReferenceBoxesQ[ ___ ] := False;
 (*makePromptFunctionMessages*)
 makePromptFunctionMessages // beginDefinition;
 
+(* cSpell: ignore nodef *)
 makePromptFunctionMessages[ settings_, { cells___, cell0_ } ] := Enclose[
     Module[ { modifiers, cell, name, arguments, filled, prompt, string },
         (* Ensure Wolfram/LLMFunctions is installed and loaded before calling System`LLMPrompt[..] *)

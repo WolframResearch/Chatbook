@@ -26,8 +26,6 @@ GetPersonaData[] returns information about all locally installed personas, inclu
 Calling GetPersonaData[] will additionally regenerate the cache used by GetCachedPersonaData.
 "];
 
-`$corePersonaNames;
-
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                   ];

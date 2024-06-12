@@ -1,25 +1,6 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Utils`" ];
-
-HoldComplete[
-    `$tinyHashLength;
-    `associationKeyDeflatten;
-    `clickToCopy;
-    `contextBlock;
-    `convertUTF8;
-    `exportDataURI;
-    `fastFileHash;
-    `fixLineEndings;
-    `graphicsQ;
-    `image2DQ;
-    `importDataURI;
-    `makeFailureString;
-    `readString;
-    `stringTrimMiddle;
-    `tinyHash;
-];
-
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"          ];
