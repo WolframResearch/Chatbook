@@ -275,12 +275,16 @@ toolDefaultIcon // endDefinition;
 (*toolDefaultData*)
 toolDefaultData // beginDefinition;
 
-toolDefaultData[ name_String ] := <|
-    "CanonicalName" -> toCanonicalToolName @ name,
-    "DisplayName"   -> toDisplayToolName @ name,
-    "Name"          -> toMachineToolName @ name,
-    "Icon"          -> $defaultToolIcon
-|>;
+toolDefaultData[ name_String ] :=
+    With[ { mName = toMachineToolName @ name },
+        <|
+            "CanonicalName" -> toCanonicalToolName @ name,
+            "DisplayName"   -> toDisplayToolName @ name,
+            "Name"          -> mName,
+            "ShortName"     -> mName,
+            "Icon"          -> $defaultToolIcon
+        |>
+    ];
 
 toolDefaultData // endDefinition;
 
