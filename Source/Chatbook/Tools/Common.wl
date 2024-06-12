@@ -844,6 +844,9 @@ simpleToolRequestParser // endDefinition;
 toolShortName // beginDefinition;
 
 toolShortName[ $$llmToolH[ as_Association, ___ ] ] :=
+    toolShortName @ as;
+
+toolShortName[ as_Association ] :=
     Lookup[ as, "ShortName", Lookup[ as, "Name" ] ];
 
 toolShortName[ name_String ] :=
@@ -1051,7 +1054,7 @@ simpleToolSchema[ as_Association ] := Enclose[
 
         data        = ConfirmBy[ toolData @ as, AssociationQ, "Data" ];
         name        = ConfirmBy[ toolName[ data, "Display" ], StringQ, "Name" ];
-        command     = ConfirmBy[ Lookup[ data, "ShortName", toolName[ data, "Canonical" ] ], StringQ, "ShortName" ];
+        command     = ConfirmBy[ toolShortName @ data, StringQ, "ShortName" ];
         description = ConfirmBy[ data[ "Description" ], StringQ, "Description" ];
         args        = ConfirmMatch[ as[ "Parameters" ], KeyValuePattern @ { }, "Arguments" ];
         argStrings  = ConfirmMatch[ simpleArgStrings @ args, { __String }, "ArgStrings" ];
