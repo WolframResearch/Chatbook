@@ -1,34 +1,16 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Settings`" ];
+Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-HoldComplete[
-    `$defaultChatSettings;
-    `currentChatSettings;
-    `dynamicSplitQ;
-    `getPrecedingDelimiter;
-    `multimodalPacletsAvailable;
-    `resolveAutoSettings;
-    `toolsEnabledQ;
-];
-
-Begin[ "`Private`" ];
-
 Needs[ "Wolfram`Chatbook`"                   ];
 Needs[ "Wolfram`Chatbook`Actions`"           ];
-Needs[ "Wolfram`Chatbook`ChatMessages`"      ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
-Needs[ "Wolfram`Chatbook`FrontEnd`"          ];
-Needs[ "Wolfram`Chatbook`Handlers`"          ];
-Needs[ "Wolfram`Chatbook`Models`"            ];
 Needs[ "Wolfram`Chatbook`Personas`"          ];
 Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
-Needs[ "Wolfram`Chatbook`SendChat`"          ];
 Needs[ "Wolfram`Chatbook`Serialization`"     ];
-Needs[ "Wolfram`Chatbook`Services`"          ];
-Needs[ "Wolfram`Chatbook`Tools`"             ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

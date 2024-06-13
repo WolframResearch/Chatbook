@@ -1,29 +1,14 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`PreferencesContent`" ];
-
-HoldComplete[
-    `$cloudEvaluationNotebook;
-    `$preferencesScope;
-    `createPreferencesContent;
-    `makeModelSelector;
-    `makePersonaSelector;
-    `notebookSettingsPanel;
-    `openPreferencesPage;
-];
-
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                  ];
 Needs[ "Wolfram`Chatbook`Common`"           ];
-Needs[ "Wolfram`Chatbook`Dynamics`"         ];
 Needs[ "Wolfram`Chatbook`Errors`"           ];
-Needs[ "Wolfram`Chatbook`Models`"           ];
 Needs[ "Wolfram`Chatbook`PersonaManager`"   ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`PreferencesUtils`" ];
-Needs[ "Wolfram`Chatbook`Services`"         ];
-Needs[ "Wolfram`Chatbook`Settings`"         ];
 Needs[ "Wolfram`Chatbook`ToolManager`"      ];
 Needs[ "Wolfram`Chatbook`UI`"               ];
 

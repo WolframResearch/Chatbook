@@ -2,33 +2,10 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Formatting`" ];
-
-(* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDRESULT *)
-
-Wolfram`Chatbook`FormatChatOutput;
-Wolfram`Chatbook`FormatToolCall;
-Wolfram`Chatbook`StringToBoxes;
-
-`$customToolFormatter;
-`$dynamicSplitRules;
-`$dynamicText;
-`$reformattedCell;
-`$resultCellCache;
-`clickToCopy;
-`floatingButtonGrid;
-`insertCodeBelow;
-`makeInteractiveCodeCell;
-`reformatTextData;
-`stringToBoxes;
-`toolAutoFormatter;
-
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"          ];
-Needs[ "Wolfram`Chatbook`Common`"   ];
-Needs[ "Wolfram`Chatbook`FrontEnd`" ];
-Needs[ "Wolfram`Chatbook`Sandbox`"  ];
-Needs[ "Wolfram`Chatbook`Tools`"    ];
+Needs[ "Wolfram`Chatbook`"        ];
+Needs[ "Wolfram`Chatbook`Common`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -977,6 +954,8 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Parsing Rules*)
+
+(* cSpell: ignore ENDRESULT *)
 $$endToolCall       = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
 $$eol               = " "... ~~ "\n";
 $$cmd               = Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ];
@@ -992,6 +971,8 @@ $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|End
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$textDataFormatRules*)
+
+(* cSpell: ignore TOOLCALL *)
 $textDataFormatRules = {
     StringExpression[
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
@@ -1569,11 +1550,11 @@ resolveToolFormatter[ as_Association ] := Append[ as, "FormattingFunction" -> re
 resolveToolFormatter // endDefinition;
 
 resolveToolFormatter0 // beginDefinition;
-resolveToolFormatter0[ KeyValuePattern[ "FormattingFunction" -> f_ ] ] := resolveToolFormatter0 @ f;
-resolveToolFormatter0[ Automatic ] := clickToCopy[ #1 ] &;
-resolveToolFormatter0[ Inherited ] := toolAutoFormatter;
-resolveToolFormatter0[ None      ] := #1 &;
-resolveToolFormatter0[ f_        ] := f;
+resolveToolFormatter0[ as_Association ] := resolveToolFormatter0 @ Lookup[ as, "FormattingFunction", Inherited ];
+resolveToolFormatter0[ Automatic      ] := clickToCopy[ #1 ] &;
+resolveToolFormatter0[ Inherited      ] := toolAutoFormatter;
+resolveToolFormatter0[ None           ] := #1 &;
+resolveToolFormatter0[ f_             ] := f;
 resolveToolFormatter0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1595,15 +1576,6 @@ toolAutoFormatter[ parameter_, "Parameters", ___ ] := clickToCopy @ parameter;
 toolAutoFormatter[ result_, ___ ] := result;
 
 toolAutoFormatter // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*clickToCopy*)
-clickToCopy // beginDefinition;
-clickToCopy[ ClickToCopy[ args__ ] ] := clickToCopy @ args;
-clickToCopy[ HoldForm[ expr_ ], a___ ] := clickToCopy[ Defer @ expr, a ];
-clickToCopy[ expr_, a___ ] := Grid[ { { ClickToCopy[ expr, a ], "" } }, Spacings -> 0, BaseStyle -> "Text" ];
-clickToCopy // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

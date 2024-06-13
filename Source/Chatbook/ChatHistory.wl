@@ -1,27 +1,13 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`ChatHistory`" ];
+Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-HoldComplete[
-    `accentIncludedCells;
-    `chatExcludedQ;
-    `extraCellHeight;
-    `filterChatCells;
-    `getCellsInChatHistory;
-    `removeCellAccents;
-];
-
-Begin[ "`Private`" ];
-
-Needs[ "Wolfram`Chatbook`"              ];
-Needs[ "Wolfram`Chatbook`Actions`"      ];
-Needs[ "Wolfram`Chatbook`ChatMessages`" ];
-Needs[ "Wolfram`Chatbook`Common`"       ];
-Needs[ "Wolfram`Chatbook`FrontEnd`"     ];
-Needs[ "Wolfram`Chatbook`SendChat`"     ];
-Needs[ "Wolfram`Chatbook`Settings`"     ];
+Needs[ "Wolfram`Chatbook`"         ];
+Needs[ "Wolfram`Chatbook`Actions`" ];
+Needs[ "Wolfram`Chatbook`Common`"  ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
