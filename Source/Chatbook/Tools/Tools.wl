@@ -1,37 +1,6 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Tools`" ];
-
-HoldComplete[
-    `$attachments;
-    `$defaultChatTools;
-    `$selectedTools;
-    `$toolConfiguration;
-    `$toolEvaluationResults;
-    `$toolOptions;
-    `$toolResultStringLength;
-    `expressionURIKey;
-    `expressionURIKeyQ;
-    `getToolByName;
-    `getToolDisplayName;
-    `getToolFormattingFunction;
-    `getToolIcon;
-    `initTools;
-    `makeExpressionURI;
-    `makeToolConfiguration;
-    `makeToolResponseString;
-    `parseSimpleToolCallParameterStrings;
-    `resolveTools;
-    `simpleToolRequestParser;
-    `toolData;
-    `toolName;
-    `toolOptionValue;
-    `toolRequestParser;
-    `toolSelectedQ;
-    `toolShortName;
-    `withToolBox;
-];
-
 Begin[ "`Private`" ];
 
 (* ::**************************************************************************************************************:: *)

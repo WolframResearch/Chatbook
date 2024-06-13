@@ -7,32 +7,16 @@
 
 BeginPackage[ "Wolfram`Chatbook`InlineReferences`" ];
 
-`insertPersonaInputBox;
-`insertFunctionInputBox;
-`insertModifierInputBox;
-`insertTrailingFunctionInputBox;
-
-`insertPersonaTemplate;
-`insertFunctionTemplate;
-`insertModifierTemplate;
-`insertWLTemplate;
-
-`personaTemplateBoxes;
+(* These symbols are hardcoded into the stylesheet and need to remain in this context: *)
 `functionTemplateBoxes;
 `modifierTemplateBoxes;
+`personaTemplateBoxes;
 `wlTemplateBoxes;
-
-`parseInlineReferences;
-`resolveLastInlineReference;
-`resolveInlineReferences;
-
-`$cloudInlineReferenceButtons;
 
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                   ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
-Needs[ "Wolfram`Chatbook`FrontEnd`"          ];
 Needs[ "Wolfram`Chatbook`Personas`"          ];
 Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
 Needs[ "Wolfram`Chatbook`Serialization`"     ];

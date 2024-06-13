@@ -11,13 +11,10 @@ BeginPackage[ "Wolfram`Chatbook`ResourceInstaller`" ];
 `ResourceInstallLocation;
 `ResourceUninstall;
 
-`channelCleanup;
-
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"          ];
 Needs[ "Wolfram`Chatbook`Common`"   ];
-Needs[ "Wolfram`Chatbook`Dynamics`" ];
 Needs[ "Wolfram`Chatbook`Personas`" ];
 
 $ContextAliases[ "pi`" ] = "Wolfram`Chatbook`PersonaInstaller`Private`";

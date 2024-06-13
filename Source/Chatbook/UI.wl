@@ -22,40 +22,17 @@ GeneralUtilities`SetUsage[CreateToolbarContent, "
 CreateToolbarContent[] is called by the NotebookToolbar to generate the content of the 'Notebook AI Settings' attached menu.
 "]
 
-HoldComplete[
-    `getModelMenuIcon;
-    `getPersonaIcon;
-    `getPersonaMenuIcon;
-    `labeledCheckbox;
-    `makeAutomaticResultAnalysisCheckbox;
-    `makeTemperatureSlider;
-    `makeToolCallFrequencySlider;
-    `modelGroupName;
-    `personaDisplayName;
-    `resizeMenuIcon;
-    `serviceIcon;
-    `showSnapshotModelsQ;
-];
-
 Begin["`Private`"]
 
-Needs[ "Wolfram`Chatbook`"                    ];
-Needs[ "Wolfram`Chatbook`Actions`"            ];
-Needs[ "Wolfram`Chatbook`CloudToolbar`"       ];
-Needs[ "Wolfram`Chatbook`Common`"             ];
-Needs[ "Wolfram`Chatbook`Dynamics`"           ];
-Needs[ "Wolfram`Chatbook`Errors`"             ];
-Needs[ "Wolfram`Chatbook`ErrorUtils`"         ];
-Needs[ "Wolfram`Chatbook`FrontEnd`"           ];
-Needs[ "Wolfram`Chatbook`Menus`"              ];
-Needs[ "Wolfram`Chatbook`Models`"             ];
-Needs[ "Wolfram`Chatbook`Personas`"           ];
-Needs[ "Wolfram`Chatbook`PreferencesContent`" ];
-Needs[ "Wolfram`Chatbook`PreferencesUtils`"   ];
-Needs[ "Wolfram`Chatbook`Serialization`"      ];
-Needs[ "Wolfram`Chatbook`Services`"           ];
-Needs[ "Wolfram`Chatbook`Settings`"           ];
-Needs[ "Wolfram`Chatbook`Utils`"              ];
+Needs[ "Wolfram`Chatbook`"                  ];
+Needs[ "Wolfram`Chatbook`Actions`"          ];
+Needs[ "Wolfram`Chatbook`Common`"           ];
+Needs[ "Wolfram`Chatbook`Errors`"           ];
+Needs[ "Wolfram`Chatbook`ErrorUtils`"       ];
+Needs[ "Wolfram`Chatbook`Menus`"            ];
+Needs[ "Wolfram`Chatbook`Personas`"         ];
+Needs[ "Wolfram`Chatbook`PreferencesUtils`" ];
+Needs[ "Wolfram`Chatbook`Serialization`"    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1140,11 +1117,11 @@ setModel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*absoluteCurrentValue*)
-SetFallthroughError[absoluteCurrentValue]
+(*absoluteCurrentValueOrigin*)
+SetFallthroughError[absoluteCurrentValueOrigin]
 
-absoluteCurrentValue[cell_, {TaggingRules, "ChatNotebookSettings", key_}] := currentChatSettings[cell, key]
-absoluteCurrentValue[cell_, keyPath_] := AbsoluteCurrentValue[cell, keyPath]
+absoluteCurrentValueOrigin[cell_, {TaggingRules, "ChatNotebookSettings", key_}] := currentChatSettings[cell, key]
+absoluteCurrentValueOrigin[cell_, keyPath_] := AbsoluteCurrentValue[cell, keyPath]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1167,7 +1144,7 @@ currentValueOrigin[
 	value,
 	inlineValue
 },
-	value = absoluteCurrentValue[targetObj, keyPath];
+	value = absoluteCurrentValueOrigin[targetObj, keyPath];
 
 	(* This was causing dynamics to update on every keystroke, so it's disabled for now: *)
 	(* inlineValue = nestedLookup[

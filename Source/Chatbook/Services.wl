@@ -1,29 +1,13 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Services`" ];
+Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-HoldComplete[
-    `$allowConnectionDialog;
-    `$availableServices;
-    `$enableLLMServices;
-    `$serviceCache;
-    `$servicesLoaded;
-    `$useLLMServices;
-    `getAvailableServiceNames;
-    `getAvailableServices;
-    `getServiceModelList;
-    `modelListCachedQ;
-];
-
-Begin[ "`Private`" ];
-
-Needs[ "Wolfram`Chatbook`"          ];
-Needs[ "Wolfram`Chatbook`Common`"   ];
-Needs[ "Wolfram`Chatbook`Dynamics`" ];
-Needs[ "Wolfram`Chatbook`Models`"   ];
-Needs[ "Wolfram`Chatbook`UI`"       ];
+Needs[ "Wolfram`Chatbook`"        ];
+Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`UI`"     ];
 
 $ContextAliases[ "llm`" ] = "LLMServices`";
 

@@ -10,11 +10,8 @@ BeginPackage[ "Wolfram`Chatbook`Menus`" ];
 (* :!CodeAnalysis::BeginBlock:: *)
 
 HoldComplete[
-    `attachMenuCell;
     `AttachSubmenu;
     `MakeMenu;
-    `menuMagnification;
-    `removeChatMenus;
 ];
 
 Needs[ "GeneralUtilities`" -> None ];
@@ -34,7 +31,6 @@ Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`Common`"     ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
-Needs[ "Wolfram`Chatbook`FrontEnd`"   ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
