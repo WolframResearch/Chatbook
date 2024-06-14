@@ -1177,7 +1177,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3924158197"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3927374722"|>
   ],
   Cell[
    StyleData["Text"],
@@ -2468,11 +2468,11 @@ Notebook[
        Initialization :>
         (Wolfram`Chatbook`UI`Private`cell$$ = EvaluationCell[];
         Needs["Wolfram`Chatbook`" -> None];
-        Wolfram`Chatbook`Dynamics`updateDynamics["ChatBlock"]),
+        Wolfram`Chatbook`Common`updateDynamics["ChatBlock"]),
        DynamicModuleValues :> { },
        Deinitialization :>
         (Needs["Wolfram`Chatbook`" -> None];
-        Wolfram`Chatbook`Dynamics`updateDynamics["ChatBlock"]),
+        Wolfram`Chatbook`Common`updateDynamics["ChatBlock"]),
        UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
       ]
      ])
