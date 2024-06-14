@@ -168,7 +168,9 @@
 "PersonaNameCodeWriter" -> "Escritor de c\[OAcute]digo",
 "PersonaNamePlainChat" -> "Chat simple",
 "PersonaNameRawModel" -> "Modelo sin procesar",
-"PersonaNameWolfie" -> "Wolfie"
+"PersonaNameWolfie" -> "Wolfie",
+
+"FloatingChatFieldHint" -> "Ask me anything"
 }
 @|
 @|

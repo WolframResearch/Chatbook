@@ -168,7 +168,9 @@
 "PersonaNameCodeWriter" -> "Code Writer",
 "PersonaNamePlainChat" -> "Plain Chat",
 "PersonaNameRawModel" -> "Raw Model",
-"PersonaNameWolfie" -> "Wolfie"
+"PersonaNameWolfie" -> "Wolfie",
+
+"FloatingChatFieldHint" -> "Ask me anything"
 }
 @|
 @|

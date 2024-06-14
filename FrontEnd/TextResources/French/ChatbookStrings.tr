@@ -168,7 +168,9 @@
 "PersonaNameCodeWriter" -> "R\[EAcute]dacteur de code",
 "PersonaNamePlainChat" -> "Chat simple",
 "PersonaNameRawModel" -> "Mod\[EGrave]le brut",
-"PersonaNameWolfie" -> "Wolfie"
+"PersonaNameWolfie" -> "Wolfie",
+
+"FloatingChatFieldHint" -> "Ask me anything"
 }
 @|
 @|
