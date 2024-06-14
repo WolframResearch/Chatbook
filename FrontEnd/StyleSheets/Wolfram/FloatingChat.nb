@@ -1,0 +1,72 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* Created By: SaveReadableNotebook *)
+(* https://resources.wolframcloud.com/FunctionRepository/resources/SaveReadableNotebook *)
+
+Notebook[
+ {
+  Cell[StyleData[StyleDefinitions -> "Chatbook.nb"]],
+  Cell[
+   StyleData["Notebook"],
+   ClosingSaveDialog -> False,
+   WindowToolbars -> { },
+   CellInsertionPointCell -> None,
+   Selectable -> False,
+   WindowSize -> {350, Automatic},
+   WindowMargins -> {{0, Automatic}, {Automatic, 0}},
+   WindowElements -> {"StatusArea", "VerticalScrollBar"},
+   WindowFrameElements -> {"CloseBox", "ResizeArea"},
+   WindowClickSelect -> True,
+   WindowTitle -> "Code Assistance Chat",
+   DockedCells -> {
+    Cell[
+     BoxData[
+      DynamicBox[
+       ToBoxes[
+        Needs["Wolfram`Chatbook`" -> None];
+        Symbol["Wolfram`Chatbook`ChatbookAction"][
+         "MakeWorkspaceChatDockedCell"
+        ],
+        StandardForm
+       ],
+       Initialization :>
+        With[ { Wolfram`ChatNB`nbo = EvaluationNotebook[] },
+         Needs["Wolfram`Chatbook`" -> None];
+         Symbol["Wolfram`Chatbook`ChatbookAction"][
+          "AttachWorkspaceChatInput",
+          Wolfram`ChatNB`nbo
+         ]
+        ]
+      ]
+     ]
+    ]
+   },
+   PrivateNotebookOptions -> {"ExcludeFromShutdown" -> True},
+   TaggingRules -> <|"ChatNotebookSettings" -> <|"WorkspaceChat" -> True|>|>,
+   Magnification -> 0.85,
+   Background -> GrayLevel[1]
+  ],
+  Cell[
+   StyleData["ChatInput"],
+   Selectable -> True,
+   ShowCellBracket -> False,
+   CellMargins -> {{40, 20}, {0, Inherited}}
+  ],
+  Cell[
+   StyleData["ChatOutput"],
+   Selectable -> True,
+   ShowCellBracket -> False,
+   CellMargins -> {{40, 20}, {Inherited, 0}}
+  ],
+  Cell[
+   StyleData["ChatInputField"],
+   CellFrame -> 1,
+   CellFrameMargins -> {{5, 5}, {0, 0}},
+   CellFrameColor -> GrayLevel[0.85]
+  ]
+ },
+ StyleDefinitions -> "PrivateStylesheetFormatting.nb"
+]
