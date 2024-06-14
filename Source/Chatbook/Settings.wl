@@ -203,7 +203,10 @@ resolveAutoSettings0[ settings_Association ] := Enclose[
         auto     = ConfirmBy[ Select[ settings, SameAs @ Automatic ], AssociationQ, "Auto" ];
         sorted   = ConfirmBy[ <| KeyTake[ auto, $autoSettingKeyPriority ], auto |>, AssociationQ, "Sorted" ];
         resolved = ConfirmBy[ Fold[ resolveAutoSetting, settings, Normal @ sorted ], AssociationQ, "Resolved" ];
-        If[ resolved[ "Assistance" ] && $chatState, $AutomaticAssistance = True ];
+        If[ $chatState,
+            If[ resolved[ "Assistance"    ], $AutomaticAssistance = True ];
+            If[ resolved[ "WorkspaceChat" ], $WorkspaceChat       = True ];
+        ];
         result = ConfirmBy[ resolveTools @ KeySort @ resolved, AssociationQ, "ResolveTools" ];
         If[ result[ "ToolMethod" ] === Automatic,
             result[ "ToolMethod" ] = chooseToolMethod @ result
