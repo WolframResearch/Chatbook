@@ -290,6 +290,189 @@ cellInformation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*notebookInformation*)
+notebookInformation // beginDefinition;
+
+notebookInformation[ ] :=
+    notebookInformation @ Notebooks[ ];
+
+notebookInformation[ All ] :=
+    notebookInformation @ Notebooks[ ];
+
+notebookInformation[ nbo_NotebookObject ] := Enclose[
+    Catch @ Module[ { throwIfClosed, info, visible, windowClickSelect, selected, input },
+
+        throwIfClosed = Replace[ Missing[ "NotebookClosed", ___ ] | $Failed :> Throw @ missingNotebook @ nbo ];
+
+        info = ConfirmMatch[ throwIfClosed @ notebookInformation0 @ nbo, _? AssociationQ, "Info" ];
+
+        visible = ConfirmMatch[
+            throwIfClosed @ AbsoluteCurrentValue[ nbo, Visible ],
+            True|False|Inherited,
+            "Visible"
+        ];
+
+        windowClickSelect = ConfirmMatch[
+            throwIfClosed @ AbsoluteCurrentValue[ nbo, WindowClickSelect ],
+            True|False|Inherited,
+            "WindowClickSelect"
+        ];
+
+        selected = SelectedNotebook[ ] === nbo;
+        input    = InputNotebook[ ]    === nbo;
+
+        ConfirmBy[
+            KeySort @ DeleteMissing @ <|
+                "NotebookObject"    -> nbo,
+                "Visible"           -> TrueQ @ visible,
+                "WindowClickSelect" -> TrueQ @ windowClickSelect,
+                "SelectedNotebook"  -> TrueQ @ selected,
+                "InputNotebook"     -> TrueQ @ input,
+                "ID"                -> tinyHash @ nbo,
+                info
+            |>,
+            AssociationQ,
+            "Result"
+        ]
+    ],
+    throwInternalFailure
+];
+
+(* Definition that's optimized for listable FE calls: *)
+notebookInformation[ notebooks_List ] :=
+    notebooksInformation @ notebooks;
+
+notebookInformation // endDefinition;
+
+
+notebookInformation0 // beginDefinition;
+
+notebookInformation0[ nbo_NotebookObject ] := Enclose[
+    Catch @ Module[ { info, as },
+        info = NotebookInformation @ nbo;
+        If[ FailureQ @ info, Throw @ Missing[ "NotebookClosed", nbo ] ];
+        as = ConfirmBy[ Association @ info, AssociationQ, "Association" ];
+        ConfirmBy[ AssociationMap[ formatNotebookInformation, as ], AssociationQ, "Formatted" ]
+    ],
+    throwInternalFailure
+];
+
+notebookInformation0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*notebooksInformation*)
+notebooksInformation // beginDefinition;
+
+notebooksInformation[ { } ] := { };
+
+notebooksInformation[ notebooks: { __NotebookObject } ] := Enclose[
+    Module[ { nbObjects, visible, windowClickSelect, selected, input, id, info, transposed, result },
+
+        nbObjects         = Thread[ "NotebookObject"    -> notebooks ];
+        visible           = Thread[ "Visible"           -> AbsoluteCurrentValue[ notebooks, Visible ] ];
+        windowClickSelect = Thread[ "WindowClickSelect" -> AbsoluteCurrentValue[ notebooks, WindowClickSelect ] ];
+        selected          = Thread[ "SelectedNotebook"  -> Map[ SameAs @ SelectedNotebook[ ], notebooks ] ];
+        input             = Thread[ "InputNotebook"     -> Map[ SameAs @ InputNotebook[ ], notebooks ] ];
+        id                = Thread[ "ID"                -> tinyHash /@ notebooks ];
+
+        info = notebookInformation0 /@ notebooks;
+
+        transposed = ConfirmBy[
+            Transpose @ { info, nbObjects, visible, windowClickSelect, selected, input, id },
+            ListQ,
+            "Transpose"
+        ];
+
+        result = ConfirmMatch[
+            combineNotebookInfo /@ transposed,
+            { (_? AssociationQ | Missing[ "NotebookClosed", _NotebookObject ])... },
+            "Result"
+        ];
+
+        ConfirmAssert[ Length @ result === Length @ notebooks, "LengthCheck" ];
+
+        result
+    ],
+    throwInternalFailure
+];
+
+notebooksInformation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*combineNotebookInfo*)
+combineNotebookInfo // beginDefinition;
+combineNotebookInfo[ a: { $Failed | Missing[ "NotebookClosed", ___ ], ___ } ] := missingNotebook @ a;
+combineNotebookInfo[ a_List ] := With[ { as = Association @ a }, KeySort @ DeleteMissing @ as /; notebookInfoQ @ as ];
+combineNotebookInfo[ a_List ] := missingNotebook @ a;
+combineNotebookInfo // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*missingNotebook*)
+missingNotebook // beginDefinition;
+missingNotebook[ { _, "NotebookObject" -> nbo_NotebookObject, ___ } ] := missingNotebook @ nbo;
+missingNotebook[ nbo_NotebookObject ] := Missing[ "NotebookClosed", nbo ];
+missingNotebook // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*notebookInfoQ*)
+notebookInfoQ // beginDefinition;
+notebookInfoQ[ as_Association? AssociationQ ] := FreeQ[ as, _FrontEnd`AbsoluteCurrentValue|$Failed, { 1 } ];
+notebookInfoQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatNotebookInformation*)
+formatNotebookInformation // beginDefinition;
+formatNotebookInformation[ (Rule|RuleDelayed)[ key_, value_ ] ] := formatNotebookInformation[ key, value ];
+formatNotebookInformation[ "Uri", value_ ] := formatNotebookInformation[ "FileName", value ];
+formatNotebookInformation[ key_, value_ ] := ToString @ key -> formatNotebookInformation0[ key, value ];
+formatNotebookInformation // endDefinition;
+
+formatNotebookInformation0 // beginDefinition;
+formatNotebookInformation0[ "FileName", file_ ] := toFileName @ file;
+formatNotebookInformation0[ "FileModificationTime", t_Real ] := formatNotebookInformation0[ "Timestamp", t ];
+formatNotebookInformation0[ "MemoryModificationTime", t_Real ] := formatNotebookInformation0[ "Timestamp", t ];
+formatNotebookInformation0[ "Timestamp", t_Real ] := TimeZoneConvert @ DateObject[ t, TimeZone -> 0 ];
+formatNotebookInformation0[ key_String, value_ ] := value;
+formatNotebookInformation0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toFileName*)
+toFileName // beginDefinition;
+toFileName[ file_ ] := toFileName[ file ] = toFileName0 @ file;
+toFileName // endDefinition;
+
+toFileName0 // beginDefinition;
+toFileName0[ file0_FrontEnd`FileName ] := With[ { file = ToFileName @ file0 }, toFileName0 @ file /; StringQ @ file ];
+toFileName0[ file_String ] := StringReplace[ file, "\\" -> "/" ];
+toFileName0[ file_ ] := file;
+toFileName0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*fromFETimestamp*)
+(* TODO: use this when passing notebook info to the LLM *)
+fromFETimestamp // beginDefinition;
+
+fromFETimestamp[ t_Real ] := Enclose[
+    Module[ { date, string, relative },
+        date     = ConfirmBy[ TimeZoneConvert @ DateObject[ t, TimeZone -> 0 ], DateObjectQ, "Date" ];
+        string   = ConfirmBy[ DateString[ date, { "ISODateTime", ".", "Millisecond" } ], StringQ, "String" ];
+        relative = ConfirmBy[ relativeTimeString @ date, StringQ, "Relative" ];
+        string<>" ("<>relative<>")"
+    ],
+    throwInternalFailure
+];
+
+fromFETimestamp // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*parentCell*)
 parentCell // beginDefinition;
 parentCell[ obj: _CellObject|_BoxObject ] /; $cloudNotebooks := cloudParentCell @ obj;
