@@ -1177,7 +1177,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3927374722"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3927375719"|>
   ],
   Cell[
    StyleData["Text"],
@@ -2451,13 +2451,13 @@ Notebook[
     DisplayFunction ->
      (Function[
       DynamicModuleBox[
-       {Wolfram`Chatbook`UI`Private`cell$$},
+       {Wolfram`ChatNB`cell$$},
        DynamicBox[
         ToBoxes[
          Catch[
           Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
           Wolfram`Chatbook`UI`MakeChatDelimiterCellDingbat[
-           Wolfram`Chatbook`UI`Private`cell$$
+           Wolfram`ChatNB`cell$$
           ],
           Blank[]
          ],
@@ -2466,14 +2466,20 @@ Notebook[
         TrackedSymbols :> {Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger}
        ],
        Initialization :>
-        (Wolfram`Chatbook`UI`Private`cell$$ = EvaluationCell[];
+        (Wolfram`ChatNB`cell$$ = EvaluationCell[];
         Needs["Wolfram`Chatbook`" -> None];
-        Wolfram`Chatbook`Common`updateDynamics["ChatBlock"]),
+        Symbol["Wolfram`Chatbook`ChatbookAction"][
+         "UpdateDynamics",
+         "ChatBlock"
+        ]),
        DynamicModuleValues :> { },
        Deinitialization :>
         (Needs["Wolfram`Chatbook`" -> None];
-        Wolfram`Chatbook`Common`updateDynamics["ChatBlock"]),
-       UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
+        Symbol["Wolfram`Chatbook`ChatbookAction"][
+         "UpdateDynamics",
+         "ChatBlock"
+        ]),
+       UnsavedVariables :> {Wolfram`ChatNB`cell$$}
       ]
      ])
    }

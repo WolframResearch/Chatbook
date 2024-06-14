@@ -85,6 +85,7 @@ ChatbookAction[ "TabLeft"                    , args___ ] := catchMine @ TabLeft 
 ChatbookAction[ "TabRight"                   , args___ ] := catchMine @ TabRight @ args;
 ChatbookAction[ "ToggleFormatting"           , args___ ] := catchMine @ ToggleFormatting @ args;
 ChatbookAction[ "ToolManage"                 , args___ ] := catchMine @ ToolManage @ args;
+ChatbookAction[ "UpdateDynamics"             , args___ ] := catchMine @ updateDynamics @ args;
 ChatbookAction[ "WidgetSend"                 , args___ ] := catchMine @ WidgetSend @ args;
 ChatbookAction[ args___                                ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
 
