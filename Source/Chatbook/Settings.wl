@@ -54,6 +54,7 @@ $defaultChatSettings = <|
     "SetCellDingbat"             -> True,
     "ShowMinimized"              -> Automatic,
     "StreamingOutputMethod"      -> Automatic,
+    "TabbedOutput"               -> True, (* TODO: define a "MaxOutputPages" setting *)
     "TargetCloudObject"          -> Automatic,
     "Temperature"                -> 0.7,
     "TokenBudgetMultiplier"      -> Automatic,
