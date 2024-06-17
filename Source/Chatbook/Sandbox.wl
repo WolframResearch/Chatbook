@@ -1907,8 +1907,8 @@ checkDocSearchMessageStrings[ string_String ] := StringDelete[ string, $docSearc
 checkDocSearchMessageStrings // endDefinition;
 
 $docSearchMessageStrings = {
-    " Use the documentation_searcher tool to find solutions.",
-    " Use the documentation_searcher tool to find alternatives."
+    " Use the documentation searcher tool to find solutions.",
+    " Use the documentation searcher tool to find alternatives."
 };
 
 (* ::**************************************************************************************************************:: *)
