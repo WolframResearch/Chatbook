@@ -2145,8 +2145,10 @@ AppendURIInstructions // endExportedDefinition;
 Scan[ LinkClose, Select[ Links[ ], sandboxKernelQ ] ];
 
 If[ Wolfram`ChatbookInternal`$BuildingMX,
-    $messageOverrides;
+    $generalMessageText;
     $initializationTest;
+    $messageOverrides;
+    $messageOverrideTemplates;
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)
