@@ -26,6 +26,7 @@ $$createChatOptions = OptionsPattern[ { CreateChatNotebook, Notebook } ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*CreateChatNotebook*)
+Needs[ "Wolfram`Chatbook`Settings`" ]; (* Needed for $defaultChatSettings *)
 CreateChatNotebook // Options = Normal[ $defaultChatSettings, Association ];
 
 
