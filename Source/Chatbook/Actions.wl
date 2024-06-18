@@ -58,32 +58,36 @@ ChatCellEvaluate[ args___ ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*ChatbookAction*)
-ChatbookAction[ "AccentIncludedCells"  , args___ ] := catchMine @ accentIncludedCells @ args;
-ChatbookAction[ "AIAutoAssist"         , args___ ] := catchMine @ AIAutoAssist @ args;
-ChatbookAction[ "Ask"                  , args___ ] := catchMine @ AskChat @ args;
-ChatbookAction[ "AttachCodeButtons"    , args___ ] := catchMine @ AttachCodeButtons @ args;
-ChatbookAction[ "CopyChatObject"       , args___ ] := catchMine @ CopyChatObject @ args;
-ChatbookAction[ "CopyExplodedCells"    , args___ ] := catchMine @ CopyExplodedCells @ args;
-ChatbookAction[ "DisableAssistance"    , args___ ] := catchMine @ DisableAssistance @ args;
-ChatbookAction[ "EvaluateChatInput"    , args___ ] := catchMine @ EvaluateChatInput @ args;
-ChatbookAction[ "ExclusionToggle"      , args___ ] := catchMine @ ExclusionToggle @ args;
-ChatbookAction[ "ExplodeDuplicate"     , args___ ] := catchMine @ ExplodeDuplicate @ args;
-ChatbookAction[ "ExplodeInPlace"       , args___ ] := catchMine @ ExplodeInPlace @ args;
-ChatbookAction[ "InsertCodeBelow",       args___ ] := catchMine @ insertCodeBelow @ args;
-ChatbookAction[ "InsertInlineReference", args___ ] := catchMine @ InsertInlineReference @ args;
-ChatbookAction[ "OpenChatBlockSettings", args___ ] := catchMine @ OpenChatBlockSettings @ args;
-ChatbookAction[ "OpenChatMenu"         , args___ ] := catchMine @ OpenChatMenu @ args;
-ChatbookAction[ "PersonaManage"        , args___ ] := catchMine @ PersonaManage @ args;
-ChatbookAction[ "RemoveCellAccents"    , args___ ] := catchMine @ removeCellAccents @ args;
-ChatbookAction[ "Send"                 , args___ ] := catchMine @ SendChat @ args;
-ChatbookAction[ "SendFeedback"         , args___ ] := catchMine @ SendFeedback @ args;
-ChatbookAction[ "StopChat"             , args___ ] := catchMine @ StopChat @ args;
-ChatbookAction[ "TabLeft"              , args___ ] := catchMine @ TabLeft @ args;
-ChatbookAction[ "TabRight"             , args___ ] := catchMine @ TabRight @ args;
-ChatbookAction[ "ToggleFormatting"     , args___ ] := catchMine @ ToggleFormatting @ args;
-ChatbookAction[ "ToolManage"           , args___ ] := catchMine @ ToolManage @ args;
-ChatbookAction[ "WidgetSend"           , args___ ] := catchMine @ WidgetSend @ args;
-ChatbookAction[ args___                          ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
+ChatbookAction[ "AccentIncludedCells"        , args___ ] := catchMine @ accentIncludedCells @ args;
+ChatbookAction[ "AIAutoAssist"               , args___ ] := catchMine @ AIAutoAssist @ args;
+ChatbookAction[ "Ask"                        , args___ ] := catchMine @ AskChat @ args;
+ChatbookAction[ "AttachCodeButtons"          , args___ ] := catchMine @ AttachCodeButtons @ args;
+ChatbookAction[ "AttachWorkspaceChatInput"   , args___ ] := catchMine @ attachWorkspaceChatInput @ args;
+ChatbookAction[ "CopyChatObject"             , args___ ] := catchMine @ CopyChatObject @ args;
+ChatbookAction[ "CopyExplodedCells"          , args___ ] := catchMine @ CopyExplodedCells @ args;
+ChatbookAction[ "DisableAssistance"          , args___ ] := catchMine @ DisableAssistance @ args;
+ChatbookAction[ "EvaluateChatInput"          , args___ ] := catchMine @ EvaluateChatInput @ args;
+ChatbookAction[ "EvaluateFloatingChat"       , args___ ] := catchMine @ evaluateFloatingChat @ args;
+ChatbookAction[ "ExclusionToggle"            , args___ ] := catchMine @ ExclusionToggle @ args;
+ChatbookAction[ "ExplodeDuplicate"           , args___ ] := catchMine @ ExplodeDuplicate @ args;
+ChatbookAction[ "ExplodeInPlace"             , args___ ] := catchMine @ ExplodeInPlace @ args;
+ChatbookAction[ "InsertCodeBelow"            , args___ ] := catchMine @ insertCodeBelow @ args;
+ChatbookAction[ "InsertInlineReference"      , args___ ] := catchMine @ InsertInlineReference @ args;
+ChatbookAction[ "MakeWorkspaceChatDockedCell", args___ ] := catchMine @ makeWorkspaceChatDockedCell @ args;
+ChatbookAction[ "OpenChatBlockSettings"      , args___ ] := catchMine @ OpenChatBlockSettings @ args;
+ChatbookAction[ "OpenChatMenu"               , args___ ] := catchMine @ OpenChatMenu @ args;
+ChatbookAction[ "PersonaManage"              , args___ ] := catchMine @ PersonaManage @ args;
+ChatbookAction[ "RemoveCellAccents"          , args___ ] := catchMine @ removeCellAccents @ args;
+ChatbookAction[ "Send"                       , args___ ] := catchMine @ SendChat @ args;
+ChatbookAction[ "SendFeedback"               , args___ ] := catchMine @ SendFeedback @ args;
+ChatbookAction[ "StopChat"                   , args___ ] := catchMine @ StopChat @ args;
+ChatbookAction[ "TabLeft"                    , args___ ] := catchMine @ TabLeft @ args;
+ChatbookAction[ "TabRight"                   , args___ ] := catchMine @ TabRight @ args;
+ChatbookAction[ "ToggleFormatting"           , args___ ] := catchMine @ ToggleFormatting @ args;
+ChatbookAction[ "ToolManage"                 , args___ ] := catchMine @ ToolManage @ args;
+ChatbookAction[ "UpdateDynamics"             , args___ ] := catchMine @ updateDynamics @ args;
+ChatbookAction[ "WidgetSend"                 , args___ ] := catchMine @ WidgetSend @ args;
+ChatbookAction[ args___                                ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -372,7 +376,6 @@ EvaluateChatInput[ source: _CellObject | $Failed ] :=
         EvaluateChatInput @ evalCell /; chatInputCellQ @ evalCell
     ];
 
-(* TODO: resolve auto settings here and set as a Block symbol *)
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
     withChatState @ EvaluateChatInput[ evalCell, nbo, resolveAutoSettings @ currentChatSettings @ evalCell ];
 
@@ -1343,6 +1346,7 @@ withChatState[ eval_ ] :=
     Block[
         {
             $AutomaticAssistance = False,
+            $WorkspaceChat       = False,
             $chatState           = True,
             $enableLLMServices   = Automatic,
             withChatState        = # &

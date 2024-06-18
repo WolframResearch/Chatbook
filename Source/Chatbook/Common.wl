@@ -5,7 +5,9 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-(* Symbols defined in this file: *)
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Symbols defined in this file*)
 `$closedChatCellOptions;
 `$cloudNotebooks;
 `$debug;
@@ -70,7 +72,9 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `sufficientVersionQ;
 `insufficientVersionQ;
 
-(* Symbols defined elsewhere in the paclet *)
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Symbols defined elsewhere in the paclet*)
 `$allowConnectionDialog;
 `$alwaysOpen;
 `$attachments;
@@ -134,6 +138,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `applyProcessingFunction;
 `associationKeyDeflatten;
 `attachMenuCell;
+`attachWorkspaceChatInput;
 `autoAssistQ;
 `cachedTokenizer;
 `cellInformation;
@@ -167,6 +172,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `dynamicAutoFormatQ;
 `dynamicSplitQ;
 `escapeMarkdownString;
+`evaluateFloatingChat;
 `expandMultimodalString;
 `explodeCell;
 `exportDataURI;
@@ -222,6 +228,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `makeOutputDingbat;
 `makeToolConfiguration;
 `makeToolResponseString;
+`makeWorkspaceChatDockedCell;
 `menuMagnification;
 `modelDisplayName;
 `modelListCachedQ;
@@ -229,6 +236,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `multimodalModelQ;
 `multimodalPacletsAvailable;
 `needsBasePrompt;
+`notebookInformation;
 `notebookRead;
 `openerView;
 `openPreferencesPage;
@@ -244,6 +252,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `readString;
 `redDialogButtonLabel;
 `reformatTextData;
+`relativeTimeString;
 `removeBasePrompt;
 `removeCellAccents;
 `removeChatMenus;

@@ -450,18 +450,18 @@ MakeChatInputCellDingbat[] :=
 (* ::Subsection::Closed:: *)
 (*MakeChatDelimiterCellDingbat*)
 MakeChatDelimiterCellDingbat[ ] :=
-	DynamicModule[ { cell },
-		trackedDynamic[ MakeChatDelimiterCellDingbat @ cell, { "ChatBlock" } ],
+	DynamicModule[ { Wolfram`ChatNB`cell },
+		trackedDynamic[ MakeChatDelimiterCellDingbat @ Wolfram`ChatNB`cell, { "ChatBlock" } ],
 		Initialization :> (
-			cell = EvaluationCell[ ];
+			Wolfram`ChatNB`cell = EvaluationCell[ ];
 			Needs[ "Wolfram`Chatbook`" -> None ];
-			updateDynamics[ "ChatBlock" ]
+			Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "UpdateDynamics", "ChatBlock" ]
 		),
 		Deinitialization :> (
 			Needs[ "Wolfram`Chatbook`" -> None ];
-			updateDynamics[ "ChatBlock" ]
+			Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "UpdateDynamics", "ChatBlock" ]
 		),
-		UnsavedVariables :> { cell }
+		UnsavedVariables :> { Wolfram`ChatNB`cell }
 	];
 
 MakeChatDelimiterCellDingbat[cell_CellObject] := Module[{
