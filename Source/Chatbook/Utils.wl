@@ -26,6 +26,12 @@ importResourceFunction[ clickToCopy, "ClickToCopy" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*RelativeTimeString*)
+(* https://resources.wolframcloud.com/FunctionRepository/resources/RelativeTimeString *)
+importResourceFunction[ relativeTimeString, "RelativeTimeString" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Strings*)
 
 (* ::**************************************************************************************************************:: *)

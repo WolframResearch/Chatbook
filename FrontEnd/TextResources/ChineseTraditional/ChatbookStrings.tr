@@ -168,7 +168,9 @@
 "PersonaNameCodeWriter" -> "\:7DE8\:78BC\:64B0\:5BEB\:5668",
 "PersonaNamePlainChat" ->"\:76F4\:7387\:5F0F\:7DB2\:8DEF\:804A\:5929\:7CFB\:7D71",
 "PersonaNameRawModel" -> "\:539F\:751F\:6A21\:578B",
-"PersonaNameWolfie" -> "Wolfie"
+"PersonaNameWolfie" -> "Wolfie",
+
+"FloatingChatFieldHint" -> "Ask me anything"
 }
 @|
 @|

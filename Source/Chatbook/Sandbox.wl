@@ -1694,8 +1694,7 @@ addMessageHandler[ HoldComplete[ eval_ ] ] :=
                     eval
                 ],
                 (* cSpell: ignore usenl *)
-                If[ $issueNLMessage, Message[ General::usenl, $nlMessageType ] ];
-                If[ MatchQ[ $MessageList, { __ } ], Message[ General::messages ] ]
+                If[ $issueNLMessage, Message[ General::usenl, $nlMessageType ] ]
             ]
         ]
     ];
@@ -1908,8 +1907,8 @@ checkDocSearchMessageStrings[ string_String ] := StringDelete[ string, $docSearc
 checkDocSearchMessageStrings // endDefinition;
 
 $docSearchMessageStrings = {
-    " Use the documentation_searcher tool to find solutions.",
-    " Use the documentation_searcher tool to find alternatives."
+    " Use the documentation searcher tool to find solutions.",
+    " Use the documentation searcher tool to find alternatives."
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -1964,13 +1963,48 @@ fancyResultQ // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*makePacketMessages*)
+makePacketMessages // beginDefinition;
+
+makePacketMessages[ line_, packets_List ] := Enclose[
+    Module[ { strings },
+        $appendGeneralMessage = False;
+        strings = ConfirmMatch[ makePacketMessage /@ packets, { ___String }, "Strings" ];
+        If[ ConfirmBy[ $appendGeneralMessage, BooleanQ, "AppendGeneralMessage" ],
+            Append[ strings, ConfirmBy[ $generalMessageText, StringQ, "GeneralMessage" ] ],
+            strings
+        ]
+    ],
+    throwInternalFailure
+];
+
+makePacketMessages // endDefinition;
+
+
+$generalMessageText := Enclose[
+    Module[ { string },
+        string = ConfirmBy[ $messageOverrideTemplates[ HoldComplete[ General::messages ] ], StringQ, "String" ];
+        $generalMessageText = "General::messages: " <> string
+    ],
+    throwInternalFailure @ $generalMessageText &
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*makePacketMessage*)
 $$noMessagePacket = _InputNamePacket|_MessagePacket|_OutputNamePacket|_ReturnExpressionPacket|_LinkRead|$Failed;
 
-makePacketMessages // beginDefinition;
-makePacketMessages[ line_, packets_List ] := makePacketMessages[ line, # ] & /@ packets;
-makePacketMessages[ line_String, TextPacket[ text_String ] ] := text;
-makePacketMessages[ line_, $$noMessagePacket ] := Nothing;
-makePacketMessages // endDefinition;
+makePacketMessage // beginDefinition;
+makePacketMessage[ $$noMessagePacket ] := Nothing;
+makePacketMessage[ TextPacket[ text_ ] ] := makePacketMessage @ text;
+
+makePacketMessage[ text_String ] :=
+    If[ StringStartsQ[ text, Except[ WhitespaceCharacter ].. ~~ "::" ~~ Except[ WhitespaceCharacter ].. ],
+        $appendGeneralMessage = True;
+        text,
+        text
+    ];
+
+makePacketMessage // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -2111,8 +2145,10 @@ AppendURIInstructions // endExportedDefinition;
 Scan[ LinkClose, Select[ Links[ ], sandboxKernelQ ] ];
 
 If[ Wolfram`ChatbookInternal`$BuildingMX,
-    $messageOverrides;
+    $generalMessageText;
     $initializationTest;
+    $messageOverrides;
+    $messageOverrideTemplates;
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)
