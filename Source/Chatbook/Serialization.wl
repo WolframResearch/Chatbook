@@ -2620,8 +2620,8 @@ firstMatchingCellGroup[ nb_, patt_, "Content" ] := Catch[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
-    Null;
+addToMXInitialization[
+    Null
 ];
 
 End[ ];

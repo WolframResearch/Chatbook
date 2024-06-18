@@ -2299,7 +2299,7 @@ adjustBoxSpacing // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     $copyToClipboardButtonLabel;
     $insertInputButtonLabel;
     $insertEvaluateButtonLabel;

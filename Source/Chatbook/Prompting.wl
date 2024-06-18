@@ -406,8 +406,8 @@ $collectedPromptComponents = AssociationMap[
 
 $fullBasePrompt = $basePrompt;
 
-If[ Wolfram`ChatbookInternal`$BuildingMX,
-    Null;
+addToMXInitialization[
+    Null
 ];
 
 End[ ];

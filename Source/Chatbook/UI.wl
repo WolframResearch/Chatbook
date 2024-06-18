@@ -1357,8 +1357,8 @@ nestedLookup[as_, keys_] := nestedLookup[as, keys, Missing["KeySequenceAbsent", 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
-    Null;
+addToMXInitialization[
+    Null
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)
