@@ -2212,7 +2212,7 @@ $cloudInlineReferenceButtons = Block[ { NotebookTools`Mousedown = Mouseover[ #1,
 (*Package Footer*)
 
 
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     Null
 ];
 

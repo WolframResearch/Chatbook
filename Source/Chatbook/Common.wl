@@ -71,6 +71,8 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `inlineTemplateBoxes;
 `sufficientVersionQ;
 `insufficientVersionQ;
+`addToMXInitialization;
+`mxInitialize;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1324,8 +1326,38 @@ insufficientVersionQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*MX Build Utilities*)
+$mxInitializations := $mxInitializations = Internal`Bag[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*addToMXInitialization*)
+addToMXInitialization // beginDefinition;
+addToMXInitialization // Attributes = { HoldAllComplete };
+addToMXInitialization[ ] := Null;
+addToMXInitialization[ Null ] := Null;
+addToMXInitialization[ eval___ ] /; $mxFlag := Internal`StuffBag[ $mxInitializations, HoldComplete @ eval ];
+addToMXInitialization[ ___ ] := Null;
+addToMXInitialization // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*mxInitialize*)
+mxInitialize // beginDefinition;
+mxInitialize // Attributes = { HoldAllComplete };
+
+mxInitialize[ eval___ ] :=
+    If[ TrueQ @ $mxFlag,
+        addToMXInitialization @ eval;
+        ReleaseHold @ Internal`BagPart[ $mxInitializations, All ];
+    ];
+
+mxInitialize // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     $debug = False;
     $chatbookIcons;
     $templateBoxDisplayFunctions;

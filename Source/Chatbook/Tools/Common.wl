@@ -130,12 +130,29 @@ $appearanceRulesKeys = Keys @ $autoAppearanceRules;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Default Tools*)
-$defaultChatTools := If[ TrueQ @ $CloudEvaluation,
-                         KeyDrop[ $defaultChatTools0, $cloudUnsupportedTools ],
-                         $defaultChatTools0
-                     ];
+$defaultChatTools := (
+    reevaluateToolExpressions[ ];
+    If[ TrueQ @ $CloudEvaluation,
+        KeyDrop[ $defaultChatTools0, $cloudUnsupportedTools ],
+        $defaultChatTools0
+    ]
+);
 
 $defaultChatTools0 = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*reevaluateToolExpressions*)
+reevaluateToolExpressions // beginDefinition;
+
+reevaluateToolExpressions[ ] :=
+    If[ TrueQ @ Wolfram`ChatbookInternal`$BuildingMX,
+        Null,
+        $defaultChatTools0 = AssociationMap[ Identity, $defaultChatTools0 ];
+        reevaluateToolExpressions[ ] = Null
+    ];
+
+reevaluateToolExpressions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1189,8 +1206,8 @@ $toolFrequencyExplanations = <|
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
-    Null;
+addToMXInitialization[
+    Null
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)

@@ -1688,7 +1688,7 @@ $defaultChatTools0 = Map[
     <| KeyTake[ $defaultChatTools0, $defaultToolOrder ], $defaultChatTools0 |>
 ];
 
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     $toolConfiguration;
 ];
 
