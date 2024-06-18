@@ -895,7 +895,7 @@ replaceCellContext // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     $feTaskDebug = False;
     $cloudCellFixes;
 ];
