@@ -96,8 +96,6 @@ $attachedChatInputCell = ExpressionCell[
             ],
             {
                 "ReturnKeyDown" :> (
-                    Global`thisNB = thisNB;
-                    Global`dInput = Dynamic @ input;
                     Needs[ "Wolfram`Chatbook`" -> None ];
                     Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "EvaluateFloatingChat", thisNB, Dynamic @ input ]
                 )
