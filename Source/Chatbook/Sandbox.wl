@@ -2144,7 +2144,7 @@ AppendURIInstructions // endExportedDefinition;
 (* Close previous sandbox kernel if package is being reloaded: *)
 Scan[ LinkClose, Select[ Links[ ], sandboxKernelQ ] ];
 
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     $generalMessageText;
     $initializationTest;
     $messageOverrides;

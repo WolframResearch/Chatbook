@@ -2438,7 +2438,7 @@ errorBoxes[ as___ ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     $autoSettingKeyPriority;
 ];
 

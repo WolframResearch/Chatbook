@@ -1472,7 +1472,7 @@ importResourceFunction[ gpt2Tokenizer, "GPTTokenizer" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     cachedTokenizer[ All ];
     $gpt2Tokenizer;
     (* This is only needed to generate $gpt2Tokenizer once, so it can be removed to reduce MX file size: *)

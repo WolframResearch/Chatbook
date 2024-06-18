@@ -53,6 +53,8 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 (*Begin Private Context*)
 Begin[ "`Private`" ];
 
+Needs[ "Wolfram`Chatbook`Common`" ];
+
 (* Avoiding context aliasing due to bug 434990: *)
 Needs[ "GeneralUtilities`" -> None ];
 
@@ -160,9 +162,11 @@ Protect[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     $ChatbookContexts;
 ];
+
+mxInitialize[ ];
 
 End[ ];
 EndPackage[ ];

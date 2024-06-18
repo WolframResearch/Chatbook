@@ -413,7 +413,7 @@ tinyHash // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     Scan[ fileFormatQ, $fileFormats ];
 ];
 
