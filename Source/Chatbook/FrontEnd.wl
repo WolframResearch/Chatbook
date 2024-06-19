@@ -815,14 +815,109 @@ openerView1[ args___ ] := Quiet[
 compressUntilViewed // beginDefinition;
 
 compressUntilViewed[ expr_ ] :=
+    compressUntilViewed[ Unevaluated @ expr, False ];
+
+compressUntilViewed[ expr_, False ] :=
     With[ { b64 = BaseEncode @ BinarySerialize[ Unevaluated @ expr, PerformanceGoal -> "Size" ] },
-        If[ ByteCount @ b64 < ByteCount @ expr,
-            Dynamic[ BinaryDeserialize @ BaseDecode @ b64, SingleEvaluation -> True, DestroyAfterEvaluation -> True ],
-            expr
+        Dynamic[ BinaryDeserialize @ BaseDecode @ b64, SingleEvaluation -> True, DestroyAfterEvaluation -> True ]
+    ];
+
+compressUntilViewed[ expr_, True ] :=
+    With[ { b64 = BaseEncode @ BinarySerialize[ Unevaluated @ expr, PerformanceGoal -> "Size" ] },
+        DynamicModule[
+            { display },
+            Dynamic[ Replace[ display, _Symbol :> ProgressIndicator[ Appearance -> "Percolate" ] ] ],
+            Initialization            :> (display = BinaryDeserialize @ BaseDecode @ b64),
+            SynchronousInitialization -> False,
+            UnsavedVariables          :> { display }
         ]
     ];
 
 compressUntilViewed // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$statelessProgressIndicator*)
+
+(* TODO: move this to the stylesheet *)
+$statelessProgressIndicator =
+    With[ { clock := Clock[ 10, 1.5 ] },
+        RawBoxes @ GraphicsBox[
+            {
+                GrayLevel[ 0.75 ],
+                {
+                    {
+                        PointSize @ Dynamic @ FEPrivate`Which[
+                            FEPrivate`Less[ clock, 0 ],
+                            0.08,
+                            FEPrivate`Less[ clock, 2 ],
+                            0.08 + 0.05 * clock,
+                            FEPrivate`Less[ clock, 4 ],
+                            0.28 - (0.05 * clock),
+                            True,
+                            0.08
+                        ],
+                        PointBox @ { 0, 0 }
+                    },
+                    {
+                        PointSize @ Dynamic @ FEPrivate`Which[
+                            FEPrivate`Less[ clock, 1 ],
+                            0.08,
+                            FEPrivate`Less[ clock, 3 ],
+                            0.03 + 0.05 * clock,
+                            FEPrivate`Less[ clock, 5 ],
+                            0.33 - (0.05 * clock),
+                            True,
+                            0.08
+                        ],
+                        PointBox @ { 1, 0 }
+                    },
+                    {
+                        PointSize @ Dynamic @ FEPrivate`Which[
+                            FEPrivate`Less[ clock, 2 ],
+                            0.08,
+                            FEPrivate`Less[ clock, 4 ],
+                            -0.02 + 0.05 * clock,
+                            FEPrivate`Less[ clock, 6 ],
+                            0.38 - (0.05 * clock),
+                            True,
+                            0.08
+                        ],
+                        PointBox @ { 2, 0 }
+                    },
+                    {
+                        PointSize @ Dynamic @ FEPrivate`Which[
+                            FEPrivate`Less[ clock, 3 ],
+                            0.08,
+                            FEPrivate`Less[ clock, 5 ],
+                            -0.07 + 0.05 * clock,
+                            FEPrivate`Less[ clock, 7 ],
+                            0.43 - (0.05 * clock),
+                            True,
+                            0.08
+                        ],
+                        PointBox @ { 3, 0 }
+                    },
+                    {
+                        PointSize @ Dynamic @ FEPrivate`Which[
+                            FEPrivate`Less[ clock, 4 ],
+                            0.08,
+                            FEPrivate`Less[ clock, 6 ],
+                            -0.12 + 0.05 * clock,
+                            FEPrivate`Less[ clock, 8 ],
+                            0.48 - (0.05 * clock),
+                            True,
+                            0.08
+                        ],
+                        PointBox @ { 4, 0 }
+                    }
+                }
+            },
+            AspectRatio -> Full,
+            ImageSize   -> { 50, 12 },
+            PlotRange   -> { { -1, 5 }, { -1, 1 } }
+        ]
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
