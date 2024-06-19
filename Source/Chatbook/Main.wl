@@ -37,6 +37,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `FormatChatOutput;
 `FormatToolCall;
 `FormatToolResponse;
+`FormatWolframAlphaPods;
 `GetChatHistory;
 `GetExpressionURI;
 `GetExpressionURIs;
@@ -148,6 +149,7 @@ Protect[
     FormatChatOutput,
     FormatToolCall,
     FormatToolResponse,
+    FormatWolframAlphaPods,
     GetChatHistory,
     GetExpressionURI,
     GetExpressionURIs,
