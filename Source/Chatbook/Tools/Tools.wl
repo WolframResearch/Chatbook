@@ -10,6 +10,7 @@ Get[ "Wolfram`Chatbook`Tools`Common`"          ];
 Get[ "Wolfram`Chatbook`Tools`ToolOptions`"     ];
 Get[ "Wolfram`Chatbook`Tools`DefaultTools`"    ];
 Get[ "Wolfram`Chatbook`Tools`ChatPreferences`" ];
+Get[ "Wolfram`Chatbook`Tools`WolframAlpha`"    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

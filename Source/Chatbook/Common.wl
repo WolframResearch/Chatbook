@@ -121,6 +121,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$selectedTools;
 `$serviceCache;
 `$servicesLoaded;
+`$statelessProgressIndicator;
 `$suppressButtonAppearance;
 `$tinyHashLength;
 `$tokenBudget;
