@@ -54,11 +54,15 @@ $ToolFunctions = <|
 (* ::Section::Closed:: *)
 (*Tool Configuration*)
 $defaultWebTextLength    = 12000;
-$maximumWAPodByteCount   = 1000000;
 $toolResultStringLength := Ceiling[ $initialCellStringBudget/2 ];
 $webSessionVisible       = False;
 
 $DefaultToolOptions = <|
+    "WolframAlpha" -> <|
+        "DefaultPods"     -> False,
+        "FoldPods"        -> False,
+        "MaxPodByteCount" -> 1000000
+    |>,
     "WolframLanguageEvaluator" -> <|
         "AllowedExecutePaths"      -> Automatic,
         "AllowedReadPaths"         -> All,
