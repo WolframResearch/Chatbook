@@ -427,34 +427,37 @@ waFooterMenu // beginDefinition;
 
 (* cSpell: ignore Localizable *)
 waFooterMenu[ query_String ] := Item[
-    DynamicModule[ { display },
-        display = Button[
-            Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "FEBitmaps", "CirclePlusIconScalable" ],
-            Null,
-            Appearance -> None
-        ];
-        Grid[
-            {
+    Style[
+        DynamicModule[ { display },
+            display = Button[
+                Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "FEBitmaps", "CirclePlusIconScalable" ],
+                Null,
+                Appearance -> None
+            ];
+            Grid[
                 {
-                    Hyperlink[
-                        Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "WALocalizableBitmaps", "WolframAlpha" ],
-                        "https://www.wolframalpha.com",
-                        Alignment -> Left
-                    ],
-                    Pane[
-                        Dynamic @ display,
-                        FrameMargins -> { { 0, If[ $CloudEvaluation, 23, 3 ] }, { 0, 0 } }
-                    ]
-                }
-            },
-            Spacings -> 0.5
+                    {
+                        Hyperlink[
+                            Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "WALocalizableBitmaps", "WolframAlpha" ],
+                            "https://www.wolframalpha.com",
+                            Alignment -> Left
+                        ],
+                        Pane[
+                            Dynamic @ display,
+                            FrameMargins -> { { 0, If[ $CloudEvaluation, 23, 3 ] }, { 0, 0 } }
+                        ]
+                    }
+                },
+                Spacings -> 0.5
+            ],
+            SynchronousInitialization -> False,
+            Initialization :>
+                If[ ! MatchQ[ display, _Tooltip ],
+                    Needs[ "Wolfram`Chatbook`" -> None ];
+                    display = Replace[ makeWebLinksMenu @ query, Except[ _Tooltip ] :> "" ]
+                ]
         ],
-        SynchronousInitialization -> False,
-        Initialization :>
-            If[ ! MatchQ[ display, _Tooltip ],
-                Needs[ "Wolfram`Chatbook`" -> None ];
-                display = Replace[ makeWebLinksMenu @ query, Except[ Style[ _, "WolframAlphaLinksMenu", ___ ] ] :> "" ]
-            ]
+        "WolframAlphaLinksMenu"
     ],
     Alignment -> Right
 ];
@@ -503,16 +506,13 @@ makeWebLinksMenu[ query_String ] := Enclose[
     "" &
 ];
 
-makeWebLinksMenu[ actions: { (_RuleDelayed|Delimiter).. } ] := Style[
-    Tooltip[
-        ActionMenu[
-            Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "FEBitmaps", "CirclePlusIconScalable" ],
-            actions,
-            Appearance -> None
-        ],
-        tr[ "DefaultToolsLinks" ]
+makeWebLinksMenu[ actions: { (_RuleDelayed|Delimiter).. } ] := Tooltip[
+    ActionMenu[
+        Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "FEBitmaps", "CirclePlusIconScalable" ],
+        actions,
+        Appearance -> None
     ],
-    "WolframAlphaLinksMenu"
+    tr[ "DefaultToolsLinks" ]
 ];
 
 makeWebLinksMenu[ ___ ] := "";
