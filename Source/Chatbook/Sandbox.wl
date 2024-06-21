@@ -1161,7 +1161,7 @@ setOutput[ HoldComplete[ KeyValuePattern[ "Result" -> HoldComplete[ result_ ] ] 
 setOutput[ line_Integer, HoldComplete[ result___ ] ] :=
     WithCleanup[
         Unprotect @ Out,
-        Out[ line ] = result,
+        Out[ line ] := result,
         Protect @ Out;
         $Line = line + 1
     ];
