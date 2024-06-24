@@ -2038,8 +2038,21 @@ $missingImage = RawBoxes @ TemplateBox[ { }, "ImageNotFound" ];
 (* ::Subsubsubsection::Closed:: *)
 (*importImage*)
 importImage // beginDefinition;
-importImage[ url_String ] := importImage[ url ] = Quiet @ Import[ url, "Image" ];
+importImage[ url_String ] := importImage[ url ] = importImage0 @ url;
 importImage // endDefinition;
+
+importImage0 // beginDefinition;
+importImage0[ url_String ] := importImage0[ url, Quiet @ Import[ url, "Image" ] ];
+importImage0[ url_, image_Image ] := image;
+importImage0[ url_String? cloudURLQ, _? FailureQ ] := Quiet @ Import[ CloudObject @ url, "Image" ];
+importImage0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*cloudURLQ*)
+cloudURLQ // beginDefinition;
+cloudURLQ[ url_String ] := URLParse[ url, "Domain" ] === URLParse[ $CloudBase, "Domain" ];
+cloudURLQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
