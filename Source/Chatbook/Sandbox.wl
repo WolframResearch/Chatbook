@@ -1158,6 +1158,9 @@ setOutput // Attributes = { SequenceHold };
 setOutput[ HoldComplete[ KeyValuePattern[ "Result" -> HoldComplete[ result_ ] ] ] ] :=
     setOutput[ Replace[ $Line, Except[ _Integer ] :> 1 ], HoldComplete @ result ];
 
+setOutput[ HoldComplete[ fail_Failure ] ] :=
+    setOutput[ Replace[ $Line, Except[ _Integer ] :> 1 ], HoldComplete @ fail ];
+
 setOutput[ line_Integer, HoldComplete[ result___ ] ] :=
     WithCleanup[
         Unprotect @ Out,
