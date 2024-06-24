@@ -1176,7 +1176,7 @@ makeToolResponseMessage // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*anthropicQ*)
 anthropicQ // beginDefinition;
-anthropicQ[ KeyValuePattern[ "Model" -> model_ ] ] := True;
+anthropicQ[ KeyValuePattern[ "Model" -> model_ ] ] := anthropicQ @ model;
 anthropicQ[ { service_String, _String } ] := anthropicQ @ service;
 anthropicQ[ KeyValuePattern[ "Service" -> service_ ] ] := anthropicQ @ service;
 anthropicQ[ "Anthropic" ] := True;
