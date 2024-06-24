@@ -267,7 +267,10 @@ modelNameData // endDefinition;
 modelNameData0 // beginDefinition;
 
 modelNameData0[ model_String ] :=
-    modelNameData0 @ StringSplit[ model, "-"|" " ]
+    modelNameData0 @ StringSplit[
+        StringReplace[ model, "claude-"~~a:DigitCharacter..~~"-"~~b:DigitCharacter.. :> "claude-"<>a<>"."<>b ],
+        "-"|" "
+    ];
 
 modelNameData0[ { "gpt", rest___ } ] :=
     modelNameData0 @ { "GPT", rest };

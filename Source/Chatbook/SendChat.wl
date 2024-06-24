@@ -1116,7 +1116,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             messages,
             {
                 <| "Role" -> "assistant", "Content" -> appendToolCallEndToken[ settings, StringTrim @ string ] |>,
-                <| "Role" -> "system"   , "Content" -> response |>
+                makeToolResponseMessage[ settings, response ]
             }
         ];
 
@@ -1156,6 +1156,32 @@ toolEvaluation // endDefinition;
 (* $noRepeatMessage = "\
 The user has already been provided with this result, so you do not need to repeat it.
 Reply with /end if the tool call provides a satisfactory answer, otherwise respond normally."; *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeToolResponseMessage*)
+makeToolResponseMessage // beginDefinition;
+
+makeToolResponseMessage[ settings_? anthropicQ, response_ ] := <|
+    "Role"    -> "user",
+    "Content" -> Replace[ Flatten @ { "<system>", response, "</system>" }, { s__String } :> StringJoin @ s ]
+|>;
+
+makeToolResponseMessage[ settings_, response_ ] :=
+    <| "Role" -> "system", "Content" -> response |>;
+
+makeToolResponseMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*anthropicQ*)
+anthropicQ // beginDefinition;
+anthropicQ[ KeyValuePattern[ "Model" -> model_ ] ] := True;
+anthropicQ[ { service_String, _String } ] := anthropicQ @ service;
+anthropicQ[ KeyValuePattern[ "Service" -> service_ ] ] := anthropicQ @ service;
+anthropicQ[ "Anthropic" ] := True;
+anthropicQ[ _String | $$unspecified ] := False;
+anthropicQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
