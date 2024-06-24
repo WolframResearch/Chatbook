@@ -2045,6 +2045,7 @@ importImage0 // beginDefinition;
 importImage0[ url_String ] := importImage0[ url, Quiet @ Import[ url, "Image" ] ];
 importImage0[ url_, image_Image ] := image;
 importImage0[ url_String? cloudURLQ, _? FailureQ ] := Quiet @ Import[ CloudObject @ url, "Image" ];
+importImage0[ _, failed_ ] := failed;
 importImage0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
