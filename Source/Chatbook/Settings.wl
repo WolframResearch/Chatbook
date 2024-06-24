@@ -327,7 +327,6 @@ chooseToolExamplePromptSpec // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*autoToolExamplePromptSpec*)
 autoToolExamplePromptSpec // beginDefinition;
-autoToolExamplePromptSpec[ "Anthropic" ] := None;
 autoToolExamplePromptSpec[ _ ] := Automatic;
 autoToolExamplePromptSpec // endDefinition;
 
@@ -346,6 +345,7 @@ chooseToolExamplePromptStyle // endDefinition;
 (*autoToolExamplePromptStyle*)
 autoToolExamplePromptStyle // beginDefinition;
 autoToolExamplePromptStyle[ "AzureOpenAI"|"OpenAI" ] := "ChatML";
+autoToolExamplePromptStyle[ "Anthropic" ] := "XML";
 autoToolExamplePromptStyle[ _ ] := "Basic"; (* TODO: measure performance of other models to choose the best option *)
 autoToolExamplePromptStyle // endDefinition;
 
