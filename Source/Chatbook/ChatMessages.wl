@@ -943,6 +943,8 @@ cellRole[ Cell[
 cellRole[ Cell[ _, styles__String, OptionsPattern[ ] ] ] :=
     FirstCase[ { styles }, style_ :> With[ { role = $styleRoles @ style }, role /; StringQ @ role ], "User" ];
 
+cellRole[ Cell[ _, OptionsPattern[ ] ] ] := "User";
+
 cellRole // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
