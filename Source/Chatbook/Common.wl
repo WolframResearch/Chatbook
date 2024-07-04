@@ -1033,7 +1033,31 @@ $maxPartLength = 500;
 $thisPaclet   := PacletObject[ "Wolfram/Chatbook" ];
 $debugData    := debugData @ $thisPaclet[ "PacletInfo" ];
 $settingsData := maskOpenAIKey @ $settings;
-$releaseID    := $releaseID = $thisPaclet[ "ReleaseID" ];
+$releaseID    := $releaseID = getReleaseID @ $thisPaclet;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getReleaseID*)
+getReleaseID[ paclet_PacletObject ] :=
+    getReleaseID[ paclet, paclet[ "ReleaseID" ] ];
+
+getReleaseID[ paclet_PacletObject, "$RELEASE_ID$" | "None" | Except[ _String ] ] :=
+    getReleaseID0 @ paclet[ "Location" ];
+
+getReleaseID[ paclet_, id_String ] := id;
+
+
+getReleaseID0[ dir_? DirectoryQ ] :=
+    Module[ { stdOut, id },
+        stdOut = Quiet @ RunProcess[ { "git", "rev-parse", "HEAD" }, "StandardOutput", ProcessDirectory -> dir ];
+        id = If[ StringQ @ stdOut, StringTrim @ stdOut, "" ];
+        If[ StringMatchQ[ id, Repeated[ HexadecimalCharacter, { 40 } ] ],
+            id,
+            "None"
+        ]
+    ];
+
+getReleaseID0[ ___ ] := "None";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

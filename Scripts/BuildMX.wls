@@ -149,7 +149,6 @@ cicd`ScriptConfirmBy[ PacletDirectoryLoad @ tmp, MemberQ @ tmp ];
 cicd`ScriptConfirm @ CheckAbort[ Get[ "Wolfram`Chatbook`" ], $Failed ];
 
 cicd`ScriptConfirmMatch[ DeleteDirectory[ tmp, DeleteContents -> True ], Null ];
-(* UsingFrontEnd @ SystemOpen @ tmp; *)
 
 $mxDir = cDir @ gu`EnsureDirectory @ DirectoryName @ $mxFile;
 cicd`ConsoleLog @ SequenceForm[ "MX target directory: ", $mxDir  ];
