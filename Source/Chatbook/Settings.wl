@@ -254,7 +254,6 @@ resolveAutoSetting0[ as_, "TokenizerName"              ] := getTokenizerName @ a
 resolveAutoSetting0[ as_, "ToolCallExamplePromptStyle" ] := chooseToolExamplePromptStyle @ as;
 resolveAutoSetting0[ as_, "ToolCallFrequency"          ] := Automatic;
 resolveAutoSetting0[ as_, "ToolExamplePrompt"          ] := chooseToolExamplePromptSpec @ as;
-resolveAutoSetting0[ as_, "ToolMethod"                 ] := chooseToolMethod @ as;
 resolveAutoSetting0[ as_, "ToolsEnabled"               ] := toolsEnabledQ @ as;
 resolveAutoSetting0[ as_, "TrackScrollingWhenPlaced"   ] := scrollOutputQ @ as;
 resolveAutoSetting0[ as_, key_String                   ] := Automatic;
@@ -272,7 +271,6 @@ $autoSettingKeyDependencies = <|
     "TokenizerName"              -> "Model",
     "ToolCallExamplePromptStyle" -> "Model",
     "ToolExamplePrompt"          -> "Model",
-    "ToolMethod"                 -> "Tools",
     "Tools"                      -> { "LLMEvaluator", "ToolsEnabled" },
     "ToolsEnabled"               -> { "Model", "ToolCallFrequency" }
 |>;
