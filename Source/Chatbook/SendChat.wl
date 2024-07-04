@@ -1179,27 +1179,37 @@ Reply with /end if the tool call provides a satisfactory answer, otherwise respo
 (* ::Subsubsection::Closed:: *)
 (*makeToolResponseMessage*)
 makeToolResponseMessage // beginDefinition;
+makeToolResponseMessage[ settings_, response_ ] := makeToolResponseMessage0[ serviceName @ settings, response ];
+makeToolResponseMessage // endDefinition;
 
-makeToolResponseMessage[ settings_? anthropicQ, response_ ] := <|
-    "Role"    -> "user",
+makeToolResponseMessage0 // beginDefinition;
+
+makeToolResponseMessage0[ "Anthropic"|"MistralAI", response_ ] := <|
+    "Role"    -> "User",
     "Content" -> Replace[ Flatten @ { "<system>", response, "</system>" }, { s__String } :> StringJoin @ s ]
 |>;
 
-makeToolResponseMessage[ settings_, response_ ] :=
-    <| "Role" -> "system", "Content" -> response |>;
+makeToolResponseMessage0[ service_String, response_ ] :=
+    <| "Role" -> "System", "Content" -> response |>;
 
-makeToolResponseMessage // endDefinition;
+makeToolResponseMessage0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*userToolResponseQ*)
+userToolResponseQ // beginDefinition;
+userToolResponseQ[ settings_ ] := MatchQ[ serviceName @ settings, "Anthropic"|"MistralAI" ];
+userToolResponseQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
-(*anthropicQ*)
-anthropicQ // beginDefinition;
-anthropicQ[ KeyValuePattern[ "Model" -> model_ ] ] := anthropicQ @ model;
-anthropicQ[ { service_String, _String } ] := anthropicQ @ service;
-anthropicQ[ KeyValuePattern[ "Service" -> service_ ] ] := anthropicQ @ service;
-anthropicQ[ "Anthropic" ] := True;
-anthropicQ[ _String | $$unspecified ] := False;
-anthropicQ // endDefinition;
+(*serviceName*)
+serviceName // beginDefinition;
+serviceName[ KeyValuePattern[ "Model" -> model_ ] ] := serviceName @ model;
+serviceName[ { service_String, _String } ] := service;
+serviceName[ KeyValuePattern[ "Service" -> service_String ] ] := service;
+serviceName[ _String | $$unspecified ] := "OpenAI";
+serviceName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
