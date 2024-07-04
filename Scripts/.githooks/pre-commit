@@ -15,3 +15,6 @@ if [ "$changed" != "" ]; then
     done;
 
 fi
+
+wolframscript -f Scripts/SetPacletVersion.wls $(git rev-parse HEAD)
+git add PacletInfo.wl
