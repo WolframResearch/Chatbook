@@ -1647,6 +1647,9 @@ createAlignedDelimiters[ colSizes_List, { a: Except[ { _ } ]..., { repeat_ }, b:
 createAlignedDelimiters[ colSizes_List, { alignment: Except[ _List ] } ] :=
     createAlignedDelimiters[ colSizes, ConstantArray[ alignment, Length @ colSizes ] ];
 
+createAlignedDelimiters[ colSizes_List, alignments_List ] /; Length @ alignments < Length @ colSizes :=
+    createAlignedDelimiters[ colSizes, PadRight[ alignments, Length @ colSizes, Automatic ] ];
+
 createAlignedDelimiters // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

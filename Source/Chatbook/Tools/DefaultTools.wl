@@ -938,7 +938,8 @@ GetExpressionURIs[ str_String, wrapper_, opts: OptionsPattern[ ] ] :=
     catchMine @ Block[ { $uriTooltip = OptionValue @ Tooltip },
         StringSplit[
             str,
-            link: Shortest[ "![" ~~ __ ~~ "](" ~~ __ ~~ ")" ] :> catchAlways @ GetExpressionURI[ link, wrapper ]
+            link: Shortest[ "![" ~~ __ ~~ "](" ~~ __ ~~ ")" ] /; expressionURIQ @ link :>
+                catchAlways @ GetExpressionURI[ link, wrapper ]
         ]
     ];
 
@@ -1005,6 +1006,13 @@ getExpressionURI0[ tooltip_, uri_String, as_ ] :=
     throwFailure[ "InvalidExpressionURI", uri ];
 
 getExpressionURI0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*expressionURIQ*)
+expressionURIQ // beginDefinition;
+expressionURIQ[ str_String ] := expressionURIKeyQ @ expressionURIKey @ str;
+expressionURIQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
