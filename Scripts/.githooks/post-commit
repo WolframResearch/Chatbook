@@ -1,0 +1,5 @@
+#!/bin/bash
+set -e
+
+wolframscript -f Scripts/SetReleaseID.wls $(git rev-parse HEAD)
+git add PacletInfo.wl
