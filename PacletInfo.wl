@@ -7,7 +7,7 @@ PacletObject[ <|
     "License"        -> "MIT",
     "Creator"        -> "Connor Gray, Theodore Gray, Richard Hennigan",
     "Icon"           -> "Assets/Images/PacletIcon.png",
-    "ReleaseID"      -> "8f51b5e80e7119db26f3e30b566267a2023e79b4",
+    "ReleaseID"      -> "$RELEASE_ID$",
     "ReleaseDate"    -> "$RELEASE_DATE$",
     "ReleaseURL"     -> "$RELEASE_URL$",
     "ActionURL"      -> "$ACTION_URL$",
