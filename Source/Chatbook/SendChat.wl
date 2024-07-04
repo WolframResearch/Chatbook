@@ -58,6 +58,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             "HistoryAndTarget"
         ];
 
+        $finishReason = None;
         $multimodalMessages = TrueQ @ settings[ "Multimodal" ];
         $chatIndicatorSymbol = chatIndicatorSymbol @ settings;
 
@@ -174,6 +175,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
             "HistoryAndTarget"
         ];
 
+        $finishReason = None;
         $multimodalMessages = TrueQ @ settings[ "Multimodal" ];
         $chatIndicatorSymbol = chatIndicatorSymbol @ settings;
 
@@ -632,6 +634,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                     },
                     bodyChunkHandler[ #1 ];
                     Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
+                    checkFinishReason[ #1 ];
                     writeChunk[ Dynamic @ container, cellObject, #1 ]
                 ]
             ],
@@ -647,6 +650,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                     },
                     taskFinishedHandler[ #1 ];
                     Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
+                    checkFinishReason[ #1 ];
                     logUsage @ container;
                     trimStopTokens[ container, stop ];
                     checkResponse[ $settings, Unevaluated @ container, cellObject, #1 ]
@@ -672,6 +676,22 @@ trimStopTokens[ container_, stop: { ___String } ] :=
     ];
 
 trimStopTokens // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkFinishReason*)
+checkFinishReason // beginDefinition;
+
+checkFinishReason[ as_Association ] := checkFinishReason @ as[ "BodyChunk" ];
+checkFinishReason[ _Missing ] := Null;
+
+checkFinishReason[ chunk_String ] :=
+    Module[ { reasons },
+        reasons = StringCases[ chunk, "\"finish_reason\":\"" ~~ reason: Except[ "\"" ].. ~~ "\"" :> reason ];
+        If[ MatchQ[ reasons, { ___, _String } ], $finishReason = Last @ reasons ]
+    ];
+
+checkFinishReason // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -915,6 +935,8 @@ checkResponse[ settings: KeyValuePattern[ "ToolsEnabled" -> False ], container_,
         $nextTaskEvaluation = Hold @ writeResult[ settings, container, cell, as ]
     ];
 
+(* FIXME: Look for "finish_reason":"stop" and check if response ends in a WL code block.
+          If it does, process it as a tool call, since it wrote /exec after the code block. *)
 checkResponse[ settings_, container_, cell_, as_Association ] /; toolFreeQ[ settings, container ] :=
     If[ TrueQ @ $AutomaticAssistance,
         writeResult[ settings, container, cell, as ],
@@ -1137,6 +1159,8 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
                 makeToolResponseMessage[ settings, response ]
             }
         ];
+
+        $finishReason = None;
 
         req = If[ TrueQ @ $useLLMServices,
                   ConfirmMatch[ constructMessages[ settings, newMessages ], { __Association }, "ConstructMessages" ],
