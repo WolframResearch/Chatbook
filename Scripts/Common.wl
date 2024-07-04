@@ -107,6 +107,9 @@ messageString[ ___ ] := "-- Message text not found --";
 (* ::Section::Closed:: *)
 (*Definitions*)
 
+$$ws = WhitespaceCharacter...;
+$$id = "\"" ~~ Except[ "\"" ].. ~~ "\"";
+
 $envSHA = SelectFirst[
     { Environment[ "GITHUB_SHA" ], Environment[ "BUILD_VCS_NUMBER_WolframLanguage_Paclets_Chatbook_PacChatbook" ] },
     StringQ
@@ -218,8 +221,26 @@ updatePacletInfo[ dir_ ] /; $inCICD := Enclose[
     ]
 ];
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*setPacletReleaseID*)
+(* :!CodeAnalysis::Disable::LeakedVariable:: *)
+setPacletReleaseID[ File[ dir_ ] ] :=
+    Enclose @ Module[ { id, file, bytes, string, new },
+        id = ConfirmBy[ releaseID @ dir, StringQ, "ReleaseID" ];
+        file = ConfirmBy[ FileNameJoin @ { dir, "PacletInfo.wl" }, FileExistsQ, "PacletInfoFile" ];
+        bytes = ConfirmBy[ ReadByteArray @ file, ByteArrayQ, "ByteArray" ];
+        Quiet @ Close @ file;
+        string = ConfirmBy[ ByteArrayToString @ bytes, StringQ, "String" ];
+        new = StringReplace[ string, before: ("\"ReleaseID\""~~$$ws~~"->"~~$$ws) ~~ $$id :> before<>"\""<>id<>"\"" ];
+        cicd`ConsoleNotice @ SequenceForm[ "Setting paclet release ID: ", id ];
+        WithCleanup[ BinaryWrite[ file, StringToByteArray @ new ], Close @ file ];
+        id
+    ];
 
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*updateReleaseInfoCell*)
 updateReleaseInfoCell[ dir_, url_, cmt_, run_ ] /;
     Environment[ "GITHUB_WORKFLOW" ] === "Release" :=
     UsingFrontEnd @ Enclose @ Module[ { cells, nbFile, nbo, cell },

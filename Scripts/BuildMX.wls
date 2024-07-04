@@ -142,6 +142,8 @@ tmp = cicd`ScriptConfirmBy[ copyTemporary @ $pacletDir, DirectoryQ ];
 cicd`ConsoleLog[ "Inserting confirmation sources..." ];
 cicd`ScriptConfirm @ expandTags @ tmp;
 
+setPacletReleaseID @ tmp;
+
 cicd`ConsoleLog[ "Loading paclet..." ];
 PacletDirectoryUnload @ $pacletDir;
 cicd`ScriptConfirmBy[ PacletDirectoryLoad @ tmp, MemberQ @ tmp ];
