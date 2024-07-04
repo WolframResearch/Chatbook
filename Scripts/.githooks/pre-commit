@@ -16,5 +16,7 @@ if [ "$changed" != "" ]; then
 
 fi
 
-wolframscript -f Scripts/SetPacletVersion.wls $(git rev-parse HEAD)
+sha="$(git rev-parse HEAD)"
+echo "Setting paclet release ID: $sha"
+wolframscript -f Scripts/SetPacletVersion.wls $sha
 git add PacletInfo.wl
