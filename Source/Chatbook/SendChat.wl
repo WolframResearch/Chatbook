@@ -611,7 +611,8 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
             dynamicSplit  = dynamicSplitQ @ settings,
             handlers      = getHandlerFunctions @ settings,
             useTasks      = feTaskQ @ settings,
-            toolFormatter = getToolFormatter @ settings
+            toolFormatter = getToolFormatter @ settings,
+            stop          = makeStopTokens @ settings
         },
         {
             bodyChunkHandler    = Lookup[ handlers, "BodyChunkReceived", None ],
@@ -647,6 +648,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                     taskFinishedHandler[ #1 ];
                     Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
                     logUsage @ container;
+                    trimStopTokens[ container, stop ];
                     checkResponse[ $settings, Unevaluated @ container, cellObject, #1 ]
                 ]
             ]
@@ -654,6 +656,22 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
     ];
 
 chatHandlers // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*trimStopTokens*)
+trimStopTokens // beginDefinition;
+trimStopTokens // Attributes = { HoldFirst };
+
+trimStopTokens[ container_, stop: { ___String } ] :=
+    With[ { full = container[ "FullContent" ], dynamic = container[ "DynamicContent" ] },
+        (
+            container[ "DynamicContent" ] = StringDelete[ dynamic, stop~~EndOfString ];
+            container[ "FullContent"    ] = StringDelete[ full   , stop~~EndOfString ];
+        ) /; StringQ @ full
+    ];
+
+trimStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
