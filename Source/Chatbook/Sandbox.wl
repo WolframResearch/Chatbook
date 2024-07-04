@@ -1128,7 +1128,7 @@ evaluationData // beginDefinition;
 evaluationData // Attributes = { HoldAllComplete };
 
 evaluationData[ eval_ ] := Enclose[
-    Module[ {  result, stopped, $fail },
+    Module[ { outputs, result, stopped, $fail },
         $suppressMessageCollection = False;
         outputs = Internal`Bag[ ];
         result = $fail;

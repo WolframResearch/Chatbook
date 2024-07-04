@@ -894,7 +894,7 @@ messageFailure[ args___ ] :=
         quiet   = If[ TrueQ @ $failed, Quiet, Identity ];
         message = messageFailure0;
         WithCleanup[
-            StackInhibit @ convertCloudFailure @ quiet @ message @ args,
+            StackInhibit @ promoteSourceInfo @ convertCloudFailure @ quiet @ message @ args,
             If[ TrueQ @ $catching, $failed = True ]
         ]
     ];
@@ -924,6 +924,20 @@ convertCloudFailure[ failure_ ] :=
     failure;
 
 convertCloudFailure // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*promoteSourceInfo*)
+promoteSourceInfo // beginDefinition;
+
+promoteSourceInfo[ Failure[
+    "Chatbook::Internal",
+    as: KeyValuePattern[ "MessageParameters" :> { _, KeyValuePattern[ "Information" -> info_String ] } ]
+] ] := Failure[ "Chatbook::Internal", <| as, "Source" -> info |> ];
+
+promoteSourceInfo[ failure_ ] := failure;
+
+promoteSourceInfo // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -962,11 +976,12 @@ makeInternalFailureData // Attributes = { HoldFirst };
 
 makeInternalFailureData[ eval_, Failure[ tag_, as_Association ], args___ ] :=
     StackInhibit @ Module[ { $stack = Stack[ _ ] },
-        maskOpenAIKey @ <|
-            "Evaluation" :> eval,
-            "Failure"    -> Failure[ tag, Association[ KeyTake[ as, "Information" ], as ] ],
-            "Arguments"  -> { args },
-            "Stack"      :> $stack
+        maskOpenAIKey @ DeleteMissing @ <|
+            "Evaluation"  :> eval,
+            "Information" -> as[ "Information" ],
+            "Failure"     -> Failure[ tag, Association[ KeyTake[ as, "Information" ], as ] ],
+            "Arguments"   -> { args },
+            "Stack"       :> $stack
         |>
     ];
 
@@ -1006,7 +1021,7 @@ setServiceCaller // endDefinition;
 
 $issuesURL = "https://github.com/WolframResearch/Chatbook/issues/new";
 
-$maxBugReportURLSize = 3500;
+$maxBugReportURLSize = 3250;
 (*
     RFC 7230 recommends clients support 8000: https://www.rfc-editor.org/rfc/rfc7230#section-3.1.1
     Long bug report links might not work in old versions of IE,
@@ -1018,6 +1033,31 @@ $maxPartLength = 500;
 $thisPaclet   := PacletObject[ "Wolfram/Chatbook" ];
 $debugData    := debugData @ $thisPaclet[ "PacletInfo" ];
 $settingsData := maskOpenAIKey @ $settings;
+$releaseID    := $releaseID = getReleaseID @ $thisPaclet;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getReleaseID*)
+getReleaseID[ paclet_PacletObject ] :=
+    getReleaseID[ paclet, paclet[ "ReleaseID" ] ];
+
+getReleaseID[ paclet_PacletObject, "$RELEASE_ID$" | "None" | Except[ _String ] ] :=
+    getReleaseID0 @ paclet[ "Location" ];
+
+getReleaseID[ paclet_, id_String ] := id;
+
+
+getReleaseID0[ dir_? DirectoryQ ] :=
+    Module[ { stdOut, id },
+        stdOut = Quiet @ RunProcess[ { "git", "rev-parse", "HEAD" }, "StandardOutput", ProcessDirectory -> dir ];
+        id = If[ StringQ @ stdOut, StringTrim @ stdOut, "" ];
+        If[ StringMatchQ[ id, Repeated[ HexadecimalCharacter, { 40 } ] ],
+            id,
+            "None"
+        ]
+    ];
+
+getReleaseID0[ ___ ] := "None";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1025,7 +1065,8 @@ $settingsData := maskOpenAIKey @ $settings;
 debugData // beginDefinition;
 
 debugData[ as_Association? AssociationQ ] := <|
-    KeyTake[ as, { "Name", "Version", "ReleaseID" } ],
+    KeyTake[ as, { "Name", "Version" } ],
+    "ReleaseID"             -> $releaseID,
     "EvaluationEnvironment" -> $EvaluationEnvironment,
     "FrontEndVersion"       -> $frontEndVersion,
     "KernelVersion"         -> SystemInformation[ "Kernel", "Version" ],
@@ -1058,9 +1099,29 @@ bugReportBody[ as_Association? AssociationQ ] :=
             "DebugData"       -> associationMarkdown @ $debugData,
             "Stack"           -> $bugReportStack,
             "Settings"        -> associationMarkdown @ maskOpenAIKey @ $settings,
-            "InternalFailure" -> markdownCodeBlock @ $internalFailure
+            "InternalFailure" -> markdownCodeBlock @ $internalFailure,
+            "SourceLink"      -> sourceLink @ $internalFailure
         |>
     ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sourceLink*)
+sourceLink[ KeyValuePattern[ "Information" -> info_String ] ] := sourceLink @ info;
+sourceLink[ info_String ] := sourceLink @ StringSplit[ info, "@@" ];
+sourceLink[ { tag_String, source_String } ] := sourceLink @ { tag, StringSplit[ source, ":" ] };
+sourceLink[ { tag_String, { file_String, pos_String } } ] := sourceLink @ { tag, file, StringSplit[ pos, "-" ] };
+
+sourceLink[ { tag_String, file_String, { lc1_String, lc2_String } } ] :=
+    sourceLink @ { tag, file, StringSplit[ lc1, "," ], StringSplit[ lc2, "," ] };
+
+sourceLink[ { tag_String, file_String, { l1_String, c1_String }, { l2_String, c2_String } } ] :=
+    Module[ { id },
+        id = Replace[ $releaseID, { "$RELEASE_ID$" | "None" | Except[ _String ] -> "main" } ];
+        "\n\nhttps://github.com/WolframResearch/Chatbook/blob/"<>id<>"/"<>file<>"#L"<>l1<>"-L"<>l2
+    ];
+
+sourceLink[ ___ ] := "";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1068,7 +1129,9 @@ bugReportBody[ as_Association? AssociationQ ] :=
 $bugReportBodyTemplate = StringTemplate[ "\
 Describe the issue in detail here. Attach any relevant screenshots or files. \
 The section below was automatically generated. \
-Remove any information that you do not wish to include in the report.
+Remove any information that you do not wish to include in the report.\
+\
+%%SourceLink%%
 
 <details>
 <summary>Debug Data</summary>
@@ -1079,14 +1142,14 @@ Remove any information that you do not wish to include in the report.
 
 %%Settings%%
 
+## Failure Data
+
+%%InternalFailure%%
+
 ## Stack Data
 ```
 %%Stack%%
 ```
-
-## Failure Data
-
-%%InternalFailure%%
 
 </details>",
 Delimiters -> "%%"
@@ -1120,9 +1183,9 @@ $bugReportStack := StringRiffle[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$settings*)
-$settings := Module[ { settings, styleInfo, assoc },
+$settings := Quiet @ Module[ { settings, styleInfo, assoc },
     settings  = CurrentValue @ { TaggingRules, "ChatNotebookSettings" };
-    styleInfo = CurrentValue @ { StyleDefinitions, "ChatStyleSheetInformation", TaggingRules };
+    styleInfo = Lookup[ CurrentValue @ { StyleDefinitions, "ChatStyleSheetInformation" }, TaggingRules, <| |> ];
     assoc     = Association @ Select[ Association /@ { settings, styleInfo }, AssociationQ ];
     If[ AssociationQ @ assoc,
         KeyDrop[ assoc, "OpenAIKey" ],
@@ -1363,6 +1426,7 @@ addToMXInitialization[
     $chatbookIcons;
     $templateBoxDisplayFunctions;
     $cloudTextResources;
+    $releaseID;
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)

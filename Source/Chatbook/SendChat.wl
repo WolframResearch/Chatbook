@@ -58,6 +58,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             "HistoryAndTarget"
         ];
 
+        $finishReason = None;
         $multimodalMessages = TrueQ @ settings[ "Multimodal" ];
         $chatIndicatorSymbol = chatIndicatorSymbol @ settings;
 
@@ -174,6 +175,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
             "HistoryAndTarget"
         ];
 
+        $finishReason = None;
         $multimodalMessages = TrueQ @ settings[ "Multimodal" ];
         $chatIndicatorSymbol = chatIndicatorSymbol @ settings;
 
@@ -611,7 +613,8 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
             dynamicSplit  = dynamicSplitQ @ settings,
             handlers      = getHandlerFunctions @ settings,
             useTasks      = feTaskQ @ settings,
-            toolFormatter = getToolFormatter @ settings
+            toolFormatter = getToolFormatter @ settings,
+            stop          = makeStopTokens @ settings
         },
         {
             bodyChunkHandler    = Lookup[ handlers, "BodyChunkReceived", None ],
@@ -631,6 +634,7 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                     },
                     bodyChunkHandler[ #1 ];
                     Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
+                    checkFinishReason[ #1 ];
                     writeChunk[ Dynamic @ container, cellObject, #1 ]
                 ]
             ],
@@ -646,7 +650,9 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
                     },
                     taskFinishedHandler[ #1 ];
                     Internal`StuffBag[ $debugLog, $lastStatus = #1 ];
+                    checkFinishReason[ #1 ];
                     logUsage @ container;
+                    trimStopTokens[ container, stop ];
                     checkResponse[ $settings, Unevaluated @ container, cellObject, #1 ]
                 ]
             ]
@@ -654,6 +660,38 @@ chatHandlers[ container_, cellObject_, settings_ ] :=
     ];
 
 chatHandlers // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*trimStopTokens*)
+trimStopTokens // beginDefinition;
+trimStopTokens // Attributes = { HoldFirst };
+
+trimStopTokens[ container_, stop: { ___String } ] :=
+    With[ { full = container[ "FullContent" ], dynamic = container[ "DynamicContent" ] },
+        (
+            container[ "DynamicContent" ] = StringDelete[ dynamic, stop~~EndOfString ];
+            container[ "FullContent"    ] = StringDelete[ full   , stop~~EndOfString ];
+        ) /; StringQ @ full
+    ];
+
+trimStopTokens // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkFinishReason*)
+checkFinishReason // beginDefinition;
+
+checkFinishReason[ as_Association ] := checkFinishReason @ as[ "BodyChunk" ];
+checkFinishReason[ _Missing ] := Null;
+
+checkFinishReason[ chunk_String ] :=
+    Module[ { reasons },
+        reasons = StringCases[ chunk, "\"finish_reason\":\"" ~~ reason: Except[ "\"" ].. ~~ "\"" :> reason ];
+        If[ MatchQ[ reasons, { ___, _String } ], $finishReason = Last @ reasons ]
+    ];
+
+checkFinishReason // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -897,6 +935,8 @@ checkResponse[ settings: KeyValuePattern[ "ToolsEnabled" -> False ], container_,
         $nextTaskEvaluation = Hold @ writeResult[ settings, container, cell, as ]
     ];
 
+(* FIXME: Look for "finish_reason":"stop" and check if response ends in a WL code block.
+          If it does, process it as a tool call, since it wrote /exec after the code block. *)
 checkResponse[ settings_, container_, cell_, as_Association ] /; toolFreeQ[ settings, container ] :=
     If[ TrueQ @ $AutomaticAssistance,
         writeResult[ settings, container, cell, as ],
@@ -1120,6 +1160,8 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             }
         ];
 
+        $finishReason = None;
+
         req = If[ TrueQ @ $useLLMServices,
                   ConfirmMatch[ constructMessages[ settings, newMessages ], { __Association }, "ConstructMessages" ],
                   (* TODO: this path will be obsolete when LLMServices is widely available *)
@@ -1161,27 +1203,37 @@ Reply with /end if the tool call provides a satisfactory answer, otherwise respo
 (* ::Subsubsection::Closed:: *)
 (*makeToolResponseMessage*)
 makeToolResponseMessage // beginDefinition;
+makeToolResponseMessage[ settings_, response_ ] := makeToolResponseMessage0[ serviceName @ settings, response ];
+makeToolResponseMessage // endDefinition;
 
-makeToolResponseMessage[ settings_? anthropicQ, response_ ] := <|
-    "Role"    -> "user",
+makeToolResponseMessage0 // beginDefinition;
+
+makeToolResponseMessage0[ "Anthropic"|"MistralAI", response_ ] := <|
+    "Role"    -> "User",
     "Content" -> Replace[ Flatten @ { "<system>", response, "</system>" }, { s__String } :> StringJoin @ s ]
 |>;
 
-makeToolResponseMessage[ settings_, response_ ] :=
-    <| "Role" -> "system", "Content" -> response |>;
+makeToolResponseMessage0[ service_String, response_ ] :=
+    <| "Role" -> "System", "Content" -> response |>;
 
-makeToolResponseMessage // endDefinition;
+makeToolResponseMessage0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*userToolResponseQ*)
+userToolResponseQ // beginDefinition;
+userToolResponseQ[ settings_ ] := MatchQ[ serviceName @ settings, "Anthropic"|"MistralAI" ];
+userToolResponseQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
-(*anthropicQ*)
-anthropicQ // beginDefinition;
-anthropicQ[ KeyValuePattern[ "Model" -> model_ ] ] := anthropicQ @ model;
-anthropicQ[ { service_String, _String } ] := anthropicQ @ service;
-anthropicQ[ KeyValuePattern[ "Service" -> service_ ] ] := anthropicQ @ service;
-anthropicQ[ "Anthropic" ] := True;
-anthropicQ[ _String | $$unspecified ] := False;
-anthropicQ // endDefinition;
+(*serviceName*)
+serviceName // beginDefinition;
+serviceName[ KeyValuePattern[ "Model" -> model_ ] ] := serviceName @ model;
+serviceName[ { service_String, _String } ] := service;
+serviceName[ KeyValuePattern[ "Service" -> service_String ] ] := service;
+serviceName[ _String | $$unspecified ] := "OpenAI";
+serviceName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
