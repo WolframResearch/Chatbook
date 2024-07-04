@@ -169,7 +169,7 @@ actionURL[ ] := Enclose[
 (*updatePacletInfo*)
 updatePacletInfo[ dir_ ] /; $inCICD := Enclose[
     Module[
-        { cs, file, string, id, date, url, run, cmt, new },
+        { cs, file, string, id, date, url, run, cmt, oldID, new },
 
         cs     = ConfirmBy[ Echo[ #1, "Update PacletInfo [" <> ToString @ #2 <> "]: " ], StringQ, #2 ] &;
         file   = cs[ FileNameJoin @ { dir, "PacletInfo.wl" }, "Original PacletInfo" ];
@@ -180,13 +180,14 @@ updatePacletInfo[ dir_ ] /; $inCICD := Enclose[
         url    = cs[ releaseURL @ file, "ReleaseURL" ];
         run    = cs[ actionURL[ ], "ActionURL" ];
         cmt    = cs[ commitURL @ id, "CommitURL" ];
+        oldID  = cs[ PacletObject[ Flatten @ File @ dir ][ "ReleaseID" ], "OldReleaseID" ];
 
         new = cs[
             StringReplace[
                 string,
                 {
                     "\r\n"           -> "\n",
-                    "$RELEASE_ID$"   -> id,
+                    oldID            -> id,
                     "$RELEASE_DATE$" -> date,
                     "$RELEASE_URL$"  -> url,
                     "$ACTION_URL$"   -> run,
