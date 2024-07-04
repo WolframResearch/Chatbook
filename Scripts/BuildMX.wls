@@ -139,10 +139,9 @@ If[ FileExistsQ @ $mxFile,
 
 cicd`ConsoleLog[ "Copying files..." ];
 tmp = cicd`ScriptConfirmBy[ copyTemporary @ $pacletDir, DirectoryQ ];
-cicd`ConsoleLog[ "Inserting confirmation sources..." ];
+cicd`ScriptConfirmBy[ setPacletReleaseID[ tmp, releaseID @ $pacletDir ], StringQ ];
+cicd`ConsoleLog[ "Inserting confirmation source info..." ];
 cicd`ScriptConfirm @ expandTags @ tmp;
-
-setPacletReleaseID @ tmp;
 
 cicd`ConsoleLog[ "Loading paclet..." ];
 PacletDirectoryUnload @ $pacletDir;

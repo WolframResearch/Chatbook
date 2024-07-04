@@ -122,7 +122,7 @@ $inCICD = StringQ @ $envSHA;
 (*gitCommand*)
 gitCommand[ { cmd__String }, dir_ ] :=
     Enclose @ Module[ { res },
-        res = RunProcess[ { "git", cmd }, ProcessDirectory -> dir ];
+        res = RunProcess[ { "git", cmd }, ProcessDirectory -> ExpandFileName @ dir ];
         ConfirmAssert[ res[ "ExitCode" ] === 0 ];
         StringTrim @ ConfirmBy[ res[ "StandardOutput" ], StringQ ]
     ];
@@ -225,9 +225,11 @@ updatePacletInfo[ dir_ ] /; $inCICD := Enclose[
 (* ::Subsection::Closed:: *)
 (*setPacletReleaseID*)
 (* :!CodeAnalysis::Disable::LeakedVariable:: *)
-setPacletReleaseID[ File[ dir_ ] ] :=
-    Enclose @ Module[ { id, file, bytes, string, new },
-        id = ConfirmBy[ releaseID @ dir, StringQ, "ReleaseID" ];
+setPacletReleaseID[ dir_ ] :=
+    setPacletReleaseID[ dir, releaseID @ dir ];
+
+setPacletReleaseID[ dir_, id_String? StringQ ] :=
+    Enclose @ Module[ { file, bytes, string, new },
         file = ConfirmBy[ FileNameJoin @ { dir, "PacletInfo.wl" }, FileExistsQ, "PacletInfoFile" ];
         bytes = ConfirmBy[ ReadByteArray @ file, ByteArrayQ, "ByteArray" ];
         Quiet @ Close @ file;
