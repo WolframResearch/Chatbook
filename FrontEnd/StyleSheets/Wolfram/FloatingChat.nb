@@ -13,7 +13,7 @@ Notebook[
    StyleData["Notebook"],
    ClosingSaveDialog -> False,
    WindowToolbars -> { },
-   CellInsertionPointCell -> None,
+   CellInsertionPointCell -> Cell[],
    Selectable -> False,
    WindowSize -> {350, Automatic},
    WindowMargins -> {{0, Automatic}, {Automatic, 0}},
@@ -45,7 +45,9 @@ Notebook[
     ]
    },
    PrivateNotebookOptions -> {"ExcludeFromShutdown" -> True},
+   ShowCellBracket -> False,
    TaggingRules -> <|"ChatNotebookSettings" -> <|"WorkspaceChat" -> True|>|>,
+   DefaultNewCellStyle -> "AutoMoveToChatInputField",
    Magnification -> 0.85,
    Background -> GrayLevel[1]
   ],
@@ -66,6 +68,16 @@ Notebook[
    CellFrame -> 1,
    CellFrameMargins -> {{5, 5}, {0, 0}},
    CellFrameColor -> GrayLevel[0.85]
+  ],
+  Cell[
+   StyleData["AutoMoveToChatInputField"],
+   Initialization :>
+    (NotebookDelete[EvaluationCell[]];
+    Symbol["Wolfram`Chatbook`ChatbookAction"][
+     "MoveToChatInputField",
+     EvaluationNotebook[],
+     True
+    ];)
   ]
  },
  StyleDefinitions -> "PrivateStylesheetFormatting.nb"
