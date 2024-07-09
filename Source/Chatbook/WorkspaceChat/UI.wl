@@ -14,6 +14,7 @@ $inputFieldGridMagnification = 0.75;
 $inputFieldOuterBackground   = GrayLevel[ 0.95 ];
 
 $inputFieldOptions = Sequence[
+    BoxID      -> "AttachedChatInputField",
     ImageSize  -> { Scaled[ 1 ], 25 },
     FieldHint  -> tr[ "FloatingChatFieldHint" ],
     BaseStyle  -> "ChatInput",
@@ -65,7 +66,6 @@ attachWorkspaceChatInput // beginDefinition;
 attachWorkspaceChatInput[ nbo_NotebookObject ] := Enclose[
     Module[ { attached },
         attached = ConfirmMatch[ AttachCell[ nbo, $attachedChatInputCell, Bottom, 0, Bottom ], _CellObject, "Attach" ];
-        SelectionMove[ attached, All, Cell ]; (* FIXME: this isn't working *)
         attached
     ],
     throwInternalFailure
@@ -77,7 +77,7 @@ attachWorkspaceChatInput // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*$attachedChatInputCell*)
 $attachedChatInputCell = ExpressionCell[
-    DynamicModule[ { input = Null, thisNB },
+    DynamicModule[ { thisNB },
         EventHandler[
             Pane[
                 Grid[
@@ -85,7 +85,11 @@ $attachedChatInputCell = ExpressionCell[
                         {
                             RawBoxes @ TemplateBox[ { }, "ChatIconUser" ],
                             Framed[
-                                InputField[ Dynamic @ input, String, $inputFieldOptions ],
+                                InputField[
+                                    Dynamic @ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ChatInputString" } ],
+                                    String,
+                                    $inputFieldOptions
+                                ],
                                 $inputFieldFrameOptions
                             ]
                         }
@@ -97,7 +101,11 @@ $attachedChatInputCell = ExpressionCell[
             {
                 "ReturnKeyDown" :> (
                     Needs[ "Wolfram`Chatbook`" -> None ];
-                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "EvaluateFloatingChat", thisNB, Dynamic @ input ]
+                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
+                        "EvaluateFloatingChat",
+                        thisNB,
+                        Dynamic @ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ChatInputString" } ]
+                    ]
                 )
             },
             Method -> "Queued"
@@ -105,8 +113,45 @@ $attachedChatInputCell = ExpressionCell[
         Initialization :> (thisNB = EvaluationNotebook[ ])
     ],
     "ChatInputField",
-    Background -> $inputFieldOuterBackground
+    Background -> $inputFieldOuterBackground,
+    Selectable -> True
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Input Field Movement*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*moveToChatInputField*)
+moveToChatInputField // beginDefinition;
+
+moveToChatInputField[ nbo_ ] :=
+    moveToChatInputField[ nbo, $WorkspaceChat ];
+
+moveToChatInputField[ nbo_NotebookObject, True ] := (
+    moveToChatInputField0 @ nbo; (* TODO: Need to investigate why this is needed twice *)
+    moveToChatInputField0 @ nbo;
+);
+
+moveToChatInputField[ nbo_NotebookObject, False ] :=
+    Null;
+
+moveToChatInputField // endDefinition;
+
+
+moveToChatInputField0 // beginDefinition;
+
+moveToChatInputField0[ nbo_NotebookObject ] := (
+    SelectionMove[
+        First[ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ], $Failed ],
+        After,
+        CellContents
+    ];
+    FrontEndExecute @ FrontEndToken[ nbo, "MovePrevious" ]
+);
+
+moveToChatInputField0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

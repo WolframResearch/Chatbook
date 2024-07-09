@@ -15,7 +15,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (*evaluateFloatingChat*)
 evaluateFloatingChat // beginDefinition;
 
-evaluateFloatingChat[ nbo_NotebookObject, Dynamic[ input_Symbol ] ] := Enclose[
+evaluateFloatingChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue ] ] := Enclose[
     Catch @ Module[ { text, uuid, cellObject },
         If[ ! validInputStringQ @ input, input = ""; Throw @ Null ];
         text = input;
