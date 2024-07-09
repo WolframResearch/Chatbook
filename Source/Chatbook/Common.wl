@@ -241,6 +241,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `modelDisplayName;
 `modelListCachedQ;
 `modifierTemplateBoxes;
+`moveToChatInputField;
 `multimodalModelQ;
 `multimodalPacletsAvailable;
 `needsBasePrompt;
@@ -1208,7 +1209,7 @@ $settings := Quiet @ Module[ { settings, styleInfo, assoc },
         }
     ];
 
-    assoc     = Association @ Select[ Association /@ { settings, styleInfo }, AssociationQ ];
+    assoc = Association @ Select[ Association /@ { settings, styleInfo }, AssociationQ ];
     If[ AssociationQ @ assoc, KeyDrop[ assoc, "OpenAIKey" ], settings ]
 ];
 
