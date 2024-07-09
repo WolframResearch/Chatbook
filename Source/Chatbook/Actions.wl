@@ -618,8 +618,9 @@ StopChat[ cell_CellObject ] :=
     ];
 
 StopChat[ cell0_CellObject ] := Enclose[
-    Module[ { cell, settings, container, content },
-        cell = ConfirmMatch[ ensureChatOutputCell @ cell0, _CellObject, "ParentCell" ];
+    Catch @ Module[ { cell, settings, container, content },
+        cell = ConfirmMatch[ ensureChatOutputCell @ cell0, _CellObject|None, "ParentCell" ];
+        If[ cell === None, removeTask @ $lastTask; Throw @ Null ];
         settings = ConfirmBy[ currentChatSettings @ cell, AssociationQ, "ChatNotebookSettings" ];
         removeTask @ Lookup[ settings, "Task" ];
         container = ConfirmBy[ Lookup[ settings, "Container" ], AssociationQ, "Container" ];
@@ -627,7 +628,7 @@ StopChat[ cell0_CellObject ] := Enclose[
         FinishDynamic[ ];
         Block[ { createFETask = # & }, writeReformattedCell[ settings, content, cell ] ]
     ],
-    throwInternalFailure[ StopChat @ cell0, ## ] &
+    throwInternalFailure
 ];
 
 StopChat[ $Failed ] :=
