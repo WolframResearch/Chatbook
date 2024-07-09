@@ -49,6 +49,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `trStringTemplate;
 `trExprTemplate;
 
+`$catching;
 `$catchTopTag;
 `beginDefinition;
 `catchAlways;
@@ -93,6 +94,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$conversionRules;
 `$corePersonaNames;
 `$CurrentCell;
+`$currentChatSettings;
 `$customToolFormatter;
 `$defaultChatSettings;
 `$defaultChatTools;
@@ -800,6 +802,7 @@ catchTop[ eval_, sym_Symbol ] :=
     Block[
         {
             $ChatNotebookEvaluation = True,
+            $currentChatSettings    = None,
             $messageSymbol          = Replace[ $messageSymbol, Chatbook -> sym ],
             $catching               = True,
             $failed                 = False,
@@ -1184,13 +1187,26 @@ $bugReportStack := StringRiffle[
 (* ::Subsubsection::Closed:: *)
 (*$settings*)
 $settings := Quiet @ Module[ { settings, styleInfo, assoc },
-    settings  = CurrentValue @ { TaggingRules, "ChatNotebookSettings" };
-    styleInfo = Lookup[ CurrentValue @ { StyleDefinitions, "ChatStyleSheetInformation" }, TaggingRules, <| |> ];
+
+    settings = FirstCase[
+        Unevaluated @ {
+            AbsoluteCurrentValue @ { TaggingRules, "ChatNotebookSettings" },
+            CurrentValue @ { TaggingRules, "ChatNotebookSettings" }
+        },
+        e_ :> With[ { as = Association @ e }, as /; AssociationQ @ as && as =!= <| |> ],
+        <| |>
+    ];
+
+    styleInfo = Replace[
+        CurrentValue @ { StyleDefinitions, "ChatStyleSheetInformation" },
+        {
+            KeyValuePattern[ TaggingRules -> tags: KeyValuePattern @ { } ] :> Association @ tags,
+            ___ :> <| |>
+        }
+    ];
+
     assoc     = Association @ Select[ Association /@ { settings, styleInfo }, AssociationQ ];
-    If[ AssociationQ @ assoc,
-        KeyDrop[ assoc, "OpenAIKey" ],
-        settings
-    ]
+    If[ AssociationQ @ assoc, KeyDrop[ assoc, "OpenAIKey" ], settings ]
 ];
 
 (* ::**************************************************************************************************************:: *)

@@ -86,6 +86,8 @@ $nonInheritedPersonaValues = {
     "ServiceDefaultModel"
 };
 
+$currentChatSettings = None;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Argument Patterns*)
@@ -123,6 +125,11 @@ $DefaultChatProcessingFunctions = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*$CurrentChatSettings*)
+$CurrentChatSettings := If[ AssociationQ @ $currentChatSettings, $currentChatSettings, AbsoluteCurrentChatSettings[ ] ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*AbsoluteCurrentChatSettings*)
 AbsoluteCurrentChatSettings // beginDefinition;
 AbsoluteCurrentChatSettings[ ] := AbsoluteCurrentChatSettings @ $FrontEnd;
@@ -142,6 +149,8 @@ resolveAutoSettings[ settings: KeyValuePattern[ "ResolvedAutoSettings" -> True ]
 (* Add additional settings and resolve actual LLMTool expressions *)
 resolveAutoSettings[ settings0_Association ] := Enclose[
     Module[ { persona, combined, settings, resolved },
+
+        If[ $catching, $currentChatSettings = settings0 ];
 
         persona = ConfirmMatch[ getLLMEvaluator @ settings0, _String |_Association | None, "LLMEvaluator" ];
 
@@ -182,7 +191,8 @@ resolveAutoSettings[ settings0_Association ] := Enclose[
             "Resolved"
         ];
 
-        If[ TrueQ @ $chatState, addHandlerArguments[ "ChatNotebookSettings" -> resolved ] ];
+        If[ $chatState, addHandlerArguments[ "ChatNotebookSettings" -> resolved ] ];
+        If[ $catching, $currentChatSettings = resolved ];
 
         resolved
     ],

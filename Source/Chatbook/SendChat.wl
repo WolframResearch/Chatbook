@@ -63,7 +63,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         $chatIndicatorSymbol = chatIndicatorSymbol @ settings;
 
         If[ TrueQ @ settings[ "EnableChatGroupSettings" ],
-            AppendTo[ settings, "ChatGroupSettings" -> getChatGroupSettings @ evalCell ]
+            AppendTo[ settings, "ChatGroupSettings" -> getChatGroupSettings @ evalCell ];
+            $currentChatSettings = settings;
         ];
 
         If[ ! settings[ "IncludeHistory" ], cells = { evalCell } ];
@@ -84,7 +85,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             If[ AssociationQ @ settings[ "LLMEvaluator" ],
                 settings[ "LLMEvaluator" ] = Association[ settings[ "LLMEvaluator" ], persona ],
                 settings = Association[ settings, persona ]
-            ]
+            ];
+            $currentChatSettings = settings;
         ];
 
         AppendTo[ settings, "Data" -> data ];
@@ -127,6 +129,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             "CreateOutput"
         ];
 
+        moveToChatInputField @ nbo;
+
         applyHandlerFunction[
             settings,
             "ChatPre",
@@ -151,7 +155,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
 
         task
     ],
-    throwInternalFailure[ sendChat[ evalCell, nbo, settings0 ], ## ] &
+    throwInternalFailure
 ];
 
 
@@ -180,7 +184,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         $chatIndicatorSymbol = chatIndicatorSymbol @ settings;
 
         If[ TrueQ @ settings[ "EnableChatGroupSettings" ],
-            AppendTo[ settings, "ChatGroupSettings" -> getChatGroupSettings @ evalCell ]
+            AppendTo[ settings, "ChatGroupSettings" -> getChatGroupSettings @ evalCell ];
+            $currentChatSettings = settings;
         ];
 
         id  = Lookup[ settings, "ID" ];
@@ -208,7 +213,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
             If[ AssociationQ @ settings[ "LLMEvaluator" ],
                 settings[ "LLMEvaluator" ] = Association[ settings[ "LLMEvaluator" ], persona ],
                 settings = Association[ settings, persona ]
-            ]
+            ];
+            $currentChatSettings = settings;
         ];
 
         AppendTo[ settings, "Data" -> data ];
@@ -251,6 +257,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
             "CreateOutput"
         ];
 
+        moveToChatInputField @ nbo;
+
         applyHandlerFunction[
             settings,
             "ChatPre",
@@ -275,7 +283,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
 
         task
     ],
-    throwInternalFailure[ sendChat[ evalCell, nbo, settings0 ], ## ] &
+    throwInternalFailure
 ];
 
 sendChat // endDefinition;
