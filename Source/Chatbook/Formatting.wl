@@ -170,12 +170,13 @@ formatToolCall // endDefinition;
 
 formatToolCall0 // beginDefinition;
 
-formatToolCall0[ string_String, as_Association ] := Panel[
-    makeToolCallBoxLabel @ as,
-    BaseStyle    -> "Text",
-    Background   -> GrayLevel[ 0.95 ],
-    ImageMargins -> 10
-];
+formatToolCall0[ string_String, as_Association ] :=
+    Panel[
+        makeToolCallBoxLabel @ as,
+        BaseStyle    -> { "Text", LineBreakWithin -> False },
+        Background   -> GrayLevel[ 0.95 ],
+        ImageMargins -> { { 0, 0 }, { 10, 10 } }
+    ];
 
 formatToolCall0[ string_String, failed_Failure ] := Framed[
     failed,
@@ -1409,7 +1410,7 @@ makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ]
     If[ MissingQ @ icon,
         Nothing,
         {
-            Spacer[ 5 ],
+            Spacer[ 0 ],
             toolCallIconPane @ icon
         }
     ]
@@ -1421,7 +1422,7 @@ makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Row @ Flatten @ {
     If[ MissingQ @ icon,
         Nothing,
         {
-            Spacer[ 5 ],
+            Spacer[ 0 ],
             toolCallIconPane @ icon
         }
     ]
