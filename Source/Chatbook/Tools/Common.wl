@@ -1025,6 +1025,8 @@ you MUST write /retry before making the next tool call:
 /retry
 TOOLCALL: <tool name>
 <new parameters>
+ENDARGUMENTS
+ENDTOOLCALL
 
 This will hide the previous tool call in a collapsed section that the user can open if they wish to see prior attempts.
 If you fail to do this, the user will have a hard time knowing which tool calls contain the correct results.";
