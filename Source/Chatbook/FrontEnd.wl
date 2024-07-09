@@ -189,6 +189,17 @@ feParentObject // endDefinition;
 (*Cells*)
 
 (* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*$evaluationCell*)
+$evaluationCell :=
+    With[ { cell = EvaluationCell[ ] },
+        If[ TrueQ[ $chatState && MatchQ[ cell, _CellObject ] ],
+            $evaluationCell = cell,
+            cell
+        ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*cellObjectQ*)
 cellObjectQ[ cell_CellObject ] := MatchQ[ Developer`CellInformation @ cell, KeyValuePattern @ { } ];
@@ -248,6 +259,9 @@ rootEvaluationCell[ source_, cells: { __CellObject } ] :=
         KeyValuePattern @ { "Evaluating" -> True, "CellObject" -> cell_CellObject } :> cell,
         throwInternalFailure @ rootEvaluationCell[ source, cells ]
     ];
+
+
+rootEvaluationCell[ cell_CellObject, None ] := None;
 
 rootEvaluationCell // endDefinition;
 
@@ -679,6 +693,26 @@ $cloudCellFixes := $cloudCellFixes = Dispatch @ {
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Notebooks*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$evaluationNotebook*)
+$evaluationNotebook :=
+    With[ { nbo = evaluationNotebook[ ] },
+        If[ TrueQ[ $chatState && MatchQ[ nbo, _NotebookObject ] ],
+            $evaluationNotebook = nbo,
+            nbo
+        ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*evaluationNotebook*)
+evaluationNotebook // beginDefinition;
+evaluationNotebook[ ] := evaluationNotebook @ $evaluationCell;
+evaluationNotebook[ cell_CellObject ] := With[ { nbo = parentNotebook @ cell }, nbo /; MatchQ[ nbo, _NotebookObject ] ];
+evaluationNotebook[ _ ] := EvaluationNotebook[ ];
+evaluationNotebook // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

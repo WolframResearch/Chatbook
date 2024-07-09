@@ -380,46 +380,49 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
     withChatState @ EvaluateChatInput[ evalCell, nbo, resolveAutoSettings @ currentChatSettings @ evalCell ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
-    withChatState @ Block[ { $AutomaticAssistance = False, $aborted = False },
-        $lastCellObject     = None;
-        $lastChatString     = None;
-        $lastMessages       = None;
-        $nextTaskEvaluation = None;
-        $enableLLMServices  = settings[ "EnableLLMServices" ];
-        clearMinimizedChats @ nbo;
+    withChatStateAndFEObjects[
+        { evalCell, nbo },
+        Block[ { $AutomaticAssistance = False, $aborted = False },
+            $lastCellObject     = None;
+            $lastChatString     = None;
+            $lastMessages       = None;
+            $nextTaskEvaluation = None;
+            $enableLLMServices  = settings[ "EnableLLMServices" ];
+            clearMinimizedChats @ nbo;
 
-        (* Send chat while listening for an abort: *)
-        CheckAbort[
-            sendChat[ evalCell, nbo, settings ];
-            waitForLastTask[ ]
-            ,
-            (* The user has issued an abort: *)
-            $aborted = True;
-            (* Clean up the current chat evaluation: *)
-            With[ { cell = $lastCellObject },
-                If[ MatchQ[ cell, _CellObject ],
-                    StopChat @ cell,
-                    removeTask @ $lastTask
+            (* Send chat while listening for an abort: *)
+            CheckAbort[
+                sendChat[ evalCell, nbo, settings ];
+                waitForLastTask[ ]
+                ,
+                (* The user has issued an abort: *)
+                $aborted = True;
+                (* Clean up the current chat evaluation: *)
+                With[ { cell = $lastCellObject },
+                    If[ MatchQ[ cell, _CellObject ],
+                        StopChat @ cell,
+                        removeTask @ $lastTask
+                    ]
                 ]
-            ]
-            ,
-            PropagateAborts -> False
-        ];
-
-        blockChatObject[
-            If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
-                With[
-                    {
-                        chat = constructChatObject @ Append[
-                            $lastMessages,
-                            <| "Role" -> "Assistant", "Content" -> $lastChatString |>
-                        ]
-                    },
-                    applyChatPost[ chat, settings, nbo, $aborted ]
-                ],
-                applyChatPost[ None, settings, nbo, $aborted ];
-                Null
+                ,
+                PropagateAborts -> False
             ];
+
+            blockChatObject[
+                If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
+                    With[
+                        {
+                            chat = constructChatObject @ Append[
+                                $lastMessages,
+                                <| "Role" -> "Assistant", "Content" -> $lastChatString |>
+                            ]
+                        },
+                        applyChatPost[ chat, settings, nbo, $aborted ]
+                    ],
+                    applyChatPost[ None, settings, nbo, $aborted ];
+                    Null
+                ];
+            ]
         ]
     ];
 
@@ -1106,7 +1109,8 @@ SendChat[ evalCell_CellObject, nbo_NotebookObject, settings_Association? Associa
 SendChat[ evalCell_, nbo_, settings_, Automatic ] /; $cloudNotebooks :=
     SendChat[ evalCell, nbo, settings, False ];
 
-SendChat[ evalCell_, nbo_, settings_, Automatic ] := withChatState @
+SendChat[ evalCell_, nbo_, settings_, Automatic ] := withChatStateAndFEObjects[
+    { evalCell, nbo },
     With[ { styles = cellStyles @ evalCell },
         Block[ { $autoOpen, $alwaysOpen = $alwaysOpen },
             $autoOpen = MemberQ[ styles, $$chatInputStyle ];
@@ -1114,13 +1118,16 @@ SendChat[ evalCell_, nbo_, settings_, Automatic ] := withChatState @
             $enableLLMServices  = settings[ "EnableLLMServices" ];
             sendChat[ evalCell, nbo, addCellStyleSettings[ settings, styles ] ]
         ]
-    ];
+    ]
+];
 
-SendChat[ evalCell_, nbo_, settings_, minimized_ ] := withChatState @
+SendChat[ evalCell_, nbo_, settings_, minimized_ ] := withChatStateAndFEObjects[
+    { evalCell, nbo },
     Block[ { $alwaysOpen = alwaysOpenQ[ settings, minimized ] },
         $enableLLMServices  = settings[ "EnableLLMServices" ];
         sendChat[ evalCell, nbo, addCellStyleSettings[ settings, evalCell ] ]
-    ];
+    ]
+];
 
 SendChat // endDefinition;
 
@@ -1353,10 +1360,32 @@ withChatState[ eval_ ] :=
         },
         $ChatHandlerData = <| |>;
         (* cSpell: ignore multser *)
-        Quiet[ withToolBox @ withBasePromptBuilder @ eval, ServiceExecute::multser ]
+        Internal`InheritedBlock[ { $evaluationCell, $evaluationNotebook },
+            Quiet[ withToolBox @ withBasePromptBuilder @ eval, ServiceExecute::multser ]
+        ]
     ];
 
 withChatState // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*withChatStateAndFEObjects*)
+withChatStateAndFEObjects // beginDefinition;
+withChatStateAndFEObjects // Attributes = { HoldRest };
+
+withChatStateAndFEObjects[ cell_CellObject ] :=
+    withChatStateAndFEObjects[ { cell, None } ];
+
+withChatStateAndFEObjects[ { cell_, nbo_ } ] :=
+    Function[ eval, withChatStateAndFEObjects[ { cell, nbo }, eval ], HoldFirst ];
+
+withChatStateAndFEObjects[ { cell_CellObject, nbo_NotebookObject }, eval_ ] :=
+    withChatState @ Block[ { $evaluationCell = cell, $evaluationNotebook = nbo }, eval ];
+
+withChatStateAndFEObjects[ { cell_CellObject, nbo_ }, eval_ ] :=
+    withChatState @ Block[ { $evaluationCell = cell }, eval ];
+
+withChatStateAndFEObjects // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
