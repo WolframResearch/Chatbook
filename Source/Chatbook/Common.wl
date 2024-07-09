@@ -104,6 +104,8 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$dynamicSplitRules;
 `$dynamicText;
 `$enableLLMServices;
+`$evaluationCell;
+`$evaluationNotebook;
 `$finalCell;
 `$fullBasePrompt;
 `$inDialog;
