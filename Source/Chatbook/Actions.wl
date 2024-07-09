@@ -524,6 +524,9 @@ ensureChatOutputCell[ cell_CellObject, new_CellObject? chatOutputCellQ ] :=
 ensureChatOutputCell[ cell_, new_CellObject? chatOutputCellQ ] :=
     ensureChatOutputCell[ new ] = new;
 
+ensureChatOutputCell[ cell_, None ] :=
+    None;
+
 ensureChatOutputCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
