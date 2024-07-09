@@ -14,6 +14,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$ChatNotebookEvaluation;
 `$ChatPost;
 `$ChatPre;
+`$CurrentChatSettings;
 `$DefaultChatHandlerFunctions;
 `$DefaultChatProcessingFunctions;
 `$DefaultModel;
@@ -128,6 +129,7 @@ Protect[
     $AutomaticAssistance,
     $ChatbookContexts,
     $ChatNotebookEvaluation,
+    $CurrentChatSettings,
     $DefaultChatHandlerFunctions,
     $DefaultChatProcessingFunctions,
     $DefaultModel,
