@@ -210,6 +210,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `getToolDisplayName;
 `getToolFormattingFunction;
 `getToolIcon;
+`getWorkspacePrompt;
 `graphicsQ;
 `grayDialogButtonLabel;
 `image2DQ;
