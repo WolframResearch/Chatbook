@@ -205,6 +205,9 @@ graphicsQ[ ___                     ] := False;
 graphicsBoxQ[ _GraphicsBox|_Graphics3DBox ] := True;
 graphicsBoxQ[ $$graphicsBoxIgnoredHead[ box_, ___ ] ] := graphicsBoxQ @ Unevaluated @ box;
 graphicsBoxQ[ TemplateBox[ { box_, ___ }, $$graphicsBoxIgnoredTemplates, ___ ] ] := graphicsBoxQ @ Unevaluated @ box;
+graphicsBoxQ[ RowBox[ boxes_List ] ] := AnyTrue[ boxes, graphicsBoxQ ];
+graphicsBoxQ[ TemplateBox[ boxes_List, "RowDefault", ___ ] ] := AnyTrue[ boxes, graphicsBoxQ ];
+graphicsBoxQ[ GridBox[ boxes_List, ___ ] ] := AnyTrue[ Flatten @ boxes, graphicsBoxQ ];
 graphicsBoxQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
