@@ -896,7 +896,7 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
             "ReformatTextData"
         ];
 
-        write = Cell[ TextData @ reformatted, Background -> None ];
+        write = Cell[ TextData @ reformatted, "None", Background -> None ];
         nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
 
         container[ "DynamicContent" ] = dynamic;
@@ -910,7 +910,7 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
             ];
             splitDynamicTaskFunction @ NotebookWrite[
                 System`NotebookLocationSpecifier[ boxObject, "Before" ],
-                StyleBox[ "\n" ],
+                Cell[ "\n", "None" ],
                 None,
                 AutoScroll -> False
             ];
@@ -920,7 +920,7 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
         $lastDynamicUpdate = AbsoluteTime[ ];
 
     ],
-    throwInternalFailure[ splitDynamicContent[ container, { static, dynamic }, cell, uuid ], ## ] &
+    throwInternalFailure
 ];
 
 (* There's nothing we can write as static content yet: *)
