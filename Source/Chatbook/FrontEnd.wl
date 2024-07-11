@@ -780,7 +780,12 @@ getBoxObjectFromBoxID[ cell_CellObject, uuid_ ] :=
     ];
 
 getBoxObjectFromBoxID[ nbo_NotebookObject, uuid_String ] :=
-    MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject @ FE`BoxReference[ nbo, { { uuid } } ];
+    MathLink`CallFrontEnd @ FrontEnd`BoxReferenceBoxObject @ FE`BoxReference[
+        nbo,
+        { { uuid } },
+        FE`SearchStart -> "StartFromBeginning",
+        FE`SearchStop  -> "StopAtEnd"
+    ];
 
 getBoxObjectFromBoxID // endDefinition;
 
