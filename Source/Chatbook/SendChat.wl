@@ -129,8 +129,6 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             "CreateOutput"
         ];
 
-        moveToChatInputField @ nbo;
-
         applyHandlerFunction[
             settings,
             "ChatPre",
@@ -256,8 +254,6 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
             _CellObject,
             "CreateOutput"
         ];
-
-        moveToChatInputField @ nbo;
 
         applyHandlerFunction[
             settings,
