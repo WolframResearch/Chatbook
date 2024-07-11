@@ -44,7 +44,6 @@ Notebook[
      ]
     ]
    },
-   PrivateNotebookOptions -> {"ExcludeFromShutdown" -> True},
    ShowCellBracket -> False,
    TaggingRules -> <|
     "ChatNotebookSettings" -> <|"SetCellDingbat" -> False, "WorkspaceChat" -> True|>
@@ -52,6 +51,10 @@ Notebook[
    DefaultNewCellStyle -> "AutoMoveToChatInputField",
    Magnification -> 0.85,
    Background -> GrayLevel[1]
+  ],
+  Cell[
+   StyleData["WorkspaceChatStyleSheetInformation"],
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.4.6.3929684383"|>
   ],
   Cell[
    StyleData["ChatInput"],

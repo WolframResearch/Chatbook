@@ -970,17 +970,25 @@ $settings := Quiet @ Module[ { settings, styleInfo, assoc },
         <| |>
     ];
 
-    styleInfo = Replace[
-        CurrentValue @ { StyleDefinitions, "ChatStyleSheetInformation" },
-        {
-            KeyValuePattern[ TaggingRules -> tags: KeyValuePattern @ { } ] :> Association @ tags,
-            ___ :> <| |>
-        }
-    ];
+    styleInfo = styleSheetInfo @ { "WorkspaceChatStylesheetInformation", "ChatStyleSheetInformation" };
 
     assoc = Association @ Select[ Association /@ { settings, styleInfo }, AssociationQ ];
     If[ AssociationQ @ assoc, KeyDrop[ assoc, "OpenAIKey" ], settings ]
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*styleSheetInfo*)
+styleSheetInfo[ name_String ] := Replace[
+    CurrentValue @ { StyleDefinitions, name },
+    {
+        KeyValuePattern[ TaggingRules -> tags: KeyValuePattern @ { } ] :> Association @ tags,
+        ___ :> <| |>
+    }
+];
+
+styleSheetInfo[ names: { ___String } ] :=
+    Association @ Select[ styleSheetInfo /@ names, AssociationQ ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

@@ -587,7 +587,7 @@ $floatingChatDockedCells = {
 (*Stylesheet Version*)
 
 
-$stylesheetVersion = StringJoin[
+$stylesheetVersion := $stylesheetVersion = StringJoin[
     PacletObject[ File[ $pacletDirectory ] ][ "Version" ],
     ".",
     ToString @ Round @ AbsoluteTime[ ]
