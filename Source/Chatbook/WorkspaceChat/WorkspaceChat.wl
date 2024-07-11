@@ -15,6 +15,10 @@ Needs[ "Wolfram`Chatbook`Common`" ];
     * Create test writer tool
 *)
 
+(* FIXME:
+    * Don't attach to left when it would be offscreen (attach to right instead, or just float it)
+*)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*$WorkspaceChat*)
@@ -26,9 +30,10 @@ $WorkspaceChat = False;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Load Subcontexts*)
-Get[ "Wolfram`Chatbook`WorkspaceChat`Context`"  ];
-Get[ "Wolfram`Chatbook`WorkspaceChat`Evaluate`" ];
-Get[ "Wolfram`Chatbook`WorkspaceChat`UI`"       ];
+Get[ "Wolfram`Chatbook`WorkspaceChat`Context`"            ];
+Get[ "Wolfram`Chatbook`WorkspaceChat`Evaluate`"           ];
+Get[ "Wolfram`Chatbook`WorkspaceChat`ShowCodeAssistance`" ];
+Get[ "Wolfram`Chatbook`WorkspaceChat`UI`"                 ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
