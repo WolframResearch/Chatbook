@@ -47,7 +47,7 @@ $pacletDirectory       = DirectoryName[ $InputFileName, 2 ];
 $iconManifestFile      = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
 $displayFunctionsFile  = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctions.wxf" };
 $styleSheetTarget      = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
-$floatStyleSheetTarget = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Wolfram", "FloatingChat.nb" };
+$floatStyleSheetTarget = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Wolfram", "WorkspaceChat.nb" };
 
 
 
@@ -680,7 +680,7 @@ BuildStylesheets[                       ] := BuildStylesheets @ All;
 BuildStylesheets[ All | Automatic       ] := BuildStylesheets @ $validStylesheetNames;
 BuildStylesheets[ styles: { ___String } ] := AssociationMap[ BuildStylesheets, styles ];
 BuildStylesheets[ "Chatbook"            ] := BuildChatbookStylesheet[ ];
-BuildStylesheets[ "FloatingChat"        ] := BuildFloatingStylesheet[ ];
+BuildStylesheets[ "WorkspaceChat"       ] := BuildFloatingStylesheet[ ];
 
 BuildStylesheets[ style_String ] := Failure[
     "UnknownStyle",
@@ -699,7 +699,7 @@ BuildStylesheets[ other___ ] := Failure[
 ];
 
 
-$validStylesheetNames = { "Chatbook", "FloatingChat" };
+$validStylesheetNames = { "Chatbook", "WorkspaceChat" };
 
 (* ::Section::Closed:: *)
 (*BuildChatbookStylesheet*)

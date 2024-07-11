@@ -16,7 +16,7 @@ Notebook[
    CellInsertionPointCell -> Cell[],
    Selectable -> False,
    WindowSize -> {350, Automatic},
-   WindowMargins -> {{0, Automatic}, {Automatic, 0}},
+   WindowMargins -> {{0, Automatic}, {0, 0}},
    WindowElements -> {"StatusArea", "VerticalScrollBar"},
    WindowFrameElements -> {"CloseBox", "ResizeArea"},
    WindowClickSelect -> True,
@@ -46,7 +46,9 @@ Notebook[
    },
    PrivateNotebookOptions -> {"ExcludeFromShutdown" -> True},
    ShowCellBracket -> False,
-   TaggingRules -> <|"ChatNotebookSettings" -> <|"WorkspaceChat" -> True|>|>,
+   TaggingRules -> <|
+    "ChatNotebookSettings" -> <|"SetCellDingbat" -> False, "WorkspaceChat" -> True|>
+   |>,
    DefaultNewCellStyle -> "AutoMoveToChatInputField",
    Magnification -> 0.85,
    Background -> GrayLevel[1]
@@ -54,14 +56,16 @@ Notebook[
   Cell[
    StyleData["ChatInput"],
    Selectable -> True,
+   CellDingbat -> None,
    ShowCellBracket -> False,
-   CellMargins -> {{40, 20}, {0, Inherited}}
+   CellMargins -> {{10, 10}, {0, 10}}
   ],
   Cell[
    StyleData["ChatOutput"],
    Selectable -> True,
+   CellDingbat -> None,
    ShowCellBracket -> False,
-   CellMargins -> {{40, 20}, {Inherited, 0}}
+   CellMargins -> {{10, 10}, {10, 0}}
   ],
   Cell[
    StyleData["ChatInputField"],
