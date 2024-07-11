@@ -18,11 +18,11 @@ Cell[
     PrivateNotebookOptions -> { "ExcludeFromShutdown" -> True },
     Selectable             -> False,
     ShowCellBracket        -> False,
-    TaggingRules           -> <| "ChatNotebookSettings" -> <| "WorkspaceChat" -> True |> |>,
+    TaggingRules           -> <| "ChatNotebookSettings" -> <| "SetCellDingbat" -> False, "WorkspaceChat" -> True |> |>,
     WindowClickSelect      -> True,
     WindowElements         -> { "StatusArea", "VerticalScrollBar" },
     WindowFrameElements    -> { "CloseBox", "ResizeArea" },
-    WindowMargins          -> { { 0, Automatic }, { Automatic, 0 } },
+    WindowMargins          -> { { 0, Automatic }, { 0, 0 } },
     WindowSize             -> { $sideChatWidth, Automatic },
     WindowTitle            -> "Code Assistance Chat",
     WindowToolbars         -> { }
@@ -35,8 +35,9 @@ Cell[
 
 Cell[
     StyleData[ "ChatInput" ],
+    CellDingbat     -> None,
     Selectable      -> True,
-    CellMargins     -> { { 40, 20 }, { 0, Inherited } },
+    CellMargins     -> { { 10, 10 }, { 0, 10 } },
     ShowCellBracket -> False
 ]
 
@@ -47,7 +48,8 @@ Cell[
 
 Cell[
     StyleData[ "ChatOutput" ],
-    CellMargins     -> { { 40, 20 }, { Inherited, 0 } },
+    CellDingbat     -> None,
+    CellMargins     -> { { 10, 10 }, { 10, 0 } },
     ShowCellBracket -> False,
     Selectable      -> True
 ]
