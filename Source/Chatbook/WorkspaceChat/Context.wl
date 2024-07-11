@@ -30,6 +30,7 @@ Use this to determine where the user is in the notebook.
 (* ::Subsection::Closed:: *)
 (*getWorkspacePrompt*)
 getWorkspacePrompt // beginDefinition;
+
 getWorkspacePrompt[ settings_Association ] :=
     If[ TrueQ @ $WorkspaceChat,
         getContextFromSelection[ $evaluationNotebook, settings ],
@@ -65,7 +66,7 @@ getContextFromSelection[ chatNB_NotebookObject, nbo_NotebookObject, settings_Ass
 
         marked = ConfirmMatch[ insertSelectionIndicator @ { before, selected, after }, { ___Cell }, "Marked" ];
         (* FIXME: set appropriate content types and adhere to existing token budgets *)
-        string = ConfirmBy[ CellToString[ Notebook @ marked, "ContentTypes" -> { "Text", "Image" } ], StringQ, "String" ];
+        string = ConfirmBy[ CellToString[ Notebook @ marked, "ContentTypes" -> { "Text" } ], StringQ, "String" ];
         applyNotebookContextTemplate @ string
     ],
     throwInternalFailure
@@ -173,6 +174,7 @@ selectContextCells0 // endDefinition;
 (* ::Subsection::Closed:: *)
 (*getUserNotebook*)
 getUserNotebook // beginDefinition;
+getUserNotebook[ ] := FirstCase[ userNotebooks[ ], _NotebookObject, None ];
 getUserNotebook[ chatNB_NotebookObject ] := FirstCase[ userNotebooks @ chatNB, _NotebookObject, None ];
 getUserNotebook // endDefinition;
 
@@ -181,20 +183,48 @@ getUserNotebook // endDefinition;
 (*userNotebooks*)
 userNotebooks // beginDefinition;
 
-userNotebooks[ chatNB_NotebookObject ] := DeleteCases[ userNotebooks[ ], chatNB ];
-userNotebooks[ ] := userNotebooks @ Notebooks[ ];
+userNotebooks[ chatNB_NotebookObject ] :=
+    DeleteCases[ userNotebooks[ ], chatNB ];
+
+userNotebooks[ ] :=
+    userNotebooks @ Notebooks[ ];
 
 userNotebooks[ notebooks: { ___NotebookObject } ] := Enclose[
-    Module[ { frames, assoc, filtered },
-        frames = CurrentValue[ notebooks, WindowFrame ];
-        assoc = ConfirmBy[ AssociationThread[ notebooks -> frames ], AssociationQ, "Association" ];
-        filtered = DeleteCases[ assoc, "Palette" ];
-        ConfirmMatch[ Keys @ filtered, { ___NotebookObject }, "Result" ]
+    Module[ { noPalettes, visible, included },
+
+        noPalettes = ConfirmMatch[
+            selectByCurrentValue[ notebooks, WindowFrame, # =!= "Palette" & ],
+            { ___NotebookObject },
+            "NoPalettes"
+        ];
+
+        visible = ConfirmMatch[
+            selectByCurrentValue[ noPalettes, Visible, TrueQ ],
+            { ___NotebookObject },
+            "Visible"
+        ];
+
+        included = ConfirmMatch[
+            selectByCurrentValue[ visible, { TaggingRules, "ChatNotebookSettings" }, includedTagsQ ],
+            { ___NotebookObject },
+            "NotExcluded"
+        ];
+
+        included
     ],
     throwInternalFailure
 ];
 
 userNotebooks // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*includedTagsQ*)
+includedTagsQ // beginDefinition;
+includedTagsQ[ KeyValuePattern[ "ExcludeFromChat" -> True ] ] := False;
+includedTagsQ[ KeyValuePattern[ "WorkspaceChat" -> True ] ] := False;
+includedTagsQ[ _ ] := True;
+includedTagsQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
