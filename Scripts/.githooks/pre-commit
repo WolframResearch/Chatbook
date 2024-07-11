@@ -11,7 +11,9 @@ if [ "$changed" != "" ]; then
 
     for sourceFilePath in $changed
     do
-    git add $sourceFilePath
+    if [ -f "$sourceFilePath" ]; then
+        git add "$sourceFilePath"
+    fi
     done;
 
 fi
