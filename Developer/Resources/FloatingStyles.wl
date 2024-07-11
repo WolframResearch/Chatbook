@@ -15,7 +15,6 @@ Cell[
     DefaultNewCellStyle    -> "AutoMoveToChatInputField",
     DockedCells            -> $floatingChatDockedCells,
     Magnification          -> 0.85,
-    PrivateNotebookOptions -> { "ExcludeFromShutdown" -> True },
     Selectable             -> False,
     ShowCellBracket        -> False,
     TaggingRules           -> <| "ChatNotebookSettings" -> <| "SetCellDingbat" -> False, "WorkspaceChat" -> True |> |>,
@@ -26,6 +25,12 @@ Cell[
     WindowSize             -> { $sideChatWidth, Automatic },
     WindowTitle            -> "Code Assistance Chat",
     WindowToolbars         -> { }
+]
+
+
+Cell[
+    StyleData[ "WorkspaceChatStyleSheetInformation" ],
+    TaggingRules -> <| "WorkspaceChatStyleSheetVersion" -> $stylesheetVersion |>
 ]
 
 
