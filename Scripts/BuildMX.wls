@@ -33,6 +33,18 @@ $mxFile = cStr @ FileNameJoin @ {
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*codeParse*)
+codeParse[ file_ ] := codeParse[ file ] =
+    cp`CodeParse @ Flatten @ File @ file;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*codeParseIndexed*)
+codeParseIndexed[ file_ ] := codeParseIndexed[ file ] =
+    cp`CodeParse[ Flatten @ File @ file, "SourceConvention" -> "SourceCharacterIndex" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*copyTemporary*)
 copyTemporary[ dir_ ] :=
     Enclose @ Module[ { tmp, extFiles },
@@ -69,7 +81,7 @@ expandTags[ root_, file_ ] :=
         tags = ConfirmMatch[ getNewTags[ root, file ], { ___String }, "Tags" ];
         If[ tags === { }, Throw @ file ];
         cicd`ConsoleLog[ "\t" <> ToString @ file ];
-        pos = ConfirmMatch[ getPos @ file, { { _Integer, _Integer }.. }, "Positions" ];
+        pos = ConfirmMatch[ getTagPos @ file, { { _Integer, _Integer }.. }, "Positions" ];
         ConfirmAssert[ Length @ tags == Length @ pos, "LengthCheck" ];
         string = ConfirmBy[ ReadString @ file, StringQ, "FileContent" ];
         newString = ConfirmBy[ StringReplacePart[ string, tags, pos ], StringQ, "NewFileContent" ];
@@ -85,7 +97,7 @@ getNewTags[ root_, file_ ] :=
         relativeFile = StringReplace[ ResourceFunction[ "RelativePath" ][ root, file ], "\\" -> "/" ];
 
         Cases[
-            cp`CodeParse @ File @ file,
+            codeParse @ file,
             ResourceFunction[ "ASTPattern" ][
                 HoldPattern @ Alternatives[
                     (Confirm|ConfirmAssert)[ _, $tag1_String ],
@@ -114,9 +126,9 @@ $tagTemplate = StringTemplate[ "\"`Tag`@@`File`:`Line1`,`Column1`-`Line2`,`Colum
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*getPos*)
-getPos[ file_ ] := Cases[
-    cp`CodeParse[ File @ file, "SourceConvention" -> "SourceCharacterIndex" ],
+(*getTagPos*)
+getTagPos[ file_ ] := Cases[
+    codeParseIndexed @ file,
     ResourceFunction[ "ASTPattern" ][
         HoldPattern[
             Alternatives[
