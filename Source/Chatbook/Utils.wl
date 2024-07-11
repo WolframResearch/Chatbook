@@ -32,6 +32,12 @@ importResourceFunction[ relativeTimeString, "RelativeTimeString" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*SelectByCurrentValue*)
+(* https://resources.wolframcloud.com/FunctionRepository/resources/SelectByCurrentValue *)
+importResourceFunction[ selectByCurrentValue, "SelectByCurrentValue" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Strings*)
 
 (* ::**************************************************************************************************************:: *)
