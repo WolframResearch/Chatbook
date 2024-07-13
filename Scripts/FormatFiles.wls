@@ -98,7 +98,8 @@ getFiles[ root_, None ] := FileNames[ "*.nb", root, Infinity ];
 getFiles[ root_, ignore_ ] :=
     getFiles[ root, ignore, getNotebookArgs[ ] ];
 
-getFiles[ root_, ignore_, files: { ___String? FileExistsQ } ] := files;
+getFiles[ root_, ignore_, files: { ___String } ] :=
+    Select[ files, FileExistsQ ];
 
 getFiles[ root_, ignore_, _ ] :=
     Select[ FileNames[ { "*.nb", "*.wlt" }, root, Infinity ],
@@ -106,11 +107,8 @@ getFiles[ root_, ignore_, _ ] :=
     ];
 
 getNotebookArgs[ ] := getNotebookArgs @ getArg[ "files", None ];
-
 getNotebookArgs[ nbs_String ] := getNotebookArgs @ StringSplit[ nbs, "\n" ];
-
-getNotebookArgs[ { files___String? FileExistsQ } ] := { files };
-
+getNotebookArgs[ files: { __String } ] := Select[ files, FileExistsQ ];
 getNotebookArgs[ ___ ] := Missing[ "NotFound" ];
 
 (* ::**************************************************************************************************************:: *)

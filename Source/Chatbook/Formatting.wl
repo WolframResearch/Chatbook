@@ -170,12 +170,13 @@ formatToolCall // endDefinition;
 
 formatToolCall0 // beginDefinition;
 
-formatToolCall0[ string_String, as_Association ] := Panel[
-    makeToolCallBoxLabel @ as,
-    BaseStyle    -> "Text",
-    Background   -> GrayLevel[ 0.95 ],
-    ImageMargins -> 10
-];
+formatToolCall0[ string_String, as_Association ] :=
+    Panel[
+        makeToolCallBoxLabel @ as,
+        BaseStyle    -> { "Text", LineBreakWithin -> False },
+        Background   -> GrayLevel[ 0.95 ],
+        ImageMargins -> { { 0, 0 }, { 10, 10 } }
+    ];
 
 formatToolCall0[ string_String, failed_Failure ] := Framed[
     failed,
@@ -734,7 +735,10 @@ insertCodeBelow // beginDefinition;
 insertCodeBelow[ code_ ] := insertCodeBelow[ code, False ];
 
 insertCodeBelow[ cell_CellObject, evaluate_ ] :=
-    insertCodeBelow[ getCodeBlockContent @ cell, evaluate ];
+    If[ TrueQ @ CurrentChatSettings[ cell, "WorkspaceChat" ],
+        insertCodeInUserNotebook[ parentNotebook @ cell, getCodeBlockContent @ cell, evaluate ],
+        insertCodeBelow[ getCodeBlockContent @ cell, evaluate ]
+    ];
 
 insertCodeBelow[ cell_Cell, evaluate_ ] :=
     Module[ { cellObj, nbo },
@@ -751,6 +755,39 @@ insertCodeBelow[ string_String, evaluate_ ] :=
     insertCodeBelow[ reparseCodeBoxes @ Cell[ BoxData @ string, "Input" ], evaluate ];
 
 insertCodeBelow // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*insertCodeInUserNotebook*)
+insertCodeInUserNotebook // beginDefinition;
+
+insertCodeInUserNotebook[ chatNB_NotebookObject, cell_Cell, evaluate_ ] := Enclose[
+    Module[ { nbo },
+        nbo = ConfirmMatch[ getNotebookForCodeInsertion @ chatNB, _NotebookObject, "UserNotebook" ];
+        SelectionMove[ nbo, After, Cell, AutoScroll -> True ];
+        SetSelectedNotebook @ nbo;
+        NotebookWrite[ nbo, preprocessInsertedCell @ cell, All ];
+        If[ TrueQ @ evaluate,
+            selectionEvaluateCreateCell @ nbo,
+            SelectionMove[ nbo, After, CellContents ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+insertCodeInUserNotebook[ chatNB_NotebookObject, code_String, evaluate_ ] :=
+    insertCodeInUserNotebook[ chatNB, reparseCodeBoxes @ Cell[ BoxData @ code, "Input" ], evaluate ];
+
+insertCodeInUserNotebook // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getNotebookForCodeInsertion*)
+getNotebookForCodeInsertion // beginDefinition;
+getNotebookForCodeInsertion[ chatNB_NotebookObject ] := getNotebookForCodeInsertion[ chatNB, getUserNotebook @ chatNB ];
+getNotebookForCodeInsertion[ _, userNB_NotebookObject ] := userNB;
+getNotebookForCodeInsertion[ _, None ] := CreateNotebook[ ];
+getNotebookForCodeInsertion // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1409,7 +1446,7 @@ makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ]
     If[ MissingQ @ icon,
         Nothing,
         {
-            Spacer[ 5 ],
+            Spacer[ 0 ],
             toolCallIconPane @ icon
         }
     ]
@@ -1421,7 +1458,7 @@ makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Row @ Flatten @ {
     If[ MissingQ @ icon,
         Nothing,
         {
-            Spacer[ 5 ],
+            Spacer[ 0 ],
             toolCallIconPane @ icon
         }
     ]

@@ -32,7 +32,7 @@ sendFeedback[ cell_CellObject, positive: True|False ] := Enclose[
         data = ConfirmBy[ createFeedbackData[ cell, positive ], AssociationQ, "FeedbackData" ];
         ConfirmMatch[ createFeedbackDialog[ cell, data ], _NotebookObject, "FeedbackDialog" ]
     ],
-    throwInternalFailure[ sendFeedback[ cell, positive ], ## ] &
+    throwInternalFailure
 ];
 
 sendFeedback // endDefinition;
@@ -50,7 +50,7 @@ createFeedbackData[ cell_CellObject, positive: True|False ] := Enclose[
         data       = ConfirmBy[ BinaryDeserialize @ wxf, AssociationQ, "Data" ];
         chatData   = ConfirmBy[ Lookup[ data, "Data" ], AssociationQ, "ChatData" ];
         systemData = ConfirmBy[ $debugData, AssociationQ, "SystemData" ];
-        settings   = ConfirmBy[ Association[ $settingsData,  KeyDrop[ data, "Data" ] ], AssociationQ, "SettingsData" ];
+        settings   = ConfirmBy[ Association[ $settingsData, KeyDrop[ data, "Data" ] ], AssociationQ, "SettingsData" ];
         image      = ConfirmBy[ cellImage @ cell, ImageQ, "Image" ];
 
         <|
@@ -62,7 +62,7 @@ createFeedbackData[ cell_CellObject, positive: True|False ] := Enclose[
             "ContentID" -> contentID @ { chatData, settings, systemData }
         |>
     ],
-    throwInternalFailure[ createFeedbackData[ cell, positive ], ##1 ] &
+    throwInternalFailure
 ];
 
 createFeedbackData // endDefinition;
@@ -82,7 +82,7 @@ cellImage[ cellObject_CellObject ] := Enclose[
         (* cellImage[ cellObject ] = image *)
         image
     ],
-    throwInternalFailure[ cellImage @ cellObject, ## ] &
+    throwInternalFailure
 ];
 
 cellImage // endDefinition;

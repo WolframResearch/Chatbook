@@ -14,6 +14,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$ChatNotebookEvaluation;
 `$ChatPost;
 `$ChatPre;
+`$CurrentChatSettings;
 `$DefaultChatHandlerFunctions;
 `$DefaultChatProcessingFunctions;
 `$DefaultModel;
@@ -46,6 +47,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `SandboxLinguisticAssistantData;
 `SetModel;
 `SetToolOptions;
+`ShowCodeAssistance;
 `StringToBoxes;
 `WriteChatOutputCell;
 
@@ -128,6 +130,7 @@ Protect[
     $AutomaticAssistance,
     $ChatbookContexts,
     $ChatNotebookEvaluation,
+    $CurrentChatSettings,
     $DefaultChatHandlerFunctions,
     $DefaultChatProcessingFunctions,
     $DefaultModel,
@@ -157,6 +160,7 @@ Protect[
     SandboxLinguisticAssistantData,
     SetModel,
     SetToolOptions,
+    ShowCodeAssistance,
     StringToBoxes,
     WriteChatOutputCell
 ];

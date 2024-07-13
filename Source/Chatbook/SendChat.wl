@@ -63,7 +63,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         $chatIndicatorSymbol = chatIndicatorSymbol @ settings;
 
         If[ TrueQ @ settings[ "EnableChatGroupSettings" ],
-            AppendTo[ settings, "ChatGroupSettings" -> getChatGroupSettings @ evalCell ]
+            AppendTo[ settings, "ChatGroupSettings" -> getChatGroupSettings @ evalCell ];
+            $currentChatSettings = settings;
         ];
 
         If[ ! settings[ "IncludeHistory" ], cells = { evalCell } ];
@@ -84,7 +85,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             If[ AssociationQ @ settings[ "LLMEvaluator" ],
                 settings[ "LLMEvaluator" ] = Association[ settings[ "LLMEvaluator" ], persona ],
                 settings = Association[ settings, persona ]
-            ]
+            ];
+            $currentChatSettings = settings;
         ];
 
         AppendTo[ settings, "Data" -> data ];
@@ -151,7 +153,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
 
         task
     ],
-    throwInternalFailure[ sendChat[ evalCell, nbo, settings0 ], ## ] &
+    throwInternalFailure
 ];
 
 
@@ -180,7 +182,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
         $chatIndicatorSymbol = chatIndicatorSymbol @ settings;
 
         If[ TrueQ @ settings[ "EnableChatGroupSettings" ],
-            AppendTo[ settings, "ChatGroupSettings" -> getChatGroupSettings @ evalCell ]
+            AppendTo[ settings, "ChatGroupSettings" -> getChatGroupSettings @ evalCell ];
+            $currentChatSettings = settings;
         ];
 
         id  = Lookup[ settings, "ID" ];
@@ -208,7 +211,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
             If[ AssociationQ @ settings[ "LLMEvaluator" ],
                 settings[ "LLMEvaluator" ] = Association[ settings[ "LLMEvaluator" ], persona ],
                 settings = Association[ settings, persona ]
-            ]
+            ];
+            $currentChatSettings = settings;
         ];
 
         AppendTo[ settings, "Data" -> data ];
@@ -275,7 +279,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] := catchTopAs[ ChatbookAction ] @ Enclos
 
         task
     ],
-    throwInternalFailure[ sendChat[ evalCell, nbo, settings0 ], ## ] &
+    throwInternalFailure
 ];
 
 sendChat // endDefinition;
@@ -892,7 +896,7 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
             "ReformatTextData"
         ];
 
-        write = Cell[ TextData @ reformatted, Background -> None ];
+        write = Cell[ TextData @ reformatted, "None", Background -> None ];
         nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
 
         container[ "DynamicContent" ] = dynamic;
@@ -906,7 +910,7 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
             ];
             splitDynamicTaskFunction @ NotebookWrite[
                 System`NotebookLocationSpecifier[ boxObject, "Before" ],
-                StyleBox[ "\n" ],
+                Cell[ "\n", "None" ],
                 None,
                 AutoScroll -> False
             ];
@@ -916,7 +920,7 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
         $lastDynamicUpdate = AbsoluteTime[ ];
 
     ],
-    throwInternalFailure[ splitDynamicContent[ container, { static, dynamic }, cell, uuid ], ## ] &
+    throwInternalFailure
 ];
 
 (* There's nothing we can write as static content yet: *)
@@ -1680,12 +1684,13 @@ activeAIAssistantCell[
             reformat  = dynamicAutoFormatQ @ settings,
             task      = Lookup[ settings, "Task" ],
             formatter = getFormattingFunction @ settings,
-            cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ]
+            cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ],
+            outer     = If[ TrueQ @ $WorkspaceChat, TemplateBox[ { # }, "AssistantMessageBox" ] &, # & ]
         },
         Module[ { x = 0 },
             ClearAttributes[ { x, cellObject }, Temporary ];
             Cell[
-                BoxData @ ToBoxes @
+                BoxData @ outer @ ToBoxes @
                     If[ TrueQ @ reformat,
                         Dynamic[
                             Refresh[
@@ -1746,10 +1751,11 @@ activeAIAssistantCell[
             task      = Lookup[ settings, "Task" ],
             uuid      = container[ "UUID" ],
             formatter = getFormattingFunction @ settings,
-            cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ]
+            cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ],
+            outer     = If[ TrueQ @ $WorkspaceChat, TemplateBox[ { # }, "AssistantMessageBox" ] &, # & ]
         },
         Cell[
-            BoxData @ TagBox[
+            BoxData @ outer @ TagBox[
                 ToBoxes @ Dynamic[
                     $dynamicTrigger;
                     (* `$dynamicTrigger` is used to precisely control when the dynamic updates, otherwise we can get an
@@ -2050,9 +2056,6 @@ scrollOutputQ[ settings_Association ] :=
                      $$unspecified :> sufficientVersionQ[ "TrackScrollingWhenPlaced" ]
             ];
 
-scrollOutputQ[ settings_Association? scrollOutputQ, cell_CellObject ] :=
-    cellInformation[ cell ][ "CursorPosition" ] === "BelowCell";
-
 scrollOutputQ[ settings_Association, cell_ ] := False;
 
 scrollOutputQ // endDefinition;
@@ -2078,7 +2081,7 @@ reformatCell // beginDefinition;
 
 (* FIXME: why does this actually need UsingFrontEnd here? *)
 reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uuid_ ] := usingFrontEnd @ Enclose[
-    Module[ { formatter, toolFormatter, content, rules, dingbat },
+    Module[ { formatter, toolFormatter, content, rules, dingbat, outer },
 
         formatter = Confirm[ getFormattingFunction @ settings, "GetFormattingFunction" ];
         toolFormatter = Confirm[ getToolFormatter @ settings, "GetToolFormatter" ];
@@ -2102,8 +2105,18 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
 
         dingbat = makeOutputDingbat @ settings;
 
+        outer = If[ TrueQ @ $WorkspaceChat,
+                    TextData @ {
+                        Cell[
+                            BoxData @ TemplateBox[ { Cell[ #, Background -> None ] }, "AssistantMessageBox" ],
+                            Background -> None
+                        ]
+                    } &,
+                    # &
+                ];
+
         Cell[
-            content,
+            outer @ content,
             If[ TrueQ @ $AutomaticAssistance,
                 Switch[ tag,
                         "[ERROR]"  , "AssistantOutputError",
