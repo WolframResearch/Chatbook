@@ -33,6 +33,12 @@ Begin[ "`Private`" ];
 
 $sideChatWidth = 350;
 
+$workspaceDefaultSettings = <|
+    "SetCellDingbat" -> False,
+    "TabbedOutput"   -> False, (* FIXME: this is temporarily set to False to avoid some bad bugs *)
+    "WorkspaceChat"  -> True
+|>;
+
 
 (* ::Subsection::Closed:: *)
 (*Paths*)

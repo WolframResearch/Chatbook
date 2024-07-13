@@ -1684,12 +1684,13 @@ activeAIAssistantCell[
             reformat  = dynamicAutoFormatQ @ settings,
             task      = Lookup[ settings, "Task" ],
             formatter = getFormattingFunction @ settings,
-            cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ]
+            cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ],
+            outer     = If[ TrueQ @ $WorkspaceChat, TemplateBox[ { # }, "AssistantMessageBox" ] &, # & ]
         },
         Module[ { x = 0 },
             ClearAttributes[ { x, cellObject }, Temporary ];
             Cell[
-                BoxData @ ToBoxes @
+                BoxData @ outer @ ToBoxes @
                     If[ TrueQ @ reformat,
                         Dynamic[
                             Refresh[
@@ -1750,10 +1751,11 @@ activeAIAssistantCell[
             task      = Lookup[ settings, "Task" ],
             uuid      = container[ "UUID" ],
             formatter = getFormattingFunction @ settings,
-            cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ]
+            cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ],
+            outer     = If[ TrueQ @ $WorkspaceChat, TemplateBox[ { # }, "AssistantMessageBox" ] &, # & ]
         },
         Cell[
-            BoxData @ TagBox[
+            BoxData @ outer @ TagBox[
                 ToBoxes @ Dynamic[
                     $dynamicTrigger;
                     (* `$dynamicTrigger` is used to precisely control when the dynamic updates, otherwise we can get an
@@ -2079,7 +2081,7 @@ reformatCell // beginDefinition;
 
 (* FIXME: why does this actually need UsingFrontEnd here? *)
 reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uuid_ ] := usingFrontEnd @ Enclose[
-    Module[ { formatter, toolFormatter, content, rules, dingbat },
+    Module[ { formatter, toolFormatter, content, rules, dingbat, outer },
 
         formatter = Confirm[ getFormattingFunction @ settings, "GetFormattingFunction" ];
         toolFormatter = Confirm[ getToolFormatter @ settings, "GetToolFormatter" ];
@@ -2103,8 +2105,18 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
 
         dingbat = makeOutputDingbat @ settings;
 
+        outer = If[ TrueQ @ $WorkspaceChat,
+                    TextData @ {
+                        Cell[
+                            BoxData @ TemplateBox[ { Cell[ #, Background -> None ] }, "AssistantMessageBox" ],
+                            Background -> None
+                        ]
+                    } &,
+                    # &
+                ];
+
         Cell[
-            content,
+            outer @ content,
             If[ TrueQ @ $AutomaticAssistance,
                 Switch[ tag,
                         "[ERROR]"  , "AssistantOutputError",

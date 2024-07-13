@@ -84,6 +84,12 @@ attachToLeft[ source_NotebookObject, current_NotebookObject ] := Enclose[
         bottom = margins[[ 2, 1 ]];
         top    = margins[[ 2, 2 ]];
 
+        If[ NonPositive[ left - $workspaceChatWidth ],
+            left   = $workspaceChatWidth;
+            bottom = 0;
+            top    = 0;
+        ];
+
         SetOptions[
             current,
             WindowMargins -> { { left - $workspaceChatWidth, Automatic }, { bottom, top } },

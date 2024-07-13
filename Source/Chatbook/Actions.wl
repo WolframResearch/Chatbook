@@ -61,6 +61,7 @@ ChatCellEvaluate[ args___ ] :=
 ChatbookAction[ "AccentIncludedCells"        , args___ ] := catchMine @ accentIncludedCells @ args;
 ChatbookAction[ "AIAutoAssist"               , args___ ] := catchMine @ AIAutoAssist @ args;
 ChatbookAction[ "Ask"                        , args___ ] := catchMine @ AskChat @ args;
+ChatbookAction[ "AssistantMessageLabel"      , args___ ] := catchMine @ assistantMessageLabel @ args;
 ChatbookAction[ "AttachCodeButtons"          , args___ ] := catchMine @ AttachCodeButtons @ args;
 ChatbookAction[ "AttachWorkspaceChatInput"   , args___ ] := catchMine @ attachWorkspaceChatInput @ args;
 ChatbookAction[ "CopyChatObject"             , args___ ] := catchMine @ CopyChatObject @ args;
@@ -87,6 +88,7 @@ ChatbookAction[ "TabRight"                   , args___ ] := catchMine @ TabRight
 ChatbookAction[ "ToggleFormatting"           , args___ ] := catchMine @ ToggleFormatting @ args;
 ChatbookAction[ "ToolManage"                 , args___ ] := catchMine @ ToolManage @ args;
 ChatbookAction[ "UpdateDynamics"             , args___ ] := catchMine @ updateDynamics @ args;
+ChatbookAction[ "UserMessageLabel"           , args___ ] := catchMine @ userMessageLabel @ args;
 ChatbookAction[ "WidgetSend"                 , args___ ] := catchMine @ WidgetSend @ args;
 ChatbookAction[ args___                                ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
 
