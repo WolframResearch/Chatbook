@@ -33,6 +33,12 @@ Begin[ "`Private`" ];
 
 $sideChatWidth = 350;
 
+$workspaceDefaultSettings = <|
+    "SetCellDingbat" -> False,
+    "TabbedOutput"   -> False, (* FIXME: this is temporarily set to False to avoid some bad bugs *)
+    "WorkspaceChat"  -> True
+|>;
+
 
 (* ::Subsection::Closed:: *)
 (*Paths*)
@@ -47,7 +53,7 @@ $pacletDirectory       = DirectoryName[ $InputFileName, 2 ];
 $iconManifestFile      = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
 $displayFunctionsFile  = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctions.wxf" };
 $styleSheetTarget      = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
-$floatStyleSheetTarget = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Wolfram", "FloatingChat.nb" };
+$floatStyleSheetTarget = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Wolfram", "WorkspaceChat.nb" };
 
 
 
@@ -587,7 +593,7 @@ $floatingChatDockedCells = {
 (*Stylesheet Version*)
 
 
-$stylesheetVersion = StringJoin[
+$stylesheetVersion := $stylesheetVersion = StringJoin[
     PacletObject[ File[ $pacletDirectory ] ][ "Version" ],
     ".",
     ToString @ Round @ AbsoluteTime[ ]
@@ -680,7 +686,7 @@ BuildStylesheets[                       ] := BuildStylesheets @ All;
 BuildStylesheets[ All | Automatic       ] := BuildStylesheets @ $validStylesheetNames;
 BuildStylesheets[ styles: { ___String } ] := AssociationMap[ BuildStylesheets, styles ];
 BuildStylesheets[ "Chatbook"            ] := BuildChatbookStylesheet[ ];
-BuildStylesheets[ "FloatingChat"        ] := BuildFloatingStylesheet[ ];
+BuildStylesheets[ "WorkspaceChat"       ] := BuildFloatingStylesheet[ ];
 
 BuildStylesheets[ style_String ] := Failure[
     "UnknownStyle",
@@ -699,7 +705,7 @@ BuildStylesheets[ other___ ] := Failure[
 ];
 
 
-$validStylesheetNames = { "Chatbook", "FloatingChat" };
+$validStylesheetNames = { "Chatbook", "WorkspaceChat" };
 
 (* ::Section::Closed:: *)
 (*BuildChatbookStylesheet*)

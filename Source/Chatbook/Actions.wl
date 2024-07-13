@@ -61,6 +61,7 @@ ChatCellEvaluate[ args___ ] :=
 ChatbookAction[ "AccentIncludedCells"        , args___ ] := catchMine @ accentIncludedCells @ args;
 ChatbookAction[ "AIAutoAssist"               , args___ ] := catchMine @ AIAutoAssist @ args;
 ChatbookAction[ "Ask"                        , args___ ] := catchMine @ AskChat @ args;
+ChatbookAction[ "AssistantMessageLabel"      , args___ ] := catchMine @ assistantMessageLabel @ args;
 ChatbookAction[ "AttachCodeButtons"          , args___ ] := catchMine @ AttachCodeButtons @ args;
 ChatbookAction[ "AttachWorkspaceChatInput"   , args___ ] := catchMine @ attachWorkspaceChatInput @ args;
 ChatbookAction[ "CopyChatObject"             , args___ ] := catchMine @ CopyChatObject @ args;
@@ -74,6 +75,7 @@ ChatbookAction[ "ExplodeInPlace"             , args___ ] := catchMine @ ExplodeI
 ChatbookAction[ "InsertCodeBelow"            , args___ ] := catchMine @ insertCodeBelow @ args;
 ChatbookAction[ "InsertInlineReference"      , args___ ] := catchMine @ InsertInlineReference @ args;
 ChatbookAction[ "MakeWorkspaceChatDockedCell", args___ ] := catchMine @ makeWorkspaceChatDockedCell @ args;
+ChatbookAction[ "MoveToChatInputField"       , args___ ] := catchMine @ moveToChatInputField @ args;
 ChatbookAction[ "OpenChatBlockSettings"      , args___ ] := catchMine @ OpenChatBlockSettings @ args;
 ChatbookAction[ "OpenChatMenu"               , args___ ] := catchMine @ OpenChatMenu @ args;
 ChatbookAction[ "PersonaManage"              , args___ ] := catchMine @ PersonaManage @ args;
@@ -86,6 +88,7 @@ ChatbookAction[ "TabRight"                   , args___ ] := catchMine @ TabRight
 ChatbookAction[ "ToggleFormatting"           , args___ ] := catchMine @ ToggleFormatting @ args;
 ChatbookAction[ "ToolManage"                 , args___ ] := catchMine @ ToolManage @ args;
 ChatbookAction[ "UpdateDynamics"             , args___ ] := catchMine @ updateDynamics @ args;
+ChatbookAction[ "UserMessageLabel"           , args___ ] := catchMine @ userMessageLabel @ args;
 ChatbookAction[ "WidgetSend"                 , args___ ] := catchMine @ WidgetSend @ args;
 ChatbookAction[ args___                                ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
 
@@ -380,46 +383,49 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
     withChatState @ EvaluateChatInput[ evalCell, nbo, resolveAutoSettings @ currentChatSettings @ evalCell ];
 
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
-    withChatState @ Block[ { $AutomaticAssistance = False, $aborted = False },
-        $lastCellObject     = None;
-        $lastChatString     = None;
-        $lastMessages       = None;
-        $nextTaskEvaluation = None;
-        $enableLLMServices  = settings[ "EnableLLMServices" ];
-        clearMinimizedChats @ nbo;
+    withChatStateAndFEObjects[
+        { evalCell, nbo },
+        Block[ { $AutomaticAssistance = False, $aborted = False },
+            $lastCellObject     = None;
+            $lastChatString     = None;
+            $lastMessages       = None;
+            $nextTaskEvaluation = None;
+            $enableLLMServices  = settings[ "EnableLLMServices" ];
+            clearMinimizedChats @ nbo;
 
-        (* Send chat while listening for an abort: *)
-        CheckAbort[
-            sendChat[ evalCell, nbo, settings ];
-            waitForLastTask[ ]
-            ,
-            (* The user has issued an abort: *)
-            $aborted = True;
-            (* Clean up the current chat evaluation: *)
-            With[ { cell = $lastCellObject },
-                If[ MatchQ[ cell, _CellObject ],
-                    StopChat @ cell,
-                    removeTask @ $lastTask
+            (* Send chat while listening for an abort: *)
+            CheckAbort[
+                sendChat[ evalCell, nbo, settings ];
+                waitForLastTask[ ]
+                ,
+                (* The user has issued an abort: *)
+                $aborted = True;
+                (* Clean up the current chat evaluation: *)
+                With[ { cell = $lastCellObject },
+                    If[ MatchQ[ cell, _CellObject ],
+                        StopChat @ cell,
+                        removeTask @ $lastTask
+                    ]
                 ]
-            ]
-            ,
-            PropagateAborts -> False
-        ];
-
-        blockChatObject[
-            If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
-                With[
-                    {
-                        chat = constructChatObject @ Append[
-                            $lastMessages,
-                            <| "Role" -> "Assistant", "Content" -> $lastChatString |>
-                        ]
-                    },
-                    applyChatPost[ chat, settings, nbo, $aborted ]
-                ],
-                applyChatPost[ None, settings, nbo, $aborted ];
-                Null
+                ,
+                PropagateAborts -> False
             ];
+
+            blockChatObject[
+                If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
+                    With[
+                        {
+                            chat = constructChatObject @ Append[
+                                $lastMessages,
+                                <| "Role" -> "Assistant", "Content" -> $lastChatString |>
+                            ]
+                        },
+                        applyChatPost[ chat, settings, nbo, $aborted ]
+                    ],
+                    applyChatPost[ None, settings, nbo, $aborted ];
+                    Null
+                ];
+            ]
         ]
     ];
 
@@ -521,6 +527,9 @@ ensureChatOutputCell[ cell_CellObject, new_CellObject? chatOutputCellQ ] :=
 ensureChatOutputCell[ cell_, new_CellObject? chatOutputCellQ ] :=
     ensureChatOutputCell[ new ] = new;
 
+ensureChatOutputCell[ cell_, None ] :=
+    None;
+
 ensureChatOutputCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -615,8 +624,9 @@ StopChat[ cell_CellObject ] :=
     ];
 
 StopChat[ cell0_CellObject ] := Enclose[
-    Module[ { cell, settings, container, content },
-        cell = ConfirmMatch[ ensureChatOutputCell @ cell0, _CellObject, "ParentCell" ];
+    Catch @ Module[ { cell, settings, container, content },
+        cell = ConfirmMatch[ ensureChatOutputCell @ cell0, _CellObject|None, "ParentCell" ];
+        If[ cell === None, removeTask @ $lastTask; Throw @ Null ];
         settings = ConfirmBy[ currentChatSettings @ cell, AssociationQ, "ChatNotebookSettings" ];
         removeTask @ Lookup[ settings, "Task" ];
         container = ConfirmBy[ Lookup[ settings, "Container" ], AssociationQ, "Container" ];
@@ -624,7 +634,7 @@ StopChat[ cell0_CellObject ] := Enclose[
         FinishDynamic[ ];
         Block[ { createFETask = # & }, writeReformattedCell[ settings, content, cell ] ]
     ],
-    throwInternalFailure[ StopChat @ cell0, ## ] &
+    throwInternalFailure
 ];
 
 StopChat[ $Failed ] :=
@@ -1106,7 +1116,8 @@ SendChat[ evalCell_CellObject, nbo_NotebookObject, settings_Association? Associa
 SendChat[ evalCell_, nbo_, settings_, Automatic ] /; $cloudNotebooks :=
     SendChat[ evalCell, nbo, settings, False ];
 
-SendChat[ evalCell_, nbo_, settings_, Automatic ] := withChatState @
+SendChat[ evalCell_, nbo_, settings_, Automatic ] := withChatStateAndFEObjects[
+    { evalCell, nbo },
     With[ { styles = cellStyles @ evalCell },
         Block[ { $autoOpen, $alwaysOpen = $alwaysOpen },
             $autoOpen = MemberQ[ styles, $$chatInputStyle ];
@@ -1114,13 +1125,16 @@ SendChat[ evalCell_, nbo_, settings_, Automatic ] := withChatState @
             $enableLLMServices  = settings[ "EnableLLMServices" ];
             sendChat[ evalCell, nbo, addCellStyleSettings[ settings, styles ] ]
         ]
-    ];
+    ]
+];
 
-SendChat[ evalCell_, nbo_, settings_, minimized_ ] := withChatState @
+SendChat[ evalCell_, nbo_, settings_, minimized_ ] := withChatStateAndFEObjects[
+    { evalCell, nbo },
     Block[ { $alwaysOpen = alwaysOpenQ[ settings, minimized ] },
         $enableLLMServices  = settings[ "EnableLLMServices" ];
         sendChat[ evalCell, nbo, addCellStyleSettings[ settings, evalCell ] ]
-    ];
+    ]
+];
 
 SendChat // endDefinition;
 
@@ -1353,10 +1367,32 @@ withChatState[ eval_ ] :=
         },
         $ChatHandlerData = <| |>;
         (* cSpell: ignore multser *)
-        Quiet[ withToolBox @ withBasePromptBuilder @ eval, ServiceExecute::multser ]
+        Internal`InheritedBlock[ { $evaluationCell, $evaluationNotebook },
+            Quiet[ withToolBox @ withBasePromptBuilder @ eval, ServiceExecute::multser ]
+        ]
     ];
 
 withChatState // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*withChatStateAndFEObjects*)
+withChatStateAndFEObjects // beginDefinition;
+withChatStateAndFEObjects // Attributes = { HoldRest };
+
+withChatStateAndFEObjects[ cell_CellObject ] :=
+    withChatStateAndFEObjects[ { cell, None } ];
+
+withChatStateAndFEObjects[ { cell_, nbo_ } ] :=
+    Function[ eval, withChatStateAndFEObjects[ { cell, nbo }, eval ], HoldFirst ];
+
+withChatStateAndFEObjects[ { cell_CellObject, nbo_NotebookObject }, eval_ ] :=
+    withChatState @ Block[ { $evaluationCell = cell, $evaluationNotebook = nbo }, eval ];
+
+withChatStateAndFEObjects[ { cell_CellObject, nbo_ }, eval_ ] :=
+    withChatState @ Block[ { $evaluationCell = cell }, eval ];
+
+withChatStateAndFEObjects // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

@@ -49,6 +49,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `trStringTemplate;
 `trExprTemplate;
 
+`$catching;
 `$catchTopTag;
 `beginDefinition;
 `catchAlways;
@@ -77,246 +78,20 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Symbols defined elsewhere in the paclet*)
-`$allowConnectionDialog;
-`$alwaysOpen;
-`$attachments;
-`$autoOpen;
-`$availableServices;
-`$basePrompt;
-`$basePromptComponents;
-`$baseStyle;
-`$chatDataTag;
-`$chatInputIndicator;
-`$chatState;
-`$cloudEvaluationNotebook;
-`$cloudInlineReferenceButtons;
-`$conversionRules;
-`$corePersonaNames;
-`$CurrentCell;
-`$customToolFormatter;
-`$defaultChatSettings;
-`$defaultChatTools;
-`$defaultMaxCellStringLength;
-`$defaultMaxOutputCellStringLength;
-`$dialogInputAllowed;
-`$dynamicSplitRules;
-`$dynamicText;
-`$enableLLMServices;
-`$finalCell;
-`$fullBasePrompt;
-`$inDialog;
-`$inEpilog;
-`$initialCellStringBudget;
-`$lastCellObject;
-`$lastChatString;
-`$lastMessages;
-`$lastSettings;
-`$lastTask;
-`$longNameCharacters;
-`$multimodalMessages;
-`$nextTaskEvaluation;
-`$preferencesScope;
-`$resultCellCache;
-`$sandboxKernelCommandLine;
-`$selectedTools;
-`$serviceCache;
-`$servicesLoaded;
-`$statelessProgressIndicator;
-`$suppressButtonAppearance;
-`$tinyHashLength;
-`$tokenBudget;
-`$tokenPressure;
-`$toolConfiguration;
-`$toolEvaluationResults;
-`$toolOptions;
-`$toolResultStringLength;
-`$useLLMServices;
-`accentIncludedCells;
-`acv;
-`addHandlerArguments;
-`addProcessingArguments;
-`allowedMultimodalRoles;
-`apiKeyDialog;
-`applyHandlerFunction;
-`applyProcessingFunction;
-`associationKeyDeflatten;
-`attachMenuCell;
-`attachWorkspaceChatInput;
-`autoAssistQ;
-`cachedTokenizer;
-`cellInformation;
-`cellOpenQ;
-`cellPrint;
-`cellPrintAfter;
-`cellStyles;
-`channelCleanup;
-`chatExcludedQ;
-`chatHandlerFunctionsKeys;
-`chatInputCellQ;
-`chatModelQ;
-`checkEvaluationCell;
-`chooseDefaultModelName;
-`clearMinimizedChats;
-`clickToCopy;
-`compressUntilViewed;
-`constructMessages;
-`contextBlock;
-`convertUTF8;
-`createDialog;
-`createFETask;
-`createPreferencesContent;
-`currentChatSettings;
-`cv;
-`cvExpand;
-`dialogBody;
-`dialogHeader;
-`dialogSubHeader;
-`documentationSearchAPI;
-`dynamicAutoFormatQ;
-`dynamicSplitQ;
-`escapeMarkdownString;
-`evaluateFloatingChat;
-`expandMultimodalString;
-`explodeCell;
-`exportDataURI;
-`expressionURIKey;
-`expressionURIKeyQ;
-`fastFileHash;
-`feParentObject;
-`filterChatCells;
-`fixCloudCell;
-`fixLineEndings;
-`floatingButtonGrid;
-`forceRefreshCloudPreferences;
-`functionTemplateBoxes;
-`getAvailableServiceNames;
-`getBoxObjectFromBoxID;
-`getChatGroupSettings;
-`getHandlerFunctions;
-`getModelList;
-`getPersonaIcon;
-`getPersonaMenuIcon;
-`getPrecedingDelimiter;
-`getProcessingFunction;
-`getProcessingFunctions;
-`getServiceModelList;
-`getTokenizer;
-`getTokenizerName;
-`getToolByName;
-`getToolDisplayName;
-`getToolFormattingFunction;
-`getToolIcon;
-`graphicsQ;
-`grayDialogButtonLabel;
-`image2DQ;
-`importDataURI;
-`initFETaskWidget;
-`initTools;
-`inlineExpressionURIs;
-`insertCodeBelow;
-`insertFunctionInputBox;
-`insertFunctionTemplate;
-`insertModifierInputBox;
-`insertModifierTemplate;
-`insertPersonaInputBox;
-`insertPersonaTemplate;
-`insertTrailingFunctionInputBox;
-`insertWLTemplate;
-`logUsage;
-`makeChatCloudDockedCellContents;
-`makeExpressionURI;
-`makeFailureString;
-`makeInteractiveCodeCell;
-`makeModelSelector;
-`makeOutputDingbat;
-`makeToolConfiguration;
-`makeToolResponseString;
-`makeWorkspaceChatDockedCell;
-`menuMagnification;
-`modelDisplayName;
-`modelListCachedQ;
-`modifierTemplateBoxes;
-`multimodalModelQ;
-`multimodalPacletsAvailable;
-`needsBasePrompt;
-`notebookInformation;
-`notebookRead;
-`openerView;
-`openPreferencesPage;
-`parentCell;
-`parentNotebook;
-`parseInlineReferences;
-`parseSimpleToolCallParameterStrings;
-`personaDisplayName;
-`personaTemplateBoxes;
-`preprocessSandboxString;
-`rasterize;
-`rasterizeBlock;
-`readString;
-`redDialogButtonLabel;
-`reformatTextData;
-`relativeTimeString;
-`removeBasePrompt;
-`removeCellAccents;
-`removeChatMenus;
-`replaceCellContext;
-`resizeMenuIcon;
-`resizeMultimodalImage;
-`resolveAutoSettings;
-`resolveFullModelSpec;
-`resolveInlineReferences;
-`resolveTools;
-`revertMultimodalContent;
-`rootEvaluationCell;
-`sandboxEvaluate;
-`sandboxFormatter;
-`scrollOutputQ;
-`selectionEvaluateCreateCell;
-`sendChat;
-`sendFeedback;
-`serviceIcon;
-`setCV;
-`simpleResultQ;
-`simpleToolRequestParser;
-`snapshotModelQ;
-`standardizeMessageKeys;
-`standardizeModelData;
-`stringToBoxes;
-`stringTrimMiddle;
-`systemCredential;
-`tinyHash;
-`toAPIKey;
-`toCompressedBoxes;
-`toImageURI;
-`toModelName;
-`toolAutoFormatter;
-`toolData;
-`toolName;
-`toolOptionValue;
-`toolRequestParser;
-`toolSelectedQ;
-`toolsEnabledQ;
-`topParentCell;
-`trackedDynamic;
-`truncateString;
-`unsetCV;
-`updateDynamics;
-`usingFrontEnd;
-`withBasePromptBuilder;
-`withChatState;
-`withToolBox;
-`wlTemplateBoxes;
-`writeReformattedCell;
+Get[ "Wolfram`Chatbook`CommonSymbols`" ];
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Begin Private Context*)
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`" ];
 
-$cloudNotebooks := TrueQ @ CloudSystem`$CloudNotebooks;
-
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
+$cloudNotebooks := TrueQ @ CloudSystem`$CloudNotebooks;
+
 $chatIndicatorSymbol  = "\|01f4ac";
 
 $chatDelimiterStyles  = { "ChatBlockDivider", "ChatDelimiter", "ExcludedChatDelimiter" };
@@ -800,6 +575,7 @@ catchTop[ eval_, sym_Symbol ] :=
     Block[
         {
             $ChatNotebookEvaluation = True,
+            $currentChatSettings    = None,
             $messageSymbol          = Replace[ $messageSymbol, Chatbook -> sym ],
             $catching               = True,
             $failed                 = False,
@@ -1184,14 +960,35 @@ $bugReportStack := StringRiffle[
 (* ::Subsubsection::Closed:: *)
 (*$settings*)
 $settings := Quiet @ Module[ { settings, styleInfo, assoc },
-    settings  = CurrentValue @ { TaggingRules, "ChatNotebookSettings" };
-    styleInfo = Lookup[ CurrentValue @ { StyleDefinitions, "ChatStyleSheetInformation" }, TaggingRules, <| |> ];
-    assoc     = Association @ Select[ Association /@ { settings, styleInfo }, AssociationQ ];
-    If[ AssociationQ @ assoc,
-        KeyDrop[ assoc, "OpenAIKey" ],
-        settings
-    ]
+
+    settings = FirstCase[
+        Unevaluated @ {
+            AbsoluteCurrentValue @ { TaggingRules, "ChatNotebookSettings" },
+            CurrentValue @ { TaggingRules, "ChatNotebookSettings" }
+        },
+        e_ :> With[ { as = Association @ e }, as /; AssociationQ @ as && as =!= <| |> ],
+        <| |>
+    ];
+
+    styleInfo = styleSheetInfo @ { "WorkspaceChatStylesheetInformation", "ChatStyleSheetInformation" };
+
+    assoc = Association @ Select[ Association /@ { settings, styleInfo }, AssociationQ ];
+    If[ AssociationQ @ assoc, KeyDrop[ assoc, "OpenAIKey" ], settings ]
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*styleSheetInfo*)
+styleSheetInfo[ name_String ] := Replace[
+    CurrentValue @ { StyleDefinitions, name },
+    {
+        KeyValuePattern[ TaggingRules -> tags: KeyValuePattern @ { } ] :> Association @ tags,
+        ___ :> <| |>
+    }
+];
+
+styleSheetInfo[ names: { ___String } ] :=
+    Association @ Select[ styleSheetInfo /@ names, AssociationQ ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

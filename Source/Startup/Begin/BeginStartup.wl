@@ -3,6 +3,7 @@
 	loading code, which clears names in the Wolfram`Chatbook` context
 *)
 Wolfram`ChatbookStartupDump`$ContextInfo = {$Context, $ContextPath, $ContextAliases};
+Wolfram`ChatbookStartupDump`$versionString = TextString @ $VersionNumber <> "." <> TextString @ $ReleaseNumber;
 
 (*----------------------------------------*)
 (* Add File > New > Chat-Enabled Notebook *)
@@ -14,41 +15,58 @@ Wolfram`ChatbookStartupDump`$ContextInfo = {$Context, $ContextPath, $ContextAlia
 	In v13.3.1 and later, these menu commands are built-in to the FE's
 	MenuSetup.tr global menus definitions.
 *)
-If[!PacletNewerQ[ToString[$VersionNumber] <> "." <> ToString[$ReleaseNumber], "13.3.0"],
+If[ ! PacletNewerQ[ Wolfram`ChatbookStartupDump`$versionString, "13.3.0" ],
+    Once[
+        FrontEndExecute @ {
+            FrontEnd`AddMenuCommands[
+                "New",
+                {
+                    MenuItem[
+                        "Chat-Enabled Notebook",
+                        FrontEnd`KernelExecute[
+							Needs[ "Wolfram`Chatbook`" -> None ];
+                        	Symbol[ "Wolfram`Chatbook`CreateChatNotebook" ][ ]
+						],
+                        FrontEnd`MenuEvaluator -> Automatic,
+                        FrontEnd`MenuKey[ "n", FrontEnd`Modifiers -> { FrontEnd`Command, FrontEnd`Option } ]
+                    ]
+                }
+            ]
+        },
+        "FrontEndSession"
+    ]
+]
+
+(*--------------------------------*)
+(* Adds Help > Code Assistance... *)
+(*--------------------------------*)
+If[ PacletNewerQ[ Wolfram`ChatbookStartupDump`$versionString, "14.0.0" ],
 	Once[
-		FrontEndExecute[{
-			FrontEnd`AddMenuCommands["New", {
-				MenuItem[
-					"Chat-Enabled Notebook",
-					FrontEnd`KernelExecute[(
-						Needs["Wolfram`Chatbook`" -> None];
-						Wolfram`Chatbook`CreateChatNotebook[]
-					)],
-					FrontEnd`MenuEvaluator -> Automatic,
-					FrontEnd`MenuKey["n", FrontEnd`Modifiers -> {FrontEnd`Command, FrontEnd`Option}]
-				],
-				MenuItem[
-					"Chat-Driven Notebook",
-					FrontEnd`KernelExecute[(
-						Needs["Wolfram`Chatbook`" -> None];
-						Wolfram`Chatbook`CreateChatDrivenNotebook[]
-					)],
-					FrontEnd`MenuEvaluator -> Automatic
-				]
-			}]
-			(* FIXME: figure out how to make this work:
-			FrontEnd`AddMenuCommands["Paclet Repository Item", {
-				MenuItem[
-					"Prompt Repository Item",
-					FrontEnd`KernelExecute[{
-						Needs["ResourceSystemClient`" -> None];
-						ResourceSystemClient`CreateResourceNotebook["Prompt", "SuppressProgressBar" -> True]
-					}],
-					MenuEvaluator -> Automatic,
-					Method -> "Queued"
-				]
-			}]*)
-		}],
+		FrontEndExecute @ {
+			FrontEnd`AddMenuCommands[
+				"OpenHelpLink",
+				{
+					MenuItem[
+						"Code Assistance Chat\[Ellipsis]",
+						FrontEnd`KernelExecute[
+							Needs[ "Wolfram`Chatbook`" -> None ];
+							Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Window" ]
+						],
+						FrontEnd`MenuEvaluator -> Automatic,
+						FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Command } ]
+					],
+					MenuItem[
+						"Code Assistance for Selection",
+						FrontEnd`KernelExecute[
+							Needs[ "Wolfram`Chatbook`" -> None ];
+							Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Inline" ]
+						],
+						FrontEnd`MenuEvaluator -> Automatic,
+						FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Control } ]
+					]
+				}
+			]
+		},
 		"FrontEndSession"
 	]
 ]

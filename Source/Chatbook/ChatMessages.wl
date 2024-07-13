@@ -115,7 +115,7 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
 
         If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
         needsBasePrompt @ settings;
-        prompted  = addPrompts[ settings, messages0 ];
+        prompted = addPrompts[ settings, messages0 ];
 
         messages = prompted /.
             s_String :> RuleCondition @ StringTrim @ StringReplace[
@@ -151,10 +151,17 @@ constructMessages // endDefinition;
 (*addPrompts*)
 addPrompts // beginDefinition;
 
-addPrompts[ settings_Association, messages_List ] :=
-    addPrompts[ assembleCustomPrompt @ settings, messages ];
+addPrompts[ settings_Association, messages_List ] := Enclose[
+    Module[ { custom, workspace, prompt },
+        custom    = ConfirmMatch[ assembleCustomPrompt @ settings, None|_String, "Custom"    ];
+        workspace = ConfirmMatch[ getWorkspacePrompt @ settings  , None|_String, "Workspace" ];
+        prompt    = StringRiffle[ Select[ { custom, workspace }, StringQ ], "\n\n" ];
+        addPrompts[ prompt, messages ]
+    ],
+    throwInternalFailure
+];
 
-addPrompts[ None, messages_List ] :=
+addPrompts[ None|"", messages_List ] :=
     messages;
 
 addPrompts[ prompt_String, { sysMessage: KeyValuePattern[ "Role" -> "System" ], messages___ } ] := Enclose[
@@ -188,7 +195,7 @@ assembleCustomPrompt[ settings_? AssociationQ, templated: { ___, _TemplateObject
         prompts = Replace[ templated, t_TemplateObject :> applyPromptTemplate[ t, params ], { 1 } ];
         assembleCustomPrompt[ settings, prompts ] /; MatchQ[ prompts, { ___String } ]
     ],
-    throwInternalFailure[ assembleCustomPrompt[ settings, templated ], ## ] &
+    throwInternalFailure
 ];
 
 assembleCustomPrompt // endDefinition;
