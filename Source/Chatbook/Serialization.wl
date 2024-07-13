@@ -90,6 +90,8 @@ $$ignoredCellStyle = Alternatives[
 
 (* Cell styles that will prevent wrapping BoxData in triple backticks: *)
 $$noCodeBlockStyle = Alternatives[
+    "ChatInput",
+    "ChatOutput",
     "FunctionEssay",
     "GuideFunctionsSubsection",
     "NotebookImage",
@@ -187,14 +189,16 @@ $boxOp = <| SuperscriptBox -> "^", SubscriptBox -> "_" |>;
 
 (* How to choose TemplateBox arguments for serialization *)
 $templateBoxRules = <|
+    "AssistantMessageBox"       -> First,
     "ChatCodeBlockTemplate"     -> First,
+    "ConditionalExpression"     -> makeExpressionString,
     "GrayLink"                  -> First,
     "HyperlinkDefault"          -> First,
     "Key0"                      -> First,
     "Key1"                      -> (Riffle[ #, "-" ] &),
     "RowDefault"                -> Identity,
-    "ConditionalExpression"     -> makeExpressionString,
-    "TransferFunctionModelFull" -> makeExpressionString
+    "TransferFunctionModelFull" -> makeExpressionString,
+    "UserMessageBox"            -> First
 |>;
 
 (* ::**************************************************************************************************************:: *)

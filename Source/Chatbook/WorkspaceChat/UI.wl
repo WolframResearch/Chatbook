@@ -15,9 +15,9 @@ $inputFieldOuterBackground   = GrayLevel[ 0.95 ];
 
 $inputFieldOptions = Sequence[
     BoxID      -> "AttachedChatInputField",
-    ImageSize  -> { Scaled[ 1 ], 25 },
+    ImageSize  -> { Scaled[ 1 ], { 25, Automatic } },
     FieldHint  -> tr[ "FloatingChatFieldHint" ],
-    BaseStyle  -> "ChatInput",
+    BaseStyle  -> { "Text" },
     Appearance -> "Frameless"
 ];
 
@@ -25,6 +25,21 @@ $inputFieldFrameOptions = Sequence[
     Background   -> White,
     FrameMargins -> { { 5, 5 }, { 2, 2 } },
     FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], RGBColor[ "#a3c9f2" ] ]
+];
+
+$userImageParams = <| "size" -> 50, "default" -> "identicon", "rating" -> "G" |>;
+
+$defaultUserImage = Graphics[
+    {
+        EdgeForm @ None,
+        FaceForm @ GrayLevel[ 0.8 ],
+        Disk[ { 0, 0.2 }, 2.35 ],
+        FaceForm @ White,
+        Disk[ { 0, 1 }, 1 ],
+        Disk[ { 0, -1.8 }, { 1.65, 2 } ]
+    },
+    ImageSize -> 25,
+    PlotRange -> { { -2.4, 2.4 }, { -2.0, 2.8 } }
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -41,18 +56,44 @@ makeWorkspaceChatDockedCell[ ] := Grid @ {
         Button[
             "New",
             SelectionMove[ EvaluationNotebook[ ], After, Notebook ];
-            NotebookWrite[ EvaluationNotebook[ ], Cell[ "", "ChatDelimiter" ] ]
+            NotebookWrite[ EvaluationNotebook[ ], Cell[ "", "ChatDelimiter", CellFrameLabels -> None ] ]
         ],
         Button[ "Clear", NotebookDelete @ Cells @ EvaluationNotebook[ ] ],
         Item[ "", ItemSize -> Fit ],
-        Button[
-            "Pop Out",
-            NotebookPut @ Notebook[ First @ NotebookGet @ EvaluationNotebook[ ], StyleDefinitions -> "Chatbook.nb" ]
-        ]
+        Button[ "Pop Out", popOutChatNB @ EvaluationNotebook[ ], Method -> "Queued" ]
     }
 };
 
 makeWorkspaceChatDockedCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Convert to Normal Chat Notebook*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*popOutChatNB*)
+popOutChatNB // beginDefinition;
+
+popOutChatNB[ nbo_NotebookObject ] :=
+    popOutChatNB @ NotebookGet @ nbo;
+
+popOutChatNB[ Notebook[ cells_, ___ ] ] :=
+    NotebookPut @ Notebook[ cells /. $fromWorkspaceChatConversionRules, StyleDefinitions -> "Chatbook.nb" ];
+
+popOutChatNB // endDefinition;
+
+
+$fromWorkspaceChatConversionRules := $fromWorkspaceChatConversionRules = Dispatch @ {
+    Cell[ BoxData @ TemplateBox[ { text_ }, "UserMessageBox" ], "ChatInput", opts___ ] :>
+        Cell[ Flatten @ TextData @ text, "ChatInput", opts ]
+    ,
+    Cell[
+        TextData @ Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox" ], ___ ],
+        "ChatOutput",
+        opts___
+    ] :> Cell[ Flatten @ TextData @ text, "ChatOutput", opts ]
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -86,7 +127,10 @@ $attachedChatInputCell = ExpressionCell[
                             RawBoxes @ TemplateBox[ { }, "ChatIconUser" ],
                             Framed[
                                 InputField[
-                                    Dynamic @ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ChatInputString" } ],
+                                    Dynamic @ CurrentValue[
+                                        EvaluationNotebook[ ],
+                                        { TaggingRules, "ChatInputString" }
+                                    ],
                                     String,
                                     $inputFieldOptions
                                 ],
@@ -155,9 +199,70 @@ moveToChatInputField0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Chat Message Labels*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*assistantMessageLabel*)
+assistantMessageLabel // beginDefinition;
+assistantMessageLabel[ ] := Grid[ { { assistantImage[ ], assistantName[ ] } }, Alignment -> { Automatic, Center } ];
+assistantMessageLabel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*assistantName*)
+assistantName // beginDefinition;
+assistantName[ ] := "Code Assistant"; (* TODO *)
+assistantName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*assistantImage*)
+assistantImage // beginDefinition;
+assistantImage[ ] := RawBoxes @ TemplateBox[ { }, "ChatIconCodeAssistant" ]; (* TODO *)
+assistantImage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*userMessageLabel*)
+userMessageLabel // beginDefinition;
+userMessageLabel[ ] := Grid[ { { userName[ ], userImage[ ] } }, Alignment -> { Automatic, Center } ];
+userMessageLabel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*userName*)
+userName // beginDefinition;
+userName[ ] := SelectFirst[ { $CloudAccountName, $Username }, StringQ, "You" ];
+userName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*userImage*)
+userImage // beginDefinition;
+
+userImage[ ] := userImage[ $CloudUserID ];
+
+userImage[ user_String ] := Enclose[
+    Module[ { hash, url, image },
+        hash = Hash[ ToLowerCase @ StringTrim @ user, "MD5", "HexString" ];
+        url = ConfirmBy[ URLBuild[ { "https://www.gravatar.com/avatar/", hash }, $userImageParams ], StringQ, "URL" ];
+        image = ConfirmBy[ Import @ url, ImageQ, "Image" ];
+        userImage[ user ] = Show[ image, ImageSize -> 25 ]
+    ],
+    $defaultUserImage &
+];
+
+userImage[ other_ ] :=
+    $defaultUserImage;
+
+userImage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
-    Null
+    $fromWorkspaceChatConversionRules
 ];
 
 End[ ];

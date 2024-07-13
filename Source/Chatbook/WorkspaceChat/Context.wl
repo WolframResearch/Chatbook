@@ -149,6 +149,9 @@ selectContextCells[ { before___, a: KeyValuePattern[ "CursorPosition" -> _List ]
 selectContextCells[ { before___, a: Longest[ KeyValuePattern[ "CursorPosition" -> "CellBracket" ].. ], after___ } ] :=
     selectContextCells0 @ <| "Before" -> { before }, "Selected" -> { a }, "After" -> { after } |>;
 
+selectContextCells[ { all: KeyValuePattern[ "CursorPosition" -> None ]... } ] :=
+    selectContextCells0 @ <| "Before" -> { all }, "Selected" -> { }, "After" -> { } |>;
+
 selectContextCells // endDefinition;
 
 
