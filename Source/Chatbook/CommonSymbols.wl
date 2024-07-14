@@ -104,7 +104,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `dynamicAutoFormatQ;
 `dynamicSplitQ;
 `escapeMarkdownString;
-`evaluateFloatingChat;
+`evaluateWorkspaceChat;
 `expandMultimodalString;
 `explodeCell;
 `exportDataURI;

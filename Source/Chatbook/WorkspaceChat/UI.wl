@@ -16,7 +16,7 @@ $inputFieldOuterBackground   = GrayLevel[ 0.95 ];
 $inputFieldOptions = Sequence[
     BoxID      -> "AttachedChatInputField",
     ImageSize  -> { Scaled[ 1 ], { 25, Automatic } },
-    FieldHint  -> tr[ "FloatingChatFieldHint" ],
+    FieldHint  -> tr[ "WorkspaceChatFieldHint" ],
     BaseStyle  -> { "Text" },
     Appearance -> "Frameless"
 ];
@@ -146,7 +146,7 @@ $attachedChatInputCell = ExpressionCell[
                 "ReturnKeyDown" :> (
                     Needs[ "Wolfram`Chatbook`" -> None ];
                     Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
-                        "EvaluateFloatingChat",
+                        "EvaluateWorkspaceChat",
                         thisNB,
                         Dynamic @ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ChatInputString" } ]
                     ]
@@ -175,6 +175,7 @@ moveToChatInputField[ nbo_ ] :=
 
 moveToChatInputField[ nbo_NotebookObject, True ] := (
     moveToChatInputField0 @ nbo; (* TODO: Need to investigate why this is needed twice *)
+    (* FIXME: Maybe this should use `FrontEndExecute @ FrontEnd`FrontEndToken[ "MoveNextPlaceHolder" ]`? *)
     moveToChatInputField0 @ nbo;
 );
 

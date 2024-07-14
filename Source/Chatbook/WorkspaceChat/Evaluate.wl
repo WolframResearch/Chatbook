@@ -12,10 +12,10 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*evaluateFloatingChat*)
-evaluateFloatingChat // beginDefinition;
+(*evaluateWorkspaceChat*)
+evaluateWorkspaceChat // beginDefinition;
 
-evaluateFloatingChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue ] ] := Enclose[
+evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue ] ] := Enclose[
     Catch @ Module[ { text, uuid, cell, cellObject },
         If[ ! validInputStringQ @ input, input = ""; Throw @ Null ];
         text = input;
@@ -31,7 +31,7 @@ evaluateFloatingChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue 
     throwInternalFailure
 ];
 
-evaluateFloatingChat // endDefinition;
+evaluateWorkspaceChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
