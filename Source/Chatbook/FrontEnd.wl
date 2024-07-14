@@ -293,12 +293,18 @@ cellInformation[ cells: { ___CellObject } ] := Select[
     AssociationQ
 ];
 
-cellInformation[ cell_CellObject ] := Association[
-    Developer`CellInformation @ cell,
-    "CellObject"           -> cell,
-    "CellAutoOverwrite"    -> CurrentValue[ cell, CellAutoOverwrite ],
-    "ChatNotebookSettings" -> AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ]
-];
+cellInformation[ cell_CellObject ] :=
+    With[ { info = Association @ Developer`CellInformation @ cell },
+        If[ AssociationQ @ info,
+            Association[
+                info,
+                "CellObject"           -> cell,
+                "CellAutoOverwrite"    -> CurrentValue[ cell, CellAutoOverwrite ],
+                "ChatNotebookSettings" -> AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ]
+            ],
+            Missing[ "NotAvailable" ]
+        ]
+    ];
 
 cellInformation // endDefinition;
 
