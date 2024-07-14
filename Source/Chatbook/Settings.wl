@@ -1079,6 +1079,9 @@ getPrecedingDelimiter[ cell_CellObject, nbo_, { before0___CellObject, cell_, ___
         If[ MissingQ @ pos, Missing[ "NotAvailable" ], Extract[ before, pos ] ]
     ];
 
+getPrecedingDelimiter[ cell_CellObject, nbo_, cells: { ___CellObject } ] /; ! MemberQ[ cells, cell ] :=
+    Missing[ "NotAvailable" ];
+
 getPrecedingDelimiter // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
