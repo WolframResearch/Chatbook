@@ -16,7 +16,7 @@ $inputFieldOuterBackground   = GrayLevel[ 0.95 ];
 $inputFieldOptions = Sequence[
     BoxID      -> "AttachedChatInputField",
     ImageSize  -> { Scaled[ 1 ], { 25, Automatic } },
-    FieldHint  -> tr[ "WorkspaceChatFieldHint" ],
+    FieldHint  -> tr[ "AttachedChatFieldHint" ],
     BaseStyle  -> { "Text" },
     Appearance -> "Frameless"
 ];

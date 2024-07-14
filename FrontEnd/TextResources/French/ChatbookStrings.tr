@@ -170,7 +170,7 @@
 "PersonaNameRawModel" -> "Mod\[EGrave]le brut",
 "PersonaNameWolfie" -> "Wolfie",
 
-"WorkspaceChatFieldHint" -> "Demandez\[Hyphen]moi quelque chose"
+"AttachedChatFieldHint" -> "Demandez\[Hyphen]moi quelque chose"
 }
 @|
 @|
