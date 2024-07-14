@@ -38,13 +38,14 @@ Cell[
 (*ChatInput*)
 Cell[
     StyleData[ "ChatInput" ],
-    CellFrame       -> 0,
-    CellDingbat     -> None,
-    CellMargins     -> { { 15, 10 }, { 5, 10 } },
-    Selectable      -> True,
-    ShowCellBracket -> False,
-    TextAlignment   -> Right,
-    CellFrameLabels -> {
+    CellDingbat           -> None,
+    CellFrame             -> 0,
+    CellFrameLabelMargins -> 6,
+    CellMargins           -> { { 15, 10 }, { 5, 10 } },
+    Selectable            -> True,
+    ShowCellBracket       -> False,
+    TextAlignment         -> Right,
+    CellFrameLabels       -> {
         { None, None },
         {
             None,
@@ -198,6 +199,48 @@ Cell[
             ImageSize      -> { Scaled[ 1 ], Automatic },
             RoundingRadius -> 10,
             StripOnInput   -> False
+        ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*WorkspaceSendChatButton*)
+Cell[
+    StyleData[ "WorkspaceSendChatButton" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ PaneSelector[
+            {
+                None -> Button[
+                    RawBoxes @ TemplateBox[ { #1, #2 }, "SendChatButtonLabel" ],
+                    Needs[ "Wolfram`Chatbook`" -> None ];
+                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
+                        "EvaluateWorkspaceChat",
+                        #3,
+                        Dynamic @ CurrentValue[ #3, { TaggingRules, "ChatInputString" } ]
+                    ],
+                    FrameMargins -> 0,
+                    Method       -> "Queued"
+                ]
+            },
+            Dynamic @ Wolfram`Chatbook`$ChatEvaluationCell,
+            Button[
+                Overlay[
+                    {
+                        RawBoxes @ TemplateBox[ { #2 }, "ChatEvaluatingSpinner" ],
+                        Graphics[
+                            { RGBColor[ 0.71373, 0.054902, 0.0 ], Rectangle[ { -0.5, -0.5 }, { 0.5, 0.5 } ] },
+                            ImageSize -> #2,
+                            PlotRange -> 1.1
+                        ]
+                    },
+                    Alignment -> { Center, Center }
+                ],
+                Needs[ "Wolfram`Chatbook`" -> None ];
+                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
+                FrameMargins -> 0
+            ],
+            Alignment -> { Automatic, Baseline }
         ]
     }
 ]

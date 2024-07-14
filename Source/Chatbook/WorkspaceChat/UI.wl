@@ -135,7 +135,8 @@ $attachedChatInputCell = ExpressionCell[
                                     $inputFieldOptions
                                 ],
                                 $inputFieldFrameOptions
-                            ]
+                            ],
+                            RawBoxes @ TemplateBox[ { RGBColor[ "#a3c9f2" ], 27, thisNB }, "WorkspaceSendChatButton" ]
                         }
                     },
                     BaseStyle -> { Magnification -> $inputFieldGridMagnification }
@@ -148,7 +149,7 @@ $attachedChatInputCell = ExpressionCell[
                     Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
                         "EvaluateWorkspaceChat",
                         thisNB,
-                        Dynamic @ CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ChatInputString" } ]
+                        Dynamic @ CurrentValue[ thisNB, { TaggingRules, "ChatInputString" } ]
                     ]
                 )
             },

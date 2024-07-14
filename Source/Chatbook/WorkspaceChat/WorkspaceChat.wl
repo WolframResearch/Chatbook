@@ -8,15 +8,10 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 
 (* TODO:
     * Get context from multiple notebooks
-    * Allow exclusion of entire notebooks via the usual chat setting
     * Set up an LLM subtask to choose relevant notebooks for inclusion
     * Update serialization to include cell identifiers when serializing notebook context
     * Create NotebookEditor tool that utilizes these cell identifiers to allow for editing of notebooks
     * Create test writer tool
-*)
-
-(* FIXME:
-    * Don't attach to left when it would be offscreen (attach to right instead, or just float it)
 *)
 
 (* ::**************************************************************************************************************:: *)
