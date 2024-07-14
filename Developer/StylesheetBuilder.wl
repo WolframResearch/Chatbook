@@ -10,10 +10,10 @@ ClearAll[ "`*" ];
 ClearAll[ "`Private`*" ];
 
 $ChatbookStylesheet;
-$FloatingStylesheet;
+$WorkspaceStylesheet;
 BuildStylesheets;
 BuildChatbookStylesheet;
-BuildFloatingStylesheet;
+BuildWorkspaceStylesheet;
 
 System`LinkedItems;
 System`MenuAnchor;
@@ -44,16 +44,16 @@ $workspaceDefaultSettings = <|
 (*Paths*)
 
 
-$assetLocation         = FileNameJoin @ { DirectoryName @ $InputFileName, "Resources" };
-$iconDirectory         = FileNameJoin @ { $assetLocation, "Icons" };
-$ninePatchDirectory    = FileNameJoin @ { $assetLocation, "NinePatchImages" };
-$styleDataFile         = FileNameJoin @ { $assetLocation, "Styles.wl" };
-$floatingStyleDataFile = FileNameJoin @ { $assetLocation, "FloatingStyles.wl" };
-$pacletDirectory       = DirectoryName[ $InputFileName, 2 ];
-$iconManifestFile      = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
-$displayFunctionsFile  = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctions.wxf" };
-$styleSheetTarget      = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
-$floatStyleSheetTarget = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Wolfram", "WorkspaceChat.nb" };
+$assetLocation          = FileNameJoin @ { DirectoryName @ $InputFileName, "Resources" };
+$iconDirectory          = FileNameJoin @ { $assetLocation, "Icons" };
+$ninePatchDirectory     = FileNameJoin @ { $assetLocation, "NinePatchImages" };
+$styleDataFile          = FileNameJoin @ { $assetLocation, "Styles.wl" };
+$workspaceStyleDataFile = FileNameJoin @ { $assetLocation, "WorkspaceStyles.wl" };
+$pacletDirectory        = DirectoryName[ $InputFileName, 2 ];
+$iconManifestFile       = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
+$displayFunctionsFile   = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctions.wxf" };
+$styleSheetTarget       = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
+$floatStyleSheetTarget  = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Wolfram", "WorkspaceChat.nb" };
 
 
 
@@ -571,10 +571,10 @@ $discardedMaterialLabel = discardedMaterialLabelBox[ Dynamic @ Typeset`hover$$, 
 
 
 (* ::Subsection::Closed:: *)
-(*$floatingChatDockedCells*)
+(*$workspaceChatDockedCells*)
 
 
-$floatingChatDockedCells = {
+$workspaceChatDockedCells = {
     Cell @ BoxData @ DynamicBox[
         ToBoxes[
             Needs[ "Wolfram`Chatbook`" -> None ];
@@ -621,7 +621,7 @@ inlineResources[ expr_ ] := expr /. {
 $styleDataCells = inlineResources @ Cases[ Flatten @ ReadList @ $styleDataFile, _Cell ];
 
 
-$floatingStyleDataCells = inlineResources @ Cases[ Flatten @ ReadList @ $floatingStyleDataFile, _Cell ];
+$workspaceStyleDataCells = inlineResources @ Cases[ Flatten @ ReadList @ $workspaceStyleDataFile, _Cell ];
 
 
 (* ::Subsection::Closed:: *)
@@ -665,13 +665,13 @@ $ChatbookStylesheet = Notebook[
 
 
 (* ::Section::Closed:: *)
-(*$FloatingStylesheet*)
+(*$WorkspaceStylesheet*)
 
 
-$FloatingStylesheet = Notebook[
+$WorkspaceStylesheet = Notebook[
     Flatten @ {
         Cell @ StyleData[ StyleDefinitions -> "Chatbook.nb" ],
-        $floatingStyleDataCells
+        $workspaceStyleDataCells
     },
     StyleDefinitions -> "PrivateStylesheetFormatting.nb"
 ];
@@ -686,7 +686,7 @@ BuildStylesheets[                       ] := BuildStylesheets @ All;
 BuildStylesheets[ All | Automatic       ] := BuildStylesheets @ $validStylesheetNames;
 BuildStylesheets[ styles: { ___String } ] := AssociationMap[ BuildStylesheets, styles ];
 BuildStylesheets[ "Chatbook"            ] := BuildChatbookStylesheet[ ];
-BuildStylesheets[ "WorkspaceChat"       ] := BuildFloatingStylesheet[ ];
+BuildStylesheets[ "WorkspaceChat"       ] := BuildWorkspaceStylesheet[ ];
 
 BuildStylesheets[ style_String ] := Failure[
     "UnknownStyle",
@@ -747,26 +747,15 @@ BuildChatbookStylesheet[ target_ ] :=
 
 
 (* ::Section::Closed:: *)
-(*BuildFloatingStylesheet*)
+(*BuildWorkspaceStylesheet*)
 
 
-fixContexts[ expr_ ] := ResourceFunction[ "ReplaceContext" ][
-    expr,
-    {
-        "Wolfram`ChatbookStylesheetBuilder`"         -> "Wolfram`ChatNB`",
-        "Wolfram`ChatbookStylesheetBuilder`Private`" -> "Wolfram`ChatNB`",
-        "$CellContext`"                              -> "Wolfram`ChatNB`",
-        $Context                                     -> "Wolfram`ChatNB`"
-    }
-];
+BuildWorkspaceStylesheet[ ] := BuildWorkspaceStylesheet @ $floatStyleSheetTarget;
 
-
-BuildFloatingStylesheet[ ] := BuildFloatingStylesheet @ $floatStyleSheetTarget;
-
-BuildFloatingStylesheet[ target_ ] :=
+BuildWorkspaceStylesheet[ target_ ] :=
     Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
         Module[ { exported },
-            exported = Export[ target, fixContexts @ $FloatingStylesheet, "NB" ];
+            exported = Export[ target, fixContexts @ $WorkspaceStylesheet, "NB" ];
             PacletInstall[ "Wolfram/PacletCICD" ];
             Needs[ "Wolfram`PacletCICD`" -> None ];
             SetOptions[

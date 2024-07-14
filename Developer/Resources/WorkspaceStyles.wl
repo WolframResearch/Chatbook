@@ -11,7 +11,7 @@ Cell[
     CellInsertionPointCell -> None,
     "ClosingSaveDialog"    -> False,
     DefaultNewCellStyle    -> "AutoMoveToChatInputField",
-    DockedCells            -> $floatingChatDockedCells,
+    DockedCells            -> $workspaceChatDockedCells,
     Magnification          -> 0.85,
     Saveable               -> False,
     Selectable             -> False,
