@@ -32,6 +32,11 @@ HoldComplete[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*$ChatEvaluationCell*)
+$ChatEvaluationCell = None;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*ChatCellEvaluate*)
 ChatCellEvaluate // ClearAll;
 
@@ -618,6 +623,9 @@ autoAssistQ // endDefinition;
 (*StopChat*)
 StopChat // beginDefinition;
 
+StopChat[ ] :=
+    StopChat @ $lastCellObject;
+
 StopChat[ cell_CellObject ] :=
     With[ { parent = parentCell @ cell },
         StopChat @ parent /; MatchQ[ parent, Except[ cell, _CellObject ] ]
@@ -626,8 +634,9 @@ StopChat[ cell_CellObject ] :=
 StopChat[ cell0_CellObject ] := Enclose[
     Catch @ Module[ { cell, settings, container, content },
         cell = ConfirmMatch[ ensureChatOutputCell @ cell0, _CellObject|None, "ParentCell" ];
-        If[ cell === None, removeTask @ $lastTask; Throw @ Null ];
-        settings = ConfirmBy[ currentChatSettings @ cell, AssociationQ, "ChatNotebookSettings" ];
+        If[ cell === None, $ChatEvaluationCell = None; removeTask @ $lastTask; Throw @ Null ];
+        settings = ConfirmMatch[ currentChatSettings @ cell, _Association|_Missing, "ChatNotebookSettings" ];
+        If[ MissingQ @ settings, $ChatEvaluationCell = None; removeTask @ $lastTask; Throw @ Null ];
         removeTask @ Lookup[ settings, "Task" ];
         container = ConfirmBy[ Lookup[ settings, "Container" ], AssociationQ, "Container" ];
         content = ConfirmMatch[ Lookup[ container, "FullContent" ], _String|_ProgressIndicator, "Content" ];
@@ -1387,10 +1396,18 @@ withChatStateAndFEObjects[ { cell_, nbo_ } ] :=
     Function[ eval, withChatStateAndFEObjects[ { cell, nbo }, eval ], HoldFirst ];
 
 withChatStateAndFEObjects[ { cell_CellObject, nbo_NotebookObject }, eval_ ] :=
-    withChatState @ Block[ { $evaluationCell = cell, $evaluationNotebook = nbo }, eval ];
+    WithCleanup[
+        $ChatEvaluationCell = cell,
+        withChatState @ Block[ { $evaluationCell = cell, $evaluationNotebook = nbo }, eval ],
+        $ChatEvaluationCell = None
+    ];
 
 withChatStateAndFEObjects[ { cell_CellObject, nbo_ }, eval_ ] :=
-    withChatState @ Block[ { $evaluationCell = cell }, eval ];
+    WithCleanup[
+        $ChatEvaluationCell = cell,
+        withChatState @ Block[ { $evaluationCell = cell }, eval ],
+        $ChatEvaluationCell = None
+    ];
 
 withChatStateAndFEObjects // endDefinition;
 

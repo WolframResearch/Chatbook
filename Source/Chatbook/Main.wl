@@ -10,6 +10,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$AvailableTools;
 `$ChatAbort;
 `$ChatbookContexts;
+`$ChatEvaluationCell;
 `$ChatHandlerData;
 `$ChatNotebookEvaluation;
 `$ChatPost;

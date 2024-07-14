@@ -125,7 +125,21 @@ $includedCellWidget = Cell[
 makeIconTemplateBoxStyle[ file_ ] := makeIconTemplateBoxStyle[ file, Import @ file ];
 
 makeIconTemplateBoxStyle[ file_, func_Function ] :=
-    makeIconTemplateBoxStyle[ file, func, ToBoxes @ func @ $$slot[ 1 ] /. $$slot -> Slot ];
+    makeIconTemplateBoxStyle[
+        file,
+        func,
+        ToBoxes @ func[ $$slot1, $$slot2, $$slot3 ] /. {
+            ToBoxes @ $$slot1 -> $$slot1,
+            ToBoxes @ $$slot2 -> $$slot2,
+            ToBoxes @ $$slot3 -> $$slot3
+        } /. {
+            $$slot1 -> $$slot[ 1 ],
+            $$slot2 -> $$slot[ 2 ],
+            $$slot3 -> $$slot[ 3 ]
+        } /. {
+            $$slot -> Slot
+        }
+    ];
 
 makeIconTemplateBoxStyle[ file_, icon_ ] :=
     makeIconTemplateBoxStyle[ file, icon, ToBoxes @ icon ];
@@ -422,7 +436,12 @@ $tabbedOutputControls =
             Alignment -> Center,
             Spacings  -> 0.1
         ],
-        Initialization   :> (cell = If[ $CloudEvaluation, x; EvaluationCell[ ], ParentCell @ EvaluationCell[ ] ]),
+        Initialization   :> (
+            cell = If[ $CloudEvaluation,
+                       Wolfram`ChatNB`x; EvaluationCell[ ],
+                       ParentCell @ EvaluationCell[ ]
+                   ]
+        ),
         UnsavedVariables :> { cell }
     ];
 

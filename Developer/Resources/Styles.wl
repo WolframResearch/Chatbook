@@ -136,15 +136,20 @@ Cell[
 
 Cell[
     StyleData[ "ChatInput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
-    CellFrameColor    -> RGBColor[ "#a3c9f2" ],
-    CellGroupingRules -> "InputGrouping",
-    CellMargins       -> { { 66, 25 }, { 1, 8 } },
-    CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
-    CounterIncrements -> { "ChatInputCount" },
-    Evaluatable       -> True,
-    MenuSortingValue  -> 1543,
-    StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "SideChat", "=" -> "WolframAlphaShort", "*" -> "Item" },
-    TaggingRules      -> <| "ChatNotebookSettings" -> <| |> |>,
+    CellFrameColor        -> RGBColor[ "#a3c9f2" ],
+    CellFrameLabelMargins -> -32,
+    CellGroupingRules     -> "InputGrouping",
+    CellMargins           -> { { 66, 32 }, { 1, 8 } },
+    CellTrayWidgets       -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    CounterIncrements     -> { "ChatInputCount" },
+    Evaluatable           -> True,
+    MenuSortingValue      -> 1543,
+    StyleKeyMapping       -> { "~" -> "ChatDelimiter", "'" -> "SideChat", "=" -> "WolframAlphaShort", "*" -> "Item" },
+    TaggingRules          -> <| "ChatNotebookSettings" -> <| |> |>,
+    CellFrameLabels -> {
+        { None, Cell[ BoxData @ TemplateBox[ { RGBColor[ "#a3c9f2" ], 20 }, "SendChatButton" ], Background -> None ] },
+        { None, None }
+    },
 	CellDingbat -> Cell[
         BoxData @ DynamicBox @ ToBoxes[
             If[ TrueQ @ CloudSystem`$CloudNotebooks,
