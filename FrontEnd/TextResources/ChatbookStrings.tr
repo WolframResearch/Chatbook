@@ -170,7 +170,7 @@
 "PersonaNameRawModel" -> "Raw Model",
 "PersonaNameWolfie" -> "Wolfie",
 
-"WorkspaceChatFieldHint" -> "Ask me anything"
+"AttachedChatFieldHint" -> "Ask me anything"
 }
 @|
 @|
