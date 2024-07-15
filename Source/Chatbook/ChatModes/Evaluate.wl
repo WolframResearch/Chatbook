@@ -1,14 +1,38 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
-BeginPackage[ "Wolfram`Chatbook`InlineChat`" ];
+BeginPackage[ "Wolfram`Chatbook`ChatModes`Evaluate`" ];
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"        ];
-Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`"                  ];
+Needs[ "Wolfram`Chatbook`Common`"           ];
+Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Evaluate Inline Chat*)
+(*Evaluate Alternate Chat Inputs*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*evaluateWorkspaceChat*)
+evaluateWorkspaceChat // beginDefinition;
+
+evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue ] ] := Enclose[
+    Catch @ Module[ { text, uuid, cell, cellObject },
+        If[ ! validInputStringQ @ input, input = ""; Throw @ Null ];
+        text = input;
+        uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
+        cell = Cell[ BoxData @ TemplateBox[ { text }, "UserMessageBox" ], "ChatInput", CellTags -> uuid ];
+        input = "";
+        SelectionMove[ nbo, After, Notebook, AutoScroll -> True ];
+        NotebookWrite[ nbo, cell ];
+        cellObject = ConfirmMatch[ First[ Cells[ nbo, CellTags -> uuid ], $Failed ], _CellObject, "CellObject" ];
+        CurrentValue[ cellObject, CellTags ] = { };
+        ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
+    ],
+    throwInternalFailure
+];
+
+evaluateWorkspaceChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -45,12 +69,8 @@ evaluateInlineChat[ cell_CellObject, root_CellObject, Dynamic[ input_ ], Dynamic
 evaluateInlineChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*validInputStringQ*)
-validInputStringQ // beginDefinition;
-validInputStringQ[ input_String? StringQ ] := ! StringMatchQ[ input, WhitespaceCharacter... ];
-validInputStringQ[ _ ] := False
-validInputStringQ // endDefinition;
+(* ::Section::Closed:: *)
+(*Overrides*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -83,6 +103,18 @@ createNewInlineOutput0 // endDefinition;
 writeInlineChatOutputCell // beginDefinition;
 writeInlineChatOutputCell[ cell_, new_Cell, settings_ ] := Null; (* FIXME: Do the thing *)
 writeInlineChatOutputCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Misc Utilities*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*validInputStringQ*)
+validInputStringQ // beginDefinition;
+validInputStringQ[ input_String? StringQ ] := ! StringMatchQ[ input, WhitespaceCharacter... ];
+validInputStringQ[ _ ] := False
+validInputStringQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
