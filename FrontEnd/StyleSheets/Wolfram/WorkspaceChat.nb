@@ -60,7 +60,7 @@ Notebook[
   ],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.4.6.3930014694"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.4.6.3930021547"|>
   ],
   Cell[
    StyleData["ChatInput"],
@@ -148,79 +148,6 @@ Notebook[
      EvaluationNotebook[],
      True
     ];)
-  ],
-  Cell[
-   StyleData[
-    "MessageAuthorLabel",
-    StyleDefinitions -> StyleData["Text"]
-   ],
-   ShowStringCharacters -> False,
-   FontSize -> 14,
-   FontWeight -> "DemiBold"
-  ],
-  Cell[
-   StyleData["UserMessageLabel"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      PaneBox[
-       #1,
-       BaseStyle -> {"MessageAuthorLabel"},
-       ImageSize -> {Scaled[1], Automatic},
-       Alignment -> Right,
-       FrameMargins -> {{0, 11}, {0, 0}}
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["AssistantMessageLabel"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      PaneBox[
-       #1,
-       BaseStyle -> {"MessageAuthorLabel"},
-       ImageSize -> {Scaled[1], Automatic},
-       Alignment -> Left,
-       FrameMargins -> {{11, 0}, {0, 0}}
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["UserMessageBox"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      FrameBox[
-       Cell[#1, "Text", Background -> None],
-       Background -> RGBColor[0.929412, 0.956863, 0.988235],
-       FrameMargins -> 8,
-       FrameStyle -> RGBColor[0.639216, 0.788235, 0.94902],
-       RoundingRadius -> 10,
-       StripOnInput -> False
-      ]
-     ])
-   }
-  ],
-  Cell[
-   StyleData["AssistantMessageBox"],
-   TemplateBoxOptions -> {
-    DisplayFunction ->
-     (Function[
-      FrameBox[
-       #1,
-       BaseStyle -> "ChatOutput",
-       Background -> RGBColor[0.988235, 0.992157, 1.0],
-       FrameMargins -> 8,
-       FrameStyle -> RGBColor[0.788235, 0.8, 0.815686],
-       ImageSize -> {Scaled[1], Automatic},
-       RoundingRadius -> 10,
-       StripOnInput -> False
-      ]
-     ])
-   }
   ],
   Cell[
    StyleData["WorkspaceSendChatButton"],

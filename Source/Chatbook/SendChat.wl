@@ -1690,7 +1690,7 @@ activeAIAssistantCell[
             task      = Lookup[ settings, "Task" ],
             formatter = getFormattingFunction @ settings,
             cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ],
-            outer     = If[ TrueQ @ $WorkspaceChat, TemplateBox[ { # }, "AssistantMessageBox" ] &, # & ]
+            outer     = If[ TrueQ[ $WorkspaceChat||$InlineChat ], assistantMessageBox, # & ]
         },
         Module[ { x = 0 },
             ClearAttributes[ { x, cellObject }, Temporary ];
@@ -1735,9 +1735,10 @@ activeAIAssistantCell[
                     CellDingbat -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
                     Sequence @@ { }
                 ],
-                CellTags        -> cellTags,
-                CellTrayWidgets -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
-                TaggingRules    -> <| "ChatNotebookSettings" -> smallSettings @ settings |>
+                CellTags           -> cellTags,
+                CellTrayWidgets    -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
+                PrivateCellOptions -> { "ContentsOpacity" -> 1 },
+                TaggingRules       -> <| "ChatNotebookSettings" -> smallSettings @ settings |>
             ]
         ]
     ];
@@ -1757,7 +1758,7 @@ activeAIAssistantCell[
             uuid      = container[ "UUID" ],
             formatter = getFormattingFunction @ settings,
             cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ],
-            outer     = If[ TrueQ @ $WorkspaceChat, TemplateBox[ { # }, "AssistantMessageBox" ] &, # & ]
+            outer     = If[ TrueQ[ $WorkspaceChat||$InlineChat ], assistantMessageBox, # & ]
         },
         Cell[
             BoxData @ outer @ TagBox[
@@ -1794,6 +1795,7 @@ activeAIAssistantCell[
             Editable           -> True,
             LanguageCategory   -> None,
             LineIndent         -> 0,
+            PrivateCellOptions -> { "ContentsOpacity" -> 1 },
             Selectable         -> True,
             ShowAutoSpellCheck -> False,
             ShowCursorTracker  -> False,
