@@ -32,6 +32,11 @@ HoldComplete[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*$ChatEvaluationCell*)
+$ChatEvaluationCell = None;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*ChatCellEvaluate*)
 ChatCellEvaluate // ClearAll;
 
@@ -67,8 +72,10 @@ ChatbookAction[ "AttachWorkspaceChatInput"   , args___ ] := catchMine @ attachWo
 ChatbookAction[ "CopyChatObject"             , args___ ] := catchMine @ CopyChatObject @ args;
 ChatbookAction[ "CopyExplodedCells"          , args___ ] := catchMine @ CopyExplodedCells @ args;
 ChatbookAction[ "DisableAssistance"          , args___ ] := catchMine @ DisableAssistance @ args;
+ChatbookAction[ "DisplayInlineChat"          , args___ ] := catchMine @ displayInlineChat @ args;
 ChatbookAction[ "EvaluateChatInput"          , args___ ] := catchMine @ EvaluateChatInput @ args;
-ChatbookAction[ "EvaluateFloatingChat"       , args___ ] := catchMine @ evaluateFloatingChat @ args;
+ChatbookAction[ "EvaluateWorkspaceChat"      , args___ ] := catchMine @ evaluateWorkspaceChat @ args;
+ChatbookAction[ "EvaluateInlineChat"         , args___ ] := catchMine @ evaluateInlineChat @ args;
 ChatbookAction[ "ExclusionToggle"            , args___ ] := catchMine @ ExclusionToggle @ args;
 ChatbookAction[ "ExplodeDuplicate"           , args___ ] := catchMine @ ExplodeDuplicate @ args;
 ChatbookAction[ "ExplodeInPlace"             , args___ ] := catchMine @ ExplodeInPlace @ args;
@@ -618,6 +625,9 @@ autoAssistQ // endDefinition;
 (*StopChat*)
 StopChat // beginDefinition;
 
+StopChat[ ] :=
+    StopChat @ $lastCellObject;
+
 StopChat[ cell_CellObject ] :=
     With[ { parent = parentCell @ cell },
         StopChat @ parent /; MatchQ[ parent, Except[ cell, _CellObject ] ]
@@ -626,8 +636,9 @@ StopChat[ cell_CellObject ] :=
 StopChat[ cell0_CellObject ] := Enclose[
     Catch @ Module[ { cell, settings, container, content },
         cell = ConfirmMatch[ ensureChatOutputCell @ cell0, _CellObject|None, "ParentCell" ];
-        If[ cell === None, removeTask @ $lastTask; Throw @ Null ];
-        settings = ConfirmBy[ currentChatSettings @ cell, AssociationQ, "ChatNotebookSettings" ];
+        If[ cell === None, $ChatEvaluationCell = None; removeTask @ $lastTask; Throw @ Null ];
+        settings = ConfirmMatch[ currentChatSettings @ cell, _Association|_Missing, "ChatNotebookSettings" ];
+        If[ MissingQ @ settings, $ChatEvaluationCell = None; removeTask @ $lastTask; Throw @ Null ];
         removeTask @ Lookup[ settings, "Task" ];
         container = ConfirmBy[ Lookup[ settings, "Container" ], AssociationQ, "Container" ];
         content = ConfirmMatch[ Lookup[ container, "FullContent" ], _String|_ProgressIndicator, "Content" ];
@@ -940,16 +951,17 @@ scrape // endDefinition;
 (*AttachCodeButtons*)
 AttachCodeButtons // beginDefinition;
 
-AttachCodeButtons[ Dynamic[ attached_ ], cell_CellObject? chatCodeBlockQ, string_, lang_ ] := (
-    attached = AttachCell[
-        cell,
-        floatingButtonGrid[ attached, cell, lang ],
-        { Left, Bottom },
-        Offset[ { 0, 13 }, { 0, 0 } ],
-        { Left, Top },
-        RemovalConditions -> { "MouseClickOutside", "MouseExit" }
-    ]
-);
+AttachCodeButtons[ Dynamic[ attached_ ], cell_CellObject? chatCodeBlockQ, string_, lang_ ] :=
+    Block[ { $InlineChat = inlineChatQ @ cell },
+        attached = AttachCell[
+            cell,
+            floatingButtonGrid[ attached, cell, lang ],
+            { Left, Bottom },
+            Offset[ { 0, 13 }, { 0, 0 } ],
+            { Left, Top },
+            RemovalConditions -> { "MouseClickOutside", "MouseExit" }
+        ]
+    ];
 
 AttachCodeButtons[ attached_, cell_CellObject, string_, lang_ ] := Enclose[
     Catch @ Module[ { parent, evalCell, newParent },
@@ -973,6 +985,13 @@ AttachCodeButtons[ attached_, cell_CellObject, string_, lang_ ] := Enclose[
 ];
 
 AttachCodeButtons // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*inlineChatQ*)
+inlineChatQ // beginDefinition;
+inlineChatQ[ cell_CellObject ] := inlineChatQ[ cell ] = currentChatSettings[ cell, "InlineChat" ];
+inlineChatQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1387,10 +1406,18 @@ withChatStateAndFEObjects[ { cell_, nbo_ } ] :=
     Function[ eval, withChatStateAndFEObjects[ { cell, nbo }, eval ], HoldFirst ];
 
 withChatStateAndFEObjects[ { cell_CellObject, nbo_NotebookObject }, eval_ ] :=
-    withChatState @ Block[ { $evaluationCell = cell, $evaluationNotebook = nbo }, eval ];
+    WithCleanup[
+        $ChatEvaluationCell = cell,
+        withChatState @ Block[ { $evaluationCell = cell, $evaluationNotebook = nbo }, eval ],
+        $ChatEvaluationCell = None
+    ];
 
 withChatStateAndFEObjects[ { cell_CellObject, nbo_ }, eval_ ] :=
-    withChatState @ Block[ { $evaluationCell = cell }, eval ];
+    WithCleanup[
+        $ChatEvaluationCell = cell,
+        withChatState @ Block[ { $evaluationCell = cell }, eval ],
+        $ChatEvaluationCell = None
+    ];
 
 withChatStateAndFEObjects // endDefinition;
 

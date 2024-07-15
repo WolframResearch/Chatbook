@@ -1,10 +1,11 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
-BeginPackage[ "Wolfram`Chatbook`WorkspaceChat`" ];
+BeginPackage[ "Wolfram`Chatbook`ChatModes`ShowCodeAssistance`" ];
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"        ];
-Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`"                  ];
+Needs[ "Wolfram`Chatbook`Common`"           ];
+Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -33,7 +34,7 @@ ShowCodeAssistance // endExportedDefinition;
 (* ::Subsection::Closed:: *)
 (*showCodeAssistanceInline*)
 showCodeAssistanceInline // beginDefinition;
-showCodeAssistanceInline[ nbo_NotebookObject ] := MessageDialog[ "Not implemented yet." ]; (* FIXME *)
+showCodeAssistanceInline[ nbo_NotebookObject ] := attachInlineChatInput @ nbo;
 showCodeAssistanceInline[ _ ] := MessageDialog[ "No notebook selected." ];
 showCodeAssistanceInline // endDefinition;
 
@@ -138,9 +139,16 @@ CreateWorkspaceChat // endExportedDefinition;
 (*createWorkspaceChat*)
 createWorkspaceChat // beginDefinition;
 
-createWorkspaceChat[ ] := Enclose[
+createWorkspaceChat[ ] :=
+    createWorkspaceChat[ { } ];
+
+createWorkspaceChat[ cells: { ___Cell } ] := Enclose[
     Module[ { nbo },
-        nbo = ConfirmMatch[ CreateNotebook[ $workspaceChatNotebookOptions ], _NotebookObject, "Notebook" ];
+        nbo = ConfirmMatch[
+            NotebookPut @ Notebook[ cells, $workspaceChatNotebookOptions ],
+            _NotebookObject,
+            "Notebook"
+        ];
         (* Do we need to move to input field here? *)
         SetOptions[
             nbo,
@@ -153,10 +161,17 @@ createWorkspaceChat[ ] := Enclose[
     throwInternalFailure
 ];
 
-createWorkspaceChat[ source_NotebookObject ] := Enclose[
+createWorkspaceChat[ source_NotebookObject ] :=
+    createWorkspaceChat[ source, { } ];
+
+createWorkspaceChat[ source_NotebookObject, cells: { ___Cell } ] := Enclose[
     Module[ { nbo },
 
-        nbo = ConfirmMatch[ CreateNotebook[ $workspaceChatNotebookOptions ], _NotebookObject, "Notebook" ];
+        nbo = ConfirmMatch[
+            NotebookPut @ Notebook[ cells, $workspaceChatNotebookOptions ],
+            _NotebookObject,
+            "Notebook"
+        ];
 
         (* Do we need to move to input field here? *)
         ConfirmMatch[ attachToLeft[ source, nbo ], _NotebookObject, "Attached" ]

@@ -1123,9 +1123,12 @@ chatbookIcon // endDefinition;
 (*inlineTemplateBox*)
 inlineTemplateBox // beginDefinition;
 
-inlineTemplateBox[ TemplateBox[ args_, name_String ] ] :=
+inlineTemplateBox[ box: TemplateBox[ args_, name_String ] ] :=
     With[ { func = $templateBoxDisplayFunctions @ name },
-        TemplateBox[ args, name, DisplayFunction -> func ] /; MatchQ[ func, _Function ]
+        (
+            inlineTemplateBox[ Verbatim[ box ] ] =
+                inlineTemplateBoxes @ TemplateBox[ args, name, DisplayFunction -> func ]
+        ) /; MatchQ[ func, _Function ]
     ];
 
 inlineTemplateBox[ RawBoxes[ box_TemplateBox ] ] :=
@@ -1141,10 +1144,10 @@ inlineTemplateBox // endDefinition;
 inlineTemplateBoxes // beginDefinition;
 
 inlineTemplateBoxes[ expr_ ] :=
-    ReplaceAll[
+    ReplaceRepeated[
         expr,
         TemplateBox[ args_, name_String ] :>
-            With[ { func = inlineTemplateBox @ $templateBoxDisplayFunctions @ name },
+            With[ { func = $templateBoxDisplayFunctions @ name },
                 TemplateBox[ args, name, DisplayFunction -> func ] /; MatchQ[ func, _Function ]
             ]
     ];

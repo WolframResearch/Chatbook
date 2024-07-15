@@ -861,6 +861,7 @@ splitDynamicContent // Attributes = { HoldFirst };
 
 (* NotebookLocationSpecifier isn't available before 13.3 and splitting isn't yet supported in cloud: *)
 splitDynamicContent[ container_, cell_ ] /; Or[
+    $InlineChat,
     ! $dynamicSplit,
     insufficientVersionQ[ "DynamicSplit" ],
     $cloudNotebooks
@@ -1578,6 +1579,9 @@ openChatCell // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*WriteChatOutputCell*)
+WriteChatOutputCell[ cell_, new_Cell, info_ ] /; $InlineChat :=
+    writeInlineChatOutputCell[ cell, new, info ];
+
 WriteChatOutputCell[
     cell_CellObject,
     new_Cell,
@@ -1597,6 +1601,7 @@ WriteChatOutputCell[ args___ ] :=
 (* ::Subsubsection::Closed:: *)
 (*createNewChatOutput*)
 createNewChatOutput // beginDefinition;
+createNewChatOutput[ settings_, target_, cell_Cell ] /; $InlineChat := createNewInlineOutput[ settings, target, cell ];
 createNewChatOutput[ settings_, None, cell_Cell ] := cellPrint @ cell;
 createNewChatOutput[ settings_, target_, cell_Cell ] /; settings[ "TabbedOutput" ] === False := cellPrint @ cell;
 createNewChatOutput[ settings_, target_CellObject, cell_Cell ] := prepareChatOutputPage[ target, cell ];
@@ -1685,7 +1690,7 @@ activeAIAssistantCell[
             task      = Lookup[ settings, "Task" ],
             formatter = getFormattingFunction @ settings,
             cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ],
-            outer     = If[ TrueQ @ $WorkspaceChat, TemplateBox[ { # }, "AssistantMessageBox" ] &, # & ]
+            outer     = If[ TrueQ[ $WorkspaceChat||$InlineChat ], assistantMessageBox, # & ]
         },
         Module[ { x = 0 },
             ClearAttributes[ { x, cellObject }, Temporary ];
@@ -1730,9 +1735,10 @@ activeAIAssistantCell[
                     CellDingbat -> Cell[ BoxData @ makeActiveOutputDingbat @ settings, Background -> None ],
                     Sequence @@ { }
                 ],
-                CellTags        -> cellTags,
-                CellTrayWidgets -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
-                TaggingRules    -> <| "ChatNotebookSettings" -> smallSettings @ settings |>
+                CellTags           -> cellTags,
+                CellTrayWidgets    -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
+                PrivateCellOptions -> { "ContentsOpacity" -> 1 },
+                TaggingRules       -> <| "ChatNotebookSettings" -> smallSettings @ settings |>
             ]
         ]
     ];
@@ -1752,7 +1758,7 @@ activeAIAssistantCell[
             uuid      = container[ "UUID" ],
             formatter = getFormattingFunction @ settings,
             cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ],
-            outer     = If[ TrueQ @ $WorkspaceChat, TemplateBox[ { # }, "AssistantMessageBox" ] &, # & ]
+            outer     = If[ TrueQ[ $WorkspaceChat||$InlineChat ], assistantMessageBox, # & ]
         },
         Cell[
             BoxData @ outer @ TagBox[
@@ -1789,6 +1795,7 @@ activeAIAssistantCell[
             Editable           -> True,
             LanguageCategory   -> None,
             LineIndent         -> 0,
+            PrivateCellOptions -> { "ContentsOpacity" -> 1 },
             Selectable         -> True,
             ShowAutoSpellCheck -> False,
             ShowCursorTracker  -> False,
