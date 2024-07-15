@@ -1,10 +1,11 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
-BeginPackage[ "Wolfram`Chatbook`WorkspaceChat`" ];
+BeginPackage[ "Wolfram`Chatbook`ChatModes`UI`" ];
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"        ];
-Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`"                  ];
+Needs[ "Wolfram`Chatbook`Common`"           ];
+Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -44,7 +45,7 @@ $defaultUserImage = Graphics[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Docked Cell*)
+(*Workspace Chat*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -67,46 +68,18 @@ makeWorkspaceChatDockedCell[ ] := Grid @ {
 makeWorkspaceChatDockedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*Convert to Normal Chat Notebook*)
-
-(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*popOutChatNB*)
-popOutChatNB // beginDefinition;
-
-popOutChatNB[ nbo_NotebookObject ] :=
-    popOutChatNB @ NotebookGet @ nbo;
-
-popOutChatNB[ Notebook[ cells_, ___ ] ] :=
-    NotebookPut @ Notebook[ cells /. $fromWorkspaceChatConversionRules, StyleDefinitions -> "Chatbook.nb" ];
-
-popOutChatNB // endDefinition;
-
-
-$fromWorkspaceChatConversionRules := $fromWorkspaceChatConversionRules = Dispatch @ {
-    Cell[ BoxData @ TemplateBox[ { text_ }, "UserMessageBox" ], "ChatInput", opts___ ] :>
-        Cell[ Flatten @ TextData @ text, "ChatInput", opts ]
-    ,
-    Cell[
-        TextData @ Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox" ], ___ ],
-        "ChatOutput",
-        opts___
-    ] :> Cell[ Flatten @ TextData @ text, "ChatOutput", opts ]
-};
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*Attached Chat Input*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*attachChatInputField*)
+(*attachWorkspaceChatInput*)
 attachWorkspaceChatInput // beginDefinition;
 
 attachWorkspaceChatInput[ nbo_NotebookObject ] := Enclose[
     Module[ { attached },
-        attached = ConfirmMatch[ AttachCell[ nbo, $attachedChatInputCell, Bottom, 0, Bottom ], _CellObject, "Attach" ];
+        attached = ConfirmMatch[
+            AttachCell[ nbo, $attachedWorkspaceChatInputCell, Bottom, 0, Bottom ],
+            _CellObject,
+            "Attach"
+        ];
+
         attached
     ],
     throwInternalFailure
@@ -116,9 +89,9 @@ attachWorkspaceChatInput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*$attachedChatInputCell*)
-$attachedChatInputCell = ExpressionCell[
-    DynamicModule[ { thisNB },
+(*$attachedWorkspaceChatInputCell*)
+$attachedWorkspaceChatInputCell := $attachedWorkspaceChatInputCell = Cell[
+    BoxData @ ToBoxes @ DynamicModule[ { thisNB },
         EventHandler[
             Pane[
                 Grid[
@@ -164,6 +137,164 @@ $attachedChatInputCell = ExpressionCell[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Inline Chat*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*attachInlineChatInput*)
+attachInlineChatInput // beginDefinition;
+
+attachInlineChatInput[ nbo_NotebookObject ] :=
+    attachInlineChatInput[ nbo, SelectedCells @ nbo ];
+
+attachInlineChatInput[ nbo_NotebookObject, { root_CellObject } ] := Enclose[
+    Module[ { attached },
+
+        attached = ConfirmMatch[
+            AttachCell[
+                NotebookSelection @ nbo,
+                inlineChatInputCell @ root,
+                { Left, Bottom },
+                0,
+                { Left, Top },
+                RemovalConditions -> { "MouseClickOutside" }
+            ],
+            _CellObject,
+            "Attach"
+        ];
+
+        SelectionMove[ attached, Before, CellContents ];
+        FrontEndExecute @ FrontEnd`FrontEndToken[ "MoveNextPlaceHolder" ];
+
+        attached
+    ],
+    throwInternalFailure
+];
+
+attachInlineChatInput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inlineChatInputCell*)
+inlineChatInputCell // beginDefinition;
+
+inlineChatInputCell[ root_CellObject ] := Cell[
+    BoxData @ inlineTemplateBox @ TemplateBox[
+        {
+            ToBoxes @ DynamicModule[ { messageCells = { }, cell },
+                Dynamic[
+                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
+                        "DisplayInlineChat",
+                        cell,
+                        root,
+                        Dynamic[ messageCells ]
+                    ]
+                ],
+                Initialization :> ( cell = EvaluationCell[ ] ),
+                UnsavedVariables :> { cell }
+            ]
+        },
+        "DropShadowPaneBox"
+    ],
+    "ChatInputField",
+    Background    -> None,
+    Selectable    -> True,
+    Magnification -> 0.8
+];
+
+inlineChatInputCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*displayInlineChat*)
+displayInlineChat // beginDefinition;
+
+displayInlineChat[ cell_CellObject, root_CellObject, Dynamic[ messageCells_ ] ] :=
+    Module[ { inputField },
+
+        inputField = inlineChatInputField[
+            cell,
+            root,
+            Dynamic @ CurrentValue[ cell, { TaggingRules, "ChatInputString" } ],
+            Dynamic @ messageCells
+        ];
+
+        displayInlineChatMessages[ messageCells, inputField ]
+    ];
+
+displayInlineChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inlineChatInputField*)
+inlineChatInputField // beginDefinition;
+
+inlineChatInputField[ cell_CellObject, root_CellObject, Dynamic[ currentInput_ ], Dynamic[ messageCells_ ] ] :=
+    EventHandler[
+        Pane[
+            Grid[
+                {
+                    {
+                        RawBoxes @ inlineTemplateBox @ TemplateBox[ { }, "ChatIconUser" ],
+                        Framed[
+                            InputField[ Dynamic @ currentInput, String, $inputFieldOptions ],
+                            $inputFieldFrameOptions
+                        ],
+                        RawBoxes @ inlineTemplateBox @ TemplateBox[ { RGBColor[ "#a3c9f2" ], 27 }, "SendChatButton" ]
+                    }
+                },
+                BaseStyle -> { Magnification -> $inputFieldGridMagnification }
+            ],
+            FrameMargins -> $inputFieldPaneMargins
+        ],
+        {
+            "ReturnKeyDown" :> (
+                Needs[ "Wolfram`Chatbook`" -> None ];
+                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
+                    "EvaluateInlineChat",
+                    cell,
+                    root,
+                    Dynamic @ currentInput,
+                    Dynamic @ messageCells
+                ]
+            )
+        },
+        Method -> "Queued"
+    ];
+
+inlineChatInputField // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*displayInlineChatMessages*)
+displayInlineChatMessages // beginDefinition;
+
+displayInlineChatMessages[ { }, inputField_ ] :=
+    Pane[ inputField, ImageSize -> { Scaled[ 0.5 ], Automatic } ];
+
+displayInlineChatMessages[ cells: { __Cell }, inputField_ ] :=
+    Column[
+        {
+            Pane[
+                Column[
+                    RawBoxes /@ cells,
+                    Background -> White,
+                    Alignment -> Left,
+                    Spacings  -> 0
+                ],
+                ImageSize -> { Scaled[ 0.5 ], UpTo[ 400 ] },
+                Scrollbars -> Automatic,
+                AppearanceElements -> { }
+            ],
+            Pane[ inputField, ImageSize -> { Scaled[ 0.5 ], Automatic } ]
+        },
+        Alignment -> Left
+    ];
+
+displayInlineChatMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Input Field Movement*)
 
 (* ::**************************************************************************************************************:: *)
@@ -171,6 +302,7 @@ $attachedChatInputCell = ExpressionCell[
 (*moveToChatInputField*)
 moveToChatInputField // beginDefinition;
 
+(* TODO: support inline chat cells too *)
 moveToChatInputField[ nbo_ ] :=
     moveToChatInputField[ nbo, $WorkspaceChat ];
 
@@ -259,6 +391,41 @@ userImage[ other_ ] :=
     $defaultUserImage;
 
 userImage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Normal Chat Notebook Conversion*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*popOutChatNB*)
+popOutChatNB // beginDefinition;
+popOutChatNB[ nbo_NotebookObject ] := popOutChatNB @ NotebookGet @ nbo;
+popOutChatNB[ Notebook[ cells_, ___ ] ] := popOutChatNB @ cells;
+popOutChatNB[ cells: { ___Cell } ] := NotebookPut @ cellsToChatNB @ cells;
+popOutChatNB // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cellsToChatNB*)
+cellsToChatNB // beginDefinition;
+
+cellsToChatNB[ cells: { ___Cell } ] :=
+    Notebook[ cells /. $fromWorkspaceChatConversionRules, StyleDefinitions -> "Chatbook.nb" ];
+
+cellsToChatNB // endDefinition;
+
+
+$fromWorkspaceChatConversionRules := $fromWorkspaceChatConversionRules = Dispatch @ {
+    Cell[ BoxData @ TemplateBox[ { text_ }, "UserMessageBox" ], "ChatInput", opts___ ] :>
+        Cell[ Flatten @ TextData @ text, "ChatInput", opts ]
+    ,
+    Cell[
+        TextData @ Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox" ], ___ ],
+        "ChatOutput",
+        opts___
+    ] :> Cell[ Flatten @ TextData @ text, "ChatOutput", opts ]
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

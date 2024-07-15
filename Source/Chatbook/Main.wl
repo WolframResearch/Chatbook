@@ -90,6 +90,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`ChatGroups`",
     "Wolfram`Chatbook`ChatHistory`",
     "Wolfram`Chatbook`ChatMessages`",
+    "Wolfram`Chatbook`ChatModes`",
     "Wolfram`Chatbook`CloudToolbar`",
     "Wolfram`Chatbook`Common`",
     "Wolfram`Chatbook`CreateChatNotebook`",
@@ -102,7 +103,6 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`Formatting`",
     "Wolfram`Chatbook`FrontEnd`",
     "Wolfram`Chatbook`Handlers`",
-    "Wolfram`Chatbook`InlineChat`",
     "Wolfram`Chatbook`InlineReferences`",
     "Wolfram`Chatbook`Menus`",
     "Wolfram`Chatbook`Models`",
@@ -120,8 +120,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`ToolManager`",
     "Wolfram`Chatbook`Tools`",
     "Wolfram`Chatbook`UI`",
-    "Wolfram`Chatbook`Utils`",
-    "Wolfram`Chatbook`WorkspaceChat`"
+    "Wolfram`Chatbook`Utils`"
 };
 
 Scan[ Needs[ # -> None ] &, $ChatbookContexts ];
