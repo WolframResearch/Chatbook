@@ -861,6 +861,7 @@ splitDynamicContent // Attributes = { HoldFirst };
 
 (* NotebookLocationSpecifier isn't available before 13.3 and splitting isn't yet supported in cloud: *)
 splitDynamicContent[ container_, cell_ ] /; Or[
+    $InlineChat,
     ! $dynamicSplit,
     insufficientVersionQ[ "DynamicSplit" ],
     $cloudNotebooks
@@ -1578,6 +1579,9 @@ openChatCell // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*WriteChatOutputCell*)
+WriteChatOutputCell[ cell_, new_Cell, info_ ] /; $InlineChat :=
+    writeInlineChatOutputCell[ cell, new, info ];
+
 WriteChatOutputCell[
     cell_CellObject,
     new_Cell,
@@ -1597,6 +1601,7 @@ WriteChatOutputCell[ args___ ] :=
 (* ::Subsubsection::Closed:: *)
 (*createNewChatOutput*)
 createNewChatOutput // beginDefinition;
+createNewChatOutput[ settings_, target_, cell_Cell ] /; $InlineChat := createNewInlineOutput[ settings, target, cell ];
 createNewChatOutput[ settings_, None, cell_Cell ] := cellPrint @ cell;
 createNewChatOutput[ settings_, target_, cell_Cell ] /; settings[ "TabbedOutput" ] === False := cellPrint @ cell;
 createNewChatOutput[ settings_, target_CellObject, cell_Cell ] := prepareChatOutputPage[ target, cell ];
