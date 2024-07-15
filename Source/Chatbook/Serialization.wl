@@ -180,6 +180,9 @@ $escapedMarkdownCharacters = { "`", "$", "*", "_", "#", "|" };
     [] () {} + - . !
 *)
 
+$leftSelectionIndicator  = "\[LeftPointer]";
+$rightSelectionIndicator = "\[RightPointer]";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*Conversion Rules*)
@@ -305,6 +308,7 @@ CellToString // Options = {
     "CharacterNormalization"    -> "NFKC", (* FIXME: do this *)
     "ContentTypes"              -> Automatic,
     "ConversionRules"           :> $conversionRules,
+    "CurrentSelection"          -> None, (* TODO *)
     "Debug"                     :> $CellToStringDebug,
     "MaxCellStringLength"       -> $maxCellStringLength,
     "MaxOutputCellStringLength" -> $maxOutputCellStringLength,
@@ -793,6 +797,14 @@ fasterCellToString0[ a_String ] :=
     ];
 
 fasterCellToString0[ a: { ___String } ] := StringJoin[ fasterCellToString0 /@ a ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Current Selection*)
+fasterCellToString0[ (Cell|StyleBox|TagBox)[ boxes_, "CurrentSelection", ___ ] ] :=
+    StringJoin[ $leftSelectionIndicator, fasterCellToString0 @ boxes, $rightSelectionIndicator ];
+
+(* TODO: Determine selection position from "CurrentSelection" option value *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)

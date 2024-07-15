@@ -13,7 +13,7 @@ Needs[ "Wolfram`Chatbook`Serialization`" ];
 $maxCellsBeforeSelection = 100;
 $maxCellsAfterSelection  = 10;
 
-$currentSelectionIndicator = { "\\["<>"BeginSelection"<>"]", "\\["<>"EndSelection"<>"]" };
+$currentSelectionIndicator = { $leftSelectionIndicator, $rightSelectionIndicator };
 
 $notebookContextTemplate = StringTemplate[ "\
 IMPORTANT: Below is some context from the user's currently selected notebook. \
