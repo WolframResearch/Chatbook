@@ -125,12 +125,14 @@ createFETask // Attributes = { HoldFirst };
 createFETask[ eval_ ] /; $cloudNotebooks :=
     eval;
 
-createFETask[ eval_ ] := (
-    If[ $feTaskDebug, Internal`StuffBag[ $feTaskLog, <| "Task" -> Hold @ eval, "Created" -> AbsoluteTime[ ] |> ] ];
-    AppendTo[ $feTasks, Hold @ eval ];
-    ++$feTaskCreationCount;
-    ++$feTaskTrigger
-);
+createFETask[ eval_ ] :=
+    With[ { inline = $InlineChat, state = $inlineChatState },
+        If[ $feTaskDebug, Internal`StuffBag[ $feTaskLog, <| "Task" -> Hold @ eval, "Created" -> AbsoluteTime[ ] |> ] ];
+        (* FIXME: This Block is a bit of a hack: *)
+        AppendTo[ $feTasks, Hold @ Block[ { $InlineChat = inline, $inlineChatState = state }, eval ] ];
+        ++$feTaskCreationCount;
+        ++$feTaskTrigger
+    ];
 
 createFETask // endDefinition;
 
@@ -293,12 +295,18 @@ cellInformation[ cells: { ___CellObject } ] := Select[
     AssociationQ
 ];
 
-cellInformation[ cell_CellObject ] := Association[
-    Developer`CellInformation @ cell,
-    "CellObject"           -> cell,
-    "CellAutoOverwrite"    -> CurrentValue[ cell, CellAutoOverwrite ],
-    "ChatNotebookSettings" -> AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ]
-];
+cellInformation[ cell_CellObject ] :=
+    With[ { info = Association @ Developer`CellInformation @ cell },
+        If[ AssociationQ @ info,
+            Association[
+                info,
+                "CellObject"           -> cell,
+                "CellAutoOverwrite"    -> CurrentValue[ cell, CellAutoOverwrite ],
+                "ChatNotebookSettings" -> AbsoluteCurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ]
+            ],
+            Missing[ "NotAvailable" ]
+        ]
+    ];
 
 cellInformation // endDefinition;
 
@@ -733,8 +741,20 @@ withNoRenderUpdates // endDefinition;
 (* ::Subsection::Closed:: *)
 (*parentNotebook*)
 parentNotebook // beginDefinition;
-parentNotebook[ obj: _CellObject|_BoxObject ] := Notebooks @ obj;
+parentNotebook[ obj: _CellObject|_BoxObject ] := parentNotebook[ obj, Notebooks @ obj ];
+parentNotebook[ obj_, nbo_NotebookObject ] := nbo;
+parentNotebook[ obj_CellObject, _? FailureQ ] := tryInlineChatParent @ obj;
+parentNotebook[ _, fail_ ] := fail;
 parentNotebook // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*tryInlineChatParent*)
+tryInlineChatParent // beginDefinition;
+tryInlineChatParent[ obj_CellObject ] := tryInlineChatParent[ obj, currentChatSettings[ obj, "InlineChatRootCell" ] ];
+tryInlineChatParent[ obj_, cell_CellObject ] := Notebooks @ cell;
+tryInlineChatParent[ _, _ ] := $Failed;
+tryInlineChatParent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

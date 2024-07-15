@@ -136,15 +136,20 @@ Cell[
 
 Cell[
     StyleData[ "ChatInput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
-    CellFrameColor    -> RGBColor[ "#a3c9f2" ],
-    CellGroupingRules -> "InputGrouping",
-    CellMargins       -> { { 66, 25 }, { 1, 8 } },
-    CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
-    CounterIncrements -> { "ChatInputCount" },
-    Evaluatable       -> True,
-    MenuSortingValue  -> 1543,
-    StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "SideChat", "=" -> "WolframAlphaShort", "*" -> "Item" },
-    TaggingRules      -> <| "ChatNotebookSettings" -> <| |> |>,
+    CellFrameColor        -> RGBColor[ "#a3c9f2" ],
+    CellFrameLabelMargins -> -32,
+    CellGroupingRules     -> "InputGrouping",
+    CellMargins           -> { { 66, 32 }, { 1, 8 } },
+    CellTrayWidgets       -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    CounterIncrements     -> { "ChatInputCount" },
+    Evaluatable           -> True,
+    MenuSortingValue      -> 1543,
+    StyleKeyMapping       -> { "~" -> "ChatDelimiter", "'" -> "SideChat", "=" -> "WolframAlphaShort", "*" -> "Item" },
+    TaggingRules          -> <| "ChatNotebookSettings" -> <| |> |>,
+    CellFrameLabels -> {
+        { None, Cell[ BoxData @ TemplateBox[ { RGBColor[ "#a3c9f2" ], 20 }, "SendChatButton" ], Background -> None ] },
+        { None, None }
+    },
 	CellDingbat -> Cell[
         BoxData @ DynamicBox @ ToBoxes[
             If[ TrueQ @ CloudSystem`$CloudNotebooks,
@@ -1013,6 +1018,107 @@ Cell[
     }
 ]
 
+
+(* ::Section::Closed:: *)
+(*Inline Chat Styles*)
+
+
+(* ::Subsection::Closed:: *)
+(*MessageAuthorLabel*)
+
+
+Cell[
+    StyleData[ "MessageAuthorLabel", StyleDefinitions -> StyleData[ "Text" ] ],
+    FontSize             -> 14,
+    FontWeight           -> "DemiBold",
+    ShowStringCharacters -> False
+]
+
+
+(* ::Subsection::Closed:: *)
+(*UserMessageLabel*)
+
+
+Cell[
+    StyleData[ "UserMessageLabel" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ PaneBox[
+            #,
+            BaseStyle    -> { "MessageAuthorLabel" },
+            ImageSize    -> { Scaled[ 1 ], Automatic },
+            Alignment    -> Right,
+            FrameMargins -> { { 0, 11 }, { 0, 0 } }
+        ]
+    }
+]
+
+
+(* ::Subsection::Closed:: *)
+(*AssistantMessageLabel*)
+
+
+Cell[
+    StyleData[ "AssistantMessageLabel" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ PaneBox[
+            #,
+            BaseStyle    -> { "MessageAuthorLabel" },
+            ImageSize    -> { Scaled[ 1 ], Automatic },
+            Alignment    -> Left,
+            FrameMargins -> { { 11, 0 }, { 0, 0 } }
+        ]
+    }
+]
+
+
+(* ::Subsection::Closed:: *)
+(*UserMessageBox*)
+
+
+Cell[
+    StyleData[ "UserMessageBox" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ FrameBox[
+            Cell[ #, "Text", Background -> None ],
+            Background     -> RGBColor[ "#edf4fc" ],
+            FrameMargins   -> 8,
+            FrameStyle     -> RGBColor[ "#a3c9f2" ],
+            RoundingRadius -> 10,
+            StripOnInput   -> False
+        ]
+    }
+]
+
+
+(* ::Subsection::Closed:: *)
+(*AssistantMessageBox*)
+
+
+Cell[
+    StyleData[ "AssistantMessageBox" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ FrameBox[
+            #,
+            BaseStyle      -> "Text",
+            Background     -> RGBColor[ "#fcfdff" ],
+            FrameMargins   -> 8,
+            FrameStyle     -> RGBColor[ "#c9ccd0" ],
+            ImageSize      -> { Scaled[ 1 ], Automatic },
+            RoundingRadius -> 10,
+            StripOnInput   -> False
+        ]
+    }
+]
+
+
+(* ::Subsection::Closed:: *)
+(*DropShadowPaneBox*)
+
+
+Cell[
+    StyleData[ "DropShadowPaneBox" ],
+    TemplateBoxOptions -> { DisplayFunction -> $dropShadowPaneBox }
+]
 
 
 (* ::Section::Closed:: *)

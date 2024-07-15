@@ -624,7 +624,7 @@ floatingButtonGrid[ attached_, cell_, lang_ ] := RawBoxes @ TemplateBox[
     {
         ToBoxes @ Grid[
             {
-                {
+                checkTemplateBoxes @ {
                     button[ evaluateLanguageLabel @ lang, insertCodeBelow[ cell, True ]; NotebookDelete @ attached ],
                     button[ $insertInputButtonLabel, insertCodeBelow[ cell, False ]; NotebookDelete @ attached ],
                     button[ $copyToClipboardButtonLabel, copyCode @ cell; NotebookDelete @ attached ]
@@ -643,7 +643,7 @@ floatingButtonGrid[ string_, lang_ ] := RawBoxes @ TemplateBox[
     {
         ToBoxes @ Grid[
             {
-                {
+                checkTemplateBoxes @ {
                     button[ evaluateLanguageLabel @ lang, insertCodeBelow[ string, True ] ],
                     button[ $insertInputButtonLabel, insertCodeBelow[ string, False ] ],
                     button[ $copyToClipboardButtonLabel, CopyToClipboard @ string ]
@@ -658,6 +658,15 @@ floatingButtonGrid[ string_, lang_ ] := RawBoxes @ TemplateBox[
 ];
 
 floatingButtonGrid // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkTemplateBoxes*)
+checkTemplateBoxes // beginDefinition;
+checkTemplateBoxes[ boxes_ ] := checkTemplateBoxes[ boxes, $InlineChat ];
+checkTemplateBoxes[ boxes_, True ] := checkTemplateBoxes[ Verbatim @ boxes, True ] = inlineTemplateBoxes @ boxes;
+checkTemplateBoxes[ boxes_, _ ] := boxes;
+checkTemplateBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -762,11 +771,20 @@ insertCodeBelow // endDefinition;
 insertCodeInUserNotebook // beginDefinition;
 
 insertCodeInUserNotebook[ chatNB_NotebookObject, cell_Cell, evaluate_ ] := Enclose[
-    Module[ { nbo },
+    Module[ { nbo, cellObj },
         nbo = ConfirmMatch[ getNotebookForCodeInsertion @ chatNB, _NotebookObject, "UserNotebook" ];
-        SelectionMove[ nbo, After, Cell, AutoScroll -> True ];
+        cellObj = ConfirmMatch[ getLastSelectedCell @ nbo, _CellObject|None, "SelectedCell" ];
+
+        If[ cellObj === None
+            ,
+            SelectionMove[ nbo, After, Cell, AutoScroll -> True ];
+            NotebookWrite[ nbo, preprocessInsertedCell @ cell, All ]
+            ,
+            insertAfterChatGeneratedCells[ cellObj, cell ]
+        ];
+
         SetSelectedNotebook @ nbo;
-        NotebookWrite[ nbo, preprocessInsertedCell @ cell, All ];
+
         If[ TrueQ @ evaluate,
             selectionEvaluateCreateCell @ nbo,
             SelectionMove[ nbo, After, CellContents ]
@@ -791,6 +809,15 @@ getNotebookForCodeInsertion // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*getLastSelectedCell*)
+getLastSelectedCell // beginDefinition;
+getLastSelectedCell[ nbo_NotebookObject ] := getLastSelectedCell @ SelectedCells @ nbo;
+getLastSelectedCell[ { ___, cell_CellObject } ] := cell;
+getLastSelectedCell[ _ ] := None;
+getLastSelectedCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*insertAfterChatGeneratedCells*)
 insertAfterChatGeneratedCells // beginDefinition;
 
@@ -812,20 +839,33 @@ insertAfterChatGeneratedCells[ cellObj_CellObject, cell_Cell ] /; $cloudNotebook
 ];
 
 insertAfterChatGeneratedCells[ cellObj_CellObject, cell_Cell ] := Enclose[
-    Module[ { nbo, allCells, cellsAfter, tagged, inserted, insertionPoint },
+    Module[ { nbo, allCells, cellsAfter, taggedQ, tagged, generated, skip, skipped, insertionPoint },
 
-        nbo = ConfirmMatch[ parentNotebook @ cellObj, _NotebookObject, "ParentNotebook" ];
-        allCells = ConfirmMatch[ Cells @ nbo, { __CellObject }, "AllCells" ];
+        nbo        = ConfirmMatch[ parentNotebook @ cellObj, _NotebookObject, "ParentNotebook" ];
+        allCells   = ConfirmMatch[ Cells @ nbo, { __CellObject }, "AllCells" ];
         cellsAfter = Replace[ allCells, { { ___, cellObj, after___ } :> { after }, _ :> { } } ];
+        taggedQ    = MemberQ[ Flatten @ List @ #, $chatGeneratedCellTag ] &;
 
         tagged = ConfirmBy[
-            AssociationThread[ cellsAfter -> Flatten @* List /@ CurrentValue[ cellsAfter, CellTags ] ],
+            AssociationThread[ cellsAfter -> taggedQ /@ CurrentValue[ cellsAfter, CellTags ] ],
             AssociationQ,
             "Tagged"
         ];
 
-        inserted = ConfirmBy[ TakeWhile[ tagged, MemberQ[ $chatGeneratedCellTag ] ], AssociationQ, "Inserted" ];
-        insertionPoint = ConfirmMatch[ Last[ Keys @ inserted, cellObj ], _CellObject, "InsertionPoint" ];
+        generated = ConfirmBy[
+            AssociationThread[ cellsAfter -> CurrentValue[ cellsAfter, GeneratedCell ] ],
+            AssociationQ,
+            "Generated"
+        ];
+
+        skip = ConfirmBy[
+            Merge[ { tagged, generated }, Apply @ Or ],
+            AssociationQ,
+            "Skip"
+        ];
+
+        skipped = ConfirmBy[ TakeWhile[ skip, TrueQ ], AssociationQ, "Inserted" ];
+        insertionPoint = ConfirmMatch[ Last[ Keys @ skipped, cellObj ], _CellObject, "InsertionPoint" ];
 
         SelectionMove[ insertionPoint, After, Cell ];
         NotebookWrite[ nbo, preprocessInsertedCell @ cell, All ];
@@ -2349,12 +2389,63 @@ adjustBoxSpacing // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Alternate Chat Mode Styles*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Template Boxes*)
+$userMessageBoxTemplate := $userMessageBoxTemplate =
+    Function @ Evaluate @ inlineTemplateBox @ TemplateBox[ { # }, "UserMessageBox" ];
+
+$assistantMessageBoxTemplate := $assistantMessageBoxTemplate =
+    Function @ Evaluate @ inlineTemplateBox @ TemplateBox[ { # }, "AssistantMessageBox" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*assistantMessageBox*)
+assistantMessageBox // beginDefinition;
+
+assistantMessageBox[ box_ ] :=
+    assistantMessageBox[ box, $InlineChat ];
+
+assistantMessageBox[ box_, True ] :=
+    With[ { template = $assistantMessageBoxTemplate @ box },
+        template /; MatchQ[ template, TemplateBox[ __, DisplayFunction -> _, ___ ] ]
+    ];
+
+assistantMessageBox[ box_, Except[ True ] ] :=
+    TemplateBox[ { box }, "AssistantMessageBox" ];
+
+assistantMessageBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*userMessageBox*)
+userMessageBox // beginDefinition;
+
+userMessageBox[ box_ ] :=
+    userMessageBox[ box, $InlineChat ];
+
+userMessageBox[ box_, True ] :=
+    With[ { template = $userMessageBoxTemplate @ box },
+        template /; MatchQ[ template, TemplateBox[ __, DisplayFunction -> _, ___ ] ]
+    ];
+
+userMessageBox[ box_, Except[ True ] ] :=
+    TemplateBox[ { box }, "UserMessageBox" ];
+
+userMessageBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
     $copyToClipboardButtonLabel;
     $insertInputButtonLabel;
     $insertEvaluateButtonLabel;
     $languageIcons;
+    $userMessageBoxTemplate;
+    $assistantMessageBoxTemplate;
 ];
 
 End[ ];

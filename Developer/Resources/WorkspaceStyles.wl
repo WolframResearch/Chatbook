@@ -11,7 +11,7 @@ Cell[
     CellInsertionPointCell -> None,
     "ClosingSaveDialog"    -> False,
     DefaultNewCellStyle    -> "AutoMoveToChatInputField",
-    DockedCells            -> $floatingChatDockedCells,
+    DockedCells            -> $workspaceChatDockedCells,
     Magnification          -> 0.85,
     Saveable               -> False,
     Selectable             -> False,
@@ -38,13 +38,14 @@ Cell[
 (*ChatInput*)
 Cell[
     StyleData[ "ChatInput" ],
-    CellFrame       -> 0,
-    CellDingbat     -> None,
-    CellMargins     -> { { 15, 10 }, { 5, 10 } },
-    Selectable      -> True,
-    ShowCellBracket -> False,
-    TextAlignment   -> Right,
-    CellFrameLabels -> {
+    CellDingbat           -> None,
+    CellFrame             -> 0,
+    CellFrameLabelMargins -> 6,
+    CellMargins           -> { { 15, 10 }, { 5, 10 } },
+    Selectable            -> True,
+    ShowCellBracket       -> False,
+    TextAlignment         -> Right,
+    CellFrameLabels       -> {
         { None, None },
         {
             None,
@@ -122,82 +123,46 @@ Cell[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*MessageAuthorLabel*)
-Cell[
-    StyleData[ "MessageAuthorLabel", StyleDefinitions -> StyleData[ "Text" ] ],
-    FontSize             -> 14,
-    FontWeight           -> "DemiBold",
-    ShowStringCharacters -> False
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
 (*Template Boxes*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*UserMessageLabel*)
+(*WorkspaceSendChatButton*)
 Cell[
-    StyleData[ "UserMessageLabel" ],
+    StyleData[ "WorkspaceSendChatButton" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ PaneBox[
-            #,
-            BaseStyle    -> { "MessageAuthorLabel" },
-            ImageSize    -> { Scaled[ 1 ], Automatic },
-            Alignment    -> Right,
-            FrameMargins -> { { 0, 11 }, { 0, 0 } }
-        ]
-    }
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*AssistantMessageLabel*)
-Cell[
-    StyleData[ "AssistantMessageLabel" ],
-    TemplateBoxOptions -> {
-        DisplayFunction -> Function @ PaneBox[
-            #,
-            BaseStyle    -> { "MessageAuthorLabel" },
-            ImageSize    -> { Scaled[ 1 ], Automatic },
-            Alignment    -> Left,
-            FrameMargins -> { { 11, 0 }, { 0, 0 } }
-        ]
-    }
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*UserMessageBox*)
-Cell[
-    StyleData[ "UserMessageBox" ],
-    TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ FrameBox[
-            Cell[ #, "Text", Background -> None ],
-            Background     -> RGBColor[ "#edf4fc" ],
-            FrameMargins   -> 8,
-            FrameStyle     -> RGBColor[ "#a3c9f2" ],
-            RoundingRadius -> 10,
-            StripOnInput   -> False
-        ]
-    }
-]
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*AssistantMessageBox*)
-Cell[
-    StyleData[ "AssistantMessageBox" ],
-    TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ FrameBox[
-            #,
-            BaseStyle      -> "ChatOutput",
-            Background     -> RGBColor[ "#fcfdff" ],
-            FrameMargins   -> 8,
-            FrameStyle     -> RGBColor[ "#c9ccd0" ],
-            ImageSize      -> { Scaled[ 1 ], Automatic },
-            RoundingRadius -> 10,
-            StripOnInput   -> False
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ PaneSelector[
+            {
+                None -> Button[
+                    RawBoxes @ TemplateBox[ { #1, #2 }, "SendChatButtonLabel" ],
+                    Needs[ "Wolfram`Chatbook`" -> None ];
+                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
+                        "EvaluateWorkspaceChat",
+                        #3,
+                        Dynamic @ CurrentValue[ #3, { TaggingRules, "ChatInputString" } ]
+                    ],
+                    FrameMargins -> 0,
+                    Method       -> "Queued"
+                ]
+            },
+            Dynamic @ Wolfram`Chatbook`$ChatEvaluationCell,
+            Button[
+                Overlay[
+                    {
+                        RawBoxes @ TemplateBox[ { #2 }, "ChatEvaluatingSpinner" ],
+                        Graphics[
+                            { RGBColor[ 0.71373, 0.054902, 0.0 ], Rectangle[ { -0.5, -0.5 }, { 0.5, 0.5 } ] },
+                            ImageSize -> #2,
+                            PlotRange -> 1.1
+                        ]
+                    },
+                    Alignment -> { Center, Center }
+                ],
+                Needs[ "Wolfram`Chatbook`" -> None ];
+                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
+                FrameMargins -> 0
+            ],
+            Alignment -> { Automatic, Baseline }
         ]
     }
 ]

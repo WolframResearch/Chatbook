@@ -889,13 +889,14 @@ currentChatSettings[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession, key_
 );
 
 currentChatSettings[ cell0_CellObject ] := Catch @ Enclose[
-    Module[ { cell, cellInfo, styles, nbo, delimiter, settings },
+    Catch @ Module[ { cell, cellInfo, styles, nbo, delimiter, settings },
 
         verifyInheritance @ cell0;
 
-        cell     = cell0;
-        cellInfo = ConfirmBy[ cellInformation @ cell, AssociationQ, "CellInformation" ];
-        styles   = ConfirmMatch[ Flatten @ List @ Lookup[ cellInfo, "Style" ], { ___String } ];
+        cell = cell0;
+        cellInfo = ConfirmMatch[ cellInformation @ cell, _Association|_Missing, "CellInformation" ];
+        If[ MissingQ @ cellInfo, Throw @ Missing[ "NotAvailable" ] ];
+        styles = ConfirmMatch[ Flatten @ List @ Lookup[ cellInfo, "Style" ], { ___String } ];
 
         If[ MemberQ[ styles, $$nestedCellStyle ],
             cell   = ConfirmMatch[ topParentCell @ cell, _CellObject, "ParentCell" ];
@@ -924,17 +925,18 @@ currentChatSettings[ cell0_CellObject ] := Catch @ Enclose[
             "CombinedSettings"
         ]
     ],
-    throwInternalFailure[ currentChatSettings @ cell0, ## ] &
+    throwInternalFailure
 ];
 
 currentChatSettings[ cell0_CellObject, key_String ] := Catch @ Enclose[
-    Module[ { cell, cellInfo, styles, nbo, cells, delimiter, values },
+    Catch @ Module[ { cell, cellInfo, styles, nbo, cells, delimiter, values },
 
         verifyInheritance @ cell0;
 
-        cell     = cell0;
-        cellInfo = ConfirmBy[ cellInformation @ cell, AssociationQ, "CellInformation" ];
-        styles   = ConfirmMatch[ Flatten @ List @ Lookup[ cellInfo, "Style" ], { ___String } ];
+        cell = cell0;
+        cellInfo = ConfirmMatch[ cellInformation @ cell, _Association|_Missing, "CellInformation" ];
+        If[ MissingQ @ cellInfo, Throw @ Missing[ "NotAvailable" ] ];
+        styles = ConfirmMatch[ Flatten @ List @ Lookup[ cellInfo, "Style" ], { ___String } ];
 
         If[ MemberQ[ styles, $$nestedCellStyle ],
             cell   = ConfirmMatch[ topParentCell @ cell, _CellObject, "ParentCell" ];
@@ -1076,6 +1078,9 @@ getPrecedingDelimiter[ cell_CellObject, nbo_, { before0___CellObject, cell_, ___
         pos = FirstPosition[ delimiterTest, True ];
         If[ MissingQ @ pos, Missing[ "NotAvailable" ], Extract[ before, pos ] ]
     ];
+
+getPrecedingDelimiter[ cell_CellObject, nbo_, cells: { ___CellObject } ] /; ! MemberQ[ cells, cell ] :=
+    Missing[ "NotAvailable" ];
 
 getPrecedingDelimiter // endDefinition;
 

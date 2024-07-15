@@ -1,11 +1,12 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
-BeginPackage[ "Wolfram`Chatbook`WorkspaceChat`" ];
+BeginPackage[ "Wolfram`Chatbook`ChatModes`Context`" ];
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"               ];
-Needs[ "Wolfram`Chatbook`Common`"        ];
-Needs[ "Wolfram`Chatbook`Serialization`" ];
+Needs[ "Wolfram`Chatbook`"                  ];
+Needs[ "Wolfram`Chatbook`Common`"           ];
+Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
+Needs[ "Wolfram`Chatbook`Serialization`"    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -13,7 +14,7 @@ Needs[ "Wolfram`Chatbook`Serialization`" ];
 $maxCellsBeforeSelection = 100;
 $maxCellsAfterSelection  = 10;
 
-$currentSelectionIndicator = { "\\["<>"BeginSelection"<>"]", "\\["<>"EndSelection"<>"]" };
+$currentSelectionIndicator = { $leftSelectionIndicator, $rightSelectionIndicator };
 
 $notebookContextTemplate = StringTemplate[ "\
 IMPORTANT: Below is some context from the user's currently selected notebook. \
@@ -25,6 +26,37 @@ Use this to determine where the user is in the notebook.
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Context from other notebooks*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getInlineChatPrompt*)
+getInlineChatPrompt // beginDefinition;
+
+getInlineChatPrompt[ settings_ ] :=
+    If[ TrueQ @ $InlineChat,
+        getInlineChatPrompt0[ settings, $inlineChatState ],
+        None
+    ];
+
+getInlineChatPrompt // endDefinition;
+
+
+getInlineChatPrompt0 // beginDefinition;
+
+getInlineChatPrompt0[ settings_, state_Association ] :=
+    getInlineChatPrompt0[ settings, state[ "ParentCell" ], state[ "ParentNotebook" ] ];
+
+getInlineChatPrompt0[ settings_, cell_CellObject, nbo_NotebookObject ] :=
+    getInlineChatPrompt0[ settings, cell, Cells @ nbo ];
+
+getInlineChatPrompt0[ settings_, cell_CellObject, { before___CellObject, cell_, after___CellObject } ] :=
+    getContextFromSelection0 @ <|
+        "Before"   -> { before },
+        "Selected" -> { cell },
+        "After"    -> { after }
+    |>;
+
+getInlineChatPrompt0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -50,10 +82,22 @@ getContextFromSelection[ chatNB_NotebookObject, settings_Association ] :=
 getContextFromSelection[ chatNB_NotebookObject, None, settings_Association ] :=
     None;
 
-getContextFromSelection[ chatNB_NotebookObject, nbo_NotebookObject, settings_Association ] := Enclose[
-    Catch @ Module[ { selectionData, cellObjects, cells, len1, len2, before, selected, after, marked, string },
+getContextFromSelection[ chatNB_, nbo_NotebookObject, settings_Association ] := Enclose[
+    Module[ { selectionData },
+        selectionData = ConfirmBy[ selectContextCells @ nbo, AssociationQ, "SelectionData" ];
+        ConfirmBy[ getContextFromSelection0 @ selectionData, StringQ, "Context" ]
+    ],
+    throwInternalFailure
+];
 
-        selectionData = selectContextCells @ nbo;
+getContextFromSelection // endDefinition;
+
+
+getContextFromSelection0 // beginDefinition;
+
+getContextFromSelection0[ selectionData_Association ] := Enclose[
+    Catch @ Module[ { cellObjects, cells, len1, len2, before, selected, after, marked, string },
+
         cellObjects = ConfirmMatch[ Flatten @ Values @ selectionData, { ___CellObject }, "CellObjects" ];
         cells = ConfirmMatch[ notebookRead @ cellObjects, { ___Cell }, "Cells" ];
 
@@ -72,7 +116,7 @@ getContextFromSelection[ chatNB_NotebookObject, nbo_NotebookObject, settings_Ass
     throwInternalFailure
 ];
 
-getContextFromSelection // endDefinition;
+getContextFromSelection0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -219,6 +263,19 @@ userNotebooks[ notebooks: { ___NotebookObject } ] := Enclose[
 ];
 
 userNotebooks // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*userNotebookQ*)
+userNotebookQ // beginDefinition;
+
+userNotebookQ[ nbo_NotebookObject ] := TrueQ @ And[
+    CurrentValue[ nbo, WindowFrame ] =!= "Palette",
+    CurrentValue[ nbo, Visible ] === True,
+    includedTagsQ @ AbsoluteCurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings" } ]
+];
+
+userNotebookQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

@@ -10,6 +10,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$AvailableTools;
 `$ChatAbort;
 `$ChatbookContexts;
+`$ChatEvaluationCell;
 `$ChatHandlerData;
 `$ChatNotebookEvaluation;
 `$ChatPost;
@@ -21,6 +22,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$DefaultToolOptions;
 `$DefaultTools;
 `$IncludedCellWidget;
+`$InlineChat;
 `$InstalledTools;
 `$SandboxKernel;
 `$ToolFunctions;
@@ -88,6 +90,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`ChatGroups`",
     "Wolfram`Chatbook`ChatHistory`",
     "Wolfram`Chatbook`ChatMessages`",
+    "Wolfram`Chatbook`ChatModes`",
     "Wolfram`Chatbook`CloudToolbar`",
     "Wolfram`Chatbook`Common`",
     "Wolfram`Chatbook`CreateChatNotebook`",
@@ -117,8 +120,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`ToolManager`",
     "Wolfram`Chatbook`Tools`",
     "Wolfram`Chatbook`UI`",
-    "Wolfram`Chatbook`Utils`",
-    "Wolfram`Chatbook`WorkspaceChat`"
+    "Wolfram`Chatbook`Utils`"
 };
 
 Scan[ Needs[ # -> None ] &, $ChatbookContexts ];
@@ -136,6 +138,7 @@ Protect[
     $DefaultModel,
     $DefaultToolOptions,
     $DefaultTools,
+    $InlineChat,
     $InstalledTools,
     $ToolFunctions,
     $WorkspaceChat,

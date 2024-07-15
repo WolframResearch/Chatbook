@@ -10,10 +10,10 @@ ClearAll[ "`*" ];
 ClearAll[ "`Private`*" ];
 
 $ChatbookStylesheet;
-$FloatingStylesheet;
+$WorkspaceStylesheet;
 BuildStylesheets;
 BuildChatbookStylesheet;
-BuildFloatingStylesheet;
+BuildWorkspaceStylesheet;
 
 System`LinkedItems;
 System`MenuAnchor;
@@ -44,16 +44,16 @@ $workspaceDefaultSettings = <|
 (*Paths*)
 
 
-$assetLocation         = FileNameJoin @ { DirectoryName @ $InputFileName, "Resources" };
-$iconDirectory         = FileNameJoin @ { $assetLocation, "Icons" };
-$ninePatchDirectory    = FileNameJoin @ { $assetLocation, "NinePatchImages" };
-$styleDataFile         = FileNameJoin @ { $assetLocation, "Styles.wl" };
-$floatingStyleDataFile = FileNameJoin @ { $assetLocation, "FloatingStyles.wl" };
-$pacletDirectory       = DirectoryName[ $InputFileName, 2 ];
-$iconManifestFile      = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
-$displayFunctionsFile  = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctions.wxf" };
-$styleSheetTarget      = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
-$floatStyleSheetTarget = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Wolfram", "WorkspaceChat.nb" };
+$assetLocation          = FileNameJoin @ { DirectoryName @ $InputFileName, "Resources" };
+$iconDirectory          = FileNameJoin @ { $assetLocation, "Icons" };
+$ninePatchDirectory     = FileNameJoin @ { $assetLocation, "NinePatchImages" };
+$styleDataFile          = FileNameJoin @ { $assetLocation, "Styles.wl" };
+$workspaceStyleDataFile = FileNameJoin @ { $assetLocation, "WorkspaceStyles.wl" };
+$pacletDirectory        = DirectoryName[ $InputFileName, 2 ];
+$iconManifestFile       = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
+$displayFunctionsFile   = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctions.wxf" };
+$styleSheetTarget       = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
+$floatStyleSheetTarget  = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Wolfram", "WorkspaceChat.nb" };
 
 
 
@@ -83,6 +83,118 @@ trBox[name_?StringQ] := DynamicBox[FEPrivate`FrontEndResource["ChatbookStrings",
 
 $floatingButtonNinePatch = Import @ FileNameJoin @ { $ninePatchDirectory, "FloatingButtonGrid.wxf" };
 
+
+(* ::Subsection::Closed:: *)
+(*Drop Shadows*)
+
+$dropShadowConfig = <|
+    "CenterColor"     -> GrayLevel[ 0.95 ],
+    "FrameColor"      -> GrayLevel[ 0.85 ],
+    "FrameThickness"  -> 1,
+    "Offset"          -> { 0, -2 },
+    "Radius"          -> 10,
+    "ShadowColor"     -> GrayLevel[ 0.5, 0.5 ],
+    "ShadowIntensity" -> 0.4
+|>;
+
+
+$dropShadowPaneBox := $dropShadowPaneBox =
+    With[ { img = createNinePatch @ $dropShadowConfig },
+        Function[
+            PanelBox[
+                #,
+                Appearance     -> img,
+                ContentPadding -> False,
+                FrameMargins   -> { { 0, 0 }, { 0, 0 } }
+            ]
+        ]
+    ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*createNinePatch*)
+
+
+createNinePatch[ config_ ] := set9PatchPixels[ createBaseImage @ config, config ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*set9PatchPixels*)
+
+
+set9PatchPixels[ image_, config: KeyValuePattern[ "Offset" -> { oh_, ov_ } ] ] :=
+    Module[ { padded, w, h },
+        padded = ImagePad[ image, 1, White ];
+        { w, h } = ImageDimensions @ padded;
+        toByteImage @ ReplacePixelValue[
+            padded,
+            {
+                { Ceiling[ w / 2 ] - oh, 1 },
+                { Ceiling[ w / 2 ] - oh, h },
+                { 1, Ceiling[ h / 2 ] - ov },
+                { w, Ceiling[ h / 2 ] - ov }
+            } -> Black
+        ]
+    ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*createBaseImage*)
+
+
+createBaseImage[ config: KeyValuePattern @ { "ShadowColor" -> shadowColor_ } ] :=
+    With[ { alpha = createAlphaMask @ config },
+        setFramePixels[ SetAlphaChannel[ ConstantImage[ shadowColor, ImageDimensions @ alpha ], alpha ], config ]
+    ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*toByteImage*)
+
+
+toByteImage[ img_ ] := Image[
+    NumericArray[ Round @ Clip[ 255 * ImageData @ ColorConvert[ img, "RGB" ], { 0, 255 } ], "UnsignedInteger8" ],
+    "Byte",
+    ColorSpace      -> "RGB",
+    Interleaving    -> True,
+    ImageResolution -> 72
+];
+
+
+(* ::Subsubsection::Closed:: *)
+(*createAlphaMask*)
+
+
+createAlphaMask[ config: KeyValuePattern @ { "Radius" -> radius_, "ShadowIntensity" -> shadowIntensity_ } ] :=
+    setFramePixels[
+        Image[ shadowIntensity * Rescale @ GaussianMatrix @ { radius, 0.4 * radius } ],
+        <| config, "FrameColor" -> White, "CenterColor" -> Black |>
+    ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*setFramePixels*)
+
+
+setFramePixels[
+    image_,
+    KeyValuePattern @ {
+        "CenterColor"    -> centerColor_,
+        "FrameColor"     -> frameColor_,
+        "FrameThickness" -> frameThickness_,
+        "Offset"         -> { oh_, ov_ },
+        "Radius"         -> radius_
+    }
+] :=
+    With[ { r = radius, ft = frameThickness },
+        ReplacePixelValue[
+            ReplacePixelValue[
+                image,
+                { r - ft - oh + 1 ;; r + ft - oh + 1, r - ft - ov + 1 ;; r + ft - ov + 1 } -> frameColor
+            ],
+            { r - oh + 1, r - ov + 1 } -> centerColor
+        ]
+    ];
 
 
 (* ::Subsection::Closed:: *)
@@ -125,7 +237,21 @@ $includedCellWidget = Cell[
 makeIconTemplateBoxStyle[ file_ ] := makeIconTemplateBoxStyle[ file, Import @ file ];
 
 makeIconTemplateBoxStyle[ file_, func_Function ] :=
-    makeIconTemplateBoxStyle[ file, func, ToBoxes @ func @ $$slot[ 1 ] /. $$slot -> Slot ];
+    makeIconTemplateBoxStyle[
+        file,
+        func,
+        ToBoxes @ func[ $$slot1, $$slot2, $$slot3 ] /. {
+            ToBoxes @ $$slot1 -> $$slot1,
+            ToBoxes @ $$slot2 -> $$slot2,
+            ToBoxes @ $$slot3 -> $$slot3
+        } /. {
+            $$slot1 -> $$slot[ 1 ],
+            $$slot2 -> $$slot[ 2 ],
+            $$slot3 -> $$slot[ 3 ]
+        } /. {
+            $$slot -> Slot
+        }
+    ];
 
 makeIconTemplateBoxStyle[ file_, icon_ ] :=
     makeIconTemplateBoxStyle[ file, icon, ToBoxes @ icon ];
@@ -422,7 +548,12 @@ $tabbedOutputControls =
             Alignment -> Center,
             Spacings  -> 0.1
         ],
-        Initialization   :> (cell = If[ $CloudEvaluation, x; EvaluationCell[ ], ParentCell @ EvaluationCell[ ] ]),
+        Initialization   :> (
+            cell = If[ $CloudEvaluation,
+                       Wolfram`ChatNB`x; EvaluationCell[ ],
+                       ParentCell @ EvaluationCell[ ]
+                   ]
+        ),
         UnsavedVariables :> { cell }
     ];
 
@@ -571,10 +702,10 @@ $discardedMaterialLabel = discardedMaterialLabelBox[ Dynamic @ Typeset`hover$$, 
 
 
 (* ::Subsection::Closed:: *)
-(*$floatingChatDockedCells*)
+(*$workspaceChatDockedCells*)
 
 
-$floatingChatDockedCells = {
+$workspaceChatDockedCells = {
     Cell @ BoxData @ DynamicBox[
         ToBoxes[
             Needs[ "Wolfram`Chatbook`" -> None ];
@@ -621,7 +752,7 @@ inlineResources[ expr_ ] := expr /. {
 $styleDataCells = inlineResources @ Cases[ Flatten @ ReadList @ $styleDataFile, _Cell ];
 
 
-$floatingStyleDataCells = inlineResources @ Cases[ Flatten @ ReadList @ $floatingStyleDataFile, _Cell ];
+$workspaceStyleDataCells = inlineResources @ Cases[ Flatten @ ReadList @ $workspaceStyleDataFile, _Cell ];
 
 
 (* ::Subsection::Closed:: *)
@@ -665,13 +796,13 @@ $ChatbookStylesheet = Notebook[
 
 
 (* ::Section::Closed:: *)
-(*$FloatingStylesheet*)
+(*$WorkspaceStylesheet*)
 
 
-$FloatingStylesheet = Notebook[
+$WorkspaceStylesheet = Notebook[
     Flatten @ {
         Cell @ StyleData[ StyleDefinitions -> "Chatbook.nb" ],
-        $floatingStyleDataCells
+        $workspaceStyleDataCells
     },
     StyleDefinitions -> "PrivateStylesheetFormatting.nb"
 ];
@@ -686,7 +817,7 @@ BuildStylesheets[                       ] := BuildStylesheets @ All;
 BuildStylesheets[ All | Automatic       ] := BuildStylesheets @ $validStylesheetNames;
 BuildStylesheets[ styles: { ___String } ] := AssociationMap[ BuildStylesheets, styles ];
 BuildStylesheets[ "Chatbook"            ] := BuildChatbookStylesheet[ ];
-BuildStylesheets[ "WorkspaceChat"       ] := BuildFloatingStylesheet[ ];
+BuildStylesheets[ "WorkspaceChat"       ] := BuildWorkspaceStylesheet[ ];
 
 BuildStylesheets[ style_String ] := Failure[
     "UnknownStyle",
@@ -747,26 +878,15 @@ BuildChatbookStylesheet[ target_ ] :=
 
 
 (* ::Section::Closed:: *)
-(*BuildFloatingStylesheet*)
+(*BuildWorkspaceStylesheet*)
 
 
-fixContexts[ expr_ ] := ResourceFunction[ "ReplaceContext" ][
-    expr,
-    {
-        "Wolfram`ChatbookStylesheetBuilder`"         -> "Wolfram`ChatNB`",
-        "Wolfram`ChatbookStylesheetBuilder`Private`" -> "Wolfram`ChatNB`",
-        "$CellContext`"                              -> "Wolfram`ChatNB`",
-        $Context                                     -> "Wolfram`ChatNB`"
-    }
-];
+BuildWorkspaceStylesheet[ ] := BuildWorkspaceStylesheet @ $floatStyleSheetTarget;
 
-
-BuildFloatingStylesheet[ ] := BuildFloatingStylesheet @ $floatStyleSheetTarget;
-
-BuildFloatingStylesheet[ target_ ] :=
+BuildWorkspaceStylesheet[ target_ ] :=
     Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
         Module[ { exported },
-            exported = Export[ target, fixContexts @ $FloatingStylesheet, "NB" ];
+            exported = Export[ target, fixContexts @ $WorkspaceStylesheet, "NB" ];
             PacletInstall[ "Wolfram/PacletCICD" ];
             Needs[ "Wolfram`PacletCICD`" -> None ];
             SetOptions[
