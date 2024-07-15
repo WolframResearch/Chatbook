@@ -60,7 +60,7 @@ Notebook[
   ],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.4.6.3929948790"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.4.6.3929960055"|>
   ],
   Cell[
    StyleData["ChatInput"],

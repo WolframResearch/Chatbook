@@ -1177,7 +1177,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3929948790"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3929960055"|>
   ],
   Cell[
    StyleData["Text"],
@@ -18081,6 +18081,29 @@ Notebook[
         GridBoxSpacings -> {"Columns" -> {{Automatic}}, "Rows" -> {{0.1}}}
        ],
        "Column"
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["DropShadowPaneBox"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      PanelBox[
+       #1,
+       Appearance ->
+        Image[
+         CompressedData[
+          "\n1:eJy9lU1LAlEUhqdxdIYYQ5gkwQFNXLiQlkMhLqJVIQhGCK7UUmljoEG0m7/p\n3/AP2HvlvXK6STnFNPB4mcM5z5x7nI/z8UtvaluWtfTw0xu9XS8Wo/f7Ak4e\n5svn2XzydDt/ncwmi8txBsEz4oBNgiNh+vaI49gSHBGbZICzh4zI0TU7zx63\n9KraLMgBF3gCl/GsuMYnv+GWToe1ynMMfJAX+Ix7zHOMa0i3vqb2uqxVngII\nQFEQMJ5nniv8W5fhtg3vCR0lEIIKqHINGQ+YJ/224dazyAnvKSiDGmiAJrjg\n2mC8zDztz+nZGO4s55dnP6quTl8EWqDNNWK8zryAdR490i17LnC/NdZfgZvV\narXRqHPGL5hXYt2ud/08iDn77CHkviN6usq5Xq+1u8t4xLyQdb6eu37O6Nbz\nKPL/anL/d6Bv9N1nvMW8Cuv0XBwxE9Nd5X7VfDtgAB7BlOuA8TbzqgncX/oG\nQ3qHv+j723nTN+D647yT3Cfss8P1oPvkH+7vNJ/LNN8nab4HrTi997cVp/vd\n2ef/8/fy0CPpd/4Dbscq/g==\n     "
+         ],
+         "Byte",
+         ColorSpace -> "RGB",
+         ImageResolution -> 72,
+         Interleaving -> True
+        ],
+       ContentPadding -> False,
+       FrameMargins -> {{0, 0}, {0, 0}}
       ]
      ])
    }
