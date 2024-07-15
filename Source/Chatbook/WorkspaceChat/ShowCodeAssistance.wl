@@ -33,7 +33,7 @@ ShowCodeAssistance // endExportedDefinition;
 (* ::Subsection::Closed:: *)
 (*showCodeAssistanceInline*)
 showCodeAssistanceInline // beginDefinition;
-showCodeAssistanceInline[ nbo_NotebookObject ] := MessageDialog[ "Not implemented yet." ]; (* FIXME *)
+showCodeAssistanceInline[ nbo_NotebookObject ] := attachInlineChatInput @ nbo;
 showCodeAssistanceInline[ _ ] := MessageDialog[ "No notebook selected." ];
 showCodeAssistanceInline // endDefinition;
 
