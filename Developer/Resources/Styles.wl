@@ -1019,6 +1019,15 @@ Cell[
 ]
 
 
+(* ::Section::Closed:: *)
+(*DropShadowPaneBox*)
+
+
+Cell[
+    StyleData[ "DropShadowPaneBox" ],
+    TemplateBoxOptions -> { DisplayFunction -> $dropShadowPaneBox }
+]
+
 
 (* ::Section::Closed:: *)
 (*Templates*)

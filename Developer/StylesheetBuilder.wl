@@ -84,6 +84,118 @@ trBox[name_?StringQ] := DynamicBox[FEPrivate`FrontEndResource["ChatbookStrings",
 $floatingButtonNinePatch = Import @ FileNameJoin @ { $ninePatchDirectory, "FloatingButtonGrid.wxf" };
 
 
+(* ::Subsection::Closed:: *)
+(*Drop Shadows*)
+
+$dropShadowConfig = <|
+    "CenterColor"     -> GrayLevel[ 0.95 ],
+    "FrameColor"      -> GrayLevel[ 0.85 ],
+    "FrameThickness"  -> 1,
+    "Offset"          -> { 0, -2 },
+    "Radius"          -> 10,
+    "ShadowColor"     -> GrayLevel[ 0.5, 0.5 ],
+    "ShadowIntensity" -> 0.4
+|>;
+
+
+$dropShadowPaneBox := $dropShadowPaneBox =
+    With[ { img = createNinePatch @ $dropShadowConfig },
+        Function[
+            PanelBox[
+                #,
+                Appearance     -> img,
+                ContentPadding -> False,
+                FrameMargins   -> { { 0, 0 }, { 0, 0 } }
+            ]
+        ]
+    ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*createNinePatch*)
+
+
+createNinePatch[ config_ ] := set9PatchPixels[ createBaseImage @ config, config ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*set9PatchPixels*)
+
+
+set9PatchPixels[ image_, config: KeyValuePattern[ "Offset" -> { oh_, ov_ } ] ] :=
+    Module[ { padded, w, h },
+        padded = ImagePad[ image, 1, White ];
+        { w, h } = ImageDimensions @ padded;
+        toByteImage @ ReplacePixelValue[
+            padded,
+            {
+                { Ceiling[ w / 2 ] - oh, 1 },
+                { Ceiling[ w / 2 ] - oh, h },
+                { 1, Ceiling[ h / 2 ] - ov },
+                { w, Ceiling[ h / 2 ] - ov }
+            } -> Black
+        ]
+    ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*createBaseImage*)
+
+
+createBaseImage[ config: KeyValuePattern @ { "ShadowColor" -> shadowColor_ } ] :=
+    With[ { alpha = createAlphaMask @ config },
+        setFramePixels[ SetAlphaChannel[ ConstantImage[ shadowColor, ImageDimensions @ alpha ], alpha ], config ]
+    ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*toByteImage*)
+
+
+toByteImage[ img_ ] := Image[
+    NumericArray[ Round @ Clip[ 255 * ImageData @ ColorConvert[ img, "RGB" ], { 0, 255 } ], "UnsignedInteger8" ],
+    "Byte",
+    ColorSpace      -> "RGB",
+    Interleaving    -> True,
+    ImageResolution -> 72
+];
+
+
+(* ::Subsubsection::Closed:: *)
+(*createAlphaMask*)
+
+
+createAlphaMask[ config: KeyValuePattern @ { "Radius" -> radius_, "ShadowIntensity" -> shadowIntensity_ } ] :=
+    setFramePixels[
+        Image[ shadowIntensity * Rescale @ GaussianMatrix @ { radius, 0.4 * radius } ],
+        <| config, "FrameColor" -> White, "CenterColor" -> Black |>
+    ];
+
+
+(* ::Subsubsection::Closed:: *)
+(*setFramePixels*)
+
+
+setFramePixels[
+    image_,
+    KeyValuePattern @ {
+        "CenterColor"    -> centerColor_,
+        "FrameColor"     -> frameColor_,
+        "FrameThickness" -> frameThickness_,
+        "Offset"         -> { oh_, ov_ },
+        "Radius"         -> radius_
+    }
+] :=
+    With[ { r = radius, ft = frameThickness },
+        ReplacePixelValue[
+            ReplacePixelValue[
+                image,
+                { r - ft - oh + 1 ;; r + ft - oh + 1, r - ft - ov + 1 ;; r + ft - ov + 1 } -> frameColor
+            ],
+            { r - oh + 1, r - ov + 1 } -> centerColor
+        ]
+    ];
+
 
 (* ::Subsection::Closed:: *)
 (*$suppressButtonAppearance*)
