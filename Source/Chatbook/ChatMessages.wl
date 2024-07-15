@@ -101,6 +101,9 @@ constructMessages // beginDefinition;
 
 constructMessages[ _Association? AssociationQ, { } ] := { };
 
+constructMessages[ settings_Association? AssociationQ, cells: { __CellObject } ] /; $InlineChat :=
+    constructInlineMessages @ settings;
+
 constructMessages[ settings_Association? AssociationQ, cells: { __CellObject } ] :=
     constructMessages[ settings, notebookRead @ cells ];
 
@@ -148,14 +151,34 @@ constructMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*constructInlineMessages*)
+constructInlineMessages // beginDefinition;
+
+constructInlineMessages[ settings_ ] :=
+    constructInlineMessages[ settings, $inlineChatState ];
+
+constructInlineMessages[ settings_, state_Association ] :=
+    constructInlineMessages[ settings, state, state[ "MessageCells" ] ];
+
+constructInlineMessages[ settings_, state_, Dynamic[ cells_ ] ] :=
+    constructInlineMessages[ settings, state, cells ];
+
+constructInlineMessages[ settings_, state_, cells: { __Cell } ] :=
+    constructMessages[ settings, Global`cells = cells ];
+
+constructInlineMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*addPrompts*)
 addPrompts // beginDefinition;
 
 addPrompts[ settings_Association, messages_List ] := Enclose[
-    Module[ { custom, workspace, prompt },
+    Module[ { custom, workspace, inline, prompt },
         custom    = ConfirmMatch[ assembleCustomPrompt @ settings, None|_String, "Custom"    ];
         workspace = ConfirmMatch[ getWorkspacePrompt @ settings  , None|_String, "Workspace" ];
-        prompt    = StringRiffle[ Select[ { custom, workspace }, StringQ ], "\n\n" ];
+        inline    = ConfirmMatch[ getInlineChatPrompt @ settings , None|_String, "Inline"    ];
+        prompt    = StringRiffle[ Select[ { custom, workspace, inline }, StringQ ], "\n\n" ];
         addPrompts[ prompt, messages ]
     ],
     throwInternalFailure

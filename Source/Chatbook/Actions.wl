@@ -951,16 +951,17 @@ scrape // endDefinition;
 (*AttachCodeButtons*)
 AttachCodeButtons // beginDefinition;
 
-AttachCodeButtons[ Dynamic[ attached_ ], cell_CellObject? chatCodeBlockQ, string_, lang_ ] := (
-    attached = AttachCell[
-        cell,
-        floatingButtonGrid[ attached, cell, lang ],
-        { Left, Bottom },
-        Offset[ { 0, 13 }, { 0, 0 } ],
-        { Left, Top },
-        RemovalConditions -> { "MouseClickOutside", "MouseExit" }
-    ]
-);
+AttachCodeButtons[ Dynamic[ attached_ ], cell_CellObject? chatCodeBlockQ, string_, lang_ ] :=
+    Block[ { $InlineChat = inlineChatQ @ cell },
+        attached = AttachCell[
+            cell,
+            floatingButtonGrid[ attached, cell, lang ],
+            { Left, Bottom },
+            Offset[ { 0, 13 }, { 0, 0 } ],
+            { Left, Top },
+            RemovalConditions -> { "MouseClickOutside", "MouseExit" }
+        ]
+    ];
 
 AttachCodeButtons[ attached_, cell_CellObject, string_, lang_ ] := Enclose[
     Catch @ Module[ { parent, evalCell, newParent },
@@ -984,6 +985,13 @@ AttachCodeButtons[ attached_, cell_CellObject, string_, lang_ ] := Enclose[
 ];
 
 AttachCodeButtons // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*inlineChatQ*)
+inlineChatQ // beginDefinition;
+inlineChatQ[ cell_CellObject ] := inlineChatQ[ cell ] = currentChatSettings[ cell, "InlineChat" ];
+inlineChatQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

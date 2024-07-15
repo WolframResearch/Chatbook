@@ -139,9 +139,16 @@ CreateWorkspaceChat // endExportedDefinition;
 (*createWorkspaceChat*)
 createWorkspaceChat // beginDefinition;
 
-createWorkspaceChat[ ] := Enclose[
+createWorkspaceChat[ ] :=
+    createWorkspaceChat[ { } ];
+
+createWorkspaceChat[ cells: { ___Cell } ] := Enclose[
     Module[ { nbo },
-        nbo = ConfirmMatch[ CreateNotebook[ $workspaceChatNotebookOptions ], _NotebookObject, "Notebook" ];
+        nbo = ConfirmMatch[
+            NotebookPut @ Notebook[ cells, $workspaceChatNotebookOptions ],
+            _NotebookObject,
+            "Notebook"
+        ];
         (* Do we need to move to input field here? *)
         SetOptions[
             nbo,
@@ -154,10 +161,17 @@ createWorkspaceChat[ ] := Enclose[
     throwInternalFailure
 ];
 
-createWorkspaceChat[ source_NotebookObject ] := Enclose[
+createWorkspaceChat[ source_NotebookObject ] :=
+    createWorkspaceChat[ source, { } ];
+
+createWorkspaceChat[ source_NotebookObject, cells: { ___Cell } ] := Enclose[
     Module[ { nbo },
 
-        nbo = ConfirmMatch[ CreateNotebook[ $workspaceChatNotebookOptions ], _NotebookObject, "Notebook" ];
+        nbo = ConfirmMatch[
+            NotebookPut @ Notebook[ cells, $workspaceChatNotebookOptions ],
+            _NotebookObject,
+            "Notebook"
+        ];
 
         (* Do we need to move to input field here? *)
         ConfirmMatch[ attachToLeft[ source, nbo ], _NotebookObject, "Attached" ]

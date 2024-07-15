@@ -180,8 +180,8 @@ $escapedMarkdownCharacters = { "`", "$", "*", "_", "#", "|" };
     [] () {} + - . !
 *)
 
-$leftSelectionIndicator  = "\[LeftPointer]";
-$rightSelectionIndicator = "\[RightPointer]";
+$leftSelectionIndicator  = "\\["<>"BeginSelection"<>"]";
+$rightSelectionIndicator = "\\["<>"EndSelection"<>"]";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1078,7 +1078,7 @@ fasterCellToString0[ Cell[ boxes_, "BlockQuote", ___ ] ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Inline Code*)
-fasterCellToString0[ TemplateBox[ { code_ }, "ChatCodeInlineTemplate" ] ] /; ! $inlineCode :=
+fasterCellToString0[ TemplateBox[ { code_ }, "ChatCodeInlineTemplate", ___ ] ] /; ! $inlineCode :=
     Block[ { $escapeMarkdown = False, $inlineCode = True },
         needsBasePrompt[ "DoubleBackticks" ];
         "``" <> fasterCellToString0 @ code <> "``"
@@ -1105,37 +1105,37 @@ fasterCellToString0[ (Cell|StyleBox)[ code_, "InlineCode"|"InlineFormula", ___ ]
 (*Template Boxes*)
 
 (* Messages *)
-fasterCellToString0[ TemplateBox[ args: { _, _, str_String, ___ }, "MessageTemplate" ] ] := (
+fasterCellToString0[ TemplateBox[ args: { _, _, str_String, ___ }, "MessageTemplate", ___ ] ] := (
     needsBasePrompt[ "WolframLanguage" ];
     sowMessageData @ args; (* Look for stack trace data *)
     fasterCellToString0 @ str
 );
 
 (* Large Outputs *)
-fasterCellToString0[ TemplateBox[ KeyValuePattern[ "shortenedBoxes" -> boxes_ ], "OutputSizeLimitTemplate" ] ] :=
+fasterCellToString0[ TemplateBox[ KeyValuePattern[ "shortenedBoxes" -> boxes_ ], "OutputSizeLimitTemplate", ___ ] ] :=
     fasterCellToString0 @ boxes;
 
-fasterCellToString0[ TemplateBox[ { size_ }, "OutputSizeLimit`Skeleton" ] ] :=
+fasterCellToString0[ TemplateBox[ { size_ }, "OutputSizeLimit`Skeleton", ___ ] ] :=
     " \[LeftSkeleton]" <> fasterCellToString0 @ size <> "\[RightSkeleton] ";
 
 (* Row *)
 fasterCellToString0[ TemplateBox[ args_, "RowDefault", ___ ] ] := fasterCellToString0 @ args;
-fasterCellToString0[ TemplateBox[ { sep_, items__ }, "RowWithSeparator" ] ] :=
+fasterCellToString0[ TemplateBox[ { sep_, items__ }, "RowWithSeparator", ___ ] ] :=
     fasterCellToString0 @ Riffle[ { items }, sep ];
 
 (* Tooltips *)
 fasterCellToString0[ TemplateBox[ { a_, ___ }, "PrettyTooltipTemplate", ___ ] ] := fasterCellToString0 @ a;
 
 (* Control-Equal Input *)
-fasterCellToString0[ TemplateBox[ KeyValuePattern[ "query" -> query_String ], "LinguisticAssistantTemplate" ] ] :=
+fasterCellToString0[ TemplateBox[ KeyValuePattern[ "query" -> query_String ], "LinguisticAssistantTemplate", ___ ] ] :=
     "\[FreeformPrompt][\""<>query<>"\"]";
 
-fasterCellToString0[ TemplateBox[ KeyValuePattern[ "boxes" -> box_ ], "LinguisticAssistantTemplate" ] ] :=
+fasterCellToString0[ TemplateBox[ KeyValuePattern[ "boxes" -> box_ ], "LinguisticAssistantTemplate", ___ ] ] :=
     fasterCellToString0 @ box;
 
 (* NotebookObject *)
 fasterCellToString0[
-    TemplateBox[ KeyValuePattern[ "label" -> label_String ], "NotebookObjectUUIDsUnsaved"|"NotebookObjectUUIDs" ]
+    TemplateBox[ KeyValuePattern[ "label" -> label_String ], "NotebookObjectUUIDsUnsaved"|"NotebookObjectUUIDs", ___ ]
 ] := (
     needsBasePrompt[ "Notebooks" ];
     "NotebookObject["<>label<>"]"
@@ -1143,7 +1143,7 @@ fasterCellToString0[
 
 (* Entity *)
 $$entityBoxType = "Entity"|"EntityClass"|"EntityProperty"|"EntityType";
-fasterCellToString0[ TemplateBox[ { _, box_, ___ }, $$entityBoxType ] ] := fasterCellToString0 @ box;
+fasterCellToString0[ TemplateBox[ { _, box_, ___ }, $$entityBoxType, ___ ] ] := fasterCellToString0 @ box;
 fasterCellToString0[ TemplateBox[ _, "InertEntity", ___ ] ] := "\[LeftSkeleton]formatted entity\[RightSkeleton]";
 
 (* Quantities *)
@@ -1199,7 +1199,7 @@ fasterCellToString0[ box: TemplateBox[ { ___ }, $$inactiveTemplate, ___ ] ] :=
     With[ { str = makeExpressionString @ box }, str /; StringQ @ str ];
 
 (* Spacers *)
-fasterCellToString0[ TemplateBox[ _, "Spacer1" ] ] := " ";
+fasterCellToString0[ TemplateBox[ _, "Spacer1", ___ ] ] := " ";
 
 (* Links *)
 $$refLinkTemplate = Alternatives[
@@ -1260,7 +1260,7 @@ fasterCellToString0[
 ] := "[" <> fasterCellToString0 @ label <> "](" <> TextString @ url <> ")";
 
 (* TeXAssistantTemplate *)
-fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> string_ ], "TeXAssistantTemplate" ] ] := (
+fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> string_ ], "TeXAssistantTemplate", ___ ] ] := (
     needsBasePrompt[ "Math" ];
     "$$" <> string <> "$$"
 );
@@ -1456,7 +1456,7 @@ outputSizeLimitString // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*Iconized Expressions*)
 fasterCellToString0[
-    InterpretationBox[ DynamicModuleBox[ { ___ }, iconized: TemplateBox[ _, "IconizedObject" ] ], ___ ]
+    InterpretationBox[ DynamicModuleBox[ { ___ }, iconized: TemplateBox[ _, "IconizedObject", ___ ] ], ___ ]
 ] := fasterCellToString0 @ iconized;
 
 fasterCellToString0[ TemplateBox[ { _, label_, ___ }, "IconizedObject", ___ ] ] :=
@@ -2202,6 +2202,9 @@ stringToBoxes[ string_, other_ ] := string;
 (* ::Subsubsection::Closed:: *)
 (*makeGraphicsString*)
 makeGraphicsString // SetFallthroughError;
+
+makeGraphicsString[ DynamicBox[ import_FEPrivate`ImportImage, ___ ] ] :=
+    ToString[ RawBoxes @ DynamicBox @ import, StandardForm ];
 
 makeGraphicsString[ gfx_ ] := makeGraphicsString[ gfx, makeGraphicsExpression @ gfx ];
 
