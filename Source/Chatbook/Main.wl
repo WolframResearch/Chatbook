@@ -22,6 +22,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$DefaultToolOptions;
 `$DefaultTools;
 `$IncludedCellWidget;
+`$InlineChat;
 `$InstalledTools;
 `$SandboxKernel;
 `$ToolFunctions;
@@ -101,6 +102,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`Formatting`",
     "Wolfram`Chatbook`FrontEnd`",
     "Wolfram`Chatbook`Handlers`",
+    "Wolfram`Chatbook`InlineChat`",
     "Wolfram`Chatbook`InlineReferences`",
     "Wolfram`Chatbook`Menus`",
     "Wolfram`Chatbook`Models`",
@@ -137,6 +139,7 @@ Protect[
     $DefaultModel,
     $DefaultToolOptions,
     $DefaultTools,
+    $InlineChat,
     $InstalledTools,
     $ToolFunctions,
     $WorkspaceChat,

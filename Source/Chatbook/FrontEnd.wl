@@ -125,12 +125,14 @@ createFETask // Attributes = { HoldFirst };
 createFETask[ eval_ ] /; $cloudNotebooks :=
     eval;
 
-createFETask[ eval_ ] := (
-    If[ $feTaskDebug, Internal`StuffBag[ $feTaskLog, <| "Task" -> Hold @ eval, "Created" -> AbsoluteTime[ ] |> ] ];
-    AppendTo[ $feTasks, Hold @ eval ];
-    ++$feTaskCreationCount;
-    ++$feTaskTrigger
-);
+createFETask[ eval_ ] :=
+    With[ { inline = $InlineChat, state = $inlineChatState },
+        If[ $feTaskDebug, Internal`StuffBag[ $feTaskLog, <| "Task" -> Hold @ eval, "Created" -> AbsoluteTime[ ] |> ] ];
+        (* FIXME: This Block is a bit of a hack: *)
+        AppendTo[ $feTasks, Hold @ Block[ { $InlineChat = inline, $inlineChatState = state }, eval ] ];
+        ++$feTaskCreationCount;
+        ++$feTaskTrigger
+    ];
 
 createFETask // endDefinition;
 
