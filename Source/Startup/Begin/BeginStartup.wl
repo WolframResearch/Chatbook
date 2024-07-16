@@ -53,7 +53,12 @@ If[ PacletNewerQ[ Wolfram`ChatbookStartupDump`$versionString, "14.0.0" ],
 							Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Window" ]
 						],
 						FrontEnd`MenuEvaluator -> Automatic,
-						FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Command } ]
+						Evaluate[
+							If[ $OperatingSystem === "MacOSX",
+								FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Control } ],
+								FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Command } ]
+							]
+						]
 					],
 					MenuItem[
 						"Code Assistance for Selection",
