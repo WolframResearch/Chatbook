@@ -62,7 +62,7 @@ If[ PacletNewerQ[ Wolfram`ChatbookStartupDump`$versionString, "14.0.0" ],
 							Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Inline" ]
 						],
 						FrontEnd`MenuEvaluator -> Automatic,
-						FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Control } ]
+						FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Control, FrontEnd`Shift } ]
 					]
 				}
 			]
