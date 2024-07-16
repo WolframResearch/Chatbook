@@ -287,6 +287,109 @@ includedTagsQ[ _ ] := True;
 includedTagsQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*insertSelectionMarkers*)
+insertSelectionMarkers // beginDefinition;
+
+insertSelectionMarkers[ cell: Cell[ content_, a___ ], { before0_Integer, after0_Integer } ] :=
+    Module[ { before, after, result },
+        before = before0;
+        after = after0;
+        result = Catch[ insertSelectionMarkers0[ { before, after }, content ], $insertTag ];
+        If[ MissingQ @ result, fullSelection @ cell, Cell[ result, a ] ]
+    ];
+
+insertSelectionMarkers[ cell_Cell, "AboveCell" ] :=
+    { Cell @ Verbatim[ $beginSelectionIndicator<>$endSelectionIndicator ], cell };
+
+insertSelectionMarkers[ cell_Cell, "BelowCell" ] :=
+    { cell, Cell @ Verbatim[ $beginSelectionIndicator<>$endSelectionIndicator ] };
+
+insertSelectionMarkers // endDefinition;
+
+
+insertSelectionMarkers0 // beginDefinition;
+insertSelectionMarkers0 // Attributes = { HoldFirst };
+
+insertSelectionMarkers0[ state_, (h: BoxData|TextData|RowBox|StyleBox)[ box_, a___ ] ] :=
+    h[ insertSelectionMarkers0[ state, box ], a ];
+
+insertSelectionMarkers0[ { before_, after_ }, cell_Cell ] :=
+    WithCleanup[
+        cell,
+        before -= 1;
+        after  -= 1;
+    ];
+
+insertSelectionMarkers0[ state_, boxes_List ] :=
+    insertSelectionMarkers0[ state, # ] & /@ boxes;
+
+insertSelectionMarkers0[ { before_, after_ }, str_String ] :=
+    With[ { len = StringLength @ str },
+        WithCleanup[
+            Which[
+                (* selection caret is in range and between characters *)
+                0 <= before <= len && before === after,
+                WithCleanup[
+                    StringInsert[ str, $beginSelectionIndicator<>$endSelectionIndicator, before + 1 ],
+                    before = after = -1
+                ],
+
+                (* both are in range of current string *)
+                0 <= before <= len && 0 <= after <= len,
+                WithCleanup[
+                    StringInsert[
+                        StringInsert[ str, $endSelectionIndicator, after + 1 ],
+                        $beginSelectionIndicator,
+                        before + 1
+                    ],
+                    before = after = -1
+                ],
+
+                (* beginning of selection is in range *)
+                0 <= before <= len,
+                WithCleanup[
+                    StringInsert[ str, $beginSelectionIndicator, before + 1 ],
+                    before = -1
+                ],
+
+                (* end of selection is in range *)
+                0 <= after <= len,
+                WithCleanup[
+                    StringInsert[ str, $endSelectionIndicator, after + 1 ],
+                    after = -1
+                ],
+
+                (* selection is not in range *)
+                True,
+                str
+            ],
+
+            (* update counters *)
+            before -= len;
+            after  -= len;
+        ]
+    ];
+
+insertSelectionMarkers0[ { _? Negative, _? Negative }, box_ ] :=
+    box;
+
+insertSelectionMarkers0[ ___ ] :=
+    Throw[ Missing[ "FullSelection" ], $insertTag ];
+
+insertSelectionMarkers0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*fullSelection*)
+fullSelection // beginDefinition;
+fullSelection[ Cell[ a_, b___ ] ] := Cell[ fullSelection @ a, b ];
+fullSelection[ text_String ] := TextData @ { $beginSelectionIndicator, text, $endSelectionIndicator };
+fullSelection[ BoxData[ a_, b___ ] ] := BoxData[ RowBox @ { $beginSelectionIndicator, a, $endSelectionIndicator }, b ];
+fullSelection[ TextData[ text_ ] ] := TextData @ Flatten @ { $beginSelectionIndicator, text, $endSelectionIndicator };
+fullSelection // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
