@@ -191,7 +191,7 @@ feParentObject // endDefinition;
 (*Cells*)
 
 (* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
+(* ::Subsection::Closed:: *)
 (*$evaluationCell*)
 $evaluationCell :=
     With[ { cell = EvaluationCell[ ] },
