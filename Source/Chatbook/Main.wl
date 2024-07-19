@@ -30,6 +30,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `AbsoluteCurrentChatSettings;
 `AppendURIInstructions;
 `BasePrompt;
+`CachedBoxes;
 `CellToChatMessage;
 `Chatbook;
 `ChatbookAction;
@@ -37,6 +38,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `CreateChatDrivenNotebook;
 `CreateChatNotebook;
 `CurrentChatSettings;
+`DisplayBase64Boxes;
 `FormatChatOutput;
 `FormatToolCall;
 `FormatToolResponse;
@@ -146,6 +148,7 @@ Protect[
     AbsoluteCurrentChatSettings,
     AppendURIInstructions,
     BasePrompt,
+    CachedBoxes,
     CellToChatMessage,
     Chatbook,
     ChatbookAction,
@@ -153,6 +156,7 @@ Protect[
     CreateChatDrivenNotebook,
     CreateChatNotebook,
     CurrentChatSettings,
+    DisplayBase64Boxes,
     FormatChatOutput,
     FormatToolCall,
     FormatToolResponse,
