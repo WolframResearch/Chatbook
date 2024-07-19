@@ -10,9 +10,6 @@ Needs[ "Wolfram`Chatbook`Common`" ];
     * Workspace Chat
         * Get context from multiple notebooks
         * Set up an LLM subtask to choose relevant notebooks for inclusion
-    * Inline chat
-        * Need to hook up static output replacements (writeInlineChatOutputCell)
-        * Hook up proper styling for chat inputs/outputs in inline chat
     * Fine-grained selection prompts (e.g. specific character ranges, instead of whole cells)
     * Update serialization to include cell identifiers when serializing notebook context
     * Create NotebookEditor tool that utilizes these cell identifiers to allow for editing of notebooks
