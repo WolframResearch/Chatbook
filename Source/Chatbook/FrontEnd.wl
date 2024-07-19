@@ -1055,7 +1055,7 @@ rasterizeBlock // endDefinition;
 (* ::Subsection::Closed:: *)
 (*rasterize*)
 rasterize // beginDefinition;
-rasterize[ expr_ ] := usingFrontEnd @ Rasterize @ expr;
+rasterize[ expr_, opts___ ] := usingFrontEnd @ Rasterize[ Unevaluated @ expr, opts ];
 rasterize // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
