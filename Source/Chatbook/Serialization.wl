@@ -737,6 +737,12 @@ fasterCellToString0[ (box_)[ a__, BaseStyle -> { b___, ShowStringCharacters -> c
 (* Conversion Rules can specify Verbatim["..."] to prevent any further processing on strings: *)
 fasterCellToString0[ Verbatim[ Verbatim ][ string_String? StringQ ] ] := string;
 
+(* Separate definition for comments, since we don't want to add spacing around operators, etc: *)
+fasterCellToString0[ boxes: RowBox @ { "(*", ___, "*)" } ] :=
+    With[ { flat = Flatten[ boxes //. RowBox[ a___ ] :> a ] },
+        StringReplace[ StringJoin @ flat, FromCharacterCode[ 62371 ] -> "\n" ] /; MatchQ[ flat, { ___String } ]
+    ];
+
 (* Add spacing between RowBox elements that are comma separated *)
 fasterCellToString0[ "," ] := ", ";
 fasterCellToString0[ c: $$spacedInfixOperator ] := " "<>c<>" ";
