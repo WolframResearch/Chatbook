@@ -115,6 +115,20 @@ StringToBoxes // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*CachedBoxes*)
+CachedBoxes // beginDefinition;
+CachedBoxes[ expr_ ] := catchMine @ cachedBoxes @ Unevaluated @ expr;
+CachedBoxes // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*DisplayBase64Boxes*)
+DisplayBase64Boxes // beginDefinition;
+DisplayBase64Boxes[ b64_String ] := catchMine @ displayBase64Boxes @ b64;
+DisplayBase64Boxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Chat Output Formatting*)
 
 (* ::**************************************************************************************************************:: *)
@@ -1990,11 +2004,11 @@ image[ alt_String, url_String ] := Enclose[
         keys = ConfirmMatch[ Keys @ $attachments, { ___String? StringQ }, "Keys" ];
         key  = SelectFirst[ keys, StringContainsQ[ url, #1, IgnoreCase -> True ] & ];
         If[ StringQ @ key,
-            attachment[ alt, key ],
+            markdownImageBoxes[ alt, key, Replace[ $attachments[ key ], HoldComplete[ expr_ ] :> expr ] ],
             image[ alt, url, urlParse @ url ]
         ]
     ],
-    throwInternalFailure[ image[ alt, url ], ## ] &
+    throwInternalFailure
 ];
 
 image[ alt_, url_, KeyValuePattern @ { "Scheme" -> "attachment"|"expression", "Domain" -> key_String } ] :=
@@ -2190,10 +2204,120 @@ targetImageSize // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*cachedBoxes*)
 cachedBoxes // beginDefinition;
-cachedBoxes[ e_ ] := With[ { h = Hash @ Unevaluated @ e }, Lookup[ $boxCache, h, $boxCache[ h ] = MakeBoxes @ e ] ];
+
+cachedBoxes[ e_ ] :=
+    With[ { h = Hash @ Unevaluated @ e },
+        Lookup[ $boxCache, h, $boxCache[ h ] = checkBoxes @ MakeBoxes @ e ]
+    ];
+
 cachedBoxes // endDefinition;
 
 $boxCache = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkBoxes*)
+checkBoxes // beginDefinition;
+checkBoxes[ e_ ] /; $CloudEvaluation && ! FreeQ[ e, _RasterBox ] := embeddedHTMLBoxes @ e;
+checkBoxes[ e_ ] := e;
+checkBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*embeddedHTMLBoxes*)
+embeddedHTMLBoxes // beginDefinition;
+
+embeddedHTMLBoxes[ boxes_ ] := Enclose[
+    Module[ { b64, dynamic },
+
+        b64 = BaseEncode @ BinarySerialize[ RawBoxes @ boxes, PerformanceGoal -> "Size" ];
+
+        dynamic = With[ { b64 = b64, missing = $missingImage },
+            DynamicModule[ { display, ready = False },
+                PaneSelector[
+                    { True -> Dynamic @ display },
+                    Dynamic @ ready,
+                    $waiting,
+                    ImageSize -> Automatic
+                ],
+                Initialization :>
+                    If[ TrueQ @ $dynamicText,
+                        Null,
+                        display = Replace[
+                            Symbol[ "Wolfram`Chatbook`DisplayBase64Boxes" ][ b64 ],
+                            Blank @ Symbol[ "Wolfram`Chatbook`DisplayBase64Boxes" ] :> missing
+                        ];
+                        ready = True
+                    ],
+                SynchronousInitialization -> False,
+                UnsavedVariables :> { display, ready }
+            ]
+        ];
+
+        TagBox[ ToBoxes @ dynamic, "DynamicEmbeddedHTMLBoxes" ]
+    ],
+    throwInternalFailure
+];
+
+embeddedHTMLBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*displayBase64Boxes*)
+displayBase64Boxes // beginDefinition;
+
+displayBase64Boxes[ b64_String ] /; $dynamicText := $waiting;
+
+displayBase64Boxes[ b64_String ] := Enclose[
+    Module[ { bytes, boxes, display },
+        bytes = ConfirmBy[ BaseDecode @ b64, ByteArrayQ, "Bytes" ];
+        boxes = ConfirmMatch[ BinaryDeserialize @ bytes, _RawBoxes, "Boxes" ];
+        display = If[ TrueQ @ $CloudEvaluation, cloudEmbeddedHTMLImage @ boxes, boxes ];
+        displayBase64Boxes[ b64 ] = ConfirmMatch[ display, _RawBoxes, "Display" ]
+    ],
+    throwInternalFailure
+];
+
+displayBase64Boxes // endDefinition;
+
+
+$waiting := $waiting = RawBoxes @ ToBoxes @ Panel[
+    ProgressIndicator[ Appearance -> "Necklace" ],
+    ImageSize -> { 150, 150 },
+    Alignment -> { Center, Center }
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudEmbeddedHTMLImage*)
+cloudEmbeddedHTMLImage // beginDefinition;
+
+cloudEmbeddedHTMLImage[ expr_ ] := Enclose[
+    Module[ { raster, size, resized, b64, width, height, embedSize, html, boxes },
+
+        raster = ConfirmBy[ rasterize[ expr, ImageResolution -> 144 ], image2DQ, "Raster" ];
+        size = Max @ ConfirmMatch[ ImageDimensions @ raster, { _, _ }, "OriginalDimensions" ];
+        resized = If[ size > 1000, ImageResize[ raster, { UpTo[ 1000 ], UpTo[ 1000 ] } ], raster ];
+        b64 = ConfirmBy[ exportDataURI[ resized, "JPEG" ], StringQ, "Base64" ];
+        { width, height } = Round[ ConfirmMatch[ ImageDimensions @ resized, { _, _ }, "Dimensions" ] / 2 ];
+        embedSize = { width, height + 12 };
+
+        html = ConfirmBy[
+            TemplateApply[ $embeddedImageTemplate, { b64, width, height } ],
+            StringQ,
+            "HTML"
+        ];
+
+        boxes = ToBoxes @ EmbeddedHTML[ html, ImageSize -> embedSize ];
+        RawBoxes @ TagBox[ boxes, "CloudEmbeddedHTMLImage" ]
+    ],
+    throwInternalFailure
+];
+
+cloudEmbeddedHTMLImage // endDefinition;
+
+
+$embeddedImageTemplate = "<div style=\"margin: -8px;\"><img src=\"`1`\" width=\"`2`\" height=\"`3`\"></div>";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
