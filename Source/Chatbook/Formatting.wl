@@ -2372,9 +2372,32 @@ stringToBoxes[ s_String ] /; $dynamicText := StringReplace[
 ];
 
 stringToBoxes[ s_String ] :=
-    adjustBoxSpacing @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ s;
+    adjustBoxSpacing @ stringToBoxes0 @ usingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ s;
 
 stringToBoxes // endDefinition;
+
+
+stringToBoxes0 // beginDefinition;
+stringToBoxes0[ RowBox @ { a___, b: "\n"|"\[IndentingNewLine]", c___ } ] := stringToBoxes0 @ { a, b, c };
+stringToBoxes0[ boxes_? boxDataQ ] := boxes;
+stringToBoxes0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*boxDataQ*)
+boxDataQ // beginDefinition;
+boxDataQ[ _String? StringQ ] := True;
+boxDataQ[ boxes_List ] := AllTrue[ boxes, boxDataQ ];
+boxDataQ[ (_? boxSymbolQ)[ ___ ] ] := True;
+boxDataQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*boxSymbolQ*)
+boxSymbolQ // beginDefinition;
+boxSymbolQ[ RowBox ] := True;
+boxSymbolQ[ s_Symbol ] := boxSymbolQ[ s ] = Context @ s === "System`" && StringEndsQ[ SymbolName @ s, "Box" ];
+boxSymbolQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
