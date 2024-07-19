@@ -86,7 +86,9 @@ $nonInheritedPersonaValues = {
     "ServiceDefaultModel"
 };
 
-$currentChatSettings = None;
+$currentChatSettings          = None;
+$currentSettingsCache         = None;
+$absoluteCurrentSettingsCache = None;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -132,10 +134,44 @@ $CurrentChatSettings := If[ AssociationQ @ $currentChatSettings, $currentChatSet
 (* ::Section::Closed:: *)
 (*AbsoluteCurrentChatSettings*)
 AbsoluteCurrentChatSettings // beginDefinition;
-AbsoluteCurrentChatSettings[ ] := AbsoluteCurrentChatSettings @ $FrontEnd;
-AbsoluteCurrentChatSettings[ obj: $$feObj ] := resolveAutoSettings @ currentChatSettings @ obj;
-AbsoluteCurrentChatSettings[ obj: $$feObj, keys__String ] := AbsoluteCurrentChatSettings[ obj ][ keys ];
+AbsoluteCurrentChatSettings[ ] := catchMine @ AbsoluteCurrentChatSettings @ $FrontEnd;
+AbsoluteCurrentChatSettings[ obj: $$feObj ] := catchMine @ absoluteCurrentChatSettings @ obj;
+AbsoluteCurrentChatSettings[ obj: $$feObj, keys__String ] := catchMine @ absoluteCurrentChatSettings[ obj, keys ];
 AbsoluteCurrentChatSettings // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*absoluteCurrentChatSettings*)
+absoluteCurrentChatSettings // beginDefinition;
+
+absoluteCurrentChatSettings[ obj: $$feObj ] := Enclose[
+    Catch @ Module[ { cached, settings },
+        cached = $absoluteCurrentSettingsCache @ obj;
+        If[ AssociationQ @ cached, Throw @ cached ];
+        settings = ConfirmBy[ absoluteCurrentChatSettings0 @ obj, AssociationQ, "Settings" ];
+        If[ AssociationQ @ $absoluteCurrentSettingsCache,
+            $absoluteCurrentSettingsCache[ obj ] = settings,
+            settings
+        ]
+    ],
+    throwInternalFailure
+];
+
+absoluteCurrentChatSettings[ obj: $$feObj, keys__ ] := Enclose[
+    Module[ { settings },
+        settings = ConfirmBy[ absoluteCurrentChatSettings @ obj, AssociationQ, "Settings" ];
+        Replace[ settings @ keys, _Missing -> Inherited ]
+    ],
+    throwInternalFailure
+];
+
+absoluteCurrentChatSettings // endDefinition;
+
+
+absoluteCurrentChatSettings0 // beginDefinition;
+absoluteCurrentChatSettings0[ ] := absoluteCurrentChatSettings0 @ $FrontEnd;
+absoluteCurrentChatSettings0[ obj: $$feObj ] := resolveAutoSettings @ currentChatSettings @ obj;
+absoluteCurrentChatSettings0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -658,25 +694,37 @@ setCurrentChatSettings0 // endDefinition;
 
 setCurrentChatSettings1 // beginDefinition;
 
-setCurrentChatSettings1[ scope: $$feObj, Inherited ] :=
+setCurrentChatSettings1[ scope: $$feObj, Inherited ] := WithCleanup[
     If[ TrueQ @ $CloudEvaluation,
         setCurrentChatSettingsCloud[ scope, Inherited ],
         CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" } ] = Inherited
-    ];
+    ],
+    (* Invalidate cache *)
+    $currentSettingsCache = <| |>
+    (* Note: It may be more slightly more efficient to just invalidate for the given `scope`, but that would require
+       also finding scopes that `scope` inherits from and invalidating those as well. This is much simpler. *)
+];
 
 setCurrentChatSettings1[ scope: $$feObj, value_ ] :=
     With[ { as = Association @ value },
-        If[ TrueQ @ $CloudEvaluation,
-            setCurrentChatSettingsCloud[ scope, as ],
-            CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" } ] = as
+        WithCleanup[
+            If[ TrueQ @ $CloudEvaluation,
+                setCurrentChatSettingsCloud[ scope, as ],
+                CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" } ] = as
+            ],
+            (* Invalidate cache *)
+            $currentSettingsCache = <| |>
         ] /; AssociationQ @ as
     ];
 
-setCurrentChatSettings1[ scope: $$feObj, key_String? StringQ, value_ ] :=
+setCurrentChatSettings1[ scope: $$feObj, key_String? StringQ, value_ ] := WithCleanup[
     If[ TrueQ @ $CloudEvaluation,
         setCurrentChatSettingsCloud[ scope, key, value ],
         CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", key } ] = value
-    ];
+    ],
+    (* Invalidate cache *)
+    $currentSettingsCache = <| |>
+];
 
 setCurrentChatSettings1 // endDefinition;
 
@@ -857,14 +905,8 @@ unsetCurrentChatSettings[ obj: $$feObj, key_ ] := throwFailure[
 unsetCurrentChatSettings // endDefinition;
 
 unsetCurrentChatSettings0 // beginDefinition;
-
-(* FIXME: make this work in cloud *)
-unsetCurrentChatSettings0[ obj: $$feObj ] :=
-    (CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ] = Inherited);
-
-unsetCurrentChatSettings0[ obj: $$feObj, key_? StringQ ] :=
-    (CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ] = Inherited);
-
+unsetCurrentChatSettings0[ obj: $$feObj ] := setCurrentChatSettings[ obj, Inherited ];
+unsetCurrentChatSettings0[ obj: $$feObj, key_? StringQ ] := setCurrentChatSettings[ obj, key, Inherited ];
 unsetCurrentChatSettings0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -872,23 +914,53 @@ unsetCurrentChatSettings0 // endDefinition;
 (*currentChatSettings*)
 currentChatSettings // beginDefinition;
 
-currentChatSettings[ fe: $$frontEndObject ] /; $CloudEvaluation :=
+currentChatSettings[ obj: $$feObj ] := Enclose[
+    Catch @ Module[ { cached, settings },
+        cached = $currentSettingsCache @ obj;
+        If[ AssociationQ @ cached, Throw @ cached ];
+        settings = ConfirmBy[ currentChatSettings0 @ obj, AssociationQ, "Settings" ];
+        If[ AssociationQ @ $currentSettingsCache,
+            $currentSettingsCache[ obj ] = settings,
+            settings
+        ]
+    ],
+    throwInternalFailure
+];
+
+currentChatSettings[ obj: $$feObj, key_ ] := Enclose[
+    Catch @ Module[ { cached },
+        cached = $currentSettingsCache @ obj;
+        If[ AssociationQ @ cached && KeyExistsQ[ cached, key ], Throw @ cached @ key ];
+        If[ AssociationQ @ $currentSettingsCache,
+            Lookup[ ConfirmBy[ currentChatSettings @ obj, AssociationQ, "Settings" ], key, Inherited ],
+            currentChatSettings0[ obj, key ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+currentChatSettings // endDefinition;
+
+
+currentChatSettings0 // beginDefinition;
+
+currentChatSettings0[ fe: $$frontEndObject ] /; $CloudEvaluation :=
     getGlobalChatSettings[ ];
 
-currentChatSettings[ fe: $$frontEndObject, key_String ] /; $CloudEvaluation :=
+currentChatSettings0[ fe: $$frontEndObject, key_String ] /; $CloudEvaluation :=
     getGlobalChatSettings[ key ];
 
-currentChatSettings[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession ] := (
+currentChatSettings0[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession ] := (
     verifyInheritance @ obj;
-    currentChatSettings0 @ obj
+    currentChatSettings1 @ obj
 );
 
-currentChatSettings[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := (
+currentChatSettings0[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := (
     verifyInheritance @ obj;
-    currentChatSettings0[ obj, key ]
+    currentChatSettings1[ obj, key ]
 );
 
-currentChatSettings[ cell0_CellObject ] := Catch @ Enclose[
+currentChatSettings0[ cell0_CellObject ] := Catch @ Enclose[
     Catch @ Module[ { cell, cellInfo, styles, nbo, delimiter, settings },
 
         verifyInheritance @ cell0;
@@ -903,7 +975,7 @@ currentChatSettings[ cell0_CellObject ] := Catch @ Enclose[
             styles = cellStyles @ cell;
         ];
 
-        If[ cellInfo[ "ChatNotebookSettings", "ChatDelimiter" ], Throw @ currentChatSettings0 @ cell ];
+        If[ cellInfo[ "ChatNotebookSettings", "ChatDelimiter" ], Throw @ currentChatSettings1 @ cell ];
 
         nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
 
@@ -928,7 +1000,7 @@ currentChatSettings[ cell0_CellObject ] := Catch @ Enclose[
     throwInternalFailure
 ];
 
-currentChatSettings[ cell0_CellObject, key_String ] := Catch @ Enclose[
+currentChatSettings0[ cell0_CellObject, key_String ] := Catch @ Enclose[
     Catch @ Module[ { cell, cellInfo, styles, nbo, cells, delimiter, values },
 
         verifyInheritance @ cell0;
@@ -943,7 +1015,7 @@ currentChatSettings[ cell0_CellObject, key_String ] := Catch @ Enclose[
             styles = cellStyles @ cell;
         ];
 
-        If[ cellInfo[ "ChatNotebookSettings", "ChatDelimiter" ], Throw @ currentChatSettings0[ cell, key ] ];
+        If[ cellInfo[ "ChatNotebookSettings", "ChatDelimiter" ], Throw @ currentChatSettings1[ cell, key ] ];
 
         nbo   = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
         cells = ConfirmMatch[ Cells @ nbo, { __CellObject }, "ChatCells" ];
@@ -976,15 +1048,15 @@ currentChatSettings[ cell0_CellObject, key_String ] := Catch @ Enclose[
             ]
         ]
     ],
-    throwInternalFailure[ currentChatSettings[ cell0, key ], ## ] &
+    throwInternalFailure
 ];
 
-currentChatSettings // endDefinition;
+currentChatSettings0 // endDefinition;
 
 
-currentChatSettings0 // beginDefinition;
+currentChatSettings1 // beginDefinition;
 
-currentChatSettings0[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession ] :=
+currentChatSettings1[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession ] :=
     mergeChatSettings @ Map[
         evaluateSettings,
         {
@@ -997,12 +1069,12 @@ currentChatSettings0[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEnd
         }
     ];
 
-currentChatSettings0[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := Replace[
+currentChatSettings1[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := Replace[
     absoluteCurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", key } ],
     Inherited :> Lookup[ $cachedGlobalSettings, key, Lookup[ $defaultChatSettings, key, Inherited ] ]
 ];
 
-currentChatSettings0 // endDefinition;
+currentChatSettings1 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
