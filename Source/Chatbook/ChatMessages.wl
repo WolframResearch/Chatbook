@@ -164,7 +164,7 @@ constructInlineMessages[ settings_, state_, Dynamic[ cells_ ] ] :=
     constructInlineMessages[ settings, state, cells ];
 
 constructInlineMessages[ settings_, state_, cells: { __Cell } ] :=
-    constructMessages[ settings, Global`cells = cells ];
+    constructMessages[ settings, cells ];
 
 constructInlineMessages // endDefinition;
 
