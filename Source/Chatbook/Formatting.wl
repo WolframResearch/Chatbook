@@ -2235,29 +2235,21 @@ checkBoxes // endDefinition;
 embeddedHTMLBoxes // beginDefinition;
 
 embeddedHTMLBoxes[ boxes_ ] := Enclose[
-    Module[ { b64, dynamic },
+    Module[ { id, dynamic },
+        id = ConfirmBy[ createBoxCacheReference @ boxes, IntegerQ, "ID" ];
 
-        b64 = BaseEncode @ BinarySerialize[ RawBoxes @ boxes, PerformanceGoal -> "Size" ];
-
-        dynamic = With[ { b64 = b64, missing = $missingImage },
-            DynamicModule[ { display, ready = False },
-                PaneSelector[
-                    { True -> Dynamic @ display },
-                    Dynamic @ ready,
-                    $waiting,
-                    ImageSize -> Automatic
-                ],
-                Initialization :>
+        dynamic = With[ { id = id, missing = $missingImage, waiting = $waiting },
+            DynamicModule[ { b64, display },
+                Dynamic @ Replace[ display, Except[ _RawBoxes ] -> waiting ],
+                Initialization :> (
                     If[ TrueQ @ $dynamicText,
                         Null,
-                        display = Replace[
-                            Symbol[ "Wolfram`Chatbook`DisplayBase64Boxes" ][ b64 ],
-                            Blank @ Symbol[ "Wolfram`Chatbook`DisplayBase64Boxes" ] :> missing
-                        ];
-                        ready = True
-                    ],
+                        If[ ! StringQ @ b64, b64 = getBase64 @ id ];
+                        display = Replace[ displayBase64Boxes @ b64, Except[ _RawBoxes ] :> missing ]
+                    ]
+                ),
                 SynchronousInitialization -> False,
-                UnsavedVariables :> { display, ready }
+                UnsavedVariables :> { display }
             ]
         ];
 
@@ -2267,6 +2259,35 @@ embeddedHTMLBoxes[ boxes_ ] := Enclose[
 ];
 
 embeddedHTMLBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createBoxCacheReference*)
+createBoxCacheReference // beginDefinition;
+createBoxCacheReference[ boxes_ ] := With[ { id = Hash @ boxes }, $boxQueueCache[ id ] = boxes; id ];
+createBoxCacheReference // endDefinition;
+
+$boxQueueCache = <| |>;
+$base64Cache   = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getBase64*)
+getBase64 // beginDefinition;
+
+getBase64[ id_ ] := getBase64[ id, $base64Cache[ id ] ];
+getBase64[ id_, b64_String ] := b64;
+getBase64[ id_, m_Missing ] := getBase64[ id, m, $boxQueueCache[ id ] ];
+getBase64[ id_, _, _Missing ] := Missing[ "NotAvailable" ];
+
+getBase64[ id_, _, boxes_ ] :=
+    With[ { b64 = BaseEncode @ BinarySerialize[ RawBoxes @ boxes, PerformanceGoal -> "Size" ] },
+        $base64Cache[ id ] = b64;
+        KeyDropFrom[ $boxQueueCache, id ];
+        b64
+    ];
+
+getBase64 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2285,6 +2306,8 @@ displayBase64Boxes[ b64_String ] := Enclose[
     throwInternalFailure
 ];
 
+displayBase64Boxes[ _ ] := $waiting;
+
 displayBase64Boxes // endDefinition;
 
 
@@ -2300,7 +2323,7 @@ $waiting := $waiting = RawBoxes @ ToBoxes @ Panel[
 cloudEmbeddedHTMLImage // beginDefinition;
 
 cloudEmbeddedHTMLImage[ expr_ ] := Enclose[
-    Module[ { raster, size, resized, b64, width, height, embedSize, html, boxes },
+    usingFrontEnd @ Module[ { raster, size, resized, b64, width, height, embedSize, html, boxes },
 
         raster = ConfirmBy[ rasterize[ expr, ImageResolution -> 144 ], image2DQ, "Raster" ];
         size = Max @ ConfirmMatch[ ImageDimensions @ raster, { _, _ }, "OriginalDimensions" ];
