@@ -158,22 +158,29 @@ attachInlineChatInput[ nbo_NotebookObject ] :=
         Null
     ];
 
-(* FIXME: need to determine selection info and store it before attaching the cell, since the selection will move *)
 attachInlineChatInput[ nbo_NotebookObject, { root_CellObject } ] := Enclose[
-    Module[ { attached },
+    Module[ { selectionInfo, attached },
 
-        $lastScrollPosition = 0.0;
-        $inlineChatScrollPosition = 0.0;
-
+        NotebookDelete @ $lastAttachedInlineChat;
         NotebookDelete @ Cells[ nbo, AttachedCell -> True, CellStyle -> "AttachedChatInput" ];
 
+        selectionInfo = ConfirmMatch[
+            getSelectionInfo @ root,
+            None | KeyValuePattern[ "CursorPosition" -> { _Integer, _Integer } ],
+            "SelectionInfo"
+        ];
+
+        $lastScrollPosition       = 0.0;
+        $inlineChatScrollPosition = 0.0;
+
+        (* TODO: Watch the root cell for changes and remove (or disable) the attached chat if cell changed *)
         attached = ConfirmMatch[
             AttachCell[
                 NotebookSelection @ nbo,
-                inlineChatInputCell @ root,
-                { Left, Top },
-                0,
+                inlineChatInputCell[ root, selectionInfo ],
                 { Left, Bottom },
+                0,
+                { Left, Top },
                 RemovalConditions -> { "EvaluatorQuit" }
             ],
             _CellObject,
@@ -183,21 +190,47 @@ attachInlineChatInput[ nbo_NotebookObject, { root_CellObject } ] := Enclose[
         SelectionMove[ attached, Before, CellContents ];
         FrontEndExecute @ FrontEnd`FrontEndToken[ "MoveNextPlaceHolder" ];
 
-        attached
+        $lastAttachedInlineChat = attached
     ],
     throwInternalFailure
 ];
 
+(* FIXME: Need to handle multiple or no cell selections *)
 attachInlineChatInput[ nbo_NotebookObject, { ___ } ] := Null;
 
 attachInlineChatInput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*getSelectionInfo*)
+getSelectionInfo // beginDefinition;
+
+getSelectionInfo[ cell_CellObject ] := getSelectionInfo[ cell, cellInformation[ cell, "CursorPosition" ] ];
+getSelectionInfo[ cell_, Except[ { _Integer, _Integer } ] ] := None;
+getSelectionInfo[ cell_, pos_ ] := getSelectionInfo[ cell, pos, cellHash @ cell ];
+
+getSelectionInfo[ cell_CellObject, pos: { _Integer, _Integer }, hash_String ] := <|
+    "CellObject"     -> cell,
+    "CursorPosition" -> pos,
+    "Hash"           -> hash
+|>;
+
+getSelectionInfo // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cellHash*)
+cellHash // beginDefinition;
+cellHash[ cell_CellObject ] := cellHash[ cell, FrontEndExecute @ FrontEnd`CryptoHash @ cell ];
+cellHash[ cell_CellObject, KeyValuePattern @ { "DirtiableContentsHash" -> hash_String } ] := hash;
+cellHash // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*inlineChatInputCell*)
 inlineChatInputCell // beginDefinition;
 
-inlineChatInputCell[ root_CellObject ] := Cell[
+inlineChatInputCell[ root_CellObject, selectionInfo_ ] := Cell[
     BoxData @ inlineTemplateBox @ TemplateBox[
         {
             ToBoxes @ DynamicModule[ { messageCells = { }, cell },
@@ -206,6 +239,7 @@ inlineChatInputCell[ root_CellObject ] := Cell[
                         "DisplayInlineChat",
                         cell,
                         root,
+                        selectionInfo,
                         Dynamic[ messageCells ]
                     ]
                 ],
@@ -241,12 +275,13 @@ inlineChatInputCell // endDefinition;
 (*displayInlineChat*)
 displayInlineChat // beginDefinition;
 
-displayInlineChat[ cell_CellObject, root_CellObject, Dynamic[ messageCells_Symbol ] ] :=
+displayInlineChat[ cell_CellObject, root_CellObject, selectionInfo_, Dynamic[ messageCells_Symbol ] ] :=
     Module[ { inputField },
 
         inputField = inlineChatInputField[
             cell,
             root,
+            selectionInfo,
             Dynamic @ CurrentValue[ cell, { TaggingRules, "ChatInputString" } ],
             Dynamic @ messageCells
         ];
@@ -261,7 +296,13 @@ displayInlineChat // endDefinition;
 (*inlineChatInputField*)
 inlineChatInputField // beginDefinition;
 
-inlineChatInputField[ cell_CellObject, root_CellObject, Dynamic[ currentInput_ ], Dynamic[ messageCells_ ] ] :=
+inlineChatInputField[
+    cell_CellObject,
+    root_CellObject,
+    selectionInfo_,
+    Dynamic[ currentInput_ ],
+    Dynamic[ messageCells_ ]
+] :=
     EventHandler[
         Pane[
             Grid[
@@ -304,6 +345,7 @@ inlineChatInputField[ cell_CellObject, root_CellObject, Dynamic[ currentInput_ ]
                     "EvaluateInlineChat",
                     cell,
                     root,
+                    selectionInfo,
                     Dynamic @ currentInput,
                     Dynamic @ messageCells
                 ]

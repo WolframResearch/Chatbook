@@ -1366,63 +1366,6 @@ showAPIKeyDialog // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Settings*)
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*withChatState*)
-withChatState // beginDefinition;
-withChatState // Attributes = { HoldFirst };
-
-(* TODO: create a `$CurrentChatSettings` symbol that's scoped here and defined as soon as settings are resolved *)
-withChatState[ eval_ ] :=
-    Block[
-        {
-            $AutomaticAssistance = False,
-            $WorkspaceChat       = False,
-            $chatState           = True,
-            $enableLLMServices   = Automatic,
-            withChatState        = # &
-        },
-        $ChatHandlerData = <| |>;
-        (* cSpell: ignore multser *)
-        Internal`InheritedBlock[ { $evaluationCell, $evaluationNotebook },
-            Quiet[ withToolBox @ withBasePromptBuilder @ eval, ServiceExecute::multser ]
-        ]
-    ];
-
-withChatState // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*withChatStateAndFEObjects*)
-withChatStateAndFEObjects // beginDefinition;
-withChatStateAndFEObjects // Attributes = { HoldRest };
-
-withChatStateAndFEObjects[ cell_CellObject ] :=
-    withChatStateAndFEObjects[ { cell, None } ];
-
-withChatStateAndFEObjects[ { cell_, nbo_ } ] :=
-    Function[ eval, withChatStateAndFEObjects[ { cell, nbo }, eval ], HoldFirst ];
-
-withChatStateAndFEObjects[ { cell_CellObject, nbo_NotebookObject }, eval_ ] :=
-    WithCleanup[
-        $ChatEvaluationCell = cell,
-        withChatState @ Block[ { $evaluationCell = cell, $evaluationNotebook = nbo }, eval ],
-        $ChatEvaluationCell = None
-    ];
-
-withChatStateAndFEObjects[ { cell_CellObject, nbo_ }, eval_ ] :=
-    WithCleanup[
-        $ChatEvaluationCell = cell,
-        withChatState @ Block[ { $evaluationCell = cell }, eval ],
-        $ChatEvaluationCell = None
-    ];
-
-withChatStateAndFEObjects // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
 (*Paclet Assets*)
 
 (* ::**************************************************************************************************************:: *)
