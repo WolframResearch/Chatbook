@@ -2004,7 +2004,14 @@ image[ alt_String, url_String ] := Enclose[
         keys = ConfirmMatch[ Keys @ $attachments, { ___String? StringQ }, "Keys" ];
         key  = SelectFirst[ keys, StringContainsQ[ url, #1, IgnoreCase -> True ] & ];
         If[ StringQ @ key,
-            markdownImageBoxes[ alt, key, Replace[ $attachments[ key ], HoldComplete[ expr_ ] :> expr ] ],
+            Cell[
+                BoxData @ markdownImageBoxes[
+                    alt,
+                    key,
+                    Replace[ $attachments[ key ], HoldComplete[ expr_ ] :> expr ]
+                ],
+                Background -> None
+            ],
             image[ alt, url, urlParse @ url ]
         ]
     ],
