@@ -227,7 +227,17 @@ resolveAutoSettings[ settings0_Association ] := Enclose[
             "Resolved"
         ];
 
-        If[ $chatState, addHandlerArguments[ "ChatNotebookSettings" -> resolved ] ];
+        If[ $chatState,
+            addHandlerArguments[ "ChatNotebookSettings" -> resolved ];
+
+            (* TODO: this is not ideal *)
+            $multimodalMessages      = TrueQ @ resolved[ "Multimodal" ];
+            $tokenBudget             = makeTokenBudget @ resolved;
+            $tokenPressure           = 0.0;
+            $initialCellStringBudget = makeCellStringBudget @ resolved;
+            $cellStringBudget        = $initialCellStringBudget;
+            $conversionRules         = resolved[ "ConversionRules" ];
+        ];
         If[ $catching, $currentChatSettings = resolved ];
 
         resolved

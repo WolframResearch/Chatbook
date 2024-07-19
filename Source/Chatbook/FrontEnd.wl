@@ -280,7 +280,8 @@ cellEvaluatingQ // endDefinition;
 (*cellInformation*)
 cellInformation // beginDefinition;
 
-cellInformation[ nbo_NotebookObject ] := cellInformation @ Cells @ nbo;
+cellInformation[ nbo_NotebookObject, a___ ] :=
+    cellInformation[ Cells @ nbo, a ];
 
 cellInformation[ cells: { ___CellObject } ] := Select[
     Map[
@@ -306,6 +307,32 @@ cellInformation[ cell_CellObject ] :=
             ],
             Missing[ "NotAvailable" ]
         ]
+    ];
+
+cellInformation[ cells: { ___CellObject }, key_String ] :=
+    Replace[
+        cellInformation @ cells,
+        as: KeyValuePattern @ { } :> Lookup[ as, key, Missing[ "NotAvailable" ] ],
+        { 1 }
+    ];
+
+cellInformation[ cell_CellObject, key_String ] :=
+    Replace[
+        cellInformation @ cell,
+        as: KeyValuePattern @ { } :> Lookup[ as, key, Missing[ "NotAvailable" ] ]
+    ];
+
+cellInformation[ cells: { ___CellObject }, keys: { ___String } ] :=
+    Replace[
+        cellInformation @ cells,
+        as: KeyValuePattern @ { } :> KeyTake[ as, keys ],
+        { 1 }
+    ];
+
+cellInformation[ cell_CellObject, keys: { ___String } ] :=
+    Replace[
+        cellInformation @ cell,
+        as: KeyValuePattern @ { } :> KeyTake[ as, keys ]
     ];
 
 cellInformation // endDefinition;

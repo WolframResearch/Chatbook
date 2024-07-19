@@ -49,7 +49,13 @@ evaluateWorkspaceChat // endDefinition;
 (*evaluateInlineChat*)
 evaluateInlineChat // beginDefinition;
 
-evaluateInlineChat[ cell_CellObject, root_CellObject, Dynamic[ input_ ], Dynamic[ messageCells_ ] ] := Enclose[
+evaluateInlineChat[
+    cell_CellObject,
+    root_CellObject,
+    selectionInfo_,
+    Dynamic[ input_ ],
+    Dynamic[ messageCells_ ]
+] := Enclose[
     Catch @ Module[ { text, nbo, result },
 
         If[ ! validInputStringQ @ input, input = ""; Throw @ Null ];
@@ -68,6 +74,7 @@ evaluateInlineChat[ cell_CellObject, root_CellObject, Dynamic[ input_ ], Dynamic
                     "ParentCell"     -> root,
                     "ParentNotebook" -> nbo,
                     "InlineChatCell" -> cell,
+                    "SelectionInfo"  -> selectionInfo,
                     "MessageCells"   -> Dynamic @ messageCells
                 |>
             },

@@ -242,6 +242,16 @@ applyPromptTemplate // endDefinition;
 makeChatMessages // beginDefinition;
 
 makeChatMessages[ settings_, cells_ ] :=
+    makeChatMessages[ settings, cells, True ];
+
+makeChatMessages[ settings_, cells_, includeSystem_ ] /; $chatState :=
+    Block[ { $chatInputIndicator = mixedContentQ @ cells },
+        If[ includeSystem && settings[ "BasePrompt" ] =!= None, tokenCheckedMessage[ settings, $fullBasePrompt ] ];
+        (* FIXME: need to account for persona/tool prompting as well *)
+        makeChatMessages0[ settings, cells, includeSystem ]
+    ];
+
+makeChatMessages[ settings_, cells_, includeSystem_ ] :=
     Block[
         {
             $multimodalMessages      = TrueQ @ settings[ "Multimodal" ],
@@ -253,9 +263,9 @@ makeChatMessages[ settings_, cells_ ] :=
         },
         $conversionRules = settings[ "ConversionRules" ];
         $cellStringBudget = $initialCellStringBudget;
-        If[ settings[ "BasePrompt" ] =!= None, tokenCheckedMessage[ settings, $fullBasePrompt ] ];
+        If[ includeSystem && settings[ "BasePrompt" ] =!= None, tokenCheckedMessage[ settings, $fullBasePrompt ] ];
         (* FIXME: need to account for persona/tool prompting as well *)
-        makeChatMessages0[ settings, cells ]
+        makeChatMessages0[ settings, cells, includeSystem ]
     ];
 
 makeChatMessages // endDefinition;
@@ -263,19 +273,17 @@ makeChatMessages // endDefinition;
 
 makeChatMessages0 // beginDefinition;
 
-makeChatMessages0[ settings_, { cells___, cell_ ? promptFunctionCellQ } ] := (
+makeChatMessages0[ settings_, { cells___, cell_ ? promptFunctionCellQ }, includeSystem_ ] := (
     Sow[ <| "RawOutput" -> True |>, $chatDataTag ];
     makePromptFunctionMessages[ settings, { cells, cell } ]
 );
 
-makeChatMessages0[ settings0_, cells_List ] := Enclose[
+makeChatMessages0[ settings0_, cells_List, includeSystem_ ] := Enclose[
     Module[ { settings, role, message, toMessage0, toMessage, cell, history, messages, merged },
         settings   = ConfirmBy[ <| settings0, "HistoryPosition" -> 0, "Cells" -> cells |>, AssociationQ, "Settings" ];
-        role       = makeCurrentRole @ settings;
+        role       = If[ TrueQ @ includeSystem, makeCurrentRole @ settings, Missing[ ] ];
         cell       = ConfirmMatch[ Last[ cells, $Failed ], _Cell, "Cell" ];
         toMessage0 = Confirm[ getCellMessageFunction @ settings, "CellMessageFunction" ];
-
-        $tokenBudgetLog = Internal`Bag[ ];
 
         toMessage = Function @ With[
             { msg = toMessage0[ #1, <| #2, "TokenBudget" -> $tokenBudget, "TokenPressure" -> $tokenPressure |> ] },
@@ -303,7 +311,7 @@ makeChatMessages0[ settings0_, cells_List ] := Enclose[
         merged = If[ TrueQ @ Lookup[ settings, "MergeMessages" ], mergeMessageData @ messages, messages ];
         $lastMessageList = merged
     ],
-    throwInternalFailure[ makeChatMessages0[ settings0, cells ], ## ] &
+    throwInternalFailure
 ];
 
 makeChatMessages0 // endDefinition;
@@ -422,7 +430,7 @@ tokenCheckedMessage[ as_Association, message_ ] := Enclose[
 
         message
     ],
-    throwInternalFailure[ tokenCheckedMessage[ as, message ], ## ] &
+    throwInternalFailure
 ];
 
 tokenCheckedMessage // endDefinition;
