@@ -1177,7 +1177,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3930557209"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3930562727"|>
   ],
   Cell[
    StyleData["Text"],
@@ -12356,13 +12356,14 @@ Notebook[
            TemplateBox[{#1, #2}, "SendChatButtonLabel"],
            ButtonFunction :>
             (SelectionMove[Wolfram`ChatNB`cell$$, All, Cell];
-            SelectionEvaluateCreateCell[
-             Notebooks[Wolfram`ChatNB`cell$$]
+            FrontEndTokenExecute[
+             Notebooks[Wolfram`ChatNB`cell$$],
+             "EvaluateCells"
             ]),
            FrameMargins -> 0,
+           Method -> "Queued",
            Appearance -> Automatic,
-           Evaluator -> Automatic,
-           Method -> "Preemptive"
+           Evaluator -> Automatic
           ],
          True ->
           ButtonBox[
@@ -12400,6 +12401,7 @@ Notebook[
        Initialization :>
         (Wolfram`ChatNB`cell$$ = 
          If[ $CloudEvaluation,
+          Wolfram`ChatNB`x;
           EvaluationCell[],
           ParentCell[EvaluationCell[]]
          ]),
