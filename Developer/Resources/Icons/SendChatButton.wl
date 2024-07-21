@@ -30,7 +30,7 @@ Function[
    Dynamic[ Wolfram`Chatbook`$ChatEvaluationCell === cell ],
    Alignment -> { Automatic, Baseline }
   ],
-  Initialization :> (cell = ParentCell @ EvaluationCell[ ]),
+  Initialization :> (cell = If[ $CloudEvaluation, EvaluationCell[ ], ParentCell @ EvaluationCell[ ] ]),
   DynamicModuleValues :> { }
  ]
 ]
