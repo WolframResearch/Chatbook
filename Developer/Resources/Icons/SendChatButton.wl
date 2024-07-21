@@ -6,8 +6,8 @@ Function[
      Button[
       RawBoxes @ TemplateBox[ { #1, #2 }, "SendChatButtonLabel" ],
       SelectionMove[ cell, All, Cell ];
-      SelectionEvaluateCreateCell @ Notebooks @ cell,
-      FrameMargins -> 0
+      FrontEndTokenExecute[ Notebooks @ cell, "EvaluateCells" ],
+      FrameMargins -> 0,
      ],
     True ->
      Button[
