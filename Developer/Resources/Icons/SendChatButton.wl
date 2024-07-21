@@ -8,6 +8,7 @@ Function[
       SelectionMove[ cell, All, Cell ];
       FrontEndTokenExecute[ Notebooks @ cell, "EvaluateCells" ],
       FrameMargins -> 0,
+      Method -> "Queued"
      ],
     True ->
      Button[
