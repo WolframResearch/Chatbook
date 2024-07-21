@@ -6,8 +6,9 @@ Function[
      Button[
       RawBoxes @ TemplateBox[ { #1, #2 }, "SendChatButtonLabel" ],
       SelectionMove[ cell, All, Cell ];
-      SelectionEvaluateCreateCell @ Notebooks @ cell,
-      FrameMargins -> 0
+      FrontEndTokenExecute[ Notebooks @ cell, "EvaluateCells" ],
+      FrameMargins -> 0,
+      Method -> "Queued"
      ],
     True ->
      Button[
@@ -30,7 +31,7 @@ Function[
    Dynamic[ Wolfram`Chatbook`$ChatEvaluationCell === cell ],
    Alignment -> { Automatic, Baseline }
   ],
-  Initialization :> (cell = ParentCell @ EvaluationCell[ ]),
+  Initialization :> (cell = If[ $CloudEvaluation, x; EvaluationCell[ ], ParentCell @ EvaluationCell[ ] ]),
   DynamicModuleValues :> { }
  ]
 ]
