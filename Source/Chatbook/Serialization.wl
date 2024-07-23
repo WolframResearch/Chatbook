@@ -904,7 +904,7 @@ fasterCellToString0[ Cell[
 (* Control equals input *)
 fasterCellToString0[ NamespaceBox[
     "LinguisticAssistant",
-    DynamicModuleBox[ { ___, Typeset`query$$ = query_String, ___ }, __ ],
+    DynamicModuleBox[ { ___, Typeset`query$$|WolframAlphaClient`Private`query$$ = query_String, ___ }, __ ],
     ___
 ] ] := "\[FreeformPrompt][\""<>query<>"\"]";
 
