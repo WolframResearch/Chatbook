@@ -766,10 +766,6 @@ $templateBoxDisplayFunctions = Association @ Cases[
 ];
 
 
-Developer`WriteWXFFile[ $displayFunctionsFile, $templateBoxDisplayFunctions ];
-
-
-
 (* ::Subsection::Closed:: *)
 (*Default Settings*)
 
@@ -858,6 +854,7 @@ BuildChatbookStylesheet[ ] := BuildChatbookStylesheet @ $styleSheetTarget;
 BuildChatbookStylesheet[ target_ ] :=
     Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
         Module[ { exported },
+            Developer`WriteWXFFile[ $displayFunctionsFile, fixContexts @ $templateBoxDisplayFunctions ];
             exported = Export[ target, fixContexts @ $ChatbookStylesheet, "NB" ];
             PacletInstall[ "Wolfram/PacletCICD" ];
             Needs[ "Wolfram`PacletCICD`" -> None ];

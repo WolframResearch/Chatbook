@@ -474,7 +474,6 @@ delayedChatObject // endDefinition;
 (*chatInputCellQ*)
 chatInputCellQ[ cell_CellObject ] := chatInputCellQ[ cell ] = chatInputCellQ[ cell, Developer`CellInformation @ cell ];
 chatInputCellQ[ cell_, KeyValuePattern[ "Style" -> $$chatInputStyle ] ] := True;
-chatInputCellQ[ cell_CellObject, ___ ] := ($badCellObject = cell; $badCell = NotebookRead @ cell; False);
 chatInputCellQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
@@ -508,12 +507,6 @@ chatOutputCellQ[ cell_, KeyValuePattern[ "Style" -> $$chatOutputStyle ] ] :=
 chatOutputCellQ[ cell_CellObject, KeyValuePattern[ "Style" -> "Output" ] ] /; $cloudNotebooks :=
     MatchQ[ CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings", "CellObject" } ], _CellObject ];
 
-chatOutputCellQ[ cell_CellObject, ___ ] := (
-    $badCellObject = cell;
-    $badCell = NotebookRead @ cell;
-    False
-);
-
 chatOutputCellQ[ ___ ] :=
     False;
 
@@ -526,13 +519,16 @@ ensureChatOutputCell[ cell_CellObject? chatOutputCellQ ] :=
     ensureChatOutputCell[ cell ] = cell;
 
 ensureChatOutputCell[ cell_ ] :=
-    ensureChatOutputCell[ cell, rootEvaluationCell @ cell ];
+    ensureChatOutputCell[ cell, topParentCell @ cell ];
 
 ensureChatOutputCell[ cell_CellObject, new_CellObject? chatOutputCellQ ] :=
     ensureChatOutputCell[ cell ] = ensureChatOutputCell[ new ] = new;
 
 ensureChatOutputCell[ cell_, new_CellObject? chatOutputCellQ ] :=
     ensureChatOutputCell[ new ] = new;
+
+ensureChatOutputCell[ cell_, new_CellObject? chatInputCellQ ] :=
+    ensureChatOutputCell[ cell, nextChatOutput @ new ];
 
 ensureChatOutputCell[ cell_, None ] :=
     None;
@@ -626,7 +622,17 @@ autoAssistQ // endDefinition;
 StopChat // beginDefinition;
 
 StopChat[ ] :=
-    StopChat @ $lastCellObject;
+    With[ { cell = $lastCellObject },
+        StopChat @ cell /; chatOutputCellQ @ cell
+    ];
+
+StopChat[ ] :=
+    With[ { cell = $ChatEvaluationCell },
+        StopChat @ cell /; chatInputCellQ @ cell
+    ];
+
+StopChat[ ] :=
+    StopChat @ rootEvaluationCell[ ];
 
 StopChat[ cell_CellObject ] :=
     With[ { parent = parentCell @ cell },
@@ -634,13 +640,15 @@ StopChat[ cell_CellObject ] :=
     ];
 
 StopChat[ cell0_CellObject ] := Enclose[
-    Catch @ Module[ { cell, settings, container, content },
+    Catch @ Module[ { finish, cell, settings, container, content },
+        finish = Function[ $ChatEvaluationCell = None; removeTask @ $lastTask; Throw @ Null ];
         cell = ConfirmMatch[ ensureChatOutputCell @ cell0, _CellObject|None, "ParentCell" ];
-        If[ cell === None, $ChatEvaluationCell = None; removeTask @ $lastTask; Throw @ Null ];
+        If[ cell === None, finish[ ] ];
         settings = ConfirmMatch[ currentChatSettings @ cell, _Association|_Missing, "ChatNotebookSettings" ];
-        If[ MissingQ @ settings, $ChatEvaluationCell = None; removeTask @ $lastTask; Throw @ Null ];
-        removeTask @ Lookup[ settings, "Task" ];
-        container = ConfirmBy[ Lookup[ settings, "Container" ], AssociationQ, "Container" ];
+        If[ MissingQ @ settings, finish[ ] ];
+        removeTask @ Lookup[ settings, "Task", None ];
+        container = ConfirmMatch[ Lookup[ settings, "Container", None ], _Association|None, "Container" ];
+        If[ container === None, finish[ ] ];
         content = ConfirmMatch[ Lookup[ container, "FullContent" ], _String|_ProgressIndicator, "Content" ];
         FinishDynamic[ ];
         Block[ { createFETask = # & }, writeReformattedCell[ settings, content, cell ] ]
@@ -649,9 +657,30 @@ StopChat[ cell0_CellObject ] := Enclose[
 ];
 
 StopChat[ $Failed ] :=
-    StopChat @ rootEvaluationCell[ ];
+    With[ { cell = rootEvaluationCell[ ] },
+        If[ MatchQ[ cell, _CellObject ], StopChat @ cell ]
+    ];
 
 StopChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*nextChatOutput*)
+nextChatOutput // beginDefinition;
+nextChatOutput[ cell_CellObject? chatOutputCellQ ] := cell;
+nextChatOutput[ cell_CellObject ] /; $cloudNotebooks := cloudNextChatOutput @ cell;
+nextChatOutput[ cell_CellObject ] := NextCell[ cell, CellStyle -> "ChatOutput" ];
+nextChatOutput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudNextChatOutput*)
+cloudNextChatOutput // beginDefinition;
+cloudNextChatOutput[ cell_CellObject ] := cloudNextChatOutput[ cell, parentNotebook @ cell ];
+cloudNextChatOutput[ cell_CellObject, nbo_NotebookObject ] := cloudNextChatOutput[ cell, Cells @ nbo ];
+cloudNextChatOutput[ cell_, { ___, cell_, cells___CellObject } ] := SelectFirst[ { cells }, chatOutputCellQ, None ];
+cloudNextChatOutput[ cell_, _ ] := None;
+cloudNextChatOutput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

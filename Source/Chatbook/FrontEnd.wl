@@ -552,12 +552,37 @@ parentCell // endDefinition;
 (* ::Subsection::Closed:: *)
 (*nextCell*)
 nextCell // beginDefinition;
-nextCell[ cell_CellObject ] /; $cloudNotebooks := nextCell[ cell, parentNotebook @ cell ];
-nextCell[ cell_CellObject ] := NextCell @ cell;
-nextCell[ cell_CellObject, nbo_NotebookObject ] := nextCell[ cell, Cells @ nbo ];
-nextCell[ cell_, { ___, cell_, next_CellObject, ___ } ] := next;
-nextCell[ _CellObject, ___ ] := None;
+nextCell // Options = { CellStyle -> Automatic };
+
+nextCell[ cell_CellObject, opts: OptionsPattern[ ] ] :=
+    If[ TrueQ @ $cloudNotebooks,
+        cloudNextCell[ cell, OptionValue[ CellStyle ] ],
+        NextCell[ cell, opts ]
+    ];
+
 nextCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudNextCell*)
+cloudNextCell // beginDefinition;
+
+cloudNextCell[ cell_CellObject, style_ ] :=
+    cloudNextCell[ cell, parentNotebook @ cell, style ];
+
+cloudNextCell[ cell_CellObject, nbo_NotebookObject, style_ ] :=
+    cloudNextCell[ cell, Cells @ nbo, style ];
+
+cloudNextCell[ cell_, { ___, cell_, next_CellObject, ___ }, Automatic ] :=
+    next;
+
+cloudNextCell[ cell_, { ___, cell_, after__CellObject }, style_ ] :=
+    SelectFirst[ { after }, MemberQ[ cellStyles @ #, style ] &, None ];
+
+cloudNextCell[ _CellObject, _, _ ] :=
+    None;
+
+cloudNextCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

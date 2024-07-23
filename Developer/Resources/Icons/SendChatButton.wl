@@ -5,6 +5,7 @@ Function[
     False ->
      Button[
       RawBoxes @ TemplateBox[ { #1, #2 }, "SendChatButtonLabel" ],
+      Wolfram`Chatbook`$ChatEvaluationCell = cell;
       SelectionMove[ cell, All, Cell ];
       FrontEndTokenExecute[ Notebooks @ cell, "EvaluateCells" ],
       FrameMargins -> 0,
@@ -17,14 +18,17 @@ Function[
         RawBoxes @ TemplateBox[ { #2 }, "ChatEvaluatingSpinner" ],
         Graphics[
          { RGBColor[ 0.71373, 0.054902, 0.0 ], Rectangle[ { -0.5, -0.5 }, { 0.5, 0.5 } ] },
-         ImageSize -> 20,
+         ImageSize -> #2,
          PlotRange -> 1.1
         ]
        },
        Alignment -> { Center, Center }
       ],
-      Needs[ "Wolfram`Chatbook`" -> None ];
-      Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
+      If[ Wolfram`Chatbook`$ChatEvaluationCell =!= cell,
+       NotebookWrite[ cell, NotebookRead @ cell, None, AutoScroll -> False ],
+       Needs[ "Wolfram`Chatbook`" -> None ];
+       Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ]
+      ],
       FrameMargins -> 0
      ]
    },
@@ -32,6 +36,7 @@ Function[
    Alignment -> { Automatic, Baseline }
   ],
   Initialization :> (cell = If[ $CloudEvaluation, x; EvaluationCell[ ], ParentCell @ EvaluationCell[ ] ]),
-  DynamicModuleValues :> { }
+  DynamicModuleValues :> { },
+  UnsavedVariables :> { cell }
  ]
 ]

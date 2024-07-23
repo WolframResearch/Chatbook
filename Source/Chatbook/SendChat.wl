@@ -679,6 +679,9 @@ trimStopTokens[ container_, stop: { ___String } ] :=
         ) /; StringQ @ full
     ];
 
+trimStopTokens[ container_, { ___String } ] :=
+    Null;
+
 trimStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

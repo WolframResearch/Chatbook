@@ -207,7 +207,10 @@ wolframAlphaResultFormatter // endDefinition;
 (*formatWolframAlphaPods*)
 formatWolframAlphaPods // beginDefinition;
 
-formatWolframAlphaPods[ info_ ] :=
+formatWolframAlphaPods[ expr: _Missing|_Failure|$Failed ] :=
+    expr;
+
+formatWolframAlphaPods[ info_Association ] :=
     formatWolframAlphaPods[ info[ "Query" ], info[ "Pods" ], $dynamicText ];
 
 formatWolframAlphaPods[ query_, grouped_Association, dynamic_ ] := Enclose[
