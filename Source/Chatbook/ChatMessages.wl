@@ -54,6 +54,8 @@ $cachedTokenizerNames = {
     "generic",
     "gpt-2",
     "gpt-3.5",
+    "gpt-4o",
+    "gpt-4o-text",
     "gpt-4-turbo",
     "gpt-4-vision",
     "gpt-4"
@@ -542,11 +544,26 @@ logUsage // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*applyTokenizer*)
 applyTokenizer // beginDefinition;
-applyTokenizer[ tokenizer_, content_String ] := tokenizer @ content;
-applyTokenizer[ tokenizer_, content_? graphicsQ ] := tokenizer @ content;
+applyTokenizer[ tokenizer_, content_String ] := applyTokenizer0[ tokenizer, content ];
+applyTokenizer[ tokenizer_, content_? graphicsQ ] := applyTokenizer0[ tokenizer, content ];
 applyTokenizer[ tokenizer_, content_List ] := Flatten[ applyTokenizer[ tokenizer, # ] & /@ content ];
-applyTokenizer[ tokenizer_, KeyValuePattern[ "Data" -> data_ ] ] := tokenizer @ data;
+applyTokenizer[ tokenizer_, KeyValuePattern[ "Data" -> data_ ] ] := applyTokenizer0[ tokenizer, data ];
 applyTokenizer // endDefinition;
+
+
+applyTokenizer0 // beginDefinition;
+(* cSpell: ignore invencin *)
+applyTokenizer0[ tokenizer_, content_ ] :=
+    Module[ { result, $retry },
+        result = Quiet[ Check[ tokenizer @ content, $retry, NetEncoder::invencin ], NetEncoder::invencin ];
+        If[ result === $retry,
+            Pause[ 0.1 ];
+            tokenizer @ content,
+            result
+        ]
+    ];
+
+applyTokenizer0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1390,6 +1407,11 @@ cacheTokenizer // endDefinition;
 (*findTokenizer*)
 findTokenizer // beginDefinition;
 
+findTokenizer[ "gpt-4o-text" ] :=
+    With[ { tokenizer = findTokenizer[ "gpt-4o" ] },
+        tokenizer /; ! MissingQ @ tokenizer
+    ];
+
 findTokenizer[ model_String ] := Enclose[
     Quiet @ Module[ { name, tokenizer },
         initTools[ ];
@@ -1409,6 +1431,7 @@ findTokenizer // endDefinition;
 (*Pre-cached small tokenizer functions*)
 $cachedTokenizers[ "chat-bison"   ] = ToCharacterCode[ #, "UTF8" ] &;
 $cachedTokenizers[ "gpt-4-vision" ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4" ] ][ # ] &;
+$cachedTokenizers[ "gpt-4o"       ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4o-text" ] ][ # ] &;
 $cachedTokenizers[ "claude-3"     ] = If[ graphicsQ @ #, claude3ImageTokenizer, cachedTokenizer[ "claude" ] ][ # ] &;
 $cachedTokenizers[ "generic"      ] = If[ graphicsQ @ #, { }, $gpt2Tokenizer @ # ] &;
 
@@ -1419,7 +1442,6 @@ tokenizerName // beginDefinition;
 
 tokenizerName[ "gpt-4-turbo-preview" ] = "gpt-4";
 tokenizerName[ "gpt-4-turbo"         ] = "gpt-4-vision";
-tokenizerName[ "gpt-4o"              ] = "gpt-4-vision";
 
 tokenizerName[ name_String ] :=
     SelectFirst[
