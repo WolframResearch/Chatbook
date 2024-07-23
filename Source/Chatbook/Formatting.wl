@@ -105,6 +105,15 @@ $autoOperatorRenderings = <|
     ShowStringCharacters -> False
 ];
 
+
+esc[ c_ ] := "\[EntityStart]" <> IntegerString @ FromDigits[ ToCharacterCode[ c, "UTF-8" ], 255 ] <> "\[EntityEnd]";
+
+$mdEscapedCharacters = { "`", "$", "*", "_", "#", "|" };
+$$mdEscapedCharacter = Alternatives @@ Map[ "\\"<># &, $mdEscapedCharacters ];
+
+$mdEscapeRules   = "\\" <> # -> esc @ # & /@ $mdEscapedCharacters;
+$mdUnescapeRules = esc @ # -> # & /@ $mdEscapedCharacters;
+
 (* ::**************************************************************************************************************:: *)
  (* ::Section::Closed:: *)
  (*StringToBoxes*)
@@ -207,6 +216,12 @@ formatToolCall0 // endDefinition;
 (* ::Subsection::Closed:: *)
 (*reformatTextData*)
 reformatTextData // beginDefinition;
+
+reformatTextData[ string_String ] /; StringContainsQ[ string, $$mdEscapedCharacter ] :=
+    ReplaceAll[
+        reformatTextData @ StringReplace[ string, $mdEscapeRules ],
+        s_String :> RuleCondition @ StringReplace[ s, $mdUnescapeRules ]
+    ];
 
 reformatTextData[ string_String ] := joinAdjacentStrings @ Flatten[
     makeResultCell /@ discardBadToolCalls @ DeleteCases[
@@ -1096,14 +1111,6 @@ $textDataFormatRules = {
     quote: $$blockQuote :> blockQuoteCell @ quote
     ,
     "[`" ~~ label: Except[ "[" ].. ~~ "`](" ~~ url: Except[ ")" ].. ~~ ")" :> "[" <> label <> "]("<>url<>")",
-
-    (* Escaped markdown characters: *)
-    "\\`" :> "`",
-    "\\$" :> "$",
-    "\\*" :> "*",
-    "\\_" :> "_",
-    "\\#" :> "#",
-    "\\|" :> "|",
 
     "``" ~~ code__ ~~ "``" /; StringFreeQ[ code, "``" ] :> inlineCodeCell @ code,
     "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`" /; inlineSyntaxQ @ code :> inlineCodeCell @ code,
