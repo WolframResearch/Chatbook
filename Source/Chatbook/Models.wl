@@ -193,7 +193,7 @@ multimodalModelQ[ "gpt-4-turbo" ] :=
 multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "claude-3" ] :=
     True;
 
-multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4o" ] :=
+multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4o"|"gpt-4o-mini" ] :=
     True;
 
 multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4-turbo-" ] :=
