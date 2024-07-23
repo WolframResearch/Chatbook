@@ -18,7 +18,7 @@ Function[
         RawBoxes @ TemplateBox[ { #2 }, "ChatEvaluatingSpinner" ],
         Graphics[
          { RGBColor[ 0.71373, 0.054902, 0.0 ], Rectangle[ { -0.5, -0.5 }, { 0.5, 0.5 } ] },
-         ImageSize -> 20,
+         ImageSize -> #2,
          PlotRange -> 1.1
         ]
        },
