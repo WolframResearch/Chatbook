@@ -1177,7 +1177,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3930717685"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3930718414"|>
   ],
   Cell[
    StyleData["Text"],
@@ -12389,7 +12389,7 @@ Notebook[
                RGBColor[0.71373, 0.054902, 0.0],
                RectangleBox[{-0.5, -0.5}, {0.5, 0.5}]
               },
-              ImageSize -> 20,
+              ImageSize -> #2,
               PlotRange -> 1.1
              ]
             },
