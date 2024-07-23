@@ -1238,9 +1238,9 @@ userToolResponseQ // endDefinition;
 (*serviceName*)
 serviceName // beginDefinition;
 serviceName[ KeyValuePattern[ "Model" -> model_ ] ] := serviceName @ model;
-serviceName[ { service_String, _String } ] := service;
+serviceName[ { service_String, _String | $$unspecified } ] := service;
 serviceName[ KeyValuePattern[ "Service" -> service_String ] ] := service;
-serviceName[ _String | $$unspecified ] := "OpenAI";
+serviceName[ _String | _Association | $$unspecified ] := "OpenAI";
 serviceName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
