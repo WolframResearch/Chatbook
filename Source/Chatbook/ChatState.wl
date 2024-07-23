@@ -77,17 +77,49 @@ withChatEvaluationCell // Attributes = { HoldRest };
 
 withChatEvaluationCell[ cell_CellObject, eval_ ] :=
     withChatState @ WithCleanup[
-        $ChatEvaluationCell = cell,
+        $ChatEvaluationCell = cell
+        ,
         withEvaluationCell[
             cell,
             (* Initialize settings cache: *)
             AbsoluteCurrentChatSettings @ cell;
             eval
-        ],
-        $ChatEvaluationCell = None
+        ]
+        ,
+        $ChatEvaluationCell = None;
+        If[ $CloudEvaluation,
+            (* Workaround for dynamic in send/stop button not updating in cloud: *)
+            NotebookWrite[ cell, NotebookRead @ cell, None, AutoScroll -> False ]
+        ]
     ];
 
 withChatEvaluationCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*forceRedrawCellFrameLabels*)
+forceRedrawCellFrameLabels // beginDefinition;
+
+(* Workaround for dynamic in send/stop button not updating in cloud: *)
+forceRedrawCellFrameLabels[ cell_CellObject ] /; $CloudEvaluation && chatInputCellQ @ cell :=
+    Module[ { labels },
+        labels = Replace[
+            CurrentValue[ cell, CellFrameLabels ],
+            Except[ { { _, _ }, { _, _ } } ] :> $defaultCellFrameLabels
+        ];
+        SetOptions[ cell, CellFrameLabels -> None ];
+        SetOptions[ cell, CellFrameLabels -> labels ];
+    ];
+
+forceRedrawCellFrameLabels[ cell_ ] := Null;
+
+forceRedrawCellFrameLabels // endDefinition;
+
+
+$defaultCellFrameLabels = {
+    { None, Cell[ BoxData @ TemplateBox[ { RGBColor[ "#a3c9f2" ], 20 }, "SendChatButton" ], Background -> None ] },
+    { None, None }
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

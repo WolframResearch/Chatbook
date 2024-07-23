@@ -187,6 +187,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `multimodalModelQ;
 `multimodalPacletsAvailable;
 `needsBasePrompt;
+`nextCell;
 `notebookInformation;
 `notebookRead;
 `openerView;
