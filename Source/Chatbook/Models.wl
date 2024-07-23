@@ -561,8 +561,8 @@ resolveFullModelSpec // beginDefinition;
 resolveFullModelSpec[ settings: KeyValuePattern[ "Model" -> model_ ] ] :=
     resolveFullModelSpec @ model;
 
-resolveFullModelSpec[ { service_String, Automatic } ] :=
-    resolveFullModelSpec @ <| "Service" -> service, "Name" -> Automatic |>;
+resolveFullModelSpec[ { service_String, name_ } ] :=
+    resolveFullModelSpec @ <| "Service" -> service, "Name" -> name |>;
 
 resolveFullModelSpec[ model: KeyValuePattern @ { "Service" -> service_String, "Name" -> Automatic } ] := Enclose[
     Catch @ Module[ { default, models, name },
