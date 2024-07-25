@@ -40,7 +40,8 @@ If[ ! PacletNewerQ[ Wolfram`ChatbookStartupDump`$versionString, "13.3.0" ],
 (*--------------------------------*)
 (* Adds Help > Code Assistance... *)
 (*--------------------------------*)
-If[ PacletNewerQ[ Wolfram`ChatbookStartupDump`$versionString, "14.0.0" ],
+(* Once code assistance is ready, this "14.1.0" can be changed to "14.0.0" to enable it for 14.1 users: *)
+If[ PacletNewerQ[ Wolfram`ChatbookStartupDump`$versionString, "14.1.0" ],
 	Once[
 		FrontEndExecute @ {
 			FrontEnd`AddMenuCommands[
