@@ -2565,6 +2565,7 @@ formatMetadata[ ___ ] :=
 (* ::Subsubsection::Closed:: *)
 (*codeBlockQ*)
 codeBlockQ // beginDefinition;
+codeBlockQ[ Cell[ _, OptionsPattern[ ] ] ] := False;
 codeBlockQ[ Cell[ __, $$noCodeBlockStyle, ___ ] ] := False;
 codeBlockQ[ Cell[ __, "Program", ___ ] ] := True;
 codeBlockQ[ Cell[ __, CellTags -> { ___, "CheckboxCell", ___ }, ___ ] ] := False;
