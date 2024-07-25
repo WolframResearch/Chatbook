@@ -1,34 +1,16 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Settings`" ];
+Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-HoldComplete[
-    `$defaultChatSettings;
-    `currentChatSettings;
-    `dynamicSplitQ;
-    `getPrecedingDelimiter;
-    `multimodalPacletsAvailable;
-    `resolveAutoSettings;
-    `toolsEnabledQ;
-];
-
-Begin[ "`Private`" ];
-
 Needs[ "Wolfram`Chatbook`"                   ];
 Needs[ "Wolfram`Chatbook`Actions`"           ];
-Needs[ "Wolfram`Chatbook`ChatMessages`"      ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
-Needs[ "Wolfram`Chatbook`FrontEnd`"          ];
-Needs[ "Wolfram`Chatbook`Handlers`"          ];
-Needs[ "Wolfram`Chatbook`Models`"            ];
 Needs[ "Wolfram`Chatbook`Personas`"          ];
 Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
-Needs[ "Wolfram`Chatbook`SendChat`"          ];
 Needs[ "Wolfram`Chatbook`Serialization`"     ];
-Needs[ "Wolfram`Chatbook`Services`"          ];
-Needs[ "Wolfram`Chatbook`Tools`"             ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -37,52 +19,57 @@ $cloudInheritanceFix := $cloudNotebooks;
 
 (* cSpell: ignore AIAPI *)
 $defaultChatSettings = <|
-    "Assistance"                -> Automatic,
-    "Authentication"            -> Automatic,
-    "AutoFormat"                -> True,
-    "BasePrompt"                -> Automatic,
-    "ChatContextPreprompt"      -> Automatic,
-    "ChatDrivenNotebook"        -> False,
-    "ChatHistoryLength"         -> 100,
-    "ChatInputIndicator"        -> Automatic,
-    "DynamicAutoFormat"         -> Automatic,
-    "EnableChatGroupSettings"   -> False,
-    "EnableLLMServices"         -> Automatic, (* TODO: remove this once LLMServices is widely available *)
-    "FrequencyPenalty"          -> 0.1,
-    "HandlerFunctions"          :> $DefaultChatHandlerFunctions,
-    "HandlerFunctionsKeys"      -> Automatic,
-    "IncludeHistory"            -> Automatic,
-    "InitialChatCell"           -> True,
-    "LLMEvaluator"              -> "CodeAssistant",
-    "MaxCellStringLength"       -> Automatic,
-    "MaxContextTokens"          -> Automatic,
-    "MaxOutputCellStringLength" -> Automatic,
-    "MaxTokens"                 -> Automatic,
-    "MergeMessages"             -> True,
-    "Model"                     :> $DefaultModel,
-    "Multimodal"                -> Automatic,
-    "NotebookWriteMethod"       -> Automatic,
-    "OpenAIAPICompletionURL"    -> "https://api.openai.com/v1/chat/completions",
-    "OpenAIKey"                 -> Automatic, (* TODO: remove this once LLMServices is widely available *)
-    "PresencePenalty"           -> 0.1,
-    "ProcessingFunctions"       :> $DefaultChatProcessingFunctions,
-    "Prompts"                   -> { },
-    "SetCellDingbat"            -> True,
-    "ShowMinimized"             -> Automatic,
-    "StreamingOutputMethod"     -> Automatic,
-    "TargetCloudObject"         -> Automatic,
-    "Temperature"               -> 0.7,
-    "TokenBudgetMultiplier"     -> Automatic,
-    "Tokenizer"                 -> Automatic,
-    "ToolCallFrequency"         -> Automatic,
-    "ToolMethod"                -> Automatic,
-    "ToolOptions"               :> $DefaultToolOptions,
-    "Tools"                     -> Automatic,
-    "ToolSelectionType"         -> <| |>,
-    "ToolsEnabled"              -> Automatic,
-    "TopP"                      -> 1,
-    "TrackScrollingWhenPlaced"  -> Automatic,
-    "VisiblePersonas"           -> $corePersonaNames
+    "Assistance"                 -> Automatic,
+    "Authentication"             -> Automatic,
+    "AutoFormat"                 -> True,
+    "BasePrompt"                 -> Automatic,
+    "BypassResponseChecking"     -> False,
+    "ChatContextPreprompt"       -> Automatic,
+    "ChatDrivenNotebook"         -> False,
+    "ChatHistoryLength"          -> 1000,
+    "ChatInputIndicator"         -> Automatic,
+    "ConversionRules"            -> None,
+    "DynamicAutoFormat"          -> Automatic,
+    "EnableChatGroupSettings"    -> False,
+    "EnableLLMServices"          -> Automatic,
+    "FrequencyPenalty"           -> 0.1,
+    "HandlerFunctions"           :> $DefaultChatHandlerFunctions,
+    "HandlerFunctionsKeys"       -> Automatic,
+    "IncludeHistory"             -> Automatic,
+    "InitialChatCell"            -> True,
+    "LLMEvaluator"               -> "CodeAssistant",
+    "MaxCellStringLength"        -> Automatic,
+    "MaxContextTokens"           -> Automatic,
+    "MaxOutputCellStringLength"  -> Automatic,
+    "MaxTokens"                  -> Automatic,
+    "MergeMessages"              -> True,
+    "Model"                      :> $DefaultModel,
+    "Multimodal"                 -> Automatic,
+    "NotebookWriteMethod"        -> Automatic,
+    "OpenAIAPICompletionURL"     -> "https://api.openai.com/v1/chat/completions",
+    "OpenAIKey"                  -> Automatic,
+    "PresencePenalty"            -> 0.1,
+    "ProcessingFunctions"        :> $DefaultChatProcessingFunctions,
+    "Prompts"                    -> { },
+    "SetCellDingbat"             -> True,
+    "ShowMinimized"              -> Automatic,
+    "StreamingOutputMethod"      -> Automatic,
+    "TabbedOutput"               -> True, (* TODO: define a "MaxOutputPages" setting *)
+    "TargetCloudObject"          -> Automatic,
+    "Temperature"                -> 0.7,
+    "TokenBudgetMultiplier"      -> Automatic,
+    "Tokenizer"                  -> Automatic,
+    "ToolCallExamplePromptStyle" -> Automatic,
+    "ToolCallFrequency"          -> Automatic,
+    "ToolExamplePrompt"          -> Automatic,
+    "ToolMethod"                 -> Automatic,
+    "ToolOptions"                :> $DefaultToolOptions,
+    "Tools"                      -> Automatic,
+    "ToolSelectionType"          -> <| |>,
+    "ToolsEnabled"               -> Automatic,
+    "TopP"                       -> 1,
+    "TrackScrollingWhenPlaced"   -> Automatic,
+    "VisiblePersonas"            -> $corePersonaNames
 |>;
 
 $cachedGlobalSettings := $cachedGlobalSettings = getGlobalSettingsFile[ ];
@@ -99,6 +86,10 @@ $nonInheritedPersonaValues = {
     "ServiceDefaultModel"
 };
 
+$currentChatSettings          = None;
+$currentSettingsCache         = None;
+$absoluteCurrentSettingsCache = None;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Argument Patterns*)
@@ -111,7 +102,7 @@ $$frontEndObject        = HoldPattern[ $FrontEnd | _FrontEndObject ];
 $ChatAbort    = None;
 $ChatPost     = None;
 $ChatPre      = None;
-$DefaultModel = <| "Service" -> "OpenAI", "Name" -> "gpt-4" |>;
+$DefaultModel = <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -136,12 +127,51 @@ $DefaultChatProcessingFunctions = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*$CurrentChatSettings*)
+$CurrentChatSettings := If[ AssociationQ @ $currentChatSettings, $currentChatSettings, AbsoluteCurrentChatSettings[ ] ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*AbsoluteCurrentChatSettings*)
 AbsoluteCurrentChatSettings // beginDefinition;
-AbsoluteCurrentChatSettings[ ] := AbsoluteCurrentChatSettings @ $FrontEnd;
-AbsoluteCurrentChatSettings[ obj: $$feObj ] := resolveAutoSettings @ currentChatSettings @ obj;
-AbsoluteCurrentChatSettings[ obj: $$feObj, keys__String ] := AbsoluteCurrentChatSettings[ obj ][ keys ];
+AbsoluteCurrentChatSettings[ ] := catchMine @ AbsoluteCurrentChatSettings @ $FrontEnd;
+AbsoluteCurrentChatSettings[ obj: $$feObj ] := catchMine @ absoluteCurrentChatSettings @ obj;
+AbsoluteCurrentChatSettings[ obj: $$feObj, keys__String ] := catchMine @ absoluteCurrentChatSettings[ obj, keys ];
 AbsoluteCurrentChatSettings // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*absoluteCurrentChatSettings*)
+absoluteCurrentChatSettings // beginDefinition;
+
+absoluteCurrentChatSettings[ obj: $$feObj ] := Enclose[
+    Catch @ Module[ { cached, settings },
+        cached = $absoluteCurrentSettingsCache @ obj;
+        If[ AssociationQ @ cached, Throw @ cached ];
+        settings = ConfirmBy[ absoluteCurrentChatSettings0 @ obj, AssociationQ, "Settings" ];
+        If[ AssociationQ @ $absoluteCurrentSettingsCache,
+            $absoluteCurrentSettingsCache[ obj ] = settings,
+            settings
+        ]
+    ],
+    throwInternalFailure
+];
+
+absoluteCurrentChatSettings[ obj: $$feObj, keys__ ] := Enclose[
+    Module[ { settings },
+        settings = ConfirmBy[ absoluteCurrentChatSettings @ obj, AssociationQ, "Settings" ];
+        Replace[ settings @ keys, _Missing -> Inherited ]
+    ],
+    throwInternalFailure
+];
+
+absoluteCurrentChatSettings // endDefinition;
+
+
+absoluteCurrentChatSettings0 // beginDefinition;
+absoluteCurrentChatSettings0[ ] := absoluteCurrentChatSettings0 @ $FrontEnd;
+absoluteCurrentChatSettings0[ obj: $$feObj ] := resolveAutoSettings @ currentChatSettings @ obj;
+absoluteCurrentChatSettings0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -155,6 +185,8 @@ resolveAutoSettings[ settings: KeyValuePattern[ "ResolvedAutoSettings" -> True ]
 (* Add additional settings and resolve actual LLMTool expressions *)
 resolveAutoSettings[ settings0_Association ] := Enclose[
     Module[ { persona, combined, settings, resolved },
+
+        If[ $catching, $currentChatSettings = settings0 ];
 
         persona = ConfirmMatch[ getLLMEvaluator @ settings0, _String |_Association | None, "LLMEvaluator" ];
 
@@ -195,7 +227,18 @@ resolveAutoSettings[ settings0_Association ] := Enclose[
             "Resolved"
         ];
 
-        If[ TrueQ @ $chatState, addHandlerArguments[ "ChatNotebookSettings" -> resolved ] ];
+        If[ $chatState,
+            addHandlerArguments[ "ChatNotebookSettings" -> resolved ];
+
+            (* TODO: this is not ideal *)
+            $multimodalMessages      = TrueQ @ resolved[ "Multimodal" ];
+            $tokenBudget             = makeTokenBudget @ resolved;
+            $tokenPressure           = 0.0;
+            $initialCellStringBudget = makeCellStringBudget @ resolved;
+            $cellStringBudget        = $initialCellStringBudget;
+            $conversionRules         = resolved[ "ConversionRules" ];
+        ];
+        If[ $catching, $currentChatSettings = resolved ];
 
         resolved
     ],
@@ -212,12 +255,19 @@ resolveAutoSettings0[ settings: KeyValuePattern[ _ :> _ ] ] :=
     resolveAutoSettings @ AssociationMap[ Apply @ Rule, settings ];
 
 resolveAutoSettings0[ settings_Association ] := Enclose[
-    Module[ { auto, sorted, resolved },
+    Module[ { auto, sorted, resolved, result },
         auto     = ConfirmBy[ Select[ settings, SameAs @ Automatic ], AssociationQ, "Auto" ];
         sorted   = ConfirmBy[ <| KeyTake[ auto, $autoSettingKeyPriority ], auto |>, AssociationQ, "Sorted" ];
         resolved = ConfirmBy[ Fold[ resolveAutoSetting, settings, Normal @ sorted ], AssociationQ, "Resolved" ];
-        If[ resolved[ "Assistance" ] && $chatState, $AutomaticAssistance = True ];
-        ConfirmBy[ resolveTools @ KeySort @ resolved, AssociationQ, "ResolveTools" ]
+        If[ $chatState,
+            If[ resolved[ "Assistance"    ], $AutomaticAssistance = True ];
+            If[ resolved[ "WorkspaceChat" ], $WorkspaceChat       = True ];
+        ];
+        result = ConfirmBy[ resolveTools @ KeySort @ resolved, AssociationQ, "ResolveTools" ];
+        If[ result[ "ToolMethod" ] === Automatic,
+            result[ "ToolMethod" ] = chooseToolMethod @ result
+        ];
+        result
     ],
     throwInternalFailure
 ];
@@ -240,41 +290,45 @@ resolveAutoSetting[ settings_, key_ -> value_ ] := <| settings, key -> resolveAu
 resolveAutoSetting // endDefinition;
 
 resolveAutoSetting0 // beginDefinition;
-resolveAutoSetting0[ as_, "Assistance"                ] := False;
-resolveAutoSetting0[ as_, "DynamicAutoFormat"         ] := dynamicAutoFormatQ @ as;
-resolveAutoSetting0[ as_, "ChatInputIndicator"        ] := "\|01f4ac";
-resolveAutoSetting0[ as_, "EnableLLMServices"         ] := $useLLMServices;
-resolveAutoSetting0[ as_, "HandlerFunctionsKeys"      ] := chatHandlerFunctionsKeys @ as;
-resolveAutoSetting0[ as_, "IncludeHistory"            ] := Automatic;
-resolveAutoSetting0[ as_, "MaxCellStringLength"       ] := chooseMaxCellStringLength @ as;
-resolveAutoSetting0[ as_, "MaxContextTokens"          ] := autoMaxContextTokens @ as;
-resolveAutoSetting0[ as_, "MaxOutputCellStringLength" ] := chooseMaxOutputCellStringLength @ as;
-resolveAutoSetting0[ as_, "MaxTokens"                 ] := autoMaxTokens @ as;
-resolveAutoSetting0[ as_, "Multimodal"                ] := multimodalQ @ as;
-resolveAutoSetting0[ as_, "NotebookWriteMethod"       ] := "PreemptiveLink";
-resolveAutoSetting0[ as_, "ShowMinimized"             ] := Automatic;
-resolveAutoSetting0[ as_, "StreamingOutputMethod"     ] := "PartialDynamic";
-resolveAutoSetting0[ as_, "TokenBudgetMultiplier"     ] := 1;
-resolveAutoSetting0[ as_, "Tokenizer"                 ] := getTokenizer @ as;
-resolveAutoSetting0[ as_, "TokenizerName"             ] := getTokenizerName @ as;
-resolveAutoSetting0[ as_, "ToolCallFrequency"         ] := Automatic;
-resolveAutoSetting0[ as_, "ToolsEnabled"              ] := toolsEnabledQ @ as;
-resolveAutoSetting0[ as_, "TrackScrollingWhenPlaced"  ] := scrollOutputQ @ as;
-resolveAutoSetting0[ as_, key_String                  ] := Automatic;
+resolveAutoSetting0[ as_, "Assistance"                 ] := False;
+resolveAutoSetting0[ as_, "ChatInputIndicator"         ] := "\|01f4ac";
+resolveAutoSetting0[ as_, "DynamicAutoFormat"          ] := dynamicAutoFormatQ @ as;
+resolveAutoSetting0[ as_, "EnableLLMServices"          ] := $useLLMServices;
+resolveAutoSetting0[ as_, "HandlerFunctionsKeys"       ] := chatHandlerFunctionsKeys @ as;
+resolveAutoSetting0[ as_, "IncludeHistory"             ] := Automatic;
+resolveAutoSetting0[ as_, "MaxCellStringLength"        ] := chooseMaxCellStringLength @ as;
+resolveAutoSetting0[ as_, "MaxContextTokens"           ] := autoMaxContextTokens @ as;
+resolveAutoSetting0[ as_, "MaxOutputCellStringLength"  ] := chooseMaxOutputCellStringLength @ as;
+resolveAutoSetting0[ as_, "MaxTokens"                  ] := autoMaxTokens @ as;
+resolveAutoSetting0[ as_, "Multimodal"                 ] := multimodalQ @ as;
+resolveAutoSetting0[ as_, "NotebookWriteMethod"        ] := "PreemptiveLink";
+resolveAutoSetting0[ as_, "ShowMinimized"              ] := Automatic;
+resolveAutoSetting0[ as_, "StreamingOutputMethod"      ] := "PartialDynamic";
+resolveAutoSetting0[ as_, "TokenBudgetMultiplier"      ] := 1;
+resolveAutoSetting0[ as_, "Tokenizer"                  ] := getTokenizer @ as;
+resolveAutoSetting0[ as_, "TokenizerName"              ] := getTokenizerName @ as;
+resolveAutoSetting0[ as_, "ToolCallExamplePromptStyle" ] := chooseToolExamplePromptStyle @ as;
+resolveAutoSetting0[ as_, "ToolCallFrequency"          ] := Automatic;
+resolveAutoSetting0[ as_, "ToolExamplePrompt"          ] := chooseToolExamplePromptSpec @ as;
+resolveAutoSetting0[ as_, "ToolsEnabled"               ] := toolsEnabledQ @ as;
+resolveAutoSetting0[ as_, "TrackScrollingWhenPlaced"   ] := scrollOutputQ @ as;
+resolveAutoSetting0[ as_, key_String                   ] := Automatic;
 resolveAutoSetting0 // endDefinition;
 
 (* Settings that require other settings to be resolved first: *)
 $autoSettingKeyDependencies = <|
-    "HandlerFunctionsKeys"      -> "EnableLLMServices",
-    "MaxCellStringLength"       -> { "Model", "MaxContextTokens" },
-    "MaxContextTokens"          -> "Model",
-    "MaxOutputCellStringLength" -> "MaxCellStringLength",
-    "MaxTokens"                 -> "Model",
-    "Multimodal"                -> { "EnableLLMServices", "Model" },
-    "Tokenizer"                 -> "TokenizerName",
-    "TokenizerName"             -> "Model",
-    "Tools"                     -> { "LLMEvaluator", "ToolsEnabled" },
-    "ToolsEnabled"              -> { "Model", "ToolCallFrequency" }
+    "HandlerFunctionsKeys"       -> "EnableLLMServices",
+    "MaxCellStringLength"        -> { "Model", "MaxContextTokens" },
+    "MaxContextTokens"           -> "Model",
+    "MaxOutputCellStringLength"  -> "MaxCellStringLength",
+    "MaxTokens"                  -> "Model",
+    "Multimodal"                 -> { "EnableLLMServices", "Model" },
+    "Tokenizer"                  -> "TokenizerName",
+    "TokenizerName"              -> "Model",
+    "ToolCallExamplePromptStyle" -> "Model",
+    "ToolExamplePrompt"          -> "Model",
+    "Tools"                      -> { "LLMEvaluator", "ToolsEnabled" },
+    "ToolsEnabled"               -> { "Model", "ToolCallFrequency" }
 |>;
 
 (* Sort topologically so dependencies will be satisfied in order: *)
@@ -293,6 +347,61 @@ $autoSettingKeyPriority := Enclose[
     * BasePrompt (might not be possible here)
     * ChatContextPreprompt
 *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chooseToolMethod*)
+chooseToolMethod // beginDefinition;
+chooseToolMethod[ as_Association ] := chooseToolMethod[ as, as[ "Tools" ] ];
+chooseToolMethod[ as_, tools_List ] := If[ AllTrue[ tools, simpleToolQ ], "Simple", Automatic ];
+chooseToolMethod[ as_, _ ] := Automatic;
+chooseToolMethod // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*simpleToolQ*)
+simpleToolQ // beginDefinition;
+simpleToolQ[ tool_ ] := simpleToolQ[ tool, $DefaultTools ];
+simpleToolQ[ name_String, default_Association ] := KeyExistsQ[ default, name ];
+simpleToolQ[ tool_LLMTool, default_Association ] := MemberQ[ default, tool ];
+simpleToolQ[ _, default_Association ] := False;
+simpleToolQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chooseToolExamplePromptSpec*)
+chooseToolExamplePromptSpec // beginDefinition;
+chooseToolExamplePromptSpec[ as_Association ] := chooseToolExamplePromptSpec[ as, as[ "Model" ] ];
+chooseToolExamplePromptSpec[ as_, model_String ] := autoToolExamplePromptSpec[ "OpenAI" ];
+chooseToolExamplePromptSpec[ as_, { service_String, _String } ] := autoToolExamplePromptSpec @ service;
+chooseToolExamplePromptSpec[ as_, model_Association ] := autoToolExamplePromptSpec @ model[ "Service" ];
+chooseToolExamplePromptSpec // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*autoToolExamplePromptSpec*)
+autoToolExamplePromptSpec // beginDefinition;
+autoToolExamplePromptSpec[ _ ] := Automatic;
+autoToolExamplePromptSpec // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chooseToolExamplePromptStyle*)
+chooseToolExamplePromptStyle // beginDefinition;
+chooseToolExamplePromptStyle[ as_Association ] := chooseToolExamplePromptStyle[ as, as[ "Model" ] ];
+chooseToolExamplePromptStyle[ as_, model_String ] := autoToolExamplePromptStyle[ "OpenAI" ];
+chooseToolExamplePromptStyle[ as_, { service_String, _String } ] := autoToolExamplePromptStyle @ service;
+chooseToolExamplePromptStyle[ as_, model_Association ] := autoToolExamplePromptStyle @ model[ "Service" ];
+chooseToolExamplePromptStyle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*autoToolExamplePromptStyle*)
+autoToolExamplePromptStyle // beginDefinition;
+autoToolExamplePromptStyle[ "AzureOpenAI"|"OpenAI" ] := "ChatML";
+autoToolExamplePromptStyle[ "Anthropic" ] := "XML";
+autoToolExamplePromptStyle[ _ ] := "Basic"; (* TODO: measure performance of other models to choose the best option *)
+autoToolExamplePromptStyle // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -323,15 +432,19 @@ autoMaxContextTokens // endDefinition;
 
 autoMaxContextTokens0 // beginDefinition;
 autoMaxContextTokens0[ name_String ] := autoMaxContextTokens0 @ StringSplit[ name, "-"|Whitespace ];
-autoMaxContextTokens0[ { ___, "gpt", "4", "vision"  , ___ } ] := 2^17;
-autoMaxContextTokens0[ { ___, "gpt", "4", "turbo"   , ___ } ] := 2^17;
-autoMaxContextTokens0[ { ___, "claude", "2"         , ___ } ] := 10^5;
-autoMaxContextTokens0[ { ___, "16k"                 , ___ } ] := 2^14;
-autoMaxContextTokens0[ { ___, "32k"                 , ___ } ] := 2^15;
-autoMaxContextTokens0[ { ___, "gpt", "4"            , ___ } ] := 2^13;
-autoMaxContextTokens0[ { ___, "gpt", "3.5"          , ___ } ] := 2^12;
-autoMaxContextTokens0[ { ___, "chat", "bison", "001", ___ } ] := 20000;
-autoMaxContextTokens0[ _List                                ] := 2^12;
+autoMaxContextTokens0[ { ___, "gpt", "4o"                   , ___ } ] := 2^17;
+autoMaxContextTokens0[ { ___, "gpt", "4", "vision"          , ___ } ] := 2^17;
+autoMaxContextTokens0[ { ___, "gpt", "4", "turbo"           , ___ } ] := 2^17;
+autoMaxContextTokens0[ { ___, "claude", "2"                 , ___ } ] := 10^5;
+autoMaxContextTokens0[ { ___, "claude", "2.1"|"3"           , ___ } ] := 2*10^5;
+autoMaxContextTokens0[ { ___, "16k"                         , ___ } ] := 2^14;
+autoMaxContextTokens0[ { ___, "32k"                         , ___ } ] := 2^15;
+autoMaxContextTokens0[ { ___, "gpt", "4"                    , ___ } ] := 2^13;
+autoMaxContextTokens0[ { ___, "gpt", "3.5"                  , ___ } ] := 2^12;
+autoMaxContextTokens0[ { ___, "chat", "bison", "001"        , ___ } ] := 20000;
+autoMaxContextTokens0[ { ___, "gemini", ___, "pro", "vision", ___ } ] := 12288;
+autoMaxContextTokens0[ { ___, "gemini", ___, "pro"          , ___ } ] := 30720;
+autoMaxContextTokens0[ _List                                        ] := 2^12;
 autoMaxContextTokens0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -438,12 +551,20 @@ getNamedLLMEvaluator // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*toolsEnabledQ*)
+$$disabledToolsModel = Alternatives[
+    ___ ~~ "gpt-3" ~~ ___,
+    "chat-bison-001",
+    "claude-instant-1.2",
+    "gemini-1.0-pro" ~~ ___,
+    "gemini-pro-vision",
+    "gemini-pro"
+];
+
 toolsEnabledQ[ KeyValuePattern[ "ToolsEnabled" -> enabled: True|False ] ] := enabled;
 toolsEnabledQ[ KeyValuePattern[ "ToolCallFrequency" -> freq: (_Integer|_Real)? NonPositive ] ] := False;
 toolsEnabledQ[ KeyValuePattern[ "Model" -> model_ ] ] := toolsEnabledQ @ toModelName @ model;
 toolsEnabledQ[ model: KeyValuePattern @ { "Service" -> _, "Name" -> _ } ] := toolsEnabledQ @ toModelName @ model;
-toolsEnabledQ[ "chat-bison-001" ] := False;
-toolsEnabledQ[ model_String ] := ! TrueQ @ StringContainsQ[ model, "gpt-3", IgnoreCase -> True ];
+toolsEnabledQ[ model_String ] := ! StringMatchQ[ model, $$disabledToolsModel, IgnoreCase -> True ];
 toolsEnabledQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
@@ -583,25 +704,37 @@ setCurrentChatSettings0 // endDefinition;
 
 setCurrentChatSettings1 // beginDefinition;
 
-setCurrentChatSettings1[ scope: $$feObj, Inherited ] :=
+setCurrentChatSettings1[ scope: $$feObj, Inherited ] := WithCleanup[
     If[ TrueQ @ $CloudEvaluation,
         setCurrentChatSettingsCloud[ scope, Inherited ],
         CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" } ] = Inherited
-    ];
+    ],
+    (* Invalidate cache *)
+    $currentSettingsCache = <| |>
+    (* Note: It may be more slightly more efficient to just invalidate for the given `scope`, but that would require
+       also finding scopes that `scope` inherits from and invalidating those as well. This is much simpler. *)
+];
 
 setCurrentChatSettings1[ scope: $$feObj, value_ ] :=
     With[ { as = Association @ value },
-        If[ TrueQ @ $CloudEvaluation,
-            setCurrentChatSettingsCloud[ scope, as ],
-            CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" } ] = as
+        WithCleanup[
+            If[ TrueQ @ $CloudEvaluation,
+                setCurrentChatSettingsCloud[ scope, as ],
+                CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" } ] = as
+            ],
+            (* Invalidate cache *)
+            $currentSettingsCache = <| |>
         ] /; AssociationQ @ as
     ];
 
-setCurrentChatSettings1[ scope: $$feObj, key_String? StringQ, value_ ] :=
+setCurrentChatSettings1[ scope: $$feObj, key_String? StringQ, value_ ] := WithCleanup[
     If[ TrueQ @ $CloudEvaluation,
         setCurrentChatSettingsCloud[ scope, key, value ],
         CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", key } ] = value
-    ];
+    ],
+    (* Invalidate cache *)
+    $currentSettingsCache = <| |>
+];
 
 setCurrentChatSettings1 // endDefinition;
 
@@ -782,14 +915,8 @@ unsetCurrentChatSettings[ obj: $$feObj, key_ ] := throwFailure[
 unsetCurrentChatSettings // endDefinition;
 
 unsetCurrentChatSettings0 // beginDefinition;
-
-(* FIXME: make this work in cloud *)
-unsetCurrentChatSettings0[ obj: $$feObj ] :=
-    (CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ] = Inherited);
-
-unsetCurrentChatSettings0[ obj: $$feObj, key_? StringQ ] :=
-    (CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings" } ] = Inherited);
-
+unsetCurrentChatSettings0[ obj: $$feObj ] := setCurrentChatSettings[ obj, Inherited ];
+unsetCurrentChatSettings0[ obj: $$feObj, key_? StringQ ] := setCurrentChatSettings[ obj, key, Inherited ];
 unsetCurrentChatSettings0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -797,37 +924,68 @@ unsetCurrentChatSettings0 // endDefinition;
 (*currentChatSettings*)
 currentChatSettings // beginDefinition;
 
-currentChatSettings[ fe: $$frontEndObject ] /; $cloudNotebooks :=
+currentChatSettings[ obj: $$feObj ] := Enclose[
+    Catch @ Module[ { cached, settings },
+        cached = $currentSettingsCache @ obj;
+        If[ AssociationQ @ cached, Throw @ cached ];
+        settings = ConfirmBy[ currentChatSettings0 @ obj, AssociationQ, "Settings" ];
+        If[ AssociationQ @ $currentSettingsCache,
+            $currentSettingsCache[ obj ] = settings,
+            settings
+        ]
+    ],
+    throwInternalFailure
+];
+
+currentChatSettings[ obj: $$feObj, key_ ] := Enclose[
+    Catch @ Module[ { cached },
+        cached = $currentSettingsCache @ obj;
+        If[ AssociationQ @ cached && KeyExistsQ[ cached, key ], Throw @ cached @ key ];
+        If[ AssociationQ @ $currentSettingsCache,
+            Lookup[ ConfirmBy[ currentChatSettings @ obj, AssociationQ, "Settings" ], key, Inherited ],
+            currentChatSettings0[ obj, key ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+currentChatSettings // endDefinition;
+
+
+currentChatSettings0 // beginDefinition;
+
+currentChatSettings0[ fe: $$frontEndObject ] /; $CloudEvaluation :=
     getGlobalChatSettings[ ];
 
-currentChatSettings[ fe: $$frontEndObject, key_String ] /; $cloudNotebooks :=
+currentChatSettings0[ fe: $$frontEndObject, key_String ] /; $CloudEvaluation :=
     getGlobalChatSettings[ key ];
 
-currentChatSettings[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession ] := (
+currentChatSettings0[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession ] := (
     verifyInheritance @ obj;
-    currentChatSettings0 @ obj
+    currentChatSettings1 @ obj
 );
 
-currentChatSettings[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := (
+currentChatSettings0[ obj: _NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := (
     verifyInheritance @ obj;
-    currentChatSettings0[ obj, key ]
+    currentChatSettings1[ obj, key ]
 );
 
-currentChatSettings[ cell0_CellObject ] := Catch @ Enclose[
-    Module[ { cell, cellInfo, styles, nbo, delimiter, settings },
+currentChatSettings0[ cell0_CellObject ] := Catch @ Enclose[
+    Catch @ Module[ { cell, cellInfo, styles, nbo, delimiter, settings },
 
         verifyInheritance @ cell0;
 
-        cell     = cell0;
-        cellInfo = ConfirmBy[ cellInformation @ cell, AssociationQ, "CellInformation" ];
-        styles   = ConfirmMatch[ Flatten @ List @ Lookup[ cellInfo, "Style" ], { ___String } ];
+        cell = cell0;
+        cellInfo = ConfirmMatch[ cellInformation @ cell, _Association|_Missing, "CellInformation" ];
+        If[ MissingQ @ cellInfo, Throw @ Missing[ "NotAvailable" ] ];
+        styles = ConfirmMatch[ Flatten @ List @ Lookup[ cellInfo, "Style" ], { ___String } ];
 
         If[ MemberQ[ styles, $$nestedCellStyle ],
             cell   = ConfirmMatch[ topParentCell @ cell, _CellObject, "ParentCell" ];
             styles = cellStyles @ cell;
         ];
 
-        If[ cellInfo[ "ChatNotebookSettings", "ChatDelimiter" ], Throw @ currentChatSettings0 @ cell ];
+        If[ cellInfo[ "ChatNotebookSettings", "ChatDelimiter" ], Throw @ currentChatSettings1 @ cell ];
 
         nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
 
@@ -849,24 +1007,25 @@ currentChatSettings[ cell0_CellObject ] := Catch @ Enclose[
             "CombinedSettings"
         ]
     ],
-    throwInternalFailure[ currentChatSettings @ cell0, ## ] &
+    throwInternalFailure
 ];
 
-currentChatSettings[ cell0_CellObject, key_String ] := Catch @ Enclose[
-    Module[ { cell, cellInfo, styles, nbo, cells, delimiter, values },
+currentChatSettings0[ cell0_CellObject, key_String ] := Catch @ Enclose[
+    Catch @ Module[ { cell, cellInfo, styles, nbo, cells, delimiter, values },
 
         verifyInheritance @ cell0;
 
-        cell     = cell0;
-        cellInfo = ConfirmBy[ cellInformation @ cell, AssociationQ, "CellInformation" ];
-        styles   = ConfirmMatch[ Flatten @ List @ Lookup[ cellInfo, "Style" ], { ___String } ];
+        cell = cell0;
+        cellInfo = ConfirmMatch[ cellInformation @ cell, _Association|_Missing, "CellInformation" ];
+        If[ MissingQ @ cellInfo, Throw @ Missing[ "NotAvailable" ] ];
+        styles = ConfirmMatch[ Flatten @ List @ Lookup[ cellInfo, "Style" ], { ___String } ];
 
         If[ MemberQ[ styles, $$nestedCellStyle ],
             cell   = ConfirmMatch[ topParentCell @ cell, _CellObject, "ParentCell" ];
             styles = cellStyles @ cell;
         ];
 
-        If[ cellInfo[ "ChatNotebookSettings", "ChatDelimiter" ], Throw @ currentChatSettings0[ cell, key ] ];
+        If[ cellInfo[ "ChatNotebookSettings", "ChatDelimiter" ], Throw @ currentChatSettings1[ cell, key ] ];
 
         nbo   = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
         cells = ConfirmMatch[ Cells @ nbo, { __CellObject }, "ChatCells" ];
@@ -899,15 +1058,15 @@ currentChatSettings[ cell0_CellObject, key_String ] := Catch @ Enclose[
             ]
         ]
     ],
-    throwInternalFailure[ currentChatSettings[ cell0, key ], ## ] &
+    throwInternalFailure
 ];
 
-currentChatSettings // endDefinition;
+currentChatSettings0 // endDefinition;
 
 
-currentChatSettings0 // beginDefinition;
+currentChatSettings1 // beginDefinition;
 
-currentChatSettings0[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession ] :=
+currentChatSettings1[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession ] :=
     mergeChatSettings @ Map[
         evaluateSettings,
         {
@@ -920,12 +1079,12 @@ currentChatSettings0[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEnd
         }
     ];
 
-currentChatSettings0[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := Replace[
+currentChatSettings1[ obj: _CellObject|_NotebookObject|_FrontEndObject|$FrontEndSession, key_String ] := Replace[
     absoluteCurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", key } ],
     Inherited :> Lookup[ $cachedGlobalSettings, key, Lookup[ $defaultChatSettings, key, Inherited ] ]
 ];
 
-currentChatSettings0 // endDefinition;
+currentChatSettings1 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -964,7 +1123,9 @@ mergeChatSettings[ a_List ] := mergeChatSettings[ a ] = mergeChatSettings0 @ a /
 mergeChatSettings // endDefinition;
 
 mergeChatSettings0 // beginDefinition;
-mergeChatSettings0[ { a___, Inherited.., b___ } ] := mergeChatSettings0 @ { a, b };
+mergeChatSettings0[ { a___, (Inherited|ParentList).., b___ } ] := mergeChatSettings0 @ { a, b };
+mergeChatSettings0[ { a___, { b___ }, { c___, ParentList, d___ } } ] := mergeChatSettings0 @ { a, { c, b, d } };
+mergeChatSettings0[ { a___, b: Except[ $$unspecified ], { c___, ParentList, d___ } } ] := mergeChatSettings0 @ { a, { c, b, d } };
 mergeChatSettings0[ { a_? AssociationQ, b__? AssociationQ } ] := DeleteMissing @ Merge[ { a, b }, mergeChatSettings0 ];
 mergeChatSettings0[ { a___, Except[ _? AssociationQ ].., b__? AssociationQ } ] := mergeChatSettings0 @ { a, b };
 mergeChatSettings0[ { __, e: Except[ _? AssociationQ ] } ] := e;
@@ -1000,13 +1161,16 @@ getPrecedingDelimiter[ cell_CellObject, nbo_, { before0___CellObject, cell_, ___
         If[ MissingQ @ pos, Missing[ "NotAvailable" ], Extract[ before, pos ] ]
     ];
 
+getPrecedingDelimiter[ cell_CellObject, nbo_, cells: { ___CellObject } ] /; ! MemberQ[ cells, cell ] :=
+    Missing[ "NotAvailable" ];
+
 getPrecedingDelimiter // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*verifyInheritance*)
 verifyInheritance // beginDefinition;
-verifyInheritance[ obj_ ] /; $SynchronousEvaluation || $cloudNotebooks := True;
+verifyInheritance[ obj_ ] /; $SynchronousEvaluation || $CloudEvaluation := True;
 verifyInheritance[ obj_? inheritingQ ] := True;
 verifyInheritance[ obj: $$feObj ] := With[ { verified = verifyInheritance0 @ obj }, inheritingQ @ obj ];
 verifyInheritance // endDefinition;
@@ -1140,7 +1304,7 @@ associationComplement // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     $mergeSettingsDispatch;
 ];
 

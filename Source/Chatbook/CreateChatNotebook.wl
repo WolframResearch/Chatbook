@@ -9,12 +9,9 @@ HoldComplete[
 
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"            ];
-Needs[ "Wolfram`Chatbook`Common`"     ];
-Needs[ "Wolfram`Chatbook`Formatting`" ];
-Needs[ "Wolfram`Chatbook`SendChat`"   ];
-Needs[ "Wolfram`Chatbook`Settings`"   ];
-Needs[ "Wolfram`Chatbook`UI`"         ];
+Needs[ "Wolfram`Chatbook`"        ];
+Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`UI`"     ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -29,6 +26,7 @@ $$createChatOptions = OptionsPattern[ { CreateChatNotebook, Notebook } ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*CreateChatNotebook*)
+Needs[ "Wolfram`Chatbook`Settings`" ]; (* Needed for $defaultChatSettings *)
 CreateChatNotebook // Options = Normal[ $defaultChatSettings, Association ];
 
 
@@ -289,8 +287,8 @@ createMessageCell0 // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
-    Null;
+addToMXInitialization[
+    Null
 ];
 
 End[ ];

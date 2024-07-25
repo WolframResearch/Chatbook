@@ -1,29 +1,13 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Services`" ];
+Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-HoldComplete[
-    `$allowConnectionDialog;
-    `$availableServices;
-    `$enableLLMServices;
-    `$serviceCache;
-    `$servicesLoaded;
-    `$useLLMServices;
-    `getAvailableServiceNames;
-    `getAvailableServices;
-    `getServiceModelList;
-    `modelListCachedQ;
-];
-
-Begin[ "`Private`" ];
-
-Needs[ "Wolfram`Chatbook`"          ];
-Needs[ "Wolfram`Chatbook`Common`"   ];
-Needs[ "Wolfram`Chatbook`Dynamics`" ];
-Needs[ "Wolfram`Chatbook`Models`"   ];
-Needs[ "Wolfram`Chatbook`UI`"       ];
+Needs[ "Wolfram`Chatbook`"        ];
+Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`UI`"     ];
 
 $ContextAliases[ "llm`" ] = "LLMServices`";
 
@@ -33,7 +17,7 @@ $ContextAliases[ "llm`" ] = "LLMServices`";
 $allowConnectionDialog = True;
 $enableLLMServices     = Automatic;
 $modelListCache        = <| |>;
-$modelSortOrder        = { "Snapshot", "FineTuned", "DisplayName" };
+$modelSortOrder        = { "Preview", "Snapshot", "FineTuned", "Date", "DisplayName" };
 $servicesLoaded        = False;
 $useLLMServices       := MatchQ[ $enableLLMServices, Automatic|True ] && TrueQ @ $llmServicesAvailable;
 $serviceCache          = None;
@@ -70,8 +54,17 @@ $availableServiceNames := getAvailableServiceNames[ ];
 (* ::Subsection::Closed:: *)
 (*getAvailableServiceNames*)
 getAvailableServiceNames // beginDefinition;
-getAvailableServiceNames[ ] := getAvailableServiceNames @ $availableServices;
-getAvailableServiceNames[ services_Association ] := Keys @ services;
+getAvailableServiceNames // Options = { "IncludeHidden" -> True };
+
+getAvailableServiceNames[ opts: OptionsPattern[ ] ] :=
+    getAvailableServiceNames[ $availableServices, opts ];
+
+getAvailableServiceNames[ services_Association, opts: OptionsPattern[ ] ] :=
+    If[ TrueQ @ OptionValue[ "IncludeHidden" ],
+        Keys @ services,
+        Keys @ DeleteCases[ services, KeyValuePattern[ "Hidden" -> True ] ]
+    ];
+
 getAvailableServiceNames // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -277,8 +270,8 @@ getOpenAIChatModels // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
-    Null;
+addToMXInitialization[
+    Null
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)

@@ -1,14 +1,9 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Dynamics`" ];
+Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
-
-`trackedDynamic;
-`trackedDynamicWrapper;
-`updateDynamics;
-
-Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"        ];
 Needs[ "Wolfram`Chatbook`Common`" ];
@@ -17,12 +12,13 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $dynamicTriggers = <|
-    "ChatBlock"   :> $chatBlockTrigger,
-    "Models"      :> $modelsTrigger,
-    "Personas"    :> $personasTrigger,
-    "Preferences" :> $preferencesTrigger,
-    "Services"    :> $servicesTrigger,
-    "Tools"       :> $toolsTrigger
+    "ChatBlock"            :> $chatBlockTrigger,
+    "InlineChatScrollPane" :> $inlineChatScrollPaneTrigger,
+    "Models"               :> $modelsTrigger,
+    "Personas"             :> $personasTrigger,
+    "Preferences"          :> $preferencesTrigger,
+    "Services"             :> $servicesTrigger,
+    "Tools"                :> $toolsTrigger
 |>;
 
 Cases[ $dynamicTriggers, sym_Symbol :> (sym = 0) ];
@@ -141,8 +137,8 @@ updateDynamics // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
-    Null;
+addToMXInitialization[
+    Null
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)

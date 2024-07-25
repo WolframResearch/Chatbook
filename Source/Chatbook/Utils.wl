@@ -1,35 +1,10 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Utils`" ];
-
-HoldComplete[
-    `$tinyHashLength;
-    `associationKeyDeflatten;
-    `clickToCopy;
-    `contextBlock;
-    `convertUTF8;
-    `exportDataURI;
-    `fastFileHash;
-    `fileFormatQ;
-    `fixLineEndings;
-    `formatToMIMEType;
-    `getPinkBoxErrors;
-    `graphicsQ;
-    `image2DQ;
-    `importDataURI;
-    `makeFailureString;
-    `mimeTypeToFormat;
-    `readString;
-    `stringTrimMiddle;
-    `tinyHash;
-    `validGraphicsQ;
-];
-
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"          ];
-Needs[ "Wolfram`Chatbook`Common`"   ];
-Needs[ "Wolfram`Chatbook`FrontEnd`" ];
+Needs[ "Wolfram`Chatbook`"        ];
+Needs[ "Wolfram`Chatbook`Common`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -48,6 +23,18 @@ importResourceFunction[ associationKeyDeflatten, "AssociationKeyDeflatten" ];
 (*ClickToCopy*)
 (* https://resources.wolframcloud.com/FunctionRepository/resources/ClickToCopy *)
 importResourceFunction[ clickToCopy, "ClickToCopy" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*RelativeTimeString*)
+(* https://resources.wolframcloud.com/FunctionRepository/resources/RelativeTimeString *)
+importResourceFunction[ relativeTimeString, "RelativeTimeString" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*SelectByCurrentValue*)
+(* https://resources.wolframcloud.com/FunctionRepository/resources/SelectByCurrentValue *)
+importResourceFunction[ selectByCurrentValue, "SelectByCurrentValue" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -218,6 +205,9 @@ graphicsQ[ ___                     ] := False;
 graphicsBoxQ[ _GraphicsBox|_Graphics3DBox ] := True;
 graphicsBoxQ[ $$graphicsBoxIgnoredHead[ box_, ___ ] ] := graphicsBoxQ @ Unevaluated @ box;
 graphicsBoxQ[ TemplateBox[ { box_, ___ }, $$graphicsBoxIgnoredTemplates, ___ ] ] := graphicsBoxQ @ Unevaluated @ box;
+graphicsBoxQ[ RowBox[ boxes_List ] ] := AnyTrue[ boxes, graphicsBoxQ ];
+graphicsBoxQ[ TemplateBox[ boxes_List, "RowDefault", ___ ] ] := AnyTrue[ boxes, graphicsBoxQ ];
+graphicsBoxQ[ GridBox[ boxes_List, ___ ] ] := AnyTrue[ Flatten @ boxes, graphicsBoxQ ];
 graphicsBoxQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
@@ -390,7 +380,7 @@ exportDataURI[ data_, fmt_String ] :=
 
 exportDataURI[ data_, fmt_String, mime_String ] := Enclose[
     Module[ { base64 },
-        base64 = ConfirmBy[ UsingFrontEnd @ ExportString[ data, { "Base64", fmt } ], StringQ, "Base64" ];
+        base64 = ConfirmBy[ usingFrontEnd @ ExportString[ data, { "Base64", fmt } ], StringQ, "Base64" ];
         "data:" <> mime <> ";base64," <> StringDelete[ base64, "\n" ]
     ],
     throwInternalFailure
@@ -432,7 +422,7 @@ tinyHash // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     Scan[ fileFormatQ, $fileFormats ];
 ];
 

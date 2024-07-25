@@ -1,0 +1,208 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* Created By: SaveReadableNotebook *)
+(* https://resources.wolframcloud.com/FunctionRepository/resources/SaveReadableNotebook *)
+
+Notebook[
+ {
+  Cell[StyleData[StyleDefinitions -> "Chatbook.nb"]],
+  Cell[
+   StyleData["Notebook"],
+   ClosingSaveDialog -> False,
+   Saveable -> False,
+   WindowToolbars -> { },
+   CellInsertionPointCell -> None,
+   Selectable -> False,
+   WindowSize -> {350, Automatic},
+   WindowMargins -> {{0, Automatic}, {0, 0}},
+   WindowFrame -> "ModelessDialog",
+   WindowElements -> {"VerticalScrollBar"},
+   WindowFrameElements -> {"CloseBox", "ResizeArea"},
+   WindowClickSelect -> True,
+   WindowTitle -> "Code Assistance Chat",
+   DockedCells -> {
+    Cell[
+     BoxData[
+      DynamicBox[
+       ToBoxes[
+        Needs["Wolfram`Chatbook`" -> None];
+        Symbol["Wolfram`Chatbook`ChatbookAction"][
+         "MakeWorkspaceChatDockedCell"
+        ],
+        StandardForm
+       ],
+       Initialization :>
+        With[ { Wolfram`ChatNB`nbo = EvaluationNotebook[] },
+         Needs["Wolfram`Chatbook`" -> None];
+         Symbol["Wolfram`Chatbook`ChatbookAction"][
+          "AttachWorkspaceChatInput",
+          Wolfram`ChatNB`nbo
+         ]
+        ]
+      ]
+     ]
+    ]
+   },
+   ShowCellBracket -> False,
+   TaggingRules -> <|
+    "ChatNotebookSettings" -> <|
+     "SetCellDingbat" -> False,
+     "TabbedOutput" -> False,
+     "WorkspaceChat" -> True
+    |>
+   |>,
+   DefaultNewCellStyle -> "AutoMoveToChatInputField",
+   Magnification -> 0.85,
+   Background -> GrayLevel[1]
+  ],
+  Cell[
+   StyleData["WorkspaceChatStyleSheetInformation"],
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.4.6.3930718414"|>
+  ],
+  Cell[
+   StyleData["ChatInput"],
+   Selectable -> True,
+   CellFrame -> 0,
+   CellDingbat -> None,
+   ShowCellBracket -> False,
+   CellMargins -> {{15, 10}, {5, 10}},
+   CellFrameLabels -> {
+    {None, None},
+    {
+     None,
+     Cell[
+      BoxData[
+       TemplateBox[
+        {
+         DynamicBox[
+          ToBoxes[
+           Needs["Wolfram`Chatbook`" -> None];
+           Symbol["Wolfram`Chatbook`ChatbookAction"][
+            "UserMessageLabel"
+           ],
+           StandardForm
+          ],
+          SingleEvaluation -> True
+         ]
+        },
+        "UserMessageLabel"
+       ]
+      ]
+     ]
+    }
+   },
+   CellFrameLabelMargins -> 6,
+   TextAlignment -> Right
+  ],
+  Cell[
+   StyleData["ChatOutput"],
+   Selectable -> True,
+   CellFrame -> 0,
+   CellDingbat -> None,
+   ShowCellBracket -> False,
+   CellMargins -> {{10, 15}, {15, 12}},
+   Initialization :> None,
+   CellFrameLabels -> {
+    {None, None},
+    {
+     None,
+     Cell[
+      BoxData[
+       TemplateBox[
+        {
+         DynamicBox[
+          ToBoxes[
+           Needs["Wolfram`Chatbook`" -> None];
+           Symbol["Wolfram`Chatbook`ChatbookAction"][
+            "AssistantMessageLabel"
+           ],
+           StandardForm
+          ],
+          SingleEvaluation -> True
+         ]
+        },
+        "AssistantMessageLabel"
+       ]
+      ]
+     ]
+    }
+   },
+   Background -> None
+  ],
+  Cell[
+   StyleData["ChatInputField"],
+   CellFrame -> 1,
+   CellFrameMargins -> {{5, 5}, {0, 0}},
+   CellFrameColor -> GrayLevel[0.85]
+  ],
+  Cell[
+   StyleData["AutoMoveToChatInputField"],
+   Initialization :>
+    (NotebookDelete[EvaluationCell[]];
+    Needs["Wolfram`Chatbook`" -> None];
+    Symbol["Wolfram`Chatbook`ChatbookAction"][
+     "MoveToChatInputField",
+     EvaluationNotebook[],
+     True
+    ];)
+  ],
+  Cell[
+   StyleData["WorkspaceSendChatButton"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      PaneSelectorBox[
+       {
+        None ->
+         ButtonBox[
+          TemplateBox[{#1, #2}, "SendChatButtonLabel"],
+          ButtonFunction :>
+           (Needs["Wolfram`Chatbook`" -> None];
+           Symbol["Wolfram`Chatbook`ChatbookAction"][
+            "EvaluateWorkspaceChat",
+            #3,
+            Dynamic[
+             CurrentValue[#3, {TaggingRules, "ChatInputString"}]
+            ]
+           ]),
+          FrameMargins -> 0,
+          Method -> "Queued",
+          Appearance -> Automatic,
+          Evaluator -> Automatic
+         ]
+       },
+       Dynamic[Wolfram`Chatbook`$ChatEvaluationCell],
+       ButtonBox[
+        OverlayBox[
+         {
+          TemplateBox[{#2}, "ChatEvaluatingSpinner"],
+          GraphicsBox[
+           {
+            RGBColor[0.71373, 0.054902, 0.0],
+            RectangleBox[{-0.5, -0.5}, {0.5, 0.5}]
+           },
+           ImageSize -> #2,
+           PlotRange -> 1.1
+          ]
+         },
+         Alignment -> {Center, Center}
+        ],
+        ButtonFunction :>
+         (Needs["Wolfram`Chatbook`" -> None];
+         Symbol["Wolfram`Chatbook`ChatbookAction"]["StopChat"]),
+        FrameMargins -> 0,
+        Appearance -> Automatic,
+        Evaluator -> Automatic,
+        Method -> "Preemptive"
+       ],
+       Alignment -> {Automatic, Baseline}
+      ]
+     ])
+   }
+  ]
+ },
+ StyleDefinitions -> "PrivateStylesheetFormatting.nb"
+]

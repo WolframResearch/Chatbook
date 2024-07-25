@@ -11,13 +11,10 @@ BeginPackage[ "Wolfram`Chatbook`ResourceInstaller`" ];
 `ResourceInstallLocation;
 `ResourceUninstall;
 
-`channelCleanup;
-
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"          ];
 Needs[ "Wolfram`Chatbook`Common`"   ];
-Needs[ "Wolfram`Chatbook`Dynamics`" ];
 Needs[ "Wolfram`Chatbook`Personas`" ];
 
 $ContextAliases[ "pi`" ] = "Wolfram`Chatbook`PersonaInstaller`Private`";
@@ -290,7 +287,7 @@ ResourceInstallFromURL[ rtype: $$installableType|Automatic ] := catchMine @ Encl
     Module[ { url },
 
         url = ConfirmMatch[
-            DefinitionNotebookClient`FancyInputString[ "Prompt", "Enter a URL" ], (* FIXME: needs custom dialog *)
+            DefinitionNotebookClient`FancyInputString[ "Prompt", tr[ "ResourceInstallerFromURLPrompt" ] ], (* FIXME: needs custom dialog *)
             _String|$Canceled,
             "InputString"
         ];
@@ -833,7 +830,7 @@ invalidateCache // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     $debug = False;
 ];
 

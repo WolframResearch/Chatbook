@@ -1,14 +1,6 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Prompting`" ];
-
-`$basePrompt;
-`$basePromptComponents;
-`$fullBasePrompt;
-`needsBasePrompt;
-`removeBasePrompt;
-`withBasePromptBuilder;
-
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"        ];
@@ -40,6 +32,7 @@ $basePromptOrder = {
     "Checkboxes",
     "CheckboxesIndeterminate",
     "ConversionFormatting",
+    "ExternalLanguageCells",
     "SpecialURI",
     "SpecialURIImporting",
     "SpecialURIAudio",
@@ -52,7 +45,9 @@ $basePromptOrder = {
     "ModernMethods",
     "FunctionalStyle",
     "WolframLanguageStyle",
-    "WolframLanguageEvaluatorTool"
+    "WolframLanguageEvaluatorTool",
+    "EndTurnToken",
+    "EndTurnToolCall"
 };
 
 $basePromptClasses = <|
@@ -85,6 +80,7 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "MarkdownImageBox"             -> { "MessageConversionHeader" },
     "MarkdownImageBoxImporting"    -> { "MarkdownImageBox" },
     "ConversionFormatting"         -> { "MessageConversionHeader" },
+    "ExternalLanguageCells"        -> { "MessageConversionHeader" },
     "SpecialURI"                   -> { },
     "SpecialURIImporting"          -> { "SpecialURI" },
     "SpecialURIAudio"              -> { "SpecialURI" },
@@ -96,7 +92,9 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "ModernMethods"                -> { },
     "FunctionalStyle"              -> { },
     "WolframLanguageStyle"         -> { "DocumentationLinkSyntax", "InlineSymbolLinks" },
-    "WolframLanguageEvaluatorTool" -> { "WolframLanguageStyle" }
+    "WolframLanguageEvaluatorTool" -> { "WolframLanguageStyle" },
+    "EndTurnToken"                 -> { },
+    "EndTurnToolCall"              -> { "EndTurnToken" }
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -201,6 +199,10 @@ $basePromptComponents[ "ConversionFormatting" ] = "\
 ``Cell[TextData[{StyleBox[\"Styled\", FontSlant -> \"Italic\"], \" message\"}], \"ChatInput\"]`` \
 becomes ``*Styled* message``.";
 
+$basePromptComponents[ "ExternalLanguageCells" ] = "\
+	* When you see code blocks denoted with languages other than Wolfram Language, they are external language cells, \
+which is a cell type that evaluates other languages through ExternalEvaluate returning a WL output.";
+
 $basePromptComponents[ "SpecialURI" ] = "\
 * You will occasionally see markdown links with special URI schemes, e.g. ![label](scheme://content-id) that represent \
 interactive interface elements. You can use these in your responses to display the same elements to the user, but they \
@@ -249,6 +251,12 @@ $basePromptComponents[ "WolframLanguageStyle" ] = "
 
 $basePromptComponents[ "WolframLanguageEvaluatorTool" ] = "\
 * If the user is asking for a result instead of code to produce that result, use the wolfram_language_evaluator tool";
+
+$basePromptComponents[ "EndTurnToken" ] = "\
+* Always end your turn by writing /end.";
+
+$basePromptComponents[ "EndTurnToolCall" ] = "\
+* If you are going to make a tool call, you must do so BEFORE ending your turn.";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -398,8 +406,8 @@ $collectedPromptComponents = AssociationMap[
 
 $fullBasePrompt = $basePrompt;
 
-If[ Wolfram`ChatbookInternal`$BuildingMX,
-    Null;
+addToMXInitialization[
+    Null
 ];
 
 End[ ];

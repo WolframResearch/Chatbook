@@ -38,8 +38,8 @@ Quiet[
     General::shdw
 ];
 
+(* Redraw any dynamics that might might have pink-boxed while loading *)
+Wolfram`Chatbook`Common`updateDynamics[ All ];
+
 (* Set the paclet object for this paclet, ensuring that it corresponds to the one that's actually loaded: *)
 Wolfram`Chatbook`Common`$thisPaclet = PacletObject @ File @ DirectoryName[ $InputFileName, 3 ];
-
-(* Redraw any dynamics that might might have pink-boxed while loading *)
-Wolfram`Chatbook`Dynamics`updateDynamics[ All ];

@@ -5,6 +5,9 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Symbols defined in this file*)
 `$closedChatCellOptions;
 `$cloudNotebooks;
 `$debug;
@@ -33,7 +36,20 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$unspecified;
 `$$feObj;
 `$$template;
+`$$complex;
+`$$integer;
+`$$rational;
+`$$real;
+`$$string;
+`$$symbol;
+`$$atomic;
 
+`tr;
+`trRaw;
+`trStringTemplate;
+`trExprTemplate;
+
+`$catching;
 `$catchTopTag;
 `beginDefinition;
 `catchAlways;
@@ -45,6 +61,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `importResourceFunction;
 `messageFailure;
 `messagePrint;
+`setServiceCaller;
 `throwFailure;
 `throwInternalFailure;
 `throwMessageDialog;
@@ -55,16 +72,26 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `inlineTemplateBoxes;
 `sufficientVersionQ;
 `insufficientVersionQ;
+`addToMXInitialization;
+`mxInitialize;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Symbols defined elsewhere in the paclet*)
+Get[ "Wolfram`Chatbook`CommonSymbols`" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Begin Private Context*)
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`" ];
 
-$cloudNotebooks := TrueQ @ CloudSystem`$CloudNotebooks;
-
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
+$cloudNotebooks := TrueQ @ CloudSystem`$CloudNotebooks;
+
 $chatIndicatorSymbol  = "\|01f4ac";
 
 $chatDelimiterStyles  = { "ChatBlockDivider", "ChatDelimiter", "ExcludedChatDelimiter" };
@@ -94,6 +121,14 @@ $versionRequirements = <|
 
 $mxFlag = Wolfram`ChatbookInternal`$BuildingMX;
 $resourceFunctionContext = "Wolfram`Chatbook`ResourceFunctions`";
+(* cSpell: ignore Deflatten *)
+$resourceVersions = <|
+    "AssociationKeyDeflatten" -> "1.0.0",
+    "ClickToCopy"             -> "1.0.0",
+    "GPTTokenizer"            -> "1.1.0",
+    "MessageFailure"          -> "1.0.0",
+    "ReplaceContext"          -> "1.0.0"
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -122,6 +157,112 @@ $$unspecified     = _Missing | Automatic | Inherited;
 $$feObj           = _FrontEndObject | $FrontEndSession | _NotebookObject | _CellObject | _BoxObject;
 $$template        = _String|_TemplateObject|_TemplateExpression|_TemplateSequence;
 
+(* Helper functions for held pattern tests: *)
+u[ f_ ] := Function[ Null, f @ Unevaluated @ #, HoldAllComplete ];
+pt[ patt_, f_ ] := PatternTest[ patt, Evaluate @ u @ f ];
+
+(* Atomic expressions (not including raw objects like Association etc): *)
+$$complex  = pt[ _Complex , AtomQ             ];
+$$integer  = pt[ _Integer , IntegerQ          ];
+$$rational = pt[ _Rational, AtomQ             ];
+$$real     = pt[ _Real    , Developer`RealQ   ];
+$$string   = pt[ _String  , StringQ           ];
+$$symbol   = pt[ _Symbol  , Developer`SymbolQ ];
+$$atomic   = $$complex | $$integer | $$rational | $$real | $$string | $$symbol;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Text and Expression Resources*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*tr*)
+(* Look up translations for `name` in text resources data files. *)
+tr // beginDefinition;
+tr[ name_? StringQ ] /; $CloudEvaluation := cloudTextResource @ name;
+tr[ name_? StringQ ] := Dynamic @ FEPrivate`FrontEndResource[ "ChatbookStrings", name ];
+tr // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*trRaw*)
+trRaw // beginDefinition;
+trRaw[ name_? StringQ ] /; $CloudEvaluation := cloudTextResource @ name;
+trRaw[ name_? StringQ ] := FrontEndResource[ "ChatbookStrings", name ];
+trRaw // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*trStringTemplate*)
+(* Templated strings require the kernel *)
+trStringTemplate // beginDefinition;
+trStringTemplate[ name_? StringQ ] := StringTemplate @ trRaw @ name;
+trStringTemplate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*trExprTemplate*)
+(* There might be a better way to implement this, but the rationale is we should avoid placing huge
+    expressions or linear syntax within text resource files.
+    The following is compatible with injection into Row or TextData expressions using numbered sequential slots. *)
+trExprTemplate // beginDefinition;
+
+trExprTemplate[ name_? StringQ ] :=
+    TemplateObject @ Splice @ StringSplit[ trRaw @ name, "`" ~~ d: DigitCharacter.. ~~ "`" :> TemplateSlot @ d ];
+
+trExprTemplate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$cloudTextResources*)
+$cloudTextResources := getCloudTextResources[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*cloudTextResource*)
+cloudTextResource // beginDefinition;
+cloudTextResource[ name_String ] := cloudTextResource[ name, $cloudTextResources ];
+cloudTextResource[ name_String, resources_Association ] := cloudTextResource[ name, resources[ name ] ];
+cloudTextResource[ name_String, string_String ] := cloudTextResource[ name ] = string;
+cloudTextResource // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getCloudTextResources*)
+getCloudTextResources // beginDefinition;
+
+getCloudTextResources[ ] := Enclose[
+    Module[ { file, string, assoc },
+
+        file = ConfirmBy[
+            FileNameJoin @ { $thisPaclet[ "Location" ], "FrontEnd", "TextResources", "ChatbookStrings.tr" },
+            FileExistsQ,
+            "File"
+        ];
+
+        string = ConfirmBy[ ReadString @ file, StringQ, "String" ];
+
+        assoc = ConfirmBy[
+            First[
+                StringCases[
+                    string,
+                    "@@resource ChatbookStrings" ~~ WhitespaceCharacter... ~~ rules: Shortest[ "{" ~~ ___ ~~ "}" ] :>
+                        Association @ ToExpression @ rules,
+                    1
+                ],
+                $Failed
+            ],
+            AssociationQ,
+            "Association"
+        ];
+
+        getCloudTextResources[ ] = assoc
+    ],
+    throwInternalFailure
+];
+
+getCloudTextResources // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Messages*)
@@ -138,6 +279,7 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "Internal"                        -> "An unexpected error occurred. `1`",
     "InvalidAPIKey"                   -> "Invalid value for API key: `1`",
     "InvalidArguments"                -> "Invalid arguments given for `1` in `2`.",
+    "InvalidConversionRules"          -> "`1` is neither a list of replacement rules nor a valid dispatch table, and so cannot be used for replacing.",
     "InvalidExpressionURI"            -> "The string \"`1`\" is not a valid expression URI.",
     "InvalidFrontEndScope"            -> "The value `1` is not a valid scope for `2`.",
     "InvalidFunctions"                -> "Invalid setting for ProcessingFunctions: `1`; using defaults instead.",
@@ -376,16 +518,22 @@ importResourceFunction // beginDefinition;
 importResourceFunction::failure = "[ERROR] Failed to import resource function `1`. Aborting MX build.";
 importResourceFunction // Attributes = { HoldFirst };
 
-importResourceFunction[ symbol_Symbol, name_String ] /; $mxFlag := Enclose[
+importResourceFunction[ symbol_Symbol, name_String ] :=
+    importResourceFunction[ symbol, name, Lookup[ $resourceVersions, name, "Latest" ] ];
+
+importResourceFunction[ symbol_Symbol, name_String, version_String ] /; $mxFlag := Enclose[
     Block[ { PrintTemporary },
         Module[ { sourceContext, targetContext, definition, replaced, newSymbol },
 
-            sourceContext = ConfirmBy[ ResourceFunction[ name, "Context" ], StringQ ];
+            sourceContext = ConfirmBy[ ResourceFunction[ name, "Context", ResourceVersion -> version ], StringQ ];
             targetContext = $resourceFunctionContext<>name<>"`";
             definition    = ConfirmMatch[ ResourceFunction[ name, "DefinitionList" ], _Language`DefinitionList ];
 
             replaced = ConfirmMatch[
-                ResourceFunction[ "ReplaceContext" ][ definition, sourceContext -> targetContext ],
+                ResourceFunction[ "ReplaceContext", ResourceVersion -> $resourceVersions[ "ReplaceContext" ] ][
+                    definition,
+                    sourceContext -> targetContext
+                ],
                 _Language`DefinitionList
             ];
 
@@ -399,8 +547,8 @@ importResourceFunction[ symbol_Symbol, name_String ] /; $mxFlag := Enclose[
     (Message[ importResourceFunction::failure, name ]; Abort[ ]) &
 ];
 
-importResourceFunction[ symbol_Symbol, name_String ] :=
-    symbol := symbol = Block[ { PrintTemporary }, ResourceFunction[ name, "Function" ] ];
+importResourceFunction[ symbol_Symbol, name_String, version_String ] :=
+    symbol := symbol = Block[ { PrintTemporary }, ResourceFunction[ name, "Function", ResourceVersion -> version ] ];
 
 importResourceFunction // endDefinition;
 
@@ -427,13 +575,14 @@ catchTop[ eval_, sym_Symbol ] :=
     Block[
         {
             $ChatNotebookEvaluation = True,
+            $currentChatSettings    = None,
             $messageSymbol          = Replace[ $messageSymbol, Chatbook -> sym ],
             $catching               = True,
             $failed                 = False,
             catchTop                = # &,
             catchTopAs              = (#1 &) &
         },
-        Catch[ eval, $catchTopTag ]
+        Catch[ setServiceCaller @ eval, $catchTopTag ]
     ];
 
 catchTop // endDefinition;
@@ -521,7 +670,7 @@ messageFailure[ args___ ] :=
         quiet   = If[ TrueQ @ $failed, Quiet, Identity ];
         message = messageFailure0;
         WithCleanup[
-            StackInhibit @ convertCloudFailure @ quiet @ message @ args,
+            StackInhibit @ promoteSourceInfo @ convertCloudFailure @ quiet @ message @ args,
             If[ TrueQ @ $catching, $failed = True ]
         ]
     ];
@@ -551,6 +700,20 @@ convertCloudFailure[ failure_ ] :=
     failure;
 
 convertCloudFailure // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*promoteSourceInfo*)
+promoteSourceInfo // beginDefinition;
+
+promoteSourceInfo[ Failure[
+    "Chatbook::Internal",
+    as: KeyValuePattern[ "MessageParameters" :> { _, KeyValuePattern[ "Information" -> info_String ] } ]
+] ] := Failure[ "Chatbook::Internal", <| as, "Source" -> info |> ];
+
+promoteSourceInfo[ failure_ ] := failure;
+
+promoteSourceInfo // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -589,11 +752,12 @@ makeInternalFailureData // Attributes = { HoldFirst };
 
 makeInternalFailureData[ eval_, Failure[ tag_, as_Association ], args___ ] :=
     StackInhibit @ Module[ { $stack = Stack[ _ ] },
-        maskOpenAIKey @ <|
-            "Evaluation" :> eval,
-            "Failure"    -> Failure[ tag, Association[ KeyTake[ as, "Information" ], as ] ],
-            "Arguments"  -> { args },
-            "Stack"      :> $stack
+        maskOpenAIKey @ DeleteMissing @ <|
+            "Evaluation"  :> eval,
+            "Information" -> as[ "Information" ],
+            "Failure"     -> Failure[ tag, Association[ KeyTake[ as, "Information" ], as ] ],
+            "Arguments"   -> { args },
+            "Stack"       :> $stack
         |>
     ];
 
@@ -607,12 +771,33 @@ makeInternalFailureData[ eval_, args___ ] :=
     ];
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*setServiceCaller*)
+setServiceCaller // beginDefinition;
+setServiceCaller // Attributes = { HoldFirst };
+
+setServiceCaller[ eval_ ] := (
+    Quiet @ Needs[ "ServiceConnectionUtilities`" -> None ];
+    setServiceCaller[ eval, ServiceConnectionUtilities`$Caller ]
+);
+
+setServiceCaller[ eval_, { c___ } ] :=
+    Block[ { ServiceConnectionUtilities`$Caller = { c, "Chatbook" }, setServiceCaller = # & },
+        eval
+    ];
+
+setServiceCaller[ eval_, _ ] :=
+    setServiceCaller[ eval, { } ];
+
+setServiceCaller // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Bug Report Link Generation*)
 
 $issuesURL = "https://github.com/WolframResearch/Chatbook/issues/new";
 
-$maxBugReportURLSize = 3500;
+$maxBugReportURLSize = 3250;
 (*
     RFC 7230 recommends clients support 8000: https://www.rfc-editor.org/rfc/rfc7230#section-3.1.1
     Long bug report links might not work in old versions of IE,
@@ -624,6 +809,31 @@ $maxPartLength = 500;
 $thisPaclet   := PacletObject[ "Wolfram/Chatbook" ];
 $debugData    := debugData @ $thisPaclet[ "PacletInfo" ];
 $settingsData := maskOpenAIKey @ $settings;
+$releaseID    := $releaseID = getReleaseID @ $thisPaclet;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getReleaseID*)
+getReleaseID[ paclet_PacletObject ] :=
+    getReleaseID[ paclet, paclet[ "ReleaseID" ] ];
+
+getReleaseID[ paclet_PacletObject, "$RELEASE_ID$" | "None" | Except[ _String ] ] :=
+    getReleaseID0 @ paclet[ "Location" ];
+
+getReleaseID[ paclet_, id_String ] := id;
+
+
+getReleaseID0[ dir_? DirectoryQ ] :=
+    Module[ { stdOut, id },
+        stdOut = Quiet @ RunProcess[ { "git", "rev-parse", "HEAD" }, "StandardOutput", ProcessDirectory -> dir ];
+        id = If[ StringQ @ stdOut, StringTrim @ stdOut, "" ];
+        If[ StringMatchQ[ id, Repeated[ HexadecimalCharacter, { 40 } ] ],
+            id,
+            "None"
+        ]
+    ];
+
+getReleaseID0[ ___ ] := "None";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -631,7 +841,8 @@ $settingsData := maskOpenAIKey @ $settings;
 debugData // beginDefinition;
 
 debugData[ as_Association? AssociationQ ] := <|
-    KeyTake[ as, { "Name", "Version", "ReleaseID" } ],
+    KeyTake[ as, { "Name", "Version" } ],
+    "ReleaseID"             -> $releaseID,
     "EvaluationEnvironment" -> $EvaluationEnvironment,
     "FrontEndVersion"       -> $frontEndVersion,
     "KernelVersion"         -> SystemInformation[ "Kernel", "Version" ],
@@ -664,9 +875,29 @@ bugReportBody[ as_Association? AssociationQ ] :=
             "DebugData"       -> associationMarkdown @ $debugData,
             "Stack"           -> $bugReportStack,
             "Settings"        -> associationMarkdown @ maskOpenAIKey @ $settings,
-            "InternalFailure" -> markdownCodeBlock @ $internalFailure
+            "InternalFailure" -> markdownCodeBlock @ $internalFailure,
+            "SourceLink"      -> sourceLink @ $internalFailure
         |>
     ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sourceLink*)
+sourceLink[ KeyValuePattern[ "Information" -> info_String ] ] := sourceLink @ info;
+sourceLink[ info_String ] := sourceLink @ StringSplit[ info, "@@" ];
+sourceLink[ { tag_String, source_String } ] := sourceLink @ { tag, StringSplit[ source, ":" ] };
+sourceLink[ { tag_String, { file_String, pos_String } } ] := sourceLink @ { tag, file, StringSplit[ pos, "-" ] };
+
+sourceLink[ { tag_String, file_String, { lc1_String, lc2_String } } ] :=
+    sourceLink @ { tag, file, StringSplit[ lc1, "," ], StringSplit[ lc2, "," ] };
+
+sourceLink[ { tag_String, file_String, { l1_String, c1_String }, { l2_String, c2_String } } ] :=
+    Module[ { id },
+        id = Replace[ $releaseID, { "$RELEASE_ID$" | "None" | Except[ _String ] -> "main" } ];
+        "\n\nhttps://github.com/WolframResearch/Chatbook/blob/"<>id<>"/"<>file<>"#L"<>l1<>"-L"<>l2
+    ];
+
+sourceLink[ ___ ] := "";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -674,7 +905,9 @@ bugReportBody[ as_Association? AssociationQ ] :=
 $bugReportBodyTemplate = StringTemplate[ "\
 Describe the issue in detail here. Attach any relevant screenshots or files. \
 The section below was automatically generated. \
-Remove any information that you do not wish to include in the report.
+Remove any information that you do not wish to include in the report.\
+\
+%%SourceLink%%
 
 <details>
 <summary>Debug Data</summary>
@@ -685,14 +918,14 @@ Remove any information that you do not wish to include in the report.
 
 %%Settings%%
 
+## Failure Data
+
+%%InternalFailure%%
+
 ## Stack Data
 ```
 %%Stack%%
 ```
-
-## Failure Data
-
-%%InternalFailure%%
 
 </details>",
 Delimiters -> "%%"
@@ -726,15 +959,36 @@ $bugReportStack := StringRiffle[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$settings*)
-$settings := Module[ { settings, styleInfo, assoc },
-    settings  = CurrentValue @ { TaggingRules, "ChatNotebookSettings" };
-    styleInfo = CurrentValue @ { StyleDefinitions, "ChatStyleSheetInformation", TaggingRules };
-    assoc     = Association @ Select[ Association /@ { settings, styleInfo }, AssociationQ ];
-    If[ AssociationQ @ assoc,
-        KeyDrop[ assoc, "OpenAIKey" ],
-        settings
-    ]
+$settings := Quiet @ Module[ { settings, styleInfo, assoc },
+
+    settings = FirstCase[
+        Unevaluated @ {
+            AbsoluteCurrentValue @ { TaggingRules, "ChatNotebookSettings" },
+            CurrentValue @ { TaggingRules, "ChatNotebookSettings" }
+        },
+        e_ :> With[ { as = Association @ e }, as /; AssociationQ @ as && as =!= <| |> ],
+        <| |>
+    ];
+
+    styleInfo = styleSheetInfo @ { "WorkspaceChatStylesheetInformation", "ChatStyleSheetInformation" };
+
+    assoc = Association @ Select[ Association /@ { settings, styleInfo }, AssociationQ ];
+    If[ AssociationQ @ assoc, KeyDrop[ assoc, "OpenAIKey" ], settings ]
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*styleSheetInfo*)
+styleSheetInfo[ name_String ] := Replace[
+    CurrentValue @ { StyleDefinitions, name },
+    {
+        KeyValuePattern[ TaggingRules -> tags: KeyValuePattern @ { } ] :> Association @ tags,
+        ___ :> <| |>
+    }
+];
+
+styleSheetInfo[ names: { ___String } ] :=
+    Association @ Select[ styleSheetInfo /@ names, AssociationQ ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -869,9 +1123,12 @@ chatbookIcon // endDefinition;
 (*inlineTemplateBox*)
 inlineTemplateBox // beginDefinition;
 
-inlineTemplateBox[ TemplateBox[ args_, name_String ] ] :=
+inlineTemplateBox[ box: TemplateBox[ args_, name_String ] ] :=
     With[ { func = $templateBoxDisplayFunctions @ name },
-        TemplateBox[ args, name, DisplayFunction -> func ] /; MatchQ[ func, _Function ]
+        (
+            inlineTemplateBox[ Verbatim[ box ] ] =
+                inlineTemplateBoxes @ TemplateBox[ args, name, DisplayFunction -> func ]
+        ) /; MatchQ[ func, _Function ]
     ];
 
 inlineTemplateBox[ RawBoxes[ box_TemplateBox ] ] :=
@@ -887,10 +1144,10 @@ inlineTemplateBox // endDefinition;
 inlineTemplateBoxes // beginDefinition;
 
 inlineTemplateBoxes[ expr_ ] :=
-    ReplaceAll[
+    ReplaceRepeated[
         expr,
         TemplateBox[ args_, name_String ] :>
-            With[ { func = inlineTemplateBoxes @ $templateBoxDisplayFunctions @ name },
+            With[ { func = $templateBoxDisplayFunctions @ name },
                 TemplateBox[ args, name, DisplayFunction -> func ] /; MatchQ[ func, _Function ]
             ]
     ];
@@ -933,11 +1190,43 @@ insufficientVersionQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*MX Build Utilities*)
+$mxInitializations := $mxInitializations = Internal`Bag[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*addToMXInitialization*)
+addToMXInitialization // beginDefinition;
+addToMXInitialization // Attributes = { HoldAllComplete };
+addToMXInitialization[ ] := Null;
+addToMXInitialization[ Null ] := Null;
+addToMXInitialization[ eval___ ] /; $mxFlag := Internal`StuffBag[ $mxInitializations, HoldComplete @ eval ];
+addToMXInitialization[ ___ ] := Null;
+addToMXInitialization // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*mxInitialize*)
+mxInitialize // beginDefinition;
+mxInitialize // Attributes = { HoldAllComplete };
+
+mxInitialize[ eval___ ] :=
+    If[ TrueQ @ $mxFlag,
+        addToMXInitialization @ eval;
+        ReleaseHold @ Internal`BagPart[ $mxInitializations, All ];
+    ];
+
+mxInitialize // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     $debug = False;
     $chatbookIcons;
     $templateBoxDisplayFunctions;
+    $cloudTextResources;
+    $releaseID;
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)

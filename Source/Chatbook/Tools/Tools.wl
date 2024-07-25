@@ -1,36 +1,6 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Tools`" ];
-
-HoldComplete[
-    `$attachments;
-    `$defaultChatTools;
-    `$selectedTools;
-    `$toolConfiguration;
-    `$toolEvaluationResults;
-    `$toolOptions;
-    `$toolResultStringLength;
-    `expressionURIKey;
-    `expressionURIKeyQ;
-    `getToolByName;
-    `getToolDisplayName;
-    `getToolFormattingFunction;
-    `getToolIcon;
-    `initTools;
-    `makeExpressionURI;
-    `makeToolConfiguration;
-    `makeToolResponseString;
-    `resolveTools;
-    `simpleToolRequestParser;
-    `toolData;
-    `toolName;
-    `toolOptionValue;
-    `toolRequestParser;
-    `toolSelectedQ;
-    `toolShortName;
-    `withToolBox;
-];
-
 Begin[ "`Private`" ];
 
 (* ::**************************************************************************************************************:: *)
@@ -40,12 +10,13 @@ Get[ "Wolfram`Chatbook`Tools`Common`"          ];
 Get[ "Wolfram`Chatbook`Tools`ToolOptions`"     ];
 Get[ "Wolfram`Chatbook`Tools`DefaultTools`"    ];
 Get[ "Wolfram`Chatbook`Tools`ChatPreferences`" ];
+Get[ "Wolfram`Chatbook`Tools`WolframAlpha`"    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
-    Null;
+addToMXInitialization[
+    Null
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)

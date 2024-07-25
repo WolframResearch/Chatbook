@@ -1,5 +1,6 @@
 <|
-	"Description" 		-> "Wolfram's friendliest AI guide",
+	"Description"       -> "Wolfram's friendliest AI guide",
+	"DisplayName"       -> Dynamic @ FEPrivate`FrontEndResource[ "ChatbookStrings", "PersonaNameWolfie" ],
 	"DocumentationLink" -> "https://resources.wolframcloud.com/PromptRepository/resources/Wolfie/",
 	"Tools"             -> {
 		"DocumentationLookup",
@@ -7,6 +8,7 @@
 		"WolframAlpha",
 		"WolframLanguageEvaluator",
 		"WebSearcher",
-		"WebFetcher"
+		"WebFetcher",
+		ParentList
 	}
 |>

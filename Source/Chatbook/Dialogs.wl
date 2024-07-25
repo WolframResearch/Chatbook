@@ -1,29 +1,9 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Dialogs`" ];
+Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
-
-`$baseStyle;
-
-`$inDialog;
-`createDialog;
-
-`acv;
-`cv;
-`cvExpand;
-`setCV;
-`unsetCV;
-
-`headerStyle;
-`dialogHeader;
-`dialogSubHeader;
-`dialogBody;
-
-`grayDialogButtonLabel;
-`redDialogButtonLabel;
-
-Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                   ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
@@ -318,7 +298,7 @@ unsetCV // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     $cvRules;
 ];
 

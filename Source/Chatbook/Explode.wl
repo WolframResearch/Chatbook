@@ -1,15 +1,26 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Explode`" ];
-
-`explodeCell;
-
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"        ];
 Needs[ "Wolfram`Chatbook`Common`" ];
 
-$$newCellStyle = "Section"|"Subsection"|"Subsubsection"|"Subsubsubsection"|"Item"|"Input"|"ExternalLanguage"|"Program";
+$$newCellStyle = Alternatives[
+    "BlockQuote",
+    "ExternalLanguage",
+    "Input",
+    "Item",
+    "MarkdownDelimiter",
+    "Program",
+    "Section",
+    "Subsection",
+    "Subsubsection",
+    "Subsubsubsection",
+    "Text",
+    "TextTableForm",
+    "Title"
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -39,6 +50,10 @@ explodeCell // endDefinition;
 (* ::Subsection::Closed:: *)
 (*$preprocessingRules*)
 $preprocessingRules := $preprocessingRules = Dispatch @ {
+    (* Remove "InlineSection" styling: *)
+    Cell[ BoxData @ PaneBox[ StyleBox[ text_, style_, ___ ], ___ ], "InlineSection", ___ ] :>
+        RuleCondition @ StyleBox[ extractText @ text, style ],
+
     (* Convert TextRefLink to plain hyperlink: *)
     Cell @ BoxData[ TemplateBox[ { label_, uri_, ___ }, "TextRefLink" ], ___ ] :>
         Cell @ BoxData @ ButtonBox[
@@ -79,6 +94,12 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
     (* Remove nested cells: *)
     Cell @ BoxData[ cell_Cell, ___ ] :> cell,
 
+    StyleBox[ a_String, "InlineItem", b___ ] :> StyleBox[ "\n"<>a, b ],
+
+    (* Format text tables: *)
+    Cell[ content__, "TextTableForm", opts: OptionsPattern[ ] ] :>
+        Cell[ content, "TextTableForm", "Text", opts ],
+
     (* Remove extra style overrides from external language cells: *)
     Cell[ content_, "ExternalLanguage", OrderlessPatternSequence[ System`CellEvaluationLanguage -> lang_, __ ] ] :>
         Cell[ content, "ExternalLanguage", System`CellEvaluationLanguage -> lang ],
@@ -98,8 +119,20 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
         { a, Cell @@ b, c },
 
     (* Tiny line breaks: *)
-    StyleBox[ "\n", "TinyLineBreak", ___ ] :> "\n"
+    StyleBox[ "\n", "TinyLineBreak", ___ ] :> "\n",
+
+    Cell[ boxes_, style: "MarkdownDelimiter"|"BlockQuote", a___ ] :>
+        Cell[ boxes, "Text", style, a ]
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*extractText*)
+extractText // beginDefinition;
+extractText[ text_String ] := If[ StringMatchQ[ text, "\"" ~~ ___ ~~ "\"" ], ToExpression @ text, text ];
+extractText[ (Cell|StyleBox)[ text_, ___ ] ] := extractText @ text;
+extractText[ text_ ] := extractText[ text ] = CellToString @ text;
+extractText // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -155,7 +188,7 @@ regroupCells // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     $preprocessingRules;
 ];
 

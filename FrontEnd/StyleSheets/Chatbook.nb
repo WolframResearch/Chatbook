@@ -398,7 +398,15 @@ Notebook[
               TemplateBox[{}, "ChatInputIcon"],
               BaselinePosition -> Center -> Scaled[0.55]
              ],
-             StyleBox["Chat Input", "CellInsertionMenu"],
+             StyleBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource[
+                "ChatbookStrings",
+                "StylesheetInsertionMenuChatInput"
+               ]
+              ],
+              "CellInsertionMenu"
+             ],
              StyleBox[
               StyleBox["'", "CellInsertionMenuShortcut"],
               "CellInsertionMenuShortcut"
@@ -471,7 +479,15 @@ Notebook[
               TemplateBox[{}, "SideChatIcon"],
               BaselinePosition -> Center -> Scaled[0.55]
              ],
-             StyleBox["Side Chat", "CellInsertionMenu"],
+             StyleBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource[
+                "ChatbookStrings",
+                "StylesheetInsertionMenuSideChat"
+               ]
+              ],
+              "CellInsertionMenu"
+             ],
              StyleBox[
               StyleBox["''", "CellInsertionMenuShortcut"],
               "CellInsertionMenuShortcut"
@@ -1161,7 +1177,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.4.2.3915874681"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.4.6.3930718414"|>
   ],
   Cell[
    StyleData["Text"],
@@ -1577,8 +1593,13 @@ Notebook[
      CellFrame -> 0,
      CellMargins -> 0
     ],
-   CellMargins -> {{66, 25}, {1, 8}},
-   StyleKeyMapping -> {"~" -> "ChatDelimiter", "'" -> "SideChat"},
+   CellMargins -> {{66, 32}, {1, 8}},
+   StyleKeyMapping -> {
+    "~" -> "ChatDelimiter",
+    "'" -> "SideChat",
+    "=" -> "WolframAlphaShort",
+    "*" -> "Item"
+   },
    Evaluatable -> True,
    CellGroupingRules -> "InputGrouping",
    TaggingRules -> <|"ChatNotebookSettings" -> <||>|>,
@@ -1648,6 +1669,22 @@ Notebook[
      ]
    },
    CellFrameColor -> RGBColor[0.639216, 0.788235, 0.94902],
+   CellFrameLabels -> {
+    {
+     None,
+     Cell[
+      BoxData[
+       TemplateBox[
+        {RGBColor[0.639216, 0.788235, 0.94902], 20},
+        "SendChatButton"
+       ]
+      ],
+      Background -> None
+     ]
+    },
+    {None, None}
+   },
+   CellFrameLabelMargins -> -32,
    CounterIncrements -> {"ChatInputCount"},
    MenuSortingValue -> 1543
   ],
@@ -1843,10 +1880,28 @@ Notebook[
                  ImageSize -> Automatic,
                  FrameMargins -> 0
                 ],
-                "\"Send feedback to Wolfram\"",
-                TooltipStyle -> "TextStyling"
+                DynamicBox[
+                 ToBoxes[
+                  FEPrivate`FrontEndResource[
+                   "ChatbookStrings",
+                   "StylesheetFeedbackButtonTooltip"
+                  ],
+                  StandardForm
+                 ]
+                ]
                ],
-               Annotation[#1, "Send feedback to Wolfram", "Tooltip"] &
+               Function[
+                Annotation[
+                 #1,
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                   "ChatbookStrings",
+                   "StylesheetFeedbackButtonTooltip"
+                  ]
+                 ],
+                 "Tooltip"
+                ]
+               ]
               ],
               MouseAppearanceTag["LinkHand"]
              ],
@@ -1887,10 +1942,28 @@ Notebook[
                  ImageSize -> Automatic,
                  FrameMargins -> 0
                 ],
-                "\"Send feedback to Wolfram\"",
-                TooltipStyle -> "TextStyling"
+                DynamicBox[
+                 ToBoxes[
+                  FEPrivate`FrontEndResource[
+                   "ChatbookStrings",
+                   "StylesheetFeedbackButtonTooltip"
+                  ],
+                  StandardForm
+                 ]
+                ]
                ],
-               Annotation[#1, "Send feedback to Wolfram", "Tooltip"] &
+               Function[
+                Annotation[
+                 #1,
+                 Dynamic[
+                  FEPrivate`FrontEndResource[
+                   "ChatbookStrings",
+                   "StylesheetFeedbackButtonTooltip"
+                  ]
+                 ],
+                 "Tooltip"
+                ]
+               ]
               ],
               MouseAppearanceTag["LinkHand"]
              ],
@@ -2019,10 +2092,28 @@ Notebook[
                 Evaluator -> Automatic,
                 Method -> "Preemptive"
                ],
-               "\"Disable automatic assistance\"",
-               TooltipStyle -> "TextStyling"
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetAssistantMenuInitializerButtonTooltip"
+                 ],
+                 StandardForm
+                ]
+               ]
               ],
-              Annotation[#1, "Disable automatic assistance", "Tooltip"] &
+              Function[
+               Annotation[
+                #1,
+                Dynamic[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetAssistantMenuInitializerButtonTooltip"
+                 ]
+                ],
+                "Tooltip"
+               ]
+              ]
              ]
             },
             {
@@ -2101,10 +2192,28 @@ Notebook[
                 Evaluator -> Automatic,
                 Method -> "Preemptive"
                ],
-               "\"Disable automatic assistance\"",
-               TooltipStyle -> "TextStyling"
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetAssistantMenuInitializerButtonTooltip"
+                 ],
+                 StandardForm
+                ]
+               ]
               ],
-              Annotation[#1, "Disable automatic assistance", "Tooltip"] &
+              Function[
+               Annotation[
+                #1,
+                Dynamic[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetAssistantMenuInitializerButtonTooltip"
+                 ]
+                ],
+                "Tooltip"
+               ]
+              ]
              ]
             },
             {
@@ -2183,10 +2292,28 @@ Notebook[
                 Evaluator -> Automatic,
                 Method -> "Preemptive"
                ],
-               "\"Disable automatic assistance\"",
-               TooltipStyle -> "TextStyling"
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetAssistantMenuInitializerButtonTooltip"
+                 ],
+                 StandardForm
+                ]
+               ]
               ],
-              Annotation[#1, "Disable automatic assistance", "Tooltip"] &
+              Function[
+               Annotation[
+                #1,
+                Dynamic[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetAssistantMenuInitializerButtonTooltip"
+                 ]
+                ],
+                "Tooltip"
+               ]
+              ]
              ]
             },
             {
@@ -2340,13 +2467,13 @@ Notebook[
     DisplayFunction ->
      (Function[
       DynamicModuleBox[
-       {Wolfram`Chatbook`UI`Private`cell$$},
+       {Wolfram`ChatNB`cell$$},
        DynamicBox[
         ToBoxes[
          Catch[
           Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger;
           Wolfram`Chatbook`UI`MakeChatDelimiterCellDingbat[
-           Wolfram`Chatbook`UI`Private`cell$$
+           Wolfram`ChatNB`cell$$
           ],
           Blank[]
          ],
@@ -2355,14 +2482,20 @@ Notebook[
         TrackedSymbols :> {Wolfram`Chatbook`Dynamics`Private`$chatBlockTrigger}
        ],
        Initialization :>
-        (Wolfram`Chatbook`UI`Private`cell$$ = EvaluationCell[];
+        (Wolfram`ChatNB`cell$$ = EvaluationCell[];
         Needs["Wolfram`Chatbook`" -> None];
-        Wolfram`Chatbook`Dynamics`updateDynamics["ChatBlock"]),
+        Symbol["Wolfram`Chatbook`ChatbookAction"][
+         "UpdateDynamics",
+         "ChatBlock"
+        ]),
        DynamicModuleValues :> { },
        Deinitialization :>
         (Needs["Wolfram`Chatbook`" -> None];
-        Wolfram`Chatbook`Dynamics`updateDynamics["ChatBlock"]),
-       UnsavedVariables :> {Wolfram`Chatbook`UI`Private`cell$$}
+        Symbol["Wolfram`Chatbook`ChatbookAction"][
+         "UpdateDynamics",
+         "ChatBlock"
+        ]),
+       UnsavedVariables :> {Wolfram`ChatNB`cell$$}
       ]
      ])
    }
@@ -2759,7 +2892,15 @@ Notebook[
              TemplateBox[
               {
                TemplateBox[{"DivideCellsIcon"}, "ChatMenuItemToolbarIcon"],
-               "\"Explode Cells (In Place)\"",
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetExplodeCellsInPlace"
+                 ],
+                 StandardForm
+                ]
+               ],
                Hold[
                 With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
                  {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
@@ -2781,7 +2922,15 @@ Notebook[
              TemplateBox[
               {
                TemplateBox[{"OverflowIcon"}, "ChatMenuItemToolbarIcon"],
-               "\"Explode Cells (Duplicate)\"",
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetExplodeCellsDuplicate"
+                 ],
+                 StandardForm
+                ]
+               ],
                Hold[
                 With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
                  {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
@@ -2806,7 +2955,15 @@ Notebook[
                 {"HyperlinkCopyIcon"},
                 "ChatMenuItemToolbarIcon"
                ],
-               "\"Copy Exploded Cells\"",
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetCopyExplodedCells"
+                 ],
+                 StandardForm
+                ]
+               ],
                Hold[
                 With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
                  {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
@@ -2829,7 +2986,15 @@ Notebook[
              TemplateBox[
               {
                TemplateBox[{"TypesettingIcon"}, "ChatMenuItemToolbarIcon"],
-               "\"Toggle Formatting\"",
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetToggleFormatting"
+                 ],
+                 StandardForm
+                ]
+               ],
                Hold[
                 With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
                  {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
@@ -2851,7 +3016,15 @@ Notebook[
              TemplateBox[
               {
                TemplateBox[{"InPlaceIcon"}, "ChatMenuItemToolbarIcon"],
-               "\"Copy ChatObject\"",
+               DynamicBox[
+                ToBoxes[
+                 FEPrivate`FrontEndResource[
+                  "ChatbookStrings",
+                  "StylesheetCopyChatObject"
+                 ],
+                 StandardForm
+                ]
+               ],
                Hold[
                 With[ { Wolfram`ChatNB`cell$ = EvaluationCell[] },
                  {Wolfram`ChatNB`root$ = ParentCell[Wolfram`ChatNB`cell$]},
@@ -4453,6 +4626,368 @@ Notebook[
        AspectRatio -> Automatic,
        ImageSize -> {{19.0, 19.0}, {19.0, 19.0}},
        PlotRange -> {{-0.5, 18.5}, {-0.5, 18.5}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ChatEvaluatingSpinner"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      DynamicBox[
+       If[ TrueQ[$CloudEvaluation],
+        GraphicsBox[
+         {Thickness[0.05], GrayLevel[0.9], CircleBox[{0, 0}, 1]},
+         PlotRange -> 1.1,
+         ImageSize -> #1
+        ],
+        DynamicModuleBox[
+         {Wolfram`ChatNB`i},
+         OverlayBox[
+          {
+           PaneBox[
+            AnimatorBox[
+             Dynamic[Wolfram`ChatNB`i],
+             {1, 30, 1},
+             AutoAction -> False,
+             AnimationRate -> Automatic,
+             DisplayAllSteps -> True,
+             DefaultDuration -> 2,
+             AppearanceElements -> None
+            ],
+            ImageSize -> {0, 0}
+           ],
+           GraphicsBox[
+            {
+             Thickness[0.05],
+             GrayLevel[0.9],
+             CircleBox[{0, 0}, 1, {0.0, 6.2832}]
+            },
+            PlotRange -> 1.1,
+            ImageSize -> #1
+           ],
+           PaneSelectorBox[
+            {
+             1 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {4.5332, 4.9332}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             2 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {4.5151, 4.9332}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             3 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {4.4611, 4.9332}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             4 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {4.3713, 4.9332}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             5 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {4.2463, 4.9332}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             6 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {4.0869, 4.9332}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             7 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {3.894, 4.9332}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             8 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {3.6686, 4.9332}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             9 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {3.412, 4.9332}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             10 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {3.1258, 4.924}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             11 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {2.8116, 4.8802}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             12 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {2.4711, 4.8006}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             13 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {2.1064, 4.6856}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             14 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {1.7195, 4.5359}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             15 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {1.3127, 4.3525}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             16 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {0.88824, 4.1362}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             17 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {0.44865, 3.8884}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             18 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {-0.0035846, 3.6105}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             19 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {-0.46585, 3.3041}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             20 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {-0.9355, 2.9709}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             21 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {-1.4098, 2.6129}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             22 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {-1.75, 2.2322}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             23 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {-1.75, 1.8308}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             24 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {-1.75, 1.4112}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             25 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {-1.75, 0.97565}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             26 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {-1.75, 0.52676}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             27 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {-1.75, 0.067093}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             28 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {-1.75, -0.40072}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             29 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {-1.75, -0.87399}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ],
+             30 ->
+              GraphicsBox[
+               {
+                Thickness[0.06],
+                GrayLevel[0.7],
+                CircleBox[{0, 0}, 1, {-1.75, -1.35}]
+               },
+               PlotRange -> 1.1,
+               ImageSize -> #1
+              ]
+            },
+            Dynamic[Wolfram`ChatNB`i],
+            ContentPadding -> False,
+            FrameMargins -> 0,
+            ImageSize -> All,
+            Alignment -> Automatic,
+            BaseStyle -> None,
+            TransitionDirection -> Horizontal,
+            TransitionDuration -> 0.5,
+            TransitionEffect -> Automatic
+           ]
+          },
+          ContentPadding -> False,
+          FrameMargins -> 0
+         ],
+         DynamicModuleValues :> { }
+        ]
+       ],
+       SingleEvaluation -> True
       ]
      ])
    }
@@ -7029,6 +7564,97 @@ Notebook[
        ImageSize -> {{14.0, 17.0}, {14.0, 17.0}},
        PlotRange -> {{-0.5, 13.5}, {-0.5, 16.5}},
        AspectRatio -> Automatic
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["DiscardedMaterial"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.066667],
+        FaceForm[
+         {RGBColor[0.53725, 0.53725, 0.53725], Opacity[1.0]}
+        ],
+        FilledCurveBox[
+         {
+          {
+           {1, 4, 3},
+           {0, 1, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {0, 1, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {1, 3, 3},
+           {0, 1, 0}
+          },
+          {
+           {0, 2, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {0, 1, 0},
+           {1, 3, 3},
+           {1, 3, 3},
+           {1, 3, 3},
+           {0, 1, 0},
+           {0, 1, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {1, 3, 3}
+          },
+          {
+           {0, 2, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0}
+          }
+         },
+         {
+          CompressedData[
+           "\n1:eJxTTMoPSmViYGCQAmIQDQFaDmCqQdMBxtfdNPf98mOacBqXOgjNBOf7mHc6\nJjxlQJNnQDOHAc0cmHpROH/Z7CMKG4pE0MwTQbNPxGGNTFSK9X1BOD/h6QWl\n2z+F0OSFHbacKNs3X0oYzofIC8H5+ndV2BqnsjoAOf6902Uc3gTukGvNFnbQ\nbhe7ee67jMOMPKHmA6eEHdy2ff57pUIWzT1yqHy4v0TQ/A1TrwX3H2o4iaLy\ngeYAADp3VlE=\n      "
+          ],
+          CompressedData[
+           "\n1:eJxTTMoPSmViYGCQBWIQDQE6DmCqQdMBhc8gCudHWG45UWYn5BDyeOnsIw+0\noOICaPoEHHKf/1758ZIcnK+7ae775W7CDkE75FpfB36y9zHvdEx4KuRw9gwI\nfLAXv3nue3CyEFT9B/s1MlEp1vcF4fyXaoYca+Yg+DxM2u1ikYIOGRPf1tib\nfrCfNRMIJAUdzn8PBrrsg71TwtMLStECDmD69kd7sLv38Tv8AEkf+QLnQ8z7\ngcaH+oeBCc4HG/Pzhz2q/Ad7WHjA+KjhBeXDw+WDPSzcUM2DhTPMPsx4QA1v\nHfziQH0Arfp+zg==\n      "
+          ],
+          {
+           {10.316, 11.109},
+           {8.207, 9.0},
+           {10.316, 6.891},
+           {9.609, 6.184},
+           {7.5, 8.293},
+           {5.391, 6.184},
+           {4.684, 6.891},
+           {6.793, 9.0},
+           {4.684, 11.109},
+           {5.391, 11.816},
+           {7.5, 9.707},
+           {9.609, 11.816},
+           {10.316, 11.109}
+          }
+         }
+        ]
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {16.0, 16.0},
+       PlotRange -> {{-0.5, 15.5}, {-0.5, 15.5}}
       ]
      ])
    }
@@ -11683,6 +12309,129 @@ Notebook[
        AspectRatio -> Automatic,
        ImageSize -> {20.0, 20.0},
        PlotRange -> {{0.0, 20.0}, {0.0, 20.0}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["SendChatButtonLabel"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.055556],
+        FaceForm[#1],
+        FilledCurveBox[
+         {
+          {
+           {0, 2, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {1, 3, 3},
+           {1, 3, 3},
+           {0, 1, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {1, 3, 3}
+          }
+         },
+         CompressedData[
+          "\n1:eJxTTMoPSmVmYGBgBGIZIGYC4i9/r1S8ZDNwKM6Y+Lbmv67DvcntrVGX/9lL\n699VYWPUdXiwj2+O8aIP9t05z3+v/Kjj8Dsm9+i/TY/tN819v/zYaS0HweO7\ndvSyfbHfUzJZgmWapsOWyK87b3UJOjwRkT35dL6yQ+2FzUARIQcrZa/qZn5l\nh1VNgZ5zG0Qcpm3iKVzzWsnh/gPuySuZxBz2PgZqcFV2WPsLaIGdksPNc9+D\nHy9Vc7CadLreY7+SQ75Q84FTD9Ucdv5p/3I7XNmh8qWaIccaNQcTQTObvZOU\nHYC2h/HpqjnY7A2apnhO2WGd+8MqkXWqDt/Z4mf4TFV2uL64wJZLXNUhM/9D\n60kRZQenhKcXlG6rOEScMjqycZ24w4y7QI9XKToo5VRULdURc/jn/OvtawVF\nB6Y9rEIi9qIOlRErTM9GKzhsa6kB+kjUoWXe2VXnReUdNjA/79HIFXOQmHqF\nM2MRt4Pv577gkiViDo/NpA5EL2Bx0M9bzLiHVdrhUNvy8FObGB1AofM3VdaB\nKwNo0y82B1W2xqnOpw0cQMFvv1UL4s9EQwdg6DdOZdZx8AB547mBQ/+hrxox\n/HoO6PEFAPo2ybM=\n     "
+         ]
+        ]
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> #2,
+       PlotRange -> {{-0.5, 18.5}, {-0.5, 18.5}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["SendChatButton"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      DynamicModuleBox[
+       {Wolfram`ChatNB`cell$$},
+       PaneSelectorBox[
+        {
+         False ->
+          ButtonBox[
+           TemplateBox[{#1, #2}, "SendChatButtonLabel"],
+           ButtonFunction :>
+            (
+            Wolfram`Chatbook`$ChatEvaluationCell = 
+             Wolfram`ChatNB`cell$$;
+
+            SelectionMove[Wolfram`ChatNB`cell$$, All, Cell];
+            FrontEndTokenExecute[
+             Notebooks[Wolfram`ChatNB`cell$$],
+             "EvaluateCells"
+            ]),
+           FrameMargins -> 0,
+           Method -> "Queued",
+           Appearance -> Automatic,
+           Evaluator -> Automatic
+          ],
+         True ->
+          ButtonBox[
+           OverlayBox[
+            {
+             TemplateBox[{#2}, "ChatEvaluatingSpinner"],
+             GraphicsBox[
+              {
+               RGBColor[0.71373, 0.054902, 0.0],
+               RectangleBox[{-0.5, -0.5}, {0.5, 0.5}]
+              },
+              ImageSize -> #2,
+              PlotRange -> 1.1
+             ]
+            },
+            Alignment -> {Center, Center}
+           ],
+           ButtonFunction :>
+            If[ UnsameQ[
+              Wolfram`Chatbook`$ChatEvaluationCell,
+              Wolfram`ChatNB`cell$$
+             ],
+             NotebookWrite[
+              Wolfram`ChatNB`cell$$,
+              NotebookRead[Wolfram`ChatNB`cell$$],
+              None,
+              AutoScroll -> False
+             ],
+             Needs["Wolfram`Chatbook`" -> None];
+             Symbol["Wolfram`Chatbook`ChatbookAction"]["StopChat"]
+            ],
+           FrameMargins -> 0,
+           Appearance -> Automatic,
+           Evaluator -> Automatic,
+           Method -> "Preemptive"
+          ]
+        },
+        Dynamic[
+         SameQ[
+          Wolfram`Chatbook`$ChatEvaluationCell,
+          Wolfram`ChatNB`cell$$
+         ]
+        ],
+        Alignment -> {Automatic, Baseline}
+       ],
+       Initialization :>
+        (Wolfram`ChatNB`cell$$ = 
+         If[ $CloudEvaluation,
+          Wolfram`ChatNB`x;
+          EvaluationCell[],
+          ParentCell[EvaluationCell[]]
+         ]),
+       DynamicModuleValues :> { },
+       UnsavedVariables :> {Wolfram`ChatNB`cell$$}
       ]
      ])
    }
@@ -17369,6 +18118,102 @@ Notebook[
    }
   ],
   Cell[
+   StyleData[
+    "MessageAuthorLabel",
+    StyleDefinitions -> StyleData["Text"]
+   ],
+   ShowStringCharacters -> False,
+   FontSize -> 14,
+   FontWeight -> "DemiBold"
+  ],
+  Cell[
+   StyleData["UserMessageLabel"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      PaneBox[
+       #1,
+       BaseStyle -> {"MessageAuthorLabel"},
+       ImageSize -> {Scaled[1], Automatic},
+       Alignment -> Right,
+       FrameMargins -> {{0, 11}, {0, 0}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["AssistantMessageLabel"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      PaneBox[
+       #1,
+       BaseStyle -> {"MessageAuthorLabel"},
+       ImageSize -> {Scaled[1], Automatic},
+       Alignment -> Left,
+       FrameMargins -> {{11, 0}, {0, 0}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["UserMessageBox"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      FrameBox[
+       Cell[#1, "Text", Background -> None],
+       Background -> RGBColor[0.929412, 0.956863, 0.988235],
+       FrameMargins -> 8,
+       FrameStyle -> RGBColor[0.639216, 0.788235, 0.94902],
+       RoundingRadius -> 10,
+       StripOnInput -> False
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["AssistantMessageBox"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      FrameBox[
+       #1,
+       BaseStyle -> "Text",
+       Background -> RGBColor[0.988235, 0.992157, 1.0],
+       FrameMargins -> 8,
+       FrameStyle -> RGBColor[0.788235, 0.8, 0.815686],
+       ImageSize -> {Scaled[1], Automatic},
+       RoundingRadius -> 10,
+       StripOnInput -> False
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["DropShadowPaneBox"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      PanelBox[
+       #1,
+       Appearance ->
+        Image[
+         CompressedData[
+          "\n1:eJy9lU1LAlEUhqdxdIYYQ5gkwQFNXLiQlkMhLqJVIQhGCK7UUmljoEG0m7/p\n3/AP2HvlvXK6STnFNPB4mcM5z5x7nI/z8UtvaluWtfTw0xu9XS8Wo/f7Ak4e\n5svn2XzydDt/ncwmi8txBsEz4oBNgiNh+vaI49gSHBGbZICzh4zI0TU7zx63\n9KraLMgBF3gCl/GsuMYnv+GWToe1ynMMfJAX+Ix7zHOMa0i3vqb2uqxVngII\nQFEQMJ5nniv8W5fhtg3vCR0lEIIKqHINGQ+YJ/224dazyAnvKSiDGmiAJrjg\n2mC8zDztz+nZGO4s55dnP6quTl8EWqDNNWK8zryAdR490i17LnC/NdZfgZvV\narXRqHPGL5hXYt2ud/08iDn77CHkviN6usq5Xq+1u8t4xLyQdb6eu37O6Nbz\nKPL/anL/d6Bv9N1nvMW8Cuv0XBwxE9Nd5X7VfDtgAB7BlOuA8TbzqgncX/oG\nQ3qHv+j723nTN+D647yT3Cfss8P1oPvkH+7vNJ/LNN8nab4HrTi997cVp/vd\n2ef/8/fy0CPpd/4Dbscq/g==\n     "
+         ],
+         "Byte",
+         ColorSpace -> "RGB",
+         ImageResolution -> 72,
+         Interleaving -> True
+        ],
+       ContentPadding -> False,
+       FrameMargins -> {{0, 0}, {0, 0}}
+      ]
+     ])
+   }
+  ],
+  Cell[
    StyleData["ChatbookPersona"],
    TemplateBoxOptions -> {
     DisplayFunction ->
@@ -17529,10 +18374,28 @@ Notebook[
         TagBox[
          TooltipBox[
           TemplateBox[{}, "ChatWidgetIcon"],
-          "\"Send to LLM\"",
-          TooltipStyle -> "TextStyling"
+          DynamicBox[
+           ToBoxes[
+            FEPrivate`FrontEndResource[
+             "ChatbookStrings",
+             "StylesheetChatWidgetButtonTooltip"
+            ],
+            StandardForm
+           ]
+          ]
          ],
-         Annotation[#1, "Send to LLM", "Tooltip"] &
+         Function[
+          Annotation[
+           #1,
+           Dynamic[
+            FEPrivate`FrontEndResource[
+             "ChatbookStrings",
+             "StylesheetChatWidgetButtonTooltip"
+            ]
+           ],
+           "Tooltip"
+          ]
+         ]
         ],
         MouseAppearanceTag["LinkHand"]
        ],
@@ -17571,6 +18434,296 @@ Notebook[
        FontSize -> 10,
        FontColor -> RGBColor[0.55433, 0.707942, 0.925795],
        FontWeight -> Plain
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["DiscardedMaterialOpener"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      DynamicModuleBox[
+       {Typeset`hover$$ = False, Typeset`open$$ = False},
+       PaneSelectorBox[
+        {
+         False ->
+          TagBox[
+           GridBox[
+            {
+             {
+              TagBox[
+               TagBox[
+                FrameBox[
+                 TagBox[
+                  GridBox[
+                   {
+                    {
+                     TemplateBox[{}, "DiscardedMaterial"],
+                     "\"Discarded material\"",
+                     PaneSelectorBox[
+                      {
+                       {True, False} ->
+                        TemplateBox[
+                         {RGBColor[0.3451, 0.72157, 0.98039]},
+                         "DiscardedMaterialOpenerIcon"
+                        ],
+                       {False, False} ->
+                        TemplateBox[
+                         {GrayLevel[0.7451]},
+                         "DiscardedMaterialOpenerIcon"
+                        ],
+                       {True, True} ->
+                        TemplateBox[
+                         {RGBColor[0.3451, 0.72157, 0.98039]},
+                         "DiscardedMaterialCloserIcon"
+                        ],
+                       {False, True} ->
+                        TemplateBox[
+                         {GrayLevel[0.7451]},
+                         "DiscardedMaterialCloserIcon"
+                        ]
+                      },
+                      Dynamic[{Typeset`hover$$, Typeset`open$$}]
+                     ]
+                    }
+                   },
+                   GridBoxAlignment -> {"Columns" -> {{Automatic}}, "Rows" -> {{Baseline}}},
+                   AutoDelete -> False,
+                   GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}
+                  ],
+                  "Grid"
+                 ],
+                 Background ->
+                  Dynamic[
+                   FEPrivate`If[
+                    Typeset`hover$$,
+                    GrayLevel[1],
+                    RGBColor[0.94902, 0.96863, 0.98824]
+                   ]
+                  ],
+                 BaseStyle -> {
+                  "Text",
+                  "IconizedDefaultName",
+                  ShowStringCharacters -> False
+                 },
+                 FrameMargins -> 2,
+                 FrameStyle -> RGBColor[0.9098, 0.93333, 0.95294],
+                 RoundingRadius -> 5,
+                 StripOnInput -> False
+                ],
+                EventHandlerTag[
+                 {
+                  "MouseEntered" :> FEPrivate`Set[Typeset`hover$$, True],
+                  "MouseExited" :> FEPrivate`Set[Typeset`hover$$, False],
+                  "MouseClicked" :>
+                   FEPrivate`Set[
+                    Typeset`open$$,
+                    FEPrivate`If[Typeset`open$$, False, True]
+                   ],
+                  PassEventsDown -> True,
+                  Method -> "Preemptive",
+                  PassEventsUp -> True
+                 }
+                ]
+               ],
+               MouseAppearanceTag["LinkHand"]
+              ]
+             }
+            },
+            DefaultBaseStyle -> "Column",
+            GridBoxAlignment -> {"Columns" -> {{Left}}},
+            GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+            GridBoxSpacings -> {"Columns" -> {{Automatic}}, "Rows" -> {{0.25}}}
+           ],
+           "Column"
+          ],
+         True ->
+          TagBox[
+           GridBox[
+            {
+             {
+              TagBox[
+               TagBox[
+                FrameBox[
+                 TagBox[
+                  GridBox[
+                   {
+                    {
+                     TemplateBox[{}, "DiscardedMaterial"],
+                     "\"Discarded material\"",
+                     PaneSelectorBox[
+                      {
+                       {True, False} ->
+                        TemplateBox[
+                         {RGBColor[0.3451, 0.72157, 0.98039]},
+                         "DiscardedMaterialOpenerIcon"
+                        ],
+                       {False, False} ->
+                        TemplateBox[
+                         {GrayLevel[0.7451]},
+                         "DiscardedMaterialOpenerIcon"
+                        ],
+                       {True, True} ->
+                        TemplateBox[
+                         {RGBColor[0.3451, 0.72157, 0.98039]},
+                         "DiscardedMaterialCloserIcon"
+                        ],
+                       {False, True} ->
+                        TemplateBox[
+                         {GrayLevel[0.7451]},
+                         "DiscardedMaterialCloserIcon"
+                        ]
+                      },
+                      Dynamic[{Typeset`hover$$, Typeset`open$$}]
+                     ]
+                    }
+                   },
+                   GridBoxAlignment -> {"Columns" -> {{Automatic}}, "Rows" -> {{Baseline}}},
+                   AutoDelete -> False,
+                   GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}
+                  ],
+                  "Grid"
+                 ],
+                 Background ->
+                  Dynamic[
+                   FEPrivate`If[
+                    Typeset`hover$$,
+                    GrayLevel[1],
+                    RGBColor[0.94902, 0.96863, 0.98824]
+                   ]
+                  ],
+                 BaseStyle -> {
+                  "Text",
+                  "IconizedDefaultName",
+                  ShowStringCharacters -> False
+                 },
+                 FrameMargins -> 2,
+                 FrameStyle -> RGBColor[0.9098, 0.93333, 0.95294],
+                 RoundingRadius -> 5,
+                 StripOnInput -> False
+                ],
+                EventHandlerTag[
+                 {
+                  "MouseEntered" :> FEPrivate`Set[Typeset`hover$$, True],
+                  "MouseExited" :> FEPrivate`Set[Typeset`hover$$, False],
+                  "MouseClicked" :>
+                   FEPrivate`Set[
+                    Typeset`open$$,
+                    FEPrivate`If[Typeset`open$$, False, True]
+                   ],
+                  PassEventsDown -> True,
+                  Method -> "Preemptive",
+                  PassEventsUp -> True
+                 }
+                ]
+               ],
+               MouseAppearanceTag["LinkHand"]
+              ]
+             },
+             {
+              FrameBox[
+               #1,
+               Background -> RGBColor[0.94902, 0.96863, 0.98824],
+               FrameMargins -> 10,
+               FrameStyle -> RGBColor[0.9098, 0.93333, 0.95294],
+               ImageSize -> {Full, Automatic},
+               RoundingRadius -> 5,
+               StripOnInput -> False
+              ]
+             }
+            },
+            DefaultBaseStyle -> "Column",
+            GridBoxAlignment -> {"Columns" -> {{Left}}},
+            GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+            GridBoxSpacings -> {"Columns" -> {{Automatic}}, "Rows" -> {{0.25}}}
+           ],
+           "Column"
+          ]
+        },
+        Dynamic[Typeset`open$$],
+        ImageMargins -> 10,
+        ImageSize -> Automatic,
+        Alignment -> Left,
+        ContentPadding -> False
+       ],
+       DynamicModuleValues :> { },
+       UnsavedVariables :> {Typeset`hover$$}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["DiscardedMaterialOpenerIcon"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        #1,
+        Thickness[0.090909],
+        Opacity[1.0],
+        FilledCurveBox[
+         {
+          {
+           {0, 2, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0}
+          }
+         },
+         {
+          {
+           {8.5, 4.5},
+           {6.5, 4.5},
+           {6.5, 2.5},
+           {4.5, 2.5},
+           {4.5, 4.5},
+           {2.5, 4.5},
+           {2.5, 6.5},
+           {4.5, 6.5},
+           {4.5, 8.5},
+           {6.5, 8.5},
+           {6.5, 6.5},
+           {8.5, 6.5}
+          }
+         }
+        ]
+       },
+       AspectRatio -> Automatic,
+       BaselinePosition -> Center -> Center,
+       ImageSize -> {11.0, 11.0},
+       PlotRange -> {{0.0, 11.0}, {0.0, 11.0}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["DiscardedMaterialCloserIcon"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        #1,
+        Thickness[0.090909],
+        Opacity[1.0],
+        FilledCurveBox[
+         {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}}},
+         {{{8.5, 4.5}, {2.5, 4.5}, {2.5, 6.5}, {8.5, 6.5}}}
+        ]
+       },
+       AspectRatio -> Automatic,
+       BaselinePosition -> Center -> Center,
+       ImageSize -> {11.0, 11.0},
+       PlotRange -> {{0.0, 11.0}, {0.0, 11.0}}
       ]
      ])
    }

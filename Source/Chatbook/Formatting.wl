@@ -2,35 +2,10 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Formatting`" ];
-
-(* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDRESULT *)
-
-Wolfram`Chatbook`FormatChatOutput;
-Wolfram`Chatbook`FormatToolCall;
-Wolfram`Chatbook`StringToBoxes;
-
-`$customToolFormatter;
-`$dynamicSplitRules;
-`$dynamicText;
-`$reformattedCell;
-`$resultCellCache;
-`clickToCopy;
-`floatingButtonGrid;
-`insertCodeBelow;
-`makeInteractiveCodeCell;
-`reformatTextData;
-`stringToBoxes;
-`toolAutoFormatter;
-
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"          ];
-Needs[ "Wolfram`Chatbook`Common`"   ];
-Needs[ "Wolfram`Chatbook`FrontEnd`" ];
-Needs[ "Wolfram`Chatbook`Sandbox`"  ];
-Needs[ "Wolfram`Chatbook`Tools`"    ];
-
-(* FIXME: Use ParagraphSpacing to squeeze text closer together *)
+Needs[ "Wolfram`Chatbook`"        ];
+Needs[ "Wolfram`Chatbook`Common`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -52,10 +27,11 @@ $wlCodeString = Longest @ Alternatives[
 
 $resultCellCache = <| |>;
 
-sectionStyle[ 1 ] := "Section";
-sectionStyle[ 2 ] := "Subsection";
-sectionStyle[ 3 ] := "Subsubsection";
-sectionStyle[ 4 ] := "Subsubsubsection";
+sectionStyle[ 1 ] := "Title";
+sectionStyle[ 2 ] := "Section";
+sectionStyle[ 3 ] := "Subsection";
+sectionStyle[ 4 ] := "Subsubsection";
+sectionStyle[ 5 ] := "Subsubsubsection";
 sectionStyle[ _ ] := "Subsubsubsubsection";
 
 $tinyLineBreak = StyleBox[ "\n", "TinyLineBreak", FontSize -> 3 ];
@@ -76,10 +52,19 @@ $externalLanguageRules = Replace[
     { 1 }
 ];
 
-$$mdRow1  = WhitespaceCharacter... ~~ "|" ~~ Except[ "\n" ]... ~~ "|" ~~ WhitespaceCharacter... ~~ ("\n"|EndOfString);
+$$ws      = Shortest[ WhitespaceCharacter... ];
+$$mdRow1  = $$ws ~~ "|" ~~ Except[ "\n" ]... ~~ "|" ~~ $$ws ~~ ("\n"|EndOfString);
 $$mdRow2  = Except[ "\n" ].. ~~ Repeated[ ("|" ~~ Except[ "\n" ]...), { 2, Infinity } ] ~~ ("\n"|EndOfString);
 $$mdRow   = $$mdRow1 | $$mdRow2;
 $$mdTable = $$mdRow ~~ $$mdRow ..;
+
+$$blockQuoteLine = StartOfLine ~~ ">" ~~ $$ws ~~ Except[ "\n" ].. ~~ ("\n"|EndOfString);
+$$blockQuote     = Longest[ $$blockQuoteLine.. ];
+
+$$hyphenDelimiter     = Repeated[ "-", { 3, Infinity } ];
+$$asteriskDelimiter   = Repeated[ "*", { 3, Infinity } ];
+$$underscoreDelimiter = Repeated[ "_", { 3, Infinity } ];
+$$delimiter           = StartOfLine ~~ ($$hyphenDelimiter|$$asteriskDelimiter|$$underscoreDelimiter) ~~ EndOfLine;
 
 $chatGeneratedCellTag = "ChatGeneratedCell";
 
@@ -103,6 +88,32 @@ $autoOperatorRenderings = <|
  $expressionURIPlaceholder = "\[LeftSkeleton]\[Ellipsis]\[RightSkeleton]";
  $freeformPromptBox        = StyleBox[ "\[FreeformPrompt]", FontColor -> RGBColor[ "#ff6f00" ], FontSize -> 9 ];
 
+
+ $delimiterCell = Cell[
+    BoxData @ TagBox[
+        GridBox[
+            { { TemplateBox[ { 0 }, "Spacer1" ] }, { TemplateBox[ { 0 }, "Spacer1" ] } },
+            AutoDelete      -> False,
+            GridBoxDividers -> { "Columns" -> { False, { True }, False }, "Rows" -> { False, { True }, False } },
+            GridBoxItemSize -> { "Columns" -> { { Fit } }, "Rows" -> { { Automatic } } },
+            FrameStyle      -> Directive[ GrayLevel[ 0.8 ], AbsoluteThickness[ 1 ] ]
+        ],
+        "Grid"
+    ],
+    "MarkdownDelimiter",
+    Background           -> None,
+    ShowStringCharacters -> False
+];
+
+
+esc[ c_ ] := "\[EntityStart]" <> IntegerString @ FromDigits[ ToCharacterCode[ c, "UTF-8" ], 255 ] <> "\[EntityEnd]";
+
+$mdEscapedCharacters = { "`", "$", "*", "_", "#", "|" };
+$$mdEscapedCharacter = Alternatives @@ Map[ "\\"<># &, $mdEscapedCharacters ];
+
+$mdEscapeRules   = "\\" <> # -> esc @ # & /@ $mdEscapedCharacters;
+$mdUnescapeRules = esc @ # -> # & /@ $mdEscapedCharacters;
+
 (* ::**************************************************************************************************************:: *)
  (* ::Section::Closed:: *)
  (*StringToBoxes*)
@@ -110,6 +121,20 @@ StringToBoxes // beginDefinition;
 StringToBoxes[ string_String? StringQ ] := catchAlways[ stringToBoxes @ string, StringToBoxes ];
 StringToBoxes[ string_String? StringQ, "WL" ] := catchAlways[ wlStringToBoxes @ string, StringToBoxes ];
 StringToBoxes // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*CachedBoxes*)
+CachedBoxes // beginDefinition;
+CachedBoxes[ expr_ ] := catchMine @ cachedBoxes @ Unevaluated @ expr;
+CachedBoxes // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*DisplayBase64Boxes*)
+DisplayBase64Boxes // beginDefinition;
+DisplayBase64Boxes[ b64_String ] := catchMine @ displayBase64Boxes @ b64;
+DisplayBase64Boxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -168,12 +193,13 @@ formatToolCall // endDefinition;
 
 formatToolCall0 // beginDefinition;
 
-formatToolCall0[ string_String, as_Association ] := Panel[
-    makeToolCallBoxLabel @ as,
-    BaseStyle    -> "Text",
-    Background   -> GrayLevel[ 0.95 ],
-    ImageMargins -> 10
-];
+formatToolCall0[ string_String, as_Association ] :=
+    Panel[
+        makeToolCallBoxLabel @ as,
+        BaseStyle    -> { "Text", LineBreakWithin -> False },
+        Background   -> GrayLevel[ 0.95 ],
+        ImageMargins -> { { 0, 0 }, { 10, 10 } }
+    ];
 
 formatToolCall0[ string_String, failed_Failure ] := Framed[
     failed,
@@ -191,13 +217,46 @@ formatToolCall0 // endDefinition;
 (*reformatTextData*)
 reformatTextData // beginDefinition;
 
+reformatTextData[ string_String ] /; StringContainsQ[ string, $$mdEscapedCharacter ] :=
+    ReplaceAll[
+        reformatTextData @ StringReplace[ string, $mdEscapeRules ],
+        s_String :> RuleCondition @ StringReplace[ s, $mdUnescapeRules ]
+    ];
+
 reformatTextData[ string_String ] := joinAdjacentStrings @ Flatten[
-    makeResultCell /@ StringSplit[ string, $textDataFormatRules, IgnoreCase -> True ]
+    makeResultCell /@ discardBadToolCalls @ DeleteCases[
+        StringSplit[ string, $textDataFormatRules, IgnoreCase -> True ],
+        ""
+    ]
 ];
 
 reformatTextData[ other_ ] := other;
 
 reformatTextData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*discardBadToolCalls*)
+discardBadToolCalls // beginDefinition;
+
+discardBadToolCalls[ {
+    a___,
+    tc_inlineToolCallCell,
+    b: Except[ _inlineToolCallCell ]...,
+    $discardPreviousToolCall,
+    c___
+} ] := discardBadToolCalls @ { a, $lastDiscarded = discardedMaterial[ tc, b ], c };
+
+discardBadToolCalls[ { a: Except[ _inlineToolCallCell ]..., $discardPreviousToolCall, b___ } ] :=
+    discardBadToolCalls @ { a, b };
+
+discardBadToolCalls[ { a___, discardedMaterial[ b___ ], discardedMaterial[ c___ ], d___ } ] :=
+    discardBadToolCalls @ { a, $lastDiscarded = discardedMaterial[ b, c ], d };
+
+discardBadToolCalls[ textData_List ] :=
+    textData;
+
+discardBadToolCalls // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -216,6 +275,9 @@ makeResultCell // endDefinition;
 
 
 makeResultCell0 // beginDefinition;
+
+makeResultCell0[ discardedMaterial[ stuff___ ] ] :=
+    makeDiscardedMaterialCell @ stuff;
 
 makeResultCell0[ str_String ] := formatTextString @ str;
 
@@ -246,18 +308,16 @@ makeResultCell0[ imageCell[ alt_String, url_String ] ] := image[ alt, url ];
 makeResultCell0[ hyperlinkCell[ label_String, url_String ] ] := hyperlink[ label, url ];
 
 makeResultCell0[ bulletCell[ whitespace_String, item_String ] ] := Flatten @ {
-    $tinyLineBreak,
+    "\n",
     whitespace,
-    StyleBox[ "\[Bullet]", FontColor -> GrayLevel[ 0.5 ] ],
+    StyleBox[ "\[Bullet]", "InlineItem", FontColor -> GrayLevel[ 0.5 ] ],
     " ",
-    reformatTextData @ item,
-    $tinyLineBreak
+    formatTextString @ item
 };
 
 makeResultCell0[ sectionCell[ n_, section_String ] ] := Flatten @ {
     "\n",
-    styleBox[ formatTextString @ section, sectionStyle @ n, "InlineSection", FontSize -> .8*Inherited ],
-    $tinyLineBreak
+    inlineSection[ section, sectionStyle @ n ]
 };
 
 makeResultCell0[ inlineToolCallCell[ string_String ] ] := (
@@ -268,8 +328,99 @@ makeResultCell0[ inlineToolCallCell[ string_String ] ] := (
 makeResultCell0[ tableCell[ string_String ] ] :=
     makeTableCell @ string;
 
+makeResultCell0[ delimiterCell[ ] ] :=
+    $delimiterCell;
+
+makeResultCell0[ blockQuoteCell[ quote_String ] ] := Cell[
+    BoxData @ GridBox[
+        {
+            {
+                PaneBox[
+                    formatTextToBoxes @ StringDelete[ StringTrim @ quote, StartOfLine ~~ ">" ~~ " "... ],
+                    ImageMargins -> 5,
+                    ImageSize    -> { Full, Automatic },
+                    BaseStyle    -> { "Text", FontColor -> GrayLevel[ 0.35 ] }
+                ]
+            }
+        },
+        AutoDelete        -> False,
+        GridBoxBackground -> { "Columns" -> { { GrayLevel[ 1 ] } } },
+        GridBoxDividers   -> {
+            "ColumnsIndexed" -> { 1 -> Directive[ RGBColor[ 0.87, 0.94, 1 ], AbsoluteThickness[ 4 ] ] },
+            "Rows"           -> { { False } }
+        },
+        GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } }
+    ],
+    "BlockQuote",
+    Background -> None
+];
+
 makeResultCell0 // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inlineSection*)
+inlineSection // beginDefinition;
+
+inlineSection[ content_, style_String ] :=
+    inlineSection[ content, style, sectionMargins @ style ];
+
+inlineSection[ content_, style_String, margins: { { _, _ }, { _, _ } } ] := Cell[
+    BoxData @ PaneBox[
+        StyleBox[ formatTextToBoxes @ content, style, ShowStringCharacters -> False ],
+        ImageMargins -> margins
+    ],
+    "InlineSection",
+    Background -> None
+];
+
+inlineSection[ content_, style_String, { bottom_Integer, top_Integer } ] :=
+    inlineSection[ content, style, { { 0, 0 }, { bottom, top } } ];
+
+inlineSection // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*formatTextToBoxes*)
+formatTextToBoxes // beginDefinition;
+formatTextToBoxes[ text_String ] := formatTextToBoxes[ text, styleBox @ text ];
+formatTextToBoxes[ text_String, formatted_String ] := ToBoxes @ formatted;
+formatTextToBoxes[ text_String, data: $$textData ] := Cell[ TextData @ Flatten @ { data }, Background -> None ];
+formatTextToBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*sectionMargins*)
+sectionMargins // beginDefinition;
+sectionMargins[ "Title"|"Section"|"Subsection"|"Subsubsection" ] := { { 0, 0 }, { 5, 15 } };
+sectionMargins[ _String ] := { { 0, 0 }, { 2, 5 } };
+sectionMargins // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeDiscardedMaterialCell*)
+makeDiscardedMaterialCell // beginDefinition;
+
+makeDiscardedMaterialCell[ stuff___ ] := {
+    Cell[
+        BoxData @ TemplateBox[
+            {
+                ToBoxes @ compressUntilViewed @ RawBoxes @ Cell[
+                    TextData @ joinAdjacentStrings @ Flatten[ makeResultCell /@ { stuff } ],
+                    "Text",
+                    Background  -> None,
+                    FontOpacity -> 0.5
+                ]
+            },
+            "DiscardedMaterialOpener"
+        ],
+        "DiscardedMaterial",
+        Background -> None
+    ],
+    "\n"
+};
+
+makeDiscardedMaterialCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -330,9 +481,8 @@ texUTF8Convert0 // endDefinition;
 makeTableCell // beginDefinition;
 
 makeTableCell[ table_String ] := Flatten @ {
-    $tinyLineBreak,
-    makeTableCell0 @ table,
-    $tinyLineBreak
+    "\n",
+    makeTableCell0 @ StringTrim @ table
 };
 
 makeTableCell // endDefinition;
@@ -348,7 +498,10 @@ makeTableCell0 @ { { __String? emptyTableItemQ }, { b__String? delimiterItemQ },
 
 makeTableCell0[ { a_List, { b__String? delimiterItemQ }, c__ } ] :=
     Cell[
-        BoxData @ alignTable[ ToBoxes @ textTableForm[ { c }, TableHeadings -> { None, formatRaw /@ a } ], { b } ],
+        BoxData @ PaneBox[
+            alignTable[ ToBoxes @ textTableForm[ { c }, TableHeadings -> { None, formatRaw /@ a } ], { b } ],
+            ImageMargins -> { { 0, 0 }, { 5, 5 } }
+        ],
         "TextTableForm"
     ];
 
@@ -500,7 +653,7 @@ floatingButtonGrid[ attached_, cell_, lang_ ] := RawBoxes @ TemplateBox[
     {
         ToBoxes @ Grid[
             {
-                {
+                checkTemplateBoxes @ {
                     button[ evaluateLanguageLabel @ lang, insertCodeBelow[ cell, True ]; NotebookDelete @ attached ],
                     button[ $insertInputButtonLabel, insertCodeBelow[ cell, False ]; NotebookDelete @ attached ],
                     button[ $copyToClipboardButtonLabel, copyCode @ cell; NotebookDelete @ attached ]
@@ -519,7 +672,7 @@ floatingButtonGrid[ string_, lang_ ] := RawBoxes @ TemplateBox[
     {
         ToBoxes @ Grid[
             {
-                {
+                checkTemplateBoxes @ {
                     button[ evaluateLanguageLabel @ lang, insertCodeBelow[ string, True ] ],
                     button[ $insertInputButtonLabel, insertCodeBelow[ string, False ] ],
                     button[ $copyToClipboardButtonLabel, CopyToClipboard @ string ]
@@ -537,12 +690,21 @@ floatingButtonGrid // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*checkTemplateBoxes*)
+checkTemplateBoxes // beginDefinition;
+checkTemplateBoxes[ boxes_ ] := checkTemplateBoxes[ boxes, $InlineChat ];
+checkTemplateBoxes[ boxes_, True ] := checkTemplateBoxes[ Verbatim @ boxes, True ] = inlineTemplateBoxes @ boxes;
+checkTemplateBoxes[ boxes_, _ ] := boxes;
+checkTemplateBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*evaluateLanguageLabel*)
 evaluateLanguageLabel[ name_String ] :=
     With[ { icon = $languageIcons @ name },
         fancyTooltip[
             MouseAppearance[ buttonMouseover[ buttonFrameDefault @ icon, buttonFrameActive @ icon ], "LinkHand" ],
-            "Insert content as new input cell below and evaluate"
+            tr[ "FormattingInsertContentAndEvaluateTooltip" ]
         ] /; MatchQ[ icon, _Graphics | _Image ]
     ];
 
@@ -568,7 +730,7 @@ $copyToClipboardButtonLabel := $copyToClipboardButtonLabel = fancyTooltip[
         ],
         "LinkHand"
     ],
-    "Copy to clipboard"
+    tr[ "FormattingCopyToClipboardTooltip" ]
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -582,7 +744,7 @@ $insertInputButtonLabel := $insertInputButtonLabel = fancyTooltip[
         ],
         "LinkHand"
     ],
-    "Insert content as new input cell below"
+    tr[ "FormattingInsertContentTooltip" ]
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -596,7 +758,7 @@ $insertEvaluateButtonLabel := $insertEvaluateButtonLabel = fancyTooltip[
         ],
         "LinkHand"
     ],
-    "Insert content as new input cell below and evaluate"
+    tr[ "FormattingInsertContentAndEvaluateTooltip" ]
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -611,13 +773,17 @@ insertCodeBelow // beginDefinition;
 insertCodeBelow[ code_ ] := insertCodeBelow[ code, False ];
 
 insertCodeBelow[ cell_CellObject, evaluate_ ] :=
-    insertCodeBelow[ getCodeBlockContent @ cell, evaluate ];
+    If[ TrueQ @ CurrentChatSettings[ cell, "WorkspaceChat" ],
+        insertCodeInUserNotebook[ parentNotebook @ cell, getCodeBlockContent @ cell, evaluate ],
+        insertCodeBelow[ getCodeBlockContent @ cell, evaluate ]
+    ];
 
 insertCodeBelow[ cell_Cell, evaluate_ ] :=
     Module[ { cellObj, nbo },
         cellObj = topParentCell @ EvaluationCell[ ];
-        nbo  = parentNotebook @ cellObj;
+        nbo = parentNotebook @ cellObj;
         insertAfterChatGeneratedCells[ cellObj, cell ];
+        NotebookDelete @ Cells[ nbo, AttachedCell -> True, CellStyle -> "AttachedChatInput" ];
         If[ TrueQ @ evaluate,
             selectionEvaluateCreateCell @ nbo,
             SelectionMove[ nbo, After, CellContents ]
@@ -628,6 +794,57 @@ insertCodeBelow[ string_String, evaluate_ ] :=
     insertCodeBelow[ reparseCodeBoxes @ Cell[ BoxData @ string, "Input" ], evaluate ];
 
 insertCodeBelow // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*insertCodeInUserNotebook*)
+insertCodeInUserNotebook // beginDefinition;
+
+insertCodeInUserNotebook[ chatNB_NotebookObject, cell_Cell, evaluate_ ] := Enclose[
+    Module[ { nbo, cellObj },
+        nbo = ConfirmMatch[ getNotebookForCodeInsertion @ chatNB, _NotebookObject, "UserNotebook" ];
+        cellObj = ConfirmMatch[ getLastSelectedCell @ nbo, _CellObject|None, "SelectedCell" ];
+
+        If[ cellObj === None
+            ,
+            SelectionMove[ nbo, After, Cell, AutoScroll -> True ];
+            NotebookWrite[ nbo, preprocessInsertedCell @ cell, All ]
+            ,
+            insertAfterChatGeneratedCells[ cellObj, cell ]
+        ];
+
+        SetSelectedNotebook @ nbo;
+
+        If[ TrueQ @ evaluate,
+            selectionEvaluateCreateCell @ nbo,
+            SelectionMove[ nbo, After, CellContents ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+insertCodeInUserNotebook[ chatNB_NotebookObject, code_String, evaluate_ ] :=
+    insertCodeInUserNotebook[ chatNB, reparseCodeBoxes @ Cell[ BoxData @ code, "Input" ], evaluate ];
+
+insertCodeInUserNotebook // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getNotebookForCodeInsertion*)
+getNotebookForCodeInsertion // beginDefinition;
+getNotebookForCodeInsertion[ chatNB_NotebookObject ] := getNotebookForCodeInsertion[ chatNB, getUserNotebook @ chatNB ];
+getNotebookForCodeInsertion[ _, userNB_NotebookObject ] := userNB;
+getNotebookForCodeInsertion[ _, None ] := CreateNotebook[ ];
+getNotebookForCodeInsertion // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getLastSelectedCell*)
+getLastSelectedCell // beginDefinition;
+getLastSelectedCell[ nbo_NotebookObject ] := getLastSelectedCell @ SelectedCells @ nbo;
+getLastSelectedCell[ { ___, cell_CellObject } ] := cell;
+getLastSelectedCell[ _ ] := None;
+getLastSelectedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -652,20 +869,33 @@ insertAfterChatGeneratedCells[ cellObj_CellObject, cell_Cell ] /; $cloudNotebook
 ];
 
 insertAfterChatGeneratedCells[ cellObj_CellObject, cell_Cell ] := Enclose[
-    Module[ { nbo, allCells, cellsAfter, tagged, inserted, insertionPoint },
+    Module[ { nbo, allCells, cellsAfter, taggedQ, tagged, generated, skip, skipped, insertionPoint },
 
-        nbo = ConfirmMatch[ parentNotebook @ cellObj, _NotebookObject, "ParentNotebook" ];
-        allCells = ConfirmMatch[ Cells @ nbo, { __CellObject }, "AllCells" ];
+        nbo        = ConfirmMatch[ parentNotebook @ cellObj, _NotebookObject, "ParentNotebook" ];
+        allCells   = ConfirmMatch[ Cells @ nbo, { __CellObject }, "AllCells" ];
         cellsAfter = Replace[ allCells, { { ___, cellObj, after___ } :> { after }, _ :> { } } ];
+        taggedQ    = MemberQ[ Flatten @ List @ #, $chatGeneratedCellTag ] &;
 
         tagged = ConfirmBy[
-            AssociationThread[ cellsAfter -> Flatten @* List /@ CurrentValue[ cellsAfter, CellTags ] ],
+            AssociationThread[ cellsAfter -> taggedQ /@ CurrentValue[ cellsAfter, CellTags ] ],
             AssociationQ,
             "Tagged"
         ];
 
-        inserted = ConfirmBy[ TakeWhile[ tagged, MemberQ[ $chatGeneratedCellTag ] ], AssociationQ, "Inserted" ];
-        insertionPoint = ConfirmMatch[ Last[ Keys @ inserted, cellObj ], _CellObject, "InsertionPoint" ];
+        generated = ConfirmBy[
+            AssociationThread[ cellsAfter -> CurrentValue[ cellsAfter, GeneratedCell ] ],
+            AssociationQ,
+            "Generated"
+        ];
+
+        skip = ConfirmBy[
+            Merge[ { tagged, generated }, Apply @ Or ],
+            AssociationQ,
+            "Skip"
+        ];
+
+        skipped = ConfirmBy[ TakeWhile[ skip, TrueQ ], AssociationQ, "Inserted" ];
+        insertionPoint = ConfirmMatch[ Last[ Keys @ skipped, cellObj ], _CellObject, "InsertionPoint" ];
 
         SelectionMove[ insertionPoint, After, Cell ];
         NotebookWrite[ nbo, preprocessInsertedCell @ cell, All ];
@@ -747,7 +977,7 @@ getCodeBlockContent // endDefinition;
 reparseCodeBoxes // beginDefinition;
 
 reparseCodeBoxes[ Cell[ BoxData[ s_String ], a___ ] ] /; $cloudNotebooks :=
-    Cell[ BoxData @ UsingFrontEnd @ stringToBoxes @ s, a ];
+    Cell[ BoxData @ usingFrontEnd @ stringToBoxes @ s, a ];
 
 reparseCodeBoxes[ cell_Cell ] :=
     cell;
@@ -831,10 +1061,12 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Parsing Rules*)
+
+(* cSpell: ignore ENDRESULT *)
 $$endToolCall       = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
 $$eol               = " "... ~~ "\n";
-$$cmd               = Repeated[ DigitCharacter|LetterCharacter|"_"|"$", { 1, 80 } ];
-$$simpleToolCommand = StartOfLine ~~ ("/" ~~ c: $$cmd) ~~ $$eol /; $simpleToolMethod && toolShortNameQ @ c;
+$$cmd               = Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ];
+$$simpleToolCommand = StartOfLine ~~ $$ws ~~ ("/" ~~ c: $$cmd) ~~ $$eol /; $simpleToolMethod && toolShortNameQ @ c;
 $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|EndOfString) ];
 
 
@@ -846,6 +1078,8 @@ $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|End
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$textDataFormatRules*)
+
+(* cSpell: ignore TOOLCALL *)
 $textDataFormatRules = {
     StringExpression[
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
@@ -862,19 +1096,21 @@ $textDataFormatRules = {
     ,
     tool: $$simpleToolCall :> inlineToolCallCell @ tool
     ,
-    ("\n"|StartOfString) ~~ w:" "... ~~ "* " ~~ item: Longest[ Except[ "\n" ].. ] :> bulletCell[ w, item ],
-    ("\n"|StartOfString) ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :> sectionCell[ StringLength @ h, sec ],
+    StartOfLine ~~ "/retry" ~~ (WhitespaceCharacter|EndOfString) :> $discardPreviousToolCall
+    ,
+    ("\n"|StartOfString).. ~~ w:" "... ~~ ("* "|"- ") ~~ item: Longest[ Except[ "\n" ].. ] :>
+        bulletCell[ w, item ]
+    ,
+    ("\n"|StartOfString).. ~~ h:"#".. ~~ " " ~~ sec: Longest[ Except[ "\n" ].. ] :>
+        sectionCell[ StringLength @ h, sec ]
+    ,
+    $$delimiter :> delimiterCell[ ]
+    ,
     table: $$mdTable :> tableCell @ table
     ,
+    quote: $$blockQuote :> blockQuoteCell @ quote
+    ,
     "[`" ~~ label: Except[ "[" ].. ~~ "`](" ~~ url: Except[ ")" ].. ~~ ")" :> "[" <> label <> "]("<>url<>")",
-
-    (* Escaped markdown characters: *)
-    "\\`" :> "`",
-    "\\$" :> "$",
-    "\\*" :> "*",
-    "\\_" :> "_",
-    "\\#" :> "#",
-    "\\|" :> "|",
 
     "``" ~~ code__ ~~ "``" /; StringFreeQ[ code, "``" ] :> inlineCodeCell @ code,
     "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`" /; inlineSyntaxQ @ code :> inlineCodeCell @ code,
@@ -936,11 +1172,35 @@ $stringFormatRules = {
     "__" ~~ text: Except[ "_" ].. ~~ "__" /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontWeight -> Bold ],
 
+    "~~" ~~ text: Except[ "~" ].. ~~ "~~" /; StringFreeQ[ text, "\n" ] :>
+        styleBox[ text, FontVariations -> { "StrikeThrough" -> True } ],
+
+    "``" ~~ code__ ~~ "``" /; StringFreeQ[ code, "``" ] :>
+        makeResultCell @ inlineCodeCell @ code,
+
+    "`" ~~ code: Except[ WhitespaceCharacter ].. ~~ "`" /; inlineSyntaxQ @ code :>
+        makeResultCell @ inlineCodeCell @ code,
+
+    "`" ~~ code: Except[ "`"|"\n" ].. ~~ "`" :>
+        makeResultCell @ inlineCodeCell @ code,
+
     "*" ~~ text: Except[ "*" ].. ~~ "*" /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontSlant -> Italic ],
 
     "_" ~~ text: Except[ "_" ].. ~~ "_" /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontSlant -> Italic ],
+
+    "$$" ~~ math__ ~~ "$$" /; StringFreeQ[ math, "$$" ] :>
+        makeResultCell @ mathCell @ math,
+
+    "\\(" ~~ math__ ~~ "\\)" /; StringFreeQ[ math, "\\)" ] :>
+        makeResultCell @ mathCell @ math,
+
+    "\\[" ~~ math__ ~~ "\\]" /; StringFreeQ[ math, "\\]" ] :>
+        makeResultCell @ mathCell @ math,
+
+    "$" ~~ math: Except[ "$" ].. ~~ "$" /; probablyMathQ @ math :>
+        makeResultCell @ mathCell @ math,
 
     "[" ~~ label: Except[ "[" ].. ~~ "](" ~~ url: Except[ ")" ].. ~~ ")" :>
         hyperlink[ label, url ],
@@ -1032,12 +1292,14 @@ parseToolCallString // endDefinition;
 (*parsePartialToolCallString*)
 parsePartialToolCallString // beginDefinition;
 
+(* TODO: define a `parsePartialSimpleToolCallString` that can also be used in `simpleToolRequestParser` *)
+
 parsePartialToolCallString[ string_String ] /; $simpleToolMethod := Enclose[
     Module[ { command, argString, tool, name, paramNames, argStrings, padded, params, result },
         command = ConfirmBy[
             StringReplace[
                 string,
-                StartOfString ~~ "/" ~~ cmd: LetterCharacter.. ~~ WhitespaceCharacter... ~~ "\n" ~~ ___ :> cmd
+                StartOfString ~~ $$ws ~~ ("/" ~~ cmd: $$cmd) ~~ $$eol ~~ ___ :> cmd
             ],
             toolShortNameQ,
             "Command"
@@ -1046,8 +1308,16 @@ parsePartialToolCallString[ string_String ] /; $simpleToolMethod := Enclose[
         argString = First[
             StringCases[
                 string,
-                StartOfString ~~ "/" ~~ command ~~ WhitespaceCharacter... ~~ "\n" ~~ a___ ~~ ("/exec"|EndOfString) :>
-                    a,
+                Shortest @ StringExpression[
+                    StartOfString,
+                    $$ws,
+                    "/",
+                    command,
+                    WhitespaceCharacter...,
+                    "\n",
+                    a___,
+                    "/exec"|EndOfString
+                ] :> a,
                 1
             ],
             Missing[ ]
@@ -1057,10 +1327,12 @@ parsePartialToolCallString[ string_String ] /; $simpleToolMethod := Enclose[
         name = ConfirmBy[ toolName @ tool, StringQ, "ToolName" ];
 
         If[ StringQ @ argString,
-            paramNames = Keys @ ConfirmMatch[ tool[[ 1, "Parameters" ]], KeyValuePattern @ { }, "ParameterNames" ];
-            argStrings = If[ Length @ paramNames === 1, { argString }, StringSplit[ argString, "\n" ] ];
-            padded = PadRight[ argStrings, Length @ paramNames, "" ];
-            params = ConfirmBy[ AssociationThread[ paramNames -> padded ], AssociationQ, "Parameters" ]
+            paramNames = Keys @ ConfirmMatch[ tool[ "Parameters" ], KeyValuePattern @ { }, "ParameterNames" ];
+            params = ConfirmBy[
+                parseSimpleToolCallParameterStrings[ paramNames, argString ],
+                AssociationQ,
+                "Parameters"
+            ]
             ,
             params = <| |>
         ];
@@ -1113,7 +1385,6 @@ parseFullToolCallString // beginDefinition;
 parseFullToolCallString[ id_String, string_String ] :=
     parseFullToolCallString[ id, $toolEvaluationResults[ id ], string ];
 
-(* FIXME: handle simple syntax too *)
 parseFullToolCallString[ id_, _Missing, string_String ] :=
     parsePartialToolCallString @ string;
 
@@ -1132,7 +1403,7 @@ parseFullToolCallString[ id_String, resp: HoldPattern[ _LLMToolResponse ], strin
 parseFullToolCallString[ id_String, tool: HoldPattern[ _LLMTool ], parameters_Association, output_, string_ ] :=
     $lastFullParsed = <|
         "ID"                 -> id,
-        "Name"               -> toolName[tool],
+        "Name"               -> toolName @ tool,
         "DisplayName"        -> getToolDisplayName @ tool,
         "Icon"               -> getToolIcon @ tool,
         "FormattingFunction" -> getToolFormattingFunction @ tool,
@@ -1158,7 +1429,7 @@ parseToolCallID[ string_String? StringQ ] :=
                     WhitespaceCharacter...,
                     Alternatives[
                         "TOOLCALL:",
-                        StartOfLine ~~ "/" ~~ cmd: LetterCharacter.. ~~ WhitespaceCharacter... ~~ "\n" /;
+                        StartOfLine ~~ "/" ~~ cmd: Except[ WhitespaceCharacter ].. ~~ WhitespaceCharacter... ~~ "\n" /;
                             toolShortNameQ @ cmd
                     ],
                     ___,
@@ -1237,7 +1508,7 @@ makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ]
     If[ MissingQ @ icon,
         Nothing,
         {
-            Spacer[ 5 ],
+            Spacer[ 0 ],
             toolCallIconPane @ icon
         }
     ]
@@ -1249,7 +1520,7 @@ makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Row @ Flatten @ {
     If[ MissingQ @ icon,
         Nothing,
         {
-            Spacer[ 5 ],
+            Spacer[ 0 ],
             toolCallIconPane @ icon
         }
     ]
@@ -1378,11 +1649,11 @@ resolveToolFormatter[ as_Association ] := Append[ as, "FormattingFunction" -> re
 resolveToolFormatter // endDefinition;
 
 resolveToolFormatter0 // beginDefinition;
-resolveToolFormatter0[ KeyValuePattern[ "FormattingFunction" -> f_ ] ] := resolveToolFormatter0 @ f;
-resolveToolFormatter0[ Automatic ] := clickToCopy[ #1 ] &;
-resolveToolFormatter0[ Inherited ] := toolAutoFormatter;
-resolveToolFormatter0[ None      ] := #1 &;
-resolveToolFormatter0[ f_        ] := f;
+resolveToolFormatter0[ as_Association ] := resolveToolFormatter0 @ Lookup[ as, "FormattingFunction", Inherited ];
+resolveToolFormatter0[ Automatic      ] := clickToCopy[ #1 ] &;
+resolveToolFormatter0[ Inherited      ] := toolAutoFormatter;
+resolveToolFormatter0[ None           ] := #1 &;
+resolveToolFormatter0[ f_             ] := f;
 resolveToolFormatter0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1404,15 +1675,6 @@ toolAutoFormatter[ parameter_, "Parameters", ___ ] := clickToCopy @ parameter;
 toolAutoFormatter[ result_, ___ ] := result;
 
 toolAutoFormatter // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*clickToCopy*)
-clickToCopy // beginDefinition;
-clickToCopy[ ClickToCopy[ args__ ] ] := clickToCopy @ args;
-clickToCopy[ HoldForm[ expr_ ], a___ ] := clickToCopy[ Defer @ expr, a ];
-clickToCopy[ expr_, a___ ] := Grid[ { { ClickToCopy[ expr, a ], "" } }, Spacings -> 0, BaseStyle -> "Text" ];
-clickToCopy // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1722,6 +1984,9 @@ codeBlockFrame // endDefinition;
 styleBox // beginDefinition;
 
 styleBox[ text_String, a___ ] := styleBox[ formatTextString @ text, a ];
+styleBox[ { link: Cell @ BoxData[ TemplateBox[ { _, ___ }, "TextRefLink", ___ ], ___ ] }, ___ ] := link;
+styleBox[ { text_String } ] := text;
+styleBox[ { StyleBox[ text_ ], a___ } ] := styleBox @ { text, a };
 styleBox[ { text: _ButtonBox|_String }, a___ ] := StyleBox[ text, a ];
 styleBox[ { StyleBox[ text_, a___ ] }, b___ ] := DeleteDuplicates @ StyleBox[ text, a, b ];
 styleBox[ { Cell[ text_, a___ ] }, b___ ] := DeleteDuplicates @ Cell[ text, a, b ];
@@ -1746,19 +2011,53 @@ image[ alt_String, url_String ] := Enclose[
         keys = ConfirmMatch[ Keys @ $attachments, { ___String? StringQ }, "Keys" ];
         key  = SelectFirst[ keys, StringContainsQ[ url, #1, IgnoreCase -> True ] & ];
         If[ StringQ @ key,
-            attachment[ alt, key ],
-            image[ alt, url, URLParse @ url ]
+            Cell[
+                BoxData @ markdownImageBoxes[
+                    alt,
+                    key,
+                    Replace[ $attachments[ key ], HoldComplete[ expr_ ] :> expr ]
+                ],
+                Background -> None
+            ],
+            image[ alt, url, urlParse @ url ]
         ]
     ],
-    throwInternalFailure[ image[ alt, url ], ## ] &
+    throwInternalFailure
 ];
 
 image[ alt_, url_, KeyValuePattern @ { "Scheme" -> "attachment"|"expression", "Domain" -> key_String } ] :=
     attachment[ alt, key ];
 
-image[ alt_, url_, _ ] := importedImage[ alt, url ];
+image[ alt_, url_, KeyValuePattern @ { "Scheme" -> "file", "Path" -> path_String } ] :=
+    importedImage[ alt, path ];
+
+image[ alt_, url_, _ ] :=
+    importedImage[ alt, url ];
 
 image // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*urlParse*)
+urlParse // beginDefinition;
+urlParse[ url_String ] := With[ { parsed = localParse @ url }, parsed /; AssociationQ @ parsed ];
+urlParse[ url_String ] := URLParse @ url;
+urlParse // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*localParse*)
+localParse // beginDefinition;
+
+localParse[ uri_String ] /; StringStartsQ[ uri, ("attachment"|"file")~~"://" ] :=
+    With[ { path = StringDelete[ uri, StartOfString ~~ ("attachment"|"file") ~~ "://" ] },
+        <| "Scheme" -> "file", "Path" -> path |> /; FileExistsQ @ path
+    ];
+
+localParse[ uri_String ] :=
+    Missing[ "NotAvailable" ];
+
+localParse // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1801,18 +2100,24 @@ attachmentBoxes // endDefinition;
 (*markdownImageBoxes*)
 markdownImageBoxes // beginDefinition;
 
-markdownImageBoxes[ "", url_String, expr_ ] := TagBox[
-    cachedBoxes @ expr,
-    "MarkdownImage",
-    AutoDelete   -> True,
-    TaggingRules -> <| "CellToStringData" -> "![]("<>url<>")" |>
+markdownImageBoxes[ "", url_String, expr_ ] := PaneBox[
+    TagBox[
+        cachedBoxes @ expr,
+        "MarkdownImage",
+        AutoDelete   -> True,
+        TaggingRules -> <| "CellToStringData" -> "![]("<>url<>")" |>
+    ],
+    ImageMargins -> { { 0, 0 }, { 10, 10 } }
 ];
 
-markdownImageBoxes[ alt_String, url_String, expr_ ] := TagBox[
-    TooltipBox[ cachedBoxes @ expr, ToString[ alt, InputForm ] ],
-    "MarkdownImage",
-    AutoDelete   -> True,
-    TaggingRules -> <| "CellToStringData" -> "!["<>alt<>"]("<>url<>")" |>
+markdownImageBoxes[ alt_String, url_String, expr_ ] := PaneBox[
+    TagBox[
+        TooltipBox[ cachedBoxes @ expr, ToString[ alt, InputForm ] ],
+        "MarkdownImage",
+        AutoDelete   -> True,
+        TaggingRules -> <| "CellToStringData" -> "!["<>alt<>"]("<>url<>")" |>
+    ],
+    ImageMargins -> { { 0, 0 }, { 10, 10 } }
 ];
 
 markdownImageBoxes // endDefinition;
@@ -1839,8 +2144,22 @@ $missingImage = RawBoxes @ TemplateBox[ { }, "ImageNotFound" ];
 (* ::Subsubsubsection::Closed:: *)
 (*importImage*)
 importImage // beginDefinition;
-importImage[ url_String ] := importImage[ url ] = Quiet @ Import[ url, "Image" ];
+importImage[ url_String ] := importImage[ url ] = importImage0 @ url;
 importImage // endDefinition;
+
+importImage0 // beginDefinition;
+importImage0[ url_String ] := importImage0[ url, Quiet @ Import[ url, "Image" ] ];
+importImage0[ url_, image_Image ] := image;
+importImage0[ url_String? cloudURLQ, _? FailureQ ] := Quiet @ Import[ CloudObject @ url, "Image" ];
+importImage0[ _, failed_ ] := failed;
+importImage0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*cloudURLQ*)
+cloudURLQ // beginDefinition;
+cloudURLQ[ url_String ] := URLParse[ url, "Domain" ] === URLParse[ $CloudBase, "Domain" ];
+cloudURLQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1871,7 +2190,7 @@ resizeImage0[ img_Image? ImageQ, dims: { _Integer, _Integer } ] /; Max @ dims > 
     showResized @ ImageResize[ img, { UpTo @ $maxImageSize, UpTo @ $maxImageSize } ];
 
 resizeImage0[ img_Image? ImageQ, dims: { _Integer, _Integer } ] :=
-    Show[ img, ImageSize -> dims / 2 ];
+    Show[ img, Options[ img, ImageSize ] ];
 
 resizeImage0[ other_ ] :=
     other;
@@ -1899,10 +2218,143 @@ targetImageSize // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*cachedBoxes*)
 cachedBoxes // beginDefinition;
-cachedBoxes[ e_ ] := With[ { h = Hash @ Unevaluated @ e }, Lookup[ $boxCache, h, $boxCache[ h ] = MakeBoxes @ e ] ];
+
+cachedBoxes[ e_ ] :=
+    With[ { h = Hash @ Unevaluated @ e },
+        Lookup[ $boxCache, h, $boxCache[ h ] = checkBoxes @ MakeBoxes @ e ]
+    ];
+
 cachedBoxes // endDefinition;
 
 $boxCache = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkBoxes*)
+checkBoxes // beginDefinition;
+checkBoxes[ e_ ] /; $CloudEvaluation && ! FreeQ[ e, _RasterBox ] := embeddedHTMLBoxes @ e;
+checkBoxes[ e_ ] := e;
+checkBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*embeddedHTMLBoxes*)
+embeddedHTMLBoxes // beginDefinition;
+
+embeddedHTMLBoxes[ boxes_ ] := Enclose[
+    Module[ { id, dynamic },
+        id = ConfirmBy[ createBoxCacheReference @ boxes, IntegerQ, "ID" ];
+
+        dynamic = With[ { id = id, missing = $missingImage, waiting = $waiting },
+            DynamicModule[ { b64, display },
+                Dynamic @ Replace[ display, Except[ _RawBoxes ] -> waiting ],
+                Initialization :> (
+                    If[ TrueQ @ $dynamicText,
+                        Null,
+                        If[ ! StringQ @ b64, b64 = getBase64 @ id ];
+                        display = Replace[ displayBase64Boxes @ b64, Except[ _RawBoxes ] :> missing ]
+                    ]
+                ),
+                SynchronousInitialization -> False,
+                UnsavedVariables :> { display }
+            ]
+        ];
+
+        TagBox[ ToBoxes @ dynamic, "DynamicEmbeddedHTMLBoxes" ]
+    ],
+    throwInternalFailure
+];
+
+embeddedHTMLBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createBoxCacheReference*)
+createBoxCacheReference // beginDefinition;
+createBoxCacheReference[ boxes_ ] := With[ { id = Hash @ boxes }, $boxQueueCache[ id ] = boxes; id ];
+createBoxCacheReference // endDefinition;
+
+$boxQueueCache = <| |>;
+$base64Cache   = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getBase64*)
+getBase64 // beginDefinition;
+
+getBase64[ id_ ] := getBase64[ id, $base64Cache[ id ] ];
+getBase64[ id_, b64_String ] := b64;
+getBase64[ id_, m_Missing ] := getBase64[ id, m, $boxQueueCache[ id ] ];
+getBase64[ id_, _, _Missing ] := Missing[ "NotAvailable" ];
+
+getBase64[ id_, _, boxes_ ] :=
+    With[ { b64 = BaseEncode @ BinarySerialize[ RawBoxes @ boxes, PerformanceGoal -> "Size" ] },
+        $base64Cache[ id ] = b64;
+        KeyDropFrom[ $boxQueueCache, id ];
+        b64
+    ];
+
+getBase64 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*displayBase64Boxes*)
+displayBase64Boxes // beginDefinition;
+
+displayBase64Boxes[ b64_String ] /; $dynamicText := $waiting;
+
+displayBase64Boxes[ b64_String ] := Enclose[
+    Module[ { bytes, boxes, display },
+        bytes = ConfirmBy[ BaseDecode @ b64, ByteArrayQ, "Bytes" ];
+        boxes = ConfirmMatch[ BinaryDeserialize @ bytes, _RawBoxes, "Boxes" ];
+        display = If[ TrueQ @ $CloudEvaluation, cloudEmbeddedHTMLImage @ boxes, boxes ];
+        displayBase64Boxes[ b64 ] = ConfirmMatch[ display, _RawBoxes, "Display" ]
+    ],
+    throwInternalFailure
+];
+
+displayBase64Boxes[ _ ] := $waiting;
+
+displayBase64Boxes // endDefinition;
+
+
+$waiting := $waiting = RawBoxes @ ToBoxes @ Panel[
+    ProgressIndicator[ Appearance -> "Necklace" ],
+    ImageSize -> { 150, 150 },
+    Alignment -> { Center, Center }
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cloudEmbeddedHTMLImage*)
+cloudEmbeddedHTMLImage // beginDefinition;
+
+cloudEmbeddedHTMLImage[ expr_ ] := Enclose[
+    usingFrontEnd @ Module[ { raster, size, resized, b64, width, height, embedSize, html, boxes },
+
+        raster = ConfirmBy[ rasterize[ expr, ImageResolution -> 144 ], image2DQ, "Raster" ];
+        size = Max @ ConfirmMatch[ ImageDimensions @ raster, { _, _ }, "OriginalDimensions" ];
+        resized = If[ size > 1000, ImageResize[ raster, { UpTo[ 1000 ], UpTo[ 1000 ] } ], raster ];
+        b64 = ConfirmBy[ exportDataURI[ resized, "JPEG" ], StringQ, "Base64" ];
+        { width, height } = Round[ ConfirmMatch[ ImageDimensions @ resized, { _, _ }, "Dimensions" ] / 2 ];
+        embedSize = { width, height + 12 };
+
+        html = ConfirmBy[
+            TemplateApply[ $embeddedImageTemplate, { b64, width, height } ],
+            StringQ,
+            "HTML"
+        ];
+
+        boxes = ToBoxes @ EmbeddedHTML[ html, ImageSize -> embedSize ];
+        RawBoxes @ TagBox[ boxes, "CloudEmbeddedHTMLImage" ]
+    ],
+    throwInternalFailure
+];
+
+cloudEmbeddedHTMLImage // endDefinition;
+
+
+$embeddedImageTemplate = "<div style=\"margin: -8px;\"><img src=\"`1`\" width=\"`2`\" height=\"`3`\"></div>";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1988,7 +2440,7 @@ $languageIcons := $languageIcons = Enclose[
 joinAdjacentStrings // beginDefinition;
 joinAdjacentStrings[ { content___, "\n"|StyleBox[ "\n", ___ ] } ] := joinAdjacentStrings @ { content };
 joinAdjacentStrings[ { "\n"|StyleBox[ "\n", ___ ], content___ } ] := joinAdjacentStrings @ { content };
-joinAdjacentStrings[ content_List ] := joinAdjacentStrings0 /@ SplitBy[ content, StringQ ];
+joinAdjacentStrings[ content_List ] := trimWhitespace[ joinAdjacentStrings0 /@ SplitBy[ content, StringQ ] ];
 joinAdjacentStrings // endDefinition;
 
 joinAdjacentStrings0 // beginDefinition;
@@ -1999,6 +2451,43 @@ joinAdjacentStrings0[ { strings__String } ] :=
 joinAdjacentStrings0[ { other___ } ] := other;
 
 joinAdjacentStrings0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*trimWhitespace*)
+trimWhitespace // beginDefinition;
+trimWhitespace[ { } ] := { };
+trimWhitespace[ { a_, b___, c_ } ] := { trimWhitespaceL @ a, b, trimWhitespaceR @ c };
+trimWhitespace[ { a_ } ] := { trimWhitespaceB @ a };
+trimWhitespace // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*trimWhitespaceB*)
+trimWhitespaceB // beginDefinition;
+trimWhitespaceB[ a_String ] := StringTrim @ a;
+trimWhitespaceB[ other_ ] := trimWhitespaceR @ trimWhitespaceL @ other;
+trimWhitespaceB // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*trimWhitespaceL*)
+trimWhitespaceL // beginDefinition;
+trimWhitespaceL[ a_String ] := StringDelete[ a, StartOfString ~~ WhitespaceCharacter.. ];
+trimWhitespaceL[ (h: Cell|StyleBox|TextData|BoxData)[ a_, b___ ] ] := h[ trimWhitespaceL @ a, b ];
+trimWhitespaceL[ { a_, b___ } ] := { trimWhitespaceL @ a, b };
+trimWhitespaceL[ other_ ] := other;
+trimWhitespaceL // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*trimWhitespaceR*)
+trimWhitespaceR // beginDefinition;
+trimWhitespaceR[ a_String ] := StringDelete[ a, WhitespaceCharacter.. ~~ EndOfString ];
+trimWhitespaceR[ (h: Cell|StyleBox|TextData|BoxData)[ a_, b___ ] ] := h[ trimWhitespaceR @ a, b ];
+trimWhitespaceR[ { a___, b_ } ] := { a, trimWhitespaceR @ b };
+trimWhitespaceR[ other_ ] := other;
+trimWhitespaceR // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -2045,9 +2534,32 @@ stringToBoxes[ s_String ] /; $dynamicText := StringReplace[
 ];
 
 stringToBoxes[ s_String ] :=
-    adjustBoxSpacing @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ s;
+    adjustBoxSpacing @ stringToBoxes0 @ usingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ s;
 
 stringToBoxes // endDefinition;
+
+
+stringToBoxes0 // beginDefinition;
+stringToBoxes0[ RowBox @ { a___, b: "\n"|"\[IndentingNewLine]", c___ } ] := stringToBoxes0 @ { a, b, c };
+stringToBoxes0[ boxes_? boxDataQ ] := boxes;
+stringToBoxes0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*boxDataQ*)
+boxDataQ // beginDefinition;
+boxDataQ[ _String? StringQ ] := True;
+boxDataQ[ boxes_List ] := AllTrue[ boxes, boxDataQ ];
+boxDataQ[ (_? boxSymbolQ)[ ___ ] ] := True;
+boxDataQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*boxSymbolQ*)
+boxSymbolQ // beginDefinition;
+boxSymbolQ[ RowBox ] := True;
+boxSymbolQ[ s_Symbol ] := boxSymbolQ[ s ] = Context @ s === "System`" && StringEndsQ[ SymbolName @ s, "Box" ];
+boxSymbolQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -2062,12 +2574,63 @@ adjustBoxSpacing // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Alternate Chat Mode Styles*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Template Boxes*)
+$userMessageBoxTemplate := $userMessageBoxTemplate =
+    Function @ Evaluate @ inlineTemplateBox @ TemplateBox[ { # }, "UserMessageBox" ];
+
+$assistantMessageBoxTemplate := $assistantMessageBoxTemplate =
+    Function @ Evaluate @ inlineTemplateBox @ TemplateBox[ { # }, "AssistantMessageBox" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*assistantMessageBox*)
+assistantMessageBox // beginDefinition;
+
+assistantMessageBox[ box_ ] :=
+    assistantMessageBox[ box, $InlineChat ];
+
+assistantMessageBox[ box_, True ] :=
+    With[ { template = $assistantMessageBoxTemplate @ box },
+        template /; MatchQ[ template, TemplateBox[ __, DisplayFunction -> _, ___ ] ]
+    ];
+
+assistantMessageBox[ box_, Except[ True ] ] :=
+    TemplateBox[ { box }, "AssistantMessageBox" ];
+
+assistantMessageBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*userMessageBox*)
+userMessageBox // beginDefinition;
+
+userMessageBox[ box_ ] :=
+    userMessageBox[ box, $InlineChat ];
+
+userMessageBox[ box_, True ] :=
+    With[ { template = $userMessageBoxTemplate @ box },
+        template /; MatchQ[ template, TemplateBox[ __, DisplayFunction -> _, ___ ] ]
+    ];
+
+userMessageBox[ box_, Except[ True ] ] :=
+    TemplateBox[ { box }, "UserMessageBox" ];
+
+userMessageBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     $copyToClipboardButtonLabel;
     $insertInputButtonLabel;
     $insertEvaluateButtonLabel;
     $languageIcons;
+    $userMessageBoxTemplate;
+    $assistantMessageBoxTemplate;
 ];
 
 End[ ];

@@ -1,41 +1,15 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`ChatMessages`" ];
-
-(* cSpell: ignore nodef *)
+Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-Wolfram`Chatbook`CellToChatMessage;
-
-`$chatDataTag;
-`$initialCellStringBudget;
-`$multimodalMessages;
-`$tokenBudget;
-`$tokenPressure;
-`cachedTokenizer;
-`constructMessages;
-`expandMultimodalString;
-`getTokenizer;
-`getTokenizerName;
-`logUsage;
-`resizeMultimodalImage;
-
-Begin[ "`Private`" ];
-
-Needs[ "Wolfram`Chatbook`"                  ];
-Needs[ "Wolfram`Chatbook`Actions`"          ];
-Needs[ "Wolfram`Chatbook`Common`"           ];
-Needs[ "Wolfram`Chatbook`FrontEnd`"         ];
-Needs[ "Wolfram`Chatbook`Handlers`"         ];
-Needs[ "Wolfram`Chatbook`InlineReferences`" ];
-Needs[ "Wolfram`Chatbook`Models`"           ];
-Needs[ "Wolfram`Chatbook`Personas`"         ];
-Needs[ "Wolfram`Chatbook`Prompting`"        ];
-Needs[ "Wolfram`Chatbook`Serialization`"    ];
-Needs[ "Wolfram`Chatbook`Settings`"         ];
-Needs[ "Wolfram`Chatbook`Tools`"            ];
-Needs[ "Wolfram`Chatbook`Utils`"            ];
+Needs[ "Wolfram`Chatbook`"               ];
+Needs[ "Wolfram`Chatbook`Actions`"       ];
+Needs[ "Wolfram`Chatbook`Common`"        ];
+Needs[ "Wolfram`Chatbook`Personas`"      ];
+Needs[ "Wolfram`Chatbook`Serialization`" ];
 
 $ContextAliases[ "tokens`" ] = "Wolfram`LLMFunctions`Utilities`Tokenization`";
 
@@ -77,15 +51,18 @@ $cachedTokenizerNames = {
     "chat-bison",
     "claude-3",
     "claude",
+    "generic",
     "gpt-2",
     "gpt-3.5",
+    "gpt-4o",
+    "gpt-4o-text",
     "gpt-4-turbo",
     "gpt-4-vision",
     "gpt-4"
 };
 
-$cachedTokenizers     = <| |>;
-$fallbackTokenizer    = "gpt-2";
+$cachedTokenizers  = <| |>;
+$fallbackTokenizer = "generic";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -101,7 +78,7 @@ CellToChatMessage[ cell_Cell, settings_Association? AssociationQ, opts: OptionsP
         Replace[
             Flatten @ {
                 If[ TrueQ @ Positive @ Lookup[ settings, "HistoryPosition", 0 ],
-                    makeCellMessage @ cell,
+                    makeCellMessage[ cell, settings ],
                     makeCurrentCellMessage[
                         settings,
                         Replace[
@@ -126,6 +103,9 @@ constructMessages // beginDefinition;
 
 constructMessages[ _Association? AssociationQ, { } ] := { };
 
+constructMessages[ settings_Association? AssociationQ, cells: { __CellObject } ] /; $InlineChat :=
+    constructInlineMessages @ settings;
+
 constructMessages[ settings_Association? AssociationQ, cells: { __CellObject } ] :=
     constructMessages[ settings, notebookRead @ cells ];
 
@@ -140,7 +120,7 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
 
         If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
         needsBasePrompt @ settings;
-        prompted  = addPrompts[ settings, messages0 ];
+        prompted = addPrompts[ settings, messages0 ];
 
         messages = prompted /.
             s_String :> RuleCondition @ StringTrim @ StringReplace[
@@ -173,13 +153,40 @@ constructMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*constructInlineMessages*)
+constructInlineMessages // beginDefinition;
+
+constructInlineMessages[ settings_ ] :=
+    constructInlineMessages[ settings, $inlineChatState ];
+
+constructInlineMessages[ settings_, state_Association ] :=
+    constructInlineMessages[ settings, state, state[ "MessageCells" ] ];
+
+constructInlineMessages[ settings_, state_, Dynamic[ cells_ ] ] :=
+    constructInlineMessages[ settings, state, cells ];
+
+constructInlineMessages[ settings_, state_, cells: { __Cell } ] :=
+    constructMessages[ settings, cells ];
+
+constructInlineMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*addPrompts*)
 addPrompts // beginDefinition;
 
-addPrompts[ settings_Association, messages_List ] :=
-    addPrompts[ assembleCustomPrompt @ settings, messages ];
+addPrompts[ settings_Association, messages_List ] := Enclose[
+    Module[ { custom, workspace, inline, prompt },
+        custom    = ConfirmMatch[ assembleCustomPrompt @ settings, None|_String, "Custom"    ];
+        workspace = ConfirmMatch[ getWorkspacePrompt @ settings  , None|_String, "Workspace" ];
+        inline    = ConfirmMatch[ getInlineChatPrompt @ settings , None|_String, "Inline"    ];
+        prompt    = StringRiffle[ Select[ { custom, workspace, inline }, StringQ ], "\n\n" ];
+        addPrompts[ prompt, messages ]
+    ],
+    throwInternalFailure
+];
 
-addPrompts[ None, messages_List ] :=
+addPrompts[ None|"", messages_List ] :=
     messages;
 
 addPrompts[ prompt_String, { sysMessage: KeyValuePattern[ "Role" -> "System" ], messages___ } ] := Enclose[
@@ -213,7 +220,7 @@ assembleCustomPrompt[ settings_? AssociationQ, templated: { ___, _TemplateObject
         prompts = Replace[ templated, t_TemplateObject :> applyPromptTemplate[ t, params ], { 1 } ];
         assembleCustomPrompt[ settings, prompts ] /; MatchQ[ prompts, { ___String } ]
     ],
-    throwInternalFailure[ assembleCustomPrompt[ settings, templated ], ## ] &
+    throwInternalFailure
 ];
 
 assembleCustomPrompt // endDefinition;
@@ -237,6 +244,16 @@ applyPromptTemplate // endDefinition;
 makeChatMessages // beginDefinition;
 
 makeChatMessages[ settings_, cells_ ] :=
+    makeChatMessages[ settings, cells, True ];
+
+makeChatMessages[ settings_, cells_, includeSystem_ ] /; $chatState :=
+    Block[ { $chatInputIndicator = mixedContentQ @ cells },
+        If[ includeSystem && settings[ "BasePrompt" ] =!= None, tokenCheckedMessage[ settings, $fullBasePrompt ] ];
+        (* FIXME: need to account for persona/tool prompting as well *)
+        makeChatMessages0[ settings, cells, includeSystem ]
+    ];
+
+makeChatMessages[ settings_, cells_, includeSystem_ ] :=
     Block[
         {
             $multimodalMessages      = TrueQ @ settings[ "Multimodal" ],
@@ -244,12 +261,13 @@ makeChatMessages[ settings_, cells_ ] :=
             $tokenPressure           = 0.0,
             $initialCellStringBudget = makeCellStringBudget @ settings,
             $chatInputIndicator      = mixedContentQ @ cells,
-            $cellStringBudget
+            $cellStringBudget, $conversionRules
         },
+        $conversionRules = settings[ "ConversionRules" ];
         $cellStringBudget = $initialCellStringBudget;
-        If[ settings[ "BasePrompt" ] =!= None, tokenCheckedMessage[ settings, $fullBasePrompt ] ];
+        If[ includeSystem && settings[ "BasePrompt" ] =!= None, tokenCheckedMessage[ settings, $fullBasePrompt ] ];
         (* FIXME: need to account for persona/tool prompting as well *)
-        makeChatMessages0[ settings, cells ]
+        makeChatMessages0[ settings, cells, includeSystem ]
     ];
 
 makeChatMessages // endDefinition;
@@ -257,19 +275,17 @@ makeChatMessages // endDefinition;
 
 makeChatMessages0 // beginDefinition;
 
-makeChatMessages0[ settings_, { cells___, cell_ ? promptFunctionCellQ } ] := (
+makeChatMessages0[ settings_, { cells___, cell_ ? promptFunctionCellQ }, includeSystem_ ] := (
     Sow[ <| "RawOutput" -> True |>, $chatDataTag ];
     makePromptFunctionMessages[ settings, { cells, cell } ]
 );
 
-makeChatMessages0[ settings0_, cells_List ] := Enclose[
+makeChatMessages0[ settings0_, cells_List, includeSystem_ ] := Enclose[
     Module[ { settings, role, message, toMessage0, toMessage, cell, history, messages, merged },
         settings   = ConfirmBy[ <| settings0, "HistoryPosition" -> 0, "Cells" -> cells |>, AssociationQ, "Settings" ];
-        role       = makeCurrentRole @ settings;
+        role       = If[ TrueQ @ includeSystem, makeCurrentRole @ settings, Missing[ ] ];
         cell       = ConfirmMatch[ Last[ cells, $Failed ], _Cell, "Cell" ];
         toMessage0 = Confirm[ getCellMessageFunction @ settings, "CellMessageFunction" ];
-
-        $tokenBudgetLog = Internal`Bag[ ];
 
         toMessage = Function @ With[
             { msg = toMessage0[ #1, <| #2, "TokenBudget" -> $tokenBudget, "TokenPressure" -> $tokenPressure |> ] },
@@ -297,7 +313,7 @@ makeChatMessages0[ settings0_, cells_List ] := Enclose[
         merged = If[ TrueQ @ Lookup[ settings, "MergeMessages" ], mergeMessageData @ messages, messages ];
         $lastMessageList = merged
     ],
-    throwInternalFailure[ makeChatMessages0[ settings0, cells ], ## ] &
+    throwInternalFailure
 ];
 
 makeChatMessages0 // endDefinition;
@@ -416,7 +432,7 @@ tokenCheckedMessage[ as_Association, message_ ] := Enclose[
 
         message
     ],
-    throwInternalFailure[ tokenCheckedMessage[ as, message ], ## ] &
+    throwInternalFailure
 ];
 
 tokenCheckedMessage // endDefinition;
@@ -528,11 +544,26 @@ logUsage // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*applyTokenizer*)
 applyTokenizer // beginDefinition;
-applyTokenizer[ tokenizer_, content_String ] := tokenizer @ content;
-applyTokenizer[ tokenizer_, content_? graphicsQ ] := tokenizer @ content;
+applyTokenizer[ tokenizer_, content_String ] := applyTokenizer0[ tokenizer, content ];
+applyTokenizer[ tokenizer_, content_? graphicsQ ] := applyTokenizer0[ tokenizer, content ];
 applyTokenizer[ tokenizer_, content_List ] := Flatten[ applyTokenizer[ tokenizer, # ] & /@ content ];
-applyTokenizer[ tokenizer_, KeyValuePattern[ "Data" -> data_ ] ] := tokenizer @ data;
+applyTokenizer[ tokenizer_, KeyValuePattern[ "Data" -> data_ ] ] := applyTokenizer0[ tokenizer, data ];
 applyTokenizer // endDefinition;
+
+
+applyTokenizer0 // beginDefinition;
+(* cSpell: ignore invencin *)
+applyTokenizer0[ tokenizer_, content_ ] :=
+    Module[ { result, $retry },
+        result = Quiet[ Check[ tokenizer @ content, $retry, NetEncoder::invencin ], NetEncoder::invencin ];
+        If[ result === $retry,
+            Pause[ 0.1 ];
+            tokenizer @ content,
+            result
+        ]
+    ];
+
+applyTokenizer0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -751,13 +782,19 @@ makeCurrentCellMessage[ settings_, { cells___, cell0_ } ] := Enclose[
     Module[ { modifiers, cell, role, content },
         { modifiers, cell } = ConfirmMatch[ extractModifiers @ cell0, { _, _ }, "Modifiers" ];
         role = ConfirmBy[ cellRole @ cell, StringQ, "CellRole" ];
-        content = ConfirmBy[ Block[ { $CurrentCell = True }, makeMessageContent @ cell ], validContentQ, "Content" ];
+
+        content = ConfirmBy[
+            Block[ { $CurrentCell = True }, makeMessageContent[ cell, role, settings ] ],
+            validContentQ,
+            "Content"
+        ];
+
         Flatten @ {
             expandModifierMessages[ settings, modifiers, { cells }, cell ],
             <| "Role" -> role, "Content" -> content |>
         }
     ],
-    throwInternalFailure[ makeCurrentCellMessage[ settings, { cells, cell0 } ], ## ] &
+    throwInternalFailure
 ];
 
 makeCurrentCellMessage // endDefinition;
@@ -767,18 +804,42 @@ makeCurrentCellMessage // endDefinition;
 (*makeMessageContent*)
 makeMessageContent // beginDefinition;
 
-makeMessageContent[ cell_Cell ] /; $multimodalMessages := Enclose[
-    Module[ { string, split, joined },
+makeMessageContent[ cell_Cell, role_String, settings_ ] /; $multimodalMessages := Enclose[
+    Module[ { string, roles },
         string = ConfirmBy[ cellToString @ cell, StringQ, "CellToString" ];
-        expandMultimodalString @ string
+        roles = ConfirmMatch[ allowedMultimodalRoles @ settings, All | { ___String }, "Roles" ];
+        If[ MatchQ[ roles, All | { ___, role, ___ } ],
+            expandMultimodalString @ string,
+            string
+        ]
     ],
-    throwInternalFailure[ makeMessageContent @ cell, ## ] &
+    throwInternalFailure
 ];
 
-makeMessageContent[ cell_Cell ] :=
+makeMessageContent[ cell_Cell, role_, settings_ ] :=
     cellToString @ cell;
 
 makeMessageContent // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*allowedMultimodalRoles*)
+allowedMultimodalRoles // beginDefinition;
+allowedMultimodalRoles[ settings_ ] := allowedMultimodalRoles0 @ toModelName @ settings[ "Model" ];
+allowedMultimodalRoles // endDefinition;
+
+
+allowedMultimodalRoles0 // beginDefinition;
+
+allowedMultimodalRoles0[ model_String ] := allowedMultimodalRoles0[ model ] =
+    If[ StringContainsQ[ model, WordBoundary~~"gpt-4o"~~WordBoundary ],
+        { "User" },
+        All
+    ];
+
+allowedMultimodalRoles0[ _Missing ] := All;
+
+allowedMultimodalRoles0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -909,7 +970,15 @@ validContentPartQ[ ___ ] := False;
 (* ::Subsection::Closed:: *)
 (*makeCellMessage*)
 makeCellMessage // beginDefinition;
-makeCellMessage[ cell_Cell ] := <| "Role" -> cellRole @ cell, "Content" -> makeMessageContent @ cell |>;
+
+makeCellMessage[ cell_Cell, settings_ ] :=
+    With[ { role = cellRole @ cell },
+        <|
+            "Role"    -> role,
+            "Content" -> makeMessageContent[ cell, role, settings  ]
+        |>
+    ];
+
 makeCellMessage // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -928,6 +997,8 @@ cellRole[ Cell[
 
 cellRole[ Cell[ _, styles__String, OptionsPattern[ ] ] ] :=
     FirstCase[ { styles }, style_ :> With[ { role = $styleRoles @ style }, role /; StringQ @ role ], "User" ];
+
+cellRole[ Cell[ _, OptionsPattern[ ] ] ] := "User";
 
 cellRole // endDefinition;
 
@@ -955,32 +1026,69 @@ mergeMessages // beginDefinition;
 
 mergeMessages[ { } ] := Nothing;
 mergeMessages[ { message_ } ] := message;
-mergeMessages[ messages: { first_Association, __Association } ] :=
-    Module[ { role, content, stitch },
-        role    = Lookup[ first, "Role" ];
-        content = Flatten @ Lookup[ messages, "Content" ];
-        stitch  = StringDelete[ #1, Longest[ "```\n\n```"~~("wl"|"") ] ] &;
+mergeMessages[ messages: { first_Association, __Association } ] := Enclose[
+    Module[ { role, content, merged },
+        role = ConfirmBy[ Lookup[ first, "Role" ], StringQ, "Role" ];
 
-        If[ AllTrue[ content, StringQ ],
-            <|
-                "Role"    -> role,
-                "Content" -> stitch @ StringRiffle[ content, "\n\n" ]
-            |>,
-            <|
-                "Role" -> role,
-                "Content" -> FixedPoint[
-                    Replace @ {
-                        { a___, b_String, c_String, d___ } :> { a, stitch[ b<>"\n\n"<>c ], d },
-                        { a___, b_String, { c_String, d___ }, e___ } :> { a, { stitch[ b<>"\n\n"<>c ], d }, e },
-                        { a___, { b___, c_String }, d_String, e___ } :> { a, { b, stitch[ c<>"\n\n"<>d ] }, e }
-                    },
-                    content
-                ]
-            |>
-        ]
-    ];
+        content = Replace[
+            Flatten @ Lookup[ messages, "Content" ],
+            KeyValuePattern @ { "Type" -> "Text", "Data" -> s_String } :> s,
+            { 1 }
+        ];
+
+        merged = ConfirmMatch[ mergeCodeBlocks @ content, { (_String|_Association)... }, "Merged" ];
+
+        <| "Role" -> role, "Content" -> merged |>
+    ],
+    throwInternalFailure
+];
 
 mergeMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*mergeCodeBlocks*)
+mergeCodeBlocks // beginDefinition;
+
+mergeCodeBlocks[ content_List ] := Enclose[
+    Module[ { split, joined },
+        split = SplitBy[ content, StringQ ];
+        joined = Replace[ split, s: { __String } :> mergeCodeBlocks @ StringRiffle[ s, "\n\n" ], { 1 } ];
+        Flatten @ joined
+    ],
+    throwInternalFailure
+];
+
+mergeCodeBlocks[ string0_String ] := Enclose[
+    Catch @ Module[ { string, split, strings },
+        string = StringReplace[ string0, "```\n\n"~~("\n"..)~~"```" :> "```\n\n```" ];
+
+        split = StringSplit[
+            string,
+            Shortest[ "```" ~~ lang: Except[ WhitespaceCharacter ]... ~~ "\n" ~~ code__ ~~ "\n```" ] :>
+                codeBlock[ StringTrim @ lang, StringTrim @ code ]
+        ];
+
+        strings = Replace[
+            FixedPoint[
+                Replace[
+                    { a___, codeBlock[ lang_, code1_ ], "\n\n", codeBlock[ lang_, code2_ ], b___ } :>
+                        { a, codeBlock[ lang, code1<>"\n\n"<>code2 ], b }
+                ],
+                split
+            ],
+            codeBlock[ lang_, code_ ] :> "```"<>lang<>"\n"<>code<>"\n```",
+            { 1 }
+        ];
+
+        ConfirmAssert[ AllTrue[ strings, StringQ ], "StringCheck" ];
+
+        mergeCodeBlocks[ string0 ] = StringJoin @ strings
+    ],
+    throwInternalFailure
+];
+
+mergeCodeBlocks // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1010,6 +1118,7 @@ inlineFunctionReferenceBoxesQ[ ___ ] := False;
 (*makePromptFunctionMessages*)
 makePromptFunctionMessages // beginDefinition;
 
+(* cSpell: ignore nodef *)
 makePromptFunctionMessages[ settings_, { cells___, cell0_ } ] := Enclose[
     Module[ { modifiers, cell, name, arguments, filled, prompt, string },
         (* Ensure Wolfram/LLMFunctions is installed and loaded before calling System`LLMPrompt[..] *)
@@ -1268,7 +1377,7 @@ cachedTokenizer[ id_String ] := Enclose[
         tokenizer = findTokenizer @ name;
         If[ MissingQ @ tokenizer,
             (* Fallback to the GPT-2 tokenizer: *)
-            tokenizer = ConfirmMatch[ $gpt2Tokenizer, Except[ $$unspecified ], "GPT2Tokenizer" ];
+            tokenizer = ConfirmMatch[ $genericTokenizer, Except[ $$unspecified ], "GPT2Tokenizer" ];
             If[ TrueQ @ Wolfram`ChatbookInternal`$BuildingMX,
                 tokenizer, (* Avoid caching fallback values into MX definitions *)
                 cacheTokenizer[ name, tokenizer ]
@@ -1298,6 +1407,11 @@ cacheTokenizer // endDefinition;
 (*findTokenizer*)
 findTokenizer // beginDefinition;
 
+findTokenizer[ "gpt-4o-text" ] :=
+    With[ { tokenizer = findTokenizer[ "gpt-4o" ] },
+        tokenizer /; ! MissingQ @ tokenizer
+    ];
+
 findTokenizer[ model_String ] := Enclose[
     Quiet @ Module[ { name, tokenizer },
         initTools[ ];
@@ -1316,9 +1430,10 @@ findTokenizer // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*Pre-cached small tokenizer functions*)
 $cachedTokenizers[ "chat-bison"   ] = ToCharacterCode[ #, "UTF8" ] &;
-$cachedTokenizers[ "gpt-4-turbo"  ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4" ] ][ # ] &;
 $cachedTokenizers[ "gpt-4-vision" ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4" ] ][ # ] &;
+$cachedTokenizers[ "gpt-4o"       ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4o-text" ] ][ # ] &;
 $cachedTokenizers[ "claude-3"     ] = If[ graphicsQ @ #, claude3ImageTokenizer, cachedTokenizer[ "claude" ] ][ # ] &;
+$cachedTokenizers[ "generic"      ] = If[ graphicsQ @ #, { }, $gpt2Tokenizer @ # ] &;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1326,6 +1441,7 @@ $cachedTokenizers[ "claude-3"     ] = If[ graphicsQ @ #, claude3ImageTokenizer, 
 tokenizerName // beginDefinition;
 
 tokenizerName[ "gpt-4-turbo-preview" ] = "gpt-4";
+tokenizerName[ "gpt-4-turbo"         ] = "gpt-4-vision";
 
 tokenizerName[ name_String ] :=
     SelectFirst[
@@ -1418,7 +1534,7 @@ importResourceFunction[ gpt2Tokenizer, "GPTTokenizer" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     cachedTokenizer[ All ];
     $gpt2Tokenizer;
     (* This is only needed to generate $gpt2Tokenizer once, so it can be removed to reduce MX file size: *)

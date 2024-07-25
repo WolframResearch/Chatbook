@@ -3,6 +3,16 @@
 Begin[ "Wolfram`ChatbookStylesheetBuilder`Private`" ];
 
 
+(* ::Section::Closed:: *)
+(*Resources*)
+
+
+(* ::Subsection::Closed:: *)
+(*tr*)
+
+
+tr[name_?StringQ] := Dynamic[FEPrivate`FrontEndResource["ChatbookStrings", name]]
+
 
 (* ::Section::Closed:: *)
 (*Notebook*)
@@ -126,15 +136,20 @@ Cell[
 
 Cell[
     StyleData[ "ChatInput", StyleDefinitions -> StyleData[ "FramedChatCell" ] ],
-    CellFrameColor    -> RGBColor[ "#a3c9f2" ],
-    CellGroupingRules -> "InputGrouping",
-    CellMargins       -> { { 66, 25 }, { 1, 8 } },
-    CellTrayWidgets   -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
-    CounterIncrements -> { "ChatInputCount" },
-    Evaluatable       -> True,
-    MenuSortingValue  -> 1543,
-    StyleKeyMapping   -> { "~" -> "ChatDelimiter", "'" -> "SideChat", "=" -> "WolframAlphaShort", "*" -> "Item" },
-    TaggingRules      -> <| "ChatNotebookSettings" -> <| |> |>,
+    CellFrameColor        -> RGBColor[ "#a3c9f2" ],
+    CellFrameLabelMargins -> -32,
+    CellGroupingRules     -> "InputGrouping",
+    CellMargins           -> { { 66, 32 }, { 1, 8 } },
+    CellTrayWidgets       -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
+    CounterIncrements     -> { "ChatInputCount" },
+    Evaluatable           -> True,
+    MenuSortingValue      -> 1543,
+    StyleKeyMapping       -> { "~" -> "ChatDelimiter", "'" -> "SideChat", "=" -> "WolframAlphaShort", "*" -> "Item" },
+    TaggingRules          -> <| "ChatNotebookSettings" -> <| |> |>,
+    CellFrameLabels -> {
+        { None, Cell[ BoxData @ TemplateBox[ { RGBColor[ "#a3c9f2" ], 20 }, "SendChatButton" ], Background -> None ] },
+        { None, None }
+    },
 	CellDingbat -> Cell[
         BoxData @ DynamicBox @ ToBoxes[
             If[ TrueQ @ CloudSystem`$CloudNotebooks,
@@ -1004,6 +1019,107 @@ Cell[
 ]
 
 
+(* ::Section::Closed:: *)
+(*Inline Chat Styles*)
+
+
+(* ::Subsection::Closed:: *)
+(*MessageAuthorLabel*)
+
+
+Cell[
+    StyleData[ "MessageAuthorLabel", StyleDefinitions -> StyleData[ "Text" ] ],
+    FontSize             -> 14,
+    FontWeight           -> "DemiBold",
+    ShowStringCharacters -> False
+]
+
+
+(* ::Subsection::Closed:: *)
+(*UserMessageLabel*)
+
+
+Cell[
+    StyleData[ "UserMessageLabel" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ PaneBox[
+            #,
+            BaseStyle    -> { "MessageAuthorLabel" },
+            ImageSize    -> { Scaled[ 1 ], Automatic },
+            Alignment    -> Right,
+            FrameMargins -> { { 0, 11 }, { 0, 0 } }
+        ]
+    }
+]
+
+
+(* ::Subsection::Closed:: *)
+(*AssistantMessageLabel*)
+
+
+Cell[
+    StyleData[ "AssistantMessageLabel" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ PaneBox[
+            #,
+            BaseStyle    -> { "MessageAuthorLabel" },
+            ImageSize    -> { Scaled[ 1 ], Automatic },
+            Alignment    -> Left,
+            FrameMargins -> { { 11, 0 }, { 0, 0 } }
+        ]
+    }
+]
+
+
+(* ::Subsection::Closed:: *)
+(*UserMessageBox*)
+
+
+Cell[
+    StyleData[ "UserMessageBox" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ FrameBox[
+            Cell[ #, "Text", Background -> None ],
+            Background     -> RGBColor[ "#edf4fc" ],
+            FrameMargins   -> 8,
+            FrameStyle     -> RGBColor[ "#a3c9f2" ],
+            RoundingRadius -> 10,
+            StripOnInput   -> False
+        ]
+    }
+]
+
+
+(* ::Subsection::Closed:: *)
+(*AssistantMessageBox*)
+
+
+Cell[
+    StyleData[ "AssistantMessageBox" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ FrameBox[
+            #,
+            BaseStyle      -> "Text",
+            Background     -> RGBColor[ "#fcfdff" ],
+            FrameMargins   -> 8,
+            FrameStyle     -> RGBColor[ "#c9ccd0" ],
+            ImageSize      -> { Scaled[ 1 ], Automatic },
+            RoundingRadius -> 10,
+            StripOnInput   -> False
+        ]
+    }
+]
+
+
+(* ::Subsection::Closed:: *)
+(*DropShadowPaneBox*)
+
+
+Cell[
+    StyleData[ "DropShadowPaneBox" ],
+    TemplateBoxOptions -> { DisplayFunction -> $dropShadowPaneBox }
+]
+
 
 (* ::Section::Closed:: *)
 (*Templates*)
@@ -1147,7 +1263,7 @@ Cell[
         DisplayFunction -> Function[
             Evaluate @ ToBoxes @ Button[
                 MouseAppearance[
-                    Tooltip[ RawBoxes @ TemplateBox[ { }, "ChatWidgetIcon" ], "Send to LLM" ],
+                    Tooltip[ RawBoxes @ TemplateBox[ { }, "ChatWidgetIcon" ], tr["StylesheetChatWidgetButtonTooltip"] ],
                     "LinkHand"
                 ],
                 With[ { $CellContext`cell = ParentCell @ EvaluationCell[ ] },
@@ -1179,6 +1295,138 @@ Cell[
     }
 ]
 
+
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*DiscardedMaterialOpener*)
+
+
+Cell[
+    StyleData[ "DiscardedMaterialOpener" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ DynamicModuleBox[
+            { Typeset`hover$$ = False, Typeset`open$$ = False },
+            PaneSelectorBox[
+                {
+                    False -> TagBox[
+                        GridBox[
+                            { { $discardedMaterialLabel } },
+                            DefaultBaseStyle -> "Column",
+                            GridBoxAlignment -> { "Columns" -> { { Left } } },
+                            GridBoxItemSize  -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+                            GridBoxSpacings  -> { "Columns" -> { { Automatic } }, "Rows" -> { { 0.25 } } }
+                        ],
+                        "Column"
+                    ],
+                    True -> TagBox[
+                        GridBox[
+                            {
+                                { $discardedMaterialLabel },
+                                {
+                                    FrameBox[
+                                        #1,
+                                        Background     -> RGBColor[ 0.94902, 0.96863, 0.98824 ],
+                                        FrameMargins   -> 10,
+                                        FrameStyle     -> RGBColor[ 0.9098, 0.93333, 0.95294 ],
+                                        ImageSize      -> { Full, Automatic },
+                                        RoundingRadius -> 5,
+                                        StripOnInput   -> False
+                                    ]
+                                }
+                            },
+                            DefaultBaseStyle -> "Column",
+                            GridBoxAlignment -> { "Columns" -> { { Left } } },
+                            GridBoxItemSize  -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+                            GridBoxSpacings  -> { "Columns" -> { { Automatic } }, "Rows" -> { { 0.25 } } }
+                        ],
+                        "Column"
+                    ]
+                },
+                Dynamic @ Typeset`open$$,
+                ImageMargins   -> 10,
+                ImageSize      -> Automatic,
+                Alignment      -> Left,
+                ContentPadding -> False
+            ],
+            DynamicModuleValues :> { },
+            UnsavedVariables    :> { Typeset`hover$$ }
+        ]
+    }
+]
+
+
+Cell[
+    StyleData[ "DiscardedMaterialOpenerIcon" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ GraphicsBox[
+            {
+                #1,
+                Thickness[ 0.090909 ],
+                Opacity[ 1.0 ],
+                FilledCurveBox[
+                    {
+                        {
+                            { 0, 2, 0 },
+                            { 0, 1, 0 },
+                            { 0, 1, 0 },
+                            { 0, 1, 0 },
+                            { 0, 1, 0 },
+                            { 0, 1, 0 },
+                            { 0, 1, 0 },
+                            { 0, 1, 0 },
+                            { 0, 1, 0 },
+                            { 0, 1, 0 },
+                            { 0, 1, 0 }
+                        }
+                    },
+                    {
+                        {
+                            { 8.5, 4.5 },
+                            { 6.5, 4.5 },
+                            { 6.5, 2.5 },
+                            { 4.5, 2.5 },
+                            { 4.5, 4.5 },
+                            { 2.5, 4.5 },
+                            { 2.5, 6.5 },
+                            { 4.5, 6.5 },
+                            { 4.5, 8.5 },
+                            { 6.5, 8.5 },
+                            { 6.5, 6.5 },
+                            { 8.5, 6.5 }
+                        }
+                    }
+                ]
+            },
+            AspectRatio      -> Automatic,
+            BaselinePosition -> Center -> Center,
+            ImageSize        -> { 11.0, 11.0 },
+            PlotRange        -> { { 0.0, 11.0 }, { 0.0, 11.0 } }
+        ]
+    }
+]
+
+
+Cell[
+    StyleData[ "DiscardedMaterialCloserIcon" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ GraphicsBox[
+            {
+                #1,
+                Thickness[ 0.090909 ],
+                Opacity[ 1.0 ],
+                FilledCurveBox[
+                    { { { 0, 2, 0 }, { 0, 1, 0 }, { 0, 1, 0 } } },
+                    { { { 8.5, 4.5 }, { 2.5, 4.5 }, { 2.5, 6.5 }, { 8.5, 6.5 } } }
+                ]
+            },
+            AspectRatio      -> Automatic,
+            BaselinePosition -> Center -> Center,
+            ImageSize        -> { 11.0, 11.0 },
+            PlotRange        -> { { 0.0, 11.0 }, { 0.0, 11.0 } }
+        ]
+    }
+]
 
 
 (* ::Section::Closed:: *)

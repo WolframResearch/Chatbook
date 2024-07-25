@@ -1,21 +1,11 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`CloudToolbar`" ];
-
-HoldComplete[
-    `makeChatCloudDockedCellContents;
-    `forceRefreshCloudPreferences;
-];
-
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"                    ];
-Needs[ "Wolfram`Chatbook`Common`"             ];
-Needs[ "Wolfram`Chatbook`Dialogs`"            ];
-Needs[ "Wolfram`Chatbook`Dynamics`"           ];
-Needs[ "Wolfram`Chatbook`PreferencesContent`" ];
-Needs[ "Wolfram`Chatbook`Services`"           ];
-Needs[ "Wolfram`Chatbook`UI`"                 ];
+Needs[ "Wolfram`Chatbook`"        ];
+Needs[ "Wolfram`Chatbook`Common`" ];
+Needs[ "Wolfram`Chatbook`UI`"     ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -62,7 +52,11 @@ makeChatCloudDockedCellContents // endDefinition;
 cloudCellInsertMenu // beginDefinition;
 
 cloudCellInsertMenu[ ] := ActionMenu[
-    toolbarButtonLabel @ Row @ { "Insert Chat Cell", Spacer[ 5 ], RawBoxes @ TemplateBox[ { }, "ChatInputIcon" ] },
+    toolbarButtonLabel @ Row @ {
+        tr[ "ChatToolbarInsertChatCell" ],
+        Spacer[ 5 ],
+        RawBoxes @ TemplateBox[ { }, "ChatInputIcon" ]
+    },
     {
         insertStyleMenuItem[ "ChatInputIcon", "ChatInput", "'" ],
         insertStyleMenuItem[ "SideChatIcon", "SideChat", "' '" ],
@@ -143,7 +137,11 @@ insertCellStyle // endDefinition;
 cloudPreferencesButton // beginDefinition;
 
 cloudPreferencesButton[ ] := Button[
-    toolbarButtonLabel @ Row @ { "Chat Settings", Spacer[ 5 ], RawBoxes @ TemplateBox[ { }, "AdvancedSettings" ] },
+    toolbarButtonLabel @ Row @ {
+        tr[ "ChatToolbarChatSettings" ],
+        Spacer[ 5 ],
+        RawBoxes @ TemplateBox[ { }, "AdvancedSettings" ]
+    },
     toggleCloudPreferences @ EvaluationNotebook[ ],
     FrameMargins -> { { 0, 4 }, { 0, 0 } }
 ];
@@ -216,10 +214,12 @@ cloudModelSelector // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$cloudChatBanner*)
-$cloudChatBanner := $cloudChatBanner = cvExpand @ PaneSelector[
-    { True -> $chatDrivenNotebookLabel, False -> $chatEnabledNotebookLabel },
-    Dynamic @ TrueQ @ cv[ EvaluationNotebook[ ], "ChatDrivenNotebook" ],
-    ImageSize -> Automatic
+$cloudChatBanner := Block[ { $CloudEvaluation = True },
+    $cloudChatBanner = cvExpand @ PaneSelector[
+        { True -> $chatDrivenNotebookLabel, False -> $chatEnabledNotebookLabel },
+        Dynamic @ TrueQ @ cv[ EvaluationNotebook[ ], "ChatDrivenNotebook" ],
+        ImageSize -> Automatic
+    ]
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -230,7 +230,7 @@ $chatDrivenNotebookLabel := Grid[
         {
             "",
             chatbookIcon[ "ChatDrivenNotebookIcon", False ],
-            Style[ "Chat-Driven Notebook", $notebookTypeLabelOptions ]
+            Style[ tr[ "ChatToolbarChatDrivenLabel" ], $notebookTypeLabelOptions ]
         }
     },
     Alignment -> { Automatic, Center },
@@ -245,7 +245,7 @@ $chatEnabledNotebookLabel := Grid[
         {
             "",
             chatbookIcon[ "ChatEnabledNotebookIcon", False ],
-            Style[ "Chat-Enabled Notebook", $notebookTypeLabelOptions ]
+            Style[ tr[ "ChatToolbarChatEnabledLabel" ], $notebookTypeLabelOptions ]
         }
     },
     Alignment -> { Automatic, Center },
@@ -276,7 +276,7 @@ forceRefreshCloudPreferences // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     $cloudChatBanner;
 ];
 

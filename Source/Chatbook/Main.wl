@@ -10,22 +10,27 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$AvailableTools;
 `$ChatAbort;
 `$ChatbookContexts;
+`$ChatEvaluationCell;
 `$ChatHandlerData;
 `$ChatNotebookEvaluation;
 `$ChatPost;
 `$ChatPre;
+`$CurrentChatSettings;
 `$DefaultChatHandlerFunctions;
 `$DefaultChatProcessingFunctions;
 `$DefaultModel;
 `$DefaultToolOptions;
 `$DefaultTools;
 `$IncludedCellWidget;
+`$InlineChat;
 `$InstalledTools;
 `$SandboxKernel;
 `$ToolFunctions;
+`$WorkspaceChat;
 `AbsoluteCurrentChatSettings;
 `AppendURIInstructions;
 `BasePrompt;
+`CachedBoxes;
 `CellToChatMessage;
 `Chatbook;
 `ChatbookAction;
@@ -33,9 +38,11 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `CreateChatDrivenNotebook;
 `CreateChatNotebook;
 `CurrentChatSettings;
+`DisplayBase64Boxes;
 `FormatChatOutput;
 `FormatToolCall;
 `FormatToolResponse;
+`FormatWolframAlphaPods;
 `GetChatHistory;
 `GetExpressionURI;
 `GetExpressionURIs;
@@ -44,6 +51,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `SandboxLinguisticAssistantData;
 `SetModel;
 `SetToolOptions;
+`ShowCodeAssistance;
 `StringToBoxes;
 `WriteChatOutputCell;
 
@@ -51,6 +59,8 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 (* ::Subsection::Closed:: *)
 (*Begin Private Context*)
 Begin[ "`Private`" ];
+
+Needs[ "Wolfram`Chatbook`Common`" ];
 
 (* Avoiding context aliasing due to bug 434990: *)
 Needs[ "GeneralUtilities`" -> None ];
@@ -76,57 +86,69 @@ Chatbook is a symbol for miscellaneous chat notebook messages.\
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Load Files*)
-Block[ { $ContextPath },
-    Get[ "Wolfram`Chatbook`Common`"             ];
-    Get[ "Wolfram`Chatbook`Settings`"           ];
-    Get[ "Wolfram`Chatbook`ErrorUtils`"         ];
-    Get[ "Wolfram`Chatbook`Errors`"             ];
-    Get[ "Wolfram`Chatbook`CreateChatNotebook`" ];
-    Get[ "Wolfram`Chatbook`Dynamics`"           ];
-    Get[ "Wolfram`Chatbook`Utils`"              ];
-    Get[ "Wolfram`Chatbook`FrontEnd`"           ];
-    Get[ "Wolfram`Chatbook`Serialization`"      ];
-    Get[ "Wolfram`Chatbook`UI`"                 ];
-    Get[ "Wolfram`Chatbook`Sandbox`"            ];
-    Get[ "Wolfram`Chatbook`Tools`"              ];
-    Get[ "Wolfram`Chatbook`Formatting`"         ];
-    Get[ "Wolfram`Chatbook`Prompting`"          ];
-    Get[ "Wolfram`Chatbook`Explode`"            ];
-    Get[ "Wolfram`Chatbook`ChatGroups`"         ];
-    Get[ "Wolfram`Chatbook`ChatMessages`"       ];
-    Get[ "Wolfram`Chatbook`Services`"           ];
-    Get[ "Wolfram`Chatbook`SendChat`"           ];
-    Get[ "Wolfram`Chatbook`Feedback`"           ];
-    Get[ "Wolfram`Chatbook`Actions`"            ];
-    Get[ "Wolfram`Chatbook`Menus`"              ];
-    Get[ "Wolfram`Chatbook`ResourceInstaller`"  ];
-    Get[ "Wolfram`Chatbook`Personas`"           ];
-    Get[ "Wolfram`Chatbook`InlineReferences`"   ];
-    Get[ "Wolfram`Chatbook`PreferencesUtils`"   ];
-    Get[ "Wolfram`Chatbook`Models`"             ];
-    Get[ "Wolfram`Chatbook`Dialogs`"            ];
-    Get[ "Wolfram`Chatbook`ToolManager`"        ];
-    Get[ "Wolfram`Chatbook`PersonaManager`"     ];
-    Get[ "Wolfram`Chatbook`ChatHistory`"        ];
-    Get[ "Wolfram`Chatbook`CloudToolbar`"       ];
-];
+$ChatbookContexts = {
+    "Wolfram`Chatbook`",
+    "Wolfram`Chatbook`Actions`",
+    "Wolfram`Chatbook`ChatGroups`",
+    "Wolfram`Chatbook`ChatHistory`",
+    "Wolfram`Chatbook`ChatMessages`",
+    "Wolfram`Chatbook`ChatModes`",
+    "Wolfram`Chatbook`ChatState`",
+    "Wolfram`Chatbook`CloudToolbar`",
+    "Wolfram`Chatbook`Common`",
+    "Wolfram`Chatbook`CreateChatNotebook`",
+    "Wolfram`Chatbook`Dialogs`",
+    "Wolfram`Chatbook`Dynamics`",
+    "Wolfram`Chatbook`Errors`",
+    "Wolfram`Chatbook`ErrorUtils`",
+    "Wolfram`Chatbook`Explode`",
+    "Wolfram`Chatbook`Feedback`",
+    "Wolfram`Chatbook`Formatting`",
+    "Wolfram`Chatbook`FrontEnd`",
+    "Wolfram`Chatbook`Handlers`",
+    "Wolfram`Chatbook`InlineReferences`",
+    "Wolfram`Chatbook`Menus`",
+    "Wolfram`Chatbook`Models`",
+    "Wolfram`Chatbook`PersonaManager`",
+    "Wolfram`Chatbook`Personas`",
+    "Wolfram`Chatbook`PreferencesContent`",
+    "Wolfram`Chatbook`PreferencesUtils`",
+    "Wolfram`Chatbook`Prompting`",
+    "Wolfram`Chatbook`ResourceInstaller`",
+    "Wolfram`Chatbook`Sandbox`",
+    "Wolfram`Chatbook`SendChat`",
+    "Wolfram`Chatbook`Serialization`",
+    "Wolfram`Chatbook`Services`",
+    "Wolfram`Chatbook`Settings`",
+    "Wolfram`Chatbook`ToolManager`",
+    "Wolfram`Chatbook`Tools`",
+    "Wolfram`Chatbook`UI`",
+    "Wolfram`Chatbook`Utils`"
+};
+
+Scan[ Needs[ # -> None ] &, $ChatbookContexts ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Protected Symbols*)
 Protect[
     $AutomaticAssistance,
+    $ChatbookContexts,
     $ChatNotebookEvaluation,
+    $CurrentChatSettings,
     $DefaultChatHandlerFunctions,
     $DefaultChatProcessingFunctions,
     $DefaultModel,
     $DefaultToolOptions,
     $DefaultTools,
+    $InlineChat,
     $InstalledTools,
     $ToolFunctions,
+    $WorkspaceChat,
     AbsoluteCurrentChatSettings,
     AppendURIInstructions,
     BasePrompt,
+    CachedBoxes,
     CellToChatMessage,
     Chatbook,
     ChatbookAction,
@@ -134,9 +156,11 @@ Protect[
     CreateChatDrivenNotebook,
     CreateChatNotebook,
     CurrentChatSettings,
+    DisplayBase64Boxes,
     FormatChatOutput,
     FormatToolCall,
     FormatToolResponse,
+    FormatWolframAlphaPods,
     GetChatHistory,
     GetExpressionURI,
     GetExpressionURIs,
@@ -144,21 +168,19 @@ Protect[
     SandboxLinguisticAssistantData,
     SetModel,
     SetToolOptions,
+    ShowCodeAssistance,
     StringToBoxes,
     WriteChatOutputCell
 ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Subcontexts*)
-$ChatbookContexts := $ChatbookContexts = Select[ Contexts[ "Wolfram`Chatbook`*" ], StringFreeQ[ "`Private`" ] ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     $ChatbookContexts;
 ];
+
+mxInitialize[ ];
 
 End[ ];
 EndPackage[ ];

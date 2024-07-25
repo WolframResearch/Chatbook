@@ -1,27 +1,13 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Sandbox`" ];
-
-(* cSpell: ignore noinit pacletreadonly playerpass sntx *)
+Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 
-`$sandboxKernelCommandLine;
-`fancyResultQ;
-`inlineExpressionURIs;
-`preprocessSandboxString;
-`sandboxEvaluate;
-`sandboxFormatter;
-`simpleResultQ;
-
-Begin[ "`Private`" ];
-
-Needs[ "Wolfram`Chatbook`"            ];
-Needs[ "Wolfram`Chatbook`Common`"     ];
-Needs[ "Wolfram`Chatbook`Formatting`" ];
-Needs[ "Wolfram`Chatbook`Tools`"      ];
-Needs[ "Wolfram`Chatbook`Utils`"      ];
+Needs[ "Wolfram`Chatbook`"        ];
+Needs[ "Wolfram`Chatbook`Common`" ];
 
 $ContextAliases[ "sp`" ] = "Wolfram`Chatbook`SandboxParsing`";
 (* :!CodeAnalysis::Disable::UnexpectedLetterlikeCharacter:: *)
@@ -36,9 +22,12 @@ $appendURIPrompt          := toolOptionValue[ "WolframLanguageEvaluator", "Appen
 $includeDefinitions       := toolOptionValue[ "WolframLanguageEvaluator", "IncludeDefinitions"       ];
 $sandboxEvaluationTimeout := toolOptionValue[ "WolframLanguageEvaluator", "EvaluationTimeConstraint" ];
 $sandboxPingTimeout       := toolOptionValue[ "WolframLanguageEvaluator", "PingTimeConstraint"       ];
+$evaluatorMethod          := toolOptionValue[ "WolframLanguageEvaluator", "Method"                   ];
 $cloudEvaluatorLocation    = "/Chatbook/Tools/WolframLanguageEvaluator/Evaluate";
 $cloudLineNumber           = 1;
 $cloudSession              = None;
+$maxSandboxMessages        = 10;
+$maxMessageParameterLength = 100;
 
 (* Tests for expressions that lose their initialized status when sending over a link: *)
 $initializationTests = Join[
@@ -76,7 +65,7 @@ $initializationTests = Join[
     ]
 ];
 
-
+(* cSpell: ignore noinit, pacletreadonly *)
 $sandboxKernelCommandLine := StringRiffle @ {
     ToString[
         If[ $OperatingSystem === "Windows",
@@ -264,6 +253,7 @@ startSandboxKernel[ ] := Enclose[
 
         Scan[ LinkClose, Select[ Links[ ], sandboxKernelQ ] ];
 
+        (* cSpell: ignore playerpass *)
         (* pwFile = FileNameJoin @ { $InstallationDirectory, "Configuration", "Licensing", "playerpass" }; *)
 
         kernel = ConfirmMatch[ LinkLaunch @ $sandboxKernelCommandLine, _LinkObject, "LinkLaunch" ];
@@ -449,11 +439,13 @@ sandboxEvaluate // beginDefinition;
 sandboxEvaluate[ KeyValuePattern[ "code" -> code_ ] ] := sandboxEvaluate @ code;
 sandboxEvaluate[ code_String ] := sandboxEvaluate @ toSandboxExpression @ code;
 sandboxEvaluate[ HoldComplete[ xs__, x_ ] ] := sandboxEvaluate @ HoldComplete @ CompoundExpression[ xs, x ];
-sandboxEvaluate[ HoldComplete[ evaluation_ ] ] /; $CloudEvaluation := cloudSandboxEvaluate @ HoldComplete @ evaluation;
+sandboxEvaluate[ HoldComplete[ eval_ ] ] /; useCloudSandboxQ[ ] := cloudSandboxEvaluate @ HoldComplete @ eval;
+sandboxEvaluate[ HoldComplete[ eval_ ] ] /; useSessionQ[ ] := sessionEvaluate @ HoldComplete @ eval;
 
 sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
     Module[ { kernel, null, packets, $sandboxTag, $timedOut, $kernelQuit, results, flat, initialized, final },
 
+        $lastSandboxMethod = "Local";
         $lastSandboxEvaluation = HoldComplete @ evaluation;
         kernel = ConfirmMatch[ getSandboxKernel[ ], _LinkObject, "GetKernel" ];
 
@@ -522,10 +514,30 @@ sandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
             final[ "String" ]
         ]
     ],
-    throwInternalFailure[ sandboxEvaluate @ HoldComplete @ evaluation, ## ] &
+    throwInternalFailure
 ];
 
 sandboxEvaluate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*useCloudSandboxQ*)
+useCloudSandboxQ // beginDefinition;
+useCloudSandboxQ[ ] := useCloudSandboxQ @ $evaluatorMethod;
+useCloudSandboxQ[ "Cloud" ] := True;
+useCloudSandboxQ[ $$unspecified ] := TrueQ @ $CloudEvaluation;
+useCloudSandboxQ[ _ ] := False;
+useCloudSandboxQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*useSessionQ*)
+useSessionQ // beginDefinition;
+useSessionQ[ ] := useSessionQ @ $evaluatorMethod;
+useSessionQ[ "Session"|None ] := True;
+useSessionQ[ $$unspecified ] := False;
+useSessionQ[ _ ] := False;
+useSessionQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -548,6 +560,7 @@ cloudSandboxEvaluate // beginDefinition;
 cloudSandboxEvaluate[ HoldComplete[ evaluation_ ] ] := Enclose[
     Catch @ Module[ { api, held, wxf, definitions, response, result, packets, initialized },
 
+        $lastSandboxMethod = "Cloud";
         $lastSandboxEvaluation = HoldComplete @ evaluation;
 
         api = ConfirmMatch[ getCloudEvaluatorAPI[ ], _CloudObject|_Failure, "CloudEvaluator" ];
@@ -726,6 +739,53 @@ deployCloudEvaluator[ target_CloudObject ] := With[ { messages = $messageOverrid
 ];
 
 deployCloudEvaluator // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sessionEvaluate*)
+sessionEvaluate // beginDefinition;
+
+sessionEvaluate[ HoldComplete[ eval0_ ] ] := Enclose[
+    Module[ { response, eval, result, packets, initialized },
+
+        $lastSandboxMethod = "Session";
+        $lastSandboxEvaluation = HoldComplete @ eval0;
+
+        response = $Failed;
+        eval = makeLinkWriteEvaluation @ eval0;
+
+        With[ { held = eval, tc = $sandboxEvaluationTimeout },
+            response = evaluationData[
+                HoldComplete @@ {
+                    TimeConstrained[
+                        ReleaseHold @ held,
+                        tc,
+                        Failure[
+                            "EvaluationTimeExceeded",
+                            <|
+                                "MessageTemplate"   -> "Evaluation exceeded the `1` second time limit.",
+                                "MessageParameters" -> { tc }
+                            |>
+                        ]
+                    ]
+                }
+            ]
+        ];
+
+        result = HoldComplete @@ ConfirmMatch[ Lookup[ response, "Result" ], _HoldComplete|_Hold, "Result" ];
+        packets = TextPacket /@ response[ "OutputLog" ];
+        initialized = result;
+
+        $lastSandboxResult = <|
+            "String"  -> sandboxResultString[ initialized, packets ],
+            "Result"  -> sandboxResult @ initialized,
+            "Packets" -> packets
+        |>
+    ],
+    throwInternalFailure
+];
+
+sessionEvaluate // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1063,6 +1123,373 @@ sandboxStringNormalize // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*evaluationData*)
+evaluationData // beginDefinition;
+evaluationData // Attributes = { HoldAllComplete };
+
+evaluationData[ eval_ ] := Enclose[
+    Module[ { outputs, result, stopped, $fail },
+        $suppressMessageCollection = False;
+        outputs = Internal`Bag[ ];
+        result = $fail;
+        stopped = <| |>;
+        Internal`HandlerBlock[
+            { "Message", evaluationMessageHandler[ stopped, outputs ] },
+            Internal`HandlerBlock[
+                { "Wolfram.System.Print.Veto", evaluationPrintHandler @ outputs },
+                result = Quiet @ Quiet[ catchEverything @ eval, $stackTag::begin ]
+            ]
+        ];
+        ConfirmAssert[ result =!= $fail, "EvaluationFailure" ];
+        setOutput @ result;
+        ConfirmBy[ makeEvaluationResultData[ result, outputs ], AssociationQ, "ResultData" ]
+    ],
+    throwInternalFailure
+];
+
+evaluationData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*setOutput*)
+setOutput // beginDefinition;
+setOutput // Attributes = { SequenceHold };
+
+setOutput[ HoldComplete[ KeyValuePattern[ "Result" -> HoldComplete[ result_ ] ] ] ] :=
+    setOutput[ Replace[ $Line, Except[ _Integer ] :> 1 ], HoldComplete @ result ];
+
+setOutput[ HoldComplete[ fail_Failure ] ] :=
+    setOutput[ Replace[ $Line, Except[ _Integer ] :> 1 ], HoldComplete @ fail ];
+
+setOutput[ line_Integer, HoldComplete[ result___ ] ] :=
+    WithCleanup[
+        Unprotect @ Out,
+        Out[ line ] := result,
+        Protect @ Out;
+        $Line = line + 1
+    ];
+
+setOutput // endDefinition;
+
+(* TODO: Should probably also set things like In[], InString[], etc. *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*evaluationPrintHandler*)
+evaluationPrintHandler // beginDefinition;
+evaluationPrintHandler[ out_Internal`Bag ] := evaluationPrintHandler[ out, # ] &;
+evaluationPrintHandler[ out_Internal`Bag, output_ ] := (Internal`StuffBag[ out, makePrintText @ output ]; False);
+evaluationPrintHandler // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makePrintText*)
+makePrintText // beginDefinition;
+makePrintText[ out_ ] := makePrintText[ Replace[ $Line, Except[ _Integer ] :> 1 ], out ];
+makePrintText[ n_Integer, out_ ] := makePrintText[ "During evaluation of In[" <> ToString @ n <> "]:= ", out ];
+makePrintText[ lbl_String, HoldComplete[ out__ ] ] := StringJoin[ lbl, ToString @ Unevaluated @ SequenceForm @ out ];
+makePrintText[ lbl_, HoldComplete[ ] ] := "";
+makePrintText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*evaluationMessageHandler*)
+evaluationMessageHandler // beginDefinition;
+evaluationMessageHandler // Attributes = { HoldFirst };
+(* `stopped` is a held association that's used to mark messages that have triggered a `General::stop`, and `outputs`
+   contains the message and print text to be inserted into to the tool output for the LLM. *)
+evaluationMessageHandler[ stopped_, outputs_ ] := evaluationMessageHandler0[ stopped, outputs, # ] &;
+evaluationMessageHandler // endDefinition;
+
+
+evaluationMessageHandler0 // beginDefinition;
+evaluationMessageHandler0 // Attributes = { HoldFirst };
+
+(* Message is not from LLM code or we've collected too many, so we don't want to insert it into the tool response: *)
+evaluationMessageHandler0[ _, _, _ ] /; $suppressMessageCollection := Null;
+
+(* cSpell: ignore newsym *)
+(* Messages that are so frequent we don't want to waste time analyzing them: *)
+evaluationMessageHandler0[ _, _, Hold[ Message[ $CharacterEncoding::utf8 | General::newsym, ___ ], _ ] ] := Null;
+
+(* Message already triggered a General::stop, so do nothing: *)
+evaluationMessageHandler0[ stopped_, outputs_, Hold[ Message[ mn_, ___ ], _ ] ] /; stopped @ HoldComplete @ mn := Null;
+
+(* Message is locally quiet, so do nothing: *)
+evaluationMessageHandler0[ _, _, Hold[ message_? messageQuietedQ, _ ] ] := Null;
+
+(* Message has triggered a `General::stop`, but it's locally quiet, so mark it and otherwise do nothing: *)
+evaluationMessageHandler0[ stopped_, _, Hold[ Message[ General::stop, HoldForm[ msg_? messageQuietedQ ] ], _ ] ] := (
+    stopped[ HoldComplete @ msg ] = True;
+    Null
+);
+
+(* Already collected the max number of messages, so do nothing: *)
+evaluationMessageHandler0[ _, outputs_Internal`Bag, _ ] /; Internal`BagLength @ outputs > $maxSandboxMessages := (
+    $suppressMessageCollection = True;
+    Null
+);
+
+(* Otherwise, collect message text: *)
+evaluationMessageHandler0[ stopped_, outputs_, Hold[ message_, _ ] ] :=
+    Block[ { $suppressMessageCollection = True }, (* Any messages occurring in here are not from LLM code *)
+        (* If message is General::stop, tag the message in its argument as stopped so it won't be collected again: *)
+        checkMessageStop[ stopped, message ];
+        (* Create message text and save it: *)
+        Internal`StuffBag[ outputs, makeMessageText @ message ]
+    ];
+
+evaluationMessageHandler0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*checkMessageStop*)
+checkMessageStop // beginDefinition;
+checkMessageStop // Attributes = { HoldAllComplete };
+checkMessageStop[ stopped_, Message[ General::stop, HoldForm[ stop_ ] ] ] := stopped[ HoldComplete @ stop ] = True;
+checkMessageStop[ stopped_, _Message ] := Null;
+checkMessageStop // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeMessageText*)
+makeMessageText // beginDefinition;
+makeMessageText // Attributes = { HoldAllComplete };
+
+makeMessageText[ Message[ mn: MessageName[ sym_Symbol, tag__String ], args0___ ] ] :=
+    Module[ { template, label, args },
+        template = SelectFirst[ { messageOverrideTemplate @ mn, mn, MessageName[ General, tag ] }, StringQ ];
+        label    = ToString @ Unevaluated @ mn;
+        args     = HoldForm /@ Unevaluated @ { args0 };
+        If[ StringQ @ template,
+            applyMessageTemplate[ label, template, args ],
+            undefinedMessageText[ label, args ]
+        ]
+    ];
+
+makeMessageText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*messageOverrideTemplate*)
+messageOverrideTemplate // beginDefinition;
+messageOverrideTemplate // Attributes = { HoldAllComplete };
+messageOverrideTemplate[ mn_MessageName ] := Lookup[ $messageOverrideTemplates, HoldComplete @ mn ];
+messageOverrideTemplate // endDefinition;
+
+
+$messageOverrideTemplates := $messageOverrideTemplates = Association @ Cases[
+    $messageOverrides,
+    HoldPattern[ mn_MessageName = template_String ] :> (HoldComplete @ mn -> template)
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*applyMessageTemplate*)
+applyMessageTemplate // beginDefinition;
+
+applyMessageTemplate[ label_String, template_String, args_List ] :=
+    label <> ": " <> ToString @ StringForm[ template, Sequence @@ shortenMessageParameters @ args ];
+
+applyMessageTemplate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*shortenMessageParameters*)
+shortenMessageParameters // beginDefinition;
+shortenMessageParameters // Attributes = { HoldAllComplete };
+shortenMessageParameters[ { } ] := { };
+shortenMessageParameters[ args_List ] := shortenMessageParameter[ countLargeParameters @ args ] /@ Unevaluated @ args;
+shortenMessageParameters // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*countLargeParameters*)
+countLargeParameters // beginDefinition;
+countLargeParameters // Attributes = { HoldFirst };
+countLargeParameters[ { } ] := 0;
+countLargeParameters[ { args__ } ] := Length @ Select[ HoldComplete @ args, largeParameterQ ];
+countLargeParameters // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*largeParameterQ*)
+largeParameterQ // beginDefinition;
+largeParameterQ[ _String ] := True;
+largeParameterQ[ $$atomic ] := False;
+largeParameterQ[ HoldForm[ expr_ ] ] := largeParameterQ @ expr;
+largeParameterQ[ _ ] := True;
+largeParameterQ // Attributes = { HoldAllComplete };
+largeParameterQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*shortenMessageParameter*)
+shortenMessageParameter // beginDefinition;
+
+shortenMessageParameter[ count_Integer? NonNegative ] :=
+    With[ { len = Max[ 50, Ceiling[ $maxMessageParameterLength / Max[ 1, count ] ] ] },
+        Function[ Null, shortenMessageParameter[ len, Unevaluated @ # ], HoldAllComplete ]
+    ];
+
+shortenMessageParameter[ len_Integer? NonNegative, expr_ ] :=
+    ToString[ Unevaluated @ Short @ expr, PageWidth -> len ];
+
+shortenMessageParameter // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*undefinedMessageText*)
+undefinedMessageText // beginDefinition;
+
+undefinedMessageText[ label_String, { args___ } ] := StringJoin[
+    label,
+    ": ",
+    "-- Message text not found -- ",
+    "(" <> ToString[ # ] <> ")" & /@ { args }
+];
+
+undefinedMessageText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*messageQuietedQ*)
+messageQuietedQ // beginDefinition;
+messageQuietedQ // Attributes = { HoldAllComplete };
+
+messageQuietedQ[ Message[ msg_, ___ ] ] :=
+    messageQuietedQ @ msg;
+
+messageQuietedQ[ msg: MessageName[ _Symbol, tag___ ] ] :=
+    With[ { msgEval = msg },
+        TrueQ @ Or[
+            MatchQ[ msgEval, _$Off ],
+            inheritingOffQ[ msgEval, tag ],
+            messageQuietedQ0 @ msg
+        ]
+    ];
+
+messageQuietedQ // endDefinition;
+
+
+messageQuietedQ0 // beginDefinition;
+messageQuietedQ0 // Attributes = { HoldAllComplete };
+
+messageQuietedQ0[ msg: MessageName[ _Symbol, tag___ ] ] :=
+    Module[ { stack, msgOrGeneral, msgPatt },
+
+        stack        = localStack @ Lookup[ Internal`QuietStatus[ ], Stack ];
+        msgOrGeneral = generalMessagePattern @ msg;
+        msgPatt      = All | { ___, msgOrGeneral, ___ };
+
+        TrueQ @ And[
+            (* check if msg is unquieted via third arg of Quiet: *)
+            FreeQ[ stack, { _, _, msgPatt }, 2 ],
+            (* check if msg is not quieted via second arg of Quiet: *)
+            ! FreeQ[ stack, { _, msgPatt, _ }, 2 ]
+        ]
+    ];
+
+messageQuietedQ0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inheritingOffQ*)
+inheritingOffQ // beginDefinition;
+inheritingOffQ[ _String, ___ ] := False;
+inheritingOffQ[ msg_, tag_ ] := MatchQ[ MessageName[ General, tag ], _$Off ];
+inheritingOffQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*localStack*)
+localStack // beginDefinition;
+localStack[ HoldForm @ { ___, { ___, { $stackTag::begin }, ___ }, stack___ } ] := localStack @ HoldForm @ { stack };
+localStack[ HoldForm @ { stack___, { ___, { $stackTag::end }, ___ }, ___ } ] := localStack @ HoldForm @ { stack };
+localStack[ stack_ ] := stack;
+localStack // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*generalMessagePattern*)
+generalMessagePattern // beginDefinition;
+generalMessagePattern // Attributes = { HoldAllComplete };
+
+generalMessagePattern[ msg: MessageName[ _Symbol, tag___ ] ] :=
+    If[ StringQ @ msg,
+        HoldPattern @ msg,
+        HoldPattern[ msg | MessageName[ General, tag ] ]
+    ];
+
+generalMessagePattern // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*catchEverything*)
+catchEverything // beginDefinition;
+catchEverything // Attributes = { HoldAllComplete };
+catchEverything[ e_ ] := catchEverything0 @ CheckAbort[ Catch @ Catch[ contained @ e, _, uncaughtThrow ], $Aborted ];
+catchEverything // endDefinition;
+
+
+catchEverything0 // beginDefinition;
+catchEverything0 // Attributes = { SequenceHold };
+
+catchEverything0[ contained[ result___ ] ] :=
+    result;
+
+catchEverything0[ $Aborted ] :=
+    makeHeldResultAssociation @ $Aborted;
+
+catchEverything0[ uncaughtThrow[ uncaught__ ] ] := (
+    Message[ Throw::nocatch, HoldForm @ Throw @ uncaught ];
+    makeHeldResultAssociation @ Hold @ Throw @ uncaught
+);
+
+catchEverything0[ uncaught_ ] :=
+    catchEverything0 @ uncaughtThrow @ uncaught;
+
+catchEverything0[ uncaught___ ] :=
+    catchEverything0 @ uncaughtThrow @ Sequence @ uncaught;
+
+catchEverything0 // endDefinition;
+
+(* TODO: Figure out a reliable way to intercept Exit and Quit.
+   Note: Quit is locked in cloud, so we can't use a Block to redefine it. *)
+
+contained // Attributes = { SequenceHold };
+uncaughtThrow // Attributes = { HoldAllComplete };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeHeldResultAssociation*)
+makeHeldResultAssociation // beginDefinition;
+makeHeldResultAssociation // Attributes = { HoldAllComplete };
+
+makeHeldResultAssociation[ e_ ] :=
+    HoldComplete @@ { <| "Line" -> $Line, "Result" -> HoldComplete @ e, "Initialized" -> { } |> };
+
+makeHeldResultAssociation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeEvaluationResultData*)
+makeEvaluationResultData // beginDefinition;
+makeEvaluationResultData // Attributes = { SequenceHold };
+
+makeEvaluationResultData[ result_, outputs_Internal`Bag ] :=
+    makeEvaluationResultData[ result, Internal`BagPart[ outputs, All ] ];
+
+makeEvaluationResultData[ result_, outputs: { ___String } ] :=
+    <|
+        "Result"    :> result,
+        "OutputLog" -> outputs
+    |>;
+
+makeEvaluationResultData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*linkWriteEvaluation*)
 linkWriteEvaluation // beginDefinition;
 linkWriteEvaluation // Attributes = { HoldAllComplete };
@@ -1270,8 +1697,7 @@ addMessageHandler[ HoldComplete[ eval_ ] ] :=
                     eval
                 ],
                 (* cSpell: ignore usenl *)
-                If[ $issueNLMessage, Message[ General::usenl, $nlMessageType ] ];
-                If[ MatchQ[ $MessageList, { __ } ], Message[ General::messages ] ]
+                If[ $issueNLMessage, Message[ General::usenl, $nlMessageType ] ]
             ]
         ]
     ];
@@ -1308,7 +1734,10 @@ sandboxResult // endDefinition;
 (* ::Subsection::Closed:: *)
 (*sandboxResultString*)
 sandboxResultString // beginDefinition;
-sandboxResultString[ result_, packets_ ] := checkDocSearchMessageStrings @ sandboxResultString0[ result, packets ];
+
+sandboxResultString[ result_, packets_ ] :=
+    mergeComments @ appendRetryNotice @ checkDocSearchMessageStrings @ sandboxResultString0[ result, packets ];
+
 sandboxResultString // endDefinition;
 
 
@@ -1356,6 +1785,39 @@ sandboxResultString0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*mergeComments*)
+mergeComments // beginDefinition;
+
+mergeComments[ string_String ] := StringReplace[
+    string,
+    {
+        "*)" ~~ WhitespaceCharacter... ~~ "\n" ~~ WhitespaceCharacter... ~~ "(*" -> "\n\n",
+        "*)" ~~ WhitespaceCharacter... ~~ "(*" -> "\n"
+    }
+];
+
+mergeComments // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*appendRetryNotice*)
+appendRetryNotice // beginDefinition;
+
+appendRetryNotice[ string_String ] :=
+    If[ StringContainsQ[ string, "General::messages" ],
+        string<>"\n\n"<>$retryMessage,
+        string
+    ];
+
+appendRetryNotice // endDefinition;
+
+$retryMessage = "(* \
+IMPORTANT! If this tool call failed to provide the desired result for any reason, \
+you MUST write /retry before making the next tool call. \
+*)";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*appendURIInstructions*)
 appendURIInstructions // beginDefinition;
 
@@ -1365,8 +1827,26 @@ appendURIInstructions[ as: KeyValuePattern @ { "String" -> s_, "Result" -> expr_
 appendURIInstructions[ string_String, expr_ ] /; $appendURIPrompt :=
     appendURIInstructions0[ string, expr ];
 
-appendURIInstructions[ string_String, _ ] :=
+appendURIInstructions[ string_String, HoldComplete[ e_? simpleFormattingQ ] ] :=
     string;
+
+appendURIInstructions[ string_String, HoldComplete[ ___, expr_ ] ] := Enclose[
+    Module[ { uri, key },
+        uri = ConfirmBy[
+            makeExpressionURI[ "expression", "Formatted Result", Unevaluated @ expr ],
+            StringQ,
+            "ExpressionURI"
+        ];
+
+        key = ConfirmBy[ expressionURIKey @ uri, StringQ, "ExpressionURIKey" ];
+
+        If[ StringContainsQ[ string, key ],
+            string,
+            string <> "\n\n(* "<> uri <>" *)"
+        ]
+    ],
+    throwInternalFailure
+];
 
 appendURIInstructions // endDefinition;
 
@@ -1416,7 +1896,7 @@ appendURIQ // Attributes = { HoldAllComplete };
 appendURIQ[ expr_ ] := TrueQ @ Or[
     ByteCount @ Unevaluated @ expr > 500,
     graphicsQ @ Unevaluated @ expr,
-    ! FreeQ[ Unevaluated @ expr, _Quantity|_Entity|_EntityClass|_EntityProperty|_DateObject ]
+    ! simpleFormattingQ @ expr
 ];
 
 appendURIQ // endDefinition;
@@ -1430,8 +1910,8 @@ checkDocSearchMessageStrings[ string_String ] := StringDelete[ string, $docSearc
 checkDocSearchMessageStrings // endDefinition;
 
 $docSearchMessageStrings = {
-    " Use the documentation_searcher tool to find solutions.",
-    " Use the documentation_searcher tool to find alternatives."
+    " Use the documentation searcher tool to find solutions.",
+    " Use the documentation searcher tool to find alternatives."
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -1461,6 +1941,21 @@ simpleResultQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*simpleFormattingQ*)
+simpleFormattingQ // beginDefinition;
+simpleFormattingQ // Attributes = { HoldAllComplete };
+simpleFormattingQ[ _String ] := True;
+simpleFormattingQ[ e_ ] := simpleFormattingQ[ HoldPattern @ Verbatim[ e ] ] = simpleFormattingQ0 @ MakeBoxes @ e;
+simpleFormattingQ // endDefinition;
+
+simpleFormattingQ0 // beginDefinition;
+simpleFormattingQ0[ _String ] := True;
+simpleFormattingQ0[ RowBox[ boxes_List ] ] := AllTrue[ boxes, simpleFormattingQ0 ];
+simpleFormattingQ0[ ___ ] := False;
+simpleFormattingQ0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*fancyResultQ*)
 fancyResultQ // beginDefinition;
 fancyResultQ // Attributes = { HoldAllComplete };
@@ -1471,13 +1966,48 @@ fancyResultQ // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*makePacketMessages*)
+makePacketMessages // beginDefinition;
+
+makePacketMessages[ line_, packets_List ] := Enclose[
+    Module[ { strings },
+        $appendGeneralMessage = False;
+        strings = ConfirmMatch[ makePacketMessage /@ packets, { ___String }, "Strings" ];
+        If[ ConfirmBy[ $appendGeneralMessage, BooleanQ, "AppendGeneralMessage" ],
+            Append[ strings, ConfirmBy[ $generalMessageText, StringQ, "GeneralMessage" ] ],
+            strings
+        ]
+    ],
+    throwInternalFailure
+];
+
+makePacketMessages // endDefinition;
+
+
+$generalMessageText := Enclose[
+    Module[ { string },
+        string = ConfirmBy[ $messageOverrideTemplates[ HoldComplete[ General::messages ] ], StringQ, "String" ];
+        $generalMessageText = "General::messages: " <> string
+    ],
+    throwInternalFailure @ $generalMessageText &
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*makePacketMessage*)
 $$noMessagePacket = _InputNamePacket|_MessagePacket|_OutputNamePacket|_ReturnExpressionPacket|_LinkRead|$Failed;
 
-makePacketMessages // beginDefinition;
-makePacketMessages[ line_, packets_List ] := makePacketMessages[ line, # ] & /@ packets;
-makePacketMessages[ line_String, TextPacket[ text_String ] ] := text;
-makePacketMessages[ line_, $$noMessagePacket ] := Nothing;
-makePacketMessages // endDefinition;
+makePacketMessage // beginDefinition;
+makePacketMessage[ $$noMessagePacket ] := Nothing;
+makePacketMessage[ TextPacket[ text_ ] ] := makePacketMessage @ text;
+
+makePacketMessage[ text_String ] :=
+    If[ StringStartsQ[ text, Except[ WhitespaceCharacter ].. ~~ "::" ~~ Except[ WhitespaceCharacter ].. ],
+        $appendGeneralMessage = True;
+        text,
+        text
+    ];
+
+makePacketMessage // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1575,24 +2105,33 @@ smallBoxesQ // endDefinition;
 (*expandNLInputBoxes*)
 expandNLInputBoxes // beginDefinition;
 
-expandNLInputBoxes[ code_String ] := expandNLInputBoxes @ stringToBoxes @ code;
-
-expandNLInputBoxes[ boxes_ ] := boxes /. {
-    RowBox @ { "\[FreeformPrompt]", "[", b__, "]" } :> With[
-        { e = Quiet @ ToExpression[ RowBox @ { "HoldComplete", "[", b, "]" }, StandardForm, expandNLInputBoxes0 ] },
-        e /; ! FailureQ @ e
-    ]
-};
+expandNLInputBoxes[ boxes0_ ] :=
+    Module[ { boxes },
+        boxes = If[ StringQ @ boxes0, stringToBoxes @ boxes0, boxes0 ];
+        boxes /. RowBox @ { "\[FreeformPrompt]", "[", b__, "]" } :>
+            With[ { expanded = expandNLInputBoxes0 @ b }, expanded /; ! FailureQ @ expanded ]
+    ];
 
 expandNLInputBoxes // endDefinition;
 
 
 expandNLInputBoxes0 // beginDefinition;
-expandNLInputBoxes0[ HoldComplete[ q_String ] ] := expandNLInputBoxes0 @ SandboxLinguisticAssistantData @ q;
-expandNLInputBoxes0[ HoldComplete[ q_String, p_ ] ] := expandNLInputBoxes0 @ SandboxLinguisticAssistantData[ q, p ];
-expandNLInputBoxes0[ KeyValuePattern[ "Parse" -> HoldComplete[ expr_ ] ] ] := MakeBoxes @ expr;
-expandNLInputBoxes0[ _ ] := $Failed;
+
+expandNLInputBoxes0[ boxes__ ] := Quiet @ ToExpression[
+    RowBox @ { "System`HoldComplete", "[", boxes, "]" },
+    StandardForm,
+    expandNLInputBoxes1
+];
+
 expandNLInputBoxes0 // endDefinition;
+
+
+expandNLInputBoxes1 // beginDefinition;
+expandNLInputBoxes1[ HoldComplete[ q_String ] ] := expandNLInputBoxes1 @ SandboxLinguisticAssistantData @ q;
+expandNLInputBoxes1[ HoldComplete[ q_String, p_ ] ] := expandNLInputBoxes1 @ SandboxLinguisticAssistantData[ q, p ];
+expandNLInputBoxes1[ KeyValuePattern[ "Parse" -> HoldComplete[ expr_ ] ] ] := MakeBoxes @ expr;
+expandNLInputBoxes1[ _ ] := $Failed;
+expandNLInputBoxes1 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1608,9 +2147,11 @@ AppendURIInstructions // endExportedDefinition;
 (* Close previous sandbox kernel if package is being reloaded: *)
 Scan[ LinkClose, Select[ Links[ ], sandboxKernelQ ] ];
 
-If[ Wolfram`ChatbookInternal`$BuildingMX,
-    $messageOverrides;
+addToMXInitialization[
+    $generalMessageText;
     $initializationTest;
+    $messageOverrides;
+    $messageOverrideTemplates;
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)

@@ -1,27 +1,13 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`ChatHistory`" ];
+Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-HoldComplete[
-    `accentIncludedCells;
-    `chatExcludedQ;
-    `extraCellHeight;
-    `filterChatCells;
-    `getCellsInChatHistory;
-    `removeCellAccents;
-];
-
-Begin[ "`Private`" ];
-
-Needs[ "Wolfram`Chatbook`"              ];
-Needs[ "Wolfram`Chatbook`Actions`"      ];
-Needs[ "Wolfram`Chatbook`ChatMessages`" ];
-Needs[ "Wolfram`Chatbook`Common`"       ];
-Needs[ "Wolfram`Chatbook`FrontEnd`"     ];
-Needs[ "Wolfram`Chatbook`SendChat`"     ];
-Needs[ "Wolfram`Chatbook`Settings`"     ];
+Needs[ "Wolfram`Chatbook`"         ];
+Needs[ "Wolfram`Chatbook`Actions`" ];
+Needs[ "Wolfram`Chatbook`Common`"  ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -190,6 +176,8 @@ chatExcludedQ[ KeyValuePattern[ "ChatNotebookSettings" -> settings_ ] ] := chatE
 chatExcludedQ[ KeyValuePattern[ "ExcludeFromChat" -> exclude_ ] ] := TrueQ @ exclude;
 chatExcludedQ[ KeyValuePattern[ { } ] ] := False;
 chatExcludedQ[ Inherited ] := False;
+chatExcludedQ[ _? FailureQ ] := False;
+chatExcludedQ[ _FrontEnd`AbsoluteCurrentValue ] := False;
 
 chatExcludedQ // endDefinition;
 
@@ -282,8 +270,8 @@ extraCellHeight // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
-    Null;
+addToMXInitialization[
+    Null
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)

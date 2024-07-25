@@ -26,8 +26,6 @@ GetPersonaData[] returns information about all locally installed personas, inclu
 Calling GetPersonaData[] will additionally regenerate the cache used by GetCachedPersonaData.
 "];
 
-`$corePersonaNames;
-
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                   ];
@@ -35,7 +33,6 @@ Needs[ "Wolfram`Chatbook`Common`"            ];
 Needs[ "Wolfram`Chatbook`Errors`"            ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`"        ];
 Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
-Needs[ "Wolfram`Chatbook`Utils`"             ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -158,7 +155,7 @@ GetPersonaData[] := Module[{
 	pacletPersonas = KeySort @ Flatten @ Map[loadPacletPersonas, paclets];
 	personas = Merge[{resourcePersonas, pacletPersonas}, First];
 
-	$CachedPersonaData = RaiseConfirmMatch[
+	$CachedPersonaData = fixFEResourceBoxes @ RaiseConfirmMatch[
 		(* Show core personas first *)
 		standardizePersonaData /@ Join[KeyTake[personas, $corePersonaNames], KeySort[personas]],
 		_Association? AssociationQ
@@ -176,6 +173,13 @@ GetPersonaData[persona_?StringQ] := Module[{
 ]
 
 GetPersonaData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*fixFEResourceBoxes*)
+fixFEResourceBoxes // beginDefinition;
+fixFEResourceBoxes[ expr_ ] := expr /. Dynamic[ res_FEPrivate`FrontEndResource ] :> RawBoxes @ DynamicBox @ res;
+fixFEResourceBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -336,7 +340,7 @@ standardizePersonaData // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
+addToMXInitialization[
     loadPacletPersonas @ PacletObject[ "Wolfram/Chatbook" ];
 ];
 

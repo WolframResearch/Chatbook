@@ -7,17 +7,10 @@ BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                   ];
-Needs[ "Wolfram`Chatbook`ChatMessages`"      ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
-Needs[ "Wolfram`Chatbook`Formatting`"        ];
-Needs[ "Wolfram`Chatbook`Handlers`"          ];
-Needs[ "Wolfram`Chatbook`Models`"            ];
 Needs[ "Wolfram`Chatbook`Personas`"          ];
-Needs[ "Wolfram`Chatbook`Prompting`"         ];
 Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
-Needs[ "Wolfram`Chatbook`Sandbox`"           ];
 Needs[ "Wolfram`Chatbook`Serialization`"     ];
-Needs[ "Wolfram`Chatbook`Utils`"             ];
 
 HoldComplete[
     System`LLMTool;
@@ -61,17 +54,22 @@ $ToolFunctions = <|
 (* ::Section::Closed:: *)
 (*Tool Configuration*)
 $defaultWebTextLength    = 12000;
-$maximumWAPodByteCount   = 1000000;
 $toolResultStringLength := Ceiling[ $initialCellStringBudget/2 ];
 $webSessionVisible       = False;
 
 $DefaultToolOptions = <|
+    "WolframAlpha" -> <|
+        "DefaultPods"     -> False,
+        "FoldPods"        -> False,
+        "MaxPodByteCount" -> 1000000
+    |>,
     "WolframLanguageEvaluator" -> <|
-        "AppendURIPrompt"          -> False,
         "AllowedExecutePaths"      -> Automatic,
         "AllowedReadPaths"         -> All,
         "AllowedWritePaths"        -> Automatic,
+        "AppendURIPrompt"          -> False,
         "EvaluationTimeConstraint" -> 60,
+        "Method"                   -> Automatic,
         "PingTimeConstraint"       -> 30
     |>,
     "WebFetcher" -> <|
@@ -136,12 +134,29 @@ $appearanceRulesKeys = Keys @ $autoAppearanceRules;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Default Tools*)
-$defaultChatTools := If[ TrueQ @ $CloudEvaluation,
-                         KeyDrop[ $defaultChatTools0, $cloudUnsupportedTools ],
-                         $defaultChatTools0
-                     ];
+$defaultChatTools := (
+    reevaluateToolExpressions[ ];
+    If[ TrueQ @ $CloudEvaluation,
+        KeyDrop[ $defaultChatTools0, $cloudUnsupportedTools ],
+        $defaultChatTools0
+    ]
+);
 
 $defaultChatTools0 = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*reevaluateToolExpressions*)
+reevaluateToolExpressions // beginDefinition;
+
+reevaluateToolExpressions[ ] :=
+    If[ TrueQ @ Wolfram`ChatbookInternal`$BuildingMX,
+        Null,
+        $defaultChatTools0 = AssociationMap[ Identity, $defaultChatTools0 ];
+        reevaluateToolExpressions[ ] = Null
+    ];
+
+reevaluateToolExpressions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -189,6 +204,7 @@ toolName[ name_String, "Machine" ] := toMachineToolName @ name;
 toolName[ name_String, "Canonical" ] := toCanonicalToolName @ name;
 toolName[ name_String, "Display" ] := toDisplayToolName @ name;
 toolName[ tools_List, type_ ] := toolName[ #, type ] & /@ tools;
+toolName[ Inherited|ParentList, type_ ] := Missing[ "NotAvailable" ];
 toolName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -273,12 +289,16 @@ toolDefaultIcon // endDefinition;
 (*toolDefaultData*)
 toolDefaultData // beginDefinition;
 
-toolDefaultData[ name_String ] := <|
-    "CanonicalName" -> toCanonicalToolName @ name,
-    "DisplayName"   -> toDisplayToolName @ name,
-    "Name"          -> toMachineToolName @ name,
-    "Icon"          -> $defaultToolIcon
-|>;
+toolDefaultData[ name_String ] :=
+    With[ { mName = toMachineToolName @ name },
+        <|
+            "CanonicalName" -> toCanonicalToolName @ name,
+            "DisplayName"   -> toDisplayToolName @ name,
+            "Name"          -> mName,
+            "ShortName"     -> mName,
+            "Icon"          -> $defaultToolIcon
+        |>
+    ];
 
 toolDefaultData // endDefinition;
 
@@ -327,6 +347,18 @@ toDisplayToolName // endDefinition;
 formatToolCallExample // beginDefinition;
 
 formatToolCallExample[ name_String, params_Association ] :=
+    formatToolCallExample[ name, params, $ChatHandlerData[ "ChatNotebookSettings", "ToolMethod" ] ];
+
+formatToolCallExample[ name_String, params_Association, "Simple" ] := Enclose[
+    Module[ { command, values },
+        command = ConfirmBy[ toolShortName @ name, StringQ, "Command" ];
+        values = ConfirmMatch[ Values @ params, { ___String }, "Values" ];
+        TemplateApply[ "/`1`\n`2`\n/exec", { command, StringRiffle[ values, "\n" ] } ]
+    ],
+    throwInternalFailure
+];
+
+formatToolCallExample[ name_String, params_Association, _ ] :=
     TemplateApply[
         (* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDTOOLCALL *)
         "TOOLCALL: `1`\n`2`\nENDARGUMENTS\nENDTOOLCALL",
@@ -481,16 +513,20 @@ getToolNames[ as_Association ] :=
 getToolNames[ tools_, None ] := { };
 
 (* Persona wants default tools *)
-getToolNames[ tools_, Automatic|Inherited ] := getToolNames @ tools;
+getToolNames[ tools_, Automatic|Inherited|ParentList ] := getToolNames @ tools;
 
 (* Persona declares an explicit list of tools *)
 getToolNames[ Automatic|None|Inherited, personaTools_List ] := getToolNames @ personaTools;
+
+(* Persona inherits tools: *)
+getToolNames[ { parent___ }, { a___, ParentList, b___ } ] := getToolNames @ { a, parent, b };
 
 (* The user has specified an explicit list of tools as well, so include them *)
 getToolNames[ tools_List, personaTools_List ] := Union[ getToolNames @ tools, getToolNames @ personaTools ];
 
 (* Get name of each tool *)
-getToolNames[ tools_List ] := DeleteDuplicates @ Flatten[ getCachedToolName /@ tools ];
+getToolNames[ tools_List ] :=
+    DeleteDuplicates @ Flatten[ getCachedToolName /@ DeleteCases[ tools, $$unspecified|ParentList ] ];
 
 (* Default tools *)
 getToolNames[ Automatic|Inherited ] := Keys @ $DefaultTools;
@@ -518,7 +554,7 @@ getCachedToolName[ tool: HoldPattern[ _LLMTool ] ] := Enclose[
         $toolBox[ name ] = tool;
         name
     ],
-    throwInternalFailure[ getCachedToolName @ tool, ## ] &
+    throwInternalFailure
 ];
 
 getCachedToolName[ name_String ] :=
@@ -675,13 +711,99 @@ $toolConfiguration := $toolConfiguration = LLMConfiguration @ <| "Tools" -> Valu
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*toolRequestParser*)
-toolRequestParser := toolRequestParser =
-    Quiet[ Check[ $toolConfiguration[ "ToolRequestParser" ],
-                  Wolfram`LLMFunctions`LLMConfiguration`$DefaultTextualToolMethod[ "ToolRequestParser" ],
-                  LLMConfiguration::invprop
-           ],
-           LLMConfiguration::invprop
-    ];
+toolRequestParser // beginDefinition;
+
+toolRequestParser[ content_String ] := Enclose[
+    Catch @ Module[ { calls, toolName, paramsJSON, rawCallString, callPosition, bag, params },
+
+        calls = StringCases[
+            content,
+            StringExpression[
+                StartOfString,
+                Longest[ ___ ],
+                callString: StringExpression[
+                    "TOOLCALL: ",
+                    Shortest[ toolNameStr__ ],
+                    EndOfLine,
+                    Shortest[ paramsStr__ ],
+                    "ENDARGUMENTS",
+                    WhitespaceCharacter...,
+                    EndOfString
+                ]
+            ] :> { StringTrim @ toolNameStr, paramsStr, StringTrim @ callString }
+        ];
+
+        If[ Length @ calls =!= 1, Throw @ None ];
+        { toolName, paramsJSON, rawCallString } = First @ calls;
+        callPosition = Last @ StringPosition[ content, rawCallString ];
+        bag = Internal`Bag[ ];
+
+        params = Quiet @ Internal`HandlerBlock[ { "Message", jsonMessageHandler @ bag },
+                             Developer`ReadRawJSONString @ paramsJSON
+                         ];
+
+        If[ FailureQ @ params,
+            Throw @ { callPosition, Failure[ "InvalidJSON", <| "Message" -> makeJSONFailureMessage @ bag |> ] }
+        ];
+
+        {
+            callPosition,
+            System`LLMToolRequest[ toolName, Normal @ params, rawCallString<>"\nENDTOOLCALL" ]
+        }
+    ],
+    throwInternalFailure
+];
+
+toolRequestParser // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeJSONFailureMessage*)
+makeJSONFailureMessage // beginDefinition;
+
+makeJSONFailureMessage[ bag_Internal`Bag ] :=
+    makeJSONFailureMessage @ Internal`BagPart[ bag, All ];
+
+makeJSONFailureMessage[ messages: { __String } ] := StringRiffle[
+    Flatten @ { "Parsing arguments as JSON failed with the following messages:", "\t" <> # & /@ messages },
+    "\n"
+];
+
+makeJSONFailureMessage[ ___ ] :=
+    "Arguments were not valid JSON.";
+
+makeJSONFailureMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*jsonMessageHandler*)
+jsonMessageHandler // beginDefinition;
+
+jsonMessageHandler[ bag_Internal`Bag ] :=
+    jsonMessageHandler[ bag, # ] &;
+
+jsonMessageHandler[
+    bag_Internal`Bag,
+    Hold[ Message[ msg: MessageName[ Developer`ReadRawJSONString, tag__ ], params___ ], _ ]
+] := Enclose[
+    Module[ { template, args, string },
+        template = ConfirmBy[ If[ StringQ @ msg, msg, MessageName[ General, tag ] ], StringQ ];
+        args = ConfirmMatch[ messageParameterString /@ Unevaluated @ { params }, { ___String } ];
+        string = ConfirmBy[ TemplateApply[ template, args ], StringQ ];
+        Internal`StuffBag[ bag, string ]
+    ],
+    throwInternalFailure
+];
+
+jsonMessageHandler // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*messageParameterString*)
+messageParameterString // beginDefinition;
+messageParameterString // Attributes = { HoldAllComplete };
+messageParameterString[ expr_ ] := ToString[ Unevaluated @ Short[ expr, 1 ], PageWidth -> 80 ];
+messageParameterString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -689,11 +811,7 @@ toolRequestParser := toolRequestParser =
 simpleToolRequestParser // beginDefinition;
 
 simpleToolRequestParser[ string_String ] := Enclose[
-    Catch @ Module[
-        {
-            tools, commands, calls, command, argString, callString, callPos, tool, name, paramNames, argStrings,
-            padded, params
-        },
+    Catch @ Module[ { tools, commands, calls, command, argString, callString, callPos, tool, name, paramNames, params },
 
         tools = ConfirmMatch[ Values @ $selectedTools, { ___LLMTool }, "Tools" ];
         commands = ConfirmMatch[ toolShortName /@ tools, { ___String }, "Commands" ];
@@ -701,8 +819,14 @@ simpleToolRequestParser[ string_String ] := Enclose[
         (* TODO: return failure when trying to use an invalid tool command string *)
         calls = StringCases[
             StringDelete[ string, "/" ~~ commands ~~ ___ ~~ "/exec" ],
-            Longest[ StartOfString ~~ ___ ~~ StartOfLine ~~ s: ("/" ~~ (cmd: commands) ~~ args___) ~~ EndOfString ] :>
-                { StringTrim @ cmd, StringTrim @ args, s }
+            Longest @ StringExpression[
+                StartOfString,
+                ___,
+                StartOfLine,
+                WhitespaceCharacter...,
+                s: ("/" ~~ cmd: commands ~~ args___),
+                EndOfString
+            ] :> { StringTrim @ cmd, StringTrim @ args, s }
         ];
 
         If[ calls === { }, Throw @ None ];
@@ -712,14 +836,10 @@ simpleToolRequestParser[ string_String ] := Enclose[
         callPos = ConfirmMatch[ Last[ StringPosition[ string, callString ], $Failed ], { __Integer }, "CallPosition" ];
         tool = ConfirmMatch[ AssociationThread[ commands -> tools ][ command ], _LLMTool, "Tool" ];
 
-        name = ConfirmBy[ tool[[ 1, "Name" ]], StringQ, "ToolName" ];
+        name = ConfirmBy[ tool[ "Name" ], StringQ, "ToolName" ];
 
-        paramNames = Keys @ ConfirmMatch[ tool[[ 1, "Parameters" ]], KeyValuePattern @ { }, "ParameterNames" ];
-        argStrings = If[ Length @ paramNames === 1, { argString }, StringSplit[ argString, "\n" ] ];
-        If[ Length @ argStrings > Length @ paramNames, Throw @ None ];
-
-        padded = PadRight[ argStrings, Length @ paramNames, "" ];
-        params = Normal @ ConfirmBy[ AssociationThread[ paramNames -> padded ], AssociationQ, "Parameters" ];
+        paramNames = Keys @ ConfirmMatch[ tool[ "Parameters" ], KeyValuePattern @ { }, "ParameterNames" ];
+        params = ConfirmBy[ parseSimpleToolCallParameterStrings[ paramNames, argString ], AssociationQ, "Parameters" ];
 
         { callPos, LLMToolRequest[ name, params, callString ] }
     ],
@@ -730,9 +850,55 @@ simpleToolRequestParser // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*parseSimpleToolCallParameterStrings*)
+parseSimpleToolCallParameterStrings // beginDefinition;
+
+parseSimpleToolCallParameterStrings[ { param_String }, argString_String ] :=
+    <| param -> StringDelete[ argString, StartOfString ~~ WhitespaceCharacter... ~~ param ~~ ":" ~~ " "... ] |>;
+
+parseSimpleToolCallParameterStrings[ paramNames: { __String }, argString_String ] := Enclose[
+    Catch @ Module[ { namedSplit, defaults, pairs },
+        namedSplit = StringSplit[ argString, StartOfLine ~~ (" "|"\t")... ~~ p: paramNames ~~ ":" ~~ " "... :> p ];
+        If[ OddQ @ Length @ namedSplit, Throw @ parseSimpleToolCallParameterStrings0[ paramNames, argString ] ];
+        defaults = AssociationMap[ "" &, paramNames ];
+        pairs = ConfirmMatch[ Partition[ namedSplit, 2 ], { { _String, _String } .. }, "Pairs" ];
+        ConfirmBy[ <| defaults, Rule @@@ pairs |>, AssociationQ, "Parameters" ]
+    ],
+    throwInternalFailure
+];
+
+parseSimpleToolCallParameterStrings // endDefinition;
+
+
+parseSimpleToolCallParameterStrings0 // beginDefinition;
+
+parseSimpleToolCallParameterStrings0[ paramNames: { __String }, argString_String ] := Enclose[
+    Module[ { split, padded },
+        split = StringSplit[ argString, "\n" ];
+        padded = PadRight[ split, Length @ paramNames, "" ];
+        ConfirmBy[ AssociationThread[ paramNames -> padded ], AssociationQ, "Parameters" ]
+    ],
+    throwInternalFailure
+];
+
+parseSimpleToolCallParameterStrings0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*toolShortName*)
 toolShortName // beginDefinition;
-toolShortName[ $$llmToolH[ as_Association, ___ ] ] := Lookup[ as, "ShortName", Lookup[ as, "Name" ] ];
+
+toolShortName[ $$llmToolH[ as_Association, ___ ] ] :=
+    toolShortName @ as;
+
+toolShortName[ as_Association ] :=
+    Lookup[ as, "ShortName", Lookup[ as, "Name" ] ];
+
+toolShortName[ name_String ] :=
+    With[ { tool = getToolByName @ name },
+        toolShortName @ tool /; MatchQ[ tool, $$llmTool ]
+    ];
+
 toolShortName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -794,11 +960,19 @@ getToolPostPrompt // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getToolExamplePrompt*)
 getToolExamplePrompt // beginDefinition;
-getToolExamplePrompt[ as_Association ] := getToolExamplePrompt[ as, as[ "ToolMethod" ], as[ "ToolExamplePrompt" ] ];
-getToolExamplePrompt[ as_, "Simple", $$unspecified ] := Nothing;
-getToolExamplePrompt[ as_, method_, $$unspecified ] := $fullExamples;
-getToolExamplePrompt[ as_, method_, prompt: $$template ] := prompt;
-getToolExamplePrompt[ as_, method_, None ] := Nothing;
+
+getToolExamplePrompt[ as_Association ] :=
+    getToolExamplePrompt[ as, as[ "ToolMethod" ], as[ "ToolExamplePrompt" ], as[ "ToolCallExamplePromptStyle" ] ];
+
+getToolExamplePrompt[ as_, method_, $$unspecified, style_String ] :=
+    Block[ { $messageTemplateType = style }, $fullExamples ];
+
+getToolExamplePrompt[ as_, method_, prompt: $$template, style_ ] :=
+    prompt;
+
+getToolExamplePrompt[ as_, method_, None, style_ ] :=
+    Nothing;
+
 getToolExamplePrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -843,7 +1017,19 @@ You did not create these tools, so you do not know what they can and cannot do.
 
 You should try to avoid mentioning tools by name in your response and instead speak generally about their function. \
 For example, if there were a number_adder tool, you would instead talk about \"adding numbers\". If you must mention \
-a tool by name, you should use the DisplayName property instead of the tool name.";
+a tool by name, you should use the DisplayName property instead of the tool name.
+
+IMPORTANT! If a tool call fails to give the desired result for any reason, \
+you MUST write /retry before making the next tool call:
+
+/retry
+TOOLCALL: <tool name>
+<new parameters>
+ENDARGUMENTS
+ENDTOOLCALL
+
+This will hide the previous tool call in a collapsed section that the user can open if they wish to see prior attempts.
+If you fail to do this, the user will have a hard time knowing which tool calls contain the correct results.";
 
 
 $toolListing = {
@@ -915,7 +1101,7 @@ simpleToolSchema[ as_Association ] := Enclose[
 
         data        = ConfirmBy[ toolData @ as, AssociationQ, "Data" ];
         name        = ConfirmBy[ toolName[ data, "Display" ], StringQ, "Name" ];
-        command     = ConfirmBy[ Lookup[ data, "ShortName", toolName[ data, "Canonical" ] ], StringQ, "ShortName" ];
+        command     = ConfirmBy[ toolShortName @ data, StringQ, "ShortName" ];
         description = ConfirmBy[ data[ "Description" ], StringQ, "Description" ];
         args        = ConfirmMatch[ as[ "Parameters" ], KeyValuePattern @ { }, "Arguments" ];
         argStrings  = ConfirmMatch[ simpleArgStrings @ args, { __String }, "ArgStrings" ];
@@ -1026,8 +1212,8 @@ $toolFrequencyExplanations = <|
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-If[ Wolfram`ChatbookInternal`$BuildingMX,
-    Null;
+addToMXInitialization[
+    Null
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)
