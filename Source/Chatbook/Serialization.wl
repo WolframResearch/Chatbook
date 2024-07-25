@@ -1265,6 +1265,16 @@ fasterCellToString0[
     ]
 ] := "[" <> fasterCellToString0 @ label <> "](" <> TextString @ url <> ")";
 
+fasterCellToString0[ TemplateBox[ { label_, url_String | URL[ url_String ] }, "HyperlinkURL", ___ ] ] :=
+    Block[ { $showStringCharacters = False },
+        "[" <> fasterCellToString0 @ label <> "](" <> url <> ")"
+    ];
+
+fasterCellToString0[ TemplateBox[ { label_, { url_String | URL[ url_String ], _ }, _ }, "HyperlinkDefault", ___ ] ] :=
+    Block[ { $showStringCharacters = False },
+        "[" <> fasterCellToString0 @ label <> "](" <> url <> ")"
+    ];
+
 (* TeXAssistantTemplate *)
 fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> string_ ], "TeXAssistantTemplate", ___ ] ] := (
     needsBasePrompt[ "Math" ];
