@@ -193,7 +193,7 @@ multimodalModelQ[ "gpt-4-turbo" ] :=
 multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "claude-3" ] :=
     True;
 
-multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4o" ] :=
+multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4o"|"gpt-4o-mini" ] :=
     True;
 
 multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4-turbo-" ] :=
@@ -561,8 +561,8 @@ resolveFullModelSpec // beginDefinition;
 resolveFullModelSpec[ settings: KeyValuePattern[ "Model" -> model_ ] ] :=
     resolveFullModelSpec @ model;
 
-resolveFullModelSpec[ { service_String, Automatic } ] :=
-    resolveFullModelSpec @ <| "Service" -> service, "Name" -> Automatic |>;
+resolveFullModelSpec[ { service_String, name_ } ] :=
+    resolveFullModelSpec @ <| "Service" -> service, "Name" -> name |>;
 
 resolveFullModelSpec[ model: KeyValuePattern @ { "Service" -> service_String, "Name" -> Automatic } ] := Enclose[
     Catch @ Module[ { default, models, name },
