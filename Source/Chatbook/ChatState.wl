@@ -86,11 +86,14 @@ withChatEvaluationCell[ cell_CellObject, eval_ ] :=
             eval
         ]
         ,
-        $ChatEvaluationCell = None;
-        If[ $CloudEvaluation,
-            (* Workaround for dynamic in send/stop button not updating in cloud: *)
-            NotebookWrite[ cell, NotebookRead @ cell, None, AutoScroll -> False ]
-        ]
+        (* CompoundExpression cannot be used here due to bug(450686): *)
+        {
+            $ChatEvaluationCell = None,
+            If[ $CloudEvaluation,
+                (* Workaround for dynamic in send/stop button not updating in cloud: *)
+                NotebookWrite[ cell, NotebookRead @ cell, None, AutoScroll -> False ]
+            ]
+        }
     ];
 
 withChatEvaluationCell // endDefinition;
