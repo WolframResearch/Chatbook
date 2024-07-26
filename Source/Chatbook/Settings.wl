@@ -710,7 +710,7 @@ setCurrentChatSettings1[ scope: $$feObj, Inherited ] := WithCleanup[
         CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" } ] = Inherited
     ],
     (* Invalidate cache *)
-    $currentSettingsCache = <| |>
+    If[ AssociationQ @ $currentSettingsCache, $currentSettingsCache = <| |> ]
     (* Note: It may be more slightly more efficient to just invalidate for the given `scope`, but that would require
        also finding scopes that `scope` inherits from and invalidating those as well. This is much simpler. *)
 ];
@@ -723,7 +723,7 @@ setCurrentChatSettings1[ scope: $$feObj, value_ ] :=
                 CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings" } ] = as
             ],
             (* Invalidate cache *)
-            $currentSettingsCache = <| |>
+            If[ AssociationQ @ $currentSettingsCache, $currentSettingsCache = <| |> ]
         ] /; AssociationQ @ as
     ];
 
@@ -733,7 +733,7 @@ setCurrentChatSettings1[ scope: $$feObj, key_String? StringQ, value_ ] := WithCl
         CurrentValue[ scope, { TaggingRules, "ChatNotebookSettings", key } ] = value
     ],
     (* Invalidate cache *)
-    $currentSettingsCache = <| |>
+    If[ AssociationQ @ $currentSettingsCache, $currentSettingsCache = <| |> ]
 ];
 
 setCurrentChatSettings1 // endDefinition;
