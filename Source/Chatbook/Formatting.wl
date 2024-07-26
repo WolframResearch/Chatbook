@@ -2540,7 +2540,6 @@ stringToBoxes // endDefinition;
 
 
 stringToBoxes0 // beginDefinition;
-stringToBoxes0[ RowBox @ { a___, b: "\n"|"\[IndentingNewLine]", c___ } ] := stringToBoxes0 @ { a, b, c };
 stringToBoxes0[ boxes_? boxDataQ ] := boxes;
 stringToBoxes0 // endDefinition;
 
