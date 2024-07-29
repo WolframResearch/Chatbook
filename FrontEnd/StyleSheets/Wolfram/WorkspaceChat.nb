@@ -60,7 +60,7 @@ Notebook[
   ],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.4.6.3930718414"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.4.8.3931260998"|>
   ],
   Cell[
    StyleData["ChatInput"],
@@ -158,43 +158,38 @@ Notebook[
        {
         None ->
          ButtonBox[
-          TemplateBox[{#1, #2}, "SendChatButtonLabel"],
+          TemplateBox[{#1, #2, #3}, "SendChatButtonLabel"],
           ButtonFunction :>
            (Needs["Wolfram`Chatbook`" -> None];
            Symbol["Wolfram`Chatbook`ChatbookAction"][
             "EvaluateWorkspaceChat",
-            #3,
+            #4,
             Dynamic[
-             CurrentValue[#3, {TaggingRules, "ChatInputString"}]
+             CurrentValue[#4, {TaggingRules, "ChatInputString"}]
             ]
            ]),
+          Appearance ->
+           FEPrivate`FrontEndResource[
+            "FEExpressions",
+            "SuppressMouseDownNinePatchAppearance"
+           ],
           FrameMargins -> 0,
           Method -> "Queued",
-          Appearance -> Automatic,
           Evaluator -> Automatic
          ]
        },
        Dynamic[Wolfram`Chatbook`$ChatEvaluationCell],
        ButtonBox[
-        OverlayBox[
-         {
-          TemplateBox[{#2}, "ChatEvaluatingSpinner"],
-          GraphicsBox[
-           {
-            RGBColor[0.71373, 0.054902, 0.0],
-            RectangleBox[{-0.5, -0.5}, {0.5, 0.5}]
-           },
-           ImageSize -> #2,
-           PlotRange -> 1.1
-          ]
-         },
-         Alignment -> {Center, Center}
-        ],
+        TemplateBox[{#1, #2, #3}, "StopChatButtonLabel"],
         ButtonFunction :>
          (Needs["Wolfram`Chatbook`" -> None];
          Symbol["Wolfram`Chatbook`ChatbookAction"]["StopChat"]),
+        Appearance ->
+         FEPrivate`FrontEndResource[
+          "FEExpressions",
+          "SuppressMouseDownNinePatchAppearance"
+         ],
         FrameMargins -> 0,
-        Appearance -> Automatic,
         Evaluator -> Automatic,
         Method -> "Preemptive"
        ],
