@@ -134,32 +134,24 @@ Cell[
         DisplayFunction -> Function @ Evaluate @ ToBoxes @ PaneSelector[
             {
                 None -> Button[
-                    RawBoxes @ TemplateBox[ { #1, #2 }, "SendChatButtonLabel" ],
+                    RawBoxes @ TemplateBox[ { #1, #2, #3 }, "SendChatButtonLabel" ],
                     Needs[ "Wolfram`Chatbook`" -> None ];
                     Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
                         "EvaluateWorkspaceChat",
-                        #3,
-                        Dynamic @ CurrentValue[ #3, { TaggingRules, "ChatInputString" } ]
+                        #4,
+                        Dynamic @ CurrentValue[ #4, { TaggingRules, "ChatInputString" } ]
                     ],
+                    Appearance   -> "Suppressed",
                     FrameMargins -> 0,
                     Method       -> "Queued"
                 ]
             },
             Dynamic @ Wolfram`Chatbook`$ChatEvaluationCell,
             Button[
-                Overlay[
-                    {
-                        RawBoxes @ TemplateBox[ { #2 }, "ChatEvaluatingSpinner" ],
-                        Graphics[
-                            { RGBColor[ 0.71373, 0.054902, 0.0 ], Rectangle[ { -0.5, -0.5 }, { 0.5, 0.5 } ] },
-                            ImageSize -> #2,
-                            PlotRange -> 1.1
-                        ]
-                    },
-                    Alignment -> { Center, Center }
-                ],
+                RawBoxes @ TemplateBox[ { #1, #2, #3 }, "StopChatButtonLabel" ],
                 Needs[ "Wolfram`Chatbook`" -> None ];
                 Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
+                Appearance   -> "Suppressed",
                 FrameMargins -> 0
             ],
             Alignment -> { Automatic, Baseline }

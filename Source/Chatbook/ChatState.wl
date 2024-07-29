@@ -120,7 +120,13 @@ forceRedrawCellFrameLabels // endDefinition;
 
 
 $defaultCellFrameLabels = {
-    { None, Cell[ BoxData @ TemplateBox[ { RGBColor[ "#a3c9f2" ], 20 }, "SendChatButton" ], Background -> None ] },
+    {
+        None,
+        Cell[
+            BoxData @ TemplateBox[ { RGBColor[ "#a3c9f2" ], RGBColor[ "#f1f7fd" ], 20 }, "SendChatButton" ],
+            Background -> None
+        ]
+    },
     { None, None }
 };
 
