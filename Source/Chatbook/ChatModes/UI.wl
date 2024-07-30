@@ -117,7 +117,10 @@ $attachedWorkspaceChatInputCell := $attachedWorkspaceChatInputCell = Cell[
                                 ],
                                 $inputFieldFrameOptions
                             ],
-                            RawBoxes @ TemplateBox[ { RGBColor[ "#a3c9f2" ], 27, thisNB }, "WorkspaceSendChatButton" ]
+                            RawBoxes @ TemplateBox[
+                                { RGBColor[ "#a3c9f2" ], RGBColor[ "#f1f7fd" ], 27, thisNB },
+                                "WorkspaceSendChatButton"
+                            ]
                         }
                     },
                     BaseStyle -> { Magnification -> $inputFieldGridMagnification }
@@ -317,7 +320,10 @@ inlineChatInputField[
                             $inputFieldFrameOptions
                         ],
                         (* FIXME: this needs a custom button *)
-                        RawBoxes @ inlineTemplateBox @ TemplateBox[ { RGBColor[ "#a3c9f2" ], 27 }, "SendChatButton" ],
+                        RawBoxes @ inlineTemplateBox @ TemplateBox[
+                            { RGBColor[ "#a3c9f2" ], RGBColor[ "#f1f7fd" ], 27 },
+                            "SendChatButton"
+                        ],
                         Style[
                             ActionMenu[
                                 "More",

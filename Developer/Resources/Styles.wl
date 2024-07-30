@@ -147,7 +147,13 @@ Cell[
     StyleKeyMapping       -> { "~" -> "ChatDelimiter", "'" -> "SideChat", "=" -> "WolframAlphaShort", "*" -> "Item" },
     TaggingRules          -> <| "ChatNotebookSettings" -> <| |> |>,
     CellFrameLabels -> {
-        { None, Cell[ BoxData @ TemplateBox[ { RGBColor[ "#a3c9f2" ], 20 }, "SendChatButton" ], Background -> None ] },
+        {
+            None,
+            Cell[
+                BoxData @ TemplateBox[ { RGBColor[ "#a3c9f2" ], RGBColor[ "#f1f7fd" ], 20 }, "SendChatButton" ],
+                Background -> None
+            ]
+        },
         { None, None }
     },
 	CellDingbat -> Cell[
@@ -1135,7 +1141,7 @@ Cell[
 		DisplayFunction -> (
 			NamespaceBox["ChatbookPersonaID",
 				DynamicModuleBox[{},
-					DynamicBox[ToBoxes @ Wolfram`Chatbook`InlineReferences`personaTemplateBoxes[1, #input, #state, #uuid]],
+					DynamicBox[ToBoxes @ Wolfram`Chatbook`Common`personaTemplateBoxes[1, #input, #state, #uuid]],
 					Initialization :> (
 						Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
 						Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = EvaluationCell[ ]
@@ -1157,7 +1163,7 @@ Cell[
 		DisplayFunction -> (
 			NamespaceBox["ChatbookModifierID",
 				DynamicModuleBox[{},
-					DynamicBox[ToBoxes @ Wolfram`Chatbook`InlineReferences`modifierTemplateBoxes[1, #input, #params, #state, #uuid]],
+					DynamicBox[ToBoxes @ Wolfram`Chatbook`Common`modifierTemplateBoxes[1, #input, #params, #state, #uuid]],
 					Initialization :> (
 						Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
 						Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = EvaluationCell[ ]
@@ -1179,7 +1185,7 @@ Cell[
 		DisplayFunction -> (
 			NamespaceBox["ChatbookFunctionID",
 				DynamicModuleBox[{},
-					DynamicBox[ToBoxes @ Wolfram`Chatbook`InlineReferences`functionTemplateBoxes[1, #input, #params, #state, #uuid]],
+					DynamicBox[ToBoxes @ Wolfram`Chatbook`Common`functionTemplateBoxes[1, #input, #params, #state, #uuid]],
 					Initialization :> (
 						Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
 						Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = EvaluationCell[ ]
@@ -1201,7 +1207,7 @@ Cell[
 		DisplayFunction -> (
 			NamespaceBox["ChatbookWLTemplateID",
 				DynamicModuleBox[{},
-					DynamicBox[ToBoxes @ Wolfram`Chatbook`InlineReferences`wlTemplateBoxes[1, #input, #state, #uuid]],
+					DynamicBox[ToBoxes @ Wolfram`Chatbook`Common`wlTemplateBoxes[1, #input, #state, #uuid]],
 					Initialization :> (
 						Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
 						Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = EvaluationCell[ ]
