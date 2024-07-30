@@ -24,7 +24,10 @@ $$newCellStyle = Alternatives[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Explode Cell*)
+(*ExplodeCell*)
+ExplodeCell // beginDefinition;
+ExplodeCell[ cell_Cell ] := catchMine @ explodeCell @ cell;
+ExplodeCell // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -76,7 +79,7 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
     ] :> cell,
 
     (* Convert "ChatCodeInlineTemplate" to "InlineCode" cells: *)
-    Cell[ BoxData[ TemplateBox[ { boxes_ }, "ChatCodeInlineTemplate" ], ___ ], "ChatCode"|"ChatCodeActive", ___ ] :>
+    Cell[ BoxData[ TemplateBox[ { boxes_ }, "ChatCodeInlineTemplate", ___ ], ___ ], "ChatCode"|"ChatCodeActive", ___ ] :>
         Cell[ BoxData @ boxes, "InlineCode" ],
 
     (* Remove "ChatCode" styling: *)
@@ -89,7 +92,7 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
     Cell[ text_, "ChatPreformatted", ___ ] :> Cell[ text, "Program" ],
 
     (* Remove "ChatCodeBlockTemplate" template boxes: *)
-    TemplateBox[ { cell_Cell }, "ChatCodeBlockTemplate" ] :> cell,
+    TemplateBox[ { cell_Cell }, "ChatCodeBlockTemplate", ___ ] :> cell,
 
     (* Remove nested cells: *)
     Cell @ BoxData[ cell_Cell, ___ ] :> cell,
