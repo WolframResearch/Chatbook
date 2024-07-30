@@ -37,46 +37,6 @@ If[ ! PacletNewerQ[ Wolfram`ChatbookStartupDump`$versionString, "13.3.0" ],
     ]
 ]
 
-(*--------------------------------*)
-(* Adds Help > Code Assistance... *)
-(*--------------------------------*)
-(* Once code assistance is ready, this "14.1.0" can be changed to "14.0.0" to enable it for 14.1 users: *)
-If[ PacletNewerQ[ Wolfram`ChatbookStartupDump`$versionString, "14.1.0" ],
-	Once[
-		FrontEndExecute @ {
-			FrontEnd`AddMenuCommands[
-				"OpenHelpLink",
-				{
-					MenuItem[
-						"Code Assistance Chat\[Ellipsis]",
-						FrontEnd`KernelExecute[
-							Needs[ "Wolfram`Chatbook`" -> None ];
-							Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Window" ]
-						],
-						FrontEnd`MenuEvaluator -> Automatic,
-						Evaluate[
-							If[ $OperatingSystem === "MacOSX",
-								FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Control } ],
-								FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Command } ]
-							]
-						]
-					],
-					MenuItem[
-						"Code Assistance for Selection",
-						FrontEnd`KernelExecute[
-							Needs[ "Wolfram`Chatbook`" -> None ];
-							Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Inline" ]
-						],
-						FrontEnd`MenuEvaluator -> Automatic,
-						FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Control, FrontEnd`Shift } ]
-					]
-				}
-			]
-		},
-		"FrontEndSession"
-	]
-]
-
 (*----------------------------*)
 (* Add CreateNotebook["Chat"] *)
 (*----------------------------*)
