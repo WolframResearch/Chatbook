@@ -15,6 +15,12 @@ Needs[ "Wolfram`Chatbook`"            ];
 Needs[ "Wolfram`Chatbook`Common`"     ];
 Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
 
+
+(* FIXME:
+    Serialize strike-through:
+        StyleBox[..., FontVariations -> {"StrikeThrough" -> True}]
+*)
+
 (* TODO:
 
     There should be a way to pass custom serialization rules in chat settings, e.g.
@@ -142,7 +148,7 @@ $conversionRules = None;
 
 (* Add spacing around these operators *)
 $$spacedInfixOperator = Alternatives[
-    "^", "*", "+", "=", "|", "<", ">", "?", "/", ":", "!=", "@*", "^=", "&&", "*=", "-=", "->", "+=", "==", "~~",
+    "^", "*", "+", "-", "=", "|", "<", ">", "?", "/", ":", "!=", "@*", "^=", "&&", "*=", "-=", "->", "+=", "==", "~~",
     "||", "<=", "<>", ">=", ";;", "/@", "/*", "/=", "/.", "/;", ":=", ":>", "::", "^:=", "=!=", "===", "|->", "<->",
     "//@", "//.", "\[Equal]", "\[GreaterEqual]", "\[LessEqual]", "\[NotEqual]", "\[Function]", "\[Rule]",
     "\[RuleDelayed]", "\[TwoWayRule]"
@@ -2268,6 +2274,7 @@ sowMessageData[ ___ ] := Null;
 (*showStringCharactersQ*)
 showStringCharactersQ[ Cell[ __, "TextTableForm", ___ ] ] := False;
 showStringCharactersQ[ Cell[ __, "MoreInfoText", ___ ] ] := False;
+showStringCharactersQ[ Cell[ _, OptionsPattern[ ] ] ] := False;
 showStringCharactersQ[ ___ ] := True;
 
 (* ::**************************************************************************************************************:: *)
