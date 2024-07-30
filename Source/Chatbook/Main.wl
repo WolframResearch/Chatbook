@@ -39,6 +39,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `CreateChatNotebook;
 `CurrentChatSettings;
 `DisplayBase64Boxes;
+`EnableCodeAssistance;
 `ExplodeCell;
 `FormatChatOutput;
 `FormatToolCall;
@@ -159,6 +160,7 @@ Protect[
     CreateChatNotebook,
     CurrentChatSettings,
     DisplayBase64Boxes,
+    EnableCodeAssistance,
     ExplodeCell,
     FormatChatOutput,
     FormatToolCall,
