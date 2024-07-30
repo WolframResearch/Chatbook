@@ -24,7 +24,10 @@ $$newCellStyle = Alternatives[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Explode Cell*)
+(*ExplodeCell*)
+ExplodeCell // beginDefinition;
+ExplodeCell[ cell_Cell ] := catchMine @ explodeCell @ cell;
+ExplodeCell // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

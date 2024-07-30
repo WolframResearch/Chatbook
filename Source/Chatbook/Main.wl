@@ -39,6 +39,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `CreateChatNotebook;
 `CurrentChatSettings;
 `DisplayBase64Boxes;
+`ExplodeCell;
 `FormatChatOutput;
 `FormatToolCall;
 `FormatToolResponse;
@@ -46,6 +47,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `GetChatHistory;
 `GetExpressionURI;
 `GetExpressionURIs;
+`InlineTemplateBoxes;
 `InvalidateServiceCache;
 `MakeExpressionURI;
 `SandboxLinguisticAssistantData;
@@ -157,6 +159,7 @@ Protect[
     CreateChatNotebook,
     CurrentChatSettings,
     DisplayBase64Boxes,
+    ExplodeCell,
     FormatChatOutput,
     FormatToolCall,
     FormatToolResponse,
@@ -164,6 +167,7 @@ Protect[
     GetChatHistory,
     GetExpressionURI,
     GetExpressionURIs,
+    InlineTemplateBoxes,
     MakeExpressionURI,
     SandboxLinguisticAssistantData,
     SetModel,
