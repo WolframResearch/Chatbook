@@ -370,17 +370,17 @@ uriData // endDefinition;
 (*exportDataURI*)
 exportDataURI // beginDefinition;
 
-exportDataURI[ data_ ] :=
+exportDataURI[ data_, opts: OptionsPattern[ ] ] :=
     With[ { mime = guessExpressionMimeType @ data },
-        exportDataURI[ data, mimeTypeToFormat @ mime, mime ]
+        exportDataURI[ data, mimeTypeToFormat @ mime, mime, opts ]
     ];
 
-exportDataURI[ data_, fmt_String ] :=
-    exportDataURI[ data, fmt, formatToMIMEType @ fmt ];
+exportDataURI[ data_, fmt_String, opts: OptionsPattern[ ] ] :=
+    exportDataURI[ data, fmt, formatToMIMEType @ fmt, opts ];
 
-exportDataURI[ data_, fmt_String, mime_String ] := Enclose[
+exportDataURI[ data_, fmt_String, mime_String, opts: OptionsPattern[ ] ] := Enclose[
     Module[ { base64 },
-        base64 = ConfirmBy[ usingFrontEnd @ ExportString[ data, { "Base64", fmt } ], StringQ, "Base64" ];
+        base64 = ConfirmBy[ usingFrontEnd @ ExportString[ data, { "Base64", fmt }, opts ], StringQ, "Base64" ];
         "data:" <> mime <> ";base64," <> StringDelete[ base64, "\n" ]
     ],
     throwInternalFailure

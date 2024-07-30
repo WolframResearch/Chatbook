@@ -180,7 +180,7 @@ addExtraToolData // endDefinition;
 (* ::Subsection::Closed:: *)
 (*getToolByName*)
 getToolByName // beginDefinition;
-getToolByName[ name_String ] := Lookup[ $toolBox, toCanonicalToolName @ name ];
+getToolByName[ name_String ] := Lookup[ $AvailableTools, toCanonicalToolName @ name ];
 getToolByName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -896,7 +896,10 @@ toolShortName[ as_Association ] :=
 
 toolShortName[ name_String ] :=
     With[ { tool = getToolByName @ name },
-        toolShortName @ tool /; MatchQ[ tool, $$llmTool ]
+        If[ MatchQ[ tool, $$llmTool ],
+            toolShortName @ tool,
+            name
+        ]
     ];
 
 toolShortName // endDefinition;

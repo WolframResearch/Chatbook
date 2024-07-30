@@ -19,6 +19,51 @@ $workspaceChatNotebookOptions = Sequence[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*EnableCodeAssistance*)
+EnableCodeAssistance // beginDefinition;
+EnableCodeAssistance[ ] := catchMine @ Once[ enableCodeAssistance[ ]; Null, "FrontEndSession" ];
+EnableCodeAssistance // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*enableCodeAssistance*)
+enableCodeAssistance // beginDefinition;
+
+enableCodeAssistance[ ] := FrontEndExecute @ {
+    FrontEnd`AddMenuCommands[
+        "OpenHelpLink",
+        {
+            MenuItem[
+                "Code Assistance Chat\[Ellipsis]",
+                FrontEnd`KernelExecute[
+                    Needs[ "Wolfram`Chatbook`" -> None ];
+                    Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Window" ]
+                ],
+                FrontEnd`MenuEvaluator -> Automatic,
+                Evaluate[
+                    If[ $OperatingSystem === "MacOSX",
+                        FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Control } ],
+                        FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Command } ]
+                    ]
+                ]
+            ],
+            MenuItem[
+                "Code Assistance for Selection",
+                FrontEnd`KernelExecute[
+                    Needs[ "Wolfram`Chatbook`" -> None ];
+                    Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Inline" ]
+                ],
+                FrontEnd`MenuEvaluator -> Automatic,
+                FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Control, FrontEnd`Shift } ]
+            ]
+        }
+    ]
+};
+
+enableCodeAssistance // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*ShowCodeAssistance*)
 ShowCodeAssistance // beginDefinition;
 ShowCodeAssistance[ ] := catchMine @ ShowCodeAssistance[ "Window" ];

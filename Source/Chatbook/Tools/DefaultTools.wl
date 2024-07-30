@@ -730,7 +730,7 @@ user // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*assistant*)
 assistant // beginDefinition;
-assistant[ { a___, "tool" -> { name_String, as_Association }, b___ } ] := assistant @ { a, toolCall[ name, as ], b };
+assistant[ { a___, "tool"|"Tool" -> { name_, as_ }, b___ } ] := assistant @ { a, toolCall[ name, as ], b };
 assistant[ a_List ] := TemplateApply[ messageTemplate[ "Assistant" ], StringRiffle[ TextString /@ Flatten @ a, "\n" ] ];
 assistant[ a_String ] := assistant @ { a };
 assistant // endDefinition;
@@ -754,14 +754,15 @@ toolCall // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*toolExample*)
 toolExample // beginDefinition;
-toolExample[ rules: (_Rule|_String).. ] := StringRiffle[ toolExample0 /@ { rules }, "\n\n" ];
+toolExample[ { rules: (_Rule|_String)... } ] := StringRiffle[ toolExample0 /@ { rules }, "\n\n" ];
+toolExample[ rules: (_Rule|_String)... ] := toolExample @ { rules };
 toolExample // endDefinition;
 
 toolExample0 // beginDefinition;
-toolExample0[ "user"      -> message_ ] := user      @ message;
-toolExample0[ "assistant" -> message_ ] := assistant @ message;
-toolExample0[ "system"    -> message_ ] := system    @ message;
-toolExample0[ prompt_String           ] := prompt;
+toolExample0[ "user"|"User"           -> message_ ] := user      @ message;
+toolExample0[ "assistant"|"Assistant" -> message_ ] := assistant @ message;
+toolExample0[ "system"|"System"       -> message_ ] := system    @ message;
+toolExample0[ prompt_String                       ] := prompt;
 toolExample0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
