@@ -19,7 +19,7 @@ $preferencesWidth        = 640;
 $cloudPreferencesHeight  = 400;
 $cloudEvaluationNotebook = None;
 
-$preferencesPages = { "Notebooks", "Services", "Personas", "Tools" };
+$preferencesPages = { "Services", "Notebooks", "Personas", "Tools" };
 $$preferencesPage = Alternatives @@ $preferencesPages;
 
 $preferencesScope := $FrontEnd;
@@ -324,7 +324,7 @@ makeDefaultSettingsContent[ ] := Enclose[
         (* The personaSelector is a pop-up menu for selecting the default persona: *)
         personaSelector = ConfirmMatch[ makePersonaSelector[ ], _Dynamic, "PersonaSelector" ];
         (* The modelSelector is a dynamic module containing menus to select the service and model separately: *)
-        modelSelector = ConfirmMatch[ makeModelSelector[ ], _Dynamic, "ModelSelector" ];
+        modelSelector = ConfirmMatch[ makeModelSelector[ "Notebooks" ], _Dynamic, "ModelSelector" ];
         (* The temperatureInput is an input field for setting the default 'temperature' for responses: *)
         temperatureInput = ConfirmMatch[ makeTemperatureInput[ ], _Style, "TemperatureInput" ];
         (* The openAICompletionURLInput is an input field for setting URL used for API calls to OpenAI: *)
@@ -402,16 +402,20 @@ personaPopupLabel // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeModelSelector*)
 makeModelSelector // beginDefinition;
-makeModelSelector[ ] := scopedTrackedDynamic[ makeModelSelector0[ ], { "Models", "Services" } ];
+makeModelSelector[ type_String ] := scopedTrackedDynamic[ makeModelSelector0[ type ], { "Models", "Services" } ];
 makeModelSelector // endDefinition;
 
 
 makeModelSelector0 // beginDefinition;
 
-makeModelSelector0[ ] :=
-    makeModelSelector0 @ $availableServices;
+makeModelSelector0[ type_String ] :=
+    makeModelSelector0[
+        type,
+        If[ KeyExistsQ[ $availableServices, "LLMKit" ],
+            $availableServices,
+            <| "LLMKit" -> <| "Service" -> "Wolfram LLM Service", "Icon" -> chatbookIcon["llmkit-dialog-sm", True] |>, $availableServices |> ] ]
 
-makeModelSelector0[ services_Association? AssociationQ ] := Enclose[
+makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose[
     DynamicModule[ { default, service, model, state, serviceSelector, modelSelector, highlight },
 
         default = CurrentChatSettings[ $preferencesScope, "Model" ];
@@ -440,18 +444,31 @@ makeModelSelector0[ services_Association? AssociationQ ] := Enclose[
         highlight = highlightControl[ Row @ { #1, Spacer[ 1 ], #2 }, "Notebooks", #3 ] &;
 
         highlightControl[
-            Row @ {
-                highlight[ tr[ "PreferencesContentLLMServiceLabel" ], serviceSelector, "ModelService" ],
-                Spacer[ 5 ],
-                highlight[
-                    tr[ "PreferencesContentModelLabel" ],
-                    Dynamic[
-                        If[ state === "Loading" || MatchQ[ modelSelector, _Symbol ], $loadingPopupMenu, modelSelector ],
-                        TrackedSymbols :> { state, modelSelector }
-                    ],
-                    "ModelName"
-                ]
-            },
+            Row @ 
+                If[ MatchQ[ type, "Cloud" | "Notebooks" ],
+                    {
+                        highlight[ tr[ "PreferencesContentLLMServiceLabel" ], serviceSelector, "ModelService" ],
+                        Spacer[ 5 ],
+                        highlight[
+                            tr[ "PreferencesContentModelLabel" ],
+                            Dynamic[
+                                If[ state === "Loading" || MatchQ[ modelSelector, _Symbol ], $loadingPopupMenu, modelSelector ],
+                                TrackedSymbols :> { state, modelSelector }
+                            ],
+                            "ModelName"
+                        ]
+                    },
+                    {
+                        serviceSelector,
+                        Spacer[ 24 ],
+                        Dynamic[ If[ service === "LLMKit", "", tr[ "PreferencesContentModelLabelAlt" ] ] ],
+                        Spacer[ 7 ],
+                        Dynamic[
+                            If[ state === "Loading" || MatchQ[ modelSelector, _Symbol ], $loadingPopupMenu, modelSelector ],
+                            TrackedSymbols :> { state, modelSelector }
+                        ]
+                    }
+                ],
             "Notebooks",
             "Model"
         ],
@@ -568,6 +585,8 @@ makeModelNameSelector[
 
         ensureServiceName @ service;
         ConfirmAssert[ StringQ @ service, "ServiceName" ];
+
+        If[ service === "LLMKit", Return @ "" ];
 
         models = ConfirmMatch[
             Block[ { $allowConnectionDialog = False }, getServiceModelList @ service ],
@@ -1093,22 +1112,50 @@ servicesSettingsPanel // endDefinition;
 servicesSettingsPanel0 // beginDefinition;
 
 servicesSettingsPanel0[ ] := Enclose[
-    Module[ { settingsLabel, settings, serviceGrid },
+    Module[ { llmIcon, llmHelp, llmLabel, llmPanel, servicesLabel, serviceGrid, settingsLabel, settings },
 
-        settingsLabel = subsectionText @ tr[ "PreferencesContentSubsectionRegisteredServices" ];
-        settings      = ConfirmMatch[ makeModelSelector[ ], _Dynamic, "ServicesSettings" ];
-        serviceGrid   = ConfirmMatch[ makeServiceGrid[ ], _Grid, "ServiceGrid" ];
+        llmLabel      = subsectionText @ tr[ "PreferencesContentLLMKitTitle" ];
+        llmPanel      = makeLLMPanel[ ];
+        servicesLabel = subsectionText @ tr[ "PreferencesContentService" ];
+        serviceGrid   = ConfirmMatch[ makeServiceGrid[ ], _Framed, "ServiceGrid" ];
+        settingsLabel = subsectionText @ tr[ "PreferencesContentDefaultService" ];
+        settings      = ConfirmMatch[ makeModelSelector[ "Services" ], _Dynamic, "ServicesSettings" ];
+
+        llmIcon = chatbookIcon[ "llmkit-dialog-sm", False ];
+        llmHelp = (* If this tooltip isn't meant to be a button, then use infoTooltip[llmLabel, text] *)
+            Button[
+                Tooltip[
+                    NotebookTools`Mousedown[
+                        Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.537 ], 14 ] ] ],
+                        Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.692 ], 14 ] ] ],
+                        Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.358 ], 14 ] ] ] ],
+                    Pane[ (*FIXME*)"FIXME", ImageSize -> UpTo[ 274 ] ],
+                    TooltipStyle -> {
+                        Background -> RGBColor[ "#EDEDED" ],
+                        CellFrameColor -> RGBColor[ "#D1D1D1" ],
+                        CellFrameMargins -> 5,
+                        FontColor -> RGBColor[ "#333333" ],
+                        FontFamily -> "Roboto",
+                        FontSize -> 11 } ],
+                (*FIXME*)Beep[ ],
+                Appearance -> "Suppressed",
+                BaselinePosition -> Baseline,
+                ImageSize -> Automatic,
+                Method -> "Queued" ];
 
         Pane[
             Grid[
                 {
+                    { Grid[ { { llmIcon, llmLabel, llmHelp } }, Alignment -> { Left, Center } ] },
+                    { llmPanel },
+                    { servicesLabel },
+                    { serviceGrid   },
                     { settingsLabel },
-                    { settings      },
-                    { serviceGrid   }
+                    { settings      }
                 },
                 Alignment -> { Left, Baseline },
                 ItemSize  -> { Fit, Automatic },
-                Spacings  -> { 0, 0.7 }
+                Spacings  -> { Automatic, { 0, 0.2, { 1.43, 0.5 }, 0 } }
             ],
             ImageMargins -> 8
         ]
@@ -1120,30 +1167,149 @@ servicesSettingsPanel0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*makeLLMPanel*)
+makeLLMPanel // beginDefinition;
+
+makeLLMPanel[ ] :=
+    Module[ { subscribeButton, username, signInButton, manageButton },
+        subscribeButton =
+            Button[
+                NotebookTools`Mousedown[
+                    Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Normal", FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
+                    Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Hover", FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
+                    Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Pressed", FrameMargins -> { { 17, 17 }, { 7, 7 } } ] ],
+                (*FIXME*)SystemOpen["https://billing.test.wolfram.com/pricing/LLMKit.html"],
+                Appearance -> "Suppressed",
+                BaseStyle -> "DialogTextCommon",
+                BaselinePosition -> Baseline,
+                ImageSize -> Automatic ];
+        
+        username =
+            PaneSelector[
+                {
+                    False -> "",
+                    True ->
+                        Grid[
+                            { {
+                                RawBoxes @ DynamicBox[ FEPrivate`FrontEndResource[ "FEBitmaps", "GenericUserIcon" ][ GrayLevel[ 0.2 ] ] ],
+                                Dynamic[ FrontEnd`CurrentValue["WolframCloudFullUserName"] ] } },
+                            Alignment -> { Left, Baseline },
+                            BaseStyle -> { FontColor -> GrayLevel[ 0.2 ], FontSize -> 14 },
+                            BaselinePosition -> { 1, 2 } ] },
+                Dynamic[ TrueQ[ CurrentValue[ "WolframCloudConnected" ] ] ],
+                BaselinePosition -> Baseline,
+                ImageSize -> Automatic ];
+
+        signInButton =
+            Button[
+                Style[
+                    tr[ "PreferencesContentLLMKitSignInButton" ],
+                    FontColor ->
+                        Dynamic[
+                            If[ CurrentValue[ "MouseOver" ],
+                                RGBColor[ 0.3333333333333333, 0.6941176470588235, 0.8483660130718954 ],
+                                RGBColor[                 0., 0.5411764705882353, 0.7725490196078432 ] ] ] ],
+                If[ CurrentValue[ "WolframCloudConnected" ] =!= "Pending", FEPrivate`WolframCloudSignIn[ ] ],
+                Appearance -> "Suppressed",
+                BaseStyle -> "DialogTextCommon",
+                BaselinePosition -> Baseline,
+                ImageSize -> Automatic,
+                Method -> "Queued" ];
+
+        manageButton =
+            Button[
+                Style[
+                    tr[ "PreferencesContentLLMKitEnabledManage" ],
+                    FontColor -> Dynamic[ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.2 ], GrayLevel[ 0.537254 ] ] ] ],
+                SystemOpen["https://billing.test.wolfram.com/pricing/LLMKit.html"](*FIXME*),
+                Appearance -> "Suppressed",
+                BaseStyle -> "DialogTextCommon",
+                ImageSize -> Automatic ];
+
+       
+        Framed[
+            Grid[
+                {
+                    {
+                        PaneSelector[
+                            {
+                                "A" ->
+                                    Grid[
+                                        {
+                                            { tr[ "PreferencesContentLLMKitSubscriptionRequired" ], SpanFromLeft, SpanFromLeft },
+                                            { subscribeButton, tr[ "PreferencesContentLLMKitSignInOr" ], signInButton }
+                                        },
+                                        Alignment -> { Left, Baseline },
+                                        BaseStyle -> { "DialogText", FontColor -> GrayLevel[ 0.537254 ] },
+                                        BaselinePosition -> { 1, 1 }
+                                    ],
+                                "B" ->
+                                    Grid[
+                                        {
+                                            { tr[ "PreferencesContentLLMKitNoSubscription" ] },
+                                            { subscribeButton }
+                                        },
+                                        Alignment -> { Left, Baseline },
+                                        BaseStyle -> { "DialogText", FontColor -> GrayLevel[ 0.537254 ] },
+                                        BaselinePosition -> { 1, 1 }
+                                    ],
+                                "C" ->
+                                    Grid[
+                                        {
+                                            { chatbookIcon[ "CheckmarkGreen", False ], tr[ "PreferencesContentLLMKitEnabledTitle" ] },
+                                            { "", tr[ "PreferencesContentLLMKitEnabledText" ] },
+                                            { "", manageButton }
+                                        },
+                                        Alignment -> { Left, Baseline },
+                                        BaseStyle -> { "DialogTextCommon", FontColor -> GrayLevel[ 0.537254 ] },
+                                        BaselinePosition -> { 1, 2 },
+                                        Spacings -> { 0, 0.5 }
+                                    ]
+                            },
+                            Dynamic[ Which[ !TrueQ[ CurrentValue[ "WolframCloudConnected" ] ], "A", !TrueQ[ Wolfram`LLMFunctions`Common`Private`$LLMKitSubscribed ], "B", True, "C" ] ],
+                            BaselinePosition -> Baseline,
+                            ImageSize -> Automatic ],
+                        "",
+                        username
+                    }
+                },
+                Alignment -> { Left, Baseline },
+                ItemSize -> { { Automatic, Fit, Automatic } },
+                Spacings -> { Automatic, 0.7 } ],
+            Background -> White,
+            FrameMargins -> { { 15, 15 }, { 15, 10 } },
+            FrameStyle -> GrayLevel[ 0.898 ],
+            ImageSize -> Scaled[ 1 ],
+            RoundingRadius -> 3 ]        
+    ];
+
+makeLLMPanel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*makeServiceGrid*)
 makeServiceGrid // beginDefinition;
 
-makeServiceGrid[ ] := Grid[
-    Join[
-        {
-            {
-                Spacer[ 1 ],
-                tr[ "PreferencesContentService" ],
-                SpanFromLeft,
-                tr[ "PreferencesContentAuthentication" ],
-                "",
-                Spacer[ 1 ]
-            }
-        },
-        makeServiceGridRows @ $availableServices
-    ],
-    Alignment  -> { Left, Baseline },
-    Background -> { { }, { GrayLevel[ 0.898 ], { White } } },
-    ItemSize   -> { { Automatic, Automatic, Scaled[ 0.3 ], Fit, Automatic }, Automatic },
-    Dividers   -> { True, All },
-    FrameStyle -> GrayLevel[ 0.898 ],
-    Spacings   -> { Automatic, 0.7 }
-];
+makeServiceGrid[ ] :=
+    Framed[
+        Pane[
+            Grid[
+                KeyValueMap[ makeServiceGridRow, DeleteCases[ $availableServices, KeyValuePattern[ "Hidden" -> True ] ] ],
+                Alignment  -> { Left, Baseline },
+                Background -> { { }, { { White } } },
+                ItemSize   -> { { Automatic, Automatic, Scaled[ 0.3 ], Fit, Automatic }, Automatic },
+                Dividers   -> { { }, { False, { True }, False } },
+                FrameStyle -> GrayLevel[ 0.898 ],
+                Spacings   -> { Automatic, 0.7 } ],
+            AppearanceElements -> { },
+            FrameMargins -> 8,
+            Scrollbars -> { False, Automatic },
+            ImageSize -> { Scaled[ 1 ], UpTo[ 150 ] } ],
+        Background -> White,
+        FrameMargins -> 0,
+        FrameStyle -> GrayLevel[ 0.898 ],
+        ImageSize -> Scaled[ 1 ],
+        RoundingRadius -> 3 ];
 
 makeServiceGrid // endDefinition;
 
@@ -1166,12 +1332,7 @@ makeServiceGridRows // endDefinition;
 makeServiceGridRow // beginDefinition;
 
 makeServiceGridRow[ name_String, data_Association ] := {
-    Spacer[ 1 ],
-    resizeMenuIcon @ inlineTemplateBoxes @ serviceIcon @ data,
-    name,
-    makeServiceAuthenticationDisplay @ name,
-    deleteServiceButton @ name,
-    Spacer[ 1 ]
+    makeServiceAuthenticationDisplay[ name, resizeMenuIcon @ inlineTemplateBoxes @ serviceIcon @ data ]
 };
 
 makeServiceGridRow // endDefinition;
@@ -1230,11 +1391,11 @@ $deleteServiceButtonFrameOptions = Sequence[
 (*makeServiceAuthenticationDisplay*)
 makeServiceAuthenticationDisplay // beginDefinition;
 
-makeServiceAuthenticationDisplay[ service_String ] :=
+makeServiceAuthenticationDisplay[ service_String, icon_ ] :=
     DynamicModule[ { display },
         display = ProgressIndicator[ Appearance -> "Percolate" ];
         Dynamic[ display, TrackedSymbols :> { display } ],
-        Initialization :> scopeInitialization @ createServiceAuthenticationDisplay[ service, Dynamic[ display ] ],
+        Initialization :> scopeInitialization @ createServiceAuthenticationDisplay[ service, icon, Dynamic[ display ] ],
         SynchronousInitialization -> False
     ];
 
@@ -1245,19 +1406,24 @@ makeServiceAuthenticationDisplay // endDefinition;
 (*createServiceAuthenticationDisplay*)
 createServiceAuthenticationDisplay // beginDefinition;
 
-createServiceAuthenticationDisplay[ service_, Dynamic[ display_ ] ] := Enclose[
+createServiceAuthenticationDisplay[ service_, icon_, Dynamic[ display_ ] ] := Enclose[
     Module[ { type },
         type = ConfirmBy[ credentialType @ service, StringQ, "CredentialType" ];
-        display = Row[
+        display = Grid[
             {
-                If[ type === "None",
-                    Style[ "\[Checkmark]", ShowContents -> False ],
-                    Style[ "\[Checkmark]", FontColor -> Gray     ]
-                ],
-                Spacer[ 20 ],
-                connectOrDisconnectButton[ service, type, Dynamic @ display ]
+                {
+                    Spacer[ 5 ],
+                    If[ type === "None",
+                        Overlay[ { icon, Graphics[ Background -> GrayLevel[ 1, 0.5 ], ImageSize -> { 21, 21 } ] } ],
+                        icon ],
+                    Style[ service, FontColor -> If[ type === "None", GrayLevel[ 0, 0.5 ], Inherited ] ],
+                    "",
+                    connectOrDisconnectButton[ service, type, icon, Dynamic @ display ]
+                }
             },
-            Alignment -> { Left, Baseline }
+            Alignment -> { Left, Baseline },
+            ItemSize -> { { Automatic, Automatic, Fit, Automatic } },
+            Spacings -> { 0, Automatic }
         ];
     ],
     throwInternalFailure
@@ -1270,22 +1436,22 @@ createServiceAuthenticationDisplay // endDefinition;
 (*connectOrDisconnectButton*)
 connectOrDisconnectButton // beginDefinition;
 
-connectOrDisconnectButton[ service_String, "None", Dynamic[ display_ ] ] :=
+connectOrDisconnectButton[ service_String, "None", icon_, Dynamic[ display_ ] ] :=
     Button[
         tr[ "ConnectButton" ],
         display = ProgressIndicator[ Appearance -> "Percolate" ];
         clearConnectionCache[ service, False ];
         Quiet[ Wolfram`LLMFunctions`APIs`Common`ConnectToService @ service, { ServiceConnect::genconerr } ];
-        createServiceAuthenticationDisplay[ service, Dynamic @ display ],
+        createServiceAuthenticationDisplay[ service, icon, Dynamic @ display ],
         Method -> "Queued"
     ];
 
-connectOrDisconnectButton[ service_String, "SystemCredential"|"Environment"|"ServiceConnect", Dynamic[ display_ ] ] :=
+connectOrDisconnectButton[ service_String, "SystemCredential"|"Environment"|"ServiceConnect", icon_, Dynamic[ display_ ] ] :=
     Button[
         tr[ "DisconnectButton" ],
         display = ProgressIndicator[ Appearance -> "Percolate" ];
         disconnectService @ service;
-        createServiceAuthenticationDisplay[ service, Dynamic @ display ],
+        createServiceAuthenticationDisplay[ service, icon, Dynamic @ display ],
         Method -> "Queued"
     ];
 
