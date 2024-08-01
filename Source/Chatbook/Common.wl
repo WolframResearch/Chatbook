@@ -1119,6 +1119,13 @@ chatbookIcon[ name_String, icon: Except[ _Missing ] ] := icon;
 chatbookIcon // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*InlineTemplateBoxes*)
+InlineTemplateBoxes // beginDefinition;
+InlineTemplateBoxes[ expr_ ] := catchMine @ inlineTemplateBoxes @ expr;
+InlineTemplateBoxes // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*inlineTemplateBox*)
 inlineTemplateBox // beginDefinition;

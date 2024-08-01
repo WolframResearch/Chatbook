@@ -4,36 +4,29 @@ Function[
    {
     False ->
      Button[
-      RawBoxes @ TemplateBox[ { #1, #2 }, "SendChatButtonLabel" ],
+      RawBoxes @ TemplateBox[ { #1, #2, #3 }, "SendChatButtonLabel" ],
       Wolfram`Chatbook`$ChatEvaluationCell = cell;
       SelectionMove[ cell, All, Cell ];
       FrontEndTokenExecute[ Notebooks @ cell, "EvaluateCells" ],
+      Appearance -> "Suppressed",
       FrameMargins -> 0,
       Method -> "Queued"
      ],
     True ->
      Button[
-      Overlay[
-       {
-        RawBoxes @ TemplateBox[ { #2 }, "ChatEvaluatingSpinner" ],
-        Graphics[
-         { RGBColor[ 0.71373, 0.054902, 0.0 ], Rectangle[ { -0.5, -0.5 }, { 0.5, 0.5 } ] },
-         ImageSize -> #2,
-         PlotRange -> 1.1
-        ]
-       },
-       Alignment -> { Center, Center }
-      ],
+      RawBoxes @ TemplateBox[ { #1, #2, #3 }, "StopChatButtonLabel" ],
       If[ Wolfram`Chatbook`$ChatEvaluationCell =!= cell,
        NotebookWrite[ cell, NotebookRead @ cell, None, AutoScroll -> False ],
        Needs[ "Wolfram`Chatbook`" -> None ];
        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ]
       ],
+      Appearance -> "Suppressed",
       FrameMargins -> 0
      ]
    },
    Dynamic[ Wolfram`Chatbook`$ChatEvaluationCell === cell ],
-   Alignment -> { Automatic, Baseline }
+   Alignment -> { Automatic, Baseline },
+   ImageSize -> Automatic
   ],
   Initialization :> (cell = If[ $CloudEvaluation, x; EvaluationCell[ ], ParentCell @ EvaluationCell[ ] ]),
   DynamicModuleValues :> { },
