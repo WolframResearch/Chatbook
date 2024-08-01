@@ -25,7 +25,8 @@ Function[
      ]
    },
    Dynamic[ Wolfram`Chatbook`$ChatEvaluationCell === cell ],
-   Alignment -> { Automatic, Baseline }
+   Alignment -> { Automatic, Baseline },
+   ImageSize -> Automatic
   ],
   Initialization :> (cell = If[ $CloudEvaluation, x; EvaluationCell[ ], ParentCell @ EvaluationCell[ ] ]),
   DynamicModuleValues :> { },

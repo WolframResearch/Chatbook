@@ -1177,7 +1177,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.4.8.3931260998"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.4.8.3931491780"|>
   ],
   Cell[
    StyleData["Text"],
@@ -12477,7 +12477,8 @@ Notebook[
           Wolfram`ChatNB`cell$$
          ]
         ],
-        Alignment -> {Automatic, Baseline}
+        Alignment -> {Automatic, Baseline},
+        ImageSize -> Automatic
        ],
        Initialization :>
         (Wolfram`ChatNB`cell$$ = 
