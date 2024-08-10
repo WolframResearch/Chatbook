@@ -9,9 +9,11 @@ Wolfram`ChatbookLoader`$MXFile = FileNameJoin @ {
 Quiet[
     If[ FileExistsQ @ Wolfram`ChatbookLoader`$MXFile
         ,
-        Unprotect[ "Wolfram`Chatbook`*" ];
-        ClearAll[ "Wolfram`Chatbook`*" ];
-        ClearAll[ "Wolfram`Chatbook`*`*" ];
+        If[ MemberQ[ $Packages, "Wolfram`Chatbook`" ],
+            Unprotect[ "Wolfram`Chatbook`*" ];
+            ClearAll[ "Wolfram`Chatbook`*" ];
+            ClearAll[ "Wolfram`Chatbook`*`*" ]
+        ];
         Get @ Wolfram`ChatbookLoader`$MXFile;
         (* Ensure all subcontexts are in $Packages to avoid reloading subcontexts out of order: *)
         If[ MatchQ[ Wolfram`Chatbook`$ChatbookContexts, { __String } ],
@@ -24,11 +26,13 @@ Quiet[
         ,
         WithCleanup[
             PreemptProtect[
-                Quiet[
-                    Unprotect[ "Wolfram`Chatbook`*" ];
-                    ClearAll[ "Wolfram`Chatbook`*" ];
-                    Remove[ "Wolfram`Chatbook`*`*" ],
-                    { Remove::rmnsm }
+                If[ MemberQ[ $Packages, "Wolfram`Chatbook`" ],
+                    Quiet[
+                        Unprotect[ "Wolfram`Chatbook`*" ];
+                        ClearAll[ "Wolfram`Chatbook`*" ];
+                        Remove[ "Wolfram`Chatbook`*`*" ],
+                        { Remove::rmnsm }
+                    ]
                 ];
                 Get[ "Wolfram`Chatbook`Main`" ]
             ],
