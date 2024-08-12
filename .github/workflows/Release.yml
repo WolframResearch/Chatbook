@@ -98,6 +98,9 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+    - name: Unformat
+      run: wolframscript -f Scripts/UnformatFiles.wls
+
     - name: BuildMX
       run: wolframscript -f Scripts/BuildMX.wls
 

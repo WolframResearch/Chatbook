@@ -11,3 +11,5 @@
 If[ PacletNewerQ[ Wolfram`ChatbookStartupDump`$versionString, "14.1.0" ],
 	Wolfram`Chatbook`EnableCodeAssistance[ ]
 ]
+
+Wolfram`ChatbookStartupDump`$loadTime = SessionTime[ ] - Wolfram`ChatbookStartupDump`$loadStart;

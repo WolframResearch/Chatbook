@@ -10,6 +10,8 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$AvailableTools;
 `$ChatAbort;
 `$ChatbookContexts;
+`$ChatbookNames;
+`$ChatbookProtectedNames;
 `$ChatEvaluationCell;
 `$ChatHandlerData;
 `$ChatNotebookEvaluation;
@@ -133,57 +135,68 @@ Scan[ Needs[ # -> None ] &, $ChatbookContexts ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Names*)
+$ChatbookNames := $ChatbookNames =
+    Block[ { $Context, $ContextPath },
+        Union[ Names[ "Wolfram`Chatbook`*" ], Names[ "Wolfram`Chatbook`*`*" ] ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Protected Symbols*)
-Protect[
-    $AutomaticAssistance,
-    $ChatbookContexts,
-    $ChatNotebookEvaluation,
-    $CurrentChatSettings,
-    $DefaultChatHandlerFunctions,
-    $DefaultChatProcessingFunctions,
-    $DefaultModel,
-    $DefaultToolOptions,
-    $DefaultTools,
-    $InlineChat,
-    $InstalledTools,
-    $ToolFunctions,
-    $WorkspaceChat,
-    AbsoluteCurrentChatSettings,
-    AppendURIInstructions,
-    BasePrompt,
-    CachedBoxes,
-    CellToChatMessage,
-    Chatbook,
-    ChatbookAction,
-    ChatCellEvaluate,
-    CreateChatDrivenNotebook,
-    CreateChatNotebook,
-    CurrentChatSettings,
-    DisplayBase64Boxes,
-    EnableCodeAssistance,
-    ExplodeCell,
-    FormatChatOutput,
-    FormatToolCall,
-    FormatToolResponse,
-    FormatWolframAlphaPods,
-    GetChatHistory,
-    GetExpressionURI,
-    GetExpressionURIs,
-    InlineTemplateBoxes,
-    MakeExpressionURI,
-    SandboxLinguisticAssistantData,
-    SetModel,
-    SetToolOptions,
-    ShowCodeAssistance,
-    StringToBoxes,
-    WriteChatOutputCell
-];
+$ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
+    "$AutomaticAssistance",
+    "$ChatbookContexts",
+    "$ChatNotebookEvaluation",
+    "$CurrentChatSettings",
+    "$DefaultChatHandlerFunctions",
+    "$DefaultChatProcessingFunctions",
+    "$DefaultModel",
+    "$DefaultToolOptions",
+    "$DefaultTools",
+    "$InlineChat",
+    "$InstalledTools",
+    "$ToolFunctions",
+    "$WorkspaceChat",
+    "AbsoluteCurrentChatSettings",
+    "AppendURIInstructions",
+    "BasePrompt",
+    "CachedBoxes",
+    "CellToChatMessage",
+    "Chatbook",
+    "ChatbookAction",
+    "ChatCellEvaluate",
+    "CreateChatDrivenNotebook",
+    "CreateChatNotebook",
+    "CurrentChatSettings",
+    "DisplayBase64Boxes",
+    "EnableCodeAssistance",
+    "ExplodeCell",
+    "FormatChatOutput",
+    "FormatToolCall",
+    "FormatToolResponse",
+    "FormatWolframAlphaPods",
+    "GetChatHistory",
+    "GetExpressionURI",
+    "GetExpressionURIs",
+    "InlineTemplateBoxes",
+    "MakeExpressionURI",
+    "SandboxLinguisticAssistantData",
+    "SetModel",
+    "SetToolOptions",
+    "ShowCodeAssistance",
+    "StringToBoxes",
+    "WriteChatOutputCell"
+};
+
+Protect @@ $ChatbookProtectedNames;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
     $ChatbookContexts;
+    $ChatbookNames;
 ];
 
 mxInitialize[ ];
