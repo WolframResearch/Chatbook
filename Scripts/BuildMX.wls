@@ -142,33 +142,6 @@ getTagPos[ file_ ] := Cases[
 ];
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*cacheTokenizers*)
-cacheTokenizers[ ] :=
-    Enclose @ Module[ { dir, files, current, new, combined },
-
-        dir     = ConfirmBy[ FileNameJoin @ { $pacletDir, "Developer/Resources/Tokenizers" }, DirectoryQ, "Directory" ];
-        files   = ConfirmMatch[ FileNames[ "*.wxf", dir ], { __ }, "Files" ];
-        current = ConfirmBy[ Symbol[ "Wolfram`Chatbook`Common`$cachedTokenizers" ], AssociationQ, "Current" ];
-        new     = ConfirmBy[ <| (FileBaseName[ # ] -> Developer`ReadWXFFile[ # ] &) /@ files |>, AssociationQ, "New" ];
-
-        ConfirmAssert[ AllTrue[ new, MatchQ[ _NetEncoder ] ], "NetEncoderCheck" ];
-
-        combined = ConfirmBy[ <| current, new |>, AssociationQ, "Combined" ];
-
-        setName[ "Wolfram`Chatbook`Common`$cachedTokenizers", combined ];
-
-        ConfirmAssert[ Symbol[ "Wolfram`Chatbook`Common`$cachedTokenizers" ] === combined, "Assignment" ];
-
-        combined
-    ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*setName*)
-setName[ name_String, expr_ ] := ToExpression[ name, InputForm, Function[ symbol, symbol = expr, HoldAllComplete ] ];
-
-(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Build MX*)
 If[ FileExistsQ @ $mxFile,
@@ -190,9 +163,6 @@ Remove[ "Wolfram`Chatbook`*" ];
 Remove[ "Wolfram`Chatbook`*`*" ];
 cicd`ScriptConfirmAssert[ Names[ "Wolfram`Chatbook`*" ] === Names[ "Wolfram`Chatbook`*`*" ] === { }, "Names" ];
 cicd`ScriptConfirm @ CheckAbort[ Get[ "Wolfram`Chatbook`" ], $Failed ];
-
-cicd`ConsoleLog[ "Caching tokenizers..." ];
-cicd`ScriptConfirmBy[ cacheTokenizers[ ], AssociationQ ];
 
 cicd`ScriptConfirmMatch[ DeleteDirectory[ tmp, DeleteContents -> True ], Null ];
 

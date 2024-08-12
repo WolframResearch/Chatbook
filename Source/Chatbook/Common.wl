@@ -298,6 +298,7 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "NoSandboxKernel"                 -> "Unable to start a sandbox kernel. This may mean that the number of currently running kernels exceeds the limit defined by $LicenseProcesses.",
     "NotImplemented"                  -> "Action \"`1`\" is not implemented.",
     "NotInstallableResourceType"      -> "Resource type `1` is not an installable resource type for chat notebooks. Valid types are `2`.",
+    "PersonaDirectoryNotFound"        -> "The directory `2` for persona `1` was not found.",
     "RateLimitReached"                -> "Rate limit reached for requests. Please try again later.",
     "ResourceNotFound"                -> "Resource `1` not found.",
     "ResourceNotInstalled"            -> "The resource `1` is not installed.",
@@ -1164,14 +1165,26 @@ inlineTemplateBoxes // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$chatbookIcons*)
-$chatbookIcons := $chatbookIcons =
-    Developer`ReadWXFFile @ PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "Icons" ];
+$chatbookIcons := Enclose[
+    Module[ { file, icons },
+        file = ConfirmBy[ $thisPaclet[ "AssetLocation", "Icons" ], FileExistsQ, "File" ];
+        icons = ConfirmBy[ Developer`ReadWXFFile @ file, AssociationQ, "Icons" ];
+        If[ TrueQ @ $mxFlag, icons, $chatbookIcons = icons ]
+    ],
+    throwInternalFailure[ $chatbookIcons, ## ] &
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$templateBoxDisplayFunctions*)
-$templateBoxDisplayFunctions := $templateBoxDisplayFunctions =
-    Developer`ReadWXFFile @ PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "DisplayFunctions" ];
+$templateBoxDisplayFunctions := Enclose[
+    Module[ { file, funcs },
+        file = ConfirmBy[ $thisPaclet[ "AssetLocation", "DisplayFunctions" ], FileExistsQ, "File" ];
+        funcs = ConfirmBy[ Developer`ReadWXFFile @ file, AssociationQ, "Functions" ];
+        If[ TrueQ @ $mxFlag, funcs, $templateBoxDisplayFunctions = funcs ]
+    ],
+    throwInternalFailure[ $templateBoxDisplayFunctions, ## ] &
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1231,7 +1244,6 @@ mxInitialize // endDefinition;
 addToMXInitialization[
     $debug = False;
     $chatbookIcons;
-    $templateBoxDisplayFunctions;
     $cloudTextResources;
     $releaseID;
 ];

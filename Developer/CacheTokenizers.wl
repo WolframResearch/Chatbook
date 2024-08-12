@@ -18,8 +18,8 @@ Needs[ "Developer`" -> None ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Paths*)
-$assetLocation      = FileNameJoin @ { DirectoryName @ $InputFileName, "Resources" };
-$tokenizerDirectory = FileNameJoin @ { $assetLocation, "Tokenizers" };
+$pacletDirectory    = DirectoryName[ $InputFileName, 2 ];
+$tokenizerDirectory = FileNameJoin @ { $pacletDirectory, "Assets", "Tokenizers" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
