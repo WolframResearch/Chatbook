@@ -1,3 +1,4 @@
+Wolfram`ChatbookStartupDump`$loadStart = SessionTime[ ];
 (*
 	Note: This context name was chosen to avoid being cleared by the Chatbook.wl
 	loading code, which clears names in the Wolfram`Chatbook` context

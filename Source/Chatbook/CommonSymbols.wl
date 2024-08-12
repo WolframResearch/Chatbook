@@ -11,6 +11,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$basePrompt;
 `$basePromptComponents;
 `$baseStyle;
+`$cachedTokenizers;
 `$cellStringBudget;
 `$chatDataTag;
 `$chatInputIndicator;

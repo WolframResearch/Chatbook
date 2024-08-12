@@ -186,62 +186,88 @@ fixFEResourceBoxes // endDefinition;
 (*loadPacletPersonas*)
 loadPacletPersonas // beginDefinition;
 
-loadPacletPersonas[ paclet_PacletObject ] := loadPacletPersonas[ paclet[ "Name" ], paclet[ "Version" ], paclet ];
+loadPacletPersonas[ paclet_PacletObject ] :=
+	loadPacletPersonas[ paclet[ "Name" ], paclet[ "Version" ], paclet ];
 
 loadPacletPersonas[ name_, version_, paclet_ ] := loadPacletPersonas[ name, version, _ ] =
-	Handle[_Failure] @ Module[{
-		extensions
-	},
-		Needs["PacletTools`" -> None];
-
-		extensions = RaiseConfirmMatch[
-			PacletTools`PacletExtensions[paclet, "LLMConfiguration"],
-			{{_String, _Association}...}
-		];
-
-		Map[
-			extension |-> loadPersonaFromPacletExtension[
-				paclet,
-				PacletTools`PacletExtensionDirectory[paclet, extension],
-				extension
-			],
-			extensions
-		]
+	Cases[
+		Flatten @ Cases[
+			paclet[ "StructuredExtensions" ],
+			{ "LLMConfiguration", as_ } :> loadPersonasFromPacletExtension[ paclet, as ]
+		],
+		HoldPattern[ _String -> _Association ]
 	];
 
 loadPacletPersonas // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*loadPersonasFromPacletExtension*)
+loadPersonasFromPacletExtension // beginDefinition;
+
+loadPersonasFromPacletExtension[ paclet_, extensionInfo_Association ] :=
+    loadPersonasFromPacletExtension[ paclet, extensionInfo, Lookup[ extensionInfo, "Personas" ] ];
+
+loadPersonasFromPacletExtension[ paclet_, extensionInfo_, personas_List ] :=
+	Cases[
+		Flatten[ loadPersonaFromPacletExtension[ paclet, extensionInfo, # ] & /@ personas ],
+		HoldPattern[ _String -> _Association ]
+	];
+
+loadPersonasFromPacletExtension // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*loadPersonaFromPacletExtension*)
 loadPersonaFromPacletExtension // beginDefinition;
 
-loadPersonaFromPacletExtension[
-	paclet_?PacletObjectQ,
-	extensionDirectory_?StringQ,
-	{"LLMConfiguration", options_?AssociationQ}
-] := Handle[_Failure] @ Module[{
-	personas = Lookup[options, "Personas"]
-},
-	RaiseConfirmMatch[personas, {___?StringQ}];
+loadPersonaFromPacletExtension[ paclet_, extensionInfo_, persona: KeyValuePattern[ "Symbol" -> _String ] ] :=
+	loadPersonaFromSymbol[ paclet, extensionInfo, persona ];
 
-	Map[
-		personaName |-> (
-			(* Note:
-				Stop errors from propagating upwards so that a failure to load
-				any one persona doesn't prevent other, valid, personas from
-				being loaded and returned. *)
-			personaName -> Handle[_Failure] @ loadPersonaFromDirectory[
-				paclet,
-				personaName,
-				FileNameJoin[{extensionDirectory, "Personas", personaName}]
-			]
-		),
-		personas
-	]
-];
+loadPersonaFromPacletExtension[ paclet_, extensionInfo_, persona_String ] :=
+	loadPersonaFromName[ paclet, extensionInfo, persona ];
 
 loadPersonaFromPacletExtension // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*loadPersonaFromSymbol*)
+loadPersonaFromSymbol // beginDefinition;
+
+(* FIXME: Need to finish loading these when actually referenced anywhere *)
+loadPersonaFromSymbol[ _, _, persona: KeyValuePattern[ "Name" -> name_String ] ] :=
+	name -> <| persona, "Hidden" -> True, "Loaded" -> False |>;
+
+loadPersonaFromSymbol // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*loadPersonaFromName*)
+loadPersonaFromName // beginDefinition;
+
+loadPersonaFromName[ paclet_, extensionInfo_Association, name_String ] :=
+    With[ { extensionDir = pacletExtensionDirectory[ paclet, { "LLMConfiguration", extensionInfo } ] },
+        name -> loadPersonaFromDirectory[ paclet, name, FileNameJoin @ { extensionDir, "Personas", name } ]
+    ];
+
+loadPersonaFromName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*pacletExtensionDirectory*)
+pacletExtensionDirectory // beginDefinition;
+
+pacletExtensionDirectory[ paclet_, extension_ ] :=
+	Module[ { dir },
+		Needs[ "PacletTools`" -> None ];
+		dir = PacletTools`PacletExtensionDirectory[ paclet, extension ];
+		If[ TrueQ @ Wolfram`ChatbookInternal`$BuildingMX,
+			dir,
+			pacletExtensionDirectory[ paclet, extension ] = dir
+		]
+	];
+
+pacletExtensionDirectory // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -249,16 +275,9 @@ loadPersonaFromPacletExtension // endDefinition;
 loadPersonaFromDirectory // beginDefinition;
 
 loadPersonaFromDirectory[ paclet_PacletObject, personaName_, dir_? StringQ ] := Enclose[
-	Module[ { icon, config, origin, prompts, extra },
+	Catch @ Module[ { icon, config, origin, prompts, extra },
 
-		If[ ! DirectoryQ @ dir,
-			Raise[
-				ChatbookError,
-				<| "PersonaDirectory" -> dir |>,
-				"Persona does not exist in expected directory: ``",
-				InputForm @ dir
-			];
-		];
+		If[ ! DirectoryQ @ dir, Throw @ messageFailure[ "PersonaDirectoryNotFound", personaName, dir ] ];
 
 		icon = FileNameJoin @ { dir, "Icon.wl" };
 		config = FileNameJoin @ { dir, "LLMConfiguration.wl" };

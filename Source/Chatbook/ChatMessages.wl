@@ -1326,7 +1326,7 @@ argumentTokenToString // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Tokenization*)
-$tokenizer := $gpt2Tokenizer;
+$tokenizer := cachedTokenizer[ "gpt-4o" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1377,7 +1377,7 @@ cachedTokenizer[ id_String ] := Enclose[
         tokenizer = findTokenizer @ name;
         If[ MissingQ @ tokenizer,
             (* Fallback to the GPT-2 tokenizer: *)
-            tokenizer = ConfirmMatch[ $genericTokenizer, Except[ $$unspecified ], "GPT2Tokenizer" ];
+            tokenizer = ConfirmMatch[ $cachedTokenizers[ "generic" ], Except[ $$unspecified ], "GPT2Tokenizer" ];
             If[ TrueQ @ Wolfram`ChatbookInternal`$BuildingMX,
                 tokenizer, (* Avoid caching fallback values into MX definitions *)
                 cacheTokenizer[ name, tokenizer ]
@@ -1407,12 +1407,29 @@ cacheTokenizer // endDefinition;
 (*findTokenizer*)
 findTokenizer // beginDefinition;
 
-findTokenizer[ "gpt-4o-text" ] :=
+findTokenizer[ model_String ] := Enclose[
+    Catch @ Module[ { dir, file, tokenizer },
+        dir = ConfirmBy[ $tokenizerDirectory, StringQ, "Directory" ];
+        file = FileNameJoin @ { dir, model<>".wxf" };
+        tokenizer = If[ FileExistsQ @ file, Developer`ReadWXFFile @ file, findTokenizer0 @ model ];
+        If[ MissingQ @ tokenizer, Throw @ tokenizer ];
+        ConfirmMatch[ tokenizer[ "test" ], _List, "TokenizerTest" ];
+        tokenizer
+    ],
+    throwInternalFailure
+];
+
+findTokenizer // endDefinition;
+
+
+findTokenizer0 // beginDefinition;
+
+findTokenizer0[ "gpt-4o-text" ] :=
     With[ { tokenizer = findTokenizer[ "gpt-4o" ] },
         tokenizer /; ! MissingQ @ tokenizer
     ];
 
-findTokenizer[ model_String ] := Enclose[
+findTokenizer0[ model_String ] := Enclose[
     Quiet @ Module[ { name, tokenizer },
         initTools[ ];
         Quiet @ Needs[ "Wolfram`LLMFunctions`Utilities`Tokenization`" -> None ];
@@ -1424,7 +1441,10 @@ findTokenizer[ model_String ] := Enclose[
     Missing[ "NotFound" ] &
 ];
 
-findTokenizer // endDefinition;
+findTokenizer0 // endDefinition;
+
+
+$tokenizerDirectory := $tokenizerDirectory = FileNameJoin @ { $thisPaclet[ "Location" ], "Assets", "Tokenizers" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -1433,7 +1453,7 @@ $cachedTokenizers[ "chat-bison"   ] = ToCharacterCode[ #, "UTF8" ] &;
 $cachedTokenizers[ "gpt-4-vision" ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4" ] ][ # ] &;
 $cachedTokenizers[ "gpt-4o"       ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4o-text" ] ][ # ] &;
 $cachedTokenizers[ "claude-3"     ] = If[ graphicsQ @ #, claude3ImageTokenizer, cachedTokenizer[ "claude" ] ][ # ] &;
-$cachedTokenizers[ "generic"      ] = If[ graphicsQ @ #, { }, $gpt2Tokenizer @ # ] &;
+$cachedTokenizers[ "generic"      ] = If[ graphicsQ @ #, { }, cachedTokenizer[ "gpt-2" ] ] &;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1524,21 +1544,10 @@ claude3ImageTokenCount0[ w_Integer, h_Integer ] := Ceiling[ (w * h) / 750 ];
 claude3ImageTokenCount0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*Fallback Tokenizer*)
-$gpt2Tokenizer := $gpt2Tokenizer = gpt2Tokenizer[ ];
-
-(* https://resources.wolframcloud.com/FunctionRepository/resources/GPTTokenizer *)
-importResourceFunction[ gpt2Tokenizer, "GPTTokenizer" ];
-
-(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
-    cachedTokenizer[ All ];
-    $gpt2Tokenizer;
-    (* This is only needed to generate $gpt2Tokenizer once, so it can be removed to reduce MX file size: *)
-    Remove[ "Wolfram`Chatbook`ResourceFunctions`GPTTokenizer`GPTTokenizer" ];
+    Null
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)

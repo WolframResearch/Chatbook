@@ -6,12 +6,25 @@ Wolfram`ChatbookLoader`$MXFile = FileNameJoin @ {
     "Chatbook.mx"
 };
 
+If[ MemberQ[ $Packages, "Wolfram`Chatbook`" ]
+    ,
+    Wolfram`ChatbookLoader`$protectedNames = Replace[
+        Wolfram`Chatbook`$ChatbookProtectedNames,
+        Except[ _List ] :> Names[ "Wolfram`Chatbook`*" ]
+    ];
+
+    Wolfram`ChatbookLoader`$allNames = Replace[
+        Wolfram`Chatbook`$ChatbookNames,
+        Except[ _List ] :> Union[ Wolfram`ChatbookLoader`$protectedNames, Names[ "Wolfram`Chatbook`*`*" ] ]
+    ];
+
+    Unprotect @@ Wolfram`ChatbookLoader`$protectedNames;
+    ClearAll @@ Wolfram`ChatbookLoader`$allNames;
+];
+
 Quiet[
     If[ FileExistsQ @ Wolfram`ChatbookLoader`$MXFile
         ,
-        Unprotect[ "Wolfram`Chatbook`*" ];
-        ClearAll[ "Wolfram`Chatbook`*" ];
-        ClearAll[ "Wolfram`Chatbook`*`*" ];
         Get @ Wolfram`ChatbookLoader`$MXFile;
         (* Ensure all subcontexts are in $Packages to avoid reloading subcontexts out of order: *)
         If[ MatchQ[ Wolfram`Chatbook`$ChatbookContexts, { __String } ],
@@ -23,15 +36,7 @@ Quiet[
         ]
         ,
         WithCleanup[
-            PreemptProtect[
-                Quiet[
-                    Unprotect[ "Wolfram`Chatbook`*" ];
-                    ClearAll[ "Wolfram`Chatbook`*" ];
-                    Remove[ "Wolfram`Chatbook`*`*" ],
-                    { Remove::rmnsm }
-                ];
-                Get[ "Wolfram`Chatbook`Main`" ]
-            ],
+            PreemptProtect @ Get[ "Wolfram`Chatbook`Main`" ],
             { $Context, $ContextPath, $ContextAliases } = { ## }
         ] & [ $Context, $ContextPath, $ContextAliases ]
     ],
