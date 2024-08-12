@@ -34,10 +34,11 @@ PacletObject[ <|
         { "Asset",
             "Root"    -> "Assets",
             "Assets"  -> {
-                { "Icons"           , "Icons.wxf"            },
-                { "DisplayFunctions", "DisplayFunctions.wxf" },
                 { "AIAssistant"     , "AIAssistant"          },
-                { "SandboxMessages" , "SandboxMessages.wl"   }
+                { "DisplayFunctions", "DisplayFunctions.wxf" },
+                { "Icons"           , "Icons.wxf"            },
+                { "SandboxMessages" , "SandboxMessages.wl"   },
+                { "Tokenizers"      , "Tokenizers"           }
             }
         },
         { "LLMConfiguration",
