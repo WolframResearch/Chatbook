@@ -53,6 +53,8 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `InlineTemplateBoxes;
 `InvalidateServiceCache;
 `MakeExpressionURI;
+`RelatedDocumentation;
+`RelatedWolframAlphaQueries;
 `SandboxLinguisticAssistantData;
 `SetModel;
 `SetToolOptions;
@@ -128,7 +130,8 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`ToolManager`",
     "Wolfram`Chatbook`Tools`",
     "Wolfram`Chatbook`UI`",
-    "Wolfram`Chatbook`Utils`"
+    "Wolfram`Chatbook`Utils`",
+    "Wolfram`Chatbook`VectorDatabases`"
 };
 
 Scan[ Needs[ # -> None ] &, $ChatbookContexts ];
@@ -181,6 +184,8 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "GetExpressionURIs",
     "InlineTemplateBoxes",
     "MakeExpressionURI",
+    "RelatedDocumentation",
+    "RelatedWolframAlphaQueries",
     "SandboxLinguisticAssistantData",
     "SetModel",
     "SetToolOptions",
