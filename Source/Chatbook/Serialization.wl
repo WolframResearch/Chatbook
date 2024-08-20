@@ -914,6 +914,9 @@ fasterCellToString0[ NamespaceBox[
     ___
 ] ] := "\[FreeformPrompt][\""<>query<>"\"]";
 
+(* FreeformEvaluate *)
+fasterCellToString0[ RowBox @ { "=[", query_String, "]" } ] := "\[FreeformPrompt]["<>query<>"]";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Graphics*)
