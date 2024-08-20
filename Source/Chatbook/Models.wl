@@ -107,7 +107,7 @@ $fallbackModelList = { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4" };
 (*chatModelQ*)
 chatModelQ // beginDefinition;
 chatModelQ[ _? (modelContains[ "instruct" ]) ] := False;
-chatModelQ[ _? (modelContains[ StartOfString~~("gpt"|"ft:gpt") ]) ] := True;
+chatModelQ[ _? (modelContains[ StartOfString~~("gpt"|"ft:gpt"|"chatgpt-4o") ]) ] := True;
 chatModelQ[ _String ] := False;
 chatModelQ // endDefinition;
 
@@ -193,7 +193,7 @@ multimodalModelQ[ "gpt-4-turbo" ] :=
 multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "claude-3" ] :=
     True;
 
-multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4o"|"gpt-4o-mini" ] :=
+multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4o"|"gpt-4o-mini"|"chatgpt-4o" ] :=
     True;
 
 multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4-turbo-" ] :=
