@@ -75,6 +75,7 @@
 "PersonaManagerInstallPersonas" -> "Install Personas",
 "PersonaManagerInstallFrom" -> "Install from",
 "PersonaManagerInstallFromPromptRepo" -> "Prompt Repository \[UpperRightArrow]",
+"PersonaManagerInstallFromFile" -> "Definition Notebook",
 "PersonaManagerManagePersonas" -> "Manage and Enable Personas",
 "PersonaManagerInMenu" -> "In Menu",
 "PersonaManagerName" -> "Name",
@@ -113,6 +114,7 @@
 "PreferencesContentOpenAICompletionURLLabel" -> "Chat Completion URL:",
 
 "ResourceInstallerFromURLPrompt" -> "Enter a URL",
+"ResourceInstallerFromFilePrompt" -> "Choose a Resource Definition Notebook",
 
 "ToolManagerTitle" -> "Add & Manage LLM Tools",
 "ToolManagerInstallTools" -> "Install Tools",

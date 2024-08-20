@@ -6,6 +6,7 @@ BeginPackage[ "Wolfram`Chatbook`ResourceInstaller`" ];
 `$ResourceInstallationDirectory;
 `GetInstalledResourceData;
 `ResourceInstall;
+`ResourceInstallFromFile;
 `ResourceInstallFromRepository;
 `ResourceInstallFromURL;
 `ResourceInstallLocation;
@@ -396,6 +397,72 @@ scrapeResourceFromShingle[ url_String ] := Enclose[
 ];
 
 scrapeResourceFromShingle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*ResourceInstallFromFile*)
+
+ResourceInstallFromFile // ClearAll;
+
+ResourceInstallFromFile[ ] :=
+    catchMine @ ResourceInstallFromFile @ Automatic;
+
+ResourceInstallFromFile[ path_String ] :=
+    catchMine @ ResourceInstallFromFile[ Automatic, path ];
+
+ResourceInstallFromFile[ File[ path_String ] ] :=
+    catchMine @ ResourceInstallFromFile[ Automatic, path ];
+
+ResourceInstallFromFile[ rtype: $$installableType|Automatic ] := catchMine @ Enclose[
+    Module[ { path },
+
+        path = ConfirmMatch[
+            SystemDialogInput[ "FileOpen", ".nb", WindowTitle -> FrontEndResource[ "ChatbookStrings", "ResourceInstallerFromFilePrompt" ] ],
+            _String|$Canceled,
+            "InputString"
+        ];
+
+        If[ path === $Canceled,
+            $Canceled,
+            ConfirmBy[ ResourceInstallFromFile[ rtype, path ], AssociationQ, "Install" ]
+        ]
+    ],
+    throwInternalFailure[ ResourceInstallFromFile @ rtype, ## ] &
+];
+
+ResourceInstallFromFile[ rtype: $$installableType|Automatic, path_String ] := Enclose[
+    Module[ { ro, expected, actual, file },
+
+        ro       = ConfirmMatch[ resourceFromFile @ path, _ResourceObject, "ResourceObject" ];
+        expected = Replace[ rtype, Automatic -> $$installableType ];
+        actual   = ConfirmBy[ ro[ "ResourceType" ], StringQ, "ResourceType" ];
+
+        If[ ! MatchQ[ actual, expected ],
+            If[ StringQ @ expected,
+                throwMessageDialog[ "ExpectedInstallableResourceType", expected, actual ],
+                throwMessageDialog[ "NotInstallableResourceType", actual, $installableTypes ]
+            ]
+        ];
+
+        file = ConfirmBy[ ResourceInstall @ ro, FileExistsQ, "ResourceInstall" ];
+        ConfirmBy[ getResourceFile @ file, AssociationQ, "GetResourceFile" ]
+    ],
+    throwInternalFailure[ ResourceInstallFromFile[ rtype, path ], ## ] &
+];
+
+ResourceInstallFromFile[ args___ ] :=
+    catchMine @ throwFailure[ "InvalidArguments", ResourceInstallFromFile, HoldForm @ ResourceInstallFromFile @ args ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*resourceFromFile*)
+resourceFromFile // beginDefinition;
+
+resourceFromFile[ path_String ] := Block[ { PrintTemporary },
+    Quiet[ DefinitionNotebookClient`ScrapeResource[ Import[ path ] ] ]
+];
+
+resourceFromFile // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
