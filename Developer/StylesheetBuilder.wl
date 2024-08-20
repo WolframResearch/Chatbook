@@ -73,8 +73,8 @@ Get[ "Wolfram`Chatbook`" ];
 (*tr*)
 
 
-tr[name_?StringQ] := Dynamic[FEPrivate`FrontEndResource["ChatbookStrings", name]]
-trBox[name_?StringQ] := DynamicBox[FEPrivate`FrontEndResource["ChatbookStrings", name]]
+tr[ name_?StringQ ] := Dynamic[ FEPrivate`FrontEndResource[ "ChatbookStrings", name ] ]
+trBox[ name_?StringQ ] := DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookStrings", name ] ]
 
 
 (* ::Subsection::Closed:: *)
@@ -266,7 +266,7 @@ makeIconTemplateBoxStyle[ file_, icon_, boxes_ ] :=
 
 
 $askMenuItem = MenuItem[
-    "Ask AI Assistant",
+    "StylesheetContextMenuAskAI",
     KernelExecute[
         With[
             { $CellContext`nbo = InputNotebook[ ] },
@@ -286,7 +286,7 @@ $askMenuItem = MenuItem[
 
 
 $excludeMenuItem = MenuItem[
-    "Include/Exclude From AI Chat",
+    "StylesheetContextMenuIncludeExclude",
     KernelExecute[
         With[
             { $CellContext`nbo = InputNotebook[ ] },
@@ -305,10 +305,26 @@ $excludeMenuItem = MenuItem[
 (*contextMenu*)
 
 
-contextMenu[ a___, name_String, b___ ] := contextMenu[ a, FrontEndResource[ "ContextMenus", name ], b ];
-contextMenu[ a___, list_List, b___ ] := contextMenu @@ Flatten @ { a, list, b };
-contextMenu[ a___ ] := Flatten @ { a };
+(* Note:
+    MenuItem cannot have Dynamic or FEPrivate`FrontEndResource expressions as its first argument.
+    Maybe this is a bug, but a workaround is to use ContextMenu -> Dynamic[Function[...][args]].
+    The purpose of the Function is to inject resolved versions of FEPrivate`FrontEndResource.
+    Said differently, MenuItem can only take a String as its first argument, so we coerce the
+    FrontEnd to first resolve the string resources before it tries to resolve the ContextMenu. *)
 
+contextMenu[ a___, name_String, b___ ] := contextMenu[ a, FEPrivate`FrontEndResource[ "ContextMenus", name ], b ];
+contextMenu[ a : (_List | _FEPrivate`FrontEndResource).. ] := With[ { slot = Slot },
+    Replace[
+        Reap @ Module[ { i = 1 },
+            Replace[
+                FEPrivate`Join[ a ],
+                MenuItem[ s_String, rest__ ] :> ( Sow[ FEPrivate`FrontEndResource[ "ChatbookStrings", s ] ]; MenuItem[ slot[ i++ ], rest ] ),
+                { 2 }
+            ]
+        ],
+        { menu_FEPrivate`Join, { { resourceStrings__ } } } :> Dynamic[ Function[ menu ][ resourceStrings ] ]
+    ]
+]
 
 
 (* ::Subsection::Closed:: *)
@@ -360,7 +376,7 @@ assistantMenuInitializer[ name_String, color_ ] :=
                                 ],
                                 Appearance -> $suppressButtonAppearance
                             ],
-                            tr["StylesheetAssistantMenuInitializerButtonTooltip"]
+                            tr[ "StylesheetAssistantMenuInitializerButtonTooltip" ]
                         ],
                         RawBoxes @ TemplateBox[ { name, color }, "ChatMenuButton" ]
                     },
@@ -400,7 +416,7 @@ feedbackButton[ positive: True|False, name_String ] :=
                     RawBoxes @ TemplateBox[ { }, name<>"Inactive" ],
                     RawBoxes @ TemplateBox[ { }, name<>"Active" ]
                 ],
-                tr["StylesheetFeedbackButtonTooltip"]
+                tr[ "StylesheetFeedbackButtonTooltip" ]
             ],
             "LinkHand"
         ],
