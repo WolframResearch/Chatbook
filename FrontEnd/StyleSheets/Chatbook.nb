@@ -793,516 +793,54 @@ Notebook[
     |>
    |>,
    ComponentwiseContextMenu -> <|
-    "CellBracket" -> {
-     MenuItem[
-      "Ask AI Assistant",
-      KernelExecute[
-       With[ { Wolfram`ChatNB`nbo = InputNotebook[] },
-        {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]},
-        Quiet[Needs["Wolfram`Chatbook`" -> None]];
-        Symbol["Wolfram`Chatbook`ChatbookAction"][
-         "Ask",
-         Wolfram`ChatNB`nbo,
-         Wolfram`ChatNB`cells
-        ]
+    "CellBracket" ->
+     Dynamic[
+      FEPrivate`Join[{MenuItem[#1, KernelExecute[With[{Wolfram`ChatNB`nbo = InputNotebook[]}, {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]}, Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["Ask", Wolfram`ChatNB`nbo, Wolfram`ChatNB`cells]]], MenuEvaluator -> Automatic, Method -> "Queued"], MenuItem[#2, KernelExecute[With[{Wolfram`ChatNB`nbo = InputNotebook[]}, {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]}, Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["ExclusionToggle", Wolfram`ChatNB`nbo, Wolfram`ChatNB`cells]]], MenuEvaluator -> Automatic, Method -> "Queued"], Delimiter}, FEPrivate`FrontEndResource["ContextMenus", "CellBracket"]] &[
+       FEPrivate`FrontEndResource[
+        "ChatbookStrings",
+        "StylesheetContextMenuAskAI"
+       ],
+       FEPrivate`FrontEndResource[
+        "ChatbookStrings",
+        "StylesheetContextMenuIncludeExclude"
        ]
-      ],
-      MenuEvaluator -> Automatic,
-      Method -> "Queued"
+      ]
      ],
-     MenuItem[
-      "Include/Exclude From AI Chat",
-      KernelExecute[
-       With[ { Wolfram`ChatNB`nbo = InputNotebook[] },
-        {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]},
-        Quiet[Needs["Wolfram`Chatbook`" -> None]];
-        Symbol["Wolfram`Chatbook`ChatbookAction"][
-         "ExclusionToggle",
-         Wolfram`ChatNB`nbo,
-         Wolfram`ChatNB`cells
-        ]
+    "CellGroup" ->
+     Dynamic[
+      FEPrivate`Join[{MenuItem[#1, KernelExecute[With[{Wolfram`ChatNB`nbo = InputNotebook[]}, {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]}, Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["ExclusionToggle", Wolfram`ChatNB`nbo, Wolfram`ChatNB`cells]]], MenuEvaluator -> Automatic, Method -> "Queued"], Delimiter}, FEPrivate`FrontEndResource["ContextMenus", "CellGroup"]] &[
+       FEPrivate`FrontEndResource[
+        "ChatbookStrings",
+        "StylesheetContextMenuIncludeExclude"
        ]
-      ],
-      MenuEvaluator -> Automatic,
-      Method -> "Queued"
+      ]
      ],
-     Delimiter,
-     MenuItem["Cu&t", "Cut"],
-     MenuItem["&Copy", "Copy"],
-     MenuItem["&Paste", FrontEnd`Paste[After]],
-     Menu[
-      "Cop&y As",
-      {
-       MenuItem["Plain &Text", FrontEnd`CopySpecial["PlainText"]],
-       MenuItem["&Input Text", FrontEnd`CopySpecial["InputText"]],
-       MenuItem[
-        "&LaTeX",
-        KernelExecute[ToExpression["FrontEnd`CopyAsTeX[]"]],
-        MenuEvaluator -> "System"
-       ],
-       MenuItem[
-        "M&athML",
-        KernelExecute[ToExpression["FrontEnd`CopyAsMathML[]"]],
-        MenuEvaluator -> "System"
-       ],
-       Delimiter,
-       MenuItem[
-        "Cell &Object",
-        FrontEnd`CopySpecial["CellObject"]
-       ],
-       MenuItem[
-        "&Cell Expression",
-        FrontEnd`CopySpecial["CellExpression"]
-       ],
-       MenuItem[
-        "&Notebook Expression",
-        FrontEnd`CopySpecial["NotebookExpression"]
+    "CellRange" ->
+     Dynamic[
+      FEPrivate`Join[{MenuItem[#1, KernelExecute[With[{Wolfram`ChatNB`nbo = InputNotebook[]}, {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]}, Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["ExclusionToggle", Wolfram`ChatNB`nbo, Wolfram`ChatNB`cells]]], MenuEvaluator -> Automatic, Method -> "Queued"], Delimiter}, FEPrivate`FrontEndResource["ContextMenus", "CellRange"]] &[
+       FEPrivate`FrontEndResource[
+        "ChatbookStrings",
+        "StylesheetContextMenuIncludeExclude"
        ]
-      }
-     ],
-     Delimiter,
-     MenuItem["&Evaluate Cell", "EvaluateCells"],
-     MenuItem[
-      "&Remove from Evaluation Queue",
-      "RemoveFromEvaluationQueue"
-     ],
-     MenuItem[
-      "Analyze Cell",
-      KernelExecute[
-       Needs["CodeInspector`"];
-       CodeInspector`AttachAnalysis[
-        SelectedCells[InputNotebook[]]
-       ]
-      ],
-      MenuEvaluator -> Automatic,
-      Method -> "Queued"
-     ],
-     Delimiter,
-     Menu[
-      "Con&vert To",
-      {
-       MenuItem["&InputForm", "SelectionConvert" -> InputForm],
-       MenuItem[
-        "&Raw InputForm",
-        "SelectionConvert" -> RawInputForm
-       ],
-       MenuItem["&OutputForm", "SelectionConvert" -> OutputForm],
-       MenuItem[
-        "First Convert to BoxForm",
-        "MenuListConvertFormatTypes",
-        MenuAnchor -> True
-       ],
-       Delimiter,
-       MenuItem["&Bitmap", "SelectionConvert" -> "Bitmap"]
-      }
-     ],
-     ToggleMenuItem[
-      "&Initialization Cell",
-      InitializationCell -> Toggle
-     ],
-     MenuItem["Add/Remove Cell Tags...", "CellTagsEditDialog"],
-     Delimiter,
-     Menu[
-      "&Style",
-      {
-       LinkedItems[
-        {
-         MenuItem[
-          "Start Cell Style Names",
-          "MenuListStyles",
-          MenuAnchor -> True
-         ]
-        }
-       ],
-       Delimiter,
-       MenuItem["&Other...", "StyleOther"]
-      }
-     ],
-     Menu[
-      "Back&ground Color",
-      {
-       MenuItem["Palette...", "BackgroundDialog"],
-       Delimiter,
-       LinkedItems[
-        {
-         MenuItem["None", Background -> None],
-         Delimiter,
-         MenuItem["Black", Background -> GrayLevel[0]],
-         MenuItem["Gray", Background -> GrayLevel[0.5]],
-         MenuItem["Light Gray", Background -> GrayLevel[0.85]],
-         MenuItem["White", Background -> GrayLevel[1]],
-         Delimiter,
-         MenuItem[
-          "Light Blue",
-          Background -> RGBColor[0.87, 0.94, 1]
-         ],
-         MenuItem[
-          "Light Brown",
-          Background -> RGBColor[0.94, 0.91, 0.88]
-         ],
-         MenuItem["Light Cyan", Background -> RGBColor[0.9, 1, 1]],
-         MenuItem[
-          "Light Green",
-          Background -> RGBColor[0.88, 1, 0.88]
-         ],
-         MenuItem[
-          "Light Magenta",
-          Background -> RGBColor[1, 0.9, 1]
-         ],
-         MenuItem[
-          "Light Orange",
-          Background -> RGBColor[1, 0.9, 0.8]
-         ],
-         MenuItem[
-          "Light Pink",
-          Background -> RGBColor[1, 0.925, 0.925]
-         ],
-         MenuItem[
-          "Light Purple",
-          Background -> RGBColor[0.94, 0.88, 0.94]
-         ],
-         MenuItem[
-          "Light Red",
-          Background -> RGBColor[1, 0.85, 0.85]
-         ],
-         MenuItem[
-          "Light Yellow",
-          Background -> RGBColor[1, 1, 0.85]
-         ],
-         Delimiter,
-         MenuItem["Orange", Background -> RGBColor[1, 0.5, 0]],
-         MenuItem["Pink", Background -> RGBColor[1, 0.5, 0.5]],
-         MenuItem["Yellow", Background -> RGBColor[1, 1, 0]]
-        }
-       ]
-      }
-     ],
-     Menu[
-      "Si&ze",
-      {
-       MenuItem["&Larger", FontSize -> Larger],
-       MenuItem["&Smaller", FontSize -> Smaller],
-       Delimiter,
-       LinkedItems[
-        {
-         MenuItem["&9 Point", FontSize -> 9],
-         MenuItem["1&0 Point", FontSize -> 10],
-         MenuItem["&12 Point", FontSize -> 12],
-         MenuItem["1&4 Point", FontSize -> 14],
-         MenuItem["1&6 Point", FontSize -> 16],
-         MenuItem["1&8 Point", FontSize -> 18],
-         MenuItem["&24 Point", FontSize -> 24],
-         MenuItem["&36 Point", FontSize -> 36],
-         MenuItem["&72 Point", FontSize -> 72]
-        }
-       ]
-      }
-     ],
-     MenuItem["Clear &Formatting", "ClearCellOptions"],
-     Delimiter,
-     MenuItem["Save Se&lection As...", "SelectionSaveSpecial"],
-     MenuItem["Print Selection...", "PrintSelectionDialog"],
-     MenuItem["Spea&k Selection", "SelectionSpeak"],
-     Delimiter,
-     MenuItem[
-      "Properties...",
-      "OptionsDialog",
-      Scope -> Selection
+      ]
      ]
-    },
-    "CellGroup" -> {
-     MenuItem[
-      "Include/Exclude From AI Chat",
-      KernelExecute[
-       With[ { Wolfram`ChatNB`nbo = InputNotebook[] },
-        {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]},
-        Quiet[Needs["Wolfram`Chatbook`" -> None]];
-        Symbol["Wolfram`Chatbook`ChatbookAction"][
-         "ExclusionToggle",
-         Wolfram`ChatNB`nbo,
-         Wolfram`ChatNB`cells
-        ]
-       ]
-      ],
-      MenuEvaluator -> Automatic,
-      Method -> "Queued"
-     ],
-     Delimiter,
-     MenuItem["Cu&t", "Cut"],
-     MenuItem["&Copy", "Copy"],
-     MenuItem["&Paste", FrontEnd`Paste[After]],
-     Menu[
-      "Cop&y As",
-      {
-       MenuItem["Plain &Text", FrontEnd`CopySpecial["PlainText"]],
-       MenuItem[
-        "Cell &Object",
-        FrontEnd`CopySpecial["CellObject"]
-       ],
-       MenuItem[
-        "&Cell Expression",
-        FrontEnd`CopySpecial["CellExpression"]
-       ],
-       MenuItem[
-        "&Notebook Expression",
-        FrontEnd`CopySpecial["NotebookExpression"]
-       ]
-      }
-     ],
-     Delimiter,
-     MenuItem["&Merge Cells", "CellMerge"],
-     MenuItem["&Ungroup Cells", "CellUngroup"],
-     Delimiter,
-     MenuItem["Open&/Close Group", "OpenCloseGroup"],
-     MenuItem["&Open All Subgroups", "SelectionOpenAllGroups"],
-     MenuItem["C&lose All Subgroups", "SelectionCloseAllGroups"],
-     Delimiter,
-     MenuItem["&Evaluate Cells", "EvaluateCells"],
-     MenuItem[
-      "&Remove from Evaluation Queue",
-      "RemoveFromEvaluationQueue"
-     ],
-     MenuItem[
-      "Analyze Cells",
-      KernelExecute[
-       Needs["CodeInspector`"];
-       CodeInspector`AttachAnalysis[
-        SelectedCells[InputNotebook[]]
-       ]
-      ],
-      MenuEvaluator -> Automatic,
-      Method -> "Queued"
-     ],
-     Delimiter,
-     MenuItem["Clear &Formatting", "ClearCellOptions"],
-     Menu[
-      "&Style",
-      {
-       LinkedItems[
-        {
-         MenuItem[
-          "Start Cell Style Names",
-          "MenuListStyles",
-          MenuAnchor -> True
-         ]
-        }
-       ],
-       Delimiter,
-       MenuItem["&Other...", "StyleOther"]
-      }
-     ]
-    },
-    "CellRange" -> {
-     MenuItem[
-      "Include/Exclude From AI Chat",
-      KernelExecute[
-       With[ { Wolfram`ChatNB`nbo = InputNotebook[] },
-        {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]},
-        Quiet[Needs["Wolfram`Chatbook`" -> None]];
-        Symbol["Wolfram`Chatbook`ChatbookAction"][
-         "ExclusionToggle",
-         Wolfram`ChatNB`nbo,
-         Wolfram`ChatNB`cells
-        ]
-       ]
-      ],
-      MenuEvaluator -> Automatic,
-      Method -> "Queued"
-     ],
-     Delimiter,
-     MenuItem["Cu&t", "Cut"],
-     MenuItem["&Copy", "Copy"],
-     MenuItem["&Paste", FrontEnd`Paste[After]],
-     Menu[
-      "Cop&y As",
-      {
-       MenuItem["Plain &Text", FrontEnd`CopySpecial["PlainText"]],
-       MenuItem[
-        "Cell &Object",
-        FrontEnd`CopySpecial["CellObject"]
-       ],
-       MenuItem[
-        "&Cell Expression",
-        FrontEnd`CopySpecial["CellExpression"]
-       ],
-       MenuItem[
-        "&Notebook Expression",
-        FrontEnd`CopySpecial["NotebookExpression"]
-       ]
-      }
-     ],
-     Delimiter,
-     MenuItem["&Merge Cells", "CellMerge"],
-     MenuItem["&Group Cells", "CellGroup"],
-     Delimiter,
-     MenuItem["&Open All Subgroups", "SelectionOpenAllGroups"],
-     MenuItem["C&lose All Subgroups", "SelectionCloseAllGroups"],
-     Delimiter,
-     MenuItem["&Evaluate Cells", "EvaluateCells"],
-     MenuItem[
-      "&Remove from Evaluation Queue",
-      "RemoveFromEvaluationQueue"
-     ],
-     MenuItem[
-      "Analyze Cells",
-      KernelExecute[
-       Needs["CodeInspector`"];
-       CodeInspector`AttachAnalysis[
-        SelectedCells[InputNotebook[]]
-       ]
-      ],
-      MenuEvaluator -> Automatic,
-      Method -> "Queued"
-     ],
-     Delimiter,
-     MenuItem["Clear &Formatting", "ClearCellOptions"],
-     Menu[
-      "&Style",
-      {
-       LinkedItems[
-        {
-         MenuItem[
-          "Start Cell Style Names",
-          "MenuListStyles",
-          MenuAnchor -> True
-         ]
-        }
-       ],
-       Delimiter,
-       MenuItem["&Other...", "StyleOther"]
-      }
-     ]
-    }
    |>
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.5.0.3931772186"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.5.1.3933057070"|>
   ],
   Cell[
    StyleData["Text"],
-   ContextMenu -> {
-    MenuItem[
-     "Ask AI Assistant",
-     KernelExecute[
-      With[ { Wolfram`ChatNB`nbo = InputNotebook[] },
-       {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]},
-       Quiet[Needs["Wolfram`Chatbook`" -> None]];
-       Symbol["Wolfram`Chatbook`ChatbookAction"][
-        "Ask",
-        Wolfram`ChatNB`nbo,
-        Wolfram`ChatNB`cells
-       ]
+   ContextMenu ->
+    Dynamic[
+     FEPrivate`Join[{MenuItem[#1, KernelExecute[With[{Wolfram`ChatNB`nbo = InputNotebook[]}, {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]}, Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["Ask", Wolfram`ChatNB`nbo, Wolfram`ChatNB`cells]]], MenuEvaluator -> Automatic, Method -> "Queued"], Delimiter}, FEPrivate`FrontEndResource["ContextMenus", "Text"]] &[
+      FEPrivate`FrontEndResource[
+       "ChatbookStrings",
+       "StylesheetContextMenuAskAI"
       ]
-     ],
-     MenuEvaluator -> Automatic,
-     Method -> "Queued"
-    ],
-    Delimiter,
-    MenuItem["Cu&t", "Cut"],
-    MenuItem["&Copy", "Copy"],
-    MenuItem["&Paste", FrontEnd`Paste[After]],
-    Menu[
-     "Cop&y As",
-     {
-      MenuItem["Plain &Text", FrontEnd`CopySpecial["PlainText"]],
-      MenuItem["&Input Text", FrontEnd`CopySpecial["InputText"]],
-      MenuItem[
-       "&LaTeX",
-       KernelExecute[ToExpression["FrontEnd`CopyAsTeX[]"]],
-       MenuEvaluator -> "System"
-      ],
-      MenuItem[
-       "M&athML",
-       KernelExecute[ToExpression["FrontEnd`CopyAsMathML[]"]],
-       MenuEvaluator -> "System"
-      ],
-      Delimiter,
-      MenuItem[
-       "Cell &Object",
-       FrontEnd`CopySpecial["CellObject"]
-      ],
-      MenuItem[
-       "&Cell Expression",
-       FrontEnd`CopySpecial["CellExpression"]
-      ],
-      MenuItem[
-       "&Notebook Expression",
-       FrontEnd`CopySpecial["NotebookExpression"]
-      ]
-     }
-    ],
-    Delimiter,
-    MenuItem["Make &Hyperlink...", "CreateHyperlinkDialog"],
-    MenuItem[
-     "Insert Table/&Matrix...",
-     FrontEndExecute[
-      {
-       FrontEnd`NotebookOpen[
-        FrontEnd`FindFileOnPath[
-         "InsertGrid.nb",
-         "PrivatePathsSystemResources"
-        ]
-       ]
-      }
-     ]
-    ],
-    MenuItem["Chec&k Spelling...", "FindNextMisspelling"],
-    Menu[
-     "Citatio&n",
-     {
-      MenuItem[
-       "Insert Bibliographical &Reference...",
-       "InsertBibReference"
-      ],
-      MenuItem[
-       "Insert Bibliographical &Note...",
-       "InsertBibNote"
-      ],
-      Delimiter,
-      MenuItem[
-       "Set / Change Citation &Style...",
-       "SetCitationStyle"
-      ],
-      MenuItem[
-       "&Insert Bibliography and Notes",
-       "InsertBibAndNotes"
-      ],
-      MenuItem[
-       "&Delete Bibliography and Notes",
-       "DeleteBibAndNotes"
-      ],
-      MenuItem[
-       "Re&build Bibliography and Notes",
-       "RebuildBibAndNotes"
-      ]
-     }
-    ],
-    Delimiter,
-    Menu[
-     "Sty&le",
-     {
-      MenuItem[
-       "Start Cell Style Names",
-       "MenuListStyles",
-       MenuAnchor -> True
-      ],
-      Delimiter,
-      MenuItem["&Other...", "StyleOther"]
-     }
-    ],
-    Delimiter,
-    MenuItem["Create Inline Cell", "CreateInlineCell"],
-    MenuItem["Di&vide Cell", "CellSplit"],
-    MenuItem["Evaluate &in Place", All],
-    Delimiter,
-    MenuItem[
-     "Toggle &Full Screen",
-     FrontEndExecute[
-      FrontEnd`Value[FEPrivate`NotebookToggleFullScreen[]]
      ]
     ]
-   }
   ],
   Cell[
    StyleData["Input"],
@@ -1321,238 +859,28 @@ Notebook[
       Wolfram`ChatNB`cell
      ]
     ],
-   ContextMenu -> {
-    MenuItem[
-     "Ask AI Assistant",
-     KernelExecute[
-      With[ { Wolfram`ChatNB`nbo = InputNotebook[] },
-       {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]},
-       Quiet[Needs["Wolfram`Chatbook`" -> None]];
-       Symbol["Wolfram`Chatbook`ChatbookAction"][
-        "Ask",
-        Wolfram`ChatNB`nbo,
-        Wolfram`ChatNB`cells
-       ]
+   ContextMenu ->
+    Dynamic[
+     FEPrivate`Join[{MenuItem[#1, KernelExecute[With[{Wolfram`ChatNB`nbo = InputNotebook[]}, {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]}, Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["Ask", Wolfram`ChatNB`nbo, Wolfram`ChatNB`cells]]], MenuEvaluator -> Automatic, Method -> "Queued"], Delimiter}, FEPrivate`FrontEndResource["ContextMenus", "Input"]] &[
+      FEPrivate`FrontEndResource[
+       "ChatbookStrings",
+       "StylesheetContextMenuAskAI"
       ]
-     ],
-     MenuEvaluator -> Automatic,
-     Method -> "Queued"
-    ],
-    Delimiter,
-    MenuItem["Cu&t", "Cut"],
-    MenuItem["&Copy", "Copy"],
-    MenuItem["&Paste", FrontEnd`Paste[After]],
-    Menu[
-     "Cop&y As",
-     {
-      MenuItem["Plain &Text", FrontEnd`CopySpecial["PlainText"]],
-      MenuItem["&Input Text", FrontEnd`CopySpecial["InputText"]],
-      MenuItem[
-       "&LaTeX",
-       KernelExecute[ToExpression["FrontEnd`CopyAsTeX[]"]],
-       MenuEvaluator -> "System"
-      ],
-      MenuItem[
-       "M&athML",
-       KernelExecute[ToExpression["FrontEnd`CopyAsMathML[]"]],
-       MenuEvaluator -> "System"
-      ],
-      Delimiter,
-      MenuItem[
-       "Cell &Object",
-       FrontEnd`CopySpecial["CellObject"]
-      ],
-      MenuItem[
-       "&Cell Expression",
-       FrontEnd`CopySpecial["CellExpression"]
-      ],
-      MenuItem[
-       "&Notebook Expression",
-       FrontEnd`CopySpecial["NotebookExpression"]
-      ]
-     }
-    ],
-    Delimiter,
-    MenuItem["&Evaluate Cell", "EvaluateCells"],
-    MenuItem["Evaluate &in Place", All],
-    MenuItem[
-     "Analyze Cell",
-     KernelExecute[
-      Needs["CodeInspector`"];
-      CodeInspector`AttachAnalysis[
-       SelectedCells[InputNotebook[]]
-      ]
-     ],
-     MenuEvaluator -> Automatic,
-     Method -> "Queued"
-    ],
-    Menu[
-     "C&onvert To",
-     {
-      MenuItem["&InputForm", "SelectionConvert" -> InputForm],
-      MenuItem[
-       "&Raw InputForm",
-       "SelectionConvert" -> RawInputForm
-      ],
-      MenuItem["&OutputForm", "SelectionConvert" -> OutputForm],
-      MenuItem[
-       "First Convert to BoxForm",
-       "MenuListConvertFormatTypes",
-       MenuAnchor -> True
-      ],
-      Delimiter,
-      MenuItem["&Bitmap", "SelectionConvert" -> "Bitmap"]
-     }
-    ],
-    Delimiter,
-    MenuItem["Make &Hyperlink...", "CreateHyperlinkDialog"],
-    MenuItem[
-     "Insert Table/&Matrix...",
-     FrontEndExecute[
-      {
-       FrontEnd`NotebookOpen[
-        FrontEnd`FindFileOnPath[
-         "InsertGrid.nb",
-         "PrivatePathsSystemResources"
-        ]
-       ]
-      }
-     ]
-    ],
-    MenuItem[
-     "Insert &Special Character...",
-     FrontEndExecute[
-      {FrontEnd`NotebookOpen["SpecialCharacters.nb"]}
-     ]
-    ],
-    Delimiter,
-    MenuItem["Check &Balance", "Balance"],
-    MenuItem["Di&vide Cell", "CellSplit"],
-    MenuItem[
-     "&Un/Comment Selection",
-     KernelExecute[ToExpression["FE`toggleComment[]"]],
-     MenuEvaluator -> "System"
-    ],
-    MenuItem[
-     "Un/Iconi&ze Selection",
-     KernelExecute[ToExpression["FE`iconizeSelectionToggle[]"]],
-     MenuEvaluator -> Automatic
-    ],
-    Delimiter,
-    MenuItem["&Get Help", FrontEnd`SelectionHelpDialog[True]],
-    MenuItem[
-     "Why the Coloring?...",
-     FrontEndExecute[
-      {
-       FrontEnd`NotebookOpen[
-        FrontEnd`FindFileOnPath[
-         "WhyTheColoring.nb",
-         "PrivatePathsSystemResources"
-        ]
-       ]
-      }
-     ]
-    ],
-    MenuItem["Spea&k Selection", "SelectionSpeak"],
-    Delimiter,
-    MenuItem[
-     "Toggle &Full Screen",
-     FrontEndExecute[
-      FrontEnd`Value[FEPrivate`NotebookToggleFullScreen[]]
      ]
     ]
-   }
   ],
   Cell[
    StyleData["Output"],
    CellTrayWidgets -> <|"GearMenu" -> <|"Condition" -> False|>|>,
-   ContextMenu -> {
-    MenuItem[
-     "Ask AI Assistant",
-     KernelExecute[
-      With[ { Wolfram`ChatNB`nbo = InputNotebook[] },
-       {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]},
-       Quiet[Needs["Wolfram`Chatbook`" -> None]];
-       Symbol["Wolfram`Chatbook`ChatbookAction"][
-        "Ask",
-        Wolfram`ChatNB`nbo,
-        Wolfram`ChatNB`cells
-       ]
+   ContextMenu ->
+    Dynamic[
+     FEPrivate`Join[{MenuItem[#1, KernelExecute[With[{Wolfram`ChatNB`nbo = InputNotebook[]}, {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]}, Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["Ask", Wolfram`ChatNB`nbo, Wolfram`ChatNB`cells]]], MenuEvaluator -> Automatic, Method -> "Queued"], Delimiter}, FEPrivate`FrontEndResource["ContextMenus", "Output"]] &[
+      FEPrivate`FrontEndResource[
+       "ChatbookStrings",
+       "StylesheetContextMenuAskAI"
       ]
-     ],
-     MenuEvaluator -> Automatic,
-     Method -> "Queued"
-    ],
-    Delimiter,
-    MenuItem["Cu&t", "Cut"],
-    MenuItem["&Copy", "Copy"],
-    MenuItem["&Paste", FrontEnd`Paste[After]],
-    Menu[
-     "Cop&y As",
-     {
-      MenuItem["Plain &Text", FrontEnd`CopySpecial["PlainText"]],
-      MenuItem["&Input Text", FrontEnd`CopySpecial["InputText"]],
-      MenuItem[
-       "&LaTeX",
-       KernelExecute[ToExpression["FrontEnd`CopyAsTeX[]"]],
-       MenuEvaluator -> "System"
-      ],
-      MenuItem[
-       "M&athML",
-       KernelExecute[ToExpression["FrontEnd`CopyAsMathML[]"]],
-       MenuEvaluator -> "System"
-      ],
-      Delimiter,
-      MenuItem[
-       "Cell &Object",
-       FrontEnd`CopySpecial["CellObject"]
-      ],
-      MenuItem[
-       "&Cell Expression",
-       FrontEnd`CopySpecial["CellExpression"]
-      ],
-      MenuItem[
-       "&Notebook Expression",
-       FrontEnd`CopySpecial["NotebookExpression"]
-      ]
-     }
-    ],
-    Delimiter,
-    Menu[
-     "Con&vert To",
-     {
-      MenuItem["&InputForm", "SelectionConvert" -> InputForm],
-      MenuItem[
-       "&Raw InputForm",
-       "SelectionConvert" -> RawInputForm
-      ],
-      MenuItem["&OutputForm", "SelectionConvert" -> OutputForm],
-      MenuItem[
-       "First Convert to BoxForm",
-       "MenuListConvertFormatTypes",
-       MenuAnchor -> True
-      ],
-      Delimiter,
-      MenuItem["&Bitmap", "SelectionConvert" -> "Bitmap"]
-     }
-    ],
-    Delimiter,
-    MenuItem[
-     "Un/Iconi&ze Selection",
-     KernelExecute[ToExpression["FE`iconizeSelectionToggle[]"]],
-     MenuEvaluator -> Automatic
-    ],
-    Delimiter,
-    MenuItem["&Get Help", FrontEnd`SelectionHelpDialog[True]],
-    MenuItem["Spea&k Selection", "SelectionSpeak"],
-    Delimiter,
-    MenuItem[
-     "Toggle &Full Screen",
-     FrontEndExecute[
-      FrontEnd`Value[FEPrivate`NotebookToggleFullScreen[]]
      ]
     ]
-   }
   ],
   Cell[
    StyleData["Message"],

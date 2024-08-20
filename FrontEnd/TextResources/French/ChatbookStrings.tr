@@ -162,6 +162,8 @@
 "StylesheetCopyChatObject" -> "Copier l\[CloseCurlyQuote]objet de Chat",
 "StylesheetInsertionMenuChatInput" -> "Entr\[EAcute]e de chat",
 "StylesheetInsertionMenuSideChat" -> "Chat lat\[EAcute]ral",
+"StylesheetContextMenuAskAI" -> "Ask AI Assistant",
+"StylesheetContextMenuIncludeExclude" -> "Include/Exclude From AI Chat",
 
 "PersonaNameBirdnardo" -> "Birdnardo",
 "PersonaNameCodeAssistant" -> "Assistant de code",

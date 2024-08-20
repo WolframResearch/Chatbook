@@ -162,6 +162,8 @@
 "StylesheetCopyChatObject" -> "Copy ChatObject",
 "StylesheetInsertionMenuChatInput" -> "Chat Input",
 "StylesheetInsertionMenuSideChat" -> "Side Chat",
+"StylesheetContextMenuAskAI" -> "Ask AI Assistant",
+"StylesheetContextMenuIncludeExclude" -> "Include/Exclude From AI Chat",
 
 "PersonaNameBirdnardo" -> "Birdnardo",
 "PersonaNameCodeAssistant" -> "Code Assistant",
