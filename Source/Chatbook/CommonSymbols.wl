@@ -55,6 +55,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$sandboxKernelCommandLine;
 `$selectedTools;
 `$serviceCache;
+`$serviceCaller;
 `$servicesLoaded;
 `$statelessProgressIndicator;
 `$suppressButtonAppearance;
