@@ -163,6 +163,8 @@
 "StylesheetCopyChatObject" -> "ChatObject \:BCF5\:C0AC",
 "StylesheetInsertionMenuChatInput" -> "\:CC44\:D305 \:C785\:B825",
 "StylesheetInsertionMenuSideChat" -> "\:C0AC\:C774\:B4DC \:CC44\:D305",
+"StylesheetContextMenuAskAI" -> "Ask AI Assistant",
+"StylesheetContextMenuIncludeExclude" -> "Include/Exclude From AI Chat",
 
 "PersonaNameBirdnardo" -> "Birdnardo",
 "PersonaNameCodeAssistant" -> "Code Assistant",

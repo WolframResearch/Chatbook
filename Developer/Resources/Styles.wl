@@ -33,9 +33,9 @@ Cell[
     |>,
 
     ComponentwiseContextMenu -> <|
-        "CellBracket" -> contextMenu[ $askMenuItem, $excludeMenuItem, Delimiter, "CellBracket" ],
-        "CellGroup"   -> contextMenu[ $excludeMenuItem, Delimiter, "CellGroup" ],
-        "CellRange"   -> contextMenu[ $excludeMenuItem, Delimiter, "CellRange" ]
+        "CellBracket" -> contextMenu[ { $askMenuItem, $excludeMenuItem, Delimiter }, "CellBracket" ],
+        "CellGroup"   -> contextMenu[ { $excludeMenuItem, Delimiter }, "CellGroup" ],
+        "CellRange"   -> contextMenu[ { $excludeMenuItem, Delimiter }, "CellRange" ]
     |>,
 
     PrivateCellOptions -> {
@@ -59,7 +59,7 @@ Cell[
 
 Cell[
     StyleData[ "Text" ],
-    ContextMenu -> contextMenu[ $askMenuItem, Delimiter, "Text" ]
+    ContextMenu -> contextMenu[ { $askMenuItem, Delimiter }, "Text" ]
 ]
 
 
@@ -77,7 +77,7 @@ Cell[
         "*" -> "Item",
         ">" -> "ExternalLanguageDefault"
     },
-    ContextMenu -> contextMenu[ $askMenuItem, Delimiter, "Input" ],
+    ContextMenu -> contextMenu[ { $askMenuItem, Delimiter }, "Input" ],
     CellEpilog :> With[ { $CellContext`cell = (FinishDynamic[ ]; EvaluationCell[ ]) },
         Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
         Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AIAutoAssist", $CellContext`cell ]
@@ -92,7 +92,7 @@ Cell[
 
 Cell[
     StyleData[ "Output" ],
-    ContextMenu -> contextMenu[ $askMenuItem, Delimiter, "Output" ],
+    ContextMenu -> contextMenu[ { $askMenuItem, Delimiter }, "Output" ],
     CellTrayWidgets -> <| "GearMenu" -> <| "Condition" -> False |> |>
 ]
 
