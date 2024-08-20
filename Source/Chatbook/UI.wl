@@ -111,20 +111,15 @@ SetFallthroughError[createChatNotEnabledToolbar]
 createChatNotEnabledToolbar[
 	nbObj_NotebookObject,
 	menuCell_CellObject
-] := Module[{
-	button
-},
-	button = EventHandler[
+] :=
+	EventHandler[
 		makeEnableAIChatFeaturesLabel[False],
 		"MouseClicked" :> (
 			tryMakeChatEnabledNotebook[nbObj, menuCell]
 		),
 		(* Needed so that we can open a ChoiceDialog if required. *)
 		Method -> "Queued"
-	];
-
-	Pane[button, {$chatMenuWidth, Automatic}]
-]
+	]
 
 (*====================================*)
 
@@ -232,19 +227,32 @@ makeAutomaticResultAnalysisCheckbox[
 },
 	labeledCheckbox[
 		Dynamic[ autoAssistQ @ target, setterFunction ],
-		Row @ {
-			tr[ "UIAutomaticAnalysisLabel" ],
-			Spacer[ 3 ],
-			Tooltip[ chatbookIcon[ "InformationTooltip", False ], tr[ "UIAutomaticAnalysisTooltip" ] ]
-		}
+		(* We can only get the tooltip to glue itself to the text by first literalizing the text resource as a string before typesetting to RowBox. *)
+		Dynamic @ Row[
+			{
+				FrontEndResource[ "ChatbookStrings", "UIAutomaticAnalysisLabel" ],
+				Spacer[ 3 ],
+				Tooltip[ chatbookIcon[ "InformationTooltip", False ], FrontEndResource[ "ChatbookStrings", "UIAutomaticAnalysisTooltip" ] ]
+			},
+			"\[NoBreak]", StripOnInput -> True]
 	]
 ]
 
 (*====================================*)
 
+SetFallthroughError[menuItemLineWrap]
+
+menuItemLineWrap[label_, width_ : 50] :=
+Pane[
+	label,
+	$chatMenuWidth - width,
+	BaselinePosition -> Baseline, BaseStyle -> { LineBreakWithin -> Automatic, LineIndent -> -0.05, LinebreakAdjustments -> { 1, 10, 1, 0, 1 } } ]
+
+(*====================================*)
+
 SetFallthroughError[labeledCheckbox]
 
-labeledCheckbox[value_, label_, enabled_ : Automatic] := Style[
+labeledCheckbox[value_, label_, enabled_ : Automatic] :=
 	Row[
 		{
 			Checkbox[
@@ -253,7 +261,7 @@ labeledCheckbox[value_, label_, enabled_ : Automatic] := Style[
 				Enabled -> enabled
 			],
 			Spacer[3],
-			label
+			menuItemLineWrap @ label
 		},
 		BaseStyle -> {
 			"Text",
@@ -262,9 +270,7 @@ labeledCheckbox[value_, label_, enabled_ : Automatic] := Style[
 			         Preferences.nb *)
 			CheckboxBoxOptions -> { ImageMargins -> 0 }
 		}
-	],
-	LineBreakWithin -> False
-]
+	]
 
 (*====================================*)
 
@@ -280,7 +286,7 @@ makeToolCallFrequencySlider[ obj_ ] :=
                     ]
                 ]
             ],
-            Style[ tr[ "UIAdvancedChooseAutomatically" ], "ChatMenuLabel" ]
+            Style[ menuItemLineWrap @ tr[ "UIAdvancedChooseAutomatically" ], "ChatMenuLabel" ]
         ];
         slider = Pane[
             Grid[
@@ -720,7 +726,7 @@ makeChatActionMenuContent[
 			}
 		},
         {
-			tr[ "UIAdvancedToolCallFrequency" ],
+			menuItemLineWrap @ tr[ "UIAdvancedToolCallFrequency" ],
 			{
 				None,
 				makeToolCallFrequencySlider[toolValue],
@@ -761,7 +767,7 @@ makeChatActionMenuContent[
 			},
 				{
 					alignedMenuIcon[persona, personaValue, icon],
-					personaDisplayName[persona, personaSettings],
+					menuItemLineWrap @ personaDisplayName[persona, personaSettings],
 					Hold[callback["Persona", persona];updateDynamics[{"ChatBlock"}]]
 				}
 			],
@@ -780,8 +786,8 @@ makeChatActionMenuContent[
 				}]
 			}],
 			Delimiter,
-			{alignedMenuIcon[getIcon["PersonaOther"]], tr[ "UIAddAndManagePersonas" ], "PersonaManage"},
-			{alignedMenuIcon[getIcon["ToolManagerRepository"]], tr[ "UIAddAndManageTools" ], "ToolManage"},
+			{alignedMenuIcon[getIcon["PersonaOther"]], menuItemLineWrap @ tr[ "UIAddAndManagePersonas" ], "PersonaManage"},
+			{alignedMenuIcon[getIcon["ToolManagerRepository"]], menuItemLineWrap @ tr[ "UIAddAndManageTools" ], "ToolManage"},
 			Delimiter,
             <|
                 "Label" -> tr[ "UIModels" ],
