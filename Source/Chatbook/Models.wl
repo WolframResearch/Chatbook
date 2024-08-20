@@ -487,7 +487,7 @@ modelIcon[ name_String ] /; StringStartsQ[ name, "ft:" ] :=
 modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-3.5" ] :=
     RawBoxes @ TemplateBox[ { }, "ModelGPT35" ];
 
-modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-4" ] :=
+modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-4"|"chatgpt-4" ] :=
     RawBoxes @ TemplateBox[ { }, "ModelGPT4" ];
 
 modelIcon[ name_String ] :=
