@@ -75,6 +75,7 @@
 "PersonaManagerInstallPersonas" -> "Installer des personnages",
 "PersonaManagerInstallFrom" -> "Installer \[AGrave] partir de",
 "PersonaManagerInstallFromPromptRepo" -> "R\[EAcute]f\[EAcute]rentiel de l\[CloseCurlyQuote]invite \[UpperRightArrow]",
+"PersonaManagerInstallFromFile" -> "Definition Notebook",
 "PersonaManagerManagePersonas" -> "G\[EAcute]rer et activer les personnages",
 "PersonaManagerInMenu" -> "Dans le menu",
 "PersonaManagerName" -> "Nom",
@@ -113,6 +114,7 @@
 "PreferencesContentOpenAICompletionURLLabel" -> "URL compl\[EGrave]te du chat\[NonBreakingSpace]:",
 
 "ResourceInstallerFromURLPrompt" -> "Entrer une URL",
+"ResourceInstallerFromFilePrompt" -> "Choose a Resource Definition Notebook",
 
 "ToolManagerTitle" -> "Ajouter et g\[EAcute]rer des outils LLM",
 "ToolManagerInstallTools" -> "Installer des outils",

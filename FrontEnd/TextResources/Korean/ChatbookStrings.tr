@@ -76,6 +76,7 @@
 "PersonaManagerInstallPersonas" -> "\:D398\:B974\:C18C\:B098 \:C124\:CE58",
 "PersonaManagerInstallFrom" -> "\:B2E4\:C74C\:BD80\:D130 \:C124\:CE58",
 "PersonaManagerInstallFromPromptRepo" -> "\:D504\:B86C\:D504\:D2B8 \:B9AC\:D3EC\:C9C0\:D1A0\:B9AC \[UpperRightArrow]",
+"PersonaManagerInstallFromFile" -> "Definition Notebook",
 "PersonaManagerManagePersonas" -> "\:D398\:B974\:C18C\:B098 \:AD00\:B9AC \:BC0F \:D65C\:C131\:D654",
 "PersonaManagerInMenu" -> "\:BA54\:B274\:C5D0\:C11C",
 "PersonaManagerName" -> "\:C774\:B984",
@@ -114,6 +115,7 @@
 "PreferencesContentOpenAICompletionURLLabel" -> "\:CC44\:D305 \:C644\:B8CC URL:",
 
 "ResourceInstallerFromURLPrompt" -> "URL\:C744 \:C785\:B825",
+"ResourceInstallerFromFilePrompt" -> "Choose a Resource Definition Notebook",
 
 "ToolManagerTitle" -> "\:B300\:D615 \:C5B8\:C5B4 \:BAA8\:B378 \:B3C4\:AD6C\:C758 \:CD94\:AC00 \:BC0F \:AD00\:B9AC",
 "ToolManagerInstallTools" -> "\:B3C4\:AD6C \:C124\:CE58",
