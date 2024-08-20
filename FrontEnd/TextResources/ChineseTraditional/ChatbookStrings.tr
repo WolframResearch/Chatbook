@@ -162,6 +162,8 @@
 "StylesheetCopyChatObject" -> "\:8907\:88FD ChatObject",
 "StylesheetInsertionMenuChatInput" -> "\:7DB2\:8DEF\:804A\:5929\:7CFB\:7D71\:8F38\:5165",
 "StylesheetInsertionMenuSideChat" -> "Side Chat \:FF08\:585E\:6390\:FF09",
+"StylesheetContextMenuAskAI" -> "Ask AI Assistant",
+"StylesheetContextMenuIncludeExclude" -> "Include/Exclude From AI Chat",
 
 "PersonaNameBirdnardo" -> "Birdnardo",
 "PersonaNameCodeAssistant" -> "\:7DE8\:78BC\:5C0F\:5E6B\:624B",

@@ -432,7 +432,7 @@ autoMaxContextTokens // endDefinition;
 
 autoMaxContextTokens0 // beginDefinition;
 autoMaxContextTokens0[ name_String ] := autoMaxContextTokens0 @ StringSplit[ name, "-"|Whitespace ];
-autoMaxContextTokens0[ { ___, "gpt", "4o"                   , ___ } ] := 2^17;
+autoMaxContextTokens0[ { ___, "gpt"|"chatgpt", "4o"         , ___ } ] := 2^17;
 autoMaxContextTokens0[ { ___, "gpt", "4", "vision"          , ___ } ] := 2^17;
 autoMaxContextTokens0[ { ___, "gpt", "4", "turbo"           , ___ } ] := 2^17;
 autoMaxContextTokens0[ { ___, "claude", "2"                 , ___ } ] := 10^5;

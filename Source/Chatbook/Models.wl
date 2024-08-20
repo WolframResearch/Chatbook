@@ -107,7 +107,7 @@ $fallbackModelList = { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4" };
 (*chatModelQ*)
 chatModelQ // beginDefinition;
 chatModelQ[ _? (modelContains[ "instruct" ]) ] := False;
-chatModelQ[ _? (modelContains[ StartOfString~~("gpt"|"ft:gpt") ]) ] := True;
+chatModelQ[ _? (modelContains[ StartOfString~~("gpt"|"ft:gpt"|"chatgpt-4o") ]) ] := True;
 chatModelQ[ _String ] := False;
 chatModelQ // endDefinition;
 
@@ -193,7 +193,7 @@ multimodalModelQ[ "gpt-4-turbo" ] :=
 multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "claude-3" ] :=
     True;
 
-multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4o"|"gpt-4o-mini" ] :=
+multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4o"|"gpt-4o-mini"|"chatgpt-4o" ] :=
     True;
 
 multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4-turbo-" ] :=
@@ -272,6 +272,9 @@ modelNameData0[ model_String ] :=
         "-"|" "
     ];
 
+modelNameData0[ { before___, "chatgpt", after___ } ] :=
+    modelNameData0 @ { before, "ChatGPT", after };
+
 modelNameData0[ { "gpt", rest___ } ] :=
     modelNameData0 @ { "GPT", rest };
 
@@ -300,6 +303,9 @@ modelNameData0[ { "GPT", version_String, rest___ } ] /; StringStartsQ[ version, 
 (* cSpell: ignore omni *)
 modelNameData0[ { "GPT-4o", rest___ } ] :=
     modelNameData0 @ { "GPT-4", "Omni", rest };
+
+modelNameData0[ { before___, gpt_String, "4o", after___ } ] /; StringEndsQ[ gpt, "gpt", IgnoreCase -> True ] :=
+    modelNameData0 @ { before, gpt<>"-4", "Omni", after };
 
 modelNameData0[ parts: { __String } ] :=
 	<| "BaseName" -> StringRiffle @ Capitalize @ parts |>;
@@ -481,7 +487,7 @@ modelIcon[ name_String ] /; StringStartsQ[ name, "ft:" ] :=
 modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-3.5" ] :=
     RawBoxes @ TemplateBox[ { }, "ModelGPT35" ];
 
-modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-4" ] :=
+modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-4"|"chatgpt-4" ] :=
     RawBoxes @ TemplateBox[ { }, "ModelGPT4" ];
 
 modelIcon[ name_String ] :=
