@@ -313,17 +313,18 @@ $excludeMenuItem = MenuItem[
     FrontEnd to first resolve the string resources before it tries to resolve the ContextMenu. *)
 
 contextMenu[ a___, name_String, b___ ] := contextMenu[ a, FEPrivate`FrontEndResource[ "ContextMenus", name ], b ];
-contextMenu[ a : (_List | _FEPrivate`FrontEndResource).. ] :=
+contextMenu[ a : (_List | _FEPrivate`FrontEndResource).. ] := With[ { slot = Slot },
     Replace[
         Reap @ Module[ { i = 1 },
             Replace[
                 FEPrivate`Join[ a ],
-                MenuItem[ s_String, rest__ ] :> ( Sow[ FEPrivate`FrontEndResource[ "ChatbookStrings", s ] ]; MenuItem[ Slot[ i++ ], rest ] ),
+                MenuItem[ s_String, rest__ ] :> ( Sow[ FEPrivate`FrontEndResource[ "ChatbookStrings", s ] ]; MenuItem[ slot[ i++ ], rest ] ),
                 { 2 }
             ]
         ],
         { menu_FEPrivate`Join, { { resourceStrings__ } } } :> Dynamic[ Function[ menu ][ resourceStrings ] ]
     ]
+]
 
 
 (* ::Subsection::Closed:: *)
