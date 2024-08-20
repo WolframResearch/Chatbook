@@ -272,6 +272,9 @@ modelNameData0[ model_String ] :=
         "-"|" "
     ];
 
+modelNameData0[ { before___, "chatgpt", after___ } ] :=
+    modelNameData0 @ { before, "ChatGPT", after };
+
 modelNameData0[ { "gpt", rest___ } ] :=
     modelNameData0 @ { "GPT", rest };
 
@@ -300,6 +303,9 @@ modelNameData0[ { "GPT", version_String, rest___ } ] /; StringStartsQ[ version, 
 (* cSpell: ignore omni *)
 modelNameData0[ { "GPT-4o", rest___ } ] :=
     modelNameData0 @ { "GPT-4", "Omni", rest };
+
+modelNameData0[ { before___, gpt_String, "4o", after___ } ] /; StringEndsQ[ gpt, "gpt", IgnoreCase -> True ] :=
+    modelNameData0 @ { before, gpt<>"-4", "Omni", after };
 
 modelNameData0[ parts: { __String } ] :=
 	<| "BaseName" -> StringRiffle @ Capitalize @ parts |>;
