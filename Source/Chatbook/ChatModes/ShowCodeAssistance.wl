@@ -14,8 +14,11 @@ $workspaceChatWidth = 325;
 
 $workspaceChatNotebookOptions = Sequence[
     DefaultNewCellStyle -> "AutoMoveToChatInputField",
-    StyleDefinitions    -> FrontEnd`FileName[ { "Wolfram" }, "WorkspaceChat.nb", CharacterEncoding -> "UTF-8" ]
+    StyleDefinitions    -> FrontEnd`FileName[ { "Wolfram" }, "WorkspaceChat.nb", CharacterEncoding -> "UTF-8" ],
+    TaggingRules        -> <| "ChatNotebookSettings" -> <| "ServiceCaller" -> "CodeAssistance" |> |>
 ];
+
+(* TODO: set $serviceCaller from chat settings *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
