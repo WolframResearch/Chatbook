@@ -165,15 +165,6 @@ RelatedDocumentation // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Vector Database Utilities*)
-(* TODO: only use this during development and download from above URL otherwise *)
-$vectorDBDirectory :=
-    With[ { dir = FileNameJoin @ { $thisPaclet[ "Location" ], "Assets/VectorDatabases" } },
-        If[ TrueQ @ Wolfram`ChatbookInternal`$BuildingMX,
-            dir,
-            $vectorDBDirectory = dir
-        ]
-    ];
-
 $vectorDBDirectory := getVectorDBDirectory[ ];
 
 (* ::**************************************************************************************************************:: *)
@@ -188,6 +179,7 @@ getVectorDBDirectory[ ] := Enclose[
             $localVectorDBDirectory
         },
         vectorDBDirectoryQ,
+        (* TODO: need a version of this that prompts the user with a dialog asking them to download *)
         ConfirmBy[ downloadVectorDatabases[ ], vectorDBDirectoryQ, "Downloaded" ]
     ],
     throwInternalFailure
@@ -218,6 +210,62 @@ vectorDBDirectoryQ0[ dir_? DirectoryQ ] := Enclose[
 vectorDBDirectoryQ0[ _ ] := False;
 
 vectorDBDirectoryQ0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*downloadVectorDatabases*)
+(* TODO: need some kind of progress indicator *)
+downloadVectorDatabases // beginDefinition;
+
+downloadVectorDatabases[ ] :=
+    downloadVectorDatabases[ $localVectorDBDirectory, $vectorDBDownloadURLs ];
+
+downloadVectorDatabases[ dir0_, urls_Association ] := Enclose[
+    Module[ { dir, tasks },
+        dir = ConfirmBy[ GeneralUtilities`EnsureDirectory @ dir0, DirectoryQ, "Directory" ];
+        tasks = ConfirmMatch[ KeyValueMap[ downloadVectorDatabase @ dir, urls ], { __TaskObject }, "Download" ];
+        ConfirmMatch[ taskWait @ tasks, { __TaskObject }, "TaskWait" ];
+        ConfirmBy[ unpackVectorDatabases @ dir, DirectoryQ, "Unpacked" ]
+    ],
+    throwInternalFailure
+];
+
+downloadVectorDatabases // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*unpackVectorDatabases*)
+unpackVectorDatabases // beginDefinition;
+(* FIXME: define this *)
+unpackVectorDatabases // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*taskWait*)
+taskWait // beginDefinition;
+taskWait[ tasks_List ] := taskWait /@ tasks;
+taskWait[ task_TaskObject ] := taskWait[ task, task[ "TaskStatus" ] ];
+taskWait[ task_TaskObject, "Removed" ] := task;
+taskWait[ task_TaskObject, _ ] := TaskWait @ task;
+taskWait // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*downloadVectorDatabase*)
+downloadVectorDatabase // beginDefinition;
+
+downloadVectorDatabase[ dir_ ] :=
+    downloadVectorDatabase[ dir, ## ] &;
+
+downloadVectorDatabase[ dir_, name_String, url_String ] := Enclose[
+    Module[ { file },
+        file = ConfirmBy[ FileNameJoin @ { dir, name <> ".zip" }, StringQ, "File" ];
+        ConfirmMatch[ URLDownloadSubmit[ url, file ], _TaskObject, "Task" ]
+    ],
+    throwInternalFailure
+];
+
+downloadVectorDatabase // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
