@@ -1453,7 +1453,7 @@ $cachedTokenizers[ "chat-bison"   ] = ToCharacterCode[ #, "UTF8" ] &;
 $cachedTokenizers[ "gpt-4-vision" ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4" ] ][ # ] &;
 $cachedTokenizers[ "gpt-4o"       ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4o-text" ] ][ # ] &;
 $cachedTokenizers[ "claude-3"     ] = If[ graphicsQ @ #, claude3ImageTokenizer, cachedTokenizer[ "claude" ] ][ # ] &;
-$cachedTokenizers[ "generic"      ] = If[ graphicsQ @ #, { }, cachedTokenizer[ "gpt-2" ] ] &;
+$cachedTokenizers[ "generic"      ] = If[ graphicsQ @ #, { }, cachedTokenizer[ "gpt-2" ][ # ] ] &;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
