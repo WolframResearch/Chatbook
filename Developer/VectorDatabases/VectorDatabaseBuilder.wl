@@ -2,7 +2,7 @@
 (*Package Header*)
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
-BeginPackage[ "WolframChatbookDeveloper`VectorDatabaseBuilder`" ];
+BeginPackage[ "Wolfram`ChatbookVectorDatabaseBuilder`" ];
 
 (* Exported symbols *)
 `AddToVectorDatabaseData;
