@@ -71,6 +71,14 @@ RelatedWolframAlphaQueries[\"string$\"] gives a list of Wolfram|Alpha queries th
 conversational-style question specified by \"string$\".
 RelatedWolframAlphaQueries[All] gives the full list of available Wolfram|Alpha sample queries." ];
 
+RelatedWolframAlphaQueries[ ___ ] /; $noSemanticSearch := Failure[
+    "SemanticSearchUnavailable",
+    <|
+        "MessageTemplate"   :> "SemanticSearch paclet is not available.",
+        "MessageParameters" -> { }
+    |>
+];
+
 RelatedWolframAlphaQueries[ prompt: _String | { ___String } ] :=
     catchMine @ RelatedWolframAlphaQueries[ prompt, Automatic ];
 
@@ -106,6 +114,14 @@ GeneralUtilities`SetUsage[ RelatedDocumentation, "\
 RelatedDocumentation[\"string$\"] gives a list of documentation URIs that are semantically related to the \
 conversational-style question specified by \"string$\".
 RelatedDocumentation[All] gives the full list of available documentation URIs." ];
+
+RelatedDocumentation[ ___ ] /; $noSemanticSearch := Failure[
+    "SemanticSearchUnavailable",
+    <|
+        "MessageTemplate"   :> "SemanticSearch paclet is not available.",
+        "MessageParameters" -> { }
+    |>
+];
 
 RelatedDocumentation[ prompt_ ] := catchMine @ RelatedDocumentation[ prompt, Automatic ];
 RelatedDocumentation[ prompt_, Automatic ] := catchMine @ RelatedDocumentation[ prompt, "URIs" ];
@@ -168,6 +184,8 @@ RelatedDocumentation // endDefinition;
 (* ::Section::Closed:: *)
 (*Vector Database Utilities*)
 $vectorDBDirectory := getVectorDBDirectory[ ];
+
+$noSemanticSearch := $noSemanticSearch = ! PacletObjectQ @ Quiet @ PacletInstall[ "SemanticSearch" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
