@@ -31,13 +31,15 @@ Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 
 (* A prebuilt version of the SemanticSearch paclet is included for running tests on 13.3: *)
 If[ ! PacletObjectQ @ PacletObject[ "SemanticSearch" ],
-    cicd`ScriptConfirmBy[
-        PacletInstall @ FileNameJoin @ {
-            DirectoryName[ $InputFileName, 2 ],
-            "Developer", "Resources", "Paclets", "SemanticSearch.paclet"
-        },
-        PacletObjectQ
-    ]
+    semanticSearchPaclet = FileNameJoin @ {
+        DirectoryName[ $InputFileName, 2 ],
+        "Developer", "Resources", "Paclets", "SemanticSearch.paclet"
+    };
+    Print[ "File: ", semanticSearchPaclet ];
+    Print[ "Exists: ", FileExistsQ @ semanticSearchPaclet ];
+    Print[ "Size: ", FileByteCount @ semanticSearchPaclet ];
+    Print[ "Hash: ", FileHash @ semanticSearchPaclet ];
+    cicd`ScriptConfirmBy[ PacletInstall @ semanticSearchPaclet, PacletObjectQ ]
 ];
 
 (* ::**************************************************************************************************************:: *)
