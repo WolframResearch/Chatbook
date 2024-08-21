@@ -29,6 +29,17 @@ If[ ! PacletObjectQ @ PacletObject[ "Wolfram/PacletCICD" ],
 
 Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 
+(* A prebuilt version of the SemanticSearch paclet is included for running tests on 13.3: *)
+If[ ! PacletObjectQ @ PacletObject[ "SemanticSearch" ],
+    cicd`ScriptConfirmBy[
+        PacletInstall @ FileNameJoin @ {
+            DirectoryName[ $InputFileName, 2 ],
+            "Developer", "Resources", "Paclets", "SemanticSearch.paclet"
+        },
+        PacletObjectQ
+    ]
+];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Definitions*)
