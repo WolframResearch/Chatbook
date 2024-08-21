@@ -828,7 +828,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.5.1.3933057070"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.5.1.3933230601"|>
   ],
   Cell[
    StyleData["Text"],
@@ -1920,7 +1920,12 @@ Notebook[
        FrameMargins -> {{3, 3}, {2, 2}},
        FrameStyle ->
         Directive[AbsoluteThickness[1], GrayLevel[0.92941]],
-       ImageMargins -> {{0, 0}, {0, 0}}
+       ImageMargins -> {{0, 0}, {0, 0}},
+       BaseStyle -> {
+        "InlineCode",
+        AutoSpacing -> False,
+        AutoMultiplicationSymbol -> False
+       }
       ]
      ])
    }
