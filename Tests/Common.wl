@@ -29,17 +29,23 @@ If[ ! PacletObjectQ @ PacletObject[ "Wolfram/PacletCICD" ],
 
 Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 
+If[ $VersionNumber < 14 && StringQ @ Environment[ "GITHUB_ACTIONS" ],
+    PacletSiteUpdate @ PacletSites[ ];
+    PacletInstall[ "OAuth" ];
+    PacletInstall[ "ServiceConnection_OpenAI" ];
+    PacletInstall[ "ServiceConnectionUtilities" ];
+    PacletInstall[ "Wolfram/LLMFunctions" ];
+];
+
 (* A prebuilt version of the SemanticSearch paclet is included for running tests on 13.3: *)
 If[ ! PacletObjectQ @ PacletObject[ "SemanticSearch" ],
-    semanticSearchPaclet = FileNameJoin @ {
-        DirectoryName[ $InputFileName, 2 ],
-        "Developer", "Resources", "Paclets", "SemanticSearch.paclet"
-    };
-    Print[ "File: ", semanticSearchPaclet ];
-    Print[ "Exists: ", FileExistsQ @ semanticSearchPaclet ];
-    Print[ "Size: ", FileByteCount @ semanticSearchPaclet ];
-    Print[ "Hash: ", FileHash @ semanticSearchPaclet ];
-    cicd`ScriptConfirmBy[ PacletInstall @ semanticSearchPaclet, PacletObjectQ ]
+    cicd`ScriptConfirmBy[
+        PacletInstall @ FileNameJoin @ {
+            DirectoryName[ $InputFileName, 2 ],
+            "Developer/Resources/Paclets/SemanticSearch.paclet"
+        },
+        PacletObjectQ
+    ]
 ];
 
 (* ::**************************************************************************************************************:: *)
