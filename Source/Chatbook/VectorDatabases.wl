@@ -49,6 +49,8 @@ $vectorDBDownloadURLs = AssociationMap[ $baseVectorDatabasesURL <> "/" <> # <> "
 $pacletVectorDBDirectory := FileNameJoin @ { $thisPaclet[ "Location" ], "Assets/VectorDatabases" };
 $localVectorDBDirectory  := FileNameJoin @ { ExpandFileName @ LocalObject @ $LocalBase, "Chatbook/VectorDatabases" };
 
+(* TODO: need versioned URLs and paths *)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Argument Patterns*)
@@ -214,23 +216,49 @@ vectorDBDirectoryQ0 // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*downloadVectorDatabases*)
-(* TODO: need some kind of progress indicator *)
 downloadVectorDatabases // beginDefinition;
 
 downloadVectorDatabases[ ] :=
     downloadVectorDatabases[ $localVectorDBDirectory, $vectorDBDownloadURLs ];
 
 downloadVectorDatabases[ dir0_, urls_Association ] := Enclose[
-    Module[ { dir, tasks },
+    Module[ { names, sizes, dir, tasks },
+
         dir = ConfirmBy[ GeneralUtilities`EnsureDirectory @ dir0, DirectoryQ, "Directory" ];
-        tasks = ConfirmMatch[ KeyValueMap[ downloadVectorDatabase @ dir, urls ], { __TaskObject }, "Download" ];
-        ConfirmMatch[ taskWait @ tasks, { __TaskObject }, "TaskWait" ];
-        ConfirmBy[ unpackVectorDatabases @ dir, DirectoryQ, "Unpacked" ]
+        names = ConfirmMatch[ Keys @ urls, { __String }, "Names" ];
+        sizes = ConfirmMatch[ getDownloadSize /@ Values @ urls, { __? Positive }, "Sizes" ];
+
+        $downloadProgress = AssociationMap[ 0 &, names ];
+        $progressText = "Downloading semantic search indices\[Ellipsis]";
+        Progress`EvaluateWithProgress[
+            tasks = ConfirmMatch[ KeyValueMap[ downloadVectorDatabase @ dir, urls ], { __TaskObject }, "Download" ];
+            ConfirmMatch[ taskWait @ tasks, { __TaskObject }, "TaskWait" ];
+            $progressText = "Unpacking files\[Ellipsis]";
+            ConfirmBy[ unpackVectorDatabases @ dir, DirectoryQ, "Unpacked" ],
+            With[ { s = Total @ sizes },
+                <|
+                    "Text"             :> $progressText,
+                    "ElapsedTime"      -> Automatic,
+                    "RemainingTime"    -> Automatic,
+                    (* "ByteCountCurrent" :> Total @ $downloadProgress,
+                    "ByteCountTotal"   -> Total @ sizes, *)
+                    "Progress"         :> Total @ $downloadProgress / s
+                |>
+            ]
+        ]
     ],
     throwInternalFailure
 ];
 
 downloadVectorDatabases // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getDownloadSize*)
+getDownloadSize // beginDefinition;
+getDownloadSize[ url_String ] := getDownloadSize @ CloudObject @ url;
+getDownloadSize[ obj_CloudObject ] := FileByteCount @ obj;
+getDownloadSize // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -277,13 +305,30 @@ downloadVectorDatabase[ dir_ ] :=
 
 downloadVectorDatabase[ dir_, name_String, url_String ] := Enclose[
     Module[ { file },
-        file = ConfirmBy[ FileNameJoin @ { dir, name <> ".zip" }, StringQ, "File" ];
-        ConfirmMatch[ URLDownloadSubmit[ url, file ], _TaskObject, "Task" ]
+        file = ConfirmBy[ FileNameJoin @ { dir, name<>".zip" }, StringQ, "File" ];
+        ConfirmMatch[
+            URLDownloadSubmit[
+                url,
+                file,
+                HandlerFunctions     -> <| "TaskProgress" -> setDownloadProgress @ name |>,
+                HandlerFunctionsKeys -> { "ByteCountDownloaded" }
+            ],
+            _TaskObject,
+            "Task"
+        ]
     ],
     throwInternalFailure
 ];
 
 downloadVectorDatabase // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*setDownloadProgress*)
+setDownloadProgress // beginDefinition;
+setDownloadProgress[ name_String ] := setDownloadProgress[ name, ## ] &;
+setDownloadProgress[ name_, KeyValuePattern[ "ByteCountDownloaded" -> b_? Positive ] ] := $downloadProgress[ name ] = b;
+setDownloadProgress // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
