@@ -68,10 +68,10 @@ If[ ! DirectoryQ @ $pacletDirectory, abort[ "Paclet directory ", $pacletDirector
 Quiet @ PacletDirectoryUnload @ $sourceDirectory;
 PacletDataRebuild[ ];
 PacletDirectoryLoad @ $pacletDirectory;
+Get[ "Wolfram`Chatbook`" ];
 If[ ! MemberQ[ $LoadedFiles, FileNameJoin @ { $pacletDirectory, "Source", "Chatbook", "64Bit", "Chatbook.mx" } ],
     abort[ "Paclet MX file was not loaded!" ]
 ];
-Needs[ "Wolfram`Chatbook`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
