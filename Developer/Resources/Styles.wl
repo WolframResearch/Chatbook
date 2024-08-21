@@ -611,7 +611,8 @@ Cell[
             BaselinePosition -> Scaled[ 0.275 ],
             FrameMargins     -> { { 3, 3 }, { 2, 2 } },
             FrameStyle       -> Directive[ AbsoluteThickness[ 1 ], GrayLevel[ 0.92941 ] ],
-            ImageMargins     -> { { 0, 0 }, { 0, 0 } }
+            ImageMargins     -> { { 0, 0 }, { 0, 0 } },
+            BaseStyle        -> { "InlineCode", AutoSpacing -> False, AutoMultiplicationSymbol -> False }
         ]
     }
 ]
