@@ -236,8 +236,26 @@ downloadVectorDatabases // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*unpackVectorDatabases*)
 unpackVectorDatabases // beginDefinition;
-(* FIXME: define this *)
+unpackVectorDatabases[ dir_? DirectoryQ ] := unpackVectorDatabases[ dir, FileNames[ "*.zip", dir ] ];
+unpackVectorDatabases[ dir_, zips: { __String } ] := unpackVectorDatabases[ dir, zips, unpackVectorDatabase /@ zips ];
+unpackVectorDatabases[ dir_, zips_, extracted: { { __String }.. } ] := dir;
 unpackVectorDatabases // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*unpackVectorDatabase*)
+unpackVectorDatabase // beginDefinition;
+
+unpackVectorDatabase[ zip_String? FileExistsQ ] := Enclose[
+    Module[ { root, dir },
+        root = ConfirmBy[ DirectoryName @ zip, DirectoryQ, "RootDirectory" ];
+        dir = ConfirmBy[ GeneralUtilities`EnsureDirectory @ { root, FileBaseName @ zip }, DirectoryQ, "Directory" ];
+        ConfirmMatch[ ExtractArchive[ zip, dir, OverwriteTarget -> True ], { __? FileExistsQ }, "Extracted" ]
+    ],
+    throwInternalFailure
+];
+
+unpackVectorDatabase // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
