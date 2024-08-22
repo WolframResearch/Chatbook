@@ -156,6 +156,7 @@ $$size            = Infinity | (_Real|_Integer)? NonNegative;
 $$unspecified     = _Missing | Automatic | Inherited;
 $$feObj           = _FrontEndObject | $FrontEndSession | _NotebookObject | _CellObject | _BoxObject;
 $$template        = _String|_TemplateObject|_TemplateExpression|_TemplateSequence;
+$$serviceCaller   = _String? StringQ | { ___String? StringQ };
 
 (* Helper functions for held pattern tests: *)
 u[ f_ ] := Function[ Null, f @ Unevaluated @ #, HoldAllComplete ];
@@ -775,22 +776,38 @@ makeInternalFailureData[ eval_, args___ ] :=
 (* ::Subsection::Closed:: *)
 (*setServiceCaller*)
 setServiceCaller // beginDefinition;
-setServiceCaller // Attributes = { HoldFirst };
 
-setServiceCaller[ eval_ ] := (
+setServiceCaller[ eval_ ] :=
+    setServiceCaller[ eval, chatbookServiceCaller[ ] ];
+
+setServiceCaller[ eval_, caller_ ] := (
     Quiet @ Needs[ "ServiceConnectionUtilities`" -> None ];
-    setServiceCaller[ eval, ServiceConnectionUtilities`$Caller ]
+    setServiceCaller[ eval, caller, ServiceConnectionUtilities`$Caller ]
 );
 
-setServiceCaller[ eval_, { c___ } ] :=
-    Block[ { ServiceConnectionUtilities`$Caller = { c, "Chatbook" }, setServiceCaller = # & },
+setServiceCaller[ eval_, caller: $$serviceCaller, { current___ } ] :=
+    Block[ { ServiceConnectionUtilities`$Caller = DeleteDuplicates @ Flatten @ { current, "Chatbook", caller } },
         eval
     ];
 
-setServiceCaller[ eval_, _ ] :=
-    setServiceCaller[ eval, { } ];
+setServiceCaller[ eval_, caller_, _ ] :=
+    setServiceCaller[ eval, caller, { } ];
 
+setServiceCaller // Attributes = { HoldFirst };
 setServiceCaller // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbookServiceCaller*)
+chatbookServiceCaller // beginDefinition;
+
+chatbookServiceCaller[ ] := Flatten @ {
+    If[ TrueQ @ $InlineChat, "InlineChat", Nothing ],
+    If[ TrueQ @ $WorkspaceChat, "WorkspaceChat", Nothing ],
+    Replace[ $serviceCaller, Except[ $$serviceCaller ] -> Nothing ]
+};
+
+chatbookServiceCaller // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
