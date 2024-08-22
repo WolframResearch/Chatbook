@@ -120,6 +120,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`Personas`",
     "Wolfram`Chatbook`PreferencesContent`",
     "Wolfram`Chatbook`PreferencesUtils`",
+    "Wolfram`Chatbook`PromptGenerators`",
     "Wolfram`Chatbook`Prompting`",
     "Wolfram`Chatbook`ResourceInstaller`",
     "Wolfram`Chatbook`Sandbox`",
@@ -130,8 +131,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`ToolManager`",
     "Wolfram`Chatbook`Tools`",
     "Wolfram`Chatbook`UI`",
-    "Wolfram`Chatbook`Utils`",
-    "Wolfram`Chatbook`VectorDatabases`"
+    "Wolfram`Chatbook`Utils`"
 };
 
 Scan[ Needs[ # -> None ] &, $ChatbookContexts ];
