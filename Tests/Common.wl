@@ -6,6 +6,7 @@ BeginPackage[ "Wolfram`ChatbookTests`" ];
 (* :!CodeAnalysis::BeginBlock:: *)
 
 HoldComplete[
+    `$TestDefinitionsLoaded,
     `$TestNotebook;
     `CreateChatCell;
     `CreateChatCells;
@@ -28,6 +29,10 @@ If[ ! PacletObjectQ @ PacletObject[ "Wolfram/PacletCICD" ],
 ];
 
 Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
+
+If[ StringQ @ Environment[ "GITHUB_ACTIONS" ],
+    ServiceConnect[ "OpenAI", Authentication -> <| "APIKey" -> Environment[ "OPENAI_API_KEY" ] |> ]
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -68,10 +73,10 @@ If[ ! DirectoryQ @ $pacletDirectory, abort[ "Paclet directory ", $pacletDirector
 Quiet @ PacletDirectoryUnload @ $sourceDirectory;
 PacletDataRebuild[ ];
 PacletDirectoryLoad @ $pacletDirectory;
+Get[ "Wolfram`Chatbook`" ];
 If[ ! MemberQ[ $LoadedFiles, FileNameJoin @ { $pacletDirectory, "Source", "Chatbook", "64Bit", "Chatbook.mx" } ],
     abort[ "Paclet MX file was not loaded!" ]
 ];
-Needs[ "Wolfram`Chatbook`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
