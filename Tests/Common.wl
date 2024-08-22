@@ -6,6 +6,7 @@ BeginPackage[ "Wolfram`ChatbookTests`" ];
 (* :!CodeAnalysis::BeginBlock:: *)
 
 HoldComplete[
+    `$TestDefinitionsLoaded,
     `$TestNotebook;
     `CreateChatCell;
     `CreateChatCells;
@@ -30,7 +31,7 @@ If[ ! PacletObjectQ @ PacletObject[ "Wolfram/PacletCICD" ],
 Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 
 If[ StringQ @ Environment[ "GITHUB_ACTIONS" ],
-    EchoEvaluation @ ServiceConnect[ "OpenAI", Authentication -> <| "APIKey" -> Environment[ "OPENAI_API_KEY" ] |> ]
+    ServiceConnect[ "OpenAI", Authentication -> <| "APIKey" -> Environment[ "OPENAI_API_KEY" ] |> ]
 ];
 
 (* ::**************************************************************************************************************:: *)
