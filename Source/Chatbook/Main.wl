@@ -17,6 +17,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$ChatNotebookEvaluation;
 `$ChatPost;
 `$ChatPre;
+`$ChatTimingData;
 `$CurrentChatSettings;
 `$DefaultChatHandlerFunctions;
 `$DefaultChatProcessingFunctions;
@@ -52,6 +53,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `GetExpressionURIs;
 `InlineTemplateBoxes;
 `InvalidateServiceCache;
+`LogChatTiming;
 `MakeExpressionURI;
 `RelatedDocumentation;
 `RelatedWolframAlphaQueries;
@@ -151,6 +153,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "$AutomaticAssistance",
     "$ChatbookContexts",
     "$ChatNotebookEvaluation",
+    "$ChatTimingData",
     "$CurrentChatSettings",
     "$DefaultChatHandlerFunctions",
     "$DefaultChatProcessingFunctions",
@@ -183,6 +186,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "GetExpressionURI",
     "GetExpressionURIs",
     "InlineTemplateBoxes",
+    "LogChatTiming",
     "MakeExpressionURI",
     "RelatedDocumentation",
     "RelatedWolframAlphaQueries",
