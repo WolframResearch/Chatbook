@@ -129,21 +129,22 @@ downloadVectorDatabases[ dir0_, urls_Association ] := Enclose[
 
         $downloadProgress = AssociationMap[ 0 &, names ];
         $progressText = "Downloading semantic search indices\[Ellipsis]";
+
         Progress`EvaluateWithProgress[
+
             tasks = ConfirmMatch[ KeyValueMap[ downloadVectorDatabase @ dir, urls ], { __TaskObject }, "Download" ];
             ConfirmMatch[ taskWait @ tasks, { __TaskObject }, "TaskWait" ];
             $progressText = "Unpacking files\[Ellipsis]";
             ConfirmBy[ unpackVectorDatabases @ dir, DirectoryQ, "Unpacked" ],
-            With[ { s = Total @ sizes },
-                <|
-                    "Text"             :> $progressText,
-                    "ElapsedTime"      -> Automatic,
-                    "RemainingTime"    -> Automatic,
-                    (* "ByteCountCurrent" :> Total @ $downloadProgress,
-                    "ByteCountTotal"   -> Total @ sizes, *)
-                    "Progress"         :> Total @ $downloadProgress / s
-                |>
-            ]
+
+            <|
+                "Text"             :> $progressText,
+                "ElapsedTime"      -> Automatic,
+                "RemainingTime"    -> Automatic,
+                "ByteCountCurrent" :> Total @ $downloadProgress,
+                "ByteCountTotal"   -> Total @ sizes,
+                "Progress"         -> Automatic
+            |>
         ]
     ],
     throwInternalFailure
