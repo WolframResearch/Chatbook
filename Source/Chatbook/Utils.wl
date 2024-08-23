@@ -421,6 +421,94 @@ tinyHash // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*$ChatTimingData*)
+$ChatTimingData := chatTimingData[ ];
+
+$ChatTimingData /: Unset @ $ChatTimingData := ($timingLog = Internal`Bag[ ]; Null);
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatTimingData*)
+chatTimingData // beginDefinition;
+chatTimingData[ ] := SortBy[ Internal`BagPart[ $timingLog, All ], Lookup[ "AbsoluteTime" ] ]; (* TODO: format this data *)
+chatTimingData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*LogChatTiming*)
+LogChatTiming // beginDefinition;
+LogChatTiming // Attributes = { HoldFirst, SequenceHold };
+
+LogChatTiming[ tag_String ] := Function[ eval, LogChatTiming[ eval, tag ], HoldAllComplete ];
+LogChatTiming[ sym_Symbol ] := LogChatTiming @ Evaluate @ SymbolName @ sym;
+LogChatTiming[ eval: (h_Symbol)[ ___ ] ] := LogChatTiming[ eval, SymbolName @ h ];
+LogChatTiming[ eval_ ] := LogChatTiming[ eval, "None" ];
+
+LogChatTiming[ eval_, tag_String ] := (
+    If[ ! NumberQ @ $chatStartTime, $chatStartTime = AbsoluteTime[ ] ];
+    If[ ! StringQ @ $chatEvaluationID, $chatEvaluationID = CreateUUID[ ] ];
+    If[ MatchQ[ $timings, _Internal`Bag ],
+        logChatTiming[ eval, tag ],
+        Block[ { $timings = Internal`Bag[ ] },
+            logChatTiming[ eval, tag ]
+        ]
+    ]
+);
+
+LogChatTiming // endExportedDefinition;
+
+$timings   = Internal`Bag[ ];
+$timingLog = Internal`Bag[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*logChatTiming*)
+logChatTiming // beginDefinition;
+logChatTiming // Attributes = { HoldFirst, SequenceHold };
+
+logChatTiming[ eval_, tag_String ] :=
+    Module[ { now, absNow, result, fullTime, innerTimings, usedTime },
+
+        now    = chatTime[ ];
+        absNow = AbsoluteTime[ ];
+
+        Block[ { $timings = Internal`Bag[ ] },
+            fullTime = First @ AbsoluteTiming[ result = eval ];
+            innerTimings = Internal`BagPart[ $timings, All ];
+        ];
+
+        usedTime = fullTime - Total @ innerTimings;
+        Internal`StuffBag[ $timings, fullTime ];
+
+        Internal`StuffBag[
+            $timingLog,
+            <|
+                "ChatEvaluationCell" -> $ChatEvaluationCell,
+                "Tag"                -> tag,
+                "UsedTiming"         -> usedTime,
+                "FullTiming"         -> fullTime,
+                "ChatTime"           -> now,
+                "AbsoluteTime"       -> absNow,
+                "UUID"               -> $chatEvaluationID
+            |>
+        ];
+
+        result
+    ];
+
+logChatTiming // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatTime*)
+chatTime // beginDefinition;
+chatTime[ ] := chatTime @ $chatStartTime;
+chatTime[ start_Real ] := AbsoluteTime[ ] - start;
+chatTime[ _ ] := Missing[ "NotAvailable" ];
+chatTime // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
     Scan[ fileFormatQ, $fileFormats ];

@@ -126,10 +126,21 @@ createFETask[ eval_ ] /; $cloudNotebooks :=
     eval;
 
 createFETask[ eval_ ] :=
-    With[ { inline = $InlineChat, state = $inlineChatState },
+    With[ { inline = $InlineChat, state = $inlineChatState, id = $chatEvaluationID, t = $chatStartTime },
         If[ $feTaskDebug, Internal`StuffBag[ $feTaskLog, <| "Task" -> Hold @ eval, "Created" -> AbsoluteTime[ ] |> ] ];
         (* FIXME: This Block is a bit of a hack: *)
-        AppendTo[ $feTasks, Hold @ Block[ { $InlineChat = inline, $inlineChatState = state }, eval ] ];
+        AppendTo[
+            $feTasks,
+            Hold @ Block[
+                {
+                    $InlineChat       = inline,
+                    $inlineChatState  = state,
+                    $chatEvaluationID = id,
+                    $chatStartTime    = t
+                },
+                eval
+            ]
+        ];
         ++$feTaskCreationCount;
         ++$feTaskTrigger
     ];
