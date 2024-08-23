@@ -241,7 +241,7 @@ resolveAutoSettings[ settings0_Association ] := Enclose[
         If[ $catching, $currentChatSettings = resolved ];
 
         resolved
-    ],
+    ] // LogChatTiming[ "ResolveAutoSettings" ],
     throwInternalFailure
 ];
 
