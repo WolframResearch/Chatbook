@@ -537,7 +537,8 @@ chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] :
                 makeLLMConfiguration @ settings,
                 Authentication       -> settings[ "Authentication" ],
                 HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
-                HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings
+                HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
+                "TestConnection"     -> False
             ],
             <|
                 "Container"             :> container,
