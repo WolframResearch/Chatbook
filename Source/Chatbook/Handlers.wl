@@ -58,8 +58,8 @@ applyHandlerFunction[ settings_Association, name_String, args0_ ] := Enclose[
         $ChatHandlerData = ConfirmBy[ addHandlerArguments @ args, AssociationQ, "AddHandlerArguments" ];
         handler = Confirm[ getHandlerFunction[ settings, name ], "HandlerFunction" ];
         handler @ KeyDrop[ $ChatHandlerData, $handlerDroppedParameters ]
-    ],
-    throwInternalFailure[ applyHandlerFunction[ settings, name, args0 ], ## ] &
+    ] // LogChatTiming[ name ],
+    throwInternalFailure
 ];
 
 applyHandlerFunction // endDefinition;
@@ -167,8 +167,8 @@ applyProcessingFunction[ settings_Association, name_String, args_HoldComplete, p
         ];
         function = Confirm[ getProcessingFunction[ settings, name, default ], "ProcessingFunction" ];
         function @@ args
-    ],
-    throwInternalFailure[ applyProcessingFunction[ settings, name, args, default ], ## ] &
+    ] // LogChatTiming[ name ],
+    throwInternalFailure
 ];
 
 applyProcessingFunction[ settings_, name_, args: Except[ _HoldComplete ], params_, default_ ] :=

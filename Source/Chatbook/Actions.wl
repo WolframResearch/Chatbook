@@ -402,7 +402,7 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
 
             (* Send chat while listening for an abort: *)
             CheckAbort[
-                sendChat[ evalCell, nbo, settings ];
+                sendChat[ evalCell, nbo, settings ] // LogChatTiming[ "SendChat" ];
                 waitForLastTask[ ]
                 ,
                 (* The user has issued an abort: *)
@@ -425,7 +425,7 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
                             chat = constructChatObject @ Append[
                                 $lastMessages,
                                 <| "Role" -> "Assistant", "Content" -> $lastChatString |>
-                            ]
+                            ] // LogChatTiming[ "ConstructChatObject" ]
                         },
                         applyChatPost[ chat, settings, nbo, $aborted ]
                     ],
@@ -434,7 +434,7 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
                 ];
             ]
         ]
-    ];
+    ] // LogChatTiming[ "EvaluateChatInput" ];
 
 EvaluateChatInput // endDefinition;
 
@@ -544,11 +544,12 @@ waitForLastTask[ ] := waitForLastTask @ $lastTask;
 
 waitForLastTask[ $Canceled ] := $Canceled;
 
-waitForLastTask[ task_TaskObject ] := (
+waitForLastTask[ task_TaskObject ] := LogChatTiming[
     TaskWait @ task;
     runNextTask[ ];
-    If[ $lastTask =!= task, waitForLastTask @ $lastTask ]
-);
+    If[ $lastTask =!= task, waitForLastTask @ $lastTask ],
+    "WaitForLastTask"
+];
 
 waitForLastTask[ HoldPattern[ $lastTask ] ] := Null;
 
