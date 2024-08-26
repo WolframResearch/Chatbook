@@ -577,6 +577,7 @@ catchTop[ eval_, sym_Symbol ] :=
     Block[
         {
             $ChatNotebookEvaluation = True,
+            $chatEvaluationID       = CreateUUID[ ],
             $currentChatSettings    = None,
             $messageSymbol          = Replace[ $messageSymbol, Chatbook -> sym ],
             $catching               = True,
@@ -584,6 +585,7 @@ catchTop[ eval_, sym_Symbol ] :=
             catchTop                = # &,
             catchTopAs              = (#1 &) &
         },
+        $chatStartTime = AbsoluteTime[ ];
         Catch[ setServiceCaller @ eval, $catchTopTag ]
     ];
 
