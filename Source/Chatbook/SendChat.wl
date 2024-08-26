@@ -53,7 +53,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         cells0 = ConfirmMatch[ selectChatCells[ settings, evalCell, nbo ], { __CellObject }, "SelectChatCells" ];
 
         { cells, target } = ConfirmMatch[
-            chatHistoryCellsAndTarget @ cells0,
+            chatHistoryCellsAndTarget @ cells0 // LogChatTiming[ "ChatHistoryCellsAndTarget" ],
             { { __CellObject }, _CellObject | None },
             "HistoryAndTarget"
         ];
@@ -71,7 +71,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
 
         { messages, data } = Reap[
             ConfirmMatch[
-                constructMessages[ settings, cells ],
+                constructMessages[ settings, cells ] // LogChatTiming[ "ConstructMessages" ],
                 { __Association },
                 "MakeHTTPRequest"
             ],
@@ -120,14 +120,14 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
                     CurrentValue[ evalCell, CellDingbat ],
                     TemplateBox[ { }, "ChatInputActiveCellDingbat" ] -> TemplateBox[ { }, "ChatInputCellDingbat" ]
                 ]
-            ]
+            ] // LogChatTiming[ "SetCellDingbat" ]
         ];
 
         cellObject = $lastCellObject = ConfirmMatch[
             createNewChatOutput[ settings, target, cell ],
             _CellObject,
             "CreateOutput"
-        ];
+        ] // LogChatTiming[ "CreateChatOutput" ];
 
         applyHandlerFunction[
             settings,
@@ -537,7 +537,8 @@ chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] :
                 makeLLMConfiguration @ settings,
                 Authentication       -> settings[ "Authentication" ],
                 HandlerFunctions     -> chatHandlers[ container, cellObject, settings ],
-                HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings
+                HandlerFunctionsKeys -> chatHandlerFunctionsKeys @ settings,
+                "TestConnection"     -> False
             ],
             <|
                 "Container"             :> container,
@@ -1197,7 +1198,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         If[ task === $Canceled, StopChat @ cell ];
 
         task
-    ],
+    ] // LogChatTiming[ "ToolEvaluation" ],
     throwInternalFailure
 ];
 
@@ -1304,7 +1305,7 @@ selectChatCells[ as_Association? AssociationQ, cell_CellObject, nbo_NotebookObje
             ]
         },
         $selectedChatCells = selectChatCells0[ cell, clearMinimizedChats @ nbo ]
-    ];
+    ] // LogChatTiming[ "SelectChatCells" ];
 
 selectChatCells // endDefinition;
 
