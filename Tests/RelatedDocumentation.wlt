@@ -85,3 +85,90 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "RelatedDocumentation-Snippets-Count@@Tests/RelatedDocumentation.wlt:82,1-87,2"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Prompt*)
+VerificationTest[
+    prompt = RelatedDocumentation[
+        "What's the 123456789th prime?",
+        "Prompt",
+        "FilterResults" -> False,
+        "MaxItems"      -> 20
+    ],
+    _String,
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-Prompt@@Tests/RelatedDocumentation.wlt:92,1-102,2"
+]
+
+VerificationTest[
+    StringCount[ prompt, "paclet:ref/Prime#" ],
+    _Integer? (GreaterThan[ 5 ]),
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-Prompt-Count@@Tests/RelatedDocumentation.wlt:104,1-109,2"
+]
+
+VerificationTest[
+    prompt = RelatedDocumentation[ "What's the 123456789th prime?", "Prompt", "FilterResults" -> True ],
+    _String,
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-Prompt-Filtered@@Tests/RelatedDocumentation.wlt:111,1-116,2"
+]
+
+VerificationTest[
+    StringCount[ prompt, "paclet:ref/Prime#" ],
+    _Integer? Positive,
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-Prompt-Filtered-Count@@Tests/RelatedDocumentation.wlt:118,1-123,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Message Input*)
+VerificationTest[
+    prompt = RelatedDocumentation[
+        {
+            <| "Role" -> "User"     , "Content" -> "What's the 123456789th prime?"  |>,
+            <| "Role" -> "Assistant", "Content" -> "```wl\nPrime[123456789]\n```"   |>,
+            <| "Role" -> "User"     , "Content" -> "What about the one after that?" |>
+        },
+        "Prompt",
+        "FilterResults" -> False,
+        "MaxItems"      -> 20
+    ],
+    _String,
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-Prompt-Messages@@Tests/RelatedDocumentation.wlt:128,1-142,2"
+]
+
+VerificationTest[
+    StringCount[ prompt, { "paclet:ref/Prime#", "paclet:ref/NextPrime#" } ],
+    _Integer? (GreaterThan[ 10 ]),
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-Prompt-Messages-Count@@Tests/RelatedDocumentation.wlt:144,1-149,2"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Selection Prompt*)
+VerificationTest[
+    prompt = Block[
+        { Wolfram`Chatbook`Common`$contextPrompt = "```wl\nIn[1]:= Prime[123456789]\nOut[1]= 2543568463\n```" },
+        RelatedDocumentation[
+            { <| "Role" -> "User", "Content" -> "What does this do?" |> },
+            "Prompt",
+            "FilterResults" -> False,
+            "MaxItems" -> 20
+        ]
+    ],
+    _String,
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-Prompt-Selection@@Tests/RelatedDocumentation.wlt:154,1-167,2"
+]
+
+VerificationTest[
+    StringCount[ prompt, "paclet:ref/Prime#" ],
+    _Integer? (GreaterThan[ 5 ]),
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-Prompt-Selection-Count@@Tests/RelatedDocumentation.wlt:169,1-174,2"
+]
