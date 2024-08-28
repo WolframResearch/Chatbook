@@ -404,16 +404,18 @@ scrapeResourceFromShingle // endDefinition;
 
 ResourceInstallFromFile // ClearAll;
 
+(* Not sure if this syntactic sugar is warranted *)
 ResourceInstallFromFile[ ] :=
-    catchMine @ ResourceInstallFromFile @ Automatic;
+    catchMine @ ResourceInstallFromFile[ Automatic, Automatic ]
 
-ResourceInstallFromFile[ path_String ] :=
-    catchMine @ ResourceInstallFromFile[ Automatic, path ];
+ResourceInstallFromFile[ rtype: $$installableType|Automatic ] :=
+    catchMine @ ResourceInstallFromFile[ rtype, Automatic ];
 
 ResourceInstallFromFile[ File[ path_String ] ] :=
     catchMine @ ResourceInstallFromFile[ Automatic, path ];
 
-ResourceInstallFromFile[ rtype: $$installableType|Automatic ] := catchMine @ Enclose[
+(* I expect these next two definitions to be the most used *)
+ResourceInstallFromFile[ rtype: $$installableType|Automatic, Automatic ] := catchMine @ Enclose[
     Module[ { path },
 
         path = ConfirmMatch[
@@ -433,7 +435,7 @@ ResourceInstallFromFile[ rtype: $$installableType|Automatic ] := catchMine @ Enc
 ResourceInstallFromFile[ rtype: $$installableType|Automatic, path_String ] := Enclose[
     Module[ { ro, expected, actual, file },
 
-        ro       = ConfirmMatch[ resourceFromFile @ path, _ResourceObject, "ResourceObject" ];
+        ro       = ConfirmMatch[ resourceFromFile[ rtype, path ], _ResourceObject, "ResourceObject" ];
         expected = Replace[ rtype, Automatic -> $$installableType ];
         actual   = ConfirmBy[ ro[ "ResourceType" ], StringQ, "ResourceType" ];
 
@@ -458,8 +460,15 @@ ResourceInstallFromFile[ args___ ] :=
 (*resourceFromFile*)
 resourceFromFile // beginDefinition;
 
-resourceFromFile[ path_String ] := Block[ { PrintTemporary },
+resourceFromFile[ Automatic, path_String ] := Block[ { PrintTemporary },
     Quiet[ DefinitionNotebookClient`ScrapeResource[ Import[ path ] ] ]
+];
+
+resourceFromFile[ rtype_, path_String ] := Block[ { PrintTemporary },
+    Quiet[
+        With[ { nb = Import[ path ] },
+            ConfirmMatch[ DefinitionNotebookClient`NotebookResourceType @ nb, rtype, "ResourceType" ];
+            DefinitionNotebookClient`ScrapeResource @ nb ] ]
 ];
 
 resourceFromFile // endDefinition;
