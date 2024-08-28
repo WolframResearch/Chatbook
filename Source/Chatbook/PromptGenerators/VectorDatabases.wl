@@ -129,7 +129,7 @@ downloadVectorDatabases[ dir0_, urls_Association ] := Enclose[
         $downloadProgress = AssociationMap[ 0 &, names ];
         $progressText = "Downloading semantic search indices\[Ellipsis]";
 
-        Progress`EvaluateWithProgress[
+        evaluateWithProgress[
 
             tasks = ConfirmMatch[ KeyValueMap[ downloadVectorDatabase @ dir, urls ], { __TaskObject }, "Download" ];
             ConfirmMatch[ taskWait @ tasks, { __TaskObject }, "TaskWait" ];
@@ -150,6 +150,39 @@ downloadVectorDatabases[ dir0_, urls_Association ] := Enclose[
 ];
 
 downloadVectorDatabases // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*evaluateWithProgress*)
+(* This is a workaround for EvaluateWithProgress never printing a progress panel when called normally in a chat: *)
+evaluateWithProgress // beginDefinition;
+evaluateWithProgress // Attributes = { HoldFirst };
+
+evaluateWithProgress[ args___ ] /; $Notebooks && $EvaluationEnvironment === "Session" :=
+    Module[ { container, dialog },
+
+        container = ProgressIndicator[ Appearance -> "Percolate" ];
+
+        dialog = CreateDialog[
+            Pane[ Dynamic @ container, ImageMargins -> { { 5, 5 }, { 10, 5 } } ],
+            WindowTitle -> Dynamic[ $progressText ]
+        ];
+
+        WithCleanup[
+            Progress`EvaluateWithProgress[
+                args,
+                "Container" :> container,
+                "Delay"     -> 0
+            ],
+            NotebookClose @ dialog;
+            Remove @ container;
+        ]
+    ];
+
+evaluateWithProgress[ args___ ] :=
+    Progress`EvaluateWithProgress @ args;
+
+evaluateWithProgress // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
