@@ -176,11 +176,12 @@ constructInlineMessages // endDefinition;
 addPrompts // beginDefinition;
 
 addPrompts[ settings_Association, messages_List ] := Enclose[
-    Module[ { custom, workspace, inline, prompt },
-        custom    = ConfirmMatch[ assembleCustomPrompt @ settings, None|_String, "Custom"    ];
-        workspace = ConfirmMatch[ getWorkspacePrompt @ settings  , None|_String, "Workspace" ];
-        inline    = ConfirmMatch[ getInlineChatPrompt @ settings , None|_String, "Inline"    ];
-        prompt    = StringRiffle[ Select[ { custom, workspace, inline }, StringQ ], "\n\n" ];
+    Module[ { custom, workspace, inline, generated, prompt },
+        custom    = ConfirmMatch[ assembleCustomPrompt @ settings            , None|_String, "Custom"    ];
+        workspace = ConfirmMatch[ getWorkspacePrompt @ settings              , None|_String, "Workspace" ];
+        inline    = ConfirmMatch[ getInlineChatPrompt @ settings             , None|_String, "Inline"    ];
+        generated = ConfirmMatch[ applyPromptGenerators[ settings, messages ], None|_String, "Generated" ];
+        prompt    = StringRiffle[ Select[ { custom, workspace, inline, generated }, StringQ ], "\n\n" ];
         addPrompts[ prompt, messages ]
     ],
     throwInternalFailure

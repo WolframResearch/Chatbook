@@ -26,6 +26,7 @@ withChatState[ eval_ ] :=
             $enableLLMServices            = Automatic,
             $WorkspaceChat                = False,
             withChatState                 = # &,
+            $contextPrompt                = None,
 
             (* Values used for token budgets during cell serialization: *)
             $cellStringBudget             = $cellStringBudget,
