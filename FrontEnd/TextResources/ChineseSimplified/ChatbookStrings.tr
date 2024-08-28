@@ -120,6 +120,7 @@
 "ToolManagerInstallTools" -> "\:5B89\:88C5\:5DE5\:5177",
 "ToolManagerInstallFrom" -> "\:4ECE\:6B64\:5904\:5B89\:88C5\:ff1a",
 "ToolManagerInstallFromLLMToolRepo" -> "LLM \:5DE5\:5177\:5E93 \[UpperRightArrow]",
+"ToolManagerInstallFromFile" -> "Definition Notebook",
 "ToolManagerManageTools" -> "\:7BA1\:7406\:548C\:542F\:7528\:5DE5\:5177",
 "ToolManagerShowEnabledFor" -> "\:663E\:793A\:542F\:7528\:7684\:5DE5\:5177\:ff1a",
 "ToolManagerTool" -> "\:5DE5\:5177",

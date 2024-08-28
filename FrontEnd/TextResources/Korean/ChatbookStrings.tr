@@ -121,6 +121,7 @@
 "ToolManagerInstallTools" -> "\:B3C4\:AD6C \:C124\:CE58",
 "ToolManagerInstallFrom" -> "\:B2E4\:C74C\:BD80\:D130 \:C124\:CE58",
 "ToolManagerInstallFromLLMToolRepo" -> "\:B300\:D615 \:C5B8\:C5B4 \:BAA8\:B378 \:B3C4\:AD6C \:B9AC\:D3EC\:C9C0\:D1A0\:B9AC \[UpperRightArrow]",
+"ToolManagerInstallFromFile" -> "Definition Notebook",
 "ToolManagerManageTools" -> "\:B3C4\:AD6C \:AD00\:B9AC \:BC0F \:D65C\:C131\:D654",
 "ToolManagerShowEnabledFor" -> "\:B2E4\:C74C\:C5D0 \:B300\:D574 \:D65C\:C131\:D654\:B41C \:B3C4\:AD6C \:D45C\:C2DC:",
 "ToolManagerTool" -> "\:B3C4\:AD6C",

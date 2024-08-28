@@ -120,6 +120,7 @@
 "ToolManagerInstallTools" -> "Install Tools",
 "ToolManagerInstallFrom" -> "Install from",
 "ToolManagerInstallFromLLMToolRepo" -> "LLM Tool Repository \[UpperRightArrow]",
+"ToolManagerInstallFromFile" -> "Definition Notebook",
 "ToolManagerManageTools" -> "Manage and Enable Tools",
 "ToolManagerShowEnabledFor" -> "Show enabled tools for:",
 "ToolManagerTool" -> "Tool",

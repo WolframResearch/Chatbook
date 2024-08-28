@@ -120,6 +120,7 @@
 "ToolManagerInstallTools" -> "\:30c4\:30fc\:30eb\:306e\:30a4\:30f3\:30b9\:30c8\:30fc\:30eb",
 "ToolManagerInstallFrom" -> "\:6b21\:304b\:3089\:30a4\:30f3\:30b9\:30c8\:30fc\:30eb\:ff1a",
 "ToolManagerInstallFromLLMToolRepo" -> "LLM Tool Repository \[UpperRightArrow]",
+"ToolManagerInstallFromFile" -> "Definition Notebook",
 "ToolManagerManageTools" -> "\:30c4\:30fc\:30eb\:306e\:7ba1\:7406\:3068\:6709\:52b9\:5316",
 "ToolManagerShowEnabledFor" -> "\:6b21\:306b\:3064\:3044\:3066\:6709\:52b9\:5316\:3055\:308c\:305f\:30c4\:30fc\:30eb\:3092\:8868\:793a\:ff1a",
 "ToolManagerTool" -> "\:30c4\:30fc\:30eb",

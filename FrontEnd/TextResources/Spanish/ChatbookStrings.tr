@@ -120,6 +120,7 @@
 "ToolManagerInstallTools" -> "Instalar herramientas",
 "ToolManagerInstallFrom" -> "Instalar desde",
 "ToolManagerInstallFromLLMToolRepo" -> "Repositorio de herramientas LLM \[UpperRightArrow]",
+"ToolManagerInstallFromFile" -> "Definition Notebook",
 "ToolManagerManageTools" -> "Administrar y habilitar herramientas",
 "ToolManagerShowEnabledFor" -> "Mostrar herramientas habilitadas para:",
 "ToolManagerTool" -> "Herramienta",

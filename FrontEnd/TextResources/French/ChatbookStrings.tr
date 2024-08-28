@@ -120,6 +120,7 @@
 "ToolManagerInstallTools" -> "Installer des outils",
 "ToolManagerInstallFrom" -> "Installer \[AGrave] partir de",
 "ToolManagerInstallFromLLMToolRepo" -> "R\[EAcute]f\[EAcute]rentiel d\[CloseCurlyQuote]outils LLM \[UpperRightArrow]",
+"ToolManagerInstallFromFile" -> "Definition Notebook",
 "ToolManagerManageTools" -> "G\[EAcute]rer et activer les outils",
 "ToolManagerShowEnabledFor" -> "Afficher les outils activ\[EAcute]s pour\[NonBreakingSpace]:",
 "ToolManagerTool" -> "Outil",
