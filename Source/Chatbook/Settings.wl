@@ -51,6 +51,7 @@ $defaultChatSettings = <|
     "PresencePenalty"            -> 0.1,
     "ProcessingFunctions"        :> $DefaultChatProcessingFunctions,
     "Prompts"                    -> { },
+    "PromptGenerators"           -> { },
     "SetCellDingbat"             -> True,
     "ShowMinimized"              -> Automatic,
     "StreamingOutputMethod"      -> Automatic,

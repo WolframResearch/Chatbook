@@ -18,6 +18,10 @@ $documentationSnippetBaseURL = "https://www.wolframcloud.com/obj/wolframai-conte
 (* ::Section::Closed:: *)
 (*RelatedDocumentation*)
 RelatedDocumentation // beginDefinition;
+RelatedDocumentation // Options = {
+    "FilterResults" -> Automatic,
+    "MaxItems"      -> 20
+};
 
 GeneralUtilities`SetUsage[ RelatedDocumentation, "\
 RelatedDocumentation[\"string$\"] gives a list of documentation URIs that are semantically related to the \
@@ -32,24 +36,36 @@ RelatedDocumentation[ ___ ] /; $noSemanticSearch := Failure[
     |>
 ];
 
-RelatedDocumentation[ prompt_ ] := catchMine @ RelatedDocumentation[ prompt, Automatic ];
-RelatedDocumentation[ prompt_, Automatic ] := catchMine @ RelatedDocumentation[ prompt, "URIs" ];
-RelatedDocumentation[ prompt_, count: _Integer | UpTo[ _Integer ] ] := RelatedDocumentation[ prompt, Automatic, count ];
-RelatedDocumentation[ prompt_, property_ ] := catchMine @ RelatedDocumentation[ prompt, property, Automatic ];
-RelatedDocumentation[ prompt_, Automatic, count_ ] := RelatedDocumentation[ prompt, "URIs", count ];
+RelatedDocumentation[ prompt_, opts: OptionsPattern[ ] ] :=
+    catchMine @ RelatedDocumentation[ prompt, Automatic, opts ];
 
-RelatedDocumentation[ prompt: _String | { ___String }, "URIs", Automatic ] := catchMine @ Enclose[
+RelatedDocumentation[ prompt_, Automatic, opts: OptionsPattern[ ] ] :=
+    catchMine @ RelatedDocumentation[ prompt, "URIs", opts ];
+
+RelatedDocumentation[ prompt_, count: _Integer | UpTo[ _Integer ], opts: OptionsPattern[ ] ] :=
+    RelatedDocumentation[ prompt, Automatic, count, opts ];
+
+RelatedDocumentation[ prompt_, property_, opts: OptionsPattern[ ] ] :=
+    catchMine @ RelatedDocumentation[ prompt, property, OptionValue @ MaxItems, opts ];
+
+RelatedDocumentation[ prompt_, Automatic, count_, opts: OptionsPattern[ ] ] :=
+    RelatedDocumentation[ prompt, "URIs", count, opts ];
+
+RelatedDocumentation[ prompt: $$prompt, "URIs", Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
+    (* TODO: filter results *)
     ConfirmMatch[ vectorDBSearch[ "DocumentationURIs", prompt, "Values" ], { ___String }, "Queries" ],
     throwInternalFailure
 ];
 
-RelatedDocumentation[ All, "URIs", Automatic ] := catchMine @ Enclose[
+RelatedDocumentation[ All, "URIs", Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
+    (* TODO: filter results *)
     Union @ ConfirmMatch[ vectorDBSearch[ "DocumentationURIs", All ], { __String }, "QueryList" ],
     throwInternalFailure
 ];
 
-RelatedDocumentation[ prompt_, "Snippets", Automatic ] := catchMine @ Enclose[
+RelatedDocumentation[ prompt: $$prompt, "Snippets", Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
     ConfirmMatch[
+        (* TODO: filter results *)
         DeleteMissing[ makeDocSnippets @ vectorDBSearch[ "DocumentationURIs", prompt, "Values" ] ],
         { ___String },
         "Snippets"
@@ -57,33 +73,48 @@ RelatedDocumentation[ prompt_, "Snippets", Automatic ] := catchMine @ Enclose[
     throwInternalFailure
 ];
 
-RelatedDocumentation[ prompt_, property_, UpTo[ n_Integer ] ] :=
-    catchMine @ RelatedDocumentation[ prompt, property, n ];
+RelatedDocumentation[ prompt_, property_, UpTo[ n_Integer ], opts: OptionsPattern[ ] ] :=
+    catchMine @ RelatedDocumentation[ prompt, property, n, opts ];
 
-RelatedDocumentation[ prompt_, property_, n_Integer ] := catchMine @ Enclose[
-    Take[ ConfirmMatch[ RelatedDocumentation[ prompt, property, Automatic ], { ___String } ], UpTo @ n ],
+RelatedDocumentation[ prompt_, property_, n_Integer, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
+    Take[ ConfirmMatch[ RelatedDocumentation[ prompt, property, Automatic, opts ], { ___String } ], UpTo @ n ],
     throwInternalFailure
 ];
 
-RelatedDocumentation[ prompt_, property: "Results"|"Values"|"EmbeddingVector"|All, n_Integer ] := catchMine @ Enclose[
-    Take[ ConfirmBy[ vectorDBSearch[ "DocumentationURIs", prompt, property ], ListQ, "Results" ], UpTo @ n ],
-    throwInternalFailure
-];
+RelatedDocumentation[
+    prompt: $$prompt,
+    property: "Results"|"Values"|"EmbeddingVector"|All,
+    n_Integer,
+    opts: OptionsPattern[ ]
+] :=
+    catchMine @ Enclose[
+        (* TODO: filter results *)
+        Take[ ConfirmBy[ vectorDBSearch[ "DocumentationURIs", prompt, property ], ListQ, "Results" ], UpTo @ n ],
+        throwInternalFailure
+    ];
 
-RelatedDocumentation[ prompt_, property: "Index"|"Distance", n_Integer ] := catchMine @ Enclose[
-    Lookup[
-        Take[
-            ConfirmMatch[
-                RelatedDocumentation[ prompt, "Results", n ],
-                { KeyValuePattern[ property -> _ ]... },
-                "Results"
+RelatedDocumentation[ prompt_, property: "Index"|"Distance", n_Integer, opts: OptionsPattern[ ] ] :=
+    catchMine @ Enclose[
+        Lookup[
+            Take[
+                ConfirmMatch[
+                    RelatedDocumentation[ prompt, "Results", n, opts ],
+                    { KeyValuePattern[ property -> _ ]... },
+                    "Results"
+                ],
+                UpTo @ n
             ],
-            UpTo @ n
+            property
         ],
-        property
-    ],
-    throwInternalFailure
-];
+        throwInternalFailure
+    ];
+
+RelatedDocumentation[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
+    catchMine @ relatedDocumentationPrompt[
+        ensureChatMessages @ prompt,
+        n,
+        MatchQ[ OptionValue[ "FilterResults" ], Automatic|True ]
+    ];
 
 RelatedDocumentation[ args___ ] := catchMine @ throwFailure[
     "InvalidArguments",
@@ -92,6 +123,107 @@ RelatedDocumentation[ args___ ] := catchMine @ throwFailure[
 ];
 
 RelatedDocumentation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ensureChatMessages*)
+ensureChatMessages // beginDefinition;
+ensureChatMessages[ prompt_String ] := { <| "Role" -> "User", "Content" -> prompt |> };
+ensureChatMessages[ message: KeyValuePattern[ "Role" -> _ ] ] := { message };
+ensureChatMessages[ messages: $$chatMessages ] := messages;
+ensureChatMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*relatedDocumentationPrompt*)
+relatedDocumentationPrompt // beginDefinition;
+
+relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_ ] := Enclose[
+    Catch @ Module[ { uris, filtered, string },
+        uris = ConfirmMatch[ RelatedDocumentation[ messages, "URIs", count ], { ___String }, "URIs" ];
+        If[ uris === { }, Throw[ "" ] ];
+
+        filtered = ConfirmMatch[ filterSnippets[ messages, uris, filter ], { ___String }, "Filtered" ];
+        string = StringTrim @ StringRiffle[ "# "<># & /@ DeleteCases[ filtered, "" ], "\n\n======\n\n" ];
+        $relatedDocsStringHeader <> string
+    ],
+    throwInternalFailure
+];
+
+relatedDocumentationPrompt // endDefinition;
+
+
+$relatedDocsStringHeader = "\
+Here are some Wolfram documentation snippets that might be helpful:
+
+";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*filterSnippets*)
+filterSnippets // beginDefinition;
+
+filterSnippets[ messages_, uris: { __String }, filter_ ] := Enclose[
+    Catch @ Module[ { snippets, transcript, xml, instructions, response, pages },
+
+        snippets = ConfirmMatch[ makeDocSnippets @ uris, { ___String }, "Snippets" ];
+        If[ ! TrueQ @ filter, Throw @ snippets ];
+
+        transcript = ConfirmBy[ getSmallContextString @ insertContextPrompt @ messages, StringQ, "Transcript" ];
+
+        xml = ConfirmMatch[ snippetXML /@ snippets, { __String }, "XML" ];
+        instructions = ConfirmBy[
+            TemplateApply[
+                $bestDocumentationPrompt,
+                <| "Snippets" -> StringRiffle[ xml, "\n\n" ], "Transcript" -> transcript |>
+            ],
+            StringQ,
+            "Prompt"
+        ];
+
+        response = StringTrim @ ConfirmBy[ llmSynthesize @ instructions, StringQ, "Response" ];
+        pages = ConfirmMatch[ makeDocSnippets @ StringCases[ response, uris ], { ___String }, "Pages" ];
+
+        pages
+    ],
+    throwInternalFailure
+];
+
+filterSnippets // endDefinition;
+
+
+$bestDocumentationPrompt = StringTemplate[ "\
+Your task is to read a chat transcript between a user and assistant, and then select the most relevant \
+Wolfram Language documentation snippets that could help the assistant answer the user's latest message. \
+Each snippet is uniquely identified by a URI (always starts with 'paclet:' or 'https://resources.wolframcloud.com').
+
+Choose up to 5 documentation snippets that would help answer the user's MOST RECENT message. \
+Respond only with the corresponding URIs of the snippets and nothing else. \
+If there are no relevant pages, respond with just the string \"none\".
+
+Here is the chat transcript:
+
+<transcript>
+%%Transcript%%
+</transcript>
+
+Here are the available documentation snippets to choose from:
+
+<snippets>
+%%Snippets%%
+</snippets>
+
+Reminder: Choose up to 5 documentation snippets that would help answer the user's MOST RECENT message. \
+Respond only with the corresponding URIs of the snippets and nothing else. \
+If there are no relevant pages, respond with just the string \"none\".\
+", Delimiters -> "%%" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*snippetXML*)
+snippetXML // beginDefinition;
+snippetXML[ snippet_String ] := "<snippet>\n" <> snippet <> "\n</snippet>";
+snippetXML // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -148,7 +280,7 @@ getDocumentationSnippetData[ uris: { __String } ] := Enclose[
             AllTrue @ MatchQ[ KeyValuePattern[ "String" -> _String ] ],
             "Result"
         ]
-    ],
+    ] // LogChatTiming[ "GetDocumentationSnippets" ],
     throwInternalFailure
 ];
 

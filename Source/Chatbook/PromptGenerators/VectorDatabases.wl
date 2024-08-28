@@ -24,9 +24,8 @@ $embeddingService        = "OpenAI"; (* FIXME *)
 $embeddingModel          = "text-embedding-3-small";
 $embeddingAuthentication = Automatic; (* FIXME *)
 
-$smallContextMessageCount        = 3;
-$smallContextStringLength        = 8000;
-$conversationVectorSearchPenalty = 16.0;
+
+$conversationVectorSearchPenalty = 1.0;
 
 $relatedQueryCount = 5;
 $relatedDocsCount  = 20;
@@ -146,7 +145,7 @@ downloadVectorDatabases[ dir0_, urls_Association ] := Enclose[
                 "Progress"         -> Automatic
             |>
         ]
-    ],
+    ] // LogChatTiming[ "DownloadVectorDatabases" ],
     throwInternalFailure
 ];
 
@@ -164,9 +163,16 @@ getDownloadSize // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*unpackVectorDatabases*)
 unpackVectorDatabases // beginDefinition;
-unpackVectorDatabases[ dir_? DirectoryQ ] := unpackVectorDatabases[ dir, FileNames[ "*.zip", dir ] ];
-unpackVectorDatabases[ dir_, zips: { __String } ] := unpackVectorDatabases[ dir, zips, unpackVectorDatabase /@ zips ];
-unpackVectorDatabases[ dir_, zips_, extracted: { { __String }.. } ] := dir;
+
+unpackVectorDatabases[ dir_? DirectoryQ ] :=
+    unpackVectorDatabases[ dir, FileNames[ "*.zip", dir ] ] // LogChatTiming[ "UnpackVectorDatabases" ];
+
+unpackVectorDatabases[ dir_, zips: { __String } ] :=
+    unpackVectorDatabases[ dir, zips, unpackVectorDatabase /@ zips ];
+
+unpackVectorDatabases[ dir_, zips_, extracted: { { __String }.. } ] :=
+    dir;
+
 unpackVectorDatabases // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -216,7 +222,7 @@ downloadVectorDatabase[ dir_, name_String, url_String ] := Enclose[
             _TaskObject,
             "Task"
         ]
-    ],
+    ] // LogChatTiming[ { "DownloadVectorDatabase", name } ],
     throwInternalFailure
 ];
 
@@ -351,7 +357,7 @@ vectorDBSearch[ dbName_String, prompt_String, All ] := Enclose[
                 embeddingVector,
                 { "Index", "Distance" },
                 MaxItems -> $maxNeighbors
-            ],
+            ] // LogChatTiming[ "VectorDatabaseSearch" ],
             { ___Association },
             "PositionsAndDistances"
         ];
@@ -400,11 +406,19 @@ vectorDBSearch[ dbName_String, All, "Values" ] := Enclose[
     throwInternalFailure
 ];
 
-vectorDBSearch[ dbName_String, messages: { __Association }, prop: "Values"|"Results" ] := Enclose[
-    Catch @ Module[ { conversationString, lastMessageString, conversationResults, lastMessageResults, combined },
+vectorDBSearch[ dbName_String, messages0: { __Association }, prop: "Values"|"Results" ] := Enclose[
+    Catch @ Module[
+        { messages, conversationString, lastMessageString, conversationResults, lastMessageResults, combined },
+
+        messages = ConfirmMatch[ insertContextPrompt @ messages0, { __Association }, "Messages" ];
 
         conversationString = ConfirmBy[ getSmallContextString @ messages, StringQ, "ConversationString" ];
-        lastMessageString = ConfirmBy[ getSmallContextString @ { Last @ messages }, StringQ, "LastMessageString" ];
+
+        lastMessageString = ConfirmBy[
+            getSmallContextString[ { Last @ messages }, "IncludeSystemMessage" -> True ],
+            StringQ,
+            "LastMessageString"
+        ];
 
         If[ conversationString === "" || lastMessageString === "", Throw @ { } ];
 
@@ -439,6 +453,25 @@ vectorDBSearch[ dbName_String, messages: { __Association }, prop: "Values"|"Resu
 ];
 
 vectorDBSearch // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*insertContextPrompt*)
+insertContextPrompt // beginDefinition;
+
+insertContextPrompt[ messages_ ] :=
+    insertContextPrompt[ messages, $contextPrompt ];
+
+insertContextPrompt[ { before___, last_Association }, prompt_String ] := {
+    before,
+    <| "Role" -> "User", "Content" -> prompt |>,
+    last
+};
+
+insertContextPrompt[ messages_List, other_ ] :=
+    messages;
+
+insertContextPrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -483,7 +516,7 @@ getEmbedding[ string_String ] := Enclose[
             Developer`PackedArrayQ,
             "TinyVector"
         ]
-    ],
+    ] // LogChatTiming[ "GetEmbedding" ],
     throwInternalFailure
 ];
 
@@ -607,25 +640,7 @@ selectBestDocumentationPages[ messages_List, relatedDocs0: { __String } ] := Enc
 selectBestDocumentationPages // endDefinition;
 
 
-$bestDocumentationPrompt = StringTemplate[ "\
-Your task is to read a chat transcript between a user and assistant, and then select the most relevant \
-Wolfram Language documentation snippets that could help the assistant answer the user's latest message. \
-Each snippet is uniquely identified by a URI (always starts with 'paclet:'). \
 
-Here are the available documentation snippets to choose from:
-
-%%Snippets%%
-
----
-
-Here is the chat transcript:
-
-%%Transcript%%
-
-Choose up to 5 documentation snippets that would help answer the user's MOST RECENT message. \
-Respond only with the corresponding URIs of the snippets and nothing else. \
-If there are no relevant pages, respond with just the string \"none\"\
-", Delimiters -> "%%" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -641,28 +656,6 @@ stringReplaceSystemMessage[
 };
 
 stringReplaceSystemMessage // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getSmallContextString*)
-getSmallContextString // beginDefinition;
-
-getSmallContextString[ messages0: { ___Association } ] := Enclose[
-    Catch @ Module[ { messages, recent, strings, string },
-        messages = ConfirmMatch[ makeChatTranscript @ messages0, { ___Association }, "Messages" ];
-        If[ messages === { }, Throw[ "" ] ];
-        recent = revertMultimodalContent @ Reverse @ Take[ Reverse @ messages, UpTo[ $smallContextMessageCount ] ];
-        strings = ConfirmMatch[ recent[[ All, "Content" ]], { __String }, "Strings" ];
-        string = StringRiffle[ strings, "\n\n" ];
-        If[ StringLength @ string > $smallContextStringLength,
-            StringTake[ string, { -$smallContextStringLength, -1 } ],
-            string
-        ]
-    ],
-    throwInternalFailure
-];
-
-getSmallContextString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

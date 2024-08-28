@@ -132,25 +132,7 @@ $resourceVersions = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*Style Patterns*)
-cellStylePattern // beginDefinition;
-cellStylePattern[ { styles__String } ] := styles | { ___, Alternatives @ styles , ___ };
-cellStylePattern // endDefinition;
-
-$$chatDelimiterStyle  = cellStylePattern @ $chatDelimiterStyles ;
-$$chatIgnoredStyle    = cellStylePattern @ $chatIgnoredStyles;
-$$chatInputStyle      = cellStylePattern @ $chatInputStyles;
-$$chatOutputStyle     = cellStylePattern @ $chatOutputStyles;
-$$excludeHistoryStyle = cellStylePattern @ $excludeHistoryStyles;
-$$nestedCellStyle     = cellStylePattern @ $nestedCellStyles;
-
-$$textDataItem        = (_String|_Cell|_StyleBox|_ButtonBox);
-$$textDataList        = { $$textDataItem... };
-$$textData            = $$textDataItem | $$textDataList;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*Other Argument Patterns *)
+(*Basic Argument Patterns*)
 $$optionsSequence = (Rule|RuleDelayed)[ _Symbol|_String, _ ] ...;
 $$size            = Infinity | (_Real|_Integer)? NonNegative;
 $$unspecified     = _Missing | Automatic | Inherited;
@@ -172,9 +154,45 @@ $$symbol   = pt[ _Symbol  , Developer`SymbolQ ];
 $$atomic   = $$complex | $$integer | $$rational | $$real | $$string | $$symbol;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Style Patterns*)
+cellStylePattern // beginDefinition;
+cellStylePattern[ { styles__String } ] := styles | { ___, Alternatives @ styles , ___ };
+cellStylePattern // endDefinition;
+
+$$chatDelimiterStyle  = cellStylePattern @ $chatDelimiterStyles ;
+$$chatIgnoredStyle    = cellStylePattern @ $chatIgnoredStyles;
+$$chatInputStyle      = cellStylePattern @ $chatInputStyles;
+$$chatOutputStyle     = cellStylePattern @ $chatOutputStyles;
+$$excludeHistoryStyle = cellStylePattern @ $excludeHistoryStyles;
+$$nestedCellStyle     = cellStylePattern @ $nestedCellStyles;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Text Data*)
+$$textDataItem        = (_String|_Cell|_StyleBox|_ButtonBox);
+$$textDataList        = { $$textDataItem... };
+$$textData            = $$textDataItem | $$textDataList;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Graphics*)
+$$graphics = _? graphicsQ;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Chat Messages*)
+$$messageRole         = "System"|"Assistant"|"User";
+$$messageContentData  = KeyValuePattern @ { "Type" -> "Text"|"Image", "Data" -> _ } | $$string | $$graphics;
+$$messageContent      = $$messageContentData | { $$messageContentData... };
+$$chatMessage         = KeyValuePattern @ { "Role" -> $$messageRole, "Content" -> $$messageContent };
+$$chatMessages        = { $$chatMessage... };
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Text and Expression Resources*)
 
+(* FIXME: These need to go after beginDefinition and endDefinition initializations *)
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*tr*)

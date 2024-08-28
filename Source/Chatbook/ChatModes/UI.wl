@@ -156,12 +156,15 @@ $attachedWorkspaceChatInputCell := $attachedWorkspaceChatInputCell = Cell[
 attachInlineChatInput // beginDefinition;
 
 attachInlineChatInput[ nbo_NotebookObject ] :=
+    attachInlineChatInput[ nbo, <| |> ];
+
+attachInlineChatInput[ nbo_NotebookObject, settings_Association ] :=
     If[ TrueQ @ userNotebookQ @ nbo,
-        attachInlineChatInput[ nbo, SelectedCells @ nbo ],
+        attachInlineChatInput[ nbo, settings, SelectedCells @ nbo ],
         Null
     ];
 
-attachInlineChatInput[ nbo_NotebookObject, { root_CellObject } ] := Enclose[
+attachInlineChatInput[ nbo_NotebookObject, settings_Association, { root_CellObject } ] := Enclose[
     Module[ { selectionInfo, attached },
 
         NotebookDelete @ $lastAttachedInlineChat;
@@ -180,7 +183,7 @@ attachInlineChatInput[ nbo_NotebookObject, { root_CellObject } ] := Enclose[
         attached = ConfirmMatch[
             AttachCell[
                 NotebookSelection @ nbo,
-                inlineChatInputCell[ root, selectionInfo ],
+                inlineChatInputCell[ root, selectionInfo, settings ],
                 { Left, Bottom },
                 0,
                 { Left, Top },
@@ -198,8 +201,21 @@ attachInlineChatInput[ nbo_NotebookObject, { root_CellObject } ] := Enclose[
     throwInternalFailure
 ];
 
-(* FIXME: Need to handle multiple or no cell selections *)
-attachInlineChatInput[ nbo_NotebookObject, { ___ } ] := Null;
+(* TODO: moving the selection probably isn't ideal: *)
+attachInlineChatInput[ nbo_NotebookObject, settings_, { } ] := Enclose[
+    Module[ { root },
+        SelectionMove[ nbo, Previous, Cell ];
+        root = Replace[ SelectedCells @ nbo, { cell_CellObject } :> cell ];
+        If[ MatchQ[ root, _CellObject ],
+            attachInlineChatInput[ nbo, settings, { root } ],
+            Null
+        ]
+    ],
+    throwInternalFailure
+];
+
+(* FIXME: Need to handle multiple cell selections *)
+attachInlineChatInput[ nbo_NotebookObject, settings_, { ___ } ] := Null;
 
 attachInlineChatInput // endDefinition;
 
@@ -233,7 +249,7 @@ cellHash // endDefinition;
 (*inlineChatInputCell*)
 inlineChatInputCell // beginDefinition;
 
-inlineChatInputCell[ root_CellObject, selectionInfo_ ] := Cell[
+inlineChatInputCell[ root_CellObject, selectionInfo_, settings_ ] := Cell[
     BoxData @ inlineTemplateBox @ TemplateBox[
         {
             ToBoxes @ DynamicModule[ { messageCells = { }, cell },
@@ -268,7 +284,8 @@ inlineChatInputCell[ root_CellObject, selectionInfo_ ] := Cell[
     ],
     "AttachedChatInput",
     Background -> None,
-    Selectable -> True
+    Selectable -> True,
+    TaggingRules -> <| "ChatNotebookSettings" -> settings |>
 ];
 
 inlineChatInputCell // endDefinition;
