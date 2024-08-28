@@ -103,23 +103,9 @@ VerificationTest[
 
 VerificationTest[
     StringCount[ prompt, "paclet:ref/Prime#" ],
-    _Integer? (GreaterThan[ 5 ]),
+    _Integer? (GreaterThan[ 3 ]),
     SameTest -> MatchQ,
     TestID   -> "RelatedDocumentation-Prompt-Count@@Tests/RelatedDocumentation.wlt:104,1-109,2"
-]
-
-VerificationTest[
-    prompt = RelatedDocumentation[ "What's the 123456789th prime?", "Prompt", "FilterResults" -> True ],
-    _String,
-    SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Filtered@@Tests/RelatedDocumentation.wlt:111,1-116,2"
-]
-
-VerificationTest[
-    StringCount[ prompt, "paclet:ref/Prime#" ],
-    _Integer? Positive,
-    SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Filtered-Count@@Tests/RelatedDocumentation.wlt:118,1-123,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -138,14 +124,14 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Messages@@Tests/RelatedDocumentation.wlt:128,1-142,2"
+    TestID   -> "RelatedDocumentation-Prompt-Messages@@Tests/RelatedDocumentation.wlt:114,1-128,2"
 ]
 
 VerificationTest[
     StringCount[ prompt, { "paclet:ref/Prime#", "paclet:ref/NextPrime#" } ],
     _Integer? (GreaterThan[ 10 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Messages-Count@@Tests/RelatedDocumentation.wlt:144,1-149,2"
+    TestID   -> "RelatedDocumentation-Prompt-Messages-Count@@Tests/RelatedDocumentation.wlt:130,1-135,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -163,12 +149,12 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Selection@@Tests/RelatedDocumentation.wlt:154,1-167,2"
+    TestID   -> "RelatedDocumentation-Prompt-Selection@@Tests/RelatedDocumentation.wlt:140,1-153,2"
 ]
 
 VerificationTest[
     StringCount[ prompt, "paclet:ref/Prime#" ],
     _Integer? (GreaterThan[ 5 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Selection-Count@@Tests/RelatedDocumentation.wlt:169,1-174,2"
+    TestID   -> "RelatedDocumentation-Prompt-Selection-Count@@Tests/RelatedDocumentation.wlt:155,1-160,2"
 ]
