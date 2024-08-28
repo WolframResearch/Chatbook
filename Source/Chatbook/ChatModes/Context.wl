@@ -98,8 +98,9 @@ getContextFromSelection[ chatNB_NotebookObject, None, settings_Association ] :=
     None;
 
 getContextFromSelection[ chatNB_, nbo_NotebookObject, settings_Association ] := Enclose[
-    Module[ { selectionData },
-        selectionData = ConfirmBy[ selectContextCells @ nbo, AssociationQ, "SelectionData" ];
+    Catch @ Module[ { selectionData },
+        selectionData = ConfirmMatch[ selectContextCells @ nbo, _Association|None, "SelectionData" ];
+        If[ selectionData === None, Throw @ None ];
         ConfirmBy[ getContextFromSelection0[ selectionData, settings ], StringQ, "Context" ]
     ],
     throwInternalFailure
@@ -132,6 +133,7 @@ getContextFromSelection0[ selectionData_Association, settings_ ] := Enclose[
         marked = ConfirmMatch[ insertSelectionIndicator @ { before, selected, after }, { ___Cell }, "Marked" ];
         messages = ConfirmMatch[ makeChatMessages[ settings, marked, False ], { ___Association }, "Messages" ];
         string = ConfirmBy[ messagesToString @ messages, StringQ, "String" ];
+        $contextPrompt = string;
         postProcessNotebookContextString[ applyNotebookContextTemplate @ string, string ]
     ],
     throwInternalFailure
@@ -244,7 +246,10 @@ selectContextCells // beginDefinition;
 selectContextCells[ nbo_NotebookObject ] :=
     selectContextCells @ Cells @ nbo;
 
-selectContextCells[ cells: { ___CellObject } ] :=
+selectContextCells[ { } ] :=
+    None;
+
+selectContextCells[ cells: { __CellObject } ] :=
     selectContextCells @ cellInformation @ cells;
 
 selectContextCells[ { a: KeyValuePattern[ "CursorPosition" -> "AboveCell" ], after___ } ] :=

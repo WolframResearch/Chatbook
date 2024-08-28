@@ -12,10 +12,17 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (*Configuration*)
 $workspaceChatWidth = 325;
 
+$codeAssistanceSettings = <|
+    "ServiceCaller"     -> "CodeAssistance",
+    "PromptGenerators"  -> { "RelatedDocumentation" },
+    "Tools"             -> { "WolframLanguageEvaluator" },
+    "ToolSelectionType" -> <| "DocumentationLookup" -> None, "DocumentationSearcher" -> None |>
+|>;
+
 $workspaceChatNotebookOptions = Sequence[
     DefaultNewCellStyle -> "AutoMoveToChatInputField",
     StyleDefinitions    -> FrontEnd`FileName[ { "Wolfram" }, "WorkspaceChat.nb", CharacterEncoding -> "UTF-8" ],
-    TaggingRules        -> <| "ChatNotebookSettings" -> <| "ServiceCaller" -> "CodeAssistance" |> |>
+    TaggingRules        -> <| "ChatNotebookSettings" -> $codeAssistanceSettings |>
 ];
 
 (* TODO: set $serviceCaller from chat settings *)
@@ -70,8 +77,11 @@ enableCodeAssistance // endDefinition;
 (*ShowCodeAssistance*)
 ShowCodeAssistance // beginDefinition;
 ShowCodeAssistance[ ] := catchMine @ ShowCodeAssistance[ "Window" ];
-ShowCodeAssistance[ "Window" ] := catchMine @ showCodeAssistanceWindow @ getUserNotebook[ ];
-ShowCodeAssistance[ "Inline" ] := catchMine @ showCodeAssistanceInline @ InputNotebook[ ];
+ShowCodeAssistance[ nbo_NotebookObject ] := catchMine @ showCodeAssistanceWindow @ nbo;
+ShowCodeAssistance[ "Window" ] := catchMine @ ShowCodeAssistance[ getUserNotebook[ ], "Window" ];
+ShowCodeAssistance[ "Inline" ] := catchMine @ ShowCodeAssistance[ InputNotebook[ ], "Inline" ];
+ShowCodeAssistance[ nbo_NotebookObject, "Window" ] := catchMine @ showCodeAssistanceWindow @ nbo;
+ShowCodeAssistance[ nbo_NotebookObject, "Inline" ] := catchMine @ showCodeAssistanceInline @ nbo;
 ShowCodeAssistance // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -82,7 +92,7 @@ ShowCodeAssistance // endExportedDefinition;
 (* ::Subsection::Closed:: *)
 (*showCodeAssistanceInline*)
 showCodeAssistanceInline // beginDefinition;
-showCodeAssistanceInline[ nbo_NotebookObject ] := attachInlineChatInput @ nbo;
+showCodeAssistanceInline[ nbo_NotebookObject ] := attachInlineChatInput[ nbo, $codeAssistanceSettings ];
 showCodeAssistanceInline[ _ ] := MessageDialog[ "No notebook selected." ];
 showCodeAssistanceInline // endDefinition;
 

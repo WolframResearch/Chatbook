@@ -76,7 +76,11 @@ evaluateInlineChat[
                     "InlineChatCell" -> cell,
                     "SelectionInfo"  -> selectionInfo,
                     "MessageCells"   -> Dynamic @ messageCells
-                |>
+                |>,
+                $defaultChatSettings = mergeChatSettings @ {
+                    $defaultChatSettings,
+                    CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ]
+                }
             },
             result = ConfirmMatch[ ChatCellEvaluate @ root, _ChatObject|Null, "ChatCellEvaluate" ]
         ];

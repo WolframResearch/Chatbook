@@ -1164,7 +1164,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         newMessages = Join[
             messages,
             {
-                <| "Role" -> "assistant", "Content" -> appendToolCallEndToken[ settings, StringTrim @ string ] |>,
+                <| "Role" -> "Assistant", "Content" -> appendToolCallEndToken[ settings, StringTrim @ string ] |>,
                 makeToolResponseMessage[ settings, response ]
             }
         ];
