@@ -13,7 +13,7 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 $inputFieldPaneMargins       = 5;
 $inputFieldGridMagnification = 0.8;
 $inputFieldOuterBackground   = GrayLevel[ 0.95 ];
-$initialInlineChatWidth      = Scaled[ 0.5 ];
+$initialInlineChatWidth      = Scaled[ 1 ];
 $initialInlineChatHeight     = UpTo[ 200 ];
 
 $inputFieldOptions = Sequence[
@@ -184,9 +184,9 @@ attachInlineChatInput[ nbo_NotebookObject, settings_Association, { root_CellObje
             AttachCell[
                 NotebookSelection @ nbo,
                 inlineChatInputCell[ root, selectionInfo, settings ],
-                { Left, Bottom },
+                { "WindowCenter", Bottom },
                 0,
-                { Left, Top },
+                { Center, Top },
                 RemovalConditions -> { "EvaluatorQuit" }
             ],
             _CellObject,
@@ -271,6 +271,7 @@ inlineChatInputCell[ root_CellObject, selectionInfo_, settings_ ] := Cell[
                     cell = EvaluationCell[ ];
                     parentCell[ cell ] = root;
                     parentNotebook[ cell ] = parentNotebook @ root;
+                    attachInlineChatButtons[ EvaluationCell[ ], Dynamic @ messageCells ]
                 ),
 
                 Deinitialization :> Quiet[
@@ -289,6 +290,110 @@ inlineChatInputCell[ root_CellObject, selectionInfo_, settings_ ] := Cell[
 ];
 
 inlineChatInputCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*attachInlineChatButtons*)
+attachInlineChatButtons // beginDefinition;
+
+attachInlineChatButtons[ cell_CellObject, messageCells_Dynamic ] := AttachCell[
+    cell,
+    inlineChatButtonsCell[ cell, messageCells ],
+    { Right, Top },
+    Offset[ { -57, -7 }, 0 ],
+    { Left, Top }
+];
+
+attachInlineChatButtons // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inlineChatButtonsCell*)
+inlineChatButtonsCell // beginDefinition;
+
+(* TODO: define a template box for this in the stylesheet *)
+inlineChatButtonsCell[ cell_CellObject, messageCells_Dynamic ] :=
+    Cell @ BoxData @ GridBox[
+        { { closeButton @ cell }, { popOutButton[ cell, messageCells ] } },
+        AutoDelete      -> False,
+        GridBoxItemSize -> { "Columns" -> { { 0 } }, "Rows" -> { { 0 } } },
+        GridBoxSpacings -> { "Columns" -> { { 0 } }, "Rows" -> { { 0 } } }
+    ];
+
+inlineChatButtonsCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*closeButton*)
+closeButton // beginDefinition;
+
+closeButton[ cell_CellObject ] := ToBoxes @ Button[
+    RawBoxes @ FrameBox[
+        GraphicsBox[
+            {
+                GrayLevel[ 0.3 ],
+                AbsoluteThickness[ 1 ],
+                CapForm[ "Round" ],
+                LineBox @ { { { -1, -1 }, { 1, 1 } }, { { 1, -1 }, { -1, 1 } } }
+            },
+            ImagePadding -> { { 0, 1 }, { 1, 0 } },
+            ImageSize    -> { 6, 6 },
+            PlotRange    -> 1
+        ],
+        Alignment      -> { Center, Center },
+        Background     -> GrayLevel[ 0.96 ],
+        ContentPadding -> False,
+        FrameMargins   -> None,
+        FrameStyle     -> GrayLevel[ 0.85 ],
+        ImageSize      -> { 16, 16 },
+        RoundingRadius -> 2,
+        StripOnInput   -> False
+    ],
+    NotebookDelete @ cell,
+    Appearance -> "Suppressed",
+    Tooltip    -> "Close"
+];
+
+closeButton // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*popOutButton*)
+popOutButton // beginDefinition;
+
+popOutButton[ cell_CellObject, messageCells_Dynamic ] := ToBoxes @ Button[
+    RawBoxes @ FrameBox[
+        GraphicsBox[
+            {
+                GrayLevel[ 0.3 ],
+                AbsoluteThickness[ 1 ],
+                CapForm[ "Round" ],
+                LineBox @ {
+                    { { -0.4, 0.8 }, { -0.8, 0.8 }, { -0.8, -0.8 }, { 0.8, -0.8 }, { 0.8, -0.4 } },
+                    { { -0.1, -0.1 }, { 1, 1 } },
+                    { { 0.2, 1 }, { 1, 1 }, { 1, 0.2 } }
+                }
+            },
+            ImagePadding -> { { 0, 1 }, { 1, 0 } },
+            ImageSize    -> { 10, 10 },
+            PlotRange    -> 1
+        ],
+        Alignment      -> { Center, Center },
+        Background     -> GrayLevel[ 0.96 ],
+        ContentPadding -> False,
+        FrameMargins   -> None,
+        FrameStyle     -> GrayLevel[ 0.85 ],
+        ImageSize      -> { 16, 16 },
+        RoundingRadius -> 2,
+        StripOnInput   -> False
+    ],
+    NotebookDelete @ cell;
+    popOutWorkspaceChatNB @ messageCells,
+    Appearance -> "Suppressed",
+    Tooltip    -> "View in Code Assistance Chat"
+];
+
+popOutButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -340,20 +445,6 @@ inlineChatInputField[
                         RawBoxes @ inlineTemplateBox @ TemplateBox[
                             { RGBColor[ "#a3c9f2" ], RGBColor[ "#f1f7fd" ], 27 },
                             "SendChatButton"
-                        ],
-                        Style[
-                            ActionMenu[
-                                "More",
-                                {
-                                    "Close"        :> NotebookDelete @ EvaluationCell[ ],
-                                    "View in Chat" :> (
-                                        NotebookDelete @ EvaluationCell[ ];
-                                        popOutWorkspaceChatNB @ messageCells
-                                    )
-                                },
-                                ImageSize -> { Automatic, 25 }
-                            ],
-                            Magnification -> 1
                         ]
                     }
                 },
@@ -401,7 +492,7 @@ moveToInlineChatInputField // endDefinition;
 displayInlineChatMessages // beginDefinition;
 
 displayInlineChatMessages[ { }, inputField_ ] :=
-    Pane[ inputField, ImageSize -> { Scaled[ 0.5 ], Automatic } ];
+    Pane[ inputField, ImageSize -> { $initialInlineChatWidth, Automatic } ];
 
 displayInlineChatMessages[ cells: { __Cell }, inputField_ ] :=
     DynamicModule[ { w, h, size },
@@ -415,6 +506,7 @@ displayInlineChatMessages[ cells: { __Cell }, inputField_ ] :=
             {
                 Pane[
                     Column[
+                        (* FIXME: code blocks don't show syntax styles or string characters *)
                         formatInlineMessageCells /@ cells,
                         Alignment  -> Left,
                         BaseStyle  -> { Magnification -> 0.8 },
@@ -596,6 +688,9 @@ userImage // endDefinition;
 (* ::Subsection::Closed:: *)
 (*popOutWorkspaceChatNB*)
 popOutWorkspaceChatNB // beginDefinition;
+
+popOutWorkspaceChatNB[ Dynamic[ cells_ ] ] :=
+    popOutWorkspaceChatNB @ cells;
 
 popOutWorkspaceChatNB[ cells: { ___Cell } ] := Enclose[
     Module[ { nbo },
