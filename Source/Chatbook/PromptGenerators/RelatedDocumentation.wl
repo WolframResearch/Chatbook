@@ -145,7 +145,11 @@ relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_ ] := Enclo
 
         filtered = ConfirmMatch[ filterSnippets[ messages, uris, filter ], { ___String }, "Filtered" ];
         string = StringTrim @ StringRiffle[ "# "<># & /@ DeleteCases[ filtered, "" ], "\n\n======\n\n" ];
-        $relatedDocsStringHeader <> string
+
+        If[ string === "",
+            "",
+            $relatedDocsStringHeader <> string
+        ]
     ],
     throwInternalFailure
 ];
@@ -164,12 +168,13 @@ Here are some Wolfram documentation snippets that might be helpful:
 filterSnippets // beginDefinition;
 
 filterSnippets[ messages_, uris: { __String }, filter_ ] := Enclose[
-    Catch @ Module[ { snippets, transcript, xml, instructions, response, pages },
+    Catch @ Module[ { snippets, inserted, transcript, xml, instructions, response, pages },
 
         snippets = ConfirmMatch[ makeDocSnippets @ uris, { ___String }, "Snippets" ];
         If[ ! TrueQ @ filter, Throw @ snippets ];
 
-        transcript = ConfirmBy[ getSmallContextString @ insertContextPrompt @ messages, StringQ, "Transcript" ];
+        inserted = insertContextPrompt @ messages;
+        transcript = ConfirmBy[ getSmallContextString @ inserted, StringQ, "Transcript" ];
 
         xml = ConfirmMatch[ snippetXML /@ snippets, { __String }, "XML" ];
         instructions = ConfirmBy[

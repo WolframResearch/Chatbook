@@ -27,6 +27,7 @@ withChatState[ eval_ ] :=
             $WorkspaceChat                = False,
             withChatState                 = # &,
             $contextPrompt                = None,
+            $selectionPrompt              = None,
 
             (* Values used for token budgets during cell serialization: *)
             $cellStringBudget             = $cellStringBudget,

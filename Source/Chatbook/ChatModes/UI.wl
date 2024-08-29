@@ -484,6 +484,8 @@ moveToInlineChatInputField[ box_BoxObject ] := Quiet @ Catch[
     _
 ];
 
+moveToInlineChatInputField[ None ] := Null;
+
 moveToInlineChatInputField // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

@@ -186,8 +186,15 @@ $escapedMarkdownCharacters = { "`", "$", "*", "_", "#", "|" };
     [] () {} + - . !
 *)
 
-$leftSelectionIndicator  = "\\["<>"BeginSelection"<>"]";
-$rightSelectionIndicator = "\\["<>"EndSelection"<>"]";
+(* $leftSelectionIndicator  = "\\["<>"BeginSelection"<>"]";
+$rightSelectionIndicator = "\\["<>"EndSelection"<>"]"; *)
+
+$leftSelectionIndicator  = "<selection>";
+$rightSelectionIndicator = "</selection>";
+
+(* Determines if serialized cell content should be wrapped in <cell id=xxxx>...</cell> *)
+$includeCellXML    = False;
+$xmlCellAttributes = { "id" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -320,7 +327,9 @@ CellToString // Options = {
     "MaxOutputCellStringLength" -> $maxOutputCellStringLength,
     "PageWidth"                 -> $cellPageWidth,
     "UnhandledBoxFunction"      -> None,
-    "WindowWidth"               -> $windowWidth
+    "WindowWidth"               -> $windowWidth,
+    "IncludeXML"                :> $includeCellXML,
+    "XMLCellAttributes"         :> $xmlCellAttributes
 };
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -331,6 +340,7 @@ CellToString[ cell_, opts: OptionsPattern[ ] ] :=
             $cellCharacterEncoding = OptionValue[ "CharacterEncoding" ],
             $CellToStringDebug = TrueQ @ OptionValue[ "Debug" ],
             $unhandledBoxFunction = OptionValue[ "UnhandledBoxFunction" ],
+            $includeCellXML = TrueQ @ OptionValue[ "IncludeXML" ],
             $cellPageWidth, $windowWidth, $maxCellStringLength, $maxOutputCellStringLength,
             $contentTypes, $multimodalImages
         },
@@ -421,13 +431,17 @@ cellToString // beginDefinition;
 (* Argument normalization *)
 cellToString[ data: _TextData|_BoxData|_RawData ] := cellToString @ Cell @ data;
 cellToString[ string_String? StringQ ] := cellToString @ Cell @ string;
-cellToString[ cell_CellObject ] := cellToString @ NotebookRead @ cell;
+cellToString[ cell_CellObject ] := cellToString @ notebookRead @ cell;
 
 (* Multiple cells to one string *)
 cellToString[ Notebook[ cells_List, ___ ] ] := cellsToString @ cells;
 cellToString[ Cell @ CellGroupData[ cells_List, _ ] ] := cellsToString @ cells;
 cellToString[ nbo_NotebookObject ] := cellToString @ Cells @ nbo;
-cellToString[ cells: { __CellObject } ] := cellsToString @ NotebookRead @ cells;
+cellToString[ cells: { __CellObject } ] := cellsToString @ notebookRead @ cells;
+
+(* Wrap serialized cell in xml tags for the notebook editor tool: *)
+cellToString[ cell_Cell? xmlCellQ ] :=
+    cellToXMLString @ cell;
 
 (* Drop cell label for some styles *)
 cellToString[ Cell[ a__, style: $$noCellLabelStyle, b___, CellLabel -> _, c___ ] ] :=
@@ -608,6 +622,79 @@ cellsToString[ cells_List ] :=
             }
         ]
     ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*xmlCellQ*)
+xmlCellQ // beginDefinition;
+xmlCellQ[ Cell[ __, $$chatInputStyle|$$chatOutputStyle, ___ ] ] := False;
+xmlCellQ[ _Cell ] := TrueQ @ $includeCellXML;
+xmlCellQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cellToXMLString*)
+cellToXMLString // beginDefinition;
+
+cellToXMLString[ cell_Cell ] := Enclose[
+    Catch @ Module[ { string, attributes, attributeString },
+        string = ConfirmBy[ Block[ { $includeCellXML = False }, cellToString @ cell ], StringQ, "String" ];
+        attributes = ConfirmBy[ cellXMLAttributes @ cell, AssociationQ, "XMLAttributes" ];
+        attributeString = StringTrim @ StringRiffle @ KeyValueMap[ StringJoin[ #1, "='", #2, "'" ] &, attributes ];
+        If[ StringLength @ attributeString > 0, attributeString = " " <> attributeString ];
+        StringJoin[
+            "<cell", attributeString, ">\n",
+            string,
+            "\n</cell>"
+        ]
+    ],
+    throwInternalFailure
+];
+
+cellToXMLString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cellXMLAttributes*)
+cellXMLAttributes // beginDefinition;
+
+cellXMLAttributes[ cell_Cell ] := DeleteMissing @ AssociationMap[
+    Apply @ Rule,
+    KeyTake[
+        <|
+            "id"    :> xmlCellID @ cell,
+            "style" :> xmlCellStyle @ cell,
+            "label" :> xmlCellLabel @ cell
+        |>,
+        $xmlCellAttributes
+    ]
+];
+
+cellXMLAttributes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*xmlCellID*)
+xmlCellID // beginDefinition;
+xmlCellID[ Cell[ __, CellObject -> cell_CellObject, ___ ] ] := cellReference @ cell;
+xmlCellID[ _Cell ] := Missing[ ];
+xmlCellID // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*xmlCellStyle*)
+xmlCellStyle // beginDefinition;
+xmlCellStyle[ Cell[ _, style__String, OptionsPattern[ ] ] ] := { style };
+xmlCellStyle[ _Cell ] := Missing[ ];
+xmlCellStyle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*xmlCellLabel*)
+xmlCellLabel // beginDefinition;
+xmlCellLabel[ Cell[ __, CellLabel -> label_String, ___ ] ] := label;
+xmlCellLabel[ _Cell ] := Missing[ ];
+xmlCellLabel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

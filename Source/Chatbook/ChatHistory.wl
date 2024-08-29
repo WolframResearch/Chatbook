@@ -84,7 +84,7 @@ selectProperties // endDefinition;
 (*getCellExpressions*)
 getCellExpressions // beginDefinition;
 getCellExpressions[ KeyValuePattern[ "CellObjects" -> cells_ ] ] := getCellExpressions @ cells;
-getCellExpressions[ cells: { ___CellObject } ] := NotebookRead @ cells;
+getCellExpressions[ cells: { ___CellObject } ] := notebookRead @ cells;
 getCellExpressions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

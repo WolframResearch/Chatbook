@@ -851,18 +851,20 @@ simpleToolRequestParser // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*parseSimpleToolCallParameterStrings*)
+$$argNameDelimiter = (":"|"="|"-") ~~ " "...;
+
 parseSimpleToolCallParameterStrings // beginDefinition;
 
 parseSimpleToolCallParameterStrings[ { param_String }, argString_String ] :=
-    <| param -> StringDelete[ argString, StartOfString ~~ WhitespaceCharacter... ~~ param ~~ ":" ~~ " "... ] |>;
+    <| param -> StringDelete[ argString, StartOfString ~~ WhitespaceCharacter... ~~ param ~~ $$argNameDelimiter ] |>;
 
 parseSimpleToolCallParameterStrings[ paramNames: { __String }, argString_String ] := Enclose[
     Catch @ Module[ { namedSplit, defaults, pairs },
-        namedSplit = StringSplit[ argString, StartOfLine ~~ (" "|"\t")... ~~ p: paramNames ~~ ":" ~~ " "... :> p ];
+        namedSplit = StringSplit[ argString, StartOfLine ~~ (" "|"\t"|"")... ~~ p: paramNames ~~ $$argNameDelimiter :> p ];
         If[ OddQ @ Length @ namedSplit, Throw @ parseSimpleToolCallParameterStrings0[ paramNames, argString ] ];
         defaults = AssociationMap[ "" &, paramNames ];
         pairs = ConfirmMatch[ Partition[ namedSplit, 2 ], { { _String, _String } .. }, "Pairs" ];
-        ConfirmBy[ <| defaults, Rule @@@ pairs |>, AssociationQ, "Parameters" ]
+        StringTrim /@ ConfirmBy[ <| defaults, Rule @@@ pairs |>, AssociationQ, "Parameters" ]
     ],
     throwInternalFailure
 ];
@@ -876,7 +878,7 @@ parseSimpleToolCallParameterStrings0[ paramNames: { __String }, argString_String
     Module[ { split, padded },
         split = StringSplit[ argString, "\n" ];
         padded = PadRight[ split, Length @ paramNames, "" ];
-        ConfirmBy[ AssociationThread[ paramNames -> padded ], AssociationQ, "Parameters" ]
+        StringTrim /@ ConfirmBy[ AssociationThread[ paramNames -> padded ], AssociationQ, "Parameters" ]
     ],
     throwInternalFailure
 ];
