@@ -101,11 +101,14 @@ $dropShadowConfig = <|
 $dropShadowPaneBox := $dropShadowPaneBox =
     With[ { img = createNinePatch @ $dropShadowConfig },
         Function[
-            PanelBox[
-                #,
-                Appearance     -> img,
-                ContentPadding -> False,
-                FrameMargins   -> { { 0, 0 }, { 0, 0 } }
+            PaneBox[
+                PanelBox[
+                    #,
+                    Appearance     -> img,
+                    ContentPadding -> False,
+                    FrameMargins   -> { { 0, 0 }, { 0, 0 } }
+                ],
+                ImageMargins -> { { 40, 50 }, { 0, 0 } }
             ]
         ]
     ];
