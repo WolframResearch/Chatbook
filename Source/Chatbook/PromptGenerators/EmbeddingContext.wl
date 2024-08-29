@@ -87,7 +87,10 @@ makeChatTranscript[ { messages__ }, result_String, opts: OptionsPattern[ ] ] :=
 makeChatTranscript[ messages_List, opts: OptionsPattern[ ] ] :=
     If[ TrueQ @ OptionValue[ "IncludeSystemMessage" ],
         revertMultimodalContent @ messages,
-        revertMultimodalContent @ DeleteCases[ messages, KeyValuePattern[ "Role"|"role" -> "System"|"system" ] ]
+        revertMultimodalContent @ Replace[
+            messages,
+            { KeyValuePattern[ "Role"|"role" -> "System"|"system" ], rest___ } :> { rest }
+        ]
     ];
 
 makeChatTranscript // endDefinition;

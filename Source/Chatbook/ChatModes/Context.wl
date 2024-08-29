@@ -60,7 +60,7 @@ getInlineChatPrompt0[
     cell_CellObject,
     { before___CellObject, cell_, after___CellObject }
 ] :=
-    Block[ { $selectionInfo = info },
+    Block[ { $selectionInfo = info, $includeCellXML = TrueQ @ $notebookEditorEnabled },
         getContextFromSelection0[
             <|
                 "Before"   -> { before },
@@ -80,7 +80,9 @@ getWorkspacePrompt // beginDefinition;
 
 getWorkspacePrompt[ settings_Association ] :=
     If[ TrueQ @ $WorkspaceChat,
-        getContextFromSelection[ $evaluationNotebook, settings ],
+        Block[ { $includeCellXML = TrueQ @ $notebookEditorEnabled },
+            getContextFromSelection[ $evaluationNotebook, settings ]
+        ],
         None
     ];
 
@@ -133,13 +135,67 @@ getContextFromSelection0[ selectionData_Association, settings_ ] := Enclose[
         marked = ConfirmMatch[ insertSelectionIndicator @ { before, selected, after }, { ___Cell }, "Marked" ];
         messages = ConfirmMatch[ makeChatMessages[ settings, marked, False ], { ___Association }, "Messages" ];
         string = ConfirmBy[ messagesToString @ messages, StringQ, "String" ];
-        $contextPrompt = string;
+
+        $contextPrompt   = processContextPromptString @ string;
+        $selectionPrompt = extractSelectionPrompt @ string;
+
+        $lastContextPrompt   = $contextPrompt;
+        $lastSelectionPrompt = $selectionPrompt;
+
+        (* FIXME: pass $selectionPrompt instead of extracting again: *)
         postProcessNotebookContextString[ applyNotebookContextTemplate @ string, string ]
     ],
     throwInternalFailure
 ];
 
 getContextFromSelection0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*extractSelectionPrompt*)
+extractSelectionPrompt // beginDefinition;
+
+extractSelectionPrompt[ prompt_String ] := Enclose[
+    Catch @ Module[ { selections, selected },
+        selections = StringCases[ prompt, $leftSelectionIndicator ~~ s___ ~~ $rightSelectionIndicator :> s, 1 ];
+        If[ selections === { }, Throw @ None ];
+        selected = StringTrim @ ConfirmBy[ First @ selections, StringQ, "Selected" ];
+        If[ selected === "", Throw @ None, selected ]
+    ],
+    throwInternalFailure
+];
+
+extractSelectionPrompt // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*processContextPromptString*)
+processContextPromptString // beginDefinition;
+
+processContextPromptString[ prompt_String ] := Enclose[
+    Module[ { noXML, noSelection },
+        noXML = ConfirmBy[ stripCellXML @ prompt, StringQ, "NoXML" ];
+        noSelection = ConfirmBy[ (*stripSelectionIndicators @*) noXML, StringQ, "NoSelection" ];
+        ConfirmBy[ mergeCodeBlocks @ noSelection, StringQ, "Merged" ]
+    ],
+    throwInternalFailure
+];
+
+processContextPromptString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*stripCellXML*)
+stripCellXML // beginDefinition;
+stripCellXML[ prompt_String ] := StringDelete[ prompt, { "<cell" ~~ Except[ "\n" ]... ~~ ">\n", "\n</cell>" } ];
+stripCellXML // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*stripSelectionIndicators*)
+stripSelectionIndicators // beginDefinition;
+stripSelectionIndicators[ s_String ] := StringDelete[ s, { $leftSelectionIndicator, $rightSelectionIndicator } ];
+stripSelectionIndicators // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
