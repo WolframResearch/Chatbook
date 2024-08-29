@@ -441,7 +441,14 @@ vectorDBSearch[ dbName_String, All, "Values" ] := Enclose[
 
 vectorDBSearch[ dbName_String, messages0: { __Association }, prop: "Values"|"Results" ] := Enclose[
     Catch @ Module[
-        { messages, conversationString, lastMessageString, conversationResults, lastMessageResults, combined },
+        {
+            messages,
+            conversationString, lastMessageString, selectionString,
+            conversationResults, lastMessageResults, selectionResults,
+            combined, n, merged
+        },
+
+        (* TODO: asynchronously pre-cache embeddings for each type *)
 
         messages = ConfirmMatch[ insertContextPrompt @ messages0, { __Association }, "Messages" ];
 
@@ -453,7 +460,11 @@ vectorDBSearch[ dbName_String, messages0: { __Association }, prop: "Values"|"Res
             "LastMessageString"
         ];
 
+        selectionString = If[ StringQ @ $selectionPrompt, $selectionPrompt, None ];
+
         If[ conversationString === "" || lastMessageString === "", Throw @ { } ];
+
+        preloadEmbeddings @ { conversationString, lastMessageString, selectionString };
 
         conversationResults = ConfirmMatch[
             MapAt[
@@ -475,11 +486,32 @@ vectorDBSearch[ dbName_String, messages0: { __Association }, prop: "Values"|"Res
                 ]
             ];
 
-        combined = SortBy[ Join[ conversationResults, lastMessageResults ], Lookup[ "Distance" ] ];
+        selectionResults =
+            If[ StringQ @ selectionString,
+                ConfirmMatch[
+                    vectorDBSearch[ dbName, selectionString, "Results" ],
+                    { KeyValuePattern[ { "Distance" -> _Real, "Value" -> _ } ]... },
+                    "SelectionResults"
+                ],
+                { }
+            ];
+
+        combined = SortBy[ Join[ conversationResults, lastMessageResults, selectionResults ], Lookup[ "Distance" ] ];
+
+        n = Ceiling[ $maxNeighbors / 10 ];
+        merged = Take[
+            DeleteDuplicates @ Join[
+                Take[ conversationResults, UpTo[ n ] ],
+                Take[ lastMessageResults , UpTo[ n ] ],
+                Take[ selectionResults   , UpTo[ n ] ],
+                combined
+            ],
+            UpTo[ $maxNeighbors ]
+        ];
 
         If[ prop === "Results",
-            combined,
-            DeleteDuplicates[ Lookup[ "Value" ] /@ combined ]
+            merged,
+            DeleteDuplicates[ Lookup[ "Value" ] /@ merged ]
         ]
     ],
     throwInternalFailure
@@ -489,19 +521,34 @@ vectorDBSearch // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*preloadEmbeddings*)
+preloadEmbeddings // beginDefinition;
+(* FIXME: find a way to asynchronously fetch embeddings (ServiceSubmit isn't working) *)
+preloadEmbeddings[ strings: { (_String|None)... } ] := Null;
+preloadEmbeddings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*insertContextPrompt*)
 insertContextPrompt // beginDefinition;
 
 insertContextPrompt[ messages_ ] :=
-    insertContextPrompt[ messages, $contextPrompt ];
+    insertContextPrompt[ messages, $contextPrompt, $selectionPrompt ];
 
-insertContextPrompt[ { before___, last_Association }, prompt_String ] := {
+insertContextPrompt[ { before___, last_Association }, context_String, selection_String ] := {
     before,
-    <| "Role" -> "User", "Content" -> prompt |>,
+    <| "Role" -> "User"  , "Content" -> context |>,
+    <| "Role" -> "System", "Content" -> "User's currently selected text: \""<>selection<>"\"" |>,
     last
 };
 
-insertContextPrompt[ messages_List, other_ ] :=
+insertContextPrompt[ { before___, last_Association }, context_String, _ ] := {
+    before,
+    <| "Role" -> "User", "Content" -> context |>,
+    last
+};
+
+insertContextPrompt[ messages_List, _, _ ] :=
     messages;
 
 insertContextPrompt // endDefinition;
