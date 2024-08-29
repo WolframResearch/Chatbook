@@ -123,6 +123,16 @@ Cell[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*CodeAssistanceWelcomeCell*)
+Cell[
+    StyleData[ "CodeAssistanceWelcomeCell" ],
+    CellMargins          -> { { 10, 10 }, { 30, 10 } },
+    ShowStringCharacters -> False,
+    TaggingRules         -> <| "ChatNotebookSettings" -> <| "ExcludeFromChat" -> True |> |>
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Template Boxes*)
 
 (* ::**************************************************************************************************************:: *)
@@ -155,6 +165,52 @@ Cell[
                 FrameMargins -> 0
             ],
             Alignment -> { Automatic, Baseline }
+        ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*WelcomeToCodeAssistanceSplash*)
+Cell[
+    StyleData[ "WelcomeToCodeAssistanceSplash" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ ToBoxes @ Framed[
+            Pane[
+                Grid[
+                    {
+                        { Magnify[ RawBoxes @ TemplateBox[ { }, "ChatIconCodeAssistant" ], 5 ] },
+                        {
+                            Style[
+                                "Welcome to Code Assistance Chat",
+                                FontWeight -> Bold,
+                                FontSize   -> 17,
+                                FontColor  -> GrayLevel[ 0.25 ]
+                            ]
+                        },
+                        { "Ask me anything using the input field below." },
+                        {
+                            Button[
+                                "View Tutorial \[RightGuillemet]",
+                                MessageDialog[ "Not implemented yet." ],
+                                Appearance -> None,
+                                BaseStyle  -> { "Link" }
+                            ]
+                        }
+                    },
+                    BaseStyle -> { "Text", FontSize -> 13, FontColor -> GrayLevel[ 0.5 ], LineBreakWithin -> False },
+                    Spacings  -> { 1, { 0, 1.25, 1.25, 0.75 } }
+                ],
+                Alignment       -> { Center, Automatic },
+                ImageSize       -> { Scaled[ 1 ], Automatic },
+                ImageSizeAction -> "ShrinkToFit"
+            ],
+            Alignment      -> { Center, Automatic },
+            Background     -> RGBColor[ "#fcfdff" ],
+            FrameMargins   -> { { 10, 10 }, { 10, 10 } },
+            FrameStyle     -> RGBColor[ "#ecf0f5" ],
+            ImageSize      -> { Automatic, Automatic },
+            RoundingRadius -> 10
         ]
     }
 ]
