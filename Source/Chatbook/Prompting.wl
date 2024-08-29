@@ -245,6 +245,8 @@ $basePromptComponents[ "WolframLanguageStyle" ] = "
 * Keep code simple when possible
 * Use functional programming instead of procedural
 * Do not assign global variables when it's not necessary
+* Always use proper naming conventions for your variables (e.g. lowerCamelCase)
+* Never use single capital letters to represent variables (e.g. use `a Sin[k x + \[Phi]]` instead of `A Sin[k x + \[Phi]]`)
 * Prefer modern Wolfram Language symbols and methods
 * Many new symbols have been added to WL since your knowledge cutoff date, so check documentation as needed
 * When creating plots, add options such as labels and legends to make them easier to understand";

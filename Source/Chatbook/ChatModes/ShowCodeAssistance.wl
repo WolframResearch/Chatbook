@@ -15,7 +15,7 @@ $workspaceChatWidth = 325;
 $codeAssistanceSettings = <|
     "ServiceCaller"     -> "CodeAssistance",
     "PromptGenerators"  -> { "RelatedDocumentation" },
-    "Tools"             -> { "WolframLanguageEvaluator" },
+    "Tools"             -> { "NotebookEditor" },
     "ToolSelectionType" -> <| "DocumentationLookup" -> None, "DocumentationSearcher" -> None |>
 |>;
 
