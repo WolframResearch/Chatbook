@@ -7,10 +7,11 @@ Begin[ "`Private`" ];
 (* ::Section::Closed:: *)
 (*Load Subcontexts*)
 Get[ "Wolfram`Chatbook`Tools`Common`"          ];
-Get[ "Wolfram`Chatbook`Tools`ToolOptions`"     ];
-Get[ "Wolfram`Chatbook`Tools`DefaultTools`"    ];
 Get[ "Wolfram`Chatbook`Tools`ChatPreferences`" ];
+Get[ "Wolfram`Chatbook`Tools`NotebookEditor`"  ];
+Get[ "Wolfram`Chatbook`Tools`ToolOptions`"     ];
 Get[ "Wolfram`Chatbook`Tools`WolframAlpha`"    ];
+Get[ "Wolfram`Chatbook`Tools`DefaultTools`"    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
