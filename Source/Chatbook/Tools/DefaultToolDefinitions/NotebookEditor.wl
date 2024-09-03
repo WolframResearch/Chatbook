@@ -36,6 +36,38 @@ Do not surround code you write with triple backticks and don't include cell labe
 The target 'selected' refers to the entire cell or cells.";
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Spec*)
+$defaultChatTools0[ "NotebookEditor" ] = <|
+    toolDefaultData[ "NotebookEditor" ],
+    "ShortName"          -> "nb_edit",
+    "Icon"               -> $nbEditIcon,
+    "Description"        -> $nbEditDescription,
+    "Enabled"            :> $notebookEditorEnabled,
+    "Function"           -> notebookEdit,
+    "FormattingFunction" -> toolAutoFormatter,
+    "Hidden"             -> True, (* TODO: hide this from UI *)
+    "Origin"             -> "BuiltIn",
+    "Parameters"         -> {
+        "action" -> <|
+            "Interpreter" -> "String",
+            "Help"        -> "Action to execute. Valid values are 'delete', 'write', 'append', 'prepend'.",
+            "Required"    -> True
+        |>,
+        "target" -> <|
+            "Interpreter" -> "String",
+            "Help"        -> "Target of action. Can be a comma-delimited list of cell IDs or 'selected' (default).",
+            "Required"    -> False
+        |>,
+        "content" -> <|
+            "Interpreter" -> "String",
+            "Help"        -> "Content to write, append, or prepend. Can be a string or a list of Cell expressions.",
+            "Required"    -> False
+        |>
+    }
+|>;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Tool Function*)
 

@@ -14,29 +14,16 @@ Needs[ "Wolfram`Chatbook`Serialization`"     ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Config*)
-$usableChatSettingsKeys = {
-    "Assistance",
-    "ChatHistoryLength",
-    "LLMEvaluator",
-    "MaxCellStringLength",
-    "MergeMessages",
-    "Model",
-    "Prompts",
-    "Temperature",
-    "ToolCallFrequency",
-    "Tools"
-};
-
-$$scope = _NotebookObject | $FrontEnd;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*Chat Preferences*)
+(*Tool Specification*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*Tool Description*)
+(*Icon*)
+$chatPreferencesIcon = RawBoxes @ TemplateBox[ { }, "ChatBlockSettingsMenuIcon" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Description*)
 $chatPreferencesDescription = "\
 Get and set current chat preferences.
 
@@ -62,6 +49,62 @@ Key descriptions
 | ToolCallFrequency   | real       | 0.5             | The frequency with which to use tools. Values should be a number between 0 and 1. |
 | Tools               | [ string ] |                 | The list of currently enabled tools. Use the 'get' action for available names. |
 ";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Spec*)
+$defaultChatTools0[ "ChatPreferences" ] = <|
+    toolDefaultData[ "ChatPreferences" ],
+    "Icon"               -> $chatPreferencesIcon,
+    "Description"        -> $chatPreferencesDescription,
+    "Function"           -> chatPreferences,
+    "FormattingFunction" -> toolAutoFormatter,
+    "Origin"             -> "BuiltIn",
+    "Parameters"         -> {
+        "action" -> <|
+            "Interpreter" -> { "get", "set" },
+            "Help"        -> "Whether to get or set chat settings",
+            "Required"    -> True
+        |>,
+        "key" -> <|
+            "Interpreter" -> "String",
+            "Help"        -> "Which chat setting to get or set",
+            "Required"    -> False
+        |>,
+        "value" -> <|
+            "Interpreter" -> "String",
+            "Help"        -> "The value to set the chat setting to",
+            "Required"    -> False
+        |>,
+        "scope" -> <|
+            "Interpreter" -> { "global", "notebook" },
+            "Help"        -> "The scope of the chat setting (default is 'notebook')",
+            "Required"    -> False
+        |>
+    }
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Config*)
+$usableChatSettingsKeys = {
+    "Assistance",
+    "ChatHistoryLength",
+    "LLMEvaluator",
+    "MaxCellStringLength",
+    "MergeMessages",
+    "Model",
+    "Prompts",
+    "Temperature",
+    "ToolCallFrequency",
+    "Tools"
+};
+
+$$scope = _NotebookObject | $FrontEnd;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Chat Preferences*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
