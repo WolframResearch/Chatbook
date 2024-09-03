@@ -9,7 +9,8 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$notebookEditorEnabled := TrueQ @ $WorkspaceChat || TrueQ @ $InlineChat;
+(* $notebookEditorEnabled := TrueQ @ $WorkspaceChat || TrueQ @ $InlineChat; *)
+$notebookEditorEnabled = False;
 
 $cancelledNotebookEdit = Failure[ "Cancelled", <| "Message" -> "Proposed change was rejected by the user" |> ];
 
