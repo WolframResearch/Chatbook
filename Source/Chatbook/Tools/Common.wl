@@ -1216,9 +1216,50 @@ $toolFrequencyExplanations = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Tool Properties*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getToolIcon*)
+getToolIcon // beginDefinition;
+getToolIcon[ tool: $$llmTool ] := getToolIcon @ toolData @ tool;
+getToolIcon[ as_Association ] := Lookup[ toolData @ as, "Icon", RawBoxes @ TemplateBox[ { }, "WrenchIcon" ] ];
+getToolIcon[ _ ] := $defaultToolIcon;
+getToolIcon // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getToolDisplayName*)
+getToolDisplayName // beginDefinition;
+
+getToolDisplayName[ tool_ ] :=
+    getToolDisplayName[ tool, Missing[ "NotFound" ] ];
+
+getToolDisplayName[ tool: $$llmTool, default_ ] :=
+    getToolDisplayName @ toolData @ tool;
+
+getToolDisplayName[ as_Association, default_ ] :=
+    Lookup[ as, "DisplayName", toDisplayToolName @ Lookup[ as, "Name", default ] ];
+
+getToolDisplayName[ _, default_ ] :=
+    default;
+
+getToolDisplayName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getToolFormattingFunction*)
+getToolFormattingFunction // beginDefinition;
+getToolFormattingFunction[ HoldPattern @ LLMTool[ as_, ___ ] ] := getToolFormattingFunction @ as;
+getToolFormattingFunction[ as_Association ] := Lookup[ as, "FormattingFunction", Automatic ];
+getToolFormattingFunction[ _ ] := Automatic;
+getToolFormattingFunction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
-    Null
+    $toolConfiguration;
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)
