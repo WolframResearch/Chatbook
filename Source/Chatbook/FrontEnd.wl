@@ -789,8 +789,17 @@ createCellReference // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*findCellReference*)
 findCellReference // beginDefinition;
+findCellReference[ ref_String ] /; StringLength @ ref > $tinyHashLength := findCellReferenceInString @ ref;
 findCellReference[ ref_String ] := Catch[ findNotebookCell[ ref ] /@ Notebooks[ ]; Missing[ "NotFound" ], $ref ];
 findCellReference // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*findCellReferenceInString*)
+findCellReferenceInString // beginDefinition;
+findCellReferenceInString[ s_String ] := findCellReferenceInString[ s, Select[ Keys @ $cellReferences, StringQ ] ];
+findCellReferenceInString[ s_String, refs: { ___String } ] := First[ StringCases[ s, refs, 1 ], Missing[ "NotFound" ] ];
+findCellReferenceInString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
