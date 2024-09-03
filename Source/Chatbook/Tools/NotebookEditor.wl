@@ -14,10 +14,6 @@ $notebookEditorEnabled := TrueQ @ $WorkspaceChat || TrueQ @ $InlineChat;
 $cancelledNotebookEdit = Missing[ "Edit was cancelled by the user" ];
 
 (* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*Tool Metadata*)
-
-(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Icon*)
 $nbEditIcon = RawBoxes[
