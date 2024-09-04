@@ -783,7 +783,6 @@ insertCodeBelow[ cell_Cell, evaluate_ ] :=
         cellObj = topParentCell @ EvaluationCell[ ];
         nbo = parentNotebook @ cellObj;
         insertAfterChatGeneratedCells[ cellObj, cell ];
-        NotebookDelete @ Cells[ nbo, AttachedCell -> True, CellStyle -> "AttachedChatInput" ];
         If[ TrueQ @ evaluate,
             selectionEvaluateCreateCell @ nbo,
             SelectionMove[ nbo, After, CellContents ]
