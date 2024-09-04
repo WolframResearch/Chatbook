@@ -8,6 +8,54 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Tool Specification*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Icon*)
+$wolframAlphaIcon = RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEBitmaps", "InsertionAlpha" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Description*)
+$wolframAlphaDescription = "\
+Use natural language queries with Wolfram|Alpha to get up-to-date computational results about entities in chemistry, \
+physics, geography, history, art, astronomy, and more.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Spec*)
+$defaultChatTools0[ "WolframAlpha" ] = <|
+    toolDefaultData[ "WolframAlpha" ],
+    "ShortName"          -> "wa",
+    "Icon"               -> $wolframAlphaIcon,
+    "Description"        -> $wolframAlphaDescription,
+    "DisplayName"        -> "Wolfram|Alpha",
+    "Enabled"            :> ! TrueQ @ $AutomaticAssistance,
+    "FormattingFunction" -> wolframAlphaResultFormatter,
+    "Function"           -> getWolframAlphaText,
+    "Origin"             -> "BuiltIn",
+    "Parameters"         -> {
+        "query" -> <|
+            "Interpreter" -> "String",
+            "Help"        -> "the input",
+            "Required"    -> True
+        |>,
+        "steps" -> <|
+            "Interpreter" -> "Boolean",
+            "Help"        -> "whether to show step-by-step solution",
+            "Required"    -> False
+        |>(*,
+        "assumption" -> <|
+            "Interpreter" -> "String",
+            "Help"        -> "the assumption to use, passed back from a previous query with the same input.",
+            "Required"    -> False
+        |>*)
+    }
+|>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Configuration*)
 $defaultPods           := toolOptionValue[ "WolframAlpha", "DefaultPods"     ];
 $foldPods              := toolOptionValue[ "WolframAlpha", "FoldPods"        ];

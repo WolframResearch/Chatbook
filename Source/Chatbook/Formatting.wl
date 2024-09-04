@@ -783,7 +783,6 @@ insertCodeBelow[ cell_Cell, evaluate_ ] :=
         cellObj = topParentCell @ EvaluationCell[ ];
         nbo = parentNotebook @ cellObj;
         insertAfterChatGeneratedCells[ cellObj, cell ];
-        NotebookDelete @ Cells[ nbo, AttachedCell -> True, CellStyle -> "AttachedChatInput" ];
         If[ TrueQ @ evaluate,
             selectionEvaluateCreateCell @ nbo,
             SelectionMove[ nbo, After, CellContents ]
@@ -1724,7 +1723,11 @@ makeInteractiveCodeCell[ lang_String? wolframLanguageQ, code_ ] :=
             BoxData @ If[ StringQ @ code, wlStringToBoxes @ code, code ],
             "ChatCode",
             "Input",
-            Background -> GrayLevel[ 1 ]
+            Background           -> GrayLevel[ 1 ],
+            LanguageCategory     -> "Input",
+            ShowAutoStyles       -> True,
+            ShowStringCharacters -> True,
+            ShowSyntaxStyles     -> True
         ];
         handler = inlineInteractiveCodeCell[ display, code ];
         codeBlockFrame[ Cell @ BoxData @ ToBoxes @ handler, code ]
@@ -2080,7 +2083,11 @@ attachment[ alt_String, key_String, expr_ ] :=
             BoxData @ boxes,
             "ChatCode",
             "Input",
-            Background -> GrayLevel[ 1 ]
+            Background           -> GrayLevel[ 1 ],
+            LanguageCategory     -> "Input",
+            ShowAutoStyles       -> True,
+            ShowStringCharacters -> True,
+            ShowSyntaxStyles     -> True
         ];
         handler = inlineInteractiveCodeCell[ display, Cell[ BoxData @ cachedBoxes @ expr, "Input" ] ];
         codeBlockFrame[ Cell @ BoxData @ ToBoxes @ handler, expr ]
