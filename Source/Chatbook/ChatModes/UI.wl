@@ -567,7 +567,11 @@ formatInlineMessageCells[ cell: Cell[ __, "ChatOutput", ___ ] ] :=
             {
                 {
                     Pane[ assistantImage[ ], ImageMargins -> $messageAuthorImagePadding ],
-                    RawBoxes @ Append[ DeleteCases[ cell, Background -> _ ], Background -> None ]
+                    RawBoxes @ InputFieldBox[
+                        Append[ DeleteCases[ cell, Background -> _ ], Background -> None ],
+                        Appearance -> None,
+                        ImageSize  -> { Scaled[ 1 ], Automatic }
+                    ]
                 }
             },
             Alignment -> { Left, Top }
