@@ -434,7 +434,7 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
                 ];
             ]
         ]
-    ] // LogChatTiming[ "EvaluateChatInput" ];
+    ];
 
 EvaluateChatInput // endDefinition;
 
