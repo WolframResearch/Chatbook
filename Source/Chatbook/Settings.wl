@@ -19,58 +19,60 @@ $cloudInheritanceFix := $cloudNotebooks;
 
 (* cSpell: ignore AIAPI *)
 $defaultChatSettings = <|
-    "Assistance"                 -> Automatic,
-    "Authentication"             -> Automatic,
-    "AutoFormat"                 -> True,
-    "BasePrompt"                 -> Automatic,
-    "BypassResponseChecking"     -> False,
-    "ChatContextPreprompt"       -> Automatic,
-    "ChatDrivenNotebook"         -> False,
-    "ChatHistoryLength"          -> 1000,
-    "ChatInputIndicator"         -> Automatic,
-    "ConversionRules"            -> None,
-    "DynamicAutoFormat"          -> Automatic,
-    "EnableChatGroupSettings"    -> False,
-    "EnableLLMServices"          -> Automatic,
-    "FrequencyPenalty"           -> 0.1,
-    "HandlerFunctions"           :> $DefaultChatHandlerFunctions,
-    "HandlerFunctionsKeys"       -> Automatic,
-    "IncludeHistory"             -> Automatic,
-    "InitialChatCell"            -> True,
-    "LLMEvaluator"               -> "CodeAssistant",
-    "MaxCellStringLength"        -> Automatic,
-    "MaxContextTokens"           -> Automatic,
-    "MaxOutputCellStringLength"  -> Automatic,
-    "MaxTokens"                  -> Automatic,
-    "MergeMessages"              -> True,
-    "Model"                      :> $DefaultModel,
-    "Multimodal"                 -> Automatic,
-    "NotebookWriteMethod"        -> Automatic,
-    "OpenAIAPICompletionURL"     -> "https://api.openai.com/v1/chat/completions",
-    "OpenAIKey"                  -> Automatic,
-    "PresencePenalty"            -> 0.1,
-    "ProcessingFunctions"        :> $DefaultChatProcessingFunctions,
-    "Prompts"                    -> { },
-    "PromptGenerators"           -> { },
-    "SetCellDingbat"             -> True,
-    "ShowMinimized"              -> Automatic,
-    "StreamingOutputMethod"      -> Automatic,
-    "TabbedOutput"               -> True, (* TODO: define a "MaxOutputPages" setting *)
-    "TargetCloudObject"          -> Automatic,
-    "Temperature"                -> 0.7,
-    "TokenBudgetMultiplier"      -> Automatic,
-    "Tokenizer"                  -> Automatic,
-    "ToolCallExamplePromptStyle" -> Automatic,
-    "ToolCallFrequency"          -> Automatic,
-    "ToolExamplePrompt"          -> Automatic,
-    "ToolMethod"                 -> Automatic,
-    "ToolOptions"                :> $DefaultToolOptions,
-    "Tools"                      -> Automatic,
-    "ToolSelectionType"          -> <| |>,
-    "ToolsEnabled"               -> Automatic,
-    "TopP"                       -> 1,
-    "TrackScrollingWhenPlaced"   -> Automatic,
-    "VisiblePersonas"            -> $corePersonaNames
+    "Assistance"                     -> Automatic,
+    "Authentication"                 -> Automatic,
+    "AutoFormat"                     -> True,
+    "BasePrompt"                     -> Automatic,
+    "BypassResponseChecking"         -> False,
+    "ChatContextPreprompt"           -> Automatic,
+    "ChatDrivenNotebook"             -> False,
+    "ChatHistoryLength"              -> 1000,
+    "ChatInputIndicator"             -> Automatic,
+    "ConversionRules"                -> None,
+    "DynamicAutoFormat"              -> Automatic,
+    "EnableChatGroupSettings"        -> False,
+    "EnableLLMServices"              -> Automatic,
+    "FrequencyPenalty"               -> 0.1,
+    "HandlerFunctions"               :> $DefaultChatHandlerFunctions,
+    "HandlerFunctionsKeys"           -> Automatic,
+    "IncludeHistory"                 -> Automatic,
+    "InitialChatCell"                -> True,
+    "LLMEvaluator"                   -> "CodeAssistant",
+    "MaxCellStringLength"            -> Automatic,
+    "MaxContextTokens"               -> Automatic,
+    "MaxOutputCellStringLength"      -> Automatic,
+    "MaxTokens"                      -> Automatic,
+    "MergeMessages"                  -> True,
+    "Model"                          :> $DefaultModel,
+    "Multimodal"                     -> Automatic,
+    "NotebookWriteMethod"            -> Automatic,
+    "OpenAIAPICompletionURL"         -> "https://api.openai.com/v1/chat/completions",
+    "OpenAIKey"                      -> Automatic,
+    "PresencePenalty"                -> 0.1,
+    "ProcessingFunctions"            :> $DefaultChatProcessingFunctions,
+    "Prompts"                        -> { },
+    "PromptGenerators"               -> { },
+    "PromptGeneratorMessageRole"     -> "System",
+    "PromptGeneratorMessagePosition" -> 2,
+    "SetCellDingbat"                 -> True,
+    "ShowMinimized"                  -> Automatic,
+    "StreamingOutputMethod"          -> Automatic,
+    "TabbedOutput"                   -> True, (* TODO: define a "MaxOutputPages" setting *)
+    "TargetCloudObject"              -> Automatic,
+    "Temperature"                    -> 0.7,
+    "TokenBudgetMultiplier"          -> Automatic,
+    "Tokenizer"                      -> Automatic,
+    "ToolCallExamplePromptStyle"     -> Automatic,
+    "ToolCallFrequency"              -> Automatic,
+    "ToolExamplePrompt"              -> Automatic,
+    "ToolMethod"                     -> Automatic,
+    "ToolOptions"                    :> $DefaultToolOptions,
+    "Tools"                          -> Automatic,
+    "ToolSelectionType"              -> <| |>,
+    "ToolsEnabled"                   -> Automatic,
+    "TopP"                           -> 1,
+    "TrackScrollingWhenPlaced"       -> Automatic,
+    "VisiblePersonas"                -> $corePersonaNames
 |>;
 
 $cachedGlobalSettings := $cachedGlobalSettings = getGlobalSettingsFile[ ];
@@ -291,29 +293,32 @@ resolveAutoSetting[ settings_, key_ -> value_ ] := <| settings, key -> resolveAu
 resolveAutoSetting // endDefinition;
 
 resolveAutoSetting0 // beginDefinition;
-resolveAutoSetting0[ as_, "Assistance"                 ] := False;
-resolveAutoSetting0[ as_, "ChatInputIndicator"         ] := "\|01f4ac";
-resolveAutoSetting0[ as_, "DynamicAutoFormat"          ] := dynamicAutoFormatQ @ as;
-resolveAutoSetting0[ as_, "EnableLLMServices"          ] := $useLLMServices;
-resolveAutoSetting0[ as_, "HandlerFunctionsKeys"       ] := chatHandlerFunctionsKeys @ as;
-resolveAutoSetting0[ as_, "IncludeHistory"             ] := Automatic;
-resolveAutoSetting0[ as_, "MaxCellStringLength"        ] := chooseMaxCellStringLength @ as;
-resolveAutoSetting0[ as_, "MaxContextTokens"           ] := autoMaxContextTokens @ as;
-resolveAutoSetting0[ as_, "MaxOutputCellStringLength"  ] := chooseMaxOutputCellStringLength @ as;
-resolveAutoSetting0[ as_, "MaxTokens"                  ] := autoMaxTokens @ as;
-resolveAutoSetting0[ as_, "Multimodal"                 ] := multimodalQ @ as;
-resolveAutoSetting0[ as_, "NotebookWriteMethod"        ] := "PreemptiveLink";
-resolveAutoSetting0[ as_, "ShowMinimized"              ] := Automatic;
-resolveAutoSetting0[ as_, "StreamingOutputMethod"      ] := "PartialDynamic";
-resolveAutoSetting0[ as_, "TokenBudgetMultiplier"      ] := 1;
-resolveAutoSetting0[ as_, "Tokenizer"                  ] := getTokenizer @ as;
-resolveAutoSetting0[ as_, "TokenizerName"              ] := getTokenizerName @ as;
-resolveAutoSetting0[ as_, "ToolCallExamplePromptStyle" ] := chooseToolExamplePromptStyle @ as;
-resolveAutoSetting0[ as_, "ToolCallFrequency"          ] := Automatic;
-resolveAutoSetting0[ as_, "ToolExamplePrompt"          ] := chooseToolExamplePromptSpec @ as;
-resolveAutoSetting0[ as_, "ToolsEnabled"               ] := toolsEnabledQ @ as;
-resolveAutoSetting0[ as_, "TrackScrollingWhenPlaced"   ] := scrollOutputQ @ as;
-resolveAutoSetting0[ as_, key_String                   ] := Automatic;
+resolveAutoSetting0[ as_, "Assistance"                     ] := False;
+resolveAutoSetting0[ as_, "ChatInputIndicator"             ] := "\|01f4ac";
+resolveAutoSetting0[ as_, "DynamicAutoFormat"              ] := dynamicAutoFormatQ @ as;
+resolveAutoSetting0[ as_, "EnableLLMServices"              ] := $useLLMServices;
+resolveAutoSetting0[ as_, "HandlerFunctionsKeys"           ] := chatHandlerFunctionsKeys @ as;
+resolveAutoSetting0[ as_, "IncludeHistory"                 ] := Automatic;
+resolveAutoSetting0[ as_, "PromptGenerators"               ] := { };
+resolveAutoSetting0[ as_, "PromptGeneratorMessageRole"     ] := "System";
+resolveAutoSetting0[ as_, "PromptGeneratorMessagePosition" ] := 2;
+resolveAutoSetting0[ as_, "MaxCellStringLength"            ] := chooseMaxCellStringLength @ as;
+resolveAutoSetting0[ as_, "MaxContextTokens"               ] := autoMaxContextTokens @ as;
+resolveAutoSetting0[ as_, "MaxOutputCellStringLength"      ] := chooseMaxOutputCellStringLength @ as;
+resolveAutoSetting0[ as_, "MaxTokens"                      ] := autoMaxTokens @ as;
+resolveAutoSetting0[ as_, "Multimodal"                     ] := multimodalQ @ as;
+resolveAutoSetting0[ as_, "NotebookWriteMethod"            ] := "PreemptiveLink";
+resolveAutoSetting0[ as_, "ShowMinimized"                  ] := Automatic;
+resolveAutoSetting0[ as_, "StreamingOutputMethod"          ] := "PartialDynamic";
+resolveAutoSetting0[ as_, "TokenBudgetMultiplier"          ] := 1;
+resolveAutoSetting0[ as_, "Tokenizer"                      ] := getTokenizer @ as;
+resolveAutoSetting0[ as_, "TokenizerName"                  ] := getTokenizerName @ as;
+resolveAutoSetting0[ as_, "ToolCallExamplePromptStyle"     ] := chooseToolExamplePromptStyle @ as;
+resolveAutoSetting0[ as_, "ToolCallFrequency"              ] := Automatic;
+resolveAutoSetting0[ as_, "ToolExamplePrompt"              ] := chooseToolExamplePromptSpec @ as;
+resolveAutoSetting0[ as_, "ToolsEnabled"                   ] := toolsEnabledQ @ as;
+resolveAutoSetting0[ as_, "TrackScrollingWhenPlaced"       ] := scrollOutputQ @ as;
+resolveAutoSetting0[ as_, key_String                       ] := Automatic;
 resolveAutoSetting0 // endDefinition;
 
 (* Settings that require other settings to be resolved first: *)
