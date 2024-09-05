@@ -59,6 +59,7 @@ $$vectorDatabase = _VectorDatabaseObject? System`Private`ValidQ;
 (* ::Subsection::Closed:: *)
 (*Cache*)
 $vectorDBSearchCache = <| |>;
+$embeddingCache      = <| |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -158,7 +159,7 @@ downloadVectorDatabases // endDefinition;
 evaluateWithProgress // beginDefinition;
 evaluateWithProgress // Attributes = { HoldFirst };
 
-evaluateWithProgress[ args___ ] /; $Notebooks && $EvaluationEnvironment === "Session" :=
+evaluateWithProgress[ args___ ] /; $ChatNotebookEvaluation :=
     Module[ { container, dialog },
 
         container = ProgressIndicator[ Appearance -> "Percolate" ];
@@ -382,7 +383,7 @@ vectorDBSearch[ dbName_String, prompt_String, All ] := Enclose[
         vectorDBInfo    = ConfirmBy[ getVectorDB @ dbName, AssociationQ, "VectorDBInfo" ];
         vectorDB        = ConfirmMatch[ vectorDBInfo[ "VectorDatabaseObject" ], $$vectorDatabase, "VectorDatabase" ];
         allValues       = ConfirmBy[ vectorDBInfo[ "Values" ], ListQ, "Values" ];
-        embeddingVector = ConfirmMatch[ getEmbedding @ prompt, { __Real }, "EmbeddingVector" ];
+        embeddingVector = ConfirmMatch[ getEmbedding @ prompt, _NumericArray, "EmbeddingVector" ];
 
         close = ConfirmMatch[
             inVectorDBDirectory @ VectorDatabaseSearch[
@@ -464,7 +465,7 @@ vectorDBSearch[ dbName_String, messages0: { __Association }, prop: "Values"|"Res
 
         If[ conversationString === "" || lastMessageString === "", Throw @ { } ];
 
-        preloadEmbeddings @ { conversationString, lastMessageString, selectionString };
+        getEmbeddings @ Select[ { conversationString, lastMessageString, selectionString }, StringQ ];
 
         conversationResults = ConfirmMatch[
             MapAt[
@@ -521,14 +522,6 @@ vectorDBSearch // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*preloadEmbeddings*)
-preloadEmbeddings // beginDefinition;
-(* FIXME: find a way to asynchronously fetch embeddings (ServiceSubmit isn't working) *)
-preloadEmbeddings[ strings: { (_String|None)... } ] := Null;
-preloadEmbeddings // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*insertContextPrompt*)
 insertContextPrompt // beginDefinition;
 
@@ -567,46 +560,88 @@ cacheVectorDBResult[ dbName_String, prompt_String, data_Association ] := (
 cacheVectorDBResult // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
+(* ::Section::Closed:: *)
+(*Embeddings*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*getEmbedding*)
 getEmbedding // beginDefinition;
 
+getEmbedding[ string_String ] :=
+    With[ { embedding = $embeddingCache[ string ] },
+        embedding /; NumericArrayQ @ embedding
+    ];
+
 getEmbedding[ string_String ] := Enclose[
-    Catch @ Module[ { resp, vector },
-
-        resp = ConfirmBy[
-            setServiceCaller @ ServiceExecute[
-                $embeddingService,
-                "RawEmbedding",
-                { "input" -> string, "model" -> $embeddingModel },
-                Authentication -> $embeddingAuthentication
-            ],
-            AssociationQ,
-            "EmbeddingResponse"
-        ];
-
-        vector = ConfirmBy[
-            Developer`ToPackedArray @ Flatten @ resp[[ "data", All, "embedding" ]],
-            Developer`PackedArrayQ,
-            "PackedArray"
-        ];
-
-        getEmbedding[ string ] = ConfirmBy[
-            toTinyVector @ vector,
-            Developer`PackedArrayQ,
-            "TinyVector"
-        ]
-    ] // LogChatTiming[ "GetEmbedding" ],
+    First @ ConfirmMatch[ getEmbeddings @ { string }, { _NumericArray }, "Embedding" ],
     throwInternalFailure
 ];
 
 getEmbedding // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getEmbeddings*)
+getEmbeddings // beginDefinition;
+
+getEmbeddings[ { } ] := { };
+
+getEmbeddings[ strings: { __String } ] := Enclose[
+    Module[ { notCached },
+        notCached = Select[ strings, ! KeyExistsQ[ $embeddingCache, # ] & ];
+        ConfirmMatch[ getAndCacheEmbeddings @ notCached, { ___NumericArray }, "CacheEmbeddings" ];
+        ConfirmMatch[ Lookup[ $embeddingCache, strings ], { __NumericArray }, "Result" ]
+    ] // LogChatTiming[ "GetEmbeddings" ],
+    throwInternalFailure
+];
+
+getEmbeddings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getAndCacheEmbeddings*)
+getAndCacheEmbeddings // beginDefinition;
+
+getAndCacheEmbeddings[ { } ] :=
+    { };
+
+getAndCacheEmbeddings[ strings: { __String } ] := Enclose[
+    Module[ { resp, vectors },
+        resp = ConfirmBy[
+            setServiceCaller @ ServiceExecute[
+                $embeddingService,
+                "RawEmbedding",
+                { "input" -> strings, "model" -> $embeddingModel },
+                Authentication -> $embeddingAuthentication
+            ],
+            AssociationQ,
+            "EmbeddingResponse"
+        ];
+
+        vectors = ConfirmBy[
+            Developer`ToPackedArray @ resp[[ "data", All, "embedding" ]],
+            Developer`PackedArrayQ,
+            "PackedArray"
+        ];
+
+        ConfirmAssert[ Length @ strings === Length @ vectors, "LengthCheck" ];
+
+        MapThread[
+            ($embeddingCache[ #1 ] = toTinyVector @ #2) &,
+            { strings, vectors }
+        ]
+    ],
+    throwInternalFailure
+];
+
+getAndCacheEmbeddings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*toTinyVector*)
 toTinyVector // beginDefinition;
-toTinyVector[ v_ ] := 127.5 * Normalize @ v[[ 1;;$embeddingDimension ]] - 0.5;
+toTinyVector[ v_ ] := NumericArray[ 127.5 * Normalize @ v[[ 1;;$embeddingDimension ]] - 0.5, "Real16" ];
 toTinyVector // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

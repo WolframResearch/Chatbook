@@ -34,7 +34,7 @@ getInlineChatPrompt // beginDefinition;
 
 getInlineChatPrompt[ settings_ ] :=
     If[ TrueQ @ $InlineChat,
-        getInlineChatPrompt0[ settings, $inlineChatState ],
+        getInlineChatPrompt0[ settings, $inlineChatState ] // LogChatTiming[ "GetInlineChatPrompt" ],
         None
     ];
 
@@ -82,7 +82,7 @@ getWorkspacePrompt[ settings_Association ] :=
     If[ TrueQ @ $WorkspaceChat,
         Block[ { $includeCellXML = TrueQ @ $notebookEditorEnabled },
             getContextFromSelection[ $evaluationNotebook, settings ]
-        ],
+        ] // LogChatTiming[ "GetWorkspacePrompt" ],
         None
     ];
 

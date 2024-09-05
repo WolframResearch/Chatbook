@@ -19,6 +19,7 @@ withChatState // Attributes = { HoldFirst };
 withChatState[ eval_ ] :=
     Block[
         {
+            $ChatNotebookEvaluation       = True,
             $absoluteCurrentSettingsCache = <| |>,
             $AutomaticAssistance          = False,
             $chatState                    = True,

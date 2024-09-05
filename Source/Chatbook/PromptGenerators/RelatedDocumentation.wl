@@ -140,10 +140,21 @@ relatedDocumentationPrompt // beginDefinition;
 
 relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_ ] := Enclose[
     Catch @ Module[ { uris, filtered, string },
-        uris = ConfirmMatch[ RelatedDocumentation[ messages, "URIs", count ], { ___String }, "URIs" ];
+
+        uris = ConfirmMatch[
+            RelatedDocumentation[ messages, "URIs", count ],
+            { ___String },
+             "URIs"
+        ] // LogChatTiming[ "RelatedDocumentationURIs" ];
+
         If[ uris === { }, Throw[ "" ] ];
 
-        filtered = ConfirmMatch[ filterSnippets[ messages, uris, filter ], { ___String }, "Filtered" ];
+        filtered = ConfirmMatch[
+            filterSnippets[ messages, uris, filter ] // LogChatTiming[ "FilterSnippets" ],
+            { ___String },
+            "Filtered"
+        ];
+
         string = StringTrim @ StringRiffle[ "# "<># & /@ DeleteCases[ filtered, "" ], "\n\n======\n\n" ];
 
         If[ string === "",
@@ -158,7 +169,7 @@ relatedDocumentationPrompt // endDefinition;
 
 
 $relatedDocsStringHeader = "\
-Here are some Wolfram documentation snippets that might be helpful:
+IMPORTANT: Here are some Wolfram documentation snippets that you should use to respond.
 
 ";
 

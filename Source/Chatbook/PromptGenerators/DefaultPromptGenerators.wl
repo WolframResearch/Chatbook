@@ -15,9 +15,12 @@ HoldComplete[
 (* ::Section::Closed:: *)
 (*DefaultPromptGenerators*)
 $defaultPromptGenerators := $defaultPromptGenerators = <|
-    "RelatedDocumentation"       -> LLMPromptGenerator[ RelatedDocumentation[ #, "Prompt", MaxItems -> 20 ] &, "Messages" ],
-    "RelatedWolframAlphaQueries" -> LLMPromptGenerator[ RelatedWolframAlphaQueries[ #, "Prompt" ] &, "Messages" ]
+    "RelatedDocumentation"       -> LLMPromptGenerator[ relatedDocumentationGenerator, "Messages" ],
+    "RelatedWolframAlphaQueries" -> LLMPromptGenerator[ relatedWolframAlphaQueriesGenerator, "Messages" ]
 |>;
+
+relatedDocumentationGenerator       := LogChatTiming @ RelatedDocumentation[ #, "Prompt", MaxItems -> 20 ] &;
+relatedWolframAlphaQueriesGenerator := LogChatTiming @ RelatedWolframAlphaQueries[ #, "Prompt" ] &;
 
 (* TODO: prompt generator selectors that work like tool selections *)
 
@@ -33,18 +36,18 @@ applyPromptGenerators[ settings_, generators0_, messages: $$chatMessages ] := En
     Catch @ Module[ { generators, data, prompts },
 
         generators = ConfirmMatch[
-            toPromptGenerator /@ Flatten @ { generators0 },
+            LogChatTiming[ toPromptGenerator /@ Flatten @ { generators0 }, "LLMPromptGenerators" ],
             { ___LLMPromptGenerator },
             "Generators"
         ];
 
-        If[ generators === { }, Throw @ None ];
+        If[ generators === { }, Throw @ { } ];
 
         data = ConfirmBy[ makePromptGeneratorData[ settings, messages ], AssociationQ, "Data" ];
         prompts = ConfirmMatch[ applyPromptGenerator[ #, data ] & /@ generators, { $$string... }, "Prompts" ];
 
-        StringRiffle[ DeleteCases[ prompts, "" ], "\n\n" ]
-    ],
+        DeleteCases[ prompts, "" ]
+    ] // LogChatTiming[ "ApplyPromptGenerators" ],
     throwInternalFailure
 ];
 
@@ -82,7 +85,10 @@ makePromptGeneratorData // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*applyPromptGenerator*)
 applyPromptGenerator // beginDefinition;
-applyPromptGenerator[ gen_LLMPromptGenerator, data_Association ] := formatGeneratedPrompt @ gen @ data;
+
+applyPromptGenerator[ gen_LLMPromptGenerator, data_Association ] :=
+    formatGeneratedPrompt @ LogChatTiming[ gen @ data, "ApplyPromptGenerator" ];
+
 applyPromptGenerator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

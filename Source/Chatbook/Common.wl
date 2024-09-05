@@ -306,6 +306,8 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "InvalidHandlerKeys"              -> "Invalid setting for HandlerFunctionsKeys: `1`; using defaults instead.",
     "InvalidHandlers"                 -> "Invalid setting for HandlerFunctions: `1`; using defaults instead.",
     "InvalidMessages"                 -> "The value `2` returned by `1` is not a valid list of messages.",
+    "InvalidPromptGeneratorPosition"  -> "Invalid position spec for prompt generator messages: `1`.",
+    "InvalidPromptGeneratorRole"      -> "Invalid role for prompt generator messages: `1`. Valid values are: \"System\", \"Assistant\", or \"User\".",
     "InvalidResourceSpecification"    -> "The argument `1` is not a valid resource specification.",
     "InvalidResourceURL"              -> "The specified URL does not represent a valid resource object.",
     "InvalidRootSettings"             -> "The value `1` is not valid for root chat settings.",
@@ -594,14 +596,13 @@ catchTop[ eval_ ] := catchTop[ eval, Chatbook ];
 catchTop[ eval_, sym_Symbol ] :=
     Block[
         {
-            $ChatNotebookEvaluation = True,
-            $chatEvaluationID       = CreateUUID[ ],
-            $currentChatSettings    = None,
-            $messageSymbol          = Replace[ $messageSymbol, Chatbook -> sym ],
-            $catching               = True,
-            $failed                 = False,
-            catchTop                = # &,
-            catchTopAs              = (#1 &) &
+            $chatEvaluationID    = CreateUUID[ ],
+            $currentChatSettings = None,
+            $messageSymbol       = Replace[ $messageSymbol, Chatbook -> sym ],
+            $catching            = True,
+            $failed              = False,
+            catchTop             = # &,
+            catchTopAs           = (#1 &) &
         },
         $chatStartTime = AbsoluteTime[ ];
         Catch[ setServiceCaller @ eval, $catchTopTag ]
