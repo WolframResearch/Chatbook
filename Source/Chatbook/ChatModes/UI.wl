@@ -224,14 +224,23 @@ attachInlineChatInput // endDefinition;
 (*getSelectionInfo*)
 getSelectionInfo // beginDefinition;
 
-getSelectionInfo[ cell_CellObject ] := getSelectionInfo[ cell, cellInformation[ cell, "CursorPosition" ] ];
-getSelectionInfo[ cell_, Except[ { _Integer, _Integer } ] ] := None;
-getSelectionInfo[ cell_, pos_ ] := getSelectionInfo[ cell, pos, cellHash @ cell ];
+getSelectionInfo[ cell_CellObject ] :=
+    getSelectionInfo[ cell, cellInformation[ cell, { "ContentData", "CursorPosition" } ] ];
 
-getSelectionInfo[ cell_CellObject, pos: { _Integer, _Integer }, hash_String ] := <|
-    "CellObject"     -> cell,
-    "CursorPosition" -> pos,
-    "Hash"           -> hash
+getSelectionInfo[ cell_, KeyValuePattern[ "CursorPosition" -> Except[ { _Integer, _Integer } ] ] ] :=
+    None;
+
+getSelectionInfo[ cell_, info_ ] :=
+    getSelectionInfo[ cell, info, cellHash @ cell ];
+
+getSelectionInfo[
+    cell_CellObject,
+    as: KeyValuePattern[ "CursorPosition" -> { _Integer, _Integer } ],
+    hash_String
+] := <|
+    as,
+    "CellObject" -> cell,
+    "Hash"       -> hash
 |>;
 
 getSelectionInfo // endDefinition;
