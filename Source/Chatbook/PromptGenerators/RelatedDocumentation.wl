@@ -169,7 +169,7 @@ relatedDocumentationPrompt // endDefinition;
 
 
 $relatedDocsStringHeader = "\
-Here are some Wolfram documentation snippets that might be helpful:
+IMPORTANT: Here are some Wolfram documentation snippets that you should use to respond.
 
 ";
 
