@@ -387,6 +387,7 @@ logChatTiming[ eval_, tag_String ] :=
             |>
         ];
 
+        result;
         result
     ];
 
