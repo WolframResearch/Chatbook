@@ -10,6 +10,7 @@ HoldComplete[
     `$inputFieldPaneMargins,
     `createWorkspaceChat,
     `findCurrentWorkspaceChat,
+    `getContextFromSelection,
     `getSelectionInfo,
     `moveToInlineChatInputField,
     `scrollInlineChat,
