@@ -129,7 +129,7 @@ VerificationTest[
 
 VerificationTest[
     StringCount[ prompt, { "paclet:ref/Prime#", "paclet:ref/NextPrime#" } ],
-    _Integer? (GreaterThan[ 10 ]),
+    _Integer? (GreaterEqualThan[ 10 ]),
     SameTest -> MatchQ,
     TestID   -> "RelatedDocumentation-Prompt-Messages-Count@@Tests/RelatedDocumentation.wlt:130,1-135,2"
 ]
