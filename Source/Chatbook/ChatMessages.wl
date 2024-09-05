@@ -116,7 +116,8 @@ constructMessages[ settings_Association? AssociationQ, cells: { __Cell } ] :=
     constructMessages[ settings, makeChatMessages[ settings, cells ] ];
 
 constructMessages[ settings_Association? AssociationQ, messages0: { __Association } ] :=
-    Enclose @ Module[ { prompted, messages, processed },
+    Enclose @ Module[
+        { prompted, messages, merged, genRole, genPos, generatedPrompts, generatedMessages, combined, processed },
 
         If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
         needsBasePrompt @ settings;
@@ -133,7 +134,36 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
                 }
             ];
 
-        processed = applyProcessingFunction[ settings, "ChatMessages", HoldComplete[ messages, $ChatHandlerData ] ];
+        merged = If[ TrueQ @ Lookup[ settings, "MergeMessages" ],
+                     ConfirmMatch[ mergeMessageData @ messages, $$chatMessages, "Merged" ],
+                     messages
+                 ];
+
+        genRole = settings[ "PromptGeneratorMessageRole"     ];
+        genPos  = settings[ "PromptGeneratorMessagePosition" ];
+
+        If[ ! MatchQ[ genRole, "System"|"Assistant"|"User" ],
+            throwFailure[ "InvalidPromptGeneratorRole", genRole ]
+        ];
+
+        generatedPrompts = ConfirmMatch[ applyPromptGenerators[ settings, merged ], { ___String }, "Generated" ];
+
+        generatedMessages = Splice @ ConfirmMatch[
+            <| "Role" -> genRole, "Content" -> # |> & /@ generatedPrompts,
+            $$chatMessages,
+            "GeneratedMessages"
+        ];
+
+        combined = ConfirmMatch[
+            Check[
+                Insert[ merged, generatedMessages, genPos ],
+                throwFailure[ "InvalidPromptGeneratorPosition", genPos ]
+            ],
+            $$chatMessages,
+            "Combined"
+        ];
+
+        processed = applyProcessingFunction[ settings, "ChatMessages", HoldComplete[ combined, $ChatHandlerData ] ];
 
         If[ ! MatchQ[ processed, $$validMessageResults ],
             messagePrint[ "InvalidMessages", getProcessingFunction[ settings, "ChatMessages" ], processed ];
@@ -141,6 +171,7 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
         ];
 
         processed //= DeleteCases @ KeyValuePattern[ "Content" -> "" ];
+
         Sow[ <| "Messages" -> processed |>, $chatDataTag ];
 
         $lastSettings = settings;
@@ -176,12 +207,11 @@ constructInlineMessages // endDefinition;
 addPrompts // beginDefinition;
 
 addPrompts[ settings_Association, messages_List ] := Enclose[
-    Module[ { custom, workspace, inline, generated, prompt },
-        custom    = ConfirmMatch[ assembleCustomPrompt @ settings            , None|_String, "Custom"    ];
-        workspace = ConfirmMatch[ getWorkspacePrompt @ settings              , None|_String, "Workspace" ];
-        inline    = ConfirmMatch[ getInlineChatPrompt @ settings             , None|_String, "Inline"    ];
-        generated = ConfirmMatch[ applyPromptGenerators[ settings, messages ], None|_String, "Generated" ];
-        prompt    = StringRiffle[ Select[ { custom, workspace, inline, generated }, StringQ ], "\n\n" ];
+    Module[ { custom, workspace, inline, prompt },
+        custom    = ConfirmMatch[ assembleCustomPrompt @ settings, None|_String, "Custom"    ];
+        workspace = ConfirmMatch[ getWorkspacePrompt @ settings  , None|_String, "Workspace" ];
+        inline    = ConfirmMatch[ getInlineChatPrompt @ settings , None|_String, "Inline"    ];
+        prompt    = StringRiffle[ Select[ { custom, workspace, inline }, StringQ ], "\n\n" ];
         addPrompts[ prompt, messages ]
     ],
     throwInternalFailure
@@ -282,7 +312,7 @@ makeChatMessages0[ settings_, { cells___, cell_ ? promptFunctionCellQ }, include
 );
 
 makeChatMessages0[ settings0_, cells_List, includeSystem_ ] := Enclose[
-    Module[ { settings, role, message, toMessage0, toMessage, cell, history, messages, merged },
+    Module[ { settings, role, message, toMessage0, toMessage, cell, history, messages },
         settings   = ConfirmBy[ <| settings0, "HistoryPosition" -> 0, "Cells" -> cells |>, AssociationQ, "Settings" ];
         role       = If[ TrueQ @ includeSystem, makeCurrentRole @ settings, Missing[ ] ];
         cell       = ConfirmMatch[ Last[ cells, $Failed ], _Cell, "Cell" ];
@@ -311,8 +341,7 @@ makeChatMessages0[ settings0_, cells_List, includeSystem_ ] := Enclose[
 
         messages = addExcisedCellMessage @ DeleteMissing @ Flatten @ { role, history, message };
 
-        merged = If[ TrueQ @ Lookup[ settings, "MergeMessages" ], mergeMessageData @ messages, messages ];
-        $lastMessageList = merged
+        $lastMessageList = messages
     ],
     throwInternalFailure
 ];
