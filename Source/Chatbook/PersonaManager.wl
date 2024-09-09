@@ -69,6 +69,14 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
                                 Appearance       -> "Suppressed",
                                 BaselinePosition -> Baseline,
                                 Method           -> "Queued"
+                            ],
+                            Button[
+                                grayDialogButtonLabel @ tr[ "PersonaManagerInstallFromFile" ],
+                                If[ $CloudEvaluation, SetOptions[ EvaluationNotebook[ ], DockedCells -> Inherited ] ];
+                                Block[ { PrintTemporary }, ResourceInstallFromFile[ "Prompt" ] ],
+                                Appearance       -> "Suppressed",
+                                BaselinePosition -> Baseline,
+                                Method           -> "Queued"
                             ]
                         }
                     }
@@ -146,7 +154,7 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
                     {
                         2 -> True,
                         4 -> True,
-                        -2 -> Directive[delimColor, AbsoluteThickness[5]]
+                        -2 -> Directive[AbsoluteThickness[5]]
                     },
                     {
                         3 -> True

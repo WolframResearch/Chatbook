@@ -1224,6 +1224,14 @@ installToolsSection[ ] := Sequence[
                     Appearance       -> "Suppressed",
                     BaselinePosition -> Baseline,
                     Method           -> "Queued"
+                ],
+                Button[
+                    grayDialogButtonLabel @ tr[ "ToolManagerInstallFromFile" ],
+                    If[ $CloudEvaluation, SetOptions[ EvaluationNotebook[ ], DockedCells -> Inherited ] ];
+                    Block[ { PrintTemporary }, ResourceInstallFromFile[ "LLMTool" ] ],
+                    Appearance       -> "Suppressed",
+                    BaselinePosition -> Baseline,
+                    Method           -> "Queued"
                 ]
             }
         }
