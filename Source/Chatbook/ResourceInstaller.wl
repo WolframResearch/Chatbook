@@ -464,11 +464,14 @@ resourceFromFile[ Automatic, path_String ] := Block[ { PrintTemporary },
     Quiet[ DefinitionNotebookClient`ScrapeResource[ Import[ path ] ] ]
 ];
 
-resourceFromFile[ rtype_, path_String ] := Block[ { PrintTemporary },
-    Quiet[
-        With[ { nb = Import[ path ] },
+resourceFromFile[ rtype_, path_String ] := Enclose[
+    Block[ { PrintTemporary },
+        Quiet @ With[ { nb = Import @ path },
             ConfirmMatch[ DefinitionNotebookClient`NotebookResourceType @ nb, rtype, "ResourceType" ];
-            DefinitionNotebookClient`ScrapeResource @ nb ] ]
+            DefinitionNotebookClient`ScrapeResource @ nb
+        ]
+    ],
+    throwInternalFailure
 ];
 
 resourceFromFile // endDefinition;
