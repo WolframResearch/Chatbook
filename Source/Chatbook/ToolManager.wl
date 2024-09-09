@@ -435,7 +435,12 @@ addPersonaSource // endDefinition;
 (* ::Subsection::Closed:: *)
 (*getFullToolList*)
 getFullToolList // beginDefinition;
-getFullToolList[ ] := DeleteDuplicates @ Join[ Values @ $DefaultTools, Values @ $InstalledTools ];
+
+getFullToolList[ ] := DeleteCases[
+    DeleteDuplicates @ Join[ Values @ $DefaultTools, Values @ $InstalledTools ],
+    _[ KeyValuePattern[ "Hidden" -> True ], ___ ]
+];
+
 getFullToolList // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
