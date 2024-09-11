@@ -726,10 +726,10 @@ withFETasks // endDefinition;
 writeChunk // beginDefinition;
 
 writeChunk[ container_, cell_, KeyValuePattern[ "BodyChunkProcessed" -> chunks_ ] ] :=
-    With[ { chunk = StringJoin @ Select[ Flatten @ { chunks }, StringQ ] },
-        If[ chunk === "",
+    With[ { strings = extractBodyChunks @ chunks },
+        If[ ! MatchQ[ strings, { __String } ],
             Null,
-            writeChunk0[ container, cell, chunk, chunk ]
+            With[ { chunk = StringJoin @ strings }, writeChunk0[ container, cell, chunk, chunk ] ]
         ]
     ];
 
@@ -975,7 +975,7 @@ writeResult[ settings_, container_, cell_, as_Association ] := Enclose[
         If[ settings[ "BypassResponseChecking" ], Throw @ writeReformattedCell[ settings, container, cell ] ];
 
         log = ConfirmMatch[ Internal`BagPart[ $debugLog, All ], { ___Association }, "DebugLog" ];
-        processed = StringJoin @ Cases[ log, KeyValuePattern[ "BodyChunkProcessed" -> s_String ] :> s ];
+        processed = StringJoin @ ConfirmMatch[ extractBodyChunks @ log, { ___String }, "Processed" ];
         { body, data } = ConfirmMatch[ extractBodyData @ log, { _, _ }, "ExtractBodyData" ];
 
         $lastFullResponseData = <| "Body" -> body, "Processed" -> processed, "Data" -> data |>;

@@ -138,6 +138,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `exportDataURI;
 `expressionURIKey;
 `expressionURIKeyQ;
+`extractBodyChunks;
 `fastFileHash;
 `feParentObject;
 `filterChatCells;
