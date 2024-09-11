@@ -72,18 +72,13 @@ llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator_Association, callback_ ] :=
                 Internal`StuffBag[ chunks, # ]
             ],
             "TaskFinished" -> Function[
-                Module[ { string },
-                    $lastSynthesizeSubmitLog = Internal`BagPart[ chunks, All ];
-                    string = StringJoin @ Select[
-                        Flatten @ Cases[
-                            Internal`BagPart[ chunks, All ],
-                            KeyValuePattern[ "BodyChunkProcessed" -> c_ ] :> c
-                        ],
-                        StringQ
-                    ];
-                    If[ string === "",
-                        callback[ Failure[ "InvalidResponse", <| "Data" -> Internal`BagPart[ chunks, All ] |> ], #1 ],
-                        callback[ string, #1 ]
+                Module[ { data, strings },
+                    data = Internal`BagPart[ chunks, All ];
+                    $lastSynthesizeSubmitLog = data;
+                    strings = extractBodyChunks @ data;
+                    If[ ! MatchQ[ strings, { __String } ],
+                        callback[ Failure[ "InvalidResponse", <| "Data" -> data |> ], #1 ],
+                        With[ { s = StringJoin @ strings }, callback[ s, #1 ] ]
                     ]
                 ]
             ]
@@ -176,6 +171,29 @@ imageTokenCount // beginDefinition;
 imageTokenCount[ img_Image ] := imageTokenCount @ ImageDimensions @ img;
 imageTokenCount[ { w_Integer, h_Integer } ] := 85 + 170 * Ceiling[ h / 512 ] * Ceiling[ w / 512 ];
 imageTokenCount // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*extractBodyChunks*)
+extractBodyChunks // beginDefinition;
+
+extractBodyChunks[ data_ ] := Enclose[
+    ConfirmMatch[ DeleteCases[ Flatten @ { extractBodyChunks0 @ data }, "" ], { ___String }, "Result" ],
+    throwInternalFailure
+];
+
+extractBodyChunks // endDefinition;
+
+
+extractBodyChunks0 // beginDefinition;
+extractBodyChunks0[ content_String ] := content;
+extractBodyChunks0[ content_List ] := extractBodyChunks /@ content;
+extractBodyChunks0[ KeyValuePattern[ "BodyChunkProcessed" -> content_ ] ] := extractBodyChunks0 @ content;
+extractBodyChunks0[ KeyValuePattern[ "ContentDelta" -> content_ ] ] := extractBodyChunks0 @ content;
+extractBodyChunks0[ KeyValuePattern @ { "Type" -> "Text", "Data" -> content_ } ] := extractBodyChunks0 @ content;
+extractBodyChunks0[ bag_Internal`Bag ] := extractBodyChunks0 @ Internal`BagPart[ bag, All ];
+extractBodyChunks0[ Null ] := { };
+extractBodyChunks0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
