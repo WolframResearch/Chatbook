@@ -11,10 +11,10 @@ Needs[ "Wolfram`Chatbook`Serialization`"    ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$maxCellsBeforeSelection = 100;
-$maxCellsAfterSelection  = 10;
-
-$currentSelectionIndicator = { $leftSelectionIndicator, $rightSelectionIndicator };
+$maxCellsBeforeSelection    = 100;
+$maxCellsAfterSelection     = 20;
+$notebookInstructionsPrompt = True;
+$currentSelectionIndicator  = { $leftSelectionIndicator, $rightSelectionIndicator };
 
 $notebookContextTemplate = StringTemplate[ "\
 IMPORTANT: Below is some context from the user's currently selected notebook. \
@@ -92,18 +92,25 @@ getWorkspacePrompt // endDefinition;
 (* ::Subsection::Closed:: *)
 (*getContextFromSelection*)
 getContextFromSelection // beginDefinition;
+getContextFromSelection // Options = { "NotebookInstructionsPrompt" -> True };
 
-getContextFromSelection[ chatNB_NotebookObject, settings_Association ] :=
-    getContextFromSelection[ chatNB, getUserNotebook @ chatNB, settings ];
+getContextFromSelection[ chatNB_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] :=
+    getContextFromSelection[ chatNB, getUserNotebook @ chatNB, settings, opts ];
 
-getContextFromSelection[ chatNB_NotebookObject, None, settings_Association ] :=
+getContextFromSelection[ chatNB_NotebookObject, None, settings_Association, opts: OptionsPattern[ ] ] :=
     None;
 
-getContextFromSelection[ chatNB_, nbo_NotebookObject, settings_Association ] := Enclose[
+getContextFromSelection[ chatNB_, nbo_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] := Enclose[
     Catch @ Module[ { selectionData },
         selectionData = ConfirmMatch[ selectContextCells @ nbo, _Association|None, "SelectionData" ];
         If[ selectionData === None, Throw @ None ];
-        ConfirmBy[ getContextFromSelection0[ selectionData, settings ], StringQ, "Context" ]
+        ConfirmBy[
+            Block[ { $notebookInstructionsPrompt = TrueQ @ OptionValue[ "NotebookInstructionsPrompt" ] },
+                getContextFromSelection0[ selectionData, settings ]
+            ],
+            StringQ,
+            "Context"
+        ]
     ],
     throwInternalFailure
 ];
@@ -120,7 +127,8 @@ getContextFromSelection0[ selectionData: KeyValuePattern[ "Selected" -> { cell_C
         ];
 
 getContextFromSelection0[ selectionData_Association, settings_ ] := Enclose[
-    Catch @ Module[ { cellObjects, cells, len1, len2, before, selected, after, marked, messages, string },
+    Catch @ Module[
+        { cellObjects, cells, len1, len2, before, selected, after, marked, messages, string, nbCtx },
 
         cellObjects = ConfirmMatch[ Flatten @ Values @ selectionData, { ___CellObject }, "CellObjects" ];
         cells = ConfirmMatch[ notebookRead @ cellObjects, { ___Cell }, "Cells" ];
@@ -142,8 +150,10 @@ getContextFromSelection0[ selectionData_Association, settings_ ] := Enclose[
         $lastContextPrompt   = $contextPrompt;
         $lastSelectionPrompt = $selectionPrompt;
 
+        nbCtx = ConfirmBy[ applyNotebookContextTemplate @ string, StringQ, "NotebookContext" ];
+
         (* FIXME: pass $selectionPrompt instead of extracting again: *)
-        postProcessNotebookContextString[ applyNotebookContextTemplate @ string, string ]
+        postProcessNotebookContextString[ nbCtx, string ]
     ],
     throwInternalFailure
 ];
@@ -220,6 +230,9 @@ messageToString // endDefinition;
 (*postProcessNotebookContextString*)
 postProcessNotebookContextString // beginDefinition;
 
+postProcessNotebookContextString[ prompt_String, string_String ] /; ! TrueQ @ $notebookInstructionsPrompt :=
+    prompt;
+
 postProcessNotebookContextString[ prompt_String, string_String ] :=
     Module[ { selected, selectedString },
         selected = StringCases[ string, $leftSelectionIndicator ~~ s__ ~~ $rightSelectionIndicator :> s, 1 ];
@@ -241,6 +254,9 @@ postProcessNotebookContextString // endDefinition;
 (* ::Subsection::Closed:: *)
 (*applyNotebookContextTemplate*)
 applyNotebookContextTemplate // beginDefinition;
+
+applyNotebookContextTemplate[ string_String ] /; ! TrueQ @ $notebookInstructionsPrompt :=
+    string;
 
 applyNotebookContextTemplate[ string_String ] :=
     applyNotebookContextTemplate[ string, $currentSelectionIndicator ];
