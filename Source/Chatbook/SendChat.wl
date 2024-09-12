@@ -5,11 +5,10 @@ Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-Needs[ "Wolfram`Chatbook`"               ];
-Needs[ "Wolfram`Chatbook`Actions`"       ];
-Needs[ "Wolfram`Chatbook`Common`"        ];
-Needs[ "Wolfram`Chatbook`Personas`"      ];
-Needs[ "Wolfram`Chatbook`Serialization`" ];
+Needs[ "Wolfram`Chatbook`"          ];
+Needs[ "Wolfram`Chatbook`Actions`"  ];
+Needs[ "Wolfram`Chatbook`Common`"   ];
+Needs[ "Wolfram`Chatbook`Personas`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -843,7 +842,7 @@ autoCorrect[ string_String ] := StringReplace[ string, $llmAutoCorrectRules ];
 autoCorrect // endDefinition;
 
 (* cSpell: ignore evaliator *)
-$llmAutoCorrectRules = Flatten @ {
+$llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "wolfram_language_evaliator" -> "wolfram_language_evaluator",
     "\\!\\(\\*MarkdownImageBox[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
     "\\!\\(MarkdownImageBox[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
@@ -2542,6 +2541,7 @@ errorBoxes[ as___ ] :=
 (*Package Footer*)
 addToMXInitialization[
     $autoSettingKeyPriority;
+    $llmAutoCorrectRules;
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)

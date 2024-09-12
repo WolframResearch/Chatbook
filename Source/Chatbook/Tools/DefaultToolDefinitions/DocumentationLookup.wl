@@ -3,9 +3,8 @@
 BeginPackage[ "Wolfram`Chatbook`Tools`" ];
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"               ];
-Needs[ "Wolfram`Chatbook`Common`"        ];
-Needs[ "Wolfram`Chatbook`Serialization`" ];
+Needs[ "Wolfram`Chatbook`"        ];
+Needs[ "Wolfram`Chatbook`Common`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

@@ -10,7 +10,6 @@ Needs[ "Wolfram`Chatbook`Actions`"           ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
 Needs[ "Wolfram`Chatbook`Personas`"          ];
 Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
-Needs[ "Wolfram`Chatbook`Serialization`"     ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -591,10 +590,21 @@ dynamicSplitQ // endDefinition;
 (* TODO: need to support something like CurrentChatSettings[scope, {"key1", "key2", ...}] for nested values *)
 
 GeneralUtilities`SetUsage[ CurrentChatSettings, "\
-CurrentChatSettings[obj$, \"key$\"] gives the current chat settings for the CellObject or NotebookObject obj$ for the specified key.
-CurrentChatSettings[obj$] gives all current chat settings for obj$.
-CurrentChatSettings[] is equivalent to CurrentChatSettings[EvaluationCell[]].
-CurrentChatSettings[\"key$\"] is equivalent to CurrentChatSettings[EvaluationCell[], \"key$\"].\
+CurrentChatSettings[] gives the current global chat settings.
+CurrentChatSettings[\"key$\"] gives the global setting for the specified key.
+CurrentChatSettings[obj$] gives all settings scoped by obj$.
+CurrentChatSettings[obj$, \"key$\"] gives the setting scoped by obj$ for the specified key.
+CurrentChatSettings[obj$, $$] = value$ sets the chat settings for obj$ to value$.
+CurrentChatSettings[obj$, $$] =. resets the chat settings for obj$ to the default value.
+
+* The value for obj$ can be any of the following:
+| $FrontEnd          | persistent global scope |
+| $FrontEndSession   | session global scope    |
+| NotebookObject[$$] | notebook scope          |
+| CellObject[$$]     | cell scope              |
+* When setting chat settings without a key using CurrentChatSettings[obj$] = value$, \
+the value$ must be an Association or Inherited.
+* CurrentChatSettings[obj$, $$] =. is equivalent to CurrentChatSettings[obj$, $$] = Inherited.\
 " ];
 
 CurrentChatSettings[ ] := catchMine @

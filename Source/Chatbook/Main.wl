@@ -35,6 +35,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `BasePrompt;
 `CachedBoxes;
 `CellToChatMessage;
+`CellToString;
 `Chatbook;
 `ChatbookAction;
 `ChatCellEvaluate;
@@ -172,6 +173,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "BasePrompt",
     "CachedBoxes",
     "CellToChatMessage",
+    "CellToString",
     "Chatbook",
     "ChatbookAction",
     "ChatCellEvaluate",
@@ -210,6 +212,7 @@ Protect @@ $ChatbookProtectedNames;
 addToMXInitialization[
     $ChatbookContexts;
     $ChatbookNames;
+    SetAttributes[ Evaluate @ Names[ "Wolfram`Chatbook`*" ], ReadProtected ];
 ];
 
 mxInitialize[ ];
