@@ -19,7 +19,6 @@ Needs[ "Wolfram`Chatbook`"                   ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
 Needs[ "Wolfram`Chatbook`Personas`"          ];
 Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
-Needs[ "Wolfram`Chatbook`Serialization`"     ];
 
 
 
