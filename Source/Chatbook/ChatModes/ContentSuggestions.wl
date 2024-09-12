@@ -19,8 +19,8 @@ $suggestionsAuthentication = Automatic;
 $wlSuggestionsModel       = "gpt-4o";
 $wlSuggestionsMultimodal  = False;
 $wlSuggestionsCount       = 3;
-$wlSuggestionsMaxTokens   = 128;
-$wlSuggestionsTemperature = 1.0;
+$wlSuggestionsMaxTokens   = 64;
+$wlSuggestionsTemperature = 1.25;
 $wlPlaceholderString      = "<placeholder>";
 
 $wlSuggestionsPrompt = StringTemplate[ "\
@@ -201,7 +201,7 @@ generateSuggestions // endDefinition;
 generateWLSuggestions // beginDefinition;
 
 generateWLSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_String, settings_ ] := Enclose[
-    Module[ { context, instructions, response, suggestions },
+    Module[ { context, instructions, response, suggestions, stripped },
 
         context = ConfirmBy[
             StringReplace[
@@ -243,15 +243,92 @@ generateWLSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_St
         $lastSuggestionsResponse = response;
 
         suggestions = DeleteDuplicates @ ConfirmMatch[ getWLSuggestions @ response, { __BoxData }, "Suggestions" ];
+        stripped = ConfirmMatch[ stripSurroundingWLCode[ suggestions, context ], { __BoxData }, "Stripped" ];
 
         $lastSuggestions = suggestions;
 
-        container = formatSuggestions[ Dynamic[ container ], suggestions, nbo, root, context, settings ]
+        container = formatSuggestions[ Dynamic[ container ], stripped, nbo, root, context, settings ]
     ],
     throwInternalFailure
 ];
 
 generateWLSuggestions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*stripSurroundingWLCode*)
+stripSurroundingWLCode // beginDefinition;
+
+stripSurroundingWLCode[ suggestions: { __BoxData }, context_String ] := Enclose[
+    Catch @ Module[ { surrounding, stripped },
+
+        surrounding = ConfirmMatch[ getSurroundingWLCode @ context, { _String, _String }, "Surrounding" ];
+        If[ StringTrim @ surrounding === { "", "" }, Throw @ suggestions ];
+
+        stripped = ConfirmMatch[
+            Flatten[ stripSurroundingWLCode[ #, surrounding ] & /@ suggestions ],
+            { suggestionWrapper[ _Integer, _BoxData ].. },
+            "Result"
+        ];
+
+        ConfirmMatch[ DeleteDuplicates @ SortBy[ stripped, First ][[ All, 2 ]], { __BoxData }, "Result" ]
+    ],
+    throwInternalFailure
+];
+
+stripSurroundingWLCode[ suggestion_BoxData, { before_String, after_String } ] := Enclose[
+    Module[ { string, stripped, boxes },
+        string = ConfirmBy[ CellToString @ StyleBox[ suggestion, ShowStringCharacters -> True ], StringQ, "String" ];
+
+        stripped = ConfirmBy[
+            If[ StringMatchQ[ string, before ~~ ___ ~~ after ],
+                StringDelete[ string, { StartOfString~~before, after~~EndOfString } ],
+                string
+            ],
+            StringQ,
+            "Stripped"
+        ];
+
+        boxes = ConfirmMatch[ postProcessWLSuggestions @ stripped, _BoxData, "Result" ];
+
+        DeleteDuplicatesBy[ { suggestionWrapper[ 0, boxes ], suggestionWrapper[ 1, suggestion ] }, Last ]
+    ],
+    throwInternalFailure
+];
+
+stripSurroundingWLCode // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getSurroundingWLCode*)
+getSurroundingWLCode // beginDefinition;
+
+getSurroundingWLCode[ context_String ] := Enclose[
+    Catch @ Module[ { strings, boxes },
+        strings = First @ ConfirmMatch[
+            StringCases[
+                context,
+                StringExpression[
+                    "```wl\n",
+                    a___ /; StringFreeQ[ a, "```" ],
+                    $wlPlaceholderString,
+                    b___ /; StringFreeQ[ b, "```" ],
+                    "\n```"
+                ] :> { a, b },
+                1
+            ],
+            { { _String, _String } },
+            "Strings"
+        ];
+
+        boxes = ConfirmMatch[ postProcessWLSuggestions @ strings, { _BoxData, _BoxData }, "Boxes" ];
+
+        ConfirmMatch[ CellToString /@ boxes, { _String, _String }, "Result" ]
+    ],
+    throwInternalFailure
+];
+
+getSurroundingWLCode // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -279,19 +356,22 @@ postProcessWLSuggestions[ suggestion_String ] := Enclose[
             $$outLabel ~~ ___ ~~ EndOfString
         ];
 
-        noBlocks = StringTrim @ StringDelete[
-            If[ StringContainsQ[ noOutputs, "```"~~__~~"```" ],
-                ConfirmBy[
-                    First @ StringCases[ noOutputs, "```" ~~ Except[ "\n" ]... ~~ "\n" ~~ code___ ~~ "```" :> code, 1 ],
-                    StringQ,
-                    "NoBlocks"
+        noBlocks = StringTrim[
+                StringTrim @ StringDelete[
+                If[ StringContainsQ[ noOutputs, "```"~~__~~"```" ],
+                    ConfirmBy[
+                        First @ StringCases[ noOutputs, "```" ~~ Except[ "\n" ]... ~~ "\n" ~~ code___ ~~ "```" :> code, 1 ],
+                        StringQ,
+                        "NoBlocks"
+                    ],
+                    noOutputs
                 ],
-                noOutputs
+                {
+                    StartOfLine ~~ WhitespaceCharacter... ~~ "```" ~~ Except[ "\n" ]... ~~ EndOfLine,
+                    "```" ~~ WhitespaceCharacter... ~~ EndOfLine
+                }
             ],
-            {
-                StartOfLine ~~ WhitespaceCharacter... ~~ "```" ~~ Except[ "\n" ]... ~~ EndOfLine,
-                "```" ~~ WhitespaceCharacter... ~~ EndOfLine
-            }
+            Longest[ "```"|"``" ]
         ];
 
         noLabels = StringTrim @ StringDelete[ noBlocks, $$inLabel ];
