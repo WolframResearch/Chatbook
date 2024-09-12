@@ -44,6 +44,7 @@ $textPlaceholderString      = "<placeholder>";
 
 $textSuggestionsPrompt = StringTemplate[ "\
 Complete the following by writing text that can be inserted into %%Placeholder%%.
+The current cell style is \"%%Style%%\", so only write content that would be appropriate for this cell type.
 Do your best to match the existing style (whitespace, line breaks, etc.).
 Your suggested text will be inserted into %%Placeholder%%, so be careful not to repeat the immediately surrounding text.
 Respond with the completion text and nothing else.",
@@ -308,7 +309,9 @@ postProcessWLSuggestions // endDefinition;
 generateTextSuggestions // beginDefinition;
 
 generateTextSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_String, settings_ ] := Enclose[
-    Module[ { context, instructions, response, suggestions },
+    Module[ { style, context, instructions, response, suggestions },
+
+        style = First[ ConfirmMatch[ cellStyles @ root, { ___String }, "Styles" ], "Text" ];
 
         context = ConfirmBy[
             StringReplace[
@@ -326,10 +329,12 @@ generateTextSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_
         $lastSuggestionContext = context;
 
         instructions = ConfirmBy[
-            TemplateApply[ $textSuggestionsPrompt, <| "Placeholder" -> $textPlaceholderString |> ],
+            TemplateApply[ $textSuggestionsPrompt, <| "Placeholder" -> $textPlaceholderString, "Style" -> style |> ],
             StringQ,
             "Instructions"
         ];
+
+        $lastInstructions = instructions;
 
         response = setServiceCaller @ ServiceExecute[
             $suggestionsService,
@@ -385,6 +390,7 @@ toTextData // beginDefinition;
 toTextData[ Cell[ text_, ___ ] ] := toTextData @ text;
 toTextData[ text_TextData ] := text;
 toTextData[ text: $$textData ] := TextData @ Flatten @ { text };
+toTextData[ boxes_BoxData ] := TextData @ { Cell[ postProcessWLSuggestions @ CellToString @ boxes, "InlineCode" ] };
 toTextData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
