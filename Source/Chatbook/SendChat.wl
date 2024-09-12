@@ -5,11 +5,10 @@ Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-Needs[ "Wolfram`Chatbook`"               ];
-Needs[ "Wolfram`Chatbook`Actions`"       ];
-Needs[ "Wolfram`Chatbook`Common`"        ];
-Needs[ "Wolfram`Chatbook`Personas`"      ];
-Needs[ "Wolfram`Chatbook`Serialization`" ];
+Needs[ "Wolfram`Chatbook`"          ];
+Needs[ "Wolfram`Chatbook`Actions`"  ];
+Needs[ "Wolfram`Chatbook`Common`"   ];
+Needs[ "Wolfram`Chatbook`Personas`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

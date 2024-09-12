@@ -21,7 +21,6 @@ Begin[ "`Private`" ];
 Needs[ "Wolfram`Chatbook`"                ];
 Needs[ "Wolfram`Chatbook`Common`"         ];
 Needs[ "Wolfram`Chatbook`PersonaManager`" ];
-Needs[ "Wolfram`Chatbook`Serialization`"  ];
 Needs[ "Wolfram`Chatbook`ToolManager`"    ];
 
 HoldComplete[

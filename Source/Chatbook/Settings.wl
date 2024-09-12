@@ -10,7 +10,6 @@ Needs[ "Wolfram`Chatbook`Actions`"           ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
 Needs[ "Wolfram`Chatbook`Personas`"          ];
 Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
-Needs[ "Wolfram`Chatbook`Serialization`"     ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

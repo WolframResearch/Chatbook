@@ -6,7 +6,6 @@ Begin[ "`Private`" ];
 Needs[ "Wolfram`Chatbook`"                  ];
 Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
-Needs[ "Wolfram`Chatbook`Serialization`"    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
