@@ -212,6 +212,7 @@ Protect @@ $ChatbookProtectedNames;
 addToMXInitialization[
     $ChatbookContexts;
     $ChatbookNames;
+    SetAttributes[ Evaluate @ Names[ "Wolfram`Chatbook`*" ], ReadProtected ];
 ];
 
 mxInitialize[ ];
