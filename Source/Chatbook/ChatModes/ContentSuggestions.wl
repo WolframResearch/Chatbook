@@ -12,6 +12,7 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (*Configuration*)
 $suggestionsService        = "OpenAI";
 $suggestionsAuthentication = Automatic;
+$stripWhitespace           = True;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -19,15 +20,18 @@ $suggestionsAuthentication = Automatic;
 $wlSuggestionsModel       = "gpt-4o";
 $wlSuggestionsMultimodal  = False;
 $wlSuggestionsCount       = 3;
-$wlSuggestionsMaxTokens   = 64;
-$wlSuggestionsTemperature = 1.25;
+$wlSuggestionsMaxTokens   = 128;
+$wlSuggestionsTemperature = 0.9;
 $wlPlaceholderString      = "<placeholder>";
+$wlCellsBefore            = 20;
+$wlCellsAfter             = 5;
 
 $wlSuggestionsPrompt = StringTemplate[ "\
 Complete the following Wolfram Language code by writing text that can be inserted into %%Placeholder%%.
 Do your best to match the existing style (whitespace, line breaks, etc.).
 Your suggested text will be inserted into %%Placeholder%%, so be careful not to repeat the immediately surrounding text.
 Use `%` to refer to the previous output or `%n` for earlier outputs (where n is an output number) when appropriate.
+Limit your suggested completion to approximately one or two lines of code.
 Respond with the completion text and nothing else.
 Do not include any formatting in your response. Do not include outputs or `In[]:=` cell labels.",
 Delimiters -> "%%" ];
@@ -39,8 +43,10 @@ $textSuggestionsModel       = "gpt-4o";
 $textSuggestionsMultimodal  = False;
 $textSuggestionsCount       = 3;
 $textSuggestionsMaxTokens   = 256;
-$textSuggestionsTemperature = 1.0;
+$textSuggestionsTemperature = 0.7;
 $textPlaceholderString      = "<placeholder>";
+$textCellsBefore            = 20;
+$textCellsAfter             = 20;
 
 $textSuggestionsPrompt = StringTemplate[ "\
 Complete the following by writing text that can be inserted into %%Placeholder%%.
@@ -68,8 +74,8 @@ $$outLabel = "Out[" ~~ DigitCharacter... ~~ "]" ~~ WhitespaceCharacter... ~~ ("=
 (* ::Section::Closed:: *)
 (*ShowContentSuggestions*)
 ShowContentSuggestions // beginDefinition;
-ShowContentSuggestions[ ] := catchMine @ showContentSuggestions @ InputNotebook[ ];
-ShowContentSuggestions[ nbo_NotebookObject ] := catchMine @ showContentSuggestions @ nbo;
+ShowContentSuggestions[ ] := catchMine @ LogChatTiming @ showContentSuggestions @ InputNotebook[ ];
+ShowContentSuggestions[ nbo_NotebookObject ] := catchMine @ LogChatTiming @ showContentSuggestions @ nbo;
 ShowContentSuggestions // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -111,7 +117,7 @@ showContentSuggestions0[ nbo_NotebookObject, root_CellObject ] := Enclose[
         NotebookDelete @ Cells[ nbo, AttachedCell -> True, CellStyle -> "AttachedContentSuggestions" ];
 
         selectionInfo = ConfirmMatch[
-            getSelectionInfo @ root,
+            LogChatTiming @ getSelectionInfo @ root,
             None | KeyValuePattern[ "CursorPosition" -> { _Integer, _Integer } ],
             "SelectionInfo"
         ];
@@ -128,9 +134,11 @@ showContentSuggestions0[ nbo_NotebookObject, root_CellObject ] := Enclose[
 ];
 
 showContentSuggestions0[ nbo_NotebookObject, root_CellObject, selectionInfo_Association ] := Enclose[
-    Catch @ Module[ { suggestionsContainer, attached, settings, context },
+    Catch @ Module[ { type, suggestionsContainer, attached, settings, context },
 
         If[ ! MatchQ[ selectionInfo, KeyValuePattern[ "CursorPosition" -> { _Integer, _Integer } ] ], Throw @ Null ];
+
+        type = ConfirmBy[ suggestionsType @ selectionInfo, StringQ, "Type" ];
 
         suggestionsContainer = ProgressIndicator[ Appearance -> "Necklace" ];
         attached = ConfirmMatch[
@@ -148,18 +156,13 @@ showContentSuggestions0[ nbo_NotebookObject, root_CellObject, selectionInfo_Asso
 
         ClearAttributes[ suggestionsContainer, Temporary ];
 
-        settings = ConfirmBy[ AbsoluteCurrentChatSettings @ root, AssociationQ, "Settings" ];
-
-        context = ConfirmBy[
-            getContextFromSelection[ None, nbo, settings, "NotebookInstructionsPrompt" -> False ],
-            StringQ,
-            "Context"
-        ];
+        settings = ConfirmBy[ LogChatTiming @ AbsoluteCurrentChatSettings @ root, AssociationQ, "Settings" ];
+        context = ConfirmBy[ LogChatTiming @ getSuggestionsContext[ type, nbo, settings ], StringQ, "Context" ];
 
         ConfirmMatch[
-            generateSuggestions[ selectionInfo, Dynamic[ suggestionsContainer ], nbo, root, context, settings ],
+            LogChatTiming @ generateSuggestions[ type, Dynamic[ suggestionsContainer ], nbo, root, context, settings ],
             _Pane,
-            "Submit"
+            "Generate"
         ];
 
         attached
@@ -168,6 +171,31 @@ showContentSuggestions0[ nbo_NotebookObject, root_CellObject, selectionInfo_Asso
 ];
 
 showContentSuggestions0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getSuggestionsContext*)
+getSuggestionsContext // beginDefinition;
+
+getSuggestionsContext[ "WL", nbo_NotebookObject, settings_ ] := getContextFromSelection[
+    None,
+    nbo,
+    settings,
+    "NotebookInstructionsPrompt" -> False,
+    "MaxCellsBeforeSelection"    -> $wlCellsBefore,
+    "MaxCellsAfterSelection"     -> $wlCellsAfter
+];
+
+getSuggestionsContext[ "Text", nbo_NotebookObject, settings_ ] := getContextFromSelection[
+    None,
+    nbo,
+    settings,
+    "NotebookInstructionsPrompt" -> False,
+    "MaxCellsBeforeSelection"    -> $textCellsBefore,
+    "MaxCellsAfterSelection"     -> $textCellsAfter
+];
+
+getSuggestionsContext // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -187,12 +215,21 @@ contentSuggestionsCell[ Dynamic[ container_Symbol ] ] := Cell[
 contentSuggestionsCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*suggestionsType*)
+suggestionsType // beginDefinition;
+suggestionsType[ selectionInfo_Association ] := suggestionsType @ selectionInfo[ "ContentData" ];
+suggestionsType[ BoxData  ] := "WL";
+suggestionsType[ TextData ] := "Text";
+suggestionsType[ _        ] := "Notebook";
+suggestionsType // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*generateSuggestions*)
 generateSuggestions // beginDefinition;
-generateSuggestions[ selectionInfo_Association, args__ ] := generateSuggestions[ selectionInfo[ "ContentData" ], args ];
-generateSuggestions[ BoxData, args__ ] := generateWLSuggestions @ args;
-generateSuggestions[ TextData, args__ ] := generateTextSuggestions @ args;
+generateSuggestions[ "WL"  , args__ ] := generateWLSuggestions @ args;
+generateSuggestions[ "Text", args__ ] := generateTextSuggestions @ args;
 generateSuggestions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -201,7 +238,7 @@ generateSuggestions // endDefinition;
 generateWLSuggestions // beginDefinition;
 
 generateWLSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_String, settings_ ] := Enclose[
-    Module[ { context, instructions, response, suggestions, stripped },
+    Module[ { context, instructions, response, style, suggestions, stripped },
 
         context = ConfirmBy[
             StringReplace[
@@ -224,7 +261,9 @@ generateWLSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_St
             "Instructions"
         ];
 
-        response = setServiceCaller @ ServiceExecute[
+        $lastInstructions = instructions;
+
+        response = setServiceCaller @ LogChatTiming @ ServiceExecute[
             $suggestionsService,
             "Chat",
             {
@@ -242,8 +281,18 @@ generateWLSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_St
 
         $lastSuggestionsResponse = response;
 
-        suggestions = DeleteDuplicates @ ConfirmMatch[ getWLSuggestions @ response, { __BoxData }, "Suggestions" ];
-        stripped = ConfirmMatch[ stripSurroundingWLCode[ suggestions, context ], { __BoxData }, "Stripped" ];
+        style = First[ ConfirmMatch[ cellStyles @ root, { ___String }, "Styles" ], "Input" ];
+
+        suggestions = DeleteDuplicates @ ConfirmMatch[
+            getWLSuggestions[ style, response ],
+            { __BoxData },
+            "Suggestions"
+        ];
+
+        stripped = Take[
+            ConfirmMatch[ stripSurroundingWLCode[ style, suggestions, context ], { __BoxData }, "Stripped" ],
+            UpTo[ $wlSuggestionsCount ]
+        ];
 
         $lastSuggestions = suggestions;
 
@@ -258,6 +307,11 @@ generateWLSuggestions // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*stripSurroundingWLCode*)
 stripSurroundingWLCode // beginDefinition;
+
+stripSurroundingWLCode[ style_, suggestions_, context_ ] :=
+    Block[ { $stripWhitespace = stripWhitespaceQ @ style },
+        stripSurroundingWLCode[ suggestions, context ]
+    ];
 
 stripSurroundingWLCode[ suggestions: { __BoxData }, context_String ] := Enclose[
     Catch @ Module[ { surrounding, stripped },
@@ -334,8 +388,21 @@ getSurroundingWLCode // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getWLSuggestions*)
 getWLSuggestions // beginDefinition;
-getWLSuggestions[ content_ ] := postProcessWLSuggestions @ getSuggestions @ content;
+
+getWLSuggestions[ style_, content_ ] :=
+    Block[ { $stripWhitespace = stripWhitespaceQ @ style },
+        postProcessWLSuggestions @ getSuggestions @ content
+    ];
+
 getWLSuggestions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*stripWhitespaceQ*)
+stripWhitespaceQ // beginDefinition;
+stripWhitespaceQ[ "Code"  ] := False;
+stripWhitespaceQ[ _String ] := True;
+stripWhitespaceQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -376,12 +443,31 @@ postProcessWLSuggestions[ suggestion_String ] := Enclose[
 
         noLabels = StringTrim @ StringDelete[ noBlocks, $$inLabel ];
 
-        ConfirmMatch[ StripBoxes @ stringToBoxes @ noLabels, _BoxData, "Result" ]
+        ConfirmMatch[
+            If[ TrueQ @ $stripWhitespace,
+                Flatten @ BoxData @ StripBoxes @ stringToBoxes @ noLabels,
+                Flatten @ BoxData @ simpleStringToBoxes @ noLabels
+            ],
+            _BoxData,
+            "Result"
+        ]
     ],
     throwInternalFailure
 ];
 
 postProcessWLSuggestions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*simpleStringToBoxes*)
+simpleStringToBoxes // beginDefinition;
+
+simpleStringToBoxes[ string_String ] := Enclose[
+    ConfirmBy[ usingFrontEnd @ FrontEndExecute @ FrontEnd`ReparseBoxStructurePacket @ string, boxDataQ, "Boxes" ],
+    throwInternalFailure
+];
+
+simpleStringToBoxes // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -416,7 +502,7 @@ generateTextSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_
 
         $lastInstructions = instructions;
 
-        response = setServiceCaller @ ServiceExecute[
+        response = setServiceCaller @ LogChatTiming @ ServiceExecute[
             $suggestionsService,
             "Chat",
             {
@@ -498,7 +584,7 @@ formatSuggestions[
     Module[ { styles, formatted },
         styles = ConfirmMatch[ cellStyles @ root, { ___String }, "Styles" ];
         formatted = ConfirmMatch[ formatSuggestion[ root, nbo, styles ] /@ suggestions, { __Button }, "Formatted" ];
-        Pane[ Column[ formatted, Spacings -> 0 ] ]
+        Pane[ Column[ formatted, Spacings -> 0 ], ImageSize -> { UpTo[ Scaled[ 0.9 ] ], Automatic } ]
     ],
     throwInternalFailure
 ];
@@ -521,7 +607,9 @@ formatSuggestion[ root_CellObject, nbo_NotebookObject, { styles___String }, sugg
             Sequence @@ {
                 ShowStringCharacters -> True,
                 ShowAutoStyles       -> True,
-                LanguageCategory     -> "Input"
+                LanguageCategory     -> "Input",
+                LineBreakWithin      -> True,
+                PageWidth            :> WindowWidth
             },
             Sequence @@ { }
         ]

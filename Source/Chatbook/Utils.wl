@@ -333,9 +333,9 @@ LogChatTiming // beginDefinition;
 LogChatTiming // Attributes = { HoldFirst, SequenceHold };
 
 LogChatTiming[ tag_String ] := Function[ eval, LogChatTiming[ eval, tag ], HoldAllComplete ];
-LogChatTiming[ sym_Symbol ] := LogChatTiming @ Evaluate @ SymbolName @ sym;
+LogChatTiming[ sym_Symbol ] := LogChatTiming @ Evaluate @ Capitalize @ SymbolName @ sym;
 LogChatTiming[ tags_List ] := LogChatTiming @ Evaluate @ StringRiffle[ tags, ":" ];
-LogChatTiming[ eval: (h_Symbol)[ ___ ] ] := LogChatTiming[ eval, SymbolName @ h ];
+LogChatTiming[ eval: (h_Symbol)[ ___ ] ] := LogChatTiming[ eval, Capitalize @ SymbolName @ h ];
 LogChatTiming[ eval_ ] := LogChatTiming[ eval, "None" ];
 
 LogChatTiming[ eval_, tag_String ] := (
