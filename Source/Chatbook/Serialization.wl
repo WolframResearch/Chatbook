@@ -5,7 +5,7 @@ BeginPackage[ "Wolfram`Chatbook`Serialization`" ];
 (* Avoiding context aliasing due to bug 434990: *)
 Needs[ "GeneralUtilities`" -> None ];
 
-GeneralUtilities`SetUsage[ `CellToString, "\
+GeneralUtilities`SetUsage[ CellToString, "\
 CellToString[cell$] serializes a Cell expression as a string for use in chat.\
 " ];
 
@@ -19,20 +19,6 @@ Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
 (* FIXME:
     Serialize strike-through:
         StyleBox[..., FontVariations -> {"StrikeThrough" -> True}]
-*)
-
-(* TODO:
-
-    There should be a way to pass custom serialization rules in chat settings, e.g.
-    ```
-    "ConversionRules" -> {
-        _GraphicsBox -> "[Image]",
-        Cell[box_, "MyStyle"] :> formatMyStyle[box]
-    }
-    ```
-
-    These replacements should be done prior to calling `cellToString`, but need to be tagged in some way so we don't
-    try to serialize the results again via `fasterCellToString0`.
 *)
 
 (* ::**************************************************************************************************************:: *)
@@ -314,7 +300,7 @@ $wolframAlphaInputTemplate = codeTemplate[ "\
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*CellToString*)
-CellToString // SetFallthroughError;
+CellToString // beginDefinition;
 
 CellToString // Options = {
     "CharacterEncoding"         -> $cellCharacterEncoding,
@@ -377,6 +363,8 @@ CellToString[ cell_, opts: OptionsPattern[ ] ] :=
         ]
     ];
 (* :!CodeAnalysis::EndBlock:: *)
+
+CellToString // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -2752,6 +2740,14 @@ firstMatchingCellGroup[ nb_, patt_, "Content" ] := Catch[
     Missing[ "NotFound" ],
     $cellGroupTag
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Backwards Compatibility*)
+
+(* The resource function ExportMarkdownString depends on CellToString in the original context: *)
+Wolfram`Chatbook`Serialization`CellToString = CellToString;
+(* https://resources.wolframcloud.com/FunctionRepository/resources/ExportMarkdownString *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
