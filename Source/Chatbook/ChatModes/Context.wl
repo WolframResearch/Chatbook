@@ -91,7 +91,11 @@ getWorkspacePrompt // endDefinition;
 (* ::Subsection::Closed:: *)
 (*getContextFromSelection*)
 getContextFromSelection // beginDefinition;
-getContextFromSelection // Options = { "NotebookInstructionsPrompt" -> True };
+getContextFromSelection // Options = {
+    "NotebookInstructionsPrompt" -> True,
+    "MaxCellsBeforeSelection"    :> $maxCellsBeforeSelection,
+    "MaxCellsAfterSelection"     :> $maxCellsAfterSelection
+};
 
 getContextFromSelection[ chatNB_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] :=
     getContextFromSelection[ chatNB, getUserNotebook @ chatNB, settings, opts ];
@@ -100,15 +104,23 @@ getContextFromSelection[ chatNB_NotebookObject, None, settings_Association, opts
     None;
 
 getContextFromSelection[ chatNB_, nbo_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] := Enclose[
-    Catch @ Module[ { selectionData },
-        selectionData = ConfirmMatch[ selectContextCells @ nbo, _Association|None, "SelectionData" ];
-        If[ selectionData === None, Throw @ None ];
-        ConfirmBy[
-            Block[ { $notebookInstructionsPrompt = TrueQ @ OptionValue[ "NotebookInstructionsPrompt" ] },
-                getContextFromSelection0[ selectionData, settings ]
-            ],
-            StringQ,
-            "Context"
+    Catch @ Block[
+        {
+            $notebookInstructionsPrompt = OptionValue[ "NotebookInstructionsPrompt" ],
+            $maxCellsBeforeSelection    = OptionValue[ "MaxCellsBeforeSelection"    ],
+            $maxCellsAfterSelection     = OptionValue[ "MaxCellsAfterSelection"     ]
+        },
+        Module[ { selectionData },
+
+            selectionData = ConfirmMatch[
+                LogChatTiming @ selectContextCells @ nbo,
+                _Association|None,
+                "SelectionData"
+            ];
+
+            If[ selectionData === None, Throw @ None ];
+
+            ConfirmBy[ getContextFromSelection0[ selectionData, settings ], StringQ, "Context" ]
         ]
     ],
     throwInternalFailure
@@ -130,7 +142,7 @@ getContextFromSelection0[ selectionData_Association, settings_ ] := Enclose[
         { cellObjects, cells, len1, len2, before, selected, after, marked, messages, string, nbCtx },
 
         cellObjects = ConfirmMatch[ Flatten @ Values @ selectionData, { ___CellObject }, "CellObjects" ];
-        cells = ConfirmMatch[ notebookRead @ cellObjects, { ___Cell }, "Cells" ];
+        cells = ConfirmMatch[ LogChatTiming @ notebookRead @ cellObjects, { ___Cell }, "Cells" ];
 
         len1 = Length @ ConfirmMatch[ selectionData[ "Before"   ], { ___CellObject }, "BeforeLength"   ];
         len2 = Length @ ConfirmMatch[ selectionData[ "Selected" ], { ___CellObject }, "SelectedLength" ];
@@ -140,7 +152,7 @@ getContextFromSelection0[ selectionData_Association, settings_ ] := Enclose[
         after    = ConfirmMatch[ cells[[ len1 + len2 + 1 ;; All ]] , { ___Cell }, "AfterCells"    ];
 
         marked = ConfirmMatch[ insertSelectionIndicator @ { before, selected, after }, { ___Cell }, "Marked" ];
-        messages = ConfirmMatch[ makeChatMessages[ settings, marked, False ], { ___Association }, "Messages" ];
+        messages = ConfirmMatch[ LogChatTiming @ makeChatMessages[ settings, marked, False ], { ___Association }, "Messages" ];
         string = ConfirmBy[ messagesToString @ messages, StringQ, "String" ];
 
         $contextPrompt   = processContextPromptString @ string;
@@ -229,7 +241,7 @@ messageToString // endDefinition;
 (*postProcessNotebookContextString*)
 postProcessNotebookContextString // beginDefinition;
 
-postProcessNotebookContextString[ prompt_String, string_String ] /; ! TrueQ @ $notebookInstructionsPrompt :=
+postProcessNotebookContextString[ prompt_String, string_String ] /; ! $notebookInstructionsPrompt :=
     prompt;
 
 postProcessNotebookContextString[ prompt_String, string_String ] :=
@@ -254,7 +266,7 @@ postProcessNotebookContextString // endDefinition;
 (*applyNotebookContextTemplate*)
 applyNotebookContextTemplate // beginDefinition;
 
-applyNotebookContextTemplate[ string_String ] /; ! TrueQ @ $notebookInstructionsPrompt :=
+applyNotebookContextTemplate[ string_String ] /; ! $notebookInstructionsPrompt :=
     string;
 
 applyNotebookContextTemplate[ string_String ] :=

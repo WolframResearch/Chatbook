@@ -1403,7 +1403,7 @@ cachedTokenizer[ id_String ] :=
 cachedTokenizer[ id_String ] := Enclose[
     Module[ { name, tokenizer },
         name      = ConfirmBy[ tokenizerName @ toModelName @ id, StringQ, "Name" ];
-        tokenizer = findTokenizer @ name;
+        tokenizer = LogChatTiming @ findTokenizer @ name;
         If[ MissingQ @ tokenizer,
             (* Fallback to the GPT-2 tokenizer: *)
             tokenizer = ConfirmMatch[ $cachedTokenizers[ "generic" ], Except[ $$unspecified ], "GPT2Tokenizer" ];
@@ -1438,11 +1438,19 @@ findTokenizer // beginDefinition;
 
 findTokenizer[ model_String ] := Enclose[
     Catch @ Module[ { dir, file, tokenizer },
+
         dir = ConfirmBy[ $tokenizerDirectory, StringQ, "Directory" ];
         file = FileNameJoin @ { dir, model<>".wxf" };
-        tokenizer = If[ FileExistsQ @ file, Developer`ReadWXFFile @ file, findTokenizer0 @ model ];
+
+        tokenizer = If[ FileExistsQ @ file,
+                        LogChatTiming[ Developer`ReadWXFFile @ file, "ReadTokenizerFile" ],
+                        findTokenizer0 @ model
+                    ];
+
         If[ MissingQ @ tokenizer, Throw @ tokenizer ];
-        ConfirmMatch[ tokenizer[ "test" ], _List, "TokenizerTest" ];
+
+        ConfirmMatch[ LogChatTiming[ tokenizer[ "test" ], "TokenizerTest" ], _List, "TokenizerTest" ];
+
         tokenizer
     ],
     throwInternalFailure
