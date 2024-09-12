@@ -32,7 +32,6 @@ Needs[ "Wolfram`Chatbook`ErrorUtils`"       ];
 Needs[ "Wolfram`Chatbook`Menus`"            ];
 Needs[ "Wolfram`Chatbook`Personas`"         ];
 Needs[ "Wolfram`Chatbook`PreferencesUtils`" ];
-Needs[ "Wolfram`Chatbook`Serialization`"    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
