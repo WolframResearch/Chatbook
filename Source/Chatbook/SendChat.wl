@@ -343,6 +343,9 @@ makeHTTPRequest // endDefinition;
 (*makeStopTokens*)
 makeStopTokens // beginDefinition;
 
+makeStopTokens[ settings_Association? o1ModelQ ] :=
+    Missing[ ];
+
 makeStopTokens[ settings_Association ] :=
     Select[
         DeleteDuplicates @ Flatten @ {
@@ -584,7 +587,7 @@ makeLLMConfiguration[ as: KeyValuePattern[ "Model" -> model_String ] ] :=
     makeLLMConfiguration @ Append[ as, "Model" -> { "OpenAI", model } ];
 
 makeLLMConfiguration[ as_Association ] :=
-    $lastLLMConfiguration = LLMConfiguration @ Association[
+    $lastLLMConfiguration = LLMConfiguration @ DeleteMissing @ Association[
         KeyTake[ as, { "Model", "MaxTokens", "Temperature", "PresencePenalty" } ],
         "StopTokens" -> makeStopTokens @ as
     ];
@@ -679,7 +682,7 @@ trimStopTokens[ container_, stop: { ___String } ] :=
         ) /; StringQ @ full
     ];
 
-trimStopTokens[ container_, { ___String } ] :=
+trimStopTokens[ container_, { ___String } | _Missing ] :=
     Null;
 
 trimStopTokens // endDefinition;
