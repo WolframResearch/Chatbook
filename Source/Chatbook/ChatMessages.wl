@@ -171,6 +171,8 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
 
         processed //= DeleteCases @ KeyValuePattern[ "Content" -> "" ];
 
+        processed = rewriteMessageRoles[ settings, processed ];
+
         Sow[ <| "Messages" -> processed |>, $chatDataTag ];
 
         $lastSettings = settings;
@@ -180,6 +182,30 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
     ];
 
 constructMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*rewriteMessageRoles*)
+rewriteMessageRoles // beginDefinition;
+rewriteMessageRoles[ settings_? o1ModelQ, messages_ ] := convertSystemRoleToUser @ messages;
+rewriteMessageRoles[ settings_, messages_ ] := messages;
+rewriteMessageRoles // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*convertSystemRoleToUser*)
+convertSystemRoleToUser // beginDefinition;
+
+convertSystemRoleToUser[ messages_List ] :=
+    convertSystemRoleToUser /@ messages;
+
+convertSystemRoleToUser[ as: KeyValuePattern @ { "Role" -> "System", "Content" -> content_ } ] :=
+    <| as, "Role" -> "User" |>;
+
+convertSystemRoleToUser[ message_Association ] :=
+    message;
+
+convertSystemRoleToUser // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

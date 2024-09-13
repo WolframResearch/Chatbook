@@ -257,15 +257,16 @@ resolveAutoSettings0[ settings: KeyValuePattern[ _ :> _ ] ] :=
     resolveAutoSettings @ AssociationMap[ Apply @ Rule, settings ];
 
 resolveAutoSettings0[ settings_Association ] := Enclose[
-    Module[ { auto, sorted, resolved, result },
+    Module[ { auto, sorted, resolved, override, result },
         auto     = ConfirmBy[ Select[ settings, SameAs @ Automatic ], AssociationQ, "Auto" ];
         sorted   = ConfirmBy[ <| KeyTake[ auto, $autoSettingKeyPriority ], auto |>, AssociationQ, "Sorted" ];
         resolved = ConfirmBy[ Fold[ resolveAutoSetting, settings, Normal @ sorted ], AssociationQ, "Resolved" ];
+        override = ConfirmBy[ overrideSettings @ resolved, AssociationQ, "Override" ];
         If[ $chatState,
-            If[ resolved[ "Assistance"    ], $AutomaticAssistance = True ];
-            If[ resolved[ "WorkspaceChat" ], $WorkspaceChat       = True ];
+            If[ override[ "Assistance"    ], $AutomaticAssistance = True ];
+            If[ override[ "WorkspaceChat" ], $WorkspaceChat       = True ];
         ];
-        result = ConfirmBy[ resolveTools @ KeySort @ resolved, AssociationQ, "ResolveTools" ];
+        result = ConfirmBy[ resolveTools @ KeySort @ override, AssociationQ, "ResolveTools" ];
         If[ result[ "ToolMethod" ] === Automatic,
             result[ "ToolMethod" ] = chooseToolMethod @ result
         ];
@@ -275,6 +276,16 @@ resolveAutoSettings0[ settings_Association ] := Enclose[
 ];
 
 resolveAutoSettings0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*overrideSettings*)
+overrideSettings // beginDefinition;
+overrideSettings[ settings_Association? o1ModelQ ] := <| settings, $o1Overrides |>;
+overrideSettings[ settings_Association ] := settings;
+overrideSettings // endDefinition;
+
+$o1Overrides = <| "PresencePenalty" -> 0, "Temperature" -> 1 |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -562,13 +573,15 @@ $$disabledToolsModel = Alternatives[
     "claude-instant-1.2",
     "gemini-1.0-pro" ~~ ___,
     "gemini-pro-vision",
-    "gemini-pro"
+    "gemini-pro",
+    "o1" ~~ WordBoundary ~~ ___
 ];
 
 toolsEnabledQ[ KeyValuePattern[ "ToolsEnabled" -> enabled: True|False ] ] := enabled;
 toolsEnabledQ[ KeyValuePattern[ "ToolCallFrequency" -> freq: (_Integer|_Real)? NonPositive ] ] := False;
 toolsEnabledQ[ KeyValuePattern[ "Model" -> model_ ] ] := toolsEnabledQ @ toModelName @ model;
 toolsEnabledQ[ model: KeyValuePattern @ { "Service" -> _, "Name" -> _ } ] := toolsEnabledQ @ toModelName @ model;
+toolsEnabledQ[ { service_String, name_String } ] := toolsEnabledQ @ <| "Service" -> service, "Name" -> name |>;
 toolsEnabledQ[ model_String ] := ! StringMatchQ[ model, $$disabledToolsModel, IgnoreCase -> True ];
 toolsEnabledQ[ ___ ] := False;
 
