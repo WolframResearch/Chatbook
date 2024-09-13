@@ -121,6 +121,21 @@ modelContains // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*o1ModelQ*)
+o1ModelQ // beginDefinition;
+
+o1ModelQ[ model_ ] := Enclose[
+    o1ModelQ[ model ] = StringContainsQ[
+        ConfirmBy[ toModelName @ model, StringQ, "Name" ],
+        WordBoundary~~"o1"~~WordBoundary
+    ],
+    throwInternalFailure
+];
+
+o1ModelQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*modelName*)
 modelName // beginDefinition;
 modelName[ KeyValuePattern[ "Name" -> name_String ] ] := modelName @ name;
@@ -131,6 +146,9 @@ modelName // endDefinition;
 (* ::Subsection::Closed:: *)
 (*toModelName*)
 toModelName // beginDefinition;
+
+toModelName[ KeyValuePattern[ "Model" -> model_ ] ] :=
+    toModelName @ model;
 
 toModelName[ KeyValuePattern @ { "Service" -> service_, "Name"|"Model" -> model_ } ] :=
     toModelName @ { service, model };
