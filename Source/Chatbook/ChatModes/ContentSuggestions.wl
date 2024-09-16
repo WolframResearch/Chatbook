@@ -33,7 +33,9 @@ Your suggested text will be inserted into %%Placeholder%%, so be careful not to 
 Use `%` to refer to the previous output or `%n` for earlier outputs (where n is an output number) when appropriate.
 Limit your suggested completion to approximately one or two lines of code.
 Respond with the completion text and nothing else.
-Do not include any formatting in your response. Do not include outputs or `In[]:=` cell labels.",
+Do not include any formatting in your response. Do not include outputs or `In[]:=` cell labels.
+
+%%RelatedDocumentation%%",
 Delimiters -> "%%" ];
 
 (* ::**************************************************************************************************************:: *)
@@ -74,8 +76,8 @@ $$outLabel = "Out[" ~~ DigitCharacter... ~~ "]" ~~ WhitespaceCharacter... ~~ ("=
 (* ::Section::Closed:: *)
 (*ShowContentSuggestions*)
 ShowContentSuggestions // beginDefinition;
-ShowContentSuggestions[ ] := catchMine @ LogChatTiming @ showContentSuggestions @ InputNotebook[ ];
-ShowContentSuggestions[ nbo_NotebookObject ] := catchMine @ LogChatTiming @ showContentSuggestions @ nbo;
+ShowContentSuggestions[ ] := catchMine @ withChatState @ LogChatTiming @ showContentSuggestions @ InputNotebook[ ];
+ShowContentSuggestions[ nbo_ ] := catchMine @ withChatState @ LogChatTiming @ showContentSuggestions @ nbo;
 ShowContentSuggestions // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -159,6 +161,9 @@ showContentSuggestions0[ nbo_NotebookObject, root_CellObject, selectionInfo_Asso
         settings = ConfirmBy[ LogChatTiming @ AbsoluteCurrentChatSettings @ root, AssociationQ, "Settings" ];
         context = ConfirmBy[ LogChatTiming @ getSuggestionsContext[ type, nbo, settings ], StringQ, "Context" ];
 
+        $contextPrompt   = None;
+        $selectionPrompt = None;
+
         ConfirmMatch[
             LogChatTiming @ generateSuggestions[ type, Dynamic[ suggestionsContainer ], nbo, root, context, settings ],
             _Pane,
@@ -238,7 +243,7 @@ generateSuggestions // endDefinition;
 generateWLSuggestions // beginDefinition;
 
 generateWLSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_String, settings_ ] := Enclose[
-    Module[ { context, instructions, response, style, suggestions, stripped },
+    Module[ { context, preprocessed, relatedDocs, instructions, response, style, suggestions, stripped },
 
         context = ConfirmBy[
             StringReplace[
@@ -255,8 +260,19 @@ generateWLSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_St
 
         $lastSuggestionContext = context;
 
-        instructions = ConfirmBy[
-            TemplateApply[ $wlSuggestionsPrompt, <| "Placeholder" -> $wlPlaceholderString |> ],
+        preprocessed = ConfirmBy[ preprocessRelatedDocsContext @ context, StringQ, "Preprocessing" ];
+
+        relatedDocs = ConfirmBy[
+            LogChatTiming @ RelatedDocumentation[ preprocessed, "Prompt", "FilterResults" -> False, MaxItems -> 5 ],
+            StringQ,
+            "RelatedDocumentation"
+        ];
+
+        instructions = StringTrim @ ConfirmBy[
+            TemplateApply[
+                $wlSuggestionsPrompt,
+                <| "Placeholder" -> $wlPlaceholderString, "RelatedDocumentation" -> relatedDocs |>
+            ],
             StringQ,
             "Instructions"
         ];
@@ -302,6 +318,25 @@ generateWLSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_St
 ];
 
 generateWLSuggestions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*preprocessRelatedDocsContext*)
+preprocessRelatedDocsContext // beginDefinition;
+
+preprocessRelatedDocsContext[ context_String ] :=
+    preprocessRelatedDocsContext[
+        context,
+        StringSplit[ context, code: Shortest[ "```" ~~ __ ~~ "```" ] :> codeBlock @ code ]
+    ];
+
+preprocessRelatedDocsContext[ context_, { ___, text_String, codeBlock[ code_String ] } ] :=
+    StringJoin[ text, code ];
+
+preprocessRelatedDocsContext[ context_String, { (_String|_codeBlock)... } ] :=
+    context;
+
+preprocessRelatedDocsContext // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
