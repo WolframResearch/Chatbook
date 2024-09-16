@@ -51,7 +51,7 @@ $$vectorDatabase = _VectorDatabaseObject? System`Private`ValidQ;
 $vectorDBSourceDirectory = FileNameJoin @ { DirectoryName @ $InputFileName, "SourceData" };
 $vectorDBTargetDirectory = FileNameJoin @ { DirectoryName[ $InputFileName, 3 ], "Assets", "VectorDatabases" };
 
-$incrementalBuildBatchSize = 256;
+$incrementalBuildBatchSize = 512;
 $dbConnectivity            = 16;
 $dbExpansionAdd            = 256;
 $dbExpansionSearch         = 2048;
@@ -59,10 +59,10 @@ $dbExpansionSearch         = 2048;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Embeddings*)
-$embeddingDimension        = 256;
+$embeddingDimension        = 384;
 $embeddingType             = "Integer8";
-$embeddingService          = "OpenAI";
-$embeddingModel            = "text-embedding-3-small";
+$embeddingService          = "Local";
+$embeddingModel            = "SentenceBERT";
 $embeddingMaxTokens        = 8000;
 $maxSnippetLength          = 4000;
 $defaultEmbeddingLocation  = FileNameJoin @ { $CacheBaseDirectory, "ChatbookDeveloper", "Embeddings" };
@@ -457,7 +457,10 @@ getCachedEmbedding[ string_String ] :=
     ];
 
 getCachedEmbedding[ string_String ] :=
-    getCachedEmbedding[ string, embeddingHash @ string ];
+    If[ $embeddingModel === "SentenceBERT",
+        Missing[ "NotCached" ],
+        getCachedEmbedding[ string, embeddingHash @ string ]
+    ];
 
 getCachedEmbedding[ string_String, hash_String ] :=
     Catch @ Module[ { file, vector },
@@ -499,6 +502,18 @@ getAndCacheEmbeddings0[ strings: { __String } ] := Enclose[
 (*createEmbeddings*)
 createEmbeddings // ClearAll;
 
+createEmbeddings[ strings: { __String } ] /; $embeddingModel === "SentenceBERT" :=
+    Catch @ Module[ { vectors, small, meta, pairs },
+        $currentItem = If[ IntegerQ @ $currentItem, $currentItem + Length @ strings, Length @ strings ];
+        vectors = Quiet @ toPackedArray @ sentenceBERTEmbedding @ strings;
+        meta = <| "Strings" -> strings, "Vectors" -> vectors |>;
+        If[ ! packedArrayQ @ vectors, Throw @ Failure[ "EmbeddingFailure", meta ] ];
+        If[ Length @ vectors =!= Length @ strings, Throw @ Failure[ "EmbeddingShapeFailure", meta ] ];
+        small = toByteVector@*Normalize /@ vectors[[ All, 1 ;; $embeddingDimension ]];
+        pairs = Transpose @ { strings, small };
+        Association[ cacheEmbedding /@ pairs ]
+    ];
+
 createEmbeddings[ strings: { __String } ] :=
     Catch @ Module[ { resp, vectors, small, meta, pairs },
         $currentItem = If[ IntegerQ @ $currentItem, $currentItem + Length @ strings, Length @ strings ];
@@ -519,9 +534,26 @@ createEmbeddings[ string_String ] :=
     First[ createEmbeddings @ { string }, $Failed ];
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sentenceBERTEmbedding*)
+sentenceBERTEmbedding // beginDefinition;
+
+sentenceBERTEmbedding[ args___ ] := (
+    Needs[ "SemanticSearch`" -> None ];
+    SemanticSearch`SemanticSearch`Private`SentenceBERTEmbedding @ args
+);
+
+sentenceBERTEmbedding // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*cacheEmbedding*)
 cacheEmbedding // ClearAll;
+
+cacheEmbedding[ string_String, vector_NumericArray ] /; $embeddingModel === "SentenceBERT" := (
+    $embeddingCache[ string ] = vector;
+    string -> vector
+);
 
 cacheEmbedding[ string_String, vector_NumericArray ] :=
     cacheEmbedding[ string, vector, embeddingHash @ string ];
