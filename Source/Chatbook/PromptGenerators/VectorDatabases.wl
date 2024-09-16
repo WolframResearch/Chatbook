@@ -17,11 +17,11 @@ HoldComplete[
 (*Configuration*)
 $vectorDBNames = { "DocumentationURIs", "WolframAlphaQueries" };
 
-$embeddingDimension      = 256;
+$embeddingDimension      = 384;
 $maxNeighbors            = 50;
 $maxEmbeddingDistance    = 150.0;
-$embeddingService        = "OpenAI"; (* FIXME *)
-$embeddingModel          = "text-embedding-3-small";
+$embeddingService        = "Local";
+$embeddingModel          = "SentenceBERT";
 $embeddingAuthentication = Automatic; (* FIXME *)
 
 
@@ -606,6 +606,24 @@ getAndCacheEmbeddings // beginDefinition;
 getAndCacheEmbeddings[ { } ] :=
     { };
 
+getAndCacheEmbeddings[ strings: { __String } ] /; $embeddingModel === "SentenceBERT" := Enclose[
+    Module[ { vectors },
+        vectors = ConfirmBy[
+            Developer`ToPackedArray @ sentenceBERTEmbedding @ strings,
+            Developer`PackedArrayQ,
+            "PackedArray"
+        ];
+
+        ConfirmAssert[ Length @ strings === Length @ vectors, "LengthCheck" ];
+
+        MapThread[
+            ($embeddingCache[ #1 ] = toTinyVector @ #2) &,
+            { strings, vectors }
+        ]
+    ],
+    throwInternalFailure
+];
+
 getAndCacheEmbeddings[ strings: { __String } ] := Enclose[
     Module[ { resp, vectors },
         resp = ConfirmBy[
@@ -636,6 +654,18 @@ getAndCacheEmbeddings[ strings: { __String } ] := Enclose[
 ];
 
 getAndCacheEmbeddings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sentenceBERTEmbedding*)
+sentenceBERTEmbedding // beginDefinition;
+
+sentenceBERTEmbedding[ args___ ] := (
+    Needs[ "SemanticSearch`" -> None ];
+    SemanticSearch`SemanticSearch`Private`SentenceBERTEmbedding @ args
+);
+
+sentenceBERTEmbedding // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
