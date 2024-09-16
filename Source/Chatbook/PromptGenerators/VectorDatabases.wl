@@ -16,6 +16,7 @@ HoldComplete[
 (* ::Section::Closed:: *)
 (*Configuration*)
 $vectorDBNames = { "DocumentationURIs", "WolframAlphaQueries" };
+$dbVersion     = "1.1.0";
 
 $embeddingDimension      = 384;
 $maxNeighbors            = 50;
@@ -40,13 +41,21 @@ $maxExtraFiles     = 20;
 $baseVectorDatabasesURL = "https://www.wolframcloud.com/obj/wolframai-content/VectorDatabases";
 
 (* TODO: these will be moved to the data repository: *)
-$vectorDBDownloadURLs = AssociationMap[ $baseVectorDatabasesURL <> "/" <> # <> ".zip" &, $vectorDBNames ];
+$vectorDBDownloadURLs = AssociationMap[
+    URLBuild @ { $baseVectorDatabasesURL, $dbVersion, # <> ".zip" } &,
+    $vectorDBNames
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Paths*)
 $pacletVectorDBDirectory := FileNameJoin @ { $thisPaclet[ "Location" ], "Assets/VectorDatabases" };
-$localVectorDBDirectory  := FileNameJoin @ { ExpandFileName @ LocalObject @ $LocalBase, "Chatbook/VectorDatabases" };
+
+$localVectorDBDirectory := FileNameJoin @ {
+    ExpandFileName @ LocalObject @ $LocalBase,
+    "Chatbook/VectorDatabases",
+    $dbVersion
+};
 
 (* TODO: need versioned URLs and paths *)
 
