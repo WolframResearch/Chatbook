@@ -1453,6 +1453,16 @@ preprocessTraditionalForm // endDefinition;
 fasterCellToString0[ SubscriptBox[ "\[InvisiblePrefixScriptBase]", x_ ] ] :=
     fasterCellToString0 @ SubscriptBox[ " ", x ];
 
+(* Derivative *)
+fasterCellToString0[ SuperscriptBox[ f_, "\[Prime]", ___ ] ] :=
+    "Derivative[1][" <> fasterCellToString0 @ f <> "]";
+
+fasterCellToString0[ SuperscriptBox[ f_, "\[Prime]\[Prime]", ___ ] ] :=
+    "Derivative[2][" <> fasterCellToString0 @ f <> "]";
+
+fasterCellToString0[ SuperscriptBox[ f_, TagBox[ RowBox @ { "(", n_String, ")" }, Derivative ], ___ ] ] :=
+    "Derivative[" <> n <> "][" <> fasterCellToString0 @ f <> "]";
+
 (* Sqrt *)
 fasterCellToString0[ SqrtBox[ a_ ] ] :=
     (needsBasePrompt[ "WolframLanguage" ]; "Sqrt["<>fasterCellToString0 @ a<>"]");
