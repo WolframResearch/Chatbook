@@ -16,12 +16,13 @@ HoldComplete[
 (* ::Section::Closed:: *)
 (*Configuration*)
 $vectorDBNames = { "DocumentationURIs", "WolframAlphaQueries" };
+$dbVersion     = "1.1.0";
 
-$embeddingDimension      = 256;
+$embeddingDimension      = 384;
 $maxNeighbors            = 50;
 $maxEmbeddingDistance    = 150.0;
-$embeddingService        = "OpenAI"; (* FIXME *)
-$embeddingModel          = "text-embedding-3-small";
+$embeddingService        = "Local";
+$embeddingModel          = "SentenceBERT";
 $embeddingAuthentication = Automatic; (* FIXME *)
 
 
@@ -40,13 +41,21 @@ $maxExtraFiles     = 20;
 $baseVectorDatabasesURL = "https://www.wolframcloud.com/obj/wolframai-content/VectorDatabases";
 
 (* TODO: these will be moved to the data repository: *)
-$vectorDBDownloadURLs = AssociationMap[ $baseVectorDatabasesURL <> "/" <> # <> ".zip" &, $vectorDBNames ];
+$vectorDBDownloadURLs = AssociationMap[
+    URLBuild @ { $baseVectorDatabasesURL, $dbVersion, # <> ".zip" } &,
+    $vectorDBNames
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Paths*)
 $pacletVectorDBDirectory := FileNameJoin @ { $thisPaclet[ "Location" ], "Assets/VectorDatabases" };
-$localVectorDBDirectory  := FileNameJoin @ { ExpandFileName @ LocalObject @ $LocalBase, "Chatbook/VectorDatabases" };
+
+$localVectorDBDirectory := FileNameJoin @ {
+    ExpandFileName @ LocalObject @ $LocalBase,
+    "Chatbook/VectorDatabases",
+    $dbVersion
+};
 
 (* TODO: need versioned URLs and paths *)
 
@@ -606,6 +615,24 @@ getAndCacheEmbeddings // beginDefinition;
 getAndCacheEmbeddings[ { } ] :=
     { };
 
+getAndCacheEmbeddings[ strings: { __String } ] /; $embeddingModel === "SentenceBERT" := Enclose[
+    Module[ { vectors },
+        vectors = ConfirmBy[
+            Developer`ToPackedArray @ sentenceBERTEmbedding @ strings,
+            Developer`PackedArrayQ,
+            "PackedArray"
+        ];
+
+        ConfirmAssert[ Length @ strings === Length @ vectors, "LengthCheck" ];
+
+        MapThread[
+            ($embeddingCache[ #1 ] = toTinyVector @ #2) &,
+            { strings, vectors }
+        ]
+    ],
+    throwInternalFailure
+];
+
 getAndCacheEmbeddings[ strings: { __String } ] := Enclose[
     Module[ { resp, vectors },
         resp = ConfirmBy[
@@ -636,6 +663,40 @@ getAndCacheEmbeddings[ strings: { __String } ] := Enclose[
 ];
 
 getAndCacheEmbeddings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sentenceBERTEmbedding*)
+sentenceBERTEmbedding := getSentenceBERTEmbeddingFunction[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*getSentenceBERTEmbeddingFunction*)
+getSentenceBERTEmbeddingFunction // beginDefinition;
+
+getSentenceBERTEmbeddingFunction[ ] := Enclose[
+    Module[ { name },
+
+        Needs[ "SemanticSearch`" -> None ];
+
+        name = ConfirmBy[
+            SelectFirst[
+                {
+                    "SemanticSearch`SentenceBERTEmbedding",
+                    "SemanticSearch`SemanticSearch`Private`SentenceBERTEmbedding"
+                },
+                NameQ @ # && ToExpression[ #, InputForm, System`Private`HasAnyEvaluationsQ ] &
+            ],
+            StringQ,
+            "SymbolName"
+        ];
+
+        getSentenceBERTEmbeddingFunction[ ] = Symbol @ name
+    ],
+    throwInternalFailure
+];
+
+getSentenceBERTEmbeddingFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
