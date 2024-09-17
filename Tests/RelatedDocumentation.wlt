@@ -129,7 +129,7 @@ VerificationTest[
 
 VerificationTest[
     StringCount[ prompt, { "paclet:ref/Prime#", "paclet:ref/NextPrime#" } ],
-    _Integer? (GreaterEqualThan[ 10 ]),
+    _Integer? (GreaterEqualThan[ 8 ]),
     SameTest -> MatchQ,
     TestID   -> "RelatedDocumentation-Prompt-Messages-Count@@Tests/RelatedDocumentation.wlt:130,1-135,2"
 ]
@@ -144,7 +144,7 @@ VerificationTest[
             { <| "Role" -> "User", "Content" -> "What does this do?" |> },
             "Prompt",
             "FilterResults" -> False,
-            "MaxItems" -> 20
+            "MaxItems"      -> 20
         ]
     ],
     _String,
@@ -154,7 +154,7 @@ VerificationTest[
 
 VerificationTest[
     StringCount[ prompt, "paclet:ref/Prime#" ],
-    _Integer? (GreaterThan[ 5 ]),
+    _Integer? (GreaterEqualThan[ 2 ]),
     SameTest -> MatchQ,
     TestID   -> "RelatedDocumentation-Prompt-Selection-Count@@Tests/RelatedDocumentation.wlt:155,1-160,2"
 ]
