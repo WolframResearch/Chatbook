@@ -14,6 +14,11 @@ Needs[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
 (*Configuration*)
 $documentationSnippetBaseURL = "https://www.wolframcloud.com/obj/wolframai-content/DocumentationSnippets/Text";
 
+$snippetsCacheDirectory := $snippetsCacheDirectory = FileNameJoin @ {
+    ExpandFileName @ LocalObject @ $LocalBase,
+    "Chatbook/DocumentationSnippets"
+};
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*RelatedDocumentation*)
@@ -289,7 +294,7 @@ getDocumentationSnippetData[ uris: { __String } ] := Enclose[
             "Missing"
         ];
 
-        fetchDocumentationSnippets @ missing;
+        LogChatTiming @ fetchDocumentationSnippets @ missing;
 
         ConfirmBy[
             AssociationMap[ getCachedDocumentationSnippet, uris ],
@@ -308,8 +313,61 @@ getDocumentationSnippetData // endDefinition;
 getCachedDocumentationSnippet // beginDefinition;
 getCachedDocumentationSnippet[ uri_String ] := getCachedDocumentationSnippet @ StringSplit[ uri, "#" ];
 getCachedDocumentationSnippet[ { base_String } ] := getCachedDocumentationSnippet @ { base, None };
-getCachedDocumentationSnippet[ { base_String, fragment_ } ] := $documentationSnippets[ base, fragment ];
+getCachedDocumentationSnippet[ { base_String, fragment_ } ] := getCachedDocumentationSnippet0[ base, fragment ];
 getCachedDocumentationSnippet // endDefinition;
+
+
+getCachedDocumentationSnippet0 // beginDefinition;
+
+getCachedDocumentationSnippet0[ base_String, fragment_ ] :=
+    With[ { snippet = $documentationSnippets[ base, fragment ] },
+        snippet /; snippetDataQ @ snippet
+    ];
+
+getCachedDocumentationSnippet0[ base_String, fragment_ ] := Enclose[
+    Catch @ Module[ { file, data, snippet },
+        file = ConfirmBy[ snippetCacheFile @ base, StringQ, "File" ];
+        data = If[ TrueQ @ FileExistsQ @ file, Quiet @ Developer`ReadWXFFile @ file, Throw @ Missing[ "NotCached" ] ];
+        snippet = data[ fragment ];
+        If[ AssociationQ @ data && snippetDataQ @ snippet,
+            $documentationSnippets[ base ] = data; snippet,
+            Missing[ "NotCached" ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+getCachedDocumentationSnippet0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*snippetDataQ*)
+snippetDataQ // beginDefinition;
+snippetDataQ[ KeyValuePattern[ "String" -> _String ] ] := True;
+snippetDataQ[ _ ] := False;
+snippetDataQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*snippetCacheFile*)
+snippetCacheFile // beginDefinition;
+
+snippetCacheFile[ uri_String ] /; StringStartsQ[ uri, "paclet:" ] :=
+    snippetCacheFile[ uri, StringDelete[ uri, "paclet:" ], "Documentation" ];
+
+snippetCacheFile[ uri_String ] /; StringStartsQ[ uri, "https://resources.wolframcloud.com/" ] :=
+    snippetCacheFile[ uri, StringDelete[ uri, "https://resources.wolframcloud.com/" ], "ResourceSystem" ];
+
+snippetCacheFile[ uri_String, path0_String, name_String ] := Enclose[
+    Module[ { path, file },
+        path = ConfirmBy[ StringTrim[ path0, "/" ] <> ".wxf", StringQ, "Path" ];
+        file = ConfirmBy[ FileNameJoin @ { $snippetsCacheDirectory, name, path }, StringQ, "File" ];
+        snippetCacheFile[ uri ] = file
+    ],
+    throwInternalFailure
+];
+
+snippetCacheFile // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -382,7 +440,7 @@ toDocSnippetURL0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*processDocumentationSnippetResults*)
 processDocumentationSnippetResults // beginDefinition;
-processDocumentationSnippetResults[ results_Association ] := processDocumentationSnippetResult /@ results;
+processDocumentationSnippetResults[ results_Association ] := KeyValueMap[ processDocumentationSnippetResult, results ];
 processDocumentationSnippetResults // endDefinition;
 
 (* TODO: retry failed results *)
@@ -392,17 +450,24 @@ processDocumentationSnippetResults // endDefinition;
 (*processDocumentationSnippetResult*)
 processDocumentationSnippetResult // beginDefinition;
 
-processDocumentationSnippetResult[ as_Association ] :=
-    processDocumentationSnippetResult[ as, as[ "BodyByteArray" ], as[ "StatusCode" ] ];
+processDocumentationSnippetResult[ base_String, as_Association ] :=
+    processDocumentationSnippetResult[ base, as, as[ "BodyByteArray" ], as[ "StatusCode" ] ];
 
-processDocumentationSnippetResult[ as_, bytes_ByteArray, 200 ] :=
-    processDocumentationSnippetResult[ as, Quiet @ Developer`ReadWXFByteArray @ bytes ];
+processDocumentationSnippetResult[ base_String, as_, bytes_ByteArray, 200 ] :=
+    processDocumentationSnippetResult[ base, as, Quiet @ Developer`ReadWXFByteArray @ bytes ];
 
-processDocumentationSnippetResult[ as_, data_List ] :=
-    Association[
-        makeCombinedSnippet @ data,
-        cacheDocumentationSnippetResult /@ data
-    ];
+processDocumentationSnippetResult[ base_String, as_, data_List ] := Enclose[
+    Module[ { combined, keyed, processed, file },
+        combined = ConfirmMatch[ makeCombinedSnippet @ data, None -> _Association, "Combined" ];
+        keyed = Last @ StringSplit[ ConfirmBy[ #[ "URI" ], StringQ, "URI" ], "#" ] -> # & /@ data;
+        processed = ConfirmBy[ Association[ combined, keyed ], AssociationQ, "Processed" ];
+        file = ConfirmBy[ snippetCacheFile @ base, StringQ, "File" ];
+        ConfirmBy[ GeneralUtilities`EnsureDirectory @ DirectoryName @ file, DirectoryQ, "Directory" ];
+        ConfirmBy[ Developer`WriteWXFFile[ file, processed ], FileExistsQ, "Export" ];
+        $documentationSnippets[ base ] = processed
+    ],
+    throwInternalFailure
+];
 
 processDocumentationSnippetResult // endDefinition;
 
@@ -410,18 +475,9 @@ processDocumentationSnippetResult // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeCombinedSnippet*)
 makeCombinedSnippet // beginDefinition;
-
 makeCombinedSnippet[ { data_Association, ___ } ] := makeCombinedSnippet @ data;
-
-makeCombinedSnippet[ data_Association ] := Enclose[
-    Module[ { uri, base },
-        uri = ConfirmBy[ data[ "URI" ], StringQ, "URI" ];
-        base = ConfirmBy[ First @ StringSplit[ uri, "#" ], StringQ, "Base" ];
-        cacheDocumentationSnippetResult[ { base, None }, data ]
-    ],
-    throwInternalFailure
-];
-
+(* TODO: combined several initial snippets instead of just one *)
+makeCombinedSnippet[ data_Association ] := None -> data;
 makeCombinedSnippet // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
