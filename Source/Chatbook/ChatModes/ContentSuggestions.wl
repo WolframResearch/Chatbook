@@ -480,7 +480,7 @@ postProcessWLSuggestions[ suggestion_String ] := Enclose[
 
         ConfirmMatch[
             If[ TrueQ @ $stripWhitespace,
-                Flatten @ BoxData @ StripBoxes @ stringToBoxes @ noLabels,
+                Flatten @ BoxData @ StripBoxes @ StringToBoxes[ noLabels, "WL" ],
                 Flatten @ BoxData @ simpleStringToBoxes @ noLabels
             ],
             _BoxData,
