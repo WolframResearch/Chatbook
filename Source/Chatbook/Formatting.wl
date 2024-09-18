@@ -1784,8 +1784,12 @@ formatNLInputs // beginDefinition;
 formatNLInputs[ string_String ] :=
     StringReplace[
         string,
-        "\[FreeformPrompt][\"" ~~ q: Except[ "\"" ].. ~~ ("\"]"|EndOfString) :>
-            ToString[ RawBoxes @ formatNLInputFast @ q, StandardForm ]
+        {
+            "\[FreeformPrompt][\"" ~~ q: Except[ "\"" ].. ~~ ("\"]"|EndOfString) :>
+                ToString[ RawBoxes @ formatNLInputFast @ q, StandardForm ],
+            "ResourceFunction[\"" ~~ name: Except[ "\"" ].. ~~ ("\"]"|EndOfString) :>
+                ToString[ RawBoxes @ formatResourceFunctionFast @ name, StandardForm ]
+        }
     ];
 
 formatNLInputs[ boxes_ ] :=
@@ -1795,9 +1799,46 @@ formatNLInputs[ boxes_ ] :=
         ,
         RowBox @ { "\[FreeformPrompt]", "[", q_String } /; StringMatchQ[ q, "\""~~Except[ "\""]..~~("\""|"") ] :>
             RuleCondition @ formatNLInputFast @ q
+        ,
+        RowBox @ { "ResourceFunction", "[", name_String, "]" } /; StringMatchQ[ name, "\""~~Except[ "\""]..~~"\"" ] :>
+            RuleCondition @ If[ TrueQ @ $dynamicText,
+                                formatResourceFunctionFast @ name,
+                                formatResourceFunctionSlow @ name
+                            ]
     };
 
 formatNLInputs // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatResourceFunctionFast*)
+formatResourceFunctionFast // beginDefinition;
+
+formatResourceFunctionFast[ name_String ] := (
+    Needs[ "FunctionResource`" -> None ];
+    FunctionResource`InertResourceFunctionBoxes[ "Published", StringTrim[ name, "\"" ] ]
+);
+
+formatResourceFunctionFast // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatResourceFunctionSlow*)
+formatResourceFunctionSlow // beginDefinition;
+
+(* formatResourceFunctionSlow[ name_String ] := (
+    Needs[ "FunctionResource`" -> None ];
+    With[ { display = FunctionResource`InertResourceFunctionBoxes[ "Published", StringTrim[ name, "\"" ] ] },
+        InterpretationBox[ display, ResourceFunction @ name, Selectable -> False, SelectWithContents -> True ]
+    ]
+); *)
+
+formatResourceFunctionSlow[ name_String ] := (
+    Needs[ "FunctionResource`" -> None ];
+    FunctionResource`MakeResourceFunctionBoxes @ StringTrim[ name, "\"" ]
+);
+
+formatResourceFunctionSlow // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
