@@ -38,6 +38,8 @@ Do not include any formatting in your response. Do not include outputs or `In[]:
 %%RelatedDocumentation%%",
 Delimiters -> "%%" ];
 
+$defaultWLContextString = "";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*TextData Suggestions*)
@@ -324,19 +326,49 @@ generateWLSuggestions // endDefinition;
 (*preprocessRelatedDocsContext*)
 preprocessRelatedDocsContext // beginDefinition;
 
-preprocessRelatedDocsContext[ context_String ] :=
-    preprocessRelatedDocsContext[
-        context,
-        StringSplit[ context, code: Shortest[ "```" ~~ __ ~~ "```" ] :> codeBlock @ code ]
-    ];
-
-preprocessRelatedDocsContext[ context_, { ___, text_String, codeBlock[ code_String ] } ] :=
-    StringJoin[ text, code ];
-
-preprocessRelatedDocsContext[ context_String, { (_String|_codeBlock)... } ] :=
-    context;
+preprocessRelatedDocsContext[ context_String ] := Enclose[
+    Module[ { processed, noPlaceholder },
+        processed     = ConfirmBy[ preprocessRelatedDocsContext0 @ context, StringQ, "Processed" ];
+        noPlaceholder = ConfirmBy[ StringDelete[ processed, $wlPlaceholderString ], StringQ, "NoPlaceholder" ];
+        ConfirmBy[
+            StringReplace[
+                StringTrim @ noPlaceholder,
+                StartOfString ~~ "```wl" ~~ WhitespaceCharacter... ~~ "```" ~~ EndOfString :> $defaultWLContextString
+            ],
+            StringQ,
+            "Result"
+        ]
+    ],
+    throwInternalFailure
+];
 
 preprocessRelatedDocsContext // endDefinition;
+
+
+preprocessRelatedDocsContext0 // beginDefinition;
+
+preprocessRelatedDocsContext0[ context_String ] :=
+    preprocessRelatedDocsContext0[
+        context,
+        DeleteCases[
+            StringSplit[ context, code: Shortest[ "```" ~~ __ ~~ "```" ] :> codeBlock @ code ],
+            _String? (StringMatchQ[ WhitespaceCharacter... ])
+        ]
+    ];
+
+preprocessRelatedDocsContext0[ context_, { ___, text_String, codeBlock[ code_String ] } ] :=
+    StringJoin[ text, code ];
+
+(* SentenceBERT doesn't do well with pure code, so don't try to include documentation RAG if that's all we have: *)
+preprocessRelatedDocsContext0[ context_, { ___codeBlock } ] :=
+    "";
+
+(* TODO: in cases like this, it might be best to just use heuristics to choose relevant documentation from symbols. *)
+
+preprocessRelatedDocsContext0[ context_String, { (_String|_codeBlock)... } ] :=
+    context;
+
+preprocessRelatedDocsContext0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

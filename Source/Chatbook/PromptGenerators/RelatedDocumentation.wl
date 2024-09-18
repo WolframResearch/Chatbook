@@ -7,8 +7,6 @@ Needs[ "Wolfram`Chatbook`"                         ];
 Needs[ "Wolfram`Chatbook`Common`"                  ];
 Needs[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
 
-(* TODO: move selectBestDocumentationPages to this file and implement via filtering option for RelatedDocumentation *)
-
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
