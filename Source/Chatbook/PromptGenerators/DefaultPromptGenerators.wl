@@ -19,8 +19,31 @@ $defaultPromptGenerators := $defaultPromptGenerators = <|
     "RelatedWolframAlphaQueries" -> LLMPromptGenerator[ relatedWolframAlphaQueriesGenerator, "Messages" ]
 |>;
 
-relatedDocumentationGenerator       := LogChatTiming @ RelatedDocumentation[ #, "Prompt", MaxItems -> 20 ] &;
-relatedWolframAlphaQueriesGenerator := LogChatTiming @ RelatedWolframAlphaQueries[ #, "Prompt" ] &;
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*relatedDocumentationGenerator*)
+relatedDocumentationGenerator // beginDefinition;
+
+relatedDocumentationGenerator[ messages: $$chatMessages ] :=
+    If[ TrueQ[ $InlineChat || $WorkspaceChat ], (* TODO: define a flag for when using Code Assistance instead of this *)
+        LogChatTiming @ RelatedDocumentation[ messages, "Prompt", MaxItems -> 20, "FilterResults" -> True ],
+        LogChatTiming @ RelatedDocumentation[ messages, "Prompt", MaxItems -> 5, "FilterResults" -> False ]
+    ];
+
+relatedDocumentationGenerator // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*relatedWolframAlphaQueriesGenerator*)
+relatedWolframAlphaQueriesGenerator // beginDefinition;
+
+relatedWolframAlphaQueriesGenerator[ messages: $$chatMessages ] :=
+    If[ TrueQ[ $InlineChat || $WorkspaceChat ],
+        LogChatTiming @ RelatedWolframAlphaQueries[ messages, "Prompt", MaxItems -> 20, "FilterResults" -> True ],
+        LogChatTiming @ RelatedWolframAlphaQueries[ messages, "Prompt", MaxItems -> 5, "FilterResults" -> False ]
+    ];
+
+relatedWolframAlphaQueriesGenerator // endDefinition;
 
 (* TODO: prompt generator selectors that work like tool selections *)
 

@@ -7,8 +7,6 @@ Needs[ "Wolfram`Chatbook`"                         ];
 Needs[ "Wolfram`Chatbook`Common`"                  ];
 Needs[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
 
-(* TODO: move selectBestDocumentationPages to this file and implement via filtering option for RelatedDocumentation *)
-
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
@@ -164,7 +162,7 @@ relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_ ] := Enclo
 
         If[ string === "",
             "",
-            $relatedDocsStringHeader <> string
+            prependRelatedDocsHeader[ string, filter ]
         ]
     ],
     throwInternalFailure
@@ -172,11 +170,20 @@ relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_ ] := Enclo
 
 relatedDocumentationPrompt // endDefinition;
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*prependRelatedDocsHeader*)
+prependRelatedDocsHeader // beginDefinition;
+prependRelatedDocsHeader[ string_String, True ] := $relatedDocsStringFilteredHeader <> string;
+prependRelatedDocsHeader[ string_String, _    ] := $relatedDocsStringUnfilteredHeader <> string;
+prependRelatedDocsHeader // endDefinition;
 
-$relatedDocsStringHeader = "\
-IMPORTANT: Here are some Wolfram documentation snippets that you should use to respond.
 
-";
+$relatedDocsStringFilteredHeader =
+"IMPORTANT: Here are some Wolfram documentation snippets that you should use to respond.\n\n";
+
+$relatedDocsStringUnfilteredHeader =
+"Here are some Wolfram documentation snippets that you may find useful.\n\n";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

@@ -120,7 +120,7 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
 
         If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
         needsBasePrompt @ settings;
-        prompted = addPrompts[ settings, messages0 ];
+        prompted = addPrompts[ settings, DeleteCases[ messages0, KeyValuePattern[ "Temporary" -> True ] ] ];
 
         messages = prompted /.
             s_String :> RuleCondition @ StringTrim @ StringReplace[
@@ -148,7 +148,7 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
         generatedPrompts = ConfirmMatch[ applyPromptGenerators[ settings, merged ], { ___String }, "Generated" ];
 
         generatedMessages = Splice @ ConfirmMatch[
-            <| "Role" -> genRole, "Content" -> # |> & /@ generatedPrompts,
+            <| "Role" -> genRole, "Content" -> #, "Temporary" -> True |> & /@ generatedPrompts,
             $$chatMessages,
             "GeneratedMessages"
         ];

@@ -22,12 +22,12 @@ $wlSuggestionsMultimodal  = False;
 $wlSuggestionsCount       = 3;
 $wlSuggestionsMaxTokens   = 128;
 $wlSuggestionsTemperature = 0.9;
-$wlPlaceholderString      = "<placeholder>";
-$wlCellsBefore            = 20;
-$wlCellsAfter             = 5;
+$wlPlaceholderString      = "\:2758";
+$wlCellsBefore            = 50;
+$wlCellsAfter             = 10;
 
 $wlSuggestionsPrompt = StringTemplate[ "\
-Complete the following Wolfram Language code by writing text that can be inserted into %%Placeholder%%.
+Complete the following Wolfram Language code by writing text that can be inserted into \"%%Placeholder%%\".
 Do your best to match the existing style (whitespace, line breaks, etc.).
 Your suggested text will be inserted into %%Placeholder%%, so be careful not to repeat the immediately surrounding text.
 Use `%` to refer to the previous output or `%n` for earlier outputs (where n is an output number) when appropriate.
@@ -38,6 +38,8 @@ Do not include any formatting in your response. Do not include outputs or `In[]:
 %%RelatedDocumentation%%",
 Delimiters -> "%%" ];
 
+$defaultWLContextString = "";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*TextData Suggestions*)
@@ -46,12 +48,12 @@ $textSuggestionsMultimodal  = False;
 $textSuggestionsCount       = 3;
 $textSuggestionsMaxTokens   = 256;
 $textSuggestionsTemperature = 0.7;
-$textPlaceholderString      = "<placeholder>";
-$textCellsBefore            = 20;
+$textPlaceholderString      = "\:2758";
+$textCellsBefore            = 50;
 $textCellsAfter             = 20;
 
 $textSuggestionsPrompt = StringTemplate[ "\
-Complete the following by writing text that can be inserted into %%Placeholder%%.
+Complete the following by writing text that can be inserted into \"%%Placeholder%%\".
 The current cell style is \"%%Style%%\", so only write content that would be appropriate for this cell type.
 Do your best to match the existing style (whitespace, line breaks, etc.).
 Your suggested text will be inserted into %%Placeholder%%, so be careful not to repeat the immediately surrounding text.
@@ -324,19 +326,49 @@ generateWLSuggestions // endDefinition;
 (*preprocessRelatedDocsContext*)
 preprocessRelatedDocsContext // beginDefinition;
 
-preprocessRelatedDocsContext[ context_String ] :=
-    preprocessRelatedDocsContext[
-        context,
-        StringSplit[ context, code: Shortest[ "```" ~~ __ ~~ "```" ] :> codeBlock @ code ]
-    ];
-
-preprocessRelatedDocsContext[ context_, { ___, text_String, codeBlock[ code_String ] } ] :=
-    StringJoin[ text, code ];
-
-preprocessRelatedDocsContext[ context_String, { (_String|_codeBlock)... } ] :=
-    context;
+preprocessRelatedDocsContext[ context_String ] := Enclose[
+    Module[ { processed, noPlaceholder },
+        processed     = ConfirmBy[ preprocessRelatedDocsContext0 @ context, StringQ, "Processed" ];
+        noPlaceholder = ConfirmBy[ StringDelete[ processed, $wlPlaceholderString ], StringQ, "NoPlaceholder" ];
+        ConfirmBy[
+            StringReplace[
+                StringTrim @ noPlaceholder,
+                StartOfString ~~ "```wl" ~~ WhitespaceCharacter... ~~ "```" ~~ EndOfString :> $defaultWLContextString
+            ],
+            StringQ,
+            "Result"
+        ]
+    ],
+    throwInternalFailure
+];
 
 preprocessRelatedDocsContext // endDefinition;
+
+
+preprocessRelatedDocsContext0 // beginDefinition;
+
+preprocessRelatedDocsContext0[ context_String ] :=
+    preprocessRelatedDocsContext0[
+        context,
+        DeleteCases[
+            StringSplit[ context, code: Shortest[ "```" ~~ __ ~~ "```" ] :> codeBlock @ code ],
+            _String? (StringMatchQ[ WhitespaceCharacter... ])
+        ]
+    ];
+
+preprocessRelatedDocsContext0[ context_, { ___, text_String, codeBlock[ code_String ] } ] :=
+    StringJoin[ text, code ];
+
+(* SentenceBERT doesn't do well with pure code, so don't try to include documentation RAG if that's all we have: *)
+preprocessRelatedDocsContext0[ context_, { ___codeBlock } ] :=
+    "";
+
+(* TODO: in cases like this, it might be best to just use heuristics to choose relevant documentation from symbols. *)
+
+preprocessRelatedDocsContext0[ context_String, { (_String|_codeBlock)... } ] :=
+    context;
+
+preprocessRelatedDocsContext0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -462,7 +494,11 @@ postProcessWLSuggestions[ suggestion_String ] := Enclose[
                 StringTrim @ StringDelete[
                 If[ StringContainsQ[ noOutputs, "```"~~__~~"```" ],
                     ConfirmBy[
-                        First @ StringCases[ noOutputs, "```" ~~ Except[ "\n" ]... ~~ "\n" ~~ code___ ~~ "```" :> code, 1 ],
+                        First @ StringCases[
+                            noOutputs,
+                            "```" ~~ Except[ "\n" ]... ~~ "\n" ~~ code___ ~~ "```" :> code,
+                            1
+                        ],
                         StringQ,
                         "NoBlocks"
                     ],
@@ -480,7 +516,7 @@ postProcessWLSuggestions[ suggestion_String ] := Enclose[
 
         ConfirmMatch[
             If[ TrueQ @ $stripWhitespace,
-                Flatten @ BoxData @ StripBoxes @ stringToBoxes @ noLabels,
+                Flatten @ BoxData @ StripBoxes @ StringToBoxes[ noLabels, "WL" ],
                 Flatten @ BoxData @ simpleStringToBoxes @ noLabels
             ],
             _BoxData,
@@ -643,7 +679,8 @@ formatSuggestion[ root_CellObject, nbo_NotebookObject, { styles___String }, sugg
                 ShowStringCharacters -> True,
                 ShowAutoStyles       -> True,
                 LanguageCategory     -> "Input",
-                LineBreakWithin      -> True,
+                LineBreakWithin      -> Automatic,
+                LineIndent           -> 1,
                 PageWidth            :> WindowWidth
             },
             Sequence @@ { }
