@@ -462,7 +462,11 @@ postProcessWLSuggestions[ suggestion_String ] := Enclose[
                 StringTrim @ StringDelete[
                 If[ StringContainsQ[ noOutputs, "```"~~__~~"```" ],
                     ConfirmBy[
-                        First @ StringCases[ noOutputs, "```" ~~ Except[ "\n" ]... ~~ "\n" ~~ code___ ~~ "```" :> code, 1 ],
+                        First @ StringCases[
+                            noOutputs,
+                            "```" ~~ Except[ "\n" ]... ~~ "\n" ~~ code___ ~~ "```" :> code,
+                            1
+                        ],
                         StringQ,
                         "NoBlocks"
                     ],
@@ -643,7 +647,8 @@ formatSuggestion[ root_CellObject, nbo_NotebookObject, { styles___String }, sugg
                 ShowStringCharacters -> True,
                 ShowAutoStyles       -> True,
                 LanguageCategory     -> "Input",
-                LineBreakWithin      -> True,
+                LineBreakWithin      -> Automatic,
+                LineIndent           -> 1,
                 PageWidth            :> WindowWidth
             },
             Sequence @@ { }
