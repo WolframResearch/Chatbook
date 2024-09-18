@@ -22,12 +22,12 @@ $wlSuggestionsMultimodal  = False;
 $wlSuggestionsCount       = 3;
 $wlSuggestionsMaxTokens   = 128;
 $wlSuggestionsTemperature = 0.9;
-$wlPlaceholderString      = "<placeholder>";
-$wlCellsBefore            = 20;
-$wlCellsAfter             = 5;
+$wlPlaceholderString      = "\:2758";
+$wlCellsBefore            = 50;
+$wlCellsAfter             = 10;
 
 $wlSuggestionsPrompt = StringTemplate[ "\
-Complete the following Wolfram Language code by writing text that can be inserted into %%Placeholder%%.
+Complete the following Wolfram Language code by writing text that can be inserted into \"%%Placeholder%%\".
 Do your best to match the existing style (whitespace, line breaks, etc.).
 Your suggested text will be inserted into %%Placeholder%%, so be careful not to repeat the immediately surrounding text.
 Use `%` to refer to the previous output or `%n` for earlier outputs (where n is an output number) when appropriate.
@@ -48,12 +48,12 @@ $textSuggestionsMultimodal  = False;
 $textSuggestionsCount       = 3;
 $textSuggestionsMaxTokens   = 256;
 $textSuggestionsTemperature = 0.7;
-$textPlaceholderString      = "<placeholder>";
-$textCellsBefore            = 20;
+$textPlaceholderString      = "\:2758";
+$textCellsBefore            = 50;
 $textCellsAfter             = 20;
 
 $textSuggestionsPrompt = StringTemplate[ "\
-Complete the following by writing text that can be inserted into %%Placeholder%%.
+Complete the following by writing text that can be inserted into \"%%Placeholder%%\".
 The current cell style is \"%%Style%%\", so only write content that would be appropriate for this cell type.
 Do your best to match the existing style (whitespace, line breaks, etc.).
 Your suggested text will be inserted into %%Placeholder%%, so be careful not to repeat the immediately surrounding text.
