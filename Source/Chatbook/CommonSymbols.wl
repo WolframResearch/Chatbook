@@ -202,6 +202,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `menuMagnification;
 `mergeChatSettings;
 `mergeCodeBlocks;
+`messageListToString;
 `modelDisplayName;
 `modelListCachedQ;
 `modifierTemplateBoxes;

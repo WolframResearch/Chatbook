@@ -15,7 +15,10 @@ $defaultLLMSynthesizeEvaluator = <| "Model" -> <| "Service" -> "OpenAI", "Name" 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*LLM Utilities*)
-$$llmPrompt = $$string|$$graphics|{ ($$string|$$graphics).. };
+$$llmPromptString   = $$string   | KeyValuePattern @ { "Type" -> "Text" , "Data" -> $$string   };
+$$llmPromptGraphics = $$graphics | KeyValuePattern @ { "Type" -> "Image", "Data" -> $$graphics };
+$$llmPromptItem     = $$llmPromptString | $$llmPromptGraphics;
+$$llmPrompt         = $$llmPromptItem | { $$llmPromptItem.. };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -108,16 +111,16 @@ truncatePrompt // beginDefinition;
 truncatePrompt[ string_String, evaluator_ ] :=  stringTrimMiddle[ string, modelContextLimit @ evaluator ];
 truncatePrompt[ { strings___String }, evaluator_ ] := truncatePrompt[ StringJoin @ strings, evaluator ];
 
-truncatePrompt[ prompts: { (_String|_Image).. }, evaluator_ ] := Enclose[
+truncatePrompt[ prompts: { ($$string|$$graphics).. }, evaluator_ ] := Enclose[
     Module[ { stringCount, images, imageCount, budget, imageBudget, resized, imageTokens, stringBudget },
 
         stringCount = Count[ prompts, _String ];
-        images = Cases[ prompts, _Image  ];
+        images = Cases[ prompts, $$graphics ];
         imageCount = Length @ images;
         budget = ConfirmBy[ modelContextLimit @ evaluator, IntegerQ, "Budget" ];
         imageBudget = Max[ 512, 2^(13 - imageCount) ];
-        resized = Replace[ prompts, i_Image :> resizePromptImage[ i, imageBudget ], { 1 } ];
-        imageTokens = Total @ Cases[ resized, i_Image :> imageTokenCount @ i ];
+        resized = Replace[ prompts, i: $$graphics :> resizePromptImage[ i, imageBudget ], { 1 } ];
+        imageTokens = Total @ Cases[ resized, i: $$graphics :> imageTokenCount @ i ];
 
         stringBudget = ConfirmMatch[
             Floor[ (budget - imageTokens) / stringCount ],
@@ -134,6 +137,9 @@ truncatePrompt[ prompts: { (_String|_Image).. }, evaluator_ ] := Enclose[
     throwInternalFailure
 ];
 
+truncatePrompt[ prompts: { ___, _Association, ___ }, evaluator_ ] :=
+    truncatePrompt[ Replace[ prompts, as_Association :> as[ "Data" ], { 1 } ], evaluator ];
+
 truncatePrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -141,7 +147,7 @@ truncatePrompt // endDefinition;
 (*resizePromptImage*)
 resizePromptImage // beginDefinition;
 
-resizePromptImage[ image_Image ] := resizePromptImage[ image, 4096 ];
+resizePromptImage[ image_ ] := resizePromptImage[ image, 4096 ];
 
 resizePromptImage[ image_Image, max_Integer ] := Enclose[
     Module[ { dims, size },
@@ -151,6 +157,9 @@ resizePromptImage[ image_Image, max_Integer ] := Enclose[
     ],
     throwInternalFailure
 ];
+
+resizePromptImage[ gfx: $$graphics, max_Integer ] :=
+    resizePromptImage[ resizeMultimodalImage @ gfx, max ];
 
 resizePromptImage // endDefinition;
 
