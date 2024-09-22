@@ -13,8 +13,9 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 $workspaceChatWidth = 325;
 
 $codeAssistanceSettings = <|
-    "ServiceCaller"     -> "CodeAssistance",
+    "AppName"           -> "CodeAssistance",
     "PromptGenerators"  -> { "RelatedDocumentation" },
+    "ServiceCaller"     -> "CodeAssistance",
     "Tools"             -> { "NotebookEditor" },
     "ToolSelectionType" -> <| "DocumentationLookup" -> None, "DocumentationSearcher" -> None |>
 |>;
