@@ -89,7 +89,7 @@ makeChatTranscript[ messages_List, opts: OptionsPattern[ ] ] :=
         revertMultimodalContent @ messages,
         revertMultimodalContent @ Replace[
             messages,
-            { KeyValuePattern[ "Role"|"role" -> "System"|"system" ], rest___ } :> { rest }
+            { Longest[ KeyValuePattern[ "Role"|"role" -> "System"|"system" ].. ], rest___ } :> { rest }
         ]
     ];
 

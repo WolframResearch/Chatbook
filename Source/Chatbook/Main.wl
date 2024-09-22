@@ -51,6 +51,8 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `FormatToolCall;
 `FormatToolResponse;
 `FormatWolframAlphaPods;
+`GenerateChatTitle;
+`GenerateChatTitleAsynchronous;
 `GetChatHistory;
 `GetExpressionURI;
 `GetExpressionURIs;
@@ -108,6 +110,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`ChatMessages`",
     "Wolfram`Chatbook`ChatModes`",
     "Wolfram`Chatbook`ChatState`",
+    "Wolfram`Chatbook`ChatTitle`",
     "Wolfram`Chatbook`CloudToolbar`",
     "Wolfram`Chatbook`Common`",
     "Wolfram`Chatbook`CreateChatNotebook`",
@@ -192,6 +195,8 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "FormatToolCall",
     "FormatToolResponse",
     "FormatWolframAlphaPods",
+    "GenerateChatTitle",
+    "GenerateChatTitleAsynchronous",
     "GetChatHistory",
     "GetExpressionURI",
     "GetExpressionURIs",
