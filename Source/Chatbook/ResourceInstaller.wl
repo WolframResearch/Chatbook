@@ -60,10 +60,7 @@ $resourceBrowseURLs = <|
     "LLMTool" -> "https://resources.wolframcloud.com/LLMToolRepository"
 |>;
 
-$ResourceInstallationDirectory := GeneralUtilities`EnsureDirectory @ {
-    ExpandFileName @ LocalObject @ $LocalBase,
-    "Chatbook"
-};
+$ResourceInstallationDirectory := $ChatbookFilesDirectory;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

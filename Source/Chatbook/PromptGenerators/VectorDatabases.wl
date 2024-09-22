@@ -50,12 +50,7 @@ $vectorDBDownloadURLs = AssociationMap[
 (* ::Subsection::Closed:: *)
 (*Paths*)
 $pacletVectorDBDirectory := FileNameJoin @ { $thisPaclet[ "Location" ], "Assets/VectorDatabases" };
-
-$localVectorDBDirectory := FileNameJoin @ {
-    ExpandFileName @ LocalObject @ $LocalBase,
-    "Chatbook/VectorDatabases",
-    $dbVersion
-};
+$localVectorDBDirectory  := ChatbookFilesDirectory @ { "VectorDatabases", $dbVersion };
 
 (* TODO: need versioned URLs and paths *)
 

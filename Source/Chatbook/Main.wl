@@ -10,6 +10,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$AvailableTools;
 `$ChatAbort;
 `$ChatbookContexts;
+`$ChatbookFilesDirectory;
 `$ChatbookNames;
 `$ChatbookProtectedNames;
 `$ChatEvaluationCell;
@@ -38,6 +39,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `CellToString;
 `Chatbook;
 `ChatbookAction;
+`ChatbookFilesDirectory;
 `ChatCellEvaluate;
 `CreateChatDrivenNotebook;
 `CreateChatNotebook;
@@ -100,6 +102,7 @@ Chatbook is a symbol for miscellaneous chat notebook messages.\
 $ChatbookContexts = {
     "Wolfram`Chatbook`",
     "Wolfram`Chatbook`Actions`",
+    "Wolfram`Chatbook`ChatbookFiles`",
     "Wolfram`Chatbook`ChatGroups`",
     "Wolfram`Chatbook`ChatHistory`",
     "Wolfram`Chatbook`ChatMessages`",
@@ -156,6 +159,7 @@ $ChatbookNames := $ChatbookNames =
 $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "$AutomaticAssistance",
     "$ChatbookContexts",
+    "$ChatbookFilesDirectory",
     "$ChatNotebookEvaluation",
     "$ChatTimingData",
     "$CurrentChatSettings",
@@ -176,6 +180,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "CellToString",
     "Chatbook",
     "ChatbookAction",
+    "ChatbookFilesDirectory",
     "ChatCellEvaluate",
     "CreateChatDrivenNotebook",
     "CreateChatNotebook",
