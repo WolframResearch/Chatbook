@@ -1744,7 +1744,7 @@ activeAIAssistantCell[
                 CellTags           -> cellTags,
                 CellTrayWidgets    -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
                 PrivateCellOptions -> { "ContentsOpacity" -> 1 },
-                TaggingRules       -> <| "ChatNotebookSettings" -> smallSettings @ settings |>
+                TaggingRules       -> <| "ChatNotebookSettings" -> toSmallSettings @ settings |>
             ]
         ]
     ];
@@ -1805,7 +1805,7 @@ activeAIAssistantCell[
             Selectable         -> True,
             ShowAutoSpellCheck -> False,
             ShowCursorTracker  -> False,
-            TaggingRules       -> <| "ChatNotebookSettings" -> smallSettings @ settings |>,
+            TaggingRules       -> <| "ChatNotebookSettings" -> toSmallSettings @ settings |>,
             If[ scrollOutputQ @ settings,
                 PrivateCellOptions -> { "TrackScrollingWhenPlaced" -> True },
                 Sequence @@ { }
@@ -2282,7 +2282,7 @@ makeCompactChatData[
     BaseEncode @ BinarySerialize[
         DeleteCases[
             Association[
-                smallSettings @ as,
+                toSmallSettings @ as,
                 "MessageTag" -> tag,
                 "Data" -> Association[
                     data,
@@ -2301,29 +2301,29 @@ makeCompactChatData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*smallSettings*)
-smallSettings // beginDefinition;
-smallSettings[ as_Association ] := smallSettings0 @ KeyDrop[ as, { "OpenAIKey", "Tokenizer" } ] /. $exprToNameRules;
-smallSettings // endDefinition;
+(*toSmallSettings*)
+toSmallSettings // beginDefinition;
+toSmallSettings[ as_Association ] := toSmallSettings0 @ KeyDrop[ as, { "OpenAIKey", "Tokenizer" } ] /. $exprToNameRules;
+toSmallSettings // endDefinition;
 
-smallSettings0 // beginDefinition;
+toSmallSettings0 // beginDefinition;
 
-smallSettings0[ as: KeyValuePattern[ "Model" -> model: KeyValuePattern[ "Icon" -> _ ] ] ] :=
-    smallSettings0 @ <| as, "Model" -> KeyTake[ model, { "Service", "Name" } ] |>;
+toSmallSettings0[ as: KeyValuePattern[ "Model" -> model: KeyValuePattern[ "Icon" -> _ ] ] ] :=
+    toSmallSettings0 @ <| as, "Model" -> KeyTake[ model, { "Service", "Name" } ] |>;
 
-smallSettings0[ as_Association ] :=
-    smallSettings0[ as, as[ "LLMEvaluator" ] ];
+toSmallSettings0[ as_Association ] :=
+    toSmallSettings0[ as, as[ "LLMEvaluator" ] ];
 
-smallSettings0[ as_, KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] :=
+toSmallSettings0[ as_, KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] :=
     If[ AssociationQ @ GetCachedPersonaData @ name,
         Append[ as, "LLMEvaluator" -> name ],
         as
     ];
 
-smallSettings0[ as_, _ ] :=
+toSmallSettings0[ as_, _ ] :=
     as;
 
-smallSettings0 // endDefinition;
+toSmallSettings0 // endDefinition;
 
 
 $exprToNameRules := AssociationMap[ Reverse, $AvailableTools ];
