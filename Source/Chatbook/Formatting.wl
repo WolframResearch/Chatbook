@@ -578,6 +578,7 @@ formatRaw[ item_, { } ] := item;
 formatRaw[ item_, StyleBox[ box_ ] ] := formatRaw[ item, box ];
 formatRaw[ item_, box: _ButtonBox|_Cell|_StyleBox ] := RawBoxes @ box;
 formatRaw[ item_, string_String ] := string;
+formatRaw[ item_, text: $$textDataList ] := RawBoxes @ Cell @ TextData @ text;
 formatRaw // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
