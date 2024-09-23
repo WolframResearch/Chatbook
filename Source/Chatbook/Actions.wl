@@ -767,6 +767,9 @@ revertMultimodalContent[ as: KeyValuePattern[ "Content" -> content_List ] ] := <
     ]
 |>;
 
+revertMultimodalContent[ as: KeyValuePattern[ "Content" -> content_Association ] ] :=
+    revertMultimodalContent[ <| as, "Content" -> { content } |> ];
+
 revertMultimodalContent[ as: KeyValuePattern[ "Content" -> _String ] ] :=
     as;
 

@@ -7,7 +7,6 @@ HoldComplete[
     `$noSemanticSearch,
     `getSmallContextString,
     `insertContextPrompt,
-    `makeChatTranscript,
     `vectorDBSearch
 ];
 
