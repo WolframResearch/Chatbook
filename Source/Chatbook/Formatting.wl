@@ -1065,7 +1065,7 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 $$endToolCall       = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
 $$eol               = " "... ~~ "\n";
 $$cmd               = Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ];
-$$simpleToolCommand = StartOfLine ~~ $$ws ~~ ("/" ~~ c: $$cmd) ~~ $$eol /; $simpleToolMethod && toolShortNameQ @ c;
+$$simpleToolCommand = StartOfLine ~~ $$ws ~~ ("/" ~~ $$cmd) ~~ $$eol;
 $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|EndOfString) ];
 
 
@@ -1428,8 +1428,7 @@ parseToolCallID[ string_String? StringQ ] :=
                     WhitespaceCharacter...,
                     Alternatives[
                         "TOOLCALL:",
-                        StartOfLine ~~ "/" ~~ cmd: Except[ WhitespaceCharacter ].. ~~ WhitespaceCharacter... ~~ "\n" /;
-                            toolShortNameQ @ cmd
+                        StartOfLine ~~ "/" ~~ cmd: Except[ WhitespaceCharacter ].. ~~ WhitespaceCharacter... ~~ "\n"
                     ],
                     ___,
                     "ENDRESULT(",
