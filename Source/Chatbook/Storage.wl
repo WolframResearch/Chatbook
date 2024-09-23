@@ -1,16 +1,14 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
-BeginPackage[ "Wolfram`Chatbook`ChatModes`Storage`" ];
+BeginPackage[ "Wolfram`Chatbook`Storage`" ];
 Begin[ "`Private`" ];
 
-Needs[ "Wolfram`Chatbook`"                  ];
-Needs[ "Wolfram`Chatbook`Common`"           ];
-Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
+Needs[ "Wolfram`Chatbook`"        ];
+Needs[ "Wolfram`Chatbook`Common`" ];
 
 (* TODO:
     * Need to also save/restore tool call results
     * Save chat as a callback to GenerateChatTitleAsynchronous?
-    * Does this belong in the ChatModes context?
 *)
 
 (* ::**************************************************************************************************************:: *)
