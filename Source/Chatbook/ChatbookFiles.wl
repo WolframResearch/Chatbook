@@ -14,15 +14,23 @@ $chatbookRoot := FileNameJoin @ { ExpandFileName @ LocalObject @ $LocalBase, "Ch
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*$ChatbookFilesDirectory*)
-$ChatbookFilesDirectory := chatbookFilesDirectory @ { };
+$ChatbookFilesDirectory := chatbookFilesDirectory[ { }, False ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*ChatbookFilesDirectory*)
 ChatbookFilesDirectory // beginDefinition;
-ChatbookFilesDirectory[ ] := catchMine @ chatbookFilesDirectory @ { };
-ChatbookFilesDirectory[ name_String ] := catchMine @ chatbookFilesDirectory @ { name };
-ChatbookFilesDirectory[ { names___String } ] := catchMine @ chatbookFilesDirectory @ { names };
+ChatbookFilesDirectory // Options = { "EnsureDirectory" -> True };
+
+ChatbookFilesDirectory[ opts: OptionsPattern[ ] ] :=
+    catchMine @ chatbookFilesDirectory[ { }, OptionValue[ "EnsureDirectory" ] ];
+
+ChatbookFilesDirectory[ name_String, opts: OptionsPattern[ ] ] :=
+    catchMine @ chatbookFilesDirectory[ { name }, OptionValue[ "EnsureDirectory" ] ];
+
+ChatbookFilesDirectory[ { names___String }, opts: OptionsPattern[ ] ] :=
+    catchMine @ chatbookFilesDirectory[ { names }, OptionValue[ "EnsureDirectory" ] ];
+
 ChatbookFilesDirectory // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -30,8 +38,11 @@ ChatbookFilesDirectory // endExportedDefinition;
 (*chatbookFilesDirectory*)
 chatbookFilesDirectory // beginDefinition;
 
-chatbookFilesDirectory[ { names___String } ] := Enclose[
-    ConfirmBy[ GeneralUtilities`EnsureDirectory @ { $chatbookRoot, names }, DirectoryQ, "Directory" ],
+chatbookFilesDirectory[ { names___String }, ensure_ ] := Enclose[
+    If[ TrueQ @ ensure,
+        ConfirmBy[ GeneralUtilities`EnsureDirectory @ { $chatbookRoot, names }, DirectoryQ, "Directory" ],
+        ConfirmBy[ FileNameJoin @ { $chatbookRoot, names }, StringQ, "Directory" ]
+    ],
     throwInternalFailure
 ];
 
