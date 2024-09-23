@@ -220,24 +220,6 @@ stripSelectionIndicators // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*messagesToString*)
-messagesToString // beginDefinition;
-messagesToString[ messages_List ] := messagesToString[ messages, messageToString /@ revertMultimodalContent @ messages ];
-messagesToString[ _, strings: { ___String } ] := StringRiffle[ strings, "\n\n" ];
-messagesToString // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*messageToString*)
-messageToString // beginDefinition;
-messageToString[ KeyValuePattern[ "Content" -> content_ ] ] := messageToString @ content;
-messageToString[ KeyValuePattern[ "Data" -> content_ ] ] := messageToString @ content;
-messageToString[ { message___String } ] := StringJoin @ message;
-messageToString[ message_String ] := message;
-messageToString // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*postProcessNotebookContextString*)
 postProcessNotebookContextString // beginDefinition;
 

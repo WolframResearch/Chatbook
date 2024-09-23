@@ -57,7 +57,7 @@ generateChatTitle // beginDefinition;
 generateChatTitle[ messages_, callback_ ] := Enclose[
     Module[ { string, short, instructions, context },
 
-        string       = ConfirmBy[ messageListToString[ messages, "IncludeSystemMessage" -> False ], StringQ, "String" ];
+        string       = ConfirmBy[ messagesToString[ messages, "IncludeSystemMessage" -> False ], StringQ, "String" ];
         short        = ConfirmBy[ StringTake[ string, UpTo[ $maxContextLength ] ], StringQ, "Short" ];
         instructions = ConfirmBy[ TemplateApply[ $titlePrompt, short ], StringQ, "Prompt" ];
 

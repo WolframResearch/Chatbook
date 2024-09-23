@@ -11,6 +11,9 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (*Config*)
 $tinyHashLength = 5;
 
+$messageToStringDelimiter = "\n\n";
+$messageToStringTemplate  = StringTemplate[ "`Role`: `Content`" ];
+
 (* cSpell: ignore deflatten *)
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -39,6 +42,61 @@ importResourceFunction[ selectByCurrentValue, "SelectByCurrentValue" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Strings*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*messagesToString*)
+messagesToString // beginDefinition;
+
+messagesToString // Options = {
+    "IncludeSystemMessage"     -> False,
+    "IncludeTemporaryMessages" -> False,
+    "MessageDelimiter"         -> $messageToStringDelimiter,
+    "MessageTemplate"          -> $messageToStringTemplate
+};
+
+messagesToString[ { }, opts: OptionsPattern[ ] ] :=
+    "";
+
+messagesToString[ messages0_, opts: OptionsPattern[ ] ] := Enclose[
+    Catch @ Module[ { messages, system, temporary, template, delimiter, reverted, strings },
+
+        messages = ConfirmMatch[ messages0, $$chatMessages, "Messages" ];
+
+        (* Check if the system messages should be included: *)
+        system = ConfirmMatch[ OptionValue[ "IncludeSystemMessage" ], True|False, "System" ];
+        If[ ! system, messages = Replace[ messages, { KeyValuePattern[ "Role" -> "System" ], m___ } :> { m } ] ];
+        If[ messages === { }, Throw[ "" ] ];
+
+        (* Check if the temporary messages should be included: *)
+        temporary = ConfirmMatch[ OptionValue[ "IncludeTemporaryMessages" ], True|False, "Temporary" ];
+        If[ ! temporary, messages = DeleteCases[ messages, KeyValuePattern[ "Temporary" -> True ] ] ];
+        If[ messages === { }, Throw[ "" ] ];
+
+        template = ConfirmMatch[ OptionValue[ "MessageTemplate" ], _String|_TemplateObject|None, "Template" ];
+        delimiter = ConfirmMatch[ OptionValue[ "MessageDelimiter" ], _String, "Delimiter" ];
+
+        reverted = ConfirmMatch[
+            revertMultimodalContent @ messages,
+            { KeyValuePattern[ "Content" -> _String ].. },
+            "Reverted"
+        ];
+
+        strings = ConfirmMatch[
+            If[ template === None, Lookup[ reverted, "Content" ], TemplateApply[ template, # ] & /@ reverted ],
+            { __String },
+            "Strings"
+        ];
+
+        ConfirmBy[ StringRiffle[ strings, delimiter ], StringQ, "Result" ]
+    ],
+    throwInternalFailure
+];
+
+messagesToString[ { messages__ }, assistant_String, opts: OptionsPattern[ ] ] :=
+    messagesToString[ { messages, <| "Role" -> "Assistant", "Content" -> assistant |> }, opts ];
+
+messagesToString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
