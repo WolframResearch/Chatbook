@@ -29,32 +29,49 @@ Remember, respond only with the title and nothing else.";
 (* ::Section::Closed:: *)
 (*GenerateChatTitle*)
 GenerateChatTitle // beginDefinition;
+GenerateChatTitle // Options = { "Temperature" -> 0.7 };
 
-GenerateChatTitle[ messages: $$chatMessages ] := catchMine @ Enclose[
-    Module[ { title, callback, task },
-        callback = Function[ title = # ];
-        task = ConfirmMatch[ generateChatTitle[ messages, callback ], _TaskObject, "Task" ];
-        TaskWait @ task;
-        ConfirmMatch[ title, Except[ "", _String ], "Title" ]
-    ],
-    throwInternalFailure
-];
+GenerateChatTitle[ messages: $$chatMessages, opts: OptionsPattern[ ] ] :=
+    catchMine @ LogChatTiming @ generateChatTitle[ messages, OptionValue[ "Temperature" ] ];
 
 GenerateChatTitle // endExportedDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*GenerateChatTitleAsynchronous*)
-GenerateChatTitleAsynchronous // beginDefinition;
-GenerateChatTitleAsynchronous[ messages: $$chatMessages, f_ ] := catchMine @ generateChatTitle[ messages, f ];
-GenerateChatTitleAsynchronous // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*generateChatTitle*)
 generateChatTitle // beginDefinition;
 
-generateChatTitle[ messages_, callback_ ] := Enclose[
+generateChatTitle[ messages_, temperature_ ] := Enclose[
+    Module[ { title, task },
+
+        task = ConfirmMatch[
+            generateChatTitleAsync[ messages, Function[ title = # ], temperature ],
+            _TaskObject,
+            "Task"
+        ];
+
+        TaskWait @ task;
+
+        ConfirmMatch[ title, _String|_Failure, "Result" ]
+    ],
+    throwInternalFailure
+];
+
+generateChatTitle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*GenerateChatTitleAsynchronous*)
+GenerateChatTitleAsynchronous // beginDefinition;
+GenerateChatTitleAsynchronous[ messages: $$chatMessages, f_ ] := catchMine @ generateChatTitleAsync[ messages, f ];
+GenerateChatTitleAsynchronous // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*generateChatTitleAsync*)
+generateChatTitleAsync // beginDefinition;
+
+generateChatTitleAsync[ messages: $$chatMessages, callback_, temperature: Automatic | _? NumericQ ] := Enclose[
     Module[ { string, short, instructions, context },
 
         string       = ConfirmBy[ messagesToString[ messages, "IncludeSystemMessage" -> False ], StringQ, "String" ];
@@ -69,12 +86,51 @@ generateChatTitle[ messages_, callback_ ] := Enclose[
 
         $lastChatTitleContext = context;
 
-        ConfirmMatch[ llmSynthesizeSubmit[ context, callback ], _TaskObject, "Task" ]
+        ConfirmMatch[
+            llmSynthesizeSubmit[ context, <| "Temperature" -> temperature |>, callback ],
+            _TaskObject,
+            "Task"
+        ]
     ],
     throwInternalFailure
 ];
 
-generateChatTitle // endDefinition;
+generateChatTitleAsync // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*postProcessChatTitle*)
+postProcessChatTitle // beginDefinition;
+
+postProcessChatTitle[ title0_String ] := Enclose[
+    Module[ { title },
+
+        title = ConfirmBy[
+            StringReplace[
+                StringTrim @ title0,
+                StartOfString ~~ (("\"" ~~ t___ ~~ "\"") | ("'" ~~ t___ ~~ "'")) ~~ EndOfString :> t
+            ],
+            StringQ,
+            "Title"
+        ];
+
+        ConfirmAssert[ StringQ @ title && StringLength @ title > 0, "StringCheck" ];
+
+        Which[
+            StringContainsQ[ title, "\n"|"```" ],
+            Failure[ "TitleCharacters", <| "MessageTemplate" -> "Unexpected characters in generated title." |> ],
+
+            StringLength @ title > $hardMaxTitleLength,
+            Failure[ "TitleLength", <| "MessageTemplate" -> "Generated title exceeds the maximum length." |> ],
+
+            True,
+            title
+        ]
+    ],
+    throwInternalFailure
+];
+
+postProcessChatTitle // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
