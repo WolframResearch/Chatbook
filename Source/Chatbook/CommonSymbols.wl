@@ -271,6 +271,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `toolSelectedQ;
 `toolsEnabledQ;
 `topParentCell;
+`toSmallSettings;
 `trackedDynamic;
 `truncateString;
 `unsetCV;
