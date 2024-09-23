@@ -63,11 +63,13 @@ makeWorkspaceChatDockedCell // beginDefinition;
 makeWorkspaceChatDockedCell[ ] := Grid @ {
     {
         Button[
-            "New",
-            SelectionMove[ EvaluationNotebook[ ], After, Notebook ];
-            NotebookWrite[ EvaluationNotebook[ ], Cell[ "", "ChatDelimiter", CellFrameLabels -> None ] ]
-        ],
-        Button[ "Clear", NotebookDelete @ Cells @ EvaluationNotebook[ ] ],
+            "New Chat",
+            With[ { nbo = EvaluationNotebook[ ] },
+                NotebookDelete @ Cells @ nbo;
+                CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ]
+            ]
+        ]
+        ,
         Item[ "", ItemSize -> Fit ],
         Button[ "Pop Out", popOutChatNB @ EvaluationNotebook[ ], Method -> "Queued" ]
     }
