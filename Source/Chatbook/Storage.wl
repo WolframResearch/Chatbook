@@ -14,12 +14,13 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$savedChatDataVersion     = 1;
-$rootStorageName          = "SavedChats";
-$defaultAppName           = "Default";
-$defaultConversationTitle = "Untitled Chat";
-$timestampPrefixLength    = 7; (* enough for about 1000 years *)
-$$timestampPrefix         = Repeated[ LetterCharacter|DigitCharacter, { $timestampPrefixLength } ];
+$maxTitleGenerationMessages = 10;
+$savedChatDataVersion       = 1;
+$rootStorageName            = "SavedChats";
+$defaultAppName             = "Default";
+$defaultConversationTitle   = "Untitled Chat";
+$timestampPrefixLength      = 7; (* good for about 1000 years *)
+$$timestampPrefix           = Repeated[ LetterCharacter|DigitCharacter, { $timestampPrefixLength } ];
 
 $$chatMetadata = KeyValuePattern @ {
     "ConversationTitle" -> _String,
@@ -27,6 +28,8 @@ $$chatMetadata = KeyValuePattern @ {
     "Date"              -> _Real,
     "Version"           -> _Integer
 };
+
+$generatedTitleCache = <| |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -74,9 +77,13 @@ readChatMetaFile // endDefinition;
 (* ::Section::Closed:: *)
 (*SaveChat*)
 SaveChat // beginDefinition;
+SaveChat // Options = { "AutoGenerateTitle" -> True };
 
-SaveChat[ messages: $$chatMessages, settings_Association ] :=
-    catchMine @ LogChatTiming @ saveChat[ messages, settings ];
+SaveChat[ messages: $$chatMessages, settings_Association, opts: OptionsPattern[ ] ] :=
+    catchMine @ LogChatTiming @ saveChat[ messages, settings, OptionValue[ "AutoGenerateTitle" ] ];
+
+SaveChat[ chat_ChatObject, settings_Association, opts: OptionsPattern[ ] ] :=
+    catchMine @ LogChatTiming @ saveChat[ chat[ "Messages" ], settings, OptionValue[ "AutoGenerateTitle" ] ];
 
 SaveChat // endExportedDefinition;
 
@@ -85,9 +92,9 @@ SaveChat // endExportedDefinition;
 (*saveChat*)
 saveChat // beginDefinition;
 
-saveChat[ messages0_, settings_ ] := Enclose[
-    Module[ { messages, appName, metadata, directory, attachments, smallSettings, as },
-
+saveChat[ messages0_, settings0_, autoTitle_ ] := Enclose[
+    Module[ { settings, messages, appName, metadata, directory, attachments, smallSettings, as },
+        settings = If[ TrueQ @ autoTitle, <| settings0, "AutoGenerateTitle" -> True |>, settings0 ];
         messages = ConfirmMatch[ prepareMessagesForSaving[ messages0, settings ], $$chatMessages, "Messages" ];
         appName = ConfirmBy[ Lookup[ settings, "AppName", $defaultAppName ], StringQ, "AppName" ];
         metadata = ConfirmMatch[ getChatMetadata[ messages, settings ], $$chatMetadata, "Metadata" ];
@@ -137,6 +144,15 @@ saveChat[ messages0_, settings_ ] := Enclose[
 ];
 
 saveChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getAppName*)
+getAppName // beginDefinition;
+getAppName[ settings_Association ] := getAppName @ settings[ "AppName" ];
+getAppName[ app_String ] := app;
+getAppName[ _ ] := $defaultAppName;
+getAppName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -279,15 +295,59 @@ getChatUUID // endDefinition;
 (*getChatTitle*)
 getChatTitle // beginDefinition;
 getChatTitle[ messages_, KeyValuePattern[ "ConversationTitle" -> title_String ] ] := title;
-getChatTitle[ messages_, _Association ] := defaultConversationTitle @ messages;
+getChatTitle[ messages_, settings_Association ] := defaultConversationTitle[ messages, settings ];
 getChatTitle // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*defaultConversationTitle*)
 defaultConversationTitle // beginDefinition;
-defaultConversationTitle[ messages_ ] := $defaultConversationTitle; (* This could maybe use GenerateChatTitle here *)
+
+defaultConversationTitle[ messages_, settings_ ] :=
+    If[ TrueQ @ settings[ "AutoGenerateTitle" ],
+        generateTitleCached @ messages,
+        $defaultConversationTitle
+    ];
+
 defaultConversationTitle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*generateTitleCached*)
+generateTitleCached // beginDefinition;
+generateTitleCached[ messages_List ] := generateTitleCached0 @ Take[ messages, UpTo @ $maxTitleGenerationMessages ];
+generateTitleCached // endDefinition;
+
+
+generateTitleCached0 // beginDefinition;
+
+generateTitleCached0[ messages_List ] :=
+    generateTitleCached0[ Hash @ messages, messages ];
+
+generateTitleCached0[ hash_Integer, messages_ ] :=
+    With[ { cached = $generatedTitleCache[ hash ] },
+        cached /; StringQ @ cached
+    ];
+
+generateTitleCached0[ hash_Integer, messages_ ] := Enclose[
+    Module[ { title },
+        title = ConfirmMatch[ GenerateChatTitle @ messages, _String|_Failure, "Title" ];
+
+        $lastGeneratedTitle = title;
+        $lastRegeneratedTitle = None;
+
+        (* retry once if first attempt failed using higher temperature: *)
+        If[ FailureQ @ title,
+            title = ConfirmBy[ GenerateChatTitle[ messages, "Temperature" -> 1.0 ], StringQ, "Retry" ];
+            $lastRegeneratedTitle = title
+        ];
+
+        $generatedTitleCache[ hash ] = title
+    ],
+    throwInternalFailure
+];
+
+generateTitleCached0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
