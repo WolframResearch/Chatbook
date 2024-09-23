@@ -53,6 +53,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `FormatWolframAlphaPods;
 `GenerateChatTitle;
 `GenerateChatTitleAsynchronous;
+`GetAttachments;
 `GetChatHistory;
 `GetExpressionURI;
 `GetExpressionURIs;
@@ -63,6 +64,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `RelatedDocumentation;
 `RelatedWolframAlphaQueries;
 `SandboxLinguisticAssistantData;
+`SaveChat;
 `SetModel;
 `SetToolOptions;
 `ShowCodeAssistance;
@@ -198,6 +200,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "FormatWolframAlphaPods",
     "GenerateChatTitle",
     "GenerateChatTitleAsynchronous",
+    "GetAttachments",
     "GetChatHistory",
     "GetExpressionURI",
     "GetExpressionURIs",
@@ -207,6 +210,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "RelatedDocumentation",
     "RelatedWolframAlphaQueries",
     "SandboxLinguisticAssistantData",
+    "SaveChat",
     "SetModel",
     "SetToolOptions",
     "ShowCodeAssistance",
