@@ -90,7 +90,6 @@ $DefaultToolOptions = <|
 
 $defaultToolIcon = RawBoxes @ TemplateBox[ { }, "WrenchIcon" ];
 
-$attachments           = <| |>;
 $selectedTools         = <| |>;
 $toolBox               = <| |>;
 $toolEvaluationResults = <| |>;
