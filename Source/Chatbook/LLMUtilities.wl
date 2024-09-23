@@ -26,7 +26,7 @@ $$llmPrompt         = $$llmPromptItem | { $$llmPromptItem.. };
 llmSynthesize // beginDefinition;
 
 llmSynthesize[ prompt: $$llmPrompt ] :=
-    llmSynthesize[ prompt, $defaultLLMSynthesizeEvaluator ];
+    llmSynthesize[ prompt, <| |> ];
 
 llmSynthesize[ prompt: $$llmPrompt, evaluator_Association ] := Enclose[
     ConfirmMatch[ llmSynthesize0[ prompt, evaluator, 1 ], Except[ "", _String ], "Result" ],
@@ -60,10 +60,16 @@ llmSynthesize0 // endDefinition;
 llmSynthesizeSubmit // beginDefinition;
 
 llmSynthesizeSubmit[ prompt: $$llmPrompt, callback_ ] :=
-    llmSynthesizeSubmit[ prompt, $defaultLLMSynthesizeEvaluator, callback ];
+    llmSynthesizeSubmit[ prompt, <| |>, callback ];
 
-llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator_Association, callback_ ] := Enclose[
-    Module[ { prompt, messages, config, chunks, handlers, keys },
+llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] := Enclose[
+    Module[ { evaluator, prompt, messages, config, chunks, handlers, keys },
+
+        evaluator = ConfirmBy[
+            <| $defaultLLMSynthesizeEvaluator, DeleteCases[ evaluator0, Automatic | _Missing ] |>,
+            AssociationQ,
+            "Evaluator"
+        ];
 
         prompt   = ConfirmMatch[ truncatePrompt[ prompt0, evaluator ], $$llmPrompt, "Prompt" ];
         messages = { <| "Role" -> "User", "Content" -> prompt |> };
