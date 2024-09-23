@@ -50,7 +50,8 @@ listSavedChats[ appName_String ] := Enclose[
             "Root"
         ];
 
-        files = FileNames[ "metadata.wxf", root, { 2 } ];
+        (* most recent appear first *)
+        files = Reverse @ FileNames[ "metadata.wxf", root, { 2 } ];
         If[ files === { }, Throw @ { } ];
 
         ConfirmMatch[ readChatMetaFile /@ files, { ___Association }, "Metadata" ]
