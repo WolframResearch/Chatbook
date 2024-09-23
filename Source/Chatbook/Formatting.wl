@@ -1087,15 +1087,15 @@ $textDataFormatRules = {
     ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString) ] :>
         codeBlockCell[ language, code ]
     ,
-    "![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
-        StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
-            imageCell[ alt, url ]
-    ,
     tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString)) :> inlineToolCallCell @ tool
     ,
     tool: $$simpleToolCall :> inlineToolCallCell @ tool
     ,
     StartOfLine ~~ "/retry" ~~ (WhitespaceCharacter|EndOfString) :> $discardPreviousToolCall
+    ,
+    "![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
+        StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
+            imageCell[ alt, url ]
     ,
     ("\n"|StartOfString).. ~~ w:" "... ~~ ("* "|"- ") ~~ item: Longest[ Except[ "\n" ].. ] :>
         bulletCell[ w, item ]
