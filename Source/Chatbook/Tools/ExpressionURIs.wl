@@ -12,6 +12,13 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 $expressionSchemes = { "attachment", "audio", "dynamic", "expression", "video" };
 $$expressionScheme = Alternatives @@ $expressionSchemes;
 
+$$expressionURIKey := "content-" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ];
+
+$attachmentTypes     = { "Expressions", "ToolCalls" };
+$$attachmentProperty = Alternatives @@ $attachmentTypes;
+
+$attachments = <| |>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*FormatToolResponse*)
@@ -162,13 +169,8 @@ expressionURIQ // endDefinition;
 (* ::Subsection::Closed:: *)
 (*expressionURIKeyQ*)
 expressionURIKeyQ // beginDefinition;
-
-expressionURIKeyQ[ key_String ] :=
-    StringMatchQ[ key, "content-" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ];
-
-expressionURIKeyQ[ _ ] :=
-    False;
-
+expressionURIKeyQ[ key_String ] := StringMatchQ[ key, $$expressionURIKey ];
+expressionURIKeyQ[ _ ] := False;
 expressionURIKeyQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -282,6 +284,62 @@ getAttachment[ uri_String, key_String ] :=
     Lookup[ $attachments, key, throwFailure[ "URIUnavailable", uri ] ];
 
 getAttachment // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*GetAttachments*)
+GetAttachments // beginDefinition;
+
+GetAttachments[ ] :=
+    GetAttachments[ None, All ];
+
+GetAttachments[ prop: $$attachmentProperty ] :=
+    GetAttachments[ None, prop ];
+
+GetAttachments[ messages_ ] :=
+    catchMine @ GetAttachments[ messages, All ];
+
+GetAttachments[ messages: $$chatMessages|None, prop: $$attachmentProperty|All ] :=
+    catchMine @ getAttachments[ messages, prop ];
+
+GetAttachments // endExportedDefinition;
+
+(* TODO: this should identify expression and tool call keys from earlier sessions and give Missing[...] for those *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getAttachments*)
+getAttachments // beginDefinition;
+
+(* cSpell: ignore ENDRESULT *)
+getAttachments[ messages_List, All ] := Enclose[
+    Catch @ Module[ { allExprKeys, allToolKeys, string, exprKeys, toolKeys, exprs, toolCalls },
+        allExprKeys = ConfirmMatch[ Keys @ $attachments, { ___String }, "ExpressionKeys" ];
+        allToolKeys = ConfirmMatch[ Keys @ $toolEvaluationResults, { ___String }, "ToolKeys" ];
+        string = ConfirmBy[ messagesToString[ messages, "MessageTemplate" -> None ], StringQ, "String" ];
+        exprKeys = DeleteDuplicates @ StringCases[ string, allExprKeys ];
+        toolKeys = DeleteDuplicates @ StringCases[ string, "ENDRESULT("~~key:allToolKeys~~")" :> key ];
+        exprs = ConfirmBy[ KeyTake[ $attachments, exprKeys ], AssociationQ, "Expressions" ];
+        toolCalls = ConfirmBy[ KeyTake[ $toolEvaluationResults, toolKeys ], AssociationQ, "ToolCalls" ];
+        <| "Expressions" -> exprs, "ToolCalls" -> toolCalls |>
+    ],
+    throwInternalFailure
+];
+
+getAttachments[ None, All ] := Enclose[
+    <|
+        "Expressions" -> ConfirmBy[ $attachments, AssociationQ, "Expressions" ],
+        "ToolCalls"   -> ConfirmBy[ $toolEvaluationResults, AssociationQ, "ToolCalls" ]
+    |>,
+    throwInternalFailure
+];
+
+getAttachments[ messages_, prop: $$attachmentProperty ] := Enclose[
+    ConfirmBy[ getAttachments[ messages, All ][ prop ], AssociationQ, "Result" ],
+    throwInternalFailure
+];
+
+getAttachments // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

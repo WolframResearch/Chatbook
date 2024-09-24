@@ -15,9 +15,11 @@ HoldComplete[
 (* ::Section::Closed:: *)
 (*DefaultPromptGenerators*)
 $defaultPromptGenerators := $defaultPromptGenerators = <|
-    "RelatedDocumentation"       -> LLMPromptGenerator[ relatedDocumentationGenerator, "Messages" ],
-    "RelatedWolframAlphaQueries" -> LLMPromptGenerator[ relatedWolframAlphaQueriesGenerator, "Messages" ]
+    "RelatedDocumentation"       -> LLMPromptGenerator[ relatedDocumentationGenerator, "Messages" ](*,
+    "RelatedWolframAlphaQueries" -> LLMPromptGenerator[ relatedWolframAlphaQueriesGenerator, "Messages" ]*)
 |>;
+
+(* TODO: update RelatedWolframAlphaQueries to support same argument types as RelatedDocumentation *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

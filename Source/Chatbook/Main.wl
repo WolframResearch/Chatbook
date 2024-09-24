@@ -10,6 +10,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$AvailableTools;
 `$ChatAbort;
 `$ChatbookContexts;
+`$ChatbookFilesDirectory;
 `$ChatbookNames;
 `$ChatbookProtectedNames;
 `$ChatEvaluationCell;
@@ -38,7 +39,9 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `CellToString;
 `Chatbook;
 `ChatbookAction;
+`ChatbookFilesDirectory;
 `ChatCellEvaluate;
+`ChatMessageToCell;
 `CreateChatDrivenNotebook;
 `CreateChatNotebook;
 `CurrentChatSettings;
@@ -49,16 +52,22 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `FormatToolCall;
 `FormatToolResponse;
 `FormatWolframAlphaPods;
+`GenerateChatTitle;
+`GenerateChatTitleAsynchronous;
+`GetAttachments;
 `GetChatHistory;
 `GetExpressionURI;
 `GetExpressionURIs;
 `InlineTemplateBoxes;
 `InvalidateServiceCache;
+`ListSavedChats;
+`LoadChat;
 `LogChatTiming;
 `MakeExpressionURI;
 `RelatedDocumentation;
 `RelatedWolframAlphaQueries;
 `SandboxLinguisticAssistantData;
+`SaveChat;
 `SetModel;
 `SetToolOptions;
 `ShowCodeAssistance;
@@ -100,11 +109,14 @@ Chatbook is a symbol for miscellaneous chat notebook messages.\
 $ChatbookContexts = {
     "Wolfram`Chatbook`",
     "Wolfram`Chatbook`Actions`",
+    "Wolfram`Chatbook`ChatbookFiles`",
     "Wolfram`Chatbook`ChatGroups`",
     "Wolfram`Chatbook`ChatHistory`",
     "Wolfram`Chatbook`ChatMessages`",
+    "Wolfram`Chatbook`ChatMessageToCell`",
     "Wolfram`Chatbook`ChatModes`",
     "Wolfram`Chatbook`ChatState`",
+    "Wolfram`Chatbook`ChatTitle`",
     "Wolfram`Chatbook`CloudToolbar`",
     "Wolfram`Chatbook`Common`",
     "Wolfram`Chatbook`CreateChatNotebook`",
@@ -134,6 +146,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`Serialization`",
     "Wolfram`Chatbook`Services`",
     "Wolfram`Chatbook`Settings`",
+    "Wolfram`Chatbook`Storage`",
     "Wolfram`Chatbook`ToolManager`",
     "Wolfram`Chatbook`Tools`",
     "Wolfram`Chatbook`UI`",
@@ -156,6 +169,7 @@ $ChatbookNames := $ChatbookNames =
 $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "$AutomaticAssistance",
     "$ChatbookContexts",
+    "$ChatbookFilesDirectory",
     "$ChatNotebookEvaluation",
     "$ChatTimingData",
     "$CurrentChatSettings",
@@ -176,7 +190,9 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "CellToString",
     "Chatbook",
     "ChatbookAction",
+    "ChatbookFilesDirectory",
     "ChatCellEvaluate",
+    "ChatMessageToCell",
     "CreateChatDrivenNotebook",
     "CreateChatNotebook",
     "CurrentChatSettings",
@@ -187,15 +203,21 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "FormatToolCall",
     "FormatToolResponse",
     "FormatWolframAlphaPods",
+    "GenerateChatTitle",
+    "GenerateChatTitleAsynchronous",
+    "GetAttachments",
     "GetChatHistory",
     "GetExpressionURI",
     "GetExpressionURIs",
     "InlineTemplateBoxes",
+    "ListSavedChats",
+    "LoadChat",
     "LogChatTiming",
     "MakeExpressionURI",
     "RelatedDocumentation",
     "RelatedWolframAlphaQueries",
     "SandboxLinguisticAssistantData",
+    "SaveChat",
     "SetModel",
     "SetToolOptions",
     "ShowCodeAssistance",

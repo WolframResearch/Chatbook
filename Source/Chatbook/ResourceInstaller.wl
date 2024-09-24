@@ -60,10 +60,7 @@ $resourceBrowseURLs = <|
     "LLMTool" -> "https://resources.wolframcloud.com/LLMToolRepository"
 |>;
 
-$ResourceInstallationDirectory := GeneralUtilities`EnsureDirectory @ {
-    ExpandFileName @ LocalObject @ $LocalBase,
-    "Chatbook"
-};
+$ResourceInstallationDirectory := $ChatbookFilesDirectory;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -633,7 +630,7 @@ resourceTypeDirectory // beginDefinition;
 
 resourceTypeDirectory[ rtype_String ] := Enclose[
     Module[ { root, typeName },
-        root     = ConfirmBy[ $ResourceInstallationDirectory, DirectoryQ, "RootDirectory" ];
+        root     = ConfirmBy[ $ResourceInstallationDirectory, StringQ, "RootDirectory" ];
         typeName = ConfirmBy[ resourceTypeDirectoryName @ rtype, StringQ, "TypeName" ];
         ConfirmBy[ GeneralUtilities`EnsureDirectory @ { root, typeName }, DirectoryQ, "Directory" ]
     ],

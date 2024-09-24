@@ -139,7 +139,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             |>
         ];
 
-        task = $lastTask = chatSubmit[ container, messages, cellObject, settings ];
+        task = $lastTask = chatSubmit[ container, prepareMessagesForLLM @ messages, cellObject, settings ];
 
         addHandlerArguments[ "Task" -> task ];
 
@@ -340,6 +340,21 @@ makeHTTPRequest // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*prepareMessagesForLLM*)
+prepareMessagesForLLM // beginDefinition;
+
+prepareMessagesForLLM[ messages: $$chatMessages ] := ReplaceAll[
+        messages,
+        s_String :> RuleCondition @ StringTrim @ StringReplace[
+            s,
+            "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :> "\nENDRESULT\n"
+        ]
+    ];
+
+prepareMessagesForLLM // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*makeStopTokens*)
 makeStopTokens // beginDefinition;
 
@@ -372,7 +387,10 @@ chatIndicatorSymbol // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*prepareMessagesForHTTPRequest*)
 prepareMessagesForHTTPRequest // beginDefinition;
-prepareMessagesForHTTPRequest[ messages_List ] := $lastHTTPMessages = prepareMessageForHTTPRequest /@ messages;
+
+prepareMessagesForHTTPRequest[ messages_List ] :=
+    $lastHTTPMessages = prepareMessagesForLLM[ prepareMessageForHTTPRequest /@ messages ];
+
 prepareMessagesForHTTPRequest // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1166,7 +1184,11 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         newMessages = Join[
             messages,
             {
-                <| "Role" -> "Assistant", "Content" -> appendToolCallEndToken[ settings, StringTrim @ string ] |>,
+                <|
+                    "Role"        -> "Assistant",
+                    "Content"     -> appendToolCallEndToken[ settings, StringTrim @ string ],
+                    "ToolRequest" -> True
+                |>,
                 makeToolResponseMessage[ settings, response ]
             }
         ];
@@ -1174,7 +1196,11 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         $finishReason = None;
 
         req = If[ TrueQ @ $useLLMServices,
-                  ConfirmMatch[ constructMessages[ settings, newMessages ], { __Association }, "ConstructMessages" ],
+                  ConfirmMatch[
+                      prepareMessagesForLLM @ constructMessages[ settings, newMessages ],
+                      { __Association },
+                      "ConstructMessages"
+                  ],
                   (* TODO: this path will be obsolete when LLMServices is widely available *)
                   ConfirmMatch[ makeHTTPRequest[ settings, newMessages ], _HTTPRequest, "HTTPRequest" ]
               ];
@@ -1220,12 +1246,13 @@ makeToolResponseMessage // endDefinition;
 makeToolResponseMessage0 // beginDefinition;
 
 makeToolResponseMessage0[ "Anthropic"|"MistralAI", response_ ] := <|
-    "Role"    -> "User",
-    "Content" -> Replace[ Flatten @ { "<system>", response, "</system>" }, { s__String } :> StringJoin @ s ]
+    "Role"         -> "User",
+    "Content"      -> Replace[ Flatten @ { "<system>", response, "</system>" }, { s__String } :> StringJoin @ s ],
+    "ToolResponse" -> True
 |>;
 
 makeToolResponseMessage0[ service_String, response_ ] :=
-    <| "Role" -> "System", "Content" -> response |>;
+    <| "Role" -> "System", "Content" -> response, "ToolResponse" -> True |>;
 
 makeToolResponseMessage0 // endDefinition;
 
@@ -1744,7 +1771,7 @@ activeAIAssistantCell[
                 CellTags           -> cellTags,
                 CellTrayWidgets    -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
                 PrivateCellOptions -> { "ContentsOpacity" -> 1 },
-                TaggingRules       -> <| "ChatNotebookSettings" -> smallSettings @ settings |>
+                TaggingRules       -> <| "ChatNotebookSettings" -> toSmallSettings @ settings |>
             ]
         ]
     ];
@@ -1805,7 +1832,7 @@ activeAIAssistantCell[
             Selectable         -> True,
             ShowAutoSpellCheck -> False,
             ShowCursorTracker  -> False,
-            TaggingRules       -> <| "ChatNotebookSettings" -> smallSettings @ settings |>,
+            TaggingRules       -> <| "ChatNotebookSettings" -> toSmallSettings @ settings |>,
             If[ scrollOutputQ @ settings,
                 PrivateCellOptions -> { "TrackScrollingWhenPlaced" -> True },
                 Sequence @@ { }
@@ -2282,7 +2309,7 @@ makeCompactChatData[
     BaseEncode @ BinarySerialize[
         DeleteCases[
             Association[
-                smallSettings @ as,
+                toSmallSettings @ as,
                 "MessageTag" -> tag,
                 "Data" -> Association[
                     data,
@@ -2301,29 +2328,29 @@ makeCompactChatData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*smallSettings*)
-smallSettings // beginDefinition;
-smallSettings[ as_Association ] := smallSettings0 @ KeyDrop[ as, { "OpenAIKey", "Tokenizer" } ] /. $exprToNameRules;
-smallSettings // endDefinition;
+(*toSmallSettings*)
+toSmallSettings // beginDefinition;
+toSmallSettings[ as_Association ] := toSmallSettings0 @ KeyDrop[ as, { "OpenAIKey", "Tokenizer" } ] /. $exprToNameRules;
+toSmallSettings // endDefinition;
 
-smallSettings0 // beginDefinition;
+toSmallSettings0 // beginDefinition;
 
-smallSettings0[ as: KeyValuePattern[ "Model" -> model: KeyValuePattern[ "Icon" -> _ ] ] ] :=
-    smallSettings0 @ <| as, "Model" -> KeyTake[ model, { "Service", "Name" } ] |>;
+toSmallSettings0[ as: KeyValuePattern[ "Model" -> model: KeyValuePattern[ "Icon" -> _ ] ] ] :=
+    toSmallSettings0 @ <| as, "Model" -> KeyTake[ model, { "Service", "Name" } ] |>;
 
-smallSettings0[ as_Association ] :=
-    smallSettings0[ as, as[ "LLMEvaluator" ] ];
+toSmallSettings0[ as_Association ] :=
+    toSmallSettings0[ as, as[ "LLMEvaluator" ] ];
 
-smallSettings0[ as_, KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] :=
+toSmallSettings0[ as_, KeyValuePattern[ "LLMEvaluatorName" -> name_String ] ] :=
     If[ AssociationQ @ GetCachedPersonaData @ name,
         Append[ as, "LLMEvaluator" -> name ],
         as
     ];
 
-smallSettings0[ as_, _ ] :=
+toSmallSettings0[ as_, _ ] :=
     as;
 
-smallSettings0 // endDefinition;
+toSmallSettings0 // endDefinition;
 
 
 $exprToNameRules := AssociationMap[ Reverse, $AvailableTools ];

@@ -30,6 +30,8 @@ $$historyProperty           = All | $$validChatHistoryProperty | { $$validChatHi
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*GetChatHistory*)
+GetChatHistory // beginDefinition;
+
 GeneralUtilities`SetUsage[ GetChatHistory, "\
 GetChatHistory[cell$] gives the list of cells that would be included in the chat history for the \
 CellObject specified by cell$.
@@ -60,11 +62,10 @@ GetChatHistory[ cell_CellObject, property: $$historyProperty ] := catchMine @ En
         If[ KeyExistsQ[ as, "Settings" ], as[ "Settings" ] = resolveAutoSettings @ as[ "Settings" ] ];
         ConfirmMatch[ selectProperties[ as, property ], Except[ _selectProperties ], "SelectedProperties" ]
     ],
-    throwInternalFailure[ GetChatHistory[ cell, property ], ## ] &
+    throwInternalFailure
 ];
 
-GetChatHistory[ args___ ] :=
-    catchMine @ throwFailure[ "InvalidArguments", GetChatHistory, HoldForm @ GetChatHistory @ args ];
+GetChatHistory // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
