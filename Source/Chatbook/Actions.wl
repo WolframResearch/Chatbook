@@ -3,7 +3,7 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 
-(* cSpell: ignore TOOLCALL, ENDTOOLCALL, ENDRESULT, nodef *)
+(* cSpell: ignore TOOLCALL, ENDTOOLCALL, nodef *)
 
 (* TODO: these probably aren't needed as exported symbols since all hooks are going through ChatbookAction *)
 `AskChat;
@@ -421,11 +421,12 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
                 If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
                     With[
                         {
-                            chat = constructChatObject @ Append[
+                            chat = constructChatObject @ mergeToolCallMessages @ Append[
                                 $lastMessages,
                                 <| "Role" -> "Assistant", "Content" -> $lastChatString |>
                             ] // LogChatTiming[ "ConstructChatObject" ]
                         },
+                        If[ TrueQ @ settings[ "AutoSaveConversations" ], SaveChat[ chat, settings ] ];
                         applyChatPost[ chat, settings, nbo, $aborted ]
                     ],
                     applyChatPost[ None, settings, nbo, $aborted ];
@@ -436,6 +437,27 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
     ];
 
 EvaluateChatInput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*mergeToolCallMessages*)
+mergeToolCallMessages // beginDefinition;
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::KernelBug:: *)
+mergeToolCallMessages[ {
+    a___,
+    KeyValuePattern[ "ToolRequest" -> True ],
+    KeyValuePattern[ "ToolResponse" -> True ],
+    b: KeyValuePattern[ "Role" -> "Assistant" ],
+    c___
+} ] := mergeToolCallMessages @ { a, b, c };
+(* :!CodeAnalysis::EndBlock:: *)
+
+mergeToolCallMessages[ messages_List ] :=
+    messages;
+
+mergeToolCallMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -766,6 +788,9 @@ revertMultimodalContent[ as: KeyValuePattern[ "Content" -> content_List ] ] := <
         s_String | KeyValuePattern @ { "Type" -> "Text", "Data" -> s_String } :> s
     ]
 |>;
+
+revertMultimodalContent[ as: KeyValuePattern[ "Content" -> content_Association ] ] :=
+    revertMultimodalContent[ <| as, "Content" -> { content } |> ];
 
 revertMultimodalContent[ as: KeyValuePattern[ "Content" -> _String ] ] :=
     as;

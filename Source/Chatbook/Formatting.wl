@@ -1066,7 +1066,7 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 $$endToolCall       = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
 $$eol               = " "... ~~ "\n";
 $$cmd               = Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ];
-$$simpleToolCommand = StartOfLine ~~ $$ws ~~ ("/" ~~ c: $$cmd) ~~ $$eol /; $simpleToolMethod && toolShortNameQ @ c;
+$$simpleToolCommand = StartOfLine ~~ $$ws ~~ ("/" ~~ $$cmd) ~~ $$eol;
 $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|EndOfString) ];
 
 
@@ -1088,15 +1088,15 @@ $textDataFormatRules = {
     ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString) ] :>
         codeBlockCell[ language, code ]
     ,
-    "![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
-        StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
-            imageCell[ alt, url ]
-    ,
     tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString)) :> inlineToolCallCell @ tool
     ,
     tool: $$simpleToolCall :> inlineToolCallCell @ tool
     ,
     StartOfLine ~~ "/retry" ~~ (WhitespaceCharacter|EndOfString) :> $discardPreviousToolCall
+    ,
+    "![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
+        StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
+            imageCell[ alt, url ]
     ,
     ("\n"|StartOfString).. ~~ w:" "... ~~ ("* "|"- ") ~~ item: Longest[ Except[ "\n" ].. ] :>
         bulletCell[ w, item ]
@@ -1429,8 +1429,7 @@ parseToolCallID[ string_String? StringQ ] :=
                     WhitespaceCharacter...,
                     Alternatives[
                         "TOOLCALL:",
-                        StartOfLine ~~ "/" ~~ cmd: Except[ WhitespaceCharacter ].. ~~ WhitespaceCharacter... ~~ "\n" /;
-                            toolShortNameQ @ cmd
+                        StartOfLine ~~ "/" ~~ cmd: Except[ WhitespaceCharacter ].. ~~ WhitespaceCharacter... ~~ "\n"
                     ],
                     ___,
                     "ENDRESULT(",

@@ -18,15 +18,18 @@ $cloudInheritanceFix := $cloudNotebooks;
 
 (* cSpell: ignore AIAPI *)
 $defaultChatSettings = <|
+    "AppName"                        -> None,
     "Assistance"                     -> Automatic,
     "Authentication"                 -> Automatic,
     "AutoFormat"                     -> True,
+    "AutoSaveConversations"          -> Automatic,
     "BasePrompt"                     -> Automatic,
     "BypassResponseChecking"         -> False,
     "ChatContextPreprompt"           -> Automatic,
     "ChatDrivenNotebook"             -> False,
     "ChatHistoryLength"              -> 1000,
     "ChatInputIndicator"             -> Automatic,
+    "ConversationUUID"               -> None,
     "ConversionRules"                -> None,
     "DynamicAutoFormat"              -> Automatic,
     "EnableChatGroupSettings"        -> False,
@@ -51,6 +54,7 @@ $defaultChatSettings = <|
     "ProcessingFunctions"            :> $DefaultChatProcessingFunctions,
     "Prompts"                        -> { },
     "PromptGenerators"               -> { },
+    "PromptGeneratorsEnabled"        -> Automatic, (* TODO *)
     "PromptGeneratorMessageRole"     -> "System",
     "PromptGeneratorMessagePosition" -> 2,
     "SetCellDingbat"                 -> True,
@@ -304,6 +308,7 @@ resolveAutoSetting // endDefinition;
 
 resolveAutoSetting0 // beginDefinition;
 resolveAutoSetting0[ as_, "Assistance"                     ] := False;
+resolveAutoSetting0[ as_, "AutoSaveConversations"          ] := autoSaveConversationsQ @ as;
 resolveAutoSetting0[ as_, "ChatInputIndicator"             ] := "\|01f4ac";
 resolveAutoSetting0[ as_, "DynamicAutoFormat"              ] := dynamicAutoFormatQ @ as;
 resolveAutoSetting0[ as_, "EnableLLMServices"              ] := $useLLMServices;
@@ -333,6 +338,7 @@ resolveAutoSetting0 // endDefinition;
 
 (* Settings that require other settings to be resolved first: *)
 $autoSettingKeyDependencies = <|
+    "AutoSaveConversations"      -> { "AppName", "ConversationUUID" },
     "HandlerFunctionsKeys"       -> "EnableLLMServices",
     "MaxCellStringLength"        -> { "Model", "MaxContextTokens" },
     "MaxContextTokens"           -> "Model",
@@ -363,6 +369,13 @@ $autoSettingKeyPriority := Enclose[
     * BasePrompt (might not be possible here)
     * ChatContextPreprompt
 *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*autoSaveConversationsQ*)
+autoSaveConversationsQ // beginDefinition;
+autoSaveConversationsQ[ as_Association ] := TrueQ[ StringQ @ as[ "AppName" ] && StringQ @ as[ "ConversationUUID" ] ];
+autoSaveConversationsQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -906,7 +919,7 @@ storeGlobalSettings // endDefinition;
 (*$globalSettingsFile*)
 $globalSettingsFile := Enclose[
     Module[ { dir },
-        dir  = ConfirmBy[ $ResourceInstallationDirectory, DirectoryQ, "ResourceInstallationDirectory" ];
+        dir  = ConfirmBy[ $ResourceInstallationDirectory, StringQ, "ResourceInstallationDirectory" ];
         $globalSettingsFile = ConfirmBy[ FileNameJoin @ { dir, "GlobalChatSettings.wxf" }, StringQ, "File" ]
     ],
     throwInternalFailure

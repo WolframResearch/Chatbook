@@ -12,17 +12,31 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (*Configuration*)
 $workspaceChatWidth = 325;
 
-$codeAssistanceSettings = <|
-    "ServiceCaller"     -> "CodeAssistance",
+$codeAssistanceBaseSettings = <|
+    "AppName"           -> "CodeAssistance",
     "PromptGenerators"  -> { "RelatedDocumentation" },
+    "ServiceCaller"     -> "CodeAssistance",
+    "ToolOptions"       -> <| "WolframLanguageEvaluator" -> <| "AppendURIPrompt" -> True, "Method" -> "Session" |> |>,
     "Tools"             -> { "NotebookEditor" },
     "ToolSelectionType" -> <| "DocumentationLookup" -> None, "DocumentationSearcher" -> None |>
 |>;
 
-$workspaceChatNotebookOptions = Sequence[
+$codeAssistanceWorkspaceSettings := <|
+    $codeAssistanceBaseSettings,
+    "AutoGenerateTitle" -> True,
+    "ConversationUUID"  -> CreateUUID[ ]
+|>;
+
+$codeAssistanceInlineSettings := <|
+    $codeAssistanceBaseSettings,
+    "AutoGenerateTitle"     -> False,
+    "AutoSaveConversations" -> False
+|>;
+
+$workspaceChatNotebookOptions := Sequence[
     DefaultNewCellStyle -> "AutoMoveToChatInputField",
     StyleDefinitions    -> FrontEnd`FileName[ { "Wolfram" }, "WorkspaceChat.nb", CharacterEncoding -> "UTF-8" ],
-    TaggingRules        -> <| "ChatNotebookSettings" -> $codeAssistanceSettings |>
+    TaggingRules        -> <| "ChatNotebookSettings" -> $codeAssistanceWorkspaceSettings |>
 ];
 
 (* TODO: set $serviceCaller from chat settings *)
@@ -115,7 +129,7 @@ ShowCodeAssistance // endExportedDefinition;
 (* ::Subsection::Closed:: *)
 (*showCodeAssistanceInline*)
 showCodeAssistanceInline // beginDefinition;
-showCodeAssistanceInline[ nbo_NotebookObject ] := attachInlineChatInput[ nbo, $codeAssistanceSettings ];
+showCodeAssistanceInline[ nbo_NotebookObject ] := attachInlineChatInput[ nbo, $codeAssistanceInlineSettings ];
 showCodeAssistanceInline[ _ ] := MessageDialog[ "No notebook selected." ];
 showCodeAssistanceInline // endDefinition;
 

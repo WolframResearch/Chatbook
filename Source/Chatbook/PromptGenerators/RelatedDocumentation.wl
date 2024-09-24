@@ -12,10 +12,7 @@ Needs[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
 (*Configuration*)
 $documentationSnippetBaseURL = "https://www.wolframcloud.com/obj/wolframai-content/DocumentationSnippets/Text";
 
-$snippetsCacheDirectory := $snippetsCacheDirectory = FileNameJoin @ {
-    ExpandFileName @ LocalObject @ $LocalBase,
-    "Chatbook/DocumentationSnippets"
-};
+$snippetsCacheDirectory := $snippetsCacheDirectory = ChatbookFilesDirectory[ "DocumentationSnippets" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
