@@ -136,6 +136,42 @@ restoreAttachments // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*DeleteChat*)
+DeleteChat // beginDefinition;
+DeleteChat[ as_Association ] := catchMine @ DeleteChat[ as[ "AppName" ], as[ "ConversationUUID" ] ];
+DeleteChat[ uuid_String ] := catchMine @ LogChatTiming @ deleteChat[ $defaultAppName, uuid ];
+DeleteChat[ appName_String, uuid_String ] := catchMine @ LogChatTiming @ deleteChat[ appName, uuid ];
+DeleteChat // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*deleteChat*)
+deleteChat // beginDefinition;
+
+deleteChat[ appName_String, uuid_String ] := Enclose[
+    Catch @ Module[ { root, dirs, dir },
+
+        root = ConfirmBy[
+            ChatbookFilesDirectory[ { $rootStorageName, appName }, "EnsureDirectory" -> False ],
+            StringQ,
+            "Root"
+        ];
+
+        dirs = ConfirmMatch[ Sort @ FileNames[ $$timestampPrefix ~~ "_" ~~ uuid, root ], { ___String }, "Directories" ];
+        If[ dirs === { }, Throw @ Missing[ "NotFound" ] ];
+        dir = ConfirmBy[ First[ dirs, $Failed ], StringQ, "Directory" ];
+        ConfirmMatch[ DeleteDirectory[ dir, DeleteContents -> True ], Null, "DeleteDirectory" ];
+        ConfirmAssert[ ! DirectoryQ @ dir, "DirectoryCheck" ];
+        updateDynamics[ "SavedChats" ];
+        dir
+    ],
+    throwInternalFailure
+];
+
+deleteChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*SaveChat*)
 SaveChat // beginDefinition;
 SaveChat // Options = { "AutoGenerateTitle" -> True };

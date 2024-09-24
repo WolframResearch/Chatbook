@@ -66,15 +66,33 @@ makeWorkspaceChatDockedCell[ ] :=
     DynamicModule[ { nbo },
         Grid @ {
             {
-                Button[
-                    "New Chat",
-                    NotebookDelete @ Cells @ nbo;
-                    CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ]
+                Tooltip[
+                    Button[
+                        "New Chat",
+                        NotebookDelete @ Cells @ nbo;
+                        CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ]
+                    ],
+                    "Start a new conversation"
                 ],
-                trackedDynamic[ createHistoryMenu @ nbo, "SavedChats" ]
+                trackedDynamic[ createHistoryMenu @ nbo, "SavedChats" ],
+                Tooltip[
+                    Button[
+                        "Delete",
+                        DeleteChat[
+                            CurrentChatSettings[ nbo, "AppName" ],
+                            CurrentChatSettings[ nbo, "ConversationUUID" ]
+                        ];
+                        NotebookDelete @ Cells @ nbo;
+                        CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ]
+                    ],
+                    "Remove the current chat from the history menu"
+                ]
                 ,
                 Item[ "", ItemSize -> Fit ],
-                Button[ "Pop Out", popOutChatNB @ nbo, Method -> "Queued" ]
+                Tooltip[
+                    Button[ "Pop Out", popOutChatNB @ nbo, Method -> "Queued" ],
+                    "View the chat as a normal chat notebook"
+                ]
             }
         },
         Initialization :> (nbo = EvaluationNotebook[ ])
@@ -294,6 +312,7 @@ inlineChatInputCell[ root_CellObject, selectionInfo_, settings_ ] := Cell[
                     $inputFieldBox = None;
                     Unset @ parentCell @ cell;
                     Unset @ parentNotebook @ cell;
+                    ClearAll @ evaluateCurrentInlineChat;
                 ]
             ]
         },
@@ -443,7 +462,15 @@ inlineChatInputField[
     selectionInfo_,
     Dynamic[ currentInput_ ],
     Dynamic[ messageCells_ ]
-] :=
+] := (
+    evaluateCurrentInlineChat[ ] := ChatbookAction[
+        "EvaluateInlineChat",
+        cell,
+        root,
+        selectionInfo,
+        Dynamic @ currentInput,
+        Dynamic @ messageCells
+    ];
     EventHandler[
         Pane[
             Grid[
@@ -482,7 +509,8 @@ inlineChatInputField[
             )
         },
         Method -> "Queued"
-    ];
+    ]
+);
 
 inlineChatInputField // endDefinition;
 
@@ -806,7 +834,7 @@ makeHistoryMenuItem[ nbo_NotebookObject, chat_Association ] := Enclose[
         title = ConfirmBy[ chat[ "ConversationTitle" ], StringQ, "Title" ];
         date = DateObject[ ConfirmBy[ chat[ "Date" ], NumericQ, "Date" ], TimeZone -> 0 ];
         timeString = ConfirmBy[ relativeTimeString @ date, StringQ, "TimeString" ];
-        label = Row @ { title, " ", Style[ timeString, FontOpacity -> 0.75, FontSize -> Inherited * 0.75 ] };
+        label = Row @ { title, " ", Style[ timeString, FontOpacity -> 0.75, FontSize -> Inherited * 0.9 ] };
         label :> loadConversation[ nbo, chat ]
     ],
     throwInternalFailure
@@ -827,9 +855,20 @@ loadConversation[ nbo_NotebookObject, id_ ] := Enclose[
         cells = ConfirmMatch[ ChatMessageToCell[ messages, "Workspace" ], { __Cell }, "Cells" ];
         cellObjects = ConfirmMatch[ Cells @ nbo, { ___CellObject }, "CellObjects" ];
         ConfirmMatch[ NotebookDelete @ cellObjects, { Null... }, "Delete" ];
-        ConfirmMatch[ NotebookWrite[ nbo, cells, AutoScroll -> False ], Null, "Write" ];
+
+        WithCleanup[
+            NotebookDelete @ First[ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ], $Failed ],
+            SelectionMove[ nbo, Before, Notebook, AutoScroll -> True ];
+            ConfirmMatch[
+                NotebookWrite[ nbo, cells, AutoScroll -> False ],
+                Null,
+                "Write"
+            ],
+            ChatbookAction[ "AttachWorkspaceChatInput", nbo ]
+        ];
+
         CurrentChatSettings[ nbo, "ConversationUUID" ] = uuid;
-        moveToChatInputField @ nbo
+        moveToChatInputField[ nbo, True ]
     ],
     throwInternalFailure
 ];
