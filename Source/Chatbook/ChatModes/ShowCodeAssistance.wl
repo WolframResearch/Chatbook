@@ -192,7 +192,10 @@ attachToLeft[ source_NotebookObject, current_NotebookObject ] := Enclose[
             WindowSize    -> { $workspaceChatWidth, Automatic }
         ];
 
-        SetSelectedNotebook @ current
+        SetSelectedNotebook @ current;
+        moveToChatInputField[ current, True ];
+
+        current
     ],
     throwInternalFailure
 ];

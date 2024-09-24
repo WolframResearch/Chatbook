@@ -45,6 +45,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `CreateChatDrivenNotebook;
 `CreateChatNotebook;
 `CurrentChatSettings;
+`DeleteChat;
 `DisplayBase64Boxes;
 `EnableCodeAssistance;
 `ExplodeCell;
@@ -196,6 +197,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "CreateChatDrivenNotebook",
     "CreateChatNotebook",
     "CurrentChatSettings",
+    "DeleteChat",
     "DisplayBase64Boxes",
     "EnableCodeAssistance",
     "ExplodeCell",
