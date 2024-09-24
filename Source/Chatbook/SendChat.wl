@@ -139,7 +139,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             |>
         ];
 
-        task = $lastTask = chatSubmit[ container, messages, cellObject, settings ];
+        task = $lastTask = chatSubmit[ container, prepareMessagesForLLM @ messages, cellObject, settings ];
 
         addHandlerArguments[ "Task" -> task ];
 
@@ -340,6 +340,21 @@ makeHTTPRequest // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*prepareMessagesForLLM*)
+prepareMessagesForLLM // beginDefinition;
+
+prepareMessagesForLLM[ messages: $$chatMessages ] := ReplaceAll[
+        messages,
+        s_String :> RuleCondition @ StringTrim @ StringReplace[
+            s,
+            "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :> "\nENDRESULT\n"
+        ]
+    ];
+
+prepareMessagesForLLM // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*makeStopTokens*)
 makeStopTokens // beginDefinition;
 
@@ -372,7 +387,10 @@ chatIndicatorSymbol // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*prepareMessagesForHTTPRequest*)
 prepareMessagesForHTTPRequest // beginDefinition;
-prepareMessagesForHTTPRequest[ messages_List ] := $lastHTTPMessages = prepareMessageForHTTPRequest /@ messages;
+
+prepareMessagesForHTTPRequest[ messages_List ] :=
+    $lastHTTPMessages = prepareMessagesForLLM[ prepareMessageForHTTPRequest /@ messages ];
+
 prepareMessagesForHTTPRequest // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1166,7 +1184,11 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         newMessages = Join[
             messages,
             {
-                <| "Role" -> "Assistant", "Content" -> appendToolCallEndToken[ settings, StringTrim @ string ] |>,
+                <|
+                    "Role"        -> "Assistant",
+                    "Content"     -> appendToolCallEndToken[ settings, StringTrim @ string ],
+                    "ToolRequest" -> True
+                |>,
                 makeToolResponseMessage[ settings, response ]
             }
         ];
@@ -1174,7 +1196,11 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         $finishReason = None;
 
         req = If[ TrueQ @ $useLLMServices,
-                  ConfirmMatch[ constructMessages[ settings, newMessages ], { __Association }, "ConstructMessages" ],
+                  ConfirmMatch[
+                      prepareMessagesForLLM @ constructMessages[ settings, newMessages ],
+                      { __Association },
+                      "ConstructMessages"
+                  ],
                   (* TODO: this path will be obsolete when LLMServices is widely available *)
                   ConfirmMatch[ makeHTTPRequest[ settings, newMessages ], _HTTPRequest, "HTTPRequest" ]
               ];
@@ -1220,12 +1246,13 @@ makeToolResponseMessage // endDefinition;
 makeToolResponseMessage0 // beginDefinition;
 
 makeToolResponseMessage0[ "Anthropic"|"MistralAI", response_ ] := <|
-    "Role"    -> "User",
-    "Content" -> Replace[ Flatten @ { "<system>", response, "</system>" }, { s__String } :> StringJoin @ s ]
+    "Role"         -> "User",
+    "Content"      -> Replace[ Flatten @ { "<system>", response, "</system>" }, { s__String } :> StringJoin @ s ],
+    "ToolResponse" -> True
 |>;
 
 makeToolResponseMessage0[ service_String, response_ ] :=
-    <| "Role" -> "System", "Content" -> response |>;
+    <| "Role" -> "System", "Content" -> response, "ToolResponse" -> True |>;
 
 makeToolResponseMessage0 // endDefinition;
 
