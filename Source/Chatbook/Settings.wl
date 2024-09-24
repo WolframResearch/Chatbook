@@ -919,7 +919,7 @@ storeGlobalSettings // endDefinition;
 (*$globalSettingsFile*)
 $globalSettingsFile := Enclose[
     Module[ { dir },
-        dir  = ConfirmBy[ $ResourceInstallationDirectory, DirectoryQ, "ResourceInstallationDirectory" ];
+        dir  = ConfirmBy[ $ResourceInstallationDirectory, StringQ, "ResourceInstallationDirectory" ];
         $globalSettingsFile = ConfirmBy[ FileNameJoin @ { dir, "GlobalChatSettings.wxf" }, StringQ, "File" ]
     ],
     throwInternalFailure

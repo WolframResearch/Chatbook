@@ -630,7 +630,7 @@ resourceTypeDirectory // beginDefinition;
 
 resourceTypeDirectory[ rtype_String ] := Enclose[
     Module[ { root, typeName },
-        root     = ConfirmBy[ $ResourceInstallationDirectory, DirectoryQ, "RootDirectory" ];
+        root     = ConfirmBy[ $ResourceInstallationDirectory, StringQ, "RootDirectory" ];
         typeName = ConfirmBy[ resourceTypeDirectoryName @ rtype, StringQ, "TypeName" ];
         ConfirmBy[ GeneralUtilities`EnsureDirectory @ { root, typeName }, DirectoryQ, "Directory" ]
     ],
