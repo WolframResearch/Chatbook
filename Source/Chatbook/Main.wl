@@ -41,6 +41,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `ChatbookAction;
 `ChatbookFilesDirectory;
 `ChatCellEvaluate;
+`ChatMessageToCell;
 `CreateChatDrivenNotebook;
 `CreateChatNotebook;
 `CurrentChatSettings;
@@ -59,6 +60,8 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `GetExpressionURIs;
 `InlineTemplateBoxes;
 `InvalidateServiceCache;
+`ListSavedChats;
+`LoadChat;
 `LogChatTiming;
 `MakeExpressionURI;
 `RelatedDocumentation;
@@ -110,6 +113,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`ChatGroups`",
     "Wolfram`Chatbook`ChatHistory`",
     "Wolfram`Chatbook`ChatMessages`",
+    "Wolfram`Chatbook`ChatMessageToCell`",
     "Wolfram`Chatbook`ChatModes`",
     "Wolfram`Chatbook`ChatState`",
     "Wolfram`Chatbook`ChatTitle`",
@@ -188,6 +192,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "ChatbookAction",
     "ChatbookFilesDirectory",
     "ChatCellEvaluate",
+    "ChatMessageToCell",
     "CreateChatDrivenNotebook",
     "CreateChatNotebook",
     "CurrentChatSettings",
@@ -205,6 +210,8 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "GetExpressionURI",
     "GetExpressionURIs",
     "InlineTemplateBoxes",
+    "ListSavedChats",
+    "LoadChat",
     "LogChatTiming",
     "MakeExpressionURI",
     "RelatedDocumentation",

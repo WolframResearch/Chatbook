@@ -51,6 +51,8 @@ $inputFieldBox = None;
 $inlineChatScrollPosition = 0.0;
 $lastScrollPosition       = 0.0;
 
+$maxHistoryItems = 50;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Workspace Chat*)
@@ -60,20 +62,23 @@ $lastScrollPosition       = 0.0;
 (*makeWorkspaceChatDockedCell*)
 makeWorkspaceChatDockedCell // beginDefinition;
 
-makeWorkspaceChatDockedCell[ ] := Grid @ {
-    {
-        Button[
-            "New Chat",
-            With[ { nbo = EvaluationNotebook[ ] },
-                NotebookDelete @ Cells @ nbo;
-                CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ]
-            ]
-        ]
-        ,
-        Item[ "", ItemSize -> Fit ],
-        Button[ "Pop Out", popOutChatNB @ EvaluationNotebook[ ], Method -> "Queued" ]
-    }
-};
+makeWorkspaceChatDockedCell[ ] :=
+    DynamicModule[ { nbo },
+        Grid @ {
+            {
+                Button[
+                    "New Chat",
+                    NotebookDelete @ Cells @ nbo;
+                    CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ]
+                ],
+                trackedDynamic[ createHistoryMenu @ nbo, "SavedChats" ]
+                ,
+                Item[ "", ItemSize -> Fit ],
+                Button[ "Pop Out", popOutChatNB @ nbo, Method -> "Queued" ]
+            }
+        },
+        Initialization :> (nbo = EvaluationNotebook[ ])
+    ];
 
 makeWorkspaceChatDockedCell // endDefinition;
 
@@ -763,6 +768,73 @@ $fromWorkspaceChatConversionRules := $fromWorkspaceChatConversionRules = Dispatc
         ___
     ] :> Cell[ Flatten @ TextData @ text, "ChatOutput" ]
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*History*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*createHistoryMenu*)
+createHistoryMenu // beginDefinition;
+
+createHistoryMenu[ nbo_NotebookObject ] :=
+    createHistoryMenu[ nbo, ListSavedChats @ CurrentChatSettings[ nbo, "AppName" ] ];
+
+createHistoryMenu[ nbo_NotebookObject ] := Enclose[
+    Catch @ Module[ { appName, chats },
+        appName = ConfirmBy[ CurrentChatSettings[ nbo, "AppName" ], StringQ, "AppName" ];
+        chats = ConfirmMatch[ ListSavedChats @ appName, { ___Association }, "Chats" ];
+        If[ chats === { }, Throw @ ActionMenu[ "History", { "Nothing here yet" :> Null } ] ];
+        ActionMenu[ "History", makeHistoryMenuItem[ nbo ] /@ Take[ chats, UpTo @ $maxHistoryItems ] ]
+    ],
+    throwInternalFailure
+];
+
+createHistoryMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeHistoryMenuItem*)
+makeHistoryMenuItem // beginDefinition;
+
+makeHistoryMenuItem[ nbo_NotebookObject ] :=
+    makeHistoryMenuItem[ nbo, # ] &;
+
+makeHistoryMenuItem[ nbo_NotebookObject, chat_Association ] := Enclose[
+    Module[ { title, date, timeString, label },
+        title = ConfirmBy[ chat[ "ConversationTitle" ], StringQ, "Title" ];
+        date = DateObject[ ConfirmBy[ chat[ "Date" ], NumericQ, "Date" ], TimeZone -> 0 ];
+        timeString = ConfirmBy[ relativeTimeString @ date, StringQ, "TimeString" ];
+        label = Row @ { title, " ", Style[ timeString, FontOpacity -> 0.75, FontSize -> Inherited * 0.75 ] };
+        label :> loadConversation[ nbo, chat ]
+    ],
+    throwInternalFailure
+];
+
+makeHistoryMenuItem // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*loadConversation*)
+loadConversation // beginDefinition;
+
+loadConversation[ nbo_NotebookObject, id_ ] := Enclose[
+    Module[ { loaded, uuid, messages, cells, cellObjects },
+        loaded = ConfirmBy[ LoadChat @ id, AssociationQ, "Loaded" ];
+        uuid = ConfirmBy[ loaded[ "ConversationUUID" ], StringQ, "UUID" ];
+        messages = ConfirmBy[ loaded[ "Messages" ], ListQ, "Messages" ];
+        cells = ConfirmMatch[ ChatMessageToCell[ messages, "Workspace" ], { __Cell }, "Cells" ];
+        cellObjects = ConfirmMatch[ Cells @ nbo, { ___CellObject }, "CellObjects" ];
+        ConfirmMatch[ NotebookDelete @ cellObjects, { Null... }, "Delete" ];
+        ConfirmMatch[ NotebookWrite[ nbo, cells, AutoScroll -> False ], Null, "Write" ];
+        CurrentChatSettings[ nbo, "ConversationUUID" ] = uuid;
+        moveToChatInputField @ nbo
+    ],
+    throwInternalFailure
+];
+
+loadConversation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

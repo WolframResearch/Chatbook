@@ -23,6 +23,7 @@ $timestampPrefixLength      = 7; (* good for about 1000 years *)
 $$timestampPrefix           = Repeated[ LetterCharacter|DigitCharacter, { $timestampPrefixLength } ];
 
 $$chatMetadata = KeyValuePattern @ {
+    "AppName"           -> _String,
     "ConversationTitle" -> _String,
     "ConversationUUID"  -> _String,
     "Date"              -> _Real,
@@ -75,6 +76,66 @@ readChatMetaFile // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*LoadChat*)
+LoadChat // beginDefinition;
+LoadChat[ as_Association ] := catchMine @ LoadChat[ as[ "AppName" ], as[ "ConversationUUID" ] ];
+LoadChat[ uuid_String ] := catchMine @ LogChatTiming @ loadChat[ $defaultAppName, uuid ];
+LoadChat[ appName_String, uuid_String ] := catchMine @ LogChatTiming @ loadChat[ appName, uuid ];
+LoadChat // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*loadChat*)
+loadChat // beginDefinition;
+
+loadChat[ appName_String, uuid_String ] := Enclose[
+    Catch @ Module[ { root, dirs, dir, file, data },
+
+        root = ConfirmBy[
+            ChatbookFilesDirectory[ { $rootStorageName, appName }, "EnsureDirectory" -> False ],
+            StringQ,
+            "Root"
+        ];
+
+        dirs = ConfirmMatch[ Sort @ FileNames[ $$timestampPrefix ~~ "_" ~~ uuid, root ], { ___String }, "Directories" ];
+        If[ dirs === { }, Throw @ Missing[ "NotFound" ] ];
+        dir = ConfirmBy[ First[ dirs, $Failed ], StringQ, "Directory" ];
+        file = ConfirmBy[ FileNameJoin @ { dir, "data.wxf" }, StringQ, "File" ];
+        If[ ! FileExistsQ @ file, Throw @ Missing[ "NotFound" ] ];
+        data = ConfirmBy[ Developer`ReadWXFFile @ file, AssociationQ, "Data" ];
+        ConfirmBy[ restoreAttachments @ data, AssociationQ, "RestoreAttachments" ];
+        data
+    ],
+    throwInternalFailure
+];
+
+loadChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*restoreAttachments*)
+restoreAttachments // beginDefinition;
+
+restoreAttachments[ KeyValuePattern[ "Attachments" -> attachments_Association ] ] :=
+    Association @ KeyValueMap[ # -> restoreAttachments @ ## &, attachments ];
+
+restoreAttachments[ "Expressions", expressions_Association ] := Enclose[
+    $attachments = ConfirmBy[ <| $attachments, expressions |>, AssociationQ, "Attachments" ],
+    throwInternalFailure
+];
+
+restoreAttachments[ "ToolCalls", toolCalls_Association ] := Enclose[
+    $toolEvaluationResults = ConfirmBy[ <| $toolEvaluationResults, toolCalls |>, AssociationQ, "ToolCalls" ],
+    throwInternalFailure
+];
+
+restoreAttachments[ key_, value_ ] :=
+    value;
+
+restoreAttachments // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*SaveChat*)
 SaveChat // beginDefinition;
 SaveChat // Options = { "AutoGenerateTitle" -> True };
@@ -97,7 +158,7 @@ saveChat[ messages0_, settings0_, autoTitle_ ] := Enclose[
         settings = If[ TrueQ @ autoTitle, <| settings0, "AutoGenerateTitle" -> True |>, settings0 ];
         messages = ConfirmMatch[ prepareMessagesForSaving[ messages0, settings ], $$chatMessages, "Messages" ];
         appName = ConfirmBy[ Lookup[ settings, "AppName", $defaultAppName ], StringQ, "AppName" ];
-        metadata = ConfirmMatch[ getChatMetadata[ messages, settings ], $$chatMetadata, "Metadata" ];
+        metadata = ConfirmMatch[ getChatMetadata[ appName, messages, settings ], $$chatMetadata, "Metadata" ];
         directory = ConfirmBy[ targetDirectory[ appName, metadata ], DirectoryQ, "Directory" ];
         attachments = ConfirmBy[ GetAttachments[ messages, All ], AssociationQ, "Attachments" ];
         smallSettings = ConfirmBy[ toSmallSettings @ settings, AssociationQ, "Settings" ];
@@ -137,6 +198,8 @@ saveChat[ messages0_, settings0_, autoTitle_ ] := Enclose[
         ];
 
         ConfirmMatch[ cleanupStaleChats @ appName, { ___String }, "Cleanup" ];
+
+        updateDynamics[ "SavedChats" ];
 
         Success[ "Saved", as ]
     ],
@@ -262,7 +325,7 @@ saveChatFile // endDefinition;
 (*getChatMetadata*)
 getChatMetadata // beginDefinition;
 
-getChatMetadata[ messages_, settings_Association ] := Enclose[
+getChatMetadata[ appName_, messages_, settings_Association ] := Enclose[
     Module[ { uuid, title, date, version },
 
         uuid    = ConfirmBy[ getChatUUID @ settings, StringQ, "ConversationUUID" ];
@@ -271,6 +334,7 @@ getChatMetadata[ messages_, settings_Association ] := Enclose[
         version = ConfirmBy[ $savedChatDataVersion, IntegerQ, "Version" ];
 
         <|
+            "AppName"           -> appName,
             "ConversationUUID"  -> uuid,
             "ConversationTitle" -> title,
             "Date"              -> date,
