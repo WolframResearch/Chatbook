@@ -2292,24 +2292,6 @@ makeExpressionString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*stringToBoxes*)
-stringToBoxes // SetFallthroughError;
-
-stringToBoxes[ s_String /; StringMatchQ[ s, "\"" ~~ __ ~~ "\"" ] ] :=
-    With[ { str = stringToBoxes @ StringTrim[ s, "\"" ] }, "\""<>str<>"\"" /; StringQ @ str ];
-
-stringToBoxes[ string_String ] :=
-    stringToBoxes[
-        string,
-        (* TODO: there could be a kernel implementation of this *)
-        Quiet @ usingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`UndocumentedTestFEParserPacket[ string, True ]
-    ];
-
-stringToBoxes[ string_, { BoxData[ boxes_, ___ ], ___ } ] := boxes;
-stringToBoxes[ string_, other_ ] := string;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*makeGraphicsString*)
 makeGraphicsString // SetFallthroughError;
 
