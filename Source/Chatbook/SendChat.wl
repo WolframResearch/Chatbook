@@ -2148,7 +2148,10 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
         outer = If[ TrueQ @ $WorkspaceChat,
                     TextData @ {
                         Cell[
-                            BoxData @ TemplateBox[ { Cell[ #, Background -> None ] }, "AssistantMessageBox" ],
+                            BoxData @ TemplateBox[
+                                { Cell[ #, Background -> None, Editable -> True, Selectable -> True ] },
+                                "AssistantMessageBox"
+                            ],
                             Background -> None
                         ]
                     } &,
