@@ -73,7 +73,7 @@ Cell[
     Background      -> None,
     CellDingbat     -> None,
     CellFrame       -> 0,
-    CellMargins     -> { { 10, 15 }, { 15, 12 } },
+    CellMargins     -> { { 10, 15 }, { 25, 12 } },
     Initialization  -> None,
     Selectable      -> True,
     ShowCellBracket -> False,
