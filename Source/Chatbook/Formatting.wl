@@ -2595,7 +2595,7 @@ reparseBoxStructurePacket // beginDefinition;
 reparseBoxStructurePacket[ string_String ] := Replace[
     usingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ StyleBox[
         string,
-        ShowStringCharacters -> False
+        ShowStringCharacters -> True
     ],
     StyleBox[ boxes_, ___ ] :> boxes
 ];
