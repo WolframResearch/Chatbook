@@ -39,10 +39,11 @@ Cell[
 Cell[
     StyleData[ "ChatInput" ],
     CellDingbat           -> None,
+    CellEventActions      -> None,
     CellFrame             -> 0,
     CellFrameLabelMargins -> 6,
     CellMargins           -> { { 15, 10 }, { 5, 10 } },
-    Selectable            -> True,
+    Selectable            -> False,
     ShowCellBracket       -> False,
     CellFrameLabels       -> {
         { None, None },
@@ -75,7 +76,7 @@ Cell[
     CellFrame       -> 0,
     CellMargins     -> { { 10, 15 }, { 25, 12 } },
     Initialization  -> None,
-    Selectable      -> True,
+    Selectable      -> False,
     ShowCellBracket -> False,
     CellFrameLabels -> {
         { None, None },
