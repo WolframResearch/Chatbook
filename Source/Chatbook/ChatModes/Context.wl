@@ -153,7 +153,7 @@ getContextFromSelection0[ selectionData_Association, settings_ ] := Enclose[
 
         marked = ConfirmMatch[ insertSelectionIndicator @ { before, selected, after }, { ___Cell }, "Marked" ];
         messages = ConfirmMatch[ LogChatTiming @ makeChatMessages[ settings, marked, False ], { ___Association }, "Messages" ];
-        string = ConfirmBy[ messagesToString @ messages, StringQ, "String" ];
+        string = ConfirmBy[ messagesToString[ messages, "MessageTemplate" -> None ], StringQ, "String" ];
 
         $contextPrompt   = processContextPromptString @ string;
         $selectionPrompt = extractSelectionPrompt @ string;
