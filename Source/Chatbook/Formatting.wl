@@ -2578,7 +2578,7 @@ stringToBoxes[ s_String /; StringMatchQ[ s, "\"" ~~ __ ~~ "\"" ] ] :=
     With[ { str = stringToBoxes @ StringTrim[ s, "\"" ] }, "\""<>str<>"\"" /; StringQ @ str ];
 
 stringToBoxes[ s_String ] :=
-    adjustBoxSpacing @ stringToBoxes0 @ usingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ s;
+    adjustBoxSpacing @ stringToBoxes0 @ reparseBoxStructurePacket @ s;
 
 stringToBoxes // endDefinition;
 
@@ -2586,6 +2586,21 @@ stringToBoxes // endDefinition;
 stringToBoxes0 // beginDefinition;
 stringToBoxes0[ boxes_? boxDataQ ] := boxes;
 stringToBoxes0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reparseBoxStructurePacket*)
+reparseBoxStructurePacket // beginDefinition;
+
+reparseBoxStructurePacket[ string_String ] := Replace[
+    usingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ StyleBox[
+        string,
+        ShowStringCharacters -> False
+    ],
+    StyleBox[ boxes_, ___ ] :> boxes
+];
+
+reparseBoxStructurePacket // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
