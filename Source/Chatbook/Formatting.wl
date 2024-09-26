@@ -1826,13 +1826,6 @@ formatResourceFunctionFast // endDefinition;
 (*formatResourceFunctionSlow*)
 formatResourceFunctionSlow // beginDefinition;
 
-(* formatResourceFunctionSlow[ name_String ] := (
-    Needs[ "FunctionResource`" -> None ];
-    With[ { display = FunctionResource`InertResourceFunctionBoxes[ "Published", StringTrim[ name, "\"" ] ] },
-        InterpretationBox[ display, ResourceFunction @ name, Selectable -> False, SelectWithContents -> True ]
-    ]
-); *)
-
 formatResourceFunctionSlow[ name_String ] := (
     Needs[ "FunctionResource`" -> None ];
     FunctionResource`MakeResourceFunctionBoxes @ StringTrim[ name, "\"" ]
@@ -2580,6 +2573,9 @@ stringToBoxes[ s_String ] /; $dynamicText := StringReplace[
     "InlinedExpression[\"" ~~ LetterCharacter.. ~~ "://" ~~ (LetterCharacter|DigitCharacter|"-").. ~~ "\"]" :>
         $expressionURIPlaceholder
 ];
+
+stringToBoxes[ s_String /; StringMatchQ[ s, "\"" ~~ __ ~~ "\"" ] ] :=
+    With[ { str = stringToBoxes @ StringTrim[ s, "\"" ] }, "\""<>str<>"\"" /; StringQ @ str ];
 
 stringToBoxes[ s_String ] :=
     adjustBoxSpacing @ stringToBoxes0 @ usingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ s;
