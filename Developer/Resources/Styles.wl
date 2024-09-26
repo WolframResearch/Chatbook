@@ -1085,13 +1085,17 @@ Cell[
 Cell[
     StyleData[ "UserMessageBox" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ FrameBox[
-            Cell[ #, "Text", Background -> None ],
-            Background     -> RGBColor[ "#edf4fc" ],
-            FrameMargins   -> 8,
-            FrameStyle     -> RGBColor[ "#a3c9f2" ],
-            RoundingRadius -> 10,
-            StripOnInput   -> False
+        DisplayFunction -> Function @ Evaluate @ PaneBox[
+            FrameBox[
+                Cell[ #, "Text", Background -> None ],
+                Background     -> RGBColor[ "#edf4fc" ],
+                FrameMargins   -> 8,
+                FrameStyle     -> RGBColor[ "#a3c9f2" ],
+                RoundingRadius -> 10,
+                StripOnInput   -> False
+            ],
+            Alignment -> Right,
+            ImageSize -> { Full, Automatic }
         ]
     }
 ]
