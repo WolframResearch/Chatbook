@@ -10,6 +10,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $chatOutputOptions = Sequence[ GeneratedCell -> True, CellAutoOverwrite -> True ];
+$selectableOptions = Sequence[ Background -> None, Selectable -> True, Editable -> True ];
 
 $$chatCellFormat = None | Automatic | "Default" | "Inline" | "Workspace";
 
@@ -77,9 +78,19 @@ wrapCellContent // endDefinition;
 workspaceInput // beginDefinition;
 workspaceInput[ TextData[ { text_String } ] ] := workspaceInput @ text;
 workspaceInput[ TextData[ text_String ] ] := workspaceInput @ text;
-workspaceInput[ text_String ] := Cell[ BoxData @ TemplateBox[ { text }, "UserMessageBox" ], "ChatInput" ];
-workspaceInput[ text_ ] := Cell[ BoxData @ TemplateBox[ { Cell @ text }, "UserMessageBox" ], "ChatInput" ];
+workspaceInput[ text_String ] := workspaceInput0 @ text;
+workspaceInput[ text_ ] := workspaceInput0 @ Cell @ text;
 workspaceInput // endDefinition;
+
+
+workspaceInput0 // beginDefinition;
+
+workspaceInput0[ stuff_ ] := Cell[
+    BoxData @ TemplateBox[ { Cell[ stuff, $selectableOptions ] }, "UserMessageBox" ],
+    "ChatInput"
+];
+
+workspaceInput0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -89,7 +100,7 @@ workspaceOutput // beginDefinition;
 workspaceOutput[ text_TextData ] :=
     wrapCellContent[
         TextData @ Cell[
-            BoxData @ TemplateBox[ { Cell[ text, Background -> None ] }, "AssistantMessageBox" ],
+            BoxData @ TemplateBox[ { Cell[ text, $selectableOptions ] }, "AssistantMessageBox" ],
             Background -> None
         ],
         "Assistant",

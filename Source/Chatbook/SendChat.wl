@@ -1794,8 +1794,8 @@ activeAIAssistantCell[
             outer     = If[ TrueQ[ $WorkspaceChat||$InlineChat ], assistantMessageBox, # & ]
         },
         Cell[
-            BoxData @ outer @ TagBox[
-                ToBoxes @ Dynamic[
+            BoxData @ TagBox[
+                outer @ ToBoxes @ Dynamic[
                     $dynamicTrigger;
                     (* `$dynamicTrigger` is used to precisely control when the dynamic updates, otherwise we can get an
                        FE crash if a NotebookWrite happens at the same time. *)
@@ -2148,7 +2148,10 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
         outer = If[ TrueQ @ $WorkspaceChat,
                     TextData @ {
                         Cell[
-                            BoxData @ TemplateBox[ { Cell[ #, Background -> None ] }, "AssistantMessageBox" ],
+                            BoxData @ TemplateBox[
+                                { Cell[ #, Background -> None, Editable -> True, Selectable -> True ] },
+                                "AssistantMessageBox"
+                            ],
                             Background -> None
                         ]
                     } &,
