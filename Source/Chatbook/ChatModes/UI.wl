@@ -664,7 +664,7 @@ moveToChatInputField0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Chat Message Labels*)
+(*Chat Message Decorations*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -729,6 +729,50 @@ userImage[ other_ ] :=
     $defaultUserImage;
 
 userImage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*attachAssistantMessageButtons*)
+attachAssistantMessageButtons // beginDefinition;
+
+attachAssistantMessageButtons[ cell_ ] /; $dynamicText || MatchQ[ $ChatEvaluationCell, _CellObject ] := Null;
+
+attachAssistantMessageButtons[ cell_CellObject ] :=
+    attachAssistantMessageButtons[ cell, CurrentChatSettings[ cell, "WorkspaceChat" ] ];
+
+attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
+    Catch @ Module[ { cell, attached },
+
+        cell = topParentCell @ cell0;
+        If[ ! MatchQ[ cell, _CellObject ], Throw @ Null ];
+
+        (* If chat has been reloaded from history, it no longer has the necessary metadata for feedback: *)
+        If[ ! StringQ @ CurrentValue[ cell, { TaggingRules, "ChatData" } ], Throw @ Null ];
+
+        (* Remove existing attached cell, if any: *)
+        NotebookDelete @ Cells[ cell, AttachedCell -> True, CellStyle -> "ChatOutputTrayButtons" ];
+
+        (* Attach new cell: *)
+        attached = AttachCell[
+            cell,
+            Cell[
+                BoxData @ TemplateBox[ { }, "FeedbackButtonsHorizontal" ],
+                "ChatOutputTrayButtons",
+                Magnification -> AbsoluteCurrentValue[ cell, Magnification ]
+            ],
+            { Left, Bottom },
+            0,
+            { Left, Top },
+            RemovalConditions -> "MouseExit"
+        ]
+    ],
+    throwInternalFailure
+];
+
+attachAssistantMessageButtons[ cell_CellObject, _ ] :=
+    Null;
+
+attachAssistantMessageButtons // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

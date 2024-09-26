@@ -17,6 +17,7 @@ HoldComplete[
 (*Configuration*)
 $vectorDBNames = { "DocumentationURIs", "WolframAlphaQueries" };
 $dbVersion     = "1.1.0";
+$allowDownload = True;
 
 $embeddingDimension      = 384;
 $maxNeighbors            = 50;
@@ -120,6 +121,9 @@ vectorDBDirectoryQ0 // endDefinition;
 (* ::Subsection::Closed:: *)
 (*downloadVectorDatabases*)
 downloadVectorDatabases // beginDefinition;
+
+downloadVectorDatabases[ ] /; ! $allowDownload :=
+    Throw[ Missing[ "DownloadDisabled" ], $vdbTag ];
 
 downloadVectorDatabases[ ] :=
     downloadVectorDatabases[ $localVectorDBDirectory, $vectorDBDownloadURLs ];
@@ -404,7 +408,7 @@ inVectorDBDirectory // endDefinition;
 (* ::Subsection::Closed:: *)
 (*initializeVectorDatabases*)
 initializeVectorDatabases // beginDefinition;
-initializeVectorDatabases[ ] := getVectorDB /@ $vectorDBNames;
+initializeVectorDatabases[ ] := Block[ { $allowDownload = False }, Catch[ getVectorDB /@ $vectorDBNames, $vdbTag ] ];
 initializeVectorDatabases // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
