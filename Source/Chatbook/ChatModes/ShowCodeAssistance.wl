@@ -228,8 +228,8 @@ findCurrentWorkspaceChat // endDefinition;
 (* ::Section::Closed:: *)
 (*CreateWorkspaceChat*)
 CreateWorkspaceChat // beginDefinition;
-CreateWorkspaceChat[ ] := catchMine @ createWorkspaceChat[ ];
-CreateWorkspaceChat[ nbo_NotebookObject ] := catchMine @ createWorkspaceChat @ nbo;
+CreateWorkspaceChat[ ] := catchMine @ LogChatTiming @ createWorkspaceChat[ ];
+CreateWorkspaceChat[ nbo_NotebookObject ] := catchMine @ LogChatTiming @ createWorkspaceChat @ nbo;
 CreateWorkspaceChat // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)

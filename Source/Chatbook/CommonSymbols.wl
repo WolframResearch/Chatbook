@@ -92,6 +92,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `assistantMessageBox;
 `assistantMessageLabel;
 `associationKeyDeflatten;
+`attachAssistantMessageButtons;
 `attachInlineChatInput;
 `attachMenuCell;
 `attachWorkspaceChatInput;
