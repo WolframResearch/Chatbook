@@ -742,9 +742,17 @@ attachAssistantMessageButtons[ cell_CellObject ] :=
 
 attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
     Catch @ Module[ { cell, attached },
+
         cell = topParentCell @ cell0;
         If[ ! MatchQ[ cell, _CellObject ], Throw @ Null ];
+
+        (* If chat has been reloaded from history, it no longer has the necessary metadata for feedback: *)
+        If[ ! StringQ @ CurrentValue[ cell, { TaggingRules, "ChatData" } ], Throw @ Null ];
+
+        (* Remove existing attached cell, if any: *)
         NotebookDelete @ Cells[ cell, AttachedCell -> True, CellStyle -> "ChatOutputTrayButtons" ];
+
+        (* Attach new cell: *)
         attached = AttachCell[
             cell,
             Cell[
@@ -756,7 +764,7 @@ attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
             0,
             { Left, Top },
             RemovalConditions -> "MouseExit"
-        ];
+        ]
     ],
     throwInternalFailure
 ];
