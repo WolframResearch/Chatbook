@@ -102,7 +102,7 @@ generateChatTitleAsync // endDefinition;
 (*postProcessChatTitle*)
 postProcessChatTitle // beginDefinition;
 
-postProcessChatTitle[ title0_String ] := Enclose[
+postProcessChatTitle[ title0_String, KeyValuePattern[ "StatusCode" -> 200 ] ] := Enclose[
     Module[ { title },
 
         title = ConfirmBy[
