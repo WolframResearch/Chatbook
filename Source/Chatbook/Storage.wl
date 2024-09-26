@@ -19,6 +19,7 @@ $savedChatDataVersion       = 1;
 $rootStorageName            = "SavedChats";
 $defaultAppName             = "Default";
 $defaultConversationTitle   = "Untitled Chat";
+$maxFilesDisplay            = 50;
 $timestampPrefixLength      = 7; (* good for about 1000 years *)
 $$timestampPrefix           = Repeated[ LetterCharacter|DigitCharacter, { $timestampPrefixLength } ];
 
@@ -30,14 +31,16 @@ $$chatMetadata = KeyValuePattern @ {
     "Version"           -> _Integer
 };
 
+$$appSpec = $$string | All | _NotebookObject;
+
 $generatedTitleCache = <| |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*ListSavedChats*)
 ListSavedChats // beginDefinition;
-ListSavedChats[ ] := catchMine @ ListSavedChats @ $defaultAppName;
-ListSavedChats[ appName_String ] := catchMine @ LogChatTiming @ listSavedChats @ appName;
+ListSavedChats[ ] := catchMine @ ListSavedChats @ All;
+ListSavedChats[ appSpec: $$appSpec ] := catchMine @ LogChatTiming @ listSavedChats @ appSpec;
 ListSavedChats // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -45,25 +48,51 @@ ListSavedChats // endExportedDefinition;
 (*listSavedChats*)
 listSavedChats // beginDefinition;
 
-listSavedChats[ appName_String ] := Enclose[
-    Catch @ Module[ { root, files },
+listSavedChats[ appSpec: $$appSpec ] := Enclose[
+    Catch @ Module[ { appName, dirName, root, depth, files, sorted },
+
+        appName = ConfirmMatch[ determineAppName @ appSpec, $$string | All, "Name" ];
+        dirName = If[ StringQ @ appName, appName, Nothing ];
 
         root = ConfirmBy[
-            ChatbookFilesDirectory[ { $rootStorageName, appName }, "EnsureDirectory" -> False ],
+            ChatbookFilesDirectory[ { $rootStorageName, dirName }, "EnsureDirectory" -> False ],
             StringQ,
             "Root"
         ];
 
-        (* most recent appear first *)
-        files = Reverse @ FileNames[ "metadata.wxf", root, { 2 } ];
+        depth = If[ StringQ @ appName, 2, 3 ];
+
+
+        files = FileNames[ "metadata.wxf", root, { depth } ];
         If[ files === { }, Throw @ { } ];
 
-        ConfirmMatch[ readChatMetaFile /@ files, { ___Association }, "Metadata" ]
+        (* show most recent first *)
+        sorted = If[ StringQ @ appName, Reverse @ files, ReverseSortBy[ files, FileNameTake[ #, { -2 } ] & ] ];
+
+        ConfirmMatch[ readChatMetaFile /@ Take[ sorted, UpTo @ $maxFilesDisplay ], { ___Association }, "Metadata" ]
     ],
     throwInternalFailure
 ];
 
 listSavedChats // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*determineAppName*)
+determineAppName // beginDefinition;
+determineAppName[ All ] := All;
+determineAppName[ name_String ] := name;
+determineAppName[ nbo_NotebookObject ] := notebookAppName @ nbo;
+determineAppName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*notebookAppName*)
+notebookAppName // beginDefinition;
+notebookAppName[ nbo_NotebookObject ] := notebookAppName[ nbo, CurrentChatSettings[ nbo, "AppName" ] ];
+notebookAppName[ nbo_, name_String ] := name;
+notebookAppName[ nbo_, $$unspecified ] := $defaultAppName;
+notebookAppName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
