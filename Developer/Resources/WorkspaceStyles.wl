@@ -44,7 +44,6 @@ Cell[
     CellMargins           -> { { 15, 10 }, { 5, 10 } },
     Selectable            -> True,
     ShowCellBracket       -> False,
-    TextAlignment         -> Right,
     CellFrameLabels       -> {
         { None, None },
         {

@@ -15,14 +15,6 @@ BuildStylesheets;
 BuildChatbookStylesheet;
 BuildWorkspaceStylesheet;
 
-System`LinkedItems;
-System`MenuAnchor;
-System`MenuItem;
-System`RawInputForm;
-System`ToggleMenuItem;
-System`Scope;
-System`ClosingSaveDialog;
-
 Begin[ "`Private`" ];
 
 
