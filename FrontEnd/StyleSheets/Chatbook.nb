@@ -828,7 +828,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.5.1.3936349213"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.5.1.3936355760"|>
   ],
   Cell[
    StyleData["Text"],
@@ -17615,7 +17615,8 @@ Notebook[
      (Function[
       PaneBox[
        FrameBox[
-        Cell[#1, "Text", Background -> None],
+        #1,
+        BaseStyle -> {"Text", Editable -> False, Selectable -> False},
         Background -> RGBColor[0.929412, 0.956863, 0.988235],
         FrameMargins -> 8,
         FrameStyle -> RGBColor[0.639216, 0.788235, 0.94902],
@@ -17636,7 +17637,7 @@ Notebook[
       TagBox[
        FrameBox[
         #1,
-        BaseStyle -> "Text",
+        BaseStyle -> {"Text", Editable -> False, Selectable -> False},
         Background -> RGBColor[0.988235, 0.992157, 1.0],
         FrameMargins -> 8,
         FrameStyle -> RGBColor[0.788235, 0.8, 0.815686],
