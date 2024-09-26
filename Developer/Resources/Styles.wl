@@ -334,7 +334,7 @@ Cell[
     TaggingRules         -> <| "ChatNotebookSettings" -> <| |> |>,
     CellTrayWidgets      -> <|
         "ChatWidget"   -> <| "Visible" -> False |>,
-        "ChatFeedback" -> <| "Content" -> Cell[ BoxData @ ToBoxes @ $feedbackButtons, "ChatFeedback" ] |>
+        "ChatFeedback" -> <| "Content" -> Cell[ BoxData @ ToBoxes @ $feedbackButtonsV, "ChatFeedback" ] |>
     |>,
     menuInitializer[ "ChatOutput", RGBColor[ "#ecf0f5" ] ]
 ]
@@ -1108,17 +1108,35 @@ Cell[
 Cell[
     StyleData[ "AssistantMessageBox" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ FrameBox[
-            #,
-            BaseStyle      -> "Text",
-            Background     -> RGBColor[ "#fcfdff" ],
-            FrameMargins   -> 8,
-            FrameStyle     -> RGBColor[ "#c9ccd0" ],
-            ImageSize      -> { Scaled[ 1 ], Automatic },
-            RoundingRadius -> 10,
-            StripOnInput   -> False
+        DisplayFunction -> Function @ Evaluate @ TagBox[
+            FrameBox[
+                #,
+                BaseStyle      -> "Text",
+                Background     -> RGBColor[ "#fcfdff" ],
+                FrameMargins   -> 8,
+                FrameStyle     -> RGBColor[ "#c9ccd0" ],
+                ImageSize      -> { Scaled[ 1 ], Automatic },
+                RoundingRadius -> 10,
+                StripOnInput   -> False
+            ],
+            EventHandlerTag @ {
+                "MouseEntered" :>
+                    With[ { cell = EvaluationCell[ ] },
+                        Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+                        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachAssistantMessageButtons", cell ]
+                    ],
+                Method         -> "Preemptive",
+                PassEventsDown -> Automatic,
+                PassEventsUp   -> True
+            }
         ]
     }
+]
+
+
+Cell[
+    StyleData[ "FeedbackButtonsHorizontal" ],
+    TemplateBoxOptions -> { DisplayFunction -> Function @ Evaluate @ ToBoxes @ $feedbackButtonsH }
 ]
 
 

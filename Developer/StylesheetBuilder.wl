@@ -398,7 +398,8 @@ assistantMenuInitializer[ name_String, color_ ] :=
 
 
 
-$feedbackButtons = Column[ { feedbackButton @ True, feedbackButton @ False }, Spacings -> { 0, { 0, 0.25, 0 } } ];
+$feedbackButtonsV := Column[ { feedbackButton @ True, feedbackButton @ False }, Spacings -> { 0, { 0, 0.25, 0 } } ];
+$feedbackButtonsH := Grid[ { { feedbackButton @ True, feedbackButton @ False } }, Spacings -> 0.2 ];
 
 feedbackButton[ True  ] := feedbackButton[ True , "ThumbsUp"   ];
 feedbackButton[ False ] := feedbackButton[ False, "ThumbsDown" ];
