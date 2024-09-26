@@ -828,7 +828,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.5.1.3933912045"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.5.1.3936341552"|>
   ],
   Cell[
    StyleData["Text"],
@@ -17613,13 +17613,17 @@ Notebook[
    TemplateBoxOptions -> {
     DisplayFunction ->
      (Function[
-      FrameBox[
-       Cell[#1, "Text", Background -> None],
-       Background -> RGBColor[0.929412, 0.956863, 0.988235],
-       FrameMargins -> 8,
-       FrameStyle -> RGBColor[0.639216, 0.788235, 0.94902],
-       RoundingRadius -> 10,
-       StripOnInput -> False
+      PaneBox[
+       FrameBox[
+        Cell[#1, "Text", Background -> None],
+        Background -> RGBColor[0.929412, 0.956863, 0.988235],
+        FrameMargins -> 8,
+        FrameStyle -> RGBColor[0.639216, 0.788235, 0.94902],
+        RoundingRadius -> 10,
+        StripOnInput -> False
+       ],
+       Alignment -> Right,
+       ImageSize -> {Full, Automatic}
       ]
      ])
    }
