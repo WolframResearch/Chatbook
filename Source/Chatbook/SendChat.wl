@@ -1794,8 +1794,8 @@ activeAIAssistantCell[
             outer     = If[ TrueQ[ $WorkspaceChat||$InlineChat ], assistantMessageBox, # & ]
         },
         Cell[
-            BoxData @ outer @ TagBox[
-                ToBoxes @ Dynamic[
+            BoxData @ TagBox[
+                outer @ ToBoxes @ Dynamic[
                     $dynamicTrigger;
                     (* `$dynamicTrigger` is used to precisely control when the dynamic updates, otherwise we can get an
                        FE crash if a NotebookWrite happens at the same time. *)
