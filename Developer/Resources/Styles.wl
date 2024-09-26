@@ -1087,7 +1087,8 @@ Cell[
     TemplateBoxOptions -> {
         DisplayFunction -> Function @ Evaluate @ PaneBox[
             FrameBox[
-                Cell[ #, "Text", Background -> None ],
+                #,
+                BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
                 Background     -> RGBColor[ "#edf4fc" ],
                 FrameMargins   -> 8,
                 FrameStyle     -> RGBColor[ "#a3c9f2" ],
@@ -1111,7 +1112,7 @@ Cell[
         DisplayFunction -> Function @ Evaluate @ TagBox[
             FrameBox[
                 #,
-                BaseStyle      -> "Text",
+                BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
                 Background     -> RGBColor[ "#fcfdff" ],
                 FrameMargins   -> 8,
                 FrameStyle     -> RGBColor[ "#c9ccd0" ],
