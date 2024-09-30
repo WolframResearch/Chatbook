@@ -24,7 +24,7 @@ $defaultChatSettings = <|
     "AutoFormat"                     -> True,
     "AutoSaveConversations"          -> Automatic,
     "BasePrompt"                     -> Automatic,
-    "BypassResponseChecking"         -> False,
+    "BypassResponseChecking"         -> Automatic,
     "ChatContextPreprompt"           -> Automatic,
     "ChatDrivenNotebook"             -> False,
     "ChatHistoryLength"              -> 1000,
@@ -35,6 +35,7 @@ $defaultChatSettings = <|
     "EnableChatGroupSettings"        -> False,
     "EnableLLMServices"              -> Automatic,
     "FrequencyPenalty"               -> 0.1,
+    "ForceSynchronous"               -> Automatic,
     "HandlerFunctions"               :> $DefaultChatHandlerFunctions,
     "HandlerFunctionsKeys"           -> Automatic,
     "IncludeHistory"                 -> Automatic,
@@ -309,9 +310,11 @@ resolveAutoSetting // endDefinition;
 resolveAutoSetting0 // beginDefinition;
 resolveAutoSetting0[ as_, "Assistance"                     ] := False;
 resolveAutoSetting0[ as_, "AutoSaveConversations"          ] := autoSaveConversationsQ @ as;
+resolveAutoSetting0[ as_, "BypassResponseChecking"         ] := bypassResponseCheckingQ @ as;
 resolveAutoSetting0[ as_, "ChatInputIndicator"             ] := "\|01f4ac";
 resolveAutoSetting0[ as_, "DynamicAutoFormat"              ] := dynamicAutoFormatQ @ as;
 resolveAutoSetting0[ as_, "EnableLLMServices"              ] := $useLLMServices;
+resolveAutoSetting0[ as_, "ForceSynchronous"               ] := forceSynchronousQ @ as;
 resolveAutoSetting0[ as_, "HandlerFunctionsKeys"           ] := chatHandlerFunctionsKeys @ as;
 resolveAutoSetting0[ as_, "IncludeHistory"                 ] := Automatic;
 resolveAutoSetting0[ as_, "PromptGenerators"               ] := { };
@@ -339,6 +342,8 @@ resolveAutoSetting0 // endDefinition;
 (* Settings that require other settings to be resolved first: *)
 $autoSettingKeyDependencies = <|
     "AutoSaveConversations"      -> { "AppName", "ConversationUUID" },
+    "BypassResponseChecking"     -> "ForceSynchronous",
+    "ForceSynchronous"           -> "Model",
     "HandlerFunctionsKeys"       -> "EnableLLMServices",
     "MaxCellStringLength"        -> { "Model", "MaxContextTokens" },
     "MaxContextTokens"           -> "Model",
@@ -369,6 +374,20 @@ $autoSettingKeyPriority := Enclose[
     * BasePrompt (might not be possible here)
     * ChatContextPreprompt
 *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*bypassResponseCheckingQ*)
+bypassResponseCheckingQ // beginDefinition;
+bypassResponseCheckingQ[ as_Association ] := TrueQ @ as[ "ForceSynchronous" ];
+bypassResponseCheckingQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*forceSynchronousQ*)
+forceSynchronousQ // beginDefinition;
+forceSynchronousQ[ as_Association ] := o1ModelQ @ as;
+forceSynchronousQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

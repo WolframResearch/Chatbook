@@ -546,6 +546,26 @@ chatSubmit // endDefinition;
 chatSubmit0 // beginDefinition;
 chatSubmit0 // Attributes = { HoldFirst };
 
+(* Currently used for o1 models since they don't support streaming: *)
+chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] /; settings[ "ForceSynchronous" ] :=
+    Module[ { auth, stop, result },
+        auth = settings[ "Authentication" ];
+        stop = makeStopTokens @ settings;
+
+        result = LLMServices`Chat[
+            standardizeMessageKeys @ messages,
+            makeLLMConfiguration @ settings,
+            Authentication -> auth
+        ];
+
+        writeChunk[ Dynamic @ container, cellObject, <| "BodyChunkProcessed" -> result[ "Content" ] |> ];
+        logUsage @ container;
+        trimStopTokens[ container, stop ];
+        checkResponse[ settings, Unevaluated @ container, cellObject, <| |> ];
+
+        None
+    ];
+
 chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] := Quiet[
     Needs[ "LLMServices`" -> None ];
     $lastChatSubmitResult = ReleaseHold[
