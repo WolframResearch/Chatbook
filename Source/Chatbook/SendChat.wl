@@ -547,24 +547,38 @@ chatSubmit0 // beginDefinition;
 chatSubmit0 // Attributes = { HoldFirst };
 
 (* Currently used for o1 models since they don't support streaming: *)
-chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] /; settings[ "ForceSynchronous" ] :=
+chatSubmit0[
+    container_,
+    messages: { __Association },
+    cellObject_,
+    settings_
+] /; settings[ "ForceSynchronous" ] := Enclose[
     Module[ { auth, stop, result },
         auth = settings[ "Authentication" ];
         stop = makeStopTokens @ settings;
 
-        result = LLMServices`Chat[
-            standardizeMessageKeys @ messages,
-            makeLLMConfiguration @ settings,
-            Authentication -> auth
+        result = ConfirmMatch[
+            LLMServices`Chat[
+                standardizeMessageKeys @ messages,
+                makeLLMConfiguration @ settings,
+                Authentication -> auth
+            ],
+            _Association | _Failure,
+            "ChatResult"
         ];
+
+        If[ FailureQ @ result, throwTop @ writeErrorCell[ cellObject, result ] ];
 
         writeChunk[ Dynamic @ container, cellObject, <| "BodyChunkProcessed" -> result[ "Content" ] |> ];
         logUsage @ container;
         trimStopTokens[ container, stop ];
         checkResponse[ settings, Unevaluated @ container, cellObject, <| |> ];
 
+        (* This cannot return a TaskObject: *)
         None
-    ];
+    ],
+    throwInternalFailure
+];
 
 chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] := Quiet[
     Needs[ "LLMServices`" -> None ];
