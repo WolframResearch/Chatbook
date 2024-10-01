@@ -127,7 +127,9 @@ $resourceVersions = <|
     "ClickToCopy"             -> "1.0.0",
     "GPTTokenizer"            -> "1.1.0",
     "MessageFailure"          -> "1.0.0",
-    "ReplaceContext"          -> "1.0.0"
+    "RelativeTimeString"      -> "1.0.0",
+    "ReplaceContext"          -> "1.0.0",
+    "SelectByCurrentValue"    -> "1.0.1"
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -541,7 +543,7 @@ importResourceFunction::failure = "[ERROR] Failed to import resource function `1
 importResourceFunction // Attributes = { HoldFirst };
 
 importResourceFunction[ symbol_Symbol, name_String ] :=
-    importResourceFunction[ symbol, name, Lookup[ $resourceVersions, name, "Latest" ] ];
+    importResourceFunction[ symbol, name, Lookup[ $resourceVersions, name ] ];
 
 importResourceFunction[ symbol_Symbol, name_String, version_String ] /; $mxFlag := Enclose[
     Block[ { PrintTemporary },
