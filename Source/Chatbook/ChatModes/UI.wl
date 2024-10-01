@@ -858,7 +858,11 @@ createHistoryMenu[ nbo_NotebookObject ] := Enclose[
         appName = ConfirmBy[ CurrentChatSettings[ nbo, "AppName" ], StringQ, "AppName" ];
         chats = ConfirmMatch[ ListSavedChats @ appName, { ___Association }, "Chats" ];
         If[ chats === { }, Throw @ ActionMenu[ "History", { "Nothing here yet" :> Null } ] ];
-        ActionMenu[ "History", makeHistoryMenuItem[ nbo ] /@ Take[ chats, UpTo @ $maxHistoryItems ] ]
+        ActionMenu[
+            "History",
+            makeHistoryMenuItem[ nbo ] /@ Take[ chats, UpTo @ $maxHistoryItems ],
+            Method -> "Queued"
+        ]
     ],
     throwInternalFailure
 ];
