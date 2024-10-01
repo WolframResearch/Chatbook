@@ -17,7 +17,6 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 $maxTitleGenerationMessages = 10;
 $savedChatDataVersion       = 1;
 $rootStorageName            = "SavedChats";
-$defaultAppName             = "Default";
 $defaultConversationTitle   = "Untitled Chat";
 $maxFilesDisplay            = 50;
 $timestampPrefixLength      = 7; (* good for about 1000 years *)

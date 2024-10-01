@@ -31,6 +31,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$currentChatSettings;
 `$currentSettingsCache;
 `$customToolFormatter;
+`$defaultAppName;
 `$defaultChatSettings;
 `$defaultChatTools;
 `$defaultMaxCellStringLength;
