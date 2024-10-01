@@ -93,6 +93,7 @@ Needs[ "Wolfram`Chatbook`" ];
 $cloudNotebooks := TrueQ @ CloudSystem`$CloudNotebooks;
 
 $chatIndicatorSymbol  = "\|01f4ac";
+$defaultAppName       = "Default";
 
 $chatDelimiterStyles  = { "ChatBlockDivider", "ChatDelimiter", "ExcludedChatDelimiter" };
 $chatIgnoredStyles    = { "ChatExcluded" };

@@ -18,7 +18,7 @@ $cloudInheritanceFix := $cloudNotebooks;
 
 (* cSpell: ignore AIAPI *)
 $defaultChatSettings = <|
-    "AppName"                        -> None,
+    "AppName"                        -> Automatic,
     "Assistance"                     -> Automatic,
     "Authentication"                 -> Automatic,
     "AutoFormat"                     -> True,
@@ -308,6 +308,7 @@ resolveAutoSetting[ settings_, key_ -> value_ ] := <| settings, key -> resolveAu
 resolveAutoSetting // endDefinition;
 
 resolveAutoSetting0 // beginDefinition;
+resolveAutoSetting0[ as_, "AppName"                        ] := $defaultAppName;
 resolveAutoSetting0[ as_, "Assistance"                     ] := False;
 resolveAutoSetting0[ as_, "AutoSaveConversations"          ] := autoSaveConversationsQ @ as;
 resolveAutoSetting0[ as_, "BypassResponseChecking"         ] := bypassResponseCheckingQ @ as;
@@ -317,15 +318,15 @@ resolveAutoSetting0[ as_, "EnableLLMServices"              ] := $useLLMServices;
 resolveAutoSetting0[ as_, "ForceSynchronous"               ] := forceSynchronousQ @ as;
 resolveAutoSetting0[ as_, "HandlerFunctionsKeys"           ] := chatHandlerFunctionsKeys @ as;
 resolveAutoSetting0[ as_, "IncludeHistory"                 ] := Automatic;
-resolveAutoSetting0[ as_, "PromptGenerators"               ] := { };
-resolveAutoSetting0[ as_, "PromptGeneratorMessageRole"     ] := "System";
-resolveAutoSetting0[ as_, "PromptGeneratorMessagePosition" ] := 2;
 resolveAutoSetting0[ as_, "MaxCellStringLength"            ] := chooseMaxCellStringLength @ as;
 resolveAutoSetting0[ as_, "MaxContextTokens"               ] := autoMaxContextTokens @ as;
 resolveAutoSetting0[ as_, "MaxOutputCellStringLength"      ] := chooseMaxOutputCellStringLength @ as;
 resolveAutoSetting0[ as_, "MaxTokens"                      ] := autoMaxTokens @ as;
 resolveAutoSetting0[ as_, "Multimodal"                     ] := multimodalQ @ as;
 resolveAutoSetting0[ as_, "NotebookWriteMethod"            ] := "PreemptiveLink";
+resolveAutoSetting0[ as_, "PromptGeneratorMessagePosition" ] := 2;
+resolveAutoSetting0[ as_, "PromptGeneratorMessageRole"     ] := "System";
+resolveAutoSetting0[ as_, "PromptGenerators"               ] := { };
 resolveAutoSetting0[ as_, "ShowMinimized"                  ] := Automatic;
 resolveAutoSetting0[ as_, "StreamingOutputMethod"          ] := "PartialDynamic";
 resolveAutoSetting0[ as_, "TokenBudgetMultiplier"          ] := 1;
