@@ -153,6 +153,8 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `getAvailableServiceNames;
 `getBoxObjectFromBoxID;
 `getChatGroupSettings;
+`getEmbedding;
+`getEmbeddings;
 `getHandlerFunctions;
 `getInlineChatPrompt;
 `getModelList;
