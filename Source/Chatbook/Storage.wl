@@ -154,6 +154,9 @@ loadChat // endDefinition;
 (*getChatConversationData*)
 getChatConversationData // beginDefinition;
 
+getChatConversationData[ data: $$conversationFullData ] :=
+    data;
+
 getChatConversationData[ KeyValuePattern @ { "AppName" -> appName_String, "ConversationUUID" -> uuid_String } ] :=
     getChatConversationData[ appName, uuid ];
 
@@ -486,6 +489,9 @@ saveChatFile0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getChatMetadata*)
 getChatMetadata // beginDefinition;
+
+getChatMetadata[ data: $$conversationData ] :=
+    KeyTake[ data, $metaKeys ];
 
 getChatMetadata[ appName_, messages_, settings_Association ] := Enclose[
     Module[ { uuid, title, date, version },
