@@ -327,6 +327,8 @@ saveChat[ messages0_, settings0_, autoTitle_ ] := Enclose[
 
         ConfirmMatch[ cleanupStaleChats @ appName, { ___String }, "Cleanup" ];
 
+        ConfirmMatch[ AddChatToSearchIndex @ as, _Success, "AddToSearchIndex" ];
+
         updateDynamics[ "SavedChats" ];
 
         Success[ "Saved", as ]
