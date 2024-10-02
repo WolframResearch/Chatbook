@@ -14,22 +14,35 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$maxTitleGenerationMessages = 10;
-$savedChatDataVersion       = 1;
+$maxTitleGenerationMessages = 10; (* 5 input/output pairs *)
+$savedChatDataVersion       = 2;
 $rootStorageName            = "SavedChats";
-$defaultAppName             = "Default";
 $defaultConversationTitle   = "Untitled Chat";
-$maxFilesDisplay            = 50;
+$maxChatItems               = Infinity;
 $timestampPrefixLength      = 7; (* good for about 1000 years *)
 $$timestampPrefix           = Repeated[ LetterCharacter|DigitCharacter, { $timestampPrefixLength } ];
 
-$$chatMetadata = KeyValuePattern @ {
+$metaKeys = { "AppName", "ConversationTitle", "ConversationUUID", "Date", "Version" };
+
+(* TODO: these patterns might need to move to Common.wl *)
+$$conversationData = KeyValuePattern @ {
     "AppName"           -> _String,
     "ConversationTitle" -> _String,
     "ConversationUUID"  -> _String,
     "Date"              -> _Real,
-    "Version"           -> _Integer
+    "Version"           -> $savedChatDataVersion
 };
+
+$$conversationFullData = KeyValuePattern @ {
+    "AppName"           -> _String,
+    "ConversationTitle" -> _String,
+    "ConversationUUID"  -> _String,
+    "Date"              -> _Real,
+    "Messages"          -> _List,
+    "Version"           -> $savedChatDataVersion
+};
+
+$$legacyData = KeyValuePattern[ "Version" -> _? (LessThan @ $savedChatDataVersion ) ];
 
 $$appSpec = $$string | All | _NotebookObject;
 
@@ -39,8 +52,14 @@ $generatedTitleCache = <| |>;
 (* ::Section::Closed:: *)
 (*ListSavedChats*)
 ListSavedChats // beginDefinition;
-ListSavedChats[ ] := catchMine @ ListSavedChats @ All;
-ListSavedChats[ appSpec: $$appSpec ] := catchMine @ LogChatTiming @ listSavedChats @ appSpec;
+ListSavedChats // Options = { MaxItems -> $maxChatItems };
+
+ListSavedChats[ opts: OptionsPattern[ ] ] :=
+    catchMine @ ListSavedChats[ All, opts ];
+
+ListSavedChats[ appSpec: $$appSpec, opts: OptionsPattern[ ] ] :=
+    catchMine @ LogChatTiming @ listSavedChats[ appSpec, OptionValue[ MaxItems ] ];
+
 ListSavedChats // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -48,8 +67,8 @@ ListSavedChats // endExportedDefinition;
 (*listSavedChats*)
 listSavedChats // beginDefinition;
 
-listSavedChats[ appSpec: $$appSpec ] := Enclose[
-    Catch @ Module[ { appName, dirName, root, depth, files, sorted },
+listSavedChats[ appSpec: $$appSpec, maxItems_? Positive ] := Enclose[
+    Catch @ Module[ { appName, dirName, root, depth, files, sorted, take },
 
         appName = ConfirmMatch[ determineAppName @ appSpec, $$string | All, "Name" ];
         dirName = If[ StringQ @ appName, appName, Nothing ];
@@ -62,14 +81,14 @@ listSavedChats[ appSpec: $$appSpec ] := Enclose[
 
         depth = If[ StringQ @ appName, 2, 3 ];
 
-
         files = FileNames[ "metadata.wxf", root, { depth } ];
         If[ files === { }, Throw @ { } ];
 
         (* show most recent first *)
         sorted = If[ StringQ @ appName, Reverse @ files, ReverseSortBy[ files, FileNameTake[ #, { -2 } ] & ] ];
+        take = ConfirmMatch[ Take[ sorted, UpTo @ Floor @ maxItems ], { ___String }, "Take" ];
 
-        ConfirmMatch[ readChatMetaFile /@ Take[ sorted, UpTo @ $maxFilesDisplay ], { ___Association }, "Metadata" ]
+        ConfirmMatch[ readChatMetaFile /@ take, { ___Association }, "Metadata" ]
     ],
     throwInternalFailure
 ];
@@ -99,17 +118,18 @@ notebookAppName // endDefinition;
 (*readChatMetaFile*)
 readChatMetaFile // beginDefinition;
 readChatMetaFile[ file_String ] := readChatMetaFile[ file, Quiet @ Developer`ReadWXFFile @ file ];
-readChatMetaFile[ file_String, as: $$chatMetadata ] := <| as, "Path" -> File @ DirectoryName @ file |>;
+readChatMetaFile[ file_String, as_Association ] := checkChatDataVersion @ as;
 readChatMetaFile[ file_String, _? FailureQ ] := Nothing; (* corrupt WXF file (should we auto-remove it?) *)
 readChatMetaFile // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*LoadChat*)
+(* TODO: LoadChat[NotebookObject[...], spec]*)
 LoadChat // beginDefinition;
-LoadChat[ as_Association ] := catchMine @ LoadChat[ as[ "AppName" ], as[ "ConversationUUID" ] ];
-LoadChat[ uuid_String ] := catchMine @ LogChatTiming @ loadChat[ $defaultAppName, uuid ];
-LoadChat[ appName_String, uuid_String ] := catchMine @ LogChatTiming @ loadChat[ appName, uuid ];
+LoadChat[ as: KeyValuePattern[ "ConversationUUID" -> _String ] ] := catchMine @ LogChatTiming @ loadChat @ as;
+LoadChat[ uuid_String ] := catchMine @ LoadChat @ <| "ConversationUUID" -> uuid |>;
+LoadChat[ app_String, uuid_String ] := catchMine @ LoadChat @ <| "AppName" -> app, "ConversationUUID" -> uuid |>;
 LoadChat // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -117,21 +137,10 @@ LoadChat // endExportedDefinition;
 (*loadChat*)
 loadChat // beginDefinition;
 
-loadChat[ appName_String, uuid_String ] := Enclose[
-    Catch @ Module[ { root, dirs, dir, file, data },
-
-        root = ConfirmBy[
-            ChatbookFilesDirectory[ { $rootStorageName, appName }, "EnsureDirectory" -> False ],
-            StringQ,
-            "Root"
-        ];
-
-        dirs = ConfirmMatch[ Sort @ FileNames[ $$timestampPrefix ~~ "_" ~~ uuid, root ], { ___String }, "Directories" ];
-        If[ dirs === { }, Throw @ Missing[ "NotFound" ] ];
-        dir = ConfirmBy[ First[ dirs, $Failed ], StringQ, "Directory" ];
-        file = ConfirmBy[ FileNameJoin @ { dir, "data.wxf" }, StringQ, "File" ];
-        If[ ! FileExistsQ @ file, Throw @ Missing[ "NotFound" ] ];
-        data = ConfirmBy[ Developer`ReadWXFFile @ file, AssociationQ, "Data" ];
+loadChat[ as_Association ] := Enclose[
+    Catch @ Module[ { data },
+        data = ConfirmMatch[ getChatConversationData @ as, $$conversationFullData|_Missing, "Data" ];
+        If[ MissingQ @ data, Throw @ data ];
         ConfirmBy[ restoreAttachments @ data, AssociationQ, "RestoreAttachments" ];
         data
     ],
@@ -139,6 +148,63 @@ loadChat[ appName_String, uuid_String ] := Enclose[
 ];
 
 loadChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getChatConversationData*)
+getChatConversationData // beginDefinition;
+
+getChatConversationData[ data: $$conversationFullData ] :=
+    data;
+
+getChatConversationData[ KeyValuePattern @ { "AppName" -> appName_String, "ConversationUUID" -> uuid_String } ] :=
+    getChatConversationData[ appName, uuid ];
+
+getChatConversationData[ KeyValuePattern[ "ConversationUUID" -> uuid_String ] ] :=
+    getChatConversationData @ uuid;
+
+getChatConversationData[ uuid_String ] := Enclose[
+    Catch @ Module[ { root, dir },
+        root = ConfirmBy[ storageDirectory[ ], StringQ, "Root" ];
+        dir = First[ conversationFileNames[ uuid, root, { 2 } ], Throw @ Missing[ "NotFound" ] ];
+        ConfirmMatch[ getChatConversationData0 @ dir, $$conversationFullData|_Missing, "Data" ]
+    ],
+    throwInternalFailure
+];
+
+getChatConversationData[ appName_String, uuid_String ] := Enclose[
+    Catch @ Module[ { root, dir },
+        root = ConfirmBy[ storageDirectory @ appName, StringQ, "Root" ];
+        dir = First[ conversationFileNames[ uuid, root ], Throw @ Missing[ "NotFound" ] ];
+        ConfirmMatch[ getChatConversationData0 @ dir, $$conversationFullData|_Missing, "Data" ]
+    ],
+    throwInternalFailure
+];
+
+getChatConversationData // endDefinition;
+
+
+getChatConversationData0 // beginDefinition;
+
+getChatConversationData0[ dir_String ] := Enclose[
+    Catch @ Module[ { fail, file, data },
+        fail = Function[ Quiet @ DeleteDirectory[ dir, DeleteContents -> True ]; Throw @ Missing[ "NotFound" ] ];
+
+        file = FileNameJoin @ { dir, "data.wxf" };
+        If[ ! FileExistsQ @ file, fail[ ] ];
+
+        data = Quiet @ Developer`ReadWXFFile @ file;
+        If[ ! AssociationQ @ data, fail[ ] ];
+
+        checkChatDataVersion @ data
+    ],
+    throwInternalFailure
+];
+
+getChatConversationData0[ missing_Missing ] :=
+    missing;
+
+getChatConversationData0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -179,14 +245,8 @@ deleteChat // beginDefinition;
 
 deleteChat[ appName_String, uuid_String ] := Enclose[
     Catch @ Module[ { root, dirs, dir },
-
-        root = ConfirmBy[
-            ChatbookFilesDirectory[ { $rootStorageName, appName }, "EnsureDirectory" -> False ],
-            StringQ,
-            "Root"
-        ];
-
-        dirs = ConfirmMatch[ Sort @ FileNames[ $$timestampPrefix ~~ "_" ~~ uuid, root ], { ___String }, "Directories" ];
+        root = ConfirmBy[ storageDirectory @ appName, StringQ, "Root" ];
+        dirs = ConfirmMatch[ conversationFileNames[ uuid, root ], { ___String }, "Directories" ];
         If[ dirs === { }, Throw @ Missing[ "NotFound" ] ];
         dir = ConfirmBy[ First[ dirs, $Failed ], StringQ, "Directory" ];
         ConfirmMatch[ DeleteDirectory[ dir, DeleteContents -> True ], Null, "DeleteDirectory" ];
@@ -219,11 +279,13 @@ SaveChat // endExportedDefinition;
 saveChat // beginDefinition;
 
 saveChat[ messages0_, settings0_, autoTitle_ ] := Enclose[
-    Module[ { settings, messages, appName, metadata, directory, attachments, smallSettings, as },
+    Module[ { settings, messages, appName, metadata, vectors, directory, attachments, smallSettings, as },
+
         settings = If[ TrueQ @ autoTitle, <| settings0, "AutoGenerateTitle" -> True |>, settings0 ];
         messages = ConfirmMatch[ prepareMessagesForSaving[ messages0, settings ], $$chatMessages, "Messages" ];
         appName = ConfirmBy[ Lookup[ settings, "AppName", $defaultAppName ], StringQ, "AppName" ];
-        metadata = ConfirmMatch[ getChatMetadata[ appName, messages, settings ], $$chatMetadata, "Metadata" ];
+        metadata = ConfirmMatch[ getChatMetadata[ appName, messages, settings ], $$conversationData, "Metadata" ];
+        vectors = ConfirmMatch[ createMessageVectors[ metadata, messages, settings ], { ___NumericArray }, "Vectors" ];
         directory = ConfirmBy[ targetDirectory[ appName, metadata ], DirectoryQ, "Directory" ];
         attachments = ConfirmBy[ GetAttachments[ messages, All ], AssociationQ, "Attachments" ];
         smallSettings = ConfirmBy[ toSmallSettings @ settings, AssociationQ, "Settings" ];
@@ -243,7 +305,8 @@ saveChat[ messages0_, settings0_, autoTitle_ ] := Enclose[
                     metadata,
                     "Attachments" -> attachments,
                     "Messages"    -> messages,
-                    "Settings"    -> smallSettings
+                    "Settings"    -> smallSettings,
+                    "Vectors"     -> vectors
                 |>,
                 directory,
                 PerformanceGoal -> "Size"
@@ -264,6 +327,8 @@ saveChat[ messages0_, settings0_, autoTitle_ ] := Enclose[
 
         ConfirmMatch[ cleanupStaleChats @ appName, { ___String }, "Cleanup" ];
 
+        ConfirmMatch[ AddChatToSearchIndex @ as, _Success, "AddToSearchIndex" ];
+
         updateDynamics[ "SavedChats" ];
 
         Success[ "Saved", as ]
@@ -272,6 +337,37 @@ saveChat[ messages0_, settings0_, autoTitle_ ] := Enclose[
 ];
 
 saveChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createMessageVectors*)
+createMessageVectors // beginDefinition;
+
+createMessageVectors[ metadata_, messages: $$chatMessages, settings_ ] := Enclose[
+    Module[ { partitioned, strings, rVectors, iVectors, title, titleVector },
+        ConfirmAssert[ Length @ messages >= 2, "LengthCheck" ];
+        partitioned = ConfirmBy[ Partition[ messages, UpTo[ 2 ] ], ListQ, "Pairs" ];
+        strings = ConfirmMatch[ messagesToString /@ partitioned, { __String }, "Strings" ];
+        rVectors = ConfirmMatch[ getEmbeddings @ strings, { __NumericArray }, "Embeddings" ];
+        iVectors = ConfirmMatch[ toInt8Vector /@ rVectors, { __NumericArray }, "Int8Vectors" ];
+        title = metadata[ "ConversationTitle" ];
+        If[ StringQ @ title,
+            titleVector = ConfirmMatch[ toInt8Vector @ getEmbedding @ title, _NumericArray, "TitleVector" ];
+            Prepend[ iVectors, titleVector ],
+            iVectors
+        ]
+    ],
+    throwInternalFailure
+];
+
+createMessageVectors // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*toInt8Vector*)
+toInt8Vector // beginDefinition;
+toInt8Vector[ arr_NumericArray ] := NumericArray[ arr, "Integer8", "ClipAndRound" ];
+toInt8Vector // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -314,13 +410,8 @@ cleanupStaleChats // beginDefinition;
 
 cleanupStaleChats[ app_String ] := Enclose[
     Module[ { root, dirs, grouped, delete },
-        root = ConfirmBy[
-            ChatbookFilesDirectory[ { $rootStorageName, app }, "EnsureDirectory" -> False ],
-            StringQ,
-            "Root"
-        ];
-
-        dirs = ConfirmMatch[ Sort @ FileNames[ $$timestampPrefix ~~ "_" ~~ __, root ], { ___String }, "Directories" ];
+        root = ConfirmBy[ storageDirectory @ app, StringQ, "Root" ];
+        dirs = ConfirmMatch[ conversationFileNames[ All, root ], { ___String }, "Directories" ];
         grouped = GatherBy[ dirs, StringDrop[ FileNameTake @ #, $timestampPrefixLength ] & ];
         delete = ConfirmMatch[ Flatten[ Most /@ grouped ], { ___String }, "Delete" ];
 
@@ -375,7 +466,18 @@ dropSystemMessage // endDefinition;
 (*saveChatFile*)
 saveChatFile // beginDefinition;
 
-saveChatFile[ type_String, data_, directory_, opts: OptionsPattern[ ] ] := Enclose[
+saveChatFile[ "metadata", data_Association, directory_, opts: OptionsPattern[ ] ] :=
+    saveChatFile0[ "metadata", KeyTake[ data, $metaKeys ], directory, opts ];
+
+saveChatFile[ type_String, data_Association, directory_, opts: OptionsPattern[ ] ] :=
+    saveChatFile0[ type, data, directory, opts ];
+
+saveChatFile // endDefinition;
+
+
+saveChatFile0 // beginDefinition;
+
+saveChatFile0[ type_String, data_, directory_, opts: OptionsPattern[ ] ] := Enclose[
     Module[ { file },
         file = ConfirmBy[ FileNameJoin @ { directory, type <> ".wxf" }, StringQ, "File" ];
         ConfirmBy[ Developer`WriteWXFFile[ file, data, opts ], FileExistsQ, "Export" ]
@@ -383,12 +485,15 @@ saveChatFile[ type_String, data_, directory_, opts: OptionsPattern[ ] ] := Enclo
     throwInternalFailure
 ];
 
-saveChatFile // endDefinition;
+saveChatFile0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*getChatMetadata*)
 getChatMetadata // beginDefinition;
+
+getChatMetadata[ data: $$conversationData ] :=
+    KeyTake[ data, $metaKeys ];
 
 getChatMetadata[ appName_, messages_, settings_Association ] := Enclose[
     Module[ { uuid, title, date, version },
@@ -477,6 +582,121 @@ generateTitleCached0[ hash_Integer, messages_ ] := Enclose[
 ];
 
 generateTitleCached0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Upgrade Data*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*checkChatDataVersion*)
+checkChatDataVersion // beginDefinition;
+checkChatDataVersion[ as: $$conversationData ] := as;
+checkChatDataVersion[ as: $$legacyData ] := upgradeChatData @ as;
+checkChatDataVersion // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*upgradeChatData*)
+upgradeChatData // beginDefinition;
+
+upgradeChatData[ as: KeyValuePattern[ "Version" -> oldVersion_Integer ] ] := Enclose[
+    Module[ { upgraded, newVersion },
+        ConfirmAssert[ oldVersion < $savedChatDataVersion, "OldVersionCheck" ];
+        upgraded = ConfirmBy[ upgradeChatData0[ oldVersion, as ], AssociationQ, "Upgraded" ];
+        newVersion = ConfirmMatch[ upgraded[ "Version" ], _Integer, "NewVersion" ];
+        ConfirmAssert[ oldVersion < newVersion <= $savedChatDataVersion, "NewVersionCheck" ];
+        If[ newVersion === $savedChatDataVersion,
+            upgraded,
+            upgradeChatData @ upgraded
+        ]
+    ],
+    throwInternalFailure
+];
+
+upgradeChatData // endDefinition;
+
+
+upgradeChatData0 // beginDefinition;
+upgradeChatData0[ 1, as_Association ] := upgradeChatData1 @ as;
+upgradeChatData0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Update from version 1*)
+
+(* Adds vectors to the saved data: *)
+upgradeChatData1 // beginDefinition;
+
+upgradeChatData1[ metadata_Association ] := Enclose[
+    Module[ { appName, directory, file, data, messages, settings, vectors, newData, newMeta },
+
+        appName   = ConfirmBy[ metadata[ "AppName" ], StringQ, "AppName" ];
+        directory = ConfirmBy[ targetDirectory[ appName, metadata ], DirectoryQ, "Directory" ];
+        file      = ConfirmBy[ FileNameJoin @ { directory, "data.wxf" }, FileExistsQ, "File" ];
+        data      = ConfirmBy[ Developer`ReadWXFFile @ file, AssociationQ, "Data" ];
+        messages  = ConfirmMatch[ data[ "Messages" ], $$chatMessages, "Messages" ];
+        settings  = ConfirmBy[ data[ "Settings" ], AssociationQ, "Settings" ];
+        vectors   = ConfirmMatch[ createMessageVectors[ metadata, messages, settings ], { ___NumericArray }, "Vectors" ];
+        newData   = <| data, "Vectors" -> vectors, "Version" -> 2 |>;
+        newMeta   = ConfirmBy[ <| metadata, "Version" -> 2 |>, AssociationQ, "Metadata" ];
+
+        ConfirmBy[
+            saveChatFile[ "metadata", newMeta, directory ],
+            FileExistsQ,
+            "SaveMetadata"
+        ];
+
+        ConfirmBy[
+            saveChatFile[ "data", newData, directory, PerformanceGoal -> "Size" ],
+            FileExistsQ,
+            "SaveMessages"
+        ];
+
+        If[ KeyExistsQ[ metadata, "Messages" ],
+            newData,
+            newMeta
+        ]
+    ],
+    throwInternalFailure
+];
+
+upgradeChatData1 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*File Utilities*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*storageDirectory*)
+storageDirectory // beginDefinition;
+storageDirectory[ ] := ChatbookFilesDirectory[ $rootStorageName, "EnsureDirectory" -> False ];
+storageDirectory[ name_String ] := ChatbookFilesDirectory[ { $rootStorageName, name }, "EnsureDirectory" -> False ];
+storageDirectory[ All ] := storageDirectory[ ];
+storageDirectory // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*conversationFileNames*)
+conversationFileNames // beginDefinition;
+
+conversationFileNames[ All, args__ ] :=
+    conversationFileNames[ __, args ];
+
+conversationFileNames[ pattern_, args__ ] := Enclose[
+    Sort @ ConfirmMatch[ FileNames[ conversationFilePattern @ pattern, args ], { ___String }, "FileNames" ],
+    throwInternalFailure
+];
+
+conversationFileNames // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*conversationFilePattern*)
+conversationFilePattern // beginDefinition;
+conversationFilePattern[ pattern_ ] := $$timestampPrefix ~~ "_" ~~ pattern;
+conversationFilePattern // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

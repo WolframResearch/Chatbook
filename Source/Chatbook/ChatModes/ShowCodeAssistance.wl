@@ -14,6 +14,8 @@ $workspaceChatWidth = 325;
 
 $codeAssistanceBaseSettings = <|
     "AppName"           -> "CodeAssistance",
+    "Authentication"    -> Automatic, (* TODO *)
+    "Model"             -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>,
     "PromptGenerators"  -> { "RelatedDocumentation" },
     "ServiceCaller"     -> "CodeAssistance",
     "ToolOptions"       -> <| "WolframLanguageEvaluator" -> <| "AppendURIPrompt" -> True, "Method" -> "Session" |> |>,

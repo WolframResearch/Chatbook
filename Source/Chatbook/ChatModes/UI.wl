@@ -30,7 +30,7 @@ $inputFieldFrameOptions = Sequence[
     FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], RGBColor[ "#a3c9f2" ] ]
 ];
 
-$userImageParams = <| "size" -> 50, "default" -> "identicon", "rating" -> "G" |>;
+$userImageParams = <| "size" -> 40, "default" -> "404", "rating" -> "G" |>;
 
 $defaultUserImage = Graphics[
     {
@@ -41,7 +41,7 @@ $defaultUserImage = Graphics[
         Disk[ { 0, 1 }, 1 ],
         Disk[ { 0, -1.8 }, { 1.65, 2 } ]
     },
-    ImageSize -> 25,
+    ImageSize -> 20,
     PlotRange -> { { -2.4, 2.4 }, { -2.0, 2.8 } }
 ];
 
@@ -51,7 +51,7 @@ $inputFieldBox = None;
 $inlineChatScrollPosition = 0.0;
 $lastScrollPosition       = 0.0;
 
-$maxHistoryItems = 50;
+$maxHistoryItems = 25;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -717,12 +717,12 @@ userImage[ ] := userImage[ $CloudUserID ];
 
 userImage[ user_String ] := Enclose[
     Module[ { hash, url, image },
-        hash = Hash[ ToLowerCase @ StringTrim @ user, "MD5", "HexString" ];
-        url = ConfirmBy[ URLBuild[ { "https://www.gravatar.com/avatar/", hash }, $userImageParams ], StringQ, "URL" ];
-        image = ConfirmBy[ Import @ url, ImageQ, "Image" ];
-        userImage[ user ] = Show[ image, ImageSize -> 25 ]
+        hash  = Hash[ ToLowerCase @ StringTrim @ user, "MD5", "HexString" ];
+        url   = ConfirmBy[ URLBuild[ { "https://www.gravatar.com/avatar/", hash }, $userImageParams ], StringQ, "URL" ];
+        image = ConfirmBy[ Quiet @ Import @ url, ImageQ, "Image" ];
+        userImage[ user ] = Show[ image, ImageSize -> 20 ]
     ],
-    $defaultUserImage &
+    (userImage[ user ] = $defaultUserImage) &
 ];
 
 userImage[ other_ ] :=
@@ -858,7 +858,11 @@ createHistoryMenu[ nbo_NotebookObject ] := Enclose[
         appName = ConfirmBy[ CurrentChatSettings[ nbo, "AppName" ], StringQ, "AppName" ];
         chats = ConfirmMatch[ ListSavedChats @ appName, { ___Association }, "Chats" ];
         If[ chats === { }, Throw @ ActionMenu[ "History", { "Nothing here yet" :> Null } ] ];
-        ActionMenu[ "History", makeHistoryMenuItem[ nbo ] /@ Take[ chats, UpTo @ $maxHistoryItems ] ]
+        ActionMenu[
+            "History",
+            makeHistoryMenuItem[ nbo ] /@ Take[ chats, UpTo @ $maxHistoryItems ],
+            Method -> "Queued"
+        ]
     ],
     throwInternalFailure
 ];
