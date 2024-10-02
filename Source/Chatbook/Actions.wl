@@ -568,7 +568,11 @@ waitForLastTask // beginDefinition;
 waitForLastTask[ ] := waitForLastTask @ $lastTask;
 
 waitForLastTask[ $Canceled ] := $Canceled;
-waitForLastTask[ None ] := runNextTask[ ];
+
+waitForLastTask[ None ] :=
+    While[ MatchQ[ $nextTaskEvaluation, _Hold ],
+           runNextTask @ $nextTaskEvaluation
+    ];
 
 waitForLastTask[ task_TaskObject ] := LogChatTiming[
     TaskWait @ task;
