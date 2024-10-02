@@ -32,6 +32,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$ToolFunctions;
 `$WorkspaceChat;
 `AbsoluteCurrentChatSettings;
+`AddChatToSearchIndex;
 `AppendURIInstructions;
 `BasePrompt;
 `CachedBoxes;
@@ -65,10 +66,12 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `LoadChat;
 `LogChatTiming;
 `MakeExpressionURI;
+`RebuildChatSearchIndex;
 `RelatedDocumentation;
 `RelatedWolframAlphaQueries;
 `SandboxLinguisticAssistantData;
 `SaveChat;
+`SearchChats;
 `SetModel;
 `SetToolOptions;
 `ShowCodeAssistance;
@@ -143,6 +146,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`Prompting`",
     "Wolfram`Chatbook`ResourceInstaller`",
     "Wolfram`Chatbook`Sandbox`",
+    "Wolfram`Chatbook`Search`",
     "Wolfram`Chatbook`SendChat`",
     "Wolfram`Chatbook`Serialization`",
     "Wolfram`Chatbook`Services`",
@@ -184,6 +188,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "$ToolFunctions",
     "$WorkspaceChat",
     "AbsoluteCurrentChatSettings",
+    "AddChatToSearchIndex",
     "AppendURIInstructions",
     "BasePrompt",
     "CachedBoxes",
@@ -216,10 +221,12 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "LoadChat",
     "LogChatTiming",
     "MakeExpressionURI",
+    "RebuildChatSearchIndex",
     "RelatedDocumentation",
     "RelatedWolframAlphaQueries",
     "SandboxLinguisticAssistantData",
     "SaveChat",
+    "SearchChats",
     "SetModel",
     "SetToolOptions",
     "ShowCodeAssistance",
