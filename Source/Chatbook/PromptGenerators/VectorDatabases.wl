@@ -15,9 +15,10 @@ HoldComplete[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$vectorDBNames = { "DocumentationURIs", "WolframAlphaQueries" };
-$dbVersion     = "1.1.0";
-$allowDownload = True;
+$vectorDBNames   = { "DocumentationURIs", "WolframAlphaQueries" };
+$dbVersion       = "1.1.0";
+$allowDownload   = True;
+$cacheEmbeddings = True;
 
 $embeddingDimension      = 384;
 $maxNeighbors            = 50;
@@ -693,14 +694,15 @@ cacheVectorDBResult // endDefinition;
 (* ::Subsection::Closed:: *)
 (*getEmbedding*)
 getEmbedding // beginDefinition;
+getEmbedding // Options = { "CacheEmbeddings" -> $cacheEmbeddings };
 
-getEmbedding[ string_String ] :=
+getEmbedding[ string_String, opts: OptionsPattern[ ] ] :=
     With[ { embedding = $embeddingCache[ string ] },
         embedding /; NumericArrayQ @ embedding
     ];
 
-getEmbedding[ string_String ] := Enclose[
-    First @ ConfirmMatch[ getEmbeddings @ { string }, { _NumericArray }, "Embedding" ],
+getEmbedding[ string_String, opts: OptionsPattern[ ] ] := Enclose[
+    First @ ConfirmMatch[ getEmbeddings[ { string }, opts ], { _NumericArray }, "Embedding" ],
     throwInternalFailure
 ];
 
@@ -710,19 +712,31 @@ getEmbedding // endDefinition;
 (* ::Subsection::Closed:: *)
 (*getEmbeddings*)
 getEmbeddings // beginDefinition;
+getEmbeddings // Options = { "CacheEmbeddings" -> $cacheEmbeddings };
 
-getEmbeddings[ { } ] := { };
+getEmbeddings[ { }, opts: OptionsPattern[ ] ] := { };
 
-getEmbeddings[ strings: { __String } ] := Enclose[
+getEmbeddings[ strings: { __String }, opts: OptionsPattern[ ] ] :=
+    If[ TrueQ @ OptionValue[ "CacheEmbeddings" ],
+        getEmbeddings0 @ strings,
+        Block[ { $cacheEmbeddings = False }, getAndCacheEmbeddings @ strings ]
+    ] // LogChatTiming[ "GetEmbeddings" ];
+
+getEmbeddings // endDefinition;
+
+
+getEmbeddings0 // beginDefinition;
+
+getEmbeddings0[ strings: { __String } ] := Enclose[
     Module[ { notCached },
         notCached = Select[ strings, ! KeyExistsQ[ $embeddingCache, # ] & ];
         ConfirmMatch[ getAndCacheEmbeddings @ notCached, { ___NumericArray }, "CacheEmbeddings" ];
         ConfirmMatch[ Lookup[ $embeddingCache, strings ], { __NumericArray }, "Result" ]
-    ] // LogChatTiming[ "GetEmbeddings" ],
+    ],
     throwInternalFailure
 ];
 
-getEmbeddings // endDefinition;
+getEmbeddings0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -742,10 +756,7 @@ getAndCacheEmbeddings[ strings: { __String } ] /; $embeddingModel === "SentenceB
 
         ConfirmAssert[ Length @ strings === Length @ vectors, "LengthCheck" ];
 
-        MapThread[
-            ($embeddingCache[ #1 ] = toTinyVector @ #2) &,
-            { strings, vectors }
-        ]
+        MapThread[ cacheEmbedding, { strings, vectors } ]
     ],
     throwInternalFailure
 ];
@@ -771,15 +782,20 @@ getAndCacheEmbeddings[ strings: { __String } ] := Enclose[
 
         ConfirmAssert[ Length @ strings === Length @ vectors, "LengthCheck" ];
 
-        MapThread[
-            ($embeddingCache[ #1 ] = toTinyVector @ #2) &,
-            { strings, vectors }
-        ]
+        MapThread[ cacheEmbedding, { strings, vectors } ]
     ],
     throwInternalFailure
 ];
 
 getAndCacheEmbeddings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cacheEmbedding*)
+cacheEmbedding // beginDefinition;
+cacheEmbedding[ key_String, vector_ ] /; ! $cacheEmbeddings := toTinyVector @ vector;
+cacheEmbedding[ key_String, vector_ ] := $embeddingCache[ key ] = toTinyVector @ vector;
+cacheEmbedding // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

@@ -18,7 +18,7 @@ $cloudInheritanceFix := $cloudNotebooks;
 
 (* cSpell: ignore AIAPI *)
 $defaultChatSettings = <|
-    "AppName"                        -> None,
+    "AppName"                        -> Automatic,
     "Assistance"                     -> Automatic,
     "Authentication"                 -> Automatic,
     "AutoFormat"                     -> True,
@@ -308,6 +308,7 @@ resolveAutoSetting[ settings_, key_ -> value_ ] := <| settings, key -> resolveAu
 resolveAutoSetting // endDefinition;
 
 resolveAutoSetting0 // beginDefinition;
+resolveAutoSetting0[ as_, "AppName"                        ] := $defaultAppName;
 resolveAutoSetting0[ as_, "Assistance"                     ] := False;
 resolveAutoSetting0[ as_, "AutoSaveConversations"          ] := autoSaveConversationsQ @ as;
 resolveAutoSetting0[ as_, "BypassResponseChecking"         ] := bypassResponseCheckingQ @ as;
@@ -317,15 +318,15 @@ resolveAutoSetting0[ as_, "EnableLLMServices"              ] := $useLLMServices;
 resolveAutoSetting0[ as_, "ForceSynchronous"               ] := forceSynchronousQ @ as;
 resolveAutoSetting0[ as_, "HandlerFunctionsKeys"           ] := chatHandlerFunctionsKeys @ as;
 resolveAutoSetting0[ as_, "IncludeHistory"                 ] := Automatic;
-resolveAutoSetting0[ as_, "PromptGenerators"               ] := { };
-resolveAutoSetting0[ as_, "PromptGeneratorMessageRole"     ] := "System";
-resolveAutoSetting0[ as_, "PromptGeneratorMessagePosition" ] := 2;
 resolveAutoSetting0[ as_, "MaxCellStringLength"            ] := chooseMaxCellStringLength @ as;
 resolveAutoSetting0[ as_, "MaxContextTokens"               ] := autoMaxContextTokens @ as;
 resolveAutoSetting0[ as_, "MaxOutputCellStringLength"      ] := chooseMaxOutputCellStringLength @ as;
 resolveAutoSetting0[ as_, "MaxTokens"                      ] := autoMaxTokens @ as;
 resolveAutoSetting0[ as_, "Multimodal"                     ] := multimodalQ @ as;
 resolveAutoSetting0[ as_, "NotebookWriteMethod"            ] := "PreemptiveLink";
+resolveAutoSetting0[ as_, "PromptGeneratorMessagePosition" ] := 2;
+resolveAutoSetting0[ as_, "PromptGeneratorMessageRole"     ] := "System";
+resolveAutoSetting0[ as_, "PromptGenerators"               ] := { };
 resolveAutoSetting0[ as_, "ShowMinimized"                  ] := Automatic;
 resolveAutoSetting0[ as_, "StreamingOutputMethod"          ] := "PartialDynamic";
 resolveAutoSetting0[ as_, "TokenBudgetMultiplier"          ] := 1;
@@ -480,6 +481,7 @@ autoMaxContextTokens // endDefinition;
 
 autoMaxContextTokens0 // beginDefinition;
 autoMaxContextTokens0[ name_String ] := autoMaxContextTokens0 @ StringSplit[ name, "-"|Whitespace ];
+autoMaxContextTokens0[ { ___, "o1"                          , ___ } ] := 2^17;
 autoMaxContextTokens0[ { ___, "gpt"|"chatgpt", "4o"         , ___ } ] := 2^17;
 autoMaxContextTokens0[ { ___, "gpt", "4", "vision"          , ___ } ] := 2^17;
 autoMaxContextTokens0[ { ___, "gpt", "4", "turbo"           , ___ } ] := 2^17;
@@ -492,6 +494,7 @@ autoMaxContextTokens0[ { ___, "gpt", "3.5"                  , ___ } ] := 2^12;
 autoMaxContextTokens0[ { ___, "chat", "bison", "001"        , ___ } ] := 20000;
 autoMaxContextTokens0[ { ___, "gemini", ___, "pro", "vision", ___ } ] := 12288;
 autoMaxContextTokens0[ { ___, "gemini", ___, "pro"          , ___ } ] := 30720;
+autoMaxContextTokens0[ { ___, "phi3.5"                      , ___ } ] := 2^17;
 autoMaxContextTokens0[ _List                                        ] := 2^12;
 autoMaxContextTokens0 // endDefinition;
 
