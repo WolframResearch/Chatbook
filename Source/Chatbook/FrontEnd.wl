@@ -657,24 +657,28 @@ cellPrint // endDefinition;
 (*cloudCellPrint*)
 cloudCellPrint // beginDefinition;
 
-cloudCellPrint[ cell0_Cell ] :=
-    Enclose @ Module[ { cellUUID, nbUUID, cell },
-        cellUUID = CreateUUID[ ];
-        nbUUID   = ConfirmBy[ cloudNotebookUUID[ ], StringQ ];
-        cell     = Append[ DeleteCases[ cell0, ExpressionUUID -> _ ], ExpressionUUID -> cellUUID ];
-        CellPrint @ cell;
-        CellObject[ cellUUID, nbUUID ]
+cloudCellPrint[ cell_Cell ] :=
+    With[ { obj = MathLink`CallFrontEnd @ FrontEnd`CellPrintReturnObject @ cell },
+        obj /; MatchQ[ obj, _CellObject ]
     ];
 
-cloudCellPrint // endDefinition;
+cloudCellPrint[ Cell[ a__, CellTags -> tags0_, b___ ] ] := Enclose[
+    Module[ { uuid, tags, cell, obj },
+        uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
+        tags = Select[ Flatten @ { tags0, uuid }, StringQ ];
+        cell = Cell[ a, CellTags -> tags, b ];
+        CellPrint @ cell;
+        obj = First @ ConfirmMatch[ Cells[ CellTags -> uuid ], { _CellObject }, "Cells" ];
+        SetOptions[ obj, CellTags -> Replace[ tags, { uuid } -> Inherited ] ];
+        obj
+    ],
+    throwInternalFailure
+];
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*cloudNotebookUUID*)
-cloudNotebookUUID // beginDefinition;
-cloudNotebookUUID[ ] := cloudNotebookUUID[ EvaluationNotebook[ ] ];
-cloudNotebookUUID[ NotebookObject[ _, uuid_String ] ] := uuid;
-cloudNotebookUUID // endDefinition;
+cloudCellPrint[ Cell[ a___ ] ] :=
+    cloudCellPrint @ Cell[ a, CellTags -> { } ];
+
+cloudCellPrint // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
