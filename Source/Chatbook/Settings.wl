@@ -64,6 +64,7 @@ $defaultChatSettings = <|
     "TabbedOutput"                   -> True, (* TODO: define a "MaxOutputPages" setting *)
     "TargetCloudObject"              -> Automatic,
     "Temperature"                    -> 0.7,
+    "TimeConstraint"                 -> Automatic,
     "TokenBudgetMultiplier"          -> Automatic,
     "Tokenizer"                      -> Automatic,
     "ToolCallExamplePromptStyle"     -> Automatic,
