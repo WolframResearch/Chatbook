@@ -291,7 +291,7 @@ overrideSettings[ settings_Association? gpt4oTextToolsQ ] := <| settings, $gpt4o
 overrideSettings[ settings_Association ] := settings;
 overrideSettings // endDefinition;
 
-$o1Overrides = <| "PresencePenalty" -> 0, "Temperature" -> 1 |>;
+$o1Overrides            = <| "PresencePenalty" -> 0, "Temperature" -> 1 |>;
 $gpt4oTextToolOverrides = <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o-2024-05-13" |> |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -402,7 +402,7 @@ bypassResponseCheckingQ // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*forceSynchronousQ*)
 forceSynchronousQ // beginDefinition;
-forceSynchronousQ[ as_Association ] := o1ModelQ @ as;
+forceSynchronousQ[ as_Association ] := TrueQ @ Or[ o1ModelQ @ as, serviceName @ as === "GoogleGemini" ];
 forceSynchronousQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
