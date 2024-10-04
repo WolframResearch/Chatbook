@@ -558,10 +558,13 @@ chatSubmit0[
         stop = makeStopTokens @ settings;
 
         result = ConfirmMatch[
-            LLMServices`Chat[
-                standardizeMessageKeys @ messages,
-                makeLLMConfiguration @ settings,
-                Authentication -> auth
+            Quiet[
+                LLMServices`Chat[
+                    standardizeMessageKeys @ messages,
+                    makeLLMConfiguration @ settings,
+                    Authentication -> auth
+                ],
+                { LLMServices`Chat::unsupported }
             ],
             _Association | _Failure,
             "ChatResult"
@@ -1296,16 +1299,6 @@ makeToolResponseMessage0 // endDefinition;
 userToolResponseQ // beginDefinition;
 userToolResponseQ[ settings_ ] := MatchQ[ serviceName @ settings, "Anthropic"|"MistralAI" ];
 userToolResponseQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*serviceName*)
-serviceName // beginDefinition;
-serviceName[ KeyValuePattern[ "Model" -> model_ ] ] := serviceName @ model;
-serviceName[ { service_String, _String | $$unspecified } ] := service;
-serviceName[ KeyValuePattern[ "Service" -> service_String ] ] := service;
-serviceName[ _String | _Association | $$unspecified ] := "OpenAI";
-serviceName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
