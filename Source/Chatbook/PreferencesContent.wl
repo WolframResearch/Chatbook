@@ -472,6 +472,9 @@ makeModelSelector0[ services_Association? AssociationQ ] := Enclose[
     throwInternalFailure
 ];
 
+makeModelSelector0[ failure: HoldPattern @ Failure[ LLMServices`LLMServiceInformation, ___ ] ] :=
+    Pane[ failure, ImageSize -> { $preferencesWidth-50, Automatic } ];
+
 makeModelSelector0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1084,8 +1087,12 @@ makeToolCallFrequencySelector // endDefinition;
 (* ::Subsection::Closed:: *)
 (*servicesSettingsPanel*)
 servicesSettingsPanel // beginDefinition;
+servicesSettingsPanel[ ] := Catch[ servicesSettingsPanel0[ ], $servicesSettingsTag ];
+servicesSettingsPanel // endDefinition;
 
-servicesSettingsPanel[ ] := Enclose[
+servicesSettingsPanel0 // beginDefinition;
+
+servicesSettingsPanel0[ ] := Enclose[
     Module[ { settingsLabel, settings, serviceGrid },
 
         settingsLabel = subsectionText @ tr[ "PreferencesContentSubsectionRegisteredServices" ];
@@ -1109,7 +1116,7 @@ servicesSettingsPanel[ ] := Enclose[
     throwInternalFailure
 ];
 
-servicesSettingsPanel // endDefinition;
+servicesSettingsPanel0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1128,7 +1135,7 @@ makeServiceGrid[ ] := Grid[
                 Spacer[ 1 ]
             }
         },
-        KeyValueMap[ makeServiceGridRow, DeleteCases[ $availableServices, KeyValuePattern[ "Hidden" -> True ] ] ]
+        makeServiceGridRows @ $availableServices
     ],
     Alignment  -> { Left, Baseline },
     Background -> { { }, { GrayLevel[ 0.898 ], { White } } },
@@ -1139,6 +1146,19 @@ makeServiceGrid[ ] := Grid[
 ];
 
 makeServiceGrid // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeServiceGridRows*)
+makeServiceGridRows // beginDefinition;
+
+makeServiceGridRows[ services_Association ] :=
+    KeyValueMap[ makeServiceGridRow, DeleteCases[ services, KeyValuePattern[ "Hidden" -> True ] ] ];
+
+makeServiceGridRows[ failure: HoldPattern @ Failure[ LLMServices`LLMServiceInformation, ___ ] ] :=
+    Throw[ Pane[ failure, ImageSize -> { $preferencesWidth-50, Automatic } ], $servicesSettingsTag ];
+
+makeServiceGridRows // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

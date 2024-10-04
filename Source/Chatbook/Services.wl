@@ -27,6 +27,11 @@ $llmServicesAvailable := $llmServicesAvailable = (
     PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "1.2.2" ]
 );
 
+$$llmServicesFailure = HoldPattern @ Failure[
+    LLMServices`LLMServiceInformation,
+    KeyValuePattern[ "MessageTemplate" :> LLMServices`LLMServiceInformation::corrupt ]
+];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*InvalidateServiceCache*)
@@ -228,6 +233,19 @@ getAvailableServices0[ services0_Association? AssociationQ ] := Enclose[
 
         $servicesLoaded = True;
         $serviceCache   = preCached
+    ],
+    throwInternalFailure
+];
+
+(* If stored service information is corrupt, attempt to reset it and try again: *)
+getAvailableServices0[ $$llmServicesFailure ] := Enclose[
+    Catch @ Module[ { services },
+        ConfirmMatch[ llm`ResetServices[ ], { __Success }, "Reset" ];
+        services = llm`LLMServiceInformation @ llm`ChatSubmit;
+        (* If it's still failing, return the failure: *)
+        If[ MatchQ[ services, $$llmServicesFailure ], Throw @ services ];
+        (* Otherwise we can proceed normally: *)
+        getAvailableServices0 @ ConfirmBy[ services, AssociationQ, "Services" ]
     ],
     throwInternalFailure
 ];
