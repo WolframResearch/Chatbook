@@ -59,6 +59,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$longNameCharacters;
 `$multimodalMessages;
 `$nextTaskEvaluation;
+`$noSemanticSearch;
 `$notebookEditorEnabled;
 `$preferencesScope;
 `$resultCellCache;

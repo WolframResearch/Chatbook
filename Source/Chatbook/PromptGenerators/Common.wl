@@ -4,7 +4,6 @@ BeginPackage[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
 
 HoldComplete[
     `$$prompt,
-    `$noSemanticSearch,
     `getSmallContextString,
     `insertContextPrompt,
     `vectorDBSearch
