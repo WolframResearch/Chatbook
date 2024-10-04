@@ -490,6 +490,8 @@ chooseMaxOutputCellStringLength // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*autoMaxContextTokens*)
 autoMaxContextTokens // beginDefinition;
+(* cSpell: ignore ollama *)
+autoMaxContextTokens[ as_? ollamaQ ] := serviceMaxContextTokens @ as;
 autoMaxContextTokens[ as_Association ] := autoMaxContextTokens[ as, as[ "Model" ] ];
 autoMaxContextTokens[ as_, model_ ] := autoMaxContextTokens[ as, model, toModelName @ model ];
 autoMaxContextTokens[ _, _, name_String ] := autoMaxContextTokens0 @ name;
@@ -513,6 +515,32 @@ autoMaxContextTokens0[ { ___, "gemini", ___, "pro"          , ___ } ] := 30720;
 autoMaxContextTokens0[ { ___, "phi3.5"                      , ___ } ] := 2^17;
 autoMaxContextTokens0[ _List                                        ] := 2^12;
 autoMaxContextTokens0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*ollamaQ*)
+ollamaQ // beginDefinition;
+ollamaQ[ as_Association ] := MatchQ[ serviceName @ as, "Ollama"|"ollama" ];
+ollamaQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*serviceMaxContextTokens*)
+serviceMaxContextTokens // beginDefinition;
+
+serviceMaxContextTokens[ settings_Association ] :=
+    serviceMaxContextTokens[ serviceName @ settings, toModelName @ settings ];
+
+serviceMaxContextTokens[ service_String, name_String ] :=
+    Module[ { max },
+        max = Quiet @ ServiceExecute[ service, "ModelContextLength", { "Name" -> name } ];
+        If[ TrueQ @ Positive @ max,
+            serviceMaxContextTokens[ service, name ] = Floor @ max,
+            autoMaxContextTokens0 @ name
+        ]
+    ];
+
+serviceMaxContextTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
