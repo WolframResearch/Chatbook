@@ -403,7 +403,7 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
             (* Send chat while listening for an abort: *)
             CheckAbort[
                 sendChat[ evalCell, nbo, settings ] // LogChatTiming[ "SendChat" ];
-                waitForLastTask[ ]
+                waitForLastTask @ settings
                 ,
                 (* The user has issued an abort: *)
                 $aborted = True;
@@ -565,7 +565,14 @@ ensureChatOutputCell // endDefinition;
 (*waitForLastTask*)
 waitForLastTask // beginDefinition;
 
-waitForLastTask[ ] := waitForLastTask @ $lastTask;
+waitForLastTask[ settings_Association ] :=
+    Module[ { timeConstraint },
+        timeConstraint = settings[ "TimeConstraint" ];
+        If[ TrueQ @ Positive @ timeConstraint,
+            TimeConstrained[ waitForLastTask @ $lastTask, timeConstraint, StopChat[ ] ],
+            waitForLastTask @ $lastTask
+        ]
+    ];
 
 waitForLastTask[ $Canceled ] := $Canceled;
 
