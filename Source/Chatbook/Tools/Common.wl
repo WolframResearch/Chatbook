@@ -161,7 +161,10 @@ reevaluateToolExpressions // endDefinition;
 (*Installed Tools*)
 $installedTools := Association @ Cases[
     GetInstalledResourceData[ "LLMTool" ],
-    as: KeyValuePattern[ "Tool" -> tool_ ] :> (toolName @ tool -> addExtraToolData[ tool, as ])
+    as: KeyValuePattern[ "Tool" -> tool0_ ] :>
+        With[ { tool = Quiet @ tool0 },
+            (toolName @ tool -> addExtraToolData[ tool, as ]) /; MatchQ[ tool, _LLMTool ]
+        ]
 ];
 
 (* ::**************************************************************************************************************:: *)
