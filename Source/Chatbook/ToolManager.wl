@@ -459,7 +459,7 @@ getFullPersonaList // endDefinition;
 standardizePersonaData // beginDefinition;
 
 standardizePersonaData[ persona_Association ] :=
-    standardizePersonaData[ persona, Lookup[ persona, "Tools", { } ] ];
+    standardizePersonaData[ persona, getValidPersonaTools @ persona ];
 
 standardizePersonaData[ persona_Association, tools_List ] :=
     Append[ persona, "Tools" -> tools ];
@@ -471,6 +471,13 @@ standardizePersonaData[ persona_Association, None ] :=
     standardizePersonaData[ persona, { } ];
 
 standardizePersonaData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getValidPersonaTools*)
+getValidPersonaTools // beginDefinition;
+getValidPersonaTools[ persona_Association ] := Quiet @ Cases[ Lookup[ persona, "Tools", { } ], _LLMTool ];
+getValidPersonaTools // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
