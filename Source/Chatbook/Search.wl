@@ -86,6 +86,7 @@ addChatToSearchIndex // beginDefinition;
 
 addChatToSearchIndex[ spec_ ] := Enclose[
     Catch @ Module[ { data, appName, uuid, vectors, metadata },
+        If[ $noSemanticSearch, Throw @ Missing[ "NoSemanticSearch" ] ];
         data = ConfirmMatch[ getChatConversationData @ spec, _Association|_Missing, "Data" ];
         If[ MissingQ @ data, Throw @ Missing[ "NotSaved" ] ]; (* TODO: auto-save here? *)
         appName = ConfirmBy[ data[ "AppName" ], StringQ, "AppName" ];
