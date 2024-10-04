@@ -343,7 +343,7 @@ makeHTTPRequest // endDefinition;
 (*prepareMessagesForLLM*)
 prepareMessagesForLLM // beginDefinition;
 
-prepareMessagesForLLM[ messages: $$chatMessages ] := ReplaceAll[
+prepareMessagesForLLM[ messages: { ___Association } ] := ReplaceAll[
         messages,
         s_String :> RuleCondition @ StringTrim @ StringReplace[
             s,
