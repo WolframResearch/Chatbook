@@ -106,7 +106,7 @@ $fallbackModelList = { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4" };
 (* ::Subsection::Closed:: *)
 (*chatModelQ*)
 chatModelQ // beginDefinition;
-chatModelQ[ _? (modelContains[ "instruct" ]) ] := False;
+chatModelQ[ _? (modelContains[ "instruct"|"realtime" ]) ] := False;
 chatModelQ[ _? (modelContains[ StartOfString~~("gpt"|"ft:gpt"|"chatgpt-4o") ]) ] := True;
 chatModelQ[ _String ] := False;
 chatModelQ // endDefinition;
