@@ -144,6 +144,16 @@ modelName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*serviceName*)
+serviceName // beginDefinition;
+serviceName[ KeyValuePattern[ "Model" -> model_ ] ] := serviceName @ model;
+serviceName[ { service_String, _String | $$unspecified } ] := service;
+serviceName[ KeyValuePattern[ "Service" -> service_String ] ] := service;
+serviceName[ _String | _Association | $$unspecified ] := "OpenAI";
+serviceName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*toModelName*)
 toModelName // beginDefinition;
 

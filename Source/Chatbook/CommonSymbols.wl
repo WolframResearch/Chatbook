@@ -255,6 +255,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `sendChat;
 `sendFeedback;
 `serviceIcon;
+`serviceName;
 `setCV;
 `simpleResultQ;
 `simpleToolRequestParser;
