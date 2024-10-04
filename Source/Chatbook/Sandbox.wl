@@ -832,7 +832,23 @@ toSandboxExpression[ s_String, $Failed ] /; StringContainsQ[ s, "'" ] :=
         ]
     ];
 
-toSandboxExpression[ s_String, $Failed ] := HoldComplete @ ToExpression[ s, InputForm ];
+toSandboxExpression[ s_String, $Failed ] :=
+    Module[ { openers, closers, new, held },
+        openers = StringCount[ s, "[" ];
+        closers = StringCount[ s, "]" ];
+        (
+            new = s <> StringRepeat[ "]", openers - closers ];
+            held = Quiet @ ToExpression[ new, InputForm, HoldComplete ];
+            If[ MatchQ[ held, _HoldComplete ],
+                sandboxStringNormalize[ s ] = new;
+                held,
+                HoldComplete[ ToExpression[ s, InputForm ] ]
+            ]
+        ) /; openers > closers
+    ];
+
+toSandboxExpression[ s_String, $Failed ] :=
+    HoldComplete @ ToExpression[ s, InputForm ];
 
 toSandboxExpression // endDefinition;
 
