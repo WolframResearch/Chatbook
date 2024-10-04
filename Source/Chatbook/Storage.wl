@@ -327,7 +327,7 @@ saveChat[ messages0_, settings0_, autoTitle_ ] := Enclose[
 
         ConfirmMatch[ cleanupStaleChats @ appName, { ___String }, "Cleanup" ];
 
-        ConfirmMatch[ AddChatToSearchIndex @ as, _Success, "AddToSearchIndex" ];
+        ConfirmMatch[ AddChatToSearchIndex @ as, _Success | Missing[ "NoSemanticSearch" ], "AddToSearchIndex" ];
 
         updateDynamics[ "SavedChats" ];
 
@@ -344,7 +344,8 @@ saveChat // endDefinition;
 createMessageVectors // beginDefinition;
 
 createMessageVectors[ metadata_, messages: $$chatMessages, settings_ ] := Enclose[
-    Module[ { partitioned, strings, rVectors, iVectors, title, titleVector },
+    Catch @ Module[ { partitioned, strings, rVectors, iVectors, title, titleVector },
+        If[ $noSemanticSearch, Throw @ { } ];
         ConfirmAssert[ Length @ messages >= 2, "LengthCheck" ];
         partitioned = ConfirmBy[ Partition[ messages, UpTo[ 2 ] ], ListQ, "Pairs" ];
         strings = ConfirmMatch[ messagesToString /@ partitioned, { __String }, "Strings" ];

@@ -55,7 +55,10 @@ EnableCodeAssistance // endExportedDefinition;
 (*enableCodeAssistance*)
 enableCodeAssistance // beginDefinition;
 
-enableCodeAssistance[ ] := Once[
+enableCodeAssistance[ ] :=
+    enableCodeAssistance[ $VersionNumber >= 14.1 ];
+
+enableCodeAssistance[ True ] := Once[
     FrontEndExecute @ {
         FrontEnd`AddMenuCommands[
             "OpenHelpLink",
@@ -102,6 +105,32 @@ enableCodeAssistance[ ] := Once[
                         ]
                     ],
                     Method -> "Queued"
+                ]
+            }
+        ]
+    },
+    "FrontEndSession"
+];
+
+(* When attachment to selection is not available, we can't do inline chat or content suggestions: *)
+enableCodeAssistance[ False ] := Once[
+    FrontEndExecute @ {
+        FrontEnd`AddMenuCommands[
+            "OpenHelpLink",
+            {
+                MenuItem[
+                    "Code Assistance Chat\[Ellipsis]",
+                    FrontEnd`KernelExecute[
+                        Needs[ "Wolfram`Chatbook`" -> None ];
+                        Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Window" ]
+                    ],
+                    FrontEnd`MenuEvaluator -> Automatic,
+                    Evaluate[
+                        If[ $OperatingSystem === "MacOSX",
+                            FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Control } ],
+                            FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Command } ]
+                        ]
+                    ]
                 ]
             }
         ]
