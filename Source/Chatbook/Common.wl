@@ -33,6 +33,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$size;
 `$$textData;
 `$$textDataList;
+`$$graphics;
 `$$unspecified;
 `$$feObj;
 `$$template;
@@ -43,6 +44,10 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$string;
 `$$symbol;
 `$$atomic;
+
+`$$chatMessage;
+`$$chatMessages;
+`wordsPattern;
 
 `tr;
 `trRaw;
@@ -190,6 +195,11 @@ $$messageContentData  = KeyValuePattern @ { "Type" -> "Text"|"Image", "Data" -> 
 $$messageContent      = $$messageContentData | { $$messageContentData... };
 $$chatMessage         = KeyValuePattern @ { "Role" -> $$messageRole, "Content" -> $$messageContent };
 $$chatMessages        = { $$chatMessage... };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Misc*)
+wordsPattern[ words_ ] := _String? (containsWordsQ @ words);
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

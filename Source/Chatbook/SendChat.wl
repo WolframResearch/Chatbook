@@ -357,20 +357,9 @@ prepareMessagesForLLM // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeStopTokens*)
 makeStopTokens // beginDefinition;
-
-makeStopTokens[ settings_Association? o1ModelQ ] :=
-    Missing[ ];
-
-makeStopTokens[ settings_Association ] :=
-    Select[
-        DeleteDuplicates @ Flatten @ {
-            settings[ "StopTokens" ],
-            If[ settings[ "ToolMethod" ] === "Simple", { "\n/exec", "/end" }, { "ENDTOOLCALL", "/end" } ],
-            If[ TrueQ @ $AutomaticAssistance, "[INFO]", Nothing ]
-        },
-        StringQ
-    ];
-
+makeStopTokens[ settings_Association ] := makeStopTokens[ settings, settings[ "StopTokens" ] ];
+makeStopTokens[ settings_, None | { } ] := Missing[ ];
+makeStopTokens[ settings_, tokens: { __String } ] := tokens;
 makeStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1277,28 +1266,60 @@ Reply with /end if the tool call provides a satisfactory answer, otherwise respo
 (* ::Subsubsection::Closed:: *)
 (*makeToolResponseMessage*)
 makeToolResponseMessage // beginDefinition;
-makeToolResponseMessage[ settings_, response_ ] := makeToolResponseMessage0[ serviceName @ settings, response ];
+
+makeToolResponseMessage[ settings_, response_ ] :=
+    makeToolResponseMessage[ settings, settings[ "Model" ], response ];
+
+makeToolResponseMessage[ settings_, model_Association, response_ ] :=
+    makeToolResponseMessage0[ model[ "Service" ], model[ "Family" ], response ];
+
 makeToolResponseMessage // endDefinition;
+
 
 makeToolResponseMessage0 // beginDefinition;
 
-makeToolResponseMessage0[ "Anthropic"|"MistralAI", response_ ] := <|
+makeToolResponseMessage0[ "Anthropic"|"MistralAI", family_, response_ ] := <|
     "Role"         -> "User",
-    "Content"      -> Replace[ Flatten @ { "<system>", response, "</system>" }, { s__String } :> StringJoin @ s ],
+    "Content"      -> wrapResponse[ "<system>", response, "</system>" ],
     "ToolResponse" -> True
 |>;
 
-makeToolResponseMessage0[ service_String, response_ ] :=
+(* cSpell: ignore Qwen, Nemotron *)
+makeToolResponseMessage0[ service_, "Qwen"|"Nemotron"|"Mistral", response_ ] := <|
+    "Role"         -> "User",
+    "Content"      -> wrapResponse[ "<tool_response>", response, "</tool_response>" ],
+    "ToolResponse" -> True
+|>;
+
+(* cSpell: ignore Nemotron *)
+(* makeToolResponseMessage0[ service_, "Nemotron", response_ ] := <|
+    "Role"         -> "User",
+    "Content"      -> wrapResponse[ "<extra_id_1>Tool\n", response, "" ],
+    "ToolResponse" -> True
+|>;
+
+makeToolResponseMessage0[ service_, "Mistral", response_ ] := <|
+    "Role"         -> "User",
+    "Content"      -> wrapResponse[ "[TOOL_RESULTS] {\"content\": ", response, "} [/TOOL_RESULTS]" ],
+    "ToolResponse" -> True
+|>; *)
+
+makeToolResponseMessage0[ service_String, family_, response_ ] :=
     <| "Role" -> "System", "Content" -> response, "ToolResponse" -> True |>;
 
 makeToolResponseMessage0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*userToolResponseQ*)
-userToolResponseQ // beginDefinition;
-userToolResponseQ[ settings_ ] := MatchQ[ serviceName @ settings, "Anthropic"|"MistralAI" ];
-userToolResponseQ // endDefinition;
+(*wrapResponse*)
+wrapResponse // beginDefinition;
+
+wrapResponse[ left_, response_, right_ ] := Replace[
+    Flatten @ { left, response, right },
+    { s__String } :> StringJoin @ s
+];
+
+wrapResponse // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

@@ -2,9 +2,6 @@
 
 BeginPackage[ "Wolfram`Chatbook`Common`" ];
 
-`$$chatMessage;
-`$$chatMessages;
-`$$graphics;
 `$absoluteCurrentSettingsCache;
 `$allowConnectionDialog;
 `$alwaysOpen;
@@ -118,6 +115,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `clickToCopy;
 `compressUntilViewed;
 `constructMessages;
+`containsWordsQ;
 `contextBlock;
 `convertUTF8;
 `createDialog;
