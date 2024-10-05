@@ -150,6 +150,15 @@ makeFailureString[ failure: Failure[ tag_, as_Association ] ] := Enclose[
 makeFailureString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*containsWordsQ*)
+containsWordsQ // beginDefinition;
+containsWordsQ[ p_ ] := containsWordsQ[ #, p ] &;
+containsWordsQ[ m_String, p_List ] := containsWordsQ[ m, StringExpression @@ Riffle[ p, Except[ WordCharacter ]... ] ];
+containsWordsQ[ m_String, p_ ] := StringContainsQ[ m, WordBoundary~~p~~WordBoundary, IgnoreCase -> True ];
+containsWordsQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Files*)
 
