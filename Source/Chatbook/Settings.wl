@@ -34,8 +34,8 @@ $defaultChatSettings = <|
     "DynamicAutoFormat"              -> Automatic,
     "EnableChatGroupSettings"        -> False,
     "EnableLLMServices"              -> Automatic,
-    "FrequencyPenalty"               -> 0.1,
     "ForceSynchronous"               -> Automatic,
+    "FrequencyPenalty"               -> 0.1,
     "HandlerFunctions"               :> $DefaultChatHandlerFunctions,
     "HandlerFunctionsKeys"           -> Automatic,
     "IncludeHistory"                 -> Automatic,
@@ -53,13 +53,14 @@ $defaultChatSettings = <|
     "OpenAIKey"                      -> Automatic,
     "PresencePenalty"                -> 0.1,
     "ProcessingFunctions"            :> $DefaultChatProcessingFunctions,
-    "Prompts"                        -> { },
+    "PromptGeneratorMessagePosition" -> 2,
+    "PromptGeneratorMessageRole"     -> "System",
     "PromptGenerators"               -> { },
     "PromptGeneratorsEnabled"        -> Automatic, (* TODO *)
-    "PromptGeneratorMessageRole"     -> "System",
-    "PromptGeneratorMessagePosition" -> 2,
+    "Prompts"                        -> { },
     "SetCellDingbat"                 -> True,
     "ShowMinimized"                  -> Automatic,
+    "StopTokens"                     -> Automatic,
     "StreamingOutputMethod"          -> Automatic,
     "TabbedOutput"                   -> True, (* TODO: define a "MaxOutputPages" setting *)
     "TargetCloudObject"              -> Automatic,
@@ -276,6 +277,7 @@ resolveAutoSettings0[ settings_Association ] := Enclose[
         If[ result[ "ToolMethod" ] === Automatic,
             result[ "ToolMethod" ] = chooseToolMethod @ result
         ];
+        result[ "StopTokens" ] = autoStopTokens @ result;
         result
     ],
     throwInternalFailure
@@ -369,7 +371,7 @@ $autoSettingKeyDependencies = <|
     "Multimodal"                 -> { "EnableLLMServices", "Model" },
     "Tokenizer"                  -> "TokenizerName",
     "TokenizerName"              -> "Model",
-    "ToolCallExamplePromptStyle" -> "Model",
+    "ToolCallExamplePromptStyle" -> { "Model", "ToolsEnabled" },
     "ToolExamplePrompt"          -> "Model",
     "Tools"                      -> { "LLMEvaluator", "ToolsEnabled" },
     "ToolsEnabled"               -> { "Model", "ToolCallFrequency" }
@@ -453,20 +455,88 @@ autoToolExamplePromptSpec // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*chooseToolExamplePromptStyle*)
 chooseToolExamplePromptStyle // beginDefinition;
-chooseToolExamplePromptStyle[ as_Association ] := chooseToolExamplePromptStyle[ as, as[ "Model" ] ];
-chooseToolExamplePromptStyle[ as_, model_String ] := autoToolExamplePromptStyle[ "OpenAI" ];
-chooseToolExamplePromptStyle[ as_, { service_String, _String } ] := autoToolExamplePromptStyle @ service;
-chooseToolExamplePromptStyle[ as_, model_Association ] := autoToolExamplePromptStyle @ model[ "Service" ];
+chooseToolExamplePromptStyle[ KeyValuePattern[ "ToolsEnabled" -> False ] ] := None;
+chooseToolExamplePromptStyle[ settings_Association ] := chooseToolExamplePromptStyle[ settings, settings[ "Model" ] ];
+chooseToolExamplePromptStyle[ _, as_Association ] := autoToolExamplePromptStyle[ as[ "Service" ], as[ "Family" ] ];
 chooseToolExamplePromptStyle // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*autoToolExamplePromptStyle*)
 autoToolExamplePromptStyle // beginDefinition;
-autoToolExamplePromptStyle[ "AzureOpenAI"|"OpenAI" ] := "ChatML";
-autoToolExamplePromptStyle[ "Anthropic" ] := "XML";
-autoToolExamplePromptStyle[ _ ] := "Basic"; (* TODO: measure performance of other models to choose the best option *)
+
+autoToolExamplePromptStyle[ service_, family_ ] := autoToolExamplePromptStyle[ service, family ] =
+    autoToolExamplePromptStyle0[ service, family ];
+
 autoToolExamplePromptStyle // endDefinition;
+
+(* cSpell: ignore Qwen, Nemotron *)
+autoToolExamplePromptStyle0 // beginDefinition;
+
+(* By service: *)
+autoToolExamplePromptStyle0[ "AzureOpenAI", _ ] := "ChatML";
+autoToolExamplePromptStyle0[ "OpenAI"     , _ ] := "ChatML";
+autoToolExamplePromptStyle0[ "Anthropic"  , _ ] := "XML";
+
+(* By model family: *)
+autoToolExamplePromptStyle0[ _, "Phi"           ] := "Phi";
+autoToolExamplePromptStyle0[ _, "Llama"         ] := "Llama";
+autoToolExamplePromptStyle0[ _, "Gemma"         ] := "Gemma";
+autoToolExamplePromptStyle0[ _, "Qwen"          ] := "ChatML";
+autoToolExamplePromptStyle0[ _, "Nemotron"      ] := "Nemotron";
+autoToolExamplePromptStyle0[ _, "Mistral"       ] := "Instruct";
+autoToolExamplePromptStyle0[ _, "DeepSeekCoder" ] := "DeepSeekCoder";
+
+(* Default: *)
+autoToolExamplePromptStyle0[ _, _ ] := "Basic";
+
+autoToolExamplePromptStyle0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*autoStopTokens*)
+autoStopTokens // beginDefinition;
+
+autoStopTokens[ as_Association? o1ModelQ ] :=
+    None;
+
+autoStopTokens[ KeyValuePattern[ "ToolsEnabled" -> False ] ] :=
+    If[ TrueQ @ $AutomaticAssistance, { "[INFO]" }, None ];
+
+autoStopTokens[ as_Association ] := Replace[
+    DeleteDuplicates @ Flatten @ {
+        methodStopTokens @ as[ "ToolMethod" ],
+        styleStopTokens @ as[ "ToolCallExamplePromptStyle" ],
+        If[ TrueQ @ $AutomaticAssistance, "[INFO]", Nothing ]
+    },
+    { } -> None
+];
+
+autoStopTokens // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*methodStopTokens*)
+(* cSpell: ignore ENDTOOLCALL *)
+methodStopTokens // beginDefinition;
+methodStopTokens[ "Simple"         ] := { "\n/exec", "/end" };
+methodStopTokens[ "Service"        ] := { "/end" };
+methodStopTokens[ "Textual"|"JSON" ] := { "ENDTOOLCALL", "/end" };
+methodStopTokens[ _                ] := { "ENDTOOLCALL", "\n/exec", "/end" };
+methodStopTokens // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*styleStopTokens*)
+(* cSpell: ignore cbegin *)
+styleStopTokens // beginDefinition;
+styleStopTokens[ "Phi"           ] := { "<|user|>", "<|assistant|>" };
+styleStopTokens[ "Llama"         ] := { "<|start_header_id|>" };
+styleStopTokens[ "Gemma"         ] := { "<start_of_turn>" };
+styleStopTokens[ "Nemotron"      ] := { "<extra_id_0>", "<extra_id_1>" };
+styleStopTokens[ "DeepSeekCoder" ] := { "<\:ff5cbegin\:2581of\:2581sentence\:ff5c>" };
+styleStopTokens[ _String         ] := { };
+styleStopTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
