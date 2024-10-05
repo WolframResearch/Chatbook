@@ -19,6 +19,7 @@ $snippetsCacheDirectory := $snippetsCacheDirectory = ChatbookFilesDirectory[ "Do
 (*RelatedDocumentation*)
 RelatedDocumentation // beginDefinition;
 RelatedDocumentation // Options = {
+    "FilteredCount" -> Automatic,
     "FilterResults" -> Automatic,
     "MaxItems"      -> 20
 };
@@ -113,7 +114,8 @@ RelatedDocumentation[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
     catchMine @ relatedDocumentationPrompt[
         ensureChatMessages @ prompt,
         n,
-        MatchQ[ OptionValue[ "FilterResults" ], Automatic|True ]
+        MatchQ[ OptionValue[ "FilterResults" ], Automatic|True ],
+        Replace[ OptionValue[ "FilteredCount" ], Automatic -> Ceiling[ n / 4 ] ]
     ];
 
 RelatedDocumentation[ args___ ] := catchMine @ throwFailure[
@@ -138,7 +140,7 @@ ensureChatMessages // endDefinition;
 (*relatedDocumentationPrompt*)
 relatedDocumentationPrompt // beginDefinition;
 
-relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_ ] := Enclose[
+relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_, filterCount_ ] := Enclose[
     Catch @ Module[ { uris, filtered, string },
 
         uris = ConfirmMatch[
@@ -150,7 +152,7 @@ relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_ ] := Enclo
         If[ uris === { }, Throw[ "" ] ];
 
         filtered = ConfirmMatch[
-            filterSnippets[ messages, uris, filter ] // LogChatTiming[ "FilterSnippets" ],
+            filterSnippets[ messages, uris, filter, filterCount ] // LogChatTiming[ "FilterSnippets" ],
             { ___String },
             "Filtered"
         ];
@@ -187,7 +189,7 @@ $relatedDocsStringUnfilteredHeader =
 (*filterSnippets*)
 filterSnippets // beginDefinition;
 
-filterSnippets[ messages_, uris: { __String }, filter_ ] := Enclose[
+filterSnippets[ messages_, uris: { __String }, filter_, filterCount_Integer? Positive ] := Enclose[
     Catch @ Module[ { snippets, inserted, transcript, xml, instructions, response, pages },
 
         snippets = ConfirmMatch[ makeDocSnippets @ uris, { ___String }, "Snippets" ];
@@ -200,7 +202,11 @@ filterSnippets[ messages_, uris: { __String }, filter_ ] := Enclose[
         instructions = ConfirmBy[
             TemplateApply[
                 $bestDocumentationPrompt,
-                <| "Snippets" -> StringRiffle[ xml, "\n\n" ], "Transcript" -> transcript |>
+                <|
+                    "FilteredCount" -> filterCount,
+                    "Snippets"      -> StringRiffle[ xml, "\n\n" ],
+                    "Transcript"    -> transcript
+                |>
             ],
             StringQ,
             "Prompt"
@@ -222,7 +228,7 @@ Your task is to read a chat transcript between a user and assistant, and then se
 Wolfram Language documentation snippets that could help the assistant answer the user's latest message. \
 Each snippet is uniquely identified by a URI (always starts with 'paclet:' or 'https://resources.wolframcloud.com').
 
-Choose up to 5 documentation snippets that would help answer the user's MOST RECENT message. \
+Choose up to %%FilteredCount%% documentation snippets that would help answer the user's MOST RECENT message. \
 Respond only with the corresponding URIs of the snippets and nothing else. \
 If there are no relevant pages, respond with just the string \"none\".
 
@@ -238,7 +244,7 @@ Here are the available documentation snippets to choose from:
 %%Snippets%%
 </snippets>
 
-Reminder: Choose up to 5 documentation snippets that would help answer the user's MOST RECENT message. \
+Reminder: Choose up to %%FilteredCount%% documentation snippets that would help answer the user's MOST RECENT message. \
 Respond only with the corresponding URIs of the snippets and nothing else. \
 If there are no relevant pages, respond with just the string \"none\".\
 ", Delimiters -> "%%" ];

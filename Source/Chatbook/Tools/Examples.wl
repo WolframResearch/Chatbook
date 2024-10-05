@@ -128,6 +128,40 @@ $chatMessageTemplates[ "XML", "System"    ] = "<system>%%1%%</system>";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
+(*DeepSeekCoder*)
+(* cSpell: ignore cend *)
+$chatMessageTemplates[ "DeepSeekCoder" ] = <| |>;
+$chatMessageTemplates[ "DeepSeekCoder", "User"      ] = "User: %%1%%";
+$chatMessageTemplates[ "DeepSeekCoder", "Assistant" ] = "Assistant: %%1%%\n/end<\:ff5cend\:2581of\:2581sentence\:ff5c>";
+$chatMessageTemplates[ "DeepSeekCoder", "System"    ] = "System: %%1%%";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Llama*)
+$chatMessageTemplates[ "Llama" ] = <| |>;
+$chatMessageTemplates[ "Llama", "User"      ] = "<|start_header_id|>user<|end_header_id|>\n%%1%%<|eot_id|>";
+$chatMessageTemplates[ "Llama", "Assistant" ] = "<|start_header_id|>assistant<|end_header_id|>\n%%1%%\n/end<|eot_id|>";
+$chatMessageTemplates[ "Llama", "System"    ] = "<|start_header_id|>system<|end_header_id|>\n%%1%%<|eot_id|>";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Gemma*)
+$chatMessageTemplates[ "Gemma" ] = <| |>;
+$chatMessageTemplates[ "Gemma", "User"      ] = "<start_of_turn>user\n%%1%%<end_of_turn>";
+$chatMessageTemplates[ "Gemma", "Assistant" ] = "<start_of_turn>model\n%%1%%\n/end<end_of_turn>";
+$chatMessageTemplates[ "Gemma", "System"    ] = "<start_of_turn>user\n%%1%%<end_of_turn>";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Nemotron*)
+(* cSpell: ignore Nemotron *)
+$chatMessageTemplates[ "Nemotron" ] = <| |>;
+$chatMessageTemplates[ "Nemotron", "User"      ] = "<extra_id_1>User\n%%1%%";
+$chatMessageTemplates[ "Nemotron", "Assistant" ] = "<extra_id_1>Assistant\n%%1%%\n/end";
+$chatMessageTemplates[ "Nemotron", "System"    ] = "<extra_id_0>System\n%%1%%";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
 (*messageTemplate*)
 messageTemplate // beginDefinition;
 
