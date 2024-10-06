@@ -87,9 +87,7 @@ The current cell style is \"%%Style%%\", so only write content that would be app
 %%StyleNotes%%
 Do your best to match the existing style (whitespace, line breaks, etc.).
 Your suggested text will be inserted into %%Placeholder%%, so be careful not to repeat the immediately surrounding text.
-Respond with the completion text and nothing else.
-
-%%RelatedDocumentation%%",
+Respond with the completion text and nothing else.",
 Delimiters -> "%%" ];
 
 (* ::**************************************************************************************************************:: *)
@@ -108,7 +106,9 @@ $notebookSuggestionsPrompt = StringTemplate[ "\
 Complete the following by writing markdown text that can be inserted into \"%%Placeholder%%\".
 Do your best to match the existing style (whitespace, line breaks, etc.).
 Your suggested text will be inserted into %%Placeholder%%, so be careful not to repeat the immediately surrounding text.
-Respond with the completion text and nothing else.",
+Respond with the completion text and nothing else.
+
+%%RelatedDocumentation%%",
 Delimiters -> "%%" ];
 
 (* ::**************************************************************************************************************:: *)
