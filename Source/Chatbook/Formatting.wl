@@ -223,9 +223,10 @@ reformatTextData[ string_String ] /; StringContainsQ[ string, $$mdEscapedCharact
         s_String :> RuleCondition @ StringReplace[ s, $mdUnescapeRules ]
     ];
 
+(* cSpell: ignore maxrec *)
 reformatTextData[ string_String ] := joinAdjacentStrings @ Flatten[
     makeResultCell /@ discardBadToolCalls @ DeleteCases[
-        StringSplit[ string, $textDataFormatRules, IgnoreCase -> True ],
+        Quiet[ StringSplit[ string, $textDataFormatRules, IgnoreCase -> True ], RegularExpression::maxrec ],
         ""
     ]
 ];
