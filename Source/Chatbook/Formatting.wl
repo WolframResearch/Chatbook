@@ -1976,28 +1976,13 @@ makeInlineCodeCell // beginDefinition;
 makeInlineCodeCell[ s_String? nameQ ] /; Context @ s === "System`" :=
     hyperlink[ s, "paclet:ref/" <> Last @ StringSplit[ s, "`" ] ];
 
-makeInlineCodeCell[ s_String? LowerCaseQ ] := StyleBox[ unescapeInlineMarkdown @ s, "TI" ];
+makeInlineCodeCell[ s_String? LowerCaseQ ] :=
+    StyleBox[ unescapeInlineMarkdown @ s, "TI" ];
 
-makeInlineCodeCell[ code_String ] /; $dynamicText := Cell[
-    BoxData @ TemplateBox[ { stringToBoxes @ unescapeInlineMarkdown @ code }, "ChatCodeInlineTemplate" ],
+makeInlineCodeCell[ code_String ] := Cell[
+    BoxData @ TemplateBox[ { Cell[ unescapeInlineMarkdown @ code, Background -> None ] }, "ChatCodeInlineTemplate" ],
     "ChatCodeActive"
 ];
-
-makeInlineCodeCell[ code0_String ] :=
-    With[ { code = unescapeInlineMarkdown @ code0 },
-        If[ SyntaxQ @ code,
-            Cell[
-                BoxData @ TemplateBox[ { stringToBoxes @ code }, "ChatCodeInlineTemplate" ],
-                "ChatCode",
-                Background -> None
-            ],
-            Cell[
-                BoxData @ TemplateBox[ { Cell[ code, Background -> None ] }, "ChatCodeInlineTemplate" ],
-                "ChatCodeActive",
-                Background -> None
-            ]
-        ]
-    ];
 
 makeInlineCodeCell // endDefinition;
 
@@ -2625,11 +2610,31 @@ boxSymbolQ // endDefinition;
 (*adjustBoxSpacing*)
 adjustBoxSpacing // beginDefinition;
 adjustBoxSpacing[ row: RowBox @ { "(*", ___, "*)" } ] := row;
-adjustBoxSpacing[ RowBox[ items_List ] ] := RowBox[ adjustBoxSpacing /@ DeleteCases[ items, " " ] ];
 adjustBoxSpacing[ "\n" ] := "\[IndentingNewLine]";
 adjustBoxSpacing[ s_String ] /; $CloudEvaluation := Lookup[ $autoOperatorRenderings, s, s ];
+adjustBoxSpacing[ RowBox[ items_List ] ] := RowBox[ adjustBoxSpacing /@ adjustSequenceSpacing @ items ];
 adjustBoxSpacing[ box_ ] := box;
 adjustBoxSpacing // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*adjustSequenceSpacing*)
+adjustSequenceSpacing // beginDefinition;
+
+adjustSequenceSpacing[ items_List ] := SequenceReplace[
+    items,
+    {
+        { $space, op: $infixOperators, $space  } :> op,
+        { $space, op: $infixOperators } :> op,
+        { op: $infixOperators, $space } :> op,
+        { ",", $space } -> ","
+    }
+];
+
+adjustSequenceSpacing // endDefinition;
+
+$space = " "|"  "|"   ";
+$infixOperators = "+"|"-"|"*"|"/"|"^"|"&&"|"||"|"=="|"==="|"!="|"=!="|"<"|"<="|">"|">="|"->"|":>"|"="|":=";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
