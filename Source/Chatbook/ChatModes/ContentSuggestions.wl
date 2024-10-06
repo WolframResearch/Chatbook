@@ -13,6 +13,7 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 $suggestionsService        = "OpenAI";
 $suggestionsAuthentication = Automatic;
 $stripWhitespace           = True;
+$defaultWLContextString    = "";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -25,8 +26,13 @@ $wlSuggestionsTemperature = 0.9;
 $wlPlaceholderString      = "\:2758";
 $wlCellsBefore            = 50;
 $wlCellsAfter             = 10;
+$wlDocMaxItems            = 5;
+$wlFilterDocResults       = False;
+$wlFilteredDocCount       = 3;
 
-$wlSuggestionsPrompt = StringTemplate[ "\
+$wlSuggestionsPrompt := If[ TrueQ @ $wlFIM, $wlFIMPrompt, $wlSuggestionsPrompt0 ];
+
+$wlSuggestionsPrompt0 = StringTemplate[ "\
 Complete the following Wolfram Language code by writing text that can be inserted into \"%%Placeholder%%\".
 Do your best to match the existing style (whitespace, line breaks, etc.).
 Your suggested text will be inserted into %%Placeholder%%, so be careful not to repeat the immediately surrounding text.
@@ -38,7 +44,30 @@ Do not include any formatting in your response. Do not include outputs or `In[]:
 %%RelatedDocumentation%%",
 Delimiters -> "%%" ];
 
-$defaultWLContextString = "";
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Fill-in-the-Middle Completions*)
+(* cSpell: ignore Ollama, CodeGemma, DeepSeek *)
+$wlFIM                 = False;
+$wlFIMService          = "Ollama";
+$wlFIMModel            = "deepseek-coder-v2";
+$wlFIMAuthentication   = Automatic;
+$wlFIMTemperature      = 0.7;
+$wlFIMSuggestionsCount = 1;
+
+$wlFIMOptions = <|
+    "num_predict" -> $wlSuggestionsMaxTokens,
+    "stop"        -> { "\n\n" },
+    "temperature" -> $wlFIMTemperature
+|>;
+
+$wlFIMPrompt = StringTemplate[ "\
+Complete the following Wolfram Language code.
+Do your best to match the existing style (whitespace, line breaks, etc.).
+Use `%` to refer to the previous output or `%n` for earlier outputs (where n is an output number) when appropriate.
+Limit your suggested completion to approximately one or two lines of code.
+Do not include any formatting in your response. Do not include outputs or `In[]:=` cell labels.",
+Delimiters -> "%%" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -245,7 +274,7 @@ generateSuggestions // endDefinition;
 generateWLSuggestions // beginDefinition;
 
 generateWLSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_String, settings_ ] := Enclose[
-    Module[ { context, preprocessed, relatedDocs, instructions, response, style, suggestions, stripped },
+    Module[ { context, preprocessed, relatedDocs, as, instructions, response, style, suggestions, stripped },
 
         context = ConfirmBy[
             StringReplace[
@@ -265,36 +294,32 @@ generateWLSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_St
         preprocessed = ConfirmBy[ preprocessRelatedDocsContext @ context, StringQ, "Preprocessing" ];
 
         relatedDocs = ConfirmBy[
-            LogChatTiming @ RelatedDocumentation[ preprocessed, "Prompt", "FilterResults" -> False, MaxItems -> 5 ],
+            LogChatTiming @ RelatedDocumentation[
+                preprocessed,
+                "Prompt",
+                MaxItems        -> $wlDocMaxItems,
+                "FilterResults" -> $wlFilterDocResults,
+                "FilteredCount" -> $wlFilteredDocCount
+            ],
             StringQ,
             "RelatedDocumentation"
         ];
 
-        instructions = StringTrim @ ConfirmBy[
-            TemplateApply[
-                $wlSuggestionsPrompt,
-                <| "Placeholder" -> $wlPlaceholderString, "RelatedDocumentation" -> relatedDocs |>
-            ],
-            StringQ,
-            "Instructions"
-        ];
+        as = <|
+            "Context"              -> context,
+            "Placeholder"          -> $wlPlaceholderString,
+            "RelatedDocumentation" -> relatedDocs
+        |>;
+
+        instructions = StringTrim @ ConfirmBy[ TemplateApply[ $wlSuggestionsPrompt, as ], StringQ, "Instructions" ];
+        as[ "Instructions" ] = instructions;
 
         $lastInstructions = instructions;
 
-        response = setServiceCaller @ LogChatTiming @ ServiceExecute[
-            $suggestionsService,
-            "Chat",
-            {
-                "Messages" -> {
-                    <| "Role" -> "System", "Content" -> instructions |>,
-                    <| "Role" -> "User"  , "Content" -> context      |>
-                },
-                "Model"       -> $wlSuggestionsModel,
-                "N"           -> $wlSuggestionsCount,
-                "MaxTokens"   -> $wlSuggestionsMaxTokens,
-                "Temperature" -> $wlSuggestionsTemperature
-            },
-            Authentication -> $suggestionsAuthentication
+        response = ConfirmMatch[
+            executeWLSuggestions @ as,
+            KeyValuePattern[ "Content" -> { __String } ],
+            "Response"
         ];
 
         $lastSuggestionsResponse = response;
@@ -320,6 +345,88 @@ generateWLSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_St
 ];
 
 generateWLSuggestions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*executeWLSuggestions*)
+executeWLSuggestions // beginDefinition;
+executeWLSuggestions[ as_ ] := If[ TrueQ @ $wlFIM, executeWLSuggestionsFIM @ as, executeWLSuggestions0 @ as ];
+executeWLSuggestions // endDefinition;
+
+
+executeWLSuggestions0 // beginDefinition;
+
+executeWLSuggestions0[ KeyValuePattern @ { "Instructions" -> instructions_, "Context" -> context_ } ] :=
+    executeWLSuggestions0[ instructions, context ];
+
+executeWLSuggestions0[ instructions_, context_ ] :=
+    setServiceCaller @ LogChatTiming @ ServiceExecute[
+        $suggestionsService,
+        "Chat",
+        {
+            "Messages" -> {
+                <| "Role" -> "System", "Content" -> instructions |>,
+                <| "Role" -> "User"  , "Content" -> context      |>
+            },
+            "Model"       -> $wlSuggestionsModel,
+            "N"           -> $wlSuggestionsCount,
+            "MaxTokens"   -> $wlSuggestionsMaxTokens,
+            "Temperature" -> $wlSuggestionsTemperature
+        },
+        Authentication -> $suggestionsAuthentication
+    ];
+
+executeWLSuggestions0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*executeWLSuggestionsFIM*)
+executeWLSuggestionsFIM // beginDefinition;
+
+executeWLSuggestionsFIM[ as_Association ] := Enclose[
+    Module[ { instructions, context, docs, before, after, prompt, suffix, responses, strings },
+
+        instructions = ConfirmBy[ as[ "Instructions"         ], StringQ, "Instructions" ];
+        context      = ConfirmBy[ as[ "Context"              ], StringQ, "Context"      ];
+        docs         = ConfirmBy[ as[ "RelatedDocumentation" ], StringQ, "RelatedDocs"  ];
+
+        { before, after } = ConfirmMatch[
+            StringSplit[ context, $wlPlaceholderString ],
+            { _String, _String },
+            "Split"
+        ];
+
+        prompt = ConfirmBy[ instructions<>"\n\n\n"<>before, StringQ, "Prompt" ];
+        suffix = ConfirmBy[ after<>"\n\n\n"<>docs, StringQ, "Suffix" ];
+
+        responses = ConfirmMatch[
+            Table[
+                setServiceCaller @ LogChatTiming @ ServiceExecute[
+                    $wlFIMService,
+                    "RawCompletion",
+                    DeleteMissing @ <|
+                        "model"   -> $wlFIMModel,
+                        "prompt"  -> prompt,
+                        "suffix"  -> suffix,
+                        "stream"  -> False,
+                        "options" -> $wlFIMOptions
+                    |>,
+                    Authentication -> $wlFIMAuthentication
+                ],
+                $wlFIMSuggestionsCount
+            ],
+            { __Association },
+            "Responses"
+        ];
+
+        strings = ConfirmMatch[ #[ "response" ] & /@ responses, { __String }, "Strings" ];
+
+        <| "Content" -> strings |>
+    ],
+    throwInternalFailure
+];
+
+executeWLSuggestionsFIM // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
