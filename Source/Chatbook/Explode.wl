@@ -22,6 +22,8 @@ $$newCellStyle = Alternatives[
     "Title"
 ];
 
+$$ws = _String? (StringMatchQ[ WhitespaceCharacter... ]);
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*ExplodeCell*)
@@ -40,14 +42,66 @@ explodeCell[ string_String ] := Cell[ #, "Text" ] & /@ StringSplit[ string, Long
 explodeCell[ (BoxData|TextData)[ textData_, ___ ] ] := explodeCell @ Flatten @ List @ textData;
 
 explodeCell[ textData_List ] := Enclose[
-    Module[ { processed },
+    Module[ { processed, grouped, post },
         processed = ConfirmMatch[ ReplaceRepeated[ textData, $preprocessingRules ], $$textDataList, "Preprocessing" ];
-        ConfirmMatch[ regroupCells @ processed, $$textDataList, "RegroupCells" ]
+        grouped = ConfirmMatch[ regroupCells @ processed, $$textDataList, "RegroupCells" ];
+        post = ConfirmMatch[ Flatten[ postProcessExplodedCells /@ grouped ], { __Cell }, "PostProcessing" ];
+        SequenceReplace[
+            post,
+            { Cell[ caption_? captionQ, "Text", a___ ], input: Cell[ __, "Input"|"Code", ___ ] } :>
+                Sequence[ Cell[ caption, "CodeText", a ], input ]
+        ]
     ],
-    throwInternalFailure[ explodeCell @ textData, ## ] &
+    throwInternalFailure
 ];
 
 explodeCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*captionQ*)
+captionQ // beginDefinition;
+captionQ[ text_String ] := StringEndsQ[ text, ":"~~WhitespaceCharacter... ];
+captionQ[ (ButtonBox|Cell|StyleBox|TextData)[ text_, ___ ] ] := captionQ @ text;
+captionQ[ { ___, text_ } ] := captionQ @ text;
+captionQ[ _ ] := False;
+captionQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*postProcessExplodedCells*)
+postProcessExplodedCells // beginDefinition;
+
+postProcessExplodedCells[
+    Cell[ BoxData @ RowBox @ { RowBox @ { "In", "[", n_String, "]" }, "="|":=", boxes__ }, "Input", a___ ]
+] := Cell[ BoxData @ boxes, "Input", CellLabel -> "In["<>n<>"]:=", a ];
+
+postProcessExplodedCells[
+    Cell[ BoxData @ RowBox @ { RowBox @ { "Out", "[", n_String, "]" }, "="|":=", boxes__ }, "Input", a___ ]
+] := Cell[ BoxData @ boxes, "Output", CellLabel -> "Out["<>n<>"]=", a ];
+
+postProcessExplodedCells[ Cell[
+    BoxData @ RowBox @ {
+        RowBox @ { RowBox @ { "In", "[", nIn_String, "]" }, ":=", in___ },
+        $$ws...,
+        RowBox @ { RowBox @ { "Out", "[", nOut_String, "]" }, "=", out___ }
+    },
+    "Input"
+] ] := {
+    Cell[ BoxData @ RowBox @ { in }, "Input", CellLabel -> "In["<>nIn<>"]:=" ],
+    Cell[ BoxData @ RowBox @ { out }, "Output", CellLabel -> "Out["<>nOut<>"]=" ]
+};
+
+postProcessExplodedCells[ cell: Cell[ __, "Input", ___ ] ] := DeleteCases[
+    cell /. { RowBox @ { RowBox @ { "In", "[", _, "]" }, "="|":=", boxes__ } :> RowBox @ { boxes } },
+    RowBox @ { RowBox @ { "Out", "[", _, "]" }, "="|":=", __ },
+    Infinity
+];
+
+postProcessExplodedCells[ cell_Cell ] :=
+    cell;
+
+postProcessExplodedCells // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -97,7 +151,11 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
     (* Remove nested cells: *)
     Cell @ BoxData[ cell_Cell, ___ ] :> cell,
 
-    StyleBox[ a_String, "InlineItem", b___ ] :> StyleBox[ "\n"<>a, b ],
+    Cell[ TextData @ { StyleBox[ "\[Bullet]", ___ ], " ", content___ }, "InlineItem", ___ ] :>
+        Cell[ TextData @ content, "Item" ],
+
+    Cell[ TextData @ { _String, StyleBox[ "\[Bullet]", ___ ], " ", content___ }, "InlineSubitem", ___ ] :>
+        Cell[ TextData @ content, "Subitem" ],
 
     (* Format text tables: *)
     Cell[ content__, "TextTableForm", opts: OptionsPattern[ ] ] :>
@@ -125,7 +183,16 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
     StyleBox[ "\n", "TinyLineBreak", ___ ] :> "\n",
 
     Cell[ boxes_, style: "MarkdownDelimiter"|"BlockQuote", a___ ] :>
-        Cell[ boxes, "Text", style, a ]
+        Cell[ boxes, "Text", style, a ],
+
+    (* Fix cases where the LLM tried to manually create MarkdownImageBoxes: *)
+    RowBox @ { "\\!", RowBox @ { "\\(", RowBox @ { "*MarkdownImageBox", "[", uri_, "]" }, "\\)" } } :>
+        With[ { expr = Quiet @ catchAlways @ GetExpressionURI @ StringTrim[ uri, "\"" ] },
+            If[ FailureQ @ expr,
+                "\[LeftSkeleton]Removed\[RightSkeleton]",
+                ToBoxes @ expr
+            ]
+        ]
 };
 
 (* ::**************************************************************************************************************:: *)

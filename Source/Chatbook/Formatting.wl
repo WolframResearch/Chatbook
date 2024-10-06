@@ -308,12 +308,29 @@ makeResultCell0[ imageCell[ alt_String, url_String ] ] := image[ alt, url ];
 
 makeResultCell0[ hyperlinkCell[ label_String, url_String ] ] := hyperlink[ label, url ];
 
-makeResultCell0[ bulletCell[ whitespace_String, item_String ] ] := Flatten @ {
+makeResultCell0[ bulletCell[ "", item_String ] ] := {
     "\n",
-    whitespace,
-    StyleBox[ "\[Bullet]", "InlineItem", FontColor -> GrayLevel[ 0.5 ] ],
-    " ",
-    formatTextString @ item
+    Cell[
+        TextData @ Flatten @ {
+            StyleBox[ "\[Bullet]", FontColor -> GrayLevel[ 0.5 ] ],
+            " ",
+            formatTextString @ item
+        },
+        "InlineItem"
+    ]
+};
+
+makeResultCell0[ bulletCell[ whitespace_String, item_String ] ] := {
+    "\n",
+    Cell[
+        TextData @ Flatten @ {
+            whitespace,
+            StyleBox[ "\[Bullet]", FontColor -> GrayLevel[ 0.5 ] ],
+            " ",
+            formatTextString @ item
+        },
+        "InlineSubitem"
+    ]
 };
 
 makeResultCell0[ sectionCell[ n_, section_String ] ] := Flatten @ {

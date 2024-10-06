@@ -25,7 +25,7 @@ $wlSuggestionsMaxTokens   = 128;
 $wlSuggestionsTemperature = 0.9;
 $wlPlaceholderString      = "\:2758";
 $wlCellsBefore            = 50;
-$wlCellsAfter             = 10;
+$wlCellsAfter             = 25;
 $wlDocMaxItems            = 5;
 $wlFilterDocResults       = False;
 $wlFilteredDocCount       = 3;
@@ -79,11 +79,12 @@ $textSuggestionsMaxTokens   = 256;
 $textSuggestionsTemperature = 0.7;
 $textPlaceholderString      = "\:2758";
 $textCellsBefore            = 50;
-$textCellsAfter             = 20;
+$textCellsAfter             = 25;
 
 $textSuggestionsPrompt = StringTemplate[ "\
 Complete the following by writing text that can be inserted into \"%%Placeholder%%\".
-The current cell style is \"%%Style%%\", so only write content that would be appropriate for this cell type.
+The current cell style is \"%%Style%%\", so only write content that would be appropriate for this cell type.\
+%%StyleNotes%%
 Do your best to match the existing style (whitespace, line breaks, etc.).
 Your suggested text will be inserted into %%Placeholder%%, so be careful not to repeat the immediately surrounding text.
 Respond with the completion text and nothing else.",
@@ -92,7 +93,23 @@ Delimiters -> "%%" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Notebook Content Suggestions*)
-(* TODO: between cells suggestions *)
+$notebookSuggestionsModel       = "gpt-4o";
+$notebookSuggestionsMultimodal  = False;
+$notebookSuggestionsCount       = 1;
+$notebookSuggestionsMaxTokens   = 512;
+$notebookSuggestionsTemperature = 0.7;
+$notebookPlaceholderString      = "\:2758";
+$notebookCellsBefore            = 50;
+$notebookCellsAfter             = 25;
+
+$notebookSuggestionsPrompt = StringTemplate[ "\
+Complete the following by writing markdown text that can be inserted into \"%%Placeholder%%\".
+Do your best to match the existing style (whitespace, line breaks, etc.).
+Your suggested text will be inserted into %%Placeholder%%, so be careful not to repeat the immediately surrounding text.
+Respond with the completion text and nothing else.
+
+%%RelatedDocumentation%%",
+Delimiters -> "%%" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -125,7 +142,7 @@ showContentSuggestions[ nbo_NotebookObject ] :=
 showContentSuggestions[ nbo_NotebookObject, { selected_CellObject } ] :=
     showContentSuggestions0[ nbo, selected ];
 
-showContentSuggestions[ nbo_NotebookObject, { } ] := Enclose[
+(* showContentSuggestions[ nbo_NotebookObject, { } ] := Enclose[
     Module[ { selected },
         (* FIXME: this is where notebook content suggestions should come in *)
         SelectionMove[ nbo, After, Cell ];
@@ -134,7 +151,10 @@ showContentSuggestions[ nbo_NotebookObject, { } ] := Enclose[
         showContentSuggestions0[ nbo, First @ selected ]
     ],
     throwInternalFailure
-];
+]; *)
+
+showContentSuggestions[ nbo_NotebookObject, { } ] :=
+    showContentSuggestions0[ nbo, nbo ];
 
 showContentSuggestions[ _NotebookObject, _ ] :=
     Null;
@@ -144,21 +164,18 @@ showContentSuggestions // endDefinition;
 
 showContentSuggestions0 // beginDefinition;
 
-showContentSuggestions0[ nbo_NotebookObject, root_CellObject ] := Enclose[
-    Module[ { selectionInfo },
+showContentSuggestions0[ nbo_NotebookObject, root: $$feObj ] := Enclose[
+    Catch @ Module[ { selectionType, contentData, info },
 
         NotebookDelete @ Cells[ nbo, AttachedCell -> True, CellStyle -> "AttachedContentSuggestions" ];
-
-        selectionInfo = ConfirmMatch[
-            LogChatTiming @ getSelectionInfo @ root,
-            None | KeyValuePattern[ "CursorPosition" -> { _Integer, _Integer } ],
-            "SelectionInfo"
-        ];
-
-        $lastSelectionInfo = selectionInfo;
+        selectionType = CurrentValue[ nbo, "SelectionType" ];
+        $lastSelectionType = selectionType;
+        If[ ! MatchQ[ selectionType, "CellCaret"|"TextCaret"|"TextRange" ], Throw @ Null ];
+        contentData = If[ MatchQ[ root, _CellObject ], cellInformation[ root, "ContentData" ], None ];
+        info = <| "ContentData" -> contentData, "SelectionType" -> selectionType |>;
 
         ConfirmMatch[
-            setServiceCaller[ showContentSuggestions0[ nbo, root, selectionInfo ], "ContentSuggestions" ],
+            setServiceCaller[ showContentSuggestions0[ nbo, root, info ], "ContentSuggestions" ],
             _CellObject | Null,
             "ShowContentSuggestions"
         ]
@@ -166,14 +183,13 @@ showContentSuggestions0[ nbo_NotebookObject, root_CellObject ] := Enclose[
     throwInternalFailure
 ];
 
-showContentSuggestions0[ nbo_NotebookObject, root_CellObject, selectionInfo_Association ] := Enclose[
+showContentSuggestions0[ nbo_NotebookObject, root: $$feObj, selectionInfo_Association ] := Enclose[
     Catch @ Module[ { type, suggestionsContainer, attached, settings, context },
-
-        If[ ! MatchQ[ selectionInfo, KeyValuePattern[ "CursorPosition" -> { _Integer, _Integer } ] ], Throw @ Null ];
 
         type = ConfirmBy[ suggestionsType @ selectionInfo, StringQ, "Type" ];
 
         suggestionsContainer = ProgressIndicator[ Appearance -> "Necklace" ];
+
         attached = ConfirmMatch[
             AttachCell[
                 NotebookSelection @ nbo,
@@ -181,7 +197,7 @@ showContentSuggestions0[ nbo_NotebookObject, root_CellObject, selectionInfo_Asso
                 { "WindowCenter", Bottom },
                 0,
                 { Center, Top },
-                RemovalConditions -> { "EvaluatorQuit", "MouseClickOutside", "SelectionExit" }
+                RemovalConditions -> { "EvaluatorQuit", "MouseClickOutside" }
             ],
             _CellObject,
             "Attached"
@@ -231,6 +247,15 @@ getSuggestionsContext[ "Text", nbo_NotebookObject, settings_ ] := getContextFrom
     "MaxCellsAfterSelection"     -> $textCellsAfter
 ];
 
+getSuggestionsContext[ "Notebook", nbo_NotebookObject, settings_ ] := getContextFromSelection[
+    None,
+    nbo,
+    settings,
+    "NotebookInstructionsPrompt" -> False,
+    "MaxCellsBeforeSelection"    -> $notebookCellsBefore,
+    "MaxCellsAfterSelection"     -> $notebookCellsAfter
+];
+
 getSuggestionsContext // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -264,8 +289,9 @@ suggestionsType // endDefinition;
 (* ::Subsection::Closed:: *)
 (*generateSuggestions*)
 generateSuggestions // beginDefinition;
-generateSuggestions[ "WL"  , args__ ] := generateWLSuggestions @ args;
-generateSuggestions[ "Text", args__ ] := generateTextSuggestions @ args;
+generateSuggestions[ "WL"      , args__ ] := generateWLSuggestions @ args;
+generateSuggestions[ "Text"    , args__ ] := generateTextSuggestions @ args;
+generateSuggestions[ "Notebook", args__ ] := generateNotebookSuggestions @ args;
 generateSuggestions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -318,7 +344,7 @@ generateWLSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_St
 
         response = ConfirmMatch[
             executeWLSuggestions @ as,
-            KeyValuePattern[ "Content" -> { __String } ],
+            KeyValuePattern[ "Content" -> { __String } | _String ],
             "Response"
         ];
 
@@ -332,6 +358,7 @@ generateWLSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_St
             "Suggestions"
         ];
 
+        (* FIXME: strip surrounding code in getWLSuggestions instead of going from string -> boxes -> string -> boxes *)
         stripped = Take[
             ConfirmMatch[ stripSurroundingWLCode[ style, suggestions, context ], { __BoxData }, "Stripped" ],
             UpTo[ $wlSuggestionsCount ]
@@ -505,13 +532,13 @@ stripSurroundingWLCode[ suggestions: { __BoxData }, context_String ] := Enclose[
 ];
 
 stripSurroundingWLCode[ suggestion_BoxData, { before_String, after_String } ] := Enclose[
-    Module[ { string, stripped, boxes },
+    Catch @ Module[ { string, stripped, boxes },
         string = ConfirmBy[ CellToString @ StyleBox[ suggestion, ShowStringCharacters -> True ], StringQ, "String" ];
 
         stripped = ConfirmBy[
             If[ StringMatchQ[ string, before ~~ ___ ~~ after ],
                 StringDelete[ string, { StartOfString~~before, after~~EndOfString } ],
-                string
+                Throw @ { suggestionWrapper[ 1, suggestion ] }
             ],
             StringQ,
             "Stripped"
@@ -623,7 +650,7 @@ postProcessWLSuggestions[ suggestion_String ] := Enclose[
 
         ConfirmMatch[
             If[ TrueQ @ $stripWhitespace,
-                Flatten @ BoxData @ StripBoxes @ StringToBoxes[ noLabels, "WL" ],
+                Flatten @ BoxData @ StringToBoxes[ noLabels, "WL" ],
                 Flatten @ BoxData @ simpleStringToBoxes @ noLabels
             ],
             _BoxData,
@@ -673,7 +700,13 @@ generateTextSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_
         $lastSuggestionContext = context;
 
         instructions = ConfirmBy[
-            TemplateApply[ $textSuggestionsPrompt, <| "Placeholder" -> $textPlaceholderString, "Style" -> style |> ],
+            TemplateApply[
+                $textSuggestionsPrompt,
+                <|
+                    "Placeholder" -> $textPlaceholderString,
+                    "Style"       -> style,
+                    "StyleNotes"  -> styleNotes @ style
+                |> ],
             StringQ,
             "Instructions"
         ];
@@ -712,6 +745,18 @@ generateTextSuggestions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*styleNotes*)
+styleNotes // beginDefinition;
+
+styleNotes[ "CodeText" ] := "
+CodeText cells typically contain a short one-line caption ending in a colon (:) that describe the next input.";
+
+styleNotes[ _ ] := "";
+
+styleNotes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*getTextSuggestions*)
 getTextSuggestions // beginDefinition;
 getTextSuggestions[ content_ ] := postProcessTextSuggestions @ getSuggestions @ content;
@@ -738,6 +783,104 @@ toTextData[ boxes_BoxData ] := TextData @ { Cell[ postProcessWLSuggestions @ Cel
 toTextData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*generateNotebookSuggestions*)
+generateNotebookSuggestions // beginDefinition;
+
+generateNotebookSuggestions[ Dynamic[ container_ ], nbo_, root_NotebookObject, context0_String, settings_ ] := Enclose[
+    Module[ { context, preprocessed, relatedDocs, as, instructions, response, suggestions },
+
+        context = ConfirmBy[
+            StringReplace[
+                context0,
+                Shortest[ $leftSelectionIndicator~~___~~$rightSelectionIndicator ] :> $notebookPlaceholderString
+            ],
+            StringQ,
+            "Context"
+        ];
+
+        If[ TrueQ @ $notebookSuggestionsMultimodal,
+            context = ConfirmMatch[ GetExpressionURIs @ context, { (_String|_Image)... }, "MultimodalContext" ]
+        ];
+
+        $lastSuggestionContext = context;
+
+        preprocessed = ConfirmBy[ preprocessRelatedDocsContext @ context, StringQ, "Preprocessing" ];
+
+        relatedDocs = ConfirmBy[
+            LogChatTiming @ RelatedDocumentation[
+                preprocessed,
+                "Prompt",
+                MaxItems        -> $wlDocMaxItems,
+                "FilterResults" -> $wlFilterDocResults,
+                "FilteredCount" -> $wlFilteredDocCount
+            ],
+            StringQ,
+            "RelatedDocumentation"
+        ];
+
+        as = <|
+            "Context"              -> context,
+            "Placeholder"          -> $wlPlaceholderString,
+            "RelatedDocumentation" -> relatedDocs
+        |>;
+
+        instructions = StringTrim @ ConfirmBy[
+            TemplateApply[ $notebookSuggestionsPrompt, as ],
+            StringQ,
+            "Instructions"
+        ];
+        as[ "Instructions" ] = instructions;
+
+        $lastInstructions = instructions;
+
+        response = setServiceCaller @ LogChatTiming @ ServiceExecute[
+            $suggestionsService,
+            "Chat",
+            {
+                "Messages" -> {
+                    <| "Role" -> "System", "Content" -> instructions |>,
+                    <| "Role" -> "User"  , "Content" -> context      |>
+                },
+                "Model"       -> $notebookSuggestionsModel,
+                "N"           -> $notebookSuggestionsCount,
+                "MaxTokens"   -> $notebookSuggestionsMaxTokens,
+                "Temperature" -> $notebookSuggestionsTemperature
+            },
+            Authentication -> $suggestionsAuthentication
+        ];
+
+        $lastSuggestionsResponse = response;
+
+        suggestions = DeleteDuplicates @ ConfirmMatch[ getNotebookSuggestions @ response, { __Cell }, "Suggestions" ];
+
+        $lastSuggestions = suggestions;
+
+        container = formatSuggestions[ Dynamic[ container ], suggestions, nbo, root, context, settings ]
+    ],
+    throwInternalFailure
+];
+
+generateNotebookSuggestions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getNotebookSuggestions*)
+getNotebookSuggestions // beginDefinition;
+getNotebookSuggestions[ content_ ] := Flatten @ { postProcessNotebookSuggestions @ getSuggestions @ content };
+getNotebookSuggestions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*postProcessNotebookSuggestions*)
+postProcessNotebookSuggestions // beginDefinition;
+postProcessNotebookSuggestions[ suggestions_List ] := postProcessNotebookSuggestions /@ suggestions;
+postProcessNotebookSuggestions[ s_String ] := postProcessNotebookSuggestions[ s, FormatChatOutput @ s ];
+postProcessNotebookSuggestions[ s_, RawBoxes[ cell_Cell ] ] := postProcessNotebookSuggestions[ s, ExplodeCell @ cell ];
+postProcessNotebookSuggestions[ s_, cells: { __Cell } ] := Cell @ CellGroupData[ cells, Open ];
+postProcessNotebookSuggestions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*getSuggestions*)
 getSuggestions // beginDefinition;
@@ -755,12 +898,12 @@ formatSuggestions[
     container_,
     suggestions: { __ },
     nbo_NotebookObject,
-    root_CellObject,
+    root: $$feObj,
     context_,
     settings_
 ] := Enclose[
     Module[ { styles, formatted },
-        styles = ConfirmMatch[ cellStyles @ root, { ___String }, "Styles" ];
+        styles = If[ MatchQ[ root, _CellObject ], ConfirmMatch[ cellStyles @ root, { ___String }, "Styles" ], None ];
         formatted = ConfirmMatch[ formatSuggestion[ root, nbo, styles ] /@ suggestions, { __Button }, "Formatted" ];
         Pane[ Column[ formatted, Spacings -> 0 ], ImageSize -> { UpTo[ Scaled[ 0.9 ] ], Automatic } ]
     ],
@@ -774,10 +917,10 @@ formatSuggestions // endDefinition;
 (*formatSuggestion*)
 formatSuggestion // beginDefinition;
 
-formatSuggestion[ root_CellObject, nbo_NotebookObject, styles_ ] :=
+formatSuggestion[ root: $$feObj, nbo_NotebookObject, styles_ ] :=
     formatSuggestion[ root, nbo, styles, # ] &;
 
-formatSuggestion[ root_CellObject, nbo_NotebookObject, { styles___String }, suggestion_BoxData ] := Button[
+formatSuggestion[ root: $$feObj, nbo_NotebookObject, { styles___String }, suggestion_BoxData ] := Button[
     RawBoxes @ Cell[
         suggestion,
         styles,
@@ -798,14 +941,64 @@ formatSuggestion[ root_CellObject, nbo_NotebookObject, { styles___String }, sugg
     Alignment -> Left
 ];
 
-formatSuggestion[ root_CellObject, nbo_NotebookObject, { styles___String }, suggestion_TextData ] := Button[
+formatSuggestion[ root: $$feObj, nbo_NotebookObject, { styles___String }, suggestion_TextData ] := Button[
     RawBoxes @ Cell[ suggestion, styles, Deployed -> True, Selectable -> False ],
     NotebookDelete @ EvaluationCell[ ];
     NotebookWrite[ nbo, suggestion, After ],
     Alignment -> Left
 ];
 
+formatSuggestion[ root: $$feObj, nbo_NotebookObject, None, suggestion: Cell[ _CellGroupData ] ] := Button[
+    Column[ formatSuggestionCells /@ cellFlatten @ suggestion ],
+    NotebookDelete @ EvaluationCell[ ];
+    NotebookWrite[ nbo, suggestion, After ],
+    Alignment -> Left
+];
+
 formatSuggestion // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatSuggestionCells*)
+formatSuggestionCells // beginDefinition;
+
+formatSuggestionCells[ cell: Cell[ _CellGroupData, ___ ] ] :=
+    formatSuggestionCells @ cellFlatten @ cell;
+
+formatSuggestionCells[ cells: { __Cell } ] :=
+    formatSuggestionCells /@ cells;
+
+formatSuggestionCells[ Cell[ a__, CellLabel -> label_, b___ ] ] := Grid[
+    { {
+        Pane[
+            RawBoxes @ Cell[ label, "CellLabelExpired", FontSize -> 9, FontSlant -> Plain ],
+            Alignment -> Right,
+            ImageSize -> { 50, Automatic }
+        ],
+        formatSuggestionCells @ Cell[ a, b ]
+    } },
+    Alignment -> { { Right, Left }, Top }
+];
+
+formatSuggestionCells[ Cell[ a__, style: "Code"|"Input", b___ ] ] :=
+    RawBoxes @ Cell[
+        a,
+        style,
+        b,
+        Deployed             -> True,
+        Selectable           -> False,
+        ShowStringCharacters -> True,
+        ShowAutoStyles       -> True,
+        LanguageCategory     -> "Input",
+        LineBreakWithin      -> Automatic,
+        LineIndent           -> 1,
+        PageWidth            :> WindowWidth
+    ];
+
+formatSuggestionCells[ Cell[ a__ ] ] :=
+    RawBoxes @ Cell[ a, Deployed -> True, Selectable -> False ];
+
+formatSuggestionCells // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
