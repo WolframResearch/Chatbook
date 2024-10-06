@@ -98,6 +98,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `autoAssistQ;
 `boxDataQ;
 `cachedTokenizer;
+`cellFlatten;
 `cellInformation;
 `cellOpenQ;
 `cellPrint;
