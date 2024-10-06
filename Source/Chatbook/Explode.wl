@@ -22,6 +22,8 @@ $$newCellStyle = Alternatives[
     "Title"
 ];
 
+$$ws = _String? (StringMatchQ[ WhitespaceCharacter... ]);
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*ExplodeCell*)
@@ -43,7 +45,7 @@ explodeCell[ textData_List ] := Enclose[
     Module[ { processed, grouped, post },
         processed = ConfirmMatch[ ReplaceRepeated[ textData, $preprocessingRules ], $$textDataList, "Preprocessing" ];
         grouped = ConfirmMatch[ regroupCells @ processed, $$textDataList, "RegroupCells" ];
-        post = ConfirmMatch[ postProcessExplodedCells /@ grouped, { __Cell }, "PostProcessing" ];
+        post = ConfirmMatch[ Flatten[ postProcessExplodedCells /@ grouped ], { __Cell }, "PostProcessing" ];
         SequenceReplace[
             post,
             { Cell[ caption_? captionQ, "Text", a___ ], input: Cell[ __, "Input"|"Code", ___ ] } :>
@@ -71,12 +73,30 @@ captionQ // endDefinition;
 postProcessExplodedCells // beginDefinition;
 
 postProcessExplodedCells[
-    Cell[ BoxData @ RowBox @ { RowBox @ { "In", "[", n_String, "]" }, "="|":=", boxes_ }, "Input", a___ ]
+    Cell[ BoxData @ RowBox @ { RowBox @ { "In", "[", n_String, "]" }, "="|":=", boxes__ }, "Input", a___ ]
 ] := Cell[ BoxData @ boxes, "Input", CellLabel -> "In["<>n<>"]:=", a ];
 
 postProcessExplodedCells[
-    Cell[ BoxData @ RowBox @ { RowBox @ { "Out", "[", n_String, "]" }, "="|":=", boxes_ }, "Input", a___ ]
+    Cell[ BoxData @ RowBox @ { RowBox @ { "Out", "[", n_String, "]" }, "="|":=", boxes__ }, "Input", a___ ]
 ] := Cell[ BoxData @ boxes, "Output", CellLabel -> "Out["<>n<>"]=", a ];
+
+postProcessExplodedCells[ Cell[
+    BoxData @ RowBox @ {
+        RowBox @ { RowBox @ { "In", "[", nIn_String, "]" }, ":=", in___ },
+        $$ws...,
+        RowBox @ { RowBox @ { "Out", "[", nOut_String, "]" }, "=", out___ }
+    },
+    "Input"
+] ] := {
+    Cell[ BoxData @ RowBox @ { in }, "Input", CellLabel -> "In["<>nIn<>"]:=" ],
+    Cell[ BoxData @ RowBox @ { out }, "Output", CellLabel -> "Out["<>nOut<>"]=" ]
+};
+
+postProcessExplodedCells[ cell: Cell[ __, "Input", ___ ] ] := DeleteCases[
+    cell /. { RowBox @ { RowBox @ { "In", "[", _, "]" }, "="|":=", boxes__ } :> RowBox @ { boxes } },
+    RowBox @ { RowBox @ { "Out", "[", _, "]" }, "="|":=", __ },
+    Infinity
+];
 
 postProcessExplodedCells[ cell_Cell ] :=
     cell;
