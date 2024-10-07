@@ -395,7 +395,7 @@ withToolBox // endDefinition;
 selectTools // beginDefinition;
 
 selectTools[ as_Association ] := Enclose[
-    Module[ { llmEvaluatorName, toolNames, selections, selectionTypes, add, remove, selectedNames, tools, short },
+    Module[ { llmEvaluatorName, toolNames, selections, selectionTypes, add, remove, selectedNames, short },
 
         llmEvaluatorName = ConfirmBy[ getLLMEvaluatorName @ as, StringQ, "LLMEvaluatorName" ];
         toolNames        = ConfirmMatch[ getToolNames @ as, { ___String }, "Names" ];

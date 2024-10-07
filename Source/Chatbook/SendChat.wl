@@ -1168,6 +1168,7 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         (* Ensure dynamic text is up to date: *)
         $dynamicTrigger++;
         $lastDynamicUpdate = AbsoluteTime[ ];
+        $toolCallCount = If[ IntegerQ @ $toolCallCount, $toolCallCount + 1, 1 ];
 
         string = ConfirmBy[ container[ "FullContent" ], StringQ, "FullContent" ];
 
@@ -1180,6 +1181,8 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
             { _, _LLMToolRequest|_Failure },
             "ToolRequestParser"
         ];
+
+        applyHandlerFunction[ settings, "ToolRequestReceived", <| "ToolRequest" -> toolCall |> ];
 
         toolResponse = ConfirmMatch[
             If[ FailureQ @ toolCall,
@@ -1240,6 +1243,10 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
         $dynamicTrigger++;
         $lastDynamicUpdate = AbsoluteTime[ ];
 
+        applyHandlerFunction[ settings, "ToolResponseReceived", <| "ToolResponse" -> toolResponse |> ];
+
+        If[ ! sendToolResponseQ[ settings, toolResponse ], StopChat @ cell ];
+
         task = $lastTask = chatSubmit[ container, req, cell, settings ];
 
         addHandlerArguments[ "Task" -> task ];
@@ -1261,6 +1268,34 @@ toolEvaluation // endDefinition;
 (* $noRepeatMessage = "\
 The user has already been provided with this result, so you do not need to repeat it.
 Reply with /end if the tool call provides a satisfactory answer, otherwise respond normally."; *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sendToolResponseQ*)
+sendToolResponseQ // beginDefinition;
+(* TODO: allow one final response when reaching the limit and disable tools for the next chat submit *)
+sendToolResponseQ[ KeyValuePattern[ "MaxToolResponses" -> n_Integer ], _ ] /; $toolCallCount > n := False;
+sendToolResponseQ[ KeyValuePattern[ "SendToolResponse" -> False ], _ ] := False;
+sendToolResponseQ[ _, response_LLMToolResponse ] := ! TrueQ @ terminalToolResponseQ @ response;
+sendToolResponseQ[ _, _ ] := True;
+sendToolResponseQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*terminalToolResponseQ*)
+terminalToolResponseQ // beginDefinition;
+terminalToolResponseQ[ res_LLMToolResponse ] := TrueQ @ Or[ terminalQ @ res[ "Tool" ], terminalQ @ res[ "Data" ] ];
+terminalToolResponseQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*terminalQ*)
+terminalQ // beginDefinition;
+terminalQ[ tool_LLMTool ] := terminalQ @ tool[ "Data" ];
+terminalQ[ KeyValuePattern[ "Output" -> KeyValuePattern[ "SendToolResponse" -> False ] ] ] := True;
+terminalQ[ KeyValuePattern[ "SendToolResponse" -> False ] ] := True;
+terminalQ[ _ ] := False;
+terminalQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

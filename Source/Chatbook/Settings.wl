@@ -45,12 +45,14 @@ $defaultChatSettings = <|
     "MaxContextTokens"               -> Automatic,
     "MaxOutputCellStringLength"      -> Automatic,
     "MaxTokens"                      -> Automatic,
+    "MaxToolResponses"               -> 5,
     "MergeMessages"                  -> True,
     "Model"                          :> $DefaultModel,
     "Multimodal"                     -> Automatic,
     "NotebookWriteMethod"            -> Automatic,
     "OpenAIAPICompletionURL"         -> "https://api.openai.com/v1/chat/completions",
     "OpenAIKey"                      -> Automatic,
+    "OpenToolCallBoxes"              -> Automatic,
     "PresencePenalty"                -> 0.1,
     "ProcessingFunctions"            :> $DefaultChatProcessingFunctions,
     "PromptGeneratorMessagePosition" -> 2,
@@ -58,6 +60,7 @@ $defaultChatSettings = <|
     "PromptGenerators"               -> { },
     "PromptGeneratorsEnabled"        -> Automatic, (* TODO *)
     "Prompts"                        -> { },
+    "SendToolResponse"               -> Automatic,
     "SetCellDingbat"                 -> True,
     "ShowMinimized"                  -> Automatic,
     "StopTokens"                     -> Automatic,
@@ -117,9 +120,11 @@ $DefaultModel = <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>;
 (* ::Subsection::Closed:: *)
 (*Handler Functions*)
 $DefaultChatHandlerFunctions = <|
-    "ChatAbort" :> $ChatAbort,
-    "ChatPost"  :> $ChatPost,
-    "ChatPre"   :> $ChatPre
+    "ChatAbort"             :> $ChatAbort,
+    "ChatPost"              :> $ChatPost,
+    "ChatPre"               :> $ChatPre,
+    "ToolRequestReceived"   -> None,
+    "ToolResponseGenerated" -> None
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -246,6 +251,7 @@ resolveAutoSettings[ settings0_Association ] := Enclose[
             $initialCellStringBudget = makeCellStringBudget @ resolved;
             $cellStringBudget        = $initialCellStringBudget;
             $conversionRules         = resolved[ "ConversionRules" ];
+            $openToolCallBoxes       = resolved[ "OpenToolCallBoxes" ];
         ];
         If[ $catching, $currentChatSettings = resolved ];
 
@@ -342,6 +348,7 @@ resolveAutoSetting0[ as_, "MaxOutputCellStringLength"      ] := chooseMaxOutputC
 resolveAutoSetting0[ as_, "MaxTokens"                      ] := autoMaxTokens @ as;
 resolveAutoSetting0[ as_, "Multimodal"                     ] := multimodalQ @ as;
 resolveAutoSetting0[ as_, "NotebookWriteMethod"            ] := "PreemptiveLink";
+resolveAutoSetting0[ as_, "OpenToolCallBoxes"              ] := openToolCallBoxesQ @ as;
 resolveAutoSetting0[ as_, "PromptGeneratorMessagePosition" ] := 2;
 resolveAutoSetting0[ as_, "PromptGeneratorMessageRole"     ] := "System";
 resolveAutoSetting0[ as_, "PromptGenerators"               ] := { };
@@ -369,6 +376,7 @@ $autoSettingKeyDependencies = <|
     "MaxOutputCellStringLength"  -> "MaxCellStringLength",
     "MaxTokens"                  -> "Model",
     "Multimodal"                 -> { "EnableLLMServices", "Model" },
+    "OpenToolCallBoxes"          -> "SendToolResponse",
     "Tokenizer"                  -> "TokenizerName",
     "TokenizerName"              -> "Model",
     "ToolCallExamplePromptStyle" -> { "Model", "ToolsEnabled" },
@@ -393,6 +401,13 @@ $autoSettingKeyPriority := Enclose[
     * BasePrompt (might not be possible here)
     * ChatContextPreprompt
 *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*openToolCallBoxesQ*)
+openToolCallBoxesQ // beginDefinition;
+openToolCallBoxesQ[ as_Association ] := If[ as[ "SendToolResponse" ] === False, True, Automatic ];
+openToolCallBoxesQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
