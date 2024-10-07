@@ -1103,12 +1103,18 @@ $textDataFormatRules = {
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
         Shortest[ code__ ],
         ("```"|EndOfString)
-    ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString) ] :>
+    ] /; StringFreeQ[ code, ("TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString))|$$simpleToolCall ] :>
         codeBlockCell[ language, code ]
     ,
-    tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString)) :> inlineToolCallCell @ tool
+    Longest @ StringExpression[
+        (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
+        tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString))
+    ] :> inlineToolCallCell @ tool
     ,
-    tool: $$simpleToolCall :> inlineToolCallCell @ tool
+    Longest @ StringExpression[
+        (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
+        tool: $$simpleToolCall
+     ] :> inlineToolCallCell @ tool
     ,
     StartOfLine ~~ "/retry" ~~ (WhitespaceCharacter|EndOfString) :> $discardPreviousToolCall
     ,
