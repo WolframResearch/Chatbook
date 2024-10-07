@@ -29,6 +29,8 @@ withChatState[ eval_ ] :=
             withChatState                 = # &,
             $contextPrompt                = None,
             $selectionPrompt              = None,
+            $toolCallCount                = 0,
+            $openToolCallBoxes            = Automatic,
 
             (* Values used for token budgets during cell serialization: *)
             $cellStringBudget             = $cellStringBudget,

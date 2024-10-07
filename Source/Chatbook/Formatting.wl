@@ -1427,7 +1427,8 @@ parseFullToolCallString[ id_String, tool: HoldPattern[ _LLMTool ], parameters_As
         "FormattingFunction" -> getToolFormattingFunction @ tool,
         "ToolCall"           -> StringTrim @ string,
         "Parameters"         -> parameters,
-        "Result"             -> output
+        "Result"             -> output,
+        "Open"               -> TrueQ @ $openToolCallBoxes
     |>;
 
 parseFullToolCallString // endDefinition;
@@ -1510,6 +1511,7 @@ makeToolCallBoxLabel[ as0_, name_String, icon_ ] :=
                     LabelStyle -> { FontSize -> 12 }
                 ]
             },
+            TrueQ @ as0[ "Open" ],
             Method -> "Active"
         ]
     ];
