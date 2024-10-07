@@ -114,7 +114,7 @@
 "PreferencesContentAuthentication" -> "Authentication",
 "PreferencesContentUnregisterTooltip" -> "Unregister service connection",
 "PreferencesContentOpenAICompletionURLLabel" -> "Chat Completion URL:",
-"PreferencesContentLLMKitTitle" -> "Wolfram LLM Kit",
+"PreferencesContentLLMKitTitle" -> "Wolfram Code Assistant + LLM Kit",
 "PreferencesContentLLMKitSubscribeButton" -> "Subscribe",
 "PreferencesContentLLMKitSubscriptionRequired" -> "LLM Kit requires a subscription",
 "PreferencesContentLLMKitNoSubscription" -> "No LLM Kit subscription found",
