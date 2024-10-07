@@ -269,7 +269,10 @@ SaveChat[ messages: $$chatMessages, settings_Association, opts: OptionsPattern[ 
     catchMine @ LogChatTiming @ saveChat[ messages, settings, OptionValue[ "AutoGenerateTitle" ] ];
 
 SaveChat[ chat_ChatObject, settings_Association, opts: OptionsPattern[ ] ] :=
-    catchMine @ LogChatTiming @ saveChat[ chat[ "Messages" ], settings, OptionValue[ "AutoGenerateTitle" ] ];
+    catchMine @ SaveChat[ chat[ "Messages" ], settings, opts ];
+
+SaveChat[ chat_Dataset, settings_Association, opts: OptionsPattern[ ] ] :=
+    catchMine @ SaveChat[ Normal @ chat, settings, opts ];
 
 SaveChat // endExportedDefinition;
 
