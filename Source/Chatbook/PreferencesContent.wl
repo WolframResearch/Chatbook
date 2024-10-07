@@ -1266,7 +1266,7 @@ makeLLMPanel[ ] :=
                                         Spacings -> { 0, 0.5 }
                                     ]
                             },
-                            Dynamic[ Which[ !TrueQ[ CurrentValue[ "WolframCloudConnected" ] ], "A", !TrueQ[ Wolfram`LLMFunctions`Common`Private`$LLMKitSubscribed ], "B", True, "C" ] ],
+                            Dynamic[ Which[ !TrueQ[ CurrentValue[ "WolframCloudConnected" ] ], "A", !TrueQ[ Wolfram`LLMFunctions`Common`$LLMKitSubscribed ], "B", True, "C" ] ],
                             BaselinePosition -> Baseline,
                             ImageSize -> Automatic ],
                         "",
