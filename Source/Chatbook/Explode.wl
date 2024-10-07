@@ -11,6 +11,7 @@ $$newCellStyle = Alternatives[
     "ExternalLanguage",
     "Input",
     "Item",
+    "Subitem",
     "MarkdownDelimiter",
     "Program",
     "Section",
@@ -249,6 +250,9 @@ regroupCells[ { grouped___ }, { grouping___ }, { string_String, rest___ } ] :=
                 throwInternalFailure @ regroupCells[ { grouped }, { grouping }, { string, rest } ]
         }
     ];
+
+regroupCells[ { grouped___ }, { grouping___ }, { other_, rest___ } ] :=
+    regroupCells[ { grouped }, { grouping, other }, { rest } ];
 
 regroupCells[ { grouped___ }, { grouping___ }, { } ] :=
     DeleteCases[ { grouped, Cell[ TextData @ { grouping }, "Text" ] }, Cell[ TextData @ { }, ___ ] ];
