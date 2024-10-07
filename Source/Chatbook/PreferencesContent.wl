@@ -413,7 +413,7 @@ makeModelSelector0[ type_String ] :=
         type,
         If[ KeyExistsQ[ $availableServices, "LLMKit" ],
             $availableServices,
-            <| "LLMKit" -> <| "Service" -> "Wolfram LLM Service", "Icon" -> chatbookIcon["llmkit-dialog-sm", True] |>, $availableServices |> ] ]
+            <| "LLMKit" -> <| "Service" -> "Wolfram", "Icon" -> chatbookIcon["llmkit-dialog-sm", True] |>, $availableServices |> ] ]
 
 makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose[
     DynamicModule[ { default, service, model, state, serviceSelector, modelSelector, highlight },

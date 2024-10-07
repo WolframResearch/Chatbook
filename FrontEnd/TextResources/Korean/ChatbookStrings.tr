@@ -115,7 +115,7 @@
 "PreferencesContentAuthentication" -> "\:C778\:C99D",
 "PreferencesContentUnregisterTooltip" -> "\:C11C\:BE44\:C2A4 \:C5F0\:ACB0 \:B4F1\:B85D \:CDE8\:C18C",
 "PreferencesContentOpenAICompletionURLLabel" -> "\:CC44\:D305 \:C644\:B8CC URL:",
-"PreferencesContentLLMKitTitle" -> "Wolfram LLM Kit",
+"PreferencesContentLLMKitTitle" -> "Wolfram Code Assistant + LLM Kit",
 "PreferencesContentLLMKitSubscribeButton" -> "Subscribe",
 "PreferencesContentLLMKitSubscriptionRequired" -> "LLM Kit requires a subscription",
 "PreferencesContentLLMKitNoSubscription" -> "No LLM Kit subscription found",
