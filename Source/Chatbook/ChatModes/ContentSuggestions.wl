@@ -32,6 +32,7 @@ $wlFilteredDocCount       = 3;
 
 $wlSuggestionsPrompt := If[ TrueQ @ $wlFIM, $wlFIMPrompt, $wlSuggestionsPrompt0 ];
 
+(* TODO: make the language a template parameter to support ExternalLanguage cells too: *)
 $wlSuggestionsPrompt0 = StringTemplate[ "\
 Complete the following Wolfram Language code by writing text that can be inserted into \"%%Placeholder%%\".
 Do your best to match the existing style (whitespace, line breaks, etc.).
