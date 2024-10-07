@@ -12,6 +12,7 @@ concurrency:
 env:
   RESOURCE_PUBLISHER_TOKEN: ${{ secrets.RESOURCE_PUBLISHER_TOKEN }}
   WOLFRAMSCRIPT_ENTITLEMENTID: ${{ secrets.WOLFRAMSCRIPT_ENTITLEMENTID }}
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
 jobs:
 
@@ -36,6 +37,9 @@ jobs:
     
     - name: Build
       run: wolframscript -f Scripts/BuildPaclet.wls
+
+    - name: InstallTestDependencies
+      run: wolframscript -f Scripts/InstallTestDependencies.wls
 
     - name: Test
       run: wolframscript -f Scripts/TestPaclet.wls
@@ -97,6 +101,9 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+
+    - name: Unformat
+      run: wolframscript -f Scripts/UnformatFiles.wls
 
     - name: BuildMX
       run: wolframscript -f Scripts/BuildMX.wls

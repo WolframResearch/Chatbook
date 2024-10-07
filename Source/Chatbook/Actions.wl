@@ -3,7 +3,7 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 
-(* cSpell: ignore TOOLCALL, ENDTOOLCALL, ENDRESULT, nodef *)
+(* cSpell: ignore TOOLCALL, ENDTOOLCALL, nodef *)
 
 (* TODO: these probably aren't needed as exported symbols since all hooks are going through ChatbookAction *)
 `AskChat;
@@ -21,7 +21,6 @@ Begin[ "`Private`" ];
 Needs[ "Wolfram`Chatbook`"                ];
 Needs[ "Wolfram`Chatbook`Common`"         ];
 Needs[ "Wolfram`Chatbook`PersonaManager`" ];
-Needs[ "Wolfram`Chatbook`Serialization`"  ];
 Needs[ "Wolfram`Chatbook`ToolManager`"    ];
 
 HoldComplete[
@@ -63,41 +62,42 @@ ChatCellEvaluate[ args___ ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*ChatbookAction*)
-ChatbookAction[ "AccentIncludedCells"        , args___ ] := catchMine @ accentIncludedCells @ args;
-ChatbookAction[ "AIAutoAssist"               , args___ ] := catchMine @ AIAutoAssist @ args;
-ChatbookAction[ "Ask"                        , args___ ] := catchMine @ AskChat @ args;
-ChatbookAction[ "AssistantMessageLabel"      , args___ ] := catchMine @ assistantMessageLabel @ args;
-ChatbookAction[ "AttachCodeButtons"          , args___ ] := catchMine @ AttachCodeButtons @ args;
-ChatbookAction[ "AttachWorkspaceChatInput"   , args___ ] := catchMine @ attachWorkspaceChatInput @ args;
-ChatbookAction[ "CopyChatObject"             , args___ ] := catchMine @ CopyChatObject @ args;
-ChatbookAction[ "CopyExplodedCells"          , args___ ] := catchMine @ CopyExplodedCells @ args;
-ChatbookAction[ "DisableAssistance"          , args___ ] := catchMine @ DisableAssistance @ args;
-ChatbookAction[ "DisplayInlineChat"          , args___ ] := catchMine @ displayInlineChat @ args;
-ChatbookAction[ "EvaluateChatInput"          , args___ ] := catchMine @ EvaluateChatInput @ args;
-ChatbookAction[ "EvaluateWorkspaceChat"      , args___ ] := catchMine @ evaluateWorkspaceChat @ args;
-ChatbookAction[ "EvaluateInlineChat"         , args___ ] := catchMine @ evaluateInlineChat @ args;
-ChatbookAction[ "ExclusionToggle"            , args___ ] := catchMine @ ExclusionToggle @ args;
-ChatbookAction[ "ExplodeDuplicate"           , args___ ] := catchMine @ ExplodeDuplicate @ args;
-ChatbookAction[ "ExplodeInPlace"             , args___ ] := catchMine @ ExplodeInPlace @ args;
-ChatbookAction[ "InsertCodeBelow"            , args___ ] := catchMine @ insertCodeBelow @ args;
-ChatbookAction[ "InsertInlineReference"      , args___ ] := catchMine @ InsertInlineReference @ args;
-ChatbookAction[ "MakeWorkspaceChatDockedCell", args___ ] := catchMine @ makeWorkspaceChatDockedCell @ args;
-ChatbookAction[ "MoveToChatInputField"       , args___ ] := catchMine @ moveToChatInputField @ args;
-ChatbookAction[ "OpenChatBlockSettings"      , args___ ] := catchMine @ OpenChatBlockSettings @ args;
-ChatbookAction[ "OpenChatMenu"               , args___ ] := catchMine @ OpenChatMenu @ args;
-ChatbookAction[ "PersonaManage"              , args___ ] := catchMine @ PersonaManage @ args;
-ChatbookAction[ "RemoveCellAccents"          , args___ ] := catchMine @ removeCellAccents @ args;
-ChatbookAction[ "Send"                       , args___ ] := catchMine @ SendChat @ args;
-ChatbookAction[ "SendFeedback"               , args___ ] := catchMine @ SendFeedback @ args;
-ChatbookAction[ "StopChat"                   , args___ ] := catchMine @ StopChat @ args;
-ChatbookAction[ "TabLeft"                    , args___ ] := catchMine @ TabLeft @ args;
-ChatbookAction[ "TabRight"                   , args___ ] := catchMine @ TabRight @ args;
-ChatbookAction[ "ToggleFormatting"           , args___ ] := catchMine @ ToggleFormatting @ args;
-ChatbookAction[ "ToolManage"                 , args___ ] := catchMine @ ToolManage @ args;
-ChatbookAction[ "UpdateDynamics"             , args___ ] := catchMine @ updateDynamics @ args;
-ChatbookAction[ "UserMessageLabel"           , args___ ] := catchMine @ userMessageLabel @ args;
-ChatbookAction[ "WidgetSend"                 , args___ ] := catchMine @ WidgetSend @ args;
-ChatbookAction[ args___                                ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
+ChatbookAction[ "AccentIncludedCells"          , args___ ] := catchMine @ accentIncludedCells @ args;
+ChatbookAction[ "AIAutoAssist"                 , args___ ] := catchMine @ AIAutoAssist @ args;
+ChatbookAction[ "Ask"                          , args___ ] := catchMine @ AskChat @ args;
+ChatbookAction[ "AssistantMessageLabel"        , args___ ] := catchMine @ assistantMessageLabel @ args;
+ChatbookAction[ "AttachAssistantMessageButtons", args___ ] := catchMine @ attachAssistantMessageButtons @ args;
+ChatbookAction[ "AttachCodeButtons"            , args___ ] := catchMine @ AttachCodeButtons @ args;
+ChatbookAction[ "AttachWorkspaceChatInput"     , args___ ] := catchMine @ attachWorkspaceChatInput @ args;
+ChatbookAction[ "CopyChatObject"               , args___ ] := catchMine @ CopyChatObject @ args;
+ChatbookAction[ "CopyExplodedCells"            , args___ ] := catchMine @ CopyExplodedCells @ args;
+ChatbookAction[ "DisableAssistance"            , args___ ] := catchMine @ DisableAssistance @ args;
+ChatbookAction[ "DisplayInlineChat"            , args___ ] := catchMine @ displayInlineChat @ args;
+ChatbookAction[ "EvaluateChatInput"            , args___ ] := catchMine @ EvaluateChatInput @ args;
+ChatbookAction[ "EvaluateWorkspaceChat"        , args___ ] := catchMine @ evaluateWorkspaceChat @ args;
+ChatbookAction[ "EvaluateInlineChat"           , args___ ] := catchMine @ evaluateInlineChat @ args;
+ChatbookAction[ "ExclusionToggle"              , args___ ] := catchMine @ ExclusionToggle @ args;
+ChatbookAction[ "ExplodeDuplicate"             , args___ ] := catchMine @ ExplodeDuplicate @ args;
+ChatbookAction[ "ExplodeInPlace"               , args___ ] := catchMine @ ExplodeInPlace @ args;
+ChatbookAction[ "InsertCodeBelow"              , args___ ] := catchMine @ insertCodeBelow @ args;
+ChatbookAction[ "InsertInlineReference"        , args___ ] := catchMine @ InsertInlineReference @ args;
+ChatbookAction[ "MakeWorkspaceChatDockedCell"  , args___ ] := catchMine @ makeWorkspaceChatDockedCell @ args;
+ChatbookAction[ "MoveToChatInputField"         , args___ ] := catchMine @ moveToChatInputField @ args;
+ChatbookAction[ "OpenChatBlockSettings"        , args___ ] := catchMine @ OpenChatBlockSettings @ args;
+ChatbookAction[ "OpenChatMenu"                 , args___ ] := catchMine @ OpenChatMenu @ args;
+ChatbookAction[ "PersonaManage"                , args___ ] := catchMine @ PersonaManage @ args;
+ChatbookAction[ "RemoveCellAccents"            , args___ ] := catchMine @ removeCellAccents @ args;
+ChatbookAction[ "Send"                         , args___ ] := catchMine @ SendChat @ args;
+ChatbookAction[ "SendFeedback"                 , args___ ] := catchMine @ SendFeedback @ args;
+ChatbookAction[ "StopChat"                     , args___ ] := catchMine @ StopChat @ args;
+ChatbookAction[ "TabLeft"                      , args___ ] := catchMine @ TabLeft @ args;
+ChatbookAction[ "TabRight"                     , args___ ] := catchMine @ TabRight @ args;
+ChatbookAction[ "ToggleFormatting"             , args___ ] := catchMine @ ToggleFormatting @ args;
+ChatbookAction[ "ToolManage"                   , args___ ] := catchMine @ ToolManage @ args;
+ChatbookAction[ "UpdateDynamics"               , args___ ] := catchMine @ updateDynamics @ args;
+ChatbookAction[ "UserMessageLabel"             , args___ ] := catchMine @ userMessageLabel @ args;
+ChatbookAction[ "WidgetSend"                   , args___ ] := catchMine @ WidgetSend @ args;
+ChatbookAction[ args___                                  ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -402,8 +402,8 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
 
             (* Send chat while listening for an abort: *)
             CheckAbort[
-                sendChat[ evalCell, nbo, settings ];
-                waitForLastTask[ ]
+                sendChat[ evalCell, nbo, settings ] // LogChatTiming[ "SendChat" ];
+                waitForLastTask @ settings
                 ,
                 (* The user has issued an abort: *)
                 $aborted = True;
@@ -422,11 +422,12 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
                 If[ ListQ @ $lastMessages && StringQ @ $lastChatString,
                     With[
                         {
-                            chat = constructChatObject @ Append[
+                            chat = constructChatObject @ mergeToolCallMessages @ Append[
                                 $lastMessages,
                                 <| "Role" -> "Assistant", "Content" -> $lastChatString |>
-                            ]
+                            ] // LogChatTiming[ "ConstructChatObject" ]
                         },
+                        If[ TrueQ @ settings[ "AutoSaveConversations" ], SaveChat[ chat, settings ] ];
                         applyChatPost[ chat, settings, nbo, $aborted ]
                     ],
                     applyChatPost[ None, settings, nbo, $aborted ];
@@ -437,6 +438,27 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
     ];
 
 EvaluateChatInput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*mergeToolCallMessages*)
+mergeToolCallMessages // beginDefinition;
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::KernelBug:: *)
+mergeToolCallMessages[ {
+    a___,
+    KeyValuePattern[ "ToolRequest" -> True ],
+    KeyValuePattern[ "ToolResponse" -> True ],
+    b: KeyValuePattern[ "Role" -> "Assistant" ],
+    c___
+} ] := mergeToolCallMessages @ { a, b, c };
+(* :!CodeAnalysis::EndBlock:: *)
+
+mergeToolCallMessages[ messages_List ] :=
+    messages;
+
+mergeToolCallMessages // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -533,6 +555,9 @@ ensureChatOutputCell[ cell_, new_CellObject? chatInputCellQ ] :=
 ensureChatOutputCell[ cell_, None ] :=
     None;
 
+ensureChatOutputCell[ _, _ ] :=
+    None;
+
 ensureChatOutputCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -540,15 +565,28 @@ ensureChatOutputCell // endDefinition;
 (*waitForLastTask*)
 waitForLastTask // beginDefinition;
 
-waitForLastTask[ ] := waitForLastTask @ $lastTask;
+waitForLastTask[ settings_Association ] :=
+    Module[ { timeConstraint },
+        timeConstraint = settings[ "TimeConstraint" ];
+        If[ TrueQ @ Positive @ timeConstraint,
+            TimeConstrained[ waitForLastTask @ $lastTask, timeConstraint, StopChat[ ] ],
+            waitForLastTask @ $lastTask
+        ]
+    ];
 
 waitForLastTask[ $Canceled ] := $Canceled;
 
-waitForLastTask[ task_TaskObject ] := (
+waitForLastTask[ None ] :=
+    While[ MatchQ[ $nextTaskEvaluation, _Hold ],
+           runNextTask @ $nextTaskEvaluation
+    ];
+
+waitForLastTask[ task_TaskObject ] := LogChatTiming[
     TaskWait @ task;
     runNextTask[ ];
-    If[ $lastTask =!= task, waitForLastTask @ $lastTask ]
-);
+    If[ $lastTask =!= task, waitForLastTask @ $lastTask ],
+    "WaitForLastTask"
+];
 
 waitForLastTask[ HoldPattern[ $lastTask ] ] := Null;
 
@@ -763,6 +801,9 @@ revertMultimodalContent[ as: KeyValuePattern[ "Content" -> content_List ] ] := <
         s_String | KeyValuePattern @ { "Type" -> "Text", "Data" -> s_String } :> s
     ]
 |>;
+
+revertMultimodalContent[ as: KeyValuePattern[ "Content" -> content_Association ] ] :=
+    revertMultimodalContent[ <| as, "Content" -> { content } |> ];
 
 revertMultimodalContent[ as: KeyValuePattern[ "Content" -> _String ] ] :=
     as;

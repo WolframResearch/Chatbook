@@ -33,6 +33,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$size;
 `$$textData;
 `$$textDataList;
+`$$graphics;
 `$$unspecified;
 `$$feObj;
 `$$template;
@@ -43,6 +44,10 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$string;
 `$$symbol;
 `$$atomic;
+
+`$$chatMessage;
+`$$chatMessages;
+`wordsPattern;
 
 `tr;
 `trRaw;
@@ -93,6 +98,7 @@ Needs[ "Wolfram`Chatbook`" ];
 $cloudNotebooks := TrueQ @ CloudSystem`$CloudNotebooks;
 
 $chatIndicatorSymbol  = "\|01f4ac";
+$defaultAppName       = "Default";
 
 $chatDelimiterStyles  = { "ChatBlockDivider", "ChatDelimiter", "ExcludedChatDelimiter" };
 $chatIgnoredStyles    = { "ChatExcluded" };
@@ -127,35 +133,20 @@ $resourceVersions = <|
     "ClickToCopy"             -> "1.0.0",
     "GPTTokenizer"            -> "1.1.0",
     "MessageFailure"          -> "1.0.0",
-    "ReplaceContext"          -> "1.0.0"
+    "RelativeTimeString"      -> "1.0.0",
+    "ReplaceContext"          -> "1.0.0",
+    "SelectByCurrentValue"    -> "1.0.1"
 |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*Style Patterns*)
-cellStylePattern // beginDefinition;
-cellStylePattern[ { styles__String } ] := styles | { ___, Alternatives @ styles , ___ };
-cellStylePattern // endDefinition;
-
-$$chatDelimiterStyle  = cellStylePattern @ $chatDelimiterStyles ;
-$$chatIgnoredStyle    = cellStylePattern @ $chatIgnoredStyles;
-$$chatInputStyle      = cellStylePattern @ $chatInputStyles;
-$$chatOutputStyle     = cellStylePattern @ $chatOutputStyles;
-$$excludeHistoryStyle = cellStylePattern @ $excludeHistoryStyles;
-$$nestedCellStyle     = cellStylePattern @ $nestedCellStyles;
-
-$$textDataItem        = (_String|_Cell|_StyleBox|_ButtonBox);
-$$textDataList        = { $$textDataItem... };
-$$textData            = $$textDataItem | $$textDataList;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*Other Argument Patterns *)
+(*Basic Argument Patterns*)
 $$optionsSequence = (Rule|RuleDelayed)[ _Symbol|_String, _ ] ...;
 $$size            = Infinity | (_Real|_Integer)? NonNegative;
 $$unspecified     = _Missing | Automatic | Inherited;
 $$feObj           = _FrontEndObject | $FrontEndSession | _NotebookObject | _CellObject | _BoxObject;
 $$template        = _String|_TemplateObject|_TemplateExpression|_TemplateSequence;
+$$serviceCaller   = _String? StringQ | { ___String? StringQ };
 
 (* Helper functions for held pattern tests: *)
 u[ f_ ] := Function[ Null, f @ Unevaluated @ #, HoldAllComplete ];
@@ -171,9 +162,50 @@ $$symbol   = pt[ _Symbol  , Developer`SymbolQ ];
 $$atomic   = $$complex | $$integer | $$rational | $$real | $$string | $$symbol;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Style Patterns*)
+cellStylePattern // beginDefinition;
+cellStylePattern[ { styles__String } ] := styles | { ___, Alternatives @ styles , ___ };
+cellStylePattern // endDefinition;
+
+$$chatDelimiterStyle  = cellStylePattern @ $chatDelimiterStyles ;
+$$chatIgnoredStyle    = cellStylePattern @ $chatIgnoredStyles;
+$$chatInputStyle      = cellStylePattern @ $chatInputStyles;
+$$chatOutputStyle     = cellStylePattern @ $chatOutputStyles;
+$$excludeHistoryStyle = cellStylePattern @ $excludeHistoryStyles;
+$$nestedCellStyle     = cellStylePattern @ $nestedCellStyles;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Text Data*)
+$$textDataItem        = (_String|_Cell|_StyleBox|_ButtonBox);
+$$textDataList        = { $$textDataItem... };
+$$textData            = $$textDataItem | $$textDataList;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Graphics*)
+$$graphics = _? graphicsQ;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Chat Messages*)
+$$messageRole         = "System"|"Assistant"|"User";
+$$messageContentData  = KeyValuePattern @ { "Type" -> "Text"|"Image", "Data" -> _ } | $$string | $$graphics;
+$$messageContent      = $$messageContentData | { $$messageContentData... };
+$$chatMessage         = KeyValuePattern @ { "Role" -> $$messageRole, "Content" -> $$messageContent };
+$$chatMessages        = { $$chatMessage... };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Misc*)
+wordsPattern[ words_ ] := _String? (containsWordsQ @ words);
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Text and Expression Resources*)
 
+(* FIXME: These need to go after beginDefinition and endDefinition initializations *)
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*tr*)
@@ -287,6 +319,8 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "InvalidHandlerKeys"              -> "Invalid setting for HandlerFunctionsKeys: `1`; using defaults instead.",
     "InvalidHandlers"                 -> "Invalid setting for HandlerFunctions: `1`; using defaults instead.",
     "InvalidMessages"                 -> "The value `2` returned by `1` is not a valid list of messages.",
+    "InvalidPromptGeneratorPosition"  -> "Invalid position spec for prompt generator messages: `1`.",
+    "InvalidPromptGeneratorRole"      -> "Invalid role for prompt generator messages: `1`. Valid values are: \"System\", \"Assistant\", or \"User\".",
     "InvalidResourceSpecification"    -> "The argument `1` is not a valid resource specification.",
     "InvalidResourceURL"              -> "The specified URL does not represent a valid resource object.",
     "InvalidRootSettings"             -> "The value `1` is not valid for root chat settings.",
@@ -298,6 +332,7 @@ KeyValueMap[ Function[ MessageName[ Chatbook, #1 ] = #2 ], <|
     "NoSandboxKernel"                 -> "Unable to start a sandbox kernel. This may mean that the number of currently running kernels exceeds the limit defined by $LicenseProcesses.",
     "NotImplemented"                  -> "Action \"`1`\" is not implemented.",
     "NotInstallableResourceType"      -> "Resource type `1` is not an installable resource type for chat notebooks. Valid types are `2`.",
+    "PersonaDirectoryNotFound"        -> "The directory `2` for persona `1` was not found.",
     "RateLimitReached"                -> "Rate limit reached for requests. Please try again later.",
     "ResourceNotFound"                -> "Resource `1` not found.",
     "ResourceNotInstalled"            -> "The resource `1` is not installed.",
@@ -519,7 +554,7 @@ importResourceFunction::failure = "[ERROR] Failed to import resource function `1
 importResourceFunction // Attributes = { HoldFirst };
 
 importResourceFunction[ symbol_Symbol, name_String ] :=
-    importResourceFunction[ symbol, name, Lookup[ $resourceVersions, name, "Latest" ] ];
+    importResourceFunction[ symbol, name, Lookup[ $resourceVersions, name ] ];
 
 importResourceFunction[ symbol_Symbol, name_String, version_String ] /; $mxFlag := Enclose[
     Block[ { PrintTemporary },
@@ -574,14 +609,15 @@ catchTop[ eval_ ] := catchTop[ eval, Chatbook ];
 catchTop[ eval_, sym_Symbol ] :=
     Block[
         {
-            $ChatNotebookEvaluation = True,
-            $currentChatSettings    = None,
-            $messageSymbol          = Replace[ $messageSymbol, Chatbook -> sym ],
-            $catching               = True,
-            $failed                 = False,
-            catchTop                = # &,
-            catchTopAs              = (#1 &) &
+            $chatEvaluationID    = CreateUUID[ ],
+            $currentChatSettings = None,
+            $messageSymbol       = Replace[ $messageSymbol, Chatbook -> sym ],
+            $catching            = True,
+            $failed              = False,
+            catchTop             = # &,
+            catchTopAs           = (#1 &) &
         },
+        $chatStartTime = AbsoluteTime[ ];
         Catch[ setServiceCaller @ eval, $catchTopTag ]
     ];
 
@@ -774,22 +810,38 @@ makeInternalFailureData[ eval_, args___ ] :=
 (* ::Subsection::Closed:: *)
 (*setServiceCaller*)
 setServiceCaller // beginDefinition;
-setServiceCaller // Attributes = { HoldFirst };
 
-setServiceCaller[ eval_ ] := (
+setServiceCaller[ eval_ ] :=
+    setServiceCaller[ eval, chatbookServiceCaller[ ] ];
+
+setServiceCaller[ eval_, caller_ ] := (
     Quiet @ Needs[ "ServiceConnectionUtilities`" -> None ];
-    setServiceCaller[ eval, ServiceConnectionUtilities`$Caller ]
+    setServiceCaller[ eval, caller, ServiceConnectionUtilities`$Caller ]
 );
 
-setServiceCaller[ eval_, { c___ } ] :=
-    Block[ { ServiceConnectionUtilities`$Caller = { c, "Chatbook" }, setServiceCaller = # & },
+setServiceCaller[ eval_, caller: $$serviceCaller, { current___ } ] :=
+    Block[ { ServiceConnectionUtilities`$Caller = DeleteDuplicates @ Flatten @ { current, "Chatbook", caller } },
         eval
     ];
 
-setServiceCaller[ eval_, _ ] :=
-    setServiceCaller[ eval, { } ];
+setServiceCaller[ eval_, caller_, _ ] :=
+    setServiceCaller[ eval, caller, { } ];
 
+setServiceCaller // Attributes = { HoldFirst };
 setServiceCaller // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chatbookServiceCaller*)
+chatbookServiceCaller // beginDefinition;
+
+chatbookServiceCaller[ ] := Flatten @ {
+    If[ TrueQ @ $InlineChat, "InlineChat", Nothing ],
+    If[ TrueQ @ $WorkspaceChat, "WorkspaceChat", Nothing ],
+    Replace[ $serviceCaller, Except[ $$serviceCaller ] -> Nothing ]
+};
+
+chatbookServiceCaller // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1164,14 +1216,26 @@ inlineTemplateBoxes // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$chatbookIcons*)
-$chatbookIcons := $chatbookIcons =
-    Developer`ReadWXFFile @ PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "Icons" ];
+$chatbookIcons := Enclose[
+    Module[ { file, icons },
+        file = ConfirmBy[ $thisPaclet[ "AssetLocation", "Icons" ], FileExistsQ, "File" ];
+        icons = ConfirmBy[ Developer`ReadWXFFile @ file, AssociationQ, "Icons" ];
+        If[ TrueQ @ $mxFlag, icons, $chatbookIcons = icons ]
+    ],
+    throwInternalFailure[ $chatbookIcons, ## ] &
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$templateBoxDisplayFunctions*)
-$templateBoxDisplayFunctions := $templateBoxDisplayFunctions =
-    Developer`ReadWXFFile @ PacletObject[ "Wolfram/Chatbook" ][ "AssetLocation", "DisplayFunctions" ];
+$templateBoxDisplayFunctions := Enclose[
+    Module[ { file, funcs },
+        file = ConfirmBy[ $thisPaclet[ "AssetLocation", "DisplayFunctions" ], FileExistsQ, "File" ];
+        funcs = ConfirmBy[ Developer`ReadWXFFile @ file, AssociationQ, "Functions" ];
+        If[ TrueQ @ $mxFlag, funcs, $templateBoxDisplayFunctions = funcs ]
+    ],
+    throwInternalFailure[ $templateBoxDisplayFunctions, ## ] &
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1231,7 +1295,6 @@ mxInitialize // endDefinition;
 addToMXInitialization[
     $debug = False;
     $chatbookIcons;
-    $templateBoxDisplayFunctions;
     $cloudTextResources;
     $releaseID;
 ];

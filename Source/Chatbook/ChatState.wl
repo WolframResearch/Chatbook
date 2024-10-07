@@ -19,6 +19,7 @@ withChatState // Attributes = { HoldFirst };
 withChatState[ eval_ ] :=
     Block[
         {
+            $ChatNotebookEvaluation       = True,
             $absoluteCurrentSettingsCache = <| |>,
             $AutomaticAssistance          = False,
             $chatState                    = True,
@@ -26,6 +27,10 @@ withChatState[ eval_ ] :=
             $enableLLMServices            = Automatic,
             $WorkspaceChat                = False,
             withChatState                 = # &,
+            $contextPrompt                = None,
+            $selectionPrompt              = None,
+            $toolCallCount                = 0,
+            $openToolCallBoxes            = Automatic,
 
             (* Values used for token budgets during cell serialization: *)
             $cellStringBudget             = $cellStringBudget,

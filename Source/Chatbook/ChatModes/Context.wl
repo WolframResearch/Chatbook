@@ -6,15 +6,14 @@ Begin[ "`Private`" ];
 Needs[ "Wolfram`Chatbook`"                  ];
 Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
-Needs[ "Wolfram`Chatbook`Serialization`"    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$maxCellsBeforeSelection = 100;
-$maxCellsAfterSelection  = 10;
-
-$currentSelectionIndicator = { $leftSelectionIndicator, $rightSelectionIndicator };
+$maxCellsBeforeSelection    = 100;
+$maxCellsAfterSelection     = 20;
+$notebookInstructionsPrompt = True;
+$currentSelectionIndicator  = { $leftSelectionIndicator, $rightSelectionIndicator };
 
 $notebookContextTemplate = StringTemplate[ "\
 IMPORTANT: Below is some context from the user's currently selected notebook. \
@@ -34,7 +33,7 @@ getInlineChatPrompt // beginDefinition;
 
 getInlineChatPrompt[ settings_ ] :=
     If[ TrueQ @ $InlineChat,
-        getInlineChatPrompt0[ settings, $inlineChatState ],
+        getInlineChatPrompt0[ settings, $inlineChatState ] // LogChatTiming[ "GetInlineChatPrompt" ],
         None
     ];
 
@@ -60,7 +59,7 @@ getInlineChatPrompt0[
     cell_CellObject,
     { before___CellObject, cell_, after___CellObject }
 ] :=
-    Block[ { $selectionInfo = info },
+    Block[ { $selectionInfo = info, $includeCellXML = TrueQ @ $notebookEditorEnabled },
         getContextFromSelection0[
             <|
                 "Before"   -> { before },
@@ -80,7 +79,9 @@ getWorkspacePrompt // beginDefinition;
 
 getWorkspacePrompt[ settings_Association ] :=
     If[ TrueQ @ $WorkspaceChat,
-        getContextFromSelection[ $evaluationNotebook, settings ],
+        Block[ { $includeCellXML = TrueQ @ $notebookEditorEnabled },
+            getContextFromSelection[ $evaluationNotebook, settings ]
+        ] // LogChatTiming[ "GetWorkspacePrompt" ],
         None
     ];
 
@@ -90,17 +91,37 @@ getWorkspacePrompt // endDefinition;
 (* ::Subsection::Closed:: *)
 (*getContextFromSelection*)
 getContextFromSelection // beginDefinition;
+getContextFromSelection // Options = {
+    "NotebookInstructionsPrompt" -> True,
+    "MaxCellsBeforeSelection"    :> $maxCellsBeforeSelection,
+    "MaxCellsAfterSelection"     :> $maxCellsAfterSelection
+};
 
-getContextFromSelection[ chatNB_NotebookObject, settings_Association ] :=
-    getContextFromSelection[ chatNB, getUserNotebook @ chatNB, settings ];
+getContextFromSelection[ chatNB_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] :=
+    getContextFromSelection[ chatNB, getUserNotebook @ chatNB, settings, opts ];
 
-getContextFromSelection[ chatNB_NotebookObject, None, settings_Association ] :=
+getContextFromSelection[ chatNB_NotebookObject, None, settings_Association, opts: OptionsPattern[ ] ] :=
     None;
 
-getContextFromSelection[ chatNB_, nbo_NotebookObject, settings_Association ] := Enclose[
-    Module[ { selectionData },
-        selectionData = ConfirmBy[ selectContextCells @ nbo, AssociationQ, "SelectionData" ];
-        ConfirmBy[ getContextFromSelection0[ selectionData, settings ], StringQ, "Context" ]
+getContextFromSelection[ chatNB_, nbo_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] := Enclose[
+    Catch @ Block[
+        {
+            $notebookInstructionsPrompt = OptionValue[ "NotebookInstructionsPrompt" ],
+            $maxCellsBeforeSelection    = OptionValue[ "MaxCellsBeforeSelection"    ],
+            $maxCellsAfterSelection     = OptionValue[ "MaxCellsAfterSelection"     ]
+        },
+        Module[ { selectionData },
+
+            selectionData = ConfirmMatch[
+                LogChatTiming @ selectContextCells @ nbo,
+                _Association|None,
+                "SelectionData"
+            ];
+
+            If[ selectionData === None, Throw @ None ];
+
+            ConfirmBy[ getContextFromSelection0[ selectionData, settings ], StringQ, "Context" ]
+        ]
     ],
     throwInternalFailure
 ];
@@ -117,10 +138,11 @@ getContextFromSelection0[ selectionData: KeyValuePattern[ "Selected" -> { cell_C
         ];
 
 getContextFromSelection0[ selectionData_Association, settings_ ] := Enclose[
-    Catch @ Module[ { cellObjects, cells, len1, len2, before, selected, after, marked, messages, string },
+    Catch @ Module[
+        { cellObjects, cells, len1, len2, before, selected, after, marked, messages, string, nbCtx },
 
         cellObjects = ConfirmMatch[ Flatten @ Values @ selectionData, { ___CellObject }, "CellObjects" ];
-        cells = ConfirmMatch[ notebookRead @ cellObjects, { ___Cell }, "Cells" ];
+        cells = ConfirmMatch[ LogChatTiming @ notebookRead @ cellObjects, { ___Cell }, "Cells" ];
 
         len1 = Length @ ConfirmMatch[ selectionData[ "Before"   ], { ___CellObject }, "BeforeLength"   ];
         len2 = Length @ ConfirmMatch[ selectionData[ "Selected" ], { ___CellObject }, "SelectedLength" ];
@@ -130,9 +152,19 @@ getContextFromSelection0[ selectionData_Association, settings_ ] := Enclose[
         after    = ConfirmMatch[ cells[[ len1 + len2 + 1 ;; All ]] , { ___Cell }, "AfterCells"    ];
 
         marked = ConfirmMatch[ insertSelectionIndicator @ { before, selected, after }, { ___Cell }, "Marked" ];
-        messages = ConfirmMatch[ makeChatMessages[ settings, marked, False ], { ___Association }, "Messages" ];
-        string = ConfirmBy[ messagesToString @ messages, StringQ, "String" ];
-        postProcessNotebookContextString[ applyNotebookContextTemplate @ string, string ]
+        messages = ConfirmMatch[ LogChatTiming @ makeChatMessages[ settings, marked, False ], { ___Association }, "Messages" ];
+        string = ConfirmBy[ messagesToString[ messages, "MessageTemplate" -> None ], StringQ, "String" ];
+
+        $contextPrompt   = processContextPromptString @ string;
+        $selectionPrompt = extractSelectionPrompt @ string;
+
+        $lastContextPrompt   = $contextPrompt;
+        $lastSelectionPrompt = $selectionPrompt;
+
+        nbCtx = ConfirmBy[ applyNotebookContextTemplate @ string, StringQ, "NotebookContext" ];
+
+        (* FIXME: pass $selectionPrompt instead of extracting again: *)
+        postProcessNotebookContextString[ nbCtx, string ]
     ],
     throwInternalFailure
 ];
@@ -141,26 +173,58 @@ getContextFromSelection0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*messagesToString*)
-messagesToString // beginDefinition;
-messagesToString[ messages_List ] := messagesToString[ messages, messageToString /@ revertMultimodalContent @ messages ];
-messagesToString[ _, strings: { ___String } ] := StringRiffle[ strings, "\n\n" ];
-messagesToString // endDefinition;
+(*extractSelectionPrompt*)
+extractSelectionPrompt // beginDefinition;
+
+extractSelectionPrompt[ prompt_String ] := Enclose[
+    Catch @ Module[ { selections, selected },
+        selections = StringCases[ prompt, $leftSelectionIndicator ~~ s___ ~~ $rightSelectionIndicator :> s, 1 ];
+        If[ selections === { }, Throw @ None ];
+        selected = StringTrim @ ConfirmBy[ First @ selections, StringQ, "Selected" ];
+        If[ selected === "", Throw @ None, selected ]
+    ],
+    throwInternalFailure
+];
+
+extractSelectionPrompt // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*messageToString*)
-messageToString // beginDefinition;
-messageToString[ KeyValuePattern[ "Content" -> content_ ] ] := messageToString @ content;
-messageToString[ KeyValuePattern[ "Data" -> content_ ] ] := messageToString @ content;
-messageToString[ { message___String } ] := StringJoin @ message;
-messageToString[ message_String ] := message;
-messageToString // endDefinition;
+(*processContextPromptString*)
+processContextPromptString // beginDefinition;
+
+processContextPromptString[ prompt_String ] := Enclose[
+    Module[ { noXML, noSelection },
+        noXML = ConfirmBy[ stripCellXML @ prompt, StringQ, "NoXML" ];
+        noSelection = ConfirmBy[ (*stripSelectionIndicators @*) noXML, StringQ, "NoSelection" ];
+        ConfirmBy[ mergeCodeBlocks @ noSelection, StringQ, "Merged" ]
+    ],
+    throwInternalFailure
+];
+
+processContextPromptString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*stripCellXML*)
+stripCellXML // beginDefinition;
+stripCellXML[ prompt_String ] := StringDelete[ prompt, { "<cell" ~~ Except[ "\n" ]... ~~ ">\n", "\n</cell>" } ];
+stripCellXML // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*stripSelectionIndicators*)
+stripSelectionIndicators // beginDefinition;
+stripSelectionIndicators[ s_String ] := StringDelete[ s, { $leftSelectionIndicator, $rightSelectionIndicator } ];
+stripSelectionIndicators // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*postProcessNotebookContextString*)
 postProcessNotebookContextString // beginDefinition;
+
+postProcessNotebookContextString[ prompt_String, string_String ] /; ! $notebookInstructionsPrompt :=
+    prompt;
 
 postProcessNotebookContextString[ prompt_String, string_String ] :=
     Module[ { selected, selectedString },
@@ -183,6 +247,9 @@ postProcessNotebookContextString // endDefinition;
 (* ::Subsection::Closed:: *)
 (*applyNotebookContextTemplate*)
 applyNotebookContextTemplate // beginDefinition;
+
+applyNotebookContextTemplate[ string_String ] /; ! $notebookInstructionsPrompt :=
+    string;
 
 applyNotebookContextTemplate[ string_String ] :=
     applyNotebookContextTemplate[ string, $currentSelectionIndicator ];
@@ -244,7 +311,10 @@ selectContextCells // beginDefinition;
 selectContextCells[ nbo_NotebookObject ] :=
     selectContextCells @ Cells @ nbo;
 
-selectContextCells[ cells: { ___CellObject } ] :=
+selectContextCells[ { } ] :=
+    None;
+
+selectContextCells[ cells: { __CellObject } ] :=
     selectContextCells @ cellInformation @ cells;
 
 selectContextCells[ { a: KeyValuePattern[ "CursorPosition" -> "AboveCell" ], after___ } ] :=

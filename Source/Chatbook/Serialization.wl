@@ -5,7 +5,7 @@ BeginPackage[ "Wolfram`Chatbook`Serialization`" ];
 (* Avoiding context aliasing due to bug 434990: *)
 Needs[ "GeneralUtilities`" -> None ];
 
-GeneralUtilities`SetUsage[ `CellToString, "\
+GeneralUtilities`SetUsage[ CellToString, "\
 CellToString[cell$] serializes a Cell expression as a string for use in chat.\
 " ];
 
@@ -19,20 +19,6 @@ Needs[ "Wolfram`Chatbook`ErrorUtils`" ];
 (* FIXME:
     Serialize strike-through:
         StyleBox[..., FontVariations -> {"StrikeThrough" -> True}]
-*)
-
-(* TODO:
-
-    There should be a way to pass custom serialization rules in chat settings, e.g.
-    ```
-    "ConversionRules" -> {
-        _GraphicsBox -> "[Image]",
-        Cell[box_, "MyStyle"] :> formatMyStyle[box]
-    }
-    ```
-
-    These replacements should be done prior to calling `cellToString`, but need to be tagged in some way so we don't
-    try to serialize the results again via `fasterCellToString0`.
 *)
 
 (* ::**************************************************************************************************************:: *)
@@ -186,8 +172,15 @@ $escapedMarkdownCharacters = { "`", "$", "*", "_", "#", "|" };
     [] () {} + - . !
 *)
 
-$leftSelectionIndicator  = "\\["<>"BeginSelection"<>"]";
-$rightSelectionIndicator = "\\["<>"EndSelection"<>"]";
+(* $leftSelectionIndicator  = "\\["<>"BeginSelection"<>"]";
+$rightSelectionIndicator = "\\["<>"EndSelection"<>"]"; *)
+
+$leftSelectionIndicator  = "<selection>";
+$rightSelectionIndicator = "</selection>";
+
+(* Determines if serialized cell content should be wrapped in <cell id=xxxx>...</cell> *)
+$includeCellXML    = False;
+$xmlCellAttributes = { "id" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -307,7 +300,7 @@ $wolframAlphaInputTemplate = codeTemplate[ "\
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*CellToString*)
-CellToString // SetFallthroughError;
+CellToString // beginDefinition;
 
 CellToString // Options = {
     "CharacterEncoding"         -> $cellCharacterEncoding,
@@ -320,7 +313,9 @@ CellToString // Options = {
     "MaxOutputCellStringLength" -> $maxOutputCellStringLength,
     "PageWidth"                 -> $cellPageWidth,
     "UnhandledBoxFunction"      -> None,
-    "WindowWidth"               -> $windowWidth
+    "WindowWidth"               -> $windowWidth,
+    "IncludeXML"                :> $includeCellXML,
+    "XMLCellAttributes"         :> $xmlCellAttributes
 };
 
 (* :!CodeAnalysis::BeginBlock:: *)
@@ -331,6 +326,7 @@ CellToString[ cell_, opts: OptionsPattern[ ] ] :=
             $cellCharacterEncoding = OptionValue[ "CharacterEncoding" ],
             $CellToStringDebug = TrueQ @ OptionValue[ "Debug" ],
             $unhandledBoxFunction = OptionValue[ "UnhandledBoxFunction" ],
+            $includeCellXML = TrueQ @ OptionValue[ "IncludeXML" ],
             $cellPageWidth, $windowWidth, $maxCellStringLength, $maxOutputCellStringLength,
             $contentTypes, $multimodalImages
         },
@@ -367,6 +363,8 @@ CellToString[ cell_, opts: OptionsPattern[ ] ] :=
         ]
     ];
 (* :!CodeAnalysis::EndBlock:: *)
+
+CellToString // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -421,13 +419,17 @@ cellToString // beginDefinition;
 (* Argument normalization *)
 cellToString[ data: _TextData|_BoxData|_RawData ] := cellToString @ Cell @ data;
 cellToString[ string_String? StringQ ] := cellToString @ Cell @ string;
-cellToString[ cell_CellObject ] := cellToString @ NotebookRead @ cell;
+cellToString[ cell_CellObject ] := cellToString @ notebookRead @ cell;
 
 (* Multiple cells to one string *)
 cellToString[ Notebook[ cells_List, ___ ] ] := cellsToString @ cells;
 cellToString[ Cell @ CellGroupData[ cells_List, _ ] ] := cellsToString @ cells;
 cellToString[ nbo_NotebookObject ] := cellToString @ Cells @ nbo;
-cellToString[ cells: { __CellObject } ] := cellsToString @ NotebookRead @ cells;
+cellToString[ cells: { __CellObject } ] := cellsToString @ notebookRead @ cells;
+
+(* Wrap serialized cell in xml tags for the notebook editor tool: *)
+cellToString[ cell_Cell? xmlCellQ ] :=
+    cellToXMLString @ cell;
 
 (* Drop cell label for some styles *)
 cellToString[ Cell[ a__, style: $$noCellLabelStyle, b___, CellLabel -> _, c___ ] ] :=
@@ -608,6 +610,79 @@ cellsToString[ cells_List ] :=
             }
         ]
     ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*xmlCellQ*)
+xmlCellQ // beginDefinition;
+xmlCellQ[ Cell[ __, $$chatInputStyle|$$chatOutputStyle, ___ ] ] := False;
+xmlCellQ[ _Cell ] := TrueQ @ $includeCellXML;
+xmlCellQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cellToXMLString*)
+cellToXMLString // beginDefinition;
+
+cellToXMLString[ cell_Cell ] := Enclose[
+    Catch @ Module[ { string, attributes, attributeString },
+        string = ConfirmBy[ Block[ { $includeCellXML = False }, cellToString @ cell ], StringQ, "String" ];
+        attributes = ConfirmBy[ cellXMLAttributes @ cell, AssociationQ, "XMLAttributes" ];
+        attributeString = StringTrim @ StringRiffle @ KeyValueMap[ StringJoin[ #1, "='", #2, "'" ] &, attributes ];
+        If[ StringLength @ attributeString > 0, attributeString = " " <> attributeString ];
+        StringJoin[
+            "<cell", attributeString, ">\n",
+            string,
+            "\n</cell>"
+        ]
+    ],
+    throwInternalFailure
+];
+
+cellToXMLString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*cellXMLAttributes*)
+cellXMLAttributes // beginDefinition;
+
+cellXMLAttributes[ cell_Cell ] := DeleteMissing @ AssociationMap[
+    Apply @ Rule,
+    KeyTake[
+        <|
+            "id"    :> xmlCellID @ cell,
+            "style" :> xmlCellStyle @ cell,
+            "label" :> xmlCellLabel @ cell
+        |>,
+        $xmlCellAttributes
+    ]
+];
+
+cellXMLAttributes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*xmlCellID*)
+xmlCellID // beginDefinition;
+xmlCellID[ Cell[ __, CellObject -> cell_CellObject, ___ ] ] := cellReference @ cell;
+xmlCellID[ _Cell ] := Missing[ ];
+xmlCellID // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*xmlCellStyle*)
+xmlCellStyle // beginDefinition;
+xmlCellStyle[ Cell[ _, style__String, OptionsPattern[ ] ] ] := { style };
+xmlCellStyle[ _Cell ] := Missing[ ];
+xmlCellStyle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*xmlCellLabel*)
+xmlCellLabel // beginDefinition;
+xmlCellLabel[ Cell[ __, CellLabel -> label_String, ___ ] ] := label;
+xmlCellLabel[ _Cell ] := Missing[ ];
+xmlCellLabel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -913,6 +988,9 @@ fasterCellToString0[ NamespaceBox[
     DynamicModuleBox[ { ___, Typeset`query$$|WolframAlphaClient`Private`query$$ = query_String, ___ }, __ ],
     ___
 ] ] := "\[FreeformPrompt][\""<>query<>"\"]";
+
+(* FreeformEvaluate *)
+fasterCellToString0[ RowBox @ { "=[", query_String, "]" } ] := "\[FreeformPrompt]["<>query<>"]";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -1374,6 +1452,16 @@ preprocessTraditionalForm // endDefinition;
 
 fasterCellToString0[ SubscriptBox[ "\[InvisiblePrefixScriptBase]", x_ ] ] :=
     fasterCellToString0 @ SubscriptBox[ " ", x ];
+
+(* Derivative *)
+fasterCellToString0[ SuperscriptBox[ f_, "\[Prime]", ___ ] ] :=
+    "Derivative[1][" <> fasterCellToString0 @ f <> "]";
+
+fasterCellToString0[ SuperscriptBox[ f_, "\[Prime]\[Prime]", ___ ] ] :=
+    "Derivative[2][" <> fasterCellToString0 @ f <> "]";
+
+fasterCellToString0[ SuperscriptBox[ f_, TagBox[ RowBox @ { "(", n_String, ")" }, Derivative ], ___ ] ] :=
+    "Derivative[" <> n <> "][" <> fasterCellToString0 @ f <> "]";
 
 (* Sqrt *)
 fasterCellToString0[ SqrtBox[ a_ ] ] :=
@@ -2204,24 +2292,6 @@ makeExpressionString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*stringToBoxes*)
-stringToBoxes // SetFallthroughError;
-
-stringToBoxes[ s_String /; StringMatchQ[ s, "\"" ~~ __ ~~ "\"" ] ] :=
-    With[ { str = stringToBoxes @ StringTrim[ s, "\"" ] }, "\""<>str<>"\"" /; StringQ @ str ];
-
-stringToBoxes[ string_String ] :=
-    stringToBoxes[
-        string,
-        (* TODO: there could be a kernel implementation of this *)
-        Quiet @ usingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`UndocumentedTestFEParserPacket[ string, True ]
-    ];
-
-stringToBoxes[ string_, { BoxData[ boxes_, ___ ], ___ } ] := boxes;
-stringToBoxes[ string_, other_ ] := string;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*makeGraphicsString*)
 makeGraphicsString // SetFallthroughError;
 
@@ -2662,6 +2732,14 @@ firstMatchingCellGroup[ nb_, patt_, "Content" ] := Catch[
     Missing[ "NotFound" ],
     $cellGroupTag
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Backwards Compatibility*)
+
+(* The resource function ExportMarkdownString depends on CellToString in the original context: *)
+Wolfram`Chatbook`Serialization`CellToString = CellToString;
+(* https://resources.wolframcloud.com/FunctionRepository/resources/ExportMarkdownString *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

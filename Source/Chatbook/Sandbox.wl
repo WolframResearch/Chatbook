@@ -194,7 +194,7 @@ pingSandboxKernel[ kernel_LinkObject ] := Enclose[
             IntegerQ,
             "ProcessID"
         ]
-    ]
+    ] // LogChatTiming[ "PingSandboxKernel" ]
 ];
 
 pingSandboxKernel // endDefinition;
@@ -300,8 +300,8 @@ startSandboxKernel[ ] := Enclose[
             Quiet @ LinkClose @ kernel;
             throwFailure[ "NoSandboxKernel" ]
         ]
-    ],
-    throwInternalFailure[ startSandboxKernel[ ], ## ] &
+    ] // LogChatTiming[ "StartSandboxKernel" ],
+    throwInternalFailure
 ];
 
 startSandboxKernel // endDefinition;
@@ -437,7 +437,7 @@ $messageOverrides := $messageOverrides = Flatten @ Apply[
 sandboxEvaluate // beginDefinition;
 
 sandboxEvaluate[ KeyValuePattern[ "code" -> code_ ] ] := sandboxEvaluate @ code;
-sandboxEvaluate[ code_String ] := sandboxEvaluate @ toSandboxExpression @ code;
+sandboxEvaluate[ code_String ] := sandboxEvaluate @ toSandboxExpression @ code // LogChatTiming[ "SandboxEvaluate" ];
 sandboxEvaluate[ HoldComplete[ xs__, x_ ] ] := sandboxEvaluate @ HoldComplete @ CompoundExpression[ xs, x ];
 sandboxEvaluate[ HoldComplete[ eval_ ] ] /; useCloudSandboxQ[ ] := cloudSandboxEvaluate @ HoldComplete @ eval;
 sandboxEvaluate[ HoldComplete[ eval_ ] ] /; useSessionQ[ ] := sessionEvaluate @ HoldComplete @ eval;
@@ -832,7 +832,23 @@ toSandboxExpression[ s_String, $Failed ] /; StringContainsQ[ s, "'" ] :=
         ]
     ];
 
-toSandboxExpression[ s_String, $Failed ] := HoldComplete @ ToExpression[ s, InputForm ];
+toSandboxExpression[ s_String, $Failed ] :=
+    Module[ { openers, closers, new, held },
+        openers = StringCount[ s, "[" ];
+        closers = StringCount[ s, "]" ];
+        (
+            new = s <> StringRepeat[ "]", openers - closers ];
+            held = Quiet @ ToExpression[ new, InputForm, HoldComplete ];
+            If[ MatchQ[ held, _HoldComplete ],
+                sandboxStringNormalize[ s ] = new;
+                held,
+                HoldComplete[ ToExpression[ s, InputForm ] ]
+            ]
+        ) /; openers > closers
+    ];
+
+toSandboxExpression[ s_String, $Failed ] :=
+    HoldComplete @ ToExpression[ s, InputForm ];
 
 toSandboxExpression // endDefinition;
 

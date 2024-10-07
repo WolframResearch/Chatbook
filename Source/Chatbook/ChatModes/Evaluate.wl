@@ -28,10 +28,20 @@ evaluateWorkspaceChat // beginDefinition;
 
 evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue ] ] := Enclose[
     Catch @ Module[ { text, uuid, cell, cellObject },
+
         If[ ! validInputStringQ @ input, input = ""; Throw @ Null ];
         text = input;
         uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
-        cell = Cell[ BoxData @ TemplateBox[ { text }, "UserMessageBox" ], "ChatInput", CellTags -> uuid ];
+
+        cell = Cell[
+            BoxData @ TemplateBox[
+                { Cell[ text, Background -> None, Selectable -> True, Editable -> True ] },
+                "UserMessageBox"
+            ],
+            "ChatInput",
+            CellTags -> uuid
+        ];
+
         input = "";
         SelectionMove[ nbo, After, Notebook, AutoScroll -> True ];
         NotebookWrite[ nbo, cell ];
@@ -76,7 +86,11 @@ evaluateInlineChat[
                     "InlineChatCell" -> cell,
                     "SelectionInfo"  -> selectionInfo,
                     "MessageCells"   -> Dynamic @ messageCells
-                |>
+                |>,
+                $defaultChatSettings = mergeChatSettings @ {
+                    $defaultChatSettings,
+                    CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ]
+                }
             },
             result = ConfirmMatch[ ChatCellEvaluate @ root, _ChatObject|Null, "ChatCellEvaluate" ]
         ];

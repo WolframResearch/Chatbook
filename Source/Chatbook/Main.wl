@@ -10,11 +10,15 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$AvailableTools;
 `$ChatAbort;
 `$ChatbookContexts;
+`$ChatbookFilesDirectory;
+`$ChatbookNames;
+`$ChatbookProtectedNames;
 `$ChatEvaluationCell;
 `$ChatHandlerData;
 `$ChatNotebookEvaluation;
 `$ChatPost;
 `$ChatPre;
+`$ChatTimingData;
 `$CurrentChatSettings;
 `$DefaultChatHandlerFunctions;
 `$DefaultChatProcessingFunctions;
@@ -28,16 +32,21 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$ToolFunctions;
 `$WorkspaceChat;
 `AbsoluteCurrentChatSettings;
+`AddChatToSearchIndex;
 `AppendURIInstructions;
 `BasePrompt;
 `CachedBoxes;
 `CellToChatMessage;
+`CellToString;
 `Chatbook;
 `ChatbookAction;
+`ChatbookFilesDirectory;
 `ChatCellEvaluate;
+`ChatMessageToCell;
 `CreateChatDrivenNotebook;
 `CreateChatNotebook;
 `CurrentChatSettings;
+`DeleteChat;
 `DisplayBase64Boxes;
 `EnableCodeAssistance;
 `ExplodeCell;
@@ -45,16 +54,28 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `FormatToolCall;
 `FormatToolResponse;
 `FormatWolframAlphaPods;
+`GenerateChatTitle;
+`GenerateChatTitleAsynchronous;
+`GetAttachments;
 `GetChatHistory;
 `GetExpressionURI;
 `GetExpressionURIs;
 `InlineTemplateBoxes;
 `InvalidateServiceCache;
+`ListSavedChats;
+`LoadChat;
+`LogChatTiming;
 `MakeExpressionURI;
+`RebuildChatSearchIndex;
+`RelatedDocumentation;
+`RelatedWolframAlphaQueries;
 `SandboxLinguisticAssistantData;
+`SaveChat;
+`SearchChats;
 `SetModel;
 `SetToolOptions;
 `ShowCodeAssistance;
+`ShowContentSuggestions;
 `StringToBoxes;
 `WriteChatOutputCell;
 
@@ -92,11 +113,14 @@ Chatbook is a symbol for miscellaneous chat notebook messages.\
 $ChatbookContexts = {
     "Wolfram`Chatbook`",
     "Wolfram`Chatbook`Actions`",
+    "Wolfram`Chatbook`ChatbookFiles`",
     "Wolfram`Chatbook`ChatGroups`",
     "Wolfram`Chatbook`ChatHistory`",
     "Wolfram`Chatbook`ChatMessages`",
+    "Wolfram`Chatbook`ChatMessageToCell`",
     "Wolfram`Chatbook`ChatModes`",
     "Wolfram`Chatbook`ChatState`",
+    "Wolfram`Chatbook`ChatTitle`",
     "Wolfram`Chatbook`CloudToolbar`",
     "Wolfram`Chatbook`Common`",
     "Wolfram`Chatbook`CreateChatNotebook`",
@@ -108,21 +132,26 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`Feedback`",
     "Wolfram`Chatbook`Formatting`",
     "Wolfram`Chatbook`FrontEnd`",
+    "Wolfram`Chatbook`Graphics`",
     "Wolfram`Chatbook`Handlers`",
     "Wolfram`Chatbook`InlineReferences`",
+    "Wolfram`Chatbook`LLMUtilities`",
     "Wolfram`Chatbook`Menus`",
     "Wolfram`Chatbook`Models`",
     "Wolfram`Chatbook`PersonaManager`",
     "Wolfram`Chatbook`Personas`",
     "Wolfram`Chatbook`PreferencesContent`",
     "Wolfram`Chatbook`PreferencesUtils`",
+    "Wolfram`Chatbook`PromptGenerators`",
     "Wolfram`Chatbook`Prompting`",
     "Wolfram`Chatbook`ResourceInstaller`",
     "Wolfram`Chatbook`Sandbox`",
+    "Wolfram`Chatbook`Search`",
     "Wolfram`Chatbook`SendChat`",
     "Wolfram`Chatbook`Serialization`",
     "Wolfram`Chatbook`Services`",
     "Wolfram`Chatbook`Settings`",
+    "Wolfram`Chatbook`Storage`",
     "Wolfram`Chatbook`ToolManager`",
     "Wolfram`Chatbook`Tools`",
     "Wolfram`Chatbook`UI`",
@@ -133,57 +162,88 @@ Scan[ Needs[ # -> None ] &, $ChatbookContexts ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Names*)
+$ChatbookNames := $ChatbookNames =
+    Block[ { $Context, $ContextPath },
+        Union[ Names[ "Wolfram`Chatbook`*" ], Names[ "Wolfram`Chatbook`*`*" ] ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Protected Symbols*)
-Protect[
-    $AutomaticAssistance,
-    $ChatbookContexts,
-    $ChatNotebookEvaluation,
-    $CurrentChatSettings,
-    $DefaultChatHandlerFunctions,
-    $DefaultChatProcessingFunctions,
-    $DefaultModel,
-    $DefaultToolOptions,
-    $DefaultTools,
-    $InlineChat,
-    $InstalledTools,
-    $ToolFunctions,
-    $WorkspaceChat,
-    AbsoluteCurrentChatSettings,
-    AppendURIInstructions,
-    BasePrompt,
-    CachedBoxes,
-    CellToChatMessage,
-    Chatbook,
-    ChatbookAction,
-    ChatCellEvaluate,
-    CreateChatDrivenNotebook,
-    CreateChatNotebook,
-    CurrentChatSettings,
-    DisplayBase64Boxes,
-    EnableCodeAssistance,
-    ExplodeCell,
-    FormatChatOutput,
-    FormatToolCall,
-    FormatToolResponse,
-    FormatWolframAlphaPods,
-    GetChatHistory,
-    GetExpressionURI,
-    GetExpressionURIs,
-    InlineTemplateBoxes,
-    MakeExpressionURI,
-    SandboxLinguisticAssistantData,
-    SetModel,
-    SetToolOptions,
-    ShowCodeAssistance,
-    StringToBoxes,
-    WriteChatOutputCell
-];
+$ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
+    "$AutomaticAssistance",
+    "$ChatbookContexts",
+    "$ChatbookFilesDirectory",
+    "$ChatNotebookEvaluation",
+    "$ChatTimingData",
+    "$CurrentChatSettings",
+    "$DefaultChatHandlerFunctions",
+    "$DefaultChatProcessingFunctions",
+    "$DefaultModel",
+    "$DefaultToolOptions",
+    "$DefaultTools",
+    "$InlineChat",
+    "$InstalledTools",
+    "$ToolFunctions",
+    "$WorkspaceChat",
+    "AbsoluteCurrentChatSettings",
+    "AddChatToSearchIndex",
+    "AppendURIInstructions",
+    "BasePrompt",
+    "CachedBoxes",
+    "CellToChatMessage",
+    "CellToString",
+    "Chatbook",
+    "ChatbookAction",
+    "ChatbookFilesDirectory",
+    "ChatCellEvaluate",
+    "ChatMessageToCell",
+    "CreateChatDrivenNotebook",
+    "CreateChatNotebook",
+    "CurrentChatSettings",
+    "DeleteChat",
+    "DisplayBase64Boxes",
+    "EnableCodeAssistance",
+    "ExplodeCell",
+    "FormatChatOutput",
+    "FormatToolCall",
+    "FormatToolResponse",
+    "FormatWolframAlphaPods",
+    "GenerateChatTitle",
+    "GenerateChatTitleAsynchronous",
+    "GetAttachments",
+    "GetChatHistory",
+    "GetExpressionURI",
+    "GetExpressionURIs",
+    "InlineTemplateBoxes",
+    "ListSavedChats",
+    "LoadChat",
+    "LogChatTiming",
+    "MakeExpressionURI",
+    "RebuildChatSearchIndex",
+    "RelatedDocumentation",
+    "RelatedWolframAlphaQueries",
+    "SandboxLinguisticAssistantData",
+    "SaveChat",
+    "SearchChats",
+    "SetModel",
+    "SetToolOptions",
+    "ShowCodeAssistance",
+    "ShowContentSuggestions",
+    "StringToBoxes",
+    "WriteChatOutputCell"
+};
+
+Protect @@ $ChatbookProtectedNames;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
     $ChatbookContexts;
+    $ChatbookNames;
+    SetAttributes[ Evaluate @ Names[ "Wolfram`Chatbook`*" ], ReadProtected ];
 ];
 
 mxInitialize[ ];

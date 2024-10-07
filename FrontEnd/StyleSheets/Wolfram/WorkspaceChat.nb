@@ -18,7 +18,6 @@ Notebook[
    Selectable -> False,
    WindowSize -> {350, Automatic},
    WindowMargins -> {{0, Automatic}, {0, 0}},
-   WindowFrame -> "ModelessDialog",
    WindowElements -> {"VerticalScrollBar"},
    WindowFrameElements -> {"CloseBox", "ResizeArea"},
    WindowClickSelect -> True,
@@ -60,15 +59,16 @@ Notebook[
   ],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.0.3931772186"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.1.3936664622"|>
   ],
   Cell[
    StyleData["ChatInput"],
-   Selectable -> True,
+   Selectable -> False,
    CellFrame -> 0,
    CellDingbat -> None,
    ShowCellBracket -> False,
    CellMargins -> {{15, 10}, {5, 10}},
+   CellEventActions -> None,
    CellFrameLabels -> {
     {None, None},
     {
@@ -94,16 +94,15 @@ Notebook[
      ]
     }
    },
-   CellFrameLabelMargins -> 6,
-   TextAlignment -> Right
+   CellFrameLabelMargins -> 6
   ],
   Cell[
    StyleData["ChatOutput"],
-   Selectable -> True,
+   Selectable -> False,
    CellFrame -> 0,
    CellDingbat -> None,
    ShowCellBracket -> False,
-   CellMargins -> {{10, 15}, {15, 12}},
+   CellMargins -> {{10, 15}, {25, 12}},
    Initialization :> None,
    CellFrameLabels -> {
     {None, None},
@@ -150,6 +149,12 @@ Notebook[
     ];)
   ],
   Cell[
+   StyleData["CodeAssistanceWelcomeCell"],
+   CellMargins -> {{10, 10}, {30, 10}},
+   TaggingRules -> <|"ChatNotebookSettings" -> <|"ExcludeFromChat" -> True|>|>,
+   ShowStringCharacters -> False
+  ],
+  Cell[
    StyleData["WorkspaceSendChatButton"],
    TemplateBoxOptions -> {
     DisplayFunction ->
@@ -194,6 +199,71 @@ Notebook[
         Method -> "Preemptive"
        ],
        Alignment -> {Automatic, Baseline}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["WelcomeToCodeAssistanceSplash"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      FrameBox[
+       PaneBox[
+        TagBox[
+         GridBox[
+          {
+           {
+            StyleBox[
+             TemplateBox[{}, "ChatIconCodeAssistant"],
+             Magnification -> 5 * Inherited,
+             StripOnInput -> False
+            ]
+           },
+           {
+            StyleBox[
+             "\"Welcome to Code Assistance Chat\"",
+             FontWeight -> Bold,
+             FontSize -> 17,
+             FontColor -> GrayLevel[0.25],
+             StripOnInput -> False
+            ]
+           },
+           {"\"Ask me anything using the input field below.\""},
+           {
+            ButtonBox[
+             "\"View Tutorial \[RightGuillemet]\"",
+             ButtonFunction :> MessageDialog["Not implemented yet."],
+             Appearance -> None,
+             BaseStyle -> {"Link"},
+             Evaluator -> Automatic,
+             Method -> "Preemptive"
+            ]
+           }
+          },
+          AutoDelete -> False,
+          GridBoxItemSize -> {"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+          GridBoxSpacings -> {"Columns" -> {{1}}, "Rows" -> {0, 1.25, 1.25, 0.75}},
+          BaseStyle -> {
+           "Text",
+           FontSize -> 13,
+           FontColor -> GrayLevel[0.5],
+           LineBreakWithin -> False
+          }
+         ],
+         "Grid"
+        ],
+        Alignment -> {Center, Automatic},
+        ImageSize -> {Scaled[1], Automatic},
+        ImageSizeAction -> "ShrinkToFit"
+       ],
+       Alignment -> {Center, Automatic},
+       Background -> RGBColor[0.988235, 0.992157, 1.0],
+       FrameMargins -> {{10, 10}, {10, 10}},
+       FrameStyle -> RGBColor[0.92549, 0.941176, 0.960784],
+       ImageSize -> {Automatic, Automatic},
+       RoundingRadius -> 10,
+       StripOnInput -> False
       ]
      ])
    }

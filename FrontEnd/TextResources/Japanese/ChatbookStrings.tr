@@ -75,6 +75,7 @@
 "PersonaManagerInstallPersonas" -> "\:30da\:30eb\:30bd\:30ca\:306e\:30a4\:30f3\:30b9\:30c8\:30fc\:30eb",
 "PersonaManagerInstallFrom" -> "\:6b21\:304b\:3089\:30a4\:30f3\:30b9\:30c8\:30fc\:30eb\:ff1a",
 "PersonaManagerInstallFromPromptRepo" -> "Prompt Repository \[UpperRightArrow]",
+"PersonaManagerInstallFromFile" -> "Definition Notebook",
 "PersonaManagerManagePersonas" -> "\:30da\:30eb\:30bd\:30ca\:306e\:7ba1\:7406\:3068\:6709\:52b9\:5316",
 "PersonaManagerInMenu" -> "\:30e1\:30cb\:30e5\:30fc",
 "PersonaManagerName" -> "\:540d\:524d",
@@ -113,11 +114,13 @@
 "PreferencesContentOpenAICompletionURLLabel" -> "\:30c1\:30e3\:30c3\:30c8\:5b8c\:4e86\:306eURL\:ff1a",
 
 "ResourceInstallerFromURLPrompt" -> "URL\:3092\:5165\:529b\:3057\:3066\:304f\:3060\:3055\:3044",
+"ResourceInstallerFromFilePrompt" -> "Choose a Resource Definition Notebook",
 
 "ToolManagerTitle" -> "\:5927\:898f\:6a21\:8a00\:8a9e\:30c4\:30fc\:30eb\:306e\:8ffd\:52a0\:3068\:7ba1\:7406",
 "ToolManagerInstallTools" -> "\:30c4\:30fc\:30eb\:306e\:30a4\:30f3\:30b9\:30c8\:30fc\:30eb",
 "ToolManagerInstallFrom" -> "\:6b21\:304b\:3089\:30a4\:30f3\:30b9\:30c8\:30fc\:30eb\:ff1a",
 "ToolManagerInstallFromLLMToolRepo" -> "LLM Tool Repository \[UpperRightArrow]",
+"ToolManagerInstallFromFile" -> "Definition Notebook",
 "ToolManagerManageTools" -> "\:30c4\:30fc\:30eb\:306e\:7ba1\:7406\:3068\:6709\:52b9\:5316",
 "ToolManagerShowEnabledFor" -> "\:6b21\:306b\:3064\:3044\:3066\:6709\:52b9\:5316\:3055\:308c\:305f\:30c4\:30fc\:30eb\:3092\:8868\:793a\:ff1a",
 "ToolManagerTool" -> "\:30c4\:30fc\:30eb",
@@ -162,6 +165,8 @@
 "StylesheetCopyChatObject" -> "ChatObject\:3092\:30b3\:30d4\:30fc\:3059\:308b",
 "StylesheetInsertionMenuChatInput" -> "\:30c1\:30e3\:30c3\:30c8\:5165\:529b",
 "StylesheetInsertionMenuSideChat" -> "\:30b5\:30a4\:30c9\:30c1\:30e3\:30c3\:30c8",
+"StylesheetContextMenuAskAI" -> "Ask AI Assistant",
+"StylesheetContextMenuIncludeExclude" -> "Include/Exclude From AI Chat",
 
 "PersonaNameBirdnardo" -> "Birdnardo",
 "PersonaNameCodeAssistant" -> "Code Assistant",

@@ -75,6 +75,7 @@
 "PersonaManagerInstallPersonas" -> "Installer des personnages",
 "PersonaManagerInstallFrom" -> "Installer \[AGrave] partir de",
 "PersonaManagerInstallFromPromptRepo" -> "R\[EAcute]f\[EAcute]rentiel de l\[CloseCurlyQuote]invite \[UpperRightArrow]",
+"PersonaManagerInstallFromFile" -> "Definition Notebook",
 "PersonaManagerManagePersonas" -> "G\[EAcute]rer et activer les personnages",
 "PersonaManagerInMenu" -> "Dans le menu",
 "PersonaManagerName" -> "Nom",
@@ -113,11 +114,13 @@
 "PreferencesContentOpenAICompletionURLLabel" -> "URL compl\[EGrave]te du chat\[NonBreakingSpace]:",
 
 "ResourceInstallerFromURLPrompt" -> "Entrer une URL",
+"ResourceInstallerFromFilePrompt" -> "Choose a Resource Definition Notebook",
 
 "ToolManagerTitle" -> "Ajouter et g\[EAcute]rer des outils LLM",
 "ToolManagerInstallTools" -> "Installer des outils",
 "ToolManagerInstallFrom" -> "Installer \[AGrave] partir de",
 "ToolManagerInstallFromLLMToolRepo" -> "R\[EAcute]f\[EAcute]rentiel d\[CloseCurlyQuote]outils LLM \[UpperRightArrow]",
+"ToolManagerInstallFromFile" -> "Definition Notebook",
 "ToolManagerManageTools" -> "G\[EAcute]rer et activer les outils",
 "ToolManagerShowEnabledFor" -> "Afficher les outils activ\[EAcute]s pour\[NonBreakingSpace]:",
 "ToolManagerTool" -> "Outil",
@@ -162,6 +165,8 @@
 "StylesheetCopyChatObject" -> "Copier l\[CloseCurlyQuote]objet de Chat",
 "StylesheetInsertionMenuChatInput" -> "Entr\[EAcute]e de chat",
 "StylesheetInsertionMenuSideChat" -> "Chat lat\[EAcute]ral",
+"StylesheetContextMenuAskAI" -> "Ask AI Assistant",
+"StylesheetContextMenuIncludeExclude" -> "Include/Exclude From AI Chat",
 
 "PersonaNameBirdnardo" -> "Birdnardo",
 "PersonaNameCodeAssistant" -> "Assistant de code",

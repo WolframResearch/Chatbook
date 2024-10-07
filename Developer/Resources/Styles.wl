@@ -33,9 +33,9 @@ Cell[
     |>,
 
     ComponentwiseContextMenu -> <|
-        "CellBracket" -> contextMenu[ $askMenuItem, $excludeMenuItem, Delimiter, "CellBracket" ],
-        "CellGroup"   -> contextMenu[ $excludeMenuItem, Delimiter, "CellGroup" ],
-        "CellRange"   -> contextMenu[ $excludeMenuItem, Delimiter, "CellRange" ]
+        "CellBracket" -> contextMenu[ { $askMenuItem, $excludeMenuItem, Delimiter }, "CellBracket" ],
+        "CellGroup"   -> contextMenu[ { $excludeMenuItem, Delimiter }, "CellGroup" ],
+        "CellRange"   -> contextMenu[ { $excludeMenuItem, Delimiter }, "CellRange" ]
     |>,
 
     PrivateCellOptions -> {
@@ -59,7 +59,7 @@ Cell[
 
 Cell[
     StyleData[ "Text" ],
-    ContextMenu -> contextMenu[ $askMenuItem, Delimiter, "Text" ]
+    ContextMenu -> contextMenu[ { $askMenuItem, Delimiter }, "Text" ]
 ]
 
 
@@ -77,7 +77,7 @@ Cell[
         "*" -> "Item",
         ">" -> "ExternalLanguageDefault"
     },
-    ContextMenu -> contextMenu[ $askMenuItem, Delimiter, "Input" ],
+    ContextMenu -> contextMenu[ { $askMenuItem, Delimiter }, "Input" ],
     CellEpilog :> With[ { $CellContext`cell = (FinishDynamic[ ]; EvaluationCell[ ]) },
         Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
         Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AIAutoAssist", $CellContext`cell ]
@@ -92,7 +92,7 @@ Cell[
 
 Cell[
     StyleData[ "Output" ],
-    ContextMenu -> contextMenu[ $askMenuItem, Delimiter, "Output" ],
+    ContextMenu -> contextMenu[ { $askMenuItem, Delimiter }, "Output" ],
     CellTrayWidgets -> <| "GearMenu" -> <| "Condition" -> False |> |>
 ]
 
@@ -334,7 +334,7 @@ Cell[
     TaggingRules         -> <| "ChatNotebookSettings" -> <| |> |>,
     CellTrayWidgets      -> <|
         "ChatWidget"   -> <| "Visible" -> False |>,
-        "ChatFeedback" -> <| "Content" -> Cell[ BoxData @ ToBoxes @ $feedbackButtons, "ChatFeedback" ] |>
+        "ChatFeedback" -> <| "Content" -> Cell[ BoxData @ ToBoxes @ $feedbackButtonsV, "ChatFeedback" ] |>
     |>,
     menuInitializer[ "ChatOutput", RGBColor[ "#ecf0f5" ] ]
 ]
@@ -611,7 +611,8 @@ Cell[
             BaselinePosition -> Scaled[ 0.275 ],
             FrameMargins     -> { { 3, 3 }, { 2, 2 } },
             FrameStyle       -> Directive[ AbsoluteThickness[ 1 ], GrayLevel[ 0.92941 ] ],
-            ImageMargins     -> { { 0, 0 }, { 0, 0 } }
+            ImageMargins     -> { { 0, 0 }, { 0, 0 } },
+            BaseStyle        -> { "InlineCode", AutoSpacing -> False, AutoMultiplicationSymbol -> False }
         ]
     }
 ]
@@ -1084,13 +1085,18 @@ Cell[
 Cell[
     StyleData[ "UserMessageBox" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ FrameBox[
-            Cell[ #, "Text", Background -> None ],
-            Background     -> RGBColor[ "#edf4fc" ],
-            FrameMargins   -> 8,
-            FrameStyle     -> RGBColor[ "#a3c9f2" ],
-            RoundingRadius -> 10,
-            StripOnInput   -> False
+        DisplayFunction -> Function @ Evaluate @ PaneBox[
+            FrameBox[
+                #,
+                BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
+                Background     -> RGBColor[ "#edf4fc" ],
+                FrameMargins   -> 8,
+                FrameStyle     -> RGBColor[ "#a3c9f2" ],
+                RoundingRadius -> 10,
+                StripOnInput   -> False
+            ],
+            Alignment -> Right,
+            ImageSize -> { Full, Automatic }
         ]
     }
 ]
@@ -1103,17 +1109,35 @@ Cell[
 Cell[
     StyleData[ "AssistantMessageBox" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ Evaluate @ FrameBox[
-            #,
-            BaseStyle      -> "Text",
-            Background     -> RGBColor[ "#fcfdff" ],
-            FrameMargins   -> 8,
-            FrameStyle     -> RGBColor[ "#c9ccd0" ],
-            ImageSize      -> { Scaled[ 1 ], Automatic },
-            RoundingRadius -> 10,
-            StripOnInput   -> False
+        DisplayFunction -> Function @ Evaluate @ TagBox[
+            FrameBox[
+                #,
+                BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
+                Background     -> RGBColor[ "#fcfdff" ],
+                FrameMargins   -> 8,
+                FrameStyle     -> RGBColor[ "#c9ccd0" ],
+                ImageSize      -> { Scaled[ 1 ], Automatic },
+                RoundingRadius -> 10,
+                StripOnInput   -> False
+            ],
+            EventHandlerTag @ {
+                "MouseEntered" :>
+                    With[ { cell = EvaluationCell[ ] },
+                        Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+                        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachAssistantMessageButtons", cell ]
+                    ],
+                Method         -> "Preemptive",
+                PassEventsDown -> Automatic,
+                PassEventsUp   -> True
+            }
         ]
     }
+]
+
+
+Cell[
+    StyleData[ "FeedbackButtonsHorizontal" ],
+    TemplateBoxOptions -> { DisplayFunction -> Function @ Evaluate @ ToBoxes @ $feedbackButtonsH }
 ]
 
 

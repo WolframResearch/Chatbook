@@ -5,11 +5,10 @@ Begin[ "`Private`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)
 
-Needs[ "Wolfram`Chatbook`"               ];
-Needs[ "Wolfram`Chatbook`Actions`"       ];
-Needs[ "Wolfram`Chatbook`Common`"        ];
-Needs[ "Wolfram`Chatbook`Personas`"      ];
-Needs[ "Wolfram`Chatbook`Serialization`" ];
+Needs[ "Wolfram`Chatbook`"          ];
+Needs[ "Wolfram`Chatbook`Actions`"  ];
+Needs[ "Wolfram`Chatbook`Common`"   ];
+Needs[ "Wolfram`Chatbook`Personas`" ];
 
 $ContextAliases[ "tokens`" ] = "Wolfram`LLMFunctions`Utilities`Tokenization`";
 
@@ -116,11 +115,12 @@ constructMessages[ settings_Association? AssociationQ, cells: { __Cell } ] :=
     constructMessages[ settings, makeChatMessages[ settings, cells ] ];
 
 constructMessages[ settings_Association? AssociationQ, messages0: { __Association } ] :=
-    Enclose @ Module[ { prompted, messages, processed },
+    Enclose @ Module[
+        { prompted, messages, merged, genRole, genPos, generatedPrompts, generatedMessages, combined, processed },
 
         If[ settings[ "AutoFormat" ], needsBasePrompt[ "Formatting" ] ];
         needsBasePrompt @ settings;
-        prompted = addPrompts[ settings, messages0 ];
+        prompted = addPrompts[ settings, DeleteCases[ messages0, KeyValuePattern[ "Temporary" -> True ] ] ];
 
         messages = prompted /.
             s_String :> RuleCondition @ StringTrim @ StringReplace[
@@ -133,7 +133,36 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
                 }
             ];
 
-        processed = applyProcessingFunction[ settings, "ChatMessages", HoldComplete[ messages, $ChatHandlerData ] ];
+        merged = If[ TrueQ @ Lookup[ settings, "MergeMessages" ],
+                     ConfirmMatch[ mergeMessageData @ messages, $$chatMessages, "Merged" ],
+                     messages
+                 ];
+
+        genRole = settings[ "PromptGeneratorMessageRole"     ];
+        genPos  = settings[ "PromptGeneratorMessagePosition" ];
+
+        If[ ! MatchQ[ genRole, "System"|"Assistant"|"User" ],
+            throwFailure[ "InvalidPromptGeneratorRole", genRole ]
+        ];
+
+        generatedPrompts = ConfirmMatch[ applyPromptGenerators[ settings, merged ], { ___String }, "Generated" ];
+
+        generatedMessages = Splice @ ConfirmMatch[
+            <| "Role" -> genRole, "Content" -> #, "Temporary" -> True |> & /@ generatedPrompts,
+            $$chatMessages,
+            "GeneratedMessages"
+        ];
+
+        combined = ConfirmMatch[
+            Check[
+                Insert[ merged, generatedMessages, genPos ],
+                throwFailure[ "InvalidPromptGeneratorPosition", genPos ]
+            ],
+            $$chatMessages,
+            "Combined"
+        ];
+
+        processed = applyProcessingFunction[ settings, "ChatMessages", HoldComplete[ combined, $ChatHandlerData ] ];
 
         If[ ! MatchQ[ processed, $$validMessageResults ],
             messagePrint[ "InvalidMessages", getProcessingFunction[ settings, "ChatMessages" ], processed ];
@@ -141,6 +170,9 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
         ];
 
         processed //= DeleteCases @ KeyValuePattern[ "Content" -> "" ];
+
+        processed = rewriteMessageRoles[ settings, processed ];
+
         Sow[ <| "Messages" -> processed |>, $chatDataTag ];
 
         $lastSettings = settings;
@@ -150,6 +182,30 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
     ];
 
 constructMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*rewriteMessageRoles*)
+rewriteMessageRoles // beginDefinition;
+rewriteMessageRoles[ settings_? o1ModelQ, messages_ ] := convertSystemRoleToUser @ messages;
+rewriteMessageRoles[ settings_, messages_ ] := messages;
+rewriteMessageRoles // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*convertSystemRoleToUser*)
+convertSystemRoleToUser // beginDefinition;
+
+convertSystemRoleToUser[ messages_List ] :=
+    convertSystemRoleToUser /@ messages;
+
+convertSystemRoleToUser[ as: KeyValuePattern @ { "Role" -> "System", "Content" -> content_ } ] :=
+    <| as, "Role" -> "User" |>;
+
+convertSystemRoleToUser[ message_Association ] :=
+    message;
+
+convertSystemRoleToUser // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -281,7 +337,7 @@ makeChatMessages0[ settings_, { cells___, cell_ ? promptFunctionCellQ }, include
 );
 
 makeChatMessages0[ settings0_, cells_List, includeSystem_ ] := Enclose[
-    Module[ { settings, role, message, toMessage0, toMessage, cell, history, messages, merged },
+    Module[ { settings, role, message, toMessage0, toMessage, cell, history, messages },
         settings   = ConfirmBy[ <| settings0, "HistoryPosition" -> 0, "Cells" -> cells |>, AssociationQ, "Settings" ];
         role       = If[ TrueQ @ includeSystem, makeCurrentRole @ settings, Missing[ ] ];
         cell       = ConfirmMatch[ Last[ cells, $Failed ], _Cell, "Cell" ];
@@ -310,8 +366,7 @@ makeChatMessages0[ settings0_, cells_List, includeSystem_ ] := Enclose[
 
         messages = addExcisedCellMessage @ DeleteMissing @ Flatten @ { role, history, message };
 
-        merged = If[ TrueQ @ Lookup[ settings, "MergeMessages" ], mergeMessageData @ messages, messages ];
-        $lastMessageList = merged
+        $lastMessageList = messages
     ],
     throwInternalFailure
 ];
@@ -1326,7 +1381,7 @@ argumentTokenToString // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Tokenization*)
-$tokenizer := $gpt2Tokenizer;
+$tokenizer := cachedTokenizer[ "gpt-4o" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1374,10 +1429,10 @@ cachedTokenizer[ id_String ] :=
 cachedTokenizer[ id_String ] := Enclose[
     Module[ { name, tokenizer },
         name      = ConfirmBy[ tokenizerName @ toModelName @ id, StringQ, "Name" ];
-        tokenizer = findTokenizer @ name;
+        tokenizer = LogChatTiming @ findTokenizer @ name;
         If[ MissingQ @ tokenizer,
             (* Fallback to the GPT-2 tokenizer: *)
-            tokenizer = ConfirmMatch[ $genericTokenizer, Except[ $$unspecified ], "GPT2Tokenizer" ];
+            tokenizer = ConfirmMatch[ $cachedTokenizers[ "generic" ], Except[ $$unspecified ], "GPT2Tokenizer" ];
             If[ TrueQ @ Wolfram`ChatbookInternal`$BuildingMX,
                 tokenizer, (* Avoid caching fallback values into MX definitions *)
                 cacheTokenizer[ name, tokenizer ]
@@ -1407,12 +1462,37 @@ cacheTokenizer // endDefinition;
 (*findTokenizer*)
 findTokenizer // beginDefinition;
 
-findTokenizer[ "gpt-4o-text" ] :=
+findTokenizer[ model_String ] := Enclose[
+    Catch @ Module[ { dir, file, tokenizer },
+
+        dir = ConfirmBy[ $tokenizerDirectory, StringQ, "Directory" ];
+        file = FileNameJoin @ { dir, model<>".wxf" };
+
+        tokenizer = If[ FileExistsQ @ file,
+                        LogChatTiming[ Developer`ReadWXFFile @ file, "ReadTokenizerFile" ],
+                        findTokenizer0 @ model
+                    ];
+
+        If[ MissingQ @ tokenizer, Throw @ tokenizer ];
+
+        ConfirmMatch[ LogChatTiming[ tokenizer[ "test" ], "TokenizerTest" ], _List, "TokenizerTest" ];
+
+        tokenizer
+    ],
+    throwInternalFailure
+];
+
+findTokenizer // endDefinition;
+
+
+findTokenizer0 // beginDefinition;
+
+findTokenizer0[ "gpt-4o-text" ] :=
     With[ { tokenizer = findTokenizer[ "gpt-4o" ] },
         tokenizer /; ! MissingQ @ tokenizer
     ];
 
-findTokenizer[ model_String ] := Enclose[
+findTokenizer0[ model_String ] := Enclose[
     Quiet @ Module[ { name, tokenizer },
         initTools[ ];
         Quiet @ Needs[ "Wolfram`LLMFunctions`Utilities`Tokenization`" -> None ];
@@ -1424,7 +1504,10 @@ findTokenizer[ model_String ] := Enclose[
     Missing[ "NotFound" ] &
 ];
 
-findTokenizer // endDefinition;
+findTokenizer0 // endDefinition;
+
+
+$tokenizerDirectory := $tokenizerDirectory = FileNameJoin @ { $thisPaclet[ "Location" ], "Assets", "Tokenizers" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -1433,7 +1516,7 @@ $cachedTokenizers[ "chat-bison"   ] = ToCharacterCode[ #, "UTF8" ] &;
 $cachedTokenizers[ "gpt-4-vision" ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4" ] ][ # ] &;
 $cachedTokenizers[ "gpt-4o"       ] = If[ graphicsQ @ #, gpt4ImageTokenizer, cachedTokenizer[ "gpt-4o-text" ] ][ # ] &;
 $cachedTokenizers[ "claude-3"     ] = If[ graphicsQ @ #, claude3ImageTokenizer, cachedTokenizer[ "claude" ] ][ # ] &;
-$cachedTokenizers[ "generic"      ] = If[ graphicsQ @ #, { }, $gpt2Tokenizer @ # ] &;
+$cachedTokenizers[ "generic"      ] = If[ graphicsQ @ #, { }, cachedTokenizer[ "gpt-2" ][ # ] ] &;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1524,21 +1607,10 @@ claude3ImageTokenCount0[ w_Integer, h_Integer ] := Ceiling[ (w * h) / 750 ];
 claude3ImageTokenCount0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*Fallback Tokenizer*)
-$gpt2Tokenizer := $gpt2Tokenizer = gpt2Tokenizer[ ];
-
-(* https://resources.wolframcloud.com/FunctionRepository/resources/GPTTokenizer *)
-importResourceFunction[ gpt2Tokenizer, "GPTTokenizer" ];
-
-(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
-    cachedTokenizer[ All ];
-    $gpt2Tokenizer;
-    (* This is only needed to generate $gpt2Tokenizer once, so it can be removed to reduce MX file size: *)
-    Remove[ "Wolfram`Chatbook`ResourceFunctions`GPTTokenizer`GPTTokenizer" ];
+    Null
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)

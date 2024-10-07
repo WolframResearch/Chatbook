@@ -126,10 +126,21 @@ createFETask[ eval_ ] /; $cloudNotebooks :=
     eval;
 
 createFETask[ eval_ ] :=
-    With[ { inline = $InlineChat, state = $inlineChatState },
+    With[ { inline = $InlineChat, state = $inlineChatState, id = $chatEvaluationID, t = $chatStartTime },
         If[ $feTaskDebug, Internal`StuffBag[ $feTaskLog, <| "Task" -> Hold @ eval, "Created" -> AbsoluteTime[ ] |> ] ];
         (* FIXME: This Block is a bit of a hack: *)
-        AppendTo[ $feTasks, Hold @ Block[ { $InlineChat = inline, $inlineChatState = state }, eval ] ];
+        AppendTo[
+            $feTasks,
+            Hold @ Block[
+                {
+                    $InlineChat       = inline,
+                    $inlineChatState  = state,
+                    $chatEvaluationID = id,
+                    $chatStartTime    = t
+                },
+                eval
+            ]
+        ];
         ++$feTaskCreationCount;
         ++$feTaskTrigger
     ];
@@ -646,24 +657,28 @@ cellPrint // endDefinition;
 (*cloudCellPrint*)
 cloudCellPrint // beginDefinition;
 
-cloudCellPrint[ cell0_Cell ] :=
-    Enclose @ Module[ { cellUUID, nbUUID, cell },
-        cellUUID = CreateUUID[ ];
-        nbUUID   = ConfirmBy[ cloudNotebookUUID[ ], StringQ ];
-        cell     = Append[ DeleteCases[ cell0, ExpressionUUID -> _ ], ExpressionUUID -> cellUUID ];
-        CellPrint @ cell;
-        CellObject[ cellUUID, nbUUID ]
+cloudCellPrint[ cell_Cell ] :=
+    With[ { obj = MathLink`CallFrontEnd @ FrontEnd`CellPrintReturnObject @ cell },
+        obj /; MatchQ[ obj, _CellObject ]
     ];
 
-cloudCellPrint // endDefinition;
+cloudCellPrint[ Cell[ a__, CellTags -> tags0_, b___ ] ] := Enclose[
+    Module[ { uuid, tags, cell, obj },
+        uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
+        tags = Select[ Flatten @ { tags0, uuid }, StringQ ];
+        cell = Cell[ a, CellTags -> tags, b ];
+        CellPrint @ cell;
+        obj = First @ ConfirmMatch[ Cells[ CellTags -> uuid ], { _CellObject }, "Cells" ];
+        SetOptions[ obj, CellTags -> Replace[ tags, { uuid } -> Inherited ] ];
+        obj
+    ],
+    throwInternalFailure
+];
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*cloudNotebookUUID*)
-cloudNotebookUUID // beginDefinition;
-cloudNotebookUUID[ ] := cloudNotebookUUID[ EvaluationNotebook[ ] ];
-cloudNotebookUUID[ NotebookObject[ _, uuid_String ] ] := uuid;
-cloudNotebookUUID // endDefinition;
+cloudCellPrint[ Cell[ a___ ] ] :=
+    cloudCellPrint @ Cell[ a, CellTags -> { } ];
+
+cloudCellPrint // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -751,6 +766,63 @@ $cloudCellFixes := $cloudCellFixes = Dispatch @ {
 };
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*cellReference*)
+cellReference // beginDefinition;
+cellReference[ cell_CellObject ] := Lookup[ $cellReferences, cell, createCellReference @ cell ];
+cellReference[ ref_String      ] := Lookup[ $cellReferences, ref , findCellReference @ ref    ];
+cellReference // endDefinition;
+
+$cellReferences = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*createCellReference*)
+createCellReference // beginDefinition;
+
+createCellReference[ cell_CellObject ] :=
+    With[ { ref = tinyHash @ cell },
+        $cellReferences[ cell ] = ref;
+        $cellReferences[ ref ] = cell;
+        ref
+    ];
+
+createCellReference // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*findCellReference*)
+findCellReference // beginDefinition;
+findCellReference[ ref_String ] /; StringLength @ ref > $tinyHashLength := findCellReferenceInString @ ref;
+findCellReference[ ref_String ] := Catch[ findNotebookCell[ ref ] /@ Notebooks[ ]; Missing[ "NotFound" ], $ref ];
+findCellReference // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*findCellReferenceInString*)
+findCellReferenceInString // beginDefinition;
+findCellReferenceInString[ s_String ] := findCellReferenceInString[ s, Select[ Keys @ $cellReferences, StringQ ] ];
+findCellReferenceInString[ s_String, refs: { ___String } ] := First[ StringCases[ s, refs, 1 ], Missing[ "NotFound" ] ];
+findCellReferenceInString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*findNotebookCell*)
+findNotebookCell // beginDefinition;
+findNotebookCell[ ref_ ] := findNotebookCell[ ref, # ] &;
+findNotebookCell[ ref_, nbo_ ] := checkCellReference[ ref ] /@ Cells @ nbo;
+findNotebookCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*checkCellReference*)
+checkCellReference // beginDefinition;
+checkCellReference[ ref_ ] := checkCellReference[ ref, # ] &;
+checkCellReference[ ref_, cell_CellObject ] := With[ { r = cellReference @ cell }, Throw[ cell, $ref ] /; ref === r ];
+checkCellReference[ _, _ ] := Null;
+checkCellReference // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Notebooks*)
 
@@ -813,16 +885,33 @@ tryInlineChatParent // endDefinition;
 (*notebookRead*)
 notebookRead // beginDefinition;
 notebookRead[ cells_ ] /; $cloudNotebooks := cloudNotebookRead @ cells;
-notebookRead[ cells_ ] := NotebookRead @ cells;
+notebookRead[ cells_ ] := notebookReadWithCellObjects @ cells;
 notebookRead // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*cloudNotebookRead*)
 cloudNotebookRead // beginDefinition;
-cloudNotebookRead[ cells: { ___CellObject } ] := NotebookRead /@ cells;
-cloudNotebookRead[ cell_ ] := NotebookRead @ cell;
+cloudNotebookRead[ cells: { ___CellObject } ] := notebookReadWithCellObjects /@ cells;
+cloudNotebookRead[ cell_ ] := notebookReadWithCellObjects @ cell;
 cloudNotebookRead // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*notebookReadWithCellObjects*)
+notebookReadWithCellObjects // beginDefinition;
+notebookReadWithCellObjects[ cell_CellObject ] := appendCellObject[ NotebookRead @ cell, cell ];
+notebookReadWithCellObjects[ cells: { ___CellObject } ] := appendCellObject[ NotebookRead @ cells, cells ];
+notebookReadWithCellObjects[ other_ ] := NotebookRead @ other;
+notebookReadWithCellObjects // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*appendCellObject*)
+appendCellObject // beginDefinition;
+appendCellObject[ Cell[ a___ ], obj_CellObject ] := Cell[ a, CellObject -> obj ];
+appendCellObject[ cells: { ___Cell }, objs: { ___CellObject } ] := MapThread[ appendCellObject, { cells, objs } ];
+appendCellObject // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

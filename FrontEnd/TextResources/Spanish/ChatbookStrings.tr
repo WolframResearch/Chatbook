@@ -75,6 +75,7 @@
 "PersonaManagerInstallPersonas" -> "Instalar personas",
 "PersonaManagerInstallFrom" -> "Instalar desde",
 "PersonaManagerInstallFromPromptRepo" -> "Repositorio de prompts \[UpperRightArrow]",
+"PersonaManagerInstallFromFile" -> "Definition Notebook",
 "PersonaManagerManagePersonas" -> "Gestionar y habilitar personas",
 "PersonaManagerInMenu" -> "En men\[UAcute]",
 "PersonaManagerName" -> "Nombre",
@@ -113,11 +114,13 @@
 "PreferencesContentOpenAICompletionURLLabel" -> "URL de finalizaci\[OAcute]n de chat:",
 
 "ResourceInstallerFromURLPrompt" -> "Ingrese un enlace URL",
+"ResourceInstallerFromFilePrompt" -> "Choose a Resource Definition Notebook",
 
 "ToolManagerTitle" -> "Agregar y administrar herramientas LLM",
 "ToolManagerInstallTools" -> "Instalar herramientas",
 "ToolManagerInstallFrom" -> "Instalar desde",
 "ToolManagerInstallFromLLMToolRepo" -> "Repositorio de herramientas LLM \[UpperRightArrow]",
+"ToolManagerInstallFromFile" -> "Definition Notebook",
 "ToolManagerManageTools" -> "Administrar y habilitar herramientas",
 "ToolManagerShowEnabledFor" -> "Mostrar herramientas habilitadas para:",
 "ToolManagerTool" -> "Herramienta",
@@ -162,6 +165,8 @@
 "StylesheetCopyChatObject" -> "Copiar ChatObject",
 "StylesheetInsertionMenuChatInput" -> "Entrada de chat",
 "StylesheetInsertionMenuSideChat" -> "Chat lateral",
+"StylesheetContextMenuAskAI" -> "Ask AI Assistant",
+"StylesheetContextMenuIncludeExclude" -> "Include/Exclude From AI Chat",
 
 "PersonaNameBirdnardo" -> "Birdnardo",
 "PersonaNameCodeAssistant" -> "Asistente de c\[OAcute]digo",

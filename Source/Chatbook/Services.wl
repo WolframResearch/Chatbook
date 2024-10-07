@@ -27,6 +27,16 @@ $llmServicesAvailable := $llmServicesAvailable = (
     PacletNewerQ[ PacletObject[ "Wolfram/LLMFunctions" ], "1.2.2" ]
 );
 
+$$llmServicesFailure = HoldPattern @ Failure[
+    LLMServices`LLMServiceInformation,
+    KeyValuePattern[ "MessageTemplate" :> LLMServices`LLMServiceInformation::corrupt ]
+];
+
+(* Used to filter out models that are known not to work with chat notebooks: *)
+$invalidModelNameParts = <|
+    "OpenAI" -> WordBoundary~~("instruct"|"realtime")~~WordBoundary
+|>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*InvalidateServiceCache*)
@@ -163,7 +173,7 @@ getModelListQuietly // endDefinition;
 checkModelList // beginDefinition;
 
 checkModelList[ info_, models_List ] :=
-    models;
+    Select[ models, usableChatModelQ @ info ];
 
 checkModelList[ info_, $Canceled | $Failed | Missing[ "NotConnected" ] ] :=
     Missing[ "NotConnected" ];
@@ -182,6 +192,32 @@ checkModelList[ info_, other_ ] :=
     Missing[ "NoModelList" ];
 
 checkModelList // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*usableChatModelQ*)
+usableChatModelQ // beginDefinition;
+
+usableChatModelQ[ KeyValuePattern[ "Service" -> service_ ] ] :=
+    usableChatModelQ @ service;
+
+usableChatModelQ[ service_String ] :=
+    With[ { patt = $invalidModelNameParts @ service },
+        If[ MissingQ @ patt,
+            True &,
+            usableChatModelQ[ patt, # ] &
+        ]
+    ];
+
+usableChatModelQ[ patt_, model_ ] := Enclose[
+    Module[ { name },
+        name = ConfirmBy[ toModelName @ model, StringQ, "Name" ];
+        ConfirmMatch[ StringFreeQ[ name, patt, IgnoreCase -> True ], True|False, "Result" ]
+    ],
+    throwInternalFailure
+];
+
+usableChatModelQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -228,6 +264,19 @@ getAvailableServices0[ services0_Association? AssociationQ ] := Enclose[
 
         $servicesLoaded = True;
         $serviceCache   = preCached
+    ],
+    throwInternalFailure
+];
+
+(* If stored service information is corrupt, attempt to reset it and try again: *)
+getAvailableServices0[ $$llmServicesFailure ] := Enclose[
+    Catch @ Module[ { services },
+        ConfirmMatch[ llm`ResetServices[ ], { __Success }, "Reset" ];
+        services = llm`LLMServiceInformation @ llm`ChatSubmit;
+        (* If it's still failing, return the failure: *)
+        If[ MatchQ[ services, $$llmServicesFailure ], Throw @ services ];
+        (* Otherwise we can proceed normally: *)
+        getAvailableServices0 @ ConfirmBy[ services, AssociationQ, "Services" ]
     ],
     throwInternalFailure
 ];

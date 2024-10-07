@@ -13,7 +13,7 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 $inputFieldPaneMargins       = 5;
 $inputFieldGridMagnification = 0.8;
 $inputFieldOuterBackground   = GrayLevel[ 0.95 ];
-$initialInlineChatWidth      = Scaled[ 0.5 ];
+$initialInlineChatWidth      = Scaled[ 1 ];
 $initialInlineChatHeight     = UpTo[ 200 ];
 
 $inputFieldOptions = Sequence[
@@ -30,7 +30,7 @@ $inputFieldFrameOptions = Sequence[
     FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], RGBColor[ "#a3c9f2" ] ]
 ];
 
-$userImageParams = <| "size" -> 50, "default" -> "identicon", "rating" -> "G" |>;
+$userImageParams = <| "size" -> 40, "default" -> "404", "rating" -> "G" |>;
 
 $defaultUserImage = Graphics[
     {
@@ -41,7 +41,7 @@ $defaultUserImage = Graphics[
         Disk[ { 0, 1 }, 1 ],
         Disk[ { 0, -1.8 }, { 1.65, 2 } ]
     },
-    ImageSize -> 25,
+    ImageSize -> 20,
     PlotRange -> { { -2.4, 2.4 }, { -2.0, 2.8 } }
 ];
 
@@ -50,6 +50,8 @@ $messageAuthorImagePadding = { { 0, 0 }, { 0, 6 } };
 $inputFieldBox = None;
 $inlineChatScrollPosition = 0.0;
 $lastScrollPosition       = 0.0;
+
+$maxHistoryItems = 25;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -60,18 +62,41 @@ $lastScrollPosition       = 0.0;
 (*makeWorkspaceChatDockedCell*)
 makeWorkspaceChatDockedCell // beginDefinition;
 
-makeWorkspaceChatDockedCell[ ] := Grid @ {
-    {
-        Button[
-            "New",
-            SelectionMove[ EvaluationNotebook[ ], After, Notebook ];
-            NotebookWrite[ EvaluationNotebook[ ], Cell[ "", "ChatDelimiter", CellFrameLabels -> None ] ]
-        ],
-        Button[ "Clear", NotebookDelete @ Cells @ EvaluationNotebook[ ] ],
-        Item[ "", ItemSize -> Fit ],
-        Button[ "Pop Out", popOutChatNB @ EvaluationNotebook[ ], Method -> "Queued" ]
-    }
-};
+makeWorkspaceChatDockedCell[ ] :=
+    DynamicModule[ { nbo },
+        Grid @ {
+            {
+                Tooltip[
+                    Button[
+                        "New Chat",
+                        NotebookDelete @ Cells @ nbo;
+                        CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ]
+                    ],
+                    "Start a new conversation"
+                ],
+                trackedDynamic[ createHistoryMenu @ nbo, "SavedChats" ],
+                Tooltip[
+                    Button[
+                        "Delete",
+                        DeleteChat[
+                            CurrentChatSettings[ nbo, "AppName" ],
+                            CurrentChatSettings[ nbo, "ConversationUUID" ]
+                        ];
+                        NotebookDelete @ Cells @ nbo;
+                        CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ]
+                    ],
+                    "Remove the current chat from the history menu"
+                ]
+                ,
+                Item[ "", ItemSize -> Fit ],
+                Tooltip[
+                    Button[ "Pop Out", popOutChatNB @ nbo, Method -> "Queued" ],
+                    "View the chat as a normal chat notebook"
+                ]
+            }
+        },
+        Initialization :> (nbo = EvaluationNotebook[ ])
+    ];
 
 makeWorkspaceChatDockedCell // endDefinition;
 
@@ -156,12 +181,15 @@ $attachedWorkspaceChatInputCell := $attachedWorkspaceChatInputCell = Cell[
 attachInlineChatInput // beginDefinition;
 
 attachInlineChatInput[ nbo_NotebookObject ] :=
+    attachInlineChatInput[ nbo, <| |> ];
+
+attachInlineChatInput[ nbo_NotebookObject, settings_Association ] :=
     If[ TrueQ @ userNotebookQ @ nbo,
-        attachInlineChatInput[ nbo, SelectedCells @ nbo ],
+        attachInlineChatInput[ nbo, settings, SelectedCells @ nbo ],
         Null
     ];
 
-attachInlineChatInput[ nbo_NotebookObject, { root_CellObject } ] := Enclose[
+attachInlineChatInput[ nbo_NotebookObject, settings_Association, { root_CellObject } ] := Enclose[
     Module[ { selectionInfo, attached },
 
         NotebookDelete @ $lastAttachedInlineChat;
@@ -180,10 +208,10 @@ attachInlineChatInput[ nbo_NotebookObject, { root_CellObject } ] := Enclose[
         attached = ConfirmMatch[
             AttachCell[
                 NotebookSelection @ nbo,
-                inlineChatInputCell[ root, selectionInfo ],
-                { Left, Bottom },
+                inlineChatInputCell[ root, selectionInfo, settings ],
+                { "WindowCenter", Bottom },
                 0,
-                { Left, Top },
+                { Center, Top },
                 RemovalConditions -> { "EvaluatorQuit" }
             ],
             _CellObject,
@@ -198,8 +226,21 @@ attachInlineChatInput[ nbo_NotebookObject, { root_CellObject } ] := Enclose[
     throwInternalFailure
 ];
 
-(* FIXME: Need to handle multiple or no cell selections *)
-attachInlineChatInput[ nbo_NotebookObject, { ___ } ] := Null;
+(* TODO: moving the selection probably isn't ideal: *)
+attachInlineChatInput[ nbo_NotebookObject, settings_, { } ] := Enclose[
+    Module[ { root },
+        SelectionMove[ nbo, Previous, Cell ];
+        root = Replace[ SelectedCells @ nbo, { cell_CellObject } :> cell ];
+        If[ MatchQ[ root, _CellObject ],
+            attachInlineChatInput[ nbo, settings, { root } ],
+            Null
+        ]
+    ],
+    throwInternalFailure
+];
+
+(* FIXME: Need to handle multiple cell selections *)
+attachInlineChatInput[ nbo_NotebookObject, settings_, { ___ } ] := Null;
 
 attachInlineChatInput // endDefinition;
 
@@ -208,14 +249,23 @@ attachInlineChatInput // endDefinition;
 (*getSelectionInfo*)
 getSelectionInfo // beginDefinition;
 
-getSelectionInfo[ cell_CellObject ] := getSelectionInfo[ cell, cellInformation[ cell, "CursorPosition" ] ];
-getSelectionInfo[ cell_, Except[ { _Integer, _Integer } ] ] := None;
-getSelectionInfo[ cell_, pos_ ] := getSelectionInfo[ cell, pos, cellHash @ cell ];
+getSelectionInfo[ cell_CellObject ] :=
+    getSelectionInfo[ cell, cellInformation[ cell, { "ContentData", "CursorPosition" } ] ];
 
-getSelectionInfo[ cell_CellObject, pos: { _Integer, _Integer }, hash_String ] := <|
-    "CellObject"     -> cell,
-    "CursorPosition" -> pos,
-    "Hash"           -> hash
+getSelectionInfo[ cell_, KeyValuePattern[ "CursorPosition" -> Except[ { _Integer, _Integer } ] ] ] :=
+    None;
+
+getSelectionInfo[ cell_, info_ ] :=
+    getSelectionInfo[ cell, info, cellHash @ cell ];
+
+getSelectionInfo[
+    cell_CellObject,
+    as: KeyValuePattern[ "CursorPosition" -> { _Integer, _Integer } ],
+    hash_String
+] := <|
+    as,
+    "CellObject" -> cell,
+    "Hash"       -> hash
 |>;
 
 getSelectionInfo // endDefinition;
@@ -233,7 +283,7 @@ cellHash // endDefinition;
 (*inlineChatInputCell*)
 inlineChatInputCell // beginDefinition;
 
-inlineChatInputCell[ root_CellObject, selectionInfo_ ] := Cell[
+inlineChatInputCell[ root_CellObject, selectionInfo_, settings_ ] := Cell[
     BoxData @ inlineTemplateBox @ TemplateBox[
         {
             ToBoxes @ DynamicModule[ { messageCells = { }, cell },
@@ -255,12 +305,14 @@ inlineChatInputCell[ root_CellObject, selectionInfo_ ] := Cell[
                     cell = EvaluationCell[ ];
                     parentCell[ cell ] = root;
                     parentNotebook[ cell ] = parentNotebook @ root;
+                    attachInlineChatButtons[ EvaluationCell[ ], Dynamic @ messageCells ]
                 ),
 
                 Deinitialization :> Quiet[
                     $inputFieldBox = None;
                     Unset @ parentCell @ cell;
                     Unset @ parentNotebook @ cell;
+                    ClearAll @ evaluateCurrentInlineChat;
                 ]
             ]
         },
@@ -268,10 +320,115 @@ inlineChatInputCell[ root_CellObject, selectionInfo_ ] := Cell[
     ],
     "AttachedChatInput",
     Background -> None,
-    Selectable -> True
+    Selectable -> True,
+    TaggingRules -> <| "ChatNotebookSettings" -> settings |>
 ];
 
 inlineChatInputCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*attachInlineChatButtons*)
+attachInlineChatButtons // beginDefinition;
+
+attachInlineChatButtons[ cell_CellObject, messageCells_Dynamic ] := AttachCell[
+    cell,
+    inlineChatButtonsCell[ cell, messageCells ],
+    { Right, Top },
+    Offset[ { -57, -7 }, 0 ],
+    { Left, Top }
+];
+
+attachInlineChatButtons // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inlineChatButtonsCell*)
+inlineChatButtonsCell // beginDefinition;
+
+(* TODO: define a template box for this in the stylesheet *)
+inlineChatButtonsCell[ cell_CellObject, messageCells_Dynamic ] :=
+    Cell @ BoxData @ GridBox[
+        { { closeButton @ cell }, { popOutButton[ cell, messageCells ] } },
+        AutoDelete      -> False,
+        GridBoxItemSize -> { "Columns" -> { { 0 } }, "Rows" -> { { 0 } } },
+        GridBoxSpacings -> { "Columns" -> { { 0 } }, "Rows" -> { { 0 } } }
+    ];
+
+inlineChatButtonsCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*closeButton*)
+closeButton // beginDefinition;
+
+closeButton[ cell_CellObject ] := ToBoxes @ Button[
+    RawBoxes @ FrameBox[
+        GraphicsBox[
+            {
+                GrayLevel[ 0.3 ],
+                AbsoluteThickness[ 1 ],
+                CapForm[ "Round" ],
+                LineBox @ { { { -1, -1 }, { 1, 1 } }, { { 1, -1 }, { -1, 1 } } }
+            },
+            ImagePadding -> { { 0, 1 }, { 1, 0 } },
+            ImageSize    -> { 6, 6 },
+            PlotRange    -> 1
+        ],
+        Alignment      -> { Center, Center },
+        Background     -> GrayLevel[ 0.96 ],
+        ContentPadding -> False,
+        FrameMargins   -> None,
+        FrameStyle     -> GrayLevel[ 0.85 ],
+        ImageSize      -> { 16, 16 },
+        RoundingRadius -> 2,
+        StripOnInput   -> False
+    ],
+    NotebookDelete @ cell,
+    Appearance -> "Suppressed",
+    Tooltip    -> "Close"
+];
+
+closeButton // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*popOutButton*)
+popOutButton // beginDefinition;
+
+popOutButton[ cell_CellObject, messageCells_Dynamic ] := ToBoxes @ Button[
+    RawBoxes @ FrameBox[
+        GraphicsBox[
+            {
+                GrayLevel[ 0.3 ],
+                AbsoluteThickness[ 1 ],
+                CapForm[ "Round" ],
+                LineBox @ {
+                    { { -0.4, 0.8 }, { -0.8, 0.8 }, { -0.8, -0.8 }, { 0.8, -0.8 }, { 0.8, -0.4 } },
+                    { { -0.1, -0.1 }, { 1, 1 } },
+                    { { 0.2, 1 }, { 1, 1 }, { 1, 0.2 } }
+                }
+            },
+            ImagePadding -> { { 0, 1 }, { 1, 0 } },
+            ImageSize    -> { 10, 10 },
+            PlotRange    -> 1
+        ],
+        Alignment      -> { Center, Center },
+        Background     -> GrayLevel[ 0.96 ],
+        ContentPadding -> False,
+        FrameMargins   -> None,
+        FrameStyle     -> GrayLevel[ 0.85 ],
+        ImageSize      -> { 16, 16 },
+        RoundingRadius -> 2,
+        StripOnInput   -> False
+    ],
+    NotebookDelete @ cell;
+    popOutWorkspaceChatNB @ messageCells,
+    Appearance -> "Suppressed",
+    Tooltip    -> "View in Code Assistance Chat"
+];
+
+popOutButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -305,7 +462,15 @@ inlineChatInputField[
     selectionInfo_,
     Dynamic[ currentInput_ ],
     Dynamic[ messageCells_ ]
-] :=
+] := (
+    evaluateCurrentInlineChat[ ] := ChatbookAction[
+        "EvaluateInlineChat",
+        cell,
+        root,
+        selectionInfo,
+        Dynamic @ currentInput,
+        Dynamic @ messageCells
+    ];
     EventHandler[
         Pane[
             Grid[
@@ -323,20 +488,6 @@ inlineChatInputField[
                         RawBoxes @ inlineTemplateBox @ TemplateBox[
                             { RGBColor[ "#a3c9f2" ], RGBColor[ "#f1f7fd" ], 27 },
                             "SendChatButton"
-                        ],
-                        Style[
-                            ActionMenu[
-                                "More",
-                                {
-                                    "Close"        :> NotebookDelete @ EvaluationCell[ ],
-                                    "View in Chat" :> (
-                                        NotebookDelete @ EvaluationCell[ ];
-                                        popOutWorkspaceChatNB @ messageCells
-                                    )
-                                },
-                                ImageSize -> { Automatic, 25 }
-                            ],
-                            Magnification -> 1
                         ]
                     }
                 },
@@ -358,7 +509,8 @@ inlineChatInputField[
             )
         },
         Method -> "Queued"
-    ];
+    ]
+);
 
 inlineChatInputField // endDefinition;
 
@@ -376,6 +528,8 @@ moveToInlineChatInputField[ box_BoxObject ] := Quiet @ Catch[
     _
 ];
 
+moveToInlineChatInputField[ None ] := Null;
+
 moveToInlineChatInputField // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -384,7 +538,7 @@ moveToInlineChatInputField // endDefinition;
 displayInlineChatMessages // beginDefinition;
 
 displayInlineChatMessages[ { }, inputField_ ] :=
-    Pane[ inputField, ImageSize -> { Scaled[ 0.5 ], Automatic } ];
+    Pane[ inputField, ImageSize -> { $initialInlineChatWidth, Automatic } ];
 
 displayInlineChatMessages[ cells: { __Cell }, inputField_ ] :=
     DynamicModule[ { w, h, size },
@@ -398,6 +552,7 @@ displayInlineChatMessages[ cells: { __Cell }, inputField_ ] :=
             {
                 Pane[
                     Column[
+                        (* FIXME: code blocks don't show syntax styles or string characters *)
                         formatInlineMessageCells /@ cells,
                         Alignment  -> Left,
                         BaseStyle  -> { Magnification -> 0.8 },
@@ -456,7 +611,11 @@ formatInlineMessageCells[ cell: Cell[ __, "ChatOutput", ___ ] ] :=
             {
                 {
                     Pane[ assistantImage[ ], ImageMargins -> $messageAuthorImagePadding ],
-                    RawBoxes @ Append[ DeleteCases[ cell, Background -> _ ], Background -> None ]
+                    RawBoxes @ InputFieldBox[
+                        Append[ DeleteCases[ cell, Background -> _ ], Background -> None ],
+                        Appearance -> None,
+                        ImageSize  -> { Scaled[ 1 ], Automatic }
+                    ]
                 }
             },
             Alignment -> { Left, Top }
@@ -505,7 +664,7 @@ moveToChatInputField0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Chat Message Labels*)
+(*Chat Message Decorations*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -558,18 +717,62 @@ userImage[ ] := userImage[ $CloudUserID ];
 
 userImage[ user_String ] := Enclose[
     Module[ { hash, url, image },
-        hash = Hash[ ToLowerCase @ StringTrim @ user, "MD5", "HexString" ];
-        url = ConfirmBy[ URLBuild[ { "https://www.gravatar.com/avatar/", hash }, $userImageParams ], StringQ, "URL" ];
-        image = ConfirmBy[ Import @ url, ImageQ, "Image" ];
-        userImage[ user ] = Show[ image, ImageSize -> 25 ]
+        hash  = Hash[ ToLowerCase @ StringTrim @ user, "MD5", "HexString" ];
+        url   = ConfirmBy[ URLBuild[ { "https://www.gravatar.com/avatar/", hash }, $userImageParams ], StringQ, "URL" ];
+        image = ConfirmBy[ Quiet @ Import @ url, ImageQ, "Image" ];
+        userImage[ user ] = Show[ image, ImageSize -> 20 ]
     ],
-    $defaultUserImage &
+    (userImage[ user ] = $defaultUserImage) &
 ];
 
 userImage[ other_ ] :=
     $defaultUserImage;
 
 userImage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*attachAssistantMessageButtons*)
+attachAssistantMessageButtons // beginDefinition;
+
+attachAssistantMessageButtons[ cell_ ] /; $dynamicText || MatchQ[ $ChatEvaluationCell, _CellObject ] := Null;
+
+attachAssistantMessageButtons[ cell_CellObject ] :=
+    attachAssistantMessageButtons[ cell, CurrentChatSettings[ cell, "WorkspaceChat" ] ];
+
+attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
+    Catch @ Module[ { cell, attached },
+
+        cell = topParentCell @ cell0;
+        If[ ! MatchQ[ cell, _CellObject ], Throw @ Null ];
+
+        (* If chat has been reloaded from history, it no longer has the necessary metadata for feedback: *)
+        If[ ! StringQ @ CurrentValue[ cell, { TaggingRules, "ChatData" } ], Throw @ Null ];
+
+        (* Remove existing attached cell, if any: *)
+        NotebookDelete @ Cells[ cell, AttachedCell -> True, CellStyle -> "ChatOutputTrayButtons" ];
+
+        (* Attach new cell: *)
+        attached = AttachCell[
+            cell,
+            Cell[
+                BoxData @ TemplateBox[ { }, "FeedbackButtonsHorizontal" ],
+                "ChatOutputTrayButtons",
+                Magnification -> AbsoluteCurrentValue[ cell, Magnification ]
+            ],
+            { Left, Bottom },
+            0,
+            { Left, Top },
+            RemovalConditions -> "MouseExit"
+        ]
+    ],
+    throwInternalFailure
+];
+
+attachAssistantMessageButtons[ cell_CellObject, _ ] :=
+    Null;
+
+attachAssistantMessageButtons // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -579,6 +782,9 @@ userImage // endDefinition;
 (* ::Subsection::Closed:: *)
 (*popOutWorkspaceChatNB*)
 popOutWorkspaceChatNB // beginDefinition;
+
+popOutWorkspaceChatNB[ Dynamic[ cells_ ] ] :=
+    popOutWorkspaceChatNB @ cells;
 
 popOutWorkspaceChatNB[ cells: { ___Cell } ] := Enclose[
     Module[ { nbo },
@@ -634,6 +840,88 @@ $fromWorkspaceChatConversionRules := $fromWorkspaceChatConversionRules = Dispatc
         ___
     ] :> Cell[ Flatten @ TextData @ text, "ChatOutput" ]
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*History*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*createHistoryMenu*)
+createHistoryMenu // beginDefinition;
+
+createHistoryMenu[ nbo_NotebookObject ] :=
+    createHistoryMenu[ nbo, ListSavedChats @ CurrentChatSettings[ nbo, "AppName" ] ];
+
+createHistoryMenu[ nbo_NotebookObject ] := Enclose[
+    Catch @ Module[ { appName, chats },
+        appName = ConfirmBy[ CurrentChatSettings[ nbo, "AppName" ], StringQ, "AppName" ];
+        chats = ConfirmMatch[ ListSavedChats @ appName, { ___Association }, "Chats" ];
+        If[ chats === { }, Throw @ ActionMenu[ "History", { "Nothing here yet" :> Null } ] ];
+        ActionMenu[
+            "History",
+            makeHistoryMenuItem[ nbo ] /@ Take[ chats, UpTo @ $maxHistoryItems ],
+            Method -> "Queued"
+        ]
+    ],
+    throwInternalFailure
+];
+
+createHistoryMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeHistoryMenuItem*)
+makeHistoryMenuItem // beginDefinition;
+
+makeHistoryMenuItem[ nbo_NotebookObject ] :=
+    makeHistoryMenuItem[ nbo, # ] &;
+
+makeHistoryMenuItem[ nbo_NotebookObject, chat_Association ] := Enclose[
+    Module[ { title, date, timeString, label },
+        title = ConfirmBy[ chat[ "ConversationTitle" ], StringQ, "Title" ];
+        date = DateObject[ ConfirmBy[ chat[ "Date" ], NumericQ, "Date" ], TimeZone -> 0 ];
+        timeString = ConfirmBy[ relativeTimeString @ date, StringQ, "TimeString" ];
+        label = Row @ { title, " ", Style[ timeString, FontOpacity -> 0.75, FontSize -> Inherited * 0.9 ] };
+        label :> loadConversation[ nbo, chat ]
+    ],
+    throwInternalFailure
+];
+
+makeHistoryMenuItem // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*loadConversation*)
+loadConversation // beginDefinition;
+
+loadConversation[ nbo_NotebookObject, id_ ] := Enclose[
+    Module[ { loaded, uuid, messages, cells, cellObjects },
+        loaded = ConfirmBy[ LoadChat @ id, AssociationQ, "Loaded" ];
+        uuid = ConfirmBy[ loaded[ "ConversationUUID" ], StringQ, "UUID" ];
+        messages = ConfirmBy[ loaded[ "Messages" ], ListQ, "Messages" ];
+        cells = ConfirmMatch[ ChatMessageToCell[ messages, "Workspace" ], { __Cell }, "Cells" ];
+        cellObjects = ConfirmMatch[ Cells @ nbo, { ___CellObject }, "CellObjects" ];
+        ConfirmMatch[ NotebookDelete @ cellObjects, { Null... }, "Delete" ];
+
+        WithCleanup[
+            NotebookDelete @ First[ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ], $Failed ],
+            SelectionMove[ nbo, Before, Notebook, AutoScroll -> True ];
+            ConfirmMatch[
+                NotebookWrite[ nbo, cells, AutoScroll -> False ],
+                Null,
+                "Write"
+            ],
+            ChatbookAction[ "AttachWorkspaceChatInput", nbo ]
+        ];
+
+        CurrentChatSettings[ nbo, "ConversationUUID" ] = uuid;
+        moveToChatInputField[ nbo, True ]
+    ],
+    throwInternalFailure
+];
+
+loadConversation // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

@@ -223,9 +223,10 @@ reformatTextData[ string_String ] /; StringContainsQ[ string, $$mdEscapedCharact
         s_String :> RuleCondition @ StringReplace[ s, $mdUnescapeRules ]
     ];
 
+(* cSpell: ignore maxrec *)
 reformatTextData[ string_String ] := joinAdjacentStrings @ Flatten[
     makeResultCell /@ discardBadToolCalls @ DeleteCases[
-        StringSplit[ string, $textDataFormatRules, IgnoreCase -> True ],
+        Quiet[ StringSplit[ string, $textDataFormatRules, IgnoreCase -> True ], RegularExpression::maxrec ],
         ""
     ]
 ];
@@ -307,12 +308,29 @@ makeResultCell0[ imageCell[ alt_String, url_String ] ] := image[ alt, url ];
 
 makeResultCell0[ hyperlinkCell[ label_String, url_String ] ] := hyperlink[ label, url ];
 
-makeResultCell0[ bulletCell[ whitespace_String, item_String ] ] := Flatten @ {
+makeResultCell0[ bulletCell[ "", item_String ] ] := {
     "\n",
-    whitespace,
-    StyleBox[ "\[Bullet]", "InlineItem", FontColor -> GrayLevel[ 0.5 ] ],
-    " ",
-    formatTextString @ item
+    Cell[
+        TextData @ Flatten @ {
+            StyleBox[ "\[Bullet]", FontColor -> GrayLevel[ 0.5 ] ],
+            " ",
+            formatTextString @ item
+        },
+        "InlineItem"
+    ]
+};
+
+makeResultCell0[ bulletCell[ whitespace_String, item_String ] ] := {
+    "\n",
+    Cell[
+        TextData @ Flatten @ {
+            whitespace,
+            StyleBox[ "\[Bullet]", FontColor -> GrayLevel[ 0.5 ] ],
+            " ",
+            formatTextString @ item
+        },
+        "InlineSubitem"
+    ]
 };
 
 makeResultCell0[ sectionCell[ n_, section_String ] ] := Flatten @ {
@@ -578,6 +596,7 @@ formatRaw[ item_, { } ] := item;
 formatRaw[ item_, StyleBox[ box_ ] ] := formatRaw[ item, box ];
 formatRaw[ item_, box: _ButtonBox|_Cell|_StyleBox ] := RawBoxes @ box;
 formatRaw[ item_, string_String ] := string;
+formatRaw[ item_, text: $$textDataList ] := RawBoxes @ Cell @ TextData @ text;
 formatRaw // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -783,7 +802,6 @@ insertCodeBelow[ cell_Cell, evaluate_ ] :=
         cellObj = topParentCell @ EvaluationCell[ ];
         nbo = parentNotebook @ cellObj;
         insertAfterChatGeneratedCells[ cellObj, cell ];
-        NotebookDelete @ Cells[ nbo, AttachedCell -> True, CellStyle -> "AttachedChatInput" ];
         If[ TrueQ @ evaluate,
             selectionEvaluateCreateCell @ nbo,
             SelectionMove[ nbo, After, CellContents ]
@@ -1066,7 +1084,7 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 $$endToolCall       = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
 $$eol               = " "... ~~ "\n";
 $$cmd               = Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ];
-$$simpleToolCommand = StartOfLine ~~ $$ws ~~ ("/" ~~ c: $$cmd) ~~ $$eol /; $simpleToolMethod && toolShortNameQ @ c;
+$$simpleToolCommand = StartOfLine ~~ $$ws ~~ ("/" ~~ $$cmd) ~~ $$eol;
 $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|EndOfString) ];
 
 
@@ -1085,18 +1103,24 @@ $textDataFormatRules = {
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
         Shortest[ code__ ],
         ("```"|EndOfString)
-    ] /; StringFreeQ[ code, "TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString) ] :>
+    ] /; StringFreeQ[ code, ("TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString))|$$simpleToolCall ] :>
         codeBlockCell[ language, code ]
+    ,
+    Longest @ StringExpression[
+        (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
+        tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString))
+    ] :> inlineToolCallCell @ tool
+    ,
+    Longest @ StringExpression[
+        (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
+        tool: $$simpleToolCall
+     ] :> inlineToolCallCell @ tool
+    ,
+    StartOfLine ~~ "/retry" ~~ (WhitespaceCharacter|EndOfString) :> $discardPreviousToolCall
     ,
     "![" ~~ alt: Shortest[ ___ ] ~~ "](" ~~ url: Shortest[ Except[ ")" ].. ] ~~ ")" /;
         StringFreeQ[ alt, "["~~___~~"]("~~__~~")" ] :>
             imageCell[ alt, url ]
-    ,
-    tool: ("TOOLCALL:" ~~ Shortest[ ___ ] ~~ ($$endToolCall|EndOfString)) :> inlineToolCallCell @ tool
-    ,
-    tool: $$simpleToolCall :> inlineToolCallCell @ tool
-    ,
-    StartOfLine ~~ "/retry" ~~ (WhitespaceCharacter|EndOfString) :> $discardPreviousToolCall
     ,
     ("\n"|StartOfString).. ~~ w:" "... ~~ ("* "|"- ") ~~ item: Longest[ Except[ "\n" ].. ] :>
         bulletCell[ w, item ]
@@ -1409,7 +1433,8 @@ parseFullToolCallString[ id_String, tool: HoldPattern[ _LLMTool ], parameters_As
         "FormattingFunction" -> getToolFormattingFunction @ tool,
         "ToolCall"           -> StringTrim @ string,
         "Parameters"         -> parameters,
-        "Result"             -> output
+        "Result"             -> output,
+        "Open"               -> TrueQ @ $openToolCallBoxes
     |>;
 
 parseFullToolCallString // endDefinition;
@@ -1429,8 +1454,7 @@ parseToolCallID[ string_String? StringQ ] :=
                     WhitespaceCharacter...,
                     Alternatives[
                         "TOOLCALL:",
-                        StartOfLine ~~ "/" ~~ cmd: Except[ WhitespaceCharacter ].. ~~ WhitespaceCharacter... ~~ "\n" /;
-                            toolShortNameQ @ cmd
+                        StartOfLine ~~ "/" ~~ cmd: Except[ WhitespaceCharacter ].. ~~ WhitespaceCharacter... ~~ "\n"
                     ],
                     ___,
                     "ENDRESULT(",
@@ -1493,6 +1517,7 @@ makeToolCallBoxLabel[ as0_, name_String, icon_ ] :=
                     LabelStyle -> { FontSize -> 12 }
                 ]
             },
+            TrueQ @ as0[ "Open" ],
             Method -> "Active"
         ]
     ];
@@ -1724,7 +1749,11 @@ makeInteractiveCodeCell[ lang_String? wolframLanguageQ, code_ ] :=
             BoxData @ If[ StringQ @ code, wlStringToBoxes @ code, code ],
             "ChatCode",
             "Input",
-            Background -> GrayLevel[ 1 ]
+            Background           -> GrayLevel[ 1 ],
+            LanguageCategory     -> "Input",
+            ShowAutoStyles       -> True,
+            ShowStringCharacters -> True,
+            ShowSyntaxStyles     -> True
         ];
         handler = inlineInteractiveCodeCell[ display, code ];
         codeBlockFrame[ Cell @ BoxData @ ToBoxes @ handler, code ]
@@ -1781,8 +1810,12 @@ formatNLInputs // beginDefinition;
 formatNLInputs[ string_String ] :=
     StringReplace[
         string,
-        "\[FreeformPrompt][\"" ~~ q: Except[ "\"" ].. ~~ ("\"]"|EndOfString) :>
-            ToString[ RawBoxes @ formatNLInputFast @ q, StandardForm ]
+        {
+            "\[FreeformPrompt][\"" ~~ q: Except[ "\"" ].. ~~ ("\"]"|EndOfString) :>
+                ToString[ RawBoxes @ formatNLInputFast @ q, StandardForm ],
+            "ResourceFunction[\"" ~~ name: Except[ "\"" ].. ~~ ("\"]"|EndOfString) :>
+                ToString[ RawBoxes @ formatResourceFunctionFast @ name, StandardForm ]
+        }
     ];
 
 formatNLInputs[ boxes_ ] :=
@@ -1792,9 +1825,39 @@ formatNLInputs[ boxes_ ] :=
         ,
         RowBox @ { "\[FreeformPrompt]", "[", q_String } /; StringMatchQ[ q, "\""~~Except[ "\""]..~~("\""|"") ] :>
             RuleCondition @ formatNLInputFast @ q
+        ,
+        RowBox @ { "ResourceFunction", "[", name_String, "]" } /; StringMatchQ[ name, "\""~~Except[ "\""]..~~"\"" ] :>
+            RuleCondition @ If[ TrueQ @ $dynamicText,
+                                formatResourceFunctionFast @ name,
+                                formatResourceFunctionSlow @ name
+                            ]
     };
 
 formatNLInputs // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatResourceFunctionFast*)
+formatResourceFunctionFast // beginDefinition;
+
+formatResourceFunctionFast[ name_String ] := (
+    Needs[ "FunctionResource`" -> None ];
+    FunctionResource`InertResourceFunctionBoxes[ "Published", StringTrim[ name, "\"" ] ]
+);
+
+formatResourceFunctionFast // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatResourceFunctionSlow*)
+formatResourceFunctionSlow // beginDefinition;
+
+formatResourceFunctionSlow[ name_String ] := (
+    Needs[ "FunctionResource`" -> None ];
+    FunctionResource`MakeResourceFunctionBoxes @ StringTrim[ name, "\"" ]
+);
+
+formatResourceFunctionSlow // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1938,28 +2001,13 @@ makeInlineCodeCell // beginDefinition;
 makeInlineCodeCell[ s_String? nameQ ] /; Context @ s === "System`" :=
     hyperlink[ s, "paclet:ref/" <> Last @ StringSplit[ s, "`" ] ];
 
-makeInlineCodeCell[ s_String? LowerCaseQ ] := StyleBox[ unescapeInlineMarkdown @ s, "TI" ];
+makeInlineCodeCell[ s_String? LowerCaseQ ] :=
+    StyleBox[ unescapeInlineMarkdown @ s, "TI" ];
 
-makeInlineCodeCell[ code_String ] /; $dynamicText := Cell[
-    BoxData @ TemplateBox[ { stringToBoxes @ unescapeInlineMarkdown @ code }, "ChatCodeInlineTemplate" ],
+makeInlineCodeCell[ code_String ] := Cell[
+    BoxData @ TemplateBox[ { Cell[ unescapeInlineMarkdown @ code, Background -> None ] }, "ChatCodeInlineTemplate" ],
     "ChatCodeActive"
 ];
-
-makeInlineCodeCell[ code0_String ] :=
-    With[ { code = unescapeInlineMarkdown @ code0 },
-        If[ SyntaxQ @ code,
-            Cell[
-                BoxData @ TemplateBox[ { stringToBoxes @ code }, "ChatCodeInlineTemplate" ],
-                "ChatCode",
-                Background -> None
-            ],
-            Cell[
-                BoxData @ TemplateBox[ { Cell[ code, Background -> None ] }, "ChatCodeInlineTemplate" ],
-                "ChatCodeActive",
-                Background -> None
-            ]
-        ]
-    ];
 
 makeInlineCodeCell // endDefinition;
 
@@ -2080,7 +2128,11 @@ attachment[ alt_String, key_String, expr_ ] :=
             BoxData @ boxes,
             "ChatCode",
             "Input",
-            Background -> GrayLevel[ 1 ]
+            Background           -> GrayLevel[ 1 ],
+            LanguageCategory     -> "Input",
+            ShowAutoStyles       -> True,
+            ShowStringCharacters -> True,
+            ShowSyntaxStyles     -> True
         ];
         handler = inlineInteractiveCodeCell[ display, Cell[ BoxData @ cachedBoxes @ expr, "Input" ] ];
         codeBlockFrame[ Cell @ BoxData @ ToBoxes @ handler, expr ]
@@ -2533,8 +2585,11 @@ stringToBoxes[ s_String ] /; $dynamicText := StringReplace[
         $expressionURIPlaceholder
 ];
 
+stringToBoxes[ s_String /; StringMatchQ[ s, "\"" ~~ __ ~~ "\"" ] ] :=
+    With[ { str = stringToBoxes @ StringTrim[ s, "\"" ] }, "\""<>str<>"\"" /; StringQ @ str ];
+
 stringToBoxes[ s_String ] :=
-    adjustBoxSpacing @ stringToBoxes0 @ usingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ s;
+    adjustBoxSpacing @ stringToBoxes0 @ reparseBoxStructurePacket @ s;
 
 stringToBoxes // endDefinition;
 
@@ -2542,6 +2597,21 @@ stringToBoxes // endDefinition;
 stringToBoxes0 // beginDefinition;
 stringToBoxes0[ boxes_? boxDataQ ] := boxes;
 stringToBoxes0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*reparseBoxStructurePacket*)
+reparseBoxStructurePacket // beginDefinition;
+
+reparseBoxStructurePacket[ string_String ] := Replace[
+    usingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket @ StyleBox[
+        string,
+        ShowStringCharacters -> True
+    ],
+    StyleBox[ boxes_, ___ ] :> boxes
+];
+
+reparseBoxStructurePacket // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2565,11 +2635,31 @@ boxSymbolQ // endDefinition;
 (*adjustBoxSpacing*)
 adjustBoxSpacing // beginDefinition;
 adjustBoxSpacing[ row: RowBox @ { "(*", ___, "*)" } ] := row;
-adjustBoxSpacing[ RowBox[ items_List ] ] := RowBox[ adjustBoxSpacing /@ DeleteCases[ items, " " ] ];
 adjustBoxSpacing[ "\n" ] := "\[IndentingNewLine]";
 adjustBoxSpacing[ s_String ] /; $CloudEvaluation := Lookup[ $autoOperatorRenderings, s, s ];
+adjustBoxSpacing[ RowBox[ items_List ] ] := RowBox[ adjustBoxSpacing /@ adjustSequenceSpacing @ items ];
 adjustBoxSpacing[ box_ ] := box;
 adjustBoxSpacing // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*adjustSequenceSpacing*)
+adjustSequenceSpacing // beginDefinition;
+
+adjustSequenceSpacing[ items_List ] := SequenceReplace[
+    items,
+    {
+        { $space, op: $infixOperators, $space  } :> op,
+        { $space, op: $infixOperators } :> op,
+        { op: $infixOperators, $space } :> op,
+        { ",", $space } -> ","
+    }
+];
+
+adjustSequenceSpacing // endDefinition;
+
+$space = " "|"  "|"   ";
+$infixOperators = "+"|"-"|"*"|"/"|"^"|"&&"|"||"|"=="|"==="|"!="|"=!="|"<"|"<="|">"|">="|"->"|":>"|"="|":=";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

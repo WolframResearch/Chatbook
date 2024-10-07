@@ -10,7 +10,6 @@ Needs[ "Wolfram`Chatbook`"                   ];
 Needs[ "Wolfram`Chatbook`Common`"            ];
 Needs[ "Wolfram`Chatbook`Personas`"          ];
 Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
-Needs[ "Wolfram`Chatbook`Serialization`"     ];
 
 HoldComplete[
     System`LLMTool;
@@ -91,7 +90,6 @@ $DefaultToolOptions = <|
 
 $defaultToolIcon = RawBoxes @ TemplateBox[ { }, "WrenchIcon" ];
 
-$attachments           = <| |>;
 $selectedTools         = <| |>;
 $toolBox               = <| |>;
 $toolEvaluationResults = <| |>;
@@ -163,7 +161,10 @@ reevaluateToolExpressions // endDefinition;
 (*Installed Tools*)
 $installedTools := Association @ Cases[
     GetInstalledResourceData[ "LLMTool" ],
-    as: KeyValuePattern[ "Tool" -> tool_ ] :> (toolName @ tool -> addExtraToolData[ tool, as ])
+    as: KeyValuePattern[ "Tool" -> tool0_ ] :>
+        With[ { tool = Quiet @ tool0 },
+            (toolName @ tool -> addExtraToolData[ tool, as ]) /; MatchQ[ tool, _LLMTool ]
+        ]
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -394,7 +395,7 @@ withToolBox // endDefinition;
 selectTools // beginDefinition;
 
 selectTools[ as_Association ] := Enclose[
-    Module[ { llmEvaluatorName, toolNames, selections, selectionTypes, add, remove, selectedNames, tools, short },
+    Module[ { llmEvaluatorName, toolNames, selections, selectionTypes, add, remove, selectedNames, short },
 
         llmEvaluatorName = ConfirmBy[ getLLMEvaluatorName @ as, StringQ, "LLMEvaluatorName" ];
         toolNames        = ConfirmMatch[ getToolNames @ as, { ___String }, "Names" ];
@@ -851,18 +852,21 @@ simpleToolRequestParser // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*parseSimpleToolCallParameterStrings*)
+$$argNameDelimiter = (":"|"="|"-") ~~ " "...;
+
 parseSimpleToolCallParameterStrings // beginDefinition;
 
 parseSimpleToolCallParameterStrings[ { param_String }, argString_String ] :=
-    <| param -> StringDelete[ argString, StartOfString ~~ WhitespaceCharacter... ~~ param ~~ ":" ~~ " "... ] |>;
+    <| param -> StringDelete[ argString, StartOfString ~~ WhitespaceCharacter... ~~ param ~~ $$argNameDelimiter ] |>;
 
 parseSimpleToolCallParameterStrings[ paramNames: { __String }, argString_String ] := Enclose[
-    Catch @ Module[ { namedSplit, defaults, pairs },
-        namedSplit = StringSplit[ argString, StartOfLine ~~ (" "|"\t")... ~~ p: paramNames ~~ ":" ~~ " "... :> p ];
+    Catch @ Module[ { namedSplit, defaults, pairs, as },
+        namedSplit = StringSplit[ argString, StartOfLine ~~ (" "|"\t"|"")... ~~ p: paramNames ~~ $$argNameDelimiter :> p ];
         If[ OddQ @ Length @ namedSplit, Throw @ parseSimpleToolCallParameterStrings0[ paramNames, argString ] ];
         defaults = AssociationMap[ "" &, paramNames ];
         pairs = ConfirmMatch[ Partition[ namedSplit, 2 ], { { _String, _String } .. }, "Pairs" ];
-        ConfirmBy[ <| defaults, Rule @@@ pairs |>, AssociationQ, "Parameters" ]
+        as = ConfirmBy[ <| defaults, Rule @@@ pairs |>, AssociationQ, "Parameters" ];
+        ConfirmBy[ trimSimpleParameterString /@ as, AllTrue @ StringQ, "Result" ]
     ],
     throwInternalFailure
 ];
@@ -873,15 +877,34 @@ parseSimpleToolCallParameterStrings // endDefinition;
 parseSimpleToolCallParameterStrings0 // beginDefinition;
 
 parseSimpleToolCallParameterStrings0[ paramNames: { __String }, argString_String ] := Enclose[
-    Module[ { split, padded },
+    Module[ { split, padded, threaded },
         split = StringSplit[ argString, "\n" ];
         padded = PadRight[ split, Length @ paramNames, "" ];
-        ConfirmBy[ AssociationThread[ paramNames -> padded ], AssociationQ, "Parameters" ]
+        threaded = ConfirmBy[ AssociationThread[ paramNames -> padded ], AssociationQ, "Parameters" ];
+        ConfirmBy[ trimSimpleParameterString /@ threaded, AllTrue @ StringQ, "Result" ]
     ],
     throwInternalFailure
 ];
 
 parseSimpleToolCallParameterStrings0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*trimSimpleParameterString*)
+trimSimpleParameterString // beginDefinition;
+
+trimSimpleParameterString[ s_String ] := StringDelete[
+    s,
+    {
+        StartOfString ~~ Alternatives[
+            WhitespaceCharacter... ~~ "|" ~~ WhitespaceCharacter... ~~ "\n" ~~ WhitespaceCharacter...,
+            WhitespaceCharacter...
+        ],
+        WhitespaceCharacter... ~~ EndOfString
+    }
+];
+
+trimSimpleParameterString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1076,7 +1099,19 @@ arg1
 arg2
 /exec
 
-After you write /exec, the system will execute the tool call for you and return the result.";
+After you write /exec, the system will execute the tool call for you and return the result.
+
+If your arguments require multiple lines, specify the name of each argument followed by a colon and a space, \
+then the value:
+
+/command
+arg1: value that
+spans multiple
+lines
+arg2: another
+value
+/exec
+";
 
 
 $simpleToolPost = "\
@@ -1214,9 +1249,50 @@ $toolFrequencyExplanations = <|
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Tool Properties*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getToolIcon*)
+getToolIcon // beginDefinition;
+getToolIcon[ tool: $$llmTool ] := getToolIcon @ toolData @ tool;
+getToolIcon[ as_Association ] := Lookup[ toolData @ as, "Icon", RawBoxes @ TemplateBox[ { }, "WrenchIcon" ] ];
+getToolIcon[ _ ] := $defaultToolIcon;
+getToolIcon // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getToolDisplayName*)
+getToolDisplayName // beginDefinition;
+
+getToolDisplayName[ tool_ ] :=
+    getToolDisplayName[ tool, Missing[ "NotFound" ] ];
+
+getToolDisplayName[ tool: $$llmTool, default_ ] :=
+    getToolDisplayName @ toolData @ tool;
+
+getToolDisplayName[ as_Association, default_ ] :=
+    Lookup[ as, "DisplayName", toDisplayToolName @ Lookup[ as, "Name", default ] ];
+
+getToolDisplayName[ _, default_ ] :=
+    default;
+
+getToolDisplayName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getToolFormattingFunction*)
+getToolFormattingFunction // beginDefinition;
+getToolFormattingFunction[ HoldPattern @ LLMTool[ as_, ___ ] ] := getToolFormattingFunction @ as;
+getToolFormattingFunction[ as_Association ] := Lookup[ as, "FormattingFunction", Automatic ];
+getToolFormattingFunction[ _ ] := Automatic;
+getToolFormattingFunction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
-    Null
+    $toolConfiguration;
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)

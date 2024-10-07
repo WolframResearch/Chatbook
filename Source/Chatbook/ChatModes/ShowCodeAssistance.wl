@@ -12,16 +12,42 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (*Configuration*)
 $workspaceChatWidth = 325;
 
-$workspaceChatNotebookOptions = Sequence[
+$codeAssistanceBaseSettings = <|
+    "AppName"           -> "CodeAssistance",
+    "Authentication"    -> Automatic, (* TODO *)
+    "Model"             -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>,
+    "PromptGenerators"  -> { "RelatedDocumentation" },
+    "ServiceCaller"     -> "CodeAssistance",
+    "ToolOptions"       -> <| "WolframLanguageEvaluator" -> <| "AppendURIPrompt" -> True, "Method" -> "Session" |> |>,
+    "Tools"             -> { "NotebookEditor" },
+    "ToolSelectionType" -> <| "DocumentationLookup" -> None, "DocumentationSearcher" -> None |>
+|>;
+
+$codeAssistanceWorkspaceSettings := <|
+    $codeAssistanceBaseSettings,
+    "AutoGenerateTitle" -> True,
+    "ConversationUUID"  -> CreateUUID[ ]
+|>;
+
+$codeAssistanceInlineSettings := <|
+    $codeAssistanceBaseSettings,
+    "AutoGenerateTitle"     -> False,
+    "AutoSaveConversations" -> False
+|>;
+
+$workspaceChatNotebookOptions := Sequence[
     DefaultNewCellStyle -> "AutoMoveToChatInputField",
-    StyleDefinitions    -> FrontEnd`FileName[ { "Wolfram" }, "WorkspaceChat.nb", CharacterEncoding -> "UTF-8" ]
+    StyleDefinitions    -> FrontEnd`FileName[ { "Wolfram" }, "WorkspaceChat.nb", CharacterEncoding -> "UTF-8" ],
+    TaggingRules        -> <| "ChatNotebookSettings" -> $codeAssistanceWorkspaceSettings |>
 ];
+
+(* TODO: set $serviceCaller from chat settings *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*EnableCodeAssistance*)
 EnableCodeAssistance // beginDefinition;
-EnableCodeAssistance[ ] := catchMine @ Once[ enableCodeAssistance[ ]; Null, "FrontEndSession" ];
+EnableCodeAssistance[ ] := catchMine @ (enableCodeAssistance[ ]; Null);
 EnableCodeAssistance // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -29,36 +55,88 @@ EnableCodeAssistance // endExportedDefinition;
 (*enableCodeAssistance*)
 enableCodeAssistance // beginDefinition;
 
-enableCodeAssistance[ ] := FrontEndExecute @ {
-    FrontEnd`AddMenuCommands[
-        "OpenHelpLink",
-        {
-            MenuItem[
-                "Code Assistance Chat\[Ellipsis]",
-                FrontEnd`KernelExecute[
-                    Needs[ "Wolfram`Chatbook`" -> None ];
-                    Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Window" ]
+enableCodeAssistance[ ] :=
+    enableCodeAssistance[ $VersionNumber >= 14.1 ];
+
+enableCodeAssistance[ True ] := Once[
+    FrontEndExecute @ {
+        FrontEnd`AddMenuCommands[
+            "OpenHelpLink",
+            {
+                MenuItem[
+                    "Code Assistance Chat\[Ellipsis]",
+                    FrontEnd`KernelExecute[
+                        Needs[ "Wolfram`Chatbook`" -> None ];
+                        Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Window" ]
+                    ],
+                    FrontEnd`MenuEvaluator -> Automatic,
+                    Evaluate[
+                        If[ $OperatingSystem === "MacOSX",
+                            FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Control } ],
+                            FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Command } ]
+                        ]
+                    ]
                 ],
-                FrontEnd`MenuEvaluator -> Automatic,
-                Evaluate[
-                    If[ $OperatingSystem === "MacOSX",
-                        FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Control } ],
-                        FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Command } ]
+                MenuItem[
+                    "Code Assistance for Selection",
+                    FrontEnd`KernelExecute[
+                        Needs[ "Wolfram`Chatbook`" -> None ];
+                        Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Inline" ]
+                    ],
+                    FrontEnd`MenuEvaluator -> Automatic,
+                    FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Control, FrontEnd`Shift } ]
+                ]
+            }
+        ],
+        FrontEnd`AddMenuCommands[
+            "DuplicatePreviousOutput",
+            {
+                MenuItem[
+                    "AI Content Suggestion",
+                    FrontEnd`KernelExecute[
+                        Needs[ "Wolfram`Chatbook`" -> None ];
+                        Symbol[ "Wolfram`Chatbook`ShowContentSuggestions" ][ ]
+                    ],
+                    FrontEnd`MenuEvaluator -> Automatic,
+                    Evaluate[
+                        If[ $OperatingSystem === "MacOSX",
+                            FrontEnd`MenuKey[ "k", FrontEnd`Modifiers -> { FrontEnd`Control } ],
+                            FrontEnd`MenuKey[ "k", FrontEnd`Modifiers -> { FrontEnd`Command } ]
+                        ]
+                    ],
+                    Method -> "Queued"
+                ]
+            }
+        ]
+    },
+    "FrontEndSession"
+];
+
+(* When attachment to selection is not available, we can't do inline chat or content suggestions: *)
+enableCodeAssistance[ False ] := Once[
+    FrontEndExecute @ {
+        FrontEnd`AddMenuCommands[
+            "OpenHelpLink",
+            {
+                MenuItem[
+                    "Code Assistance Chat\[Ellipsis]",
+                    FrontEnd`KernelExecute[
+                        Needs[ "Wolfram`Chatbook`" -> None ];
+                        Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Window" ]
+                    ],
+                    FrontEnd`MenuEvaluator -> Automatic,
+                    Evaluate[
+                        If[ $OperatingSystem === "MacOSX",
+                            FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Control } ],
+                            FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Command } ]
+                        ]
                     ]
                 ]
-            ],
-            MenuItem[
-                "Code Assistance for Selection",
-                FrontEnd`KernelExecute[
-                    Needs[ "Wolfram`Chatbook`" -> None ];
-                    Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Inline" ]
-                ],
-                FrontEnd`MenuEvaluator -> Automatic,
-                FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Control, FrontEnd`Shift } ]
-            ]
-        }
-    ]
-};
+            }
+        ]
+    },
+    "FrontEndSession"
+];
 
 enableCodeAssistance // endDefinition;
 
@@ -67,8 +145,11 @@ enableCodeAssistance // endDefinition;
 (*ShowCodeAssistance*)
 ShowCodeAssistance // beginDefinition;
 ShowCodeAssistance[ ] := catchMine @ ShowCodeAssistance[ "Window" ];
-ShowCodeAssistance[ "Window" ] := catchMine @ showCodeAssistanceWindow @ getUserNotebook[ ];
-ShowCodeAssistance[ "Inline" ] := catchMine @ showCodeAssistanceInline @ InputNotebook[ ];
+ShowCodeAssistance[ nbo_NotebookObject ] := catchMine @ showCodeAssistanceWindow @ nbo;
+ShowCodeAssistance[ "Window" ] := catchMine @ ShowCodeAssistance[ getUserNotebook[ ], "Window" ];
+ShowCodeAssistance[ "Inline" ] := catchMine @ ShowCodeAssistance[ InputNotebook[ ], "Inline" ];
+ShowCodeAssistance[ nbo_NotebookObject, "Window" ] := catchMine @ showCodeAssistanceWindow @ nbo;
+ShowCodeAssistance[ nbo_NotebookObject, "Inline" ] := catchMine @ showCodeAssistanceInline @ nbo;
 ShowCodeAssistance // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -79,7 +160,7 @@ ShowCodeAssistance // endExportedDefinition;
 (* ::Subsection::Closed:: *)
 (*showCodeAssistanceInline*)
 showCodeAssistanceInline // beginDefinition;
-showCodeAssistanceInline[ nbo_NotebookObject ] := attachInlineChatInput @ nbo;
+showCodeAssistanceInline[ nbo_NotebookObject ] := attachInlineChatInput[ nbo, $codeAssistanceInlineSettings ];
 showCodeAssistanceInline[ _ ] := MessageDialog[ "No notebook selected." ];
 showCodeAssistanceInline // endDefinition;
 
@@ -142,7 +223,10 @@ attachToLeft[ source_NotebookObject, current_NotebookObject ] := Enclose[
             WindowSize    -> { $workspaceChatWidth, Automatic }
         ];
 
-        SetSelectedNotebook @ current
+        SetSelectedNotebook @ current;
+        moveToChatInputField[ current, True ];
+
+        current
     ],
     throwInternalFailure
 ];
@@ -175,8 +259,8 @@ findCurrentWorkspaceChat // endDefinition;
 (* ::Section::Closed:: *)
 (*CreateWorkspaceChat*)
 CreateWorkspaceChat // beginDefinition;
-CreateWorkspaceChat[ ] := catchMine @ createWorkspaceChat[ ];
-CreateWorkspaceChat[ nbo_NotebookObject ] := catchMine @ createWorkspaceChat @ nbo;
+CreateWorkspaceChat[ ] := catchMine @ LogChatTiming @ createWorkspaceChat[ ];
+CreateWorkspaceChat[ nbo_NotebookObject ] := catchMine @ LogChatTiming @ createWorkspaceChat @ nbo;
 CreateWorkspaceChat // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)

@@ -158,6 +158,10 @@ cicd`ScriptConfirm @ expandTags @ tmp;
 cicd`ConsoleLog[ "Loading paclet..." ];
 PacletDirectoryUnload @ $pacletDir;
 cicd`ScriptConfirmBy[ PacletDirectoryLoad @ tmp, MemberQ @ tmp ];
+Unprotect[ "Wolfram`Chatbook`*" ];
+Remove[ "Wolfram`Chatbook`*" ];
+Remove[ "Wolfram`Chatbook`*`*" ];
+cicd`ScriptConfirmAssert[ Names[ "Wolfram`Chatbook`*" ] === Names[ "Wolfram`Chatbook`*`*" ] === { }, "Names" ];
 cicd`ScriptConfirm @ CheckAbort[ Get[ "Wolfram`Chatbook`" ], $Failed ];
 
 cicd`ScriptConfirmMatch[ DeleteDirectory[ tmp, DeleteContents -> True ], Null ];

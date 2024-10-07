@@ -106,18 +106,25 @@ $fallbackModelList = { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4" };
 (* ::Subsection::Closed:: *)
 (*chatModelQ*)
 chatModelQ // beginDefinition;
-chatModelQ[ _? (modelContains[ "instruct" ]) ] := False;
-chatModelQ[ _? (modelContains[ StartOfString~~("gpt"|"ft:gpt") ]) ] := True;
+chatModelQ[ wordsPattern[ "instruct"|"realtime" ] ] := False;
+chatModelQ[ wordsPattern[ StartOfString~~("gpt"|"ft:gpt"|"chatgpt-4o") ] ] := True;
 chatModelQ[ _String ] := False;
 chatModelQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*modelContains*)
-modelContains // beginDefinition;
-modelContains[ patt_ ] := modelContains[ #, patt ] &;
-modelContains[ m_String, patt_ ] := StringContainsQ[ m, WordBoundary~~patt~~WordBoundary, IgnoreCase -> True ];
-modelContains // endDefinition;
+(* ::Subsection::Closed:: *)
+(*o1ModelQ*)
+o1ModelQ // beginDefinition;
+
+o1ModelQ[ model_ ] := Enclose[
+    o1ModelQ[ model ] = StringContainsQ[
+        ConfirmBy[ toModelName @ model, StringQ, "Name" ],
+        WordBoundary~~"o1"~~WordBoundary
+    ],
+    throwInternalFailure
+];
+
+o1ModelQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -129,8 +136,21 @@ modelName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*serviceName*)
+serviceName // beginDefinition;
+serviceName[ KeyValuePattern[ "Model" -> model_ ] ] := serviceName @ model;
+serviceName[ { service_String, _String | $$unspecified } ] := service;
+serviceName[ KeyValuePattern[ "Service" -> service_String ] ] := service;
+serviceName[ _String | _Association | $$unspecified ] := "OpenAI";
+serviceName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*toModelName*)
 toModelName // beginDefinition;
+
+toModelName[ KeyValuePattern[ "Model" -> model_ ] ] :=
+    toModelName @ model;
 
 toModelName[ KeyValuePattern @ { "Service" -> service_, "Name"|"Model" -> model_ } ] :=
     toModelName @ { service, model };
@@ -193,7 +213,7 @@ multimodalModelQ[ "gpt-4-turbo" ] :=
 multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "claude-3" ] :=
     True;
 
-multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4o"|"gpt-4o-mini" ] :=
+multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4o"|"gpt-4o-mini"|"chatgpt-4o" ] :=
     True;
 
 multimodalModelQ[ name_String? StringQ ] /; StringStartsQ[ name, "gpt-4-turbo-" ] :=
@@ -219,6 +239,7 @@ modelNameData[ data: KeyValuePattern @ {
     "BaseName"     -> _String,
     "Date"         -> _? modelDateSpecQ | None,
     "Preview"      -> True|False,
+    "Family"       -> _String|None,
     "FineTuned"    -> True|False,
     "FineTuneName" -> _String|None,
     "Organization" -> _String|None,
@@ -237,6 +258,7 @@ modelNameData[ model0_ ] := Enclose[
             "Name"         -> model,
             "Date"         -> None,
             "Preview"      -> False,
+            "Family"       -> None,
             "FineTuned"    -> False,
             "FineTuneName" -> None,
             "Organization" -> None,
@@ -254,6 +276,7 @@ modelNameData[ model0_ ] := Enclose[
 
         data = <| defaults, data |>;
         data[ "DisplayName" ] = ConfirmBy[ createModelDisplayName @ data, StringQ, "DisplayName" ];
+        data[ "Family" ] = ConfirmMatch[ chooseModelFamily @ data, _String | None, "Family" ];
         data //= KeySort;
 
         modelNameData[ model0 ] = ConfirmBy[ data, AssociationQ, "FullData" ]
@@ -271,6 +294,9 @@ modelNameData0[ model_String ] :=
         StringReplace[ model, "claude-"~~a:DigitCharacter..~~"-"~~b:DigitCharacter.. :> "claude-"<>a<>"."<>b ],
         "-"|" "
     ];
+
+modelNameData0[ { before___, "chatgpt", after___ } ] :=
+    modelNameData0 @ { before, "ChatGPT", after };
 
 modelNameData0[ { "gpt", rest___ } ] :=
     modelNameData0 @ { "GPT", rest };
@@ -301,10 +327,42 @@ modelNameData0[ { "GPT", version_String, rest___ } ] /; StringStartsQ[ version, 
 modelNameData0[ { "GPT-4o", rest___ } ] :=
     modelNameData0 @ { "GPT-4", "Omni", rest };
 
+modelNameData0[ { before___, gpt_String, "4o", after___ } ] /; StringEndsQ[ gpt, "gpt", IgnoreCase -> True ] :=
+    modelNameData0 @ { before, gpt<>"-4", "Omni", after };
+
 modelNameData0[ parts: { __String } ] :=
 	<| "BaseName" -> StringRiffle @ Capitalize @ parts |>;
 
 modelNameData0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*chooseModelFamily*)
+$$version         = ("v"|"") ~~ DigitCharacter.. ~~ Repeated[ "." ~~ DigitCharacter.., { 0, Infinity } ];
+$$parameterCount0 = DigitCharacter.. ~~ Repeated[ "." ~~ DigitCharacter.., { 0, Infinity } ] ~~ ("b"|"m"|"");
+$$parameterCount  = ((DigitCharacter.. ~~ "x") | "") ~~ $$parameterCount0;
+$$versionOrParams = $$version | $$parameterCount | "";
+
+chooseModelFamily // beginDefinition;
+chooseModelFamily[ as_Association ] := chooseModelFamily @ as[ "Name" ];
+chooseModelFamily[ name_String ] := chooseModelFamily[ name ] = chooseModelFamily0 @ name;
+chooseModelFamily // endDefinition;
+
+chooseModelFamily0 // beginDefinition;
+(* cSpell: ignore Qwen, Nemotron *)
+chooseModelFamily0[ wordsPattern[ "Phi"       ~~ $$versionOrParams ] ] := "Phi";
+chooseModelFamily0[ wordsPattern[ "Llama"     ~~ $$versionOrParams ] ] := "Llama";
+chooseModelFamily0[ wordsPattern[ "Gemma"     ~~ $$versionOrParams ] ] := "Gemma";
+chooseModelFamily0[ wordsPattern[ "CodeGemma" ~~ $$versionOrParams ] ] := "Gemma";
+chooseModelFamily0[ wordsPattern[ "Qwen"      ~~ $$versionOrParams ] ] := "Qwen";
+chooseModelFamily0[ wordsPattern[ "Nemotron"  ~~ $$versionOrParams ] ] := "Nemotron";
+chooseModelFamily0[ wordsPattern[ "Mistral"   ~~ $$versionOrParams ] ] := "Mistral";
+
+chooseModelFamily0[ wordsPattern[ { "DeepSeek", "Coder", $$versionOrParams } ] ] := "DeepSeekCoder";
+
+chooseModelFamily0[ _String ] := None;
+
+chooseModelFamily0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -481,7 +539,7 @@ modelIcon[ name_String ] /; StringStartsQ[ name, "ft:" ] :=
 modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-3.5" ] :=
     RawBoxes @ TemplateBox[ { }, "ModelGPT35" ];
 
-modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-4" ] :=
+modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-4"|"chatgpt-4" ] :=
     RawBoxes @ TemplateBox[ { }, "ModelGPT4" ];
 
 modelIcon[ name_String ] :=

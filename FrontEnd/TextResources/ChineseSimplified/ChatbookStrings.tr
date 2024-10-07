@@ -75,6 +75,7 @@
 "PersonaManagerInstallPersonas" -> "\:5B89\:88C5\:89D2\:8272",
 "PersonaManagerInstallFrom" -> "\:4ECE\:6B64\:5904\:5B89\:88C5\:ff1a",
 "PersonaManagerInstallFromPromptRepo" -> "\:63D0\:793A\:8BCD\:5B58\:50A8\:5E93 \[UpperRightArrow]",
+"PersonaManagerInstallFromFile" -> "Definition Notebook",
 "PersonaManagerManagePersonas" -> "\:7BA1\:7406\:548C\:542F\:7528\:89D2\:8272",
 "PersonaManagerInMenu" -> "\:5305\:62EC\:5728\:83DC\:5355\:4E2D",
 "PersonaManagerName" -> "\:540D\:5B57",
@@ -113,11 +114,13 @@
 "PreferencesContentOpenAICompletionURLLabel" -> "\:804A\:5929\:8865\:5168 URL\:ff1a",
 
 "ResourceInstallerFromURLPrompt" -> "\:8F93\:5165 URL",
+"ResourceInstallerFromFilePrompt" -> "Choose a Resource Definition Notebook",
 
 "ToolManagerTitle" -> "\:6DFB\:52A0\:548C\:7BA1\:7406 LLM \:5DE5\:5177",
 "ToolManagerInstallTools" -> "\:5B89\:88C5\:5DE5\:5177",
 "ToolManagerInstallFrom" -> "\:4ECE\:6B64\:5904\:5B89\:88C5\:ff1a",
 "ToolManagerInstallFromLLMToolRepo" -> "LLM \:5DE5\:5177\:5E93 \[UpperRightArrow]",
+"ToolManagerInstallFromFile" -> "Definition Notebook",
 "ToolManagerManageTools" -> "\:7BA1\:7406\:548C\:542F\:7528\:5DE5\:5177",
 "ToolManagerShowEnabledFor" -> "\:663E\:793A\:542F\:7528\:7684\:5DE5\:5177\:ff1a",
 "ToolManagerTool" -> "\:5DE5\:5177",
@@ -162,6 +165,8 @@
 "StylesheetCopyChatObject" -> "\:590D\:5236 ChatObject",
 "StylesheetInsertionMenuChatInput" -> "\:804A\:5929\:8F93\:5165",
 "StylesheetInsertionMenuSideChat" -> "\:79C1\:804A",
+"StylesheetContextMenuAskAI" -> "Ask AI Assistant",
+"StylesheetContextMenuIncludeExclude" -> "Include/Exclude From AI Chat",
 
 "PersonaNameBirdnardo" -> "Birdnardo",
 "PersonaNameCodeAssistant" -> "\:4EE3\:7801\:52A9\:624B",

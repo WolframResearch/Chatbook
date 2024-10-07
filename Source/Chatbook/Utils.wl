@@ -11,6 +11,9 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (*Config*)
 $tinyHashLength = 5;
 
+$messageToStringDelimiter = "\n\n";
+$messageToStringTemplate  = StringTemplate[ "`Role`: `Content`" ];
+
 (* cSpell: ignore deflatten *)
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -39,6 +42,61 @@ importResourceFunction[ selectByCurrentValue, "SelectByCurrentValue" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Strings*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*messagesToString*)
+messagesToString // beginDefinition;
+
+messagesToString // Options = {
+    "IncludeSystemMessage"     -> False,
+    "IncludeTemporaryMessages" -> False,
+    "MessageDelimiter"         -> $messageToStringDelimiter,
+    "MessageTemplate"          -> $messageToStringTemplate
+};
+
+messagesToString[ { }, opts: OptionsPattern[ ] ] :=
+    "";
+
+messagesToString[ messages0_, opts: OptionsPattern[ ] ] := Enclose[
+    Catch @ Module[ { messages, system, temporary, template, delimiter, reverted, strings },
+
+        messages = ConfirmMatch[ messages0, $$chatMessages, "Messages" ];
+
+        (* Check if the system messages should be included: *)
+        system = ConfirmMatch[ OptionValue[ "IncludeSystemMessage" ], True|False, "System" ];
+        If[ ! system, messages = Replace[ messages, { KeyValuePattern[ "Role" -> "System" ], m___ } :> { m } ] ];
+        If[ messages === { }, Throw[ "" ] ];
+
+        (* Check if the temporary messages should be included: *)
+        temporary = ConfirmMatch[ OptionValue[ "IncludeTemporaryMessages" ], True|False, "Temporary" ];
+        If[ ! temporary, messages = DeleteCases[ messages, KeyValuePattern[ "Temporary" -> True ] ] ];
+        If[ messages === { }, Throw[ "" ] ];
+
+        template = ConfirmMatch[ OptionValue[ "MessageTemplate" ], _String|_TemplateObject|None, "Template" ];
+        delimiter = ConfirmMatch[ OptionValue[ "MessageDelimiter" ], _String, "Delimiter" ];
+
+        reverted = ConfirmMatch[
+            revertMultimodalContent @ messages,
+            { KeyValuePattern[ "Content" -> _String ].. },
+            "Reverted"
+        ];
+
+        strings = ConfirmMatch[
+            If[ template === None, Lookup[ reverted, "Content" ], TemplateApply[ template, # ] & /@ reverted ],
+            { __String },
+            "Strings"
+        ];
+
+        ConfirmBy[ StringRiffle[ strings, delimiter ], StringQ, "Result" ]
+    ],
+    throwInternalFailure
+];
+
+messagesToString[ { messages__ }, assistant_String, opts: OptionsPattern[ ] ] :=
+    messagesToString[ { messages, <| "Role" -> "Assistant", "Content" -> assistant |> }, opts ];
+
+messagesToString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -90,6 +148,15 @@ makeFailureString[ failure: Failure[ tag_, as_Association ] ] := Enclose[
 ];
 
 makeFailureString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*containsWordsQ*)
+containsWordsQ // beginDefinition;
+containsWordsQ[ p_ ] := containsWordsQ[ #, p ] &;
+containsWordsQ[ m_String, p_List ] := containsWordsQ[ m, StringExpression @@ Riffle[ p, Except[ WordCharacter ]... ] ];
+containsWordsQ[ m_String, p_ ] := StringContainsQ[ m, WordBoundary~~p~~WordBoundary, IgnoreCase -> True ];
+containsWordsQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -151,113 +218,6 @@ fastFileHash // beginDefinition;
 fastFileHash[ file_ ] := fastFileHash[ file, ReadByteArray @ file ];
 fastFileHash[ file_, bytes_ByteArray ] := Hash @ bytes;
 fastFileHash // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*Graphics*)
-$$graphics = HoldPattern @ Alternatives[
-    _System`AstroGraphics,
-    _GeoGraphics,
-    _Graphics,
-    _Graphics3D,
-    _Image,
-    _Image3D,
-    _Legended
-];
-
-$$definitelyNotGraphics = HoldPattern @ Alternatives[
-    _Association,
-    _CloudObject,
-    _File,
-    _List,
-    _String,
-    _URL,
-    Null,
-    True|False
-];
-
-$$graphicsBoxIgnoredHead = HoldPattern @ Alternatives[
-    BoxData,
-    Cell,
-    FormBox,
-    PaneBox,
-    StyleBox,
-    TagBox
-];
-
-$$graphicsBoxIgnoredTemplates = Alternatives[
-    "Labeled",
-    "Legended"
-];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*graphicsQ*)
-graphicsQ[ $$graphics              ] := True;
-graphicsQ[ $$definitelyNotGraphics ] := False;
-graphicsQ[ RawBoxes[ boxes_ ]      ] := graphicsBoxQ @ Unevaluated @ boxes;
-graphicsQ[ g_                      ] := MatchQ[ Quiet @ Show @ Unevaluated @ g, $$graphics ];
-graphicsQ[ ___                     ] := False;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*graphicsBoxQ*)
-graphicsBoxQ[ _GraphicsBox|_Graphics3DBox ] := True;
-graphicsBoxQ[ $$graphicsBoxIgnoredHead[ box_, ___ ] ] := graphicsBoxQ @ Unevaluated @ box;
-graphicsBoxQ[ TemplateBox[ { box_, ___ }, $$graphicsBoxIgnoredTemplates, ___ ] ] := graphicsBoxQ @ Unevaluated @ box;
-graphicsBoxQ[ RowBox[ boxes_List ] ] := AnyTrue[ boxes, graphicsBoxQ ];
-graphicsBoxQ[ TemplateBox[ boxes_List, "RowDefault", ___ ] ] := AnyTrue[ boxes, graphicsBoxQ ];
-graphicsBoxQ[ GridBox[ boxes_List, ___ ] ] := AnyTrue[ Flatten @ boxes, graphicsBoxQ ];
-graphicsBoxQ[ ___ ] := False;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*validGraphicsQ*)
-validGraphicsQ[ g_? graphicsQ ] := getPinkBoxErrors @ Unevaluated @ g === { };
-validGraphicsQ[ ___ ] := False;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*getPinkBoxErrors*)
-getPinkBoxErrors // beginDefinition;
-(* TODO: hook this up to evaluator outputs and CellToString to give feedback about pink boxes *)
-
-getPinkBoxErrors[ { } ] :=
-    { };
-
-getPinkBoxErrors[ cells: _CellObject | { __CellObject } ] :=
-    getPinkBoxErrors @ NotebookRead @ cells;
-
-getPinkBoxErrors[ cells: _Cell | { __Cell } ] :=
-    Module[ { nbo },
-        UsingFrontEnd @ WithCleanup[
-            nbo = NotebookPut[ Notebook @ Flatten @ { cells }, Visible -> False ],
-            SelectionMove[ nbo, All, Notebook ];
-            MathLink`CallFrontEnd @ FrontEnd`GetErrorsInSelectionPacket @ nbo,
-            NotebookClose @ nbo
-        ]
-    ];
-
-getPinkBoxErrors[ data: _TextData | _BoxData | { __BoxData } ] :=
-    getPinkBoxErrors @ Cell @ data;
-
-getPinkBoxErrors[ exprs_List ] :=
-    getPinkBoxErrors[ Cell @* BoxData /@ MakeBoxes /@ Unevaluated @ exprs ];
-
-getPinkBoxErrors[ expr_ ] :=
-    getPinkBoxErrors @ { Cell @ BoxData @ MakeBoxes @ expr };
-
-getPinkBoxErrors // endDefinition;
-
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*image2DQ*)
-(* Matches against the head in addition to checking ImageQ to avoid passing Image3D when a 2D image is expected: *)
-image2DQ // beginDefinition;
-image2DQ[ _Image? ImageQ ] := True;
-image2DQ[ _              ] := False;
-image2DQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -418,6 +378,96 @@ tinyHash // beginDefinition;
 tinyHash[ e_ ] := tinyHash[ Unevaluated @ e, $tinyHashLength ];
 tinyHash[ e_, n_ ] := StringTake[ IntegerString[ Hash @ Unevaluated @ e, 36 ], -n ];
 tinyHash // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*$ChatTimingData*)
+$ChatTimingData := chatTimingData[ ];
+
+$ChatTimingData /: Unset @ $ChatTimingData := ($timingLog = Internal`Bag[ ]; Null);
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatTimingData*)
+chatTimingData // beginDefinition;
+chatTimingData[ ] := SortBy[ Internal`BagPart[ $timingLog, All ], Lookup[ "AbsoluteTime" ] ]; (* TODO: format this data *)
+chatTimingData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*LogChatTiming*)
+LogChatTiming // beginDefinition;
+LogChatTiming // Attributes = { HoldFirst, SequenceHold };
+
+LogChatTiming[ tag_String ] := Function[ eval, LogChatTiming[ eval, tag ], HoldAllComplete ];
+LogChatTiming[ sym_Symbol ] := LogChatTiming @ Evaluate @ Capitalize @ SymbolName @ sym;
+LogChatTiming[ tags_List ] := LogChatTiming @ Evaluate @ StringRiffle[ tags, ":" ];
+LogChatTiming[ eval: (h_Symbol)[ ___ ] ] := LogChatTiming[ eval, Capitalize @ SymbolName @ h ];
+LogChatTiming[ eval_ ] := LogChatTiming[ eval, "None" ];
+
+LogChatTiming[ eval_, tag_String ] := (
+    If[ ! NumberQ @ $chatStartTime, $chatStartTime = AbsoluteTime[ ] ];
+    If[ ! StringQ @ $chatEvaluationID, $chatEvaluationID = CreateUUID[ ] ];
+    If[ MatchQ[ $timings, _Internal`Bag ],
+        logChatTiming[ eval, tag ],
+        Block[ { $timings = Internal`Bag[ ] },
+            logChatTiming[ eval, tag ]
+        ]
+    ]
+);
+
+LogChatTiming // endExportedDefinition;
+
+$timings   = Internal`Bag[ ];
+$timingLog = Internal`Bag[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*logChatTiming*)
+logChatTiming // beginDefinition;
+logChatTiming // Attributes = { HoldFirst, SequenceHold };
+
+logChatTiming[ eval_, tag_String ] :=
+    Module[ { now, absNow, result, fullTime, innerTimings, usedTime },
+
+        now    = chatTime[ ];
+        absNow = AbsoluteTime[ ];
+
+        Block[ { $timings = Internal`Bag[ ] },
+            fullTime = First @ AbsoluteTiming[ result = eval ];
+            innerTimings = Internal`BagPart[ $timings, All ];
+        ];
+
+        usedTime = fullTime - Total @ innerTimings;
+        Internal`StuffBag[ $timings, fullTime ];
+
+        Internal`StuffBag[
+            $timingLog,
+            <|
+                "ChatEvaluationCell" -> $ChatEvaluationCell,
+                "Tag"                -> tag,
+                "UsedTiming"         -> usedTime,
+                "FullTiming"         -> fullTime,
+                "ChatTime"           -> now,
+                "AbsoluteTime"       -> absNow,
+                "UUID"               -> $chatEvaluationID
+            |>
+        ];
+
+        result;
+        result
+    ];
+
+logChatTiming // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatTime*)
+chatTime // beginDefinition;
+chatTime[ ] := chatTime @ $chatStartTime;
+chatTime[ start_Real ] := AbsoluteTime[ ] - start;
+chatTime[ _ ] := Missing[ "NotAvailable" ];
+chatTime // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
