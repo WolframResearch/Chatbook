@@ -15,6 +15,10 @@ $suggestionsAuthentication = Automatic;
 $stripWhitespace           = True;
 $defaultWLContextString    = "";
 
+$inputStyle      = "Input";
+$$inputStyle     = "Input"|"Code";
+$$generatedStyle = "Echo"|"EchoAfter"|"EchoBefore"|"EchoTiming"|"Message"|"Output"|"Print";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Wolfram Language Suggestions*)
@@ -86,6 +90,7 @@ Complete the following by writing text that can be inserted into \"%%Placeholder
 The current cell style is \"%%Style%%\", so only write content that would be appropriate for this cell type.\
 %%StyleNotes%%
 Do your best to match the existing style (whitespace, line breaks, etc.).
+Write built-in Wolfram Language symbols as markdown links: [Table](paclet:ref/Table).
 Your suggested text will be inserted into %%Placeholder%%, so be careful not to repeat the immediately surrounding text.
 Respond with the completion text and nothing else.",
 Delimiters -> "%%" ];
@@ -102,8 +107,20 @@ $notebookPlaceholderString      = "\:2758";
 $notebookCellsBefore            = 50;
 $notebookCellsAfter             = 25;
 
-$notebookSuggestionsPrompt = StringTemplate[ "\
+$notebookSuggestionsPrompt := If[ $inputStyle === "Code", $packageSuggestionsPrompt, $notebookSuggestionsPrompt0 ];
+
+$notebookSuggestionsPrompt0 = StringTemplate[ "\
 Complete the following by writing markdown text that can be inserted into \"%%Placeholder%%\".
+Do your best to match the existing style (whitespace, line breaks, etc.).
+Write built-in Wolfram Language symbols as markdown links: [Table](paclet:ref/Table).
+Your suggested text will be inserted into %%Placeholder%%, so be careful not to repeat the immediately surrounding text.
+Respond with the completion text and nothing else.
+
+%%RelatedDocumentation%%",
+Delimiters -> "%%" ];
+
+$packageSuggestionsPrompt = StringTemplate[ "\
+Complete the following by writing text that can be inserted into \"%%Placeholder%%\".
 Do your best to match the existing style (whitespace, line breaks, etc.).
 Your suggested text will be inserted into %%Placeholder%%, so be careful not to repeat the immediately surrounding text.
 Respond with the completion text and nothing else.
@@ -619,7 +636,10 @@ postProcessWLSuggestions[ suggestion_String ] := Enclose[
         noOutputs = StringDelete[
             StringDelete[
                 suggestion,
-                "```" ~~ Except[ "\n" ]... ~~ WhitespaceCharacter... ~~ $$outLabel ~~ ___ ~~ EndOfString
+                {
+                    $wlPlaceholderString,
+                    "```" ~~ Except[ "\n" ]... ~~ WhitespaceCharacter... ~~ $$outLabel ~~ ___ ~~ EndOfString
+                }
             ],
             $$outLabel ~~ ___ ~~ EndOfString
         ];
@@ -766,10 +786,20 @@ getTextSuggestions // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*postProcessTextSuggestions*)
 postProcessTextSuggestions // beginDefinition;
-postProcessTextSuggestions[ suggestions_List ] := postProcessTextSuggestions /@ suggestions;
-postProcessTextSuggestions[ s_String ] := postProcessTextSuggestions[ s, FormatChatOutput @ s ];
-postProcessTextSuggestions[ s_, RawBoxes[ cell_Cell ] ] := postProcessTextSuggestions[ s, ExplodeCell @ cell ];
-postProcessTextSuggestions[ s_, { cell_Cell, ___ } ] := toTextData @ cell;
+
+postProcessTextSuggestions[ suggestions_List ] :=
+    postProcessTextSuggestions /@ suggestions;
+
+(* FIXME: need to create an option for FormatChatOutput to control $stripWhitespace *)
+postProcessTextSuggestions[ s_String ] :=
+    postProcessTextSuggestions[ s, FormatChatOutput @ StringDelete[ s, $textPlaceholderString ] ];
+
+postProcessTextSuggestions[ s_, RawBoxes[ cell_Cell ] ] :=
+    postProcessTextSuggestions[ s, ExplodeCell @ cell ];
+
+postProcessTextSuggestions[ s_, { cell_Cell, ___ } ] :=
+    toTextData @ cell;
+
 postProcessTextSuggestions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -787,7 +817,18 @@ toTextData // endDefinition;
 (*generateNotebookSuggestions*)
 generateNotebookSuggestions // beginDefinition;
 
-generateNotebookSuggestions[ Dynamic[ container_ ], nbo_, root_NotebookObject, context0_String, settings_ ] := Enclose[
+generateNotebookSuggestions[ container_, nbo_NotebookObject, root_, context_, settings_ ] :=
+    Block[ { $inputStyle = determineInputStyle @ nbo, $stripWhitespace },
+        $stripWhitespace = $inputStyle =!= "Code";
+        generateNotebookSuggestions0[ container, nbo, root, context, settings ]
+    ];
+
+generateNotebookSuggestions // endDefinition;
+
+
+generateNotebookSuggestions0 // beginDefinition;
+
+generateNotebookSuggestions0[ Dynamic[ container_ ], nbo_, root_NotebookObject, context0_String, settings_ ] := Enclose[
     Module[ { context, preprocessed, relatedDocs, as, instructions, response, suggestions },
 
         context = ConfirmBy[
@@ -861,7 +902,16 @@ generateNotebookSuggestions[ Dynamic[ container_ ], nbo_, root_NotebookObject, c
     throwInternalFailure
 ];
 
-generateNotebookSuggestions // endDefinition;
+generateNotebookSuggestions0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*determineInputStyle*)
+determineInputStyle // beginDefinition;
+determineInputStyle[ nbo_NotebookObject ] := determineInputStyle[ nbo, CurrentValue[ nbo, DefaultNewCellStyle ] ];
+determineInputStyle[ nbo_, style: $$inputStyle ] := style;
+determineInputStyle[ nbo_, style_ ] := "Input";
+determineInputStyle // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -874,11 +924,50 @@ getNotebookSuggestions // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*postProcessNotebookSuggestions*)
 postProcessNotebookSuggestions // beginDefinition;
-postProcessNotebookSuggestions[ suggestions_List ] := postProcessNotebookSuggestions /@ suggestions;
-postProcessNotebookSuggestions[ s_String ] := postProcessNotebookSuggestions[ s, FormatChatOutput @ s ];
-postProcessNotebookSuggestions[ s_, RawBoxes[ cell_Cell ] ] := postProcessNotebookSuggestions[ s, ExplodeCell @ cell ];
-postProcessNotebookSuggestions[ s_, cells: { __Cell } ] := Cell @ CellGroupData[ cells, Open ];
+
+postProcessNotebookSuggestions[ suggestions_List ] :=
+    postProcessNotebookSuggestions /@ suggestions;
+
+postProcessNotebookSuggestions[ s_String ] :=
+    postProcessNotebookSuggestions[ s, FormatChatOutput @ StringDelete[ s, $notebookPlaceholderString ] ];
+
+postProcessNotebookSuggestions[ s_, RawBoxes[ cell_Cell ] ] :=
+    postProcessNotebookSuggestions[ s, ExplodeCell @ cell ];
+
+postProcessNotebookSuggestions[ s_, cells0: { ___Cell, Cell[ __, $$generatedStyle, ___ ], ___Cell } ] :=
+    With[ { cells = DeleteCases[ cells0, Cell[ __, $$generatedStyle, ___ ] ] },
+        postProcessNotebookSuggestions[ s, cells ] /; cells =!= { }
+    ];
+
+postProcessNotebookSuggestions[ s_, cells: { __Cell } ] :=
+    Cell @ CellGroupData[ Flatten[ postProcessNotebookSuggestion /@ cells ], Open ];
+
 postProcessNotebookSuggestions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*postProcessNotebookSuggestion*)
+postProcessNotebookSuggestion // beginDefinition;
+
+postProcessNotebookSuggestion[ Cell[ a__, $$inputStyle, b___ ] ] :=
+    divideCell @ Cell[ a, $inputStyle, b, If[ $inputStyle === "Input", CellLabel -> "In[\:f759]:=", Sequence @@ { } ] ];
+
+postProcessNotebookSuggestion[ cell_Cell ] :=
+    cell;
+
+postProcessNotebookSuggestion // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*divideCell*)
+divideCell // beginDefinition;
+
+divideCell[ cell_Cell ] :=
+    With[ { divided = Quiet @ NotebookTools`DivideCell[ cell, { $inputStyle, Automatic, True } ] },
+        If[ MatchQ[ divided, { __Cell } ], divided, cell ]
+    ];
+
+divideCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -949,9 +1038,9 @@ formatSuggestion[ root: $$feObj, nbo_NotebookObject, { styles___String }, sugges
 ];
 
 formatSuggestion[ root: $$feObj, nbo_NotebookObject, None, suggestion: Cell[ _CellGroupData ] ] := Button[
-    Column[ formatSuggestionCells /@ cellFlatten @ suggestion ],
+    Column[ formatSuggestionCells /@ cellFlatten @ suggestion, Spacings -> 2 ],
     NotebookDelete @ EvaluationCell[ ];
-    NotebookWrite[ nbo, suggestion, After ],
+    NotebookWrite[ nbo, suggestion, All ],
     Alignment -> Left
 ];
 
@@ -971,7 +1060,7 @@ formatSuggestionCells[ cells: { __Cell } ] :=
 formatSuggestionCells[ Cell[ a__, CellLabel -> label_, b___ ] ] := Grid[
     { {
         Pane[
-            RawBoxes @ Cell[ label, "CellLabelExpired", FontSize -> 9, FontSlant -> Plain ],
+            Style[ label, "CellLabelExpired", FontSlant -> Plain ],
             Alignment -> Right,
             ImageSize -> { 50, Automatic }
         ],
