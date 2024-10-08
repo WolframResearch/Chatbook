@@ -1041,13 +1041,13 @@ makeCellMessage // endDefinition;
 cellRole // beginDefinition;
 
 cellRole[ cell_Cell ] :=
-    With[ { role = $cellRole }, role /; StringQ @ role ];
+    With[ { role = $cellRole }, standardizeRole @ role /; StringQ @ role ];
 
 cellRole[ Cell[
     __,
     TaggingRules -> KeyValuePattern[ "ChatNotebookSettings" -> KeyValuePattern[ "Role" -> role_String ] ],
     ___
-] ] := role;
+] ] := standardizeRole @ role;
 
 cellRole[ Cell[ _, styles__String, OptionsPattern[ ] ] ] :=
     FirstCase[ { styles }, style_ :> With[ { role = $styleRoles @ style }, role /; StringQ @ role ], "User" ];
@@ -1055,6 +1055,13 @@ cellRole[ Cell[ _, styles__String, OptionsPattern[ ] ] ] :=
 cellRole[ Cell[ _, OptionsPattern[ ] ] ] := "User";
 
 cellRole // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*standardizeRole*)
+standardizeRole // beginDefinition;
+standardizeRole[ role_String? StringQ ] := standardizeRole[ role ] = Capitalize @ role;
+standardizeRole // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

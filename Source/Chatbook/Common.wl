@@ -1098,9 +1098,9 @@ associationMarkdown[ other_   ] := markdownCodeBlock @ other;
 maskOpenAIKey[ expr_ ] :=
     With[ { mask = "**********" },
         ReplaceAll[
-            expr /. HoldPattern[ "OpenAIKey" -> Except[ mask, _String ] ] :> ("OpenAIKey" -> mask),
-            a: (KeyValuePattern[ "OpenAIKey" -> Except[ mask, _String ] ])? AssociationQ :>
-                RuleCondition @ Insert[ a, "OpenAIKey" -> mask, Key[ "OpenAIKey" ] ]
+            expr /. HoldPattern[ k:"APIKey"|"OpenAIKey" -> Except[ mask, _String ] ] :> (k -> mask),
+            a: (KeyValuePattern[ k:"APIKey"|"OpenAIKey" -> Except[ mask, _String ] ])? AssociationQ :>
+                RuleCondition @ Insert[ a, k -> mask, Key[ k ] ]
         ]
     ];
 
