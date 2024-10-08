@@ -175,7 +175,11 @@
 "PersonaNameRawModel" -> "Modelo sin procesar",
 "PersonaNameWolfie" -> "Wolfie",
 
-"AttachedChatFieldHint" -> "Preg\[UAcute]ntame lo que sea"
+"AttachedChatFieldHint" -> "Preg\[UAcute]ntame lo que sea",
+
+"MenuItemOpenHelpLinkChat" -> "Code Assistance Chat\[Ellipsis]",
+"MenuItemOpenHelpLinkSelection" -> "Code Assistance for Selection",
+"MenuItemDuplicatePreviousOutputSuggestion" -> "AI Content Suggestion"
 }
 @|
 @|

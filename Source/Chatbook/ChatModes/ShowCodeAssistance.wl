@@ -64,7 +64,7 @@ enableCodeAssistance[ True ] := Once[
             "OpenHelpLink",
             {
                 MenuItem[
-                    "Code Assistance Chat\[Ellipsis]",
+                    FrontEndResource["ChatbookStrings", "MenuItemOpenHelpLinkChat"],
                     FrontEnd`KernelExecute[
                         Needs[ "Wolfram`Chatbook`" -> None ];
                         Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Window" ]
@@ -78,7 +78,7 @@ enableCodeAssistance[ True ] := Once[
                     ]
                 ],
                 MenuItem[
-                    "Code Assistance for Selection",
+                    FrontEndResource["ChatbookStrings", "MenuItemOpenHelpLinkSelection"],
                     FrontEnd`KernelExecute[
                         Needs[ "Wolfram`Chatbook`" -> None ];
                         Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Inline" ]
@@ -92,7 +92,7 @@ enableCodeAssistance[ True ] := Once[
             "DuplicatePreviousOutput",
             {
                 MenuItem[
-                    "AI Content Suggestion",
+                    FrontEndResource["ChatbookStrings", "MenuItemDuplicatePreviousOutputSuggestion"],
                     FrontEnd`KernelExecute[
                         Needs[ "Wolfram`Chatbook`" -> None ];
                         Symbol[ "Wolfram`Chatbook`ShowContentSuggestions" ][ ]
@@ -119,7 +119,7 @@ enableCodeAssistance[ False ] := Once[
             "OpenHelpLink",
             {
                 MenuItem[
-                    "Code Assistance Chat\[Ellipsis]",
+                    FrontEndResource["ChatbookStrings", "MenuItemOpenHelpLinkChat"],
                     FrontEnd`KernelExecute[
                         Needs[ "Wolfram`Chatbook`" -> None ];
                         Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Window" ]

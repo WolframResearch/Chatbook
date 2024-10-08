@@ -175,7 +175,11 @@
 "PersonaNameRawModel" -> "Raw Model",
 "PersonaNameWolfie" -> "Wolfie",
 
-"AttachedChatFieldHint" -> "Ask me anything"
+"AttachedChatFieldHint" -> "Ask me anything",
+
+"MenuItemOpenHelpLinkChat" -> "Code Assistance Chat\[Ellipsis]",
+"MenuItemOpenHelpLinkSelection" -> "Code Assistance for Selection",
+"MenuItemDuplicatePreviousOutputSuggestion" -> "AI Content Suggestion"
 }
 @|
 @|

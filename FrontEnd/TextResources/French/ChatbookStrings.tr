@@ -175,7 +175,11 @@
 "PersonaNameRawModel" -> "Mod\[EGrave]le brut",
 "PersonaNameWolfie" -> "Wolfie",
 
-"AttachedChatFieldHint" -> "Demandez\[Hyphen]moi quelque chose"
+"AttachedChatFieldHint" -> "Demandez\[Hyphen]moi quelque chose",
+
+"MenuItemOpenHelpLinkChat" -> "Code Assistance Chat\[Ellipsis]",
+"MenuItemOpenHelpLinkSelection" -> "Code Assistance for Selection",
+"MenuItemDuplicatePreviousOutputSuggestion" -> "AI Content Suggestion"
 }
 @|
 @|
