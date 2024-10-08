@@ -16,7 +16,6 @@ Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
 (*Configuration*)
 $cloudInheritanceFix := $cloudNotebooks;
 
-(* cSpell: ignore AIAPI *)
 $defaultChatSettings = <|
     "AppName"                        -> Automatic,
     "Assistance"                     -> Automatic,
@@ -485,7 +484,7 @@ autoToolExamplePromptStyle[ service_, family_ ] := autoToolExamplePromptStyle[ s
 
 autoToolExamplePromptStyle // endDefinition;
 
-(* cSpell: ignore Qwen, Nemotron *)
+
 autoToolExamplePromptStyle0 // beginDefinition;
 
 (* By service: *)
@@ -532,7 +531,6 @@ autoStopTokens // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*methodStopTokens*)
-(* cSpell: ignore ENDTOOLCALL *)
 methodStopTokens // beginDefinition;
 methodStopTokens[ "Simple"         ] := { "\n/exec", "/end" };
 methodStopTokens[ "Service"        ] := { "/end" };
@@ -543,7 +541,6 @@ methodStopTokens // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*styleStopTokens*)
-(* cSpell: ignore cbegin *)
 styleStopTokens // beginDefinition;
 styleStopTokens[ "Phi"           ] := { "<|user|>", "<|assistant|>" };
 styleStopTokens[ "Llama"         ] := { "<|start_header_id|>" };
@@ -575,7 +572,6 @@ chooseMaxOutputCellStringLength // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*autoMaxContextTokens*)
 autoMaxContextTokens // beginDefinition;
-(* cSpell: ignore ollama *)
 autoMaxContextTokens[ as_? ollamaQ ] := serviceMaxContextTokens @ as;
 autoMaxContextTokens[ as_Association ] := autoMaxContextTokens[ as, as[ "Model" ] ];
 autoMaxContextTokens[ as_, model_ ] := autoMaxContextTokens[ as, model, toModelName @ model ];

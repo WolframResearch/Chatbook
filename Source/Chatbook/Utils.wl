@@ -14,7 +14,6 @@ $tinyHashLength = 5;
 $messageToStringDelimiter = "\n\n";
 $messageToStringTemplate  = StringTemplate[ "`Role`: `Content`" ];
 
-(* cSpell: ignore deflatten *)
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*AssociationKeyDeflatten*)
@@ -269,20 +268,20 @@ importDataURI[ URL[ uri_String ], fmt_ ] :=
     importDataURI[ uri, fmt ];
 
 importDataURI[ uri_String, fmt0_ ] := Enclose[
-    Module[ { info, bytes, fmt, fmts, result, $failed },
+    Module[ { info, bytes, fmt, formats, result, $failed },
 
         info  = ConfirmBy[ uriData @ uri, AssociationQ, "URIData" ];
         bytes = ConfirmBy[ info[ "Data" ], ByteArrayQ, "Data" ];
         fmt   = If[ StringQ @ fmt0, fmt0, Nothing ];
 
-        fmts = ConfirmMatch[
+        formats = ConfirmMatch[
             DeleteDuplicates @ Flatten @ { fmt, info[ "Formats" ], Automatic },
             { (Automatic|_String).. },
             "Formats"
         ];
 
         result = FirstCase[
-            fmts,
+            formats,
             f_ :> With[ { res = ImportByteArray[ bytes, f ] },
                 res /; MatchQ[ res, Except[ _ImportByteArray | _? FailureQ ] ]
             ],

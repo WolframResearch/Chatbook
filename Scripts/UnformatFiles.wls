@@ -30,7 +30,6 @@ files = cicd`ScriptConfirmMatch[
     { __String }
 ];
 
-(* cSpell: ignore unformatting *)
 cicd`ConsoleLog[ "Unformatting " <> ToString @ Length @ files <> " files..." ];
 
 result = cicd`ScriptConfirmMatch[ unformat /@ files, { __String } ];

@@ -157,7 +157,7 @@ CreateLLMToolManagerPanel[ tools0_List, personas_List ] :=
                                                     Spacer[ 4 ],
                                                     tr[ "ToolManagerEnabledFor" ],
                                                     Spacer[ 5 ],
-                                                    personaNameDisp[ personaDisplayNames, Dynamic @ column ]
+                                                    personaNameDisplay[ personaDisplayNames, Dynamic @ column ]
                                                 }
                                             }
                                         ],
@@ -1169,10 +1169,10 @@ scopeSelector // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*personaNameDisp*)
-personaNameDisp // beginDefinition;
+(*personaNameDisplay*)
+personaNameDisplay // beginDefinition;
 
-personaNameDisp[ personaNames_, Dynamic[ column_ ] ] :=
+personaNameDisplay[ personaNames_, Dynamic[ column_ ] ] :=
     With[ { allowedIndices = Range @ Length @ personaNames },
         PaneSelector[
             Thread[ allowedIndices -> personaNames ],
@@ -1183,7 +1183,7 @@ personaNameDisp[ personaNames_, Dynamic[ column_ ] ] :=
         ]
     ];
 
-personaNameDisp // endDefinition;
+personaNameDisplay // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

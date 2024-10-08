@@ -65,7 +65,6 @@ $initializationTests = Join[
     ]
 ];
 
-(* cSpell: ignore noinit, pacletreadonly *)
 $sandboxKernelCommandLine := StringRiffle @ {
     ToString[
         If[ $OperatingSystem === "Windows",
@@ -249,12 +248,9 @@ getCurrentLineNumber // endDefinition;
 startSandboxKernel // beginDefinition;
 
 startSandboxKernel[ ] := Enclose[
-    Module[ { pwFile, kernel, readPaths, writePaths, executePaths, pid },
+    Module[ { kernel, readPaths, writePaths, executePaths, pid },
 
         Scan[ LinkClose, Select[ Links[ ], sandboxKernelQ ] ];
-
-        (* cSpell: ignore playerpass *)
-        (* pwFile = FileNameJoin @ { $InstallationDirectory, "Configuration", "Licensing", "playerpass" }; *)
 
         kernel = ConfirmMatch[ LinkLaunch @ $sandboxKernelCommandLine, _LinkObject, "LinkLaunch" ];
 
@@ -1224,7 +1220,6 @@ evaluationMessageHandler0 // Attributes = { HoldFirst };
 (* Message is not from LLM code or we've collected too many, so we don't want to insert it into the tool response: *)
 evaluationMessageHandler0[ _, _, _ ] /; $suppressMessageCollection := Null;
 
-(* cSpell: ignore newsym *)
 (* Messages that are so frequent we don't want to waste time analyzing them: *)
 evaluationMessageHandler0[ _, _, Hold[ Message[ $CharacterEncoding::utf8 | General::newsym, ___ ], _ ] ] := Null;
 
@@ -1399,7 +1394,7 @@ messageQuietedQ0[ msg: MessageName[ _Symbol, tag___ ] ] :=
         msgPatt      = All | { ___, msgOrGeneral, ___ };
 
         TrueQ @ And[
-            (* check if msg is unquieted via third arg of Quiet: *)
+            (* check if msg is not quiet via third arg of Quiet: *)
             FreeQ[ stack, { _, _, msgPatt }, 2 ],
             (* check if msg is not quieted via second arg of Quiet: *)
             ! FreeQ[ stack, { _, msgPatt, _ }, 2 ]
@@ -1712,7 +1707,6 @@ addMessageHandler[ HoldComplete[ eval_ ] ] :=
                     },
                     eval
                 ],
-                (* cSpell: ignore usenl *)
                 If[ $issueNLMessage, Message[ General::usenl, $nlMessageType ] ]
             ]
         ]

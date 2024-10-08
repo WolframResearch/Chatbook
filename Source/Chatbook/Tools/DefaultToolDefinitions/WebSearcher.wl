@@ -67,7 +67,6 @@ webSearch0[ query_String ] := Enclose[
             Check[
                 raw = WebSearch[ query, opts ],
                 $unavailable,
-                (* cSpell: ignore unexp *)
                 IntegratedServices`IntegratedServices::unexp
             ],
             IntegratedServices`IntegratedServices::unexp

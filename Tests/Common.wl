@@ -2,7 +2,6 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`ChatbookTests`" ];
 
-(* cSpell: ignore samevers *)
 (* :!CodeAnalysis::BeginBlock:: *)
 
 HoldComplete[
