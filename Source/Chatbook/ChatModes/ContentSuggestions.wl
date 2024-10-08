@@ -28,8 +28,8 @@ $wlSuggestionsCount       = 3;
 $wlSuggestionsMaxTokens   = 128;
 $wlSuggestionsTemperature = 0.9;
 $wlPlaceholderString      = "\:2758";
-$wlCellsBefore            = 50;
-$wlCellsAfter             = 25;
+$wlCellsBefore            = 25;
+$wlCellsAfter             = 10;
 $wlDocMaxItems            = 5;
 $wlFilterDocResults       = False;
 $wlFilteredDocCount       = 3;
@@ -82,8 +82,8 @@ $textSuggestionsCount       = 3;
 $textSuggestionsMaxTokens   = 256;
 $textSuggestionsTemperature = 0.7;
 $textPlaceholderString      = "\:2758";
-$textCellsBefore            = 50;
-$textCellsAfter             = 25;
+$textCellsBefore            = 25;
+$textCellsAfter             = 10;
 
 $textSuggestionsPrompt = StringTemplate[ "\
 Complete the following by writing text that can be inserted into \"%%Placeholder%%\".
@@ -113,6 +113,7 @@ $notebookSuggestionsPrompt0 = StringTemplate[ "\
 Complete the following by writing markdown text that can be inserted into \"%%Placeholder%%\".
 Do your best to match the existing style (whitespace, line breaks, etc.).
 Write built-in Wolfram Language symbols as markdown links: [Table](paclet:ref/Table).
+Write Wolfram Language code as code blocks: ```wl\nCode here\n```.
 Your suggested text will be inserted into %%Placeholder%%, so be careful not to repeat the immediately surrounding text.
 Respond with the completion text and nothing else.
 
@@ -122,6 +123,7 @@ Delimiters -> "%%" ];
 $packageSuggestionsPrompt = StringTemplate[ "\
 Complete the following by writing text that can be inserted into \"%%Placeholder%%\".
 Do your best to match the existing style (whitespace, line breaks, etc.).
+You can use markdown to format your response.
 Your suggested text will be inserted into %%Placeholder%%, so be careful not to repeat the immediately surrounding text.
 Respond with the completion text and nothing else.
 
@@ -767,6 +769,34 @@ generateTextSuggestions // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*styleNotes*)
 styleNotes // beginDefinition;
+
+styleNotes[ "Title" ] := "
+A title cell should be a short, descriptive phrase that summarizes the content that follows.
+Remember: You are only to complete the current title cell, so only write a few words at most.";
+
+styleNotes[ "Section" ] := "
+Section cells should be used to divide the notebook into logical sections.
+They should be short and descriptive.
+Remember: You are only to complete the current section cell, so only write a few words at most.";
+
+styleNotes[ "Subsection" ] := "
+Subsection cells should be used to further divide the notebook into logical parts.
+They should be short and descriptive.
+Remember: You are only to complete the current subsection cell, so only write a few words at most.";
+
+styleNotes[ "Subsubsection" ] := "
+Subsubsection cells should be used to further divide the notebook into logical parts.
+They should be short and descriptive.
+Remember: You are only to complete the current subsubsection cell, so only write a few words at most.";
+
+styleNotes[ "Subsubsubsection" ] := "
+Subsubsubsection cells should be used to further divide the notebook into logical parts.
+They should be short and descriptive.
+Remember: You are only to complete the current subsubsubsection cell, so only write a few words at most.";
+
+styleNotes[ "Text" ] := "
+Text cells are for normal text, which may include inline markdown formatting.
+Do not write any code blocks in a text cell.";
 
 styleNotes[ "CodeText" ] := "
 CodeText cells typically contain a short one-line caption ending in a colon (:) that describe the next input.";
