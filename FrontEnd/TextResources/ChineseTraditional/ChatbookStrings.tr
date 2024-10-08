@@ -116,6 +116,7 @@
 "PreferencesContentOpenAICompletionURLLabel" -> "\:7DB2\:8DEF\:804A\:5929\:7CFB\:7D71\:5BE6\:73FE\:7DB2\:5740\:FF1A",
 "PreferencesContentLLMKitTitle" -> "Wolfram Code Assistant + LLM Kit",
 "PreferencesContentLLMKitSubscribeButton" -> "Subscribe",
+"PreferencesContentLLMKitLearnMoreTooltip" -> "Learn more\[Ellipsis]",
 "PreferencesContentLLMKitSubscriptionRequired" -> "LLM Kit requires a subscription",
 "PreferencesContentLLMKitNoSubscription" -> "No LLM Kit subscription found",
 "PreferencesContentLLMKitSignInOr" -> "or",

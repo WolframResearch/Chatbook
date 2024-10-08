@@ -1129,7 +1129,7 @@ servicesSettingsPanel0[ ] := Enclose[
                         Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.537 ], 14 ] ] ],
                         Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.692 ], 14 ] ] ],
                         Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.358 ], 14 ] ] ] ],
-                    Pane[ (*FIXME*)"FIXME", ImageSize -> UpTo[ 274 ] ],
+                    Pane[ tr[ "PreferencesContentLLMKitLearnMoreTooltip" ], ImageSize -> UpTo[ 274 ] ],
                     TooltipStyle -> {
                         Background -> RGBColor[ "#EDEDED" ],
                         CellFrameColor -> RGBColor[ "#D1D1D1" ],
@@ -1137,7 +1137,7 @@ servicesSettingsPanel0[ ] := Enclose[
                         FontColor -> RGBColor[ "#333333" ],
                         FontFamily -> "Roboto",
                         FontSize -> 11 } ],
-                (*FIXME*)Beep[ ],
+                SystemOpen[ Lookup[ Wolfram`LLMFunctions`Common`$LLMKitInfo, "learnMoreUrl" ] ],
                 Appearance -> "Suppressed",
                 BaselinePosition -> Baseline,
                 ImageSize -> Automatic,
@@ -1178,7 +1178,7 @@ makeLLMPanel[ ] :=
                     Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Normal", FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
                     Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Hover", FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
                     Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Pressed", FrameMargins -> { { 17, 17 }, { 7, 7 } } ] ],
-                (*FIXME*)SystemOpen["https://billing.test.wolfram.com/pricing/LLMKit.html"],
+                SystemOpen[ Lookup[ Wolfram`LLMFunctions`Common`$LLMKitInfo, "buyNowUrl" ] ],
                 Appearance -> "Suppressed",
                 BaseStyle -> "DialogTextCommon",
                 BaselinePosition -> Baseline,
@@ -1221,7 +1221,7 @@ makeLLMPanel[ ] :=
                 Style[
                     tr[ "PreferencesContentLLMKitEnabledManage" ],
                     FontColor -> Dynamic[ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.2 ], GrayLevel[ 0.537254 ] ] ] ],
-                SystemOpen["https://billing.test.wolfram.com/pricing/LLMKit.html"](*FIXME*),
+                SystemOpen[ Lookup[ Wolfram`LLMFunctions`Common`$LLMKitInfo, "manageSubscriptionUrl" ] ],
                 Appearance -> "Suppressed",
                 BaseStyle -> "DialogTextCommon",
                 ImageSize -> Automatic ];
