@@ -110,7 +110,7 @@ getContextFromSelection[ chatNB_, nbo_NotebookObject, settings_Association, opts
             $maxCellsBeforeSelection    = OptionValue[ "MaxCellsBeforeSelection"    ],
             $maxCellsAfterSelection     = OptionValue[ "MaxCellsAfterSelection"     ]
         },
-        Module[ { selectionData },
+        Module[ { selectionData, string },
 
             selectionData = ConfirmMatch[
                 LogChatTiming @ selectContextCells @ nbo,
@@ -120,7 +120,9 @@ getContextFromSelection[ chatNB_, nbo_NotebookObject, settings_Association, opts
 
             If[ selectionData === None, Throw @ None ];
 
-            ConfirmBy[ getContextFromSelection0[ selectionData, settings ], StringQ, "Context" ]
+            string = ConfirmBy[ getContextFromSelection0[ selectionData, settings ], StringQ, "Context" ];
+
+            ConfirmBy[ mergeCodeBlocks @ string, StringQ, "Merged" ]
         ]
     ],
     throwInternalFailure
