@@ -37,7 +37,7 @@ CreatePersonaManagerDialog // endDefinition;
 (*CreatePersonaManagerPanel*)
 CreatePersonaManagerPanel // beginDefinition;
 
-CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
+CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimiterColor},
     favorites = Replace[
         CurrentChatSettings[ $FrontEnd, "PersonaFavorites" ],
         Except[ { ___String } ] :> $corePersonaNames
@@ -114,11 +114,11 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
                                     {{True}},
                                     {
                                         2 -> False,
-                                        Length[favorites] + 2 -> Directive[delimColor, AbsoluteThickness[5]]
+                                        Length[favorites] + 2 -> Directive[delimiterColor, AbsoluteThickness[5]]
                                     }
                                 }
                             },
-                            FrameStyle -> Dynamic[delimColor],
+                            FrameStyle -> Dynamic[delimiterColor],
                             ItemSize -> {{Automatic, Automatic, Automatic, Automatic, Fit, {Automatic}}, {}},
                             Spacings -> {
                                 {{{1}}, {2 -> 1, 4 -> 0.5}},
@@ -161,7 +161,7 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
                     }
                 ]
             },
-            FrameStyle -> Dynamic[delimColor],
+            FrameStyle -> Dynamic[delimiterColor],
             Spacings -> {0, 0}
         ],
         ContentPadding -> 0,
@@ -169,7 +169,7 @@ CreatePersonaManagerPanel[ ] := DynamicModule[{favorites, delimColor},
         FrameStyle -> None,
         ImageSize -> { If[ TrueQ @ $inDialog, 501, Automatic ], All}],
     Initialization :> (
-        delimColor = CurrentValue[{StyleDefinitions, "DialogDelimiter", CellFrameColor}];
+        delimiterColor = CurrentValue[{StyleDefinitions, "DialogDelimiter", CellFrameColor}];
         GetPersonaData[]; (* sets $CachedPersonaData *)
         (* make sure there are no unexpected extra personas *)
         Enclose[

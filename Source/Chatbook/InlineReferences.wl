@@ -1347,18 +1347,18 @@ setPersonaState[state_, "Input", input_] := (
 
 setPersonaState[state_, "Chosen", input_] :=
 Enclose[
-	With[{cellobj = EvaluationCell[]},
+	With[{cellObj = EvaluationCell[]},
 		state = "Chosen";
-		SelectionMove[cellobj, All, Cell];
+		SelectionMove[cellObj, All, Cell];
 		FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]];
-		CurrentValue[cellobj, {TaggingRules, "PersonaName"}] = input;
+		CurrentValue[cellObj, {TaggingRules, "PersonaName"}] = input;
 
 		If[ ! MemberQ[ Keys @ GetCachedPersonaData[ ], input ],
 	        ConfirmBy[ ResourceInstall[ "Prompt: "<>input ], FileExistsQ, "ResourceInstall" ];
 	        ConfirmAssert[ MemberQ[ Keys @ GetCachedPersonaData[ ], input ], "GetCachedPersonaData" ]
 	    ];
 
-		With[ { parent = ParentCell @ cellobj },
+		With[ { parent = ParentCell @ cellObj },
 			CurrentValue[ parent, CellDingbat ] = Inherited;
 			CurrentValue[ parent, { TaggingRules, "ChatNotebookSettings", "LLMEvaluator" } ] = input;
 		]
@@ -1472,11 +1472,11 @@ Cell[BoxData[FormBox[
 insertPersonaTemplate[ cell_CellObject ] := insertPersonaTemplate[ cell, parentNotebook @ cell ];
 
 insertPersonaTemplate[ parent_CellObject, nbo_NotebookObject ] :=
-	Module[ { uuid, cellexpr },
+	Module[ { uuid, cellExpr },
 		resolveInlineReferences @ parent;
 		uuid = CreateUUID[ ];
-		cellexpr = personaTemplateCell[ "", "Input", uuid ];
-		NotebookWrite[ nbo, cellexpr ];
+		cellExpr = personaTemplateCell[ "", "Input", uuid ];
+		NotebookWrite[ nbo, cellExpr ];
 		(* FIXME: Can we get rid of the need for this UUID, and use BoxReference-something? *)
 		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
 	];
@@ -1484,11 +1484,11 @@ insertPersonaTemplate[ parent_CellObject, nbo_NotebookObject ] :=
 insertPersonaTemplate[ name_String, cell_CellObject ] := insertPersonaTemplate[ name, cell, parentNotebook @ cell ];
 
 insertPersonaTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
-	Module[ { uuid, cellexpr },
+	Module[ { uuid, cellExpr },
 		resolveInlineReferences @ ParentCell @ parent;
 		uuid = CreateUUID[ ];
-		cellexpr = personaTemplateCell[ name, "Input", uuid ];
-		NotebookWrite[ parent, cellexpr ];
+		cellExpr = personaTemplateCell[ name, "Input", uuid ];
+		NotebookWrite[ parent, cellExpr ];
 		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
 	];
 
@@ -1534,11 +1534,11 @@ setModifierState[state_, "Input", input_, params_] := (
 
 setModifierState[state_, "Chosen", input_, params_] :=
 Enclose[
-	With[{cellobj = EvaluationCell[]},
+	With[{cellObj = EvaluationCell[]},
 		state = "Chosen";
-		SelectionMove[cellobj, All, Cell];
+		SelectionMove[cellObj, All, Cell];
 		FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]];
-		CurrentValue[cellobj, TaggingRules] = <| "PromptModifierName" -> input, "PromptArguments" -> params |>;
+		CurrentValue[cellObj, TaggingRules] = <| "PromptModifierName" -> input, "PromptArguments" -> params |>;
 	]
 	,
 	throwInternalFailure[ setModifierState[state, "Chosen", input, params], ## ] &
@@ -1678,11 +1678,11 @@ insertModifierTemplate[ cell_CellObject ] :=
     ];
 
 insertModifierTemplate[ parent_CellObject, nbo_NotebookObject ] :=
-	Module[ { uuid, cellexpr },
+	Module[ { uuid, cellExpr },
 		resolveInlineReferences @ parent;
 		uuid = CreateUUID[ ];
-		cellexpr = modifierTemplateCell[ "", {}, "Input", uuid ];
-		NotebookWrite[ nbo, cellexpr ];
+		cellExpr = modifierTemplateCell[ "", {}, "Input", uuid ];
+		NotebookWrite[ nbo, cellExpr ];
 		(* FIXME: Can we get rid of the need for this UUID, and use BoxReference-something? *)
 		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
 	];
@@ -1690,11 +1690,11 @@ insertModifierTemplate[ parent_CellObject, nbo_NotebookObject ] :=
 insertModifierTemplate[ name_String, cell_CellObject ] := insertModifierTemplate[ name, cell, parentNotebook @ cell ];
 
 insertModifierTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
-	Module[ { uuid, cellexpr },
+	Module[ { uuid, cellExpr },
 		resolveInlineReferences @ ParentCell @ parent;
 		uuid = CreateUUID[ ];
-		cellexpr = modifierTemplateCell[ name, {}, "Input", uuid ];
-		NotebookWrite[ parent, cellexpr ];
+		cellExpr = modifierTemplateCell[ name, {}, "Input", uuid ];
+		NotebookWrite[ parent, cellExpr ];
 		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
 	];
 
@@ -1746,11 +1746,11 @@ setFunctionState[state_, "Input", input_, params_] := (
 
 setFunctionState[state_, "Chosen", input_, params_] :=
 Enclose[
-	With[{cellobj = EvaluationCell[]},
+	With[{cellObj = EvaluationCell[]},
 		state = "Chosen";
-		SelectionMove[cellobj, All, Cell];
+		SelectionMove[cellObj, All, Cell];
 		FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]];
-		CurrentValue[cellobj, TaggingRules] = <| "PromptFunctionName" -> input, "PromptArguments" -> params |>;
+		CurrentValue[cellObj, TaggingRules] = <| "PromptFunctionName" -> input, "PromptArguments" -> params |>;
 	]
 	,
 	throwInternalFailure[ setFunctionState[state, "Chosen", input, params], ## ]&
@@ -1899,11 +1899,11 @@ insertFunctionTemplate[ cell_CellObject ] :=
     ];
 
 insertFunctionTemplate[ parent_CellObject, nbo_NotebookObject ] :=
-	Module[ { uuid, cellexpr },
+	Module[ { uuid, cellExpr },
 		resolveInlineReferences @ parent;
 		uuid = CreateUUID[ ];
-		cellexpr = functionTemplateCell[ "", {}, "Input", uuid ];
-		NotebookWrite[ nbo, cellexpr ];
+		cellExpr = functionTemplateCell[ "", {}, "Input", uuid ];
+		NotebookWrite[ nbo, cellExpr ];
 		(* FIXME: Can we get rid of the need for this UUID, and use BoxReference-something? *)
 		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
 	];
@@ -1911,11 +1911,11 @@ insertFunctionTemplate[ parent_CellObject, nbo_NotebookObject ] :=
 insertFunctionTemplate[ name_String, cell_CellObject ] := insertFunctionTemplate[ name, cell, parentNotebook @ cell ];
 
 insertFunctionTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
-	Module[ { uuid, cellexpr },
+	Module[ { uuid, cellExpr },
 		resolveInlineReferences @ ParentCell @ parent;
 		uuid = CreateUUID[ ];
-		cellexpr = functionTemplateCell[ name, {}, "Input", uuid ];
-		NotebookWrite[ parent, cellexpr ];
+		cellExpr = functionTemplateCell[ name, {}, "Input", uuid ];
+		NotebookWrite[ parent, cellExpr ];
 		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
 	];
 
@@ -1942,11 +1942,11 @@ setWLState[state_, "Input", input_] := (
 
 setWLState[state_, "Chosen", input_] :=
 Enclose[
-	With[{cellobj = EvaluationCell[]},
+	With[{cellObj = EvaluationCell[]},
 		state = "Chosen";
-		SelectionMove[cellobj, All, Cell];
+		SelectionMove[cellObj, All, Cell];
 		FrontEndExecute[FrontEnd`FrontEndToken["MoveNext"]];
-		CurrentValue[cellobj, TaggingRules] = <| "WLCode" -> input |>;
+		CurrentValue[cellObj, TaggingRules] = <| "WLCode" -> input |>;
 	]
 	,
 	throwInternalFailure[ setWLState[state, "Chosen", input], ## ]&
@@ -2087,11 +2087,11 @@ insertWLTemplate[ cell_CellObject ] :=
     insertWLTemplate[ cell, parentNotebook @ cell ];
 
 insertWLTemplate[ parent_CellObject, nbo_NotebookObject ] :=
-	Module[ { uuid, cellexpr },
+	Module[ { uuid, cellExpr },
 		resolveInlineReferences @ parent;
 		uuid = CreateUUID[ ];
-		cellexpr = wlTemplateCell[ "", "Input", uuid ];
-		NotebookWrite[ nbo, cellexpr ];
+		cellExpr = wlTemplateCell[ "", "Input", uuid ];
+		NotebookWrite[ nbo, cellExpr ];
 		(* FIXME: Can we get rid of the need for this UUID, and use BoxReference-something? *)
 		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
 	];
@@ -2099,11 +2099,11 @@ insertWLTemplate[ parent_CellObject, nbo_NotebookObject ] :=
 insertWLTemplate[ name_String, cell_CellObject ] := insertWLTemplate[ name, cell, parentNotebook @ cell ];
 
 insertWLTemplate[ name_String, parent_CellObject, nbo_NotebookObject ] :=
-	Module[ { uuid, cellexpr },
+	Module[ { uuid, cellExpr },
 		resolveInlineReferences @ ParentCell @ parent;
 		uuid = CreateUUID[ ];
-		cellexpr = wlTemplateCell[ name, "Input", uuid ];
-		NotebookWrite[ parent, cellexpr ];
+		cellExpr = wlTemplateCell[ name, "Input", uuid ];
+		NotebookWrite[ parent, cellExpr ];
 		FrontEnd`MoveCursorToInputField[ nbo, uuid ]
 	];
 

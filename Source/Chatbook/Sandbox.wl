@@ -248,11 +248,9 @@ getCurrentLineNumber // endDefinition;
 startSandboxKernel // beginDefinition;
 
 startSandboxKernel[ ] := Enclose[
-    Module[ { pwFile, kernel, readPaths, writePaths, executePaths, pid },
+    Module[ { kernel, readPaths, writePaths, executePaths, pid },
 
         Scan[ LinkClose, Select[ Links[ ], sandboxKernelQ ] ];
-
-        (* pwFile = FileNameJoin @ { $InstallationDirectory, "Configuration", "Licensing", "playerpass" }; *)
 
         kernel = ConfirmMatch[ LinkLaunch @ $sandboxKernelCommandLine, _LinkObject, "LinkLaunch" ];
 
@@ -1396,7 +1394,7 @@ messageQuietedQ0[ msg: MessageName[ _Symbol, tag___ ] ] :=
         msgPatt      = All | { ___, msgOrGeneral, ___ };
 
         TrueQ @ And[
-            (* check if msg is unquieted via third arg of Quiet: *)
+            (* check if msg is not quiet via third arg of Quiet: *)
             FreeQ[ stack, { _, _, msgPatt }, 2 ],
             (* check if msg is not quieted via second arg of Quiet: *)
             ! FreeQ[ stack, { _, msgPatt, _ }, 2 ]
