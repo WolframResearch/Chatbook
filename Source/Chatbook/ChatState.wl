@@ -42,7 +42,6 @@ withChatState[ eval_ ] :=
         },
         $ChatHandlerData = <| |>;
         $tokenBudgetLog = Internal`Bag[ ];
-        (* cSpell: ignore multser *)
         Internal`InheritedBlock[ { $evaluationCell, $evaluationNotebook },
             Quiet[ withToolBox @ withBasePromptBuilder @ eval, ServiceExecute::multser ]
         ]

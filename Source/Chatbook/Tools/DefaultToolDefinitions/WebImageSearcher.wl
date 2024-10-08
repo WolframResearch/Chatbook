@@ -65,7 +65,6 @@ webImageSearch0[ query_String ] := Enclose[
             Check[
                 raw = WebImageSearch[ query, "ImageHyperlinks", opts ],
                 $unavailable,
-                (* cSpell: ignore unexp *)
                 IntegratedServices`IntegratedServices::unexp
             ],
             IntegratedServices`IntegratedServices::unexp

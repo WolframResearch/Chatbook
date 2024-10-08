@@ -3,8 +3,6 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`Actions`" ];
 
-(* cSpell: ignore TOOLCALL, ENDTOOLCALL, nodef *)
-
 (* TODO: these probably aren't needed as exported symbols since all hooks are going through ChatbookAction *)
 `AskChat;
 `AttachCodeButtons;
@@ -763,7 +761,6 @@ CopyChatObject // endDefinition;
 (*constructChatObject*)
 constructChatObject // beginDefinition;
 
-(* cSpell: ignore bdprompt *)
 constructChatObject[ messages_List ] :=
     With[ { chat = Quiet[ chatObject @ checkMultimodal @ standardizeMessageKeys @ messages, ChatObject::bdprompt ] },
         chat /; MatchQ[ chat, _chatObject ]

@@ -85,8 +85,8 @@ $$url         = held[ _URL ];
 (*ResourceUninstall*)
 ResourceUninstall // ClearAll;
 
-ResourceUninstall[ rtype: $$installableType, name_String ] :=
-    catchMine @ resourceUninstall[ rtype, name ];
+ResourceUninstall[ rType: $$installableType, name_String ] :=
+    catchMine @ resourceUninstall[ rType, name ];
 
 ResourceUninstall[ ro_ResourceObject ] :=
     catchMine @ ResourceUninstall[ ro[ "ResourceType" ], ro[ "Name" ] ];
@@ -107,16 +107,16 @@ ResourceUninstall[ args___ ] :=
 (*resourceUninstall*)
 resourceUninstall // beginDefinition;
 
-resourceUninstall[ rtype: $$installableType, name_String ] := Enclose[
+resourceUninstall[ rType: $$installableType, name_String ] := Enclose[
     Module[ { target },
-        target = ConfirmBy[ resourceInstallLocation[ rtype, name ], StringQ, "InstallLocation" ];
-        If[ ! FileExistsQ @ target, throwFailure[ "ResourceNotInstalled", rtype, name ] ];
+        target = ConfirmBy[ resourceInstallLocation[ rType, name ], StringQ, "InstallLocation" ];
+        If[ ! FileExistsQ @ target, throwFailure[ "ResourceNotInstalled", rType, name ] ];
         ConfirmMatch[ DeleteFile @ target, Null, "DeleteFile" ];
         ConfirmAssert[ ! FileExistsQ @ target, "FileExists" ];
-        invalidateCache[ rtype ];
+        invalidateCache[ rType ];
         Null
     ],
-    throwInternalFailure[ resourceUninstall[ rtype, name ], ## ] &
+    throwInternalFailure[ resourceUninstall[ rType, name ], ## ] &
 ];
 
 resourceUninstall // endDefinition;
@@ -126,19 +126,19 @@ resourceUninstall // endDefinition;
 (*ResourceInstallFromRepository*)
 ResourceInstallFromRepository // beginDefinition;
 
-ResourceInstallFromRepository[ rtype: $$installableType ] := catchMine @ Enclose[
+ResourceInstallFromRepository[ rType: $$installableType ] := catchMine @ Enclose[
     Module[ { data },
         $channelData = None;
 
         data = ConfirmMatch[
-            withExternalChannelFunctions @ browseWithChannelCallback @ rtype,
+            withExternalChannelFunctions @ browseWithChannelCallback @ rType,
             KeyValuePattern @ { "Listener" -> _ChannelListener, "Channel" -> _ChannelObject },
             "BrowseWithCallback"
         ];
 
         $channelData = Append[ data, "Dialog" -> EvaluationNotebook[ ] ]
     ],
-    throwInternalFailure[ ResourceInstallFromRepository @ rtype, ##1 ] &
+    throwInternalFailure[ ResourceInstallFromRepository @ rType, ##1 ] &
 ];
 
 ResourceInstallFromRepository // endDefinition;
@@ -156,7 +156,7 @@ withExternalChannelFunctions // endDefinition;
 (*browseWithChannelCallback*)
 browseWithChannelCallback // beginDefinition;
 
-browseWithChannelCallback[ rtype: $$installableType ] := Enclose[
+browseWithChannelCallback[ rType: $$installableType ] := Enclose[
     Module[ { perms, channel, data, handler, listener, url, shortURL, parsed, id, browseURL },
 
         perms = ConfirmMatch[ $channelPermissions, "Public"|"Private", "ChannelPermissions" ];
@@ -164,17 +164,17 @@ browseWithChannelCallback[ rtype: $$installableType ] := Enclose[
         channel = ConfirmMatch[
             CreateChannel[ Permissions -> perms ],
             _ChannelObject,
-            SystemOpen @ resourceBrowseURL @ rtype;
+            SystemOpen @ resourceBrowseURL @ rType;
             throwMessageDialog[ "ChannelFrameworkError" ]
         ];
 
-        data    = <| "ResourceType" -> rtype, "Listener" :> listener, "Channel" -> channel |>;
+        data    = <| "ResourceType" -> rType, "Listener" :> listener, "Channel" -> channel |>;
         handler = ConfirmMatch[ resourceInstallHandler @ data, _Function, "Handler" ];
 
         listener = ConfirmMatch[
             ChannelListen[ channel, handler ],
             _ChannelListener,
-            SystemOpen @ resourceBrowseURL @ rtype;
+            SystemOpen @ resourceBrowseURL @ rType;
             throwMessageDialog[ "ChannelFrameworkError" ]
         ];
 
@@ -182,12 +182,12 @@ browseWithChannelCallback[ rtype: $$installableType ] := Enclose[
         shortURL  = ConfirmBy[ makeShortListenerURL[ channel, url ], StringQ, "URLShorten" ];
         parsed    = ConfirmMatch[ DeleteCases[ URLParse[ shortURL, "Path" ], "" ], { __String? StringQ }, "URLParse" ];
         id        = ConfirmBy[ Last @ URLParse[ shortURL, "Path" ], StringQ, "ChannelID" ];
-        browseURL = ConfirmBy[ resourceBrowseURL[ rtype, id ], StringQ, "BrowseURL" ];
+        browseURL = ConfirmBy[ resourceBrowseURL[ rType, id ], StringQ, "BrowseURL" ];
 
         ConfirmMatch[ SystemOpen @ browseURL, Null, "SystemOpen" ];
         AssociationMap[ Apply @ Rule, Append[ data, "BrowseURL" -> browseURL ] ]
     ],
-    throwInternalFailure[ browseWithChannelCallback @ rtype, ## ] &
+    throwInternalFailure[ browseWithChannelCallback @ rType, ## ] &
 ];
 
 browseWithChannelCallback // endDefinition;
@@ -256,8 +256,8 @@ makeShortListenerURL // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*resourceBrowseURL*)
 resourceBrowseURL // beginDefinition;
-resourceBrowseURL[ rtype_String, id_String ] := URLBuild[ resourceBrowseURL @ rtype, { "ChannelID" -> id } ];
-resourceBrowseURL[ rtype: $$installableType ] := Lookup[ $resourceBrowseURLs, rtype, $Failed ];
+resourceBrowseURL[ rType_String, id_String ] := URLBuild[ resourceBrowseURL @ rType, { "ChannelID" -> id } ];
+resourceBrowseURL[ rType: $$installableType ] := Lookup[ $resourceBrowseURLs, rType, $Failed ];
 resourceBrowseURL // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -281,7 +281,7 @@ ResourceInstallFromURL // beginDefinition;
 ResourceInstallFromURL[ ] :=
     catchMine @ ResourceInstallFromURL @ Automatic;
 
-ResourceInstallFromURL[ rtype: $$installableType|Automatic ] := catchMine @ Enclose[
+ResourceInstallFromURL[ rType: $$installableType|Automatic ] := catchMine @ Enclose[
     Module[ { url },
 
         url = ConfirmMatch[
@@ -292,17 +292,17 @@ ResourceInstallFromURL[ rtype: $$installableType|Automatic ] := catchMine @ Encl
 
         If[ url === $Canceled,
             $Canceled,
-            ConfirmBy[ ResourceInstallFromURL[ rtype, url ], AssociationQ, "Install" ]
+            ConfirmBy[ ResourceInstallFromURL[ rType, url ], AssociationQ, "Install" ]
         ]
     ],
-    throwInternalFailure[ ResourceInstallFromURL @ rtype, ## ] &
+    throwInternalFailure[ ResourceInstallFromURL @ rType, ## ] &
 ];
 
-ResourceInstallFromURL[ rtype: $$installableType|Automatic, url_String ] := Enclose[
+ResourceInstallFromURL[ rType: $$installableType|Automatic, url_String ] := Enclose[
     Module[ { ro, expected, actual, file },
 
         ro       = ConfirmMatch[ resourceFromURL @ url, _ResourceObject, "ResourceObject" ];
-        expected = Replace[ rtype, Automatic -> $$installableType ];
+        expected = Replace[ rType, Automatic -> $$installableType ];
         actual   = ConfirmBy[ ro[ "ResourceType" ], StringQ, "ResourceType" ];
 
         If[ ! MatchQ[ actual, expected ],
@@ -315,7 +315,7 @@ ResourceInstallFromURL[ rtype: $$installableType|Automatic, url_String ] := Encl
         file = ConfirmBy[ ResourceInstall @ ro, FileExistsQ, "ResourceInstall" ];
         ConfirmBy[ getResourceFile @ file, AssociationQ, "GetResourceFile" ]
     ],
-    throwInternalFailure[ ResourceInstallFromURL[ rtype, url ], ## ] &
+    throwInternalFailure[ ResourceInstallFromURL[ rType, url ], ## ] &
 ];
 
 ResourceInstallFromURL // endDefinition;
@@ -405,14 +405,14 @@ ResourceInstallFromFile // ClearAll;
 ResourceInstallFromFile[ ] :=
     catchMine @ ResourceInstallFromFile[ Automatic, Automatic ]
 
-ResourceInstallFromFile[ rtype: $$installableType|Automatic ] :=
-    catchMine @ ResourceInstallFromFile[ rtype, Automatic ];
+ResourceInstallFromFile[ rType: $$installableType|Automatic ] :=
+    catchMine @ ResourceInstallFromFile[ rType, Automatic ];
 
 ResourceInstallFromFile[ File[ path_String ] ] :=
     catchMine @ ResourceInstallFromFile[ Automatic, path ];
 
 (* I expect these next two definitions to be the most used *)
-ResourceInstallFromFile[ rtype: $$installableType|Automatic, Automatic ] := catchMine @ Enclose[
+ResourceInstallFromFile[ rType: $$installableType|Automatic, Automatic ] := catchMine @ Enclose[
     Module[ { path },
 
         path = ConfirmMatch[
@@ -423,17 +423,17 @@ ResourceInstallFromFile[ rtype: $$installableType|Automatic, Automatic ] := catc
 
         If[ path === $Canceled,
             $Canceled,
-            ConfirmBy[ ResourceInstallFromFile[ rtype, path ], AssociationQ, "Install" ]
+            ConfirmBy[ ResourceInstallFromFile[ rType, path ], AssociationQ, "Install" ]
         ]
     ],
-    throwInternalFailure[ ResourceInstallFromFile @ rtype, ## ] &
+    throwInternalFailure[ ResourceInstallFromFile @ rType, ## ] &
 ];
 
-ResourceInstallFromFile[ rtype: $$installableType|Automatic, path_String ] := Enclose[
+ResourceInstallFromFile[ rType: $$installableType|Automatic, path_String ] := Enclose[
     Module[ { ro, expected, actual, file },
 
-        ro       = ConfirmMatch[ resourceFromFile[ rtype, path ], _ResourceObject, "ResourceObject" ];
-        expected = Replace[ rtype, Automatic -> $$installableType ];
+        ro       = ConfirmMatch[ resourceFromFile[ rType, path ], _ResourceObject, "ResourceObject" ];
+        expected = Replace[ rType, Automatic -> $$installableType ];
         actual   = ConfirmBy[ ro[ "ResourceType" ], StringQ, "ResourceType" ];
 
         If[ ! MatchQ[ actual, expected ],
@@ -446,7 +446,7 @@ ResourceInstallFromFile[ rtype: $$installableType|Automatic, path_String ] := En
         file = ConfirmBy[ ResourceInstall @ ro, FileExistsQ, "ResourceInstall" ];
         ConfirmBy[ getResourceFile @ file, AssociationQ, "GetResourceFile" ]
     ],
-    throwInternalFailure[ ResourceInstallFromFile[ rtype, path ], ## ] &
+    throwInternalFailure[ ResourceInstallFromFile[ rType, path ], ## ] &
 ];
 
 ResourceInstallFromFile[ args___ ] :=
@@ -461,10 +461,10 @@ resourceFromFile[ Automatic, path_String ] := Block[ { PrintTemporary },
     Quiet[ DefinitionNotebookClient`ScrapeResource[ Import[ path ] ] ]
 ];
 
-resourceFromFile[ rtype_, path_String ] := Enclose[
+resourceFromFile[ rType_, path_String ] := Enclose[
     Block[ { PrintTemporary },
         Quiet @ With[ { nb = Import @ path },
-            ConfirmMatch[ DefinitionNotebookClient`NotebookResourceType @ nb, rtype, "ResourceType" ];
+            ConfirmMatch[ DefinitionNotebookClient`NotebookResourceType @ nb, rType, "ResourceType" ];
             DefinitionNotebookClient`ScrapeResource @ nb
         ]
     ],
@@ -481,8 +481,8 @@ ResourceInstallLocation // ClearAll;
 ResourceInstallLocation[ ro_ResourceObject ] :=
     catchMine @ ResourceInstallLocation[ ro[ "ResourceType" ], ro[ "Name" ] ];
 
-ResourceInstallLocation[ rtype: $$installableType, name_String ] :=
-    catchMine @ resourceInstallLocation[ rtype, name ];
+ResourceInstallLocation[ rType: $$installableType, name_String ] :=
+    catchMine @ resourceInstallLocation[ rType, name ];
 
 ResourceInstallLocation[ id_, opts: OptionsPattern[ ] ] :=
     catchMine @ With[ { ro = resourceObject[ id, opts ] },
@@ -530,11 +530,11 @@ resourceInstall[ resource: HoldPattern @ ResourceObject[ info_Association, ___ ]
 
 resourceInstall[ info_? AssociationQ ] := resourceInstall[ info[ "ResourceType" ], info ];
 
-resourceInstall[ rtype: $$installableType, info_? AssociationQ ] := Enclose[
+resourceInstall[ rType: $$installableType, info_? AssociationQ ] := Enclose[
     Module[ { target, content, installed },
 
-        target    = ConfirmBy[ resourceInstallLocation[ rtype, info ], StringQ, "InstallLocation" ];
-        content   = ConfirmBy[ resourceInstalledContent[ rtype, info ], AssociationQ, "InstalledContent" ];
+        target    = ConfirmBy[ resourceInstallLocation[ rType, info ], StringQ, "InstallLocation" ];
+        content   = ConfirmBy[ resourceInstalledContent[ rType, info ], AssociationQ, "InstalledContent" ];
         installed = ConfirmBy[ installResourceContent[ info, content, target ], FileExistsQ, "Install" ];
 
         If[ TrueQ @ $debug,
@@ -549,16 +549,16 @@ resourceInstall[ rtype: $$installableType, info_? AssociationQ ] := Enclose[
             ]
         ];
 
-        postInstall[ rtype, info ];
-        invalidateCache[ rtype ];
+        postInstall[ rType, info ];
+        invalidateCache[ rType ];
 
         installed
     ],
-    throwInternalFailure[ resourceInstall[ rtype, info ], ## ] &
+    throwInternalFailure[ resourceInstall[ rType, info ], ## ] &
 ];
 
-resourceInstall[ rtype: Except[ $$installableType ], _ ] :=
-    throwFailure[ "NotInstallableResourceType", rtype, $installableTypes ];
+resourceInstall[ rType: Except[ $$installableType ], _ ] :=
+    throwFailure[ "NotInstallableResourceType", rType, $installableTypes ];
 
 resourceInstall // endDefinition;
 
@@ -568,7 +568,7 @@ resourceInstall // endDefinition;
 postInstall // beginDefinition;
 postInstall[ "Prompt", info_ ] := addToVisiblePersonas @ resourceName @ info;
 postInstall[ "LLMTool", info_ ] := enableTool @ resourceName @ info;
-postInstall[ rtype_, info_ ] := Null;
+postInstall[ rType_, info_ ] := Null;
 postInstall // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -608,17 +608,17 @@ enableTool // endDefinition;
 (*resourceInstallLocation*)
 resourceInstallLocation // beginDefinition;
 
-resourceInstallLocation[ rtype_, KeyValuePattern[ "Name" -> name_ ] ] :=
-    resourceInstallLocation[ rtype, name ];
+resourceInstallLocation[ rType_, KeyValuePattern[ "Name" -> name_ ] ] :=
+    resourceInstallLocation[ rType, name ];
 
-resourceInstallLocation[ rtype_String, name0_String ] := Enclose[
+resourceInstallLocation[ rType_String, name0_String ] := Enclose[
     Module[ { name, fileName, directory },
-        name      = ConfirmBy[ resourceName[ rtype, name0 ], StringQ, "Name" ];
+        name      = ConfirmBy[ resourceName[ rType, name0 ], StringQ, "Name" ];
         fileName  = URLEncode @ name <> ".mx";
-        directory = ConfirmBy[ resourceTypeDirectory @ rtype, DirectoryQ, "Directory" ];
+        directory = ConfirmBy[ resourceTypeDirectory @ rType, DirectoryQ, "Directory" ];
         FileNameJoin @ { directory, fileName }
     ],
-    throwInternalFailure[ resourceInstallLocation[ rtype, name0 ], ## ] &
+    throwInternalFailure[ resourceInstallLocation[ rType, name0 ], ## ] &
 ];
 
 resourceInstallLocation // endDefinition;
@@ -628,13 +628,13 @@ resourceInstallLocation // endDefinition;
 (*resourceTypeDirectory*)
 resourceTypeDirectory // beginDefinition;
 
-resourceTypeDirectory[ rtype_String ] := Enclose[
+resourceTypeDirectory[ rType_String ] := Enclose[
     Module[ { root, typeName },
         root     = ConfirmBy[ $ResourceInstallationDirectory, StringQ, "RootDirectory" ];
-        typeName = ConfirmBy[ resourceTypeDirectoryName @ rtype, StringQ, "TypeName" ];
+        typeName = ConfirmBy[ resourceTypeDirectoryName @ rType, StringQ, "TypeName" ];
         ConfirmBy[ GeneralUtilities`EnsureDirectory @ { root, typeName }, DirectoryQ, "Directory" ]
     ],
-    throwInternalFailure[ resourceTypeDirectory @ rtype, ## ] &
+    throwInternalFailure[ resourceTypeDirectory @ rType, ## ] &
 ];
 
 resourceTypeDirectory // endDefinition;
@@ -645,7 +645,7 @@ resourceTypeDirectory // endDefinition;
 resourceTypeDirectoryName // beginDefinition;
 resourceTypeDirectoryName[ "Prompt"     ] := "Personas";
 resourceTypeDirectoryName[ "LLMTool"    ] := "Tools";
-resourceTypeDirectoryName[ rtype_String ] := URLEncode @ rtype;
+resourceTypeDirectoryName[ rType_String ] := URLEncode @ rType;
 resourceTypeDirectoryName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -653,12 +653,12 @@ resourceTypeDirectoryName // endDefinition;
 (*resourceName*)
 resourceName // beginDefinition;
 
-resourceName[ KeyValuePattern @ { "ResourceType" -> rtype_, "Name" -> name_ } ] :=
-    resourceName[ rtype, name ];
+resourceName[ KeyValuePattern @ { "ResourceType" -> rType_, "Name" -> name_ } ] :=
+    resourceName[ rType, name ];
 
-resourceName[ rtype_String, name_String ] := (
-    needsResourceType @ rtype;
-    StringDelete[ name, StartOfString ~~ ResourceSystemClient`ResourceType`NamePrefix @ rtype ]
+resourceName[ rType_String, name_String ] := (
+    needsResourceType @ rType;
+    StringDelete[ name, StartOfString ~~ ResourceSystemClient`ResourceType`NamePrefix @ rType ]
 );
 
 resourceName // endDefinition;
@@ -668,16 +668,16 @@ resourceName // endDefinition;
 (*needsResourceType*)
 needsResourceType // beginDefinition;
 
-needsResourceType[ rtype: $$installableType ] := Enclose[
+needsResourceType[ rType: $$installableType ] := Enclose[
     Module[ { pacletName, paclet, context },
-        pacletName = ConfirmBy[ rtype <> "Resource", StringQ, "PacletName" ];
+        pacletName = ConfirmBy[ rType <> "Resource", StringQ, "PacletName" ];
         paclet = ConfirmBy[ PacletInstall @ pacletName, PacletObjectQ, "PacletInstall" ];
         context = ConfirmBy[ First[ Flatten @ List @ paclet[ "Context" ], $Failed ], StringQ, "Context" ];
         ConfirmMatch[ Needs[ context -> None ], Null, "NeedsContext" ];
         ConfirmAssert[ MemberQ[ $Packages, context ], "Packages" ];
-        needsResourceType[ rtype ] = Null
+        needsResourceType[ rType ] = Null
     ],
-    throwInternalFailure[ needsResourceType @ rtype, ## ] &
+    throwInternalFailure[ needsResourceType @ rType, ## ] &
 ];
 
 needsResourceType // endDefinition;
@@ -789,14 +789,14 @@ GetInstalledResourceData[ All, opts: OptionsPattern[ ] ] :=
         AssociationMap[ getInstalledResourceData, $installableTypes ]
     ];
 
-GetInstalledResourceData[ rtype: $$installableType, opts: OptionsPattern[ ] ] :=
+GetInstalledResourceData[ rType: $$installableType, opts: OptionsPattern[ ] ] :=
     catchMine[
-        If[ TrueQ @ OptionValue[ "RegenerateCache" ], KeyDropFrom[ $installedResourceCache, rtype ] ];
-        getInstalledResourceData @ rtype
+        If[ TrueQ @ OptionValue[ "RegenerateCache" ], KeyDropFrom[ $installedResourceCache, rType ] ];
+        getInstalledResourceData @ rType
     ];
 
-GetInstalledResourceData[ rtype_, opts: OptionsPattern[ ] ] :=
-    catchMine @ throwFailure[ "NotInstallableResourceType", rtype, $installableTypes ];
+GetInstalledResourceData[ rType_, opts: OptionsPattern[ ] ] :=
+    catchMine @ throwFailure[ "NotInstallableResourceType", rType, $installableTypes ];
 
 GetInstalledResourceData[ a___ ] :=
     catchMine @ throwFailure[ "InvalidArguments", GetInstalledResourceData, HoldForm @ GetInstalledResourceData @ a ];
@@ -806,14 +806,14 @@ GetInstalledResourceData[ a___ ] :=
 (*getInstalledResourceData*)
 getInstalledResourceData // beginDefinition;
 
-getInstalledResourceData[ rtype_ ] :=
-    With[ { cached = $installedResourceCache[ rtype ] },
+getInstalledResourceData[ rType_ ] :=
+    With[ { cached = $installedResourceCache[ rType ] },
         cached /; ! MissingQ @ cached
     ];
 
-getInstalledResourceData[ rtype: $$installableType ] := Enclose[
+getInstalledResourceData[ rType: $$installableType ] := Enclose[
     Module[ { data, held, merged, released },
-        data = ConfirmMatch[ getInstalledResources @ rtype, { ___Association }, "GetInstalledResources" ];
+        data = ConfirmMatch[ getInstalledResources @ rType, { ___Association }, "GetInstalledResources" ];
         held = data /. expr: Except[ $$notHeld ] :> tempHold @ expr;
 
         merged = KeySort @ Association @ Cases[
@@ -829,9 +829,9 @@ getInstalledResourceData[ rtype: $$installableType ] := Enclose[
                         KeyDrop[ resourceAssoc, "Name" ],
                         <|
                             "Name"         -> name,
-                            "ResourceType" -> rtype,
+                            "ResourceType" -> rType,
                             "ResourceName" -> Lookup[ resourceAssoc, "Name", name ],
-                            "Origin"       -> determineOrigin[ rtype, resourceAssoc ]
+                            "Origin"       -> determineOrigin[ rType, resourceAssoc ]
                         |>
                     },
                     First
@@ -840,7 +840,7 @@ getInstalledResourceData[ rtype: $$installableType ] := Enclose[
 
         released = ConfirmBy[ merged /. tempHold[ expr_ ] :> expr, FreeQ @ tempHold, "Release" ];
 
-        $installedResourceCache[ rtype ] = released
+        $installedResourceCache[ rType ] = released
     ],
     throwInternalFailure
 ];
@@ -851,7 +851,7 @@ getInstalledResourceData // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getInstalledResources*)
 getInstalledResources // beginDefinition;
-getInstalledResources[ rtype_String ] := getResourceFile /@ FileNames[ "*.mx", resourceTypeDirectory @ rtype ];
+getInstalledResources[ rType_String ] := getResourceFile /@ FileNames[ "*.mx", resourceTypeDirectory @ rType ];
 getInstalledResources // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -865,12 +865,12 @@ getResourceFile // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*determineOrigin*)
 determineOrigin // beginDefinition;
-determineOrigin[ rtype: $$installableType, KeyValuePattern[ "RepositoryLocation" -> $$url ] ] := rtype<>"Repository";
-determineOrigin[ rtype_, KeyValuePattern[ "RepositoryLocation" -> $$localObject ] ] := "Local";
-determineOrigin[ rtype_, KeyValuePattern[ "ResourceLocations" -> { $$localObject } ] ] := "Local";
-determineOrigin[ rtype_, KeyValuePattern[ "ResourceLocations" -> { $$cloudObject } ] ] := "Cloud";
-determineOrigin[ rtype_, KeyValuePattern[ "DocumentationLink" -> $$url ] ] := "Cloud";
-determineOrigin[ rtype: $$installableType, _Association ] := "Unknown";
+determineOrigin[ rType: $$installableType, KeyValuePattern[ "RepositoryLocation" -> $$url ] ] := rType<>"Repository";
+determineOrigin[ rType_, KeyValuePattern[ "RepositoryLocation" -> $$localObject ] ] := "Local";
+determineOrigin[ rType_, KeyValuePattern[ "ResourceLocations" -> { $$localObject } ] ] := "Local";
+determineOrigin[ rType_, KeyValuePattern[ "ResourceLocations" -> { $$cloudObject } ] ] := "Cloud";
+determineOrigin[ rType_, KeyValuePattern[ "DocumentationLink" -> $$url ] ] := "Cloud";
+determineOrigin[ rType: $$installableType, _Association ] := "Unknown";
 determineOrigin // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

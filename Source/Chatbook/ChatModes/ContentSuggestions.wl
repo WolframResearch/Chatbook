@@ -48,7 +48,6 @@ Delimiters -> "%%" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*Fill-in-the-Middle Completions*)
-(* cSpell: ignore Ollama, CodeGemma, DeepSeek *)
 $wlFIM                 = False;
 $wlFIMService          = "Ollama";
 $wlFIMModel            = "deepseek-coder-v2";

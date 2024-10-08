@@ -288,7 +288,6 @@ sendChat // endDefinition;
 (*makeHTTPRequest*)
 makeHTTPRequest // beginDefinition;
 
-(* cSpell: ignore ENDTOOLCALL, AIAPI *)
 makeHTTPRequest[ settings_Association? AssociationQ, messages: { __Association } ] :=
     Enclose @ Module[
         { key, stream, model, tokens, temperature, topP, freqPenalty, presPenalty, data, body, apiCompletionURL },
@@ -517,7 +516,6 @@ chatSubmit // Attributes = { HoldFirst };
 chatSubmit[ args__ ] := Quiet[
     rasterizeBlock @ chatSubmit0 @ args,
     {
-        (* cSpell: ignore wname, invm, invk *)
         ServiceConnections`SavedConnections::wname,
         ServiceConnections`ServiceConnections::wname,
         URLSubmit::invm,
@@ -888,7 +886,6 @@ autoCorrect // beginDefinition;
 autoCorrect[ string_String ] := StringReplace[ string, $llmAutoCorrectRules ];
 autoCorrect // endDefinition;
 
-(* cSpell: ignore evaliator *)
 $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "wolfram_language_evaliator" -> "wolfram_language_evaluator",
     "\\!\\(\\*MarkdownImageBox[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
@@ -1319,14 +1316,12 @@ makeToolResponseMessage0[ "Anthropic"|"MistralAI", family_, response_ ] := <|
     "ToolResponse" -> True
 |>;
 
-(* cSpell: ignore Qwen, Nemotron *)
 makeToolResponseMessage0[ service_, "Qwen"|"Nemotron"|"Mistral", response_ ] := <|
     "Role"         -> "User",
     "Content"      -> wrapResponse[ "<tool_response>", response, "</tool_response>" ],
     "ToolResponse" -> True
 |>;
 
-(* cSpell: ignore Nemotron *)
 (* makeToolResponseMessage0[ service_, "Nemotron", response_ ] := <|
     "Role"         -> "User",
     "Content"      -> wrapResponse[ "<extra_id_1>Tool\n", response, "" ],
@@ -1389,7 +1384,6 @@ appendToolResult[ container_Symbol, KeyValuePattern[ "ToolMethod" -> "Simple" ],
         container[ "DynamicContent" ] = container[ "DynamicContent" ] <> append;
     ];
 
-(* cSpell: ignore ENDRESULT *)
 appendToolResult[ container_Symbol, settings_, output_String, id_String ] :=
     Module[ { append },
         append = "ENDTOOLCALL\nRESULT\n"<>output<>"\nENDRESULT(" <> id <> ")\n\n";

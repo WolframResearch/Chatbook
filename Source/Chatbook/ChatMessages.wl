@@ -127,7 +127,6 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
                 s,
                 {
                     "%%BASE_PROMPT%%" :> $basePrompt,
-                    (* cSpell: ignore ENDRESULT *)
                     "\nENDRESULT(" ~~ Repeated[ LetterCharacter|DigitCharacter, $tinyHashLength ] ~~ ")\n" :>
                         "\nENDRESULT\n"
                 }
@@ -607,7 +606,7 @@ applyTokenizer // endDefinition;
 
 
 applyTokenizer0 // beginDefinition;
-(* cSpell: ignore invencin *)
+
 applyTokenizer0[ tokenizer_, content_ ] :=
     Module[ { result, $retry },
         result = Quiet[ Check[ tokenizer @ content, $retry, NetEncoder::invencin ], NetEncoder::invencin ];
@@ -1173,7 +1172,6 @@ inlineFunctionReferenceBoxesQ[ ___ ] := False;
 (*makePromptFunctionMessages*)
 makePromptFunctionMessages // beginDefinition;
 
-(* cSpell: ignore nodef *)
 makePromptFunctionMessages[ settings_, { cells___, cell0_ } ] := Enclose[
     Module[ { modifiers, cell, name, arguments, filled, prompt, string },
         (* Ensure Wolfram/LLMFunctions is installed and loaded before calling System`LLMPrompt[..] *)

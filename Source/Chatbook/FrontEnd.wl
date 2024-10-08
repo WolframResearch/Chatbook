@@ -10,8 +10,6 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
-
-(* cSpell: ignore Rasterizer *)
 $cloudRasterizerLocation = "/Chatbook/API/RasterizerService";
 
 $checkEvaluationCell := $VersionNumber <= 13.2; (* Flag that determines whether to use workarounds for #187 *)
