@@ -127,7 +127,7 @@ $versionRequirements = <|
 
 $mxFlag = Wolfram`ChatbookInternal`$BuildingMX;
 $resourceFunctionContext = "Wolfram`Chatbook`ResourceFunctions`";
-(* cSpell: ignore Deflatten *)
+
 $resourceVersions = <|
     "AssociationKeyDeflatten" -> "1.0.0",
     "ClickToCopy"             -> "1.0.0",
@@ -1045,7 +1045,6 @@ styleSheetInfo[ names: { ___String } ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*trimURL*)
-(* cSpell: ignore Fdetails *)
 trimURL[ url_String ] := trimURL[ url, $maxBugReportURLSize ];
 
 trimURL[ url_String, limit_Integer ] /; StringLength @ url <= limit := url;

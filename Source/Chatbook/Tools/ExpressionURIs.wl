@@ -311,7 +311,6 @@ GetAttachments // endExportedDefinition;
 (*getAttachments*)
 getAttachments // beginDefinition;
 
-(* cSpell: ignore ENDRESULT *)
 getAttachments[ messages_List, All ] := Enclose[
     Catch @ Module[ { allExprKeys, allToolKeys, string, exprKeys, toolKeys, exprs, toolCalls },
         allExprKeys = ConfirmMatch[ Keys @ $attachments, { ___String }, "ExpressionKeys" ];

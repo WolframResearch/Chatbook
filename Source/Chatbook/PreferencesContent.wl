@@ -665,7 +665,6 @@ serviceConnectButton[
         tr[ "PreferencesContentServiceConnectButton" ],
         Needs[ "Wolfram`LLMFunctions`" -> None ];
         Replace[
-            (* cSpell: ignore genconerr *)
             Quiet[ Wolfram`LLMFunctions`APIs`Common`ConnectToService @ service, { ServiceConnect::genconerr } ],
             _ServiceObject :>
                 If[ ListQ @ getServiceModelList @ service,
@@ -781,7 +780,6 @@ makeOpenAICompletionURLInput[ False ] := highlightControl[
     prefsInputField[
         tr[ "PreferencesContentOpenAICompletionURLLabel" ],
         scopedDynamic[
-            (* cSpell: ignore AIAPI *)
             CurrentChatSettings[ $preferencesScope, "OpenAIAPICompletionURL" ],
             {
                 None,
@@ -1348,7 +1346,6 @@ subsectionText // endDefinition;
 (*prefsInputField*)
 prefsInputField // beginDefinition;
 
-(* cSpell: ignore leadin *)
 prefsInputField[ None, value_Dynamic, type_, opts: OptionsPattern[ ] ] :=
     prefsInputField0[ value, type, opts ];
 

@@ -14,7 +14,6 @@ $tinyHashLength = 5;
 $messageToStringDelimiter = "\n\n";
 $messageToStringTemplate  = StringTemplate[ "`Role`: `Content`" ];
 
-(* cSpell: ignore deflatten *)
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*AssociationKeyDeflatten*)
