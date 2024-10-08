@@ -1112,50 +1112,92 @@ servicesSettingsPanel // endDefinition;
 servicesSettingsPanel0 // beginDefinition;
 
 servicesSettingsPanel0[ ] := Enclose[
-    Module[ { llmIcon, llmHelp, llmLabel, llmPanel, servicesLabel, serviceGrid, settingsLabel, settings },
-
+    Module[ { llmIcon, llmHelp, llmLabel, llmPanel, serviceCollapsableSection, serviceGrid, settingsLabel, settings },
+        
         llmLabel      = subsectionText @ tr[ "PreferencesContentLLMKitTitle" ];
         llmPanel      = makeLLMPanel[ ];
-        servicesLabel = subsectionText @ tr[ "PreferencesContentService" ];
         serviceGrid   = ConfirmMatch[ makeServiceGrid[ ], _Framed, "ServiceGrid" ];
         settingsLabel = subsectionText @ tr[ "PreferencesContentDefaultService" ];
         settings      = ConfirmMatch[ makeModelSelector[ "Services" ], _Dynamic, "ServicesSettings" ];
 
+        serviceCollapsableSection =
+            DynamicModule[ { Typeset`openQ = False },
+                PaneSelector[
+                    {
+                        True ->
+                            Grid[
+                                {
+                                    {
+                                        EventHandler[
+                                            PaneSelector[
+                                                {
+                                                    False -> subsectionText @ Grid[ { { tr[ "PreferencesContentService" ], "\:f443" } }, Alignment -> { Left, Baseline }, BaselinePosition -> { 1, 1 } ],
+                                                    True -> subsectionText @ Grid[ { { tr[ "PreferencesContentService" ], "\:f449" } }, Alignment -> { Left, Baseline }, BaselinePosition -> { 1, 1 } ]
+                                                },
+                                                Dynamic[ CurrentValue[ "MouseOver" ] ],
+                                                BaselinePosition -> Baseline,
+                                                ImageSize -> Automatic ],
+                                            "MouseClicked" :> ( Typeset`openQ = !Typeset`openQ ) ] },
+                                    { serviceGrid }
+                                },
+                                Alignment -> { Left, Baseline },
+                                BaselinePosition -> { 1, 1 } ],
+                        False ->
+                            EventHandler[
+                                PaneSelector[
+                                    {
+                                        False -> subsectionText @ Grid[ { { tr[ "PreferencesContentService" ], "\:f442" } }, Alignment -> { Left, Baseline }, BaselinePosition -> { 1, 1 } ],
+                                        True -> subsectionText @ Grid[ { { tr[ "PreferencesContentService" ], "\:f43b" } }, Alignment -> { Left, Baseline }, BaselinePosition -> { 1, 1 } ]
+                                    },
+                                    Dynamic[ CurrentValue[ "MouseOver" ] ],
+                                    BaselinePosition -> Baseline,
+                                    ImageSize -> Automatic ],
+                                "MouseClicked" :> ( Typeset`openQ = !Typeset`openQ ) ] },
+                    Dynamic[ Typeset`openQ ],
+                    BaselinePosition -> Baseline,
+                    ImageSize -> Automatic ]
+            ];
+
         llmIcon = chatbookIcon[ "llmkit-dialog-sm", False ];
         llmHelp = (* If this tooltip isn't meant to be a button, then use infoTooltip[llmLabel, text] *)
-            Button[
-                Tooltip[
-                    NotebookTools`Mousedown[
-                        Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.537 ], 14 ] ] ],
-                        Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.692 ], 14 ] ] ],
-                        Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.358 ], 14 ] ] ] ],
-                    Pane[ tr[ "PreferencesContentLLMKitLearnMoreTooltip" ], ImageSize -> UpTo[ 274 ] ],
-                    TooltipStyle -> {
-                        Background -> RGBColor[ "#EDEDED" ],
-                        CellFrameColor -> RGBColor[ "#D1D1D1" ],
-                        CellFrameMargins -> 5,
-                        FontColor -> RGBColor[ "#333333" ],
-                        FontFamily -> "Roboto",
-                        FontSize -> 11 } ],
-                SystemOpen[ Lookup[ Wolfram`LLMFunctions`Common`$LLMKitInfo, "learnMoreUrl" ] ],
-                Appearance -> "Suppressed",
-                BaselinePosition -> Baseline,
-                ImageSize -> Automatic,
-                Method -> "Queued" ];
+            PaneSelector[
+                {
+                    True ->
+                        Button[
+                            Tooltip[
+                                NotebookTools`Mousedown[
+                                    Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.537 ], 14 ] ] ],
+                                    Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.692 ], 14 ] ] ],
+                                    Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.358 ], 14 ] ] ] ],
+                                Pane[ tr[ "PreferencesContentLLMKitLearnMoreTooltip" ], ImageSize -> UpTo[ 274 ] ],
+                                TooltipStyle -> {
+                                    Background -> RGBColor[ "#EDEDED" ],
+                                    CellFrameColor -> RGBColor[ "#D1D1D1" ],
+                                    CellFrameMargins -> 5,
+                                    FontColor -> RGBColor[ "#333333" ],
+                                    FontFamily -> "Roboto",
+                                    FontSize -> 11 } ],
+                            SystemOpen[ Lookup[ Wolfram`LLMFunctions`Common`$LLMKitInfo, "learnMoreUrl" ] ],
+                            Appearance -> "Suppressed",
+                            BaselinePosition -> Baseline,
+                            ImageSize -> Automatic,
+                            Method -> "Queued" ],
+                    False -> ProgressIndicator[ Appearance -> "Percolate" ] },
+                Dynamic[ Wolfram`LLMFunctions`Common`$LLMKitInfo =!= None ],
+                ImageSize -> Automatic];
 
         Pane[
             Grid[
                 {
                     { Grid[ { { llmIcon, llmLabel, llmHelp } }, Alignment -> { Left, Center } ] },
                     { llmPanel },
-                    { servicesLabel },
-                    { serviceGrid   },
+                    { serviceCollapsableSection },
                     { settingsLabel },
                     { settings      }
                 },
                 Alignment -> { Left, Baseline },
                 ItemSize  -> { Fit, Automatic },
-                Spacings  -> { Automatic, { 0, 0.2, { 1.43, 0.5 }, 0 } }
+                Spacings  -> { Automatic, { 0, 0.2, 1.43, 1.43, 0.5, 0 } }
             ],
             ImageMargins -> 8
         ]
@@ -1233,6 +1275,15 @@ makeLLMPanel[ ] :=
                     {
                         PaneSelector[
                             {
+                                "Loading" ->
+                                    DynamicModule[
+                                        (* Display a progress indicator until $LLMKitInfo is set via initialization *)
+                                        { llmSessionInfo (* really a dummy variable that will hold the same Association as $LLMKitInfo *) },
+                                        ProgressIndicator[ Appearance -> "Percolate" ],
+                                        Initialization :> ( SessionSubmit[ Wolfram`LLMFunctions`Common`Private`setupRequestLLMKitStatus[ Dynamic[ llmSessionInfo ] ] ] ),
+                                        Deinitialization :> ( SessionSubmit[ Wolfram`LLMFunctions`Common`Private`teardownRequestLLMKitStatus[ Dynamic[ llmSessionInfo ] ] ] ),
+                                        SynchronousInitialization -> False
+                                    ],
                                 "A" ->
                                     Grid[
                                         {
@@ -1266,7 +1317,12 @@ makeLLMPanel[ ] :=
                                         Spacings -> { 0, 0.5 }
                                     ]
                             },
-                            Dynamic[ Which[ !TrueQ[ CurrentValue[ "WolframCloudConnected" ] ], "A", !TrueQ[ Wolfram`LLMFunctions`Common`$LLMKitSubscribed ], "B", True, "C" ] ],
+                            Dynamic[
+                                Which[
+                                    Wolfram`LLMFunctions`Common`$LLMKitInfo === None, "Loading",
+                                    !TrueQ[ CurrentValue[ "WolframCloudConnected" ] ], "A",
+                                    !TrueQ[ Wolfram`LLMFunctions`Common`$LLMKitSubscribed ], "B",
+                                    True, "C" ] ],
                             BaselinePosition -> Baseline,
                             ImageSize -> Automatic ],
                         "",
