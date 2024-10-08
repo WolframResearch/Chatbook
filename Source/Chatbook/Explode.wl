@@ -7,17 +7,48 @@ Needs[ "Wolfram`Chatbook`"        ];
 Needs[ "Wolfram`Chatbook`Common`" ];
 
 $$newCellStyle = Alternatives[
+    "Abstract",
+    "Affiliation",
+    "Author",
     "BlockQuote",
+    "Chapter",
+    "Code",
+    "CodeText",
+    "DisplayFormula",
+    "DisplayFormulaNumbered",
+    "Echo",
+    "EchoAfter",
+    "EchoBefore",
+    "EchoTiming",
     "ExternalLanguage",
     "Input",
+    "InputOnly",
     "Item",
-    "Subitem",
+    "ItemNumbered",
+    "ItemParagraph",
     "MarkdownDelimiter",
+    "Message",
+    "Output",
+    "Print",
     "Program",
+    "Reference",
     "Section",
+    "SideCaption",
+    "SideCaptionArray",
+    "SmallText",
+    "Subchapter",
+    "Subitem",
+    "SubitemNumbered",
+    "SubitemParagraph",
     "Subsection",
+    "Subsubitem",
+    "SubsubitemNumbered",
+    "SubsubitemParagraph",
     "Subsubsection",
     "Subsubsubsection",
+    "Subsubsubsubsection",
+    "Subsubtitle",
+    "Subtitle",
     "Text",
     "TextTableForm",
     "Title"
@@ -29,7 +60,8 @@ $$ws = _String? (StringMatchQ[ WhitespaceCharacter... ]);
 (* ::Section::Closed:: *)
 (*ExplodeCell*)
 ExplodeCell // beginDefinition;
-ExplodeCell[ cell_Cell ] := catchMine @ explodeCell @ cell;
+ExplodeCell[ cell_Cell ] := catchMine @ LogChatTiming @ explodeCell @ cell;
+ExplodeCell[ RawBoxes[ cell_Cell ] ] := catchMine @ ExplodeCell @ cell;
 ExplodeCell // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -75,11 +107,11 @@ postProcessExplodedCells // beginDefinition;
 
 postProcessExplodedCells[
     Cell[ BoxData @ RowBox @ { RowBox @ { "In", "[", n_String, "]" }, "="|":=", boxes__ }, "Input", a___ ]
-] := Cell[ BoxData @ boxes, "Input", CellLabel -> "In["<>n<>"]:=", a ];
+] := Cell[ BoxData @ RowBox @ { boxes }, "Input", CellLabel -> "In["<>n<>"]:=", a ];
 
 postProcessExplodedCells[
     Cell[ BoxData @ RowBox @ { RowBox @ { "Out", "[", n_String, "]" }, "="|":=", boxes__ }, "Input", a___ ]
-] := Cell[ BoxData @ boxes, "Output", CellLabel -> "Out["<>n<>"]=", a ];
+] := Cell[ BoxData @ RowBox @ { boxes }, "Output", CellLabel -> "Out["<>n<>"]=", a ];
 
 postProcessExplodedCells[ Cell[
     BoxData @ RowBox @ {
@@ -88,7 +120,7 @@ postProcessExplodedCells[ Cell[
         RowBox @ { RowBox @ { "Out", "[", nOut_String, "]" }, "=", out___ }
     },
     "Input"
-] ] := {
+] ] := postProcessExplodedCells /@ {
     Cell[ BoxData @ RowBox @ { in }, "Input", CellLabel -> "In["<>nIn<>"]:=" ],
     Cell[ BoxData @ RowBox @ { out }, "Output", CellLabel -> "Out["<>nOut<>"]=" ]
 };
@@ -112,14 +144,17 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
     Cell[ BoxData @ PaneBox[ StyleBox[ text_, style_, ___ ], ___ ], "InlineSection", ___ ] :>
         RuleCondition @ StyleBox[ extractText @ text, style ],
 
+    (* Inline code cell groups: *)
+    Cell[ BoxData @ GridBox[ grid_List, ___ ], "CellGroupBlock", ___ ] :>
+        Sequence @@ Replace[
+            Cases[ grid, { _, a_ } :> a ],
+            box: TemplateBox[ _, "MessageTemplate", ___ ] :> Cell[ BoxData @ box, "Message" ],
+            { 1 }
+        ],
+
     (* Convert TextRefLink to plain hyperlink: *)
     Cell @ BoxData[ TemplateBox[ { label_, uri_, ___ }, "TextRefLink" ], ___ ] :>
-        Cell @ BoxData @ ButtonBox[
-            StyleBox[ label, "Text" ],
-            BaseStyle  -> "Link",
-            ButtonData -> uri,
-            ButtonNote -> uri
-        ],
+        ButtonBox[ label, BaseStyle -> "Link", ButtonData -> uri ],
 
     (* Convert interactive code blocks to input cells: *)
     DynamicModuleBox[
