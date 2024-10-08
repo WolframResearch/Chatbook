@@ -175,7 +175,11 @@
 "PersonaNameRawModel" -> "\:672a\:52a0\:5de5\:306e\:30e2\:30c7\:30eb",
 "PersonaNameWolfie" -> "Wolfie",
 
-"AttachedChatFieldHint" -> "\:4f55\:3067\:3082\:805e\:3044\:3066\:304f\:3060\:3055\:3044"
+"AttachedChatFieldHint" -> "\:4f55\:3067\:3082\:805e\:3044\:3066\:304f\:3060\:3055\:3044",
+
+"MenuItemOpenHelpLinkChat" -> "Code Assistance Chat\[Ellipsis]",
+"MenuItemOpenHelpLinkSelection" -> "Code Assistance for Selection",
+"MenuItemDuplicatePreviousOutputSuggestion" -> "AI Content Suggestion"
 }
 @|
 @|
