@@ -61,6 +61,7 @@ $$noCellLabelStyle = Alternatives[
     "ChatBlockDivider",
     "ChatInput",
     "ChatSystemInput",
+    "Message",
     "Section",
     "SideChat",
     "Subsection",
@@ -133,7 +134,7 @@ $conversionRules = None;
 (* Add spacing around these operators *)
 $$spacedInfixOperator = Alternatives[
     "^", "*", "+", "-", "=", "|", "<", ">", "?", "/", ":", "!=", "@*", "^=", "&&", "*=", "-=", "->", "+=", "==", "~~",
-    "||", "<=", "<>", ">=", ";;", "/@", "/*", "/=", "/.", "/;", ":=", ":>", "::", "^:=", "=!=", "===", "|->", "<->",
+    "||", "<=", "<>", ">=", ";;", "/@", "/*", "/=", "/.", "/;", ":=", ":>", "^:=", "=!=", "===", "|->", "<->",
     "//@", "//.", "\[Equal]", "\[GreaterEqual]", "\[LessEqual]", "\[NotEqual]", "\[Function]", "\[Rule]",
     "\[RuleDelayed]", "\[TwoWayRule]"
 ];
@@ -478,6 +479,31 @@ cellToString[ cell: Cell[ __, "Program", ___ ] ] /; ! TrueQ @ $delimitedCodeBloc
             ]
         ]
     ];
+
+(* Add a cell label for Echo cells *)
+cellToString[ Cell[ a__, "Echo", b___ ] ] :=
+    cellToString @ Cell[ a, b, CellLabel -> ">>" ];
+
+cellToString[ Cell[ a__, "EchoTiming", b___ ] ] :=
+    cellToString @ Cell[ a, b, CellLabel -> "\:231A" ];
+
+cellToString[ Cell[
+    a__,
+    "EchoBefore"|"EchoAfter",
+    b___,
+    CellDingbat -> Cell @ BoxData @ TemplateBox[
+        { StyleBox[ dingbat_, "EchoBeforeDingbat"|"EchoAfterDingbat", ___ ], ___ },
+        "HyperlinkDefault",
+        ___
+    ],
+    c___
+] ] := cellToString @ Cell[
+    a, b, c,
+    CellLabel -> StringReplace[
+        fasterCellToString @ dingbat,
+        { "\[RightGuillemet]" -> ">>", "\[LeftGuillemet]" -> "<<" }
+    ]
+];
 
 (* Prepend cell label to the cell string *)
 cellToString[ Cell[ a__, CellLabel -> label_String, b___ ] ] :=
@@ -1193,6 +1219,12 @@ fasterCellToString0[ (Cell|StyleBox)[ code_, "InlineCode"|"InlineFormula", ___ ]
 (*Template Boxes*)
 
 (* Messages *)
+fasterCellToString0[ TemplateBox[ args: { sym_String, tag_String, str_String, ___ }, "MessageTemplate", ___ ] ] := (
+    needsBasePrompt[ "WolframLanguage" ];
+    sowMessageData @ args; (* Look for stack trace data *)
+    sym <> "::" <> tag <> ": "<> fasterCellToString0 @ str
+);
+
 fasterCellToString0[ TemplateBox[ args: { _, _, str_String, ___ }, "MessageTemplate", ___ ] ] := (
     needsBasePrompt[ "WolframLanguage" ];
     sowMessageData @ args; (* Look for stack trace data *)

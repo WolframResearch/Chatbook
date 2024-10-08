@@ -1735,8 +1735,10 @@ makeInteractiveCodeCell[ language_, code_String ] /; $dynamicText :=
     ];
 
 (* Wolfram Language code blocks *)
-makeInteractiveCodeCell[ lang_String? wolframLanguageQ, code_ ] :=
-    Module[ { display, handler },
+makeInteractiveCodeCell[ lang_String? wolframLanguageQ, code0_ ] := Enclose[
+    Catch @ Module[ { code, display, handler },
+        code = ConfirmMatch[ parseCellGroupBlock @ code0, _Cell|_String, "Code" ];
+        If[ MatchQ[ code, _Cell ], Throw @ code ];
         display = RawBoxes @ Cell[
             BoxData @ If[ StringQ @ code, wlStringToBoxes @ code, code ],
             "ChatCode",
@@ -1749,7 +1751,9 @@ makeInteractiveCodeCell[ lang_String? wolframLanguageQ, code_ ] :=
         ];
         handler = inlineInteractiveCodeCell[ display, code ];
         codeBlockFrame[ Cell @ BoxData @ ToBoxes @ handler, code ]
-    ];
+    ],
+    throwInternalFailure
+];
 
 (* Supported external language code blocks *)
 makeInteractiveCodeCell[ lang_String? externalLanguageQ, code_String ] :=
@@ -1781,6 +1785,124 @@ makeInteractiveCodeCell[ language_String, code_String ] :=
     ];
 
 makeInteractiveCodeCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*parseCellGroupBlock*)
+parseCellGroupBlock // beginDefinition;
+
+parseCellGroupBlock[ code_String ] := Enclose[
+    Catch @ Module[ { split, trimmed, rows },
+
+        split = StringSplit[
+            code,
+            {
+                l: $$inLabel         :> label[ "Input"     , StringTrim @ l ],
+                l: $$outLabel        :> label[ "Output"    , StringTrim @ l ],
+                l: $$echoLabel       :> label[ "Echo"      , StringTrim @ l ],
+                l: $$echoTimingLabel :> label[ "EchoTiming", StringTrim @ l ],
+                l: $$messageLabel    :> label[ "Message"   , StringTrim @ l ],
+                l: $$printLabel      :> label[ "Print"     , StringTrim @ l ]
+            }
+        ];
+
+        trimmed = DeleteCases[ Replace[ split, s_String :> StringTrim @ s, { 1 } ], "" ];
+
+        Replace[
+            trimmed,
+            {
+                (* No labels: *)
+                { _ } :> Throw @ code,
+
+                (* A single in/out label with some code: *)
+                { label[ "In"|"Out", _ ], s_String } :> Throw @ s}
+        ];
+
+        rows = Replace[
+            SequenceReplace[
+                trimmed,
+                { label[ style_, l_ ], s_String } :> makeLabeledBlockCell[ s, style, l ]
+            ],
+            s_String :> { "", makeInteractiveCodeCell[ "Plaintext", s ] },
+            { 1 }
+        ];
+
+        Cell[
+            BoxData @ GridBox[
+                rows,
+                GridBoxAlignment -> { "Columns" -> { Right, Left }, "Rows" -> { { Baseline } } }(*,
+                GridBoxItemSize -> { "Columns" -> { 4, Automatic }, "Rows" -> { { Automatic } } }*)
+            ],
+            "CellGroupBlock"
+        ]
+    ],
+    throwInternalFailure
+];
+
+parseCellGroupBlock // endDefinition;
+
+
+$$equals          = ":=" | "=";
+$$inLabel         = "In" ~~ "[" ~~ Except["]"] ... ~~ "]" ~~ $$equals;
+$$outLabel        = "Out" ~~ "[" ~~ Except["]"] ... ~~ "]" ~~ $$equals;
+$$echoLabel       = Longest[ ">>".. | "<<".. ];
+$$echoTimingLabel = "\[WatchIcon]";
+$$messageLabel    = Except[ WhitespaceCharacter ].. ~~ "::" ~~ (LetterCharacter|DigitCharacter) .. ~~ ":";
+$$printLabel      = "During evaluation of " ~~ $$inLabel;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeLabeledBlockCell*)
+makeLabeledBlockCell // beginDefinition;
+
+makeLabeledBlockCell[ text_String, "Message", label_String ] :=
+    makeBlockMessage[ StringSplit[ StringTrim[ label, ":" ], "::" ], text ];
+
+makeLabeledBlockCell[ code_, style_, label_ ] := {
+    makeBlockLabel[ label, style ],
+    makeLabeledBlockCell0[ code, style ]
+};
+
+makeLabeledBlockCell // endDefinition;
+
+
+makeLabeledBlockCell0 // beginDefinition;
+
+makeLabeledBlockCell0[ code_String, "Input" ] :=
+    makeInteractiveCodeCell[ "Wolfram", code ];
+
+makeLabeledBlockCell0[ code_String, style_String ] :=
+    Cell[ BoxData @ code, style ];
+
+makeLabeledBlockCell0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeBlockMessage*)
+makeBlockMessage // beginDefinition;
+
+makeBlockMessage[ { sym_String, tag_String }, text_String ] :=
+    { "", TemplateBox[ { sym, tag, text, 2, 0, 0, 0, "Local" }, "MessageTemplate", BaseStyle -> "MSG" ] };
+
+makeBlockMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeBlockLabel*)
+makeBlockLabel // beginDefinition;
+
+makeBlockLabel[ label_String, "Input"  ] := StyleBox[ label, "CellLabelExpired" ];
+makeBlockLabel[ label_String, "Output" ] := StyleBox[ label, "CellLabelExpired" ];
+makeBlockLabel[ label_, "EchoTiming" ] := StyleBox[ "\[WatchIcon]", "EchoDingbat" ];
+makeBlockLabel[ label_String, "Message" ] := StyleBox[ label, "MessageMenuLabel" ];
+makeBlockLabel[ label_, "Print" ] := "";
+
+makeBlockLabel[ label_String, "Echo" ] := StyleBox[
+    StringReplace[ label, { ">>" -> "\[RightGuillemet]", "<<" -> "\[LeftGuillemet]" } ],
+    "EchoDingbat"
+];
+
+makeBlockLabel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1823,9 +1945,40 @@ formatNLInputs[ boxes_ ] :=
                                 formatResourceFunctionFast @ name,
                                 formatResourceFunctionSlow @ name
                             ]
+        ,
+        box: RowBox @ { "DateObject", "[", ___, "]" } :>
+            RuleCondition @ formatDateObjectBoxes @ box
     };
 
 formatNLInputs // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatDateObjectBoxes*)
+formatDateObjectBoxes // beginDefinition;
+
+formatDateObjectBoxes[ boxes_RowBox ] :=
+    Quiet @ Module[ { held, date },
+        held = ToExpression[ boxes, StandardForm, HoldComplete ];
+        If[ MatchQ[ held, _[ $$possibleDateObject ] ],
+            date = Quiet @ ReleaseHold @ held;
+            If[ DateObjectQ @ date,
+                ToBoxes @ date,
+                boxes
+            ],
+            boxes
+        ]
+    ];
+
+formatDateObjectBoxes // endDefinition;
+
+
+$$possibleDateObject = HoldPattern @ DateObject[
+    { (_Real|_Integer).. },
+    ___String,
+    (_Real|_Integer)...,
+    OptionsPattern[ ]
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
