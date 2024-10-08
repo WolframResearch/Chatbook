@@ -1,7 +1,5 @@
 BeginPackage[ "Wolfram`Chatbook`Serialization`" ];
 
-(* cSpell: ignore TOOLCALL, specialkeywords, tabletags, NFKC *)
-
 (* Avoiding context aliasing due to bug 434990: *)
 Needs[ "GeneralUtilities`" -> None ];
 
@@ -1534,7 +1532,6 @@ fasterCellToString0[ (box: $boxOperators)[ a_, b_, OptionsPattern[ ] ] ] :=
 
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
-(* cSpell: ignore noinfoker *)
 fasterCellToString0[
     InterpretationBox[
         boxes_,

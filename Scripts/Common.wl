@@ -1,5 +1,3 @@
-(* cSpell: ignore samevers *)
-
 BeginPackage[ "Wolfram`ChatbookScripts`" ];
 
 (* :!CodeAnalysis::BeginBlock:: *)

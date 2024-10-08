@@ -65,7 +65,6 @@ $initializationTests = Join[
     ]
 ];
 
-(* cSpell: ignore noinit, pacletreadonly *)
 $sandboxKernelCommandLine := StringRiffle @ {
     ToString[
         If[ $OperatingSystem === "Windows",
@@ -253,7 +252,6 @@ startSandboxKernel[ ] := Enclose[
 
         Scan[ LinkClose, Select[ Links[ ], sandboxKernelQ ] ];
 
-        (* cSpell: ignore playerpass *)
         (* pwFile = FileNameJoin @ { $InstallationDirectory, "Configuration", "Licensing", "playerpass" }; *)
 
         kernel = ConfirmMatch[ LinkLaunch @ $sandboxKernelCommandLine, _LinkObject, "LinkLaunch" ];
@@ -1224,7 +1222,6 @@ evaluationMessageHandler0 // Attributes = { HoldFirst };
 (* Message is not from LLM code or we've collected too many, so we don't want to insert it into the tool response: *)
 evaluationMessageHandler0[ _, _, _ ] /; $suppressMessageCollection := Null;
 
-(* cSpell: ignore newsym *)
 (* Messages that are so frequent we don't want to waste time analyzing them: *)
 evaluationMessageHandler0[ _, _, Hold[ Message[ $CharacterEncoding::utf8 | General::newsym, ___ ], _ ] ] := Null;
 
@@ -1712,7 +1709,6 @@ addMessageHandler[ HoldComplete[ eval_ ] ] :=
                     },
                     eval
                 ],
-                (* cSpell: ignore usenl *)
                 If[ $issueNLMessage, Message[ General::usenl, $nlMessageType ] ]
             ]
         ]

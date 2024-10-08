@@ -34,7 +34,6 @@ VerificationTest[
     TestID   -> "RelatedDocumentation-URIs@@Tests/RelatedDocumentation.wlt:30,1-35,2"
 ]
 
-(* cSpell: ignore textcontent *)
 VerificationTest[
     Length @ Select[
         uris,
@@ -48,42 +47,42 @@ VerificationTest[
     ],
     _Integer? (GreaterThan[ 5 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-URIs-Count@@Tests/RelatedDocumentation.wlt:38,1-52,2"
+    TestID   -> "RelatedDocumentation-URIs-Count@@Tests/RelatedDocumentation.wlt:37,1-51,2"
 ]
 
 VerificationTest[
     snippets = RelatedDocumentation[ "What's the biggest pokemon?", "Snippets" ],
     { __String },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Snippets@@Tests/RelatedDocumentation.wlt:54,1-59,2"
+    TestID   -> "RelatedDocumentation-Snippets@@Tests/RelatedDocumentation.wlt:53,1-58,2"
 ]
 
 VerificationTest[
     Total @ StringCount[ snippets, "Entity[\"Pokemon\"," ],
     _Integer? (GreaterThan[ 5 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Snippets-Count@@Tests/RelatedDocumentation.wlt:61,1-66,2"
+    TestID   -> "RelatedDocumentation-Snippets-Count@@Tests/RelatedDocumentation.wlt:60,1-65,2"
 ]
 
 VerificationTest[
     uris = RelatedDocumentation[ "What's the biggest pokemon?", Automatic, 3 ],
     { _String, _String, _String },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-URIs-Count@@Tests/RelatedDocumentation.wlt:68,1-73,2"
+    TestID   -> "RelatedDocumentation-URIs-Count@@Tests/RelatedDocumentation.wlt:67,1-72,2"
 ]
 
 VerificationTest[
     AllTrue[ uris, StringStartsQ[ "paclet:ref/" ] ],
     True,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-URIs-Match@@Tests/RelatedDocumentation.wlt:75,1-80,2"
+    TestID   -> "RelatedDocumentation-URIs-Match@@Tests/RelatedDocumentation.wlt:74,1-79,2"
 ]
 
 VerificationTest[
     RelatedDocumentation[ "What's the biggest pokemon?", "Snippets", 3 ],
     { _String, _String, _String },
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Snippets-Count@@Tests/RelatedDocumentation.wlt:82,1-87,2"
+    TestID   -> "RelatedDocumentation-Snippets-Count@@Tests/RelatedDocumentation.wlt:81,1-86,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -98,14 +97,14 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt@@Tests/RelatedDocumentation.wlt:92,1-102,2"
+    TestID   -> "RelatedDocumentation-Prompt@@Tests/RelatedDocumentation.wlt:91,1-101,2"
 ]
 
 VerificationTest[
     StringCount[ prompt, "paclet:ref/Prime#" ],
     _Integer? (GreaterThan[ 3 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Count@@Tests/RelatedDocumentation.wlt:104,1-109,2"
+    TestID   -> "RelatedDocumentation-Prompt-Count@@Tests/RelatedDocumentation.wlt:103,1-108,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -124,14 +123,14 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Messages@@Tests/RelatedDocumentation.wlt:114,1-128,2"
+    TestID   -> "RelatedDocumentation-Prompt-Messages@@Tests/RelatedDocumentation.wlt:113,1-127,2"
 ]
 
 VerificationTest[
     StringCount[ prompt, { "paclet:ref/Prime#", "paclet:ref/NextPrime#" } ],
     _Integer? (GreaterEqualThan[ 8 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Messages-Count@@Tests/RelatedDocumentation.wlt:130,1-135,2"
+    TestID   -> "RelatedDocumentation-Prompt-Messages-Count@@Tests/RelatedDocumentation.wlt:129,1-134,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -149,12 +148,12 @@ VerificationTest[
     ],
     _String,
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Selection@@Tests/RelatedDocumentation.wlt:140,1-153,2"
+    TestID   -> "RelatedDocumentation-Prompt-Selection@@Tests/RelatedDocumentation.wlt:139,1-152,2"
 ]
 
 VerificationTest[
     StringCount[ prompt, "paclet:ref/Prime#" ],
     _Integer? (GreaterEqualThan[ 2 ]),
     SameTest -> MatchQ,
-    TestID   -> "RelatedDocumentation-Prompt-Selection-Count@@Tests/RelatedDocumentation.wlt:155,1-160,2"
+    TestID   -> "RelatedDocumentation-Prompt-Selection-Count@@Tests/RelatedDocumentation.wlt:154,1-159,2"
 ]

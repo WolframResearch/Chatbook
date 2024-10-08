@@ -266,7 +266,6 @@ quietOptionValue[ sym_Symbol, opts_List, name_ ] :=
 
 quietOptionValue[ sym_Symbol, { opts: OptionsPattern[ ] }, name_, default_ ] := Quiet[
     Replace[ OptionValue[ sym, { opts }, name ], HoldPattern[ name ] :> default ],
-    (* cSpell: ignore nodef, optnf *)
     { OptionValue::nodef, OptionValue::optnf }
 ];
 
@@ -361,7 +360,6 @@ formatToolCallExample[ name_String, params_Association, "Simple" ] := Enclose[
 
 formatToolCallExample[ name_String, params_Association, _ ] :=
     TemplateApply[
-        (* cSpell: ignore TOOLCALL, ENDARGUMENTS, ENDTOOLCALL *)
         "TOOLCALL: `1`\n`2`\nENDARGUMENTS\nENDTOOLCALL",
         { toMachineToolName @ name, Developer`WriteRawJSONString @ params }
     ];

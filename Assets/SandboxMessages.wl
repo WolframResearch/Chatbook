@@ -1,5 +1,3 @@
-(* cSpell: ignore ntype, usenl, notent, unkunit *)
-
 ExampleData::notent = "`1` is not a known entity for the collection `2`. Try using natural language input (\[FreeformPrompt][\"query\"]) to get the correct expression instead."
 General::messages = "Messages were generated which may indicate errors. Use the documentation searcher tool to find solutions."
 General::usenl = "Messages involving `1` were generated. Try using natural language input (\[FreeformPrompt][\"query\"]) to get the correct expression instead."

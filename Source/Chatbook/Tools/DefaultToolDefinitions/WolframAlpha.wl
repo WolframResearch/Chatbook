@@ -91,7 +91,6 @@ getWolframAlphaText[ query_String, steps: True|False|_Missing ] :=
 getWolframAlphaText[ query_String, steps_, { } ] :=
     "No results returned";
 
-(* cSpell: ignore deflatten *)
 getWolframAlphaText[ query_String, steps_, info_List ] :=
     getWolframAlphaText[ query, steps, associationKeyDeflatten[ makeKeySequenceRule /@ info ] ];
 
@@ -476,7 +475,6 @@ podHideMoreDetailsButton // endDefinition;
 (*waFooterMenu*)
 waFooterMenu // beginDefinition;
 
-(* cSpell: ignore Localizable *)
 waFooterMenu[ query_String ] := Item[
     Style[
         DynamicModule[ { display },
@@ -528,7 +526,6 @@ makeWebLinksMenu[ query_String ] := Enclose[
 
         sources = ConfirmMatch[ getWASources @ query, KeyValuePattern @ { } ];
 
-        (* cSpell: ignore wolframalpha *)
         url = URLBuild @ <|
             "Scheme" -> "https",
             "Domain" -> "www.wolframalpha.com",

@@ -323,7 +323,6 @@ modelNameData0[ { before__, s_String, "vision" } ] :=
 modelNameData0[ { "GPT", version_String, rest___ } ] /; StringStartsQ[ version, DigitCharacter.. ] :=
     modelNameData0 @ { "GPT-"<>version, rest };
 
-(* cSpell: ignore omni *)
 modelNameData0[ { "GPT-4o", rest___ } ] :=
     modelNameData0 @ { "GPT-4", "Omni", rest };
 
@@ -349,7 +348,7 @@ chooseModelFamily[ name_String ] := chooseModelFamily[ name ] = chooseModelFamil
 chooseModelFamily // endDefinition;
 
 chooseModelFamily0 // beginDefinition;
-(* cSpell: ignore Qwen, Nemotron *)
+
 chooseModelFamily0[ wordsPattern[ "Phi"       ~~ $$versionOrParams ] ] := "Phi";
 chooseModelFamily0[ wordsPattern[ "Llama"     ~~ $$versionOrParams ] ] := "Llama";
 chooseModelFamily0[ wordsPattern[ "Gemma"     ~~ $$versionOrParams ] ] := "Gemma";

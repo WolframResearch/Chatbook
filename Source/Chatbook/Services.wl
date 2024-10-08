@@ -159,7 +159,6 @@ getModelListQuietly[ info_Association ] /; ! $allowConnectionDialog :=
         getModelListQuietly @ info
     ];
 
-(* cSpell: ignore nprmtv, genconerr, invs, nolink *)
 getModelListQuietly[ info_Association ] := Quiet[
     checkModelList[ info, Check[ info[ "ModelList" ], Missing[ "NotConnected" ], DialogInput::nprmtv ] ],
     { DialogInput::nprmtv, ServiceConnect::genconerr, ServiceConnect::invs, ServiceExecute::nolink }

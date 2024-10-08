@@ -223,7 +223,6 @@ reformatTextData[ string_String ] /; StringContainsQ[ string, $$mdEscapedCharact
         s_String :> RuleCondition @ StringReplace[ s, $mdUnescapeRules ]
     ];
 
-(* cSpell: ignore maxrec *)
 reformatTextData[ string_String ] := joinAdjacentStrings @ Flatten[
     makeResultCell /@ discardBadToolCalls @ DeleteCases[
         Quiet[ StringSplit[ string, $textDataFormatRules, IgnoreCase -> True ], RegularExpression::maxrec ],
@@ -1079,14 +1078,11 @@ fancyTooltip[ expr_, tooltip_ ] := Tooltip[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Parsing Rules*)
-
-(* cSpell: ignore ENDRESULT *)
 $$endToolCall       = Longest[ "ENDRESULT" ~~ (("(" ~~ (LetterCharacter|DigitCharacter).. ~~ ")") | "") ];
 $$eol               = " "... ~~ "\n";
 $$cmd               = Repeated[ Except[ WhitespaceCharacter ], { 1, 80 } ];
 $$simpleToolCommand = StartOfLine ~~ $$ws ~~ ("/" ~~ $$cmd) ~~ $$eol;
 $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|EndOfString) ];
-
 
 (* TODO:
     Maybe it would be simpler to use a regex here? The command string part would need to be dynamically generated.
@@ -1096,8 +1092,6 @@ $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|End
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$textDataFormatRules*)
-
-(* cSpell: ignore TOOLCALL *)
 $textDataFormatRules = {
     StringExpression[
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
@@ -1181,8 +1175,6 @@ $dynamicSplitRules = {
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$stringFormatRules*)
-
-(* cSpell: ignore textit, textbf *)
 $stringFormatRules = {
     "***" ~~ text: Except[ "*" ].. ~~ "***" /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],

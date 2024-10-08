@@ -1,5 +1,3 @@
-(* cSpell: ignore Deflatten *)
-
 BeginPackage[ "Wolfram`Chatbook`Common`" ];
 
 `$absoluteCurrentSettingsCache;

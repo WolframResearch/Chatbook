@@ -129,7 +129,6 @@ $chatMessageTemplates[ "XML", "System"    ] = "<system>%%1%%</system>";
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*DeepSeekCoder*)
-(* cSpell: ignore cend *)
 $chatMessageTemplates[ "DeepSeekCoder" ] = <| |>;
 $chatMessageTemplates[ "DeepSeekCoder", "User"      ] = "User: %%1%%";
 $chatMessageTemplates[ "DeepSeekCoder", "Assistant" ] = "Assistant: %%1%%\n/end<\:ff5cend\:2581of\:2581sentence\:ff5c>";
@@ -154,7 +153,6 @@ $chatMessageTemplates[ "Gemma", "System"    ] = "<start_of_turn>user\n%%1%%<end_
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Nemotron*)
-(* cSpell: ignore Nemotron *)
 $chatMessageTemplates[ "Nemotron" ] = <| |>;
 $chatMessageTemplates[ "Nemotron", "User"      ] = "<extra_id_1>User\n%%1%%";
 $chatMessageTemplates[ "Nemotron", "Assistant" ] = "<extra_id_1>Assistant\n%%1%%\n/end";
