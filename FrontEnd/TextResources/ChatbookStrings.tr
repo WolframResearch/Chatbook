@@ -121,8 +121,8 @@
 "PreferencesContentLLMKitNoSubscription" -> "No LLM Kit subscription found",
 "PreferencesContentLLMKitSignInOr" -> "or",
 "PreferencesContentLLMKitSignInButton" -> "Sign In to use an existing subscription \[RightGuillemet]",
-"PreferencesContentLLMKitEnabledTitle" -> "LLM Kit Essentials",
-"PreferencesContentLLMKitEnabledText" -> "LLM Kit features are enabled.",
+"PreferencesContentLLMKitEnabledTitle" -> "Code Assistant + LLM Kit Essentials",
+"PreferencesContentLLMKitEnabledText" -> "Code Assistant and LLM Kit features are enabled.",
 "PreferencesContentLLMKitEnabledManage" -> "Manage your subscription \[RightGuillemet]",
 
 "ResourceInstallerFromURLPrompt" -> "Enter a URL",
