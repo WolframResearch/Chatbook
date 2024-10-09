@@ -828,7 +828,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.5.1.3936664622"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3937452361"|>
   ],
   Cell[
    StyleData["Text"],
@@ -6244,6 +6244,51 @@ Notebook[
    }
   ],
   Cell[
+   StyleData["CheckmarkGreen"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.0625],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {
+            {
+             {0, 2, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0}
+            }
+           },
+           {
+            {
+             {5.9883, 1.1318},
+             {1.0653, 6.6698},
+             {2.9343, 8.3308},
+             {6.0113, 4.8678},
+             {12.8263, 12.3418},
+             {14.6743, 10.6578},
+             {5.9883, 1.1318}
+            }
+           }
+          ]
+         },
+         {FaceForm[RGBColor[0.0, 0.670588, 0.0117647, 1.0]]},
+         StripOnInput -> False
+        ]
+       },
+       ImageSize -> {16.0, 14.0},
+       PlotRange -> {{0.0, 16.0}, {0.0, 14.0}},
+       AspectRatio -> Automatic
+      ]
+     ])
+   }
+  ],
+  Cell[
    StyleData["Checkmark"],
    TemplateBoxOptions -> {
     DisplayFunction ->
@@ -7737,6 +7782,245 @@ Notebook[
        ImageSize -> {{11.0, 17.0}, {11.0, 17.0}},
        BaselinePosition -> Center -> Center,
        PlotRange -> {{-0.5, 10.5}, {-0.5, 16.5}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["llmkit-dialog-sm"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.037037],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {
+            {
+             {0, 2, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0}
+            }
+           },
+           CompressedData[
+            "\n1:eJxTTMoPSmVmYGBgBGIxIGZiAIMFZ71UHYB0w+QTZiA6wfOuKIh+8ZPPEkQ7\nHJORANFHPucag2iGSwwP7IFUxi5LI7B8AZ8giD5whEEHWX7B9D5lZP0H5FQV\nkc1nsOtiB9ITe72g9m+6KwKiDSYwaIPlA8yvgszxWBZlAJZfcwcs71DZYQqW\nV20D6WeYcPuHCYheMFUZbP4EtgYrsDqOHrD9AoV7wP5q2PFPG1n+QJGFEYr+\ntzlg/13YBTHfxxTi/wvPwfZHPTl3HGwOR9d/LbD5causkfkPlFaD+SjhCQBg\nhVci\n       "
+           ]
+          ]
+         },
+         {FaceForm[RGBColor[0.866667, 0.0666667, 0.0, 1.0]]},
+         StripOnInput -> False
+        ],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+            {
+             {0, 2, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0}
+            }
+           },
+           {
+            {
+             {18.0, 16.0},
+             {14.0, 16.0},
+             {14.0, 17.0},
+             {18.0, 17.0},
+             {18.0, 16.0}
+            },
+            {
+             {18.0, 14.0},
+             {17.0, 14.0},
+             {17.0, 15.0},
+             {18.0, 15.0},
+             {18.0, 14.0}
+            },
+            {
+             {16.0, 14.0},
+             {11.0, 14.0},
+             {11.0, 15.0},
+             {16.0, 15.0},
+             {16.0, 14.0}
+            },
+            {
+             {13.0, 12.0},
+             {9.0, 12.0},
+             {9.0, 13.0},
+             {13.0, 13.0},
+             {13.0, 12.0}
+            },
+            {
+             {9.0, 15.0},
+             {10.0, 15.0},
+             {10.0, 14.0},
+             {9.0, 14.0},
+             {9.0, 15.0}
+            },
+            {
+             {9.0, 17.0},
+             {13.0, 17.0},
+             {13.0, 16.0},
+             {9.0, 16.0},
+             {9.0, 17.0}
+            },
+            {
+             {7.0, 19.0},
+             {7.0, 10.0},
+             {9.0, 10.0},
+             {9.0, 7.0},
+             {13.0, 10.0},
+             {20.0, 10.0},
+             {20.0, 19.0},
+             {7.0, 19.0}
+            }
+           }
+          ]
+         },
+         {FaceForm[RGBColor[1.0, 1.0, 1.0, 1.0]]},
+         StripOnInput -> False
+        ],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}},
+           {
+            {
+             {9.0, 14.0},
+             {10.0, 14.0},
+             {10.0, 15.0},
+             {9.0, 15.0},
+             {9.0, 14.0}
+            }
+           }
+          ]
+         },
+         {FaceForm[RGBColor[0.866667, 0.0666667, 0.0, 1.0]]},
+         StripOnInput -> False
+        ],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}},
+           {
+            {
+             {9.0, 16.0},
+             {13.0, 16.0},
+             {13.0, 17.0},
+             {9.0, 17.0},
+             {9.0, 16.0}
+            }
+           }
+          ]
+         },
+         {FaceForm[RGBColor[0.866667, 0.0666667, 0.0, 1.0]]},
+         StripOnInput -> False
+        ],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}},
+           {
+            {
+             {9.0, 12.0},
+             {13.0, 12.0},
+             {13.0, 13.0},
+             {9.0, 13.0},
+             {9.0, 12.0}
+            }
+           }
+          ]
+         },
+         {FaceForm[RGBColor[0.866667, 0.0666667, 0.0, 1.0]]},
+         StripOnInput -> False
+        ],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}},
+           {
+            {
+             {11.0, 14.0},
+             {16.0, 14.0},
+             {16.0, 15.0},
+             {11.0, 15.0},
+             {11.0, 14.0}
+            }
+           }
+          ]
+         },
+         {FaceForm[RGBColor[0.866667, 0.0666667, 0.0, 1.0]]},
+         StripOnInput -> False
+        ],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}},
+           {
+            {
+             {14.0, 16.0},
+             {18.0, 16.0},
+             {18.0, 17.0},
+             {14.0, 17.0},
+             {14.0, 16.0}
+            }
+           }
+          ]
+         },
+         {FaceForm[RGBColor[0.866667, 0.0666667, 0.0, 1.0]]},
+         StripOnInput -> False
+        ],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}},
+           {
+            {
+             {17.0, 14.0},
+             {18.0, 14.0},
+             {18.0, 15.0},
+             {17.0, 15.0},
+             {17.0, 14.0}
+            }
+           }
+          ]
+         },
+         {FaceForm[RGBColor[0.866667, 0.0666667, 0.0, 1.0]]},
+         StripOnInput -> False
+        ]
+       },
+       ImageSize -> {27.0, 28.0},
+       PlotRange -> {{0.0, 27.0}, {0.0, 28.0}},
+       AspectRatio -> Automatic
       ]
      ])
    }

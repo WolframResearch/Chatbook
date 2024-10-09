@@ -204,7 +204,7 @@ createCloudPreferencesContent // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*cloudModelSelector*)
 cloudModelSelector // beginDefinition;
-cloudModelSelector[ ] := makeModelSelector[ ];
+cloudModelSelector[ ] := makeModelSelector[ "Cloud" ];
 cloudModelSelector // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
