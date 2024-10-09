@@ -1737,7 +1737,7 @@ makeInteractiveCodeCell[ language_, code_String ] /; $dynamicText :=
 (* Wolfram Language code blocks *)
 makeInteractiveCodeCell[ lang_String? wolframLanguageQ, code0_ ] := Enclose[
     Catch @ Module[ { code, display, handler },
-        code = ConfirmMatch[ parseCellGroupBlock @ code0, _Cell|_String, "Code" ];
+        code = ConfirmMatch[ parseCellGroupBlock @ code0, _Cell | _? boxDataQ, "Code" ];
         If[ MatchQ[ code, _Cell ], Throw @ code ];
         display = RawBoxes @ Cell[
             BoxData @ If[ StringQ @ code, wlStringToBoxes @ code, code ],
@@ -1838,6 +1838,8 @@ parseCellGroupBlock[ code_String ] := Enclose[
     ],
     throwInternalFailure
 ];
+
+parseCellGroupBlock[ boxes_ ] := boxes;
 
 parseCellGroupBlock // endDefinition;
 
