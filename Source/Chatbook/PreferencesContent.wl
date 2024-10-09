@@ -511,10 +511,13 @@ makeServiceSelector[
             extractServiceName @ CurrentChatSettings[ $preferencesScope, "Model" ],
             serviceSelectCallback[ Dynamic @ service, Dynamic @ model, Dynamic @ modelSelector, Dynamic @ state ]
         ],
-        KeyValueMap[
-            popupValue[ #1, #2[ "Service" ], #2[ "Icon" ] ] &,
-            DeleteCases[ services, KeyValuePattern[ "Hidden" -> True ] ]
-        ]
+        (* ensure LLMKit is first in the popup followed by a delimiter *)
+        Replace[
+            KeyValueMap[
+                popupValue[ #1, #2[ "Service" ], #2[ "Icon" ] ] &,
+                DeleteCases[ services, KeyValuePattern[ "Hidden" -> True ] ]
+            ],
+            { a___, b:("LLMKit" -> _), c___ } :> { b, Delimiter, a, c } ]
     ];
 
 makeServiceSelector // endDefinition;
