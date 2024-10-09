@@ -718,16 +718,19 @@ $discardedMaterialLabel = discardedMaterialLabelBox[ Dynamic @ Typeset`hover$$, 
 
 
 $workspaceChatDockedCells = {
-    Cell @ BoxData @ DynamicBox[
-        ToBoxes[
-            Needs[ "Wolfram`Chatbook`" -> None ];
-            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "MakeWorkspaceChatDockedCell" ],
-            StandardForm
+    Cell[
+        BoxData @ DynamicBox[
+            ToBoxes[
+                Needs[ "Wolfram`Chatbook`" -> None ];
+                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "MakeWorkspaceChatDockedCell" ],
+                StandardForm
+            ],
+            Initialization :> With[ { nbo = EvaluationNotebook[ ] },
+                Needs[ "Wolfram`Chatbook`" -> None ];
+                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachWorkspaceChatInput", nbo ]
+            ]
         ],
-        Initialization :> With[ { nbo = EvaluationNotebook[ ] },
-            Needs[ "Wolfram`Chatbook`" -> None ];
-            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachWorkspaceChatInput", nbo ]
-        ]
+        Magnification :> CurrentValue[ EvaluationNotebook[ ], Magnification ]
     ]
 };
 

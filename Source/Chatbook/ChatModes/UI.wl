@@ -11,7 +11,7 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $inputFieldPaneMargins       = 5;
-$inputFieldGridMagnification = 0.8;
+$inputFieldGridMagnification = Inherited;
 $inputFieldOuterBackground   = GrayLevel[ 0.95 ];
 $initialInlineChatWidth      = Scaled[ 1 ];
 $initialInlineChatHeight     = UpTo[ 200 ];
@@ -167,8 +167,9 @@ $attachedWorkspaceChatInputCell := $attachedWorkspaceChatInputCell = Cell[
         Initialization :> (thisNB = EvaluationNotebook[ ])
     ],
     "ChatInputField",
-    Background -> $inputFieldOuterBackground,
-    Selectable -> True
+    Background    -> $inputFieldOuterBackground,
+    Magnification :> AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ],
+    Selectable    -> True
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -319,9 +320,10 @@ inlineChatInputCell[ root_CellObject, selectionInfo_, settings_ ] := Cell[
         "DropShadowPaneBox"
     ],
     "AttachedChatInput",
-    Background -> None,
-    Selectable -> True,
-    TaggingRules -> <| "ChatNotebookSettings" -> settings |>
+    Background    -> None,
+    Magnification :> AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ],
+    Selectable    -> True,
+    TaggingRules  -> <| "ChatNotebookSettings" -> settings |>
 ];
 
 inlineChatInputCell // endDefinition;
@@ -552,10 +554,9 @@ displayInlineChatMessages[ cells: { __Cell }, inputField_ ] :=
             {
                 Pane[
                     Column[
-                        (* FIXME: code blocks don't show syntax styles or string characters *)
                         formatInlineMessageCells /@ cells,
                         Alignment  -> Left,
-                        BaseStyle  -> { Magnification -> 0.8 },
+                        BaseStyle  -> { Magnification -> 0.8 * Inherited },
                         ItemSize   -> { Fit, Automatic },
                         Spacings   -> 0.5
                     ],
