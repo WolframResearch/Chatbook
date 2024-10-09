@@ -204,7 +204,7 @@ extractBodyChunks0 // beginDefinition;
 extractBodyChunks0[ content_String ] := content;
 extractBodyChunks0[ content_List ] := extractBodyChunks /@ content;
 extractBodyChunks0[ KeyValuePattern[ "BodyChunkProcessed" -> content_ ] ] := extractBodyChunks0 @ content;
-extractBodyChunks0[ KeyValuePattern[ "ContentDelta" -> content_ ] ] := extractBodyChunks0 @ content;
+extractBodyChunks0[ KeyValuePattern[ "ContentChunk"|"ContentDelta" -> content_ ] ] := extractBodyChunks0 @ content;
 extractBodyChunks0[ KeyValuePattern @ { "Type" -> "Text", "Data" -> content_ } ] := extractBodyChunks0 @ content;
 extractBodyChunks0[ KeyValuePattern @ { } ] := { };
 extractBodyChunks0[ bag_Internal`Bag ] := extractBodyChunks0 @ Internal`BagPart[ bag, All ];
