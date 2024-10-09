@@ -178,9 +178,9 @@
 
 "AttachedChatFieldHint" -> "\:BB34\:C5C7\:C774\:B4E0 \:BB3C\:C5B4\:BCF4\:C138\:C694",
 
-"MenuItemOpenHelpLinkChat" -> "Code Assistance Chat\[Ellipsis]",
-"MenuItemOpenHelpLinkSelection" -> "Code Assistance for Selection",
-"MenuItemDuplicatePreviousOutputSuggestion" -> "AI Content Suggestion"
+"MenuItemShowCodeAssistanceWindow" -> "Code Assistance Chat\[Ellipsis]",
+"MenuItemShowCodeAssistanceInline" -> "Code Assistance for Selection",
+"MenuItemShowContentSuggestions" -> "AI Content Suggestion"
 }
 @|
 @|

@@ -177,9 +177,9 @@
 
 "AttachedChatFieldHint" -> "Preg\[UAcute]ntame lo que sea",
 
-"MenuItemOpenHelpLinkChat" -> "Code Assistance Chat\[Ellipsis]",
-"MenuItemOpenHelpLinkSelection" -> "Code Assistance for Selection",
-"MenuItemDuplicatePreviousOutputSuggestion" -> "AI Content Suggestion"
+"MenuItemShowCodeAssistanceWindow" -> "Code Assistance Chat\[Ellipsis]",
+"MenuItemShowCodeAssistanceInline" -> "Code Assistance for Selection",
+"MenuItemShowContentSuggestions" -> "AI Content Suggestion"
 }
 @|
 @|
