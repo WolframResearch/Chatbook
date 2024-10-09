@@ -1177,7 +1177,7 @@ servicesSettingsPanel0[ ] := Enclose[
                                     FontColor -> RGBColor[ "#333333" ],
                                     FontFamily -> "Roboto",
                                     FontSize -> 11 } ],
-                            SystemOpen[ Lookup[ Wolfram`LLMFunctions`Common`$LLMKitInfo, "learnMoreUrl" ] ],
+                            openLLMKitURL[ "learnMoreUrl" ],
                             Appearance -> "Suppressed",
                             BaselinePosition -> Baseline,
                             ImageSize -> Automatic,
@@ -1220,7 +1220,7 @@ makeLLMPanel[ ] :=
                     Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Normal", FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
                     Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Hover", FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
                     Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Pressed", FrameMargins -> { { 17, 17 }, { 7, 7 } } ] ],
-                SystemOpen[ Lookup[ Wolfram`LLMFunctions`Common`$LLMKitInfo, "buyNowUrl" ] ],
+                openLLMKitURL[ "buyNowUrl" ],
                 Appearance -> "Suppressed",
                 BaseStyle -> "DialogTextCommon",
                 BaselinePosition -> Baseline,
@@ -1263,7 +1263,7 @@ makeLLMPanel[ ] :=
                 Style[
                     tr[ "PreferencesContentLLMKitEnabledManage" ],
                     FontColor -> Dynamic[ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.2 ], GrayLevel[ 0.537254 ] ] ] ],
-                SystemOpen[ Lookup[ Wolfram`LLMFunctions`Common`$LLMKitInfo, "manageSubscriptionUrl" ] ],
+                openLLMKitURL[ "manageSubscriptionUrl" ],
                 Appearance -> "Suppressed",
                 BaseStyle -> "DialogTextCommon",
                 ImageSize -> Automatic ];
@@ -1841,6 +1841,18 @@ clearConnectionCache[ service_String, delete: True|False ] := (
 );
 
 clearConnectionCache // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*openLLMKitURL*)
+openLLMKitURL // beginDefinition;
+
+openLLMKitURL[ name_String ] :=
+    With[ { url = Wolfram`LLMFunctions`Common`$LLMKitInfo[ name ] },
+        If[ StringQ @ url, SystemOpen @ url ]
+    ];
+
+openLLMKitURL // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
