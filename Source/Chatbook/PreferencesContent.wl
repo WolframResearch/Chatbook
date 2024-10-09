@@ -420,7 +420,7 @@ makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose
 
         default = CurrentChatSettings[ $preferencesScope, "Model" ];
         service = ConfirmBy[ extractServiceName @ default, StringQ, "ServiceName" ];
-        model   = ConfirmBy[ extractModelName @ default  , StringQ, "ModelName"   ];
+        model   = ConfirmMatch[ extractModelName @ default, _String | Automatic, "ModelName" ];
         state   = If[ modelListCachedQ @ service, "Loaded", "Loading" ];
 
         modelSelector = If[ state === "Loaded",
@@ -444,7 +444,7 @@ makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose
         highlight = highlightControl[ Row @ { #1, Spacer[ 1 ], #2 }, "Notebooks", #3 ] &;
 
         highlightControl[
-            Row @ 
+            Row @
                 If[ MatchQ[ type, "Cloud" | "Notebooks" ],
                     {
                         highlight[ tr[ "PreferencesContentLLMServiceLabel" ], serviceSelector, "ModelService" ],
@@ -1113,7 +1113,7 @@ servicesSettingsPanel0 // beginDefinition;
 
 servicesSettingsPanel0[ ] := Enclose[
     Module[ { llmIcon, llmHelp, llmLabel, llmPanel, serviceCollapsableSection, serviceGrid, settingsLabel, settings },
-        
+
         llmLabel      = subsectionText @ tr[ "PreferencesContentLLMKitTitle" ];
         llmPanel      = makeLLMPanel[ ];
         serviceGrid   = ConfirmMatch[ makeServiceGrid[ ], _Framed, "ServiceGrid" ];
@@ -1225,7 +1225,7 @@ makeLLMPanel[ ] :=
                 BaseStyle -> "DialogTextCommon",
                 BaselinePosition -> Baseline,
                 ImageSize -> Automatic ];
-        
+
         username =
             PaneSelector[
                 {
@@ -1268,7 +1268,7 @@ makeLLMPanel[ ] :=
                 BaseStyle -> "DialogTextCommon",
                 ImageSize -> Automatic ];
 
-       
+
         Framed[
             Grid[
                 {
@@ -1336,7 +1336,7 @@ makeLLMPanel[ ] :=
             FrameMargins -> { { 15, 15 }, { 15, 10 } },
             FrameStyle -> GrayLevel[ 0.898 ],
             ImageSize -> Scaled[ 1 ],
-            RoundingRadius -> 3 ]        
+            RoundingRadius -> 3 ]
     ];
 
 makeLLMPanel // endDefinition;
@@ -1702,7 +1702,7 @@ extractServiceName // endDefinition;
 (*extractModelName*)
 extractModelName // beginDefinition;
 extractModelName[ name_String ] := name;
-extractModelName[ KeyValuePattern[ "Name" -> name_String ] ] := name;
+extractModelName[ KeyValuePattern[ "Name" -> name: _String|Automatic ] ] := name;
 extractModelName[ _ ] := $DefaultModel[ "Name" ];
 extractModelName // endDefinition;
 

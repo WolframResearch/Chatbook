@@ -114,7 +114,7 @@ $$frontEndObject        = HoldPattern[ $FrontEnd | _FrontEndObject ];
 $ChatAbort    = None;
 $ChatPost     = None;
 $ChatPre      = None;
-$DefaultModel = <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>;
+$DefaultModel = <| "Service" -> "LLMKit", "Name" -> Automatic |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -295,13 +295,28 @@ resolveAutoSettings0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*overrideSettings*)
 overrideSettings // beginDefinition;
+overrideSettings[ settings_Association? llmKitQ ] := <| settings, $llmKitOverrides |>;
 overrideSettings[ settings_Association? o1ModelQ ] := <| settings, $o1Overrides |>;
 overrideSettings[ settings_Association? gpt4oTextToolsQ ] := <| settings, $gpt4oTextToolOverrides |>;
 overrideSettings[ settings_Association ] := settings;
 overrideSettings // endDefinition;
 
+(* TODO: these shouldn't be mutually exclusive: *)
+$llmKitOverrides        = <| "Authentication" -> "LLMKit" |>;
 $o1Overrides            = <| "PresencePenalty" -> 0, "Temperature" -> 1 |>;
 $gpt4oTextToolOverrides = <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o-2024-05-13" |> |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*llmKitQ*)
+llmKitQ // beginDefinition;
+
+llmKitQ[ as_Association ] := TrueQ @ Or[
+    as[ "Model", "Service"        ] === "LLMKit",
+    as[ "Model", "Authentication" ] === "LLMKit"
+];
+
+llmKitQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -334,6 +349,7 @@ resolveAutoSetting // endDefinition;
 resolveAutoSetting0 // beginDefinition;
 resolveAutoSetting0[ as_, "AppName"                        ] := $defaultAppName;
 resolveAutoSetting0[ as_, "Assistance"                     ] := False;
+resolveAutoSetting0[ as_, "Authentication"                 ] := autoAuthentication @ as;
 resolveAutoSetting0[ as_, "AutoSaveConversations"          ] := autoSaveConversationsQ @ as;
 resolveAutoSetting0[ as_, "BypassResponseChecking"         ] := bypassResponseCheckingQ @ as;
 resolveAutoSetting0[ as_, "ChatInputIndicator"             ] := "\|01f4ac";
@@ -367,6 +383,7 @@ resolveAutoSetting0 // endDefinition;
 
 (* Settings that require other settings to be resolved first: *)
 $autoSettingKeyDependencies = <|
+    "Authentication"             -> "Model",
     "AutoSaveConversations"      -> { "AppName", "ConversationUUID" },
     "BypassResponseChecking"     -> "ForceSynchronous",
     "ForceSynchronous"           -> "Model",
@@ -401,6 +418,16 @@ $autoSettingKeyPriority := Enclose[
     * BasePrompt (might not be possible here)
     * ChatContextPreprompt
 *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*autoAuthentication*)
+autoAuthentication // beginDefinition;
+autoAuthentication[ as_Association ] := autoAuthentication[ as, as[ "Model" ] ];
+autoAuthentication[ as_, KeyValuePattern[ "Authentication" -> auth: Except[ $$unspecified ] ] ] := auth;
+autoAuthentication[ as_, KeyValuePattern[ "Service" -> "LLMKit" ] ] := "LLMKit";
+autoAuthentication[ as_, auth_ ] := Automatic;
+autoAuthentication // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
