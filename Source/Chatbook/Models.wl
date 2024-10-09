@@ -13,6 +13,9 @@ Needs[ "Wolfram`Chatbook`UI`"      ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
+$defaultLLMKitService   = "AzureOpenAI";
+$defaultLLMKitModelName = "gpt-4o-2024-05-13";
+
 $$modelVersion = DigitCharacter.. ~~ (("." ~~ DigitCharacter...) | "");
 
 $defaultModelIcon = "";
@@ -621,6 +624,21 @@ resolveFullModelSpec[ settings: KeyValuePattern[ "Model" -> model_ ] ] :=
 
 resolveFullModelSpec[ { service_String, name_ } ] :=
     resolveFullModelSpec @ <| "Service" -> service, "Name" -> name |>;
+
+resolveFullModelSpec[ model: KeyValuePattern @ { "Service" -> "LLMKit", "Name" -> $$unspecified } ] :=
+    standardizeModelData @ <|
+        model,
+        "Service"        -> $defaultLLMKitService,
+        "Name"           -> $defaultLLMKitModelName,
+        "Authentication" -> "LLMKit"
+    |>;
+
+resolveFullModelSpec[ model: KeyValuePattern[ "Service" -> "LLMKit" ] ] :=
+    standardizeModelData @ <|
+        model,
+        "Service"        -> $defaultLLMKitService,
+        "Authentication" -> "LLMKit"
+    |>;
 
 resolveFullModelSpec[ model: KeyValuePattern @ { "Service" -> service_String, "Name" -> Automatic } ] := Enclose[
     Catch @ Module[ { default, models, name },
