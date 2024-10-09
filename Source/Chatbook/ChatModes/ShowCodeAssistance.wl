@@ -203,24 +203,27 @@ showCodeAssistanceWindow // endDefinition;
 attachToLeft // beginDefinition;
 
 attachToLeft[ source_NotebookObject, current_NotebookObject ] := Enclose[
-    Module[ { margins, left, bottom, top },
+    Module[ { mag, width, margins, left, bottom, top },
 
+        mag     = Replace[ AbsoluteCurrentValue[ source, Magnification ], Except[ _? NumberQ ] :> 1.0 ];
+        width   = Ceiling @ ConfirmBy[ $workspaceChatWidth * mag, NumberQ, "Width" ];
         margins = ConfirmMatch[ windowMargins @ source, { { _, _ }, { _, _ } }, "Margins" ];
 
         left   = margins[[ 1, 1 ]];
         bottom = margins[[ 2, 1 ]];
         top    = margins[[ 2, 2 ]];
 
-        If[ NonPositive[ left - $workspaceChatWidth ],
-            left   = $workspaceChatWidth;
+        If[ NonPositive[ left - width ],
+            left   = width;
             bottom = 0;
             top    = 0;
         ];
 
         SetOptions[
             current,
-            WindowMargins -> { { left - $workspaceChatWidth, Automatic }, { bottom, top } },
-            WindowSize    -> { $workspaceChatWidth, Automatic }
+            Magnification -> 0.85 * mag,
+            WindowMargins -> { { left - width, Automatic }, { bottom, top } },
+            WindowSize    -> { width, Automatic }
         ];
 
         SetSelectedNotebook @ current;
