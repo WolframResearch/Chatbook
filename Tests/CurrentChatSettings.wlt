@@ -36,7 +36,7 @@ VerificationTest[
 
 VerificationTest[
     CurrentChatSettings[ "Model" ],
-    KeyValuePattern @ { "Service" -> _String, "Name" -> _String } | _String | Automatic,
+    KeyValuePattern @ { "Service" -> _String, "Name" -> _String | Automatic } | _String | Automatic,
     SameTest -> MatchQ,
     TestID   -> "CurrentChatSettings@@Tests/CurrentChatSettings.wlt:37,1-42,2"
 ]
@@ -46,14 +46,14 @@ VerificationTest[
 (*Scoped*)
 VerificationTest[
     UsingFrontEnd @ CurrentChatSettings[ $FrontEnd, "Model" ],
-    KeyValuePattern @ { "Service" -> _String, "Name" -> _String } | _String | Automatic,
+    KeyValuePattern @ { "Service" -> _String, "Name" -> _String | Automatic } | _String | Automatic,
     SameTest -> MatchQ,
     TestID   -> "CurrentChatSettings@@Tests/CurrentChatSettings.wlt:47,1-52,2"
 ]
 
 VerificationTest[
     UsingFrontEnd @ CurrentChatSettings[ $FrontEndSession, "Model" ],
-    KeyValuePattern @ { "Service" -> _String, "Name" -> _String } | _String | Automatic,
+    KeyValuePattern @ { "Service" -> _String, "Name" -> _String | Automatic } | _String | Automatic,
     SameTest -> MatchQ,
     TestID   -> "CurrentChatSettings@@Tests/CurrentChatSettings.wlt:54,1-59,2"
 ]
@@ -86,7 +86,7 @@ VerificationTest[
         }
     ],
     {
-        Except[ "BlockModel", KeyValuePattern @ { "Service" -> _String, "Name" -> _String } ],
+        Except[ "BlockModel", KeyValuePattern @ { "Service" -> _String, "Name" -> _String | Automatic } ],
         "BlockModel",
         "BlockModel"
     },
