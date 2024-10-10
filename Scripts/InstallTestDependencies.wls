@@ -18,16 +18,7 @@ If[ ! PacletObjectQ @ Quiet @ PacletInstall[ "SemanticSearch" ],
     }
 ];
 
-Scan[
-    Print[ "Name: ", #[ "Name" ], "\t\tVersion: ", #[ "Version" ] ] &,
-    PacletObject /@ {
-        "OAuth",
-        "ServiceConnection_OpenAI",
-        "ServiceConnectionUtilities",
-        "Wolfram/LLMFunctions",
-        "SemanticSearch"
-    }
-];
+Print @ Head @ NetModel[ "all-MiniLM-L6-v2" ];
 
 If[ ! PacletObjectQ @ PacletObject[ "SemanticSearch" ],
     Print[ "::error::Failed to install SemanticSearch." ];
