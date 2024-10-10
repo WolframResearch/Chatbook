@@ -89,6 +89,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `applyProcessingFunction;
 `applyPromptGenerators;
 `assistantMessageBox;
+`assistantMessageBoxActive;
 `assistantMessageLabel;
 `associationKeyDeflatten;
 `attachAssistantMessageButtons;
