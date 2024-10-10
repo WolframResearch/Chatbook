@@ -944,7 +944,7 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
             "ReformatTextData"
         ];
 
-        write = Cell[ TextData @ reformatted, "None", Background -> None ];
+        write = Cell[ TextData @ reformatted, "ChatOutput", Background -> None, CellFrame -> 0 ];
         nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "ParentNotebook" ];
 
         container[ "DynamicContent" ] = dynamic;
@@ -1868,11 +1868,11 @@ activeAIAssistantCell[
             uuid      = container[ "UUID" ],
             formatter = getFormattingFunction @ settings,
             cellTags  = Replace[ cellTags0, Except[ _String | { ___String } ] :> Inherited ],
-            outer     = If[ TrueQ[ $WorkspaceChat||$InlineChat ], assistantMessageBox, # & ]
+            outer     = If[ TrueQ[ $WorkspaceChat||$InlineChat ], assistantMessageBoxActive, # & ]
         },
         Cell[
-            BoxData @ TagBox[
-                outer @ ToBoxes @ Dynamic[
+            BoxData @ outer @ TagBox[
+                ToBoxes @ Dynamic[
                     $dynamicTrigger;
                     (* `$dynamicTrigger` is used to precisely control when the dynamic updates, otherwise we can get an
                        FE crash if a NotebookWrite happens at the same time. *)

@@ -221,7 +221,7 @@ formatInlineChatInput // beginDefinition;
 formatInlineChatInput[ text_String ] :=
     Block[ { $InlineChat = True },
         Cell[
-            BoxData @ userMessageBox @ text,
+            BoxData @ userMessageBox @ Cell @ TextData @ text,
             "ChatInput",
             CellFrame          -> 0,
             PrivateCellOptions -> { "ContentsOpacity" -> 1 }
