@@ -108,7 +108,7 @@
 "PreferencesContentEnableTools" -> "\:30c4\:30fc\:30eb\:306e\:6709\:52b9\:5316\:ff1a",
 "PreferencesContentToolCallFrequency" -> "\:30c4\:30fc\:30eb\:547c\:51fa\:3057\:306e\:983b\:5ea6\:ff1a",
 "PreferencesContentSubsectionRegisteredServices" -> "\:767b\:9332\:3055\:308c\:305f\:30b5\:30fc\:30d3\:30b9",
-"PreferencesContentService" -> "\:30C0\:30A4\:30EC\:30AF\:30C8\:30B5\:30FC\:30D3\:30B9\:63A5\:7D9A",
+"PreferencesContentService" -> "\:30B5\:30FC\:30D3\:30B9\:3078\:306E\:76F4\:63A5\:63A5\:7D9A",
 "PreferencesContentDefaultService" -> "LLM\:95A2\:6570\:3068\:30C1\:30E3\:30C3\:30C8\:30CE\:30FC\:30C8\:30D6\:30C3\:30AF\:306E\:30C7\:30D5\:30A9\:30EB\:30C8\:30B5\:30FC\:30D3\:30B9",
 "PreferencesContentServiceConnectButton" -> "\:30e2\:30c7\:30eb\:30ea\:30b9\:30c8\:306b\:63a5\:7d9a",
 "PreferencesContentAuthentication" -> "\:8a8d\:8a3c",
@@ -117,11 +117,11 @@
 "PreferencesContentLLMKitTitle" -> "Wolfram\:30B3\:30FC\:30C9\:30A2\:30B7\:30B9\:30BF\:30F3\:30C8 + LLM\:30AD\:30C3\:30C8",
 "PreferencesContentLLMKitSubscribeButton" -> "\:30B5\:30D6\:30B9\:30AF\:30E9\:30A4\:30D6",
 "PreferencesContentLLMKitLearnMoreTooltip" -> "\:8A73\:7D30\[Ellipsis]",
-"PreferencesContentLLMKitSubscriptionRequired" -> "LLM\:30AD\:30C3\:30C8\:306F\:30B5\:30D6\:30B9\:30AF\:30EA\:30D7\:30B7\:30E7\:30F3\:3092\:5FC5\:8981\:3068\:3057\:3066\:3044\:307E\:3059\:FF0E",
+"PreferencesContentLLMKitSubscriptionRequired" -> "LLM\:30AD\:30C3\:30C8\:306B\:306F\:30B5\:30D6\:30B9\:30AF\:30EA\:30D7\:30B7\:30E7\:30F3\:304C\:5FC5\:8981\:3067\:3059\:FF0E",
 "PreferencesContentLLMKitNoSubscription" -> "LLM\:30AD\:30C3\:30C8\:306E\:30B5\:30D6\:30B9\:30AF\:30EA\:30D7\:30B7\:30E7\:30F3\:304C\:898B\:4ED8\:304B\:308A\:307E\:305B\:3093\:FF0E",
 "PreferencesContentLLMKitSignInOr" -> "\:307E\:305F\:306F",
-"PreferencesContentLLMKitSignInButton" -> "\:65E2\:5B58\:306E\:30B5\:30D6\:30B9\:30AF\:30EA\:30D7\:30B7\:30E7\:30F3\:306B\:30B5\:30A4\:30F3\:30A4\:30F3\[RightGuillemet]",
-"PreferencesContentLLMKitEnabledTitle" -> "\:30B3\:30FC\:30C9\:30A2\:30B7\:30B9\:30BF\:30F3\:30C8 + \:5FC5\:8981\:306ALLM\:30AD\:30C3\:30C8",
+"PreferencesContentLLMKitSignInButton" -> "\:30B5\:30A4\:30F3\:30A4\:30F3\:3057\:3066\:65E2\:5B58\:306E\:30B5\:30D6\:30B9\:30AF\:30EA\:30D7\:30B7\:30E7\:30F3\:3092\:4F7F\:3046\[RightGuillemet]",
+"PreferencesContentLLMKitEnabledTitle" -> "\:30B3\:30FC\:30C9\:30A2\:30B7\:30B9\:30BF\:30F3\:30C8 +\:57FA\:672C\:7684\:306ALLM\:30AD\:30C3\:30C8",
 "PreferencesContentLLMKitEnabledText" -> "\:30B3\:30FC\:30C9\:30A2\:30B7\:30B9\:30BF\:30F3\:30C8\:3068LLM\:30AD\:30C3\:30C8\:306E\:6A5F\:80FD\:306F\:6709\:52B9\:3067\:3059\:FF0E",
 "PreferencesContentLLMKitEnabledManage" -> "\:30B5\:30D6\:30B9\:30AF\:30EA\:30D7\:30B7\:30E7\:30F3\:3092\:7BA1\:7406\[RightGuillemet]",
 
@@ -189,8 +189,8 @@
 
 "AttachedChatFieldHint" -> "\:4f55\:3067\:3082\:805e\:3044\:3066\:304f\:3060\:3055\:3044",
 
-"MenuItemShowCodeAssistanceWindow" -> "\:30B3\:30FC\:30C9\:30A2\:30B7\:30B9\:30BF\:30F3\:30C8\:30C1\:30E3\:30C3\:30C8\[Ellipsis]",
-"MenuItemShowCodeAssistanceInline" -> "\:9078\:629E\:90E8\:5206\:306E\:305F\:3081\:306E\:30B3\:30FC\:30C9\:30A2\:30B7\:30B9\:30BF\:30F3\:30C8",
+"MenuItemShowCodeAssistanceWindow" -> "\:30B3\:30FC\:30C9\:30A2\:30B7\:30B9\:30BF\:30F3\:30B9\:30C1\:30E3\:30C3\:30C8\[Ellipsis]"
+"MenuItemShowCodeAssistanceInline" -> "\:9078\:629E\:90E8\:5206\:306E\:305F\:3081\:306E\:30B3\:30FC\:30C9\:30A2\:30B7\:30B9\:30BF\:30F3\:30B9",
 "MenuItemShowContentSuggestions" -> "AI\:306B\:3088\:308B\:30B3\:30F3\:30C6\:30F3\:30C4\:306E\:63D0\:6848"
 }
 @|
