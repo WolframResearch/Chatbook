@@ -2841,6 +2841,27 @@ assistantMessageBox // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*assistantMessageBoxActive*)
+assistantMessageBoxActive // beginDefinition;
+
+assistantMessageBoxActive[ box_ ] :=
+    assistantMessageBoxActive[ box, $InlineChat ];
+
+assistantMessageBoxActive[ box_, True ] :=
+    With[ { template = $assistantMessageBoxTemplate @ box },
+        template /; MatchQ[ template, TemplateBox[ __, DisplayFunction -> _, ___ ] ]
+    ];
+
+assistantMessageBoxActive[ box_, Except[ True ] ] :=
+    TemplateBox[
+        { Cell[ BoxData @ StyleBox[ box, "Text" ], Editable -> True ] },
+        "AssistantMessageBox"
+    ];
+
+assistantMessageBoxActive // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*userMessageBox*)
 userMessageBox // beginDefinition;
 
