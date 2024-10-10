@@ -11344,7 +11344,7 @@ Notebook[
                 {0, 255},
                 ColorFunction -> RGBColor,
                 ImageResolution -> {72.0, 72.0},
-                SmoothingQuality -> "High"
+                RasterInterpolation -> "High"
                ],
                BoxForm`ImageTag[
                 "Byte",
@@ -12035,7 +12035,7 @@ Notebook[
                 {0, 255},
                 ColorFunction -> RGBColor,
                 ImageResolution -> {144.0, 144.0},
-                SmoothingQuality -> "High"
+                RasterInterpolation -> "High"
                ],
                BoxForm`ImageTag[
                 "Byte",
@@ -12091,7 +12091,7 @@ Notebook[
                    {0, 255},
                    ColorFunction -> RGBColor,
                    ImageResolution -> {144.0, 144.0},
-                   SmoothingQuality -> "High"
+                   RasterInterpolation -> "High"
                   ],
                   BoxForm`ImageTag[
                    "Byte",
@@ -12128,7 +12128,7 @@ Notebook[
                    {0, 255},
                    ColorFunction -> RGBColor,
                    ImageResolution -> {144.0, 144.0},
-                   SmoothingQuality -> "High"
+                   RasterInterpolation -> "High"
                   ],
                   BoxForm`ImageTag[
                    "Byte",
@@ -12165,7 +12165,7 @@ Notebook[
                    {0, 255},
                    ColorFunction -> RGBColor,
                    ImageResolution -> {144.0, 144.0},
-                   SmoothingQuality -> "High"
+                   RasterInterpolation -> "High"
                   ],
                   BoxForm`ImageTag[
                    "Byte",
@@ -12230,7 +12230,7 @@ Notebook[
                    {0, 255},
                    ColorFunction -> RGBColor,
                    ImageResolution -> {144.0, 144.0},
-                   SmoothingQuality -> "High"
+                   RasterInterpolation -> "High"
                   ],
                   BoxForm`ImageTag[
                    "Byte",
@@ -12267,7 +12267,7 @@ Notebook[
                    {0, 255},
                    ColorFunction -> RGBColor,
                    ImageResolution -> {144.0, 144.0},
-                   SmoothingQuality -> "High"
+                   RasterInterpolation -> "High"
                   ],
                   BoxForm`ImageTag[
                    "Byte",
@@ -12304,7 +12304,7 @@ Notebook[
                    {0, 255},
                    ColorFunction -> RGBColor,
                    ImageResolution -> {144.0, 144.0},
-                   SmoothingQuality -> "High"
+                   RasterInterpolation -> "High"
                   ],
                   BoxForm`ImageTag[
                    "Byte",
@@ -12353,7 +12353,7 @@ Notebook[
                 {0, 255},
                 ColorFunction -> RGBColor,
                 ImageResolution -> {144.0, 144.0},
-                SmoothingQuality -> "High"
+                RasterInterpolation -> "High"
                ],
                BoxForm`ImageTag[
                 "Byte",
@@ -12390,7 +12390,7 @@ Notebook[
                 {0, 255},
                 ColorFunction -> RGBColor,
                 ImageResolution -> {144.0, 144.0},
-                SmoothingQuality -> "High"
+                RasterInterpolation -> "High"
                ],
                BoxForm`ImageTag[
                 "Byte",
@@ -12433,7 +12433,7 @@ Notebook[
                 {0, 255},
                 ColorFunction -> RGBColor,
                 ImageResolution -> {144.0, 144.0},
-                SmoothingQuality -> "High"
+                RasterInterpolation -> "High"
                ],
                BoxForm`ImageTag[
                 "Byte",
@@ -14048,7 +14048,7 @@ Notebook[
                },
                CellID -> 267876551
               ],
-              Cell["13.3+", "Text", CellID -> 1052559837]
+              Cell["14.1+", "Text", CellID -> 1052559837]
              },
              Open
             ]
@@ -17501,7 +17501,7 @@ Notebook[
                  "Default" ->
                   Image[
                    CompressedData[
-                    "\n\n1:eJxTTMoPSmNiYGAo5gASQYnljkVFiZXBAkBOaF5xZnpeaopnXklqemqRRRIz\nUFAcikHs/4QAMWqA4ANlAJchNy8+3Lv6/OKOvT2Z6yAIyAaKAMWJMeTN67cb\nZx9riFyGCwFlgWrwGHL32pNJhZuAKtsSV+1ZfuH66ccf336FICAbKAIUB8oC\n1QBVYjUEaD7EhAXNe96/+oI19IDiQFmIOXD3IBsC8QVQDcGIgJgDVI9mCDDE\nIL7A5QY090D8BQlnuCHAkAcKAn1N0AQIAKoEqgfqQjYEGINAQWDoEWkIUCVQ\nPVAXUC8kNQIZwJQAFATGApGGAFUC1QN1QQwBAsoNoYpL/lMvTKgSO1RJJ1RJ\nsdTKO1TJxdQqT+CAwpKNDEAwIv4TV9oDAHfUai0=\n                   "
+                    "\n1:eJxTTMoPSmNiYGAo5gASQYnljkVFiZXBAkBOaF5xZnpeaopnXklqemqRRRIz\nUFAcikHs/4QAMWqA4ANlAJchNy8+3Lv6/OKOvT2Z6yAIyAaKAMWJMeTN67cb\nZx9riFyGCwFlgWrwGHL32pNJhZuAKtsSV+1ZfuH66ccf336FICAbKAIUB8oC\n1QBVYjUEaD7EhAXNe96/+oI19IDiQFmIOXD3IBsC8QVQDcGIgJgDVI9mCDDE\nIL7A5QY090D8BQlnuCHAkAcKAn1N0AQIAKoEqgfqQjYEGINAQWDoEWkIUCVQ\nPVAXUC8kNQIZwJQAFATGApGGAFUC1QN1QQwBAsoNoYpL/lMvTKgSO1RJJ1RJ\nsdTKO1TJxdQqT+CAwpKNDEAwIv4TV9oDAHfUai0=\n                   "
                    ],
                    "Byte",
                    ColorSpace -> "RGB",
@@ -17862,7 +17862,7 @@ Notebook[
                  "Default" ->
                   Image[
                    CompressedData[
-                    "\n\n1:eJxTTMoPSmNiYGAo5gASQYnljkVFiZXBAkBOaF5xZnpeaopnXklqemqRRRIz\nUFAcikHs/4QAMWqA4ANlAJchNy8+3Lv6/OKOvT2Z6yAIyAaKAMWJMeTN67cb\nZx9riFyGCwFlgWrwGHL32pNJhZuAKtsSV+1ZfuH66ccf336FICAbKAIUB8oC\n1QBVYjUEaD7EhAXNe96/+oI19IDiQFmIOXD3IBsC8QVQDcGIgJgDVI9mCDDE\nIL7A5QY090D8BQlnuCHAkAcKAn1N0AQIAKoEqgfqQjYEGINAQWDoEWkIUCVQ\nPVAXUC8kNQIZwJQAFATGApGGAFUC1QN1QQwBAsoNoYpL/lMvTKgSO1RJJ1RJ\nsdTKO1TJxdQqT+CAwpKNDEAwIv4TV9oDAHfUai0=\n                   "
+                    "\n1:eJxTTMoPSmNiYGAo5gASQYnljkVFiZXBAkBOaF5xZnpeaopnXklqemqRRRIz\nUFAcikHs/4QAMWqA4ANlAJchNy8+3Lv6/OKOvT2Z6yAIyAaKAMWJMeTN67cb\nZx9riFyGCwFlgWrwGHL32pNJhZuAKtsSV+1ZfuH66ccf336FICAbKAIUB8oC\n1QBVYjUEaD7EhAXNe96/+oI19IDiQFmIOXD3IBsC8QVQDcGIgJgDVI9mCDDE\nIL7A5QY090D8BQlnuCHAkAcKAn1N0AQIAKoEqgfqQjYEGINAQWDoEWkIUCVQ\nPVAXUC8kNQIZwJQAFATGApGGAFUC1QN1QQwBAsoNoYpL/lMvTKgSO1RJJ1RJ\nsdTKO1TJxdQqT+CAwpKNDEAwIv4TV9oDAHfUai0=\n                   "
                    ],
                    "Byte",
                    ColorSpace -> "RGB",
@@ -18129,7 +18129,7 @@ Notebook[
                  "Default" ->
                   Image[
                    CompressedData[
-                    "\n\n1:eJxTTMoPSmNiYGAo5gASQYnljkVFiZXBAkBOaF5xZnpeaopnXklqemqRRRIz\nUFAcikHs/4QAMWqA4ANlAJchNy8+3Lv6/OKOvT2Z6yAIyAaKAMWJMeTN67cb\nZx9riFyGCwFlgWrwGHL32pNJhZuAKtsSV+1ZfuH66ccf336FICAbKAIUB8oC\n1QBVYjUEaD7EhAXNe96/+oI19IDiQFmIOXD3IBsC8QVQDcGIgJgDVI9mCDDE\nIL7A5QY090D8BQlnuCHAkAcKAn1N0AQIAKoEqgfqQjYEGINAQWDoEWkIUCVQ\nPVAXUC8kNQIZwJQAFATGApGGAFUC1QN1QQwBAsoNoYpL/lMvTKgSO1RJJ1RJ\nsdTKO1TJxdQqT+CAwpKNDEAwIv4TV9oDAHfUai0=\n                   "
+                    "\n1:eJxTTMoPSmNiYGAo5gASQYnljkVFiZXBAkBOaF5xZnpeaopnXklqemqRRRIz\nUFAcikHs/4QAMWqA4ANlAJchNy8+3Lv6/OKOvT2Z6yAIyAaKAMWJMeTN67cb\nZx9riFyGCwFlgWrwGHL32pNJhZuAKtsSV+1ZfuH66ccf336FICAbKAIUB8oC\n1QBVYjUEaD7EhAXNe96/+oI19IDiQFmIOXD3IBsC8QVQDcGIgJgDVI9mCDDE\nIL7A5QY090D8BQlnuCHAkAcKAn1N0AQIAKoEqgfqQjYEGINAQWDoEWkIUCVQ\nPVAXUC8kNQIZwJQAFATGApGGAFUC1QN1QQwBAsoNoYpL/lMvTKgSO1RJJ1RJ\nsdTKO1TJxdQqT+CAwpKNDEAwIv4TV9oDAHfUai0=\n                   "
                    ],
                    "Byte",
                    ColorSpace -> "RGB",
@@ -23971,7 +23971,7 @@ Notebook[
                {11.8717, 7.94746}
               },
               CompressedData[
-               "\n\n1:eJxlkXtMU3cUx6soT4V7y6MV6QOYj97LvZUFWAdGv0EkmJkNyibo8LkRO8qs\nDzYsCr7oWHRCFUQRplINtloxomFqRAU6FohjAXEK69RKwaLjNcwgxamXGNkf\nO8nJySe/nOT8vp/gDRpl+lQej6fgemK+rQVI9GlzeMfycfKZvtxWK0dtIH80\nNYfEvzdMCbokOV5qkw95dhPoG95R/srKoqm9gDUWEbB5FZv2JrFYE3/J2k4R\n+LZwSufzOgZCh6/28Asf7Jz+VZNBxmBzb8q23TwCjk6zM+1gGBR3/7lo5t4F\ne4NKFozQyBMpNsYtI6C1+7ieUNMwDLjou+wEZOur+tf2UWgdeTxgziXx5FzN\n4P7dFOx+ouaetXykGiN/jVlEQWpp9YvW+MJquONa9kIGe1dieOtJP+jVS35W\n/CbD4Tj56dQBf0Q9Hml0b5PhiT2vwADBJNdYXFqqKoQw1UfMkNTLcFN/78KJ\n4kBIZywcFXtTMFz5YKwhPwjH50zJyDBR2J/5dNxEilHp9ezz3jgafJ/55VvT\nJcgYT1lx/L0wfNNYu7RsphSeOndFvieDLZ91Zi/lSaEuuDVXbWEwsZblIUVa\n4qP3z+5gEdWu1MYYJDjoOhSQQMgRcew7W2iDGD9+xG0elWPh1Rj1T3+KMF3f\nZWnu5/xc4QQdC8I7fxVfb1r+iWI2XnVs75s7zE7y1dWq6rsPWGRZZSKzRAQu\ntcVnXjNwrs8fUu0Tw8291zHsxaCB+zaZLEYIcfG5IDMMvztDKpmNYhi7w12O\ntNHIQWcJbRVhRc0XoYSGhnnagcayR0G4vu9BWawb/TbPU7NRpywNLrxH4ctz\n6z5VzgvEhJ6PbRTSrPEu288LJ1lVOs1oShdgT8vY6Kz7FCjhkQ4Phz+aJVzg\n3jTEiVE9nho/bFUd6t+5i0ZtlfYXWbQvbqRcWD7WQ+NM6LWXBRF8/HGWO1AX\nBktReDZTSSLn+/hsgmbg0MQGT60moWtV/8XXMXAviipMPU8iq3286f5DBkbl\nZbdV9SROZbb4P4xkEd2X260eJCEt/qFCl8si31n64eoAPlY+FerrbrJwclpL\nNvDRcHvboO1vFiUJhqNJd/7jvMWRa64vC0B6cvUQK2D+xx0eqpDMMcGkr3f8\nBvidex8=\n             "
+               "\n1:eJxlkXtMU3cUx6soT4V7y6MV6QOYj97LvZUFWAdGv0EkmJkNyibo8LkRO8qs\nDzYsCr7oWHRCFUQRplINtloxomFqRAU6FohjAXEK69RKwaLjNcwgxamXGNkf\nO8nJySe/nOT8vp/gDRpl+lQej6fgemK+rQVI9GlzeMfycfKZvtxWK0dtIH80\nNYfEvzdMCbokOV5qkw95dhPoG95R/srKoqm9gDUWEbB5FZv2JrFYE3/J2k4R\n+LZwSufzOgZCh6/28Asf7Jz+VZNBxmBzb8q23TwCjk6zM+1gGBR3/7lo5t4F\ne4NKFozQyBMpNsYtI6C1+7ieUNMwDLjou+wEZOur+tf2UWgdeTxgziXx5FzN\n4P7dFOx+ouaetXykGiN/jVlEQWpp9YvW+MJquONa9kIGe1dieOtJP+jVS35W\n/CbD4Tj56dQBf0Q9Hml0b5PhiT2vwADBJNdYXFqqKoQw1UfMkNTLcFN/78KJ\n4kBIZywcFXtTMFz5YKwhPwjH50zJyDBR2J/5dNxEilHp9ezz3jgafJ/55VvT\nJcgYT1lx/L0wfNNYu7RsphSeOndFvieDLZ91Zi/lSaEuuDVXbWEwsZblIUVa\n4qP3z+5gEdWu1MYYJDjoOhSQQMgRcew7W2iDGD9+xG0elWPh1Rj1T3+KMF3f\nZWnu5/xc4QQdC8I7fxVfb1r+iWI2XnVs75s7zE7y1dWq6rsPWGRZZSKzRAQu\ntcVnXjNwrs8fUu0Tw8291zHsxaCB+zaZLEYIcfG5IDMMvztDKpmNYhi7w12O\ntNHIQWcJbRVhRc0XoYSGhnnagcayR0G4vu9BWawb/TbPU7NRpywNLrxH4ctz\n6z5VzgvEhJ6PbRTSrPEu288LJ1lVOs1oShdgT8vY6Kz7FCjhkQ4Phz+aJVzg\n3jTEiVE9nho/bFUd6t+5i0ZtlfYXWbQvbqRcWD7WQ+NM6LWXBRF8/HGWO1AX\nBktReDZTSSLn+/hsgmbg0MQGT60moWtV/8XXMXAviipMPU8iq3286f5DBkbl\nZbdV9SROZbb4P4xkEd2X260eJCEt/qFCl8si31n64eoAPlY+FerrbrJwclpL\nNvDRcHvboO1vFiUJhqNJd/7jvMWRa64vC0B6cvUQK2D+xx0eqpDMMcGkr3f8\nBvidex8=\n             "
               ]
              }
             ]
@@ -26561,7 +26561,7 @@ Notebook[
              {6.81, 13.0}
             },
             CompressedData[
-             "\n\n1:eJxTTMoPSmViYGCQB2IQbct1fXGBrbRD6+vAHXKtvA7r3B9WiayTdoCI8zgc\n/qoR039IHkoLOjCAgYKDB0iZu4CDPFijgsOsmSDAC1UnCzWPE0rLQMXZHV6x\nmAia1Ug56E1Y8MMwjdXh685bXX9VJRx4Jq9sCvRkcTh7BgREHfoPgTSwOAQB\ndb8OFHYAO4eLFeo+IQcRMIMLzoe4h9dBW2LqFc4MYYd4zdMCx38JOviYdzom\npIo4PJgjuHSvo6jDkgKQz0QdCsEelHDQjAHZJAa1VxIqLwH3Jzofok8S4i9W\nRQews67LQsJhnoKDMRjIQ9Q3wMJJwQFMJULDSRJmrhzUPKh6Blmof+QcwM6K\nkXb4Bgq2rzJQcXFovMhA5UUdciqqluo0SztsKMqY+NZG2OHV1E08hTrSDquA\noTmXQdABPX4BaWq/EA==\n           "
+             "\n1:eJxTTMoPSmViYGCQB2IQbct1fXGBrbRD6+vAHXKtvA7r3B9WiayTdoCI8zgc\n/qoR039IHkoLOjCAgYKDB0iZu4CDPFijgsOsmSDAC1UnCzWPE0rLQMXZHV6x\nmAia1Ug56E1Y8MMwjdXh685bXX9VJRx4Jq9sCvRkcTh7BgREHfoPgTSwOAQB\ndb8OFHYAO4eLFeo+IQcRMIMLzoe4h9dBW2LqFc4MYYd4zdMCx38JOviYdzom\npIo4PJgjuHSvo6jDkgKQz0QdCsEelHDQjAHZJAa1VxIqLwH3Jzofok8S4i9W\nRQews67LQsJhnoKDMRjIQ9Q3wMJJwQFMJULDSRJmrhzUPKh6Blmof+QcwM6K\nkXb4Bgq2rzJQcXFovMhA5UUdciqqluo0SztsKMqY+NZG2OHV1E08hTrSDquA\noTmXQdABPX4BaWq/EA==\n           "
             ],
             {
              {8.81, 9.79},
