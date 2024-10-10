@@ -94,7 +94,7 @@ scopedTrackedDynamic // endDefinition;
 currentTabPageDynamic // beginDefinition;
 
 currentTabPageDynamic[ scope_ ] := Dynamic[
-    Replace[ CurrentChatSettings[ scope, "CurrentPreferencesTab" ], $$unspecified -> "Notebooks" ],
+    Replace[ CurrentChatSettings[ scope, "CurrentPreferencesTab" ], $$unspecified -> "Services" ],
     (CurrentChatSettings[ scope, "CurrentPreferencesTab" ] = #1) &
 ];
 
@@ -107,7 +107,7 @@ currentTabPage // beginDefinition;
 
 currentTabPage[ scope_ ] := Replace[
     CurrentChatSettings[ scope, "CurrentPreferencesTab" ],
-    $$unspecified -> "Notebooks"
+    $$unspecified -> "Services"
 ];
 
 currentTabPage // endDefinition;
@@ -1952,7 +1952,7 @@ resetChatPreferences // endDefinition;
 openPreferencesPage // beginDefinition;
 
 openPreferencesPage[ ] :=
-    openPreferencesPage[ "Notebooks" ];
+    openPreferencesPage[ "Services" ];
 
 openPreferencesPage[ page: $$preferencesPage ] := (
     CurrentChatSettings[ $FrontEnd, "CurrentPreferencesTab" ] = page;
