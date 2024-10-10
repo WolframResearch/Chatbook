@@ -38,7 +38,11 @@ withChatState[ eval_ ] :=
             $initialCellStringBudget      = $initialCellStringBudget,
             $multimodalMessages           = $multimodalMessages,
             $tokenBudget                  = $tokenBudget,
-            $tokenPressure                = $tokenPressure
+            $tokenPressure                = $tokenPressure,
+
+            (* LLM Kit info *)
+            $llmKit                       = $llmKit,
+            $llmKitService                = $llmKitService
         },
         $ChatHandlerData = <| |>;
         $tokenBudgetLog = Internal`Bag[ ];
