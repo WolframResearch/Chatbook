@@ -10,10 +10,22 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$suggestionsService        = "OpenAI";
-$suggestionsAuthentication = Automatic;
+$suggestionsService       := $llmKitService;
+$suggestionsAuthentication = "LLMKit";
 $stripWhitespace           = True;
 $defaultWLContextString    = "";
+
+$contentSuggestionsOverrides = <|
+    "Authentication"            -> "LLMKit",
+    "MaxCellStringLength"       -> 1000,
+    "MaxOutputCellStringLength" -> 200
+|>;
+
+$maxContextTokens = <|
+    "WL"       -> 2^12,
+    "Text"     -> 2^12,
+    "Notebook" -> 2^15
+|>;
 
 $inputStyle      = "Input";
 $$inputStyle     = "Input"|"Code";
@@ -161,17 +173,6 @@ showContentSuggestions[ nbo_NotebookObject ] :=
 showContentSuggestions[ nbo_NotebookObject, { selected_CellObject } ] :=
     showContentSuggestions0[ nbo, selected ];
 
-(* showContentSuggestions[ nbo_NotebookObject, { } ] := Enclose[
-    Module[ { selected },
-        (* FIXME: this is where notebook content suggestions should come in *)
-        SelectionMove[ nbo, After, Cell ];
-        NotebookWrite[ nbo, "", All ];
-        selected = ConfirmMatch[ SelectedCells @ nbo, { _CellObject }, "Selected" ];
-        showContentSuggestions0[ nbo, First @ selected ]
-    ],
-    throwInternalFailure
-]; *)
-
 showContentSuggestions[ nbo_NotebookObject, { } ] :=
     showContentSuggestions0[ nbo, nbo ];
 
@@ -225,6 +226,13 @@ showContentSuggestions0[ nbo_NotebookObject, root: $$feObj, selectionInfo_Associ
         ClearAttributes[ suggestionsContainer, Temporary ];
 
         settings = ConfirmBy[ LogChatTiming @ AbsoluteCurrentChatSettings @ root, AssociationQ, "Settings" ];
+
+        settings = mergeChatSettings @ {
+            settings,
+            $contentSuggestionsOverrides,
+            <| "MaxContextTokens" -> determineMaxContextTokens @ type |>
+        };
+
         context = ConfirmBy[ LogChatTiming @ getSuggestionsContext[ type, nbo, settings ], StringQ, "Context" ];
 
         $contextPrompt   = None;
@@ -242,6 +250,13 @@ showContentSuggestions0[ nbo_NotebookObject, root: $$feObj, selectionInfo_Associ
 ];
 
 showContentSuggestions0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*determineMaxContextTokens*)
+determineMaxContextTokens // beginDefinition;
+determineMaxContextTokens[ type_String ] := $maxContextTokens[ type ];
+determineMaxContextTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -367,8 +382,6 @@ generateWLSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_St
             "Response"
         ];
 
-        $lastSuggestionsResponse = response;
-
         style = First[ ConfirmMatch[ cellStyles @ root, { ___String }, "Styles" ], "Input" ];
 
         suggestions = DeleteDuplicates @ ConfirmMatch[
@@ -406,7 +419,7 @@ executeWLSuggestions0[ KeyValuePattern @ { "Instructions" -> instructions_, "Con
     executeWLSuggestions0[ instructions, context ];
 
 executeWLSuggestions0[ instructions_, context_ ] :=
-    setServiceCaller @ LogChatTiming @ ServiceExecute[
+    setServiceCaller @ LogChatTiming @ suggestionServiceExecute[
         $suggestionsService,
         "Chat",
         {
@@ -418,8 +431,7 @@ executeWLSuggestions0[ instructions_, context_ ] :=
             "N"           -> $wlSuggestionsCount,
             "MaxTokens"   -> $wlSuggestionsMaxTokens,
             "Temperature" -> $wlSuggestionsTemperature
-        },
-        Authentication -> $suggestionsAuthentication
+        }
     ];
 
 executeWLSuggestions0 // endDefinition;
@@ -447,7 +459,7 @@ executeWLSuggestionsFIM[ as_Association ] := Enclose[
 
         responses = ConfirmMatch[
             Table[
-                setServiceCaller @ LogChatTiming @ ServiceExecute[
+                setServiceCaller @ LogChatTiming @ suggestionServiceExecute[
                     $wlFIMService,
                     "RawCompletion",
                     DeleteMissing @ <|
@@ -456,8 +468,7 @@ executeWLSuggestionsFIM[ as_Association ] := Enclose[
                         "suffix"  -> suffix,
                         "stream"  -> False,
                         "options" -> $wlFIMOptions
-                    |>,
-                    Authentication -> $wlFIMAuthentication
+                    |>
                 ],
                 $wlFIMSuggestionsCount
             ],
@@ -735,7 +746,7 @@ generateTextSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_
 
         $lastInstructions = instructions;
 
-        response = setServiceCaller @ LogChatTiming @ ServiceExecute[
+        response = setServiceCaller @ LogChatTiming @ suggestionServiceExecute[
             $suggestionsService,
             "Chat",
             {
@@ -748,11 +759,8 @@ generateTextSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_
                 "MaxTokens"   -> $textSuggestionsMaxTokens,
                 "Temperature" -> $textSuggestionsTemperature,
                 "StopTokens"  -> { "\n\n" }
-            },
-            Authentication -> $suggestionsAuthentication
+            }
         ];
-
-        $lastSuggestionsResponse = response;
 
         suggestions = DeleteDuplicates @ ConfirmMatch[ getTextSuggestions @ response, { __TextData }, "Suggestions" ];
 
@@ -905,7 +913,7 @@ generateNotebookSuggestions0[ Dynamic[ container_ ], nbo_, root_NotebookObject, 
 
         $lastInstructions = instructions;
 
-        response = setServiceCaller @ LogChatTiming @ ServiceExecute[
+        response = setServiceCaller @ LogChatTiming @ suggestionServiceExecute[
             $suggestionsService,
             "Chat",
             {
@@ -917,11 +925,8 @@ generateNotebookSuggestions0[ Dynamic[ container_ ], nbo_, root_NotebookObject, 
                 "N"           -> $notebookSuggestionsCount,
                 "MaxTokens"   -> $notebookSuggestionsMaxTokens,
                 "Temperature" -> $notebookSuggestionsTemperature
-            },
-            Authentication -> $suggestionsAuthentication
+            }
         ];
-
-        $lastSuggestionsResponse = response;
 
         suggestions = DeleteDuplicates @ ConfirmMatch[ getNotebookSuggestions @ response, { __Cell }, "Suggestions" ];
 
@@ -1118,6 +1123,55 @@ formatSuggestionCells[ Cell[ a__ ] ] :=
     RawBoxes @ Cell[ a, Deployed -> True, Selectable -> False ];
 
 formatSuggestionCells // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Service Utilities*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*suggestionServiceExecute*)
+suggestionServiceExecute // beginDefinition;
+
+suggestionServiceExecute[ service_, args___ ] := Enclose[
+    Module[ { auth, result },
+        auth = $suggestionsAuthentication;
+
+        result = Quiet[
+            ServiceExecute[ service, args, Authentication -> auth ],
+            ServiceExecute::apierr
+        ];
+
+        $lastSuggestionsResponse = result;
+
+        If[ TrueQ @ llmKitSubscriptionMissingQ[ auth, result ],
+            throwTop[
+                NotebookDelete @ Cells[
+                    EvaluationNotebook[ ],
+                    AttachedCell -> True,
+                    CellStyle    -> "AttachedContentSuggestions"
+                ];
+                Needs[ "Wolfram`LLMFunctions`APIs`Common`" ];
+                Wolfram`LLMFunctions`APIs`Common`ConnectToService[ service, "LLMKit" ]
+            ],
+            ConfirmBy[ result, AssociationQ, "Result" ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+suggestionServiceExecute // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*llmKitSubscriptionMissingQ*)
+llmKitSubscriptionMissingQ // beginDefinition;
+llmKitSubscriptionMissingQ[ "LLMKit", failure_Failure ] := ! FreeQ[ failure, $$subscriptionError ];
+llmKitSubscriptionMissingQ[ _, _ ] := False;
+llmKitSubscriptionMissingQ // endDefinition;
+
+
+$$subscriptionError = KeyValuePattern[ "error" -> KeyValuePattern[ "code" -> "subscription-required" ] ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
