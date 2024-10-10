@@ -268,29 +268,58 @@ SaveChat // Options = { "AutoGenerateTitle" -> True };
 SaveChat[ messages: $$chatMessages, settings_Association, opts: OptionsPattern[ ] ] :=
     catchMine @ LogChatTiming @ saveChat[ messages, settings, OptionValue[ "AutoGenerateTitle" ] ];
 
+(* Save from a notebook: *)
+SaveChat[ chat_NotebookObject, opts: OptionsPattern[ ] ] :=
+    catchMine @ LogChatTiming @ saveChat[
+        chat,
+        ensureConversationUUID @ chat,
+        OptionValue[ "AutoGenerateTitle" ]
+    ];
+
+(* Save from a notebook with custom settings: *)
+SaveChat[ nbo_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] :=
+    catchMine @ LogChatTiming @ saveChat[
+        nbo,
+        ensureConversationUUID[ nbo, settings ],
+        OptionValue[ "AutoGenerateTitle" ]
+    ];
+
+(* Called at the end of chat evaluations if AutoSaveConversations is true and ensures notebook has a UUID: *)
+SaveChat[ nbo_NotebookObject, messages_, settings_Association, opts: OptionsPattern[ ] ] :=
+    catchMine @ SaveChat[ messages, ensureConversationUUID[ nbo, settings ], opts ];
+
+(* Alternate chat representations: *)
 SaveChat[ chat_ChatObject, settings_Association, opts: OptionsPattern[ ] ] :=
     catchMine @ SaveChat[ chat[ "Messages" ], settings, opts ];
 
 SaveChat[ chat_Dataset, settings_Association, opts: OptionsPattern[ ] ] :=
     catchMine @ SaveChat[ Normal @ chat, settings, opts ];
 
-SaveChat[ chat_NotebookObject, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
+SaveChat // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ensureConversationUUID*)
+ensureConversationUUID // beginDefinition;
+
+ensureConversationUUID[ nbo_NotebookObject ] :=
+    ensureConversationUUID[ nbo, <| |> ];
+
+ensureConversationUUID[ nbo_NotebookObject, settings0_Association ] := Enclose[
     Module[ { settings, uuid },
-        settings = ConfirmBy[ LogChatTiming @ AbsoluteCurrentChatSettings @ chat, AssociationQ, "Settings" ];
-        If[ ! StringQ @ settings[ "ConversationUUID" ],
+        settings = ConfirmBy[ <| AbsoluteCurrentChatSettings @ nbo, settings0 |>, AssociationQ, "Settings" ];
+        uuid = settings[ "ConversationUUID" ];
+        If[ ! StringQ @ uuid,
             uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
-            CurrentChatSettings[ chat, "ConversationUUID" ] = uuid;
             settings[ "ConversationUUID" ] = uuid;
+            ConfirmBy[ CurrentChatSettings[ nbo, "ConversationUUID" ] = uuid, StringQ, "SetUUID" ];
         ];
-        SaveChat[ chat, settings, opts ]
+        settings
     ],
     throwInternalFailure
 ];
 
-SaveChat[ chat_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] :=
-    catchMine @ saveChat[ chat, settings, OptionValue[ "AutoGenerateTitle" ] ];
-
-SaveChat // endExportedDefinition;
+ensureConversationUUID // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -302,7 +331,13 @@ saveChat[ messages0: $$chatMessages, settings0_, autoTitle_ ] := Enclose[
 
         settings = If[ TrueQ @ autoTitle, <| settings0, "AutoGenerateTitle" -> True |>, settings0 ];
         messages = ConfirmMatch[ prepareMessagesForSaving[ messages0, settings ], $$chatMessages, "Messages" ];
-        appName = ConfirmBy[ Lookup[ settings, "AppName", $defaultAppName ], StringQ, "AppName" ];
+
+        appName = ConfirmBy[
+            Replace[ Lookup[ settings, "AppName" ], $$unspecified :> $defaultAppName ],
+            StringQ,
+            "AppName"
+        ];
+
         metadata = ConfirmMatch[ getChatMetadata[ appName, messages, settings ], $$conversationData, "Metadata" ];
         vectors = ConfirmMatch[ createMessageVectors[ metadata, messages, settings ], { ___NumericArray }, "Vectors" ];
         directory = ConfirmBy[ targetDirectory[ appName, metadata ], DirectoryQ, "Directory" ];
