@@ -93,6 +93,7 @@
 "PreferencesContentPersonaLabel" -> "\:89D2\:8272\:ff1a",
 "PreferencesContentLLMServiceLabel" -> "LLM \:670D\:52A1\:5546\:ff1a",
 "PreferencesContentModelLabel" -> "\:6A21\:578B\:ff1a",
+"PreferencesContentModelLabelAlt" -> "\:6A21\:578B",
 "PreferencesContentTemperatureLabel" -> "\:6E29\:5EA6\:ff1a",
 "PreferencesContentSubsectionChat" -> "\:804A\:5929\:7B14\:8BB0\:672C\:4E2D\:7684\:5355\:5143",
 "PreferencesContentFormatOutputLabel" -> "\:683C\:5F0F\:5316\:804A\:5929\:8F93\:51FA",
@@ -107,11 +108,22 @@
 "PreferencesContentEnableTools" -> "\:542F\:7528\:5DE5\:5177\:ff1a",
 "PreferencesContentToolCallFrequency" -> "\:8C03\:7528\:5DE5\:5177\:7684\:9891\:7387\:ff1a",
 "PreferencesContentSubsectionRegisteredServices" -> "\:6CE8\:518C\:670D\:52A1\:5546",
-"PreferencesContentService" -> "\:670D\:52A1\:5546",
+"PreferencesContentService" -> "Direct Service Connections",
+"PreferencesContentDefaultService" -> "Default Service for LLM Functions & Chat Notebooks",
 "PreferencesContentServiceConnectButton" -> "\:8FDE\:63A5\:83B7\:53D6\:6A21\:578B\:5217\:8868",
 "PreferencesContentAuthentication" -> "\:8BA4\:8BC1",
 "PreferencesContentUnregisterTooltip" -> "\:53D6\:6D88\:4E0E\:6CE8\:518C\:670D\:52A1\:5546\:7684\:8FDE\:63A5",
 "PreferencesContentOpenAICompletionURLLabel" -> "\:804A\:5929\:8865\:5168 URL\:ff1a",
+"PreferencesContentLLMKitTitle" -> "Wolfram Code Assistant + LLM Kit",
+"PreferencesContentLLMKitSubscribeButton" -> "Subscribe",
+"PreferencesContentLLMKitLearnMoreTooltip" -> "Learn more\[Ellipsis]",
+"PreferencesContentLLMKitSubscriptionRequired" -> "LLM Kit requires a subscription",
+"PreferencesContentLLMKitNoSubscription" -> "No LLM Kit subscription found",
+"PreferencesContentLLMKitSignInOr" -> "or",
+"PreferencesContentLLMKitSignInButton" -> "Sign In to use an existing subscription \[RightGuillemet]",
+"PreferencesContentLLMKitEnabledTitle" -> "Code Assistant + LLM Kit Essentials",
+"PreferencesContentLLMKitEnabledText" -> "Code Assistant and LLM Kit features are enabled.",
+"PreferencesContentLLMKitEnabledManage" -> "Manage your subscription \[RightGuillemet]",
 
 "ResourceInstallerFromURLPrompt" -> "\:8F93\:5165 URL",
 "ResourceInstallerFromFilePrompt" -> "Choose a Resource Definition Notebook",
@@ -175,7 +187,11 @@
 "PersonaNameRawModel" -> "\:539F\:59CB\:6A21\:578B",
 "PersonaNameWolfie" -> "Wolfie",
 
-"AttachedChatFieldHint" -> "\:6709\:95EE\:5FC5\:7B54"
+"AttachedChatFieldHint" -> "\:6709\:95EE\:5FC5\:7B54",
+
+"MenuItemShowCodeAssistanceWindow" -> "Code Assistance Chat\[Ellipsis]",
+"MenuItemShowCodeAssistanceInline" -> "Code Assistance for Selection",
+"MenuItemShowContentSuggestions" -> "AI Content Suggestion"
 }
 @|
 @|
