@@ -787,22 +787,64 @@ popOutWorkspaceChatNB // beginDefinition;
 popOutWorkspaceChatNB[ Dynamic[ cells_ ] ] :=
     popOutWorkspaceChatNB @ cells;
 
-popOutWorkspaceChatNB[ cells: { ___Cell } ] := Enclose[
-    Module[ { nbo },
+popOutWorkspaceChatNB[ cells0: { ___Cell } ] := Enclose[
+    Module[ { cells, settings, nbo },
         NotebookClose @ findCurrentWorkspaceChat[ ];
 
+        cells = cells0 //. $inlineToWorkspaceConversionRules;
+
         nbo = ConfirmMatch[
-            createWorkspaceChat[ EvaluationNotebook[ ], DeleteCases[ cells, CellDingbat -> _, { 2 } ] ],
+            createWorkspaceChat[ EvaluationNotebook[ ], cells ],
             _NotebookObject,
             "Notebook"
         ];
 
-        moveToChatInputField @ nbo
+        moveToChatInputField @ nbo;
+
+        settings = ConfirmBy[ AbsoluteCurrentChatSettings @ nbo, AssociationQ, "Settings" ];
+        If[ TrueQ @ settings[ "AutoSaveConversations" ], SaveChat[ nbo, settings ] ];
+
+        nbo
     ],
     throwInternalFailure
 ];
 
 popOutWorkspaceChatNB // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$inlineToWorkspaceConversionRules*)
+$inlineToWorkspaceConversionRules := $inlineToWorkspaceConversionRules = Dispatch @ {
+    Cell[ BoxData @ TemplateBox[ { Cell[ text_ ] }, "UserMessageBox", __ ], "ChatInput", ___ ] :>
+        Cell[
+            BoxData @ TemplateBox[
+                { Cell[ Flatten @ TextData @ text, Background -> None, Selectable -> True, Editable -> True ] },
+                "UserMessageBox"
+            ],
+            "ChatInput"
+        ]
+    ,
+    Cell[
+        TextData @ { Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox", ___ ], ___ ] },
+        "ChatOutput",
+        ___,
+        TaggingRules -> tags_,
+        ___
+    ] :>
+        Cell[
+            TextData @ Cell[
+                BoxData @ TemplateBox[
+                    { Cell[ Flatten @ TextData @ text, Background -> None, Editable -> True, Selectable -> True ] },
+                    "AssistantMessageBox"
+                ],
+                Background -> None
+            ],
+            "ChatOutput",
+            TaggingRules      -> tags,
+            GeneratedCell     -> True,
+            CellAutoOverwrite -> True
+        ]
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -826,6 +868,9 @@ cellsToChatNB // endDefinition;
 
 
 $fromWorkspaceChatConversionRules := $fromWorkspaceChatConversionRules = Dispatch @ {
+    Cell[ BoxData @ TemplateBox[ { Cell[ TextData[ text_ ], ___ ] }, "UserMessageBox", ___ ], "ChatInput", ___ ] :>
+        Cell[ Flatten @ TextData @ text, "ChatInput" ]
+    ,
     Cell[ BoxData @ TemplateBox[ { text_ }, "UserMessageBox", ___ ], "ChatInput", ___ ] :>
         Cell[ Flatten @ TextData @ text, "ChatInput" ]
     ,
@@ -928,7 +973,8 @@ loadConversation // endDefinition;
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
-    $fromWorkspaceChatConversionRules
+    $fromWorkspaceChatConversionRules;
+    $inlineToWorkspaceConversionRules;
 ];
 
 End[ ];
