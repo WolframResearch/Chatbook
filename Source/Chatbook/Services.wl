@@ -14,7 +14,7 @@ $ContextAliases[ "llm`" ] = "LLMServices`";
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$llmKit                = True;
+$llmKit               := $llmKit = $VersionNumber >= 14.1;
 $llmKitService        := getLLMKitService[ ];
 $allowConnectionDialog = True;
 $enableLLMServices     = Automatic;
