@@ -476,7 +476,10 @@ standardizePersonaData // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getValidPersonaTools*)
 getValidPersonaTools // beginDefinition;
-getValidPersonaTools[ persona_Association ] := Quiet @ Cases[ Lookup[ persona, "Tools", { } ], _LLMTool ];
+
+getValidPersonaTools[ persona_Association ] :=
+    Quiet @ Cases[ Lookup[ persona, "Tools", { } ], _LLMTool|_String|ParentList ];
+
 getValidPersonaTools // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
