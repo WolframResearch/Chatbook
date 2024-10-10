@@ -93,6 +93,7 @@
 "PreferencesContentPersonaLabel" -> "Personnage\[NonBreakingSpace]:",
 "PreferencesContentLLMServiceLabel" -> "Service LLM\[NonBreakingSpace]:",
 "PreferencesContentModelLabel" -> "Mod\[EGrave]le\[NonBreakingSpace]:",
+"PreferencesContentModelLabelAlt" -> "Mod\[EGrave]le\[NonBreakingSpace]",
 "PreferencesContentTemperatureLabel" -> "Temp\[EAcute]rature\[NonBreakingSpace]:",
 "PreferencesContentSubsectionChat" -> "Cellules du notebook de chat",
 "PreferencesContentFormatOutputLabel" -> "Mise en forme de la sortie du chat",
@@ -107,11 +108,22 @@
 "PreferencesContentEnableTools" -> "Activer les outils\[NonBreakingSpace]: ",
 "PreferencesContentToolCallFrequency" -> "Fr\[EAcute]quence d\[CloseCurlyQuote]appel des outils\[NonBreakingSpace]:",
 "PreferencesContentSubsectionRegisteredServices" -> "Services enregistr\[EAcute]s",
-"PreferencesContentService" -> "Service",
+"PreferencesContentService" -> "Direct Service Connections",
+"PreferencesContentDefaultService" -> "Default Service for LLM Functions & Chat Notebooks",
 "PreferencesContentServiceConnectButton" -> "Se connecter pour la liste des mod\[EGrave]les",
 "PreferencesContentAuthentication" -> "Authentification",
 "PreferencesContentUnregisterTooltip" -> "Annuler la connexion au service",
 "PreferencesContentOpenAICompletionURLLabel" -> "URL compl\[EGrave]te du chat\[NonBreakingSpace]:",
+"PreferencesContentLLMKitTitle" -> "Wolfram Code Assistant + LLM Kit",
+"PreferencesContentLLMKitSubscribeButton" -> "Subscribe",
+"PreferencesContentLLMKitLearnMoreTooltip" -> "Learn more\[Ellipsis]",
+"PreferencesContentLLMKitSubscriptionRequired" -> "LLM Kit requires a subscription",
+"PreferencesContentLLMKitNoSubscription" -> "No LLM Kit subscription found",
+"PreferencesContentLLMKitSignInOr" -> "or",
+"PreferencesContentLLMKitSignInButton" -> "Sign In to use an existing subscription \[RightGuillemet]",
+"PreferencesContentLLMKitEnabledTitle" -> "Code Assistant + LLM Kit Essentials",
+"PreferencesContentLLMKitEnabledText" -> "Code Assistant and LLM Kit features are enabled.",
+"PreferencesContentLLMKitEnabledManage" -> "Manage your subscription \[RightGuillemet]",
 
 "ResourceInstallerFromURLPrompt" -> "Entrer une URL",
 "ResourceInstallerFromFilePrompt" -> "Choose a Resource Definition Notebook",
@@ -175,7 +187,11 @@
 "PersonaNameRawModel" -> "Mod\[EGrave]le brut",
 "PersonaNameWolfie" -> "Wolfie",
 
-"AttachedChatFieldHint" -> "Demandez\[Hyphen]moi quelque chose"
+"AttachedChatFieldHint" -> "Demandez\[Hyphen]moi quelque chose",
+
+"MenuItemShowCodeAssistanceWindow" -> "Code Assistance Chat\[Ellipsis]",
+"MenuItemShowCodeAssistanceInline" -> "Code Assistance for Selection",
+"MenuItemShowContentSuggestions" -> "AI Content Suggestion"
 }
 @|
 @|
