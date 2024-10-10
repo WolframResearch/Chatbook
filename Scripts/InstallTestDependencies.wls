@@ -18,8 +18,6 @@ If[ ! PacletObjectQ @ Quiet @ PacletInstall[ "SemanticSearch" ],
     }
 ];
 
-Print @ Head @ NetModel[ "all-MiniLM-L6-v2" ];
-
 If[ ! PacletObjectQ @ PacletObject[ "SemanticSearch" ],
     Print[ "::error::Failed to install SemanticSearch." ];
     Exit[ 1 ]
