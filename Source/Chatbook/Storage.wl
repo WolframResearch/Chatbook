@@ -274,6 +274,12 @@ SaveChat[ chat_ChatObject, settings_Association, opts: OptionsPattern[ ] ] :=
 SaveChat[ chat_Dataset, settings_Association, opts: OptionsPattern[ ] ] :=
     catchMine @ SaveChat[ Normal @ chat, settings, opts ];
 
+SaveChat[ chat_NotebookObject, opts: OptionsPattern[ ] ] :=
+    catchMine @ SaveChat[ chat, CurrentChatSettings @ chat, opts ];
+
+SaveChat[ chat_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] :=
+    catchMine @ saveChat[ chat, settings, OptionValue[ "AutoGenerateTitle" ] ];
+
 SaveChat // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -281,7 +287,7 @@ SaveChat // endExportedDefinition;
 (*saveChat*)
 saveChat // beginDefinition;
 
-saveChat[ messages0_, settings0_, autoTitle_ ] := Enclose[
+saveChat[ messages0: $$chatMessages, settings0_, autoTitle_ ] := Enclose[
     Module[ { settings, messages, appName, metadata, vectors, directory, attachments, smallSettings, as },
 
         settings = If[ TrueQ @ autoTitle, <| settings0, "AutoGenerateTitle" -> True |>, settings0 ];
@@ -335,6 +341,17 @@ saveChat[ messages0_, settings0_, autoTitle_ ] := Enclose[
         updateDynamics[ "SavedChats" ];
 
         Success[ "Saved", as ]
+    ],
+    throwInternalFailure
+];
+
+saveChat[ nbo_NotebookObject, settings_, autoTitle_ ] := Enclose[
+    Catch @ Module[ { cellObjects, cells, messages },
+        cellObjects = ConfirmMatch[ Cells @ nbo, { ___CellObject }, "CellObjects" ];
+        If[ cellObjects === { }, Throw @ Missing[ "NoCells" ] ];
+        cells = ConfirmMatch[ notebookRead @ cellObjects, { ___Cell }, "Cells" ];
+        messages = ConfirmMatch[ CellToChatMessage[ #, settings ] & /@ cells, $$chatMessages, "Messages" ];
+        ConfirmMatch[ saveChat[ messages, settings, autoTitle ], _Success, "SaveChat" ]
     ],
     throwInternalFailure
 ];
