@@ -51,6 +51,8 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$lastSettings;
 `$lastTask;
 `$leftSelectionIndicator;
+`$llmKit;
+`$llmKitService;
 `$longNameCharacters;
 `$multimodalMessages;
 `$nextTaskEvaluation;

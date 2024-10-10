@@ -10,10 +10,22 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$suggestionsService        = "OpenAI";
-$suggestionsAuthentication = Automatic;
+$suggestionsService       := $llmKitService;
+$suggestionsAuthentication = "LLMKit";
 $stripWhitespace           = True;
 $defaultWLContextString    = "";
+
+$contentSuggestionsOverrides = <|
+    "Authentication"            -> "LLMKit",
+    "MaxCellStringLength"       -> 1000,
+    "MaxOutputCellStringLength" -> 200
+|>;
+
+$maxContextTokens = <|
+    "WL"       -> 2^12,
+    "Text"     -> 2^12,
+    "Notebook" -> 2^15
+|>;
 
 $inputStyle      = "Input";
 $$inputStyle     = "Input"|"Code";
@@ -161,17 +173,6 @@ showContentSuggestions[ nbo_NotebookObject ] :=
 showContentSuggestions[ nbo_NotebookObject, { selected_CellObject } ] :=
     showContentSuggestions0[ nbo, selected ];
 
-(* showContentSuggestions[ nbo_NotebookObject, { } ] := Enclose[
-    Module[ { selected },
-        (* FIXME: this is where notebook content suggestions should come in *)
-        SelectionMove[ nbo, After, Cell ];
-        NotebookWrite[ nbo, "", All ];
-        selected = ConfirmMatch[ SelectedCells @ nbo, { _CellObject }, "Selected" ];
-        showContentSuggestions0[ nbo, First @ selected ]
-    ],
-    throwInternalFailure
-]; *)
-
 showContentSuggestions[ nbo_NotebookObject, { } ] :=
     showContentSuggestions0[ nbo, nbo ];
 
@@ -225,6 +226,13 @@ showContentSuggestions0[ nbo_NotebookObject, root: $$feObj, selectionInfo_Associ
         ClearAttributes[ suggestionsContainer, Temporary ];
 
         settings = ConfirmBy[ LogChatTiming @ AbsoluteCurrentChatSettings @ root, AssociationQ, "Settings" ];
+
+        settings = mergeChatSettings @ {
+            settings,
+            $contentSuggestionsOverrides,
+            <| "MaxContextTokens" -> determineMaxContextTokens @ type |>
+        };
+
         context = ConfirmBy[ LogChatTiming @ getSuggestionsContext[ type, nbo, settings ], StringQ, "Context" ];
 
         $contextPrompt   = None;
@@ -242,6 +250,13 @@ showContentSuggestions0[ nbo_NotebookObject, root: $$feObj, selectionInfo_Associ
 ];
 
 showContentSuggestions0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*determineMaxContextTokens*)
+determineMaxContextTokens // beginDefinition;
+determineMaxContextTokens[ type_String ] := $maxContextTokens[ type ];
+determineMaxContextTokens // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
