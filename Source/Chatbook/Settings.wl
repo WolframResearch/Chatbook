@@ -113,7 +113,12 @@ $$frontEndObject        = HoldPattern[ $FrontEnd | _FrontEndObject ];
 $ChatAbort    = None;
 $ChatPost     = None;
 $ChatPre      = None;
-$DefaultModel = <| "Service" -> "LLMKit", "Name" -> Automatic |>;
+
+$DefaultModel :=
+    If[ $VersionNumber >= 14.1,
+        <| "Service" -> "LLMKit", "Name" -> Automatic |>,
+        <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -251,6 +256,8 @@ resolveAutoSettings[ settings0_Association ] := Enclose[
             $cellStringBudget        = $initialCellStringBudget;
             $conversionRules         = resolved[ "ConversionRules" ];
             $openToolCallBoxes       = resolved[ "OpenToolCallBoxes" ];
+
+            setLLMKitFlags @ resolved;
         ];
         If[ $catching, $currentChatSettings = resolved ];
 
@@ -289,6 +296,15 @@ resolveAutoSettings0[ settings_Association ] := Enclose[
 ];
 
 resolveAutoSettings0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*setLLMKitFlags*)
+setLLMKitFlags // beginDefinition;
+setLLMKitFlags[ as_ ] := setLLMKitFlags[ as[ "Authentication" ], as[ "Model", "Service" ] ];
+setLLMKitFlags[ "LLMKit", service_String ] := ($llmKit = True; $llmKitService = service);
+setLLMKitFlags[ auth_, _ ] := $llmKit = auth === "LLMKit";
+setLLMKitFlags // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

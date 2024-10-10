@@ -354,7 +354,7 @@ checkResult[ eval: (sym_Symbol)[ args___ ] ] :=
             Print[ "::notice::Exporting stack data: ", stacks ];
             Export[
                 stacks,
-                $stackHistory,
+                First @ $stackHistory,
                 "WXF",
                 PerformanceGoal -> "Size"
             ];
