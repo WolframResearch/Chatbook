@@ -274,8 +274,18 @@ SaveChat[ chat_ChatObject, settings_Association, opts: OptionsPattern[ ] ] :=
 SaveChat[ chat_Dataset, settings_Association, opts: OptionsPattern[ ] ] :=
     catchMine @ SaveChat[ Normal @ chat, settings, opts ];
 
-SaveChat[ chat_NotebookObject, opts: OptionsPattern[ ] ] :=
-    catchMine @ SaveChat[ chat, CurrentChatSettings @ chat, opts ];
+SaveChat[ chat_NotebookObject, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
+    Module[ { settings, uuid },
+        settings = ConfirmBy[ LogChatTiming @ AbsoluteCurrentChatSettings @ chat, AssociationQ, "Settings" ];
+        If[ ! StringQ @ settings[ "ConversationUUID" ],
+            uuid = ConfirmBy[ CreateUUID[ ], StringQ, "UUID" ];
+            CurrentChatSettings[ chat, "ConversationUUID" ] = uuid;
+            settings[ "ConversationUUID" ] = uuid;
+        ];
+        SaveChat[ chat, settings, opts ]
+    ],
+    throwInternalFailure
+];
 
 SaveChat[ chat_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] :=
     catchMine @ saveChat[ chat, settings, OptionValue[ "AutoGenerateTitle" ] ];
