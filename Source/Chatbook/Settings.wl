@@ -113,7 +113,12 @@ $$frontEndObject        = HoldPattern[ $FrontEnd | _FrontEndObject ];
 $ChatAbort    = None;
 $ChatPost     = None;
 $ChatPre      = None;
-$DefaultModel = <| "Service" -> "LLMKit", "Name" -> Automatic |>;
+
+$DefaultModel :=
+    If[ $VersionNumber >= 14.1,
+        <| "Service" -> "LLMKit", "Name" -> Automatic |>,
+        <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |>
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
