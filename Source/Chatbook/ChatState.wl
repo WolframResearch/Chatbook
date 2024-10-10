@@ -61,9 +61,15 @@ withChatStateAndFEObjects[ { cell_CellObject, nbo_NotebookObject }, eval_ ] :=
 withChatStateAndFEObjects[ { cell_CellObject, None }, eval_ ] :=
     withChatState @ withChatEvaluationCell[ cell, eval ];
 
+withChatStateAndFEObjects[ { None, nbo_NotebookObject }, eval_ ] :=
+    withChatState @ withEvaluationNotebook[ nbo, eval ];
+
 (* Operator forms: *)
 withChatStateAndFEObjects[ cell_CellObject ] :=
     withChatStateAndFEObjects[ { cell, None } ];
+
+withChatStateAndFEObjects[ nbo_NotebookObject ] :=
+    withChatStateAndFEObjects[ { None, nbo } ];
 
 withChatStateAndFEObjects[ { cell_, nbo_ } ] :=
     Function[ eval,
