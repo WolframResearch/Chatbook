@@ -48,3 +48,12 @@ jobs:
     
     - name: Test
       run: wolframscript -f Scripts/TestPaclet.wls
+    
+    - name: UploadStackData
+      if: always() && env.PACLET_STACK_HISTORY
+      uses: actions/upload-artifact@v4
+      with:
+        name: StackData
+        path: ${{ env.PACLET_STACK_HISTORY }}
+        retention-days: 1
+        if-no-files-found: error
