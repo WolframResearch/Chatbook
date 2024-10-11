@@ -43,6 +43,9 @@ Notebook[
         ]
       ]
      ],
+     CellFrame -> 0,
+     CellFrameMargins -> 0,
+     CellMargins -> -1,
      Magnification :>
       CurrentValue[EvaluationNotebook[], Magnification]
     ]
@@ -61,7 +64,7 @@ Notebook[
   ],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3937540270"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3937639724"|>
   ],
   Cell[
    StyleData["ChatInput"],
