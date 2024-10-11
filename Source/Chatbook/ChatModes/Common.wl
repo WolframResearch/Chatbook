@@ -9,6 +9,7 @@ HoldComplete[
     `$inputFieldOuterBackground,
     `$inputFieldPaneMargins,
     `createWorkspaceChat,
+    `evaluateAttachedInlineChat,
     `findCurrentWorkspaceChat,
     `getContextFromSelection,
     `getSelectionInfo,

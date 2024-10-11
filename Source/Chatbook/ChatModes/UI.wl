@@ -384,7 +384,7 @@ inlineChatInputCell[ root_CellObject, selectionInfo_, settings_ ] := Cell[
                     $inputFieldBox = None;
                     Unset @ parentCell @ cell;
                     Unset @ parentNotebook @ cell;
-                    ClearAll @ evaluateCurrentInlineChat;
+                    ClearAll @ evaluateAttachedInlineChat;
                 ]
             ]
         },
@@ -536,7 +536,7 @@ inlineChatInputField[
     Dynamic[ currentInput_ ],
     Dynamic[ messageCells_ ]
 ] := (
-    evaluateCurrentInlineChat[ ] := ChatbookAction[
+    evaluateAttachedInlineChat[ ] := ChatbookAction[
         "EvaluateInlineChat",
         cell,
         root,
