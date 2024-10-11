@@ -44,7 +44,7 @@ $wlCellsBefore            = 25;
 $wlCellsAfter             = 10;
 $wlDocMaxItems            = 5;
 $wlFilterDocResults       = False;
-$wlFilteredDocCount       = 3;
+$wlFilteredDocCount       = 5;
 
 $wlSuggestionsPrompt := If[ TrueQ @ $wlFIM, $wlFIMPrompt, $wlSuggestionsPrompt0 ];
 
@@ -113,11 +113,14 @@ Delimiters -> "%%" ];
 $notebookSuggestionsModel       = "gpt-4o";
 $notebookSuggestionsMultimodal  = False;
 $notebookSuggestionsCount       = 1;
-$notebookSuggestionsMaxTokens   = 512;
+$notebookSuggestionsMaxTokens   = 1024;
 $notebookSuggestionsTemperature = 0.7;
 $notebookPlaceholderString      = "\:2758";
 $notebookCellsBefore            = 50;
 $notebookCellsAfter             = 25;
+$notebookDocMaxItems            = 20;
+$notebookFilterDocResults       = True;
+$notebookFilteredDocCount       = 5;
 
 $notebookSuggestionsPrompt := If[ $inputStyle === "Code", $packageSuggestionsPrompt, $notebookSuggestionsPrompt0 ];
 
@@ -890,9 +893,9 @@ generateNotebookSuggestions0[ Dynamic[ container_ ], nbo_, root_NotebookObject, 
             LogChatTiming @ RelatedDocumentation[
                 preprocessed,
                 "Prompt",
-                MaxItems        -> $wlDocMaxItems,
-                "FilterResults" -> $wlFilterDocResults,
-                "FilteredCount" -> $wlFilteredDocCount
+                MaxItems        -> $notebookDocMaxItems,
+                "FilterResults" -> $notebookFilterDocResults,
+                "FilteredCount" -> $notebookFilteredDocCount
             ],
             StringQ,
             "RelatedDocumentation"
