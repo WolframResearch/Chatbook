@@ -15,6 +15,17 @@ $inputFieldGridMagnification = Inherited;
 $inputFieldOuterBackground   = GrayLevel[ 0.95 ];
 $initialInlineChatWidth      = Scaled[ 1 ];
 $initialInlineChatHeight     = UpTo[ 200 ];
+$inputFieldBox               = None;
+$inlineChatScrollPosition    = 0.0;
+$lastScrollPosition          = 0.0;
+$maxHistoryItems             = 25;
+$messageAuthorImagePadding   = { { 0, 0 }, { 0, 6 } };
+
+$toolbarLabelStyle = Sequence[
+    "Text",
+    FontColor  -> White,
+    FontWeight -> "DemiBold"
+];
 
 $inputFieldOptions = Sequence[
     BoxID      -> "AttachedChatInputField",
@@ -32,26 +43,8 @@ $inputFieldFrameOptions = Sequence[
 
 $userImageParams = <| "size" -> 40, "default" -> "404", "rating" -> "G" |>;
 
-$defaultUserImage = Graphics[
-    {
-        EdgeForm @ None,
-        FaceForm @ GrayLevel[ 0.8 ],
-        Disk[ { 0, 0.2 }, 2.35 ],
-        FaceForm @ White,
-        Disk[ { 0, 1 }, 1 ],
-        Disk[ { 0, -1.8 }, { 1.65, 2 } ]
-    },
-    ImageSize -> 20,
-    PlotRange -> { { -2.4, 2.4 }, { -2.0, 2.8 } }
-];
-
-$messageAuthorImagePadding = { { 0, 0 }, { 0, 6 } };
-
-$inputFieldBox = None;
-$inlineChatScrollPosition = 0.0;
-$lastScrollPosition       = 0.0;
-
-$maxHistoryItems = 25;
+$defaultUserImage := $defaultUserImage =
+    inlineTemplateBoxes @ RawBoxes @ TemplateBox[ { }, "WorkspaceDefaultUserIcon" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -62,43 +55,121 @@ $maxHistoryItems = 25;
 (*makeWorkspaceChatDockedCell*)
 makeWorkspaceChatDockedCell // beginDefinition;
 
-makeWorkspaceChatDockedCell[ ] :=
+(* FIXME: Add text resources for button labels and tooltips *)
+makeWorkspaceChatDockedCell[ ] := Framed[
     DynamicModule[ { nbo },
-        Grid @ {
-            {
-                Tooltip[
-                    Button[
-                        "New Chat",
-                        NotebookDelete @ Cells @ nbo;
-                        CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ]
-                    ],
-                    "Start a new conversation"
-                ],
+        Grid[
+            { {
                 trackedDynamic[ createHistoryMenu @ nbo, "SavedChats" ],
-                Tooltip[
-                    Button[
-                        "Delete",
-                        DeleteChat[
-                            CurrentChatSettings[ nbo, "AppName" ],
-                            CurrentChatSettings[ nbo, "ConversationUUID" ]
-                        ];
-                        NotebookDelete @ Cells @ nbo;
-                        CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ]
-                    ],
-                    "Remove the current chat from the history menu"
-                ]
-                ,
-                Item[ "", ItemSize -> Fit ],
-                Tooltip[
-                    Button[ "Pop Out", popOutChatNB @ nbo, Method -> "Queued" ],
-                    "View the chat as a normal chat notebook"
-                ]
-            }
-        },
+                Item[ Spacer[ 0 ], ItemSize -> Fit ],
+                sourcesButton @ Dynamic @ nbo,
+                newChatButton @ Dynamic @ nbo
+            } },
+            Alignment -> { Automatic, Center },
+            Spacings  -> 0.5
+        ],
         Initialization :> (nbo = EvaluationNotebook[ ])
-    ];
+    ],
+    Background   -> RGBColor[ "#66ADD2" ],
+    FrameStyle   -> RGBColor[ "#A3C9F2" ],
+    FrameMargins -> { { 2, 8 }, { 0, 0 } },
+    ImageMargins -> 0
+];
 
 makeWorkspaceChatDockedCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*sourcesButton*)
+sourcesButton // beginDefinition;
+
+sourcesButton[ Dynamic[ nbo_ ] ] := Button[
+    toolbarButtonLabel[ "Sources" ],
+    MessageDialog[ "Coming soon" ],
+    Appearance -> "Suppressed"
+];
+
+sourcesButton // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*newChatButton*)
+newChatButton // beginDefinition;
+
+newChatButton[ Dynamic[ nbo_ ] ] := Button[
+    toolbarButtonLabel[ "New" ],
+    NotebookDelete @ Cells @ nbo;
+    CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ],
+    Appearance -> "Suppressed"
+];
+
+newChatButton // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolbarButtonLabel*)
+toolbarButtonLabel // beginDefinition;
+
+toolbarButtonLabel[ name_String, opts: OptionsPattern[ ] ] :=
+    toolbarButtonLabel[ name, name, opts ];
+
+toolbarButtonLabel[ iconName_String, labelName: _String|None, opts: OptionsPattern[ ] ] :=
+    toolbarButtonLabel[ iconName, labelName, labelName, opts ];
+
+toolbarButtonLabel[ iconName_String, labelName: _String|None, tooltipName: _String|None, opts: OptionsPattern[ ] ] :=
+    toolbarButtonLabel[ iconName, labelName, tooltipName, opts ] =
+        With[ { lbl = toolbarButtonLabel0[ iconName, labelName ] },
+            buttonTooltip[
+                NotebookTools`Mousedown[
+                    Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonDefault ],
+                    Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonHover   ],
+                    Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonActive  ]
+                ],
+                tooltipName
+            ]
+        ];
+
+toolbarButtonLabel // endDefinition;
+
+
+toolbarButtonLabel0 // beginDefinition;
+
+toolbarButtonLabel0[ iconName_String, labelName_String ] :=
+    Grid[
+        { {
+            RawBoxes @ TemplateBox[ { }, "WorkspaceToolbarIcon"<>iconName ],
+            Style[ tr[ "WorkspaceToolbarButtonLabel"<>labelName ], $toolbarLabelStyle ]
+        } },
+        Spacings  -> 0.5,
+        Alignment -> { Automatic, Center }
+    ];
+
+toolbarButtonLabel0[ iconName_String, None ] :=
+    Grid[
+        { { RawBoxes @ TemplateBox[ { }, "WorkspaceToolbarIcon"<>iconName ] } },
+        Spacings  -> 0.5,
+        Alignment -> { Automatic, Center }
+    ];
+
+toolbarButtonLabel0 // endDefinition;
+
+$toolbarButtonCommon = Sequence[
+    FrameMargins   -> { { 1, 1 }, { 1, 1 } },
+    ImageSize      -> { Automatic, 22 },
+    RoundingRadius -> 3
+];
+
+$toolbarButtonDefault = Sequence[ Background -> RGBColor[ "#66ADD2" ], FrameStyle -> RGBColor[ "#66ADD2" ] ];
+$toolbarButtonHover   = Sequence[ Background -> RGBColor[ "#87C3E3" ], FrameStyle -> RGBColor[ "#9ACAE4" ] ];
+$toolbarButtonActive  = Sequence[ Background -> RGBColor[ "#3689B5" ], FrameStyle -> RGBColor[ "#3689B5" ] ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*buttonTooltip*)
+buttonTooltip // beginDefinition;
+buttonTooltip[ label_, None ] := label;
+buttonTooltip[ label_, name_String ] := Tooltip[ label, tr[ "WorkspaceToolbarButtonTooltip"<>name ] ];
+buttonTooltip // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -905,9 +976,11 @@ createHistoryMenu[ nbo_NotebookObject ] := Enclose[
         chats = ConfirmMatch[ ListSavedChats @ appName, { ___Association }, "Chats" ];
         If[ chats === { }, Throw @ ActionMenu[ "History", { "Nothing here yet" :> Null } ] ];
         ActionMenu[
-            "History",
+            toolbarButtonLabel[ "History", None, "History" ],
             makeHistoryMenuItem[ nbo ] /@ Take[ chats, UpTo @ $maxHistoryItems ],
-            Method -> "Queued"
+            Appearance -> "Suppressed",
+            Method     -> "Queued",
+            MenuStyle  -> { Magnification -> 1 }
         ]
     ],
     throwInternalFailure
@@ -975,6 +1048,7 @@ loadConversation // endDefinition;
 addToMXInitialization[
     $fromWorkspaceChatConversionRules;
     $inlineToWorkspaceConversionRules;
+    $defaultUserImage;
 ];
 
 End[ ];
