@@ -14,6 +14,7 @@ $suggestionsService       := $llmKitService;
 $suggestionsAuthentication = "LLMKit";
 $stripWhitespace           = True;
 $defaultWLContextString    = "";
+$finishReason              = None;
 
 $contentSuggestionsOverrides = <|
     "Authentication"            -> "LLMKit",
@@ -44,7 +45,7 @@ $wlCellsBefore            = 25;
 $wlCellsAfter             = 10;
 $wlDocMaxItems            = 5;
 $wlFilterDocResults       = False;
-$wlFilteredDocCount       = 3;
+$wlFilteredDocCount       = 5;
 
 $wlSuggestionsPrompt := If[ TrueQ @ $wlFIM, $wlFIMPrompt, $wlSuggestionsPrompt0 ];
 
@@ -113,11 +114,14 @@ Delimiters -> "%%" ];
 $notebookSuggestionsModel       = "gpt-4o";
 $notebookSuggestionsMultimodal  = False;
 $notebookSuggestionsCount       = 1;
-$notebookSuggestionsMaxTokens   = 512;
+$notebookSuggestionsMaxTokens   = 1024;
 $notebookSuggestionsTemperature = 0.7;
 $notebookPlaceholderString      = "\:2758";
 $notebookCellsBefore            = 50;
 $notebookCellsAfter             = 25;
+$notebookDocMaxItems            = 20;
+$notebookFilterDocResults       = True;
+$notebookFilteredDocCount       = 5;
 
 $notebookSuggestionsPrompt := If[ $inputStyle === "Code", $packageSuggestionsPrompt, $notebookSuggestionsPrompt0 ];
 
@@ -171,10 +175,10 @@ showContentSuggestions[ nbo_NotebookObject ] :=
     showContentSuggestions[ nbo, SelectedCells @ nbo ];
 
 showContentSuggestions[ nbo_NotebookObject, { selected_CellObject } ] :=
-    showContentSuggestions0[ nbo, selected ];
+    Block[ { $finishReason = None }, showContentSuggestions0[ nbo, selected ] ];
 
 showContentSuggestions[ nbo_NotebookObject, { } ] :=
-    showContentSuggestions0[ nbo, nbo ];
+    Block[ { $finishReason = None }, showContentSuggestions0[ nbo, nbo ] ];
 
 showContentSuggestions[ _NotebookObject, _ ] :=
     Null;
@@ -890,9 +894,9 @@ generateNotebookSuggestions0[ Dynamic[ container_ ], nbo_, root_NotebookObject, 
             LogChatTiming @ RelatedDocumentation[
                 preprocessed,
                 "Prompt",
-                MaxItems        -> $wlDocMaxItems,
-                "FilterResults" -> $wlFilterDocResults,
-                "FilteredCount" -> $wlFilteredDocCount
+                MaxItems        -> $notebookDocMaxItems,
+                "FilterResults" -> $notebookFilterDocResults,
+                "FilteredCount" -> $notebookFilteredDocCount
             ],
             StringQ,
             "RelatedDocumentation"
@@ -927,6 +931,8 @@ generateNotebookSuggestions0[ Dynamic[ container_ ], nbo_, root_NotebookObject, 
                 "Temperature" -> $notebookSuggestionsTemperature
             }
         ];
+
+        $finishReason = response[ "FinishReason" ];
 
         suggestions = DeleteDuplicates @ ConfirmMatch[ getNotebookSuggestions @ response, { __Cell }, "Suggestions" ];
 
@@ -974,10 +980,32 @@ postProcessNotebookSuggestions[ s_, cells0: { ___Cell, Cell[ __, $$generatedStyl
         postProcessNotebookSuggestions[ s, cells ] /; cells =!= { }
     ];
 
-postProcessNotebookSuggestions[ s_, cells: { __Cell } ] :=
-    Cell @ CellGroupData[ Flatten[ postProcessNotebookSuggestion /@ cells ], Open ];
+postProcessNotebookSuggestions[ s_, cells: { __Cell } ] := Enclose[
+    Module[ { processed, trimmed },
+        processed = ConfirmMatch[ Flatten[ postProcessNotebookSuggestion /@ cells ], { __Cell }, "Processed" ];
+        trimmed = ConfirmMatch[ trimUnfinishedInput @ processed, { __Cell }, "Trimmed" ];
+        Cell @ CellGroupData[ trimmed, Open ]
+    ],
+    throwInternalFailure
+];
 
 postProcessNotebookSuggestions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*trimUnfinishedInput*)
+trimUnfinishedInput // beginDefinition;
+
+trimUnfinishedInput[ cells: { keep__, Cell[ __, $$inputStyle, ___ ] } ] :=
+    If[ $finishReason === "length" && Length @ cells > 5,
+        { keep },
+        cells
+    ];
+
+trimUnfinishedInput[ cells_List ] :=
+    cells;
+
+trimUnfinishedInput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

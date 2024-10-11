@@ -1098,7 +1098,10 @@ $textDataFormatRules = {
         Shortest[ code__ ],
         ("```"|EndOfString)
     ] /; StringFreeQ[ code, ("TOOLCALL:" ~~ ___ ~~ ($$endToolCall|EndOfString))|$$simpleToolCall ] :>
-        codeBlockCell[ language, code ]
+        If[ StringMatchQ[ code, $$mdTable ],
+            tableCell @ code,
+            codeBlockCell[ language, code ]
+        ]
     ,
     Longest @ StringExpression[
         (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
