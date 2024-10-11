@@ -144,12 +144,86 @@ enableCodeAssistance // endDefinition;
 (* ::Section::Closed:: *)
 (*ShowCodeAssistance*)
 ShowCodeAssistance // beginDefinition;
-ShowCodeAssistance[ ] := catchMine @ ShowCodeAssistance[ "Window" ];
-ShowCodeAssistance[ nbo_NotebookObject ] := catchMine @ showCodeAssistanceWindow @ nbo;
-ShowCodeAssistance[ "Window" ] := catchMine @ ShowCodeAssistance[ getUserNotebook[ ], "Window" ];
-ShowCodeAssistance[ "Inline" ] := catchMine @ ShowCodeAssistance[ InputNotebook[ ], "Inline" ];
-ShowCodeAssistance[ nbo_NotebookObject, "Window" ] := catchMine @ showCodeAssistanceWindow @ nbo;
-ShowCodeAssistance[ nbo_NotebookObject, "Inline" ] := catchMine @ showCodeAssistanceInline @ nbo;
+ShowCodeAssistance // Options = { "Input" -> None, "EvaluateInput" -> False, "NewChat" -> False };
+
+GeneralUtilities`SetUsage[ ShowCodeAssistance, "\
+ShowCodeAssistance[] shows code assistance in a new or existing window.
+ShowCodeAssistance[\"type$\"] shows code assistance of the specified type for the currently selected notebook.
+ShowCodeAssistance[obj$, \"type$\"] shows code assistance of the specified type for the given front end object obj$.
+
+* The value for \"type$\" can be \"Window\", \"Inline\", or Automatic.
+* The value for obj$ can be a NotebookObject or a CellObject.
+* The default value for \"type$\" is \"Window\" when obj$ is a NotebookObject, and \"Inline\" for a CellObject.
+* ShowCodeAssistance accepts the following options:
+| Input         | None  | A string to use as the initial chat input  |
+| EvaluateInput | False | Whether to evaluate the initial chat input |
+| NewChat       | False | Whether to start a new chat                |
+* If EvaluateInput is True, a value must be given for Input.
+* Specifying NewChat \[Rule] True will clear the existing code assistance chat (if any).
+* The setting for NewChat has no effect for Inline code assistance.\
+" ];
+
+(* The zero argument form uses "Window" by default: *)
+ShowCodeAssistance[ opts: OptionsPattern[ ] ] :=
+    catchMine @ ShowCodeAssistance[ "Window", opts ];
+
+(* Uses "Window" if given a NotebookObject: *)
+ShowCodeAssistance[ nbo_NotebookObject, opts: OptionsPattern[ ] ] :=
+    catchMine @ ShowCodeAssistance[ nbo, "Window", opts ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Window*)
+ShowCodeAssistance[ "Window", opts: OptionsPattern[ ] ] :=
+    catchMine @ ShowCodeAssistance[ getUserNotebook[ ], "Window", opts ];
+
+ShowCodeAssistance[ nbo_NotebookObject, "Window"|Automatic, opts: OptionsPattern[ ] ] :=
+    catchMine @ withChatState @ showCodeAssistanceWindow[
+        nbo,
+        OptionValue[ "Input"         ],
+        OptionValue[ "EvaluateInput" ],
+        OptionValue[ "NewChat"       ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Inline*)
+ShowCodeAssistance[ "Inline", opts: OptionsPattern[ ] ] :=
+    catchMine @ ShowCodeAssistance[ InputNotebook[ ], "Inline", opts ];
+
+ShowCodeAssistance[ nbo_NotebookObject, "Inline", opts: OptionsPattern[ ] ] :=
+    catchMine @ withChatState @ showCodeAssistanceInline[
+        nbo,
+        OptionValue[ "Input"         ],
+        OptionValue[ "EvaluateInput" ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*From CellObjects*)
+
+(* A CellObject uses "Inline" by default: *)
+ShowCodeAssistance[ cell_CellObject, opts: OptionsPattern[ ] ] :=
+    catchMine @ ShowCodeAssistance[ cell, "Inline", opts ];
+
+(* If given a CellObject, move selection to the cell, then use "Inline" on the parent notebook: *)
+ShowCodeAssistance[ cell_CellObject, "Inline"|Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
+    Module[ { nbo },
+        nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "Notebook" ];
+        SelectionMove[ cell, All, Cell ];
+        ShowCodeAssistance[ nbo, "Inline", opts ]
+    ],
+    throwInternalFailure
+];
+
+ShowCodeAssistance[ cell_CellObject, "Window", opts: OptionsPattern[ ] ] := catchMine @ Enclose[
+    Module[ { nbo },
+        nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "Notebook" ];
+        ShowCodeAssistance[ nbo, "Window", opts ]
+    ],
+    throwInternalFailure
+];
+
 ShowCodeAssistance // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -160,9 +234,30 @@ ShowCodeAssistance // endExportedDefinition;
 (* ::Subsection::Closed:: *)
 (*showCodeAssistanceInline*)
 showCodeAssistanceInline // beginDefinition;
-showCodeAssistanceInline[ nbo_NotebookObject ] := attachInlineChatInput[ nbo, $codeAssistanceInlineSettings ];
-showCodeAssistanceInline[ _ ] := MessageDialog[ "No notebook selected." ];
+
+showCodeAssistanceInline[ nbo_NotebookObject, input_, evaluate_ ] :=
+    Module[ { attached },
+        attached = attachInlineChatInput[ nbo, $codeAssistanceInlineSettings ];
+        setInlineInputAndEvaluate[ attached, input, evaluate ]
+    ];
+
+showCodeAssistanceInline[ _ ] :=
+    Beep[ "No notebook selected for code assistance." ];
+
 showCodeAssistanceInline // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*setInlineInputAndEvaluate*)
+setInlineInputAndEvaluate // beginDefinition;
+
+setInlineInputAndEvaluate[ attached_CellObject, input_, evaluate_ ] := (
+    If[ StringQ @ input, CurrentValue[ attached, { TaggingRules, "ChatInputString" } ] = input ];
+    If[ TrueQ @ evaluate, evaluateAttachedInlineChat[ ] ];
+    attached
+);
+
+setInlineInputAndEvaluate // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -173,29 +268,72 @@ showCodeAssistanceInline // endDefinition;
 (*showCodeAssistanceWindow*)
 showCodeAssistanceWindow // beginDefinition;
 
-showCodeAssistanceWindow[ source_NotebookObject ] := Enclose[
-    Module[ { current },
+
+showCodeAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] := Enclose[
+    Module[ { current, nbo },
+
         current = ConfirmMatch[ findCurrentWorkspaceChat[ ], _NotebookObject | Missing[ "NotFound" ], "Existing" ];
-        If[ MissingQ @ current,
-            ConfirmMatch[ createWorkspaceChat @ source, _NotebookObject, "New" ],
-            ConfirmMatch[ attachToLeft[ source, current ], _NotebookObject, "Attached" ]
-        ]
+
+        If[ TrueQ @ new,
+            Quiet @ NotebookClose @ current;
+            current = Missing[ "NotFound" ]
+        ];
+
+        nbo = If[ MissingQ @ current,
+                  ConfirmMatch[ createWorkspaceChat @ source, _NotebookObject, "New" ],
+                  ConfirmMatch[ attachToLeft[ source, current ], _NotebookObject, "Attached" ]
+              ];
+
+        setWindowInputAndEvaluate[ nbo, input, evaluate ]
     ],
     throwInternalFailure
 ];
 
-showCodeAssistanceWindow[ None ] := Enclose[
-    Module[ { current },
+
+showCodeAssistanceWindow[ None, input_, evaluate_, new_ ] := Enclose[
+    Module[ { current, nbo },
         current = ConfirmMatch[ findCurrentWorkspaceChat[ ], _NotebookObject | Missing[ "NotFound" ], "Existing" ];
-        If[ MissingQ @ current,
-            ConfirmMatch[ createWorkspaceChat[ ], _NotebookObject, "New" ],
-            current
-        ]
+
+        If[ TrueQ @ new,
+            Quiet @ NotebookClose @ current;
+            current = Missing[ "NotFound" ]
+        ];
+
+        nbo = If[ MissingQ @ current,
+                  ConfirmMatch[ createWorkspaceChat[ ], _NotebookObject, "New" ],
+                  current
+              ];
+
+        setWindowInputAndEvaluate[ nbo, input, evaluate ]
     ],
     throwInternalFailure
 ];
+
 
 showCodeAssistanceWindow // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*setWindowInputAndEvaluate*)
+setWindowInputAndEvaluate // beginDefinition;
+
+setWindowInputAndEvaluate[ nbo_NotebookObject, input_, evaluate_ ] := (
+    If[ StringQ @ input,
+        CurrentValue[ nbo, { TaggingRules, "ChatInputString" } ] = input;
+    ];
+
+    If[ TrueQ @ evaluate,
+        ChatbookAction[
+            "EvaluateWorkspaceChat",
+            nbo,
+            Dynamic @ CurrentValue[ nbo, { TaggingRules, "ChatInputString" } ]
+        ]
+    ];
+
+    nbo
+);
+
+setWindowInputAndEvaluate // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
