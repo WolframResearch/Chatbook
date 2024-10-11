@@ -141,6 +141,13 @@ postProcessExplodedCells // endDefinition;
 (*$preprocessingRules*)
 $preprocessingRules := $preprocessingRules = Dispatch @ {
     (* Remove "InlineSection" styling: *)
+    Cell[
+        BoxData @ PaneBox[
+            StyleBox[ Cell[ text_, Background -> None ], style_, ___ ], ___ ],
+            "InlineSection",
+            ___
+    ] :> Cell[ text, style ],
+
     Cell[ BoxData @ PaneBox[ StyleBox[ text_, style_, ___ ], ___ ], "InlineSection", ___ ] :>
         RuleCondition @ StyleBox[ extractText @ text, style ],
 
