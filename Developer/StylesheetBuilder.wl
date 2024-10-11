@@ -14,6 +14,7 @@ $WorkspaceStylesheet;
 BuildStylesheets;
 BuildChatbookStylesheet;
 BuildWorkspaceStylesheet;
+CompileTemplateData;
 
 Begin[ "`Private`" ];
 
@@ -730,6 +731,9 @@ $workspaceChatDockedCells = {
                 Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachWorkspaceChatInput", nbo ]
             ]
         ],
+        CellFrame        -> 0,
+        CellFrameMargins -> 0,
+        CellMargins      -> -1,
         Magnification :> CurrentValue[ EvaluationNotebook[ ], Magnification ]
     ]
 };
@@ -869,7 +873,7 @@ BuildChatbookStylesheet[ ] := BuildChatbookStylesheet @ $styleSheetTarget;
 BuildChatbookStylesheet[ target_ ] :=
     Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
         Module[ { exported },
-            Developer`WriteWXFFile[ $displayFunctionsFile, fixContexts @ $templateBoxDisplayFunctions ];
+            CompileTemplateData[ ];
             exported = Export[ target, fixContexts @ $ChatbookStylesheet, "NB" ];
             PacletInstall[ "Wolfram/PacletCICD" ];
             Needs[ "Wolfram`PacletCICD`" -> None ];
@@ -916,6 +920,12 @@ BuildWorkspaceStylesheet[ target_ ] :=
         ]
     ];
 
+
+(* ::Section::Closed:: *)
+(*CompileTemplateData*)
+
+
+CompileTemplateData[ ] := Developer`WriteWXFFile[ $displayFunctionsFile, fixContexts @ $templateBoxDisplayFunctions ];
 
 
 (* ::Section::Closed:: *)

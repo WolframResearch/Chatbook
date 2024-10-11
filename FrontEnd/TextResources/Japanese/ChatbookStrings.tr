@@ -191,7 +191,14 @@
 
 "MenuItemShowCodeAssistanceWindow" -> "\:30B3\:30FC\:30C9\:30A2\:30B7\:30B9\:30BF\:30F3\:30B9\:30C1\:30E3\:30C3\:30C8\[Ellipsis]",
 "MenuItemShowCodeAssistanceInline" -> "\:9078\:629E\:90E8\:5206\:306E\:305F\:3081\:306E\:30B3\:30FC\:30C9\:30A2\:30B7\:30B9\:30BF\:30F3\:30B9",
-"MenuItemShowContentSuggestions" -> "AI\:306B\:3088\:308B\:30B3\:30F3\:30C6\:30F3\:30C4\:306E\:63D0\:6848"
+"MenuItemShowContentSuggestions" -> "AI\:306B\:3088\:308B\:30B3\:30F3\:30C6\:30F3\:30C4\:306E\:63D0\:6848",
+
+"WorkspaceToolbarButtonLabelSources" -> "Sources",
+"WorkspaceToolbarButtonLabelNew" -> "New",
+
+"WorkspaceToolbarButtonTooltipHistory" -> "[[Manage conversations]]",
+"WorkspaceToolbarButtonTooltipSources" -> "[[Add additional source material to the chat context]]",
+"WorkspaceToolbarButtonTooltipNew" -> "[[Start a new conversation]]"
 }
 @|
 @|

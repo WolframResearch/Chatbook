@@ -192,7 +192,14 @@
 
 "MenuItemShowCodeAssistanceWindow" -> "Code Assistance Chat\[Ellipsis]",
 "MenuItemShowCodeAssistanceInline" -> "Code Assistance for Selection",
-"MenuItemShowContentSuggestions" -> "AI Content Suggestion"
+"MenuItemShowContentSuggestions" -> "AI Content Suggestion",
+
+"WorkspaceToolbarButtonLabelSources" -> "Sources",
+"WorkspaceToolbarButtonLabelNew" -> "New",
+
+"WorkspaceToolbarButtonTooltipHistory" -> "[[Manage conversations]]",
+"WorkspaceToolbarButtonTooltipSources" -> "[[Add additional source material to the chat context]]",
+"WorkspaceToolbarButtonTooltipNew" -> "[[Start a new conversation]]"
 }
 @|
 @|
