@@ -6,38 +6,6 @@ Wolfram`ChatbookStartupDump`$loadStart = SessionTime[ ];
 Wolfram`ChatbookStartupDump`$ContextInfo = {$Context, $ContextPath, $ContextAliases};
 Wolfram`ChatbookStartupDump`$versionString = TextString @ $VersionNumber <> "." <> TextString @ $ReleaseNumber;
 
-(*----------------------------------------*)
-(* Add File > New > Chat-Enabled Notebook *)
-(*----------------------------------------*)
-
-(*
-	Only add the new chat notebook menu commands in v13.3.0 and earlier.
-
-	In v13.3.1 and later, these menu commands are built-in to the FE's
-	MenuSetup.tr global menus definitions.
-*)
-If[ ! PacletNewerQ[ Wolfram`ChatbookStartupDump`$versionString, "13.3.0" ],
-    Once[
-        FrontEndExecute @ {
-            FrontEnd`AddMenuCommands[
-                "New",
-                {
-                    MenuItem[
-                        "Chat-Enabled Notebook",
-                        FrontEnd`KernelExecute[
-							Needs[ "Wolfram`Chatbook`" -> None ];
-                        	Symbol[ "Wolfram`Chatbook`CreateChatNotebook" ][ ]
-						],
-                        FrontEnd`MenuEvaluator -> Automatic,
-                        FrontEnd`MenuKey[ "n", FrontEnd`Modifiers -> { FrontEnd`Command, FrontEnd`Option } ]
-                    ]
-                }
-            ]
-        },
-        "FrontEndSession"
-    ]
-]
-
 (*----------------------------*)
 (* Add CreateNotebook["Chat"] *)
 (*----------------------------*)
