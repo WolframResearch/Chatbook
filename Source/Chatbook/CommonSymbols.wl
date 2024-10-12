@@ -19,6 +19,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$chatState;
 `$cloudEvaluationNotebook;
 `$cloudInlineReferenceButtons;
+`$codeAssistanceExtraInstructions;
 `$contextPrompt;
 `$conversionRules;
 `$corePersonaNames;
