@@ -47,7 +47,11 @@ $basePromptOrder = {
     "WolframLanguageStyle",
     "WolframLanguageEvaluatorTool",
     "EndTurnToken",
-    "EndTurnToolCall"
+    "EndTurnToolCall",
+    "CodeAssistanceInstructionsHeader",
+    "CodeAssistanceGettingStarted",
+    "CodeAssistanceErrorMessage",
+    "CodeAssistanceExtraInstructions"
 };
 
 $basePromptClasses = <|
@@ -61,40 +65,44 @@ $basePromptClasses = <|
 |>;
 
 $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
-    "GeneralInstructionsHeader"    -> { },
-    "NotebooksPreamble"            -> { },
-    "AutoAssistant"                -> { "CodeBlocks", "DoubleBackticks" },
-    "CodeBlocks"                   -> { },
-    "CellLabels"                   -> { "CodeBlocks", "Notebooks" },
-    "CheckboxesIndeterminate"      -> { "Checkboxes" },
-    "DoubleBackticks"              -> { },
-    "MathExpressions"              -> { "EscapedCharacters" },
-    "EscapedCharacters"            -> { },
-    "DocumentationLinkSyntax"      -> { },
-    "InlineSymbolLinks"            -> { },
-    "MessageConversionHeader"      -> { "NotebooksPreamble" },
-    "ChatInputIndicator"           -> { "MessageConversionHeader" },
-    "WolframAlphaInputIndicator"   -> { "MessageConversionHeader" },
-    "ConversionLargeOutputs"       -> { "MessageConversionHeader" },
-    "ConversionGraphics"           -> { "MessageConversionHeader" },
-    "MarkdownImageBox"             -> { "MessageConversionHeader" },
-    "MarkdownImageBoxImporting"    -> { "MarkdownImageBox" },
-    "ConversionFormatting"         -> { "MessageConversionHeader" },
-    "ExternalLanguageCells"        -> { "MessageConversionHeader" },
-    "SpecialURI"                   -> { },
-    "SpecialURIImporting"          -> { "SpecialURI" },
-    "SpecialURIAudio"              -> { "SpecialURI" },
-    "SpecialURIVideo"              -> { "SpecialURI" },
-    "SpecialURIDynamic"            -> { "SpecialURI" },
-    "VisibleUserInput"             -> { },
-    "TrivialCode"                  -> { },
-    "WolframSymbolCapitalization"  -> { },
-    "ModernMethods"                -> { },
-    "FunctionalStyle"              -> { },
-    "WolframLanguageStyle"         -> { "DocumentationLinkSyntax", "InlineSymbolLinks" },
-    "WolframLanguageEvaluatorTool" -> { "WolframLanguageStyle" },
-    "EndTurnToken"                 -> { },
-    "EndTurnToolCall"              -> { "EndTurnToken" }
+    "GeneralInstructionsHeader"        -> { },
+    "NotebooksPreamble"                -> { },
+    "AutoAssistant"                    -> { "CodeBlocks", "DoubleBackticks" },
+    "CodeBlocks"                       -> { },
+    "CellLabels"                       -> { "CodeBlocks", "Notebooks" },
+    "CheckboxesIndeterminate"          -> { "Checkboxes" },
+    "DoubleBackticks"                  -> { },
+    "MathExpressions"                  -> { "EscapedCharacters" },
+    "EscapedCharacters"                -> { },
+    "DocumentationLinkSyntax"          -> { },
+    "InlineSymbolLinks"                -> { },
+    "MessageConversionHeader"          -> { "NotebooksPreamble" },
+    "ChatInputIndicator"               -> { "MessageConversionHeader" },
+    "WolframAlphaInputIndicator"       -> { "MessageConversionHeader" },
+    "ConversionLargeOutputs"           -> { "MessageConversionHeader" },
+    "ConversionGraphics"               -> { "MessageConversionHeader" },
+    "MarkdownImageBox"                 -> { "MessageConversionHeader" },
+    "MarkdownImageBoxImporting"        -> { "MarkdownImageBox" },
+    "ConversionFormatting"             -> { "MessageConversionHeader" },
+    "ExternalLanguageCells"            -> { "MessageConversionHeader" },
+    "SpecialURI"                       -> { },
+    "SpecialURIImporting"              -> { "SpecialURI" },
+    "SpecialURIAudio"                  -> { "SpecialURI" },
+    "SpecialURIVideo"                  -> { "SpecialURI" },
+    "SpecialURIDynamic"                -> { "SpecialURI" },
+    "VisibleUserInput"                 -> { },
+    "TrivialCode"                      -> { },
+    "WolframSymbolCapitalization"      -> { },
+    "ModernMethods"                    -> { },
+    "FunctionalStyle"                  -> { },
+    "WolframLanguageStyle"             -> { "DocumentationLinkSyntax", "InlineSymbolLinks" },
+    "WolframLanguageEvaluatorTool"     -> { "WolframLanguageStyle" },
+    "EndTurnToken"                     -> { },
+    "EndTurnToolCall"                  -> { "EndTurnToken" },
+    "CodeAssistanceInstructionsHeader" -> { },
+    "CodeAssistanceGettingStarted"     -> { "CodeAssistanceInstructionsHeader" },
+    "CodeAssistanceErrorMessage"       -> { "CodeAssistanceInstructionsHeader" },
+    "CodeAssistanceExtraInstructions"  -> { "CodeAssistanceInstructionsHeader" }
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -261,6 +269,47 @@ $basePromptComponents[ "EndTurnToolCall" ] = "\
 * If you are going to make a tool call, you must do so BEFORE ending your turn.";
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Code Assistance Instructions*)
+(* TODO *)
+$basePromptComponents[ "CodeAssistanceInstructionsHeader" ] = "
+# Special Instructions for Code Assistance
+";
+
+$basePromptComponents[ "CodeAssistanceGettingStarted" ] := "\
+The user has initiated this chat via a \"Need help getting started?\" button that appears in an empty notebook.
+You should inform the user about some basics of the chat interface:
+* The user can type chat messages to you in the input field below and either press "<>$enter<>" or click the Send button to send.
+* At the top of the interface, there are three UI elements:
+	* A history button to manage previous chat conversations
+	* A button labeled \"Sources\" that allows the user to attach additional context to the chat (files, images, etc.)
+	* A button labeled \"New\" that starts a new chat conversation (the current one is saved in history)
+* Provide an example WL code block and explain that additional buttons appear when the user hovers over the code block:
+	* Evaluate the code
+	* Insert the code in the user's notebook without evaluation
+	* Copy the code to the clipboard
+* Finally, ask a follow-up question to find out what the user is trying to accomplish.
+";
+
+$basePromptComponents[ "CodeAssistanceErrorMessage" ] = "\
+The user has initiated this chat via a help button attached to the selected error message cell. \
+Your response should be focused on the user's selected error message.";
+
+$basePromptComponents[ "CodeAssistanceExtraInstructions" ] :=
+    $codeAssistanceExtraInstructions;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$enter*)
+$enter := If[ $OperatingSystem === "MacOSX", "return", "enter" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Extra Instructions*)
+(* This is set dynamically via Block: *)
+$codeAssistanceExtraInstructions = None;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Prompt Builder*)
 
@@ -278,8 +327,8 @@ buildPrompt[ ] := Enclose[
     Module[ { keys, ordered, string },
         expandPromptComponents[ ];
         keys = ConfirmMatch[ Values @ KeyTake[ $collectedPromptComponents, $basePromptOrder ], { ___String }, "Keys" ];
-        ordered = ConfirmMatch[ Values @ KeyTake[ $basePromptComponents, keys ], { ___String }, "Ordered" ];
-        string = ConfirmBy[ StringRiffle[ ordered, "\n" ], StringQ, "String" ];
+        ordered = ConfirmMatch[ Values @ KeyTake[ $basePromptComponents, keys ], { (_String|None)... }, "Ordered" ];
+        string = ConfirmBy[ StringRiffle[ DeleteCases[ ordered, ""|None ], "\n" ], StringQ, "String" ];
         If[ StringQ @ $chatIndicatorSymbol,
             StringReplace[ string, "$$chatIndicatorSymbol$$" -> $chatIndicatorSymbol ],
             string
@@ -308,7 +357,8 @@ expandPromptComponents // endDefinition;
 expandPromptComponent // beginDefinition;
 
 expandPromptComponent[ name_String ] :=
-    Module[ { class, dependencies, needs },
+    Catch @ Module[ { class, dependencies, needs },
+        If[ MatchQ[ $basePromptComponents[ name ], "" | None ], Throw @ { } ];
         class = Lookup[ $basePromptClasses, name, { } ];
         dependencies = Lookup[ $basePromptDependencies, name, { } ];
         needs = Select[ Union[ class, dependencies ], ! KeyExistsQ[ $collectedPromptComponents, #1 ] & ];
