@@ -198,7 +198,10 @@
 
 "WorkspaceToolbarButtonTooltipHistory" -> "[[Manage conversations]]",
 "WorkspaceToolbarButtonTooltipSources" -> "[[Add additional source material to the chat context]]",
-"WorkspaceToolbarButtonTooltipNew" -> "[[Start a new conversation]]"
+"WorkspaceToolbarButtonTooltipNew" -> "[[Start a new conversation]]",
+
+"CodeAssistanceInputGettingStarted" -> "Help me get started",
+"CodeAssistanceInputErrorMessage" -> "What went wrong?"
 }
 @|
 @|
