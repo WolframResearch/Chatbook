@@ -19,6 +19,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$ChatPost;
 `$ChatPre;
 `$ChatTimingData;
+`$CodeAssistanceInputs;
 `$CurrentChatSettings;
 `$DefaultChatHandlerFunctions;
 `$DefaultChatProcessingFunctions;
@@ -177,6 +178,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "$ChatbookFilesDirectory",
     "$ChatNotebookEvaluation",
     "$ChatTimingData",
+    "$CodeAssistanceInputs",
     "$CurrentChatSettings",
     "$DefaultChatHandlerFunctions",
     "$DefaultChatProcessingFunctions",

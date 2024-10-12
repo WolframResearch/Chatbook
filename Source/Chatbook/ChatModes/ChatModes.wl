@@ -34,6 +34,7 @@ $InlineChat = False;
 (* ::Section::Closed:: *)
 (*Load Subcontexts*)
 $subcontexts = {
+    "Wolfram`Chatbook`ChatModes`CodeAssistanceInstructions`",
     "Wolfram`Chatbook`ChatModes`Common`",
     "Wolfram`Chatbook`ChatModes`ContentSuggestions`",
     "Wolfram`Chatbook`ChatModes`Context`",

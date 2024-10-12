@@ -144,7 +144,18 @@ enableCodeAssistance // endDefinition;
 (* ::Section::Closed:: *)
 (*ShowCodeAssistance*)
 ShowCodeAssistance // beginDefinition;
-ShowCodeAssistance // Options = { "Input" -> None, "EvaluateInput" -> False, "NewChat" -> False };
+ShowCodeAssistance // Options = {
+    "EvaluateInput"     -> False,
+    "ExtraInstructions" -> None,
+    "Input"             -> None,
+    "NewChat"           -> Automatic
+};
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Messages*)
+Chatbook::MissingCodeAssistanceInput = "No code assistance input defined for key `1`.";
+Chatbook::InvalidExtraInstructions   = "Expected a string or None instead of `1` for ExtraInstructions.";
 
 GeneralUtilities`SetUsage[ ShowCodeAssistance, "\
 ShowCodeAssistance[] shows code assistance in a new or existing window.
@@ -155,13 +166,19 @@ ShowCodeAssistance[obj$, \"type$\"] shows code assistance of the specified type 
 * The value for obj$ can be a NotebookObject or a CellObject.
 * The default value for \"type$\" is \"Window\" when obj$ is a NotebookObject, and \"Inline\" for a CellObject.
 * ShowCodeAssistance accepts the following options:
-| Input         | None  | A string to use as the initial chat input  |
-| EvaluateInput | False | Whether to evaluate the initial chat input |
-| NewChat       | False | Whether to start a new chat                |
-* If EvaluateInput is True, a value must be given for Input.
+| EvaluateInput     | False     | Whether to evaluate the initial chat input                                      |
+| ExtraInstructions | None      | Additional instructions to include in the system prompt for the LLM             |
+| Input             | None      | The initial chat input string or Key[\"name$\"] to reference a predefined input |
+| NewChat           | Automatic | Whether to start a new chat                                                     |
+* If EvaluateInput is True, a value must be given for Input or InputName.
 * Specifying NewChat \[Rule] True will clear the existing code assistance chat (if any).
-* The setting for NewChat has no effect for Inline code assistance.\
+* The setting for NewChat has no effect for Inline code assistance.
+* Possible values for \"name$\" in Key[\"name$\"] can be found in Keys[$CodeAssistanceInputs].\
 " ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Defaults*)
 
 (* The zero argument form uses "Window" by default: *)
 ShowCodeAssistance[ opts: OptionsPattern[ ] ] :=
@@ -178,11 +195,14 @@ ShowCodeAssistance[ "Window", opts: OptionsPattern[ ] ] :=
     catchMine @ ShowCodeAssistance[ getUserNotebook[ ], "Window", opts ];
 
 ShowCodeAssistance[ nbo_NotebookObject, "Window"|Automatic, opts: OptionsPattern[ ] ] :=
-    catchMine @ withChatState @ showCodeAssistanceWindow[
-        nbo,
-        OptionValue[ "Input"         ],
-        OptionValue[ "EvaluateInput" ],
-        OptionValue[ "NewChat"       ]
+    catchMine @ withChatState @ withExtraInstructions[
+        OptionValue[ "ExtraInstructions" ],
+        showCodeAssistanceWindow[
+            nbo,
+            validateOptionInput @ OptionValue[ "Input" ],
+            OptionValue[ "EvaluateInput" ],
+            OptionValue[ "NewChat" ]
+        ]
     ];
 
 (* ::**************************************************************************************************************:: *)
@@ -192,10 +212,13 @@ ShowCodeAssistance[ "Inline", opts: OptionsPattern[ ] ] :=
     catchMine @ ShowCodeAssistance[ InputNotebook[ ], "Inline", opts ];
 
 ShowCodeAssistance[ nbo_NotebookObject, "Inline", opts: OptionsPattern[ ] ] :=
-    catchMine @ withChatState @ showCodeAssistanceInline[
-        nbo,
-        OptionValue[ "Input"         ],
-        OptionValue[ "EvaluateInput" ]
+    catchMine @ withChatState @ withExtraInstructions[
+        OptionValue[ "ExtraInstructions" ],
+        showCodeAssistanceInline[
+            nbo,
+            validateOptionInput @ OptionValue[ "Input" ],
+            OptionValue[ "EvaluateInput" ]
+        ]
     ];
 
 (* ::**************************************************************************************************************:: *)
@@ -208,7 +231,7 @@ ShowCodeAssistance[ cell_CellObject, opts: OptionsPattern[ ] ] :=
 
 (* If given a CellObject, move selection to the cell, then use "Inline" on the parent notebook: *)
 ShowCodeAssistance[ cell_CellObject, "Inline"|Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
-    Module[ { nbo },
+    withChatState @ Module[ { nbo },
         nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "Notebook" ];
         SelectionMove[ cell, All, Cell ];
         ShowCodeAssistance[ nbo, "Inline", opts ]
@@ -216,8 +239,9 @@ ShowCodeAssistance[ cell_CellObject, "Inline"|Automatic, opts: OptionsPattern[ ]
     throwInternalFailure
 ];
 
+(* If given a CellObject, use "Window" on the parent notebook: *)
 ShowCodeAssistance[ cell_CellObject, "Window", opts: OptionsPattern[ ] ] := catchMine @ Enclose[
-    Module[ { nbo },
+    withChatState @ Module[ { nbo },
         nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "Notebook" ];
         ShowCodeAssistance[ nbo, "Window", opts ]
     ],
@@ -225,6 +249,44 @@ ShowCodeAssistance[ cell_CellObject, "Window", opts: OptionsPattern[ ] ] := catc
 ];
 
 ShowCodeAssistance // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*withExtraInstructions*)
+withExtraInstructions // beginDefinition;
+withExtraInstructions // Attributes = { HoldRest };
+
+withExtraInstructions[ instructions: $$string, eval_ ] :=
+    Block[ { $codeAssistanceExtraInstructions = instructions },
+        needsBasePrompt[ "CodeAssistanceExtraInstructions" ];
+        eval
+    ];
+
+withExtraInstructions[ None, eval_ ] :=
+    eval;
+
+withExtraInstructions[ other_, eval_ ] :=
+    throwFailure[ "InvalidExtraInstructions", other ];
+
+withExtraInstructions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*validateOptionInput*)
+validateOptionInput // beginDefinition;
+
+validateOptionInput[ input: $$string | None ] :=
+    input;
+
+validateOptionInput[ Key[ name_String ] ] :=
+    With[ { input = getCodeAssistanceInput @ name },
+        If[ StringQ @ input,
+            input,
+            throwFailure[ "MissingCodeAssistanceInput", name ]
+        ]
+    ];
+
+validateOptionInput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -256,6 +318,9 @@ setInlineInputAndEvaluate[ attached_CellObject, input_, evaluate_ ] := (
     If[ TrueQ @ evaluate, evaluateAttachedInlineChat[ ] ];
     attached
 );
+
+setInlineInputAndEvaluate[ Null, input_, evaluate_ ] :=
+    Null;
 
 setInlineInputAndEvaluate // endDefinition;
 
