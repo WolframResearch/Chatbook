@@ -24,13 +24,17 @@ $codeAssistanceBaseSettings = <|
 $codeAssistanceWorkspaceSettings := <|
     $codeAssistanceBaseSettings,
     "AutoGenerateTitle" -> True,
-    "ConversationUUID"  -> CreateUUID[ ]
+    "ConversationUUID"  -> CreateUUID[ ],
+    "SetCellDingbat"    -> False,
+    "TabbedOutput"      -> False,
+    "WorkspaceChat"     -> True
 |>;
 
 $codeAssistanceInlineSettings := <|
     $codeAssistanceBaseSettings,
     "AutoGenerateTitle"     -> False,
-    "AutoSaveConversations" -> False
+    "AutoSaveConversations" -> False,
+    "InlineChat"            -> True
 |>;
 
 $workspaceChatNotebookOptions := Sequence[
