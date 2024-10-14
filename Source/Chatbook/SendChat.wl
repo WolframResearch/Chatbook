@@ -66,30 +66,6 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             $currentChatSettings = settings;
         ];
 
-        If[ ! settings[ "IncludeHistory" ], cells = { evalCell } ];
-
-        { messages, data } = Reap[
-            ConfirmMatch[
-                constructMessages[ settings, cells ] // LogChatTiming[ "ConstructMessages" ],
-                { __Association },
-                "MakeHTTPRequest"
-            ],
-            $chatDataTag
-        ];
-
-        data = ConfirmBy[ Association @ Flatten @ data, AssociationQ, "Data" ];
-
-        If[ data[ "RawOutput" ],
-            persona = ConfirmBy[ GetCachedPersonaData[ "RawModel" ], AssociationQ, "NonePersona" ];
-            If[ AssociationQ @ settings[ "LLMEvaluator" ],
-                settings[ "LLMEvaluator" ] = Association[ settings[ "LLMEvaluator" ], persona ],
-                settings = Association[ settings, persona ]
-            ];
-            $currentChatSettings = settings;
-        ];
-
-        AppendTo[ settings, "Data" -> data ];
-
         container = <|
             "DynamicContent" -> ProgressIndicator[ Appearance -> "Percolate" ],
             "FullContent"    -> ProgressIndicator[ Appearance -> "Percolate" ],
@@ -109,6 +85,36 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             NotebookDelete @ $lastCellObject;
         ];
 
+        cellObject = $lastCellObject = ConfirmMatch[
+            createNewChatOutput[ settings, target, cell ],
+            _CellObject,
+            "CreateOutput"
+        ] // LogChatTiming[ "CreateChatOutput" ];
+
+        If[ ! settings[ "IncludeHistory" ], cells = { evalCell } ];
+
+        { messages, data } = Reap[
+            ConfirmMatch[
+                constructMessages[ settings, cells ] // LogChatTiming[ "ConstructMessages" ],
+                { __Association },
+                "ConstructMessages"
+            ],
+            $chatDataTag
+        ];
+
+        data = ConfirmBy[ Association @ Flatten @ data, AssociationQ, "Data" ];
+
+        If[ data[ "RawOutput" ],
+            persona = ConfirmBy[ GetCachedPersonaData[ "RawModel" ], AssociationQ, "NonePersona" ];
+            If[ AssociationQ @ settings[ "LLMEvaluator" ],
+                settings[ "LLMEvaluator" ] = Association[ settings[ "LLMEvaluator" ], persona ],
+                settings = Association[ settings, persona ]
+            ];
+            $currentChatSettings = settings;
+        ];
+
+        AppendTo[ settings, "Data" -> data ];
+
         $resultCellCache = <| |>;
         $debugLog = Internal`Bag[ ];
 
@@ -121,12 +127,6 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
                 ]
             ] // LogChatTiming[ "SetCellDingbat" ]
         ];
-
-        cellObject = $lastCellObject = ConfirmMatch[
-            createNewChatOutput[ settings, target, cell ],
-            _CellObject,
-            "CreateOutput"
-        ] // LogChatTiming[ "CreateChatOutput" ];
 
         applyHandlerFunction[
             settings,
