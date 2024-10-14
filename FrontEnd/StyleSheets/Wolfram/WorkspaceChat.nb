@@ -64,7 +64,25 @@ Notebook[
   ],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3937639724"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3937887365"|>
+  ],
+  Cell[
+   StyleData[
+    "WorkspaceChatToolbarButtonLabel",
+    StyleDefinitions -> StyleData["Text"]
+   ],
+   FontSize -> 13,
+   FontWeight -> "DemiBold",
+   FontColor -> GrayLevel[1]
+  ],
+  Cell[
+   StyleData[
+    "WorkspaceChatToolbarTitle",
+    StyleDefinitions ->
+     StyleData["WorkspaceChatToolbarButtonLabel"]
+   ],
+   FontWeight -> Plain,
+   FontSlant -> Italic
   ],
   Cell[
    StyleData["ChatInput"],
