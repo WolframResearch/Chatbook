@@ -21,11 +21,7 @@ $lastScrollPosition          = 0.0;
 $maxHistoryItems             = 25;
 $messageAuthorImagePadding   = { { 0, 0 }, { 0, 6 } };
 
-$toolbarLabelStyle = Sequence[
-    "Text",
-    FontColor  -> White,
-    FontWeight -> "DemiBold"
-];
+$toolbarLabelStyle = "WorkspaceChatToolbarButtonLabel";
 
 $inputFieldOptions = Sequence[
     BoxID      -> "AttachedChatInputField",
@@ -55,7 +51,6 @@ $defaultUserImage := $defaultUserImage =
 (*makeWorkspaceChatDockedCell*)
 makeWorkspaceChatDockedCell // beginDefinition;
 
-(* FIXME: Add text resources for button labels and tooltips *)
 makeWorkspaceChatDockedCell[ ] := Framed[
     DynamicModule[ { nbo },
         Grid[
@@ -99,7 +94,9 @@ newChatButton // beginDefinition;
 newChatButton[ Dynamic[ nbo_ ] ] := Button[
     toolbarButtonLabel[ "New" ],
     NotebookDelete @ Cells @ nbo;
-    CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ],
+    CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ];
+    CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = "";
+    ,
     Appearance -> "Suppressed"
 ];
 
@@ -113,21 +110,21 @@ toolbarButtonLabel // beginDefinition;
 toolbarButtonLabel[ name_String, opts: OptionsPattern[ ] ] :=
     toolbarButtonLabel[ name, name, opts ];
 
-toolbarButtonLabel[ iconName_String, labelName: _String|None, opts: OptionsPattern[ ] ] :=
-    toolbarButtonLabel[ iconName, labelName, labelName, opts ];
+toolbarButtonLabel[ iconName_String, label_, opts: OptionsPattern[ ] ] :=
+    toolbarButtonLabel[ iconName, label, iconName, opts ];
 
-toolbarButtonLabel[ iconName_String, labelName: _String|None, tooltipName: _String|None, opts: OptionsPattern[ ] ] :=
-    toolbarButtonLabel[ iconName, labelName, tooltipName, opts ] =
-        With[ { lbl = toolbarButtonLabel0[ iconName, labelName ] },
-            buttonTooltip[
-                NotebookTools`Mousedown[
-                    Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonDefault ],
-                    Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonHover   ],
-                    Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonActive  ]
-                ],
-                tooltipName
-            ]
-        ];
+toolbarButtonLabel[ iconName_String, label_, tooltipName: _String | None, opts: OptionsPattern[ ] ] :=
+    toolbarButtonLabel[ iconName, label, tooltipName, opts ] =
+    With[ { lbl = toolbarButtonLabel0[ iconName, label ] },
+        buttonTooltip[
+            NotebookTools`Mousedown[
+                Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonDefault ],
+                Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonHover   ],
+                Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonActive  ]
+            ],
+            tooltipName
+        ]
+    ];
 
 toolbarButtonLabel // endDefinition;
 
@@ -135,14 +132,7 @@ toolbarButtonLabel // endDefinition;
 toolbarButtonLabel0 // beginDefinition;
 
 toolbarButtonLabel0[ iconName_String, labelName_String ] :=
-    Grid[
-        { {
-            RawBoxes @ TemplateBox[ { }, "WorkspaceToolbarIcon"<>iconName ],
-            Style[ tr[ "WorkspaceToolbarButtonLabel"<>labelName ], $toolbarLabelStyle ]
-        } },
-        Spacings  -> 0.5,
-        Alignment -> { Automatic, Center }
-    ];
+    toolbarButtonLabel0[ iconName, tr[ "WorkspaceToolbarButtonLabel"<>labelName ] ];
 
 toolbarButtonLabel0[ iconName_String, None ] :=
     Grid[
@@ -151,10 +141,20 @@ toolbarButtonLabel0[ iconName_String, None ] :=
         Alignment -> { Automatic, Center }
     ];
 
+toolbarButtonLabel0[ iconName_String, label_ ] :=
+    Grid[
+        { {
+            RawBoxes @ TemplateBox[ { }, "WorkspaceToolbarIcon"<>iconName ],
+            Style[ label, $toolbarLabelStyle ]
+        } },
+        Spacings  -> 0.5,
+        Alignment -> { Automatic, Center }
+    ];
+
 toolbarButtonLabel0 // endDefinition;
 
 $toolbarButtonCommon = Sequence[
-    FrameMargins   -> { { 1, 1 }, { 1, 1 } },
+    FrameMargins   -> { { 1, 3 }, { 1, 1 } },
     ImageSize      -> { Automatic, 22 },
     RoundingRadius -> 3
 ];
@@ -971,12 +971,30 @@ createHistoryMenu[ nbo_NotebookObject ] :=
     createHistoryMenu[ nbo, ListSavedChats @ CurrentChatSettings[ nbo, "AppName" ] ];
 
 createHistoryMenu[ nbo_NotebookObject ] := Enclose[
-    Catch @ Module[ { appName, chats },
+    Catch @ Module[ { appName, chats, label },
+
         appName = ConfirmBy[ CurrentChatSettings[ nbo, "AppName" ], StringQ, "AppName" ];
         chats = ConfirmMatch[ ListSavedChats @ appName, { ___Association }, "Chats" ];
         If[ chats === { }, Throw @ ActionMenu[ "History", { "Nothing here yet" :> Null } ] ];
+
+        label = Pane[
+            Style[
+                Dynamic @ FEPrivate`If[
+                    CurrentValue[ nbo, { WindowSize, 1 } ] > 250,
+                    FEPrivate`TruncateStringToWidth[
+                        CurrentValue[ nbo, { TaggingRules, "ConversationTitle" }, "" ],
+                        "WorkspaceChatToolbarTitle",
+                        CurrentValue[ nbo, { WindowSize, 1 } ] - 170,
+                        Right
+                    ],
+                    ""
+                ],
+                "WorkspaceChatToolbarTitle"
+            ]
+        ];
+
         ActionMenu[
-            toolbarButtonLabel[ "History", None, "History" ],
+            toolbarButtonLabel[ "History", label, "History" ],
             makeHistoryMenuItem[ nbo ] /@ Take[ chats, UpTo @ $maxHistoryItems ],
             Appearance -> "Suppressed",
             Method     -> "Queued",
@@ -1015,26 +1033,21 @@ makeHistoryMenuItem // endDefinition;
 loadConversation // beginDefinition;
 
 loadConversation[ nbo_NotebookObject, id_ ] := Enclose[
-    Module[ { loaded, uuid, messages, cells, cellObjects },
+    Module[ { loaded, uuid, title, messages, cells, cellObjects },
         loaded = ConfirmBy[ LoadChat @ id, AssociationQ, "Loaded" ];
         uuid = ConfirmBy[ loaded[ "ConversationUUID" ], StringQ, "UUID" ];
+        title = ConfirmBy[ loaded[ "ConversationTitle" ], StringQ, "Title" ];
         messages = ConfirmBy[ loaded[ "Messages" ], ListQ, "Messages" ];
         cells = ConfirmMatch[ ChatMessageToCell[ messages, "Workspace" ], { __Cell }, "Cells" ];
         cellObjects = ConfirmMatch[ Cells @ nbo, { ___CellObject }, "CellObjects" ];
         ConfirmMatch[ NotebookDelete @ cellObjects, { Null... }, "Delete" ];
-
-        WithCleanup[
-            NotebookDelete @ First[ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ], $Failed ],
-            SelectionMove[ nbo, Before, Notebook, AutoScroll -> True ];
-            ConfirmMatch[
-                NotebookWrite[ nbo, cells, AutoScroll -> False ],
-                Null,
-                "Write"
-            ],
-            ChatbookAction[ "AttachWorkspaceChatInput", nbo ]
-        ];
-
+        NotebookDelete @ First[ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ], $Failed ];
+        SelectionMove[ nbo, Before, Notebook, AutoScroll -> True ];
+        ConfirmMatch[ NotebookWrite[ nbo, cells, AutoScroll -> False ], Null, "Write" ];
+        If[ Cells @ nbo === { }, NotebookWrite[ nbo, cells, AutoScroll -> False ] ];
+        ChatbookAction[ "AttachWorkspaceChatInput", nbo ];
         CurrentChatSettings[ nbo, "ConversationUUID" ] = uuid;
+        CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = title;
         moveToChatInputField[ nbo, True ]
     ],
     throwInternalFailure
