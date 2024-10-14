@@ -12,7 +12,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 $llmSynthesizeAuthentication := If[ TrueQ @ $llmKit, "LLMKit", Automatic ];
 
 $defaultLLMSynthesizeEvaluator :=
-    If[ StringQ @ $llmKitService,
+    If[ TrueQ @ $llmKit && StringQ @ $llmKitService,
         <| "Model" -> <| "Service" -> $llmKitService, "Name" -> "gpt-4o-mini" |> |>,
         <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o-mini" |> |>
     ];

@@ -38,15 +38,11 @@ withChatState[ eval_ ] :=
             $initialCellStringBudget      = $initialCellStringBudget,
             $multimodalMessages           = $multimodalMessages,
             $tokenBudget                  = $tokenBudget,
-            $tokenPressure                = $tokenPressure,
-
-            (* LLM Kit info *)
-            $llmKit                       = $llmKit,
-            $llmKitService                = $llmKitService
+            $tokenPressure                = $tokenPressure
         },
         $ChatHandlerData = <| |>;
         $tokenBudgetLog = Internal`Bag[ ];
-        Internal`InheritedBlock[ { $evaluationCell, $evaluationNotebook },
+        Internal`InheritedBlock[ { $evaluationCell, $evaluationNotebook, $llmKit, $llmKitService },
             Quiet[ withToolBox @ withBasePromptBuilder @ eval, ServiceExecute::multser ]
         ]
     ];
