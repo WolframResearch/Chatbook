@@ -10,7 +10,7 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$workspaceChatWidth = 325;
+$workspaceChatWidth = 360;
 
 $codeAssistanceBaseSettings = <|
     "AppName"           -> "CodeAssistance",

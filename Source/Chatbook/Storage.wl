@@ -48,6 +48,8 @@ $$appSpec = $$string | All | _NotebookObject;
 
 $generatedTitleCache = <| |>;
 
+$savingNotebook = None;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*ListSavedChats*)
@@ -269,24 +271,30 @@ SaveChat[ messages: $$chatMessages, settings_Association, opts: OptionsPattern[ 
     catchMine @ LogChatTiming @ saveChat[ messages, settings, OptionValue[ "AutoGenerateTitle" ] ];
 
 (* Save from a notebook: *)
-SaveChat[ chat_NotebookObject, opts: OptionsPattern[ ] ] :=
-    catchMine @ LogChatTiming @ saveChat[
-        chat,
-        ensureConversationUUID @ chat,
-        OptionValue[ "AutoGenerateTitle" ]
+SaveChat[ nbo_NotebookObject, opts: OptionsPattern[ ] ] :=
+    catchMine @ Block[ { $savingNotebook = nbo },
+        LogChatTiming @ saveChat[
+            chat,
+            ensureConversationUUID @ nbo,
+            OptionValue[ "AutoGenerateTitle" ]
+        ]
     ];
 
 (* Save from a notebook with custom settings: *)
 SaveChat[ nbo_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] :=
-    catchMine @ LogChatTiming @ saveChat[
-        nbo,
-        ensureConversationUUID[ nbo, settings ],
-        OptionValue[ "AutoGenerateTitle" ]
+    catchMine @ Block[ { $savingNotebook = nbo },
+        LogChatTiming @ saveChat[
+            nbo,
+            ensureConversationUUID[ nbo, settings ],
+            OptionValue[ "AutoGenerateTitle" ]
+        ]
     ];
 
 (* Called at the end of chat evaluations if AutoSaveConversations is true and ensures notebook has a UUID: *)
 SaveChat[ nbo_NotebookObject, messages_, settings_Association, opts: OptionsPattern[ ] ] :=
-    catchMine @ SaveChat[ messages, ensureConversationUUID[ nbo, settings ], opts ];
+    catchMine @ Block[ { $savingNotebook = nbo },
+        SaveChat[ messages, ensureConversationUUID[ nbo, settings ], opts ]
+    ];
 
 (* Alternate chat representations: *)
 SaveChat[ chat_ChatObject, settings_Association, opts: OptionsPattern[ ] ] :=
@@ -383,6 +391,8 @@ saveChat[ messages0: $$chatMessages, settings0_, autoTitle_ ] := Enclose[
 
         ConfirmMatch[ AddChatToSearchIndex @ as, _Success | Missing[ "NoSemanticSearch" ], "AddToSearchIndex" ];
 
+        setChatDisplayTitle[ $savingNotebook, metadata ];
+
         updateDynamics[ "SavedChats" ];
 
         Success[ "Saved", as ]
@@ -402,6 +412,21 @@ saveChat[ nbo_NotebookObject, settings_, autoTitle_ ] := Enclose[
 ];
 
 saveChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*setChatDisplayTitle*)
+setChatDisplayTitle // beginDefinition;
+
+setChatDisplayTitle[ nbo_NotebookObject, KeyValuePattern[ "ConversationTitle" -> title_String ] ] :=
+    If[ title =!= $defaultConversationTitle,
+        CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = title
+    ];
+
+setChatDisplayTitle[ None, _ ] :=
+    Null;
+
+setChatDisplayTitle // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

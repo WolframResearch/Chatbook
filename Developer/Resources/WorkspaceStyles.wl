@@ -34,6 +34,29 @@ Cell[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Toolbar Styles*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*WorkspaceChatToolbarLabel*)
+Cell[
+    StyleData[ "WorkspaceChatToolbarButtonLabel", StyleDefinitions -> StyleData[ "Text" ] ],
+    FontColor  -> White,
+    FontSize   -> 13,
+    FontWeight -> "DemiBold"
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*WorkspaceChatToolbarTitle*)
+Cell[
+    StyleData[ "WorkspaceChatToolbarTitle", StyleDefinitions -> StyleData[ "WorkspaceChatToolbarButtonLabel" ] ],
+    FontSlant  -> Italic,
+    FontWeight -> Plain
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*ChatInput*)
 Cell[
     StyleData[ "ChatInput" ],

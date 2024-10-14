@@ -1215,6 +1215,7 @@ $$subscriptionError = KeyValuePattern[ "error" -> KeyValuePattern[ "code" -> "su
 (*serviceUnavailableQ*)
 serviceUnavailableQ // beginDefinition;
 serviceUnavailableQ[ "LLMKit", failure_Failure ] := ! FreeQ[ failure, Failure[ "APIError", _ ] ];
+serviceUnavailableQ[ _, _ ] := False;
 serviceUnavailableQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
