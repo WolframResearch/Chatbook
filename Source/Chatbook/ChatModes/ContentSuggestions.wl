@@ -10,14 +10,13 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$suggestionsService       := $llmKitService;
-$suggestionsAuthentication = "LLMKit";
-$stripWhitespace           = True;
-$defaultWLContextString    = "";
-$finishReason              = None;
+$suggestionsService        := If[ TrueQ @ $llmKit && StringQ @ $llmKitService, $llmKitService, "OpenAI" ];
+$suggestionsAuthentication := If[ TrueQ @ $llmKit, "LLMKit", Automatic ];
+$stripWhitespace            = True;
+$defaultWLContextString     = "";
+$finishReason               = None;
 
 $contentSuggestionsOverrides = <|
-    "Authentication"            -> "LLMKit",
     "MaxCellStringLength"       -> 1000,
     "MaxOutputCellStringLength" -> 200
 |>;
@@ -1156,13 +1155,15 @@ formatSuggestionCells // endDefinition;
 (* ::Section::Closed:: *)
 (*Service Utilities*)
 
+Chatbook::SuggestionServiceUnavailable = "The AI suggestion service is currently unavailable. Please try again later.";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*suggestionServiceExecute*)
 suggestionServiceExecute // beginDefinition;
 
 suggestionServiceExecute[ service_, args___ ] := Enclose[
-    Module[ { auth, result },
+    Module[ { auth, result, cleanup },
         auth = $suggestionsAuthentication;
 
         result = Quiet[
@@ -1170,20 +1171,28 @@ suggestionServiceExecute[ service_, args___ ] := Enclose[
             ServiceExecute::apierr
         ];
 
+        cleanup = Function @ NotebookDelete @ Cells[
+            EvaluationNotebook[ ],
+            AttachedCell -> True,
+            CellStyle    -> "AttachedContentSuggestions"
+        ];
+
         $lastSuggestionsResponse = result;
 
         If[ TrueQ @ llmKitSubscriptionMissingQ[ auth, result ],
+            cleanup[ ];
             throwTop[
-                NotebookDelete @ Cells[
-                    EvaluationNotebook[ ],
-                    AttachedCell -> True,
-                    CellStyle    -> "AttachedContentSuggestions"
-                ];
                 Needs[ "Wolfram`LLMFunctions`APIs`Common`" ];
                 Wolfram`LLMFunctions`APIs`Common`ConnectToService[ service, "LLMKit" ]
-            ],
-            ConfirmBy[ result, AssociationQ, "Result" ]
-        ]
+            ]
+        ];
+
+        If[ serviceUnavailableQ[ auth, result ],
+            cleanup[ ];
+            throwMessageDialog[ "SuggestionServiceUnavailable", result ]
+        ];
+
+        ConfirmBy[ result, AssociationQ, "Result" ]
     ],
     throwInternalFailure
 ];
@@ -1200,6 +1209,13 @@ llmKitSubscriptionMissingQ // endDefinition;
 
 
 $$subscriptionError = KeyValuePattern[ "error" -> KeyValuePattern[ "code" -> "subscription-required" ] ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*serviceUnavailableQ*)
+serviceUnavailableQ // beginDefinition;
+serviceUnavailableQ[ "LLMKit", failure_Failure ] := ! FreeQ[ failure, Failure[ "APIError", _ ] ];
+serviceUnavailableQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

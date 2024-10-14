@@ -303,7 +303,8 @@ resolveAutoSettings0 // endDefinition;
 setLLMKitFlags // beginDefinition;
 setLLMKitFlags[ as_ ] := setLLMKitFlags[ as[ "Authentication" ], as[ "Model", "Service" ] ];
 setLLMKitFlags[ "LLMKit", service_String ] := ($llmKit = True; $llmKitService = service);
-setLLMKitFlags[ auth_, _ ] := $llmKit = auth === "LLMKit";
+setLLMKitFlags[ "LLMKit", _ ] := $llmKit = True;
+setLLMKitFlags[ _, _ ] := ($llmKit = False; $llmKitService = None);
 setLLMKitFlags // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
