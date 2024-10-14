@@ -1094,10 +1094,10 @@ parseXMLResponse[ response_String ] :=
     ];
 
 parseXMLResponse[ XMLObject[ ___ ][ ___, elem_XMLElement, ___ ] ] :=
-    With[ { as = Association @ parseXMLElement @ elem },
-        If[ AssociationQ @ as,
-            as,
-            $Failed
+    With[ { p = parseXMLElement @ elem },
+        If[ AssociationQ @ Association @ p,
+            Association @ p,
+            p
         ]
     ];
 
@@ -1110,6 +1110,8 @@ parseXMLResponse // endDefinition;
 (*parseXMLElement*)
 parseXMLElement // beginDefinition;
 
+parseXMLElement[ string_String ] := string;
+parseXMLElement[ XMLElement[ "html", { ___ }, content_ ] ] := <| "message" -> parseHTMLMessage @ content |>;
 parseXMLElement[ XMLElement[ _, _List, content_List ] ] := parseXMLElement /@ content;
 parseXMLElement[ XMLElement[ key_String, { ___ }, value_String ] ] := key -> value;
 parseXMLElement[ XMLElement[ key_String, { ___ }, { value_String } ] ] := key -> value;
@@ -1124,6 +1126,33 @@ parseXMLElement[ xml: XMLElement[ key_String, { ___ }, data_List ] ] :=
     ];
 
 parseXMLElement // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*parseHTMLMessage*)
+parseHTMLMessage // beginDefinition;
+parseHTMLMessage[ string_String ] := string;
+parseHTMLMessage[ content_List ] := joinIfStrings[ parseHTMLMessage /@ content ];
+parseHTMLMessage[ XMLElement[ "body", { ___ }, xml_ ] ] := parseHTMLMessage @ xml;
+parseHTMLMessage[ XMLElement[ "h1", { ___ }, xml_ ] ] := joinIfStrings[ "\n### ", parseHTMLMessage @ xml, "\n" ];
+parseHTMLMessage[ XMLElement[ "h2", { ___ }, xml_ ] ] := joinIfStrings[ "\n#### ", parseHTMLMessage @ xml, "\n" ];
+parseHTMLMessage[ XMLElement[ "h3", { ___ }, xml_ ] ] := joinIfStrings[ "\n##### ", parseHTMLMessage @ xml, "\n" ];
+parseHTMLMessage[ XMLElement[ "h4"|"h5"|"h6", { ___ }, xml_ ] ] := joinIfStrings[ "\n", parseHTMLMessage @ xml, "\n" ];
+parseHTMLMessage[ XMLElement[ "div"|"p", { ___ }, xml_ ] ] := joinIfStrings[ "\n", parseHTMLMessage @ xml, "\n" ];
+parseHTMLMessage[ XMLElement[ "br", { ___ }, _ ] ] := "\n";
+parseHTMLMessage[ XMLElement[ "b"|"strong", { ___ }, xml_ ] ] := "*" <> parseHTMLMessage @ xml <> "*";
+parseHTMLMessage[ XMLElement[ "i"|"em", { ___ }, xml_ ] ] := "**" <> parseHTMLMessage @ xml <> "**";
+parseHTMLMessage[ XMLElement[ _, { ___ }, xml_ ] ] := parseHTMLMessage @ xml;
+parseHTMLMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*joinIfStrings*)
+joinIfStrings // beginDefinition;
+joinIfStrings[ { str___String } ] := StringJoin @ str;
+joinIfStrings[ str_List ] := With[ { flat = Flatten @ str }, StringJoin @ flat /; MatchQ[ flat, { ___String } ] ];
+joinIfStrings[ a_, b__ ] := joinIfStrings @ Flatten @ { a, b };
+joinIfStrings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -2601,6 +2630,11 @@ errorText0[ as_, code_, message_String ] :=
 (* ::Subsubsection::Closed:: *)
 (*serverMessageTextData*)
 serverMessageTextData // beginDefinition;
+
+serverMessageTextData[ text_String ] := Flatten @ {
+    Chatbook::ServerMessageHeader,
+    StyleBox[ #, FontOpacity -> 0.75, FontSlant -> Italic ] & /@ Flatten[ { reformatTextData @ StringTrim @ text } ]
+};
 
 serverMessageTextData[ textData: _String | $$textDataList ] := Flatten @ {
     Chatbook::ServerMessageHeader,

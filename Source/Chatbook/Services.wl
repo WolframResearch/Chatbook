@@ -15,7 +15,7 @@ $ContextAliases[ "llm`" ] = "LLMServices`";
 (* ::Section::Closed:: *)
 (*Configuration*)
 $llmKit               := $llmKit = $VersionNumber >= 14.1;
-$llmKitService        := getLLMKitService[ ];
+$llmKitService        := LogChatTiming @ getLLMKitService[ ];
 $allowConnectionDialog = True;
 $enableLLMServices     = Automatic;
 $modelListCache        = <| |>;

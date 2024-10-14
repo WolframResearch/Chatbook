@@ -130,6 +130,9 @@ postProcessChatTitle[ title0_String, KeyValuePattern[ "StatusCode" -> 200 ] ] :=
     throwInternalFailure
 ];
 
+postProcessChatTitle[ failure: Failure[ "InvalidResponse", _ ], _ ] :=
+    throwTop @ failure;
+
 postProcessChatTitle // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

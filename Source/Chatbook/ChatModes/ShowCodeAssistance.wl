@@ -14,8 +14,6 @@ $workspaceChatWidth = 325;
 
 $codeAssistanceBaseSettings = <|
     "AppName"           -> "CodeAssistance",
-    "Authentication"    -> "LLMKit",
-    "Model"             -> <| "Service" -> "LLMKit", "Name" -> Automatic |>,
     "PromptGenerators"  -> { "RelatedDocumentation" },
     "ServiceCaller"     -> "CodeAssistance",
     "ToolOptions"       -> <| "WolframLanguageEvaluator" -> <| "AppendURIPrompt" -> True, "Method" -> "Session" |> |>,
@@ -192,14 +190,18 @@ ShowCodeAssistance[ nbo_NotebookObject, opts: OptionsPattern[ ] ] :=
 (* ::Subsection::Closed:: *)
 (*Window*)
 ShowCodeAssistance[ "Window", opts: OptionsPattern[ ] ] :=
-    catchMine @ ShowCodeAssistance[ getUserNotebook[ ], "Window", opts ];
+    catchMine @ LogChatTiming @ withChatState @ LogChatTiming @ ShowCodeAssistance[
+        LogChatTiming @ getUserNotebook[ ],
+        "Window",
+        opts
+    ];
 
 ShowCodeAssistance[ nbo_NotebookObject, "Window"|Automatic, opts: OptionsPattern[ ] ] :=
     catchMine @ withChatState @ withExtraInstructions[
         OptionValue[ "ExtraInstructions" ],
-        showCodeAssistanceWindow[
+        LogChatTiming @ showCodeAssistanceWindow[
             nbo,
-            validateOptionInput @ OptionValue[ "Input" ],
+            LogChatTiming @ validateOptionInput @ OptionValue[ "Input" ],
             OptionValue[ "EvaluateInput" ],
             OptionValue[ "NewChat" ]
         ]
@@ -209,14 +211,14 @@ ShowCodeAssistance[ nbo_NotebookObject, "Window"|Automatic, opts: OptionsPattern
 (* ::Subsection::Closed:: *)
 (*Inline*)
 ShowCodeAssistance[ "Inline", opts: OptionsPattern[ ] ] :=
-    catchMine @ ShowCodeAssistance[ InputNotebook[ ], "Inline", opts ];
+    catchMine @ withChatState @ LogChatTiming @ ShowCodeAssistance[ InputNotebook[ ], "Inline", opts ];
 
 ShowCodeAssistance[ nbo_NotebookObject, "Inline", opts: OptionsPattern[ ] ] :=
     catchMine @ withChatState @ withExtraInstructions[
         OptionValue[ "ExtraInstructions" ],
         showCodeAssistanceInline[
             nbo,
-            validateOptionInput @ OptionValue[ "Input" ],
+            LogChatTiming @ validateOptionInput @ OptionValue[ "Input" ],
             OptionValue[ "EvaluateInput" ]
         ]
     ];
@@ -337,7 +339,11 @@ showCodeAssistanceWindow // beginDefinition;
 showCodeAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] := Enclose[
     Module[ { current, nbo },
 
-        current = ConfirmMatch[ findCurrentWorkspaceChat[ ], _NotebookObject | Missing[ "NotFound" ], "Existing" ];
+        current = ConfirmMatch[
+            LogChatTiming @ findCurrentWorkspaceChat[ ],
+            _NotebookObject | Missing[ "NotFound" ],
+            "Existing"
+        ];
 
         If[ TrueQ @ new,
             Quiet @ NotebookClose @ current;
@@ -345,11 +351,11 @@ showCodeAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] := En
         ];
 
         nbo = If[ MissingQ @ current,
-                  ConfirmMatch[ createWorkspaceChat @ source, _NotebookObject, "New" ],
-                  ConfirmMatch[ attachToLeft[ source, current ], _NotebookObject, "Attached" ]
+                  ConfirmMatch[ LogChatTiming @ createWorkspaceChat @ source, _NotebookObject, "New" ],
+                  ConfirmMatch[ LogChatTiming @ attachToLeft[ source, current ], _NotebookObject, "Attached" ]
               ];
 
-        setWindowInputAndEvaluate[ nbo, input, evaluate ]
+        LogChatTiming @ setWindowInputAndEvaluate[ nbo, input, evaluate ]
     ],
     throwInternalFailure
 ];
