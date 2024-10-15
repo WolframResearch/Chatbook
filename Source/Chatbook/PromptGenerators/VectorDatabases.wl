@@ -169,8 +169,28 @@ evaluateWithProgress // beginDefinition;
 evaluateWithProgress // Attributes = { HoldFirst };
 evaluateWithProgress[ args___ ] /; $WorkspaceChat := evaluateWithWorkspaceProgress @ args;
 evaluateWithProgress[ args___ ] /; $InlineChat := evaluateWithInlineProgress @ args;
-evaluateWithProgress[ args___ ] := Progress`EvaluateWithProgress @ args;
+evaluateWithProgress[ args___ ] := evaluateWithProgressContainer[ $progressContainer, args ];
 evaluateWithProgress // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*evaluateWithProgressContainer*)
+evaluateWithProgressContainer // beginDefinition;
+evaluateWithProgressContainer // Attributes = { HoldRest };
+
+evaluateWithProgressContainer[ HoldComplete[ container_Symbol ], args___ ] :=
+    Module[ { before },
+        WithCleanup[
+            before = container,
+            Progress`EvaluateWithProgress[ args, "Container" :> container, "Delay" -> 0 ],
+            container = before
+        ]
+    ];
+
+evaluateWithProgressContainer[ _, args___ ] :=
+    Progress`EvaluateWithProgress[ args, "Delay" -> 0 ];
+
+evaluateWithProgressContainer // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
