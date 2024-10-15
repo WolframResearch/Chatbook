@@ -254,6 +254,54 @@ ShowCodeAssistance[ cell_CellObject, "Window", opts: OptionsPattern[ ] ] := catc
     throwInternalFailure
 ];
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Named Aliases*)
+$aliasRules = <|
+    "GettingStarted" -> <|
+        "DefaultObject" :> EvaluationNotebook[ ],
+        "Type"          -> "Window",
+        "Options"       -> <|
+            "Input"         -> Key[ "GettingStarted" ],
+            "EvaluateInput" -> True,
+            "NewChat"       -> True
+        |>
+    |>,
+    "ErrorMessage" -> <|
+        "DefaultObject" :> EvaluationCell[ ],
+        "Type"          -> "Inline",
+        "Options"       -> <|
+            "Input"         -> Key[ "ErrorMessage" ],
+            "EvaluateInput" -> True
+        |>
+    |>
+|>;
+
+$$alias = Alternatives @@ Keys @ $aliasRules;
+
+
+ShowCodeAssistance[ alias: $$alias, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
+    ShowCodeAssistance[
+        ConfirmMatch[ $aliasRules[ alias, "DefaultObject" ], _CellObject|_NotebookObject, "DefaultObject" ],
+        alias,
+        opts
+    ],
+    throwInternalFailure
+];
+
+
+ShowCodeAssistance[ obj: _CellObject|_NotebookObject, alias: $$alias, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
+    Module[ { type, options },
+        type = ConfirmMatch[ $aliasRules[ alias, "Type" ], "Window"|"Inline", "Type" ];
+        options = ConfirmBy[ $aliasRules[ alias, "Options" ], AssociationQ, "Options" ];
+        ShowCodeAssistance[ obj, type, opts, Sequence @@ Normal[ options, Association ] ]
+    ],
+    throwInternalFailure
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*End Definition*)
 ShowCodeAssistance // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
