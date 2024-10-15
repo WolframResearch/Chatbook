@@ -19,7 +19,7 @@ Cell[
     TaggingRules           -> <| "ChatNotebookSettings" -> $workspaceDefaultSettings |>,
     WindowClickSelect      -> True,
     WindowElements         -> { "VerticalScrollBar", "MagnificationPopUp" },
-    WindowFrameElements    -> { "CloseBox", "ResizeArea" },
+    WindowFrameElements    -> { "CloseBox", "ResizeArea", "ZoomBox" },
     WindowMargins          -> { { 0, Automatic }, { 0, 0 } },
     WindowSize             -> { $sideChatWidth, Automatic },
     WindowTitle            -> "Code Assistance Chat",
