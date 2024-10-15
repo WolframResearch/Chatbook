@@ -61,6 +61,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$notebookEditorEnabled;
 `$openToolCallBoxes;
 `$preferencesScope;
+`$progressContainer;
 `$resultCellCache;
 `$rightSelectionIndicator;
 `$sandboxKernelCommandLine;
