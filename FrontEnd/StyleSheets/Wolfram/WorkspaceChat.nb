@@ -19,7 +19,7 @@ Notebook[
    WindowSize -> {350, Automatic},
    WindowMargins -> {{0, Automatic}, {0, 0}},
    WindowElements -> {"VerticalScrollBar", "MagnificationPopUp"},
-   WindowFrameElements -> {"CloseBox", "ResizeArea"},
+   WindowFrameElements -> {"CloseBox", "ResizeArea", "ZoomBox"},
    WindowClickSelect -> True,
    WindowTitle -> "Code Assistance Chat",
    DockedCells -> {
@@ -66,7 +66,7 @@ Notebook[
   ],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3937985886"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3937995172"|>
   ],
   Cell[
    StyleData[
