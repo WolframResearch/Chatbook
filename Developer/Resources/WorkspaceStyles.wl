@@ -18,7 +18,7 @@ Cell[
     ShowCellBracket        -> False,
     TaggingRules           -> <| "ChatNotebookSettings" -> $workspaceDefaultSettings |>,
     WindowClickSelect      -> True,
-    WindowElements         -> { "VerticalScrollBar" },
+    WindowElements         -> { "VerticalScrollBar", "MagnificationPopUp" },
     WindowFrameElements    -> { "CloseBox", "ResizeArea" },
     WindowMargins          -> { { 0, Automatic }, { 0, 0 } },
     WindowSize             -> { $sideChatWidth, Automatic },

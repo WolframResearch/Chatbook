@@ -734,7 +734,7 @@ $workspaceChatDockedCells = {
         CellFrame        -> 0,
         CellFrameMargins -> 0,
         CellMargins      -> -1,
-        Magnification :> CurrentValue[ EvaluationNotebook[ ], Magnification ]
+        Magnification -> Dynamic[ AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ] ]
     ]
 };
 
