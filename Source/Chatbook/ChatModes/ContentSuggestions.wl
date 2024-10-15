@@ -212,6 +212,7 @@ showContentSuggestions0[ nbo_NotebookObject, root: $$feObj, selectionInfo_Associ
         type = ConfirmBy[ suggestionsType @ selectionInfo, StringQ, "Type" ];
 
         suggestionsContainer = ProgressIndicator[ Appearance -> "Necklace" ];
+        $progressContainer = HoldComplete @ suggestionsContainer;
 
         attached = ConfirmMatch[
             AttachCell[
@@ -246,6 +247,8 @@ showContentSuggestions0[ nbo_NotebookObject, root: $$feObj, selectionInfo_Associ
             _Pane,
             "Generate"
         ];
+
+        $progressContainer = None;
 
         attached
     ],
