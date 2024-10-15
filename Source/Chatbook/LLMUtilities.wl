@@ -90,9 +90,13 @@ llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] :
                     data = Internal`BagPart[ chunks, All ];
                     $lastSynthesizeSubmitLog = data;
                     strings = extractBodyChunks @ data;
-                    If[ ! MatchQ[ strings, { __String } ],
-                        callback[ Failure[ "InvalidResponse", <| "Data" -> data |> ], #1 ],
-                        With[ { s = StringJoin @ strings }, callback[ s, #1 ] ]
+                    Which[
+                        MatchQ[ strings, { __String } ],
+                            With[ { s = StringJoin @ strings }, callback[ s, #1 ] ],
+                        FailureQ @ strings,
+                            callback[ strings, #1 ],
+                        True,
+                            callback[ Failure[ "InvalidResponse", <| "Data" -> data |> ], #1 ]
                     ]
                 ]
             ]
@@ -198,7 +202,10 @@ imageTokenCount // endDefinition;
 extractBodyChunks // beginDefinition;
 
 extractBodyChunks[ data_ ] := Enclose[
-    ConfirmMatch[ DeleteCases[ Flatten @ { extractBodyChunks0 @ data }, "" ], { ___String }, "Result" ],
+    Catch[
+        ConfirmMatch[ DeleteCases[ Flatten @ { extractBodyChunks0 @ data }, "" ], { ___String }, "Result" ],
+        $bodyChunksTag
+    ],
     throwInternalFailure
 ];
 
@@ -207,14 +214,31 @@ extractBodyChunks // endDefinition;
 
 extractBodyChunks0 // beginDefinition;
 extractBodyChunks0[ content_String ] := content;
-extractBodyChunks0[ content_List ] := extractBodyChunks /@ content;
+extractBodyChunks0[ content_List ] := extractBodyChunks0 /@ content;
 extractBodyChunks0[ KeyValuePattern[ "BodyChunkProcessed" -> content_ ] ] := extractBodyChunks0 @ content;
 extractBodyChunks0[ KeyValuePattern[ "ContentChunk"|"ContentDelta" -> content_ ] ] := extractBodyChunks0 @ content;
 extractBodyChunks0[ KeyValuePattern @ { "Type" -> "Text", "Data" -> content_ } ] := extractBodyChunks0 @ content;
 extractBodyChunks0[ KeyValuePattern @ { } ] := { };
 extractBodyChunks0[ bag_Internal`Bag ] := extractBodyChunks0 @ Internal`BagPart[ bag, All ];
 extractBodyChunks0[ Null ] := { };
+
+extractBodyChunks0[ Failure[
+    "BodyChunkProcessingFailure",
+    KeyValuePattern[ "MessageParameters" :> { ___, failure_Failure? apiFailureQ, ___ } ]
+] ] := extractBodyChunks0 @ failure;
+
+extractBodyChunks0[ fail_Failure? apiFailureQ ] :=
+    throwFailureToChatOutput @ fail;
+
 extractBodyChunks0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*apiFailureQ*)
+apiFailureQ // beginDefinition;
+apiFailureQ[ Failure[ "APIError", KeyValuePattern[ "StatusCode" -> Except[ 200, _Integer ] ] ] ] := True;
+apiFailureQ[ _ ] := False;
+apiFailureQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
