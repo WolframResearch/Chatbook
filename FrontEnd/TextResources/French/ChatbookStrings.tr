@@ -191,7 +191,7 @@
 
 "MenuItemShowCodeAssistanceWindow" -> "Code Assistance Chat\[Ellipsis]",
 "MenuItemShowCodeAssistanceInline" -> "Code Assistance for Selection",
-"MenuItemShowContentSuggestions" -> "AI Content Suggestion",
+"MenuItemShowContentSuggestions" -> "Suggestion de contenu par l\[CloseCurlyQuote]IA",
 
 "WorkspaceToolbarButtonLabelSources" -> "Sources",
 "WorkspaceToolbarButtonLabelNew" -> "New",
