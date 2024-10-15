@@ -258,6 +258,15 @@ ShowCodeAssistance[ cell_CellObject, "Window", opts: OptionsPattern[ ] ] := catc
 (* ::Subsection::Closed:: *)
 (*Named Aliases*)
 $aliasRules = <|
+    "ErrorMessage" -> <|
+        "DefaultObject" :> EvaluationCell[ ],
+        "Type"          -> "Inline",
+        "Options"       -> <|
+            "Input"         -> Key[ "ErrorMessage" ],
+            "EvaluateInput" -> True
+        |>
+    |>,
+    (* TODO: there should be an option that sets the minimum messages needed for auto saving *)
     "GettingStarted" -> <|
         "DefaultObject" :> EvaluationNotebook[ ],
         "Type"          -> "Window",
@@ -266,18 +275,22 @@ $aliasRules = <|
             "EvaluateInput" -> True,
             "NewChat"       -> True
         |>
-    |>,
-    "ErrorMessage" -> <|
-        "DefaultObject" :> EvaluationCell[ ],
-        "Type"          -> "Inline",
-        "Options"       -> <|
-            "Input"         -> Key[ "ErrorMessage" ],
-            "EvaluateInput" -> True
-        |>
     |>
 |>;
 
-$$alias = Alternatives @@ Keys @ $aliasRules;
+$$alias        = Alternatives @@ Keys @ $aliasRules;
+$$specialAlias = Alternatives[ "CellInsertionPoint" ];
+
+
+ShowCodeAssistance[ alias: $$specialAlias, opts: OptionsPattern[ ] ] :=
+    catchMine @ ShowCodeAssistance[ Automatic, alias, opts ];
+
+
+ShowCodeAssistance[ obj_, alias: $$specialAlias, opts: OptionsPattern[ ] ] :=
+    catchMine @ Enclose[
+        ConfirmMatch[ autoShowCodeAssistance[ alias, obj, opts ], Null|_NotebookObject|_CellObject, "AutoShow" ],
+        throwInternalFailure
+    ];
 
 
 ShowCodeAssistance[ alias: $$alias, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
@@ -303,6 +316,29 @@ ShowCodeAssistance[ obj: _CellObject|_NotebookObject, alias: $$alias, opts: Opti
 (* ::Subsection::Closed:: *)
 (*End Definition*)
 ShowCodeAssistance // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*autoShowCodeAssistance*)
+autoShowCodeAssistance // beginDefinition;
+
+autoShowCodeAssistance[ "CellInsertionPoint", obj0_, opts: OptionsPattern[ ] ] := Enclose[
+    Catch @ Module[ { nbo, cells, obj },
+        nbo = ConfirmMatch[ EvaluationNotebook[ ], _NotebookObject, "Notebook" ];
+        cells = ConfirmMatch[ Cells @ nbo, { ___CellObject }, "Cells" ];
+        obj = ConfirmMatch[ If[ obj0 === Automatic, nbo, obj0 ], _CellObject|_NotebookObject, "Object" ];
+
+        (* It's an empty notebook, so start workspace chat with the getting started prompt: *)
+        If[ cells === { }, Throw @ ShowCodeAssistance[ obj, "GettingStarted", opts ] ];
+
+        (* Otherwise open an inline chat without initial evaluation: *)
+        SelectionMove[ nbo, Previous, Cell ];
+        ShowCodeAssistance[ obj, "Inline", opts ]
+    ],
+    throwInternalFailure
+];
+
+autoShowCodeAssistance // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
