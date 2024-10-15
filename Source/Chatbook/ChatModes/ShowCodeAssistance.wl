@@ -332,7 +332,7 @@ autoShowCodeAssistance[ "CellInsertionPoint", obj0_, opts: OptionsPattern[ ] ] :
         If[ cells === { }, Throw @ ShowCodeAssistance[ obj, "GettingStarted", opts ] ];
 
         (* Otherwise open an inline chat without initial evaluation: *)
-        SelectionMove[ EvaluationNotebook[ ], Previous, Cell ];
+        SelectionMove[ nbo, Previous, Cell ];
         ShowCodeAssistance[ obj, "Inline", opts ]
     ],
     throwInternalFailure
