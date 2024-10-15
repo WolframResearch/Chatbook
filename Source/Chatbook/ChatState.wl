@@ -40,8 +40,13 @@ withChatState[ eval_ ] :=
             $tokenBudget                  = $tokenBudget,
             $tokenPressure                = $tokenPressure
         },
+
+        (* These are not locally scoped for debugging purposes: *)
         $ChatHandlerData = <| |>;
-        $tokenBudgetLog = Internal`Bag[ ];
+        $tokenBudgetLog  = Internal`Bag[ ];
+        $lastTask        = None;
+        $lastCellObject  = None;
+
         Internal`InheritedBlock[ { $evaluationCell, $evaluationNotebook, $llmKit, $llmKitService },
             Quiet[ withToolBox @ withBasePromptBuilder @ eval, ServiceExecute::multser ]
         ]

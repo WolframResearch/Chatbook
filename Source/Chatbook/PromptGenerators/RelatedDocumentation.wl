@@ -16,6 +16,11 @@ $snippetsCacheDirectory := $snippetsCacheDirectory = ChatbookFilesDirectory[ "Do
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Messages*)
+Chatbook::CloudDownloadError = "Unable to download required data from the cloud. Please try again later.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*RelatedDocumentation*)
 RelatedDocumentation // beginDefinition;
 RelatedDocumentation // Options = {
@@ -465,6 +470,17 @@ processDocumentationSnippetResult[ base_String, as_Association ] :=
 
 processDocumentationSnippetResult[ base_String, as_, bytes_ByteArray, 200 ] :=
     processDocumentationSnippetResult[ base, as, Quiet @ Developer`ReadWXFByteArray @ bytes ];
+
+processDocumentationSnippetResult[ base_String, as_Association, bytes_, code: Except[ 200, _Integer ] ] :=
+    throwFailureToChatOutput @ Failure[
+        "CloudDownloadError",
+        <|
+            "MessageTemplate"   :> Chatbook::CloudDownloadError,
+            "MessageParameters" -> { },
+            KeyTake[ as, { "URL", "StatusCode" } ],
+            as
+        |>
+    ];
 
 processDocumentationSnippetResult[ base_String, as_, data_List ] := Enclose[
     Module[ { combined, keyed, processed, file },
