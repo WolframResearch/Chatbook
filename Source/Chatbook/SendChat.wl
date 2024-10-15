@@ -114,6 +114,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         ];
 
         AppendTo[ settings, "Data" -> data ];
+        CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "Data" } ] = data;
 
         $resultCellCache = <| |>;
         $debugLog = Internal`Bag[ ];
