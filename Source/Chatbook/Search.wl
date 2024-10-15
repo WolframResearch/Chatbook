@@ -35,6 +35,7 @@ searchChats // beginDefinition;
 searchChats[ appName_String, query_String, max_? Positive ] := Enclose[
     Catch @ Module[ { index, flat, values, vectors, embedding, idx, results },
 
+        If[ query === "", Throw @ { } ];
         index = Values @ ConfirmBy[ loadChatSearchIndex @ appName, AssociationQ, "Load" ];
 
         flat = ConfirmMatch[
