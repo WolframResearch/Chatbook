@@ -269,6 +269,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `stringToBoxes;
 `stringTrimMiddle;
 `systemCredential;
+`throwFailureToChatOutput;
 `tinyHash;
 `toAPIKey;
 `toCompressedBoxes;

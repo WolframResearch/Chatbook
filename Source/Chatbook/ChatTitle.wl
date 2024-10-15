@@ -133,6 +133,9 @@ postProcessChatTitle[ title0_String, KeyValuePattern[ "StatusCode" -> 200 ] ] :=
 postProcessChatTitle[ failure: Failure[ "InvalidResponse", _ ], _ ] :=
     throwTop @ failure;
 
+postProcessChatTitle[ failure: Failure[ "APIError", _ ], _ ] :=
+    throwFailureToChatOutput @ failure;
+
 postProcessChatTitle // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

@@ -769,11 +769,15 @@ withFETasks // endDefinition;
 (*writeChunk*)
 writeChunk // beginDefinition;
 
-writeChunk[ container_, cell_, KeyValuePattern[ "BodyChunkProcessed" -> chunks_ ] ] :=
+writeChunk[ container_, cell_, as: KeyValuePattern[ "BodyChunkProcessed" -> chunks_ ] ] :=
     With[ { strings = extractBodyChunks @ chunks },
-        If[ ! MatchQ[ strings, { __String } ],
-            Null,
-            With[ { chunk = StringJoin @ strings }, writeChunk0[ container, cell, chunk, chunk ] ]
+        Which[
+            FailureQ @ strings,
+                throwFailureToChatOutput @ strings,
+            MatchQ[ strings, { __String } ],
+                With[ { chunk = StringJoin @ strings }, writeChunk0[ container, cell, chunk, chunk ] ],
+            True,
+                Null
         ]
     ];
 
@@ -1018,7 +1022,8 @@ writeResult[ settings_, container_, cell_, as_Association ] := Enclose[
         If[ settings[ "BypassResponseChecking" ], Throw @ writeReformattedCell[ settings, container, cell ] ];
 
         log = ConfirmMatch[ Internal`BagPart[ $debugLog, All ], { ___Association }, "DebugLog" ];
-        processed = StringJoin @ ConfirmMatch[ extractBodyChunks @ log, { ___String }, "Processed" ];
+        processed = StringJoin @ ConfirmMatch[ extractBodyChunks @ log, { ___String } | _Failure, "Processed" ];
+        If[ FailureQ @ processed, throwTop @ writeErrorCell[ cell, processed ] ];
         { body, data } = ConfirmMatch[ extractBodyData @ log, { _, _ }, "ExtractBodyData" ];
 
         $lastFullResponseData = <| "Body" -> body, "Processed" -> processed, "Data" -> data |>;
@@ -2523,9 +2528,26 @@ attachChatOutputMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*throwFailureToChatOutput*)
+throwFailureToChatOutput // beginDefinition;
+
+throwFailureToChatOutput[ failure_ ] :=
+    throwFailureToChatOutput[ $lastTask, $lastCellObject, failure ];
+
+throwFailureToChatOutput[ task_, cell_CellObject, failure_ ] := (
+    Quiet @ TaskRemove @ task;
+    throwTop @ writeErrorCell[ cell, failure ];
+);
+
+throwFailureToChatOutput[ _, None, failure_Failure ] :=
+    throwTop @ failure;
+
+throwFailureToChatOutput // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*writeErrorCell*)
 writeErrorCell // beginDefinition;
-writeErrorCell[ cell_, failure_Failure ] := (createFETask @ NotebookDelete @ cell; failure);
 writeErrorCell[ cell_, as_ ] := (createFETask @ NotebookWrite[ cell, errorCell @ as ]; Null);
 writeErrorCell // endDefinition;
 
@@ -2533,9 +2555,6 @@ writeErrorCell // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*errorCell*)
 errorCell // beginDefinition;
-
-errorCell[ failure_Failure ] :=
-    Cell[ BoxData @ ToBoxes @ failure, "Output" ];
 
 errorCell[ as_ ] := Enclose[
     Module[ { text },
