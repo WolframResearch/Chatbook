@@ -29,6 +29,7 @@ $$newCellStyle = Alternatives[
     "MarkdownDelimiter",
     "Message",
     "Output",
+    "Picture",
     "Print",
     "Program",
     "Reference",
@@ -76,7 +77,7 @@ explodeCell[ (BoxData|TextData)[ textData_, ___ ] ] := explodeCell @ Flatten @ L
 
 explodeCell[ textData_List ] := Enclose[
     Module[ { processed, grouped, post },
-        processed = ConfirmMatch[ ReplaceRepeated[ textData, $preprocessingRules ], $$textDataList, "Preprocessing" ];
+        processed = ConfirmMatch[ preprocessExplodedCells @ textData, $$textDataList, "Preprocessing" ];
         grouped = ConfirmMatch[ regroupCells @ processed, $$textDataList, "RegroupCells" ];
         post = ConfirmMatch[ Flatten[ postProcessExplodedCells /@ grouped ], { __Cell }, "PostProcessing" ];
         SequenceReplace[
@@ -99,6 +100,19 @@ captionQ[ (ButtonBox|Cell|StyleBox|TextData)[ text_, ___ ] ] := captionQ @ text;
 captionQ[ { ___, text_ } ] := captionQ @ text;
 captionQ[ _ ] := False;
 captionQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*preprocessExplodedCells*)
+preprocessExplodedCells // beginDefinition;
+preprocessExplodedCells[ text_List ] := preprocessExplodedCells0 @ ReplaceRepeated[ text, $preprocessingRules ];
+preprocessExplodedCells // endDefinition;
+
+preprocessExplodedCells0 // beginDefinition;
+preprocessExplodedCells0[ TextData[ text_ ] ] := preprocessExplodedCells0 @ Flatten @ { text };
+preprocessExplodedCells0[ { text_TextData } ] := preprocessExplodedCells0 @ text;
+preprocessExplodedCells0[ text_List ] := Flatten @ text;
+preprocessExplodedCells0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -131,6 +145,12 @@ postProcessExplodedCells[ cell: Cell[ __, "Input", ___ ] ] := DeleteCases[
     Infinity
 ];
 
+postProcessExplodedCells[ Cell[ BoxData @ TooltipBox[ TemplateBox[ { }, "ImageNotFound" ], ___ ], "Picture", ___ ] ] :=
+    Nothing;
+
+postProcessExplodedCells[ Cell[ BoxData @ TemplateBox[ { }, "ImageNotFound" ], "Picture", ___ ] ] :=
+    Nothing;
+
 postProcessExplodedCells[ cell_Cell ] :=
     cell;
 
@@ -140,6 +160,10 @@ postProcessExplodedCells // endDefinition;
 (* ::Subsection::Closed:: *)
 (*$preprocessingRules*)
 $preprocessingRules := $preprocessingRules = Dispatch @ {
+    (* Workspace/Inline chat template boxes: *)
+    Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox", ___ ], ___ ] :>
+        text,
+
     (* Remove "InlineSection" styling: *)
     Cell[
         BoxData @ PaneBox[
@@ -235,7 +259,11 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
                 "\[LeftSkeleton]Removed\[RightSkeleton]",
                 ToBoxes @ expr
             ]
-        ]
+        ],
+
+    (* Markdown images: *)
+    Cell[ BoxData @ PaneBox[ TagBox[ box_, "MarkdownImage", ___ ], ___ ], "Input", ___ ] :>
+        Cell[ BoxData @ box, "Picture" ]
 };
 
 (* ::**************************************************************************************************************:: *)
