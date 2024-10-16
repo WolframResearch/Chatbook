@@ -147,10 +147,11 @@ enableCodeAssistance // endDefinition;
 (*ShowCodeAssistance*)
 ShowCodeAssistance // beginDefinition;
 ShowCodeAssistance // Options = {
-    "EvaluateInput"     -> False,
-    "ExtraInstructions" -> None,
-    "Input"             -> None,
-    "NewChat"           -> Automatic
+    "ChatNotebookSettings" -> <| |>,
+    "EvaluateInput"        -> False,
+    "ExtraInstructions"    -> None,
+    "Input"                -> None,
+    "NewChat"              -> Automatic
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -207,7 +208,8 @@ ShowCodeAssistance[ nbo_NotebookObject, "Window"|Automatic, opts: OptionsPattern
             nbo,
             LogChatTiming @ validateOptionInput @ OptionValue[ "Input" ],
             OptionValue[ "EvaluateInput" ],
-            OptionValue[ "NewChat" ]
+            OptionValue[ "NewChat" ],
+            OptionValue[ "ChatNotebookSettings" ]
         ]
     ];
 
@@ -223,7 +225,8 @@ ShowCodeAssistance[ nbo_NotebookObject, "Inline", opts: OptionsPattern[ ] ] :=
         showCodeAssistanceInline[
             nbo,
             LogChatTiming @ validateOptionInput @ OptionValue[ "Input" ],
-            OptionValue[ "EvaluateInput" ]
+            OptionValue[ "EvaluateInput" ],
+            OptionValue[ "ChatNotebookSettings" ]
         ]
     ];
 
@@ -271,9 +274,10 @@ $aliasRules = <|
         "DefaultObject" :> EvaluationNotebook[ ],
         "Type"          -> "Window",
         "Options"       -> <|
-            "Input"         -> Key[ "GettingStarted" ],
-            "EvaluateInput" -> True,
-            "NewChat"       -> True
+            "Input"                -> Key[ "GettingStarted" ],
+            "EvaluateInput"        -> True,
+            "NewChat"              -> True,
+            "ChatNotebookSettings" -> <| "MinimumResponsesToSave" -> 2 |>
         |>
     |>
 |>;
@@ -387,11 +391,21 @@ validateOptionInput // endDefinition;
 (*showCodeAssistanceInline*)
 showCodeAssistanceInline // beginDefinition;
 
-showCodeAssistanceInline[ nbo_NotebookObject, input_, evaluate_ ] :=
-    Module[ { attached },
-        attached = attachInlineChatInput[ nbo, $codeAssistanceInlineSettings ];
+showCodeAssistanceInline[ nbo_NotebookObject, input_, evaluate_, settings0_Association ] := Enclose[
+    Module[ { settings, attached },
+
+        settings = ConfirmBy[
+            mergeChatSettings @ { $codeAssistanceInlineSettings, settings0 },
+            AssociationQ,
+            "Settings"
+        ];
+
+        attached = attachInlineChatInput[ nbo, settings ];
+
         setInlineInputAndEvaluate[ attached, input, evaluate ]
-    ];
+    ],
+    throwInternalFailure
+];
 
 showCodeAssistanceInline[ _ ] :=
     Beep[ "No notebook selected for code assistance." ];
@@ -423,6 +437,10 @@ setInlineInputAndEvaluate // endDefinition;
 (*showCodeAssistanceWindow*)
 showCodeAssistanceWindow // beginDefinition;
 
+showCodeAssistanceWindow[ source_, input_, evaluate_, new_, settings_Association ] :=
+    Block[ { $codeAssistanceWorkspaceSettings = mergeChatSettings @ { $codeAssistanceWorkspaceSettings, settings } },
+        showCodeAssistanceWindow[ source, input, evaluate, new ]
+    ];
 
 showCodeAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] := Enclose[
     Module[ { current, nbo },
