@@ -86,13 +86,16 @@ evaluateInlineChat[
                     "InlineChatCell" -> cell,
                     "SelectionInfo"  -> selectionInfo,
                     "MessageCells"   -> Dynamic @ messageCells
-                |>,
-                $defaultChatSettings = mergeChatSettings @ {
-                    $defaultChatSettings,
-                    CurrentValue[ cell, { TaggingRules, "ChatNotebookSettings" } ]
-                }
+                |>
             },
-            result = ConfirmMatch[ ChatCellEvaluate @ root, _ChatObject|Null, "ChatCellEvaluate" ]
+            result = ConfirmMatch[
+                Internal`InheritedBlock[ { currentChatSettings },
+                    currentChatSettings[ root ] := currentChatSettings[ cell ];
+                    ChatCellEvaluate @ root
+                ],
+                _ChatObject|Null,
+                "ChatCellEvaluate"
+            ]
         ];
 
         SessionSubmit @ moveToInlineChatInputField[ ];
