@@ -425,7 +425,9 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association
                                 <| "Role" -> "Assistant", "Content" -> $lastChatString |>
                             ] // LogChatTiming[ "ConstructChatObject" ]
                         },
-                        If[ TrueQ @ settings[ "AutoSaveConversations" ], SaveChat[ nbo, chat, settings ] ];
+                        If[ TrueQ @ settings[ "AutoSaveConversations" ],
+                            SaveChat[ nbo, chat, settings, "AutoSaveOnly" -> True ]
+                        ];
                         applyChatPost[ chat, settings, nbo, $aborted ]
                     ],
                     applyChatPost[ None, settings, nbo, $aborted ];
