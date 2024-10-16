@@ -955,7 +955,11 @@ generateNotebookSuggestions0[ Dynamic[ container_ ], nbo_, root_NotebookObject, 
 
         $finishReason = response[ "FinishReason" ];
 
-        suggestions = DeleteDuplicates @ ConfirmMatch[ getNotebookSuggestions @ response, { __Cell }, "Suggestions" ];
+        suggestions = DeleteDuplicates @ ConfirmMatch[
+            getNotebookSuggestions[ context, response ],
+            { __Cell },
+            "Suggestions"
+        ];
 
         $lastSuggestions = suggestions;
 
@@ -979,7 +983,11 @@ determineInputStyle // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getNotebookSuggestions*)
 getNotebookSuggestions // beginDefinition;
-getNotebookSuggestions[ content_ ] := Flatten @ { postProcessNotebookSuggestions @ getSuggestions @ content };
+
+getNotebookSuggestions[ context_, content_ ] := Flatten @ {
+    LogChatTiming @ postProcessNotebookSuggestions[ context, getSuggestions @ content ]
+};
+
 getNotebookSuggestions // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -987,29 +995,59 @@ getNotebookSuggestions // endDefinition;
 (*postProcessNotebookSuggestions*)
 postProcessNotebookSuggestions // beginDefinition;
 
-postProcessNotebookSuggestions[ suggestions_List ] :=
-    postProcessNotebookSuggestions /@ suggestions;
+postProcessNotebookSuggestions[ context_String, suggestions_List ] :=
+    postProcessNotebookSuggestions[ context, # ] & /@ suggestions;
 
-postProcessNotebookSuggestions[ string0_String ] := Enclose[
-    Module[ { string },
-        string = StringDelete[ string0, $notebookPlaceholderString ];
-        If[ StringMatchQ[ string, "```\n" ~~__~~ "\n```" ],
-            string = StringDelete[ string, { StartOfString~~"```\n", "\n```"~~EndOfString } ]
+postProcessNotebookSuggestions[ context_String, string0_String ] := Enclose[
+    Module[ { before, after, string, s, maxPrefix, commonPrefix, maxSuffix, commonSuffix, trimmed },
+
+        { before, after } = ConfirmMatch[
+            Replace[
+                StringSplit[ context, $notebookPlaceholderString :> Placeholder ],
+                {
+                    { s_String, Placeholder }           :> { s, "" },
+                    { Placeholder, s_String }           :> { "", s },
+                    { a_String, Placeholder, b_String } :> { a , b }
+                }
+            ],
+            { _String, _String },
+            "Split"
         ];
-        postProcessNotebookSuggestions[ string0, FormatChatOutput @ string ]
+
+        string = ConfirmBy[ StringDelete[ string0, $notebookPlaceholderString ], StringQ, "String" ];
+        If[ StringMatchQ[ string, ("```\n"|"```markdown\n") ~~__~~ "\n```", IgnoreCase -> True ],
+            string = StringDelete[ string, { StartOfString~~("```\n"|"```markdown\n"), "\n```"~~EndOfString } ]
+        ];
+
+        (* TODO: this could be generalized: *)
+        maxPrefix = Min[ StringLength @ before, StringLength @ string ];
+        commonPrefix = "";
+        Do[ If[ (s = StringTake[ before, -i ]) === StringTake[ string, i ], commonPrefix = s ], { i, maxPrefix } ];
+        maxSuffix = Min[ StringLength @ after, StringLength @ string ];
+        commonSuffix = "";
+        Do[ If[ (s = StringTake[ string, -i ]) === StringTake[ after, i ], commonSuffix = s ], { i, maxSuffix } ];
+        trimmed = StringDelete[ string, { StartOfString~~commonPrefix, commonSuffix~~EndOfString } ];
+
+        postProcessNotebookSuggestions0[ string0, FormatChatOutput @ trimmed ]
     ],
     throwInternalFailure
 ];
 
-postProcessNotebookSuggestions[ s_, RawBoxes[ cell_Cell ] ] :=
-    postProcessNotebookSuggestions[ s, ExplodeCell @ cell ];
+postProcessNotebookSuggestions // endDefinition;
 
-postProcessNotebookSuggestions[ s_, cells0: { ___Cell, Cell[ __, $$generatedStyle, ___ ], ___Cell } ] :=
+
+
+postProcessNotebookSuggestions0 // beginDefinition;
+
+postProcessNotebookSuggestions0[ s_, RawBoxes[ cell_Cell ] ] :=
+    postProcessNotebookSuggestions0[ s, ExplodeCell @ cell ];
+
+postProcessNotebookSuggestions0[ s_, cells0: { ___Cell, Cell[ __, $$generatedStyle, ___ ], ___Cell } ] :=
     With[ { cells = DeleteCases[ cells0, Cell[ __, $$generatedStyle, ___ ] | Cell[ $$whitespace, "Text", ___ ] ] },
-        postProcessNotebookSuggestions[ s, cells ] /; cells =!= { }
+        postProcessNotebookSuggestions0[ s, cells ] /; cells =!= { }
     ];
 
-postProcessNotebookSuggestions[ s_, cells: { __Cell } ] := Enclose[
+postProcessNotebookSuggestions0[ s_, cells: { __Cell } ] := Enclose[
     Module[ { processed, trimmed },
         processed = ConfirmMatch[ Flatten[ postProcessNotebookSuggestion /@ cells ], { __Cell }, "Processed" ];
         trimmed = ConfirmMatch[ trimUnfinishedInput @ processed, { __Cell }, "Trimmed" ];
@@ -1018,7 +1056,7 @@ postProcessNotebookSuggestions[ s_, cells: { __Cell } ] := Enclose[
     throwInternalFailure
 ];
 
-postProcessNotebookSuggestions // endDefinition;
+postProcessNotebookSuggestions0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
