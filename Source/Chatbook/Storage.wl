@@ -142,7 +142,7 @@ loadChat // beginDefinition;
 loadChat[ as_Association ] := Enclose[
     Catch @ Module[ { data },
         data = ConfirmMatch[ getChatConversationData @ as, $$conversationFullData|_Missing, "Data" ];
-        If[ MissingQ @ data, Throw @ data ];
+        If[ MissingQ @ data, RemoveChatFromSearchIndex @ as; Throw @ data ];
         ConfirmBy[ restoreAttachments @ data, AssociationQ, "RestoreAttachments" ];
         data
     ],
