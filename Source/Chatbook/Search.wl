@@ -111,6 +111,47 @@ addChatToSearchIndex // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*RemoveChatFromSearchIndex*)
+RemoveChatFromSearchIndex // beginDefinition;
+
+RemoveChatFromSearchIndex[ as: KeyValuePattern[ "ConversationUUID" -> uuid_String ] ] :=
+    catchMine @ LogChatTiming @ removeChatFromSearchIndex[ Lookup[ as, "AppName", All ], uuid ];
+
+RemoveChatFromSearchIndex[ uuid_String ] :=
+    catchMine @ LogChatTiming @ removeChatFromSearchIndex[ All, uuid ];
+
+RemoveChatFromSearchIndex[ app_String, uuid_String ] :=
+    catchMine @ LogChatTiming @ removeChatFromSearchIndex[ app, uuid ];
+
+RemoveChatFromSearchIndex // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*removeChatFromSearchIndex*)
+removeChatFromSearchIndex // beginDefinition;
+
+removeChatFromSearchIndex[ All, uuid_String ] := Enclose[
+    Catch @ Module[ { appNames },
+        ConfirmBy[ loadChatSearchIndex[ All ], AssociationQ, "Load" ];
+        appNames = ConfirmMatch[ Keys @ DeleteMissing @ $chatSearchIndex[[ All, uuid ]], { ___String }, "Names" ];
+        removeChatFromSearchIndex[ #, uuid ] & /@ appNames
+    ],
+    throwInternalFailure
+];
+
+removeChatFromSearchIndex[ app_String, uuid_String ] := Enclose[
+    ConfirmBy[ loadChatSearchIndex @ app, AssociationQ, "Load" ];
+    ConfirmAssert[ AssociationQ @ $chatSearchIndex[ app ], "CheckIndex" ];
+    KeyDropFrom[ $chatSearchIndex[ app ], uuid ];
+    ConfirmBy[ saveChatIndex @ app, FileExistsQ, "Save" ];
+    Success[ "RemovedChatFromSearchIndex", <| "AppName" -> app, "ConversationUUID" -> uuid |> ],
+    throwInternalFailure
+];
+
+removeChatFromSearchIndex // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*RebuildChatSearchIndex*)
 RebuildChatSearchIndex // beginDefinition;
 RebuildChatSearchIndex[ appName_String ] := catchMine @ LogChatTiming @ rebuildChatSearchIndex @ appName;
@@ -136,7 +177,7 @@ rebuildChatSearchIndex[ appName_String ] := Enclose[
 
         If[ ! AssociationQ @ $chatSearchIndex, $chatSearchIndex = <| |> ];
         chats = ConfirmMatch[ ListSavedChats @ appName, { ___Association }, "Chats" ];
-        ConfirmMatch[ addChatToSearchIndex /@ chats, { ___Success }, "AddChatToSearchIndex" ];
+        ConfirmMatch[ addChatToSearchIndex /@ chats, { (_Success|Missing[ "NoVectors" ])... }, "AddChatToSearchIndex" ];
         ConfirmBy[ saveChatIndex @ appName, FileExistsQ, "Save" ];
         ConfirmBy[ $chatSearchIndex[ appName ], AssociationQ, "Result" ]
     ],
@@ -156,7 +197,7 @@ rebuildChatSearchIndex[ All ] := Enclose[
 
         $chatSearchIndex = <| |>;
         chats = ConfirmMatch[ ListSavedChats[ ], { ___Association }, "Chats" ];
-        ConfirmMatch[ addChatToSearchIndex /@ chats, { ___Success }, "AddChatToSearchIndex" ];
+        ConfirmMatch[ addChatToSearchIndex /@ chats, { (_Success|Missing[ "NoVectors" ])... }, "AddChatToSearchIndex" ];
         ConfirmMatch[ saveChatIndex[ ], { ___? FileExistsQ }, "Save" ];
         $chatSearchIndex
     ],
