@@ -31,6 +31,9 @@ $inputStyle      = "Input";
 $$inputStyle     = "Input"|"Code";
 $$generatedStyle = "Echo"|"EchoAfter"|"EchoBefore"|"EchoTiming"|"Message"|"Output"|"Print";
 
+$$whitespaceString = _String? (StringMatchQ[ WhitespaceCharacter... ])
+$$whitespace       = $$whitespaceString | TextData @ $$whitespaceString | TextData @ { $$whitespaceString... };
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Wolfram Language Suggestions*)
@@ -1002,7 +1005,7 @@ postProcessNotebookSuggestions[ s_, RawBoxes[ cell_Cell ] ] :=
     postProcessNotebookSuggestions[ s, ExplodeCell @ cell ];
 
 postProcessNotebookSuggestions[ s_, cells0: { ___Cell, Cell[ __, $$generatedStyle, ___ ], ___Cell } ] :=
-    With[ { cells = DeleteCases[ cells0, Cell[ __, $$generatedStyle, ___ ] ] },
+    With[ { cells = DeleteCases[ cells0, Cell[ __, $$generatedStyle, ___ ] | Cell[ $$whitespace, "Text", ___ ] ] },
         postProcessNotebookSuggestions[ s, cells ] /; cells =!= { }
     ];
 
