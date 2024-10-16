@@ -987,8 +987,16 @@ postProcessNotebookSuggestions // beginDefinition;
 postProcessNotebookSuggestions[ suggestions_List ] :=
     postProcessNotebookSuggestions /@ suggestions;
 
-postProcessNotebookSuggestions[ s_String ] :=
-    postProcessNotebookSuggestions[ s, FormatChatOutput @ StringDelete[ s, $notebookPlaceholderString ] ];
+postProcessNotebookSuggestions[ string0_String ] := Enclose[
+    Module[ { string },
+        string = StringDelete[ string0, $notebookPlaceholderString ];
+        If[ StringMatchQ[ string, "```\n" ~~__~~ "\n```" ],
+            string = StringDelete[ string, { StartOfString~~"```\n", "\n```"~~EndOfString } ]
+        ];
+        postProcessNotebookSuggestions[ string0, FormatChatOutput @ string ]
+    ],
+    throwInternalFailure
+];
 
 postProcessNotebookSuggestions[ s_, RawBoxes[ cell_Cell ] ] :=
     postProcessNotebookSuggestions[ s, ExplodeCell @ cell ];
