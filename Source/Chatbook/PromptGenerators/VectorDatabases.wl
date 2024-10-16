@@ -598,7 +598,12 @@ vectorDBSearch[ dbName_String, messages0: { __Association }, prop: "Values"|"Res
 
         (* TODO: asynchronously pre-cache embeddings for each type *)
 
-        messages = ConfirmMatch[ insertContextPrompt @ messages0, { __Association }, "Messages" ];
+        messages = DeleteCases[
+            ConfirmMatch[ insertContextPrompt @ messages0, { __Association }, "Messages" ],
+            KeyValuePattern[ "Content" -> "" | { } ]
+        ];
+
+        If[ messages === { }, Throw @ { } ];
 
         conversationString = ConfirmBy[ getSmallContextString @ messages, StringQ, "ConversationString" ];
 
