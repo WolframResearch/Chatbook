@@ -142,7 +142,7 @@ loadChat // beginDefinition;
 loadChat[ as_Association ] := Enclose[
     Catch @ Module[ { data },
         data = ConfirmMatch[ getChatConversationData @ as, $$conversationFullData|_Missing, "Data" ];
-        If[ MissingQ @ data, Throw @ data ];
+        If[ MissingQ @ data, RemoveChatFromSearchIndex @ as; Throw @ data ];
         ConfirmBy[ restoreAttachments @ data, AssociationQ, "RestoreAttachments" ];
         data
     ],
@@ -247,6 +247,7 @@ deleteChat // beginDefinition;
 
 deleteChat[ appName_String, uuid_String ] := Enclose[
     Catch @ Module[ { root, dirs, dir },
+        RemoveChatFromSearchIndex[ appName, uuid ];
         root = ConfirmBy[ storageDirectory @ appName, StringQ, "Root" ];
         dirs = ConfirmMatch[ conversationFileNames[ uuid, root ], { ___String }, "Directories" ];
         If[ dirs === { }, Throw @ Missing[ "NotFound" ] ];
