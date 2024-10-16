@@ -70,6 +70,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `RebuildChatSearchIndex;
 `RelatedDocumentation;
 `RelatedWolframAlphaQueries;
+`RemoveChatFromSearchIndex;
 `SandboxLinguisticAssistantData;
 `SaveChat;
 `SearchChats;
@@ -226,6 +227,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "RebuildChatSearchIndex",
     "RelatedDocumentation",
     "RelatedWolframAlphaQueries",
+    "RemoveChatFromSearchIndex",
     "SandboxLinguisticAssistantData",
     "SaveChat",
     "SearchChats",
