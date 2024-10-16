@@ -269,9 +269,9 @@ SaveChat // beginDefinition;
 SaveChat // Options = { "AutoGenerateTitle" -> True, "AutoSaveOnly" -> False };
 
 SaveChat[ messages_, settings_Association, opts: OptionsPattern[ ] ] :=
-        With[ { autoOnly = OptionValue[ "AutoSaveOnly" ], auto = TrueQ @ settings[ "AutoSaveConversations" ] },
-            Missing[ "Skipped" ] /; autoOnly && ! auto
-        ];
+    With[ { autoOnly = OptionValue[ "AutoSaveOnly" ], auto = TrueQ @ settings[ "AutoSaveConversations" ] },
+        Missing[ "Skipped" ] /; autoOnly && ! auto
+    ];
 
 SaveChat[ messages: $$chatMessages, settings_Association, opts: OptionsPattern[ ] ] :=
     catchMine @ LogChatTiming @ saveChat[
