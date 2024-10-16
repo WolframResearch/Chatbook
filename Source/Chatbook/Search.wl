@@ -176,7 +176,7 @@ rebuildChatSearchIndex[ appName_String ] := Enclose[
 
         If[ ! AssociationQ @ $chatSearchIndex, $chatSearchIndex = <| |> ];
         chats = ConfirmMatch[ ListSavedChats @ appName, { ___Association }, "Chats" ];
-        ConfirmMatch[ addChatToSearchIndex /@ chats, { ___Success }, "AddChatToSearchIndex" ];
+        ConfirmMatch[ addChatToSearchIndex /@ chats, { (_Success|Missing[ "NoVectors" ])... }, "AddChatToSearchIndex" ];
         ConfirmBy[ saveChatIndex @ appName, FileExistsQ, "Save" ];
         ConfirmBy[ $chatSearchIndex[ appName ], AssociationQ, "Result" ]
     ],
@@ -196,7 +196,7 @@ rebuildChatSearchIndex[ All ] := Enclose[
 
         $chatSearchIndex = <| |>;
         chats = ConfirmMatch[ ListSavedChats[ ], { ___Association }, "Chats" ];
-        ConfirmMatch[ addChatToSearchIndex /@ chats, { ___Success }, "AddChatToSearchIndex" ];
+        ConfirmMatch[ addChatToSearchIndex /@ chats, { (_Success|Missing[ "NoVectors" ])... }, "AddChatToSearchIndex" ];
         ConfirmMatch[ saveChatIndex[ ], { ___? FileExistsQ }, "Save" ];
         $chatSearchIndex
     ],
