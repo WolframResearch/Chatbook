@@ -46,6 +46,7 @@ $defaultChatSettings = <|
     "MaxTokens"                      -> Automatic,
     "MaxToolResponses"               -> 5,
     "MergeMessages"                  -> True,
+    "MinimumResponsesToSave"         -> 1,
     "Model"                          :> $DefaultModel,
     "Multimodal"                     -> Automatic,
     "NotebookWriteMethod"            -> Automatic,

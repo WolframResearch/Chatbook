@@ -265,10 +265,20 @@ deleteChat // endDefinition;
 (* ::Section::Closed:: *)
 (*SaveChat*)
 SaveChat // beginDefinition;
-SaveChat // Options = { "AutoGenerateTitle" -> True };
+SaveChat // Options = { "AutoGenerateTitle" -> True, "AutoSaveOnly" -> False };
+
+SaveChat[ messages_, settings_Association, opts: OptionsPattern[ ] ] :=
+        With[ { autoOnly = OptionValue[ "AutoSaveOnly" ], auto = TrueQ @ settings[ "AutoSaveConversations" ] },
+            Missing[ "Skipped" ] /; autoOnly && ! auto
+        ];
 
 SaveChat[ messages: $$chatMessages, settings_Association, opts: OptionsPattern[ ] ] :=
-    catchMine @ LogChatTiming @ saveChat[ messages, settings, OptionValue[ "AutoGenerateTitle" ] ];
+    catchMine @ LogChatTiming @ saveChat[
+        messages,
+        settings,
+        OptionValue[ "AutoGenerateTitle" ],
+        OptionValue[ "AutoSaveOnly" ]
+    ];
 
 (* Save from a notebook: *)
 SaveChat[ nbo_NotebookObject, opts: OptionsPattern[ ] ] :=
@@ -276,7 +286,8 @@ SaveChat[ nbo_NotebookObject, opts: OptionsPattern[ ] ] :=
         LogChatTiming @ saveChat[
             chat,
             ensureConversationUUID @ nbo,
-            OptionValue[ "AutoGenerateTitle" ]
+            OptionValue[ "AutoGenerateTitle" ],
+            OptionValue[ "AutoSaveOnly" ]
         ]
     ];
 
@@ -286,7 +297,8 @@ SaveChat[ nbo_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] :=
         LogChatTiming @ saveChat[
             nbo,
             ensureConversationUUID[ nbo, settings ],
-            OptionValue[ "AutoGenerateTitle" ]
+            OptionValue[ "AutoGenerateTitle" ],
+            OptionValue[ "AutoSaveOnly" ]
         ]
     ];
 
@@ -334,7 +346,33 @@ ensureConversationUUID // endDefinition;
 (*saveChat*)
 saveChat // beginDefinition;
 
-saveChat[ messages0: $$chatMessages, settings0_, autoTitle_ ] := Enclose[
+saveChat[ nbo_NotebookObject, settings_, autoTitle_, auto_ ] := Enclose[
+    Catch @ Module[ { cellObjects, cells, messages },
+        cellObjects = ConfirmMatch[ Cells @ nbo, { ___CellObject }, "CellObjects" ];
+        If[ cellObjects === { }, Throw @ Missing[ "NoCells" ] ];
+        cells = ConfirmMatch[ notebookRead @ cellObjects, { ___Cell }, "Cells" ];
+        messages = ConfirmMatch[ CellToChatMessage[ #, settings ] & /@ cells, $$chatMessages, "Messages" ];
+        ConfirmMatch[ saveChat[ messages, settings, autoTitle, auto ], _Success | Missing[ "Skipped" ], "SaveChat" ]
+    ],
+    throwInternalFailure
+];
+
+saveChat[ messages_, settings_, autoTitle_, True ] :=
+    If[ TrueQ @ autoSaveQ[ messages, settings ],
+        saveChat0[ messages, settings, autoTitle ],
+        Missing[ "Skipped" ]
+    ];
+
+saveChat[ messages_, settings_, autoTitle_, auto_ ] :=
+    saveChat0[ messages, settings, autoTitle ];
+
+saveChat // endDefinition;
+
+
+
+saveChat0 // beginDefinition;
+
+saveChat0[ messages0: $$chatMessages, settings0_, autoTitle_ ] := Enclose[
     Module[ { settings, messages, appName, metadata, vectors, directory, attachments, smallSettings, as },
 
         settings = If[ TrueQ @ autoTitle, <| settings0, "AutoGenerateTitle" -> True |>, settings0 ];
@@ -400,18 +438,28 @@ saveChat[ messages0: $$chatMessages, settings0_, autoTitle_ ] := Enclose[
     throwInternalFailure
 ];
 
-saveChat[ nbo_NotebookObject, settings_, autoTitle_ ] := Enclose[
-    Catch @ Module[ { cellObjects, cells, messages },
-        cellObjects = ConfirmMatch[ Cells @ nbo, { ___CellObject }, "CellObjects" ];
-        If[ cellObjects === { }, Throw @ Missing[ "NoCells" ] ];
-        cells = ConfirmMatch[ notebookRead @ cellObjects, { ___Cell }, "Cells" ];
-        messages = ConfirmMatch[ CellToChatMessage[ #, settings ] & /@ cells, $$chatMessages, "Messages" ];
-        ConfirmMatch[ saveChat[ messages, settings, autoTitle ], _Success, "SaveChat" ]
+saveChat0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*autoSaveQ*)
+autoSaveQ // beginDefinition;
+
+autoSaveQ[ messages: $$chatMessages, settings_Association ] := Enclose[
+    Catch @ Module[ { minResponses, responses },
+        If[ settings[ "AutoSaveConversations" ] =!= True, Throw @ False ];
+        minResponses = ConfirmMatch[
+            Lookup[ settings, "MinimumResponsesToSave", 1 ],
+            _Integer? Positive,
+            "MinResponses"
+        ];
+        responses = Count[ messages, KeyValuePattern[ "Role" -> "Assistant" ] ];
+        responses >= minResponses
     ],
     throwInternalFailure
 ];
 
-saveChat // endDefinition;
+autoSaveQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
