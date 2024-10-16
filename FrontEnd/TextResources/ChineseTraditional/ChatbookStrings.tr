@@ -193,15 +193,15 @@
 "MenuItemShowCodeAssistanceInline" -> "\:9078\:53D6\:90E8\:5206\:7684\:7DE8\:78BC\:5C0F\:5E6B\:624B",
 "MenuItemShowContentSuggestions" -> "AI \:5167\:5BB9\:5EFA\:8B70",
 
-"WorkspaceToolbarButtonLabelSources" -> "Sources",
-"WorkspaceToolbarButtonLabelNew" -> "New",
+"WorkspaceToolbarButtonLabelSources" -> "\:8CC7\:6E90",
+"WorkspaceToolbarButtonLabelNew" -> "\:65B0\:589E",
 
 "WorkspaceToolbarButtonTooltipHistory" -> "[[Manage conversations]]",
 "WorkspaceToolbarButtonTooltipSources" -> "[[Add additional source material to the chat context]]",
 "WorkspaceToolbarButtonTooltipNew" -> "[[Start a new conversation]]",
 
-"CodeAssistanceInputGettingStarted" -> "Help me get started",
-"CodeAssistanceInputErrorMessage" -> "What went wrong?"
+"CodeAssistanceInputGettingStarted" -> "\:6C42\:52A9\:5982\:4F55\:958B\:59CB",
+"CodeAssistanceInputErrorMessage" -> "\:54EA\:88E1\:51FA\:4E86\:554F\:984C\:FF1F"
 }
 @|
 @|
