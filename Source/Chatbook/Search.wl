@@ -111,6 +111,46 @@ addChatToSearchIndex // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*RemoveChatFromSearchIndex*)
+RemoveChatFromSearchIndex // beginDefinition;
+
+RemoveChatFromSearchIndex[ as: KeyValuePattern[ "ConversationUUID" -> _String ] ] :=
+    catchMine @ LogChatTiming @ removeChatFromSearchIndex @ as;
+
+RemoveChatFromSearchIndex[ uuid_String ] :=
+    catchMine @ LogChatTiming @ removeChatFromSearchIndex @ uuid;
+
+RemoveChatFromSearchIndex[ app_String, uuid_String ] :=
+    catchMine @ LogChatTiming @ removeChatFromSearchIndex @ <| "AppName" -> app, "ConversationUUID" -> uuid |>;
+
+RemoveChatFromSearchIndex // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*removeChatFromSearchIndex*)
+removeChatFromSearchIndex // beginDefinition;
+
+removeChatFromSearchIndex[ spec_ ] := Enclose[
+    Catch @ Module[ { appName, uuid },
+        If[ $noSemanticSearch, Throw @ Missing[ "NoSemanticSearch" ] ];
+        appName = ConfirmBy[ spec[ "AppName" ], StringQ, "AppName" ];
+        uuid = ConfirmBy[ spec[ "ConversationUUID" ], StringQ, "ConversationUUID" ];
+
+        ConfirmBy[ loadChatSearchIndex @ appName, AssociationQ, "Load" ];
+        ConfirmAssert[ AssociationQ @ $chatSearchIndex[ appName ], "CheckIndex" ];
+
+        KeyDropFrom[ $chatSearchIndex[ appName ], uuid ];
+        ConfirmBy[ saveChatIndex @ appName, FileExistsQ, "Save" ];
+
+        Success[ "RemovedChatFromSearchIndex", <| "AppName" -> appName, "ConversationUUID" -> uuid |> ]
+    ],
+    throwInternalFailure
+];
+
+removeChatFromSearchIndex // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*RebuildChatSearchIndex*)
 RebuildChatSearchIndex // beginDefinition;
 RebuildChatSearchIndex[ appName_String ] := catchMine @ LogChatTiming @ rebuildChatSearchIndex @ appName;
