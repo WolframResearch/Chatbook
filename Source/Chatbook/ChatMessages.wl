@@ -108,6 +108,9 @@ constructMessages[ settings_Association? AssociationQ, cells: { __CellObject } ]
 constructMessages[ settings_Association? AssociationQ, cells: { __CellObject } ] :=
     constructMessages[ settings, notebookRead @ cells ];
 
+constructMessages[ settings_, { cells___Cell, _Cell? dynamicOutputCellQ } ] :=
+    constructMessages[ settings, { cells } ];
+
 constructMessages[ settings_Association? AssociationQ, { cells___Cell, cell_Cell } ] /; $cloudNotebooks :=
     constructMessages[ settings, makeChatMessages[ settings, { cells, parseInlineReferences @ cell } ] ];
 
@@ -181,6 +184,19 @@ constructMessages[ settings_Association? AssociationQ, messages0: { __Associatio
     ];
 
 constructMessages // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*dynamicOutputCellQ*)
+dynamicOutputCellQ // beginDefinition;
+
+dynamicOutputCellQ[ Cell[ boxes_BoxData, ___, "ChatOutput", ___ ] ] :=
+    ! FreeQ[ boxes, TagBox[ _, "DynamicTextDisplay", ___ ] ];
+
+dynamicOutputCellQ[ _ ] :=
+    False;
+
+dynamicOutputCellQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
