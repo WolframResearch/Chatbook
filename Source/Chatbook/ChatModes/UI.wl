@@ -777,7 +777,13 @@ userMessageLabel // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*userName*)
 userName // beginDefinition;
-userName[ ] := SelectFirst[ { $CloudAccountName, $Username }, StringQ, "You" ];
+
+userName[ ] := FirstCase[
+    Unevaluated @ { $CloudAccountName, CurrentValue[ "WolframCloudFullUserName" ], $Username },
+    expr_ :> With[ { user = expr }, user /; StringQ @ user ],
+    "You"
+];
+
 userName // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -785,7 +791,10 @@ userName // endDefinition;
 (*userImage*)
 userImage // beginDefinition;
 
-userImage[ ] := userImage[ $CloudUserID ];
+userImage[ ] := userImage @ FirstCase[
+    Unevaluated @ { $CloudUserID, CurrentValue[ "WolframCloudUserName" ] },
+    expr_ :> With[ { user = expr }, user /; StringQ @ user ]
+];
 
 userImage[ user_String ] := Enclose[
     Module[ { hash, url, image },
