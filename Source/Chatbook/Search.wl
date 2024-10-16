@@ -114,14 +114,14 @@ addChatToSearchIndex // endDefinition;
 (*RemoveChatFromSearchIndex*)
 RemoveChatFromSearchIndex // beginDefinition;
 
-RemoveChatFromSearchIndex[ as: KeyValuePattern[ "ConversationUUID" -> _String ] ] :=
-    catchMine @ LogChatTiming @ removeChatFromSearchIndex @ as;
+RemoveChatFromSearchIndex[ as: KeyValuePattern[ "ConversationUUID" -> uuid_String ] ] :=
+    catchMine @ LogChatTiming @ removeChatFromSearchIndex[ Lookup[ as, "AppName", All ], uuid ];
 
 RemoveChatFromSearchIndex[ uuid_String ] :=
-    catchMine @ LogChatTiming @ removeChatFromSearchIndex @ uuid;
+    catchMine @ LogChatTiming @ removeChatFromSearchIndex[ All, uuid ];
 
 RemoveChatFromSearchIndex[ app_String, uuid_String ] :=
-    catchMine @ LogChatTiming @ removeChatFromSearchIndex @ <| "AppName" -> app, "ConversationUUID" -> uuid |>;
+    catchMine @ LogChatTiming @ removeChatFromSearchIndex[ app, uuid ];
 
 RemoveChatFromSearchIndex // endExportedDefinition;
 
@@ -130,20 +130,21 @@ RemoveChatFromSearchIndex // endExportedDefinition;
 (*removeChatFromSearchIndex*)
 removeChatFromSearchIndex // beginDefinition;
 
-removeChatFromSearchIndex[ spec_ ] := Enclose[
-    Catch @ Module[ { appName, uuid },
-        If[ $noSemanticSearch, Throw @ Missing[ "NoSemanticSearch" ] ];
-        appName = ConfirmBy[ spec[ "AppName" ], StringQ, "AppName" ];
-        uuid = ConfirmBy[ spec[ "ConversationUUID" ], StringQ, "ConversationUUID" ];
-
-        ConfirmBy[ loadChatSearchIndex @ appName, AssociationQ, "Load" ];
-        ConfirmAssert[ AssociationQ @ $chatSearchIndex[ appName ], "CheckIndex" ];
-
-        KeyDropFrom[ $chatSearchIndex[ appName ], uuid ];
-        ConfirmBy[ saveChatIndex @ appName, FileExistsQ, "Save" ];
-
-        Success[ "RemovedChatFromSearchIndex", <| "AppName" -> appName, "ConversationUUID" -> uuid |> ]
+removeChatFromSearchIndex[ All, uuid_String ] := Enclose[
+    Catch @ Module[ { appNames },
+        ConfirmBy[ loadChatSearchIndex[ All ], AssociationQ, "Load" ];
+        appNames = ConfirmMatch[ Keys @ DeleteMissing @ $chatSearchIndex[[ All, uuid ]], { ___String }, "Names" ];
+        removeChatFromSearchIndex[ #, uuid ] & /@ appNames
     ],
+    throwInternalFailure
+];
+
+removeChatFromSearchIndex[ app_String, uuid_String ] := Enclose[
+    ConfirmBy[ loadChatSearchIndex @ app, AssociationQ, "Load" ];
+    ConfirmAssert[ AssociationQ @ $chatSearchIndex[ app ], "CheckIndex" ];
+    KeyDropFrom[ $chatSearchIndex[ app ], uuid ];
+    ConfirmBy[ saveChatIndex @ app, FileExistsQ, "Save" ];
+    Success[ "RemovedChatFromSearchIndex", <| "AppName" -> app, "ConversationUUID" -> uuid |> ],
     throwInternalFailure
 ];
 
