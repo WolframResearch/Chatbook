@@ -192,8 +192,9 @@ showContentSuggestions0[ nbo_NotebookObject, root: $$feObj ] := Enclose[
 
         NotebookDelete @ Cells[ nbo, AttachedCell -> True, CellStyle -> "AttachedContentSuggestions" ];
         selectionType = CurrentValue[ nbo, "SelectionType" ];
+        If[ selectionType === None && Cells @ nbo =!= { }, Throw @ Null ];
         $lastSelectionType = selectionType;
-        If[ ! MatchQ[ selectionType, "CellCaret"|"TextCaret"|"TextRange" ], Throw @ Null ];
+        If[ ! MatchQ[ selectionType, "CellCaret"|"TextCaret"|"TextRange"|None ], Throw @ Null ];
         contentData = If[ MatchQ[ root, _CellObject ], cellInformation[ root, "ContentData" ], None ];
         info = <| "ContentData" -> contentData, "SelectionType" -> selectionType |>;
 
@@ -207,21 +208,32 @@ showContentSuggestions0[ nbo_NotebookObject, root: $$feObj ] := Enclose[
 ];
 
 showContentSuggestions0[ nbo_NotebookObject, root: $$feObj, selectionInfo_Association ] := Enclose[
-    Catch @ Module[ { type, suggestionsContainer, attached, settings, context },
+    Catch @ Module[ { type, selection, suggestionsContainer, attached, settings, context },
 
         type = ConfirmBy[ suggestionsType @ selectionInfo, StringQ, "Type" ];
+        selection = selectionInfo[ "SelectionType" ];
 
         suggestionsContainer = ProgressIndicator[ Appearance -> "Necklace" ];
         $progressContainer = HoldComplete @ suggestionsContainer;
 
         attached = ConfirmMatch[
-            AttachCell[
-                NotebookSelection @ nbo,
-                contentSuggestionsCell[ Dynamic[ suggestionsContainer ] ],
-                { "WindowCenter", Bottom },
-                0,
-                { Center, Top },
-                RemovalConditions -> { "EvaluatorQuit", "MouseClickOutside" }
+            If[ selection === None,
+                AttachCell[
+                    nbo,
+                    contentSuggestionsCell[ Dynamic[ suggestionsContainer ] ],
+                    { Center, Top },
+                    0,
+                    { Center, Top },
+                    RemovalConditions -> { "EvaluatorQuit", "MouseClickOutside" }
+                ],
+                AttachCell[
+                    NotebookSelection @ nbo,
+                    contentSuggestionsCell[ Dynamic[ suggestionsContainer ] ],
+                    { "WindowCenter", Bottom },
+                    0,
+                    { Center, Top },
+                    RemovalConditions -> { "EvaluatorQuit", "MouseClickOutside" }
+                ]
             ],
             _CellObject,
             "Attached"
@@ -237,7 +249,11 @@ showContentSuggestions0[ nbo_NotebookObject, root: $$feObj, selectionInfo_Associ
             <| "MaxContextTokens" -> determineMaxContextTokens @ type |>
         };
 
-        context = ConfirmBy[ LogChatTiming @ getSuggestionsContext[ type, nbo, settings ], StringQ, "Context" ];
+        context = ConfirmBy[
+            Replace[ LogChatTiming @ getSuggestionsContext[ type, nbo, settings ], None -> "" ],
+            StringQ,
+            "Context"
+        ];
 
         $contextPrompt   = None;
         $selectionPrompt = None;
@@ -501,7 +517,7 @@ preprocessRelatedDocsContext[ context_String ] := Enclose[
         processed     = ConfirmBy[ preprocessRelatedDocsContext0 @ context, StringQ, "Processed" ];
         noPlaceholder = ConfirmBy[ StringDelete[ processed, $wlPlaceholderString ], StringQ, "NoPlaceholder" ];
         ConfirmBy[
-            StringReplace[
+            StringTrim @ StringReplace[
                 StringTrim @ noPlaceholder,
                 StartOfString ~~ "```wl" ~~ WhitespaceCharacter... ~~ "```" ~~ EndOfString :> $defaultWLContextString
             ],
@@ -971,8 +987,16 @@ postProcessNotebookSuggestions // beginDefinition;
 postProcessNotebookSuggestions[ suggestions_List ] :=
     postProcessNotebookSuggestions /@ suggestions;
 
-postProcessNotebookSuggestions[ s_String ] :=
-    postProcessNotebookSuggestions[ s, FormatChatOutput @ StringDelete[ s, $notebookPlaceholderString ] ];
+postProcessNotebookSuggestions[ string0_String ] := Enclose[
+    Module[ { string },
+        string = StringDelete[ string0, $notebookPlaceholderString ];
+        If[ StringMatchQ[ string, "```\n" ~~__~~ "\n```" ],
+            string = StringDelete[ string, { StartOfString~~"```\n", "\n```"~~EndOfString } ]
+        ];
+        postProcessNotebookSuggestions[ string0, FormatChatOutput @ string ]
+    ],
+    throwInternalFailure
+];
 
 postProcessNotebookSuggestions[ s_, RawBoxes[ cell_Cell ] ] :=
     postProcessNotebookSuggestions[ s, ExplodeCell @ cell ];
