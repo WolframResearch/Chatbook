@@ -337,7 +337,8 @@ contentSuggestionsCell[ Dynamic[ container_Symbol ] ] := Cell[
         FrameStyle     -> GrayLevel[ 0.75 ],
         RoundingRadius -> 5
     ],
-    "AttachedContentSuggestions"
+    "AttachedContentSuggestions",
+    Magnification -> Dynamic @ AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ]
 ];
 
 contentSuggestionsCell // endDefinition;
