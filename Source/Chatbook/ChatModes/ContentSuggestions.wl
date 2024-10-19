@@ -162,8 +162,8 @@ Delimiters -> "%%" ];
 $$emptyItem       = "" | { } | { "" };
 $$emptySuggestion = $$emptyItem | BoxData @ $$emptyItem | TextData @ $$emptyItem;
 
-$$inLabel  = "In["  ~~ DigitCharacter... ~~ "]" ~~ WhitespaceCharacter... ~~ ":=";
-$$outLabel = "Out[" ~~ DigitCharacter... ~~ "]" ~~ WhitespaceCharacter... ~~ ("="|"//");
+$$inLabel  = "In["  ~~ (DigitCharacter...|"\:f759") ~~ "]" ~~ WhitespaceCharacter... ~~ ":=";
+$$outLabel = "Out[" ~~ (DigitCharacter...|"\:f759") ~~ "]" ~~ WhitespaceCharacter... ~~ ("="|"//");
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
