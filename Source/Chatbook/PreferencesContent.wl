@@ -1113,7 +1113,7 @@ servicesSettingsPanel // endDefinition;
 servicesSettingsPanel0 // beginDefinition;
 
 servicesSettingsPanel0[ ] := Enclose[
-    Module[ { llmIcon, llmHelp, llmLabel, llmPanel, serviceCollapsableSection, serviceGrid, settingsLabel, settings },
+    Module[ { llmIcon, llmHelp, llmLabel, llmPanel, serviceCollapsibleSection, serviceGrid, settingsLabel, settings },
 
         llmLabel      = subsectionText @ tr[ "PreferencesContentLLMKitTitle" ];
         llmPanel      = makeLLMPanel[ ];
@@ -1121,7 +1121,7 @@ servicesSettingsPanel0[ ] := Enclose[
         settingsLabel = subsectionText @ tr[ "PreferencesContentDefaultService" ];
         settings      = ConfirmMatch[ makeModelSelector[ "Services" ], _Dynamic, "ServicesSettings" ];
 
-        serviceCollapsableSection =
+        serviceCollapsibleSection =
             DynamicModule[ { Typeset`openQ = False },
                 PaneSelector[
                     {
@@ -1192,7 +1192,7 @@ servicesSettingsPanel0[ ] := Enclose[
                 {
                     { Grid[ { { llmIcon, llmLabel, llmHelp } }, Alignment -> { Left, Center } ] },
                     { llmPanel },
-                    { serviceCollapsableSection },
+                    { serviceCollapsibleSection },
                     { settingsLabel },
                     { settings      }
                 },
@@ -1465,7 +1465,14 @@ createServiceAuthenticationDisplay // beginDefinition;
 
 createServiceAuthenticationDisplay[ service_, icon_, Dynamic[ display_ ] ] := Enclose[
     Module[ { type },
-        type = ConfirmBy[ credentialType @ service, StringQ, "CredentialType" ];
+        type = ConfirmBy[
+            Quiet[
+                credentialType @ service,
+                { ServiceConnections`SavedConnections::wname, ServiceConnections`ServiceConnections::wname }
+            ],
+            StringQ,
+            "CredentialType"
+        ];
         display = Grid[
             {
                 {
