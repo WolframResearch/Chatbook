@@ -120,18 +120,18 @@ preprocessExplodedCells0 // endDefinition;
 postProcessExplodedCells // beginDefinition;
 
 postProcessExplodedCells[
-    Cell[ BoxData @ RowBox @ { RowBox @ { "In", "[", n_String, "]" }, "="|":=", boxes__ }, "Input", a___ ]
+    Cell[ BoxData @ RowBox @ { RowBox @ { "In", "[", n__String, "]" }, "="|":=", boxes__ }, "Input", a___ ]
 ] := Cell[ BoxData @ RowBox @ { boxes }, "Input", CellLabel -> "In["<>n<>"]:=", a ];
 
 postProcessExplodedCells[
-    Cell[ BoxData @ RowBox @ { RowBox @ { "Out", "[", n_String, "]" }, "="|":=", boxes__ }, "Input", a___ ]
+    Cell[ BoxData @ RowBox @ { RowBox @ { "Out", "[", n__String, "]" }, "="|":=", boxes__ }, "Input", a___ ]
 ] := Cell[ BoxData @ RowBox @ { boxes }, "Output", CellLabel -> "Out["<>n<>"]=", a ];
 
 postProcessExplodedCells[ Cell[
     BoxData @ RowBox @ {
-        RowBox @ { RowBox @ { "In", "[", nIn_String, "]" }, ":=", in___ },
+        RowBox @ { RowBox @ { "In", "[", nIn__String, "]" }, ":=", in___ },
         $$ws...,
-        RowBox @ { RowBox @ { "Out", "[", nOut_String, "]" }, "=", out___ }
+        RowBox @ { RowBox @ { "Out", "[", nOut__String, "]" }, "=", out___ }
     },
     "Input"
 ] ] := postProcessExplodedCells /@ {
@@ -140,8 +140,8 @@ postProcessExplodedCells[ Cell[
 };
 
 postProcessExplodedCells[ cell: Cell[ __, "Input", ___ ] ] := DeleteCases[
-    cell /. { RowBox @ { RowBox @ { "In", "[", _, "]" }, "="|":=", boxes__ } :> RowBox @ { boxes } },
-    RowBox @ { RowBox @ { "Out", "[", _, "]" }, "="|":=", __ },
+    cell /. { RowBox @ { RowBox @ { "In", "[", __, "]" }, "="|":=", boxes__ } :> RowBox @ { boxes } },
+    RowBox @ { RowBox @ { "Out", "[", __, "]" }, "="|":=", __ },
     Infinity
 ];
 

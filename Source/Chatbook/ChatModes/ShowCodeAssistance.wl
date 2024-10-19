@@ -23,11 +23,12 @@ $codeAssistanceBaseSettings = <|
 
 $codeAssistanceWorkspaceSettings := <|
     $codeAssistanceBaseSettings,
-    "AutoGenerateTitle" -> True,
-    "ConversationUUID"  -> CreateUUID[ ],
-    "SetCellDingbat"    -> False,
-    "TabbedOutput"      -> False,
-    "WorkspaceChat"     -> True
+    "AutoGenerateTitle"     -> True,
+    "AutoSaveConversations" -> True,
+    "ConversationUUID"      -> CreateUUID[ ],
+    "SetCellDingbat"        -> False,
+    "TabbedOutput"          -> False,
+    "WorkspaceChat"         -> True
 |>;
 
 $codeAssistanceInlineSettings := <|
@@ -201,7 +202,7 @@ ShowCodeAssistance[ "Window", opts: OptionsPattern[ ] ] :=
         opts
     ];
 
-ShowCodeAssistance[ nbo_NotebookObject, "Window"|Automatic, opts: OptionsPattern[ ] ] :=
+ShowCodeAssistance[ nbo: _NotebookObject|None, "Window"|Automatic, opts: OptionsPattern[ ] ] :=
     catchMine @ withChatState @ withExtraInstructions[
         OptionValue[ "ExtraInstructions" ],
         LogChatTiming @ showCodeAssistanceWindow[
@@ -239,8 +240,10 @@ ShowCodeAssistance[ cell_CellObject, opts: OptionsPattern[ ] ] :=
     catchMine @ ShowCodeAssistance[ cell, "Inline", opts ];
 
 (* If given a CellObject, move selection to the cell, then use "Inline" on the parent notebook: *)
-ShowCodeAssistance[ cell_CellObject, "Inline"|Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
-    withChatState @ Module[ { nbo },
+ShowCodeAssistance[ cell0_CellObject, "Inline"|Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
+    withChatState @ Module[ { cell, nbo },
+        (* Use the top-level parent in case cell0 is an attached or inline cell: *)
+        cell = ConfirmMatch[ topParentCell @ cell0, _CellObject, "Cell" ];
         nbo = ConfirmMatch[ parentNotebook @ cell, _NotebookObject, "Notebook" ];
         SelectionMove[ cell, All, Cell ];
         ShowCodeAssistance[ nbo, "Inline", opts ]
@@ -269,7 +272,6 @@ $aliasRules = <|
             "EvaluateInput" -> True
         |>
     |>,
-    (* TODO: there should be an option that sets the minimum messages needed for auto saving *)
     "GettingStarted" -> <|
         "DefaultObject" :> EvaluationNotebook[ ],
         "Type"          -> "Window",
