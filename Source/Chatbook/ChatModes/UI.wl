@@ -564,7 +564,7 @@ inlineChatInputField[
                         ]
                     }
                 },
-                BaseStyle -> { Magnification -> $inputFieldGridMagnification }
+                BaseStyle -> { Magnification -> $inputFieldGridMagnification*0.8 }
             ],
             FrameMargins -> $inputFieldPaneMargins
         ],
