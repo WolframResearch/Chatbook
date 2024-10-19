@@ -1013,9 +1013,10 @@ postProcessNotebookSuggestions[ context_String, string0_String ] := Enclose[
             Replace[
                 StringSplit[ context, $notebookPlaceholderString :> Placeholder ],
                 {
-                    { s_String, Placeholder }           :> { s, "" },
-                    { Placeholder, s_String }           :> { "", s },
-                    { a_String, Placeholder, b_String } :> { a , b }
+                    { b_String, Placeholder, a_String } :> { b , a  },
+                    { b_String, Placeholder           } :> { b , "" },
+                    {           Placeholder, a_String } :> { "", a  },
+                    {                                 } :> { "", "" }
                 }
             ],
             { _String, _String },
