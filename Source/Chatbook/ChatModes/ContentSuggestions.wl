@@ -130,10 +130,18 @@ $notebookSuggestionsPrompt := If[ $inputStyle === "Code", $packageSuggestionsPro
 $notebookSuggestionsPrompt0 = StringTemplate[ "\
 Complete the following by writing markdown text that can be inserted into \"%%Placeholder%%\".
 Do your best to match the existing style (whitespace, line breaks, etc.).
-Write built-in Wolfram Language symbols as markdown links: [Table](paclet:ref/Table).
-Write Wolfram Language code as code blocks: ```wl\nCode here\n```.
-Your suggested text will be inserted into %%Placeholder%%, so be careful not to repeat the immediately surrounding text.
-Respond with the completion text and nothing else.
+
+- In text, format built-in Wolfram Language symbols as markdown links: [Table](paclet:ref/Table).
+- When writing code, only write the inputs.\
+ Do not include the corresponding output and do not state what the expected output will be.\
+ The user will be given the opportunity to run all inputs to regenerate outputs as needed.
+- Write Wolfram Language code as code blocks, specifying `wl` as the language. For example:
+```wl
+Table[i^2, {i, 10}]
+```
+- Your suggested text will be inserted into %%Placeholder%%,\
+ so be careful not to repeat the immediately surrounding text.
+- Respond with the completion text and nothing else.
 
 %%RelatedDocumentation%%",
 Delimiters -> "%%" ];
