@@ -1465,7 +1465,14 @@ createServiceAuthenticationDisplay // beginDefinition;
 
 createServiceAuthenticationDisplay[ service_, icon_, Dynamic[ display_ ] ] := Enclose[
     Module[ { type },
-        type = ConfirmBy[ credentialType @ service, StringQ, "CredentialType" ];
+        type = ConfirmBy[
+            Quiet[
+                credentialType @ service,
+                { ServiceConnections`SavedConnections::wname, ServiceConnections`ServiceConnections::wname }
+            ],
+            StringQ,
+            "CredentialType"
+        ];
         display = Grid[
             {
                 {
