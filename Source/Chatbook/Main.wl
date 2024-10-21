@@ -79,6 +79,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `ShowCodeAssistance;
 `ShowContentSuggestions;
 `StringToBoxes;
+`ToggleChatInclusion;
 `WriteChatOutputCell;
 
 (* ::**************************************************************************************************************:: *)
@@ -236,6 +237,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "ShowCodeAssistance",
     "ShowContentSuggestions",
     "StringToBoxes",
+    "ToggleChatInclusion",
     "WriteChatOutputCell"
 };
 

@@ -24,6 +24,54 @@ Use this to determine where the user is in the notebook.
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*ToggleChatInclusion*)
+ToggleChatInclusion // beginDefinition;
+
+ToggleChatInclusion[ ] :=
+    catchMine @ ToggleChatInclusion @ InputNotebook[ ];
+
+ToggleChatInclusion[ obj: _CellObject|_NotebookObject ] := catchMine @ Enclose[
+    ToggleChatInclusion[ obj, ! ConfirmMatch[ currentlyIncludedQ @ obj, True|False, "Included" ] ],
+    throwInternalFailure
+];
+
+ToggleChatInclusion[ obj: _CellObject|_NotebookObject, True ] := catchMine @ Enclose[
+    ConfirmMatch[ includeInChatHistory @ obj, True, "Include" ],
+    throwInternalFailure
+];
+
+ToggleChatInclusion[ obj: _CellObject|_NotebookObject, False ] := catchMine @ Enclose[
+    ConfirmMatch[ excludeFromChatHistory @ obj, False, "Exclude" ],
+    throwInternalFailure
+];
+
+ToggleChatInclusion // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*currentlyIncludedQ*)
+currentlyIncludedQ // beginDefinition;
+currentlyIncludedQ[ obj_ ] := currentlyIncludedQ[ obj, CurrentChatSettings[ obj, "ExcludeFromChat" ] ];
+currentlyIncludedQ[ obj_, True ] := False;
+currentlyIncludedQ[ obj_, False|$$unspecified ] := True;
+currentlyIncludedQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*includeInChatHistory*)
+includeInChatHistory // beginDefinition;
+includeInChatHistory[ obj_ ] := (CurrentChatSettings[ obj, "ExcludeFromChat" ] = Inherited; currentlyIncludedQ @ obj);
+includeInChatHistory // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*excludeFromChatHistory*)
+excludeFromChatHistory // beginDefinition;
+excludeFromChatHistory[ obj_ ] := (CurrentChatSettings[ obj, "ExcludeFromChat" ] = True; currentlyIncludedQ @ obj);
+excludeFromChatHistory // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Context from other notebooks*)
 
 (* ::**************************************************************************************************************:: *)
