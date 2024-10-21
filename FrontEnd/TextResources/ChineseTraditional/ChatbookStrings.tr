@@ -193,15 +193,15 @@
 "MenuItemShowCodeAssistanceInline" -> "\:9078\:53D6\:90E8\:5206\:7684\:7DE8\:78BC\:5C0F\:5E6B\:624B",
 "MenuItemShowContentSuggestions" -> "AI \:5167\:5BB9\:5EFA\:8B70",
 
-"WorkspaceToolbarButtonLabelSources" -> "Sources",
-"WorkspaceToolbarButtonLabelNew" -> "New",
+"WorkspaceToolbarButtonLabelSources" -> "\:8CC7\:6E90",
+"WorkspaceToolbarButtonLabelNew" -> "\:65B0\:589E",
 
-"WorkspaceToolbarButtonTooltipHistory" -> "[[Manage conversations]]",
-"WorkspaceToolbarButtonTooltipSources" -> "[[Add additional source material to the chat context]]",
-"WorkspaceToolbarButtonTooltipNew" -> "[[Start a new conversation]]",
+"WorkspaceToolbarButtonTooltipHistory" -> "[[\:7BA1\:7406\:6703\:8A71]]",
+"WorkspaceToolbarButtonTooltipSources" -> "[[\:589E\:6DFB\:984D\:5916\:4F86\:6E90\:8CC7\:6599\:81F3\:804A\:5929\:7CFB\:7D71\:4E0A\:4E0B\:6587]]",
+"WorkspaceToolbarButtonTooltipNew" -> "[[\:958B\:59CB\:65B0\:589E\:6703\:8A71]]",
 
-"CodeAssistanceInputGettingStarted" -> "Help me get started",
-"CodeAssistanceInputErrorMessage" -> "What went wrong?"
+"CodeAssistanceInputGettingStarted" -> "\:6C42\:52A9\:5982\:4F55\:958B\:59CB",
+"CodeAssistanceInputErrorMessage" -> "\:54EA\:88E1\:51FA\:4E86\:554F\:984C\:FF1F"
 }
 @|
 @|
