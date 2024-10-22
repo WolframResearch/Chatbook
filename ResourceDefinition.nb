@@ -12537,7 +12537,7 @@ Notebook[
             CellID -> 57534933
            ],
            Cell[
-            "Connor Gray, Theodore Gray, Richard Hennigan",
+            "Connor Gray, Theodore Gray, Richard Hennigan, Kevin Daily",
             "Text",
             CellEventActions -> {
              Inherited,
