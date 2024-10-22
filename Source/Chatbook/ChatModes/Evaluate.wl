@@ -45,6 +45,7 @@ evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue
         input = "";
         SelectionMove[ nbo, After, Notebook, AutoScroll -> True ];
         NotebookWrite[ nbo, cell ];
+        moveChatInputToBottom @ nbo;
         cellObject = ConfirmMatch[ First[ Cells[ nbo, CellTags -> uuid ], $Failed ], _CellObject, "CellObject" ];
         CurrentValue[ cellObject, CellTags ] = { };
         ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]
@@ -53,6 +54,21 @@ evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue
 ];
 
 evaluateWorkspaceChat // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*moveChatInputToBottom*)
+moveChatInputToBottom // beginDefinition;
+
+moveChatInputToBottom[ nbo_NotebookObject ] :=
+    Catch @ Module[ { attached },
+        attached = Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField", CellTags -> "Top" ];
+        If[ attached === { }, Throw @ Null ];
+        NotebookDelete @ attached;
+        ChatbookAction[ "AttachWorkspaceChatInput", nbo, Bottom ]
+    ];
+
+moveChatInputToBottom // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
