@@ -56,21 +56,6 @@ evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue
 evaluateWorkspaceChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*moveChatInputToBottom*)
-moveChatInputToBottom // beginDefinition;
-
-moveChatInputToBottom[ nbo_NotebookObject ] :=
-    Catch @ Module[ { attached },
-        attached = Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField", CellTags -> "Top" ];
-        If[ attached === { }, Throw @ Null ];
-        NotebookDelete @ attached;
-        ChatbookAction[ "AttachWorkspaceChatInput", nbo, Bottom ]
-    ];
-
-moveChatInputToBottom // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*evaluateInlineChat*)
 evaluateInlineChat // beginDefinition;

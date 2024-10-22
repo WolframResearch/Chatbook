@@ -96,6 +96,7 @@ newChatButton[ Dynamic[ nbo_ ] ] := Button[
     NotebookDelete @ Cells @ nbo;
     CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ];
     CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = "";
+    moveChatInputToTop @ nbo;
     ,
     Appearance -> "Suppressed"
 ];
@@ -245,6 +246,40 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
     Magnification :> AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ],
     Selectable    -> True
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Moving input field between bottom/top of window*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*moveChatInputToTop*)
+moveChatInputToTop // beginDefinition;
+
+moveChatInputToTop[ nbo_NotebookObject ] :=
+    Catch @ Module[ { attached },
+        attached = Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField", CellTags -> "Bottom" ];
+        If[ attached === { }, Throw @ Null ];
+        NotebookDelete @ attached;
+        ChatbookAction[ "AttachWorkspaceChatInput", nbo, Top ]
+    ];
+
+moveChatInputToTop // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*moveChatInputToBottom*)
+moveChatInputToBottom // beginDefinition;
+
+moveChatInputToBottom[ nbo_NotebookObject ] :=
+    Catch @ Module[ { attached },
+        attached = Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField", CellTags -> "Top" ];
+        If[ attached === { }, Throw @ Null ];
+        NotebookDelete @ attached;
+        ChatbookAction[ "AttachWorkspaceChatInput", nbo, Bottom ]
+    ];
+
+moveChatInputToBottom // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
