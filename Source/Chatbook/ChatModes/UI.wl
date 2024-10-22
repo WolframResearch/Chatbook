@@ -228,10 +228,6 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
             {
                 "ReturnKeyDown" :> (
                     Needs[ "Wolfram`Chatbook`" -> None ];
-                    If[ # =!= {},
-                        NotebookDelete @ #;
-                        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachWorkspaceChatInput", thisNB ]
-                    ]& @ Cells[ thisNB, AttachedCell -> True, CellStyle -> "ChatInputField", CellTags -> "Top" ];
                     Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
                         "EvaluateWorkspaceChat",
                         thisNB,
@@ -245,7 +241,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
     ],
     "ChatInputField",
     Background    -> $inputFieldOuterBackground,
-    CellTags -> location,
+    CellTags      -> location,
     Magnification :> AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ],
     Selectable    -> True
 ];
