@@ -5,7 +5,7 @@ PacletObject[ <|
     "WolframVersion" -> "14.1+",
     "Description"    -> "Wolfram Notebooks + LLMs",
     "License"        -> "MIT",
-    "Creator"        -> "Connor Gray, Theodore Gray, Richard Hennigan",
+    "Creator"        -> "Connor Gray, Theodore Gray, Richard Hennigan, Kevin Daily",
     "Icon"           -> "Assets/Images/PacletIcon.png",
     "ReleaseID"      -> "$RELEASE_ID$",
     "ReleaseDate"    -> "$RELEASE_DATE$",

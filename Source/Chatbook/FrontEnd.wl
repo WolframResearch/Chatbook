@@ -358,7 +358,7 @@ notebookInformation[ All ] :=
     notebookInformation @ Notebooks[ ];
 
 notebookInformation[ nbo_NotebookObject ] := Enclose[
-    Catch @ Module[ { throwIfClosed, info, visible, windowClickSelect, selected, input, settings },
+    Catch @ Module[ { throwIfClosed, info, visible, windowFrame, selected, input, settings },
 
         throwIfClosed = Replace[ Missing[ "NotebookClosed", ___ ] | $Failed :> Throw @ missingNotebook @ nbo ];
 
@@ -370,10 +370,10 @@ notebookInformation[ nbo_NotebookObject ] := Enclose[
             "Visible"
         ];
 
-        windowClickSelect = ConfirmMatch[
-            throwIfClosed @ AbsoluteCurrentValue[ nbo, WindowClickSelect ],
-            True|False|Inherited,
-            "WindowClickSelect"
+        windowFrame = ConfirmMatch[
+            throwIfClosed @ AbsoluteCurrentValue[ nbo, WindowFrame ],
+            _String|$$unspecified,
+            "WindowFrame"
         ];
 
         selected = SelectedNotebook[ ] === nbo;
@@ -390,13 +390,13 @@ notebookInformation[ nbo_NotebookObject ] := Enclose[
 
         ConfirmBy[
             KeySort @ DeleteMissing @ <|
-                "ChatNotebookSettings" -> settings,
-                "ID"                   -> tinyHash @ nbo,
-                "InputNotebook"        -> TrueQ @ input,
                 "NotebookObject"       -> nbo,
+                "ChatNotebookSettings" -> settings,
+                "ShortID"              -> tinyHash @ nbo,
+                "InputNotebook"        -> TrueQ @ input,
                 "SelectedNotebook"     -> TrueQ @ selected,
                 "Visible"              -> TrueQ @ visible,
-                "WindowClickSelect"    -> TrueQ @ windowClickSelect,
+                "WindowFrame"          -> windowFrame,
                 info
             |>,
             AssociationQ,
@@ -436,28 +436,38 @@ notebooksInformation[ { } ] := { };
 
 notebooksInformation[ notebooks: { __NotebookObject } ] := Enclose[
     Module[
-        { nbObjects, visible, windowClickSelect, selected, input, id, settings, feSettings, info, transposed, result },
+        { nbObjects, visible, windowFrame, selected, input, id, settings, feSettings, info, transposed, result },
 
-        nbObjects         = Thread[ "NotebookObject"    -> notebooks ];
-        visible           = Thread[ "Visible"           -> AbsoluteCurrentValue[ notebooks, Visible ] ];
-        windowClickSelect = Thread[ "WindowClickSelect" -> AbsoluteCurrentValue[ notebooks, WindowClickSelect ] ];
-        selected          = Thread[ "SelectedNotebook"  -> Map[ SameAs @ SelectedNotebook[ ], notebooks ] ];
-        input             = Thread[ "InputNotebook"     -> Map[ SameAs @ InputNotebook[ ], notebooks ] ];
-        id                = Thread[ "ID"                -> tinyHash /@ notebooks ];
+        nbObjects   = Thread[ "NotebookObject"   -> notebooks ];
+        visible     = Thread[ "Visible"          -> AbsoluteCurrentValue[ notebooks, Visible ] ];
+        windowFrame = Thread[ "WindowFrame"      -> AbsoluteCurrentValue[ notebooks, WindowFrame ] ];
+        selected    = Thread[ "SelectedNotebook" -> Map[ SameAs @ SelectedNotebook[ ], notebooks ] ];
+        input       = Thread[ "InputNotebook"    -> Map[ SameAs @ InputNotebook[ ], notebooks ] ];
+        id          = Thread[ "ShortID"          -> tinyHash /@ notebooks ];
 
         settings = Thread[
             "ChatNotebookSettings" -> AbsoluteCurrentValue[ notebooks, { TaggingRules, "ChatNotebookSettings" } ]
         ];
 
-        If[ MemberQ[ settings, "ChatNotebookSettings" -> Inherited ],
-            feSettings = AbsoluteCurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ];
-            settings = Replace[ settings, Inherited -> feSettings, { 2 } ]
+        If[ MemberQ[ settings, "ChatNotebookSettings" -> Inherited|_List ],
+            feSettings = GeneralUtilities`ToAssociations @ AbsoluteCurrentValue[
+                $FrontEnd,
+                { TaggingRules, "ChatNotebookSettings" }
+            ];
+            settings = Replace[
+                settings,
+                {
+                    Inherited  -> feSettings,
+                    rules_List :> <| feSettings, rules |>
+                },
+                { 2 }
+            ]
         ];
 
         info = notebookInformation0 /@ notebooks;
 
         transposed = ConfirmBy[
-            Transpose @ { info, nbObjects, visible, windowClickSelect, selected, input, id, settings },
+            Transpose @ { nbObjects, info, visible, windowFrame, selected, input, id, settings },
             ListQ,
             "Transpose"
         ];
