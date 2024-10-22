@@ -58,6 +58,9 @@
 "FeedbackDialogBodyPreviewData" -> "Preview data to be sent",
 "FeedbackDialogThanks" -> "Thanks for your feedback!",
 
+"FormattingInsertContentAndEvaluateLabel" -> "Insert and evaluate",
+"FormattingCopyToClipboardLabel" -> "Copy",
+"FormattingInsertContentLabel" -> "Insert",
 "FormattingInsertContentAndEvaluateTooltip" -> "Insert content as new input cell below and evaluate",
 "FormattingCopyToClipboardTooltip" -> "Copy to clipboard",
 "FormattingInsertContentTooltip" -> "Insert content as new input cell below",

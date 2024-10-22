@@ -544,14 +544,14 @@ Cell[
 
 
 Cell[
-    StyleData[ "ChatCodeBlockButtonPanel" ],
+    StyleData[ "ChatCodeBlockButtonPanel" ](* ,
     TemplateBoxOptions -> {
         DisplayFunction -> Function @ Evaluate @ PanelBox[
             #,
             Appearance   -> $floatingButtonNinePatch,
             ImageMargins -> 0
         ]
-    }
+    } *)
 ]
 
 
@@ -629,13 +629,32 @@ Cell[
 Cell[
     StyleData[ "ChatCodeBlockTemplate" ],
     TemplateBoxOptions -> {
-        DisplayFunction -> Function @ FrameBox[
-            #,
-            Background   -> GrayLevel[ 1 ],
-            FrameMargins -> { { 10, 10 }, { 6, 6 } },
-            FrameStyle   -> Directive[ AbsoluteThickness[ 1 ], GrayLevel[ 0.92941 ] ],
-            ImageMargins -> { { 0, 0 }, { 8, 8 } },
-            ImageSize    -> { Full, Automatic }
+        DisplayFunction -> Function @
+        GridBox[
+            {
+                {
+                    FrameBox[
+                        #1,
+                        Background   -> GrayLevel[ 1 ],
+                        FrameMargins -> { { 10, 10 }, { 6, 6 } },
+                        FrameStyle   -> Directive[ AbsoluteThickness[ 1 ], GrayLevel[ 0.92941 ] ],
+                        ImageMargins -> { { 0, 0 }, { 0, 8 } },
+                        ImageSize    -> { Full, Automatic }
+                    ] },
+                {
+                    FrameBox[
+                        DynamicBox[ ToBoxes @ Wolfram`Chatbook`Common`floatingButtonGrid[ #1, #2 ] ],
+                        Background   -> GrayLevel[ 1 ],
+                        FrameMargins -> { { 7, 2 }, { 2, 2 } },
+                        FrameStyle   -> Directive[ AbsoluteThickness[ 1 ], GrayLevel[ 0.92941 ] ],
+                        ImageMargins -> { { 0, 0 }, { 8, -1 } }, (* negative margin to barely overlap the frame above *)
+                        ImageSize    -> { Full, Automatic }
+                    ] }
+            },
+            DefaultBaseStyle -> "Column",
+            GridBoxAlignment -> { "Columns" -> { { Left } } },
+            GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+            GridBoxSpacings -> { "Columns" -> { { 0 } }, "Rows" -> { { 0 } } }
         ]
     }
 ]

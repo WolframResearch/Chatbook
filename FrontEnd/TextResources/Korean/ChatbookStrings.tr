@@ -58,6 +58,9 @@
 "FeedbackDialogBodyPreviewData" -> "\:C804\:C1A1\:D560 \:B370\:C774\:D130 \:BBF8\:B9AC\:BCF4\:AE30",
 "FeedbackDialogThanks" -> "\:D53C\:B4DC\:BC31\:C744 \:BCF4\:B0B4 \:C8FC\:C154\:C11C \:AC10\:C0AC\:D569\:B2C8\:B2E4!",
 
+"FormattingInsertContentAndEvaluateLabel" -> "Insert and evaluate",
+"FormattingCopyToClipboardLabel" -> "Copy",
+"FormattingInsertContentLabel" -> "Insert",
 "FormattingInsertContentAndEvaluateTooltip" -> "\:C544\:B798\:C5D0 \:CF58\:D150\:CE20\:B97C \:C0C8 \:C785\:B825 \
 \:C140\:B85C \:C0BD\:C785\:D558\:ACE0 \:D3C9\:AC00",
 "FormattingCopyToClipboardTooltip" -> "\:D074\:B9BD\:BCF4\:B4DC\:C5D0 \:BCF5\:C0AC",

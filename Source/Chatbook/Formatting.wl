@@ -669,26 +669,26 @@ formatTextString // endDefinition;
 (*floatingButtonGrid*)
 floatingButtonGrid // beginDefinition;
 
-floatingButtonGrid // Attributes = { HoldFirst };
-
-floatingButtonGrid[ attached_, cell_, lang_ ] := RawBoxes @ TemplateBox[
-    {
-        ToBoxes @ Grid[
+floatingButtonGrid[ cell_Cell, lang_ ] :=
+    Module[ { cellObj },
+        cellObj = topParentCell @ EvaluationCell[ ];
+        Grid[
             {
                 checkTemplateBoxes @ {
-                    button[ evaluateLanguageLabel @ lang, insertCodeBelow[ cell, True ]; NotebookDelete @ attached ],
-                    button[ $insertInputButtonLabel, insertCodeBelow[ cell, False ]; NotebookDelete @ attached ],
-                    button[ $copyToClipboardButtonLabel, copyCode @ cell; NotebookDelete @ attached ]
+                    button[ evaluateLanguageLabel @ lang, insertCodeBelow[ cell, True ] ],
+                    button[
+                        If[ TrueQ @ CurrentChatSettings[ cellObj, "WorkspaceChat" ], $insertInputButtonLabelWorkspaceChat, $insertInputButtonLabel ],
+                        insertCodeBelow[ cell, False ] ],
+                    button[ $copyToClipboardButtonLabel, copyCode @ cell ]
                 }
             },
             Alignment  -> Top,
             Spacings   -> 0.2,
             FrameStyle -> GrayLevel[ 0.85 ]
         ]
-    },
-    "ChatCodeBlockButtonPanel"
-];
+    ]
 
+(* TODO: I'm assuming this still works on the cloud as written *)
 (* For cloud notebooks (no attached cell) *)
 floatingButtonGrid[ string_, lang_ ] := RawBoxes @ TemplateBox[
     {
@@ -725,7 +725,13 @@ checkTemplateBoxes // endDefinition;
 evaluateLanguageLabel[ name_String ] :=
     With[ { icon = $languageIcons @ name },
         fancyTooltip[
-            MouseAppearance[ buttonMouseover[ buttonFrameDefault @ icon, buttonFrameActive @ icon ], "LinkHand" ],
+            MouseAppearance[
+                buttonMouseover[
+                    buttonFrameDefault[ buttonPane @ icon, False ],
+                    buttonFrameActive[ buttonPane @ icon, False ]
+                ],
+                "LinkHand"
+            ],
             tr[ "FormattingInsertContentAndEvaluateTooltip" ]
         ] /; MatchQ[ icon, _Graphics | _Image ]
     ];
@@ -747,8 +753,8 @@ evaluateLanguageLabel[ ___ ] := $insertEvaluateButtonLabel;
 $copyToClipboardButtonLabel := $copyToClipboardButtonLabel = fancyTooltip[
     MouseAppearance[
         buttonMouseover[
-            buttonFrameDefault @ RawBoxes @ TemplateBox[ { }, "AssistantCopyClipboard" ],
-            buttonFrameActive @ RawBoxes @ TemplateBox[ { }, "AssistantCopyClipboard" ]
+            buttonFrameDefault @ labeledIcon[ "AssistantCopyClipboard", "FormattingCopyToClipboardLabel" ],
+            buttonFrameActive @ labeledIcon[ "AssistantCopyClipboard", "FormattingCopyToClipboardLabel" ]
         ],
         "LinkHand"
     ],
@@ -761,8 +767,22 @@ $copyToClipboardButtonLabel := $copyToClipboardButtonLabel = fancyTooltip[
 $insertInputButtonLabel := $insertInputButtonLabel = fancyTooltip[
     MouseAppearance[
         buttonMouseover[
-            buttonFrameDefault @ RawBoxes @ TemplateBox[ { }, "AssistantCopyBelow" ],
-            buttonFrameActive @ RawBoxes @ TemplateBox[ { }, "AssistantCopyBelow" ]
+            buttonFrameDefault @ labeledIcon[ "AssistantCopyBelow", "FormattingInsertContentLabel" ],
+            buttonFrameActive @ labeledIcon[ "AssistantCopyBelow", "FormattingInsertContentLabel" ]
+        ],
+        "LinkHand"
+    ],
+    tr[ "FormattingInsertContentTooltip" ]
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$insertInputButtonLabelWorkspaceChat*)
+$insertInputButtonLabelWorkspaceChat := $insertInputButtonLabelWorkspaceChat = fancyTooltip[
+    MouseAppearance[
+        buttonMouseover[
+            buttonFrameDefault @ labeledIcon[ "AssistantCopyRight", "FormattingInsertContentLabel" ],
+            buttonFrameActive @ labeledIcon[ "AssistantCopyRight", "FormattingInsertContentLabel" ]
         ],
         "LinkHand"
     ],
@@ -775,8 +795,8 @@ $insertInputButtonLabel := $insertInputButtonLabel = fancyTooltip[
 $insertEvaluateButtonLabel := $insertEvaluateButtonLabel = fancyTooltip[
     MouseAppearance[
         buttonMouseover[
-            buttonFrameDefault @ RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ],
-            buttonFrameActive @ RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ]
+            buttonFrameDefault @ labeledIcon[ "AssistantEvaluate", "FormattingInsertContentAndEvaluateLabel" ],
+            buttonFrameActive @ labeledIcon[ "AssistantEvaluate", "FormattingInsertContentAndEvaluateLabel" ]
         ],
         "LinkHand"
     ],
@@ -804,10 +824,14 @@ insertCodeBelow[ cell_Cell, evaluate_ ] :=
     Module[ { cellObj, nbo },
         cellObj = topParentCell @ EvaluationCell[ ];
         nbo = parentNotebook @ cellObj;
-        insertAfterChatGeneratedCells[ cellObj, cell ];
-        If[ TrueQ @ evaluate,
-            selectionEvaluateCreateCell @ nbo,
-            SelectionMove[ nbo, After, CellContents ]
+        If[ TrueQ @ CurrentChatSettings[ cellObj, "WorkspaceChat" ],
+            insertCodeInUserNotebook[ nbo, getCodeBlockContent @ cell, evaluate ]
+            ,
+            insertAfterChatGeneratedCells[ cellObj, getCodeBlockContent @ cell ];
+            If[ TrueQ @ evaluate,
+                selectionEvaluateCreateCell @ nbo,
+                SelectionMove[ nbo, After, CellContents ]
+            ]
         ]
     ];
 
@@ -979,7 +1003,7 @@ stripMarkdownBoxes // endDefinition;
 getCodeBlockContent // beginDefinition;
 getCodeBlockContent[ cell_CellObject ] := getCodeBlockContent @ NotebookRead @ cell;
 getCodeBlockContent[ Cell[ BoxData[ boxes_, ___ ], ___, "ChatCodeBlock", ___ ] ] := getCodeBlockContent @ boxes;
-getCodeBlockContent[ TemplateBox[ { boxes_ }, "ChatCodeBlockTemplate", ___ ] ] := getCodeBlockContent @ boxes;
+getCodeBlockContent[ TemplateBox[ { boxes_, ___ }, "ChatCodeBlockTemplate", ___ ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ Cell[ BoxData[ boxes_, ___ ] ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ DynamicModuleBox[ _, boxes_, ___ ] ] := getCodeBlockContent @ boxes;
 getCodeBlockContent[ TagBox[ boxes_, _EventHandlerTag, ___ ] ] := getCodeBlockContent @ boxes;
@@ -1017,7 +1041,8 @@ button // Attributes = { HoldRest };
 
 button[ label_, code_, opts___ ] := Button[
     label, code, opts,
-    Appearance -> Dynamic @ FEPrivate`FrontEndResource[ "FEExpressions", "SuppressMouseDownNinePatchAppearance" ]
+    Appearance -> Dynamic @ FEPrivate`FrontEndResource[ "FEExpressions", "SuppressMouseDownNinePatchAppearance" ],
+    BaselinePosition -> Baseline
 ];
 
 button // endDefinition;
@@ -1025,37 +1050,50 @@ button // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*buttonMouseover*)
-buttonMouseover[ a_, b_ ] := Mouseover[ a, b ];
+buttonMouseover[ a_, b_ ] := Mouseover[ a, b, BaselinePosition -> Baseline ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*buttonFrameDefault*)
-buttonFrameDefault[ expr_ ] :=
+buttonFrameDefault[ expr_, extendMarginsQ: True|False : True ] :=
     Framed[
-        buttonPane @ expr,
-        FrameStyle     -> GrayLevel[ 0.95 ],
-        Background     -> GrayLevel[ 1 ],
-        FrameMargins   -> 0,
-        RoundingRadius -> 2
+        expr,
+        FrameStyle       -> None,
+        Background       -> None,
+        BaselinePosition -> Baseline,
+        FrameMargins     -> If[ extendMarginsQ, { { 0, 4 }, { 0, 0 } }, 0 ], (* If there's text then we need larger right-margins *)
+        RoundingRadius   -> 3
     ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*buttonFrameActive*)
-buttonFrameActive[ expr_ ] :=
+buttonFrameActive[ expr_, extendMarginsQ: True|False : True ] :=
     Framed[
-        buttonPane @ expr,
-        FrameStyle     -> GrayLevel[ 0.82 ],
-        Background     -> GrayLevel[ 1 ],
-        FrameMargins   -> 0,
-        RoundingRadius -> 2
+        expr,
+        FrameStyle       -> RGBColor[ "#d4e5ed" ],
+        Background       -> GrayLevel[ 1 ],
+        BaselinePosition -> Baseline,
+        FrameMargins     -> If[ extendMarginsQ, { { 0, 4 }, { 0, 0 } }, 0 ], (* If there's text then we need larger right-margins *)
+        RoundingRadius   -> 3
     ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*buttonPane*)
 buttonPane[ expr_ ] :=
-    Pane[ expr, ImageSize -> { 24, 24 }, ImageSizeAction -> "ShrinkToFit", Alignment -> { Center, Center } ];
+    Pane[ expr, ImageSize -> { 24, 24 }, ImageSizeAction -> "ShrinkToFit", Alignment -> { Center, Center }, BaselinePosition -> Baseline ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*labeledIcon*)
+labeledIcon[ iconTemplateName_String, textResource_String ] :=
+    Grid[
+        { {
+            buttonPane @ RawBoxes @ TemplateBox[ { }, iconTemplateName ],
+            Style[ tr @ textResource, FontSize -> 12, FontColor -> RGBColor[ "#333333" ], FontFamily -> "Source Sans Pro" ]
+        } },
+        BaselinePosition -> { 1, 2 }, Alignment -> { Left, Baseline }, Spacings -> { 0, 0 } ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1757,7 +1795,7 @@ makeInteractiveCodeCell[ lang_String? wolframLanguageQ, code0_ ] := Enclose[
             ShowSyntaxStyles     -> True
         ];
         handler = inlineInteractiveCodeCell[ display, code ];
-        codeBlockFrame[ Cell @ BoxData @ ToBoxes @ handler, code ]
+        codeBlockFrame[ ToBoxes @ handler, code ]
     ],
     throwInternalFailure
 ];
@@ -1775,7 +1813,7 @@ makeInteractiveCodeCell[ lang_String? externalLanguageQ, code_String ] :=
             CellFrame  -> None
         ];
         handler = inlineInteractiveCodeCell[ display, cell ];
-        codeBlockFrame[ Cell @ BoxData @ ToBoxes @ handler, code, lang ]
+        codeBlockFrame[ Cell @ BoxData @ ToBoxes @ handler, code, lang ] (* TODO: unclear if we need Cell[BoxData[...]] for non-Wolfram code *)
     ];
 
 (* Code blocks for any other languages *)
@@ -2075,27 +2113,7 @@ inlineInteractiveCodeCell[ display_, string_ ] :=
 inlineInteractiveCodeCell[ display_, string_, lang_ ] /; $cloudNotebooks :=
     cloudInlineInteractiveCodeCell[ display, string, lang ];
 
-inlineInteractiveCodeCell[ display_, string_, lang_ ] :=
-    DynamicModule[ { $CellContext`attached, $CellContext`cell },
-        EventHandler[
-            display,
-            {
-                "MouseEntered" :> If[ ! TrueQ @ $CloudEvaluation,
-                    Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-                    Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
-                        "AttachCodeButtons",
-                        Dynamic[ $CellContext`attached ],
-                        $CellContext`cell,
-                        string,
-                        lang
-                    ]
-                ]
-            }
-        ],
-        TaggingRules     -> <| "CellToStringType" -> "InlineInteractiveCodeCell", "CodeLanguage" -> lang |>,
-        UnsavedVariables :> { $CellContext`attached, $CellContext`cell },
-        Initialization   :> { $CellContext`cell = (FinishDynamic[ ]; EvaluationCell[ ]) }
-    ];
+inlineInteractiveCodeCell[ display_, string_, lang_ ] := display;
 
 inlineInteractiveCodeCell // endDefinition;
 
@@ -2173,7 +2191,7 @@ codeBlockFrame // beginDefinition;
 codeBlockFrame[ cell_, string_ ] := codeBlockFrame[ cell, string, "Wolfram" ];
 
 codeBlockFrame[ cell_, string_, lang_ ] := Cell[
-    BoxData @ TemplateBox[ { cell }, "ChatCodeBlockTemplate" ],
+    BoxData @ TemplateBox[ { cell, lang }, "ChatCodeBlockTemplate" ],
     "ChatCodeBlock",
     Background -> None
 ];
@@ -2891,6 +2909,7 @@ userMessageBox // endDefinition;
 addToMXInitialization[
     $copyToClipboardButtonLabel;
     $insertInputButtonLabel;
+    $insertInputButtonLabelWorkspaceChat;
     $insertEvaluateButtonLabel;
     $languageIcons;
     $userMessageBoxTemplate;
