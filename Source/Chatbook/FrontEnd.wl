@@ -449,9 +449,19 @@ notebooksInformation[ notebooks: { __NotebookObject } ] := Enclose[
             "ChatNotebookSettings" -> AbsoluteCurrentValue[ notebooks, { TaggingRules, "ChatNotebookSettings" } ]
         ];
 
-        If[ MemberQ[ settings, "ChatNotebookSettings" -> Inherited ],
-            feSettings = AbsoluteCurrentValue[ $FrontEnd, { TaggingRules, "ChatNotebookSettings" } ];
-            settings = Replace[ settings, Inherited -> feSettings, { 2 } ]
+        If[ MemberQ[ settings, "ChatNotebookSettings" -> Inherited|_List ],
+            feSettings = GeneralUtilities`ToAssociations @ AbsoluteCurrentValue[
+                $FrontEnd,
+                { TaggingRules, "ChatNotebookSettings" }
+            ];
+            settings = Replace[
+                settings,
+                {
+                    Inherited  -> feSettings,
+                    rules_List :> <| feSettings, rules |>
+                },
+                { 2 }
+            ]
         ];
 
         info = notebookInformation0 /@ notebooks;
