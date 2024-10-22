@@ -728,12 +728,12 @@ $workspaceChatDockedCells = {
             ],
             Initialization :> With[ { nbo = EvaluationNotebook[ ] },
                 Needs[ "Wolfram`Chatbook`" -> None ];
-                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachWorkspaceChatInput", nbo ]
+                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachWorkspaceChatInput", nbo, Top ]
             ]
         ],
         CellFrame        -> 0,
         CellFrameMargins -> 0,
-        CellMargins      -> -1,
+        CellMargins      -> {{-1, -5}, {-1, -1}},
         Magnification -> Dynamic[ AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ] ]
     ]
 };
