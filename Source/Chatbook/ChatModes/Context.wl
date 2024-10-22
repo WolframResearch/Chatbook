@@ -22,6 +22,9 @@ Use this to determine where the user is in the notebook.
 
 %%NotebookContent%%", Delimiters -> "%%" ];
 
+$$exclusionReason  = None | { __String };
+$$exclusionReasons = { $$exclusionReason... };
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*ToggleChatInclusion*)
@@ -69,6 +72,73 @@ includeInChatHistory // endDefinition;
 excludeFromChatHistory // beginDefinition;
 excludeFromChatHistory[ obj_ ] := (CurrentChatSettings[ obj, "ExcludeFromChat" ] = True; currentlyIncludedQ @ obj);
 excludeFromChatHistory // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*SourceNotebookObjectInformation*)
+SourceNotebookObjectInformation // beginDefinition;
+
+SourceNotebookObjectInformation[ ] := catchMine @ Enclose[
+    Select[
+        ConfirmMatch[ sourceNotebookInformation[ ], { ___Association }, "NotebookInformation" ],
+        #[ "Usable" ] &
+    ],
+    throwInternalFailure
+];
+
+SourceNotebookObjectInformation // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*sourceNotebookInformation*)
+sourceNotebookInformation // beginDefinition;
+
+sourceNotebookInformation[ ] := Enclose[
+    Catch @ Module[ { info, reasons, usable, included, index, transposed },
+
+        info = ConfirmMatch[ DeleteMissing @ notebookInformation @ All, { ___Association }, "NotebookInformation" ];
+        reasons = ConfirmMatch[ exclusionReason /@ info, $$exclusionReasons, "Reasons" ];
+
+        usable   = Thread[ "Usable"   -> MatchQ[ None | { "Excluded" } ] /@ reasons ];
+        included = Thread[ "Included" -> SameAs[ None ] /@ reasons ];
+        index    = Thread[ "Index"    -> Range @ Length @ info ];
+
+        transposed = ConfirmBy[
+            Transpose @ { info, Thread[ "ExclusionReasons" -> reasons ], usable, included, index },
+            ListQ,
+            "Transposed"
+        ];
+
+        Association /@ transposed
+    ],
+    throwInternalFailure
+];
+
+sourceNotebookInformation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*exclusionReason*)
+exclusionReason // beginDefinition;
+
+exclusionReason[ info_Association ] := Enclose[
+    Module[ { tested, keys },
+        tested = ConfirmBy[ Comap[ $exclusionTests, info ], AssociationQ, "Tested" ];
+        keys = ConfirmMatch[ Keys @ Select[ tested, TrueQ ], { ___String }, "Keys" ];
+        Replace[ keys, { } -> None ]
+    ],
+    throwInternalFailure
+];
+
+exclusionReason // endDefinition;
+
+
+$exclusionTests = <|
+    "Excluded"      -> Function[ #[ "ChatNotebookSettings", "ExcludeFromChat" ] === True ],
+    "Invisible"     -> Function[ #[ "Visible" ] === False ],
+    "Palette"       -> Function[ #[ "WindowFrame" ] === "Palette" ],
+    "WorkspaceChat" -> Function[ #[ "ChatNotebookSettings", "WorkspaceChat" ] ]
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
