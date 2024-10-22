@@ -728,7 +728,7 @@ $workspaceChatDockedCells = {
             ],
             Initialization :> With[ { nbo = EvaluationNotebook[ ] },
                 Needs[ "Wolfram`Chatbook`" -> None ];
-                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachWorkspaceChatInput", nbo, Top ]
+                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachWorkspaceChatInput", nbo, If[ Cells[ nbo ] =!= { }, Bottom, Top ] ]
             ]
         ],
         CellFrame        -> 0,
