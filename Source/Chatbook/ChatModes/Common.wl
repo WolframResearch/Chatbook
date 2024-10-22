@@ -14,6 +14,8 @@ HoldComplete[
     `getCodeAssistanceInput,
     `getContextFromSelection,
     `getSelectionInfo,
+    `moveChatInputToBottom,
+    `moveChatInputToTop,
     `moveToInlineChatInputField,
     `scrollInlineChat,
     `userNotebookQ,
