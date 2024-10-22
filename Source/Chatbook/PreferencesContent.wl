@@ -551,7 +551,7 @@ serviceSelectCallback[
 
     (* Finish loading the model name selector: *)
     If[ state === "Loading",
-        expandScope @ If[ $CloudEvaluation, Identity, SessionSubmit ][
+        expandScope @ If[ !$CloudEvaluation,
             Block[ { $scopePlaceholder := $preferencesScope },
                 modelSelector = makeModelNameSelector[
                     Dynamic @ service,
