@@ -39,7 +39,7 @@ Notebook[
          Symbol["Wolfram`Chatbook`ChatbookAction"][
           "AttachWorkspaceChatInput",
           Wolfram`ChatNB`nbo,
-          Top
+          If[ Cells[Wolfram`ChatNB`nbo] =!= { }, Bottom, Top ]
          ]
         ]
       ]
@@ -67,7 +67,7 @@ Notebook[
   ],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3938578219"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3938584294"|>
   ],
   Cell[
    StyleData[
