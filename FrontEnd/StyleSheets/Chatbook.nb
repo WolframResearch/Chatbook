@@ -828,7 +828,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3937887365"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3938581187"|>
   ],
   Cell[
    StyleData["Text"],
@@ -6283,7 +6283,8 @@ Notebook[
        },
        ImageSize -> {16.0, 14.0},
        PlotRange -> {{0.0, 16.0}, {0.0, 14.0}},
-       AspectRatio -> Automatic
+       AspectRatio -> Automatic,
+       BaselinePosition -> Center -> Center
       ]
      ])
    }

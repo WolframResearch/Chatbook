@@ -551,7 +551,7 @@ serviceSelectCallback[
 
     (* Finish loading the model name selector: *)
     If[ state === "Loading",
-        expandScope @ If[ $CloudEvaluation, Identity, SessionSubmit ][
+        expandScope @ If[ !$CloudEvaluation,
             Block[ { $scopePlaceholder := $preferencesScope },
                 modelSelector = makeModelNameSelector[
                     Dynamic @ service,
@@ -1308,14 +1308,13 @@ makeLLMPanel[ ] :=
                                 "C" ->
                                     Grid[
                                         {
-                                            { chatbookIcon[ "CheckmarkGreen", False ], tr[ "PreferencesContentLLMKitEnabledTitle" ] },
-                                            { "", tr[ "PreferencesContentLLMKitEnabledText" ] },
+                                            { chatbookIcon[ "CheckmarkGreen", False ], Style[ tr[ "PreferencesContentLLMKitEnabledTitle" ], FontColor -> GrayLevel[ 0.2 ] ] },
                                             { "", manageButton }
                                         },
                                         Alignment -> { Left, Baseline },
                                         BaseStyle -> { "DialogTextCommon", FontColor -> GrayLevel[ 0.537254 ] },
                                         BaselinePosition -> { 1, 2 },
-                                        Spacings -> { 0, 0.5 }
+                                        Spacings -> { 0.25, 0.5 }
                                     ]
                             },
                             Dynamic[
