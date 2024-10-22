@@ -849,7 +849,7 @@ insertCodeInUserNotebook // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getNotebookForCodeInsertion*)
 getNotebookForCodeInsertion // beginDefinition;
-getNotebookForCodeInsertion[ chatNB_NotebookObject ] := getNotebookForCodeInsertion[ chatNB, getUserNotebook @ chatNB ];
+getNotebookForCodeInsertion[ chatNB_NotebookObject ] := getNotebookForCodeInsertion[ chatNB, getUserNotebook[ ] ];
 getNotebookForCodeInsertion[ _, userNB_NotebookObject ] := userNB;
 getNotebookForCodeInsertion[ _, None ] := CreateNotebook[ ];
 getNotebookForCodeInsertion // endDefinition;

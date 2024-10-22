@@ -216,7 +216,7 @@ getContextFromSelection // Options = {
 };
 
 getContextFromSelection[ chatNB_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] :=
-    getContextFromSelection[ chatNB, getUserNotebook @ chatNB, settings, opts ];
+    getContextFromSelection[ chatNB, getUserNotebook[ ], settings, opts ];
 
 getContextFromSelection[ chatNB_NotebookObject, None, settings_Association, opts: OptionsPattern[ ] ] :=
     None;
@@ -478,7 +478,6 @@ selectContextCells0 // endDefinition;
 (*getUserNotebook*)
 getUserNotebook // beginDefinition;
 getUserNotebook[ ] := FirstCase[ userNotebooks[ ], _NotebookObject, None ];
-getUserNotebook[ chatNB_NotebookObject ] := FirstCase[ userNotebooks @ chatNB, _NotebookObject, None ];
 getUserNotebook // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -486,34 +485,10 @@ getUserNotebook // endDefinition;
 (*userNotebooks*)
 userNotebooks // beginDefinition;
 
-userNotebooks[ chatNB_NotebookObject ] :=
-    DeleteCases[ userNotebooks[ ], chatNB ];
-
-userNotebooks[ ] :=
-    userNotebooks @ Notebooks[ ];
-
-userNotebooks[ notebooks: { ___NotebookObject } ] := Enclose[
-    Module[ { noPalettes, visible, included },
-
-        noPalettes = ConfirmMatch[
-            selectByCurrentValue[ notebooks, WindowFrame, # =!= "Palette" & ],
-            { ___NotebookObject },
-            "NoPalettes"
-        ];
-
-        visible = ConfirmMatch[
-            selectByCurrentValue[ noPalettes, Visible, TrueQ ],
-            { ___NotebookObject },
-            "Visible"
-        ];
-
-        included = ConfirmMatch[
-            selectByCurrentValue[ visible, { TaggingRules, "ChatNotebookSettings" }, includedTagsQ ],
-            { ___NotebookObject },
-            "NotExcluded"
-        ];
-
-        included
+userNotebooks[ ] := Enclose[
+    Cases[
+        ConfirmMatch[ SourceNotebookObjectInformation[ ], { ___Association }, "NotebookInformation" ],
+        KeyValuePattern @ { "Included" -> True, "NotebookObject" -> nbo_NotebookObject } :> nbo
     ],
     throwInternalFailure
 ];
