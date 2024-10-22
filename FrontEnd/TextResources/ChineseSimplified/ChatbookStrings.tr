@@ -58,6 +58,9 @@
 "FeedbackDialogBodyPreviewData" -> "\:9884\:89C8\:5C06\:8981\:53D1\:9001\:7684\:6570\:636E",
 "FeedbackDialogThanks" -> "\:611F\:8C22\:60A8\:7684\:53CD\:9988\:610F\:89C1\:ff01",
 
+"FormattingInsertContentAndEvaluateLabel" -> "Insert and evaluate",
+"FormattingCopyToClipboardLabel" -> "Copy",
+"FormattingInsertContentLabel" -> "Insert",
 "FormattingInsertContentAndEvaluateTooltip" -> "\:5728\:4E0B\:9762\:63D2\:5165\:5185\:5BB9\:4F5C\:4E3A\:65B0\:7684\:8F93\:5165\:5355\:5143\:5E76\:8BA1\:7B97",
 "FormattingCopyToClipboardTooltip" -> "\:590D\:5236\:5230\:526A\:8D34\:677F",
 "FormattingInsertContentTooltip" -> "\:5728\:4E0B\:9762\:63D2\:5165\:5185\:5BB9\:4F5C\:4E3A\:65B0\:7684\:8F93\:5165\:5355\:5143",

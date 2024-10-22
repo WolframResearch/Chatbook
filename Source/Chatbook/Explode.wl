@@ -213,7 +213,7 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
     Cell[ text_, "ChatPreformatted", ___ ] :> Cell[ text, "Program" ],
 
     (* Remove "ChatCodeBlockTemplate" template boxes: *)
-    TemplateBox[ { cell_Cell }, "ChatCodeBlockTemplate", ___ ] :> cell,
+    TemplateBox[ { cell_Cell, ___ }, "ChatCodeBlockTemplate", ___ ] :> cell,
 
     (* Remove nested cells: *)
     Cell @ BoxData[ cell_Cell, ___ ] :> cell,
