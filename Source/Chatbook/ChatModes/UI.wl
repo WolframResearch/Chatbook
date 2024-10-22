@@ -224,7 +224,8 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                     },
                     BaseStyle -> { Magnification -> $inputFieldGridMagnification }
                 ],
-                FrameMargins -> $inputFieldPaneMargins
+                FrameMargins -> $inputFieldPaneMargins,
+                ImageSize -> If[ location === "Top", Dynamic[ { Automatic, AbsoluteCurrentValue[ thisNB, { WindowSize, 2 } ] / AbsoluteCurrentValue[ thisNB, Magnification ] } ], Automatic ]
             ],
             {
                 "ReturnKeyDown" :> (
