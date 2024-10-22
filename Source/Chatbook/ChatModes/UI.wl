@@ -176,10 +176,12 @@ buttonTooltip // endDefinition;
 (*attachWorkspaceChatInput*)
 attachWorkspaceChatInput // beginDefinition;
 
-attachWorkspaceChatInput[ nbo_NotebookObject ] := Enclose[
+attachWorkspaceChatInput[ nbo_NotebookObject ] := attachWorkspaceChatInput[ nbo, Bottom ]
+
+attachWorkspaceChatInput[ nbo_NotebookObject, location : Top|Bottom ] := Enclose[
     Module[ { attached },
         attached = ConfirmMatch[
-            AttachCell[ nbo, $attachedWorkspaceChatInputCell, Bottom, 0, Bottom ],
+            AttachCell[ nbo, attachedWorkspaceChatInputCell[ If[ location === Top, "Top", "Bottom" ] ], location, 0, location ],
             _CellObject,
             "Attach"
         ];
@@ -193,8 +195,8 @@ attachWorkspaceChatInput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*$attachedWorkspaceChatInputCell*)
-$attachedWorkspaceChatInputCell := $attachedWorkspaceChatInputCell = Cell[
+(*attachedWorkspaceChatInputCell*)
+attachedWorkspaceChatInputCell[ location_String ] := Cell[
     BoxData @ ToBoxes @ DynamicModule[ { thisNB },
         EventHandler[
             Pane[
@@ -226,6 +228,10 @@ $attachedWorkspaceChatInputCell := $attachedWorkspaceChatInputCell = Cell[
             {
                 "ReturnKeyDown" :> (
                     Needs[ "Wolfram`Chatbook`" -> None ];
+                    If[ # =!= {},
+                        NotebookDelete @ #;
+                        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachWorkspaceChatInput", thisNB ]
+                    ]& @ Cells[ thisNB, AttachedCell -> True, CellStyle -> "ChatInputField", CellTags -> "Top" ];
                     Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
                         "EvaluateWorkspaceChat",
                         thisNB,
@@ -239,6 +245,7 @@ $attachedWorkspaceChatInputCell := $attachedWorkspaceChatInputCell = Cell[
     ],
     "ChatInputField",
     Background    -> $inputFieldOuterBackground,
+    CellTags -> location,
     Magnification :> AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ],
     Selectable    -> True
 ];
