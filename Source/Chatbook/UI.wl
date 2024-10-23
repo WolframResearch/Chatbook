@@ -857,9 +857,17 @@ createServiceMenu[ obj_, root_ ] :=
         MakeMenu[
             Join[
                 { tr[ "UIModelsServices" ] },
+                {
+                    {
+                        serviceIcon[ model, "Wolfram" ],
+                        "Wolfram",
+                        Hold[ removeChatMenus @ EvaluationCell[ ]; setModel[ obj, <| "Service" -> "LLMKit", "Name" -> Automatic |> ] ]
+                    },
+                    Delimiter
+                },
                 Map[
                     createServiceItem[ obj, model, root, #1 ] &,
-                    DeleteDuplicates[ Prepend[ getAvailableServiceNames[ "IncludeHidden" -> False ], "Wolfram" ] ] ]
+                    DeleteCases[ getAvailableServiceNames[ "IncludeHidden" -> False ], "Wolfram" ] ]
             ],
             GrayLevel[ 0.85 ],
             140
@@ -948,13 +956,6 @@ serviceIcon // endDefinition;
 (*dynamicModelMenu*)
 dynamicModelMenu // beginDefinition;
 
-(* Wolfram LLMKit only has Automatic model so far *)
-dynamicModelMenu[ obj_, root_, model_, service: "Wolfram" ] :=
-    Module[ { display },
-        makeServiceModelMenu[ Dynamic @ display, obj, root, model, service ];
-        display
-    ];
-
 dynamicModelMenu[ obj_, root_, model_, service_? modelListCachedQ ] :=
     Module[ { display },
         makeServiceModelMenu[ Dynamic @ display, obj, root, model, service ];
@@ -996,19 +997,6 @@ dynamicModelMenu // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeServiceModelMenu*)
 makeServiceModelMenu // beginDefinition;
-
-makeServiceModelMenu[ Dynamic[ display_ ], obj_, root_, currentModel_, service: "Wolfram" ] :=
-    display = MakeMenu[
-        Join[
-            { service },
-            {
-	            modelMenuItem[ obj, root, currentModel,
-	                <| "Name" -> Automatic, "Icon" -> serviceIcon @ "Wolfram", "DisplayName" -> "Automatic", "Service" -> "LLMKit" |> ]
-	        }
-	    ],
-        GrayLevel[ 0.85 ],
-        280
-    ];
 
 makeServiceModelMenu[ display_, obj_, root_, currentModel_, service_String ] :=
     makeServiceModelMenu[
