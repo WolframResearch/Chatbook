@@ -45,6 +45,7 @@ evaluateWorkspaceChat[ nbo_NotebookObject, Dynamic[ input: _Symbol|_CurrentValue
         input = "";
         SelectionMove[ nbo, After, Notebook, AutoScroll -> True ];
         NotebookWrite[ nbo, cell ];
+        moveChatInputToBottom @ nbo;
         cellObject = ConfirmMatch[ First[ Cells[ nbo, CellTags -> uuid ], $Failed ], _CellObject, "CellObject" ];
         CurrentValue[ cellObject, CellTags ] = { };
         ConfirmMatch[ ChatCellEvaluate[ cellObject, nbo ], _ChatObject|Null, "ChatCellEvaluate" ]

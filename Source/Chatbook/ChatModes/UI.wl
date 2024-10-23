@@ -96,6 +96,7 @@ newChatButton[ Dynamic[ nbo_ ] ] := Button[
     NotebookDelete @ Cells @ nbo;
     CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ];
     CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = "";
+    moveChatInputToTop @ nbo;
     ,
     Appearance -> "Suppressed"
 ];
@@ -176,10 +177,12 @@ buttonTooltip // endDefinition;
 (*attachWorkspaceChatInput*)
 attachWorkspaceChatInput // beginDefinition;
 
-attachWorkspaceChatInput[ nbo_NotebookObject ] := Enclose[
+attachWorkspaceChatInput[ nbo_NotebookObject ] := attachWorkspaceChatInput[ nbo, Bottom ]
+
+attachWorkspaceChatInput[ nbo_NotebookObject, location : Top|Bottom ] := Enclose[
     Module[ { attached },
         attached = ConfirmMatch[
-            AttachCell[ nbo, $attachedWorkspaceChatInputCell, Bottom, 0, Bottom ],
+            AttachCell[ nbo, attachedWorkspaceChatInputCell[ If[ location === Top, "Top", "Bottom" ] ], location, 0, location ],
             _CellObject,
             "Attach"
         ];
@@ -193,8 +196,8 @@ attachWorkspaceChatInput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*$attachedWorkspaceChatInputCell*)
-$attachedWorkspaceChatInputCell := $attachedWorkspaceChatInputCell = Cell[
+(*attachedWorkspaceChatInputCell*)
+attachedWorkspaceChatInputCell[ location_String ] := Cell[
     BoxData @ ToBoxes @ DynamicModule[ { thisNB },
         EventHandler[
             Pane[
@@ -221,7 +224,8 @@ $attachedWorkspaceChatInputCell := $attachedWorkspaceChatInputCell = Cell[
                     },
                     BaseStyle -> { Magnification -> $inputFieldGridMagnification }
                 ],
-                FrameMargins -> $inputFieldPaneMargins
+                FrameMargins -> $inputFieldPaneMargins,
+                ImageSize -> If[ location === "Top", Dynamic[ { Automatic, AbsoluteCurrentValue[ thisNB, { WindowSize, 2 } ] / AbsoluteCurrentValue[ thisNB, Magnification ] } ], Automatic ]
             ],
             {
                 "ReturnKeyDown" :> (
@@ -239,9 +243,44 @@ $attachedWorkspaceChatInputCell := $attachedWorkspaceChatInputCell = Cell[
     ],
     "ChatInputField",
     Background    -> $inputFieldOuterBackground,
+    CellTags      -> location,
     Magnification :> AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ],
     Selectable    -> True
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Moving input field between bottom/top of window*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*moveChatInputToTop*)
+moveChatInputToTop // beginDefinition;
+
+moveChatInputToTop[ nbo_NotebookObject ] :=
+    Catch @ Module[ { attached },
+        attached = Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField", CellTags -> "Bottom" ];
+        If[ attached === { }, Throw @ Null ];
+        NotebookDelete @ attached;
+        ChatbookAction[ "AttachWorkspaceChatInput", nbo, Top ]
+    ];
+
+moveChatInputToTop // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*moveChatInputToBottom*)
+moveChatInputToBottom // beginDefinition;
+
+moveChatInputToBottom[ nbo_NotebookObject ] :=
+    Catch @ Module[ { attached },
+        attached = Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField", CellTags -> "Top" ];
+        If[ attached === { }, Throw @ Null ];
+        NotebookDelete @ attached;
+        ChatbookAction[ "AttachWorkspaceChatInput", nbo, Bottom ]
+    ];
+
+moveChatInputToBottom // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
