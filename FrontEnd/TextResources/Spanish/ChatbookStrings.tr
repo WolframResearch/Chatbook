@@ -189,8 +189,8 @@
 
 "AttachedChatFieldHint" -> "Preg\[UAcute]ntame lo que sea",
 
-"MenuItemShowCodeAssistanceWindow" -> "Chat de asistencia de c\[OAcute]digo\[Ellipsis]",
-"MenuItemShowCodeAssistanceInline" -> "Asistencia de c\[OAcute]digo para selecci\[OAcute]n",
+"MenuItemShowCodeAssistanceWindow" -> "Notebook Assistant Chat\[Ellipsis]",
+"MenuItemShowCodeAssistanceInline" -> "Notebook Assistant for Selection",
 "MenuItemShowContentSuggestions" -> "Sugerencia de contenido de IA",
 
 "WorkspaceWindowTitle" -> "Notebook Assistant",

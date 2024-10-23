@@ -189,8 +189,8 @@
 
 "AttachedChatFieldHint" -> "Ask me anything",
 
-"MenuItemShowCodeAssistanceWindow" -> "Code Assistance Chat\[Ellipsis]",
-"MenuItemShowCodeAssistanceInline" -> "Code Assistance for Selection",
+"MenuItemShowCodeAssistanceWindow" -> "Notebook Assistant Chat\[Ellipsis]",
+"MenuItemShowCodeAssistanceInline" -> "Notebook Assistant for Selection",
 "MenuItemShowContentSuggestions" -> "AI Content Suggestion",
 
 "WorkspaceWindowTitle" -> "Notebook Assistant",
