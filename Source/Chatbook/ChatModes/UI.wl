@@ -197,6 +197,9 @@ attachWorkspaceChatInput // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*attachedWorkspaceChatInputCell*)
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::DynamicImageSize:: *)
 attachedWorkspaceChatInputCell[ location_String ] := Cell[
     BoxData @ ToBoxes @ DynamicModule[ { thisNB },
         EventHandler[
@@ -225,7 +228,15 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                     BaseStyle -> { Magnification -> $inputFieldGridMagnification }
                 ],
                 FrameMargins -> $inputFieldPaneMargins,
-                ImageSize -> If[ location === "Top", Dynamic[ { Automatic, AbsoluteCurrentValue[ thisNB, { WindowSize, 2 } ] / AbsoluteCurrentValue[ thisNB, Magnification ] } ], Automatic ]
+                ImageSize ->
+                    If[ location === "Top",
+                        Dynamic @ {
+                            Automatic,
+                            AbsoluteCurrentValue[ thisNB, { WindowSize, 2 } ] /
+                                AbsoluteCurrentValue[ thisNB, Magnification ]
+                        },
+                        Automatic
+                    ]
             ],
             {
                 "ReturnKeyDown" :> (
@@ -247,6 +258,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
     Magnification :> AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ],
     Selectable    -> True
 ];
+(* :!CodeAnalysis::EndBlock:: *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
