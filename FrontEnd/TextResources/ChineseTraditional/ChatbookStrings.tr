@@ -189,8 +189,8 @@
 
 "AttachedChatFieldHint" -> "\:6B61\:8FCE\:8A62\:554F\:4EFB\:4F55\:4E8B\:60C5",
 
-"MenuItemShowCodeAssistanceWindow" -> "\:7DE8\:78BC\:5C0F\:5E6B\:624B\:7DB2\:8DEF\:804A\:5929\:7CFB\:7D71\[Ellipsis]",
-"MenuItemShowCodeAssistanceInline" -> "\:9078\:53D6\:90E8\:5206\:7684\:7DE8\:78BC\:5C0F\:5E6B\:624B",
+"MenuItemShowCodeAssistanceWindow" -> "Notebook Assistant Chat\[Ellipsis]",
+"MenuItemShowCodeAssistanceInline" -> "Notebook Assistant for Selection",
 "MenuItemShowContentSuggestions" -> "AI \:5167\:5BB9\:5EFA\:8B70",
 
 "WorkspaceWindowTitle" -> "Notebook Assistant",
