@@ -10,7 +10,7 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$workspaceChatWidth = 360;
+$workspaceChatWidth = Switch[ $OperatingSystem, "MacOSX", 450, _, 360 ];
 
 $codeAssistanceBaseSettings = <|
     "AppName"           -> "CodeAssistance",
