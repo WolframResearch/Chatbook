@@ -857,7 +857,9 @@ createServiceMenu[ obj_, root_ ] :=
         MakeMenu[
             Join[
                 { tr[ "UIModelsServices" ] },
-                (createServiceItem[ obj, model, root, #1 ] &) /@ getAvailableServiceNames[ "IncludeHidden" -> False ]
+                Map[
+                    createServiceItem[ obj, model, root, #1 ] &,
+                    DeleteDuplicates[ Prepend[ getAvailableServiceNames[ "IncludeHidden" -> False ], "Wolfram" ] ] ]
             ],
             GrayLevel[ 0.85 ],
             140
@@ -893,6 +895,10 @@ serviceIcon // beginDefinition;
 serviceIcon[ model_String, "OpenAI" ] :=
     alignedMenuIcon[ $currentSelectionCheck, serviceIcon[ "OpenAI" ] ];
 
+(* LLMKit service is provided by Wolfram *)
+serviceIcon[ model: KeyValuePattern[ "Service" -> "LLMKit" ], "Wolfram" ] :=
+    alignedMenuIcon[ $currentSelectionCheck, serviceIcon @ "Wolfram" ];
+
 (* Show a checkmark if the currently selected model belongs to this service: *)
 serviceIcon[ model: KeyValuePattern[ "Service" -> service_String ], service_String ] :=
     alignedMenuIcon[ $currentSelectionCheck, serviceIcon @ service ];
@@ -927,6 +933,7 @@ serviceIcon[ KeyValuePattern[ "Service" -> service_String ] ] :=
 (*Services specified as strings*)
 
 (* Services with icons defined in template boxes: *)
+serviceIcon[ "Wolfram"   ] := chatbookIcon[ "llmkit-dialog-sm"    , True ];
 serviceIcon[ "OpenAI"    ] := chatbookIcon[ "ServiceIconOpenAI"   , True ];
 serviceIcon[ "Anthropic" ] := chatbookIcon[ "ServiceIconAnthropic", True ];
 serviceIcon[ "PaLM"      ] := chatbookIcon[ "ServiceIconPaLM"     , True ];
@@ -940,6 +947,13 @@ serviceIcon // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*dynamicModelMenu*)
 dynamicModelMenu // beginDefinition;
+
+(* Wolfram LLMKit only has Automatic model so far *)
+dynamicModelMenu[ obj_, root_, model_, service: "Wolfram" ] :=
+    Module[ { display },
+        makeServiceModelMenu[ Dynamic @ display, obj, root, model, service ];
+        display
+    ];
 
 dynamicModelMenu[ obj_, root_, model_, service_? modelListCachedQ ] :=
     Module[ { display },
@@ -982,6 +996,19 @@ dynamicModelMenu // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*makeServiceModelMenu*)
 makeServiceModelMenu // beginDefinition;
+
+makeServiceModelMenu[ Dynamic[ display_ ], obj_, root_, currentModel_, service: "Wolfram" ] :=
+    display = MakeMenu[
+        Join[
+            { service },
+            {
+	            modelMenuItem[ obj, root, currentModel,
+	                <| "Name" -> Automatic, "Icon" -> serviceIcon @ "Wolfram", "DisplayName" -> "Automatic", "Service" -> "LLMKit" |> ]
+	        }
+	    ],
+        GrayLevel[ 0.85 ],
+        280
+    ];
 
 makeServiceModelMenu[ display_, obj_, root_, currentModel_, service_String ] :=
     makeServiceModelMenu[
@@ -1099,6 +1126,7 @@ modelMenuItem // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*modelSelectionCheckmark*)
 modelSelectionCheckmark // beginDefinition;
+modelSelectionCheckmark[ KeyValuePattern[ "Name" -> model: Automatic ], model: Automatic ] := $currentSelectionCheck; (* LLMKit *)
 modelSelectionCheckmark[ KeyValuePattern[ "Name" -> model_String ], model_String ] := $currentSelectionCheck;
 modelSelectionCheckmark[ model_String, model_String ] := $currentSelectionCheck;
 modelSelectionCheckmark[ _, _ ] := Style[ $currentSelectionCheck, ShowContents -> False ];
@@ -1109,7 +1137,7 @@ modelSelectionCheckmark // endDefinition;
 (*setModel*)
 setModel // beginDefinition;
 
-setModel[ obj_, KeyValuePattern @ { "Service" -> service_String, "Name" -> model_String } ] := (
+setModel[ obj_, KeyValuePattern @ { "Service" -> service_String, "Name" -> model: _String|Automatic } ] := (
     CurrentValue[ obj, { TaggingRules, "ChatNotebookSettings", "Model" } ] =
         <| "Service" -> service, "Name" -> model |>
 );
