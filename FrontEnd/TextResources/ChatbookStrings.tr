@@ -193,9 +193,9 @@
 "MenuItemShowCodeAssistanceInline" -> "Code Assistance for Selection",
 "MenuItemShowContentSuggestions" -> "AI Content Suggestion",
 
+"WorkspaceWindowTitle" -> "Notebook Assistant",
 "WorkspaceToolbarButtonLabelSources" -> "Sources",
 "WorkspaceToolbarButtonLabelNew" -> "New",
-
 "WorkspaceToolbarButtonTooltipHistory" -> "[[Manage conversations]]",
 "WorkspaceToolbarButtonTooltipSources" -> "[[Add additional source material to the chat context]]",
 "WorkspaceToolbarButtonTooltipNew" -> "[[Start a new conversation]]",

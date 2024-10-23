@@ -21,7 +21,13 @@ Notebook[
    WindowElements -> {"VerticalScrollBar", "MagnificationPopUp"},
    WindowFrameElements -> {"CloseBox", "ResizeArea", "ZoomBox"},
    WindowClickSelect -> True,
-   WindowTitle -> "Code Assistance Chat",
+   WindowTitle ->
+    Dynamic[
+     FEPrivate`FrontEndResource[
+      "ChatbookStrings",
+      "WorkspaceWindowTitle"
+     ]
+    ],
    DockedCells -> {
     Cell[
      BoxData[
@@ -67,7 +73,7 @@ Notebook[
   ],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3938584294"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3938683276"|>
   ],
   Cell[
    StyleData[
