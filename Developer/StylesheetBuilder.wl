@@ -14,6 +14,7 @@ $WorkspaceStylesheet;
 BuildStylesheets;
 BuildChatbookStylesheet;
 BuildWorkspaceStylesheet;
+BuildCoreExtensionsStylesheet;
 CompileTemplateData;
 
 Begin[ "`Private`" ];
@@ -45,6 +46,7 @@ $workspaceStyleDataFile = FileNameJoin @ { $assetLocation, "WorkspaceStyles.wl" 
 $pacletDirectory        = DirectoryName[ $InputFileName, 2 ];
 $iconManifestFile       = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
 $displayFunctionsFile   = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctions.wxf" };
+$coreExtensionsTarget   = FileNameJoin @ { $pacletDirectory, "FrontEnd", "Assets", "Extensions", "CoreExtensions.nb" };
 $styleSheetTarget       = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
 $floatStyleSheetTarget  = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Wolfram", "WorkspaceChat.nb" };
 
@@ -903,6 +905,49 @@ BuildWorkspaceStylesheet[ target_ ] :=
     Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
         Module[ { exported },
             exported = Export[ target, fixContexts @ $WorkspaceStylesheet, "NB" ];
+            PacletInstall[ "Wolfram/PacletCICD" ];
+            Needs[ "Wolfram`PacletCICD`" -> None ];
+            SetOptions[
+                ResourceFunction[ "SaveReadableNotebook" ],
+                "RealAccuracy" -> 10,
+                "ExcludedNotebookOptions" -> {
+                    ExpressionUUID,
+                    FrontEndVersion,
+                    WindowMargins,
+                    WindowSize
+                }
+            ];
+            Wolfram`PacletCICD`FormatNotebooks @ exported;
+            exported
+        ]
+    ];
+
+
+BuildCoreExtensionsStylesheet[ ] := BuildCoreExtensionsStylesheet @ $coreExtensionsTarget;
+
+excludedCoreExtensions = Alternatives[
+    "Notebook",
+    "Text",
+    "Input",
+    "Output",
+    "Message",
+    "Link",
+    "InlineFormula"];
+
+BuildCoreExtensionsStylesheet[ target_ ] :=
+    Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
+        Module[ { exported },
+            CompileTemplateData[ ];
+            exported =
+                Export[
+                    target,
+                    fixContexts @
+                        Notebook[
+                            Flatten @ {
+                                Cell[ "Chatbook Core.nb Extensions", "Title" ],
+                                DeleteCases[ Flatten @ $styleDataCells, Cell[ StyleData[ excludedCoreExtensions, ___ ], ___ ] ] },
+                            StyleDefinitions -> "Default.nb" ],
+                    "NB" ];
             PacletInstall[ "Wolfram/PacletCICD" ];
             Needs[ "Wolfram`PacletCICD`" -> None ];
             SetOptions[
