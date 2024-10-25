@@ -4558,7 +4558,126 @@ b+bZ6FxBqAPpOprL7YAefgCtVISU
   BaselinePosition->Scaled[0.2],
   ImagePadding->0.5,
   ImageSize->{16., 16.},
-  PlotRange->{{0., 16.}, {0., 16.}}]
+  PlotRange->{{0., 16.}, {0., 16.}}],
+
+"ToolManagerAllChecked" -> (GraphicsBox[{#, 
+   FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1,
+      3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{1, 4, 3}, {0, 1, 0}, {1, 3, 
+     3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}}, {{{8.49, 
+     10.51}, {2.02, 10.51}, {0.91, 10.51}, {0., 9.61}, {0., 8.49}, {0., 
+     2.01}, {0., 0.9}, {0.9, -0.0099993}, {2.02, -0.0099993}, {
+     8.5, -0.0099993}, {9.61, -0.0099993}, {10.52, 0.89}, {10.52, 2.01}, {
+     10.52, 8.49}, {10.52, 9.6}, {9.62, 10.51}, {8.5, 10.51}, {8.49, 
+     10.51}}, {{9.25, 2.04}, {9.25, 1.61}, {8.9, 1.26}, {8.47, 1.26}, {2.03, 
+     1.26}, {1.6, 1.26}, {1.25, 1.61}, {1.25, 2.04}, {1.25, 8.48}, {1.25, 
+     8.91}, {1.6, 9.26}, {2.03, 9.26}, {8.47, 9.26}, {8.9, 9.26}, {9.25, 
+     8.91}, {9.25, 8.48}, {9.25, 2.04}}}], 
+   FilledCurveBox[{{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1,
+     3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+    3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}}}, CompressedData["
+1:eJxdUiFMw1AQ7boVtsKyrrQbjEA/wQwDAr3kggHLDGYGErAMC3p6BgMC02k0
+eljQ09No0Px/93pNdsnP77u73nt3/w5u7oe3Vc/zKvac2OPbs8jHg3CR0VPy
+fr58NDSd//ZH0z3Fp2y75FBybOho5DJ6lE1+Lj/2M+K0pEMPtko+7tHri7MU
+edtkgzYjQt2IZo4uj1A3oju2iEIWUvoLLPpaipl20gRfDJ5N+BP4N1SH9BEi
+rwPdDcUeW12xLWIT1uiv7xwpXXADAeqn6MfHndCna2tege4SC++WYukjBl8N
++lqIB6pT+NaRH2BeddSvwt+ATp+G/BHifx95TczVV54CC39b8feXszbmW8Uc
+YuIxDmrg6aLfGPcO4l3wGd2HYm+kbib+NyN9HBrF3PdZiZn+ysg+PRvoM1pP
+3tUI/7VZ2U+D90F8mSle3e9/gCshyQ==
+    "]], 
+   FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1,
+     3, 3}, {0, 1, 0}, {1, 3, 3}}}, {{{13.49, 15.06}, {7.01, 15.06}, {6.17, 
+    15.06}, {5.45, 14.54}, {5.15, 13.81}, {13.47, 13.81}, {13.9, 13.81}, {
+    14.25, 13.46}, {14.25, 13.03}, {14.25, 4.71}, {14.99, 5.01}, {15.51, 
+    5.73}, {15.51, 6.57}, {15.51, 13.04}, {15.51, 14.15}, {14.61, 15.06}, {
+    13.49, 15.06}}}], 
+   FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1,
+     3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}}, {{{10.99, 12.79}, {4.51, 
+    12.79}, {3.67, 12.79}, {2.95, 12.27}, {2.65, 11.54}, {10.97, 11.54}, {
+    11.4, 11.54}, {11.75, 11.19}, {11.75, 10.76}, {11.75, 2.44}, {12.49, 
+    2.74}, {13.01, 3.46}, {13.01, 4.3}, {13.01, 10.78}, {13.01, 11.89}, {
+    12.11, 12.8}, {10.99, 12.8}, {10.99, 12.79}}}]}, 
+  ImageSize -> {20., 17.647058823529413`}, 
+  PlotRange -> {{0., 16.54}, {0., 14.51}}, ImagePadding -> {{0, 1}, {1, 0}}, 
+  AspectRatio -> Automatic, BaselinePosition -> Scaled[0.25]]& ),
+
+"ToolManagerBin" -> (GraphicsBox[{#, 
+   CapForm["Butt"], 
+   JoinForm["Round"], 
+   Thickness[0.105], 
+   JoinedCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{7.81, 
+    0.38}, {1.08, 0.38}, {0.45, 8.92}, {8.44, 8.92}, {7.81, 0.38}}}, 
+    CurveClosed -> {1}], 
+   JoinedCurveBox[{{{0, 2, 0}}}, {{{3.2, 7.02}, {3.2, 2.38}}}, 
+    CurveClosed -> {0}], 
+   JoinedCurveBox[{{{0, 2, 0}}}, {{{5.56, 7.02}, {5.56, 2.38}}}, 
+    CurveClosed -> {0}], 
+   JoinedCurveBox[{{{0, 2, 0}}}, {{{0., 10.79}, {8.83, 10.79}}}, 
+    CurveClosed -> {0}], 
+   JoinedCurveBox[{{{0, 2, 0}}}, {{{6.04, 11.81}, {2.78, 11.81}}}, 
+    CurveClosed -> {0}]}, ImageSize -> {11.077, 16.}, 
+  PlotRange -> {{0., 8.83}, {0., 12.31}}, AspectRatio -> Automatic, 
+  ImagePadding -> {{0, 1}, {1, 0}}, BaselinePosition -> Scaled[0]]& ),
+
+"ToolManagerClear" -> (GraphicsBox[{#, 
+   DiskBox[{0, 0}, 2.5], 
+   GrayLevel[1], 
+   Thickness[0.13], 
+   CapForm["Round"], 
+   LineBox[{{{-1, -1}, {1, 1}}, {{1, -1}, {-1, 1}}}]}, ImageSize -> {14, 14}, 
+  ImagePadding -> {{0, 1}, {1, 0}}, BaselinePosition -> Scaled[0.1]]& ),
+
+"ToolManagerCog" -> (GraphicsBox[{#, 
+   JoinForm["Round"], 
+   Thickness[0.08], 
+   JoinedCurveBox[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {0,
+     1, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
+    3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 
+    3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {
+    1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 
+    0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {1, 
+    3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {
+    1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+    3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {0, 
+    1, 0}, {1, 3, 3}, {0, 1, 0}}}, CompressedData["
+1:eJxlVj1MFEEU3rvjCKE57ly4g+V2uZ3jx5rGhszEBlupaTSRVixssLGhsaEx
+JlrYnDUNDY0NFjZag4kNidhgQYMJJHjezPe9t7m7TTaTb+bte9/7mfe28/T5
+1rNKFEWlwftu8JYH78HJ9dp2zbjv3/zTdjv++Z27sH+QunX/HOXu0flefLiZ
+ucg/r3Os0ZL7tLsxfWq67jjdv3x83HGZXz4SP8gVQ96ovN9O9417MYC9K+P8
+svvZUI9xfwfWT64N7Rl338O1Qo/oDfzW82F81FF5r3Zjesl9eO+ffAwHt84z
++pszDpmev/LHe6naDTBuMx6GcgnlDNcCB/92E9h9YxDfnYTfGepJyGNZMfis
+0I8F+Jeuui9++6TF/VWuBUZcm4r/eHg5pxh6Z5mHVfKL4dfbFfKLR/jEmgf4
+dY9ykq+GxgP26uTLPKV15jOnvRn6Ibim8cc6xbx2iSddCPthl/IVxcGt7ZLK
+g1/EfEl99G3g91XydWehV/jeWLkHggO/h7nKg2+H9VPF/vzSGIa9qt4POYfe
+TPlDb+q2QgDL/K7N/RLjmiiWOhN/wT9hfEvMe0K7V1bqDOcXimHvDPHYXCC/
+U4t8txTjvMChXnpNxVibzMOpxTrL+/OL8Y2VD/jF5FnSOkNcxD+pq7KDmQbt
+Vbg2aK+CfrFRZ74nGI8Z1mGVcjXG+86C1xTt3BBPKha9Ii9xh92+RT4i8ouo
+v28lH+gL/4grlLu1Ur/DeErlkfea8h7F4CF+VHlvRuXrGhfINxiPMu3E/E7u
+SYERxyIvct+xFnlC3UhdyfcXzOss7f6w0m+kzqQfCZZ+JVj6mWDU6wL7xZkF
+v4T+X1jpj8N8Evov/i3S7zL1LGo8YK9NuYrOOdSb1FWG/tib4PeZxl/mC/Tc
+WZk/0jdCPd4WWPqmyMt8Q530rcw/8Ih0PsKe3IvuSN/okt+kygOzrt7KvK6N
+YcyhXO+HnMP/mhP+cr/QBzm3ew3E46X09VjxcB0ZrSPoN8xXDL9/LuvcAZ8V
+xeij43MKeZhTjPOmYuShpRj3u6VzU+aozFWpI+EDfuNzO4g9Ef8WNR7oa+zX
+88X/0+j/1H8IvdQX
+    "], CurveClosed -> {1}], 
+   JoinedCurveBox[{{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}}, {{{7.5, 
+    5.97}, {7.5, 5.1195}, {6.8105, 4.43}, {5.96, 4.43}, {5.1095, 4.43}, {4.42,
+     5.1195}, {4.42, 5.97}, {4.42, 6.8205}, {5.1095, 7.51}, {5.96, 7.51}, {
+    6.8105, 7.51}, {7.5, 6.8205}, {7.5, 5.97}}}, CurveClosed -> {0}]}, 
+  ImageSize -> {15, 15}, PlotRange -> {{0., 11.93}, {0., 11.93}}, AspectRatio -> 
+  Automatic, ImagePadding -> {{0, 1}, {1, 0}}, BaselinePosition -> 
+  Scaled[0.25]]& ),
+
+"ToolManagerDelimiter" -> (GraphicsBox[{#, 
+   AbsoluteThickness[0.75], 
+   LineBox[{{0, -1}, {0, 1}}]}, AspectRatio -> Full, 
+  ImagePadding -> {{0, 0}, {6, 4}}, ImageSize -> {2, 30}]& ),
+
+"ToolManagerDownChevron" -> (GraphicsBox[{#, 
+   CapForm["Round"], 
+   Thickness[0.25], 
+   LineBox[{{-1, 0}, {0, -1}, {1, 0}}]}, AspectRatio -> Full, 
+  ImageSize -> {7, 4}, ImagePadding -> {{0, 1}, {1, 0}}, BaselinePosition -> 
+  Scaled[-0.5]]& )
 }
 @|
 @|
