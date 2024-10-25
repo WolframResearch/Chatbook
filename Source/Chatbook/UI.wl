@@ -941,10 +941,10 @@ serviceIcon[ KeyValuePattern[ "Service" -> service_String ] ] :=
 (*Services specified as strings*)
 
 (* Services with icons defined in template boxes: *)
-serviceIcon[ "Wolfram"   ] := chatbookIcon[ "llmkit-dialog-sm"    , True ];
-serviceIcon[ "OpenAI"    ] := chatbookIcon[ "ServiceIconOpenAI"   , True ];
-serviceIcon[ "Anthropic" ] := chatbookIcon[ "ServiceIconAnthropic", True ];
-serviceIcon[ "PaLM"      ] := chatbookIcon[ "ServiceIconPaLM"     , True ];
+serviceIcon[ "Wolfram"   ] := chatbookIcon[ "llmkit-dialog-sm"    , False ];
+serviceIcon[ "OpenAI"    ] := chatbookIcon[ "ServiceIconOpenAI"   , False ];
+serviceIcon[ "Anthropic" ] := chatbookIcon[ "ServiceIconAnthropic", False ];
+serviceIcon[ "PaLM"      ] := chatbookIcon[ "ServiceIconPaLM"     , False ];
 
 (* Otherwise look in registered service info for an icon: *)
 serviceIcon[ service_String ] := Replace[ $availableServices[ service, "Icon" ], $$unspecified -> "" ];
