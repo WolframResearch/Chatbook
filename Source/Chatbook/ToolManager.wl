@@ -663,9 +663,9 @@ configureButton[ tool_Association? configurableToolQ, index_Integer, Dynamic[ { 
                             ],
                             Spacer[ 5 ],
                             tool[ "CanonicalName" ],
-                            Dynamic @ iconData[ "Cog", colCog ],
+                            iconData[ "Cog", colCog ],
                             Spacer[ 5 ],
-                            Dynamic @ iconData[ "Delimiter", colDelimiter ]
+                            iconData[ "Delimiter", colDelimiter ]
                         }
                     },
                     Alignment -> Left,
@@ -701,9 +701,9 @@ configureButton[ tool_Association, index_Integer, Dynamic[ { row_, column_ } ] ]
                             ],
                             Spacer[ 5 ],
                             tool[ "CanonicalName" ],
-                            Tooltip[ Dynamic @ iconData[ "Cog", colCog ], nonConfigurableTooltip @ tool ],
+                            Tooltip[ iconData[ "Cog", colCog ], nonConfigurableTooltip @ tool ],
                             Spacer[ 5 ],
-                            Dynamic @ iconData[ "Delimiter", colDelimiter ]
+                            iconData[ "Delimiter", colDelimiter ]
                         }
                     },
                     Alignment -> Left,
@@ -741,7 +741,7 @@ deleteButton[ tool_Association? deletableToolQ, index_Integer, Dynamic[ { row_, 
                             Spacer[ 5 ],
                             deleteButton0[ colBin, index, tool ],
                             Spacer[ 3 ],
-                            Dynamic @ iconData[ "Delimiter", Transparent ]
+                            iconData[ "Delimiter", Transparent ]
                         }
                     },
                     ItemSize -> { 0, 0 },
@@ -770,7 +770,7 @@ deleteButton[ tool_Association, index_Integer, Dynamic[ { row_, column_ } ] ] :=
                         {
                             Spacer[ 5 ],
                             Button[
-                                Tooltip[ Dynamic @ iconData[ "Bin", colBin ], nonDeletableTooltip @ tool ],
+                                Tooltip[ iconData[ "Bin", colBin ], nonDeletableTooltip @ tool ],
                                 Null,
                                 Appearance       -> "Suppressed",
                                 BaselinePosition -> Center -> Center,
@@ -779,7 +779,7 @@ deleteButton[ tool_Association, index_Integer, Dynamic[ { row_, column_ } ] ] :=
                                 ImageSize        -> { Automatic, $rowHeight }
                             ],
                             Spacer[ 3 ],
-                            Dynamic @ iconData[ "Delimiter", Transparent ]
+                            iconData[ "Delimiter", Transparent ]
                         }
                     },
                     ItemSize -> { 0, 0 },
@@ -803,7 +803,7 @@ deleteButton // endDefinition;
 deleteButton0 // beginDefinition;
 
 deleteButton0[ colBin_, row_, tool_Association ] := Button[
-    Dynamic @ iconData[ "Bin", colBin ],
+    iconData[ "Bin", colBin ],
     attachOverlay[
         {
             Style[ tr[ "ToolManagerDeleteTool" ], "DialogHeader", FontSize -> 16, FontWeight -> "DemiBold" ],
@@ -1020,10 +1020,10 @@ rightColControl[
                                     val -> Grid[
                                         {
                                             {
-                                                Dynamic @ iconData[ "AllChecked", col ],
+                                                iconData[ "AllChecked", col ],
                                                 Spacer[ 3 ],
                                                 label,
-                                                Dynamic @ iconData[ "DownChevron", col ]
+                                                iconData[ "DownChevron", col ]
                                             }
                                         },
                                         ItemSize -> { 0, 0 },
@@ -1107,7 +1107,7 @@ rightColControl[
                             Function[
                                 { val, col },
                                 val -> Button[
-                                    Dynamic @ iconData[ "Clear", col ],
+                                    iconData[ "Clear", col ],
                                     unsetCV[ scope, "ToolSelections"   , toolName ];
                                     unsetCV[ scope, "ToolSelectionType", toolName ];
                                     ,
@@ -1446,7 +1446,7 @@ cloudConfigureToolButton // beginDefinition;
 
 cloudConfigureToolButton[ tool_Association ] :=
     Tooltip[
-        Dynamic @ iconData[ "Cog", GrayLevel[ 0.8 ] ],
+        iconData[ "Cog", GrayLevel[ 0.8 ] ],
         nonConfigurableTooltip @ tool
     ];
 
@@ -1468,15 +1468,15 @@ cloudDeleteToolButton[ tool_Association? deletableToolQ ] :=
 
 cloudDeleteToolButton[ tool_Association ] :=
     Tooltip[
-        Dynamic @ iconData[ "Bin", GrayLevel[ 0.8 ] ],
+        iconData[ "Bin", GrayLevel[ 0.8 ] ],
         nonDeletableTooltip @ tool
     ];
 
 cloudDeleteToolButton // endDefinition;
 
 $cloudDeleteToolButtonLabel = Mouseover[
-    Dynamic @ iconData[ "Bin", GrayLevel[ 0.65 ] ],
-    Dynamic @ iconData[ "Bin", $activeBlue ]
+    iconData[ "Bin", GrayLevel[ 0.65 ] ],
+    iconData[ "Bin", $activeBlue ]
 ];
 
 (* ::**************************************************************************************************************:: *)
