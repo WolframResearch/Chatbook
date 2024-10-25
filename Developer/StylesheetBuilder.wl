@@ -923,16 +923,22 @@ BuildWorkspaceStylesheet[ target_ ] :=
     ];
 
 
+(* CoreExtensions.nb is a 14.2 feature. It is ignored entirely by 14.1. *)
 BuildCoreExtensionsStylesheet[ ] := BuildCoreExtensionsStylesheet @ $coreExtensionsTarget;
 
-excludedCoreExtensions = Alternatives[
-    "Notebook",
-    "Text",
-    "Input",
-    "Output",
-    "Message",
-    "Link",
-    "InlineFormula"];
+revisedCoreExtensions[ ] :=
+Module[ { excludedCoreExtensions },
+    excludedCoreExtensions = Alternatives[ (* These styles are ignored because they are appended to Core and Core already contains them *)
+        "Notebook",
+        "Text",
+        "Input",
+        "Output",
+        "Message",
+        "Link",
+        "InlineFormula"];
+
+    DeleteCases[ Flatten @ $styleDataCells, Cell[ StyleData[ excludedCoreExtensions, ___ ], ___ ] ]
+]
 
 BuildCoreExtensionsStylesheet[ target_ ] :=
     Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
@@ -943,9 +949,7 @@ BuildCoreExtensionsStylesheet[ target_ ] :=
                     target,
                     fixContexts @
                         Notebook[
-                            Flatten @ {
-                                Cell[ "Chatbook Core.nb Extensions", "Title" ],
-                                DeleteCases[ Flatten @ $styleDataCells, Cell[ StyleData[ excludedCoreExtensions, ___ ], ___ ] ] },
+                            Flatten @ { Cell[ "Chatbook Core.nb Extensions", "Title" ], revisedCoreExtensions[ ] },
                             StyleDefinitions -> "Default.nb" ],
                     "NB" ];
             PacletInstall[ "Wolfram/PacletCICD" ];
