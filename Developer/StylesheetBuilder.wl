@@ -412,8 +412,8 @@ feedbackButton[ positive: True|False, name_String ] :=
         MouseAppearance[
             Tooltip[
                 Mouseover[
-                    RawBoxes @ TemplateBox[ { }, name<>"Inactive" ],
-                    RawBoxes @ TemplateBox[ { }, name<>"Active" ]
+                    Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", # ] ]&[ name<>"Inactive" ],
+                    Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", # ] ]&[ name<>"Active" ]
                 ],
                 tr[ "StylesheetFeedbackButtonTooltip" ]
             ],
