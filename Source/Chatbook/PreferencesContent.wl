@@ -1400,7 +1400,7 @@ deleteServiceButton // beginDefinition;
 
 deleteServiceButton[ "OpenAI" ] := Framed[
     Button[
-        Insert[ chatbookIcon[ "ToolManagerBin", False ], GrayLevel[ 0.8 ], { 1, 1, 1 } ],
+        chatbookIcon[ "ToolManagerBin", False, GrayLevel[ 0.8 ] ],
         Null,
         Enabled -> False,
         $deleteServiceButtonOptions
@@ -1878,8 +1878,8 @@ $verticalSpacer = { Pane[ "", ImageSize -> { Automatic, 20 } ], SpanFromLeft };
 (* ::Subsection::Closed:: *)
 (*$trashBin*)
 $trashBin := Mouseover[
-    Insert[ chatbookIcon[ "ToolManagerBin", False ], GrayLevel[ 0.65 ], { 1, 1, 1 } ],
-    Insert[ chatbookIcon[ "ToolManagerBin", False ], Hue[ 0.59, 0.9, 0.93 ], { 1, 1, 1 } ]
+    chatbookIcon[ "ToolManagerBin", False, GrayLevel[ 0.65 ] ],
+    chatbookIcon[ "ToolManagerBin", False, Hue[ 0.59, 0.9, 0.93 ] ]
 ];
 
 (* ::**************************************************************************************************************:: *)
