@@ -539,10 +539,10 @@ modelIcon[ name_String ] /; StringStartsQ[ name, "ft:" ] :=
     modelIcon @ StringDelete[ name, StartOfString~~"ft:" ];
 
 modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-3.5" ] :=
-    RawBoxes @ TemplateBox[ { }, "ModelGPT35" ];
+    Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ModelGPT35" ];
 
 modelIcon[ gpt_String ] /; StringStartsQ[ gpt, "gpt-4"|"chatgpt-4" ] :=
-    RawBoxes @ TemplateBox[ { }, "ModelGPT4" ];
+    Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "ModelGPT4" ];
 
 modelIcon[ name_String ] :=
     $defaultModelIcon;

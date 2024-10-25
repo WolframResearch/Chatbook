@@ -88,7 +88,7 @@ $DefaultToolOptions = <|
     |>
 |>;
 
-$defaultToolIcon = RawBoxes @ TemplateBox[ { }, "WrenchIcon" ];
+$defaultToolIcon = Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "WrenchIcon" ];
 
 $selectedTools         = <| |>;
 $toolBox               = <| |>;
@@ -1254,7 +1254,7 @@ $toolFrequencyExplanations = <|
 (*getToolIcon*)
 getToolIcon // beginDefinition;
 getToolIcon[ tool: $$llmTool ] := getToolIcon @ toolData @ tool;
-getToolIcon[ as_Association ] := Lookup[ toolData @ as, "Icon", RawBoxes @ TemplateBox[ { }, "WrenchIcon" ] ];
+getToolIcon[ as_Association ] := Lookup[ toolData @ as, "Icon", Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "WrenchIcon" ] ];
 getToolIcon[ _ ] := $defaultToolIcon;
 getToolIcon // endDefinition;
 
