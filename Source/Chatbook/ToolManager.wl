@@ -1199,7 +1199,7 @@ linkedPane // endDefinition;
 (* ::Section::Closed:: *)
 (*Icons*)
 iconData // beginDefinition;
-iconData[ name_String, color_ ] := Insert[ chatbookIcon[ "ToolManager"<>name, False ], color, { 1, 1, 1 } ];
+iconData[ name_String, color_ ] := chatbookIcon[ "ToolManager"<>name, False, color ];
 iconData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
