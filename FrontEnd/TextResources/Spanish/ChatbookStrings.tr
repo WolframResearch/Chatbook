@@ -183,6 +183,7 @@
 "PersonaNameBirdnardo" -> "Birdnardo",
 "PersonaNameCodeAssistant" -> "Asistente de c\[OAcute]digo",
 "PersonaNameCodeWriter" -> "Escritor de c\[OAcute]digo",
+"PersonaNameNotebookAssistant" -> "Notebook Assistant",
 "PersonaNamePlainChat" -> "Chat simple",
 "PersonaNameRawModel" -> "Modelo sin procesar",
 "PersonaNameWolfie" -> "Wolfie",

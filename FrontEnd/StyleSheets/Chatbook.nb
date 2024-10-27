@@ -828,7 +828,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3938581187"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3939013074"|>
   ],
   Cell[
    StyleData["Text"],
@@ -4878,6 +4878,176 @@ Notebook[
         ]
        },
        ImageSize -> {21, 21}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["ChatIconNotebookAssistant"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.038462],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {
+            {
+             {0, 2, 0},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0}
+            }
+           },
+           CompressedData[
+            "\n1:eJxTTMoPSmVmYGBgBGIRIGZigIIGBQcUmkEEzv90yTdJIEIITV7Qga1xqnO3\njiKcD6GV0PimcL5Ld87z35mmqOYdgMmLoPFN4XyYPhR5XOJI+oozJr6t+a8I\n51e+VDPkALoXRR/cPwh+7vPfKz9e0kSVB9L6d1XYGkWFMMQBtjo+0A==\n       "
+           ]
+          ]
+         },
+         {FaceForm[RGBColor[0.4902, 0.82353, 1.0, 1.0]]},
+         StripOnInput -> False
+        ],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {
+            {
+             {0, 2, 0},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3}
+            },
+            {
+             {1, 4, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3},
+             {0, 1, 0},
+             {1, 3, 3},
+             {0, 1, 0}
+            }
+           },
+           {
+            CompressedData[
+             "\n1:eJxTTMoPSmViYGAQAWIQDQGmDhDaDEqLwPkz8oSaD5wSRJMXcIhKsb7v32sK\n56OaA+Mrwfk+5p2OCU8V0MxTQLNPgQANM1cLTdwUzkd1F0zezGHffCn9u08Q\n/OKMiW9r/iui+QsRDjBzUM3DVAcAxvcssw==\n        "
+            ],
+            CompressedData[
+             "\n1:eJxTTMoPSmViYGCQBmIQDQGmDmCqwdRBd9Pc98vdEHy84kj6ijMmvq35rwjn\nc6yRiUrZreiwbPYRhQ1Fpg7VIuvcH1YpOmw5UbZvfpSpw4w8oeYDXooOf1Z+\nvOTrZAoRl4LylWDmK6LaA+drwflpILBME84/7m3e6Zig6eDxsEpk3XEFuLhm\nTP+hrxoiaOYooPFxiSP0+YCMfyqEJi8E9SeCD6GV0PimcD4sPFHMg4erCBof\nEc4A/3BXag==\n        "
+            ]
+           }
+          ]
+         },
+         {FaceForm[RGBColor[0.18824, 0.49412, 0.6549, 1.0]]},
+         StripOnInput -> False
+        ],
+        StyleBox[
+         {
+          FilledCurveBox[
+           {
+            {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}},
+            {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}},
+            {
+             {1, 4, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {1, 3, 3},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0},
+             {0, 1, 0}
+            }
+           },
+           {
+            {
+             {13.992, 13.049},
+             {13.607, 13.272},
+             {13.262, 13.394},
+             {12.937, 13.353},
+             {12.978, 13.556},
+             {13.038, 13.698},
+             {13.099, 13.881},
+             {13.789, 13.982},
+             {14.296, 13.617},
+             {14.763, 13.272},
+             {14.398, 13.171},
+             {14.357, 13.15},
+             {13.992, 13.049}
+            },
+            {
+             {14.337, 15.402},
+             {14.033, 15.707},
+             {13.424, 16.092},
+             {13.424, 16.092},
+             {13.424, 16.092},
+             {13.302, 16.802},
+             {13.221, 17.066},
+             {13.769, 17.593},
+             {13.85, 17.675},
+             {14.377, 18.182},
+             {14.418, 17.167},
+             {14.398, 16.64},
+             {14.337, 15.402}
+            },
+            CompressedData[
+             "\n1:eJyFlHlIVFEUxieJCon2xUxLx/fezJvXc+bNGCFRfe1l2gpmo7RqSmSbWVFW\nhJktRIs6mRkioRVMuRQiZRZli7ZnC6WRFlE2pe2rWve+O70g//DCMHz3MOee\n8zvfGf+Fy2fGeOh0ulDyod89IoJPX3NYUPKp5f664xz+1y/yDlX47VUQt+9d\n0qhEDu+PXpkyrFLR4mvLc7zNLQriX/06/uEeB/NTrtOWvjZkV/gVrnptaFfX\nr+9zcmK9Gc3k12HPJTQmjRo694zM8vUKxAT60HcZ5HJy1+cW7FpKAitlhHT1\nkFLDbZq+TNLFzbChQVC6OGslfCblNWyzQozac/HLMQmT6EOxVvzctKRsdW8T\nbt4gx6mg/+Nb32YtEnFXX/NjU5UVvvbo4c+6i0jz6hjeTbbB6UMu5hmRuaxX\n8oWQIKhthglYOcLz0ZEVNlZfKQdCbU35bwW5safeJGQEsPh0C35db6y8pPcH\nLd/DJWN/VOvYn7I3q2cijw3J5tD8qv4Ifng5Pkjnh52F9Q0ZH7017dxVE6cr\n8NV0emqKvbp5MAykTR+7gJaviXXZih4DKdgOgXCMJUSGu+e0w4zrueNLPm3k\nQejse1drwZj5L+/oa3gEkHaXJFkZf3+jxjOfjLuw2KjFSZMjPA+I2EywpZVa\nWNxqYvnKzLhKXhldNwSEsjGquwxCb9rutRbQ6qLPiox3tQKKJ8duhJTajxBX\n0ErGIyhGyMWHm44KViSqwA1ttOqHLIXN4wSPFNeM0kEpBtb/EwHHaJtbBFSS\n9N5NAh7QtNt5LU6qm/9yOofF9OQLbp9xmEmyuHoakXWQnAECaLtlQWK7Wt2P\nrxxC1cQi85sPB4rHq6OJ8Y3koEqHidXXgXfXITEfSDy+zyKbtVVivB6588VI\nKEiP2b5oo57dzzZhdmTR+bcj9bDRkyCiLrtn3rkFARhHjS+KzP8Kx/x8w9iu\nvpZ51rG3Sc/8vNOAFfM63xpQpGd9zuHbaJV7vIC3FLuLR3XYQoJAZHuwm2dz\nmiqCrnVGMs98EvFP/92vv5rarN9jE9ubde54QKDmb9VX2RZND1YHLuP2NwJs\nIN/m/+kPQPcZbA==\n        "
+            ]
+           }
+          ]
+         },
+         {FaceForm[RGBColor[0.2, 0.2, 0.2, 1.0]]},
+         StripOnInput -> False
+        ]
+       },
+       ImageSize -> {21, 21},
+       ImagePadding -> 1
       ]
      ])
    }
