@@ -182,7 +182,13 @@ attachWorkspaceChatInput[ nbo_NotebookObject ] := attachWorkspaceChatInput[ nbo,
 attachWorkspaceChatInput[ nbo_NotebookObject, location : Top|Bottom ] := Enclose[
     Module[ { attached },
         attached = ConfirmMatch[
-            AttachCell[ nbo, attachedWorkspaceChatInputCell[ If[ location === Top, "Top", "Bottom" ] ], location, 0, location ],
+            AttachCell[
+                nbo,
+                attachedWorkspaceChatInputCell[ If[ location === Top, "Top", "Bottom" ] ],
+                location,
+                0,
+                location
+            ],
             _CellObject,
             "Attach"
         ];
@@ -219,7 +225,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                 ],
                                 $inputFieldFrameOptions
                             ],
-                            RawBoxes @ TemplateBox[
+                            workspaceChatInitializer @ RawBoxes @ TemplateBox[
                                 { RGBColor[ "#a3c9f2" ], RGBColor[ "#f1f7fd" ], 27, thisNB },
                                 "WorkspaceSendChatButton"
                             ]
@@ -259,6 +265,38 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
     Selectable    -> True
 ];
 (* :!CodeAnalysis::EndBlock:: *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*workspaceChatInitializer*)
+workspaceChatInitializer // beginDefinition;
+
+workspaceChatInitializer[ expr_ ] :=
+    DynamicWrapper[
+        expr,
+        initializeWorkspaceChat[ ],
+        SingleEvaluation    -> True,
+        SynchronousUpdating -> False
+    ];
+
+workspaceChatInitializer // endDefinition;
+
+$workspaceChatInitialized = False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*initializeWorkspaceChat*)
+initializeWorkspaceChat // beginDefinition;
+
+initializeWorkspaceChat[ ] := initializeWorkspaceChat[ ] = LogChatTiming[
+    LogChatTiming[ getEmbeddings[ { "Hello" } ], "InitializeEmbeddings" ];
+    LogChatTiming[ cachedTokenizer[ "gpt-4o-text" ], "InitializeTokenizer" ];
+    LogChatTiming[ $llmKitService, "InitializeLLMKitService" ];
+    $workspaceChatInitialized = True,
+    "InitializeWorkspaceChat"
+];
+
+initializeWorkspaceChat // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
