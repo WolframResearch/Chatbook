@@ -217,7 +217,12 @@ filterSnippets[ messages_, uris: { __String }, filter_, filterCount_Integer? Pos
             "Prompt"
         ];
 
-        response = StringTrim @ ConfirmBy[ llmSynthesize @ instructions, StringQ, "Response" ];
+        response = StringTrim @ ConfirmBy[
+            LogChatTiming[ llmSynthesize @ instructions, "WaitForFilterSnippetsTask" ],
+            StringQ,
+            "Response"
+        ];
+
         pages = ConfirmMatch[ makeDocSnippets @ StringCases[ response, uris ], { ___String }, "Pages" ];
 
         pages
