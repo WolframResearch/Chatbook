@@ -45,12 +45,12 @@ generateChatTitle[ messages_, temperature_ ] := Enclose[
     Module[ { title, task },
 
         task = ConfirmMatch[
-            generateChatTitleAsync[ messages, Function[ title = # ], temperature ],
+            LogChatTiming @ generateChatTitleAsync[ messages, Function[ title = # ], temperature ],
             _TaskObject,
             "Task"
         ];
 
-        TaskWait @ task;
+        LogChatTiming[ TaskWait @ task, "WaitForChatTitleTask" ];
 
         ConfirmMatch[ title, _String|_Failure, "Result" ]
     ],
