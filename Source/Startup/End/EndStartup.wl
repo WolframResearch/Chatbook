@@ -7,6 +7,6 @@
 (*--------------------------------*)
 (* Adds Help > Code Assistance... *)
 (*--------------------------------*)
-Wolfram`Chatbook`EnableCodeAssistance[ ];
+If[ $Notebooks, Once[ Wolfram`Chatbook`EnableCodeAssistance[ ], "FrontEndSession" ] ];
 
 Wolfram`ChatbookStartupDump`$loadTime = SessionTime[ ] - Wolfram`ChatbookStartupDump`$loadStart;
