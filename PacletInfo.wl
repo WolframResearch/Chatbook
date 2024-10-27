@@ -46,6 +46,7 @@ PacletObject[ <|
                 "PlainChat",
                 "CodeAssistant",
                 "CodeWriter",
+                "NotebookAssistant",
                 "RawModel",
                 "Wolfie",
                 "Birdnardo"
