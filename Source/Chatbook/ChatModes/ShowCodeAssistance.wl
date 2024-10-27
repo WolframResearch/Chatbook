@@ -56,15 +56,14 @@ EnableCodeAssistance // beginDefinition;
 EnableCodeAssistance[ ] :=
     catchMine @ EnableCodeAssistance @ Automatic;
 
-EnableCodeAssistance[ Automatic ] := catchMine[
+EnableCodeAssistance[ Automatic ] := catchMine @
     If[ $VersionNumber >= 14.1,
         enableCodeAssistance @ { "Window", "ContentSuggestions" },
         enableCodeAssistance @ { "Window" }
     ];
-];
 
 EnableCodeAssistance[ keys: { $$codeAssistanceMenuItem.. } ] :=
-    catchMine @ enableCodeAssistance @ keys;
+    catchMine @ enableCodeAssistance @ DeleteDuplicates @ keys;
 
 EnableCodeAssistance[ key: $$codeAssistanceMenuItem ] :=
     catchMine @ enableCodeAssistance @ { key };
@@ -136,12 +135,7 @@ $codeAssistanceMenuItems = <|
 (* ::Subsection::Closed:: *)
 (*enableCodeAssistance*)
 enableCodeAssistance // beginDefinition;
-
-enableCodeAssistance[ keys: { ___String } ] :=
-    With[ { items = Lookup[ $codeAssistanceMenuItems, keys ] },
-        Once @ FrontEndExecute @ items
-    ];
-
+enableCodeAssistance[ k: { $$codeAssistanceMenuItem.. } ] := FrontEndExecute @ Lookup[ $codeAssistanceMenuItems, k ];
 enableCodeAssistance // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
