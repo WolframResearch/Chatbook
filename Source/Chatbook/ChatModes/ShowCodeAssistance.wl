@@ -14,6 +14,7 @@ $workspaceChatWidth := $workspaceChatWidth = Switch[ $OperatingSystem, "MacOSX",
 
 $codeAssistanceBaseSettings = <|
     "AppName"           -> "CodeAssistance",
+    "LLMEvaluator"      -> "NotebookAssistant",
     "PromptGenerators"  -> { "RelatedDocumentation" },
     "ServiceCaller"     -> "CodeAssistance",
     "ToolOptions"       -> <| "WolframLanguageEvaluator" -> <| "AppendURIPrompt" -> True, "Method" -> "Session" |> |>,

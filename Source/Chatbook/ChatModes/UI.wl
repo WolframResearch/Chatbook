@@ -793,29 +793,19 @@ moveToChatInputField0 // endDefinition;
 (* ::Subsection::Closed:: *)
 (*assistantMessageLabel*)
 assistantMessageLabel // beginDefinition;
-assistantMessageLabel[ ] := Grid[ { { assistantImage[ ], assistantName[ ] } }, Alignment -> { Automatic, Center } ];
+
+assistantMessageLabel[ ] := Enclose[
+    Catch @ Module[ { cell, persona, icon, name },
+        cell = topParentCell @ EvaluationCell[ ];
+        persona = If[ MatchQ[ cell, _CellObject ], CurrentChatSettings[ cell, "LLMEvaluator" ], "NotebookAssistant" ];
+        icon = ConfirmMatch[ getPersonaMenuIcon @ persona, Except[ _getPersonaMenuIcon | _? FailureQ ], "Icon" ];
+        name = ConfirmMatch[ personaDisplayName @ persona, Except[ _personaDisplayName | _? FailureQ ], "Name" ];
+        Grid[ { { icon, name } }, Alignment -> { Automatic, Center } ]
+    ],
+    throwInternalFailure
+];
+
 assistantMessageLabel // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*assistantName*)
-assistantName // beginDefinition;
-assistantName[ ] := "Code Assistant"; (* TODO *)
-assistantName // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*assistantImage*)
-assistantImage // beginDefinition;
-assistantImage[      ] := assistantImage @ $InlineChat;
-assistantImage[ True ] := inlineTemplateBox @ assistantImage0[ ];
-assistantImage[ _    ] := assistantImage0[ ];
-assistantImage // endDefinition;
-
-
-assistantImage0 // beginDefinition;
-assistantImage0[ ] := RawBoxes @ TemplateBox[ { }, "ChatIconCodeAssistant" ]; (* TODO *)
-assistantImage0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
