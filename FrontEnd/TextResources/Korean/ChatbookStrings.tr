@@ -190,13 +190,13 @@
 
 "AttachedChatFieldHint" -> "\:BB34\:C5C7\:C774\:B4E0 \:BB3C\:C5B4\:BCF4\:C138\:C694",
 
-"MenuItemShowCodeAssistanceWindow" -> "\:CF54\:B4DC \:C9C0\:C6D0 \:CC44\:D305\[Ellipsis]",
-"MenuItemShowCodeAssistanceInline" -> "\:C120\:D0DD \:BD80\:BD84\:C5D0 \:B300\:D55C \:CF54\:B4DC \:C9C0\:C6D0",
+"MenuItemShowCodeAssistanceWindow" -> "Notebook Assistant Chat\[Ellipsis]",
+"MenuItemShowCodeAssistanceInline" -> "Notebook Assistant for Selection",
 "MenuItemShowContentSuggestions" -> "AI\:C5D0 \:C758\:D55C \:CF58\:D150\:CE20 \:C81C\:C548",
 
+"WorkspaceWindowTitle" -> "Notebook Assistant",
 "WorkspaceToolbarButtonLabelSources" -> "\:CD9C\:CC98",
 "WorkspaceToolbarButtonLabelNew" -> "\:C2E0\:ADDC",
-
 "WorkspaceToolbarButtonTooltipHistory" -> "[[\:B300\:D654 \:AD00\:B9AC]]",
 "WorkspaceToolbarButtonTooltipSources" -> "[[\:CC44\:D305 \:B0B4\:C6A9\:C5D0 \:B2E4\:B978 \:C790\:B8CC \:CD94\:AC00]]",
 "WorkspaceToolbarButtonTooltipNew" -> "[[\:C0C8\:B85C\:C6B4 \:B300\:D654 \:C2DC\:C791]]",

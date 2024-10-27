@@ -189,13 +189,13 @@
 
 "AttachedChatFieldHint" -> "\:4f55\:3067\:3082\:805e\:3044\:3066\:304f\:3060\:3055\:3044",
 
-"MenuItemShowCodeAssistanceWindow" -> "\:30B3\:30FC\:30C9\:30A2\:30B7\:30B9\:30BF\:30F3\:30B9\:30C1\:30E3\:30C3\:30C8\[Ellipsis]",
-"MenuItemShowCodeAssistanceInline" -> "\:9078\:629E\:90E8\:5206\:306E\:305F\:3081\:306E\:30B3\:30FC\:30C9\:30A2\:30B7\:30B9\:30BF\:30F3\:30B9",
+"MenuItemShowCodeAssistanceWindow" -> "Notebook Assistant Chat\[Ellipsis]",
+"MenuItemShowCodeAssistanceInline" -> "Notebook Assistant for Selection",
 "MenuItemShowContentSuggestions" -> "AI\:306B\:3088\:308B\:30B3\:30F3\:30C6\:30F3\:30C4\:306E\:63D0\:6848",
 
+"WorkspaceWindowTitle" -> "Notebook Assistant",
 "WorkspaceToolbarButtonLabelSources" -> "\:30BD\:30FC\:30B9",
 "WorkspaceToolbarButtonLabelNew" -> "\:65B0\:898F",
-
 "WorkspaceToolbarButtonTooltipHistory" -> "[[\:4F1A\:8A71\:3092\:7BA1\:7406\:3059\:308B]]",
 "WorkspaceToolbarButtonTooltipSources" -> "[[\:4ED6\:306E\:30BD\:30FC\:30B9\:30DE\:30C6\:30EA\:30A2\:30EB\:3092\:30C1\:30E3\:30C3\:30C8\:30B3\:30F3\:30C6\:30AD\:30B9\:30C8\:306B\:8FFD\:52A0\:3059\:308B]]",
 "WorkspaceToolbarButtonTooltipNew" -> "[[\:65B0\:3057\:3044\:4F1A\:8A71\:3092\:59CB\:3081\:308B]]",

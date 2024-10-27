@@ -46,101 +46,96 @@ $workspaceChatNotebookOptions := Sequence[
 
 (* TODO: set $serviceCaller from chat settings *)
 
+$$codeAssistanceMenuItem = "Inline"|"Window"|"ContentSuggestions";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*EnableCodeAssistance*)
 EnableCodeAssistance // beginDefinition;
-EnableCodeAssistance[ ] := catchMine @ (enableCodeAssistance[ ]; Null);
+
+EnableCodeAssistance[ ] :=
+    catchMine @ EnableCodeAssistance @ Automatic;
+
+EnableCodeAssistance[ Automatic ] := catchMine @
+    If[ $VersionNumber >= 14.1,
+        enableCodeAssistance @ { "Window", "ContentSuggestions" },
+        enableCodeAssistance @ { "Window" }
+    ];
+
+EnableCodeAssistance[ keys: { $$codeAssistanceMenuItem.. } ] :=
+    catchMine @ enableCodeAssistance @ DeleteDuplicates @ keys;
+
+EnableCodeAssistance[ key: $$codeAssistanceMenuItem ] :=
+    catchMine @ enableCodeAssistance @ { key };
+
 EnableCodeAssistance // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$codeAssistanceMenuItems*)
+$codeAssistanceMenuItems = <|
+    "Inline" :> FrontEnd`AddMenuCommands[
+        "OpenHelpLink",
+        {
+            MenuItem[
+                FrontEndResource[ "ChatbookStrings", "MenuItemShowCodeAssistanceInline" ],
+                FrontEnd`KernelExecute[
+                    Needs[ "Wolfram`Chatbook`" -> None ];
+                    Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Inline" ]
+                ],
+                FrontEnd`MenuEvaluator -> Automatic,
+                FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { "Control", "Shift" } ]
+            ]
+        }
+    ],
+
+    "Window" :> FrontEnd`AddMenuCommands[
+        "OpenHelpLink",
+        {
+            MenuItem[
+                FrontEndResource[ "ChatbookStrings", "MenuItemShowCodeAssistanceWindow" ],
+                FrontEnd`KernelExecute[
+                    Needs[ "Wolfram`Chatbook`" -> None ];
+                    Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Window" ]
+                ],
+                FrontEnd`MenuEvaluator -> Automatic,
+                Evaluate[
+                    If[ $OperatingSystem === "MacOSX",
+                        FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { "Control" } ],
+                        FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { "Command" } ]
+                    ]
+                ]
+            ]
+        }
+    ],
+
+    "ContentSuggestions" :> FrontEnd`AddMenuCommands[
+        "DuplicatePreviousOutput",
+        {
+            MenuItem[
+                FrontEndResource[ "ChatbookStrings", "MenuItemShowContentSuggestions" ],
+                FrontEnd`KernelExecute[
+                    Needs[ "Wolfram`Chatbook`" -> None ];
+                    Symbol[ "Wolfram`Chatbook`ShowContentSuggestions" ][ ]
+                ],
+                FrontEnd`MenuEvaluator -> Automatic,
+                Evaluate[
+                    If[ $OperatingSystem === "MacOSX",
+                        FrontEnd`MenuKey[ "k", FrontEnd`Modifiers -> { "Control" } ],
+                        FrontEnd`MenuKey[ "k", FrontEnd`Modifiers -> { "Command" } ]
+                    ]
+                ],
+                Method -> "Queued"
+            ]
+        }
+    ]
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*enableCodeAssistance*)
 enableCodeAssistance // beginDefinition;
-
-enableCodeAssistance[ ] :=
-    enableCodeAssistance[ $VersionNumber >= 14.1 ];
-
-enableCodeAssistance[ True ] := Once[
-    FrontEndExecute @ {
-        FrontEnd`AddMenuCommands[
-            "OpenHelpLink",
-            {
-                MenuItem[
-                    FrontEndResource["ChatbookStrings", "MenuItemShowCodeAssistanceWindow"],
-                    FrontEnd`KernelExecute[
-                        Needs[ "Wolfram`Chatbook`" -> None ];
-                        Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Window" ]
-                    ],
-                    FrontEnd`MenuEvaluator -> Automatic,
-                    Evaluate[
-                        If[ $OperatingSystem === "MacOSX",
-                            FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Control } ],
-                            FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Command } ]
-                        ]
-                    ]
-                ],
-                MenuItem[
-                    FrontEndResource["ChatbookStrings", "MenuItemShowCodeAssistanceInline"],
-                    FrontEnd`KernelExecute[
-                        Needs[ "Wolfram`Chatbook`" -> None ];
-                        Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Inline" ]
-                    ],
-                    FrontEnd`MenuEvaluator -> Automatic,
-                    FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Control, FrontEnd`Shift } ]
-                ]
-            }
-        ],
-        FrontEnd`AddMenuCommands[
-            "DuplicatePreviousOutput",
-            {
-                MenuItem[
-                    FrontEndResource["ChatbookStrings", "MenuItemShowContentSuggestions"],
-                    FrontEnd`KernelExecute[
-                        Needs[ "Wolfram`Chatbook`" -> None ];
-                        Symbol[ "Wolfram`Chatbook`ShowContentSuggestions" ][ ]
-                    ],
-                    FrontEnd`MenuEvaluator -> Automatic,
-                    Evaluate[
-                        If[ $OperatingSystem === "MacOSX",
-                            FrontEnd`MenuKey[ "k", FrontEnd`Modifiers -> { FrontEnd`Control } ],
-                            FrontEnd`MenuKey[ "k", FrontEnd`Modifiers -> { FrontEnd`Command } ]
-                        ]
-                    ],
-                    Method -> "Queued"
-                ]
-            }
-        ]
-    },
-    "FrontEndSession"
-];
-
-(* When attachment to selection is not available, we can't do inline chat or content suggestions: *)
-enableCodeAssistance[ False ] := Once[
-    FrontEndExecute @ {
-        FrontEnd`AddMenuCommands[
-            "OpenHelpLink",
-            {
-                MenuItem[
-                    FrontEndResource["ChatbookStrings", "MenuItemShowCodeAssistanceWindow"],
-                    FrontEnd`KernelExecute[
-                        Needs[ "Wolfram`Chatbook`" -> None ];
-                        Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Window" ]
-                    ],
-                    FrontEnd`MenuEvaluator -> Automatic,
-                    Evaluate[
-                        If[ $OperatingSystem === "MacOSX",
-                            FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Control } ],
-                            FrontEnd`MenuKey[ "'", FrontEnd`Modifiers -> { FrontEnd`Command } ]
-                        ]
-                    ]
-                ]
-            }
-        ]
-    },
-    "FrontEndSession"
-];
-
+enableCodeAssistance[ k: { $$codeAssistanceMenuItem.. } ] := FrontEndExecute @ Lookup[ $codeAssistanceMenuItems, k ];
 enableCodeAssistance // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

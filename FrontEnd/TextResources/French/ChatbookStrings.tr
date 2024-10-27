@@ -189,13 +189,13 @@
 
 "AttachedChatFieldHint" -> "Demande\[Hyphen]moi quelque chose",
 
-"MenuItemShowCodeAssistanceWindow" -> "Chat d\[CloseCurlyQuote]assistance au code\[Ellipsis]",
-"MenuItemShowCodeAssistanceInline" -> "Code d\[CloseCurlyQuote]aide \[AGrave] la s\[EAcute]lection",
+"MenuItemShowCodeAssistanceWindow" -> "Notebook Assistant Chat\[Ellipsis]",
+"MenuItemShowCodeAssistanceInline" -> "Notebook Assistant for Selection",
 "MenuItemShowContentSuggestions" -> "Suggestion de contenu par l\[CloseCurlyQuote]IA",
 
+"WorkspaceWindowTitle" -> "Notebook Assistant",
 "WorkspaceToolbarButtonLabelSources" -> "Sources",
 "WorkspaceToolbarButtonLabelNew" -> "Nouveau",
-
 "WorkspaceToolbarButtonTooltipHistory" -> "[[G\[EAcute]rer les conversations]]",
 "WorkspaceToolbarButtonTooltipSources" -> "[[Ajouter des sources suppl\[EAcute]mentaires au contexte du chat]]",
 "WorkspaceToolbarButtonTooltipNew" -> "[[D\[EAcute]marrer une nouvelle conversation]]",
