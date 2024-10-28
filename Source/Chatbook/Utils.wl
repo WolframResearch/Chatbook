@@ -360,6 +360,301 @@ guessExpressionMimeType // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Progress*)
+$progressContainer = None;
+$progressFraction  = 0.0;
+$progressText      = "Please wait\[Ellipsis]";
+$defaultProgress   = ProgressIndicator[ Appearance -> "Percolate" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*initializeProgressContainer*)
+initializeProgressContainer // beginDefinition;
+
+initializeProgressContainer[ container_Symbol ] := (
+    $dynamicTrigger    = 0;
+    $progressFraction  = 0.0;
+    $progressContainer = HoldComplete @ container[ "DynamicContent" ];
+
+    container = <|
+        "DynamicContent" -> $defaultProgress,
+        "FullContent"    -> $defaultProgress,
+        "UUID"           -> CreateUUID[ ]
+    |>
+);
+
+initializeProgressContainer // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*setProgressDisplay*)
+setProgressDisplay // beginDefinition;
+
+setProgressDisplay[ p: _Integer|_Real ] := Enclose[
+    $progressFraction = ConfirmBy[ p, 0.0 <= # <= 1.0 &, "ProgressFraction" ],
+    throwInternalFailure
+];
+
+setProgressDisplay[ expr_ ] :=
+    setProgressDisplay[ expr, 0.0 ];
+
+setProgressDisplay[ expr_, p_ ] :=
+    setProgressDisplay[ expr, p, $progressContainer ];
+
+setProgressDisplay[ expr_, p_, HoldComplete[ container_ ] ] := Enclose[
+    $progressFraction = ConfirmBy[ p, 0.0 <= # <= 1.0 &, "ProgressFraction" ];
+    If[ expr =!= None && ! StringQ @ container,
+        WithCleanup[
+            container = ConfirmMatch[
+                basicProgressPanel[ expr, Dynamic @ $progressFraction ],
+                _Deploy,
+                "ProgressPanel"
+            ],
+            $dynamicTrigger++
+        ]
+    ],
+    throwInternalFailure
+];
+
+setProgressDisplay[ expr_, _, _ ] :=
+    Null;
+
+setProgressDisplay // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*basicProgressPanel*)
+basicProgressPanel // beginDefinition;
+
+basicProgressPanel[ expr_, p_ ] := Deploy @ Grid[
+    {
+        {
+            Pane[
+                Grid[
+                    {
+                        {
+                            Style[
+                                If[ StringQ @ expr,
+                                    Row @ { expr, ProgressIndicator[ Appearance -> "Ellipsis" ] },
+                                    expr
+                                ],
+                                "ProgressTitle"
+                            ]
+                        },
+                        {
+                            Grid[
+                                {
+                                    {
+                                        Graphics[
+                                            {
+                                                RGBColor[ 0.26667, 0.61961, 0.96863 ],
+                                                Rectangle[ ImageScaled @ { 0, 0 }, ImageScaled @ { p, 1 } ]
+                                            },
+                                            AspectRatio      -> Full,
+                                            Background       -> GrayLevel[ 0.81961 ],
+                                            ImageSize        -> { Full, 4 },
+                                            PlotRangePadding -> None
+                                        ]
+                                    }
+                                },
+                                Alignment -> { Center, Center },
+                                Frame     -> None,
+                                ItemSize  -> { Automatic, 0 },
+                                Spacings  -> { { 0, { }, 0 }, { 0, { }, 0 } }
+                            ]
+                        }
+                    },
+                    Alignment  -> { Left, Automatic },
+                    Background -> None,
+                    Frame      -> All,
+                    FrameStyle -> Directive[ 1, GrayLevel[ 0, 0 ] ],
+                    Spacings   -> { { 0, { 0 }, 0 }, { 0.6, { -0.2 }, 0.0 } }
+                ],
+                FrameMargins -> { { 0, 0 }, { 0, 0 } },
+                ImageSize    -> { Scaled[ 1 ], Automatic }
+            ]
+        }
+    },
+    Frame      -> All,
+    FrameStyle -> Directive[ 1, GrayLevel[ 0, 0 ] ],
+    Spacings   -> { { 0, { 0 }, 0 }, { 0, { 0 }, 0 } }
+];
+
+basicProgressPanel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*evaluateWithProgress*)
+(* This is a workaround for EvaluateWithProgress never printing a progress panel when called normally in a chat: *)
+evaluateWithProgress // beginDefinition;
+evaluateWithProgress // Attributes = { HoldFirst };
+evaluateWithProgress[ args___ ] /; $WorkspaceChat := evaluateWithWorkspaceProgress @ args;
+evaluateWithProgress[ args___ ] /; $InlineChat := evaluateWithInlineProgress @ args;
+evaluateWithProgress[ args___ ] := evaluateWithProgressContainer[ $progressContainer, args ];
+evaluateWithProgress // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*evaluateWithProgressContainer*)
+evaluateWithProgressContainer // beginDefinition;
+evaluateWithProgressContainer // Attributes = { HoldRest };
+
+evaluateWithProgressContainer[ HoldComplete[ container_ ], args___ ] /; ! StringQ @ container :=
+    Module[ { before },
+        WithCleanup[
+            before = container,
+            Progress`EvaluateWithProgress[ args, "Container" :> container, "Delay" -> 0 ],
+            PreemptProtect @ If[ ! StringQ @ container, container = before ]
+        ]
+    ];
+
+evaluateWithProgressContainer[ _, args___ ] :=
+    Progress`EvaluateWithProgress[ args, "Delay" -> 0 ];
+
+evaluateWithProgressContainer // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*evaluateWithWorkspaceProgress*)
+evaluateWithWorkspaceProgress // beginDefinition;
+evaluateWithWorkspaceProgress // Attributes = { HoldFirst };
+
+evaluateWithWorkspaceProgress[ args___ ] :=
+    Catch @ Module[ { nbo, cell, container, attached },
+
+        nbo = $evaluationNotebook;
+        cell = Last[ Cells[ nbo, CellStyle -> "ChatOutput" ], None ];
+        If[ ! MatchQ[ cell, _CellObject ], Throw @ evaluateWithDialogProgress @ args ];
+
+        container = ProgressIndicator[ Appearance -> "Percolate" ];
+
+        attached = AttachCell[
+            cell,
+            Magnify[
+                Pane[
+                    Dynamic[ container, Deinitialization :> Quiet @ Remove @ container ],
+                    ImageSize -> { Scaled[ 1 ], Automatic }
+                ],
+                AbsoluteCurrentValue[ nbo, Magnification ]
+            ],
+            { Left, Bottom },
+            Offset[ { 0, -30 }, { 0, 0 } ],
+            { Left, Top }
+        ];
+
+        WithCleanup[
+            Block[ { Progress`AssetsDump`$defaultIndicatorWidth = Scaled[ 0.925 ] },
+                Progress`EvaluateWithProgress[
+                    args,
+                    "Container" :> container,
+                    "Delay"     -> 0
+                ]
+            ],
+            NotebookDelete @ attached;
+            Quiet @ Remove @ container;
+        ]
+    ];
+
+evaluateWithWorkspaceProgress // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*evaluateWithInlineProgress*)
+evaluateWithInlineProgress // beginDefinition;
+evaluateWithInlineProgress // Attributes = { HoldFirst };
+
+evaluateWithInlineProgress[ args___ ] := Enclose[
+    Catch @ Module[ { container, cells, inserted },
+
+        container = ProgressIndicator[ Appearance -> "Percolate" ];
+        cells = $inlineChatState[ "MessageCells" ];
+        inserted = insertInlineProgressIndicator[ Dynamic @ container, cells ];
+        If[ ! MatchQ[ inserted, { ___Cell } ], Throw @ evaluateWithDialogProgress @ args ];
+
+        WithCleanup[
+            Progress`EvaluateWithProgress[
+                args,
+                "Container" :> container,
+                "Delay"     -> 0
+            ],
+            ConfirmMatch[ removeInlineProgressIndicator @ cells, { ___Cell }, "Removed" ];
+            Quiet @ Remove @ container;
+        ]
+    ],
+    throwInternalFailure
+];
+
+evaluateWithInlineProgress // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*insertInlineProgressIndicator*)
+insertInlineProgressIndicator // beginDefinition;
+
+insertInlineProgressIndicator[ Dynamic[ container_ ], Dynamic[ cells0_Symbol ] ] := Enclose[
+    Module[ { cells, cell },
+        cells = ConfirmMatch[ cells0, { ___Cell }, "Cells" ];
+        cell = Cell[
+            BoxData @ assistantMessageBox @ ToBoxes @ Dynamic[
+                container,
+                Deinitialization :> Quiet @ Remove @ container
+            ],
+            "ChatOutput",
+            "EvaluateWithProgressContainer",
+            CellFrame          -> 0,
+            PrivateCellOptions -> { "ContentsOpacity" -> 1 }
+        ];
+        cells0 = Append[ cells, cell ]
+    ],
+    throwInternalFailure
+];
+
+insertInlineProgressIndicator // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*removeInlineProgressIndicator*)
+removeInlineProgressIndicator // beginDefinition;
+
+removeInlineProgressIndicator[ Dynamic[ cells_Symbol ] ] :=
+    cells = DeleteCases[ cells, Cell[ __, "EvaluateWithProgressContainer", ___ ] ];
+
+removeInlineProgressIndicator // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*evaluateWithDialogProgress*)
+evaluateWithDialogProgress // beginDefinition;
+evaluateWithDialogProgress // Attributes = { HoldFirst };
+
+evaluateWithDialogProgress[ args___ ] :=
+    Module[ { container, dialog },
+
+        container = ProgressIndicator[ Appearance -> "Percolate" ];
+
+        dialog = CreateDialog[
+            Pane[
+                Dynamic[ container, Deinitialization :> Quiet @ Remove @ container ],
+                ImageMargins -> { { 5, 5 }, { 10, 5 } }
+            ],
+            WindowTitle -> Dynamic[ $progressText ]
+        ];
+
+        WithCleanup[
+            Progress`EvaluateWithProgress[
+                args,
+                "Container" :> container,
+                "Delay"     -> 0
+            ],
+            NotebookClose @ dialog;
+            Quiet @ Remove @ container;
+        ]
+    ];
+
+evaluateWithDialogProgress // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Misc*)
 
 (* ::**************************************************************************************************************:: *)
