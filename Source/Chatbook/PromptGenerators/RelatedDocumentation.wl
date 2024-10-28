@@ -148,6 +148,7 @@ relatedDocumentationPrompt // beginDefinition;
 relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_, filterCount_ ] := Enclose[
     Catch @ Module[ { uris, filtered, string },
 
+        setProgressDisplay[ "Checking documentation" ];
         uris = ConfirmMatch[
             RelatedDocumentation[ messages, "URIs", count ],
             { ___String },
@@ -200,8 +201,10 @@ filterSnippets[ messages_, uris: { __String }, filter_, filterCount_Integer? Pos
         snippets = ConfirmMatch[ makeDocSnippets @ uris, { ___String }, "Snippets" ];
         If[ ! TrueQ @ filter, Throw @ snippets ];
 
+        setProgressDisplay[ "Choosing relevant documentation" ];
         inserted = insertContextPrompt @ messages;
         transcript = ConfirmBy[ getSmallContextString @ inserted, StringQ, "Transcript" ];
+        setProgressDisplay[ 0.25 ];
 
         xml = ConfirmMatch[ snippetXML /@ snippets, { __String }, "XML" ];
         instructions = ConfirmBy[
@@ -216,14 +219,17 @@ filterSnippets[ messages_, uris: { __String }, filter_, filterCount_Integer? Pos
             StringQ,
             "Prompt"
         ];
+        setProgressDisplay[ 0.5 ];
 
         response = StringTrim @ ConfirmBy[
             LogChatTiming[ llmSynthesize @ instructions, "WaitForFilterSnippetsTask" ],
             StringQ,
             "Response"
         ];
+        setProgressDisplay[ 0.75 ];
 
         pages = ConfirmMatch[ makeDocSnippets @ StringCases[ response, uris ], { ___String }, "Pages" ];
+        setProgressDisplay[ 1 ];
 
         pages
     ],
@@ -397,7 +403,11 @@ fetchDocumentationSnippets // beginDefinition;
 fetchDocumentationSnippets[ { } ] := { };
 
 fetchDocumentationSnippets[ uris: { __String } ] :=
-    Module[ { $results, tasks },
+    Module[ { count, noun, countText, $results, tasks },
+        count = Length @ uris;
+        noun = If[ count == 1, "snippet", "snippets" ];
+        countText = If[ count <= 3, IntegerName @ count, ToString @ count ];
+        setProgressDisplay[ "Downloading "<>countText<>" documentation "<>noun ];
         $results = AssociationMap[ <| "URI" -> #1 |> &, uris ];
         tasks = fetchDocumentationSnippets0 @ $results /@ uris;
         TaskWait @ tasks;

@@ -156,7 +156,11 @@ FormatChatOutput // endDefinition;
 
 formatChatOutput // beginDefinition;
 
-formatChatOutput[ output_, "Waiting" ] := ProgressIndicator[ Appearance -> "Percolate" ];
+formatChatOutput[ output: $$progressIndicator, _ ] :=
+    output;
+
+formatChatOutput[ output_, "Waiting" ] :=
+    ProgressIndicator[ Appearance -> "Percolate" ];
 
 formatChatOutput[ output_String, "Streaming" ] :=
     Block[ { $dynamicText = True }, RawBoxes @ Cell @ TextData @ reformatTextData @ output ];

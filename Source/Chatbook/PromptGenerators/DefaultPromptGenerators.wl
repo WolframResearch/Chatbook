@@ -27,7 +27,7 @@ $defaultPromptGenerators := $defaultPromptGenerators = <|
 relatedDocumentationGenerator // beginDefinition;
 
 relatedDocumentationGenerator[ messages: $$chatMessages ] :=
-    If[ TrueQ[ $InlineChat || $WorkspaceChat ], (* TODO: define a flag for when using Code Assistance instead of this *)
+    If[ TrueQ[ $InlineChat || $WorkspaceChat || $llmKit ],
         LogChatTiming @ RelatedDocumentation[ messages, "Prompt", MaxItems -> 20, "FilterResults" -> True ],
         LogChatTiming @ RelatedDocumentation[ messages, "Prompt", MaxItems -> 5, "FilterResults" -> False ]
     ];
