@@ -66,11 +66,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             $currentChatSettings = settings;
         ];
 
-        container = <|
-            "DynamicContent" -> ProgressIndicator[ Appearance -> "Percolate" ],
-            "FullContent"    -> ProgressIndicator[ Appearance -> "Percolate" ],
-            "UUID"           -> CreateUUID[ ]
-        |>;
+        ConfirmBy[ initializeProgressContainer @ container, AssociationQ, "InitializeProgress" ];
 
         $reformattedCell = None;
         cellTags = CurrentValue[ evalCell, CellTags ];
@@ -91,6 +87,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             "CreateOutput"
         ] // LogChatTiming[ "CreateChatOutput" ];
 
+        setProgressDisplay[ "Creating messages" ];
+
         If[ ! settings[ "IncludeHistory" ], cells = { evalCell } ];
 
         { messages, data } = Reap[
@@ -101,6 +99,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             ],
             $chatDataTag
         ];
+        setProgressDisplay[ 1.0 ];
 
         data = ConfirmBy[ Association @ Flatten @ data, AssociationQ, "Data" ];
 
@@ -140,6 +139,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             |>
         ];
 
+        setProgressDisplay[ "Sending chat" ];
         task = $lastTask = chatSubmit[ container, prepareMessagesForLLM @ messages, cellObject, settings ];
 
         addHandlerArguments[ "Task" -> task ];
@@ -148,6 +148,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "Task"       } ] = task;
 
         If[ FailureQ @ task, throwTop @ writeErrorCell[ cellObject, task ] ];
+        setProgressDisplay[ "Waiting for response" ];
 
         If[ task === $Canceled, StopChat @ cellObject ];
 
@@ -1169,7 +1170,7 @@ joinIfStrings // endDefinition;
 (*toolFreeQ*)
 toolFreeQ // beginDefinition;
 toolFreeQ[ settings_, KeyValuePattern[ "FullContent" -> s_ ] ] := toolFreeQ[ settings[ "ToolMethod" ], s ];
-toolFreeQ[ method_, _ProgressIndicator ] := True;
+toolFreeQ[ method_, $$progressIndicator ] := True;
 toolFreeQ[ "Simple", s_String ] := simpleToolFreeQ @ s;
 toolFreeQ[ _, s_String ] := toolFreeQ0 @ s;
 toolFreeQ // endDefinition;
@@ -2097,7 +2098,7 @@ writeReformattedCell // beginDefinition;
 writeReformattedCell[ settings_, KeyValuePattern[ "FullContent" -> string_ ], cell_ ] :=
     writeReformattedCell[ settings, string, cell ];
 
-writeReformattedCell[ settings_, _ProgressIndicator, cell_CellObject ] :=
+writeReformattedCell[ settings_, $$progressIndicator, cell_CellObject ] :=
     writeReformattedCell[ settings, None, cell ];
 
 writeReformattedCell[ settings_, None, cell_CellObject ] :=

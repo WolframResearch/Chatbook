@@ -36,6 +36,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$graphics;
 `$$unspecified;
 `$$feObj;
+`$$progressIndicator;
 `$$template;
 `$$complex;
 `$$integer;
@@ -141,12 +142,13 @@ $resourceVersions = <|
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Basic Argument Patterns*)
-$$optionsSequence = (Rule|RuleDelayed)[ _Symbol|_String, _ ] ...;
-$$size            = Infinity | (_Real|_Integer)? NonNegative;
-$$unspecified     = _Missing | Automatic | Inherited;
-$$feObj           = _FrontEndObject | $FrontEndSession | _NotebookObject | _CellObject | _BoxObject;
-$$template        = _String|_TemplateObject|_TemplateExpression|_TemplateSequence;
-$$serviceCaller   = _String? StringQ | { ___String? StringQ };
+$$optionsSequence   = (Rule|RuleDelayed)[ _Symbol|_String, _ ] ...;
+$$size              = Infinity | (_Real|_Integer)? NonNegative;
+$$unspecified       = _Missing | Automatic | Inherited;
+$$feObj             = _FrontEndObject | $FrontEndSession | _NotebookObject | _CellObject | _BoxObject;
+$$progressIndicator = _ProgressIndicator | _Deploy | _Progress`ProgressDump`ProgressPanelGUI;
+$$template          = _String|_TemplateObject|_TemplateExpression|_TemplateSequence;
+$$serviceCaller     = _String? StringQ | { ___String? StringQ };
 
 (* Helper functions for held pattern tests: *)
 u[ f_ ] := Function[ Null, f @ Unevaluated @ #, HoldAllComplete ];

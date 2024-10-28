@@ -568,7 +568,7 @@ logUsage // beginDefinition;
 logUsage[ KeyValuePattern[ "FullContent" -> response_ ] ] :=
     logUsage @ response;
 
-logUsage[ _ProgressIndicator ] :=
+logUsage[ $$progressIndicator ] :=
     Null;
 
 logUsage[ response_String ] := logUsage[
