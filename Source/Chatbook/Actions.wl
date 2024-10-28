@@ -687,7 +687,7 @@ StopChat[ cell0_CellObject ] := Enclose[
         removeTask @ Lookup[ settings, "Task", None ];
         container = ConfirmMatch[ Lookup[ settings, "Container", None ], _Association|None, "Container" ];
         If[ container === None, finish[ ] ];
-        content = ConfirmMatch[ Lookup[ container, "FullContent" ], _String|_ProgressIndicator, "Content" ];
+        content = ConfirmMatch[ Lookup[ container, "FullContent" ], _String|$$progressIndicator, "Content" ];
         FinishDynamic[ ];
         Block[ { createFETask = # & }, writeReformattedCell[ settings, content, cell ] ]
     ],
