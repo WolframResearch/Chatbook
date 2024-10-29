@@ -366,6 +366,8 @@ $progressFraction  = 0.0;
 $progressText      = "Please wait\[Ellipsis]";
 $defaultProgress   = ProgressIndicator[ Appearance -> "Percolate" ];
 
+$$progressFraction = (_Integer|_Real)? (0.0 <= # <= 1.0 &);
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*initializeProgressContainer*)
@@ -387,23 +389,57 @@ initializeProgressContainer // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*withApproximateProgress*)
+withApproximateProgress // beginDefinition;
+withApproximateProgress // Attributes = { HoldFirst };
+
+withApproximateProgress[ expr_ ] :=
+    If[ MatchQ[ expr, $$progressFraction ],
+        withApproximateProgress[ Inherited, expr ],
+        withApproximateProgress[ expr, $progressFraction ]
+    ];
+
+withApproximateProgress[ label_, fraction: $$progressFraction ] :=
+    Function[ eval, withApproximateProgress[ eval, label, fraction ], HoldFirst ];
+
+withApproximateProgress[ eval_, label_, fraction: $$progressFraction ] := Enclose[
+    Module[ { current, scale, progressEnd, progressStep, result },
+
+        current = Replace[ $progressFraction, Except[ $$progressFraction ] -> 0.0 ];
+        scale = ConfirmMatch[ (Cos[ current * Pi ] + 1.0) / 2.0, $$progressFraction, "Scale" ];
+        progressEnd = ConfirmMatch[ scale * fraction, $$progressFraction, "ProgressEnd" ];
+        progressStep = progressEnd / 2;
+
+        setProgressDisplay[ label, $progressFraction + progressStep ];
+        result = eval;
+        setProgressDisplay[ Inherited, $progressFraction + progressStep ];
+
+        result
+    ],
+    throwInternalFailure
+];
+
+withApproximateProgress // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*setProgressDisplay*)
 setProgressDisplay // beginDefinition;
 
 setProgressDisplay[ p: _Integer|_Real ] := Enclose[
-    $progressFraction = ConfirmBy[ p, 0.0 <= # <= 1.0 &, "ProgressFraction" ],
+    $progressFraction = ConfirmBy[ p, 0.0 <= # <= 1.0 &, "ProgressFraction" ];,
     throwInternalFailure
 ];
 
 setProgressDisplay[ expr_ ] :=
-    setProgressDisplay[ expr, 0.0 ];
+    setProgressDisplay[ expr, $progressFraction ];
 
 setProgressDisplay[ expr_, p_ ] :=
     setProgressDisplay[ expr, p, $progressContainer ];
 
 setProgressDisplay[ expr_, p_, HoldComplete[ container_ ] ] := Enclose[
     $progressFraction = ConfirmBy[ p, 0.0 <= # <= 1.0 &, "ProgressFraction" ];
-    If[ expr =!= None && ! StringQ @ container,
+    If[ ! MatchQ[ expr, Automatic|Inherited|None ] && ! StringQ @ container,
         WithCleanup[
             container = ConfirmMatch[
                 basicProgressPanel[ expr, Dynamic @ $progressFraction ],
@@ -411,7 +447,7 @@ setProgressDisplay[ expr_, p_, HoldComplete[ container_ ] ] := Enclose[
                 "ProgressPanel"
             ],
             $dynamicTrigger++
-        ]
+        ];
     ],
     throwInternalFailure
 ];
