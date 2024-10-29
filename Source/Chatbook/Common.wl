@@ -1167,7 +1167,8 @@ escapePipes[ string_String ] := StringReplace[ string, "|" -> "\\|" ];
 chatbookIcon // beginDefinition;
 chatbookIcon[ name_String ] := chatbookIcon[ name, True ];
 chatbookIcon[ name_String, True  ] := chatbookIcon[ name, Lookup[ $chatbookIcons, name ] ];
-chatbookIcon[ name_String, False ] := inlineTemplateBox @ chatbookIcon[ name, True ];
+chatbookIcon[ name_String, False ] := Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", name ];
+chatbookIcon[ name_String, False, args__ ] := Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", name ][ args ]; (* Function resources *)
 chatbookIcon[ name_String, icon: Except[ _Missing ] ] := icon;
 chatbookIcon // endDefinition;
 

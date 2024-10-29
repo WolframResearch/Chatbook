@@ -140,7 +140,7 @@ cloudPreferencesButton[ ] := Button[
     toolbarButtonLabel @ Row @ {
         tr[ "ChatToolbarChatSettings" ],
         Spacer[ 5 ],
-        RawBoxes @ TemplateBox[ { }, "AdvancedSettings" ]
+        Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "AdvancedSettings" ]
     },
     toggleCloudPreferences @ EvaluationNotebook[ ],
     FrameMargins -> { { 0, 4 }, { 0, 0 } }
