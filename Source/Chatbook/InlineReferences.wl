@@ -29,7 +29,7 @@ Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
 $argumentDivider = "|";
 
 $frameStyle     = Directive[ AbsoluteThickness[ 1 ], RGBColor[ "#a3c9f2" ] ];
-$frameBaseStyle = { "InlineReferenceText", FontSize -> 0.95*Inherited };
+$frameBaseStyle = { "NotebookAssistant`InlineReferenceText", FontSize -> 0.95*Inherited };
 
 $frameOptions = Sequence[
     RoundingRadius -> 2,

@@ -371,7 +371,9 @@ checkResult[ eval: (sym_Symbol)[ args___ ] ] :=
         If[ FailureQ @ result,
             Print[ "::error::" <> full <> " failed" ];
             Exit[ 1 ]
-        ]
+        ];
+
+        result
     ];
 
 noExit    := Wolfram`PacletCICD`Private`noExit;
