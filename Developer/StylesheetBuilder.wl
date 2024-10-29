@@ -928,14 +928,18 @@ BuildCoreExtensionsStylesheet[ ] := BuildCoreExtensionsStylesheet @ $coreExtensi
 
 revisedCoreExtensions[ ] :=
 Module[ { excludedCoreExtensions },
-    excludedCoreExtensions = Alternatives[ (* These styles are ignored because they are appended to Core and Core already contains them *)
-        "Notebook",
-        "Text",
+    (* These styles are excluded because they are appended to Core and Core already contains them,
+        or we needed to rename and modify the original versions and we want to avoid cluttering Core. *)
+    excludedCoreExtensions = Alternatives[
+        "InlineFormula",
+        "InlineReferenceText",
         "Input",
-        "Output",
-        "Message",
         "Link",
-        "InlineFormula"];
+        "Message",
+        "Notebook",
+        "Output",
+        "Text"
+    ];
 
     DeleteCases[ Flatten @ $styleDataCells, Cell[ StyleData[ excludedCoreExtensions, ___ ], ___ ] ]
 ]

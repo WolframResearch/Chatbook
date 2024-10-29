@@ -57,9 +57,22 @@ Cell[
 (*Text*)
 
 
+(* 
+    In 14.1, Chatbook.nb inherits from Default.nb, but in 14.2, chat styles are in CoreExtensions.nb only.
+    "Text" is defined in Default.nb, so include what we need from it so it looks correct. *)
 Cell[
     StyleData[ "Text" ],
     ContextMenu -> contextMenu[ { $askMenuItem, Delimiter }, "Text" ]
+]
+
+Cell[
+    StyleData[ "NotebookAssistant`Text" ],
+    ContextMenu -> contextMenu[ { $askMenuItem, Delimiter }, "Text" ],
+    CellMargins -> { { 66, 10 }, { 7, 8 } },
+    FontFamily -> "Source Sans Pro",
+    FontSize -> 15,
+    LineSpacing -> { 1, 3 },
+    TabSpacings -> { 2.5 }
 ]
 
 
@@ -118,7 +131,7 @@ Cell[
 
 
 Cell[
-    StyleData[ "FramedChatCell", StyleDefinitions -> StyleData[ "Text" ] ],
+    StyleData[ "FramedChatCell", StyleDefinitions -> StyleData[ "NotebookAssistant`Text" ] ],
     AutoQuoteCharacters      -> { },
     CellFrame                -> 2,
     CellFrameColor           -> RGBColor[ "#ecf0f5" ],
@@ -388,17 +401,27 @@ Cell[
 (*ChatBlockDivider*)
 
 
+(*
+    14.2 CoreExtensions: this had inherited from Section which is defined in Default.
+    Instead, hard-code what we were inheriting from Default's definition. *)
 Cell[
-    StyleData[ "ChatBlockDivider", StyleDefinitions -> StyleData[ "Section" ] ],
+    StyleData[ "ChatBlockDivider" ],
     MenuSortingValue    -> 1546,
     CellFrame           -> { { 0, 0 }, { 0, 8 } },
     CellFrameColor      -> GrayLevel[ 0.74902 ],
+    CellFrameMargins    -> 4,
     CellGroupingRules   -> { "SectionGrouping", 30 },
-    CellMargins         -> { { 5, 25 }, { Inherited, Inherited } },
+    CellMargins         -> { { 5, 25 }, { 8, 18 } },
     CellTrayWidgets     -> <| "ChatWidget" -> <| "Visible" -> False |> |>,
     CounterAssignments  -> { { "ChatInputCount", 0 } },
+    CounterIncrements   -> "Section",
     FontColor           -> GrayLevel[ 0.2 ],
+    FontFamily          -> "Source Sans Pro",
+    FontSize            -> 28,
     FontWeight          -> "DemiBold",
+    LanguageCategory    -> "NaturalLanguage",
+    LineSpacing         -> { 1, 2 },
+    PageBreakBelow      -> False,
     ShowCellLabel       -> False,
     StyleKeyMapping     -> { "~" -> "ChatDelimiter", "'" -> "ChatInput" },
     TaggingRules        -> <| "ChatNotebookSettings" -> <| "ChatDelimiter" -> True |> |>,
@@ -537,6 +560,9 @@ Cell[
 (*ChatCode*)
 
 
+(* 
+    14.2 CoreExtensions: most important parts of Input are defined in Core.nb. Only the CellEpliog is missing for chat functionality.
+    There is no impact on 14.1 chatbooks because Input already adds CellEpilog, so duplicating it here has no effect. *)
 Cell[
     StyleData[ "ChatCode", StyleDefinitions -> StyleData[ "Input" ] ],
     Background           -> GrayLevel[ 1 ],
@@ -545,7 +571,13 @@ Cell[
     LanguageCategory     -> "Input",
     ShowAutoStyles       -> True,
     ShowStringCharacters -> True,
-    ShowSyntaxStyles     -> True
+    ShowSyntaxStyles     -> True,
+
+    CellEpilog :> With[ { Wolfram`ChatNB`cell = (FinishDynamic[]; EvaluationCell[]) },
+        Quiet[ Needs[ "Wolfram`Chatbook`" -> None ] ]; 
+        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AIAutoAssist", Wolfram`ChatNB`cell ]
+    ]
+ 
 ]
 
 
@@ -554,13 +586,25 @@ Cell[
 (*ChatPreformatted*)
 
 
+(*
+    14.2 CoreExtensions: this had inherited from Program which is defined in Default.
+    Instead, hard-code what we were inheriting from Default's definition. *)
 Cell[
-    StyleData[ "ChatPreformatted", StyleDefinitions -> StyleData[ "Program" ] ],
-    Background           -> GrayLevel[ 1 ],
-    CellFrame            -> None,
-    FontSize             -> 13,
-    FontWeight           -> "Plain",
-    ShowStringCharacters -> True
+    StyleData[ "ChatPreformatted" ],
+    AutoQuoteCharacters      -> { },
+    Background               -> GrayLevel[ 1 ],
+    CellFrame                -> None,
+    CellMargins              -> { { 66, 10 }, { 8, 8 } },
+    CodeAssistOptions        -> { "AutoDetectHyperlinks" -> False },
+    FontFamily               -> Dynamic[ AbsoluteCurrentValue[ { StyleHints, "CodeFont" } ] ],
+    FontSize                 -> 13,
+    FontWeight               -> "Plain",
+    Hyphenation              -> False,
+    LanguageCategory         -> "Formula",
+    PasteAutoQuoteCharacters -> { },
+    ScriptLevel              -> 1,
+    ShowStringCharacters     -> True,
+    StripStyleOnPaste        -> True
 ]
 
 
@@ -1035,7 +1079,7 @@ Cell[
 
 
 Cell[
-    StyleData[ "MessageAuthorLabel", StyleDefinitions -> StyleData[ "Text" ] ],
+    StyleData[ "MessageAuthorLabel", StyleDefinitions -> StyleData[ "NotebookAssistant`Text" ] ],
     FontSize             -> 14,
     FontWeight           -> "DemiBold",
     ShowStringCharacters -> False
@@ -1251,8 +1295,14 @@ Cell[
 (*InlineReferenceText*)
 
 
+(* TODO: unclear if this style is serialized into pre-14.1 chatbooks, so hang on to it, but exclude from CoreExtensions. *)
 Cell[
-    StyleData[ "InlineReferenceText", StyleDefinitions -> StyleData[ "Text" ] ],
+    StyleData[ "InlineReferenceText", StyleDefinitions -> StyleData[ "NotebookAssistant`Text" ] ],
+    FontColor -> GrayLevel[ 0.2 ]
+]
+
+Cell[
+    StyleData[ "NotebookAssistant`InlineReferenceText", StyleDefinitions -> StyleData[ "NotebookAssistant`Text" ] ],
     FontColor -> GrayLevel[ 0.2 ]
 ]
 
