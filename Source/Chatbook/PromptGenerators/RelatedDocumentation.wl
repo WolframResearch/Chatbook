@@ -148,12 +148,11 @@ relatedDocumentationPrompt // beginDefinition;
 relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_, filterCount_ ] := Enclose[
     Catch @ Module[ { uris, filtered, string },
 
-        setProgressDisplay[ "Checking documentation" ];
         uris = ConfirmMatch[
             RelatedDocumentation[ messages, "URIs", count ],
             { ___String },
              "URIs"
-        ] // LogChatTiming[ "RelatedDocumentationURIs" ];
+        ] // LogChatTiming[ "RelatedDocumentationURIs" ] // withApproximateProgress[ "Checking documentation", 0.2 ];
 
         If[ uris === { }, Throw[ "" ] ];
 
@@ -204,7 +203,6 @@ filterSnippets[ messages_, uris: { __String }, filter_, filterCount_Integer? Pos
         setProgressDisplay[ "Choosing relevant documentation" ];
         inserted = insertContextPrompt @ messages;
         transcript = ConfirmBy[ getSmallContextString @ inserted, StringQ, "Transcript" ];
-        setProgressDisplay[ 0.25 ];
 
         xml = ConfirmMatch[ snippetXML /@ snippets, { __String }, "XML" ];
         instructions = ConfirmBy[
@@ -219,17 +217,17 @@ filterSnippets[ messages_, uris: { __String }, filter_, filterCount_Integer? Pos
             StringQ,
             "Prompt"
         ];
-        setProgressDisplay[ 0.5 ];
 
         response = StringTrim @ ConfirmBy[
-            LogChatTiming[ llmSynthesize @ instructions, "WaitForFilterSnippetsTask" ],
+            LogChatTiming[
+                llmSynthesize @ instructions,
+                "WaitForFilterSnippetsTask"
+            ] // withApproximateProgress[ 0.5 ],
             StringQ,
             "Response"
         ];
-        setProgressDisplay[ 0.75 ];
 
         pages = ConfirmMatch[ makeDocSnippets @ StringCases[ response, uris ], { ___String }, "Pages" ];
-        setProgressDisplay[ 1 ];
 
         pages
     ],
@@ -403,15 +401,19 @@ fetchDocumentationSnippets // beginDefinition;
 fetchDocumentationSnippets[ { } ] := { };
 
 fetchDocumentationSnippets[ uris: { __String } ] :=
-    Module[ { count, noun, countText, $results, tasks },
+     Module[ { count, noun, countText, text, $results, tasks },
         count = Length @ uris;
         noun = If[ count == 1, "snippet", "snippets" ];
         countText = If[ count <= 3, IntegerName @ count, ToString @ count ];
-        setProgressDisplay[ "Downloading "<>countText<>" documentation "<>noun ];
-        $results = AssociationMap[ <| "URI" -> #1 |> &, uris ];
-        tasks = fetchDocumentationSnippets0 @ $results /@ uris;
-        TaskWait @ tasks;
-        processDocumentationSnippetResults @ $results
+        text = "Downloading "<>countText<>" documentation "<>noun;
+        withApproximateProgress[
+            $results = AssociationMap[ <| "URI" -> #1 |> &, uris ];
+            tasks = fetchDocumentationSnippets0 @ $results /@ uris;
+            TaskWait @ tasks;
+            processDocumentationSnippetResults @ $results,
+            text,
+            0.5
+        ]
     ];
 
 fetchDocumentationSnippets // endDefinition;

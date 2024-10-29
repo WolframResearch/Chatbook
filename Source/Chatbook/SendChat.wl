@@ -87,8 +87,6 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             "CreateOutput"
         ] // LogChatTiming[ "CreateChatOutput" ];
 
-        setProgressDisplay[ "Creating messages" ];
-
         If[ ! settings[ "IncludeHistory" ], cells = { evalCell } ];
 
         { messages, data } = Reap[
@@ -98,8 +96,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
                 "ConstructMessages"
             ],
             $chatDataTag
-        ];
-        setProgressDisplay[ 1.0 ];
+        ] // withApproximateProgress[ "Creating messages", 0.3 ];
 
         data = ConfirmBy[ Association @ Flatten @ data, AssociationQ, "Data" ];
 
@@ -139,8 +136,12 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             |>
         ];
 
-        setProgressDisplay[ "Sending chat" ];
-        task = $lastTask = chatSubmit[ container, prepareMessagesForLLM @ messages, cellObject, settings ];
+        task = $lastTask = chatSubmit[
+            container,
+            prepareMessagesForLLM @ messages,
+            cellObject,
+            settings
+        ] // withApproximateProgress[ "Sending chat", 0.4 ];
 
         addHandlerArguments[ "Task" -> task ];
 
@@ -148,7 +149,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "Task"       } ] = task;
 
         If[ FailureQ @ task, throwTop @ writeErrorCell[ cellObject, task ] ];
-        setProgressDisplay[ "Waiting for response" ];
+        setProgressDisplay[ "Waiting for response", 1.0 ];
 
         If[ task === $Canceled, StopChat @ cellObject ];
 

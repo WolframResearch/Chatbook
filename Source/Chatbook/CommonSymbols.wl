@@ -297,6 +297,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `userMessageBox;
 `userMessageLabel;
 `usingFrontEnd;
+`withApproximateProgress;
 `withBasePromptBuilder;
 `withChatState;
 `withChatStateAndFEObjects;
