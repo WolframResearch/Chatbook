@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3939276329"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3939280647"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -1080,7 +1080,7 @@ Notebook[
           DynamicBox[
            ToBoxes[Wolfram`Chatbook`Common`floatingButtonGrid[#1, #2]]
           ],
-          Background -> GrayLevel[1],
+          Background -> RGBColor[0.98824, 0.99216, 1.0],
           FrameMargins -> {{7, 2}, {2, 2}},
           FrameStyle ->
            Directive[AbsoluteThickness[1], GrayLevel[0.92941]],
