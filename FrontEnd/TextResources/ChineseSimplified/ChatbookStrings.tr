@@ -197,9 +197,10 @@
 "WorkspaceWindowTitle" -> "Notebook Assistant",
 "WorkspaceToolbarButtonLabelSources" -> "\:8D44\:6E90",
 "WorkspaceToolbarButtonLabelNew" -> "\:65B0\:5BF9\:8BDD",
-"WorkspaceToolbarButtonTooltipHistory" -> "[[\:7BA1\:7406\:5BF9\:8BDD]]",
-"WorkspaceToolbarButtonTooltipSources" -> "[[\:5C06\:5176\:4ED6\:8D44\:6599\:6DFB\:52A0\:5230\:804A\:5929\:4E0A\:4E0B\:6587\:4E2D]]",
-"WorkspaceToolbarButtonTooltipNew" -> "[[\:5F00\:59CB\:65B0\:7684\:5BF9\:8BDD]]",
+"WorkspaceToolbarButtonTooltipHistory" -> "\:7BA1\:7406\:5BF9\:8BDD",
+"WorkspaceToolbarButtonTooltipSources" -> "\:5C06\:5176\:4ED6\:8D44\:6599\:6DFB\:52A0\:5230\:804A\:5929\:4E0A\:4E0B\:6587\:4E2D",
+"WorkspaceToolbarButtonTooltipNew" -> "\:5F00\:59CB\:65B0\:7684\:5BF9\:8BDD",
+"WorkspaceSourcesOpenNotebooks" -> "Open Notebooks",
 
 "CodeAssistanceInputGettingStarted" -> "\:5E2E\:52A9\:6211\:5F00\:59CB\:4F7F\:7528",
 "CodeAssistanceInputErrorMessage" -> "\:51FA\:4EC0\:4E48\:95EE\:9898\:4E86\:ff1f"
