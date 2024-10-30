@@ -18,6 +18,13 @@ If[ ! PacletObjectQ @ Quiet @ PacletInstall[ "SemanticSearch" ],
     }
 ];
 
+(* FIXME: Temporary workaround for SemanticSearch issues: *)
+"A friendly code inspector reminder to remove this workaround once the issue is resolved."
+If[ $VersionNumber < 14.2,
+    DeleteObject @ ResourceObject[ "all-MiniLM-L6-v2" ];
+    ResourceObject[ "all-MiniLM-L6-v2", ResourceVersion -> "1.1.0" ]
+];
+
 If[ ! PacletObjectQ @ PacletObject[ "SemanticSearch" ],
     Print[ "::error::Failed to install SemanticSearch." ];
     Exit[ 1 ]
