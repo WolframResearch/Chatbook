@@ -623,7 +623,7 @@ catchTop[ eval_, sym_Symbol ] :=
             catchTopAs           = (#1 &) &
         },
         $chatStartTime = AbsoluteTime[ ];
-        Catch[ setServiceCaller @ eval, $catchTopTag ]
+        Catch[ setServiceCallerAndID[ eval, $chatEvaluationID ], $catchTopTag ]
     ];
 
 catchTop // endDefinition;
@@ -817,6 +817,19 @@ makeInternalFailureData[ eval_, args___ ] :=
     ];
 
 $priorityFailureKeys = { "Information", "ConfirmationType", "Expression", "Function", "Pattern", "Test" };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*setServiceCallerAndID*)
+setServiceCallerAndID // beginDefinition;
+setServiceCallerAndID // Attributes = { HoldFirst };
+
+setServiceCallerAndID[ eval_, uuid_String ] := (
+    Quiet @ Needs[ "ServiceConnectionUtilities`" -> None ];
+    Block[ { ServiceConnectionUtilities`$TransactionID = uuid }, setServiceCaller @ eval ]
+);
+
+setServiceCallerAndID // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
