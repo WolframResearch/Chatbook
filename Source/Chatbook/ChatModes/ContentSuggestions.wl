@@ -10,11 +10,12 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$suggestionsService        := If[ TrueQ @ $llmKit && StringQ @ $llmKitService, $llmKitService, "OpenAI" ];
-$suggestionsAuthentication := If[ TrueQ @ $llmKit, "LLMKit", Automatic ];
-$stripWhitespace            = True;
-$defaultWLContextString     = "";
-$finishReason               = None;
+$suggestionsService             := If[ TrueQ @ $llmKit && StringQ @ $llmKitService, $llmKitService, "OpenAI" ];
+$suggestionsAuthentication      := If[ TrueQ @ $llmKit, "LLMKit", Automatic ];
+$stripWhitespace                 = True;
+$defaultWLContextString          = "";
+$finishReason                    = None;
+$contentSuggestionsProgressWidth = 250;
 
 $contentSuggestionsOverrides = <|
     "MaxCellStringLength"       -> 1000,
@@ -185,10 +186,10 @@ showContentSuggestions[ nbo_NotebookObject ] :=
     showContentSuggestions[ nbo, SelectedCells @ nbo ];
 
 showContentSuggestions[ nbo_NotebookObject, { selected_CellObject } ] :=
-    Block[ { $finishReason = None }, showContentSuggestions0[ nbo, selected ] ];
+    withSuggestionsProgress @ showContentSuggestions0[ nbo, selected ];
 
 showContentSuggestions[ nbo_NotebookObject, { } ] :=
-    Block[ { $finishReason = None }, showContentSuggestions0[ nbo, nbo ] ];
+    withSuggestionsProgress @ showContentSuggestions0[ nbo, nbo ];
 
 showContentSuggestions[ _NotebookObject, _ ] :=
     Null;
@@ -224,8 +225,9 @@ showContentSuggestions0[ nbo_NotebookObject, root: $$feObj, selectionInfo_Associ
         type = ConfirmBy[ suggestionsType @ selectionInfo, StringQ, "Type" ];
         selection = selectionInfo[ "SelectionType" ];
 
-        suggestionsContainer = ProgressIndicator[ Appearance -> "Necklace" ];
         $progressContainer = HoldComplete @ suggestionsContainer;
+        setProgressDisplay[ "Generating suggestions", 0.0 ];
+        $fixedProgressText = True;
 
         attached = ConfirmMatch[
             If[ selection === None,
@@ -252,27 +254,50 @@ showContentSuggestions0[ nbo_NotebookObject, root: $$feObj, selectionInfo_Associ
 
         ClearAttributes[ suggestionsContainer, Temporary ];
 
-        settings = ConfirmBy[ LogChatTiming @ AbsoluteCurrentChatSettings @ root, AssociationQ, "Settings" ];
+        withApproximateProgress[
+            settings = ConfirmBy[
+                LogChatTiming @ AbsoluteCurrentChatSettings @ root,
+                AssociationQ,
+                "Settings"
+            ];
 
-        settings = mergeChatSettings @ {
-            settings,
-            $contentSuggestionsOverrides,
-            <| "MaxContextTokens" -> determineMaxContextTokens @ type |>
-        };
+            settings = mergeChatSettings @ {
+                settings,
+                $contentSuggestionsOverrides,
+                <| "MaxContextTokens" -> determineMaxContextTokens @ type |>
+            },
+            Inherited,
+            0.25
+        ];
 
-        context = ConfirmBy[
-            Replace[ LogChatTiming @ getSuggestionsContext[ type, nbo, settings ], None -> "" ],
-            StringQ,
-            "Context"
+        context = withApproximateProgress[
+            ConfirmBy[
+                Replace[ LogChatTiming @ getSuggestionsContext[ type, nbo, settings ], None -> "" ],
+                StringQ,
+                "Context"
+            ],
+            Inherited,
+            0.2
         ];
 
         $contextPrompt   = None;
         $selectionPrompt = None;
 
-        ConfirmMatch[
-            LogChatTiming @ generateSuggestions[ type, Dynamic[ suggestionsContainer ], nbo, root, context, settings ],
-            _Pane,
-            "Generate"
+        withApproximateProgress[
+            ConfirmMatch[
+                LogChatTiming @ generateSuggestions[
+                    type,
+                    Dynamic[ suggestionsContainer ],
+                    nbo,
+                    root,
+                    context,
+                    settings
+                ],
+                _Pane,
+                "Generate"
+            ],
+            Inherited,
+            0.4
         ];
 
         $progressContainer = None;
@@ -283,6 +308,26 @@ showContentSuggestions0[ nbo_NotebookObject, root: $$feObj, selectionInfo_Associ
 ];
 
 showContentSuggestions0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*withSuggestionsProgress*)
+withSuggestionsProgress // beginDefinition;
+withSuggestionsProgress // Attributes = { HoldFirst };
+
+withSuggestionsProgress[ eval_ ] := Block[
+    {
+        $finishReason             = None,
+        $progressWidth            = $contentSuggestionsProgressWidth,
+        $showProgressText         = True,
+        $showProgressBar          = True,
+        $showProgressCancelButton = True,
+        $fixedProgressText        = $fixedProgressText
+    },
+    CheckAbort[ eval, NotebookDelete @ Cells[ CellStyle -> "AttachedContentSuggestions", AttachedCell -> True ] ]
+];
+
+withSuggestionsProgress // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -333,8 +378,8 @@ contentSuggestionsCell // beginDefinition;
 contentSuggestionsCell[ Dynamic[ container_Symbol ] ] := Cell[
     BoxData @ ToBoxes @ Framed[
         Dynamic[ container(*, Deinitialization :> Quiet @ Remove @ container*) ],
-        Background     -> GrayLevel[ 0.95 ],
-        FrameStyle     -> GrayLevel[ 0.75 ],
+        Background     -> RGBColor[ "#F3FAFF" ],
+        FrameStyle     -> RGBColor[ "#C9D9E5" ],
         RoundingRadius -> 5
     ],
     "AttachedContentSuggestions",
@@ -394,7 +439,7 @@ generateWLSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_St
                 MaxItems        -> $wlDocMaxItems,
                 "FilterResults" -> $wlFilterDocResults,
                 "FilteredCount" -> $wlFilteredDocCount
-            ],
+            ] // withApproximateProgress[ 0.25 ],
             StringQ,
             "RelatedDocumentation"
         ];
@@ -927,7 +972,7 @@ generateNotebookSuggestions0[ Dynamic[ container_ ], nbo_, root_NotebookObject, 
                 MaxItems        -> $notebookDocMaxItems,
                 "FilterResults" -> $notebookFilterDocResults,
                 "FilteredCount" -> $notebookFilteredDocCount
-            ],
+            ] // withApproximateProgress[ 0.4 ],
             StringQ,
             "RelatedDocumentation"
         ];

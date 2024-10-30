@@ -361,10 +361,17 @@ guessExpressionMimeType // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Progress*)
-$progressContainer = None;
-$progressFraction  = 0.0;
-$progressText      = "Please wait\[Ellipsis]";
-$defaultProgress   = ProgressIndicator[ Appearance -> "Percolate" ];
+$progressContainer        = None;
+$progressFraction         = 0.0;
+$progressText             = "Please wait\[Ellipsis]";
+$defaultProgress          = ProgressIndicator[ Appearance -> "Percolate" ];
+$showProgressText         = False;
+$showProgressBar          = True;
+$showProgressCancelButton = False;
+$fixedProgressText        = False;
+$progressWidth            = Scaled[ 1 ];
+
+$$progressFraction = (_Integer|_Real)? (0.0 <= # <= 1.0 &);
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -387,23 +394,57 @@ initializeProgressContainer // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*withApproximateProgress*)
+withApproximateProgress // beginDefinition;
+withApproximateProgress // Attributes = { HoldFirst };
+
+withApproximateProgress[ expr_ ] :=
+    If[ MatchQ[ expr, $$progressFraction ],
+        withApproximateProgress[ Inherited, expr ],
+        withApproximateProgress[ expr, $progressFraction ]
+    ];
+
+withApproximateProgress[ label_, fraction: $$progressFraction ] :=
+    Function[ eval, withApproximateProgress[ eval, label, fraction ], HoldFirst ];
+
+withApproximateProgress[ eval_, label_, fraction: $$progressFraction ] := Enclose[
+    Module[ { current, scale, progressEnd, progressStep, result },
+
+        current = Replace[ $progressFraction, Except[ $$progressFraction ] -> 0.0 ];
+        scale = ConfirmMatch[ (Cos[ current * Pi ] + 1.0) / 2.0, $$progressFraction, "Scale" ];
+        progressEnd = ConfirmMatch[ scale * fraction, $$progressFraction, "ProgressEnd" ];
+        progressStep = progressEnd / 2;
+
+        setProgressDisplay[ label, $progressFraction + progressStep ];
+        result = eval;
+        setProgressDisplay[ Inherited, $progressFraction + progressStep ];
+
+        result
+    ],
+    throwInternalFailure
+];
+
+withApproximateProgress // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*setProgressDisplay*)
 setProgressDisplay // beginDefinition;
 
 setProgressDisplay[ p: _Integer|_Real ] := Enclose[
-    $progressFraction = ConfirmBy[ p, 0.0 <= # <= 1.0 &, "ProgressFraction" ],
+    $progressFraction = ConfirmBy[ Clip[ p, { 0, 1 } ], 0.0 <= # <= 1.0 &, "ProgressFraction" ];,
     throwInternalFailure
 ];
 
 setProgressDisplay[ expr_ ] :=
-    setProgressDisplay[ expr, 0.0 ];
+    setProgressDisplay[ expr, $progressFraction ];
 
 setProgressDisplay[ expr_, p_ ] :=
     setProgressDisplay[ expr, p, $progressContainer ];
 
 setProgressDisplay[ expr_, p_, HoldComplete[ container_ ] ] := Enclose[
-    $progressFraction = ConfirmBy[ p, 0.0 <= # <= 1.0 &, "ProgressFraction" ];
-    If[ expr =!= None && ! StringQ @ container,
+    $progressFraction = ConfirmBy[ Clip[ p, { 0, 1 } ], 0.0 <= # <= 1.0 &, "ProgressFraction" ];
+    If[ ! $fixedProgressText && ! MatchQ[ expr, Automatic|Inherited|None ] && ! StringQ @ container,
         WithCleanup[
             container = ConfirmMatch[
                 basicProgressPanel[ expr, Dynamic @ $progressFraction ],
@@ -411,7 +452,7 @@ setProgressDisplay[ expr_, p_, HoldComplete[ container_ ] ] := Enclose[
                 "ProgressPanel"
             ],
             $dynamicTrigger++
-        ]
+        ];
     ],
     throwInternalFailure
 ];
@@ -426,43 +467,15 @@ setProgressDisplay // endDefinition;
 (*basicProgressPanel*)
 basicProgressPanel // beginDefinition;
 
+(* Include progress text above progress indicator bar: *)
 basicProgressPanel[ expr_, p_ ] := Deploy @ Grid[
     {
         {
             Pane[
                 Grid[
                     {
-                        {
-                            Style[
-                                If[ StringQ @ expr,
-                                    Row @ { expr, ProgressIndicator[ Appearance -> "Ellipsis" ] },
-                                    expr
-                                ],
-                                "ProgressTitle"
-                            ]
-                        },
-                        {
-                            Grid[
-                                {
-                                    {
-                                        Graphics[
-                                            {
-                                                RGBColor[ 0.26667, 0.61961, 0.96863 ],
-                                                Rectangle[ ImageScaled @ { 0, 0 }, ImageScaled @ { p, 1 } ]
-                                            },
-                                            AspectRatio      -> Full,
-                                            Background       -> GrayLevel[ 0.81961 ],
-                                            ImageSize        -> { Full, 4 },
-                                            PlotRangePadding -> None
-                                        ]
-                                    }
-                                },
-                                Alignment -> { Center, Center },
-                                Frame     -> None,
-                                ItemSize  -> { Automatic, 0 },
-                                Spacings  -> { { 0, { }, 0 }, { 0, { }, 0 } }
-                            ]
-                        }
+                        basicProgressTextRow[ expr, p ],
+                        basicProgressBarRow[ expr, p ]
                     },
                     Alignment  -> { Left, Automatic },
                     Background -> None,
@@ -471,7 +484,7 @@ basicProgressPanel[ expr_, p_ ] := Deploy @ Grid[
                     Spacings   -> { { 0, { 0 }, 0 }, { 0.6, { -0.2 }, 0.0 } }
                 ],
                 FrameMargins -> { { 0, 0 }, { 0, 0 } },
-                ImageSize    -> { Scaled[ 1 ], Automatic }
+                ImageSize    -> { $progressWidth, Automatic }
             ]
         }
     },
@@ -481,6 +494,314 @@ basicProgressPanel[ expr_, p_ ] := Deploy @ Grid[
 ];
 
 basicProgressPanel // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*basicProgressTextRow*)
+basicProgressTextRow // beginDefinition;
+
+basicProgressTextRow[ expr_, p_ ] /; $showProgressText := {
+    Style[
+        If[ StringQ @ expr,
+            Row @ { expr, ProgressIndicator[ Appearance -> "Ellipsis" ] },
+            expr
+        ],
+        "ProgressTitle"
+    ],
+    If[ TrueQ @ $showProgressCancelButton,
+        If[ TrueQ @ $showProgressBar, "", progressCancelButton[ expr, p ] ],
+        Nothing
+    ]
+};
+
+basicProgressTextRow[ expr_, p_ ] := Nothing;
+
+basicProgressTextRow // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*basicProgressBarRow*)
+basicProgressBarRow // beginDefinition;
+
+basicProgressBarRow[ expr_, p_ ] /; $showProgressBar := {
+    Grid[
+        {
+            {
+                Graphics[
+                    {
+                        RGBColor[ "#449EF7" ],
+                        Rectangle[ ImageScaled @ { 0, 0 }, ImageScaled @ { p, 1 } ]
+                    },
+                    AspectRatio      -> Full,
+                    Background       -> RGBColor[ "#D1D1D1" ],
+                    ImageSize        -> { Full, 4 },
+                    PlotRangePadding -> None
+                ],
+                progressCancelButton[ expr, p ]
+            }
+        },
+        Alignment -> { Center, Center },
+        Frame     -> None,
+        ItemSize  -> { Automatic, 0 },
+        Spacings  -> { { 0, { }, 0 }, { 0, { }, 0 } }
+    ]
+};
+
+basicProgressBarRow[ expr_, p_ ] := Nothing;
+
+basicProgressBarRow // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*progressCancelButton*)
+progressCancelButton // beginDefinition;
+
+progressCancelButton[ expr_, p_ ] /; $showProgressCancelButton := Button[
+    $progressCancelButtonLabel,
+    FrontEnd`EvaluatorAbort @ Automatic,
+    Appearance -> "Suppressed",
+    Evaluator  -> None,
+    Method     -> "Preemptive"
+];
+
+progressCancelButton[ expr_, p_ ] := Nothing;
+
+progressCancelButton // endDefinition;
+
+(* FIXME: move this to text resources: *)
+$progressCancelButtonLabel := $progressCancelButtonLabel = NotebookTools`Mousedown[
+    Graphics[
+        {
+            Thickness[ 0.071429 ],
+            Style[
+                {
+                    FilledCurve[
+                        { { { 1, 4, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 0, 1, 0 } } },
+                        {
+                            {
+                                { 10., 14. },
+                                { 12.209, 14. },
+                                { 14., 12.209 },
+                                { 14., 10. },
+                                { 14., 4. },
+                                { 14., 1.7906 },
+                                { 12.209, 0. },
+                                { 10., 0. },
+                                { 4., 0. },
+                                { 1.7906, 0. },
+                                { 0., 1.7906 },
+                                { 0., 4. },
+                                { 0., 10. },
+                                { 0., 12.209 },
+                                { 1.7906, 14. },
+                                { 4., 14. },
+                                { 10., 14. }
+                            }
+                        }
+                    ]
+                },
+                FaceForm @ GrayLevel[ 0, 0 ]
+            ],
+            Style[
+                {
+                    FilledCurve[
+                        {
+                            {
+                                { 0, 2, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 }
+                            }
+                        },
+                        {
+                            {
+                                { 10.35, 11. },
+                                { 6.999, 7.649 },
+                                { 3.649, 11. },
+                                { 3., 10.35 },
+                                { 6.35, 6.999 },
+                                { 3., 3.65 },
+                                { 3.649, 3. },
+                                { 6.999, 6.351 },
+                                { 10.35, 3. },
+                                { 11., 3.65 },
+                                { 7.649, 6.999 },
+                                { 11., 10.35 },
+                                { 10.35, 11. }
+                            }
+                        }
+                    ]
+                },
+                FaceForm @ RGBColor[ 0.27451, 0.61961, 0.79608, 1. ]
+            ]
+        },
+        ImageSize -> { 14., 14. },
+        PlotRange -> { { 0., 14. }, { 0., 14. } },
+        AspectRatio -> Automatic
+    ],
+    Graphics[
+        {
+            Thickness[ 0.071429 ],
+            Style[
+                {
+                    FilledCurve[
+                        { { { 1, 4, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 0, 1, 0 } } },
+                        {
+                            {
+                                { 10., 14. },
+                                { 12.209, 14. },
+                                { 14., 12.209 },
+                                { 14., 10. },
+                                { 14., 4. },
+                                { 14., 1.7906 },
+                                { 12.209, 0. },
+                                { 10., 0. },
+                                { 4., 0. },
+                                { 1.7906, 0. },
+                                { 0., 1.7906 },
+                                { 0., 4. },
+                                { 0., 10. },
+                                { 0., 12.209 },
+                                { 1.7906, 14. },
+                                { 4., 14. },
+                                { 10., 14. }
+                            }
+                        }
+                    ]
+                },
+                FaceForm @ RGBColor[ 0.80784, 0.92157, 1., 1. ]
+            ],
+            Style[
+                {
+                    FilledCurve[
+                        {
+                            {
+                                { 0, 2, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 }
+                            }
+                        },
+                        {
+                            {
+                                { 10.35, 11. },
+                                { 6.999, 7.649 },
+                                { 3.649, 11. },
+                                { 3., 10.35 },
+                                { 6.35, 6.999 },
+                                { 3., 3.65 },
+                                { 3.649, 3. },
+                                { 6.999, 6.351 },
+                                { 10.35, 3. },
+                                { 11., 3.65 },
+                                { 7.649, 6.999 },
+                                { 11., 10.35 },
+                                { 10.35, 11. }
+                            }
+                        }
+                    ]
+                },
+                FaceForm @ RGBColor[ 0.27451, 0.61961, 0.79608, 1. ]
+            ]
+        },
+        ImageSize -> { 14., 14. },
+        PlotRange -> { { 0., 14. }, { 0., 14. } },
+        AspectRatio -> Automatic
+    ],
+    Graphics[
+        {
+            Thickness[ 0.071429 ],
+            Style[
+                {
+                    FilledCurve[
+                        { { { 1, 4, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 0, 1, 0 }, { 1, 3, 3 }, { 0, 1, 0 } } },
+                        {
+                            {
+                                { 10., 14. },
+                                { 12.209, 14. },
+                                { 14., 12.209 },
+                                { 14., 10. },
+                                { 14., 4. },
+                                { 14., 1.7906 },
+                                { 12.209, 0. },
+                                { 10., 0. },
+                                { 4., 0. },
+                                { 1.7906, 0. },
+                                { 0., 1.7906 },
+                                { 0., 4. },
+                                { 0., 10. },
+                                { 0., 12.209 },
+                                { 1.7906, 14. },
+                                { 4., 14. },
+                                { 10., 14. }
+                            }
+                        }
+                    ]
+                },
+                FaceForm @ RGBColor[ 0.27451, 0.61961, 0.79608, 1. ]
+            ],
+            Style[
+                {
+                    FilledCurve[
+                        {
+                            {
+                                { 0, 2, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 },
+                                { 0, 1, 0 }
+                            }
+                        },
+                        {
+                            {
+                                { 10.35, 11. },
+                                { 6.999, 7.649 },
+                                { 3.649, 11. },
+                                { 3., 10.35 },
+                                { 6.35, 6.999 },
+                                { 3., 3.65 },
+                                { 3.649, 3. },
+                                { 6.999, 6.351 },
+                                { 10.35, 3. },
+                                { 11., 3.65 },
+                                { 7.649, 6.999 },
+                                { 11., 10.35 },
+                                { 10.35, 11. }
+                            }
+                        }
+                    ]
+                },
+                FaceForm @ RGBColor[ 1., 1., 1., 1. ]
+            ]
+        },
+        ImageSize -> { 14., 14. },
+        PlotRange -> { { 0., 14. }, { 0., 14. } },
+        AspectRatio -> Automatic
+    ]
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
