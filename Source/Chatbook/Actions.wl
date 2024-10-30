@@ -1026,9 +1026,9 @@ AttachCodeButtons[ Dynamic[ attached_ ], cell_CellObject? chatCodeBlockQ, string
             cell,
             floatingButtonGrid[ attached, cell, lang ],
             { Left, Bottom },
-            Offset[ { 0, 13 }, { 0, 0 } ],
-            { Left, Top },
-            RemovalConditions -> { "MouseClickOutside", "MouseExit" }
+            Offset[ { 0, 0 }, Automatic ],
+            { Left, Bottom }, (* attaches to ChatCodeBlockTemplate's bottom ImageMargins, not the cell content *)
+            RemovalConditions -> { }
         ]
     ];
 
