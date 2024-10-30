@@ -1171,24 +1171,39 @@ notebookSources[ ] := Framed[
                         KeyValuePattern @ { "NotebookObject" -> nbo_NotebookObject, "WindowTitle" -> title_ } :> {
                             Spacer[ 3 ],
                             inclusionCheckbox @ nbo,
+                            Item[
+                                Button[
+                                    MouseAppearance[
+                                        Grid[ { { $notebookIcon, title } }, Alignment -> { Left, Baseline } ],
+                                        "LinkHand"
+                                    ],
+                                    ToggleChatInclusion @ nbo,
+                                    Alignment  -> Left,
+                                    Appearance -> "Suppressed",
+                                    BaseStyle  -> { "Text", FontSize -> 14, LineBreakWithin -> False }
+                                ],
+                                ItemSize -> Fit
+                            ],
                             Button[
                                 MouseAppearance[
-                                    Grid[ { { $notebookIcon, title } }, Alignment -> { Left, Baseline } ],
+                                    Mouseover[
+                                        Style[ "   \[RightGuillemet]   ", FontColor -> GrayLevel[ 0.6 ] ],
+                                        Style[ "   \[RightGuillemet]   ", FontColor -> GrayLevel[ 0.2 ] ]
+                                    ],
                                     "LinkHand"
                                 ],
                                 SetSelectedNotebook @ nbo,
-                                Alignment  -> Left,
+                                Alignment  -> Right,
                                 Appearance -> "Suppressed",
-                                BaseStyle  -> { "Text", FontSize -> 14 }
-                            ],
-                            Item[ Spacer[ 3 ], ItemSize -> Fit ]
+                                BaseStyle  -> { "Text", FontSize -> 16 }
+                            ]
                         }
                     ],
                     Alignment -> { Left, Center },
                     Dividers  -> { False, { False, { RGBColor[ "#D1D1D1" ] }, False } },
                     Spacings  -> { Automatic, { 0, { 1 }, 0 } }
                 ],
-                FrameMargins -> { { 0, 0 }, { 5, 3 } }
+                FrameMargins -> { { 0, 0 }, { 5, 5 } }
             ]
         },
         Alignment -> Left,
