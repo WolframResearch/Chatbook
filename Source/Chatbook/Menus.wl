@@ -171,7 +171,7 @@ addSubmenuHandler // endDefinition;
 submenuLabel // beginDefinition;
 
 submenuLabel[ label_ ] := Grid[
-    { { Item[ label, ItemSize -> Fit, Alignment -> Left ], RawBoxes @ TemplateBox[ { }, "Triangle" ] } },
+    { { Item[ label, ItemSize -> Fit, Alignment -> Left ], Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "Triangle" ] } },
     Spacings -> 0
 ];
 

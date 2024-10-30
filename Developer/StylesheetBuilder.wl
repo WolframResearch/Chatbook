@@ -14,6 +14,7 @@ $WorkspaceStylesheet;
 BuildStylesheets;
 BuildChatbookStylesheet;
 BuildWorkspaceStylesheet;
+BuildCoreExtensionsStylesheet;
 CompileTemplateData;
 
 Begin[ "`Private`" ];
@@ -45,6 +46,7 @@ $workspaceStyleDataFile = FileNameJoin @ { $assetLocation, "WorkspaceStyles.wl" 
 $pacletDirectory        = DirectoryName[ $InputFileName, 2 ];
 $iconManifestFile       = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
 $displayFunctionsFile   = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctions.wxf" };
+$coreExtensionsTarget   = FileNameJoin @ { $pacletDirectory, "FrontEnd", "Assets", "Extensions", "CoreExtensions.nb" };
 $styleSheetTarget       = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Chatbook.nb" };
 $floatStyleSheetTarget  = FileNameJoin @ { $pacletDirectory, "FrontEnd", "StyleSheets", "Wolfram", "WorkspaceChat.nb" };
 
@@ -410,8 +412,8 @@ feedbackButton[ positive: True|False, name_String ] :=
         MouseAppearance[
             Tooltip[
                 Mouseover[
-                    RawBoxes @ TemplateBox[ { }, name<>"Inactive" ],
-                    RawBoxes @ TemplateBox[ { }, name<>"Active" ]
+                    Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", # ] ]&[ name<>"Inactive" ],
+                    Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", # ] ]&[ name<>"Active" ]
                 ],
                 tr[ "StylesheetFeedbackButtonTooltip" ]
             ],
@@ -903,6 +905,57 @@ BuildWorkspaceStylesheet[ target_ ] :=
     Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
         Module[ { exported },
             exported = Export[ target, fixContexts @ $WorkspaceStylesheet, "NB" ];
+            PacletInstall[ "Wolfram/PacletCICD" ];
+            Needs[ "Wolfram`PacletCICD`" -> None ];
+            SetOptions[
+                ResourceFunction[ "SaveReadableNotebook" ],
+                "RealAccuracy" -> 10,
+                "ExcludedNotebookOptions" -> {
+                    ExpressionUUID,
+                    FrontEndVersion,
+                    WindowMargins,
+                    WindowSize
+                }
+            ];
+            Wolfram`PacletCICD`FormatNotebooks @ exported;
+            exported
+        ]
+    ];
+
+
+(* CoreExtensions.nb is a 14.2 feature. It is ignored entirely by 14.1. *)
+BuildCoreExtensionsStylesheet[ ] := BuildCoreExtensionsStylesheet @ $coreExtensionsTarget;
+
+revisedCoreExtensions[ ] :=
+Module[ { excludedCoreExtensions },
+    (* These styles are excluded because they are appended to Core and Core already contains them,
+        or we needed to rename and modify the original versions and we want to avoid cluttering Core. *)
+    excludedCoreExtensions = Alternatives[
+        "InlineFormula",
+        "InlineReferenceText",
+        "Input",
+        "Link",
+        "Message",
+        "Notebook",
+        "Output",
+        "Text"
+    ];
+
+    DeleteCases[ Flatten @ $styleDataCells, Cell[ StyleData[ excludedCoreExtensions, ___ ], ___ ] ]
+]
+
+BuildCoreExtensionsStylesheet[ target_ ] :=
+    Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" } },
+        Module[ { exported },
+            CompileTemplateData[ ];
+            exported =
+                Export[
+                    target,
+                    fixContexts @
+                        Notebook[
+                            Flatten @ { Cell[ "Chatbook Core.nb Extensions", "Title" ], revisedCoreExtensions[ ] },
+                            StyleDefinitions -> "Default.nb" ],
+                    "NB" ];
             PacletInstall[ "Wolfram/PacletCICD" ];
             Needs[ "Wolfram`PacletCICD`" -> None ];
             SetOptions[
