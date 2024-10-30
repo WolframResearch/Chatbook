@@ -18,6 +18,14 @@ If[ ! PacletObjectQ @ Quiet @ PacletInstall[ "SemanticSearch" ],
     }
 ];
 
+(* FIXME: Temporary workaround for SemanticSearch issues: *)
+If[ $VersionNumber < 14.2,
+    Print[ "::warning::Using a temporary workaround for `NetModel[\"all-MiniLM-L6-v2\"]`" ];
+    DeleteObject @ ResourceObject[ "all-MiniLM-L6-v2" ];
+    ResourceObject[ "all-MiniLM-L6-v2", ResourceVersion -> "1.1.0" ];
+    NetModel[ "all-MiniLM-L6-v2" ]
+];
+
 If[ ! PacletObjectQ @ PacletObject[ "SemanticSearch" ],
     Print[ "::error::Failed to install SemanticSearch." ];
     Exit[ 1 ]

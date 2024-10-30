@@ -200,9 +200,10 @@
 "WorkspaceWindowTitle" -> "Notebook Assistant",
 "WorkspaceToolbarButtonLabelSources" -> "Sources",
 "WorkspaceToolbarButtonLabelNew" -> "Nouveau",
-"WorkspaceToolbarButtonTooltipHistory" -> "[[G\[EAcute]rer les conversations]]",
-"WorkspaceToolbarButtonTooltipSources" -> "[[Ajouter des sources suppl\[EAcute]mentaires au contexte du chat]]",
-"WorkspaceToolbarButtonTooltipNew" -> "[[D\[EAcute]marrer une nouvelle conversation]]",
+"WorkspaceToolbarButtonTooltipHistory" -> "G\[EAcute]rer les conversations",
+"WorkspaceToolbarButtonTooltipSources" -> "Ajouter des sources suppl\[EAcute]mentaires au contexte du chat",
+"WorkspaceToolbarButtonTooltipNew" -> "D\[EAcute]marrer une nouvelle conversation",
+"WorkspaceSourcesOpenNotebooks" -> "Open Notebooks",
 
 "CodeAssistanceInputGettingStarted" -> "Aide\[Hyphen]moi \[AGrave] d\[EAcute]marrer",
 "CodeAssistanceInputErrorMessage" -> "Qu\[CloseCurlyQuote]est\[Hyphen]ce qui n\[CloseCurlyQuote]a pas fonctionn\[EAcute]\[NonBreakingSpace]?"
