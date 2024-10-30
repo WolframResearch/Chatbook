@@ -191,7 +191,6 @@ $boxOp = <| SuperscriptBox -> "^", SubscriptBox -> "_" |>;
 (* How to choose TemplateBox arguments for serialization *)
 $templateBoxRules = <|
     "AssistantMessageBox"       -> First,
-    "ChatCodeBlockTemplate"     -> First,
     "ConditionalExpression"     -> makeExpressionString,
     "GrayLink"                  -> First,
     "HyperlinkDefault"          -> First,
@@ -565,11 +564,9 @@ cellToString[ Cell[ a__, "Message", "MSG", b___ ] ] :=
 
 (* External language cells get converted to a code block with the corresponding language specifier  *)
 cellToString[ Cell[ code_, "ExternalLanguage", ___, $$cellEvaluationLanguage -> lang_String, ___ ] ] :=
-    With[ { string = cellToString0 @ code },
-        (
-            needsBasePrompt[ "ExternalLanguageCells" ];
-            "```"<>lang<>"\n"<>string<>"\n```"
-        ) /; StringQ @ string
+    Block[ { $escapeMarkdown = False },
+        needsBasePrompt[ "ExternalLanguageCells" ];
+        "```" <> lang <> "\n" <> cellToString0 @ code <> "\n```"
     ];
 
 (* Output styles that should be truncated *)
@@ -1212,6 +1209,14 @@ fasterCellToString0[ (Cell|StyleBox)[ code_, "InlineCode"|"InlineFormula", ___ ]
     Block[ { $escapeMarkdown = False, $inlineCode = True },
         needsBasePrompt[ "DoubleBackticks" ];
         "``" <> fasterCellToString0 @ code <> "``"
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Code Blocks*)
+fasterCellToString0[ TemplateBox[ { code_, language_ }, "ChatCodeBlockTemplate", ___ ] ] :=
+    Block[ { $escapeMarkdown = False },
+        "\n" <> cellToString @ Replace[ code, Cell @ BoxData[ c_Cell, ___ ] :> c ] <> "\n"
     ];
 
 (* ::**************************************************************************************************************:: *)
