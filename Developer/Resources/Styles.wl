@@ -644,7 +644,7 @@ Cell[
                 {
                     FrameBox[
                         DynamicBox[ ToBoxes @ Wolfram`Chatbook`Common`floatingButtonGrid[ #1, #2 ] ],
-                        Background   -> GrayLevel[ 1 ],
+                        Background   -> RGBColor[ 0.98824, 0.99216, 1. ],
                         FrameMargins -> { { 7, 2 }, { 2, 2 } },
                         FrameStyle   -> Directive[ AbsoluteThickness[ 1 ], GrayLevel[ 0.92941 ] ],
                         ImageMargins -> { { 0, 0 }, { 8, -1 } }, (* negative margin to barely overlap the frame above *)
