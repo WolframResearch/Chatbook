@@ -212,7 +212,7 @@ Cell[
                         Background   -> RGBColor[ "#f9fdff" ],
                         FrameMargins -> { { 7, 2 }, { 2, 2 } },
                         FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], GrayLevel[ 0.89804 ] ],
-                        ImageMargins -> { { 0, 0 }, { 8, -1 } }, (* negative margin to barely overlap the frame above *)
+                        ImageMargins -> { { 0, 0 }, { 8, -2 } }, (* negative margin to barely overlap the frame above *)
                         ImageSize    -> { Full, Automatic }
                     ] }
             },

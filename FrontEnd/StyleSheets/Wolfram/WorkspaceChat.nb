@@ -73,7 +73,7 @@ Notebook[
   ],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3939276329"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3939277492"|>
   ],
   Cell[
    StyleData[
@@ -252,7 +252,7 @@ Notebook[
           FrameMargins -> {{7, 2}, {2, 2}},
           FrameStyle ->
            Directive[AbsoluteThickness[2], GrayLevel[0.89804]],
-          ImageMargins -> {{0, 0}, {8, -1}},
+          ImageMargins -> {{0, 0}, {8, -2}},
           ImageSize -> {Full, Automatic}
          ]
         }
