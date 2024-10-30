@@ -1156,7 +1156,7 @@ notebookSources[ ] := Framed[
         {
             Pane[
                 Style[
-                    "Open Notebooks",
+                    tr[ "WorkspaceSourcesOpenNotebooks" ],
                     "Text",
                     FontSize   -> 14,
                     FontColor  -> RGBColor[ "#333333" ],

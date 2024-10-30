@@ -197,9 +197,10 @@
 "WorkspaceWindowTitle" -> "Notebook Assistant",
 "WorkspaceToolbarButtonLabelSources" -> "Sources",
 "WorkspaceToolbarButtonLabelNew" -> "New",
-"WorkspaceToolbarButtonTooltipHistory" -> "[[Manage conversations]]",
-"WorkspaceToolbarButtonTooltipSources" -> "[[Add additional source material to the chat context]]",
-"WorkspaceToolbarButtonTooltipNew" -> "[[Start a new conversation]]",
+"WorkspaceToolbarButtonTooltipHistory" -> "Manage conversations",
+"WorkspaceToolbarButtonTooltipSources" -> "Add additional source material to the chat context",
+"WorkspaceToolbarButtonTooltipNew" -> "Start a new conversation",
+"WorkspaceSourcesOpenNotebooks" -> "Open Notebooks",
 
 "CodeAssistanceInputGettingStarted" -> "Help me get started",
 "CodeAssistanceInputErrorMessage" -> "What went wrong?"
