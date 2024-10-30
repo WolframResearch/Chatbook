@@ -58,6 +58,9 @@
 "FeedbackDialogBodyPreviewData" -> "Aper\[CCedilla]u des donn\[EAcute]es \[AGrave] envoyer",
 "FeedbackDialogThanks" -> "Merci pour vos commentaires\[NonBreakingSpace]!",
 
+"FormattingInsertContentAndEvaluateLabel" -> "Insert and evaluate",
+"FormattingCopyToClipboardLabel" -> "Copy",
+"FormattingInsertContentLabel" -> "Insert",
 "FormattingInsertContentAndEvaluateTooltip" -> "Ins\[EAcute]rer le contenu en tant que nouvelle cellule d\[CloseCurlyQuote]entr\[EAcute]e ci-dessous et l\[CloseCurlyQuote]\[EAcute]valuer",
 "FormattingCopyToClipboardTooltip" -> "Copier dans le presse-papiers",
 "FormattingInsertContentTooltip" -> "Ins\[EAcute]rer le contenu en tant que nouvelle cellule d\[CloseCurlyQuote]entr\[EAcute]e ci-dessous",

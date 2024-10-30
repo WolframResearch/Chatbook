@@ -159,6 +159,73 @@ Cell[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*AssistantMessageBox - only a few minor style tweaks compared to definition in Chatbook.nb *)
+Cell[
+    StyleData[ "AssistantMessageBox" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ TagBox[
+            FrameBox[
+                #,
+                BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
+                Background     -> RGBColor[ "#f9fdff" ], (* tweaked *)
+                FrameMargins   -> 8,
+                FrameStyle     -> Directive[ AbsoluteThickness[ 2 ], RGBColor[ "#e0eff7" ] ], (* tweaked *)
+                ImageSize      -> { Scaled[ 1 ], Automatic },
+                RoundingRadius -> 8, (* tweaked *)
+                StripOnInput   -> False
+            ],
+            EventHandlerTag @ {
+                "MouseEntered" :>
+                    With[ { cell = EvaluationCell[ ] },
+                        Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+                        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachAssistantMessageButtons", cell ]
+                    ],
+                Method         -> "Preemptive",
+                PassEventsDown -> Automatic,
+                PassEventsUp   -> True
+            }
+        ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ChatCodeBlockTemplate - only a few minor style tweaks compared to definition in Chatbook.nb*)
+Cell[
+    StyleData[ "ChatCodeBlockTemplate" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @
+        GridBox[
+            {
+                {
+                    FrameBox[
+                        #1,
+                        Background   -> GrayLevel[ 1 ],
+                        FrameMargins -> { { 10, 10 }, { 6, 6 } },
+                        FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], GrayLevel[ 0.89804 ] ],
+                        ImageMargins -> { { 0, 0 }, { 0, 8 } },
+                        ImageSize    -> { Full, Automatic }
+                    ] },
+                {
+                    FrameBox[
+                        DynamicBox[ ToBoxes @ Wolfram`Chatbook`Common`floatingButtonGrid[ #1, #2 ] ],
+                        Background   -> RGBColor[ "#f9fdff" ],
+                        FrameMargins -> { { 7, 2 }, { 2, 2 } },
+                        FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], GrayLevel[ 0.89804 ] ],
+                        ImageMargins -> { { 0, 0 }, { 8, -2 } }, (* negative margin to barely overlap the frame above *)
+                        ImageSize    -> { Full, Automatic }
+                    ] }
+            },
+            DefaultBaseStyle -> "Column",
+            GridBoxAlignment -> { "Columns" -> { { Left } } },
+            GridBoxItemSize -> { "Columns" -> { { Automatic } }, "Rows" -> { { Automatic } } },
+            GridBoxSpacings -> { "Columns" -> { { 0 } }, "Rows" -> { { 0 } } }
+        ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*WorkspaceSendChatButton*)
 Cell[
     StyleData[ "WorkspaceSendChatButton" ],
