@@ -29,6 +29,8 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$IncludedCellWidget;
 `$InlineChat;
 `$InstalledTools;
+`$LastChatbookFailure;
+`$LastChatbookFailureText;
 `$SandboxKernel;
 `$ToolFunctions;
 `$WorkspaceChat;
@@ -190,6 +192,8 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "$DefaultTools",
     "$InlineChat",
     "$InstalledTools",
+    "$LastChatbookFailure",
+    "$LastChatbookFailureText",
     "$ToolFunctions",
     "$WorkspaceChat",
     "AbsoluteCurrentChatSettings",
