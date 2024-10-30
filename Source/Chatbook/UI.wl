@@ -742,8 +742,8 @@ makeChatActionMenuContent[
 				}
 			}],
 			{
-				{"User", getIcon["ChatIconUser"]},
-				{"System", getIcon["RoleSystem"]}
+				{ "User",  getIcon @ "ChatIconUser" },
+				{ "System",  getIcon @ "RoleSystem" }
 			}
 		]
 	];
@@ -778,26 +778,26 @@ makeChatActionMenuContent[
 				"Delimiter" :> Splice[{
 					Delimiter,
 					{
-						alignedMenuIcon[getIcon["ChatBlockSettingsMenuIcon"]],
+						alignedMenuIcon[ getIcon @ "ChatBlockSettingsMenuIcon" ],
 						tr[ "UIChatBlockSettings" ],
 						"OpenChatBlockSettings"
 					}
 				}]
 			}],
 			Delimiter,
-			{alignedMenuIcon[getIcon["PersonaOther"]], menuItemLineWrap @ tr[ "UIAddAndManagePersonas" ], "PersonaManage"},
-			{alignedMenuIcon[getIcon["ToolManagerRepository"]], menuItemLineWrap @ tr[ "UIAddAndManageTools" ], "ToolManage"},
+			{alignedMenuIcon[ getIcon @ "PersonaOther" ], menuItemLineWrap @ tr[ "UIAddAndManagePersonas" ], "PersonaManage"},
+			{alignedMenuIcon[ getIcon @ "ToolManagerRepository" ], menuItemLineWrap @ tr[ "UIAddAndManageTools" ], "ToolManage"},
 			Delimiter,
             <|
                 "Label" -> tr[ "UIModels" ],
                 "Type"  -> "Submenu",
-                "Icon"  -> alignedMenuIcon @ getIcon[ "ChatBlockSettingsMenuIcon" ],
+                "Icon"  -> alignedMenuIcon @ getIcon @ "ChatBlockSettingsMenuIcon",
                 "Data"  :> createServiceMenu[ targetObj, ParentCell @ EvaluationCell[ ] ]
             |>,
             <|
                 "Label" -> tr[ "UIAdvancedSettings" ],
                 "Type"  -> "Submenu",
-                "Icon"  -> alignedMenuIcon @ getIcon[ "AdvancedSettings" ],
+                "Icon"  -> alignedMenuIcon @ getIcon @ "AdvancedSettings",
                 "Data"  -> advancedSettingsMenu
             |>
         }
@@ -841,7 +841,7 @@ makeChatMenuCell // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*getIcon*)
-getIcon[ name_ ] := RawBoxes @ TemplateBox[ { }, name ];
+getIcon[ name_ ] := Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", name ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -941,10 +941,10 @@ serviceIcon[ KeyValuePattern[ "Service" -> service_String ] ] :=
 (*Services specified as strings*)
 
 (* Services with icons defined in template boxes: *)
-serviceIcon[ "Wolfram"   ] := chatbookIcon[ "llmkit-dialog-sm"    , True ];
-serviceIcon[ "OpenAI"    ] := chatbookIcon[ "ServiceIconOpenAI"   , True ];
-serviceIcon[ "Anthropic" ] := chatbookIcon[ "ServiceIconAnthropic", True ];
-serviceIcon[ "PaLM"      ] := chatbookIcon[ "ServiceIconPaLM"     , True ];
+serviceIcon[ "Wolfram"   ] := chatbookIcon[ "llmkit-dialog-sm"    , False ];
+serviceIcon[ "OpenAI"    ] := chatbookIcon[ "ServiceIconOpenAI"   , False ];
+serviceIcon[ "Anthropic" ] := chatbookIcon[ "ServiceIconAnthropic", False ];
+serviceIcon[ "PaLM"      ] := chatbookIcon[ "ServiceIconPaLM"     , False ];
 
 (* Otherwise look in registered service info for an icon: *)
 serviceIcon[ service_String ] := Replace[ $availableServices[ service, "Icon" ], $$unspecified -> "" ];

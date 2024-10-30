@@ -336,7 +336,7 @@ checkLiteralModelLists // endDefinition;
 (*$fallBackServices*)
 $fallBackServices = <|
     "OpenAI" -> <|
-        "Icon"      -> chatbookIcon[ "ServiceIconOpenAI" ],
+        "Icon"      -> chatbookIcon[ "ServiceIconOpenAI", False ],
         "ModelList" :> getOpenAIChatModels[ ]
     |>
 |>;
