@@ -139,6 +139,9 @@ $resourceVersions = <|
     "SelectByCurrentValue"    -> "1.0.1"
 |>;
 
+$LastChatbookFailure     = None;
+$LastChatbookFailureText = None;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Basic Argument Patterns*)
@@ -691,6 +694,11 @@ throwFailure // endDefinition;
 (*messageFailure*)
 messageFailure // Attributes = { HoldFirst };
 
+messageFailure[ "Internal"|Chatbook::Internal, args___ ] := (
+    General::ChatbookInternal = Chatbook::Internal;
+    messageFailure[ General::ChatbookInternal, args ]
+);
+
 messageFailure[ t_String, args___ ] :=
     With[ { s = $messageSymbol },
         If[ StringQ @ MessageName[ s, t ],
@@ -792,10 +800,10 @@ makeInternalFailureData[ eval_, Failure[ tag_, as_Association ], args___ ] :=
     StackInhibit @ Module[ { $stack = Stack[ _ ] },
         maskOpenAIKey @ DeleteMissing @ <|
             "Evaluation"  :> eval,
-            "Information" -> as[ "Information" ],
-            "Failure"     -> Failure[ tag, Association[ KeyTake[ as, "Information" ], as ] ],
-            "Arguments"   -> { args },
-            "Stack"       :> $stack
+            KeyTake[ as, $priorityFailureKeys ],
+            "Stack"       :> $stack,
+            "Failure"     -> Failure[ tag, Association[ KeyDrop[ as, $priorityFailureKeys ], as ] ],
+            "Arguments"   -> { args }
         |>
     ];
 
@@ -803,10 +811,12 @@ makeInternalFailureData[ eval_, args___ ] :=
     StackInhibit @ Module[ { $stack = Stack[ _ ] },
         maskOpenAIKey @ <|
             "Evaluation" :> eval,
-            "Arguments"  -> { args },
-            "Stack"      :> $stack
+            "Stack"      :> $stack,
+            "Arguments"  -> { args }
         |>
     ];
+
+$priorityFailureKeys = { "Information", "ConfirmationType", "Expression", "Function", "Pattern", "Test" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -851,7 +861,7 @@ chatbookServiceCaller // endDefinition;
 
 $issuesURL = "https://github.com/WolframResearch/Chatbook/issues/new";
 
-$maxBugReportURLSize = 3250;
+$maxBugReportURLSize = 7000;
 (*
     RFC 7230 recommends clients support 8000: https://www.rfc-editor.org/rfc/rfc7230#section-3.1.1
     Long bug report links might not work in old versions of IE,
@@ -923,16 +933,65 @@ $bugReportLink := Hyperlink[
 bugReportBody[ ] := bugReportBody @ $thisPaclet[ "PacletInfo" ];
 
 bugReportBody[ as_Association? AssociationQ ] :=
-    TemplateApply[
-        $bugReportBodyTemplate,
-        TemplateVerbatim /@ <|
-            "DebugData"       -> associationMarkdown @ $debugData,
-            "Stack"           -> $bugReportStack,
-            "Settings"        -> associationMarkdown @ maskOpenAIKey @ $settings,
-            "InternalFailure" -> markdownCodeBlock @ $internalFailure,
-            "SourceLink"      -> sourceLink @ $internalFailure
-        |>
+    Module[ { debugData, stack, settings, internalFailure, bugReportText, file, data },
+
+        debugData        = $debugData;
+        stack            = $bugReportStack;
+        settings         = $settings;
+        internalFailure  = $internalFailure;
+
+        bugReportText = TemplateApply[
+            $bugReportBodyTemplate,
+            TemplateVerbatim /@ <|
+                "DebugData"       -> associationMarkdown @ debugData,
+                "Stack"           -> stack,
+                "Settings"        -> associationMarkdown @ takeRelevantSettings @ settings,
+                "InternalFailure" -> markdownCodeBlock @ internalFailure,
+                "SourceLink"      -> sourceLink @ internalFailure
+            |>
+        ];
+
+        data = <|
+            "ReportText"      -> bugReportText,
+            "PacletInfo"      -> as,
+            "DebugData"       -> debugData,
+            "Stack"           -> stack,
+            "Settings"        -> settings,
+            "InternalFailure" -> internalFailure
+        |>;
+
+        file = File @ Export[
+            FileNameJoin @ { $UserBaseDirectory, "Logs", "Chatbook", "LastInternalFailureData.mx" },
+            data,
+            "MX"
+        ];
+
+        WithCleanup[
+            Unprotect[ $LastChatbookFailure, $LastChatbookFailureText ]
+            ,
+            $LastChatbookFailure     = file;
+            $LastChatbookFailureText = bugReportText;
+            ,
+            Protect[ $LastChatbookFailure, $LastChatbookFailureText ]
+        ];
+
+        bugReportText
     ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*takeRelevantSettings*)
+takeRelevantSettings // beginDefinition;
+takeRelevantSettings[ settings_Association ] := maskOpenAIKey @ KeyDrop[ settings, $droppedSettingsKeys ];
+takeRelevantSettings // endDefinition;
+
+(* Settings that we don't need in debug data: *)
+$droppedSettingsKeys = {
+    "ServiceDefaultModel",
+    "CurrentPreferencesTab",
+    "PersonaFavorites",
+    "VisiblePersonas"
+};
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -998,7 +1057,7 @@ $frontEndVersion :=
 (* ::Subsubsection::Closed:: *)
 (*$bugReportStack*)
 $bugReportStack := StringRiffle[
-    Replace[
+    Reverse @ Replace[
         DeleteAdjacentDuplicates @ Cases[
             Stack[ _ ],
             HoldForm[ (s_Symbol) | (s_Symbol)[ ___ ] | (s_Symbol)[ ___ ][ ___ ] ] /;
@@ -1060,7 +1119,13 @@ trimURL[ url_String, limit_Integer ] :=
         after  = Longest[ nl~~bt~~nl~~"%3C%2Fdetails%3E" ];
         base   = StringLength @ StringReplace[ url, a: before ~~ ___ ~~ b: after :> a <> "\n" <> b ];
         take   = UpTo @ Max[ limit - base, 80 ];
-        With[ { t = take }, StringReplace[ url, a: before ~~ b__ ~~ c: after :> a <> StringTake[ b, t ] <> "\n" <> c ] ]
+
+        With[ { t = take },
+            StringReplace[
+                StringReplace[ url, a: before ~~ b__ ~~ c: after :> a <> StringTake[ b, t ] <> "\n" <> c ],
+                "%%0A" | ("%"~~HexadecimalCharacter~~"%0A") :> "%0A"
+            ]
+        ]
     ];
 
 (* ::**************************************************************************************************************:: *)
