@@ -201,9 +201,10 @@
 "WorkspaceWindowTitle" -> "Notebook Assistant",
 "WorkspaceToolbarButtonLabelSources" -> "\:CD9C\:CC98",
 "WorkspaceToolbarButtonLabelNew" -> "\:C2E0\:ADDC",
-"WorkspaceToolbarButtonTooltipHistory" -> "[[\:B300\:D654 \:AD00\:B9AC]]",
-"WorkspaceToolbarButtonTooltipSources" -> "[[\:CC44\:D305 \:B0B4\:C6A9\:C5D0 \:B2E4\:B978 \:C790\:B8CC \:CD94\:AC00]]",
-"WorkspaceToolbarButtonTooltipNew" -> "[[\:C0C8\:B85C\:C6B4 \:B300\:D654 \:C2DC\:C791]]",
+"WorkspaceToolbarButtonTooltipHistory" -> "\:B300\:D654 \:AD00\:B9AC",
+"WorkspaceToolbarButtonTooltipSources" -> "\:CC44\:D305 \:B0B4\:C6A9\:C5D0 \:B2E4\:B978 \:C790\:B8CC \:CD94\:AC00",
+"WorkspaceToolbarButtonTooltipNew" -> "\:C0C8\:B85C\:C6B4 \:B300\:D654 \:C2DC\:C791",
+"WorkspaceSourcesOpenNotebooks" -> "Open Notebooks",
 
 "CodeAssistanceInputGettingStarted" -> "\:C2DC\:C791\:C5D0 \:B3C4\:C6C0 \:BC1B\:AE30",
 "CodeAssistanceInputErrorMessage" -> "\:BB34\:C5C7\:C774 \:C798\:BABB\:B418\:C5C8\:B098\:C694?"

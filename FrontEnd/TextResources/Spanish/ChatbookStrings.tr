@@ -200,9 +200,10 @@
 "WorkspaceWindowTitle" -> "Notebook Assistant",
 "WorkspaceToolbarButtonLabelSources" -> "Fuentes",
 "WorkspaceToolbarButtonLabelNew" -> "Nuevo",
-"WorkspaceToolbarButtonTooltipHistory" -> "[[Administrar conversaciones]]",
-"WorkspaceToolbarButtonTooltipSources" -> "[[Agregar material de origen adicional al contexto del chat]]",
-"WorkspaceToolbarButtonTooltipNew" -> "[[Iniciar una nueva conversaci\[OAcute]n]]",
+"WorkspaceToolbarButtonTooltipHistory" -> "Administrar conversaciones",
+"WorkspaceToolbarButtonTooltipSources" -> "Agregar material de origen adicional al contexto del chat",
+"WorkspaceToolbarButtonTooltipNew" -> "Iniciar una nueva conversaci\[OAcute]n",
+"WorkspaceSourcesOpenNotebooks" -> "Open Notebooks",
 
 "CodeAssistanceInputGettingStarted" -> "Ay\[UAcute]dame a comenzar",
 "CodeAssistanceInputErrorMessage" -> "\[DownQuestion]Qu\[EAcute] sali\[OAcute] mal?"
