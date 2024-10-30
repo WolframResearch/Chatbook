@@ -80,7 +80,7 @@ sourcesButton // beginDefinition;
 
 sourcesButton[ Dynamic[ nbo_ ] ] := Button[
     toolbarButtonLabel[ "Sources" ],
-    MessageDialog[ "Coming soon" ],
+    toggleOverlayMenu[ nbo, "Sources" ],
     Appearance -> "Suppressed"
 ];
 
@@ -93,6 +93,7 @@ newChatButton // beginDefinition;
 
 newChatButton[ Dynamic[ nbo_ ] ] := Button[
     toolbarButtonLabel[ "New" ],
+    clearOverlayMenus @ nbo;
     NotebookDelete @ Cells @ nbo;
     CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ];
     CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = "";
@@ -1048,10 +1049,193 @@ $fromWorkspaceChatConversionRules := $fromWorkspaceChatConversionRules = Dispatc
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*History*)
+(*Overlay Menus*)
+$notebookIcon = RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEBitmaps", "NotebookIcon" ][
+    GrayLevel[ 0.651 ],
+    RGBColor[ 0.86667, 0.066667, 0. ]
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*clearOverlayMenus*)
+clearOverlayMenus // beginDefinition;
+
+clearOverlayMenus[ nbo_NotebookObject ] :=
+    NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
+
+clearOverlayMenus // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toggleOverlayMenu*)
+toggleOverlayMenu // beginDefinition;
+
+toggleOverlayMenu[ nbo_NotebookObject, name_String ] :=
+    Module[ { cell },
+        cell = First[
+            Cells[ nbo, AttachedCell -> True, CellStyle -> "AttachedOverlayMenu", CellTags -> name ],
+            Missing[ "NotAttached" ]
+        ];
+
+        If[ MissingQ @ cell,
+            attachOverlayMenu[ nbo, name ],
+            NotebookDelete @ cell
+        ]
+    ];
+
+toggleOverlayMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*overlayMenu*)
+overlayMenu // beginDefinition;
+overlayMenu[ "Sources" ] := notebookSources[ ];
+overlayMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*attachOverlayMenu*)
+attachOverlayMenu // beginDefinition;
+
+attachOverlayMenu[ nbo_NotebookObject, name_String ] := Enclose[
+    clearOverlayMenus @ nbo;
+    AttachCell[
+        nbo,
+        Cell[
+            BoxData @ ToBoxes @ Framed[
+                ConfirmMatch[ overlayMenu @ name, Except[ _overlayMenu ], "OverlayMenu" ],
+                Alignment    -> { Left, Top },
+                Background   -> White,
+                FrameMargins -> { { 5, 5 }, { 2000, 5 } },
+                FrameStyle   -> White
+            ],
+            "AttachedOverlayMenu",
+            CellTags -> name,
+            Magnification -> Dynamic @ AbsoluteCurrentValue[ nbo, Magnification ]
+        ],
+        { Center, Top },
+        0,
+        { Center, Top }
+    ],
+    throwInternalFailure
+];
+
+attachOverlayMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Sources*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toggleSourcesMenu*)
+toggleSourcesMenu // beginDefinition;
+
+toggleSourcesMenu[ nbo_NotebookObject ] :=
+    Module[ { cell },
+        cell = First[
+            Cells[ nbo, AttachedCell -> True, CellStyle -> "AttachedOverlayMenu", CellTags -> "Sources" ],
+            Missing[ "NotAttached" ]
+        ];
+
+        If[ MissingQ @ cell,
+            attachOverlayMenu[ nbo, "Sources", notebookSources[ ] ],
+            NotebookDelete @ cell
+        ]
+    ];
+
+toggleSourcesMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*notebookSources*)
+notebookSources // beginDefinition;
+
+notebookSources[ ] := Framed[
+    Column[
+        {
+            Pane[
+                Style[
+                    tr[ "WorkspaceSourcesOpenNotebooks" ],
+                    "Text",
+                    FontSize   -> 14,
+                    FontColor  -> RGBColor[ "#333333" ],
+                    FontWeight -> Bold
+                ],
+                FrameMargins -> { { 5, 5 }, { 3, 3 } }
+            ],
+            Pane[
+                Dynamic @ Grid[
+                    Cases[
+                        SortBy[ SourceNotebookObjectInformation[ ], #[ "WindowTitle" ] & ],
+                        KeyValuePattern @ { "NotebookObject" -> nbo_NotebookObject, "WindowTitle" -> title_ } :> {
+                            Spacer[ 3 ],
+                            inclusionCheckbox @ nbo,
+                            Item[
+                                Button[
+                                    MouseAppearance[
+                                        Grid[ { { $notebookIcon, title } }, Alignment -> { Left, Baseline } ],
+                                        "LinkHand"
+                                    ],
+                                    ToggleChatInclusion @ nbo,
+                                    Alignment  -> Left,
+                                    Appearance -> "Suppressed",
+                                    BaseStyle  -> { "Text", FontSize -> 14, LineBreakWithin -> False }
+                                ],
+                                ItemSize -> Fit
+                            ],
+                            Button[
+                                MouseAppearance[
+                                    Mouseover[
+                                        Style[ "   \[RightGuillemet]   ", FontColor -> GrayLevel[ 0.6 ] ],
+                                        Style[ "   \[RightGuillemet]   ", FontColor -> GrayLevel[ 0.2 ] ]
+                                    ],
+                                    "LinkHand"
+                                ],
+                                SetSelectedNotebook @ nbo,
+                                Alignment  -> Right,
+                                Appearance -> "Suppressed",
+                                BaseStyle  -> { "Text", FontSize -> 16 }
+                            ]
+                        }
+                    ],
+                    Alignment -> { Left, Center },
+                    Dividers  -> { False, { False, { RGBColor[ "#D1D1D1" ] }, False } },
+                    Spacings  -> { Automatic, { 0, { 1 }, 0 } }
+                ],
+                FrameMargins -> { { 0, 0 }, { 5, 5 } }
+            ]
+        },
+        Alignment -> Left,
+        Background -> { RGBColor[ "#F5F5F5" ], White },
+        Dividers -> { None, { 2 -> RGBColor[ "#D1D1D1" ] } }
+    ],
+    RoundingRadius -> 3,
+    FrameMargins   -> 0,
+    FrameStyle     -> RGBColor[ "#D1D1D1" ]
+];
+
+notebookSources // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*inclusionCheckbox*)
+inclusionCheckbox // beginDefinition;
+
+inclusionCheckbox[ nbo_NotebookObject ] :=
+    Checkbox @ Dynamic[
+        ! TrueQ @ CurrentChatSettings[ nbo, "ExcludeFromChat" ],
+        ToggleChatInclusion[ nbo, #1 ] &
+    ];
+
+inclusionCheckbox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*History*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*createHistoryMenu*)
 createHistoryMenu // beginDefinition;
 
@@ -1116,7 +1300,7 @@ makeHistoryMenuItem[ nbo_NotebookObject, chat_Association ] := Enclose[
 makeHistoryMenuItem // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
+(* ::Subsubsection::Closed:: *)
 (*loadConversation*)
 loadConversation // beginDefinition;
 
