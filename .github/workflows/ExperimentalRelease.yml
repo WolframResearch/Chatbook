@@ -1,0 +1,53 @@
+name: Experimental Release
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *'
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  WOLFRAMSCRIPT_ENTITLEMENTID: ${{ secrets.WOLFRAMSCRIPT_ENTITLEMENTID }}
+  GH_INSTALL_URL: https://github.com/cli/cli/releases/download/v2.33.0/gh_2.33.0_linux_amd64.deb
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Update Git
+      run: |
+        apt-get update && apt-get install software-properties-common -y
+        add-apt-repository ppa:git-core/ppa -y
+        apt-get update && apt-get install git -y
+        wget ${{ env.GH_INSTALL_URL }} -O gh.deb
+        dpkg -i gh.deb
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Build Paclet
+      run: wolframscript -f Scripts/BuildPaclet.wls
+
+    - name: Update Release
+      run: |
+        git config --global --add safe.directory $(pwd)
+        if gh release view experimental; then
+          gh release edit experimental \
+            --target="${{ github.ref }}" \
+            --repo="${{ env.GITHUB_REPOSITORY }}" \
+            --title="Experimental Release" \
+            --prerelease
+        else
+          gh release create experimental \
+            --target="${{ github.ref }}" \
+            --repo="${{ env.GITHUB_REPOSITORY }}" \
+            --title="Experimental Release" \
+            --prerelease
+        fi
+
+    - name: Upload Artifact
+      run: gh release upload experimental "${{ env.PACLET_PATH }}#Wolfram__Chatbook.paclet" --clobber
