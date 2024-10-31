@@ -2,8 +2,8 @@ name: Experimental Release
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 3 * * *'
+  push:
+    branches: [main]
 
 concurrency:
   group: ${{ github.ref }}

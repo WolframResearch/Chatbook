@@ -547,6 +547,7 @@ chatSubmit0[
         auth = settings[ "Authentication" ];
         stop = makeStopTokens @ settings;
 
+        setProgressDisplay[ "Waiting for response", 1.0 ];
         result = ConfirmMatch[
             Quiet[
                 LLMServices`Chat[
