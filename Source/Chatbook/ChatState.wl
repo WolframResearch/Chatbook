@@ -32,6 +32,7 @@ withChatState[ eval_ ] :=
             $toolCallCount                = 0,
             $openToolCallBoxes            = Automatic,
             $progressContainer            = None,
+            $showProgressText             = $showProgressText,
 
             (* Values used for token budgets during cell serialization: *)
             $cellStringBudget             = $cellStringBudget,
