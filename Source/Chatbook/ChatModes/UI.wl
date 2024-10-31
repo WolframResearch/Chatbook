@@ -1093,8 +1093,10 @@ $notebookIcon = RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEBitmaps",
 (*clearOverlayMenus*)
 clearOverlayMenus // beginDefinition;
 
-clearOverlayMenus[ nbo_NotebookObject ] :=
-    NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
+clearOverlayMenus[ nbo_NotebookObject ] := (
+    restoreVerticalScrollbar @ nbo;
+    NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ]
+);
 
 clearOverlayMenus // endDefinition;
 
@@ -1112,6 +1114,7 @@ toggleOverlayMenu[ nbo_NotebookObject, name_String ] :=
 
         If[ MissingQ @ cell,
             attachOverlayMenu[ nbo, name ],
+            restoreVerticalScrollbar @ nbo;
             NotebookDelete @ cell
         ]
     ];
@@ -1132,7 +1135,8 @@ overlayMenu // endDefinition;
 attachOverlayMenu // beginDefinition;
 
 attachOverlayMenu[ nbo_NotebookObject, name_String ] := Enclose[
-    clearOverlayMenus @ nbo;
+    hideVerticalScrollbar @ nbo;
+    NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
     AttachCell[
         nbo,
         Cell[
@@ -1155,6 +1159,23 @@ attachOverlayMenu[ nbo_NotebookObject, name_String ] := Enclose[
 ];
 
 attachOverlayMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*restoreVerticalScrollbar*)
+restoreVerticalScrollbar // beginDefinition;
+restoreVerticalScrollbar[ nbo_NotebookObject ] := CurrentValue[ nbo, WindowElements ] = Inherited;
+restoreVerticalScrollbar // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*hideVerticalScrollbar*)
+hideVerticalScrollbar // beginDefinition;
+
+hideVerticalScrollbar[ nbo_NotebookObject ] := CurrentValue[ nbo, WindowElements ] =
+    DeleteCases[ AbsoluteCurrentValue[ nbo, WindowElements ], "VerticalScrollBar" ];
+
+hideVerticalScrollbar // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
