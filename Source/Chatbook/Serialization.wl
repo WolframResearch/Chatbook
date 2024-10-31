@@ -2198,6 +2198,9 @@ fasterCellToString0[ Cell[
     ___
 ] ] := Block[ { $escapeMarkdown = False }, "```" <> lang <> "\n" <> fasterCellToString0 @ box <> "\n```" ];
 
+fasterCellToString0[ Cell[ BoxData[ b: TemplateBox[ _, "ChatCodeBlockTemplate", ___ ], ___ ], "ChatCodeBlock", ___ ] ] :=
+    fasterCellToString0 @ b;
+
 fasterCellToString0[ Cell[ BoxData[ boxes_, ___ ], "ChatCodeBlock", ___ ] ] :=
     Module[ { string },
         string = Block[ { $escapeMarkdown = False }, fasterCellToString0 @ boxes ];
