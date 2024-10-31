@@ -37,6 +37,8 @@ $inputFieldFrameOptions = Sequence[
     FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], RGBColor[ "#a3c9f2" ] ]
 ];
 
+$useGravatarImages := useGravatarImagesQ[ ];
+
 $userImageParams = <| "size" -> 40, "default" -> "404", "rating" -> "G" |>;
 
 $defaultUserImage := $defaultUserImage =
@@ -55,10 +57,10 @@ makeWorkspaceChatDockedCell[ ] := Framed[
     DynamicModule[ { nbo },
         Grid[
             { {
-                trackedDynamic[ createHistoryMenu @ nbo, "SavedChats" ],
+                LogChatTiming @ historyButton @ Dynamic @ nbo,
                 Item[ Spacer[ 0 ], ItemSize -> Fit ],
-                sourcesButton @ Dynamic @ nbo,
-                newChatButton @ Dynamic @ nbo
+                LogChatTiming @ sourcesButton @ Dynamic @ nbo,
+                LogChatTiming @ newChatButton @ Dynamic @ nbo
             } },
             Alignment -> { Automatic, Center },
             Spacings  -> 0.5
@@ -72,6 +74,39 @@ makeWorkspaceChatDockedCell[ ] := Framed[
 ];
 
 makeWorkspaceChatDockedCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*historyButton*)
+historyButton // beginDefinition;
+
+historyButton[ Dynamic[ nbo_ ] ] :=
+    Module[ { label },
+
+        label = Pane[
+            Style[
+                Dynamic @ FEPrivate`If[
+                    CurrentValue[ nbo, { WindowSize, 1 } ] > 250,
+                    FEPrivate`TruncateStringToWidth[
+                        CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ],
+                        "WorkspaceChatToolbarTitle",
+                        CurrentValue[ nbo, { WindowSize, 1 } ] - 170,
+                        Right
+                    ],
+                    ""
+                ],
+                "WorkspaceChatToolbarTitle"
+            ]
+        ];
+
+        Button[
+            toolbarButtonLabel[ "History", label, "History" ],
+            toggleOverlayMenu[ nbo, "History" ],
+            Appearance -> "Suppressed"
+        ]
+    ];
+
+historyButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -871,10 +906,14 @@ userName // endDefinition;
 (*userImage*)
 userImage // beginDefinition;
 
-userImage[ ] := userImage @ FirstCase[
-    Unevaluated @ { $CloudUserID, CurrentValue[ "WolframCloudUserName" ] },
-    expr_ :> With[ { user = expr }, user /; StringQ @ user ]
-];
+userImage[ ] :=
+    If[ TrueQ @ $useGravatarImages,
+        userImage @ FirstCase[
+            Unevaluated @ { $CloudUserID, CurrentValue[ "WolframCloudUserName" ] },
+            expr_ :> With[ { user = expr }, user /; StringQ @ user ]
+        ],
+        $defaultUserImage
+    ];
 
 userImage[ user_String ] := Enclose[
     Module[ { hash, url, image },
@@ -890,6 +929,13 @@ userImage[ other_ ] :=
     $defaultUserImage;
 
 userImage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*useGravatarImagesQ*)
+useGravatarImagesQ // beginDefinition;
+useGravatarImagesQ[ ] := useGravatarImagesQ[ ] = TrueQ @ CurrentChatSettings[ $FrontEnd, "UseGravatarImages" ];
+useGravatarImagesQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1014,7 +1060,25 @@ popOutChatNB[ nbo_NotebookObject ] := popOutChatNB @ NotebookGet @ nbo;
 popOutChatNB[ Notebook[ cells_, ___ ] ] := popOutChatNB @ cells;
 popOutChatNB[ Dynamic[ messageList_ ] ] := popOutChatNB @ messageList;
 popOutChatNB[ cells: { ___Cell } ] := NotebookPut @ cellsToChatNB @ cells;
+popOutChatNB[ chat_Association ] := popOutChatNB0 @ chat;
 popOutChatNB // endDefinition;
+
+
+popOutChatNB0 // beginDefinition;
+
+popOutChatNB0[ id_ ] := Enclose[
+    Module[ { loaded, uuid, title, messages, cells },
+        loaded = ConfirmBy[ LoadChat @ id, AssociationQ, "Loaded" ];
+        uuid = ConfirmBy[ loaded[ "ConversationUUID" ], StringQ, "UUID" ];
+        title = ConfirmBy[ loaded[ "ConversationTitle" ], StringQ, "Title" ];
+        messages = ConfirmBy[ loaded[ "Messages" ], ListQ, "Messages" ];
+        cells = ConfirmMatch[ ChatMessageToCell @ messages, { __Cell }, "Cells" ];
+        ConfirmMatch[ CreateChatNotebook @ cells, _NotebookObject, "Notebook" ]
+    ],
+    throwInternalFailure
+];
+
+popOutChatNB0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1060,8 +1124,10 @@ $notebookIcon = RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEBitmaps",
 (*clearOverlayMenus*)
 clearOverlayMenus // beginDefinition;
 
-clearOverlayMenus[ nbo_NotebookObject ] :=
-    NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
+clearOverlayMenus[ nbo_NotebookObject ] := (
+    restoreVerticalScrollbar @ nbo;
+    NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ]
+);
 
 clearOverlayMenus // endDefinition;
 
@@ -1079,6 +1145,7 @@ toggleOverlayMenu[ nbo_NotebookObject, name_String ] :=
 
         If[ MissingQ @ cell,
             attachOverlayMenu[ nbo, name ],
+            restoreVerticalScrollbar @ nbo;
             NotebookDelete @ cell
         ]
     ];
@@ -1089,7 +1156,9 @@ toggleOverlayMenu // endDefinition;
 (* ::Subsection::Closed:: *)
 (*overlayMenu*)
 overlayMenu // beginDefinition;
-overlayMenu[ "Sources" ] := notebookSources[ ];
+overlayMenu[ nbo_, "Sources" ] := sourcesOverlay @ nbo;
+overlayMenu[ nbo_, "History" ] := historyOverlay @ nbo;
+overlayMenu[ nbo_, "Loading" ] := loadingOverlay @ nbo;
 overlayMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1098,16 +1167,18 @@ overlayMenu // endDefinition;
 attachOverlayMenu // beginDefinition;
 
 attachOverlayMenu[ nbo_NotebookObject, name_String ] := Enclose[
-    clearOverlayMenus @ nbo;
+    hideVerticalScrollbar @ nbo;
+    NotebookDelete @ Cells[ nbo, CellStyle -> "AttachedOverlayMenu", AttachedCell -> True ];
     AttachCell[
         nbo,
         Cell[
             BoxData @ ToBoxes @ Framed[
-                ConfirmMatch[ overlayMenu @ name, Except[ _overlayMenu ], "OverlayMenu" ],
-                Alignment    -> { Left, Top },
+                ConfirmMatch[ overlayMenu[ nbo, name ], Except[ _overlayMenu ], "OverlayMenu" ],
+                Alignment    -> { Center, Top },
                 Background   -> White,
                 FrameMargins -> { { 5, 5 }, { 2000, 5 } },
-                FrameStyle   -> White
+                FrameStyle   -> White,
+                ImageSize    -> { Scaled[ 1 ], Automatic }
             ],
             "AttachedOverlayMenu",
             CellTags -> name,
@@ -1124,33 +1195,71 @@ attachOverlayMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*Sources*)
+(*withLoadingOverlay*)
+withLoadingOverlay // beginDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*toggleSourcesMenu*)
-toggleSourcesMenu // beginDefinition;
+withLoadingOverlay // Attributes = { HoldRest };
 
-toggleSourcesMenu[ nbo_NotebookObject ] :=
-    Module[ { cell },
-        cell = First[
-            Cells[ nbo, AttachedCell -> True, CellStyle -> "AttachedOverlayMenu", CellTags -> "Sources" ],
-            Missing[ "NotAttached" ]
-        ];
+withLoadingOverlay[ nbo_NotebookObject ] :=
+    Function[ eval, withLoadingOverlay[ nbo, eval ], HoldFirst ];
 
-        If[ MissingQ @ cell,
-            attachOverlayMenu[ nbo, "Sources", notebookSources[ ] ],
-            NotebookDelete @ cell
+withLoadingOverlay[ nbo_NotebookObject, eval_ ] :=
+    Module[ { attached },
+        WithCleanup[
+            attached = attachOverlayMenu[ nbo, "Loading" ],
+            eval,
+            NotebookDelete @ attached
         ]
     ];
 
-toggleSourcesMenu // endDefinition;
+withLoadingOverlay // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*loadingOverlay*)
+loadingOverlay // beginDefinition;
+
+loadingOverlay[ _NotebookObject ] := Pane[
+    ProgressIndicator[ Appearance -> "Necklace" ],
+    ImageMargins -> 50
+];
+
+loadingOverlay // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*restoreVerticalScrollbar*)
+restoreVerticalScrollbar // beginDefinition;
+restoreVerticalScrollbar[ nbo_NotebookObject ] := CurrentValue[ nbo, WindowElements ] = Inherited;
+restoreVerticalScrollbar // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*hideVerticalScrollbar*)
+hideVerticalScrollbar // beginDefinition;
+
+hideVerticalScrollbar[ nbo_NotebookObject ] := CurrentValue[ nbo, WindowElements ] =
+    DeleteCases[ AbsoluteCurrentValue[ nbo, WindowElements ], "VerticalScrollBar" ];
+
+hideVerticalScrollbar // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Sources*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*sourcesOverlay*)
+sourcesOverlay // beginDefinition;
+sourcesOverlay[ nbo_NotebookObject ] := notebookSources[ ]; (* TODO: combined menu that includes files etc. *)
+sourcesOverlay // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*notebookSources*)
 notebookSources // beginDefinition;
 
+(* FIXME: the sources overlay ends up too thin if there are no notebooks open *)
 notebookSources[ ] := Framed[
     Column[
         {
@@ -1174,7 +1283,10 @@ notebookSources[ ] := Framed[
                             Item[
                                 Button[
                                     MouseAppearance[
-                                        Grid[ { { $notebookIcon, title } }, Alignment -> { Left, Baseline } ],
+                                        Grid[
+                                            { { $notebookIcon, formatNotebookTitle @ title } },
+                                            Alignment -> { Left, Baseline }
+                                        ],
                                         "LinkHand"
                                     ],
                                     ToggleChatInclusion @ nbo,
@@ -1219,6 +1331,14 @@ notebookSources // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*formatNotebookTitle*)
+formatNotebookTitle // beginDefinition;
+formatNotebookTitle[ title_String ] := title;
+formatNotebookTitle[ None ] := Style[ "Unnamed Notebook", FontColor -> GrayLevel[ 0.6 ], FontSlant -> Italic ];
+formatNotebookTitle // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*inclusionCheckbox*)
 inclusionCheckbox // beginDefinition;
 
@@ -1236,68 +1356,230 @@ inclusionCheckbox // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*createHistoryMenu*)
-createHistoryMenu // beginDefinition;
+(*historyOverlay*)
+historyOverlay // beginDefinition;
 
-createHistoryMenu[ nbo_NotebookObject ] :=
-    createHistoryMenu[ nbo, ListSavedChats @ CurrentChatSettings[ nbo, "AppName" ] ];
+historyOverlay[ nbo_NotebookObject ] :=
+    DynamicModule[ { searching = False },
+        PaneSelector[
+            {
+                True  -> historySearchView[ nbo, Dynamic @ searching ],
+                False -> historyDefaultView[ nbo, Dynamic @ searching ]
+            },
+            Dynamic @ searching,
+            ImageSize -> Automatic
+        ]
+    ];
 
-createHistoryMenu[ nbo_NotebookObject ] := Enclose[
-    Catch @ Module[ { appName, chats, label },
+historyOverlay // endDefinition;
 
-        appName = ConfirmBy[ CurrentChatSettings[ nbo, "AppName" ], StringQ, "AppName" ];
-        chats = ConfirmMatch[ ListSavedChats @ appName, { ___Association }, "Chats" ];
-        If[ chats === { }, Throw @ ActionMenu[ "History", { "Nothing here yet" :> Null } ] ];
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*historyDefaultView*)
+historyDefaultView // beginDefinition;
 
-        label = Pane[
-            Style[
-                Dynamic @ FEPrivate`If[
-                    CurrentValue[ nbo, { WindowSize, 1 } ] > 250,
-                    FEPrivate`TruncateStringToWidth[
-                        CurrentValue[ nbo, { TaggingRules, "ConversationTitle" }, "" ],
-                        "WorkspaceChatToolbarTitle",
-                        CurrentValue[ nbo, { WindowSize, 1 } ] - 170,
-                        Right
-                    ],
-                    ""
-                ],
-                "WorkspaceChatToolbarTitle"
-            ]
-        ];
+historyDefaultView[ nbo_NotebookObject, Dynamic[ searching_ ] ] := Enclose[
+    Catch @ Module[ { header, view },
+        header = ConfirmMatch[ makeHistoryHeader @ historySearchButton @ Dynamic @ searching, _Pane, "Header" ];
+        view = ConfirmMatch[ makeDefaultHistoryView @ nbo, _RawBoxes, "View" ];
 
-        ActionMenu[
-            toolbarButtonLabel[ "History", label, "History" ],
-            makeHistoryMenuItem[ nbo ] /@ Take[ chats, UpTo @ $maxHistoryItems ],
-            Appearance -> "Suppressed",
-            Method     -> "Queued",
-            MenuStyle  -> { Magnification -> 1 }
+        Framed[
+            Column[
+                { header, view },
+                Alignment  -> Left,
+                Background -> { RGBColor[ "#F5F5F5" ], White },
+                Dividers   -> { None, { 2 -> RGBColor[ "#D1D1D1" ] } }
+            ],
+            RoundingRadius -> 3,
+            FrameMargins   -> 0,
+            FrameStyle     -> RGBColor[ "#D1D1D1" ]
         ]
     ],
     throwInternalFailure
 ];
 
-createHistoryMenu // endDefinition;
+historyDefaultView // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeDefaultHistoryView*)
+makeDefaultHistoryView // beginDefinition;
+
+makeDefaultHistoryView[ nbo_NotebookObject ] := Enclose[
+    RawBoxes @ ToBoxes @ DynamicModule[ { display },
+        display = Pane[ ProgressIndicator[ Appearance -> "Percolate" ], ImageMargins -> 25 ];
+
+        Pane[
+            Dynamic[ display, TrackedSymbols :> { display } ],
+            Alignment          -> { Center, Top },
+            AppearanceElements -> { },
+            FrameMargins       -> { { 0, 0 }, { 5, 5 } },
+            ImageSize          -> Dynamic @ { Scaled[ 1 ], AbsoluteCurrentValue[ nbo, { WindowSize, 2 } ] },
+            Scrollbars         -> Automatic
+        ],
+
+        Initialization            :> (display = catchAlways @ makeDefaultHistoryView0 @ nbo),
+        SynchronousInitialization -> False
+    ],
+    throwInternalFailure
+];
+
+makeDefaultHistoryView // endDefinition;
+
+
+makeDefaultHistoryView0 // beginDefinition;
+
+makeDefaultHistoryView0[ nbo_NotebookObject ] := Enclose[
+    DynamicModule[ { appName, chats, rows },
+        appName = ConfirmBy[ CurrentChatSettings[ nbo, "AppName" ], StringQ, "AppName" ];
+        chats = ConfirmMatch[ ListSavedChats @ appName, { ___Association }, "Chats" ];
+        rows = makeHistoryMenuItem[ Dynamic @ rows, nbo ] /@ chats;
+        Dynamic[
+            Grid[
+                rows,
+                Alignment -> { Left, Center },
+                Dividers  -> { False, { False, { RGBColor[ "#D1D1D1" ] }, False } },
+                Spacings  -> { Automatic, { 0, { 1 }, 0 } }
+            ],
+            TrackedSymbols :> { rows }
+        ]
+    ],
+    throwInternalFailure
+];
+
+makeDefaultHistoryView0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeHistoryHeader*)
+makeHistoryHeader // beginDefinition;
+
+makeHistoryHeader[ extraContent_ ] := Pane[
+    Grid[
+        {
+            {
+                (* FIXME: move "History" to text resources *)
+                Style[ "History", "Text", FontSize -> 14, FontColor -> RGBColor[ "#333333" ], FontWeight -> Bold ],
+                extraContent
+            }
+        },
+        Alignment -> { { Left, Right }, Baseline },
+        ItemSize  -> Fit
+    ],
+    FrameMargins -> { { 5, 5 }, { 3, 3 } }
+];
+
+makeHistoryHeader // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*historySearchButton*)
+historySearchButton // beginDefinition;
+
+historySearchButton[ Dynamic[ searching_ ] ] :=
+    PaneSelector[
+        {
+            False -> searchButton @ Dynamic @ searching,
+            True -> searchField @ Dynamic @ searching
+        },
+        Dynamic @ searching,
+        ImageSize -> Automatic
+    ];
+
+historySearchButton // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*searchButton*)
+searchButton // beginDefinition;
+searchButton[ Dynamic[ searching_ ] ] := Button[ $searchButtonLabel, searching = True, Appearance -> "Suppressed" ];
+searchButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*makeHistoryMenuItem*)
 makeHistoryMenuItem // beginDefinition;
 
-makeHistoryMenuItem[ nbo_NotebookObject ] :=
-    makeHistoryMenuItem[ nbo, # ] &;
+makeHistoryMenuItem[ rows_Dynamic, nbo_NotebookObject ] :=
+    makeHistoryMenuItem[ rows, nbo, # ] &;
 
-makeHistoryMenuItem[ nbo_NotebookObject, chat_Association ] := Enclose[
-    Module[ { title, date, timeString, label },
+makeHistoryMenuItem[ Dynamic[ rows_ ], nbo_NotebookObject, chat_Association ] := Enclose[
+    Module[ { title, date, timeString, default, hover },
         title = ConfirmBy[ chat[ "ConversationTitle" ], StringQ, "Title" ];
         date = DateObject[ ConfirmBy[ chat[ "Date" ], NumericQ, "Date" ], TimeZone -> 0 ];
         timeString = ConfirmBy[ relativeTimeString @ date, StringQ, "TimeString" ];
-        label = Row @ { title, " ", Style[ timeString, FontOpacity -> 0.75, FontSize -> Inherited * 0.9 ] };
-        label :> loadConversation[ nbo, chat ]
+
+        default = Grid[
+            { {
+                title,
+                Style[ timeString, FontColor -> RGBColor[ "#A6A6A6" ] ]
+            } },
+            Alignment -> { { Left, Right }, Baseline },
+            BaseStyle -> { "Text", FontSize -> 14, LineBreakWithin -> False },
+            ItemSize  -> Fit
+        ];
+
+        hover = Grid[
+            { {
+                Button[
+                    title,
+                    loadConversation[ nbo, chat ],
+                    Alignment  -> Left,
+                    Appearance -> "Suppressed",
+                    BaseStyle  -> { "Text", FontSize -> 14, LineBreakWithin -> False },
+                    Method     -> "Queued"
+                ],
+                Grid[
+                    { {
+                        Button[
+                            $popOutButtonLabel,
+                            popOutChatNB @ chat,
+                            Appearance -> "Suppressed"
+                        ],
+                        Button[
+                            $trashButtonLabel,
+                            DeleteChat @ chat;
+                            removeChatFromRows[ Dynamic @ rows, chat ],
+                            Appearance -> "Suppressed"
+                        ]
+                    } }
+                ]
+            } },
+            Alignment  -> { { Left, Right }, Baseline },
+            Background -> RGBColor[ "#EDF7FC" ],
+            ItemSize   -> Fit
+        ];
+
+        {
+            Style[ Spacer[ 3 ], TaggingRules -> <| "ConversationUUID" -> chat[ "ConversationUUID" ] |> ],
+            Mouseover[ default, hover ],
+            Spacer[ 3 ]
+        }
     ],
     throwInternalFailure
 ];
 
 makeHistoryMenuItem // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*removeChatFromRows*)
+removeChatFromRows // beginDefinition;
+
+removeChatFromRows[ Dynamic[ rows_ ], KeyValuePattern[ "ConversationUUID" -> uuid_String ] ] :=
+    rows = DeleteCases[
+        rows,
+        {
+            Style[
+                __,
+                TaggingRules -> KeyValuePattern[ "ConversationUUID" -> uuid ],
+                ___
+            ],
+            ___
+        }
+    ];
+
+removeChatFromRows // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1320,12 +1602,20 @@ loadConversation[ nbo_NotebookObject, id_ ] := Enclose[
         ChatbookAction[ "AttachWorkspaceChatInput", nbo ];
         CurrentChatSettings[ nbo, "ConversationUUID" ] = uuid;
         CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = title;
+        restoreVerticalScrollbar @ nbo;
         moveToChatInputField[ nbo, True ]
-    ],
+    ] // withLoadingOverlay @ nbo,
     throwInternalFailure
 ];
 
 loadConversation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Icons*)
+$searchButtonLabel := $searchButtonLabel = chatbookIcon[ "WorkspaceHistorySearchIcon", False ];
+$popOutButtonLabel := $popOutButtonLabel = chatbookIcon[ "WorkspaceHistoryPopOutIcon", False ];
+$trashButtonLabel  := $trashButtonLabel  = chatbookIcon[ "WorkspaceHistoryTrashIcon" , False ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

@@ -19,6 +19,8 @@ $$chatCellFormat = None | Automatic | "Default" | "Inline" | "Workspace";
 (*ChatMessageToCell*)
 ChatMessageToCell // beginDefinition;
 
+ChatMessageToCell[ messages_ ] := ChatMessageToCell[ messages, "Default" ];
+
 ChatMessageToCell[ message: $$chatMessage, format: $$chatCellFormat ] := catchMine @ Enclose[
     First @ ConfirmMatch[ chatMessagesToCells[ { message }, format ], { _Cell }, "Cell" ],
     throwInternalFailure
