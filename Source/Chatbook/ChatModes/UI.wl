@@ -1430,15 +1430,18 @@ makeDefaultHistoryView // endDefinition;
 makeDefaultHistoryView0 // beginDefinition;
 
 makeDefaultHistoryView0[ nbo_NotebookObject ] := Enclose[
-    Module[ { appName, chats, rows },
+    DynamicModule[ { appName, chats, rows },
         appName = ConfirmBy[ CurrentChatSettings[ nbo, "AppName" ], StringQ, "AppName" ];
         chats = ConfirmMatch[ ListSavedChats @ appName, { ___Association }, "Chats" ];
-        rows = ConfirmBy[ makeHistoryMenuItem[ nbo ] /@ chats, MatrixQ, "Grid" ];
-        Grid[
-            rows,
-            Alignment -> { Left, Center },
-            Dividers  -> { False, { False, { RGBColor[ "#D1D1D1" ] }, False } },
-            Spacings  -> { Automatic, { 0, { 1 }, 0 } }
+        rows = makeHistoryMenuItem[ Dynamic @ rows, nbo ] /@ chats;
+        Dynamic[
+            Grid[
+                rows,
+                Alignment -> { Left, Center },
+                Dividers  -> { False, { False, { RGBColor[ "#D1D1D1" ] }, False } },
+                Spacings  -> { Automatic, { 0, { 1 }, 0 } }
+            ],
+            TrackedSymbols :> { rows }
         ]
     ],
     throwInternalFailure
@@ -1497,10 +1500,10 @@ searchButton // endDefinition;
 (*makeHistoryMenuItem*)
 makeHistoryMenuItem // beginDefinition;
 
-makeHistoryMenuItem[ nbo_NotebookObject ] :=
-    makeHistoryMenuItem[ nbo, # ] &;
+makeHistoryMenuItem[ rows_Dynamic, nbo_NotebookObject ] :=
+    makeHistoryMenuItem[ rows, nbo, # ] &;
 
-makeHistoryMenuItem[ nbo_NotebookObject, chat_Association ] := Enclose[
+makeHistoryMenuItem[ Dynamic[ rows_ ], nbo_NotebookObject, chat_Association ] := Enclose[
     Module[ { title, date, timeString, default, hover },
         title = ConfirmBy[ chat[ "ConversationTitle" ], StringQ, "Title" ];
         date = DateObject[ ConfirmBy[ chat[ "Date" ], NumericQ, "Date" ], TimeZone -> 0 ];
@@ -1526,19 +1529,57 @@ makeHistoryMenuItem[ nbo_NotebookObject, chat_Association ] := Enclose[
                     BaseStyle  -> { "Text", FontSize -> 14, LineBreakWithin -> False },
                     Method     -> "Queued"
                 ],
-                Grid[ { { "[BUTTONS GO HERE]" } } ]
+                Grid[
+                    { {
+                        Button[
+                            $popOutButtonLabel,
+                            popOutChatNB @ chat,
+                            Appearance -> "Suppressed"
+                        ],
+                        Button[
+                            $trashButtonLabel,
+                            DeleteChat @ chat;
+                            removeChatFromRows[ Dynamic @ rows, chat ],
+                            Appearance -> "Suppressed"
+                        ]
+                    } }
+                ]
             } },
             Alignment  -> { { Left, Right }, Baseline },
             Background -> RGBColor[ "#EDF7FC" ],
             ItemSize   -> Fit
         ];
 
-        { Spacer[ 3 ], Mouseover[ default, hover ], Spacer[ 3 ] }
+        {
+            Style[ Spacer[ 3 ], TaggingRules -> <| "ConversationUUID" -> chat[ "ConversationUUID" ] |> ],
+            Mouseover[ default, hover ],
+            Spacer[ 3 ]
+        }
     ],
     throwInternalFailure
 ];
 
 makeHistoryMenuItem // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*removeChatFromRows*)
+removeChatFromRows // beginDefinition;
+
+removeChatFromRows[ Dynamic[ rows_ ], KeyValuePattern[ "ConversationUUID" -> uuid_String ] ] :=
+    rows = DeleteCases[
+        rows,
+        {
+            Style[
+                __,
+                TaggingRules -> KeyValuePattern[ "ConversationUUID" -> uuid ],
+                ___
+            ],
+            ___
+        }
+    ];
+
+removeChatFromRows // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1652,7 +1693,7 @@ $searchIconDefault = Graphics[
             FaceForm @ RGBColor[ 0.2, 0.2, 0.2, 1.0 ]
         ]
     },
-    ImageSize -> { 18.0, 18.0 },
+    ImageSize -> { 18.0, 18.0 }/0.85,
     PlotRange -> { { 0.0, 18.0 }, { 0.0, 18.0 } },
     AspectRatio -> Automatic
 ];
@@ -1733,7 +1774,7 @@ $searchIconActive = Graphics[
             FaceForm @ RGBColor[ 0.4, 0.67843, 0.82353, 1.0 ]
         ]
     },
-    ImageSize -> { 18.0, 18.0 },
+    ImageSize -> { 18.0, 18.0 }/0.85,
     PlotRange -> { { 0.0, 18.0 }, { 0.0, 18.0 } },
     AspectRatio -> Automatic
 ];
@@ -1810,10 +1851,10 @@ $popOutButtonLabel := $popOutButtonLabel = RawBoxes @ ToBoxes @ Mouseover[
                         }
                     ]
                 },
-                FaceForm @ GrayLevel[ 0.2 ]
+                FaceForm @ RGBColor[ 0.4, 0.67843, 0.82353, 1.0 ]
             ]
         },
-        ImageSize -> { 10.0, 10.0 },
+        ImageSize -> { 10.0, 10.0 }/0.85,
         PlotRange -> { { -0.5, 9.5 }, { -0.5, 9.5 } },
         AspectRatio -> Automatic
     ],
@@ -1887,10 +1928,10 @@ $popOutButtonLabel := $popOutButtonLabel = RawBoxes @ ToBoxes @ Mouseover[
                         }
                     ]
                 },
-                FaceForm @ RGBColor[ 0.4, 0.67843, 0.82353, 1.0 ]
+                FaceForm @ GrayLevel[ 0.2 ]
             ]
         },
-        ImageSize -> { 10.0, 10.0 },
+        ImageSize -> { 10.0, 10.0 }/0.85,
         PlotRange -> { { -0.5, 9.5 }, { -0.5, 9.5 } },
         AspectRatio -> Automatic
     ]
@@ -1938,7 +1979,7 @@ $trashButtonLabel := $trashButtonLabel = RawBoxes @ ToBoxes @ Mouseover[
                         }
                     ]
                 },
-                FaceForm @ GrayLevel[ 0.2 ]
+                FaceForm @ RGBColor[ 0.4, 0.67843, 0.82353, 1. ]
             ],
             Style[
                 {
@@ -1955,7 +1996,7 @@ $trashButtonLabel := $trashButtonLabel = RawBoxes @ ToBoxes @ Mouseover[
                         }
                     ]
                 },
-                FaceForm @ GrayLevel[ 0.2 ]
+                FaceForm @ RGBColor[ 0.4, 0.67843, 0.82353, 1. ]
             ],
             Style[
                 {
@@ -1964,7 +2005,7 @@ $trashButtonLabel := $trashButtonLabel = RawBoxes @ ToBoxes @ Mouseover[
                         { { { 0.517, 9. }, { 10.498, 9. }, { 10.498, 10. }, { 0.517, 10. }, { 0.517, 9. } } }
                     ]
                 },
-                FaceForm @ GrayLevel[ 0.2 ]
+                FaceForm @ RGBColor[ 0.4, 0.67843, 0.82353, 1. ]
             ],
             Style[
                 {
@@ -1973,10 +2014,10 @@ $trashButtonLabel := $trashButtonLabel = RawBoxes @ ToBoxes @ Mouseover[
                         { { { 4.515, 10. }, { 6.528, 10. }, { 6.528, 11. }, { 4.515, 11. }, { 4.515, 10. } } }
                     ]
                 },
-                FaceForm @ GrayLevel[ 0.2 ]
+                FaceForm @ RGBColor[ 0.4, 0.67843, 0.82353, 1. ]
             ]
         },
-        ImageSize -> { 12., 12. },
+        ImageSize -> { 12., 12. }/0.85,
         PlotRange -> { { -0.5, 11.5 }, { -0.5, 11.5 } },
         AspectRatio -> Automatic
     ],
@@ -2020,7 +2061,7 @@ $trashButtonLabel := $trashButtonLabel = RawBoxes @ ToBoxes @ Mouseover[
                         }
                     ]
                 },
-                FaceForm @ RGBColor[ 0.4, 0.67843, 0.82353, 1. ]
+                FaceForm @ GrayLevel[ 0.2 ]
             ],
             Style[
                 {
@@ -2037,7 +2078,7 @@ $trashButtonLabel := $trashButtonLabel = RawBoxes @ ToBoxes @ Mouseover[
                         }
                     ]
                 },
-                FaceForm @ RGBColor[ 0.4, 0.67843, 0.82353, 1. ]
+                FaceForm @ GrayLevel[ 0.2 ]
             ],
             Style[
                 {
@@ -2046,7 +2087,7 @@ $trashButtonLabel := $trashButtonLabel = RawBoxes @ ToBoxes @ Mouseover[
                         { { { 0.517, 9. }, { 10.498, 9. }, { 10.498, 10. }, { 0.517, 10. }, { 0.517, 9. } } }
                     ]
                 },
-                FaceForm @ RGBColor[ 0.4, 0.67843, 0.82353, 1. ]
+                FaceForm @ GrayLevel[ 0.2 ]
             ],
             Style[
                 {
@@ -2055,10 +2096,10 @@ $trashButtonLabel := $trashButtonLabel = RawBoxes @ ToBoxes @ Mouseover[
                         { { { 4.515, 10. }, { 6.528, 10. }, { 6.528, 11. }, { 4.515, 11. }, { 4.515, 10. } } }
                     ]
                 },
-                FaceForm @ RGBColor[ 0.4, 0.67843, 0.82353, 1. ]
+                FaceForm @ GrayLevel[ 0.2 ]
             ]
         },
-        ImageSize -> { 12., 12. },
+        ImageSize -> { 12., 12. }/0.85,
         PlotRange -> { { -0.5, 11.5 }, { -0.5, 11.5 } },
         AspectRatio -> Automatic
     ]
