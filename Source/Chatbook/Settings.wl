@@ -258,6 +258,8 @@ resolveAutoSettings[ settings0_Association ] := Enclose[
             $conversionRules         = resolved[ "ConversionRules" ];
             $openToolCallBoxes       = resolved[ "OpenToolCallBoxes" ];
 
+            If[ resolved[ "ForceSynchronous" ], $showProgressText = True ];
+
             setLLMKitFlags @ resolved;
         ];
         If[ $catching, $currentChatSettings = resolved ];
