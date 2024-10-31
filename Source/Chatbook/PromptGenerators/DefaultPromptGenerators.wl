@@ -84,7 +84,7 @@ applyPromptGenerators // endDefinition;
 toPromptGenerator // beginDefinition;
 toPromptGenerator[ ___ ] /; $VersionNumber < 14.1 := Nothing;
 toPromptGenerator[ name_String ] := toPromptGenerator @ $defaultPromptGenerators @ name;
-toPromptGenerator[ generator_LLMPromptGenerator ] := generator;
+toPromptGenerator[ generator: HoldPattern[ _LLMPromptGenerator ] ] := generator;
 toPromptGenerator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -111,7 +111,7 @@ makePromptGeneratorData // endDefinition;
 (*applyPromptGenerator*)
 applyPromptGenerator // beginDefinition;
 
-applyPromptGenerator[ gen_LLMPromptGenerator, data_Association ] :=
+applyPromptGenerator[ gen: HoldPattern[ _LLMPromptGenerator ], data_Association ] :=
     formatGeneratedPrompt @ LogChatTiming[ gen @ data, "ApplyPromptGenerator" ];
 
 applyPromptGenerator // endDefinition;

@@ -29,6 +29,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$excludeHistoryStyle;
 `$$nestedCellStyle;
 
+`$$cloudObject;
 `$$optionsSequence;
 `$$size;
 `$$textData;
@@ -45,6 +46,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$$string;
 `$$symbol;
 `$$atomic;
+`$$image;
 
 `$$chatMessage;
 `$$chatMessages;
@@ -152,6 +154,7 @@ $$feObj             = _FrontEndObject | $FrontEndSession | _NotebookObject | _Ce
 $$progressIndicator = _ProgressIndicator | _Deploy | _Progress`ProgressDump`ProgressPanelGUI;
 $$template          = _String|_TemplateObject|_TemplateExpression|_TemplateSequence;
 $$serviceCaller     = _String? StringQ | { ___String? StringQ };
+$$cloudObject       = HoldPattern[ _CloudObject ];
 
 (* Helper functions for held pattern tests: *)
 u[ f_ ] := Function[ Null, f @ Unevaluated @ #, HoldAllComplete ];
@@ -191,6 +194,7 @@ $$textData            = $$textDataItem | $$textDataList;
 (* ::Subsection::Closed:: *)
 (*Graphics*)
 $$graphics = _? graphicsQ;
+$$image    = HoldPattern[ _Image? image2DQ ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

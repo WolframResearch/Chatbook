@@ -142,21 +142,23 @@ $$spacedInfixOperator = Alternatives[
 $delimiterString = "\n\n---\n\n";
 
 (* Characters that should be serialized as long-form representations: *)
-$longNameCharacterList = {
-    "\[AltKey]",
-    "\[CommandKey]",
-    "\[ControlKey]",
-    "\[DeleteKey]",
-    "\[EnterKey]",
-    "\[EscapeKey]",
-    "\[OptionKey]",
-    "\[ReturnKey]",
-    "\[SpaceKey]",
-    "\[SystemEnterKey]",
-    "\[TabKey]"
+$longNameCharacterNames = {
+    "AltKey",
+    "CommandKey",
+    "ControlKey",
+    "DeleteKey",
+    "EnterKey",
+    "EscapeKey",
+    "OptionKey",
+    "ReturnKey",
+    "SpaceKey",
+    "SystemEnterKey",
+    "TabKey"
 };
 
-$longNameCharacters = Normal @ AssociationMap[ "\\[" <> CharacterName[ # ] <> "]" &, $longNameCharacterList ];
+$longNameCharacterList = ToExpression[ "\"\\[" <> # <> "]\"" & /@ $longNameCharacterNames ];
+
+$longNameCharacters = Thread[ $longNameCharacterList -> ("\\["<>#<>"]" &) /@ $longNameCharacterNames ];
 $$longNameCharacter = Alternatives @@ $longNameCharacterList;
 
 $$invisibleCharacter = Alternatives[

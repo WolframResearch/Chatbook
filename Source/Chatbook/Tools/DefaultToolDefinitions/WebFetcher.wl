@@ -8,6 +8,11 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Config*)
+$$webSessionObject = HoldPattern[ _WebSessionObject ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Tool Specification*)
 $defaultChatTools0[ "WebFetcher" ] = <|
     toolDefaultData[ "WebFetcher" ],
@@ -58,7 +63,7 @@ fetchWebText[ URL[ url_ ] ] :=
 fetchWebText[ url_String ] :=
     fetchWebText[ url, $webSession ];
 
-fetchWebText[ url_String, session_WebSessionObject ] := Enclose[
+fetchWebText[ url_String, session: $$webSessionObject ] := Enclose[
     Module[ { body, strings },
         ConfirmMatch[ WebExecute[ session, { "OpenPage" -> url } ], _Success | { __Success } ];
         Pause[ 3 ]; (* Allow time for the page to load *)
@@ -102,8 +107,8 @@ $webSession := getWebSession[ ];
 (*getWebSession*)
 getWebSession // beginDefinition;
 getWebSession[ ] := getWebSession @ $currentWebSession;
-getWebSession[ session_WebSessionObject? validWebSessionQ ] := session;
-getWebSession[ session_WebSessionObject ] := (Quiet @ DeleteObject @ session; startWebSession[ ]);
+getWebSession[ session: $$webSessionObject? validWebSessionQ ] := session;
+getWebSession[ session: $$webSessionObject ] := (Quiet @ DeleteObject @ session; startWebSession[ ]);
 getWebSession[ _ ] := startWebSession[ ];
 getWebSession // endDefinition;
 
@@ -112,7 +117,7 @@ getWebSession // endDefinition;
 (*validWebSessionQ*)
 validWebSessionQ // ClearAll;
 
-validWebSessionQ[ session_WebSessionObject ] :=
+validWebSessionQ[ session: $$webSessionObject ] :=
     With[ { valid = Quiet @ StringQ @ WebExecute[ session, "PageURL" ] },
         If[ valid, True, Quiet @ DeleteObject @ session; False ]
     ];

@@ -213,7 +213,7 @@ checkModelList[ info_, $Canceled | $Failed | Missing[ "NotConnected" ] ] :=
 checkModelList[ info_, Failure[ "ConfirmationFailed", KeyValuePattern[ "Expression" :> expr_ ] ] ] :=
     checkModelList[ info, expr ];
 
-checkModelList[ info_, _ServiceExecute ] := (
+checkModelList[ info_, HoldPattern[ _ServiceExecute ] ] := (
     If[ AssociationQ @ Wolfram`LLMFunctions`APIs`Common`$ConnectionCache,
         KeyDropFrom[ Wolfram`LLMFunctions`APIs`Common`$ConnectionCache, info[ "Service" ] ]
     ];
