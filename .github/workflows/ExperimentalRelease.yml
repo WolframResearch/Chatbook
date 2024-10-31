@@ -11,11 +11,18 @@ concurrency:
 
 env:
   WOLFRAMSCRIPT_ENTITLEMENTID: ${{ secrets.WOLFRAMSCRIPT_ENTITLEMENTID }}
+  WOLFRAM_SYSTEM_ID: Linux-x86-64
   GH_INSTALL_URL: https://github.com/cli/cli/releases/download/v2.33.0/gh_2.33.0_linux_amd64.deb
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   Build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    container:
+      image: wolframresearch/wolframengine:14.1
+      options: --user root
 
     steps:
     - name: Update Git
@@ -31,6 +38,9 @@ jobs:
 
     - name: Build Paclet
       run: wolframscript -f Scripts/BuildPaclet.wls
+    
+    - name: Rename Paclet File
+      run: mv "${{ env.PACLET_PATH }}" "${{ env.PACLET_BUILD_DIR }}/Wolfram__Chatbook.paclet"
 
     - name: Update Release
       run: |
@@ -50,4 +60,4 @@ jobs:
         fi
 
     - name: Upload Artifact
-      run: gh release upload experimental "${{ env.PACLET_PATH }}#Wolfram__Chatbook.paclet" --clobber
+      run: gh release upload experimental "${{ env.PACLET_BUILD_DIR }}/Wolfram__Chatbook.paclet" --clobber
