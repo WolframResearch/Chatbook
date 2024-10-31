@@ -42,7 +42,11 @@ $codeAssistanceInlineSettings := <|
 $workspaceChatNotebookOptions := Sequence[
     DefaultNewCellStyle -> "AutoMoveToChatInputField",
     StyleDefinitions    -> FrontEnd`FileName[ { "Wolfram" }, "WorkspaceChat.nb", CharacterEncoding -> "UTF-8" ],
-    TaggingRules        -> <| "ChatNotebookSettings" -> $codeAssistanceWorkspaceSettings |>
+    TaggingRules        -> <|
+        "ChatInputString"      -> "",
+        "ChatNotebookSettings" -> $codeAssistanceWorkspaceSettings,
+        "ConversationTitle"    -> ""
+    |>
 ];
 
 (* TODO: set $serviceCaller from chat settings *)
