@@ -37,6 +37,8 @@ $inputFieldFrameOptions = Sequence[
     FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], RGBColor[ "#a3c9f2" ] ]
 ];
 
+$useGravatarImages := useGravatarImagesQ[ ];
+
 $userImageParams = <| "size" -> 40, "default" -> "404", "rating" -> "G" |>;
 
 $defaultUserImage := $defaultUserImage =
@@ -904,10 +906,14 @@ userName // endDefinition;
 (*userImage*)
 userImage // beginDefinition;
 
-userImage[ ] := userImage @ FirstCase[
-    Unevaluated @ { $CloudUserID, CurrentValue[ "WolframCloudUserName" ] },
-    expr_ :> With[ { user = expr }, user /; StringQ @ user ]
-];
+userImage[ ] :=
+    If[ TrueQ @ $useGravatarImages,
+        userImage @ FirstCase[
+            Unevaluated @ { $CloudUserID, CurrentValue[ "WolframCloudUserName" ] },
+            expr_ :> With[ { user = expr }, user /; StringQ @ user ]
+        ],
+        $defaultUserImage
+    ];
 
 userImage[ user_String ] := Enclose[
     Module[ { hash, url, image },
@@ -923,6 +929,13 @@ userImage[ other_ ] :=
     $defaultUserImage;
 
 userImage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*useGravatarImagesQ*)
+useGravatarImagesQ // beginDefinition;
+useGravatarImagesQ[ ] := useGravatarImagesQ[ ] = TrueQ @ CurrentChatSettings[ $FrontEnd, "UseGravatarImages" ];
+useGravatarImagesQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
