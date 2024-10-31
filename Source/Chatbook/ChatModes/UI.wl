@@ -55,10 +55,10 @@ makeWorkspaceChatDockedCell[ ] := Framed[
     DynamicModule[ { nbo },
         Grid[
             { {
-                trackedDynamic[ createHistoryMenu @ nbo, "SavedChats" ],
+                LogChatTiming @ historyButton @ Dynamic @ nbo,
                 Item[ Spacer[ 0 ], ItemSize -> Fit ],
-                sourcesButton @ Dynamic @ nbo,
-                newChatButton @ Dynamic @ nbo
+                LogChatTiming @ sourcesButton @ Dynamic @ nbo,
+                LogChatTiming @ newChatButton @ Dynamic @ nbo
             } },
             Alignment -> { Automatic, Center },
             Spacings  -> 0.5
@@ -72,6 +72,39 @@ makeWorkspaceChatDockedCell[ ] := Framed[
 ];
 
 makeWorkspaceChatDockedCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*historyButton*)
+historyButton // beginDefinition;
+
+historyButton[ Dynamic[ nbo_ ] ] :=
+    Module[ { label },
+
+        label = Pane[
+            Style[
+                Dynamic @ FEPrivate`If[
+                    CurrentValue[ nbo, { WindowSize, 1 } ] > 250,
+                    FEPrivate`TruncateStringToWidth[
+                        CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ],
+                        "WorkspaceChatToolbarTitle",
+                        CurrentValue[ nbo, { WindowSize, 1 } ] - 170,
+                        Right
+                    ],
+                    ""
+                ],
+                "WorkspaceChatToolbarTitle"
+            ]
+        ];
+
+        Button[
+            toolbarButtonLabel[ "History", label, "History" ],
+            toggleOverlayMenu[ nbo, "History" ],
+            Appearance -> "Suppressed"
+        ]
+    ];
+
+historyButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1089,7 +1122,8 @@ toggleOverlayMenu // endDefinition;
 (* ::Subsection::Closed:: *)
 (*overlayMenu*)
 overlayMenu // beginDefinition;
-overlayMenu[ "Sources" ] := notebookSources[ ];
+overlayMenu[ nbo_, "Sources" ] := sourcesMenu @ nbo;
+overlayMenu[ nbo_, "History" ] := historyMenu @ nbo;
 overlayMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1103,7 +1137,7 @@ attachOverlayMenu[ nbo_NotebookObject, name_String ] := Enclose[
         nbo,
         Cell[
             BoxData @ ToBoxes @ Framed[
-                ConfirmMatch[ overlayMenu @ name, Except[ _overlayMenu ], "OverlayMenu" ],
+                ConfirmMatch[ overlayMenu[ nbo, name ], Except[ _overlayMenu ], "OverlayMenu" ],
                 Alignment    -> { Left, Top },
                 Background   -> White,
                 FrameMargins -> { { 5, 5 }, { 2000, 5 } },
@@ -1127,30 +1161,18 @@ attachOverlayMenu // endDefinition;
 (*Sources*)
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*toggleSourcesMenu*)
-toggleSourcesMenu // beginDefinition;
-
-toggleSourcesMenu[ nbo_NotebookObject ] :=
-    Module[ { cell },
-        cell = First[
-            Cells[ nbo, AttachedCell -> True, CellStyle -> "AttachedOverlayMenu", CellTags -> "Sources" ],
-            Missing[ "NotAttached" ]
-        ];
-
-        If[ MissingQ @ cell,
-            attachOverlayMenu[ nbo, "Sources", notebookSources[ ] ],
-            NotebookDelete @ cell
-        ]
-    ];
-
-toggleSourcesMenu // endDefinition;
+(* ::Subsection::Closed:: *)
+(*sourcesMenu*)
+sourcesMenu // beginDefinition;
+sourcesMenu[ nbo_NotebookObject ] := notebookSources[ ]; (* TODO: combined menu that includes files etc. *)
+sourcesMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*notebookSources*)
 notebookSources // beginDefinition;
 
+(* FIXME: the sources overlay ends up too thin if there are no notebooks open *)
 notebookSources[ ] := Framed[
     Column[
         {
@@ -1236,47 +1258,122 @@ inclusionCheckbox // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*createHistoryMenu*)
-createHistoryMenu // beginDefinition;
+(*historyMenu*)
+historyMenu // beginDefinition;
 
-createHistoryMenu[ nbo_NotebookObject ] :=
-    createHistoryMenu[ nbo, ListSavedChats @ CurrentChatSettings[ nbo, "AppName" ] ];
+historyMenu[ nbo_NotebookObject ] :=
+    DynamicModule[ { searching = False },
+        PaneSelector[
+            {
+                True  -> historySearchView[ nbo, Dynamic @ searching ],
+                False -> historyDefaultView[ nbo, Dynamic @ searching ]
+            },
+            Dynamic @ searching,
+            ImageSize -> Automatic
+        ]
+    ];
 
-createHistoryMenu[ nbo_NotebookObject ] := Enclose[
-    Catch @ Module[ { appName, chats, label },
+historyMenu // endDefinition;
 
-        appName = ConfirmBy[ CurrentChatSettings[ nbo, "AppName" ], StringQ, "AppName" ];
-        chats = ConfirmMatch[ ListSavedChats @ appName, { ___Association }, "Chats" ];
-        If[ chats === { }, Throw @ ActionMenu[ "History", { "Nothing here yet" :> Null } ] ];
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*historyDefaultView*)
+historyDefaultView // beginDefinition;
 
-        label = Pane[
-            Style[
-                Dynamic @ FEPrivate`If[
-                    CurrentValue[ nbo, { WindowSize, 1 } ] > 250,
-                    FEPrivate`TruncateStringToWidth[
-                        CurrentValue[ nbo, { TaggingRules, "ConversationTitle" }, "" ],
-                        "WorkspaceChatToolbarTitle",
-                        CurrentValue[ nbo, { WindowSize, 1 } ] - 170,
-                        Right
-                    ],
-                    ""
-                ],
-                "WorkspaceChatToolbarTitle"
-            ]
-        ];
+historyDefaultView[ nbo_NotebookObject, Dynamic[ searching_ ] ] := Enclose[
+    Catch @ Module[ { header, view },
+        header = ConfirmMatch[ makeHistoryHeader @ historySearchButton @ Dynamic @ searching, _Pane, "Header" ];
+        view = ConfirmMatch[ makeDefaultHistoryView @ nbo, _Pane, "View" ];
 
-        ActionMenu[
-            toolbarButtonLabel[ "History", label, "History" ],
-            makeHistoryMenuItem[ nbo ] /@ Take[ chats, UpTo @ $maxHistoryItems ],
-            Appearance -> "Suppressed",
-            Method     -> "Queued",
-            MenuStyle  -> { Magnification -> 1 }
+        Framed[
+            Column[
+                { header, view },
+                Alignment  -> Left,
+                Background -> { RGBColor[ "#F5F5F5" ], White },
+                Dividers   -> { None, { 2 -> RGBColor[ "#D1D1D1" ] } }
+            ],
+            RoundingRadius -> 3,
+            FrameMargins   -> 0,
+            FrameStyle     -> RGBColor[ "#D1D1D1" ]
         ]
     ],
     throwInternalFailure
 ];
 
-createHistoryMenu // endDefinition;
+historyDefaultView // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeDefaultHistoryView*)
+makeDefaultHistoryView // beginDefinition;
+
+makeDefaultHistoryView[ nbo_NotebookObject ] := Enclose[
+    Module[ { appName, chats },
+        appName = ConfirmBy[ CurrentChatSettings[ nbo, "AppName" ], StringQ, "AppName" ];
+        chats = ConfirmMatch[ ListSavedChats @ appName, { ___Association }, "Chats" ];
+        Pane[
+            Grid[
+                makeHistoryMenuItem[ nbo ] /@ chats,
+                Alignment -> { Left, Center },
+                Dividers  -> { False, { False, { RGBColor[ "#D1D1D1" ] }, False } },
+                Spacings  -> { Automatic, { 0, { 1 }, 0 } }
+            ],
+            AppearanceElements -> { },
+            FrameMargins       -> { { 0, 0 }, { 5, 5 } },
+            ImageSize          -> Dynamic @ { Automatic, AbsoluteCurrentValue[ nbo, { WindowSize, 2 } ] },
+            Scrollbars         -> Automatic
+        ]
+    ],
+    throwInternalFailure
+];
+
+makeDefaultHistoryView // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeHistoryHeader*)
+makeHistoryHeader // beginDefinition;
+
+makeHistoryHeader[ extraContent_ ] := Pane[
+    Grid[
+        {
+            {
+                (* FIXME: move "History" to text resources *)
+                Style[ "History", "Text", FontSize -> 14, FontColor -> RGBColor[ "#333333" ], FontWeight -> Bold ],
+                extraContent
+            }
+        },
+        Alignment -> { { Left, Right }, Baseline },
+        ItemSize  -> Fit
+    ],
+    FrameMargins -> { { 5, 5 }, { 3, 3 } }
+];
+
+makeHistoryHeader // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*historySearchButton*)
+historySearchButton // beginDefinition;
+
+historySearchButton[ Dynamic[ searching_ ] ] :=
+    PaneSelector[
+        {
+            False -> searchButton @ Dynamic @ searching,
+            True -> searchField @ Dynamic @ searching
+        },
+        Dynamic @ searching,
+        ImageSize -> Automatic
+    ];
+
+historySearchButton // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*searchButton*)
+searchButton // beginDefinition;
+searchButton[ Dynamic[ searching_ ] ] := Button[ $searchButtonLabel, searching = True, Appearance -> "Suppressed" ];
+searchButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1287,12 +1384,39 @@ makeHistoryMenuItem[ nbo_NotebookObject ] :=
     makeHistoryMenuItem[ nbo, # ] &;
 
 makeHistoryMenuItem[ nbo_NotebookObject, chat_Association ] := Enclose[
-    Module[ { title, date, timeString, label },
+    Module[ { title, date, timeString, default, hover },
         title = ConfirmBy[ chat[ "ConversationTitle" ], StringQ, "Title" ];
         date = DateObject[ ConfirmBy[ chat[ "Date" ], NumericQ, "Date" ], TimeZone -> 0 ];
         timeString = ConfirmBy[ relativeTimeString @ date, StringQ, "TimeString" ];
-        label = Row @ { title, " ", Style[ timeString, FontOpacity -> 0.75, FontSize -> Inherited * 0.9 ] };
-        label :> loadConversation[ nbo, chat ]
+
+        default = Grid[
+            { {
+                title,
+                Style[ timeString, FontColor -> RGBColor[ "#A6A6A6" ] ]
+            } },
+            Alignment -> { { Left, Right }, Baseline },
+            BaseStyle -> { "Text", FontSize -> 14, LineBreakWithin -> False },
+            ItemSize  -> Fit
+        ];
+
+        hover = Grid[
+            { {
+                Button[
+                    title,
+                    loadConversation[ nbo, chat ],
+                    Alignment  -> Left,
+                    Appearance -> "Suppressed",
+                    BaseStyle  -> { "Text", FontSize -> 14, LineBreakWithin -> False },
+                    Method     -> "Queued"
+                ],
+                Grid[ { { "[BUTTONS GO HERE]" } } ]
+            } },
+            Alignment  -> { { Left, Right }, Baseline },
+            Background -> RGBColor[ "#EDF7FC" ],
+            ItemSize   -> Fit
+        ];
+
+        { Spacer[ 3 ], Mouseover[ default, hover ], Spacer[ 3 ] }
     ],
     throwInternalFailure
 ];
@@ -1317,6 +1441,7 @@ loadConversation[ nbo_NotebookObject, id_ ] := Enclose[
         SelectionMove[ nbo, Before, Notebook, AutoScroll -> True ];
         ConfirmMatch[ NotebookWrite[ nbo, cells, AutoScroll -> False ], Null, "Write" ];
         If[ Cells @ nbo === { }, NotebookWrite[ nbo, cells, AutoScroll -> False ] ];
+        clearOverlayMenus @ nbo;
         ChatbookAction[ "AttachWorkspaceChatInput", nbo ];
         CurrentChatSettings[ nbo, "ConversationUUID" ] = uuid;
         CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = title;
@@ -1326,6 +1451,175 @@ loadConversation[ nbo_NotebookObject, id_ ] := Enclose[
 ];
 
 loadConversation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Icons*)
+(* FIXME: Move to text resources *)
+
+$searchButtonLabel := $searchButtonLabel = RawBoxes @ ToBoxes @ Mouseover[ $searchIconDefault, $searchIconActive ];
+
+$searchIconDefault = Graphics[
+    {
+        Thickness[ 0.055556 ],
+        Style[
+            {
+                FilledCurve[
+                    {
+                        { { 1, 4, 3 }, { 1, 3, 3 }, { 1, 3, 3 }, { 1, 3, 3 } },
+                        {
+                            { 0, 2, 0 },
+                            { 1, 3, 3 },
+                            { 1, 3, 3 },
+                            { 1, 3, 3 },
+                            { 1, 3, 3 },
+                            { 1, 3, 3 },
+                            { 1, 3, 3 },
+                            { 0, 1, 0 },
+                            { 1, 3, 3 },
+                            { 1, 3, 3 },
+                            { 1, 3, 3 }
+                        }
+                    },
+                    {
+                        {
+                            { 7.5, 6.0 },
+                            { 5.019, 6.0 },
+                            { 3.0, 8.019 },
+                            { 3.0, 10.5 },
+                            { 3.0, 12.981 },
+                            { 5.019, 15.0 },
+                            { 7.5, 15.0 },
+                            { 9.981, 15.0 },
+                            { 12.0, 12.981 },
+                            { 12.0, 10.5 },
+                            { 12.0, 8.019 },
+                            { 9.981, 6.0 },
+                            { 7.5, 6.0 }
+                        },
+                        {
+                            { 15.03, 3.03 },
+                            { 11.416, 6.645 },
+                            { 12.394, 7.638 },
+                            { 13.0, 8.999 },
+                            { 13.0, 10.5 },
+                            { 13.0, 13.533 },
+                            { 10.533, 16.0 },
+                            { 7.5, 16.0 },
+                            { 4.467, 16.0 },
+                            { 2.0, 13.533 },
+                            { 2.0, 10.5 },
+                            { 2.0, 7.467 },
+                            { 4.467, 5.0 },
+                            { 7.5, 5.0 },
+                            { 8.495, 5.0 },
+                            { 9.426, 5.27 },
+                            { 10.232, 5.733 },
+                            { 10.251, 5.709 },
+                            { 10.26, 5.68 },
+                            { 10.282, 5.657 },
+                            { 13.97, 1.97 },
+                            { 14.116, 1.823 },
+                            { 14.308, 1.75 },
+                            { 14.5, 1.75 },
+                            { 14.692, 1.75 },
+                            { 14.884, 1.823 },
+                            { 15.03, 1.97 },
+                            { 15.323, 2.263 },
+                            { 15.323, 2.737 },
+                            { 15.03, 3.03 }
+                        }
+                    }
+                ]
+            },
+            FaceForm @ RGBColor[ 0.2, 0.2, 0.2, 1.0 ]
+        ]
+    },
+    ImageSize -> { 18.0, 18.0 },
+    PlotRange -> { { 0.0, 18.0 }, { 0.0, 18.0 } },
+    AspectRatio -> Automatic
+];
+
+$searchIconActive = Graphics[
+    {
+        Thickness[ 0.055556 ],
+        Style[
+            {
+                FilledCurve[
+                    {
+                        { { 1, 4, 3 }, { 1, 3, 3 }, { 1, 3, 3 }, { 1, 3, 3 } },
+                        {
+                            { 1, 4, 3 },
+                            { 1, 3, 3 },
+                            { 1, 3, 3 },
+                            { 1, 3, 3 },
+                            { 1, 3, 3 },
+                            { 1, 3, 3 },
+                            { 0, 1, 0 },
+                            { 1, 3, 3 },
+                            { 1, 3, 3 },
+                            { 1, 3, 3 },
+                            { 0, 1, 0 }
+                        }
+                    },
+                    {
+                        {
+                            { 3.5, 10.5 },
+                            { 3.5, 12.981 },
+                            { 5.519, 15.0 },
+                            { 8.0, 15.0 },
+                            { 10.481, 15.0 },
+                            { 12.5, 12.981 },
+                            { 12.5, 10.5 },
+                            { 12.5, 8.019 },
+                            { 10.481, 6.0 },
+                            { 8.0, 6.0 },
+                            { 5.519, 6.0 },
+                            { 3.5, 8.019 },
+                            { 3.5, 10.5 }
+                        },
+                        {
+                            { 11.916, 6.645 },
+                            { 12.894, 7.638 },
+                            { 13.5, 8.999 },
+                            { 13.5, 10.5 },
+                            { 13.5, 13.533 },
+                            { 11.033, 16.0 },
+                            { 8.0, 16.0 },
+                            { 4.967, 16.0 },
+                            { 2.5, 13.533 },
+                            { 2.5, 10.5 },
+                            { 2.5, 7.467 },
+                            { 4.967, 5.0 },
+                            { 8.0, 5.0 },
+                            { 8.995, 5.0 },
+                            { 9.926, 5.27 },
+                            { 10.732, 5.733 },
+                            { 10.751, 5.709 },
+                            { 10.76, 5.68 },
+                            { 10.782, 5.657 },
+                            { 14.47, 1.97 },
+                            { 14.616, 1.823 },
+                            { 14.808, 1.75 },
+                            { 15.0, 1.75 },
+                            { 15.192, 1.75 },
+                            { 15.384, 1.823 },
+                            { 15.53, 1.97 },
+                            { 15.823, 2.263 },
+                            { 15.823, 2.737 },
+                            { 15.53, 3.03 },
+                            { 11.916, 6.645 }
+                        }
+                    }
+                ]
+            },
+            FaceForm @ RGBColor[ 0.4, 0.67843, 0.82353, 1.0 ]
+        ]
+    },
+    ImageSize -> { 18.0, 18.0 },
+    PlotRange -> { { 0.0, 18.0 }, { 0.0, 18.0 } },
+    AspectRatio -> Automatic
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
