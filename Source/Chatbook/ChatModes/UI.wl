@@ -1230,7 +1230,10 @@ notebookSources[ ] := Framed[
                             Item[
                                 Button[
                                     MouseAppearance[
-                                        Grid[ { { $notebookIcon, title } }, Alignment -> { Left, Baseline } ],
+                                        Grid[
+                                            { { $notebookIcon, formatNotebookTitle @ title } },
+                                            Alignment -> { Left, Baseline }
+                                        ],
                                         "LinkHand"
                                     ],
                                     ToggleChatInclusion @ nbo,
@@ -1272,6 +1275,14 @@ notebookSources[ ] := Framed[
 ];
 
 notebookSources // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatNotebookTitle*)
+formatNotebookTitle // beginDefinition;
+formatNotebookTitle[ title_String ] := title;
+formatNotebookTitle[ None ] := Style[ "Unnamed Notebook", FontColor -> GrayLevel[ 0.6 ], FontSlant -> Italic ];
+formatNotebookTitle // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
