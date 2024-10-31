@@ -635,7 +635,7 @@ getCloudEvaluatorAPI // beginDefinition;
 getCloudEvaluatorAPI[ ] :=
     getCloudEvaluatorAPI @ CloudObject @ $cloudEvaluatorLocation;
 
-getCloudEvaluatorAPI[ target_CloudObject ] :=
+getCloudEvaluatorAPI[ target: $$cloudObject ] :=
     Module[ { deployed },
         deployed = deployCloudEvaluator @ target;
         If[ validCloudEvaluatorQ @ deployed,
@@ -657,7 +657,7 @@ getCloudEvaluatorAPI // endDefinition;
 (*validCloudEvaluatorQ*)
 validCloudEvaluatorQ // beginDefinition;
 
-validCloudEvaluatorQ[ obj_CloudObject ] := MatchQ[
+validCloudEvaluatorQ[ obj: $$cloudObject ] := MatchQ[
     URLExecute[ obj, { "Evaluation" -> BaseEncode @ BinarySerialize @ HoldComplete[ 1 + 1 ] }, "WXF" ],
     KeyValuePattern[ (Rule|RuleDelayed)[ "Result", HoldComplete[ 2 ] ] ]
 ];
@@ -669,7 +669,7 @@ validCloudEvaluatorQ // endDefinition;
 (*deployCloudEvaluator*)
 deployCloudEvaluator // beginDefinition;
 
-deployCloudEvaluator[ target_CloudObject ] := With[ { messages = $messageOverrides },
+deployCloudEvaluator[ target: $$cloudObject ] := With[ { messages = $messageOverrides },
     CloudDeploy[
         APIFunction[
             {
@@ -1055,7 +1055,7 @@ expandAmbiguityLists // beginDefinition;
 expandAmbiguityLists // Attributes = { HoldAllComplete };
 
 
-expandAmbiguityLists[ expr_AmbiguityList ] :=
+expandAmbiguityLists[ expr: HoldPattern[ _AmbiguityList ] ] :=
     Module[ { bag },
         bag = Internal`Bag[ ];
         expandAmbiguityLists[ bag, expr ];
@@ -1065,7 +1065,7 @@ expandAmbiguityLists[ expr_AmbiguityList ] :=
 
 expandAmbiguityLists[
     bag_,
-    AmbiguityList[ { e_, rest___ }, ___ ]
+    HoldPattern @ AmbiguityList[ { e_, rest___ }, ___ ]
 ] /; FreeQ[ Unevaluated @ e, AmbiguityList ] := (
     Internal`StuffBag[ bag, HoldComplete @ e ];
     expandAmbiguityLists[ bag, AmbiguityList @ { rest } ]
@@ -1074,7 +1074,7 @@ expandAmbiguityLists[
 
 expandAmbiguityLists[
     bag_,
-    AmbiguityList[ { Quantity[ m_, AmbiguityList[ { units___ }, ___ ] ], rest___ }, ___ ]
+    HoldPattern @ AmbiguityList[ { Quantity[ m_, AmbiguityList[ { units___ }, ___ ] ], rest___ }, ___ ]
 ] /; FreeQ[ HoldComplete[ m, units ], AmbiguityList ] := (
     Cases[ HoldComplete @ units, u_ :> Internal`StuffBag[ bag, HoldComplete @ Quantity[ m, u ] ] ];
     expandAmbiguityLists[ bag, AmbiguityList @ { rest } ]
@@ -1619,7 +1619,7 @@ timeConstraintFailure[ t_? Positive ] := Failure[
     |>
 ];
 
-timeConstraintFailure[ q_Quantity ] :=
+timeConstraintFailure[ q: HoldPattern[ _Quantity ] ] :=
     With[ { s = UnitConvert[ q, "Seconds" ] },
         timeConstraintFailure @ QuantityMagnitude @ s /; QuantityUnit @ s === "Seconds"
     ];

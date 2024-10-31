@@ -59,7 +59,7 @@ $localVectorDBDirectory  := ChatbookFilesDirectory @ { "VectorDatabases", $dbVer
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Argument Patterns*)
-$$vectorDatabase = _VectorDatabaseObject? System`Private`ValidQ;
+$$vectorDatabase = HoldPattern[ _VectorDatabaseObject? System`Private`ValidQ ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -166,7 +166,7 @@ downloadVectorDatabases // endDefinition;
 (*getDownloadSize*)
 getDownloadSize // beginDefinition;
 getDownloadSize[ url_String ] := getDownloadSize @ CloudObject @ url;
-getDownloadSize[ obj_CloudObject ] := FileByteCount @ obj;
+getDownloadSize[ obj: $$cloudObject ] := FileByteCount @ obj;
 getDownloadSize // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

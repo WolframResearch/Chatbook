@@ -600,7 +600,7 @@ chatSubmit0[ container_, messages: { __Association }, cellObject_, settings_ ] :
 ];
 
 (* TODO: this definition is obsolete once LLMServices is widely available: *)
-chatSubmit0[ container_, req_HTTPRequest, cellObject_, settings_ ] := (
+chatSubmit0[ container_, req: HoldPattern[ _HTTPRequest ], cellObject_, settings_ ] := (
     $buffer = "";
     applyProcessingFunction[
         settings,
@@ -1310,7 +1310,7 @@ sendToolResponseQ // beginDefinition;
 (* TODO: allow one final response when reaching the limit and disable tools for the next chat submit *)
 sendToolResponseQ[ KeyValuePattern[ "MaxToolResponses" -> n_Integer ], _ ] /; $toolCallCount > n := False;
 sendToolResponseQ[ KeyValuePattern[ "SendToolResponse" -> False ], _ ] := False;
-sendToolResponseQ[ _, response_LLMToolResponse ] := ! TrueQ @ terminalToolResponseQ @ response;
+sendToolResponseQ[ _, response: HoldPattern[ _LLMToolResponse ] ] := ! TrueQ @ terminalToolResponseQ @ response;
 sendToolResponseQ[ _, _ ] := True;
 sendToolResponseQ // endDefinition;
 
@@ -1318,14 +1318,17 @@ sendToolResponseQ // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*terminalToolResponseQ*)
 terminalToolResponseQ // beginDefinition;
-terminalToolResponseQ[ res_LLMToolResponse ] := TrueQ @ Or[ terminalQ @ res[ "Tool" ], terminalQ @ res[ "Data" ] ];
+
+terminalToolResponseQ[ res: HoldPattern[ _LLMToolResponse ] ] :=
+    TrueQ @ Or[ terminalQ @ res[ "Tool" ], terminalQ @ res[ "Data" ] ];
+
 terminalToolResponseQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*terminalQ*)
 terminalQ // beginDefinition;
-terminalQ[ tool_LLMTool ] := terminalQ @ tool[ "Data" ];
+terminalQ[ tool: HoldPattern[ _LLMTool ] ] := terminalQ @ tool[ "Data" ];
 terminalQ[ KeyValuePattern[ "Output" -> KeyValuePattern[ "SendToolResponse" -> False ] ] ] := True;
 terminalQ[ KeyValuePattern[ "SendToolResponse" -> False ] ] := True;
 terminalQ[ _ ] := False;

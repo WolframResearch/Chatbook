@@ -118,8 +118,8 @@ getPinkBoxErrors // endDefinition;
 (*image2DQ*)
 (* Matches against the head in addition to checking ImageQ to avoid passing Image3D when a 2D image is expected: *)
 image2DQ // beginDefinition;
-image2DQ[ _Image? ImageQ ] := True;
-image2DQ[ _              ] := False;
+image2DQ[ HoldPattern[ _Image? ImageQ ] ] := True;
+image2DQ[ _ ] := False;
 image2DQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

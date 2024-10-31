@@ -1334,7 +1334,7 @@ cloudSystemCredential[ name_String ] :=
 cloudSystemCredential[ name_, _Missing ] :=
     Missing[ "NotAvailable" ];
 
-cloudSystemCredential[ name_, credential_EncryptedObject ] :=
+cloudSystemCredential[ name_, credential: HoldPattern[ _EncryptedObject ] ] :=
     cloudSystemCredential[ name, Decrypt[ $cloudEncryptHash, credential ] ];
 
 cloudSystemCredential[ name_, credential_String ] :=

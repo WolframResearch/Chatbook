@@ -463,7 +463,7 @@ contentID // endDefinition;
 (*checkResponse*)
 checkResponse // beginDefinition;
 
-checkResponse[ cell_CellObject, nbo_NotebookObject, response_HTTPResponse ] := Enclose[
+checkResponse[ cell_CellObject, nbo_NotebookObject, response: HoldPattern[ _HTTPResponse ] ] := Enclose[
     Module[ { bytes, string, data, code, uuid },
         bytes  = ConfirmBy[ response[ "BodyByteArray" ], ByteArrayQ, "Bytes" ];
         string = ConfirmBy[ ByteArrayToString @ bytes, StringQ, "String" ];
@@ -511,7 +511,7 @@ displayError // endDefinition;
 (*createImageFile*)
 createImageFile // beginDefinition;
 createImageFile[ data_Association ] := createImageFile @ data[ "Image" ];
-createImageFile[ image_Image? ImageQ ] := Flatten @ File @ Export[ $temporaryImageFile, image, "PNG" ];
+createImageFile[ image: $$image ] := Flatten @ File @ Export[ $temporaryImageFile, image, "PNG" ];
 createImageFile // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
