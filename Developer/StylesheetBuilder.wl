@@ -730,8 +730,13 @@ $workspaceChatDockedCells = {
             ],
             Initialization :> With[ { nbo = EvaluationNotebook[ ] },
                 Needs[ "Wolfram`Chatbook`" -> None ];
-                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachWorkspaceChatInput", nbo, If[ Cells[ nbo ] =!= { }, Bottom, Top ] ]
+                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
+                    "AttachWorkspaceChatInput",
+                    nbo,
+                    If[ Cells[ nbo ] =!= { }, Bottom, Top ]
             ]
+        ],
+            TrackedSymbols :> { }
         ],
         CellFrame        -> 0,
         CellFrameMargins -> 0,
