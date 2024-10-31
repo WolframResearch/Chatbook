@@ -683,10 +683,8 @@ inlineChatInputField[
                             $inputFieldFrameOptions
                         ],
                         (* FIXME: this needs a custom button *)
-                        RawBoxes @ inlineTemplateBox @ TemplateBox[
-                            { RGBColor[ "#a3c9f2" ], RGBColor[ "#f1f7fd" ], 27 },
-                            "SendChatButton"
-                        ]
+                        RawBoxes @ inlineTemplateBox @
+                            DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButton" ][ #1, #2, 27 ] ]&[ RGBColor[ "#a3c9f2" ], RGBColor[ "#f1f7fd" ] ]
                     }
                 },
                 BaseStyle -> { Magnification -> $inputFieldGridMagnification*0.8 }
