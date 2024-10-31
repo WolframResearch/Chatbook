@@ -1304,7 +1304,7 @@ historyDefaultView // beginDefinition;
 historyDefaultView[ nbo_NotebookObject, Dynamic[ searching_ ] ] := Enclose[
     Catch @ Module[ { header, view },
         header = ConfirmMatch[ makeHistoryHeader @ historySearchButton @ Dynamic @ searching, _Pane, "Header" ];
-        view = ConfirmMatch[ makeDefaultHistoryView @ nbo, _Pane, "View" ];
+        view = ConfirmMatch[ makeDefaultHistoryView @ nbo, _RawBoxes, "View" ];
 
         Framed[
             Column[
@@ -1329,26 +1329,45 @@ historyDefaultView // endDefinition;
 makeDefaultHistoryView // beginDefinition;
 
 makeDefaultHistoryView[ nbo_NotebookObject ] := Enclose[
-    Module[ { appName, chats },
-        appName = ConfirmBy[ CurrentChatSettings[ nbo, "AppName" ], StringQ, "AppName" ];
-        chats = ConfirmMatch[ ListSavedChats @ appName, { ___Association }, "Chats" ];
+    RawBoxes @ ToBoxes @ DynamicModule[ { display },
+        display = Pane[ ProgressIndicator[ Appearance -> "Percolate" ], ImageMargins -> 25 ];
+
         Pane[
-            Grid[
-                makeHistoryMenuItem[ nbo ] /@ chats,
-                Alignment -> { Left, Center },
-                Dividers  -> { False, { False, { RGBColor[ "#D1D1D1" ] }, False } },
-                Spacings  -> { Automatic, { 0, { 1 }, 0 } }
-            ],
+            Dynamic[ display, TrackedSymbols :> { display } ],
+            Alignment          -> { Center, Top },
             AppearanceElements -> { },
             FrameMargins       -> { { 0, 0 }, { 5, 5 } },
-            ImageSize          -> Dynamic @ { Automatic, AbsoluteCurrentValue[ nbo, { WindowSize, 2 } ] },
+            ImageSize          -> Dynamic @ { Scaled[ 1 ], AbsoluteCurrentValue[ nbo, { WindowSize, 2 } ] },
             Scrollbars         -> Automatic
-        ]
+        ],
+
+        Initialization            :> (display = catchAlways @ makeDefaultHistoryView0 @ nbo),
+        SynchronousInitialization -> False
     ],
     throwInternalFailure
 ];
 
 makeDefaultHistoryView // endDefinition;
+
+
+makeDefaultHistoryView0 // beginDefinition;
+
+makeDefaultHistoryView0[ nbo_NotebookObject ] := Enclose[
+    Module[ { appName, chats, rows },
+        appName = ConfirmBy[ CurrentChatSettings[ nbo, "AppName" ], StringQ, "AppName" ];
+        chats = ConfirmMatch[ ListSavedChats @ appName, { ___Association }, "Chats" ];
+        rows = ConfirmBy[ makeHistoryMenuItem[ nbo ] /@ chats, MatrixQ, "Grid" ];
+        Grid[
+            rows,
+            Alignment -> { Left, Center },
+            Dividers  -> { False, { False, { RGBColor[ "#D1D1D1" ] }, False } },
+            Spacings  -> { Automatic, { 0, { 1 }, 0 } }
+        ]
+    ],
+    throwInternalFailure
+];
+
+makeDefaultHistoryView0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
