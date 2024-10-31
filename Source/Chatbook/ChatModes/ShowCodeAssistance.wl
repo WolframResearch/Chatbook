@@ -601,7 +601,7 @@ createWorkspaceChat[ cells: { ___Cell } ] := Enclose[
         (* Do we need to move to input field here? *)
         SetOptions[
             nbo,
-            WindowMargins -> { { 0, Automatic }, { 0, 0 } },
+            WindowMargins -> { { 0, Automatic }, { Automatic, 0 } },
             WindowSize    -> { $workspaceChatWidth, Automatic }
         ];
 
