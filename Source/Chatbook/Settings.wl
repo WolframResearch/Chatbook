@@ -489,7 +489,7 @@ chooseToolMethod // endDefinition;
 simpleToolQ // beginDefinition;
 simpleToolQ[ tool_ ] := simpleToolQ[ tool, $DefaultTools ];
 simpleToolQ[ name_String, default_Association ] := KeyExistsQ[ default, name ];
-simpleToolQ[ tool_LLMTool, default_Association ] := MemberQ[ default, tool ];
+simpleToolQ[ tool: HoldPattern[ _LLMTool ], default_Association ] := MemberQ[ default, tool ];
 simpleToolQ[ _, default_Association ] := False;
 simpleToolQ // endDefinition;
 

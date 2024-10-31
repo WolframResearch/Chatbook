@@ -2373,7 +2373,7 @@ importImage // endDefinition;
 
 importImage0 // beginDefinition;
 importImage0[ url_String ] := importImage0[ url, Quiet @ Import[ url, "Image" ] ];
-importImage0[ url_, image_Image ] := image;
+importImage0[ url_, image: $$image ] := image;
 importImage0[ url_String? cloudURLQ, _? FailureQ ] := Quiet @ Import[ CloudObject @ url, "Image" ];
 importImage0[ _, failed_ ] := failed;
 importImage0 // endDefinition;
@@ -2404,16 +2404,16 @@ resizeImage // endDefinition;
 
 resizeImage0 // beginDefinition;
 
-resizeImage0[ img_Image? ImageQ ] :=
+resizeImage0[ img: $$image ] :=
     resizeImage0[ img, ImageDimensions @ img ];
 
-resizeImage0[ img_Image? ImageQ, dims: { _Integer, _Integer } ] /; $dynamicText && Max @ dims > $maxDynamicImageSize :=
+resizeImage0[ img: $$image, dims: { _Integer, _Integer } ] /; $dynamicText && Max @ dims > $maxDynamicImageSize :=
     showResized @ ImageResize[ img, { UpTo[ $maxDynamicImageSize ], UpTo[ $maxDynamicImageSize ] } ];
 
-resizeImage0[ img_Image? ImageQ, dims: { _Integer, _Integer } ] /; Max @ dims > $maxImageSize :=
+resizeImage0[ img: $$image, dims: { _Integer, _Integer } ] /; Max @ dims > $maxImageSize :=
     showResized @ ImageResize[ img, { UpTo @ $maxImageSize, UpTo @ $maxImageSize } ];
 
-resizeImage0[ img_Image? ImageQ, dims: { _Integer, _Integer } ] :=
+resizeImage0[ img: $$image, dims: { _Integer, _Integer } ] :=
     Show[ img, Options[ img, ImageSize ] ];
 
 resizeImage0[ other_ ] :=
@@ -2425,7 +2425,7 @@ resizeImage0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*showResized*)
 showResized // beginDefinition;
-showResized[ img_Image? ImageQ ] := showResized[ img, targetImageSize @ img ];
+showResized[ img: $$image ] := showResized[ img, targetImageSize @ img ];
 showResized[ img_, { w_Integer, h_Integer } ] := Show[ img, ImageSize -> { UpTo @ w, UpTo @ h } ];
 showResized[ img_ ] := img;
 showResized // endDefinition;
@@ -2434,8 +2434,8 @@ showResized // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*targetImageSize*)
 targetImageSize // beginDefinition;
-targetImageSize[ img_Image? ImageQ ] /; $dynamicText := Ceiling[ (ImageDimensions @ img / 2) / $dynamicImageScale ];
-targetImageSize[ img_Image? ImageQ ] := Ceiling[ ImageDimensions @ img / 2 ];
+targetImageSize[ img: $$image ] /; $dynamicText := Ceiling[ (ImageDimensions @ img / 2) / $dynamicImageScale ];
+targetImageSize[ img: $$image ] := Ceiling[ ImageDimensions @ img / 2 ];
 targetImageSize // endDefinition;
 
 (* ::**************************************************************************************************************:: *)

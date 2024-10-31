@@ -1606,7 +1606,7 @@ gpt4ImageTokenCount // endDefinition;
 
 gpt4ImageTokenCount0 // beginDefinition;
 gpt4ImageTokenCount0[ image_ ] := gpt4ImageTokenCount0[ image, resizeMultimodalImage @ image ];
-gpt4ImageTokenCount0[ image_, resized_Image ] := gpt4ImageTokenCount0[ image, ImageDimensions @ resized ];
+gpt4ImageTokenCount0[ image_, resized: $$image ] := gpt4ImageTokenCount0[ image, ImageDimensions @ resized ];
 gpt4ImageTokenCount0[ image_, { w_, h_ } ] := gpt4ImageTokenCount0[ w, h ];
 gpt4ImageTokenCount0[ w_Integer, h_Integer ] := 85 + 170 * Ceiling[ h / 512 ] * Ceiling[ w / 512 ];
 gpt4ImageTokenCount0 // endDefinition;
@@ -1622,7 +1622,7 @@ claude3ImageTokenCount // endDefinition;
 
 claude3ImageTokenCount0 // beginDefinition;
 claude3ImageTokenCount0[ image_ ] := claude3ImageTokenCount0[ image, resizeMultimodalImage @ image ];
-claude3ImageTokenCount0[ image_, resized_Image ] := claude3ImageTokenCount0[ image, ImageDimensions @ resized ];
+claude3ImageTokenCount0[ image_, resized: $$image ] := claude3ImageTokenCount0[ image, ImageDimensions @ resized ];
 claude3ImageTokenCount0[ image_, { w_, h_ } ] := claude3ImageTokenCount0[ w, h ];
 claude3ImageTokenCount0[ w_Integer, h_Integer ] := Ceiling[ (w * h) / 750 ];
 claude3ImageTokenCount0 // endDefinition;

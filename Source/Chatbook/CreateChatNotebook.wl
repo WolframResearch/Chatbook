@@ -112,7 +112,7 @@ createCloudChatNotebook // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*deployCloudNotebook*)
 deployCloudNotebook // beginDefinition;
-deployCloudNotebook[ nb_Notebook, obj_CloudObject ] := CloudDeploy[ nb, obj, CloudObjectURLType -> "Environment" ];
+deployCloudNotebook[ nb_Notebook, obj: $$cloudObject ] := CloudDeploy[ nb, obj, CloudObjectURLType -> "Environment" ];
 deployCloudNotebook[ nb_Notebook, _ ] := CloudDeploy[ nb, CloudObjectURLType -> "Environment" ];
 deployCloudNotebook // endDefinition;
 
