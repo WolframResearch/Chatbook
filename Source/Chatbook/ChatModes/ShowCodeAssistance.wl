@@ -42,7 +42,11 @@ $codeAssistanceInlineSettings := <|
 $workspaceChatNotebookOptions := Sequence[
     DefaultNewCellStyle -> "AutoMoveToChatInputField",
     StyleDefinitions    -> FrontEnd`FileName[ { "Wolfram" }, "WorkspaceChat.nb", CharacterEncoding -> "UTF-8" ],
-    TaggingRules        -> <| "ChatNotebookSettings" -> $codeAssistanceWorkspaceSettings |>
+    TaggingRules        -> <|
+        "ChatInputString"      -> "",
+        "ChatNotebookSettings" -> $codeAssistanceWorkspaceSettings,
+        "ConversationTitle"    -> ""
+    |>
 ];
 
 (* TODO: set $serviceCaller from chat settings *)
@@ -528,7 +532,7 @@ attachToLeft[ source_NotebookObject, current_NotebookObject ] := Enclose[
 
         If[ NonPositive[ left - width ],
             left   = width;
-            bottom = 0;
+            bottom = Automatic;
             top    = 0;
         ];
 
@@ -597,7 +601,7 @@ createWorkspaceChat[ cells: { ___Cell } ] := Enclose[
         (* Do we need to move to input field here? *)
         SetOptions[
             nbo,
-            WindowMargins -> { { 0, Automatic }, { 0, 0 } },
+            WindowMargins -> { { 0, Automatic }, { Automatic, 0 } },
             WindowSize    -> { $workspaceChatWidth, Automatic }
         ];
 

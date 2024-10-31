@@ -20,7 +20,7 @@ Cell[
     WindowClickSelect      -> True,
     WindowElements         -> { "VerticalScrollBar", "MagnificationPopUp" },
     WindowFrameElements    -> { "CloseBox", "ResizeArea", "ZoomBox" },
-    WindowMargins          -> { { 0, Automatic }, { 0, 0 } },
+    WindowMargins          -> { { 0, Automatic }, { Automatic, 0 } },
     WindowSize             -> { $sideChatWidth, Automatic },
     WindowTitle            -> Dynamic @ FEPrivate`FrontEndResource[ "ChatbookStrings", "WorkspaceWindowTitle" ],
     WindowToolbars         -> { }

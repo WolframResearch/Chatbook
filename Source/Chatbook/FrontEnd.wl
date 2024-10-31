@@ -525,6 +525,7 @@ formatNotebookInformation0[ "FileName", file_ ] := toFileName @ file;
 formatNotebookInformation0[ "FileModificationTime", t_Real ] := formatNotebookInformation0[ "Timestamp", t ];
 formatNotebookInformation0[ "MemoryModificationTime", t_Real ] := formatNotebookInformation0[ "Timestamp", t ];
 formatNotebookInformation0[ "Timestamp", t_Real ] := TimeZoneConvert @ DateObject[ t, TimeZone -> 0 ];
+formatNotebookInformation0[ "WindowTitle", "" ] := None;
 formatNotebookInformation0[ key_String, value_ ] := value;
 formatNotebookInformation0 // endDefinition;
 

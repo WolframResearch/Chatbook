@@ -730,12 +730,17 @@ $workspaceChatDockedCells = {
             ],
             Initialization :> With[ { nbo = EvaluationNotebook[ ] },
                 Needs[ "Wolfram`Chatbook`" -> None ];
-                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachWorkspaceChatInput", nbo, If[ Cells[ nbo ] =!= { }, Bottom, Top ] ]
-            ]
+                Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
+                    "AttachWorkspaceChatInput",
+                    nbo,
+                    If[ Cells[ nbo ] =!= { }, Bottom, Top ]
+                ]
+            ],
+            TrackedSymbols :> { }
         ],
         CellFrame        -> 0,
         CellFrameMargins -> 0,
-        CellMargins      -> {{-1, -5}, {-1, -1}},
+        CellMargins      -> { { -1, -5 }, { -1, -1 } },
         Magnification -> Dynamic[ AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ] ]
     ]
 };
@@ -835,6 +840,7 @@ BuildStylesheets[ All | Automatic       ] := BuildStylesheets @ $validStylesheet
 BuildStylesheets[ styles: { ___String } ] := AssociationMap[ BuildStylesheets, styles ];
 BuildStylesheets[ "Chatbook"            ] := BuildChatbookStylesheet[ ];
 BuildStylesheets[ "WorkspaceChat"       ] := BuildWorkspaceStylesheet[ ];
+BuildStylesheets[ "CoreExtensions"      ] := BuildCoreExtensionsStylesheet[ ];
 
 BuildStylesheets[ style_String ] := Failure[
     "UnknownStyle",
@@ -853,7 +859,7 @@ BuildStylesheets[ other___ ] := Failure[
 ];
 
 
-$validStylesheetNames = { "Chatbook", "WorkspaceChat" };
+$validStylesheetNames = { "Chatbook", "CoreExtensions", "WorkspaceChat" };
 
 (* ::Section::Closed:: *)
 (*BuildChatbookStylesheet*)
