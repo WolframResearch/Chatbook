@@ -18,11 +18,13 @@ $defaultChatTools0[ "DocumentationLookup" ] = <|
     "FormattingFunction" -> toolAutoFormatter,
     "Origin"             -> "BuiltIn",
     "Parameters"         -> {
-        "names" -> <|
-            "Interpreter" -> DelimitedSequence[ "WolframLanguageSymbol", "," ],
-            "Help"        -> "One or more Wolfram Language symbols separated by commas",
-            "Required"    -> True
-        |>
+        "names" -> Block[ { DelimitedSequence },
+            <|
+                "Interpreter" -> DelimitedSequence[ "WolframLanguageSymbol", "," ],
+                "Help"        -> "One or more Wolfram Language symbols separated by commas",
+                "Required"    -> True
+            |>
+        ]
     }
 |>;
 

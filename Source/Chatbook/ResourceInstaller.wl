@@ -74,11 +74,16 @@ $$notHeld = Alternatives[
 ];
 
 tempHold // Attributes = { HoldAllComplete };
+held // Attributes = { HoldAllComplete };
 held[ expr_ ] := HoldPattern[ tempHold @ expr | expr ];
 
-$$cloudObject = held[ _CloudObject ];
-$$localObject = held[ _LocalObject ];
-$$url         = held[ _URL ];
+$$cloudObjectH = held[ _CloudObject ];
+$$localObjectH = held[ _LocalObject ];
+$$urlH         = held[ _URL ];
+
+$$channelObject   = HoldPattern[ _ChannelObject   ];
+$$channelListener = HoldPattern[ _ChannelListener ];
+$$resourceObject  = HoldPattern[ _ResourceObject  ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -88,7 +93,7 @@ ResourceUninstall // ClearAll;
 ResourceUninstall[ rType: $$installableType, name_String ] :=
     catchMine @ resourceUninstall[ rType, name ];
 
-ResourceUninstall[ ro_ResourceObject ] :=
+ResourceUninstall[ ro: $$resourceObject ] :=
     catchMine @ ResourceUninstall[ ro[ "ResourceType" ], ro[ "Name" ] ];
 
 ResourceUninstall[ id_, opts: OptionsPattern[ ] ] :=
@@ -268,8 +273,10 @@ channelCleanup // beginDefinition;
 channelCleanup[ ] := channelCleanup @ $channelData;
 channelCleanup[ None ] := Null;
 
-channelCleanup[ KeyValuePattern @ { "Listener" -> listener_ChannelListener, "Channel" -> channel_ChannelObject } ] :=
-    Quiet[ RemoveChannelListener @ listener; DeleteChannel @ channel ];
+channelCleanup[ KeyValuePattern @ {
+    "Listener" -> listener: $$channelListener,
+    "Channel"  -> channel: $$channelObject
+} ] := Quiet[ RemoveChannelListener @ listener; DeleteChannel @ channel ];
 
 channelCleanup // endDefinition;
 
@@ -339,7 +346,7 @@ resourceFromURL0 // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*installableResourceQ*)
-installableResourceQ[ ro_ResourceObject ] := MatchQ[ ro[ "ResourceType" ], $$installableType ];
+installableResourceQ[ ro: $$resourceObject ] := MatchQ[ ro[ "ResourceType" ], $$installableType ];
 installableResourceQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
@@ -478,7 +485,7 @@ resourceFromFile // endDefinition;
 (*ResourceInstallLocation*)
 ResourceInstallLocation // ClearAll;
 
-ResourceInstallLocation[ ro_ResourceObject ] :=
+ResourceInstallLocation[ ro: $$resourceObject ] :=
     catchMine @ ResourceInstallLocation[ ro[ "ResourceType" ], ro[ "Name" ] ];
 
 ResourceInstallLocation[ rType: $$installableType, name_String ] :=
@@ -500,7 +507,7 @@ ResourceInstallLocation[ args___ ] :=
 (*ResourceInstall*)
 ResourceInstall // ClearAll;
 
-ResourceInstall[ ro_ResourceObject ] :=
+ResourceInstall[ ro: $$resourceObject ] :=
     catchMine @ resourceInstall @ ro;
 
 ResourceInstall[ id_, opts: OptionsPattern[ ] ] :=
@@ -865,11 +872,11 @@ getResourceFile // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*determineOrigin*)
 determineOrigin // beginDefinition;
-determineOrigin[ rType: $$installableType, KeyValuePattern[ "RepositoryLocation" -> $$url ] ] := rType<>"Repository";
-determineOrigin[ rType_, KeyValuePattern[ "RepositoryLocation" -> $$localObject ] ] := "Local";
-determineOrigin[ rType_, KeyValuePattern[ "ResourceLocations" -> { $$localObject } ] ] := "Local";
-determineOrigin[ rType_, KeyValuePattern[ "ResourceLocations" -> { $$cloudObject } ] ] := "Cloud";
-determineOrigin[ rType_, KeyValuePattern[ "DocumentationLink" -> $$url ] ] := "Cloud";
+determineOrigin[ rType: $$installableType, KeyValuePattern[ "RepositoryLocation" -> $$urlH ] ] := rType<>"Repository";
+determineOrigin[ rType_, KeyValuePattern[ "RepositoryLocation" -> $$localObjectH ] ] := "Local";
+determineOrigin[ rType_, KeyValuePattern[ "ResourceLocations" -> { $$localObjectH } ] ] := "Local";
+determineOrigin[ rType_, KeyValuePattern[ "ResourceLocations" -> { $$cloudObjectH } ] ] := "Cloud";
+determineOrigin[ rType_, KeyValuePattern[ "DocumentationLink" -> $$urlH ] ] := "Cloud";
 determineOrigin[ rType: $$installableType, _Association ] := "Unknown";
 determineOrigin // endDefinition;
 

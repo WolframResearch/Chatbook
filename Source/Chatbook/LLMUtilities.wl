@@ -164,7 +164,7 @@ resizePromptImage // beginDefinition;
 
 resizePromptImage[ image_ ] := resizePromptImage[ image, 4096 ];
 
-resizePromptImage[ image_Image, max_Integer ] := Enclose[
+resizePromptImage[ image: $$image, max_Integer ] := Enclose[
     Module[ { dims, size },
         dims = ConfirmMatch[ ImageDimensions @ image, { _Integer, _Integer }, "Dimensions" ];
         size = ConfirmBy[ Max[ dims, max ], IntegerQ, "Max" ];
@@ -192,7 +192,7 @@ modelContextLimit // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*imageTokenCount*)
 imageTokenCount // beginDefinition;
-imageTokenCount[ img_Image ] := imageTokenCount @ ImageDimensions @ img;
+imageTokenCount[ img: $$image ] := imageTokenCount @ ImageDimensions @ img;
 imageTokenCount[ { w_Integer, h_Integer } ] := 85 + 170 * Ceiling[ h / 512 ] * Ceiling[ w / 512 ];
 imageTokenCount // endDefinition;
 

@@ -310,7 +310,7 @@ SaveChat[ nbo_NotebookObject, messages_, settings_Association, opts: OptionsPatt
     ];
 
 (* Alternate chat representations: *)
-SaveChat[ chat_ChatObject, settings_Association, opts: OptionsPattern[ ] ] :=
+SaveChat[ chat: HoldPattern[ _ChatObject ], settings_Association, opts: OptionsPattern[ ] ] :=
     catchMine @ SaveChat[ chat[ "Messages" ], settings, opts ];
 
 SaveChat[ chat_Dataset, settings_Association, opts: OptionsPattern[ ] ] :=
