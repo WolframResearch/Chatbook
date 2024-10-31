@@ -233,7 +233,7 @@ Cell[
         DisplayFunction -> Function @ Evaluate @ ToBoxes @ PaneSelector[
             {
                 None -> Button[
-                    RawBoxes @ TemplateBox[ { #1, #2, #3 }, "SendChatButtonLabel" ],
+                    Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButtonLabel" ][ #1, #2, #3 ] ],
                     Needs[ "Wolfram`Chatbook`" -> None ];
                     Symbol[ "Wolfram`Chatbook`ChatbookAction" ][
                         "EvaluateWorkspaceChat",
@@ -247,7 +247,7 @@ Cell[
             },
             Dynamic @ Wolfram`Chatbook`$ChatEvaluationCell,
             Button[
-                RawBoxes @ TemplateBox[ { #1, #2, #3 }, "StopChatButtonLabel" ],
+                Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "StopChatButtonLabel" ][ #1, #2, #3 ] ],
                 Needs[ "Wolfram`Chatbook`" -> None ];
                 Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "StopChat" ],
                 Appearance   -> "Suppressed",

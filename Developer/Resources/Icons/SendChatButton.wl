@@ -14,7 +14,7 @@ Function[
      ],
     True ->
      Button[
-      RawBoxes @ TemplateBox[ { #1, #2, #3 }, "StopChatButtonLabel" ],
+      Dynamic[ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "StopChatButtonLabel" ][ #1, #2, #3 ] ],
       If[ Wolfram`Chatbook`$ChatEvaluationCell =!= cell,
        NotebookWrite[ cell, NotebookRead @ cell, None, AutoScroll -> False ],
        Needs[ "Wolfram`Chatbook`" -> None ];
