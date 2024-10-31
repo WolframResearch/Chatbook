@@ -1138,8 +1138,9 @@ toggleOverlayMenu // endDefinition;
 (* ::Subsection::Closed:: *)
 (*overlayMenu*)
 overlayMenu // beginDefinition;
-overlayMenu[ nbo_, "Sources" ] := sourcesMenu @ nbo;
-overlayMenu[ nbo_, "History" ] := historyMenu @ nbo;
+overlayMenu[ nbo_, "Sources" ] := sourcesOverlay @ nbo;
+overlayMenu[ nbo_, "History" ] := historyOverlay @ nbo;
+overlayMenu[ nbo_, "Loading" ] := loadingOverlay @ nbo;
 overlayMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1155,10 +1156,11 @@ attachOverlayMenu[ nbo_NotebookObject, name_String ] := Enclose[
         Cell[
             BoxData @ ToBoxes @ Framed[
                 ConfirmMatch[ overlayMenu[ nbo, name ], Except[ _overlayMenu ], "OverlayMenu" ],
-                Alignment    -> { Left, Top },
+                Alignment    -> { Center, Top },
                 Background   -> White,
                 FrameMargins -> { { 5, 5 }, { 2000, 5 } },
-                FrameStyle   -> White
+                FrameStyle   -> White,
+                ImageSize    -> { Scaled[ 1 ], Automatic }
             ],
             "AttachedOverlayMenu",
             CellTags -> name,
@@ -1172,6 +1174,39 @@ attachOverlayMenu[ nbo_NotebookObject, name_String ] := Enclose[
 ];
 
 attachOverlayMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*withLoadingOverlay*)
+withLoadingOverlay // beginDefinition;
+
+withLoadingOverlay // Attributes = { HoldRest };
+
+withLoadingOverlay[ nbo_NotebookObject ] :=
+    Function[ eval, withLoadingOverlay[ nbo, eval ], HoldFirst ];
+
+withLoadingOverlay[ nbo_NotebookObject, eval_ ] :=
+    Module[ { attached },
+        WithCleanup[
+            attached = attachOverlayMenu[ nbo, "Loading" ],
+            eval,
+            NotebookDelete @ attached
+        ]
+    ];
+
+withLoadingOverlay // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*loadingOverlay*)
+loadingOverlay // beginDefinition;
+
+loadingOverlay[ _NotebookObject ] := Pane[
+    ProgressIndicator[ Appearance -> "Necklace" ],
+    ImageMargins -> 50
+];
+
+loadingOverlay // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1196,10 +1231,10 @@ hideVerticalScrollbar // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*sourcesMenu*)
-sourcesMenu // beginDefinition;
-sourcesMenu[ nbo_NotebookObject ] := notebookSources[ ]; (* TODO: combined menu that includes files etc. *)
-sourcesMenu // endDefinition;
+(*sourcesOverlay*)
+sourcesOverlay // beginDefinition;
+sourcesOverlay[ nbo_NotebookObject ] := notebookSources[ ]; (* TODO: combined menu that includes files etc. *)
+sourcesOverlay // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1303,10 +1338,10 @@ inclusionCheckbox // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*historyMenu*)
-historyMenu // beginDefinition;
+(*historyOverlay*)
+historyOverlay // beginDefinition;
 
-historyMenu[ nbo_NotebookObject ] :=
+historyOverlay[ nbo_NotebookObject ] :=
     DynamicModule[ { searching = False },
         PaneSelector[
             {
@@ -1318,7 +1353,7 @@ historyMenu[ nbo_NotebookObject ] :=
         ]
     ];
 
-historyMenu // endDefinition;
+historyOverlay // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1505,12 +1540,12 @@ loadConversation[ nbo_NotebookObject, id_ ] := Enclose[
         SelectionMove[ nbo, Before, Notebook, AutoScroll -> True ];
         ConfirmMatch[ NotebookWrite[ nbo, cells, AutoScroll -> False ], Null, "Write" ];
         If[ Cells @ nbo === { }, NotebookWrite[ nbo, cells, AutoScroll -> False ] ];
-        clearOverlayMenus @ nbo;
         ChatbookAction[ "AttachWorkspaceChatInput", nbo ];
         CurrentChatSettings[ nbo, "ConversationUUID" ] = uuid;
         CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = title;
+        restoreVerticalScrollbar @ nbo;
         moveToChatInputField[ nbo, True ]
-    ],
+    ] // withLoadingOverlay @ nbo,
     throwInternalFailure
 ];
 
