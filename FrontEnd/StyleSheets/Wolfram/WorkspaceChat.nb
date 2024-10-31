@@ -74,7 +74,7 @@ Notebook[
   ],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3939356866"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3939380299"|>
   ],
   Cell[
    StyleData[
@@ -275,7 +275,13 @@ Notebook[
        {
         None ->
          ButtonBox[
-          TemplateBox[{#1, #2, #3}, "SendChatButtonLabel"],
+          DynamicBox[
+           FEPrivate`FrontEndResource["ChatbookExpressions", "SendChatButtonLabel"][
+            #1,
+            #2,
+            #3
+           ]
+          ],
           ButtonFunction :>
            (Needs["Wolfram`Chatbook`" -> None];
            Symbol["Wolfram`Chatbook`ChatbookAction"][
@@ -297,7 +303,13 @@ Notebook[
        },
        Dynamic[Wolfram`Chatbook`$ChatEvaluationCell],
        ButtonBox[
-        TemplateBox[{#1, #2, #3}, "StopChatButtonLabel"],
+        DynamicBox[
+         FEPrivate`FrontEndResource["ChatbookExpressions", "StopChatButtonLabel"][
+          #1,
+          #2,
+          #3
+         ]
+        ],
         ButtonFunction :>
          (Needs["Wolfram`Chatbook`" -> None];
          Symbol["Wolfram`Chatbook`ChatbookAction"]["StopChat"]),
