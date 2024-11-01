@@ -163,7 +163,7 @@ Cell[
         {
             None,
             Cell[
-                BoxData @ TemplateBox[ { RGBColor[ "#a3c9f2" ], RGBColor[ "#f1f7fd" ], 20 }, "SendChatButton" ],
+                BoxData[ DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "SendChatButton" ][ #1, #2, 20 ] ]&[ RGBColor[ "#a3c9f2" ], RGBColor[ "#f1f7fd" ] ] ],
                 Background -> None
             ]
         },

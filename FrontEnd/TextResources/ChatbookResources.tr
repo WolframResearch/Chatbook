@@ -4692,6 +4692,231 @@ xeij43MKeZhTjPOmYuShpRj3u6VzU+aozFWpI+EDfuNzO4g9Ef8WNR7oa+zX
   ImageSize -> {7, 4}, ImagePadding -> {{0, 1}, {1, 0}}, BaselinePosition -> 
   Scaled[-0.5]]& ),
 
+"ChatEvaluatingSpinner" -> (DynamicBox[
+  If[
+   TrueQ[$CloudEvaluation], 
+   GraphicsBox[{
+     Thickness[0.05], #2, 
+     CircleBox[{0, 0}, 1]}, PlotRange -> 1.1, ImageSize -> #], 
+   DynamicModuleBox[{Typeset`i}, 
+    OverlayBox[{
+      PaneBox[
+       AnimatorBox[
+        Dynamic[Typeset`i], {1, 30, 1}, AutoAction -> False, AnimationRate -> 
+        Automatic, DisplayAllSteps -> True, DefaultDuration -> 2, 
+        AppearanceElements -> None], ImageSize -> {0, 0}], 
+      GraphicsBox[{
+        Thickness[0.05], #2, 
+        CircleBox[{0, 0}, 1, {0., 6.2832}]}, PlotRange -> 1.1, 
+       ImageSize -> #], 
+      PaneSelectorBox[{1 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {4.5332, 4.9332}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 2 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {4.5151, 4.9332}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 3 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {4.4611, 4.9332}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 4 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {4.3713, 4.9332}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 5 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {4.2463, 4.9332}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 6 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {4.0869, 4.9332}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 7 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {3.894, 4.9332}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 8 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {3.6686, 4.9332}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 9 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {3.412, 4.9332}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 10 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {3.1258, 4.924}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 11 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {2.8116, 4.8802}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 12 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {2.4711, 4.8006}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 13 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {2.1064, 4.6856}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 14 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {1.7195, 4.5359}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 15 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {1.3127, 4.3525}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 16 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {0.88824, 4.1362}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 17 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {0.44865, 3.8884}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 18 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-0.0035846, 3.6105}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 19 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-0.46585, 3.3041}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 20 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-0.9355, 2.9709}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 21 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-1.4098, 2.6129}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 22 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-1.75, 2.2322}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 23 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-1.75, 1.8308}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 24 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-1.75, 1.4112}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 25 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-1.75, 0.97565}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 26 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-1.75, 0.52676}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 27 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-1.75, 0.067093}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 28 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-1.75, -0.40072}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 29 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-1.75, -0.87399}]}, PlotRange -> 1.1, 
+          ImageSize -> #], 30 -> GraphicsBox[{
+           Thickness[0.06], #3, 
+           CircleBox[{0, 0}, 1, {-1.75, -1.35}]}, PlotRange -> 1.1, 
+          ImageSize -> #]}, 
+       Dynamic[Typeset`i], ContentPadding -> False, FrameMargins -> 0, 
+       ImageSize -> All, Alignment -> Automatic, BaseStyle -> None, 
+       TransitionDirection -> Horizontal, TransitionDuration -> 0.5, 
+       TransitionEffect -> Automatic]}, ContentPadding -> False, FrameMargins -> 
+     0], DynamicModuleValues :> {}]], SingleEvaluation -> True]& ),
+
+"StopChatButtonLabel" -> (TagBox[
+  PaneSelectorBox[{False -> FrameBox[
+      OverlayBox[{
+        DynamicBox[
+         FEPrivate`FrontEndResource[
+         "ChatbookExpressions", "ChatEvaluatingSpinner"][#3, 
+          GrayLevel[0.9], 
+          GrayLevel[0.7]]], 
+        GraphicsBox[{
+          RGBColor[0.2, 0.5137254901960784, 0.6745098039215687], 
+          RectangleBox[{-0.5, -0.5}, {0.5, 0.5}]}, ImageSize -> #3, PlotRange -> 
+         1.1]}, Alignment -> {Center, Center}], FrameStyle -> GrayLevel[1], 
+      Background -> GrayLevel[1], RoundingRadius -> 3, FrameMargins -> 1, 
+      StripOnInput -> False], True -> FrameBox[
+      OverlayBox[{
+        DynamicBox[
+         FEPrivate`FrontEndResource[
+         "ChatbookExpressions", "ChatEvaluatingSpinner"][#3, 
+          GrayLevel[0.9], 
+          GrayLevel[0.7]]], 
+        GraphicsBox[{
+          RGBColor[0.2, 0.5137254901960784, 0.6745098039215687], 
+          RectangleBox[{-0.5, -0.5}, {0.5, 0.5}]}, ImageSize -> #3, PlotRange -> 
+         1.1]}, Alignment -> {Center, Center}], FrameStyle -> #, 
+      Background -> #2, RoundingRadius -> 3, FrameMargins -> 1, StripOnInput -> 
+      False]}, 
+   Dynamic[
+    CurrentValue["MouseOver"]], ImageSize -> Automatic, FrameMargins -> 0], 
+  MouseAppearanceTag["LinkHand"]]& ),
+
+"SendChatButtonLabel" -> (TagBox[
+  PaneSelectorBox[{False -> FrameBox[
+      GraphicsBox[{
+        Thickness[0.055556], 
+        FaceForm[#], 
+        FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+         0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+         3}, {0, 1, 0}, {1, 3, 3}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIZIGYC4i9/r1S8ZDNwKM6Y+Lbmv67DvcntrVGX/9lL
+699VYWPUdXiwj2+O8aIP9t05z3+v/Kjj8Dsm9+i/TY/tN819v/zYaS0HweO7
+dvSyfbHfUzJZgmWapsOWyK87b3UJOjwRkT35dL6yQ+2FzUARIQcrZa/qZn5l
+h1VNgZ5zG0Qcpm3iKVzzWsnh/gPuySuZxBz2PgZqcFV2WPsLaIGdksPNc9+D
+Hy9Vc7CadLreY7+SQ75Q84FTD9Ucdv5p/3I7XNmh8qWaIccaNQcTQTObvZOU
+HYC2h/HpqjnY7A2apnhO2WGd+8MqkXWqDt/Z4mf4TFV2uL64wJZLXNUhM/9D
+60kRZQenhKcXlG6rOEScMjqycZ24w4y7QI9XKToo5VRULdURc/jn/OvtawVF
+B6Y9rEIi9qIOlRErTM9GKzhsa6kB+kjUoWXe2VXnReUdNjA/79HIFXOQmHqF
+M2MRt4Pv577gkiViDo/NpA5EL2Bx0M9bzLiHVdrhUNvy8FObGB1AofM3VdaB
+KwNo0y82B1W2xqnOpw0cQMFvv1UL4s9EQwdg6DdOZdZx8AB547mBQ/+hrxox
+/HoO6PEFAPo2ybM=
+         "]]}, AspectRatio -> Automatic, ImageSize -> #3, 
+       PlotRange -> {{-0.5, 18.5}, {-0.5, 18.5}}], FrameStyle -> GrayLevel[1],
+       Background -> GrayLevel[1], RoundingRadius -> 3, FrameMargins -> 1, 
+      StripOnInput -> False], True -> FrameBox[
+      GraphicsBox[{
+        Thickness[0.055556], 
+        FaceForm[#], 
+        FilledCurveBox[{{{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+         0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+         3}, {0, 1, 0}, {1, 3, 3}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIZIGYC4i9/r1S8ZDNwKM6Y+Lbmv67DvcntrVGX/9lL
+699VYWPUdXiwj2+O8aIP9t05z3+v/Kjj8Dsm9+i/TY/tN819v/zYaS0HweO7
+dvSyfbHfUzJZgmWapsOWyK87b3UJOjwRkT35dL6yQ+2FzUARIQcrZa/qZn5l
+h1VNgZ5zG0Qcpm3iKVzzWsnh/gPuySuZxBz2PgZqcFV2WPsLaIGdksPNc9+D
+Hy9Vc7CadLreY7+SQ75Q84FTD9Ucdv5p/3I7XNmh8qWaIccaNQcTQTObvZOU
+HYC2h/HpqjnY7A2apnhO2WGd+8MqkXWqDt/Z4mf4TFV2uL64wJZLXNUhM/9D
+60kRZQenhKcXlG6rOEScMjqycZ24w4y7QI9XKToo5VRULdURc/jn/OvtawVF
+B6Y9rEIi9qIOlRErTM9GKzhsa6kB+kjUoWXe2VXnReUdNjA/79HIFXOQmHqF
+M2MRt4Pv577gkiViDo/NpA5EL2Bx0M9bzLiHVdrhUNvy8FObGB1AofM3VdaB
+KwNo0y82B1W2xqnOpw0cQMFvv1UL4s9EQwdg6DdOZdZx8AB547mBQ/+hrxox
+/HoO6PEFAPo2ybM=
+         "]]}, AspectRatio -> Automatic, ImageSize -> #3, 
+       PlotRange -> {{-0.5, 18.5}, {-0.5, 18.5}}], FrameStyle -> #, 
+      Background -> #2, RoundingRadius -> 3, FrameMargins -> 1, StripOnInput -> 
+      False]}, 
+   Dynamic[
+    CurrentValue["MouseOver"]], ImageSize -> Automatic, FrameMargins -> 0], 
+  MouseAppearanceTag["LinkHand"]]& ),
+
+"SendChatButton" -> (DynamicModuleBox[{Typeset`cell$$}, 
+  PaneSelectorBox[{False -> ButtonBox[
+      DynamicBox[
+       FEPrivate`FrontEndResource[
+       "ChatbookExpressions", "SendChatButtonLabel"][#, #2, #3]], 
+      ButtonFunction :> (
+       Wolfram`Chatbook`$ChatEvaluationCell = Typeset`cell$$; 
+       SelectionMove[Typeset`cell$$, All, Cell]; FrontEndTokenExecute[
+         Notebooks[Typeset`cell$$], "EvaluateCells"]), Appearance -> 
+      FEPrivate`FrontEndResource[
+       "FEExpressions", "SuppressMouseDownNinePatchAppearance"], FrameMargins -> 
+      0, Method -> "Queued", Evaluator -> Automatic], True -> ButtonBox[
+      DynamicBox[
+       FEPrivate`FrontEndResource[
+       "ChatbookExpressions", "StopChatButtonLabel"][#, #2, #3]], 
+      ButtonFunction :> 
+      If[Wolfram`Chatbook`$ChatEvaluationCell =!= Typeset`cell$$, 
+        NotebookWrite[Typeset`cell$$, 
+         NotebookRead[Typeset`cell$$], None, AutoScroll -> False], 
+        Needs["Wolfram`Chatbook`" -> None]; 
+        Symbol["Wolfram`Chatbook`ChatbookAction"]["StopChat"]], Appearance -> 
+      FEPrivate`FrontEndResource[
+       "FEExpressions", "SuppressMouseDownNinePatchAppearance"], FrameMargins -> 
+      0, Evaluator -> Automatic, Method -> "Preemptive"]}, 
+   Dynamic[Wolfram`Chatbook`$ChatEvaluationCell === Typeset`cell$$], 
+   Alignment -> {Automatic, Baseline}, ImageSize -> Automatic], 
+  Initialization :> (Typeset`cell$$ = 
+   If[$CloudEvaluation, Wolfram`ChatbookFrontEndResourceBuilder`Private`x; 
+     EvaluationCell[], 
+     ParentCell[
+      EvaluationCell[]]]), DynamicModuleValues :> {}, 
+  UnsavedVariables :> {Typeset`cell$$}]& ),
+
 "WorkspaceHistoryPopOutIcon" -> PaneSelectorBox[{False->
   GraphicsBox[
    {Thickness[0.11111], FaceForm[{RGBColor[0.4, 0.67843, 0.82353], Opacity[

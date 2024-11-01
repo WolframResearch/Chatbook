@@ -37,13 +37,13 @@ $workspaceDefaultSettings = <|
 (* ::Subsection::Closed:: *)
 (*Paths*)
 
-
-$assetLocation          = FileNameJoin @ { DirectoryName @ $InputFileName, "Resources" };
+$inputFileName          = Replace[ $InputFileName, "" :> NotebookFileName[ ] ];
+$assetLocation          = FileNameJoin @ { DirectoryName @ $inputFileName, "Resources" };
 $iconDirectory          = FileNameJoin @ { $assetLocation, "Icons" };
 $ninePatchDirectory     = FileNameJoin @ { $assetLocation, "NinePatchImages" };
 $styleDataFile          = FileNameJoin @ { $assetLocation, "Styles.wl" };
 $workspaceStyleDataFile = FileNameJoin @ { $assetLocation, "WorkspaceStyles.wl" };
-$pacletDirectory        = DirectoryName[ $InputFileName, 2 ];
+$pacletDirectory        = DirectoryName[ $inputFileName, 2 ];
 $iconManifestFile       = FileNameJoin @ { $pacletDirectory, "Assets", "Icons.wxf" };
 $displayFunctionsFile   = FileNameJoin @ { $pacletDirectory, "Assets", "DisplayFunctions.wxf" };
 $coreExtensionsTarget   = FileNameJoin @ { $pacletDirectory, "FrontEnd", "Assets", "Extensions", "CoreExtensions.nb" };
