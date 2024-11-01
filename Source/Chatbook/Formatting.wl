@@ -1532,7 +1532,7 @@ makeToolCallBoxLabel[ as: KeyValuePattern[ "Name" -> name_String ] ] :=
         ]
     ];
 
-makeToolCallBoxLabel[ as_Association ] := "Using tool\[Ellipsis]";
+makeToolCallBoxLabel[ as_Association ] := tr[ "FormattingToolUsingLoading" ];
 
 makeToolCallBoxLabel[ as_Association, name_String ] :=
     makeToolCallBoxLabel[ as, name, getToolIcon @ as ];
@@ -1565,7 +1565,7 @@ makeToolCallBoxLabel // endDefinition;
 makeToolCallBoxLabel0 // beginDefinition;
 
 makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] := Row @ Flatten @ {
-    "Using ",
+    tr[ "FormattingToolUsing" ],
     Style[ string, FontWeight -> "DemiBold" ],
     If[ MissingQ @ icon,
         Nothing,
@@ -1577,7 +1577,7 @@ makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ]
 };
 
 makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Row @ Flatten @ {
-    "Used ",
+    tr[ "FormattingToolUsed" ],
     Style[ string, FontWeight -> "DemiBold" ],
     If[ MissingQ @ icon,
         Nothing,
