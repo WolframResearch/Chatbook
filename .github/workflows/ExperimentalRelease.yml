@@ -45,19 +45,14 @@ jobs:
     - name: Update Release
       run: |
         git config --global --add safe.directory $(pwd)
+
         if gh release view experimental; then
-          gh release edit experimental \
-            --target="${{ github.ref }}" \
-            --repo="${{ env.GITHUB_REPOSITORY }}" \
-            --title="Experimental Release" \
-            --prerelease
-        else
-          gh release create experimental \
-            --target="${{ github.ref }}" \
-            --repo="${{ env.GITHUB_REPOSITORY }}" \
-            --title="Experimental Release" \
-            --prerelease
+          gh release delete experimental --cleanup-tag --yes --repo="${{ env.GITHUB_REPOSITORY }}"
         fi
 
-    - name: Upload Artifact
-      run: gh release upload experimental "${{ env.PACLET_BUILD_DIR }}/Wolfram__Chatbook.paclet" --clobber
+        gh release create experimental "${{ env.PACLET_BUILD_DIR }}/Wolfram__Chatbook.paclet" \
+          --target="${{ github.ref }}" \
+          --repo="${{ env.GITHUB_REPOSITORY }}" \
+          --title="Experimental Release" \
+          --notes="This is an experimental release that's always updated with the latest build from the main branch." \
+          --prerelease
