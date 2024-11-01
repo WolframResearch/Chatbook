@@ -24,6 +24,7 @@ $messageAuthorImagePadding   = { { 0, 0 }, { 0, 6 } };
 $toolbarLabelStyle = "WorkspaceChatToolbarButtonLabel";
 
 $inputFieldOptions = Sequence[
+    Alignment  -> { Automatic, Baseline },
     BoxID      -> "AttachedChatInputField",
     ImageSize  -> { Scaled[ 1 ], { 25, Automatic } },
     FieldHint  -> tr[ "AttachedChatFieldHint" ],
@@ -32,6 +33,7 @@ $inputFieldOptions = Sequence[
 ];
 
 $inputFieldFrameOptions = Sequence[
+    Alignment    -> { Automatic, Baseline },
     Background   -> White,
     FrameMargins -> { { 5, 5 }, { 2, 2 } },
     FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], RGBColor[ "#a3c9f2" ] ]
