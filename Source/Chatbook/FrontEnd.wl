@@ -1016,13 +1016,22 @@ DynamicModule[{Typeset`var = initialState},
         PaneSelector[
             {
                 False ->
-                    Framed[
-                        clickableOpenerRow[Dynamic[Typeset`var], label],
-                        BaseStyle      -> { "Text", LineBreakWithin -> False },
-                        Background     -> RGBColor[ "#E5F7FF" ],
-                        FrameStyle     -> RGBColor[ "#9CCBE3" ],
-                        ImageMargins   -> { { 0, 0 }, { 2, 2 } },
-                        RoundingRadius -> 4],
+                    Mouseover[
+                        Framed[
+                            clickableOpenerRow[Dynamic[Typeset`var], label],
+                            BaseStyle      -> { "Text", LineBreakWithin -> False },
+                            Background     -> RGBColor[ "#E5F7FF" ],
+                            FrameStyle     -> RGBColor[ "#9CCBE3" ],
+                            ImageMargins   -> { { 0, 0 }, { 2, 2 } },
+                            RoundingRadius -> 4],
+                        Framed[
+                            clickableOpenerRow[Dynamic[Typeset`var], label],
+                            BaseStyle      -> { "Text", LineBreakWithin -> False },
+                            Background     -> RGBColor[ "#ffffff" ],
+                            FrameStyle     -> RGBColor[ "#D6EDF9" ],
+                            ImageMargins   -> { { 0, 0 }, { 2, 2 } },
+                            RoundingRadius -> 4]
+                    ],
                 True ->
                     Framed[
                         Grid[
@@ -1032,8 +1041,8 @@ DynamicModule[{Typeset`var = initialState},
                         Alignment -> {Left, Baseline},
                         BaselinePosition -> {1, 1}],
                         BaseStyle      -> { "Text", LineBreakWithin -> False },
-                        Background     -> RGBColor[ "#E5F7FF" ],
-                        FrameStyle     -> RGBColor[ "#9CCBE3" ],
+                        Background     -> RGBColor[ "#ffffff" ],
+                        FrameStyle     -> RGBColor[ "#D6EDF9" ],
                         ImageMargins   -> { { 0, 0 }, { 2, 2 } },
                         RoundingRadius -> 4]},
             Dynamic[TrueQ[Typeset`var]],
