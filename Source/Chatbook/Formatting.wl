@@ -197,13 +197,7 @@ formatToolCall // endDefinition;
 
 formatToolCall0 // beginDefinition;
 
-formatToolCall0[ string_String, as_Association ] :=
-    Panel[
-        makeToolCallBoxLabel @ as,
-        BaseStyle    -> { "Text", LineBreakWithin -> False },
-        Background   -> GrayLevel[ 0.95 ],
-        ImageMargins -> { { 0, 0 }, { 10, 10 } }
-    ];
+formatToolCall0[ string_String, as_Association ] := makeToolCallBoxLabel @ as;
 
 formatToolCall0[ string_String, failed_Failure ] := Framed[
     failed,
@@ -1554,8 +1548,7 @@ makeToolCallBoxLabel[ as0_, name_String, icon_ ] :=
                     LabelStyle -> { FontSize -> 12 }
                 ]
             },
-            TrueQ @ as0[ "Open" ],
-            Method -> "Active"
+            TrueQ @ as0[ "Open" ]
         ]
     ];
 
@@ -1564,28 +1557,28 @@ makeToolCallBoxLabel // endDefinition;
 
 makeToolCallBoxLabel0 // beginDefinition;
 
-makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] := Row @ Flatten @ {
-    tr[ "FormattingToolUsing" ],
-    Style[ string, FontWeight -> "DemiBold" ],
+makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] := Flatten @ {
     If[ MissingQ @ icon,
         Nothing,
         {
             Spacer[ 0 ],
             toolCallIconPane @ icon
         }
-    ]
+    ],
+    Style[ tr[ "FormattingToolUsing" ], FontColor -> RGBColor["#3383AC"] ],
+    Style[ string, FontWeight -> "DemiBold", FontColor -> RGBColor["#3383AC"] ]
 };
 
-makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Row @ Flatten @ {
-    tr[ "FormattingToolUsed" ],
-    Style[ string, FontWeight -> "DemiBold" ],
+makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Flatten @ {
     If[ MissingQ @ icon,
         Nothing,
         {
             Spacer[ 0 ],
             toolCallIconPane @ icon
         }
-    ]
+    ],
+    Style[ tr[ "FormattingToolUsed" ], FontColor -> RGBColor["#3383AC"] ],
+    Style[ string, FontWeight -> "DemiBold", FontColor -> RGBColor["#3383AC"] ]
 };
 
 makeToolCallBoxLabel0 // endDefinition;

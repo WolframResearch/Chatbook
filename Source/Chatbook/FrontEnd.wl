@@ -1005,18 +1005,70 @@ compressRasterBoxes // endDefinition;
 openerView[ args___ ] := Verbatim[ openerView[ args ] ] = openerView0[ args ];
 
 openerView0 // beginDefinition;
-openerView0[ { a_, b_ }, args___ ] /; ByteCount @ b > 50000 := openerView1[ { a, compressUntilViewed @ b }, args ];
-openerView0[ { a_, b_ }, args___ ] := openerView1[ { a, b }, args ];
+openerView0[ { label_, content_ }, initialState_, ___ ] /; ByteCount @ content > 50000 := openerView1[ { label, compressUntilViewed @ content }, initialState ];
+openerView0[ { label_, content_ }, initialState_, ___ ] := openerView1[ { label, content }, initialState ];
 openerView0 // endDefinition;
 
 (*cspell: ignore patv *)
-openerView1[ args___ ] := Quiet[
-    RawBoxes @ ReplaceAll[
-        Replace[ ToBoxes @ OpenerView @ args, TagBox[ boxes_, ___ ] :> boxes ],
-        InterpretationBox[ boxes_, _OpenerView, ___ ] :> boxes
-    ],
-    Pattern::patv
-];
+openerView1[ { label_, content_ }, initialState_ ] :=
+DynamicModule[{Typeset`var = initialState},
+    Style[
+        PaneSelector[
+            {
+                False ->
+                    Framed[
+                        clickableOpenerRow[Dynamic[Typeset`var], label],
+                        BaseStyle      -> { "Text", LineBreakWithin -> False },
+                        Background     -> RGBColor[ "#E5F7FF" ],
+                        FrameStyle     -> RGBColor[ "#9CCBE3" ],
+                        ImageMargins   -> { { 0, 0 }, { 2, 2 } },
+                        RoundingRadius -> 4],
+                True ->
+                    Framed[
+                        Grid[
+                            {
+                                {clickableOpenerRow[Dynamic[Typeset`var], label]},
+                                {content}},
+                        Alignment -> {Left, Baseline},
+                        BaselinePosition -> {1, 1}],
+                        BaseStyle      -> { "Text", LineBreakWithin -> False },
+                        Background     -> RGBColor[ "#E5F7FF" ],
+                        FrameStyle     -> RGBColor[ "#9CCBE3" ],
+                        ImageMargins   -> { { 0, 0 }, { 2, 2 } },
+                        RoundingRadius -> 4]},
+            Dynamic[TrueQ[Typeset`var]],
+            ImageSize -> Automatic,
+            BaselinePosition -> Baseline,
+            DefaultBaseStyle -> "OpenerView",
+            ImageMargins -> 0
+        ],
+        Deployed -> False,
+        StripOnInput -> False
+    ]
+]
+
+clickableOpenerRow[Dynamic[var_], label_] :=
+MouseAppearance[
+    EventHandler[
+        Grid[
+            {
+                Append[
+                    If[ListQ[label], label, {label}],
+                    PaneSelector[
+                        {True -> "\[Minus]", False -> "+"},
+                        Dynamic[var],
+                        ImageSize -> Automatic,
+                        BaselinePosition -> Baseline,
+                        BaseStyle -> {FontSize -> Larger, FontWeight -> "DemiBold", FontColor -> RGBColor["#3383AC"]},
+                        ImageMargins -> {{0, 10}, {0, 0}}]]},
+            Alignment -> {Left, Baseline},
+            BaselinePosition -> {1, 1},
+            BaseStyle -> {ShowStringCharacters -> False}],
+        "MouseClicked" :> FEPrivate`Set[var, Not[var]], (* Run entirely in front end *)
+        Method -> "Preemptive",
+        PassEventsDown -> Automatic, 
+        PassEventsUp -> True],
+    "Arrow"]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
