@@ -310,11 +310,11 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
 workspaceChatInitializer // beginDefinition;
 
 workspaceChatInitializer[ expr_ ] :=
-    DynamicWrapper[
+    DynamicModule[
+        { },
         expr,
-        Refresh[ initializeWorkspaceChat[ ], None ],
-        SingleEvaluation    -> True,
-        SynchronousUpdating -> False
+        Initialization :> initializeWorkspaceChat[ ],
+        SynchronousInitialization -> False
     ];
 
 workspaceChatInitializer // endDefinition;
