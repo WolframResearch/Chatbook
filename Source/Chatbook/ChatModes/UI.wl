@@ -312,7 +312,7 @@ workspaceChatInitializer // beginDefinition;
 workspaceChatInitializer[ expr_ ] :=
     DynamicWrapper[
         expr,
-        initializeWorkspaceChat[ ],
+        Refresh[ initializeWorkspaceChat[ ], None ],
         SingleEvaluation    -> True,
         SynchronousUpdating -> False
     ];
