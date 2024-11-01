@@ -1,4 +1,6 @@
-Mouseover[
+(* ::Package:: *)
+
+RawBoxes @ ToBoxes @ Mouseover[
  Graphics[
   {
    Thickness[ 0.11111 ],
