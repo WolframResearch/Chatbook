@@ -1531,7 +1531,30 @@ makeToolCallBoxLabel[ as_Association ] := tr[ "FormattingToolUsingLoading" ];
 makeToolCallBoxLabel[ as_Association, name_String ] :=
     makeToolCallBoxLabel[ as, name, getToolIcon @ as ];
 
-makeToolCallBoxLabel[ as_, name_String, icon_ ] /; $dynamicText := makeToolCallBoxLabel0[ as, name, icon ];
+makeToolCallBoxLabel[ as_, name_String, icon_ ] /; $dynamicText := Framed[
+    Grid[
+        {
+            Append[
+                makeToolCallBoxLabel0[ as, name, icon ],
+                Pane[
+                    "+",
+                    ImageSize        -> Automatic,
+                    BaselinePosition -> Baseline,
+                    BaseStyle        -> { FontSize -> Larger, FontWeight -> "DemiBold", FontColor -> RGBColor[ "#3383AC" ] },
+                    ImageMargins     -> { { 0, 10 }, { 0, 0 } }
+                ]
+            ]
+        },
+        Alignment        -> { Left, Baseline },
+        BaselinePosition -> { 1, 1 },
+        BaseStyle        -> { ShowStringCharacters -> False }
+    ],
+    BaseStyle      -> { "Text", LineBreakWithin -> False },
+    Background     -> RGBColor[ "#E5F7FF" ],
+    FrameStyle     -> RGBColor[ "#9CCBE3" ],
+    ImageMargins   -> { { 0, 0 }, { 2, 2 } },
+    RoundingRadius -> 4
+];
 
 makeToolCallBoxLabel[ as0_, name_String, icon_ ] :=
     With[ { as = resolveToolFormatter @ as0 },
