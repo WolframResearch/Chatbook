@@ -5,10 +5,10 @@ BeginPackage[ "Wolfram`ChatbookScripts`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Initialization*)
-Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 If[ ! TrueQ @ $loadedDefinitions, Get @ FileNameJoin @ { DirectoryName @ $InputFileName, "Common.wl" } ];
 Get @ cFile @ FileNameJoin @ { DirectoryName @ $InputFileName, "UnformatFiles.wls" };
 Get @ cFile @ FileNameJoin @ { DirectoryName @ $InputFileName, "BuildMX.wls" };
+Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -17,7 +17,7 @@ Get @ cFile @ FileNameJoin @ { DirectoryName @ $InputFileName, "BuildMX.wls" };
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Build*)
-result = checkResult @ Wolfram`PacletCICD`BuildPaclet[
+result = checkResult @ cicd`BuildPaclet[
     $defNB,
     "Check"      -> False,
     "ExitOnFail" -> True,
