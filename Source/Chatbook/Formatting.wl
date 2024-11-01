@@ -1538,6 +1538,7 @@ makeToolCallBoxLabel[ as0_, name_String, icon_ ] :=
         openerView[
             {
                 makeToolCallBoxLabel0[ as, name, icon ],
+                (*TODO: custom interface LLM 667 *)
                 TabView[
                     {
                         "Raw"         -> makeToolCallRawView @ as,
