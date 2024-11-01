@@ -1153,7 +1153,7 @@ $textDataFormatRules = {
     Longest @ StringExpression[
         (("```" ~~ Except[ "\n" ]... ~~ (" "...) ~~ "\n"))|"",
         tool: $$simpleToolCall
-     ] :> inlineToolCallCell @ tool
+     ] /; ! StringStartsQ[ tool, $$ws ~~ "/retry" ~~ $$eol ] :> inlineToolCallCell @ tool
     ,
     StartOfLine ~~ "/retry" ~~ (WhitespaceCharacter|EndOfString) :> $discardPreviousToolCall
     ,
@@ -1356,7 +1356,7 @@ parsePartialToolCallString // beginDefinition;
 (* TODO: define a `parsePartialSimpleToolCallString` that can also be used in `simpleToolRequestParser` *)
 
 parsePartialToolCallString[ string_String ] /; $simpleToolMethod := Enclose[
-    Module[ { command, argString, tool, name, paramNames, argStrings, padded, params, result },
+    Module[ { command, argString, tool, name, paramNames, params, result },
         command = ConfirmBy[
             StringReplace[
                 string,
