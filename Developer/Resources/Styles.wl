@@ -1153,7 +1153,7 @@ Cell[
                 #,
                 BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
                 Background     -> RGBColor[ "#edf4fc" ],
-                FrameMargins   -> 8,
+                FrameMargins   -> { { 8, 15 }, { 8, 8 } },
                 FrameStyle     -> RGBColor[ "#a3c9f2" ],
                 RoundingRadius -> 10,
                 StripOnInput   -> False
@@ -1177,7 +1177,7 @@ Cell[
                 #,
                 BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
                 Background     -> RGBColor[ "#fcfdff" ],
-                FrameMargins   -> 8,
+                FrameMargins   -> { { 15, 8 }, { 8, 8 } },
                 FrameStyle     -> RGBColor[ "#c9ccd0" ],
                 ImageSize      -> { Scaled[ 1 ], Automatic },
                 RoundingRadius -> 10,
