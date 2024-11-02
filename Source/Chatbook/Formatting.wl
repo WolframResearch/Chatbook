@@ -1531,30 +1531,8 @@ makeToolCallBoxLabel[ as_Association ] := tr[ "FormattingToolUsingLoading" ];
 makeToolCallBoxLabel[ as_Association, name_String ] :=
     makeToolCallBoxLabel[ as, name, getToolIcon @ as ];
 
-makeToolCallBoxLabel[ as_, name_String, icon_ ] /; $dynamicText := Framed[
-    Grid[
-        {
-            Append[
-                makeToolCallBoxLabel0[ as, name, icon ],
-                Pane[
-                    "+",
-                    ImageSize        -> Automatic,
-                    BaselinePosition -> Baseline,
-                    BaseStyle        -> { FontSize -> Larger, FontWeight -> "DemiBold", FontColor -> RGBColor[ "#3383AC" ] },
-                    ImageMargins     -> { { 0, 10 }, { 0, 0 } }
-                ]
-            ]
-        },
-        Alignment        -> { Left, Baseline },
-        BaselinePosition -> { 1, 1 },
-        BaseStyle        -> { ShowStringCharacters -> False }
-    ],
-    BaseStyle      -> { "Text", LineBreakWithin -> False },
-    Background     -> RGBColor[ "#E5F7FF" ],
-    FrameStyle     -> RGBColor[ "#9CCBE3" ],
-    ImageMargins   -> { { 0, 0 }, { 2, 2 } },
-    RoundingRadius -> 4
-];
+makeToolCallBoxLabel[ as_, name_String, icon_ ] /; $dynamicText :=
+    fakeOpenerView @ makeToolCallBoxLabel0[ as, name, icon ];
 
 makeToolCallBoxLabel[ as0_, name_String, icon_ ] :=
     With[ { as = resolveToolFormatter @ as0 },
@@ -1582,27 +1560,15 @@ makeToolCallBoxLabel // endDefinition;
 makeToolCallBoxLabel0 // beginDefinition;
 
 makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] := Flatten @ {
-    If[ MissingQ @ icon,
-        Nothing,
-        {
-            Spacer[ 0 ],
-            toolCallIconPane @ icon
-        }
-    ],
-    Style[ tr[ "FormattingToolUsing" ], FontColor -> RGBColor["#3383AC"] ],
-    Style[ string, FontWeight -> "DemiBold", FontColor -> RGBColor["#3383AC"] ]
+    toolCallIconPane @ icon,
+    Style[ tr[ "FormattingToolUsing" ], FontColor -> RGBColor[ "#3383AC" ] ],
+    Style[ string, FontWeight -> "DemiBold", FontColor -> RGBColor[ "#3383AC" ] ]
 };
 
 makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Flatten @ {
-    If[ MissingQ @ icon,
-        Nothing,
-        {
-            Spacer[ 0 ],
-            toolCallIconPane @ icon
-        }
-    ],
-    Style[ tr[ "FormattingToolUsed" ], FontColor -> RGBColor["#3383AC"] ],
-    Style[ string, FontWeight -> "DemiBold", FontColor -> RGBColor["#3383AC"] ]
+    toolCallIconPane @ icon,
+    Style[ tr[ "FormattingToolUsed" ], FontColor -> RGBColor[ "#3383AC" ] ],
+    Style[ string, FontWeight -> "DemiBold", FontColor -> RGBColor[ "#3383AC" ] ]
 };
 
 makeToolCallBoxLabel0 // endDefinition;
@@ -1612,17 +1578,32 @@ makeToolCallBoxLabel0 // endDefinition;
 (*toolCallIconPane*)
 toolCallIconPane // beginDefinition;
 
-toolCallIconPane[ icon_ ] :=
+toolCallIconPane[ icon_ ] := Pane[
+    toolCallIconPane0 @ icon,
+    BaselinePosition -> Scaled[ 0.2 ],
+    ContentPadding   -> False,
+    FrameMargins     -> { { 0, 0 }, { 0, 0 } }
+];
+
+toolCallIconPane // endDefinition;
+
+
+toolCallIconPane0 // beginDefinition;
+
+toolCallIconPane0[ $$unspecified ] :=
+    toolCallIconPane0 @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "WrenchIcon" ];
+
+toolCallIconPane0[ icon_ ] :=
     Dynamic[
         If[ TrueQ @ $CloudEvaluation,
             #1,
-            Pane[ #1, ImageSize -> { 20, 20 }, ImageSizeAction -> "ShrinkToFit" ]
+            Pane[ #1, ImageSize -> { 16, 16 }, ImageSizeAction -> "ShrinkToFit" ]
         ] &[ icon ],
         SingleEvaluation -> True,
         TrackedSymbols   :> { }
     ];
 
-toolCallIconPane // endDefinition;
+toolCallIconPane0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
