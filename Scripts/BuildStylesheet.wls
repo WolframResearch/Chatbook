@@ -31,7 +31,7 @@ cicd`ConsoleLog[ "Building stylesheet..." ];
 Block[ { $Context = "Global`", $ContextPath = { "System`", "Global`" }, $ContextAliases = $ContextAliases },
     UsingFrontEnd[
         cicd`ScriptConfirm @ CheckAbort[ Get @ $builderFile, $Failed ];
-        result = cicd`ScriptConfirmBy[ Wolfram`ChatbookStylesheetBuilder`BuildChatbookStylesheet[ ], FileExistsQ ];
+        result = cicd`ScriptConfirmBy[ Wolfram`ChatbookStylesheetBuilder`BuildStylesheets[ All ], AssociationQ ];
     ];
 ];
 
