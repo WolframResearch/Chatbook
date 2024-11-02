@@ -63,28 +63,26 @@ Cell[
     CellDingbat           -> None,
     CellEventActions      -> None,
     CellFrame             -> 0,
-    CellFrameLabelMargins -> 6,
-    CellMargins           -> { { 15, 10 }, { 5, 10 } },
+    CellFrameLabelMargins -> -15,
+    CellMargins           -> { { 15, 15 }, { 5, 10 } },
     Selectable            -> False,
     ShowCellBracket       -> False,
     CellFrameLabels       -> {
-        { None, None },
         {
             None,
-            Cell @ BoxData @ TemplateBox[
-                {
-                    DynamicBox[
-                        ToBoxes[
-                            Needs[ "Wolfram`Chatbook`" -> None ];
-                            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "UserMessageLabel" ],
-                            StandardForm
-                        ],
-                        SingleEvaluation -> True
-                    ]
-                },
-                "UserMessageLabel"
+            Cell[
+                BoxData @ DynamicBox[
+                    ToBoxes[
+                        Needs[ "Wolfram`Chatbook`" -> None ];
+                        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "UserMessageLabel" ],
+                        StandardForm
+                    ],
+                    SingleEvaluation -> True
+                ],
+                Background -> None
             ]
-        }
+        },
+        { None, None }
     }
 ]
 
@@ -93,31 +91,30 @@ Cell[
 (*ChatOutput*)
 Cell[
     StyleData[ "ChatOutput" ],
-    Background      -> None,
-    CellDingbat     -> None,
-    CellFrame       -> 0,
-    CellMargins     -> { { 10, 15 }, { 25, 12 } },
-    Initialization  -> None,
-    Selectable      -> False,
-    ShowCellBracket -> False,
-    CellFrameLabels -> {
-        { None, None },
+    Background            -> None,
+    CellDingbat           -> None,
+    CellFrame             -> 0,
+    CellFrameLabelMargins -> -5,
+    CellMargins           -> { { 10, 15 }, { 25, 12 } },
+    Initialization        -> None,
+    Selectable            -> False,
+    ShowCellBracket       -> False,
+    CellFrameLabels       -> {
         {
-            None,
-            Cell @ BoxData @ TemplateBox[
-                {
-                    DynamicBox[
-                        ToBoxes[
-                            Needs[ "Wolfram`Chatbook`" -> None ];
-                            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AssistantMessageLabel" ],
-                            StandardForm
-                        ],
-                        SingleEvaluation -> True
-                    ]
-                },
-                "AssistantMessageLabel"
-            ]
-        }
+            Cell[
+                BoxData @ DynamicBox[
+                    ToBoxes[
+                        Needs[ "Wolfram`Chatbook`" -> None ];
+                        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AssistantMessageLabel" ],
+                        StandardForm
+                    ],
+                    SingleEvaluation -> True
+                ],
+                Background -> None
+            ],
+            None
+        },
+        { None, None }
     }
 ]
 
