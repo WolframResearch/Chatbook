@@ -197,13 +197,7 @@ formatToolCall // endDefinition;
 
 formatToolCall0 // beginDefinition;
 
-formatToolCall0[ string_String, as_Association ] :=
-    Panel[
-        makeToolCallBoxLabel @ as,
-        BaseStyle    -> { "Text", LineBreakWithin -> False },
-        Background   -> GrayLevel[ 0.95 ],
-        ImageMargins -> { { 0, 0 }, { 10, 10 } }
-    ];
+formatToolCall0[ string_String, as_Association ] := makeToolCallBoxLabel @ as;
 
 formatToolCall0[ string_String, failed_Failure ] := Framed[
     failed,
@@ -1532,18 +1526,20 @@ makeToolCallBoxLabel[ as: KeyValuePattern[ "Name" -> name_String ] ] :=
         ]
     ];
 
-makeToolCallBoxLabel[ as_Association ] := "Using tool\[Ellipsis]";
+makeToolCallBoxLabel[ as_Association ] := tr[ "FormattingToolUsingLoading" ];
 
 makeToolCallBoxLabel[ as_Association, name_String ] :=
     makeToolCallBoxLabel[ as, name, getToolIcon @ as ];
 
-makeToolCallBoxLabel[ as_, name_String, icon_ ] /; $dynamicText := makeToolCallBoxLabel0[ as, name, icon ];
+makeToolCallBoxLabel[ as_, name_String, icon_ ] /; $dynamicText :=
+    fakeOpenerView @ makeToolCallBoxLabel0[ as, name, icon ];
 
 makeToolCallBoxLabel[ as0_, name_String, icon_ ] :=
     With[ { as = resolveToolFormatter @ as0 },
         openerView[
             {
                 makeToolCallBoxLabel0[ as, name, icon ],
+                (*TODO: custom interface LLM 667 *)
                 TabView[
                     {
                         "Raw"         -> makeToolCallRawView @ as,
@@ -1554,8 +1550,7 @@ makeToolCallBoxLabel[ as0_, name_String, icon_ ] :=
                     LabelStyle -> { FontSize -> 12 }
                 ]
             },
-            TrueQ @ as0[ "Open" ],
-            Method -> "Active"
+            TrueQ @ as0[ "Open" ]
         ]
     ];
 
@@ -1564,28 +1559,16 @@ makeToolCallBoxLabel // endDefinition;
 
 makeToolCallBoxLabel0 // beginDefinition;
 
-makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] := Row @ Flatten @ {
-    "Using ",
-    Style[ string, FontWeight -> "DemiBold" ],
-    If[ MissingQ @ icon,
-        Nothing,
-        {
-            Spacer[ 0 ],
-            toolCallIconPane @ icon
-        }
-    ]
+makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] := Flatten @ {
+    toolCallIconPane @ icon,
+    Style[ tr[ "FormattingToolUsing" ], FontColor -> RGBColor[ "#3383AC" ] ],
+    Style[ string, FontWeight -> "DemiBold", FontColor -> RGBColor[ "#3383AC" ] ]
 };
 
-makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Row @ Flatten @ {
-    "Used ",
-    Style[ string, FontWeight -> "DemiBold" ],
-    If[ MissingQ @ icon,
-        Nothing,
-        {
-            Spacer[ 0 ],
-            toolCallIconPane @ icon
-        }
-    ]
+makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Flatten @ {
+    toolCallIconPane @ icon,
+    Style[ tr[ "FormattingToolUsed" ], FontColor -> RGBColor[ "#3383AC" ] ],
+    Style[ string, FontWeight -> "DemiBold", FontColor -> RGBColor[ "#3383AC" ] ]
 };
 
 makeToolCallBoxLabel0 // endDefinition;
@@ -1595,17 +1578,32 @@ makeToolCallBoxLabel0 // endDefinition;
 (*toolCallIconPane*)
 toolCallIconPane // beginDefinition;
 
-toolCallIconPane[ icon_ ] :=
+toolCallIconPane[ icon_ ] := Pane[
+    toolCallIconPane0 @ icon,
+    BaselinePosition -> Scaled[ 0.2 ],
+    ContentPadding   -> False,
+    FrameMargins     -> { { 0, 0 }, { 0, 0 } }
+];
+
+toolCallIconPane // endDefinition;
+
+
+toolCallIconPane0 // beginDefinition;
+
+toolCallIconPane0[ $$unspecified ] :=
+    toolCallIconPane0 @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "WrenchIcon" ];
+
+toolCallIconPane0[ icon_ ] :=
     Dynamic[
         If[ TrueQ @ $CloudEvaluation,
             #1,
-            Pane[ #1, ImageSize -> { 20, 20 }, ImageSizeAction -> "ShrinkToFit" ]
+            Pane[ #1, ImageSize -> { 16, 16 }, ImageSizeAction -> "ShrinkToFit" ]
         ] &[ icon ],
         SingleEvaluation -> True,
         TrackedSymbols   :> { }
     ];
 
-toolCallIconPane // endDefinition;
+toolCallIconPane0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)

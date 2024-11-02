@@ -64,6 +64,9 @@
 "FormattingInsertContentAndEvaluateTooltip" -> "Insert content as new input cell below and evaluate",
 "FormattingCopyToClipboardTooltip" -> "Copy to clipboard",
 "FormattingInsertContentTooltip" -> "Insert content as new input cell below",
+"FormattingToolUsing" -> "Using ",
+"FormattingToolUsed" -> "Used ",
+"FormattingToolUsingLoading" -> "Using tool\[Ellipsis]",
 
 "InlineReferencesFieldHint" -> "PromptName",
 "InlineReferencesInsertLabel" -> "Insert:",
