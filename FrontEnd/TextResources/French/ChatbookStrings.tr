@@ -64,6 +64,9 @@
 "FormattingInsertContentAndEvaluateTooltip" -> "Ins\[EAcute]rer le contenu en tant que nouvelle cellule d\[CloseCurlyQuote]entr\[EAcute]e ci-dessous et l\[CloseCurlyQuote]\[EAcute]valuer",
 "FormattingCopyToClipboardTooltip" -> "Copier dans le presse-papiers",
 "FormattingInsertContentTooltip" -> "Ins\[EAcute]rer le contenu en tant que nouvelle cellule d\[CloseCurlyQuote]entr\[EAcute]e ci-dessous",
+"FormattingToolUsing" -> "Using ",
+"FormattingToolUsed" -> "Used ",
+"FormattingToolUsingLoading" -> "Using tool\[Ellipsis]",
 
 "InlineReferencesFieldHint" -> "Nom de l\[CloseCurlyQuote]invite",
 "InlineReferencesInsertLabel" -> "Ins\[EAcute]rer\[NonBreakingSpace]:",

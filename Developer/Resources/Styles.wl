@@ -57,7 +57,7 @@ Cell[
 (*Text*)
 
 
-(* 
+(*
     In 14.1, Chatbook.nb inherits from Default.nb, but in 14.2, chat styles are in CoreExtensions.nb only.
     "Text" is defined in Default.nb, so include what we need from it so it looks correct. *)
 Cell[
@@ -560,7 +560,7 @@ Cell[
 (*ChatCode*)
 
 
-(* 
+(*
     14.2 CoreExtensions: most important parts of Input are defined in Core.nb. Only the CellEpliog is missing for chat functionality.
     There is no impact on 14.1 chatbooks because Input already adds CellEpilog, so duplicating it here has no effect. *)
 Cell[
@@ -574,10 +574,10 @@ Cell[
     ShowSyntaxStyles     -> True,
 
     CellEpilog :> With[ { Wolfram`ChatNB`cell = (FinishDynamic[]; EvaluationCell[]) },
-        Quiet[ Needs[ "Wolfram`Chatbook`" -> None ] ]; 
+        Quiet[ Needs[ "Wolfram`Chatbook`" -> None ] ];
         Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AIAutoAssist", Wolfram`ChatNB`cell ]
     ]
- 
+
 ]
 
 
@@ -1443,7 +1443,7 @@ Cell[
                     ]
                 },
                 Dynamic @ Typeset`open$$,
-                ImageMargins   -> 10,
+                ImageMargins   -> { { 0, 0 }, { 8, 8 } },
                 ImageSize      -> Automatic,
                 Alignment      -> Left,
                 ContentPadding -> False
