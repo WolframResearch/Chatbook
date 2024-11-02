@@ -74,7 +74,7 @@ Notebook[
   ],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3939533179"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3939536254"|>
   ],
   Cell[
    StyleData[
@@ -100,34 +100,30 @@ Notebook[
    CellFrame -> 0,
    CellDingbat -> None,
    ShowCellBracket -> False,
-   CellMargins -> {{15, 10}, {5, 10}},
+   CellMargins -> {{15, 15}, {5, 10}},
    CellEventActions -> None,
    CellFrameLabels -> {
-    {None, None},
     {
      None,
      Cell[
       BoxData[
-       TemplateBox[
-        {
-         DynamicBox[
-          ToBoxes[
-           Needs["Wolfram`Chatbook`" -> None];
-           Symbol["Wolfram`Chatbook`ChatbookAction"][
-            "UserMessageLabel"
-           ],
-           StandardForm
-          ],
-          SingleEvaluation -> True
-         ]
-        },
-        "UserMessageLabel"
+       DynamicBox[
+        ToBoxes[
+         Needs["Wolfram`Chatbook`" -> None];
+         Symbol["Wolfram`Chatbook`ChatbookAction"][
+          "UserMessageLabel"
+         ],
+         StandardForm
+        ],
+        SingleEvaluation -> True
        ]
-      ]
+      ],
+      Background -> None
      ]
-    }
+    },
+    {None, None}
    },
-   CellFrameLabelMargins -> 6
+   CellFrameLabelMargins -> -15
   ],
   Cell[
    StyleData["ChatOutput"],
@@ -138,30 +134,27 @@ Notebook[
    CellMargins -> {{10, 15}, {25, 12}},
    Initialization :> None,
    CellFrameLabels -> {
-    {None, None},
     {
-     None,
      Cell[
       BoxData[
-       TemplateBox[
-        {
-         DynamicBox[
-          ToBoxes[
-           Needs["Wolfram`Chatbook`" -> None];
-           Symbol["Wolfram`Chatbook`ChatbookAction"][
-            "AssistantMessageLabel"
-           ],
-           StandardForm
-          ],
-          SingleEvaluation -> True
-         ]
-        },
-        "AssistantMessageLabel"
+       DynamicBox[
+        ToBoxes[
+         Needs["Wolfram`Chatbook`" -> None];
+         Symbol["Wolfram`Chatbook`ChatbookAction"][
+          "AssistantMessageLabel"
+         ],
+         StandardForm
+        ],
+        SingleEvaluation -> True
        ]
-      ]
-     ]
-    }
+      ],
+      Background -> None
+     ],
+     None
+    },
+    {None, None}
    },
+   CellFrameLabelMargins -> -5,
    Background -> None
   ],
   Cell[

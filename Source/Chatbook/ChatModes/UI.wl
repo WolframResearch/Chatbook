@@ -869,12 +869,10 @@ moveToChatInputField0 // endDefinition;
 assistantMessageLabel // beginDefinition;
 
 assistantMessageLabel[ ] := Enclose[
-    Catch @ Module[ { cell, persona, icon, name },
+    Catch @ Module[ { cell, persona },
         cell = topParentCell @ EvaluationCell[ ];
         persona = If[ MatchQ[ cell, _CellObject ], CurrentChatSettings[ cell, "LLMEvaluator" ], "NotebookAssistant" ];
-        icon = ConfirmMatch[ getPersonaMenuIcon @ persona, Except[ _getPersonaMenuIcon | _? FailureQ ], "Icon" ];
-        name = ConfirmMatch[ personaDisplayName @ persona, Except[ _personaDisplayName | _? FailureQ ], "Name" ];
-        Grid[ { { icon, name } }, Alignment -> { Automatic, Center } ]
+        ConfirmMatch[ getPersonaMenuIcon @ persona, Except[ _getPersonaMenuIcon | _? FailureQ ], "Icon" ]
     ],
     throwInternalFailure
 ];
@@ -885,7 +883,7 @@ assistantMessageLabel // endDefinition;
 (* ::Subsection::Closed:: *)
 (*userMessageLabel*)
 userMessageLabel // beginDefinition;
-userMessageLabel[ ] := Grid[ { { userName[ ], userImage[ ] } }, Alignment -> { Automatic, Center } ];
+userMessageLabel[ ] := userImage[ ];
 userMessageLabel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
