@@ -1358,10 +1358,10 @@ inclusionCheckbox // endDefinition;
 historyOverlay // beginDefinition;
 
 historyOverlay[ nbo_NotebookObject ] :=
-    DynamicModule[ { searching = False },
+    DynamicModule[ { searching = False, query = "" },
         PaneSelector[
             {
-                True  -> historySearchView[ nbo, Dynamic @ searching ],
+                True  -> historySearchView[ nbo, Dynamic @ searching, Dynamic @ query ],
                 False -> historyDefaultView[ nbo, Dynamic @ searching ]
             },
             Dynamic @ searching,
@@ -1370,6 +1370,98 @@ historyOverlay[ nbo_NotebookObject ] :=
     ];
 
 historyOverlay // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*historySearchView*)
+historySearchView // beginDefinition;
+
+historySearchView[ nbo_NotebookObject, Dynamic[ searching_ ], Dynamic[ query_ ] ] := Enclose[
+    Catch @ Module[ { appName, header, view },
+        appName = ConfirmBy[ CurrentChatSettings[ nbo, "AppName" ], StringQ, "AppName" ];
+
+        header = ConfirmMatch[
+            makeHistoryHeader @ historySearchField[ Dynamic @ query, Dynamic @ searching ],
+            _Pane,
+            "Header"
+        ];
+
+        view = ConfirmMatch[ makeHistorySearchResults[ nbo, appName, Dynamic @ query ], _, "View" ];
+
+        Framed[
+            Column[
+                { header, view },
+                Alignment  -> Left,
+                Background -> { RGBColor[ "#F5F5F5" ], White },
+                Dividers   -> { None, { 2 -> RGBColor[ "#D1D1D1" ] } }
+            ],
+            RoundingRadius -> 3,
+            FrameMargins   -> 0,
+            FrameStyle     -> RGBColor[ "#D1D1D1" ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+historySearchView // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeHistorySearchResults*)
+makeHistorySearchResults // beginDefinition;
+
+makeHistorySearchResults[ nbo_NotebookObject, appName_String, Dynamic[ query_ ] ] := Dynamic[
+    showSearchResults[ nbo, appName, query ],
+    TrackedSymbols :> { query }
+];
+
+makeHistorySearchResults // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*showSearchResults*)
+showSearchResults // beginDefinition;
+
+showSearchResults[ nbo_, appName_, query_String ] := Enclose[
+    Module[ { chats, rows },
+        chats = ConfirmMatch[ SearchChats[ appName, query ], { ___Association }, "Chats" ];
+        rows = makeHistoryMenuItem[ Dynamic @ rows, nbo ] /@ chats;
+        Dynamic[
+            Grid[
+                rows,
+                Alignment -> { Left, Center },
+                Dividers  -> { False, { False, { RGBColor[ "#D1D1D1" ] }, False } },
+                Spacings  -> { Automatic, { 0, { 1 }, 0 } }
+            ],
+            TrackedSymbols :> { rows }
+        ]
+    ],
+    throwInternalFailure
+];
+
+showSearchResults // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*historySearchField*)
+historySearchField // beginDefinition;
+
+historySearchField[ Dynamic[ query_ ], Dynamic[ searching_ ] ] := Grid[
+    { {
+        InputField[
+            Dynamic[ query ],
+            String,
+            BaseStyle        -> "Text",
+            ContinuousAction -> True,
+            FieldHint        -> "Search",
+            ImageSize        -> { Full, Automatic }
+        ],
+        historySearchButton @ Dynamic @ searching
+    } },
+    Alignment -> { Automatic, Baseline }
+];
+
+historySearchField // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1462,7 +1554,7 @@ makeHistoryHeader[ extraContent_ ] := Pane[
             }
         },
         Alignment -> { { Left, Right }, Baseline },
-        ItemSize  -> Fit
+        ItemSize  -> { { Fit, Automatic }, Automatic }
     ],
     FrameMargins -> { { 5, 5 }, { 3, 3 } }
 ];
@@ -1471,27 +1563,17 @@ makeHistoryHeader // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*historySearchButton*)
+(*searchButton*)
 historySearchButton // beginDefinition;
 
-historySearchButton[ Dynamic[ searching_ ] ] :=
-    PaneSelector[
-        {
-            False -> searchButton @ Dynamic @ searching,
-            True -> searchField @ Dynamic @ searching
-        },
-        Dynamic @ searching,
-        ImageSize -> Automatic
-    ];
+historySearchButton[ Dynamic[ searching_ ] ] := Button[
+    $searchButtonLabel,
+    searching = ! TrueQ @ searching,
+    Alignment  -> Right,
+    Appearance -> "Suppressed"
+];
 
 historySearchButton // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*searchButton*)
-searchButton // beginDefinition;
-searchButton[ Dynamic[ searching_ ] ] := Button[ $searchButtonLabel, searching = True, Appearance -> "Suppressed" ];
-searchButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
