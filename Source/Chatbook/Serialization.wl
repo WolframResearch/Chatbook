@@ -1065,14 +1065,15 @@ $graphicsBoxStringReplacements = {
 toMarkdownImageBox // beginDefinition;
 
 toMarkdownImageBox[ graphics_ ] := Enclose[
-    Module[ { img, uri },
-        img    = ConfirmBy[ rasterizeGraphics @ graphics, ImageQ, "RasterizeGraphics" ];
-        uri    = ConfirmBy[ MakeExpressionURI[ "image", img ], StringQ, "RasterID" ];
+    Catch @ Module[ { img, uri },
+        img = ConfirmMatch[ rasterizeGraphics @ graphics, _Image | Missing[ "OutOfMemory" ], "RasterizeGraphics" ];
+        If[ MissingQ @ img, Block[ { $multiModalImages = False }, Throw @ fasterCellToString0 @ graphics ] ];
+        uri = ConfirmBy[ MakeExpressionURI[ "image", img ], StringQ, "RasterID" ];
         needsBasePrompt[ "MarkdownImageBox" ];
         If[ toolSelectedQ[ "WolframLanguageEvaluator" ], needsBasePrompt[ "MarkdownImageBoxImporting" ] ];
         "\\!\\(\\*MarkdownImageBox[\"" <> uri <> "\"]\\)"
     ],
-    throwInternalFailure[ toMarkdownImageBox @ graphics, ## ] &
+    throwInternalFailure
 ];
 
 toMarkdownImageBox // endDefinition;
@@ -1081,13 +1082,25 @@ toMarkdownImageBox // endDefinition;
 (* ::Subsubsubsubsection::Closed:: *)
 (*rasterizeGraphics*)
 rasterizeGraphics // beginDefinition;
-rasterizeGraphics[ gfx: $$graphicsBox ] := rasterizeGraphics[ gfx ] = rasterize @ RawBoxes @ gfx;
+rasterizeGraphics[ gfx: $$graphicsBox ] := rasterizeGraphics[ gfx ] = checkedRasterize @ RawBoxes @ gfx;
 rasterizeGraphics[ cell_Cell ] := rasterizeGraphics[ cell, 6.25*$cellPageWidth ];
 
 rasterizeGraphics[ cell_Cell, width_Real ] := rasterizeGraphics[ cell, width ] =
-    rasterize @ Append[ cell, PageWidth -> width ];
+    checkedRasterize @ Append[ cell, PageWidth -> width ];
 
 rasterizeGraphics // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*checkedRasterize*)
+checkedRasterize // beginDefinition;
+
+checkedRasterize[ expr_ ] := Quiet[
+    Check[ rasterize @ RawBoxes @ expr, Missing[ "OutOfMemory" ], Rasterize::bigraster ],
+    Rasterize::bigraster
+];
+
+checkedRasterize // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
