@@ -207,6 +207,9 @@
 "WorkspaceToolbarButtonTooltipNew" -> "D\[EAcute]marrer une nouvelle conversation",
 "WorkspaceSourcesOpenNotebooks" -> "Open Notebooks",
 
+"InlineChatButtonTooltipClose" -> "Close",
+"InlineChatButtonTooltipViewCodeAssist" -> "View in Code Assistance Chat",
+
 "CodeAssistanceInputGettingStarted" -> "Aide\[Hyphen]moi \[AGrave] d\[EAcute]marrer",
 "CodeAssistanceInputErrorMessage" -> "Qu\[CloseCurlyQuote]est\[Hyphen]ce qui n\[CloseCurlyQuote]a pas fonctionn\[EAcute]\[NonBreakingSpace]?"
 }
