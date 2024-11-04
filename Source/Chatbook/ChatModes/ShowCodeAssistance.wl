@@ -532,8 +532,8 @@ attachToLeft[ source_NotebookObject, current_NotebookObject ] := Enclose[
 
         If[ NonPositive[ left - width ],
             left   = width;
-            bottom = Automatic;
-            top    = 0;
+            bottom = bottom;
+            top    = top;
         ];
 
         SetOptions[
