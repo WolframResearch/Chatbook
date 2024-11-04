@@ -586,7 +586,7 @@ closeButton[ cell_CellObject ] := ToBoxes @ Button[
     ],
     NotebookDelete @ cell,
     Appearance -> "Suppressed",
-    Tooltip    -> "Close"
+    Tooltip    -> ToBoxes @ tr["InlineChatButtonTooltipClose"]
 ];
 
 closeButton // endDefinition;
@@ -625,7 +625,7 @@ popOutButton[ cell_CellObject, messageCells_Dynamic ] := ToBoxes @ Button[
     NotebookDelete @ cell;
     popOutWorkspaceChatNB @ messageCells,
     Appearance -> "Suppressed",
-    Tooltip    -> "View in Code Assistance Chat"
+    Tooltip    -> ToBoxes @ tr["InlineChatButtonTooltipViewCodeAssist"]
 ];
 
 popOutButton // endDefinition;

@@ -207,6 +207,9 @@
 "WorkspaceToolbarButtonTooltipNew" -> "\:958B\:59CB\:65B0\:589E\:6703\:8A71",
 "WorkspaceSourcesOpenNotebooks" -> "Open Notebooks",
 
+"InlineChatButtonTooltipClose" -> "Close",
+"InlineChatButtonTooltipViewCodeAssist" -> "View in Code Assistance Chat",
+
 "CodeAssistanceInputGettingStarted" -> "\:6C42\:52A9\:5982\:4F55\:958B\:59CB",
 "CodeAssistanceInputErrorMessage" -> "\:54EA\:88E1\:51FA\:4E86\:554F\:984C\:FF1F"
 }
