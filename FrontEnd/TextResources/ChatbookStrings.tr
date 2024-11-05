@@ -207,6 +207,9 @@
 "WorkspaceToolbarButtonTooltipNew" -> "Start a new conversation",
 "WorkspaceSourcesOpenNotebooks" -> "Open Notebooks",
 
+"InlineChatButtonTooltipClose" -> "Close",
+"InlineChatButtonTooltipViewCodeAssist" -> "View in Code Assistance Chat",
+
 "CodeAssistanceInputGettingStarted" -> "Help me get started",
 "CodeAssistanceInputErrorMessage" -> "What went wrong?"
 }

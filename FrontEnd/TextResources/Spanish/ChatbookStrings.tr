@@ -207,6 +207,9 @@
 "WorkspaceToolbarButtonTooltipNew" -> "Iniciar una nueva conversaci\[OAcute]n",
 "WorkspaceSourcesOpenNotebooks" -> "Open Notebooks",
 
+"InlineChatButtonTooltipClose" -> "Close",
+"InlineChatButtonTooltipViewCodeAssist" -> "View in Code Assistance Chat",
+
 "CodeAssistanceInputGettingStarted" -> "Ay\[UAcute]dame a comenzar",
 "CodeAssistanceInputErrorMessage" -> "\[DownQuestion]Qu\[EAcute] sali\[OAcute] mal?"
 }
