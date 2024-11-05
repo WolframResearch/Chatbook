@@ -1068,7 +1068,7 @@ MouseAppearance[
             },
             $openerLabelGridOptions
         ],
-        "MouseClicked" :> FEPrivate`Set[var, Not[var]], (* Run entirely in front end *)
+        "MouseDown" :> FEPrivate`Set[var, Not[var]], (* Run entirely in front end *)
         Method -> "Preemptive",
         PassEventsDown -> Automatic,
         PassEventsUp -> True],
