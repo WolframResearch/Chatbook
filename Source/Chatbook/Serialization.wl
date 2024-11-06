@@ -1096,7 +1096,7 @@ rasterizeGraphics // endDefinition;
 checkedRasterize // beginDefinition;
 
 checkedRasterize[ expr_ ] := Quiet[
-    Check[ rasterize @ RawBoxes @ expr, Missing[ "OutOfMemory" ], Rasterize::bigraster ],
+    Check[ rasterize @ expr, Missing[ "OutOfMemory" ], Rasterize::bigraster ],
     Rasterize::bigraster
 ];
 
