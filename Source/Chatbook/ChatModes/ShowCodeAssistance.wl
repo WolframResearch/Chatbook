@@ -101,7 +101,7 @@ $codeAssistanceMenuItems = <|
                 FrontEndResource[ "ChatbookStrings", "MenuItemShowCodeAssistanceWindow" ],
                 FrontEnd`KernelExecute[
                     Needs[ "Wolfram`Chatbook`" -> None ];
-                    Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Window" ]
+                    Symbol[ "Wolfram`Chatbook`ShowCodeAssistance" ][ "Window", "NewChat" -> True ]
                 ],
                 FrontEnd`MenuEvaluator -> Automatic,
                 Evaluate[
