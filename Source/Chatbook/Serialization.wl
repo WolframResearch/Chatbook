@@ -1082,11 +1082,21 @@ toMarkdownImageBox // endDefinition;
 (* ::Subsubsubsubsection::Closed:: *)
 (*rasterizeGraphics*)
 rasterizeGraphics // beginDefinition;
-rasterizeGraphics[ gfx: $$graphicsBox ] := rasterizeGraphics[ gfx ] = checkedRasterize @ RawBoxes @ gfx;
-rasterizeGraphics[ cell_Cell ] := rasterizeGraphics[ cell, 6.25*$cellPageWidth ];
 
-rasterizeGraphics[ cell_Cell, width_Real ] := rasterizeGraphics[ cell, width ] =
-    checkedRasterize @ Append[ cell, PageWidth -> width ];
+rasterizeGraphics[ gfx: $$graphicsBox ] :=
+    If[ TrueQ @ $ChatNotebookEvaluation,
+        rasterizeGraphics[ Verbatim[ gfx ] ] = checkedRasterize @ RawBoxes @ gfx,
+        checkedRasterize @ RawBoxes @ gfx
+    ];
+
+rasterizeGraphics[ cell_Cell ] :=
+    rasterizeGraphics[ cell, 6.25*$cellPageWidth ];
+
+rasterizeGraphics[ cell_Cell, width_Real ] :=
+    If[ TrueQ @ $ChatNotebookEvaluation,
+        rasterizeGraphics[ Verbatim[ cell ], width ] = checkedRasterize @ Append[ cell, PageWidth -> width ],
+        checkedRasterize @ Append[ cell, PageWidth -> width ]
+    ];
 
 rasterizeGraphics // endDefinition;
 
