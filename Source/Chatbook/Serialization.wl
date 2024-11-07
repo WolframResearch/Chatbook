@@ -139,6 +139,10 @@ $$spacedInfixOperator = Alternatives[
     "\[RuleDelayed]", "\[TwoWayRule]"
 ];
 
+$$unspacedPrefixOperator = Alternatives[
+    "-", "+", "--", "++"
+];
+
 $delimiterString = "\n\n---\n\n";
 
 (* Characters that should be serialized as long-form representations: *)
@@ -849,6 +853,7 @@ fasterCellToString0[ boxes: RowBox @ { "(*", ___, "*)" } ] :=
 
 (* Add spacing between RowBox elements that are comma separated *)
 fasterCellToString0[ "," ] := ", ";
+fasterCellToString0[ RowBox[ { op: $$unspacedPrefixOperator, a_ } ] ] := op<>fasterCellToString0 @ a;
 fasterCellToString0[ c: $$spacedInfixOperator ] := " "<>c<>" ";
 fasterCellToString0[ RowBox[ row: { ___, ","|$$spacedInfixOperator, " ", ___ } ] ] :=
     fasterCellToString0 @ RowBox @ DeleteCases[ row, " " ];
