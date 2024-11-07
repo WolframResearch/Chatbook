@@ -915,7 +915,7 @@ postProcessTextSuggestions[ suggestions_List ] :=
 
 (* FIXME: need to create an option for FormatChatOutput to control $stripWhitespace *)
 postProcessTextSuggestions[ s_String ] :=
-    postProcessTextSuggestions[ s, FormatChatOutput @ StringDelete[ s, $textPlaceholderString ] ];
+    postProcessTextSuggestions[ s, FormatChatOutput @ StringDelete[ s, $textPlaceholderString|$$stdFormBoxes ] ];
 
 postProcessTextSuggestions[ s_, RawBoxes[ cell_Cell ] ] :=
     postProcessTextSuggestions[ s, ExplodeCell @ cell ];
@@ -924,6 +924,9 @@ postProcessTextSuggestions[ s_, { cell_Cell, ___ } ] :=
     toTextData @ cell;
 
 postProcessTextSuggestions // endDefinition;
+
+
+$$stdFormBoxes = "\\!\\(" ~~ ("\\*"|"") ~~ LetterCharacter.. ~~ "[\"" ~~ Shortest[ __ ] ~~ "\"]\\)";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
