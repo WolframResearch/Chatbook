@@ -11,7 +11,7 @@ HoldComplete[
     `createWorkspaceChat,
     `evaluateAttachedInlineChat,
     `findCurrentWorkspaceChat,
-    `getCodeAssistanceInput,
+    `getNotebookAssistanceInput,
     `getContextFromSelection,
     `getSelectionInfo,
     `moveChatInputToBottom,
