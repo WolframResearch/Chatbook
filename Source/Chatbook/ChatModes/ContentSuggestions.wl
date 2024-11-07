@@ -222,6 +222,12 @@ showContentSuggestions0[ nbo_NotebookObject, root: $$feObj ] := Enclose[
 showContentSuggestions0[ nbo_NotebookObject, root: $$feObj, selectionInfo_Association ] := Enclose[
     Catch @ Module[ { type, selection, suggestionsContainer, attached, settings, context },
 
+        (* Do not show suggestions if selection is in an output cell: *)
+        If[ CurrentValue[ root, GeneratedCell ],
+            NotebookDelete @ Cells[ nbo, AttachedCell -> True, CellStyle -> "AttachedContentSuggestions" ];
+            Throw @ Null
+        ];
+
         type = ConfirmBy[ suggestionsType @ selectionInfo, StringQ, "Type" ];
         selection = selectionInfo[ "SelectionType" ];
 
