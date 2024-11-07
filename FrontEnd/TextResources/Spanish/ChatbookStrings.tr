@@ -200,6 +200,7 @@
 "MenuItemShowContentSuggestions" -> "Sugerencia de contenido de IA",
 
 "WorkspaceWindowTitle" -> "Notebook Assistant",
+"WorkspaceToolbarButtonLabelHistory" -> "History",
 "WorkspaceToolbarButtonLabelSources" -> "Fuentes",
 "WorkspaceToolbarButtonLabelNew" -> "Nuevo",
 "WorkspaceToolbarButtonTooltipHistory" -> "Administrar conversaciones",
