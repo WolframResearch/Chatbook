@@ -1282,7 +1282,24 @@ rasterizeBlock // endDefinition;
 (* ::Subsection::Closed:: *)
 (*rasterize*)
 rasterize // beginDefinition;
-rasterize[ expr_, opts___ ] := usingFrontEnd @ Rasterize[ Unevaluated @ expr, opts ];
+
+rasterize[ image_Image ] /; image2DQ @ Unevaluated @ image :=
+    image;
+
+rasterize[ RawBoxes[ cell_Cell ] ] :=
+    rasterize @ Unevaluated @ cell;
+
+rasterize[ Cell[ BoxData[ box: GraphicsBox[ TagBox[ _RasterBox, _BoxForm`ImageTag, ___ ], ___ ], ___ ], ___ ] ] :=
+    rasterize @ Unevaluated @ RawBoxes @ box;
+
+rasterize[ RawBoxes[ box: GraphicsBox[ TagBox[ _RasterBox, _BoxForm`ImageTag, ___ ], ___ ] ] ] :=
+    With[ { img = Quiet @ ToExpression[ box, StandardForm, HoldComplete ] },
+        ReleaseHold @ img /; MatchQ[ img, HoldComplete[ _Image ] ]
+    ];
+
+rasterize[ expr_, opts___ ] :=
+    usingFrontEnd @ Rasterize[ Unevaluated @ expr, opts ];
+
 rasterize // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
