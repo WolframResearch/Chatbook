@@ -71,7 +71,7 @@ makeWorkspaceChatDockedCell[ ] := Framed[
     ],
     Background   -> RGBColor[ "#66ADD2" ],
     FrameStyle   -> RGBColor[ "#A3C9F2" ],
-    FrameMargins -> { { 2, 8 }, { 0, 0 } },
+    FrameMargins -> { { 2, 8 }, { 3, 3 } },
     ImageMargins -> 0
 ];
 
@@ -128,16 +128,28 @@ sourcesButton // endDefinition;
 (*newChatButton*)
 newChatButton // beginDefinition;
 
-newChatButton[ Dynamic[ nbo_ ] ] := Button[
-    toolbarButtonLabel[ "New" ],
-    clearOverlayMenus @ nbo;
-    NotebookDelete @ Cells @ nbo;
-    CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ];
-    CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = "";
-    moveChatInputToTop @ nbo;
-    ,
-    Appearance -> "Suppressed"
-];
+newChatButton[ Dynamic[ nbo_ ] ] := 
+	With[{(* the icon colors come from the given BaseStyle *)
+    	label = toolbarButtonLabel0["New", "New",
+    		{FontColor -> RGBColor["#469ECB"]},
+    		{BaseStyle -> RGBColor[0.4, 0.678, 0.824]}
+    	],
+    	hotlabel = toolbarButtonLabel0["New", "New",
+    		{FontColor -> RGBColor[1,1,1]},
+    		{BaseStyle -> RGBColor[1,1,1]}
+    	]},
+	
+		Button[
+			toolbarButtonLabel[ lightButton, {label, hotlabel}, "New"],
+			clearOverlayMenus @ nbo;
+			NotebookDelete @ Cells @ nbo;
+			CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ];
+			CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = "";
+			moveChatInputToTop @ nbo;
+			,
+			Appearance -> "Suppressed"
+		]
+	];
 
 newChatButton // endDefinition;
 
@@ -154,38 +166,51 @@ toolbarButtonLabel[ iconName_String, label_, opts: OptionsPattern[ ] ] :=
 
 toolbarButtonLabel[ iconName_String, label_, tooltipName: _String | None, opts: OptionsPattern[ ] ] :=
     toolbarButtonLabel[ iconName, label, tooltipName, opts ] =
-    With[ { lbl = toolbarButtonLabel0[ iconName, label ] },
-        buttonTooltip[
-            NotebookTools`Mousedown[
-                Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonDefault ],
-                Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonHover   ],
-                Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonActive  ]
-            ],
-            tooltipName
-        ]
-    ];
+		With[ { lbl = toolbarButtonLabel0[ iconName, label, {}, {} ]},
+			buttonTooltip[
+				NotebookTools`Mousedown[
+					Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonDefault ],
+					Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonHover   ],
+					Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonActive  ]
+				],
+				tooltipName
+			]
+		]
+
+toolbarButtonLabel[ lightButton, {default_, hot_}, tooltipName_, opts: OptionsPattern[] ] :=
+			buttonTooltip[
+				NotebookTools`Mousedown[
+					Framed[ default, opts, $toolbarButtonCommon, $toolbarButtonLight   ],
+					Framed[ hot,     opts, $toolbarButtonCommon, $toolbarButtonHover   ],
+					Framed[ hot,     opts, $toolbarButtonCommon, $toolbarButtonActive  ]
+				],
+				tooltipName
+			]
+
 
 toolbarButtonLabel // endDefinition;
 
 
 toolbarButtonLabel0 // beginDefinition;
 
-toolbarButtonLabel0[ iconName_String, labelName_String ] :=
-    toolbarButtonLabel0[ iconName, tr[ "WorkspaceToolbarButtonLabel"<>labelName ] ];
+toolbarButtonLabel0[ iconName_String, labelName_String, {styleopts___}, {gridopts___}] :=
+    toolbarButtonLabel0[ iconName, tr[ "WorkspaceToolbarButtonLabel"<>labelName ], {styleopts}, {gridopts} ];
 
-toolbarButtonLabel0[ iconName_String, None ] :=
+toolbarButtonLabel0[ iconName_String, None, {styleopts___}, {gridopts___}] :=
     Grid[
         { { RawBoxes @ TemplateBox[ { }, "WorkspaceToolbarIcon"<>iconName ] } },
+        gridopts,
         Spacings  -> 0.5,
         Alignment -> { Automatic, Center }
     ];
 
-toolbarButtonLabel0[ iconName_String, label_ ] :=
+toolbarButtonLabel0[ iconName_String, label_, {styleopts___}, {gridopts___}] :=
     Grid[
         { {
             RawBoxes @ TemplateBox[ { }, "WorkspaceToolbarIcon"<>iconName ],
-            Style[ label, $toolbarLabelStyle ]
+            Style[ label, $toolbarLabelStyle, styleopts ]
         } },
+        gridopts, 
         Spacings  -> 0.5,
         Alignment -> { Automatic, Center }
     ];
@@ -201,6 +226,8 @@ $toolbarButtonCommon = Sequence[
 $toolbarButtonDefault = Sequence[ Background -> RGBColor[ "#66ADD2" ], FrameStyle -> RGBColor[ "#66ADD2" ] ];
 $toolbarButtonHover   = Sequence[ Background -> RGBColor[ "#87C3E3" ], FrameStyle -> RGBColor[ "#9ACAE4" ] ];
 $toolbarButtonActive  = Sequence[ Background -> RGBColor[ "#3689B5" ], FrameStyle -> RGBColor[ "#3689B5" ] ];
+$toolbarButtonLight   = Sequence[ Background -> RGBColor[ "#E0EFF6" ], FrameStyle -> RGBColor[ "#E0EFF6" ] ];
+
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
