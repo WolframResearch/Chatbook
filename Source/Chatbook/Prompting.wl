@@ -48,10 +48,10 @@ $basePromptOrder = {
     "WolframLanguageEvaluatorTool",
     "EndTurnToken",
     "EndTurnToolCall",
-    "CodeAssistanceInstructionsHeader",
-    "CodeAssistanceGettingStarted",
-    "CodeAssistanceErrorMessage",
-    "CodeAssistanceExtraInstructions"
+    "NotebookAssistanceInstructionsHeader",
+    "NotebookAssistanceGettingStarted",
+    "NotebookAssistanceErrorMessage",
+    "NotebookAssistanceExtraInstructions"
 };
 
 $basePromptClasses = <|
@@ -65,44 +65,44 @@ $basePromptClasses = <|
 |>;
 
 $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
-    "GeneralInstructionsHeader"        -> { },
-    "NotebooksPreamble"                -> { },
-    "AutoAssistant"                    -> { "CodeBlocks", "DoubleBackticks" },
-    "CodeBlocks"                       -> { },
-    "CellLabels"                       -> { "CodeBlocks", "Notebooks" },
-    "CheckboxesIndeterminate"          -> { "Checkboxes" },
-    "DoubleBackticks"                  -> { },
-    "MathExpressions"                  -> { "EscapedCharacters" },
-    "EscapedCharacters"                -> { },
-    "DocumentationLinkSyntax"          -> { },
-    "InlineSymbolLinks"                -> { },
-    "MessageConversionHeader"          -> { "NotebooksPreamble" },
-    "ChatInputIndicator"               -> { "MessageConversionHeader" },
-    "WolframAlphaInputIndicator"       -> { "MessageConversionHeader" },
-    "ConversionLargeOutputs"           -> { "MessageConversionHeader" },
-    "ConversionGraphics"               -> { "MessageConversionHeader" },
-    "MarkdownImageBox"                 -> { "MessageConversionHeader" },
-    "MarkdownImageBoxImporting"        -> { "MarkdownImageBox" },
-    "ConversionFormatting"             -> { "MessageConversionHeader" },
-    "ExternalLanguageCells"            -> { "MessageConversionHeader" },
-    "SpecialURI"                       -> { },
-    "SpecialURIImporting"              -> { "SpecialURI" },
-    "SpecialURIAudio"                  -> { "SpecialURI" },
-    "SpecialURIVideo"                  -> { "SpecialURI" },
-    "SpecialURIDynamic"                -> { "SpecialURI" },
-    "VisibleUserInput"                 -> { },
-    "TrivialCode"                      -> { },
-    "WolframSymbolCapitalization"      -> { },
-    "ModernMethods"                    -> { },
-    "FunctionalStyle"                  -> { },
-    "WolframLanguageStyle"             -> { "DocumentationLinkSyntax", "InlineSymbolLinks" },
-    "WolframLanguageEvaluatorTool"     -> { "WolframLanguageStyle" },
-    "EndTurnToken"                     -> { },
-    "EndTurnToolCall"                  -> { "EndTurnToken" },
-    "CodeAssistanceInstructionsHeader" -> { },
-    "CodeAssistanceGettingStarted"     -> { "CodeAssistanceInstructionsHeader" },
-    "CodeAssistanceErrorMessage"       -> { "CodeAssistanceInstructionsHeader" },
-    "CodeAssistanceExtraInstructions"  -> { "CodeAssistanceInstructionsHeader" }
+    "GeneralInstructionsHeader"            -> { },
+    "NotebooksPreamble"                    -> { },
+    "AutoAssistant"                        -> { "CodeBlocks", "DoubleBackticks" },
+    "CodeBlocks"                           -> { },
+    "CellLabels"                           -> { "CodeBlocks", "Notebooks" },
+    "CheckboxesIndeterminate"              -> { "Checkboxes" },
+    "DoubleBackticks"                      -> { },
+    "MathExpressions"                      -> { "EscapedCharacters" },
+    "EscapedCharacters"                    -> { },
+    "DocumentationLinkSyntax"              -> { },
+    "InlineSymbolLinks"                    -> { },
+    "MessageConversionHeader"              -> { "NotebooksPreamble" },
+    "ChatInputIndicator"                   -> { "MessageConversionHeader" },
+    "WolframAlphaInputIndicator"           -> { "MessageConversionHeader" },
+    "ConversionLargeOutputs"               -> { "MessageConversionHeader" },
+    "ConversionGraphics"                   -> { "MessageConversionHeader" },
+    "MarkdownImageBox"                     -> { "MessageConversionHeader" },
+    "MarkdownImageBoxImporting"            -> { "MarkdownImageBox" },
+    "ConversionFormatting"                 -> { "MessageConversionHeader" },
+    "ExternalLanguageCells"                -> { "MessageConversionHeader" },
+    "SpecialURI"                           -> { },
+    "SpecialURIImporting"                  -> { "SpecialURI" },
+    "SpecialURIAudio"                      -> { "SpecialURI" },
+    "SpecialURIVideo"                      -> { "SpecialURI" },
+    "SpecialURIDynamic"                    -> { "SpecialURI" },
+    "VisibleUserInput"                     -> { },
+    "TrivialCode"                          -> { },
+    "WolframSymbolCapitalization"          -> { },
+    "ModernMethods"                        -> { },
+    "FunctionalStyle"                      -> { },
+    "WolframLanguageStyle"                 -> { "DocumentationLinkSyntax", "InlineSymbolLinks" },
+    "WolframLanguageEvaluatorTool"         -> { "WolframLanguageStyle" },
+    "EndTurnToken"                         -> { },
+    "EndTurnToolCall"                      -> { "EndTurnToken" },
+    "NotebookAssistanceInstructionsHeader" -> { },
+    "NotebookAssistanceGettingStarted"     -> { "NotebookAssistanceInstructionsHeader" },
+    "NotebookAssistanceErrorMessage"       -> { "NotebookAssistanceInstructionsHeader" },
+    "NotebookAssistanceExtraInstructions"  -> { "NotebookAssistanceInstructionsHeader" }
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -270,13 +270,13 @@ $basePromptComponents[ "EndTurnToolCall" ] = "\
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*Code Assistance Instructions*)
+(*Notebook Assistance Instructions*)
 (* TODO *)
-$basePromptComponents[ "CodeAssistanceInstructionsHeader" ] = "
-# Special Instructions for Code Assistance
+$basePromptComponents[ "NotebookAssistanceInstructionsHeader" ] = "
+# Special Instructions for Notebook Assistance
 ";
 
-$basePromptComponents[ "CodeAssistanceGettingStarted" ] := "\
+$basePromptComponents[ "NotebookAssistanceGettingStarted" ] := "\
 The user has initiated this chat via a \"Need help getting started?\" button that appears in an empty notebook.
 You should inform the user about some basics of the chat interface:
 * The user can type chat messages to you in the input field below and either press "<>$enter<>" or click the Send button to send.
@@ -291,12 +291,12 @@ You should inform the user about some basics of the chat interface:
 * Finally, ask a follow-up question to find out what the user is trying to accomplish.
 ";
 
-$basePromptComponents[ "CodeAssistanceErrorMessage" ] = "\
+$basePromptComponents[ "NotebookAssistanceErrorMessage" ] = "\
 The user has initiated this chat via a help button attached to the selected error message cell. \
 Your response should be focused on the user's selected error message.";
 
-$basePromptComponents[ "CodeAssistanceExtraInstructions" ] :=
-    $codeAssistanceExtraInstructions;
+$basePromptComponents[ "NotebookAssistanceExtraInstructions" ] :=
+    $notebookAssistanceExtraInstructions;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -307,7 +307,7 @@ $enter := If[ $OperatingSystem === "MacOSX", "return", "enter" ];
 (* ::Subsubsection::Closed:: *)
 (*Extra Instructions*)
 (* This is set dynamically via Block: *)
-$codeAssistanceExtraInstructions = None;
+$notebookAssistanceExtraInstructions = None;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

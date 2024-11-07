@@ -19,7 +19,6 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$ChatPost;
 `$ChatPre;
 `$ChatTimingData;
-`$CodeAssistanceInputs;
 `$CurrentChatSettings;
 `$DefaultChatHandlerFunctions;
 `$DefaultChatProcessingFunctions;
@@ -31,6 +30,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$InstalledTools;
 `$LastChatbookFailure;
 `$LastChatbookFailureText;
+`$NotebookAssistanceInputs;
 `$SandboxKernel;
 `$ToolFunctions;
 `$WorkspaceChat;
@@ -51,7 +51,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `CurrentChatSettings;
 `DeleteChat;
 `DisplayBase64Boxes;
-`EnableCodeAssistance;
+`EnableNotebookAssistance;
 `ExplodeCell;
 `FormatChatOutput;
 `FormatToolCall;
@@ -80,6 +80,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `SetToolOptions;
 `ShowCodeAssistance;
 `ShowContentSuggestions;
+`ShowNotebookAssistance;
 `SourceNotebookObjectInformation;
 `StringToBoxes;
 `ToggleChatInclusion;
@@ -183,7 +184,6 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "$ChatbookFilesDirectory",
     "$ChatNotebookEvaluation",
     "$ChatTimingData",
-    "$CodeAssistanceInputs",
     "$CurrentChatSettings",
     "$DefaultChatHandlerFunctions",
     "$DefaultChatProcessingFunctions",
@@ -194,6 +194,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "$InstalledTools",
     "$LastChatbookFailure",
     "$LastChatbookFailureText",
+    "$NotebookAssistanceInputs",
     "$ToolFunctions",
     "$WorkspaceChat",
     "AbsoluteCurrentChatSettings",
@@ -213,7 +214,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "CurrentChatSettings",
     "DeleteChat",
     "DisplayBase64Boxes",
-    "EnableCodeAssistance",
+    "EnableNotebookAssistance",
     "ExplodeCell",
     "FormatChatOutput",
     "FormatToolCall",
@@ -241,6 +242,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "SetToolOptions",
     "ShowCodeAssistance",
     "ShowContentSuggestions",
+    "ShowNotebookAssistance",
     "SourceNotebookObjectInformation",
     "StringToBoxes",
     "ToggleChatInclusion",
