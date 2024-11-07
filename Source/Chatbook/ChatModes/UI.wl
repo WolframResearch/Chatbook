@@ -86,18 +86,33 @@ historyButton[ Dynamic[ nbo_ ] ] :=
     Module[ { label },
 
         label = Pane[
-            Style[
-                Dynamic @ FEPrivate`If[
-                    CurrentValue[ nbo, { WindowSize, 1 } ] > 250,
-                    FEPrivate`TruncateStringToWidth[
-                        CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ],
-                        "WorkspaceChatToolbarTitle",
-                        CurrentValue[ nbo, { WindowSize, 1 } ] - 170,
-                        Right
+            Dynamic[
+                If[
+                    Or[
+                        CurrentValue[ nbo, { WindowSize, 1 } ] < 250,
+                        Not @ MatchQ[CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ],
+                            Except["", _String]]
                     ],
-                    ""
-                ],
-                "WorkspaceChatToolbarTitle"
+                    tr["WorkspaceToolbarButtonLabelHistory"],
+                    Grid[
+                        {{
+                            tr["WorkspaceToolbarButtonLabelHistory"],
+                            Style[
+                                FE`Evaluate @ FEPrivate`TruncateStringToWidth[
+                                    CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ],
+                                    "WorkspaceChatToolbarTitle",
+                                    CurrentValue[ nbo, { WindowSize, 1 } ] - 170,
+                                    Right
+                                ],
+                                "WorkspaceChatToolbarTitle"
+                            ]
+                        }},
+                        FrameStyle -> White,
+                        Dividers -> Center,
+                        Spacings -> {2,0}
+                    ]
+            
+                ]
             ]
         ];
 

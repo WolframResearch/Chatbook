@@ -200,6 +200,7 @@
 "MenuItemShowContentSuggestions" -> "AI\:306B\:3088\:308B\:30B3\:30F3\:30C6\:30F3\:30C4\:306E\:63D0\:6848",
 
 "WorkspaceWindowTitle" -> "Notebook Assistant",
+"WorkspaceToolbarButtonLabelHistory" -> "History",
 "WorkspaceToolbarButtonLabelSources" -> "\:30BD\:30FC\:30B9",
 "WorkspaceToolbarButtonLabelNew" -> "\:65B0\:898F",
 "WorkspaceToolbarButtonTooltipHistory" -> "\:4F1A\:8A71\:3092\:7BA1\:7406\:3059\:308B",
