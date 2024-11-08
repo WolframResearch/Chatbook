@@ -16,7 +16,7 @@ HoldComplete[
 (* ::Section::Closed:: *)
 (*Configuration*)
 $vectorDBNames   = { "DocumentationURIs", "WolframAlphaQueries" };
-$dbVersion       = "1.1.0";
+$dbVersion       = "1.2.0";
 $allowDownload   = True;
 $cacheEmbeddings = True;
 
@@ -53,8 +53,6 @@ $vectorDBDownloadURLs = AssociationMap[
 (*Paths*)
 $pacletVectorDBDirectory := FileNameJoin @ { $thisPaclet[ "Location" ], "Assets/VectorDatabases" };
 $localVectorDBDirectory  := ChatbookFilesDirectory @ { "VectorDatabases", $dbVersion };
-
-(* TODO: need versioned URLs and paths *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
