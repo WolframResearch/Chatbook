@@ -70,8 +70,8 @@ makeWorkspaceChatDockedCell[ ] := Framed[
         Initialization :> (nbo = EvaluationNotebook[ ])
     ],
     Background   -> RGBColor[ "#66ADD2" ],
-    FrameStyle   -> RGBColor[ "#A3C9F2" ],
-    FrameMargins -> { { 2, 8 }, { 3, 3 } },
+    FrameStyle   -> RGBColor[ "#66ADD2" ], (* RGBColor[ "#A3C9F2" ] *)
+    FrameMargins -> { { 3, 3 }, { 0, 0 } },
     ImageMargins -> 0
 ];
 
@@ -101,15 +101,15 @@ historyButton[ Dynamic[ nbo_ ] ] :=
                                 FE`Evaluate @ FEPrivate`TruncateStringToWidth[
                                     CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ],
                                     "WorkspaceChatToolbarTitle",
-                                    CurrentValue[ nbo, { WindowSize, 1 } ] - 170,
+                                    CurrentValue[ nbo, { WindowSize, 1 } ] - 210,
                                     Right
                                 ],
                                 "WorkspaceChatToolbarTitle"
                             ]
                         }},
-                        FrameStyle -> White,
+                        FrameStyle -> GrayLevel[1, 0.75],
                         Dividers -> Center,
-                        Spacings -> {2,0}
+                        Spacings -> {1,0}
                     ]
             
                 ]
@@ -147,7 +147,7 @@ newChatButton[ Dynamic[ nbo_ ] ] :=
 	With[{(* the icon colors come from the given BaseStyle *)
     	label = toolbarButtonLabel0["New", "New",
     		{FontColor -> RGBColor["#469ECB"]},
-    		{BaseStyle -> RGBColor[0.4, 0.678, 0.824]}
+    		{BaseStyle -> RGBColor["#469ECB"]}
     	],
     	hotlabel = toolbarButtonLabel0["New", "New",
     		{FontColor -> RGBColor[1,1,1]},
@@ -215,8 +215,8 @@ toolbarButtonLabel0[ iconName_String, None, {styleopts___}, {gridopts___}] :=
     Grid[
         { { RawBoxes @ TemplateBox[ { }, "WorkspaceToolbarIcon"<>iconName ] } },
         gridopts,
-        Spacings  -> 0.5,
-        Alignment -> { Automatic, Center }
+        Spacings  -> 0.25,
+        Alignment -> { {Left, Right}, Center }
     ];
 
 toolbarButtonLabel0[ iconName_String, label_, {styleopts___}, {gridopts___}] :=
@@ -226,14 +226,15 @@ toolbarButtonLabel0[ iconName_String, label_, {styleopts___}, {gridopts___}] :=
             Style[ label, $toolbarLabelStyle, styleopts ]
         } },
         gridopts, 
-        Spacings  -> 0.5,
-        Alignment -> { Automatic, Center }
+        Spacings  -> 0.25,
+        Alignment -> { {Left, Right}, Center }
     ];
 
 toolbarButtonLabel0 // endDefinition;
 
 $toolbarButtonCommon = Sequence[
     FrameMargins   -> { { 1, 3 }, { 1, 1 } },
+    ImageMargins   -> { { 0, 0 }, { 4, 4 } },
     ImageSize      -> { Automatic, 22 },
     RoundingRadius -> 3
 ];
