@@ -828,7 +828,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3939536254"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3940147331"|>
   ],
   Cell[
    StyleData["Text"],
