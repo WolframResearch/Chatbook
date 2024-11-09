@@ -282,12 +282,15 @@ $aliasRules = <|
             "ChatNotebookSettings" -> <| "MinimumResponsesToSave" -> 2 |>
         |>
     |>,
+    "NotebookToolbarInline" -> <|
+        "DefaultObject" :> EvaluationNotebook[ ],
+        "Type"          -> "Inline",
+        "Options"       -> <| |>
+    |>,
     "NotebookToolbarWindow" -> <|
         "DefaultObject" :> EvaluationNotebook[ ],
         "Type"          -> "Window",
-        "Options"       -> <|
-            "NewChat" -> True
-        |>
+        "Options"       -> <| "NewChat" -> True |>
     |>
 |>;
 
