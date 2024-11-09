@@ -139,6 +139,10 @@ $$spacedInfixOperator = Alternatives[
     "\[RuleDelayed]", "\[TwoWayRule]"
 ];
 
+$$unspacedPrefixOperator = Alternatives[
+    "-", "+", "--", "++"
+];
+
 $delimiterString = "\n\n---\n\n";
 
 (* Characters that should be serialized as long-form representations: *)
@@ -849,6 +853,7 @@ fasterCellToString0[ boxes: RowBox @ { "(*", ___, "*)" } ] :=
 
 (* Add spacing between RowBox elements that are comma separated *)
 fasterCellToString0[ "," ] := ", ";
+fasterCellToString0[ RowBox[ { op: $$unspacedPrefixOperator, a_ } ] ] := op<>fasterCellToString0 @ a;
 fasterCellToString0[ c: $$spacedInfixOperator ] := " "<>c<>" ";
 fasterCellToString0[ RowBox[ row: { ___, ","|$$spacedInfixOperator, " ", ___ } ] ] :=
     fasterCellToString0 @ RowBox @ DeleteCases[ row, " " ];
@@ -1082,11 +1087,21 @@ toMarkdownImageBox // endDefinition;
 (* ::Subsubsubsubsection::Closed:: *)
 (*rasterizeGraphics*)
 rasterizeGraphics // beginDefinition;
-rasterizeGraphics[ gfx: $$graphicsBox ] := rasterizeGraphics[ gfx ] = checkedRasterize @ RawBoxes @ gfx;
-rasterizeGraphics[ cell_Cell ] := rasterizeGraphics[ cell, 6.25*$cellPageWidth ];
 
-rasterizeGraphics[ cell_Cell, width_Real ] := rasterizeGraphics[ cell, width ] =
-    checkedRasterize @ Append[ cell, PageWidth -> width ];
+rasterizeGraphics[ gfx: $$graphicsBox ] :=
+    If[ TrueQ @ $ChatNotebookEvaluation,
+        rasterizeGraphics[ Verbatim[ gfx ] ] = checkedRasterize @ RawBoxes @ gfx,
+        checkedRasterize @ RawBoxes @ gfx
+    ];
+
+rasterizeGraphics[ cell_Cell ] :=
+    rasterizeGraphics[ cell, 6.25*$cellPageWidth ];
+
+rasterizeGraphics[ cell_Cell, width_Real ] :=
+    If[ TrueQ @ $ChatNotebookEvaluation,
+        rasterizeGraphics[ Verbatim[ cell ], width ] = checkedRasterize @ Append[ cell, PageWidth -> width ],
+        checkedRasterize @ Append[ cell, PageWidth -> width ]
+    ];
 
 rasterizeGraphics // endDefinition;
 
@@ -1096,7 +1111,7 @@ rasterizeGraphics // endDefinition;
 checkedRasterize // beginDefinition;
 
 checkedRasterize[ expr_ ] := Quiet[
-    Check[ rasterize @ RawBoxes @ expr, Missing[ "OutOfMemory" ], Rasterize::bigraster ],
+    Check[ rasterize @ expr, Missing[ "OutOfMemory" ], Rasterize::bigraster ],
     Rasterize::bigraster
 ];
 

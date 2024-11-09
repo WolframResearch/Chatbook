@@ -1,6 +1,6 @@
 (* ::Section::Closed:: *)
 (*Package Header*)
-BeginPackage[ "Wolfram`Chatbook`ChatModes`CodeAssistanceInstructions`" ];
+BeginPackage[ "Wolfram`Chatbook`ChatModes`NotebookAssistanceInstructions`" ];
 Begin[ "`Private`" ];
 
 Needs[ "Wolfram`Chatbook`"                  ];
@@ -10,65 +10,65 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$codeAssistanceInputKeys = { "GettingStarted", "ErrorMessage" };
-$$codeAssistanceInputKey = Alternatives @@ $codeAssistanceInputKeys;
+$notebookAssistanceInputKeys = { "GettingStarted", "ErrorMessage" };
+$$notebookAssistanceInputKey = Alternatives @@ $notebookAssistanceInputKeys;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*$CodeAssistanceInputs*)
-$CodeAssistanceInputs := loadCodeAssistanceInputs[ ];
+(*$NotebookAssistanceInputs*)
+$NotebookAssistanceInputs := loadNotebookAssistanceInputs[ ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*loadCodeAssistanceInputs*)
-loadCodeAssistanceInputs // beginDefinition;
+(*loadNotebookAssistanceInputs*)
+loadNotebookAssistanceInputs // beginDefinition;
 
-loadCodeAssistanceInputs[ ] := Enclose[
+loadNotebookAssistanceInputs[ ] := Enclose[
     Module[ { as },
-        as = ConfirmBy[ AssociationMap[ loadCodeAssistanceInput, $codeAssistanceInputKeys ], AssociationQ, "Inputs" ];
+        as = ConfirmBy[ AssociationMap[ loadNotebookAssistanceInput, $notebookAssistanceInputKeys ], AssociationQ, "Inputs" ];
         WithCleanup[
-            Unprotect @ $CodeAssistanceInputs,
-            $CodeAssistanceInputs = ConfirmBy[ as, AllTrue @ StringQ, "Result" ],
-            Protect @ $CodeAssistanceInputs
+            Unprotect @ $NotebookAssistanceInputs,
+            $NotebookAssistanceInputs = ConfirmBy[ as, AllTrue @ StringQ, "Result" ],
+            Protect @ $NotebookAssistanceInputs
         ]
     ],
     throwInternalFailure
 ];
 
-loadCodeAssistanceInputs // endDefinition;
+loadNotebookAssistanceInputs // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*loadCodeAssistanceInput*)
-loadCodeAssistanceInput // beginDefinition;
+(*loadNotebookAssistanceInput*)
+loadNotebookAssistanceInput // beginDefinition;
 
-loadCodeAssistanceInput[ name: $$codeAssistanceInputKey ] := Enclose[
+loadNotebookAssistanceInput[ name: $$notebookAssistanceInputKey ] := Enclose[
     usingFrontEnd @ ConfirmBy[
-        trRaw[ "CodeAssistanceInput"<>name ],
+        trRaw[ "NotebookAssistanceInput"<>name ],
         StringQ,
-        "LoadCodeAssistanceInput"
+        "LoadNotebookAssistanceInput"
     ],
     throwInternalFailure
 ];
 
-loadCodeAssistanceInput // endDefinition;
+loadNotebookAssistanceInput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*getCodeAssistanceInput*)
-getCodeAssistanceInput // beginDefinition;
+(*getNotebookAssistanceInput*)
+getNotebookAssistanceInput // beginDefinition;
 
-getCodeAssistanceInput[ name_String ] := Enclose[
+getNotebookAssistanceInput[ name_String ] := Enclose[
     Module[ { inputs, result },
-        inputs = ConfirmBy[ $CodeAssistanceInputs, AssociationQ, "Inputs" ];
+        inputs = ConfirmBy[ $NotebookAssistanceInputs, AssociationQ, "Inputs" ];
         result = ConfirmMatch[ Lookup[ inputs, name ], _Missing | $$string, "Result" ];
-        If[ StringQ @ result, needsBasePrompt[ "CodeAssistance"<>name ] ];
+        If[ StringQ @ result, needsBasePrompt[ "NotebookAssistance"<>name ] ];
         result
     ],
     throwInternalFailure
 ];
 
-getCodeAssistanceInput // endDefinition;
+getNotebookAssistanceInput // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
