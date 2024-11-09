@@ -9,7 +9,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$llmSynthesizeAuthentication := If[ TrueQ @ $llmKit, "LLMKit", Automatic ];
+$llmSynthesizeAuthentication := If[ TrueQ @ $llmKit && StringQ @ $llmKitService, "LLMKit", Automatic ];
 
 $defaultLLMSynthesizeEvaluator :=
     If[ TrueQ @ $llmKit && StringQ @ $llmKitService,
