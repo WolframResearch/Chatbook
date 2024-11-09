@@ -17,10 +17,15 @@ $searchIndexVersion = 1;
 (* ::Section::Closed:: *)
 (*SearchChats*)
 SearchChats // beginDefinition;
-SearchChats // Options = { MaxItems -> 10 };
+SearchChats // Options = { "CacheEmbeddings" -> False, MaxItems -> 10 };
 
 SearchChats[ app: _String|All, query_String, opts: OptionsPattern[ ] ] :=
-    catchMine @ LogChatTiming @ searchChats[ app, query, OptionValue[ MaxItems ] ];
+    catchMine @ LogChatTiming @ searchChats[
+        app,
+        query,
+        OptionValue[ MaxItems ],
+        OptionValue[ "CacheEmbeddings" ]
+    ];
 
 SearchChats[ query_String, opts: OptionsPattern[ ] ] :=
     catchMine @ SearchChats[ All, query, opts ];
@@ -32,7 +37,7 @@ SearchChats // endDefinition;
 (*searchChats*)
 searchChats // beginDefinition;
 
-searchChats[ appName_String, query_String, max_? Positive ] := Enclose[
+searchChats[ appName_String, query_String, max_? Positive, cache_ ] := Enclose[
     Catch @ Module[ { index, flat, values, vectors, embedding, idx, results },
 
         If[ query === "", Throw @ { } ];
@@ -47,7 +52,11 @@ searchChats[ appName_String, query_String, max_? Positive ] := Enclose[
 
         { values, vectors } = ConfirmMatch[ Transpose @ flat, { _, _ }, "Transpose" ];
 
-        embedding = ConfirmBy[ getEmbedding[ query, "CacheEmbeddings" -> False ], NumericArrayQ, "Embedding" ];
+        embedding = ConfirmBy[
+            getEmbedding[ query, "CacheEmbeddings" -> TrueQ @ cache ],
+            NumericArrayQ,
+            "Embedding"
+        ];
 
         idx = ConfirmMatch[
             Nearest[ Normal @ vectors -> "Index", Normal @ embedding, Floor[ 2*max+1 ] ],
@@ -89,7 +98,7 @@ addChatToSearchIndex[ spec_ ] := Enclose[
     Catch @ Module[ { data, appName, uuid, vectors, metadata },
         If[ $noSemanticSearch, Throw @ Missing[ "NoSemanticSearch" ] ];
         data = ConfirmMatch[ getChatConversationData @ spec, _Association|_Missing, "Data" ];
-        If[ MissingQ @ data, Throw @ Missing[ "NotSaved" ] ]; (* TODO: auto-save here? *)
+        If[ MissingQ @ data, Throw @ data ]; (* TODO: auto-save here? *)
         appName = ConfirmBy[ data[ "AppName" ], StringQ, "AppName" ];
         uuid = ConfirmBy[ data[ "ConversationUUID" ], StringQ, "ConversationUUID" ];
         vectors = ConfirmMatch[ data[ "Vectors" ], { ___NumericArray }, "Vectors" ];
