@@ -42,7 +42,8 @@ $$conversationFullData = KeyValuePattern @ {
     "Version"           -> $savedChatDataVersion
 };
 
-$$legacyData = KeyValuePattern[ "Version" -> _? (LessThan @ $savedChatDataVersion ) ];
+$$legacyData       = KeyValuePattern[ "Version" -> _? (LessThan @ $savedChatDataVersion ) ];
+$$incompatibleData = KeyValuePattern[ "Version" -> _? (GreaterThan @ $savedChatDataVersion ) ];
 
 $$appSpec = $$string | All | _NotebookObject;
 
@@ -90,7 +91,11 @@ listSavedChats[ appSpec: $$appSpec, maxItems_? Positive ] := Enclose[
         sorted = If[ StringQ @ appName, Reverse @ files, ReverseSortBy[ files, FileNameTake[ #, { -2 } ] & ] ];
         take = ConfirmMatch[ Take[ sorted, UpTo @ Floor @ maxItems ], { ___String }, "Take" ];
 
-        ConfirmMatch[ readChatMetaFile /@ take, { ___Association }, "Metadata" ]
+        ConfirmMatch[
+            DeleteCases[ readChatMetaFile /@ take, Missing[ "IncompatibleData" ] ],
+            { ___Association },
+            "Metadata"
+        ]
     ],
     throwInternalFailure
 ];
@@ -142,6 +147,7 @@ loadChat // beginDefinition;
 loadChat[ as_Association ] := Enclose[
     Catch @ Module[ { data },
         data = ConfirmMatch[ getChatConversationData @ as, $$conversationFullData|_Missing, "Data" ];
+        If[ data === Missing[ "IncompatibleData" ], Throw @ data ];
         If[ MissingQ @ data, RemoveChatFromSearchIndex @ as; Throw @ data ];
         ConfirmBy[ restoreAttachments @ data, AssociationQ, "RestoreAttachments" ];
         data
@@ -733,6 +739,7 @@ generateTitleCached0 // endDefinition;
 checkChatDataVersion // beginDefinition;
 checkChatDataVersion[ as: $$conversationData ] := as;
 checkChatDataVersion[ as: $$legacyData ] := upgradeChatData @ as;
+checkChatDataVersion[ as: $$incompatibleData ] := Missing[ "IncompatibleData" ];
 checkChatDataVersion // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -747,6 +754,7 @@ upgradeChatData[ as: KeyValuePattern[ "Version" -> oldVersion_Integer ] ] := Enc
         newVersion = ConfirmMatch[ upgraded[ "Version" ], _Integer, "NewVersion" ];
         ConfirmAssert[ oldVersion < newVersion <= $savedChatDataVersion, "NewVersionCheck" ];
         If[ newVersion === $savedChatDataVersion,
+            AddChatToSearchIndex @ upgraded;
             upgraded,
             upgradeChatData @ upgraded
         ]
