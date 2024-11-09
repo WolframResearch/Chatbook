@@ -201,6 +201,7 @@
 "MenuItemShowContentSuggestions" -> "AI\:C5D0 \:C758\:D55C \:CF58\:D150\:CE20 \:C81C\:C548",
 
 "WorkspaceWindowTitle" -> "Notebook Assistant",
+"WorkspaceToolbarButtonLabelHistory" -> "History",
 "WorkspaceToolbarButtonLabelSources" -> "\:CD9C\:CC98",
 "WorkspaceToolbarButtonLabelNew" -> "\:C2E0\:ADDC",
 "WorkspaceToolbarButtonTooltipHistory" -> "\:B300\:D654 \:AD00\:B9AC",

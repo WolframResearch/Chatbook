@@ -828,7 +828,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3940147331"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3940148324"|>
   ],
   Cell[
    StyleData["Text"],
@@ -14045,76 +14045,71 @@ Notebook[
      (Function[
       GraphicsBox[
        {
-        Thickness[0.058824],
-        StyleBox[
+        Thickness[0.0588235],
+        FilledCurveBox[
          {
-          FilledCurveBox[
-           {
-            {
-             {0, 2, 0},
-             {0, 1, 0},
-             {0, 1, 0},
-             {0, 1, 0},
-             {0, 1, 0},
-             {0, 1, 0},
-             {0, 1, 0},
-             {0, 1, 0},
-             {0, 1, 0},
-             {0, 1, 0},
-             {0, 1, 0},
-             {0, 1, 0}
-            },
-            {
-             {0, 2, 0},
-             {0, 1, 0},
-             {0, 1, 0},
-             {0, 1, 0},
-             {0, 1, 0},
-             {0, 1, 0},
-             {1, 3, 3},
-             {0, 1, 0},
-             {1, 3, 3},
-             {0, 1, 0},
-             {1, 3, 3},
-             {0, 1, 0},
-             {0, 1, 0},
-             {0, 1, 0},
-             {0, 1, 0},
-             {0, 1, 0},
-             {0, 1, 0},
-             {0, 1, 0},
-             {0, 1, 0}
-            }
-           },
-           {
-            {
-             {14.0, 5.0},
-             {14.0, 8.0},
-             {12.0, 8.0},
-             {12.0, 5.0},
-             {9.0, 5.0},
-             {9.0, 3.0},
-             {12.0, 3.0},
-             {12.0, 0.0},
-             {14.0, 0.0},
-             {14.0, 3.0},
-             {17.0, 3.0},
-             {17.0, 5.0},
-             {14.0, 5.0}
-            },
-            CompressedData[
-             "\n1:eJxTTMoPSmViYGCQAmIQnWJ9379XXMqBAQxEoLQCDr6Aw6+6rD0lwtJwPoTm\ngNIf7FH5Ag4+5p2OCU9f2MP4Qs0HTi10vWaPqp+BAawuVRDOf6lmyLFGRhjO\n7855/ntloRacD+R9vOSrjWaeDpp9Og6o+nQcYPpgfFzi6PogtBKU1sLBh9Gw\ncEDnizg8rBJZ5/6Q3wE7n8MBPT4AEYFQVA==\n        "
-            ]
-           }
-          ]
+          {
+           {0, 2, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0}
+          },
+          {
+           {1, 4, 3},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {1, 3, 3},
+           {0, 1, 0},
+           {1, 3, 3},
+           {0, 1, 0}
+          }
          },
-         {FaceForm[RGBColor[1.0, 1.0, 1.0, 1.0]]},
-         StripOnInput -> False
+         {
+          {
+           {14.0, 8.0},
+           {14.0, 5.0},
+           {17.0, 5.0},
+           {17.0, 3.0},
+           {14.0, 3.0},
+           {14.0, 0.0},
+           {12.0, 0.0},
+           {12.0, 3.0},
+           {9.0, 3.0},
+           {9.0, 5.0},
+           {12.0, 5.0},
+           {12.0, 8.0},
+           {14.0, 8.0}
+          },
+          CompressedData[
+           "\n1:eJxTTMoPSmViYGCQAmIQDQR/VhZqOUCYOiD60yVfbWQ+jP6AJv4BTR8QKEFp\nLRx8GP3BHjtfBMRvcH/I74CdzwGiHXrFpZDlgUABB18ARB8oEZZG5sPMQbKX\nA0U+4ekLe2T+AtdrKHwoCEhIFUTmM6yREUbmI4UPhA8LP4R5Omj2gfko8QEA\nLWkzDA==\n      "
+          ]
+         }
         ]
        },
-       ImageSize -> {17.0, 14.0},
-       PlotRange -> {{0.0, 17.0}, {0.0, 14.0}},
-       AspectRatio -> Automatic
+       ImageSize -> {22.0, 20.0},
+       PlotRange -> {{-5.0, 17.0}, {-3, 17}},
+       AspectRatio -> Automatic,
+       DefaultBaseStyle -> { }
       ]
      ])
    }

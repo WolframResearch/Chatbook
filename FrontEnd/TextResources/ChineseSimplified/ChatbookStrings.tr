@@ -200,6 +200,7 @@
 "MenuItemShowContentSuggestions" -> "AI \:5185\:5BB9\:5EFA\:8BAE",
 
 "WorkspaceWindowTitle" -> "\:7B14\:8BB0\:672C\:52A9\:624B",
+"WorkspaceToolbarButtonLabelHistory" -> "History",
 "WorkspaceToolbarButtonLabelSources" -> "\:8D44\:6E90",
 "WorkspaceToolbarButtonLabelNew" -> "\:65B0\:5BF9\:8BDD",
 "WorkspaceToolbarButtonTooltipHistory" -> "\:7BA1\:7406\:5BF9\:8BDD",
