@@ -65,6 +65,8 @@ Cell[
     CellFrame             -> 0,
     CellFrameLabelMargins -> -15,
     CellMargins           -> { { 15, 15 }, { 5, 10 } },
+    FrameBoxOptions       -> { BaselinePosition -> Baseline },
+    PaneBoxOptions        -> { BaselinePosition -> Baseline },
     Selectable            -> False,
     ShowCellBracket       -> False,
     CellFrameLabels       -> {
@@ -79,7 +81,8 @@ Cell[
                     ],
                     SingleEvaluation -> True
                 ],
-                Background -> None
+                Background   -> None,
+                CellBaseline -> Baseline
             ]
         },
         { None, None }
@@ -96,7 +99,9 @@ Cell[
     CellFrame             -> 0,
     CellFrameLabelMargins -> -5,
     CellMargins           -> { { 10, 15 }, { 25, 12 } },
+    FrameBoxOptions       -> { BaselinePosition -> Baseline },
     Initialization        -> None,
+    PaneBoxOptions        -> { BaselinePosition -> Baseline },
     Selectable            -> False,
     ShowCellBracket       -> False,
     CellFrameLabels       -> {
@@ -110,7 +115,8 @@ Cell[
                     ],
                     SingleEvaluation -> True
                 ],
-                Background -> None
+                Background   -> None,
+                CellBaseline -> Baseline
             ],
             None
         },
