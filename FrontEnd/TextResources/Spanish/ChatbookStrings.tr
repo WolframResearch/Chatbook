@@ -200,6 +200,7 @@
 "MenuItemShowContentSuggestions" -> "Sugerencia de contenido de IA",
 
 "WorkspaceWindowTitle" -> "Asistente de cuadernos",
+"WorkspaceToolbarButtonLabelHistory" -> "History",
 "WorkspaceToolbarButtonLabelSources" -> "Fuentes",
 "WorkspaceToolbarButtonLabelNew" -> "Nuevo",
 "WorkspaceToolbarButtonTooltipHistory" -> "Administrar conversaciones",
