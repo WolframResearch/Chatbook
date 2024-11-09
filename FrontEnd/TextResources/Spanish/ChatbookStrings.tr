@@ -58,9 +58,9 @@
 "FeedbackDialogBodyPreviewData" -> "Previsualizar datos a enviar",
 "FeedbackDialogThanks" -> "\[DownExclamation]Gracias por sus comentarios!",
 
-"FormattingInsertContentAndEvaluateLabel" -> "Insert and evaluate",
-"FormattingCopyToClipboardLabel" -> "Copy",
-"FormattingInsertContentLabel" -> "Insert",
+"FormattingInsertContentAndEvaluateLabel" -> "Insertar y evaluar",
+"FormattingCopyToClipboardLabel" -> "Copiar",
+"FormattingInsertContentLabel" -> "Insertar",
 "FormattingInsertContentAndEvaluateTooltip" -> "Insertar contenido como una nueva celda de entrada debajo y evaluar",
 "FormattingCopyToClipboardTooltip" -> "Copiar al portapapeles",
 "FormattingInsertContentTooltip" -> "Insertar contenido como una nueva celda de entrada debajo",
@@ -120,14 +120,14 @@
 "PreferencesContentAuthentication" -> "Autenticaci\[OAcute]n",
 "PreferencesContentUnregisterTooltip" -> "Cancelar registro de conexi\[OAcute]n de servicio",
 "PreferencesContentOpenAICompletionURLLabel" -> "URL de finalizaci\[OAcute]n de chat:",
-"PreferencesContentLLMKitTitle" -> "Wolfram Notebook Assistant + LLM Kit",
+"PreferencesContentLLMKitTitle" -> "Asistente de cuadernos Wolfram + Kit LLM",
 "PreferencesContentLLMKitSubscribeButton" -> "Suscr\[IAcute]base",
 "PreferencesContentLLMKitLearnMoreTooltip" -> "M\[AAcute]s informaci\[OAcute]n\[Ellipsis]",
 "PreferencesContentLLMKitSubscriptionRequired" -> "El Kit LLM Kit requiere de una suscripci\[OAcute]n",
 "PreferencesContentLLMKitNoSubscription" -> "No se encontr\[OAcute] una suscripci\[OAcute]n al Kit LLM",
 "PreferencesContentLLMKitSignInOr" -> "o",
 "PreferencesContentLLMKitSignInButton" -> "Inicie sesi\[OAcute]n para utilizar una suscripci\[OAcute]n existente \[RightGuillemet]",
-"PreferencesContentLLMKitEnabledTitle" -> "Notebook Assistant + LLM Kit Essentials",
+"PreferencesContentLLMKitEnabledTitle" -> "Asistente de cuadernos + Elementos esenciales del Kit LLM",
 "PreferencesContentLLMKitEnabledManage" -> "Administre su suscripci\[OAcute]n \[RightGuillemet]",
 
 "ResourceInstallerFromURLPrompt" -> "Ingrese un enlace URL",
@@ -188,31 +188,31 @@
 "PersonaNameBirdnardo" -> "Birdnardo",
 "PersonaNameCodeAssistant" -> "Asistente de c\[OAcute]digo",
 "PersonaNameCodeWriter" -> "Escritor de c\[OAcute]digo",
-"PersonaNameNotebookAssistant" -> "Notebook Assistant",
+"PersonaNameNotebookAssistant" -> "Asistente de cuadernos",
 "PersonaNamePlainChat" -> "Chat simple",
 "PersonaNameRawModel" -> "Modelo sin procesar",
 "PersonaNameWolfie" -> "Wolfie",
 
 "AttachedChatFieldHint" -> "Preg\[UAcute]ntame lo que sea",
 
-"MenuItemShowCodeAssistanceWindow" -> "Notebook Assistant Chat\[Ellipsis]",
-"MenuItemShowCodeAssistanceInline" -> "Notebook Assistant for Selection",
+"MenuItemShowNotebookAssistanceWindow" -> "Chat del asistente de cuadernos\[Ellipsis]",
+"MenuItemShowNotebookAssistanceInline" -> "Asistente de cuadernos para la selecci\[OAcute]n",
 "MenuItemShowContentSuggestions" -> "Sugerencia de contenido de IA",
 
-"WorkspaceWindowTitle" -> "Notebook Assistant",
+"WorkspaceWindowTitle" -> "Asistente de cuadernos",
 "WorkspaceToolbarButtonLabelHistory" -> "History",
 "WorkspaceToolbarButtonLabelSources" -> "Fuentes",
 "WorkspaceToolbarButtonLabelNew" -> "Nuevo",
 "WorkspaceToolbarButtonTooltipHistory" -> "Administrar conversaciones",
 "WorkspaceToolbarButtonTooltipSources" -> "Agregar material de origen adicional al contexto del chat",
 "WorkspaceToolbarButtonTooltipNew" -> "Iniciar una nueva conversaci\[OAcute]n",
-"WorkspaceSourcesOpenNotebooks" -> "Open Notebooks",
+"WorkspaceSourcesOpenNotebooks" -> "Abrir cuadernos",
 
-"InlineChatButtonTooltipClose" -> "Close",
-"InlineChatButtonTooltipViewCodeAssist" -> "View in Code Assistance Chat",
+"InlineChatButtonTooltipClose" -> "Cerrar",
+"InlineChatButtonTooltipViewNotebookAssist" -> "Ver en chat de asistencia de cuadernos",
 
-"CodeAssistanceInputGettingStarted" -> "Ay\[UAcute]dame a comenzar",
-"CodeAssistanceInputErrorMessage" -> "\[DownQuestion]Qu\[EAcute] sali\[OAcute] mal?"
+"NotebookAssistanceInputGettingStarted" -> "Ay\[UAcute]dame a comenzar",
+"NotebookAssistanceInputErrorMessage" -> "\[DownQuestion]Qu\[EAcute] sali\[OAcute] mal?"
 }
 @|
 @|

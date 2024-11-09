@@ -668,7 +668,7 @@ popOutButton[ cell_CellObject, messageCells_Dynamic ] := ToBoxes @ Button[
     NotebookDelete @ cell;
     popOutWorkspaceChatNB @ messageCells,
     Appearance -> "Suppressed",
-    Tooltip    -> ToBoxes @ tr["InlineChatButtonTooltipViewCodeAssist"]
+    Tooltip    -> ToBoxes @ tr["InlineChatButtonTooltipViewNotebookAssist"]
 ];
 
 popOutButton // endDefinition;

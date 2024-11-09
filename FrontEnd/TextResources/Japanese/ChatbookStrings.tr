@@ -195,8 +195,8 @@
 
 "AttachedChatFieldHint" -> "\:4f55\:3067\:3082\:805e\:3044\:3066\:304f\:3060\:3055\:3044",
 
-"MenuItemShowCodeAssistanceWindow" -> "Notebook Assistant Chat\[Ellipsis]",
-"MenuItemShowCodeAssistanceInline" -> "Notebook Assistant for Selection",
+"MenuItemShowNotebookAssistanceWindow" -> "Notebook Assistant Chat\[Ellipsis]",
+"MenuItemShowNotebookAssistanceInline" -> "Notebook Assistant for Selection",
 "MenuItemShowContentSuggestions" -> "AI\:306B\:3088\:308B\:30B3\:30F3\:30C6\:30F3\:30C4\:306E\:63D0\:6848",
 
 "WorkspaceWindowTitle" -> "Notebook Assistant",
@@ -209,10 +209,10 @@
 "WorkspaceSourcesOpenNotebooks" -> "Open Notebooks",
 
 "InlineChatButtonTooltipClose" -> "Close",
-"InlineChatButtonTooltipViewCodeAssist" -> "View in Code Assistance Chat",
+"InlineChatButtonTooltipViewNotebookAssist" -> "View in Notebook Assistance Chat",
 
-"CodeAssistanceInputGettingStarted" -> "\:3069\:306E\:3088\:3046\:306B\:59CB\:3081\:307E\:3057\:3087\:3046\:304B\:FF1F",
-"CodeAssistanceInputErrorMessage" -> "\:4F55\:304C\:9593\:9055\:3063\:3066\:3044\:307E\:3057\:305F\:304B\:FF1F"
+"NotebookAssistanceInputGettingStarted" -> "\:3069\:306E\:3088\:3046\:306B\:59CB\:3081\:307E\:3057\:3087\:3046\:304B\:FF1F",
+"NotebookAssistanceInputErrorMessage" -> "\:4F55\:304C\:9593\:9055\:3063\:3066\:3044\:307E\:3057\:305F\:304B\:FF1F"
 }
 @|
 @|
