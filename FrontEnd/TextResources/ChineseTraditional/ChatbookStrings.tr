@@ -58,15 +58,15 @@
 "FeedbackDialogBodyPreviewData" -> "\:9810\:89BD\:8CC7\:6599\:5C07\:6703\:88AB\:767C\:9001",
 "FeedbackDialogThanks" -> "\:611F\:8B1D\:60A8\:7684\:56DE\:994B\:FF01",
 
-"FormattingInsertContentAndEvaluateLabel" -> "Insert and evaluate",
-"FormattingCopyToClipboardLabel" -> "Copy",
-"FormattingInsertContentLabel" -> "Insert",
+"FormattingInsertContentAndEvaluateLabel" -> "\:63D2\:5165\:4E26\:8A08\:7B97",
+"FormattingCopyToClipboardLabel" -> "\:8907\:88FD",
+"FormattingInsertContentLabel" -> "\:63D2\:5165",
 "FormattingInsertContentAndEvaluateTooltip" -> "\:63D2\:5165\:5982\:540C\:5728\:4E0B\:65B9\:65B0\:589E\:8F38\:5165\:5132\:5B58\:683C\:7684\:5167\:5BB9\:4E26\:9032\:884C\:8A08\:7B97",
 "FormattingCopyToClipboardTooltip" -> "\:8907\:88FD\:81F3\:526A\:8CBC\:7C3F",
 "FormattingInsertContentTooltip" -> "\:63D2\:5165\:5982\:540C\:5728\:4E0B\:65B9\:65B0\:589E\:8F38\:5165\:5132\:5B58\:683C\:7684\:5167\:5BB9",
-"FormattingToolUsing" -> "Using ",
-"FormattingToolUsed" -> "Used ",
-"FormattingToolUsingLoading" -> "Using tool\[Ellipsis]",
+"FormattingToolUsing" -> "\:6B63\:5728\:4F7F\:7528 ",
+"FormattingToolUsed" -> "\:5DF2\:4F7F\:7528 ",
+"FormattingToolUsingLoading" -> "\:4F7F\:7528\:4E2D\:7684\:5DE5\:5177\[Ellipsis]",
 
 "InlineReferencesFieldHint" -> "\:63D0\:793A\:540D\:7A31",
 "InlineReferencesInsertLabel" -> "\:63D2\:5165\:FF1A",
@@ -120,14 +120,14 @@
 "PreferencesContentAuthentication" -> "\:9A57\:8B49",
 "PreferencesContentUnregisterTooltip" -> "\:672A\:8A3B\:518A\:670D\:52D9\:9023\:63A5",
 "PreferencesContentOpenAICompletionURLLabel" -> "\:7DB2\:8DEF\:804A\:5929\:7CFB\:7D71\:5BE6\:73FE\:7DB2\:5740\:FF1A",
-"PreferencesContentLLMKitTitle" -> "Wolfram Notebook Assistant + LLM Kit",
+"PreferencesContentLLMKitTitle" -> "Wolfram \:7B46\:8A18\:672C\:5C0F\:5E6B\:624B + LLM \:5957\:4EF6",
 "PreferencesContentLLMKitSubscribeButton" -> "\:8A02\:95B1",
 "PreferencesContentLLMKitLearnMoreTooltip" -> "\:5B78\:7FD2\:66F4\:591A\[Ellipsis]",
 "PreferencesContentLLMKitSubscriptionRequired" -> "\:9700\:8981\:8A02\:95B1\:624D\:80FD\:4F7F\:7528 LLM \:5957\:4EF6",
 "PreferencesContentLLMKitNoSubscription" -> "\:672A\:627E\:5230 LLM \:5957\:4EF6\:8A02\:95B1\:8CC7\:8A0A",
 "PreferencesContentLLMKitSignInOr" -> "\:6216",
 "PreferencesContentLLMKitSignInButton" -> "\:767B\:5165\:4EE5\:5229\:4F7F\:7528\:73FE\:5B58\:7684\:8A02\:95B1 \[RightGuillemet]",
-"PreferencesContentLLMKitEnabledTitle" -> "Notebook Assistant + LLM Kit Essentials",
+"PreferencesContentLLMKitEnabledTitle" -> "\:7B46\:8A18\:672C\:5C0F\:5E6B\:624B + LLM \:5957\:4EF6\:7CBE\:8981",
 "PreferencesContentLLMKitEnabledManage" -> "\:7BA1\:7406\:60A8\:7684\:8A02\:95B1 \[RightGuillemet]",
 
 "ResourceInstallerFromURLPrompt" -> "\:8F38\:5165\:7DB2\:5740",
@@ -188,30 +188,30 @@
 "PersonaNameBirdnardo" -> "Birdnardo",
 "PersonaNameCodeAssistant" -> "\:7DE8\:78BC\:5C0F\:5E6B\:624B",
 "PersonaNameCodeWriter" -> "\:7DE8\:78BC\:64B0\:5BEB\:5668",
-"PersonaNameNotebookAssistant" -> "Notebook Assistant",
+"PersonaNameNotebookAssistant" -> "\:7B46\:8A18\:672C\:5C0F\:5E6B\:624B",
 "PersonaNamePlainChat" ->"\:76F4\:7387\:5F0F\:7DB2\:8DEF\:804A\:5929\:7CFB\:7D71",
 "PersonaNameRawModel" -> "\:539F\:751F\:6A21\:578B",
 "PersonaNameWolfie" -> "Wolfie",
 
 "AttachedChatFieldHint" -> "\:6B61\:8FCE\:8A62\:554F\:4EFB\:4F55\:4E8B\:60C5",
 
-"MenuItemShowCodeAssistanceWindow" -> "Notebook Assistant Chat\[Ellipsis]",
-"MenuItemShowCodeAssistanceInline" -> "Notebook Assistant for Selection",
+"MenuItemShowNotebookAssistanceWindow" -> "\:7B46\:8A18\:672C\:5C0F\:5E6B\:624B\:804A\:5929\:7CFB\:7D71\[Ellipsis]",
+"MenuItemShowNotebookAssistanceInline" -> "\:91DD\:5C0D\:9078\:53D6\:90E8\:5206\:7684\:7B46\:8A18\:672C\:5C0F\:5E6B\:624B",
 "MenuItemShowContentSuggestions" -> "AI \:5167\:5BB9\:5EFA\:8B70",
 
-"WorkspaceWindowTitle" -> "Notebook Assistant",
+"WorkspaceWindowTitle" -> "\:7B46\:8A18\:672C\:5C0F\:5E6B\:624B",
 "WorkspaceToolbarButtonLabelSources" -> "\:8CC7\:6E90",
 "WorkspaceToolbarButtonLabelNew" -> "\:65B0\:589E",
 "WorkspaceToolbarButtonTooltipHistory" -> "\:7BA1\:7406\:6703\:8A71",
 "WorkspaceToolbarButtonTooltipSources" -> "\:589E\:6DFB\:984D\:5916\:4F86\:6E90\:8CC7\:6599\:81F3\:804A\:5929\:7CFB\:7D71\:4E0A\:4E0B\:6587",
 "WorkspaceToolbarButtonTooltipNew" -> "\:958B\:59CB\:65B0\:589E\:6703\:8A71",
-"WorkspaceSourcesOpenNotebooks" -> "Open Notebooks",
+"WorkspaceSourcesOpenNotebooks" -> "\:958B\:555F\:7B46\:8A18\:672C",
 
-"InlineChatButtonTooltipClose" -> "Close",
-"InlineChatButtonTooltipViewCodeAssist" -> "View in Code Assistance Chat",
+"InlineChatButtonTooltipClose" -> "\:95DC\:9589",
+"InlineChatButtonTooltipViewNotebookAssist" -> "\:7DE8\:78BC\:5C0F\:5E6B\:624B\:804A\:5929\:7CFB\:7D71\:4E2D\:7684\:8996\:5716",
 
-"CodeAssistanceInputGettingStarted" -> "\:6C42\:52A9\:5982\:4F55\:958B\:59CB",
-"CodeAssistanceInputErrorMessage" -> "\:54EA\:88E1\:51FA\:4E86\:554F\:984C\:FF1F"
+"NotebookAssistanceInputGettingStarted" -> "\:6C42\:52A9\:5982\:4F55\:958B\:59CB",
+"NotebookAssistanceInputErrorMessage" -> "\:54EA\:88E1\:51FA\:4E86\:554F\:984C\:FF1F"
 }
 @|
 @|

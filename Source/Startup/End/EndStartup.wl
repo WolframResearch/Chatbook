@@ -4,9 +4,9 @@
 *)
 {$Context, $ContextPath, $ContextAliases} = Wolfram`ChatbookStartupDump`$ContextInfo;
 
-(*--------------------------------*)
-(* Adds Help > Code Assistance... *)
-(*--------------------------------*)
-If[ $Notebooks, Once[ Wolfram`Chatbook`EnableCodeAssistance[ ], "FrontEndSession" ] ];
+(*------------------------------------*)
+(* Adds Help > Notebook Assistance... *)
+(*------------------------------------*)
+If[ $Notebooks, Once[ Wolfram`Chatbook`EnableNotebookAssistance[ ], "FrontEndSession" ] ];
 
 Wolfram`ChatbookStartupDump`$loadTime = SessionTime[ ] - Wolfram`ChatbookStartupDump`$loadStart;
