@@ -166,7 +166,7 @@ ShowNotebookAssistance[] shows code assistance in a new or existing window.
 ShowNotebookAssistance[\"type$\"] shows code assistance of the specified type for the currently selected notebook.
 ShowNotebookAssistance[obj$, \"type$\"] shows code assistance of the specified type for the given front end object obj$.
 
-* The value for \"type$\" can be \"Window\", \"Inline\", or Automatic.
+* The value for \"type$\" can be \"Window\", \"Inline\", Automatic, or a string representing a predefined configuration.
 * The value for obj$ can be a NotebookObject or a CellObject.
 * The default value for \"type$\" is \"Window\" when obj$ is a NotebookObject, and \"Inline\" for a CellObject.
 * ShowNotebookAssistance accepts the following options:
@@ -280,6 +280,13 @@ $aliasRules = <|
             "EvaluateInput"        -> True,
             "NewChat"              -> True,
             "ChatNotebookSettings" -> <| "MinimumResponsesToSave" -> 2 |>
+        |>
+    |>,
+    "NotebookToolbarWindow" -> <|
+        "DefaultObject" :> EvaluationNotebook[ ],
+        "Type"          -> "Window",
+        "Options"       -> <|
+            "NewChat" -> True
         |>
     |>
 |>;
