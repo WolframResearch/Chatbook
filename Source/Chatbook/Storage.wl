@@ -15,7 +15,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $maxTitleGenerationMessages = 10; (* 5 input/output pairs *)
-$savedChatDataVersion       = 2;
+$savedChatDataVersion       = 3;
 $rootStorageName            = "SavedChats";
 $defaultConversationTitle   = "Untitled Chat";
 $maxChatItems               = Infinity;
@@ -759,6 +759,7 @@ upgradeChatData // endDefinition;
 
 upgradeChatData0 // beginDefinition;
 upgradeChatData0[ 1, as_Association ] := upgradeChatData1 @ as;
+upgradeChatData0[ 2, as_Association ] := upgradeChatData2 @ as;
 upgradeChatData0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -802,6 +803,50 @@ upgradeChatData1[ metadata_Association ] := Enclose[
 ];
 
 upgradeChatData1 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*Update from version 2*)
+
+(* Renames "CodeAssistance" to "NotebookAssistance": *)
+upgradeChatData2 // beginDefinition;
+
+upgradeChatData2[ metadata_Association ] := Enclose[
+    Catch @ Module[ { appName, directory, file, data, newData, newMeta },
+
+        appName = ConfirmBy[
+            Replace[ metadata[ "AppName" ], "CodeAssistance" -> "NotebookAssistance" ],
+            StringQ,
+            "AppName"
+        ];
+
+        directory = ConfirmBy[ targetDirectory[ appName, metadata ], DirectoryQ, "Directory" ];
+        file      = ConfirmBy[ FileNameJoin @ { directory, "data.wxf" }, FileExistsQ, "File" ];
+        data      = ConfirmBy[ Developer`ReadWXFFile @ file, AssociationQ, "Data" ];
+        newData   = ConfirmBy[ <| data, "AppName" -> appName, "Version" -> 3 |>, AssociationQ, "NewData" ];
+        newMeta   = ConfirmBy[ <| metadata, "AppName" -> appName, "Version" -> 3 |>, AssociationQ, "NewMetadata" ];
+
+        ConfirmBy[
+            saveChatFile[ "metadata", newMeta, directory ],
+            FileExistsQ,
+            "SaveMetadata"
+        ];
+
+        ConfirmBy[
+            saveChatFile[ "data", newData, directory, PerformanceGoal -> "Size" ],
+            FileExistsQ,
+            "SaveMessages"
+        ];
+
+        If[ KeyExistsQ[ metadata, "Messages" ],
+            newData,
+            newMeta
+        ]
+    ],
+    throwInternalFailure
+];
+
+upgradeChatData2 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
