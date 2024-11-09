@@ -10,9 +10,17 @@ Needs[ "Wolfram`Chatbook`PromptGenerators`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$documentationSnippetBaseURL = "https://www.wolframcloud.com/obj/wolframai-content/DocumentationSnippets/Text";
+$snippetType                 = "Text";
+$documentationSnippetVersion = "14-1-0-10549042";
+$baseURL                     = "https://www.wolframcloud.com/obj/wolframai-content/DocumentationSnippets";
+$documentationSnippetBaseURL = URLBuild @ { $baseURL, $documentationSnippetVersion, $snippetType };
+$resourceSnippetBaseURL      = URLBuild @ { $baseURL, "Resources", $snippetType };
 
-$snippetsCacheDirectory := $snippetsCacheDirectory = ChatbookFilesDirectory[ "DocumentationSnippets" ];
+$documentationSnippetsCacheDirectory := $documentationSnippetsCacheDirectory =
+    ChatbookFilesDirectory @ { "DocumentationSnippets", "Documentation", $documentationSnippetVersion };
+
+$resourceSnippetsCacheDirectory := $resourceSnippetsCacheDirectory =
+    ChatbookFilesDirectory @ { "DocumentationSnippets", "ResourceSystem" };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -385,13 +393,21 @@ snippetCacheFile[ uri_String ] /; StringStartsQ[ uri, "https://resources.wolfram
 snippetCacheFile[ uri_String, path0_String, name_String ] := Enclose[
     Module[ { path, file },
         path = ConfirmBy[ StringTrim[ path0, "/" ] <> ".wxf", StringQ, "Path" ];
-        file = ConfirmBy[ FileNameJoin @ { $snippetsCacheDirectory, name, path }, StringQ, "File" ];
+        file = ConfirmBy[ FileNameJoin @ { snippetCacheDirectory @ name, path }, StringQ, "File" ];
         snippetCacheFile[ uri ] = file
     ],
     throwInternalFailure
 ];
 
 snippetCacheFile // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*snippetCacheDirectory*)
+snippetCacheDirectory // beginDefinition;
+snippetCacheDirectory[ "Documentation"  ] := $documentationSnippetsCacheDirectory;
+snippetCacheDirectory[ "ResourceSystem" ] := $resourceSnippetsCacheDirectory;
+snippetCacheDirectory // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -464,7 +480,7 @@ toDocSnippetURL // endDefinition;
 toDocSnippetURL0 // beginDefinition;
 
 toDocSnippetURL0[ { "resources.wolframcloud.com", { "", repo_String, "resources", name_String } } ] :=
-    URLBuild @ { $documentationSnippetBaseURL, "Resources", repo, name <> ".wxf" };
+    URLBuild @ { $resourceSnippetBaseURL, repo, name <> ".wxf" };
 
 toDocSnippetURL0 // endDefinition;
 
