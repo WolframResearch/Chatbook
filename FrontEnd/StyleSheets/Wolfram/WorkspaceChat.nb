@@ -74,7 +74,7 @@ Notebook[
   ],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3939536254"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3940147331"|>
   ],
   Cell[
    StyleData[
@@ -118,12 +118,15 @@ Notebook[
         SingleEvaluation -> True
        ]
       ],
-      Background -> None
+      Background -> None,
+      CellBaseline -> Baseline
      ]
     },
     {None, None}
    },
-   CellFrameLabelMargins -> -15
+   CellFrameLabelMargins -> -15,
+   FrameBoxOptions -> {BaselinePosition -> Baseline},
+   PaneBoxOptions -> {BaselinePosition -> Baseline}
   ],
   Cell[
    StyleData["ChatOutput"],
@@ -148,14 +151,17 @@ Notebook[
         SingleEvaluation -> True
        ]
       ],
-      Background -> None
+      Background -> None,
+      CellBaseline -> Baseline
      ],
      None
     },
     {None, None}
    },
    CellFrameLabelMargins -> -5,
-   Background -> None
+   Background -> None,
+   FrameBoxOptions -> {BaselinePosition -> Baseline},
+   PaneBoxOptions -> {BaselinePosition -> Baseline}
   ],
   Cell[
    StyleData["ChatInputField"],
