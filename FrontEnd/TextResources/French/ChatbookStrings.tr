@@ -200,7 +200,7 @@
 "MenuItemShowContentSuggestions" -> "Suggestion de contenu par l\[CloseCurlyQuote]IA",
 
 "WorkspaceWindowTitle" -> "Assistant de notebook",
-"WorkspaceToolbarButtonLabelHistory" -> "History",
+"WorkspaceToolbarButtonLabelHistory" -> "Historique",
 "WorkspaceToolbarButtonLabelSources" -> "Sources",
 "WorkspaceToolbarButtonLabelNew" -> "Nouveau",
 "WorkspaceToolbarButtonTooltipHistory" -> "G\[EAcute]rer les conversations",
@@ -209,7 +209,7 @@
 "WorkspaceSourcesOpenNotebooks" -> "Ouvrir les notebooks",
 
 "InlineChatButtonTooltipClose" -> "Fermer",
-"InlineChatButtonTooltipViewNotebookAssist" -> "View in Notebook Assistance Chat",
+"InlineChatButtonTooltipViewNotebookAssist" -> "Voir dans le chat de l\[CloseCurlyQuote]assistant du notebook",
 
 "NotebookAssistanceInputGettingStarted" -> "Aide\[Hyphen]moi \[AGrave] d\[EAcute]marrer",
 "NotebookAssistanceInputErrorMessage" -> "Qu\[CloseCurlyQuote]est\[Hyphen]ce qui n\[CloseCurlyQuote]a pas fonctionn\[EAcute]\[NonBreakingSpace]?"
