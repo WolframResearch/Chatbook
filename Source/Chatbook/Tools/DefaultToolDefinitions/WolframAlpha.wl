@@ -92,7 +92,11 @@ getWolframAlphaText[ query_String, steps_, { } ] :=
     "No results returned";
 
 getWolframAlphaText[ query_String, steps_, info_List ] :=
-    getWolframAlphaText[ query, steps, associationKeyDeflatten[ makeKeySequenceRule /@ info ] ];
+    getWolframAlphaText[
+        query,
+        steps,
+        Quiet[ associationKeyDeflatten[ makeKeySequenceRule /@ info ], AssociationMap::invrlf ]
+    ];
 
 getWolframAlphaText[ query_String, steps_, as_Association? AssociationQ ] :=
     getWolframAlphaText[ query, steps, waResultText @ as ];
