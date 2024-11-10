@@ -820,7 +820,7 @@ upgradeChatData1 // endDefinition;
 upgradeChatData2 // beginDefinition;
 
 upgradeChatData2[ metadata_Association ] := Enclose[
-    Catch @ Module[ { appName, directory, file, data, newData, newMeta },
+    Catch @ Module[ { appName, dir1, dir2, file, data, newData, newMeta },
 
         appName = ConfirmBy[
             Replace[ metadata[ "AppName" ], "CodeAssistance" -> "NotebookAssistance" ],
@@ -828,20 +828,27 @@ upgradeChatData2[ metadata_Association ] := Enclose[
             "AppName"
         ];
 
-        directory = ConfirmBy[ targetDirectory[ appName, metadata ], DirectoryQ, "Directory" ];
-        file      = ConfirmBy[ FileNameJoin @ { directory, "data.wxf" }, FileExistsQ, "File" ];
-        data      = ConfirmBy[ Developer`ReadWXFFile @ file, AssociationQ, "Data" ];
-        newData   = ConfirmBy[ <| data, "AppName" -> appName, "Version" -> 3 |>, AssociationQ, "NewData" ];
-        newMeta   = ConfirmBy[ <| metadata, "AppName" -> appName, "Version" -> 3 |>, AssociationQ, "NewMetadata" ];
+        dir1 = ConfirmBy[ targetDirectory[ metadata[ "AppName" ], metadata ], DirectoryQ, "Directory" ];
+        dir2 = ConfirmBy[ targetDirectory[ appName, metadata ], DirectoryQ, "NewDirectory" ];
+
+        file = ConfirmBy[
+            SelectFirst[ { FileNameJoin @ { dir1, "data.wxf" }, FileNameJoin @ { dir2, "data.wxf" } }, FileExistsQ ],
+            FileExistsQ,
+            "File"
+        ];
+
+        data    = ConfirmBy[ Developer`ReadWXFFile @ file, AssociationQ, "Data" ];
+        newData = ConfirmBy[ <| data, "AppName" -> appName, "Version" -> 3 |>, AssociationQ, "NewData" ];
+        newMeta = ConfirmBy[ <| metadata, "AppName" -> appName, "Version" -> 3 |>, AssociationQ, "NewMetadata" ];
 
         ConfirmBy[
-            saveChatFile[ "metadata", newMeta, directory ],
+            saveChatFile[ "metadata", newMeta, dir2 ],
             FileExistsQ,
             "SaveMetadata"
         ];
 
         ConfirmBy[
-            saveChatFile[ "data", newData, directory, PerformanceGoal -> "Size" ],
+            saveChatFile[ "data", newData, dir2, PerformanceGoal -> "Size" ],
             FileExistsQ,
             "SaveMessages"
         ];
