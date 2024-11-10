@@ -45,7 +45,8 @@ searchChats[ appName_String, query_String, max_? Positive, cache_ ] := Enclose[
 
         flat = ConfirmMatch[
             Flatten[ Thread @ { KeyDrop[ #, "Vectors" ], #Vectors } & /@ index, 1 ],
-            { { _Association, _NumericArray }... }
+            { { _Association, _NumericArray }... },
+            "Flat"
         ];
 
         If[ flat === { }, Throw @ { } ];
