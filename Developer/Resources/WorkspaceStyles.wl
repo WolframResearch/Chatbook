@@ -162,6 +162,28 @@ Cell[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*UserMessageBox - one minor style tweaks compared to definition in Chatbook.nb *)
+Cell[
+    StyleData[ "UserMessageBox" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ Evaluate @ PaneBox[
+            FrameBox[
+                #,
+                BaseStyle      -> { "Text", Editable -> False, Selectable -> False },
+                Background     -> RGBColor[ "#edf4fc" ],
+                FrameMargins   -> { { 8, 15 }, { 8, 8 } },
+                FrameStyle     -> RGBColor[ "#a3c9f2" ],
+                RoundingRadius -> 8, (* tweaked *)
+                StripOnInput   -> False
+            ],
+            Alignment -> Right,
+            ImageSize -> { Full, Automatic }
+        ]
+    }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*AssistantMessageBox - only a few minor style tweaks compared to definition in Chatbook.nb *)
 Cell[
     StyleData[ "AssistantMessageBox" ],
