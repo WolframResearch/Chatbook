@@ -673,7 +673,7 @@ floatingButtonGrid[ cell_Cell, lang_ ] :=
                     button[
                         If[ TrueQ @ CurrentChatSettings[ cellObj, "WorkspaceChat" ], $insertInputButtonLabelWorkspaceChat, $insertInputButtonLabel ],
                         insertCodeBelow[ cell, False ] ],
-                    button[ $copyToClipboardButtonLabel, copyCode @ cell ]
+                    button[ $copyToClipboardButtonLabel, copyCodeBlock @ cell ]
                 }
             },
             Alignment  -> Top,
@@ -691,7 +691,7 @@ floatingButtonGrid[ string_, lang_ ] := RawBoxes @ TemplateBox[
                 checkTemplateBoxes @ {
                     button[ evaluateLanguageLabel @ lang, insertCodeBelow[ string, True ] ],
                     button[ $insertInputButtonLabel, insertCodeBelow[ string, False ] ],
-                    button[ $copyToClipboardButtonLabel, CopyToClipboard @ string ]
+                    button[ $copyToClipboardButtonLabel, copyCodeBlock @ string ]
                 }
             },
             Alignment  -> Top,
@@ -866,6 +866,17 @@ insertCodeInUserNotebook[ chatNB_NotebookObject, code_String, evaluate_ ] :=
     insertCodeInUserNotebook[ chatNB, reparseCodeBoxes @ Cell[ BoxData @ code, "Input" ], evaluate ];
 
 insertCodeInUserNotebook // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*copyCodeBlock*)
+copyCodeBlock // beginDefinition;
+copyCodeBlock[ code_String ] := CopyToClipboard @ code;
+copyCodeBlock[ Cell[ BoxData[ cell_Cell, ___ ] ] ] := copyCodeBlock @ cell;
+copyCodeBlock[ Cell[ code_String, ___ ] ] := copyCodeBlock @ code;
+copyCodeBlock[ cell0_Cell ] := With[ { cell = getCodeBlockContent @ cell0 }, copyCodeBlock @ cell /; cell =!= cell0 ];
+copyCodeBlock[ cell_Cell ] := CopyToClipboard @ cell;
+copyCodeBlock // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
