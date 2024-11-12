@@ -257,7 +257,7 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
         ],
 
     (* Markdown images: *)
-    Cell[ BoxData @ PaneBox[ TagBox[ box_, "MarkdownImage", ___ ], ___ ], "Input", ___ ] :>
+    Cell[ BoxData @ PaneBox[ TagBox[ box_, "MarkdownImage", ___ ], ___ ], ___ ] :>
         Cell[ BoxData @ box, "Picture" ]
 };
 
