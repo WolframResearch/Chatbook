@@ -895,6 +895,7 @@ autoCorrect[ string_String ] := StringReplace[ string, $llmAutoCorrectRules ];
 autoCorrect // endDefinition;
 
 $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
+    "```" ~~ code: Except[ "\n" ].. ~~ "```" :> "``"<>code<>"``",
     "wolfram_language_evaliator" -> "wolfram_language_evaluator",
     "\\!\\(\\*MarkdownImageBox[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
     "\\!\\(MarkdownImageBox[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
