@@ -111,7 +111,7 @@ historyButton[ Dynamic[ nbo_ ] ] :=
                         Dividers -> Center,
                         Spacings -> {1,0}
                     ]
-            
+
                 ]
             ]
         ];
@@ -143,7 +143,7 @@ sourcesButton // endDefinition;
 (*newChatButton*)
 newChatButton // beginDefinition;
 
-newChatButton[ Dynamic[ nbo_ ] ] := 
+newChatButton[ Dynamic[ nbo_ ] ] :=
 	With[{(* the icon colors come from the given BaseStyle *)
     	label = toolbarButtonLabel0["New", "New",
     		{FontColor -> RGBColor["#469ECB"]},
@@ -153,7 +153,7 @@ newChatButton[ Dynamic[ nbo_ ] ] :=
     		{FontColor -> RGBColor[1,1,1]},
     		{BaseStyle -> RGBColor[1,1,1]}
     	]},
-	
+
 		Button[
 			toolbarButtonLabel[ lightButton, {label, hotlabel}, "New"],
 			clearOverlayMenus @ nbo;
@@ -225,7 +225,7 @@ toolbarButtonLabel0[ iconName_String, label_, {styleopts___}, {gridopts___}] :=
             RawBoxes @ TemplateBox[ { }, "WorkspaceToolbarIcon"<>iconName ],
             Style[ label, $toolbarLabelStyle, styleopts ]
         } },
-        gridopts, 
+        gridopts,
         Spacings  -> 0.25,
         Alignment -> { {Left, Right}, Center }
     ];
@@ -989,13 +989,13 @@ attachAssistantMessageButtons[ cell_CellObject ] :=
     attachAssistantMessageButtons[ cell, CurrentChatSettings[ cell, "WorkspaceChat" ] ];
 
 attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
-    Catch @ Module[ { cell, attached },
+    Catch @ Module[ { cell, includeFeedback, attached },
 
         cell = topParentCell @ cell0;
         If[ ! MatchQ[ cell, _CellObject ], Throw @ Null ];
 
         (* If chat has been reloaded from history, it no longer has the necessary metadata for feedback: *)
-        If[ ! StringQ @ CurrentValue[ cell, { TaggingRules, "ChatData" } ], Throw @ Null ];
+        includeFeedback = StringQ @ CurrentValue[ cell, { TaggingRules, "ChatData" } ];
 
         (* Remove existing attached cell, if any: *)
         NotebookDelete @ Cells[ cell, AttachedCell -> True, CellStyle -> "ChatOutputTrayButtons" ];
@@ -1004,7 +1004,7 @@ attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
         attached = AttachCell[
             cell,
             Cell[
-                BoxData @ TemplateBox[ { }, "FeedbackButtonsHorizontal" ],
+                BoxData @ assistantMessageButtons @ includeFeedback,
                 "ChatOutputTrayButtons",
                 Magnification -> AbsoluteCurrentValue[ cell, Magnification ]
             ],
@@ -1021,6 +1021,55 @@ attachAssistantMessageButtons[ cell_CellObject, _ ] :=
     Null;
 
 attachAssistantMessageButtons // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*assistantMessageButtons*)
+assistantMessageButtons // beginDefinition;
+
+assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeFeedback ] =
+    ToBoxes @ DynamicModule[ { cell },
+        Grid[
+            { {
+                If[ TrueQ @ includeFeedback,
+                    Splice @ {
+                        RawBoxes @ TemplateBox[ { }, "FeedbackButtonsHorizontal" ],
+                        Style[ " |", FontColor -> GrayLevel[ 0.8 ] ]
+                    },
+                    Nothing
+                ],
+                ActionMenu[
+                    $clipboardLabel,
+                    {
+                        "Copy as\[Ellipsis]" :> Null,
+                        "    Cells"      :> ChatbookAction[ "CopyExplodedCells", cell ],
+                        "    Plain Text" :> ChatbookAction[ "CopyPlainText"    , cell ],
+                        "    Image"      :> ChatbookAction[ "CopyImage"        , cell ]
+                    },
+                    Appearance -> "Suppressed",
+                    Method     -> "Queued"
+                ]
+            } },
+            Alignment -> { Automatic, Center },
+            Spacings -> 0
+        ],
+        Initialization :> (cell = ParentCell @ EvaluationCell[ ])
+    ];
+
+assistantMessageButtons // endDefinition;
+
+
+(* FIXME: Define this in ChatbookExpressions text resource: *)
+$clipboardLabel := $clipboardLabel = usingFrontEnd @
+    With[ { icon = RawBoxes @ FrontEndResource[ "NotebookToolbarExpressions", "HyperlinkCopyIcon" ] },
+        MouseAppearance[
+            Mouseover[
+                icon /. _? ColorQ -> GrayLevel[ 0.8 ],
+                icon /. _? ColorQ -> GrayLevel[ 0.2 ]
+            ],
+            "LinkHand"
+        ]
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
