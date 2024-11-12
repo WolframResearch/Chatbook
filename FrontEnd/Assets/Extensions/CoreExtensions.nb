@@ -11,20 +11,13 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3940400412"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3940399854"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
    CellMargins -> {{66, 10}, {7, 8}},
    ContextMenu ->
-    Dynamic[
-     FEPrivate`Join[{MenuItem[#1, KernelExecute[With[{Wolfram`ChatNB`nbo = InputNotebook[]}, {Wolfram`ChatNB`cells = SelectedCells[Wolfram`ChatNB`nbo]}, Quiet[Needs["Wolfram`Chatbook`" -> None]]; Symbol["Wolfram`Chatbook`ChatbookAction"]["Ask", Wolfram`ChatNB`nbo, Wolfram`ChatNB`cells]]], MenuEvaluator -> Automatic, Method -> "Queued"], Delimiter}, FEPrivate`FrontEndResource["ContextMenus", "Text"]] &[
-      FEPrivate`FrontEndResource[
-       "ChatbookStrings",
-       "StylesheetContextMenuAskAI"
-      ]
-     ]
-    ],
+    FEPrivate`FrontEndResource["ContextMenus", "Text"],
    LineSpacing -> {1, 3},
    TabSpacings -> {2.5},
    FontFamily -> "Source Sans Pro",
