@@ -824,12 +824,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3940399854"|>
-  ],
-  Cell[
-   StyleData["Text"],
-   ContextMenu ->
-    FEPrivate`FrontEndResource["ContextMenus", "Text"]
+   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3940405830"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -857,15 +852,11 @@ Notebook[
       "AIAutoAssist",
       Wolfram`ChatNB`cell
      ]
-    ],
-   ContextMenu ->
-    FEPrivate`FrontEndResource["ContextMenus", "Input"]
+    ]
   ],
   Cell[
    StyleData["Output"],
-   CellTrayWidgets -> <|"GearMenu" -> <|"Condition" -> False|>|>,
-   ContextMenu ->
-    FEPrivate`FrontEndResource["ContextMenus", "Output"]
+   CellTrayWidgets -> <|"GearMenu" -> <|"Condition" -> False|>|>
   ],
   Cell[
    StyleData["Message"],
