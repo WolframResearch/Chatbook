@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3940315197"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3940400412"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -4623,9 +4623,11 @@ Notebook[
      (Function[
       GraphicsBox[
        {
-        Thickness[0.05],
+        Thickness[0.0714286],
         {
-         FaceForm[{RGBColor[0.4902, 0.82353, 1.0], Opacity[1.0]}],
+         FaceForm[
+          {RGBColor[0.596078, 0.843137, 0.976471], Opacity[1.0]}
+         ],
          FilledCurveBox[
           {
            {
@@ -4643,13 +4645,13 @@ Notebook[
            }
           },
           CompressedData[
-           "\n1:eJxTTMoPSmVmYGBgBGIRIGZigAFJB1RaAM5/vHT2EYUNPGjyXA48TNrtYpFS\ncD6ElkHjG8D5Lt05z39nGqCadwAmL4DGN4DzYfpQ5HGJI+l7ekHp9s9/0nD+\np0u+SQIRUqj64P5B8PXvqrA1XlVGk4fR6OEg6QAAQek3fQ==\n      "
+           "\n1:eJxTTMoPSmVmYGBgBGIRIGZiAAOFj4+5HJBohiX3X9gj8zvl76PwX7FcAPEl\nXI/zIPNf2EjzI/MzLhZqIfM9zrNpI5vnod6gjWwfjA/TB+PD9MH5OMTR9c0w\nkORH5sPcC9MH8w9MH4z/wHCZNDIf7m+fZQ/s0cUB7QlMBQ==\n      "
           ]
          ]
         },
         {
          FaceForm[
-          {RGBColor[0.18824, 0.49412, 0.6549], Opacity[1.0]}
+          {RGBColor[0.486275, 0.682353, 0.788235], Opacity[1.0]}
          ],
          FilledCurveBox[
           {
@@ -4670,7 +4672,6 @@ Notebook[
             {1, 4, 3},
             {0, 1, 0},
             {1, 3, 3},
-            {1, 3, 3},
             {0, 1, 0},
             {0, 1, 0},
             {0, 1, 0},
@@ -4687,18 +4688,18 @@ Notebook[
           },
           {
            CompressedData[
-            "\n1:eJxTTMoPSmViYGAQAWIQDQEGDhDaEEoLwPn6d1XYGqdyo8lzOESlWN/37zWA\n81HNgfFl4PwZeULNB05JopkngWafBAEaZq4KmrgBnI/qLpi8oUOtvWncrpOS\ncP7TC0q3f/6TRvMXIhxg5qCah6kOABDjKt4=\n       "
+            "\n1:eJxTTMoPSmViYGAQAWIQDQQORwq1HCBMHTDN9vyFPTL/jcc1FD6DgxaI/+mS\nrzYy/89KmDkQfsNqGX4Uvsg6bhTzQh5zoNgH5TfsgYqj86FggQmDDLI83P1Q\nvkoW1F1QvosU1N0ca7iR+Q3zpfiR+TD3w/gw/8HNg/ofJbwAWgg5Jw==\n       "
            ],
            CompressedData[
-            "\n1:eJxTTMoPSmViYGCQBmIQDQEGDmCqwcBBd9Pc98vdEHy84kj6nl5Quv3znzSc\nLxBhueVEmbTDstlHFDYUGTh804jpP/RVygEouG9+lIGD/l0VtsapUg5/Vn68\n5Otk4JAx8W2NvSmUrwQzXwrVHjhfBc6/CLS2bpUynJ8GBsoOs2aCgCSaPgE0\nvgQaH5c4Qt+MPKHmA6d40eR5HHzMOx0TniL4EFoGjW8A58PCE8U8eLgKoPER\n4QwA4s5WaA==\n       "
+            "\n1:eJxTTMoPSmViYGCQAGIQDQQORwq1HCBMbSDd4CJ1AJnP4CIFoRkYIOIw/p+V\nhSj8hvlS/Ch894e8KOaFPOZxQLYPyl9gwiCDzFf47S2NzE/YuF8KbJ4EC5jf\nsAciznB98Qd7ZH7IYw4HVD5MPQcyn4Ht+Qt7ZH7Rz8co/CWMD6B8XmR+w2oZ\nfmQ+zP9w9dDwgZsHDT+4fVA+SngDAGbuTtY=\n       "
            ]
           }
          ]
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
-       PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
+       ImageSize -> {15.0, 15.0},
+       PlotRange -> {{-0.5, 14.5}, {-0.5, 14.5}}
       ]
      ])
    }
@@ -9166,9 +9167,11 @@ Notebook[
      (Function[
       GraphicsBox[
        {
-        Thickness[0.05],
+        Thickness[0.0714286],
         {
-         FaceForm[{RGBColor[0.4902, 0.82353, 1.0], Opacity[1.0]}],
+         FaceForm[
+          {RGBColor[0.596078, 0.843137, 0.976471], Opacity[1.0]}
+         ],
          FilledCurveBox[
           {
            {
@@ -9186,13 +9189,13 @@ Notebook[
            }
           },
           CompressedData[
-           "\n1:eJxTTMoPSmVmYGBgBGIRIGZigAFZBwgt6qC7ae775cdE4XweJu12sUgEH5c4\nur6XaoYca2Q04fxfdVl7SoI1UfU1aKLqA/Ih+nThfIg+BB9C68LNg/FR7APy\nUc3VhduLYh7cnQg+WN1NZTT/yjoo3/4J1MkN58PkAf0dQ8I=\n      "
+           "\n1:eJxTTMoPSmVmYGBgBGIRIGZigAFBBwjNBKINYvqZkfkBlluYkPkwmk93Ewr/\nnn8vij6BNTLKyPwDJcHKqOY1KKPaB+ED9akj84H6UPhAWh3ZPBgfYR+Ej3AP\nhA9zL8I8uDtR+Ay6m6TR/AsOn4bgx3ftkfhgeQDo4yl3\n      "
           ]
          ]
         },
         {
          FaceForm[
-          {RGBColor[0.18824, 0.49412, 0.6549], Opacity[1.0]}
+          {RGBColor[0.486275, 0.682353, 0.788235], Opacity[1.0]}
          ],
          FilledCurveBox[
           {
@@ -9225,46 +9228,46 @@ Notebook[
           },
           {
            CompressedData[
-            "\n1:eJxTTMoPSmViYGAQAWIQ/VLNkGONjK4DAxhoOVw3eW/helwUzo9RcPyYfEYE\nzu8PLlGZ/l/YQR2kbZYmnA8xB8HX3TT3/fJjonA+mHtaBM08ETT7RKDqpXHw\nORyOa1pNOv1fGS6P6n4RqLsQfAitB7cfxoe5D8aHuR/Gh/kP1TwtB/TwAgBR\nb1Sq\n       "
+            "\n1:eJxTTMoPSmViYGAQAWIQDQJrZNQdICwVEN0Q3c+Mwp85kxGZDwIOYG2zlJH5\nHGtkUPgH/HuZkfkOvdMZ0cxjQLMPou//f35cfBB48P+/NLI8kvvB/CUys1D4\nP/7/V0e2H8aHuQ/Gh7kfxof5D8k8FTT7VBwABxM4RA==\n       "
            ],
            {
-            {14.5, 12.5},
-            {14.5, 5.5},
-            {9.9996, 5.5},
-            {9.8486, 5.5},
-            {9.7226, 5.416},
-            {7.4996, 3.934},
-            {7.4996, 5.0},
-            {7.4996, 5.5},
-            {6.9996, 5.5},
-            {5.4996, 5.5},
-            {5.4996, 12.5},
-            {14.5, 12.5}
+            {11.5, 9.5},
+            {11.5, 2.5},
+            {7.0, 2.5},
+            {6.849, 2.5},
+            {6.723, 2.416},
+            {4.5, 0.934},
+            {4.5, 2.0},
+            {4.5, 2.5},
+            {4.0, 2.5},
+            {2.5, 2.5},
+            {2.5, 9.5},
+            {11.5, 9.5}
            }
           }
          ]
         },
         {
          FaceForm[
-          {RGBColor[0.33725, 0.65882, 0.82745], Opacity[1.0]}
+          {RGBColor[0.478431, 0.721569, 0.847059], Opacity[1.0]}
          ],
          FilledCurveBox[
           {{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}},
           {
            {
-            {3.0, 15.0},
-            {17.0, 15.0},
-            {17.0, 17.0},
-            {3.0, 17.0},
-            {3.0, 15.0}
+            {0.0, 12.0},
+            {14.0, 12.0},
+            {14.0, 14.0},
+            {0.0, 14.0},
+            {0.0, 12.0}
            }
           }
          ]
         }
        },
        AspectRatio -> Automatic,
-       ImageSize -> {{21.0, 21.0}, {21.0, 21.0}},
-       PlotRange -> {{-0.5, 20.5}, {-0.5, 20.5}}
+       ImageSize -> {15.0, 15.0},
+       PlotRange -> {{-0.5, 14.5}, {-0.5, 14.5}}
       ]
      ])
    }
