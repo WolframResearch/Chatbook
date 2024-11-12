@@ -1187,7 +1187,7 @@ formatSuggestions[
 ] := Enclose[
     Module[ { styles, formatted },
         styles = If[ MatchQ[ root, _CellObject ], ConfirmMatch[ cellStyles @ root, { ___String }, "Styles" ], None ];
-        formatted = ConfirmMatch[ formatSuggestion[ root, nbo, styles ] /@ suggestions, { __Button }, "Formatted" ];
+        formatted = ConfirmMatch[ formatSuggestion[ root, nbo, styles ] /@ suggestions, { __EventHandler }, "Formatted" ];
         Pane[ Column[ formatted, Spacings -> 0 ], ImageSize -> { UpTo[ Scaled[ 0.9 ] ], Automatic } ]
     ],
     throwInternalFailure
@@ -1203,7 +1203,13 @@ formatSuggestion // beginDefinition;
 formatSuggestion[ root: $$feObj, nbo_NotebookObject, styles_ ] :=
     formatSuggestion[ root, nbo, styles, # ] &;
 
-formatSuggestion[ root: $$feObj, nbo_NotebookObject, { styles___String }, suggestion_BoxData ] := Button[
+(* This is an EventHandler wrapped around a Button rather than a naked Button to work around a crash *)
+(* bug in 14.1, 453621.  Note the first step might be unnecessary, but I can't prove it, and it's cheap. *)
+(* - FEPrivate`SetWindowCursorVisible[True] dirties the mouse cursor for the window *)
+(* - The EventHandler updates the cursor after it finishes handling the MouseClicked event *)
+(* - While updating the cursor, an internal variable pointing to the current moused-over cell is cleared *)
+(* - Therefore, a bug that leaves that internal variable pointing to a now-deleted inline cell is avoided *)
+formatSuggestion[ root: $$feObj, nbo_NotebookObject, { styles___String }, suggestion_BoxData ] := EventHandler[Button[
     RawBoxes @ Cell[
         suggestion,
         styles,
@@ -1218,24 +1224,24 @@ formatSuggestion[ root: $$feObj, nbo_NotebookObject, { styles___String }, sugges
             },
             Sequence @@ { }
         ]
-    ],
-    NotebookDelete @ EvaluationCell[ ];
-    NotebookWrite[ nbo, suggestion, After ],
-    Alignment -> Left
+    ], Alignment->Left],
+    "MouseClicked" :> (NotebookDelete @ EvaluationCell[ ];
+    If[$VersionNumber === 14.1, FE`Evaluate[FEPrivate`SetWindowCursorVisible[True]]];
+    NotebookWrite[ nbo, suggestion, After ])
 ];
 
-formatSuggestion[ root: $$feObj, nbo_NotebookObject, { styles___String }, suggestion_TextData ] := Button[
-    RawBoxes @ Cell[ suggestion, styles, Deployed -> True, Selectable -> False ],
-    NotebookDelete @ EvaluationCell[ ];
-    NotebookWrite[ nbo, suggestion, After ],
-    Alignment -> Left
+formatSuggestion[ root: $$feObj, nbo_NotebookObject, { styles___String }, suggestion_TextData ] := EventHandler[Button[
+    RawBoxes @ Cell[ suggestion, styles, Deployed -> True, Selectable -> False ], Alignment->Left],
+    "MouseClicked" :> (NotebookDelete @ EvaluationCell[ ];
+    If[$VersionNumber === 14.1, FE`Evaluate[FEPrivate`SetWindowCursorVisible[True]]];
+    NotebookWrite[ nbo, suggestion, After ])
 ];
 
-formatSuggestion[ root: $$feObj, nbo_NotebookObject, None, suggestion: Cell[ _CellGroupData ] ] := Button[
-    Column[ formatSuggestionCells /@ cellFlatten @ suggestion, Spacings -> 2 ],
-    NotebookDelete @ EvaluationCell[ ];
-    NotebookWrite[ nbo, suggestion, All ],
-    Alignment -> Left
+formatSuggestion[ root: $$feObj, nbo_NotebookObject, None, suggestion: Cell[ _CellGroupData ] ] := EventHandler[Button[
+    Column[ formatSuggestionCells /@ cellFlatten @ suggestion, Spacings -> 2 ], Alignment->Left],
+    "MouseClicked" :> (NotebookDelete @ EvaluationCell[ ];
+    If[$VersionNumber === 14.1, FE`Evaluate[FEPrivate`SetWindowCursorVisible[True]]];
+    NotebookWrite[ nbo, suggestion, All ])
 ];
 
 formatSuggestion // endDefinition;
