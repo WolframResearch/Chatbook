@@ -1039,6 +1039,24 @@ makeServiceModelMenu[ Dynamic[ display_ ], obj_, root_, currentModel_, service_S
         200
     ];
 
+makeServiceModelMenu[ Dynamic[ display_ ], obj_, root_, currentModel_, service_String, Missing[ "NoModelList" ] ] :=
+	display = MakeMenu[
+		{
+			{ service },
+			{
+				Spacer[ 0 ],
+				Automatic,
+				Hold[
+					removeChatMenus @ EvaluationCell[ ];
+					(* TODO: this could probably prompt the user with an InputField to enter a name: *)
+					setModel[ obj, <| "Service" -> service, "Name" -> Automatic |> ]
+				]
+			}
+		},
+		GrayLevel[ 0.85 ],
+		200
+	];
+
 makeServiceModelMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
