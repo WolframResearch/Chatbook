@@ -200,7 +200,7 @@
 "MenuItemShowContentSuggestions" -> "AI \:5185\:5BB9\:5EFA\:8BAE",
 
 "WorkspaceWindowTitle" -> "\:7B14\:8BB0\:672C\:52A9\:624B",
-"WorkspaceToolbarButtonLabelHistory" -> "History",
+"WorkspaceToolbarButtonLabelHistory" -> "\:5386\:53F2\:8BB0\:5F55",
 "WorkspaceToolbarButtonLabelSources" -> "\:8D44\:6E90",
 "WorkspaceToolbarButtonLabelNew" -> "\:65B0\:5BF9\:8BDD",
 "WorkspaceToolbarButtonTooltipHistory" -> "\:7BA1\:7406\:5BF9\:8BDD",
@@ -209,7 +209,7 @@
 "WorkspaceSourcesOpenNotebooks" -> "\:6253\:5F00\:7B14\:8BB0\:672C",
 
 "InlineChatButtonTooltipClose" -> "\:5173\:95ED",
-"InlineChatButtonTooltipViewNotebookAssist" -> "\:5728\:4EE3\:7801\:534F\:52A9\:804A\:5929\:4E2D\:67E5\:770B",
+"InlineChatButtonTooltipViewNotebookAssist" -> "\:5728\:7B14\:8BB0\:672C\:534F\:52A9\:804A\:5929\:4E2D\:67E5\:770B",
 
 "NotebookAssistanceInputGettingStarted" -> "\:5E2E\:52A9\:6211\:5F00\:59CB\:4F7F\:7528",
 "NotebookAssistanceInputErrorMessage" -> "\:51FA\:4EC0\:4E48\:95EE\:9898\:4E86\:ff1f"
