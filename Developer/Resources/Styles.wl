@@ -57,14 +57,6 @@ Cell[
 (*Text*)
 
 
-(*
-    In 14.1, Chatbook.nb inherits from Default.nb, but in 14.2, chat styles are in CoreExtensions.nb only.
-    "Text" is defined in Default.nb, so include what we need from it so it looks correct. *)
-Cell[
-    StyleData[ "Text" ],
-    ContextMenu -> contextMenu[ "Text" ]
-]
-
 Cell[
     StyleData[ "NotebookAssistant`Text" ],
     ContextMenu -> contextMenu[ "Text" ],
@@ -90,7 +82,6 @@ Cell[
         "*" -> "Item",
         ">" -> "ExternalLanguageDefault"
     },
-    ContextMenu -> contextMenu[ "Input" ],
     CellEpilog :> With[ { $CellContext`cell = (FinishDynamic[ ]; EvaluationCell[ ]) },
         Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
         Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AIAutoAssist", $CellContext`cell ]
@@ -105,7 +96,6 @@ Cell[
 
 Cell[
     StyleData[ "Output" ],
-    ContextMenu -> contextMenu[ "Output" ],
     CellTrayWidgets -> <| "GearMenu" -> <| "Condition" -> False |> |>
 ]
 
