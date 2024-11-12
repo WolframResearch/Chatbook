@@ -74,7 +74,7 @@ Notebook[
   ],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3940148324"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3940315197"|>
   ],
   Cell[
    StyleData[
@@ -185,6 +185,27 @@ Notebook[
    CellMargins -> {{10, 10}, {30, 10}},
    TaggingRules -> <|"ChatNotebookSettings" -> <|"ExcludeFromChat" -> True|>|>,
    ShowStringCharacters -> False
+  ],
+  Cell[
+   StyleData["UserMessageBox"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      PaneBox[
+       FrameBox[
+        #1,
+        BaseStyle -> {"Text", Editable -> False, Selectable -> False},
+        Background -> RGBColor[0.929412, 0.956863, 0.988235],
+        FrameMargins -> {{8, 15}, {8, 8}},
+        FrameStyle -> RGBColor[0.639216, 0.788235, 0.94902],
+        RoundingRadius -> 8,
+        StripOnInput -> False
+       ],
+       Alignment -> Right,
+       ImageSize -> {Full, Automatic}
+      ]
+     ])
+   }
   ],
   Cell[
    StyleData["AssistantMessageBox"],
