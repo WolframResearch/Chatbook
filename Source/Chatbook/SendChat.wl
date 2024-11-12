@@ -2524,7 +2524,7 @@ restoreLastPage // endDefinition;
 (*attachChatOutputMenu*)
 attachChatOutputMenu // beginDefinition;
 
-attachChatOutputMenu[ cell_CellObject ] /; $cloudNotebooks := Null;
+attachChatOutputMenu[ cell_CellObject ] /; $cloudNotebooks || $WorkspaceChat || $InlineChat := Null;
 
 attachChatOutputMenu[ cell_CellObject ] := (
     $lastChatOutput = cell;
