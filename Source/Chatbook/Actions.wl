@@ -86,6 +86,7 @@ ChatbookAction[ "MoveToChatInputField"         , args___ ] := catchMine @ moveTo
 ChatbookAction[ "OpenChatBlockSettings"        , args___ ] := catchMine @ OpenChatBlockSettings @ args;
 ChatbookAction[ "OpenChatMenu"                 , args___ ] := catchMine @ OpenChatMenu @ args;
 ChatbookAction[ "PersonaManage"                , args___ ] := catchMine @ PersonaManage @ args;
+ChatbookAction[ "RegenerateAssistantMessage"   , args___ ] := catchMine @ regenerateAssistantMessage @ args;
 ChatbookAction[ "RemoveCellAccents"            , args___ ] := catchMine @ removeCellAccents @ args;
 ChatbookAction[ "Send"                         , args___ ] := catchMine @ SendChat @ args;
 ChatbookAction[ "SendFeedback"                 , args___ ] := catchMine @ SendFeedback @ args;
@@ -98,6 +99,25 @@ ChatbookAction[ "UpdateDynamics"               , args___ ] := catchMine @ update
 ChatbookAction[ "UserMessageLabel"             , args___ ] := catchMine @ userMessageLabel @ args;
 ChatbookAction[ "WidgetSend"                   , args___ ] := catchMine @ WidgetSend @ args;
 ChatbookAction[ args___                                  ] := catchMine @ throwInternalFailure @ ChatbookAction @ args;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*regenerateAssistantMessage*)
+regenerateAssistantMessage // beginDefinition;
+
+regenerateAssistantMessage[ chatOutput_CellObject ] := Enclose[
+    Catch @ Module[ { chatInput, nbo },
+        chatInput = PreviousCell[ chatOutput, CellStyle -> "ChatInput" ];
+        If[ ! MatchQ[ chatInput, _CellObject ], Throw @ Null ];
+        nbo = ConfirmMatch[ parentNotebook @ chatInput, _NotebookObject, "Notebook" ];
+        NotebookDelete @ chatOutput;
+        SelectionMove[ chatInput, All, Cell, AutoScroll -> True ];
+        FrontEndTokenExecute[ nbo, "EvaluateCells" ];
+    ],
+    throwInternalFailure
+];
+
+regenerateAssistantMessage // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

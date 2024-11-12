@@ -1031,13 +1031,6 @@ assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeF
     ToBoxes @ DynamicModule[ { cell },
         Grid[
             { {
-                If[ TrueQ @ includeFeedback,
-                    Splice @ {
-                        RawBoxes @ TemplateBox[ { }, "FeedbackButtonsHorizontal" ],
-                        Style[ " |", FontColor -> GrayLevel[ 0.8 ] ]
-                    },
-                    Nothing
-                ],
                 ActionMenu[
                     $clipboardLabel,
                     {
@@ -1048,6 +1041,19 @@ assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeF
                     },
                     Appearance -> "Suppressed",
                     Method     -> "Queued"
+                ],
+                Button[
+                    $regenerateLabel,
+                    ChatbookAction[ "RegenerateAssistantMessage", cell ],
+                    Appearance -> "Suppressed",
+                    Method     -> "Queued"
+                ],
+                If[ TrueQ @ includeFeedback,
+                    Splice @ {
+                        Style[ "\[ThinSpace]|\[ThinSpace]", FontColor -> GrayLevel[ 0.8 ] ],
+                        RawBoxes @ TemplateBox[ { }, "FeedbackButtonsHorizontal" ]
+                    },
+                    Nothing
                 ]
             } },
             Alignment -> { Automatic, Center },
@@ -1060,16 +1066,62 @@ assistantMessageButtons // endDefinition;
 
 
 (* FIXME: Define this in ChatbookExpressions text resource: *)
-$clipboardLabel := $clipboardLabel = usingFrontEnd @
-    With[ { icon = RawBoxes @ FrontEndResource[ "NotebookToolbarExpressions", "HyperlinkCopyIcon" ] },
-        MouseAppearance[
-            Mouseover[
-                icon /. _? ColorQ -> GrayLevel[ 0.8 ],
-                icon /. _? ColorQ -> GrayLevel[ 0.2 ]
+$clipboardLabel := $clipboardLabel =
+    With[ { icon = RawBoxes @ usingFrontEnd @ FrontEndResource[ "NotebookToolbarExpressions", "HyperlinkCopyIcon" ] },
+        Tooltip[
+            MouseAppearance[
+                Mouseover[
+                    icon /. _? ColorQ -> GrayLevel[ 0.8 ],
+                    icon /. _? ColorQ -> GrayLevel[ 0.2 ]
+                ],
+                "LinkHand"
             ],
-            "LinkHand"
+            "Copy as\[Ellipsis]"
         ]
     ];
+
+
+(* FIXME: Define this in ChatbookExpressions text resource: *)
+$regenerateLabel = Tooltip[
+    MouseAppearance[
+        Mouseover[
+            Graphics[
+                {
+                    GrayLevel[ 0.8 ],
+                    Arrowheads @ { {
+                        0.33,
+                        1,
+                        { GraphicsBox @ PolygonBox @ { { -1, 0.5 }, { 0, 0 }, { -1, -0.5 }, { -1, 0.5 } }, 0.75 }
+                    } },
+                    Thickness[ 0.075 ],
+                    Arrow @ BezierCurve @ { { 0.25, 0.6 }, { -0.75, 0.6 }, { -0.75, -0.4 } },
+                    Arrow @ BezierCurve @ { { -0.25, -0.6 }, { 0.75, -0.6 }, { 0.75, 0.4 } }
+                },
+                Axes      -> False,
+                ImageSize -> 14,
+                PlotRange -> { { -1, 1 }, { -1, 0.7 } }
+            ],
+            Graphics[
+                {
+                    GrayLevel[ 0.2 ],
+                    Arrowheads @ { {
+                        0.33,
+                        1,
+                        { GraphicsBox @ PolygonBox @ { { -1, 0.5 }, { 0, 0 }, { -1, -0.5 }, { -1, 0.5 } }, 0.75 }
+                    } },
+                    Thickness[ 0.075 ],
+                    Arrow @ BezierCurve @ { { 0.25, 0.6 }, { -0.75, 0.6 }, { -0.75, -0.4 } },
+                    Arrow @ BezierCurve @ { { -0.25, -0.6 }, { 0.75, -0.6 }, { 0.75, 0.4 } }
+                },
+                Axes      -> False,
+                ImageSize -> 14,
+                PlotRange -> { { -1, 1 }, { -1, 0.7 } }
+            ]
+        ],
+        "LinkHand"
+    ],
+    "Regenerate response"
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
