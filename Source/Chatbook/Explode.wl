@@ -52,7 +52,8 @@ $$newCellStyle = Alternatives[
     "Subtitle",
     "Text",
     "TextTableForm",
-    "Title"
+    "Title",
+    "WolframAlphaLong"
 ];
 
 $$ws = _String? (StringMatchQ[ WhitespaceCharacter... ]);
@@ -233,14 +234,8 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
         Cell[ content, "ExternalLanguage", System`CellEvaluationLanguage -> lang ],
 
     (* Inline tool calls: *)
-    Cell[ _, "InlineToolCall", TaggingRules -> tags: KeyValuePattern[ { } ], ___ ] :>
-        Cell[
-            BoxData @ ToBoxes @ Iconize[
-                tags, (* FIXME: iconize an actual tool response object here *)
-                "Used " <> Lookup[ tags, "DisplayName", Lookup[ tags, "Name", "LLMTool" ] ]
-            ],
-            "Input"
-        ],
+    Cell[ _, "InlineToolCall", ___, TaggingRules -> tags: KeyValuePattern[ { } ], ___ ] :>
+        RuleCondition @ explodeToolCall @ tags,
 
     (* Nested text data cells: *)
     { a___, b: StyleBox[ _, $$newCellStyle, ___ ], c___ } :>
@@ -265,6 +260,31 @@ $preprocessingRules := $preprocessingRules = Dispatch @ {
     Cell[ BoxData @ PaneBox[ TagBox[ box_, "MarkdownImage", ___ ], ___ ], "Input", ___ ] :>
         Cell[ BoxData @ box, "Picture" ]
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*explodeToolCall*)
+explodeToolCall // beginDefinition;
+
+explodeToolCall[ KeyValuePattern @ {
+    "Name"       -> "WolframLanguageEvaluator",
+    "Parameters" -> KeyValuePattern[ "code" -> code_String ]
+} ] := Cell[ BoxData @ StringToBoxes[ code, "WL" ], "Input" ];
+
+explodeToolCall[ KeyValuePattern @ {
+    "Name"       -> "WolframAlpha",
+    "Parameters" -> KeyValuePattern[ "query" -> query_String ]
+} ] := Cell[ query, "WolframAlphaLong" ];
+
+explodeToolCall[ tags: KeyValuePattern @ { } ] := Cell[
+    BoxData @ ToBoxes @ Iconize[
+        tags, (* FIXME: iconize an actual tool response object here *)
+        "Used " <> Lookup[ tags, "DisplayName", Lookup[ tags, "Name", "LLMTool" ] ]
+    ],
+    "Input"
+];
+
+explodeToolCall // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
