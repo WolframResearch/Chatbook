@@ -233,7 +233,7 @@ toolbarButtonLabel0[ iconName_String, label_, {styleopts___}, {gridopts___}] :=
 toolbarButtonLabel0 // endDefinition;
 
 $toolbarButtonCommon = Sequence[
-    FrameMargins   -> { { 1, 3 }, { 1, 1 } },
+    FrameMargins   -> { { 1, 6 }, { 1, 1 } },
     ImageMargins   -> { { 0, 0 }, { 4, 4 } },
     ImageSize      -> { Automatic, 22 },
     RoundingRadius -> 3
