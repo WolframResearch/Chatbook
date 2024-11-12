@@ -69,11 +69,13 @@ ChatbookAction[ "AttachCodeButtons"            , args___ ] := catchMine @ Attach
 ChatbookAction[ "AttachWorkspaceChatInput"     , args___ ] := catchMine @ attachWorkspaceChatInput @ args;
 ChatbookAction[ "CopyChatObject"               , args___ ] := catchMine @ CopyChatObject @ args;
 ChatbookAction[ "CopyExplodedCells"            , args___ ] := catchMine @ CopyExplodedCells @ args;
+ChatbookAction[ "CopyImage"                    , args___ ] := catchMine @ copyImage @ args;
+ChatbookAction[ "CopyPlainText"                , args___ ] := catchMine @ copyPlainText @ args;
 ChatbookAction[ "DisableAssistance"            , args___ ] := catchMine @ DisableAssistance @ args;
 ChatbookAction[ "DisplayInlineChat"            , args___ ] := catchMine @ displayInlineChat @ args;
 ChatbookAction[ "EvaluateChatInput"            , args___ ] := catchMine @ EvaluateChatInput @ args;
-ChatbookAction[ "EvaluateWorkspaceChat"        , args___ ] := catchMine @ evaluateWorkspaceChat @ args;
 ChatbookAction[ "EvaluateInlineChat"           , args___ ] := catchMine @ evaluateInlineChat @ args;
+ChatbookAction[ "EvaluateWorkspaceChat"        , args___ ] := catchMine @ evaluateWorkspaceChat @ args;
 ChatbookAction[ "ExclusionToggle"              , args___ ] := catchMine @ ExclusionToggle @ args;
 ChatbookAction[ "ExplodeDuplicate"             , args___ ] := catchMine @ ExplodeDuplicate @ args;
 ChatbookAction[ "ExplodeInPlace"               , args___ ] := catchMine @ ExplodeInPlace @ args;
@@ -114,6 +116,38 @@ SendFeedback // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*copyImage*)
+copyImage // beginDefinition;
+
+copyImage[ cellObject0_ ] := Enclose[
+    Module[ { cellObject, image },
+        cellObject = ConfirmMatch[ ensureChatOutputCell @ cellObject0, _CellObject, "CellObject" ];
+        image      = ConfirmBy[ rasterize @ cellObject, image2DQ, "Image" ];
+        CopyToClipboard @ image
+    ],
+    throwInternalFailure
+];
+
+copyImage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*copyPlainText*)
+copyPlainText // beginDefinition;
+
+copyPlainText[ cellObject0_ ] := Enclose[
+    Module[ { cellObject, text },
+        cellObject = ConfirmMatch[ ensureChatOutputCell @ cellObject0, _CellObject, "CellObject" ];
+        text       = ConfirmBy[ CellToString @ cellObject, StringQ, "String" ];
+        CopyToClipboard @ text
+    ],
+    throwInternalFailure
+];
+
+copyPlainText // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*CopyExplodedCells*)
 CopyExplodedCells // beginDefinition;
 
@@ -123,7 +157,7 @@ CopyExplodedCells[ cellObject0_ ] := Enclose[
         exploded   = ConfirmMatch[ explodeCell @ cellObject, { ___Cell }, "ExplodeCell" ];
         CopyToClipboard @ exploded
     ],
-    throwInternalFailure[ CopyExplodedCells @ cellObject, ## ] &
+    throwInternalFailure
 ];
 
 CopyExplodedCells // endDefinition;
@@ -141,7 +175,7 @@ ExplodeDuplicate[ cellObject0_ ] := Enclose[
         nbo = ConfirmMatch[ parentNotebook @ cellObject, _NotebookObject, "ParentNotebook" ];
         ConfirmMatch[ NotebookWrite[ nbo, exploded ], Null, "NotebookWrite" ]
     ],
-    throwInternalFailure[ ExplodeDuplicate @ cellObject, ## ] &
+    throwInternalFailure
 ];
 
 ExplodeDuplicate // endDefinition;
@@ -157,7 +191,7 @@ ExplodeInPlace[ cellObject0_ ] := Enclose[
         exploded   = ConfirmMatch[ explodeCell @ cellObject, { __Cell }, "ExplodeCell" ];
         ConfirmMatch[ NotebookWrite[ cellObject, exploded ], Null, "NotebookWrite" ]
     ],
-    throwInternalFailure[ ExplodeInPlace @ cellObject, ## ] &
+    throwInternalFailure
 ];
 
 ExplodeInPlace // endDefinition;
@@ -175,7 +209,7 @@ ToggleFormatting[ cellObject0_ ] := Enclose[
         content = ConfirmMatch[ NotebookRead @ nbo, _String | _List, "NotebookRead" ];
         Confirm[ toggleFormatting[ cellObject, nbo, content ], "Toggle" ]
     ],
-    throwInternalFailure[ ToggleFormatting @ cellObject, ## ] &
+    throwInternalFailure
 ];
 
 ToggleFormatting // endDefinition;
@@ -197,7 +231,7 @@ toggleFormatting[ cellObject_CellObject, nbo_NotebookObject, string_String ] := 
         Confirm[ SelectionMove[ cellObject, All, CellContents, AutoScroll -> False ], "SelectionMove" ];
         Confirm[ NotebookWrite[ nbo, TextData @ textDataList, None ], "NotebookWrite" ]
     ],
-    throwInternalFailure[ toggleFormatting[ cellObject, nbo, string ], ## ] &
+    throwInternalFailure
 ];
 
 (* Convert formatted TextData to a plain string: *)
@@ -207,7 +241,7 @@ toggleFormatting[ cellObject_CellObject, nbo_NotebookObject, textDataList_List ]
         Confirm[ SelectionMove[ cellObject, All, CellContents, AutoScroll -> False ], "SelectionMove" ];
         Confirm[ NotebookWrite[ nbo, TextData @ string, None ], "NotebookWrite" ]
     ],
-    throwInternalFailure[ toggleFormatting[ cellObject, nbo, textDataList ], ## ] &
+    throwInternalFailure
 ];
 
 toggleFormatting // endDefinition;
