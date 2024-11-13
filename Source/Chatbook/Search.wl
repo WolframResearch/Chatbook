@@ -99,7 +99,7 @@ addChatToSearchIndex[ spec_ ] := Enclose[
     Catch @ Module[ { data, appName, uuid, vectors, metadata },
         If[ $noSemanticSearch, Throw @ Missing[ "NoSemanticSearch" ] ];
         data = ConfirmMatch[ getChatConversationData @ spec, _Association|_Missing, "Data" ];
-        If[ MissingQ @ data, Throw @ data ]; (* TODO: auto-save here? *)
+        If[ MissingQ @ data, Throw @ Missing[ "NoVectors" ] ]; (* TODO: auto-save here? *)
         appName = ConfirmBy[ data[ "AppName" ], StringQ, "AppName" ];
         uuid = ConfirmBy[ data[ "ConversationUUID" ], StringQ, "ConversationUUID" ];
         vectors = ConfirmMatch[ data[ "Vectors" ], { ___NumericArray }, "Vectors" ];
