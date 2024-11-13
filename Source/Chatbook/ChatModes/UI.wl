@@ -1180,12 +1180,9 @@ $inlineToWorkspaceConversionRules := $inlineToWorkspaceConversionRules = Dispatc
         ___
     ] :>
         Cell[
-            TextData @ Cell[
-                BoxData @ TemplateBox[
-                    { Cell[ Flatten @ TextData @ text, Background -> None, Editable -> True, Selectable -> True ] },
-                    "AssistantMessageBox"
-                ],
-                Background -> None
+            BoxData @ TemplateBox[
+                { Cell[ Flatten @ TextData @ text, Background -> None, Editable -> True, Selectable -> True ] },
+                "AssistantMessageBox"
             ],
             "ChatOutput",
             TaggingRules      -> tags,
@@ -1241,13 +1238,7 @@ $fromWorkspaceChatConversionRules := $fromWorkspaceChatConversionRules = Dispatc
         Cell[ Flatten @ TextData @ text, "ChatInput" ]
     ,
     Cell[
-        TextData @ Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox", ___ ], ___ ],
-        "ChatOutput",
-        ___
-    ] :> Cell[ Flatten @ TextData @ text, "ChatOutput" ]
-    ,
-    Cell[
-        TextData @ { Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox", ___ ], ___ ] },
+        BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox", ___ ],
         "ChatOutput",
         ___
     ] :> Cell[ Flatten @ TextData @ text, "ChatOutput" ]

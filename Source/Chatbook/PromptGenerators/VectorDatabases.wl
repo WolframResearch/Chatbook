@@ -603,7 +603,10 @@ getAndCacheEmbeddings[ { } ] :=
 getAndCacheEmbeddings[ strings: { __String } ] /; $embeddingModel === "SentenceBERT" := Enclose[
     Module[ { vectors },
         vectors = ConfirmBy[
-            Developer`ToPackedArray @ sentenceBERTEmbedding @ strings,
+            If[ AllTrue[ strings, StringMatchQ[ WhitespaceCharacter... ] ],
+                Developer`ToPackedArray @ Rest @ sentenceBERTEmbedding @ Prepend[ strings, "hello" ],
+                Developer`ToPackedArray @ sentenceBERTEmbedding @ strings
+            ],
             Developer`PackedArrayQ,
             "PackedArray"
         ];
