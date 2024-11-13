@@ -2265,15 +2265,10 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
         dingbat = makeOutputDingbat @ settings;
 
         outer = If[ TrueQ @ $WorkspaceChat,
-                    TextData @ {
-                        Cell[
-                            BoxData @ TemplateBox[
-                                { Cell[ #, Background -> None, Editable -> True, Selectable -> True ] },
-                                "AssistantMessageBox"
-                            ],
-                            Background -> None
-                        ]
-                    } &,
+                    BoxData @ TemplateBox[
+                        { Cell[ #, Background -> None, Editable -> True, Selectable -> True ] },
+                        "AssistantMessageBox"
+                    ] &,
                     # &
                 ];
 

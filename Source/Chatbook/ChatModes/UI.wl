@@ -111,7 +111,7 @@ historyButton[ Dynamic[ nbo_ ] ] :=
                         Dividers -> Center,
                         Spacings -> {1,0}
                     ]
-            
+
                 ]
             ]
         ];
@@ -143,7 +143,7 @@ sourcesButton // endDefinition;
 (*newChatButton*)
 newChatButton // beginDefinition;
 
-newChatButton[ Dynamic[ nbo_ ] ] := 
+newChatButton[ Dynamic[ nbo_ ] ] :=
 	With[{(* the icon colors come from the given BaseStyle *)
     	label = toolbarButtonLabel0["New", "New",
     		{FontColor -> RGBColor["#469ECB"]},
@@ -153,7 +153,7 @@ newChatButton[ Dynamic[ nbo_ ] ] :=
     		{FontColor -> RGBColor[1,1,1]},
     		{BaseStyle -> RGBColor[1,1,1]}
     	]},
-	
+
 		Button[
 			toolbarButtonLabel[ lightButton, {label, hotlabel}, "New"],
 			clearOverlayMenus @ nbo;
@@ -225,7 +225,7 @@ toolbarButtonLabel0[ iconName_String, label_, {styleopts___}, {gridopts___}] :=
             RawBoxes @ TemplateBox[ { }, "WorkspaceToolbarIcon"<>iconName ],
             Style[ label, $toolbarLabelStyle, styleopts ]
         } },
-        gridopts, 
+        gridopts,
         Spacings  -> 0.25,
         Alignment -> { {Left, Right}, Center }
     ];
@@ -1079,12 +1079,9 @@ $inlineToWorkspaceConversionRules := $inlineToWorkspaceConversionRules = Dispatc
         ___
     ] :>
         Cell[
-            TextData @ Cell[
-                BoxData @ TemplateBox[
-                    { Cell[ Flatten @ TextData @ text, Background -> None, Editable -> True, Selectable -> True ] },
-                    "AssistantMessageBox"
-                ],
-                Background -> None
+            BoxData @ TemplateBox[
+                { Cell[ Flatten @ TextData @ text, Background -> None, Editable -> True, Selectable -> True ] },
+                "AssistantMessageBox"
             ],
             "ChatOutput",
             TaggingRules      -> tags,
@@ -1140,13 +1137,7 @@ $fromWorkspaceChatConversionRules := $fromWorkspaceChatConversionRules = Dispatc
         Cell[ Flatten @ TextData @ text, "ChatInput" ]
     ,
     Cell[
-        TextData @ Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox", ___ ], ___ ],
-        "ChatOutput",
-        ___
-    ] :> Cell[ Flatten @ TextData @ text, "ChatOutput" ]
-    ,
-    Cell[
-        TextData @ { Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox", ___ ], ___ ] },
+        BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox", ___ ],
         "ChatOutput",
         ___
     ] :> Cell[ Flatten @ TextData @ text, "ChatOutput" ]
