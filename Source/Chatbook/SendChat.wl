@@ -110,7 +110,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         ];
 
         AppendTo[ settings, "Data" -> data ];
-        CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "Data" } ] = data;
+        CurrentChatSettings[ cellObject, "Data" ] = data;
 
         $resultCellCache = <| |>;
         $debugLog = Internal`Bag[ ];
@@ -145,8 +145,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
 
         addHandlerArguments[ "Task" -> task ];
 
-        CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "CellObject" } ] = cellObject;
-        CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "Task"       } ] = task;
+        CurrentChatSettings[ cellObject, "CellObject" ] = cellObject;
+        CurrentChatSettings[ cellObject, "Task"       ] = task;
 
         If[ FailureQ @ task, throwTop @ writeErrorCell[ cellObject, task ] ];
         setProgressDisplay[ "Waiting for response", 1.0 ];
