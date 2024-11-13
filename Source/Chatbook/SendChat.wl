@@ -110,7 +110,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         ];
 
         AppendTo[ settings, "Data" -> data ];
-        CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "Data" } ] = data;
+        CurrentChatSettings[ cellObject, "Data" ] = data;
 
         $resultCellCache = <| |>;
         $debugLog = Internal`Bag[ ];
@@ -145,8 +145,8 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
 
         addHandlerArguments[ "Task" -> task ];
 
-        CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "CellObject" } ] = cellObject;
-        CurrentValue[ cellObject, { TaggingRules, "ChatNotebookSettings", "Task"       } ] = task;
+        CurrentChatSettings[ cellObject, "CellObject" ] = cellObject;
+        CurrentChatSettings[ cellObject, "Task"       ] = task;
 
         If[ FailureQ @ task, throwTop @ writeErrorCell[ cellObject, task ] ];
         setProgressDisplay[ "Waiting for response", 1.0 ];
@@ -895,6 +895,7 @@ autoCorrect[ string_String ] := StringReplace[ string, $llmAutoCorrectRules ];
 autoCorrect // endDefinition;
 
 $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
+    "```" ~~ code: Except[ "\n" ].. ~~ "```" :> "``"<>code<>"``",
     "wolfram_language_evaliator" -> "wolfram_language_evaluator",
     "\\!\\(\\*MarkdownImageBox[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
     "\\!\\(MarkdownImageBox[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
@@ -2264,15 +2265,10 @@ reformatCell[ settings_, string_, tag_, open_, label_, pageData_, cellTags_, uui
         dingbat = makeOutputDingbat @ settings;
 
         outer = If[ TrueQ @ $WorkspaceChat,
-                    TextData @ {
-                        Cell[
-                            BoxData @ TemplateBox[
-                                { Cell[ #, Background -> None, Editable -> True, Selectable -> True ] },
-                                "AssistantMessageBox"
-                            ],
-                            Background -> None
-                        ]
-                    } &,
+                    BoxData @ TemplateBox[
+                        { Cell[ #, Background -> None, Editable -> True, Selectable -> True ] },
+                        "AssistantMessageBox"
+                    ] &,
                     # &
                 ];
 
@@ -2524,7 +2520,7 @@ restoreLastPage // endDefinition;
 (*attachChatOutputMenu*)
 attachChatOutputMenu // beginDefinition;
 
-attachChatOutputMenu[ cell_CellObject ] /; $cloudNotebooks := Null;
+attachChatOutputMenu[ cell_CellObject ] /; $cloudNotebooks || $WorkspaceChat || $InlineChat := Null;
 
 attachChatOutputMenu[ cell_CellObject ] := (
     $lastChatOutput = cell;
