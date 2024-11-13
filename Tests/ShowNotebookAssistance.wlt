@@ -27,13 +27,27 @@ VerificationTest[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*ShowNotebookAssistance*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*How can I find cats in this picture?*)
+
+(* Create a user notebook with an image: *)
 VerificationTest[
-    userNotebook = CreateDocument @ ExpressionCell[ FreeformEvaluate[ "picture of a cat" ], "Input" ],
-    _NotebookObject,
+    image = FreeformEvaluate[ "picture of a cat" ],
+    _Image? ImageQ,
     SameTest -> MatchQ,
-    TestID   -> "CreateUserNotebook@@Tests/ShowNotebookAssistance.wlt:30,1-35,2"
+    TestID   -> "EvaluateImage@@Tests/ShowNotebookAssistance.wlt:36,1-41,2"
 ]
 
+VerificationTest[
+    userNotebook = CreateDocument @ ExpressionCell[ image, "Input" ],
+    _NotebookObject,
+    SameTest -> MatchQ,
+    TestID   -> "CreateUserNotebook@@Tests/ShowNotebookAssistance.wlt:43,1-48,2"
+]
+
+(* Show notebook assistance window and evaluate a query concerning the selection: *)
 VerificationTest[
     SelectionMove[ First @ Cells @ userNotebook, All, Cell ];
     SetSelectedNotebook @ userNotebook;
@@ -51,20 +65,52 @@ VerificationTest[
         |>
     ],
     _NotebookObject,
-    SameTest -> MatchQ,
-    TestID   -> "ShowNotebookAssistance@@Tests/ShowNotebookAssistance.wlt:37,1-56,2"
+    SameTest       -> MatchQ,
+    TestID         -> "ShowNotebookAssistance@@Tests/ShowNotebookAssistance.wlt:51,1-71,2",
+    TimeConstraint -> 30
 ]
 
+(* ImageCases should appear somewhere in the response: *)
 VerificationTest[
-    output = CellToString @ NotebookRead @ Last @ Cells[ chatWindow, CellStyle -> "ChatOutput" ],
+    output = CellToString[
+        NotebookRead @ Last @ Cells[ chatWindow, CellStyle -> "ChatOutput" ],
+        "ContentTypes" -> { "Image", "Text" }
+    ],
     _String? (StringContainsQ[ "ImageCases" ]),
     SameTest -> MatchQ,
-    TestID   -> "ChatOutput@@Tests/ShowNotebookAssistance.wlt:58,1-63,2"
+    TestID   -> "ChatOutput@@Tests/ShowNotebookAssistance.wlt:74,1-82,2"
 ]
 
+(* Ensure that the LLM used the image inline in their response: *)
+VerificationTest[
+    GetExpressionURIs @ output,
+    { ___, image, ___ },
+    SameTest -> MatchQ,
+    TestID   -> "GetExpressionURIs@@Tests/ShowNotebookAssistance.wlt:85,1-90,2"
+]
+
+(* Ensure there are no pink boxes in the chat window: *)
+VerificationTest[
+    CurrentValue[ chatWindow, Selectable ] = True;
+    SelectionMove[ chatWindow, All, Notebook ];
+    MathLink`CallFrontEnd @ FrontEnd`GetErrorsInSelectionPacket @ chatWindow,
+    { },
+    SameTest -> MatchQ,
+    TestID   -> "NoPinkBoxes@@Tests/ShowNotebookAssistance.wlt:93,1-100,2"
+]
+
+(* Ensure no unexpected cells appeared in chat window: *)
+VerificationTest[
+    CurrentValue[ Cells @ chatWindow, "CellStyleName" ],
+    { "ChatInput", "ChatOutput" },
+    SameTest -> MatchQ,
+    TestID   -> "NoErrorMessages@@Tests/ShowNotebookAssistance.wlt:103,1-108,2"
+]
+
+(* Cleanup: *)
 VerificationTest[
     NotebookClose /@ { userNotebook, chatWindow },
     { Null, Null },
     SameTest -> MatchQ,
-    TestID   -> "CloseNotebooks@@Tests/ShowNotebookAssistance.wlt:65,1-70,2"
+    TestID   -> "Cleanup@@Tests/ShowNotebookAssistance.wlt:111,1-116,2"
 ]
