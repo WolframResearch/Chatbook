@@ -3,7 +3,7 @@
 (*Initialization*)
 VerificationTest[
     If[ ! TrueQ @ Wolfram`ChatbookTests`$TestDefinitionsLoaded,
-        Get @ FileNameJoin @ { DirectoryName[ Echo @ $TestFileName ], "Common.wl" }
+        Get @ FileNameJoin @ { DirectoryName[ $TestFileName ], "Common.wl" }
     ],
     Null,
     SameTest -> MatchQ,
