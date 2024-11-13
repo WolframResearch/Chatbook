@@ -30,6 +30,7 @@ If[ ! PacletObjectQ @ PacletObject[ "Wolfram/PacletCICD" ],
 Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 
 If[ StringQ @ Environment[ "GITHUB_ACTIONS" ] && ! TrueQ @ $serviceConnected,
+    Print[ "::notice::Creating service connection..." ];
     Needs[ "OAuth`" -> None ];
     EchoEvaluation[ ServiceConnections`SavedConnections[ "OpenAI" ] ];
     EchoEvaluation[ ServiceConnections`ServiceConnections[ "OpenAI" ] ];
