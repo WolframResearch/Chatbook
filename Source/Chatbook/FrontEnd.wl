@@ -894,7 +894,7 @@ tryInlineChatParent // endDefinition;
 (*notebookRead*)
 notebookRead // beginDefinition;
 notebookRead[ cells_ ] /; $cloudNotebooks := cloudNotebookRead @ cells;
-notebookRead[ cells_ ] := notebookReadWithCellObjects @ cells;
+notebookRead[ cells_ ] := usingFrontEnd @ notebookReadWithCellObjects @ cells;
 notebookRead // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
