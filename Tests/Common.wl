@@ -30,7 +30,14 @@ If[ ! PacletObjectQ @ PacletObject[ "Wolfram/PacletCICD" ],
 Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 
 If[ StringQ @ Environment[ "GITHUB_ACTIONS" ],
-    ServiceConnect[ "OpenAI", Authentication -> <| "APIKey" -> Environment[ "OPENAI_API_KEY" ] |> ]
+    cicd`ScriptConfirmMatch[
+        ServiceConnect[
+            "OpenAI",
+            Authentication -> <| "APIKey" -> Environment[ "OPENAI_API_KEY" ] |>,
+            SaveConnection -> False
+        ],
+        _ServiceObject
+    ]
 ];
 
 (* ::**************************************************************************************************************:: *)
