@@ -37,6 +37,13 @@ If[ StringQ @ Environment[ "GITHUB_ACTIONS" ],
             SaveConnection -> False
         ],
         _ServiceObject
+    ];
+    cicd`ScriptConfirmMatch[
+        LLMServices`Chat[
+            { <| "Role" -> "User", "Content" -> "Hello" |> },
+            LLMConfiguration[ <| "MaxTokens" -> 1, "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |> |> ]
+        ],
+        KeyValuePattern[ "Content" -> _String ]
     ]
 ];
 
