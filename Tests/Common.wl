@@ -30,24 +30,23 @@ If[ ! PacletObjectQ @ PacletObject[ "Wolfram/PacletCICD" ],
 Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 
 If[ StringQ @ Environment[ "GITHUB_ACTIONS" ] && ! TrueQ @ $serviceConnected,
-    Print[ "::notice::Creating service connection..." ];
     Needs[ "OAuth`" -> None ];
-    Print[ "::notice::Saved connections: ", ServiceConnections`SavedConnections[ "OpenAI" ] ];
-    Print[ "::notice::Service connections: ", ServiceConnections`ServiceConnections[ "OpenAI" ] ];
-    Print[
-        "::notice::New connection: ",
-        ServiceConnect[
-            "OpenAI",
-            Authentication -> <| "APIKey" -> Environment[ "OPENAI_API_KEY" ] |>,
-            SaveConnection -> False
+    If[ ServiceConnections`SavedConnections[ "OpenAI" ] === { },
+        cicd`ScriptConfirmMatch[
+            ServiceConnect[
+                "OpenAI",
+                Authentication -> <| "APIKey" -> Environment[ "OPENAI_API_KEY" ] |>,
+                SaveConnection -> True
+            ],
+            _ServiceObject
         ]
     ];
-    Print[
-        "::notice::Connection test: ",
+    cicd`ScriptConfirmMatch[
         LLMServices`Chat[
             { <| "Role" -> "User", "Content" -> "Hello" |> },
             LLMConfiguration[ <| "MaxTokens" -> 1, "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |> |> ]
-        ]
+        ],
+        KeyValuePattern[ "Content" -> _String ]
     ];
     $serviceConnected = True
 ];
