@@ -162,8 +162,7 @@ postProcessExplodedCells // endDefinition;
 (*$preprocessingRules*)
 $preprocessingRules := $preprocessingRules = Dispatch @ {
     (* Workspace/Inline chat template boxes: *)
-    Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox", ___ ], ___ ] :>
-        text,
+    TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox", ___ ] :> text,
 
     (* Remove "InlineSection" styling: *)
     Cell[
