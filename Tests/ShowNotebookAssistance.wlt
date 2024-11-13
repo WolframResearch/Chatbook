@@ -7,21 +7,21 @@ VerificationTest[
     ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "GetDefinitions"
+    TestID   -> "GetDefinitions@@Tests/ShowNotebookAssistance.wlt:4,1-11,2"
 ]
 
 VerificationTest[
     Needs[ "Wolfram`Chatbook`" ],
     Null,
     SameTest -> MatchQ,
-    TestID   -> "LoadContext"
+    TestID   -> "LoadContext@@Tests/ShowNotebookAssistance.wlt:13,1-18,2"
 ]
 
 VerificationTest[
     Context @ ShowNotebookAssistance,
     "Wolfram`Chatbook`",
     SameTest -> MatchQ,
-    TestID   -> "ShowNotebookAssistanceContext"
+    TestID   -> "ShowNotebookAssistanceContext@@Tests/ShowNotebookAssistance.wlt:20,1-25,2"
 ]
 
 (* ::**************************************************************************************************************:: *)
@@ -31,7 +31,7 @@ VerificationTest[
     userNotebook = CreateDocument @ ExpressionCell[ FreeformEvaluate[ "picture of a cat" ], "Input" ],
     _NotebookObject,
     SameTest -> MatchQ,
-    TestID   -> "CreateUserNotebook"
+    TestID   -> "CreateUserNotebook@@Tests/ShowNotebookAssistance.wlt:30,1-35,2"
 ]
 
 VerificationTest[
@@ -52,19 +52,19 @@ VerificationTest[
     ],
     _NotebookObject,
     SameTest -> MatchQ,
-    TestID   -> "ShowNotebookAssistance"
+    TestID   -> "ShowNotebookAssistance@@Tests/ShowNotebookAssistance.wlt:37,1-56,2"
 ]
 
 VerificationTest[
     output = CellToString @ NotebookRead @ Last @ Cells[ chatWindow, CellStyle -> "ChatOutput" ],
     _String? (StringContainsQ[ "ImageCases" ]),
     SameTest -> MatchQ,
-    TestID   -> "ChatOutput"
+    TestID   -> "ChatOutput@@Tests/ShowNotebookAssistance.wlt:58,1-63,2"
 ]
 
 VerificationTest[
     NotebookClose /@ { userNotebook, chatWindow },
     { Null, Null },
     SameTest -> MatchQ,
-    TestID   -> "CloseNotebooks"
+    TestID   -> "CloseNotebooks@@Tests/ShowNotebookAssistance.wlt:65,1-70,2"
 ]
