@@ -29,26 +29,8 @@ If[ ! PacletObjectQ @ PacletObject[ "Wolfram/PacletCICD" ],
 
 Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 
-If[ StringQ @ Environment[ "GITHUB_ACTIONS" ] && ! TrueQ @ $serviceConnected,
-    Needs[ "OAuth`" -> None ];
-    If[ ServiceConnections`SavedConnections[ "OpenAI" ] === { },
-        cicd`ScriptConfirmMatch[
-            ServiceConnect[
-                "OpenAI",
-                Authentication -> <| "APIKey" -> Environment[ "OPENAI_API_KEY" ] |>,
-                SaveConnection -> True
-            ],
-            _ServiceObject
-        ]
-    ];
-    cicd`ScriptConfirmMatch[
-        LLMServices`Chat[
-            { <| "Role" -> "User", "Content" -> "Hello" |> },
-            LLMConfiguration[ <| "MaxTokens" -> 1, "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o" |> |> ]
-        ],
-        KeyValuePattern[ "Content" -> _String ]
-    ];
-    $serviceConnected = True
+If[ StringQ @ Environment[ "GITHUB_ACTIONS" ],
+    ServiceConnect[ "OpenAI", Authentication -> <| "APIKey" -> Environment[ "OPENAI_API_KEY" ] |> ]
 ];
 
 (* ::**************************************************************************************************************:: *)

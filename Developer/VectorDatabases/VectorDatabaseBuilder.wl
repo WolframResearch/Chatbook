@@ -536,36 +536,14 @@ createEmbeddings[ string_String ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*sentenceBERTEmbedding*)
-sentenceBERTEmbedding := getSentenceBERTEmbeddingFunction[ ];
+sentenceBERTEmbedding // beginDefinition;
 
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*getSentenceBERTEmbeddingFunction*)
-getSentenceBERTEmbeddingFunction // beginDefinition;
+sentenceBERTEmbedding[ args___ ] := (
+    Needs[ "SemanticSearch`" -> None ];
+    SemanticSearch`SemanticSearch`Private`SentenceBERTEmbedding @ args
+);
 
-getSentenceBERTEmbeddingFunction[ ] := Enclose[
-    Module[ { name },
-
-        Needs[ "SemanticSearch`" -> None ];
-
-        name = ConfirmBy[
-            SelectFirst[
-                {
-                    "SemanticSearch`SentenceBERTEmbedding",
-                    "SemanticSearch`SemanticSearch`Private`SentenceBERTEmbedding"
-                },
-                NameQ @ # && ToExpression[ #, InputForm, System`Private`HasAnyEvaluationsQ ] &
-            ],
-            StringQ,
-            "SymbolName"
-        ];
-
-        getSentenceBERTEmbeddingFunction[ ] = Symbol @ name
-    ],
-    throwInternalFailure
-];
-
-getSentenceBERTEmbeddingFunction // endDefinition;
+sentenceBERTEmbedding // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

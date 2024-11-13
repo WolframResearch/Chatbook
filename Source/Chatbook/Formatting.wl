@@ -1140,8 +1140,6 @@ $$simpleToolCall    = Shortest[ $$simpleToolCommand ~~ ___ ~~ ($$endToolCall|End
 (* ::Subsection::Closed:: *)
 (*$textDataFormatRules*)
 $textDataFormatRules = {
-    "```" ~~ code: Except[ "\n" ].. ~~ "```" :> inlineCodeCell @ code,
-
     StringExpression[
         Longest[ "```" ~~ language: Except[ "\n" ]... ] ~~ (" "...) ~~ "\n",
         Shortest[ code__ ],
