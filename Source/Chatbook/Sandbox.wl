@@ -768,6 +768,8 @@ sessionEvaluate[ HoldComplete[ eval0_ ] ] := Enclose[
             ]
         ];
 
+        If[ $WorkspaceChat, NotebookDelete @ Cells[ $evaluationNotebook, CellStyle -> "PrintTemporary" ] ];
+
         result = HoldComplete @@ ConfirmMatch[ Lookup[ response, "Result" ], _HoldComplete|_Hold, "Result" ];
         packets = TextPacket /@ response[ "OutputLog" ];
         initialized = result;
