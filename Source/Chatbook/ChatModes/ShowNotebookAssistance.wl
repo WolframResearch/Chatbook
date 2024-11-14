@@ -15,6 +15,7 @@ $workspaceChatWidth := $workspaceChatWidth = Switch[ $OperatingSystem, "MacOSX",
 $notebookAssistanceBaseSettings = <|
     "AppName"           -> "NotebookAssistance",
     "LLMEvaluator"      -> "NotebookAssistant",
+    "Model"             -> <| "Service" -> "LLMKit", "Name" -> Automatic |>,
     "PromptGenerators"  -> { "RelatedDocumentation" },
     "ServiceCaller"     -> "NotebookAssistance",
     "ToolOptions"       -> <| "WolframLanguageEvaluator" -> <| "AppendURIPrompt" -> True, "Method" -> "Session" |> |>,
@@ -548,7 +549,15 @@ attachToLeft[ source_NotebookObject, current_NotebookObject ] := Enclose[
             WindowMargins -> { { left - width, Automatic }, { bottom, top } },
             WindowSize    -> { width, Automatic }
         ];
-
+        
+        If[ (* Starting in Mac 14.2, we can make sure the assistant notebook is on right "space". *)
+            And[
+                BoxForm`sufficientVersionQ[14.2],
+                Internal`CachedSystemInformation["FrontEnd", "OperatingSystem"] === "MacOSX"
+            ],
+            FE`Evaluate @ Evaluate @ FEPrivate`MoveToActiveDesktop @ current
+        ];
+        
         SetSelectedNotebook @ current;
         moveToChatInputField[ current, True ];
 

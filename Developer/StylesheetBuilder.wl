@@ -260,26 +260,6 @@ makeIconTemplateBoxStyle[ file_, icon_, boxes_ ] :=
 
 
 (* ::Subsection::Closed:: *)
-(*$askMenuItem*)
-
-
-$askMenuItem = MenuItem[
-    "StylesheetContextMenuAskAI",
-    KernelExecute[
-        With[
-            { $CellContext`nbo = InputNotebook[ ] },
-            { $CellContext`cells = SelectedCells @ $CellContext`nbo },
-            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "Ask", $CellContext`nbo, $CellContext`cells ]
-        ]
-    ],
-    MenuEvaluator -> Automatic,
-    Method        -> "Queued"
-];
-
-
-
-(* ::Subsection::Closed:: *)
 (*$excludeMenuItem*)
 
 
@@ -310,6 +290,7 @@ $excludeMenuItem = MenuItem[
     Said differently, MenuItem can only take a String as its first argument, so we coerce the
     FrontEnd to first resolve the string resources before it tries to resolve the ContextMenu. *)
 
+contextMenu[name_String] := FEPrivate`FrontEndResource[ "ContextMenus", name ]
 contextMenu[ a___, name_String, b___ ] := contextMenu[ a, FEPrivate`FrontEndResource[ "ContextMenus", name ], b ];
 contextMenu[ a : (_List | _FEPrivate`FrontEndResource).. ] := With[ { slot = Slot },
     Replace[
@@ -763,7 +744,6 @@ $stylesheetVersion := $stylesheetVersion = StringJoin[
 
 
 inlineResources[ expr_ ] := expr /. {
-    HoldPattern @ $askMenuItem              :> RuleCondition @ $askMenuItem,
     HoldPattern @ $defaultChatbookSettings  :> RuleCondition @ $defaultChatbookSettings,
     HoldPattern @ $suppressButtonAppearance :> RuleCondition @ $suppressButtonAppearance,
     HoldPattern @ $discardedMaterialLabel   :> RuleCondition @ $discardedMaterialLabel

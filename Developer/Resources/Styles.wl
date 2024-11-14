@@ -33,7 +33,7 @@ Cell[
     |>,
 
     ComponentwiseContextMenu -> <|
-        "CellBracket" -> contextMenu[ { $askMenuItem, $excludeMenuItem, Delimiter }, "CellBracket" ],
+        "CellBracket" -> contextMenu[ { $excludeMenuItem, Delimiter }, "CellBracket" ],
         "CellGroup"   -> contextMenu[ { $excludeMenuItem, Delimiter }, "CellGroup" ],
         "CellRange"   -> contextMenu[ { $excludeMenuItem, Delimiter }, "CellRange" ]
     |>,
@@ -57,17 +57,9 @@ Cell[
 (*Text*)
 
 
-(*
-    In 14.1, Chatbook.nb inherits from Default.nb, but in 14.2, chat styles are in CoreExtensions.nb only.
-    "Text" is defined in Default.nb, so include what we need from it so it looks correct. *)
-Cell[
-    StyleData[ "Text" ],
-    ContextMenu -> contextMenu[ { $askMenuItem, Delimiter }, "Text" ]
-]
-
 Cell[
     StyleData[ "NotebookAssistant`Text" ],
-    ContextMenu -> contextMenu[ { $askMenuItem, Delimiter }, "Text" ],
+    ContextMenu -> contextMenu[ "Text" ],
     CellMargins -> { { 66, 10 }, { 7, 8 } },
     FontFamily -> "Source Sans Pro",
     FontSize -> 15,
@@ -90,7 +82,6 @@ Cell[
         "*" -> "Item",
         ">" -> "ExternalLanguageDefault"
     },
-    ContextMenu -> contextMenu[ { $askMenuItem, Delimiter }, "Input" ],
     CellEpilog :> With[ { $CellContext`cell = (FinishDynamic[ ]; EvaluationCell[ ]) },
         Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
         Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AIAutoAssist", $CellContext`cell ]
@@ -105,7 +96,6 @@ Cell[
 
 Cell[
     StyleData[ "Output" ],
-    ContextMenu -> contextMenu[ { $askMenuItem, Delimiter }, "Output" ],
     CellTrayWidgets -> <| "GearMenu" -> <| "Condition" -> False |> |>
 ]
 
