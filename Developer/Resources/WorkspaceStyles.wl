@@ -27,6 +27,13 @@ Cell[
 ]
 
 
+(* Ensure that raw cell expressions can be toggled back to formatted view: *)
+Cell[
+    StyleData[ "CellExpression" ],
+    Selectable -> True
+]
+
+
 Cell[
     StyleData[ "WorkspaceChatStyleSheetInformation" ],
     TaggingRules -> <| "WorkspaceChatStyleSheetVersion" -> $stylesheetVersion |>

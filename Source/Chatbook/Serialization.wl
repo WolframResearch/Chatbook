@@ -539,7 +539,15 @@ cellToString[ Cell[ a__, $$subSubItemStyle, b___ ] ] :=
     ];
 
 (* Cells showing raw data (ctrl-shift-e) *)
-cellToString[ Cell[ RawData[ str_String ], ___ ] ] := (needsBasePrompt[ "Notebooks" ]; str);
+cellToString[ Cell[ RawData[ str_String ], ___ ] ] :=
+    Catch @ Module[ { held },
+        If[ ! TrueQ @ $WorkspaceChat, needsBasePrompt[ "Notebooks" ]; Throw @ str ];
+        held = Quiet @ ToExpression[ str, InputForm, HoldComplete ];
+        If[ MatchQ[ held, HoldComplete[ _Cell ] ],
+            cellToString @@ held,
+            needsBasePrompt[ "Notebooks" ]; str
+        ]
+    ];
 
 (* Include a stack trace for message cells when available *)
 cellToString[ Cell[ a__, "Message", "MSG", b___ ] ] :=
