@@ -10,8 +10,8 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$suggestionsService             := If[ TrueQ @ $llmKit && StringQ @ $llmKitService, $llmKitService, "OpenAI" ];
-$suggestionsAuthentication      := If[ TrueQ @ $llmKit, "LLMKit", Automatic ];
+$suggestionsService             := $llmKitService;
+$suggestionsAuthentication      := "LLMKit";
 $stripWhitespace                 = True;
 $defaultWLContextString          = "";
 $finishReason                    = None;

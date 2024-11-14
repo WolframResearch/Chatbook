@@ -16,6 +16,7 @@ $ContextAliases[ "llm`" ] = "LLMServices`";
 (*Configuration*)
 $llmKit               := $llmKit = $VersionNumber >= 14.1;
 $llmKitService        := LogChatTiming @ getLLMKitService[ ];
+$fallbackLLMKitService = "AzureOpenAI";
 $allowConnectionDialog = True;
 $enableLLMServices     = Automatic;
 $modelListCache        = <| |>;
@@ -57,7 +58,7 @@ getLLMKitService // beginDefinition;
 getLLMKitService[ ] := (LLMSynthesize; getLLMKitService @ Wolfram`LLMFunctions`Common`$LLMKitInfo);
 getLLMKitService[ KeyValuePattern[ "currentProvider" -> service_String ] ] := service;
 getLLMKitService[ None ] := getUpdatedLLMKitService[ ];
-getLLMKitService[ _ ] := None;
+getLLMKitService[ _ ] := $fallbackLLMKitService;
 getLLMKitService // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
