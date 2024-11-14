@@ -338,5 +338,14 @@ Cell[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Generated Styles*)
+Cell[
+    StyleData[ "PrintTemporary" ],
+    CellMargins -> { { 30, Inherited }, { Inherited, Inherited } },
+    Selectable  -> True
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Package Footer*)
 End[ ];
