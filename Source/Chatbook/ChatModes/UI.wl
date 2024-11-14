@@ -1702,6 +1702,7 @@ loadConversation // beginDefinition;
 
 loadConversation[ nbo_NotebookObject, id_ ] := Enclose[
     Module[ { loaded, uuid, title, messages, cells, cellObjects },
+
         loaded = ConfirmBy[ LoadChat @ id, AssociationQ, "Loaded" ];
         uuid = ConfirmBy[ loaded[ "ConversationUUID" ], StringQ, "UUID" ];
         title = ConfirmBy[ loaded[ "ConversationTitle" ], StringQ, "Title" ];
@@ -1710,9 +1711,15 @@ loadConversation[ nbo_NotebookObject, id_ ] := Enclose[
         cellObjects = ConfirmMatch[ Cells @ nbo, { ___CellObject }, "CellObjects" ];
         ConfirmMatch[ NotebookDelete @ cellObjects, { Null... }, "Delete" ];
         NotebookDelete @ First[ Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ], $Failed ];
-        SelectionMove[ nbo, Before, Notebook, AutoScroll -> True ];
-        ConfirmMatch[ NotebookWrite[ nbo, cells, AutoScroll -> False ], Null, "Write" ];
-        If[ Cells @ nbo === { }, NotebookWrite[ nbo, cells, AutoScroll -> False ] ];
+
+        WithCleanup[
+            CurrentValue[ nbo, Selectable ] = True,
+            SelectionMove[ nbo, Before, Notebook, AutoScroll -> True ];
+            ConfirmMatch[ NotebookWrite[ nbo, cells, AutoScroll -> False ], Null, "Write" ];
+            If[ Cells @ nbo === { }, NotebookWrite[ nbo, cells, AutoScroll -> False ] ],
+            CurrentValue[ nbo, Selectable ] = Inherited
+        ];
+
         ChatbookAction[ "AttachWorkspaceChatInput", nbo ];
         CurrentChatSettings[ nbo, "ConversationUUID" ] = uuid;
         CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = title;
