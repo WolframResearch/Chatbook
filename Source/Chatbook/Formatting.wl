@@ -301,7 +301,7 @@ makeResultCell0[ mathCell[ math_String ] ] :=
         ]
     ];
 
-makeResultCell0[ imageCell[ alt_String, url_String ] ] := image[ alt, url ];
+makeResultCell0[ imageCell[ alt_, url_String ] ] := image[ alt, url ];
 
 makeResultCell0[ hyperlinkCell[ label_String, url_String ] ] := hyperlink[ label, url ];
 
@@ -1281,7 +1281,13 @@ $stringFormatRules = {
         Cell @ BoxData @ TemplateBox[
             { $freeformPromptBox, "paclet:guide/KnowledgeRepresentationAndAccess#203374175" },
             "HyperlinkPaclet"
-        ]
+        ],
+
+    StringExpression[
+        "<!",
+        uri: (Repeated[ LetterCharacter, { 1, 20 } ] ~~ "://content-" ~~ Repeated[ LetterCharacter|DigitCharacter, 5 ]),
+        "!>"
+    ] :> image[ None, uri ]
 };
 
 (* ::**************************************************************************************************************:: *)
@@ -2235,7 +2241,7 @@ image // beginDefinition;
 
 image[ str_String ] := First @ StringSplit[ str, "![" ~~ alt__ ~~ "](" ~~ url__ ~~ ")" :> image[ alt, url ] ];
 
-image[ alt_String, url_String ] := Enclose[
+image[ alt_, url_String ] := Enclose[
     Module[ { keys, key },
         keys = ConfirmMatch[ Keys @ $attachments, { ___String? StringQ }, "Keys" ];
         key  = SelectFirst[ keys, StringContainsQ[ url, #1, IgnoreCase -> True ] & ];
@@ -2333,12 +2339,12 @@ attachmentBoxes // endDefinition;
 (*markdownImageBoxes*)
 markdownImageBoxes // beginDefinition;
 
-markdownImageBoxes[ "", url_String, expr_ ] := PaneBox[
+markdownImageBoxes[ ""|None, url_String, expr_ ] := PaneBox[
     TagBox[
         cachedBoxes @ expr,
         "MarkdownImage",
         AutoDelete   -> True,
-        TaggingRules -> <| "CellToStringData" -> "![]("<>url<>")" |>
+        TaggingRules -> <| "CellToStringData" -> toMIBoxURI @ url |>
     ],
     ImageMargins -> { { 0, 0 }, { 10, 10 } }
 ];
@@ -2348,12 +2354,39 @@ markdownImageBoxes[ alt_String, url_String, expr_ ] := PaneBox[
         TooltipBox[ cachedBoxes @ expr, ToString[ alt, InputForm ] ],
         "MarkdownImage",
         AutoDelete   -> True,
-        TaggingRules -> <| "CellToStringData" -> "!["<>alt<>"]("<>url<>")" |>
+        TaggingRules -> <| "CellToStringData" -> "![" <> alt <> "](" <> url <> ")" |>
     ],
     ImageMargins -> { { 0, 0 }, { 10, 10 } }
 ];
 
 markdownImageBoxes // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*toMIBoxURI*)
+toMIBoxURI // beginDefinition;
+
+toMIBoxURI[ uri_String ] := Enclose[
+    Catch @ Module[ { expr },
+
+        expr = ConfirmMatch[
+            catchAlways @ Quiet @ GetExpressionURI[ uri, HoldComplete ],
+            HoldComplete[ _ ] | _Failure,
+            "GetExpression"
+        ];
+
+        Replace[
+            expr,
+            {
+                HoldComplete[ e_ ] :> ConfirmBy[ MakeExpressionURI @ Unevaluated @ e, StringQ, "URI" ],
+                _Failure :> If[ StringQ @ URLParse[ uri, "Scheme" ], uri, "expression://"<>uri ]
+            }
+        ]
+    ],
+    throwInternalFailure
+];
+
+toMIBoxURI // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

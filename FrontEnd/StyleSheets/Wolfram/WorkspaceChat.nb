@@ -72,9 +72,10 @@ Notebook[
    Magnification -> 0.85,
    Background -> GrayLevel[1]
   ],
+  Cell[StyleData["CellExpression"], Selectable -> True],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3940400412"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3940579478"|>
   ],
   Cell[
    StyleData[
@@ -411,6 +412,11 @@ Notebook[
       ]
      ])
    }
+  ],
+  Cell[
+   StyleData["PrintTemporary"],
+   Selectable -> True,
+   CellMargins -> {{30, Inherited}, {Inherited, Inherited}}
   ]
  },
  StyleDefinitions -> "PrivateStylesheetFormatting.nb"

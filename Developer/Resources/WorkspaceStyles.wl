@@ -27,6 +27,13 @@ Cell[
 ]
 
 
+(* Ensure that raw cell expressions can be toggled back to formatted view: *)
+Cell[
+    StyleData[ "CellExpression" ],
+    Selectable -> True
+]
+
+
 Cell[
     StyleData[ "WorkspaceChatStyleSheetInformation" ],
     TaggingRules -> <| "WorkspaceChatStyleSheetVersion" -> $stylesheetVersion |>
@@ -327,6 +334,15 @@ Cell[
             RoundingRadius -> 10
         ]
     }
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Generated Styles*)
+Cell[
+    StyleData[ "PrintTemporary" ],
+    CellMargins -> { { 30, Inherited }, { Inherited, Inherited } },
+    Selectable  -> True
 ]
 
 (* ::**************************************************************************************************************:: *)
