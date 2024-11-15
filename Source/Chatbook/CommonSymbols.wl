@@ -216,6 +216,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `makeInteractiveCodeCell;
 `makeModelSelector;
 `makeOutputDingbat;
+`makeTeXBoxes;
 `makeTokenBudget;
 `makeToolConfiguration;
 `makeToolResponseString;
