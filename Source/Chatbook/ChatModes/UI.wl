@@ -1812,30 +1812,77 @@ $trashButtonLabel  := $trashButtonLabel  = chatbookIcon[ "WorkspaceHistoryTrashI
 (* ::Section::Closed:: *)
 (*Global Progress Bar*)
 
-(* TODO: *)
-Grid[
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*withWorkspaceGlobalProgress*)
+withWorkspaceGlobalProgress // beginDefinition;
+withWorkspaceGlobalProgress // Attributes = { HoldRest };
+
+withWorkspaceGlobalProgress[ nbo_NotebookObject, eval_ ] := Enclose[
+    Catch @ Module[ { attached },
+
+        attached = ConfirmMatch[
+            AttachCell[
+                nbo,
+                Cell[
+                    BoxData @ ToBoxes @ $workspaceChatProgressBar,
+                    "WorkspaceChatProgressBar",
+                    FontSize -> 0.1,
+                    Magnification -> AbsoluteCurrentValue[ nbo, Magnification ]
+                ],
+                { Center, Top },
+                Offset[ { 0, 1 }, { 0, 0 } ],
+                { Center, Top },
+                RemovalConditions -> { "EvaluatorQuit" }
+            ],
+            _CellObject,
+            "Attached"
+        ];
+
+        WithCleanup[ eval, NotebookDelete @ attached ]
+    ],
+    throwInternalFailure
+];
+
+withWorkspaceGlobalProgress // endDefinition;
+
+
+$workspaceChatProgressBar = With[
     {
-        {
-            Graphics[
-                {
-                    RGBColor[ "#449EF7" ],
-                    Dynamic @ Rectangle[
-                        ImageScaled @ { Max[ 0, Clock[ { -0.5, 1.0 }, 3 ] ], 0 },
-                        ImageScaled @ { Min[ 1, Clock[ {  0.0, 1.5 }, 3 ] ], 1 }
-                    ]
-                },
-                AspectRatio      -> Full,
-                Background       -> RGBColor[ "#D1D1D1" ],
-                ImageSize        -> { Full, 2 },
-                PlotRangePadding -> None
-            ]
-        }
+        background  = None,
+        colorCenter = RGBColor[ 0.27451, 0.61961, 0.79608, 1.0 ],
+        colorEdges  = RGBColor[ 0.27451, 0.61961, 0.79608, 0.0 ],
+        duration    = 3,
+        leftOffset  = -0.5,
+        rightOffset = 1.5,
+        thickness   = Thickness[ 1 ]
     },
-    Alignment -> { Center, Center },
-    Frame     -> None,
-    ItemSize  -> { Automatic, 0 },
-    Spacings  -> { { 0, { }, 0 }, { 0, { }, 0 } }
-]
+    Graphics[
+        {
+            thickness,
+            Dynamic @ TemplateBox[
+                { Clock[ { leftOffset, 1.0 }, duration ], Clock[ { 0.0, rightOffset }, duration ] },
+                "WorkspaceChatProgressBar",
+                DisplayFunction -> Function[
+                    LineBox[
+                        {
+                            { #1, 0 },
+                            { (#1 + #2) / 2, 0 },
+                            { #2, 0 }
+                        },
+                        VertexColors -> { colorEdges, colorCenter, colorEdges }
+                    ]
+                ]
+            ]
+        },
+        AspectRatio      -> Full,
+        Background       -> background,
+        ImageMargins     -> 0,
+        ImageSize        -> { Full, 4 },
+        PlotRange        -> { { 0, 1 }, Automatic },
+        PlotRangePadding -> None
+    ]
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
