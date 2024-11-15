@@ -101,7 +101,10 @@ workspaceOutput // beginDefinition;
 
 workspaceOutput[ text_TextData ] :=
     wrapCellContent[
-        BoxData @ TemplateBox[ { Cell[ text, $selectableOptions ] }, "AssistantMessageBox" ],
+        TextData @ Cell[
+            BoxData @ TemplateBox[ { Cell[ text, $selectableOptions ] }, "AssistantMessageBox" ],
+            Background -> None
+        ],
         "Assistant",
         "Default"
     ];

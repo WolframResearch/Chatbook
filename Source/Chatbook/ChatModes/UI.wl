@@ -989,13 +989,13 @@ attachAssistantMessageButtons[ cell_CellObject ] :=
     attachAssistantMessageButtons[ cell, CurrentChatSettings[ cell, "WorkspaceChat" ] ];
 
 attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
-    Catch @ Module[ { cell, attached },
+    Catch @ Module[ { cell, includeFeedback, attached },
 
         cell = topParentCell @ cell0;
         If[ ! MatchQ[ cell, _CellObject ], Throw @ Null ];
 
         (* If chat has been reloaded from history, it no longer has the necessary metadata for feedback: *)
-        If[ ! StringQ @ CurrentValue[ cell, { TaggingRules, "ChatData" } ], Throw @ Null ];
+        includeFeedback = StringQ @ CurrentValue[ cell, { TaggingRules, "ChatData" } ];
 
         (* Remove existing attached cell, if any: *)
         NotebookDelete @ Cells[ cell, AttachedCell -> True, CellStyle -> "ChatOutputTrayButtons" ];
@@ -1004,7 +1004,7 @@ attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
         attached = AttachCell[
             cell,
             Cell[
-                BoxData @ TemplateBox[ { }, "FeedbackButtonsHorizontal" ],
+                BoxData @ assistantMessageButtons @ includeFeedback,
                 "ChatOutputTrayButtons",
                 Magnification -> AbsoluteCurrentValue[ cell, Magnification ]
             ],
@@ -1021,6 +1021,67 @@ attachAssistantMessageButtons[ cell_CellObject, _ ] :=
     Null;
 
 attachAssistantMessageButtons // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*assistantMessageButtons*)
+assistantMessageButtons // beginDefinition;
+
+assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeFeedback ] =
+    ToBoxes @ DynamicModule[ { cell },
+        Grid[
+            { {
+                ActionMenu[
+                    Tooltip[ $clipboardLabel, tr[ "WorkspaceOutputRaftCopyAsTooltip" ] ],
+                    {
+                        "Copy as\[Ellipsis]" :> Null,
+                        "    Cells"      :> ChatbookAction[ "CopyExplodedCells", cell ],
+                        "    Plain Text" :> ChatbookAction[ "CopyPlainText"    , cell ],
+                        "    Image"      :> ChatbookAction[ "CopyImage"        , cell ]
+                    },
+                    Appearance -> "Suppressed",
+                    Method     -> "Queued",
+                    MenuStyle  -> { Magnification -> Inherited/0.85 }
+                ],
+                Button[
+                    Tooltip[ $regenerateLabel, tr[ "WorkspaceOutputRaftRegenerateTooltip" ] ],
+                    ChatbookAction[ "RegenerateAssistantMessage", cell ],
+                    Appearance -> "Suppressed",
+                    Method     -> "Queued"
+                ],
+                If[ TrueQ @ includeFeedback,
+                    Splice @ {
+                        Item[ Spacer[ 0 ], ItemSize -> Fit ],
+                        Button[
+                            Tooltip[ $thumbsUpLabel, tr[ "WorkspaceOutputRaftFeedbackTooltip" ] ],
+                            ChatbookAction[ "SendFeedback", cell, True ],
+                            Appearance -> "Suppressed",
+                            Method     -> "Queued"
+                        ],
+                        Button[
+                            Tooltip[ $thumbsDownLabel, tr[ "WorkspaceOutputRaftFeedbackTooltip" ] ],
+                            ChatbookAction[ "SendFeedback", cell, False ],
+                            Appearance -> "Suppressed",
+                            Method     -> "Queued"
+                        ],
+                        Spacer[ 45 ]
+                    },
+                    Nothing
+                ]
+            } },
+            Alignment -> { Automatic, Baseline },
+            Spacings -> 0
+        ],
+        Initialization :> (cell = ParentCell @ EvaluationCell[ ])
+    ];
+
+assistantMessageButtons // endDefinition;
+
+
+$clipboardLabel  := $clipboardLabel  = chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False ];
+$regenerateLabel := $regenerateLabel = chatbookIcon[ "WorkspaceOutputRaftRegenerateIcon", False ];
+$thumbsUpLabel   := $thumbsUpLabel   = chatbookIcon[ "WorkspaceOutputRaftThumbsUpIcon"  , False ];
+$thumbsDownLabel := $thumbsDownLabel = chatbookIcon[ "WorkspaceOutputRaftThumbsDownIcon", False ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1079,9 +1140,12 @@ $inlineToWorkspaceConversionRules := $inlineToWorkspaceConversionRules = Dispatc
         ___
     ] :>
         Cell[
-            BoxData @ TemplateBox[
-                { Cell[ Flatten @ TextData @ text, Background -> None, Editable -> True, Selectable -> True ] },
-                "AssistantMessageBox"
+            TextData @ Cell[
+                BoxData @ TemplateBox[
+                    { Cell[ Flatten @ TextData @ text, Background -> None, Editable -> True, Selectable -> True ] },
+                    "AssistantMessageBox"
+                ],
+                Background -> None
             ],
             "ChatOutput",
             TaggingRules      -> tags,
@@ -1137,7 +1201,13 @@ $fromWorkspaceChatConversionRules := $fromWorkspaceChatConversionRules = Dispatc
         Cell[ Flatten @ TextData @ text, "ChatInput" ]
     ,
     Cell[
-        BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox", ___ ],
+        TextData @ Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox", ___ ], ___ ],
+        "ChatOutput",
+        ___
+    ] :> Cell[ Flatten @ TextData @ text, "ChatOutput" ]
+    ,
+    Cell[
+        TextData @ { Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox", ___ ], ___ ] },
         "ChatOutput",
         ___
     ] :> Cell[ Flatten @ TextData @ text, "ChatOutput" ]
@@ -1737,6 +1807,35 @@ loadConversation // endDefinition;
 $searchButtonLabel := $searchButtonLabel = chatbookIcon[ "WorkspaceHistorySearchIcon", False ];
 $popOutButtonLabel := $popOutButtonLabel = chatbookIcon[ "WorkspaceHistoryPopOutIcon", False ];
 $trashButtonLabel  := $trashButtonLabel  = chatbookIcon[ "WorkspaceHistoryTrashIcon" , False ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Global Progress Bar*)
+
+(* TODO: *)
+Grid[
+    {
+        {
+            Graphics[
+                {
+                    RGBColor[ "#449EF7" ],
+                    Dynamic @ Rectangle[
+                        ImageScaled @ { Max[ 0, Clock[ { -0.5, 1.0 }, 3 ] ], 0 },
+                        ImageScaled @ { Min[ 1, Clock[ {  0.0, 1.5 }, 3 ] ], 1 }
+                    ]
+                },
+                AspectRatio      -> Full,
+                Background       -> RGBColor[ "#D1D1D1" ],
+                ImageSize        -> { Full, 2 },
+                PlotRangePadding -> None
+            ]
+        }
+    },
+    Alignment -> { Center, Center },
+    Frame     -> None,
+    ItemSize  -> { Automatic, 0 },
+    Spacings  -> { { 0, { }, 0 }, { 0, { }, 0 } }
+]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
