@@ -13,7 +13,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Icon*)
-$wolframAlphaIcon = RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEBitmaps", "InsertionAlpha" ];
+$wolframAlphaIcon = chatbookIcon[ "ToolIconWolframAlpha", False ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

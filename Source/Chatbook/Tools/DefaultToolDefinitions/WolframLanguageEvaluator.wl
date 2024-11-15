@@ -13,7 +13,7 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Icon*)
-$wolframLanguageEvaluatorIcon = RawBoxes @ TemplateBox[ { }, "AssistantEvaluate" ];
+$wolframLanguageEvaluatorIcon = chatbookIcon[ "ToolIconWolframLanguageEvaluator", False ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

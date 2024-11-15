@@ -5556,7 +5556,56 @@ cTGO5EynT3RyqKZq7RiYg6VF6z9PHeJwhrY1VoQLeixn9kgOQ0VKoZ6jmOfP
    StripOnInput->False]}, Dynamic[
    CurrentValue["MouseOver"]],
   FrameMargins->0,
-  ImageSize->Automatic]
+  ImageSize->Automatic],
+
+"ToolIconWolframAlpha" -> GraphicsBox[
+  {Thickness[0.047619], 
+   {FaceForm[RGBColor[0.2, 0.51373, 0.67451]], 
+    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
+     0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0,
+      1, 0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIRIGYCYtO4XZ48hzQcztR77K+9K+TQLnbz3PfJ+g5M
+e1iFRPZzOnjxMGm3X9Nz6Phy+3rjZmmHk2X75kvxGzs8W6f6pPmenMPtn3VZ
+e6YYOBRnTHxb81/Fof/QV40YoDyY7tdyuL64wJbrup6Dj3mnY4KqjsMi122f
+/07Rd/B4WCWy7rihw2GQMqD9Vyteqhl6GDgwgIEqhG4wdjh12Gltpp2iw5wj
+ChuKgPJXn2dpf7su4sCnu2nue6D+gD8SxdeDxByArg5+DDSf5XmPxlve//ar
+Pl7yTZqg5TAp5p/zr7WCcHNh8tK8D3QnPJBzMDtr7XcxUMxhsfLOP+1bpB12
+7+hl+3BNxMFc6kC0wkFOB1udK7Oe2SpC/SsENyeYdfEkK8Yf9gALCYZ6
+     "]]}, 
+   {FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}], 
+    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 
+     0}, {0, 1, 0}}}, {{{14., 11.571}, {7., 11.571}, {7., 13.}, {14., 
+     13.}}, {{14., 8.}, {7., 8.}, {7., 9.429}, {14., 9.429}}}]}},
+  AspectRatio->Automatic,
+  ImageSize->{21., 21.},
+  PlotRange->{{0., 21.}, {0., 21.}}],
+
+"ToolIconWolframLanguageEvaluator" -> GraphicsBox[
+  {Thickness[0.0625], 
+   {FaceForm[RGBColor[0.2, 0.51373, 0.67451]], 
+    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
+     0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0,
+      1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGIpIGYC4T2sQiL/5R0YwMDQ4e7WlpoLnyUcFDcUZUx8
+q+0QaqC1UjiAw8E0bpcnzyE9hx0OTY+OS3A7rDjmbd55UN0hy2K+pIeDlH3r
+68Adcq5qcP6y2UcUNhipOfxX/PutNIHJYeUSPwdhRkW4fPff1O9PForD+dP/
+T6j7XSUOMn3GbjFuB3OpA9EKjSIOr4u3iv725nAoXNN9O4Phl/2htuXhpz5J
+wN3VV1oozcug4CDa4/WKxSTRfuEPw2frWpUdFC7lx7P7cThUvlQz5Hij6TDH
+eNEW8x8/7ROeXlC6banpAPZ3vQjU3wYOSQuvmbyvEIfzw+avXntjvrgDn+6m
+ue/TtaH2KMLl/12pAJqsBuf/CH68dLaLmsO7GnvTOCtNh97peULNB9QdJkuw
+hPG91XSQ1r+rwnZQz0FvwoIfhm3KUHFtB2neB7oTgO6HhT96fAAASQiSDg==
+
+     "]]}, 
+   {FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}], 
+    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{6., 12.502}, {6., 
+     4.5018}, {12., 8.5218}, {6., 12.502}}}]}},
+  AspectRatio->Automatic,
+  BaselinePosition->(Center -> Center),
+  ImageSize->{17., 18.},
+  PlotRange->{{-0.5, 16.5}, {-0.5, 17.5}}]
 }
 @|
 @|
