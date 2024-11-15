@@ -34,6 +34,7 @@ $extraTeXRules = {
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*$$texMathSymbol*)
+(* Scraped from https://oeis.org/wiki/List_of_LaTeX_mathematical_symbols *)
 (* cSpell: disable *)
 $$texMathSymbol = Alternatives[
     "\\aleph",
