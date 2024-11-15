@@ -1496,7 +1496,10 @@ makeToolCallBoxLabel[ as_Association, name_String ] :=
     makeToolCallBoxLabel[ as, name, getToolIcon @ as ];
 
 makeToolCallBoxLabel[ as_, name_String, icon_ ] /; $dynamicText :=
-    fakeOpenerView @ makeToolCallBoxLabel0[ as, name, icon ];
+    fakeOpenerView[
+        makeToolCallBoxLabel0[ as, name, icon ],
+        as[ "Result" ] =!= ""
+    ];
 
 makeToolCallBoxLabel[ as0_, name_String, icon_ ] :=
     With[ { as = resolveToolFormatter @ as0 },
@@ -1523,11 +1526,15 @@ makeToolCallBoxLabel // endDefinition;
 
 makeToolCallBoxLabel0 // beginDefinition;
 
-makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] := Flatten @ {
-    toolCallIconPane @ icon,
-    Style[ tr[ "FormattingToolUsing" ], FontColor -> RGBColor[ "#3383AC" ] ],
-    Style[ string, FontWeight -> "DemiBold", FontColor -> RGBColor[ "#3383AC" ] ]
-};
+makeToolCallBoxLabel0[ KeyValuePattern[ "Result" -> "" ], string_String, icon_ ] :=
+With[ { col = RGBColor[ "#3383AC" ] },
+    Flatten @ {
+        toolCallIconPane @ icon,
+        Style[ tr[ "FormattingToolUsing" ], FontColor -> col ],
+        Style[ string, FontWeight -> "DemiBold", FontColor -> col ],
+        RawBoxes @ DynamicBox @ FEPrivate`FrontEndResource[ "FEExpressions", "PercolateColorAnimator" ][ Small, col ]
+    }
+];
 
 makeToolCallBoxLabel0[ as_, string_String, icon_ ] := Flatten @ {
     toolCallIconPane @ icon,
