@@ -1098,7 +1098,7 @@ extractBodyData // endDefinition;
 parseXMLResponse // beginDefinition;
 
 parseXMLResponse[ response_String ] :=
-    If[ StringContainsQ[ response, "<" ~~ __ ~~ ">" ~~ ___ ~~ "</" ~~ ___ ~~ ">" ],
+    If[ StringFormatQ[ response, "XML" ],
         parseXMLResponse[ Quiet @ ImportString[ response, "XML" ] ],
         $Failed
     ];
