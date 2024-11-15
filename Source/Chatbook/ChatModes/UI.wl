@@ -89,7 +89,7 @@ historyButton[ Dynamic[ nbo_ ] ] :=
             Dynamic[
                 If[
                     Or[
-                        CurrentValue[ nbo, { WindowSize, 1 } ] < 250,
+                        AbsoluteCurrentValue[ nbo, { WindowSize, 1 } ] < 250,
                         Not @ MatchQ[CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ],
                             Except["", _String]]
                     ],
@@ -101,7 +101,7 @@ historyButton[ Dynamic[ nbo_ ] ] :=
                                 FE`Evaluate @ FEPrivate`TruncateStringToWidth[
                                     CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ],
                                     "WorkspaceChatToolbarTitle",
-                                    CurrentValue[ nbo, { WindowSize, 1 } ] - 210,
+                                    AbsoluteCurrentValue[ nbo, { WindowSize, 1 } ] - 210,
                                     Right
                                 ],
                                 "WorkspaceChatToolbarTitle"
