@@ -160,7 +160,15 @@ withEvaluationCell // endDefinition;
 (*withEvaluationNotebook*)
 withEvaluationNotebook // beginDefinition;
 withEvaluationNotebook // Attributes = { HoldRest };
-withEvaluationNotebook[ nbo_NotebookObject, eval_ ] := Block[ { $evaluationNotebook = nbo }, eval ];
+
+withEvaluationNotebook[ nbo_NotebookObject, eval_ ] :=
+    Block[ { $evaluationNotebook = nbo },
+        If[ TrueQ @ CurrentChatSettings[ nbo, "WorkspaceChat" ],
+            withWorkspaceGlobalProgress[ nbo, eval ],
+            eval
+        ]
+    ];
+
 withEvaluationNotebook // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
