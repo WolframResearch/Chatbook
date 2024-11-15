@@ -1051,6 +1051,7 @@ assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeF
                 ],
                 If[ TrueQ @ includeFeedback,
                     Splice @ {
+                        Item[ Spacer[ 0 ], ItemSize -> Fit ],
                         Button[
                             $thumbsUpLabel,
                             ChatbookAction[ "SendFeedback", cell, True ],
@@ -1062,7 +1063,8 @@ assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeF
                             ChatbookAction[ "SendFeedback", cell, False ],
                             Appearance -> "Suppressed",
                             Method     -> "Queued"
-                        ]
+                        ],
+                        Spacer[ 45 ]
                     },
                     Nothing
                 ]
