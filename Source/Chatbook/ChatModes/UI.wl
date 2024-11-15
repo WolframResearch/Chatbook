@@ -1040,7 +1040,8 @@ assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeF
                         "    Image"      :> ChatbookAction[ "CopyImage"        , cell ]
                     },
                     Appearance -> "Suppressed",
-                    Method     -> "Queued"
+                    Method     -> "Queued",
+                    MenuStyle  -> { Magnification -> 1 }
                 ],
                 Button[
                     $regenerateLabel,
@@ -1050,13 +1051,23 @@ assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeF
                 ],
                 If[ TrueQ @ includeFeedback,
                     Splice @ {
-                        Style[ "\[ThinSpace]|\[ThinSpace]", FontColor -> GrayLevel[ 0.8 ] ],
-                        RawBoxes @ TemplateBox[ { }, "FeedbackButtonsHorizontal" ]
+                        Button[
+                            $thumbsUpLabel,
+                            ChatbookAction[ "SendFeedback", cell, True ],
+                            Appearance -> "Suppressed",
+                            Method     -> "Queued"
+                        ],
+                        Button[
+                            $thumbsDownLabel,
+                            ChatbookAction[ "SendFeedback", cell, False ],
+                            Appearance -> "Suppressed",
+                            Method     -> "Queued"
+                        ]
                     },
                     Nothing
                 ]
             } },
-            Alignment -> { Automatic, Center },
+            Alignment -> { Automatic, Baseline },
             Spacings -> 0
         ],
         Initialization :> (cell = ParentCell @ EvaluationCell[ ])
@@ -1065,63 +1076,10 @@ assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeF
 assistantMessageButtons // endDefinition;
 
 
-(* FIXME: Define this in ChatbookExpressions text resource: *)
-$clipboardLabel := $clipboardLabel =
-    With[ { icon = RawBoxes @ usingFrontEnd @ FrontEndResource[ "NotebookToolbarExpressions", "HyperlinkCopyIcon" ] },
-        Tooltip[
-            MouseAppearance[
-                Mouseover[
-                    icon /. _? ColorQ -> GrayLevel[ 0.8 ],
-                    icon /. _? ColorQ -> GrayLevel[ 0.2 ]
-                ],
-                "LinkHand"
-            ],
-            "Copy as\[Ellipsis]"
-        ]
-    ];
-
-
-(* FIXME: Define this in ChatbookExpressions text resource: *)
-$regenerateLabel = Tooltip[
-    MouseAppearance[
-        Mouseover[
-            Graphics[
-                {
-                    GrayLevel[ 0.8 ],
-                    Arrowheads @ { {
-                        0.33,
-                        1,
-                        { GraphicsBox @ PolygonBox @ { { -1, 0.5 }, { 0, 0 }, { -1, -0.5 }, { -1, 0.5 } }, 0.75 }
-                    } },
-                    Thickness[ 0.075 ],
-                    Arrow @ BezierCurve @ { { 0.25, 0.6 }, { -0.75, 0.6 }, { -0.75, -0.4 } },
-                    Arrow @ BezierCurve @ { { -0.25, -0.6 }, { 0.75, -0.6 }, { 0.75, 0.4 } }
-                },
-                Axes      -> False,
-                ImageSize -> 14,
-                PlotRange -> { { -1, 1 }, { -1, 0.7 } }
-            ],
-            Graphics[
-                {
-                    GrayLevel[ 0.2 ],
-                    Arrowheads @ { {
-                        0.33,
-                        1,
-                        { GraphicsBox @ PolygonBox @ { { -1, 0.5 }, { 0, 0 }, { -1, -0.5 }, { -1, 0.5 } }, 0.75 }
-                    } },
-                    Thickness[ 0.075 ],
-                    Arrow @ BezierCurve @ { { 0.25, 0.6 }, { -0.75, 0.6 }, { -0.75, -0.4 } },
-                    Arrow @ BezierCurve @ { { -0.25, -0.6 }, { 0.75, -0.6 }, { 0.75, 0.4 } }
-                },
-                Axes      -> False,
-                ImageSize -> 14,
-                PlotRange -> { { -1, 1 }, { -1, 0.7 } }
-            ]
-        ],
-        "LinkHand"
-    ],
-    "Regenerate response"
-];
+$clipboardLabel  := $clipboardLabel  = chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False ];
+$regenerateLabel := $regenerateLabel = chatbookIcon[ "WorkspaceOutputRaftRegenerateIcon", False ];
+$thumbsUpLabel   := $thumbsUpLabel   = chatbookIcon[ "WorkspaceOutputRaftThumbsUpIcon"  , False ];
+$thumbsDownLabel := $thumbsDownLabel = chatbookIcon[ "WorkspaceOutputRaftThumbsDownIcon", False ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1847,6 +1805,35 @@ loadConversation // endDefinition;
 $searchButtonLabel := $searchButtonLabel = chatbookIcon[ "WorkspaceHistorySearchIcon", False ];
 $popOutButtonLabel := $popOutButtonLabel = chatbookIcon[ "WorkspaceHistoryPopOutIcon", False ];
 $trashButtonLabel  := $trashButtonLabel  = chatbookIcon[ "WorkspaceHistoryTrashIcon" , False ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Global Progress Bar*)
+
+(* TODO: *)
+Grid[
+    {
+        {
+            Graphics[
+                {
+                    RGBColor[ "#449EF7" ],
+                    Dynamic @ Rectangle[
+                        ImageScaled @ { Max[ 0, Clock[ { -0.5, 1.0 }, 3 ] ], 0 },
+                        ImageScaled @ { Min[ 1, Clock[ {  0.0, 1.5 }, 3 ] ], 1 }
+                    ]
+                },
+                AspectRatio      -> Full,
+                Background       -> RGBColor[ "#D1D1D1" ],
+                ImageSize        -> { Full, 2 },
+                PlotRangePadding -> None
+            ]
+        }
+    },
+    Alignment -> { Center, Center },
+    Frame     -> None,
+    ItemSize  -> { Automatic, 0 },
+    Spacings  -> { { 0, { }, 0 }, { 0, { }, 0 } }
+]
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
