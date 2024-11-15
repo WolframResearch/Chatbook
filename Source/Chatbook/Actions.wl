@@ -126,7 +126,7 @@ SendFeedback // beginDefinition;
 
 SendFeedback[ cellObject0_, positive: True|False ] := Enclose[
     Module[ { cellObject },
-        cellObject = ConfirmMatch[ ensureChatOutputCell @ parentCell @ cellObject0, _CellObject, "CellObject" ];
+        cellObject = ConfirmMatch[ ensureChatOutputCell @ cellObject0, _CellObject, "CellObject" ];
         ConfirmMatch[ sendFeedback[ cellObject, positive ], _NotebookObject, "SendFeedbackDialog" ]
     ],
     throwInternalFailure[ SendFeedback[ cellObject0, positive ], ## ] &
