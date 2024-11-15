@@ -208,6 +208,10 @@
 "WorkspaceToolbarButtonTooltipNew" -> "\:C0C8\:B85C\:C6B4 \:B300\:D654 \:C2DC\:C791",
 "WorkspaceSourcesOpenNotebooks" -> "Open Notebooks",
 
+"WorkspaceOutputRaftCopyAsTooltip" -> "Copy response to clipboard\[Ellipsis]",
+"WorkspaceOutputRaftRegenerateTooltip" -> "Regenerate response",
+"WorkspaceOutputRaftFeedbackTooltip" -> "Wolfram\:C5D0 \:D53C\:B4DC\:BC31 \:BCF4\:B0B4\:AE30",
+
 "InlineChatButtonTooltipClose" -> "Close",
 "InlineChatButtonTooltipViewNotebookAssist" -> "View in Notebook Assistance Chat",
 
