@@ -207,6 +207,10 @@
 "WorkspaceToolbarButtonTooltipNew" -> "D\[EAcute]marrer une nouvelle conversation",
 "WorkspaceSourcesOpenNotebooks" -> "Ouvrir les notebooks",
 
+"WorkspaceOutputRaftCopyAsTooltip" -> "Copy response to clipboard\[Ellipsis]",
+"WorkspaceOutputRaftRegenerateTooltip" -> "Regenerate response",
+"WorkspaceOutputRaftFeedbackTooltip" -> "Envoyer un commentaire \[AGrave] Wolfram",
+
 "InlineChatButtonTooltipClose" -> "Fermer",
 "InlineChatButtonTooltipViewNotebookAssist" -> "Voir dans le chat de l\[CloseCurlyQuote]assistant du notebook",
 

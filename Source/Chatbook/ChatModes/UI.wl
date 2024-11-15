@@ -1032,7 +1032,7 @@ assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeF
         Grid[
             { {
                 ActionMenu[
-                    $clipboardLabel,
+                    Tooltip[ $clipboardLabel, tr[ "WorkspaceOutputRaftCopyAsTooltip" ] ],
                     {
                         "Copy as\[Ellipsis]" :> Null,
                         "    Cells"      :> ChatbookAction[ "CopyExplodedCells", cell ],
@@ -1041,10 +1041,10 @@ assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeF
                     },
                     Appearance -> "Suppressed",
                     Method     -> "Queued",
-                    MenuStyle  -> { Magnification -> 1 }
+                    MenuStyle  -> { Magnification -> Inherited/0.85 }
                 ],
                 Button[
-                    $regenerateLabel,
+                    Tooltip[ $regenerateLabel, tr[ "WorkspaceOutputRaftRegenerateTooltip" ] ],
                     ChatbookAction[ "RegenerateAssistantMessage", cell ],
                     Appearance -> "Suppressed",
                     Method     -> "Queued"
@@ -1053,13 +1053,13 @@ assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeF
                     Splice @ {
                         Item[ Spacer[ 0 ], ItemSize -> Fit ],
                         Button[
-                            $thumbsUpLabel,
+                            Tooltip[ $thumbsUpLabel, tr[ "WorkspaceOutputRaftFeedbackTooltip" ] ],
                             ChatbookAction[ "SendFeedback", cell, True ],
                             Appearance -> "Suppressed",
                             Method     -> "Queued"
                         ],
                         Button[
-                            $thumbsDownLabel,
+                            Tooltip[ $thumbsDownLabel, tr[ "WorkspaceOutputRaftFeedbackTooltip" ] ],
                             ChatbookAction[ "SendFeedback", cell, False ],
                             Appearance -> "Suppressed",
                             Method     -> "Queued"
