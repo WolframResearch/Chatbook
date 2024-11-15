@@ -1107,12 +1107,15 @@ $openerFrameOptionsActive = Sequence[
    but doesn't yet contain any inner data to reduce MathLink traffic *)
 fakeOpenerView // beginDefinition;
 
-fakeOpenerView[ label_ ] := Deploy @ Framed[
+fakeOpenerView[ label_, showButton_: False ] := Deploy @ Framed[
     Grid[
         {
             Flatten @ {
                 label,
-                RawBoxes @ TemplateBox[ { RGBColor[ "#3383AC" ] }, "DiscardedMaterialOpenerIcon" ]
+                If[ TrueQ @ showButton,
+                    RawBoxes @ TemplateBox[ { RGBColor[ "#3383AC" ] }, "DiscardedMaterialOpenerIcon" ],
+                    Nothing
+                ]
             }
         },
         $openerLabelGridOptions
