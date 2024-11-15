@@ -282,7 +282,7 @@ makeResultCell0[ str_String ] := formatTextString @ str;
 makeResultCell0[ codeBlockCell[ language_String, code_String ] ] :=
     makeCodeBlockCell[
         StringReplace[ StringTrim @ language, $externalLanguageRules, IgnoreCase -> True ],
-        StringTrim @ code
+        StringDelete[ code, { StartOfString~~Whitespace~~StartOfLine, Whitespace~~EndOfString } ]
     ];
 
 makeResultCell0[ inlineCodeCell[ code_String ] ] := ReplaceAll[
@@ -1247,10 +1247,26 @@ $stringFormatRules = {
 (* ::Subsection::Closed:: *)
 (*makeCodeBlockCell*)
 makeCodeBlockCell // beginDefinition;
-makeCodeBlockCell[ _, code_String ] /; StringMatchQ[ code, "!["~~__~~"]("~~__~~")" ] := image @ code;
-makeCodeBlockCell[ _, code_String ] /; StringStartsQ[ code, "TOOLCALL: " ] := inlineToolCall @ code;
-makeCodeBlockCell[ language_String, code_String ] := makeInteractiveCodeCell[ language, code ];
+makeCodeBlockCell[ _, code_String ] /; StringMatchQ[ StringTrim @ code, "!["~~__~~"]("~~__~~")" ] := image @ code;
+makeCodeBlockCell[ _, code_String ] /; StringStartsQ[ StringTrim @ code, "TOOLCALL: " ] := inlineToolCall @ code;
+makeCodeBlockCell[ language_String, code_String ] := makeInteractiveCodeCell[ language, stripCodePadding @ code ];
 makeCodeBlockCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*stripCodePadding*)
+stripCodePadding // beginDefinition;
+
+stripCodePadding[ code_String ] :=
+    Catch @ Module[ { padding },
+        padding = First[ StringCases[ code, StartOfString~~Whitespace, 1 ], Throw @ code ];
+        If[ AllTrue[ StringSplit[ code, "\n" ], StringStartsQ @ padding ],
+            StringDelete[ code, StartOfLine~~padding ],
+            code
+        ]
+    ];
+
+stripCodePadding // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
