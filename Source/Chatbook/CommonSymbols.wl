@@ -310,6 +310,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `withChatState;
 `withChatStateAndFEObjects;
 `withToolBox;
+`withWorkspaceGlobalProgress;
 `wlTemplateBoxes;
 `writeInlineChatOutputCell;
 `writeReformattedCell;
