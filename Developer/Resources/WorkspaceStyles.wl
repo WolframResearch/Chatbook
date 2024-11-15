@@ -105,7 +105,7 @@ Cell[
     CellDingbat           -> None,
     CellFrame             -> 0,
     CellFrameLabelMargins -> -5,
-    CellMargins           -> { { 10, 15 }, { 25, 12 } },
+    CellMargins           -> { { 10, 15 }, { 30, 12 } },
     FrameBoxOptions       -> { BaselinePosition -> Baseline },
     Initialization        -> None,
     PaneBoxOptions        -> { BaselinePosition -> Baseline },
