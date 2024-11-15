@@ -1173,6 +1173,8 @@ $dynamicSplitRules = {
 (* ::Subsection::Closed:: *)
 (*$stringFormatRules*)
 $stringFormatRules = {
+    "```" ~~ code: Except[ "\n" ].. ~~ "```" :> inlineCodeCell @ code,
+
     "***" ~~ text: Except[ "*" ].. ~~ "***" /; StringFreeQ[ text, "\n" ] :>
         styleBox[ text, FontWeight -> Bold, FontSlant -> Italic ],
 
