@@ -1258,9 +1258,10 @@ makeCodeBlockCell // endDefinition;
 stripCodePadding // beginDefinition;
 
 stripCodePadding[ code_String ] :=
-    Catch @ Module[ { padding },
+    Catch @ Module[ { padding, split },
         padding = First[ StringCases[ code, StartOfString~~Whitespace, 1 ], Throw @ code ];
-        If[ AllTrue[ StringSplit[ code, "\n" ], StringStartsQ @ padding ],
+        split = StringSplit[ code, "\n" ];
+        If[ AllTrue[ split, StringMatchQ[ #, WhitespaceCharacter... ] || StringStartsQ[ #, padding ] & ],
             StringDelete[ code, StartOfLine~~padding ],
             code
         ]
