@@ -117,6 +117,360 @@ Notebook[
             "Style",
             "Input"
            ],
+          GridBox[
+           {
+            {
+             PaneBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource["FEBitmaps", "InsertionText"]
+              ],
+              BaselinePosition -> Center -> Scaled[0.55]
+             ],
+             StyleBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource[
+                "CellInsertionMenu",
+                "TextStyle"
+               ]
+              ],
+              "CellInsertionMenu"
+             ],
+             StyleBox[
+              PaneSelectorBox[
+               {
+                True ->
+                 StyleBox[
+                  DynamicBox[
+                   FEPrivate`FrontEndResource[
+                    "CellInsertionMenu",
+                    "TextStyle2Mac"
+                   ]
+                  ],
+                  "CellInsertionMenuStyleShortcutLabel"
+                 ],
+                False ->
+                 StyleBox[
+                  DynamicBox[
+                   FEPrivate`FrontEndResource[
+                    "CellInsertionMenu",
+                    "TextStyle2"
+                   ]
+                  ],
+                  "CellInsertionMenuStyleShortcutLabel"
+                 ]
+               },
+               Dynamic[$OperatingSystem === "MacOSX"],
+               ImageSize -> {Automatic, Automatic}
+              ],
+              "CellInsertionMenuShortcut"
+             ]
+            }
+           },
+           GridBoxAlignment -> {
+            "Columns" -> {Center, Left, Right},
+            "Rows" -> {{Automatic}}
+           },
+           AutoDelete -> False,
+           GridBoxItemSize -> {
+            "Columns" -> {
+             2,
+             FEPrivate`First[
+              FEPrivate`StringWidth[
+               {
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "MathematicaInput"
+                ],
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "FreeformInput"
+                ],
+                FEPrivate`FrontEndResource["CellInsertionMenu", "WAQuery"],
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "ExternalLanguageInput"
+                ],
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "TextStyle"
+                ],
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "OtherStyle"
+                ]
+               },
+               "CellInsertionMenu"
+              ]
+             ],
+             FEPrivate`First[
+              FEPrivate`StringWidth[
+               FEPrivate`FrontEndResource[
+                "CellInsertionMenu",
+                "ShortcutColumnMaxStringLen"
+               ],
+               "CellInsertionMenuDefaultLabel"
+              ]
+             ]
+            },
+            "Rows" -> {{Automatic}}
+           },
+           GridBoxSpacings -> {
+            "Columns" -> {{0}},
+            "ColumnsIndexed" -> {2 -> 0.3, 3 -> 0.5},
+            "Rows" -> {{0}}
+           }
+          ] :>
+           FrontEndTokenExecute[EvaluationNotebook[], "Style", "Text"],
+          GridBox[
+           {
+            {
+             PaneBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource["FEBitmaps", "InsertionOther"]
+              ],
+              BaselinePosition -> Center -> Scaled[0.55]
+             ],
+             StyleBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource[
+                "CellInsertionMenu",
+                "OtherStyle"
+               ]
+              ],
+              "CellInsertionMenu"
+             ],
+             StyleBox[
+              StyleBox[
+               DynamicBox[
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "OtherStyle2"
+                ]
+               ],
+               "CellInsertionMenuShortcut"
+              ],
+              "CellInsertionMenuShortcut"
+             ]
+            }
+           },
+           GridBoxAlignment -> {
+            "Columns" -> {Center, Left, Right},
+            "Rows" -> {{Automatic}}
+           },
+           AutoDelete -> False,
+           GridBoxItemSize -> {
+            "Columns" -> {
+             2,
+             FEPrivate`First[
+              FEPrivate`StringWidth[
+               {
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "MathematicaInput"
+                ],
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "FreeformInput"
+                ],
+                FEPrivate`FrontEndResource["CellInsertionMenu", "WAQuery"],
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "ExternalLanguageInput"
+                ],
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "TextStyle"
+                ],
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "OtherStyle"
+                ]
+               },
+               "CellInsertionMenu"
+              ]
+             ],
+             FEPrivate`First[
+              FEPrivate`StringWidth[
+               FEPrivate`FrontEndResource[
+                "CellInsertionMenu",
+                "ShortcutColumnMaxStringLen"
+               ],
+               "CellInsertionMenuDefaultLabel"
+              ]
+             ]
+            },
+            "Rows" -> {{Automatic}}
+           },
+           GridBoxSpacings -> {
+            "Columns" -> {{0}},
+            "ColumnsIndexed" -> {2 -> 0.3, 3 -> 0.5},
+            "Rows" -> {{0}}
+           }
+          ] :>
+           FrontEndTokenExecute[EvaluationNotebook[], "StyleOther"],
+          Delimiter,
+          GridBox[
+           {
+            {
+             PaneBox[
+              TemplateBox[{}, "ChatInputIcon"],
+              BaselinePosition -> Center -> Scaled[0.55]
+             ],
+             StyleBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource[
+                "ChatbookStrings",
+                "StylesheetInsertionMenuChatInput"
+               ]
+              ],
+              "CellInsertionMenu"
+             ],
+             StyleBox[
+              StyleBox["'", "CellInsertionMenuShortcut"],
+              "CellInsertionMenuShortcut"
+             ]
+            }
+           },
+           GridBoxAlignment -> {
+            "Columns" -> {Center, Left, Right},
+            "Rows" -> {{Automatic}}
+           },
+           AutoDelete -> False,
+           GridBoxItemSize -> {
+            "Columns" -> {
+             2,
+             FEPrivate`First[
+              FEPrivate`StringWidth[
+               {
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "MathematicaInput"
+                ],
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "FreeformInput"
+                ],
+                FEPrivate`FrontEndResource["CellInsertionMenu", "WAQuery"],
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "ExternalLanguageInput"
+                ],
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "TextStyle"
+                ],
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "OtherStyle"
+                ]
+               },
+               "CellInsertionMenu"
+              ]
+             ],
+             FEPrivate`First[
+              FEPrivate`StringWidth[
+               FEPrivate`FrontEndResource[
+                "CellInsertionMenu",
+                "ShortcutColumnMaxStringLen"
+               ],
+               "CellInsertionMenuDefaultLabel"
+              ]
+             ]
+            },
+            "Rows" -> {{Automatic}}
+           },
+           GridBoxSpacings -> {
+            "Columns" -> {{0}},
+            "ColumnsIndexed" -> {2 -> 0.3, 3 -> 0.5},
+            "Rows" -> {{0}}
+           }
+          ] :>
+           FrontEndTokenExecute[
+            EvaluationNotebook[],
+            "Style",
+            "ChatInput"
+           ],
+          GridBox[
+           {
+            {
+             PaneBox[
+              TemplateBox[{}, "SideChatIcon"],
+              BaselinePosition -> Center -> Scaled[0.55]
+             ],
+             StyleBox[
+              DynamicBox[
+               FEPrivate`FrontEndResource[
+                "ChatbookStrings",
+                "StylesheetInsertionMenuSideChat"
+               ]
+              ],
+              "CellInsertionMenu"
+             ],
+             StyleBox[
+              StyleBox["''", "CellInsertionMenuShortcut"],
+              "CellInsertionMenuShortcut"
+             ]
+            }
+           },
+           GridBoxAlignment -> {
+            "Columns" -> {Center, Left, Right},
+            "Rows" -> {{Automatic}}
+           },
+           AutoDelete -> False,
+           GridBoxItemSize -> {
+            "Columns" -> {
+             2,
+             FEPrivate`First[
+              FEPrivate`StringWidth[
+               {
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "MathematicaInput"
+                ],
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "FreeformInput"
+                ],
+                FEPrivate`FrontEndResource["CellInsertionMenu", "WAQuery"],
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "ExternalLanguageInput"
+                ],
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "TextStyle"
+                ],
+                FEPrivate`FrontEndResource[
+                 "CellInsertionMenu",
+                 "OtherStyle"
+                ]
+               },
+               "CellInsertionMenu"
+              ]
+             ],
+             FEPrivate`First[
+              FEPrivate`StringWidth[
+               FEPrivate`FrontEndResource[
+                "CellInsertionMenu",
+                "ShortcutColumnMaxStringLen"
+               ],
+               "CellInsertionMenuDefaultLabel"
+              ]
+             ]
+            },
+            "Rows" -> {{Automatic}}
+           },
+           GridBoxSpacings -> {
+            "Columns" -> {{0}},
+            "ColumnsIndexed" -> {2 -> 0.3, 3 -> 0.5},
+            "Rows" -> {{0}}
+           }
+          ] :>
+           FrontEndTokenExecute[
+            EvaluationNotebook[],
+            "Style",
+            "SideChat"
+           ],
           Delimiter,
           GridBox[
            {
@@ -390,361 +744,7 @@ Notebook[
             EvaluationNotebook[],
             "Style",
             "ExternalLanguage"
-           ],
-          GridBox[
-           {
-            {
-             PaneBox[
-              TemplateBox[{}, "ChatInputIcon"],
-              BaselinePosition -> Center -> Scaled[0.55]
-             ],
-             StyleBox[
-              DynamicBox[
-               FEPrivate`FrontEndResource[
-                "ChatbookStrings",
-                "StylesheetInsertionMenuChatInput"
-               ]
-              ],
-              "CellInsertionMenu"
-             ],
-             StyleBox[
-              StyleBox["'", "CellInsertionMenuShortcut"],
-              "CellInsertionMenuShortcut"
-             ]
-            }
-           },
-           GridBoxAlignment -> {
-            "Columns" -> {Center, Left, Right},
-            "Rows" -> {{Automatic}}
-           },
-           AutoDelete -> False,
-           GridBoxItemSize -> {
-            "Columns" -> {
-             2,
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               {
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "MathematicaInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "FreeformInput"
-                ],
-                FEPrivate`FrontEndResource["CellInsertionMenu", "WAQuery"],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "ExternalLanguageInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "TextStyle"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "OtherStyle"
-                ]
-               },
-               "CellInsertionMenu"
-              ]
-             ],
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               FEPrivate`FrontEndResource[
-                "CellInsertionMenu",
-                "ShortcutColumnMaxStringLen"
-               ],
-               "CellInsertionMenuDefaultLabel"
-              ]
-             ]
-            },
-            "Rows" -> {{Automatic}}
-           },
-           GridBoxSpacings -> {
-            "Columns" -> {{0}},
-            "ColumnsIndexed" -> {2 -> 0.3, 3 -> 0.5},
-            "Rows" -> {{0}}
-           }
-          ] :>
-           FrontEndTokenExecute[
-            EvaluationNotebook[],
-            "Style",
-            "ChatInput"
-           ],
-          GridBox[
-           {
-            {
-             PaneBox[
-              TemplateBox[{}, "SideChatIcon"],
-              BaselinePosition -> Center -> Scaled[0.55]
-             ],
-             StyleBox[
-              DynamicBox[
-               FEPrivate`FrontEndResource[
-                "ChatbookStrings",
-                "StylesheetInsertionMenuSideChat"
-               ]
-              ],
-              "CellInsertionMenu"
-             ],
-             StyleBox[
-              StyleBox["''", "CellInsertionMenuShortcut"],
-              "CellInsertionMenuShortcut"
-             ]
-            }
-           },
-           GridBoxAlignment -> {
-            "Columns" -> {Center, Left, Right},
-            "Rows" -> {{Automatic}}
-           },
-           AutoDelete -> False,
-           GridBoxItemSize -> {
-            "Columns" -> {
-             2,
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               {
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "MathematicaInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "FreeformInput"
-                ],
-                FEPrivate`FrontEndResource["CellInsertionMenu", "WAQuery"],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "ExternalLanguageInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "TextStyle"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "OtherStyle"
-                ]
-               },
-               "CellInsertionMenu"
-              ]
-             ],
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               FEPrivate`FrontEndResource[
-                "CellInsertionMenu",
-                "ShortcutColumnMaxStringLen"
-               ],
-               "CellInsertionMenuDefaultLabel"
-              ]
-             ]
-            },
-            "Rows" -> {{Automatic}}
-           },
-           GridBoxSpacings -> {
-            "Columns" -> {{0}},
-            "ColumnsIndexed" -> {2 -> 0.3, 3 -> 0.5},
-            "Rows" -> {{0}}
-           }
-          ] :>
-           FrontEndTokenExecute[
-            EvaluationNotebook[],
-            "Style",
-            "SideChat"
-           ],
-          Delimiter,
-          GridBox[
-           {
-            {
-             PaneBox[
-              DynamicBox[
-               FEPrivate`FrontEndResource["FEBitmaps", "InsertionText"]
-              ],
-              BaselinePosition -> Center -> Scaled[0.55]
-             ],
-             StyleBox[
-              DynamicBox[
-               FEPrivate`FrontEndResource[
-                "CellInsertionMenu",
-                "TextStyle"
-               ]
-              ],
-              "CellInsertionMenu"
-             ],
-             StyleBox[
-              PaneSelectorBox[
-               {
-                True ->
-                 StyleBox[
-                  DynamicBox[
-                   FEPrivate`FrontEndResource[
-                    "CellInsertionMenu",
-                    "TextStyle2Mac"
-                   ]
-                  ],
-                  "CellInsertionMenuStyleShortcutLabel"
-                 ],
-                False ->
-                 StyleBox[
-                  DynamicBox[
-                   FEPrivate`FrontEndResource[
-                    "CellInsertionMenu",
-                    "TextStyle2"
-                   ]
-                  ],
-                  "CellInsertionMenuStyleShortcutLabel"
-                 ]
-               },
-               Dynamic[$OperatingSystem === "MacOSX"],
-               ImageSize -> {Automatic, Automatic}
-              ],
-              "CellInsertionMenuShortcut"
-             ]
-            }
-           },
-           GridBoxAlignment -> {
-            "Columns" -> {Center, Left, Right},
-            "Rows" -> {{Automatic}}
-           },
-           AutoDelete -> False,
-           GridBoxItemSize -> {
-            "Columns" -> {
-             2,
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               {
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "MathematicaInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "FreeformInput"
-                ],
-                FEPrivate`FrontEndResource["CellInsertionMenu", "WAQuery"],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "ExternalLanguageInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "TextStyle"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "OtherStyle"
-                ]
-               },
-               "CellInsertionMenu"
-              ]
-             ],
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               FEPrivate`FrontEndResource[
-                "CellInsertionMenu",
-                "ShortcutColumnMaxStringLen"
-               ],
-               "CellInsertionMenuDefaultLabel"
-              ]
-             ]
-            },
-            "Rows" -> {{Automatic}}
-           },
-           GridBoxSpacings -> {
-            "Columns" -> {{0}},
-            "ColumnsIndexed" -> {2 -> 0.3, 3 -> 0.5},
-            "Rows" -> {{0}}
-           }
-          ] :>
-           FrontEndTokenExecute[EvaluationNotebook[], "Style", "Text"],
-          GridBox[
-           {
-            {
-             PaneBox[
-              DynamicBox[
-               FEPrivate`FrontEndResource["FEBitmaps", "InsertionOther"]
-              ],
-              BaselinePosition -> Center -> Scaled[0.55]
-             ],
-             StyleBox[
-              DynamicBox[
-               FEPrivate`FrontEndResource[
-                "CellInsertionMenu",
-                "OtherStyle"
-               ]
-              ],
-              "CellInsertionMenu"
-             ],
-             StyleBox[
-              StyleBox[
-               DynamicBox[
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "OtherStyle2"
-                ]
-               ],
-               "CellInsertionMenuShortcut"
-              ],
-              "CellInsertionMenuShortcut"
-             ]
-            }
-           },
-           GridBoxAlignment -> {
-            "Columns" -> {Center, Left, Right},
-            "Rows" -> {{Automatic}}
-           },
-           AutoDelete -> False,
-           GridBoxItemSize -> {
-            "Columns" -> {
-             2,
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               {
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "MathematicaInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "FreeformInput"
-                ],
-                FEPrivate`FrontEndResource["CellInsertionMenu", "WAQuery"],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "ExternalLanguageInput"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "TextStyle"
-                ],
-                FEPrivate`FrontEndResource[
-                 "CellInsertionMenu",
-                 "OtherStyle"
-                ]
-               },
-               "CellInsertionMenu"
-              ]
-             ],
-             FEPrivate`First[
-              FEPrivate`StringWidth[
-               FEPrivate`FrontEndResource[
-                "CellInsertionMenu",
-                "ShortcutColumnMaxStringLen"
-               ],
-               "CellInsertionMenuDefaultLabel"
-              ]
-             ]
-            },
-            "Rows" -> {{Automatic}}
-           },
-           GridBoxSpacings -> {
-            "Columns" -> {{0}},
-            "ColumnsIndexed" -> {2 -> 0.3, 3 -> 0.5},
-            "Rows" -> {{0}}
-           }
-          ] :>
-           FrontEndTokenExecute[EvaluationNotebook[], "StyleOther"]
+           ]
          },
          Appearance -> None
         ],
@@ -824,7 +824,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3940599860"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3940935051"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
