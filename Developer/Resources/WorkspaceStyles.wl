@@ -12,6 +12,7 @@ Cell[
     "ClosingSaveDialog"    -> False,
     DefaultNewCellStyle    -> "AutoMoveToChatInputField",
     DockedCells            -> $workspaceChatDockedCells,
+    PrivateCellOptions     -> {"ContentsOpacity" -> Dynamic[If[CurrentValue["NotebookSelected"], 1, 0.5]]},
     Magnification          -> 0.85,
     Saveable               -> False,
     Selectable             -> False,
