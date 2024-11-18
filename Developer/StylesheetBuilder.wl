@@ -719,6 +719,7 @@ $workspaceChatDockedCells = {
             ],
             TrackedSymbols :> { }
         ],
+        PrivateCellOptions -> {"ContentsOpacity" -> Dynamic[If[CurrentValue["NotebookSelected"], 1, 0.5]]},
         CellFrame        -> 0,
         CellFrameMargins -> 0,
         CellMargins      -> { { -1, -5 }, { -1, -1 } },
