@@ -675,19 +675,22 @@ getSurroundingWLCode // beginDefinition;
 
 getSurroundingWLCode[ context_String ] := Enclose[
     Catch @ Module[ { strings, boxes },
-        strings = First @ ConfirmMatch[
-            StringCases[
-                context,
-                StringExpression[
-                    "```wl\n",
-                    a___ /; StringFreeQ[ a, "```" ],
-                    $wlPlaceholderString,
-                    b___ /; StringFreeQ[ b, "```" ],
-                    "\n```"
-                ] :> { a, b },
-                1
+        strings = ConfirmMatch[
+            First[
+                StringCases[
+                    context,
+                    StringExpression[
+                        "```wl\n",
+                        a___ /; StringFreeQ[ a, "```" ],
+                        $wlPlaceholderString,
+                        b___ /; StringFreeQ[ b, "```" ],
+                        "\n```"
+                    ] :> { a, b },
+                    1
+                ],
+                Throw @ { "", "" }
             ],
-            { { _String, _String } },
+            { _String, _String },
             "Strings"
         ];
 
@@ -761,7 +764,7 @@ postProcessWLSuggestions[ suggestion_String ] := Enclose[
                     "```" ~~ WhitespaceCharacter... ~~ EndOfLine
                 }
             ],
-            Longest[ "```"|"``" ]
+            Longest @ Repeated[ "`", { 1, 3 } ]
         ];
 
         noLabels = StringTrim @ StringDelete[ noBlocks, $$inLabel ];
