@@ -401,13 +401,13 @@ Notebook[
               DynamicBox[
                FEPrivate`FrontEndResource[
                 "ChatbookStrings",
-                "StylesheetInsertionMenuSideChat"
+                "StylesheetInsertionMenuChatBreak"
                ]
               ],
               "CellInsertionMenu"
              ],
              StyleBox[
-              StyleBox["''", "CellInsertionMenuShortcut"],
+              StyleBox["~", "CellInsertionMenuShortcut"],
               "CellInsertionMenuShortcut"
              ]
             }
@@ -469,7 +469,7 @@ Notebook[
            FrontEndTokenExecute[
             EvaluationNotebook[],
             "Style",
-            "SideChat"
+            "ChatDelimiter"
            ],
           Delimiter,
           GridBox[
@@ -824,7 +824,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3940935051"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3940939112"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],

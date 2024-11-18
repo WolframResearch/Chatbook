@@ -628,7 +628,7 @@ ReplaceAll[ boxexpr, ActionMenuBox[label_, items_, rest___] :>
 				other,
 				Delimiter,
 				insertionPointMenuItem[ TemplateBox[ { }, "ChatInputIcon" ], trBox[ "StylesheetInsertionMenuChatInput" ], "'", "ChatInput" ],
-				insertionPointMenuItem[ TemplateBox[ { }, "SideChatIcon" ], trBox[ "StylesheetInsertionMenuSideChat" ], "''", "SideChat" ],
+				insertionPointMenuItem[ TemplateBox[ { }, "SideChatIcon" ], trBox[ "StylesheetInsertionMenuChatBreak" ], "~", "ChatDelimiter" ],
 				Delimiter,
 				washort,
 				walong,
