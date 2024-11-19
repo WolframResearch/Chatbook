@@ -193,7 +193,8 @@ $basePromptComponents[ "MarkdownImageBox" ] = "\
 	* If there are images embedded in the notebook, they will be replaced by a box representation in the form \
 ``MarkdownImageBox[\"![label](attachment://content-id)\"]``. You will also receive the original image immediately \
 after this. You can use the markdown from this box ``![label](attachment://content-id)`` in your responses if you \
-want to display the original image.";
+want to display the original image. The user is not aware of the existence of MarkdownImageBoxes, since they just see \
+an image, so avoid talking about these directly.";
 
 $basePromptComponents[ "MarkdownImageBoxImporting" ] = "\
 		* Use the syntax <!attachment://content-id!> to inline one of these images in code you write for the evaluator \
