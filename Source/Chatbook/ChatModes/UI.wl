@@ -10,7 +10,7 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$inputFieldPaneMargins       = { { 5, 5 }, { 0, 5 } };
+$inputFieldPaneMargins       = { { 5, 5 }, { 5, 0 } };
 $inputFieldGridMagnification = Inherited;
 $inputFieldOuterBackground   = GrayLevel[ 0.95 ];
 $initialInlineChatWidth      = Scaled[ 0.85 ];
@@ -294,6 +294,11 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                 Grid[
                     {
                         {
+                            Spacer[ 0 ],
+                            Item[ Dynamic @ focusedNotebookDisplay @ thisNB, Alignment -> Left ],
+                            SpanFromLeft
+                        },
+                        {
                             RawBoxes @ TemplateBox[ { }, "ChatIconUser" ],
                             Framed[
                                 InputField[
@@ -310,11 +315,6 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                 { RGBColor[ "#a3c9f2" ], RGBColor[ "#f1f7fd" ], 27, thisNB },
                                 "WorkspaceSendChatButton"
                             ]
-                        },
-                        {
-                            Spacer[ 0 ],
-                            Dynamic @ focusedNotebookDisplay @ thisNB,
-                            Spacer[ 0 ]
                         }
                     },
                     BaseStyle -> { Magnification -> $inputFieldGridMagnification },
@@ -440,6 +440,7 @@ focusedNotebookDisplay[ chatNB_ ] := Enclose[
         label = Grid[
             { {
                 (* $focusIcon, *)
+                Style[ "Focusing on: ", FontSlant -> Italic, FontColor -> GrayLevel[ 0.65 ] ],
                 $smallNotebookIcon,
                 Tooltip[ formatNotebookTitle @ title, "The notebook in focus" ],
                 lockFocusButton[ chatNB, locked, focused ]
@@ -448,14 +449,15 @@ focusedNotebookDisplay[ chatNB_ ] := Enclose[
             BaseStyle -> { "Text", FontSize -> 13 }
         ];
 
-        Framed[
+        (* Framed[
             label,
             Alignment      -> { Automatic, Baseline },
             Background     -> GrayLevel[ 1 ],
             FrameMargins   -> { { 3, 3 }, { 1, 0 } },
             FrameStyle     -> GrayLevel[ 0.75 ],
             RoundingRadius -> 3
-        ]
+        ] *)
+        Pane[ label, ImageMargins -> { { 0, 0 }, { 0, 3 } } ]
     ],
     throwInternalFailure
 ];
