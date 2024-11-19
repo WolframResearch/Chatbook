@@ -1227,8 +1227,8 @@ makeLLMPanel[ ] :=
         username =
             PaneSelector[
                 {
-                    False -> "",
-                    True ->
+                    True -> "",
+                    False ->
                         Grid[
                             { {
                                 RawBoxes @ DynamicBox[ FEPrivate`FrontEndResource[ "FEBitmaps", "GenericUserIcon" ][ GrayLevel[ 0.2 ] ] ],
@@ -1236,7 +1236,7 @@ makeLLMPanel[ ] :=
                             Alignment -> { Left, Baseline },
                             BaseStyle -> { FontColor -> GrayLevel[ 0.2 ], FontSize -> 14 },
                             BaselinePosition -> { 1, 2 } ] },
-                Dynamic[ TrueQ[ CurrentValue[ "WolframCloudConnected" ] ] ],
+                Dynamic[ $CloudUserID === None ],
                 BaselinePosition -> Baseline,
                 ImageSize -> Automatic ];
 
@@ -1249,7 +1249,7 @@ makeLLMPanel[ ] :=
                             If[ CurrentValue[ "MouseOver" ],
                                 RGBColor[ 0.3333333333333333, 0.6941176470588235, 0.8483660130718954 ],
                                 RGBColor[                 0., 0.5411764705882353, 0.7725490196078432 ] ] ] ],
-                If[ CurrentValue[ "WolframCloudConnected" ] =!= "Pending", FEPrivate`WolframCloudSignIn[ ] ],
+                CloudConnect[ ],
                 Appearance -> "Suppressed",
                 BaseStyle -> "DialogTextCommon",
                 BaselinePosition -> Baseline,
@@ -1316,7 +1316,7 @@ makeLLMPanel[ ] :=
                             },
                             Dynamic[
                                 Which[
-                                    !TrueQ[ CurrentValue[ "WolframCloudConnected" ] ], "NotCloudConnected",
+                                    $CloudUserID === None, "NotCloudConnected",
                                     TrueQ[ Wolfram`LLMFunctions`Common`$LLMKitInfo[ "userHasSubscription" ] ], "CloudConnectedAndSubscribed",
                                     !AssociationQ[ Wolfram`LLMFunctions`Common`$LLMKitInfo ], "Loading",
                                     True, "CloudConnectedButNotSubscribed" ] ],
