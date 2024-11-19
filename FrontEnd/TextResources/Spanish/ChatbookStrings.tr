@@ -202,10 +202,12 @@
 "WorkspaceWindowTitle" -> "Asistente de cuadernos",
 "WorkspaceToolbarButtonLabelHistory" -> "Historial",
 "WorkspaceToolbarButtonLabelSources" -> "Fuentes",
-"WorkspaceToolbarButtonLabelNew" -> "Nuevo",
+"WorkspaceToolbarSourcesSubTitle" -> "Choose sources to be made available to the notebook assistant.",
+"WorkspaceToolbarButtonLabelNew" -> "New Chat",
 "WorkspaceToolbarButtonTooltipHistory" -> "Administrar conversaciones",
 "WorkspaceToolbarButtonTooltipSources" -> "Agregar material de origen adicional al contexto del chat",
 "WorkspaceToolbarButtonTooltipNew" -> "Iniciar una nueva conversaci\[OAcute]n",
+"WorkspaceToolbarButtonTooltipOpenAsChatbook" -> "Open as a Chat Notebook",
 "WorkspaceSourcesOpenNotebooks" -> "Abrir cuadernos",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copy response to clipboard\[Ellipsis]",

@@ -202,10 +202,12 @@
 "WorkspaceWindowTitle" -> "\:7B46\:8A18\:672C\:5C0F\:5E6B\:624B",
 "WorkspaceToolbarButtonLabelHistory" -> "\:6B77\:53F2\:8A18\:9304",
 "WorkspaceToolbarButtonLabelSources" -> "\:8CC7\:6E90",
-"WorkspaceToolbarButtonLabelNew" -> "\:65B0\:589E",
+"WorkspaceToolbarSourcesSubTitle" -> "Choose sources to be made available to the notebook assistant.",
+"WorkspaceToolbarButtonLabelNew" -> "New Chat",
 "WorkspaceToolbarButtonTooltipHistory" -> "\:7BA1\:7406\:6703\:8A71",
 "WorkspaceToolbarButtonTooltipSources" -> "\:589E\:6DFB\:984D\:5916\:4F86\:6E90\:8CC7\:6599\:81F3\:804A\:5929\:7CFB\:7D71\:4E0A\:4E0B\:6587",
 "WorkspaceToolbarButtonTooltipNew" -> "\:958B\:59CB\:65B0\:589E\:6703\:8A71",
+"WorkspaceToolbarButtonTooltipOpenAsChatbook" -> "Open as a Chat Notebook",
 "WorkspaceSourcesOpenNotebooks" -> "\:958B\:555F\:7B46\:8A18\:672C",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copy response to clipboard\[Ellipsis]",
