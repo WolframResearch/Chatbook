@@ -9,9 +9,10 @@ Needs[ "Wolfram`Chatbook`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$maxTitleLength      = 30;
-$hardMaxTitleLength  = 40;
-$maxContextLength    = 100000; (* characters *)
+$maxTitleLength         = 30;
+$hardMaxTitleLength     = 40;
+$maxContextLength       = 100000; (* characters *)
+$multimodalTitleContext = False;
 
 $titlePrompt := "\
 Please come up with a meaningful window title for the current chat conversation using no more than \
@@ -79,7 +80,9 @@ generateChatTitleAsync[ messages: $$chatMessages, callback_, temperature: Automa
         instructions = ConfirmBy[ TemplateApply[ $titlePrompt, short ], StringQ, "Prompt" ];
 
         context = ConfirmMatch[
-            Block[ { $multimodalMessages = True }, expandMultimodalString @ instructions ],
+            Block[ { $multimodalMessages = TrueQ @ $multimodalTitleContext },
+                expandMultimodalString @ instructions
+            ],
             _String | { __ },
             "Context"
         ];
