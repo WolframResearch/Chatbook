@@ -451,7 +451,7 @@ makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose
                         Spacer[ 5 ],
                         highlight[
                             Dynamic[ If[ service === "LLMKit", "", tr[ "PreferencesContentModelLabel" ] ] ],
-                            Dynamic[ If[ service === "LLMKit", "", 
+                            Dynamic[ If[ service === "LLMKit", "",
                                 If[ state === "Loading" || MatchQ[ modelSelector, _Symbol ], $loadingPopupMenu, modelSelector ] ],
                                 TrackedSymbols :> { state, modelSelector }
                             ],
@@ -1279,7 +1279,7 @@ makeLLMPanel[ ] :=
                                     DynamicModule[ { },
                                         (* Display a progress indicator until $LLMKitInfo is set via initialization *)
                                         ProgressIndicator[ Appearance -> "Percolate" ],
-                                        Initialization :> ( Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] )
+                                        Initialization :> ( Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] ),
                                         SynchronousInitialization -> False
                                     ],
                                 "NotCloudConnected" ->
