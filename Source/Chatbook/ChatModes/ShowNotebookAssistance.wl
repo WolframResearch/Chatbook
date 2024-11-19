@@ -474,6 +474,8 @@ showNotebookAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] :
                   ConfirmMatch[ LogChatTiming @ attachToLeft[ source, current ], _NotebookObject, "Attached" ]
               ];
 
+        setNotebookAssistanceEvaluator @ nbo;
+
         LogChatTiming @ setWindowInputAndEvaluate[ nbo, input, evaluate ]
     ],
     throwInternalFailure
@@ -494,6 +496,8 @@ showNotebookAssistanceWindow[ None, input_, evaluate_, new_ ] := Enclose[
                   current
               ];
 
+        setNotebookAssistanceEvaluator @ nbo;
+
         setWindowInputAndEvaluate[ nbo, input, evaluate ]
     ],
     throwInternalFailure
@@ -501,6 +505,18 @@ showNotebookAssistanceWindow[ None, input_, evaluate_, new_ ] := Enclose[
 
 
 showNotebookAssistanceWindow // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*setNotebookAssistanceEvaluator*)
+setNotebookAssistanceEvaluator // beginDefinition;
+
+setNotebookAssistanceEvaluator[ nbo_NotebookObject ] :=
+    If[ AssociationQ @ Association @ CurrentValue[ nbo, { EvaluatorNames, "NotebookAssistance" } ],
+        SetOptions[ nbo, Evaluator -> "NotebookAssistance" ]
+    ];
+
+setNotebookAssistanceEvaluator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -549,7 +565,7 @@ attachToLeft[ source_NotebookObject, current_NotebookObject ] := Enclose[
             WindowMargins -> { { left - width, Automatic }, { bottom, top } },
             WindowSize    -> { width, Automatic }
         ];
-        
+
         If[ (* Starting in Mac 14.2, we can make sure the assistant notebook is on right "space". *)
             And[
                 BoxForm`sufficientVersionQ[14.2],
@@ -557,7 +573,7 @@ attachToLeft[ source_NotebookObject, current_NotebookObject ] := Enclose[
             ],
             FE`Evaluate @ Evaluate @ FEPrivate`MoveToActiveDesktop @ current
         ];
-        
+
         SetSelectedNotebook @ current;
         moveToChatInputField[ current, True ];
 
