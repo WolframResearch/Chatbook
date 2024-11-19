@@ -824,7 +824,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3940955540"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3941018585"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -14661,6 +14661,8 @@ Notebook[
      ])
    }
   ],
+  Cell[StyleData["InlineItem"], ParagraphIndent -> -10],
+  Cell[StyleData["InlineSubitem"], ParagraphIndent -> -16],
   Cell[
    StyleData["DropShadowPaneBox"],
    TemplateBoxOptions -> {
