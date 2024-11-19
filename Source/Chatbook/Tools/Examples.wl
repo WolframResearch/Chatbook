@@ -39,12 +39,7 @@ $fullExamplesKeys :=
     With[ { selected = Keys @ $selectedTools },
         Select[
             {
-                "AstroGraphicsDocumentation",
-                "FileSystemTree",
-                "FractionalDerivatives",
-                "NaturalLanguageInput",
-                "PlotEvaluate",
-                "TemporaryDirectory"
+                "NaturalLanguageInput"
             },
             ContainsAll[ selected, $exampleDependencies[ #1 ] ] &
         ]
