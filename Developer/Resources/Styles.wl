@@ -547,32 +547,6 @@ Cell[
 
 
 (* ::Subsection::Closed:: *)
-(*ChatCode*)
-
-
-(*
-    14.2 CoreExtensions: most important parts of Input are defined in Core.nb. Only the CellEpliog is missing for chat functionality.
-    There is no impact on 14.1 chatbooks because Input already adds CellEpilog, so duplicating it here has no effect. *)
-Cell[
-    StyleData[ "ChatCode", StyleDefinitions -> StyleData[ "Input" ] ],
-    Background           -> GrayLevel[ 1 ],
-    FontSize             -> 14,
-    FontWeight           -> "Plain",
-    LanguageCategory     -> "Input",
-    ShowAutoStyles       -> True,
-    ShowStringCharacters -> True,
-    ShowSyntaxStyles     -> True,
-
-    CellEpilog :> With[ { Wolfram`ChatNB`cell = (FinishDynamic[]; EvaluationCell[]) },
-        Quiet[ Needs[ "Wolfram`Chatbook`" -> None ] ];
-        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AIAutoAssist", Wolfram`ChatNB`cell ]
-    ]
-
-]
-
-
-
-(* ::Subsection::Closed:: *)
 (*ChatPreformatted*)
 
 
@@ -604,9 +578,9 @@ Cell[
 
 
 Cell[
-    StyleData[ "ChatCodeActive", StyleDefinitions -> StyleData[ "ChatCode" ] ],
+    StyleData[ "ChatCodeActive", StyleDefinitions -> StyleData[ "Input" ] ],
     CodeAssistOptions -> { "AutoDetectHyperlinks" -> False },
-    LanguageCategory  -> None,
+    FontSize          -> 13,
     ShowAutoStyles    -> False
 ]
 
