@@ -182,6 +182,7 @@
 "StylesheetToggleFormatting" -> "\:C11C\:C2DD \:C124\:C815 \:C804\:D658",
 "StylesheetCopyChatObject" -> "ChatObject \:BCF5\:C0AC",
 "StylesheetInsertionMenuChatInput" -> "\:CC44\:D305 \:C785\:B825",
+"StylesheetInsertionMenuChatBreak" -> "Chat Break",
 "StylesheetInsertionMenuSideChat" -> "\:C0AC\:C774\:B4DC \:CC44\:D305",
 "StylesheetContextMenuIncludeExclude" -> "AI \:CC44\:D305\:C5D0\:C11C \:C624\:B294 \:AC83\:C744 \:D3EC\:D568/\:C81C\:C678",
 

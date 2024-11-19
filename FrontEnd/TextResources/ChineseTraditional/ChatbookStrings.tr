@@ -181,6 +181,7 @@
 "StylesheetToggleFormatting" ->"\:96D9\:614B\:89F8\:8B8A\:683C\:5F0F\:5316\:4E2D",
 "StylesheetCopyChatObject" -> "\:8907\:88FD ChatObject",
 "StylesheetInsertionMenuChatInput" -> "\:7DB2\:8DEF\:804A\:5929\:7CFB\:7D71\:8F38\:5165",
+"StylesheetInsertionMenuChatBreak" -> "Chat Break",
 "StylesheetInsertionMenuSideChat" -> "Side Chat \:FF08\:585E\:6390\:FF09",
 "StylesheetContextMenuIncludeExclude" -> "\:5F9E AI \:804A\:5929\:7CFB\:7D71\:7B97\:5165/\:9010\:51FA",
 

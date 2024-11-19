@@ -181,6 +181,7 @@
 "StylesheetToggleFormatting" -> "Activar formato",
 "StylesheetCopyChatObject" -> "Copiar ChatObject",
 "StylesheetInsertionMenuChatInput" -> "Entrada de chat",
+"StylesheetInsertionMenuChatBreak" -> "Chat Break",
 "StylesheetInsertionMenuSideChat" -> "Chat lateral",
 "StylesheetContextMenuIncludeExclude" -> "Incluir/excluir del Asistente de chat",
 

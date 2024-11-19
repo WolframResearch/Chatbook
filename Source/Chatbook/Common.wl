@@ -1193,7 +1193,7 @@ maskOpenAIKey[ expr_ ] :=
 (* ::Subsection::Closed:: *)
 (*markdownCodeBlock*)
 markdownCodeBlock[ as_Association? AssociationQ ] :=
-    "```\n<|\n" <> StringRiffle[ ruleToString /@ Normal[ as, Association ], "\n" ] <> "\n|>\n```\n";
+    "```\n<|\n" <> StringRiffle[ ruleToString /@ Normal[ as, Association ], ",\n" ] <> "\n|>\n```\n";
 
 markdownCodeBlock[ expr_ ] := StringJoin[
     "```\n",
