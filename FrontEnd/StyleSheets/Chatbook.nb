@@ -824,7 +824,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3940939112"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3940955540"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -1841,27 +1841,6 @@ Notebook[
   ],
   Cell[StyleData["ChatCodeBlockButtonPanel"]],
   Cell[
-   StyleData[
-    "ChatCode",
-    StyleDefinitions -> StyleData["Input"]
-   ],
-   CellEpilog :>
-    With[ { Wolfram`ChatNB`cell = (FinishDynamic[]; EvaluationCell[]) },
-     Quiet[Needs["Wolfram`Chatbook`" -> None]];
-     Symbol["Wolfram`Chatbook`ChatbookAction"][
-      "AIAutoAssist",
-      Wolfram`ChatNB`cell
-     ]
-    ],
-   ShowAutoStyles -> True,
-   ShowSyntaxStyles -> True,
-   LanguageCategory -> "Input",
-   ShowStringCharacters -> True,
-   FontSize -> 14,
-   FontWeight -> "Plain",
-   Background -> GrayLevel[1]
-  ],
-  Cell[
    StyleData["ChatPreformatted"],
    CellFrame -> None,
    CellMargins -> {{66, 10}, {8, 8}},
@@ -1882,11 +1861,11 @@ Notebook[
   Cell[
    StyleData[
     "ChatCodeActive",
-    StyleDefinitions -> StyleData["ChatCode"]
+    StyleDefinitions -> StyleData["Input"]
    ],
    ShowAutoStyles -> False,
    CodeAssistOptions -> {"AutoDetectHyperlinks" -> False},
-   LanguageCategory -> None
+   FontSize -> 13
   ],
   Cell[
    StyleData["ChatCodeBlockTemplate"],
