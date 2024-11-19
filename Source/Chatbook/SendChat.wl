@@ -964,13 +964,7 @@ splitDynamicContent[ container_, { static__String, dynamic_String }, cell_, uuid
                 write,
                 None,
                 AutoScroll -> False
-            ];
-            splitDynamicTaskFunction @ NotebookWrite[
-                System`NotebookLocationSpecifier[ boxObject, "Before" ],
-                Cell[ "\n", "None" ],
-                None,
-                AutoScroll -> False
-            ];
+            ]
         ];
 
         $dynamicTrigger++;
