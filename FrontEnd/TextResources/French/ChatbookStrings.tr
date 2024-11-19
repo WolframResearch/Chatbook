@@ -181,6 +181,7 @@
 "StylesheetToggleFormatting" -> "Basculer la mise en forme",
 "StylesheetCopyChatObject" -> "Copier l\[CloseCurlyQuote]objet de Chat",
 "StylesheetInsertionMenuChatInput" -> "Entr\[EAcute]e de chat",
+"StylesheetInsertionMenuChatBreak" -> "Chat Break",
 "StylesheetInsertionMenuSideChat" -> "Chat lat\[EAcute]ral",
 "StylesheetContextMenuIncludeExclude" -> "Inclure/exclure du chat IA",
 

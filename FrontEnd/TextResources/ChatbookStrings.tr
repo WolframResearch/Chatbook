@@ -181,6 +181,7 @@
 "StylesheetToggleFormatting" -> "Toggle Formatting",
 "StylesheetCopyChatObject" -> "Copy ChatObject",
 "StylesheetInsertionMenuChatInput" -> "Chat Input",
+"StylesheetInsertionMenuChatBreak" -> "Chat Break",
 "StylesheetInsertionMenuSideChat" -> "Side Chat",
 "StylesheetContextMenuIncludeExclude" -> "Include/Exclude From AI Chat",
 
@@ -203,7 +204,7 @@
 "WorkspaceToolbarButtonLabelSources" -> "Sources",
 "WorkspaceToolbarButtonLabelNew" -> "New",
 "WorkspaceToolbarButtonTooltipHistory" -> "Manage conversations",
-"WorkspaceToolbarButtonTooltipSources" -> "Add additional source material to the chat context",
+"WorkspaceToolbarButtonTooltipSources" -> "Sources for additional material to add to the chat context",
 "WorkspaceToolbarButtonTooltipNew" -> "Start a new conversation",
 "WorkspaceSourcesOpenNotebooks" -> "Open Notebooks",
 
