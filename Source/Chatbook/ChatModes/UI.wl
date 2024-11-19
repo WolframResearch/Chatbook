@@ -10,7 +10,7 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$inputFieldPaneMargins       = 5;
+$inputFieldPaneMargins       = { { 5, 5 }, { 0, 5 } };
 $inputFieldGridMagnification = Inherited;
 $inputFieldOuterBackground   = GrayLevel[ 0.95 ];
 $initialInlineChatWidth      = Scaled[ 0.85 ];
@@ -310,9 +310,15 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                 { RGBColor[ "#a3c9f2" ], RGBColor[ "#f1f7fd" ], 27, thisNB },
                                 "WorkspaceSendChatButton"
                             ]
+                        },
+                        {
+                            Spacer[ 0 ],
+                            Dynamic @ focusedNotebookDisplay @ thisNB,
+                            Spacer[ 0 ]
                         }
                     },
-                    BaseStyle -> { Magnification -> $inputFieldGridMagnification }
+                    BaseStyle -> { Magnification -> $inputFieldGridMagnification },
+                    Spacings  -> { 0.5, 0.2 }
                 ],
                 FrameMargins -> $inputFieldPaneMargins,
                 ImageSize ->
@@ -352,6 +358,8 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
 (*workspaceChatInitializer*)
 workspaceChatInitializer // beginDefinition;
 
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::NoVariables::DynamicModule:: *)
 workspaceChatInitializer[ expr_ ] :=
     DynamicModule[
         { },
@@ -359,6 +367,7 @@ workspaceChatInitializer[ expr_ ] :=
         Initialization :> initializeWorkspaceChat[ ],
         SynchronousInitialization -> False
     ];
+(* :!CodeAnalysis::EndBlock:: *)
 
 workspaceChatInitializer // endDefinition;
 
@@ -412,6 +421,150 @@ moveChatInputToBottom[ nbo_NotebookObject ] :=
     ];
 
 moveChatInputToBottom // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*focusedNotebookDisplay*)
+focusedNotebookDisplay // beginDefinition;
+
+focusedNotebookDisplay[ chatNB_ ] := Enclose[
+    Catch @ Module[ { lockFocused, locked, focused, title, label },
+
+        lockFocused = getLockedNotebook @ chatNB;
+        locked = MatchQ[ lockFocused, _NotebookObject ];
+        focused = If[ locked, lockFocused, ConfirmMatch[ getUserNotebook[ ], _NotebookObject|None, "Focused" ] ];
+
+        If[ focused === None, Throw @ Spacer[ 0 ] ];
+        title = Replace[ AbsoluteCurrentValue[ focused, WindowTitle ], "" | Except[ _String ] :> None ];
+
+        label = Grid[
+            { {
+                (* $focusIcon, *)
+                $smallNotebookIcon,
+                Tooltip[ formatNotebookTitle @ title, "The notebook in focus" ],
+                lockFocusButton[ chatNB, locked, focused ]
+            } },
+            Alignment -> { Left, Baseline },
+            BaseStyle -> { "Text", FontSize -> 13 }
+        ];
+
+        Framed[
+            label,
+            Alignment      -> { Automatic, Baseline },
+            Background     -> GrayLevel[ 1 ],
+            FrameMargins   -> { { 3, 3 }, { 1, 0 } },
+            FrameStyle     -> GrayLevel[ 0.75 ],
+            RoundingRadius -> 3
+        ]
+    ],
+    throwInternalFailure
+];
+
+focusedNotebookDisplay // endDefinition;
+
+
+(* FIXME: These are placeholder icons: *)
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::UnexpectedCharacter:: *)
+$focusIcon = Style[ "\|01f441\:fe0f\:200d\|01f5e8\:fe0f", FontColor -> GrayLevel[ 0.8 ] ];
+(* :!CodeAnalysis::EndBlock:: *)
+
+$lockedColor   = GrayLevel[ 0.25 ];
+$unlockedColor = GrayLevel[ 0.75 ];
+
+$unlockedIcon = Graphics[
+    {
+        FaceForm @ None,
+        EdgeForm @ Directive[ Thickness[ 0.1 ], $unlockedColor ],
+        Rectangle[ { -1, -0.75 }, { 1, 1 }, RoundingRadius -> 0.25 ],
+        Thickness[ 0.1 ],
+        $unlockedColor,
+        CapForm[ "Round" ],
+        Line @ { { 0.5, 1 }, { 0.5, 1.5 } },
+        Line @ { { 2, 1 }, { 2, 1.5 } },
+        Circle[ { 1.25, 1.5 }, 0.75, { 0, Pi } ]
+    },
+    ImageSize        -> { Automatic, 12 },
+    PlotRange        -> { { -1, 2 }, { -1.25, 2.25 } },
+    PlotRangePadding -> 0.2
+];
+
+
+$lockedIcon = Graphics[
+    {
+        FaceForm @ None,
+        EdgeForm @ Directive[ Thickness[ 0.1 ], $lockedColor ],
+        Rectangle[ { -1, -0.75 }, { 1, 1 }, RoundingRadius -> 0.25 ],
+        Thickness[ 0.1 ],
+        $lockedColor,
+        CapForm[ "Round" ],
+        Line @ { { -0.75, 1 }, { -0.75, 1.5 } },
+        Line @ { { 0.75, 1 }, { 0.75, 1.5 } },
+        Circle[ { 0, 1.5 }, 0.75, { 0, Pi } ]
+    },
+    ImageSize        -> { Automatic, 12 },
+    PlotRange        -> { { -1, 2 }, { -1.25, 2.25 } },
+    PlotRangePadding -> 0.2
+];
+
+
+$smallNotebookIcon = RawBoxes @ Append[
+    DeleteCases[
+        FrontEndResource[ "FEBitmaps", "NotebookIcon" ][
+            GrayLevel[ 0.651 ],
+            RGBColor[ 0.86667, 0.066667, 0.0 ]
+        ],
+        ImageSize -> _
+    ],
+    ImageSize -> { Automatic, 14 }
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getLockedNotebook*)
+getLockedNotebook // beginDefinition;
+getLockedNotebook[ nbo_ ] := getLockedNotebook[ nbo, CurrentChatSettings[ nbo, "FocusedNotebook" ] ];
+getLockedNotebook[ nbo_, focused_ ] := If[ TrueQ @ notebookObjectQ @ focused, focused, None ];
+getLockedNotebook // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*lockFocusButton*)
+lockFocusButton // beginDefinition;
+
+lockFocusButton[ chatNB_, locked_, target_ ] := Button[
+    lockFocusButtonIcon @ locked,
+    toggleNotebookFocusLock[ chatNB, locked, target ],
+    Alignment  -> { Automatic, Baseline },
+    Appearance -> "Suppressed"
+];
+
+lockFocusButton // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toggleNotebookFocusLock*)
+toggleNotebookFocusLock // beginDefinition;
+
+toggleNotebookFocusLock[ chatNB_NotebookObject, True, target_ ] := (
+    CurrentChatSettings[ chatNB, "FocusedNotebook" ] = Inherited
+);
+
+toggleNotebookFocusLock[ chatNB_NotebookObject, False, target_NotebookObject ] := (
+    CurrentChatSettings[ chatNB, "FocusedNotebook" ] = target
+);
+
+toggleNotebookFocusLock // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*lockFocusButtonIcon*)
+lockFocusButtonIcon // beginDefinition;
+(* FIXME: move strings to text resources *)
+lockFocusButtonIcon[ True  ] := Tooltip[ $lockedIcon, "Unlock focus from this notebook" ];
+lockFocusButtonIcon[ False ] := Tooltip[ $unlockedIcon, "Lock focus to this notebook" ];
+lockFocusButtonIcon // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

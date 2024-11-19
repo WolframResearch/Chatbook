@@ -2,8 +2,6 @@
 (*Package Header*)
 BeginPackage[ "Wolfram`Chatbook`ToolManager`" ];
 
-(* :!CodeAnalysis::BeginBlock:: *)
-
 `CreateLLMToolManagerDialog;
 `CreateLLMToolManagerPanel;
 
@@ -490,6 +488,7 @@ getValidPersonaTools // endDefinition;
 (* ::Subsection::Closed:: *)
 (*attachOverlay*)
 
+(* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::NoVariables::DynamicModule:: *)
 attachOverlay // beginDefinition;
 
@@ -525,6 +524,7 @@ attachOverlay[ expr_, opts___ ] := AttachCell[
     { Center, Center },
     RemovalConditions -> { }
 ];
+(* :!CodeAnalysis::EndBlock:: *)
 
 attachOverlay // endDefinition;
 
@@ -605,6 +605,7 @@ toolModelWarning0 // endDefinition;
 (* ::Subsection::Closed:: *)
 (*prepTools*)
 
+(* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::DuplicateKeys::ListOfRules:: *)
 prepTools // beginDefinition;
 
@@ -623,6 +624,7 @@ prepTools[ tools: { __Association }, Dynamic[ { row_, column_ } ] ] :=
         ],
         { tools, Range @ Length @ tools }
     ];
+(* :!CodeAnalysis::EndBlock:: *)
 
 prepTools // endDefinition;
 
@@ -1485,8 +1487,6 @@ $cloudDeleteToolButtonLabel = Mouseover[
 addToMXInitialization[
     Null
 ];
-
-(* :!CodeAnalysis::EndBlock:: *)
 
 End[ ];
 EndPackage[ ];

@@ -234,6 +234,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `needsBasePrompt;
 `nextCell;
 `notebookInformation;
+`notebookObjectQ;
 `notebookRead;
 `o1ModelQ;
 `openerView;
