@@ -22,6 +22,8 @@ $documentationSnippetsCacheDirectory := $documentationSnippetsCacheDirectory =
 $resourceSnippetsCacheDirectory := $resourceSnippetsCacheDirectory =
     ChatbookFilesDirectory @ { "DocumentationSnippets", "ResourceSystem" };
 
+$rerankMethod := CurrentChatSettings[ "DocumentationRerankMethod" ];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Messages*)
@@ -192,7 +194,8 @@ prependRelatedDocsHeader // endDefinition;
 
 
 $relatedDocsStringFilteredHeader =
-"IMPORTANT: Here are some Wolfram documentation snippets that you should use to respond.\n\n";
+"IMPORTANT: Here are some Wolfram documentation snippets that were retrieved based on semantic similarity to the \
+current context. Please use them if they can help answer the user's latest message.\n\n";
 
 $relatedDocsStringUnfilteredHeader =
 "Here are some Wolfram documentation snippets that you may find useful.\n\n";
@@ -202,12 +205,64 @@ $relatedDocsStringUnfilteredHeader =
 (*filterSnippets*)
 filterSnippets // beginDefinition;
 
-filterSnippets[ messages_, uris: { __String }, filter_, filterCount_Integer? Positive ] := Enclose[
+
+filterSnippets[ messages_, uris: { __String }, Except[ True ], filterCount_ ] := Enclose[
+    ConfirmMatch[ makeDocSnippets @ uris, { ___String }, "Snippets" ],
+    throwInternalFailure
+];
+
+
+filterSnippets[
+    messages_,
+    uris: { __String },
+    True,
+    filterCount_Integer? Positive
+] /; $rerankMethod === "rerank-english-v3.0" (* EXPERIMENTAL *) := Enclose[
+    Catch @ Module[ { snippets, inserted, transcript, instructions, resp, results, idx, ranked },
+
+        snippets = ConfirmMatch[ makeDocSnippets @ uris, { ___String }, "Snippets" ];
+        setProgressDisplay[ "Choosing relevant documentation" ];
+        inserted = insertContextPrompt @ messages;
+        transcript = ConfirmBy[ getSmallContextString @ inserted, StringQ, "Transcript" ];
+
+        instructions = ConfirmBy[
+            TemplateApply[ $documentationRerankPrompt, <| "Transcript" -> transcript |> ],
+            StringQ,
+            "Prompt"
+        ];
+
+        resp = ServiceExecute[
+            "Cohere",
+            "RawRerank",
+            {
+                "model"     -> "rerank-english-v3.0",
+                "query"     -> instructions,
+                "documents" -> snippets
+            }
+        ];
+
+        If[ FailureQ @ resp, throwTop @ resp ];
+
+        results = ConfirmMatch[ resp[ "results" ], { __Association }, "Results" ];
+
+        idx = ConfirmMatch[
+            Select[ results, #[ "relevance_score" ] > 0.01 & ][[ All, "index" ]] + 1,
+            { ___Integer },
+            "Indices"
+        ];
+
+        ranked = ConfirmMatch[ snippets[[ idx ]], { ___String }, "Ranked" ];
+
+        Take[ ranked, UpTo[ filterCount ] ]
+    ],
+    throwInternalFailure
+];
+
+
+filterSnippets[ messages_, uris: { __String }, True, filterCount_Integer? Positive ] := Enclose[
     Catch @ Module[ { snippets, inserted, transcript, xml, instructions, response, pages },
 
         snippets = ConfirmMatch[ makeDocSnippets @ uris, { ___String }, "Snippets" ];
-        If[ ! TrueQ @ filter, Throw @ snippets ];
-
         setProgressDisplay[ "Choosing relevant documentation" ];
         inserted = insertContextPrompt @ messages;
         transcript = ConfirmBy[ getSmallContextString @ inserted, StringQ, "Transcript" ];
@@ -228,31 +283,54 @@ filterSnippets[ messages_, uris: { __String }, filter_, filterCount_Integer? Pos
 
         response = StringTrim @ ConfirmBy[
             LogChatTiming[
-                llmSynthesize @ instructions,
+                llmSynthesize[ instructions, <| "StopTokens" -> "\"CasualChat\"" |> ],
                 "WaitForFilterSnippetsTask"
             ] // withApproximateProgress[ 0.5 ],
             StringQ,
             "Response"
         ];
 
-        pages = ConfirmMatch[ makeDocSnippets @ StringCases[ response, uris ], { ___String }, "Pages" ];
+        pages = ConfirmMatch[ makeDocSnippets @ selectSnippetsFromJSON[ response, uris ], { ___String }, "Pages" ];
 
         pages
     ],
     throwInternalFailure
 ];
 
+
 filterSnippets // endDefinition;
 
 
+
 $bestDocumentationPrompt = StringTemplate[ "\
-Your task is to read a chat transcript between a user and assistant, and then select the most relevant \
-Wolfram Language documentation snippets that could help the assistant answer the user's latest message. \
+Your task is to read a chat transcript between a user and assistant, and then select any relevant Wolfram Language \
+documentation snippets that could help the assistant answer the user's latest message.
+
 Each snippet is uniquely identified by a URI (always starts with 'paclet:' or 'https://resources.wolframcloud.com').
 
-Choose up to %%FilteredCount%% documentation snippets that would help answer the user's MOST RECENT message. \
-Respond only with the corresponding URIs of the snippets and nothing else. \
-If there are no relevant pages, respond with just the string \"none\".
+Choose up to %%FilteredCount%% documentation snippets that would help answer the user's MOST RECENT message.
+
+Respond with JSON in the following format:
+{
+	\"AssistantType\": assistantType,
+	\"Snippets\": [
+		{\"URI\": uri1, \"Score\": score1},
+		{\"URI\": uri2, \"Score\": score2},
+		...
+	]
+}
+
+For \"AssistantType\", specify the type of assistant that should handle the user's message:
+	\"Computational\": The user's message requires a computational response.
+	\"Knowledge\": The user's message requires a knowledge-based response.
+	\"CasualChat\": The user's message is casual and could be answered by a non-specialist. For example, simple greetings or general questions.
+
+Specify a score as any number from 1 to 5 for your chosen snippets using the following rubric:
+	1: The snippet is completely irrelevant to the user's message or has no usefulness.
+	2: The snippet is somewhat related, but the assistant could easily answer the user's message without it.
+	3: The snippet is related and might help the assistant answer the user's message.
+	4: The snippet is very relevant and would significantly help the assistant answer the user's message.
+	5: It would be impossible for the assistant to answer the user's message correctly without this snippet.
 
 Here is the chat transcript:
 
@@ -266,10 +344,55 @@ Here are the available documentation snippets to choose from:
 %%Snippets%%
 </snippets>
 
-Reminder: Choose up to %%FilteredCount%% documentation snippets that would help answer the user's MOST RECENT message. \
-Respond only with the corresponding URIs of the snippets and nothing else. \
-If there are no relevant pages, respond with just the string \"none\".\
+Reminder: Choose up to %%FilteredCount%% documentation snippets that would help answer the user's MOST RECENT message.
+You can (and should) skip snippets that are not relevant to the user's message or are redundant.
+Respond only with the specified JSON and nothing else.
+If there are no relevant pages, respond with [].
 ", Delimiters -> "%%" ];
+
+
+
+$documentationRerankPrompt = StringTemplate[ "\
+Read the chat transcript between a user and assistant, and then give me the best Wolfram Language documentation \
+snippet that could help the assistant answer the user's latest message.
+
+The snippet does not need to exactly answer the user's message if it can be easily generalized.
+Prefer built-in system symbols over other resources.
+Simpler is better.
+
+Here is the chat transcript:
+
+<transcript>
+%%Transcript%%
+</transcript>\
+", Delimiters -> "%%" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*selectSnippetsFromJSON*)
+selectSnippetsFromJSON // beginDefinition;
+
+selectSnippetsFromJSON[ response_String, uris_List ] := Enclose[
+    Catch @ Module[ { jsonString, jsonData, selected },
+        jsonString = ConfirmBy[ First[ StringCases[ response, Longest[ "{" ~~ __ ~~ "}" ], 1 ], None ], StringQ ];
+        jsonData = ConfirmBy[ Quiet @ Developer`ReadRawJSONString @ jsonString, AssociationQ ];
+        selected = ConfirmMatch[ Select[ jsonData[ "Snippets" ], #[ "Score" ] >= 3 & ], { __ } ];
+        ConfirmMatch[
+            Intersection[ Cases[ selected, KeyValuePattern[ "URI" -> uri_String ] :> StringTrim @ uri ], uris ],
+            { __String }
+        ]
+    ],
+    selectSnippetsFromString[ response, uris ] &
+];
+
+selectSnippetsFromJSON // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*selectSnippetsFromString*)
+selectSnippetsFromString // beginDefinition;
+selectSnippetsFromString[ response_String, uris: { ___String } ] := StringCases[ response, uris ];
+selectSnippetsFromString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
