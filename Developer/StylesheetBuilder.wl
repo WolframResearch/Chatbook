@@ -573,29 +573,71 @@ $chatDelimiterCellDingbat   = Wolfram`Chatbook`UI`MakeChatDelimiterCellDingbat[ 
 (* ::Subsection::Closed:: *)
 (*Cell Insertion Point Cell*)
 
-$cellInsertionPointCell := $cellInsertionPointCell = ReplaceAll[
-    FrontEndResource[ "FEExpressions", "CellInsertionMenu" ],
-    {
-        PaneSelectorBox[
-            args: {
-                True -> StyleBox[
-                    DynamicBox[ FEPrivate`FrontEndResource[ "CellInsertionMenu", "TextStyle2Mac" ], ___ ],
-                    ___
-                ],
-                ___
-            },
-            True|False,
-            opts___
-        ] :> PaneSelectorBox[ args, Dynamic[ $OperatingSystem === "MacOSX" ], opts ]
-        ,
-        item: HoldPattern[ _ :> FrontEndTokenExecute[ EvaluationNotebook[ ], "Style", "ExternalLanguage" ] ] :>
-            Sequence[
-                item,
-                insertionPointMenuItem[ TemplateBox[ { }, "ChatInputIcon" ], trBox[ "StylesheetInsertionMenuChatInput" ], "'", "ChatInput" ],
-                insertionPointMenuItem[ TemplateBox[ { }, "SideChatIcon" ], trBox[ "StylesheetInsertionMenuSideChat" ], "''", "SideChat" ]
-            ]
-    }
-];
+
+(*
+The cell structures used by the cell insertion point cell in the 14.2 FE are
+significantly different than in 14.1 and earlier FEs. Also note that 14.2 FEs
+already have chat-related styles in its insertion menu, so this menu re-ordering
+and additions won't be necessary starting in 14.2.
+
+Because of that, when the code below is run in 14.2 or later FEs,
+$cellInsertionPointCell will be set to Inherited. And the 14.1-specific code can
+be very particular about what the boxes actually look like.
+*)
+
+
+$cellInsertionPointCell := $cellInsertionPointCell = 
+If[BoxForm`sufficientVersionQ[14.2], Inherited,
+	ReplaceAll[
+		reorderAndAddMenuItems[ FrontEndResource[ "FEExpressions", "CellInsertionMenu" ] ],
+		{
+			PaneSelectorBox[
+				args: {
+					True -> StyleBox[
+						DynamicBox[ FEPrivate`FrontEndResource[ "CellInsertionMenu", "TextStyle2Mac" ], ___ ],
+						___
+					],
+					___
+				},
+				True|False,
+				opts___
+			] :> PaneSelectorBox[ args, Dynamic[ $OperatingSystem === "MacOSX" ], opts ]
+	    }
+	]
+]
+
+
+reorderAndAddMenuItems[boxexpr_] :=
+ReplaceAll[ boxexpr, ActionMenuBox[label_, items_, rest___] :> 
+	ActionMenuBox[
+		label,
+		Replace[items, 
+			{
+				input:    (_ :> FrontEndTokenExecute[EvaluationNotebook[], "Style", "Input"]),
+				Delimiter,
+				washort:  (_ :> FrontEndTokenExecute[EvaluationNotebook[], "Style", "WolframAlphaShort"]),
+				walong:   (_ :> FrontEndTokenExecute[EvaluationNotebook[], "Style", "WolframAlphaLong"]),
+				ext:      (_ :> FrontEndTokenExecute[EvaluationNotebook[], "Style", "ExternalLanguage"]),
+				Delimiter,
+				text:     (_ :> FrontEndTokenExecute[EvaluationNotebook[], "Style", "Text"]),
+				other:    (_ :> FrontEndTokenExecute[EvaluationNotebook[], "StyleOther"])
+			}  :>
+			{
+				input,
+				text,
+				other,
+				Delimiter,
+				insertionPointMenuItem[ TemplateBox[ { }, "ChatInputIcon" ], trBox[ "StylesheetInsertionMenuChatInput" ], "'", "ChatInput" ],
+				insertionPointMenuItem[ TemplateBox[ { }, "SideChatIcon" ], trBox[ "StylesheetInsertionMenuChatBreak" ], "~", "ChatDelimiter" ],
+				Delimiter,
+				washort,
+				walong,
+				ext
+			}
+		],
+		rest
+	]
+]
 
 
 insertionPointMenuItem // Attributes = { HoldRest };

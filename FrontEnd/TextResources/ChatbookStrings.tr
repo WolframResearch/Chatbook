@@ -181,6 +181,7 @@
 "StylesheetToggleFormatting" -> "Toggle Formatting",
 "StylesheetCopyChatObject" -> "Copy ChatObject",
 "StylesheetInsertionMenuChatInput" -> "Chat Input",
+"StylesheetInsertionMenuChatBreak" -> "Chat Break",
 "StylesheetInsertionMenuSideChat" -> "Side Chat",
 "StylesheetContextMenuIncludeExclude" -> "Include/Exclude From AI Chat",
 
