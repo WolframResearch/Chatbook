@@ -1161,31 +1161,26 @@ servicesSettingsPanel0[ ] := Enclose[
 
         llmIcon = chatbookIcon[ "llmkit-dialog-sm", False ];
         llmHelp = (* If this tooltip isn't meant to be a button, then use infoTooltip[llmLabel, text] *)
-            PaneSelector[
-                {
-                    True ->
-                        Button[
-                            Tooltip[
-                                NotebookTools`Mousedown[
-                                    Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.537 ], 14 ] ] ],
-                                    Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.692 ], 14 ] ] ],
-                                    Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.358 ], 14 ] ] ] ],
-                                Pane[ tr[ "PreferencesContentLLMKitLearnMoreTooltip" ], ImageSize -> UpTo[ 274 ] ],
-                                TooltipStyle -> {
-                                    Background -> RGBColor[ "#EDEDED" ],
-                                    CellFrameColor -> RGBColor[ "#D1D1D1" ],
-                                    CellFrameMargins -> 5,
-                                    FontColor -> RGBColor[ "#333333" ],
-                                    FontFamily -> "Roboto",
-                                    FontSize -> 11 } ],
-                            openLLMKitURL[ "learnMoreUrl" ],
-                            Appearance -> "Suppressed",
-                            BaselinePosition -> Baseline,
-                            ImageSize -> Automatic,
-                            Method -> "Queued" ],
-                    False -> ProgressIndicator[ Appearance -> "Percolate" ] },
-                Dynamic[ Wolfram`LLMFunctions`Common`$LLMKitInfo =!= None ],
-                ImageSize -> Automatic];
+            Button[
+                Tooltip[
+                    NotebookTools`Mousedown[
+                        Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.537 ], 14 ] ] ],
+                        Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.692 ], 14 ] ] ],
+                        Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.358 ], 14 ] ] ] ],
+                    Pane[ tr[ "PreferencesContentLLMKitLearnMoreTooltip" ], ImageSize -> UpTo[ 274 ] ],
+                    TooltipStyle -> {
+                        Background -> RGBColor[ "#EDEDED" ],
+                        CellFrameColor -> RGBColor[ "#D1D1D1" ],
+                        CellFrameMargins -> 5,
+                        FontColor -> RGBColor[ "#333333" ],
+                        FontFamily -> "Roboto",
+                        FontSize -> 11 } ],
+                If[ !AssociationQ[ Wolfram`LLMFunctions`Common`$LLMKitInfo ], Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] ];
+                openLLMKitURL[ "learnMoreUrl" ],
+                Appearance -> "Suppressed",
+                BaselinePosition -> Baseline,
+                Method -> "Queued",
+                ImageSize -> Automatic ];
 
         Pane[
             Grid[
@@ -1221,10 +1216,12 @@ makeLLMPanel[ ] :=
                     Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Normal", FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
                     Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Hover", FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
                     Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Pressed", FrameMargins -> { { 17, 17 }, { 7, 7 } } ] ],
+                If[ !AssociationQ[ Wolfram`LLMFunctions`Common`$LLMKitInfo ], Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] ];
                 openLLMKitURL[ "buyNowUrl" ],
                 Appearance -> "Suppressed",
                 BaseStyle -> "DialogTextCommon",
                 BaselinePosition -> Baseline,
+                Method -> "Queued",
                 ImageSize -> Automatic ];
 
         username =
@@ -1264,11 +1261,12 @@ makeLLMPanel[ ] :=
                 Style[
                     tr[ "PreferencesContentLLMKitEnabledManage" ],
                     FontColor -> Dynamic[ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.2 ], GrayLevel[ 0.537254 ] ] ] ],
+                If[ !AssociationQ[ Wolfram`LLMFunctions`Common`$LLMKitInfo ], Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] ];
                 openLLMKitURL[ "manageSubscriptionUrl" ],
                 Appearance -> "Suppressed",
                 BaseStyle -> "DialogTextCommon",
+                Method -> "Queued",
                 ImageSize -> Automatic ];
-
 
         Framed[
             Grid[
@@ -1276,16 +1274,15 @@ makeLLMPanel[ ] :=
                     {
                         PaneSelector[
                             {
+                                (* We need to quickly check whether we have a subscription without the need for setting up a channel listener. *)
                                 "Loading" ->
-                                    DynamicModule[
+                                    DynamicModule[ { },
                                         (* Display a progress indicator until $LLMKitInfo is set via initialization *)
-                                        { llmSessionInfo (* really a dummy variable that will hold the same Association as $LLMKitInfo *) },
                                         ProgressIndicator[ Appearance -> "Percolate" ],
-                                        Initialization :> ( SessionSubmit[ Wolfram`LLMFunctions`Common`Private`setupRequestLLMKitStatus[ Dynamic[ llmSessionInfo ] ] ] ),
-                                        Deinitialization :> ( SessionSubmit[ Wolfram`LLMFunctions`Common`Private`teardownRequestLLMKitStatus[ Dynamic[ llmSessionInfo ] ] ] ),
+                                        Initialization :> ( Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] )
                                         SynchronousInitialization -> False
                                     ],
-                                "A" ->
+                                "NotCloudConnected" ->
                                     Grid[
                                         {
                                             { tr[ "PreferencesContentLLMKitSubscriptionRequired" ], SpanFromLeft, SpanFromLeft },
@@ -1295,7 +1292,7 @@ makeLLMPanel[ ] :=
                                         BaseStyle -> { "DialogText", FontColor -> GrayLevel[ 0.537254 ] },
                                         BaselinePosition -> { 1, 1 }
                                     ],
-                                "B" ->
+                                "CloudConnectedButNotSubscribed" ->
                                     Grid[
                                         {
                                             { tr[ "PreferencesContentLLMKitNoSubscription" ] },
@@ -1305,7 +1302,7 @@ makeLLMPanel[ ] :=
                                         BaseStyle -> { "DialogText", FontColor -> GrayLevel[ 0.537254 ] },
                                         BaselinePosition -> { 1, 1 }
                                     ],
-                                "C" ->
+                                "CloudConnectedAndSubscribed" ->
                                     Grid[
                                         {
                                             { chatbookIcon[ "CheckmarkGreen", False ], Style[ tr[ "PreferencesContentLLMKitEnabledTitle" ], FontColor -> GrayLevel[ 0.2 ] ] },
@@ -1319,10 +1316,10 @@ makeLLMPanel[ ] :=
                             },
                             Dynamic[
                                 Which[
-                                    Wolfram`LLMFunctions`Common`$LLMKitInfo === None, "Loading",
-                                    !TrueQ[ CurrentValue[ "WolframCloudConnected" ] ], "A",
-                                    !TrueQ[ Wolfram`LLMFunctions`Common`$LLMKitSubscribed ], "B",
-                                    True, "C" ] ],
+                                    !TrueQ[ CurrentValue[ "WolframCloudConnected" ] ], "NotCloudConnected",
+                                    TrueQ[ Wolfram`LLMFunctions`Common`$LLMKitInfo[ "userHasSubscription" ] ], "CloudConnectedAndSubscribed",
+                                    !AssociationQ[ Wolfram`LLMFunctions`Common`$LLMKitInfo ], "Loading",
+                                    True, "CloudConnectedButNotSubscribed" ] ],
                             BaselinePosition -> Baseline,
                             ImageSize -> Automatic ],
                         "",
