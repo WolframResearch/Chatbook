@@ -16,11 +16,16 @@ $notebookInstructionsPrompt = True;
 $currentSelectionIndicator  = { $leftSelectionIndicator, $rightSelectionIndicator };
 
 $notebookContextTemplate = StringTemplate[ "\
-IMPORTANT: Below is some context from the user's currently selected notebook. \
+IMPORTANT: Below is some metadata and content from the user's currently selected notebook. \
 The location of the user's current selection is marked by %%SelectionIndicator%%. \
 Use this to determine where the user is in the notebook.
 
-%%NotebookContent%%", Delimiters -> "%%" ];
+<notebook>
+<metadata>%%NotebookMetadata%%</metadata>
+<content>
+%%NotebookContent%%
+</content>
+</notebook>", Delimiters -> "%%" ];
 
 $$exclusionReason  = None | { __String };
 $$exclusionReasons = { $$exclusionReason... };
@@ -136,7 +141,7 @@ exclusionReason // endDefinition;
 $exclusionTests = <|
     "Excluded"      -> Function[ #[ "ChatNotebookSettings", "ExcludeFromChat" ] === True ],
     "Invisible"     -> Function[ #[ "Visible" ] === False ],
-    "Palette"       -> Function[ #[ "WindowFrame" ] === "Palette" ],
+    "WindowFrame"   -> Function[ MatchQ[ #[ "WindowFrame" ], Except[ "Normal" ] ] ],
     "WorkspaceChat" -> Function[ #[ "ChatNotebookSettings", "WorkspaceChat" ] ]
 |>;
 
@@ -216,7 +221,11 @@ getContextFromSelection // Options = {
 };
 
 getContextFromSelection[ chatNB_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] :=
-    getContextFromSelection[ chatNB, getUserNotebook[ ], settings, opts ];
+    Module[ { focused, userNotebook },
+        focused = settings[ "FocusedNotebook" ];
+        userNotebook = If[ notebookObjectQ @ focused, focused, getUserNotebook[ ] ];
+        getContextFromSelection[ chatNB, userNotebook, settings, opts ]
+    ];
 
 getContextFromSelection[ chatNB_NotebookObject, None, settings_Association, opts: OptionsPattern[ ] ] :=
     None;
@@ -226,7 +235,8 @@ getContextFromSelection[ chatNB_, nbo_NotebookObject, settings_Association, opts
         {
             $notebookInstructionsPrompt = OptionValue[ "NotebookInstructionsPrompt" ],
             $maxCellsBeforeSelection    = OptionValue[ "MaxCellsBeforeSelection"    ],
-            $maxCellsAfterSelection     = OptionValue[ "MaxCellsAfterSelection"     ]
+            $maxCellsAfterSelection     = OptionValue[ "MaxCellsAfterSelection"     ],
+            $notebookMetadataString     = getNotebookMetadataString @ nbo
         },
         Module[ { selectionData, string },
 
@@ -290,6 +300,55 @@ getContextFromSelection0[ selectionData_Association, settings_ ] := Enclose[
 ];
 
 getContextFromSelection0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getNotebookMetadataString*)
+getNotebookMetadataString // beginDefinition;
+
+getNotebookMetadataString[ nbo_NotebookObject ] := Enclose[
+    ConfirmBy[ getNotebookMetadataString0 @ notebookInformation @ nbo, StringQ, "Metadata" ],
+    throwInternalFailure
+];
+
+getNotebookMetadataString // endDefinition;
+
+
+getNotebookMetadataString0 // beginDefinition;
+
+getNotebookMetadataString0[ info_Association ] := Enclose[
+    Module[ { modified, date, dateString, modificationInfo, nbo, nboString },
+
+        modified = TrueQ @ info[ "ModifiedInMemory" ];
+        date     = info[ "MemoryModificationTime" ];
+
+        dateString = If[ modified && DateObjectQ @ date,
+                         ConfirmBy[ DateString @ date <> " (" <> relativeTimeString @ date <> ")", StringQ, "Date" ],
+                         Missing[ ]
+                     ];
+
+        modificationInfo = DeleteMissing @ <| "ModifiedInMemory" -> modified, "MemoryModificationTime" -> dateString |>;
+
+        nbo = ConfirmMatch[ info[ "NotebookObject" ], _NotebookObject, "NotebookObject" ];
+
+        nboString = ToString[ nbo, InputForm ] <> " (Use this to reference the user's notebook in the evaluator tool)";
+
+        StringRiffle[
+            KeyValueMap[
+                ToString[ #1 ] <> ": " <> ToString[ #2 ] &,
+                Association[
+                    "NotebookObject" -> nboString,
+                    KeyTake[ info, { "WindowTitle", "FileName" } ],
+                    modificationInfo
+                ]
+            ],
+            "\n"
+        ]
+    ],
+    throwInternalFailure
+];
+
+getNotebookMetadataString0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -377,13 +436,17 @@ applyNotebookContextTemplate[ string_String ] :=
 applyNotebookContextTemplate[ string_String, { before_String, after_String } ] :=
     applyNotebookContextTemplate[ string, before <> "..." <> after ];
 
-applyNotebookContextTemplate[ string_String, indicator_String ] := TemplateApply[
-    $notebookContextTemplate,
-    <|
-        "SelectionIndicator" -> indicator,
-        "NotebookContent" -> string
-    |>
-];
+applyNotebookContextTemplate[ string_String, indicator_String ] :=
+    With[ { meta = $notebookMetadataString },
+        TemplateApply[
+            $notebookContextTemplate,
+            <|
+                "SelectionIndicator" -> indicator,
+                "NotebookContent"    -> string,
+                "NotebookMetadata"   -> If[ StringQ @ meta, "\n"<>meta<>"\n", "" ]
+            |>
+        ]
+    ];
 
 applyNotebookContextTemplate // endDefinition;
 
