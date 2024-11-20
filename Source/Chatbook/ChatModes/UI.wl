@@ -202,9 +202,8 @@ newChatButton // endDefinition;
 openAsChatbookButton // beginDefinition;
 
 openAsChatbookButton[ Dynamic[ nbo_ ] ] := Button[
-    Graphics[Background -> Red, ImageSize -> {10, 10}],
-    (* toolbarButtonLabel[ "OpenAsChatbook", None ], *)(* FIXME: implement actual button *)
-    Beep[ ] (* FIXME: what is this function? *),
+    toolbarButtonLabel[ "OpenAsChatbook", None ],
+    popOutChatNB @ nbo,
     Appearance -> "Suppressed"
 ];
 
