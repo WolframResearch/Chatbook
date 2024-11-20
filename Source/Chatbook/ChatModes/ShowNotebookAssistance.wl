@@ -13,6 +13,7 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 $workspaceChatWidth := $workspaceChatWidth = Switch[ $OperatingSystem, "MacOSX", 450, _, 360 ];
 
 $notebookAssistanceBaseSettings = <|
+    "AllowSelectionContext"     -> True,
     "AppName"                   -> "NotebookAssistance",
     "LLMEvaluator"              -> "NotebookAssistant",
     "MaxContextTokens"          -> 2^15,
