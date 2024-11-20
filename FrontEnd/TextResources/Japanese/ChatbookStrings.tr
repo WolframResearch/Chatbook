@@ -211,6 +211,10 @@
 "WorkspaceSourcesOpenNotebooks" -> "\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:3092\:958b\:304f",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copy response to clipboard\[Ellipsis]",
+"WorkspaceOutputRaftCopyAs" -> "Copy response as\[Ellipsis]",
+"WorkspaceOutputRaftCopyAsNotebookCells" -> "Notebook Cells",
+"WorkspaceOutputRaftCopyAsPlainText" -> "Plain Text",
+"WorkspaceOutputRaftCopyAsImage" -> "Image",
 "WorkspaceOutputRaftRegenerateTooltip" -> "Regenerate response",
 "WorkspaceOutputRaftFeedbackTooltip" -> "\:30d5\:30a3\:30fc\:30c9\:30d0\:30c3\:30af\:3092Wolfram\:306b\:9001\:4fe1\:3059\:308b",
 
