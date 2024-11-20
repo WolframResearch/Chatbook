@@ -1115,7 +1115,7 @@ assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeF
                     Nothing
                 ]
             } },
-            Alignment -> { Automatic, Baseline },
+            Alignment -> { Automatic, Center },
             Spacings -> 0
         ],
         Initialization :> (cell = ParentCell @ EvaluationCell[ ])
@@ -1141,15 +1141,18 @@ DynamicModule[ { Typeset`menuActiveQ = False },
                 "Default" ->
                     Framed[
                         chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False, RGBColor[ "#3383AC" ] ],
-                        Background -> RGBColor[ "#FFFFFF" ], RoundingRadius -> 3, FrameMargins -> 3, FrameStyle -> RGBColor[ "#FFFFFF" ] ],
+                        Background -> RGBColor[ "#FFFFFF" ], RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> RGBColor[ "#FFFFFF" ],
+                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ],
                 "Hover" ->
                     Framed[
                         chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False, RGBColor[ "#3383AC" ] ],
-                        Background -> RGBColor[ "#DBEDF7" ], RoundingRadius -> 3, FrameMargins -> 3, FrameStyle -> RGBColor[ "#DBEDF7" ] ],
+                        Background -> RGBColor[ "#DBEDF7" ], RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> RGBColor[ "#DBEDF7" ],
+                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ],
                 "Down" ->
                     Framed[
                         chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False, RGBColor[ "#FFFFFF" ] ],
-                        Background -> RGBColor[ "#469ECB" ], RoundingRadius -> 3, FrameMargins -> 3, FrameStyle -> RGBColor[ "#469ECB" ] ] },
+                        Background -> RGBColor[ "#469ECB" ], RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> RGBColor[ "#469ECB" ],
+                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ] },
             Dynamic[
                 Which[
                     Typeset`menuActiveQ, "Down",
@@ -1201,15 +1204,18 @@ DynamicModule[ { Typeset`menuActiveQ = False },
                 "Default" ->
                     Framed[
                         chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, RGBColor[ "#3383AC" ] ],
-                        Background -> RGBColor[ "#FFFFFF" ], RoundingRadius -> 3, FrameMargins -> 3, FrameStyle -> RGBColor[ "#FFFFFF" ] ],
+                        Background -> RGBColor[ "#FFFFFF" ], RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> RGBColor[ "#FFFFFF" ],
+                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ],
                 "Hover" ->
                     Framed[
                         chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, RGBColor[ "#3383AC" ] ],
-                        Background -> RGBColor[ "#DBEDF7" ], RoundingRadius -> 3, FrameMargins -> 3, FrameStyle -> RGBColor[ "#DBEDF7" ] ],
+                        Background -> RGBColor[ "#DBEDF7" ], RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> RGBColor[ "#DBEDF7" ],
+                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ],
                 "Down" ->
                     Framed[
                         chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, RGBColor[ "#FFFFFF" ] ],
-                        Background -> RGBColor[ "#469ECB" ], RoundingRadius -> 3, FrameMargins -> 3, FrameStyle -> RGBColor[ "#469ECB" ] ] },
+                        Background -> RGBColor[ "#469ECB" ], RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> RGBColor[ "#469ECB" ],
+                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ] },
             Dynamic[
                 Which[
                     Typeset`menuActiveQ, "Down",
