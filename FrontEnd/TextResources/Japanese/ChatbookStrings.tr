@@ -216,6 +216,10 @@
 "WorkspaceOutputRaftCopyAsPlainText" -> "Plain Text",
 "WorkspaceOutputRaftCopyAsImage" -> "Image",
 "WorkspaceOutputRaftRegenerateTooltip" -> "Regenerate response",
+"WorkspaceOutputRaftShareAs" -> "Share this as\[Ellipsis]",
+"WorkspaceOutputRaftShareAsCloudDeployment" -> "Cloud Deployment",
+"WorkspaceOutputRaftShareAsPDF" -> "PDF",
+"WorkspaceOutputRaftShareAsImage" -> "Image",
 "WorkspaceOutputRaftFeedbackTooltip" -> "\:30d5\:30a3\:30fc\:30c9\:30d0\:30c3\:30af\:3092Wolfram\:306b\:9001\:4fe1\:3059\:308b",
 
 "InlineChatButtonTooltipClose" -> "\:9589\:3058\:308b",

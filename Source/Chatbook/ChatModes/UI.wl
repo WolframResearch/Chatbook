@@ -1097,6 +1097,7 @@ assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeF
                 If[ TrueQ @ includeFeedback,
                     Splice @ {
                         Item[ Spacer[ 0 ], ItemSize -> Fit ],
+                        assistantShareAsActionMenu[ Dynamic[ cell ] ],
                         Button[
                             Tooltip[ $thumbsUpLabel, tr[ "WorkspaceOutputRaftFeedbackTooltip" ] ],
                             ChatbookAction[ "SendFeedback", cell, True ],
@@ -1187,6 +1188,66 @@ DynamicModule[ { Typeset`menuActiveQ = False },
         PassEventsUp -> True ]]
 
 assistantCopyAsActionMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+assistantShareAsActionMenu // beginDefinition;
+
+assistantShareAsActionMenu[ Dynamic[ cell_ ] ] :=
+DynamicModule[ { Typeset`menuActiveQ = False },
+    EventHandler[
+        PaneSelector[
+            {
+                "Default" ->
+                    Framed[
+                        chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, RGBColor[ "#3383AC" ] ],
+                        Background -> RGBColor[ "#FFFFFF" ], RoundingRadius -> 3, FrameMargins -> 3, FrameStyle -> RGBColor[ "#FFFFFF" ] ],
+                "Hover" ->
+                    Framed[
+                        chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, RGBColor[ "#3383AC" ] ],
+                        Background -> RGBColor[ "#DBEDF7" ], RoundingRadius -> 3, FrameMargins -> 3, FrameStyle -> RGBColor[ "#DBEDF7" ] ],
+                "Down" ->
+                    Framed[
+                        chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, RGBColor[ "#FFFFFF" ] ],
+                        Background -> RGBColor[ "#469ECB" ], RoundingRadius -> 3, FrameMargins -> 3, FrameStyle -> RGBColor[ "#469ECB" ] ] },
+            Dynamic[
+                Which[
+                    Typeset`menuActiveQ, "Down",
+                    CurrentValue[ "MouseOver" ], "Hover",
+                    True, "Default" ]],
+            ImageSize -> Automatic ],
+        {
+            "MouseDown" :> (
+                Typeset`menuActiveQ = True;
+                AttachCell[ EvaluationBox[ ],
+                    Cell[ BoxData @ ToBoxes @
+                        DynamicModule[ { },
+                            Framed[
+                                Grid[
+                                    {
+                                        { Style[ tr[ "WorkspaceOutputRaftShareAs" ], FontColor -> RGBColor[ "#898989" ], FontSize -> 12 ] },
+                                        { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftShareAsCloudDeployment" ], ChatbookAction[ "ShareAsCloudDeployment", cell ] ] },
+                                        { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftShareAsPDF" ], ChatbookAction[ "ShareAsPDF", cell ] ] },
+                                        { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftShareAsImage" ], ChatbookAction[ "ShareAsImage", cell ] ] }
+                                    },
+                                    Alignment -> Left,
+                                    BaseStyle -> { FontFamily -> "Source Sans Pro" },
+                                    Spacings -> { 0, { 0, 0.5, { 0 } } }
+                                ],
+                                Background -> White, FrameStyle -> RGBColor[ "#E5E5E5" ], ImageSize -> 158, RoundingRadius -> 4 ],
+                            InheritScope -> True,
+                            Initialization :> (True), (* Deinit won't run without an Init *)
+                            Deinitialization :> (Typeset`menuActiveQ = False)
+                        ],
+                        CellTags -> "CustomActionMenu",
+                        Magnification -> Inherited * 0.85 ],
+                    { Right, Bottom }, 0, { Right, Top }, (* Because this is an attached cell, it has to exist within the NA window *)
+                    RemovalConditions -> "MouseExit" ]) },
+        PassEventsDown -> True,
+        Method -> "Preemptive",
+        PassEventsUp -> True ]]
+
+assistantShareAsActionMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
