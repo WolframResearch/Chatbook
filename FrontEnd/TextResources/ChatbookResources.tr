@@ -5109,9 +5109,11 @@ LVZxWAB0hkqbhsPtn3VZe0pg7sOdblDlP9jjSkcA2wtoqg==
     AspectRatio->Automatic,
     ImageSize->{15., 15.},
     PlotRange->{{-0.5, 14.5}, {-0.5, 14.5}}],
+   Alignment->{Center, Center},
    Background->GrayLevel[1],
-   FrameMargins->3,
+   FrameMargins->0,
    FrameStyle->GrayLevel[1],
+   ImageSize->{22, 22},
    RoundingRadius->3,
    StripOnInput->False], True->
   FrameBox[
@@ -5132,9 +5134,11 @@ LVZxWAB0hkqbhsPtn3VZe0pg7sOdblDlP9jjSkcA2wtoqg==
     AspectRatio->Automatic,
     ImageSize->{15., 15.},
     PlotRange->{{-0.5, 14.5}, {-0.5, 14.5}}],
+   Alignment->{Center, Center},
    Background->RGBColor[0.85882, 0.92941, 0.96863],
-   FrameMargins->3,
+   FrameMargins->0,
    FrameStyle->RGBColor[0.85882, 0.92941, 0.96863],
+   ImageSize->{22, 22},
    RoundingRadius->3,
    StripOnInput->False]}, Dynamic[
    CurrentValue["MouseOver"]],
@@ -5218,9 +5222,11 @@ Ud/7f6aSsJiLSOn8+aPJdBIiIfjXHA02/V+fiML//zf/AQwp5lg=
     AspectRatio->Automatic,
     ImageSize->{16., 15.},
     PlotRange->{{-0.5, 15.5}, {-0.5, 14.5}}],
+   Alignment->{Center, Center},
    Background->GrayLevel[1],
-   FrameMargins->3,
+   FrameMargins->0,
    FrameStyle->GrayLevel[1],
+   ImageSize->{22, 22},
    RoundingRadius->3,
    StripOnInput->False], True->
   FrameBox[
@@ -5299,9 +5305,11 @@ Ud/7f6aSsJiLSOn8+aPJdBIiIfjXHA02/V+fiML//zf/AQwp5lg=
     AspectRatio->Automatic,
     ImageSize->{16., 15.},
     PlotRange->{{-0.5, 15.5}, {-0.5, 14.5}}],
+   Alignment->{Center, Center},
    Background->RGBColor[0.85882, 0.92941, 0.96863],
-   FrameMargins->3,
+   FrameMargins->0,
    FrameStyle->RGBColor[0.85882, 0.92941, 0.96863],
+   ImageSize->{22, 22},
    RoundingRadius->3,
    StripOnInput->False]}, Dynamic[
    CurrentValue["MouseOver"]],
@@ -5388,9 +5396,11 @@ cTGO5EynT3RyqKZq7RiYg6VF6z9PHeJwhrY1VoQLeixn9kgOQ0VKoZ6jmOfP
     AspectRatio->Automatic,
     ImageSize->{16., 15.},
     PlotRange->{{-0.5, 15.5}, {-0.5, 14.5}}],
+   Alignment->{Center, Center},
    Background->GrayLevel[1],
-   FrameMargins->3,
+   FrameMargins->0,
    FrameStyle->GrayLevel[1],
+   ImageSize->{22, 22},
    RoundingRadius->3,
    StripOnInput->False], True->
   FrameBox[
@@ -5472,9 +5482,11 @@ cTGO5EynT3RyqKZq7RiYg6VF6z9PHeJwhrY1VoQLeixn9kgOQ0VKoZ6jmOfP
     AspectRatio->Automatic,
     ImageSize->{16., 15.},
     PlotRange->{{-0.5, 15.5}, {-0.5, 14.5}}],
+   Alignment->{Center, Center},
    Background->RGBColor[0.85882, 0.92941, 0.96863],
-   FrameMargins->3,
+   FrameMargins->0,
    FrameStyle->RGBColor[0.85882, 0.92941, 0.96863],
+   ImageSize->{22, 22},
    RoundingRadius->3,
    StripOnInput->False]}, Dynamic[
    CurrentValue["MouseOver"]],

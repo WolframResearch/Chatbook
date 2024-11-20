@@ -304,9 +304,11 @@ RawBoxes @ ToBoxes @ Mouseover[
    PlotRange -> { { -0.5, 15.5 }, { -0.5, 14.5 } },
    AspectRatio -> Automatic
   ],
+  Alignment -> { Center, Center },
+  ImageSize -> { 22, 22 },
   Background -> GrayLevel[ 1 ],
   RoundingRadius -> 3,
-  FrameMargins -> 3,
+  FrameMargins -> 0,
   FrameStyle -> GrayLevel[ 1 ]
  ],
  Framed[
@@ -612,9 +614,11 @@ RawBoxes @ ToBoxes @ Mouseover[
    PlotRange -> { { -0.5, 15.5 }, { -0.5, 14.5 } },
    AspectRatio -> Automatic
   ],
+  Alignment -> { Center, Center },
+  ImageSize -> { 22, 22 },
   Background -> RGBColor[ 0.85882, 0.92941, 0.96863 ],
   RoundingRadius -> 3,
-  FrameMargins -> 3,
+  FrameMargins -> 0,
   FrameStyle -> RGBColor[ 0.85882, 0.92941, 0.96863 ]
  ]
 ]
