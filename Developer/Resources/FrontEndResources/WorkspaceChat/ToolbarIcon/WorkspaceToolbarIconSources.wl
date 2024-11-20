@@ -19,4 +19,5 @@ RawBoxes @ ToBoxes @ Graphics[{Thickness[0.07692307692307693],
       {0.4479999542236328, 0.}, {1., 0.}, {7., 0.}, {7., 1.}},
      {{13., 5.}, {13., 3.}, {10., 3.}, {10., 0.}, {8., 0.}, {8., 3.}, {5., 3.},
       {5., 5.}, {8., 5.}, {8., 8.}, {10., 8.}, {10., 5.}, {13., 5.}}}]},
-  AspectRatio -> Automatic, ImageSize -> {20, 20}, PlotRange -> {{-6, 14}, {-4, 16}}]
+  AspectRatio -> Automatic, ImageSize -> {20, 20}, PlotRange -> {{-6, 14}, {-4, 16}},
+  BaselinePosition -> Center -> Center]
