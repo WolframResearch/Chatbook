@@ -73,6 +73,7 @@ $defaultChatSettings = <|
     "Tokenizer"                      -> Automatic,
     "ToolCallExamplePromptStyle"     -> Automatic,
     "ToolCallFrequency"              -> Automatic,
+    "ToolCallRetryMessage"           -> Automatic,
     "ToolExamplePrompt"              -> Automatic,
     "ToolMethod"                     -> Automatic,
     "ToolOptions"                    :> $DefaultToolOptions,
@@ -331,6 +332,7 @@ $gpt4oTextToolOverrides = <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt
 llmKitQ // beginDefinition;
 
 llmKitQ[ as_Association ] := TrueQ @ Or[
+    as[ "Authentication"          ] === "LLMKit",
     as[ "Model", "Service"        ] === "LLMKit",
     as[ "Model", "Authentication" ] === "LLMKit"
 ];
@@ -394,6 +396,7 @@ resolveAutoSetting0[ as_, "Tokenizer"                      ] := getTokenizer @ a
 resolveAutoSetting0[ as_, "TokenizerName"                  ] := getTokenizerName @ as;
 resolveAutoSetting0[ as_, "ToolCallExamplePromptStyle"     ] := chooseToolExamplePromptStyle @ as;
 resolveAutoSetting0[ as_, "ToolCallFrequency"              ] := Automatic;
+resolveAutoSetting0[ as_, "ToolCallRetryMessage"           ] := toolCallRetryMessageQ @ as;
 resolveAutoSetting0[ as_, "ToolExamplePrompt"              ] := chooseToolExamplePromptSpec @ as;
 resolveAutoSetting0[ as_, "ToolsEnabled"                   ] := toolsEnabledQ @ as;
 resolveAutoSetting0[ as_, "TrackScrollingWhenPlaced"       ] := scrollOutputQ @ as;
@@ -416,6 +419,7 @@ $autoSettingKeyDependencies = <|
     "Tokenizer"                  -> "TokenizerName",
     "TokenizerName"              -> "Model",
     "ToolCallExamplePromptStyle" -> { "Model", "ToolsEnabled" },
+    "ToolCallRetryMessage"       -> { "Authentication", "Model" },
     "ToolExamplePrompt"          -> "Model",
     "Tools"                      -> { "LLMEvaluator", "ToolsEnabled" },
     "ToolsEnabled"               -> { "Model", "ToolCallFrequency" }
@@ -437,6 +441,13 @@ $autoSettingKeyPriority := Enclose[
     * BasePrompt (might not be possible here)
     * ChatContextPreprompt
 *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolCallRetryMessageQ*)
+toolCallRetryMessageQ // beginDefinition;
+toolCallRetryMessageQ[ as_Association ] := llmKitQ @ as;
+toolCallRetryMessageQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
