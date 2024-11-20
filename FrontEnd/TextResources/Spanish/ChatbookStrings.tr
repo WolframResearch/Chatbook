@@ -216,6 +216,7 @@
 "WorkspaceOutputRaftCopyAsPlainText" -> "Plain Text",
 "WorkspaceOutputRaftCopyAsImage" -> "Image",
 "WorkspaceOutputRaftRegenerateTooltip" -> "Regenerate response",
+"WorkspaceOutputRaftShareAsTooltip" -> "Share response\[Ellipsis]",
 "WorkspaceOutputRaftShareAs" -> "Share this as\[Ellipsis]",
 "WorkspaceOutputRaftShareAsCloudDeployment" -> "Cloud Deployment",
 "WorkspaceOutputRaftShareAsPDF" -> "PDF",
