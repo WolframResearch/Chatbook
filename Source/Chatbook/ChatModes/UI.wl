@@ -254,7 +254,7 @@ toolbarButtonLabel0[ iconName_String, labelName_String, {styleopts___}, {gridopt
 
 toolbarButtonLabel0[ iconName_String, None, {styleopts___}, {gridopts___}] :=
     Grid[
-        { { RawBoxes @ TemplateBox[ { }, "WorkspaceToolbarIcon"<>iconName ] } },
+        { { chatbookIcon[ "WorkspaceToolbarIcon"<>iconName, False ] } },
         gridopts,
         Spacings  -> 0.25,
         Alignment -> { {Left, Right}, Center }
@@ -263,7 +263,7 @@ toolbarButtonLabel0[ iconName_String, None, {styleopts___}, {gridopts___}] :=
 toolbarButtonLabel0[ iconName_String, label_, {styleopts___}, {gridopts___}] :=
     Grid[
         { {
-            RawBoxes @ TemplateBox[ { }, "WorkspaceToolbarIcon"<>iconName ],
+            chatbookIcon[ "WorkspaceToolbarIcon"<>iconName, False ],
             Style[ label, $toolbarLabelStyle, styleopts ]
         } },
         gridopts,
