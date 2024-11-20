@@ -335,7 +335,6 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                 Grid[
                     {
                         {
-                            Spacer[ 0 ],
                             Item[ Dynamic @ focusedNotebookDisplay @ thisNB, Alignment -> Left ],
                             SpanFromLeft
                         },
@@ -481,9 +480,9 @@ focusedNotebookDisplay[ chatNB_ ] := Enclose[
         label = Grid[
             { {
                 (* $focusIcon, *)
-                Style[ "Focusing on: ", FontSlant -> Italic, FontColor -> GrayLevel[ 0.65 ] ],
-                $smallNotebookIcon,
-                Tooltip[ formatNotebookTitle @ title, "The notebook in focus" ],
+                Checkbox @ Dynamic @ CurrentChatSettings[ chatNB, "AllowSelectionContext" ],
+                Style[ "Focusing on: ", FontSlant -> Italic, FontColor -> GrayLevel[ 0.55 ] ],
+                focusedNotebookDisplay0 @ title,
                 lockFocusButton[ chatNB, locked, focused ]
             } },
             Alignment -> { Left, Baseline },
@@ -504,6 +503,28 @@ focusedNotebookDisplay[ chatNB_ ] := Enclose[
 ];
 
 focusedNotebookDisplay // endDefinition;
+
+
+
+focusedNotebookDisplay0 // beginDefinition;
+
+focusedNotebookDisplay0[ title_ ] := Framed[
+    Row[
+        {
+            $smallNotebookIcon,
+            Spacer[ 3 ],
+            Tooltip[ Style[ formatNotebookTitle @ title, FontColor -> GrayLevel[ 0.45 ] ], "The notebook in focus" ]
+        },
+        BaselinePosition -> Baseline
+    ],
+    Background     -> GrayLevel[ 1 ],
+    ContentPadding -> False,
+    FrameMargins   -> { { 1, 3 }, { 1, 1 } },
+    FrameStyle     -> GrayLevel[ 0.75 ],
+    RoundingRadius -> 3
+];
+
+focusedNotebookDisplay0 // endDefinition;
 
 
 (* FIXME: These are placeholder icons: *)
@@ -551,16 +572,16 @@ $lockedIcon = Graphics[
     PlotRangePadding -> 0.2
 ];
 
-
-$smallNotebookIcon = RawBoxes @ Append[
+(* TODO: move to text resources *)
+$smallNotebookIcon := $smallNotebookIcon = UsingFrontEnd @ RawBoxes @ Append[
     DeleteCases[
-        FrontEndResource[ "FEBitmaps", "NotebookIcon" ][
-            GrayLevel[ 0.651 ],
-            RGBColor[ 0.86667, 0.066667, 0.0 ]
-        ],
+        FrontEndResource[ "FEBitmaps", "NotebookIcon" ][ GrayLevel[ 0.651 ], Darker @ RGBColor[ "#66ADD2" ] ],
         ImageSize -> _
     ],
-    ImageSize -> { Automatic, 14 }
+    Unevaluated @ Sequence[
+        BaselinePosition -> Scaled[ 0.2 ],
+        ImageSize        -> { Automatic, 14 }
+    ]
 ];
 
 (* ::**************************************************************************************************************:: *)
@@ -2085,6 +2106,7 @@ addToMXInitialization[
     $fromWorkspaceChatConversionRules;
     $inlineToWorkspaceConversionRules;
     $defaultUserImage;
+    $smallNotebookIcon;
 ];
 
 End[ ];

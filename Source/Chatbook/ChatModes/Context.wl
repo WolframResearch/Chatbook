@@ -157,7 +157,7 @@ $exclusionTests = <|
 getInlineChatPrompt // beginDefinition;
 
 getInlineChatPrompt[ settings_ ] :=
-    If[ TrueQ @ $InlineChat,
+    If[ TrueQ @ $InlineChat && TrueQ @ settings[ "AllowSelectionContext" ],
         getInlineChatPrompt0[ settings, $inlineChatState ] // LogChatTiming[ "GetInlineChatPrompt" ],
         None
     ];
@@ -203,7 +203,7 @@ getInlineChatPrompt0 // endDefinition;
 getWorkspacePrompt // beginDefinition;
 
 getWorkspacePrompt[ settings_Association ] :=
-    If[ TrueQ @ $WorkspaceChat,
+    If[ TrueQ @ $WorkspaceChat && TrueQ @ settings[ "AllowSelectionContext" ],
         Block[ { $includeCellXML = TrueQ @ $notebookEditorEnabled },
             getContextFromSelection[ $evaluationNotebook, settings ]
         ] // LogChatTiming[ "GetWorkspacePrompt" ],
