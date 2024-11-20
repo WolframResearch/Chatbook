@@ -314,5 +314,6 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `wlTemplateBoxes;
 `writeInlineChatOutputCell;
 `writeReformattedCell;
+`writeWorkspaceChatSubDockedCell;
 
 EndPackage[ ];

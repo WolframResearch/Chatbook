@@ -824,7 +824,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3941018585"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3941042548"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -14051,6 +14051,87 @@ Notebook[
        PlotRange -> {{-5.0, 17.0}, {-3, 17}},
        AspectRatio -> Automatic,
        DefaultBaseStyle -> { }
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["WorkspaceToolbarIconOpenAsChatbook"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      GraphicsBox[
+       {
+        Thickness[0.11111],
+        FaceForm[{GrayLevel[1], Opacity[1.0]}],
+        FilledCurveBox[
+         {
+          {
+           {0, 2, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {1, 3, 3},
+           {1, 3, 3},
+           {1, 3, 3},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0}
+          },
+          {
+           {0, 2, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0},
+           {0, 1, 0}
+          }
+         },
+         {
+          {
+           {5.0, 9.0},
+           {5.0, 8.0},
+           {7.293, 8.0},
+           {4.145, 4.856},
+           {3.949, 4.66},
+           {3.949, 4.344},
+           {4.145, 4.149},
+           {4.242, 4.051},
+           {4.371, 4.0},
+           {4.5, 4.0},
+           {4.629, 4.0},
+           {4.758, 4.051},
+           {4.855, 4.145},
+           {8.0, 7.293},
+           {8.0, 5.0},
+           {9.0, 5.0},
+           {9.0, 9.0},
+           {5.0, 9.0}
+          },
+          {
+           {9.0, 0.0},
+           {0.0, 0.0},
+           {0.0, 9.0},
+           {3.0, 9.0},
+           {3.0, 8.0},
+           {1.0, 8.0},
+           {1.0, 1.0},
+           {8.0, 1.0},
+           {8.0, 3.0},
+           {9.0, 3.0},
+           {9.0, 0.0}
+          }
+         }
+        ]
+       },
+       AspectRatio -> Automatic,
+       ImageSize -> {12, 12},
+       PlotRange -> {{-0.5, 9.5}, {-0.5, 9.5}}
       ]
      ])
    }
