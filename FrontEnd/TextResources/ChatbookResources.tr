@@ -5041,31 +5041,28 @@ r1E=
   FrameMargins->0,
   ImageSize->Automatic],
 
-"WorkspaceOutputRaftClipboardIcon" -> PaneSelectorBox[{False->
-  FrameBox[
-   GraphicsBox[
-    {Thickness[0.055556], 
-     {FaceForm[{RGBColor[0.2, 0.51373, 0.67451], Opacity[1.]}], 
-      FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
-        3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}}, {{0, 2, 
-        0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
-        0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 
-        0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{1, 4, 3}, {0, 1, 0}, {1, 3, 
-        3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 
-        3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
-        3}}}, {CompressedData["
+"WorkspaceOutputRaftClipboardIcon" -> (GraphicsBox[{
+   Thickness[0.055556], 
+   StyleBox[{
+     FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {
+       0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}}, {{0, 2, 0}, {0, 
+       1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+       0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 
+       0}, {0, 1, 0}, {0, 1, 0}}, {{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+       0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+       1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}}}, {CompressedData["
 1:eJxTTMoPSmViYGAQB2IQ/a7G3jTulqHD5XsPuCdnyjvMOaKwoWiFoQPvA90J
 CyQUHOa9X37MOxzB9zHvdExQRagvzpj4tua/nsNixj2sQlckHG7/rMvas0Ub
 Lg9S/jRAG67f+r5/7/R1WnD+jDyh5gNeWnD1X/5eqXj5TNOh+2/q9ycL5eD8
 ySubAj1jZeHqvU+w286eKgPl60H5Ig4bikAO0nOQOhCt4Ggo4hBhueVE2T49
 Byag80T+C8PdC+NL699VYXPUh/MPf9WI6W/Sh+uH+Ecfbj4svGD2A3m7PHmM
 4O6D8WHuRw9fABp3nHM=
-        "], {{9.9995, 12.999}, {10.999, 12.999}, {10.999, 0.9991}, {0.9995, 
-        0.9991}, {0.9995, 12.999}, {1.9995, 12.999}, {1.9995, 
-        13.999}, {-0.00049973, 13.999}, {-0.00049973, 0.00010014}, {11.999, 
-        0.00010014}, {11.999, 13.999}, {9.9995, 13.999}, {9.9995, 12.999}}, {{
-        4.0015, 12.999}, {7.9995, 12.999}, {7.4995, 13.999}, {4.5015, 
-        13.999}, {4.0015, 12.999}}, CompressedData["
+       "], {{9.9995, 12.999}, {10.999, 12.999}, {10.999, 0.9991}, {0.9995, 
+       0.9991}, {0.9995, 12.999}, {1.9995, 12.999}, {1.9995, 
+       13.999}, {-0.00049973, 13.999}, {-0.00049973, 0.00010014}, {11.999, 
+       0.00010014}, {11.999, 13.999}, {9.9995, 13.999}, {9.9995, 12.999}}, {{
+       4.0015, 12.999}, {7.9995, 12.999}, {7.4995, 13.999}, {4.5015, 
+       13.999}, {4.0015, 12.999}}, CompressedData["
 1:eJxTTMoPSmViYGCQBmIQ7ZckEGFpwulgDAKfNRxsua4vLtjL7lBrbxq3q1PT
 YcuJsn3zZ7E7LJDSv6vipuWgbsixRuYWh8O++UCBJzA+D5Sv4wAxj8/hvn/v
 9LxJuhDzagUcgDyhZgY9hxXHvM07GYUcijMmvq35rwsVF8HB14fyZXDwdR0i
@@ -5073,82 +5070,25 @@ LIEu/CcL5x/+qhHT3yQPty/3+e+VH4sU4O7RjOk/9PWEAty92z7/vVJxUhHu
 Hz7dTXPfuys5NE517s55rglx70NFh4OnFrpu26zhkLWnZLLEEwWHb0BrDplC
 w2uugkPQDrnW14IaDieBwSXlrwB1jzqUlofzIf4XgPOVb/+sy7LhhfPB7lvB
 5XD+e/DjpdEaDujxAwCec7rY
-        "]}]}, 
-     {FaceForm[{RGBColor[0.2, 0.51373, 0.67451], Opacity[1.]}], 
-      FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{10., 
-       9.}, {2., 9.}, {2., 10.}, {10., 10.}, {10., 9.}}}]}, 
-     {FaceForm[{RGBColor[0.2, 0.51373, 0.67451], Opacity[1.]}], 
-      FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{10., 
-       7.}, {2., 7.}, {2., 8.}, {10., 8.}, {10., 7.}}}]}, 
-     {FaceForm[{RGBColor[0.2, 0.51373, 0.67451], Opacity[1.]}], 
-      FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{10., 
-       5.}, {2., 5.}, {2., 6.}, {10., 6.}, {10., 5.}}}]}, 
-     {FaceForm[{RGBColor[0.2, 0.51373, 0.67451], Opacity[1.]}], 
-      FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{10., 
-       3.}, {2., 3.}, {2., 4.}, {10., 4.}, {10., 3.}}}]}},
-    AspectRatio->Automatic,
-    ImageSize->{19., 17.},
-    PlotRange->{{-0.5, 18.5}, {-0.5, 16.5}}],
-   Background->GrayLevel[1],
-   FrameMargins->3,
-   FrameStyle->GrayLevel[1],
-   RoundingRadius->3,
-   StripOnInput->False], True->
-  FrameBox[
-   GraphicsBox[
-    {Thickness[0.055556], 
-     {FaceForm[{RGBColor[0.2, 0.51373, 0.67451], Opacity[1.]}], 
-      FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 
-        3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}}, {{0, 2, 
-        0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
-        0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 
-        0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{1, 4, 3}, {0, 1, 0}, {1, 3, 
-        3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 
-        3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
-        3}}}, {CompressedData["
-1:eJxTTMoPSmViYGAQB2IQ/a7G3jTulqHD5XsPuCdnyjvMOaKwoWiFoQPvA90J
-CyQUHOa9X37MOxzB9zHvdExQRagvzpj4tua/nsNixj2sQlckHG7/rMvas0Ub
-Lg9S/jRAG67f+r5/7/R1WnD+jDyh5gNeWnD1X/5eqXj5TNOh+2/q9ycL5eD8
-ySubAj1jZeHqvU+w286eKgPl60H5Ig4bikAO0nOQOhCt4Ggo4hBhueVE2T49
-Byag80T+C8PdC+NL699VYXPUh/MPf9WI6W/Sh+uH+Ecfbj4svGD2A3m7PHmM
-4O6D8WHuRw9fABp3nHM=
-        "], {{9.9995, 12.999}, {10.999, 12.999}, {10.999, 0.9991}, {0.9995, 
-        0.9991}, {0.9995, 12.999}, {1.9995, 12.999}, {1.9995, 
-        13.999}, {-0.00049973, 13.999}, {-0.00049973, 0.00010014}, {11.999, 
-        0.00010014}, {11.999, 13.999}, {9.9995, 13.999}, {9.9995, 12.999}}, {{
-        4.0015, 12.999}, {7.9995, 12.999}, {7.4995, 13.999}, {4.5015, 
-        13.999}, {4.0015, 12.999}}, CompressedData["
-1:eJxTTMoPSmViYGCQBmIQ7ZckEGFpwulgDAKfNRxsua4vLtjL7lBrbxq3q1PT
-YcuJsn3zZ7E7LJDSv6vipuWgbsixRuYWh8O++UCBJzA+D5Sv4wAxj8/hvn/v
-9LxJuhDzagUcgDyhZgY9hxXHvM07GYUcijMmvq35rwsVF8HB14fyZXDwdR0i
-LIEu/CcL5x/+qhHT3yQPty/3+e+VH4sU4O7RjOk/9PWEAty92z7/vVJxUhHu
-Hz7dTXPfuys5NE517s55rglx70NFh4OnFrpu26zhkLWnZLLEEwWHb0BrDplC
-w2uugkPQDrnW14IaDieBwSXlrwB1jzqUlofzIf4XgPOVb/+sy7LhhfPB7lvB
-5XD+e/DjpdEaDujxAwCec7rY
-        "]}]}, 
-     {FaceForm[{RGBColor[0.2, 0.51373, 0.67451], Opacity[1.]}], 
-      FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{10., 
-       9.}, {2., 9.}, {2., 10.}, {10., 10.}, {10., 9.}}}]}, 
-     {FaceForm[{RGBColor[0.2, 0.51373, 0.67451], Opacity[1.]}], 
-      FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{10., 
-       7.}, {2., 7.}, {2., 8.}, {10., 8.}, {10., 7.}}}]}, 
-     {FaceForm[{RGBColor[0.2, 0.51373, 0.67451], Opacity[1.]}], 
-      FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{10., 
-       5.}, {2., 5.}, {2., 6.}, {10., 6.}, {10., 5.}}}]}, 
-     {FaceForm[{RGBColor[0.2, 0.51373, 0.67451], Opacity[1.]}], 
-      FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{10., 
-       3.}, {2., 3.}, {2., 4.}, {10., 4.}, {10., 3.}}}]}},
-    AspectRatio->Automatic,
-    ImageSize->{19., 17.},
-    PlotRange->{{-0.5, 18.5}, {-0.5, 16.5}}],
-   Background->RGBColor[0.85882, 0.92941, 0.96863],
-   FrameMargins->3,
-   FrameStyle->RGBColor[0.85882, 0.92941, 0.96863],
-   RoundingRadius->3,
-   StripOnInput->False]}, Dynamic[
-   CurrentValue["MouseOver"]],
-  FrameMargins->0,
-  ImageSize->Automatic],
+       "]}]}, {
+     FaceForm[#]}, StripOnInput -> False], 
+   StyleBox[{
+     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{10., 
+      9.}, {2., 9.}, {2., 10.}, {10., 10.}, {10., 9.}}}]}, {
+     FaceForm[#]}, StripOnInput -> False], 
+   StyleBox[{
+     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{10., 
+      7.}, {2., 7.}, {2., 8.}, {10., 8.}, {10., 7.}}}]}, {
+     FaceForm[#]}, StripOnInput -> False], 
+   StyleBox[{
+     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{10., 
+      5.}, {2., 5.}, {2., 6.}, {10., 6.}, {10., 5.}}}]}, {
+     FaceForm[#]}, StripOnInput -> False], 
+   StyleBox[{
+     FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{10., 
+      3.}, {2., 3.}, {2., 4.}, {10., 4.}, {10., 3.}}}]}, {
+     FaceForm[#]}, StripOnInput -> False]}, ImageSize -> {19., 17.}, 
+  PlotRange -> {{-0.5, 18.5}, {-0.5, 16.5}}, AspectRatio -> Automatic]& ),
 
 "WorkspaceOutputRaftRegenerateIcon" -> PaneSelectorBox[{False->
   FrameBox[
