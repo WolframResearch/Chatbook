@@ -1097,7 +1097,7 @@ assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeF
                 If[ TrueQ @ includeFeedback,
                     Splice @ {
                         Item[ Spacer[ 0 ], ItemSize -> Fit ],
-                        assistantShareAsActionMenu[ Dynamic[ cell ] ],
+                        Tooltip[ assistantShareAsActionMenu[ Dynamic[ cell ] ], tr[ "WorkspaceOutputRaftShareAsTooltip" ] ],
                         Button[
                             Tooltip[ $thumbsUpLabel, tr[ "WorkspaceOutputRaftFeedbackTooltip" ] ],
                             ChatbookAction[ "SendFeedback", cell, True ],
