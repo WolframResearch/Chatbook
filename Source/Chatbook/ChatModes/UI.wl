@@ -55,7 +55,7 @@ $defaultUserImage := $defaultUserImage =
 (*makeWorkspaceChatDockedCell*)
 makeWorkspaceChatDockedCell // beginDefinition;
 
-makeWorkspaceChatDockedCell[ ] := Framed[
+makeWorkspaceChatDockedCell[ ] := workspaceChatInitializer @ Framed[
     DynamicModule[ { nbo },
         Grid[
             { {
@@ -224,7 +224,7 @@ toolbarButtonLabel[ iconName_String, label_, tooltipName: _String | None, opts: 
     toolbarButtonLabel[ iconName, label, tooltipName, opts ] =
 		With[ { lbl = toolbarButtonLabel0[ iconName, label, {}, {} ]},
 			buttonTooltip[
-				NotebookTools`Mousedown[
+				mouseDown[
 					Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonDefault ],
 					Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonHover   ],
 					Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonActive  ]
@@ -235,7 +235,7 @@ toolbarButtonLabel[ iconName_String, label_, tooltipName: _String | None, opts: 
 
 toolbarButtonLabel[ lightButton, {default_, hot_}, tooltipName_, opts: OptionsPattern[] ] :=
 			buttonTooltip[
-				NotebookTools`Mousedown[
+				mouseDown[
 					Framed[ default, opts, $toolbarButtonCommon, $toolbarButtonLight   ],
 					Framed[ hot,     opts, $toolbarButtonCommon, $toolbarButtonHover   ],
 					Framed[ hot,     opts, $toolbarButtonCommon, $toolbarButtonActive  ]
@@ -285,6 +285,15 @@ $toolbarButtonHover   = Sequence[ Background -> RGBColor[ "#87C3E3" ], FrameStyl
 $toolbarButtonActive  = Sequence[ Background -> RGBColor[ "#3689B5" ], FrameStyle -> RGBColor[ "#3689B5" ] ];
 $toolbarButtonLight   = Sequence[ Background -> RGBColor[ "#F1F8FC" ], FrameStyle -> RGBColor[ "#F1F8FC" ] ];
 
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*mouseDown*)
+mouseDown // beginDefinition;
+(* Workaround for dynamics freezing in attached cells when mousing over docked cell: *)
+mouseDown[ a_, b_, c_ ] /; $OperatingSystem === "Windows" := Mouseover[ a, b ];
+mouseDown[ a_, b_, c_ ] := NotebookTools`Mousedown[ a, b, c ];
+mouseDown // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -347,7 +356,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                 ],
                                 $inputFieldFrameOptions
                             ],
-                            workspaceChatInitializer @ RawBoxes @ TemplateBox[
+                            RawBoxes @ TemplateBox[
                                 { RGBColor[ "#a3c9f2" ], RGBColor[ "#f1f7fd" ], 27, thisNB },
                                 "WorkspaceSendChatButton"
                             ]
