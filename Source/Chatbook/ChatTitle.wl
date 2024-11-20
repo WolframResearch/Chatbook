@@ -26,6 +26,11 @@ Here is the chat transcript:
 
 Remember, respond only with the title and nothing else.";
 
+(* TODO:
+    Detect when topic has changed and display a message:
+        Is this a new topic? You'll get more accurate results with a new chat when you change topics. <Start New Chat>
+*)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*GenerateChatTitle*)

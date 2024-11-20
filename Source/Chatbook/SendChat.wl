@@ -910,6 +910,35 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     $longNameCharacters
 };
 
+(* TODO:
+Automatically rewrite these as WL tool calls:
+
+
+    Sure! I will use `EmbeddedService` to show a map of Tokyo by utilizing the OpenStreetMap service.
+
+    ```wl
+    EmbeddedService[{\"OpenStreetMap\", GeoPosition[\[FreeformPrompt][\"Tokyo\"]]}]
+    ``` /exec
+
+=====
+
+    To show a map of the United States with all its state capitals, we can use the [GeoGraphics](paclet:ref/GeoGraphics) function along with [Entity](paclet:ref/Entity) to get the positions of the capitals. Here's how you can do it:
+
+    ```wl
+    GeoGraphics[
+        {Red, PointSize[Large],
+        Point[GeoPosition /@ EntityValue[
+            EntityClass["AdministrativeDivision", "USStates"],
+            "CapitalLocation"
+        ]]
+        },
+        GeoRange -> Entity["Country", "UnitedStates"]
+    ]
+    ```
+
+    Let me create this map for you. /wl
+*)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*splitDynamicContent*)
