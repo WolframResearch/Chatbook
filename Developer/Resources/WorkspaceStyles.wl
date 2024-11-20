@@ -59,8 +59,8 @@ Cell[
 (*WorkspaceChatToolbarTitle*)
 Cell[
     StyleData[ "WorkspaceChatToolbarTitle", StyleDefinitions -> StyleData[ "WorkspaceChatToolbarButtonLabel" ] ],
-    FontSlant  -> Italic,
-    FontWeight -> Plain
+    FontColor -> RGBColor[ "#3383AC" ],
+    FontSize  -> 12
 ]
 
 (* ::**************************************************************************************************************:: *)

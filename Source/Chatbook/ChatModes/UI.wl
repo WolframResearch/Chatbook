@@ -59,10 +59,11 @@ makeWorkspaceChatDockedCell[ ] := Framed[
     DynamicModule[ { nbo },
         Grid[
             { {
-                LogChatTiming @ historyButton @ Dynamic @ nbo,
+                LogChatTiming @ newChatButton @ Dynamic @ nbo,
                 Item[ Spacer[ 0 ], ItemSize -> Fit ],
                 LogChatTiming @ sourcesButton @ Dynamic @ nbo,
-                LogChatTiming @ newChatButton @ Dynamic @ nbo
+                LogChatTiming @ historyButton @ Dynamic @ nbo,
+                LogChatTiming @ openAsChatbookButton @ Dynamic @ nbo
             } },
             Alignment -> { Automatic, Center },
             Spacings  -> 0.5
@@ -78,50 +79,76 @@ makeWorkspaceChatDockedCell[ ] := Framed[
 makeWorkspaceChatDockedCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*makeWorkspaceChatSubDockedCellExpression*)
+makeWorkspaceChatSubDockedCellExpression // beginDefinition;
+
+makeWorkspaceChatSubDockedCellExpression[ content_ ] := Cell[ BoxData @ ToBoxes @
+    Framed[
+        content,
+        Background   -> RGBColor[ "#DDEFF9" ],
+        BaseStyle    -> { FontSlant -> Italic },
+        FrameMargins -> { { 7, 7 }, { 4, 4 } },
+        FrameStyle   -> RGBColor[ "#DDEFF9" ],
+        ImageMargins -> 0,
+        ImageSize    -> Scaled[1.]
+    ],
+    PrivateCellOptions -> { "ContentsOpacity" -> Dynamic[ If[ CurrentValue[ "NotebookSelected" ], 1, 0.5 ] ] },
+    CellFrame          -> 0,
+    CellFrameMargins   -> 0,
+    CellMargins        -> { { -1, -5 }, { -1, -1 } },
+    CellTags           -> "WorkspaceChatSubDockedCell",
+    Magnification      -> Dynamic[ AbsoluteCurrentValue[ EvaluationNotebook[ ], Magnification ] ]
+];
+
+makeWorkspaceChatSubDockedCellExpression // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*writeWorkspaceChatSubDockedCell*)
+writeWorkspaceChatSubDockedCell // beginDefinition;
+
+writeWorkspaceChatSubDockedCell[ nbo_NotebookObject, content_ ] := (
+CurrentValue[ nbo, DockedCells ] = Inherited;
+CurrentValue[ nbo, DockedCells ] = {
+    First @ Replace[ AbsoluteCurrentValue[ nbo, DockedCells ], c_Cell :> {c} ],
+    makeWorkspaceChatSubDockedCellExpression[ content ] }
+)
+
+writeWorkspaceChatSubDockedCell[ nbo_NotebookObject, WindowTitle ] := writeWorkspaceChatSubDockedCell[
+    nbo,
+    Style[
+        FE`Evaluate @ FEPrivate`TruncateStringToWidth[
+            CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ],
+            "WorkspaceChatToolbarTitle",
+            #,
+            Right
+        ]&[ AbsoluteCurrentValue[ nbo, { WindowSize, 1 } ] - 10 ],
+        "WorkspaceChatToolbarTitle"
+    ]
+]
+
+writeWorkspaceChatSubDockedCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*removeWorkspaceChatSubDockedCell*)
+removeWorkspaceChatSubDockedCell // beginDefinition;
+
+removeWorkspaceChatSubDockedCell[ nbo_NotebookObject ] := CurrentValue[ nbo, DockedCells ] = Inherited;
+
+removeWorkspaceChatSubDockedCell // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*historyButton*)
 historyButton // beginDefinition;
 
-historyButton[ Dynamic[ nbo_ ] ] :=
-    Module[ { label },
-
-        label = Pane[
-            Dynamic[
-                If[
-                    Or[
-                        AbsoluteCurrentValue[ nbo, { WindowSize, 1 } ] < 250,
-                        Not @ MatchQ[CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ],
-                            Except["", _String]]
-                    ],
-                    tr["WorkspaceToolbarButtonLabelHistory"],
-                    Grid[
-                        {{
-                            tr["WorkspaceToolbarButtonLabelHistory"],
-                            Style[
-                                FE`Evaluate @ FEPrivate`TruncateStringToWidth[
-                                    CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ],
-                                    "WorkspaceChatToolbarTitle",
-                                    AbsoluteCurrentValue[ nbo, { WindowSize, 1 } ] - 210,
-                                    Right
-                                ],
-                                "WorkspaceChatToolbarTitle"
-                            ]
-                        }},
-                        FrameStyle -> GrayLevel[1, 0.75],
-                        Dividers -> Center,
-                        Spacings -> {1,0}
-                    ]
-
-                ]
-            ]
-        ];
-
-        Button[
-            toolbarButtonLabel[ "History", label, "History" ],
-            toggleOverlayMenu[ nbo, "History" ],
-            Appearance -> "Suppressed"
-        ]
-    ];
+historyButton[ Dynamic[ nbo_ ] ] := Button[
+    toolbarButtonLabel[ "History" ],
+    toggleOverlayMenu[ nbo, "History" ],
+    Appearance -> "Suppressed"
+];
 
 historyButton // endDefinition;
 
@@ -158,6 +185,7 @@ newChatButton[ Dynamic[ nbo_ ] ] :=
 			toolbarButtonLabel[ lightButton, {label, hotlabel}, "New"],
 			clearOverlayMenus @ nbo;
 			NotebookDelete @ Cells @ nbo;
+            NotebookDelete @ Cells[ nbo, DockedCell -> True, CellTags -> "WorkspaceChatSubDockedCell" ];
 			CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ];
 			CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = "";
 			moveChatInputToTop @ nbo;
@@ -167,6 +195,19 @@ newChatButton[ Dynamic[ nbo_ ] ] :=
 	];
 
 newChatButton // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*openAsChatbookButton*)
+openAsChatbookButton // beginDefinition;
+
+openAsChatbookButton[ Dynamic[ nbo_ ] ] := Button[
+    toolbarButtonLabel[ "OpenAsChatbook", None ],
+    popOutChatNB @ nbo,
+    Appearance -> "Suppressed"
+];
+
+openAsChatbookButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -213,7 +254,7 @@ toolbarButtonLabel0[ iconName_String, labelName_String, {styleopts___}, {gridopt
 
 toolbarButtonLabel0[ iconName_String, None, {styleopts___}, {gridopts___}] :=
     Grid[
-        { { RawBoxes @ TemplateBox[ { }, "WorkspaceToolbarIcon"<>iconName ] } },
+        { { chatbookIcon[ "WorkspaceToolbarIcon"<>iconName, False ] } },
         gridopts,
         Spacings  -> 0.25,
         Alignment -> { {Left, Right}, Center }
@@ -222,7 +263,7 @@ toolbarButtonLabel0[ iconName_String, None, {styleopts___}, {gridopts___}] :=
 toolbarButtonLabel0[ iconName_String, label_, {styleopts___}, {gridopts___}] :=
     Grid[
         { {
-            RawBoxes @ TemplateBox[ { }, "WorkspaceToolbarIcon"<>iconName ],
+            chatbookIcon[ "WorkspaceToolbarIcon"<>iconName, False ],
             Style[ label, $toolbarLabelStyle, styleopts ]
         } },
         gridopts,
@@ -242,7 +283,7 @@ $toolbarButtonCommon = Sequence[
 $toolbarButtonDefault = Sequence[ Background -> RGBColor[ "#66ADD2" ], FrameStyle -> RGBColor[ "#66ADD2" ] ];
 $toolbarButtonHover   = Sequence[ Background -> RGBColor[ "#87C3E3" ], FrameStyle -> RGBColor[ "#9ACAE4" ] ];
 $toolbarButtonActive  = Sequence[ Background -> RGBColor[ "#3689B5" ], FrameStyle -> RGBColor[ "#3689B5" ] ];
-$toolbarButtonLight   = Sequence[ Background -> RGBColor[ "#E0EFF6" ], FrameStyle -> RGBColor[ "#E0EFF6" ] ];
+$toolbarButtonLight   = Sequence[ Background -> RGBColor[ "#F1F8FC" ], FrameStyle -> RGBColor[ "#F1F8FC" ] ];
 
 
 (* ::**************************************************************************************************************:: *)
@@ -1234,7 +1275,16 @@ toggleOverlayMenu[ nbo_NotebookObject, name_String ] :=
         ];
 
         If[ MissingQ @ cell,
-            attachOverlayMenu[ nbo, name ],
+            If[ name == "Sources",
+                writeWorkspaceChatSubDockedCell[ nbo, Style[ tr[ "WorkspaceToolbarSourcesSubTitle" ], FontSlant -> Italic, FontFamily -> "Source Sans Pro" ] ],
+                removeWorkspaceChatSubDockedCell[ nbo ]
+            ];
+            attachOverlayMenu[ nbo, name ];
+            ,
+            If[ CurrentValue[ nbo, {TaggingRules, "ConversationTitle" } ] =!= "",
+                writeWorkspaceChatSubDockedCell[ nbo, WindowTitle ],
+                removeWorkspaceChatSubDockedCell[ nbo ]
+            ];
             restoreVerticalScrollbar @ nbo;
             NotebookDelete @ cell
         ]
@@ -1781,6 +1831,7 @@ loadConversation[ nbo_NotebookObject, id_ ] := Enclose[
         ChatbookAction[ "AttachWorkspaceChatInput", nbo ];
         CurrentChatSettings[ nbo, "ConversationUUID" ] = uuid;
         CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = title;
+        writeWorkspaceChatSubDockedCell[ nbo, WindowTitle ];
         restoreVerticalScrollbar @ nbo;
         moveToChatInputField[ nbo, True ]
     ] // withLoadingOverlay @ nbo,
