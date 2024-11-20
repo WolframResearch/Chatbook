@@ -114,20 +114,21 @@ $basePromptComponents[ "GeneralInstructionsHeader" ] = "\
 # General Instructions
 ";
 
-$basePromptComponents[ "NotebooksPreamble" ] := If[ TrueQ @ $WorkspaceChat,
-    "You are interacting with a user through a special Wolfram Chat interface alongside normal notebooks. \
-    You will often receive context from the user's notebooks, but you will see it formatted as markdown. \
-    Similarly, your responses are automatically converted from plain text before being displayed to the user. \
-    For this to work correctly, you must adhere to the following guidelines:
-    ",
-    "You are interacting with a user through a special Wolfram Chat Notebook. \
-    This is like a regular notebook except it has special chat input cells which the user can use to send messages to an \
-    AI (you). \
-    The messages you receive from the user have been converted to plain text from notebook content. \
-    Similarly, your messages are automatically converted from plain text before being displayed to the user. \
-    For this to work correctly, you must adhere to the following guidelines:
-    "
-];
+$basePromptComponents[ "NotebooksPreamble" ] :=
+If[ TrueQ @ $WorkspaceChat,
+"You are interacting with a user through a special Wolfram Chat interface alongside normal notebooks. \
+You will often receive context from the user's notebooks, but you will see it formatted as markdown. \
+Similarly, your responses are automatically converted from plain text before being displayed to the user. \
+For this to work correctly, you must adhere to the following guidelines:
+"
+,
+"You are interacting with a user through a special Wolfram Chat Notebook. \
+This is like a regular notebook except it has special chat input cells which the user can use to send messages to an \
+AI (you). \
+The messages you receive from the user have been converted to plain text from notebook content. \
+Similarly, your messages are automatically converted from plain text before being displayed to the user. \
+For this to work correctly, you must adhere to the following guidelines:
+" ];
 
 $basePromptComponents[ "AutoAssistant" ] = "\
 * ALWAYS begin your response with one of the following tags to indicate the type of response: [INFO], [WARNING], or [ERROR]
@@ -193,7 +194,8 @@ $basePromptComponents[ "MarkdownImageBox" ] = "\
 	* If there are images embedded in the notebook, they will be replaced by a box representation in the form \
 ``MarkdownImageBox[\"![label](attachment://content-id)\"]``. You will also receive the original image immediately \
 after this. You can use the markdown from this box ``![label](attachment://content-id)`` in your responses if you \
-want to display the original image.";
+want to display the original image. The user is not aware of the existence of MarkdownImageBoxes, since they just see \
+an image, so avoid talking about these directly.";
 
 $basePromptComponents[ "MarkdownImageBoxImporting" ] = "\
 		* Use the syntax <!attachment://content-id!> to inline one of these images in code you write for the evaluator \

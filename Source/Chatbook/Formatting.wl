@@ -293,6 +293,9 @@ makeResultCell0[ inlineCodeCell[ code_String ] ] := ReplaceAll[
 makeResultCell0[ mathCell[ math_String ] ] /; StringMatchQ[ math, (DigitCharacter|"."|","|" ").. ] :=
     math;
 
+makeResultCell0[ mathCell[ name_String ] ] /; NameQ @ name && Context @ name === "System`" && StringLength @ name > 1 :=
+    makeResultCell0 @ inlineCodeCell @ name;
+
 makeResultCell0[ mathCell[ math_String ] ] :=
     With[ { boxes = makeTeXBoxes @ math },
         If[ MatchQ[ boxes, _RawBoxes ],
@@ -1907,7 +1910,7 @@ makeLabeledBlockCell0[ code_String, "Input" ] :=
     makeInteractiveCodeCell[ "Wolfram", code ];
 
 makeLabeledBlockCell0[ code_String, style_String ] :=
-    Cell[ BoxData @ code, style ];
+    Cell[ BoxData @ StringToBoxes[ code, "WL" ], style ];
 
 makeLabeledBlockCell0 // endDefinition;
 

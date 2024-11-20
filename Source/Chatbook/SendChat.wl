@@ -895,6 +895,7 @@ autoCorrect[ string_String ] := StringReplace[ string, $llmAutoCorrectRules ];
 autoCorrect // endDefinition;
 
 $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
+    StartOfLine ~~ WhitespaceCharacter... ~~ "/command\ncode:" :> "/wl\ncode:",
     "```" ~~ code: Except[ "\n" ].. ~~ "```" :> "``"<>code<>"``",
     "wolfram_language_evaliator" -> "wolfram_language_evaluator",
     "\\!\\(\\*MarkdownImageBox[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
@@ -908,6 +909,35 @@ $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     "<|image_sentinel|>" :> "",
     $longNameCharacters
 };
+
+(* TODO:
+Automatically rewrite these as WL tool calls:
+
+
+    Sure! I will use `EmbeddedService` to show a map of Tokyo by utilizing the OpenStreetMap service.
+
+    ```wl
+    EmbeddedService[{\"OpenStreetMap\", GeoPosition[\[FreeformPrompt][\"Tokyo\"]]}]
+    ``` /exec
+
+=====
+
+    To show a map of the United States with all its state capitals, we can use the [GeoGraphics](paclet:ref/GeoGraphics) function along with [Entity](paclet:ref/Entity) to get the positions of the capitals. Here's how you can do it:
+
+    ```wl
+    GeoGraphics[
+        {Red, PointSize[Large],
+        Point[GeoPosition /@ EntityValue[
+            EntityClass["AdministrativeDivision", "USStates"],
+            "CapitalLocation"
+        ]]
+        },
+        GeoRange -> Entity["Country", "UnitedStates"]
+    ]
+    ```
+
+    Let me create this map for you. /wl
+*)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -1240,17 +1270,15 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
                 ToString @ output
             ];
 
-        newMessages = Join[
+        newMessages = Flatten @ {
             messages,
-            {
-                <|
-                    "Role"        -> "Assistant",
-                    "Content"     -> appendToolCallEndToken[ settings, StringTrim @ string ],
-                    "ToolRequest" -> True
-                |>,
-                makeToolResponseMessage[ settings, response ]
-            }
-        ];
+            <|
+                "Role"        -> "Assistant",
+                "Content"     -> appendToolCallEndToken[ settings, StringTrim @ string ],
+                "ToolRequest" -> True
+            |>,
+            makeToolResponseMessage[ settings, response ]
+        };
 
         $finishReason = None;
 
@@ -1338,8 +1366,10 @@ makeToolResponseMessage // beginDefinition;
 makeToolResponseMessage[ settings_, response_ ] :=
     makeToolResponseMessage[ settings, settings[ "Model" ], response ];
 
-makeToolResponseMessage[ settings_, model_Association, response_ ] :=
-    makeToolResponseMessage0[ model[ "Service" ], model[ "Family" ], response ];
+makeToolResponseMessage[ settings_, model_Association, response_ ] := {
+    If[ TrueQ @ settings[ "ToolCallRetryMessage" ], $toolCallRetryMessage, Nothing ],
+    makeToolResponseMessage0[ model[ "Service" ], model[ "Family" ], response ]
+};
 
 makeToolResponseMessage // endDefinition;
 
@@ -1374,6 +1404,17 @@ makeToolResponseMessage0[ service_String, family_, response_ ] :=
     <| "Role" -> "System", "Content" -> response, "ToolResponse" -> True |>;
 
 makeToolResponseMessage0 // endDefinition;
+
+
+$toolCallRetryPrompt = "\
+IMPORTANT: If a tool call does not give the expected output, \
+ask the user before retrying unless you are ABSOLUTELY SURE you know how to fix the issue.";
+
+$toolCallRetryMessage = <|
+    "Role"      -> "System",
+    "Content"   -> $toolCallRetryPrompt,
+    "Temporary" -> True
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

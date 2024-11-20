@@ -1168,6 +1168,29 @@ Cell[
 ]
 
 
+
+(* ::Subsection::Closed:: *)
+(*InlineItem*)
+
+
+Cell[
+    StyleData[ "InlineItem" ],
+    ParagraphIndent -> -10
+]
+
+
+
+(* ::Subsection::Closed:: *)
+(*InlineSubitem*)
+
+
+Cell[
+    StyleData[ "InlineSubitem" ],
+    ParagraphIndent -> -16
+]
+
+
+
 (* ::Subsection::Closed:: *)
 (*DropShadowPaneBox*)
 
