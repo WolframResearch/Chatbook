@@ -66,13 +66,13 @@ makeWorkspaceChatDockedCell[ ] := workspaceChatInitializer @ Framed[
                 LogChatTiming @ openAsChatbookButton @ Dynamic @ nbo
             } },
             Alignment -> { Automatic, Center },
-            Spacings  -> 0.5
+            Spacings  -> 0.2
         ],
         Initialization :> (nbo = EvaluationNotebook[ ])
     ],
     Background   -> RGBColor[ "#66ADD2" ],
     FrameStyle   -> RGBColor[ "#66ADD2" ], (* RGBColor[ "#A3C9F2" ] *)
-    FrameMargins -> { { 3, 3 }, { 0, 0 } },
+    FrameMargins -> { { 5, 4 }, { 0, 1 } },
     ImageMargins -> 0
 ];
 
@@ -87,7 +87,6 @@ makeWorkspaceChatSubDockedCellExpression[ content_ ] := Cell[ BoxData @ ToBoxes 
     Framed[
         content,
         Background   -> RGBColor[ "#DDEFF9" ],
-        BaseStyle    -> { FontSlant -> Italic },
         FrameMargins -> { { 7, 7 }, { 4, 4 } },
         FrameStyle   -> RGBColor[ "#DDEFF9" ],
         ImageMargins -> 0,
@@ -185,7 +184,7 @@ newChatButton[ Dynamic[ nbo_ ] ] :=
 			toolbarButtonLabel[ lightButton, {label, hotlabel}, "New"],
 			clearOverlayMenus @ nbo;
 			NotebookDelete @ Cells @ nbo;
-            NotebookDelete @ Cells[ nbo, DockedCell -> True, CellTags -> "WorkspaceChatSubDockedCell" ];
+			removeWorkspaceChatSubDockedCell @ nbo;
 			CurrentChatSettings[ nbo, "ConversationUUID" ] = CreateUUID[ ];
 			CurrentValue[ nbo, { TaggingRules, "ConversationTitle" } ] = "";
 			moveChatInputToTop @ nbo;
@@ -225,9 +224,9 @@ toolbarButtonLabel[ iconName_String, label_, tooltipName: _String | None, opts: 
 		With[ { lbl = toolbarButtonLabel0[ iconName, label, {}, {} ]},
 			buttonTooltip[
 				mouseDown[
-					Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonDefault ],
-					Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonHover   ],
-					Framed[ lbl, opts, $toolbarButtonCommon, $toolbarButtonActive  ]
+					Framed[ lbl, opts, $toolbarButtonCommon[ label =!= None ], $toolbarButtonDefault ],
+					Framed[ lbl, opts, $toolbarButtonCommon[ label =!= None ], $toolbarButtonHover   ],
+					Framed[ lbl, opts, $toolbarButtonCommon[ label =!= None ], $toolbarButtonActive  ]
 				],
 				tooltipName
 			]
@@ -236,9 +235,9 @@ toolbarButtonLabel[ iconName_String, label_, tooltipName: _String | None, opts: 
 toolbarButtonLabel[ lightButton, {default_, hot_}, tooltipName_, opts: OptionsPattern[] ] :=
 			buttonTooltip[
 				mouseDown[
-					Framed[ default, opts, $toolbarButtonCommon, $toolbarButtonLight   ],
-					Framed[ hot,     opts, $toolbarButtonCommon, $toolbarButtonHover   ],
-					Framed[ hot,     opts, $toolbarButtonCommon, $toolbarButtonActive  ]
+					Framed[ default, opts, $toolbarButtonCommon @ True, $toolbarButtonLight   ],
+					Framed[ hot,     opts, $toolbarButtonCommon @ True, $toolbarButtonHover   ],
+					Framed[ hot,     opts, $toolbarButtonCommon @ True, $toolbarButtonActive  ]
 				],
 				tooltipName
 			]
@@ -257,7 +256,8 @@ toolbarButtonLabel0[ iconName_String, None, {styleopts___}, {gridopts___}] :=
         { { chatbookIcon[ "WorkspaceToolbarIcon"<>iconName, False ] } },
         gridopts,
         Spacings  -> 0.25,
-        Alignment -> { {Left, Right}, Center }
+        Alignment -> { {Left, Right}, Baseline },
+        BaselinePosition -> { 1, 1 }
     ];
 
 toolbarButtonLabel0[ iconName_String, label_, {styleopts___}, {gridopts___}] :=
@@ -268,13 +268,15 @@ toolbarButtonLabel0[ iconName_String, label_, {styleopts___}, {gridopts___}] :=
         } },
         gridopts,
         Spacings  -> 0.25,
-        Alignment -> { {Left, Right}, Center }
+        Alignment -> { {Left, Right}, Baseline },
+        BaselinePosition -> { 1, 2 }
     ];
 
 toolbarButtonLabel0 // endDefinition;
 
-$toolbarButtonCommon = Sequence[
-    FrameMargins   -> { { 1, 6 }, { 1, 1 } },
+$toolbarButtonCommon[ hasLabelQ_ ] := Sequence[
+    Alignment      -> { Center, Center },
+    FrameMargins   -> { If[ hasLabelQ, { 1, 6 }, { 3, 3 } ], { 1, 1 } },
     ImageMargins   -> { { 0, 0 }, { 4, 4 } },
     ImageSize      -> { Automatic, 22 },
     RoundingRadius -> 3
@@ -1285,7 +1287,11 @@ toggleOverlayMenu[ nbo_NotebookObject, name_String ] :=
 
         If[ MissingQ @ cell,
             If[ name == "Sources",
-                writeWorkspaceChatSubDockedCell[ nbo, Style[ tr[ "WorkspaceToolbarSourcesSubTitle" ], FontSlant -> Italic, FontFamily -> "Source Sans Pro" ] ],
+                writeWorkspaceChatSubDockedCell[
+                    nbo,
+                    Style[
+                        tr[ "WorkspaceToolbarSourcesSubTitle" ],
+                        FontColor -> GrayLevel[ 0.2 ], FontFamily -> "Source Sans Pro", FontSlant -> Italic ] ],
                 removeWorkspaceChatSubDockedCell[ nbo ]
             ];
             attachOverlayMenu[ nbo, name ];
