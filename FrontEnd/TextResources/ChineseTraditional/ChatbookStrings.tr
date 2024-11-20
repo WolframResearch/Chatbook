@@ -211,6 +211,10 @@
 "WorkspaceSourcesOpenNotebooks" -> "\:958B\:555F\:7B46\:8A18\:672C",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copy response to clipboard\[Ellipsis]",
+"WorkspaceOutputRaftCopyAs" -> "Copy response as\[Ellipsis]",
+"WorkspaceOutputRaftCopyAsNotebookCells" -> "Notebook Cells",
+"WorkspaceOutputRaftCopyAsPlainText" -> "Plain Text",
+"WorkspaceOutputRaftCopyAsImage" -> "Image",
 "WorkspaceOutputRaftRegenerateTooltip" -> "Regenerate response",
 "WorkspaceOutputRaftFeedbackTooltip" -> "\:767C\:9001\:56DE\:994B\:81F3 Wolfram",
 
