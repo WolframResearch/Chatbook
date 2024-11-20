@@ -850,7 +850,7 @@ setServiceCaller[ eval_, caller_ ] := (
 );
 
 setServiceCaller[ eval_, caller: $$serviceCaller, { current___ } ] :=
-    Block[ { ServiceConnectionUtilities`$Caller = DeleteDuplicates @ Flatten @ { current, "Chatbook", caller } },
+    Block[ { ServiceConnectionUtilities`$Caller = DeleteDuplicates @ Flatten @ { current, $chatbookCaller, caller } },
         eval
     ];
 
@@ -859,6 +859,9 @@ setServiceCaller[ eval_, caller_, _ ] :=
 
 setServiceCaller // Attributes = { HoldFirst };
 setServiceCaller // endDefinition;
+
+
+$chatbookCaller := $chatbookCaller = "Chatbook-" <> $thisPaclet[ "Version" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
