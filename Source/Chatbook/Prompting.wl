@@ -114,20 +114,21 @@ $basePromptComponents[ "GeneralInstructionsHeader" ] = "\
 # General Instructions
 ";
 
-$basePromptComponents[ "NotebooksPreamble" ] := If[ TrueQ @ $WorkspaceChat,
-    "You are interacting with a user through a special Wolfram Chat interface alongside normal notebooks. \
-    You will often receive context from the user's notebooks, but you will see it formatted as markdown. \
-    Similarly, your responses are automatically converted from plain text before being displayed to the user. \
-    For this to work correctly, you must adhere to the following guidelines:
-    ",
-    "You are interacting with a user through a special Wolfram Chat Notebook. \
-    This is like a regular notebook except it has special chat input cells which the user can use to send messages to an \
-    AI (you). \
-    The messages you receive from the user have been converted to plain text from notebook content. \
-    Similarly, your messages are automatically converted from plain text before being displayed to the user. \
-    For this to work correctly, you must adhere to the following guidelines:
-    "
-];
+$basePromptComponents[ "NotebooksPreamble" ] :=
+If[ TrueQ @ $WorkspaceChat,
+"You are interacting with a user through a special Wolfram Chat interface alongside normal notebooks. \
+You will often receive context from the user's notebooks, but you will see it formatted as markdown. \
+Similarly, your responses are automatically converted from plain text before being displayed to the user. \
+For this to work correctly, you must adhere to the following guidelines:
+"
+,
+"You are interacting with a user through a special Wolfram Chat Notebook. \
+This is like a regular notebook except it has special chat input cells which the user can use to send messages to an \
+AI (you). \
+The messages you receive from the user have been converted to plain text from notebook content. \
+Similarly, your messages are automatically converted from plain text before being displayed to the user. \
+For this to work correctly, you must adhere to the following guidelines:
+" ];
 
 $basePromptComponents[ "AutoAssistant" ] = "\
 * ALWAYS begin your response with one of the following tags to indicate the type of response: [INFO], [WARNING], or [ERROR]

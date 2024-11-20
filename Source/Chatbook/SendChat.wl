@@ -1240,17 +1240,15 @@ toolEvaluation[ settings_, container_Symbol, cell_, as_Association ] := Enclose[
                 ToString @ output
             ];
 
-        newMessages = Join[
+        newMessages = Flatten @ {
             messages,
-            {
-                <|
-                    "Role"        -> "Assistant",
-                    "Content"     -> appendToolCallEndToken[ settings, StringTrim @ string ],
-                    "ToolRequest" -> True
-                |>,
-                makeToolResponseMessage[ settings, response ]
-            }
-        ];
+            <|
+                "Role"        -> "Assistant",
+                "Content"     -> appendToolCallEndToken[ settings, StringTrim @ string ],
+                "ToolRequest" -> True
+            |>,
+            makeToolResponseMessage[ settings, response ]
+        };
 
         $finishReason = None;
 
@@ -1338,8 +1336,10 @@ makeToolResponseMessage // beginDefinition;
 makeToolResponseMessage[ settings_, response_ ] :=
     makeToolResponseMessage[ settings, settings[ "Model" ], response ];
 
-makeToolResponseMessage[ settings_, model_Association, response_ ] :=
-    makeToolResponseMessage0[ model[ "Service" ], model[ "Family" ], response ];
+makeToolResponseMessage[ settings_, model_Association, response_ ] := {
+    If[ TrueQ @ settings[ "ToolCallRetryMessage" ], $toolCallRetryMessage, Nothing ],
+    makeToolResponseMessage0[ model[ "Service" ], model[ "Family" ], response ]
+};
 
 makeToolResponseMessage // endDefinition;
 
@@ -1374,6 +1374,17 @@ makeToolResponseMessage0[ service_String, family_, response_ ] :=
     <| "Role" -> "System", "Content" -> response, "ToolResponse" -> True |>;
 
 makeToolResponseMessage0 // endDefinition;
+
+
+$toolCallRetryPrompt = "\
+IMPORTANT: If a tool call does not give the expected output, \
+ask the user before retrying unless you are ABSOLUTELY SURE you know how to fix the issue.";
+
+$toolCallRetryMessage = <|
+    "Role"      -> "System",
+    "Content"   -> $toolCallRetryPrompt,
+    "Temporary" -> True
+|>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

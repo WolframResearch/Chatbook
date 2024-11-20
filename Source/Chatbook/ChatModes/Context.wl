@@ -11,9 +11,11 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $maxCellsBeforeSelection    = 100;
-$maxCellsAfterSelection     = 20;
+$maxCellsAfterSelection     = 50;
 $notebookInstructionsPrompt = True;
 $currentSelectionIndicator  = { $leftSelectionIndicator, $rightSelectionIndicator };
+$notebookContextLimitScale  = 0.25;
+$downScaledSettings         = { "MaxCellStringLength", "MaxContextTokens", "MaxOutputCellStringLength" };
 
 $notebookContextTemplate = StringTemplate[ "\
 IMPORTANT: Below is some context from the user's currently selected notebook. \
@@ -221,14 +223,15 @@ getContextFromSelection[ chatNB_NotebookObject, settings_Association, opts: Opti
 getContextFromSelection[ chatNB_NotebookObject, None, settings_Association, opts: OptionsPattern[ ] ] :=
     None;
 
-getContextFromSelection[ chatNB_, nbo_NotebookObject, settings_Association, opts: OptionsPattern[ ] ] := Enclose[
+getContextFromSelection[ chatNB_, nbo_NotebookObject, settings0_Association, opts: OptionsPattern[ ] ] := Enclose[
     Catch @ Block[
         {
             $notebookInstructionsPrompt = OptionValue[ "NotebookInstructionsPrompt" ],
             $maxCellsBeforeSelection    = OptionValue[ "MaxCellsBeforeSelection"    ],
             $maxCellsAfterSelection     = OptionValue[ "MaxCellsAfterSelection"     ]
         },
-        Module[ { selectionData, string },
+        Module[ { settings, selectionData, string },
+            settings = ConfirmBy[ downScaledSettings @ settings0, AssociationQ, "Settings" ];
 
             selectionData = ConfirmMatch[
                 LogChatTiming @ selectContextCells @ nbo,
@@ -290,6 +293,18 @@ getContextFromSelection0[ selectionData_Association, settings_ ] := Enclose[
 ];
 
 getContextFromSelection0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*downScaledSettings*)
+downScaledSettings // beginDefinition;
+
+downScaledSettings[ settings_Association ] := <|
+    settings,
+    Floor[ $notebookContextLimitScale * KeyTake[ settings, $downScaledSettings ] ]
+|>;
+
+downScaledSettings // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -401,7 +416,16 @@ insertSelectionIndicator[ cells_ ] :=
     insertSelectionIndicator[ cells, $currentSelectionIndicator ];
 
 insertSelectionIndicator[
-    { { beforeCells___Cell }, { selectedCells___Cell }, { afterCells___Cell } },
+    { { beforeCells___Cell }, { }, { afterCells___Cell } },
+    { before_String, after_String }
+] := {
+    beforeCells,
+    Cell @ Verbatim[ before<>after ],
+    afterCells
+};
+
+insertSelectionIndicator[
+    { { beforeCells___Cell }, { selectedCells__Cell }, { afterCells___Cell } },
     { before_String, after_String }
 ] := {
     beforeCells,
