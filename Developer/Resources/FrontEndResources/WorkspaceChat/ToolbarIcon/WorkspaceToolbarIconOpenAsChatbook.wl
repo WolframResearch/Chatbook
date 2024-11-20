@@ -1,4 +1,6 @@
-Graphics[
+(* ::Package:: *)
+
+RawBoxes @ ToBoxes @ Graphics[
     {
         Thickness[ 0.11111 ],
         FaceForm @ { GrayLevel[ 1 ], Opacity[ 1. ] },
