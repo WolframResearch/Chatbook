@@ -2073,12 +2073,12 @@ withWorkspaceGlobalProgress // endDefinition;
 
 $workspaceChatProgressBar = With[
     {
-        background  = None,
-        colorCenter = RGBColor[ 0.27451, 0.61961, 0.79608, 1.0 ],
-        colorEdges  = RGBColor[ 0.27451, 0.61961, 0.79608, 0.0 ],
-        duration    = 3,
-        leftOffset  = -0.5,
-        rightOffset = 1.5,
+        background  = RGBColor[ "#D0EEFF" ],
+        colorCenter = RGBColor[ "#55C2FF" ],
+        colorEdges  = RGBColor[ "#D0EEFF" ],
+        duration    = 2.5,
+        leftOffset  = -0.2,
+        rightOffset = 1.2,
         thickness   = Thickness[ 1 ]
     },
     Graphics[
