@@ -18,7 +18,7 @@ Needs[ "Wolfram`Chatbook`UI`"                ];
 (*Configuration*)
 $toolsWidth             = 240;
 $personasWidth          = 30;
-$rightColWidth          = 107;
+$rightColWidth         := Switch[ $Language, "Japanese", 130, "French", 117, _, 107 ];
 $rowHeight              = 30;
 $highlightCol           = GrayLevel[ 0.95 ];
 $dividerCol             = GrayLevel[ 0.85 ];
