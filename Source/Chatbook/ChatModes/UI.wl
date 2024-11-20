@@ -1087,7 +1087,7 @@ assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeF
     ToBoxes @ DynamicModule[ { cell },
         Grid[
             { {
-                assistantCopyAsActionMenu[ Dynamic[ cell ] ],
+                Tooltip[ assistantCopyAsActionMenu[ Dynamic[ cell ] ], tr[ "WorkspaceOutputRaftCopyAsTooltip" ] ],
                 Button[
                     Tooltip[ $regenerateLabel, tr[ "WorkspaceOutputRaftRegenerateTooltip" ] ],
                     ChatbookAction[ "RegenerateAssistantMessage", cell ],
