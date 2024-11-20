@@ -4500,60 +4500,43 @@ xyc4nl4Kwfno8Q8ARrPSLw==
   PlotRange->{{0., 20.}, {0., 20.}}],
 
 "WorkspaceToolbarIconNew" -> GraphicsBox[
-  {Thickness[0.058824], FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}], 
+  {Thickness[0.058823529411764705`], 
    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0,
       1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
-     0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
-     1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 
-     0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
-     0}}}, {{{14., 5.}, {14., 8.}, {12., 8.}, {12., 5.}, {9., 5.}, {9., 3.}, {
-     12., 3.}, {12., 0.}, {14., 0.}, {14., 3.}, {17., 3.}, {17., 5.}, {14., 
-     5.}}, CompressedData["
-1:eJxTTMoPSmViYGCQAmIQnWJ9379XXMqBAQxEoLQCDr6Aw6+6rD0lwtJwPoTm
-gNIf7FH5Ag4+5p2OCU9f2MP4Qs0HTi10vWaPqp+BAawuVRDOf6lmyLFGRhjO
-7855/ntloRacD+R9vOSrjWaeDpp9Og6o+nQcYPpgfFzi6PogtBKU1sLBh9Gw
-cEDnizg8rBJZ5/6Q3wE7n8MBPT4AEYFQVA==
+     0}}, {{1, 4, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
+     0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+     0}}}, {{{14., 8.}, {14., 5.}, {17., 5.}, {17., 3.}, {14., 3.}, {14., 
+     0.}, {12., 0.}, {12., 3.}, {9., 3.}, {9., 5.}, {12., 5.}, {12., 8.}, {
+     14., 8.}}, CompressedData["
+1:eJxTTMoPSmViYGCQAmIQDQR/VhZqOUCYOiD60yVfbWQ+jP6AJv4BTR8QKEFp
+LRx8GP3BHjtfBMRvcH/I74CdzwGiHXrFpZDlgUABB18ARB8oEZZG5sPMQbKX
+A0U+4ekLe2T+AtdrKHwoCEhIFUTmM6yREUbmI4UPhA8LP4R5Omj2gfko8QEA
+LWkzDA==
      "]}]},
   AspectRatio->Automatic,
-  ImageSize->{17., 14.},
-  PlotRange->{{0., 17.}, {0., 14.}}],
+  DefaultBaseStyle->{},
+  ImageSize->{22., 20.},
+  PlotRange->{{-5., 17.}, {-3, 17}}],
 
 "WorkspaceToolbarIconSources" -> GraphicsBox[
-  {Thickness[0.014493], 
-   {FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}], 
-    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {
-      0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{0,
-       2, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
-      3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}}}, {{{15., 
-      5.}, {7., 5.}, {7., 15.}, {11., 15.}, {11., 12.5}, {11., 11.673}, {
-      11.673, 11.}, {12.5, 11.}, {15., 11.}, {15., 5.}}, {{12., 14.293}, {
-      14.293, 12.}, {12.5, 12.}, {12.225, 12.}, {12., 12.224}, {12., 12.5}, {
-      12., 14.293}}, CompressedData["
-1:eJxTTMoPSmViYGCQBmIQfftnXdaeLfoOGRPf1thvVYfTMHGWMD7dTXPVHexN
-43Z5ntF3kNa/q8LWqO6wRiYqxfq+vkO+UPOBU4nqDpUv1Qw53ug7HP6qEdPv
-pO5w2TdJIOKnvsPDKpF17orqDgxgYACl0fkycP6MPJCBkmjyEg7qhhxrZKT0
-4XwIrYfGF4HzN819v/zYaUE08wTQ7IPx9eD8LSfK9s2H2wOTN4Cbh+ouETQ+
-wl8wf8PCARYusHCChRssHGHhCgtnWLijxw8A7jBvnA==
-      "]}]}, 
-   {FaceForm[{RGBColor[1., 1., 1.], Opacity[1.]}], 
-    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
+  {Thickness[0.07692307692307693], FaceForm[{RGBColor[1., 1., 1.], Opacity[
+   1.]}], FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 
+     3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0,
+      1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+     3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {
      0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
-     0}}}, {{{16., 9.}, {16., 12.}, {14., 12.}, {14., 9.}, {11., 9.}, {11., 
-     7.}, {14., 7.}, {14., 4.}, {16., 4.}, {16., 7.}, {19., 7.}, {19., 9.}, {
-     16., 9.}}}]}, 
-   {FaceForm[{RGBColor[0.4, 0.67843, 0.82353], Opacity[1.]}], 
-    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
-     0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
-     0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
-     0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
-     0}}}, CompressedData["
-1:eJxTTMoPSmVmYGBgAmJeKA0BBg4QWglKG+PgyzigqkfnC0BpHRx8mHo1HHwl
-NPXofA00+9D5MPVaUFoFjQ+jDXHwYepNcPAl0NSj8znQzEXnw9Sr4OCju1fF
-AQCgQRZY
-     "]]}},
+     0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {CompressedData["
+1:eJxTTMoPSmViYGBQBmIQDQEyDhD6gz1+Wg2qTsQBO18Rmf9AbaMciP6gtlHM
+AdUeKTQ+LloBTT2Yn5H2TAJNHsxX2FCEwkdyD0SeZZoKiDbg0JGFiiuhmQPm
+v/idqYjM/1GXJQ6iG/ZsUQfRESnWYP4BzzNgvgcPE5jvYH0fzO+YehjsXweO
+N2D+DrlWiP8jfoL5Cf1OsPDQgNLofFh4Q/gca+7Yo8qDwQEZKXVkPgMiPmAA
+Zg4YNGTtgZiDMA+rOgZE+KPzP9gDADwyPuA=
+     "], {{13., 5.}, {13., 3.}, {10., 3.}, {10., 0.}, {8., 0.}, {8., 3.}, {5.,
+      3.}, {5., 5.}, {8., 5.}, {8., 8.}, {10., 8.}, {10., 5.}, {13., 5.}}}]},
   AspectRatio->Automatic,
-  ImageSize->{20., 20.},
-  PlotRange->{{0., 20.}, {0., 20.}}],
+  ImageSize->{20, 20},
+  PlotRange->{{-6, 14}, {-4, 16}}],
 
 "WrenchIcon" -> GraphicsBox[
   {GrayLevel[0.4], AbsoluteThickness[1], Opacity[1.], 
@@ -5605,7 +5588,22 @@ hPG91XSQ1r+rwnZQz0FvwoIfhm3KUHFtB2neB7oTgO6HhT96fAAASQiSDg==
   AspectRatio->Automatic,
   BaselinePosition->(Center -> Center),
   ImageSize->{17., 18.},
-  PlotRange->{{-0.5, 16.5}, {-0.5, 17.5}}]
+  PlotRange->{{-0.5, 16.5}, {-0.5, 17.5}}],
+
+"WorkspaceToolbarIconOpenAsChatbook" -> GraphicsBox[
+  {Thickness[0.11111], FaceForm[{GrayLevel[1], Opacity[1.]}], 
+   FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {1,
+      3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 
+     0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0,
+      1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{5., 9.}, {5., 8.}, {7.293, 8.}, {
+     4.145, 4.856}, {3.949, 4.66}, {3.949, 4.344}, {4.145, 4.149}, {4.242, 
+     4.051}, {4.371, 4.}, {4.5, 4.}, {4.629, 4.}, {4.758, 4.051}, {4.855, 
+     4.145}, {8., 7.293}, {8., 5.}, {9., 5.}, {9., 9.}, {5., 9.}}, {{9., 
+     0.}, {0., 0.}, {0., 9.}, {3., 9.}, {3., 8.}, {1., 8.}, {1., 1.}, {8., 
+     1.}, {8., 3.}, {9., 3.}, {9., 0.}}}]},
+  AspectRatio->Automatic,
+  ImageSize->{12, 12},
+  PlotRange->{{-0.5, 9.5}, {-0.5, 9.5}}]
 }
 @|
 @|

@@ -202,10 +202,12 @@
 "WorkspaceWindowTitle" -> "Notebook Assistant",
 "WorkspaceToolbarButtonLabelHistory" -> "History",
 "WorkspaceToolbarButtonLabelSources" -> "Sources",
-"WorkspaceToolbarButtonLabelNew" -> "New",
+"WorkspaceToolbarSourcesSubTitle" -> "Choose sources to be made available to the notebook assistant.",
+"WorkspaceToolbarButtonLabelNew" -> "New Chat",
 "WorkspaceToolbarButtonTooltipHistory" -> "Manage conversations",
 "WorkspaceToolbarButtonTooltipSources" -> "Sources for additional material to add to the chat context",
 "WorkspaceToolbarButtonTooltipNew" -> "Start a new conversation",
+"WorkspaceToolbarButtonTooltipOpenAsChatbook" -> "Open as a Chat Notebook",
 "WorkspaceSourcesOpenNotebooks" -> "Open Notebooks",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copy response to clipboard\[Ellipsis]",
