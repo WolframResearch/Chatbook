@@ -13,14 +13,18 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 $workspaceChatWidth := $workspaceChatWidth = Switch[ $OperatingSystem, "MacOSX", 450, _, 360 ];
 
 $notebookAssistanceBaseSettings = <|
-    "AppName"           -> "NotebookAssistance",
-    "LLMEvaluator"      -> "NotebookAssistant",
-    "Model"             -> <| "Service" -> "LLMKit", "Name" -> Automatic |>,
-    "PromptGenerators"  -> { "RelatedDocumentation" },
-    "ServiceCaller"     -> "NotebookAssistance",
-    "ToolOptions"       -> <| "WolframLanguageEvaluator" -> <| "AppendURIPrompt" -> True, "Method" -> "Session" |> |>,
-    "Tools"             -> { "NotebookEditor" },
-    "ToolSelectionType" -> <| "DocumentationLookup" -> None, "DocumentationSearcher" -> None |>
+    "AppName"                   -> "NotebookAssistance",
+    "LLMEvaluator"              -> "NotebookAssistant",
+    "MaxContextTokens"          -> 2^15,
+    "MaxToolResponses"          -> 3,
+    "Model"                     -> <| "Service" -> "LLMKit", "Name" -> Automatic |>,
+    "PromptGenerators"          -> { "RelatedDocumentation" },
+    "ServiceCaller"             -> "NotebookAssistance",
+    "Tools"                     -> { "NotebookEditor" },
+    "ToolSelectionType"         -> <| "DocumentationLookup" -> None, "DocumentationSearcher" -> None |>,
+    "ToolOptions"               -> <|
+        "WolframLanguageEvaluator" -> <| "AppendURIPrompt" -> True, "Method" -> "Session" |>
+    |>
 |>;
 
 $notebookAssistanceWorkspaceSettings := <|

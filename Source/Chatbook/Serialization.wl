@@ -1079,8 +1079,7 @@ toMarkdownImageBox // beginDefinition;
 
 toMarkdownImageBox[ graphics_ ] := Enclose[
     Catch @ Module[ { img, uri },
-        img = ConfirmMatch[ rasterizeGraphics @ graphics, _Image | Missing[ "OutOfMemory" ], "RasterizeGraphics" ];
-        If[ MissingQ @ img, Block[ { $multiModalImages = False }, Throw @ fasterCellToString0 @ graphics ] ];
+        img = Flatten @ RawBoxes @ graphics;
         uri = ConfirmBy[ MakeExpressionURI[ "image", img ], StringQ, "RasterID" ];
         needsBasePrompt[ "MarkdownImageBox" ];
         If[ toolSelectedQ[ "WolframLanguageEvaluator" ], needsBasePrompt[ "MarkdownImageBoxImporting" ] ];

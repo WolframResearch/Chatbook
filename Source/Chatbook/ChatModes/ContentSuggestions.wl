@@ -35,6 +35,11 @@ $$generatedStyle = "Echo"|"EchoAfter"|"EchoBefore"|"EchoTiming"|"Message"|"Outpu
 $$whitespaceString = _String? (StringMatchQ[ WhitespaceCharacter... ])
 $$whitespace       = $$whitespaceString | TextData @ $$whitespaceString | TextData @ { $$whitespaceString... };
 
+
+(* TODO: stop tokens for resource notebooks:
+    CurrentValue[ EvaluationNotebook[ ], { TaggingRules, "ResourceCreateNotebook" } ]
+*)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Wolfram Language Suggestions*)
