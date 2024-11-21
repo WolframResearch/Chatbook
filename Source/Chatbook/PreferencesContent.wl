@@ -1180,7 +1180,6 @@ servicesSettingsPanel0[ ] := Enclose[
                         FontColor -> RGBColor[ "#333333" ],
                         FontFamily -> "Roboto",
                         FontSize -> 11 } ],
-                If[ !AssociationQ[ Wolfram`LLMFunctions`Common`$LLMKitInfo ], Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] ];
                 Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Learn",
                 Appearance -> "Suppressed",
                 BaselinePosition -> Baseline,
@@ -1221,7 +1220,6 @@ makeLLMPanel[ ] :=
                     Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Normal", FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
                     Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Hover", FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
                     Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Pressed", FrameMargins -> { { 17, 17 }, { 7, 7 } } ] ],
-                If[ !AssociationQ[ Wolfram`LLMFunctions`Common`$LLMKitInfo ], Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] ];
                 Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Buy",
                 Appearance -> "Suppressed",
                 BaseStyle -> "DialogTextCommon",
@@ -1254,7 +1252,8 @@ makeLLMPanel[ ] :=
                             If[ CurrentValue[ "MouseOver" ],
                                 RGBColor[ 0.3333333333333333, 0.6941176470588235, 0.8483660130718954 ],
                                 RGBColor[                 0., 0.5411764705882353, 0.7725490196078432 ] ] ] ],
-                CloudConnect[ ],
+                CloudConnect[ ];
+                If[ Wolfram`LLMFunctions`Common`CloudAuthenticatedQ[ ], Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] ],
                 Appearance -> "Suppressed",
                 BaseStyle -> "DialogTextCommon",
                 BaselinePosition -> Baseline,
@@ -1266,7 +1265,6 @@ makeLLMPanel[ ] :=
                 Style[
                     tr[ "PreferencesContentLLMKitEnabledManage" ],
                     FontColor -> Dynamic[ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.2 ], GrayLevel[ 0.537254 ] ] ] ],
-                If[ !AssociationQ[ Wolfram`LLMFunctions`Common`$LLMKitInfo ], Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] ];
                 Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Manage",
                 Appearance -> "Suppressed",
                 BaseStyle -> "DialogTextCommon",
