@@ -4496,6 +4496,7 @@ xyc4nl4Kwfno8Q8ARrPSLw==
     8.9882}, {16., 8.9882}, {16., 10.989}, {4., 10.989}, {4., 8.9882}}, {{4., 
     5.}, {16., 5.}, {16., 7.}, {4., 7.}, {4., 5.}}}]},
   AspectRatio->Automatic,
+  BaselinePosition->(Center -> Center),
   ImageSize->{20., 20.},
   PlotRange->{{0., 20.}, {0., 20.}}],
 
@@ -4515,6 +4516,7 @@ A0U+4ekLe2T+AtdrKHwoCEhIFUTmM6yREUbmI4UPhA8LP4R5Omj2gfko8QEA
 LWkzDA==
      "]}]},
   AspectRatio->Automatic,
+  BaselinePosition->(Center -> Center),
   DefaultBaseStyle->{},
   ImageSize->{22., 20.},
   PlotRange->{{-5., 17.}, {-3, 17}}],
@@ -4535,6 +4537,7 @@ Zg4YNGTtgZiDMA+rOgZE+KPzP9gDADwyPuA=
      "], {{13., 5.}, {13., 3.}, {10., 3.}, {10., 0.}, {8., 0.}, {8., 3.}, {5.,
       3.}, {5., 5.}, {8., 5.}, {8., 8.}, {10., 8.}, {10., 5.}, {13., 5.}}}]},
   AspectRatio->Automatic,
+  BaselinePosition->(Center -> Center),
   ImageSize->{20, 20},
   PlotRange->{{-6, 14}, {-4, 16}}],
 
@@ -5554,7 +5557,9 @@ hPG91XSQ1r+rwnZQz0FvwoIfhm3KUHFtB2neB7oTgO6HhT96fAAASQiSDg==
      0.}, {0., 0.}, {0., 9.}, {3., 9.}, {3., 8.}, {1., 8.}, {1., 1.}, {8., 
      1.}, {8., 3.}, {9., 3.}, {9., 0.}}}]},
   AspectRatio->Automatic,
-  ImageSize->{12, 12},
+  BaselinePosition->(Center -> Center),
+  ImageMargins->{{0, 1}, {0, 0}},
+  ImageSize->{10, 10},
   PlotRange->{{-0.5, 9.5}, {-0.5, 9.5}}],
 
 "WorkspaceOutputRaftShareIcon" -> (GraphicsBox[{
