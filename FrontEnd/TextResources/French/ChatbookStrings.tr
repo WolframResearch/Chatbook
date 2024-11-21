@@ -211,7 +211,16 @@
 "WorkspaceSourcesOpenNotebooks" -> "Ouvrir les notebooks",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copier la r\[EAcute]ponse dans le presse\[Hyphen]papiers\[Ellipsis]",
+"WorkspaceOutputRaftCopyAs" -> "Copy response as\[Ellipsis]",
+"WorkspaceOutputRaftCopyAsNotebookCells" -> "Notebook Cells",
+"WorkspaceOutputRaftCopyAsPlainText" -> "Plain Text",
+"WorkspaceOutputRaftCopyAsImage" -> "Image",
 "WorkspaceOutputRaftRegenerateTooltip" -> "Reg\[EAcute]n\[EAcute]rer la r\[EAcute]ponse",
+"WorkspaceOutputRaftShareAsTooltip" -> "Share response\[Ellipsis]",
+"WorkspaceOutputRaftShareAs" -> "Share this as\[Ellipsis]",
+"WorkspaceOutputRaftShareAsCloudDeployment" -> "Cloud Deployment",
+"WorkspaceOutputRaftShareAsPDF" -> "PDF",
+"WorkspaceOutputRaftShareAsImage" -> "Image",
 "WorkspaceOutputRaftFeedbackTooltip" -> "Envoyer un commentaire \[AGrave] Wolfram",
 
 "InlineChatButtonTooltipClose" -> "Fermer",

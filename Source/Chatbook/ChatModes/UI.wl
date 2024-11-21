@@ -39,6 +39,12 @@ $inputFieldFrameOptions = Sequence[
     FrameStyle   -> Directive[ AbsoluteThickness[ 2 ], RGBColor[ "#a3c9f2" ] ]
 ];
 
+$actionMenuItemOptions = Sequence[
+    BaseStyle      -> { FontColor -> RGBColor[ "#333333" ], FontSize -> 13 },
+    ImageSize      -> Scaled[ 1. ],
+    RoundingRadius -> 2
+];
+
 $useGravatarImages := useGravatarImagesQ[ ];
 
 $userImageParams = <| "size" -> 40, "default" -> "404", "rating" -> "G" |>;
@@ -175,13 +181,13 @@ newChatButton[ Dynamic[ nbo_ ] ] :=
     		{FontColor -> RGBColor["#469ECB"]},
     		{BaseStyle -> RGBColor["#469ECB"]}
     	],
-    	hotlabel = toolbarButtonLabel0["New", "New",
+    	hotLabel = toolbarButtonLabel0["New", "New",
     		{FontColor -> RGBColor[1,1,1]},
     		{BaseStyle -> RGBColor[1,1,1]}
     	]},
 
 		Button[
-			toolbarButtonLabel[ lightButton, {label, hotlabel}, "New"],
+			toolbarButtonLabel[ lightButton, {label, hotLabel}, "New"],
 			clearOverlayMenus @ nbo;
 			NotebookDelete @ Cells @ nbo;
 			removeWorkspaceChatSubDockedCell @ nbo;
@@ -248,25 +254,25 @@ toolbarButtonLabel // endDefinition;
 
 toolbarButtonLabel0 // beginDefinition;
 
-toolbarButtonLabel0[ iconName_String, labelName_String, {styleopts___}, {gridopts___}] :=
-    toolbarButtonLabel0[ iconName, tr[ "WorkspaceToolbarButtonLabel"<>labelName ], {styleopts}, {gridopts} ];
+toolbarButtonLabel0[ iconName_String, labelName_String, {styleOpts___}, {gridOpts___}] :=
+    toolbarButtonLabel0[ iconName, tr[ "WorkspaceToolbarButtonLabel"<>labelName ], {styleOpts}, {gridOpts} ];
 
-toolbarButtonLabel0[ iconName_String, None, {styleopts___}, {gridopts___}] :=
+toolbarButtonLabel0[ iconName_String, None, {styleOpts___}, {gridOpts___}] :=
     Grid[
         { { chatbookIcon[ "WorkspaceToolbarIcon"<>iconName, False ] } },
-        gridopts,
+        gridOpts,
         Spacings  -> 0.25,
         Alignment -> { {Left, Right}, Baseline },
         BaselinePosition -> { 1, 1 }
     ];
 
-toolbarButtonLabel0[ iconName_String, label_, {styleopts___}, {gridopts___}] :=
+toolbarButtonLabel0[ iconName_String, label_, {styleOpts___}, {gridOpts___}] :=
     Grid[
         { {
             chatbookIcon[ "WorkspaceToolbarIcon"<>iconName, False ],
-            Style[ label, $toolbarLabelStyle, styleopts ]
+            Style[ label, $toolbarLabelStyle, styleOpts ]
         } },
-        gridopts,
+        gridOpts,
         Spacings  -> 0.25,
         Alignment -> { {Left, Right}, Baseline },
         BaselinePosition -> { 1, 2 }
@@ -404,6 +410,8 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
 (*workspaceChatInitializer*)
 workspaceChatInitializer // beginDefinition;
 
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::NoVariables::DynamicModule:: *)
 workspaceChatInitializer[ expr_ ] :=
     DynamicModule[
         { },
@@ -411,6 +419,7 @@ workspaceChatInitializer[ expr_ ] :=
         Initialization :> initializeWorkspaceChat[ ],
         SynchronousInitialization -> False
     ];
+(* :!CodeAnalysis::EndBlock:: *)
 
 workspaceChatInitializer // endDefinition;
 
@@ -1058,7 +1067,7 @@ attachAssistantMessageButtons[ cell0_CellObject, True ] := Enclose[
             Cell[
                 BoxData @ assistantMessageButtons @ includeFeedback,
                 "ChatOutputTrayButtons",
-                Magnification -> AbsoluteCurrentValue[ cell, Magnification ]
+                Magnification -> AbsoluteCurrentValue[ cell, Magnification ] * 0.85
             ],
             { Left, Bottom },
             0,
@@ -1083,27 +1092,18 @@ assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeF
     ToBoxes @ DynamicModule[ { cell },
         Grid[
             { {
-                ActionMenu[
-                    Tooltip[ $clipboardLabel, tr[ "WorkspaceOutputRaftCopyAsTooltip" ] ],
-                    {
-                        "Copy as\[Ellipsis]" :> Null,
-                        "    Cells"      :> ChatbookAction[ "CopyExplodedCells", cell ],
-                        "    Plain Text" :> ChatbookAction[ "CopyPlainText"    , cell ],
-                        "    Image"      :> ChatbookAction[ "CopyImage"        , cell ]
-                    },
-                    Appearance -> "Suppressed",
-                    Method     -> "Queued",
-                    MenuStyle  -> { Magnification -> Inherited/0.85 }
-                ],
+                Tooltip[ assistantCopyAsActionMenu[ Dynamic[ cell ] ], tr[ "WorkspaceOutputRaftCopyAsTooltip" ] ],
                 Button[
                     Tooltip[ $regenerateLabel, tr[ "WorkspaceOutputRaftRegenerateTooltip" ] ],
                     ChatbookAction[ "RegenerateAssistantMessage", cell ],
                     Appearance -> "Suppressed",
                     Method     -> "Queued"
                 ],
+                Item[ Spacer[ 0 ], ItemSize -> Fit ],
+                (* Waiting for sharing functionality to be implemented: *)
+                (* Tooltip[ assistantShareAsActionMenu[ Dynamic[ cell ] ], tr[ "WorkspaceOutputRaftShareAsTooltip" ] ], *)
                 If[ TrueQ @ includeFeedback,
                     Splice @ {
-                        Item[ Spacer[ 0 ], ItemSize -> Fit ],
                         Button[
                             Tooltip[ $thumbsUpLabel, tr[ "WorkspaceOutputRaftFeedbackTooltip" ] ],
                             ChatbookAction[ "SendFeedback", cell, True ],
@@ -1121,7 +1121,7 @@ assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeF
                     Nothing
                 ]
             } },
-            Alignment -> { Automatic, Baseline },
+            Alignment -> { Automatic, Center },
             Spacings -> 0
         ],
         Initialization :> (cell = ParentCell @ EvaluationCell[ ])
@@ -1134,6 +1134,160 @@ $clipboardLabel  := $clipboardLabel  = chatbookIcon[ "WorkspaceOutputRaftClipboa
 $regenerateLabel := $regenerateLabel = chatbookIcon[ "WorkspaceOutputRaftRegenerateIcon", False ];
 $thumbsUpLabel   := $thumbsUpLabel   = chatbookIcon[ "WorkspaceOutputRaftThumbsUpIcon"  , False ];
 $thumbsDownLabel := $thumbsDownLabel = chatbookIcon[ "WorkspaceOutputRaftThumbsDownIcon", False ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+assistantCopyAsActionMenu // beginDefinition;
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::NoVariables::DynamicModule:: *)
+assistantCopyAsActionMenu[ Dynamic[ cell_ ] ] :=
+DynamicModule[ { Typeset`menuActiveQ = False },
+    EventHandler[
+        PaneSelector[
+            {
+                "Default" ->
+                    Framed[
+                        chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False, RGBColor[ "#3383AC" ] ],
+                        Background -> RGBColor[ "#FFFFFF" ], RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> RGBColor[ "#FFFFFF" ],
+                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ],
+                "Hover" ->
+                    Framed[
+                        chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False, RGBColor[ "#3383AC" ] ],
+                        Background -> RGBColor[ "#DBEDF7" ], RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> RGBColor[ "#DBEDF7" ],
+                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ],
+                "Down" ->
+                    Framed[
+                        chatbookIcon[ "WorkspaceOutputRaftClipboardIcon" , False, RGBColor[ "#FFFFFF" ] ],
+                        Background -> RGBColor[ "#469ECB" ], RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> RGBColor[ "#469ECB" ],
+                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ] },
+            Dynamic[
+                Which[
+                    Typeset`menuActiveQ, "Down",
+                    CurrentValue[ "MouseOver" ], "Hover",
+                    True, "Default" ]],
+            ImageSize -> Automatic ],
+        {
+            "MouseDown" :> (
+                Typeset`menuActiveQ = True;
+                AttachCell[ EvaluationBox[ ],
+                    Cell[ BoxData @ ToBoxes @
+                        DynamicModule[ { },
+                            Framed[
+                                Grid[
+                                    {
+                                        { Style[ tr[ "WorkspaceOutputRaftCopyAs" ], FontColor -> RGBColor[ "#898989" ], FontSize -> 12 ] },
+                                        { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftCopyAsNotebookCells" ], ChatbookAction[ "CopyExplodedCells", cell ] ] },
+                                        { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftCopyAsPlainText" ], ChatbookAction[ "CopyPlainText", cell ] ] },
+                                        { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftCopyAsImage" ], ChatbookAction[ "CopyImage", cell ] ] }
+                                    },
+                                    Alignment -> Left,
+                                    BaseStyle -> { FontFamily -> "Source Sans Pro" },
+                                    Spacings -> { 0, { 0, 0.5, { 0 } } }
+                                ],
+                                Background -> White, FrameStyle -> RGBColor[ "#E5E5E5" ], ImageSize -> 158, RoundingRadius -> 4 ],
+                            InheritScope -> True,
+                            Initialization :> (True), (* Deinitialization won't run without an Init *)
+                            Deinitialization :> (Typeset`menuActiveQ = False)
+                        ],
+                        CellTags -> "CustomActionMenu",
+                        Magnification -> Inherited * 0.85 ],
+                    { Left, Bottom }, 0, { Left, Top },
+                    RemovalConditions -> "MouseExit" ]) },
+        PassEventsDown -> True,
+        Method -> "Preemptive",
+        PassEventsUp -> True ]]
+(* :!CodeAnalysis::EndBlock:: *)
+
+assistantCopyAsActionMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*assistantShareAsActionMenu*)
+assistantShareAsActionMenu // beginDefinition;
+
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::NoVariables::DynamicModule:: *)
+assistantShareAsActionMenu[ Dynamic[ cell_ ] ] :=
+DynamicModule[ { Typeset`menuActiveQ = False },
+    EventHandler[
+        PaneSelector[
+            {
+                "Default" ->
+                    Framed[
+                        chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, RGBColor[ "#3383AC" ] ],
+                        Background -> RGBColor[ "#FFFFFF" ], RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> RGBColor[ "#FFFFFF" ],
+                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ],
+                "Hover" ->
+                    Framed[
+                        chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, RGBColor[ "#3383AC" ] ],
+                        Background -> RGBColor[ "#DBEDF7" ], RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> RGBColor[ "#DBEDF7" ],
+                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ],
+                "Down" ->
+                    Framed[
+                        chatbookIcon[ "WorkspaceOutputRaftShareIcon" , False, RGBColor[ "#FFFFFF" ] ],
+                        Background -> RGBColor[ "#469ECB" ], RoundingRadius -> 3, FrameMargins -> 0, FrameStyle -> RGBColor[ "#469ECB" ],
+                        Alignment -> { Center, Center }, ImageSize -> { 22, 22 } ] },
+            Dynamic[
+                Which[
+                    Typeset`menuActiveQ, "Down",
+                    CurrentValue[ "MouseOver" ], "Hover",
+                    True, "Default" ]],
+            ImageSize -> Automatic ],
+        {
+            "MouseDown" :> (
+                Typeset`menuActiveQ = True;
+                AttachCell[ EvaluationBox[ ],
+                    Cell[ BoxData @ ToBoxes @
+                        DynamicModule[ { },
+                            Framed[
+                                Grid[
+                                    {
+                                        { Style[ tr[ "WorkspaceOutputRaftShareAs" ], FontColor -> RGBColor[ "#898989" ], FontSize -> 12 ] },
+                                        { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftShareAsCloudDeployment" ], ChatbookAction[ "ShareAsCloudDeployment", cell ] ] },
+                                        { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftShareAsPDF" ], ChatbookAction[ "ShareAsPDF", cell ] ] },
+                                        { assistantActionMenuItem[ tr[ "WorkspaceOutputRaftShareAsImage" ], ChatbookAction[ "ShareAsImage", cell ] ] }
+                                    },
+                                    Alignment -> Left,
+                                    BaseStyle -> { FontFamily -> "Source Sans Pro" },
+                                    Spacings -> { 0, { 0, 0.5, { 0 } } }
+                                ],
+                                Background -> White, FrameStyle -> RGBColor[ "#E5E5E5" ], ImageSize -> 158, RoundingRadius -> 4 ],
+                            InheritScope -> True,
+                            Initialization :> (True), (* Deinitialization won't run without an Init *)
+                            Deinitialization :> (Typeset`menuActiveQ = False)
+                        ],
+                        CellTags -> "CustomActionMenu",
+                        Magnification -> Inherited * 0.85 ],
+                    { Right, Bottom }, 0, { Right, Top }, (* Because this is an attached cell, it has to exist within the NA window *)
+                    RemovalConditions -> "MouseExit" ]) },
+        PassEventsDown -> True,
+        Method -> "Preemptive",
+        PassEventsUp -> True ]]
+(* :!CodeAnalysis::EndBlock:: *)
+
+assistantShareAsActionMenu // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*assistantActionMenuItem*)
+assistantActionMenuItem // beginDefinition;
+
+assistantActionMenuItem // Attributes = { HoldRest };
+
+assistantActionMenuItem[ label_, clickAction_ ] :=
+Button[
+    mouseDown[
+        Framed[ label, $actionMenuItemOptions, Background -> None,             FrameStyle -> None ],
+        Framed[ label, $actionMenuItemOptions, Background -> GrayLevel[ 1. ],  FrameStyle -> GrayLevel[ 0.82 ] ],
+        Framed[ label, $actionMenuItemOptions, Background -> GrayLevel[ 0.9 ], FrameStyle -> GrayLevel[ 0.749 ] ] ],
+    clickAction;
+    NotebookDelete[ Cells[ EvaluationNotebook[ ], AttachedCell -> True, CellTags -> "CustomActionMenu" ]],
+    Appearance -> "Suppressed",
+    Method -> "Queued",
+    ImageSize -> Automatic ]
+
+assistantActionMenuItem // endDefinition
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

@@ -211,7 +211,16 @@
 "WorkspaceSourcesOpenNotebooks" -> "\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:3092\:958b\:304f",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "\:56de\:7b54\:3092\:30af\:30ea\:30c3\:30d7\:30dc\:30fc\:30c9\:306b\:30b3\:30d4\:30fc\:3059\:308b\[Ellipsis]",
+"WorkspaceOutputRaftCopyAs" -> "Copy response as\[Ellipsis]",
+"WorkspaceOutputRaftCopyAsNotebookCells" -> "Notebook Cells",
+"WorkspaceOutputRaftCopyAsPlainText" -> "Plain Text",
+"WorkspaceOutputRaftCopyAsImage" -> "Image",
 "WorkspaceOutputRaftRegenerateTooltip" -> "\:56de\:7b54\:3092\:518d\:751f\:3059\:308b",
+"WorkspaceOutputRaftShareAsTooltip" -> "Share response\[Ellipsis]",
+"WorkspaceOutputRaftShareAs" -> "Share this as\[Ellipsis]",
+"WorkspaceOutputRaftShareAsCloudDeployment" -> "Cloud Deployment",
+"WorkspaceOutputRaftShareAsPDF" -> "PDF",
+"WorkspaceOutputRaftShareAsImage" -> "Image",
 "WorkspaceOutputRaftFeedbackTooltip" -> "\:30d5\:30a3\:30fc\:30c9\:30d0\:30c3\:30af\:3092Wolfram\:306b\:9001\:4fe1\:3059\:308b",
 
 "InlineChatButtonTooltipClose" -> "\:9589\:3058\:308b",
