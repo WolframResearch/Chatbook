@@ -181,13 +181,13 @@ newChatButton[ Dynamic[ nbo_ ] ] :=
     		{FontColor -> RGBColor["#469ECB"]},
     		{BaseStyle -> RGBColor["#469ECB"]}
     	],
-    	hotlabel = toolbarButtonLabel0["New", "New",
+    	hotLabel = toolbarButtonLabel0["New", "New",
     		{FontColor -> RGBColor[1,1,1]},
     		{BaseStyle -> RGBColor[1,1,1]}
     	]},
 
 		Button[
-			toolbarButtonLabel[ lightButton, {label, hotlabel}, "New"],
+			toolbarButtonLabel[ lightButton, {label, hotLabel}, "New"],
 			clearOverlayMenus @ nbo;
 			NotebookDelete @ Cells @ nbo;
 			removeWorkspaceChatSubDockedCell @ nbo;
@@ -254,25 +254,25 @@ toolbarButtonLabel // endDefinition;
 
 toolbarButtonLabel0 // beginDefinition;
 
-toolbarButtonLabel0[ iconName_String, labelName_String, {styleopts___}, {gridopts___}] :=
-    toolbarButtonLabel0[ iconName, tr[ "WorkspaceToolbarButtonLabel"<>labelName ], {styleopts}, {gridopts} ];
+toolbarButtonLabel0[ iconName_String, labelName_String, {styleOpts___}, {gridOpts___}] :=
+    toolbarButtonLabel0[ iconName, tr[ "WorkspaceToolbarButtonLabel"<>labelName ], {styleOpts}, {gridOpts} ];
 
-toolbarButtonLabel0[ iconName_String, None, {styleopts___}, {gridopts___}] :=
+toolbarButtonLabel0[ iconName_String, None, {styleOpts___}, {gridOpts___}] :=
     Grid[
         { { chatbookIcon[ "WorkspaceToolbarIcon"<>iconName, False ] } },
-        gridopts,
+        gridOpts,
         Spacings  -> 0.25,
         Alignment -> { {Left, Right}, Baseline },
         BaselinePosition -> { 1, 1 }
     ];
 
-toolbarButtonLabel0[ iconName_String, label_, {styleopts___}, {gridopts___}] :=
+toolbarButtonLabel0[ iconName_String, label_, {styleOpts___}, {gridOpts___}] :=
     Grid[
         { {
             chatbookIcon[ "WorkspaceToolbarIcon"<>iconName, False ],
-            Style[ label, $toolbarLabelStyle, styleopts ]
+            Style[ label, $toolbarLabelStyle, styleOpts ]
         } },
-        gridopts,
+        gridOpts,
         Spacings  -> 0.25,
         Alignment -> { {Left, Right}, Baseline },
         BaselinePosition -> { 1, 2 }
@@ -410,6 +410,8 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
 (*workspaceChatInitializer*)
 workspaceChatInitializer // beginDefinition;
 
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::NoVariables::DynamicModule:: *)
 workspaceChatInitializer[ expr_ ] :=
     DynamicModule[
         { },
@@ -417,6 +419,7 @@ workspaceChatInitializer[ expr_ ] :=
         Initialization :> initializeWorkspaceChat[ ],
         SynchronousInitialization -> False
     ];
+(* :!CodeAnalysis::EndBlock:: *)
 
 workspaceChatInitializer // endDefinition;
 
@@ -1136,6 +1139,8 @@ $thumbsDownLabel := $thumbsDownLabel = chatbookIcon[ "WorkspaceOutputRaftThumbsD
 (* ::Subsubsection::Closed:: *)
 assistantCopyAsActionMenu // beginDefinition;
 
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::NoVariables::DynamicModule:: *)
 assistantCopyAsActionMenu[ Dynamic[ cell_ ] ] :=
 DynamicModule[ { Typeset`menuActiveQ = False },
     EventHandler[
@@ -1182,7 +1187,7 @@ DynamicModule[ { Typeset`menuActiveQ = False },
                                 ],
                                 Background -> White, FrameStyle -> RGBColor[ "#E5E5E5" ], ImageSize -> 158, RoundingRadius -> 4 ],
                             InheritScope -> True,
-                            Initialization :> (True), (* Deinit won't run without an Init *)
+                            Initialization :> (True), (* Deinitialization won't run without an Init *)
                             Deinitialization :> (Typeset`menuActiveQ = False)
                         ],
                         CellTags -> "CustomActionMenu",
@@ -1192,6 +1197,7 @@ DynamicModule[ { Typeset`menuActiveQ = False },
         PassEventsDown -> True,
         Method -> "Preemptive",
         PassEventsUp -> True ]]
+(* :!CodeAnalysis::EndBlock:: *)
 
 assistantCopyAsActionMenu // endDefinition;
 
@@ -1200,6 +1206,8 @@ assistantCopyAsActionMenu // endDefinition;
 (*assistantShareAsActionMenu*)
 assistantShareAsActionMenu // beginDefinition;
 
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::NoVariables::DynamicModule:: *)
 assistantShareAsActionMenu[ Dynamic[ cell_ ] ] :=
 DynamicModule[ { Typeset`menuActiveQ = False },
     EventHandler[
@@ -1246,7 +1254,7 @@ DynamicModule[ { Typeset`menuActiveQ = False },
                                 ],
                                 Background -> White, FrameStyle -> RGBColor[ "#E5E5E5" ], ImageSize -> 158, RoundingRadius -> 4 ],
                             InheritScope -> True,
-                            Initialization :> (True), (* Deinit won't run without an Init *)
+                            Initialization :> (True), (* Deinitialization won't run without an Init *)
                             Deinitialization :> (Typeset`menuActiveQ = False)
                         ],
                         CellTags -> "CustomActionMenu",
@@ -1256,6 +1264,7 @@ DynamicModule[ { Typeset`menuActiveQ = False },
         PassEventsDown -> True,
         Method -> "Preemptive",
         PassEventsUp -> True ]]
+(* :!CodeAnalysis::EndBlock:: *)
 
 assistantShareAsActionMenu // endDefinition;
 
