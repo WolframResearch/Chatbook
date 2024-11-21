@@ -211,7 +211,16 @@
 "WorkspaceSourcesOpenNotebooks" -> "Abrir cuadernos",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copiar respuesta al portapapeles\[Ellipsis]",
+"WorkspaceOutputRaftCopyAs" -> "Copy response as\[Ellipsis]",
+"WorkspaceOutputRaftCopyAsNotebookCells" -> "Notebook Cells",
+"WorkspaceOutputRaftCopyAsPlainText" -> "Plain Text",
+"WorkspaceOutputRaftCopyAsImage" -> "Image",
 "WorkspaceOutputRaftRegenerateTooltip" -> "Regenerar respuesta",
+"WorkspaceOutputRaftShareAsTooltip" -> "Share response\[Ellipsis]",
+"WorkspaceOutputRaftShareAs" -> "Share this as\[Ellipsis]",
+"WorkspaceOutputRaftShareAsCloudDeployment" -> "Cloud Deployment",
+"WorkspaceOutputRaftShareAsPDF" -> "PDF",
+"WorkspaceOutputRaftShareAsImage" -> "Image",
 "WorkspaceOutputRaftFeedbackTooltip" -> "Enviar comentarios a Wolfram",
 
 "InlineChatButtonTooltipClose" -> "Cerrar",
