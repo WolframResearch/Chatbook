@@ -508,8 +508,8 @@ executeWLSuggestions0 // beginDefinition;
 executeWLSuggestions0[ KeyValuePattern @ { "Instructions" -> instructions_, "Context" -> context_ } ] :=
     executeWLSuggestions0[ instructions, context ];
 
-executeWLSuggestions0[ instructions_, context_ ] :=
-    setServiceCaller @ LogChatTiming @ suggestionServiceExecute[
+executeWLSuggestions0[ instructions_, context_ ] := setServiceCaller[
+    LogChatTiming @ suggestionServiceExecute[
         $suggestionsService,
         "Chat",
         {
@@ -522,7 +522,9 @@ executeWLSuggestions0[ instructions_, context_ ] :=
             "MaxTokens"   -> $wlSuggestionsMaxTokens,
             "Temperature" -> $wlSuggestionsTemperature
         }
-    ];
+    ],
+    "WLSuggestions"
+];
 
 executeWLSuggestions0 // endDefinition;
 
@@ -548,19 +550,22 @@ executeWLSuggestionsFIM[ as_Association ] := Enclose[
         suffix = ConfirmBy[ after<>"\n\n\n"<>docs, StringQ, "Suffix" ];
 
         responses = ConfirmMatch[
-            Table[
-                setServiceCaller @ LogChatTiming @ suggestionServiceExecute[
-                    $wlFIMService,
-                    "RawCompletion",
-                    DeleteMissing @ <|
-                        "model"   -> $wlFIMModel,
-                        "prompt"  -> prompt,
-                        "suffix"  -> suffix,
-                        "stream"  -> False,
-                        "options" -> $wlFIMOptions
-                    |>
+            setServiceCaller[
+                Table[
+                    LogChatTiming @ suggestionServiceExecute[
+                        $wlFIMService,
+                        "RawCompletion",
+                        DeleteMissing @ <|
+                            "model"   -> $wlFIMModel,
+                            "prompt"  -> prompt,
+                            "suffix"  -> suffix,
+                            "stream"  -> False,
+                            "options" -> $wlFIMOptions
+                        |>
+                    ],
+                    $wlFIMSuggestionsCount
                 ],
-                $wlFIMSuggestionsCount
+                "WLSuggestions"
             ],
             { __Association },
             "Responses"
@@ -839,20 +844,23 @@ generateTextSuggestions[ Dynamic[ container_ ], nbo_, root_CellObject, context0_
 
         $lastInstructions = instructions;
 
-        response = setServiceCaller @ LogChatTiming @ suggestionServiceExecute[
-            $suggestionsService,
-            "Chat",
-            {
-                "Messages" -> {
-                    <| "Role" -> "System", "Content" -> instructions |>,
-                    <| "Role" -> "User"  , "Content" -> context      |>
-                },
-                "Model"       -> $textSuggestionsModel,
-                "N"           -> $textSuggestionsCount,
-                "MaxTokens"   -> $textSuggestionsMaxTokens,
-                "Temperature" -> $textSuggestionsTemperature,
-                "StopTokens"  -> { "\n\n" }
-            }
+        response = setServiceCaller[
+            LogChatTiming @ suggestionServiceExecute[
+                $suggestionsService,
+                "Chat",
+                {
+                    "Messages" -> {
+                        <| "Role" -> "System", "Content" -> instructions |>,
+                        <| "Role" -> "User"  , "Content" -> context      |>
+                    },
+                    "Model"       -> $textSuggestionsModel,
+                    "N"           -> $textSuggestionsCount,
+                    "MaxTokens"   -> $textSuggestionsMaxTokens,
+                    "Temperature" -> $textSuggestionsTemperature,
+                    "StopTokens"  -> { "\n\n" }
+                }
+            ],
+            "TextSuggestions"
         ];
 
         suggestions = DeleteDuplicates @ ConfirmMatch[ getTextSuggestions @ response, { __TextData }, "Suggestions" ];
@@ -1009,19 +1017,22 @@ generateNotebookSuggestions0[ Dynamic[ container_ ], nbo_, root_NotebookObject, 
 
         $lastInstructions = instructions;
 
-        response = setServiceCaller @ LogChatTiming @ suggestionServiceExecute[
-            $suggestionsService,
-            "Chat",
-            {
-                "Messages" -> {
-                    <| "Role" -> "System", "Content" -> instructions |>,
-                    <| "Role" -> "User"  , "Content" -> context      |>
-                },
-                "Model"       -> $notebookSuggestionsModel,
-                "N"           -> $notebookSuggestionsCount,
-                "MaxTokens"   -> $notebookSuggestionsMaxTokens,
-                "Temperature" -> $notebookSuggestionsTemperature
-            }
+        response = setServiceCaller[
+            LogChatTiming @ suggestionServiceExecute[
+                $suggestionsService,
+                "Chat",
+                {
+                    "Messages" -> {
+                        <| "Role" -> "System", "Content" -> instructions |>,
+                        <| "Role" -> "User"  , "Content" -> context      |>
+                    },
+                    "Model"       -> $notebookSuggestionsModel,
+                    "N"           -> $notebookSuggestionsCount,
+                    "MaxTokens"   -> $notebookSuggestionsMaxTokens,
+                    "Temperature" -> $notebookSuggestionsTemperature
+                }
+            ],
+            "NotebookSuggestions"
         ];
 
         $finishReason = response[ "FinishReason" ];
