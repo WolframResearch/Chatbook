@@ -2182,7 +2182,7 @@ fasterCellToString0[ cell: Cell[ a_, ___ ] ] :=
 fasterCellToString0[ InterpretationBox[ _, expr_, ___ ] ] := Quiet[
     With[ { held = replaceCellContext @ HoldComplete @ expr },
         needsBasePrompt[ "WolframLanguage" ];
-        Replace[ held, HoldComplete[ e_ ] :> inputFormString @ Unevaluated @ e ]
+        Replace[ held, HoldComplete[ e_ ] :> truncateString @ inputFormString @ Unevaluated @ e ]
     ],
     Rule::rhs
 ];

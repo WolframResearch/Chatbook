@@ -444,7 +444,7 @@ EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject ] :=
 EvaluateChatInput[ evalCell_CellObject, nbo_NotebookObject, settings_Association? AssociationQ ] :=
     withChatStateAndFEObjects[
         { evalCell, nbo },
-        Block[ { $AutomaticAssistance = False, $aborted = False },
+        setServiceCaller @ Block[ { $AutomaticAssistance = False, $aborted = False },
             $lastCellObject     = None;
             $lastChatString     = None;
             $lastMessages       = None;
