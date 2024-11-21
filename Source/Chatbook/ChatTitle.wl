@@ -95,7 +95,10 @@ generateChatTitleAsync[ messages: $$chatMessages, callback_, temperature: Automa
         $lastChatTitleContext = context;
 
         ConfirmMatch[
-            llmSynthesizeSubmit[ context, <| "Temperature" -> temperature |>, callback @* postProcessChatTitle ],
+            setServiceCaller[
+                llmSynthesizeSubmit[ context, <| "Temperature" -> temperature |>, callback @* postProcessChatTitle ],
+                "GenerateChatTitle"
+            ],
             _TaskObject,
             "Task"
         ]
