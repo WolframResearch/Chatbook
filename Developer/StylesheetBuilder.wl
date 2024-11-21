@@ -586,7 +586,7 @@ be very particular about what the boxes actually look like.
 *)
 
 
-$cellInsertionPointCell := $cellInsertionPointCell = 
+$cellInsertionPointCell := $cellInsertionPointCell =
 If[BoxForm`sufficientVersionQ[14.2], Inherited,
 	ReplaceAll[
 		reorderAndAddMenuItems[ FrontEndResource[ "FEExpressions", "CellInsertionMenu" ] ],
@@ -608,10 +608,10 @@ If[BoxForm`sufficientVersionQ[14.2], Inherited,
 
 
 reorderAndAddMenuItems[boxexpr_] :=
-ReplaceAll[ boxexpr, ActionMenuBox[label_, items_, rest___] :> 
+ReplaceAll[ boxexpr, ActionMenuBox[label_, items_, rest___] :>
 	ActionMenuBox[
 		label,
-		Replace[items, 
+		Replace[items,
 			{
 				input:    (_ :> FrontEndTokenExecute[EvaluationNotebook[], "Style", "Input"]),
 				Delimiter,
@@ -761,7 +761,6 @@ $workspaceChatDockedCells = {
             ],
             TrackedSymbols :> { }
         ],
-        PrivateCellOptions -> {"ContentsOpacity" -> Dynamic[If[CurrentValue["NotebookSelected"], 1, 0.5]]},
         CellFrame        -> 0,
         CellFrameMargins -> 0,
         CellMargins      -> { { -1, -5 }, { -1, -1 } },
