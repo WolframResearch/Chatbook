@@ -69,7 +69,7 @@ withChatStateAndFEObjects[ { cell_CellObject, None }, eval_ ] :=
     withChatState @ withChatEvaluationCell[ cell, eval ];
 
 withChatStateAndFEObjects[ { None, nbo_NotebookObject }, eval_ ] :=
-    withChatState @ withEvaluationNotebook[ nbo, eval ];
+    withChatState @ withAppNameCaller[ nbo, withEvaluationNotebook[ nbo, eval ] ];
 
 (* Operator forms: *)
 withChatStateAndFEObjects[ cell_CellObject ] :=
@@ -100,7 +100,7 @@ withChatEvaluationCell[ cell_CellObject, eval_ ] :=
             cell,
             (* Initialize settings cache: *)
             AbsoluteCurrentChatSettings @ cell;
-            eval
+            withAppNameCaller[ cell, eval ]
         ]
         ,
         (* CompoundExpression cannot be used here due to bug(450686): *)
@@ -170,6 +170,25 @@ withEvaluationNotebook[ nbo_NotebookObject, eval_ ] :=
     ];
 
 withEvaluationNotebook // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*withAppNameCaller*)
+withAppNameCaller // beginDefinition;
+withAppNameCaller // Attributes = { HoldRest };
+
+withAppNameCaller[ obj_, eval_ ] := Enclose[
+    Module[ { appName },
+        appName = CurrentChatSettings[ obj, "AppName" ];
+        If[ StringQ @ appName && appName =!= $defaultAppName,
+            setServiceCaller[ eval, appName ],
+            eval
+        ]
+    ],
+    throwInternalFailure
+];
+
+withAppNameCaller // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
