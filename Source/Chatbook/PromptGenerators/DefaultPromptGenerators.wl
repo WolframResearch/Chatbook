@@ -28,7 +28,10 @@ relatedDocumentationGenerator // beginDefinition;
 
 relatedDocumentationGenerator[ messages: $$chatMessages ] :=
     If[ TrueQ[ $InlineChat || $WorkspaceChat || $llmKit ],
-        LogChatTiming @ RelatedDocumentation[ messages, "Prompt", MaxItems -> 20, "FilterResults" -> True ],
+        setServiceCaller[
+            LogChatTiming @ RelatedDocumentation[ messages, "Prompt", MaxItems -> 20, "FilterResults" -> True ],
+            "RelatedDocumentation"
+        ],
         LogChatTiming @ RelatedDocumentation[ messages, "Prompt", MaxItems -> 5, "FilterResults" -> False ]
     ];
 
@@ -41,7 +44,10 @@ relatedWolframAlphaQueriesGenerator // beginDefinition;
 
 relatedWolframAlphaQueriesGenerator[ messages: $$chatMessages ] :=
     If[ TrueQ[ $InlineChat || $WorkspaceChat ],
-        LogChatTiming @ RelatedWolframAlphaQueries[ messages, "Prompt", MaxItems -> 20, "FilterResults" -> True ],
+        setServiceCaller[
+            LogChatTiming @ RelatedWolframAlphaQueries[ messages, "Prompt", MaxItems -> 20, "FilterResults" -> True ],
+            "RelatedWolframAlphaQueries"
+        ],
         LogChatTiming @ RelatedWolframAlphaQueries[ messages, "Prompt", MaxItems -> 5, "FilterResults" -> False ]
     ];
 
