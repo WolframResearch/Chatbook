@@ -1196,6 +1196,7 @@ assistantCopyAsActionMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*assistantShareAsActionMenu*)
 assistantShareAsActionMenu // beginDefinition;
 
 assistantShareAsActionMenu[ Dynamic[ cell_ ] ] :=
@@ -1259,6 +1260,7 @@ assistantShareAsActionMenu // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*assistantActionMenuItem*)
 assistantActionMenuItem // beginDefinition;
 
 assistantActionMenuItem // Attributes = { HoldRest };
