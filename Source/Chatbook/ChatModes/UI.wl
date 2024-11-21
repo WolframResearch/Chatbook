@@ -1096,10 +1096,11 @@ assistantMessageButtons[ includeFeedback_ ] := assistantMessageButtons[ includeF
                     Appearance -> "Suppressed",
                     Method     -> "Queued"
                 ],
+                Item[ Spacer[ 0 ], ItemSize -> Fit ],
+                (* Waiting for sharing functionality to be implemented: *)
+                (* Tooltip[ assistantShareAsActionMenu[ Dynamic[ cell ] ], tr[ "WorkspaceOutputRaftShareAsTooltip" ] ], *)
                 If[ TrueQ @ includeFeedback,
                     Splice @ {
-                        Item[ Spacer[ 0 ], ItemSize -> Fit ],
-                        Tooltip[ assistantShareAsActionMenu[ Dynamic[ cell ] ], tr[ "WorkspaceOutputRaftShareAsTooltip" ] ],
                         Button[
                             Tooltip[ $thumbsUpLabel, tr[ "WorkspaceOutputRaftFeedbackTooltip" ] ],
                             ChatbookAction[ "SendFeedback", cell, True ],
