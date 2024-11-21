@@ -564,15 +564,15 @@ selectContextCells0 // endDefinition;
 (* ::Subsection::Closed:: *)
 (*getUserNotebook*)
 getUserNotebook // beginDefinition;
-getUserNotebook[ ] := FirstCase[ userNotebooks[ ], _NotebookObject, None ];
+getUserNotebook[ ] := FirstCase[ getUserNotebooks[ ], _NotebookObject, None ];
 getUserNotebook // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*userNotebooks*)
-userNotebooks // beginDefinition;
+(*getUserNotebooks*)
+getUserNotebooks // beginDefinition;
 
-userNotebooks[ ] := Enclose[
+getUserNotebooks[ ] := Enclose[
     Cases[
         ConfirmMatch[ SourceNotebookObjectInformation[ ], { ___Association }, "NotebookInformation" ],
         KeyValuePattern @ { "Included" -> True, "NotebookObject" -> nbo_NotebookObject } :> nbo
@@ -580,7 +580,7 @@ userNotebooks[ ] := Enclose[
     throwInternalFailure
 ];
 
-userNotebooks // endDefinition;
+getUserNotebooks // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

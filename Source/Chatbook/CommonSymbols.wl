@@ -187,6 +187,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `getToolFormattingFunction;
 `getToolIcon;
 `getUserNotebook;
+`getUserNotebooks;
 `getWorkspacePrompt;
 `graphicsQ;
 `grayDialogButtonLabel;
