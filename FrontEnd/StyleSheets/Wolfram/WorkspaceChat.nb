@@ -51,10 +51,6 @@ Notebook[
        TrackedSymbols :> { }
       ]
      ],
-     PrivateCellOptions -> {
-      "ContentsOpacity" ->
-       Dynamic[If[CurrentValue["NotebookSelected"], 1, 0.5]]
-     },
      CellFrame -> 0,
      CellFrameMargins -> 0,
      CellMargins -> {{-1, -5}, {-1, -1}},
@@ -65,10 +61,6 @@ Notebook[
     ]
    },
    ShowCellBracket -> False,
-   PrivateCellOptions -> {
-    "ContentsOpacity" ->
-     Dynamic[If[CurrentValue["NotebookSelected"], 1, 0.5]]
-   },
    TaggingRules -> <|
     "ChatNotebookSettings" -> <|
      "SetCellDingbat" -> False,
@@ -83,7 +75,23 @@ Notebook[
   Cell[StyleData["CellExpression"], Selectable -> True],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "1.5.2.3941081007"|>
+   TaggingRules -> <|
+    "WorkspaceChatStyleSheetVersion" -> "1.5.2.3.3941177587"
+   |>
+  ],
+  Cell[
+   StyleData["AttachedCell"],
+   PrivateCellOptions -> {
+    "ContentsOpacity" ->
+     Dynamic[If[CurrentValue["NotebookSelected"], 1, 0.5]]
+   }
+  ],
+  Cell[
+   StyleData["DockedCell"],
+   PrivateCellOptions -> {
+    "ContentsOpacity" ->
+     Dynamic[If[CurrentValue["NotebookSelected"], 1, 0.5]]
+   }
   ],
   Cell[
    StyleData[
