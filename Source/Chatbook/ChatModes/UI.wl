@@ -116,7 +116,9 @@ writeWorkspaceChatSubDockedCell[ nbo_NotebookObject, content_ ] := (
 CurrentValue[ nbo, DockedCells ] = Inherited;
 CurrentValue[ nbo, DockedCells ] = {
     First @ Replace[ AbsoluteCurrentValue[ nbo, DockedCells ], c_Cell :> {c} ],
-    makeWorkspaceChatSubDockedCellExpression[ content ] }
+    makeWorkspaceChatSubDockedCellExpression[ content ] };
+    (* Rewriting docked cells seems to steal focus from the chat input field, so restore it here: *)
+    If[ SelectedCells @ nbo === { }, moveToChatInputField[ nbo, True ] ]
 )
 
 writeWorkspaceChatSubDockedCell[ nbo_NotebookObject, WindowTitle ] := writeWorkspaceChatSubDockedCell[
