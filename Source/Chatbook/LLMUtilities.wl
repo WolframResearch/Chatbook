@@ -44,10 +44,12 @@ llmSynthesize // endDefinition;
 llmSynthesize0 // beginDefinition;
 
 llmSynthesize0[ prompt: $$llmPrompt, evaluator_Association, attempt_ ] := Enclose[
-    Module[ { result, callback },
+    Module[ { result, callback, task },
         result = $Failed;
         callback = Function[ result = # ];
-        TaskWait @ llmSynthesizeSubmit[ prompt, evaluator, callback ];
+        task = llmSynthesizeSubmit[ prompt, evaluator, callback ];
+        If[ FailureQ @ task, throwFailureToChatOutput @ task ];
+        TaskWait @ ConfirmMatch[ task, _TaskObject, "Task" ];
         If[ MatchQ[ result, Failure[ "InvalidResponse", _ ] ] && attempt <= 3,
             Pause[ Exp @ attempt / E ];
             llmSynthesize0[ prompt, evaluator, attempt + 1 ],
