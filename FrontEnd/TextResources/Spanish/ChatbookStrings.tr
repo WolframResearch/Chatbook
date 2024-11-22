@@ -171,6 +171,12 @@
 "UIAdvancedRoles" -> "Roles",
 "UITryEnableChatDialogMainText" -> "Habilitar la funcionalidad de Cuadernos de chat destruir\[AAcute] los estilos privados definidos en este cuaderno, y los reemplazar\[AAcute] con la hoja de estilo compartida Chatbook.",
 "UITryEnableChatDialogConfirm" -> "\[DownQuestion]Est\[AAcute] seguro que desea continuar?",
+"UIMessageManageSubscription" -> "Manage Subscription \[RightGuillemet]",
+"UIMessageContactUs" -> "Contact us \[RightGuillemet]",
+"UIMessageUsed80" -> "You have used 80% of your Wolfram Notebook Assistant + LLM Kit allowance for this month.",
+"UIMessageUsedAll" -> "You have used your entire Wolfram Notebook Assistant + LLM Kit allowance for this month.",
+"UIMessageHighUsageRate" -> "We've detected a very high rate of requests from your account. To prevent disruptions to the service for other users, we've temporarily had to block your requests.",
+"UIMessageUnblockRequest" -> "Ask to be unblocked \[RightGuillemet]",
 
 "StylesheetChatWidgetButtonTooltip" -> "Enviar a LLM",
 "StylesheetAssistantMenuInitializerButtonTooltip" -> "Deshabilitar asistencia autom\[AAcute]tica",
