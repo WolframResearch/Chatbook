@@ -894,14 +894,17 @@ autoCorrect // beginDefinition;
 autoCorrect[ string_String ] := StringReplace[ string, $llmAutoCorrectRules ];
 autoCorrect // endDefinition;
 
+
+$$specialBoxName = "AudioBox"|"MarkdownImageBox"|"VideoBox";
+
 $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     StartOfLine ~~ WhitespaceCharacter... ~~ "/command\ncode:" :> "/wl\ncode:",
     "```" ~~ code: Except[ "\n" ].. ~~ "```" :> "``"<>code<>"``",
     "wolfram_language_evaliator" -> "wolfram_language_evaluator",
-    "\\!\\(\\*MarkdownImageBox[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
-    "\\!\\(MarkdownImageBox[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
-    "\"\\\\!\\\\(\\\\*MarkdownImageBox[\\\"" ~~ Shortest[ uri__ ] ~~ "\\\"]\\\\)\"" :> uri,
-    "\"\\\\!\\\\(MarkdownImageBox[\\\"" ~~ Shortest[ uri__ ] ~~ "\\\"]\\\\)\"" :> uri,
+    "\\!\\(\\*"~~$$specialBoxName~~"[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
+    "\\!\\("~~$$specialBoxName~~"[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
+    "\"\\\\!\\\\(\\\\*"~~$$specialBoxName~~"[\\\"" ~~ Shortest[ uri__ ] ~~ "\\\"]\\\\)\"" :> uri,
+    "\"\\\\!\\\\("~~$$specialBoxName~~"[\\\"" ~~ Shortest[ uri__ ] ~~ "\\\"]\\\\)\"" :> uri,
     "<" ~~ Shortest[ scheme: LetterCharacter.. ~~ "://" ~~ id: Except[ "!" ].. ] ~~ ">" :>
         "<!" <> scheme <> "://" <> id <> "!>",
     "\\uf351" -> "\[FreeformPrompt]",

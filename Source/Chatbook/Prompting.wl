@@ -29,6 +29,8 @@ $basePromptOrder = {
     "ConversionGraphics",
     "MarkdownImageBox",
     "MarkdownImageBoxImporting",
+    "AudioBoxImporting",
+    "VideoBoxImporting",
     "Checkboxes",
     "CheckboxesIndeterminate",
     "ConversionFormatting",
@@ -83,6 +85,8 @@ $basePromptDependencies = Append[ "GeneralInstructionsHeader" ] /@ <|
     "ConversionGraphics"                   -> { "MessageConversionHeader" },
     "MarkdownImageBox"                     -> { "MessageConversionHeader" },
     "MarkdownImageBoxImporting"            -> { "MarkdownImageBox" },
+    "AudioBoxImporting"                    -> { "MarkdownImageBoxImporting" },
+    "VideoBoxImporting"                    -> { "MarkdownImageBoxImporting" },
     "ConversionFormatting"                 -> { "MessageConversionHeader" },
     "ExternalLanguageCells"                -> { "MessageConversionHeader" },
     "SpecialURI"                           -> { },
@@ -201,6 +205,12 @@ $basePromptComponents[ "MarkdownImageBoxImporting" ] = "\
 		* Use the syntax <!attachment://content-id!> to inline one of these images in code you write for the evaluator \
 tool. For example, ``ColorNegate[<!attachment://content-id!>]``. The expression will be inserted in place. Do not \
 include the MarkdownImageBox wrapper. You can also use this syntax to inline images into WL code blocks.";
+
+$basePromptComponents[ "AudioBoxImporting" ] = "\
+		* You can also use this syntax for audio that similarly appears in AudioBox[...].";
+
+$basePromptComponents[ "VideoBoxImporting" ] = "\
+		* You can also use this syntax for video that similarly appears in VideoBox[...].";
 
 $basePromptComponents[ "Checkboxes" ] = "\
 	* Checkboxes in the UI will be replaced with one of the following text representations:
