@@ -56,9 +56,11 @@ RawBoxes @ ToBoxes @ Mouseover[
     RGBColor[ 1.0, 1.0, 1.0, 1.0 ]
    ]
   },
+  (* ImageMargins -> { { 0, 1 }, { 1, 0 } }, *)
   ImageSize -> { 11.0, 11.0 },
   PlotRange -> { { -0.5, 10.5 }, { -0.5, 10.5 } },
-  AspectRatio -> Automatic
+  AspectRatio -> Automatic,
+ BaselinePosition -> Center -> Center
  ],
  Graphics[
   {
@@ -115,8 +117,11 @@ RawBoxes @ ToBoxes @ Mouseover[
     RGBColor[ 1.0, 1.0, 1.0, 1.0 ]
    ]
   },
+  (* ImageMargins -> { { 0, 1 }, { 1, 0 } }, *)
   ImageSize -> { 11.0, 11.0 },
   PlotRange -> { { -0.5, 10.5 }, { -0.5, 10.5 } },
-  AspectRatio -> Automatic
- ]
+  AspectRatio -> Automatic,
+ BaselinePosition -> Center -> Center
+ ],
+ BaselinePosition -> Baseline
 ]

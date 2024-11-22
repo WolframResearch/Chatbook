@@ -5640,6 +5640,7 @@ cdub74kO+2HuhfGBjt4hx8oK56uyNU515oa7A+4umPmw8ILZC+KuNBRxgLkP
 xoe5Hz18AaZOtJQ=
     "]]},
   AspectRatio->Automatic,
+  BaselinePosition->(Center -> Center),
   ImageSize->{6., 4.},
   PlotRange->{{-0.5, 5.5}, {-0.5, 3.5}}],
 
@@ -5659,6 +5660,7 @@ xoe5Hz18AaZOtJQ=
       5.3422}, {7.7707, 7.6712}}},
       CurveClosed->{0}]}},
    AspectRatio->Automatic,
+   BaselinePosition->(Center -> Center),
    ImageSize->{11., 11.},
    PlotRange->{{-0.5, 10.5}, {-0.5, 10.5}}], True->
   GraphicsBox[
@@ -5676,9 +5678,11 @@ xoe5Hz18AaZOtJQ=
       5.3422}, {7.7707, 7.6712}}},
       CurveClosed->{0}]}},
    AspectRatio->Automatic,
+   BaselinePosition->(Center -> Center),
    ImageSize->{11., 11.},
    PlotRange->{{-0.5, 10.5}, {-0.5, 10.5}}]}, Dynamic[
    CurrentValue["MouseOver"]],
+  BaselinePosition->Baseline,
   FrameMargins->0,
   ImageSize->Automatic],
 
@@ -5769,6 +5773,7 @@ Ugiun9VE0MzmrwDc/JvxZf5y09gdyoGy+rGiDjyTVzYFnuSGuy+nomqpzmEm
 h3yh5gOnFkrB5WH+g+mH+R9mPix8YPajhx8ATEJ2sA==
       "]}]}},
   AspectRatio->Automatic,
+  BaselinePosition->(Center -> Center),
   ImageSize->{12., 12.},
   PlotRange->{{-0.5, 11.5}, {-0.5, 11.5}}],
 
@@ -5859,6 +5864,7 @@ Ugiun9VE0MzmrwDc/JvxZf5y09gdyoGy+rGiDjyTVzYFnuSGuy+nomqpzmEm
 h3yh5gOnFkrB5WH+g+mH+R9mPix8YPajhx8ATEJ2sA==
       "]}]}},
   AspectRatio->Automatic,
+  BaselinePosition->(Center -> Center),
   ImageSize->{12., 12.},
   PlotRange->{{-0.5, 11.5}, {-0.5, 11.5}}],
 
@@ -5884,6 +5890,7 @@ JfLLHtW8D/ao9n2wRw2PD/aLGfewCgH1wfhyy1946P1/bw8zD8aH2Qfjw9wD
 48Pci2qeElp8K2H4HwCLaL8E
       "]]}},
    AspectRatio->Automatic,
+   BaselinePosition->(Center -> Center),
    ImageSize->{11., 11.},
    PlotRange->{{-0.5, 10.5}, {-0.5, 10.5}}], True->
   GraphicsBox[
@@ -5907,9 +5914,11 @@ JfLLHtW8D/ao9n2wRw2PD/aLGfewCgH1wfhyy1946P1/bw8zD8aH2Qfjw9wD
 48Pci2qeElp8K2H4HwCLaL8E
       "]]}},
    AspectRatio->Automatic,
+   BaselinePosition->(Center -> Center),
    ImageSize->{11., 11.},
    PlotRange->{{-0.5, 10.5}, {-0.5, 10.5}}]}, Dynamic[
    CurrentValue["MouseOver"]],
+  BaselinePosition->Baseline,
   FrameMargins->0,
   ImageSize->Automatic]
 }
