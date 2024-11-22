@@ -504,8 +504,14 @@ focusedNotebookDisplay[ chatNB_ ] := Enclose[
 
         label = Grid[
             { {
-                Checkbox @ Dynamic @ CurrentChatSettings[ chatNB, "AllowSelectionContext" ],
-                "Focus:",
+                Toggler[
+                    Dynamic @ CurrentChatSettings[ chatNB, "AllowSelectionContext" ],
+                    {
+                        True  -> $disableNotebookFocusLabel,
+                        False -> $enableNotebookFocusLabel
+                    }
+                ],
+                tr[ "WorkspaceFocusIndicatorFocus" ],
                 focusedNotebookDisplay0[ chatNB, focused, locked, info ]
             } },
             Alignment -> { Left, Baseline },
@@ -523,16 +529,28 @@ focusedNotebookDisplay // endDefinition;
 
 focusedNotebookDisplay0 // beginDefinition;
 
-focusedNotebookDisplay0[ chatNB_, focused_, locked_, info_ ] := Row[
-    {
+focusedNotebookDisplay0[ chatNB_, focused_, locked_, info_ ] := Grid[
+    { {
         currentNotebookButton @ focused,
-        " | ",
         selectNotebookFocusMenu[ chatNB, locked, info ]
-    },
-    BaselinePosition -> Baseline
+    } },
+    BaselinePosition -> Baseline,
+    Dividers         -> Center,
+    FrameStyle       -> GrayLevel[ 0.75 ]
 ];
 
 focusedNotebookDisplay0 // endDefinition;
+
+
+$enableNotebookFocusLabel := $enableNotebookFocusLabel = Tooltip[
+    chatbookIcon[ "WorkspaceFocusIndicatorUncheck", False ],
+    tr[ "WorkspaceFocusIndicatorEnableTooltip" ]
+];
+
+$disableNotebookFocusLabel := $disableNotebookFocusLabel = Tooltip[
+    chatbookIcon[ "WorkspaceFocusIndicatorCheck", False ],
+    tr[ "WorkspaceFocusIndicatorDisableTooltip" ]
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -557,7 +575,7 @@ currentNotebookButton // beginDefinition;
 
 currentNotebookButton[ as: KeyValuePattern @ { "NotebookObject" -> nbo_NotebookObject, "WindowTitle" -> title_ } ] :=
     Button[
-        Row[ { $smallNotebookIcon, Spacer[ 3 ], formatNotebookTitle @ title }, BaselinePosition -> Baseline ],
+        currentNotebookButtonLabel @ formatNotebookTitle @ title,
         SetSelectedNotebook @ nbo,
         Appearance -> "Suppressed",
         BaseStyle  -> { "Text", FontColor -> GrayLevel[ 0.5 ], FontSize -> 13 }
@@ -567,15 +585,43 @@ currentNotebookButton // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*currentNotebookButtonLabel*)
+currentNotebookButtonLabel // beginDefinition;
+
+currentNotebookButtonLabel[ title_ ] := Mouseover[
+    Row[
+        {
+            chatbookIcon[ "WorkspaceFocusIndicatorNotebook", False ],
+            Spacer[ 3 ],
+            title
+        },
+        BaselinePosition -> Baseline
+    ],
+    Row[
+        {
+            chatbookIcon[ "WorkspaceFocusIndicatorNotebookActive", False ],
+            Spacer[ 3 ],
+            Style[ title, FontColor -> RGBColor[ 0.2, 0.51373, 0.67451, 1.0 ] ]
+        },
+        BaselinePosition -> Baseline
+    ]
+];
+
+currentNotebookButtonLabel // endDefinition;
+
+$smallNotebookIcon := $smallNotebookIcon = chatbookIcon[ "WorkspaceFocusIndicatorNotebook", False ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*selectNotebookFocusMenu*)
 selectNotebookFocusMenu // beginDefinition;
 
 selectNotebookFocusMenu[ chatNB_, locked_, items: { current_Association, ___Association } ] :=
     selectNotebookFocusMenu[ chatNB, locked, current, SortBy[ items, Lookup[ "WindowTitle" ] ] ];
 
-selectNotebookFocusMenu[ chatNB_, locked_, first_, rest_ ] :=
+selectNotebookFocusMenu[ chatNB_, locked_, first_, rest_ ] := Tooltip[
     ActionMenu[
-        "\[DownPointer]",
+        chatbookIcon[ "WorkspaceFocusIndicatorCaret", False ],
         Flatten @ {
             currentNotebookAction[ chatNB, locked, first ],
             Delimiter,
@@ -583,7 +629,9 @@ selectNotebookFocusMenu[ chatNB_, locked_, first_, rest_ ] :=
         },
         Appearance -> "Suppressed",
         BaseStyle  -> { "Text", FontColor -> GrayLevel[ 0.5 ], FontSize -> 13, Magnification -> 1 }
-    ];
+    ],
+    tr[ "WorkspaceFocusIndicatorMenuTooltip" ]
+];
 
 selectNotebookFocusMenu // endDefinition;
 
@@ -598,7 +646,8 @@ currentNotebookAction[ chatNB_, locked_, as_Association ] :=
 currentNotebookAction[ chatNB_, locked_, title_, nbo_ ] :=
     Row @ {
         Style[ "\[Checkmark] ", ShowContents -> locked === None ],
-        "Current (",
+        tr[ "WorkspaceFocusIndicatorMenuAutomatic" ],
+        " (",
         formatNotebookTitle @ title,
         ")"
     } :> (
@@ -630,18 +679,6 @@ otherNotebookAction[ chatNB_, locked_, title_, nbo_ ] :=
     );
 
 otherNotebookAction // endDefinition;
-
-(* TODO: move to text resources *)
-$smallNotebookIcon := $smallNotebookIcon = UsingFrontEnd @ RawBoxes @ Append[
-    DeleteCases[
-        FrontEndResource[ "FEBitmaps", "NotebookIcon" ][ GrayLevel[ 0.651 ], GrayLevel[ 0.75 ] ],
-        ImageSize -> _
-    ],
-    Unevaluated @ Sequence[
-        BaselinePosition -> Scaled[ 0.2 ],
-        ImageSize        -> { Automatic, 12 }
-    ]
-];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
