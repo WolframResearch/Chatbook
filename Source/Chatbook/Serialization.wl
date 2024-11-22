@@ -1078,9 +1078,8 @@ $graphicsBoxStringReplacements = {
 toMarkdownImageBox // beginDefinition;
 
 toMarkdownImageBox[ graphics_ ] := Enclose[
-    Catch @ Module[ { img, uri },
-        img = Flatten @ RawBoxes @ graphics;
-        uri = ConfirmBy[ MakeExpressionURI[ "image", img ], StringQ, "RasterID" ];
+    Catch @ Module[ { uri },
+        uri = ConfirmBy[ boxesToExpressionURI @ graphics, StringQ, "RasterID" ];
         needsBasePrompt[ "MarkdownImageBox" ];
         If[ toolSelectedQ[ "WolframLanguageEvaluator" ], needsBasePrompt[ "MarkdownImageBoxImporting" ] ];
         "\\!\\(\\*MarkdownImageBox[\"" <> uri <> "\"]\\)"
@@ -1089,6 +1088,25 @@ toMarkdownImageBox[ graphics_ ] := Enclose[
 ];
 
 toMarkdownImageBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*boxesToExpressionURI*)
+boxesToExpressionURI // beginDefinition;
+
+boxesToExpressionURI[ RawBoxes[ boxes_ ] ] :=
+    boxesToExpressionURI @ boxes;
+
+boxesToExpressionURI[ boxes_ ] :=
+    Replace[
+        Quiet @ ToExpression[ boxes, StandardForm, HoldComplete ],
+        {
+            HoldComplete[ expr_ ] :> MakeExpressionURI @ Unevaluated @ expr,
+            _? FailureQ :> MakeExpressionURI[ "image", RawBoxes @ boxes ]
+        }
+    ];
+
+boxesToExpressionURI // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
