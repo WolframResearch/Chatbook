@@ -116,7 +116,9 @@ writeWorkspaceChatSubDockedCell[ nbo_NotebookObject, content_ ] := (
 CurrentValue[ nbo, DockedCells ] = Inherited;
 CurrentValue[ nbo, DockedCells ] = {
     First @ Replace[ AbsoluteCurrentValue[ nbo, DockedCells ], c_Cell :> {c} ],
-    makeWorkspaceChatSubDockedCellExpression[ content ] }
+    makeWorkspaceChatSubDockedCellExpression[ content ] };
+    (* Rewriting docked cells seems to steal focus from the chat input field, so restore it here: *)
+    If[ SelectedCells @ nbo === { }, moveToChatInputField[ nbo, True ] ]
 )
 
 writeWorkspaceChatSubDockedCell[ nbo_NotebookObject, WindowTitle ] := writeWorkspaceChatSubDockedCell[
@@ -318,7 +320,18 @@ attachWorkspaceChatInput // beginDefinition;
 attachWorkspaceChatInput[ nbo_NotebookObject ] := attachWorkspaceChatInput[ nbo, Bottom ]
 
 attachWorkspaceChatInput[ nbo_NotebookObject, location : Top|Bottom ] := Enclose[
-    Module[ { attached },
+    Catch @ Module[ { current, tags, attached },
+
+        current = Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ];
+        tags    = CurrentValue[ current, CellTags ];
+
+        (* Check if cell is already attached in the specified location: *)
+        If[ MatchQ[ tags, { { ___, ToString @ location, ___ } } ],
+            Throw @ ConfirmMatch[ First[ current, $Failed ], _CellObject, "CurrentCell" ]
+        ];
+
+        NotebookDelete @ current;
+
         attached = ConfirmMatch[
             AttachCell[
                 nbo,
@@ -359,6 +372,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                         { TaggingRules, "ChatInputString" }
                                     ],
                                     String,
+                                    ContinuousAction -> True,
                                     $inputFieldOptions
                                 ],
                                 $inputFieldFrameOptions
