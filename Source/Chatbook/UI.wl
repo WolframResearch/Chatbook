@@ -404,17 +404,27 @@ $commonErrorLinkOptions = Sequence[
 (*errorMessage*)
 errorMessage // beginDefinition;
 
-Options[ errorMessage ] = { Appearance -> "NonFatal", AppearanceElements -> { "Manage", "ContactUs" }};
+Attributes[ errorMessage ] = { HoldRest };
+Options[ errorMessage ] = { Appearance -> "NonFatal", ImageSize -> Automatic };
 
-errorMessage[ text_, opts: OptionsPattern[ ] ] :=
+errorMessage[ text_, opts: OptionsPattern[ ] ] := errorMessage[ { text, None }, None, opts ]
+
+errorMessage[ { messageText_, buttonText_ }, action_, opts: OptionsPattern[ ] ] :=
 With[
 	{
-		elements = Replace[ OptionValue[ AppearanceElements ], Except[ { ___String } ] :> { "Manage", "ContactUs" } ],
 		appearance = Replace[ OptionValue[ Appearance ], Except[ _String ] :> "NonFatal" ],
-		reducedOpts = DeleteCases[ Flatten[ { opts } ], _[ AppearanceElements, _ ]]
+		reducedOpts = DeleteCases[ Flatten[ { opts } ], _[ ImageSize, _ ]]
 	},
 	errorMessageFrame[
 		appearance,
+		Replace[
+			OptionValue[ImageSize],
+			Automatic :>
+				If[ TrueQ @ AbsoluteCurrentValue[ EvaluationNotebook[], { TaggingRules, "ChatNotebookSettings", "WorkspaceChat" } ],
+					{ { 296, 366 }, Automatic }, (* messages in the NA window are allowed to be larger *)
+					296
+				]
+		],
 		Grid[
 			{
 				If[ appearance === "Blocked",
@@ -425,24 +435,22 @@ With[
 					Nothing
 				],
 				If[ appearance === "Blocked",
-					{ text, SpanFromLeft },
-					{ text, Item[ errorMessageCloseButton @ reducedOpts, Alignment -> { Right, Baseline } ] }
+					{ messageText, SpanFromLeft },
+					{ messageText, Item[ errorMessageCloseButton @ reducedOpts, Alignment -> { Right, Baseline } ] }
 				],
-				If[ elements === {},
-					Nothing,
+				If[ buttonText ===  None || Unevaluated[ action ] === None,
+					{
+						errorMessageLink[ tr @ "UIMessageContactUs", SystemOpen @ URL[ "https://www.wolfram.com/support/contact" ], reducedOpts ],
+						SpanFromLeft
+					},
 					{
 						Grid[
 							{ {
-								If[ MemberQ[ elements, "Manage" ],
-									errorMessageLabeledButton[ tr @ "UIMessageManageSubscription", Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Manage", reducedOpts ],
-									Nothing ],
-								(* TODO: fill in button actions *)
-								If[ MemberQ[ elements, "UnblockRequest" ],
-									errorMessageLabeledButton[ tr @ "UIMessageUnblockRequest", Beep[ ], reducedOpts ],
-									Nothing ],
-								If[ MemberQ[ elements, "ContactUs" ],
-									errorMessageLink[ tr @ "UIMessageContactUs", Beep[ ], reducedOpts ],
-									Nothing ]
+								If[ buttonText ===  None || Unevaluated[ action ] === None,
+									Nothing,
+									errorMessageLabeledButton[ buttonText, action, reducedOpts ]
+								],
+								errorMessageLink[ tr @ "UIMessageContactUs", SystemOpen @ URL[ "https://www.wolfram.com/support/contact" ], reducedOpts ]
 							} },
 							Alignment -> { Left, Baseline },
 							BaselinePosition -> { 1, 1 },
@@ -458,11 +466,25 @@ With[
 	]
 ]
 
-errorMessage[ "UsageAt80" ] := errorMessage[ tr @ "UIMessageUsed80" ];
+errorMessage[ "UsageAt80" ] :=
+	errorMessage[
+		{ tr @ "UIMessageUsed80", tr @ "UIMessageManageSubscription" },
+		Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Manage"
+	];
 
-errorMessage[ "UsageAt100" ] := errorMessage[ tr @ "UIMessageUsedAll", Appearance -> "Fatal" ];
+errorMessage[ "UsageAt100" ] :=
+	errorMessage[
+		{ tr @ "UIMessageUsedAll", tr @ "UIMessageManageSubscription" },
+		Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Manage",
+		Appearance -> "Fatal"
+	];
 
-errorMessage[ "UsageBlocked" ] := errorMessage[ tr @ "UIMessageHighUsageRate", Appearance -> "Blocked", AppearanceElements -> { "UnblockRequest", "ContactUs" } ];
+errorMessage[ "UsageBlocked" ] :=
+	errorMessage[
+		{ tr @ "UIMessageHighUsageRate", tr @ "UIMessageUnblockRequest" },
+		Beep[ ], (* TODO *)
+		Appearance -> "Blocked"
+	];
 
 errorMessage // endDefinition;
 
@@ -471,24 +493,22 @@ errorMessage // endDefinition;
 (*errorMessageFrame*)
 errorMessageFrame // beginDefinition;
 
-Options[ errorMessageFrame ] = { Appearance -> "NonFatal" };
-
-errorMessageFrame[ "Fatal", content_ ] :=
+errorMessageFrame[ "Fatal", size_, content_ ] :=
 	Framed[
 		content,
-		$commonErrorFrameOptions,
+		$commonErrorFrameOptions, ImageSize -> size,
 		Background -> RGBColor[ "#FFF3F1" ], FrameStyle -> Directive[ AbsoluteThickness[ 2 ], RGBColor[ "#FFC4BA" ]] ];
 
-errorMessageFrame[ "NonFatal", content_ ] :=
+errorMessageFrame[ "NonFatal", size_, content_ ] :=
 	Framed[
 		content,
-		$commonErrorFrameOptions,
+		$commonErrorFrameOptions, ImageSize -> size,
 		Background -> RGBColor[ "#FFFAF2" ], FrameStyle -> Directive[ AbsoluteThickness[ 2 ], RGBColor[ "#FFD8AB" ]] ];
 
-errorMessageFrame[ "Blocked", content_ ] :=
+errorMessageFrame[ "Blocked", size_, content_ ] :=
 	Framed[
 		content,
-		$commonErrorFrameOptions,
+		$commonErrorFrameOptions, ImageSize -> size,
 		Background -> RGBColor[ "#EDF5F9" ], FrameStyle -> Directive[ AbsoluteThickness[ 2 ], RGBColor[ "#AADAF4" ]] ];
 
 errorMessageFrame // endDefinition;
