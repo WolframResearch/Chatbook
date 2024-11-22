@@ -482,7 +482,7 @@ errorMessage[ "UsageAt100" ] :=
 errorMessage[ "UsageBlocked" ] :=
 	errorMessage[
 		{ tr @ "UIMessageHighUsageRate", tr @ "UIMessageUnblockRequest" },
-		Beep[ ], (* TODO *)
+		SystemOpen @ URL[ "https://www.wolfram.com/support/contact" ], (* TODO: there may be a better URL than this *)
 		Appearance -> "Blocked"
 	];
 
