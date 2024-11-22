@@ -575,7 +575,10 @@ currentNotebookButton // beginDefinition;
 
 currentNotebookButton[ as: KeyValuePattern @ { "NotebookObject" -> nbo_NotebookObject, "WindowTitle" -> title_ } ] :=
     Button[
-        currentNotebookButtonLabel @ formatNotebookTitle @ title,
+        currentNotebookButtonLabel @ Replace[
+            formatNotebookTitle @ title,
+            s_String :> FE`Evaluate @ FEPrivate`TruncateStringToWidth[ s, "Text", 200, Right ]
+        ],
         SetSelectedNotebook @ nbo,
         Appearance -> "Suppressed",
         BaseStyle  -> { "Text", FontColor -> GrayLevel[ 0.5 ], FontSize -> 13 }
