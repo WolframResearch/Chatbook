@@ -365,6 +365,291 @@ showSnapshotModelsQ[] :=
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Error Messages*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Common Error Options*)
+
+$commonLabeledButtonOptions = Sequence[
+	BaseStyle        -> { FontFamily -> "Source Sans Pro", FontSize -> 12 },
+	BaselinePosition -> Baseline,
+	FrameMargins     -> { { 7, 7 }, { 4, 4 } },
+	RoundingRadius   -> 4
+];
+
+$commonErrorFrameOptions = Sequence[
+	BaseStyle -> {
+		FontColor            -> RGBColor[ "#333333" ],
+		FontFamily           -> "Source Sans Pro",
+		FontSize             -> 13,
+		LinebreakAdjustments -> { 1.0, 10, 1, 0, 1 },
+		LineIndent           -> 0,
+		LineSpacing          -> 0.5
+	},
+	BaselinePosition -> Baseline,
+	FrameMargins     -> { { 10, 7 }, { 8, 6 } },
+	RoundingRadius   -> 6
+];
+
+$commonErrorLinkOptions = Sequence[
+	FontFamily           -> "Source Sans Pro",
+	FontSize             -> 12,
+	LinebreakAdjustments -> { 1.0, 10, 1, 0, 1 },
+	LineIndent           -> 0
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*errorMessage*)
+errorMessage // beginDefinition;
+
+Options[ errorMessage ] = { Appearance -> "NonFatal", AppearanceElements -> { "Manage", "ContactUs" }};
+
+errorMessage[ text_, opts: OptionsPattern[ ] ] :=
+With[
+	{
+		elements = Replace[ OptionValue[ AppearanceElements ], Except[ { ___String } ] :> { "Manage", "ContactUs" } ],
+		appearance = Replace[ OptionValue[ Appearance ], Except[ _String ] :> "NonFatal" ],
+		reducedOpts = DeleteCases[ Flatten[ { opts } ], _[ AppearanceElements, _ ]]
+	},
+	errorMessageFrame[
+		appearance,
+		Grid[
+			{
+				If[ appearance === "Blocked",
+					{
+						Item[ Pane[ chatbookIcon[ "RateLimit", False ], Alignment -> { Center, Top }, ImageSize -> Scaled[ 1 ]] ],
+						Item[ errorMessageCloseButton @ reducedOpts, Alignment -> { Right, Top } ]
+					},
+					Nothing
+				],
+				If[ appearance === "Blocked",
+					{ text, SpanFromLeft },
+					{ text, Item[ errorMessageCloseButton @ reducedOpts, Alignment -> { Right, Baseline } ] }
+				],
+				If[ elements === {},
+					Nothing,
+					{
+						Grid[
+							{ {
+								If[ MemberQ[ elements, "Manage" ],
+									errorMessageLabeledButton[ tr @ "UIMessageManageSubscription", Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Manage", reducedOpts ],
+									Nothing ],
+								(* TODO: fill in button actions *)
+								If[ MemberQ[ elements, "UnblockRequest" ],
+									errorMessageLabeledButton[ tr @ "UIMessageUnblockRequest", Beep[ ], reducedOpts ],
+									Nothing ],
+								If[ MemberQ[ elements, "ContactUs" ],
+									errorMessageLink[ tr @ "UIMessageContactUs", Beep[ ], reducedOpts ],
+									Nothing ]
+							} },
+							Alignment -> { Left, Baseline },
+							BaselinePosition -> { 1, 1 },
+							Spacings -> { 1, 0 }
+						],
+						SpanFromLeft
+					}
+				]
+			},
+			Alignment -> { Left, Baseline },
+			Spacings -> { 0, 0.8 }
+		]
+	]
+]
+
+errorMessage[ "UsageAt80" ] := errorMessage[ tr @ "UIMessageUsed80" ];
+
+errorMessage[ "UsageAt100" ] := errorMessage[ tr @ "UIMessageUsedAll", Appearance -> "Fatal" ];
+
+errorMessage[ "UsageBlocked" ] := errorMessage[ tr @ "UIMessageHighUsageRate", Appearance -> "Blocked", AppearanceElements -> { "UnblockRequest", "ContactUs" } ];
+
+errorMessage // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*errorMessageFrame*)
+errorMessageFrame // beginDefinition;
+
+Options[ errorMessageFrame ] = { Appearance -> "NonFatal" };
+
+errorMessageFrame[ "Fatal", content_ ] :=
+	Framed[
+		content,
+		$commonErrorFrameOptions,
+		Background -> RGBColor[ "#FFF3F1" ], FrameStyle -> Directive[ AbsoluteThickness[ 2 ], RGBColor[ "#FFC4BA" ]] ];
+
+errorMessageFrame[ "NonFatal", content_ ] :=
+	Framed[
+		content,
+		$commonErrorFrameOptions,
+		Background -> RGBColor[ "#FFFAF2" ], FrameStyle -> Directive[ AbsoluteThickness[ 2 ], RGBColor[ "#FFD8AB" ]] ];
+
+errorMessageFrame[ "Blocked", content_ ] :=
+	Framed[
+		content,
+		$commonErrorFrameOptions,
+		Background -> RGBColor[ "#EDF5F9" ], FrameStyle -> Directive[ AbsoluteThickness[ 2 ], RGBColor[ "#AADAF4" ]] ];
+
+errorMessageFrame // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*errorMessageLabeledButton*)
+errorMessageLabeledButton // beginDefinition;
+
+Attributes[ errorMessageLabeledButton ] = { HoldRest };
+Options[ errorMessageLabeledButton ] = { Appearance -> "NonFatal" };
+
+errorMessageLabeledButton[ text_, action_, OptionsPattern[ ] ] :=
+Button[
+	errorMessageLabeledButtonAppearance[ OptionValue[ Appearance ], text ],
+	action,
+	Appearance       -> "Suppressed",
+	BaselinePosition -> Baseline,
+	ImageSize        -> Automatic
+];
+
+errorMessageLabeledButton // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*errorMessageLabeledButtonAppearance*)
+errorMessageLabeledButtonAppearance // beginDefinition;
+
+errorMessageLabeledButtonAppearance[ "Fatal", text_ ] :=
+Wolfram`Chatbook`ChatModes`UI`Private`mouseDown[
+	Framed[
+		Style[ text, FontColor -> RGBColor[ "#333333" ] ],
+		$commonLabeledButtonOptions, Background -> RGBColor[ "#FF8A7A" ], FrameStyle -> RGBColor[ "#FF8A7A" ] ],
+	Framed[
+		Style[ text, FontColor -> RGBColor[ "#333333" ] ],
+		$commonLabeledButtonOptions, Background -> RGBColor[ "#FFCAC2" ], FrameStyle -> RGBColor[ "#FFA597" ] ],
+	Framed[
+		Style[ text, FontColor -> RGBColor[ "#FFFFFF" ] ],
+		$commonLabeledButtonOptions, Background -> RGBColor[ "#ED6541" ], FrameStyle -> RGBColor[ "#ED6541" ] ]
+]
+
+errorMessageLabeledButtonAppearance[ "NonFatal", text_ ] :=
+Wolfram`Chatbook`ChatModes`UI`Private`mouseDown[
+	Framed[
+		Style[ text, FontColor -> RGBColor[ "#333333" ] ],
+		$commonLabeledButtonOptions, Background -> RGBColor[ "#FAC14D" ], FrameStyle -> RGBColor[ "#FAC14D" ] ],
+	Framed[
+		Style[ text, FontColor -> RGBColor[ "#333333" ] ],
+		$commonLabeledButtonOptions, Background -> RGBColor[ "#FFE2A7" ], FrameStyle -> RGBColor[ "#FBC24E" ] ],
+	Framed[
+		Style[ text, FontColor -> RGBColor[ "#FFFFFF" ] ],
+		$commonLabeledButtonOptions, Background -> RGBColor[ "#F09215" ], FrameStyle -> RGBColor[ "#F09215" ] ]
+]
+
+errorMessageLabeledButtonAppearance[ "Blocked", text_ ] :=
+Wolfram`Chatbook`ChatModes`UI`Private`mouseDown[
+	Framed[
+		Style[ text, FontColor -> RGBColor[ "#333333" ] ],
+		$commonLabeledButtonOptions, Background -> RGBColor[ "#7DC7EE" ], FrameStyle -> RGBColor[ "#7DC7EE" ] ],
+	Framed[
+		Style[ text, FontColor -> RGBColor[ "#333333" ] ],
+		$commonLabeledButtonOptions, Background -> RGBColor[ "#C8E9FB" ], FrameStyle -> RGBColor[ "#A3D5F0" ] ],
+	Framed[
+		Style[ text, FontColor -> RGBColor[ "#FFFFFF" ] ],
+		$commonLabeledButtonOptions, Background -> RGBColor[ "#3383AC" ], FrameStyle -> RGBColor[ "#3383AC" ] ]
+]
+
+errorMessageLabeledButtonAppearance // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*errorMessageCloseButton*)
+errorMessageCloseButton // beginDefinition;
+
+Options[ errorMessageCloseButton ] = { Appearance -> "NonFatal" };
+
+errorMessageCloseButton[ OptionsPattern[ ] ] :=
+Button[
+	errorMessageCloseButtonAppearance[ OptionValue[ Appearance ] ],
+	NotebookDelete[ EvaluationCell[ ] ],
+	Appearance       -> "Suppressed",
+	BaselinePosition -> Baseline,
+	ImageSize        -> Automatic
+];
+
+errorMessageCloseButton // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*errorMessageCloseButtonAppearance*)
+errorMessageCloseButtonAppearance // beginDefinition;
+
+errorMessageCloseButtonAppearance[ "NonFatal" ] :=
+Wolfram`Chatbook`ChatModes`UI`Private`mouseDown[
+	chatbookIcon[ "Close", False, RGBColor[ "#FAC14D" ], RGBColor[ "#FAC14D" ], RGBColor[ "#333333" ]],
+	chatbookIcon[ "Close", False, RGBColor[ "#FBC24E" ], RGBColor[ "#FFE2A7" ], RGBColor[ "#333333" ]],
+	chatbookIcon[ "Close", False, RGBColor[ "#F09215" ], RGBColor[ "#F09215" ], RGBColor[ "#FFFFFF" ]]
+]
+
+errorMessageCloseButtonAppearance[ "Fatal" ] :=
+Wolfram`Chatbook`ChatModes`UI`Private`mouseDown[
+	chatbookIcon[ "Close", False, RGBColor[ "#FF8A7A" ], RGBColor[ "#FF8A7A" ], RGBColor[ "#333333" ]],
+	chatbookIcon[ "Close", False, RGBColor[ "#FFA597" ], RGBColor[ "#FFCAC2" ], RGBColor[ "#333333" ]],
+	chatbookIcon[ "Close", False, RGBColor[ "#ED6541" ], RGBColor[ "#ED6541" ], RGBColor[ "#FFFFFF" ]]
+]
+
+errorMessageCloseButtonAppearance[ "Blocked" ] :=
+Wolfram`Chatbook`ChatModes`UI`Private`mouseDown[
+	chatbookIcon[ "Close", False, RGBColor[ "#7DC7EE" ], RGBColor[ "#7DC7EE" ], RGBColor[ "#333333" ]],
+	chatbookIcon[ "Close", False, RGBColor[ "#C8E9FB" ], RGBColor[ "#A3D5F0" ], RGBColor[ "#333333" ]],
+	chatbookIcon[ "Close", False, RGBColor[ "#3383AC" ], RGBColor[ "#3383AC" ], RGBColor[ "#FFFFFF" ]]
+]
+
+errorMessageCloseButtonAppearance // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*errorMessageLink*)
+errorMessageLink // beginDefinition;
+
+Attributes[ errorMessageLink ] = { HoldRest };
+Options[ errorMessageLink ] = { Appearance -> "NonFatal" };
+
+errorMessageLink[ text_, action_, OptionsPattern[ ] ] :=
+Button[
+	errorMessageLinkAppearance[ OptionValue[ Appearance ], text ],
+	action,
+	Appearance       -> "Suppressed",
+	BaselinePosition -> Baseline,
+	ImageSize        -> Automatic
+];
+
+errorMessageLink // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*errorMessageLinkAppearance*)
+errorMessageLinkAppearance // beginDefinition;
+
+errorMessageLinkAppearance[ "Fatal" , text_ ] :=
+Mouseover[
+	Style[ text, FontColor -> RGBColor[ "#333333" ], $commonErrorLinkOptions ],
+	Style[ text, FontColor -> RGBColor[ "#E15438" ], $commonErrorLinkOptions ],
+	BaselinePosition -> Baseline ]
+
+errorMessageLinkAppearance[ "NonFatal", text_ ] :=
+Mouseover[
+	Style[ text, FontColor -> RGBColor[ "#333333" ], $commonErrorLinkOptions ],
+	Style[ text, FontColor -> RGBColor[ "#CF8B00" ], $commonErrorLinkOptions ],
+	BaselinePosition -> Baseline ]
+
+errorMessageLinkAppearance[ "Blocked", text_ ] :=
+Mouseover[
+	Style[ text, FontColor -> RGBColor[ "#333333" ], $commonErrorLinkOptions ],
+	Style[ text, FontColor -> RGBColor[ "#449DCC" ], $commonErrorLinkOptions ],
+	BaselinePosition -> Baseline ]
+
+errorMessageLinkAppearance // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Cell Dingbats*)
 
 (* ::**************************************************************************************************************:: *)
