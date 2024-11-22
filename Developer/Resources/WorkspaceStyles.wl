@@ -12,7 +12,6 @@ Cell[
     "ClosingSaveDialog"    -> False,
     DefaultNewCellStyle    -> "AutoMoveToChatInputField",
     DockedCells            -> $workspaceChatDockedCells,
-    PrivateCellOptions     -> {"ContentsOpacity" -> Dynamic[If[CurrentValue["NotebookSelected"], 1, 0.5]]},
     Magnification          -> 0.85,
     Saveable               -> False,
     Selectable             -> False,
@@ -38,6 +37,21 @@ Cell[
 Cell[
     StyleData[ "WorkspaceChatStyleSheetInformation" ],
     TaggingRules -> <| "WorkspaceChatStyleSheetVersion" -> $stylesheetVersion |>
+]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Fade When Not Selected*)
+
+Cell[
+    StyleData[ "AttachedCell" ],
+    PrivateCellOptions -> { "ContentsOpacity" -> Dynamic @ If[ CurrentValue[ "NotebookSelected" ], 1, 0.5 ] }
+]
+
+
+Cell[
+    StyleData[ "DockedCell" ],
+    PrivateCellOptions -> { "ContentsOpacity" -> Dynamic @ If[ CurrentValue[ "NotebookSelected" ], 1, 0.5 ] }
 ]
 
 (* ::**************************************************************************************************************:: *)
