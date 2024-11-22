@@ -631,7 +631,7 @@ selectNotebookFocusMenu[ chatNB_, locked_, first_, rest_ ] := Tooltip[
             otherNotebookActions[ chatNB, locked, rest ]
         },
         Appearance -> "Suppressed",
-        BaseStyle  -> { "Text", FontColor -> GrayLevel[ 0.5 ], FontSize -> 13, Magnification -> 1 }
+        BaseStyle  -> { "Text", FontColor -> GrayLevel[ 0.5 ], FontSize -> 13, Magnification -> Inherited / 0.85 }
     ],
     tr[ "WorkspaceFocusIndicatorMenuTooltip" ]
 ];
