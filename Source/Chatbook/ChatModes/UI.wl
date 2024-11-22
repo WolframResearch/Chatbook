@@ -509,13 +509,15 @@ focusedNotebookDisplay[ chatNB_ ] := Enclose[
                     {
                         True  -> $disableNotebookFocusLabel,
                         False -> $enableNotebookFocusLabel
-                    }
+                    },
+                    BaselinePosition -> Baseline
                 ],
                 tr[ "WorkspaceFocusIndicatorFocus" ],
                 focusedNotebookDisplay0[ chatNB, focused, locked, info ]
             } },
-            Alignment -> { Left, Baseline },
-            BaseStyle -> { "Text", FontColor -> GrayLevel[ 0.5 ], FontSize -> 13 }
+            Alignment        -> { Left, Baseline },
+            BaseStyle        -> { "Text", FontColor -> GrayLevel[ 0.5 ], FontSize -> 13 },
+            BaselinePosition -> { 1, 2 } (* align to the text *)
         ];
 
         Pane[ label, ImageMargins -> { { 0, 0 }, { 0, 0 } } ]
@@ -534,7 +536,8 @@ focusedNotebookDisplay0[ chatNB_, focused_, locked_, info_ ] := Grid[
         currentNotebookButton @ focused,
         selectNotebookFocusMenu[ chatNB, locked, info ]
     } },
-    BaselinePosition -> Baseline,
+    Alignment        -> { Left, Baseline },
+    BaselinePosition -> { 1, 1 }, (* align to the button *)
     Dividers         -> Center,
     FrameStyle       -> GrayLevel[ 0.75 ]
 ];
@@ -580,8 +583,9 @@ currentNotebookButton[ as: KeyValuePattern @ { "NotebookObject" -> nbo_NotebookO
             s_String :> FE`Evaluate @ FEPrivate`TruncateStringToWidth[ s, "Text", 200, Right ]
         ],
         SetSelectedNotebook @ nbo,
-        Appearance -> "Suppressed",
-        BaseStyle  -> { "Text", FontColor -> GrayLevel[ 0.5 ], FontSize -> 13 }
+        Appearance       -> "Suppressed",
+        BaseStyle        -> { "Text", FontColor -> GrayLevel[ 0.5 ], FontSize -> 13 },
+        BaselinePosition -> Baseline
     ];
 
 currentNotebookButton // endDefinition;
@@ -607,7 +611,8 @@ currentNotebookButtonLabel[ title_ ] := Mouseover[
             Style[ title, FontColor -> RGBColor[ 0.2, 0.51373, 0.67451, 1.0 ] ]
         },
         BaselinePosition -> Baseline
-    ]
+    ],
+    BaselinePosition -> Baseline
 ];
 
 currentNotebookButtonLabel // endDefinition;
@@ -630,8 +635,9 @@ selectNotebookFocusMenu[ chatNB_, locked_, first_, rest_ ] := Tooltip[
             Delimiter,
             otherNotebookActions[ chatNB, locked, rest ]
         },
-        Appearance -> "Suppressed",
-        BaseStyle  -> { "Text", FontColor -> GrayLevel[ 0.5 ], FontSize -> 13, Magnification -> Inherited / 0.85 }
+        Appearance       -> "Suppressed",
+        BaseStyle        -> { "Text", FontColor -> GrayLevel[ 0.5 ], FontSize -> 13, Magnification -> Inherited / 0.85 },
+        BaselinePosition -> Baseline
     ],
     tr[ "WorkspaceFocusIndicatorMenuTooltip" ]
 ];

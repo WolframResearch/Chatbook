@@ -41,5 +41,6 @@ RawBoxes @ ToBoxes @ Graphics[
  },
  ImageSize -> { 6.0, 4.0 },
  PlotRange -> { { -0.5, 5.5 }, { -0.5, 3.5 } },
- AspectRatio -> Automatic
+ AspectRatio -> Automatic,
+ BaselinePosition -> Center -> Center
 ]
