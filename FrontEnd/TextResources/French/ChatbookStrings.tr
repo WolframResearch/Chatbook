@@ -171,6 +171,12 @@
 "UIAdvancedRoles" -> "Choisir automatiquement",
 "UITryEnableChatDialogMainText" -> "L\[CloseCurlyQuote]activation de la fonctionnalit\[EAcute] du notebook de chat d\[EAcute]truira les styles priv\[EAcute]s d\[EAcute]finis dans ce notebook et les remplacera par la feuille de style du chatbook partag\[EAcute]e.",
 "UITryEnableChatDialogConfirm" -> "\[CapitalEHat]tes-vous s\[UHat]r de vouloir continuer\[NonBreakingSpace]?",
+"UIMessageManageSubscription" -> "Manage Subscription \[RightGuillemet]",
+"UIMessageContactUs" -> "Contact us \[RightGuillemet]",
+"UIMessageUsed80" -> "You have used 80% of your Wolfram Notebook Assistant + LLM Kit allowance for this month.",
+"UIMessageUsedAll" -> "You have used your entire Wolfram Notebook Assistant + LLM Kit allowance for this month.",
+"UIMessageHighUsageRate" -> "We've detected a very high rate of requests from your account. To prevent disruptions to the service for other users, we've temporarily had to block your requests.",
+"UIMessageUnblockRequest" -> "Ask to be unblocked \[RightGuillemet]",
 
 "StylesheetChatWidgetButtonTooltip" -> "Envoyer au LLM",
 "StylesheetAssistantMenuInitializerButtonTooltip" -> "D\[EAcute]sactiver l\[CloseCurlyQuote]assistance automatique",
