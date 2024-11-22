@@ -509,7 +509,7 @@ errorMessageFrame[ "Blocked", size_, content_ ] :=
 	Framed[
 		content,
 		$commonErrorFrameOptions, ImageSize -> size,
-		Background -> RGBColor[ "#EDF5F9" ], FrameStyle -> Directive[ AbsoluteThickness[ 2 ], RGBColor[ "#AADAF4" ]] ];
+		Background -> RGBColor[ "#F3FBFF" ], FrameStyle -> Directive[ AbsoluteThickness[ 2 ], RGBColor[ "#AADAF4" ]] ];
 
 errorMessageFrame // endDefinition;
 
