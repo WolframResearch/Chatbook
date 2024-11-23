@@ -214,6 +214,12 @@
 "WorkspaceOutputRaftRegenerateTooltip" -> "\:91CD\:65B0\:751F\:6210\:54CD\:5E94",
 "WorkspaceOutputRaftFeedbackTooltip" -> "\:53CD\:9988\:5230 Wolfram",
 
+"WorkspaceFocusIndicatorEnableTooltip" -> "Enable using context from other notebooks",
+"WorkspaceFocusIndicatorDisableTooltip" -> "Disable using context from other notebooks",
+"WorkspaceFocusIndicatorFocus" -> "Focus:",
+"WorkspaceFocusIndicatorMenuTooltip" -> "Choose a notebook to focus on for additional context",
+"WorkspaceFocusIndicatorMenuAutomatic" -> "Choose Automatically",
+
 "InlineChatButtonTooltipClose" -> "\:5173\:95ED",
 "InlineChatButtonTooltipViewNotebookAssist" -> "\:5728\:7B14\:8BB0\:672C\:534F\:52A9\:804A\:5929\:4E2D\:67E5\:770B",
 
