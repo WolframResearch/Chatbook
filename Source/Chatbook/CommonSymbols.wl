@@ -229,6 +229,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `modelDisplayName;
 `modelListCachedQ;
 `modifierTemplateBoxes;
+`mouseDown;
 `moveToChatInputField;
 `multimodalModelQ;
 `multimodalPacletsAvailable;

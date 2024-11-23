@@ -538,7 +538,7 @@ errorMessageLabeledButton // endDefinition;
 errorMessageLabeledButtonAppearance // beginDefinition;
 
 errorMessageLabeledButtonAppearance[ "Fatal", text_ ] :=
-Wolfram`Chatbook`ChatModes`UI`Private`mouseDown[
+mouseDown[
 	Framed[
 		Style[ text, FontColor -> RGBColor[ "#333333" ] ],
 		$commonLabeledButtonOptions, Background -> RGBColor[ "#FF8A7A" ], FrameStyle -> RGBColor[ "#FF8A7A" ] ],
@@ -551,7 +551,7 @@ Wolfram`Chatbook`ChatModes`UI`Private`mouseDown[
 ]
 
 errorMessageLabeledButtonAppearance[ "NonFatal", text_ ] :=
-Wolfram`Chatbook`ChatModes`UI`Private`mouseDown[
+mouseDown[
 	Framed[
 		Style[ text, FontColor -> RGBColor[ "#333333" ] ],
 		$commonLabeledButtonOptions, Background -> RGBColor[ "#FAC14D" ], FrameStyle -> RGBColor[ "#FAC14D" ] ],
@@ -564,7 +564,7 @@ Wolfram`Chatbook`ChatModes`UI`Private`mouseDown[
 ]
 
 errorMessageLabeledButtonAppearance[ "Blocked", text_ ] :=
-Wolfram`Chatbook`ChatModes`UI`Private`mouseDown[
+mouseDown[
 	Framed[
 		Style[ text, FontColor -> RGBColor[ "#333333" ] ],
 		$commonLabeledButtonOptions, Background -> RGBColor[ "#7DC7EE" ], FrameStyle -> RGBColor[ "#7DC7EE" ] ],
@@ -602,21 +602,21 @@ errorMessageCloseButton // endDefinition;
 errorMessageCloseButtonAppearance // beginDefinition;
 
 errorMessageCloseButtonAppearance[ "NonFatal" ] :=
-Wolfram`Chatbook`ChatModes`UI`Private`mouseDown[
+mouseDown[
 	chatbookIcon[ "Close", False, RGBColor[ "#FAC14D" ], RGBColor[ "#FAC14D" ], RGBColor[ "#333333" ]],
 	chatbookIcon[ "Close", False, RGBColor[ "#FBC24E" ], RGBColor[ "#FFE2A7" ], RGBColor[ "#333333" ]],
 	chatbookIcon[ "Close", False, RGBColor[ "#F09215" ], RGBColor[ "#F09215" ], RGBColor[ "#FFFFFF" ]]
 ]
 
 errorMessageCloseButtonAppearance[ "Fatal" ] :=
-Wolfram`Chatbook`ChatModes`UI`Private`mouseDown[
+mouseDown[
 	chatbookIcon[ "Close", False, RGBColor[ "#FF8A7A" ], RGBColor[ "#FF8A7A" ], RGBColor[ "#333333" ]],
 	chatbookIcon[ "Close", False, RGBColor[ "#FFA597" ], RGBColor[ "#FFCAC2" ], RGBColor[ "#333333" ]],
 	chatbookIcon[ "Close", False, RGBColor[ "#ED6541" ], RGBColor[ "#ED6541" ], RGBColor[ "#FFFFFF" ]]
 ]
 
 errorMessageCloseButtonAppearance[ "Blocked" ] :=
-Wolfram`Chatbook`ChatModes`UI`Private`mouseDown[
+mouseDown[
 	chatbookIcon[ "Close", False, RGBColor[ "#7DC7EE" ], RGBColor[ "#7DC7EE" ], RGBColor[ "#333333" ]],
 	chatbookIcon[ "Close", False, RGBColor[ "#C8E9FB" ], RGBColor[ "#A3D5F0" ], RGBColor[ "#333333" ]],
 	chatbookIcon[ "Close", False, RGBColor[ "#3383AC" ], RGBColor[ "#3383AC" ], RGBColor[ "#FFFFFF" ]]
