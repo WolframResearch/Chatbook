@@ -17,6 +17,7 @@ Needs[ "Wolfram`Chatbook`ResourceInstaller`" ];
 $cloudInheritanceFix := $cloudNotebooks;
 
 $defaultChatSettings = <|
+    "AllowSelectionContext"          -> Automatic,
     "AppName"                        -> Automatic,
     "Assistance"                     -> Automatic,
     "Authentication"                 -> Automatic,
@@ -308,7 +309,7 @@ setLLMKitFlags // beginDefinition;
 setLLMKitFlags[ as_ ] := setLLMKitFlags[ as[ "Authentication" ], as[ "Model", "Service" ] ];
 setLLMKitFlags[ "LLMKit", service_String ] := ($llmKit = True; $llmKitService = service);
 setLLMKitFlags[ "LLMKit", _ ] := $llmKit = True;
-setLLMKitFlags[ _, _ ] := ($llmKit = False; $llmKitService = None);
+setLLMKitFlags[ _, _ ] := $llmKit = False;
 setLLMKitFlags // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -368,6 +369,7 @@ resolveAutoSetting[ settings_, key_ -> value_ ] := <| settings, key -> resolveAu
 resolveAutoSetting // endDefinition;
 
 resolveAutoSetting0 // beginDefinition;
+resolveAutoSetting0[ as_, "AllowSelectionContext"          ] := TrueQ[ $WorkspaceChat || $InlineChat ];
 resolveAutoSetting0[ as_, "AppName"                        ] := $defaultAppName;
 resolveAutoSetting0[ as_, "Assistance"                     ] := False;
 resolveAutoSetting0[ as_, "Authentication"                 ] := autoAuthentication @ as;

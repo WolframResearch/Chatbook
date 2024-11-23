@@ -837,6 +837,14 @@ checkCellReference // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*notebookObjectQ*)
+notebookObjectQ // beginDefinition;
+notebookObjectQ[ nbo_NotebookObject ] := StringQ @ CurrentValue[ nbo, ExpressionUUID ];
+notebookObjectQ[ _ ] := False;
+notebookObjectQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*$evaluationNotebook*)
 $evaluationNotebook :=
     With[ { nbo = evaluationNotebook[ ] },
