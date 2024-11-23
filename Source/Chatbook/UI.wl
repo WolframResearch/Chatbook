@@ -430,13 +430,13 @@ With[
 				If[ appearance === "Blocked",
 					{
 						Item[ Pane[ chatbookIcon[ "RateLimit", False ], Alignment -> { Center, Top }, ImageSize -> Scaled[ 1 ]] ],
-						Item[ errorMessageCloseButton @ reducedOpts, Alignment -> { Right, Top } ]
+						Item[ errorMessageCloseButton @ reducedOpts, Alignment -> { Right, Top }, ItemSize -> Fit ]
 					},
 					Nothing
 				],
 				If[ appearance === "Blocked",
 					{ messageText, SpanFromLeft },
-					{ messageText, Item[ errorMessageCloseButton @ reducedOpts, Alignment -> { Right, Baseline } ] }
+					{ messageText, Item[ errorMessageCloseButton @ reducedOpts, Alignment -> { Right, Baseline }, ItemSize -> Fit ] }
 				],
 				If[ buttonText ===  None || Unevaluated[ action ] === None,
 					{
