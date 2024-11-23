@@ -401,15 +401,15 @@ $commonErrorLinkOptions = Sequence[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
-(*errorMessage*)
-errorMessage // beginDefinition;
+(*errorMessageBox*)
+errorMessageBox // beginDefinition;
 
-Attributes[ errorMessage ] = { HoldRest };
-Options[ errorMessage ] = { Appearance -> "NonFatal", ImageSize -> Automatic };
+Attributes[ errorMessageBox ] = { HoldRest };
+Options[ errorMessageBox ] = { Appearance -> "NonFatal", ImageSize -> Automatic };
 
-errorMessage[ text_, opts: OptionsPattern[ ] ] := errorMessage[ { text, None }, None, opts ]
+errorMessageBox[ text_, opts: OptionsPattern[ ] ] := errorMessageBox[ { text, None }, None, opts ]
 
-errorMessage[ { messageText_, buttonText_ }, action_, opts: OptionsPattern[ ] ] :=
+errorMessageBox[ { messageText_, buttonText_ }, action_, opts: OptionsPattern[ ] ] :=
 With[
 	{
 		appearance = Replace[ OptionValue[ Appearance ], Except[ _String ] :> "NonFatal" ],
@@ -466,27 +466,27 @@ With[
 	]
 ]
 
-errorMessage[ "UsageAt80" ] :=
-	errorMessage[
+errorMessageBox[ "UsageAt80" ] :=
+	errorMessageBox[
 		{ tr @ "UIMessageUsed80", tr @ "UIMessageManageSubscription" },
 		Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Manage"
 	];
 
-errorMessage[ "UsageAt100" ] :=
-	errorMessage[
+errorMessageBox[ "UsageAt100" ] :=
+	errorMessageBox[
 		{ tr @ "UIMessageUsedAll", tr @ "UIMessageManageSubscription" },
 		Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Manage",
 		Appearance -> "Fatal"
 	];
 
-errorMessage[ "UsageBlocked" ] :=
-	errorMessage[
+errorMessageBox[ "UsageBlocked" ] :=
+	errorMessageBox[
 		{ tr @ "UIMessageHighUsageRate", tr @ "UIMessageUnblockRequest" },
 		SystemOpen @ URL[ "https://www.wolfram.com/support/contact" ], (* TODO: there may be a better URL than this *)
 		Appearance -> "Blocked"
 	];
 
-errorMessage // endDefinition;
+errorMessageBox // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
