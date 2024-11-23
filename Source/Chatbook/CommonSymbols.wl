@@ -145,6 +145,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `documentationSearchAPI;
 `dynamicAutoFormatQ;
 `dynamicSplitQ;
+`errorMessageBox;
 `escapeMarkdownString;
 `evaluateInlineChat;
 `evaluateWithProgress;
