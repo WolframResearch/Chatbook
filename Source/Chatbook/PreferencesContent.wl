@@ -1208,6 +1208,8 @@ servicesSettingsPanel0 // endDefinition;
 (*makeLLMPanel*)
 makeLLMPanel // beginDefinition;
 
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::NoVariables::DynamicModule:: *)
 makeLLMPanel[ ] :=
     Module[ { subscribeButton, username, signInButton, manageButton },
         subscribeButton =
@@ -1335,6 +1337,7 @@ makeLLMPanel[ ] :=
             ImageSize -> Scaled[ 1 ],
             RoundingRadius -> 3 ]
     ];
+(* :!CodeAnalysis::EndBlock:: *)
 
 makeLLMPanel // endDefinition;
 

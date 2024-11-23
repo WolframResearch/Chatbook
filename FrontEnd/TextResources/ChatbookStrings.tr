@@ -229,6 +229,12 @@
 "WorkspaceOutputRaftShareAsImage" -> "Image",
 "WorkspaceOutputRaftFeedbackTooltip" -> "Send feedback to Wolfram",
 
+"WorkspaceFocusIndicatorEnableTooltip" -> "Enable using context from other notebooks",
+"WorkspaceFocusIndicatorDisableTooltip" -> "Disable using context from other notebooks",
+"WorkspaceFocusIndicatorFocus" -> "Focus:",
+"WorkspaceFocusIndicatorMenuTooltip" -> "Choose a notebook to focus on for additional context",
+"WorkspaceFocusIndicatorMenuAutomatic" -> "Choose Automatically",
+
 "InlineChatButtonTooltipClose" -> "Close",
 "InlineChatButtonTooltipViewNotebookAssist" -> "View in Notebook Assistance Chat",
 
