@@ -2605,6 +2605,17 @@ writeErrorCell // endDefinition;
 (*errorCell*)
 errorCell // beginDefinition;
 
+errorCell[ as_ ] /; ! FreeQ[ as, $$usageLimitCode ] :=
+    Cell[
+        BoxData @ ToBoxes @ errorMessageBox[ "UsageBlocked" ],
+        "Text",
+        CellAutoOverwrite -> True,
+        CellTrayWidgets   -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
+        CodeAssistOptions -> { "AutoDetectHyperlinks" -> True },
+        GeneratedCell     -> True,
+        Initialization    -> None
+    ];
+
 errorCell[ as_ ] := Enclose[
     Module[ { text },
         text = ConfirmMatch[ errorText @ as, _String|$$textDataList, "ErrorText" ];
@@ -2622,6 +2633,16 @@ errorCell[ as_ ] := Enclose[
 ];
 
 errorCell // endDefinition;
+
+
+$$usageLimitCode = Alternatives[
+    "request-per-minute-limit-exceeded",
+    "credits-per-minute-limit-exceeded",
+    "request-per-hour-limit-exceeded",
+    "credits-per-hour-limit-exceeded",
+    "request-per-month-limit-exceeded",
+    "credits-per-month-limit-exceeded"
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
