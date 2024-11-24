@@ -385,7 +385,8 @@ $commonErrorFrameOptions = Sequence[
 		FontSize             -> 13,
 		LinebreakAdjustments -> { 1.0, 10, 1, 0, 1 },
 		LineIndent           -> 0,
-		LineSpacing          -> 0.5
+		LineSpacing          -> 0.5,
+		ShowStringCharacters -> False
 	},
 	BaselinePosition -> Baseline,
 	FrameMargins     -> { { 10, 7 }, { 8, 6 } },
