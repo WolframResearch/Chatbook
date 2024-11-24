@@ -2607,7 +2607,11 @@ errorCell // beginDefinition;
 
 errorCell[ as_ ] /; ! FreeQ[ as, $$usageLimitCode ] :=
     Cell[
-        BoxData @ ToBoxes @ errorMessageBox[ "UsageBlocked" ],
+        BoxData @ ToBoxes @
+            If[ ! FreeQ[ as, "credits-per-month-limit-exceeded" ],
+                errorMessageBox[ "UsageAt100" ],
+                errorMessageBox[ "UsageBlocked" ]
+            ],
         "Text",
         CellAutoOverwrite -> True,
         CellTrayWidgets   -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
