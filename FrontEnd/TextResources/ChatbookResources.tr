@@ -5920,7 +5920,369 @@ JfLLHtW8D/ao9n2wRw2PD/aLGfewCgH1wfhyy1946P1/bw8zD8aH2Qfjw9wD
    CurrentValue["MouseOver"]],
   BaselinePosition->Baseline,
   FrameMargins->0,
-  ImageSize->Automatic]
+  ImageSize->Automatic],
+
+"Close" -> (GraphicsBox[{
+   Thickness[0.05555555555555555], {
+    Thickness[0.05555555555555555], 
+    EdgeForm[#], 
+    FaceForm[#2], 
+    FilledCurveBox[{{{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}}, {{{18., 
+     9.}, {18., 4.0289998054504395`}, {13.97100019454956, 0.}, {9., 0.}, {
+     4.029000282287598, 0.}, {0., 4.0289998054504395`}, {0., 9.}, {0., 
+     13.97100019454956}, {4.029000282287598, 18.}, {9., 18.}, {
+     13.97100019454956, 18.}, {18., 13.97100019454956}, {18., 9.}}}]}, {
+    FaceForm[{#3, 
+      Opacity[1.]}], 
+    FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
+     0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}}}, {{{12.350000381469727`, 13.}, {8.999000549316406, 
+     9.64900016784668}, {5.649000644683838, 13.}, {5., 12.349999964237213`}, {
+     8.350000381469727, 8.999000072479248}, {5., 5.649999618530273}, {
+     5.649000644683838, 5.}, {8.999000549316406, 8.351000308990479}, {
+     12.350000381469727`, 5.}, {13.000000417232513`, 5.649999618530273}, {
+     9.649000406265259, 8.999000072479248}, {13.000000417232513`, 
+     12.349999964237213`}, {12.350000381469727`, 13.}}}]}}, 
+  ImagePadding -> {{0, 1}, {1, 0}}, AspectRatio -> Automatic, 
+  ImageSize -> {18., 18.}, PlotRange -> {{0., 18.}, {0., 18.}}]& ),
+
+"RateLimit" -> GraphicsBox[
+  {Thickness[0.005988023952095809], 
+   {FaceForm[{RGBColor[
+    0.27450980392156865`, 0.6196078431372549, 0.796078431372549], Opacity[
+    1.]}], FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{
+     167., 0.}, {0., 0.}, {0., 0.9380000233650208}, {167., 
+     0.9380000233650208}, {167., 0.}}}]}, 
+   {FaceForm[{RGBColor[
+    0.27450980392156865`, 0.6196078431372549, 0.796078431372549], Opacity[
+    1.]}], FilledCurveBox[{{{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3,
+       3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
+      0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{1, 4, 3}, {0, 1, 0}, {1, 
+      3, 3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 
+      3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+      0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+      0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{1, 4, 
+      3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}, {{1, 4, 3}, {1, 3, 3}, {1, 3, 
+      3}, {1, 3, 3}}, {{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+      0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {
+      0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+      3}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {
+      0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+      3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
+      1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+      3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {
+      0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}}, {{1, 4, 3}, {0, 1, 0}, {0, 
+      1, 0}, {1, 3, 3}}, {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+      3}, {1, 3, 3}}, {{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+      0}, {0, 1, 0}, {0, 1, 0}}, {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+      3}}, {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}}, {{1, 4, 3}, {1, 3, 
+      3}, {1, 3, 3}, {1, 3, 3}}, {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+      3}}, {{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+      0}, {0, 1, 0}}, {{1, 4, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 3}, {1, 3, 
+      3}, {1, 3, 3}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+      0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+      0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+      0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}}, {{0, 2, 
+      0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
+      0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+      3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {
+      0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+      0}, {1, 3, 3}}, {{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+      0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
+      0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {0, 
+      1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+      3}, {0, 1, 0}, {1, 3, 3}}, {{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+      0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
+      0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{0, 2, 0}, {1, 
+      3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+      0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}}, {{0, 2, 0}, {1, 3, 3}, {0, 1, 
+      0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+      0, 1, 0}, {0, 1, 0}, {1, 3, 3}}, {{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {0, 
+      1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 
+      0}, {0, 1, 0}, {1, 3, 3}}, {{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 
+      3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {
+      0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {0, 
+      1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+      0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}}, {{0, 2, 0}, {1, 3, 3}, {0, 1, 
+      0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+      0, 1, 0}, {0, 1, 0}, {1, 3, 3}}, {{1, 4, 3}, {0, 1, 0}, {1, 3, 3}, {0, 
+      1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+      0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}}, {{0, 2, 
+      0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
+      1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}}, {{0, 2, 0}, {0, 
+      1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+      0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {1, 3, 3}, {0, 1, 
+      0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
+      0, 1, 0}, {1, 3, 3}}, {{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 
+      1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+      0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {
+      1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+      0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}}, {{0, 2, 0}, {0, 1, 
+      0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
+      0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 
+      3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+      0}, {1, 3, 3}}, {{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+      0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
+      0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}}, {{0, 2, 0}, {1, 3, 3}, {0, 
+      1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 
+      3}, {0, 1, 0}, {1, 3, 3}}, {{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 
+      0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {
+      0, 1, 0}, {1, 3, 3}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 
+      1, 0}, {1, 3, 3}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+      0}, {1, 3, 3}}}, {CompressedData["
+1:eJxTTMoPSmViYGCQAGIQDQQJ34oiHYC0Az+3jQOC73B2mSSIvyP4Sz6I3/Bv
+nSqIn1Dgl4PMZ+DY6xeGzG9R90bh3zD1APPDXkgi8/ODJnEj8xkMHpw1RuYv
+8NhvjGQew4fGzWB+xlk/FP6G5knhyPy66nNY+QcWHTZC5k843mkIoldcT40A
++39nDVi9THZZBLL+1j/dyPwNl+LA/ofxWbaxFCDz4eEJcz+cP+8sCh8c3gBp
+uG4R
+      "], CompressedData["
+1:eJxTTMoPSmViYGCQAWIQDQTHYhojHIC0QuEfNxBd4HcEhW959BeYvyEu0x2Z
+z+D0HoU/4VF7ADLf4MqpAGTzGLwZAx2Q7IPxeex4wrDxEy7z+CLzFb70+IBo
+lvQboSD6Q5oqmH+ifQYK/wLHvxAUfmcyCt9gljIKv+Py+2Bk82F8mP0wPsx9
+FUuqApH5BzaZo/AZbCA0zP8wPix8YHxY+MH4sPCFmQcLf5h9MD5KfAEA5shr
+rQ==
+      "], {{83.50128746032715, 26.271201372146606`}, {72.70928764343262, 
+      26.271201372146606`}, {72.70928764343262, 19.232200622558594`}, {
+      75.81328773498535, 19.232200622558594`}, {76.14228820800781, 
+      19.232200622558594`}, {76.39928817749023, 19.026201248168945`}, {
+      78.34128952026367, 17.47120189666748}, {78.34128952026367, 
+      18.295201301574707`}, {78.34128952026367, 19.232200622558594`}, {
+      79.27828788757324, 19.232200622558594`}, {83.50128746032715, 
+      19.232200622558594`}, {83.50128746032715, 26.271201372146606`}}, {{
+      64.03228378295898, 71.30320358276367}, {65.1962890625, 
+      71.30320358276367}, {66.14329147338867, 72.25020217895508}, {
+      66.14329147338867, 73.41419982910156}, {66.14329147338867, 
+      74.57820129394531}, {65.1962890625, 75.52520370483398}, {
+      64.03228378295898, 75.52520370483398}, {62.8682861328125, 
+      75.52520370483398}, {61.921287536621094`, 74.57820129394531}, {
+      61.921287536621094`, 73.41419982910156}, {61.921287536621094`, 
+      72.25020217895508}, {62.8682861328125, 71.30320358276367}, {
+      64.03228378295898, 71.30320358276367}}, {{103.90628743171692`, 
+      71.30320358276367}, {105.0702874660492, 71.30320358276367}, {
+      106.0172872543335, 72.25020217895508}, {106.0172872543335, 
+      73.41419982910156}, {106.0172872543335, 74.57820129394531}, {
+      105.0702874660492, 75.52520370483398}, {103.90628743171692`, 
+      75.52520370483398}, {102.74228757619858`, 75.52520370483398}, {
+      101.7952875365736, 74.57820129394531}, {101.7952875365736, 
+      73.41419982910156}, {101.7952875365736, 72.25020217895508}, {
+      102.74228757619858`, 71.30320358276367}, {103.90628743171692`, 
+      71.30320358276367}}, CompressedData["
+1:eJxt1W9IU1EUAPDXYiA6cBJBZOJiJKnlolHqyHgI5bCa1znTNytGtIxQWxQV
+0WIVkhHIZkJfbD4iK8TiCUEYCaPQCBqt+mBFlP2RhGKusJDQ0Xbuu2/nwgQ5
+/Li79553zs7e2oPHnF6dIAjtqf90TP1Z4vclMRXF/LxtIrIcjlqxEyO2tAOD
+5SFw5ObTzamovD7QgS10L15txVYu9bWko+nRags2Wz8SdezFFgrKOBu2G8C+
+ONyvedN0lPOqnpOVkKdhTXM2B8MbrdjCqALnV03owKRvFzh25asL+8zLV03Z
+PP0+F55n1jDv5PZ/KuX9IJfz+s5fjfh+ZuN+mh8zmR1T838MTpSvq4J7PdfB
+31zLqrHtQcGGHam074R8b53lLE/pOSuWOyQdPXf1ddhC7Rzn4LtxO+xf0d4A
+9X8+A/Y8/L4H+nv8XD22sbBrN7a48ASiXDDggM/P/4Qo6ofhPFNxfwPn2ADk
+KS4t0c+VjYIDH/zghD3JWbzodvLrk2C5fwM9b6gI+pYw6gi2PNXJOWadIHg/
+Mzs/s07v95m7Cc6PFFsIzp9ZrP8BeXjMzXS9ZDmts9dP6zuWR3C9p4vyOQe/
+XOYsDC4S3E/S0taI+83c82auCTuWk3Rhs/lhntx3oRX7WulfbNPMZ5eE7tes
+5qdZzV8ZGjkvoeeLVMRvS+j5A3W/X0ioPprV+r2tiJ+ScH2PRrdKuP7MrD+Z
+deif/Ke6V8L9vSH847zjmdeN3WUed+P+M7PzM+v0/mGd343zCyVL3Lj/mtXv
+d8fCPWr1+/9xS04b7Ffng5nNDzObr8On7bBfnb9M/el8ZvpD51czm2/WTzb/
+rN/MEeVQVtt6V9akosfnoL/3qk01hSFs7X1xojbMvU/g/fIfmuajMQ==
+      "], {{83.96928787231445, 51.08020210266113}, {81.6122875213623, 
+      51.08020210266113}, {79.68528747558594, 49.24220275878906}, {
+      79.50928688049316, 46.910200119018555`}, {83.96928787231445, 
+      46.910200119018555`}, {88.42928695678711, 46.910200119018555`}, {
+      88.25228786468506, 49.24220275878906}, {86.32528781890869, 
+      51.08020210266113}, {83.96928787231445, 
+      51.08020210266113}}, CompressedData["
+1:eJxTTMoPSmViYGAQBmIQDQRzVgXHOgDpBe2p3iA6Qj4czJ8Q1QzmT/knBuY7
+lPf6gOgvlvdiQLTB6QJfEM2SzgDmM+S6gfn/ngZFg/lvLngj8wOUubyQ+Q8E
+1D1ANMdeMbD+Cc3z3cD2uHHEIvMrzv9E4Tcs2xuHrB/Gh5kP4zO8ew3mMzyb
+BOYbLNgJds+BDT5g/oXHIWD/7NC/HgvhXwHL3zENAPMVit3BfJTwAQC0l1Cw
+
+      "], {{99.44928765296936, 34.73720169067383}, {108.36928749084473`, 
+      34.73720169067383}, {109.02728748321533`, 34.73720169067383}, {
+      109.63528776168823`, 35.085201263427734`}, {109.96828746795654`, 
+      35.65320158004761}, {114.57428741455078`, 43.51920032501221}, {
+      111.37628746032715`, 45.392202377319336`}, {107.30628776550293`, 
+      38.44320106506348}, {99.44928765296936, 38.44320106506348}, {
+      99.44928765296936, 34.73720169067383}}, {{76.46328735351562, 
+      53.712202072143555`}, {76.46328735351562, 54.87620162963867}, {
+      75.51628684997559, 55.82320213317871}, {74.35228729248047, 
+      55.82320213317871}, {73.18828773498535, 55.82320213317871}, {
+      72.24128913879395, 54.87620162963867}, {72.24128913879395, 
+      53.712202072143555`}, {72.24128913879395, 52.548200607299805`}, {
+      73.18828773498535, 51.601200103759766`}, {74.35228729248047, 
+      51.601200103759766`}, {75.51628684997559, 51.601200103759766`}, {
+      76.46328735351562, 52.548200607299805`}, {76.46328735351562, 
+      53.712202072143555`}}, {{78.80928802490234, 53.712202072143555`}, {
+      78.80928802490234, 51.25120162963867}, {76.81428718566895, 
+      49.25520324707031}, {74.35228729248047, 49.25520324707031}, {
+      71.89128875732422, 49.25520324707031}, {69.89628791809082, 
+      51.25120162963867}, {69.89628791809082, 53.712202072143555`}, {
+      69.89628791809082, 56.17320251464844}, {71.89128875732422, 
+      58.1682014465332}, {74.35228729248047, 58.1682014465332}, {
+      76.81428718566895, 58.1682014465332}, {78.80928802490234, 
+      56.17320251464844}, {78.80928802490234, 53.712202072143555`}}, {{
+      95.69628763198853, 53.712202072143555`}, {95.69628763198853, 
+      54.87620162963867}, {94.74928760528564, 55.82320213317871}, {
+      93.58528709411621, 55.82320213317871}, {92.4212875366211, 
+      55.82320213317871}, {91.47428703308105, 54.87620162963867}, {
+      91.47428703308105, 53.712202072143555`}, {91.47428703308105, 
+      52.548200607299805`}, {92.4212875366211, 51.601200103759766`}, {
+      93.58528709411621, 51.601200103759766`}, {94.74928760528564, 
+      51.601200103759766`}, {95.69628763198853, 52.548200607299805`}, {
+      95.69628763198853, 53.712202072143555`}}, {{98.0422875881195, 
+      53.712202072143555`}, {98.0422875881195, 51.25120162963867}, {
+      96.047287940979, 49.25520324707031}, {93.58528709411621, 
+      49.25520324707031}, {91.12428760528564, 49.25520324707031}, {
+      89.12928676605225, 51.25120162963867}, {89.12928676605225, 
+      53.712202072143555`}, {89.12928676605225, 56.17320251464844}, {
+      91.12428760528564, 58.1682014465332}, {93.58528709411621, 
+      58.1682014465332}, {96.047287940979, 58.1682014465332}, {
+      98.0422875881195, 56.17320251464844}, {98.0422875881195, 
+      53.712202072143555`}}, {{53.36328887939453, 43.51920032501221}, {
+      57.97028732299805, 35.65320158004761}, {58.303287506103516`, 
+      35.085201263427734`}, {58.911285400390625`, 34.73720169067383}, {
+      59.56928634643555, 34.73720169067383}, {68.48928833007812, 
+      34.73720169067383}, {68.48928833007812, 38.44320106506348}, {
+      60.632286071777344`, 38.44320106506348}, {56.562286376953125`, 
+      45.392202377319336`}, {53.36328887939453, 
+      43.51920032501221}}, CompressedData["
+1:eJxTTMoPSmViYGAQBmIQDQQLpj33dADSE5rnu4Foh5WnvJH5DWZBviD6gYC6
+BzI/QJnLC5nP8OYCWJ9C6HcwzZDrBhZPWG8NVmdwugDCZz0Fts+hvNcHRC94
+4gmxP6oZou9cAJi/oD0VzF+wPRzMVyh2B/MPHPYEu+PC4ysQ/sE4dwg/BGxe
+QvglsLsNFuwEyztcqwHzGd699kLmw9wP48P9l8zigex/lPABAASTTUw=
+      "], {{47.84928512573242, 21.111201286315918`}, {38.934288024902344`, 
+      21.111201286315918`}, {38.934288024902344`, 15.010201454162598`}, {
+      42.21928787231445, 15.010201454162598`}, {43.156288146972656`, 
+      15.010201454162598`}, {43.156288146972656`, 14.073202133178711`}, {
+      43.156288146972656`, 13.569202423095703`}, {44.657291412353516`, 
+      14.798201560974121`}, {44.91628646850586, 15.010201454162598`}, {
+      45.25028610229492, 15.010201454162598`}, {47.84928512573242, 
+      15.010201454162598`}, {47.84928512573242, 
+      21.111201286315918`}}, CompressedData["
+1:eJxTTMoPSmViYGAQAWIQDQQOzP/dHYD0gSpVHRCdwLnADZm/QFDGFUQzbNJT
+R+bD5B94pDqjqBfXReErLP/vBKZtb6PwHzDu0UXmJwg7miLzJUw2miKb9yKM
+xwzZPhgf5n4YP8HE3AOZr7A0xQPZPBgfbh+UD3cPlA9zL8w8mH9QwgsAGFlG
+Lg==
+      "], CompressedData["
+1:eJxTTMoPSmViYGDQBWIQDQQKuZ5xDkD6wN+n+iD6Smd0FDI/94cuCr/iFweY
+rzBxnx4y/0FToC4yv2F5hgAyn0FPkRtEc72AmMdQ3cwGogUyo1H4KgdropH5
+H/j4Y8D8A6zv7IGUzLRcFP6cq4sg6j0DeMD6nSZB+KVMfCjmQflw+6D8if/8
+UPjun1wgfG43fmQ+zD8wPsy/cH7kVjD/C58/mO9gz6aHHJ4wPiy8YfwV10NR
++D8ex4P5D+5AzIPxGTqDUPgNm7MEUOSh7vU4DjEP5p8DMZ4o/Cudu2OQ+RyT
+6rHzoeEP50PDG64fnQ9VD7cPyjd4V4bCP3F7NoRvrcyNzIf5By4P9S+M7yCy
+Hxw+E/6VoaRXlPQLAD9Mp/Q=
+      "], CompressedData["
+1:eJxTTMoPSmViYGCQAGIQDQJBptYOQGrBdxUdEO1wJtQBmd+wORGFf8AnG8xn
+iPNG4S/4XYXCl+D0MkfmF0xLNEcx72QJmM/wNhSF31CZZowiv8oPhd9Qbm2M
+Yh6Uz9HmicKHuQfGh7kXbh7MfzD7YHxlCXNkPoNxASq/YzOYn+C+SRusvtjV
+CizeHKiOzFewdNVC5sP1I4c3AK0DV2E=
+      "], CompressedData["
+1:eJxTTMoPSmViYGAQAWIQDQQOZ0IdHIC0gqWrFohmCDK1xsY/oOOsDKIblCXM
+keUbKtOMUfh8p4xQ9M/wBvMPqDlpI/MX/K7SQeZztHmaI/M7PjwF8xsCIObd
+WZFigWwfjM/wFuJ+GN+BcQkK/4DNYzBfwOiZOTJfgtMLhQ9zD4wPc2/Dg8Uo
+4YMSXgBGE0XD
+      "], CompressedData["
+1:eJxTTMoPSmViYGCQAGIQDQQ/HsfHOQDpmMzzdg5I/IRXT8D8G53RYP6NoG9g
+/gTNMBT+tS1M0cj8byl/o5D5dtI/o5DNg/EL3pxH4TtYGZkh8wNsZM1QzLvM
+bYZiH5SvkZsYg8z/kzIXK3/GF2lTZP6BZTuNQfScq06xIPrE+atgeYHM4Fhk
+/R92ZKDyLaH+h/Lh4QPlw8IP5n44f68RCh8c3gB7/27A
+      "], CompressedData["
+1:eJxTTMoPSmViYGAQAWIQDQQnbs+OcwDSMZnn7RyQ+AF7jcyQ+QaPZpiC6AMb
+asD8GV+kwfwPlmGo/B0Zsch8jdzEGLA+vwOGyHyY/LUtTNHIfD67O1HI/Dzl
+vWD+igUzUPgOVhD3wfgFbyDuh/E52jLtkc0TMHpmj2wfjD9BE+J+GB/mPxgf
+5v8al0wUPji8AK3nVOg=
+      "], CompressedData["
+1:eJxTTMoPSmViYGAQBWIQDQQJJu6uDiBG/2VFMP1pvS0KP1UChd/QPNcGTJ+5
+q4DCT46VR+YzHGB9Zw+ik3ttsfFh6uF8rZUQ/v45EP7C5/LI7oHxYe6F8Rt6
+AlD4C6wiIHyDVSh8hqw4VD7UPQ5aF7Dzoeph/Ab/e2D/JtyahBJeKOEHAEKY
+TeA=
+      "], CompressedData["
+1:eJxTTMoPSmViYGAQBWIQDQQck/JDHIB0gkSoJojesK4xAJn/gCcEhR8grw/m
+H9DQ1UDmN8w9oIbMZzjA+s4eSBmIZ2Plw9TD+R+V1cHmGpdC1EeVqiO7B8aH
+uRfG13hTjcI/wdEG5jeUqKDwDyw+qIbMh7lnAcMhrHyYehj/wWqIfzmE56KE
+F0r4AQCQkUj+
+      "], CompressedData["
+1:eJxTTMoPSmViYGCQAGIQDQQKKuf9HYC0wL1HBiBa4RVHIArfRRSF/yBBHsy/
+EMBtiMx32GmDzG+4ffm0NRJ/wfXav9ZI5jX8W6dqg2QfnL9AtMgLmc+gEInC
+X/DMBcRP8LOBmAflM5wMOI3Ch7kHxoe51+F/hBeK/64UovAPTAr0ReY7NJ3E
+yj/w96k+Mp/BdL022LzfTeDw/BC2BqyeQWkJavgihzcAd6JmjA==
+      "], CompressedData["
+1:eJxTTMoPSmViYGAQAWIQDQQKrzgCHYD0gb9P9UG0gsp5f2T+gUmBviDa4f0O
+dWQ+XP2VQi9kfsNGMRQ+w/cznmB1W9sMkPkOO20MkfknA05bI/EbvlxvtAGr
+uwQxz6pP1BZELxAtQuHD3A/jC2SbofA3RESD+A21kk02yPzblyH2Qflw98D4
+MPfCzIP7Fzm8AP8FVpI=
+      "], CompressedData["
+1:eJxTTMoPSmViYGAQBWIQDQQH3hn4OYAYGw4rgeiEzQfdkfkH3pSi8BVqLMB8
+h7dnFZH5DZfmKSDzGQ6wvrMHUdkbsPJh6uHy246A+Q8kd0DkPz5WQHYPjA9z
+L4z/wM0Klf/FEcx3sDyKwj9wYz4KH+aehic7sfJh6mF8h4JzYP8emFKDEl4o
+4QcA8z9fSw==
+      "], CompressedData["
+1:eJxTTMoPSmViYGCQAGIQzcCQ4P4pJNIByHCw/qDpgMR/ECqvBaQbqlQDIPJ7
+XEH8A2pOXsh8BoN3YmHI/IpfAih8D1keMP/AJTkUvoLpe01kPkNVBD8Kn38O
+H4iWeAUxj6GUCczPOSuGwvfxYA5H5p+IkUThHzHUgvAPWfKA6GVrzkH4cblf
+7ZH51c1sKPJQ/UJTuCKQ+A5HDCH+h/ElRAOQ+fDwY5Ceh8pvi+J3QA9vAGR0
+TnA=
+      "], CompressedData["
+1:eJxTTMoPSmViYGAQBWIQzcDgIPZqQqQDiGH9QdMBic/QFsWPwrer5ALSZxht
+CiH86mY2kPwRQy9kPoPQFK4IrPwDrO/sgdSisAnhyHwfD+ZwZPU5Z8XCkPkT
+Lr8PRebfMb0QiuQeBL8qgh+Zr2D6XhNFnktDG0R/eAwx70CVqg6INngHsQ/K
+P6DmBPEPlC+R4lOIzIeHh0Iv2DzU8AMA39FNpg==
+      "], {{124.77928733825684`, 29.08320140838623}, {127.12628746032715`, 
+      29.08320140838623}, {127.46428680419922`, 29.08320140838623}, {
+      127.72428703308105`, 28.867201447486877`}, {129.00428771972656`, 
+      27.805201441049576`}, {129.00428771972656`, 28.146201446652412`}, {
+      129.00428771972656`, 29.08320140838623}, {129.94128799438477`, 
+      29.08320140838623}, {133.22628784179688`, 29.08320140838623}, {
+      133.22628784179688`, 34.71520137786865}, {124.77928733825684`, 
+      34.71520137786865}, {124.77928733825684`, 
+      29.08320140838623}}, CompressedData["
+1:eJxTTMoPSmViYGAQAWIQDQQCL77GOQBpj93PbRyQ+CuMixyR+QVXl4P5P3Zx
+x4PokOrLYP6DbjUU/pv3axKQ+QkRu1D4KyyPgvkm35aj8AtCilD4MPdA+Q2b
+ymtskMxzKM1VBfP3PF+DwueQt8PGZ4jJPG8JoiVET8Qjy0PdD+fPWMWNwof6
+H24/SngBAKeWV/Q=
+      "], CompressedData["
+1:eJxTTMoPSmViYGDQBWIQDQQN7a+THUB0SYoGiGY46Z+EzI+4boPCN6jWBfMZ
+NuWpI/Mdpturocj7X2RG4T/S/WcPpDTOQ8xjeNL8DcRfsMMflc9zHIXPUHwT
+wj/A+g7ET7jOkYzMd/gHlT8jwAiid+y5COG/OcDkgGwejA+zD8qfkeSLwpco
+94bwz1ozo/Ch/oHxYf6F8Q/8TQXzT2RBzbNsVUMOTxgfFt4w/o23b1H4CTff
+JyObB+PD7IPxGTKuMqPwoe6Fmwf1z4b+1yj8ik1eKPwJ23Sw86HhD+dDwxuu
+H50PVQ+3D8oPaPyHwve4ypsC5v8y/IfCh/oHxof5Fy4PTW8Klf9Q0itK+gUA
+zSm13Q==
+      "], {{38.46529006958008, 28.614201426506042`}, {41.75028610229492, 
+      28.614201426506042`}, {42.68729019165039, 28.614201426506042`}, {
+      42.68729019165039, 27.67720142006874}, {42.68729019165039, 
+      27.17320144176483}, {44.188289642333984`, 28.40220147371292}, {
+      44.447288513183594`, 28.614201426506042`}, {44.781288146972656`, 
+      28.614201426506042`}, {47.380287170410156`, 28.614201426506042`}, {
+      47.380287170410156`, 34.71520137786865}, {38.46529006958008, 
+      34.71520137786865}, {38.46529006958008, 
+      28.614201426506042`}}, CompressedData["
+1:eJxTTMoPSmViYGAQAWIQDQLzDzs5MDA0rFhQYeOA4DOwzMh1ROa/ebkUzE8w
++Ajmh1RfBvMbEjWdkfkOtw65o8hz/0bhP5ij4YFsHowPsw/Kh7sHyl8QZccB
+5jvogM1rEIpdaw3iK/w+hMJ3YExxQ+YncD5wAdF7fhhaIvHh8gscwO5H8PnB
+/oPzof6H248SXgC2AFTV
+      "], CompressedData["
+1:eJxTTMoPSmViYGCQAGIQDQQL+MoSHUBCHVNMQfSD7nPxyPyIb6dQ+DtYToD5
+BQc7UPgPNKtQ+A1FlVrIfAfnGC1k8xiMXcB8jznnUPgump0JyHwd1eVY+Q0l
+KRrIfAfHj6pg+vIniPzCa5og+ofMbxT9G56yJiLzb4iVofBPvCxH4S9IqkxE
+dj+MD/MfjB/xotIUmf+gHhI+Mx6Wo4QvSngDAGXtWmc=
+      "], CompressedData["
+1:eJxTTMoPSmViYGAQAWIQDQQPus/FOwDpgPQWMxC9gK8sEZkvUNqBwu+Imw7m
+d0jzovAjXlSaIvMbiiq1kPkMPMGayOY1lKRogOgbYmUo/A1PWVH4LpqdCWB+
+zg9FFD5U3mMOxP0w/oX7K1H4L3h64pHth/Fh7oPxH2hWmSLzYf4rOL8SJXxQ
+wgsA+A5NqA==
+      "], CompressedData["
+1:eJxTTMoPSmViYGAQBWIQDQQR2j2JDkC64dRhIRC9IMwjHoV/VQqFL/DiaxyI
+ZvhYIoDCP2jJjcI/wPrOHkjduG8Yj5UPVQ/nCx7nAdEdf6wh/FkcfMjugfFh
+7oXxJyRMQuHvSJueiGwenA+1D86HumdG0lbsfKh6OB/qX44vi1DCCyX8ADG4
+Usw=
+      "], CompressedData["
+1:eJxTTMoPSmViYGAQBWIQDQQN50MsHUAMmT9iDsj8A6zv7EH0hxQLrHyoejj/
+1GFxsP5aGwh/aqoEmJ7EhcrnX66Awt/jjMpf9kQe2Tw4H2YfjA9zj5aqDFY+
+TD2Mb3lNEkxzlMqBaSGoOMw9MD7MvTC+5EEUPjx8oOahhB8ACaE9/g==
+      "]}]}},
+  AspectRatio->Automatic,
+  Background->GrayLevel[1, 0],
+  BaseStyle->GrayLevel[1, 0],
+  ImageSize->{168., 78.},
+  PlotRange->{{-0.5, 167.5}, {-0.5, 77.5}}]
 }
 @|
 @|

@@ -171,6 +171,12 @@
 "UIAdvancedRoles" -> "\:89D2\:8272",
 "UITryEnableChatDialogMainText" -> "\:542F\:7528\:804A\:5929\:7B14\:8BB0\:672C\:529F\:80FD\:5C06\:7834\:574F\:6B64\:7B14\:8BB0\:672C\:4E2D\:5B9A\:4E49\:7684\:4E13\:6709\:6837\:5F0F\:ff0c\:5E76\:5C06\:5176\:66FF\:6362\:4E3A\:5171\:4EAB\:7684\:804A\:5929\:7B14\:8BB0\:672C\:6837\:5F0F\:3002",
 "UITryEnableChatDialogConfirm" -> "\:60A8\:786E\:5B9A\:8981\:7EE7\:7EED\:5417\:ff1f",
+"UIMessageManageSubscription" -> "Manage Subscription \[RightGuillemet]",
+"UIMessageContactUs" -> "Contact us \[RightGuillemet]",
+"UIMessageUsed80" -> "You have used 80% of your Wolfram Notebook Assistant + LLM Kit allowance for this month.",
+"UIMessageUsedAll" -> "You have used your entire Wolfram Notebook Assistant + LLM Kit allowance for this month.",
+"UIMessageHighUsageRate" -> "We've detected a very high rate of requests from your account. To prevent disruptions to the service for other users, we've temporarily had to block your requests.",
+"UIMessageUnblockRequest" -> "Ask to be unblocked \[RightGuillemet]",
 
 "StylesheetChatWidgetButtonTooltip" -> "\:53D1\:9001\:5230 LLM",
 "StylesheetAssistantMenuInitializerButtonTooltip" -> "\:7981\:7528\:81EA\:52A8\:534F\:52A9\:529F\:80FD",

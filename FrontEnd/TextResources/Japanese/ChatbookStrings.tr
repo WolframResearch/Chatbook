@@ -171,6 +171,12 @@
 "UIAdvancedRoles" -> "\:5f79\:5272",
 "UITryEnableChatDialogMainText" -> "\:30c1\:30e3\:30c3\:30c8\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:306e\:6a5f\:80fd\:3092\:6709\:52b9\:306b\:3059\:308b\:3068\:ff0c\:3053\:306e\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:306b\:5b9a\:7fa9\:3055\:308c\:305f\:30b9\:30bf\:30a4\:30eb\:304c\:7834\:68c4\:3055\:308c\:ff0c\:5171\:6709\:306eChatbook\:30b9\:30bf\:30a4\:30eb\:30b7\:30fc\:30c8\:3067\:7f6e\:63db\:3055\:308c\:307e\:3059\:ff0e",
 "UITryEnableChatDialogConfirm" -> "\:7d9a\:884c\:3057\:307e\:3059\:304b\:ff1f",
+"UIMessageManageSubscription" -> "Manage Subscription \[RightGuillemet]",
+"UIMessageContactUs" -> "Contact us \[RightGuillemet]",
+"UIMessageUsed80" -> "You have used 80% of your Wolfram Notebook Assistant + LLM Kit allowance for this month.",
+"UIMessageUsedAll" -> "You have used your entire Wolfram Notebook Assistant + LLM Kit allowance for this month.",
+"UIMessageHighUsageRate" -> "We've detected a very high rate of requests from your account. To prevent disruptions to the service for other users, we've temporarily had to block your requests.",
+"UIMessageUnblockRequest" -> "Ask to be unblocked \[RightGuillemet]",
 
 "StylesheetChatWidgetButtonTooltip" -> "\:5927\:898f\:6a21\:8a00\:8a9e\:30e2\:30c7\:30eb\:306b\:9001\:4fe1",
 "StylesheetAssistantMenuInitializerButtonTooltip" -> "\:81ea\:52d5\:30a2\:30b7\:30b9\:30bf\:30f3\:30c8\:3092\:7121\:52b9\:306b\:3059\:308b",
