@@ -167,7 +167,10 @@ $$longNameCharacter = Alternatives @@ $longNameCharacterList;
 
 $$invisibleCharacter = Alternatives[
     FromCharacterCode[ 8203 ], (* U+200B Zero Width Space *)
-    FromCharacterCode[ 62304 ] (* InvisibleSpace *)
+    FromCharacterCode[ 62304 ], (* InvisibleSpace *)
+    "\[SpanFromLeft]",
+    "\[SpanFromAbove]",
+    "\[SpanFromBoth]"
 ];
 
 (* Characters that should be automatically escaped when they appear in plain text to be valid markdown: *)
@@ -2162,6 +2165,15 @@ $$ignoredBox = Alternatives[
 
 
 fasterCellToString0[ $$ignoredBox ] := "";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Chatbook Text Resources*)
+fasterCellToString0[ DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "Close" ][ ___ ], ___ ] ] :=
+    "";
+
+fasterCellToString0[ DynamicBox[ ToBoxes[ FEPrivate`FrontEndResource[ "ChatbookStrings", name_String ], _ ], ___ ] ] :=
+    With[ { str = trRaw @ name }, str /; StringQ @ str ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
