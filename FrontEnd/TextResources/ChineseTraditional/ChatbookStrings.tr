@@ -171,6 +171,12 @@
 "UIAdvancedRoles" -> "\:89D2\:8272",
 "UITryEnableChatDialogMainText" -> "\:8CE6\:80FD\:7DB2\:8DEF\:804A\:5929\:7CFB\:7D71\:7B46\:8A18\:672C\:7684\:529F\:80FD\:6027\:FF0C\:4E0D\:50C5\:5C07\:6703\:6BC0\:640D\:8F09\:6B64\:7B46\:8A18\:672C\:4E2D\:6240\:5B9A\:7FA9\:7684\:79C1\:7528\:6A23\:5F0F\:FF0C\:4E14\:6703\:88AB\:5171\:4EAB Chatbook \:6A23\:5F0F\:8868\:53D6\:800C\:4EE3\:4E4B\:3002",
 "UITryEnableChatDialogConfirm" -> "\:60A8\:78BA\:5B9A\:8981\:7E7C\:7E8C\:55CE\:FF1F",
+"UIMessageManageSubscription" -> "Manage Subscription \[RightGuillemet]",
+"UIMessageContactUs" -> "Contact us \[RightGuillemet]",
+"UIMessageUsed80" -> "You have used 80% of your Wolfram Notebook Assistant + LLM Kit allowance for this month.",
+"UIMessageUsedAll" -> "You have used your entire Wolfram Notebook Assistant + LLM Kit allowance for this month.",
+"UIMessageHighUsageRate" -> "We've detected a very high rate of requests from your account. To prevent disruptions to the service for other users, we've temporarily had to block your requests.",
+"UIMessageUnblockRequest" -> "Ask to be unblocked \[RightGuillemet]",
 
 "StylesheetChatWidgetButtonTooltip" -> "\:767C\:9001\:81F3 LLM",
 "StylesheetAssistantMenuInitializerButtonTooltip" -> "\:5931\:80FD\:81EA\:52D5\:8F14\:52A9",
