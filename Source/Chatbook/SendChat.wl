@@ -1060,7 +1060,7 @@ writeResult[ settings_, container_, cell_, as_Association ] := Enclose[
 
         $lastFullResponseData = <| "Body" -> body, "Processed" -> processed, "Data" -> data |>;
 
-        Which[ MatchQ[ as[ "StatusCode" ], Except[ 200, _Integer ] ] || (processed === "" && AssociationQ @ data),
+        Which[ MatchQ[ as[ "StatusCode" ], Except[ 100|200, _Integer ] ] || (processed === "" && AssociationQ @ data),
                writeErrorCell[ cell, $badResponse = Association[ as, "Body" -> body, "BodyJSON" -> data ] ]
                ,
                processed === body === "",
@@ -2793,7 +2793,7 @@ errorBoxes[ as: KeyValuePattern[ "Error" -> "ServerResponseEmpty" ] ] :=
 errorBoxes[ as: KeyValuePattern[ "StatusCode" -> 429 ] ] :=
     ToBoxes @ messageFailure[ "RateLimitReached", as ];
 
-errorBoxes[ as: KeyValuePattern[ "StatusCode" -> code: Except[ 200 ] ] ] :=
+errorBoxes[ as: KeyValuePattern[ "StatusCode" -> code: Except[ 100|200 ] ] ] :=
     ToBoxes @ messageFailure[ "UnknownStatusCode", as ];
 
 errorBoxes[ failure_Failure ] :=
