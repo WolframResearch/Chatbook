@@ -698,6 +698,7 @@ evaluateLanguageLabel[ name_String, True ] :=
                 trExprTemplate[ "FormattingInsertContentAndEvaluateWorkspaceChatTooltip" ][ <| "1" ->
                     {
                         chatbookIcon[ "WorkspaceFocusIndicatorNotebook", False ],
+                        "\[ThinSpace]",
                         Style[ CurrentValue[ EvaluationNotebook[], { TaggingRules, "FocusWindowTitle" } ], FontWeight -> Bold ]
                     } |> ]
             } ]

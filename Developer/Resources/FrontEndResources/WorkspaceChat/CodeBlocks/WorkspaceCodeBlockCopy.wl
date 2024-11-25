@@ -45,6 +45,6 @@ Graphics[{Thickness[0.125],
        {8., 0.5}, {8., 8.5}, {8., 8.775999069213867}, 
        {7.776000022888184, 9.}, {7.5, 9.}}}]}, 
    FaceForm[RGBColor[0.2901960784313726, 0.5843137254901961, 0.8, 1.]]]}, 
- ImageSize -> {9., 13.}, PlotRange -> {{-0.5, 8.5}, 
+ ImageSize -> {11., 16.}, PlotRange -> {{-0.5, 8.5}, 
    {-0.5, 11.697400093078613}}, AspectRatio -> Automatic,
    BaselinePosition -> Center -> Center]
