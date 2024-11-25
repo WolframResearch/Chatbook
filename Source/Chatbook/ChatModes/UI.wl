@@ -505,6 +505,9 @@ focusedNotebookDisplay[ chatNB_ ] := Enclose[
         current = ConfirmBy[ First @ info, AssociationQ, "Current" ];
         focused = FirstCase[ info, KeyValuePattern[ "Focused" -> True ], current ];
 
+        (* focusedNotebookDisplay is dynamically updated so this TaggingRules value should be kept current *)
+        CurrentValue[ chatNB, { TaggingRules, "FocusWindowTitle" } ] = Lookup[ focused, "WindowTitle", None ];
+
         label = Grid[
             { {
                 Toggler[
