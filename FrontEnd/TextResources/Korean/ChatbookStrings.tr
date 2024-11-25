@@ -209,7 +209,7 @@
 "WorkspaceWindowTitle" -> "\:B178\:D2B8\:BD81 \:C5B4\:C2DC\:C2A4\:D134\:D2B8",
 "WorkspaceToolbarButtonLabelHistory" -> "\:D788\:C2A4\:D1A0\:B9AC",
 "WorkspaceToolbarButtonLabelSources" -> "\:CD9C\:CC98",
-"WorkspaceToolbarSourcesSubTitleMoved" -> "Moved previous chat to `1` History",
+"WorkspaceToolbarSourcesSubTitleMoved" -> "Previous chat moved to `1` History.",
 "WorkspaceToolbarSourcesSubTitle" -> "Choose sources to be made available to the notebook assistant.",
 "WorkspaceToolbarButtonLabelNew" -> "New Chat",
 "WorkspaceToolbarButtonTooltipHistory" -> "\:B300\:D654 \:AD00\:B9AC",
