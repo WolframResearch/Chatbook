@@ -6282,7 +6282,72 @@ TD2Mb3lNEkxzlMqBaSGoOMw9MD7MvTC+5EEUPjx8oOahhB8ACaE9/g==
   Background->GrayLevel[1, 0],
   BaseStyle->GrayLevel[1, 0],
   ImageSize->{168., 78.},
-  PlotRange->{{-0.5, 167.5}, {-0.5, 77.5}}]
+  PlotRange->{{-0.5, 167.5}, {-0.5, 77.5}}],
+
+"WorkspaceCodeBlockCopy" -> GraphicsBox[
+  {Thickness[0.125], FaceForm[{RGBColor[
+   0.2901960784313726, 0.5843137254901961, 0.8], Opacity[1.]}], 
+   FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {
+     0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1,
+      0}}, {{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {0, 1, 
+     0}, {0, 1, 0}, {0, 1, 0}}, {{0, 2, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {
+     0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {1, 3, 3}, {0, 1, 
+     0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1, 3, 3}, {0, 1, 0}, {1,
+      3, 3}, {0, 1, 0}, {1, 3, 3}}}, {{{6.822000026702881, 
+     6.291999816894531}, {1.1779999732971191`, 6.291999816894531}, {
+     1.1779999732971191`, 7.008999824523926}, {6.822000026702881, 
+     7.008999824523926}, {6.822000026702881, 6.291999816894531}}, {{
+     6.822000026702881, 4.8580002784729}, {1.1779999732971191`, 
+     4.8580002784729}, {1.1779999732971191`, 5.575000286102295}, {
+     6.822000026702881, 5.575000286102295}, {6.822000026702881, 
+     4.8580002784729}}, {{6.822000026702881, 3.4250001907348633`}, {
+     1.1779999732971191`, 3.4250001907348633`}, {1.1779999732971191`, 
+     4.142000198364258}, {6.822000026702881, 4.142000198364258}, {
+     6.822000026702881, 3.4250001907348633`}}, {{6.822000026702881, 
+     1.9910001754760742`}, {1.1779999732971191`, 1.9910001754760742`}, {
+     1.1779999732971191`, 2.7080001831054688`}, {6.822000026702881, 
+     2.7080001831054688`}, {6.822000026702881, 1.9910001754760742`}}, {{
+     2.800999879837036, 9.597000122070312}, {5.199999809265137, 
+     9.597000122070312}, {5.599999904632568, 8.79699993133545}, {
+     2.4010000228881836`, 8.79699993133545}, {2.800999879837036, 
+     9.597000122070312}}, CompressedData["
+1:eJxTTMoPSmViYGBQBWIQDQFyDhBaCUQ3TMyVROYnWMeD+QfmS4H5DJoxYP6C
+Q6YQ9f1OYL5DjD+Yf+D9cnEwXfFSGSy+Qw7MT7AsUQHzeZjEwPLHToP5C46d
+FgHTzhB+gqWJMDa+w90UNRD9YOlsTmx8mPoFRRlsKPqf/2ZGsW/2EUZk9zSI
+rGMAy399oQzx19df9sj+KZkM5i9wNQPzF7xfDubDwqNheh6YDwsvkJOQ+Qoc
+a86gyYPBAf9eRWQ+EKDzYeaAAcwcJPOwqmNAxCfEnvlS8mjmKqC5SwHN3TA+
+zD1gPsy9SObB/INIPwC/b2f2
+     "]}]},
+  AspectRatio->Automatic,
+  BaselinePosition->(Center -> Center),
+  ImageSize->{9., 13.},
+  PlotRange->{{-0.5, 8.5}, {-0.5, 11.697400093078613`}}],
+
+"WorkspaceCodeBlockInsertAndEvaluate" -> GraphicsBox[
+  {Thickness[0.07016411257027613], 
+   {RGBColor[0.2901960784313726, 0.5843137254901961, 0.8], Thickness[
+    0.05262308442770709], Opacity[1.], CapForm["Butt"], 
+    JoinForm[{"Miter", 1.}], 
+    JoinedCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {
+     0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 
+     0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0,
+      1, 0}, {0, 1, 0}}}, CompressedData["
+1:eJxTTMoPSmVmYGBgBGJRIGZiAIMEhUYZBxBj1UYdEB3heVcMRHM0XlUHi59y
+5gTRHWKSWiBaQamWG0Q/+FmnApb/2/7MHkgd8PRRBvEPWDWygMXVDeWQ5R22
+nBAF6xOtButnCEkWBtEJG+3B5jOYxjEg289QnwUWh7sv5/lzkDlbqoUUQfyG
+ogyw/ANdAzWwvGYMWP+N6wtVwe5wTwSbP2GBhDaIdlh3HGz/hosJYH8tkNKX
+Q5bfcMwb7P4XUYvA+i+UQfzHYWIINr9isgTY/zD7YeGDEn4ArS1I9w==
+     "],
+     CurveClosed->{1}]}, 
+   {FaceForm[{RGBColor[0.2901960784313726, 0.5843137254901961, 0.8], Opacity[
+    1.]}], FilledCurveBox[{{{0, 2, 0}, {0, 1, 0}, {0, 1, 0}}}, {{{
+     5.526100158691406, 10.766900062561035`}, {5.526100158691406, 
+     4.3668999671936035`}, {10.32610034942627, 7.582900285720825}, {
+     5.526100158691406, 10.766900062561035`}}}]}},
+  AspectRatio->Automatic,
+  BaselinePosition->(Center -> Center),
+  ImageSize->{16., 17.},
+  PlotRange->{{-0.5, 14.752300262451172`}, {-0.5, 15.594200134277344`}}]
 }
 @|
 @|
