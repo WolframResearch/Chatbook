@@ -487,8 +487,8 @@ showNotebookAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] :
                 Button[
                     MouseAppearance[
                         Style[
-                            Row[ { trExprTemplate["WorkspaceToolbarSourcesSubTitleMoved"][ <| "1" -> chatbookIcon[ "WorkspaceToolbarIconHistory", False ] |> ] } ],
-                            "WorkspaceChatToolbarTitle"
+                            Row[ { trExprTemplate["WorkspaceToolbarSourcesSubTitleMoved"][ <| "1" -> chatbookIcon[ "WorkspaceToolbarIconHistorySmall", False ] |> ] } ],
+                            "WorkspaceChatToolbarTitle", FontSlant -> Italic, FontWeight -> Plain
                         ],
                         "LinkHand"], (* using LinkHand to indicate the sub-docked cell is clickable *)
                     Wolfram`Chatbook`ChatModes`UI`Private`toggleOverlayMenu[ nbo, "History" ],
