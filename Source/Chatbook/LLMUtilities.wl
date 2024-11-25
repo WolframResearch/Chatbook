@@ -238,7 +238,7 @@ extractBodyChunks0 // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*apiFailureQ*)
 apiFailureQ // beginDefinition;
-apiFailureQ[ Failure[ "APIError", KeyValuePattern[ "StatusCode" -> Except[ 200, _Integer ] ] ] ] := True;
+apiFailureQ[ Failure[ "APIError", KeyValuePattern[ "StatusCode" -> Except[ 100|200, _Integer ] ] ] ] := True;
 apiFailureQ[ _ ] := False;
 apiFailureQ // endDefinition;
 
