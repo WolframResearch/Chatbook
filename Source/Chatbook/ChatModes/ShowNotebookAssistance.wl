@@ -469,7 +469,7 @@ showNotebookAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] :
             "Existing"
         ];
 
-        movedLastChatToSourcesIndicatorQ = MatchQ[ current, _NotebookObject ];
+        movedLastChatToSourcesIndicatorQ = MatchQ[ current, _NotebookObject ] && Cells[ current ] =!= {};
 
         If[ TrueQ @ new,
             Quiet @ NotebookClose @ current;
