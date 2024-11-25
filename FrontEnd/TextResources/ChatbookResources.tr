@@ -6320,7 +6320,7 @@ zD1gPsy9SObB/INIPwC/b2f2
      "]}]},
   AspectRatio->Automatic,
   BaselinePosition->(Center -> Center),
-  ImageSize->{9., 13.},
+  ImageSize->{11., 16.},
   PlotRange->{{-0.5, 8.5}, {-0.5, 11.697400093078613`}}],
 
 "WorkspaceCodeBlockInsertAndEvaluate" -> GraphicsBox[
