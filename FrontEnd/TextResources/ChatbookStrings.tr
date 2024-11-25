@@ -62,6 +62,7 @@
 "FormattingCopyToClipboardLabel" -> "Copy",
 "FormattingInsertContentLabel" -> "Insert",
 "FormattingInsertContentAndEvaluateTooltip" -> "Insert content as new input cell below and evaluate",
+"FormattingInsertContentAndEvaluateWorkspaceChatTooltip" -> "Insert this into `1` and evaluate.",
 "FormattingCopyToClipboardTooltip" -> "Copy to clipboard",
 "FormattingInsertContentTooltip" -> "Insert content as new input cell below",
 "FormattingToolUsing" -> "Using ",
