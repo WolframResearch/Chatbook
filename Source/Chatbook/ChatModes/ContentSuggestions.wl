@@ -237,7 +237,7 @@ showContentSuggestions0[ nbo_NotebookObject, root: $$feObj, selectionInfo_Associ
         selection = selectionInfo[ "SelectionType" ];
 
         $progressContainer = HoldComplete @ suggestionsContainer;
-        setProgressDisplay[ "Generating suggestions", 0.0 ];
+        setProgressDisplay[ "GeneratingSuggestions", 0.0 ];
         $fixedProgressText = True;
 
         attached = ConfirmMatch[
