@@ -69,6 +69,7 @@ graphicsBoxQ[ TemplateBox[ { box_, ___ }, $$graphicsBoxIgnoredTemplates, ___ ] ]
 graphicsBoxQ[ RowBox[ boxes_List ] ] := AnyTrue[ boxes, graphicsBoxQ ];
 graphicsBoxQ[ TemplateBox[ boxes_List, "RowDefault", ___ ] ] := AnyTrue[ boxes, graphicsBoxQ ];
 graphicsBoxQ[ GridBox[ boxes_List, ___ ] ] := AnyTrue[ Flatten @ boxes, graphicsBoxQ ];
+graphicsBoxQ[ StyleBox[ _, "GraphicsRawBoxes", ___ ] ] := True;
 graphicsBoxQ[ ___ ] := False;
 graphicsBoxQ // endDefinition;
 
