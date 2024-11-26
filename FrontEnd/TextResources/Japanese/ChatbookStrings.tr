@@ -63,6 +63,7 @@
 "FormattingInsertContentLabel" -> "\:633f\:5165",
 "FormattingInsertContentAndEvaluateTooltip" -> "\:30b3\:30f3\:30c6\:30f3\:30c4\:3092\:65b0\:898f\:306e\:5165\:529b\:30bb\:30eb\:3068\:3057\:3066\:4e0b\:306b\:633f\:5165\:3057\:8a55\:4fa1\:3059\:308b",
 "FormattingInsertContentAndEvaluateWorkspaceChatTooltip" -> "Insert this into `1` and evaluate.",
+"FormattingInsertContentAndEvaluateWorkspaceChatTooltipNew" -> "Insert this into a new notebook and evaluate.",
 "FormattingCopyToClipboardTooltip" -> "\:30af\:30ea\:30c3\:30d7\:30dc\:30fc\:30c9\:306b\:30b3\:30d4\:30fc",
 "FormattingInsertContentTooltip" -> "\:30b3\:30f3\:30c6\:30f3\:30c4\:3092\:65b0\:898f\:306e\:5165\:529b\:30bb\:30eb\:3068\:3057\:3066\:4e0b\:306b\:633f\:5165\:3059\:308b",
 "FormattingToolUsing" -> "\:4f7f\:7528\:4e2d\:ff1a",

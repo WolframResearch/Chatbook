@@ -63,6 +63,7 @@
 "FormattingInsertContentLabel" -> "Insertar",
 "FormattingInsertContentAndEvaluateTooltip" -> "Insertar contenido como una nueva celda de entrada debajo y evaluar",
 "FormattingInsertContentAndEvaluateWorkspaceChatTooltip" -> "Insert this into `1` and evaluate.",
+"FormattingInsertContentAndEvaluateWorkspaceChatTooltipNew" -> "Insert this into a new notebook and evaluate.",
 "FormattingCopyToClipboardTooltip" -> "Copiar al portapapeles",
 "FormattingInsertContentTooltip" -> "Insertar contenido como una nueva celda de entrada debajo",
 "FormattingToolUsing" -> "Utilizando ",
