@@ -209,6 +209,7 @@
 "WorkspaceWindowTitle" -> "Assistant de notebook",
 "WorkspaceToolbarButtonLabelHistory" -> "Historique",
 "WorkspaceToolbarButtonLabelSources" -> "Sources",
+"WorkspaceToolbarSourcesSubTitleMoved" -> "Previous chat moved to `1` History.",
 "WorkspaceToolbarSourcesSubTitle" -> "Choisir les sources \[AGrave] mettre à la disposition de l\[CloseCurlyQuote]assistant de notebook.",
 "WorkspaceToolbarButtonLabelNew" -> "Nouveau Chat",
 "WorkspaceToolbarButtonTooltipHistory" -> "G\[EAcute]rer les conversations",
