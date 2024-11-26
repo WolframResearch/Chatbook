@@ -164,7 +164,6 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `fixLineEndings;
 `floatingButtonGrid;
 `forceRefreshCloudPreferences;
-`formatNotebookTitle;
 `functionTemplateBoxes;
 `getAvailableServiceNames;
 `getBoxObjectFromBoxID;

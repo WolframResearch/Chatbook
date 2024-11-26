@@ -39,7 +39,6 @@ $subcontexts = {
     "Wolfram`Chatbook`ChatModes`Context`",
     "Wolfram`Chatbook`ChatModes`Evaluate`",
     "Wolfram`Chatbook`ChatModes`NotebookAssistanceInstructions`",
-    "Wolfram`Chatbook`ChatModes`NotebookFocus`",
     "Wolfram`Chatbook`ChatModes`ShowNotebookAssistance`",
     "Wolfram`Chatbook`ChatModes`UI`"
 };
