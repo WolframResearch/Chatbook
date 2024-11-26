@@ -1156,7 +1156,12 @@ servicesSettingsPanel0[ ] := Enclose[
                                 "MouseClicked" :> ( Typeset`openQ = !Typeset`openQ ) ] },
                     Dynamic[ Typeset`openQ ],
                     BaselinePosition -> Baseline,
-                    ImageSize -> Automatic ]
+                    ImageSize -> Automatic ],
+                Initialization :> None, (* needed for Deinitialization to run *)
+                Deinitialization :>
+                    If[ TrueQ[ Wolfram`LLMFunctions`Common`Private`$LastLLMKitRequest[ "ConnectionQ" ] ],
+                        SessionSubmit @ Wolfram`LLMFunctions`Common`Private`teardownLLMListener[ ]
+                    ]
             ];
 
         llmIcon = chatbookIcon[ "llmkit-dialog-sm", False ];
@@ -1175,8 +1180,7 @@ servicesSettingsPanel0[ ] := Enclose[
                         FontColor -> RGBColor[ "#333333" ],
                         FontFamily -> "Roboto",
                         FontSize -> 11 } ],
-                If[ !AssociationQ[ Wolfram`LLMFunctions`Common`$LLMKitInfo ], Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] ];
-                openLLMKitURL[ "learnMoreUrl" ],
+                Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Learn",
                 Appearance -> "Suppressed",
                 BaselinePosition -> Baseline,
                 Method -> "Queued",
@@ -1218,8 +1222,7 @@ makeLLMPanel[ ] :=
                     Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Normal", FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
                     Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Hover", FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
                     Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Pressed", FrameMargins -> { { 17, 17 }, { 7, 7 } } ] ],
-                If[ !AssociationQ[ Wolfram`LLMFunctions`Common`$LLMKitInfo ], Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] ];
-                openLLMKitURL[ "buyNowUrl" ],
+                Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Buy",
                 Appearance -> "Suppressed",
                 BaseStyle -> "DialogTextCommon",
                 BaselinePosition -> Baseline,
@@ -1238,7 +1241,7 @@ makeLLMPanel[ ] :=
                             Alignment -> { Left, Baseline },
                             BaseStyle -> { FontColor -> GrayLevel[ 0.2 ], FontSize -> 14 },
                             BaselinePosition -> { 1, 2 } ] },
-                Dynamic[ TrueQ[ CurrentValue[ "WolframCloudConnected" ] ] ],
+                Dynamic[ Wolfram`LLMFunctions`Common`CloudAuthenticatedQ[ ] ],
                 BaselinePosition -> Baseline,
                 ImageSize -> Automatic ];
 
@@ -1251,7 +1254,8 @@ makeLLMPanel[ ] :=
                             If[ CurrentValue[ "MouseOver" ],
                                 RGBColor[ 0.3333333333333333, 0.6941176470588235, 0.8483660130718954 ],
                                 RGBColor[                 0., 0.5411764705882353, 0.7725490196078432 ] ] ] ],
-                If[ CurrentValue[ "WolframCloudConnected" ] =!= "Pending", FEPrivate`WolframCloudSignIn[ ] ],
+                CloudConnect[ ];
+                If[ Wolfram`LLMFunctions`Common`CloudAuthenticatedQ[ ], Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] ],
                 Appearance -> "Suppressed",
                 BaseStyle -> "DialogTextCommon",
                 BaselinePosition -> Baseline,
@@ -1263,8 +1267,7 @@ makeLLMPanel[ ] :=
                 Style[
                     tr[ "PreferencesContentLLMKitEnabledManage" ],
                     FontColor -> Dynamic[ If[ CurrentValue[ "MouseOver" ], GrayLevel[ 0.2 ], GrayLevel[ 0.537254 ] ] ] ],
-                If[ !AssociationQ[ Wolfram`LLMFunctions`Common`$LLMKitInfo ], Wolfram`LLMFunctions`Common`UpdateLLMKitInfo[ ] ];
-                openLLMKitURL[ "manageSubscriptionUrl" ],
+                Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Manage",
                 Appearance -> "Suppressed",
                 BaseStyle -> "DialogTextCommon",
                 Method -> "Queued",
@@ -1318,7 +1321,7 @@ makeLLMPanel[ ] :=
                             },
                             Dynamic[
                                 Which[
-                                    !TrueQ[ CurrentValue[ "WolframCloudConnected" ] ], "NotCloudConnected",
+                                    !Wolfram`LLMFunctions`Common`CloudAuthenticatedQ[ ], "NotCloudConnected",
                                     TrueQ[ Wolfram`LLMFunctions`Common`$LLMKitInfo[ "userHasSubscription" ] ], "CloudConnectedAndSubscribed",
                                     !AssociationQ[ Wolfram`LLMFunctions`Common`$LLMKitInfo ], "Loading",
                                     True, "CloudConnectedButNotSubscribed" ] ],
@@ -1847,18 +1850,6 @@ clearConnectionCache[ service_String, delete: True|False ] := (
 );
 
 clearConnectionCache // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*openLLMKitURL*)
-openLLMKitURL // beginDefinition;
-
-openLLMKitURL[ name_String ] :=
-    With[ { url = Wolfram`LLMFunctions`Common`$LLMKitInfo[ name ] },
-        If[ StringQ @ url, SystemOpen @ url ]
-    ];
-
-openLLMKitURL // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
