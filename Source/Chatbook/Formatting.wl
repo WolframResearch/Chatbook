@@ -694,18 +694,38 @@ evaluateLanguageLabel[ name_String, True ] :=
                 ],
                 "LinkHand"
             ],
-            Row[ Flatten @ {
-                trExprTemplate[ "FormattingInsertContentAndEvaluateWorkspaceChatTooltip" ][ <| "1" ->
-                    {
-                        chatbookIcon[ "WorkspaceFocusIndicatorNotebook", False ],
-                        "\[ThinSpace]",
-                        Style[ CurrentValue[ EvaluationNotebook[], { TaggingRules, "FocusWindowTitle" } ], FontWeight -> Bold ]
-                    } |> ]
-            } ]
+            targetNotebookLabel @ EvaluationNotebook[ ]
         ] /; MatchQ[ icon, _Graphics | _Dynamic | _Image ]
     ];
 
 evaluateLanguageLabel[ ___ ] := $insertEvaluateButtonLabel;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*targetNotebookLabel*)
+targetNotebookLabel // beginDefinition;
+
+targetNotebookLabel[ nbo_NotebookObject ] :=
+    targetNotebookLabel[ nbo, GetFocusedNotebook @ nbo ];
+
+targetNotebookLabel[ nbo_, None ] :=
+    tr[ "FormattingInsertContentAndEvaluateWorkspaceChatTooltipNew" ];
+
+targetNotebookLabel[ nbo_, focused_NotebookObject ] :=
+    targetNotebookLabel[ nbo, focused, AbsoluteCurrentValue[ focused, WindowTitle ] ];
+
+targetNotebookLabel[ nbo_, focused_NotebookObject, title_ ] :=
+    Row @ Flatten @ {
+        trExprTemplate[ "FormattingInsertContentAndEvaluateWorkspaceChatTooltip" ][ <|
+            "1" -> {
+                chatbookIcon[ "WorkspaceFocusIndicatorNotebook", False ],
+                "\[ThinSpace]",
+                Style[ formatNotebookTitle @ title, FontWeight -> Bold ]
+            }
+        |> ]
+    };
+
+targetNotebookLabel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -871,7 +891,7 @@ copyCodeBlock // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getNotebookForCodeInsertion*)
 getNotebookForCodeInsertion // beginDefinition;
-getNotebookForCodeInsertion[ chatNB_NotebookObject ] := getNotebookForCodeInsertion[ chatNB, getUserNotebook[ ] ];
+getNotebookForCodeInsertion[ chatNB_NotebookObject ] := getNotebookForCodeInsertion[ chatNB, GetFocusedNotebook @ chatNB ];
 getNotebookForCodeInsertion[ _, userNB_NotebookObject ] := userNB;
 getNotebookForCodeInsertion[ _, None ] := CreateNotebook[ ];
 getNotebookForCodeInsertion // endDefinition;

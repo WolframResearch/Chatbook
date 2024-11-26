@@ -63,6 +63,7 @@
 "FormattingInsertContentLabel" -> "Ins\[EAcute]rer",
 "FormattingInsertContentAndEvaluateTooltip" -> "Ins\[EAcute]rer le contenu en tant que nouvelle cellule d\[CloseCurlyQuote]entr\[EAcute]e ci-dessous et l\[CloseCurlyQuote]\[EAcute]valuer",
 "FormattingInsertContentAndEvaluateWorkspaceChatTooltip" -> "Insert this into `1` and evaluate.",
+"FormattingInsertContentAndEvaluateWorkspaceChatTooltipNew" -> "Insert this into a new notebook and evaluate.",
 "FormattingCopyToClipboardTooltip" -> "Copier dans le presse-papiers",
 "FormattingInsertContentTooltip" -> "Ins\[EAcute]rer le contenu en tant que nouvelle cellule d\[CloseCurlyQuote]entr\[EAcute]e ci-dessous",
 "FormattingToolUsing" -> "Utilisation de ",
