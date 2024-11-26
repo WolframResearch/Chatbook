@@ -208,6 +208,7 @@
 "WorkspaceWindowTitle" -> "Assistant de notebook",
 "WorkspaceToolbarButtonLabelHistory" -> "Historique",
 "WorkspaceToolbarButtonLabelSources" -> "Sources",
+"WorkspaceToolbarSourcesSubTitleMoved" -> "Le chat pr\[EAcute]c\[EAcute]dent a \[EAcute]t\[EAcute] d\[EAcute]plac\[EAcute] dans l\[CloseCurlyQuote]historique `1`.",
 "WorkspaceToolbarSourcesSubTitle" -> "Choisir les sources \[AGrave] mettre à la disposition de l\[CloseCurlyQuote]assistant de notebook.",
 "WorkspaceToolbarButtonLabelNew" -> "Nouveau Chat",
 "WorkspaceToolbarButtonTooltipHistory" -> "G\[EAcute]rer les conversations",
