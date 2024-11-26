@@ -230,7 +230,16 @@
 "InlineChatButtonTooltipViewNotebookAssist" -> "\:5728\:7B14\:8BB0\:672C\:534F\:52A9\:804A\:5929\:4E2D\:67E5\:770B",
 
 "NotebookAssistanceInputGettingStarted" -> "\:5E2E\:52A9\:6211\:5F00\:59CB\:4F7F\:7528",
-"NotebookAssistanceInputErrorMessage" -> "\:51FA\:4EC0\:4E48\:95EE\:9898\:4E86\:ff1f"
+"NotebookAssistanceInputErrorMessage" -> "\:51FA\:4EC0\:4E48\:95EE\:9898\:4E86\:ff1f",
+
+"ProgressTextCheckingDocumentation" -> "Checking documentation",
+"ProgressTextChoosingDocumentation" -> "Choosing relevant documentation",
+"ProgressTextCreatingMessages" -> "Creating messages",
+"ProgressTextSendingChat" -> "Sending chat",
+"ProgressTextGeneratingSuggestions" -> "Generating suggestions",
+"ProgressTextWaitingForResponse" -> "Waiting for response",
+"ProgressTextDownloadingSnippet" -> "Downloading `1` documentation snippet",
+"ProgressTextDownloadingSnippets" -> "Downloading `1` documentation snippets"
 }
 @|
 @|

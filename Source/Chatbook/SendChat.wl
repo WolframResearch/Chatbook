@@ -96,7 +96,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
                 "ConstructMessages"
             ],
             $chatDataTag
-        ] // withApproximateProgress[ "Creating messages", 0.3 ];
+        ] // withApproximateProgress[ "CreatingMessages", 0.3 ];
 
         data = ConfirmBy[ Association @ Flatten @ data, AssociationQ, "Data" ];
 
@@ -141,7 +141,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             prepareMessagesForLLM @ messages,
             cellObject,
             settings
-        ] // withApproximateProgress[ "Sending chat", 0.4 ];
+        ] // withApproximateProgress[ "SendingChat", 0.4 ];
 
         addHandlerArguments[ "Task" -> task ];
 
@@ -149,7 +149,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         CurrentChatSettings[ cellObject, "Task"       ] = task;
 
         If[ FailureQ @ task, throwTop @ writeErrorCell[ cellObject, task ] ];
-        setProgressDisplay[ "Waiting for response", 1.0 ];
+        setProgressDisplay[ "WaitingForResponse", 1.0 ];
 
         If[ task === $Canceled, StopChat @ cellObject ];
 
@@ -547,7 +547,7 @@ chatSubmit0[
         auth = settings[ "Authentication" ];
         stop = makeStopTokens @ settings;
 
-        setProgressDisplay[ "Waiting for response", 1.0 ];
+        setProgressDisplay[ "WaitingForResponse", 1.0 ];
         result = ConfirmMatch[
             Quiet[
                 LLMServices`Chat[
