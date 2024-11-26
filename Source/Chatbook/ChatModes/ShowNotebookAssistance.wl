@@ -464,7 +464,7 @@ showNotebookAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] :
     Module[ { current, nbo, movedLastChatToSourcesIndicatorQ },
 
         current = ConfirmMatch[
-            LogChatTiming @ findCurrentWorkspaceChat[ ],
+            LogChatTiming @ findCurrentWorkspaceChat[ "NotebookAssistance" ],
             _NotebookObject | Missing[ "NotFound" ],
             "Existing"
         ];
@@ -507,7 +507,12 @@ showNotebookAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] :
 
 showNotebookAssistanceWindow[ None, input_, evaluate_, new_ ] := Enclose[
     Module[ { current, nbo },
-        current = ConfirmMatch[ findCurrentWorkspaceChat[ ], _NotebookObject | Missing[ "NotFound" ], "Existing" ];
+
+        current = ConfirmMatch[
+            findCurrentWorkspaceChat[ "NotebookAssistance" ],
+            _NotebookObject | Missing[ "NotFound" ],
+            "Existing"
+        ];
 
         If[ TrueQ @ new,
             Quiet @ NotebookClose @ current;
@@ -621,11 +626,56 @@ windowMargins // endDefinition;
 (*findCurrentWorkspaceChat*)
 findCurrentWorkspaceChat // beginDefinition;
 
-findCurrentWorkspaceChat[ ] := FirstCase[
-    selectByCurrentValue[ Notebooks[ ], { TaggingRules, "ChatNotebookSettings", "WorkspaceChat" }, "Absolute" -> True ],
+
+findCurrentWorkspaceChat[ ] :=
+    findCurrentWorkspaceChat[ All, Notebooks[ ] ];
+
+
+findCurrentWorkspaceChat[ appName_String ] :=
+    findCurrentWorkspaceChat[ appName, Notebooks[ ] ];
+
+
+findCurrentWorkspaceChat[ All | _String, { } ] :=
+    Missing[ "NotFound" ];
+
+
+findCurrentWorkspaceChat[ All, notebooks: { __NotebookObject } ] := FirstCase[
+    selectByCurrentValue[ notebooks, { TaggingRules, "ChatNotebookSettings", "WorkspaceChat" }, "Absolute" -> True ],
     _NotebookObject,
     Missing[ "NotFound" ]
 ];
+
+
+findCurrentWorkspaceChat[ appName_String, notebooks: { __NotebookObject } ] := Enclose[
+    Catch @ Module[ { wsNotebooks, appNotebooks },
+
+        wsNotebooks = ConfirmMatch[
+            selectByCurrentValue[
+                notebooks,
+                { TaggingRules, "ChatNotebookSettings", "WorkspaceChat" },
+                "Absolute" -> True
+            ],
+            { ___NotebookObject },
+            "WorkspaceNotebooks"
+        ];
+
+        If[ wsNotebooks === { }, Throw @ Missing[ "NotFound" ] ];
+
+        appNotebooks = ConfirmMatch[
+            selectByCurrentValue[
+                wsNotebooks,
+                { TaggingRules, "ChatNotebookSettings", "AppName" },
+                SameAs @ appName,
+                "Absolute" -> True
+            ],
+            { ___NotebookObject },
+            "AppNotebooks"
+        ];
+
+        FirstCase[ appNotebooks, _NotebookObject, Missing[ "NotFound" ] ]
+    ]
+];
+
 
 findCurrentWorkspaceChat // endDefinition;
 

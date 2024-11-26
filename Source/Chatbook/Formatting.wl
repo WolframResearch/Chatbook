@@ -618,13 +618,17 @@ floatingButtonGrid[ cell_Cell, lang_ ] :=
         cellObj = topParentCell @ EvaluationCell[ ];
         Grid[
             {
-                checkTemplateBoxes @ {
-                    button[ evaluateLanguageLabel @ lang, insertCodeBelow[ cell, True ] ],
-                    button[
-                        If[ TrueQ @ CurrentChatSettings[ cellObj, "WorkspaceChat" ], $insertInputButtonLabelWorkspaceChat, $insertInputButtonLabel ],
-                        insertCodeBelow[ cell, False ] ],
-                    button[ $copyToClipboardButtonLabel, copyCodeBlock @ cell ]
-                }
+                checkTemplateBoxes @ If[ TrueQ @ CurrentChatSettings[ cellObj, "WorkspaceChat" ],
+                    {
+                        button[ $copyToClipboardButtonLabelWorkspaceChat, copyCodeBlock @ cell ],
+                        button[ evaluateLanguageLabel[ lang, True ], insertCodeBelow[ cell, True ] ]
+                    },
+                    {
+                        button[ evaluateLanguageLabel[ lang, False ], insertCodeBelow[ cell, True ] ],
+                        button[ $insertInputButtonLabel, insertCodeBelow[ cell, False ] ],
+                        button[ $copyToClipboardButtonLabel, copyCodeBlock @ cell ]
+                    }
+                ]
             },
             Alignment  -> Top,
             Spacings   -> 0.2,
@@ -639,7 +643,7 @@ floatingButtonGrid[ string_, lang_ ] := RawBoxes @ TemplateBox[
         ToBoxes @ Grid[
             {
                 checkTemplateBoxes @ {
-                    button[ evaluateLanguageLabel @ lang, insertCodeBelow[ string, True ] ],
+                    button[ evaluateLanguageLabel[ lang, False ], insertCodeBelow[ string, True ] ],
                     button[ $insertInputButtonLabel, insertCodeBelow[ string, False ] ],
                     button[ $copyToClipboardButtonLabel, copyCodeBlock @ string ]
                 }
@@ -666,7 +670,7 @@ checkTemplateBoxes // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*evaluateLanguageLabel*)
-evaluateLanguageLabel[ name_String ] :=
+evaluateLanguageLabel[ name_String, False ] :=
     With[ { icon = $languageIcons @ name },
         fancyTooltip[
             MouseAppearance[
@@ -680,7 +684,48 @@ evaluateLanguageLabel[ name_String ] :=
         ] /; MatchQ[ icon, _Graphics | _Image ]
     ];
 
+evaluateLanguageLabel[ name_String, True ] :=
+    With[ { icon = If[ name === "Wolfram", chatbookIcon[ "WorkspaceCodeBlockInsertAndEvaluate", False ], $languageIcons @ name ] },
+        fancyTooltip[
+            MouseAppearance[
+                buttonMouseover[
+                    buttonFrameDefault[ labeledIcon[ If[ name === "Wolfram", { "WorkspaceCodeBlockInsertAndEvaluate", False }, name ], "FormattingInsertContentAndEvaluateLabel" ], True ],
+                    buttonFrameActive[ labeledIcon[ If[ name === "Wolfram", { "WorkspaceCodeBlockInsertAndEvaluate", False }, name ], "FormattingInsertContentAndEvaluateLabel" ], True ]
+                ],
+                "LinkHand"
+            ],
+            targetNotebookLabel @ EvaluationNotebook[ ]
+        ] /; MatchQ[ icon, _Graphics | _Dynamic | _Image ]
+    ];
+
 evaluateLanguageLabel[ ___ ] := $insertEvaluateButtonLabel;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*targetNotebookLabel*)
+targetNotebookLabel // beginDefinition;
+
+targetNotebookLabel[ nbo_NotebookObject ] :=
+    targetNotebookLabel[ nbo, GetFocusedNotebook @ nbo ];
+
+targetNotebookLabel[ nbo_, None ] :=
+    tr[ "FormattingInsertContentAndEvaluateWorkspaceChatTooltipNew" ];
+
+targetNotebookLabel[ nbo_, focused_NotebookObject ] :=
+    targetNotebookLabel[ nbo, focused, AbsoluteCurrentValue[ focused, WindowTitle ] ];
+
+targetNotebookLabel[ nbo_, focused_NotebookObject, title_ ] :=
+    Row @ Flatten @ {
+        trExprTemplate[ "FormattingInsertContentAndEvaluateWorkspaceChatTooltip" ][ <|
+            "1" -> {
+                chatbookIcon[ "WorkspaceFocusIndicatorNotebook", False ],
+                "\[ThinSpace]",
+                Style[ formatNotebookTitle @ title, FontWeight -> Bold ]
+            }
+        |> ]
+    };
+
+targetNotebookLabel // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -699,6 +744,20 @@ $copyToClipboardButtonLabel := $copyToClipboardButtonLabel = fancyTooltip[
         buttonMouseover[
             buttonFrameDefault @ labeledIcon[ "AssistantCopyClipboard", "FormattingCopyToClipboardLabel" ],
             buttonFrameActive @ labeledIcon[ "AssistantCopyClipboard", "FormattingCopyToClipboardLabel" ]
+        ],
+        "LinkHand"
+    ],
+    tr[ "FormattingCopyToClipboardTooltip" ]
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*$copyToClipboardButtonLabelWorkspaceChat*)
+$copyToClipboardButtonLabelWorkspaceChat := $copyToClipboardButtonLabelWorkspaceChat = fancyTooltip[
+    MouseAppearance[
+        buttonMouseover[
+            buttonFrameDefault @ labeledIcon[ { "WorkspaceCodeBlockCopy", False }, "FormattingCopyToClipboardLabel" ],
+            buttonFrameActive @ labeledIcon[ { "WorkspaceCodeBlockCopy", False }, "FormattingCopyToClipboardLabel" ]
         ],
         "LinkHand"
     ],
@@ -832,7 +891,7 @@ copyCodeBlock // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*getNotebookForCodeInsertion*)
 getNotebookForCodeInsertion // beginDefinition;
-getNotebookForCodeInsertion[ chatNB_NotebookObject ] := getNotebookForCodeInsertion[ chatNB, getUserNotebook[ ] ];
+getNotebookForCodeInsertion[ chatNB_NotebookObject ] := getNotebookForCodeInsertion[ chatNB, GetFocusedNotebook @ chatNB ];
 getNotebookForCodeInsertion[ _, userNB_NotebookObject ] := userNB;
 getNotebookForCodeInsertion[ _, None ] := CreateNotebook[ ];
 getNotebookForCodeInsertion // endDefinition;
@@ -1042,10 +1101,12 @@ buttonPane[ expr_ ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*labeledIcon*)
-labeledIcon[ iconTemplateName_String, textResource_String ] :=
+labeledIcon[ iconTemplateName_String, textResource_String ] := labeledIcon[ { iconTemplateName, True }, textResource ]
+
+labeledIcon[ { iconTemplateName_String, useTemplateBoxQ_ }, textResource_String ] :=
     Grid[
         { {
-            buttonPane @ RawBoxes @ TemplateBox[ { }, iconTemplateName ],
+            buttonPane @ If[ useTemplateBoxQ, RawBoxes @ TemplateBox[ { }, iconTemplateName ], chatbookIcon[ iconTemplateName, False ] ],
             Style[ tr @ textResource, FontSize -> 12, FontColor -> RGBColor[ "#333333" ], FontFamily -> "Source Sans Pro" ]
         } },
         BaselinePosition -> { 1, 2 }, Alignment -> { Left, Baseline }, Spacings -> { 0, 0 } ];
@@ -2926,6 +2987,7 @@ userMessageBox // endDefinition;
 (*Package Footer*)
 addToMXInitialization[
     $copyToClipboardButtonLabel;
+    $copyToClipboardButtonLabelWorkspaceChat;
     $insertInputButtonLabel;
     $insertInputButtonLabelWorkspaceChat;
     $insertEvaluateButtonLabel;
