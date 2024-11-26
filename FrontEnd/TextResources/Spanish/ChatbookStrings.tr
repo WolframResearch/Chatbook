@@ -239,7 +239,16 @@
 "InlineChatButtonTooltipViewNotebookAssist" -> "Ver en chat de asistencia de cuadernos",
 
 "NotebookAssistanceInputGettingStarted" -> "Ay\[UAcute]dame a comenzar",
-"NotebookAssistanceInputErrorMessage" -> "\[DownQuestion]Qu\[EAcute] sali\[OAcute] mal?"
+"NotebookAssistanceInputErrorMessage" -> "\[DownQuestion]Qu\[EAcute] sali\[OAcute] mal?",
+
+"ProgressTextCheckingDocumentation" -> "Checking documentation",
+"ProgressTextChoosingDocumentation" -> "Choosing relevant documentation",
+"ProgressTextCreatingMessages" -> "Creating messages",
+"ProgressTextSendingChat" -> "Sending chat",
+"ProgressTextGeneratingSuggestions" -> "Generating suggestions",
+"ProgressTextWaitingForResponse" -> "Waiting for response",
+"ProgressTextDownloadingSnippet" -> "Downloading `1` documentation snippet",
+"ProgressTextDownloadingSnippets" -> "Downloading `1` documentation snippets"
 }
 @|
 @|

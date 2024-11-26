@@ -239,7 +239,16 @@
 "InlineChatButtonTooltipViewNotebookAssist" -> "View in Notebook Assistance Chat",
 
 "NotebookAssistanceInputGettingStarted" -> "Help me get started",
-"NotebookAssistanceInputErrorMessage" -> "What went wrong?"
+"NotebookAssistanceInputErrorMessage" -> "What went wrong?",
+
+"ProgressTextCheckingDocumentation" -> "Checking documentation",
+"ProgressTextChoosingDocumentation" -> "Choosing relevant documentation",
+"ProgressTextCreatingMessages" -> "Creating messages",
+"ProgressTextSendingChat" -> "Sending chat",
+"ProgressTextGeneratingSuggestions" -> "Generating suggestions",
+"ProgressTextWaitingForResponse" -> "Waiting for response",
+"ProgressTextDownloadingSnippet" -> "Downloading `1` documentation snippet",
+"ProgressTextDownloadingSnippets" -> "Downloading `1` documentation snippets"
 }
 @|
 @|
