@@ -208,6 +208,7 @@
 "WorkspaceWindowTitle" -> "Asistente de cuadernos",
 "WorkspaceToolbarButtonLabelHistory" -> "Historial",
 "WorkspaceToolbarButtonLabelSources" -> "Fuentes",
+"WorkspaceToolbarSourcesSubTitleMoved" -> "Previous chat moved to `1` History.",
 "WorkspaceToolbarSourcesSubTitle" -> "Seleccionar las fuentes que estar\[AAcute]n disponibles para el asistente de cuadernos.",
 "WorkspaceToolbarButtonLabelNew" -> "Nuevo chat",
 "WorkspaceToolbarButtonTooltipHistory" -> "Administrar conversaciones",

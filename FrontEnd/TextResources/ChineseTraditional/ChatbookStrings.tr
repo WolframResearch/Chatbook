@@ -208,6 +208,7 @@
 "WorkspaceWindowTitle" -> "\:7B46\:8A18\:672C\:5C0F\:5E6B\:624B",
 "WorkspaceToolbarButtonLabelHistory" -> "\:6B77\:53F2\:8A18\:9304",
 "WorkspaceToolbarButtonLabelSources" -> "\:8CC7\:6E90",
+"WorkspaceToolbarSourcesSubTitleMoved" -> "Previous chat moved to `1` History.",
 "WorkspaceToolbarSourcesSubTitle" -> "\:9078\:64C7\:53EF\:4F9B\:7B46\:8A18\:672C\:5C0F\:5E6B\:624B\:4F7F\:7528\:7684\:4F86\:6E90\:3002",
 "WorkspaceToolbarButtonLabelNew" -> "\:65B0\:589E\:7DB2\:8DEF\:804A\:5929\:7CFB\:7D71",
 "WorkspaceToolbarButtonTooltipHistory" -> "\:7BA1\:7406\:6703\:8A71",
