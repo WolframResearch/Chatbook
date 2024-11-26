@@ -6298,8 +6298,7 @@ TD2Mb3lNEkxzlMqBaSGoOMw9MD7MvTC+5EEUPjx8oOahhB8ACaE9/g==
   AspectRatio->Automatic,
   BaselinePosition->(Center -> Center),
   ImageSize->{8., 7.},
-  PlotRange->{{-0.5, 7.5}, {-0.5, 6.5}}]
-  PlotRange->{{-0.5, 167.5}, {-0.5, 77.5}}],
+  PlotRange->{{-0.5, 7.5}, {-0.5, 6.5}}],
 
 "WorkspaceCodeBlockCopy" -> GraphicsBox[
   {Thickness[0.125], FaceForm[{RGBColor[
