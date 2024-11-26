@@ -689,8 +689,8 @@ evaluateLanguageLabel[ name_String, True ] :=
         fancyTooltip[
             MouseAppearance[
                 buttonMouseover[
-                    buttonFrameDefault[ labeledIcon[ { "WorkspaceCodeBlockInsertAndEvaluate", False }, "FormattingInsertContentAndEvaluateLabel" ], True ],
-                    buttonFrameActive[ labeledIcon[ { "WorkspaceCodeBlockInsertAndEvaluate", False }, "FormattingInsertContentAndEvaluateLabel" ], True ]
+                    buttonFrameDefault[ labeledIcon[ If[ name === "Wolfram", { "WorkspaceCodeBlockInsertAndEvaluate", False }, name ], "FormattingInsertContentAndEvaluateLabel" ], True ],
+                    buttonFrameActive[ labeledIcon[ If[ name === "Wolfram", { "WorkspaceCodeBlockInsertAndEvaluate", False }, name ], "FormattingInsertContentAndEvaluateLabel" ], True ]
                 ],
                 "LinkHand"
             ],
