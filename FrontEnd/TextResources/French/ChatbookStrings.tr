@@ -242,7 +242,16 @@
 "InlineChatButtonTooltipViewNotebookAssist" -> "Voir dans le chat de l\[CloseCurlyQuote]assistant du notebook",
 
 "NotebookAssistanceInputGettingStarted" -> "Aide\[Hyphen]moi \[AGrave] d\[EAcute]marrer",
-"NotebookAssistanceInputErrorMessage" -> "Qu\[CloseCurlyQuote]est\[Hyphen]ce qui n\[CloseCurlyQuote]a pas fonctionn\[EAcute]\[NonBreakingSpace]?"
+"NotebookAssistanceInputErrorMessage" -> "Qu\[CloseCurlyQuote]est\[Hyphen]ce qui n\[CloseCurlyQuote]a pas fonctionn\[EAcute]\[NonBreakingSpace]?",
+
+"ProgressTextCheckingDocumentation" -> "Checking documentation",
+"ProgressTextChoosingDocumentation" -> "Choosing relevant documentation",
+"ProgressTextCreatingMessages" -> "Creating messages",
+"ProgressTextSendingChat" -> "Sending chat",
+"ProgressTextGeneratingSuggestions" -> "Generating suggestions",
+"ProgressTextWaitingForResponse" -> "Waiting for response",
+"ProgressTextDownloadingSnippet" -> "Downloading `1` documentation snippet",
+"ProgressTextDownloadingSnippets" -> "Downloading `1` documentation snippets"
 }
 @|
 @|

@@ -62,6 +62,8 @@
 "FormattingCopyToClipboardLabel" -> "\:8907\:88FD",
 "FormattingInsertContentLabel" -> "\:63D2\:5165",
 "FormattingInsertContentAndEvaluateTooltip" -> "\:63D2\:5165\:5982\:540C\:5728\:4E0B\:65B9\:65B0\:589E\:8F38\:5165\:5132\:5B58\:683C\:7684\:5167\:5BB9\:4E26\:9032\:884C\:8A08\:7B97",
+"FormattingInsertContentAndEvaluateWorkspaceChatTooltip" -> "Insert this into `1` and evaluate.",
+"FormattingInsertContentAndEvaluateWorkspaceChatTooltipNew" -> "Insert this into a new notebook and evaluate.",
 "FormattingCopyToClipboardTooltip" -> "\:8907\:88FD\:81F3\:526A\:8CBC\:7C3F",
 "FormattingInsertContentTooltip" -> "\:63D2\:5165\:5982\:540C\:5728\:4E0B\:65B9\:65B0\:589E\:8F38\:5165\:5132\:5B58\:683C\:7684\:5167\:5BB9",
 "FormattingToolUsing" -> "\:6B63\:5728\:4F7F\:7528 ",
@@ -208,6 +210,7 @@
 "WorkspaceWindowTitle" -> "\:7B46\:8A18\:672C\:5C0F\:5E6B\:624B",
 "WorkspaceToolbarButtonLabelHistory" -> "\:6B77\:53F2\:8A18\:9304",
 "WorkspaceToolbarButtonLabelSources" -> "\:8CC7\:6E90",
+"WorkspaceToolbarSourcesSubTitleMoved" -> "Previous chat moved to `1` History.",
 "WorkspaceToolbarSourcesSubTitle" -> "\:9078\:64C7\:53EF\:4F9B\:7B46\:8A18\:672C\:5C0F\:5E6B\:624B\:4F7F\:7528\:7684\:4F86\:6E90\:3002",
 "WorkspaceToolbarButtonLabelNew" -> "\:65B0\:589E\:7DB2\:8DEF\:804A\:5929\:7CFB\:7D71",
 "WorkspaceToolbarButtonTooltipHistory" -> "\:7BA1\:7406\:6703\:8A71",
@@ -239,7 +242,16 @@
 "InlineChatButtonTooltipViewNotebookAssist" -> "\:7DE8\:78BC\:5C0F\:5E6B\:624B\:804A\:5929\:7CFB\:7D71\:4E2D\:7684\:8996\:5716",
 
 "NotebookAssistanceInputGettingStarted" -> "\:6C42\:52A9\:5982\:4F55\:958B\:59CB",
-"NotebookAssistanceInputErrorMessage" -> "\:54EA\:88E1\:51FA\:4E86\:554F\:984C\:FF1F"
+"NotebookAssistanceInputErrorMessage" -> "\:54EA\:88E1\:51FA\:4E86\:554F\:984C\:FF1F",
+
+"ProgressTextCheckingDocumentation" -> "Checking documentation",
+"ProgressTextChoosingDocumentation" -> "Choosing relevant documentation",
+"ProgressTextCreatingMessages" -> "Creating messages",
+"ProgressTextSendingChat" -> "Sending chat",
+"ProgressTextGeneratingSuggestions" -> "Generating suggestions",
+"ProgressTextWaitingForResponse" -> "Waiting for response",
+"ProgressTextDownloadingSnippet" -> "Downloading `1` documentation snippet",
+"ProgressTextDownloadingSnippets" -> "Downloading `1` documentation snippets"
 }
 @|
 @|
