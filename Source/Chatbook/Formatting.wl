@@ -619,11 +619,15 @@ floatingButtonGrid[ cell_Cell, lang_ ] :=
         Grid[
             {
                 checkTemplateBoxes @ {
-                    button[ evaluateLanguageLabel @ lang, insertCodeBelow[ cell, True ] ],
+                    button[ evaluateLanguageLabel @ lang, insertCodeBelow[ EvaluationCell[ ], True ] ],
                     button[
-                        If[ TrueQ @ CurrentChatSettings[ cellObj, "WorkspaceChat" ], $insertInputButtonLabelWorkspaceChat, $insertInputButtonLabel ],
-                        insertCodeBelow[ cell, False ] ],
-                    button[ $copyToClipboardButtonLabel, copyCodeBlock @ cell ]
+                        If[ TrueQ @ CurrentChatSettings[ cellObj, "WorkspaceChat" ],
+                            $insertInputButtonLabelWorkspaceChat,
+                            $insertInputButtonLabel
+                        ],
+                        insertCodeBelow[ EvaluationCell[ ], False ]
+                    ],
+                    button[ $copyToClipboardButtonLabel, copyCodeBlock @ EvaluationCell[ ] ]
                 }
             },
             Alignment  -> Top,
@@ -821,6 +825,7 @@ insertCodeInUserNotebook // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*copyCodeBlock*)
 copyCodeBlock // beginDefinition;
+copyCodeBlock[ cell_CellObject ] := copyCodeBlock @ getCodeBlockContent @ cell;
 copyCodeBlock[ code_String ] := CopyToClipboard @ code;
 copyCodeBlock[ Cell[ BoxData[ cell_Cell, ___ ] ] ] := copyCodeBlock @ cell;
 copyCodeBlock[ Cell[ code_String, ___ ] ] := copyCodeBlock @ code;
