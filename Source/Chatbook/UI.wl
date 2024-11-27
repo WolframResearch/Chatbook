@@ -408,6 +408,13 @@ errorMessageBox // beginDefinition;
 Attributes[ errorMessageBox ] = { HoldRest };
 Options[ errorMessageBox ] = { Appearance -> "NonFatal", ImageSize -> Automatic };
 
+errorMessageBox[ failure_Failure, opts: OptionsPattern[ ] ] :=
+	Which[
+		! FreeQ[ failure, "credits-per-month-limit-exceeded" ], errorMessageBox[ "UsageAt100" ],
+		! FreeQ[ failure, $$usageLimitCode ], errorMessageBox[ "UsageBlocked" ],
+		True, errorMessageBox[ ToString @ failure[ "Message" ], opts, Appearance -> "Fatal" ]
+	];
+
 errorMessageBox[ text_, opts: OptionsPattern[ ] ] := errorMessageBox[ { text, None }, None, opts ]
 
 errorMessageBox[ { messageText_, buttonText_ }, action_, opts: OptionsPattern[ ] ] :=
@@ -488,6 +495,16 @@ errorMessageBox[ "UsageBlocked" ] :=
 	];
 
 errorMessageBox // endDefinition;
+
+
+$$usageLimitCode = Alternatives[
+    "request-per-minute-limit-exceeded",
+    "credits-per-minute-limit-exceeded",
+    "request-per-hour-limit-exceeded",
+    "credits-per-hour-limit-exceeded",
+    "request-per-month-limit-exceeded",
+    "credits-per-month-limit-exceeded"
+];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
