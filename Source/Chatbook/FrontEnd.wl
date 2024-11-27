@@ -837,6 +837,14 @@ checkCellReference // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*notebookObjectQ*)
+notebookObjectQ // beginDefinition;
+notebookObjectQ[ nbo_NotebookObject ] := StringQ @ CurrentValue[ nbo, ExpressionUUID ];
+notebookObjectQ[ _ ] := False;
+notebookObjectQ // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*$evaluationNotebook*)
 $evaluationNotebook :=
     With[ { nbo = evaluationNotebook[ ] },
@@ -1238,6 +1246,15 @@ $statelessProgressIndicator =
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Misc*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*mouseDown*)
+mouseDown // beginDefinition;
+(* Workaround for dynamics freezing in attached cells when mousing over docked cell: *)
+mouseDown[ a_, b_, c_ ] /; $OperatingSystem === "Windows" := Mouseover[ a, b ];
+mouseDown[ a_, b_, c_ ] := NotebookTools`Mousedown[ a, b, c ];
+mouseDown // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

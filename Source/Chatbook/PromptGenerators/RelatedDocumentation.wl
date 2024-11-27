@@ -162,7 +162,7 @@ relatedDocumentationPrompt[ messages: $$chatMessages, count_, filter_, filterCou
             RelatedDocumentation[ messages, "URIs", count ],
             { ___String },
              "URIs"
-        ] // LogChatTiming[ "RelatedDocumentationURIs" ] // withApproximateProgress[ "Checking documentation", 0.2 ];
+        ] // LogChatTiming[ "RelatedDocumentationURIs" ] // withApproximateProgress[ "CheckingDocumentation", 0.2 ];
 
         If[ uris === { }, Throw[ "" ] ];
 
@@ -221,7 +221,7 @@ filterSnippets[
     Catch @ Module[ { snippets, inserted, transcript, instructions, resp, results, idx, ranked },
 
         snippets = ConfirmMatch[ makeDocSnippets @ uris, { ___String }, "Snippets" ];
-        setProgressDisplay[ "Choosing relevant documentation" ];
+        setProgressDisplay[ "ProgressTextChoosingDocumentation" ];
         inserted = insertContextPrompt @ messages;
         transcript = ConfirmBy[ getSmallContextString @ inserted, StringQ, "Transcript" ];
 
@@ -263,7 +263,7 @@ filterSnippets[ messages_, uris: { __String }, True, filterCount_Integer? Positi
     Catch @ Module[ { snippets, inserted, transcript, xml, instructions, response, pages },
 
         snippets = ConfirmMatch[ makeDocSnippets @ uris, { ___String }, "Snippets" ];
-        setProgressDisplay[ "Choosing relevant documentation" ];
+        setProgressDisplay[ "ChoosingDocumentation" ];
         inserted = insertContextPrompt @ messages;
         transcript = ConfirmBy[ getSmallContextString @ inserted, StringQ, "Transcript" ];
 
@@ -539,21 +539,30 @@ fetchDocumentationSnippets // beginDefinition;
 
 fetchDocumentationSnippets[ { } ] := { };
 
-fetchDocumentationSnippets[ uris: { __String } ] :=
-     Module[ { count, noun, countText, text, $results, tasks },
+fetchDocumentationSnippets[ uris: { __String } ] := Enclose[
+     Module[ { count, text, $results, tasks },
         count = Length @ uris;
-        noun = If[ count == 1, "snippet", "snippets" ];
-        countText = If[ count <= 3, IntegerName @ count, ToString @ count ];
-        text = "Downloading "<>countText<>" documentation "<>noun;
+
+        text = ConfirmBy[
+            If[ count === 1,
+                trStringTemplate[ "ProgressTextDownloadingSnippet" ][ count ],
+                trStringTemplate[ "ProgressTextDownloadingSnippets" ][ count ]
+            ],
+            StringQ,
+            "Text"
+        ];
+
         withApproximateProgress[
             $results = AssociationMap[ <| "URI" -> #1 |> &, uris ];
             tasks = fetchDocumentationSnippets0 @ $results /@ uris;
             TaskWait @ tasks;
             processDocumentationSnippetResults @ $results,
-            text,
+            Verbatim @ text,
             0.5
         ]
-    ];
+    ],
+    throwInternalFailure
+];
 
 fetchDocumentationSnippets // endDefinition;
 

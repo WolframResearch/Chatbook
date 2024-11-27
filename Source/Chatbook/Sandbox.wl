@@ -2070,7 +2070,7 @@ inlineExpressionURI[ uri_String ] :=
 inlineExpressionURI[ uri_, failed_? FailureQ ] :=
     makeCachedBoxes @ failed;
 
-inlineExpressionURI[ uri_, HoldComplete[ expr_ ] ] /; graphicsQ @ Unevaluated @ expr :=
+inlineExpressionURI[ uri_, HoldComplete[ expr_? makeCachedBoxesQ ] ] :=
     makeCachedBoxes @ expr;
 
 inlineExpressionURI[ uri_, HoldComplete[ expr_ ] ] :=
@@ -2082,6 +2082,17 @@ inlineExpressionURI[ uri_, HoldComplete[ expr_ ] ] :=
     ];
 
 inlineExpressionURI // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*makeCachedBoxesQ*)
+makeCachedBoxesQ // beginDefinition;
+makeCachedBoxesQ // Attributes = { HoldAllComplete };
+makeCachedBoxesQ[ audio_Audio ] := AudioQ @ Unevaluated @ audio;
+makeCachedBoxesQ[ video_Video ] := VideoQ @ Unevaluated @ video;
+makeCachedBoxesQ[ graph_Graph ] := GraphQ @ Unevaluated @ graph;
+makeCachedBoxesQ[ expr_ ] := graphicsQ @ Unevaluated @ expr;
+makeCachedBoxesQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

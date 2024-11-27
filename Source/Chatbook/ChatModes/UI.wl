@@ -10,7 +10,7 @@ Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$inputFieldPaneMargins       = 5;
+$inputFieldPaneMargins       = { { 5, 5 }, { 0, 5 } };
 $inputFieldGridMagnification = Inherited;
 $inputFieldOuterBackground   = GrayLevel[ 0.95 ];
 $initialInlineChatWidth      = Scaled[ 0.85 ];
@@ -116,7 +116,9 @@ writeWorkspaceChatSubDockedCell[ nbo_NotebookObject, content_ ] := (
 CurrentValue[ nbo, DockedCells ] = Inherited;
 CurrentValue[ nbo, DockedCells ] = {
     First @ Replace[ AbsoluteCurrentValue[ nbo, DockedCells ], c_Cell :> {c} ],
-    makeWorkspaceChatSubDockedCellExpression[ content ] }
+    makeWorkspaceChatSubDockedCellExpression[ content ] };
+    (* Rewriting docked cells seems to steal focus from the chat input field, so restore it here: *)
+    If[ SelectedCells @ nbo === { }, moveToChatInputField[ nbo, True ] ]
 )
 
 writeWorkspaceChatSubDockedCell[ nbo_NotebookObject, WindowTitle ] := writeWorkspaceChatSubDockedCell[
@@ -292,16 +294,6 @@ $toolbarButtonHover   = Sequence[ Background -> RGBColor[ "#87C3E3" ], FrameStyl
 $toolbarButtonActive  = Sequence[ Background -> RGBColor[ "#3689B5" ], FrameStyle -> RGBColor[ "#3689B5" ] ];
 $toolbarButtonLight   = Sequence[ Background -> RGBColor[ "#F1F8FC" ], FrameStyle -> RGBColor[ "#F1F8FC" ] ];
 
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*mouseDown*)
-mouseDown // beginDefinition;
-(* Workaround for dynamics freezing in attached cells when mousing over docked cell: *)
-mouseDown[ a_, b_, c_ ] /; $OperatingSystem === "Windows" := Mouseover[ a, b ];
-mouseDown[ a_, b_, c_ ] := NotebookTools`Mousedown[ a, b, c ];
-mouseDown // endDefinition;
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*buttonTooltip*)
@@ -318,7 +310,18 @@ attachWorkspaceChatInput // beginDefinition;
 attachWorkspaceChatInput[ nbo_NotebookObject ] := attachWorkspaceChatInput[ nbo, Bottom ]
 
 attachWorkspaceChatInput[ nbo_NotebookObject, location : Top|Bottom ] := Enclose[
-    Module[ { attached },
+    Catch @ Module[ { current, tags, attached },
+
+        current = Cells[ nbo, AttachedCell -> True, CellStyle -> "ChatInputField" ];
+        tags    = CurrentValue[ current, CellTags ];
+
+        (* Check if cell is already attached in the specified location: *)
+        If[ MatchQ[ tags, { { ___, ToString @ location, ___ } } ],
+            Throw @ ConfirmMatch[ First[ current, $Failed ], _CellObject, "CurrentCell" ]
+        ];
+
+        NotebookDelete @ current;
+
         attached = ConfirmMatch[
             AttachCell[
                 nbo,
@@ -359,6 +362,7 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                         { TaggingRules, "ChatInputString" }
                                     ],
                                     String,
+                                    ContinuousAction -> True,
                                     $inputFieldOptions
                                 ],
                                 $inputFieldFrameOptions
@@ -367,9 +371,15 @@ attachedWorkspaceChatInputCell[ location_String ] := Cell[
                                 { RGBColor[ "#a3c9f2" ], RGBColor[ "#f1f7fd" ], 27, thisNB },
                                 "WorkspaceSendChatButton"
                             ]
+                        },
+                        {
+                            Spacer[ 0 ],
+                            Item[ Dynamic @ focusedNotebookDisplay @ thisNB, Alignment -> Left ],
+                            SpanFromLeft
                         }
                     },
-                    BaseStyle -> { Magnification -> $inputFieldGridMagnification }
+                    BaseStyle -> { Magnification -> $inputFieldGridMagnification },
+                    Spacings  -> { 0.5, 0.0 }
                 ],
                 FrameMargins -> $inputFieldPaneMargins,
                 ImageSize ->
@@ -1641,8 +1651,8 @@ notebookSources // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*formatNotebookTitle*)
 formatNotebookTitle // beginDefinition;
+formatNotebookTitle[ None|"" ] := Style[ "Unnamed Notebook", FontColor -> GrayLevel[ 0.6 ], FontSlant -> Italic ];
 formatNotebookTitle[ title_String ] := title;
-formatNotebookTitle[ None ] := Style[ "Unnamed Notebook", FontColor -> GrayLevel[ 0.6 ], FontSlant -> Italic ];
 formatNotebookTitle // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -2056,12 +2066,12 @@ withWorkspaceGlobalProgress // endDefinition;
 
 $workspaceChatProgressBar = With[
     {
-        background  = None,
-        colorCenter = RGBColor[ 0.27451, 0.61961, 0.79608, 1.0 ],
-        colorEdges  = RGBColor[ 0.27451, 0.61961, 0.79608, 0.0 ],
-        duration    = 3,
-        leftOffset  = -0.5,
-        rightOffset = 1.5,
+        background  = RGBColor[ "#D0EEFF" ],
+        colorCenter = RGBColor[ "#55C2FF" ],
+        colorEdges  = RGBColor[ "#D0EEFF" ],
+        duration    = 2.5,
+        leftOffset  = -0.2,
+        rightOffset = 1.2,
         thickness   = Thickness[ 1 ]
     },
     Graphics[
@@ -2098,6 +2108,7 @@ addToMXInitialization[
     $fromWorkspaceChatConversionRules;
     $inlineToWorkspaceConversionRules;
     $defaultUserImage;
+    $smallNotebookIcon;
 ];
 
 End[ ];

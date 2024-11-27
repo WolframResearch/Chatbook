@@ -7,6 +7,8 @@ Needs[ "Wolfram`Chatbook`"                  ];
 Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 
+$ContentSuggestions = False;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
@@ -237,7 +239,7 @@ showContentSuggestions0[ nbo_NotebookObject, root: $$feObj, selectionInfo_Associ
         selection = selectionInfo[ "SelectionType" ];
 
         $progressContainer = HoldComplete @ suggestionsContainer;
-        setProgressDisplay[ "Generating suggestions", 0.0 ];
+        setProgressDisplay[ "GeneratingSuggestions", 0.0 ];
         $fixedProgressText = True;
 
         attached = ConfirmMatch[
@@ -265,50 +267,54 @@ showContentSuggestions0[ nbo_NotebookObject, root: $$feObj, selectionInfo_Associ
 
         ClearAttributes[ suggestionsContainer, Temporary ];
 
-        withApproximateProgress[
-            settings = ConfirmBy[
-                LogChatTiming @ AbsoluteCurrentChatSettings @ root,
-                AssociationQ,
-                "Settings"
+        redirectFailures[
+            suggestionsContainer,
+
+            withApproximateProgress[
+                settings = ConfirmBy[
+                    LogChatTiming @ AbsoluteCurrentChatSettings @ root,
+                    AssociationQ,
+                    "Settings"
+                ];
+
+                settings = mergeChatSettings @ {
+                    settings,
+                    $contentSuggestionsOverrides,
+                    <| "MaxContextTokens" -> determineMaxContextTokens @ type |>
+                },
+                Inherited,
+                0.25
             ];
 
-            settings = mergeChatSettings @ {
-                settings,
-                $contentSuggestionsOverrides,
-                <| "MaxContextTokens" -> determineMaxContextTokens @ type |>
-            },
-            Inherited,
-            0.25
-        ];
-
-        context = withApproximateProgress[
-            ConfirmBy[
-                Replace[ LogChatTiming @ getSuggestionsContext[ type, nbo, settings ], None -> "" ],
-                StringQ,
-                "Context"
-            ],
-            Inherited,
-            0.2
-        ];
-
-        $contextPrompt   = None;
-        $selectionPrompt = None;
-
-        withApproximateProgress[
-            ConfirmMatch[
-                LogChatTiming @ generateSuggestions[
-                    type,
-                    Dynamic[ suggestionsContainer ],
-                    nbo,
-                    root,
-                    context,
-                    settings
+            context = withApproximateProgress[
+                ConfirmBy[
+                    Replace[ LogChatTiming @ getSuggestionsContext[ type, nbo, settings ], None -> "" ],
+                    StringQ,
+                    "Context"
                 ],
-                _Pane,
-                "Generate"
-            ],
-            Inherited,
-            0.4
+                Inherited,
+                0.2
+            ];
+
+            $contextPrompt   = None;
+            $selectionPrompt = None;
+
+            withApproximateProgress[
+                ConfirmMatch[
+                    LogChatTiming @ generateSuggestions[
+                        type,
+                        Dynamic[ suggestionsContainer ],
+                        nbo,
+                        root,
+                        context,
+                        settings
+                    ],
+                    _Pane,
+                    "Generate"
+                ],
+                Inherited,
+                0.4
+            ];
         ];
 
         $progressContainer = None;
@@ -322,12 +328,45 @@ showContentSuggestions0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*redirectFailures*)
+redirectFailures // beginDefinition;
+redirectFailures // Attributes = { HoldAllComplete };
+
+redirectFailures[ container_, eval_ ] :=
+    Block[ { throwFailureToChatOutput = redirectFailureToContainer @ container },
+        Catch[ eval, $redirectTag ]
+    ];
+
+redirectFailures // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*redirectFailureToContainer*)
+redirectFailureToContainer // beginDefinition;
+redirectFailureToContainer // Attributes = { HoldFirst };
+
+redirectFailureToContainer[ container_ ] :=
+    redirectFailureToContainer[ container, # ] &;
+
+redirectFailureToContainer[ container_, failure_Failure ] := Enclose[
+    Module[ { boxes },
+        boxes = ConfirmMatch[ errorMessageBox @ failure, _Framed, "Boxes" ];
+        Throw[ container = boxes, $redirectTag ]
+    ],
+    throwInternalFailure
+];
+
+redirectFailureToContainer // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*withSuggestionsProgress*)
 withSuggestionsProgress // beginDefinition;
 withSuggestionsProgress // Attributes = { HoldFirst };
 
 withSuggestionsProgress[ eval_ ] := Block[
     {
+        $ContentSuggestions       = True,
         $finishReason             = None,
         $progressWidth            = $contentSuggestionsProgressWidth,
         $showProgressText         = True,
@@ -1348,6 +1387,8 @@ suggestionServiceExecute[ service_, args___ ] := Enclose[
             cleanup[ ];
             throwMessageDialog[ "SuggestionServiceUnavailable", result ]
         ];
+
+        If[ FailureQ @ result, throwFailureToChatOutput @ result ];
 
         ConfirmBy[ result, AssociationQ, "Result" ]
     ],

@@ -167,7 +167,10 @@ $$longNameCharacter = Alternatives @@ $longNameCharacterList;
 
 $$invisibleCharacter = Alternatives[
     FromCharacterCode[ 8203 ], (* U+200B Zero Width Space *)
-    FromCharacterCode[ 62304 ] (* InvisibleSpace *)
+    FromCharacterCode[ 62304 ], (* InvisibleSpace *)
+    "\[SpanFromLeft]",
+    "\[SpanFromAbove]",
+    "\[SpanFromBoth]"
 ];
 
 (* Characters that should be automatically escaped when they appear in plain text to be valid markdown: *)
@@ -1078,9 +1081,8 @@ $graphicsBoxStringReplacements = {
 toMarkdownImageBox // beginDefinition;
 
 toMarkdownImageBox[ graphics_ ] := Enclose[
-    Catch @ Module[ { img, uri },
-        img = Flatten @ RawBoxes @ graphics;
-        uri = ConfirmBy[ MakeExpressionURI[ "image", img ], StringQ, "RasterID" ];
+    Catch @ Module[ { uri },
+        uri = ConfirmBy[ boxesToExpressionURI @ graphics, StringQ, "RasterID" ];
         needsBasePrompt[ "MarkdownImageBox" ];
         If[ toolSelectedQ[ "WolframLanguageEvaluator" ], needsBasePrompt[ "MarkdownImageBoxImporting" ] ];
         "\\!\\(\\*MarkdownImageBox[\"" <> uri <> "\"]\\)"
@@ -1089,6 +1091,25 @@ toMarkdownImageBox[ graphics_ ] := Enclose[
 ];
 
 toMarkdownImageBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*boxesToExpressionURI*)
+boxesToExpressionURI // beginDefinition;
+
+boxesToExpressionURI[ RawBoxes[ boxes_ ] ] :=
+    boxesToExpressionURI @ boxes;
+
+boxesToExpressionURI[ boxes_ ] :=
+    Replace[
+        Quiet @ ToExpression[ boxes, StandardForm, HoldComplete ],
+        {
+            HoldComplete[ expr_ ] :> MakeExpressionURI @ Unevaluated @ expr,
+            _? FailureQ :> MakeExpressionURI[ "image", RawBoxes @ StyleBox[ boxes, "GraphicsRawBoxes" ] ]
+        }
+    ];
+
+boxesToExpressionURI // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
@@ -1184,6 +1205,7 @@ serializeVideo[ box: TemplateBox[ _, "VideoBox1"|"VideoBox2", ___ ] ] := seriali
 
 serializeVideo[ box_, video_ ] := Enclose[
     If[ VideoQ @ video,
+        If[ toolSelectedQ[ "WolframLanguageEvaluator" ], needsBasePrompt[ "VideoBoxImporting" ] ];
         "\\!\\(\\*VideoBox[\"" <> ConfirmBy[ MakeExpressionURI @ video, StringQ, "URI" ] <> "\"]\\)",
         "\\!\\(\\*VideoBox[...]\\)"
     ],
@@ -1196,17 +1218,19 @@ serializeVideo // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*Audio*)
 fasterCellToString0[ box: TagBox[ _, _Audio`AudioBox, ___ ] ] := serializeAudio @ box;
+fasterCellToString0[ box: TemplateBox[ _, "AudioBox1", ___ ] ] := serializeAudio @ box;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
 (*serializeAudio*)
 serializeAudio // beginDefinition;
 
-serializeAudio[ box: TagBox[ content_, _Audio`AudioBox, ___ ] ] := serializeAudio[ box ] =
-    serializeAudio[ content, Quiet @ ToExpression[ box, StandardForm ] ];
+serializeAudio[ box_ ] := serializeAudio[ box ] =
+    serializeAudio[ box, Quiet @ ToExpression[ box, StandardForm ] ];
 
-serializeAudio[ content_, audio_ ] := Enclose[
+serializeAudio[ box_, audio_ ] := Enclose[
     If[ AudioQ @ audio,
+        If[ toolSelectedQ[ "WolframLanguageEvaluator" ], needsBasePrompt[ "AudioBoxImporting" ] ];
         "\\!\\(\\*AudioBox[\"" <> ConfirmBy[ MakeExpressionURI @ audio, StringQ, "URI" ] <> "\"]\\)",
         "\\!\\(\\*AudioBox[...]\\)"
     ],
@@ -2141,6 +2165,15 @@ $$ignoredBox = Alternatives[
 
 
 fasterCellToString0[ $$ignoredBox ] := "";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Chatbook Text Resources*)
+fasterCellToString0[ DynamicBox[ FEPrivate`FrontEndResource[ "ChatbookExpressions", "Close" ][ ___ ], ___ ] ] :=
+    "";
+
+fasterCellToString0[ DynamicBox[ ToBoxes[ FEPrivate`FrontEndResource[ "ChatbookStrings", name_String ], _ ], ___ ] ] :=
+    With[ { str = trRaw @ name }, str /; StringQ @ str ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
