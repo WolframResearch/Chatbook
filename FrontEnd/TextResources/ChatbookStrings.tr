@@ -129,7 +129,7 @@
 "PreferencesContentLLMKitNoSubscription" -> "No LLM Kit subscription found",
 "PreferencesContentLLMKitSignInOr" -> "or",
 "PreferencesContentLLMKitSignInButton" -> "Sign In to use an existing subscription \[RightGuillemet]",
-"PreferencesContentLLMKitEnabledTitle" -> "Notebook Assistant + LLM Kit Essentials",
+"PreferencesContentLLMKitEnabledTitle" -> "Notebook Assistant + LLM Kit Subscription",
 "PreferencesContentLLMKitEnabledManage" -> "Manage your subscription \[RightGuillemet]",
 
 "ResourceInstallerFromURLPrompt" -> "Enter a URL",
