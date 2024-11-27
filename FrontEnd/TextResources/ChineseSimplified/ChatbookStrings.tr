@@ -62,6 +62,8 @@
 "FormattingCopyToClipboardLabel" -> "\:590D\:5236",
 "FormattingInsertContentLabel" -> "\:63D2\:5165",
 "FormattingInsertContentAndEvaluateTooltip" -> "\:5728\:4E0B\:9762\:63D2\:5165\:5185\:5BB9\:4F5C\:4E3A\:65B0\:7684\:8F93\:5165\:5355\:5143\:5E76\:8BA1\:7B97",
+"FormattingInsertContentAndEvaluateWorkspaceChatTooltip" -> "Insert this into `1` and evaluate.",
+"FormattingInsertContentAndEvaluateWorkspaceChatTooltipNew" -> "Insert this into a new notebook and evaluate.",
 "FormattingCopyToClipboardTooltip" -> "\:590D\:5236\:5230\:526A\:8D34\:677F",
 "FormattingInsertContentTooltip" -> "\:5728\:4E0B\:9762\:63D2\:5165\:5185\:5BB9\:4F5C\:4E3A\:65B0\:7684\:8F93\:5165\:5355\:5143",
 "FormattingToolUsing" -> "\:4F7F\:7528 ",
@@ -171,6 +173,12 @@
 "UIAdvancedRoles" -> "\:89D2\:8272",
 "UITryEnableChatDialogMainText" -> "\:542F\:7528\:804A\:5929\:7B14\:8BB0\:672C\:529F\:80FD\:5C06\:7834\:574F\:6B64\:7B14\:8BB0\:672C\:4E2D\:5B9A\:4E49\:7684\:4E13\:6709\:6837\:5F0F\:ff0c\:5E76\:5C06\:5176\:66FF\:6362\:4E3A\:5171\:4EAB\:7684\:804A\:5929\:7B14\:8BB0\:672C\:6837\:5F0F\:3002",
 "UITryEnableChatDialogConfirm" -> "\:60A8\:786E\:5B9A\:8981\:7EE7\:7EED\:5417\:ff1f",
+"UIMessageManageSubscription" -> "Manage Subscription \[RightGuillemet]",
+"UIMessageContactUs" -> "Contact us \[RightGuillemet]",
+"UIMessageUsed80" -> "You have used 80% of your Wolfram Notebook Assistant + LLM Kit allowance for this month.",
+"UIMessageUsedAll" -> "You have used your entire Wolfram Notebook Assistant + LLM Kit allowance for this month.",
+"UIMessageHighUsageRate" -> "We've detected a very high rate of requests from your account. To prevent disruptions to the service for other users, we've temporarily had to block your requests.",
+"UIMessageUnblockRequest" -> "Ask to be unblocked \[RightGuillemet]",
 
 "StylesheetChatWidgetButtonTooltip" -> "\:53D1\:9001\:5230 LLM",
 "StylesheetAssistantMenuInitializerButtonTooltip" -> "\:7981\:7528\:81EA\:52A8\:534F\:52A9\:529F\:80FD",
@@ -202,6 +210,7 @@
 "WorkspaceWindowTitle" -> "\:7B14\:8BB0\:672C\:52A9\:624B",
 "WorkspaceToolbarButtonLabelHistory" -> "\:5386\:53F2\:8BB0\:5F55",
 "WorkspaceToolbarButtonLabelSources" -> "\:8D44\:6E90",
+"WorkspaceToolbarSourcesSubTitleMoved" -> "Previous chat moved to `1` History.",
 "WorkspaceToolbarSourcesSubTitle" -> "\:9009\:62E9\:7B14\:8BB0\:672C\:52A9\:624B\:53EF\:7528\:7684\:8D44\:6E90\:3002",
 "WorkspaceToolbarButtonLabelNew" -> "\:65B0\:7684\:804A\:5929",
 "WorkspaceToolbarButtonTooltipHistory" -> "\:7BA1\:7406\:5BF9\:8BDD",
@@ -214,11 +223,26 @@
 "WorkspaceOutputRaftRegenerateTooltip" -> "\:91CD\:65B0\:751F\:6210\:54CD\:5E94",
 "WorkspaceOutputRaftFeedbackTooltip" -> "\:53CD\:9988\:5230 Wolfram",
 
+"WorkspaceFocusIndicatorEnableTooltip" -> "Enable using context from other notebooks",
+"WorkspaceFocusIndicatorDisableTooltip" -> "Disable using context from other notebooks",
+"WorkspaceFocusIndicatorFocus" -> "Focus:",
+"WorkspaceFocusIndicatorMenuTooltip" -> "Choose a notebook to focus on for additional context",
+"WorkspaceFocusIndicatorMenuAutomatic" -> "Choose Automatically",
+
 "InlineChatButtonTooltipClose" -> "\:5173\:95ED",
 "InlineChatButtonTooltipViewNotebookAssist" -> "\:5728\:7B14\:8BB0\:672C\:534F\:52A9\:804A\:5929\:4E2D\:67E5\:770B",
 
 "NotebookAssistanceInputGettingStarted" -> "\:5E2E\:52A9\:6211\:5F00\:59CB\:4F7F\:7528",
-"NotebookAssistanceInputErrorMessage" -> "\:51FA\:4EC0\:4E48\:95EE\:9898\:4E86\:ff1f"
+"NotebookAssistanceInputErrorMessage" -> "\:51FA\:4EC0\:4E48\:95EE\:9898\:4E86\:ff1f",
+
+"ProgressTextCheckingDocumentation" -> "Checking documentation",
+"ProgressTextChoosingDocumentation" -> "Choosing relevant documentation",
+"ProgressTextCreatingMessages" -> "Creating messages",
+"ProgressTextSendingChat" -> "Sending chat",
+"ProgressTextGeneratingSuggestions" -> "Generating suggestions",
+"ProgressTextWaitingForResponse" -> "Waiting for response",
+"ProgressTextDownloadingSnippet" -> "Downloading `1` documentation snippet",
+"ProgressTextDownloadingSnippets" -> "Downloading `1` documentation snippets"
 }
 @|
 @|

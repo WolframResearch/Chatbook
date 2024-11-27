@@ -96,7 +96,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
                 "ConstructMessages"
             ],
             $chatDataTag
-        ] // withApproximateProgress[ "Creating messages", 0.3 ];
+        ] // withApproximateProgress[ "CreatingMessages", 0.3 ];
 
         data = ConfirmBy[ Association @ Flatten @ data, AssociationQ, "Data" ];
 
@@ -141,7 +141,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
             prepareMessagesForLLM @ messages,
             cellObject,
             settings
-        ] // withApproximateProgress[ "Sending chat", 0.4 ];
+        ] // withApproximateProgress[ "SendingChat", 0.4 ];
 
         addHandlerArguments[ "Task" -> task ];
 
@@ -149,7 +149,7 @@ sendChat[ evalCell_, nbo_, settings0_ ] /; $useLLMServices := catchTopAs[ Chatbo
         CurrentChatSettings[ cellObject, "Task"       ] = task;
 
         If[ FailureQ @ task, throwTop @ writeErrorCell[ cellObject, task ] ];
-        setProgressDisplay[ "Waiting for response", 1.0 ];
+        setProgressDisplay[ "WaitingForResponse", 1.0 ];
 
         If[ task === $Canceled, StopChat @ cellObject ];
 
@@ -547,7 +547,7 @@ chatSubmit0[
         auth = settings[ "Authentication" ];
         stop = makeStopTokens @ settings;
 
-        setProgressDisplay[ "Waiting for response", 1.0 ];
+        setProgressDisplay[ "WaitingForResponse", 1.0 ];
         result = ConfirmMatch[
             Quiet[
                 LLMServices`Chat[
@@ -894,14 +894,17 @@ autoCorrect // beginDefinition;
 autoCorrect[ string_String ] := StringReplace[ string, $llmAutoCorrectRules ];
 autoCorrect // endDefinition;
 
+
+$$specialBoxName = "AudioBox"|"MarkdownImageBox"|"VideoBox";
+
 $llmAutoCorrectRules := $llmAutoCorrectRules = Flatten @ {
     StartOfLine ~~ WhitespaceCharacter... ~~ "/command\ncode:" :> "/wl\ncode:",
     "```" ~~ code: Except[ "\n" ].. ~~ "```" :> "``"<>code<>"``",
     "wolfram_language_evaliator" -> "wolfram_language_evaluator",
-    "\\!\\(\\*MarkdownImageBox[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
-    "\\!\\(MarkdownImageBox[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
-    "\"\\\\!\\\\(\\\\*MarkdownImageBox[\\\"" ~~ Shortest[ uri__ ] ~~ "\\\"]\\\\)\"" :> uri,
-    "\"\\\\!\\\\(MarkdownImageBox[\\\"" ~~ Shortest[ uri__ ] ~~ "\\\"]\\\\)\"" :> uri,
+    "\\!\\(\\*"~~$$specialBoxName~~"[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
+    "\\!\\("~~$$specialBoxName~~"[\"" ~~ Shortest[ uri__ ] ~~ "\"]\\)" :> uri,
+    "\"\\\\!\\\\(\\\\*"~~$$specialBoxName~~"[\\\"" ~~ Shortest[ uri__ ] ~~ "\\\"]\\\\)\"" :> uri,
+    "\"\\\\!\\\\("~~$$specialBoxName~~"[\\\"" ~~ Shortest[ uri__ ] ~~ "\\\"]\\\\)\"" :> uri,
     "<" ~~ Shortest[ scheme: LetterCharacter.. ~~ "://" ~~ id: Except[ "!" ].. ] ~~ ">" :>
         "<!" <> scheme <> "://" <> id <> "!>",
     "\\uf351" -> "\[FreeformPrompt]",
@@ -1057,7 +1060,7 @@ writeResult[ settings_, container_, cell_, as_Association ] := Enclose[
 
         $lastFullResponseData = <| "Body" -> body, "Processed" -> processed, "Data" -> data |>;
 
-        Which[ MatchQ[ as[ "StatusCode" ], Except[ 200, _Integer ] ] || (processed === "" && AssociationQ @ data),
+        Which[ MatchQ[ as[ "StatusCode" ], Except[ 100|200, _Integer ] ] || (processed === "" && AssociationQ @ data),
                writeErrorCell[ cell, $badResponse = Association[ as, "Body" -> body, "BodyJSON" -> data ] ]
                ,
                processed === body === "",
@@ -2577,11 +2580,16 @@ throwFailureToChatOutput[ failure_ ] :=
 
 throwFailureToChatOutput[ task_, cell_CellObject, failure_ ] := (
     Quiet @ TaskRemove @ task;
-    throwTop @ writeErrorCell[ cell, failure ];
+    If[ StringQ @ CurrentValue[ cell, ExpressionUUID ],
+        throwTop @ writeErrorCell[ cell, failure ],
+        throwTop @ failure
+    ]
 );
 
-throwFailureToChatOutput[ _, None, failure_Failure ] :=
-    throwTop @ failure;
+throwFailureToChatOutput[ task_, None, failure_Failure ] := (
+    Quiet @ TaskRemove @ task;
+    throwTop @ failure
+);
 
 throwFailureToChatOutput // endDefinition;
 
@@ -2597,23 +2605,27 @@ writeErrorCell // endDefinition;
 (*errorCell*)
 errorCell // beginDefinition;
 
+errorCell[ as_ ] /; ! FreeQ[ as, $$usageLimitCode ] :=
+    Cell[
+        BoxData @ ToBoxes @
+            If[ ! FreeQ[ as, "credits-per-month-limit-exceeded" ],
+                errorMessageBox[ "UsageAt100" ],
+                errorMessageBox[ "UsageBlocked" ]
+            ],
+        "Text",
+        CellAutoOverwrite -> True,
+        CellTrayWidgets   -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
+        CodeAssistOptions -> { "AutoDetectHyperlinks" -> True },
+        GeneratedCell     -> True,
+        Initialization    -> None
+    ];
+
 errorCell[ as_ ] := Enclose[
     Module[ { text },
         text = ConfirmMatch[ errorText @ as, _String|$$textDataList, "ErrorText" ];
         Cell[
-            TextData @ Flatten @ {
-                StyleBox[ "\[WarningSign] ", FontColor -> Darker @ Red, FontSize -> 1.5 Inherited ],
-                If[ StringQ @ text,
-                    {
-                        text,
-                        "\n\n",
-                        Cell @ BoxData @ Quiet @ errorBoxes @ as
-                    },
-                    text
-                ]
-            },
+            BoxData @ toErrorBoxes @ text,
             "Text",
-            "ChatOutput",
             CellAutoOverwrite -> True,
             CellTrayWidgets   -> <| "ChatFeedback" -> <| "Visible" -> False |> |>,
             CodeAssistOptions -> { "AutoDetectHyperlinks" -> True },
@@ -2625,6 +2637,56 @@ errorCell[ as_ ] := Enclose[
 ];
 
 errorCell // endDefinition;
+
+
+$$usageLimitCode = Alternatives[
+    "request-per-minute-limit-exceeded",
+    "credits-per-minute-limit-exceeded",
+    "request-per-hour-limit-exceeded",
+    "credits-per-hour-limit-exceeded",
+    "request-per-month-limit-exceeded",
+    "credits-per-month-limit-exceeded"
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toErrorBoxes*)
+toErrorBoxes // beginDefinition;
+
+toErrorBoxes[ text_String ] := Enclose[
+    Module[ { label, box },
+        label = Row @ { RawBoxes @ $errorIconBox, text };
+        box = ConfirmMatch[
+            errorMessageBox[ label, Appearance -> "Fatal", ImageSize -> { Scaled[ 1 ], Automatic } ],
+            _Framed,
+            "Box"
+        ];
+        ToBoxes @ box
+    ],
+    throwInternalFailure
+];
+
+toErrorBoxes[ text: $$testDataList ] := Enclose[
+    Module[ { label, box },
+        label = RawBoxes @ Cell[
+            TextData @ Flatten @ { $errorIconBox, text },
+            Background           -> None,
+            ShowStringCharacters -> False
+        ];
+        box = ConfirmMatch[
+            errorMessageBox[ label, Appearance -> "Fatal", ImageSize -> { Scaled[ 1 ], Automatic } ],
+            _Framed,
+            "Box"
+        ];
+        ToBoxes @ box
+    ],
+    throwInternalFailure
+];
+
+toErrorBoxes // endDefinition;
+
+
+$errorIconBox = StyleBox[ "\[WarningSign] ", FontColor -> Darker @ Red, FontSize -> 1.5 * Inherited ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -2731,7 +2793,7 @@ errorBoxes[ as: KeyValuePattern[ "Error" -> "ServerResponseEmpty" ] ] :=
 errorBoxes[ as: KeyValuePattern[ "StatusCode" -> 429 ] ] :=
     ToBoxes @ messageFailure[ "RateLimitReached", as ];
 
-errorBoxes[ as: KeyValuePattern[ "StatusCode" -> code: Except[ 200 ] ] ] :=
+errorBoxes[ as: KeyValuePattern[ "StatusCode" -> code: Except[ 100|200 ] ] ] :=
     ToBoxes @ messageFailure[ "UnknownStatusCode", as ];
 
 errorBoxes[ failure_Failure ] :=
