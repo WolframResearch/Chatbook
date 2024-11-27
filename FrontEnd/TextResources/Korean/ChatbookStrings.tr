@@ -63,6 +63,8 @@
 "FormattingInsertContentLabel" -> "\:633F\:5165",
 "FormattingInsertContentAndEvaluateTooltip" -> "\:C544\:B798\:C5D0 \:CF58\:D150\:CE20\:B97C \:C0C8 \:C785\:B825 \
 \:C140\:B85C \:C0BD\:C785\:D558\:ACE0 \:D3C9\:AC00",
+"FormattingInsertContentAndEvaluateWorkspaceChatTooltip" -> "Insert this into `1` and evaluate.",
+"FormattingInsertContentAndEvaluateWorkspaceChatTooltipNew" -> "Insert this into a new notebook and evaluate.",
 "FormattingCopyToClipboardTooltip" -> "\:D074\:B9BD\:BCF4\:B4DC\:C5D0 \:BCF5\:C0AC",
 "FormattingInsertContentTooltip" -> "\:CF58\:D150\:CE20\:B97C \:C0C8 \:C785\:B825 \:C140\:B85C \:C544\:B798\:C5D0 \:C0BD\:C785",
 "FormattingToolUsing" -> "\:C0AC\:C6A9\:C911 ",
@@ -209,6 +211,7 @@
 "WorkspaceWindowTitle" -> "\:B178\:D2B8\:BD81 \:C5B4\:C2DC\:C2A4\:D134\:D2B8",
 "WorkspaceToolbarButtonLabelHistory" -> "\:D788\:C2A4\:D1A0\:B9AC",
 "WorkspaceToolbarButtonLabelSources" -> "\:CD9C\:CC98",
+"WorkspaceToolbarSourcesSubTitleMoved" -> "Previous chat moved to `1` History.",
 "WorkspaceToolbarSourcesSubTitle" -> "Choose sources to be made available to the notebook assistant.",
 "WorkspaceToolbarButtonLabelNew" -> "New Chat",
 "WorkspaceToolbarButtonTooltipHistory" -> "\:B300\:D654 \:AD00\:B9AC",
