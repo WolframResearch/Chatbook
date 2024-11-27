@@ -1105,7 +1105,7 @@ boxesToExpressionURI[ boxes_ ] :=
         Quiet @ ToExpression[ boxes, StandardForm, HoldComplete ],
         {
             HoldComplete[ expr_ ] :> MakeExpressionURI @ Unevaluated @ expr,
-            _? FailureQ :> MakeExpressionURI[ "image", RawBoxes @ boxes ]
+            _? FailureQ :> MakeExpressionURI[ "image", RawBoxes @ StyleBox[ boxes, "GraphicsRawBoxes" ] ]
         }
     ];
 

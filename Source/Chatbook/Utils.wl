@@ -499,8 +499,21 @@ basicProgressPanel // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*basicProgressTextRow*)
 basicProgressTextRow // beginDefinition;
+basicProgressTextRow[ expr_, p_ ] /; $showProgressText := basicProgressTextRow0[ expr, p ];
+basicProgressTextRow[ expr_, p_ ] := Nothing;
+basicProgressTextRow // endDefinition;
 
-basicProgressTextRow[ expr_, p_ ] /; $showProgressText := {
+
+basicProgressTextRow0 // beginDefinition;
+basicProgressTextRow0[ Verbatim[ Verbatim ][ expr_ ], p_ ] := basicProgressTextRow1[ expr, p ];
+basicProgressTextRow0[ name_String, p_ ] := basicProgressTextRow1[ trRaw[ "ProgressText"<>name ], p ];
+basicProgressTextRow0[ expr_, p_ ] := basicProgressTextRow1[ expr, p ];
+basicProgressTextRow0 // endDefinition;
+
+
+basicProgressTextRow1 // beginDefinition;
+
+basicProgressTextRow1[ expr_, p_ ] := {
     Style[
         If[ StringQ @ expr,
             Row @ { expr, ProgressIndicator[ Appearance -> "Ellipsis" ] },
@@ -514,9 +527,7 @@ basicProgressTextRow[ expr_, p_ ] /; $showProgressText := {
     ]
 };
 
-basicProgressTextRow[ expr_, p_ ] := Nothing;
-
-basicProgressTextRow // endDefinition;
+basicProgressTextRow1 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)

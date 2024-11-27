@@ -211,6 +211,7 @@
 "WorkspaceToolbarButtonLabelHistory" -> "\:5386\:53F2\:8BB0\:5F55",
 "WorkspaceToolbarButtonLabelSources" -> "\:8D44\:6E90",
 "WorkspaceToolbarSourcesSubTitleMoved" -> "\:4E0A\:4E00\:4E2A\:804A\:5929\:5DF2\:79FB\:81F3 `1` \:5386\:53F2\:8BB0\:5F55\:3002",
+"WorkspaceToolbarSourcesSubTitleMoved" -> "Previous chat moved to `1` History.",
 "WorkspaceToolbarSourcesSubTitle" -> "\:9009\:62E9\:7B14\:8BB0\:672C\:52A9\:624B\:53EF\:7528\:7684\:8D44\:6E90\:3002",
 "WorkspaceToolbarButtonLabelNew" -> "\:65B0\:7684\:804A\:5929",
 "WorkspaceToolbarButtonTooltipHistory" -> "\:7BA1\:7406\:5BF9\:8BDD",
@@ -242,7 +243,16 @@
 "InlineChatButtonTooltipViewNotebookAssist" -> "\:5728\:7B14\:8BB0\:672C\:534F\:52A9\:804A\:5929\:4E2D\:67E5\:770B",
 
 "NotebookAssistanceInputGettingStarted" -> "\:5E2E\:52A9\:6211\:5F00\:59CB\:4F7F\:7528",
-"NotebookAssistanceInputErrorMessage" -> "\:51FA\:4EC0\:4E48\:95EE\:9898\:4E86\:ff1f"
+"NotebookAssistanceInputErrorMessage" -> "\:51FA\:4EC0\:4E48\:95EE\:9898\:4E86\:ff1f",
+
+"ProgressTextCheckingDocumentation" -> "Checking documentation",
+"ProgressTextChoosingDocumentation" -> "Choosing relevant documentation",
+"ProgressTextCreatingMessages" -> "Creating messages",
+"ProgressTextSendingChat" -> "Sending chat",
+"ProgressTextGeneratingSuggestions" -> "Generating suggestions",
+"ProgressTextWaitingForResponse" -> "Waiting for response",
+"ProgressTextDownloadingSnippet" -> "Downloading `1` documentation snippet",
+"ProgressTextDownloadingSnippets" -> "Downloading `1` documentation snippets"
 }
 @|
 @|

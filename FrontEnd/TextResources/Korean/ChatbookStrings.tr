@@ -63,6 +63,8 @@
 "FormattingInsertContentLabel" -> "\:633F\:5165",
 "FormattingInsertContentAndEvaluateTooltip" -> "\:C544\:B798\:C5D0 \:CF58\:D150\:CE20\:B97C \:C0C8 \:C785\:B825 \
 \:C140\:B85C \:C0BD\:C785\:D558\:ACE0 \:D3C9\:AC00",
+"FormattingInsertContentAndEvaluateWorkspaceChatTooltip" -> "Insert this into `1` and evaluate.",
+"FormattingInsertContentAndEvaluateWorkspaceChatTooltipNew" -> "Insert this into a new notebook and evaluate.",
 "FormattingCopyToClipboardTooltip" -> "\:D074\:B9BD\:BCF4\:B4DC\:C5D0 \:BCF5\:C0AC",
 "FormattingInsertContentTooltip" -> "\:CF58\:D150\:CE20\:B97C \:C0C8 \:C785\:B825 \:C140\:B85C \:C544\:B798\:C5D0 \:C0BD\:C785",
 "FormattingToolUsing" -> "\:C0AC\:C6A9\:C911 ",
@@ -188,7 +190,7 @@
 "StylesheetToggleFormatting" -> "\:C11C\:C2DD \:C124\:C815 \:C804\:D658",
 "StylesheetCopyChatObject" -> "ChatObject \:BCF5\:C0AC",
 "StylesheetInsertionMenuChatInput" -> "\:CC44\:D305 \:C785\:B825",
-"StylesheetInsertionMenuChatBreak" -> "Chat Break",
+"StylesheetInsertionMenuChatBreak" -> "\:CC44\:D305 \:BE0C\:B808\:C774\:D06C",
 "StylesheetInsertionMenuSideChat" -> "\:C0AC\:C774\:B4DC \:CC44\:D305",
 "StylesheetContextMenuIncludeExclude" -> "AI \:CC44\:D305\:C5D0\:C11C \:C624\:B294 \:AC83\:C744 \:D3EC\:D568/\:C81C\:C678",
 
@@ -209,25 +211,26 @@
 "WorkspaceWindowTitle" -> "\:B178\:D2B8\:BD81 \:C5B4\:C2DC\:C2A4\:D134\:D2B8",
 "WorkspaceToolbarButtonLabelHistory" -> "\:D788\:C2A4\:D1A0\:B9AC",
 "WorkspaceToolbarButtonLabelSources" -> "\:CD9C\:CC98",
-"WorkspaceToolbarSourcesSubTitle" -> "Choose sources to be made available to the notebook assistant.",
-"WorkspaceToolbarButtonLabelNew" -> "New Chat",
+"WorkspaceToolbarSourcesSubTitleMoved" -> "Previous chat moved to `1` History.",
+"WorkspaceToolbarSourcesSubTitle" -> "\:B178\:D2B8\:BD81 \:C5B4\:C2DC\:C2A4\:D134\:D2B8\:C5D0\:C11C \:C0AC\:C6A9\:D560 \:C218 \:C788\:B294 \:C18C\:C2A4\:B97C \:C120\:D0DD\:D569\:B2C8\:B2E4.",
+"WorkspaceToolbarButtonLabelNew" -> "\:C0C8\:B85C\:C6B4 \:CC44\:D305",
 "WorkspaceToolbarButtonTooltipHistory" -> "\:B300\:D654 \:AD00\:B9AC",
 "WorkspaceToolbarButtonTooltipSources" -> "\:CC44\:D305 \:B0B4\:C6A9\:C5D0 \:B2E4\:B978 \:C790\:B8CC \:CD94\:AC00",
 "WorkspaceToolbarButtonTooltipNew" -> "\:C0C8\:B85C\:C6B4 \:B300\:D654 \:C2DC\:C791",
-"WorkspaceToolbarButtonTooltipOpenAsChatbook" -> "Open as a Chat Notebook",
+"WorkspaceToolbarButtonTooltipOpenAsChatbook" -> "\:CC44\:D305 \:B178\:D2B8\:BD81\:C73C\:B85C \:C5F4\:AE30",
 "WorkspaceSourcesOpenNotebooks" -> "\:B178\:D2B8\:BD81 \:C5F4\:AE30",
 
-"WorkspaceOutputRaftCopyAsTooltip" -> "Copy response to clipboard\[Ellipsis]",
-"WorkspaceOutputRaftCopyAs" -> "Copy response as\[Ellipsis]",
-"WorkspaceOutputRaftCopyAsNotebookCells" -> "Notebook Cells",
-"WorkspaceOutputRaftCopyAsPlainText" -> "Plain Text",
-"WorkspaceOutputRaftCopyAsImage" -> "Image",
-"WorkspaceOutputRaftRegenerateTooltip" -> "Regenerate response",
-"WorkspaceOutputRaftShareAsTooltip" -> "Share response\[Ellipsis]",
-"WorkspaceOutputRaftShareAs" -> "Share this as\[Ellipsis]",
-"WorkspaceOutputRaftShareAsCloudDeployment" -> "Cloud Deployment",
+"WorkspaceOutputRaftCopyAsTooltip" -> "\:B2F5\:BCC0\:C744 \:D074\:B9BD\:BCF4\:B4DC\:C5D0 \:BCF5\:C0AC\[Ellipsis]",
+"WorkspaceOutputRaftCopyAs" -> "\:B2F5\:BCC0\:C744 \:BCF5\:C0AC\[Ellipsis]",
+"WorkspaceOutputRaftCopyAsNotebookCells" -> "\:B178\:D2B8\:BD81 \:C140",
+"WorkspaceOutputRaftCopyAsPlainText" -> "\:C77C\:BC18 \:D14D\:C2A4\:D2B8",
+"WorkspaceOutputRaftCopyAsImage" -> "\:C774\:BBF8\:C9C0",
+"WorkspaceOutputRaftRegenerateTooltip" -> "\:B2F5\:BCC0 \:C7AC\:C0DD\:C131",
+"WorkspaceOutputRaftShareAsTooltip" -> "\:B2F5\:BCC0 \:ACF5\:C720\[Ellipsis]",
+"WorkspaceOutputRaftShareAs" -> "\:B85C \:ACF5\:C720\[Ellipsis]",
+"WorkspaceOutputRaftShareAsCloudDeployment" -> "\:D074\:B77C\:C6B0\:B4DC \:BC30\:D3EC",
 "WorkspaceOutputRaftShareAsPDF" -> "PDF",
-"WorkspaceOutputRaftShareAsImage" -> "Image",
+"WorkspaceOutputRaftShareAsImage" -> "\:C774\:BBF8\:C9C0",
 "WorkspaceOutputRaftFeedbackTooltip" -> "Wolfram\:C5D0 \:D53C\:B4DC\:BC31 \:BCF4\:B0B4\:AE30",
 
 "WorkspaceFocusIndicatorEnableTooltip" -> "Enable using context from other notebooks",
@@ -240,7 +243,16 @@
 "InlineChatButtonTooltipViewNotebookAssist" -> "\:B178\:D2B8\:BD81 \:C5B4\:C2DC\:C2A4\:D134\:C2A4 \:CC44\:D305\:C5D0\:C11C \:BCF4\:AE30",
 
 "NotebookAssistanceInputGettingStarted" -> "\:C2DC\:C791\:C5D0 \:B3C4\:C6C0 \:BC1B\:AE30",
-"NotebookAssistanceInputErrorMessage" -> "\:BB34\:C5C7\:C774 \:C798\:BABB\:B418\:C5C8\:B098\:C694?"
+"NotebookAssistanceInputErrorMessage" -> "\:BB34\:C5C7\:C774 \:C798\:BABB\:B418\:C5C8\:B098\:C694?",
+
+"ProgressTextCheckingDocumentation" -> "Checking documentation",
+"ProgressTextChoosingDocumentation" -> "Choosing relevant documentation",
+"ProgressTextCreatingMessages" -> "Creating messages",
+"ProgressTextSendingChat" -> "Sending chat",
+"ProgressTextGeneratingSuggestions" -> "Generating suggestions",
+"ProgressTextWaitingForResponse" -> "Waiting for response",
+"ProgressTextDownloadingSnippet" -> "Downloading `1` documentation snippet",
+"ProgressTextDownloadingSnippets" -> "Downloading `1` documentation snippets"
 }
 @|
 @|
