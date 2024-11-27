@@ -61,7 +61,7 @@
 "FormattingInsertContentAndEvaluateLabel" -> "Ins\[EAcute]rer et \[EAcute]valuer",
 "FormattingCopyToClipboardLabel" -> "Copier",
 "FormattingInsertContentLabel" -> "Ins\[EAcute]rer",
-"FormattingInsertContentAndEvaluateTooltip" -> "Ins\[EAcute]rer le contenu en tant que nouvelle cellule d\[CloseCurlyQuote]entr\[EAcute]e ci-dessous et [EAcute]valuer",
+"FormattingInsertContentAndEvaluateTooltip" -> "Ins\[EAcute]rer le contenu en tant que nouvelle cellule d\[CloseCurlyQuote]entr\[EAcute]e ci-dessous et \[EAcute]valuer",
 "FormattingInsertContentAndEvaluateWorkspaceChatTooltip" -> "Ins\[EAcute]rer ceci dans `1` et \[EAcute]valuer.",
 "FormattingInsertContentAndEvaluateWorkspaceChatTooltipNew" -> "Ins\[EAcute]rer ceci dans un nouveau notebook et \[EAcute]valuer.",
 "FormattingCopyToClipboardTooltip" -> "Copier dans le presse-papiers",
