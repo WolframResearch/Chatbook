@@ -685,17 +685,24 @@ evaluateLanguageLabel[ name_String, False ] :=
     ];
 
 evaluateLanguageLabel[ name_String, True ] :=
-    With[ { icon = If[ name === "Wolfram", chatbookIcon[ "WorkspaceCodeBlockInsertAndEvaluate", False ], $languageIcons @ name ] },
+    Catch @ Module[ { wl, icon, labeled },
+
+        wl = wolframLanguageQ @ name;
+        icon = If[ wl, chatbookIcon[ "WorkspaceCodeBlockInsertAndEvaluate", False ], $languageIcons @ name ];
+        If[ ! MatchQ[ icon, _Graphics | _Dynamic | _Image ], Throw @ $insertEvaluateButtonLabel ];
+
+        labeled = labeledIcon[
+            If[ wl, { "WorkspaceCodeBlockInsertAndEvaluate", False }, name ],
+            "FormattingInsertContentAndEvaluateLabel"
+        ];
+
         fancyTooltip[
             MouseAppearance[
-                buttonMouseover[
-                    buttonFrameDefault[ labeledIcon[ If[ name === "Wolfram", { "WorkspaceCodeBlockInsertAndEvaluate", False }, name ], "FormattingInsertContentAndEvaluateLabel" ], True ],
-                    buttonFrameActive[ labeledIcon[ If[ name === "Wolfram", { "WorkspaceCodeBlockInsertAndEvaluate", False }, name ], "FormattingInsertContentAndEvaluateLabel" ], True ]
-                ],
+                buttonMouseover[ buttonFrameDefault[ labeled, True ], buttonFrameActive[ labeled, True ] ],
                 "LinkHand"
             ],
             targetNotebookLabel @ EvaluationNotebook[ ]
-        ] /; MatchQ[ icon, _Graphics | _Dynamic | _Image ]
+        ]
     ];
 
 evaluateLanguageLabel[ ___ ] := $insertEvaluateButtonLabel;
