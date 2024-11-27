@@ -7,6 +7,8 @@ Needs[ "Wolfram`Chatbook`"                  ];
 Needs[ "Wolfram`Chatbook`Common`"           ];
 Needs[ "Wolfram`Chatbook`ChatModes`Common`" ];
 
+$ContentSuggestions = False;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
@@ -328,6 +330,7 @@ withSuggestionsProgress // Attributes = { HoldFirst };
 
 withSuggestionsProgress[ eval_ ] := Block[
     {
+        $ContentSuggestions       = True,
         $finishReason             = None,
         $progressWidth            = $contentSuggestionsProgressWidth,
         $showProgressText         = True,
