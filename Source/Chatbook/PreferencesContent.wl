@@ -113,6 +113,25 @@ currentTabPage[ scope_ ] := Replace[
 currentTabPage // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*mousedown*)
+(* Cloud doesn't utilize the Dialog.nb stylesheet as expected, so workaround that. *)
+mousedown[ args__ ] := NotebookTools`Mousedown[ args ]
+
+commonOpts = { Alignment -> Center, FrameMargins -> { { 17, 17 }, { 7, 7 } }, FrameStyle -> None, ImageSize -> { { 38, Full }, { 19.5, Full } }, RoundingRadius -> 3 };
+
+mousedown[ args__ ] /; $CloudEvaluation := 
+ReplaceAll[
+    NotebookTools`Mousedown[args],
+    {
+        HoldPattern[ BaseStyle -> "ButtonRed1Normal" ]  :> Sequence @@ Join[ { BaseStyle -> { FontColor -> GrayLevel[ 1 ] }, Background -> RGBColor[   13/15, 1/15, 0 ] }, commonOpts ],
+        HoldPattern[ BaseStyle -> "ButtonRed1Hover" ]   :> Sequence @@ Join[ { BaseStyle -> { FontColor -> GrayLevel[ 1 ] }, Background -> RGBColor[ 254/255,   0,  0 ] }, commonOpts ],
+        HoldPattern[ BaseStyle -> "ButtonRed1Pressed" ] :> Sequence @@ Join[ { BaseStyle -> { FontColor -> GrayLevel[ 1 ] }, Background -> RGBColor[ 176/255, 1/17, 0 ] }, commonOpts ]
+    }
+]
+
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Main*)
 
@@ -1168,7 +1187,7 @@ servicesSettingsPanel0[ ] := Enclose[
         llmHelp = (* If this tooltip isn't meant to be a button, then use infoTooltip[llmLabel, text] *)
             Button[
                 Tooltip[
-                    NotebookTools`Mousedown[
+                    mousedown[
                         Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.537 ], 14 ] ] ],
                         Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.692 ], 14 ] ] ],
                         Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.358 ], 14 ] ] ] ],
@@ -1218,10 +1237,10 @@ makeLLMPanel[ ] :=
     Module[ { subscribeButton, username, signInButton, manageButton },
         subscribeButton =
             Button[
-                NotebookTools`Mousedown[
-                    Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Normal", FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
-                    Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Hover", FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
-                    Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Pressed", FrameMargins -> { { 17, 17 }, { 7, 7 } } ] ],
+                mousedown[
+                    Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Normal" ],
+                    Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Hover" ],
+                    Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Pressed" ] ],
                 Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Buy",
                 Appearance -> "Suppressed",
                 BaseStyle -> "DialogTextCommon",
@@ -1237,7 +1256,7 @@ makeLLMPanel[ ] :=
                         Grid[
                             { {
                                 RawBoxes @ DynamicBox[ FEPrivate`FrontEndResource[ "FEBitmaps", "GenericUserIcon" ][ GrayLevel[ 0.2 ] ] ],
-                                Dynamic[ FrontEnd`CurrentValue["WolframCloudFullUserName"] ] } },
+                                If[ $CloudEvaluation, Dynamic[ $CloudAccountName ], Dynamic[ FrontEnd`CurrentValue["WolframCloudFullUserName"] ] ] } },
                             Alignment -> { Left, Baseline },
                             BaseStyle -> { FontColor -> GrayLevel[ 0.2 ], FontSize -> 14 },
                             BaselinePosition -> { 1, 2 } ] },
@@ -1975,6 +1994,8 @@ highlightControl // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*highlightColor*)
 highlightColor // beginDefinition;
+
+highlightColor[ tab_, id_ ] /; $CloudEvaluation := None
 
 highlightColor[ tab_, id_ ] :=
     With[
