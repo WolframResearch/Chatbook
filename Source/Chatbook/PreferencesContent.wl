@@ -113,25 +113,6 @@ currentTabPage[ scope_ ] := Replace[
 currentTabPage // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*mousedown*)
-(* Cloud doesn't utilize the Dialog.nb stylesheet as expected, so workaround that. *)
-mousedown[ args__ ] := NotebookTools`Mousedown[ args ]
-
-commonOpts = { Alignment -> Center, FrameMargins -> { { 17, 17 }, { 7, 7 } }, FrameStyle -> None, ImageSize -> { { 38, Full }, { 19.5, Full } }, RoundingRadius -> 3 };
-
-mousedown[ args__ ] /; $CloudEvaluation := 
-ReplaceAll[
-    NotebookTools`Mousedown[args],
-    {
-        HoldPattern[ BaseStyle -> "ButtonRed1Normal" ]  :> Sequence @@ Join[ { BaseStyle -> { FontColor -> GrayLevel[ 1 ] }, Background -> RGBColor[   13/15, 1/15, 0 ] }, commonOpts ],
-        HoldPattern[ BaseStyle -> "ButtonRed1Hover" ]   :> Sequence @@ Join[ { BaseStyle -> { FontColor -> GrayLevel[ 1 ] }, Background -> RGBColor[ 254/255,   0,  0 ] }, commonOpts ],
-        HoldPattern[ BaseStyle -> "ButtonRed1Pressed" ] :> Sequence @@ Join[ { BaseStyle -> { FontColor -> GrayLevel[ 1 ] }, Background -> RGBColor[ 176/255, 1/17, 0 ] }, commonOpts ]
-    }
-]
-
-
-(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Main*)
 
@@ -1187,7 +1168,7 @@ servicesSettingsPanel0[ ] := Enclose[
         llmHelp = (* If this tooltip isn't meant to be a button, then use infoTooltip[llmLabel, text] *)
             Button[
                 Tooltip[
-                    mousedown[
+                    NotebookTools`Mousedown[
                         Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.537 ], 14 ] ] ],
                         Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.692 ], 14 ] ] ],
                         Dynamic[ RawBoxes[ FEPrivate`FrontEndResource[ "FEBitmaps", "ProductSelectorInfo" ][ GrayLevel[ 0.358 ], 14 ] ] ] ],
@@ -1237,10 +1218,7 @@ makeLLMPanel[ ] :=
     Module[ { subscribeButton, username, signInButton, manageButton },
         subscribeButton =
             Button[
-                mousedown[
-                    Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Normal" ],
-                    Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Hover" ],
-                    Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Pressed" ] ],
+                redDialogButtonLabel[ tr[ "PreferencesContentLLMKitSubscribeButton" ], FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
                 Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Buy",
                 Appearance -> "Suppressed",
                 BaseStyle -> "DialogTextCommon",
