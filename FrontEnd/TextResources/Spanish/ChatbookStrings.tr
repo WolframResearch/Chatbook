@@ -244,14 +244,14 @@
 "NotebookAssistanceInputGettingStarted" -> "Ay\[UAcute]dame a comenzar",
 "NotebookAssistanceInputErrorMessage" -> "\[DownQuestion]Qu\[EAcute] sali\[OAcute] mal?",
 
-"ProgressTextCheckingDocumentation" -> "Checking documentation",
-"ProgressTextChoosingDocumentation" -> "Choosing relevant documentation",
-"ProgressTextCreatingMessages" -> "Creating messages",
-"ProgressTextSendingChat" -> "Sending chat",
-"ProgressTextGeneratingSuggestions" -> "Generating suggestions",
-"ProgressTextWaitingForResponse" -> "Waiting for response",
-"ProgressTextDownloadingSnippet" -> "Downloading `1` documentation snippet",
-"ProgressTextDownloadingSnippets" -> "Downloading `1` documentation snippets"
+"ProgressTextCheckingDocumentation" -> "Revisando la documentaci\[OAcute]n",
+"ProgressTextChoosingDocumentation" -> "Seleccionando la documentaci\[OAcute]n relevante",
+"ProgressTextCreatingMessages" -> "Creando mensajes",
+"ProgressTextSendingChat" -> "Enviando chat",
+"ProgressTextGeneratingSuggestions" -> "Generando sugerencias",
+"ProgressTextWaitingForResponse" -> "Esperando la respuesta",
+"ProgressTextDownloadingSnippet" -> "Descargando `1` fragmento de documentaci\[OAcute]n",
+"ProgressTextDownloadingSnippets" -> "Descargando `1` fragmentos de documentaci\[OAcute]n"
 }
 @|
 @|
