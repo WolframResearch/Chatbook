@@ -1806,9 +1806,15 @@ makeToolCallOutputSection // beginDefinition;
 makeToolCallOutputSection[ as: KeyValuePattern[ "Result" -> result_ ] ] := Enclose[
     Module[ { formatter },
         formatter = Confirm[ as[ "FormattingFunction" ], "FormattingFunction" ];
-        TextCell[ wideScrollPane @ formatter[ result, "Result" ], "Text", Background -> None ]
+        TextCell[
+            wideScrollPane @ formatter[ result, "Result" ],
+            "Text",
+            Background      -> None,
+            FrameBoxOptions -> { BaselinePosition -> Automatic },
+            PaneBoxOptions  -> { BaselinePosition -> Automatic }
+        ]
     ],
-    throwInternalFailure[ makeToolCallOutputSection @ as, ## ] &
+    throwInternalFailure
 ];
 
 makeToolCallOutputSection // endDefinition;
