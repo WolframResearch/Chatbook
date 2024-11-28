@@ -685,17 +685,24 @@ evaluateLanguageLabel[ name_String, False ] :=
     ];
 
 evaluateLanguageLabel[ name_String, True ] :=
-    With[ { icon = If[ name === "Wolfram", chatbookIcon[ "WorkspaceCodeBlockInsertAndEvaluate", False ], $languageIcons @ name ] },
+    Catch @ Module[ { wl, icon, labeled },
+
+        wl = wolframLanguageQ @ name;
+        icon = If[ wl, chatbookIcon[ "WorkspaceCodeBlockInsertAndEvaluate", False ], $languageIcons @ name ];
+        If[ ! MatchQ[ icon, _Graphics | _Dynamic | _Image ], Throw @ $insertEvaluateButtonLabel ];
+
+        labeled = labeledIcon[
+            If[ wl, { "WorkspaceCodeBlockInsertAndEvaluate", False }, name ],
+            "FormattingInsertContentAndEvaluateLabel"
+        ];
+
         fancyTooltip[
             MouseAppearance[
-                buttonMouseover[
-                    buttonFrameDefault[ labeledIcon[ If[ name === "Wolfram", { "WorkspaceCodeBlockInsertAndEvaluate", False }, name ], "FormattingInsertContentAndEvaluateLabel" ], True ],
-                    buttonFrameActive[ labeledIcon[ If[ name === "Wolfram", { "WorkspaceCodeBlockInsertAndEvaluate", False }, name ], "FormattingInsertContentAndEvaluateLabel" ], True ]
-                ],
+                buttonMouseover[ buttonFrameDefault[ labeled, True ], buttonFrameActive[ labeled, True ] ],
                 "LinkHand"
             ],
             targetNotebookLabel @ EvaluationNotebook[ ]
-        ] /; MatchQ[ icon, _Graphics | _Dynamic | _Image ]
+        ]
     ];
 
 evaluateLanguageLabel[ ___ ] := $insertEvaluateButtonLabel;
@@ -1799,9 +1806,15 @@ makeToolCallOutputSection // beginDefinition;
 makeToolCallOutputSection[ as: KeyValuePattern[ "Result" -> result_ ] ] := Enclose[
     Module[ { formatter },
         formatter = Confirm[ as[ "FormattingFunction" ], "FormattingFunction" ];
-        TextCell[ wideScrollPane @ formatter[ result, "Result" ], "Text", Background -> None ]
+        TextCell[
+            wideScrollPane @ formatter[ result, "Result" ],
+            "Text",
+            Background      -> None,
+            FrameBoxOptions -> { BaselinePosition -> Automatic },
+            PaneBoxOptions  -> { BaselinePosition -> Automatic }
+        ]
     ],
-    throwInternalFailure[ makeToolCallOutputSection @ as, ## ] &
+    throwInternalFailure
 ];
 
 makeToolCallOutputSection // endDefinition;
@@ -2159,47 +2172,12 @@ inlineInteractiveCodeCell // beginDefinition;
 
 inlineInteractiveCodeCell[ display_, string_ ] /; $dynamicText := display;
 
-(* TODO: make this switch dynamically depending on $cloudNotebooks (likely as a TemplateBox)*)
 inlineInteractiveCodeCell[ display_, string_ ] :=
     inlineInteractiveCodeCell[ display, string, contentLanguage @ string ];
-
-inlineInteractiveCodeCell[ display_, string_, lang_ ] /; $cloudNotebooks :=
-    cloudInlineInteractiveCodeCell[ display, string, lang ];
 
 inlineInteractiveCodeCell[ display_, string_, lang_ ] := display;
 
 inlineInteractiveCodeCell // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*cloudInlineInteractiveCodeCell*)
-cloudInlineInteractiveCodeCell // beginDefinition;
-
-cloudInlineInteractiveCodeCell[ display_, string_, lang_ ] :=
-    Module[ { padded, buttons },
-
-        padded = Pane[ display, ImageSize -> { { 100, Automatic }, { 30, Automatic } } ];
-
-        buttons = Framed[
-            floatingButtonGrid[ string, lang ],
-            Background     -> White,
-            FrameMargins   -> { { 1, 0 }, { 0, 1 } },
-            FrameStyle     -> White,
-            ImageMargins   -> 1,
-            RoundingRadius -> 3
-        ];
-
-        Mouseover[
-            buttonOverlay[ padded, Invisible @ buttons ],
-            buttonOverlay[ padded, buttons ],
-            ContentPadding -> False,
-            FrameMargins   -> 0,
-            ImageMargins   -> 0,
-            ImageSize      -> All
-        ]
-    ];
-
-cloudInlineInteractiveCodeCell // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
