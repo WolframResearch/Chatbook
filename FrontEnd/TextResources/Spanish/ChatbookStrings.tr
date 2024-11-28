@@ -28,7 +28,7 @@
 "APIKeyDialogCreateKeyTemplate" -> "Si aun no cuenta con una clave de API, puede crear una `1`.",
 "APIKeyDialogSaveKeyTemplate" -> "Para evitar ver esta ventana en el futuro, seleccione \"Guardar\" para guardar la clave en `1`.",
 
-"ChatContextDialogSystemPromptText" -> "Texto del mensaje de sistema",
+"ChatContextDialogSystemPromptText" -> "Texto del prompt del sistema",
 "ChatContextDialogCellProcessingFunction" -> "Funci\[OAcute]n de procesamiento de celdas",
 "ChatContextDialogCellPostEvaluationFunction" -> "Funci\[OAcute]n de evaluaci\[OAcute]n posterior de celdas",
 "ChatContextDialogDescription" -> "Este es el texto que le indica qu\[EAcute] hacer.",
@@ -44,7 +44,7 @@
 "FeedbackChatMessagesContent" -> "Mensajes de chat",
 "FeedbackChatMessagesTooltip" -> "Mensajes de chat involucrados en la creaci\[OAcute]n de esta salida de chat.",
 "FeedbackSystemMessageContent" -> "Mensaje del sistema",
-"FeedbackSystemMessageTooltip" -> "El mensaje subyacente utilizado para para dar indicaciones a la IA.",
+"FeedbackSystemMessageTooltip" -> "El mensaje subyacente del sistema utilizado para para dar indicaciones a la IA.",
 "FeedbackChatHistoryContent" -> "Historial de chat utilizado para generar esta salida",
 "FeedbackChatHistoryTooltip" -> "Mensajes adicionales utilizados como historial de conversaci\[OAcute]n para generar esta salida.",
 "FeedbackChatImageContent" -> "Imagen de salida de chat",
