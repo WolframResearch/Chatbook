@@ -60,11 +60,11 @@
 
 "FormattingInsertContentAndEvaluateLabel" -> "\:C0BD\:C785 \:BC0F \:D3C9\:AC00",
 "FormattingCopyToClipboardLabel" -> "\:BCF5\:C0AC",
-"FormattingInsertContentLabel" -> "\:633F\:5165",
+"FormattingInsertContentLabel" -> "\:C0BD\:C785",
 "FormattingInsertContentAndEvaluateTooltip" -> "\:C544\:B798\:C5D0 \:CF58\:D150\:CE20\:B97C \:C0C8 \:C785\:B825 \
 \:C140\:B85C \:C0BD\:C785\:D558\:ACE0 \:D3C9\:AC00",
-"FormattingInsertContentAndEvaluateWorkspaceChatTooltip" -> "Insert this into `1` and evaluate.",
-"FormattingInsertContentAndEvaluateWorkspaceChatTooltipNew" -> "Insert this into a new notebook and evaluate.",
+"FormattingInsertContentAndEvaluateWorkspaceChatTooltip" -> "\:C774\:AC83\:C744 `1`\:C5D0 \:C0BD\:C785\:D558\:ACE0 \:D3C9\:AC00",
+"FormattingInsertContentAndEvaluateWorkspaceChatTooltipNew" -> "\:C774\:AC83\:C744 \:C0C8 \:B178\:D2B8\:BD81\:C5D0 \:C0BD\:C785\:D558\:ACE0 \:D3C9\:AC00",
 "FormattingCopyToClipboardTooltip" -> "\:D074\:B9BD\:BCF4\:B4DC\:C5D0 \:BCF5\:C0AC",
 "FormattingInsertContentTooltip" -> "\:CF58\:D150\:CE20\:B97C \:C0C8 \:C785\:B825 \:C140\:B85C \:C544\:B798\:C5D0 \:C0BD\:C785",
 "FormattingToolUsing" -> "\:C0AC\:C6A9\:C911 ",
@@ -174,12 +174,12 @@
 "UIAdvancedRoles" -> "\:C5ED\:D560",
 "UITryEnableChatDialogMainText" -> "\:CC44\:D305 \:B178\:D2B8\:BD81 \:AE30\:B2A5\:C744 \:D65C\:C131\:D654\:D558\:BA74 \:C774 \:B178\:D2B8\:BD81\:C5D0 \:C815\:C758\:B41C \:C2A4\:D0C0\:C77C\:C774 \:C0AD\:C81C\:B418\:BA70 \:ACF5\:C720\:B41C Chatbook \:C2A4\:D0C0\:C77C\:C2DC\:D2B8\:B85C \:B300\:CCB4\:B429\:B2C8\:B2E4.",
 "UITryEnableChatDialogConfirm" -> "\:ACC4\:C18D \:D558\:C2DC\:ACA0\:C2B5\:B2C8\:AE4C?",
-"UIMessageManageSubscription" -> "Manage Subscription \[RightGuillemet]",
-"UIMessageContactUs" -> "Contact us \[RightGuillemet]",
-"UIMessageUsed80" -> "You have used 80% of your Wolfram Notebook Assistant + LLM Kit allowance for this month.",
-"UIMessageUsedAll" -> "You have used your entire Wolfram Notebook Assistant + LLM Kit allowance for this month.",
-"UIMessageHighUsageRate" -> "We've detected a very high rate of requests from your account. To prevent disruptions to the service for other users, we've temporarily had to block your requests.",
-"UIMessageUnblockRequest" -> "Ask to be unblocked \[RightGuillemet]",
+"UIMessageManageSubscription" -> "\:AD6C\:B3C5 \:AD00\:B9AC \[RightGuillemet]",
+"UIMessageContactUs" -> "\:BB38\:C758\:D558\:AE30 \[RightGuillemet]",
+"UIMessageUsed80" -> "\:C774\:BC88 \:B2EC Wolfram Notebook Assistant + LLM Kit \:C0AC\:C6A9 \:D55C\:B3C4\:C758 80%\:B97C \:C0AC\:C6A9\:D588\:C2B5\:B2C8\:B2E4.",
+"UIMessageUsedAll" -> "\:C774\:BC88 \:B2EC Wolfram Notebook Assistant + LLM Kit \:C0AC\:C6A9 \:D55C\:B3C4\:B97C \:BAA8\:B450 \:C0AC\:C6A9\:D588\:C2B5\:B2C8\:B2E4.",
+"UIMessageHighUsageRate" -> "\:ADC0\:D558\:C758 \:ACC4\:C815\:C5D0\:C11C \:C694\:CCAD\:C774 \:ACFC\:B3C4\:D55C \:BE44\:C728\:B85C \:BC1C\:C0DD\:D558\:C600\:C2B5\:B2C8\:B2E4. \:B2E4\:B978 \:C0AC\:C6A9\:C790\:C5D0 \:B300\:D55C \:C11C\:BE44\:C2A4 \:CC28\:C9C8\:C744  \:BC29\:C9C0\:D558\:AE30 \:C704\:D574 \:C77C\:C2DC\:C801\:C73C\:B85C \:ADC0\:D558\:C758 \:C694\:CCAD\:C740 \:CC28\:B2E8\:B429\:B2C8\:B2E4.",
+"UIMessageUnblockRequest" -> "\:CC28\:B2E8 \:D574\:C81C \:C694\:CCAD \[RightGuillemet]",
 
 "StylesheetChatWidgetButtonTooltip" -> "\:B300\:D615 \:C5B8\:C5B4 \:BAA8\:B378\:B85C \:C804\:C1A1",
 "StylesheetAssistantMenuInitializerButtonTooltip" -> "\:C790\:B3D9 \:B3C4\:C6B0\:BBF8 \:BE44\:D65C\:C131\:D654",
@@ -211,7 +211,7 @@
 "WorkspaceWindowTitle" -> "\:B178\:D2B8\:BD81 \:C5B4\:C2DC\:C2A4\:D134\:D2B8",
 "WorkspaceToolbarButtonLabelHistory" -> "\:D788\:C2A4\:D1A0\:B9AC",
 "WorkspaceToolbarButtonLabelSources" -> "\:CD9C\:CC98",
-"WorkspaceToolbarSourcesSubTitleMoved" -> "Previous chat moved to `1` History.",
+"WorkspaceToolbarSourcesSubTitleMoved" -> "\:C774\:C804 \:CC44\:D305\:C774 `1` \:AE30\:B85D\:C73C\:B85C \:C774\:B3D9\:B418\:C5C8\:C2B5\:B2C8\:B2E4.",
 "WorkspaceToolbarSourcesSubTitle" -> "\:B178\:D2B8\:BD81 \:C5B4\:C2DC\:C2A4\:D134\:D2B8\:C5D0\:C11C \:C0AC\:C6A9\:D560 \:C218 \:C788\:B294 \:C18C\:C2A4\:B97C \:C120\:D0DD\:D569\:B2C8\:B2E4.",
 "WorkspaceToolbarButtonLabelNew" -> "\:C0C8\:B85C\:C6B4 \:CC44\:D305",
 "WorkspaceToolbarButtonTooltipHistory" -> "\:B300\:D654 \:AD00\:B9AC",
@@ -233,11 +233,11 @@
 "WorkspaceOutputRaftShareAsImage" -> "\:C774\:BBF8\:C9C0",
 "WorkspaceOutputRaftFeedbackTooltip" -> "Wolfram\:C5D0 \:D53C\:B4DC\:BC31 \:BCF4\:B0B4\:AE30",
 
-"WorkspaceFocusIndicatorEnableTooltip" -> "Enable using context from other notebooks",
-"WorkspaceFocusIndicatorDisableTooltip" -> "Disable using context from other notebooks",
-"WorkspaceFocusIndicatorFocus" -> "Focus:",
-"WorkspaceFocusIndicatorMenuTooltip" -> "Choose a notebook to focus on for additional context",
-"WorkspaceFocusIndicatorMenuAutomatic" -> "Choose Automatically",
+"WorkspaceFocusIndicatorEnableTooltip" -> "\:B2E4\:B978 \:B178\:D2B8\:BD81\:C758 \:CEE8\:D14D\:C2A4\:D2B8 \:C0AC\:C6A9\:C758 \:D65C\:C131\:D654",
+"WorkspaceFocusIndicatorDisableTooltip" -> "\:B2E4\:B978 \:B178\:D2B8\:BD81\:C758 \:CEE8\:D14D\:C2A4\:D2B8 \:C0AC\:C6A9\:C758 \:BE44\:D65C\:C131\:D654",
+"WorkspaceFocusIndicatorFocus" -> "\:C9D1\:C911:",
+"WorkspaceFocusIndicatorMenuTooltip" -> "\:CD94\:AC00 \:CEE8\:D14D\:C2A4\:D2B8\:B97C \:C704\:D574 \:C9D1\:C911\:D560 \:B178\:D2B8\:BD81\:C744 \:C120\:D0DD",
+"WorkspaceFocusIndicatorMenuAutomatic" -> "\:C790\:B3D9 \:C120\:D0DD",
 
 "InlineChatButtonTooltipClose" -> "\:B2EB\:AE30",
 "InlineChatButtonTooltipViewNotebookAssist" -> "\:B178\:D2B8\:BD81 \:C5B4\:C2DC\:C2A4\:D134\:C2A4 \:CC44\:D305\:C5D0\:C11C \:BCF4\:AE30",
@@ -245,14 +245,14 @@
 "NotebookAssistanceInputGettingStarted" -> "\:C2DC\:C791\:C5D0 \:B3C4\:C6C0 \:BC1B\:AE30",
 "NotebookAssistanceInputErrorMessage" -> "\:BB34\:C5C7\:C774 \:C798\:BABB\:B418\:C5C8\:B098\:C694?",
 
-"ProgressTextCheckingDocumentation" -> "Checking documentation",
-"ProgressTextChoosingDocumentation" -> "Choosing relevant documentation",
-"ProgressTextCreatingMessages" -> "Creating messages",
-"ProgressTextSendingChat" -> "Sending chat",
-"ProgressTextGeneratingSuggestions" -> "Generating suggestions",
-"ProgressTextWaitingForResponse" -> "Waiting for response",
-"ProgressTextDownloadingSnippet" -> "Downloading `1` documentation snippet",
-"ProgressTextDownloadingSnippets" -> "Downloading `1` documentation snippets"
+"ProgressTextCheckingDocumentation" -> "\:BB38\:C11C \:D655\:C778",
+"ProgressTextChoosingDocumentation" -> "\:AD00\:B828 \:BB38\:C11C \:C120\:D0DD",
+"ProgressTextCreatingMessages" -> "\:BA54\:C2DC\:C9C0 \:C0DD\:C131",
+"ProgressTextSendingChat" -> "\:CC44\:D305 \:BCF4\:B0B4\:AE30",
+"ProgressTextGeneratingSuggestions" -> "\:C81C\:C548 \:C0DD\:C131",
+"ProgressTextWaitingForResponse" -> "\:D68C\:C2E0\:C744 \:AE30\:B2E4\:B9AC\:B294 \:C911",
+"ProgressTextDownloadingSnippet" -> "`1` \:BB38\:C11C \:C77C\:BD80 \:B2E4\:C6B4\:B85C\:B4DC",
+"ProgressTextDownloadingSnippets" -> "`1` \:BB38\:C11C \:C77C\:BD80 \:B2E4\:C6B4\:B85C\:B4DC"
 }
 @|
 @|
