@@ -37,7 +37,7 @@
 "ChatToolbarInsertChatCell" -> "Insert Chat Cell",
 "ChatToolbarChatSettings" -> "Chat Settings",
 "ChatToolbarChatDrivenLabel" -> "Chat-Driven Notebook",
-"ChatToolbarChatEnabledLabel" -> "Chat-Enabled Notebook",
+"ChatToolbarChatEnabledLabel" -> "Chat Notebook",
 
 "DefaultToolsLinks" -> "Links",
 

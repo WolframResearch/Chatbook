@@ -30,6 +30,22 @@ $headerMargins    := If[ TrueQ @ $inDialog, $dialogHeaderMargins   , $paneHeader
 $subHeaderMargins := If[ TrueQ @ $inDialog, $dialogSubHeaderMargins, $paneSubHeaderMargins ];
 $bodyMargins      := If[ TrueQ @ $inDialog, $dialogBodyMargins     , $paneBodyMargins      ];
 
+(* Copied from Dialog.nb stylesheet in order for buttons to render correctly on Cloud *)
+$buttonCommonOptions = {
+    Alignment        -> Center,
+    BaselinePosition -> Baseline, (* added since it's repeatedly used everywhere *)
+    FrameMargins     -> 4,
+    FrameStyle       -> None,
+    ImageSize        -> { { 38, Full }, { 19.5, Full } },
+    RoundingRadius   -> 3
+};
+
+$dialogTextBasic = {
+    FontFamily         -> "Source Sans Pro",
+    FontSize           -> 13,
+    PrivateFontOptions -> { "OperatorSubstitution" -> False }
+}
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Create Dialogs*)
@@ -193,26 +209,26 @@ autoMargins0 // endDefinition;
 (*grayDialogButtonLabel*)
 grayDialogButtonLabel // beginDefinition;
 
-grayDialogButtonLabel[ { normal_, hover_, pressed_ } ] /; $cloudNotebooks :=
+grayDialogButtonLabel[ { normal_, hover_, pressed_ }, optsOverrides: OptionsPattern[ ] ] /; $cloudNotebooks :=
     Mouseover[
-        Framed[ normal , BaseStyle -> "ButtonGray1Normal" , BaselinePosition -> Baseline ],
-        Framed[ hover  , BaseStyle -> "ButtonGray1Hover"  , BaselinePosition -> Baseline ],
-        BaseStyle      -> "DialogTextBasic",
+        Framed[ normal , Sequence @@ Join[ Flatten @ { optsOverrides }, { BaseStyle -> { FontColor -> GrayLevel[ 20/51 ] }, Background -> GrayLevel[ 229/255 ] }, $buttonCommonOptions ] ],
+        Framed[ hover  , Sequence @@ Join[ Flatten @ { optsOverrides }, { BaseStyle -> { FontColor -> GrayLevel[ 20/51 ] }, Background -> GrayLevel[   49/51 ], FrameStyle -> GrayLevel[ 229/255 ] }, $buttonCommonOptions ] ],
+        BaseStyle      -> $dialogTextBasic,
         ContentPadding -> False,
         ImageSize      -> All
     ];
 
-grayDialogButtonLabel[ { normal_, hover_, pressed_ } ] :=
+grayDialogButtonLabel[ { normal_, hover_, pressed_ }, optsOverrides: OptionsPattern[ ] ] :=
     NotebookTools`Mousedown[
-        Framed[ normal , BaseStyle -> "ButtonGray1Normal" , BaselinePosition -> Baseline ],
-        Framed[ hover  , BaseStyle -> "ButtonGray1Hover"  , BaselinePosition -> Baseline ],
-        Framed[ pressed, BaseStyle -> "ButtonGray1Pressed", BaselinePosition -> Baseline ],
+        Framed[ normal , optsOverrides, BaseStyle -> "ButtonGray1Normal" , BaselinePosition -> Baseline ],
+        Framed[ hover  , optsOverrides, BaseStyle -> "ButtonGray1Hover"  , BaselinePosition -> Baseline ],
+        Framed[ pressed, optsOverrides, BaseStyle -> "ButtonGray1Pressed", BaselinePosition -> Baseline ],
         BaseStyle -> "DialogTextBasic"
     ];
 
-grayDialogButtonLabel[ { normal_, hover_ } ] := grayDialogButtonLabel[ { normal, hover, hover } ];
+grayDialogButtonLabel[ { normal_, hover_ }, opts: OptionsPattern[ ] ] := grayDialogButtonLabel[ { normal, hover, hover }, opts ];
 
-grayDialogButtonLabel[ label_ ] := grayDialogButtonLabel[ { label, label, label } ];
+grayDialogButtonLabel[ label_, opts: OptionsPattern[ ] ] := grayDialogButtonLabel[ { label, label, label }, opts ];
 
 grayDialogButtonLabel // endDefinition;
 
@@ -221,26 +237,26 @@ grayDialogButtonLabel // endDefinition;
 (*redDialogButtonLabel*)
 redDialogButtonLabel // beginDefinition;
 
-redDialogButtonLabel[ { normal_, hover_, pressed_ } ] /; $cloudNotebooks :=
+redDialogButtonLabel[ { normal_, hover_, pressed_ }, optsOverrides: OptionsPattern[ ] ] /; $cloudNotebooks :=
     Mouseover[
-        Framed[ normal , BaseStyle -> "ButtonRed1Normal" , BaselinePosition -> Baseline ],
-        Framed[ hover  , BaseStyle -> "ButtonRed1Hover"  , BaselinePosition -> Baseline ],
-        BaseStyle      -> "DialogTextBasic",
+        Framed[ normal , Sequence @@ Join[ Flatten @ { optsOverrides }, { BaseStyle -> { FontColor -> GrayLevel[ 1 ] }, Background -> RGBColor[   13/15, 1/15, 0 ] }, $buttonCommonOptions ] ],
+        Framed[ hover  , Sequence @@ Join[ Flatten @ { optsOverrides }, { BaseStyle -> { FontColor -> GrayLevel[ 1 ] }, Background -> RGBColor[ 254/255,    0, 0 ] }, $buttonCommonOptions ] ],
+        BaseStyle      -> $dialogTextBasic,
         ContentPadding -> False,
         ImageSize      -> All
     ];
 
-redDialogButtonLabel[ { normal_, hover_, pressed_ } ] :=
+redDialogButtonLabel[ { normal_, hover_, pressed_ }, optsOverrides: OptionsPattern[ ] ] :=
     NotebookTools`Mousedown[
-        Framed[ normal , BaseStyle -> "ButtonRed1Normal" , BaselinePosition -> Baseline ],
-        Framed[ hover  , BaseStyle -> "ButtonRed1Hover"  , BaselinePosition -> Baseline ],
-        Framed[ pressed, BaseStyle -> "ButtonRed1Pressed", BaselinePosition -> Baseline ],
+        Framed[ normal , optsOverrides, BaseStyle -> "ButtonRed1Normal" , BaselinePosition -> Baseline ],
+        Framed[ hover  , optsOverrides, BaseStyle -> "ButtonRed1Hover"  , BaselinePosition -> Baseline ],
+        Framed[ pressed, optsOverrides, BaseStyle -> "ButtonRed1Pressed", BaselinePosition -> Baseline ],
         BaseStyle -> "DialogTextBasic"
     ];
 
-redDialogButtonLabel[ { normal_, hover_ } ] := redDialogButtonLabel[ { normal, hover, hover } ];
+redDialogButtonLabel[ { normal_, hover_ }, opts: OptionsPattern[ ] ] := redDialogButtonLabel[ { normal, hover, hover }, opts ];
 
-redDialogButtonLabel[ label_ ] := redDialogButtonLabel[ { label, label, label } ];
+redDialogButtonLabel[ label_, opts: OptionsPattern[ ] ] := redDialogButtonLabel[ { label, label, label }, opts ];
 
 redDialogButtonLabel // endDefinition;
 

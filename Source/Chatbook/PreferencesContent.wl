@@ -1218,10 +1218,7 @@ makeLLMPanel[ ] :=
     Module[ { subscribeButton, username, signInButton, manageButton },
         subscribeButton =
             Button[
-                NotebookTools`Mousedown[
-                    Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Normal", FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
-                    Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Hover", FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
-                    Framed[ tr[ "PreferencesContentLLMKitSubscribeButton" ], BaseStyle -> "ButtonRed1Pressed", FrameMargins -> { { 17, 17 }, { 7, 7 } } ] ],
+                redDialogButtonLabel[ tr[ "PreferencesContentLLMKitSubscribeButton" ], FrameMargins -> { { 17, 17 }, { 7, 7 } } ],
                 Wolfram`LLMFunctions`Common`OpenLLMKitURL @ "Buy",
                 Appearance -> "Suppressed",
                 BaseStyle -> "DialogTextCommon",
@@ -1237,7 +1234,7 @@ makeLLMPanel[ ] :=
                         Grid[
                             { {
                                 RawBoxes @ DynamicBox[ FEPrivate`FrontEndResource[ "FEBitmaps", "GenericUserIcon" ][ GrayLevel[ 0.2 ] ] ],
-                                Dynamic[ FrontEnd`CurrentValue["WolframCloudFullUserName"] ] } },
+                                If[ $CloudEvaluation, Dynamic[ $CloudAccountName ], Dynamic[ FrontEnd`CurrentValue["WolframCloudFullUserName"] ] ] } },
                             Alignment -> { Left, Baseline },
                             BaseStyle -> { FontColor -> GrayLevel[ 0.2 ], FontSize -> 14 },
                             BaselinePosition -> { 1, 2 } ] },
@@ -1975,6 +1972,8 @@ highlightControl // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*highlightColor*)
 highlightColor // beginDefinition;
+
+highlightColor[ tab_, id_ ] /; $CloudEvaluation := None
 
 highlightColor[ tab_, id_ ] :=
     With[
