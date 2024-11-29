@@ -75,6 +75,9 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `throwMessageDialog;
 `throwTop;
 
+`templateBox;
+`chatbookExpression;
+`inlineChatbookExpressions;
 `chatbookIcon;
 `inlineTemplateBox;
 `inlineTemplateBoxes;
@@ -209,100 +212,6 @@ $$chatMessages        = { $$chatMessage... };
 (* ::Subsection::Closed:: *)
 (*Misc*)
 wordsPattern[ words_ ] := _String? (containsWordsQ @ words);
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*Text and Expression Resources*)
-
-(* FIXME: These need to go after beginDefinition and endDefinition initializations *)
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*tr*)
-(* Look up translations for `name` in text resources data files. *)
-tr // beginDefinition;
-tr[ name_? StringQ ] /; $CloudEvaluation := cloudTextResource @ name;
-tr[ name_? StringQ ] := Dynamic @ FEPrivate`FrontEndResource[ "ChatbookStrings", name ];
-tr // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*trRaw*)
-trRaw // beginDefinition;
-trRaw[ name_? StringQ ] /; $CloudEvaluation := cloudTextResource @ name;
-trRaw[ name_? StringQ ] := FrontEndResource[ "ChatbookStrings", name ];
-trRaw // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*trStringTemplate*)
-(* Templated strings require the kernel *)
-trStringTemplate // beginDefinition;
-trStringTemplate[ name_? StringQ ] := StringTemplate @ trRaw @ name;
-trStringTemplate // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*trExprTemplate*)
-(* There might be a better way to implement this, but the rationale is we should avoid placing huge
-    expressions or linear syntax within text resource files.
-    The following is compatible with injection into Row or TextData expressions using numbered sequential slots. *)
-trExprTemplate // beginDefinition;
-
-trExprTemplate[ name_? StringQ ] :=
-    TemplateObject @ Splice @ StringSplit[ trRaw @ name, "`" ~~ d: DigitCharacter.. ~~ "`" :> TemplateSlot @ d ];
-
-trExprTemplate // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*$cloudTextResources*)
-$cloudTextResources := getCloudTextResources[ ];
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsection::Closed:: *)
-(*cloudTextResource*)
-cloudTextResource // beginDefinition;
-cloudTextResource[ name_String ] := cloudTextResource[ name, $cloudTextResources ];
-cloudTextResource[ name_String, resources_Association ] := cloudTextResource[ name, resources[ name ] ];
-cloudTextResource[ name_String, string_String ] := cloudTextResource[ name ] = string;
-cloudTextResource // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*getCloudTextResources*)
-getCloudTextResources // beginDefinition;
-
-getCloudTextResources[ ] := Enclose[
-    Module[ { file, string, assoc },
-
-        file = ConfirmBy[
-            FileNameJoin @ { $thisPaclet[ "Location" ], "FrontEnd", "TextResources", "ChatbookStrings.tr" },
-            FileExistsQ,
-            "File"
-        ];
-
-        string = ConfirmBy[ ReadString @ file, StringQ, "String" ];
-
-        assoc = ConfirmBy[
-            First[
-                StringCases[
-                    string,
-                    "@@resource ChatbookStrings" ~~ WhitespaceCharacter... ~~ rules: Shortest[ "{" ~~ ___ ~~ "}" ] :>
-                        Association @ ToExpression @ rules,
-                    1
-                ],
-                $Failed
-            ],
-            AssociationQ,
-            "Association"
-        ];
-
-        getCloudTextResources[ ] = assoc
-    ],
-    throwInternalFailure
-];
-
-getCloudTextResources // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1251,7 +1160,7 @@ escapePipes[ string_String ] := StringReplace[ string, "|" -> "\\|" ];
     For efficiency, only use `False` when a template box cannot be used, i.e. when the stylesheet is not accessible.
 *)
 chatbookIcon // beginDefinition;
-chatbookIcon[ name_String ] := chatbookIcon[ name, True ];
+chatbookIcon[ name_String ] := chatbookIcon[ name, TrueQ @ $inlineChatbookExpressions ];
 chatbookIcon[ name_String, True  ] := chatbookIcon[ name, Lookup[ $chatbookIcons, name ] ];
 chatbookIcon[ name_String, False ] := Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", name ];
 chatbookIcon[ name_String, False, args__ ] := Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", name ][ args ]; (* Function resources *)
@@ -1326,6 +1235,212 @@ $templateBoxDisplayFunctions := Enclose[
 ];
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*templateBox*)
+$$inlineTemplateBoxName = Alternatives[
+    "ChatCodeBlockButtonPanel",
+    "ChatCodeBlockTemplate"
+];
+
+
+templateBox // beginDefinition;
+
+templateBox[ args_List, name: $$inlineTemplateBoxName ] /; $inlineChatbookExpressions :=
+    inlineChatbookExpressions @ inlineTemplateBox @ TemplateBox[ args, name ];
+
+templateBox[ args_List, name_String ] :=
+    TemplateBox[ args, name ];
+
+templateBox // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Text and Expression Resources*)
+
+(* FIXME: These need to go after beginDefinition and endDefinition initializations *)
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*tr*)
+(* Look up translations for `name` in text resources data files. *)
+tr // beginDefinition;
+tr[ name_? StringQ ] /; $CloudEvaluation := cloudTextResource @ name;
+tr[ name_? StringQ ] := Dynamic @ FEPrivate`FrontEndResource[ "ChatbookStrings", name ];
+tr // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*trRaw*)
+trRaw // beginDefinition;
+trRaw[ name_? StringQ ] /; $CloudEvaluation := cloudTextResource @ name;
+trRaw[ name_? StringQ ] := FrontEndResource[ "ChatbookStrings", name ];
+trRaw // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*trStringTemplate*)
+(* Templated strings require the kernel *)
+trStringTemplate // beginDefinition;
+trStringTemplate[ name_? StringQ ] := StringTemplate @ trRaw @ name;
+trStringTemplate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*trExprTemplate*)
+(* There might be a better way to implement this, but the rationale is we should avoid placing huge
+    expressions or linear syntax within text resource files.
+    The following is compatible with injection into Row or TextData expressions using numbered sequential slots. *)
+trExprTemplate // beginDefinition;
+
+trExprTemplate[ name_? StringQ ] :=
+    TemplateObject @ Splice @ StringSplit[ trRaw @ name, "`" ~~ d: DigitCharacter.. ~~ "`" :> TemplateSlot @ d ];
+
+trExprTemplate // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$cloudTextResources*)
+$cloudTextResources := getCloudTextResources[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*cloudTextResource*)
+cloudTextResource // beginDefinition;
+cloudTextResource[ name_String ] := cloudTextResource[ name, $cloudTextResources ];
+cloudTextResource[ name_String, resources_Association ] := cloudTextResource[ name, resources[ name ] ];
+cloudTextResource[ name_String, string_String ] := cloudTextResource[ name ] = string;
+cloudTextResource // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getCloudTextResources*)
+getCloudTextResources // beginDefinition;
+
+getCloudTextResources[ ] := Enclose[
+    Module[ { file, string, assoc },
+
+        file = ConfirmBy[
+            FileNameJoin @ { $thisPaclet[ "Location" ], "FrontEnd", "TextResources", "ChatbookStrings.tr" },
+            FileExistsQ,
+            "File"
+        ];
+
+        string = ConfirmBy[ ReadString @ file, StringQ, "String" ];
+
+        assoc = ConfirmBy[
+            First[
+                StringCases[
+                    string,
+                    "@@resource ChatbookStrings" ~~ WhitespaceCharacter... ~~ rules: Shortest[ "{" ~~ ___ ~~ "}" ] :>
+                        Association @ ToExpression @ rules,
+                    1
+                ],
+                $Failed
+            ],
+            AssociationQ,
+            "Association"
+        ];
+
+        getCloudTextResources[ ] = assoc
+    ],
+    throwInternalFailure
+];
+
+getCloudTextResources // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*chatbookExpression*)
+chatbookExpression // beginDefinition;
+chatbookExpression[ name_String ] /; $CloudEvaluation := RawBoxes @ cloudChatbookExpression @ name;
+chatbookExpression[ name_String ] := Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", name ];
+chatbookExpression[ name_String, args__ ] /; $CloudEvaluation := RawBoxes @ cloudChatbookExpression[ name ][ args ];
+chatbookExpression[ name_String, args__ ] := Dynamic @ RawBoxes[ FEPrivate`FrontEndResource[ "ChatbookExpressions", name ][ args ] ];
+chatbookExpression // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*$cloudChatbookExpressions*)
+$cloudChatbookExpressions := getCloudChatbookExpressions[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*cloudChatbookExpression*)
+cloudChatbookExpression // beginDefinition;
+cloudChatbookExpression[ name_String ] := cloudChatbookExpression[ name, $cloudChatbookExpressions ];
+cloudChatbookExpression[ name_String, resources_Association ] := cloudChatbookExpression[ name, resources[ name ] ];
+cloudChatbookExpression[ name_String, expr_ ] := cloudChatbookExpression[ name ] = expr;
+cloudChatbookExpression // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getCloudChatbookExpressions*)
+getCloudChatbookExpressions // beginDefinition;
+
+getCloudChatbookExpressions[ ] := Enclose[
+    Module[ { file, string, assoc },
+
+        file = ConfirmBy[
+            FileNameJoin @ { $thisPaclet[ "Location" ], "FrontEnd", "TextResources", "ChatbookResources.tr" },
+            FileExistsQ,
+            "File"
+        ];
+
+        string = ConfirmBy[ ReadString @ file, StringQ, "String" ];
+
+        assoc = ConfirmBy[
+            First[
+                StringCases[
+                    string,
+                    Shortest[ "@@resource ChatbookExpressions\n{" ~~ exprs__ ~~ "}\n@|" ] :>
+                        Association @ ToExpression[ "{" <> exprs <> "}" ],
+                    1
+                ],
+                $Failed
+            ],
+            AssociationQ,
+            "Association"
+        ];
+
+        getCloudChatbookExpressions[ ] = assoc
+    ],
+    throwInternalFailure
+];
+
+getCloudChatbookExpressions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*inlineChatbookExpressions*)
+inlineChatbookExpressions // beginDefinition;
+inlineChatbookExpressions[ expr_ ] /; $inlineChatbookExpressions := expr //. $inlineExpressionRules;
+inlineChatbookExpressions[ expr_ ] := expr;
+inlineChatbookExpressions // endDefinition;
+
+
+$inlineChatbookExpressions :=
+    With[ { inline = TrueQ[ $CloudEvaluation && $CloudVersionNumber === "1.70" ] },
+        If[ TrueQ @ $mxFlag, inline, $inlineChatbookExpressions = inline ]
+    ];
+
+
+$inlineExpressionRules := $inlineExpressionRules =
+    With[ { frontEndResource = FEPrivate`FrontEndResource|FrontEndResource },
+        Dispatch @ {
+            Dynamic[ RawBoxes @ frontEndResource[ "ChatbookExpressions", name_String ], ___ ] :>
+                RuleCondition @ RawBoxes @ cloudChatbookExpression @ name,
+
+            RawBoxes @ DynamicBox[ frontEndResource[ "ChatbookExpressions", name_String ], ___ ] :>
+                RuleCondition @ RawBoxes @ cloudChatbookExpression @ name,
+
+            DynamicBox[ frontEndResource[ "ChatbookExpressions", name_String ], ___ ] :>
+                RuleCondition @ cloudChatbookExpression @ name,
+
+            frontEndResource[ "ChatbookExpressions", name_String ] :>
+                RuleCondition @ cloudChatbookExpression @ name
+        }
+];
+
+(* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Version Utilities*)
 
@@ -1383,7 +1498,9 @@ mxInitialize // endDefinition;
 addToMXInitialization[
     $debug = False;
     $chatbookIcons;
+    $cloudChatbookExpressions;
     $cloudTextResources;
+    $inlineExpressionRules;
     $releaseID;
 ];
 
