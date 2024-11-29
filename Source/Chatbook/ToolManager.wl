@@ -1201,7 +1201,7 @@ linkedPane // endDefinition;
 (* ::Section::Closed:: *)
 (*Icons*)
 iconData // beginDefinition;
-iconData[ name_String, color_ ] := chatbookIcon[ "ToolManager"<>name, False, color ];
+iconData[ name_String, color_ ] := chatbookExpression[ "ToolManager"<>name, color ];
 iconData // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -1476,7 +1476,7 @@ cloudDeleteToolButton[ tool_Association ] :=
 
 cloudDeleteToolButton // endDefinition;
 
-$cloudDeleteToolButtonLabel = Mouseover[
+$cloudDeleteToolButtonLabel := $cloudDeleteToolButtonLabel = Mouseover[
     iconData[ "Bin", GrayLevel[ 0.65 ] ],
     iconData[ "Bin", $activeBlue ]
 ];

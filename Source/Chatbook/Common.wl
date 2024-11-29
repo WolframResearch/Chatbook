@@ -75,6 +75,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `throwMessageDialog;
 `throwTop;
 
+`templateBox;
 `chatbookExpression;
 `inlineChatbookExpressions;
 `chatbookIcon;
@@ -1232,6 +1233,25 @@ $templateBoxDisplayFunctions := Enclose[
     ],
     throwInternalFailure[ $templateBoxDisplayFunctions, ## ] &
 ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*templateBox*)
+$$inlineTemplateBoxName = Alternatives[
+    "ChatCodeBlockButtonPanel",
+    "ChatCodeBlockTemplate"
+];
+
+
+templateBox // beginDefinition;
+
+templateBox[ args_List, name: $$inlineTemplateBoxName ] /; $inlineChatbookExpressions :=
+    inlineChatbookExpressions @ inlineTemplateBox @ TemplateBox[ args, name ];
+
+templateBox[ args_List, name_String ] :=
+    TemplateBox[ args, name ];
+
+templateBox // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

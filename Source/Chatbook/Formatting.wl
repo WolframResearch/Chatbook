@@ -421,7 +421,7 @@ makeDiscardedMaterialCell // beginDefinition;
 
 makeDiscardedMaterialCell[ stuff___ ] := {
     Cell[
-        BoxData @ TemplateBox[
+        BoxData @ templateBox[
             {
                 ToBoxes @ compressUntilViewed @ RawBoxes @ Cell[
                     TextData @ joinAdjacentStrings @ Flatten[ makeResultCell /@ { stuff } ],
@@ -613,6 +613,20 @@ formatTextString // endDefinition;
 (*floatingButtonGrid*)
 floatingButtonGrid // beginDefinition;
 
+floatingButtonGrid[ cell_Cell, lang_ ] /; $cloudNotebooks :=
+    Grid[
+        {
+            {
+                button[ evaluateLanguageLabel[ lang, False ], insertCodeBelow[ EvaluationCell[ ], True ] ],
+                button[ $insertInputButtonLabel, insertCodeBelow[ EvaluationCell[ ], False ] ],
+                button[ $copyToClipboardButtonLabel, copyCodeBlock @ EvaluationCell[ ] ]
+            }
+        },
+        Alignment  -> Top,
+        Spacings   -> 0.2,
+        FrameStyle -> GrayLevel[ 0.85 ]
+    ];
+
 floatingButtonGrid[ cell_Cell, lang_ ] :=
     Module[ { cellObj },
         cellObj = topParentCell @ EvaluationCell[ ];
@@ -634,11 +648,11 @@ floatingButtonGrid[ cell_Cell, lang_ ] :=
             Spacings   -> 0.2,
             FrameStyle -> GrayLevel[ 0.85 ]
         ]
-    ]
+    ];
 
 (* TODO: I'm assuming this still works on the cloud as written *)
 (* For cloud notebooks (no attached cell) *)
-floatingButtonGrid[ string_, lang_ ] := RawBoxes @ TemplateBox[
+floatingButtonGrid[ string_, lang_ ] := RawBoxes @ templateBox[
     {
         ToBoxes @ Grid[
             {
@@ -688,8 +702,8 @@ evaluateLanguageLabel[ name_String, True ] :=
     Catch @ Module[ { wl, icon, labeled },
 
         wl = wolframLanguageQ @ name;
-        icon = If[ wl, chatbookIcon[ "WorkspaceCodeBlockInsertAndEvaluate", False ], $languageIcons @ name ];
-        If[ ! MatchQ[ icon, _Graphics | _Dynamic | _Image ], Throw @ $insertEvaluateButtonLabel ];
+        icon = If[ wl, chatbookExpression[ "WorkspaceCodeBlockInsertAndEvaluate" ], $languageIcons @ name ];
+        If[ ! MatchQ[ icon, _Graphics | _Dynamic | _Image | _RawBoxes ], Throw @ $insertEvaluateButtonLabel ];
 
         labeled = labeledIcon[
             If[ wl, { "WorkspaceCodeBlockInsertAndEvaluate", False }, name ],
@@ -725,7 +739,7 @@ targetNotebookLabel[ nbo_, focused_NotebookObject, title_ ] :=
     Row @ Flatten @ {
         trExprTemplate[ "FormattingInsertContentAndEvaluateWorkspaceChatTooltip" ][ <|
             "1" -> {
-                chatbookIcon[ "WorkspaceFocusIndicatorNotebook", False ],
+                chatbookExpression[ "WorkspaceFocusIndicatorNotebook" ],
                 "\[ThinSpace]",
                 Style[ formatNotebookTitle @ title, FontWeight -> Bold ]
             }
@@ -1114,7 +1128,7 @@ labeledIcon[ iconTemplateName_String, textResource_String ] := labeledIcon[ { ic
 labeledIcon[ { iconTemplateName_String, useTemplateBoxQ_ }, textResource_String ] :=
     Grid[
         { {
-            buttonPane @ If[ useTemplateBoxQ, RawBoxes @ TemplateBox[ { }, iconTemplateName ], chatbookIcon[ iconTemplateName, False ] ],
+            buttonPane @ If[ useTemplateBoxQ, RawBoxes @ templateBox[ { }, iconTemplateName ], chatbookExpression[ iconTemplateName ] ],
             Style[ tr @ textResource, FontSize -> 12, FontColor -> RGBColor[ "#333333" ], FontFamily -> "Source Sans Pro" ]
         } },
         BaselinePosition -> { 1, 2 }, Alignment -> { Left, Baseline }, Spacings -> { 0, 0 } ];
@@ -1373,14 +1387,14 @@ inlineToolCall // endDefinition;
 makeInlineToolCallCell // beginDefinition;
 
 makeInlineToolCallCell[ expr_, string_, as_Association ] := Cell[
-    BoxData @ ToBoxes @ expr,
+    BoxData @ inlineChatbookExpressions @ ToBoxes @ expr,
     "InlineToolCall",
     Background   -> None,
     TaggingRules -> KeyDrop[ as, { "Icon", "Result" } ]
 ];
 
 makeInlineToolCallCell[ expr_, string_String, failed_Failure ] := Cell[
-    BoxData @ ToBoxes @ expr,
+    BoxData @ inlineChatbookExpressions @ ToBoxes @ expr,
     "FailedToolCall",
     Background   -> None,
     TaggingRules -> <| "ToolCall" -> string |>
@@ -2222,7 +2236,7 @@ codeBlockFrame // beginDefinition;
 codeBlockFrame[ cell_, string_ ] := codeBlockFrame[ cell, string, "Wolfram" ];
 
 codeBlockFrame[ cell_, string_, lang_ ] := Cell[
-    BoxData @ TemplateBox[ { cell, lang }, "ChatCodeBlockTemplate" ],
+    BoxData @ templateBox[ { cell, lang }, "ChatCodeBlockTemplate" ],
     "ChatCodeBlock",
     Background -> None
 ];
@@ -2965,11 +2979,6 @@ userMessageBox // endDefinition;
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
-    $copyToClipboardButtonLabel;
-    $copyToClipboardButtonLabelWorkspaceChat;
-    $insertInputButtonLabel;
-    $insertInputButtonLabelWorkspaceChat;
-    $insertEvaluateButtonLabel;
     $languageIcons;
     $userMessageBoxTemplate;
     $assistantMessageBoxTemplate;

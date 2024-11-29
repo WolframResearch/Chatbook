@@ -1177,8 +1177,8 @@ currentChatSettings[ obj: $$feObj ] := Enclose[
     Catch @ Module[ { cached, settings },
         cached = $currentSettingsCache @ obj;
         If[ AssociationQ @ cached, Throw @ cached ];
-        settings = ConfirmBy[ currentChatSettings0 @ obj, AssociationQ, "Settings" ];
-        If[ AssociationQ @ $currentSettingsCache,
+        settings = ConfirmMatch[ currentChatSettings0 @ obj, _Association? AssociationQ | _Missing, "Settings" ];
+        If[ AssociationQ @ $currentSettingsCache && AssociationQ @ settings,
             $currentSettingsCache[ obj ] = settings,
             settings
         ]
@@ -1187,11 +1187,13 @@ currentChatSettings[ obj: $$feObj ] := Enclose[
 ];
 
 currentChatSettings[ obj: $$feObj, key_ ] := Enclose[
-    Catch @ Module[ { cached },
+    Catch @ Module[ { cached, settings },
         cached = $currentSettingsCache @ obj;
         If[ AssociationQ @ cached && KeyExistsQ[ cached, key ], Throw @ cached @ key ];
         If[ AssociationQ @ $currentSettingsCache,
-            Lookup[ ConfirmBy[ currentChatSettings @ obj, AssociationQ, "Settings" ], key, Inherited ],
+            settings = ConfirmMatch[ currentChatSettings @ obj, _Association? AssociationQ | _Missing, "Settings" ];
+            If[ MissingQ @ settings, Throw @ Inherited ];
+            Lookup[ settings, key, Inherited ],
             currentChatSettings0[ obj, key ]
         ]
     ],

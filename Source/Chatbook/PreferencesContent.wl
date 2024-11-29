@@ -16,7 +16,7 @@ Needs[ "Wolfram`Chatbook`UI`"               ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $preferencesWidth        = 640;
-$cloudPreferencesHeight  = 400;
+$cloudPreferencesHeight  = 415;
 $cloudEvaluationNotebook = None;
 
 $preferencesPages = { "Services", "Notebooks", "Personas", "Tools" };
@@ -1388,7 +1388,7 @@ makeServiceGridRows // endDefinition;
 makeServiceGridRow // beginDefinition;
 
 makeServiceGridRow[ name_String, data_Association ] := {
-    makeServiceAuthenticationDisplay[ name, resizeMenuIcon @ inlineTemplateBoxes @ serviceIcon @ data ]
+    makeServiceAuthenticationDisplay[ name, resizeMenuIcon @ inlineChatbookExpressions @ serviceIcon @ data ]
 };
 
 makeServiceGridRow // endDefinition;
@@ -1671,7 +1671,7 @@ popupValue[ value_String, label: Except[ $$unspecified ] ] :=
 popupValue[ value_String, label: Except[ $$unspecified ], icon: Except[ $$unspecified ] ] :=
     If[ TrueQ @ $noIcons,
         value -> label,
-        value -> Row[ { resizeMenuIcon @ inlineTemplateBoxes @ icon, label }, Spacer[ 1 ] ]
+        value -> Row[ { resizeMenuIcon @ inlineChatbookExpressions @ icon, label }, Spacer[ 1 ] ]
     ];
 
 popupValue // endDefinition;
