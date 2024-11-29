@@ -254,8 +254,8 @@ formatName[ "PacletRepository", name: Except[ $$unspecified ], link_ ] :=
 formatName[ origin_String, name: Except[ $$unspecified ], link_ ] :=
     Hyperlink[
         Mouseover[
-            Grid @ { { formatName @ name, chatbookIcon[ "PeelOff", False ] } },
-            Grid @ { { formatName @ name, chatbookIcon[ "PeelOff-hover", False ] } }
+            Grid @ { { formatName @ name, chatbookExpression[ "PeelOff" ] } },
+            Grid @ { { formatName @ name, chatbookExpression[ "PeelOff-hover" ] } }
         ],
         link,
         BaseStyle -> { LineBreakWithin -> False }
@@ -302,14 +302,14 @@ formatPacletLink[ origin_String, url_, pacletName_ ] :=
         "Wolfram/Chatbook",
             Tooltip[
                 Hyperlink[
-                    formatIcon @ Mouseover[chatbookIcon["PacletRepo", False], chatbookIcon["PacletRepo-hover", False]],
+                    formatIcon @ Mouseover[chatbookExpression["PacletRepo"], chatbookExpression["PacletRepo-hover"]],
                     $chatbookDocumentationURL,
                     ImageMargins -> {{13, 0}, {0, 0}}],
                 tr[ "PersonaManagerOriginChatbookTooltip" ]],
         "PacletRepository",
             Tooltip[
                 Hyperlink[
-                    formatIcon @ Mouseover[chatbookIcon["PacletRepo", False], chatbookIcon["PacletRepo-hover", False]],
+                    formatIcon @ Mouseover[chatbookExpression["PacletRepo"], chatbookExpression["PacletRepo-hover"]],
                     url,
                     ImageMargins -> {{13, 0}, {0, 0}}],
                 trStringTemplate[ "PersonaManagerOriginRepositoryTooltip" ][ <| "name" -> pacletName |> ]],
@@ -345,11 +345,11 @@ uninstallButton[ name_String, installedQ_, pacletName_String ] :=
     Button[
         PaneSelector[
             {
-                "Default" -> formatIcon @ chatbookIcon["Delete", False],
-                "Hover" -> formatIcon @ chatbookIcon["Delete-hover", False],
+                "Default" -> formatIcon @ chatbookExpression["Delete"],
+                "Hover" -> formatIcon @ chatbookExpression["Delete-hover"],
                 "Disabled" ->
                     Tooltip[
-                        formatIcon @ chatbookIcon["Delete-disabled", False],
+                        formatIcon @ chatbookExpression["Delete-disabled"],
                         trStringTemplate[ "PersonaManagerPersonaUninstallTooltip" ][ pacletName ]]},
             Dynamic[Which[!installedQ, "Disabled", CurrentValue["MouseOver"], "Hover", True, "Default"]],
             ImageSize -> Automatic],
