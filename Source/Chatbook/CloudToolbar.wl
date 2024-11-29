@@ -90,7 +90,7 @@ toolbarButtonLabel // endDefinition;
 insertStyleMenuItem // beginDefinition;
 
 insertStyleMenuItem[ icon_String, style_, shortcut_ ] :=
-    insertStyleMenuItem[ chatbookIcon[ icon, False ], style, shortcut ];
+    insertStyleMenuItem[ chatbookIcon @ icon, style, shortcut ];
 
 insertStyleMenuItem[ None, style_, shortcut_ ] :=
     insertStyleMenuItem[ Spacer[ 0 ], style, shortcut ];
@@ -140,7 +140,7 @@ cloudPreferencesButton[ ] := Button[
     toolbarButtonLabel @ Row @ {
         tr[ "ChatToolbarChatSettings" ],
         Spacer[ 5 ],
-        Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", "AdvancedSettings" ]
+        chatbookExpression[ "AdvancedSettings" ]
     },
     toggleCloudPreferences @ EvaluationNotebook[ ],
     FrameMargins -> { { 0, 4 }, { 0, 0 } }
@@ -197,7 +197,13 @@ $cloudPreferencesCell := $cloudPreferencesCell = Cell[
 (* ::Subsubsection::Closed:: *)
 (*createCloudPreferencesContent*)
 createCloudPreferencesContent // beginDefinition;
-createCloudPreferencesContent[ ] := createCloudPreferencesContent[ ] = createPreferencesContent[ ];
+
+createCloudPreferencesContent[ ] /; ! $CloudEvaluation :=
+    Block[ { $CloudEvaluation = True }, createCloudPreferencesContent[ ] ];
+
+createCloudPreferencesContent[ ] := createCloudPreferencesContent[ ] =
+    inlineChatbookExpressions @ createPreferencesContent[ ];
+
 createCloudPreferencesContent // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -229,7 +235,7 @@ $chatDrivenNotebookLabel := Grid[
     {
         {
             "",
-            chatbookIcon[ "ChatDrivenNotebookIcon", False ],
+            chatbookExpression[ "ChatDrivenNotebookIcon" ],
             Style[ tr[ "ChatToolbarChatDrivenLabel" ], $notebookTypeLabelOptions ]
         }
     },
@@ -244,7 +250,7 @@ $chatEnabledNotebookLabel := Grid[
     {
         {
             "",
-            chatbookIcon[ "ChatEnabledNotebookIcon", False ],
+            chatbookExpression[ "ChatEnabledNotebookIcon" ],
             Style[ tr[ "ChatToolbarChatEnabledLabel" ], $notebookTypeLabelOptions ]
         }
     },

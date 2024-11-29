@@ -16,7 +16,7 @@ Needs[ "Wolfram`Chatbook`UI`"               ];
 (* ::Section::Closed:: *)
 (*Configuration*)
 $preferencesWidth        = 640;
-$cloudPreferencesHeight  = 400;
+$cloudPreferencesHeight  = 415;
 $cloudEvaluationNotebook = None;
 
 $preferencesPages = { "Services", "Notebooks", "Personas", "Tools" };
@@ -413,7 +413,7 @@ makeModelSelector0[ type_String ] :=
         type,
         If[ KeyExistsQ[ $availableServices, "LLMKit" ],
             $availableServices,
-            <| "LLMKit" -> <| "Service" -> "Wolfram", "Icon" -> chatbookIcon["llmkit-dialog-sm", False] |>, $availableServices |> ] ]
+            <| "LLMKit" -> <| "Service" -> "Wolfram", "Icon" -> chatbookExpression["llmkit-dialog-sm"] |>, $availableServices |> ] ]
 
 makeModelSelector0[ type_String, services_Association? AssociationQ ] := Enclose[
     DynamicModule[ { default, service, model, state, serviceSelector, modelSelector, highlight },
@@ -1164,7 +1164,7 @@ servicesSettingsPanel0[ ] := Enclose[
                     ]
             ];
 
-        llmIcon = chatbookIcon[ "llmkit-dialog-sm", False ];
+        llmIcon = chatbookExpression[ "llmkit-dialog-sm" ];
         llmHelp = (* If this tooltip isn't meant to be a button, then use infoTooltip[llmLabel, text] *)
             Button[
                 Tooltip[
@@ -1307,7 +1307,7 @@ makeLLMPanel[ ] :=
                                 "CloudConnectedAndSubscribed" ->
                                     Grid[
                                         {
-                                            { chatbookIcon[ "CheckmarkGreen", False ], Style[ tr[ "PreferencesContentLLMKitEnabledTitle" ], FontColor -> GrayLevel[ 0.2 ] ] },
+                                            { chatbookExpression[ "CheckmarkGreen" ], Style[ tr[ "PreferencesContentLLMKitEnabledTitle" ], FontColor -> GrayLevel[ 0.2 ] ] },
                                             { "", manageButton }
                                         },
                                         Alignment -> { Left, Baseline },
@@ -1388,7 +1388,7 @@ makeServiceGridRows // endDefinition;
 makeServiceGridRow // beginDefinition;
 
 makeServiceGridRow[ name_String, data_Association ] := {
-    makeServiceAuthenticationDisplay[ name, resizeMenuIcon @ inlineTemplateBoxes @ serviceIcon @ data ]
+    makeServiceAuthenticationDisplay[ name, resizeMenuIcon @ inlineChatbookExpressions @ serviceIcon @ data ]
 };
 
 makeServiceGridRow // endDefinition;
@@ -1400,7 +1400,7 @@ deleteServiceButton // beginDefinition;
 
 deleteServiceButton[ "OpenAI" ] := Framed[
     Button[
-        chatbookIcon[ "ToolManagerBin", False, GrayLevel[ 0.8 ] ],
+        chatbookExpression[ "ToolManagerBin", GrayLevel[ 0.8 ] ],
         Null,
         Enabled -> False,
         $deleteServiceButtonOptions
@@ -1655,7 +1655,7 @@ infoTooltip // beginDefinition;
 infoTooltip[ label_, tooltip_ ] := Row @ { label, Spacer[ 3 ], Tooltip[ $infoIcon, tooltip ] };
 infoTooltip // endDefinition;
 
-$infoIcon = chatbookIcon[ "InformationTooltip", False ];
+$infoIcon := $infoIcon = chatbookExpression[ "InformationTooltip" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -1671,7 +1671,7 @@ popupValue[ value_String, label: Except[ $$unspecified ] ] :=
 popupValue[ value_String, label: Except[ $$unspecified ], icon: Except[ $$unspecified ] ] :=
     If[ TrueQ @ $noIcons,
         value -> label,
-        value -> Row[ { resizeMenuIcon @ inlineTemplateBoxes @ icon, label }, Spacer[ 1 ] ]
+        value -> Row[ { resizeMenuIcon @ inlineChatbookExpressions @ icon, label }, Spacer[ 1 ] ]
     ];
 
 popupValue // endDefinition;
@@ -1866,8 +1866,8 @@ $verticalSpacer = { Pane[ "", ImageSize -> { Automatic, 20 } ], SpanFromLeft };
 (* ::Subsection::Closed:: *)
 (*$trashBin*)
 $trashBin := Mouseover[
-    chatbookIcon[ "ToolManagerBin", False, GrayLevel[ 0.65 ] ],
-    chatbookIcon[ "ToolManagerBin", False, Hue[ 0.59, 0.9, 0.93 ] ]
+    chatbookExpression[ "ToolManagerBin", GrayLevel[ 0.65 ] ],
+    chatbookExpression[ "ToolManagerBin", Hue[ 0.59, 0.9, 0.93 ] ]
 ];
 
 (* ::**************************************************************************************************************:: *)

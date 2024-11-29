@@ -1642,18 +1642,12 @@ getPersonaMenuIcon[ name_String ] := getPersonaMenuIcon @ Lookup[ GetPersonasAss
 getPersonaMenuIcon[ KeyValuePattern[ "Icon"|"PersonaIcon" -> icon_ ] ] := getPersonaMenuIcon @ icon;
 getPersonaMenuIcon[ KeyValuePattern[ "Default" -> icon_ ] ] := getPersonaMenuIcon @ icon;
 getPersonaMenuIcon[ _Missing | _Association | None ] := RawBoxes @ TemplateBox[ { }, "PersonaUnknown" ];
-getPersonaMenuIcon[ icon_ ] := icon;
+getPersonaMenuIcon[ icon_ ] := inlineChatbookExpressions @ icon;
 
 (* If "Full" is specified, resolve TemplateBox icons into their literal
    icon data, so that they will render correctly in places where the Chatbook.nb
    stylesheet is not available. *)
-getPersonaMenuIcon[ expr_, "Full" ] :=
-	Replace[getPersonaMenuIcon[expr], {
-		RawBoxes[TemplateBox[{}, iconStyle_?StringQ]] :> (
-			chatbookIcon[iconStyle, False]
-		),
-		icon_ :> icon
-	}]
+getPersonaMenuIcon[ expr_, "Full" ] := getPersonaMenuIcon @ expr;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
