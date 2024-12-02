@@ -196,15 +196,15 @@
 "PersonaNameBirdnardo" -> "Birdnardo",
 "PersonaNameCodeAssistant" -> "\:30B3\:30FC\:30C9\:30A2\:30B7\:30B9\:30BF\:30F3\:30C8",
 "PersonaNameCodeWriter" -> "\:30B3\:30FC\:30C9\:30E9\:30A4\:30BF\:30FC",
-"PersonaNameNotebookAssistant" -> "\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:30a2\:30b7\:30b9\:30bf\:30f3\:30c8",
+"PersonaNameNotebookAssistant" -> "Notebook Assistant",
 "PersonaNamePlainChat" -> "\:30d7\:30ec\:30fc\:30f3\:30c1\:30e3\:30c3\:30c8",
 "PersonaNameRawModel" -> "\:672a\:52a0\:5de5\:306e\:30e2\:30c7\:30eb",
 "PersonaNameWolfie" -> "Wolfie",
 
 "AttachedChatFieldHint" -> "\:4f55\:3067\:3082\:805e\:3044\:3066\:304f\:3060\:3055\:3044",
 
-"MenuItemShowNotebookAssistanceWindow" -> "\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:30a2\:30b7\:30b9\:30bf\:30f3\:30c8\:30c1\:30e3\:30c3\:30c8\[Ellipsis]",
-"MenuItemShowNotebookAssistanceInline" -> "\:9078\:629e\:90e8\:5206\:306e\:305f\:3081\:306e\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:30a2\:30b7\:30b9\:30bf\:30f3\:30c8",
+"MenuItemShowNotebookAssistanceWindow" -> "Notebook Assistant Chat\[Ellipsis]",
+"MenuItemShowNotebookAssistanceInline" -> "\:9078\:629e\:90e8\:5206\:306e\:305f\:3081\:306eNotebook Assistant",
 "MenuItemShowContentSuggestions" -> "AI\:306B\:3088\:308B\:30B3\:30F3\:30C6\:30F3\:30C4\:306E\:63D0\:6848",
 
 "WorkspaceWindowTitle" -> "\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:30a2\:30b7\:30b9\:30bf\:30f3\:30c8",
