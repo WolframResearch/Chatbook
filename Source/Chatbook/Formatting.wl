@@ -897,29 +897,20 @@ insertCodeInUserNotebook // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*attachCopiedTooltip*)
 attachCopiedTooltip // beginDefinition;
-(* option 1: can only achieve MouseExit if we cover the button with an invisible Pane after mouse-click *)
-(* attachCopiedTooltip[ ] :=
-    AttachCell[
-        EvaluationBox[ ],
-        Cell[ BoxData[
-            PaneBox[
-                TemplateBox[ { "Copied" }, "ClickToCopyTooltip" ],
-                Alignment    -> { Center, Bottom },
-                FrameMargins -> 0,
-                ImageSize    -> { All, 60 }
-            ]
-        ] ],
-        { Center, Bottom }, Offset[ { 0, -7 }, Automatic ], { Center, Center },
-        RemovalConditions -> { "MouseExit" }
-    ]; *)
-(* option 2 *)
+
 attachCopiedTooltip[ ] :=
-    AttachCell[
-        EvaluationBox[ ],
-        Cell[ BoxData[ TemplateBox[ { "Copied" }, "ClickToCopyTooltip" ] ] ],
-        { Center, Bottom }, Offset[ { 0, 5 }, Automatic ], { Center, Top },
-        RemovalConditions -> { "MouseClickOutside" }
-    ];
+With[
+    {
+        cellObj = AttachCell[
+            EvaluationBox[ ],
+            Cell[ BoxData[ TemplateBox[ { "Copied" }, "ClickToCopyTooltip" ] ] ],
+            { Center, Bottom }, Offset[ { 0, 5 }, Automatic ], { Center, Top },
+            RemovalConditions -> { "MouseClickOutside" }
+        ]
+    },
+    SessionSubmit @ ScheduledTask[ NotebookDelete @ cellObj, { 1.2 } ]
+];
+
 attachCopiedTooltip // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
