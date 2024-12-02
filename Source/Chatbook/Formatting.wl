@@ -704,11 +704,7 @@ evaluateLanguageLabel[ name_String, True ] :=
         wl = wolframLanguageQ @ name;
         icon = If[ wl, chatbookExpression[ "WorkspaceCodeBlockInsertAndEvaluate" ], $languageIcons @ name ];
         If[ ! MatchQ[ icon, _Graphics | _Dynamic | _Image | _RawBoxes ], Throw @ $insertEvaluateButtonLabel ];
-
-        labeled = labeledIcon[
-            If[ wl, { "WorkspaceCodeBlockInsertAndEvaluate", False }, name ],
-            "FormattingInsertContentAndEvaluateLabel"
-        ];
+        labeled = labeledIcon[ icon, "FormattingInsertContentAndEvaluateLabel" ];
 
         fancyTooltip[
             MouseAppearance[
@@ -1123,15 +1119,42 @@ buttonPane[ expr_ ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*labeledIcon*)
-labeledIcon[ iconTemplateName_String, textResource_String ] := labeledIcon[ { iconTemplateName, True }, textResource ]
+labeledIcon // beginDefinition;
+
+
+labeledIcon[ iconTemplateName_String, textResource_String ] :=
+    labeledIcon[ { iconTemplateName, True }, textResource ];
+
 
 labeledIcon[ { iconTemplateName_String, useTemplateBoxQ_ }, textResource_String ] :=
-    Grid[
-        { {
-            buttonPane @ If[ useTemplateBoxQ, RawBoxes @ templateBox[ { }, iconTemplateName ], chatbookExpression[ iconTemplateName ] ],
-            Style[ tr @ textResource, FontSize -> 12, FontColor -> RGBColor[ "#333333" ], FontFamily -> "Source Sans Pro" ]
-        } },
-        BaselinePosition -> { 1, 2 }, Alignment -> { Left, Baseline }, Spacings -> { 0, 0 } ];
+    labeledIcon[
+        If[ useTemplateBoxQ,
+            RawBoxes @ templateBox[ { }, iconTemplateName ],
+            chatbookExpression @ iconTemplateName
+        ],
+        textResource
+    ];
+
+
+labeledIcon[ icon_, textResource_String ] := Grid[
+    {
+        {
+            buttonPane @ icon,
+            Style[
+                tr @ textResource,
+                FontColor  -> RGBColor[ "#333333" ],
+                FontFamily -> "Source Sans Pro",
+                FontSize   -> 12
+            ]
+        }
+    },
+    Alignment        -> { Left, Baseline },
+    BaselinePosition -> { 1, 2 },
+    Spacings         -> { 0, 0 }
+];
+
+
+labeledIcon // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
