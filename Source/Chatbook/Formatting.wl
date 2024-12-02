@@ -899,17 +899,43 @@ insertCodeInUserNotebook // endDefinition;
 attachCopiedTooltip // beginDefinition;
 
 attachCopiedTooltip[ ] :=
-With[
-    {
-        cellObj = AttachCell[
-            EvaluationBox[ ],
-            Cell[ BoxData[ TemplateBox[ { "Copied" }, "ClickToCopyTooltip" ] ] ],
-            { Center, Bottom }, Offset[ { 0, 5 }, Automatic ], { Center, Top },
-            RemovalConditions -> { "MouseClickOutside" }
-        ]
-    },
-    SessionSubmit @ ScheduledTask[ NotebookDelete @ cellObj, { 1.2 } ]
-];
+    AttachCell[
+        EvaluationBox[ ],
+        Cell[ BoxData[
+            PaneBox[
+                PanelBox[
+                 GridBox[{{PaneBox[
+                     DynamicBox[
+                      StyleBox[
+                       FEPrivate`ImportImage[
+                        FrontEnd`FileName[{"Typeset", "ClickToCopy"}, "Checkmark.png"]],
+                        Magnification -> 0.5`]], 
+                     BaselinePosition -> Scaled[0.1`] -> Baseline], 
+                    DynamicBox[
+                     ToBoxes[FEPrivate`FrontEndResource["FEStrings", 
+                       "clicktocopyDoneTooltip"], StandardForm]]}}, 
+                  GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+                   GridBoxItemSize -> {"Columns" -> {{Automatic}}, 
+                    "Rows" -> {{Automatic}}}, 
+                  GridBoxSpacings -> {"Columns" -> {{0.3`}}, "Rows" -> {{0}}}], 
+                 Alignment -> Center, 
+                 Appearance -> {"Default" -> 
+                    FrontEnd`FileName[{"Chatbook"}, "CopyTooltip.9.png"]}, ImageSize -> {100, Automatic}, 
+                 FrameMargins -> {{0, 0}, {0, 0}}, 
+                 BaseStyle -> {LineBreakWithin -> Automatic, 
+                   LinebreakAdjustments -> {1.`, 10, 1, 0, 1}, LineIndent -> 0, 
+                   Hyphenation -> False, 
+                   HyphenationOptions -> {"HyphenationCharacter" -> "\[Null]"},
+                   FontFamily -> "Source Sans Pro", FontSize -> 12, 
+                   FontColor -> GrayLevel[0.5]}],
+                Alignment    -> { Center, Bottom },
+                FrameMargins -> 0,
+                ImageSize    -> { All, 60 }
+            ]
+        ] ],
+        { Center, Bottom }, Offset[ { 0, -7 }, Automatic ], { Center, Center },
+        RemovalConditions -> { "MouseExit" }
+    ]; 
 
 attachCopiedTooltip // endDefinition;
 
