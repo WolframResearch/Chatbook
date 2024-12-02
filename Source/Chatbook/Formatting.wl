@@ -895,14 +895,43 @@ insertCodeInUserNotebook // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*attachCopiedTooltip*)
+attachCopiedTooltip // beginDefinition;
+(* option 1: can only achieve MouseExit if we cover the button with an invisible Pane after mouse-click *)
+(* attachCopiedTooltip[ ] :=
+    AttachCell[
+        EvaluationBox[ ],
+        Cell[ BoxData[
+            PaneBox[
+                TemplateBox[ { "Copied" }, "ClickToCopyTooltip" ],
+                Alignment    -> { Center, Bottom },
+                FrameMargins -> 0,
+                ImageSize    -> { All, 60 }
+            ]
+        ] ],
+        { Center, Bottom }, Offset[ { 0, -7 }, Automatic ], { Center, Center },
+        RemovalConditions -> { "MouseExit" }
+    ]; *)
+(* option 2 *)
+attachCopiedTooltip[ ] :=
+    AttachCell[
+        EvaluationBox[ ],
+        Cell[ BoxData[ TemplateBox[ { "Copied" }, "ClickToCopyTooltip" ] ] ],
+        { Center, Bottom }, Offset[ { 0, 5 }, Automatic ], { Center, Top },
+        RemovalConditions -> { "MouseClickOutside" }
+    ];
+attachCopiedTooltip // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*copyCodeBlock*)
 copyCodeBlock // beginDefinition;
 copyCodeBlock[ cell_CellObject ] := copyCodeBlock @ getCodeBlockContent @ cell;
-copyCodeBlock[ code_String ] := CopyToClipboard @ code;
+copyCodeBlock[ code_String ] := (CopyToClipboard @ code; attachCopiedTooltip[ ]);
 copyCodeBlock[ Cell[ BoxData[ cell_Cell, ___ ] ] ] := copyCodeBlock @ cell;
 copyCodeBlock[ Cell[ code_String, ___ ] ] := copyCodeBlock @ code;
 copyCodeBlock[ cell0_Cell ] := With[ { cell = getCodeBlockContent @ cell0 }, copyCodeBlock @ cell /; cell =!= cell0 ];
-copyCodeBlock[ cell_Cell ] := CopyToClipboard @ cell;
+copyCodeBlock[ cell_Cell ] := (CopyToClipboard @ cell; attachCopiedTooltip[ ]);
 copyCodeBlock // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
