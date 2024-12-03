@@ -895,14 +895,60 @@ insertCodeInUserNotebook // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*attachCopiedTooltip*)
+attachCopiedTooltip // beginDefinition;
+
+attachCopiedTooltip[ ] :=
+    AttachCell[
+        EvaluationBox[ ],
+        Cell[ BoxData[
+            PaneBox[
+                PanelBox[
+                 GridBox[{{PaneBox[
+                     DynamicBox[
+                      StyleBox[
+                       FEPrivate`ImportImage[
+                        FrontEnd`FileName[{"Typeset", "ClickToCopy"}, "Checkmark.png"]],
+                        Magnification -> 0.5`]], 
+                     BaselinePosition -> Scaled[0.1`] -> Baseline], 
+                    DynamicBox[
+                     ToBoxes[FEPrivate`FrontEndResource["FEStrings", 
+                       "clicktocopyDoneTooltip"], StandardForm]]}}, 
+                  GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+                   GridBoxItemSize -> {"Columns" -> {{Automatic}}, 
+                    "Rows" -> {{Automatic}}}, 
+                  GridBoxSpacings -> {"Columns" -> {{0.3`}}, "Rows" -> {{0}}}], 
+                 Alignment -> Center, 
+                 Appearance -> {"Default" -> 
+                    FrontEnd`FileName[{"Chatbook"}, "CopyTooltip.9.png"]}, ImageSize -> {100, Automatic}, 
+                 FrameMargins -> {{0, 0}, {0, 0}}, 
+                 BaseStyle -> {LineBreakWithin -> Automatic, 
+                   LinebreakAdjustments -> {1.`, 10, 1, 0, 1}, LineIndent -> 0, 
+                   Hyphenation -> False, 
+                   HyphenationOptions -> {"HyphenationCharacter" -> "\[Null]"},
+                   FontFamily -> "Source Sans Pro", FontSize -> 12, 
+                   FontColor -> GrayLevel[0.5]}],
+                Alignment    -> { Center, Bottom },
+                FrameMargins -> 0,
+                ImageSize    -> { All, 60 }
+            ]
+        ] ],
+        { Center, Bottom }, Offset[ { 0, -7 }, Automatic ], { Center, Center },
+        RemovalConditions -> { "MouseExit" }
+    ]; 
+
+attachCopiedTooltip // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*copyCodeBlock*)
 copyCodeBlock // beginDefinition;
 copyCodeBlock[ cell_CellObject ] := copyCodeBlock @ getCodeBlockContent @ cell;
-copyCodeBlock[ code_String ] := CopyToClipboard @ code;
+copyCodeBlock[ code_String ] := (CopyToClipboard @ code; attachCopiedTooltip[ ]);
 copyCodeBlock[ Cell[ BoxData[ cell_Cell, ___ ] ] ] := copyCodeBlock @ cell;
 copyCodeBlock[ Cell[ code_String, ___ ] ] := copyCodeBlock @ code;
 copyCodeBlock[ cell0_Cell ] := With[ { cell = getCodeBlockContent @ cell0 }, copyCodeBlock @ cell /; cell =!= cell0 ];
-copyCodeBlock[ cell_Cell ] := CopyToClipboard @ cell;
+copyCodeBlock[ cell_Cell ] := (CopyToClipboard @ cell; attachCopiedTooltip[ ]);
 copyCodeBlock // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
