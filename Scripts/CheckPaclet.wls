@@ -104,6 +104,22 @@ scanFixMeComment[ pos_, ast_ ] := { };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Debug*)
+Needs[ "Wolfram`PacletCICD`" -> None ];
+
+PrependTo[
+    DownValues @ Wolfram`PacletCICD`ToMarkdownString,
+    HoldPattern[ Wolfram`PacletCICD`ToMarkdownString[ args___ ] /; ! TrueQ @ $override ] :>
+        Block[ { $override = True, out },
+            Print[ "Markdown input: ", ToString[ HoldComplete @ args, InputForm ] ];
+            out = Wolfram`PacletCICD`ToMarkdownString @ args;
+            Print[ "Markdown output: ", ToString[ out, InputForm ] ];
+            out
+        ]
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Run*)
 result = checkResult @ Wolfram`PacletCICD`CheckPaclet[
     $defNB,
