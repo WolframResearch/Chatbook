@@ -118,6 +118,9 @@ PrependTo[
         ]
 ];
 
+OwnValues[ Wolfram`PacletCICD`Private`$checkHintData ] =
+    OwnValues @ Wolfram`PacletCICD`Private`$checkHintData /. "MessageText" -> "Message";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Run*)
