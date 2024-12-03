@@ -10,14 +10,15 @@ Needs[ "CodeParser`"    -> "cp`" ];
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Config*)
-$inGitHub := $inGitHub = StringQ @ Environment[ "GITHUB_ACTION" ];
+$inGitHub := $inGitHub = StringQ @ Environment[ "GITHUB_ACTIONS" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Custom Rules*)
 CodeInspector`AbstractRules`$DefaultAbstractRules = <|
     CodeInspector`AbstractRules`$DefaultAbstractRules,
-    cp`CallNode[ cp`LeafNode[ Symbol, "Throw", _ ], { _ }, _ ] -> scanSingleArgThrow
+    cp`CallNode[ cp`LeafNode[ Symbol, "Throw", _ ], { _ }, _ ] -> scanSingleArgThrow,
+    cp`LeafNode[ Symbol, _String? privateContextQ, _ ] -> scanPrivateContext
 |>;
 
 CodeInspector`ConcreteRules`$DefaultConcreteRules = <|
@@ -26,7 +27,7 @@ CodeInspector`ConcreteRules`$DefaultConcreteRules = <|
         Token`Comment,
         _String? (StringStartsQ[ "(*"~~WhitespaceCharacter...~~"FIXME:" ]),
         _
-    ] /; $inGitHub -> scanFixMeComment
+    ] -> scanFixMeComment
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -63,15 +64,43 @@ walkASTForCatch[ ast_, pos_ ] :=
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*scanPrivateContext*)
+scanPrivateContext // ClearAll;
+scanPrivateContext[ pos_, ast_ ] :=
+    Enclose @ Module[ { node, name, as },
+        node = ConfirmMatch[ Extract[ ast, pos ], _[ _, _, __ ], "Node" ];
+        name = ConfirmBy[ node[[ 2 ]], StringQ, "Name" ];
+        as = ConfirmBy[ node[[ 3 ]], AssociationQ, "Metadata" ];
+        ci`InspectionObject[
+            "PrivateContextSymbol",
+            "The symbol ``" <> name <> "`` is in a private context",
+            "Warning",
+            <| as, ConfidenceLevel -> 0.9 |>
+        ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*privateContextQ*)
+privateContextQ // ClearAll;
+privateContextQ[ name_String ] /; StringStartsQ[ name, "System`Private`" ] := False;
+privateContextQ[ name_String ] := StringContainsQ[ name, __ ~~ ("`Private`"|"`PackagePrivate`") ];
+privateContextQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*scanFixMeComment*)
 scanFixMeComment // ClearAll;
-scanFixMeComment[ pos_, ast_ ] :=
+
+scanFixMeComment[ pos_, ast_ ] /; $inGitHub :=
     Enclose @ Module[ { node, comment, as },
         node = ConfirmMatch[ Extract[ ast, pos ], _[ _, _, __ ], "Node" ];
         comment = StringTrim @ StringTrim[ ConfirmBy[ node[[ 2 ]], StringQ, "Comment" ], { "(*", "*)" } ];
         as = ConfirmBy[ node[[ 3 ]], AssociationQ, "Metadata" ];
         ci`InspectionObject[ "FixMeComment", comment, "Remark", <| as, ConfidenceLevel -> 0.9 |> ]
     ];
+
+scanFixMeComment[ pos_, ast_ ] := { };
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
