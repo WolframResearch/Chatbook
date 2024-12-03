@@ -128,9 +128,10 @@ downloadVectorDatabases[ ] :=
     downloadVectorDatabases[ $localVectorDBDirectory, $vectorDBDownloadURLs ];
 
 downloadVectorDatabases[ dir0_, urls_Association ] := Enclose[
-    Module[ { names, sizes, dir, tasks },
+    Module[ { dir, lock, names, sizes, tasks },
 
-        dir = ConfirmBy[ GeneralUtilities`EnsureDirectory @ dir0, DirectoryQ, "Directory" ];
+        dir   = ConfirmBy[ GeneralUtilities`EnsureDirectory @ dir0, DirectoryQ, "Directory" ];
+        lock  = FileNameJoin @ { dir, "download.lock" };
         names = ConfirmMatch[ Keys @ urls, { __String }, "Names" ];
         sizes = ConfirmMatch[ getDownloadSize /@ Values @ urls, { __? Positive }, "Sizes" ];
 
@@ -138,11 +139,16 @@ downloadVectorDatabases[ dir0_, urls_Association ] := Enclose[
         $progressText = "Downloading semantic search indices\[Ellipsis]";
 
         evaluateWithProgress[
-
-            tasks = ConfirmMatch[ KeyValueMap[ downloadVectorDatabase @ dir, urls ], { __TaskObject }, "Download" ];
-            ConfirmMatch[ taskWait @ tasks, { __TaskObject }, "TaskWait" ];
-            $progressText = "Unpacking files\[Ellipsis]";
-            ConfirmBy[ unpackVectorDatabases @ dir, DirectoryQ, "Unpacked" ],
+            WithLock[
+                File @ lock
+                ,
+                tasks = ConfirmMatch[ KeyValueMap[ downloadVectorDatabase @ dir, urls ], { __TaskObject }, "Download" ];
+                ConfirmMatch[ taskWait @ tasks, { (_TaskObject|$Failed).. }, "TaskWait" ];
+                $progressText = "Unpacking files\[Ellipsis]";
+                ConfirmBy[ unpackVectorDatabases @ dir, DirectoryQ, "Unpacked" ]
+                ,
+                PersistenceTime -> 180
+            ],
 
             <|
                 "Text"             :> $progressText,
@@ -220,17 +226,26 @@ downloadVectorDatabase[ dir_ ] :=
     downloadVectorDatabase[ dir, ## ] &;
 
 downloadVectorDatabase[ dir_, name_String, url_String ] := Enclose[
-    Module[ { file },
+    Module[ { file, tmp },
+
         file = ConfirmBy[ FileNameJoin @ { dir, name<>".zip" }, StringQ, "File" ];
-        ConfirmMatch[
-            URLDownloadSubmit[
-                url,
-                file,
-                HandlerFunctions     -> <| "TaskProgress" -> setDownloadProgress @ name |>,
-                HandlerFunctionsKeys -> { "ByteCountDownloaded" }
-            ],
-            _TaskObject,
-            "Task"
+        tmp = file <> ".tmp";
+        Quiet[ DeleteFile /@ { file, tmp } ];
+
+        With[ { tmp = tmp, file = file },
+            ConfirmMatch[
+                URLDownloadSubmit[
+                    url,
+                    tmp,
+                    HandlerFunctions -> <|
+                        "TaskProgress" -> setDownloadProgress @ name,
+                        "TaskFinished" -> (RenameFile[ tmp, file ] &)
+                    |>,
+                    HandlerFunctionsKeys -> { "ByteCountDownloaded" }
+                ],
+                _TaskObject,
+                "Task"
+            ]
         ]
     ] // LogChatTiming[ { "DownloadVectorDatabase", name } ],
     throwInternalFailure
