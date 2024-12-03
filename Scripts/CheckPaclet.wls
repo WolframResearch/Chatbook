@@ -9,10 +9,24 @@ Needs[ "CodeParser`"    -> "cp`" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Config*)
+$inGitHub := $inGitHub = StringQ @ Environment[ "GITHUB_ACTION" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Custom Rules*)
 CodeInspector`AbstractRules`$DefaultAbstractRules = <|
     CodeInspector`AbstractRules`$DefaultAbstractRules,
     cp`CallNode[ cp`LeafNode[ Symbol, "Throw", _ ], { _ }, _ ] -> scanSingleArgThrow
+|>;
+
+CodeInspector`ConcreteRules`$DefaultConcreteRules = <|
+    CodeInspector`ConcreteRules`$DefaultConcreteRules,
+    cp`LeafNode[
+        Token`Comment,
+        _String? (StringStartsQ[ "(*"~~WhitespaceCharacter...~~"FIXME:" ]),
+        _
+    ] /; $inGitHub -> scanFixMeComment
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -46,6 +60,18 @@ walkASTForCatch[ cp`CallNode[ cp`LeafNode[ Symbol, "Catch"|"Hold"|"HoldForm"|"Ho
 
 walkASTForCatch[ ast_, pos_ ] :=
     Extract[ ast, pos ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*scanFixMeComment*)
+scanFixMeComment // ClearAll;
+scanFixMeComment[ pos_, ast_ ] :=
+    Enclose @ Module[ { node, comment, as },
+        node = ConfirmMatch[ Extract[ ast, pos ], _[ _, _, __ ], "Node" ];
+        comment = StringTrim @ StringTrim[ ConfirmBy[ node[[ 2 ]], StringQ, "Comment" ], { "(*", "*)" } ];
+        as = ConfirmBy[ node[[ 3 ]], AssociationQ, "Metadata" ];
+        ci`InspectionObject[ "FixMeComment", comment, "Remark", <| as, ConfidenceLevel -> 0.9 |> ]
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
