@@ -205,7 +205,7 @@ unpackVectorDatabase // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*taskWait*)
 taskWait // beginDefinition;
-taskWait[ tasks_List ] := taskWait /@ tasks;
+taskWait[ tasks_List ] := CheckAbort[ taskWait /@ tasks, Quiet[ TaskRemove /@ tasks ], PropagateAborts -> True ];
 taskWait[ task_TaskObject ] := taskWait[ task, task[ "TaskStatus" ] ];
 taskWait[ task_TaskObject, "Removed" ] := task;
 taskWait[ task_TaskObject, _ ] := TaskWait @ task;
