@@ -169,7 +169,7 @@ SetFallthroughError[symbol_Symbol] := (
 
 CreateErrorType[tag_?TagQ, expansions:{___?TagQ}] := Module[{},
 	If[MemberQ[$RegisteredErrorTags, tag],
-		Throw["FIXME"];
+		throwInternalFailure @ CreateErrorType[ tag, expansions ];
 	];
 
 	data = <|
@@ -218,7 +218,7 @@ CreateFailure[
 		result = validator[failure];
 
 		If[result =!= failure,
-			Throw["FIXME: validator failure"];
+			throwInternalFailure @ CreateFailure[ tag, assoc ];
 		];
 	];
 
@@ -367,7 +367,7 @@ Handle[
 			failure:Failure[tags_?TagsQ, _],
 			$RaiseThrowTag
 		] :> failure,
-		$magicHead[___] :> Throw["TODO: invalid magic head"],
+		$magicHead[___] :> throwInternalFailure @ Handle[ result, handlers ],
 		other_ :> Return[other, Module]
 	}];
 
@@ -438,7 +438,7 @@ ConfirmReplace[
 					Replace[{
 						(head:(Rule|RuleDelayed))[lhs_, _] :> head[InputForm[lhs], "\[Ellipsis]"],
 						(* TODO: Throw a LogicError-like thing here? *)
-						other_ :> Throw["FIXME: unexpected rule structure in ConfirmReplace"]
+						other_ :> throwInternalFailure @ ConfirmReplace[ expr, rules0 ]
 					}],
 					rules
 				],
@@ -613,7 +613,7 @@ ExpandTag[tag0_?TagQ] := Module[{
 	expansions
 },
 	If[!KeyMemberQ[$RegisteredErrorTags, tag0],
-		Throw[Row[{"TODO: unknown tag error: ", tag0}]];
+		throwInternalFailure @ ExpandTag @ tag0;
 	];
 
 	expansions = Flatten @ FixedPointList[

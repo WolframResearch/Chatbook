@@ -1525,9 +1525,6 @@ getAssetFile[ file_? FileExistsQ ] :=
 
 getAssetFile // endDefinition;
 
-(* FIXME: Delete this: *)
-testFunction[ x_ ] := Throw @ x;
-
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
