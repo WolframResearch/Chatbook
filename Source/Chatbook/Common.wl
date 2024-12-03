@@ -1391,8 +1391,15 @@ getCloudChatbookExpressions[ ] := Enclose[
             First[
                 StringCases[
                     string,
-                    Shortest[ "@@resource ChatbookExpressions\n{" ~~ exprs__ ~~ "}\n@|" ] :>
-                        Association @ ToExpression[ "{" <> exprs <> "}" ],
+                    Shortest @ StringExpression[
+                        "@@resource ChatbookExpressions",
+                        WhitespaceCharacter...,
+                        "{",
+                        exprs__,
+                        "}",
+                        WhitespaceCharacter...,
+                        "@|"
+                    ] :> Association @ ToExpression[ "{" <> exprs <> "}" ],
                     1
                 ],
                 $Failed
