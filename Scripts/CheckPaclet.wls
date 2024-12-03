@@ -40,8 +40,12 @@ scanSingleArgThrow[ pos_, ast_ ] := Catch[
 (* ::Subsubsection::Closed:: *)
 (*walkASTForCatch*)
 walkASTForCatch // ClearAll;
-walkASTForCatch[ cp`CallNode[ cp`LeafNode[ Symbol, "Catch", _ ], { _ }, _ ], _ ] := Throw[ { }, $tag ];
-walkASTForCatch[ ast_, pos_ ] := Extract[ ast, pos ];
+
+walkASTForCatch[ cp`CallNode[ cp`LeafNode[ Symbol, "Catch"|"Hold"|"HoldForm"|"HoldComplete", _ ], { _ }, _ ], _ ] :=
+    Throw[ { }, $tag ];
+
+walkASTForCatch[ ast_, pos_ ] :=
+    Extract[ ast, pos ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
