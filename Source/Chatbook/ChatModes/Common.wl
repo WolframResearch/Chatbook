@@ -19,6 +19,7 @@ HoldComplete[
     `moveChatInputToTop,
     `moveToInlineChatInputField,
     `scrollInlineChat,
+    `toggleOverlayMenu,
     `userNotebookQ,
     `validInputStringQ
 ];

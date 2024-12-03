@@ -491,7 +491,7 @@ showNotebookAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] :
                             "WorkspaceChatToolbarTitle", FontSlant -> Italic, FontWeight -> Plain
                         ],
                         "LinkHand"], (* using LinkHand to indicate the sub-docked cell is clickable *)
-                    Wolfram`Chatbook`ChatModes`UI`Private`toggleOverlayMenu[ nbo, "History" ],
+                    toggleOverlayMenu[ nbo, "History" ],
                     Appearance -> "Suppressed"
                 ]
             ]
