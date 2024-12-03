@@ -1,8 +1,5 @@
 BeginPackage[ "Wolfram`ChatbookScripts`" ];
 
-(* :!CodeAnalysis::BeginBlock:: *)
-(* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
-
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Initialization*)
@@ -44,11 +41,14 @@ $pacletDir            = cDir @ DirectoryName[ $inputFileName, 2 ];
 
 Internal`AddHandler[ "Message", messageHandler ];
 
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
 $testingHeads = HoldPattern @ Alternatives[
     TestReport,
     VerificationTest,
     Testing`Private`extractUnevaluated
 ];
+(* :!CodeAnalysis::EndBlock:: *)
 
 $testStack = With[ { h = $testingHeads }, HoldForm[ h[ ___ ] ] ];
 
@@ -82,11 +82,13 @@ messagePrint // Attributes = { HoldFirst };
 messagePrint[ Message[ msg_, args___ ] ] :=
     messagePrint[ msg, args ];
 
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 messagePrint[ msg_MessageName, args___ ] :=
     Print[ "::warning::",
            ToString @ Unevaluated @ msg <> ": " <> messageString[ msg, args ]
     ];
-
+(* :!CodeAnalysis::EndBlock:: *)
 
 messageString[ template_String, args___ ] :=
     ToString[ StringForm[ template, Sequence @@ Short /@ { args } ],
@@ -168,6 +170,8 @@ actionURL[ ] := Enclose[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*updatePacletInfo*)
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 updatePacletInfo[ dir_ ] /; $inCICD := Enclose[
     Module[
         { cs, file, string, id, date, url, run, cmt, oldID, new },
@@ -218,6 +222,7 @@ updatePacletInfo[ dir_ ] /; $inCICD := Enclose[
         If[ StringQ @ Environment[ "GITHUB_ACTION" ], Exit[ 1 ] ]
     ]
 ];
+(* :!CodeAnalysis::EndBlock:: *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -241,6 +246,8 @@ setPacletReleaseID[ dir_, id_String? StringQ ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*updateReleaseInfoCell*)
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 updateReleaseInfoCell[ dir_, url_, cmt_, run_ ] /;
     Environment[ "GITHUB_WORKFLOW" ] === "Release" :=
     UsingFrontEnd @ Enclose @ Module[ { cells, nbFile, nbo, cell },
@@ -257,7 +264,7 @@ updateReleaseInfoCell[ dir_, url_, cmt_, run_ ] /;
         Print[ "Updated definition notebook: ", nbFile ];
         nbFile
     ];
-
+(* :!CodeAnalysis::EndBlock:: *)
 
 commitURL[ sha_String ] := URLBuild @ { "https://github.com/WolframResearch/Chatbook/commit", sha };
 
@@ -337,6 +344,8 @@ setResourceSystemBase[ ] := (
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*checkResult*)
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 checkResult // Attributes = { HoldFirst };
 
 checkResult[ eval: (sym_Symbol)[ args___ ] ] :=
@@ -375,13 +384,19 @@ checkResult[ eval: (sym_Symbol)[ args___ ] ] :=
 
         result
     ];
+(* :!CodeAnalysis::EndBlock:: *)
 
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
 noExit    := Wolfram`PacletCICD`Private`noExit;
 setOutput := Wolfram`PacletCICD`Private`setOutput;
+(* :!CodeAnalysis::EndBlock:: *)
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Setup*)
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 Print[ "Paclet Directory: ", $pacletDir ];
 
 updatePacletInfo @ $pacletDir;
