@@ -822,7 +822,8 @@ evaluateWithProgress // beginDefinition;
 evaluateWithProgress // Attributes = { HoldFirst };
 evaluateWithProgress[ args___ ] /; $WorkspaceChat := evaluateWithWorkspaceProgress @ args;
 evaluateWithProgress[ args___ ] /; $InlineChat := evaluateWithInlineProgress @ args;
-evaluateWithProgress[ args___ ] := evaluateWithProgressContainer[ $progressContainer, args ];
+evaluateWithProgress[ args___ ] /; $ContentSuggestions := evaluateWithProgressContainer[ $progressContainer, args ];
+evaluateWithProgress[ args___ ] := Progress`EvaluateWithProgress[ args, "Delay" -> 0 ];
 evaluateWithProgress // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
