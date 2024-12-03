@@ -27,7 +27,7 @@ scanSingleArgThrow[ pos_, ast_ ] := Catch[
                 ci`InspectionObject[
                     "NoSurroundingCatch",
                     "``Throw`` has no tag or surrounding ``Catch``",
-                    "Warning",
+                    "Error",
                     <| as, ConfidenceLevel -> 0.9 |>
                 ],
             ___ :> { }
