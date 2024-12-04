@@ -236,7 +236,7 @@
 "WorkspaceFocusIndicatorDisableTooltip" -> "\:53BB\:80FD\:4F7F\:7528\:5F9E\:5176\:4ED6\:7B46\:8A18\:672C\:800C\:4F86\:7684\:4E0A\:4E0B\:6587",
 "WorkspaceFocusIndicatorFocus" -> "\:7126\:9EDE\:FF1A",
 "WorkspaceFocusIndicatorMenuTooltip" -> "\:9078\:64C7\:4E00\:500B\:53EF\:4EE5\:805A\:7126\:65BC\:9644\:52A0\:4E0A\:4E0B\:6587\:7684\:7B46\:8A18\:672C",
-"WorkspaceFocusIndicatorMenuAutomatic" -> "\:9078\:64C7\:81EA\:52D5\:5730",
+"WorkspaceFocusIndicatorMenuAutomatic" -> "\:81EA\:52D5\:5730\:9078\:64C7",
 
 "InlineChatButtonTooltipClose" -> "\:95DC\:9589",
 "InlineChatButtonTooltipViewNotebookAssist" -> "\:7DE8\:78BC\:5C0F\:5E6B\:624B\:804A\:5929\:7CFB\:7D71\:4E2D\:7684\:8996\:5716",
