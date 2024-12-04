@@ -634,7 +634,8 @@ makeLLMConfiguration[ as: KeyValuePattern[ "Model" -> model_String ] ] :=
 
 makeLLMConfiguration[ as_Association ] /; as[ "HybridToolMethod" ] :=
     $lastLLMConfiguration = LLMConfiguration @ DeleteMissing @ Association[
-        KeyTake[ as, { "Model", "MaxTokens", "Temperature", "PresencePenalty", "Tools" } ],
+        KeyTake[ as, { "Model", "MaxTokens", "Temperature", "PresencePenalty" } ],
+        "Tools"      -> Cases[ Flatten @ { as[ "Tools" ] }, _LLMTool ],
         "StopTokens" -> makeStopTokens @ as,
         "ToolMethod" -> "Service"
     ];

@@ -319,9 +319,13 @@ setLLMKitFlags // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*overrideSettings*)
 overrideSettings // beginDefinition;
-overrideSettings[ settings_Association? llmKitQ ] := <| settings, $llmKitOverrides |>;
-overrideSettings[ settings_Association? o1ModelQ ] := <| settings, $o1Overrides |>;
-overrideSettings[ settings_Association ] := settings;
+
+overrideSettings[ settings_Association ] := <|
+    settings,
+    If[ llmKitQ @ settings, $llmKitOverrides, <| |> ],
+    If[ o1ModelQ @ settings, $o1Overrides, <| |> ]
+|>;
+
 overrideSettings // endDefinition;
 
 (* TODO: these shouldn't be mutually exclusive: *)
@@ -401,7 +405,7 @@ $autoSettingKeyDependencies = <|
     "BypassResponseChecking"     -> "ForceSynchronous",
     "ForceSynchronous"           -> "Model",
     "HandlerFunctionsKeys"       -> "EnableLLMServices",
-    "HybridToolMethod"           -> "Model",
+    "HybridToolMethod"           -> { "Model", "ToolsEnabled" },
     "MaxCellStringLength"        -> { "Model", "MaxContextTokens" },
     "MaxContextTokens"           -> "Model",
     "MaxOutputCellStringLength"  -> "MaxCellStringLength",
@@ -438,6 +442,7 @@ $autoSettingKeyPriority := Enclose[
 (* ::Subsubsection::Closed:: *)
 (*hybridToolMethodQ*)
 hybridToolMethodQ // beginDefinition;
+hybridToolMethodQ[ KeyValuePattern[ "ToolsEnabled" -> False ] ] := False;
 hybridToolMethodQ[ as_Association ] := hybridToolMethodQ[ as, as[ "Model" ] ];
 hybridToolMethodQ[ as_, $$hybridToolModel ] := True;
 hybridToolMethodQ[ as_, _ ] := False;
