@@ -194,8 +194,7 @@ prependRelatedDocsHeader // endDefinition;
 
 
 $relatedDocsStringFilteredHeader =
-"IMPORTANT: Here are some Wolfram documentation snippets that were retrieved based on semantic similarity to the \
-current context. Please use them if they can help answer the user's latest message.\n\n";
+"IMPORTANT: Here are some Wolfram documentation snippets that you should use to respond.\n\n";
 
 $relatedDocsStringUnfilteredHeader =
 "Here are some Wolfram documentation snippets that you may find useful.\n\n";
