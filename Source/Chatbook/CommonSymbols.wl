@@ -66,6 +66,7 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `$progressContainer;
 `$progressText;
 `$progressWidth;
+`$receivedToolCall;
 `$resultCellCache;
 `$rightSelectionIndicator;
 `$sandboxKernelCommandLine;

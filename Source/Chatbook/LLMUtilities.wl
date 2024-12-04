@@ -269,6 +269,9 @@ toolRequestsToStrings // endDefinition;
 (*toolRequestToString*)
 toolRequestToString // beginDefinition;
 
+(* TODO: we currently only support one tool call at a time, so extras are discarded *)
+toolRequestString[ req_ ] /; $receivedToolCall := "";
+
 toolRequestToString[ req: HoldPattern[ _LLMToolRequest ] ] /; $simpleToolMethod := Enclose[
     Module[ { name, tool, command, params, argString },
         name = ConfirmBy[ req[ "Name" ], StringQ, "Name" ];
@@ -276,7 +279,8 @@ toolRequestToString[ req: HoldPattern[ _LLMToolRequest ] ] /; $simpleToolMethod 
         command = ConfirmBy[ toolShortName @ tool, StringQ, "Command" ];
         params = ToString /@ ConfirmBy[ Association @ req[ "ParameterValues" ], AssociationQ, "ParameterValues" ];
         argString = ConfirmBy[ simpleParameterString @ params, StringQ, "ArgumentString" ];
-        StringJoin[ "/", command, "\n", argString ]
+        $receivedToolCall = True;
+        StringJoin[ "\n/", command, "\n", argString ]
     ],
     throwInternalFailure
 ];
@@ -286,7 +290,8 @@ toolRequestToString[ req: HoldPattern[ _LLMToolRequest ] ] := Enclose[
         name = ConfirmBy[ req[ "Name" ], StringQ, "Name" ];
         params = ConfirmMatch[ req[ "ParameterValues" ], KeyValuePattern @ { }, "ParameterValues" ];
         json = ConfirmBy[ Developer`ToJSON @ params, StringQ, "JSON" ];
-        StringJoin[ "TOOLCALL: ", name, "\n", json, "\n", "ENDARGUMENTS" ]
+        $receivedToolCall = True;
+        StringJoin[ "\nTOOLCALL: ", name, "\n", json, "\n", "ENDARGUMENTS" ]
     ],
     throwInternalFailure
 ];
