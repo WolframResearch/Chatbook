@@ -318,14 +318,12 @@ setLLMKitFlags // endDefinition;
 overrideSettings // beginDefinition;
 overrideSettings[ settings_Association? llmKitQ ] := <| settings, $llmKitOverrides |>;
 overrideSettings[ settings_Association? o1ModelQ ] := <| settings, $o1Overrides |>;
-overrideSettings[ settings_Association? gpt4oTextToolsQ ] := <| settings, $gpt4oTextToolOverrides |>;
 overrideSettings[ settings_Association ] := settings;
 overrideSettings // endDefinition;
 
 (* TODO: these shouldn't be mutually exclusive: *)
-$llmKitOverrides        = <| "Authentication" -> "LLMKit" |>;
-$o1Overrides            = <| "PresencePenalty" -> 0, "Temperature" -> 1 |>;
-$gpt4oTextToolOverrides = <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o-2024-05-13" |> |>;
+$llmKitOverrides = <| "Authentication" -> "LLMKit" |>;
+$o1Overrides     = <| "PresencePenalty" -> 0, "Temperature" -> 1 |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -339,19 +337,6 @@ llmKitQ[ as_Association ] := TrueQ @ Or[
 ];
 
 llmKitQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*gpt4oTextToolsQ*)
-gpt4oTextToolsQ // beginDefinition;
-
-gpt4oTextToolsQ[ settings_Association ] := TrueQ @ And[
-    settings[ "ToolsEnabled" ],
-    toModelName @ settings === "gpt-4o",
-    settings[ "ToolMethod" ] =!= "Service"
-];
-
-gpt4oTextToolsQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
