@@ -38,6 +38,7 @@ $defaultChatSettings = <|
     "FrequencyPenalty"               -> 0.1,
     "HandlerFunctions"               :> $DefaultChatHandlerFunctions,
     "HandlerFunctionsKeys"           -> Automatic,
+    "HybridToolMethod"               -> Automatic,
     "IncludeHistory"                 -> Automatic,
     "InitialChatCell"                -> True,
     "LLMEvaluator"                   -> "CodeAssistant",
@@ -109,6 +110,8 @@ $absoluteCurrentSettingsCache = None;
 (*Argument Patterns*)
 $$validRootSettingValue = Inherited | _? (AssociationQ@*Association);
 $$frontEndObject        = HoldPattern[ $FrontEnd | _FrontEndObject ];
+$$hybridToolService     = "OpenAI"|"AzureOpenAI"|"LLMKit";
+$$hybridToolModel       = _String | { $$hybridToolService, _ } | KeyValuePattern[ "Service" -> $$hybridToolService ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -365,6 +368,7 @@ resolveAutoSetting0[ as_, "DynamicAutoFormat"              ] := dynamicAutoForma
 resolveAutoSetting0[ as_, "EnableLLMServices"              ] := $useLLMServices;
 resolveAutoSetting0[ as_, "ForceSynchronous"               ] := forceSynchronousQ @ as;
 resolveAutoSetting0[ as_, "HandlerFunctionsKeys"           ] := chatHandlerFunctionsKeys @ as;
+resolveAutoSetting0[ as_, "HybridToolMethod"               ] := hybridToolMethodQ @ as;
 resolveAutoSetting0[ as_, "IncludeHistory"                 ] := Automatic;
 resolveAutoSetting0[ as_, "MaxCellStringLength"            ] := chooseMaxCellStringLength @ as;
 resolveAutoSetting0[ as_, "MaxContextTokens"               ] := autoMaxContextTokens @ as;
@@ -397,6 +401,7 @@ $autoSettingKeyDependencies = <|
     "BypassResponseChecking"     -> "ForceSynchronous",
     "ForceSynchronous"           -> "Model",
     "HandlerFunctionsKeys"       -> "EnableLLMServices",
+    "HybridToolMethod"           -> "Model",
     "MaxCellStringLength"        -> { "Model", "MaxContextTokens" },
     "MaxContextTokens"           -> "Model",
     "MaxOutputCellStringLength"  -> "MaxCellStringLength",
@@ -428,6 +433,15 @@ $autoSettingKeyPriority := Enclose[
     * BasePrompt (might not be possible here)
     * ChatContextPreprompt
 *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*hybridToolMethodQ*)
+hybridToolMethodQ // beginDefinition;
+hybridToolMethodQ[ as_Association ] := hybridToolMethodQ[ as, as[ "Model" ] ];
+hybridToolMethodQ[ as_, $$hybridToolModel ] := True;
+hybridToolMethodQ[ as_, _ ] := False;
+hybridToolMethodQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
