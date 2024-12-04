@@ -796,8 +796,9 @@ getToolPrompt // endDefinition;
 (*toolPromptData*)
 toolPromptData // beginDefinition;
 
-toolPromptData[ args: KeyValuePattern @ { "Tools" -> tools_List } ] :=
-    Append[ args, "Tools" -> Replace[ tools, t_LLMTool :> TemplateVerbatim @ t, { 1 } ] ];
+(* What was this definition doing? It was causing template errors, so it's now disabled: *)
+(* toolPromptData[ args: KeyValuePattern @ { "Tools" -> tools_List } ] :=
+    Append[ args, "Tools" -> Replace[ tools, t_LLMTool :> TemplateVerbatim @ t, { 1 } ] ]; *)
 
 toolPromptData[ expr_ ] := expr;
 

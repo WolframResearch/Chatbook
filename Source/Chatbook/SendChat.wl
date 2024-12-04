@@ -632,6 +632,14 @@ makeLLMConfiguration // beginDefinition;
 makeLLMConfiguration[ as: KeyValuePattern[ "Model" -> model_String ] ] :=
     makeLLMConfiguration @ Append[ as, "Model" -> { "OpenAI", model } ];
 
+makeLLMConfiguration[ as_Association ] /; as[ "HybridToolMethod" ] :=
+    $lastLLMConfiguration = LLMConfiguration @ DeleteMissing @ Association[
+        KeyTake[ as, { "Model", "MaxTokens", "Temperature", "PresencePenalty" } ],
+        "Tools"      -> Cases[ Flatten @ { as[ "Tools" ] }, _LLMTool ],
+        "StopTokens" -> makeStopTokens @ as,
+        "ToolMethod" -> "Service"
+    ];
+
 makeLLMConfiguration[ as_Association ] :=
     $lastLLMConfiguration = LLMConfiguration @ DeleteMissing @ Association[
         KeyTake[ as, { "Model", "MaxTokens", "Temperature", "PresencePenalty" } ],
