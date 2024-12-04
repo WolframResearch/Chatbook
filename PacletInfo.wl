@@ -1,7 +1,7 @@
 PacletObject[ <|
     "Name"           -> "Wolfram/Chatbook",
     "PublisherID"    -> "Wolfram",
-    "Version"        -> "1.5.2.18",
+    "Version"        -> "1.5.2.19",
     "WolframVersion" -> "14.1+",
     "Description"    -> "Wolfram Notebooks + LLMs",
     "License"        -> "MIT",
