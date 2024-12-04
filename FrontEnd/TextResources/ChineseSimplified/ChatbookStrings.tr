@@ -37,7 +37,7 @@
 "ChatToolbarInsertChatCell" -> "\:63D2\:5165\:804A\:5929\:5355\:5143",
 "ChatToolbarChatSettings" -> "\:804A\:5929\:8BBE\:7F6E",
 "ChatToolbarChatDrivenLabel" -> "\:804A\:5929\:7B14\:8BB0\:672C",
-"ChatToolbarChatEnabledLabel" -> "\:652F\:6301\:804A\:5929\:7684\:7B14\:8BB0\:672C",
+"ChatToolbarChatEnabledLabel" -> "\:804A\:5929\:7B14\:8BB0\:672C",
 
 "DefaultToolsLinks" -> "\:94FE\:63A5",
 
@@ -122,14 +122,14 @@
 "PreferencesContentAuthentication" -> "\:8BA4\:8BC1",
 "PreferencesContentUnregisterTooltip" -> "\:53D6\:6D88\:4E0E\:6CE8\:518C\:670D\:52A1\:5546\:7684\:8FDE\:63A5",
 "PreferencesContentOpenAICompletionURLLabel" -> "\:804A\:5929\:8865\:5168 URL\:ff1a",
-"PreferencesContentLLMKitTitle" -> "Wolfram \:7B14\:8BB0\:672C\:52A9\:624B + LLM \:5DE5\:5177\:5305",
+"PreferencesContentLLMKitTitle" -> "Wolfram Notebook Assistant + LLM Kit"",
 "PreferencesContentLLMKitSubscribeButton" -> "\:8BA2\:9605",
 "PreferencesContentLLMKitLearnMoreTooltip" -> "\:4E86\:89E3\:66F4\:591A\[Ellipsis]",
-"PreferencesContentLLMKitSubscriptionRequired" -> "LLM \:5DE5\:5177\:5305\:9700\:8981\:8BA2\:9605",
-"PreferencesContentLLMKitNoSubscription" -> "\:672A\:627E\:5230 LLM \:5DE5\:5177\:5305\:8BA2\:9605",
+"PreferencesContentLLMKitSubscriptionRequired" -> "\:4F7F\:7528 LLM Kit \:9700\:8981\:8BA2\:9605",
+"PreferencesContentLLMKitNoSubscription" -> "\:672A\:627E\:5230 LLM Kit \:8BA2\:9605",
 "PreferencesContentLLMKitSignInOr" -> "\:6216",
 "PreferencesContentLLMKitSignInButton" -> "\:767B\:5F55\:4F7F\:7528\:73B0\:6709\:8BA2\:9605 \[RightGuillemet]",
-"PreferencesContentLLMKitEnabledTitle" -> "\:7B14\:8BB0\:672C\:52A9\:624B + LLM \:5DE5\:5177\:5305\:ff08\:7CBE\:9009\:7248\:ff09",
+"PreferencesContentLLMKitEnabledTitle" -> "Notebook Assistant + LLM Kit \:8BA2\:9605",
 "PreferencesContentLLMKitEnabledManage" -> "\:7BA1\:7406\:60A8\:7684\:8BA2\:9605 \[RightGuillemet]",
 
 "ResourceInstallerFromURLPrompt" -> "\:8F93\:5165 URL",
@@ -175,8 +175,8 @@
 "UITryEnableChatDialogConfirm" -> "\:60A8\:786E\:5B9A\:8981\:7EE7\:7EED\:5417\:ff1f",
 "UIMessageManageSubscription" -> "\:7BA1\:7406\:8BA2\:9605 \[RightGuillemet]",
 "UIMessageContactUs" -> "\:8054\:7CFB\:6211\:4EEC \[RightGuillemet]",
-"UIMessageUsed80" -> "\:60A8\:5DF2\:4F7F\:7528\:4E86\:672C\:6708 Wolfram \:7B14\:8BB0\:672C\:52A9\:624B + LLM \:5DE5\:5177\:5305\:9650\:989D\:7684 80%\:3002",
-"UIMessageUsedAll" -> "\:60A8\:5DF2\:7528\:5B8C\:672C\:6708 Wolfram \:7B14\:8BB0\:672C\:52A9\:624B + LLM \:5DE5\:5177\:5305\:7684\:6240\:6709\:9650\:989D\:3002",
+"UIMessageUsed80" -> "\:60A8\:5DF2\:4F7F\:7528\:4E86\:672C\:6708 Wolfram Notebook Assistant + LLM Kit \:9650\:989D\:7684 80%\:3002",
+"UIMessageUsedAll" -> "\:60A8\:5DF2\:7528\:5B8C\:672C\:6708 Wolfram Notebook Assistant + LLM Kit \:7684\:6240\:6709\:9650\:989D\:3002",
 "UIMessageHighUsageRate" -> "\:6211\:4EEC\:53D1\:73B0\:60A8\:7684\:8D26\:6237\:8BF7\:6C42\:7387\:975E\:5E38\:9AD8\:3002\:4E3A\:4E86\:9632\:6B62\:5176\:4ED6\:7528\:6237\:7684\:670D\:52A1\:4E2D\:65AD\:ff0c\:6211\:4EEC\:4E0D\:5F97\:4E0D\:6682\:65F6\:963B\:6B62\:60A8\:7684\:8BF7\:6C42\:3002",
 "UIMessageUnblockRequest" -> "\:8BF7\:6C42\:89E3\:5C01 \[RightGuillemet]",
 
@@ -244,14 +244,14 @@
 "NotebookAssistanceInputGettingStarted" -> "\:5E2E\:52A9\:6211\:5F00\:59CB\:4F7F\:7528",
 "NotebookAssistanceInputErrorMessage" -> "\:51FA\:4EC0\:4E48\:95EE\:9898\:4E86\:ff1f",
 
-"ProgressTextCheckingDocumentation" -> "Checking documentation",
-"ProgressTextChoosingDocumentation" -> "Choosing relevant documentation",
-"ProgressTextCreatingMessages" -> "Creating messages",
-"ProgressTextSendingChat" -> "Sending chat",
-"ProgressTextGeneratingSuggestions" -> "Generating suggestions",
-"ProgressTextWaitingForResponse" -> "Waiting for response",
-"ProgressTextDownloadingSnippet" -> "Downloading `1` documentation snippet",
-"ProgressTextDownloadingSnippets" -> "Downloading `1` documentation snippets"
+"ProgressTextCheckingDocumentation" -> "\:6B63\:5728\:67E5\:770B\:6587\:6863",
+"ProgressTextChoosingDocumentation" -> "\:6B63\:5728\:9009\:62E9\:76F8\:5173\:7684\:6587\:6863",
+"ProgressTextCreatingMessages" -> "\:6B63\:5728\:751F\:6210\:4FE1\:606F",
+"ProgressTextSendingChat" -> "\:6B63\:5728\:53D1\:9001\:804A\:5929\:4FE1\:606F",
+"ProgressTextGeneratingSuggestions" -> "\:6B63\:5728\:751F\:6210\:5EFA\:8BAE",
+"ProgressTextWaitingForResponse" -> "\:7B49\:5F85\:54CD\:5E94",
+"ProgressTextDownloadingSnippet" -> "\:6B63\:5728\:4E0B\:8F7D `1` \:6587\:6863\:7247\:6BB5",
+"ProgressTextDownloadingSnippets" -> "\:6B63\:5728\:4E0B\:8F7D `1` \:6587\:6863\:7247\:6BB5"
 }
 @|
 @|
