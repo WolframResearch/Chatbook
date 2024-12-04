@@ -205,7 +205,11 @@ extractBodyChunks // beginDefinition;
 
 extractBodyChunks[ data_ ] := Enclose[
     Catch[
-        ConfirmMatch[ DeleteCases[ Flatten @ { extractBodyChunks0 @ data }, "" ], { ___String }, "Result" ],
+        ConfirmMatch[
+            DeleteCases[ Flatten @ { extractBodyChunks0 @ data }, "" ],
+            { (_String|_LLMToolRequest)... },
+            "Result"
+        ],
         $bodyChunksTag
     ],
     throwInternalFailure
@@ -215,13 +219,31 @@ extractBodyChunks // endDefinition;
 
 
 extractBodyChunks0 // beginDefinition;
-extractBodyChunks0[ content_String ] := content;
-extractBodyChunks0[ content_List ] := extractBodyChunks0 /@ content;
-extractBodyChunks0[ KeyValuePattern[ "BodyChunkProcessed" -> content_ ] ] := extractBodyChunks0 @ content;
-extractBodyChunks0[ KeyValuePattern[ "ContentChunk"|"ContentDelta" -> content_ ] ] := extractBodyChunks0 @ content;
-extractBodyChunks0[ KeyValuePattern @ { "Type" -> "Text", "Data" -> content_ } ] := extractBodyChunks0 @ content;
-extractBodyChunks0[ KeyValuePattern @ { } ] := { };
-extractBodyChunks0[ bag_Internal`Bag ] := extractBodyChunks0 @ Internal`BagPart[ bag, All ];
+
+extractBodyChunks0[ content_String ] :=
+    content;
+
+extractBodyChunks0[ content_List ] :=
+    extractBodyChunks0 /@ content;
+
+extractBodyChunks0[ as: KeyValuePattern[ "ToolRequestsChunk" -> t_ ] ] :=
+    { extractBodyChunks0 @ KeyDrop[ as, "ToolRequestsChunk" ], toolRequestsToStrings @ t };
+
+extractBodyChunks0[ KeyValuePattern[ "BodyChunkProcessed" -> content_ ] ] :=
+    extractBodyChunks0 @ content;
+
+extractBodyChunks0[ KeyValuePattern[ "ContentChunk"|"ContentDelta" -> content_ ] ] :=
+    extractBodyChunks0 @ content;
+
+extractBodyChunks0[ KeyValuePattern @ { "Type" -> "Text", "Data" -> content_ } ] :=
+    extractBodyChunks0 @ content;
+
+extractBodyChunks0[ KeyValuePattern @ { } ] :=
+    { };
+
+extractBodyChunks0[ bag_Internal`Bag ] :=
+    extractBodyChunks0 @ Internal`BagPart[ bag, All ];
+
 extractBodyChunks0[ Null ] := { };
 
 extractBodyChunks0[ Failure[
@@ -233,6 +255,62 @@ extractBodyChunks0[ fail_Failure? apiFailureQ ] :=
     throwFailureToChatOutput @ fail;
 
 extractBodyChunks0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolRequestsToStrings*)
+toolRequestsToStrings // beginDefinition;
+toolRequestsToStrings[ requests_List ] := toolRequestsToStrings /@ requests;
+toolRequestsToStrings[ req: HoldPattern[ _LLMToolRequest ] ] := toolRequestToString @ req;
+toolRequestsToStrings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toolRequestToString*)
+toolRequestToString // beginDefinition;
+
+toolRequestToString[ req: HoldPattern[ _LLMToolRequest ] ] /; $simpleToolMethod := Enclose[
+    Module[ { name, tool, command, params, argString },
+        name = ConfirmBy[ req[ "Name" ], StringQ, "Name" ];
+        tool = ConfirmMatch[ getToolByName @ name, _LLMTool, "Tool" ];
+        command = ConfirmBy[ toolShortName @ tool, StringQ, "Command" ];
+        params = ToString /@ ConfirmBy[ Association @ req[ "ParameterValues" ], AssociationQ, "ParameterValues" ];
+        argString = ConfirmBy[ simpleParameterString @ params, StringQ, "ArgumentString" ];
+        StringJoin[ "/", command, "\n", argString ]
+    ],
+    throwInternalFailure
+];
+
+toolRequestToString[ req: HoldPattern[ _LLMToolRequest ] ] := Enclose[
+    Module[ { name, params, json },
+        name = ConfirmBy[ req[ "Name" ], StringQ, "Name" ];
+        params = ConfirmMatch[ req[ "ParameterValues" ], KeyValuePattern @ { }, "ParameterValues" ];
+        json = ConfirmBy[ Developer`ToJSON @ params, StringQ, "JSON" ];
+        StringJoin[ "TOOLCALL: ", name, "\n", json, "\n", "ENDARGUMENTS" ]
+    ],
+    throwInternalFailure
+];
+
+toolRequestToString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*simpleParameterString*)
+simpleParameterString // beginDefinition;
+
+simpleParameterString[ params_Association ] /; Length @ params === 1 :=
+    ToString @ First @ params;
+
+simpleParameterString[ params_Association ] /; AllTrue[ params, StringFreeQ[ "\n" ] ] :=
+    StringRiffle[ Values @ params, "\n" ];
+
+simpleParameterString[ params_Association ] :=
+    StringRiffle[ KeyValueMap[ simpleParameterString, params ], "\n" ];
+
+simpleParameterString[ name_String, value_ ] :=
+    StringJoin[ name, ": ", ToString @ value ];
+
+simpleParameterString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
