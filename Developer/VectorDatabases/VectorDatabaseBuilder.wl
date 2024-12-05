@@ -274,7 +274,7 @@ setDBDefaults[ dir_, name_String ] :=
 addBatch // ClearAll;
 
 addBatch[ db_VectorDatabaseObject, stream_InputStream, valueBag_Internal`Bag ] :=
-    Enclose @ Catch @ Module[ { batch, text, values, embeddings },
+    Enclose @ Catch @ Module[ { batch, text, values, embeddings, added },
 
         batch = ConfirmMatch[
             readJSONLines[ stream, $incrementalBuildBatchSize ],
@@ -289,9 +289,9 @@ addBatch[ db_VectorDatabaseObject, stream_InputStream, valueBag_Internal`Bag ] :
         values = ConfirmMatch[ batch[[ All, "Value" ]], { __ }, "Values" ];
         embeddings = ConfirmBy[ $lastEmbedding = GetEmbedding @ text, NumericArrayQ, "Embeddings" ];
         ConfirmAssert[ Length @ values === Length @ embeddings, "LengthCheck" ];
-        Confirm[ $lastAdded = AddToVectorDatabase[ db, embeddings ], "AddToVectorDatabase" ];
+        added = Confirm[ $lastAdded = AddToVectorDatabase[ db, embeddings ], "AddToVectorDatabase" ];
         Internal`StuffBag[ valueBag, values, 1 ];
-        ConfirmMatch[ db[ "Dimensions" ], { Internal`BagLength @ valueBag, $embeddingDimension }, "DimensionCheck" ];
+        ConfirmMatch[ added[ "Dimensions" ], { Internal`BagLength @ valueBag, $embeddingDimension }, "DimensionCheck" ];
         embeddings
     ];
 
