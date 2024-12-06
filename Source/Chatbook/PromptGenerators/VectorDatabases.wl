@@ -67,6 +67,21 @@ $embeddingCache      = <| |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*InstallVectorDatabases*)
+InstallVectorDatabases // beginDefinition;
+
+InstallVectorDatabases[ ] := catchMine @ Enclose[
+    Success[
+        "VectorDatabasesInstalled",
+        <| "Location" -> ConfirmBy[ getVectorDBDirectory[ ], vectorDBDirectoryQ, "Location" ] |>
+    ],
+    throwInternalFailure
+];
+
+InstallVectorDatabases // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*Vector Database Utilities*)
 $vectorDBDirectory := getVectorDBDirectory[ ];
 
