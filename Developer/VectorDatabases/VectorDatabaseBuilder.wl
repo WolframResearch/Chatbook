@@ -169,7 +169,7 @@ BuildVectorDatabase[ name_String, opts: OptionsPattern[ ] ] := Enclose[
 buildVectorDatabase // ClearAll;
 
 buildVectorDatabase[ name_String ] :=
-    Enclose @ Catch @ Module[ { dir, rel, src, db, valueBag, count, n, stream, values },
+    Enclose @ Catch @ Module[ { dir, rel, src, db, valueBag, count, n, stream, values, built },
 
         loadEmbeddingCache[ ];
 
@@ -221,8 +221,16 @@ buildVectorDatabase[ name_String ] :=
 
         values = Internal`BagPart[ valueBag, All ];
 
+        ConfirmBy[ rewriteDBData[ rel, name ], FileExistsQ, "Rewrite" ];
+
+        built = ConfirmMatch[
+            VectorDatabaseObject @ File @ FileNameJoin @ { rel, name <> ".wxf" },
+            $$vectorDatabase,
+            "Result"
+        ];
+
         ConfirmAssert[ Length @ values === count, "ValueCount" ];
-        ConfirmAssert[ First @ db[ "Dimensions" ] === count, "VectorCount" ];
+        ConfirmAssert[ First @ built[ "Dimensions" ] === count, "VectorCount" ];
 
         ConfirmBy[
             writeWXFFile[ FileNameJoin @ { dir, "Values.wxf" }, values, PerformanceGoal -> "Size" ],
@@ -244,13 +252,7 @@ buildVectorDatabase[ name_String ] :=
             "EmbeddingInformation"
         ];
 
-        ConfirmBy[ rewriteDBData[ rel, name ], FileExistsQ, "Rewrite" ];
-
-        ConfirmMatch[
-            VectorDatabaseObject @ File @ FileNameJoin @ { rel, name <> ".wxf" },
-            $$vectorDatabase,
-            "Result"
-        ]
+        ConfirmMatch[ built, $$vectorDatabase, "Result" ]
     ];
 
 (* ::**************************************************************************************************************:: *)
@@ -274,7 +276,7 @@ setDBDefaults[ dir_, name_String ] :=
 addBatch // ClearAll;
 
 addBatch[ db_VectorDatabaseObject, stream_InputStream, valueBag_Internal`Bag ] :=
-    Enclose @ Catch @ Module[ { batch, text, values, embeddings },
+    Enclose @ Catch @ Module[ { batch, text, values, embeddings, added },
 
         batch = ConfirmMatch[
             readJSONLines[ stream, $incrementalBuildBatchSize ],
@@ -289,9 +291,9 @@ addBatch[ db_VectorDatabaseObject, stream_InputStream, valueBag_Internal`Bag ] :
         values = ConfirmMatch[ batch[[ All, "Value" ]], { __ }, "Values" ];
         embeddings = ConfirmBy[ $lastEmbedding = GetEmbedding @ text, NumericArrayQ, "Embeddings" ];
         ConfirmAssert[ Length @ values === Length @ embeddings, "LengthCheck" ];
-        Confirm[ $lastAdded = AddToVectorDatabase[ db, embeddings ], "AddToVectorDatabase" ];
+        added = Confirm[ $lastAdded = AddToVectorDatabase[ db, embeddings ], "AddToVectorDatabase" ];
         Internal`StuffBag[ valueBag, values, 1 ];
-        ConfirmMatch[ db[ "Dimensions" ], { Internal`BagLength @ valueBag, $embeddingDimension }, "DimensionCheck" ];
+        ConfirmMatch[ added[ "Dimensions" ], { Internal`BagLength @ valueBag, $embeddingDimension }, "DimensionCheck" ];
         embeddings
     ];
 
