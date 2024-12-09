@@ -1647,6 +1647,7 @@ getPersonaMenuIcon[ icon_ ] := inlineChatbookExpressions @ icon;
 (* If "Full" is specified, resolve TemplateBox icons into their literal
    icon data, so that they will render correctly in places where the Chatbook.nb
    stylesheet is not available. *)
+getPersonaMenuIcon[ expr_, "Full" ] /; $VersionNumber < 14.2 := InlineTemplateBoxes @ getPersonaMenuIcon @ expr;
 getPersonaMenuIcon[ expr_, "Full" ] := getPersonaMenuIcon @ expr;
 
 (* ::**************************************************************************************************************:: *)
