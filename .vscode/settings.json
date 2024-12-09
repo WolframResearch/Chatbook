@@ -10,6 +10,7 @@
         "Checkmark",
         "Checkmarked",
         "CICD",
+        "clicktocopy",
         "Componentwise",
         "Connor",
         "deepseek",
@@ -104,5 +105,8 @@
         "\\\\:[0-9a-f]+",           // unicode characters
         "%[0-9A-F]{2}\\w+",         // url encoded characters
         "1\\:eJ.+"                  // compressed data
-    ]
+    ],
+    "[wolfram]": {
+        "files.trimTrailingWhitespace": true
+    }
 }
