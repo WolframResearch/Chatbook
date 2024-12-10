@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "1.5.2.3.3941177587"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.0.1.3942828913"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -2020,7 +2020,7 @@ Notebook[
            ]
           ]
          },
-         {FaceForm[RGBColor[0.866667, 0.0666667, 0.0, 1.0]]},
+         {FaceForm[RGBColor[0.290196, 0.584314, 0.8]]},
          StripOnInput -> False
         ],
         StyleBox[
