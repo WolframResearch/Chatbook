@@ -218,6 +218,7 @@
 "WorkspaceToolbarButtonTooltipNew" -> "Iniciar una nueva conversaci\[OAcute]n",
 "WorkspaceToolbarButtonTooltipOpenAsChatbook" -> "Abrir como un Cuaderno de chat",
 "WorkspaceSourcesOpenNotebooks" -> "Abrir cuadernos",
+"WorkspaceHistoryTitle" -> "Historial",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copiar respuesta al portapapeles\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "Copiar respuesta como\[Ellipsis]",

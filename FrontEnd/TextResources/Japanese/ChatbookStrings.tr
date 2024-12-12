@@ -218,6 +218,7 @@
 "WorkspaceToolbarButtonTooltipNew" -> "\:65B0\:3057\:3044\:4F1A\:8A71\:3092\:59CB\:3081\:308B",
 "WorkspaceToolbarButtonTooltipOpenAsChatbook" -> "\:30c1\:30e3\:30c3\:30c8\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:3068\:3057\:3066\:958b\:304f",
 "WorkspaceSourcesOpenNotebooks" -> "\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:3092\:958b\:304f",
+"WorkspaceHistoryTitle" -> "\:5c65\:6b74",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "\:56de\:7b54\:3092\:30af\:30ea\:30c3\:30d7\:30dc\:30fc\:30c9\:306b\:30b3\:30d4\:30fc\:3059\:308b\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "\:5225\:306e\:5f62\:5f0f\:3067\:56de\:7b54\:3092\:30b3\:30d4\:30fc\[Ellipsis]",

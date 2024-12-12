@@ -1868,8 +1868,7 @@ makeHistoryHeader[ extraContent_ ] := Pane[
     Grid[
         {
             {
-                (* FIXME: move "History" to text resources *)
-                Style[ "History", "Text", FontSize -> 14, FontColor -> RGBColor[ "#333333" ], FontWeight -> Bold ],
+                Style[ tr[ "WorkspaceHistoryTitle" ], "Text", FontSize -> 14, FontColor -> RGBColor[ "#333333" ], FontWeight -> Bold ],
                 extraContent
             }
         },
