@@ -1368,6 +1368,38 @@ $inlineToWorkspaceConversionRules := $inlineToWorkspaceConversionRules = Dispatc
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*saveAsChatNB*)
+saveAsChatNB // beginDefinition;
+
+saveAsChatNB[ targetObj_NotebookObject ] := Enclose[
+    Module[ { filepath, nbExpr },
+        filepath =
+            SystemDialogInput[
+                "FileSave",
+                If[ CurrentValue[ targetObj, { TaggingRules, "ConversationTitle" } ] === "",
+                    "UntitledChat-" <> DateString["ISODate"] <> ".nb"
+                    ,
+                    StringReplace[ CurrentValue[ targetObj, { TaggingRules, "ConversationTitle" } ], " " -> "_"] <> ".nb"
+                ]
+            ];
+        Which[
+            filepath === $Canceled,
+                Null,
+            StringQ[filepath] && StringEndsQ[filepath, ".nb"],
+                nbExpr = First[ NotebookGet @ targetObj, {} ];
+                nbExpr = Wolfram`Chatbook`ChatModes`UI`Private`cellsToChatNB[nbExpr];
+                Export[filepath, nbExpr],
+            True,
+                Null
+        ]
+    ],
+    throwInternalFailure
+]
+
+saveAsChatNB // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*popOutChatNB*)
 popOutChatNB // beginDefinition;
 popOutChatNB[ nbo_NotebookObject ] := popOutChatNB @ NotebookGet @ nbo;
