@@ -1379,7 +1379,9 @@ SaveAsChatNotebook // endExportedDefinition;
 saveAsChatNB // beginDefinition;
 
 saveAsChatNB[ targetObj_NotebookObject ] := Enclose[
-    Catch @ Module[ { title, filepath, nbExpr },
+    Catch @ Module[ { cellObjects, title, filepath, cells, nbExpr },
+        cellObjects = Cells @ targetObj;
+        If[ ! MatchQ[ cellObjects, { __CellObject } ], Throw @ Null ];
         title = Replace[
             CurrentValue[ targetObj, { TaggingRules, "ConversationTitle" } ],
             "" | Except[ _String ] -> None
@@ -1394,10 +1396,11 @@ saveAsChatNB[ targetObj_NotebookObject ] := Enclose[
         Which[
             filepath === $Canceled,
                 Null,
-            StringQ[filepath] && StringEndsQ[filepath, ".nb"],
-                nbExpr = First[ NotebookGet @ targetObj, Throw @ Null ];
-                nbExpr = ConfirmMatch[ cellsToChatNB @ nbExpr, _Notebook, "Converted" ];
-                Export[filepath, nbExpr],
+            StringQ @ filepath && StringEndsQ[ filepath, ".nb" ],
+                cells = NotebookRead @ cellObjects;
+                If[ ! MatchQ[ cells, { __Cell } ], Throw @ Null ];
+                nbExpr = ConfirmMatch[ cellsToChatNB @ cells, _Notebook, "Converted" ];
+                ConfirmBy[ Export[ filepath, nbExpr, "NB" ], FileExistsQ, "Exported" ],
             True,
                 Null
         ]
