@@ -1380,7 +1380,7 @@ SaveAsChatNotebook // endExportedDefinition;
 saveAsChatNB // beginDefinition;
 
 saveAsChatNB[ targetObj_NotebookObject ] := Enclose[
-    Catch @ Module[ { cellObjects, title, filepath, cells, nbExpr },
+    Catch @ Module[ { cellObjects, title, filepath, cells, settings, nbExpr },
         cellObjects = Cells @ targetObj;
         If[ ! MatchQ[ cellObjects, { __CellObject } ], Throw @ Null ];
         title = Replace[
@@ -1400,7 +1400,8 @@ saveAsChatNB[ targetObj_NotebookObject ] := Enclose[
             StringQ @ filepath && StringEndsQ[ filepath, ".nb" ],
                 cells = NotebookRead @ cellObjects;
                 If[ ! MatchQ[ cells, { __Cell } ], Throw @ Null ];
-                nbExpr = ConfirmMatch[ cellsToChatNB @ cells, _Notebook, "Converted" ];
+                settings = CurrentChatSettings @ targetObj;
+                nbExpr = ConfirmMatch[ cellsToChatNB[ cells, settings ], _Notebook, "Converted" ];
                 ConfirmBy[ Export[ filepath, nbExpr, "NB" ], FileExistsQ, "Exported" ],
             True,
                 Null
@@ -1415,24 +1416,24 @@ saveAsChatNB // endDefinition;
 (* ::Subsection::Closed:: *)
 (*popOutChatNB*)
 popOutChatNB // beginDefinition;
-popOutChatNB[ nbo_NotebookObject ] := popOutChatNB @ NotebookGet @ nbo;
-popOutChatNB[ Notebook[ cells_, ___ ] ] := popOutChatNB @ cells;
-popOutChatNB[ Dynamic[ messageList_ ] ] := popOutChatNB @ messageList;
-popOutChatNB[ cells: { ___Cell } ] := NotebookPut @ cellsToChatNB @ cells;
-popOutChatNB[ chat_Association ] := popOutChatNB0 @ chat;
+popOutChatNB[ nbo_NotebookObject ] := popOutChatNB[ NotebookGet @ nbo, CurrentChatSettings @ nbo ];
+popOutChatNB[ Notebook[ cells_, ___ ], settings_ ] := popOutChatNB[ cells, settings ];
+popOutChatNB[ cells: { ___Cell }, settings_ ] := NotebookPut @ cellsToChatNB[ cells, settings ];
+popOutChatNB[ chat_Association, settings_Association ] := popOutChatNB0[ chat, settings ];
 popOutChatNB // endDefinition;
 
 
 popOutChatNB0 // beginDefinition;
 
-popOutChatNB0[ id_ ] := Enclose[
-    Module[ { loaded, uuid, title, messages, cells },
+popOutChatNB0[ id_, settings_Association ] := Enclose[
+    Module[ { loaded, uuid, title, messages, cells, options },
         loaded = ConfirmBy[ LoadChat @ id, AssociationQ, "Loaded" ];
         uuid = ConfirmBy[ loaded[ "ConversationUUID" ], StringQ, "UUID" ];
         title = ConfirmBy[ loaded[ "ConversationTitle" ], StringQ, "Title" ];
         messages = ConfirmBy[ loaded[ "Messages" ], ListQ, "Messages" ];
         cells = ConfirmMatch[ ChatMessageToCell @ messages, { __Cell }, "Cells" ];
-        ConfirmMatch[ CreateChatNotebook @ cells, _NotebookObject, "Notebook" ]
+        options = Sequence @@ Normal[ settings, Association ];
+        ConfirmMatch[ CreateChatNotebook[ cells, options ], _NotebookObject, "Notebook" ]
     ],
     throwInternalFailure
 ];
@@ -1447,7 +1448,43 @@ cellsToChatNB // beginDefinition;
 cellsToChatNB[ cells: { ___Cell } ] :=
     Notebook[ cells /. $fromWorkspaceChatConversionRules, StyleDefinitions -> "Chatbook.nb" ];
 
+cellsToChatNB[ cells: { ___Cell }, settings_Association ] :=
+    Module[ { dingbat, notebook },
+
+        dingbat = Cell[ BoxData @ makeOutputDingbat @ settings, Background -> None ];
+
+        notebook = ReplaceAll[
+            cellsToChatNB @ cells,
+            {
+                Cell[ a__, "ChatInput", b___ ] :> Cell[ a, "ChatInput", b, CellDingbat -> $evaluatedChatInputDingbat ],
+                Cell[ a__, "ChatOutput", b___ ] :> Cell[ a, "ChatOutput", b, CellDingbat -> dingbat ]
+            }
+        ];
+
+        Append[
+            notebook,
+            TaggingRules -> <| "ChatNotebookSettings" -> KeyTake[ settings, $popOutSettings ] |>
+        ]
+    ];
+
 cellsToChatNB // endDefinition;
+
+
+$popOutSettings = { "LLMEvaluator", "Model" };
+
+
+$evaluatedChatInputDingbat = Cell[
+    BoxData @ DynamicBox @ ToBoxes[
+        If[ TrueQ @ CloudSystem`$CloudNotebooks,
+            RawBoxes @ TemplateBox[ { }, "ChatIconUser" ],
+            RawBoxes @ TemplateBox[ { }, "ChatInputCellDingbat" ]
+        ],
+        StandardForm
+    ],
+    Background  -> None,
+    CellFrame   -> 0,
+    CellMargins -> 0
+];
 
 
 $fromWorkspaceChatConversionRules := $fromWorkspaceChatConversionRules = Dispatch @ {
@@ -1977,7 +2014,7 @@ makeHistoryMenuItem[ Dynamic[ rows_ ], nbo_NotebookObject, chat_Association ] :=
                     { {
                         Button[
                             $popOutButtonLabel,
-                            popOutChatNB @ chat,
+                            popOutChatNB[ chat, CurrentChatSettings @ nbo ],
                             Appearance -> "Suppressed"
                         ],
                         Button[
