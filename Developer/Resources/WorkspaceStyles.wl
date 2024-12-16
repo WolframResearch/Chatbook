@@ -15,7 +15,10 @@ Cell[
     Magnification          -> 0.85,
     NotebookEventActions   -> {
         ParentList,
-        {"MenuCommand", "SaveRename"} :> Wolfram`Chatbook`ChatModes`UI`Private`saveAsChatNB[ EvaluationNotebook[ ] ]
+        { "MenuCommand", "SaveRename" } :> (
+            Needs[ "Wolfram`Chatbook`" -> None ];
+            Symbol[ "Wolfram`Chatbook`SaveAsChatNotebook" ][ EvaluationNotebook[ ] ]
+        )
     },
     Saveable               -> False,
     Selectable             -> False,

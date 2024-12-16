@@ -1368,6 +1368,13 @@ $inlineToWorkspaceConversionRules := $inlineToWorkspaceConversionRules = Dispatc
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*SaveAsChatNotebook*)
+SaveAsChatNotebook // beginDefinition;
+SaveAsChatNotebook[ nbo_NotebookObject ] := catchMine @ saveAsChatNB @ nbo;
+SaveAsChatNotebook // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*saveAsChatNB*)
 saveAsChatNB // beginDefinition;
 
