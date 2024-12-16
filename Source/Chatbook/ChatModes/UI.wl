@@ -1380,7 +1380,10 @@ saveAsChatNB // beginDefinition;
 
 saveAsChatNB[ targetObj_NotebookObject ] := Enclose[
     Catch @ Module[ { title, filepath, nbExpr },
-        title = Replace[ CurrentChatSettings[ targetObj, "ConversationTitle" ], Except[ "", _String ] -> None ];
+        title = Replace[
+            CurrentValue[ targetObj, { TaggingRules, "ConversationTitle" } ],
+            "" | Except[ _String ] -> None
+        ];
         filepath = SystemDialogInput[
             "FileSave",
             If[ title === None,
