@@ -1466,7 +1466,7 @@ cellsToChatNB // endDefinition;
 
 $popOutSettings = { "LLMEvaluator", "Model" };
 
-
+(* TODO: we should really have something better for this *)
 $evaluatedChatInputDingbat = Cell[
     BoxData @ DynamicBox @ ToBoxes[
         If[ TrueQ @ CloudSystem`$CloudNotebooks,
