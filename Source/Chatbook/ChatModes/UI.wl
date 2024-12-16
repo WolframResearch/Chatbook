@@ -1464,7 +1464,12 @@ cellsToChatNB[ cells: { ___Cell }, settings_Association ] :=
 cellsToChatNB // endDefinition;
 
 
-$popOutSettings = { "LLMEvaluator", "Model" };
+$popOutSettings = {
+    "LLMEvaluator",
+    "MaxContextTokens",
+    "MaxToolResponses",
+    "Model"
+};
 
 (* TODO: we should really have something better for this *)
 $evaluatedChatInputDingbat = Cell[
