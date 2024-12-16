@@ -1426,12 +1426,13 @@ popOutChatNB // endDefinition;
 popOutChatNB0 // beginDefinition;
 
 popOutChatNB0[ id_, settings_Association ] := Enclose[
-    Module[ { loaded, uuid, title, messages, cells, options },
+    Module[ { loaded, uuid, title, messages, dingbat, cells, options },
         loaded = ConfirmBy[ LoadChat @ id, AssociationQ, "Loaded" ];
         uuid = ConfirmBy[ loaded[ "ConversationUUID" ], StringQ, "UUID" ];
         title = ConfirmBy[ loaded[ "ConversationTitle" ], StringQ, "Title" ];
         messages = ConfirmBy[ loaded[ "Messages" ], ListQ, "Messages" ];
-        cells = ConfirmMatch[ ChatMessageToCell @ messages, { __Cell }, "Cells" ];
+        dingbat = Cell[ BoxData @ makeOutputDingbat @ settings, Background -> None ];
+        cells = ConfirmMatch[ updateCellDingbats[ ChatMessageToCell @ messages, dingbat ], { __Cell }, "Cells" ];
         options = Sequence @@ Normal[ settings, Association ];
         ConfirmMatch[ CreateChatNotebook[ cells, options ], _NotebookObject, "Notebook" ]
     ],
@@ -1452,14 +1453,7 @@ cellsToChatNB[ cells: { ___Cell }, settings_Association ] :=
     Module[ { dingbat, notebook },
 
         dingbat = Cell[ BoxData @ makeOutputDingbat @ settings, Background -> None ];
-
-        notebook = ReplaceAll[
-            cellsToChatNB @ cells,
-            {
-                Cell[ a__, "ChatInput", b___ ] :> Cell[ a, "ChatInput", b, CellDingbat -> $evaluatedChatInputDingbat ],
-                Cell[ a__, "ChatOutput", b___ ] :> Cell[ a, "ChatOutput", b, CellDingbat -> dingbat ]
-            }
-        ];
+        notebook = updateCellDingbats[ cellsToChatNB @ cells, dingbat ];
 
         Append[
             notebook,
@@ -1497,6 +1491,21 @@ $fromWorkspaceChatConversionRules := $fromWorkspaceChatConversionRules = Dispatc
     Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox", ___ ], "ChatOutput", ___ ] :>
         Cell[ Flatten @ TextData @ text, "ChatOutput" ]
 };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*updateCellDingbats*)
+updateCellDingbats // beginDefinition;
+
+updateCellDingbats[ cells_, outputDingbat_ ] := ReplaceAll[
+    cells,
+    {
+        Cell[ a__, "ChatInput" , b___ ] :> Cell[ a, "ChatInput" , b, CellDingbat -> $evaluatedChatInputDingbat ],
+        Cell[ a__, "ChatOutput", b___ ] :> Cell[ a, "ChatOutput", b, CellDingbat -> outputDingbat ]
+    }
+];
+
+updateCellDingbats // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
