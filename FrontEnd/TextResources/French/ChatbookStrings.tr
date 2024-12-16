@@ -218,6 +218,7 @@
 "WorkspaceToolbarButtonTooltipNew" -> "D\[EAcute]marrer une nouvelle conversation",
 "WorkspaceToolbarButtonTooltipOpenAsChatbook" -> "Ouvrir en tant que notebook de Chat",
 "WorkspaceSourcesOpenNotebooks" -> "Ouvrir les notebooks",
+"WorkspaceHistoryTitle" -> "Historique",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copier la r\[EAcute]ponse dans le presse\[Hyphen]papiers\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "Copier la r\[EAcute]ponse en tant que\[Ellipsis]",

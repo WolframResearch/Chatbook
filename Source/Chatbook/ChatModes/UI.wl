@@ -1368,6 +1368,51 @@ $inlineToWorkspaceConversionRules := $inlineToWorkspaceConversionRules = Dispatc
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*SaveAsChatNotebook*)
+SaveAsChatNotebook // beginDefinition;
+(* FIXME: This seems to often lead to a crash in 14.1, so we might need a version check to make this 14.2+ *)
+SaveAsChatNotebook[ nbo_NotebookObject ] := catchMine @ saveAsChatNB @ nbo;
+SaveAsChatNotebook // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*saveAsChatNB*)
+saveAsChatNB // beginDefinition;
+
+saveAsChatNB[ targetObj_NotebookObject ] := Enclose[
+    Catch @ Module[ { cellObjects, title, filepath, cells, nbExpr },
+        cellObjects = Cells @ targetObj;
+        If[ ! MatchQ[ cellObjects, { __CellObject } ], Throw @ Null ];
+        title = Replace[
+            CurrentValue[ targetObj, { TaggingRules, "ConversationTitle" } ],
+            "" | Except[ _String ] -> None
+        ];
+        filepath = SystemDialogInput[
+            "FileSave",
+            If[ title === None,
+                "UntitledChat-" <> DateString[ "ISODate" ] <> ".nb",
+                StringReplace[ title, " " -> "_" ] <> ".nb"
+            ]
+        ];
+        Which[
+            filepath === $Canceled,
+                Null,
+            StringQ @ filepath && StringEndsQ[ filepath, ".nb" ],
+                cells = NotebookRead @ cellObjects;
+                If[ ! MatchQ[ cells, { __Cell } ], Throw @ Null ];
+                nbExpr = ConfirmMatch[ cellsToChatNB @ cells, _Notebook, "Converted" ];
+                ConfirmBy[ Export[ filepath, nbExpr, "NB" ], FileExistsQ, "Exported" ],
+            True,
+                Null
+        ]
+    ],
+    throwInternalFailure
+];
+
+saveAsChatNB // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*popOutChatNB*)
 popOutChatNB // beginDefinition;
 popOutChatNB[ nbo_NotebookObject ] := popOutChatNB @ NotebookGet @ nbo;
@@ -1868,8 +1913,7 @@ makeHistoryHeader[ extraContent_ ] := Pane[
     Grid[
         {
             {
-                (* FIXME: move "History" to text resources *)
-                Style[ "History", "Text", FontSize -> 14, FontColor -> RGBColor[ "#333333" ], FontWeight -> Bold ],
+                Style[ tr[ "WorkspaceHistoryTitle" ], "Text", FontSize -> 14, FontColor -> RGBColor[ "#333333" ], FontWeight -> Bold ],
                 extraContent
             }
         },

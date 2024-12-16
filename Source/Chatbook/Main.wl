@@ -66,6 +66,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `GetExpressionURIs;
 `GetFocusedNotebook;
 `InlineTemplateBoxes;
+`InstallVectorDatabases;
 `InvalidateServiceCache;
 `ListSavedChats;
 `LoadChat;
@@ -76,6 +77,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `RelatedWolframAlphaQueries;
 `RemoveChatFromSearchIndex;
 `SandboxLinguisticAssistantData;
+`SaveAsChatNotebook;
 `SaveChat;
 `SearchChats;
 `SetModel;
@@ -232,6 +234,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "GetExpressionURIs",
     "GetFocusedNotebook",
     "InlineTemplateBoxes",
+    "InstallVectorDatabases",
     "ListSavedChats",
     "LoadChat",
     "LogChatTiming",
@@ -241,6 +244,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "RelatedWolframAlphaQueries",
     "RemoveChatFromSearchIndex",
     "SandboxLinguisticAssistantData",
+    "SaveAsChatNotebook",
     "SaveChat",
     "SearchChats",
     "SetModel",
