@@ -204,61 +204,63 @@ buildVectorDatabase[ name_String ] :=
         valueBag = Internal`Bag[ ];
         count = ConfirmMatch[ lineCount @ src, _Integer? Positive, "LineCount" ];
         n = 0;
-        stream = ConfirmMatch[ OpenRead @ src, _InputStream, "Stream" ];
+        WithCleanup[
+            stream = ConfirmMatch[ OpenRead @ src, _InputStream, "Stream" ],
 
-        withProgress[
-            While[
-                NumericArrayQ @ ConfirmMatch[ addBatch[ db, stream, valueBag ], _NumericArray|EndOfFile, "Add" ],
-                n = Internal`BagLength @ valueBag
-            ],
-            <|
-                "Text"          -> "Building database \""<>name<>"\"",
-                "ElapsedTime"   -> Automatic,
-                "RemainingTime" -> Automatic,
-                "ItemTotal"     :> count,
-                "ItemCurrent"   :> n,
-                "Progress"      :> Automatic
-            |>,
-            "Delay" -> 0,
-            UpdateInterval -> 1
-        ];
-
-        saveEmbeddingCache[ ];
-
-        values = Internal`BagPart[ valueBag, All ];
-
-        ConfirmBy[ rewriteDBData[ rel, name ], FileExistsQ, "Rewrite" ];
-
-        built = ConfirmMatch[
-            VectorDatabaseObject @ File @ FileNameJoin @ { rel, name <> ".wxf" },
-            $$vectorDatabase,
-            "Result"
-        ];
-
-        ConfirmAssert[ Length @ values === count, "ValueCount" ];
-        ConfirmAssert[ First @ built[ "Dimensions" ] === count, "VectorCount" ];
-
-        ConfirmBy[
-            writeWXFFile[ FileNameJoin @ { dir, "Values.wxf" }, values, PerformanceGoal -> "Size" ],
-            FileExistsQ,
-            "Values"
-        ];
-
-        ConfirmBy[
-            writeWXFFile[
-                FileNameJoin @ { dir, "EmbeddingInformation.wxf" },
+            withProgress[
+                While[
+                    NumericArrayQ @ ConfirmMatch[ addBatch[ db, stream, valueBag ], _NumericArray|EndOfFile, "Add" ],
+                    n = Internal`BagLength @ valueBag
+                ],
                 <|
-                    "Dimension" -> $embeddingDimension,
-                    "Type"      -> $embeddingType,
-                    "Model"     -> $embeddingModel,
-                    "Service"   -> $embeddingService
-                |>
-            ],
-            FileExistsQ,
-            "EmbeddingInformation"
-        ];
+                    "Text"          -> "Building database \""<>name<>"\"",
+                    "ElapsedTime"   -> Automatic,
+                    "RemainingTime" -> Automatic,
+                    "ItemTotal"     :> count,
+                    "ItemCurrent"   :> n,
+                    "Progress"      :> Automatic
+                |>,
+                "Delay" -> 0,
+                UpdateInterval -> 1
+            ];
 
-        Close @ stream;
+            saveEmbeddingCache[ ];
+
+            values = Internal`BagPart[ valueBag, All ];
+
+            ConfirmBy[ rewriteDBData[ rel, name ], FileExistsQ, "Rewrite" ];
+
+            built = ConfirmMatch[
+                VectorDatabaseObject @ File @ FileNameJoin @ { rel, name <> ".wxf" },
+                $$vectorDatabase,
+                "Result"
+            ];
+
+            ConfirmAssert[ Length @ values === count, "ValueCount" ];
+            ConfirmAssert[ First @ built[ "Dimensions" ] === count, "VectorCount" ];
+
+            ConfirmBy[
+                writeWXFFile[ FileNameJoin @ { dir, "Values.wxf" }, values, PerformanceGoal -> "Size" ],
+                FileExistsQ,
+                "Values"
+            ];
+
+            ConfirmBy[
+                writeWXFFile[
+                    FileNameJoin @ { dir, "EmbeddingInformation.wxf" },
+                    <|
+                        "Dimension" -> $embeddingDimension,
+                        "Type"      -> $embeddingType,
+                        "Model"     -> $embeddingModel,
+                        "Service"   -> $embeddingService
+                    |>
+                ],
+                FileExistsQ,
+                "EmbeddingInformation"
+            ],
+
+            Close @ stream
+        ];
 
         ConfirmMatch[ built, $$vectorDatabase, "Result" ]
     ];
