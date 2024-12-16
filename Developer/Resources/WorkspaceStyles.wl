@@ -13,6 +13,13 @@ Cell[
     DefaultNewCellStyle    -> "AutoMoveToChatInputField",
     DockedCells            -> $workspaceChatDockedCells,
     Magnification          -> 0.85,
+    NotebookEventActions   -> {
+        ParentList,
+        { "MenuCommand", "SaveRename" } :> (
+            Needs[ "Wolfram`Chatbook`" -> None ];
+            Symbol[ "Wolfram`Chatbook`SaveAsChatNotebook" ][ EvaluationNotebook[ ] ]
+        )
+    },
     Saveable               -> False,
     Selectable             -> False,
     ShowCellBracket        -> False,
