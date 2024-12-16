@@ -18,9 +18,10 @@ Notebook[
    NotebookEventActions -> {
     ParentList,
     {"MenuCommand", "SaveRename"} :>
-     Wolfram`Chatbook`ChatModes`UI`Private`saveAsChatNB[
+     (Needs["Wolfram`Chatbook`" -> None];
+     Symbol["Wolfram`Chatbook`SaveAsChatNotebook"][
       EvaluationNotebook[]
-     ]
+     ])
    },
    Selectable -> False,
    WindowSize -> {350, Automatic},
@@ -82,7 +83,7 @@ Notebook[
   Cell[StyleData["CellExpression"], Selectable -> True],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.0.4.3943089780"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.0.4.3943330431"|>
   ],
   Cell[
    StyleData["AttachedCell"],
