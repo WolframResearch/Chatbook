@@ -1,4 +1,4 @@
 <|
     "Name"     -> "WolframAlphaQueries",
-    "Location" -> CloudObject[ "https://www.wolframcloud.com/obj/wolframai-content/VectorDatabases/1.2.0/Source/WolframAlphaQueries.jsonl" ]
+    "Location" -> CloudObject[ "https://www.wolframcloud.com/obj/wolframai-content/VectorDatabases/WolframAlphaQueries/1.3.0/WolframAlphaQueries.jsonl" ]
 |>
