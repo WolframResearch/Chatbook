@@ -58,6 +58,7 @@ $vectorDBDownloadURLs = AssociationMap[
 (*Paths*)
 $pacletVectorDBDirectory := FileNameJoin @ { $thisPaclet[ "Location" ], "Assets/VectorDatabases" };
 $localVectorDBDirectory  := ChatbookFilesDirectory[ "VectorDatabases" ];
+$cloudVectorDBDirectory  := PacletObject[ "Wolfram/NotebookAssistantCloudResources" ][ "AssetLocation", "VectorDatabases" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -105,6 +106,7 @@ getVectorDBDirectory[ ] := Enclose[
     $vectorDBDirectory = SelectFirst[
         {
             $pacletVectorDBDirectory,
+            If[ $CloudEvaluation, $cloudVectorDBDirectory, Nothing ],
             $localVectorDBDirectory
         },
         vectorDBDirectoryQ,
