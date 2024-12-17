@@ -24,10 +24,24 @@ $resourceSnippetsCacheDirectory := $resourceSnippetsCacheDirectory =
 
 $rerankMethod := CurrentChatSettings[ "DocumentationRerankMethod" ];
 
+$defaultSources = { "DataRepository", "Documentation", "FunctionRepository" };
+
+$sourceAliases = <|
+    "DataRepository"     -> "DataRepositoryURIs",
+    "Documentation"      -> "DocumentationURIs",
+    "FunctionRepository" -> "FunctionRepositoryURIs"
+|>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Messages*)
 Chatbook::CloudDownloadError = "Unable to download required data from the cloud. Please try again later.";
+Chatbook::InvalidSources     = "Invalid value for the \"Sources\" option: `1`.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*$RelatedDocumentationSources*)
+$RelatedDocumentationSources = $defaultSources;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -36,7 +50,8 @@ RelatedDocumentation // beginDefinition;
 RelatedDocumentation // Options = {
     "FilteredCount" -> Automatic,
     "FilterResults" -> Automatic,
-    "MaxItems"      -> 20
+    "MaxItems"      -> 20,
+    "Sources"       :> $RelatedDocumentationSources
 };
 
 GeneralUtilities`SetUsage[ RelatedDocumentation, "\
@@ -69,20 +84,20 @@ RelatedDocumentation[ prompt_, Automatic, count_, opts: OptionsPattern[ ] ] :=
 
 RelatedDocumentation[ prompt: $$prompt, "URIs", Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
     (* TODO: filter results *)
-    ConfirmMatch[ vectorDBSearch[ "DocumentationURIs", prompt, "Values" ], { ___String }, "Queries" ],
+    ConfirmMatch[ vectorDBSearch[ getSources @ OptionValue[ "Sources" ], prompt, "Values" ], { ___String }, "Queries" ],
     throwInternalFailure
 ];
 
 RelatedDocumentation[ All, "URIs", Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
     (* TODO: filter results *)
-    Union @ ConfirmMatch[ vectorDBSearch[ "DocumentationURIs", All ], { __String }, "QueryList" ],
+    Union @ ConfirmMatch[ vectorDBSearch[ getSources @ OptionValue[ "Sources" ], All ], { __String }, "QueryList" ],
     throwInternalFailure
 ];
 
 RelatedDocumentation[ prompt: $$prompt, "Snippets", Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
     ConfirmMatch[
         (* TODO: filter results *)
-        DeleteMissing[ makeDocSnippets @ vectorDBSearch[ "DocumentationURIs", prompt, "Values" ] ],
+        DeleteMissing[ makeDocSnippets @ vectorDBSearch[ getSources @ OptionValue[ "Sources" ], prompt, "Values" ] ],
         { ___String },
         "Snippets"
     ],
@@ -105,7 +120,14 @@ RelatedDocumentation[
 ] :=
     catchMine @ Enclose[
         (* TODO: filter results *)
-        Take[ ConfirmBy[ vectorDBSearch[ "DocumentationURIs", prompt, property ], ListQ, "Results" ], UpTo @ n ],
+        Take[
+            ConfirmBy[
+                vectorDBSearch[ getSources @ OptionValue[ "Sources" ], prompt, property ],
+                ListQ,
+                "Results"
+            ],
+            UpTo @ n
+        ],
         throwInternalFailure
     ];
 
@@ -140,6 +162,23 @@ RelatedDocumentation[ args___ ] := catchMine @ throwFailure[
 ];
 
 RelatedDocumentation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getSources*)
+getSources // beginDefinition;
+getSources[ names_List ] := toSource /@ Flatten @ names;
+getSources[ name_String ] := { toSource @ name };
+getSources[ Automatic|All ] := toSource /@ $defaultSources;
+getSources[ source_ ] := throwFailure[ "InvalidSources", source ];
+getSources // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toSource*)
+toSource // beginDefinition;
+toSource[ name_String ] := Lookup[ $sourceAliases, name, name ];
+toSource // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
