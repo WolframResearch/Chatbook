@@ -49,9 +49,8 @@ $maxExtraFiles     = 20;
 (*Remote Content Locations*)
 $baseVectorDatabasesURL = "https://www.wolframcloud.com/obj/wolframai-content/VectorDatabases";
 
-(* TODO: these will be moved to the data repository: *)
 $vectorDBDownloadURLs = AssociationMap[
-    URLBuild @ { $baseVectorDatabasesURL, $dbVersion, # <> ".zip" } &,
+    URLBuild @ { $baseVectorDatabasesURL, #, $vectorDatabases[ #, "Version" ], # <> ".zip" } &,
     $vectorDBNames
 ];
 
@@ -59,7 +58,7 @@ $vectorDBDownloadURLs = AssociationMap[
 (* ::Subsection::Closed:: *)
 (*Paths*)
 $pacletVectorDBDirectory := FileNameJoin @ { $thisPaclet[ "Location" ], "Assets/VectorDatabases" };
-$localVectorDBDirectory  := ChatbookFilesDirectory @ { "VectorDatabases", $dbVersion };
+$localVectorDBDirectory  := ChatbookFilesDirectory[ "VectorDatabases" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -129,11 +128,15 @@ vectorDBDirectoryQ // endDefinition;
 vectorDBDirectoryQ0 // beginDefinition;
 
 vectorDBDirectoryQ0[ dir_? DirectoryQ ] := Enclose[
-    Module[ { name, existsQ, expected },
-        name     = ConfirmBy[ FileBaseName @ dir, StringQ, "Name" ];
-        existsQ  = FileExistsQ @ FileNameJoin @ { dir, # } &;
-        expected = { name <> ".wxf", "Values.wxf", name <> "-vectors.usearch" };
-        TrueQ @ AllTrue[ expected, existsQ ]
+    Module[ { name, existsQ, expected, versionFile, expectedVersion },
+
+        name            = ConfirmBy[ FileBaseName @ dir, StringQ, "Name" ];
+        existsQ         = FileExistsQ @ FileNameJoin @ { dir, # } &;
+        expected        = { name <> ".wxf", "Values.wxf", name <> "-vectors.usearch" };
+        versionFile     = FileNameJoin @ { dir, "Version.wl" };
+        expectedVersion = ConfirmBy[ $vectorDatabases[ name, "Version" ], StringQ, "ExpectedVersion" ];
+
+        TrueQ[ AllTrue[ expected, existsQ ] && FileExistsQ @ versionFile && Get @ versionFile === expectedVersion ]
     ],
     throwInternalFailure
 ];
@@ -153,12 +156,15 @@ downloadVectorDatabases[ ] /; ! $allowDownload :=
 downloadVectorDatabases[ ] :=
     downloadVectorDatabases[ $localVectorDBDirectory, $vectorDBDownloadURLs ];
 
-downloadVectorDatabases[ dir0_, urls_Association ] := Enclose[
-    Module[ { dir, lock, names, sizes, tasks },
+downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
+    Module[ { dir, lock, names, urls, sizes, tasks },
 
-        dir   = ConfirmBy[ GeneralUtilities`EnsureDirectory @ dir0, DirectoryQ, "Directory" ];
+        dir = ConfirmBy[ GeneralUtilities`EnsureDirectory @ dir0, DirectoryQ, "Directory" ];
+        cleanupLegacyVectorDBFiles @ dir;
+        names = Select[ $vectorDBNames, ! DirectoryQ @ FileNameJoin @ { dir, # } & ];
+        urls  = KeyTake[ urls0, names ];
+
         lock  = FileNameJoin @ { dir, "download.lock" };
-        names = ConfirmMatch[ Keys @ urls, { __String }, "Names" ];
         sizes = ConfirmMatch[ getDownloadSize /@ Values @ urls, { __? Positive }, "Sizes" ];
 
         $downloadProgress = AssociationMap[ 0 &, names ];
@@ -193,6 +199,21 @@ downloadVectorDatabases // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*cleanupLegacyVectorDBFiles*)
+cleanupLegacyVectorDBFiles // beginDefinition;
+
+cleanupLegacyVectorDBFiles[ dir_String ] := Quiet @ Map[
+    DeleteDirectory[ #1, DeleteContents -> True ] &,
+    Join[
+        Select[ FileNames[ DigitCharacter.. ~~ "." ~~ DigitCharacter.. ~~ "." ~~ DigitCharacter.., dir ], DirectoryQ ],
+        Select[ FileNames[ $vectorDBNames, dir ], DirectoryQ[ # ] && ! vectorDBDirectoryQ0[ # ] & ]
+    ]
+];
+
+cleanupLegacyVectorDBFiles // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*getDownloadSize*)
 getDownloadSize // beginDefinition;
 getDownloadSize[ url_String ] := getDownloadSize @ CloudObject @ url;
@@ -221,10 +242,15 @@ unpackVectorDatabases // endDefinition;
 unpackVectorDatabase // beginDefinition;
 
 unpackVectorDatabase[ zip_String? FileExistsQ ] := Enclose[
-    Module[ { root, dir, res },
+    Module[ { name, version, root, dir, res, versionFile },
+        name = ConfirmBy[ FileBaseName @ zip, StringQ, "Name" ];
+        version = ConfirmBy[ $vectorDatabases[ name, "Version" ], StringQ, "Version" ];
         root = ConfirmBy[ DirectoryName @ zip, DirectoryQ, "RootDirectory" ];
-        dir = ConfirmBy[ GeneralUtilities`EnsureDirectory @ { root, FileBaseName @ zip }, DirectoryQ, "Directory" ];
+        dir = ConfirmBy[ GeneralUtilities`EnsureDirectory @ { root, name }, DirectoryQ, "Directory" ];
         res = ConfirmMatch[ ExtractArchive[ zip, dir, OverwriteTarget -> True ], { __? FileExistsQ }, "Extracted" ];
+        versionFile = FileNameJoin @ { dir, "Version.wl" };
+        Put[ version, versionFile ];
+        ConfirmAssert[ Get @ versionFile === version, "VersionCheck" ];
         DeleteFile @ zip;
         res
     ],
