@@ -32,6 +32,10 @@ $sourceAliases = <|
     "FunctionRepository" -> "FunctionRepositoryURIs"
 |>;
 
+
+$minUnfilteredItems       = 20;
+$unfilteredItemsPerSource = 10;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Messages*)
@@ -50,7 +54,8 @@ RelatedDocumentation // beginDefinition;
 RelatedDocumentation // Options = {
     "FilteredCount" -> Automatic,
     "FilterResults" -> Automatic,
-    "MaxItems"      -> 20,
+    "MaxItems"      -> Automatic,
+    "RerankMethod"  -> Automatic,
     "Sources"       :> $RelatedDocumentationSources
 };
 
@@ -77,7 +82,12 @@ RelatedDocumentation[ prompt_, count: _Integer | UpTo[ _Integer ], opts: Options
     RelatedDocumentation[ prompt, Automatic, count, opts ];
 
 RelatedDocumentation[ prompt_, property_, opts: OptionsPattern[ ] ] :=
-    catchMine @ RelatedDocumentation[ prompt, property, OptionValue @ MaxItems, opts ];
+    catchMine @ RelatedDocumentation[
+        prompt,
+        property,
+        getMaxItems[ OptionValue @ MaxItems, getSources @ OptionValue[ "Sources" ] ],
+        opts
+    ];
 
 RelatedDocumentation[ prompt_, Automatic, count_, opts: OptionsPattern[ ] ] :=
     RelatedDocumentation[ prompt, "URIs", count, opts ];
@@ -148,11 +158,19 @@ RelatedDocumentation[ prompt_, property: "Index"|"Distance", n_Integer, opts: Op
     ];
 
 RelatedDocumentation[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
-    catchMine @ relatedDocumentationPrompt[
-        ensureChatMessages @ prompt,
-        n,
-        MatchQ[ OptionValue[ "FilterResults" ], Automatic|True ],
-        Replace[ OptionValue[ "FilteredCount" ], Automatic -> Ceiling[ n / 4 ] ]
+    catchMine @ Block[
+        {
+            $rerankMethod = Replace[
+                OptionValue[ "RerankMethod" ],
+                $$unspecified :> CurrentChatSettings[ "DocumentationRerankMethod" ]
+            ]
+        },
+        relatedDocumentationPrompt[
+            ensureChatMessages @ prompt,
+            n,
+            MatchQ[ OptionValue[ "FilterResults" ], Automatic|True ],
+            Replace[ OptionValue[ "FilteredCount" ], Automatic -> Ceiling[ n / 4 ] ]
+        ]
     ];
 
 RelatedDocumentation[ args___ ] := catchMine @ throwFailure[
@@ -162,6 +180,16 @@ RelatedDocumentation[ args___ ] := catchMine @ throwFailure[
 ];
 
 RelatedDocumentation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getMaxItems*)
+getMaxItems // beginDefinition;
+getMaxItems[ $$unspecified, sources_List ] := Max[ $minUnfilteredItems, $unfilteredItemsPerSource * Length @ sources ];
+getMaxItems[ Infinity, _ ] := 50;
+getMaxItems[ n: $$size, _ ] := Ceiling @ n;
+getMaxItems[ UpTo[ n_ ], sources_ ] := getMaxItems[ n, sources ];
+getMaxItems // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -246,6 +274,20 @@ filterSnippets // beginDefinition;
 
 filterSnippets[ messages_, uris: { __String }, Except[ True ], filterCount_ ] := Enclose[
     ConfirmMatch[ makeDocSnippets @ uris, { ___String }, "Snippets" ],
+    throwInternalFailure
+];
+
+
+filterSnippets[
+    messages_,
+    uris: { __String },
+    True,
+    filterCount_Integer? Positive
+] /; $rerankMethod === None := Enclose[
+    Catch @ Module[ { snippets },
+        snippets = ConfirmMatch[ makeDocSnippets @ uris, { ___String }, "Snippets" ];
+        Take[ snippets, UpTo[ filterCount ] ]
+    ],
     throwInternalFailure
 ];
 
@@ -344,7 +386,7 @@ $bestDocumentationPrompt = StringTemplate[ "\
 Your task is to read a chat transcript between a user and assistant, and then select any relevant Wolfram Language \
 documentation snippets that could help the assistant answer the user's latest message.
 
-Each snippet is uniquely identified by a URI (always starts with 'paclet:' or 'https://resources.wolframcloud.com').
+Each snippet is uniquely identified by a URI (always starts with 'paclet:' or 'https://*.wolframcloud.com').
 
 Choose up to %%FilteredCount%% documentation snippets that would help answer the user's MOST RECENT message.
 
@@ -551,6 +593,13 @@ snippetCacheFile[ uri_String ] /; StringStartsQ[ uri, "paclet:" ] :=
 snippetCacheFile[ uri_String ] /; StringStartsQ[ uri, "https://resources.wolframcloud.com/" ] :=
     snippetCacheFile[ uri, StringDelete[ uri, "https://resources.wolframcloud.com/" ], "ResourceSystem" ];
 
+snippetCacheFile[ uri_String ] /; StringStartsQ[ uri, "https://datarepository.wolframcloud.com/" ] :=
+    snippetCacheFile[
+        uri,
+        "DataRepository" <> StringDelete[ uri, "https://datarepository.wolframcloud.com/" ],
+        "ResourceSystem"
+    ];
+
 snippetCacheFile[ uri_String, path0_String, name_String ] := Enclose[
     Module[ { path, file },
         path = ConfirmBy[ StringTrim[ path0, "/" ] <> ".wxf", StringQ, "Path" ];
@@ -651,6 +700,9 @@ toDocSnippetURL0 // beginDefinition;
 
 toDocSnippetURL0[ { "resources.wolframcloud.com", { "", repo_String, "resources", name_String } } ] :=
     URLBuild @ { $resourceSnippetBaseURL, repo, name <> ".wxf" };
+
+toDocSnippetURL0[ { "datarepository.wolframcloud.com", { "", "resources", name_String } } ] :=
+    URLBuild @ { $resourceSnippetBaseURL, "DataRepository", name <> ".wxf" };
 
 toDocSnippetURL0 // endDefinition;
 
