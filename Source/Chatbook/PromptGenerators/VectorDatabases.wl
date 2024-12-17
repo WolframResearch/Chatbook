@@ -23,7 +23,6 @@ $vectorDatabases = <|
 |>;
 
 $vectorDBNames   = Keys @ $vectorDatabases;
-$dbVersion       = "1.2.0";
 $allowDownload   = True;
 $cacheEmbeddings = True;
 
