@@ -15,11 +15,77 @@ HoldComplete[
 (* ::Section::Closed:: *)
 (*DefaultPromptGenerators*)
 $defaultPromptGenerators := $defaultPromptGenerators = <|
-    "RelatedDocumentation"       -> LLMPromptGenerator[ relatedDocumentationGenerator, "Messages" ](*,
-    "RelatedWolframAlphaQueries" -> LLMPromptGenerator[ relatedWolframAlphaQueriesGenerator, "Messages" ]*)
+    "RelatedDocumentation" -> LLMPromptGenerator[ relatedDocumentationGenerator, "Messages" ],
+    "WebSearch"            -> LLMPromptGenerator[ webSearchGenerator           , "Messages" ]
 |>;
 
 (* TODO: update RelatedWolframAlphaQueries to support same argument types as RelatedDocumentation *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*webSearchGenerator*)
+webSearchGenerator // beginDefinition;
+
+webSearchGenerator[ messages: $$chatMessages ] /; CurrentChatSettings[ "WebSearchRAGMethod" ] === "Tavily" := Enclose[
+    Catch @ Module[ { key, string, request, response, data, results, snippets },
+
+        key = SystemCredential[ "TAVILY_API_KEY" ];
+        If[ ! StringQ @ key, Throw[ "" ] ];
+
+        string = StringDelete[
+            ConfirmBy[ getSmallContextString @ messages, StringQ, "String" ],
+            Shortest[ ("/wl"|"/wa") ~~ __ ~~ "ENDRESULT\n" ]
+        ];
+
+        If[ StringLength @ string > 200, string = "..." <> StringTake[ string, { -197, -1 } ] ];
+
+        request = HTTPRequest[
+            "https://api.tavily.com/search",
+            <|
+                "Method"      -> "POST",
+                "ContentType" -> "application/json",
+                "Body"        -> Developer`WriteRawJSONString @ <| "query" -> string, "api_key" -> key |>
+            |>
+        ];
+
+        response = URLRead @ request;
+
+        If[ response[ "StatusCode" ] =!= 200, Throw[ "" ] ];
+
+        data = Developer`ReadRawJSONString @ ByteArrayToString @ response[ "BodyByteArray" ];
+        If[ ! AssociationQ @ data, Throw[ "" ] ];
+
+        results = Select[
+            ConfirmMatch[ data[ "results" ], { KeyValuePattern[ "score" -> $$size ]... }, "Results" ],
+            #score > 0.1 &
+        ];
+
+        If[ results === { }, Throw[ "" ] ];
+
+        snippets = ConfirmMatch[ formatWebSearchResult /@ results, { __String }, "Snippets" ];
+
+        "# Web Search Results\n\n" <> StringRiffle[ snippets, "\n\n======\n\n" ] <> "\n\n======\n\n"
+    ],
+    throwInternalFailure
+];
+
+webSearchGenerator[ messages_ ] :=
+    "";
+
+webSearchGenerator // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*formatWebSearchResult*)
+formatWebSearchResult // beginDefinition;
+
+formatWebSearchResult[ KeyValuePattern @ {
+    "title"   -> title_String,
+    "url"     -> url_String,
+    "content" -> content_String
+} ] := "## [" <> title <> "](" <> url <> ")\n\n" <> content;
+
+formatWebSearchResult // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
