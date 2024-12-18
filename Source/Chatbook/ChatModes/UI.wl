@@ -256,7 +256,14 @@ toolbarButtonLabel // endDefinition;
 toolbarButtonLabel0 // beginDefinition;
 
 toolbarButtonLabel0[ iconName_String, labelName_String, {styleOpts___}, {gridOpts___}] :=
-    toolbarButtonLabel0[ iconName, tr[ "WorkspaceToolbarButtonLabel"<>labelName ], {styleOpts}, {gridOpts} ];
+    With[ { label = tr[ "WorkspaceToolbarButtonLabel"<>labelName ] },
+        toolbarButtonLabel0[
+            iconName,
+            If[ StringQ @ label, Style @ label, label ],
+            {styleOpts},
+            {gridOpts}
+        ]
+    ];
 
 toolbarButtonLabel0[ iconName_String, None, {styleOpts___}, {gridOpts___}] :=
     Grid[
