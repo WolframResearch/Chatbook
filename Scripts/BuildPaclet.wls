@@ -27,7 +27,7 @@ result = checkResult @ cicd`BuildPaclet[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Install*)
-If[ MemberQ[ $ScriptCommandLine, "-i"|"--install"|"--install=true" ],
+If[ MemberQ[ $scriptCommandLine, "-i"|"--install"|"--install=true" ],
     archive = cFile @ result[ "PacletArchive" ];
     cicd`ConsoleNotice @ SequenceForm[ "Installing paclet file: ", archive ];
     installed = cicd`ScriptConfirmBy[ PacletInstall[ archive, ForceVersionInstall -> True ], PacletObjectQ ];
