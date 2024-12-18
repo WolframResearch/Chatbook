@@ -909,24 +909,24 @@ attachCopiedTooltip[ ] :=
                       StyleBox[
                        FEPrivate`ImportImage[
                         FrontEnd`FileName[{"Typeset", "ClickToCopy"}, "Checkmark.png"]],
-                        Magnification -> 0.5`]], 
-                     BaselinePosition -> Scaled[0.1`] -> Baseline], 
+                        Magnification -> 0.5`]],
+                     BaselinePosition -> Scaled[0.1`] -> Baseline],
                     DynamicBox[
-                     ToBoxes[FEPrivate`FrontEndResource["FEStrings", 
-                       "clicktocopyDoneTooltip"], StandardForm]]}}, 
+                     ToBoxes[FEPrivate`FrontEndResource["FEStrings",
+                       "clicktocopyDoneTooltip"], StandardForm]]}},
                   GridBoxAlignment -> {"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
-                   GridBoxItemSize -> {"Columns" -> {{Automatic}}, 
-                    "Rows" -> {{Automatic}}}, 
-                  GridBoxSpacings -> {"Columns" -> {{0.3`}}, "Rows" -> {{0}}}], 
-                 Alignment -> Center, 
-                 Appearance -> {"Default" -> 
-                    FrontEnd`FileName[{"Chatbook"}, "CopyTooltip.9.png"]}, ImageSize -> {100, Automatic}, 
-                 FrameMargins -> {{0, 0}, {0, 0}}, 
-                 BaseStyle -> {LineBreakWithin -> Automatic, 
-                   LinebreakAdjustments -> {1.`, 10, 1, 0, 1}, LineIndent -> 0, 
-                   Hyphenation -> False, 
+                   GridBoxItemSize -> {"Columns" -> {{Automatic}},
+                    "Rows" -> {{Automatic}}},
+                  GridBoxSpacings -> {"Columns" -> {{0.3`}}, "Rows" -> {{0}}}],
+                 Alignment -> Center,
+                 Appearance -> {"Default" ->
+                    FrontEnd`FileName[{"Chatbook"}, "CopyTooltip.9.png"]}, ImageSize -> {100, Automatic},
+                 FrameMargins -> {{0, 0}, {0, 0}},
+                 BaseStyle -> {LineBreakWithin -> Automatic,
+                   LinebreakAdjustments -> {1.`, 10, 1, 0, 1}, LineIndent -> 0,
+                   Hyphenation -> False,
                    HyphenationOptions -> {"HyphenationCharacter" -> "\[Null]"},
-                   FontFamily -> "Source Sans Pro", FontSize -> 12, 
+                   FontFamily -> "Source Sans Pro", FontSize -> 12,
                    FontColor -> GrayLevel[0.5]}],
                 Alignment    -> { Center, Bottom },
                 FrameMargins -> 0,
@@ -935,7 +935,7 @@ attachCopiedTooltip[ ] :=
         ] ],
         { Center, Bottom }, Offset[ { 0, -7 }, Automatic ], { Center, Center },
         RemovalConditions -> { "MouseExit" }
-    ]; 
+    ];
 
 attachCopiedTooltip // endDefinition;
 
@@ -1941,7 +1941,10 @@ makeInteractiveCodeCell[ lang_String? wolframLanguageQ, code0_ ] := Enclose[
             LanguageCategory     -> "Input",
             ShowAutoStyles       -> True,
             ShowStringCharacters -> True,
-            ShowSyntaxStyles     -> True
+            ShowSyntaxStyles     -> True,
+            TranslationOptions   -> {
+                "Enabled" -> Dynamic @ AbsoluteCurrentValue[ $FrontEnd, { TranslationOptions, "Enabled" } ]
+            }
         ];
         handler = inlineInteractiveCodeCell[ display, code ];
         codeBlockFrame[ ToBoxes @ handler, code ]
@@ -2418,7 +2421,10 @@ attachment[ alt_String, key_String, expr_ ] :=
             LanguageCategory     -> "Input",
             ShowAutoStyles       -> True,
             ShowStringCharacters -> True,
-            ShowSyntaxStyles     -> True
+            ShowSyntaxStyles     -> True,
+            TranslationOptions   -> {
+                "Enabled" -> Dynamic @ AbsoluteCurrentValue[ $FrontEnd, { TranslationOptions, "Enabled" } ]
+            }
         ];
         handler = inlineInteractiveCodeCell[ display, Cell[ BoxData @ cachedBoxes @ expr, "Input" ] ];
         codeBlockFrame[ Cell @ BoxData @ ToBoxes @ handler, expr ]
