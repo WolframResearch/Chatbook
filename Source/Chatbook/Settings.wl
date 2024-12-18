@@ -407,7 +407,7 @@ $autoSettingKeyDependencies = <|
     "HandlerFunctionsKeys"       -> "EnableLLMServices",
     "HybridToolMethod"           -> { "Model", "ToolsEnabled" },
     "MaxCellStringLength"        -> { "Model", "MaxContextTokens" },
-    "MaxContextTokens"           -> "Model",
+    "MaxContextTokens"           -> { "Authentication", "Model" },
     "MaxOutputCellStringLength"  -> "MaxCellStringLength",
     "MaxTokens"                  -> "Model",
     "Multimodal"                 -> { "EnableLLMServices", "Model" },
@@ -621,7 +621,7 @@ styleStopTokens // endDefinition;
 chooseMaxCellStringLength // beginDefinition;
 chooseMaxCellStringLength[ as_Association ] := chooseMaxCellStringLength[ as, as[ "MaxContextTokens" ] ];
 chooseMaxCellStringLength[ as_, Infinity ] := Infinity;
-chooseMaxCellStringLength[ as_, tokens: $$size ] := Ceiling[ $defaultMaxCellStringLength * tokens / 2^13 ];
+chooseMaxCellStringLength[ as_, tokens: $$size ] := Ceiling[ $defaultMaxCellStringLength * tokens / 2^14 ];
 chooseMaxCellStringLength // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -637,6 +637,7 @@ chooseMaxOutputCellStringLength // endDefinition;
 (*autoMaxContextTokens*)
 autoMaxContextTokens // beginDefinition;
 autoMaxContextTokens[ as_? ollamaQ ] := serviceMaxContextTokens @ as;
+autoMaxContextTokens[ as_Association? llmKitQ ] := Min[ 2^16, autoMaxContextTokens[ as, as[ "Model" ] ] ];
 autoMaxContextTokens[ as_Association ] := autoMaxContextTokens[ as, as[ "Model" ] ];
 autoMaxContextTokens[ as_, model_ ] := autoMaxContextTokens[ as, model, toModelName @ model ];
 autoMaxContextTokens[ _, _, name_String ] := autoMaxContextTokens0 @ name;
