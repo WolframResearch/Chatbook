@@ -48,8 +48,9 @@ $$vectorDatabase = _VectorDatabaseObject? System`Private`ValidQ;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Vector Databases*)
-$vectorDBSourceDirectory = FileNameJoin @ { DirectoryName @ $InputFileName, "SourceData" };
-$vectorDBTargetDirectory = FileNameJoin @ { DirectoryName[ $InputFileName, 3 ], "Assets", "VectorDatabases" };
+$defaultVectorDBSourceDirectory = FileNameJoin @ { DirectoryName @ $InputFileName, "SourceData" };
+$vectorDBSourceDirectory       := getVectorDBSourceDirectory[ ];
+$vectorDBTargetDirectory        = FileNameJoin @ { DirectoryName[ $InputFileName, 3 ], "Assets", "VectorDatabases" };
 
 $incrementalBuildBatchSize = 512;
 $dbConnectivity            = 16;
@@ -86,29 +87,36 @@ $embeddingCache = <| |>;
 ImportVectorDatabaseData // ClearAll;
 
 ImportVectorDatabaseData[ name_String ] :=
-    Enclose @ Module[ { file, data },
-        file = ConfirmBy[ FileNameJoin @ { $vectorDBSourceDirectory, name<>".jsonl" }, FileExistsQ, "File" ];
-        data = ConfirmMatch[ jsonlImport @ file, { ___Association? AssociationQ }, "Data" ];
-        data
+    Enclose @ Module[ { file },
+        file = ConfirmBy[ getVectorDBSourceFile @ name, FileExistsQ, "File" ];
+        ImportVectorDatabaseData @ File @ file
     ];
+
+ImportVectorDatabaseData[ file_File ] :=
+    Enclose @ ConfirmMatch[ jsonlImport @ file, { ___Association? AssociationQ }, "Data" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*ExportVectorDatabaseData*)
 ExportVectorDatabaseData // ClearAll;
 
-ExportVectorDatabaseData[ name_String, data0_List ] :=
-    Enclose @ Module[ { data, dir, file },
-        data = ConfirmBy[ toDBData @ data0, dbDataQ, "Data" ];
+ExportVectorDatabaseData[ name_String, data_List ] :=
+    Enclose @ Module[ { dir, file },
         dir  = ConfirmBy[ ensureDirectory @ $vectorDBSourceDirectory, DirectoryQ, "Directory" ];
         file = ConfirmBy[ FileNameJoin @ { dir, name<>".jsonl" }, StringQ, "File" ];
+        ExportVectorDatabaseData[ File @ file, data ]
+    ];
+
+ExportVectorDatabaseData[ file_File, data0_List ] :=
+    Enclose @ Module[ { data },
+        data = ConfirmBy[ toDBData @ data0, dbDataQ, "Data" ];
         ConfirmBy[ jsonlExport[ file, data ], FileExistsQ, "Export" ]
     ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*AddToVectorDatabaseData*)
-AddToVectorDatabaseData // beginDefinition;
+AddToVectorDatabaseData // ClearAll;
 AddToVectorDatabaseData // Options = { "Tag" -> "TextLiteral", "Rebuild" -> False };
 
 AddToVectorDatabaseData[ name_String, data_List, opts: OptionsPattern[ ] ] :=
@@ -128,8 +136,6 @@ AddToVectorDatabaseData[ name_String, data_List, opts: OptionsPattern[ ] ] :=
         <| "Exported" -> exported, "Rebuilt" -> rebuilt |>
     ];
 
-AddToVectorDatabaseData // endDefinition;
-
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*BuildVectorDatabase*)
@@ -147,7 +153,7 @@ BuildVectorDatabase[ All, opts: OptionsPattern[ ] ] :=
             $dbExpansionAdd    = OptionValue[ "ExpansionAdd"    ],
             $dbExpansionSearch = OptionValue[ "ExpansionSearch" ]
         },
-        AssociationMap[ BuildVectorDatabase, FileBaseName /@ FileNames[ "*.jsonl", $vectorDBSourceDirectory ] ]
+        AssociationMap[ BuildVectorDatabase, FileBaseName /@ getVectorDBSourceFile @ All ]
     ];
 
 BuildVectorDatabase[ name_String, opts: OptionsPattern[ ] ] := Enclose[
@@ -169,13 +175,13 @@ BuildVectorDatabase[ name_String, opts: OptionsPattern[ ] ] := Enclose[
 buildVectorDatabase // ClearAll;
 
 buildVectorDatabase[ name_String ] :=
-    Enclose @ Catch @ Module[ { dir, rel, src, db, valueBag, count, n, stream, values },
+    Enclose @ Catch @ Module[ { dir, rel, src, db, valueBag, count, n, stream, values, built },
 
         loadEmbeddingCache[ ];
 
         dir = ConfirmBy[ ensureDirectory @ { $vectorDBTargetDirectory, name }, DirectoryQ, "Directory" ];
         rel = ConfirmBy[ ResourceFunction[ "RelativePath" ][ dir ], DirectoryQ, "Relative" ];
-        src = ConfirmBy[ FileNameJoin @ { $vectorDBSourceDirectory, name<>".jsonl" }, FileExistsQ, "File" ];
+        src = ConfirmBy[ getVectorDBSourceFile @ name, FileExistsQ, "File" ];
 
         DeleteFile /@ FileNames[ { "*.wxf", "*.usearch" }, dir ];
         ConfirmAssert[ FileNames[ { "*.wxf", "*.usearch" }, dir ] === { }, "ClearedFilesCheck" ];
@@ -198,59 +204,65 @@ buildVectorDatabase[ name_String ] :=
         valueBag = Internal`Bag[ ];
         count = ConfirmMatch[ lineCount @ src, _Integer? Positive, "LineCount" ];
         n = 0;
-        stream = ConfirmMatch[ OpenRead @ src, _InputStream, "Stream" ];
+        WithCleanup[
+            stream = ConfirmMatch[ OpenRead @ src, _InputStream, "Stream" ],
 
-        withProgress[
-            While[
-                NumericArrayQ @ ConfirmMatch[ addBatch[ db, stream, valueBag ], _NumericArray|EndOfFile, "Add" ],
-                n = Internal`BagLength @ valueBag
-            ],
-            <|
-                "Text"          -> "Building database \""<>name<>"\"",
-                "ElapsedTime"   -> Automatic,
-                "RemainingTime" -> Automatic,
-                "ItemTotal"     :> count,
-                "ItemCurrent"   :> n,
-                "Progress"      :> Automatic
-            |>,
-            "Delay" -> 0,
-            UpdateInterval -> 1
-        ];
-
-        saveEmbeddingCache[ ];
-
-        values = Internal`BagPart[ valueBag, All ];
-
-        ConfirmAssert[ Length @ values === count, "ValueCount" ];
-        ConfirmAssert[ First @ db[ "Dimensions" ] === count, "VectorCount" ];
-
-        ConfirmBy[
-            writeWXFFile[ FileNameJoin @ { dir, "Values.wxf" }, values, PerformanceGoal -> "Size" ],
-            FileExistsQ,
-            "Values"
-        ];
-
-        ConfirmBy[
-            writeWXFFile[
-                FileNameJoin @ { dir, "EmbeddingInformation.wxf" },
+            withProgress[
+                While[
+                    NumericArrayQ @ ConfirmMatch[ addBatch[ db, stream, valueBag ], _NumericArray|EndOfFile, "Add" ],
+                    n = Internal`BagLength @ valueBag
+                ],
                 <|
-                    "Dimension" -> $embeddingDimension,
-                    "Type"      -> $embeddingType,
-                    "Model"     -> $embeddingModel,
-                    "Service"   -> $embeddingService
-                |>
+                    "Text"          -> "Building database \""<>name<>"\"",
+                    "ElapsedTime"   -> Automatic,
+                    "RemainingTime" -> Automatic,
+                    "ItemTotal"     :> count,
+                    "ItemCurrent"   :> n,
+                    "Progress"      :> Automatic
+                |>,
+                "Delay" -> 0,
+                UpdateInterval -> 1
+            ];
+
+            saveEmbeddingCache[ ];
+
+            values = Internal`BagPart[ valueBag, All ];
+
+            ConfirmBy[ rewriteDBData[ rel, name ], FileExistsQ, "Rewrite" ];
+
+            built = ConfirmMatch[
+                VectorDatabaseObject @ File @ FileNameJoin @ { rel, name <> ".wxf" },
+                $$vectorDatabase,
+                "Result"
+            ];
+
+            ConfirmAssert[ Length @ values === count, "ValueCount" ];
+            ConfirmAssert[ First @ built[ "Dimensions" ] === count, "VectorCount" ];
+
+            ConfirmBy[
+                writeWXFFile[ FileNameJoin @ { dir, "Values.wxf" }, values, PerformanceGoal -> "Size" ],
+                FileExistsQ,
+                "Values"
+            ];
+
+            ConfirmBy[
+                writeWXFFile[
+                    FileNameJoin @ { dir, "EmbeddingInformation.wxf" },
+                    <|
+                        "Dimension" -> $embeddingDimension,
+                        "Type"      -> $embeddingType,
+                        "Model"     -> $embeddingModel,
+                        "Service"   -> $embeddingService
+                    |>
+                ],
+                FileExistsQ,
+                "EmbeddingInformation"
             ],
-            FileExistsQ,
-            "EmbeddingInformation"
+
+            Close @ stream
         ];
 
-        ConfirmBy[ rewriteDBData[ rel, name ], FileExistsQ, "Rewrite" ];
-
-        ConfirmMatch[
-            VectorDatabaseObject @ File @ FileNameJoin @ { rel, name <> ".wxf" },
-            $$vectorDatabase,
-            "Result"
-        ]
+        ConfirmMatch[ built, $$vectorDatabase, "Result" ]
     ];
 
 (* ::**************************************************************************************************************:: *)
@@ -274,7 +286,7 @@ setDBDefaults[ dir_, name_String ] :=
 addBatch // ClearAll;
 
 addBatch[ db_VectorDatabaseObject, stream_InputStream, valueBag_Internal`Bag ] :=
-    Enclose @ Catch @ Module[ { batch, text, values, embeddings },
+    Enclose @ Catch @ Module[ { batch, text, values, embeddings, added },
 
         batch = ConfirmMatch[
             readJSONLines[ stream, $incrementalBuildBatchSize ],
@@ -289,9 +301,9 @@ addBatch[ db_VectorDatabaseObject, stream_InputStream, valueBag_Internal`Bag ] :
         values = ConfirmMatch[ batch[[ All, "Value" ]], { __ }, "Values" ];
         embeddings = ConfirmBy[ $lastEmbedding = GetEmbedding @ text, NumericArrayQ, "Embeddings" ];
         ConfirmAssert[ Length @ values === Length @ embeddings, "LengthCheck" ];
-        Confirm[ $lastAdded = AddToVectorDatabase[ db, embeddings ], "AddToVectorDatabase" ];
+        added = Confirm[ $lastAdded = AddToVectorDatabase[ db, embeddings ], "AddToVectorDatabase" ];
         Internal`StuffBag[ valueBag, values, 1 ];
-        ConfirmMatch[ db[ "Dimensions" ], { Internal`BagLength @ valueBag, $embeddingDimension }, "DimensionCheck" ];
+        ConfirmMatch[ added[ "Dimensions" ], { Internal`BagLength @ valueBag, $embeddingDimension }, "DimensionCheck" ];
         embeddings
     ];
 
@@ -728,6 +740,46 @@ embeddingHash[ string_String ] :=
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Misc Utilities*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getVectorDBSourceDirectory*)
+getVectorDBSourceDirectory // ClearAll;
+
+getVectorDBSourceDirectory[ ] := Enclose[
+    getVectorDBSourceDirectory[ ] = Confirm @ SelectFirst[
+        {
+            ReleaseHold @ PersistentSymbol[ "ChatbookDeveloper/VectorDatabaseSourceDirectory" ],
+            GeneralUtilities`EnsureDirectory @ $defaultVectorDBSourceDirectory
+        },
+        DirectoryQ,
+        $Failed
+    ]
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getVectorDBSourceFile*)
+getVectorDBSourceFile // ClearAll;
+
+getVectorDBSourceFile[ name_String ] :=
+    Enclose @ Catch @ Module[ { dir, jsonl, wl, as, url, downloaded },
+        dir = ConfirmBy[ getVectorDBSourceDirectory[ ], DirectoryQ, "Directory" ];
+        jsonl = FileNameJoin @ { dir, name<>".jsonl" };
+        If[ FileExistsQ @ jsonl, Throw @ jsonl ];
+        wl = ConfirmBy[ FileNameJoin @ { dir, name<>".wl" }, FileExistsQ, "File" ];
+        as = ConfirmBy[ Get @ wl, AssociationQ, "Data" ];
+        url = ConfirmMatch[ as[ "Location" ], _String|_CloudObject|_URL, "URL" ];
+        downloaded = ConfirmBy[ URLDownload[ url, jsonl ], FileExistsQ, "Download" ];
+        ConfirmBy[ jsonl, FileExistsQ, "Result" ]
+    ];
+
+getVectorDBSourceFile[ All ] :=
+    Enclose @ Module[ { dir, names },
+        dir = ConfirmBy[ getVectorDBSourceDirectory[ ], DirectoryQ, "Directory" ];
+        names = Union[ FileBaseName /@ FileNames[ { "*.jsonl", "*.wl" }, dir ] ];
+        getVectorDBSourceFile /@ names
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)

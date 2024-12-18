@@ -32,6 +32,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$LastChatbookFailure;
 `$LastChatbookFailureText;
 `$NotebookAssistanceInputs;
+`$RelatedDocumentationSources;
 `$SandboxKernel;
 `$ToolFunctions;
 `$WorkspaceChat;
