@@ -216,6 +216,8 @@ BeginPackage[ "Wolfram`Chatbook`Common`" ];
 `makeCellStringBudget;
 `makeChatCloudDockedCellContents;
 `makeChatMessages;
+`makeChatNotebookOptions;
+`makeChatNotebookSettings;
 `makeExpressionURI;
 `makeFailureString;
 `makeInteractiveCodeCell;

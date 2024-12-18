@@ -1309,6 +1309,163 @@ assistantActionMenuItem // endDefinition
 (* ::Section::Closed:: *)
 (*Chat Notebook Conversion*)
 
+$$convertible        = _Notebook | _NotebookObject;
+$$convertChatOptions = OptionsPattern[ { ConvertChatNotebook, Notebook } ];
+$$conversionType     = "CloudPublish" | "ChatNotebook" | "DefaultNotebook";
+$$conversionFormat   = "Notebook" | "NotebookObject";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*ConvertChatNotebook*)
+ConvertChatNotebook // beginDefinition;
+
+
+Needs[ "Wolfram`Chatbook`Settings`" ]; (* Needed for $defaultChatSettings *)
+ConvertChatNotebook // Options = Normal[ $defaultChatSettings, Association ];
+
+
+(* Default arguments and argument normalization: *)
+ConvertChatNotebook[ nb_, type_, opts: $$convertChatOptions ] :=
+    catchMine @ ConvertChatNotebook[ nb, type, Automatic, opts ];
+
+ConvertChatNotebook[ nb: $$convertible, type_, Automatic, opts: $$convertChatOptions ] :=
+    catchMine @ ConvertChatNotebook[ nb, type, Head @ nb, opts ];
+
+ConvertChatNotebook[ nb_, type_, fmt: Notebook|NotebookObject, opts: $$convertChatOptions ] :=
+    catchMine @ ConvertChatNotebook[ nb, type, ToString @ fmt, opts ];
+
+
+(* Main definition: *)
+ConvertChatNotebook[ nb: $$convertible, type: $$conversionType, fmt: $$conversionFormat, opts: $$convertChatOptions ] :=
+    catchMine @ Enclose[
+        Module[ { nbSettings, settings, options, notebook },
+
+            nbSettings = ConfirmBy[ extractNotebookChatSettings @ nb, AssociationQ, "NotebookSettings" ];
+
+            settings = ConfirmBy[
+                makeChatNotebookSettings @ Association @ FilterRules[ { opts }, Options @ ConvertChatNotebook ],
+                AssociationQ,
+                "Settings"
+            ];
+
+            settings = ConfirmBy[
+                mergeChatSettings @ { nbSettings, settings },
+                AssociationQ,
+                "MergedSettings"
+            ];
+
+            options = ConfirmMatch[
+                Flatten @ { makeChatNotebookOptions[ settings, opts ] },
+                { OptionsPattern[ ] },
+                "Options"
+            ];
+
+            notebook = ConfirmMatch[ toNotebookExpression @ nb, _Notebook, "Notebook" ];
+
+            ConfirmMatch[
+                convertChatNotebook[ notebook, type, fmt, settings, options ],
+                _Notebook | _NotebookObject,
+                "Converted"
+            ]
+        ],
+        throwInternalFailure
+    ];
+
+ConvertChatNotebook // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*convertChatNotebook*)
+convertChatNotebook // beginDefinition;
+
+convertChatNotebook[ nb_, type_, fmt_, settings_, options_ ] := Enclose[
+    Module[ { converted },
+        converted = ConfirmMatch[ convertChatNotebook0[ nb, type, settings, options ], _Notebook, "Converted" ];
+        If[ fmt === "NotebookObject", NotebookPut @ converted, converted ]
+    ],
+    throwInternalFailure
+];
+
+convertChatNotebook // endDefinition;
+
+
+convertChatNotebook0 // beginDefinition;
+convertChatNotebook0[ nb_, "CloudPublish"   , settings_, opts_ ] := convertForCloudPublish[ nb, settings, opts ];
+convertChatNotebook0[ nb_, "ChatNotebook"   , settings_, opts_ ] := convertToChatNotebook[ nb, settings, opts ];
+convertChatNotebook0[ nb_, "DefaultNotebook", settings_, opts_ ] := convertToDefaultNotebook[ nb, settings, opts ];
+convertChatNotebook0 // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*convertForCloudPublish*)
+convertForCloudPublish // beginDefinition;
+convertForCloudPublish[ nb_, settings_, opts_ ] := convertToChatNotebook[ nb, settings, opts ];
+convertForCloudPublish // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*convertToChatNotebook*)
+convertToChatNotebook // beginDefinition;
+
+convertToChatNotebook[ Notebook[ cells_, ___ ], settings_, { opts: OptionsPattern[ ] } ] :=
+    Enclose[
+        Module[ { converted, options, newCells },
+            converted = ConfirmMatch[ cellsToChatNB[ cells, settings ], _Notebook, "Converted" ];
+            options = ConfirmMatch[
+                DeleteDuplicatesBy[ Flatten @ { opts }, ToString @* First ],
+                { OptionsPattern[ ] },
+                "Options"
+            ];
+            newCells = ConfirmMatch[ First @ converted, { ___Cell }, "NewCells" ];
+            Notebook[ newCells, Sequence @@ options ]
+        ],
+        throwInternalFailure
+    ];
+
+convertToChatNotebook // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*convertToDefaultNotebook*)
+convertToDefaultNotebook // beginDefinition;
+
+(* TODO: explode cells? *)
+convertToDefaultNotebook[ nb_, settings_, opts_ ] := Replace[
+    convertToChatNotebook[ nb, settings, opts ],
+    HoldPattern[ StyleDefinitions -> "Chatbook.nb" ] :> StyleDefinitions -> "Default.nb",
+    { 1 }
+];
+
+convertToDefaultNotebook // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*extractNotebookChatSettings*)
+extractNotebookChatSettings // beginDefinition;
+
+extractNotebookChatSettings[ nbo_NotebookObject ] :=
+    With[ { as = Association @ CurrentValue[ nbo, { TaggingRules, "ChatNotebookSettings" } ] },
+        If[ AssociationQ @ as, as, <| |> ]
+    ];
+
+extractNotebookChatSettings[ Notebook[ __, TaggingRules -> KeyValuePattern[ "ChatNotebookSettings" -> as0_ ], ___ ] ] :=
+    With[ { as = Association @ as0 },
+        If[ AssociationQ @ as, as, <| |> ]
+    ];
+
+extractNotebookChatSettings[ _Notebook ] :=
+    <| |>;
+
+extractNotebookChatSettings // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toNotebookExpression*)
+toNotebookExpression // beginDefinition;
+toNotebookExpression[ nb_Notebook ] := nb;
+toNotebookExpression[ nb_NotebookObject ] := NotebookGet @ nb;
+toNotebookExpression // endDefinition;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*popOutWorkspaceChatNB*)
