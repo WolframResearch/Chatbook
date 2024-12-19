@@ -18,7 +18,7 @@ $popOutSettings = { "LLMEvaluator", "MaxContextTokens", "MaxToolResponses", "Mod
 
 $$convertible        = _Notebook | _NotebookObject;
 $$convertChatOptions = OptionsPattern[ { ConvertChatNotebook, Notebook } ];
-$$conversionType     = "CloudPublish" | "ChatNotebook" | "DefaultNotebook";
+$$conversionType     = "CloudPublish" | "CloudSave" | "ChatNotebook" | "DefaultNotebook";
 $$conversionFormat   = "Notebook" | "NotebookObject";
 
 (* ::**************************************************************************************************************:: *)
@@ -45,6 +45,7 @@ ConvertChatNotebook[notebook$, \"type$\", \"fmt$\"] converts notebook$ and gives
 * The given notebook$ should be a workspace chat and can be given as a Notebook or NotebookObject.
 * Some possible values for \"type$\" are:
 | \"CloudPublish\"    | Convert the notebook for cloud publishing.  |
+| \"CloudSave\"       | Convert the notebook for saving to cloud.   |
 | \"ChatNotebook\"    | Convert the notebook to a chat notebook.    |
 | \"DefaultNotebook\" | Convert the notebook to a default notebook. |
 * Possible values for \"fmt$\" are:
@@ -135,6 +136,7 @@ convertChatNotebook // endDefinition;
 
 convertChatNotebook0 // beginDefinition;
 convertChatNotebook0[ nb_, "CloudPublish"   , settings_, opts_ ] := convertForCloudPublish[ nb, settings, opts ];
+convertChatNotebook0[ nb_, "CloudSave"      , settings_, opts_ ] := convertForCloudSave[ nb, settings, opts ];
 convertChatNotebook0[ nb_, "ChatNotebook"   , settings_, opts_ ] := convertToChatNotebook[ nb, settings, opts ];
 convertChatNotebook0[ nb_, "DefaultNotebook", settings_, opts_ ] := convertToDefaultNotebook[ nb, settings, opts ];
 convertChatNotebook0 // endDefinition;
@@ -145,6 +147,13 @@ convertChatNotebook0 // endDefinition;
 convertForCloudPublish // beginDefinition;
 convertForCloudPublish[ nb_, settings_, opts_ ] := convertToChatNotebook[ nb, settings, opts ];
 convertForCloudPublish // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*convertForCloudSave*)
+convertForCloudSave // beginDefinition;
+convertForCloudSave[ nb_, settings_, opts_ ] := convertToChatNotebook[ nb, settings, opts ];
+convertForCloudSave // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
