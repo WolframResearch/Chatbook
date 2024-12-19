@@ -103,6 +103,7 @@ $noSemanticSearch := $noSemanticSearch = ! PacletObjectQ @ Quiet @ PacletInstall
 getVectorDBDirectory // beginDefinition;
 
 getVectorDBDirectory[ ] := Enclose[
+    If[ $CloudEvaluation, cleanupLegacyVectorDBFiles @ $localVectorDBDirectory ];
     $vectorDBDirectory = SelectFirst[
         {
             $pacletVectorDBDirectory,
@@ -203,7 +204,7 @@ downloadVectorDatabases // endDefinition;
 (*cleanupLegacyVectorDBFiles*)
 cleanupLegacyVectorDBFiles // beginDefinition;
 
-cleanupLegacyVectorDBFiles[ dir_String ] := Quiet @ Map[
+cleanupLegacyVectorDBFiles[ dir_String ] := cleanupLegacyVectorDBFiles[ dir ] = Quiet @ Map[
     DeleteDirectory[ #1, DeleteContents -> True ] &,
     Join[
         Select[ FileNames[ DigitCharacter.. ~~ "." ~~ DigitCharacter.. ~~ "." ~~ DigitCharacter.., dir ], DirectoryQ ],

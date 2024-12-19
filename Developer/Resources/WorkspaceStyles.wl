@@ -230,9 +230,12 @@ Cell[
             ],
             EventHandlerTag @ {
                 "MouseEntered" :>
-                    With[ { cell = EvaluationCell[ ] },
-                        Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-                        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachAssistantMessageButtons", cell ]
+                    If[ TrueQ @ $CloudEvaluation,
+                        Null,
+                        With[ { cell = EvaluationCell[ ] },
+                            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+                            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachAssistantMessageButtons", cell ]
+                        ]
                     ],
                 Method         -> "Preemptive",
                 PassEventsDown -> Automatic,
