@@ -18,7 +18,8 @@ $inGitHub := $inGitHub = StringQ @ Environment[ "GITHUB_ACTIONS" ];
 CodeInspector`AbstractRules`$DefaultAbstractRules = <|
     CodeInspector`AbstractRules`$DefaultAbstractRules,
     cp`CallNode[ cp`LeafNode[ Symbol, "Throw", _ ], { _ }, _ ] -> scanSingleArgThrow,
-    cp`LeafNode[ Symbol, _String? privateContextQ, _ ] -> scanPrivateContext
+    cp`LeafNode[ Symbol, _String? privateContextQ, _ ] -> scanPrivateContext,
+    cp`LeafNode[ Symbol, _String? globalSymbolQ, _ ] -> scanGlobalSymbol
 |>;
 
 CodeInspector`ConcreteRules`$DefaultConcreteRules = <|
@@ -89,6 +90,30 @@ privateContextQ[ ___ ] := False;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
+(*scanGlobalSymbol*)
+scanGlobalSymbol // ClearAll;
+scanGlobalSymbol[ pos_, ast_ ] :=
+    Enclose @ Module[ { node, name, as },
+        node = ConfirmMatch[ Extract[ ast, pos ], _[ _, _, __ ], "Node" ];
+        name = ConfirmBy[ node[[ 2 ]], StringQ, "Name" ];
+        as = ConfirmBy[ node[[ 3 ]], AssociationQ, "Metadata" ];
+        ci`InspectionObject[
+            "GlobalSymbol",
+            "The symbol ``" <> name <> "`` is in the global context",
+            "Error",
+            <| as, ConfidenceLevel -> 0.9 |>
+        ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*globalSymbolQ*)
+globalSymbolQ // ClearAll;
+globalSymbolQ[ name_String ] := StringStartsQ[ name, "Global`" ];
+globalSymbolQ[ ___ ] := False;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
 (*scanFixMeComment*)
 scanFixMeComment // ClearAll;
 
@@ -101,28 +126,6 @@ scanFixMeComment[ pos_, ast_ ] /; $inGitHub :=
     ];
 
 scanFixMeComment[ pos_, ast_ ] := { };
-
-(* ::**************************************************************************************************************:: *)
-(* ::Section::Closed:: *)
-(*Debug*)
-Needs[ "Wolfram`PacletCICD`" -> None ];
-
-PrependTo[
-    DownValues @ Wolfram`PacletCICD`ToMarkdownString,
-    HoldPattern[ Wolfram`PacletCICD`ToMarkdownString[ args___ ] /; ! TrueQ @ $override ] :>
-        Block[ { $override = True, out },
-            Print[ "Markdown input: ", ToString[ HoldComplete @ args, InputForm ] ];
-            out = Wolfram`PacletCICD`ToMarkdownString @ args;
-            Print[ "Markdown output: ", ToString[ out, InputForm ] ];
-            out
-        ]
-];
-
-OwnValues[ Wolfram`PacletCICD`Private`$checkHintData ] =
-    OwnValues @ Wolfram`PacletCICD`Private`$checkHintData /. "MessageText" -> "Message";
-
-SubValues[ Wolfram`PacletCICD`Private`reportHintRow ] =
-    SubValues @ Wolfram`PacletCICD`Private`reportHintRow /. "MessageText" -> "Message";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
