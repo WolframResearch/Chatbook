@@ -13,6 +13,13 @@ Cell[
     DefaultNewCellStyle    -> "AutoMoveToChatInputField",
     DockedCells            -> $workspaceChatDockedCells,
     Magnification          -> 0.85,
+    NotebookEventActions   -> {
+        ParentList,
+        { "MenuCommand", "SaveRename" } :> (
+            Needs[ "Wolfram`Chatbook`" -> None ];
+            Symbol[ "Wolfram`Chatbook`SaveAsChatNotebook" ][ EvaluationNotebook[ ] ]
+        )
+    },
     Saveable               -> False,
     Selectable             -> False,
     ShowCellBracket        -> False,
@@ -223,9 +230,12 @@ Cell[
             ],
             EventHandlerTag @ {
                 "MouseEntered" :>
-                    With[ { cell = EvaluationCell[ ] },
-                        Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-                        Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachAssistantMessageButtons", cell ]
+                    If[ TrueQ @ $CloudEvaluation,
+                        Null,
+                        With[ { cell = EvaluationCell[ ] },
+                            Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
+                            Symbol[ "Wolfram`Chatbook`ChatbookAction" ][ "AttachAssistantMessageButtons", cell ]
+                        ]
                     ],
                 Method         -> "Preemptive",
                 PassEventsDown -> Automatic,

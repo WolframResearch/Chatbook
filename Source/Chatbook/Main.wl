@@ -32,6 +32,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `$LastChatbookFailure;
 `$LastChatbookFailureText;
 `$NotebookAssistanceInputs;
+`$RelatedDocumentationSources;
 `$SandboxKernel;
 `$ToolFunctions;
 `$WorkspaceChat;
@@ -47,6 +48,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `ChatbookFilesDirectory;
 `ChatCellEvaluate;
 `ChatMessageToCell;
+`ConvertChatNotebook;
 `CreateChatDrivenNotebook;
 `CreateChatNotebook;
 `CurrentChatSettings;
@@ -66,6 +68,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `GetExpressionURIs;
 `GetFocusedNotebook;
 `InlineTemplateBoxes;
+`InstallVectorDatabases;
 `InvalidateServiceCache;
 `ListSavedChats;
 `LoadChat;
@@ -76,6 +79,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `RelatedWolframAlphaQueries;
 `RemoveChatFromSearchIndex;
 `SandboxLinguisticAssistantData;
+`SaveAsChatNotebook;
 `SaveChat;
 `SearchChats;
 `SetModel;
@@ -132,6 +136,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`ChatTitle`",
     "Wolfram`Chatbook`CloudToolbar`",
     "Wolfram`Chatbook`Common`",
+    "Wolfram`Chatbook`ConvertChatNotebook`",
     "Wolfram`Chatbook`CreateChatNotebook`",
     "Wolfram`Chatbook`Dialogs`",
     "Wolfram`Chatbook`Dynamics`",
@@ -213,6 +218,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "ChatbookFilesDirectory",
     "ChatCellEvaluate",
     "ChatMessageToCell",
+    "ConvertChatNotebook",
     "CreateChatDrivenNotebook",
     "CreateChatNotebook",
     "CurrentChatSettings",
@@ -232,6 +238,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "GetExpressionURIs",
     "GetFocusedNotebook",
     "InlineTemplateBoxes",
+    "InstallVectorDatabases",
     "ListSavedChats",
     "LoadChat",
     "LogChatTiming",
@@ -241,6 +248,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "RelatedWolframAlphaQueries",
     "RemoveChatFromSearchIndex",
     "SandboxLinguisticAssistantData",
+    "SaveAsChatNotebook",
     "SaveChat",
     "SearchChats",
     "SetModel",

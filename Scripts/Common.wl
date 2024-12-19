@@ -106,6 +106,7 @@ messageString[ ___ ] := "-- Message text not found --";
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Definitions*)
+$scriptCommandLine := Replace[ $ScriptCommandLine, { } :> $CommandLine ];
 
 $$ws = WhitespaceCharacter...;
 $$id = "\"" ~~ Except[ "\"" ].. ~~ "\"";

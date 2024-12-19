@@ -38,6 +38,7 @@ $defaultChatSettings = <|
     "FrequencyPenalty"               -> 0.1,
     "HandlerFunctions"               :> $DefaultChatHandlerFunctions,
     "HandlerFunctionsKeys"           -> Automatic,
+    "HybridToolMethod"               -> Automatic,
     "IncludeHistory"                 -> Automatic,
     "InitialChatCell"                -> True,
     "LLMEvaluator"                   -> "CodeAssistant",
@@ -109,6 +110,8 @@ $absoluteCurrentSettingsCache = None;
 (*Argument Patterns*)
 $$validRootSettingValue = Inherited | _? (AssociationQ@*Association);
 $$frontEndObject        = HoldPattern[ $FrontEnd | _FrontEndObject ];
+$$hybridToolService     = "OpenAI"|"AzureOpenAI"|"LLMKit";
+$$hybridToolModel       = _String | { $$hybridToolService, _ } | KeyValuePattern[ "Service" -> $$hybridToolService ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -316,16 +319,18 @@ setLLMKitFlags // endDefinition;
 (* ::Subsubsection::Closed:: *)
 (*overrideSettings*)
 overrideSettings // beginDefinition;
-overrideSettings[ settings_Association? llmKitQ ] := <| settings, $llmKitOverrides |>;
-overrideSettings[ settings_Association? o1ModelQ ] := <| settings, $o1Overrides |>;
-overrideSettings[ settings_Association? gpt4oTextToolsQ ] := <| settings, $gpt4oTextToolOverrides |>;
-overrideSettings[ settings_Association ] := settings;
+
+overrideSettings[ settings_Association ] := <|
+    settings,
+    If[ llmKitQ @ settings, $llmKitOverrides, <| |> ],
+    If[ o1ModelQ @ settings, $o1Overrides, <| |> ]
+|>;
+
 overrideSettings // endDefinition;
 
 (* TODO: these shouldn't be mutually exclusive: *)
-$llmKitOverrides        = <| "Authentication" -> "LLMKit" |>;
-$o1Overrides            = <| "PresencePenalty" -> 0, "Temperature" -> 1 |>;
-$gpt4oTextToolOverrides = <| "Model" -> <| "Service" -> "OpenAI", "Name" -> "gpt-4o-2024-05-13" |> |>;
+$llmKitOverrides = <| "Authentication" -> "LLMKit" |>;
+$o1Overrides     = <| "PresencePenalty" -> 0, "Temperature" -> 1 |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -339,19 +344,6 @@ llmKitQ[ as_Association ] := TrueQ @ Or[
 ];
 
 llmKitQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsubsection::Closed:: *)
-(*gpt4oTextToolsQ*)
-gpt4oTextToolsQ // beginDefinition;
-
-gpt4oTextToolsQ[ settings_Association ] := TrueQ @ And[
-    settings[ "ToolsEnabled" ],
-    toModelName @ settings === "gpt-4o",
-    settings[ "ToolMethod" ] =!= "Service"
-];
-
-gpt4oTextToolsQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -380,6 +372,7 @@ resolveAutoSetting0[ as_, "DynamicAutoFormat"              ] := dynamicAutoForma
 resolveAutoSetting0[ as_, "EnableLLMServices"              ] := $useLLMServices;
 resolveAutoSetting0[ as_, "ForceSynchronous"               ] := forceSynchronousQ @ as;
 resolveAutoSetting0[ as_, "HandlerFunctionsKeys"           ] := chatHandlerFunctionsKeys @ as;
+resolveAutoSetting0[ as_, "HybridToolMethod"               ] := hybridToolMethodQ @ as;
 resolveAutoSetting0[ as_, "IncludeHistory"                 ] := Automatic;
 resolveAutoSetting0[ as_, "MaxCellStringLength"            ] := chooseMaxCellStringLength @ as;
 resolveAutoSetting0[ as_, "MaxContextTokens"               ] := autoMaxContextTokens @ as;
@@ -412,8 +405,9 @@ $autoSettingKeyDependencies = <|
     "BypassResponseChecking"     -> "ForceSynchronous",
     "ForceSynchronous"           -> "Model",
     "HandlerFunctionsKeys"       -> "EnableLLMServices",
+    "HybridToolMethod"           -> { "Model", "ToolsEnabled" },
     "MaxCellStringLength"        -> { "Model", "MaxContextTokens" },
-    "MaxContextTokens"           -> "Model",
+    "MaxContextTokens"           -> { "Authentication", "Model" },
     "MaxOutputCellStringLength"  -> "MaxCellStringLength",
     "MaxTokens"                  -> "Model",
     "Multimodal"                 -> { "EnableLLMServices", "Model" },
@@ -443,6 +437,16 @@ $autoSettingKeyPriority := Enclose[
     * BasePrompt (might not be possible here)
     * ChatContextPreprompt
 *)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*hybridToolMethodQ*)
+hybridToolMethodQ // beginDefinition;
+hybridToolMethodQ[ KeyValuePattern[ "ToolsEnabled" -> False ] ] := False;
+hybridToolMethodQ[ as_Association ] := hybridToolMethodQ[ as, as[ "Model" ] ];
+hybridToolMethodQ[ as_, $$hybridToolModel ] := True;
+hybridToolMethodQ[ as_, _ ] := False;
+hybridToolMethodQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -617,7 +621,7 @@ styleStopTokens // endDefinition;
 chooseMaxCellStringLength // beginDefinition;
 chooseMaxCellStringLength[ as_Association ] := chooseMaxCellStringLength[ as, as[ "MaxContextTokens" ] ];
 chooseMaxCellStringLength[ as_, Infinity ] := Infinity;
-chooseMaxCellStringLength[ as_, tokens: $$size ] := Ceiling[ $defaultMaxCellStringLength * tokens / 2^13 ];
+chooseMaxCellStringLength[ as_, tokens: $$size ] := Ceiling[ $defaultMaxCellStringLength * tokens / 2^14 ];
 chooseMaxCellStringLength // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
@@ -633,6 +637,7 @@ chooseMaxOutputCellStringLength // endDefinition;
 (*autoMaxContextTokens*)
 autoMaxContextTokens // beginDefinition;
 autoMaxContextTokens[ as_? ollamaQ ] := serviceMaxContextTokens @ as;
+autoMaxContextTokens[ as_Association? llmKitQ ] := Min[ 2^16, autoMaxContextTokens[ as, as[ "Model" ] ] ];
 autoMaxContextTokens[ as_Association ] := autoMaxContextTokens[ as, as[ "Model" ] ];
 autoMaxContextTokens[ as_, model_ ] := autoMaxContextTokens[ as, model, toModelName @ model ];
 autoMaxContextTokens[ _, _, name_String ] := autoMaxContextTokens0 @ name;

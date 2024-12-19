@@ -218,6 +218,7 @@
 "WorkspaceToolbarButtonTooltipNew" -> "Start a new conversation",
 "WorkspaceToolbarButtonTooltipOpenAsChatbook" -> "Open as a Chat Notebook",
 "WorkspaceSourcesOpenNotebooks" -> "Open Notebooks",
+"WorkspaceHistoryTitle" -> "History",
 
 "WorkspaceOutputRaftCopyAsTooltip" -> "Copy response to clipboard\[Ellipsis]",
 "WorkspaceOutputRaftCopyAs" -> "Copy response as\[Ellipsis]",
