@@ -328,7 +328,7 @@ CellToString // Options = {
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 CellToString[ cell_, opts: OptionsPattern[ ] ] :=
-    Catch @ Block[
+    catchMine @ Catch @ Block[
         {
             $cellCharacterEncoding = OptionValue[ "CharacterEncoding" ],
             $CellToStringDebug = TrueQ @ OptionValue[ "Debug" ],
