@@ -1309,6 +1309,8 @@ assistantActionMenuItem // endDefinition
 (* ::Section::Closed:: *)
 (*Chat Notebook Conversion*)
 
+(* TODO: move more of this conversion functionality to ConvertChatNotebook *)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*popOutWorkspaceChatNB*)
@@ -1447,77 +1449,6 @@ popOutChatNB0[ id_, settings_Association ] := Enclose[
 ];
 
 popOutChatNB0 // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*cellsToChatNB*)
-cellsToChatNB // beginDefinition;
-
-cellsToChatNB[ cells: { ___Cell } ] :=
-    Notebook[ cells /. $fromWorkspaceChatConversionRules, StyleDefinitions -> "Chatbook.nb" ];
-
-cellsToChatNB[ cells: { ___Cell }, settings_Association ] :=
-    Module[ { dingbat, notebook },
-
-        dingbat = Cell[ BoxData @ makeOutputDingbat @ settings, Background -> None ];
-        notebook = updateCellDingbats[ cellsToChatNB @ cells, dingbat ];
-
-        Append[
-            notebook,
-            TaggingRules -> <| "ChatNotebookSettings" -> KeyTake[ settings, $popOutSettings ] |>
-        ]
-    ];
-
-cellsToChatNB // endDefinition;
-
-
-$popOutSettings = {
-    "LLMEvaluator",
-    "MaxContextTokens",
-    "MaxToolResponses",
-    "Model"
-};
-
-(* TODO: we should really have something better for this *)
-$evaluatedChatInputDingbat = Cell[
-    BoxData @ DynamicBox @ ToBoxes[
-        If[ TrueQ @ CloudSystem`$CloudNotebooks,
-            RawBoxes @ TemplateBox[ { }, "ChatIconUser" ],
-            RawBoxes @ TemplateBox[ { }, "ChatInputCellDingbat" ]
-        ],
-        StandardForm
-    ],
-    Background  -> None,
-    CellFrame   -> 0,
-    CellMargins -> 0
-];
-
-
-$fromWorkspaceChatConversionRules := $fromWorkspaceChatConversionRules = Dispatch @ {
-    Cell[ BoxData @ TemplateBox[ { Cell[ TextData[ text_ ], ___ ] }, "UserMessageBox", ___ ], "ChatInput", ___ ] :>
-        Cell[ Flatten @ TextData @ text, "ChatInput" ]
-    ,
-    Cell[ BoxData @ TemplateBox[ { text_ }, "UserMessageBox", ___ ], "ChatInput", ___ ] :>
-        Cell[ Flatten @ TextData @ text, "ChatInput" ]
-    ,
-    Cell[ BoxData @ TemplateBox[ { Cell[ text_, ___ ] }, "AssistantMessageBox", ___ ], "ChatOutput", ___ ] :>
-        Cell[ Flatten @ TextData @ text, "ChatOutput" ]
-};
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
-(*updateCellDingbats*)
-updateCellDingbats // beginDefinition;
-
-updateCellDingbats[ cells_, outputDingbat_ ] := ReplaceAll[
-    cells,
-    {
-        Cell[ a__, "ChatInput" , b___ ] :> Cell[ a, "ChatInput" , b, CellDingbat -> $evaluatedChatInputDingbat ],
-        Cell[ a__, "ChatOutput", b___ ] :> Cell[ a, "ChatOutput", b, CellDingbat -> outputDingbat ]
-    }
-];
-
-updateCellDingbats // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -2207,7 +2138,6 @@ $workspaceChatProgressBar = With[
 (* ::Section::Closed:: *)
 (*Package Footer*)
 addToMXInitialization[
-    $fromWorkspaceChatConversionRules;
     $inlineToWorkspaceConversionRules;
     $defaultUserImage;
     $smallNotebookIcon;
