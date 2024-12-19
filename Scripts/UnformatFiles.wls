@@ -32,7 +32,10 @@ files = cicd`ScriptConfirmMatch[
 
 cicd`ConsoleLog[ "Unformatting " <> ToString @ Length @ files <> " files..." ];
 
-result = cicd`ScriptConfirmMatch[ unformat /@ files, { __String } ];
+result = cicd`ScriptConfirmMatch[ UsingFrontEnd[
+    CurrentValue[ $FrontEndSession, DynamicUpdating ] = False;
+    unformat /@ files
+], { __String } ];
 
 EndPackage[ ];
 
