@@ -136,6 +136,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`ChatTitle`",
     "Wolfram`Chatbook`CloudToolbar`",
     "Wolfram`Chatbook`Common`",
+    "Wolfram`Chatbook`ConvertChatNotebook`",
     "Wolfram`Chatbook`CreateChatNotebook`",
     "Wolfram`Chatbook`Dialogs`",
     "Wolfram`Chatbook`Dynamics`",
