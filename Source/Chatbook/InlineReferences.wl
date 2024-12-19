@@ -39,7 +39,7 @@ $frameOptions = Sequence[
     BaseStyle      -> $frameBaseStyle
 ];
 
-$lastInlineReferenceCell = None;
+$LastInlineReferenceCell = None;
 
 
 $$inlineReferenceStyle = "InlinePersonaReference"|"InlineModifierReference"|"InlineFunctionReference";
@@ -194,7 +194,7 @@ parseFunction // endDefinition;
 
 
 resolveLastInlineReference[ ] :=
-    resolveLastInlineReference @ $lastInlineReferenceCell;
+    resolveLastInlineReference @ $LastInlineReferenceCell;
 
 resolveLastInlineReference[ cell_CellObject ] :=
     resolveLastInlineReference[ cell, Developer`CellInformation @ cell ];
@@ -357,7 +357,7 @@ modifierInputBox[ args_List, uuid_ ] :=
         ],
         Initialization :> (
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-            $lastInlineReferenceCell = cell = EvaluationCell[ ];
+            $LastInlineReferenceCell = cell = EvaluationCell[ ];
         ),
         UnsavedVariables :> { cell }
     ];
@@ -630,7 +630,7 @@ functionInputBox[ args_List, uuid_ ] :=
         ],
         Initialization :> (
             Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-            $lastInlineReferenceCell = cell = EvaluationCell[ ];
+            $LastInlineReferenceCell = cell = EvaluationCell[ ];
         ),
         UnsavedVariables :> { cell }
     ];
@@ -1149,7 +1149,7 @@ personaInputBox[ name_String, uuid_ ] := DynamicModule[ { string = name, cell },
     ],
     Initialization :> (
         Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-        $lastInlineReferenceCell = cell = EvaluationCell[ ];
+        $LastInlineReferenceCell = cell = EvaluationCell[ ];
     ),
     UnsavedVariables :> { cell }
 ];
