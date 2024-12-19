@@ -83,7 +83,7 @@ Notebook[
   Cell[StyleData["CellExpression"], Selectable -> True],
   Cell[
    StyleData["WorkspaceChatStyleSheetInformation"],
-   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.0.4.3943330431"|>
+   TaggingRules -> <|"WorkspaceChatStyleSheetVersion" -> "2.0.8.3943617669"|>
   ],
   Cell[
    StyleData["AttachedCell"],
@@ -253,11 +253,14 @@ Notebook[
        EventHandlerTag[
         {
          "MouseEntered" :>
-          With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
-           Quiet[Needs["Wolfram`Chatbook`" -> None]];
-           Symbol["Wolfram`Chatbook`ChatbookAction"][
-            "AttachAssistantMessageButtons",
-            Wolfram`ChatNB`cell
+          If[ TrueQ[$CloudEvaluation],
+           Null,
+           With[ { Wolfram`ChatNB`cell = EvaluationCell[] },
+            Quiet[Needs["Wolfram`Chatbook`" -> None]];
+            Symbol["Wolfram`Chatbook`ChatbookAction"][
+             "AttachAssistantMessageButtons",
+             Wolfram`ChatNB`cell
+            ]
            ]
           ],
          Method -> "Preemptive",
