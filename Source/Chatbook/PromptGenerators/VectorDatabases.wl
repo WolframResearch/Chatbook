@@ -15,8 +15,14 @@ HoldComplete[
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
-$vectorDBNames   = { "DocumentationURIs", "WolframAlphaQueries" };
-$dbVersion       = "1.2.0";
+$vectorDatabases = <|
+    "DataRepositoryURIs"     -> <| "Version" -> "1.0.0", "Bias" -> 1.0 |>,
+    "DocumentationURIs"      -> <| "Version" -> "1.3.0", "Bias" -> 0.0 |>,
+    "FunctionRepositoryURIs" -> <| "Version" -> "1.0.0", "Bias" -> 1.0 |>,
+    "WolframAlphaQueries"    -> <| "Version" -> "1.3.0", "Bias" -> 0.0 |>
+|>;
+
+$vectorDBNames   = Keys @ $vectorDatabases;
 $allowDownload   = True;
 $cacheEmbeddings = True;
 
@@ -42,9 +48,8 @@ $maxExtraFiles     = 20;
 (*Remote Content Locations*)
 $baseVectorDatabasesURL = "https://www.wolframcloud.com/obj/wolframai-content/VectorDatabases";
 
-(* TODO: these will be moved to the data repository: *)
 $vectorDBDownloadURLs = AssociationMap[
-    URLBuild @ { $baseVectorDatabasesURL, $dbVersion, # <> ".zip" } &,
+    URLBuild @ { $baseVectorDatabasesURL, #, $vectorDatabases[ #, "Version" ], # <> ".zip" } &,
     $vectorDBNames
 ];
 
@@ -52,18 +57,38 @@ $vectorDBDownloadURLs = AssociationMap[
 (* ::Subsection::Closed:: *)
 (*Paths*)
 $pacletVectorDBDirectory := FileNameJoin @ { $thisPaclet[ "Location" ], "Assets/VectorDatabases" };
-$localVectorDBDirectory  := ChatbookFilesDirectory @ { "VectorDatabases", $dbVersion };
+$localVectorDBDirectory  := ChatbookFilesDirectory[ "VectorDatabases" ];
+$cloudVectorDBDirectory  := PacletObject[ "Wolfram/NotebookAssistantCloudResources" ][ "AssetLocation", "VectorDatabases" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Argument Patterns*)
 $$vectorDatabase = HoldPattern[ _VectorDatabaseObject? System`Private`ValidQ ];
 
+$$dbName        = Alternatives @@ $vectorDBNames;
+$$dbNames       = { $$dbName... };
+$$dbNameOrNames = $$dbName | $$dbNames;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Cache*)
 $vectorDBSearchCache = <| |>;
 $embeddingCache      = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*InstallVectorDatabases*)
+InstallVectorDatabases // beginDefinition;
+
+InstallVectorDatabases[ ] := catchMine @ Enclose[
+    Success[
+        "VectorDatabasesInstalled",
+        <| "Location" -> ConfirmBy[ getVectorDBDirectory[ ], vectorDBDirectoryQ, "Location" ] |>
+    ],
+    throwInternalFailure
+];
+
+InstallVectorDatabases // endExportedDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -78,9 +103,11 @@ $noSemanticSearch := $noSemanticSearch = ! PacletObjectQ @ Quiet @ PacletInstall
 getVectorDBDirectory // beginDefinition;
 
 getVectorDBDirectory[ ] := Enclose[
+    If[ $CloudEvaluation, cleanupLegacyVectorDBFiles @ $localVectorDBDirectory ];
     $vectorDBDirectory = SelectFirst[
         {
             $pacletVectorDBDirectory,
+            If[ $CloudEvaluation, $cloudVectorDBDirectory, Nothing ],
             $localVectorDBDirectory
         },
         vectorDBDirectoryQ,
@@ -103,11 +130,15 @@ vectorDBDirectoryQ // endDefinition;
 vectorDBDirectoryQ0 // beginDefinition;
 
 vectorDBDirectoryQ0[ dir_? DirectoryQ ] := Enclose[
-    Module[ { name, existsQ, expected },
-        name     = ConfirmBy[ FileBaseName @ dir, StringQ, "Name" ];
-        existsQ  = FileExistsQ @ FileNameJoin @ { dir, # } &;
-        expected = { name <> ".wxf", "Values.wxf", name <> "-vectors.usearch" };
-        TrueQ @ AllTrue[ expected, existsQ ]
+    Module[ { name, existsQ, expected, versionFile, expectedVersion },
+
+        name            = ConfirmBy[ FileBaseName @ dir, StringQ, "Name" ];
+        existsQ         = FileExistsQ @ FileNameJoin @ { dir, # } &;
+        expected        = { name <> ".wxf", "Values.wxf", name <> "-vectors.usearch" };
+        versionFile     = FileNameJoin @ { dir, "Version.wl" };
+        expectedVersion = ConfirmBy[ $vectorDatabases[ name, "Version" ], StringQ, "ExpectedVersion" ];
+
+        TrueQ[ AllTrue[ expected, existsQ ] && FileExistsQ @ versionFile && Get @ versionFile === expectedVersion ]
     ],
     throwInternalFailure
 ];
@@ -127,12 +158,15 @@ downloadVectorDatabases[ ] /; ! $allowDownload :=
 downloadVectorDatabases[ ] :=
     downloadVectorDatabases[ $localVectorDBDirectory, $vectorDBDownloadURLs ];
 
-downloadVectorDatabases[ dir0_, urls_Association ] := Enclose[
-    Module[ { dir, lock, names, sizes, tasks },
+downloadVectorDatabases[ dir0_, urls0_Association ] := Enclose[
+    Module[ { dir, lock, names, urls, sizes, tasks },
 
-        dir   = ConfirmBy[ GeneralUtilities`EnsureDirectory @ dir0, DirectoryQ, "Directory" ];
+        dir = ConfirmBy[ GeneralUtilities`EnsureDirectory @ dir0, DirectoryQ, "Directory" ];
+        cleanupLegacyVectorDBFiles @ dir;
+        names = Select[ $vectorDBNames, ! DirectoryQ @ FileNameJoin @ { dir, # } & ];
+        urls  = KeyTake[ urls0, names ];
+
         lock  = FileNameJoin @ { dir, "download.lock" };
-        names = ConfirmMatch[ Keys @ urls, { __String }, "Names" ];
         sizes = ConfirmMatch[ getDownloadSize /@ Values @ urls, { __? Positive }, "Sizes" ];
 
         $downloadProgress = AssociationMap[ 0 &, names ];
@@ -167,6 +201,21 @@ downloadVectorDatabases // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
+(*cleanupLegacyVectorDBFiles*)
+cleanupLegacyVectorDBFiles // beginDefinition;
+
+cleanupLegacyVectorDBFiles[ dir_String ] := cleanupLegacyVectorDBFiles[ dir ] = Quiet @ Map[
+    DeleteDirectory[ #1, DeleteContents -> True ] &,
+    Join[
+        Select[ FileNames[ DigitCharacter.. ~~ "." ~~ DigitCharacter.. ~~ "." ~~ DigitCharacter.., dir ], DirectoryQ ],
+        Select[ FileNames[ $vectorDBNames, dir ], DirectoryQ[ # ] && ! vectorDBDirectoryQ0[ # ] & ]
+    ]
+];
+
+cleanupLegacyVectorDBFiles // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
 (*getDownloadSize*)
 getDownloadSize // beginDefinition;
 getDownloadSize[ url_String ] := getDownloadSize @ CloudObject @ url;
@@ -195,10 +244,15 @@ unpackVectorDatabases // endDefinition;
 unpackVectorDatabase // beginDefinition;
 
 unpackVectorDatabase[ zip_String? FileExistsQ ] := Enclose[
-    Module[ { root, dir, res },
+    Module[ { name, version, root, dir, res, versionFile },
+        name = ConfirmBy[ FileBaseName @ zip, StringQ, "Name" ];
+        version = ConfirmBy[ $vectorDatabases[ name, "Version" ], StringQ, "Version" ];
         root = ConfirmBy[ DirectoryName @ zip, DirectoryQ, "RootDirectory" ];
-        dir = ConfirmBy[ GeneralUtilities`EnsureDirectory @ { root, FileBaseName @ zip }, DirectoryQ, "Directory" ];
+        dir = ConfirmBy[ GeneralUtilities`EnsureDirectory @ { root, name }, DirectoryQ, "Directory" ];
         res = ConfirmMatch[ ExtractArchive[ zip, dir, OverwriteTarget -> True ], { __? FileExistsQ }, "Extracted" ];
+        versionFile = FileNameJoin @ { dir, "Version.wl" };
+        Put[ version, versionFile ];
+        ConfirmAssert[ Get @ versionFile === version, "VersionCheck" ];
         DeleteFile @ zip;
         res
     ],
@@ -351,24 +405,38 @@ loadVectorDBValues // endDefinition;
 (*vectorDBSearch*)
 vectorDBSearch // beginDefinition;
 
-vectorDBSearch[ dbName_String, prompt_String ] :=
-    vectorDBSearch[ dbName, prompt, All ];
 
-vectorDBSearch[ dbName_String, All ] :=
-    vectorDBSearch[ dbName, All, "Values" ];
+(* Default arguments: *)
+vectorDBSearch[ db: $$dbNameOrNames, prompt_String ] :=
+    vectorDBSearch[ db, prompt, All ];
 
-vectorDBSearch[ dbName_String, "", All ] := <|
+vectorDBSearch[ db: $$dbNameOrNames, All ] :=
+    vectorDBSearch[ db, All, "Values" ];
+
+
+(* Shortcuts: *)
+vectorDBSearch[ $$dbNameOrNames, "", All ] := <|
     "EmbeddingVector" -> None,
     "SearchData"      -> Missing[ "NoInput" ],
     "Values"          -> { }
 |>;
 
-vectorDBSearch[ dbName_String, prompt_String, All ] :=
+vectorDBSearch[ $$dbNameOrNames, "", "Results"|"Values" ] :=
+    { };
+
+vectorDBSearch[ { }, prompt_, prop_ ] :=
+    { };
+
+
+(* Cached results: *)
+vectorDBSearch[ dbName: $$dbName, prompt_String, All ] :=
     With[ { result = $vectorDBSearchCache[ dbName, prompt ] },
         result /; AssociationQ @ result
     ];
 
-vectorDBSearch[ dbName_String, prompt_String, All ] := Enclose[
+
+(* Main definition for string prompt: *)
+vectorDBSearch[ dbName: $$dbName, prompt_String, All ] := Enclose[
     Module[ { vectorDBInfo, vectorDB, allValues, embeddingVector, close, indices, distances, values, data, result },
 
         vectorDBInfo    = ConfirmBy[ getVectorDB @ dbName, AssociationQ, "VectorDBInfo" ];
@@ -395,7 +463,7 @@ vectorDBSearch[ dbName_String, prompt_String, All ] := Enclose[
         ConfirmAssert[ Length @ indices === Length @ distances === Length @ values, "LengthCheck" ];
 
         data = MapApply[
-            <| "Value" -> #1, "Index" -> #2, "Distance" -> #3 |> &,
+            <| "Value" -> #1, "Index" -> #2, "Distance" -> #3, "Source" -> dbName |> &,
             Transpose @ { values, indices, distances }
         ];
 
@@ -410,28 +478,9 @@ vectorDBSearch[ dbName_String, prompt_String, All ] := Enclose[
     throwInternalFailure
 ];
 
-vectorDBSearch[ dbName_String, prompt_String, key_String ] := Enclose[
-    Lookup[ ConfirmBy[ vectorDBSearch[ dbName, prompt, All ], AssociationQ, "Result" ], key ],
-    throwInternalFailure
-];
 
-vectorDBSearch[ dbName_String, prompt_String, keys: { ___String } ] := Enclose[
-    KeyTake[ ConfirmBy[ vectorDBSearch[ dbName, prompt, All ], AssociationQ, "Result" ], keys ],
-    throwInternalFailure
-];
-
-vectorDBSearch[ dbName_String, prompts: { ___String }, prop_ ] :=
-    AssociationMap[ vectorDBSearch[ dbName, #, prop ] &, prompts ];
-
-vectorDBSearch[ dbName_String, All, "Values" ] := Enclose[
-    Module[ { vectorDBInfo },
-        vectorDBInfo = ConfirmBy[ getVectorDB @ dbName, AssociationQ, "VectorDB" ];
-        ConfirmBy[ vectorDBInfo[ "Values" ], ListQ, "Values" ]
-    ],
-    throwInternalFailure
-];
-
-vectorDBSearch[ dbName_String, messages0: { __Association }, prop: "Values"|"Results" ] := Enclose[
+(* Main definition for a list of messages: *)
+vectorDBSearch[ dbName: $$dbName, messages0: { __Association }, prop: "Values"|"Results" ] := Enclose[
     Catch @ Module[
         {
             messages,
@@ -514,7 +563,85 @@ vectorDBSearch[ dbName_String, messages0: { __Association }, prop: "Values"|"Res
     throwInternalFailure
 ];
 
+
+(* Properties: *)
+vectorDBSearch[ db_, prompt_String, "EmbeddingVector" ] := Enclose[
+    ConfirmMatch[ getEmbedding @ prompt, _NumericArray, "EmbeddingVector" ],
+    throwInternalFailure
+];
+
+vectorDBSearch[ dbName: $$dbName, prompt_String, key_String ] := Enclose[
+    Lookup[ ConfirmBy[ vectorDBSearch[ dbName, prompt, All ], AssociationQ, "Result" ], key ],
+    throwInternalFailure
+];
+
+vectorDBSearch[ dbName: $$dbName, prompt_String, keys: { ___String } ] := Enclose[
+    KeyTake[ ConfirmBy[ vectorDBSearch[ dbName, prompt, All ], AssociationQ, "Result" ], keys ],
+    throwInternalFailure
+];
+
+vectorDBSearch[ dbName: $$dbName, prompts: { ___String }, prop_ ] :=
+    AssociationMap[ vectorDBSearch[ dbName, #, prop ] &, prompts ];
+
+
+(* Full list of possible values: *)
+vectorDBSearch[ dbName: $$dbName, All, "Values" ] := Enclose[
+    Module[ { vectorDBInfo },
+        vectorDBInfo = ConfirmBy[ getVectorDB @ dbName, AssociationQ, "VectorDB" ];
+        ConfirmBy[ vectorDBInfo[ "Values" ], ListQ, "Values" ]
+    ],
+    throwInternalFailure
+];
+
+vectorDBSearch[ names: $$dbNames, All, "Values" ] :=
+    Flatten[ vectorDBSearch[ #, All, "Values" ] & /@ names ];
+
+
+(* Combine results from multiple vector databases: *)
+vectorDBSearch[ names: $$dbNames, prompt_, prop: "Values"|"Results" ] := Enclose[
+    Catch @ Module[ { results, sorted },
+
+        results = ConfirmMatch[
+            applyBias[ #, vectorDBSearch[ #, prompt, "Results" ] ] & /@ names,
+            { { KeyValuePattern[ "Distance" -> $$size ].. }... },
+            "Results"
+        ];
+
+        sorted = SortBy[ Flatten @ results, #Distance & ];
+
+        If[ prop === "Results",
+            sorted,
+            ConfirmMatch[
+                DeleteDuplicates @ Lookup[ sorted, "Value" ],
+                { __String },
+                "Values"
+            ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+vectorDBSearch[ names: $$dbNames, prompt_, All ] :=
+    Merge[ vectorDBSearch[ #, prompt, All ] & /@ names, Flatten ];
+
+vectorDBSearch[ All, prompt_ ] :=
+    vectorDBSearch[ $vectorDBNames, prompt ];
+
+vectorDBSearch[ All, prompt_, prop_ ] :=
+    vectorDBSearch[ $vectorDBNames, prompt, prop ];
+
+
 vectorDBSearch // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*applyBias*)
+applyBias // beginDefinition;
+applyBias[ name_String, results_ ] := applyBias[ $vectorDatabases[ name, "Bias" ], results ];
+applyBias[ None | _Missing | 0 | 0.0, results_ ] := results;
+applyBias[ bias_, results_List ] := (applyBias[ bias, #1 ] &) /@ results;
+applyBias[ bias: $$size, as: KeyValuePattern[ "Distance" -> d: $$size ] ] := <| as, "Distance" -> d + bias |>;
+applyBias // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -547,7 +674,7 @@ insertContextPrompt // endDefinition;
 (*cacheVectorDBResult*)
 cacheVectorDBResult // beginDefinition;
 
-cacheVectorDBResult[ dbName_String, prompt_String, data_Association ] := (
+cacheVectorDBResult[ dbName: $$dbName, prompt_String, data_Association ] := (
     If[ ! AssociationQ @ $vectorDBSearchCache, $vectorDBSearchCache = <| |> ];
     If[ ! AssociationQ @ $vectorDBSearchCache[ dbName ], $vectorDBSearchCache[ dbName ] = <| |> ];
     $vectorDBSearchCache[ dbName, prompt ] = data

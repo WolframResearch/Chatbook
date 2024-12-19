@@ -24,10 +24,28 @@ $resourceSnippetsCacheDirectory := $resourceSnippetsCacheDirectory =
 
 $rerankMethod := CurrentChatSettings[ "DocumentationRerankMethod" ];
 
+$defaultSources = { "DataRepository", "Documentation", "FunctionRepository" };
+
+$sourceAliases = <|
+    "DataRepository"     -> "DataRepositoryURIs",
+    "Documentation"      -> "DocumentationURIs",
+    "FunctionRepository" -> "FunctionRepositoryURIs"
+|>;
+
+
+$minUnfilteredItems       = 20;
+$unfilteredItemsPerSource = 10;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Messages*)
 Chatbook::CloudDownloadError = "Unable to download required data from the cloud. Please try again later.";
+Chatbook::InvalidSources     = "Invalid value for the \"Sources\" option: `1`.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*$RelatedDocumentationSources*)
+$RelatedDocumentationSources = $defaultSources;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -36,7 +54,9 @@ RelatedDocumentation // beginDefinition;
 RelatedDocumentation // Options = {
     "FilteredCount" -> Automatic,
     "FilterResults" -> Automatic,
-    "MaxItems"      -> 20
+    "MaxItems"      -> Automatic,
+    "RerankMethod"  -> Automatic,
+    "Sources"       :> $RelatedDocumentationSources
 };
 
 GeneralUtilities`SetUsage[ RelatedDocumentation, "\
@@ -62,27 +82,32 @@ RelatedDocumentation[ prompt_, count: _Integer | UpTo[ _Integer ], opts: Options
     RelatedDocumentation[ prompt, Automatic, count, opts ];
 
 RelatedDocumentation[ prompt_, property_, opts: OptionsPattern[ ] ] :=
-    catchMine @ RelatedDocumentation[ prompt, property, OptionValue @ MaxItems, opts ];
+    catchMine @ RelatedDocumentation[
+        prompt,
+        property,
+        getMaxItems[ OptionValue @ MaxItems, getSources @ OptionValue[ "Sources" ] ],
+        opts
+    ];
 
 RelatedDocumentation[ prompt_, Automatic, count_, opts: OptionsPattern[ ] ] :=
     RelatedDocumentation[ prompt, "URIs", count, opts ];
 
 RelatedDocumentation[ prompt: $$prompt, "URIs", Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
     (* TODO: filter results *)
-    ConfirmMatch[ vectorDBSearch[ "DocumentationURIs", prompt, "Values" ], { ___String }, "Queries" ],
+    ConfirmMatch[ vectorDBSearch[ getSources @ OptionValue[ "Sources" ], prompt, "Values" ], { ___String }, "Queries" ],
     throwInternalFailure
 ];
 
 RelatedDocumentation[ All, "URIs", Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
     (* TODO: filter results *)
-    Union @ ConfirmMatch[ vectorDBSearch[ "DocumentationURIs", All ], { __String }, "QueryList" ],
+    Union @ ConfirmMatch[ vectorDBSearch[ getSources @ OptionValue[ "Sources" ], All ], { __String }, "QueryList" ],
     throwInternalFailure
 ];
 
 RelatedDocumentation[ prompt: $$prompt, "Snippets", Automatic, opts: OptionsPattern[ ] ] := catchMine @ Enclose[
     ConfirmMatch[
         (* TODO: filter results *)
-        DeleteMissing[ makeDocSnippets @ vectorDBSearch[ "DocumentationURIs", prompt, "Values" ] ],
+        DeleteMissing[ makeDocSnippets @ vectorDBSearch[ getSources @ OptionValue[ "Sources" ], prompt, "Values" ] ],
         { ___String },
         "Snippets"
     ],
@@ -105,7 +130,14 @@ RelatedDocumentation[
 ] :=
     catchMine @ Enclose[
         (* TODO: filter results *)
-        Take[ ConfirmBy[ vectorDBSearch[ "DocumentationURIs", prompt, property ], ListQ, "Results" ], UpTo @ n ],
+        Take[
+            ConfirmBy[
+                vectorDBSearch[ getSources @ OptionValue[ "Sources" ], prompt, property ],
+                ListQ,
+                "Results"
+            ],
+            UpTo @ n
+        ],
         throwInternalFailure
     ];
 
@@ -126,11 +158,19 @@ RelatedDocumentation[ prompt_, property: "Index"|"Distance", n_Integer, opts: Op
     ];
 
 RelatedDocumentation[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
-    catchMine @ relatedDocumentationPrompt[
-        ensureChatMessages @ prompt,
-        n,
-        MatchQ[ OptionValue[ "FilterResults" ], Automatic|True ],
-        Replace[ OptionValue[ "FilteredCount" ], Automatic -> Ceiling[ n / 4 ] ]
+    catchMine @ Block[
+        {
+            $rerankMethod = Replace[
+                OptionValue[ "RerankMethod" ],
+                $$unspecified :> CurrentChatSettings[ "DocumentationRerankMethod" ]
+            ]
+        },
+        relatedDocumentationPrompt[
+            ensureChatMessages @ prompt,
+            n,
+            MatchQ[ OptionValue[ "FilterResults" ], Automatic|True ],
+            Replace[ OptionValue[ "FilteredCount" ], Automatic -> Ceiling[ n / 4 ] ]
+        ]
     ];
 
 RelatedDocumentation[ args___ ] := catchMine @ throwFailure[
@@ -140,6 +180,33 @@ RelatedDocumentation[ args___ ] := catchMine @ throwFailure[
 ];
 
 RelatedDocumentation // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getMaxItems*)
+getMaxItems // beginDefinition;
+getMaxItems[ $$unspecified, sources_List ] := Max[ $minUnfilteredItems, $unfilteredItemsPerSource * Length @ sources ];
+getMaxItems[ Infinity, _ ] := 50;
+getMaxItems[ n: $$size, _ ] := Ceiling @ n;
+getMaxItems[ UpTo[ n_ ], sources_ ] := getMaxItems[ n, sources ];
+getMaxItems // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getSources*)
+getSources // beginDefinition;
+getSources[ names_List ] := toSource /@ Flatten @ names;
+getSources[ name_String ] := { toSource @ name };
+getSources[ Automatic|All ] := toSource /@ $defaultSources;
+getSources[ source_ ] := throwFailure[ "InvalidSources", source ];
+getSources // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toSource*)
+toSource // beginDefinition;
+toSource[ name_String ] := Lookup[ $sourceAliases, name, name ];
+toSource // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -194,8 +261,7 @@ prependRelatedDocsHeader // endDefinition;
 
 
 $relatedDocsStringFilteredHeader =
-"IMPORTANT: Here are some Wolfram documentation snippets that were retrieved based on semantic similarity to the \
-current context. Please use them if they can help answer the user's latest message.\n\n";
+"IMPORTANT: Here are some Wolfram documentation snippets that you should use to respond.\n\n";
 
 $relatedDocsStringUnfilteredHeader =
 "Here are some Wolfram documentation snippets that you may find useful.\n\n";
@@ -208,6 +274,20 @@ filterSnippets // beginDefinition;
 
 filterSnippets[ messages_, uris: { __String }, Except[ True ], filterCount_ ] := Enclose[
     ConfirmMatch[ makeDocSnippets @ uris, { ___String }, "Snippets" ],
+    throwInternalFailure
+];
+
+
+filterSnippets[
+    messages_,
+    uris: { __String },
+    True,
+    filterCount_Integer? Positive
+] /; $rerankMethod === None := Enclose[
+    Catch @ Module[ { snippets },
+        snippets = ConfirmMatch[ makeDocSnippets @ uris, { ___String }, "Snippets" ];
+        Take[ snippets, UpTo[ filterCount ] ]
+    ],
     throwInternalFailure
 ];
 
@@ -306,7 +386,7 @@ $bestDocumentationPrompt = StringTemplate[ "\
 Your task is to read a chat transcript between a user and assistant, and then select any relevant Wolfram Language \
 documentation snippets that could help the assistant answer the user's latest message.
 
-Each snippet is uniquely identified by a URI (always starts with 'paclet:' or 'https://resources.wolframcloud.com').
+Each snippet is uniquely identified by a URI (always starts with 'paclet:' or 'https://*.wolframcloud.com').
 
 Choose up to %%FilteredCount%% documentation snippets that would help answer the user's MOST RECENT message.
 
@@ -513,6 +593,13 @@ snippetCacheFile[ uri_String ] /; StringStartsQ[ uri, "paclet:" ] :=
 snippetCacheFile[ uri_String ] /; StringStartsQ[ uri, "https://resources.wolframcloud.com/" ] :=
     snippetCacheFile[ uri, StringDelete[ uri, "https://resources.wolframcloud.com/" ], "ResourceSystem" ];
 
+snippetCacheFile[ uri_String ] /; StringStartsQ[ uri, "https://datarepository.wolframcloud.com/" ] :=
+    snippetCacheFile[
+        uri,
+        "DataRepository" <> StringDelete[ uri, "https://datarepository.wolframcloud.com/" ],
+        "ResourceSystem"
+    ];
+
 snippetCacheFile[ uri_String, path0_String, name_String ] := Enclose[
     Module[ { path, file },
         path = ConfirmBy[ StringTrim[ path0, "/" ] <> ".wxf", StringQ, "Path" ];
@@ -613,6 +700,9 @@ toDocSnippetURL0 // beginDefinition;
 
 toDocSnippetURL0[ { "resources.wolframcloud.com", { "", repo_String, "resources", name_String } } ] :=
     URLBuild @ { $resourceSnippetBaseURL, repo, name <> ".wxf" };
+
+toDocSnippetURL0[ { "datarepository.wolframcloud.com", { "", "resources", name_String } } ] :=
+    URLBuild @ { $resourceSnippetBaseURL, "DataRepository", name <> ".wxf" };
 
 toDocSnippetURL0 // endDefinition;
 
