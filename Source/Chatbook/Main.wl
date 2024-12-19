@@ -48,6 +48,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `ChatbookFilesDirectory;
 `ChatCellEvaluate;
 `ChatMessageToCell;
+`ConvertChatNotebook;
 `CreateChatDrivenNotebook;
 `CreateChatNotebook;
 `CurrentChatSettings;
@@ -135,6 +136,7 @@ $ChatbookContexts = {
     "Wolfram`Chatbook`ChatTitle`",
     "Wolfram`Chatbook`CloudToolbar`",
     "Wolfram`Chatbook`Common`",
+    "Wolfram`Chatbook`ConvertChatNotebook`",
     "Wolfram`Chatbook`CreateChatNotebook`",
     "Wolfram`Chatbook`Dialogs`",
     "Wolfram`Chatbook`Dynamics`",
@@ -216,6 +218,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "ChatbookFilesDirectory",
     "ChatCellEvaluate",
     "ChatMessageToCell",
+    "ConvertChatNotebook",
     "CreateChatDrivenNotebook",
     "CreateChatNotebook",
     "CurrentChatSettings",
