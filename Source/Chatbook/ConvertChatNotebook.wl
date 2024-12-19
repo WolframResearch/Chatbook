@@ -6,6 +6,11 @@ Begin[ "`Private`" ];
 Needs[ "Wolfram`Chatbook`"        ];
 Needs[ "Wolfram`Chatbook`Common`" ];
 
+(* TODO:
+    * This should also handle conversion from a regular chat notebook to workspace chat.
+    * Move code for inline chat conversion to this file.
+*)
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Configuration*)
@@ -21,14 +26,39 @@ $$conversionFormat   = "Notebook" | "NotebookObject";
 (*ConvertChatNotebook*)
 ConvertChatNotebook // beginDefinition;
 
-
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Options*)
 Needs[ "Wolfram`Chatbook`Settings`" ]; (* Needed for $defaultChatSettings *)
 ConvertChatNotebook // Options = Normal[
     KeySort @ <| $defaultChatSettings, "CreateNewNotebook" -> False |>,
     Association
 ];
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Messages*)
+GeneralUtilities`SetUsage[ ConvertChatNotebook, "\
+ConvertChatNotebook[notebook$, \"type$\"] converts notebook$ to a new chat notebook using rules specified by \"type$\".
+ConvertChatNotebook[notebook$, \"type$\", \"fmt$\"] converts notebook$ and gives the result in the specified format.
 
+* The given notebook$ should be a workspace chat and can be given as a Notebook or NotebookObject.
+* Some possible values for \"type$\" are:
+| \"CloudPublish\"    | Convert the notebook for cloud publishing.  |
+| \"ChatNotebook\"    | Convert the notebook to a chat notebook.    |
+| \"DefaultNotebook\" | Convert the notebook to a default notebook. |
+* Possible values for \"fmt$\" are:
+| \"Notebook\"       | Return the result as a Notebook expression.      |
+| \"NotebookObject\" | Return the result as a NotebookObject.           |
+| Automatic          | Return the result in the same form as notebook$. |
+* ConvertChatNotebook accepts the same options as CreateChatNotebook with the following addition:
+| CreateNewNotebook | False | Whether to create a new NotebookObject or overwrite the existing one. |
+* The CreateNewNotebook option only has an effect when notebook$ is a NotebookObject and \"fmt$\" is \"NotebookObject\".
+" ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Definition*)
 (* Default arguments and argument normalization: *)
 ConvertChatNotebook[ nb_, type_, opts: $$convertChatOptions ] :=
     catchMine @ ConvertChatNotebook[ nb, type, Automatic, opts ];
