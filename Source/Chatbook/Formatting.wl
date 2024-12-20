@@ -36,7 +36,22 @@ sectionStyle[ _ ] := "Subsubsubsubsection";
 
 $tinyLineBreak = StyleBox[ "\n", "TinyLineBreak", FontSize -> 3 ];
 
-$$externalLanguage = "Java"|"Julia"|"Jupyter"|"NodeJS"|"Octave"|"Python"|"R"|"Ruby"|"Shell"|"SQL"|"SQL-JDBC";
+$externalLanguages = {
+    "Java",
+    "Julia",
+    "Jupyter",
+    "NodeJS",
+    "Octave",
+    "Python",
+    "R",
+    "Ruby",
+    "Shell",
+    "SQL-JDBC",
+    "SQL",
+    "SQLite"
+};
+
+$$externalLanguage = Alternatives @@ $externalLanguages;
 
 $externalLanguageRules = Replace[
     Flatten @ {
@@ -46,7 +61,7 @@ $externalLanguageRules = Replace[
         "Node"       -> "NodeJS",
         "Bash"       -> "Shell",
         "SH"         -> "Shell",
-        Cases[ $$externalLanguage, lang_ :> (lang -> lang) ]
+        Cases[ $externalLanguages, lang_ :> (lang -> lang) ]
     },
     HoldPattern[ lhs_ -> rhs_ ] :> (StartOfString~~lhs~~EndOfString -> rhs),
     { 1 }
@@ -695,7 +710,7 @@ evaluateLanguageLabel[ name_String, False ] :=
                 "LinkHand"
             ],
             tr[ "FormattingInsertContentAndEvaluateTooltip" ]
-        ] /; MatchQ[ icon, _Graphics | _Image ]
+        ] /; MatchQ[ icon, _Graphics | _Image | _Dynamic ]
     ];
 
 evaluateLanguageLabel[ name_String, True ] :=
@@ -2789,16 +2804,9 @@ externalLanguageQ[ ___ ] := False;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*$languageIcons*)
-$languageIcons := $languageIcons = Enclose[
-    ExternalEvaluate;
-    Select[
-        AssociationMap[
-            ReleaseHold @ ExternalEvaluate`Private`GetLanguageRules[ #1, "Icon" ] &,
-            ConfirmMatch[ ExternalEvaluate`Private`GetLanguageRules[ ], _List ]
-        ],
-        MatchQ[ _Graphics|_Image ]
-    ],
-    <| |> &
+$languageIcons := $languageIcons = AssociationMap[
+    chatbookExpression[ "ExternalLanguageIcon" <> StringDelete[ #, "-" ] ] &,
+    $externalLanguages
 ];
 
 (* ::**************************************************************************************************************:: *)

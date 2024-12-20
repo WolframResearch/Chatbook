@@ -328,7 +328,7 @@ CellToString // Options = {
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
 CellToString[ cell_, opts: OptionsPattern[ ] ] :=
-    Catch @ Block[
+    catchMine @ Catch @ Block[
         {
             $cellCharacterEncoding = OptionValue[ "CharacterEncoding" ],
             $CellToStringDebug = TrueQ @ OptionValue[ "Debug" ],
@@ -1021,12 +1021,15 @@ fasterCellToString0[ Cell[
     "\[FreeformPrompt] " <> query
 );
 
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
 (* Control equals input *)
 fasterCellToString0[ NamespaceBox[
     "LinguisticAssistant",
     DynamicModuleBox[ { ___, Typeset`query$$|WolframAlphaClient`Private`query$$ = query_String, ___ }, __ ],
     ___
 ] ] := "\[FreeformPrompt][\""<>query<>"\"]";
+(* :!CodeAnalysis::EndBlock:: *)
 
 (* FreeformEvaluate *)
 fasterCellToString0[ RowBox @ { "=[", query_String, "]" } ] := "\[FreeformPrompt]["<>query<>"]";
@@ -2284,6 +2287,8 @@ fasterCellToString0[ _[
 fasterCellToString0[ box_TabViewBox ] :=
     With[ { str = makeExpressionString @ box }, str /; StringQ @ str ];
 
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
 fasterCellToString0[ DynamicModuleBox[
     { ___, TypeSystem`NestedGrid`PackagePrivate`$state$$ = Association[ ___, "InitialData" -> data_, ___ ], ___ },
     ___
@@ -2291,6 +2296,7 @@ fasterCellToString0[ DynamicModuleBox[
     needsBasePrompt[ "WolframLanguage" ];
     inputFormString @ Unevaluated @ Dataset @ data
 );
+(* :!CodeAnalysis::EndBlock:: *)
 
 fasterCellToString0[ DynamicModuleBox[ a___ ] ] /; ! TrueQ @ $CellToStringDebug := (
     needsBasePrompt[ "ConversionLargeOutputs" ];

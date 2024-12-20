@@ -254,7 +254,7 @@ loadChatSearchIndex[ appName_String ] := Enclose[
 ];
 
 loadChatSearchIndex[ All ] := Enclose[
-    Module[ { root, files, names },
+    Catch @ Module[ { root, files, names },
         If[ ! AssociationQ @ $chatSearchIndex, $chatSearchIndex = <| |> ];
 
         root = ConfirmBy[

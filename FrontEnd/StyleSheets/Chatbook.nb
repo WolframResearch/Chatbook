@@ -824,7 +824,7 @@ Notebook[
   ],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.0.4.3943330431"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.0.8.3943617669"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -14457,7 +14457,7 @@ Notebook[
         ],
         Initialization :>
          (Quiet[Needs["Wolfram`Chatbook`" -> None]];
-         Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = 
+         Wolfram`Chatbook`$LastInlineReferenceCell = 
           EvaluationCell[])
        ]
       ]
@@ -14488,7 +14488,7 @@ Notebook[
         ],
         Initialization :>
          (Quiet[Needs["Wolfram`Chatbook`" -> None]];
-         Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = 
+         Wolfram`Chatbook`$LastInlineReferenceCell = 
           EvaluationCell[])
        ]
       ]
@@ -14519,7 +14519,7 @@ Notebook[
         ],
         Initialization :>
          (Quiet[Needs["Wolfram`Chatbook`" -> None]];
-         Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = 
+         Wolfram`Chatbook`$LastInlineReferenceCell = 
           EvaluationCell[])
        ]
       ]
@@ -14549,7 +14549,7 @@ Notebook[
         ],
         Initialization :>
          (Quiet[Needs["Wolfram`Chatbook`" -> None]];
-         Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = 
+         Wolfram`Chatbook`$LastInlineReferenceCell = 
           EvaluationCell[])
        ]
       ]
