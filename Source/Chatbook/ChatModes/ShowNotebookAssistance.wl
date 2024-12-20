@@ -484,15 +484,17 @@ showNotebookAssistanceWindow[ source_NotebookObject, input_, evaluate_, new_ ] :
         If[ movedLastChatToSourcesIndicatorQ,
             writeWorkspaceChatSubDockedCell[
                 nbo,
-                Button[
-                    MouseAppearance[
-                        Style[
-                            Row[ { trExprTemplate["WorkspaceToolbarSourcesSubTitleMoved"][ <| "1" -> chatbookIcon[ "WorkspaceToolbarIconHistorySmall", False ] |> ] } ],
-                            "WorkspaceChatToolbarTitle", FontSlant -> Italic, FontWeight -> Plain
-                        ],
-                        "LinkHand"], (* using LinkHand to indicate the sub-docked cell is clickable *)
-                    Wolfram`Chatbook`ChatModes`UI`Private`toggleOverlayMenu[ nbo, "History" ],
-                    Appearance -> "Suppressed"
+                With[ { nbo = nbo },
+                    Button[
+                        MouseAppearance[
+                            Style[
+                                Row[ { trExprTemplate["WorkspaceToolbarSourcesSubTitleMoved"][ <| "1" -> chatbookIcon[ "WorkspaceToolbarIconHistorySmall", False ] |> ] } ],
+                                "WorkspaceChatToolbarTitle", FontSlant -> Italic, FontWeight -> Plain
+                            ],
+                            "LinkHand"], (* using LinkHand to indicate the sub-docked cell is clickable *)
+                        toggleOverlayMenu[ nbo, "History" ],
+                        Appearance -> "Suppressed"
+                    ]
                 ]
             ]
         ];

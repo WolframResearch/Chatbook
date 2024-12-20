@@ -1218,7 +1218,7 @@ Cell[
 					DynamicBox[ToBoxes @ Wolfram`Chatbook`Common`personaTemplateBoxes[1, #input, #state, #uuid]],
 					Initialization :> (
 						Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-						Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = EvaluationCell[ ]
+						Wolfram`Chatbook`$LastInlineReferenceCell = EvaluationCell[ ]
 					)
 				]
 			]&),
@@ -1240,7 +1240,7 @@ Cell[
 					DynamicBox[ToBoxes @ Wolfram`Chatbook`Common`modifierTemplateBoxes[1, #input, #params, #state, #uuid]],
 					Initialization :> (
 						Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-						Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = EvaluationCell[ ]
+						Wolfram`Chatbook`$LastInlineReferenceCell = EvaluationCell[ ]
 					)
 				]
 			]&),
@@ -1262,7 +1262,7 @@ Cell[
 					DynamicBox[ToBoxes @ Wolfram`Chatbook`Common`functionTemplateBoxes[1, #input, #params, #state, #uuid]],
 					Initialization :> (
 						Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-						Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = EvaluationCell[ ]
+						Wolfram`Chatbook`$LastInlineReferenceCell = EvaluationCell[ ]
 					)
 				]
 			]&),
@@ -1284,7 +1284,7 @@ Cell[
 					DynamicBox[ToBoxes @ Wolfram`Chatbook`Common`wlTemplateBoxes[1, #input, #state, #uuid]],
 					Initialization :> (
 						Quiet @ Needs[ "Wolfram`Chatbook`" -> None ];
-						Wolfram`Chatbook`InlineReferences`Private`$lastInlineReferenceCell = EvaluationCell[ ]
+						Wolfram`Chatbook`$LastInlineReferenceCell = EvaluationCell[ ]
 					)
 				]
 			]&),
