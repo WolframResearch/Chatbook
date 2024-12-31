@@ -2,7 +2,10 @@ name: Experimental Release
 
 on:
   workflow_dispatch:
-  push:
+  workflow_run:
+    workflows: ["Increment Paclet Version"]
+    types:
+      - completed
     branches: [main]
 
 concurrency:
@@ -46,13 +49,16 @@ jobs:
       run: |
         git config --global --add safe.directory $(pwd)
 
-        if gh release view experimental; then
-          gh release delete experimental --cleanup-tag --yes --repo="${{ env.GITHUB_REPOSITORY }}"
+        if ! gh release view experimental; then
+          gh release create experimental \
+            --target="${{ github.ref }}" \
+            --repo="${{ env.GITHUB_REPOSITORY }}" \
+            --title="Experimental Release" \
+            --notes="This is an experimental release that's always updated with the latest build from the main branch." \
+            --prerelease
         fi
 
-        gh release create experimental "${{ env.PACLET_BUILD_DIR }}/Wolfram__Chatbook.paclet" \
-          --target="${{ github.ref }}" \
-          --repo="${{ env.GITHUB_REPOSITORY }}" \
-          --title="Experimental Release" \
-          --notes="This is an experimental release that's always updated with the latest build from the main branch." \
-          --prerelease
+        gh release upload experimental \
+          "${{ env.PACLET_BUILD_DIR }}/Wolfram__Chatbook.paclet" \
+          --clobber \
+          --repo="${{ env.GITHUB_REPOSITORY }}"
