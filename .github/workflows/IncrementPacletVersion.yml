@@ -42,6 +42,7 @@ jobs:
         run: wolframscript -f Scripts/IncrementPacletVersion.wls
 
       - name: Commit Changes
+        shell: bash
         run: |
           echo "Status: $(git status --porcelain)"
           if [[ -n $(git status --porcelain) ]]; then
