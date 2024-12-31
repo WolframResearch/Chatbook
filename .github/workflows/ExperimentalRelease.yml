@@ -52,7 +52,7 @@ jobs:
         if ! gh release view experimental; then
           gh release create experimental \
             --target="${{ github.ref }}" \
-            --repo="${{ env.GITHUB_REPOSITORY }}" \
+            --repo="${{ github.repository }}" \
             --title="Experimental Release" \
             --notes="This is an experimental release that's always updated with the latest build from the main branch." \
             --prerelease
@@ -61,4 +61,4 @@ jobs:
         gh release upload experimental \
           "${{ env.PACLET_BUILD_DIR }}/Wolfram__Chatbook.paclet" \
           --clobber \
-          --repo="${{ env.GITHUB_REPOSITORY }}"
+          --repo="${{ github.repository }}"
