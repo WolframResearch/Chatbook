@@ -6,8 +6,25 @@ BeginPackage[ "Wolfram`ChatbookScripts`" ];
 (* ::Section::Closed:: *)
 (*Initialization*)
 If[ ! TrueQ @ $loadedDefinitions, Get @ FileNameJoin @ { DirectoryName @ $InputFileName, "Common.wl" } ];
-Get @ cFile @ FileNameJoin @ { DirectoryName @ $InputFileName, "UnformatFiles.wls" };
-Get @ cFile @ FileNameJoin @ { DirectoryName @ $InputFileName, "BuildMX.wls" };
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Arguments*)
+$check    = getBooleanArgument[ { "c", "check"    }, True  ];
+$install  = getBooleanArgument[ { "i", "install"  }, False ];
+$mx       = getBooleanArgument[ { "m", "mx"       }, True  ];
+$unformat = getBooleanArgument[ { "u", "unformat" }, True  ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Optional Dependencies*)
+If[ $unformat, Get @ cFile @ FileNameJoin @ { $scriptDir, "UnformatFiles.wls" } ];
+If[ $mx      , Get @ cFile @ FileNameJoin @ { $scriptDir, "BuildMX.wls" } ];
+If[ $check   , Get @ cFile @ FileNameJoin @ { $scriptDir, "Resources", "CodeInspectorRules.wl" } ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Other*)
 Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 
 (* ::**************************************************************************************************************:: *)
@@ -19,7 +36,7 @@ Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 (*Build*)
 result = checkResult @ cicd`BuildPaclet[
     $defNB,
-    "Check"      -> False,
+    "Check"      -> $check,
     "ExitOnFail" -> True,
     "Target"     -> "Submit"
 ];
@@ -27,7 +44,7 @@ result = checkResult @ cicd`BuildPaclet[
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Install*)
-If[ MemberQ[ $scriptCommandLine, "-i"|"--install"|"--install=true" ],
+If[ $install,
     archive = cFile @ result[ "PacletArchive" ];
     cicd`ConsoleNotice @ SequenceForm[ "Installing paclet file: ", archive ];
     installed = cicd`ScriptConfirmBy[ PacletInstall[ archive, ForceVersionInstall -> True ], PacletObjectQ ];

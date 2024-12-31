@@ -34,7 +34,7 @@ jobs:
 
     - name: Check
       run: wolframscript -f Scripts/CheckPaclet.wls
-    
+
     - name: Build
       run: wolframscript -f Scripts/BuildPaclet.wls
 
