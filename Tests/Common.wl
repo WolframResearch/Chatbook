@@ -170,7 +170,6 @@ CreateChatCell // endDefinition;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Package Footer*)
-$TestDefinitionsLoaded = True;
 
 (* :!CodeAnalysis::EndBlock:: *)
 
