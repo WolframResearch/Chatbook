@@ -606,7 +606,12 @@ Options[ errorMessageCloseButton ] = { Appearance -> "NonFatal" };
 errorMessageCloseButton[ OptionsPattern[ ] ] :=
 Button[
 	errorMessageCloseButtonAppearance[ OptionValue[ Appearance ] ],
-	NotebookDelete[ EvaluationCell[ ] ],
+	(* Cloud-25777:
+		We need to coerce the cloud to send the evaluation through the kernel instead of the JS evaluator.
+		We accomplish this with a hack: include an unknown symbol with no side effects. *)
+	(
+		CloudSystem`Private`NoValue`Cloud25777;
+		NotebookDelete[ EvaluationCell[ ] ] ),
 	Appearance       -> "Suppressed",
 	BaselinePosition -> Baseline,
 	ImageSize        -> Automatic
