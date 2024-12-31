@@ -38,6 +38,7 @@ $messageHistory       = <| |>;
 $stackHistory         = <| |>;
 $inputFileName        = cFile @ Replace[ $InputFileName, "" :> NotebookFileName[ ] ];
 $pacletDir            = cDir @ DirectoryName[ $inputFileName, 2 ];
+$scriptDir            = DirectoryName @ $inputFileName;
 
 Internal`AddHandler[ "Message", messageHandler ];
 
@@ -105,9 +106,59 @@ messageString[ ___ ] := "-- Message text not found --";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
-(*Definitions*)
-$scriptCommandLine := Replace[ $ScriptCommandLine, { } :> $CommandLine ];
+(*Command Line Arguments*)
+$scriptCommandLine := Select[ Flatten @ { Replace[ $ScriptCommandLine, { } :> $CommandLine ] }, StringQ ];
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getBooleanArgument*)
+getBooleanArgument // Attributes = { HoldRest };
+
+getBooleanArgument[ name_ ] :=
+    getBooleanArgument[ name, False ];
+
+getBooleanArgument[ name_String, default_ ] :=
+    getBooleanArgument[ { name, name }, default ];
+
+getBooleanArgument[ { short_String, full_String }, default_ ] := Catch[
+    Module[ { named, interpreted, res },
+        If[ MemberQ[ $scriptCommandLine, "-"<>short | "--"<>full ], Throw[ True, $booleanTag ] ];
+        named = getNamedArgument @ full;
+        If[ ! StringQ @ named, Throw[ default, $booleanTag ] ];
+        interpreted = Interpreter[ "Boolean" ][ named ];
+        If[ BooleanQ @ interpreted,
+            interpreted,
+            res = default;
+            cicd`ConsoleError @ TemplateApply[
+                "The value \"`1`\" specified for \"`2`\" is not a valid boolean value. Using default value: \"`3`\".",
+                { named, full, res }
+            ];
+            res
+        ]
+    ],
+    $booleanTag
+];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getNamedArgument*)
+getNamedArgument // Attributes = { HoldRest };
+
+getNamedArgument[ name_ ] :=
+    getNamedArgument[ name, Missing[ "NotSpecified" ] ];
+
+getNamedArgument[ name_String, default_ ] :=
+    Module[ { arg },
+        arg = SelectFirst[ $scriptCommandLine, StringQ @ # && StringStartsQ[ #, "--"<>name<>"=" ] & ];
+        If[ StringQ @ arg,
+            StringDelete[ arg, StartOfString ~~ "--"<>name<>"=" ],
+            default
+        ]
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Definitions*)
 $$ws = WhitespaceCharacter...;
 $$id = "\"" ~~ Except[ "\"" ].. ~~ "\"";
 

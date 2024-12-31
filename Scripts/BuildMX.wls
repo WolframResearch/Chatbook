@@ -15,6 +15,7 @@ Needs[ "PacletTools`"        -> "pt`"   ];
 Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
 
 Wolfram`ChatbookInternal`$BuildingMX = True;
+$assertions = getBooleanArgument[ { "a", "assertions" }, True ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -152,8 +153,11 @@ If[ FileExistsQ @ $mxFile,
 cicd`ConsoleLog[ "Copying files..." ];
 tmp = cicd`ScriptConfirmBy[ copyTemporary @ $pacletDir, DirectoryQ ];
 cicd`ScriptConfirmBy[ setPacletReleaseID[ tmp, releaseID @ $pacletDir ], StringQ ];
-cicd`ConsoleLog[ "Inserting confirmation source info..." ];
-cicd`ScriptConfirm @ expandTags @ tmp;
+
+If[ $assertions,
+    cicd`ConsoleLog[ "Inserting confirmation source info..." ];
+    cicd`ScriptConfirm @ expandTags @ tmp
+];
 
 cicd`ConsoleLog[ "Loading paclet..." ];
 PacletDirectoryUnload @ $pacletDir;
