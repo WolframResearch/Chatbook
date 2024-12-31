@@ -43,6 +43,7 @@ jobs:
 
       - name: Commit Changes
         run: |
+          echo "Status: $(git status --porcelain)"
           if [[ -n $(git status --porcelain) ]]; then
             git add PacletInfo.wl
             git commit -m "Automated: Increment paclet version"
