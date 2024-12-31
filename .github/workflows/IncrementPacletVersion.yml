@@ -1,8 +1,9 @@
 name: Increment Paclet Version
 
 on:
+  workflow_dispatch:
   push:
-    branches: [feature/increment-paclet-version] # TODO: Change to main after testing
+    branches: [main]
 
 concurrency:
   group: ${{ github.ref }}
