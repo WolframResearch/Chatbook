@@ -41,7 +41,7 @@ jobs:
 
     - name: Build Paclet
       run: wolframscript -f Scripts/BuildPaclet.wls
-    
+
     - name: Rename Paclet File
       run: mv "${{ env.PACLET_PATH }}" "${{ env.PACLET_BUILD_DIR }}/Wolfram__Chatbook.paclet"
 
