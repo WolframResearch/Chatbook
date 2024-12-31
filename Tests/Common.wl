@@ -24,7 +24,7 @@ Off[ General::shdw           ];
 Off[ PacletInstall::samevers ];
 
 If[ ! PacletObjectQ @ PacletObject[ "Wolfram/PacletCICD" ],
-    PacletInstall[ "https://github.com/WolframResearch/PacletCICD/releases/download/v0.36.0/Wolfram__PacletCICD-0.36.0.paclet" ]
+    PacletInstall[ "https://github.com/WolframResearch/PacletCICD/releases/download/v0.36.2/Wolfram__PacletCICD-0.36.2.paclet" ]
 ];
 
 Needs[ "Wolfram`PacletCICD`" -> "cicd`" ];
@@ -71,6 +71,7 @@ $$rules = (Rule|RuleDelayed)[ _, _ ]..;
 If[ ! DirectoryQ @ $pacletDirectory, abort[ "Paclet directory ", $pacletDirectory, " does not exist!" ] ];
 Quiet @ PacletDirectoryUnload @ $sourceDirectory;
 PacletDataRebuild[ ];
+cicd`ConsoleNotice @ SequenceForm[ "Loading paclet from ", $pacletDirectory, " for running tests..." ];
 PacletDirectoryLoad @ $pacletDirectory;
 Get[ "Wolfram`Chatbook`" ];
 If[ ! MemberQ[ $LoadedFiles, FileNameJoin @ { $pacletDirectory, "Source", "Chatbook", "64Bit", "Chatbook.mx" } ],
