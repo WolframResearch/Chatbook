@@ -1,0 +1,51 @@
+name: Increment Paclet Version
+
+on:
+  push:
+    branches: [feature/increment-paclet-version] # TODO: Change to main after testing
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  WOLFRAMSCRIPT_ENTITLEMENTID: ${{ secrets.WOLFRAMSCRIPT_ENTITLEMENTID }}
+  WOLFRAM_SYSTEM_ID: Linux-x86-64
+
+jobs:
+  IncrementVersion:
+    name: Increment Version
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    container:
+      image: wolframresearch/wolframengine:14.1
+      options: --user root
+
+    steps:
+      - name: Update Git
+        run: |
+          apt-get update && apt-get install software-properties-common -y
+          add-apt-repository ppa:git-core/ppa -y
+          apt-get update && apt-get install git -y
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Increment Version
+        run: wolframscript -f Scripts/IncrementPacletVersion.wls
+
+      - name: Commit Changes
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git add PacletInfo.wl
+            git commit -m "Automated: Increment paclet version"
+            git push
+          else
+            echo "No changes to commit"
+          fi
