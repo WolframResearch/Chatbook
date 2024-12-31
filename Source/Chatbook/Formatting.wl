@@ -238,7 +238,14 @@ reformatTextData[ string_String ] /; StringContainsQ[ string, $$mdEscapedCharact
 
 reformatTextData[ string_String ] := joinAdjacentStrings @ Flatten[
     makeResultCell /@ discardBadToolCalls @ DeleteCases[
-        Quiet[ StringSplit[ string, $textDataFormatRules, IgnoreCase -> True ], RegularExpression::maxrec ],
+        Quiet[
+            StringSplit[
+                importHTMLEntities @ string,
+                $textDataFormatRules,
+                IgnoreCase -> True
+            ],
+            RegularExpression::maxrec
+        ],
         ""
     ]
 ];
@@ -246,6 +253,30 @@ reformatTextData[ string_String ] := joinAdjacentStrings @ Flatten[
 reformatTextData[ other_ ] := other;
 
 reformatTextData // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*importHTMLEntities*)
+importHTMLEntities // beginDefinition;
+
+importHTMLEntities[ string_String ] := StringReplace[
+    string,
+    entity: ("&" ~~ Repeated[ Except[ "\n" ], { 1, 6 } ] ~~ ";") :> importHTMLEntity @ entity
+];
+
+importHTMLEntities // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*importHTMLEntity*)
+importHTMLEntity // beginDefinition;
+
+importHTMLEntity[ entity_String ] := importHTMLEntity[ entity ] =
+    With[ { str = Quiet @ ImportString[ ToLowerCase @ entity, "HTML" ] },
+        If[ StringQ @ str, str, entity ]
+    ];
+
+importHTMLEntity // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
@@ -462,7 +493,7 @@ makeTableCell // beginDefinition;
 
 makeTableCell[ table_String ] := Flatten @ {
     "\n",
-    makeTableCell0 @ StringTrim @ table
+    Riffle[ makeTableCell0 /@ StringSplit[ StringTrim @ table, "\n\n" ], "\n" ]
 };
 
 makeTableCell // endDefinition;
