@@ -117,6 +117,7 @@ $envSHA = SelectFirst[
 ];
 
 $inCICD = StringQ @ $envSHA;
+$updatePacletInfo = TrueQ[ $inCICD && ! MatchQ[ Environment[ "UPDATE_PACLET_INFO" ], "false"|"False"|"0" ] ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -173,7 +174,7 @@ actionURL[ ] := Enclose[
 (*updatePacletInfo*)
 (* :!CodeAnalysis::BeginBlock:: *)
 (* :!CodeAnalysis::Disable::SuspiciousSessionSymbol:: *)
-updatePacletInfo[ dir_ ] /; $inCICD := Enclose[
+updatePacletInfo[ dir_ ] /; $updatePacletInfo := Enclose[
     Module[
         { cs, file, string, id, date, url, run, cmt, oldID, new },
 
