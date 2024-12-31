@@ -108,7 +108,5 @@
         "%[0-9A-F]{2}\\w+",         // url encoded characters
         "1\\:eJ.+"                  // compressed data
     ],
-    "[wolfram]": {
-        "files.trimTrailingWhitespace": true
-    }
+    "files.trimTrailingWhitespace": true
 }
