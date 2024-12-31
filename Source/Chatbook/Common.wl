@@ -1164,6 +1164,7 @@ chatbookIcon[ name_String ] := chatbookIcon[ name, TrueQ @ $inlineChatbookExpres
 chatbookIcon[ name_String, True  ] := chatbookIcon[ name, Lookup[ $chatbookIcons, name ] ];
 chatbookIcon[ name_String, False ] := Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", name ];
 chatbookIcon[ name_String, False, args__ ] := Dynamic @ RawBoxes @ FEPrivate`FrontEndResource[ "ChatbookExpressions", name ][ args ]; (* Function resources *)
+chatbookIcon[ name_String, False, args__ ] /; $CloudEvaluation := RawBoxes @ FrontEndResource[ "ChatbookExpressions", name ][ args ]; (* CLOUD-25597 *)
 chatbookIcon[ name_String, icon: Except[ _Missing ] ] := icon;
 chatbookIcon // endDefinition;
 
