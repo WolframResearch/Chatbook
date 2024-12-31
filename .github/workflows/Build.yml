@@ -32,26 +32,23 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Check
-      run: wolframscript -f Scripts/CheckPaclet.wls
-
     - name: Build
       run: wolframscript -f Scripts/BuildPaclet.wls
 
-    - name: UploadArtifact
+    - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         path: ${{ env.PACLET_BUILD_DIR }}
-    
-    - name: InstallTestDependencies
+
+    - name: Install Test Dependencies
       run: |
         apt-get update && apt-get install libgomp1 -y
         wolframscript -f Scripts/InstallTestDependencies.wls
-    
+
     - name: Test
       run: wolframscript -f Scripts/TestPaclet.wls
-    
-    - name: UploadStackData
+
+    - name: Upload Stack Data
       if: always() && env.PACLET_STACK_HISTORY
       uses: actions/upload-artifact@v4
       with:

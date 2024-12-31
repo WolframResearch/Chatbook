@@ -3,7 +3,6 @@
 BeginPackage[ "Wolfram`ChatbookScripts`" ];
 
 If[ ! TrueQ @ $loadedDefinitions, Get @ FileNameJoin @ { DirectoryName @ $InputFileName, "Common.wl" } ];
-Get @ cFile @ FileNameJoin @ { DirectoryName @ $InputFileName, "BuildMX.wls" };
 
 SetOptions[ TestReport, ProgressReporting -> False ];
 
