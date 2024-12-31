@@ -71,7 +71,6 @@ $$rules = (Rule|RuleDelayed)[ _, _ ]..;
 If[ ! DirectoryQ @ $pacletDirectory, abort[ "Paclet directory ", $pacletDirectory, " does not exist!" ] ];
 Quiet @ PacletDirectoryUnload @ $sourceDirectory;
 PacletDataRebuild[ ];
-cicd`ConsoleNotice @ SequenceForm[ "Loading paclet from ", $pacletDirectory, " for running tests..." ];
 PacletDirectoryLoad @ $pacletDirectory;
 Get[ "Wolfram`Chatbook`" ];
 If[ ! MemberQ[ $LoadedFiles, FileNameJoin @ { $pacletDirectory, "Source", "Chatbook", "64Bit", "Chatbook.mx" } ],
