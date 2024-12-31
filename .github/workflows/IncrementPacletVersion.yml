@@ -11,6 +11,7 @@ concurrency:
 env:
   WOLFRAMSCRIPT_ENTITLEMENTID: ${{ secrets.WOLFRAMSCRIPT_ENTITLEMENTID }}
   WOLFRAM_SYSTEM_ID: Linux-x86-64
+  UPDATE_PACLET_INFO: false
 
 jobs:
   IncrementVersion:
