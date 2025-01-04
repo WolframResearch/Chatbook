@@ -240,6 +240,7 @@ $$graphicsBox = Alternatives[
 (* Serialize the first argument of these and ignore the rest *)
 $stringStripHeads = Alternatives[
     ActionMenuBox,
+    AdjustmentBox,
     ButtonBox,
     CellGroupData,
     FrameBox,
@@ -1499,12 +1500,6 @@ fasterCellToString0[ box: TemplateBox[ args_, name_String, ___ ] ] :=
         fasterCellToString0 @ f @ args /; ! MissingQ @ f && f =!= makeExpressionString
     ];
 
-fasterCellToString0[ TemplateBox[ { args___ }, ___, InterpretationFunction -> f_, ___ ] ] :=
-    fasterCellToString0 @ f @ args;
-
-fasterCellToString0[ TemplateBox[ args_, ___, InterpretationFunction -> f_, ___ ] ] :=
-    fasterCellToString0 @ f @ args;
-
 fasterCellToString0[ OverlayBox[ { a_, ___ }, ___ ] ] :=
     fasterCellToString0 @ a;
 
@@ -2314,6 +2309,64 @@ fasterCellToString0[ DynamicModuleBox[ a___ ] ] /; ! TrueQ @ $CellToStringDebug 
     needsBasePrompt[ "ConversionLargeOutputs" ];
     "DynamicModule[\[LeftSkeleton]" <> ToString @ Length @ HoldComplete @ a <> "\[RightSkeleton]]"
 );
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Unhandled TemplateBoxes*)
+fasterCellToString0[ box: TemplateBox[ args_, ___ ] ] :=
+    With[ { f = getTemplateBoxFunction @ box },
+        fasterCellToString0 @ applyTemplateBoxDisplayFunction[ f, args ] /; ! MissingQ @ f
+    ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*getTemplateBoxFunction*)
+getTemplateBoxFunction // beginDefinition;
+getTemplateBoxFunction[ TemplateBox[ __, InterpretationFunction -> f: Except[ $$unspecified ], ___ ] ] := f;
+getTemplateBoxFunction[ TemplateBox[ __, DisplayFunction -> f: Except[ $$unspecified ], ___ ] ] := f;
+getTemplateBoxFunction[ TemplateBox[ _, name_String, ___, InterpretationFunction -> Automatic, ___ ] ] := name;
+getTemplateBoxFunction[ TemplateBox[ _, name_String, ___ ] ] := getTemplateBoxFunction @ name;
+getTemplateBoxFunction[ name_String ] := Lookup[ $templateBoxCache, name, getTemplateBoxFunction0 @ name ];
+getTemplateBoxFunction // endDefinition;
+
+
+getTemplateBoxFunction0 // beginDefinition;
+
+getTemplateBoxFunction0[ name_String ] :=
+    getTemplateBoxFunction0[ name, usingFrontEnd @ CurrentValue @ { StyleDefinitions, name, TemplateBoxOptions } ];
+
+getTemplateBoxFunction0[
+    name_,
+    KeyValuePattern[ InterpretationFunction|"InterpretationFunction" -> f: Except[ $$unspecified ] ]
+] := $templateBoxCache[ name ] = f;
+
+getTemplateBoxFunction0[
+    name_,
+    KeyValuePattern[ InterpretationFunction|"InterpretationFunction" -> Automatic ]
+] := $templateBoxCache[ name ] = name;
+
+getTemplateBoxFunction0[
+    name_,
+    KeyValuePattern[ DisplayFunction|"DisplayFunction" -> f: Except[ $$unspecified ] ]
+] := $templateBoxCache[ name ] = f;
+
+getTemplateBoxFunction0[ name_, _ ] :=
+    $templateBoxCache[ name ] = Missing[ "NotFound" ];
+
+getTemplateBoxFunction0 // endDefinition;
+
+
+$templateBoxCache = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*applyTemplateBoxDisplayFunction*)
+applyTemplateBoxDisplayFunction // beginDefinition;
+applyTemplateBoxDisplayFunction[ f_, TemplateBox[ args_, ___ ] ] := applyTemplateBoxDisplayFunction[ f, args ];
+applyTemplateBoxDisplayFunction[ f_String, a_List ] := f <> "[" <> StringRiffle[ fasterCellToString0 /@ a, ", " ] <> "]";
+applyTemplateBoxDisplayFunction[ f_, { args___ } ] := f @ args;
+applyTemplateBoxDisplayFunction[ f_, args___ ] := f @ args;
+applyTemplateBoxDisplayFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
