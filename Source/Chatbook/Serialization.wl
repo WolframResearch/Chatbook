@@ -1300,6 +1300,10 @@ fasterCellToString0[ TemplateBox[ args: { _, _, str_String, ___ }, "MessageTempl
     fasterCellToString0 @ str
 );
 
+(* Percent References *)
+fasterCellToString0[ TemplateBox[ KeyValuePattern[ "OutNumber" -> n_Integer ], "PercentRef", ___ ] ] :=
+    "%" <> ToString @ n;
+
 (* Large Outputs *)
 fasterCellToString0[ TemplateBox[ KeyValuePattern[ "shortenedBoxes" -> boxes_ ], "OutputSizeLimitTemplate", ___ ] ] :=
     fasterCellToString0 @ boxes;
