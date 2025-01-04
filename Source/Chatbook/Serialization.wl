@@ -199,15 +199,23 @@ $boxOp = <| SuperscriptBox -> "^", SubscriptBox -> "_" |>;
 
 (* How to choose TemplateBox arguments for serialization *)
 $templateBoxRules = <|
-    "AssistantMessageBox"       -> First,
-    "ConditionalExpression"     -> makeExpressionString,
-    "GrayLink"                  -> First,
-    "HyperlinkDefault"          -> First,
-    "Key0"                      -> First,
-    "Key1"                      -> (Riffle[ #, "-" ] &),
-    "RowDefault"                -> Identity,
-    "TransferFunctionModelFull" -> makeExpressionString,
-    "UserMessageBox"            -> First
+    "AssistantMessageBox"          -> First,
+    "ConditionalExpression"        -> makeExpressionString,
+    "GrayLink"                     -> First,
+    "HyperlinkDefault"             -> First,
+    "Key0"                         -> First,
+    "Key1"                         -> (Riffle[ #, "-" ] &),
+    "RowDefault"                   -> Identity,
+    "TransferFunctionModelFull"    -> makeExpressionString,
+    "UserMessageBox"               -> First,
+    "CMYKColorSwatchTemplate"      -> inputFormString @* Lookup[ "color" ],
+    "GrayLevelColorSwatchTemplate" -> inputFormString @* Lookup[ "color" ],
+    "HueColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
+    "LABColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
+    "LCHColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
+    "LUVColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
+    "RGBColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
+    "XYZColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ]
 |>;
 
 (* ::**************************************************************************************************************:: *)
