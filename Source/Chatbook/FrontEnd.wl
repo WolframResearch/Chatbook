@@ -1253,6 +1253,7 @@ $statelessProgressIndicator =
 mouseDown // beginDefinition;
 (* Workaround for dynamics freezing in attached cells when mousing over docked cell: *)
 mouseDown[ a_, b_, c_ ] /; $OperatingSystem === "Windows" := Mouseover[ a, b ];
+mouseDown[ a_, b_, c_ ] /; $CloudEvaluation := Mouseover[ a, b ];
 mouseDown[ a_, b_, c_ ] := NotebookTools`Mousedown[ a, b, c ];
 mouseDown // endDefinition;
 
