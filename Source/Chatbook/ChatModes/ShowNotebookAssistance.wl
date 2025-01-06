@@ -577,22 +577,37 @@ setWindowInputAndEvaluate // endDefinition;
 attachToLeft // beginDefinition;
 
 attachToLeft[ source_NotebookObject, current_NotebookObject ] := Enclose[
-    Module[ { mag, width, margins, left, bottom, top },
+    Module[ { mag, width, margins, left, bottom, top, displayindex, displayleftedge },
 
         mag     = Replace[ AbsoluteCurrentValue[ source, Magnification ], Except[ _? NumberQ ] :> 1.0 ];
         width   = Ceiling @ ConfirmBy[ $workspaceChatWidth * mag, NumberQ, "Width" ];
         margins = ConfirmMatch[ windowMargins @ source, { { _, _ }, { _, _ } }, "Margins" ];
+        
+        displayindex = NotebookTools`NotebookDisplayIndex[source];
+        displayleftedge = If[IntegerQ[displayindex],
+            Replace[CurrentValue["ConnectedDisplays"][[displayindex]], {
+                {___, "FullRegion" -> {{xmin_, _}, {_, _}}, ___} :> xmin,
+                _ :> 0
+            }],
+            0
+        ];
 
         left   = margins[[ 1, 1 ]];
         bottom = margins[[ 2, 1 ]];
         top    = margins[[ 2, 2 ]];
 
-        If[ NonPositive[ left - width ], left = width ];
+        left = left - width;
+        If[ left < displayleftedge,
+        	(* prevent the assistant from falling off the left edge of the display *)
+        	left = displayleftedge;
+        	(* Uncomment this to also slide the source notebook right, to avoid overlapping with the assistant *)
+			(* SetOptions[source, WindowMargins -> ReplacePart[margins, {1,1} -> (left + width)]] *)
+		];
 
         SetOptions[
             current,
             Magnification -> 0.85 * mag,
-            WindowMargins -> { { left - width, Automatic }, { bottom, top } },
+            WindowMargins -> { { left, Automatic }, { bottom, top } },
             WindowSize    -> { width, Automatic }
         ];
 
