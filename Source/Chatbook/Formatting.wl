@@ -2778,6 +2778,17 @@ $embeddedImageTemplate = "<div style=\"margin: -8px;\"><img src=\"`1`\" width=\"
 (*hyperlink*)
 hyperlink // beginDefinition;
 
+hyperlink[ label_String, uri_String? expressionURIQ ] :=
+    If[ TrueQ @ $dynamicText,
+        StyleBox[ label, "Hyperlink" ],
+        With[ { b = BaseEncode @ BinarySerialize[ GetExpressionURI @ uri, PerformanceGoal -> "Size" ] },
+            Cell[
+                BoxData @ TemplateBox[ { ToBoxes @ label, b }, "TextExpressionLink" ],
+                Background -> None
+            ]
+        ]
+    ];
+
 hyperlink[ label_String | { label_String }, uri_String ] /; StringStartsQ[ uri, "paclet:" ] :=
     Cell @ BoxData @ TemplateBox[
         {

@@ -991,13 +991,6 @@ $useRasterizationCompatibility := Enclose[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*expressionURIQ*)
-expressionURIQ // beginDefinition;
-expressionURIQ[ uri_String ] := KeyExistsQ[ $attachments, StringDelete[ uri, StartOfString ~~ __ ~~ "://" ] ];
-expressionURIQ // endDefinition;
-
-(* ::**************************************************************************************************************:: *)
-(* ::Subsubsection::Closed:: *)
 (*graphicsURIQ*)
 graphicsURIQ // beginDefinition;
 
