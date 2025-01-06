@@ -141,6 +141,8 @@ $resourceVersions = <|
     "MessageFailure"          -> "1.0.0",
     "RelativeTimeString"      -> "1.0.0",
     "ReplaceContext"          -> "1.0.0",
+    "ResourceFunctionMessage" -> "2.1.1",
+    "SecondsToQuantity"       -> "1.2.0",
     "SelectByCurrentValue"    -> "1.0.1"
 |>;
 
@@ -471,13 +473,17 @@ importResourceFunction // beginDefinition;
 importResourceFunction::failure = "[ERROR] Failed to import resource function `1`. Aborting MX build.";
 importResourceFunction // Attributes = { HoldFirst };
 
+importResourceFunction[ name_String ] :=
+    importResourceFunction[ None, name ];
+
 importResourceFunction[ symbol_Symbol, name_String ] :=
     importResourceFunction[ symbol, name, Lookup[ $resourceVersions, name ] ];
 
-importResourceFunction[ symbol_Symbol, name_String, version_String ] /; $mxFlag := Enclose[
+importResourceFunction[ symbol_Symbol, name_String, version_ ] /; $mxFlag := Enclose[
     Block[ { PrintTemporary },
-        Module[ { sourceContext, targetContext, definition, replaced, newSymbol },
+        Module[ { sourceContext, targetContext, definition, replaced, inlined, newSymbol },
 
+            ConfirmAssert @ StringQ @ version;
             sourceContext = ConfirmBy[ ResourceFunction[ name, "Context", ResourceVersion -> version ], StringQ ];
             targetContext = $resourceFunctionContext<>name<>"`";
             definition    = ConfirmMatch[ ResourceFunction[ name, "DefinitionList" ], _Language`DefinitionList ];
@@ -490,20 +496,74 @@ importResourceFunction[ symbol_Symbol, name_String, version_String ] /; $mxFlag 
                 _Language`DefinitionList
             ];
 
-            ConfirmMatch[ Language`ExtendedFullDefinition[ ] = replaced, _Language`DefinitionList ];
+            inlined = ConfirmMatch[ inlineDependentResourceFunctions @ replaced, _Language`DefinitionList ];
+
+            $importedResourceFunctions[ name ] = version;
+            KeyDropFrom[ $dependentResourceFunctions, Keys @ $importedResourceFunctions ];
+
+            ConfirmMatch[ Language`ExtendedFullDefinition[ ] = inlined, _Language`DefinitionList ];
 
             newSymbol = ConfirmMatch[ Symbol[ targetContext<>name ], _Symbol? AtomQ ];
 
-            ConfirmMatch[ symbol = newSymbol, newSymbol ]
+            importResourceFunction[ symbol, name, version ] =
+                If[ Unevaluated @ symbol === None,
+                    newSymbol,
+                    ConfirmMatch[ symbol = newSymbol, newSymbol ]
+                ]
         ]
     ],
     (Message[ importResourceFunction::failure, name ]; Abort[ ]) &
 ];
 
-importResourceFunction[ symbol_Symbol, name_String, version_String ] :=
+importResourceFunction[ symbol: Except[ None, _Symbol ], name_String, version_String ] :=
     symbol := symbol = Block[ { PrintTemporary }, ResourceFunction[ name, "Function", ResourceVersion -> version ] ];
 
 importResourceFunction // endDefinition;
+
+$importedResourceFunctions = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*importDependentResourceFunctions*)
+importDependentResourceFunctions // beginDefinition;
+
+importDependentResourceFunctions[ ] :=
+    importDependentResourceFunctions @ Keys @ $dependentResourceFunctions;
+
+importDependentResourceFunctions[ { } ] :=
+    Null;
+
+importDependentResourceFunctions[ names: { __String } ] := (
+    importResourceFunction /@ names;
+    KeyDropFrom[ $dependentResourceFunctions, names ];
+    importDependentResourceFunctions @ Keys @ $dependentResourceFunctions
+);
+
+importDependentResourceFunctions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*inlineDependentResourceFunctions*)
+inlineDependentResourceFunctions // beginDefinition;
+
+inlineDependentResourceFunctions[ definition_ ] := ReplaceAll[
+    definition,
+    {
+        HoldPattern @ ResourceFunction[ name_String, OptionsPattern[ ] ] :> RuleCondition[
+            $dependentResourceFunctions[ name ] = True;
+            Symbol[ $resourceFunctionContext<>name<>"`"<>name ]
+        ],
+        HoldPattern @ ResourceFunction[ name_String, "Function", OptionsPattern[ ] ] :> RuleCondition[
+            $dependentResourceFunctions[ name ] = True;
+            Symbol[ $resourceFunctionContext<>name<>"`"<>name ]
+        ]
+    }
+];
+
+inlineDependentResourceFunctions // endDefinition;
+
+
+$dependentResourceFunctions = <| |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -1509,6 +1569,7 @@ addToMXInitialization[
     $cloudTextResources;
     $inlineExpressionRules;
     $releaseID;
+    importDependentResourceFunctions[ ];
 ];
 
 (* :!CodeAnalysis::EndBlock:: *)
