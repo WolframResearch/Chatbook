@@ -1515,6 +1515,28 @@ Cell[
 ]
 
 
+
+(* ::Subsection::Closed:: *)
+(*TextExpressionLink*)
+
+
+Cell[
+    StyleData[ "TextExpressionLink" ],
+    TemplateBoxOptions -> {
+        DisplayFunction -> Function @ ButtonBox[
+            #1,
+            Appearance       -> None,
+            BaseStyle        -> { "Text", "Hyperlink" },
+            ButtonFunction   :> CreateDocument @ BinaryDeserialize @ BaseDecode @ #2,
+            DefaultBaseStyle -> { },
+            Evaluator        -> Automatic,
+            Method           -> "Queued"
+        ]
+    }
+]
+
+
+
 (* ::Section::Closed:: *)
 (*Package Footer*)
 
