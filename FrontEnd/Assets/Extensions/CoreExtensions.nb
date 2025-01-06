@@ -11,7 +11,7 @@ Notebook[
   Cell["Chatbook Core.nb Extensions", "Title"],
   Cell[
    StyleData["ChatStyleSheetInformation"],
-   TaggingRules -> <|"StyleSheetVersion" -> "2.0.8.3943617669"|>
+   TaggingRules -> <|"StyleSheetVersion" -> "2.0.15.3945149906"|>
   ],
   Cell[
    StyleData["NotebookAssistant`Text"],
@@ -14075,6 +14075,24 @@ Notebook[
        BaselinePosition -> Center -> Center,
        ImageSize -> {11.0, 11.0},
        PlotRange -> {{0.0, 11.0}, {0.0, 11.0}}
+      ]
+     ])
+   }
+  ],
+  Cell[
+   StyleData["TextExpressionLink"],
+   TemplateBoxOptions -> {
+    DisplayFunction ->
+     (Function[
+      ButtonBox[
+       #1,
+       Appearance -> None,
+       BaseStyle -> {"Text", "Hyperlink"},
+       ButtonFunction :>
+        CreateDocument[BinaryDeserialize[BaseDecode[#2]]],
+       DefaultBaseStyle -> { },
+       Evaluator -> Automatic,
+       Method -> "Queued"
       ]
      ])
    }

@@ -180,7 +180,7 @@ expressionURIKey // beginDefinition;
 
 expressionURIKey[ str_String ] := expressionURIKey[ str ] = FixedPoint[
     StringDelete @ {
-        StartOfString ~~ "![" ~~ __ ~~ "](",
+        StartOfString ~~ ("!["|"[") ~~ __ ~~ "](",
         StartOfString ~~ LetterCharacter.. ~~ "://",
         ")"~~EndOfString
     },
