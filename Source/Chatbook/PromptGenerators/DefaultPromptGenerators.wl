@@ -13,6 +13,11 @@ HoldComplete[
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
+(*Messages*)
+Chatbook::InvalidPromptGenerator = "Expected a valid LLMPromptGenerator instead of `1`.";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
 (*DefaultPromptGenerators*)
 $defaultPromptGenerators := $defaultPromptGenerators = <|
     "RelatedDocumentation" -> LLMPromptGenerator[ relatedDocumentationGenerator, "Messages" ],
@@ -157,6 +162,7 @@ toPromptGenerator // beginDefinition;
 toPromptGenerator[ ___ ] /; $VersionNumber < 14.1 := Nothing;
 toPromptGenerator[ name_String ] := toPromptGenerator @ $defaultPromptGenerators @ name;
 toPromptGenerator[ generator: HoldPattern[ _LLMPromptGenerator ] ] := generator;
+toPromptGenerator[ other_ ] := throwFailure[ "InvalidPromptGenerator", other ];
 toPromptGenerator // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
