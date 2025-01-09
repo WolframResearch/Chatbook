@@ -16,10 +16,10 @@ HoldComplete[
 (* ::Section::Closed:: *)
 (*Configuration*)
 $vectorDatabases = <|
-    "DataRepositoryURIs"     -> <| "Version" -> "1.0.0", "Bias" -> 1.0 |>,
-    "DocumentationURIs"      -> <| "Version" -> "1.3.0", "Bias" -> 0.0 |>,
-    "FunctionRepositoryURIs" -> <| "Version" -> "1.0.0", "Bias" -> 1.0 |>,
-    "WolframAlphaQueries"    -> <| "Version" -> "1.3.0", "Bias" -> 0.0 |>
+    "DataRepositoryURIs"     -> <| "Version" -> "1.0.0", "Bias" -> 1.0, "SnippetFunction" -> getSnippets |>,
+    "DocumentationURIs"      -> <| "Version" -> "1.3.0", "Bias" -> 0.0, "SnippetFunction" -> getSnippets |>,
+    "FunctionRepositoryURIs" -> <| "Version" -> "1.0.0", "Bias" -> 1.0, "SnippetFunction" -> getSnippets |>,
+    "WolframAlphaQueries"    -> <| "Version" -> "1.3.0", "Bias" -> 0.0, "SnippetFunction" -> Identity |>
 |>;
 
 $vectorDBNames   = Keys @ $vectorDatabases;
@@ -65,15 +65,224 @@ $cloudVectorDBDirectory  := PacletObject[ "Wolfram/NotebookAssistantCloudResourc
 (*Argument Patterns*)
 $$vectorDatabase = HoldPattern[ _VectorDatabaseObject? System`Private`ValidQ ];
 
-$$dbName        = Alternatives @@ $vectorDBNames;
+$$dbName        = _String? vectorDBNameQ;
 $$dbNames       = { $$dbName... };
 $$dbNameOrNames = $$dbName | $$dbNames;
+
+$$vectorDatabaseSource = $$vectorDatabase | _? DirectoryQ | _? FileExistsQ;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*vectorDBNameQ*)
+vectorDBNameQ // beginDefinition;
+vectorDBNameQ[ name_String ] := MemberQ[ $vectorDBNames, name ];
+vectorDBNameQ[ ___ ] := False;
+vectorDBNameQ // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Cache*)
 $vectorDBSearchCache = <| |>;
 $embeddingCache      = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*Messages*)
+Chatbook::InvalidVectorDatabaseName         = "Expected a string for vector database name instead of `1`";
+Chatbook::InvalidVectorDatabaseValues       = "Expected a list of strings for vector database values instead of `1`";
+Chatbook::VectorDatabaseValuesFileNotFound  = "Values file not found: `1`";
+Chatbook::InvalidVectorDatabaseDimensions   = "Dimensions of vectors (`1`) do not match expected dimensions (`2`)";
+Chatbook::InvalidVectorDatabaseValuesLength = "The number of values (`1`) does not match the number of vectors (`2`)";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Section::Closed:: *)
+(*RegisterVectorDatabase*)
+RegisterVectorDatabase // beginDefinition;
+
+RegisterVectorDatabase[ source: $$vectorDatabaseSource ] :=
+    catchMine @ RegisterVectorDatabase[ source, <| |> ];
+
+RegisterVectorDatabase[ source: $$vectorDatabaseSource, as_Association ] :=
+    catchMine @ registerVectorDatabase @ toVectorDatabaseInfo[ source, as ];
+
+RegisterVectorDatabase // endExportedDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*toVectorDatabaseInfo*)
+toVectorDatabaseInfo // beginDefinition;
+
+toVectorDatabaseInfo[ source: $$vectorDatabaseSource, info0_Association ] := Enclose[
+    Module[ { info, name, values, length, dim, bias, version, db, valueFunction },
+
+        info = info0;
+
+        name = getVectorDatabaseName[ source, info ];
+        If[ ! StringQ @ name, throwFailure[ "InvalidVectorDatabaseName", name ] ];
+        info[ "Name" ] = name;
+
+        values = getVectorDatabaseValues[ source, info ];
+        If[ ! MatchQ[ values, { ___String } ], throwFailure[ "InvalidVectorDatabaseValues", values ] ];
+        info[ "Values" ] = values;
+
+        { length, dim } = ConfirmMatch[
+            getVectorDatabaseDimensions[ source, info ],
+            { _Integer, _Integer },
+            "Dimensions"
+        ];
+        If[ dim =!= $embeddingDimension, throwFailure[ "InvalidVectorDatabaseDimensions", dim, $embeddingDimension ] ];
+        If[ Length @ values =!= length, throwFailure[ "InvalidVectorDatabaseValuesLength", Length @ values, length ] ];
+        info[ "Dimensions" ] = { length, dim };
+
+        bias = Lookup[ info, "Bias", 0.0 ];
+        If[ ! NumberQ @ bias, throwFailure[ "InvalidVectorDatabaseBias", bias ] ];
+        info[ "Bias" ] = bias;
+
+        version = Lookup[ info, "Version", "1.0.0" ];
+        If[ ! StringQ @ version, version = "1.0.0" ];
+        info[ "Version" ] = version;
+
+        db = ConfirmMatch[ getVectorDatabaseObject[ source, info ], $$vectorDatabase, "VectorDatabaseObject" ];
+        info[ "VectorDatabaseObject" ] = db;
+
+        valueFunction = Replace[ Lookup[ info, "SnippetFunction" ], $$unspecified -> Identity ];
+        info[ "SnippetFunction" ] = valueFunction;
+
+        info
+    ],
+    throwInternalFailure
+];
+
+toVectorDatabaseInfo // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getVectorDatabaseName*)
+getVectorDatabaseName // beginDefinition;
+
+getVectorDatabaseName[ db: $$vectorDatabase, info_Association ] := Lookup[ info, "Name", db[ "ID" ] ];
+
+getVectorDatabaseName // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getVectorDatabaseValues*)
+getVectorDatabaseValues // beginDefinition;
+
+getVectorDatabaseValues[ source_, as: KeyValuePattern[ "Values" -> values_? FileExistsQ ] ] :=
+    getVectorDatabaseValues[ values, as ];
+
+getVectorDatabaseValues[ source_, KeyValuePattern[ "Values" -> values: Except[ $$unspecified ] ] ] :=
+    values;
+
+getVectorDatabaseValues[ dir_? DirectoryQ, info_ ] := Enclose[
+    Module[ { name, infoFile, valuesFile },
+
+        name       = ConfirmBy[ info[ "Name" ], StringQ, "Name" ];
+        infoFile   = FileNameJoin @ { dir, name <> ".wxf" };
+        valuesFile = FileNameJoin @ { dir, "Values.wxf" };
+
+        If[ FileExistsQ @ valuesFile,
+            getVectorDatabaseValues[ valuesFile, info ],
+            getVectorDatabaseValues[ infoFile, info ]
+        ]
+    ],
+    throwInternalFailure
+];
+
+getVectorDatabaseValues[ file_? FileExistsQ, info_ ] :=
+    toVectorDatabaseValues @ Developer`ReadWXFFile @ ExpandFileName @ file;
+
+getVectorDatabaseValues[ db: $$vectorDatabase, info_ ] :=
+    getVectorDatabaseValues[ DirectoryName @ db[ "Location" ], info ];
+
+getVectorDatabaseValues // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*toVectorDatabaseValues*)
+toVectorDatabaseValues // beginDefinition;
+toVectorDatabaseValues[ v: { ___String } ] := v;
+toVectorDatabaseValues[ KeyValuePattern[ "Metadata" -> KeyValuePattern[ Automatic -> v: { ___String } ] ] ] := v;
+toVectorDatabaseValues // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getVectorDatabaseDimensions*)
+getVectorDatabaseDimensions // beginDefinition;
+
+getVectorDatabaseDimensions[ db: $$vectorDatabase, info_ ] :=
+    db[ "Dimensions" ];
+
+getVectorDatabaseDimensions[ dir_? DirectoryQ, info_Association ] := Enclose[
+    Module[ { name, file },
+        name = ConfirmBy[ info[ "Name" ], StringQ, "Name" ];
+        file = ConfirmBy[ FileNameJoin @ { dir, name <> ".wxf" }, FileExistsQ, "File" ];
+        getVectorDatabaseDimensions[ file, info ]
+    ],
+    throwInternalFailure
+];
+
+getVectorDatabaseDimensions // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getVectorDatabaseObject*)
+getVectorDatabaseObject // beginDefinition;
+
+getVectorDatabaseObject[ source_, KeyValuePattern[ "VectorDatabaseObject" -> db: $$vectorDatabase ] ] :=
+    db;
+
+getVectorDatabaseObject[ db: $$vectorDatabase, info_ ] :=
+    db;
+
+getVectorDatabaseObject[ dir_? DirectoryQ, info_ ] := Enclose[
+    Module[ { name, file },
+        name = ConfirmBy[ info[ "Name" ], StringQ, "Name" ];
+        file = ConfirmBy[ FileNameJoin @ { dir, name <> ".wxf" }, FileExistsQ, "File" ];
+        getVectorDatabaseObject[ file, info ]
+    ],
+    throwInternalFailure
+];
+
+getVectorDatabaseObject[ file_? FileExistsQ, info_ ] :=
+    VectorDatabaseObject @ Flatten @ File @ file;
+
+getVectorDatabaseObject // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*registerVectorDatabase*)
+registerVectorDatabase // beginDefinition;
+
+registerVectorDatabase[ info_Association ] := Enclose[
+    Module[ { name, version, bias, values, db, valueFunction },
+
+        ConfirmAssert[ DirectoryQ @ $vectorDBDirectory, "DownloadCheck" ];
+
+        name          = ConfirmBy[ info[ "Name" ], StringQ, "Name" ];
+        version       = ConfirmBy[ info[ "Version" ], StringQ, "Version" ];
+        bias          = ConfirmBy[ info[ "Bias" ], NumberQ, "Bias" ];
+        values        = ConfirmMatch[ info[ "Values" ], { ___String }, "Values" ];
+        db            = ConfirmMatch[ info[ "VectorDatabaseObject" ], $$vectorDatabase, "VectorDatabaseObject" ];
+        valueFunction = ConfirmMatch[ info[ "SnippetFunction" ], Except[ $$unspecified ], "SnippetFunction" ];
+
+        getVectorDB[ name ] = <| "Values" -> values, "VectorDatabaseObject" -> db |>;
+        $vectorDatabases[ name ] = <| "Version" -> version, "Bias" -> bias, "SnippetFunction" -> valueFunction |>;
+
+        $vectorDBNames = DeleteDuplicates @ Append[ $vectorDBNames, name ];
+
+        $defaultSources = DeleteDuplicates @ Append[
+            ConfirmMatch[ $defaultSources, { ___String }, "DefaultSources" ],
+            name
+        ];
+
+        Success[ "VectorDatabaseRegistered", KeyTake[ info, { "Name", "Version", "Bias", "VectorDatabaseObject" } ] ]
+    ],
+    throwInternalFailure
+];
+
+registerVectorDatabase // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -437,7 +646,11 @@ vectorDBSearch[ dbName: $$dbName, prompt_String, All ] :=
 
 (* Main definition for string prompt: *)
 vectorDBSearch[ dbName: $$dbName, prompt_String, All ] := Enclose[
-    Module[ { vectorDBInfo, vectorDB, allValues, embeddingVector, close, indices, distances, values, data, result },
+    Module[
+        {
+            vectorDBInfo, vectorDB, allValues, embeddingVector, close,
+            indices, distances, values, data, result, snippetFunction
+        },
 
         vectorDBInfo    = ConfirmBy[ getVectorDB @ dbName, AssociationQ, "VectorDBInfo" ];
         vectorDB        = ConfirmMatch[ vectorDBInfo[ "VectorDatabaseObject" ], $$vectorDatabase, "VectorDatabase" ];
@@ -457,13 +670,20 @@ vectorDBSearch[ dbName: $$dbName, prompt_String, All ] := Enclose[
 
         indices   = ConfirmMatch[ close[[ All, "Index"    ]], { ___Integer }, "Indices"   ];
         distances = ConfirmMatch[ close[[ All, "Distance" ]], { ___Real    }, "Distances" ];
-
         values    = ConfirmBy[ allValues[[ indices ]], ListQ, "Values" ];
 
         ConfirmAssert[ Length @ indices === Length @ distances === Length @ values, "LengthCheck" ];
 
+        snippetFunction = Confirm[ getSnippetFunction @ dbName, "SnippetFunction" ];
+
         data = MapApply[
-            <| "Value" -> #1, "Index" -> #2, "Distance" -> #3, "Source" -> dbName |> &,
+            <|
+                "Value"           -> #1,
+                "Index"           -> #2,
+                "Distance"        -> #3,
+                "Source"          -> dbName,
+                "SnippetFunction" -> snippetFunction
+            |> &,
             Transpose @ { values, indices, distances }
         ];
 
@@ -611,11 +831,7 @@ vectorDBSearch[ names: $$dbNames, prompt_, prop: "Values"|"Results" ] := Enclose
 
         If[ prop === "Results",
             sorted,
-            ConfirmMatch[
-                DeleteDuplicates @ Lookup[ sorted, "Value" ],
-                { __String },
-                "Values"
-            ]
+            ConfirmBy[ DeleteDuplicates @ Lookup[ sorted, "Value" ], ListQ, "Values" ]
         ]
     ],
     throwInternalFailure
@@ -634,13 +850,22 @@ vectorDBSearch[ All, prompt_, prop_ ] :=
 vectorDBSearch // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*getSnippetFunction*)
+getSnippetFunction // beginDefinition;
+getSnippetFunction[ name_String ] := getSnippetFunction[ name, $vectorDatabases[ name, "SnippetFunction" ] ];
+getSnippetFunction[ name_String, $$unspecified ] := Identity;
+getSnippetFunction[ name_String, function_ ] := function;
+getSnippetFunction // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*applyBias*)
 applyBias // beginDefinition;
 applyBias[ name_String, results_ ] := applyBias[ $vectorDatabases[ name, "Bias" ], results ];
 applyBias[ None | _Missing | 0 | 0.0, results_ ] := results;
 applyBias[ bias_, results_List ] := (applyBias[ bias, #1 ] &) /@ results;
-applyBias[ bias: $$size, as: KeyValuePattern[ "Distance" -> d: $$size ] ] := <| as, "Distance" -> d + bias |>;
+applyBias[ bias_? NumberQ, as: KeyValuePattern[ "Distance" -> d: $$size ] ] := <| as, "Distance" -> d + bias |>;
 applyBias // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
