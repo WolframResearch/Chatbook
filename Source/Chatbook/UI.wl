@@ -12,6 +12,7 @@ Needs[ "GeneralUtilities`" -> None ];
 MakeChatInputActiveCellDingbat
 MakeChatInputCellDingbat
 MakeChatDelimiterCellDingbat
+MakeChatCloudDefaultNotebookDockedCell
 MakeChatCloudDockedCellContents
 
 GeneralUtilities`SetUsage[CreatePreferencesContent, "
@@ -41,6 +42,11 @@ $chatMenuWidth = 220;
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Cloud Toolbar*)
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*MakeChatCloudDefaultNotebookDockedCell*)
+MakeChatCloudDefaultNotebookDockedCell[] := makeChatCloudDefaultNotebookDockedCell[ ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
