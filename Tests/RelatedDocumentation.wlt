@@ -28,15 +28,15 @@ VerificationTest[
 (* ::Section::Closed:: *)
 (*RelatedDocumentation*)
 VerificationTest[
-    uris = RelatedDocumentation[ "What's the biggest pokemon?" ],
-    { __String },
+    urls = RelatedDocumentation[ "What's the biggest pokemon?" ],
+    { URL[ _String ].. },
     SameTest -> MatchQ,
     TestID   -> "RelatedDocumentation-URIs@@Tests/RelatedDocumentation.wlt:30,1-35,2"
 ]
 
 VerificationTest[
     Length @ Select[
-        uris,
+        First /@ urls,
         StringStartsQ @ StringExpression[
             "paclet:ref/",
             "interpreter"|"entity"|"textcontent",
@@ -65,14 +65,14 @@ VerificationTest[
 ]
 
 VerificationTest[
-    uris = RelatedDocumentation[ "What's the biggest pokemon?", Automatic, 3 ],
-    { _String, _String, _String },
+    urls = RelatedDocumentation[ "What's the biggest pokemon?", Automatic, 3, "Sources" -> { "Documentation" } ],
+    { URL[ _String ], URL[ _String ], URL[ _String ] },
     SameTest -> MatchQ,
     TestID   -> "RelatedDocumentation-URIs-Count@@Tests/RelatedDocumentation.wlt:67,1-72,2"
 ]
 
 VerificationTest[
-    AllTrue[ uris, StringStartsQ[ "paclet:ref/" ] ],
+    AllTrue[ First /@ urls, StringStartsQ[ "paclet:ref/" ] ],
     True,
     SameTest -> MatchQ,
     TestID   -> "RelatedDocumentation-URIs-Match@@Tests/RelatedDocumentation.wlt:74,1-79,2"
