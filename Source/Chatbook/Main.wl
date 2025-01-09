@@ -92,6 +92,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `SourceNotebookObjectInformation;
 `StringToBoxes;
 `ToggleChatInclusion;
+`ToggleCloudNotebookAssistantMenu;
 `WriteChatOutputCell;
 
 (* ::**************************************************************************************************************:: *)
