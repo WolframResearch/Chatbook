@@ -76,6 +76,7 @@ BeginPackage[ "Wolfram`Chatbook`" ];
 `LogChatTiming;
 `MakeExpressionURI;
 `RebuildChatSearchIndex;
+`RegisterVectorDatabase;
 `RelatedDocumentation;
 `RelatedWolframAlphaQueries;
 `RemoveChatFromSearchIndex;
@@ -245,6 +246,7 @@ $ChatbookProtectedNames = "Wolfram`Chatbook`" <> # & /@ {
     "LogChatTiming",
     "MakeExpressionURI",
     "RebuildChatSearchIndex",
+    "RegisterVectorDatabase",
     "RelatedDocumentation",
     "RelatedWolframAlphaQueries",
     "RemoveChatFromSearchIndex",

@@ -1028,7 +1028,7 @@ LogChatTiming // Attributes = { HoldFirst, SequenceHold };
 
 LogChatTiming[ tag_String ] := Function[ eval, LogChatTiming[ eval, tag ], HoldAllComplete ];
 LogChatTiming[ sym_Symbol ] := LogChatTiming @ Evaluate @ Capitalize @ SymbolName @ sym;
-LogChatTiming[ tags_List ] := LogChatTiming @ Evaluate @ StringRiffle[ tags, ":" ];
+LogChatTiming[ tags_List ] := LogChatTiming @ Evaluate @ StringRiffle[ timingTag /@ tags, ":" ];
 LogChatTiming[ eval: (h_Symbol)[ ___ ] ] := LogChatTiming[ eval, Capitalize @ SymbolName @ h ];
 LogChatTiming[ eval_ ] := LogChatTiming[ eval, "None" ];
 
@@ -1047,6 +1047,15 @@ LogChatTiming // endExportedDefinition;
 
 $timings   = Internal`Bag[ ];
 $timingLog = Internal`Bag[ ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*timingTag*)
+timingTag // beginDefinition;
+timingTag[ tag_String ] := tag;
+timingTag[ symbol_Symbol ] := Capitalize @ SymbolName @ symbol;
+timingTag[ other_ ] := StringDelete[ stringTrimMiddle[ ToString @ other, 32 ], Except[ LetterCharacter ] ];
+timingTag // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
