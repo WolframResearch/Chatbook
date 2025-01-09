@@ -56,6 +56,7 @@ $incrementalBuildBatchSize = 512;
 $dbConnectivity            = 16;
 $dbExpansionAdd            = 256;
 $dbExpansionSearch         = 2048;
+$relativePaths             = Automatic;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
@@ -143,7 +144,8 @@ BuildVectorDatabase // ClearAll;
 BuildVectorDatabase // Options = {
     "Connectivity"    :> $dbConnectivity,
     "ExpansionAdd"    :> $dbExpansionAdd,
-    "ExpansionSearch" :> $dbExpansionSearch
+    "ExpansionSearch" :> $dbExpansionSearch,
+    "RelativePaths"   :> $relativePaths
 };
 
 BuildVectorDatabase[ All, opts: OptionsPattern[ ] ] :=
@@ -151,7 +153,8 @@ BuildVectorDatabase[ All, opts: OptionsPattern[ ] ] :=
         {
             $dbConnectivity    = OptionValue[ "Connectivity"    ],
             $dbExpansionAdd    = OptionValue[ "ExpansionAdd"    ],
-            $dbExpansionSearch = OptionValue[ "ExpansionSearch" ]
+            $dbExpansionSearch = OptionValue[ "ExpansionSearch" ],
+            $relativePaths     = checkRelativePaths[ OptionValue[ "RelativePaths" ], True ]
         },
         AssociationMap[ BuildVectorDatabase, FileBaseName /@ getVectorDBSourceFile @ All ]
     ];
@@ -161,13 +164,27 @@ BuildVectorDatabase[ name_String, opts: OptionsPattern[ ] ] := Enclose[
         {
             $dbConnectivity    = OptionValue[ "Connectivity"    ],
             $dbExpansionAdd    = OptionValue[ "ExpansionAdd"    ],
-            $dbExpansionSearch = OptionValue[ "ExpansionSearch" ]
+            $dbExpansionSearch = OptionValue[ "ExpansionSearch" ],
+            $relativePaths     = checkRelativePaths[ OptionValue[ "RelativePaths" ], True ]
         },
-        WithCleanup[
-            SetDirectory @ ensureDirectory @ $vectorDBTargetDirectory,
-            ConfirmMatch[ buildVectorDatabase @ name, $$vectorDatabase, "Build" ],
-            ResetDirectory[ ]
+        If[ TrueQ @ $relativePaths,
+            WithCleanup[
+                SetDirectory @ ensureDirectory @ $vectorDBTargetDirectory,
+                ConfirmMatch[ buildVectorDatabase @ name, $$vectorDatabase, "Build" ],
+                ResetDirectory[ ]
+            ],
+            ConfirmMatch[ buildVectorDatabase @ name, $$vectorDatabase, "Build" ]
         ]
+    ]
+];
+
+BuildVectorDatabase[ id_, dir_, opts: OptionsPattern[ ] ] := Enclose[
+    Block[
+        {
+            $vectorDBTargetDirectory = ConfirmBy[ GeneralUtilities`EnsureDirectory @ dir, DirectoryQ, "Directory" ],
+            $relativePaths           = checkRelativePaths[ OptionValue[ "RelativePaths" ], False ]
+        },
+        BuildVectorDatabase[ id, opts ]
     ]
 ];
 
@@ -180,7 +197,12 @@ buildVectorDatabase[ name_String ] :=
         loadEmbeddingCache[ ];
 
         dir = ConfirmBy[ ensureDirectory @ { $vectorDBTargetDirectory, name }, DirectoryQ, "Directory" ];
-        rel = ConfirmBy[ ResourceFunction[ "RelativePath" ][ dir ], DirectoryQ, "Relative" ];
+
+        rel = If[ TrueQ @ $relativePaths,
+                  ConfirmBy[ ResourceFunction[ "RelativePath" ][ dir ], DirectoryQ, "Relative" ],
+                  dir
+              ];
+
         src = ConfirmBy[ getVectorDBSourceFile @ name, FileExistsQ, "File" ];
 
         DeleteFile /@ FileNames[ { "*.wxf", "*.usearch" }, dir ];
@@ -231,7 +253,10 @@ buildVectorDatabase[ name_String ] :=
             ConfirmBy[ rewriteDBData[ rel, name ], FileExistsQ, "Rewrite" ];
 
             built = ConfirmMatch[
-                VectorDatabaseObject @ File @ FileNameJoin @ { rel, name <> ".wxf" },
+                If[ TrueQ @ $relativePaths,
+                    VectorDatabaseObject @ File @ FileNameJoin @ { rel, name <> ".wxf" },
+                    VectorDatabaseObject[ File @ FileNameJoin @ { dir, name <> ".wxf" }, OverwriteTarget -> True ]
+                ],
                 $$vectorDatabase,
                 "Result"
             ];
@@ -264,6 +289,14 @@ buildVectorDatabase[ name_String ] :=
 
         ConfirmMatch[ built, $$vectorDatabase, "Result" ]
     ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*checkRelativePaths*)
+checkRelativePaths // ClearAll;
+checkRelativePaths[ relative: True|False, default_ ] := relative;
+checkRelativePaths[ relative_, default: True|False ] := default;
+checkRelativePaths[ relative_, default_ ] := True;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
