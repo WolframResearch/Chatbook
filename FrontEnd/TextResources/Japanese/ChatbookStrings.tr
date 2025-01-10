@@ -235,7 +235,7 @@
 
 "WorkspaceFocusIndicatorEnableTooltip" -> "\:5225\:306e\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:304b\:3089\:306e\:30b3\:30f3\:30c6\:30ad\:30b9\:30c8\:3092\:4f7f\:7528\:53ef\:80fd\:306b\:3059\:308b",
 "WorkspaceFocusIndicatorDisableTooltip" -> "\:5225\:306e\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:304b\:3089\:306e\:30b3\:30f3\:30c6\:30ad\:30b9\:30c8\:3092\:4f7f\:7528\:4e0d\:53ef\:306b\:3059\:308b",
-"WorkspaceFocusIndicatorFocus" -> "\:7d5e\:308a\:8fbc\:3080\:ff1a",
+"WorkspaceFocusIndicatorFocus" -> "\:30d5\:30a9\:30fc\:30ab\:30b9\:ff1a",
 "WorkspaceFocusIndicatorMenuTooltip" -> "\:8ffd\:52a0\:306e\:30b3\:30f3\:30c6\:30ad\:30b9\:30c8\:306e\:305f\:3081\:306b\:7126\:70b9\:3092\:5f53\:3066\:308b\:30ce\:30fc\:30c8\:30d6\:30c3\:30af\:3092\:9078\:629e\:3059\:308b",
 "WorkspaceFocusIndicatorMenuAutomatic" -> "\:81ea\:52d5\:7684\:306b\:9078\:629e\:3059\:308b",
 
