@@ -718,10 +718,18 @@ vectorDBSearch[ dbName: $$dbName, messages0: { __Association }, prop: "Values"|"
 
         If[ messages === { }, Throw @ { } ];
 
-        conversationString = ConfirmBy[ getSmallContextString @ messages, StringQ, "ConversationString" ];
+        conversationString = ConfirmBy[
+            getSmallContextString[ messages, "SingleMessageTemplate" -> StringTemplate[ "`Content`" ] ],
+            StringQ,
+            "ConversationString"
+        ];
 
         lastMessageString = ConfirmBy[
-            getSmallContextString[ { Last @ messages }, "IncludeSystemMessage" -> True ],
+            getSmallContextString[
+                { Last @ messages },
+                "IncludeSystemMessage"  -> True,
+                "SingleMessageTemplate" -> StringTemplate[ "`Content`" ]
+            ],
             StringQ,
             "LastMessageString"
         ];

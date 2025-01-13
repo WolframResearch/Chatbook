@@ -51,7 +51,8 @@ messagesToString // Options = {
     "IncludeSystemMessage"     -> False,
     "IncludeTemporaryMessages" -> False,
     "MessageDelimiter"         -> $messageToStringDelimiter,
-    "MessageTemplate"          -> $messageToStringTemplate
+    "MessageTemplate"          -> $messageToStringTemplate,
+    "SingleMessageTemplate"    -> Automatic
 };
 
 messagesToString[ { }, opts: OptionsPattern[ ] ] :=
@@ -72,7 +73,15 @@ messagesToString[ messages0_, opts: OptionsPattern[ ] ] := Enclose[
         If[ ! temporary, messages = DeleteCases[ messages, KeyValuePattern[ "Temporary" -> True ] ] ];
         If[ messages === { }, Throw[ "" ] ];
 
-        template = ConfirmMatch[ OptionValue[ "MessageTemplate" ], _String|_TemplateObject|None, "Template" ];
+        template = ConfirmMatch[
+            If[ Length @ messages === 1,
+                Replace[ OptionValue[ "SingleMessageTemplate" ], Automatic -> OptionValue[ "MessageTemplate" ] ],
+                OptionValue[ "MessageTemplate" ]
+            ],
+            _String|_TemplateObject|None,
+            "Template"
+        ];
+
         delimiter = ConfirmMatch[ OptionValue[ "MessageDelimiter" ], _String, "Delimiter" ];
 
         reverted = ConfirmMatch[
@@ -82,7 +91,10 @@ messagesToString[ messages0_, opts: OptionsPattern[ ] ] := Enclose[
         ];
 
         strings = ConfirmMatch[
-            If[ template === None, Lookup[ reverted, "Content" ], TemplateApply[ template, # ] & /@ reverted ],
+            If[ template === None,
+                Lookup[ reverted, "Content" ],
+                TemplateApply[ template, # ] & /@ reverted
+            ],
             { __String },
             "Strings"
         ];
