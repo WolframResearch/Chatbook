@@ -22,7 +22,15 @@ $documentationSnippetsCacheDirectory := $documentationSnippetsCacheDirectory =
 $resourceSnippetsCacheDirectory := $resourceSnippetsCacheDirectory =
     ChatbookFilesDirectory @ { "DocumentationSnippets", "ResourceSystem" };
 
-$rerankMethod := CurrentChatSettings[ "DocumentationRerankMethod" ];
+$rerankMethod := $rerankMethod = CurrentChatSettings[ "DocumentationRerankMethod" ];
+
+$rerankScoreThreshold = 3;
+
+$bestDocumentationPromptMethod := $bestDocumentationPromptMethod = CurrentChatSettings[ "RerankPromptStyle" ];
+$bestDocumentationPrompt := If[ $bestDocumentationPromptMethod === "JSON",
+                                $bestDocumentationPromptLarge,
+                                $bestDocumentationPromptSmall
+                            ];
 
 $defaultSources = { "DataRepository", "Documentation", "FunctionRepository" };
 
@@ -35,6 +43,8 @@ $sourceAliases = <|
 
 $minUnfilteredItems       = 20;
 $unfilteredItemsPerSource = 10;
+
+$filteringLLMConfig = <| "StopTokens" -> { "CasualChat" } |>;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
@@ -54,11 +64,13 @@ $RelatedDocumentationSources := $defaultSources;
 (*RelatedDocumentation*)
 RelatedDocumentation // beginDefinition;
 RelatedDocumentation // Options = {
-    "FilteredCount" -> Automatic,
-    "FilterResults" -> Automatic,
-    "MaxItems"      -> Automatic,
-    "RerankMethod"  -> Automatic,
-    "Sources"       :> $RelatedDocumentationSources
+    "FilteredCount"     -> Automatic,
+    "FilterResults"     -> Automatic,
+    "LLMEvaluator"      -> Automatic,
+    "MaxItems"          -> Automatic,
+    "RerankPromptStyle" -> Automatic,
+    "RerankMethod"      -> Automatic,
+    "Sources"           :> $RelatedDocumentationSources
 };
 
 GeneralUtilities`SetUsage[ RelatedDocumentation, "\
@@ -172,7 +184,15 @@ RelatedDocumentation[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
         {
             $rerankMethod = Replace[
                 OptionValue[ "RerankMethod" ],
-                $$unspecified :> CurrentChatSettings[ "DocumentationRerankMethod" ]
+                $$unspecified :> $rerankMethod
+            ],
+            $bestDocumentationPromptMethod = Replace[
+                OptionValue[ "RerankPromptStyle" ],
+                $$unspecified :> $bestDocumentationPromptMethod
+            ],
+            $filteringLLMConfig = Replace[
+                OptionValue[ "LLMEvaluator" ],
+                $$unspecified :> $filteringLLMConfig
             ],
             $RelatedDocumentationSources = getSources @ OptionValue[ "Sources" ]
         },
@@ -383,22 +403,26 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
 
         response = StringTrim @ ConfirmBy[
             LogChatTiming[
-                llmSynthesize[ instructions, <| "StopTokens" -> "\"CasualChat\"" |> ],
+                llmSynthesize[ instructions, Replace[ $filteringLLMConfig, Automatic -> Verbatim @ Automatic, { 1 } ] ],
                 "WaitForFilterSnippetsTask"
             ] // withApproximateProgress[ 0.5 ],
             StringQ,
             "Response"
         ];
 
-        $lastFilterInstructions = instructions;
-        $lastFilterResponse = response;
-
         uriToSnippet = <| #Value -> #Snippet & /@ results |>;
         uris = ConfirmMatch[ Keys @ uriToSnippet, { ___String }, "URIs" ];
-        selected = ConfirmMatch[ selectSnippetsFromJSON[ response, uris ], { ___String }, "Pages" ];
+        selected = ConfirmMatch[ LogChatTiming @ selectSnippetsFromResponse[ response, uris ], { ___String }, "Pages" ];
         pages = ConfirmMatch[ Lookup[ uriToSnippet, selected ], { ___String }, "Pages" ];
 
-        addHandlerArguments[ "RelatedDocumentation" -> <| "Results"  -> uris, "Filtered" -> selected |> ];
+        addHandlerArguments[
+            "RelatedDocumentation" -> <|
+                "Results"      -> uris,
+                "Filtered"     -> selected,
+                "Response"     -> response,
+                "Instructions" -> instructions
+            |>
+        ];
 
         pages
     ],
@@ -410,7 +434,7 @@ filterSnippets // endDefinition;
 
 
 
-$bestDocumentationPrompt = StringTemplate[ "\
+$bestDocumentationPromptLarge = StringTemplate[ "\
 Your task is to read a chat transcript between a user and assistant, and then select any relevant Wolfram Language \
 documentation snippets that could help the assistant answer the user's latest message.
 
@@ -461,6 +485,50 @@ If there are no relevant pages, respond with [].
 
 
 
+$bestDocumentationPromptSmall = StringTemplate[ "\
+Your task is to read a chat transcript and select relevant Wolfram Language documentation snippets to help answer the \
+user's latest message.
+
+On the first line of your response, write one of these assistant types:
+	\"Computational\": The user's message requires a computational response.
+	\"Knowledge\": The user's message requires a knowledge-based response.
+	\"CasualChat\": The user's message is casual and could be answered by a non-specialist. For example, simple greetings or general questions.
+
+Then on each subsequent line, write a score (1-5) and id pair, separated by a space:
+<score> <id>
+
+Specify the score as any number from 1 to 5 for your chosen snippets using the following rubric:
+	1: The snippet is completely irrelevant to the user's message or has no usefulness.
+	2: The snippet is somewhat related, but the assistant could easily answer the user's message without it.
+	3: The snippet is related and might help the assistant answer the user's message.
+	4: The snippet is very relevant and would significantly help the assistant answer the user's message.
+	5: It would be impossible for the assistant to answer the user's message correctly without this snippet.
+
+<example>
+Computational
+4 Plus31258
+3 ArithmeticFunctions6736786
+</example>
+
+Here is the chat transcript:
+
+<transcript>
+%%Transcript%%
+</transcript>
+
+Available documentation snippets:
+
+<snippets>
+%%Snippets%%
+</snippets>
+
+Choose up to %%FilteredCount%% most relevant snippets. Skip irrelevant or redundant ones.
+If no relevant pages exist, only respond with the assistant type.
+Respond only in the specified format and do not include any other text.\
+", Delimiters -> "%%" ];
+
+
+
 $documentationRerankPrompt = StringTemplate[ "\
 Read the chat transcript between a user and assistant, and then give me the best Wolfram Language documentation \
 snippet that could help the assistant answer the user's latest message.
@@ -478,14 +546,14 @@ Here is the chat transcript:
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
-(*selectSnippetsFromJSON*)
-selectSnippetsFromJSON // beginDefinition;
+(*selectSnippetsFromResponse*)
+selectSnippetsFromResponse // beginDefinition;
 
-selectSnippetsFromJSON[ response_String, uris_List ] := Enclose[
+selectSnippetsFromResponse[ response_String, uris_List ] /; $bestDocumentationPromptMethod === "JSON" := Enclose[
     Catch @ Module[ { jsonString, jsonData, selected },
         jsonString = ConfirmBy[ First[ StringCases[ response, Longest[ "{" ~~ __ ~~ "}" ], 1 ], None ], StringQ ];
         jsonData = ConfirmBy[ Quiet @ Developer`ReadRawJSONString @ jsonString, AssociationQ ];
-        selected = ConfirmMatch[ Select[ jsonData[ "Snippets" ], #[ "Score" ] >= 3 & ], { __ } ];
+        selected = ConfirmMatch[ Select[ jsonData[ "Snippets" ], #[ "Score" ] >= $rerankScoreThreshold & ], { __ } ];
         ConfirmMatch[
             Intersection[ Cases[ selected, KeyValuePattern[ "URI" -> uri_String ] :> StringTrim @ uri ], uris ],
             { __String }
@@ -494,21 +562,134 @@ selectSnippetsFromJSON[ response_String, uris_List ] := Enclose[
     selectSnippetsFromString[ response, uris ] &
 ];
 
-selectSnippetsFromJSON // endDefinition;
+selectSnippetsFromResponse[ response_String, uris_List ] :=
+    selectSnippetsFromResponseSmall[ response, uris, uriToSnippetID /@ uris ];
+
+selectSnippetsFromResponse // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*selectSnippetsFromResponseSmall*)
+selectSnippetsFromResponseSmall // beginDefinition;
+
+selectSnippetsFromResponseSmall[ response_String, uris_List, ids_List ] := Enclose[
+    Module[ { scored, selected, selectedIDs, selectedURIs },
+
+        scored = ConfirmMatch[
+            StringCases[
+                response,
+                StartOfLine ~~ s: NumberString ~~ Whitespace ~~ id: ids ~~ WhitespaceCharacter... ~~ EndOfLine :>
+                    <| "Score" -> ToExpression @ s, "ID" -> snippetIDToURI @ id |>
+            ],
+            { __Association }
+        ];
+
+        selected = ReverseSortBy[
+            ConfirmMatch[
+                Select[ scored, #[ "Score" ] >= $rerankScoreThreshold & ],
+                { __Association }
+            ],
+            Lookup[ "Score" ]
+        ];
+
+        selectedIDs = ConfirmMatch[ Lookup[ selected, "ID" ], { __String }, "SelectedIDs" ];
+        selectedURIs = ConfirmMatch[ snippetIDToURI /@ selectedIDs, { __String }, "SelectedURIs" ];
+        ConfirmMatch[ Cases[ selectedURIs, Alternatives @@ uris ], { __String } ]
+    ],
+    snippetIDToURI /@ selectSnippetsFromString[ response, ids ] &
+];
+
+selectSnippetsFromResponseSmall // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*scoreSnippetLine*)
+scoreSnippetLine // beginDefinition;
+
+scoreSnippetLine[ "Computational"|"Knowledge"|"CasualChat" ] := Nothing;
+
+scoreSnippetLine[ line_String ] := Enclose[
+    Module[ { scoreString, id, score },
+        { scoreString, id } = ConfirmMatch[ StringSplit[ line, Whitespace ], { _String, _String }, "Split" ];
+        score = ToExpression @ ConfirmBy[ scoreString, StringMatchQ @ NumberString, "Score" ];
+        <| "Score" -> score, "ID" -> id |>
+    ],
+    $Failed &
+];
+
+scoreSnippetLine // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*selectSnippetsFromString*)
 selectSnippetsFromString // beginDefinition;
-selectSnippetsFromString[ response_String, uris: { ___String } ] := StringCases[ response, uris ];
+selectSnippetsFromString[ response_String, ids: { ___String } ] := StringCases[ response, ids ];
 selectSnippetsFromString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
 (*snippetXML*)
 snippetXML // beginDefinition;
-snippetXML[ snippet_String ] := "<snippet>\n" <> snippet <> "\n</snippet>";
+
+snippetXML[ snippet_String ] :=
+    snippetXML[ snippet, $bestDocumentationPromptMethod ];
+
+snippetXML[ snippet_String, "JSON" ] :=
+    "<snippet>\n"<>snippet<>"\n</snippet>";
+
+snippetXML[ snippet_String, "Small" ] := snippetXML[ snippet, "Small" ] = Enclose[
+    StringReplace[
+        snippet,
+        StartOfString ~~ header: Except[ "\n" ].. ~~ "\n" ~~ uri: Except[ "\n" ].. ~~ "\n" ~~ rest__ ~~ EndOfString :>
+            StringJoin[
+                "<snippet id='", ConfirmBy[ uriToSnippetID @ uri, StringQ, "ID" ], "'>\n",
+                header, "\n",
+                rest, "\n</snippet>"
+            ]
+    ],
+    throwInternalFailure
+];
+
+snippetXML[ snippet_String, other_ ] :=
+    snippetXML[ snippet, "Small" ];
+
 snippetXML // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*uriToSnippetID*)
+uriToSnippetID // beginDefinition;
+
+uriToSnippetID[ uri_String ] := Enclose[
+    Module[ { split, base, counter, id },
+        split = Last @ ConfirmMatch[ StringSplit[ uri, "/" ], { __String }, "Split" ];
+        base = First @ StringSplit[ split, "#" ];
+        counter = ConfirmBy[ getSnippetIDCounter @ uri, IntegerQ, "Counter" ];
+        id = base <> ToString @ counter;
+        snippetIDToURI[ id ] = uri;
+        uriToSnippetID[ uri ] = id
+    ],
+    throwInternalFailure
+];
+
+uriToSnippetID // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*snippetIDToURI*)
+snippetIDToURI // beginDefinition;
+(* This is defined for individual ids during evaluation of uriToSnippetID. *)
+snippetIDToURI[ id_String ] := id;
+snippetIDToURI // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*getSnippetIDCounter*)
+getSnippetIDCounter // beginDefinition;
+getSnippetIDCounter[ uri_String ] := getSnippetIDCounter[ uri ] = $snippetIDCounter++;
+getSnippetIDCounter // endDefinition;
+
+$snippetIDCounter = 1;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)

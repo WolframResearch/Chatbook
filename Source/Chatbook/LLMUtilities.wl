@@ -34,7 +34,11 @@ llmSynthesize[ prompt: $$llmPrompt ] :=
     llmSynthesize[ prompt, <| |> ];
 
 llmSynthesize[ prompt: $$llmPrompt, evaluator_Association ] := Enclose[
-    ConfirmMatch[ llmSynthesize0[ prompt, evaluator, 1 ], Except[ "", _String ], "Result" ],
+    ConfirmMatch[
+        llmSynthesize0[ prompt, evaluator, 1 ],
+        If[ MatchQ[ Flatten @ { evaluator[ "StopTokens" ] }, { __String } ], _String, Except[ "", _String ] ],
+        "Result"
+    ],
     throwInternalFailure
 ];
 
@@ -70,18 +74,24 @@ llmSynthesizeSubmit[ prompt: $$llmPrompt, callback_ ] :=
     llmSynthesizeSubmit[ prompt, <| |>, callback ];
 
 llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] := Enclose[
-    Module[ { evaluator, prompt, messages, config, chunks, handlers, keys },
+    Module[ { evaluator, prompt, messages, config, chunks, allowEmpty, handlers, keys, auth },
 
-        evaluator = ConfirmBy[
-            <| $defaultLLMSynthesizeEvaluator, DeleteCases[ evaluator0, Automatic | _Missing ] |>,
-            AssociationQ,
-            "Evaluator"
+        evaluator = Replace[
+            ConfirmBy[
+                <| $defaultLLMSynthesizeEvaluator, DeleteCases[ evaluator0, Automatic | _Missing ] |>,
+                AssociationQ,
+                "Evaluator"
+            ],
+            Verbatim[ Verbatim ][ value_ ] :> value,
+            { 1 }
         ];
 
         prompt   = ConfirmMatch[ truncatePrompt[ prompt0, evaluator ], $$llmPrompt, "Prompt" ];
         messages = { <| "Role" -> "User", "Content" -> prompt |> };
         config   = LLMConfiguration @ evaluator;
         chunks   = Internal`Bag[ ];
+
+        allowEmpty = MatchQ[ Flatten @ { evaluator[ "StopTokens" ] }, { __String } ];
 
         handlers = <|
             "BodyChunkReceived" -> Function[
@@ -93,7 +103,7 @@ llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] :
                     $lastSynthesizeSubmitLog = data;
                     strings = extractBodyChunks @ data;
                     Which[
-                        MatchQ[ strings, { __String } ],
+                        MatchQ[ strings, { __String } ] || (allowEmpty && strings === { }),
                             With[ { s = StringJoin @ strings }, callback[ s, #1 ] ],
                         FailureQ @ strings,
                             callback[ strings, #1 ],
@@ -106,10 +116,12 @@ llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] :
 
         keys = { "BodyChunk", "BodyChunkProcessed", "StatusCode", "EventName" };
 
+        auth = Lookup[ evaluator, "Authentication", $llmSynthesizeAuthentication ];
+
         setServiceCaller @ LLMServices`ChatSubmit[
             messages,
             config,
-            Authentication       -> $llmSynthesizeAuthentication,
+            Authentication       -> auth,
             HandlerFunctions     -> handlers,
             HandlerFunctionsKeys -> keys,
             "TestConnection"     -> False
