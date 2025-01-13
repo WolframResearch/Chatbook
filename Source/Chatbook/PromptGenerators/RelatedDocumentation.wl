@@ -487,19 +487,19 @@ Your task is to read a chat transcript and select relevant Wolfram Language docu
 user's latest message.
 
 On the first line of your response, write one of these assistant types:
-Computational - For computational responses
-Knowledge - For knowledge-based responses
-CasualChat - For casual conversation
+	\"Computational\": The user's message requires a computational response.
+	\"Knowledge\": The user's message requires a knowledge-based response.
+	\"CasualChat\": The user's message is casual and could be answered by a non-specialist. For example, simple greetings or general questions.
 
 Then on each subsequent line, write a score (1-5) and id pair, separated by a space:
 <score> <id>
 
-Scoring guide:
-1: Irrelevant/useless
-2: Related but unnecessary
-3: Helpful
-4: Very relevant
-5: Essential
+Specify the score as any number from 1 to 5 for your chosen snippets using the following rubric:
+	1: The snippet is completely irrelevant to the user's message or has no usefulness.
+	2: The snippet is somewhat related, but the assistant could easily answer the user's message without it.
+	3: The snippet is related and might help the assistant answer the user's message.
+	4: The snippet is very relevant and would significantly help the assistant answer the user's message.
+	5: It would be impossible for the assistant to answer the user's message correctly without this snippet.
 
 <example>
 Computational
@@ -520,7 +520,7 @@ Available documentation snippets:
 </snippets>
 
 Choose up to %%FilteredCount%% most relevant snippets. Skip irrelevant or redundant ones.
-If no relevant pages exist, output a single dash (-).
+If no relevant pages exist, only respond with the assistant type.
 Respond only in the specified format and do not include any other text.\
 ", Delimiters -> "%%" ];
 
