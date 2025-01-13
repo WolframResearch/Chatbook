@@ -157,3 +157,13 @@ VerificationTest[
     SameTest -> MatchQ,
     TestID   -> "RelatedDocumentation-Prompt-Selection-Count@@Tests/RelatedDocumentation.wlt:154,1-159,2"
 ]
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsection::Closed:: *)
+(*Regression Tests*)
+VerificationTest[
+    RelatedDocumentation[ { <| "Role" -> "User", "Content" -> "Hello" |> }, "Prompt", "FilterResults" -> False ],
+    _String? (StringFreeQ[ "$Username" ]),
+    SameTest -> MatchQ,
+    TestID   -> "RelatedDocumentation-Regression-UserPrefix@@Tests/RelatedDocumentation.wlt:164,1-169,2"
+]

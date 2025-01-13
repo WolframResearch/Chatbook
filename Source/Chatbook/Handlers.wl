@@ -27,6 +27,11 @@ addHandlerArguments // beginDefinition;
 addHandlerArguments[ args_ ] :=
     addHandlerArguments[ $ChatHandlerData, Association @ args ];
 
+addHandlerArguments[ current_? AssociationQ, new_? AssociationQ ] /; AnyTrue[ new, AssociationQ ] := Enclose[
+    $ChatHandlerData = ConfirmBy[ combineNestedHandlerData[ current, new ], AssociationQ, "AddHandlerArguments" ],
+    throwInternalFailure
+];
+
 addHandlerArguments[ current_? AssociationQ, new_? AssociationQ ] :=
     $ChatHandlerData = <| current, new |>;
 
@@ -36,6 +41,19 @@ addHandlerArguments[ current_, new_? AssociationQ ] := (
 );
 
 addHandlerArguments // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*combineNestedHandlerData*)
+combineNestedHandlerData // beginDefinition;
+combineNestedHandlerData[ as1_Association, as2_Association ] := combineNestedHandlerData0 @ { as1, as2 };
+combineNestedHandlerData // endDefinition;
+
+combineNestedHandlerData0 // beginDefinition;
+combineNestedHandlerData0[ { as1_Association, as2_Association } ] := Merge[ { as1, as2 }, combineNestedHandlerData0 ];
+combineNestedHandlerData0[ { value_ } ] := value;
+combineNestedHandlerData0[ { _, value_ } ] := value;
+combineNestedHandlerData0 // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
