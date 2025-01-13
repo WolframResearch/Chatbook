@@ -44,6 +44,8 @@ $sourceAliases = <|
 $minUnfilteredItems       = 20;
 $unfilteredItemsPerSource = 10;
 
+$filteringLLMConfig = <| "StopTokens" -> { "CasualChat" } |>;
+
 (* ::**************************************************************************************************************:: *)
 (* ::Section::Closed:: *)
 (*Messages*)
@@ -64,6 +66,7 @@ RelatedDocumentation // beginDefinition;
 RelatedDocumentation // Options = {
     "FilteredCount"     -> Automatic,
     "FilterResults"     -> Automatic,
+    "LLMEvaluator"      -> Automatic,
     "MaxItems"          -> Automatic,
     "RerankPromptStyle" -> Automatic,
     "RerankMethod"      -> Automatic,
@@ -186,6 +189,10 @@ RelatedDocumentation[ prompt_, "Prompt", n_Integer, opts: OptionsPattern[ ] ] :=
             $bestDocumentationPromptMethod = Replace[
                 OptionValue[ "RerankPromptStyle" ],
                 $$unspecified :> $bestDocumentationPromptMethod
+            ],
+            $filteringLLMConfig = Replace[
+                OptionValue[ "LLMEvaluator" ],
+                $$unspecified :> $filteringLLMConfig
             ],
             $RelatedDocumentationSources = getSources @ OptionValue[ "Sources" ]
         },
@@ -424,10 +431,6 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
 
 
 filterSnippets // endDefinition;
-
-
-
-$filteringLLMConfig = <| "StopTokens" -> "CasualChat" |>;
 
 
 
