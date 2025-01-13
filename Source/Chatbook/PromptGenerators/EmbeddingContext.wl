@@ -22,7 +22,7 @@ $smallContextStringLength = 8000;
 (*getSmallContextString*)
 getSmallContextString // beginDefinition;
 
-getSmallContextString // Options = { "IncludeSystemMessage" -> False };
+getSmallContextString // Options = { "IncludeSystemMessage" -> False, "SingleMessageTemplate" -> Automatic };
 
 getSmallContextString[ messages0: { ___Association }, opts: OptionsPattern[ ] ] := Enclose[
     Catch @ Module[ { messages, string },
