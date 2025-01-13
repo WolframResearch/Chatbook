@@ -396,7 +396,7 @@ filterSnippets[ messages_, results0_List, True, filterCount_Integer? Positive ] 
 
         response = StringTrim @ ConfirmBy[
             LogChatTiming[
-                llmSynthesize[ instructions, $filteringLLMConfig ],
+                llmSynthesize[ instructions, Replace[ $filteringLLMConfig, Automatic -> Verbatim @ Automatic, { 1 } ] ],
                 "WaitForFilterSnippetsTask"
             ] // withApproximateProgress[ 0.5 ],
             StringQ,
