@@ -70,12 +70,16 @@ llmSynthesizeSubmit[ prompt: $$llmPrompt, callback_ ] :=
     llmSynthesizeSubmit[ prompt, <| |>, callback ];
 
 llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] := Enclose[
-    Module[ { evaluator, prompt, messages, config, chunks, handlers, keys },
+    Module[ { evaluator, prompt, messages, config, chunks, handlers, keys, auth },
 
-        evaluator = ConfirmBy[
-            <| $defaultLLMSynthesizeEvaluator, DeleteCases[ evaluator0, Automatic | _Missing ] |>,
-            AssociationQ,
-            "Evaluator"
+        evaluator = Replace[
+            ConfirmBy[
+                <| $defaultLLMSynthesizeEvaluator, DeleteCases[ evaluator0, Automatic | _Missing ] |>,
+                AssociationQ,
+                "Evaluator"
+            ],
+            Verbatim[ Verbatim ][ value_ ] :> value,
+            { 1 }
         ];
 
         prompt   = ConfirmMatch[ truncatePrompt[ prompt0, evaluator ], $$llmPrompt, "Prompt" ];
@@ -106,10 +110,12 @@ llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] :
 
         keys = { "BodyChunk", "BodyChunkProcessed", "StatusCode", "EventName" };
 
+        auth = Lookup[ evaluator, "Authentication", $llmSynthesizeAuthentication ];
+
         setServiceCaller @ LLMServices`ChatSubmit[
             messages,
             config,
-            Authentication       -> $llmSynthesizeAuthentication,
+            Authentication       -> auth,
             HandlerFunctions     -> handlers,
             HandlerFunctionsKeys -> keys,
             "TestConnection"     -> False
