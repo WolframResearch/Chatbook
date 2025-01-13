@@ -34,7 +34,11 @@ llmSynthesize[ prompt: $$llmPrompt ] :=
     llmSynthesize[ prompt, <| |> ];
 
 llmSynthesize[ prompt: $$llmPrompt, evaluator_Association ] := Enclose[
-    ConfirmMatch[ llmSynthesize0[ prompt, evaluator, 1 ], Except[ "", _String ], "Result" ],
+    ConfirmMatch[
+        llmSynthesize0[ prompt, evaluator, 1 ],
+        If[ MatchQ[ Flatten @ { evaluator[ "StopTokens" ] }, { __String } ], _String, Except[ "", _String ] ],
+        "Result"
+    ],
     throwInternalFailure
 ];
 
@@ -70,7 +74,7 @@ llmSynthesizeSubmit[ prompt: $$llmPrompt, callback_ ] :=
     llmSynthesizeSubmit[ prompt, <| |>, callback ];
 
 llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] := Enclose[
-    Module[ { evaluator, prompt, messages, config, chunks, handlers, keys, auth },
+    Module[ { evaluator, prompt, messages, config, chunks, allowEmpty, handlers, keys, auth },
 
         evaluator = Replace[
             ConfirmBy[
@@ -87,6 +91,8 @@ llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] :
         config   = LLMConfiguration @ evaluator;
         chunks   = Internal`Bag[ ];
 
+        allowEmpty = MatchQ[ Flatten @ { evaluator[ "StopTokens" ] }, { __String } ];
+
         handlers = <|
             "BodyChunkReceived" -> Function[
                 Internal`StuffBag[ chunks, # ]
@@ -97,7 +103,7 @@ llmSynthesizeSubmit[ prompt0: $$llmPrompt, evaluator0_Association, callback_ ] :
                     $lastSynthesizeSubmitLog = data;
                     strings = extractBodyChunks @ data;
                     Which[
-                        MatchQ[ strings, { __String } ],
+                        MatchQ[ strings, { __String } ] || (allowEmpty && strings === { }),
                             With[ { s = StringJoin @ strings }, callback[ s, #1 ] ],
                         FailureQ @ strings,
                             callback[ strings, #1 ],
