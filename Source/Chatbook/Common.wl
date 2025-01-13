@@ -311,11 +311,18 @@ expandThrowInternalFailures[ expr_ ] :=
                 ReplaceAll[
                     HoldPattern[ e$: lhs ] :> rhs,
                     HoldPattern @ Enclose[ eval_, throwInternalFailure, $enclosure ] :>
-                        Enclose[ eval, throwInternalFailure[ e$, ##1 ] &, $enclosure ]
+                        Module[ { eh = HoldComplete @ e$ }, Enclose[ eval, internalFailureFunction @ eh, $enclosure ] ]
                 ]
     ];
 
 expandThrowInternalFailures // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsection::Closed:: *)
+(*internalFailureFunction*)
+internalFailureFunction // ClearAll;
+internalFailureFunction // Attributes = { HoldAllComplete };
+internalFailureFunction[ held_ ][ args___ ] := Replace[ held, HoldComplete[ e_ ] :> throwInternalFailure[ e, args ] ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsection::Closed:: *)
