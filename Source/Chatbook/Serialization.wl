@@ -270,6 +270,21 @@ $$cellEvaluationLanguage = Alternatives[
     ])
 ];
 
+$$controlBox = HoldPattern @ Alternatives[
+    AnimatorBox,
+    CheckboxBox,
+    ColorSetterBox,
+    InputFieldBox,
+    ListPickerBox,
+    LocatorPaneBox,
+    PopupMenuBox,
+    RadioButtonBox,
+    SetterBox,
+    Slider2DBox,
+    SliderBox,
+    TogglerBox
+];
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
 (*Templates*)
@@ -2196,6 +2211,20 @@ fasterCellToString0[ ProgressIndicatorBox[ args___ ] ] :=
 fasterCellToString0[ PaneSelectorBox[ { ___, False -> b_, ___ }, Dynamic[ CurrentValue[ "MouseOver" ], ___ ], ___ ] ] :=
     fasterCellToString0 @ b;
 
+fasterCellToString0[ (h: $$controlBox)[ args___ ] ] :=
+    With[ { head = Symbol @ StringDelete[ ToString @ h, "Box"~~EndOfString ] },
+        inputFormString @ Unevaluated @ head @ args
+    ];
+
+fasterCellToString0[ RotationBox[ box_, ___, BoxRotation -> r_, ___ ] ] :=
+    StringJoin[ "Rotate[", fasterCellToString0 @ box, ", ", inputFormString @ Unevaluated @ r, "]" ];
+
+fasterCellToString0[ DynamicBox[ ToBoxes[ expr_, StandardForm ], ___ ] ] :=
+    inputFormString @ Dynamic @ expr;
+
+fasterCellToString0[ DynamicWrapperBox[ box_, ___ ] ] :=
+    fasterCellToString0 @ box;
+
 fasterCellToString0[
     TagBox[ _, "MarkdownImage", ___, TaggingRules -> KeyValuePattern[ "CellToStringData" -> string_String ], ___ ]
 ] := string;
@@ -2444,7 +2473,8 @@ inputFormString[ expr_, opts: OptionsPattern[ ] ] := StringReplace[
 
 $inputFormReplacements = {
     "CompressedData[\"" ~~ s: Except[ "\"" ].. ~~ "\"]" :>
-        "CompressedData[\"\[LeftSkeleton]" <> ToString @ StringLength @ s <> "\[RightSkeleton]\"]"
+        "CompressedData[\"\[LeftSkeleton]" <> ToString @ StringLength @ s <> "\[RightSkeleton]\"]",
+    "$CellContext`" -> ""
 };
 
 (* ::**************************************************************************************************************:: *)
