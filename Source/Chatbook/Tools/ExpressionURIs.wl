@@ -57,7 +57,7 @@ makeToolResponseString // endDefinition;
 (* ::Section::Closed:: *)
 (*MakeExpressionURI*)
 MakeExpressionURI // ClearAll;
-MakeExpressionURI[ args: Repeated[ _, { 1, 3 } ] ] := makeExpressionURI @ args;
+MakeExpressionURI[ args___, expr_ ] := makeExpressionURI[ args, Unevaluated @ expr ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsection::Closed:: *)
