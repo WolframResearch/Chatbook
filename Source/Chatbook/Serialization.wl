@@ -495,6 +495,10 @@ cellToString[ Cell[ a__, $$docSearchStyle, b___ ] ] :=
         |>
     ];
 
+(* Workflow cells: *)
+cellToString[ Cell[ BoxData[ TemplateBox[ { name_String, content_ }, "FileListing", ___ ], ___ ], ___ ] ] :=
+    name <> "\n```\n" <> fasterCellToString @ content <> "\n```";
+
 (* Delimit code blocks with triple backticks *)
 cellToString[ cell: Cell[ _BoxData, ___ ] ] /; ! TrueQ @ $delimitedCodeBlock && codeBlockQ @ cell :=
     Block[ { $delimitedCodeBlock = True },
