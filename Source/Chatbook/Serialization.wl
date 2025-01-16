@@ -2575,6 +2575,9 @@ makeExpressionString[ box_, $Failed ] :=
         makeExpressionString[ box, expr ] /; ! FailureQ @ expr
     ];
 
+makeExpressionString[ TemplateBox[ _, "Tabular", ___ ], _ ] :=
+    "Tabular[...]";
+
 makeExpressionString[ box_, _ ] := makeExpressionString[ box ] =
     $Failed;
 
