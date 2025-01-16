@@ -1557,8 +1557,14 @@ fasterCellToString0[ FormBox[
     ___
 ] ] := "TeX";
 
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*FormBox*)
 fasterCellToString0[ box: FormBox[ _, TraditionalForm, ___ ] ] :=
     serializeTraditionalForm @ box;
+
+fasterCellToString0[ FormBox[ box_, TextForm, ___ ] ] :=
+    Block[ { $showStringCharacters = False, $escapeMarkdown = True }, fasterCellToString0 @ box ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
