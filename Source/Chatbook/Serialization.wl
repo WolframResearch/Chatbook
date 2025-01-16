@@ -1615,12 +1615,16 @@ fasterCellToString0[ SuperscriptBox[ f_, TagBox[ RowBox @ { "(", n_String, ")" }
     "Derivative[" <> n <> "][" <> fasterCellToString0 @ f <> "]";
 
 (* Sqrt *)
-fasterCellToString0[ SqrtBox[ a_ ] ] :=
+fasterCellToString0[ SqrtBox[ a_, OptionsPattern[ ] ] ] :=
     (needsBasePrompt[ "WolframLanguage" ]; "Sqrt["<>fasterCellToString0 @ a<>"]");
 
 (* Fraction *)
-fasterCellToString0[ FractionBox[ a_, b_ ] ] :=
+fasterCellToString0[ FractionBox[ a_, b_, OptionsPattern[ ] ] ] :=
     (needsBasePrompt[ "Math" ]; "(" <> fasterCellToString0 @ a <> "/" <> fasterCellToString0 @ b <> ")");
+
+(* RadicalBox *)
+fasterCellToString0[ RadicalBox[ a_, b_, OptionsPattern[ ] ] ] :=
+    (needsBasePrompt[ "Math" ]; fasterCellToString0 @ a <> "^(1/(" <> fasterCellToString0 @ b <> "))");
 
 (* Piecewise *)
 fasterCellToString0[ box: TagBox[ _, "Piecewise", ___ ] ] :=
@@ -1643,19 +1647,33 @@ fasterCellToString0[ TemplateBox[ { }, "Complexes", ___ ] ] := "\:2102";
 fasterCellToString0[ TemplateBox[ { n_ }, "C", ___ ] ] := "C[" <> fasterCellToString0 @ n <> "]";
 
 (* Typesetting *)
-fasterCellToString0[ SubscriptBox[ a_, b_ ] ] :=
+fasterCellToString0[ SubscriptBox[ a_, b_, OptionsPattern[ ] ] ] :=
     If[ TrueQ @ $inlineCode,
         StringJoin[ fasterCellToString0 @ a, fasterCellToString0 @ b ],
         "Subscript[" <> fasterCellToString0 @ a <> ", " <> fasterCellToString0 @ b <> "]"
     ];
 
-fasterCellToString0[ OverscriptBox[ a_, b_ ] ] :=
+fasterCellToString0[ SubsuperscriptBox[ a_, b_, c_, OptionsPattern[ ] ] ] :=
+    If[ TrueQ @ $inlineCode,
+        fasterCellToString0 @ a <> fasterCellToString0 @ b <> fasterCellToString0 @ c,
+        StringJoin[
+            "Subsuperscript[",
+            fasterCellToString0 @ a,
+            ", ",
+            fasterCellToString0 @ b,
+            ", ",
+            fasterCellToString0 @ c,
+            "]"
+        ]
+    ];
+
+fasterCellToString0[ OverscriptBox[ a_, b_, OptionsPattern[ ] ] ] :=
     "Overscript[" <> fasterCellToString0 @ a <> ", " <> fasterCellToString0 @ b <> "]";
 
-fasterCellToString0[ UnderscriptBox[ a_, b_ ] ] :=
+fasterCellToString0[ UnderscriptBox[ a_, b_, OptionsPattern[ ] ] ] :=
     "Underscript[" <> fasterCellToString0 @ a <> ", " <> fasterCellToString0 @ b <> "]";
 
-fasterCellToString0[ UnderoverscriptBox[ a_, b_, c_ ] ] := StringJoin[
+fasterCellToString0[ UnderoverscriptBox[ a_, b_, c_, OptionsPattern[ ] ] ] := StringJoin[
     "Underoverscript[",
     fasterCellToString0 @ a,
     ", ",
