@@ -2476,10 +2476,37 @@ $templateBoxCache = <| |>;
 (* ::Subsubsubsubsection::Closed:: *)
 (*applyTemplateBoxDisplayFunction*)
 applyTemplateBoxDisplayFunction // beginDefinition;
-applyTemplateBoxDisplayFunction[ f_, TemplateBox[ args_, ___ ] ] := applyTemplateBoxDisplayFunction[ f, args ];
-applyTemplateBoxDisplayFunction[ f_String, a_List ] := f <> "[" <> StringRiffle[ fasterCellToString0 /@ a, ", " ] <> "]";
-applyTemplateBoxDisplayFunction[ f_, { args___ } ] := f @ args;
-applyTemplateBoxDisplayFunction[ f_, args___ ] := f @ args;
+
+applyTemplateBoxDisplayFunction[ f_, TemplateBox[ args_, ___ ] ] :=
+    applyTemplateBoxDisplayFunction[ f, args ];
+
+applyTemplateBoxDisplayFunction[ f_String, a_List ] :=
+    f <> "[" <> StringRiffle[ fasterCellToString0 /@ a, ", " ] <> "]";
+
+applyTemplateBoxDisplayFunction[ f0_, { args___ } ] :=
+    Module[ { n, f },
+        n = Length @ HoldComplete @ args;
+        f = ReplaceRepeated[
+            ReplaceAll[
+                f0,
+                {
+                    TemplateSlotSequence[ { a_Integer, b_Integer }, riffle_ ] :>
+                        RuleCondition[ sequence @@ Riffle[ Slot /@ Range[ a, b ], riffle ] ],
+                    TemplateSlotSequence[ a_Integer, riffle_ ] :>
+                        RuleCondition[ sequence @@ Riffle[ Slot /@ Range[ a, n ], riffle ] ]
+                }
+            ],
+            {
+                h_[ c___, sequence[ d___ ], e___ ] :> h[ c, d, e ],
+                sequence[ d___ ] :> d
+            }
+        ];
+        f @ args
+    ];
+
+applyTemplateBoxDisplayFunction[ f_, args___ ] :=
+    f @ args;
+
 applyTemplateBoxDisplayFunction // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
