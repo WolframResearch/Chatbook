@@ -2270,6 +2270,12 @@ fasterCellToString0[ RotationBox[ box_, ___, BoxRotation -> r_, ___ ] ] :=
 fasterCellToString0[ DynamicBox[ ToBoxes[ expr_, StandardForm ], ___ ] ] :=
     inputFormString @ Dynamic @ expr;
 
+fasterCellToString0[ DynamicBox[ ToBoxes[ expr_ ], ___ ] ] :=
+    inputFormString @ Dynamic @ expr;
+
+fasterCellToString0[ DynamicBox[ If[ CurrentValue[ "MouseOver" ], a_, b_ ], ___ ] ] :=
+    fasterCellToString0 @ b;
+
 fasterCellToString0[ DynamicWrapperBox[ box_, ___ ] ] :=
     fasterCellToString0 @ box;
 
