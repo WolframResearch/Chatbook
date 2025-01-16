@@ -585,6 +585,14 @@ cellToString[ Cell[ RawData[ str_String ], ___ ] ] :=
         ]
     ];
 
+(* Raw output form: *)
+cellToString[ Cell[ OutputFormData[ output_String, ___ ], ___ ] ] :=
+    output;
+
+(* StyleData cells: *)
+cellToString[ cell: Cell[ _StyleData, ___ ] ] :=
+    inputFormString @ cell;
+
 (* Include a stack trace for message cells when available *)
 cellToString[ Cell[ a__, "Message", "MSG", b___ ] ] :=
     Module[ { string, stacks, stack, stackString },
@@ -1367,6 +1375,9 @@ fasterCellToString0[
     "NotebookObject["<>label<>"]"
 );
 
+fasterCellToString0[ TemplateBox[ { _, _, _, _, label_String, _ }, "NotebookObject", ___ ] ] :=
+    "NotebookObject[(* " <> StringTrim[ label, "\"" ] <> " *)]";
+
 (* Entity *)
 $$entityBoxType = "Entity"|"EntityClass"|"EntityProperty"|"EntityType";
 fasterCellToString0[ TemplateBox[ { _, box_, ___ }, $$entityBoxType, ___ ] ] := fasterCellToString0 @ box;
@@ -1511,6 +1522,10 @@ fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> input_ ], "Chatboo
             expr_ :> fasterCellToString0 @ ToBoxes @ expr
         }
     ];
+
+(* Keyboard keys *)
+fasterCellToString0[ TemplateBox[ keys: { __String }, "Key0"|"Key1"|"Key2", ___ ] ] :=
+    StringRiffle[ keys, "+" ];
 
 (* Other *)
 fasterCellToString0[ box: TemplateBox[ args_, name_String, ___ ] ] /;
@@ -2246,6 +2261,9 @@ fasterCellToString0[ BoxData[ boxes_List, ___ ] ] :=
 fasterCellToString0[ BoxData[ boxes_, ___ ] ] :=
     fasterCellToString0 @ boxes;
 
+fasterCellToString0[ GraphicsData[ "CompressedBitmap"|"PostScript", ___ ] ] :=
+    "Image[...]";
+
 fasterCellToString0[ list_List ] :=
     With[ { strings = fasterCellToString0 /@ list },
         StringJoin @ strings /; AllTrue[ strings, StringQ ]
@@ -2348,6 +2366,12 @@ fasterCellToString0[ DynamicModuleBox[ a___ ] ] /; ! TrueQ @ $CellToStringDebug 
     "DynamicModule[\[LeftSkeleton]" <> ToString @ Length @ HoldComplete @ a <> "\[RightSkeleton]]"
 );
 
+fasterCellToString0[ CounterBox[ args__String ] ] :=
+    "\\!\\(\\*CounterBox[\"" <> StringRiffle[ { args }, "\", \"" ] <> "\"]\\)";
+
+fasterCellToString0[ ValueBox[ args__String ] ] :=
+    "\\!\\(\\*ValueBox[\"" <> StringRiffle[ { args }, "\", \"" ] <> "\"]\\)";
+
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Unhandled TemplateBoxes*)
@@ -2412,6 +2436,25 @@ applyTemplateBoxDisplayFunction // endDefinition;
 fasterCellToString0[ FormBox[ box_, ___ ] ] := fasterCellToString0 @ box;
 fasterCellToString0[ $ignoredBoxPatterns ] := "";
 fasterCellToString0[ $stringStripHeads[ a_, ___ ] ] := fasterCellToString0 @ a;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*Hacks*)
+(* :!CodeAnalysis::BeginBlock:: *)
+(* :!CodeAnalysis::Disable::PrivateContextSymbol:: *)
+fasterCellToString0[ HoldPattern @ DocuTools`Private`StylizeTemplatePart[ box_ ] ] := fasterCellToString0 @ box;
+(* :!CodeAnalysis::EndBlock:: *)
+
+(* Some system model related boxes have raw values: *)
+$$rawSymbol = Alternatives[ None, Automatic, StateSpaceModel, True, False, $Failed ];
+fasterCellToString0[ sym: $$rawSymbol ] := ToString @ sym;
+fasterCellToString0[ n_? NumberQ ] := ToString @ n;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
+(*FE Failure Modes*)
+e: fasterCellToString0[ DefaultStyleDefinitions -> "Default.nb" ] :=
+    throwInternalFailure[ e, "BadFrontEndState" ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
