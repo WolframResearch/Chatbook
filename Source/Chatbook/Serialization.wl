@@ -2166,6 +2166,9 @@ fasterCellToString0[ TemplateBox[ { _, info_ }, "MoreInfoOpenerButtonTemplate", 
 
 (* OS-specific displays: *)
 fasterCellToString0 @ DynamicBox[ ToBoxes[ If[ $OperatingSystem === os_String, a_, b_ ], StandardForm ], ___ ] :=
+    If[ $OperatingSystem === os, inputFormString @ a, inputFormString @ b ];
+
+fasterCellToString0 @ DynamicBox[ If[ $OperatingSystem === os_String, a_, b_ ], ___ ] :=
     If[ $OperatingSystem === os, fasterCellToString0 @ a, fasterCellToString0 @ b ];
 
 (* Checkboxes: *)
