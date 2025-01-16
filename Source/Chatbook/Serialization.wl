@@ -2254,8 +2254,9 @@ fasterCellToString0[ DynamicBox[ ToBoxes[ FEPrivate`FrontEndResource[ "ChatbookS
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Other FE Resources*)
-fasterCellToString0[ DynamicBox[ FEPrivate`FrontEndResource[ type: "FEBitmaps"|"WABitmaps", name_String ], ___ ] ] :=
-    fasterCellToString0 @ feResource[ type, name ];
+fasterCellToString0[
+    DynamicBox[ (FEPrivate`FrontEndResource|FrontEndResource)[ type: "FEBitmaps"|"WABitmaps", name_String ], ___ ]
+] := fasterCellToString0 @ feResource[ type, name ];
 
 fasterCellToString0[ DynamicBox[ FEPrivate`FrontEndResourceString[ "okButtonText" ], ___ ] ] :=
     "OK";
@@ -2532,7 +2533,7 @@ fasterCellToString0[ n_? NumberQ ] := ToString @ n;
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*FE Failure Modes*)
-e: fasterCellToString0[ DefaultStyleDefinitions -> "Default.nb" ] :=
+e: fasterCellToString0[ (DefaultStyleDefinitions -> "Default.nb") | Function[ _ ] ] :=
     throwInternalFailure[ e, "BadFrontEndState" ];
 
 (* ::**************************************************************************************************************:: *)
