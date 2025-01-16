@@ -2253,6 +2253,25 @@ fasterCellToString0[ DynamicBox[ ToBoxes[ FEPrivate`FrontEndResource[ "ChatbookS
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
+(*Other FE Resources*)
+fasterCellToString0[ DynamicBox[ FEPrivate`FrontEndResource[ type: "FEBitmaps"|"WABitmaps", name_String ], ___ ] ] :=
+    fasterCellToString0 @ feResource[ type, name ];
+
+fasterCellToString0[ DynamicBox[ FEPrivate`FrontEndResourceString[ "okButtonText" ], ___ ] ] :=
+    "OK";
+
+fasterCellToString0[ DynamicBox[ FEPrivate`FrontEndResourceString[ "cancelButtonText" ], ___ ] ] :=
+    "Cancel";
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*feResource*)
+feResource // beginDefinition;
+feResource[ type_String, name_String ] := feResource[ type, name ] = FrontEndResource[ type, name ];
+feResource // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsection::Closed:: *)
 (*Other*)
 fasterCellToString0[ Cell[ _, "ObjectNameTranslation", ___ ] ] := "";
 
