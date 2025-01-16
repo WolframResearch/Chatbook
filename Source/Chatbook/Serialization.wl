@@ -215,7 +215,10 @@ $templateBoxRules = <|
     "LCHColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
     "LUVColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
     "RGBColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
-    "XYZColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ]
+    "XYZColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
+    "Tabular"                      -> makeExpressionString,
+    "PlatformDynamic"              -> First,
+    "URLArgument"                  -> First
 |>;
 
 (* ::**************************************************************************************************************:: *)
@@ -277,11 +280,13 @@ $$controlBox = HoldPattern @ Alternatives[
     InputFieldBox,
     ListPickerBox,
     LocatorPaneBox,
+    OpenerBox,
     PopupMenuBox,
     RadioButtonBox,
     SetterBox,
     Slider2DBox,
     SliderBox,
+    TableViewBox,
     TogglerBox
 ];
 
