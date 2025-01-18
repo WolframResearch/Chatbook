@@ -216,7 +216,6 @@ $templateBoxRules = <|
     "LUVColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
     "RGBColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
     "XYZColorSwatchTemplate"       -> inputFormString @* Lookup[ "color" ],
-    "Tabular"                      -> makeExpressionString,
     "PlatformDynamic"              -> First,
     "URLArgument"                  -> First
 |>;
@@ -237,7 +236,8 @@ $graphicsHeads = Alternatives[
 $$graphicsBox = Alternatives[
     $graphicsHeads[ ___ ],
     TemplateBox[ _, "Legended", ___ ],
-    DynamicBox[ _FEPrivate`ImportImage, ___ ]
+    DynamicBox[ _FEPrivate`ImportImage, ___ ],
+    DynamicBox[ _Charting`iInteractiveTradingChart, ___ ]
 ];
 
 (* Serialize the first argument of these and ignore the rest *)
@@ -258,9 +258,19 @@ $stringStripHeads = Alternatives[
 ];
 
 (* Boxes that should be ignored during serialization *)
-$ignoredBoxPatterns = Alternatives[
-    _PaneSelectorBox,
-    StyleBox[ _GraphicsBox, ___, "NewInGraphic", ___ ]
+$$squarePlusIcon = (FEPrivate`FrontEndResource|FrontEndResource)[
+    "FEBitmaps",
+    "SquarePlusIconSmall"|"SquarePlusIconMedium"
+];
+
+$$ifWhich = (If | Which | FEPrivate`If | FEPrivate`Which);
+
+$ignoredBoxPatterns = With[ { icon = $$squarePlusIcon, iw = $$ifWhich },
+    Alternatives[
+        _PaneSelectorBox,
+        StyleBox[ _GraphicsBox, ___, "NewInGraphic", ___ ],
+        DynamicBox[ iw[ ___, icon | StyleBox[ icon, ___ ], ___ ], ___ ]
+    ]
 ];
 
 (* CellEvaluationLanguage appears to not be System` at startup, so use this for matching as a precaution *)
@@ -643,6 +653,9 @@ cellToString[ cell: Cell[ _BoxData, Except[ $$chatInputStyle|$$chatOutputStyle ]
     $multimodalImages && Count[ cell, $$graphicsBox, Infinity ] > $maxMarkdownBoxes :=
         toMarkdownImageBox @ cell;
 
+cellToString[ cell: Cell[ _, "Picture", ___ ] ] /; $multimodalImages :=
+        toMarkdownImageBox @ cell;
+
 cellToString[ other_ ] :=
     cellToString0 @ other;
 
@@ -803,6 +816,7 @@ $globalStringReplacements = {
     "```\n```"                     -> "```\n\n```",
     "\n\n\t\n"                     -> "\n",
     "``$$" ~~ math__ ~~ "$$``"     :> "$$"<>math<>"$$",
+    Shortest[ "$$" ~~ a__ ~~ "$$$$" ~~ b__ ~~ "$$" ] :> "$$"<>a<>" "<>b<>"$$",
     link: ("``[" ~~ Except[ "]" ].. ~~ "](" ~~ Except[ ")" ].. ~~ ")``") :> StringTrim[ link, "``" ]
 };
 
@@ -925,19 +939,9 @@ fasterCellToString0[ string_String ] /; StringContainsQ[ string, $$longNameChara
     fasterCellToString0 @ StringDelete[ StringReplace[ string, $longNameCharacters ], $$invisibleCharacter ];
 
 (* StandardForm strings *)
-fasterCellToString0[ s_String ] /; StringContainsQ[
-    s,
-    a: ("\!\(" ~~ Except[ "\)" ] .. ~~ "\)") /; StringLength @ a < $maxStandardFormStringLength
-] :=
-    Module[ { split },
-        split = StringSplit[
-            s,
-            "\!\(" ~~ b: Except[ "\)" ].. ~~ "\)" :>
-                usingFrontEnd @ MathLink`CallFrontEnd @ FrontEnd`ReparseBoxStructurePacket[ "\!\("<>b<>"\)" ]
-        ];
-
-        StringJoin[ fasterCellToString0 /@ split ] /; ! MatchQ[ split, { s } ]
-    ];
+fasterCellToString0[ s_String ] /;
+    StringLength @ s < $maxStandardFormStringLength && StringContainsQ[ s, "\!\(" ~~ __ ~~ "\)" ] :=
+        serializeStandardFormString @ s;
 
 fasterCellToString0[ a_String ] /;
     StringLength @ a < $maxStandardFormStringLength && StringMatchQ[ a, "\""~~___~~("\\!"|"\!")~~___~~"\"" ] :=
@@ -947,10 +951,6 @@ fasterCellToString0[ a_String ] /;
                 StringReplace[ StringTrim[ res, "\"" ], { "\\\"" -> "\"" } ]
             ] /; FreeQ[ res, s_String /; StringContainsQ[ s, ("\\!"|"\!") ] ]
         ];
-
-fasterCellToString0[ a_String ] /;
-    StringLength @ a < $maxStandardFormStringLength && StringContainsQ[ a, ("\\!"|"\!") ] :=
-        With[ { res = stringToBoxes @ a }, res /; FreeQ[ res, s_String /; StringContainsQ[ s, ("\\!"|"\!") ] ] ];
 
 (* Other strings *)
 fasterCellToString0[ a_String ] :=
@@ -964,6 +964,39 @@ fasterCellToString0[ a_String ] :=
     ];
 
 fasterCellToString0[ a: { ___String } ] := StringJoin[ fasterCellToString0 /@ a ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*serializeStandardFormString*)
+serializeStandardFormString // beginDefinition;
+
+serializeStandardFormString[ str_String ] := Enclose[
+    Catch @ Module[ { split, strings, result },
+        split = StringSplit[
+            str,
+            {
+                Shortest[ "\!\(\*" ~~ boxes__ ~~ "\)" ] :> fromBoxString @ boxes,
+                Shortest[ "\!\(" ~~ raw__ ~~ "\)" ] :> StringReplace[ raw, { "\/" -> "/", "\^" -> "^" } ]
+            }
+        ];
+        If[ MatchQ[ split, { str } ], serializeStandardFormString[ str ] = Throw @ str ];
+        strings = ConfirmMatch[ fasterCellToString0 /@ split, { ___String }, "Strings" ];
+        result = StringJoin @ strings;
+        serializeStandardFormString[ str ] = result
+    ],
+    throwInternalFailure
+];
+
+serializeStandardFormString // endDefinition;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*fromBoxString*)
+fromBoxString // beginDefinition;
+fromBoxString[ str_String ] := fromBoxString[ str, Quiet @ ToExpression[ str, InputForm, HoldComplete ] ];
+fromBoxString[ _, HoldComplete[ expr_ ] ] := expr;
+fromBoxString[ str_String, _ ] := Verbatim @ ToString[ "\!\(\*" <> str <> "\)" ];
+fromBoxString // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -1111,7 +1144,8 @@ fasterCellToString0[ box: $$graphicsBox ] :=
         )
     ];
 
-
+fasterCellToString0[ System`LabeledGraphicsBox[ gfx_, label_, ___ ] ] :=
+    "Labeled[" <> fasterCellToString0 @ gfx <> ", " <> fasterCellToString0 @ label <> "]";
 
 $graphicsBoxStringReplacements = {
     a: DigitCharacter ~~ "." ~~ b: Repeated[ DigitCharacter, { 4, Infinity } ] :> a <> "." <> StringTake[ b, 3 ],
@@ -1329,17 +1363,29 @@ fasterCellToString0[ TemplateBox[ { code_, language_ }, "ChatCodeBlockTemplate",
 (*Template Boxes*)
 
 (* Messages *)
-fasterCellToString0[ TemplateBox[ args: { sym_String, tag_String, str_String, ___ }, "MessageTemplate", ___ ] ] := (
-    needsBasePrompt[ "WolframLanguage" ];
-    sowMessageData @ args; (* Look for stack trace data *)
-    sym <> "::" <> tag <> ": "<> fasterCellToString0 @ str
-);
+fasterCellToString0[ TemplateBox[ args: { sym_String, tag_String, str0_String, ___ }, "MessageTemplate", ___ ] ] :=
+    Module[ { str },
+        str = If[ StringMatchQ[ str0, "\""~~__~~"\"" ],
+                  Replace[ Quiet @ ToExpression[ str0, InputForm, HoldComplete ], HoldComplete[ s_String ] :> s ],
+                  str0
+              ];
+        If[ ! StringQ @ str, str = str0 ];
+        needsBasePrompt[ "WolframLanguage" ];
+        sowMessageData @ args; (* Look for stack trace data *)
+        sym <> "::" <> tag <> ": "<> Block[ { $escapeMarkdown = False }, fasterCellToString0 @ str ]
+    ];
 
-fasterCellToString0[ TemplateBox[ args: { _, _, str_String, ___ }, "MessageTemplate", ___ ] ] := (
-    needsBasePrompt[ "WolframLanguage" ];
-    sowMessageData @ args; (* Look for stack trace data *)
-    fasterCellToString0 @ str
-);
+fasterCellToString0[ TemplateBox[ args: { _, _, str0_String, ___ }, "MessageTemplate", ___ ] ] :=
+    Module[ { str },
+        str = If[ StringMatchQ[ str0, "\""~~__~~"\"" ],
+                  Replace[ Quiet @ ToExpression[ str0, InputForm, HoldComplete ], HoldComplete[ s_String ] :> s ],
+                  str0
+              ];
+        If[ ! StringQ @ str, str = str0 ];
+        needsBasePrompt[ "WolframLanguage" ];
+        sowMessageData @ args; (* Look for stack trace data *)
+        Block[ { $escapeMarkdown = False }, fasterCellToString0 @ str ]
+    ];
 
 (* Percent References *)
 fasterCellToString0[ TemplateBox[ KeyValuePattern[ "OutNumber" -> n_Integer ], "PercentRef", ___ ] ] :=
@@ -1381,7 +1427,7 @@ fasterCellToString0[ TemplateBox[ { _, _, _, _, label_String, _ }, "NotebookObje
 (* Entity *)
 $$entityBoxType = "Entity"|"EntityClass"|"EntityProperty"|"EntityType";
 fasterCellToString0[ TemplateBox[ { _, box_, ___ }, $$entityBoxType, ___ ] ] := fasterCellToString0 @ box;
-fasterCellToString0[ TemplateBox[ _, "InertEntity", ___ ] ] := "\[LeftSkeleton]formatted entity\[RightSkeleton]";
+fasterCellToString0[ TemplateBox[ _, "InertEntity", ___ ] ] := "Entity[...]";
 
 (* Quantities *)
 $$quantityBoxType = "QuantityPrefixUnit"|"QuantityPrefix"|"Quantity"|"QuantityPostfix";
@@ -1527,6 +1573,24 @@ fasterCellToString0[ TemplateBox[ KeyValuePattern[ "input" -> input_ ], "Chatboo
 fasterCellToString0[ TemplateBox[ keys: { __String }, "Key0"|"Key1"|"Key2", ___ ] ] :=
     StringRiffle[ keys, "+" ];
 
+(* Tabular *)
+fasterCellToString0[ box: TemplateBox[ _, "Tabular", ___ ] ] :=
+    With[ { str = makeExpressionString @ box },
+        str /; StringQ @ str
+    ];
+
+fasterCellToString0[ TemplateBox[ KeyValuePattern[ "Main" -> main_ ], "Tabular"|"TabularRef", ___ ] ] :=
+    fasterCellToString0 @ main;
+
+fasterCellToString0[ TemplateBox[
+    KeyValuePattern[ "Snapshot" -> tabular_System`Tabular ],
+    "TabularReferenceWrapper",
+    ___
+] ] := inputFormString @ Unevaluated @ tabular;
+
+fasterCellToString0[ TableViewBox[ tabular_System`Tabular, ___ ] ] :=
+    inputFormString @ Unevaluated @ tabular;
+
 (* Other *)
 fasterCellToString0[ box: TemplateBox[ args_, name_String, ___ ] ] /;
     $templateBoxRules @ name === makeExpressionString :=
@@ -1623,6 +1687,9 @@ fasterCellToString0[ FractionBox[ a_, b_, OptionsPattern[ ] ] ] :=
     (needsBasePrompt[ "Math" ]; "(" <> fasterCellToString0 @ a <> "/" <> fasterCellToString0 @ b <> ")");
 
 (* RadicalBox *)
+fasterCellToString0[ RadicalBox[ a_, b_, ___, SurdForm -> True, ___ ] ] :=
+    (needsBasePrompt[ "Math" ]; "Surd[" <> fasterCellToString0 @ a <> ", " <> fasterCellToString0 @ b <> "]");
+s
 fasterCellToString0[ RadicalBox[ a_, b_, OptionsPattern[ ] ] ] :=
     (needsBasePrompt[ "Math" ]; fasterCellToString0 @ a <> "^(1/(" <> fasterCellToString0 @ b <> "))");
 
@@ -1734,11 +1801,36 @@ outputSizeLimitString // endDefinition;
 (* ::Subsubsubsection::Closed:: *)
 (*Iconized Expressions*)
 fasterCellToString0[
-    InterpretationBox[ DynamicModuleBox[ { ___ }, iconized: TemplateBox[ _, "IconizedObject", ___ ] ], ___ ]
-] := fasterCellToString0 @ iconized;
+    InterpretationBox[ DynamicModuleBox[ { ___ }, iconized: TemplateBox[ _, "IconizedObject", ___ ] ], expr_, ___ ]
+] := serializeIconizedObject[ iconized, HoldComplete @ expr ];
 
-fasterCellToString0[ TemplateBox[ { _, label_, ___ }, "IconizedObject", ___ ] ] :=
-    "IconizedObject[\[LeftSkeleton]" <> StringTrim[ fasterCellToString0 @ label, "\"" ] <> "\[RightSkeleton]]";
+fasterCellToString0[ box: TemplateBox[ _, "IconizedObject", ___ ] ] :=
+    serializeIconizedObject[ box, None ];
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*serializeIconizedObject*)
+serializeIconizedObject // beginDefinition;
+
+serializeIconizedObject[
+    TemplateBox[ { _, (StyleBox|TagBox)[ n_, "IconizedCustomName"|"IconizedName", ___ ], ___ }, "IconizedObject" ],
+    _
+] :=
+    Block[ { $showStringCharacters = False },
+        "IconizedObject[\[LeftSkeleton]" <> fasterCellToString0 @ n <> "\[RightSkeleton]]"
+    ];
+
+serializeIconizedObject[ TemplateBox[ { _, "ListIcon", ___ }, "IconizedObject", ___ ], _ ] := "{...}";
+serializeIconizedObject[ TemplateBox[ { _, "AssociationIcon", ___ }, "IconizedObject", ___ ], _ ] := "<|...|>";
+serializeIconizedObject[ TemplateBox[ { _, "StringIcon", ___ }, "IconizedObject", ___ ], _ ] := "\"...\"";
+serializeIconizedObject[ TemplateBox[ { _, "SequenceIcon", ___ }, "IconizedObject", ___ ], _ ] := "...";
+
+serializeIconizedObject[ TemplateBox[ _, "IconizedObject", ___ ], HoldComplete[ (s_Symbol)[ ___ ] ] ] :=
+    ToString @ Unevaluated @ s <> "[...]";
+
+serializeIconizedObject[ TemplateBox[ _, "IconizedObject", ___ ], _ ] := "...";
+
+serializeIconizedObject // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
@@ -2254,9 +2346,16 @@ fasterCellToString0[ DynamicBox[ ToBoxes[ FEPrivate`FrontEndResource[ "ChatbookS
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*Other FE Resources*)
+fasterCellToString0[ DynamicBox[ (FEPrivate`FrontEndResource|FrontEndResource)[ "FEBitmaps", "IconizeEllipsis" ] ] ] :=
+    "...";
+
 fasterCellToString0[
     DynamicBox[ (FEPrivate`FrontEndResource|FrontEndResource)[ type: "FEBitmaps"|"WABitmaps", name_String ], ___ ]
 ] := fasterCellToString0 @ feResource[ type, name ];
+
+fasterCellToString0[
+    DynamicBox[ FEPrivate`FrontEndResource[ "FEExpressions", "ChoiceButtonsOrder" ][ buttons: { ___ } ], ___ ]
+] := fasterCellToString0 @ RowBox @ Riffle[ buttons, " " ];
 
 fasterCellToString0[ DynamicBox[ FEPrivate`FrontEndResourceString[ "okButtonText" ], ___ ] ] :=
     "OK";
@@ -2448,7 +2547,7 @@ getTemplateBoxFunction // endDefinition;
 getTemplateBoxFunction0 // beginDefinition;
 
 getTemplateBoxFunction0[ name_String ] :=
-    getTemplateBoxFunction0[ name, usingFrontEnd @ CurrentValue @ { StyleDefinitions, name, TemplateBoxOptions } ];
+    getTemplateBoxFunction0[ name, getTemplateBoxOptions @ name ];
 
 getTemplateBoxFunction0[
     name_,
@@ -2472,6 +2571,33 @@ getTemplateBoxFunction0 // endDefinition;
 
 
 $templateBoxCache = <| |>;
+
+(* ::**************************************************************************************************************:: *)
+(* ::Subsubsubsubsection::Closed:: *)
+(*getTemplateBoxOptions*)
+getTemplateBoxOptions // beginDefinition;
+
+getTemplateBoxOptions[ id_String ] /; KeyExistsQ[ $templateBoxOptionsCache, id ] :=
+    $templateBoxOptionsCache[ id ];
+
+getTemplateBoxOptions[ id_String ] := (
+    $templateBoxOptionsCache;
+    $templateBoxOptionsCache[ id ] = usingFrontEnd @ CurrentValue @ { StyleDefinitions, id, TemplateBoxOptions }
+);
+
+getTemplateBoxOptions // endDefinition;
+
+
+$templateBoxOptionsCache :=
+    Module[ { file, data },
+        file = $thisPaclet[ "AssetLocation", "TemplateBoxOptions" ];
+        data = If[ FileExistsQ @ file, Developer`ReadWXFFile @ file, <| |> ];
+        If[ ! AssociationQ @ data, data = <| |> ];
+        If[ TrueQ @ Wolfram`ChatbookInternal`$BuildingMX,
+            data,
+            $templateBoxOptionsCache = data
+        ]
+    ];
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsubsection::Closed:: *)
@@ -2529,11 +2655,12 @@ fasterCellToString0[ HoldPattern @ DocuTools`Private`StylizeTemplatePart[ box_ ]
 $$rawSymbol = Alternatives[ None, Automatic, StateSpaceModel, True, False, $Failed ];
 fasterCellToString0[ sym: $$rawSymbol ] := ToString @ sym;
 fasterCellToString0[ n_? NumberQ ] := ToString @ n;
+fasterCellToString0[ HoldPattern @ BoxData[ ] ] := "";
 
 (* ::**************************************************************************************************************:: *)
 (* ::Subsubsubsection::Closed:: *)
 (*FE Failure Modes*)
-e: fasterCellToString0[ (DefaultStyleDefinitions -> "Default.nb") | Function[ _ ] ] :=
+e: fasterCellToString0[ (DefaultStyleDefinitions -> "Default.nb") | Function[ _ ] | (ScreenRectangle -> _) ] :=
     throwInternalFailure[ e, "BadFrontEndState" ];
 
 (* ::**************************************************************************************************************:: *)
@@ -2624,9 +2751,6 @@ makeExpressionString[ box_, $Failed ] :=
     With[ { expr = Quiet @ MakeExpression @ box },
         makeExpressionString[ box, expr ] /; ! FailureQ @ expr
     ];
-
-makeExpressionString[ TemplateBox[ _, "Tabular", ___ ], _ ] :=
-    "Tabular[...]";
 
 makeExpressionString[ box_, _ ] := makeExpressionString[ box ] =
     $Failed;
