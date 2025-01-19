@@ -239,10 +239,10 @@ $$ignoredImportImage = Alternatives[
 
 $$graphicsBox = With[ { ignored = $$ignoredImportImage },
     Alternatives[
-    $graphicsHeads[ ___ ],
-    TemplateBox[ _, "Legended", ___ ],
+        $graphicsHeads[ ___ ],
+        TemplateBox[ _, "Legended", ___ ],
         DynamicBox[ FEPrivate`ImportImage @ Except @ ignored, ___ ],
-    DynamicBox[ _Charting`iInteractiveTradingChart, ___ ]
+        DynamicBox[ _Charting`iInteractiveTradingChart, ___ ]
     ]
 ];
 
@@ -700,13 +700,15 @@ cellsToString[ { a___, b: Cell[ _, "UsageInputs", ___ ], c: Cell[ _, "UsageDescr
 cellsToString[ cells_List ] :=
     With[ { strings = cellToString /@ cells },
         StringReplace[
-            StringRiffle[ Select[ strings, StringQ ], "\n\n" ],
-            {
-                "```wl"~~WhitespaceCharacter...~~"```" -> "",
-                "```\n\n```wl" -> "",
-                "```\n\n```" -> "",
-                "\n\n\n\n" -> "\n\n"
-            }
+            StringReplace[
+                StringRiffle[ Select[ strings, StringQ ], "\n\n" ],
+                {
+                    "```wl"~~WhitespaceCharacter...~~"```" -> "",
+                    "```\n\n```wl" -> "",
+                    "```\n\n```" -> ""
+                }
+            ],
+            "\n\n" ~~ Longest[ "\n".. ] -> "\n\n"
         ]
     ];
 
@@ -819,6 +821,8 @@ $globalStringReplacements = {
     "\[RightAssociation]"          -> "|>",
     "\[RightSkeleton]"             -> "\:00BB",
     "\[Rule]"                      -> "->",
+    "\[LeftDoubleBracket]"         -> "[[",
+    "\[RightDoubleBracket]"        -> "]]",
     "\n\n" ~~ Longest[ "\n".. ]    -> "\n\n",
     "```\n```"                     -> "```\n\n```",
     "\n\n\t\n"                     -> "\n",
