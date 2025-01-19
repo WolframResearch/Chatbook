@@ -656,7 +656,7 @@ cellToString[ cell: Cell[ _TextData|_String, ___ ] ] := Block[ { $escapeMarkdown
 cellToString[ cell_ ] := Block[ { $escapeMarkdown = False }, cellToString0 @ cell ];
 
 (* Rasterize entire cell if it contains enough graphics boxes *)
-cellToString[ cell: Cell[ _BoxData, Except[ $$chatInputStyle|$$chatOutputStyle ], ___ ] ] /;
+cellToString[ cell: Cell[ _BoxData, Except[ "Input"|"Code"|$$chatInputStyle|$$chatOutputStyle ], ___ ] ] /;
     $multimodalImages && Count[ cell, $$graphicsBox, Infinity ] > $maxMarkdownBoxes :=
         toMarkdownImageBox @ cell;
 
