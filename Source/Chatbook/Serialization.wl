@@ -1658,6 +1658,9 @@ getHyperlinkURL[ ButtonBox[
     OrderlessPatternSequence[ BaseStyle -> "Link"|"Hyperlink", ButtonData -> uri_, ___ ]
 ] ] := getHyperlinkURL @ uri;
 
+getHyperlinkURL[ _ ] :=
+    Missing[ "NotAvailable" ];
+
 getHyperlinkURL // endDefinition;
 
 (* ::**************************************************************************************************************:: *)
